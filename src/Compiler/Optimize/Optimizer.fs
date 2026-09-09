@@ -441,8 +441,8 @@ type cenv =
 
       specializedInlineVals: HashMultiMap<Stamp, TType * Expr>
 
-      /// Cache for 'HasFrameLocalBody'
-      frameLocalVals: Dictionary<Stamp, bool>
+      /// Cache for 'HasForcedInlineBody'
+      forcedInlineVals: Dictionary<Stamp, bool>
 
       signatureHidingInfo: SignatureHidingInfo
     }
@@ -499,9 +499,6 @@ type IncrementalOptimizationEnv =
       /// definition-site replay finds no match; this call site does, letting the correct extension be honored
       /// instead of degrading to the throwing dynamic stub. None outside the debug-specialization path.
       debugInlineCallSite: range option
-
-      /// Inline resumable-code combinators while specializing an enclosing state-machine builder.
-      resumableCodeContext: bool
     }
 
     static member Empty =
@@ -516,8 +513,7 @@ type IncrementalOptimizationEnv =
           methEnv = { pipelineCount = 0 }
           referencedCcus = []
           earlierImplFileSignatures = []
-          debugInlineCallSite = None
-          resumableCodeContext = false }
+          debugInlineCallSite = None }
 
     override x.ToString() = "<IncrementalOptimizationEnv>"
 
@@ -2478,23 +2474,23 @@ let instrIsFrameLocal instr =
 /// attribute - the callee is already inlined into the recorded body, leaving only its IL - so
 /// recover it from the body and propagate it through further wrappers.
 /// See https://github.com/dotnet/fsharp/issues/20063.
-let rec HasFrameLocalBody cenv env (vref: ValRef) =
+let rec HasForcedInlineBody cenv env (vref: ValRef) =
     let stamp = vref.Stamp
 
-    match cenv.frameLocalVals.TryGetValue stamp with
+    match cenv.forcedInlineVals.TryGetValue stamp with
     | true, res -> res
     | _ ->
         // Values bound within the body being walked have no info yet, but the walk covers them anyway.
         match TryGetInfoForVal cenv env vref |> Option.map (fun info -> stripValue info.ValExprInfo) with
         | Some(CurriedLambdaValue (_, _, _, body, _)) ->
-            cenv.frameLocalVals[stamp] <- false // Break cycles while the body is inspected
-            let res = ExprIsFrameLocal cenv env body
-            cenv.frameLocalVals[stamp] <- res
+            cenv.forcedInlineVals[stamp] <- false // Break cycles while the body is inspected
+            let res = ExprNeedsForcedInlining cenv env body
+            cenv.forcedInlineVals[stamp] <- res
             res
 
         | _ -> false
 
-and ExprIsFrameLocal cenv env expr =
+and ExprNeedsForcedInlining cenv env expr =
     let folder =
         { ExprFolder0 with
             exprIntercept =
@@ -2503,58 +2499,12 @@ and ExprIsFrameLocal cenv env expr =
 
                     match expr with
                     | Expr.Op (TOp.ILAsm (instrs, _), _, _, _) when List.exists instrIsFrameLocal instrs -> true
-                    | Expr.Val (vref, _, _) when vref.ShouldInline -> HasFrameLocalBody cenv env vref
+                    // Lowering must see the template and its resumable-code arguments in the same method.
+                    | StructStateMachineExpr cenv.g _ -> true
+                    | Expr.Val (vref, _, _) when vref.ShouldInline -> HasForcedInlineBody cenv env vref
                     | _ -> noInterceptF acc expr }
 
     FoldExpr folder false expr
-
-// A Debug helper method would hide this definition tree from LowerStateMachines.
-let HasResumableStateMachineBody cenv env (vref: ValRef) =
-    let rec hasResumableCodeArgument ty =
-        let ty = stripTyEqns cenv.g ty
-
-        if isFunTy cenv.g ty then
-            isResumableCodeTy cenv.g (domainOfFunTy cenv.g ty)
-            || hasResumableCodeArgument (rangeOfFunTy cenv.g ty)
-        else
-            false
-
-    let rec containsStateMachineBody visiting expr =
-        let folder =
-            { ExprFolder0 with
-                exprIntercept =
-                    fun _recurseF noInterceptF acc expr ->
-                        if acc then
-                            acc
-                        else
-                            match expr with
-                            | StructStateMachineExpr cenv.g _ -> true
-                            | Expr.Val (nestedVref, _, _) when nestedVref.ShouldInline ->
-                                hasStateMachineBody visiting nestedVref
-                            | _ -> noInterceptF acc expr }
-
-        FoldExpr folder false expr
-
-    and hasStateMachineBody visiting (vref: ValRef) =
-        if List.exists ((=) vref.Stamp) visiting then
-            false
-        else
-            let _, ty = tryDestForallTy cenv.g vref.Type
-
-            if not (hasResumableCodeArgument ty) then
-                false
-            else
-                match TryGetInfoForVal cenv env vref |> Option.map (fun info -> stripValue info.ValExprInfo) with
-                | Some(CurriedLambdaValue (_, _, _, body, _)) ->
-                    containsStateMachineBody (vref.Stamp :: visiting) body
-                | _ -> false
-
-    hasStateMachineBody [] vref
-
-let isResumableInlineInDebug cenv env (vref: ValRef) =
-    cenv.optimizing &&
-    (HasResumableStateMachineBody cenv env vref ||
-     (env.resumableCodeContext && isReturnsResumableCodeTy cenv.g vref.TauType))
 
 let shouldForceInlineInDebug cenv env (vref: ValRef) : bool =
     let g = cenv.g
@@ -2564,9 +2514,9 @@ let shouldForceInlineInDebug cenv env (vref: ValRef) : bool =
 
     (vref.HasDeclaringEntity && shouldForceInlineMembersInDebug g vref.DeclaringEntity) ||
 
-    isResumableInlineInDebug cenv env vref ||
+    isReturnsResumableCodeTy g vref.TauType ||
 
-    HasFrameLocalBody cenv env vref
+    HasForcedInlineBody cenv env vref
 
 /// Optimize/analyze an expression
 let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
@@ -3711,12 +3661,9 @@ and TryDevirtualizeApplication cenv env (f, tyargs, args, m) =
 /// Attempt to inline an application of a known value at callsites
 and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, args: Expr list, m) =
     let g = cenv.g
+
     match cenv.settings.alwaysInline, stripExpr valExpr with
-    | false, Expr.Val(vref, _, _)
-        when vref.ShouldInline &&
-             (not (shouldForceInlineInDebug cenv env vref) || isResumableInlineInDebug cenv env vref) ->
-        let forceInline = shouldForceInlineInDebug cenv env vref
-        let hasResumableStateMachineBody = HasResumableStateMachineBody cenv env vref
+    | false, Expr.Val(vref, _, _) when vref.ShouldInline && not (shouldForceInlineInDebug cenv env vref) ->
         let hasNoTraits =
             let tps, _ = tryDestForallTy g vref.Type
             GetTraitConstraintInfosOfTypars g tps |> List.isEmpty
@@ -3735,30 +3682,34 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
         // so route those through the specialization path which inlines the body.
         let isHiddenBySignature = cenv.signatureHidingInfo.HiddenVals.Contains vref.Deref
         let canCallDirectly =
-            not forceInline &&
             (cenv.optimizing || (vref.Accessibility.IsPublic && not isHiddenBySignature)) &&
             (hasNoTraits || (allTyargsAreBareTypars && vref.ValReprInfo.IsSome))
 
-        // Keep nested resumable combinators in the same expression tree as the builder.
-        let inlineEnv =
-            if forceInline && hasResumableStateMachineBody then
-                { env with resumableCodeContext = true }
-            else
-                env
-
-        let argsR = args |> List.map (OptimizeExpr cenv inlineEnv >> fst)
+        let argsR = args |> List.map (OptimizeExpr cenv env >> fst)
         let info = { TotalSize = 1; FunctionSize = 1; HasEffect = true; MightMakeCriticalTailcall = false; Info = UnknownValue }
 
         if canCallDirectly then
             Some(mkApps g ((exprForValRef m vref, vref.Type), [tyargs], argsR, m), info)
         else
 
-        let origFinfo = GetInfoForVal cenv inlineEnv m vref
+        let origFinfo = GetInfoForVal cenv env m vref
         match stripValue origFinfo.ValExprInfo with
         | CurriedLambdaValue(origLambdaId, _, _, origLambda, origLambdaTy) ->
             let f2R = CopyExprForInlining cenv true origLambda m
             let specLambda = MakeApplicationAndBetaReduce g (f2R, origLambdaTy, [tyargs], [], m)
             let specLambdaTy = tyOfExpr g specLambda
+
+            let hasStateMachineTemplate =
+                (false, specLambdaTy)
+                ||> SimplifyTypes.foldTypeButNotConstraints (stripTyEqns g) (fun found ty ->
+                    found ||
+                    (tryTcrefOfAppTy g ty |> ValueOption.exists (tyconRefEq g g.ResumableStateMachine_tcr)))
+
+            // A separate helper loses type parameters of the struct that replaces this template during lowering.
+            if hasStateMachineTemplate then
+                let cenv = { cenv with settings = { cenv.settings with alwaysInline = true } }
+                Some(OptimizeApplication cenv { env with debugInlineCallSite = Some m } (valExpr, vref.Type, tyargs, argsR, m))
+            else
 
             // Typars that flow in from the enclosing scope when tyargs are non-concrete. A tyarg can reach
             // only the body, and typars left unabstracted below are erased to 'object'.
@@ -3774,7 +3725,7 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
             // function (e.g. sum<int, int->int> can call sum<int, int> in its body). For
             // non-concrete type args, never specialize recursively.
             let canSpecialize =
-                match Map.tryFind origLambdaId inlineEnv.dontInline with
+                match Map.tryFind origLambdaId env.dontInline with
                 | Some tys ->
                     allTyargsAreConcrete &&
                     not tys.IsEmpty &&
@@ -3790,25 +3741,14 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
                     | Some (_, body) -> copyExpr g CloneAll body
                     | None ->
 
-                    let existingTypes = defaultArg (Map.tryFind origLambdaId inlineEnv.dontInline) []
-                    let currentDontInline = inlineEnv.dontInline
-                    let env = { inlineEnv with dontInline = Map.add origLambdaId (specLambdaTy :: existingTypes) currentDontInline; debugInlineCallSite = Some m }
+                    let existingTypes = defaultArg (Map.tryFind origLambdaId env.dontInline) []
+                    let env = { env with dontInline = Map.add origLambdaId (specLambdaTy :: existingTypes) env.dontInline; debugInlineCallSite = Some m }
                     let specLambdaR, _ = OptimizeExpr cenv env specLambda
                     cenv.specializedInlineVals.Add(origLambdaId, (specLambdaTy, specLambdaR))
                     specLambdaR
                 else
-                    let currentDontInline = inlineEnv.dontInline
-                    let specLambdaR, _ = OptimizeExpr cenv { inlineEnv with dontInline = Map.add origLambdaId [] currentDontInline; debugInlineCallSite = Some m } specLambda
+                    let specLambdaR, _ = OptimizeExpr cenv { env with dontInline = Map.add origLambdaId [] env.dontInline; debugInlineCallSite = Some m } specLambda
                     specLambdaR
-
-            let fullyInlineResumable =
-                forceInline && isResumableInlineInDebug cenv inlineEnv vref
-
-            // A helper method boundary would hide the resumable definitions from lowering.
-            if fullyInlineResumable then
-                let reducedExpr = MakeApplicationAndBetaReduce g (specLambdaR, specLambdaTy, [], argsR, m)
-                Some(OptimizeExpr cenv inlineEnv reducedExpr)
-            else
 
             // Abstract the specialized lambda over its free typars so IlxGen emits a static
             // method with flattened arguments. The alternative closure form (valReprInfo = None)
@@ -4919,7 +4859,7 @@ let OptimizeImplFile (settings, ccu, tcGlobals: TcGlobals, tcVal, importMap, opt
           stackGuard = StackGuard("OptimizerStackGuardDepth")
           realsig = tcGlobals.realsig
           specializedInlineVals = HashMultiMap(HashIdentity.Structural, true)
-          frameLocalVals = Dictionary<Stamp, bool>()
+          forcedInlineVals = Dictionary<Stamp, bool>()
           signatureHidingInfo = SignatureHidingInfo.Empty
         }
 

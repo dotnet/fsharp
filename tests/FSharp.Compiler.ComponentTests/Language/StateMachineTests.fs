@@ -8,6 +8,127 @@ open FSharp.Test.Compiler
 
 module StateMachineTests =
 
+    [<FSharp.Test.FactForNETCOREAPP>]
+    let ``SRTP await helpers preserve generic state machine captures in Debug`` () =
+        FSharp """
+open System.Runtime.CompilerServices
+open System.Threading.Tasks
+open Microsoft.FSharp.Control
+open Microsoft.FSharp.Core.CompilerServices
+
+#nowarn "3513"
+#nowarn "1204"
+
+type Helper =
+    static member inline Await(builder: byref< ^Builder>, awaiter: byref< ^Awaiter>, sm: byref< ^StateMachine>) =
+        (^Builder: (member AwaitUnsafeOnCompleted: byref< ^Awaiter> * byref< ^StateMachine> -> unit)
+            (builder, &awaiter, &sm))
+
+[<NoComparison; NoEquality>]
+type CustomAwaitable = CustomAwaitable of YieldAwaitable
+
+type TaskBuilderBase with
+    member inline _.Bind(CustomAwaitable value, continuation: unit -> TaskCode<'T, 'U>) =
+        TaskCode<'T, 'U>(fun sm ->
+            if __useResumableCode then
+                let mutable awaiter = value.GetAwaiter()
+                let mutable __stack_fin = true
+                if not awaiter.IsCompleted then
+                    let __stack_yield_fin = ResumableCode.Yield().Invoke(&sm)
+                    __stack_fin <- __stack_yield_fin
+                if __stack_fin then
+                    awaiter.GetResult()
+                    (continuation ()).Invoke(&sm)
+                else
+                    Helper.Await(&sm.Data.MethodBuilder, &awaiter, &sm)
+                    false
+            else
+                failwith "unexpected dynamic fallback")
+
+let fakeWork value (items: ResizeArray<_>) =
+    task {
+        items.Add value
+        do! CustomAwaitable(Task.Yield())
+        items.Add value
+    }
+
+[<EntryPoint>]
+let main _ =
+    let items = ResizeArray<int>()
+    fakeWork 1 items |> fun work -> work.GetAwaiter().GetResult()
+    if Seq.toList items <> [1; 1] then failwithf "Unexpected captures: %A" items
+    0
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> withFSharpCoreShippedNet
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<Theory>]
+    [<InlineData(false, false)>]
+    [<InlineData(false, true)>]
+    [<InlineData(true, false)>]
+    [<InlineData(true, true)>]
+    let ``Resumable builders and combinators inline across assemblies`` (optimizeLibrary, optimizeConsumer) =
+        let library =
+            FSharp """
+module ResumableLibrary
+
+open System.Runtime.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers
+
+#nowarn "3513"
+
+let inline finish (sm: byref<'SM> when 'SM :> IAsyncStateMachine and 'SM :> IResumableStateMachine<int>) =
+    sm.MoveNext()
+    sm.Data
+
+let inline step () =
+    ResumableCode<int, unit>(fun sm ->
+        if __useResumableCode then
+            sm.Data <- sm.Data + 21
+            true
+        else
+            failwith "unexpected combinator fallback")
+
+type Builder() =
+    member inline _.Run(code: ResumableCode<int, unit>) =
+        if __useResumableCode then
+            __stateMachine<int, int>
+                (MoveNextMethodImpl<_>(fun sm ->
+                    code.Invoke(&sm) |> ignore))
+                (SetStateMachineMethodImpl<_>(fun _ _ -> ()))
+                (AfterCode<_, _>(fun sm -> finish &sm))
+        else
+            failwith "unexpected dynamic fallback"
+
+let builder = Builder()
+
+let inline run () =
+    if __useResumableCode then
+        builder.Run(ResumableCode.Combine(step(), step()))
+    else
+        failwith "unexpected wrapper fallback"
+"""
+            |> withName "ResumableLibrary"
+            |> withDebug
+            |> withOptions [if optimizeLibrary then "--optimize+" else "--optimize-"]
+            |> asLibrary
+
+        FSharp """
+[<EntryPoint>]
+let main _ =
+    if ResumableLibrary.run() = 42 then 0 else 1
+"""
+        |> withReferences [library]
+        |> withDebug
+        |> withOptions [if optimizeConsumer then "--optimize+" else "--optimize-"]
+        |> compileExeAndRun
+        |> shouldSucceed
+        |> withExitCode 0
+
     let verifyOptimizedAndRun code =
         Fsx code
         |> withOptimize

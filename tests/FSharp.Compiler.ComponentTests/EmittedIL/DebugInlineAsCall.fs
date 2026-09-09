@@ -1790,6 +1790,8 @@ let main _ =
         |> withNoOptimize
         |> asExe
         |> compileAndRun
+        |> shouldSucceed
+        |> withExitCode 0
         |> verifySequencePoints
 
     [<Fact>]
