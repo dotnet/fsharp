@@ -5,6 +5,7 @@ namespace FSharp.Build.UnitTests
 open System
 open System.IO
 open System.Runtime.InteropServices
+open System.Threading
 open Microsoft.Build.Framework
 open Microsoft.Build.Utilities
 open FSharp.Build
@@ -24,16 +25,6 @@ type FauxHostObject() =
     member _.Sources = sources
 
     interface ITaskHost
-
-module private FscFsiTestHooks =
-
-    let private invoke<'T> (task: obj) name args =
-        (FSharp.Test.ReflectionHelper.getPrivateInstanceMethod name (task.GetType())).Invoke(task, args)
-        :?> 'T
-
-    let fullPathToTool task = invoke<string> task "InternalGenerateFullPathToTool" [||]
-    let generateResponseFileCommands task = invoke<string> task "InternalGenerateResponseFileCommands" [||]
-    let executeTool task = invoke<int> task "InternalExecuteTool" [| box ""; box ""; box "" |]
 
 type MultiThreadedTaskTests() =
 
@@ -68,49 +59,72 @@ type MultiThreadedTaskTests() =
                 typeof<Microsoft.Build.Utilities.Task>
 
         Assert.Equal(expectedBase, taskType.BaseType)
+        if taskType <> typeof<MapSourceRoots> then
+            Assert.True(typeof<IMultiThreadableTask>.IsAssignableFrom(taskType))
 
-/// One compiler task under test, kept as a named record so scenarios read as fields instead of
-/// destructured anonymous tuples.
-type private CompilerTaskCase =
-    { Executable: string
-      Create: TaskEnvironment -> obj }
+    [<Fact>]
+    member _.``all concrete build tasks have a reviewed contract``() =
+        let discovered =
+            typeof<Fsc>.Assembly.GetTypes()
+            |> Seq.filter (fun taskType -> taskType.IsPublic && not taskType.IsAbstract && typeof<ITask>.IsAssignableFrom taskType)
+            |> Seq.map _.FullName
+            |> Set.ofSeq
+        let reviewed =
+            MultiThreadedTaskTests.MultiThreadableTaskTypes
+            |> Seq.map (fun row -> (row[0] :?> Type).FullName)
+            |> Set.ofSeq
+        Assert.Equal<Set<string>>(reviewed, discovered)
+
+    [<Fact>]
+    member _.``failed preparation releases waiting workers``() =
+        use finished = new ManualResetEventSlim()
+        let errors =
+            Assert.Throws<AggregateException>(fun () ->
+                runConcurrentlyWithBarrier
+                    "failed preparation"
+                    [
+                        (fun _ -> failwith "prepare failed")
+                        (fun release ->
+                            try release ()
+                            finally finished.Set())
+                    ]
+                |> ignore)
+        Assert.True(finished.IsSet, "The waiting worker must terminate before the helper returns")
+        Assert.True(errors.InnerExceptions |> Seq.exists (fun error -> error.Message = "prepare failed"))
+
+type CompilerTaskKind =
+    | Compiler
+    | Interactive
 
 type FscFsiMultiThreadedTaskTests() =
 
     static let environmentWithCompilerBin () =
         let projectDirectory = TestFramework.createTemporaryDirectory().FullName
-        // A relative FSHARP_COMPILER_BIN makes the "normalize tool path against the injected TaskEnvironment"
-        // step observable: the resolved tool path must be rooted under this task's project directory (not the
-        // host process current directory). The returned second element is that expected rooted bin directory.
         let relativeBin = "compilerBin"
         let variables = dict [ "FSHARP_COMPILER_BIN", relativeBin ]
         let environment = TaskEnvironment.CreateWithProjectDirectoryAndEnvironment(projectDirectory, variables)
         environment, Path.Combine(projectDirectory, relativeBin)
 
-    let fscTask =
-        { Executable = "fsc.exe"
-          Create = fun environment -> Fsc() |> assignTaskEnvironment environment |> box }
+    let toolPath kind environment =
+        match kind with
+        | Compiler ->
+            let task = Fsc() |> assignTaskEnvironment environment
+            "fsc.exe", task.InternalGenerateFullPathToTool()
+        | Interactive ->
+            let task = Fsi() |> assignTaskEnvironment environment
+            "fsi.exe", task.InternalGenerateFullPathToTool()
 
-    let fsiTask =
-        { Executable = "fsi.exe"
-          Create = fun environment -> Fsi() |> assignTaskEnvironment environment |> box }
+    static member CompilerPairs =
+        [ for first, second in [ Compiler, Interactive; Compiler, Compiler ] -> [| box first; box second |] ]
 
-    let compilerTasks = [ fscTask; fsiTask ]
-
-    [<Fact>]
-    member _.``compiler tasks resolve tool paths from isolated compiler-bin environments``() =
-        for caseA, caseB in [ fscTask, fsiTask; fscTask, fscTask ] do
-            withTaskEnvironmentPairUsing environmentWithCompilerBin (fun environmentA binA environmentB binB ->
-                let taskA, taskB = caseA.Create environmentA, caseB.Create environmentB
-                let pathA = FscFsiTestHooks.fullPathToTool taskA
-                let pathB = FscFsiTestHooks.fullPathToTool taskB
-
-                // Exact directory + filename oracles pin each rooted path to its own compiler-bin env, which
-                // already implies both are rooted and distinct (binA and binB are separate temp directories).
-                Assert.Equal(caseA.Executable, Path.GetFileName pathA)
-                Assert.Equal(caseB.Executable, Path.GetFileName pathB)
-                Assert.Equal(Path.GetFullPath binA, Path.GetDirectoryName pathA)
-                Assert.Equal(Path.GetFullPath binB, Path.GetDirectoryName pathB))
+    [<Theory>]
+    [<MemberData(nameof FscFsiMultiThreadedTaskTests.CompilerPairs)>]
+    member _.``compiler tasks resolve isolated compiler-bin environments``(first: CompilerTaskKind, second: CompilerTaskKind) =
+        withTaskEnvironmentPairUsing environmentWithCompilerBin (fun environmentA binA environmentB binB ->
+            let executableA, pathA = toolPath first environmentA
+            let executableB, pathB = toolPath second environmentB
+            Assert.Equal(Path.Combine(binA, executableA), pathA)
+            Assert.Equal(Path.Combine(binB, executableB), pathB))
 
     [<Fact>]
     member _.``concurrent Fsc tasks route flags and sources to their own host objects``() =
@@ -130,11 +144,10 @@ type FscFsiMultiThreadedTaskTests() =
         let firstTask, firstHost = makeTask "--firstflag" [ "first1.fs"; "first2.fs" ]
         let secondTask, secondHost = makeTask "--secondflag" [ "second1.fs" ]
 
-        let run task release =
-            // Response-file preparation stays single-threaded; the barrier then releases both executions together.
-            FscFsiTestHooks.generateResponseFileCommands task |> ignore
+        let run (task: Fsc) release =
+            task.InternalGenerateResponseFileCommands() |> ignore
             release ()
-            FscFsiTestHooks.executeTool task |> ignore
+            Assert.Equal(0, task.InternalExecuteTool("", "", ""))
 
         runConcurrentlyWithBarrier "concurrent Fsc host objects" [ run firstTask; run secondTask ]
         |> ignore
@@ -150,24 +163,20 @@ type FscFsiMultiThreadedTaskTests() =
             Assert.Contains(own, host.Flags)
             Assert.DoesNotContain(other, host.Flags)
 
-    [<Fact>]
-    member _.``compiler tasks normalize every tool-path shape against TaskEnvironment``() =
+    [<Theory>]
+    [<InlineData("fsc.exe")>]
+    [<InlineData("fsi.exe")>]
+    member _.``tool-path normalization preserves every path shape``(executable: string) =
         withTaskEnvironment (fun environment directory ->
-            // Fsc/Fsi route their tool paths through this shared helper (covered end-to-end by the full-path
-            // and ExecuteTool tests); here we exercise the helper directly across every path shape.
             let normalize path = TaskEnvironmentPaths.normalizePathToTool environment path
-
-            for case in compilerTasks do
-                let relative = Path.Combine("tools", case.Executable)
-
-                Assert.Equal(Path.Combine(directory.FullName, relative), normalize relative)
-                Assert.Equal(case.Executable, normalize case.Executable)
-
-                // Empty and whitespace tool names stay bare (never rooted): the host resolves them via PATH,
-                // and guarding before Path.GetDirectoryName avoids its net472 throw-on-whitespace behaviour.
-                Assert.Equal("", normalize "")
-                Assert.Equal("   ", normalize "   ")
-
-                if RuntimeInformation.IsOSPlatform OSPlatform.Windows then
-                    for input in [ $@"\tools\{case.Executable}"; $@"C:tools\{case.Executable}" ] do
-                        Assert.Equal(environment.GetAbsolutePath(input).Value, normalize input))
+            let relative = Path.Combine("tools", executable)
+            let absolute = Path.Combine(directory.FullName, relative)
+            Assert.Equal(absolute, normalize relative)
+            Assert.Equal(absolute, normalize absolute)
+            Assert.Equal(executable, normalize executable)
+            Assert.Null(normalize null)
+            Assert.Equal("", normalize "")
+            Assert.Equal("   ", normalize "   ")
+            if RuntimeInformation.IsOSPlatform OSPlatform.Windows then
+                for input in [ $@"\tools\{executable}"; $@"C:tools\{executable}" ] do
+                    Assert.Equal(environment.GetAbsolutePath(input).Value, normalize input))

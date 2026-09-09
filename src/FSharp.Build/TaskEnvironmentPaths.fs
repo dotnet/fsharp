@@ -19,14 +19,12 @@ module internal TaskEnvironmentPaths =
 
     // ProcessStartInfo resolves relative tool paths against the host process current directory.
     let normalizePathToTool (taskEnvironment: TaskEnvironment) (pathToTool: string) =
-        // Guard empty/whitespace before Path.GetDirectoryName: on net472 it throws on whitespace-only
-        // input, and a bare/whitespace tool name must stay unchanged so the host resolves it via PATH.
-        match pathToTool with
-        | NonEmptyString path when not (String.IsNullOrWhiteSpace path) ->
-            match Path.GetDirectoryName path with
-            | NonEmptyString _ -> taskEnvironment.GetAbsolutePath(path).Value
+        if String.IsNullOrWhiteSpace pathToTool then
+            pathToTool
+        else
+            match Path.GetDirectoryName pathToTool with
+            | NonEmptyString _ -> taskEnvironment.GetAbsolutePath(pathToTool).Value
             | _ -> pathToTool
-        | _ -> pathToTool
 
     let defaultCompilerToolPath (taskEnvironment: TaskEnvironment) (taskType: Type) =
         let probePoint =
@@ -38,15 +36,45 @@ module internal TaskEnvironmentPaths =
         FSharpEnvironment.BinFolderOfDefaultFSharpCompilerUsingEnvironment taskEnvironment.GetEnvironmentVariable probePoint
         |> Option.defaultValue ""
 
-    // A rooted path only stands for the original when the match ends a path token: at end-of-string, at a
-    // quote, or before a separator (a directory child). Otherwise the match is a mere lexical prefix of an
-    // unrelated path (e.g. rooted "p" inside rooted "parts/x") and rewriting it would corrupt that path.
-    let private endsPathToken (source: string) index =
-        index >= source.Length
-        || (match source[index] with
-            | '\''
-            | '"' -> true
-            | c -> c = '/' || c = '\\')
+    // Quoted filenames can contain whitespace and punctuation that delimit unquoted diagnostics.
+    let private isPathToken (source: string) start finish =
+        let preceding =
+            if start = 0 then
+                ' '
+            else
+                source[start - 1]
+
+        let startsToken =
+            Char.IsWhiteSpace preceding
+            || (match preceding with
+                | '\''
+                | '"'
+                | '('
+                | '['
+                | '{'
+                | '='
+                | '>' -> true
+                | _ -> false)
+
+        startsToken
+        && (finish = source.Length
+            || (match source[finish] with
+                | '/'
+                | '\\' -> true
+                | c when preceding = '\'' || preceding = '"' -> c = preceding
+                | c ->
+                    Char.IsWhiteSpace c
+                    || (match c with
+                        | '\''
+                        | '"'
+                        | ':'
+                        | ';'
+                        | ','
+                        | ')'
+                        | ']'
+                        | '}'
+                        | '>' -> true
+                        | _ -> false)))
 
     // netstandard2.0 has no String.Replace(string, string, StringComparison) overload, and a plain replace
     // would also ignore the path-token boundary above, so both are handled here.
@@ -63,7 +91,7 @@ module internal TaskEnvironmentPaths =
                     let afterMatch = matchIndex + oldValue.Length
                     builder.Append(source, searchStart, matchIndex - searchStart) |> ignore
 
-                    if endsPathToken source afterMatch then
+                    if isPathToken source matchIndex afterMatch then
                         builder.Append(newValue) |> ignore
                     else
                         builder.Append(source, matchIndex, oldValue.Length) |> ignore

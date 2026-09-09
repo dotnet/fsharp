@@ -72,17 +72,14 @@ module BuildTaskTestHelpers =
     let withTaskEnvironment body =
         withTaskEnvironmentUsing createTaskEnvironmentInTemporaryDirectory body
 
-    // Same-thread nested disposal: environmentB is released before environmentA.
     let withTaskEnvironmentPairUsing create body =
         withTaskEnvironmentUsing create (fun environmentA stateA ->
             withTaskEnvironmentUsing create (fun environmentB stateB -> body environmentA stateA environmentB stateB))
 
-    /// Runs each action on its own thread, releasing them together through a shared barrier so any
-    /// single-threaded preparation an action performs before it calls `release` stays uncontended.
-    /// Fails `scenario` if the group does not finish within 30 seconds (deadlock guard); returns each result.
     let runConcurrentlyWithBarrier scenario (actions: ((unit -> unit) -> 'T) list) =
         use barrier = new Barrier(List.length actions)
-        let release () = barrier.SignalAndWait() |> ignore
+        let release () =
+            Assert.True(barrier.SignalAndWait(TimeSpan.FromSeconds 10.0), $"{scenario}: barrier timed out")
         let tasks = [| for action in actions -> Task.Run(fun () -> action release) |]
 
         Assert.True(

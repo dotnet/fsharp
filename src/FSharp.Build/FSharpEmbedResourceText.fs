@@ -440,16 +440,23 @@ open Printf
             // to be recovered from the open the generator emits for it, or an existing file would be
             // taken as up-to-date after the flag changed
             let failedCondition =
-                [|
-                    fun () -> File.Exists rootedOut
-                    fun () -> File.Exists rootedXml
-                    fun () -> File.Exists rootedInput
-                    fun () -> File.GetLastWriteTimeUtc rootedInput <= File.GetLastWriteTimeUtc rootedOut
-                    fun () -> File.GetLastWriteTimeUtc rootedInput <= File.GetLastWriteTimeUtc rootedXml
-                    fun () -> richText = (File.ReadLines rootedOut |> Seq.truncate 40 |> Seq.contains richTextOpen)
-                |]
-                |> Array.tryFindIndex (fun condition -> not (condition ()))
-                |> Option.map ((+) 1)
+                if not (File.Exists rootedOut) then
+                    Some 1
+                elif not (File.Exists rootedXml) then
+                    Some 2
+                elif not (File.Exists rootedInput) then
+                    Some 3
+                elif File.GetLastWriteTimeUtc rootedInput > File.GetLastWriteTimeUtc rootedOut then
+                    Some 4
+                elif File.GetLastWriteTimeUtc rootedInput > File.GetLastWriteTimeUtc rootedXml then
+                    Some 5
+                elif
+                    richText
+                    <> (File.ReadLines rootedOut |> Seq.truncate 40 |> Seq.contains richTextOpen)
+                then
+                    Some 6
+                else
+                    None
 
             match failedCondition with
             | None ->
@@ -700,7 +707,9 @@ open Printf
                 xd.Save outXmlStream
                 printMessage "Done %s" outFileName
                 Some(fileName, outFileSignatureName, outFileName, outXmlFileName)
-        with e ->
+        with
+        | TaskFailed -> None
+        | e ->
             PrintErr(
                 fileName,
                 0,

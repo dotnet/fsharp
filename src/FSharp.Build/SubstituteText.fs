@@ -11,7 +11,7 @@ open Microsoft.Build.Utilities
 type SubstituteText() =
     inherit Task()
 
-    let mutable copiedFiles = new ResizeArray<ITaskItem>()
+    let copiedFiles = ResizeArray<ITaskItem>()
     let mutable embeddedResources: ITaskItem[] = [||]
 
     interface IMultiThreadableTask with

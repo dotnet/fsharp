@@ -11,9 +11,17 @@ open FSharp.Build
 open Xunit
 open BuildTaskTestHelpers
 
-type private ResourceTaskKind =
+type ResourceTaskKind =
     | Resx
     | Text
+
+type ResourcePathShape =
+    | Relative
+    | Absolute
+    | DotSegment
+    | Invalid
+    | RootRelative
+    | DriveRelative
 
 type private PathExpectation =
     | Restored
@@ -49,7 +57,6 @@ type FileTaskEnvironmentTests() =
             Environment.CurrentDirectory <- original
 
     let runConcurrently scenario executeA executeB =
-        // No per-task preparation here, so both actions just wait on the shared barrier before executing.
         let results =
             runConcurrentlyWithBarrier
                 scenario
@@ -78,6 +85,7 @@ type FileTaskEnvironmentTests() =
         | Resx ->
             let item = TaskItem(input) :> ITaskItem
             item.SetMetadata("GenerateSource", "true")
+            item.SetMetadata("GeneratedModuleName", "Resource")
 
             let task =
                 FSharpEmbedResXSource(
@@ -87,7 +95,6 @@ type FileTaskEnvironmentTests() =
                 )
                 |> assignTaskEnvironment environment
 
-            // Output projection is deferred so it observes the task's results only after Execute runs.
             (task :> ITask), (fun () -> task.GeneratedSource)
         | Text ->
             let task =
@@ -105,20 +112,32 @@ type FileTaskEnvironmentTests() =
         | Resx -> "FSharpEmbedResXSource", ".resx"
         | Text -> "FSharpEmbedResourceText", ".txt"
 
+    let resourceContent kind marker =
+        match kind with
+        | Resx -> $"""<root><data name="Greeting"><value>{marker}</value></data></root>"""
+        | Text -> $"greeting,\"{marker}\"\n"
+
     let countOccurrences (needle: string) (text: string) =
         text.Split([| needle |], StringSplitOptions.None).Length - 1
 
-    let pathScenarios extension (directory: DirectoryInfo) =
-        [
-            "relative", $"Missing{extension}", Restored
-            "absolute beneath project", Path.Combine(directory.FullName, $"AbsentUnderProject{extension}"), PreservedAbsolute
-            "dot segment", Path.Combine("sub", "..", $"Missing{extension}"), Restored
-            "invalid path", $"in|valid{extension}", Restored
+    static member ResourceKinds = [ for kind in [ Resx; Text ] -> [| box kind |] ]
 
-            if RuntimeInformation.IsOSPlatform OSPlatform.Windows then
-                "Windows root relative", $@"\Missing{extension}", PartiallyQualified
-                "Windows drive relative", $@"C:Missing{extension}", PartiallyQualified
+    static member DiagnosticPaths =
+        [
+            for kind in [ Resx; Text ] do
+                for shape in
+                    [
+                        Relative; Absolute; DotSegment; Invalid
+                        if RuntimeInformation.IsOSPlatform OSPlatform.Windows then
+                            RootRelative
+                            DriveRelative
+                    ] do
+                    yield [| box kind; box shape |]
         ]
+
+    static member OutputFailures =
+        [ for kind, extension in [ Resx, ".fs"; Text, ".fs"; Text, ".fsi"; Text, ".resx" ] ->
+            [| box kind; box extension |] ]
 
     [<Fact>]
     member _.``WriteCodeFragment isolates relative output paths per task``() =
@@ -204,9 +223,9 @@ type FileTaskEnvironmentTests() =
             check directoryA intermediateA "AssemblyA" "AssemblyB" taskA
             check directoryB intermediateB "AssemblyB" "AssemblyA" taskB)
 
-    [<Fact>]
-    member _.``Resource generators isolate relative input and output paths per task``() =
-        for kind in [ Resx; Text ] do
+    [<Theory>]
+    [<MemberData(nameof FileTaskEnvironmentTests.ResourceKinds)>]
+    member _.``Resource generators isolate relative input and output paths per task``(kind: ResourceTaskKind) =
             withIsolatedTaskEnvironmentPair (fun environmentA directoryA environmentB directoryB ->
                 let scenario, extension = resourceKindInfo kind
                 let intermediate = Path.Combine("obj", "Debug")
@@ -216,15 +235,8 @@ type FileTaskEnvironmentTests() =
                     Directory.CreateDirectory(Path.Combine(directory.FullName, intermediate))
                     |> ignore
 
-                let content marker =
-                    match kind with
-                    | Resx ->
-                        $"""<?xml version="1.0" encoding="utf-8"?><root><data name="Greeting"><value>{marker}</value></data></root>"""
-                    | Text -> $"""greeting,"{marker}"
-"""
-
-                File.WriteAllText(Path.Combine(directoryA.FullName, input), content "Hello from A")
-                File.WriteAllText(Path.Combine(directoryB.FullName, input), content "Hello from B")
+                File.WriteAllText(Path.Combine(directoryA.FullName, input), resourceContent kind "Hello from A")
+                File.WriteAllText(Path.Combine(directoryB.FullName, input), resourceContent kind "Hello from B")
 
                 let taskA, outputA = createResourceTask kind environmentA (MockEngine()) input intermediate
                 let taskB, outputB = createResourceTask kind environmentB (MockEngine()) input intermediate
@@ -254,83 +266,74 @@ type FileTaskEnvironmentTests() =
                         assertContains scenario own contents
                         assertNotContains scenario other contents)
 
-    [<Fact>]
-    member _.``FSharpEmbedResXSource reports malformed XML only through one MSBuild error``() =
+    [<Theory>]
+    [<InlineData("Malformed.resx", "<root><data name=\"Broken\"><value>Oops</root>", "Malformed.resx", false)>]
+    [<InlineData("MissingName.resx", "<root><data><value>Oops</value></data></root>", "Missing resource name", true)>]
+    [<InlineData("MissingValue.resx", "<root><data name=\"Broken\"/></root>", "Missing resource value", true)>]
+    [<InlineData("Malformed.txt", "bad syntax without comma", "comma", true)>]
+    member _.``Resource failures log once without console output``(input: string, content: string, expected: string, taskFailed: bool) =
         withTaskEnvironment (fun environment directory ->
-            let input = "Malformed.resx"
-
-            File.WriteAllText(
-                Path.Combine(directory.FullName, input),
-                "<?xml version=\"1.0\" encoding=\"utf-8\"?><root><data name=\"Broken\"><value>Oops</root>"
-            )
-
+            File.WriteAllText(Path.Combine(directory.FullName, input), content)
+            let kind = if Path.GetExtension(input) = ".txt" then Text else Resx
             let engine = MockEngine()
-            let task, _ = createResourceTask Resx environment engine input "obj"
+            let task, _ = createResourceTask kind environment engine input "obj"
             use capture = new FSharp.Test.TestConsole.ExecutionCapture()
-            let result = task.Execute()
-
-            Assert.False result
+            Assert.False(task.Execute())
             Assert.Equal("", capture.OutText)
             Assert.Equal("", capture.ErrorText)
-            let error = Assert.Single(engine.Errors)
-            assertContains "malformed resx" input error.Message
-            assertNotContains "malformed resx" directory.FullName error.Message)
+            let message = (Assert.Single(engine.Errors)).Message
+            assertContains input expected message
+            assertNotContains input directory.FullName message
 
-    [<Fact>]
-    member _.``FSharpEmbedResXSource logs failTask errors exactly once``() =
+            if taskFailed then
+                for leaked in [ "An exception occurred when processing"; "TaskFailed"; "   at " ] do
+                    assertNotContains input leaked message)
+
+    [<Theory>]
+    [<MemberData(nameof FileTaskEnvironmentTests.DiagnosticPaths)>]
+    member _.``Resource task diagnostics preserve every input path shape``(kind: ResourceTaskKind, shape: ResourcePathShape) =
         withTaskEnvironment (fun environment directory ->
-            let input = "MissingName.resx"
-
-            File.WriteAllText(
-                Path.Combine(directory.FullName, input),
-                "<?xml version=\"1.0\" encoding=\"utf-8\"?><root><data><value>Oops</value></data></root>"
-            )
-
+            let kindName, extension = resourceKindInfo kind
+            let input, expectation =
+                match shape with
+                | Relative -> $"Missing{extension}", Restored
+                | Absolute -> Path.Combine(directory.FullName, $"AbsentUnderProject{extension}"), PreservedAbsolute
+                | DotSegment -> Path.Combine("sub", "..", $"Missing{extension}"), Restored
+                | Invalid -> $"in|valid{extension}", Restored
+                | RootRelative -> $@"\Missing{extension}", PartiallyQualified
+                | DriveRelative -> $@"C:Missing{extension}", PartiallyQualified
+            let scenario = $"{kindName}: {shape}"
             let engine = MockEngine()
-            let task, _ = createResourceTask Resx environment engine input "obj"
+            let task, _ = createResourceTask kind environment engine input "obj"
+            Assert.False(task.Execute(), scenario)
+            let error = Assert.Single(engine.Errors)
+            let message = error.Message
+            if kind = Text then Assert.Equal(input, error.File)
+            assertContains scenario input (message + "\n" + error.File)
+
+            match expectation with
+            | PreservedAbsolute ->
+                Assert.True(countOccurrences input message >= 2, $"{scenario}: expected original path in prefix and exception")
+            | Restored -> assertNotContains scenario directory.FullName message
+            | PartiallyQualified ->
+                assertNotContains scenario (environment.GetAbsolutePath(input).Value) message
+                assertNotContains scenario directory.FullName message)
+
+    [<Theory>]
+    [<MemberData(nameof FileTaskEnvironmentTests.OutputFailures)>]
+    member _.``Resource write failures preserve output paths``(kind: ResourceTaskKind, outputExtension: string) =
+        withTaskEnvironment (fun environment directory ->
+            let _, inputExtension = resourceKindInfo kind
+            let input = "Resource" + inputExtension
+            let output = Path.Combine("obj", "Resource" + outputExtension)
+            File.WriteAllText(Path.Combine(directory.FullName, input), resourceContent kind "Hello")
+            Directory.CreateDirectory(Path.Combine(directory.FullName, output)) |> ignore
+            let engine = MockEngine()
+            let task, _ = createResourceTask kind environment engine input "obj"
             Assert.False(task.Execute())
             let message = (Assert.Single(engine.Errors)).Message
-            assertContains "missing resource name" "Missing resource name" message
-
-            for leaked in [ "An exception occurred when processing"; "TaskFailed"; "   at " ] do
-                assertNotContains "missing resource name" leaked message)
-
-    [<Fact>]
-    member _.``Resource task diagnostics preserve every input path shape``() =
-        for kind in [ Resx; Text ] do
-            withTaskEnvironment (fun environment directory ->
-                let kindName, extension = resourceKindInfo kind
-
-                for name, input, expectation in pathScenarios extension directory do
-                    let scenario = $"{kindName}: {name}"
-                    let engine = MockEngine()
-                    let task, _ = createResourceTask kind environment engine input "obj"
-
-                    Assert.False(task.Execute(), scenario)
-
-                    // The Text generator surfaces an invalid intermediate path as a second diagnostic; every
-                    // other scenario reports exactly one. Assert the exact count instead of skipping the odd one.
-                    let expectedErrorCount =
-                        if kind = Text && name = "invalid path" then 2 else 1
-
-                    Assert.True(
-                        engine.Errors.Count = expectedErrorCount,
-                        $"{scenario}: expected {expectedErrorCount} error(s), got {engine.Errors.Count}"
-                    )
-
-                    let message = engine.Errors |> Seq.map _.Message |> String.concat Environment.NewLine
-                    assertContains scenario input message
-
-                    match expectation with
-                    | PreservedAbsolute ->
-                        Assert.True(
-                            countOccurrences input message >= 2,
-                            $"{scenario}: expected the absolute path in both diagnostic prefix and exception body"
-                        )
-                    | Restored -> assertNotContains scenario directory.FullName message
-                    | PartiallyQualified ->
-                        assertNotContains scenario (environment.GetAbsolutePath(input).Value) message
-                        assertNotContains scenario directory.FullName message)
+            assertContains output output message
+            assertNotContains output directory.FullName message)
 
     [<Fact>]
     member _.``FSharpEmbedResourceText restores overlapping paths longest first``() =
@@ -360,15 +363,42 @@ type FileTaskEnvironmentTests() =
 
             Assert.Equal(message, actual))
 
-    [<Fact>]
-    member _.``FSharpEmbedResourceText regenerates when RichText metadata toggles without source change``() =
+    [<Theory>]
+    [<InlineData("'{0}'", true)>]
+    [<InlineData("\"{0}\"", true)>]
+    [<InlineData("{0}", true)>]
+    [<InlineData("at Handler in {0}:line 42", true)>]
+    [<InlineData("Cannot open {0} because it is locked", true)>]
+    [<InlineData("({0})", true)>]
+    [<InlineData("[{0}]", true)>]
+    [<InlineData("{0}\nnext diagnostic", true)>]
+    [<InlineData("'{0}/child'", true)>]
+    [<InlineData("'{0}.backup'", false)>]
+    [<InlineData("'{0} backup'", false)>]
+    [<InlineData("'{0},backup'", false)>]
+    [<InlineData("'{0})backup'", false)>]
+    [<InlineData("prefix{0}'", false)>]
+    member _.``Path restoration respects diagnostic delimiters and quoted filenames``(format: string, restore: bool) =
+        withTaskEnvironment (fun environment _ ->
+            let original = "file.fs"
+            let rooted = environment.GetAbsolutePath(original).Value
+            let message = String.Format(format, rooted)
+            let expected = String.Format(format, if restore then original else rooted)
+            Assert.Equal(expected, TaskEnvironmentPaths.restoreOriginalPaths environment message [ original ]))
+
+    [<Theory>]
+    [<InlineData(false, false)>]
+    [<InlineData(false, true)>]
+    [<InlineData(true, false)>]
+    [<InlineData(true, true)>]
+    member _.``RichText incremental generation respects metadata changes``(before: bool, after: bool) =
         withTaskEnvironment (fun environment directory ->
             let input = "Toggle.txt"
             let intermediate = "obj"
             Directory.CreateDirectory(Path.Combine(directory.FullName, intermediate)) |> ignore
-            // Written once and never touched again, so the up-to-date timestamps stay identical between runs;
-            // only the toggled RichText metadata can force regeneration.
-            File.WriteAllText(Path.Combine(directory.FullName, input), "greeting,\"Hello\"\n")
+            let source = Path.Combine(directory.FullName, input)
+            File.WriteAllText(source, "greeting,\"Hello\"\n")
+            File.SetLastWriteTimeUtc(source, DateTime(2000, 1, 1, 0, 0, 0, DateTimeKind.Utc))
 
             let runWith richText =
                 let item = TaskItem(input) :> ITaskItem
@@ -386,17 +416,22 @@ type FileTaskEnvironmentTests() =
 
             let generatedFs = Path.Combine(directory.FullName, intermediate, "Toggle.fs")
             let richTextOpen = "open FSharp.Compiler.Text"
+            runWith before
+            Assert.Equal(before, File.ReadAllText(generatedFs).Contains richTextOpen)
+            let outputs = [ for ext in [ ".fs"; ".fsi"; ".resx" ] -> Path.ChangeExtension(generatedFs, ext) ]
+            let stamp = DateTime(2001, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+            for output in outputs do File.SetLastWriteTimeUtc(output, stamp)
+            runWith after
+            Assert.Equal(after, File.ReadAllText(generatedFs).Contains richTextOpen)
+            for output in outputs do
+                Assert.Equal((before = after), (File.GetLastWriteTimeUtc(output) = stamp)))
 
-            runWith false
-            assertNotContains "RichText toggle" richTextOpen (File.ReadAllText generatedFs)
-
-            // With the source timestamp unchanged, only the RichText metadata differs; the generator must
-            // still rewrite the .fs. If the RichText up-to-date check were disabled the open would be missing.
-            runWith true
-            assertContains "RichText toggle" richTextOpen (File.ReadAllText generatedFs))
-
-    [<Fact>]
-    member _.``SubstituteText isolates relative input and output paths per task``() =
+    [<Theory>]
+    [<InlineData("PLACEHOLDER", "REPLACED", "", "", "REPLACED")>]
+    [<InlineData("", "", "PLACEHOLDER", "SECOND", "SECOND")>]
+    [<InlineData("PLACEHOLDER", "STAGE2", "STAGE2", "FINAL", "FINAL")>]
+    [<InlineData(" ", "UNUSED", "", "UNUSED", "PLACEHOLDER")>]
+    member _.``SubstituteText isolates ordered replacements``(pattern1: string, replacement1: string, pattern2: string, replacement2: string, expected: string) =
         withIsolatedTaskEnvironmentPair (fun environmentA directoryA environmentB directoryB ->
             let input = "Source.txt"
             let intermediate = Path.Combine("obj", "Debug")
@@ -406,8 +441,10 @@ type FileTaskEnvironmentTests() =
             let makeTask environment =
                 let item = TaskItem(input) :> ITaskItem
                 item.SetMetadata("IntermediateTargetPath", intermediate)
-                item.SetMetadata("Pattern1", "PLACEHOLDER")
-                item.SetMetadata("Replacement1", "REPLACED")
+                item.SetMetadata("Pattern1", pattern1)
+                item.SetMetadata("Replacement1", replacement1)
+                item.SetMetadata("Pattern2", pattern2)
+                item.SetMetadata("Replacement2", replacement2)
                 SubstituteText(BuildEngine = MockEngine(), EmbeddedResources = [| item |])
                 |> assignTaskEnvironment environment
 
@@ -415,17 +452,19 @@ type FileTaskEnvironmentTests() =
             let scenario = "SubstituteText isolates relative input and output paths per task"
             runConcurrently scenario taskA.Execute taskB.Execute
 
-            let expectedItemSpec = Path.Combine(intermediate, input)
+            let noReplacement = String.IsNullOrWhiteSpace pattern1 && String.IsNullOrWhiteSpace pattern2
+            let expectedItemSpec = if noReplacement then input else Path.Combine(intermediate, input)
 
             for directory, expected, task in
                 [
-                    directoryA, "Hello from A. Token: REPLACED", taskA
-                    directoryB, "Hello from B. Token: REPLACED", taskB
+                    directoryA, $"Hello from A. Token: {expected}", taskA
+                    directoryB, $"Hello from B. Token: {expected}", taskB
                 ] do
                 Assert.Equal(expectedItemSpec, Assert.Single(task.CopiedFiles).ItemSpec)
                 let path = Path.Combine(directory.FullName, expectedItemSpec)
                 assertFileExists expected path
-                Assert.Equal(expected, File.ReadAllText path))
+                Assert.Equal(expected, File.ReadAllText path)
+                if noReplacement then Assert.False(Directory.Exists(Path.Combine(directory.FullName, intermediate))))
 
     [<Fact>]
     member _.``SubstituteText preserves its missing-source success behavior``() =
