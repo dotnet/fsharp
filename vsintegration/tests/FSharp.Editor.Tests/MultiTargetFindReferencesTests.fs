@@ -1,7 +1,8 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-/// One project loaded as two target-framework instances: `plain` compiles without the fourth file
-/// and without FOO, `foo` compiles everything with FOO defined. Both define COMMON.
+/// Projects loaded as two target-framework instances each. In the first, `plain` compiles without
+/// the fourth file and without FOO, `foo` compiles everything with FOO defined, and both define
+/// COMMON; the second pair differs only on FOO.
 module FSharp.Editor.Tests.MultiTargetFindReferencesTests
 
 open System
@@ -63,10 +64,12 @@ let private declarationPosition =
 
 let private instanceOf index = if index = 0 then plainId else fooId
 
-let private documentIn (projectId: ProjectId) path =
+let private documentOf (solution: Solution) (projectId: ProjectId) path =
     solution.GetDocumentIdsWithFilePath path
     |> Seq.find (fun id -> id.ProjectId = projectId)
     |> solution.GetDocument
+
+let private documentIn projectId path = documentOf solution projectId path
 
 [<Theory>]
 [<InlineData(0)>]
@@ -85,17 +88,17 @@ let ``every file is searched once, files under conditional compilation and insta
     Assert.Equal(6, foundReferences.Count)
 
 /// What Rename works from: the symbol's uses grouped by Roslyn document.
-let private usesByDocument (document: Document) =
+let private usesByDocument position (document: Document) =
     let sourceText = document.GetTextAsync(CancellationToken.None).Result
-    let textLine = sourceText.Lines.GetLineFromPosition declarationPosition
+    let textLine = sourceText.Lines.GetLineFromPosition position
 
-    let fcsLine = Line.fromZ (sourceText.Lines.GetLinePosition declarationPosition).Line
+    let fcsLine = Line.fromZ (sourceText.Lines.GetLinePosition position).Line
 
     let lexerSymbol =
         Tokenizer.getSymbolAtPosition (
             document.Id,
             sourceText,
-            declarationPosition,
+            position,
             document.FilePath,
             [],
             SymbolLookupKind.Greedy,
@@ -121,7 +124,8 @@ let private usesByDocument (document: Document) =
 [<InlineData(0)>]
 [<InlineData(1)>]
 let ``rename gets every use once, from an instance that compiles its file`` (instance: int) =
-    let uses = usesByDocument (documentIn (instanceOf instance) firstPath)
+    let uses =
+        usesByDocument declarationPosition (documentIn (instanceOf instance) firstPath)
 
     let located =
         [
@@ -142,3 +146,67 @@ let ``rename gets every use once, from an instance that compiles its file`` (ins
             solution.GetProject(documentId.ProjectId).Documents |> Seq.map _.FilePath
 
         Assert.Contains(solution.GetDocument(documentId).FilePath, compiledHere)
+
+/// `Consumer` carries no directive of its own, but the record whose field it reads is inferred from
+/// `Chooser`, which the two instances compile differently: with FOO the field is `A.Record.value`,
+/// without it `B.Record.value`.
+let private inferredProject =
+    SyntheticProject.Create(
+        "MultiTargetInferredType",
+        { sourceFile "Chooser" [] with
+            ExtraSource =
+                [
+                    "module A ="
+                    "    type Record = { value: int }"
+                    "module B ="
+                    "    type Record = { value: int }"
+                    "#if FOO"
+                    "let input: A.Record = { value = 1 }"
+                    "#else"
+                    "let input: B.Record = { value = 1 }"
+                    "#endif"
+                ]
+                |> String.concat "\n"
+        },
+        { sourceFile "Consumer" [ "Chooser" ] with
+            ExtraSource = "let output = ModuleChooser.input.value"
+        }
+    )
+
+let private inferredSolution, inferredPlainId =
+    let solution, instances =
+        RoslynTestHelpers.CreateMultiTargetSolution(
+            inferredProject,
+            [
+                { Defines = []; ExcludedFileIds = [] }
+                {
+                    Defines = [ "FOO" ]
+                    ExcludedFileIds = []
+                }
+            ]
+        )
+
+    match instances with
+    | [ plainId; _ ] -> solution, plainId
+    | _ -> failwith "two instances expected"
+
+let private chooserPath = inferredProject.GetFilePath "Chooser"
+
+/// `A.Record.value`, the field only the FOO instance reads outside its own declaration.
+let private inferredDeclarationPosition =
+    (File.ReadAllText chooserPath).IndexOf("value", StringComparison.Ordinal)
+
+// Searching from the instance without FOO, `Consumer` holds no use of this field - it reads
+// `B.Record.value` there. Its use in the FOO instance is still a use, and Rename that misses it
+// leaves that build calling a field that no longer exists.
+[<Fact>]
+let ``a file without directives is searched when an earlier file changes what its names mean`` () =
+    let uses =
+        usesByDocument inferredDeclarationPosition (documentOf inferredSolution inferredPlainId chooserPath)
+
+    let files =
+        [
+            for KeyValue(documentId, _) in uses -> inferredSolution.GetDocument(documentId).FilePath
+        ]
+
+    Assert.Contains(inferredProject.GetFilePath "Consumer", files)
