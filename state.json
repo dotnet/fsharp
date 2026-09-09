@@ -57,7 +57,7 @@
       "cats": []
     },
     "20399": {
-      "sha": "f130d0c132bafe8c1518404ce854f2db17f77d38",
+      "sha": "85b60d33b8e7bfaa2a70fc3bf578aba435bfeacf",
       "cats": [
         "Affects-Agent-Config"
       ]
@@ -140,9 +140,10 @@
       "cats": []
     },
     "20235": {
-      "sha": "dac7883491cf616157524e01368c7bbce2c9504a",
+      "sha": "866a1693de791609e4f233b97822d77726ee3dfb",
       "cats": [
         "Affects-Bootstrap",
+        "Affects-Build-Infra",
         "Affects-Compiler-Output",
         "Affects-Test-Tooling"
       ]
@@ -359,7 +360,7 @@
       ]
     },
     "20113": {
-      "sha": "3d3235276c4d72222d96c1956d72e53c0addb9ca",
+      "sha": "23b342512354b3c90aaa4be3b780c0643ae1d832",
       "cats": [
         "Affects-Bootstrap",
         "Affects-Build-Infra"
@@ -451,6 +452,34 @@
       "cats": [
         "Affects-Design-Time"
       ]
-    }
+      },
+      "20501": {
+        "sha": "52437eb2f9ab2dc90f5dfeda2f3ec39df0619a2e",
+        "cats": [
+          "Affects-Design-Time"
+        ]
+      },
+      "20500": {
+        "sha": "7c8c71cb1d83acf0d826818f87b0edee3a80fa93",
+        "cats": [
+          "Affects-Design-Time"
+        ]
+      },
+      "20481": {
+        "sha": "f3c8c749635b4b8ffbe907558edc1f8c161bf367",
+        "cats": []
+      },
+      "20464": {
+        "sha": "a670ed8d9234befb35d95149ec6bd20f702ef57e",
+        "cats": [
+          "Affects-Design-Time"
+        ]
+      },
+      "20455": {
+        "sha": "e66a0f8bb89828085a1c5f956b13e78ea36530af",
+        "cats": [
+          "Affects-Design-Time"
+        ]
+      }
   }
 }
