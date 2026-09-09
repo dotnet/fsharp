@@ -23,7 +23,6 @@ type LanguageFeature =
     | ReallyLongLists
     | ErrorOnDeprecatedRequireQualifiedAccess
     | RequiredPropertiesSupport
-    | InterfacesWithAbstractStaticMembers
     | SelfTypeConstraints
     | MatchNotAllowedForUnionCaseWithNoData
     | CSharpExtensionAttributeNotRequired

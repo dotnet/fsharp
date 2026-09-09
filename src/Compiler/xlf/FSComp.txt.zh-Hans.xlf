@@ -447,11 +447,6 @@
         <target state="new">Improved implied argument names with partial application</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureInterfacesWithAbstractStaticMembers">
-        <source>static abstract interface members</source>
-        <target state="translated">静态抽象接口成员</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureLowerInterpolatedStringToConcat">
         <source>Optimizes interpolated strings in certain cases, by lowering to concatenation</source>
         <target state="translated">降低为串联，以在某些情况下优化内插字符串</target>
@@ -1265,6 +1260,11 @@
       <trans-unit id="reprStateMachineNotCompilableNoAlternative">
         <source>This state machine is not statically compilable and no alternative is available. {0}. Use an 'if __useResumableCode then &lt;state-machine&gt; else &lt;alternative&gt;' to give an alternative.</source>
         <target state="translated">此状态机不可静态编译，并且没有可用的替代方法。{0}。 请使用 "if __useResumableCode 然后 &lt;state-machine&gt; else &lt;alternative&gt;' 以提供替代方法。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="runtimeStaticAbstractInterfaceMembers">
+        <source>static abstract interface members</source>
+        <target state="new">static abstract interface members</target>
         <note />
       </trans-unit>
       <trans-unit id="scriptSdkNotDetermined">
