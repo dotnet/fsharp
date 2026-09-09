@@ -25,7 +25,8 @@ When the IDE's F# semantic tools are unavailable, use the `F#` MCP server (`.mcp
 
 ## Values and types
 
-- `voption` – `ValueSome`/`ValueNone` – over `option` when the value does not escape; it is this compiler's option type. Exception: when an API hands you `'T option` (`Seq.tryHead`, `List.tryFind`), unwrap with `Option.defaultValue`/`Option.defaultWith` directly – do not insert `ValueOption.ofOption` just to switch modules.
+- `voption` – `ValueSome`/`ValueNone` – over `option` when the value does not escape; it is this compiler's option type. Exception: when an API hands you `'T option` and has no `voption` counterpart, unwrap with `Option.defaultValue`/`Option.defaultWith` directly – do not insert `ValueOption.ofOption` just to switch modules.
+- `vsintegration` has `voption`-returning counterparts of the FSharp.Core collection functions, suffixed `V`, in `FSharp.Editor/Common/Extensions.fs`: `Seq.tryHeadV`/`tryFindV`/`tryFindIndexV`/`tryPickV`/`chooseV`, `Array.tryHeadV`/`tryFindV`/`tryPickV`/`chooseV`, `List.tryFindV`, `ImmutableArray.tryHeadV`. Reach for those rather than the `option`-returning original. The module is `[<AutoOpen>]` and compiles before the rest of `FSharp.Editor`, so a file in the `Microsoft.VisualStudio.FSharp.Editor` namespace needs no `open` for them. `src/Compiler` has no equivalents.
 - `struct ('T1 * 'T2)` tuples and `[<Struct>]` types on allocation-sensitive paths.
 - Anonymous struct records (`struct {| … |}`) over bare tuples for multi-value returns of internal helpers. Public FCS surface is governed by `.fsi` files and compatibility – do not change it for style.
 - The compiler generates `IsCaseName` properties (`IsDefault`, `IsCustom`) for DU cases – use them for a specific-case check instead of a full `match`.
