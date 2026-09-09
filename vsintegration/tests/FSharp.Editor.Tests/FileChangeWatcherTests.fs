@@ -3,6 +3,7 @@
 namespace FSharp.Editor.Tests
 
 open System
+open System.Collections.Generic
 open System.Collections.Immutable
 open System.IO
 open System.Threading
@@ -11,12 +12,26 @@ open Xunit
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.FSharp.Editor
 
+/// Stands in for the token EnqueueWatchingFile hands back: IsActive defaults to true (the mock's
+/// watch is live the moment it is created) so most tests do not need to think about it; tests
+/// exercising the pending/failed states flip it through the owning context's SetActive.
+type private MockWatchedFile(onDispose: unit -> unit) =
+    let mutable isActive = true
+
+    member _.SetActive value = isActive <- value
+
+    interface IFSharpWatchedFile with
+        member _.IsActive = isActive
+        member _.Dispose() = onDispose ()
+
 type private MockFileChangeContext() =
     let fileChanged = Event<string>()
     let watched = ResizeArray<string>()
+    let tokens = Dictionary<string, MockWatchedFile>(StringComparer.OrdinalIgnoreCase)
 
     member _.WatchedFiles = List.ofSeq watched
     member _.Fire path = fileChanged.Trigger path
+    member _.SetActive(path, active) = tokens[path].SetActive active
 
     interface IFSharpFileChangeContext with
         [<CLIEvent>]
@@ -24,10 +39,9 @@ type private MockFileChangeContext() =
 
         member _.EnqueueWatchingFile path =
             watched.Add path
-
-            { new IFSharpWatchedFile with
-                member _.Dispose() = watched.Remove path |> ignore
-            }
+            let token = MockWatchedFile(fun () -> watched.Remove path |> ignore)
+            tokens[path] <- token
+            token :> IFSharpWatchedFile
 
         member _.Dispose() = watched.Clear()
 
@@ -56,6 +70,7 @@ type private ServiceCall =
 type private RecordingFileChangeService() =
     let calls = ResizeArray<ServiceCall>()
     let mutable nextCookie = 0u
+    let mutable failAdviseDirForPath: string option = None
 
     let record call = lock calls (fun () -> calls.Add call)
 
@@ -64,6 +79,12 @@ type private RecordingFileChangeService() =
         nextCookie
 
     member _.Calls = lock calls (fun () -> List.ofSeq calls)
+
+    /// Every AdviseDirChangeAsync for this exact (already directory-separator-normalized) path
+    /// throws instead of succeeding, so a test can exercise what happens to the rest of a batch
+    /// when one operation in it fails.
+    member _.FailAdviseDirForPath
+        with set value = failAdviseDirForPath <- value
 
     member this.WaitForCalls(count: int) =
         let deadline = DateTime.UtcNow + TimeSpan.FromSeconds 10.
@@ -88,9 +109,13 @@ type private RecordingFileChangeService() =
             Task.FromResult Array.empty<string>
 
         member _.AdviseDirChangeAsync(directory, _, _, _) =
-            let cookie = newCookie ()
-            record (AdvisedDir(directory, cookie))
-            Task.FromResult cookie
+            match failAdviseDirForPath with
+            | Some p when String.Equals(p, directory, StringComparison.OrdinalIgnoreCase) ->
+                Task.FromException<uint32>(InvalidOperationException "simulated advise failure")
+            | _ ->
+                let cookie = newCookie ()
+                record (AdvisedDir(directory, cookie))
+                Task.FromResult cookie
 
         member _.UnadviseDirChangeAsync(_, _) = Task.FromResult ""
 
@@ -286,6 +311,43 @@ module FileChangeWatcherTests =
             UnadvisedFiles [ 2u ] ] -> Assert.Equal(@"C:\refs\", directory)
         | calls -> failwith $"Unexpected calls: %A{calls}"
 
+    [<Fact>]
+    let ``A directory-covered watch becomes active once the directory's advise succeeds`` () =
+        let service = RecordingFileChangeService()
+        use watcher = createWatcher service
+
+        let directories =
+            ImmutableArray.Create(WatchedDirectory(@"C:\refs", ImmutableArray.Create ".dll"))
+
+        use context = (watcher :> IFSharpFileChangeWatcher).CreateContext directories
+        let watched = context.EnqueueWatchingFile @"C:\refs\a.dll"
+
+        Assert.False watched.IsActive
+        service.WaitForCalls 2 |> ignore
+        Assert.True watched.IsActive
+
+    [<Fact>]
+    let ``A failing directory advise does not block the rest of the batch`` () =
+        let service = RecordingFileChangeService()
+        service.FailAdviseDirForPath <- Some @"C:\bad\"
+        use watcher = createWatcher service
+
+        let directories =
+            ImmutableArray.Create(
+                WatchedDirectory(@"C:\bad", ImmutableArray.Create ".dll"),
+                WatchedDirectory(@"C:\good", ImmutableArray.Create ".dll")
+            )
+
+        use context = (watcher :> IFSharpFileChangeWatcher).CreateContext directories
+        let badWatch = context.EnqueueWatchingFile @"C:\bad\a.dll"
+        let goodWatch = context.EnqueueWatchingFile @"C:\good\a.dll"
+
+        // The failing directory's advise never gets recorded; the good one still does.
+        service.WaitForCalls 2 |> ignore
+
+        Assert.False badWatch.IsActive
+        Assert.True goodWatch.IsActive
+
     let private t0 = DateTime(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc)
     let private t1 = t0.AddHours 1.
 
@@ -357,4 +419,28 @@ module FileChangeWatcherTests =
             Assert.Equal(t0, stamps.GetLastWriteTimeUtc path)
 
             tracker.StopWatchingReference path
+            Assert.Equal(t1, stamps.GetLastWriteTimeUtc path))
+
+    [<Fact>]
+    let ``A pending watch always stats fresh; caching begins only once it becomes active`` () =
+        withTempFile (fun path ->
+            let watcher = MockFileChangeWatcher()
+            use tracker = new FSharpReferenceChangeTracker(watcher, ignore, testDelay)
+            let stamps = tracker :> IReferenceStamps
+
+            tracker.StartWatchingReference path
+            let context = watcher.Context.Value
+            context.SetActive(path, false)
+
+            Assert.Equal(t0, stamps.GetLastWriteTimeUtc path)
+
+            // Still pending: an external change is visible on the very next read, nothing cached yet.
+            File.SetLastWriteTimeUtc(path, t1)
+            Assert.Equal(t1, stamps.GetLastWriteTimeUtc path)
+
+            // Once the advise is confirmed, this read is the one that gets trusted from here on.
+            context.SetActive(path, true)
+            Assert.Equal(t1, stamps.GetLastWriteTimeUtc path)
+
+            File.SetLastWriteTimeUtc(path, t0)
             Assert.Equal(t1, stamps.GetLastWriteTimeUtc path))
