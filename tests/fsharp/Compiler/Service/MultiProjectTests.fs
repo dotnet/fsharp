@@ -4,6 +4,7 @@ namespace FSharp.Compiler.UnitTests
 
 open System
 open System.IO
+open System.Threading
 open FSharp.Compiler.Diagnostics
 open Xunit
 open FSharp.Test
@@ -209,3 +210,91 @@ let y = 1
 
 
 
+
+    // Focused counters for https://github.com/dotnet/fsharp/pull/20460#discussion_r3965947159:
+    // a referenced C# project's `Compilation` is recreated on every solution fork, but its
+    // in-memory PE reference is only re-emitted when the project's dependent semantic version
+    // (here, the reference's stamp) actually changes.
+    let private mkCountedCSharpPEReference (stamp: DateTime) =
+        let csSrc =
+            """
+namespace CSharpTest
+{
+    public class CSharpClass
+    {
+    }
+}
+            """
+
+        let csOptions = CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary)
+        let csSyntax = CSharpSyntaxTree.ParseText(csSrc)
+        let csReferences = TargetFrameworkUtil.getReferences TargetFramework.NetStandard20
+        let cs = CSharpCompilation.Create("csharp_test.dll", references = csReferences.As<MetadataReference>(), syntaxTrees = [csSyntax], options = csOptions)
+
+        let mutable emitCount = 0
+
+        let getStream ct =
+            Interlocked.Increment(&emitCount) |> ignore
+            let ms = new MemoryStream()
+            cs.Emit(ms, cancellationToken = ct) |> ignore
+            ms.Position <- 0L
+            ms :> Stream |> Some
+
+        let csRefProj = FSharpReferencedProject.PEReference((fun () -> stamp), DelayedILModuleReader("""Z:\csharp_test.dll""", getStream))
+
+        csRefProj, (fun () -> emitCount)
+
+    let private projectReferencing (csRefProj: FSharpReferencedProject) =
+        let fsOptions = CompilerAssert.DefaultProjectOptions TargetFramework.Current
+
+        { fsOptions with
+            ProjectId = Some(Guid.NewGuid().ToString())
+            OtherOptions = Array.append fsOptions.OtherOptions [|"""-r:Z:\csharp_test.dll"""|]
+            ReferencedProjects = [|csRefProj|] }
+
+    let private checkUsesCSharpClass (options: FSharpProjectOptions) =
+        let fsText =
+            """
+module FSharpTest
+
+open CSharpTest
+
+let test() =
+    CSharpClass()
+            """
+            |> SourceText.ofString
+
+        match
+            CompilerAssert.Checker.ParseAndCheckFileInProject("test.fs", 0, fsText, options)
+            |> Async.RunSynchronouslyImmediate
+            |> snd
+        with
+        | FSharpCheckFileAnswer.Aborted -> failwith "check file aborted"
+        | FSharpCheckFileAnswer.Succeeded checkResults -> Assert.shouldBeEmpty checkResults.Diagnostics
+
+    [<Fact>]
+    let ``Reusing a CSharp reference's stamp avoids re-emitting a recreated Compilation``() =
+        let stamp = DateTime(2024, 1, 1)
+        let csRefProj1, emitCount1 = mkCountedCSharpPEReference stamp
+        let csRefProj2, emitCount2 = mkCountedCSharpPEReference stamp
+
+        let fsOptions = projectReferencing csRefProj1
+        checkUsesCSharpClass fsOptions
+        Assert.Equal(1, emitCount1())
+
+        // Same dependent semantic version (stamp unchanged): the checker must reuse its cached
+        // project build and never touch the recreated Compilation behind the new reference.
+        checkUsesCSharpClass { fsOptions with ReferencedProjects = [|csRefProj2|] }
+        Assert.Equal(0, emitCount2())
+
+    [<Fact>]
+    let ``Changing a CSharp reference's stamp does re-emit the new Compilation``() =
+        let csRefProj1, _ = mkCountedCSharpPEReference (DateTime(2024, 1, 1))
+        let csRefProj2, emitCount2 = mkCountedCSharpPEReference (DateTime(2024, 1, 2))
+
+        let fsOptions = projectReferencing csRefProj1
+        checkUsesCSharpClass fsOptions
+
+        // Different dependent semantic version (stamp changed): the checker must pick up the new reference.
+        checkUsesCSharpClass { fsOptions with ReferencedProjects = [|csRefProj2|] }
+        Assert.True(emitCount2() >= 1)
