@@ -17,7 +17,7 @@
       "cats": []
     },
     "20416": {
-      "sha": "cda7c71afe3d45c14b2ffb860911b03fa46a00e7",
+      "sha": "4e504e9789b6fd5e9446afb22ad1012569b12cbd",
       "cats": [
         "Affects-Compiler-Output"
       ]
@@ -46,7 +46,7 @@
       "cats": []
     },
     "20403": {
-      "sha": "dbaa13d1b3406c4b0e076df3a1566c9b60807ad2",
+      "sha": "0df50009b71aca018126a219aae4e85ba9e90ff6",
       "cats": []
     },
     "20399": {
@@ -83,7 +83,7 @@
       "cats": []
     },
     "20374": {
-      "sha": "f328d1a1a9710819b6d84167deb1d9e4f4eabee8",
+      "sha": "1c466a1bd429ec2f3e8cb673dde9b003f55c47c2",
       "cats": []
     },
     "20342": {
@@ -102,13 +102,14 @@
       ]
     },
     "20275": {
-      "sha": "b7f331e77e710a2fdc27b9e0e082e665515c1bef",
+      "sha": "d4751a82d3a67fed01ba27d1f51a4745fe4bf835",
       "cats": []
     },
     "20274": {
-      "sha": "86a5d427ea9402b976b04d41fdc282a87637b473",
+      "sha": "7bf44359e4d5b6d7259a83d6266619c1450113ee",
       "cats": [
         "Affects-Bootstrap",
+        "Affects-Build-Infra",
         "Affects-Compiler-Output",
         "Scope-Review-Needed"
       ]
@@ -154,7 +155,7 @@
       "cats": []
     },
     "20443": {
-      "sha": "1e21647a4831d838f7030ba59421cd9317ef1a2f",
+      "sha": "ac311575054322de6f860cb95d589fd501d46881",
       "cats": [
         "Affects-Build-Infra",
         "Affects-Compiler-Output",
@@ -276,7 +277,7 @@
       "cats": []
     },
     "20428": {
-      "sha": "2b30bbd6e3bac11431ec62df0dfd50abec46cd54",
+      "sha": "6519f4d20c46f5dc962fb3ea4c051e85ec8ecedb",
       "cats": [
         "Affects-Compiler-Output"
       ]
@@ -297,7 +298,7 @@
       "cats": []
     },
     "20485": {
-      "sha": "e57a159d43a4689d5c12abe9ca4cae78ea32e7b6",
+      "sha": "c9564eff026a6b451ff645317cdaec9ad7e27d3c",
       "cats": []
     },
     "20486": {
@@ -321,7 +322,7 @@
       "cats": []
     },
     "20491": {
-      "sha": "f5245514db5882c1e9fc9e7b7a38cfa277f9468c",
+      "sha": "f0587a9f973453393aa162d5063f3a87dc50f1b1",
       "cats": []
     },
     "20494": {
@@ -340,8 +341,11 @@
       ]
     },
     "20113": {
-      "sha": "4c499e3ea322713164604407faa3c906d2b18fe1",
-      "cats": []
+      "sha": "3d3235276c4d72222d96c1956d72e53c0addb9ca",
+      "cats": [
+        "Affects-Bootstrap",
+        "Affects-Build-Infra"
+      ]
     },
     "20111": {
       "sha": "e83a149b149f21a841f66bcf90a869d1eccb25af",
