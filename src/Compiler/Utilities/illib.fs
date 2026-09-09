@@ -446,6 +446,12 @@ module Option =
 module internal ValueTuple =
     let inline map1Of2 ([<InlineIfLambda>] f) struct (a1, a2) = struct (f a1, a2)
 
+/// Inline counterparts to the `FSharp.Core` list combinators that take a function argument.
+/// The built-ins are not `inline`, so they force that argument into a heap `FSharpFunc`; marking
+/// these `inline` + `[<InlineIfLambda>]` and applying the function directly lets the optimizer
+/// beta-reduce it at the call site - even through an enclosing inline function - so no closure is
+/// allocated. Use in place of `List.map` / `List.forall2` on hot paths where the argument is a
+/// lambda or partial application.
 module ListInline =
     /// List.exists, but inline so the predicate is inlined (InlineIfLambda) rather than allocated as a closure.
     let inline exists ([<InlineIfLambda>] predicate: 'T -> bool) (list: 'T list) =
@@ -487,6 +493,31 @@ module ListInline =
 
         state
 
+    /// As `List.map`.
+    let inline map ([<InlineIfLambda>] mapping: 'T -> 'U) (list: 'T list) = [ for x in list -> mapping x ]
+
+    /// As `List.forall2` (raising `ArgumentException` when the lists have different lengths).
+    let inline forall2 ([<InlineIfLambda>] predicate: 'T1 -> 'T2 -> bool) (list1: 'T1 list) (list2: 'T2 list) =
+        let mutable r1 = list1
+        let mutable r2 = list2
+        let mutable result = true
+        let mutable go = true
+
+        while go do
+            // A struct tuple keeps the match flat without the per-iteration heap allocation a reference tuple would add.
+            match struct (r1, r2) with
+            | h1 :: t1, h2 :: t2 ->
+                if predicate h1 h2 then
+                    r1 <- t1
+                    r2 <- t2
+                else
+                    result <- false
+                    go <- false
+            | [], [] -> go <- false
+            | _ -> invalidArg (nameof list2) "The lists had different lengths."
+
+        result
+
 module List =
 
     let sortWithOrder (c: IComparer<'T>) elements =
@@ -509,8 +540,8 @@ module List =
 
         loop 0 xs
 
-    let lengthsEqAndForall2 p l1 l2 =
-        List.length l1 = List.length l2 && List.forall2 p l1 l2
+    let inline lengthsEqAndForall2 ([<InlineIfLambda>] p) l1 l2 =
+        List.length l1 = List.length l2 && ListInline.forall2 p l1 l2
 
     let rec findi n f l =
         match l with
@@ -533,7 +564,7 @@ module List =
         | h1 :: t1, h2 :: t2 -> h1 === h2 && checkq t1 t2
         | _ -> true
 
-    let mapq (f: 'T -> 'T) inp =
+    let inline mapq ([<InlineIfLambda>] f: 'T -> 'T) inp =
         assert not typeof<'T>.IsValueType
 
         match inp with
@@ -556,7 +587,7 @@ module List =
             else
                 [ h2a; h2b; h2c ]
         | _ ->
-            let res = List.map f inp
+            let res = ListInline.map f inp
             if checkq inp res then inp else res
 
     let frontAndBack l =
