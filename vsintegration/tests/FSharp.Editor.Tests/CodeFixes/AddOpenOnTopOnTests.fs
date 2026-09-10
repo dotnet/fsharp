@@ -78,6 +78,30 @@ Console.WriteLine 42
 
     Assert.Equal(expected, actual)
 
+[<Fact>] // The first declaration follows a block comment closing on its line
+let ``Fixes FS0039 for missing opens - declaration shares its line with the end of a comment`` () =
+    let code =
+        """(* header
+*) Console.WriteLine 42
+"""
+
+    let expected =
+        Some
+            {
+                Message = "open System"
+                FixedCode =
+                    """(* header
+*)
+   open System
+
+   Console.WriteLine 42
+"""
+            }
+
+    let actual = codeFix |> tryFix code Auto
+
+    Assert.Equal(expected, actual)
+
 [<Fact>]
 let ``Fixes FS0039 for missing opens - there is already an open directive`` () =
     let code =
