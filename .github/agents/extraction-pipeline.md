@@ -35,7 +35,7 @@ This pipeline processes **thousands** of GitHub items (typically 3,000–10,000+
 
 **Context management:** Store all intermediate results in **SQLite** (queryable) and **JSON backup files** (recoverable). Sub-agents write results to files; the orchestrator imports into SQLite and dispatches the next phase. Never pass large datasets through agent context — use the filesystem.
 
-**Model selection:** Use the best available reasoning model (e.g., `claude-opus-4.6`) for classification and synthesis sub-agents. Fast/cheap models produce shallow rules. Collection sub-agents can use standard models. Use background mode so agents run in parallel.
+**Model selection:** Use GPT-5.6 Sol for classification and synthesis sub-agents. Fast/cheap models produce shallow rules. Collection sub-agents can use standard models. Use background mode so agents run in parallel.
 
 **Reliability:** After each batch of sub-agents completes, validate output files: >500 bytes, parseable JSON, contains entries for all assigned items. Re-dispatch incomplete outputs up to 3 times. Keep batch assignments to ≤5 batches per agent — agents given too much work produce placeholders or give up.
 
@@ -182,7 +182,7 @@ Store feature areas in SQLite: `CREATE TABLE feature_areas (area_name TEXT, fold
 > **Output:** SQLite `comment_analysis` table, `taxonomy.json`
 > **Context per sub-agent:** taxonomy + CI summary + 15 PR packets (all comments on each PR)
 
-For each collected comment, classify using a sub-agent (Opus). **Do not use a hardcoded category list** — derive categories from the data:
+For each collected comment, classify using a GPT-5.6 Sol sub-agent. **Do not use a hardcoded category list** — derive categories from the data:
 
 1. **Bootstrap pass**: Take a stratified sample of ~300 comments: proportional by year, at least 5 per major feature area from §2.1, and at least 20 each of review_comments, pr_descriptions, and issue_comments. Ask a sub-agent to read them and propose a category taxonomy. The agent should identify recurring themes, name them, and define each in one sentence. Expect 15–40 categories to emerge. After deriving the taxonomy, cross-check it against the feature area table — if any area representing >10% of the codebase has zero categories, re-sample with enforced coverage.
 
@@ -223,7 +223,7 @@ This ensures a PR with 50 comments gets weight=1, same as a PR with 1 comment. T
 
 ### 2.3 Clustering
 
-> **Sub-agents:** 1 (Opus, synthesis)
+> **Sub-agents:** 1 (GPT-5.6 Sol, synthesis)
 > **Input:** `pr_rule_votes` table, `taxonomy.json`, `feature_areas` table, `ci_summary.txt`
 > **NOT available:** raw `user_comments`, JSON backups — synthesis works only with classified, deduplicated data
 > **Output:** `dimensions.json`, `principles.json`, `folder_hotspots.json`, SQLite `dimension_evidence` table
@@ -508,5 +508,4 @@ Final check on the complete artifact set:
 - No rules referencing specific function names or line numbers unless those functions are long-lived stable APIs (verified by grep in 5.6)
 - Every CHECK item is phrased as a generalizable principle, not a transcription of one PR's feedback
 - Dimension frequency was counted by PRs, not by comments — a PR with 50 comments counts the same as one with 1 comment
-
 

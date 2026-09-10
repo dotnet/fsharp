@@ -1,3 +1,9 @@
+---
+title: F# LSP
+category: Language Service Internals
+categoryindex: 300
+index: 500
+---
 # F# LSP
 
 F# LSP support design proposal. To be expanded as we learn more / settle on things.

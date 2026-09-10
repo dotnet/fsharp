@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="pt-BR" original="../FSComp.resx">
     <body>
@@ -372,11 +372,6 @@
         <target state="new">Don't warn on uppercase identifiers in binding patterns</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureDotlessFloat32Literal">
-        <source>dotless float32 literal</source>
-        <target state="translated">literal float32 sem ponto</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureEmptyBodiedComputationExpressions">
         <source>Support for computation expressions with empty bodies: builder {{ }}</source>
         <target state="new">Support for computation expressions with empty bodies: builder {{ }}</target>
@@ -470,11 +465,6 @@
       <trans-unit id="featureNonInlineLiteralsAsPrintfFormat">
         <source>String values marked as literals and IL constants as printf format</source>
         <target state="translated">Valores de cadeia de caracteres marcados como literais e constantes IL como formato printf</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureNonVariablePatternsToRightOfAsPatterns">
-        <source>non-variable patterns to the right of 'as' patterns</source>
-        <target state="translated">padrões não-variáveis à direita dos padrões 'as'.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureNotNullIfNotNull">
