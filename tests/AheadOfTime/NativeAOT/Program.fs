@@ -27,8 +27,9 @@ let runChecks () =
     // check ($"value = %A{x}", "value = 42")
 
 [<EntryPoint>]
-let main _ =
+let main argv =
     runChecks ()
+    Array2DProgram.run argv
     // Success sentinel; a failed check above printed a "FAILED" line first, so the output won't be just this.
     Console.WriteLine "Finished"
     0
