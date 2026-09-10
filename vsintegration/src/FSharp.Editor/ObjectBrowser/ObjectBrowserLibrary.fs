@@ -174,21 +174,22 @@ type internal FSharpObjectBrowserLibrary(workspace: VisualStudioWorkspace, libra
             }
             |> ignore
 
+    let checkProject (project: Project) (checker: FSharpChecker) =
+        cancellableTask {
+            if checker.UsesTransparentCompiler then
+                // The snapshot path shares the cache the editing features populate.
+                let! snapshot = project.GetFSharpProjectSnapshot()
+                return! checker.ParseAndCheckProject(snapshot, userOpName = nameof FSharpObjectBrowserLibrary)
+            else
+                let! _, _, _, (options: FSharpProjectOptions) = project.GetFSharpCompilationOptionsAsync()
+                return! checker.ParseAndCheckProject(options, userOpName = nameof FSharpObjectBrowserLibrary)
+        }
+
     let computeSymbols (project: Project) =
         backgroundTask {
             let checker = project.Solution.GetFSharpWorkspaceService().Checker
 
-            let! results =
-                cancellableTask {
-                    if checker.UsesTransparentCompiler then
-                        // The snapshot path shares the cache the editing features populate.
-                        let! snapshot = project.GetFSharpProjectSnapshot()
-                        return! checker.ParseAndCheckProject(snapshot, userOpName = nameof FSharpObjectBrowserLibrary)
-                    else
-                        let! _, _, _, (options: FSharpProjectOptions) = project.GetFSharpCompilationOptionsAsync()
-                        return! checker.ParseAndCheckProject(options, userOpName = nameof FSharpObjectBrowserLibrary)
-                }
-                |> CancellableTask.startWithoutCancellation
+            let! results = checkProject project checker |> CancellableTask.startWithoutCancellation
 
             return
                 {
