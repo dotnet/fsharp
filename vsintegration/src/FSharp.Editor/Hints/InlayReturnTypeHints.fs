@@ -12,11 +12,11 @@ open CancellableTasks
 type InlayReturnTypeHints(parseFileResults: FSharpParseFileResults, symbol: FSharpMemberOrFunctionOrValue) =
 
     let getHintParts (symbolUse: FSharpSymbolUse) =
-        symbol.GetReturnTypeLayout symbolUse.DisplayContext
+        symbol.GetReturnTypeRichText symbolUse.DisplayContext
         |> Option.map (fun typeInfo ->
             [
                 TaggedText(TextTag.Text, ": ")
-                yield! typeInfo |> Array.toList
+                yield! typeInfo.Parts |> Array.toList
                 TaggedText(TextTag.Space, " ")
             ])
 

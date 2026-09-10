@@ -1,4 +1,4 @@
-// #Regression #Conformance #DeclarationElements #LetBindings #TypeAnnotations #TypeInference #TypeConstraints 
+// #Regression #Conformance #DeclarationElements #LetBindings #TypeAnnotations #TypeInference #TypeConstraints
 // Verify warning when providing explicit type parameters when
 // the function is defined without them.
 

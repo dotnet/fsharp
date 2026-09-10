@@ -299,6 +299,22 @@ let (|SynExprParen|_|) (e: SynExpr) =
     | SynExpr.Paren(SynExprErrorSkip e, a, b, c) -> ValueSome(e, a, b, c)
     | _ -> ValueNone
 
+/// Collects the ordered sub-expressions of nested `SynExpr.Sequential`, avoiding deep recursion (empty if not a Sequential).
+let flattenSequentials expr =
+    let rec collect expr acc =
+        match expr with
+        | SynExpr.Sequential(expr1 = e1; expr2 = SynExpr.Sequential _ as e2) -> collect e2 (e1 :: acc)
+        | SynExpr.Sequential(expr1 = e1; expr2 = e2) -> e2 :: e1 :: acc
+        | _ -> acc
+
+    List.rev (collect expr [])
+
+/// A pattern that collects all sequential expressions to avoid StackOverflowException
+let (|Sequentials|_|) expr =
+    match flattenSequentials expr with
+    | [] -> None
+    | exprs -> Some exprs
+
 let (|SynPatErrorSkip|) (p: SynPat) =
     match p with
     | SynPat.FromParseError(p, _) -> p
@@ -740,6 +756,38 @@ module SynInfo =
             let argInfos = infosForObjArgs @ infosForArgs
             SynValData(Some memFlags, SynValInfo(argInfos, retInfo), None)
 
+    let private isReturnTargetedAttribute (a: SynAttribute) =
+        match a.Target with
+        | Some id -> id.idText = "return"
+        | None -> false
+
+    /// Rotate any `[<return: X>]` attributes from a binding's prefix attribute list into the
+    /// arity-info return position (`SynValInfo.retInfo`). Without this, downstream code that
+    /// reads `Val.Attribs` would incorrectly see them alongside method-targeted attributes
+    /// (see issues #17904 and #19020).
+    ///
+    /// This is a lowering step, applied while normalizing a binding for checking rather than in
+    /// the parser, so `SynBinding.attributes` keeps reporting the attributes where they were
+    /// written. Tools reading the untyped tree (formatters, analyzers, source generators) depend
+    /// on that.
+    let RotateReturnAttributes (attrs: SynAttribute list) (valSynData: SynValData) : SynAttribute list * SynValData =
+        // Fast path: avoid all allocation when there's nothing to rotate (the common case).
+        if not (List.exists isReturnTargetedAttribute attrs) then
+            attrs, valSynData
+        else
+            let returnTargeted, kept = attrs |> List.partition isReturnTargetedAttribute
+
+            let (SynValData(memFlags, SynValInfo(args, SynArgInfo(retAttrs, opt, retId)), thisIdOpt)) =
+                valSynData
+
+            let retList: SynAttributeList =
+                {
+                    Attributes = returnTargeted
+                    Range = (List.head returnTargeted).Range
+                }
+
+            kept, SynValData(memFlags, SynValInfo(args, SynArgInfo(retList :: retAttrs, opt, retId)), thisIdOpt)
+
 let mkSynBindingRhs staticOptimizations rhsExpr mRhs retInfo =
     let rhsExpr =
         List.foldBack (fun (c, e1) e2 -> SynExpr.LibraryOnlyStaticOptimization(c, e1, e2, mRhs)) staticOptimizations rhsExpr
@@ -762,6 +810,28 @@ let mkSynBinding
     let rhsExpr, retTyOpt = mkSynBindingRhs staticOptimizations origRhsExpr mRhs retInfo
     let mBind = unionRangeWithXmlDoc xmlDoc mBind
     SynBinding(vis, SynBindingKind.Normal, isInline, isMutable, attrs, xmlDoc, info, headPat, retTyOpt, rhsExpr, mBind, spBind, trivia)
+
+/// A compiler-generated `let!` binding, as produced while desugaring computation expressions: the
+/// usual binding defaults with the leading keyword marked as `let!` at mKeyword.
+let mkSynLetBangBinding mKeyword headPat rhs debugPoint mBind =
+    SynBinding(
+        accessibility = None,
+        kind = SynBindingKind.Normal,
+        isInline = false,
+        isMutable = false,
+        attributes = [],
+        xmlDoc = PreXmlDoc.Empty,
+        valData = SynInfo.emptySynValData,
+        headPat = headPat,
+        returnInfo = None,
+        expr = rhs,
+        range = mBind,
+        debugPoint = debugPoint,
+        trivia =
+            { SynBindingTrivia.Zero with
+                LeadingKeyword = SynLeadingKeyword.LetBang mKeyword
+            }
+    )
 
 let NonVirtualMemberFlags k : SynMemberFlags =
     {
@@ -918,13 +988,24 @@ let rec synExprContainsError inpExpr =
             (match origExpr with
              | Some(e, _) -> walkExpr e
              | None -> false)
-            || walkExprs (List.map (fun (_, _, e) -> e) flds)
+            || walkExprs (
+                List.map
+                    (function
+                    | SynExprAnonRecordFieldOrSpread.Field(SynExprAnonRecordField(_, _, e, _), _)
+                    | SynExprAnonRecordFieldOrSpread.Spread(spread = SynExprSpread(expr = e)) -> e)
+                    flds
+            )
 
         | SynExpr.Record(_, origExpr, fs, _) ->
             (match origExpr with
              | Some(e, _) -> walkExpr e
              | None -> false)
-            || (let flds = fs |> List.choose (fun (SynExprRecordField(expr = v)) -> v)
+            || (let flds =
+                    fs
+                    |> List.choose (function
+                        | SynExprRecordFieldOrSpread.Field(SynExprRecordField(expr = v), _) -> v
+                        | SynExprRecordFieldOrSpread.Spread(SynExprSpread(expr = e), _) -> Some e)
+
                 walkExprs flds)
 
         | SynExpr.ObjExpr(bindings = bs; members = ms; extraImpls = is) ->
@@ -1105,6 +1186,21 @@ let rec desugarGetSetMembers (memberDefns: SynMemberDefns) =
                                          GetKeyword = Some mGet
                                          SetKeyword = Some mSet
                                      }) ->
+            // Each accessor's xmlDoc must validate against the union of both accessors'
+            // parameter names; otherwise documenting the full property triggers spurious
+            // 'unknown parameter' / 'no documentation for parameter' warnings on the
+            // accessor that does not own that name. See issue #13684.
+            let argNamesOf (SynBinding(valData = SynValData(valInfo = info))) = info.ArgNames
+            let getArgs = argNamesOf getBinding
+            let setArgs = argNamesOf setBinding
+
+            let rewrap extra (SynBinding(a, k, isInline, isMutable, attrs, xmlDoc, vd, hp, ri, e, mB, sp, t)) =
+                let xmlDoc' = PreXmlDoc.WithExtraParamsForCheck(xmlDoc, extra)
+                SynBinding(a, k, isInline, isMutable, attrs, xmlDoc', vd, hp, ri, e, mB, sp, t)
+
+            let getBinding = rewrap setArgs getBinding
+            let setBinding = rewrap getArgs setBinding
+
             if Position.posLt mGet.Start mSet.Start then
                 [ SynMemberDefn.Member(getBinding, m); SynMemberDefn.Member(setBinding, m) ]
             else

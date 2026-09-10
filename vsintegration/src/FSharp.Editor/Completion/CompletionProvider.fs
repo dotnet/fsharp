@@ -104,7 +104,7 @@ type internal FSharpCompletionProvider
             sourceText: SourceText,
             caretPosition: int,
             trigger: CompletionTriggerKind,
-            getInfo: (unit -> DocumentId * string * string list * string option * bool option),
+            getInfo: (unit -> DocumentId * string * string list * string option),
             intelliSenseOptions: IntelliSenseOptions,
             cancellationToken: CancellationToken
         ) =
@@ -129,14 +129,13 @@ type internal FSharpCompletionProvider
             then
                 false
             else
-                let documentId, filePath, defines, langVersion, strictIndentation = getInfo ()
+                let documentId, filePath, defines, langVersion = getInfo ()
 
                 CompletionUtils.shouldProvideCompletion (
                     documentId,
                     filePath,
                     defines,
                     langVersion,
-                    strictIndentation,
                     sourceText,
                     triggerPosition,
                     cancellationToken
@@ -303,9 +302,9 @@ type internal FSharpCompletionProvider
             let documentId = workspace.GetDocumentIdInCurrentContext(sourceText.Container)
             let document = workspace.CurrentSolution.GetDocument(documentId)
 
-            let defines, langVersion, strictIndentation = document.GetFsharpParsingOptions()
+            let defines, langVersion = document.GetFsharpParsingOptions()
 
-            (documentId, document.FilePath, defines, Some langVersion, strictIndentation)
+            (documentId, document.FilePath, defines, Some langVersion)
 
         FSharpCompletionProvider.ShouldTriggerCompletionAux(
             sourceText,
@@ -336,7 +335,7 @@ type internal FSharpCompletionProvider
 
             let! sourceText = context.Document.GetTextAsync(ct)
 
-            let defines, langVersion, strictIndentation = document.GetFsharpParsingOptions()
+            let defines, langVersion = document.GetFsharpParsingOptions()
 
             let shouldProvideCompletion =
                 CompletionUtils.shouldProvideCompletion (
@@ -344,7 +343,6 @@ type internal FSharpCompletionProvider
                     document.FilePath,
                     defines,
                     Some langVersion,
-                    strictIndentation,
                     sourceText,
                     context.Position,
                     ct

@@ -47,9 +47,9 @@ namespace CSharpTest
 
         let fsOptions = CompilerAssert.DefaultProjectOptions TargetFramework.Current
         let fsOptions =
-            { fsOptions with 
+            { fsOptions with
                 ProjectId = Some(Guid.NewGuid().ToString())
-                OtherOptions = Array.append fsOptions.OtherOptions [|"""-r:Z:\csharp_test.dll"""|] 
+                OtherOptions = Array.append fsOptions.OtherOptions [|"""-r:Z:\csharp_test.dll"""|]
                 ReferencedProjects = [|csRefProj|] }
 
         let fsText =
@@ -62,9 +62,9 @@ let test() =
     CSharpClass()
             """
             |> SourceText.ofString
-        let _, checkAnswer = 
+        let _, checkAnswer =
             CompilerAssert.Checker.ParseAndCheckFileInProject("test.fs", 0, fsText, fsOptions)
-            |> Async.RunImmediate
+            |> Async.RunSynchronouslyImmediate
 
 
         match checkAnswer with
@@ -77,7 +77,7 @@ let test() =
         try
             let result, _ =
                 checker.Compile([|"fsc.dll";filePath;$"-o:{ outputFilePath }";"--deterministic+";"--optimize+";"--target:library"|])
-                |> Async.RunImmediate
+                |> Async.RunSynchronouslyImmediate
 
             if result.Length > 0 then
                 failwith "Compilation has errors."
@@ -137,7 +137,7 @@ let test() =
         let checker = CompilerAssert.Checker
 
         // Create an assembly with the module Script1 and function x.
-        let dllPath1 = 
+        let dllPath1 =
             createOnDiskCompiledAsDll checker
                 """
 module Script1
@@ -146,27 +146,27 @@ let x = 1
                 """
 
         // Create script with that uses Script1 and function x
-        let filePath1 = 
-            createOnDisk 
+        let filePath1 =
+            createOnDisk
                 """
 module Script2
 
 let x = Script1.x
                 """
-        
+
         try
             let fsOptions1 = CompilerAssert.DefaultProjectOptions TargetFramework.Current
             let fsOptions1 =
-                { fsOptions1 with 
+                { fsOptions1 with
                     ProjectId = Some(Guid.NewGuid().ToString())
                     OtherOptions = [|"-r:" + dllPath1|]
                     ReferencedProjects = [||]
-                    SourceFiles = [|filePath1|] }              
+                    SourceFiles = [|filePath1|] }
 
             // Verify that a script using Script1.x works
-            let checkProjectResults1 = 
+            let checkProjectResults1 =
                 checker.ParseAndCheckProject(fsOptions1)
-                |> Async.RunImmediate
+                |> Async.RunSynchronouslyImmediate
 
             Assert.Empty(checkProjectResults1.Diagnostics)
 
@@ -180,9 +180,9 @@ let y = Script1.y
                 """
 
             // Verify that a script using Script1.x and Script1.y fails
-            let checkProjectResults2 = 
+            let checkProjectResults2 =
                 checker.ParseAndCheckProject(fsOptions1)
-                |> Async.RunImmediate
+                |> Async.RunSynchronouslyImmediate
 
             Assert.NotEmpty(checkProjectResults2.Diagnostics)
 
@@ -196,9 +196,9 @@ let y = 1
                 """
 
             // Verify that a script using Script1.x and Script1.y fails
-            let checkProjectResults3 = 
+            let checkProjectResults3 =
                 checker.ParseAndCheckProject(fsOptions1)
-                |> Async.RunImmediate
+                |> Async.RunSynchronouslyImmediate
 
             Assert.Empty(checkProjectResults3.Diagnostics)
 
@@ -208,4 +208,4 @@ let y = 1
 
 
 
-        
+

@@ -441,7 +441,7 @@ let ``Giraffe signature test`` () =
 
         let! diag = workspace.Query.GetDiagnosticsForFile(Uri(giraffeSignaturesSampleDir ++ "Program.fs"))
         Assert.Equal(1, diag.Diagnostics.Length)
-        Assert.Equal("The type 'IServiceCollection' does not define the field, constructor or member 'AddGiraffe'.", diag.Diagnostics[0].Message)
+        Assert.Equal("The type 'IServiceCollection' does not define a field, constructor, or member named 'AddGiraffe'.", diag.Diagnostics[0].Message)
     }
 
 #endif

@@ -1,4 +1,4 @@
-// #DeclarationElements #LetBindings 
+// #DeclarationElements #LetBindings
 //<Expects status="success"></Expects>
 
 let answer =

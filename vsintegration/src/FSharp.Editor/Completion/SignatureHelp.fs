@@ -231,7 +231,7 @@ type internal FSharpSignatureHelpProvider [<ImportingConstructor>] (serviceProvi
                                             editorOptions.QuickInfo.ShowRemarks
                                         )
 
-                                        p.Display |> Seq.iter (RoslynHelpers.CollectTaggedText parts)
+                                        p.Display.Parts |> Seq.iter (RoslynHelpers.CollectTaggedText parts)
 
                                         {
                                             ParameterName = p.ParameterName
@@ -290,7 +290,6 @@ type internal FSharpSignatureHelpProvider [<ImportingConstructor>] (serviceProvi
             documentId: DocumentId,
             defines: string list,
             langVersion: string option,
-            strictIndentation: bool option,
             documentationBuilder: IDocumentationBuilder,
             sourceText: SourceText,
             caretPosition: int,
@@ -329,7 +328,6 @@ type internal FSharpSignatureHelpProvider [<ImportingConstructor>] (serviceProvi
                     false,
                     false,
                     langVersion,
-                    strictIndentation,
                     ct
                 )
 
@@ -382,21 +380,21 @@ type internal FSharpSignatureHelpProvider [<ImportingConstructor>] (serviceProvi
 
                     (*
                        Calculate the argument index for fun and profit! It's a doozy...
-                   
+
                        Firstly, we need to use the caret position unlike before.
-                   
+
                        If the caret position is exactly in range of an existing argument, pick its index.
-                   
+
                        The rest answers the question of, "what is the NEXT index to show?", because
                        when you're not cycling through parameters with the caret, you're typing,
                        and you want to know what the next argument should be.
-                   
+
                        A possibility is you've deleted a parameter and want to enter a new one that
                        corresponds to the argument you're "at". We need to find the correct next index.
                        This could also correspond to an existing argument application. Buuuuuut that's okay.
                        If you want the "used to be 3rd arg, but is now 2nd arg" to remain, when you cycle
                        past the "now 2nd arg", it will calculate the 3rd arg as the next argument.
-                   
+
                        If none of that applies, then we apply the magic of arithmetic
                        to find the next index if we're not at the max defined args for the application.
                        Otherwise, we're outa here!
@@ -456,8 +454,8 @@ type internal FSharpSignatureHelpProvider [<ImportingConstructor>] (serviceProvi
 
                         if argument.Count = 1 then
                             let argument = argument.[0]
-                            let taggedText = argument.Type.FormatLayout symbolUse.DisplayContext
-                            taggedText |> Seq.iter (RoslynHelpers.CollectTaggedText tt)
+                            let typeText = argument.Type.FormatRichText symbolUse.DisplayContext
+                            typeText.Parts |> Seq.iter (RoslynHelpers.CollectTaggedText tt)
 
                             let name =
                                 let displayName = argument.DisplayName
@@ -515,8 +513,8 @@ type internal FSharpSignatureHelpProvider [<ImportingConstructor>] (serviceProvi
 
                                 let tt = ResizeArray()
 
-                                let taggedText = arg.Type.FormatLayout symbolUse.DisplayContext
-                                taggedText |> Seq.iter (RoslynHelpers.CollectTaggedText tt)
+                                let typeText = arg.Type.FormatRichText symbolUse.DisplayContext
+                                typeText.Parts |> Seq.iter (RoslynHelpers.CollectTaggedText tt)
 
                                 let name =
                                     if String.IsNullOrWhiteSpace(arg.DisplayName) then
@@ -607,7 +605,6 @@ type internal FSharpSignatureHelpProvider [<ImportingConstructor>] (serviceProvi
             document: Document,
             defines: string list,
             langVersion: string option,
-            strictIndentation: bool option,
             documentationBuilder: IDocumentationBuilder,
             caretPosition: int,
             triggerTypedChar: char option,
@@ -660,7 +657,6 @@ type internal FSharpSignatureHelpProvider [<ImportingConstructor>] (serviceProvi
                         document.Id,
                         defines,
                         langVersion,
-                        strictIndentation,
                         documentationBuilder,
                         sourceText,
                         caretPosition,
@@ -680,7 +676,6 @@ type internal FSharpSignatureHelpProvider [<ImportingConstructor>] (serviceProvi
                         document.Id,
                         defines,
                         langVersion,
-                        strictIndentation,
                         documentationBuilder,
                         sourceText,
                         caretPosition,
@@ -713,7 +708,7 @@ type internal FSharpSignatureHelpProvider [<ImportingConstructor>] (serviceProvi
 
         member _.GetItemsAsync(document, position, triggerInfo, cancellationToken) =
             asyncMaybe {
-                let defines, langVersion, strictIndentation = document.GetFsharpParsingOptions()
+                let defines, langVersion = document.GetFsharpParsingOptions()
 
                 let triggerTypedChar =
                     if
@@ -731,7 +726,6 @@ type internal FSharpSignatureHelpProvider [<ImportingConstructor>] (serviceProvi
                                 document,
                                 defines,
                                 Some langVersion,
-                                strictIndentation,
                                 documentationBuilder,
                                 position,
                                 triggerTypedChar,

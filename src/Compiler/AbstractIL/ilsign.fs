@@ -11,6 +11,7 @@ open System.Reflection.PortableExecutable
 open System.Security.Cryptography
 open System.Runtime.InteropServices
 
+open FSharp.Compiler.Text
 open Internal.Utilities.Library
 
 type KeyType =
@@ -33,7 +34,7 @@ let BLOBHEADER_LENGTH = int 20
 let RSA_PUB_MAGIC = int 0x31415352
 let RSA_PRIV_MAGIC = int 0x32415352
 
-let getResourceString (_, str) = str
+let getResourceString (_, message: RichText) = message.Text
 
 [<Struct; StructLayout(LayoutKind.Explicit)>]
 type ByteArrayUnion =
@@ -351,7 +352,7 @@ let signerSignatureSize (pk: pubkey) : int = signatureSize pk
 let signerSignStreamWithKeyPair stream keyBlob = signStream stream keyBlob
 
 let failWithContainerSigningUnsupportedOnThisPlatform () =
-    failwith (FSComp.SR.containerSigningUnsupportedOnThisPlatform () |> snd)
+    failwith (FSComp.SR.containerSigningUnsupportedOnThisPlatform () |> getResourceString)
 
 //---------------------------------------------------------------------
 // Strong name signing

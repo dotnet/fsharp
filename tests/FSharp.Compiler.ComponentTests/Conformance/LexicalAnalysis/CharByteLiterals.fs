@@ -4,9 +4,10 @@ open Xunit
 open FSharp.Test.Compiler
 
 /// `This is not a valid ASCII byte literal. Value should be < 128y.` with note that error soon
-let private invalidTrigraphCharWarningMsg = 
+let private invalidTrigraphCharWarningMsg =
     FSComp.SR.lexInvalidTrigraphAsciiByteLiteral ()
     |> snd
+    |> _.Text
 
 [<Fact>]
 let ``all byte char notations pass type check`` () =

@@ -27,7 +27,7 @@ ImplFile
                             SynTyparDecl
                               ([], SynTypar (a, None, false), [],
                                { AmpersandRanges = [] })], [], (3,8--3,22))), [],
-                     [Foo],
+                     Some (LongIdent (SynLongIdent ([Foo], [], [None]))),
                      PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
                      true, None, (3,5--3,8)),
                   Simple
@@ -81,30 +81,33 @@ ImplFile
                             SynTyparDecl
                               ([], SynTypar (a, None, false), [],
                                { AmpersandRanges = [] })], [], (6,41--6,55))),
-                     [], [Bar],
+                     [], Some (LongIdent (SynLongIdent ([Bar], [], [None]))),
                      PreXmlDoc ((6,4), FSharp.Compiler.Xml.XmlDocCollector),
                      true, None, (6,38--6,41)),
                   Simple
                     (Record
                        (Some (Internal (7,4--7,12)),
-                        [SynField
-                           ([], false, Some Hash,
-                            LongIdent (SynLongIdent ([int], [], [None])), false,
-                            PreXmlDoc ((8,8), FSharp.Compiler.Xml.XmlDocCollector),
-                            None, (8,8--8,18), { LeadingKeyword = None
-                                                 MutableKeyword = None });
-                         SynField
-                           ([], false, Some Foo,
-                            App
-                              (LongIdent (SynLongIdent ([Foo], [], [None])),
-                               Some (9,17--9,18),
-                               [Var (SynTypar (a, None, false), (9,18--9,20));
-                                Var (SynTypar (b, None, false), (9,22--9,24))],
-                               [(9,20--9,21)], Some (9,24--9,25), false,
-                               (9,14--9,25)), false,
-                            PreXmlDoc ((9,8), FSharp.Compiler.Xml.XmlDocCollector),
-                            None, (9,8--9,25), { LeadingKeyword = None
-                                                 MutableKeyword = None })],
+                        [Field
+                           (SynField
+                              ([], false, Some Hash,
+                               LongIdent (SynLongIdent ([int], [], [None])),
+                               false,
+                               PreXmlDoc ((8,8), FSharp.Compiler.Xml.XmlDocCollector),
+                               None, (8,8--8,18), { LeadingKeyword = None
+                                                    MutableKeyword = None }));
+                         Field
+                           (SynField
+                              ([], false, Some Foo,
+                               App
+                                 (LongIdent (SynLongIdent ([Foo], [], [None])),
+                                  Some (9,17--9,18),
+                                  [Var (SynTypar (a, None, false), (9,18--9,20));
+                                   Var (SynTypar (b, None, false), (9,22--9,24))],
+                                  [(9,20--9,21)], Some (9,24--9,25), false,
+                                  (9,14--9,25)), false,
+                               PreXmlDoc ((9,8), FSharp.Compiler.Xml.XmlDocCollector),
+                               None, (9,8--9,25), { LeadingKeyword = None
+                                                    MutableKeyword = None }))],
                         (7,4--10,5)), (7,4--10,5)), [], None, (6,4--10,5),
                   { LeadingKeyword = And (6,0--6,3)
                     EqualsRange = Some (6,56--6,57)

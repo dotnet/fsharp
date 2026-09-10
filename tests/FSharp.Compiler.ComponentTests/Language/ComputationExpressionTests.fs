@@ -60,7 +60,7 @@ let f3 () =
         |> withDiagnostics [
             (Error 3350, Line 11, Col 16, Line 11, Col 42, "Feature 'Allow let! and use! type annotations without requiring parentheses' is not available in F# 9.0. Please use language version 10.0 or greater.")
         ]
-        
+
     [<Fact>]
     let ``Version 9.0: Allow CE return! and type annotations don't to play well together needing parentheses``() =
         FSharp """
@@ -92,7 +92,7 @@ let f1() =
         |> withDiagnostics [
             (Error 3350, Line 16, Col 17, Line 16, Col 43, "Feature 'Allow let! and use! type annotations without requiring parentheses' is not available in F# 9.0. Please use language version 10.0 or greater.")
         ]
-        
+
     [<Fact>]
     let ``Preview: Allow CE return and type annotations to play well together without needing parentheses``() =
         FSharp """
@@ -175,7 +175,7 @@ let x = lb {1; 2;()}
         """
         |> compile
         |> shouldFail
-        |> withSingleDiagnostic (Error 39, Line 10, Col 18, Line 10, Col 20, "The type 'ListBuilder' does not define the field, constructor or member 'Zero'.")
+        |> withSingleDiagnostic (Error 39, Line 10, Col 18, Line 10, Col 20, "The type 'ListBuilder' does not define a field, constructor, or member named 'Zero'.")
         |> ignore
 
     [<Fact>]
@@ -234,9 +234,9 @@ let x = lb {1; 2; if true then 3;}
     [<Theory>]
     [<InlineData("10.0","BindReturn")>]
     [<InlineData("10.0","WithoutBindReturn")>]
-    [<InlineData("8.0","BindReturn")>]   
-    [<InlineData("8.0","WithoutBindReturn")>]  
-    let ``A CE with BindReturn and Zero can omit else in an if-then return`` (langVersion, bindReturnName) = 
+    [<InlineData("8.0","BindReturn")>]
+    [<InlineData("8.0","WithoutBindReturn")>]
+    let ``A CE with BindReturn and Zero can omit else in an if-then return`` (langVersion, bindReturnName) =
         let code = $"""
 type Builder () =
     member inline __.Return (x: 'T) = Seq.singleton x
@@ -255,8 +255,8 @@ let _pythags = seqbuilder {{
         |> typecheck
         |> shouldSucceed
 
-    [<Fact>] 
-    let ``A CE with BindReturn and Zero can work without Return if flow control is not used`` () = 
+    [<Fact>]
+    let ``A CE with BindReturn and Zero can work without Return if flow control is not used`` () =
         let code = $"""
 type Builder () =
     member inline __.Bind (p: seq<'T>, rest: 'T->seq<'U>) = Seq.collect rest p
@@ -269,7 +269,7 @@ let _pythags = seqbuilder {{
   let! z = seq [5;10]  
   return (z,z) }} """
         code
-        |> FSharp     
+        |> FSharp
         |> typecheck
         |> shouldSucceed
 
@@ -319,7 +319,7 @@ let run r2 r3 =
         |> withDiagnostics [
             (Error 3345, Line 18, Col 9, Line 18, Col 13, "use! may not be combined with and!")
         ]
-        
+
     [<Fact>]
     let ``multiple use! may not be combined with and!`` () =
         Fsx """
@@ -350,7 +350,7 @@ let run r2 r3 =
         |> withDiagnostics [
             (Error 3345, Line 18, Col 9, Line 18, Col 13, "use! may not be combined with and!")
         ]
-        
+
     [<Fact>]
     let ``multiple use! may not be combined with multiple and!`` () =
         Fsx """
@@ -419,7 +419,7 @@ let run r2 r3 =
         |> withDiagnostics [
             (Error 708, Line 23, Col 9, Line 23, Col 13, "This control construct may only be used if the computation expression builder defines a 'Bind' method")
         ]
-    
+
     [<Fact>]
     let ``This control construct may only be used if the computation expression builder defines a 'Using' method`` () =
         Fsx """
@@ -454,7 +454,7 @@ let run r2 r3 =
         |> withDiagnostics [
             (Error 708, Line 23, Col 9, Line 23, Col 13, "This control construct may only be used if the computation expression builder defines a 'Using' method")
         ]
-    
+
     [<Fact>]
     let ``do! expressions may not be used in queries`` () =
         Fsx """
@@ -469,7 +469,7 @@ query {
         |> withDiagnostics [
             (Error 3143, Line 3, Col 5, Line 3, Col 8, "'let!', 'use!' and 'do!' expressions may not be used in queries")
         ]
-        
+
     [<Fact>]
     let ``let! expressions may not be used in queries`` () =
         Fsx """
@@ -484,7 +484,7 @@ query {
         |> withDiagnostics [
             (Error 3143, Line 3, Col 5, Line 3, Col 9, "'let!', 'use!' and 'do!' expressions may not be used in queries")
         ]
-            
+
     [<Fact>]
     let ``let!, and! expressions may not be used in queries`` () =
         Fsx """
@@ -500,7 +500,7 @@ query {
         |> withDiagnostics [
             (Error 3143, Line 3, Col 5, Line 3, Col 9, "'let!', 'use!' and 'do!' expressions may not be used in queries")
         ]
-        
+
     [<Fact>]
     let ``use! expressions may not be used in queries`` () =
         Fsx """
@@ -529,9 +529,9 @@ query {
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 3143, Line 4, Col 5, Line 4, Col 8, "'let!', 'use!' and 'do!' expressions may not be used in queries")  
+            (Error 3143, Line 4, Col 5, Line 4, Col 8, "'let!', 'use!' and 'do!' expressions may not be used in queries")
         ]
-        
+
     [<Fact>]
     let ``let! expressions may not be used in queries(SynExpr.Sequential)`` () =
         Fsx """
@@ -547,7 +547,7 @@ query {
         |> withDiagnostics [
             (Error 3143, Line 4, Col 5, Line 4, Col 9, "'let!', 'use!' and 'do!' expressions may not be used in queries")
         ]
-        
+
     [<Fact>]
     let ``let!, and! expressions may not be used in queries(SynExpr.Sequential)`` () =
         Fsx """
@@ -564,7 +564,7 @@ query {
         |> withDiagnostics [
             (Error 3143, Line 4, Col 5, Line 4, Col 9, "'let!', 'use!' and 'do!' expressions may not be used in queries")
         ]
-        
+
     [<Fact>]
     let ``use! expressions may not be used in queries(SynExpr.Sequential)`` () =
         Fsx """
@@ -631,7 +631,7 @@ let run r2 r3 =
         |> withDiagnostics [
             (Error 750, Line 3, Col 5, Line 3, Col 11, "This construct may only be used within computation expressions")
         ]
-        
+
     [<Fact>]
     let ``This control construct may only be used if the computation expression builder defines a 'Yield' method`` () =
         Fsx """
@@ -649,7 +649,7 @@ let f3 =
         |> withDiagnostics [
             (Error 708, Line 5, Col 13, Line 5, Col 18, "This control construct may only be used if the computation expression builder defines a 'Yield' method")
         ]
-        
+
     [<Fact>]
     let ``This control construct may only be used if the computation expression builder defines a 'YieldFrom' method`` () =
         Fsx """
@@ -667,7 +667,7 @@ let f3 =
         |> withDiagnostics [
             (Error 708, Line 5, Col 13, Line 5, Col 19, "This control construct may only be used if the computation expression builder defines a 'YieldFrom' method")
         ]
-    
+
 
     [<Fact>]
     let ``This control construct may only be used if the computation expression builder defines a 'Return' method`` () =
@@ -704,7 +704,7 @@ let run r2 r3 =
         |> withDiagnostics [
             (Error 708, Line 24, Col 19, Line 24, Col 25, "This control construct may only be used if the computation expression builder defines a 'Return' method")
         ]
-        
+
 
     [<Fact>]
     let ``This control construct may only be used if the computation expression builder defines a 'ReturnFrom' method`` () =
@@ -740,7 +740,7 @@ let run r2 r3 =
         |> shouldFail
         |> withDiagnostics [
             (Error 708, Line 24, Col 19, Line 24, Col 26, "This control construct may only be used if the computation expression builder defines a 'ReturnFrom' method")
-        ]        
+        ]
 
     [<Fact>]
     let ``This control construct may only be used if the computation expression builder defines a 'Combine' method`` () =
@@ -779,7 +779,7 @@ let run r2 r3 =
         |> withDiagnostics [
             (Error 708, Line 27, Col 9, Line 27, Col 15, "This control construct may only be used if the computation expression builder defines a 'Combine' method")
         ]
-        
+
     [<Fact>]
     let ``Sequence2 This control construct may only be used if the computation expression builder defines a 'Combine' method`` () =
         Fsx """
@@ -822,7 +822,7 @@ let run (r2: Result<int, string>) (r3: Result<int, string>) =
         |> withDiagnostics [
             (Error 708, Line 32, Col 9, Line 32, Col 15, "This control construct may only be used if the computation expression builder defines a 'Combine' method")
         ]
-        
+
     [<Fact>]
     let ``Sequence 5 This control construct may only be used if the computation expression builder defines a 'Combine' method`` () =
         Fsx """
@@ -865,7 +865,7 @@ let run (r2: Result<int, string>) (r3: Result<int, string>) =
         |> withDiagnostics [
             (Error 708, Line 32, Col 9, Line 32, Col 16, "This control construct may only be used if the computation expression builder defines a 'Combine' method")
         ]
-    
+
     [<Fact>]
     let ``Sequence 7 This control construct may only be used if the computation expression builder defines a 'Combine' method`` () =
         Fsx """
@@ -908,8 +908,8 @@ let run (r2: Result<int, string>) (r3: Result<int, string>) =
         |> shouldFail
         |> withDiagnostics [
             (Error 708, Line 33, Col 9, Line 33, Col 16, "This control construct may only be used if the computation expression builder defines a 'Combine' method")
-        ]    
-    
+        ]
+
     [<Fact>]
     let ``Sequence 8 This control construct may only be used if the computation expression builder defines a 'Combine' method`` () =
         Fsx """
@@ -953,7 +953,7 @@ let run (r2: Result<int, string>) (r3: Result<int, string>) =
         |> withDiagnostics [
             (Error 708, Line 33, Col 9, Line 33, Col 16, "This control construct may only be used if the computation expression builder defines a 'Combine' method")
         ]
-    
+
     [<Fact>]
     let ``Sequence 9 This control construct may only be used if the computation expression builder defines a 'Combine' method`` () =
         Fsx """
@@ -1042,7 +1042,7 @@ let run (r2: Result<int, string>) (r3: Result<int, string>) =
         |> withDiagnostics [
             (Error 708, Line 34, Col 9, Line 34, Col 15, "This control construct may only be used if the computation expression builder defines a 'Combine' method")
         ]
-        
+
     [<Fact>]
     let ``Sequence 4 This control construct may only be used if the computation expression builder defines a 'Combine' method`` () =
         Fsx """
@@ -1086,7 +1086,7 @@ let run (r2: Result<int, string>) (r3: Result<int, string>) =
         |> shouldFail
         |> withDiagnostics [
             (Error 708, Line 34, Col 9, Line 34, Col 14, "This control construct may only be used if the computation expression builder defines a 'Combine' method")
-        ]        
+        ]
     [<Fact>]
     let ``Sequence 6 This control construct may only be used if the computation expression builder defines a 'Combine' method`` () =
         Fsx """
@@ -1235,7 +1235,7 @@ module Test =
         |> withDiagnostics [
             (Error 708, Line 25, Col 7, Line 26, Col 13, "This control construct may only be used if the computation expression builder defines a 'Combine' method")
         ]
-        
+
     [<Fact>]
     let ``Sequence 13 This control construct may only be used if the computation expression builder defines a 'Combine' method`` () =
         Fsx """
@@ -1395,7 +1395,7 @@ let x18mutable =
             (Error 3147, Line 13, Col 20, Line 13, Col 23, "This 'let' definition may not be used in a query. Only simple value definitions may be used in queries.")
             (Error 3147, Line 20, Col 21, Line 20, Col 22, "This 'let' definition may not be used in a query. Only simple value definitions may be used in queries.")
         ]
-        
+
     [<Fact>]
     let ``Fix resumable and non-resumable CE error ranges`` () =
         FSharp """
@@ -1427,7 +1427,7 @@ is not compatible with type
 'TaskCode<int,int>' 
 ")
         ]
-        
+
     [<Fact>]
     let ``Fix resumable and non-resumable CE error ranges 2`` () =
         FSharp """
@@ -1465,8 +1465,8 @@ but here has type
 'int' 
 but here has type
 'string' ")
-        ]        
-    
+        ]
+
     [<Fact>]
     let ``Fix resumable and non-resumable CE error ranges 3`` () =
         FSharp """
@@ -1493,7 +1493,7 @@ is not compatible with type
 'TaskCode<IList<string>,IList<string>>' 
 ")
         ]
-        
+
     [<Fact>]
     let ``Fix resumable and non-resumable CE error ranges 4`` () =
         FSharp """
@@ -1523,7 +1523,7 @@ is not compatible with type
 'TaskCode<int64,int64>' 
 ")
         ]
-        
+
     [<Fact>]
     let ``Version 9.0: and! with type annotations requires parentheses`` () =
         FSharp """
@@ -1580,7 +1580,7 @@ let testParallel3() =
             (Error 3350, Line 43, Col 17, Line 43, Col 20, "Feature 'Allow let! and use! type annotations without requiring parentheses' is not available in F# 9.0. Please use language version 10.0 or greater.");
             (Error 3350, Line 44, Col 17, Line 44, Col 20, "Feature 'Allow let! and use! type annotations without requiring parentheses' is not available in F# 9.0. Please use language version 10.0 or greater.")
         ]
-        
+
     [<Fact>]
     let ``Preview: and! with type annotations works without parentheses`` () =
         FSharp """
@@ -2247,7 +2247,7 @@ but here has type
     [<Theory; FileInlineData("tailcalls.fsx")>]
     let ``tail call methods work`` compilation =
         compilation
-         |> getCompilation 
+         |> getCompilation
          |> asFsx
          |> runFsi
          |> shouldSucceed
@@ -2255,7 +2255,7 @@ but here has type
     [<Theory; FileInlineData("coroutines.fsx")>]
     let ``YieldFromFinal works in coroutines`` compilation =
         compilation
-         |> getCompilation 
+         |> getCompilation
          |> asFsx
          |> runFsi
          |> shouldSucceed
@@ -2270,6 +2270,9 @@ let data2 = [(1, "one"); (2, "two"); (3, "three")]
 let result = query { for x in data1 do join (y, name) in data2 on (x = y); select name }"""
             "let result = query { for a in [1;2;3] do for b in [4;5;6] do where (a < b); select (a + b) }"
             "let result = query { for x in [3;1;2] do sortBy x; select x }"
+            // https://github.com/dotnet/fsharp/issues/14566
+            """let result = query { join a in ["x"] on ("x" = a); join b in ["y"] on ("y" = b); select a }"""
+            """let result = query { for r in [1;2;3] do for i in [true; false] do where i; select r }"""
         ]
         |> List.map (fun s -> [| box s |])
 
@@ -2324,9 +2327,84 @@ let result = query { for x in data1 do join (y, name) in data2 on (x = y); selec
         |> withSingleDiagnostic (Warning 1182, Line line1, Col col1, Line line2, Col col2, msg)
         |> ignore
 
-    // https://github.com/dotnet/fsharp/issues/19456
     [<Fact>]
-    let ``Issue 19456 - let bang nested in plain let binding inside task CE should raise FS0750`` () =
+    let ``let! at end of computation expression gives specific error``() =
+        FSharp """
+module ComputationExpressionTests
+let foo() =
+    async {
+        let! result = async { return 0 }
+    }
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 10, Line 6, Col 5, Line 6, Col 6, "Unexpected symbol '}' in expression")
+            (Error 3885, Line 5, Col 9, Line 5, Col 13, "'let!' cannot be the final expression in a computation expression. Finish with 'return', 'return!', or a simple expression.")
+        ]
+
+    [<Fact>]
+    let ``use! at end of computation expression gives specific error``() =
+        FSharp """
+module ComputationExpressionTests
+let foo() =
+    async {
+        use! result = async { return null : System.IDisposable }
+    }
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 10, Line 6, Col 5, Line 6, Col 6, "Unexpected symbol '}' in expression")
+            (Error 3885, Line 5, Col 9, Line 5, Col 13, "'use!' cannot be the final expression in a computation expression. Finish with 'return', 'return!', or a simple expression.")
+        ]
+
+    [<Fact>]
+    let ``let! and! at end of computation expression gives specific error``() =
+        FSharp """
+module ComputationExpressionTests
+
+type Builder() =
+    member _.Bind(x, f) = f x
+    member _.MergeSources(x, y) = (x, y)
+    member _.BindReturn(x, f) = f x
+    member _.Return(x) = x
+    member _.Zero() = ()
+
+let builder = Builder()
+
+let foo() =
+    builder {
+        let! x = 1
+        and! y = 2
+    }
+        """
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 10, Line 17, Col 5, Line 17, Col 6, "Unexpected symbol '}' in expression")
+            (Error 3885, Line 15, Col 9, Line 15, Col 13, "'let!' cannot be the final expression in a computation expression. Finish with 'return', 'return!', or a simple expression.")
+        ]
+
+    [<Fact>]
+    let ``match! at end of computation expression is allowed``() =
+        FSharp """
+module ComputationExpressionTests
+let foo() =
+    async {
+        match! async { return 0 } with
+        | 0 -> return 1
+        | _ -> return 2
+    }
+        """
+        |> typecheck
+        |> shouldSucceed
+
+    // https://github.com/dotnet/fsharp/issues/19457: a let!/use!/do!-headed RHS of a plain 'let'
+    // inside a CE now runs as a nested computation. The following tests pin both compilation and the
+    // runtime values (scoping in particular).
+    [<Fact>]
+    let ``Issue 19457 - let bang nested in plain let binding inside task CE should compile`` () =
         FSharp """
 open System.Threading.Tasks
 
@@ -2336,6 +2414,531 @@ let y() =
             let! b = Task.FromResult([| "hello" |])
             b
         return a
+    }
+        """
+        |> asLibrary
+        |> typecheck
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Issue 19457 - let bang nested in plain let returns awaited value not Task`` () =
+        FSharp """
+module Test
+open System.Threading.Tasks
+let y() =
+    task {
+        let a =
+            let! b = Task.FromResult(42)
+            b
+        return a
+    }
+[<EntryPoint>]
+let main _ =
+    let r = y().Result
+    if r <> 42 then failwithf "expected 42, got %d" r
+    0
+        """
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Issue 19457 - do bang nested in plain let inside task CE compiles and runs`` () =
+        FSharp """
+module Test
+open System.Threading.Tasks
+let mutable x = 0
+let test() =
+    task {
+        let a =
+            do! Task.Delay(0)
+            x <- 1
+            42
+        return a
+    }
+[<EntryPoint>]
+let main _ =
+    let r = test().Result
+    if r <> 42 then failwithf "expected 42, got %d" r
+    if x <> 1 then failwithf "expected x=1, got %d" x
+    0
+        """
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Issue 19457 - multiple sequential let bang nested in plain let inside task CE`` () =
+        FSharp """
+module Test
+open System.Threading.Tasks
+let test() =
+    task {
+        let result =
+            let! a = Task.FromResult(1)
+            let! b = Task.FromResult(2)
+            a + b
+        return result
+    }
+[<EntryPoint>]
+let main _ =
+    let r = test().Result
+    if r <> 3 then failwithf "expected 3, got %d" r
+    0
+        """
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Issue 19457 - let bang nested in plain let inside async CE`` () =
+        FSharp """
+module Test
+let test() =
+    async {
+        let a =
+            let! b = async { return 42 }
+            b
+        return a
+    }
+[<EntryPoint>]
+let main _ =
+    let r = Async.RunSynchronously(test())
+    if r <> 42 then failwithf "expected 42, got %d" r
+    0
+        """
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Issue 19457 - plain let ahead of let bang in the RHS head chain`` () =
+        FSharp """
+module Test
+open System.Threading.Tasks
+let test() =
+    task {
+        let a =
+            let c = 10
+            let! b = Task.FromResult(c)
+            b
+        return a
+    }
+[<EntryPoint>]
+let main _ =
+    let r = test().Result
+    if r <> 10 then failwithf "expected 10, got %d" r
+    0
+        """
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    // Only the linear let!/use!/do! head chain is rewritten; a match! forming the whole RHS is not,
+    // so it keeps reporting FS0750.
+    [<Fact>]
+    let ``Issue 19457 - match bang forming the whole plain let RHS is out of scope`` () =
+        FSharp """
+module Test
+open System.Threading.Tasks
+let test() =
+    task {
+        let result =
+            match! Task.FromResult(Some 42) with
+            | Some x -> x
+            | None -> 0
+        return result
+    }
+        """
+        |> asLibrary
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 750
+
+    // A let!-bound name in the RHS is scoped to the sub-computation, so it must not shadow the outer
+    // 'b' the continuation returns.
+    [<Fact>]
+    let ``Issue 19457 - inner let bang does not shadow outer binding used in continuation`` () =
+        FSharp """
+module Test
+open System.Threading.Tasks
+let test() =
+    task {
+        let b = 999
+        let a =
+            let! b = Task.FromResult 42
+            b
+        return (a, b)
+    }
+[<EntryPoint>]
+let main _ =
+    let (a, b) = test().Result
+    if a <> 42 then failwithf "expected a=42, got %d" a
+    if b <> 999 then failwithf "expected b=999, got %d" b
+    0
+        """
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    // A plain 'let' in the RHS head chain is likewise scoped to the sub-computation: the inner 'x'
+    // must not leak into the continuation, so the result is 13, not 14.
+    [<Fact>]
+    let ``Issue 19457 - plain let inside RHS head chain does not leak into continuation`` () =
+        FSharp """
+module Test
+let test() =
+    async {
+        let x = 1
+        let p =
+            let x = 2
+            let! y = async { return 10 }
+            x + y
+        return p + x
+    }
+[<EntryPoint>]
+let main _ =
+    let r = Async.RunSynchronously(test())
+    if r <> 13 then failwithf "expected 13, got %d" r
+    0
+        """
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    // 'use!' is disposed at the end of the sub-computation (its lexical scope): U inside, then D on
+    // disposal, then A in the outer CE.
+    [<Fact>]
+    let ``Issue 19457 - use bang in plain let RHS is disposed within the sub-computation`` () =
+        FSharp """
+module Test
+open System.Threading.Tasks
+let log = System.Text.StringBuilder()
+let mkDisp (tag: string) =
+    { new System.IDisposable with member _.Dispose() = log.Append tag |> ignore }
+let test() =
+    task {
+        let a =
+            use! h = Task.FromResult(mkDisp "D")
+            log.Append "U" |> ignore
+            99
+        log.Append "A" |> ignore
+        return a
+    }
+[<EntryPoint>]
+let main _ =
+    let r = test().Result
+    if r <> 99 then failwithf "expected 99, got %d" r
+    if log.ToString() <> "UDA" then failwithf "expected UDA, got %s" (log.ToString())
+    0
+        """
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    // The sub-computation is returned exactly once: an explicit 'return' already in tail position must
+    // not be wrapped in a second 'return'.
+    [<Fact>]
+    let ``Issue 19457 - explicit return in RHS tail is not double wrapped`` () =
+        FSharp """
+module Test
+open System.Threading.Tasks
+let test() =
+    task {
+        let a =
+            let! b = Task.FromResult 42
+            return b
+        return a
+    }
+[<EntryPoint>]
+let main _ =
+    if test().Result <> 42 then failwith "expected 42"
+    0
+        """
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    // The implicit 'return' is pushed into the branches of an 'if' tail, so branches that already
+    // 'return' are left untouched.
+    [<Fact>]
+    let ``Issue 19457 - if with return branches in RHS tail compiles and runs`` () =
+        FSharp """
+module Test
+open System.Threading.Tasks
+let test() =
+    task {
+        let a =
+            let! b = Task.FromResult 42
+            if b > 0 then return b else return 0
+        return a
+    }
+[<EntryPoint>]
+let main _ =
+    if test().Result <> 42 then failwith "expected 42"
+    0
+        """
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    // A return-type annotation on the plain 'let' is carried onto the 'let!' pattern.
+    [<Fact>]
+    let ``Issue 19457 - return type annotation on the plain let is honoured`` () =
+        FSharp """
+module Test
+open System.Threading.Tasks
+let test() =
+    task {
+        let a : int =
+            let! b = Task.FromResult 42
+            b
+        return a
+    }
+[<EntryPoint>]
+let main _ =
+    if test().Result <> 42 then failwith "expected 42"
+    0
+        """
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    // A parenthesized RHS is unwrapped: parentheses are not valid computation-expression body syntax.
+    [<Fact>]
+    let ``Issue 19457 - parenthesized RHS compiles and runs`` () =
+        FSharp """
+module Test
+let test() =
+    async {
+        let a = (
+            let! b = async { return 41 }
+            b + 1)
+        return a
+    }
+[<EntryPoint>]
+let main _ =
+    if Async.RunSynchronously(test()) <> 42 then failwith "expected 42"
+    0
+        """
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    // A `try`/`with` (or `try`/`finally`) in tail position is an ordinary value expression, not a
+    // computation-expression control construct: it must be returned as a whole rather than having its
+    // body treated as CE code (which would silently yield unit).
+    [<Fact>]
+    let ``Issue 19457 - try with in RHS tail returns the value`` () =
+        FSharp """
+module Test
+open System.Threading.Tasks
+let test() =
+    task {
+        let x =
+            let! a = Task.FromResult 41
+            try a + 1 with _ -> 0
+        return x
+    }
+[<EntryPoint>]
+let main _ =
+    if test().Result <> 42 then failwith "expected 42"
+    0
+        """
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    // A leading statement before the `let!` is carried into the nested computation and runs exactly
+    // once, in order, before the bind.
+    [<Fact>]
+    let ``Issue 19457 - leading statement before the bang is preserved`` () =
+        FSharp """
+module Test
+open System.Threading.Tasks
+let mutable count = 0
+let test() =
+    task {
+        let x =
+            count <- count + 1
+            let! b = Task.FromResult 5
+            b + 1
+        return x
+    }
+[<EntryPoint>]
+let main _ =
+    if test().Result <> 6 then failwith "expected 6"
+    if count <> 1 then failwithf "expected the statement to run once, ran %d times" count
+    0
+        """
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    // A function binding is not a simple value: it keeps the ordinary 'let' translation and reports
+    // FS0750 rather than being rebound as 'let! (f x) = ...'.
+    [<Fact>]
+    let ``Issue 19457 - function binding with bang body is not lifted`` () =
+        FSharp """
+module Test
+open System.Threading.Tasks
+let test() =
+    task {
+        let f x =
+            let! b = Task.FromResult 42
+            b + x
+        return f 1
+    }
+        """
+        |> asLibrary
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 750
+
+    // A mutable binding is likewise not lifted (its mutability would otherwise be silently dropped).
+    [<Fact>]
+    let ``Issue 19457 - mutable binding with bang RHS is not lifted`` () =
+        FSharp """
+module Test
+open System.Threading.Tasks
+let test() =
+    task {
+        let mutable a =
+            let! b = Task.FromResult 42
+            b
+        return a
+    }
+        """
+        |> asLibrary
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 750
+
+    // Only a plain 'let' is rewritten; a 'use' whose RHS is a bang head-chain is left to the 'use' arm
+    // and keeps reporting FS0750. Pinning the boundary so it can't drift into a silent rewrite.
+    [<Fact>]
+    let ``Issue 19457 - use binding with bang RHS is out of scope`` () =
+        FSharp """
+module Test
+open System.Threading.Tasks
+let test() =
+    task {
+        use a =
+            let! b = Task.FromResult 42
+            b
+        return a
+    }
+        """
+        |> asLibrary
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 750
+
+    // The rewrite only looks through the linear let/let!/use!/do! head chain, not into a 'try', so a bang
+    // buried inside a 'try' in the RHS is not lifted and keeps reporting FS0750.
+    [<Fact>]
+    let ``Issue 19457 - bang inside a try in the RHS is out of scope`` () =
+        FSharp """
+module Test
+open System.Threading.Tasks
+let test() =
+    task {
+        let a =
+            try
+                let! b = Task.FromResult 42
+                b
+            with _ -> 0
+        return a
+    }
+        """
+        |> asLibrary
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 750
+
+    // Running the RHS as a nested computation means the builder must supply the members that computation
+    // needs. A builder with 'Bind' but no 'Return' now reports the missing member (FS0708) rather than
+    // FS0750; the diagnostic still names exactly what to add.
+    [<Fact>]
+    let ``Issue 19457 - minimal builder without Return reports the missing member`` () =
+        FSharp """
+module Test
+type MinBuilder() =
+    member _.Bind(x, f) = f x
+let mb = MinBuilder()
+let test() =
+    mb {
+        let a =
+            let! b = 41
+            b
+        return a
+    }
+        """
+        |> asLibrary
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 708
+        |> withDiagnosticMessageMatches "'Return'"
+
+    // The gate that decides whether to rewrite descends into 'if'/'match' branches just like the rewrite
+    // does, so a bang reached only through a branch is handled the same whether or not an unrelated bang
+    // also leads the spine.
+    [<Fact>]
+    let ``Issue 19457 - bang only inside an if branch compiles and runs`` () =
+        FSharp """
+module Test
+open System.Threading.Tasks
+let cond = true
+let test() =
+    task {
+        let p = if cond then (let! y = Task.FromResult 10 in y) else 0
+        return p
+    }
+[<EntryPoint>]
+let main _ =
+    if test().Result <> 10 then failwith "expected 10"
+    0
+        """
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Issue 19457 - bang only inside a match branch compiles and runs`` () =
+        FSharp """
+module Test
+open System.Threading.Tasks
+let test n =
+    task {
+        let p = match n with 0 -> (let! y = Task.FromResult 10 in y) | _ -> 0
+        return p
+    }
+[<EntryPoint>]
+let main _ =
+    if test(0).Result <> 10 then failwith "expected 10"
+    0
+        """
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    // A one-armed 'if' whose branch produces unit leans on the builder's implicit 'Zero' for the missing
+    // else, and still runs as a nested computation.
+    [<Fact>]
+    let ``Issue 19457 - bang inside a one-armed if uses implicit Zero`` () =
+        FSharp """
+module Test
+open System.Threading.Tasks
+let cond = true
+let test() =
+    task {
+        let p = if cond then (let! _ = Task.FromResult 10 in ())
+        return p
+    }
+[<EntryPoint>]
+let main _ =
+    test().Result
+    0
+        """
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    // The 'if'/'match' descent stops at a 'try', matching the rewrite, so a bang buried in a 'try' within a
+    // branch stays out of scope.
+    [<Fact>]
+    let ``Issue 19457 - bang inside a try within an if branch is out of scope`` () =
+        FSharp """
+module Test
+open System.Threading.Tasks
+let cond = true
+let test() =
+    task {
+        let p = if cond then (try (let! y = Task.FromResult 10 in y) with _ -> 0) else 0
+        return p
     }
         """
         |> asLibrary

@@ -778,6 +778,7 @@ type internal AgedLookup<'Token, 'Key, 'Value when 'Value: not struct>(keepStron
         |> asLibrary
         |> withRealInternalSignature realSig
         |> withOptimization optimize
+        |> withOptions [ "--nowarn:3886" ]
         |> compile
         |> shouldSucceed
         |> verifyPEFileWithSystemDlls

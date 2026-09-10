@@ -23,6 +23,6 @@ let inline testBundledEmptyAndNull (s: string) =
 
 // Usage functions to show inlining in action
 let useClassifyString s = classifyString s
-let useTestEmptyStringOnly s = testEmptyStringOnly s  
+let useTestEmptyStringOnly s = testEmptyStringOnly s
 let useBundledNullAndEmpty s = testBundledNullAndEmpty s
 let useBundledEmptyAndNull s = testBundledEmptyAndNull s

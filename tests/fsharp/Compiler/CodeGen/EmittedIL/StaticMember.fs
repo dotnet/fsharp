@@ -8,9 +8,13 @@ open Xunit
 
 module ``Static Member`` =
 
+    // The delegate-from-method cases below are pinned to --langversion:10.0: at F# 11.0 (now the default)
+    // DirectDelegateConstruction builds the delegate straight from the target method, dropping the closure
+    // class this IL expects. The 11.0 form is covered by EmittedIL/DirectDelegates.
+
     [<Fact>]
     let ``Action on Static Member``() =
-        CompilerAssert.CompileLibraryAndVerifyILRealSig(
+        CompilerAssert.CompileLibraryAndVerifyILWithOptions([| "--realsig+"; "--langversion:10.0" |],
             """
 module StaticMember01
 
@@ -74,7 +78,7 @@ type C =
 
     [<Fact>]
     let ``Action on Static Member with lambda``() =
-        CompilerAssert.CompileLibraryAndVerifyILRealSig(
+        CompilerAssert.CompileLibraryAndVerifyILWithOptions([| "--realsig+"; "--langversion:10.0" |],
             """
 module StaticMember02
 
@@ -247,7 +251,7 @@ let main _ =
 
     [<Fact>]
     let ``Func on Static Member``() =
-        CompilerAssert.CompileLibraryAndVerifyILRealSig(
+        CompilerAssert.CompileLibraryAndVerifyILWithOptions([| "--realsig+"; "--langversion:10.0" |],
             """
 module StaticMember04
 
@@ -313,7 +317,7 @@ type C =
 
     [<Fact>]
     let ``Func on Static Member with lambda``() =
-        CompilerAssert.CompileLibraryAndVerifyILRealSig(
+        CompilerAssert.CompileLibraryAndVerifyILWithOptions([| "--realsig+"; "--langversion:10.0" |],
             """
 module StaticMember05
 
@@ -434,7 +438,8 @@ let main _ =
 #if !FX_NO_WINFORMS
     [<Fact>]
     let ``EventHandler from Regression/83``() =
-        CompilerAssert.CompileLibraryAndVerifyILRealSig(
+        // Same pin as the cases above; WinForms-gated, so this one only runs on Windows CI.
+        CompilerAssert.CompileLibraryAndVerifyILWithOptions([| "--realsig+"; "--langversion:10.0" |],
             """
 module StaticMember07
 

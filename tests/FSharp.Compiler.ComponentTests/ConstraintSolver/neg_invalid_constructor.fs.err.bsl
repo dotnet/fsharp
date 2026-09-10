@@ -1,18 +1,18 @@
-neg_invalid_constructor.fs (3,29)-(3,56) typecheck error A unique overload for method 'ImmutableStack`1' could not be determined based on type information prior to this program point. A type annotation may be needed.
+neg_invalid_constructor.fs (3,29)-(3,43) typecheck error A unique overload for method 'ImmutableStack`1' could not be determined based on type information prior to this program point. A type annotation may be needed.
 
 Known type of argument: 'a list
 
 Candidates:
  - new: col: 'b -> ImmutableStack<'a>
  - private new: items: 'a list -> ImmutableStack<'a>
-neg_invalid_constructor.fs (4,93)-(4,111) typecheck error A unique overload for method 'ImmutableStack`1' could not be determined based on type information prior to this program point. A type annotation may be needed.
+neg_invalid_constructor.fs (4,93)-(4,107) typecheck error A unique overload for method 'ImmutableStack`1' could not be determined based on type information prior to this program point. A type annotation may be needed.
 
 Known type of argument: 'a list
 
 Candidates:
  - new: col: 'b -> ImmutableStack<'a>
  - private new: items: 'a list -> ImmutableStack<'a>
-neg_invalid_constructor.fs (7,30)-(7,60) typecheck error A unique overload for method 'ImmutableStack`1' could not be determined based on type information prior to this program point. A type annotation may be needed.
+neg_invalid_constructor.fs (7,30)-(7,44) typecheck error A unique overload for method 'ImmutableStack`1' could not be determined based on type information prior to this program point. A type annotation may be needed.
 
 Known type of argument: 'a list
 

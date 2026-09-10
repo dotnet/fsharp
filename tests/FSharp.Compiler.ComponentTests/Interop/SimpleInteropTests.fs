@@ -223,3 +223,58 @@ let main _ =
         |> asExe
         |> compileExeAndRun
         |> shouldSucceed
+
+    // https://github.com/dotnet/fsharp/issues/20264
+    [<Fact>]
+    let ``Issue 20264 - inherited non-abstract IL base method on generic type`` () =
+        let csLib =
+            CSharp
+                """
+namespace External
+{
+    public abstract class BehaviorBase {
+        public virtual void OnDetaching() { }
+    }
+    public class Behavior<T> : BehaviorBase { }
+}
+                """
+            |> withName "ExternalBehavior"
+
+        FSharp
+            """
+module TestIssue20264
+open External
+type MyBehavior() =
+    inherit Behavior<int>()
+    member _.Test() = base.OnDetaching()
+            """
+        |> withReferences [ csLib ]
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Issue 20264 - abstract IL base method on immediate generic type`` () =
+        let csLib =
+            CSharp
+                """
+namespace External
+{
+    public abstract class Behavior<T> {
+        public abstract void AbstractDetaching();
+    }
+}
+                """
+            |> withName "ExternalBehaviorAbstract"
+
+        FSharp
+            """
+module TestIssue20264Abstract
+open External
+type MyBehavior() =
+    inherit Behavior<int>()
+    override _.AbstractDetaching() = base.AbstractDetaching()
+            """
+        |> withReferences [ csLib ]
+        |> compile
+        |> shouldFail
+        |> withErrorCode 1201

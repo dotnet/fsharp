@@ -330,10 +330,10 @@ this file.
         -->
         <ItemGroup>
             <ActualEmbeddedResources
-                Condition=" '$(UsingXBuild)' == true"
+                Condition=" '$(UsingXBuild)' == 'true'"
                 Include="@(_CoreCompileResourceInputs);@(ManifestResourceWithNoCulture);@(ManifestNonResxWithNoCultureOnDisk);@(CompiledLicenseFile);@(AdditionalEmbeddedResource)" />
           <ActualEmbeddedResources
-                Condition=" '$(UsingXBuild)' != true"
+                Condition=" '$(UsingXBuild)' != 'true'"
                 Include="@(_CoreCompileResourceInputs);@(CompiledLicenseFile);@(AdditionalEmbeddedResource)" />
         </ItemGroup>
 
@@ -381,7 +381,7 @@ this file.
               OtherFlags="$(FscOtherFlags)"
               OutputAssembly="@(IntermediateAssembly)"
               OutputRefAssembly="@(IntermediateRefAssembly)"
-    	      ParallelCompilation="@(ParallelCompilation)"
+    	      ParallelCompilation="$(ParallelCompilation)"
               PathMap="$(PathMap)"
               PdbFile="$(PdbFile)"
               Platform="$(PlatformTarget)"
@@ -389,6 +389,7 @@ this file.
               PreferredUILang="$(PreferredUILang)"
               ProvideCommandLineArgs="$(ProvideCommandLineArgs)"
               PublicSign="$(PublicSign)"
+              AlwaysInline="$(AlwaysInline)"
               RealSig="$(RealSig)"
               References="@(ReferencePathWithRefAssemblies)"
               ReferencePath="$(ReferencePathWithRefAssemblies)"

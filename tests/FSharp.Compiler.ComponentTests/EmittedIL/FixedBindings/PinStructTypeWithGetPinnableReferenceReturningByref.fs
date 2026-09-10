@@ -6,7 +6,7 @@ open System
 [<Struct; IsByRefLike>]
 type ArrayElementRef<'T> =
     private { Values: 'T[]; Index: int }
-    
+
     static member Create(values: 'T[], index) =
         if index > values.Length then
             raise (ArgumentOutOfRangeException(nameof(index), ""))

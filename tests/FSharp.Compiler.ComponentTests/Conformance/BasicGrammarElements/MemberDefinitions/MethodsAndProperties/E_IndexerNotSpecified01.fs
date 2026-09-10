@@ -1,4 +1,4 @@
-// #Regression #Conformance #DeclarationElements #MemberDefinitions #MethodsAndProperties 
+// #Regression #Conformance #DeclarationElements #MemberDefinitions #MethodsAndProperties
 
 
 // Verify error if the type doesn't support an indexer

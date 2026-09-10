@@ -348,3 +348,118 @@ let TestEmptyStringPattern(x: string) =
   } 
 """
        ]
+
+    // https://github.com/dotnet/fsharp/issues/19873
+    // Side effect of moving the empty-string optimization to the Optimizer (was previously only
+    // applied for `match`): `if s = ""` now produces the same null-safe length-check IL.
+    [<Fact>]
+    let ``Test codegen for if-then-else with literal empty-string equality``() =
+        FSharp """
+module Test
+let TestEmptyStringEq(x: string) =
+    if x = "" then "empty" else "other"
+         """
+         |> compile
+         |> shouldSucceed
+         |> verifyIL [
+                      """
+      .method public static string  TestEmptyStringEq(string x) cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldarg.0
+    IL_0001:  brfalse.s  IL_0011
+
+    IL_0003:  ldarg.0
+    IL_0004:  callvirt   instance int32 [runtime]System.String::get_Length()
+    IL_0009:  brtrue.s   IL_0011
+
+    IL_000b:  ldstr      "empty"
+    IL_0010:  ret
+
+    IL_0011:  ldstr      "other"
+    IL_0016:  ret
+  } 
+"""
+       ]
+
+    // #19873: under `--optimize-` `(=)` isn't inlined (only when LocalOptimizationsEnabled),
+    // so the call falls through to `String.Equals(s, "")` instead of the null+Length form.
+    [<Fact>]
+    let ``Test codegen for empty string pattern under --optimize-``() =
+        FSharp """
+module Test
+let TestEmptyStringPattern(x: string) =
+    match x with
+    | "" -> "empty"
+    | _ -> "other"
+         """
+         |> withNoOptimize
+         |> compile
+         |> shouldSucceed
+         |> verifyIL [
+                      """
+      .method public static string  TestEmptyStringPattern(string x) cil managed
+  {
+    
+    .maxstack  4
+    .locals init (string V_0)
+    IL_0000:  ldarg.0
+    IL_0001:  stloc.0
+    IL_0002:  ldloc.0
+    IL_0003:  ldstr      ""
+    IL_0008:  call       bool [netstandard]System.String::Equals(string,
+                                                                 string)
+    IL_000d:  brfalse.s  IL_0015
+
+    IL_000f:  ldstr      "empty"
+    IL_0014:  ret
+
+    IL_0015:  ldstr      "other"
+    IL_001a:  ret
+  } 
+"""
+       ]
+
+    // #19873: the optimizer doesn't see BuildSwitch's `isNullFiltered` flag, so the empty-string
+    // branch under `null | "" -> _` re-emits its own null check (two back-to-back `brfalse.s`).
+    [<Fact>]
+    let ``Test codegen for null-or-empty-string pattern``() =
+        FSharp """
+module Test
+let TestNullOrEmpty(x: string) =
+    match x with
+    | null | "" -> "empty"
+    | _ -> "other"
+         """
+         |> compile
+         |> shouldSucceed
+         |> verifyIL [
+                      """
+      .method public static string  TestNullOrEmpty(string x) cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldarg.0
+    IL_0001:  brfalse.s  IL_0014
+
+    IL_0003:  ldarg.0
+    IL_0004:  brfalse.s  IL_0011
+
+    IL_0006:  ldarg.0
+    IL_0007:  callvirt   instance int32 [runtime]System.String::get_Length()
+    IL_000c:  ldc.i4.0
+    IL_000d:  ceq
+    IL_000f:  br.s       IL_0012
+
+    IL_0011:  ldc.i4.0
+    IL_0012:  brfalse.s  IL_001a
+
+    IL_0014:  ldstr      "empty"
+    IL_0019:  ret
+
+    IL_001a:  ldstr      "other"
+    IL_001f:  ret
+  } 
+"""
+       ]

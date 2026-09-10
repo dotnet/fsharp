@@ -4,9 +4,11 @@ namespace Internal.Utilities.Library
 
 open System
 open System.Threading
+open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Runtime.CompilerServices
 
+/// Do not lock on these objects.
 [<Class>]
 type InterruptibleLazy<'T> =
     new: valueFactory: (unit -> 'T) -> InterruptibleLazy<'T>
@@ -69,7 +71,7 @@ module internal PervasiveAutoOpens =
     type Async with
 
         /// Runs the computation synchronously, always starting on the current thread.
-        static member RunImmediate: computation: Async<'T> * ?cancellationToken: CancellationToken -> 'T
+        static member RunSynchronouslyImmediate: computation: Async<'T> * ?cancellationToken: CancellationToken -> 'T
 
     val foldOn: p: ('a -> 'b) -> f: ('c -> 'b -> 'd) -> z: 'c -> x: 'a -> 'd
 
@@ -84,6 +86,16 @@ type DelayInitArrayMap<'T, 'TDictKey, 'TDictValue> =
 
     abstract CreateDictionary: 'T[] -> IDictionary<'TDictKey, 'TDictValue>
 
+/// Computes a value once, in place: an unforced value costs one object rather than a lazy plus its closure.
+[<AbstractClass>]
+type internal DelayInitValue<'T when 'T: not null and 'T: not struct> =
+    new: unit -> DelayInitValue<'T>
+
+    member Value: 'T
+
+    /// Called at most once, under the instance's lock. An exception is not cached: the next access retries.
+    abstract Compute: unit -> 'T
+
 module internal Order =
 
     val orderBy: p: ('T -> 'U) -> IComparer<'T> when 'U: comparison and 'T: not null and 'T: not struct
@@ -95,6 +107,8 @@ module internal Order =
 module internal Array =
 
     val mapq: f: ('a -> 'a) -> inp: 'a[] -> 'a[] when 'a: not struct
+
+    val inline tryPick: [<InlineIfLambda>] chooser: ('T -> 'U option) -> arr: 'T[] -> 'U option
 
     val lengthsEqAndForall2: p: ('a -> 'b -> bool) -> l1: 'a[] -> l2: 'b[] -> bool
 
@@ -140,6 +154,26 @@ module internal Option =
 
     val attempt: f: (unit -> 'T) -> 'T option
 
+module internal ListInline =
+    /// List.exists, but inline so the predicate is inlined (InlineIfLambda) rather than allocated as a closure.
+    val inline exists: [<InlineIfLambda>] predicate: ('T -> bool) -> list: 'T list -> bool
+
+    /// List.forall, but inline so the predicate is inlined (InlineIfLambda) rather than allocated as a closure.
+    val inline forall: [<InlineIfLambda>] predicate: ('T -> bool) -> list: 'T list -> bool
+
+    /// List.tryFind, but inline so the predicate is inlined (InlineIfLambda) rather than allocated as a closure.
+    val inline tryFind: [<InlineIfLambda>] predicate: ('T -> bool) -> list: 'T list -> 'T option
+
+    /// List.foldBack, but inline so the folder is inlined (InlineIfLambda). Folds lengths up to 5 directly; longer lists use an array, staying stack-safe like List.foldBack.
+    val inline foldBack: [<InlineIfLambda>] folder: ('T -> 'State -> 'State) -> list: 'T list -> state: 'State -> 'State
+
+    /// List.fold, but inline so the folder is inlined (InlineIfLambda) rather than allocated as a closure.
+    val inline fold: [<InlineIfLambda>] folder: ('State -> 'T -> 'State) -> state: 'State -> list: 'T list -> 'State
+
+    val inline map: [<InlineIfLambda>] mapping: ('T -> 'U) -> list: 'T list -> 'U list
+
+    val inline forall2: [<InlineIfLambda>] predicate: ('T1 -> 'T2 -> bool) -> list1: 'T1 list -> list2: 'T2 list -> bool
+
 module internal List =
 
     val sortWithOrder: c: IComparer<'T> -> elements: 'T list -> 'T list
@@ -148,7 +182,7 @@ module internal List =
 
     val existsi: f: (int -> 'a -> bool) -> xs: 'a list -> bool
 
-    val lengthsEqAndForall2: p: ('a -> 'b -> bool) -> l1: 'a list -> l2: 'b list -> bool
+    val inline lengthsEqAndForall2: [<InlineIfLambda>] p: ('a -> 'b -> bool) -> l1: 'a list -> l2: 'b list -> bool
 
     val findi: n: int -> f: ('a -> bool) -> l: 'a list -> ('a * int) option
 
@@ -156,7 +190,7 @@ module internal List =
 
     val checkq: l1: 'a list -> l2: 'a list -> bool when 'a: not struct
 
-    val mapq: f: ('T -> 'T) -> inp: 'T list -> 'T list when 'T: not struct
+    val inline mapq: [<InlineIfLambda>] f: ('T -> 'T) -> inp: 'T list -> 'T list when 'T: not struct
 
     val frontAndBack: l: 'a list -> 'a list * 'a
 
@@ -221,8 +255,8 @@ module internal List =
 
     val prependIfSome: x: 'a option -> l: 'a list -> 'a list
 
-    val vMapFold<'T, 'State, 'Result> :
-        mapping: ('State -> 'T -> struct ('Result * 'State)) ->
+    val inline vMapFold:
+        [<InlineIfLambda>] mapping: ('State -> 'T -> struct ('Result * 'State)) ->
         state: 'State ->
         list: 'T list ->
             struct ('Result list * 'State)
@@ -296,6 +330,15 @@ type internal DictionaryExtensions =
     [<Extension>]
     static member inline BagExistsValueForKey:
         dic: Dictionary<'key, 'value list> * key: 'key * f: ('value -> bool) -> bool
+
+[<Extension; Class>]
+type internal ConcurrentDictionaryExtensions =
+
+    /// GetOrAdd whose value is produced by 'factory' at most once per key and then cached. The value is held
+    /// behind a Lazy, so under contention every caller observes the same instance and 'factory' runs once per key.
+    [<Extension>]
+    static member GetOrAddLazy:
+        dic: ConcurrentDictionary<'key, Lazy<'value>> * key: 'key * factory: ('key -> 'value) -> 'value
 
 module internal Lazy =
     val force: x: Lazy<'T> -> 'T

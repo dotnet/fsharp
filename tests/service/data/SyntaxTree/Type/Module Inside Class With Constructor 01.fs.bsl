@@ -7,7 +7,8 @@ ImplFile
           [Types
              ([SynTypeDefn
                  (SynComponentInfo
-                    ([], None, [], [MyClass],
+                    ([], None, [],
+                     Some (LongIdent (SynLongIdent ([MyClass], [], [None]))),
                      PreXmlDoc ((4,0), FSharp.Compiler.Xml.XmlDocCollector),
                      false, None, (4,5--4,12)),
                   ObjectModel
@@ -38,7 +39,8 @@ ImplFile
                     WithKeyword = None })], (4,0--4,22));
            NestedModule
              (SynComponentInfo
-                ([], None, [], [InternalModule],
+                ([], None, [],
+                 Some (LongIdent (SynLongIdent ([InternalModule], [], []))),
                  PreXmlDoc ((5,4), FSharp.Compiler.Xml.XmlDocCollector), false,
                  None, (5,4--5,25)), false,
               [Let

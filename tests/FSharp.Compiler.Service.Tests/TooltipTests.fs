@@ -4,6 +4,7 @@
 #nowarn "57"
 
 open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Text
 open FSharp.Compiler.EditorServices
@@ -31,7 +32,7 @@ let testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource (expectedCon
 
     let checkResult =
         checker.ParseAndCheckFileInProject("A.fs", 0, Map.find "A.fs" files, projectOptions)
-        |> Async.RunImmediate
+        |> Async.RunSynchronouslyImmediate
 
     match checkResult with
     | _, FSharpCheckFileAnswer.Succeeded(checkResults) ->
@@ -66,7 +67,7 @@ let bar{caret} a b = a - b
 """
 
     testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource "Comment"
-    
+
 
 [<Fact>]
 let ``Display XML doc of signature file for partial AP if implementation doesn't have one`` () =
@@ -86,7 +87,7 @@ let (|IsThr{caret}ee|_|) x = if x = 3 then Some x else None
 """
 
     testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource "Comment"
-    
+
 
 [<Fact>]
 let ``Display XML doc of signature file for DU if implementation doesn't have one`` () =
@@ -99,7 +100,7 @@ type Bar =
     | Case1 of int * string
     | Case2 of string
 """
-               
+
     let implSource =
         """
 module Foo
@@ -196,7 +197,7 @@ type Bar =
     new: unit -> Bar
     member Foo: string
 """
-               
+
     let implSource =
         """
 module Foo
@@ -243,7 +244,7 @@ module Foo
 
 val a: int
 """
-               
+
     let implSource =
         """
 module Fo{caret}o
@@ -257,7 +258,7 @@ let a = 23
 let testToolTipSquashing source =
     let context = Checker.getResolveContext source
     let files = Map.ofArray [| "A.fs", SourceText.ofString context.Source |]
-    
+
     let documentSource fileName = Map.tryFind fileName files |> async.Return
 
     let projectOptions =
@@ -272,8 +273,8 @@ let testToolTipSquashing source =
 
     let checkResult =
         checker.ParseAndCheckFileInProject("A.fs", 0, Map.find "A.fs" files, projectOptions)
-        |> Async.RunImmediate
-        
+        |> Async.RunSynchronouslyImmediate
+
     match checkResult with
     | _, FSharpCheckFileAnswer.Succeeded(checkResults) ->
         // Get the tooltip for `bar`
@@ -290,8 +291,7 @@ let testToolTipSquashing source =
                                 | ToolTipElement.Group gr -> gr |> List.map (fun g -> g.MainDescription)
                                 | _ -> failwith "expected TooltipElement.Group")
                 |> List.concat
-                |> Array.concat
-                |> Array.sumBy (fun t -> if t.Tag = TextTag.LineBreak then 1 else 0)
+                |> List.sumBy (fun t -> t.Parts |> Array.sumBy (fun t -> if t.Tag = TextTag.LineBreak then 1 else 0))
             let squashedBreaks =
                 groupsSquashed
                 |> List.map
@@ -300,9 +300,8 @@ let testToolTipSquashing source =
                                 | ToolTipElement.Group gr -> gr |> List.map (fun g -> g.MainDescription)
                                 | _ -> failwith "expected TooltipElement.Group")
                 |> List.concat
-                |> Array.concat
-                |> Array.sumBy (fun t -> if t.Tag = TextTag.LineBreak then 1 else 0)
-                    
+                |> List.sumBy (fun t -> t.Parts |> Array.sumBy (fun t -> if t.Tag = TextTag.LineBreak then 1 else 0))
+
             Assert.True(breaks < squashedBreaks)
     | _ -> failwith "Expected checking to succeed."
 
@@ -369,24 +368,23 @@ let getCheckResults source options =
     checkResults
 
 
-let taggedTextsToString (t: TaggedText array) =
-    t
-    |> Array.map (fun taggedText -> taggedText.Text)
-    |> String.concat ""
-
-let assertAndExtractTooltip (ToolTipText(items)) =
-    Assert.Equal(1,items.Length)
-    match items[0] with
-    | ToolTipElement.Group [ singleElement ] ->
-        let toolTipText =
-            singleElement.MainDescription
-            |> taggedTextsToString
-        toolTipText, singleElement.XmlDoc, singleElement.Remarks |> Option.map taggedTextsToString
-    | _ -> failwith $"Expected group, got {items[0]}"
-    
 let assertAndGetSingleToolTipText items =
     let text,_xml,_remarks = assertAndExtractTooltip items
     text
+
+let getMainDescriptionTags (ToolTipText(items)) =
+    match items with
+    | ToolTipElement.Group [ singleElement ] :: _ -> singleElement.MainDescription
+    | _ -> failwith $"Expected single group in tooltip, got {items}"
+
+let assertNameTagInTooltip expectedTag expectedName (tooltip: ToolTipText) =
+    let tags = (getMainDescriptionTags tooltip).Parts
+    let found = tags |> Array.exists (fun t -> t.Tag = expectedTag && t.Text = expectedName)
+    let desc = tags |> Array.map (fun t -> sprintf "(%A, %s)" t.Tag t.Text) |> String.concat ", "
+    Assert.True(found, sprintf "Expected tag %A with text '%s' in tooltip, but found: %s" expectedTag expectedName desc)
+
+let assertToolTipIsEmpty (ToolTipText(items)) =
+    Assert.Empty items
 
 let normalize (s: string) = s.Replace("\r\n", "\n").Replace("\n\n", "\n")
 
@@ -425,7 +423,7 @@ let exists() = System.IO.Path.Exist{caret}s(null:string)
 """
     |> assertAndGetSingleToolTipText
     |> Assert.shouldBeEquivalentTo "System.IO.Path.Exists([<NotNullWhenAttribute (true)>] path: string | null) : bool"
-    
+
 [<FactForNETCOREAPP>]
 let ``Should display xml doc on a nullable BLC method`` () =
     Checker.getTooltipWithOptions [|"--checknulls+";"--langversion:preview"|] """
@@ -440,7 +438,7 @@ let exists() = System.IO.Path.Exi{caret}sts(null:string)
             | FSharpXmlDoc.FromXmlFile (_dll,sigPath) -> sigPath |> Assert.shouldBeEquivalentTo "M:System.IO.Path.Exists(System.String)"
             | _ -> failwith $"Xml wrong type %A{xml}"
 
-            
+
 [<FactForNETCOREAPP>]
 let ``Should display xml doc on fsharp hosted nullable function`` () =
     Checker.getTooltipWithOptions [|"--checknulls+";"--langversion:preview"|] """
@@ -457,7 +455,7 @@ let exists() = myFu{caret}nc(null)
             | FSharpXmlDoc.FromXmlText t ->
                  t.UnprocessedLines |> Assert.shouldBeEquivalentTo [|" This is a xml doc above myFunc"|]
             | _ -> failwith $"xml was %A{xml}"
-            text |> Assert.shouldBeEquivalentTo "val myFunc: x: (string | null) -> string | null"            
+            text |> Assert.shouldBeEquivalentTo "val myFunc: x: (string | null) -> string | null"
             remarks |> Assert.shouldBeEquivalentTo (Some "Full name: Foo.myFunc")
 
 
@@ -473,7 +471,7 @@ let getPath() = System.IO.Path.GetFile{caret}Name(null:string)
 System.IO.Path.GetFileName(path: string | null) : string | null""" |> normalize)
 
 [<FactForNETCOREAPP>]
-let ``Should display nullable Csharp code analysis annotations on TryParse pattern`` () =   
+let ``Should display nullable Csharp code analysis annotations on TryParse pattern`` () =
     Checker.getTooltipWithOptions [|"--checknulls+";"--langversion:preview"|] """
 module Foo
 
@@ -483,7 +481,7 @@ let success,version = System.Version.TryPar{caret}se(null)
     |> Assert.shouldBeEquivalentTo """System.Version.TryParse([<NotNullWhenAttribute (true)>] input: string | null, [<NotNullWhenAttribute (true)>] result: byref<System.Version | null>) : bool"""
 
 [<FactForNETCOREAPP>]
-let ``Display with nullable annotations can be squashed`` () =   
+let ``Display with nullable annotations can be squashed`` () =
     Checker.getTooltipWithOptions [|"--checknulls+";"--langversion:preview"|] """
 module Foo
 
@@ -491,9 +489,9 @@ let success,version = System.Version.Try{caret}Parse(null)
 """
     |> assertAndGetSingleToolTipText
     |> Assert.shouldBeEquivalentTo ("""System.Version.TryParse([<NotNullWhenAttribute (true)>] input: string | null, [<NotNullWhenAttribute (true)>] result: byref<System.Version | null>) : bool""" |> normalize)
-    
+
 [<FactForNETCOREAPP>]
-let ``Allows ref struct is shown on BCL interface declaration`` () =   
+let ``Allows ref struct is shown on BCL interface declaration`` () =
     Checker.getTooltipWithOptions [|"--checknulls+";"--langversion:preview"|] """
 module Foo
 
@@ -502,9 +500,9 @@ let myAction : Acti{caret}on<int> | null = null
 """
     |> assertAndGetSingleToolTipText
     |> Assert.shouldStartWith ("""type Action<'T (allows ref struct)>""" |> normalize)
-    
+
 [<FactForNETCOREAPP>]
-let ``Allows ref struct is shown for each T on BCL interface declaration`` () =   
+let ``Allows ref struct is shown for each T on BCL interface declaration`` () =
     Checker.getTooltipWithOptions [|"--checknulls+";"--langversion:preview"|] """
 module Foo
 
@@ -513,7 +511,7 @@ let myAction : Acti{caret}on<int,_,_,_> | null = null
 """
     |> assertAndGetSingleToolTipText
     |> Assert.shouldStartWith ("""type Action<'T1,'T2,'T3,'T4 (allows ref struct and allows ref struct and allows ref struct and allows ref struct)>""" |> normalize)
-    
+
 [<FactForNETCOREAPP>]
 let ``Allows ref struct is shown on BCL method usage`` () =
     Checker.getTooltip """
@@ -525,9 +523,9 @@ let doIt (dict:Dictionary<'a,'b>) = dict.GetAltern{caret}ateLookup<'a,'b,ReadOnl
 """
     |> assertAndGetSingleToolTipText
     |> Assert.shouldContain ("""'TAlternateKey (allows ref struct)""" |> normalize)
-    
+
 [<FactForNETCOREAPP>]
-let ``Allows ref struct is not shown on BCL interface usage`` () =   
+let ``Allows ref struct is not shown on BCL interface usage`` () =
     Checker.getTooltip """
 module Foo
 
@@ -583,6 +581,43 @@ let y = normaliz{caret}e' 5
     |> assertAndGetSingleToolTipText
     |> Assert.shouldBeEquivalentTo "val normalize': x: int -> int"
 
+[<Fact>]
+let ``Wildcard lambda parameter inside member with underscore instance identifier has no tooltip`` () =
+    Checker.getTooltip """
+type T () =
+    member _.M () =
+        fun _{caret} -> ()
+"""
+    |> assertToolTipIsEmpty
+
+[<Fact>]
+let ``Wildcard let binding inside member with underscore instance identifier has no tooltip`` () =
+    Checker.getTooltip """
+type T () =
+    member _.N () =
+        let _{caret} = () in ()
+"""
+    |> assertToolTipIsEmpty
+
+[<Fact>]
+let ``Wildcard match pattern inside member with underscore instance identifier has no tooltip`` () =
+    Checker.getTooltip """
+type T () =
+    member _.M (x: int) =
+        match x with
+        | _{caret} -> ()
+"""
+    |> assertToolTipIsEmpty
+
+[<Fact>]
+let ``Named self-identifier is not affected by wildcard discard fix`` () =
+    Checker.getTooltip """
+type T () =
+    member thi{caret}s.M () = ()
+"""
+    |> assertAndGetSingleToolTipText
+    |> Assert.shouldContain "T"
+
 // https://github.com/dotnet/fsharp/issues/13194
 [<Fact>]
 let ``Sig file XML doc fallback works for member whose name contains a single quote`` () =
@@ -602,3 +637,561 @@ let normaliz{caret}e' x = x + 1
 """
 
     testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource "Normalize with a prime"
+
+// https://github.com/dotnet/fsharp/issues/10540
+[<Fact>]
+let ``Instance method should be tagged as Method in tooltip`` () =
+    Checker.getTooltip """
+type T() =
+    member x.Metho{caret}d() = ()
+"""
+    |> assertNameTagInTooltip TextTag.Method "Method"
+
+// https://github.com/dotnet/fsharp/issues/10540
+[<Fact>]
+let ``Instance method with parameters should be tagged as Method in tooltip`` () =
+    Checker.getTooltip """
+type T() =
+    member x.Ad{caret}d(a: int, b: int) = a + b
+"""
+    |> assertNameTagInTooltip TextTag.Method "Add"
+
+// https://github.com/dotnet/fsharp/issues/10540
+[<Fact>]
+let ``Static method should be tagged as Method in tooltip`` () =
+    Checker.getTooltip """
+type T() =
+    static member Creat{caret}e() = T()
+"""
+    |> assertNameTagInTooltip TextTag.Method "Create"
+
+// https://github.com/dotnet/fsharp/issues/10540
+[<Fact>]
+let ``Property-like member should be tagged as Property`` () =
+    Checker.getTooltip """
+type T() =
+    member x.Valu{caret}e = 42
+"""
+    |> assertNameTagInTooltip TextTag.Property "Value"
+
+// https://github.com/dotnet/fsharp/issues/10540
+[<Fact>]
+let ``Auto property should be tagged as Property`` () =
+    Checker.getTooltip """
+namespace Foo
+
+type Bar() =
+    member val Fo{caret}o = "bla" with get, set
+"""
+    |> assertNameTagInTooltip TextTag.Property "Foo"
+
+// https://github.com/dotnet/fsharp/issues/10540
+[<Fact>]
+let ``Indexer should be tagged as Property`` () =
+    Checker.getTooltip """
+type T() =
+    member x.Ite{caret}m with get(i: int) = i
+"""
+    |> assertNameTagInTooltip TextTag.Property "Item"
+
+// https://github.com/dotnet/fsharp/issues/10540
+[<Fact>]
+let ``Indexer with getter and setter should be tagged as Property`` () =
+    Checker.getTooltip """
+type T() =
+    let mutable data = [| 0; 1; 2 |]
+    member x.Ite{caret}m
+        with get(i: int) = data.[i]
+        and set (i: int) (v: int) = data.[i] <- v
+"""
+    |> assertNameTagInTooltip TextTag.Property "Item"
+
+// https://github.com/dotnet/fsharp/issues/10540
+[<Fact>]
+let ``Property with explicit getter should be tagged as Property`` () =
+    Checker.getTooltip """
+type T() =
+    member x.Valu{caret}e with get() = 42
+"""
+    |> assertNameTagInTooltip TextTag.Property "Value"
+
+// https://github.com/dotnet/fsharp/issues/10540
+[<Fact>]
+let ``Static property should be tagged as Property`` () =
+    Checker.getTooltip """
+type T() =
+    static member Defaul{caret}t = T()
+"""
+    |> assertNameTagInTooltip TextTag.Property "Default"
+
+// https://github.com/dotnet/fsharp/issues/10540
+[<Fact>]
+let ``Named indexed property with getter should be tagged as Property`` () =
+    Checker.getTooltip """
+type T() =
+    member x.Valu{caret}e with get(key: string) = key
+"""
+    |> assertNameTagInTooltip TextTag.Property "Value"
+
+// https://github.com/dotnet/fsharp/issues/10540
+[<Fact>]
+let ``Named indexed property with getter and setter should be tagged as Property`` () =
+    Checker.getTooltip """
+type T() =
+    let mutable store = Map.empty<string, int>
+    member x.Valu{caret}e
+        with get(key: string) = store.[key]
+        and set (key: string) (v: int) = store <- store.Add(key, v)
+"""
+    |> assertNameTagInTooltip TextTag.Property "Value"
+
+// https://github.com/dotnet/fsharp/issues/10540
+[<Fact>]
+let ``Indexer with setter only (1 arg) should be tagged as Property`` () =
+    Checker.getTooltip """
+type T() =
+    let mutable data = [| 0 |]
+    member x.Ite{caret}m
+        with set (i: int) (v: int) = data.[i] <- v
+"""
+    |> assertNameTagInTooltip TextTag.Property "Item"
+
+// https://github.com/dotnet/fsharp/issues/10540
+[<Fact>]
+let ``Indexer with getter only (2 args) should be tagged as Property`` () =
+    Checker.getTooltip """
+type T() =
+    member x.Ite{caret}m with get (i: int, j: int) = i + j
+"""
+    |> assertNameTagInTooltip TextTag.Property "Item"
+
+// https://github.com/dotnet/fsharp/issues/10540
+[<Fact>]
+let ``Indexer with setter only (2 args) should be tagged as Property`` () =
+    Checker.getTooltip """
+type T() =
+    let store = System.Collections.Generic.Dictionary<int * int, int>()
+    member x.Ite{caret}m
+        with set (i: int, j: int) (v: int) = store[(i, j)] <- v
+"""
+    |> assertNameTagInTooltip TextTag.Property "Item"
+
+// https://github.com/dotnet/fsharp/issues/10540
+[<Fact>]
+let ``Indexer with getter and setter (2 args) should be tagged as Property`` () =
+    Checker.getTooltip """
+type T() =
+    let store = System.Collections.Generic.Dictionary<int * int, int>()
+    member x.Ite{caret}m
+        with get (i: int, j: int) = store[(i, j)]
+        and set (i: int, j: int) (v: int) = store[(i, j)] <- v
+"""
+    |> assertNameTagInTooltip TextTag.Property "Item"
+
+// https://github.com/dotnet/fsharp/issues/10540
+[<Fact>]
+let ``Named indexed property with setter only (1 arg) should be tagged as Property`` () =
+    Checker.getTooltip """
+type T() =
+    let mutable store = Map.empty<string, int>
+    member x.Valu{caret}e
+        with set (key: string) (v: int) = store <- store.Add(key, v)
+"""
+    |> assertNameTagInTooltip TextTag.Property "Value"
+
+// https://github.com/dotnet/fsharp/issues/10540
+[<Fact>]
+let ``Named indexed property with getter only (2 args) should be tagged as Property`` () =
+    Checker.getTooltip """
+type T() =
+    member x.Valu{caret}e with get (a: string, b: string) = a + b
+"""
+    |> assertNameTagInTooltip TextTag.Property "Value"
+
+// https://github.com/dotnet/fsharp/issues/10540
+[<Fact>]
+let ``Named indexed property with setter only (2 args) should be tagged as Property`` () =
+    Checker.getTooltip """
+type T() =
+    let mutable store = Map.empty<string * string, int>
+    member x.Valu{caret}e
+        with set (a: string, b: string) (v: int) = store <- store.Add((a, b), v)
+"""
+    |> assertNameTagInTooltip TextTag.Property "Value"
+
+// https://github.com/dotnet/fsharp/issues/10540
+[<Fact>]
+let ``Named indexed property with getter and setter (2 args) should be tagged as Property`` () =
+    Checker.getTooltip """
+type T() =
+    let mutable store = Map.empty<string * string, int>
+    member x.Valu{caret}e
+        with get (a: string, b: string) = store[(a, b)]
+        and set (a: string, b: string) (v: int) = store <- store.Add((a, b), v)
+"""
+    |> assertNameTagInTooltip TextTag.Property "Value"
+
+// =========================================================================
+// Tooltip display correctness for signature generation changes
+// =========================================================================
+
+// Backticked active pattern case names are already tested in
+// Signatures.TypeTests.fs via the roundtrip test.
+// Testing tooltip resolution for backticked identifiers with spaces
+// is not feasible due to QuickParse limitations.
+
+// SRTP inline function shows type params in tooltip
+[<Fact>]
+let ``Tooltip shows type params for SRTP inline function`` () =
+    Checker.getTooltip """
+module Foo
+let inline a{caret}dd (x: ^T) (y: ^T) : ^T = x + y
+"""
+    |> assertAndGetSingleToolTipText
+    |> fun text ->
+        // Tooltip shows 'T form (not ^T) with requires clause
+        Assert.Contains("'T", text)
+        Assert.Contains("requires", text)
+
+// Single-case struct DU tooltip shows without leading bar
+[<Fact>]
+let ``Tooltip shows single-case struct DU without bar`` () =
+    Checker.getTooltip """
+module Foo
+[<Struct>]
+type U{caret}0 = U0
+"""
+    |> assertAndGetSingleToolTipText
+    |> fun text ->
+        Assert.Contains("U0", text)
+
+// Inline function type param names are properly displayed in tooltip
+[<Fact>]
+let ``Tooltip shows inline function type params properly`` () =
+    Checker.getTooltip """
+module Foo
+let inline fo{caret}o< ^T> (x: ^T) = x
+"""
+    |> assertAndGetSingleToolTipText
+    |> fun text ->
+        // Type param appears in tooltip
+        Assert.Contains("'T", text)
+
+// https://github.com/dotnet/fsharp/issues/11612 / #15206
+// QuickInfo / SymbolUse for an overloaded CE [<CustomOperation>] keyword must reflect the
+// overload picked by normal F# overload resolution, not the first-registered one (which
+// corresponded to the last declared overload of the builder).
+//
+// NOTE: F# only allows overloaded custom operations whose underlying CLR members share the
+// same name (overloading is by signature, not by member name). Tests below use a single
+// shared method name `Filter` to mirror what the language actually supports.
+let private renderAllGroups (ToolTipText elements) =
+    let sb = System.Text.StringBuilder()
+    for el in elements do
+        match el with
+        | ToolTipElement.Group items ->
+            for item in items do
+                sb.Append(item.MainDescription.Text) |> ignore
+                sb.Append('\n') |> ignore
+                for line in item.XmlDoc |> (function FSharpXmlDoc.FromXmlText t -> t.UnprocessedLines |> Array.toList | _ -> []) do
+                    sb.AppendLine(line) |> ignore
+        | ToolTipElement.CompositionError msg -> sb.AppendLine(msg) |> ignore
+        | ToolTipElement.None -> ()
+    sb.ToString()
+
+[<Fact>]
+let ``CE custom operator QuickInfo XmlDoc reflects resolved int overload`` () =
+    let text =
+        Checker.getTooltip """
+type Builder() =
+    member _.Yield(x) = [x]
+    member _.For(xs, body) = xs |> List.collect body
+    /// INT_OVERLOAD_MARKER
+    [<CustomOperation("filterOp")>]
+    member _.Filter(xs: int list, [<ProjectionParameter>] f: int -> bool) = List.filter f xs
+    /// STRING_OVERLOAD_MARKER
+    [<CustomOperation("filterOp")>]
+    member _.Filter(xs: string list, [<ProjectionParameter>] f: string -> bool) = List.filter f xs
+
+let b = Builder()
+let result = b { for x in [1;2;3] do filterO{caret}p (x > 0) }
+"""
+        |> renderAllGroups
+    Assert.Contains("INT_OVERLOAD_MARKER", text)
+    Assert.DoesNotContain("STRING_OVERLOAD_MARKER", text)
+
+[<Fact>]
+let ``CE custom operator QuickInfo XmlDoc reflects resolved string overload`` () =
+    let text =
+        Checker.getTooltip """
+type Builder() =
+    member _.Yield(x) = [x]
+    member _.For(xs, body) = xs |> List.collect body
+    /// INT_OVERLOAD_MARKER
+    [<CustomOperation("filterOp")>]
+    member _.Filter(xs: int list, [<ProjectionParameter>] f: int -> bool) = List.filter f xs
+    /// STRING_OVERLOAD_MARKER
+    [<CustomOperation("filterOp")>]
+    member _.Filter(xs: string list, [<ProjectionParameter>] f: string -> bool) = List.filter f xs
+
+let b = Builder()
+let result = b { for x in ["a";"b"] do filterO{caret}p (x.Length > 0) }
+"""
+        |> renderAllGroups
+    Assert.Contains("STRING_OVERLOAD_MARKER", text)
+    Assert.DoesNotContain("INT_OVERLOAD_MARKER", text)
+
+[<Fact>]
+let ``CE single custom operator QuickInfo still works`` () =
+    Checker.getTooltip """
+type Builder() =
+    member _.Yield(x) = [x]
+    member _.For(xs, body) = xs |> List.collect body
+    [<CustomOperation("whereSingle")>]
+    member _.W(xs: int list, [<ProjectionParameter>] f: int -> bool) = List.filter f xs
+
+let b = Builder()
+let result = b { for x in [1;2;3] do whereSing{caret}le (x > 0) }
+"""
+    |> renderAllGroups
+    |> fun text -> Assert.Contains("whereSingle", text)
+
+[<Fact>]
+let ``Regular method overload QuickInfo unaffected`` () =
+    Checker.getTooltip """
+type T() =
+    member _.M(x: int) = x
+    member _.M(x: string) = x.Length
+let t = T()
+let r = t.M{caret}(42)
+"""
+    |> renderAllGroups
+    |> fun text -> Assert.Contains("int", text)
+
+// https://github.com/dotnet/fsharp/issues/15206
+// GetAllUsesOfAllSymbolsInFile must report the resolved overload's MethInfo for each
+// keyword usage, not the first-registered one.
+[<Fact>]
+let ``GetAllUsesOfAllSymbolsInFile reports resolved overload for each CE custom operation use`` () =
+    let source = """
+module M
+type FooBuilder() =
+    member _.Yield _ = 1
+    member _.For(xs, body) = xs |> Seq.iter body
+    [<CustomOperation "create">]
+    member _.Create(_, i1: int, s: string, i2: int) = [i1; i2]
+    [<CustomOperation "create">]
+    member _.Create(_, i: int, s1: string, s2: string) = [i; s1.Length; s2.Length]
+
+let b = FooBuilder()
+let _ = b { for x in [1] do create 1 "" 2 }
+let _ = b { for x in [1] do create 1 "" "" }
+"""
+    let _, checkResults = getParseAndCheckResults source
+
+    // Find the two usages of the `create` keyword.
+    let createKeywordUses =
+        checkResults.GetAllUsesOfAllSymbolsInFile()
+        |> Seq.filter (fun u ->
+            match u.Symbol with
+            | :? FSharpMemberOrFunctionOrValue as mfv ->
+                mfv.LogicalName = "Create"
+                && (u.Range.StartLine = 12 || u.Range.StartLine = 13)
+                && not u.IsFromDefinition
+            | _ -> false)
+        |> Seq.sortBy (fun u -> u.Range.StartLine)
+        |> List.ofSeq
+
+    Assert.Equal(2, createKeywordUses.Length)
+
+    let lastParamType (mfv: FSharpMemberOrFunctionOrValue) =
+        mfv.CurriedParameterGroups
+        |> Seq.collect id
+        |> Seq.last
+        |> fun p -> p.Type.Format(FSharpDisplayContext.Empty)
+
+    // First usage: 'create 1 "" 2' should resolve to the (int, string, int) overload.
+    let firstMfv = createKeywordUses[0].Symbol :?> FSharpMemberOrFunctionOrValue
+    Assert.Contains("int", lastParamType firstMfv)
+
+    // Second usage: 'create 1 "" ""' should resolve to the (int, string, string) overload.
+    let secondMfv = createKeywordUses[1].Symbol :?> FSharpMemberOrFunctionOrValue
+    Assert.Contains("string", lastParamType secondMfv)
+
+    // Sanity: each usage must resolve to a *different* overload (different MethInfo).
+    Assert.NotEqual<string>(lastParamType firstMfv, lastParamType secondMfv)
+
+// Covers the join/zip/groupJoin code path which enqueues with `mOpCore.MakeSynthetic()`
+// in `mkJoinExpr`/`mkZipExpr` rather than `mClause.MakeSynthetic()` used by the unary
+// `ConsumeCustomOpClauses` path. Validates that the deferred-sink mechanism also picks
+// the resolved overload here.
+[<Fact>]
+let ``GetAllUsesOfAllSymbolsInFile reports resolved overload for IsLikeZip CE custom operation`` () =
+    let source = """
+module M
+type ZBuilder() =
+    member _.Yield (x: 'a) = [x]
+    member _.For(xs: 'a list, body: 'a -> 'b list) = xs |> List.collect body
+    [<CustomOperation("select")>]
+    member _.Select(xs: 'a list, [<ProjectionParameter>] f: 'a -> 'b) = List.map f xs
+    [<CustomOperation("myzip", IsLikeZip = true)>]
+    member _.MyZip(outer: int list, inner: int list, resultSelector: int -> int -> 'r) =
+        List.map2 resultSelector outer inner
+    [<CustomOperation("myzip", IsLikeZip = true)>]
+    member _.MyZip(outer: string list, inner: string list, resultSelector: string -> string -> 'r) =
+        List.map2 resultSelector outer inner
+
+let b = ZBuilder()
+let _ = b { for x in [1;2] do
+            myzip y in [3;4]
+            select (x + y) }
+let _ = b { for x in ["a";"b"] do
+            myzip y in ["c";"d"]
+            select (x + y) }
+"""
+    let _, checkResults = getParseAndCheckResults source
+
+    let myzipKeywordUses =
+        checkResults.GetAllUsesOfAllSymbolsInFile()
+        |> Seq.filter (fun u ->
+            match u.Symbol with
+            | :? FSharpMemberOrFunctionOrValue as mfv ->
+                mfv.LogicalName = "MyZip" && not u.IsFromDefinition
+            | _ -> false)
+        |> Seq.sortBy (fun u -> u.Range.StartLine)
+        |> List.ofSeq
+
+    Assert.Equal(2, myzipKeywordUses.Length)
+
+    let firstParamType (mfv: FSharpMemberOrFunctionOrValue) =
+        mfv.CurriedParameterGroups
+        |> Seq.collect id
+        |> Seq.head
+        |> fun p -> p.Type.Format(FSharpDisplayContext.Empty)
+
+    let firstMfv = myzipKeywordUses[0].Symbol :?> FSharpMemberOrFunctionOrValue
+    Assert.Contains("int", firstParamType firstMfv)
+
+    let secondMfv = myzipKeywordUses[1].Symbol :?> FSharpMemberOrFunctionOrValue
+    Assert.Contains("string", firstParamType secondMfv)
+
+    Assert.NotEqual<string>(firstParamType firstMfv, firstParamType secondMfv)
+
+// When `Item.MethodGroup` arrives at the synthetic call range with *more than one* MethInfo
+// (the unrefined group fired by `ResolveExprDotLongIdentAndComputeRange` BEFORE
+// `AfterResolution.RecordResolution` settles), our wrapper's `[ mi ]` singleton pattern
+// must NOT match — capturing the unrefined list would replay the wrong overload (or all of
+// them). When overload resolution then fails (broken user code) and the refined singleton
+// notification never arrives, the dictionary slot stays at the pre-populated `Fallback`,
+// so the drain's `MethInfosUseIdenticalDefinitions` check returns true → no `Replacing`
+// → the early-sunk `Item.CustomOperation(opName, _, Some Fallback)` record stays at the
+// keyword. This is the right error-recovery behaviour: the user still sees *a* MethInfo
+// in QuickInfo / Find-All-References instead of nothing.
+[<Fact>]
+let ``Broken overloaded CE custom op call falls back to the eager opDatas[0] sink record`` () =
+    // The for-loop iterates over a list whose element type matches NEITHER overload's outer
+    // type, so F# overload resolution cannot pick a single overload. We expect:
+    //   * A type-error diagnostic.
+    //   * The keyword still has an Item.CustomOperation symbol-use record (the fallback) —
+    //     we just don't know which overload was picked, because none was.
+    let source = """
+module M
+type FooBuilder() =
+    member _.Yield _ = 1
+    member _.For(xs, body) = xs |> Seq.iter body
+    [<CustomOperation "pick">]
+    member _.Pick(_, x: int) = x
+    [<CustomOperation "pick">]
+    member _.Pick(_, x: string) = x
+
+let b = FooBuilder()
+let _ = b { for x in [true] do pick true }
+"""
+    let _, checkResults = getParseAndCheckResults source
+
+    // We expect a type-check error from overload resolution failing.
+    let errors =
+        checkResults.Diagnostics
+        |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
+
+    Assert.NotEmpty errors
+
+    // But the symbol-use record at the keyword 'pick' must still exist (the eager fallback
+    // sunk by enqueueDeferredCustomOpSink) — the wrapper just didn't get a chance to upgrade
+    // it. Without this graceful fallback, IDE features at the keyword would go blank on
+    // broken CE code.
+    let pickKeywordUses =
+        checkResults.GetAllUsesOfAllSymbolsInFile()
+        |> Seq.filter (fun u ->
+            match u.Symbol with
+            | :? FSharpMemberOrFunctionOrValue as mfv ->
+                mfv.LogicalName = "Pick" && not u.IsFromDefinition
+            | _ -> false)
+        |> List.ofSeq
+
+    Assert.Equal(1, pickKeywordUses.Length)
+
+let private getFullNameRemarks (source: string) =
+    let _mainDesc, _xml, remarks =
+        Checker.getTooltip source
+        |> assertAndExtractTooltip
+    match remarks with
+    | Some r -> r
+    | None -> failwith "Expected tooltip remarks containing 'Full name:'"
+
+[<Fact>]
+let ``Companion module tooltip shows demangled name`` () =
+    let remarks =
+        getFullNameRemarks """
+module TestNs
+type MyType = { F: int }
+module MyType =
+    let func1{caret}23 x = x
+"""
+    Assert.Contains("MyType.func123", remarks)
+    Assert.DoesNotContain("MyTypeModule", remarks)
+
+[<Fact>]
+let ``Non-companion module keeps literal name`` () =
+    let remarks =
+        getFullNameRemarks """
+module TestNs
+module HelperModule =
+    let doSt{caret}uff () = ()
+"""
+    Assert.Contains("HelperModule.doStuff", remarks)
+
+[<Fact>]
+let ``ModuleSuffix attribute without companion type demangles`` () =
+    let remarks =
+        getFullNameRemarks """
+module TestNs
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module Foo =
+    let x{caret} = 1
+"""
+    Assert.Contains("Foo.x", remarks)
+    Assert.DoesNotContain("FooModule", remarks)
+
+[<Fact>]
+let ``Nested companion module demangled`` () =
+    let remarks =
+        getFullNameRemarks """
+module TestNs
+module Outer =
+    type Inner = { v: int }
+    module Inner =
+        let hel{caret}per x = x
+"""
+    Assert.Contains("Outer.Inner.helper", remarks)
+    Assert.DoesNotContain("InnerModule", remarks)
+
+[<Fact>]
+let ``List dot map tooltip shows List not ListModule`` () =
+    let remarks =
+        getFullNameRemarks """
+module TestNs
+let _ = List.m{caret}ap id [1]
+"""
+    Assert.Contains("List.map", remarks)
+    Assert.DoesNotContain("ListModule", remarks)

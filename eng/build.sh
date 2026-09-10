@@ -26,7 +26,6 @@ usage()
   echo "Test actions:"
   echo "  --testcoreclr                  Run unit tests on .NET Core (short: --test, -t)"
   echo "  --testCompilerComponentTests   Run FSharp.Compiler.ComponentTests on .NET Core"
-  echo "  --testBenchmarks               Build and Run Benchmark suite"
   echo "  --testScripting                Run FSharp.Private.ScriptingTests on .NET Core"
   echo ""
   echo "Advanced settings:"
@@ -35,6 +34,8 @@ usage()
   echo "  --skipAnalyzers                Do not run analyzers during build operations"
   echo "  --skipBuild                    Do not run the build"
   echo "  --prepareMachine               Prepare machine for CI run, clean up processes after build"
+  echo "  --msbuildMultiThreaded <value> Sets MSBuild's multi-threaded mode, i.e. the -mt switch ('true' or 'false') (short: --mt)"
+  echo "  --nodeReuse <value>            Sets nodereuse msbuild parameter ('true' or 'false')"
   echo "  --sourceBuild                  Build the repository in source-only mode."
   echo "  --productBuild                 Build the repository in product-build mode."
   echo "  --fromVMR                      Set when building from within the VMR"
@@ -76,6 +77,8 @@ ci=false
 skip_analyzers=false
 skip_build=false
 prepare_machine=false
+# Empty means "not specified"; tools.sh leaves it off unless it's explicitly requested.
+msbuild_multi_threaded=''
 source_build=false
 product_build=false
 from_vmr=false
@@ -153,9 +156,6 @@ while [[ $# > 0 ]]; do
     --testcompilercomponenttests)
       test_compilercomponent_tests=true
       ;;
-      --testbenchmarks)
-      test_benchmarks=true
-      ;;
     --testscripting)
       test_scripting=true
       ;;
@@ -170,6 +170,14 @@ while [[ $# > 0 ]]; do
       ;;
     --preparemachine)
       prepare_machine=true
+      ;;
+    --msbuildmultithreaded|--mt)
+      msbuild_multi_threaded=$2
+      shift
+      ;;
+    --nodereuse)
+      node_reuse=$2
+      shift
       ;;
     --docker)
       docker=true
@@ -196,6 +204,9 @@ while [[ $# > 0 ]]; do
       shift
       ;;
     /p:*)
+      properties+=("$1")
+      ;;
+    /clp:*)
       properties+=("$1")
       ;;
     *)
@@ -249,8 +260,8 @@ function Test() {
   projectname="${projectname%.*}"
   testresultsdir="$artifacts_dir/TestResults/$configuration"
 
-  # MTP requires --solution flag for .sln files
-  if [[ "$testproject" == *.sln ]]; then
+  # MTP requires --solution flag for .sln/.slnx files
+  if [[ "$testproject" == *.sln ]] || [[ "$testproject" == *.slnx ]]; then
     testtarget="--solution"
   else
     testtarget="--project"
@@ -279,9 +290,9 @@ function BuildSolution {
     bl="/bl:\"$log_dir/Build.binlog\""
   fi
 
-  local projects="$repo_root/FSharp.sln"
+  local projects="$repo_root/FSharp.slnx"
   if [[ "$product_build" = true ]]; then
-    projects="$repo_root/Microsoft.FSharp.Compiler.sln"
+    projects="$repo_root/src/Microsoft.FSharp.Compiler/Microsoft.FSharp.Compiler.fsproj"
   fi
 
   echo "$projects:"
@@ -303,9 +314,6 @@ function BuildSolution {
   if [[ "$ci" != true ]]; then
     quiet_restore=true
   fi
-
-  # Node reuse fails because multiple different versions of FSharp.Build.dll get loaded into MSBuild nodes
-  node_reuse=false
 
   # build bootstrap tools
   # source_build=In source build proto does no work, except cause sourcebuild in wrapper to build
@@ -376,6 +384,9 @@ trap TrapAndReportError EXIT
 
 InitializeDotNetCli $restore
 
+# Apphosts (bootstrap fsc, testhost, etc.) resolve runtimes via DOTNET_ROOT, not PATH.
+export DOTNET_ROOT="$DOTNET_INSTALL_DIR"
+
 # Resolve product TFM from centralized source of truth if not overridden via --tfm
 if [[ "$tfm" == "" ]]; then
   tfm=$("$DOTNET_INSTALL_DIR/dotnet" msbuild "$scriptroot/TargetFrameworks.props" -getProperty:FSharpNetCoreProductTargetFramework 2>/dev/null | tr -d '[:space:]')
@@ -420,12 +431,6 @@ fi
 if [[ "$test_compilercomponent_tests" == true ]]; then
   coreclrtestframework=$tfm
   Test --testproject "$repo_root/tests/FSharp.Compiler.ComponentTests/FSharp.Compiler.ComponentTests.fsproj" --targetframework $coreclrtestframework
-fi
-
-if [[ "$test_benchmarks" == true ]]; then
-  pushd "$repo_root/tests/benchmarks"
-  ./SmokeTestBenchmarks.sh
-  popd
 fi
 
 if [[ "$test_scripting" == true ]]; then

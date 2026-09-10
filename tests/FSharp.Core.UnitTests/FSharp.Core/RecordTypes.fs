@@ -26,14 +26,14 @@ type StructRecord =
 type MutableStructRecord =
     {   mutable M1: int
         mutable M2: int
-    }                  
-    
+    }
+
 let private hasAttribute<'T,'Attr>() =
     typeof<'T>.GetTypeInfo().GetCustomAttributes() |> Seq.exists  (fun x -> x.GetType() = typeof<'Attr>)
 
 [<Struct>]
 type StructRecordDefaultValue =
-    {   [<DefaultValue (false)>] 
+    {   [<DefaultValue (false)>]
         R1: Record
         R2: StructRecord
     }
@@ -51,7 +51,7 @@ let [<Fact>] ``struct records have correct behaviour with a [<DefaultValue>] on 
 [<Struct>]
 type StructRecordDefaultValue2 =
     {   R1: Record
-        [<DefaultValue (false)>] 
+        [<DefaultValue (false)>]
         R2: StructRecord
     }
 
@@ -157,23 +157,23 @@ type DefaultLayoutMutableRecord =
         mutable Fourth  : int
     }
 
-let inline CX_get_A(x: ^T) = 
+let inline CX_get_A(x: ^T) =
     ( (^T : (member A : int) (x)) )
 
-let inline CX_get_C(x: ^T) = 
+let inline CX_get_C(x: ^T) =
     ( (^T : (member C : int) (x)) )
 
-let inline CX_set_First(x: ^T, v) = 
+let inline CX_set_First(x: ^T, v) =
     ( (^T : (member First : int with set) (x,v)) )
 
-type Members() = 
-    static member CreateMutableStructRecord() = { M1 = 1; M2 = 2 } 
+type Members() =
+    static member CreateMutableStructRecord() = { M1 = 1; M2 = 2 }
 
 type RecordTypesTestClass () =
     inherit TestClassWithSimpleNameAppDomainResolver ()
 
     [<Fact>]
-    member _.``can compare records`` () = 
+    member _.``can compare records`` () =
         Check.QuickThrowOnFailure <|
         fun (i1:int) (i2:int) ->
             i1 <> i2 ==>
@@ -205,9 +205,9 @@ type RecordTypesTestClass () =
             let sr1 = { C = i1; D = i2 }
             (match sr1 with
             | { C = c; D = d } when c = i1 && d = i2 -> true
-            | _ -> false) 
+            | _ -> false)
             |@ "with pattern match on struct record" .&.
-            (sr1 |> function 
+            (sr1 |> function
             | { C = c; D = d } when c = i1 && d = i2 -> true
             | _ -> false)
             |@ "function pattern match on struct record"
@@ -228,9 +228,9 @@ type RecordTypesTestClass () =
             let sr1 = { C = i1; D = i2 }
             let test sr1 ({ C = c1; D = d2 } as sr2) =
                 sr1 = sr2 && c1 = i1 && d2 = i2
-            test sr1 sr1      
-        
-        
+            test sr1 sr1
+
+
     [<Fact>]
     member _.``struct records fields can be mutated`` () =
         Check.QuickThrowOnFailure <|
@@ -247,12 +247,12 @@ type RecordTypesTestClass () =
         fun (i1:int) (i2:int) ->
             let sr1 = { C1 = i1; C2 = i2 }
             let sr2 = { C1 = i1; C2 = i2 }
-            (sr1.Equals sr2)      
+            (sr1.Equals sr2)
 
     [<Fact>]
     member _.``struct records support [<CustomComparison>]`` () =
         Check.QuickThrowOnFailure <|
-        fun (i1:int) (i2:int) (k1:int) (k2:int) ->        
+        fun (i1:int) (i2:int) (k1:int) (k2:int) ->
             let sr1 = { C1 = i1; C2 = i2 }
             let sr2 = { C1 = k1; C2 = k2 }
             if   sr1 > sr2 then compare sr1 sr2 = 1
@@ -272,7 +272,7 @@ type RecordTypesTestClass () =
 
     [<Fact>]
     member _.``struct records offset fields correctly with [<StructLayout(LayoutKind.Explicit)>] and [<FieldOffset x>]`` () =
-        let checkOffset fieldName offset = 
+        let checkOffset fieldName offset =
             offset = int (Marshal.OffsetOf (typeof<ExplicitLayoutStructRecord>, fieldName))
         Assert.True (checkOffset "X@" 0)
         Assert.True (checkOffset "Y@" 4)
@@ -280,7 +280,7 @@ type RecordTypesTestClass () =
 
     [<Fact>]
     member _.``struct records offset mutable fields correctly with [<StructLayout(LayoutKind.Explicit)>] and [<FieldOffset x>]`` () =
-        let checkOffset fieldName offset = 
+        let checkOffset fieldName offset =
             offset = int (Marshal.OffsetOf (typeof<ExplicitLayoutMutableStructRecord>, fieldName))
         Assert.True (checkOffset "X@" 0)
         Assert.True (checkOffset "Y@" 4)
@@ -288,7 +288,7 @@ type RecordTypesTestClass () =
 
     [<Fact>]
     member _.``struct records order fields correctly with [<StructLayout(LayoutKind.Sequential)>]`` () =
-        let compareOffsets field1 fn field2 = 
+        let compareOffsets field1 fn field2 =
             fn  (Marshal.OffsetOf (typeof<SequentialLayoutStructRecord>, field1))
                 (Marshal.OffsetOf (typeof<SequentialLayoutStructRecord>, field2))
         Assert.True (compareOffsets "First@"  (<) "Second@")
@@ -297,7 +297,7 @@ type RecordTypesTestClass () =
 
     [<Fact>]
     member _.``struct records default field order matches [<StructLayout(LayoutKind.Sequential)>]`` () =
-        let compareOffsets field1 fn field2 = 
+        let compareOffsets field1 fn field2 =
             fn  (Marshal.OffsetOf (typeof<DefaultLayoutStructRecord>, field1))
                 (Marshal.OffsetOf (typeof<SequentialLayoutStructRecord>, field2))
         Assert.True (compareOffsets "First@"  (=) "First@")
@@ -307,7 +307,7 @@ type RecordTypesTestClass () =
 
     [<Fact>]
     member _.``struct records order mutable field correctly with [<StructLayout(LayoutKind.Sequential)>]`` () =
-        let compareOffsets field1 fn field2 = 
+        let compareOffsets field1 fn field2 =
             fn  (Marshal.OffsetOf (typeof<SequentialLayoutMutableStructRecord>, field1))
                 (Marshal.OffsetOf (typeof<SequentialLayoutMutableStructRecord>, field2))
         Assert.True (compareOffsets "First@"  (<) "Second@")
@@ -335,7 +335,7 @@ type RecordTypesTestClass () =
 
         let v2 = CX_get_C ({ C = 1; D = 2 })
         Assert.AreEqual (1, v2)
-    
+
         let mutable m : DefaultLayoutMutableRecord =
             {   First   = 0xbaad1
                 Second  = 0.987654
@@ -350,6 +350,6 @@ type RecordTypesTestClass () =
 
         let v = Members.CreateMutableStructRecord()
         Assert.AreEqual (1, v.M1)
-    
+
         //let v2 = Members.CreateMutableStructRecord(M1 = 100)
         //Assert.AreEqual (100, v2.M1)

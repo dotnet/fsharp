@@ -83,7 +83,7 @@
 
   SOCKET PROTOCOL
   ===============
-  The shell script client (get-fsharp-errors.sh with the compile flag) handles socket path
+  The PowerShell client (get-fsharp-errors.ps1 with the Compile switch) handles socket path
   derivation (SHA256 of repo root), server auto-start, and UDS communication.
   It sends: {"command": "compile", "project": "<fsproj>", "output": "<dll-path>"}
   Server writes DLL to the output path and responds with OK or error.
@@ -100,7 +100,7 @@
   <PropertyGroup Condition="'$(FastBuildFromCache)' == 'true'
                              AND '$(AssemblyName)' == 'FSharp.Compiler.Service'">
     <_FastBuildFromCacheActive>true</_FastBuildFromCacheActive>
-    <_FastBuildScript>$(RepoRoot).github/skills/fsharp-diagnostics/scripts/get-fsharp-errors.sh</_FastBuildScript>
+    <_FastBuildScript>$(RepoRoot).github/skills/fsharp-diagnostics/scripts/get-fsharp-errors.ps1</_FastBuildScript>
   </PropertyGroup>
 
   <!--
@@ -156,7 +156,7 @@
       Using IgnoreExitCode + ContinueOnError so server failure → Fsc fallback.
     -->
     <Exec
-        Command="bash &quot;$(_FastBuildScript)&quot; --compile &quot;$(MSBuildProjectFullPath)&quot; &quot;@(IntermediateAssembly->'%(FullPath)')&quot;"
+        Command="pwsh -NoProfile -File &quot;$(_FastBuildScript)&quot; -Compile &quot;$(MSBuildProjectFullPath)&quot; &quot;@(IntermediateAssembly->'%(FullPath)')&quot;"
         ConsoleToMSBuild="true"
         IgnoreExitCode="true"
         StandardOutputImportance="normal"

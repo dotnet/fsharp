@@ -3,17 +3,21 @@
   <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.targets', '$(MSBuildThisFileDirectory)../'))" />
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Build.Framework" Version="$(MicrosoftBuildFrameworkVersion)" PrivateAssets="all" ExcludeAssets="contentFiles;analyzers;native" />
-    <PackageReference Include="Microsoft.Build.Tasks.Core" Version="$(MicrosoftBuildTasksCoreVersion)" PrivateAssets="all" ExcludeAssets="contentFiles;analyzers;native" />
-    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="$(MicrosoftBuildUtilitiesCoreVersion)" PrivateAssets="all" ExcludeAssets="contentFiles;analyzers;native" />
-    <PackageReference Include="Microsoft.Build" Version="$(MicrosoftBuildVersion)" PrivateAssets="all" ExcludeAssets="contentFiles;analyzers;native" />
-    <PackageReference Include="Microsoft.VisualStudio.OLE.Interop" Version="$(MicrosoftVisualStudioOLEInteropVersion)" PrivateAssets="compile" ExcludeAssets="compile" />
-    <PackageReference Include="Microsoft.VisualStudio.Shell.Interop" Version="$(MicrosoftVisualStudioShellInteropVersion)" PrivateAssets="compile" ExcludeAssets="compile" />
-    <PackageReference Include="Microsoft.VisualStudio.TextManager.Interop" Version="$(MicrosoftVisualStudioTextManagerInteropVersion)" PrivateAssets="compile" ExcludeAssets="compile" />
-    <PackageReference Include="System.Buffers" Version="$(SystemBuffersVersion)" PrivateAssets="all" ExcludeAssets="contentFiles;analyzers;native" />
-    <PackageReference Include="System.Composition" Version="$(SystemCompositionVersion)" PrivateAssets="all" ExcludeAssets="contentFiles;analyzers;native" />
-    <PackageReference Include="System.Memory" Version="$(SystemMemoryVersion)" PrivateAssets="all" ExcludeAssets="contentFiles;analyzers;native" />
-    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="$(SystemRuntimeCompilerServicesUnsafeVersion)" PrivateAssets="all" ExcludeAssets="contentFiles;analyzers;native" />
+    <PackageReference Include="Microsoft.Build.Framework" PrivateAssets="all" ExcludeAssets="contentFiles;analyzers;native" />
+    <PackageReference Include="Microsoft.Build.Tasks.Core" PrivateAssets="all" ExcludeAssets="contentFiles;analyzers;native" />
+    <PackageReference Include="Microsoft.Build.Utilities.Core" PrivateAssets="all" ExcludeAssets="contentFiles;analyzers;native" />
+    <PackageReference Include="Microsoft.Build" PrivateAssets="all" ExcludeAssets="contentFiles;analyzers;native" />
+    <PackageReference Include="Microsoft.VisualStudio.OLE.Interop" PrivateAssets="compile" ExcludeAssets="compile" />
+    <PackageReference Include="Microsoft.VisualStudio.Shell.Interop" PrivateAssets="compile" ExcludeAssets="compile" />
+    <PackageReference Include="Microsoft.VisualStudio.TextManager.Interop" PrivateAssets="compile" ExcludeAssets="compile" />
+    <PackageReference Include="System.Buffers" PrivateAssets="all" ExcludeAssets="contentFiles;analyzers;native" />
+    <PackageReference Include="System.Composition" PrivateAssets="all" ExcludeAssets="contentFiles;analyzers;native" />
+    <PackageReference Include="System.Memory" PrivateAssets="all" ExcludeAssets="contentFiles;analyzers;native" />
+    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" PrivateAssets="all" ExcludeAssets="contentFiles;analyzers;native" />
+    <!-- ServiceHub.Framework, RpcContracts and StreamJsonRpc are deliberately not pinned here: Roslyn's IDE
+         packages force their versions transitively, so re-pinning them is what triggers NU1109 on a Roslyn bump. -->
+    <!-- Validation pinned to match ExternalAccess's transitive version and avoid MSB3277 conflicts. -->
+    <PackageReference Include="Microsoft.VisualStudio.Validation" PrivateAssets="all" ExcludeAssets="contentFiles;analyzers;native" />
   </ItemGroup>
 
   <!-- New VS does not allow embedded interop assemblies ... this turns off the target that turns it on -->

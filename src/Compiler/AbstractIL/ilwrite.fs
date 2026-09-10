@@ -7,6 +7,7 @@ open System.Collections.Generic
 open System.IO
 
 open Internal.Utilities
+open FSharp.Compiler.Text
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.Diagnostics
 open FSharp.Compiler.AbstractIL.BinaryConstants
@@ -518,7 +519,7 @@ type cenv =
 
       emitTailcalls: bool
 
-      deterministic: bool    
+      deterministic: bool
 
       desiredMetadataVersion: ILVersionInfo
 
@@ -690,11 +691,11 @@ let GetTypeNameAsElemPair cenv n =
 
 let rec GenTypeDefPass1 enc cenv (tdef: ILTypeDef) =
     ignore (cenv.typeDefs.AddUniqueEntry "type index" (fun (TdKey (_, n)) -> n) (TdKey (enc, tdef.Name)))
- 
+
     // Verify that the typedef contains fewer than maximumMethodsPerDotNetType
     let count = tdef.Methods.AsArray().Length
     if count > maximumMethodsPerDotNetType then
-        errorR(Error(FSComp.SR.tooManyMethodsInDotNetTypeWritingAssembly (tdef.Name, count, maximumMethodsPerDotNetType), rangeStartup))
+        errorR(Error(FSComp.SR.tooManyMethodsInDotNetTypeWritingAssembly (RichText.ofQualifiedTypeName tdef.Name, count, maximumMethodsPerDotNetType), rangeStartup))
 
     GenTypeDefsPass1 (enc@[tdef.Name]) cenv (tdef.NestedTypes.AsList())
 
@@ -837,10 +838,10 @@ let hasthisToByte hasthis =
      | ILThisConvention.InstanceExplicit -> e_IMAGE_CEE_CS_CALLCONV_INSTANCE_EXPLICIT
      | ILThisConvention.Static -> 0x00uy
 
-let callconvToByte ntypars (Callconv (hasthis, bcc)) =
-    hasthisToByte hasthis |||
+let callconvToByte ntypars (callconv: ILCallingConv) =
+    hasthisToByte callconv.ThisConv |||
     (if ntypars > 0 then e_IMAGE_CEE_CS_CALLCONV_GENERIC else 0x00uy) |||
-    (match bcc with
+    (match callconv.BasicConv with
     | ILArgConvention.FastCall -> e_IMAGE_CEE_CS_CALLCONV_FASTCALL
     | ILArgConvention.StdCall -> e_IMAGE_CEE_CS_CALLCONV_STDCALL
     | ILArgConvention.ThisCall -> e_IMAGE_CEE_CS_CALLCONV_THISCALL
@@ -1100,7 +1101,7 @@ let GetMemberAccessFlags access =
 
 exception MethodDefNotFound
 
-let private MethodDefIdxExists cenv (mref: ILMethodRef) = 
+let private MethodDefIdxExists cenv (mref: ILMethodRef) =
     let tref = mref.DeclaringTypeRef
     if not (isTypeRefLocal tref) then
         // Method referred to by method impl, event or property is not in a type defined in this module.
@@ -1327,7 +1328,7 @@ and GenTypeDefPass2 pidx enc cenv (tdef: ILTypeDef) =
         // Now generate or assign index numbers for tables referenced by the maps.
         // Don't yet generate contents of these tables - leave that to pass3, as
         // code may need to embed these entries.
-        cenv.implementsIdxs[tidx] <- tdef.Implements.Value |> List.map (fun x -> GenImplementsPass2 cenv env tidx x.Type)            
+        cenv.implementsIdxs[tidx] <- tdef.Implements.Value |> List.map (fun x -> GenImplementsPass2 cenv env tidx x.Type)
 
         tdef.Fields.AsList() |> List.iter (GenFieldDefPass2 tdef cenv tidx)
         tdef.Methods |> Seq.iter (GenMethodDefPass2 tdef cenv tidx)
@@ -1506,7 +1507,7 @@ and GenCustomAttrsPass3Or4 cenv hca (attrs: ILAttributes) =
 // ILSecurityDecl --> DeclSecurity rows
 // -------------------------------------------------------------------- *)
 
-let rec GetSecurityDeclRow cenv hds (ILSecurityDecl (action, s)) =
+let rec GetSecurityDeclRow cenv hds (ILSecurityDecl.ILSecurityDecl (action, s)) =
     UnsharedRow
         [| UShort (uint16 (List.assoc action (Lazy.force ILSecurityActionMap)))
            HasDeclSecurity (fst hds, snd hds)
@@ -1600,7 +1601,7 @@ type ExceptionClauseSpec = int * int * int * int * ExceptionClauseKind
 
 /// Arbitrary value
 [<Literal>]
-let CodeBufferCapacity = 200 
+let CodeBufferCapacity = 200
 
 /// Buffer to write results of emitting code into. Also record:
 ///   - branch sources (where fixups will occur)
@@ -1668,6 +1669,13 @@ type CodeBuffer =
         codebuf.EmitInt32 0xdeadbeef
 
     member codebuf.RecordReqdBrFixups i tgs =
+        // Fixups are prepended at the current code position while the stream is emitted linearly, so the
+        // recorded fixupLoc is strictly increasing across calls. This means codebuf.reqdBrFixups ends up in
+        // strictly descending fixupLoc order, which applyBrFixups relies on (it uses List.rev instead of sorting).
+        // Assert the invariant here at its source rather than re-sorting defensively later.
+        match codebuf.reqdBrFixups with
+        | (_, prevLoc, _) :: _ -> System.Diagnostics.Debug.Assert(codebuf.code.Position > prevLoc, "RecordReqdBrFixups: fixupLoc must be strictly increasing")
+        | [] -> ()
         codebuf.reqdBrFixups <- (i, codebuf.code.Position, tgs) :: codebuf.reqdBrFixups
         // Write a special value in that we check later when applying the fixup
         // Value is 0x11 {deadbbbb}* where 11 is for the instruction and deadbbbb is for each target
@@ -1698,7 +1706,8 @@ module Codebuf =
         go 0 (Array.length arr)
 
     let applyBrFixups (origCode : byte[]) origExnClauses origReqdStringFixups (origAvailBrFixups: Dictionary<ILCodeLabel, int>) origReqdBrFixups origSeqPoints origScopes =
-      let orderedOrigReqdBrFixups = origReqdBrFixups |> List.sortBy (fun (_, fixupLoc, _) -> fixupLoc)
+      // RecordReqdBrFixups produces fixups in strictly descending fixupLoc order.
+      let orderedOrigReqdBrFixups = List.rev origReqdBrFixups
 
       use newCode = ByteBuffer.Create origCode.Length
 
@@ -2188,7 +2197,7 @@ module Codebuf =
               StartOffset=startOffset
               EndOffset=endOffset
               Locals=
-                  [| for x in ls do 
+                  [| for x in ls do
                        if x.LocalName <> "" then
                            { Name=x.LocalName
                              Signature= (try localSigs[x.LocalIndex] with _ -> failwith ("local variable index "+string x.LocalIndex+"in debug info does not reference a valid local"))
@@ -2337,12 +2346,12 @@ module Codebuf =
             applyBrFixups origCode origExnClauses origReqdStringFixups origAvailBrFixups origReqdBrFixups origSeqPoints origScopes
 
         let rootScope =
-            { 
+            {
               Children= Array.ofList newScopes
               StartOffset=0
               EndOffset=newCode.Length
-              Locals=[| |] 
-              Imports = importScope 
+              Locals=[| |]
+              Imports = importScope
             }
 
         (newReqdStringFixups, newExnClauses, newCode, newSeqPoints, rootScope)
@@ -2356,7 +2365,7 @@ let GetFieldDefTypeAsBlobIdx cenv env ty =
     GetBytesAsBlobIdx cenv bytes
 
 let GenPdbImport (cenv: cenv) (input: ILDebugImport) =
-    match input with 
+    match input with
     | ILDebugImport.ImportType ty ->
         let tspec = ty.TypeSpec
         let tok = getTypeInfoAsTypeDefOrRefEncoded cenv (tspec.Scope, tspec.Enclosing, tspec.Name)
@@ -2365,13 +2374,13 @@ let GenPdbImport (cenv: cenv) (input: ILDebugImport) =
     | ILDebugImport.ImportNamespace nsp -> PdbImport.ImportNamespace nsp
 
 let rec GenPdbImports (cenv: cenv) (input: ILDebugImports option) =
-    match input with 
+    match input with
     | None -> None
-    | Some ilImports -> 
+    | Some ilImports ->
         match cenv.pdbImports.TryGetValue(ilImports) with
         | true, v -> Some v
         | _ ->
-            let v : PdbImports = 
+            let v : PdbImports =
                 { Imports = ilImports.Imports |> Array.map (GenPdbImport cenv)
                   Parent = GenPdbImports cenv ilImports.Parent }
             cenv.pdbImports[ilImports] <- v
@@ -2540,7 +2549,7 @@ let rec GetGenericParamAsGenericParamRow cenv _env idx owner gp =
         (if gp.HasNotNullableValueTypeConstraint then 0x0008 else 0x0000) |||
         (if gp.HasDefaultConstructorConstraint then 0x0010 else 0x0000) |||
         (if gp.HasAllowsRefStruct then 0x0020 else 0x0000)
-   
+
 
     let mdVersionMajor, _ = metadataSchemaVersionSupportedByCLRVersion cenv.desiredMetadataVersion
     if (mdVersionMajor = 1) then
@@ -2699,8 +2708,11 @@ let GenMethodDefAsRow cenv env midx (mdef: ILMethodDef) =
           cenv.AddCode code
           addr
       | MethodBody.Abstract
-      | MethodBody.PInvoke _ ->
+      | MethodBody.PInvoke _
+      | MethodBody.NotAvailable ->
           // Now record the PDB record for this method - we write this out later.
+          // Metadata-only methods still participate in name ambiguity checks and occupy
+          // MethodDebugInformation rows even though they have no sequence points.
           if cenv.generatePdb then
             cenv.pdbinfo.Add
               { MethToken = getUncodedToken TableNames.Method midx
@@ -2713,7 +2725,7 @@ let GenMethodDefAsRow cenv env midx (mdef: ILMethodDef) =
           0x0000
       | MethodBody.Native ->
           failwith "cannot write body of native method - Abstract IL cannot roundtrip mixed native/managed binaries"
-      | _ -> 0x0000)
+      )
 
     UnsharedRow
        [| ULong codeAddr
@@ -2912,6 +2924,7 @@ let rec GenTypeDefPass3 enc cenv (tdef: ILTypeDef) =
         // ClassLayout entry if needed
         match tdef.Layout with
         | ILTypeDefLayout.Auto -> ()
+        | ILTypeDefLayout.Extended -> ()  // No ClassLayout row for Extended; bits are in TypeAttributes
         | ILTypeDefLayout.Sequential layout | ILTypeDefLayout.Explicit layout ->
             if Option.isSome layout.Pack || Option.isSome layout.Size then
                 AddUnsharedRow cenv TableNames.ClassLayout
@@ -3053,23 +3066,27 @@ and GetModuleAsRow (cenv: cenv) (modul: ILModuleDef) =
            Guid 0 |]
 
 
-let rowElemCompare (e1: RowElement) (e2: RowElement) =
-    let c = compare e1.Val e2.Val
-    if c <> 0 then c else
-    compare e1.Tag e2.Tag
-
 let TableRequiresSorting tab =
     List.memAssoc tab sortedTableInfo
 
 let SortTableRows tab (rows: GenericRow[]) =
     assert (TableRequiresSorting tab)
     let col = List.assoc tab sortedTableInfo
-    rows
-        // This needs to be a stable sort, so we use List.sortWith
-        |> Array.toList
-        |> List.sortWith (fun r1 r2 -> rowElemCompare r1[col] r2[col])
-        |> Array.ofList
-        //|> Array.map SharedRow
+    let n = rows.Length
+    if n <= 1 then
+        rows
+    else
+        System.Diagnostics.Debug.Assert(n <= 0xFFFFFF, "metadata table exceeds the 2^24-1 RID limit")
+        // Pack the key column per row into one int64: [Val:31 @ bit32][Tag:8 @ bit24][originalPos:24 @ bit0].
+        // Sorting the int64[] then orders by (Val, Tag, pos) = a stable (Val, Tag) sort.
+        let keys =
+            [| for i in 0 .. n - 1 ->
+                let e = rows[i][col]
+                ((int64 e.Val) <<< 32) ||| ((int64 e.Tag) <<< 24) ||| int64 i |]
+
+        System.Array.Sort keys
+        let result = [| for key in keys -> rows[int (key &&& 0xFFFFFFL)] |]
+        result
 
 let GenModule (cenv : cenv) (modul: ILModuleDef) =
     let midx = AddUnsharedRow cenv TableNames.Module (GetModuleAsRow cenv modul)
@@ -3108,7 +3125,7 @@ let generateIL (
     generatePdb,
     ilg: ILGlobals,
     emitTailcalls,
-    deterministic,  
+    deterministic,
     referenceAssemblyOnly,
     referenceAssemblyAttribOpt: ILAttribute option,
     allGivenSources,
@@ -3149,7 +3166,7 @@ let generateIL (
                 MetadataTable.Unshared (MetadataTable<UnsharedRow>.New ("row table "+string i, EqualityComparer.Default)))
     use cenv =
         { emitTailcalls=emitTailcalls
-          deterministic = deterministic         
+          deterministic = deterministic
           ilg = ilg
           desiredMetadataVersion=desiredMetadataVersion
           requiredDataFixups= requiredDataFixups
@@ -3266,7 +3283,7 @@ let writeILMetadataAndCode (
     desiredMetadataVersion,
     ilg,
     emitTailcalls,
-    deterministic,   
+    deterministic,
     referenceAssemblyOnly,
     referenceAssemblyAttribOpt,
     allGivenSources,
@@ -3288,7 +3305,7 @@ let writeILMetadataAndCode (
           generatePdb,
           ilg,
           emitTailcalls,
-          deterministic,       
+          deterministic,
           referenceAssemblyOnly,
           referenceAssemblyAttribOpt,
           allGivenSources,
@@ -3737,7 +3754,7 @@ let writeDirectory os dict =
 let writeBytes (os: BinaryWriter) (chunk: byte[]) = os.Write(chunk, 0, chunk.Length)
 
 let writePdb (
-    dumpDebugInfo,   
+    dumpDebugInfo,
     embeddedPDB,
     pdbfile,
     outfile,
@@ -3837,7 +3854,7 @@ let writePdb (
             failwith ("Error while writing debug directory entry: " + exn.Message)
             (try os2.Dispose(); FileSystem.FileDeleteShim outfile with _ -> ())
             reraise()
-           
+
     reportTime "Finish"
     pdbBytes
 
@@ -3854,12 +3871,18 @@ type options =
      checksumAlgorithm: HashAlgorithm
      signer: ILStrongNameSigner option
      emitTailcalls: bool
-     deterministic: bool  
+     deterministic: bool
      dumpDebugInfo: bool
      referenceAssemblyOnly: bool
      referenceAssemblyAttribOpt: ILAttribute option
      referenceAssemblySignatureHash : int option
-     pathMap: PathMap }
+     pathMap: PathMap
+     /// Hot reload baseline side channel: module-level CustomDebugInformation rows for
+     /// F#-owned records in the portable PDB. Empty for ordinary compiles.
+     moduleCustomDebugInfoRows: PdbModuleCustomDebugInfo list
+     /// Per-method EnC CustomDebugInformation rows for the portable PDB writer, keyed by
+     /// IL method name. Empty for ordinary compiles.
+     methodCustomDebugInfoRows: Map<string, PdbMethodCustomDebugInfo list> }
 
 let writeBinaryAux (stream: Stream, options: options, modul, normalizeAssemblyRefs) =
 
@@ -3980,7 +4003,7 @@ let writeBinaryAux (stream: Stream, options: options, modul, normalizeAssemblyRe
                   desiredMetadataVersion,
                   ilg,
                   options.emitTailcalls,
-                  options.deterministic,                 
+                  options.deterministic,
                   options.referenceAssemblyOnly,
                   options.referenceAssemblyAttribOpt,
                   options.allGivenSources,
@@ -4022,7 +4045,15 @@ let writeBinaryAux (stream: Stream, options: options, modul, normalizeAssemblyRe
             match options.pdbfile, options.portablePDB with
             | Some _, true ->
                 let pdbInfo =
-                    generatePortablePdb options.embedAllSource options.embedSourceList options.sourceLink options.checksumAlgorithm pdbData options.pathMap
+                    generatePortablePdb
+                        options.embedAllSource
+                        options.embedSourceList
+                        options.sourceLink
+                        options.checksumAlgorithm
+                        pdbData
+                        options.pathMap
+                        options.moduleCustomDebugInfoRows
+                        options.methodCustomDebugInfoRows
 
                 if options.embeddedPDB then
                     let uncompressedLength, contentId, stream, algorithmName, checkSum = pdbInfo
@@ -4186,16 +4217,16 @@ let writeBinaryAux (stream: Stream, options: options, modul, normalizeAssemblyRe
               | HashAlgorithm.Sha256 -> System.Security.Cryptography.SHA256.Create() :> System.Security.Cryptography.HashAlgorithm
 
           let hCode = sha.ComputeHash code
-          let hData = sha.ComputeHash data   
-          // Not yet suitable for the mvidsection optimization           
+          let hData = sha.ComputeHash data
+          // Not yet suitable for the mvidsection optimization
 
-          let deterministicId = 
+          let deterministicId =
             [| hCode
                hData
                match options.referenceAssemblyOnly, options.referenceAssemblySignatureHash with
                | true, Some impliedSigHash -> BitConverter.GetBytes(impliedSigHash)
-               | _ -> sha.ComputeHash metadata |] 
-            |> Array.collect id 
+               | _ -> sha.ComputeHash metadata |]
+            |> Array.collect id
             |> sha.ComputeHash
           let deterministicMvid () = deterministicId[0..15]
           let pdbData =
@@ -4589,7 +4620,7 @@ let writeBinaryFiles (options: options, modul, normalizeAssemblyRefs) =
     let reopenOutput () =
         FileSystem.OpenFileForWriteShim(options.outfile, FileMode.Open, FileAccess.ReadWrite, FileShare.Read)
 
-    writePdb (options.dumpDebugInfo,      
+    writePdb (options.dumpDebugInfo,
         options.embeddedPDB,
         options.pdbfile,
         options.outfile,
@@ -4621,7 +4652,7 @@ let writeBinaryInMemory (options: options, modul, normalizeAssemblyRefs) =
         stream
 
     let pdbBytes =
-        writePdb (options.dumpDebugInfo,         
+        writePdb (options.dumpDebugInfo,
             options.embeddedPDB,
             options.pdbfile,
             options.outfile,

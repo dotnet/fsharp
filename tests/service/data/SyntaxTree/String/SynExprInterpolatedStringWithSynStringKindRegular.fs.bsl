@@ -14,7 +14,8 @@ ImplFile
                   Named (SynIdent (s, None), false, None, (2,4--2,5)), None,
                   InterpolatedString
                     ([String ("yo ", (2,8--2,14));
-                      FillExpr (Const (Int32 42, (2,14--2,16)), None);
+                      FillExpr
+                        (Const (Int32 42, (2,14--2,16)), DotNet (None, None));
                       String ("", (2,16--2,18))], Regular, (2,8--2,18)),
                   (2,4--2,5), Yes (2,0--2,18), { LeadingKeyword = Let (2,0--2,3)
                                                  InlineKeyword = None

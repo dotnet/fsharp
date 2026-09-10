@@ -9,12 +9,12 @@ let inline testFunc (a : ^x) (b : ^y) =
     let r1 = (^x : (static member someFunc : unit -> ^x) ())
     let r2 = (^x : (static member someFunc : unit -> ^y) ())
     ()
- 
-type Foo(x) = 
+
+type Foo(x) =
     static member someFunc() = Foo(10)
-type OtherFoo(x) = 
+type OtherFoo(x) =
     static member someFunc() = Foo(20)
- 
+
 let r = testFunc (Foo(1)) (OtherFoo(2))
 let r2 = testFunc (OtherFoo(2)) (Foo(1))
 

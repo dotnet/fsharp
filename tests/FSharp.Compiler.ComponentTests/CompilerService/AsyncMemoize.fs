@@ -241,7 +241,7 @@ let ``Job keeps running if only one requestor cancels`` () =
         do! awaitHandle jobCanComplete
         return key * 2
     }
-        
+
     let memoize = AsyncMemoize<_, int, _>()
     let events = observe memoize
 
@@ -386,7 +386,7 @@ let ``Stress test`` () =
         |> Task.WhenAll
 
     if not (test.Wait testTimeoutMs) then failwith "Test timed out - most likely deadlocked"
-    
+
     Assert.Equal (threads * iterations, started)
     // Assert.Equal<int * int * int * int * int>((0,0,0,0,0),(started, completed, canceled, failed, timeout))
     Assert.Equal (started, completed + canceled + failed + timeout)
@@ -414,7 +414,7 @@ let ``Cancel running jobs with the same key`` () =
 
     let cts = new CancellationTokenSource()
 
-    let jobsToCancel = 
+    let jobsToCancel =
         [ for i in 1 .. 10 -> Async.StartAsTask(cache.Get(key i , work), cancellationToken = cts.Token) ]
 
     waitUntil events (countOf Started >> (=) 10)
@@ -439,7 +439,10 @@ let ``Cancel running jobs with the same key`` () =
 
     job.Wait()
 
-    let events = eventsWhen events (received Finished)
+    // Wait for all 11 jobs to reach a terminal state (canceled/finished/failed)
+    // before asserting, to avoid snapshot races where some Canceled events
+    // haven't been observed yet when the Finished event arrives.
+    let events = eventsWhen events (fun e -> countOf Canceled e + countOf Finished e + countOf Failed e >= 11)
 
     Assert.Equal(0, events |> countOf Failed)
 
@@ -452,12 +455,12 @@ type DummyException(msg) =
     inherit Exception(msg)
 
 [<Fact>]
-let ``Preserve thread static diagnostics`` () = 
+let ``Preserve thread static diagnostics`` () =
 
     let seed = System.Random().Next()
 
     let rng = System.Random seed
-    
+
     let job1Cache = AsyncMemoize()
     let job2Cache = AsyncMemoize()
 
@@ -469,7 +472,7 @@ let ``Preserve thread static diagnostics`` () =
     }
 
     let job2 (input: int) = async {
-        
+
         DiagnosticsThreadStatics.DiagnosticsLogger.Warning(DummyException("job2 error 1"))
 
         let! _ = Async.Sleep (rng.Next(1, 30))

@@ -419,6 +419,7 @@ type internal TransparentCompiler
         enableBackgroundItemKeyStoreAndSemanticClassification,
         enablePartialTypeChecking,
         parallelReferenceResolution,
+        shareImportedAssemblies,
         captureIdentifiersWhenParsing,
         getSource: (string -> Async<ISourceText option>) option,
         useChangeNotifications,
@@ -469,6 +470,7 @@ type internal TransparentCompiler
             enableBackgroundItemKeyStoreAndSemanticClassification,
             enablePartialTypeChecking,
             parallelReferenceResolution,
+            shareImportedAssemblies,
             captureIdentifiersWhenParsing,
             getSource,
             useChangeNotifications
@@ -612,8 +614,7 @@ type internal TransparentCompiler
                 tcConfig.primaryAssembly.Name,
                 tcConfig.GetTargetFrameworkDirectories(),
                 tcConfig.fsharpBinariesDir,
-                tcConfig.langVersion.SpecifiedVersion,
-                tcConfig.checkNullness
+                tcConfig.importReuseKey
             )
 
         caches.FrameworkImports.Get(
@@ -931,6 +932,7 @@ type internal TransparentCompiler
                 |> Some
 
             tcConfigB.parallelReferenceResolution <- parallelReferenceResolution
+            tcConfigB.shareImportedAssemblies <- shareImportedAssemblies
             tcConfigB.captureIdentifiersWhenParsing <- captureIdentifiersWhenParsing
 
             return tcConfigB, sourceFilesNew, loadClosureOpt
@@ -1308,30 +1310,6 @@ type internal TransparentCompiler
             return nodeGraph, graph
         }
 
-    let removeImplFilesThatHaveSignatures (projectSnapshot: ProjectSnapshot) (graph: Graph<FileIndex>) =
-
-        let removeIndexes =
-            projectSnapshot.SourceFileNames
-            |> Seq.mapi pair
-            |> Seq.groupBy (
-                snd
-                >> (fun fileName ->
-                    if fileName.EndsWith(".fsi") then
-                        fileName.Substring(0, fileName.Length - 1)
-                    else
-                        fileName)
-            )
-            |> Seq.map (snd >> Seq.toList)
-            |> Seq.choose (function
-                | [ idx1, _; idx2, _ ] -> max idx1 idx2 |> Some
-                | _ -> None)
-            |> Set
-
-        graph
-        |> Seq.filter (fun x -> not (removeIndexes.Contains x.Key))
-        |> Seq.map (fun x -> x.Key, x.Value |> Array.filter (fun node -> not (removeIndexes.Contains node)))
-        |> Graph.make
-
     let removeImplFilesThatHaveSignaturesExceptLastOne (projectSnapshot: ProjectSnapshotBase<_>) (graph: Graph<FileIndex>) =
 
         let removeIndexes =
@@ -1373,7 +1351,7 @@ type internal TransparentCompiler
     let ComputeDependencyGraphForProject (tcConfig: TcConfig) (projectSnapshot: ProjectSnapshotBase<FSharpParsedFile>) =
 
         let key = projectSnapshot.SourceFiles.Key(DependencyGraphType.Project)
-        //caches.DependencyGraph.Get(key, computeDependencyGraph parsedInputs (removeImplFilesThatHaveSignatures projectSnapshot))
+
         caches.DependencyGraph.Get(
             key,
             computeDependencyGraph tcConfig (projectSnapshot.SourceFiles |> Seq.map (fun f -> f.ParsedInput)) id
@@ -2194,7 +2172,6 @@ type internal TransparentCompiler
                                 yield options.ApplyLineDirectives
                                 yield options.DiagnosticOptions.GlobalWarnAsError
                                 yield options.IsInteractive
-                                yield! (Option.toList options.StrictIndentation)
                                 yield options.CompilingFSharpCore
                                 yield options.IsExe
                             ]

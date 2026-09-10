@@ -7,7 +7,7 @@ open Microsoft.Build.Evaluation
 open Microsoft.VisualStudio.FSharp.ProjectSystem
 open Microsoft.VisualStudio.Shell
 open System.Xml
-open System.Collections.Generic 
+open System.Collections.Generic
 open System.Diagnostics
 open System.IO
 open System
@@ -29,7 +29,7 @@ type internal MSBuildUtilities() =
     /// Normalize path directory separator characters to the OS defacto
     static let NormalizePath(path : string) =
         path.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar)
-    
+
     // Gets the <... Include="path"> path for this item, except if the item is a link, then
     // gets the <Link>path</Link> value instead.
     // In other words, gets the location that will be displayed in the solution explorer.
@@ -79,7 +79,7 @@ type internal MSBuildUtilities() =
                                                     result <- false
                                             result
                                     member this.GetHashCode(x) =
-                                        if x.Count = 0 then 
+                                        if x.Count = 0 then
                                             0
                                         else
                                             x.[x.Count - 1].GetHashCode() }
@@ -102,7 +102,7 @@ type internal MSBuildUtilities() =
                     if FolderComparer.Compare(x.[i], y.[i]) <> 0 then
                         result <- false
                 result
-        
+
         let SameList(x : List<string>, y : List<string>) =
             if x.Count <> y.Count then
                 false
@@ -112,7 +112,7 @@ type internal MSBuildUtilities() =
                     if x.[i] <> y.[i] then
                         r <- false
                 r
-        
+
         let mutable curPathParts = new List<string>()
         for bi in EnumerateItems(big) do
             let path = ComputeFolder(GetUnescapedUnevaluatedInclude(bi), projectNode.BaseURI)
@@ -135,7 +135,7 @@ type internal MSBuildUtilities() =
             let bi, count = kvp.Value
             if count <> 0 then
                 big.RemoveChild(bi)
-                                        
+
         big
 
     /// Partition items into an <ItemGroup> that matters for ordering and one that doesn't.  Return the former.
@@ -163,7 +163,7 @@ type internal MSBuildUtilities() =
         for i in List.rev otherBis do
             otherBig.AppendChild(i)
         EnsureProperFolderLogic msbuildProject newBig projectNode true
-            
+
     /// If necessary, partition items into an <ItemGroup> that matters for ordering and one that doesn't.  Return the former.
     /// Throw if cannot render and throwIfCannotRender=true.
     static let EnsureValid (msbuildProject : Project) (projectNode : ProjectNode) (throwIfCannotRender:bool) =
@@ -195,20 +195,20 @@ type internal MSBuildUtilities() =
             match priorGroupWithAtLeastOneItemThatMattersForOrdering with
             | Some(g) -> EnsureProperFolderLogic msbuildProject g projectNode throwIfCannotRender
             | None -> msbuildProject.Xml.AddItemGroup()
-            
+
     static member ThrowIfNotValidAndRearrangeIfNecessary (projectNode : ProjectNode) =
         EnsureValid projectNode.BuildProject projectNode true |> ignore
-        
-    static member private MoveFileAboveHelper(item : ProjectItemElement, itemToMoveAbove : ProjectItemElement, big : ProjectItemGroupElement, _projectNode : ProjectNode) =  
+
+    static member private MoveFileAboveHelper(item : ProjectItemElement, itemToMoveAbove : ProjectItemElement, big : ProjectItemGroupElement, _projectNode : ProjectNode) =
         // TODO wildcards?
         big.RemoveChild(item)
         big.InsertBeforeChild(item, itemToMoveAbove)
-        
-    static member private MoveFileBelowHelper(item : ProjectItemElement, itemToMoveBelow : ProjectItemElement, big : ProjectItemGroupElement, _projectNode : ProjectNode) =  
+
+    static member private MoveFileBelowHelper(item : ProjectItemElement, itemToMoveBelow : ProjectItemElement, big : ProjectItemGroupElement, _projectNode : ProjectNode) =
         // TODO wildcards?
         big.RemoveChild(item)
         big.InsertAfterChild(item, itemToMoveBelow)
-        
+
     /// Move a file node to its correct place in the build project.
     /// Its correct place is defined by where it sits in the hierarchy relative
     /// to other files.
@@ -216,16 +216,16 @@ type internal MSBuildUtilities() =
         let projectNode = fileNode.ProjectMgr
         let msbuildProject = projectNode.BuildProject
         let big = EnsureValid msbuildProject projectNode false
-        
+
         let itemToMove = fileNode.ItemNode.Item.Xml
         big.RemoveChild itemToMove
-            
+
         let precedingFile =
             projectNode.AllDescendants
             |> Seq.choose (function :? FileNode as fileNode -> Some fileNode | _ -> None)
             |> Seq.takeWhile ((<>) fileNode)
             |> Seq.tryLast
-            
+
         match precedingFile with
         | None ->
             // if there is no preceding file, it must be because we're
@@ -233,15 +233,15 @@ type internal MSBuildUtilities() =
             big.PrependChild itemToMove
         | Some precedingFile ->
             big.InsertAfterChild (itemToMove, precedingFile.ItemNode.Item.Xml)
-        
+
         // The project file should now be in a valid state
         MSBuildUtilities.ThrowIfNotValidAndRearrangeIfNecessary projectNode
-        
+
     /// Given a HierarchyNode, compute the last BuildItem if we want to move something after it
     static member private FindLast(toMoveAfter : HierarchyNode, projectNode : ProjectNode) =
         match toMoveAfter with
         | :? FileNode -> toMoveAfter.ItemNode.Item.Xml
-        | :? FolderNode -> 
+        | :? FolderNode ->
             // find the last item in this folder
             let folder = ComputeFolder(toMoveAfter.Url, projectNode.BaseURI)
             let msbuildProject = projectNode.BuildProject
@@ -295,7 +295,7 @@ type internal MSBuildUtilities() =
         let big = EnsureValid msbuildProject projectNode true
         let mutable index = 0
         let mutable itemToMoveBeforeIndex = -1
-        let itemsToMove = 
+        let itemsToMove =
             [for bi in EnumerateItems(big) do
                 let curFolder = ComputeFolder(GetUnescapedUnevaluatedInclude(bi), projectNode.BaseURI)
                 if curFolder.StartsWith(folderToBeMoved, StringComparison.OrdinalIgnoreCase) then
@@ -322,7 +322,7 @@ type internal MSBuildUtilities() =
         let big = EnsureValid msbuildProject projectNode true
         let mutable index = 0
         let mutable itemToMoveAfterIndex = -1
-        let itemsToMove = 
+        let itemsToMove =
             [for bi in EnumerateItems(big) do
                 let curFolder = ComputeFolder(GetUnescapedUnevaluatedInclude(bi), projectNode.BaseURI)
                 if curFolder.StartsWith(folderToBeMoved, StringComparison.OrdinalIgnoreCase) then

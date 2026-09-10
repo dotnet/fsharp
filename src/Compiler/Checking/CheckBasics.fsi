@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 module internal FSharp.Compiler.CheckBasics
 
@@ -9,6 +9,7 @@ open Internal.Utilities.Library
 open Internal.Utilities.Collections
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.CompilerGlobalState
+open FSharp.Compiler.Infos
 open FSharp.Compiler.ConstraintSolver
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Import
@@ -130,9 +131,18 @@ type TcEnv =
 
         eIsControlFlow: bool
 
+        /// Are we checking the body of an object expression? Such a body has family access to the
+        /// implemented type, but its closures are not nested under that type, so they cannot keep it (#5302).
+        eInObjectExpr: bool
+
         // In order to avoid checking implicit-yield expressions multiple times, we cache the resulting checked expressions.
         // This avoids exponential behavior in the type checker when nesting implicit-yield expressions.
         eCachedImplicitYieldExpressions: HashMultiMap<range, SynExpr * TType * Expr>
+
+        /// Stamps of local values introduced by `use` bindings currently in scope.
+        /// Used to suppress duplicate Dispose calls when a `use` binding's
+        /// right-hand side is a reference to an already-use-bound value (issue #12300).
+        eUseBoundValStamps: Set<Stamp>
     }
 
     member DisplayEnv: DisplayEnv
@@ -140,6 +150,11 @@ type TcEnv =
     member NameEnv: NameResolutionEnv
 
     member AccessRights: AccessorDomain
+
+    /// Makes this environment available in a form that can be stored into a trait during solving.
+    member TraitContext: ITraitContext option
+
+    interface ITraitContext<AccessorDomain, MethInfo, InfoReader>
 
 /// Represents the current environment of type variables that have implicit scope
 /// (i.e. are without explicit declaration).
@@ -150,7 +165,12 @@ type UnscopedTyparEnv = UnscopedTyparEnv of NameMap<Typar>
 ///
 /// The declared type parameters, e.g. let f<'a> (x:'a) = x, plus an indication
 /// of whether additional polymorphism may be inferred, e.g. let f<'a, ..> (x:'a) y = x
-type ExplicitTyparInfo = ExplicitTyparInfo of rigidCopyOfDeclaredTypars: Typars * declaredTypars: Typars * infer: bool
+type ExplicitTyparInfo =
+    | ExplicitTyparInfo of
+        rigidCopyOfDeclaredTypars: Typars *
+        declaredTypars: Typars *
+        infer: bool *
+        hasExplicitTyparDecls: bool
 
 type ArgAndRetAttribs = ArgAndRetAttribs of Attribs list list * Attribs
 
@@ -194,8 +214,14 @@ type TcPatPhase2Input =
 
     member WithRightPath: unit -> TcPatPhase2Input
 
-/// Represents the context flowed left-to-right through pattern checking
-type TcPatLinearEnv = TcPatLinearEnv of tpenv: UnscopedTyparEnv * names: NameMap<PrelimVal1> * takenNames: Set<string>
+/// Represents the context flowed left-to-right through pattern checking.
+/// 'usesActivePattern' is true if an active pattern occurs in the pattern; see TcLetBinding.
+type TcPatLinearEnv =
+    | TcPatLinearEnv of
+        tpenv: UnscopedTyparEnv *
+        names: NameMap<PrelimVal1> *
+        takenNames: Set<string> *
+        usesActivePattern: bool
 
 /// Represents the flags passed to TcPat regarding the binding location
 type TcPatValFlags =
@@ -273,6 +299,9 @@ type TcFileState =
         /// Since they need to be later mutated with updates from signature files this should make sure
         /// we're always dealing with the same instance and the updates don't get lost
         argInfoCache: ConcurrentDictionary<string * range, ArgReprInfo>
+
+        /// Inherit clauses whose type already failed UndefinedName; skip re-resolution to avoid duplicate FS0039.
+        inheritResolutionFailed: ConcurrentDictionary<struct (Stamp * range), unit>
 
         // forward call
         TcPat:

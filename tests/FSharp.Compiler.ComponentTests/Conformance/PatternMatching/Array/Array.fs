@@ -16,7 +16,7 @@ module Array =
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
-        
+
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Array)
     [<Theory; FileInlineData("arrayMatch02.fs")>]
     let ``Array - arrayMatch02_fs - --test:ErrorRanges`` compilation =
@@ -26,7 +26,7 @@ module Array =
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
-        
+
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Array)
     [<Theory; FileInlineData("arrayMatch03.fs")>]
     let ``Array - arrayMatch03_fs - --test:ErrorRanges`` compilation =
@@ -36,7 +36,7 @@ module Array =
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
-        
+
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Array)
     [<Theory; FileInlineData("TrailingSemi01.fs")>]
     let ``Array - TrailingSemi01_fs - --test:ErrorRanges`` compilation =

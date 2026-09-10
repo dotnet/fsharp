@@ -225,6 +225,12 @@ type TypeCheckingConfig =
         DumpGraph: bool
     }
 
+/// A field belongs here when two projects differing in it cannot reuse one imported form
+[<RequireQualifiedAccess>]
+type ImportReuseKey =
+    { LangVersion: decimal
+      CheckNullness: bool }
+
 [<NoEquality; NoComparison>]
 type TcConfigBuilder =
     {
@@ -470,7 +476,7 @@ type TcConfigBuilder =
 
         mutable emitDebugInfoInQuotations: bool
 
-        mutable strictIndentation: bool option
+        mutable alwaysInline: bool option
 
         mutable exename: string option
 
@@ -514,6 +520,8 @@ type TcConfigBuilder =
         mutable exiter: Exiter
 
         mutable parallelReferenceResolution: ParallelReferenceResolution
+
+        mutable shareImportedAssemblies: bool
 
         mutable captureIdentifiersWhenParsing: bool
 
@@ -812,7 +820,7 @@ type TcConfig =
 
     member FxResolver: FxResolver
 
-    member strictIndentation: bool option
+    member alwaysInline: bool
 
     member GetTargetFrameworkDirectories: unit -> string list
 
@@ -888,9 +896,13 @@ type TcConfig =
 
     member parallelReferenceResolution: ParallelReferenceResolution
 
+    member shareImportedAssemblies: bool
+
     member captureIdentifiersWhenParsing: bool
 
     member typeCheckingConfig: TypeCheckingConfig
+
+    member importReuseKey: ImportReuseKey
 
     member dumpSignatureData: bool
 

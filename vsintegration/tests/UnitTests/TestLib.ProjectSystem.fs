@@ -2,7 +2,7 @@
 
 namespace UnitTests.TestLib.ProjectSystem
 
-open System 
+open System
 open System.CodeDom
 open System.CodeDom.Compiler
 open System.Runtime.Serialization
@@ -23,7 +23,7 @@ open Microsoft.VisualStudio.Shell.Interop
 
 open Microsoft.Build.Execution
 open Microsoft.Build.Framework
-        
+
 #nowarn "52" // The value has been copied to ensure the original is not mutated
 open Xunit
 open UnitTests.TestLib.Utils
@@ -31,7 +31,7 @@ open UnitTests.TestLib.Utils.Asserts
 open UnitTests.TestLib.Utils.FilesystemHelpers
 
 type internal UnitTestingFSharpProjectNode(package:FSharpProjectPackage) as this =
-    inherit FSharpProjectNode(package) 
+    inherit FSharpProjectNode(package)
 
     do this.InteropSafeIVsHierarchy <- this
        this.InteropSafeIVsUIHierarchy <- this
@@ -49,7 +49,7 @@ type Tree<'T> =
     | Tree of (*data*)'T * (*firstChild*)Tree<'T> * (*nextSibling*)Tree<'T>
     | Nil
 
-type TheTests() = 
+type TheTests() =
     static let Net35RefAssemPathOnThisMachine() =
         let key = @"SOFTWARE\Microsoft\.NETFramework\AssemblyFolders\Microsoft .NET Framework 3.5 Reference Assemblies"
         let hklm = Registry.LocalMachine
@@ -57,25 +57,25 @@ type TheTests() =
         rkey.GetValue("") :?> string
 
     static let ANYTREE = Tree("",Nil,Nil)
-   
-            
+
+
     /////////////////////////////////
     // project helpers
     static let SaveProject(project : UnitTestingFSharpProjectNode) =
         project.Save(null, 1, 0u) |> ignore
 
-    static let DefaultBuildActionOfFilename(filename) : Salsa.BuildAction = 
-        match Path.GetExtension(filename) with 
+    static let DefaultBuildActionOfFilename(filename) : Salsa.BuildAction =
+        match Path.GetExtension(filename) with
         | ".fsx" -> Salsa.BuildAction.None
         | ".resx"
         | ".resources" -> Salsa.BuildAction.EmbeddedResource
-        | _ -> Salsa.BuildAction.Compile            
+        | _ -> Salsa.BuildAction.Compile
 
     static let GetReferenceContainerNode(project : ProjectNode) =
         let l = new List<ReferenceContainerNode>()
         project.FindNodesOfType(l)
-        l.[0]            
-        
+        l.[0]
+
     /////////////////////////////////
     /// helpers
     static member AssertMatches (r : Regex) (s:string) =
@@ -95,7 +95,7 @@ type TheTests() =
         TheTests.AssertMatches (new Regex(regexStr)) s
 
     static member PrintHierarchy(node : HierarchyNode) =
-        let rec nSpaces n = 
+        let rec nSpaces n =
             if n = 0 then "" else "    " + nSpaces (n-1)
         let rec Print(node : HierarchyNode, level : int) =
             printfn "%s%s" (nSpaces level) node.Caption
@@ -139,30 +139,30 @@ type TheTests() =
         let p = TheTests.CreateProject(filename, "false", configChangeNotifier, sp)
         // ensure that vs-style encoding is off
         p
-        
+
     static member internal CreateProjectWithUTF8Output(filename: string) =
         let sp, configChangeNotifier = VsMocks.MakeMockServiceProviderAndConfigChangeNotifier()
         let p = TheTests.CreateProject(filename, "true", configChangeNotifier, sp)
         p
-      
+
     static member internal FindNodeWithCaption(project: UnitTestingFSharpProjectNode, caption) =
         let node = project.FirstChild
         let rec TryFind (n : HierarchyNode) =
-            if n = null then None 
-            elif n.Caption = caption then Some(n) 
+            if n = null then None
+            elif n.Caption = caption then Some(n)
             else match TryFind(n.FirstChild) with
                  | None -> TryFind(n.NextSibling)
                  | x -> x
         match TryFind node with
         | Some(x) -> x
         | None -> failwithf "did not find node with caption %s" caption
-       
+
     static member MoveDown(node: HierarchyNode) =
         match node with
-        | :? FSharpFileNode 
-        | :? FSharpFolderNode -> 
+        | :? FSharpFileNode
+        | :? FSharpFolderNode ->
             TheTests.EnsureMoveDownEnabled(node)
-            node.ExecCommandOnNode(VSProjectConstants.guidFSharpProjectCmdSet, 
+            node.ExecCommandOnNode(VSProjectConstants.guidFSharpProjectCmdSet,
                                    uint32 VSProjectConstants.MoveDownCmd.ID,
                                    uint32 0, new IntPtr(0), new IntPtr(0)) |> ignore
         | _ -> failwith "unexpected node type"
@@ -170,10 +170,10 @@ type TheTests() =
 
     static member MoveUp(node: HierarchyNode) =
         match node with
-        | :? FSharpFileNode 
+        | :? FSharpFileNode
         | :? FSharpFolderNode ->
             TheTests.EnsureMoveUpEnabled(node)
-            node.ExecCommandOnNode(VSProjectConstants.guidFSharpProjectCmdSet, 
+            node.ExecCommandOnNode(VSProjectConstants.guidFSharpProjectCmdSet,
                                    uint32 VSProjectConstants.MoveUpCmd.ID,
                                    uint32 0, new IntPtr(0), new IntPtr(0)) |> ignore
         | _ -> failwith "unexpected node type"
@@ -185,43 +185,43 @@ type TheTests() =
         ValidateOK(node.QueryStatusOnNode(VSProjectConstants.guidFSharpProjectCmdSet, uint32 VSProjectConstants.MoveDownCmd.ID, 0n, &qsr))
         let expected = QueryStatusResult.SUPPORTED
         AssertEqual expected qsr
-        
+
     static member EnsureMoveDownEnabled(node : HierarchyNode) =
         // Move Down appears on menu, and can be clicked
         let mutable qsr = new QueryStatusResult()
         ValidateOK(node.QueryStatusOnNode(VSProjectConstants.guidFSharpProjectCmdSet, uint32 VSProjectConstants.MoveDownCmd.ID, 0n, &qsr))
         let expected = QueryStatusResult.SUPPORTED ||| QueryStatusResult.ENABLED
         AssertEqual expected qsr
-             
+
     static member EnsureMoveUpDisabled(node : HierarchyNode) =
         // Move Up appears on menu, but is greyed out
         let mutable qsr = new QueryStatusResult()
         ValidateOK(node.QueryStatusOnNode(VSProjectConstants.guidFSharpProjectCmdSet, uint32 VSProjectConstants.MoveUpCmd.ID, 0n, &qsr))
         let expected = QueryStatusResult.SUPPORTED
         AssertEqual expected qsr
-        
+
     static member EnsureMoveUpEnabled(node : HierarchyNode) =
         // Move Up appears on menu, and can be clicked
         let mutable qsr = new QueryStatusResult()
         ValidateOK(node.QueryStatusOnNode(VSProjectConstants.guidFSharpProjectCmdSet, uint32 VSProjectConstants.MoveUpCmd.ID, 0n, &qsr))
         let expected = QueryStatusResult.SUPPORTED ||| QueryStatusResult.ENABLED
         AssertEqual expected qsr
-             
-    static member SimpleFsprojText(compileItems : string list, references : string list, other : string) = 
+
+    static member SimpleFsprojText(compileItems : string list, references : string list, other : string) =
         TheTests.FsprojTextWithProjectReferences(compileItems, references, [], other)
-        
-    static member SimpleFsprojTextOtherFlags(compileItems : string list, references : string list, otherflags : string, other : string) = 
+
+    static member SimpleFsprojTextOtherFlags(compileItems : string list, references : string list, otherflags : string, other : string) =
         TheTests.FsprojTextWithProjectReferencesAndOtherFlags(compileItems, references, [], otherflags, other)
-    
-    static member public FsprojTextWithProjectReferences(compileItems : string list, references : string list, projectReferences : string list, other : string) = 
+
+    static member public FsprojTextWithProjectReferences(compileItems : string list, references : string list, projectReferences : string list, other : string) =
         let vsops = Salsa.Salsa.BuiltMSBuildTestFlavour()
         let references = references |> List.map (fun r->r,false)
         let items = [for i in compileItems -> (i,DefaultBuildActionOfFilename i, None)]
         let text = vsops.CreatePhysicalProjectFileInMemory(items, references, projectReferences, [], [], null, null, other, null)
         printfn "%s" text
         text
-        
-    static member public FsprojTextWithProjectReferencesAndOtherFlags(compileItems : string list, references : string list, projectReferences : string list, otherflags : string, other : string, targetFramework : string) = 
+
+    static member public FsprojTextWithProjectReferencesAndOtherFlags(compileItems : string list, references : string list, projectReferences : string list, otherflags : string, other : string, targetFramework : string) =
         let vsops = Salsa.Salsa.BuiltMSBuildTestFlavour()
         let references = references |> List.map (fun r->r,false)
         let items = [for i in compileItems -> (i,DefaultBuildActionOfFilename i, None)]
@@ -229,7 +229,7 @@ type TheTests() =
         printfn "%s" text
         text
 
-    static member public FsprojTextWithProjectReferencesAndOtherFlags(compileItems : string list, references : string list, projectReferences : string list, otherflags : string, other : string) = 
+    static member public FsprojTextWithProjectReferencesAndOtherFlags(compileItems : string list, references : string list, projectReferences : string list, otherflags : string, other : string) =
         TheTests.FsprojTextWithProjectReferencesAndOtherFlags(compileItems, references, projectReferences, otherflags, other, null)
 
     static member AssertSameTree(expectation : Tree<string>, node : HierarchyNode) =
@@ -240,9 +240,9 @@ type TheTests() =
     static member AssertSameTreeHelper(expectation : Tree<string>, node : HierarchyNode) =
         match expectation with
         | Tree _ as x when Object.Equals(x, ANYTREE) -> ()
-        | Nil -> 
+        | Nil ->
             AssertEqual null node
-        | Tree(name,firstChild,nextSibling) -> 
+        | Tree(name,firstChild,nextSibling) ->
             AssertEqual name node.Caption
             TheTests.AssertSameTreeHelper(firstChild, node.FirstChild)
             TheTests.AssertSameTreeHelper(nextSibling, node.NextSibling)
@@ -258,12 +258,12 @@ type TheTests() =
                     Some value
                 else
                     None
-            let initialContext = 
-                sprintf "%sWhile expecting '\n%s\n' to match '\n%s\n', " 
-                    outerContext 
-                    (expectation.ToString(SaveOptions.None)) 
+            let initialContext =
+                sprintf "%sWhile expecting '\n%s\n' to match '\n%s\n', "
+                    outerContext
+                    (expectation.ToString(SaveOptions.None))
                     (actual.ToString(SaveOptions.None))
-            let Err s = 
+            let Err s =
                 sprintf "%sfound error:\n%s" initialContext s
             if expectation.Name.LocalName <> actual.Name.LocalName then
                 Assert.Fail(Err <| sprintf "Expected element name '%s' but got '%s'" expectation.Name.LocalName actual.Name.LocalName)
@@ -282,22 +282,22 @@ type TheTests() =
                 Assert.Fail(Err <| sprintf "Expected '%d' sub-elements, but found '%d'" exLen actLen)
             (expectation.Elements(), actual.Elements()) ||> Seq.iter2 (fun x y -> Match(x,y,initialContext+"\n"))
         Match(expectation, actual, "")
-    
+
     static member internal Sources (project : UnitTestingFSharpProjectNode) =
         let MakeRelativePath (file : string) =
             let projDir = project.ProjectFolder + "\\"
-            if file.StartsWith(projDir) then 
+            if file.StartsWith(projDir) then
                 file.Substring(projDir.Length)
             else
                 file
         project.CompilationSourceFiles |> Array.toList |> List.map MakeRelativePath
- 
+
     member internal this.MakeProjectAndDoWithProjectFileAndConfigChangeNotifierDispose(dispose : bool, compileItems : string list, references : string list, other : string, targetFramework : string, f : UnitTestingFSharpProjectNode -> _ -> string -> unit) =
         UIStuff.SetupSynchronizationContext()
 
         DoWithTempFile "Test.fsproj" (fun file ->
             File.AppendAllText(file, TheTests.FsprojTextWithProjectReferencesAndOtherFlags(compileItems, references, [], null, other, targetFramework))
-            let sp, cnn = 
+            let sp, cnn =
                 match targetFramework with
                 | "v4.7.2" | "4.7.2" | "4.7" | "v4.7" -> VsMocks.MakeMockServiceProviderAndConfigChangeNotifier472()
                 | "v4.6" | "4.6" -> VsMocks.MakeMockServiceProviderAndConfigChangeNotifier46()
@@ -323,14 +323,14 @@ type TheTests() =
 
     member internal this.MakeProjectAndDoWithProjectFileAndConfigChangeNotifier(compileItems : string list, references : string list, other : string, f : UnitTestingFSharpProjectNode -> _ -> string -> unit) =
         this.MakeProjectAndDoWithProjectFileAndConfigChangeNotifier(compileItems, references, other, null, f)
-        
+
     member internal this.MakeProjectAndDoWithProjectFile(compileItems : string list, references: string list, other : string, targetFramework : string, f : UnitTestingFSharpProjectNode -> string -> unit) =
         this.MakeProjectAndDoWithProjectFileAndConfigChangeNotifier(compileItems, references, other, targetFramework, fun proj _ s -> f proj s)
-    
+
     member internal this.MakeProjectAndDoWithProjectFile(compileItems : string list, references: string list, other : string, f : UnitTestingFSharpProjectNode -> string -> unit) =
         this.MakeProjectAndDoWithProjectFile(compileItems, references, other, null, f)
 
-    /// Create a project with the given "compileItems" and "other", then 
+    /// Create a project with the given "compileItems" and "other", then
     /// call "f" on that project while the project file still exists on disk.
     member internal this.MakeProjectAndDo(compileItems : string list, references : string list, other : string, f : UnitTestingFSharpProjectNode -> unit) =
         this.MakeProjectAndDo(compileItems, references, other, null, f)
@@ -346,12 +346,12 @@ type TheTests() =
         ))
         !project
 
-    
+
     member this.``FsprojFileToSolutionExplorer.PositiveTest``(compileItems : string list, other : string, expectations : Tree<string>) =
         use project = this.MakeProject(compileItems, [], other) :> HierarchyNode
         let node = project.FirstChild
         TheTests.AssertSameTree(expectations, node)
-        () 
+        ()
 
     member internal this.EnsureCausesNotification(project, code) =
         let ipsf = project :> IProvideProjectSite
@@ -363,7 +363,7 @@ type TheTests() =
     static member MsBuildCompileItems(project : Microsoft.Build.Evaluation.Project) =
         [for bi in project.Items do
             if bi.ItemType = "Compile" then
-                yield bi.EvaluatedInclude] 
+                yield bi.EvaluatedInclude]
     member this.MSBuildProjectBoilerplate (outputType : string) : string =
         let template = @"
   <PropertyGroup>
@@ -387,7 +387,7 @@ type TheTests() =
   </PropertyGroup>           
            "
         String.Format(template, outputType)
-        
+
     member this.MSBuildProjectMultiPlatformBoilerplate (outputType : string) : string =
         let template = @"
   <PropertyGroup>
@@ -421,7 +421,7 @@ type TheTests() =
   </PropertyGroup>           
            "
         String.Format(template, outputType)
-        
+
     member this.MSBuildProjectMultiConfigBoilerplate  (configs : (string*string) list): string =
         let template = @"
               <PropertyGroup>
@@ -434,7 +434,7 @@ type TheTests() =
                 <FileAlignment>512</FileAlignment>
                 <Name>Blah</Name>
               </PropertyGroup>"
-        let sb = new StringBuilder(template)     
+        let sb = new StringBuilder(template)
         for (configName,customStr) in configs do
             let platTemplate =
                 @"<PropertyGroup Condition="" '$(Configuration)|$(Platform)' == '{0}|x86' "">
@@ -446,10 +446,10 @@ type TheTests() =
                     <PlatformTarget>AnyCPU</PlatformTarget>                  
                     {1}
                     <OutputPath>bin\{0}\</OutputPath>                  
-                  </PropertyGroup>"           
+                  </PropertyGroup>"
             String.Format(platTemplate, configName, customStr) |> sb.Append |> ignore
         sb.ToString()
-        
+
     member this.MSBuildProjectMultiPlatform  (platforms : (string*string) list,?defaultPlatform): string =
         let platform = defaultArg defaultPlatform "AnyCPU"
         let template = @"
@@ -463,7 +463,7 @@ type TheTests() =
                 <FileAlignment>512</FileAlignment>
                 <Name>Blah</Name>
               </PropertyGroup>"
-        let sb = new StringBuilder(String.Format(template,platform))     
+        let sb = new StringBuilder(String.Format(template,platform))
         for (platformName,customStr) in platforms do
             let platTemplate =
                 @"<PropertyGroup Condition="" '$(Configuration)|$(Platform)' == 'Release|{0}' "">
@@ -475,7 +475,7 @@ type TheTests() =
                     <OutputPath>bin\Debug\</OutputPath>                    
                     {1}                                      
                     <PlatformTarget>{0}</PlatformTarget>                  
-                  </PropertyGroup>"           
+                  </PropertyGroup>"
             String.Format(platTemplate, platformName, customStr) |> sb.Append |> ignore
         sb.ToString()
     member internal this.CheckConfigNames (project:UnitTestingFSharpProjectNode, expectedNames : string[])=
@@ -484,7 +484,7 @@ type TheTests() =
         project.ConfigProvider.GetCfgNames(uint32 cfgNames.Length, cfgNames, actual) |> AssertEqual VSConstants.S_OK
         AssertEqualMsg expectedNames cfgNames "List of config names is different"
         AssertEqualMsg expectedNames.Length (int actual.[0]) "List of config names is ok, but reported lengths disagree"
-                
+
     member internal this.CheckPlatformNames(project:UnitTestingFSharpProjectNode, expectedNames : string[])=
         let platformNames = Array.create expectedNames.Length ""
         let actual = [| 0u |]
@@ -499,7 +499,7 @@ type TheTests() =
                 this.CheckPlatformNames(project, expectedPlatforms)
                 this.CheckConfigNames(project, expectedConfigs)
             ))
- 
+
 
 and (*type*) MSBuildItem =
     | FolderItem of string      // Include="relativeDir"
@@ -530,7 +530,7 @@ and (*type*) MSBuildItem =
     member this.IntoFolder(folder : string) =  // return new copy of item in the folder
         Debug.Assert(folder.EndsWith("\\"), "folders should end with slash")
         match this with
-        | FolderItem(s) ->  
+        | FolderItem(s) ->
             Debug.Assert(s.EndsWith("\\"), "folders should end with slash")
             FolderItem(folder + s)
         | CompileItem(s) -> CompileItem(folder + s)
@@ -553,7 +553,7 @@ and (*type*) MSBuildItems =
     member this.Items() =
         match this with
         | MSBuildItems(l) -> l
-        
+
 module LanguageServiceExtension =
     open UnitTests.TestLib.LanguageService
     open Salsa.Salsa
@@ -565,12 +565,12 @@ module LanguageServiceExtension =
         member this.CreateProjectHookIsEnabled with get() = createProjectHookIsEnabled and set(x) = createProjectHookIsEnabled <- x
 
     /// A test flavour - this layers additional behaviour over the BuiltMSBuildTestFlavour
-    /// to exercise the unit-testable versions of the classes in FSharp.ProjectSystem.FSharp.  
-    /// For example, when a CreateProject call is made, a UnitTestingFSharpProjectNode is 
+    /// to exercise the unit-testable versions of the classes in FSharp.ProjectSystem.FSharp.
+    /// For example, when a CreateProject call is made, a UnitTestingFSharpProjectNode is
     /// created (in addition to the actions performed via the MSBuild layer).
     //
     // NOTE: The "BehaviourHooks" way of injecting functionality seems awkward.
-    type internal ProjectSystemTestFlavour() = 
+    type internal ProjectSystemTestFlavour() =
         let msbuild = BuiltMSBuildTestFlavour()
         let hooks = msbuild.BehaviourHooks
         let projectDict = new Dictionary<OpenProject,ProjInfo>()
@@ -580,13 +580,13 @@ module LanguageServiceExtension =
             member ops.AddAssemblyReference(project, assem, specificVersion) =
                     let projInfo = projectDict.[project]
                     let referencesFolder = projInfo.Project.FindChild(ReferenceContainerNode.ReferencesNodeVirtualName) :?> ReferenceContainerNode
-                    let assem = 
+                    let assem =
                         // mimic logic in ReferenceResolution.fs:MSBuildResolver.Resolve()
-                        if Path.IsPathRooted(assem) then 
-                            assem 
+                        if Path.IsPathRooted(assem) then
+                            assem
                         elif not(assem.Contains("\\") || assem.Contains("/")) then
                             assem
-                        else 
+                        else
                             Path.Combine(projInfo.Project.ProjectFolder, assem)
                     let assem, isFullPath =
                         if Path.IsPathRooted(assem) then
@@ -609,8 +609,8 @@ module LanguageServiceExtension =
                     let configChangeNotifier = ref None
                     let projInfo = new ProjInfo()
                     let NULL = Unchecked.defaultof<UnitTestingFSharpProjectNode>
-                    let newHooks = 
-                     { new ProjectBehaviorHooks with 
+                    let newHooks =
+                     { new ProjectBehaviorHooks with
 
                         // Note: CreateProjectHook will callback MakeHierarchyHook and then InitializeProjectHook
                         member x.CreateProjectHook (projectFilename, files, references, projReferences, disabledWarnings, defines, versionFile, otherFlags, otherMSBuildStuff, targetFrameworkVersion: string) =
@@ -620,15 +620,15 @@ module LanguageServiceExtension =
                                     ()
                                 else
                                     // REVIEW: this is a workaround to get everything working for now; ideally we want to implement the VS gestures below
-                                    // so that they really happen in the project system, rather than just poking the .fsproj file and then doing 
+                                    // so that they really happen in the project system, rather than just poking the .fsproj file and then doing
                                     // a 'reload' each time.  But for now, this is good.
                                     projInfo.Project.Reload()
 
-                        member x.InitializeProjectHook (openProject) = 
+                        member x.InitializeProjectHook (openProject) =
                             hooks.InitializeProjectHook(openProject)
                             projectDict.Add(openProject, projInfo)
 
-                        member x.MakeHierarchyHook (projdir, fullname, projectname, ccn, serviceProvider) = 
+                        member x.MakeHierarchyHook (projdir, fullname, projectname, ccn, serviceProvider) =
                             if projInfo.Project = NULL then
                                 let p = TheTests.CreateProject(fullname, "false", ccn, serviceProvider)
                                 projInfo.Project <- p
@@ -639,7 +639,7 @@ module LanguageServiceExtension =
 
                         member x.AddFileToHierarchyHook (filename, hier) = ()
 
-                        member x.BuildHook (projFileName, target, vsOutputWindowPane) = 
+                        member x.BuildHook (projFileName, target, vsOutputWindowPane) =
                             if projInfo.Project = NULL then
                                 failwith "tried to build not-yet-created project"
                             else
@@ -647,12 +647,12 @@ module LanguageServiceExtension =
                                 projInfo.Project.BuildToOutput(target,vsOutputWindowPane, null) |> ignore   // force build through project system for code coverage
                                 hooks.BuildHook(projFileName, target, vsOutputWindowPane)      // use MSBuild to build and also return MainAssembly value
 
-                        member x.GetMainOutputAssemblyHook baseName = hooks.GetMainOutputAssemblyHook baseName 
+                        member x.GetMainOutputAssemblyHook baseName = hooks.GetMainOutputAssemblyHook baseName
 
                         member x.SaveHook () = if projInfo.Project = NULL then () else projInfo.Project.Save(null, 1, 0u) |> ignore
 
                         member x.DestroyHook () =
-                            if projInfo.Project = NULL then () else 
+                            if projInfo.Project = NULL then () else
                             projInfo.Project.Close () |> ignore
                             match projectDict |> Seq.tryFind(fun (KeyValue(k,v)) -> obj.ReferenceEquals(v, projInfo)) with
                             | Some(KeyValue(k,v)) -> projectDict.Remove(k) |> ignore
@@ -671,68 +671,68 @@ module LanguageServiceExtension =
             member ops.BehaviourHooks = hooks
             member ops.CreateVisualStudio () = msbuild.CreateVisualStudio ()
             member ops.CreateSolution vs = msbuild.CreateSolution vs
-            member ops.GetOutputWindowPaneLines vs = msbuild.GetOutputWindowPaneLines vs 
-            member ops.CloseSolution solution = msbuild.CloseSolution solution 
+            member ops.GetOutputWindowPaneLines vs = msbuild.GetOutputWindowPaneLines vs
+            member ops.CloseSolution solution = msbuild.CloseSolution solution
             member ops.CreateProjectWithHooks (solution,hooks,projectBaseName) = msbuild.CreateProjectWithHooks (solution,hooks,projectBaseName)
             member ops.NewFile (vs,filename,buildAction, lines) = msbuild.NewFile (vs,filename,buildAction, lines)
-            member ops.DeleteFileFromDisk file = msbuild.DeleteFileFromDisk file 
-            member ops.AddFileFromText (project,filenameOnDisk,filenameInProject,buildAction,lines) = msbuild.AddFileFromText (project,filenameOnDisk,filenameInProject,buildAction,lines) 
+            member ops.DeleteFileFromDisk file = msbuild.DeleteFileFromDisk file
+            member ops.AddFileFromText (project,filenameOnDisk,filenameInProject,buildAction,lines) = msbuild.AddFileFromText (project,filenameOnDisk,filenameInProject,buildAction,lines)
             member ops.AddLinkedFileFromText (project,filenameOnDisk,includeFilenameInProject,linkFilenameInProject,buildAction,lines) = msbuild.AddLinkedFileFromText (project,filenameOnDisk,includeFilenameInProject,linkFilenameInProject,buildAction,lines)
             member ops.AddProjectReference (project1, project2) = msbuild.AddProjectReference (project1, project2)
-            member ops.ProjectDirectory project = msbuild.ProjectDirectory project 
-            member ops.ProjectFile project = msbuild.ProjectFile project 
-            member ops.SetVersionFile (project,file) = msbuild.SetVersionFile (project,file) 
-            member ops.SetOtherFlags (project,flags) = msbuild.SetOtherFlags (project,flags) 
-            member ops.SetConfigurationAndPlatform (project, configAndPlatform) = msbuild.SetConfigurationAndPlatform (project, configAndPlatform) 
-            member ops.AddDisabledWarning (project, code) = msbuild.AddDisabledWarning (project, code) 
-            member ops.GetErrors project = msbuild.GetErrors project 
-            member ops.BuildProject (project,target) = msbuild.BuildProject (project,target) 
-            member ops.GetMainOutputAssembly project = msbuild.GetMainOutputAssembly project 
-            member ops.SaveProject project = msbuild.SaveProject project 
-            member ops.OpenFileViaOpenFile (vs,filename) = msbuild.OpenFileViaOpenFile (vs,filename) 
-            member ops.OpenFile (project,filename) = msbuild.OpenFile (project,filename) 
-            member ops.SetProjectDefines (project, defines) = msbuild.SetProjectDefines (project, defines) 
+            member ops.ProjectDirectory project = msbuild.ProjectDirectory project
+            member ops.ProjectFile project = msbuild.ProjectFile project
+            member ops.SetVersionFile (project,file) = msbuild.SetVersionFile (project,file)
+            member ops.SetOtherFlags (project,flags) = msbuild.SetOtherFlags (project,flags)
+            member ops.SetConfigurationAndPlatform (project, configAndPlatform) = msbuild.SetConfigurationAndPlatform (project, configAndPlatform)
+            member ops.AddDisabledWarning (project, code) = msbuild.AddDisabledWarning (project, code)
+            member ops.GetErrors project = msbuild.GetErrors project
+            member ops.BuildProject (project,target) = msbuild.BuildProject (project,target)
+            member ops.GetMainOutputAssembly project = msbuild.GetMainOutputAssembly project
+            member ops.SaveProject project = msbuild.SaveProject project
+            member ops.OpenFileViaOpenFile (vs,filename) = msbuild.OpenFileViaOpenFile (vs,filename)
+            member ops.OpenFile (project,filename) = msbuild.OpenFile (project,filename)
+            member ops.SetProjectDefines (project, defines) = msbuild.SetProjectDefines (project, defines)
             member ops.PlaceIntoProjectFileBeforeImport (project,xml) = msbuild.PlaceIntoProjectFileBeforeImport (project,xml)
-            member ops.GetOpenFiles project = msbuild.GetOpenFiles project 
-            member ops.MoveCursorTo (file,line,col) = msbuild.MoveCursorTo (file,line,col) 
-            member ops.GetCursorLocation file = msbuild.GetCursorLocation file 
-            member ops.OpenExistingProject (vs,dir,projname) = msbuild.OpenExistingProject (vs,dir,projname) 
-            member ops.MoveCursorToEndOfMarker (file,marker) = msbuild.MoveCursorToEndOfMarker (file,marker) 
-            member ops.MoveCursorToStartOfMarker (file,marker) = msbuild.MoveCursorToStartOfMarker (file,marker) 
-            member ops.GetNameOfOpenFile file = msbuild.GetNameOfOpenFile file 
-            member ops.GetProjectOptionsOfScript file = msbuild.GetProjectOptionsOfScript file 
-            member ops.GetQuickInfoAtCursor file = msbuild.GetQuickInfoAtCursor file 
-            member ops.GetQuickInfoAndSpanAtCursor file = msbuild.GetQuickInfoAndSpanAtCursor file 
-            member ops.GetMatchingBracesForPositionAtCursor file = msbuild.GetMatchingBracesForPositionAtCursor file 
-            member ops.GetParameterInfoAtCursor file = msbuild.GetParameterInfoAtCursor file 
-            member ops.GetTokenTypeAtCursor file = msbuild.GetTokenTypeAtCursor file 
-            member ops.GetSquiggleAtCursor file = msbuild.GetSquiggleAtCursor file 
-            member ops.GetSquigglesAtCursor file = msbuild.GetSquigglesAtCursor file 
-            member ops.AutoCompleteAtCursor file = msbuild.AutoCompleteAtCursor file 
-            member ops.CompleteAtCursorForReason (file,reason) = msbuild.CompleteAtCursorForReason (file,reason) 
-            member ops.CompletionBestMatchAtCursorFor (file, value, filterText) = msbuild.CompletionBestMatchAtCursorFor (file, value, filterText) 
-            member ops.GotoDefinitionAtCursor (file, forceGen) = msbuild.GotoDefinitionAtCursor (file, forceGen) 
-            member ops.GetIdentifierAtCursor file = msbuild.GetIdentifierAtCursor file 
-            member ops.GetF1KeywordAtCursor file = msbuild.GetF1KeywordAtCursor file 
-            member ops.GetLineNumber (file, n) = msbuild.GetLineNumber (file, n) 
-            member ops.GetAllLines file = msbuild.GetAllLines file 
-            member ops.SwitchToFile (vs,file) = msbuild.SwitchToFile (vs,file) 
-            member ops.OnIdle vs = msbuild.OnIdle vs 
-            member ops.ShiftKeyDown vs = msbuild.ShiftKeyDown vs 
-            member ops.ShiftKeyUp vs = msbuild.ShiftKeyUp vs 
-            member ops.TakeCoffeeBreak vs = msbuild.TakeCoffeeBreak vs 
-            member ops.ReplaceFileInMemory (file,contents,takeCoffeeBreak) = msbuild.ReplaceFileInMemory (file,contents,takeCoffeeBreak) 
-            member ops.SaveFileToDisk file = msbuild.SaveFileToDisk file 
-            member ops.CreatePhysicalProjectFileInMemory (files, references, projectReferences, disabledWarnings, defines, versionFile, otherFlags, otherProjMisc, targetFrameworkVersion) = msbuild.CreatePhysicalProjectFileInMemory (files, references, projectReferences, disabledWarnings, defines, versionFile, otherFlags, otherProjMisc, targetFrameworkVersion) 
-            member ops.CleanUp vs = msbuild.CleanUp vs 
-            member ops.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients vs = msbuild.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients vs 
-            member ops.AutoCompleteMemberDataTipsThrowsScope message = msbuild.AutoCompleteMemberDataTipsThrowsScope message 
-            member ops.CleanInvisibleProject vs = msbuild.CleanInvisibleProject vs 
-    
+            member ops.GetOpenFiles project = msbuild.GetOpenFiles project
+            member ops.MoveCursorTo (file,line,col) = msbuild.MoveCursorTo (file,line,col)
+            member ops.GetCursorLocation file = msbuild.GetCursorLocation file
+            member ops.OpenExistingProject (vs,dir,projname) = msbuild.OpenExistingProject (vs,dir,projname)
+            member ops.MoveCursorToEndOfMarker (file,marker) = msbuild.MoveCursorToEndOfMarker (file,marker)
+            member ops.MoveCursorToStartOfMarker (file,marker) = msbuild.MoveCursorToStartOfMarker (file,marker)
+            member ops.GetNameOfOpenFile file = msbuild.GetNameOfOpenFile file
+            member ops.GetProjectOptionsOfScript file = msbuild.GetProjectOptionsOfScript file
+            member ops.GetQuickInfoAtCursor file = msbuild.GetQuickInfoAtCursor file
+            member ops.GetQuickInfoAndSpanAtCursor file = msbuild.GetQuickInfoAndSpanAtCursor file
+            member ops.GetMatchingBracesForPositionAtCursor file = msbuild.GetMatchingBracesForPositionAtCursor file
+            member ops.GetParameterInfoAtCursor file = msbuild.GetParameterInfoAtCursor file
+            member ops.GetTokenTypeAtCursor file = msbuild.GetTokenTypeAtCursor file
+            member ops.GetSquiggleAtCursor file = msbuild.GetSquiggleAtCursor file
+            member ops.GetSquigglesAtCursor file = msbuild.GetSquigglesAtCursor file
+            member ops.AutoCompleteAtCursor file = msbuild.AutoCompleteAtCursor file
+            member ops.CompleteAtCursorForReason (file,reason) = msbuild.CompleteAtCursorForReason (file,reason)
+            member ops.CompletionBestMatchAtCursorFor (file, value, filterText) = msbuild.CompletionBestMatchAtCursorFor (file, value, filterText)
+            member ops.GotoDefinitionAtCursor (file, forceGen) = msbuild.GotoDefinitionAtCursor (file, forceGen)
+            member ops.GetIdentifierAtCursor file = msbuild.GetIdentifierAtCursor file
+            member ops.GetF1KeywordAtCursor file = msbuild.GetF1KeywordAtCursor file
+            member ops.GetLineNumber (file, n) = msbuild.GetLineNumber (file, n)
+            member ops.GetAllLines file = msbuild.GetAllLines file
+            member ops.SwitchToFile (vs,file) = msbuild.SwitchToFile (vs,file)
+            member ops.OnIdle vs = msbuild.OnIdle vs
+            member ops.ShiftKeyDown vs = msbuild.ShiftKeyDown vs
+            member ops.ShiftKeyUp vs = msbuild.ShiftKeyUp vs
+            member ops.TakeCoffeeBreak vs = msbuild.TakeCoffeeBreak vs
+            member ops.ReplaceFileInMemory (file,contents,takeCoffeeBreak) = msbuild.ReplaceFileInMemory (file,contents,takeCoffeeBreak)
+            member ops.SaveFileToDisk file = msbuild.SaveFileToDisk file
+            member ops.CreatePhysicalProjectFileInMemory (files, references, projectReferences, disabledWarnings, defines, versionFile, otherFlags, otherProjMisc, targetFrameworkVersion) = msbuild.CreatePhysicalProjectFileInMemory (files, references, projectReferences, disabledWarnings, defines, versionFile, otherFlags, otherProjMisc, targetFrameworkVersion)
+            member ops.CleanUp vs = msbuild.CleanUp vs
+            member ops.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients vs = msbuild.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients vs
+            member ops.AutoCompleteMemberDataTipsThrowsScope message = msbuild.AutoCompleteMemberDataTipsThrowsScope message
+            member ops.CleanInvisibleProject vs = msbuild.CleanInvisibleProject vs
+
     let internal ProjectSystemTestFlavour = ProjectSystemTestFlavour()
 
-      
 
-                
+
+
 
 

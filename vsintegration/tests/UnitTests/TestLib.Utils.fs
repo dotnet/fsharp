@@ -10,17 +10,17 @@ open Microsoft.VisualStudio
 module Asserts =
     (* Asserts ----------------------------------------------------------------------------- *)
     let AssertEqualMsg expected actual failureMsg =
-        if expected<>actual then 
+        if expected<>actual then
             let message = sprintf "Expected\n%A\nbut got\n%A\n%s" expected actual failureMsg
             printfn "%s" message
             Assert.Fail(message)
     let AssertEqual expected actual =
-        if expected<>actual then 
+        if expected<>actual then
             let message = sprintf "Expected\n%A\nbut got\n%A" expected actual
             printfn "%s" message
             Assert.Fail(message)
     let AssertNotEqual expected actual =
-        if expected=actual then 
+        if expected=actual then
             let message = "Expected not equal, but were equal"
             printfn "%s" message
             Assert.Fail(message)
@@ -56,19 +56,19 @@ module UIStuff =
         Microsoft.VisualStudio.FSharp.ProjectSystem.UIThread.InitUnitTestingMode()
 
 module FilesystemHelpers =
-    let pid = System.Diagnostics.Process.GetCurrentProcess().Id 
+    let pid = System.Diagnostics.Process.GetCurrentProcess().Id
 
     /// Create a new temporary directory.
-    let rec NewTempDirectory (prefixName : String) = 
-        let tick = Environment.TickCount 
+    let rec NewTempDirectory (prefixName : String) =
+        let tick = Environment.TickCount
         let dir = Path.Combine(Path.GetTempPath(), sprintf "%s-%A-%d" prefixName tick pid)
         if Directory.Exists dir then NewTempDirectory prefixName
-        else 
+        else
             let _ = Directory.CreateDirectory(dir)
             dir
-       
+
     /// Create a temporary file name, invoke callback with that fileName, then clean up temp file.
-    let DoWithTempFile (fileName : string) (f : string (*filePath*) -> 'a) = 
+    let DoWithTempFile (fileName : string) (f : string (*filePath*) -> 'a) =
         let dir = NewTempDirectory "fsc-tests"
         let filePath = Path.Combine(dir, fileName)
         let r = f filePath
@@ -86,7 +86,7 @@ module FilesystemHelpers =
         DeleteAll(dir)
         r
 
-module Spawn = 
+module Spawn =
     open System
     open System.IO
     open System.Diagnostics
@@ -111,7 +111,7 @@ module Spawn =
                   PrivilegedProcessorTime=proc.PrivilegedProcessorTime.TotalMilliseconds
                   UserProcessorTime=proc.UserProcessorTime.TotalMilliseconds
                   TotalProcessorTime=proc.TotalProcessorTime.TotalMilliseconds
-                }    
+                }
             with :? InvalidOperationException as e ->
                 // There is what appears to be an unresolvable race here. The process may exit while building the record.
                 { PeakPagedMemorySize=0L
@@ -120,8 +120,8 @@ module Spawn =
                   PrivilegedProcessorTime=0.0
                   UserProcessorTime=0.0
                   TotalProcessorTime=0.0
-                }               
-        static member internal SampleProcess(proc:Process,original) = 
+                }
+        static member internal SampleProcess(proc:Process,original) =
             try
                 { PeakPagedMemorySize=max proc.PeakPagedMemorySize64 original.PeakPagedMemorySize
                   PeakVirtualMemorySize=max proc.PeakVirtualMemorySize64 original.PeakVirtualMemorySize
@@ -129,13 +129,13 @@ module Spawn =
                   PrivilegedProcessorTime=max proc.PrivilegedProcessorTime.TotalMilliseconds original.PrivilegedProcessorTime
                   UserProcessorTime=max proc.UserProcessorTime.TotalMilliseconds original.UserProcessorTime
                   TotalProcessorTime=max proc.TotalProcessorTime.TotalMilliseconds original.TotalProcessorTime
-                }    
+                }
             with :? InvalidOperationException as e ->
                 // There is what appears to be an unresolvable race here. The process may exit while building the record.
                 original
 
     let private spawnDetailed logOutputTo logErrorTo exitWith command fmt =
-        let spawn (arguments:string) = 
+        let spawn (arguments:string) =
             if showSpawnedCommands then
                 printfn "%s %s" command arguments
             let pi = ProcessStartInfo(command,arguments)
@@ -151,7 +151,7 @@ module Spawn =
             proc.OutputDataReceived.Add(logOutputTo)
             proc.ErrorDataReceived.Add(logErrorTo)
             match proc.Start() with
-            | false -> 
+            | false ->
                 failwith(sprintf "Could not start process: %s %s " command arguments)
             | true ->
                 proc.BeginOutputReadLine()
@@ -161,58 +161,58 @@ module Spawn =
                     stats <- ProcessResults.SampleProcess(proc,stats)
                 exitWith command arguments proc.ExitCode stats
 
-        Printf.ksprintf spawn fmt  
+        Printf.ksprintf spawn fmt
 
-    let private expectCodeOrRaise expectedCode command arguments (exitCode:int) _ = 
-        if expectedCode<>exitCode then 
+    let private expectCodeOrRaise expectedCode command arguments (exitCode:int) _ =
+        if expectedCode<>exitCode then
             failwith(sprintf "%s %s exited with code %d. Expected %d" command arguments exitCode expectedCode)
         ()
 
-    let private expectCodeWithStatisticsOrExit expectedCode command arguments (exitCode:int) stats :ProcessResults = 
-        if expectedCode<>exitCode then 
+    let private expectCodeWithStatisticsOrExit expectedCode command arguments (exitCode:int) stats :ProcessResults =
+        if expectedCode<>exitCode then
             failwith(sprintf "%s %s exited with code %d. Expected %d" command arguments exitCode expectedCode)
         stats
 
     let private returnExitCode _ _ (exitCode:int) _= exitCode
 
     let ignoreDataReceived(_msg:DataReceivedEventArgs) = ()
-  
+
     /// Execute a command
-    let public Spawn command fmt = 
+    let public Spawn command fmt =
         spawnDetailed ignoreDataReceived ignoreDataReceived (expectCodeOrRaise 0) command fmt
 
     /// Execute a command and expect a particular result code
-    let public SpawnExpectCode expectCode command fmt = 
+    let public SpawnExpectCode expectCode command fmt =
         spawnDetailed ignoreDataReceived ignoreDataReceived (expectCodeOrRaise expectCode) command fmt
 
     /// Execute the command and return the exit code
-    let public SpawnReturnExitCode command fmt = 
+    let public SpawnReturnExitCode command fmt =
         spawnDetailed ignoreDataReceived ignoreDataReceived returnExitCode command fmt
 
     /// Execute the command a return an array of textlines for the output and error.
-    let public SpawnToTextLines command fmt = 
+    let public SpawnToTextLines command fmt =
         let outlock = obj()
         let captured = ref []
-        let capture (msg:DataReceivedEventArgs) = 
+        let capture (msg:DataReceivedEventArgs) =
             lock outlock (fun () -> captured := msg.Data :: !captured)
 
-        let exitWithResult command arguments actualCode _ = 
+        let exitWithResult command arguments actualCode _ =
             actualCode, (!captured)|>List.rev|>Array.ofList
 
         spawnDetailed capture capture exitWithResult command fmt
 
     /// Execute a command and expect a particular result code. Return the processor statistics.
-    let public SpawnWithStatisticsExpectCode expectCode command fmt = 
+    let public SpawnWithStatisticsExpectCode expectCode command fmt =
         spawnDetailed ignoreDataReceived ignoreDataReceived (expectCodeWithStatisticsOrExit expectCode) command fmt
 
-    let Batch batchText = 
+    let Batch batchText =
         let outlock = obj()
         let mutable captured = []
-        let capture (msg:DataReceivedEventArgs) = 
-            lock outlock (fun () -> 
+        let capture (msg:DataReceivedEventArgs) =
+            lock outlock (fun () ->
                 captured <- msg.Data :: captured)
 
-        let exitWithResult command arguments actualCode _ = 
+        let exitWithResult command arguments actualCode _ =
             actualCode, captured|>List.rev|>Array.ofList
 
         FilesystemHelpers.DoWithTempFile
@@ -233,27 +233,27 @@ module Spawn =
         let code = SpawnReturnExitCode "robocopy" "%s %s /mir" source destination
         match code with
         | 0 | 1 | 2 | 3 -> () // Success.
-        | _ -> 
+        | _ ->
             printfn "Robocopy %s %s /mir exited with code %d. Expected 0, 1, 2 or 3." source destination code
             exit code
 
     /// Submit a specific set of checked out files to Tfs.
-    let TfsSubmitSpecificFiles (files:string[]) comment = 
+    let TfsSubmitSpecificFiles (files:string[]) comment =
         let files = String.Join(" ", files)
 
         // Submit the changes
         match SpawnToTextLines "tf_.exe" "submit %s /comment:\"%s\" /noprompt" files comment with
-        | 0,_ -> 
+        | 0,_ ->
             printfn "Submitted files: %s" files
-        | 1,_ ->  
+        | 1,_ ->
             printfn "No changes detected in files: %s" files
         | errorCode,lines ->
-            for line in lines do 
+            for line in lines do
                 printfn "%s" line
             eprintfn "tf submit returned error code %d" errorCode
 
 [<AutoOpen>]
-module Helpers = 
+module Helpers =
     type DummyType = A | B
     let PathRelativeToTestAssembly p = Path.Combine(Path.GetDirectoryName(Uri(typeof<DummyType>.Assembly.CodeBase).LocalPath), p)
 
@@ -308,7 +308,7 @@ namespace TestLibrary
                    y : int
                  }
 
-    let showPoint (p : Point) = sprintf "(%A,%A)" p.x p.y 
+    let showPoint (p : Point) = sprintf "(%A,%A)" p.x p.y
 
     type Shape (initVertices : list<Point>) =
       let mutable vertices = initVertices

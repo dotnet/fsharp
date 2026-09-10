@@ -220,7 +220,7 @@ let CheckForNonTailRecCall (cenv: cenv) expr (tailCall: TailCall) =
             // ``Warn successfully in match clause``
             // ``Warn for byref parameters``
             if not canTailCall then
-                warning (Error(FSComp.SR.chkNotTailRecursive vref.DisplayName, m))
+                warning (Error(FSComp.SR.chkNotTailRecursive (richTextOfValName g vref.Deref), m))
         | _ -> ()
     | _ -> ()
 
@@ -317,8 +317,7 @@ and CheckExprLinear (cenv: cenv) expr (ctxt: PermitByRefExpr) (tailCall: TailCal
 and CheckExpr (cenv: cenv) origExpr (ctxt: PermitByRefExpr) (tailCall: TailCall) : unit =
 
     // Guard the stack for deeply nested expressions
-    cenv.stackGuard.Guard
-    <| fun () ->
+    cenv.stackGuard.Guard(fun () ->
 
         let g = cenv.g
 
@@ -408,7 +407,7 @@ and CheckExpr (cenv: cenv) origExpr (ctxt: PermitByRefExpr) (tailCall: TailCall)
 
         | Expr.WitnessArg _ -> ()
 
-        | Expr.Link _ -> failwith "Unexpected reclink"
+        | Expr.Link _ -> failwith "Unexpected reclink")
 
 and CheckStructStateMachineExpr cenv info =
 
@@ -780,7 +779,7 @@ let CheckModuleBinding cenv (isRec: bool) (TBind _ as bind) =
                 match expr with
                 | Expr.Val(valRef = valRef; range = m) ->
                     if isRec && insideSubBindingOrTry && cenv.mustTailCall.Contains valRef.Deref then
-                        warning (Error(FSComp.SR.chkNotTailRecursive valRef.DisplayName, m))
+                        warning (Error(FSComp.SR.chkNotTailRecursive (richTextOfValName cenv.g valRef.Deref), m))
                 | Expr.App(funcExpr = funcExpr; args = argExprs) ->
                     checkTailCall insideSubBindingOrTry funcExpr
                     argExprs |> List.iter (checkTailCall insideSubBindingOrTry)

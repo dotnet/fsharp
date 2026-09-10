@@ -5,22 +5,22 @@ module Pos17
 open System
 open System.Collections.Generic
 
-module BasicTests = 
+module BasicTests =
   let f1() = "a" |> System.Uri
   let f2() = "a" |> Uri
   let f3() = ["a"] |> Set
   let f4() = ["a", 4 ] |> Map
 
-module CheckFunctionNameHasPriorityOverTypeName = 
+module CheckFunctionNameHasPriorityOverTypeName =
 
   let Uri (x:int) =  4
   let f3() = 3 |> Uri
 
-module TestResolutionOfNonGenericTypeNameAsOverloadedConstructor = 
+module TestResolutionOfNonGenericTypeNameAsOverloadedConstructor =
 
   let f4() = ('a',3) |> String
 
-module TestResolutionOfGenericTypeNameWithTypeArgumentsAsOverloadedConstructor = 
+module TestResolutionOfGenericTypeNameWithTypeArgumentsAsOverloadedConstructor =
   let w1 = List<int>()
   let w2 = () |> List<int>
   let w3 = List<int>(3)
@@ -30,7 +30,7 @@ module TestResolutionOfGenericTypeNameWithTypeArgumentsAsOverloadedConstructor =
   let w7 = List<int>(seq { yield 1; yield 3 } )
   let w8 = seq { yield 1; yield 3 } |> List<int>
 
-module TestResolutionOfGenericTypeNameAsOverloadedConstructorWithoutTypeAnnotation = 
+module TestResolutionOfGenericTypeNameAsOverloadedConstructorWithoutTypeAnnotation =
   let x1 : List<int> = List()
   let x2 : List<int> = () |> List
   let x3 : List<int> = List(3)
@@ -40,17 +40,17 @@ module TestResolutionOfGenericTypeNameAsOverloadedConstructorWithoutTypeAnnotati
   let x7 : List<int> = List(seq { yield 1; yield 3 } )
   let x8 : List<int> = seq { yield 1; yield 3 } |> List
 
-module TestUseAsLambdaOfGenericTypeNameAsOverloadedConstructorWithoutTypeAnnotation = 
+module TestUseAsLambdaOfGenericTypeNameAsOverloadedConstructorWithoutTypeAnnotation =
   let x1 : unit -> List<int> = List
   let x4 : int -> List<int> = List
   let x5 : seq<int> -> List<int> = List
 
-module TestUseAsLambdaOfGenericTypeNameWithLongPathAsOverloadedConstructorWithoutTypeAnnotation = 
+module TestUseAsLambdaOfGenericTypeNameWithLongPathAsOverloadedConstructorWithoutTypeAnnotation =
   let x1 : unit -> List<int> = System.Collections.Generic.List
   let x4 : int -> List<int> = System.Collections.Generic.List
   let x5 : seq<int> -> List<int> = System.Collections.Generic.List
 
-module TestUseAsLambda2 = 
+module TestUseAsLambda2 =
   let x1 : unit -> List<_> = List<int>
   let x4 : int -> List<_> = List<int>
   let x5 : seq<int> -> List<_> = List<int>
@@ -60,7 +60,7 @@ module TestUseAsLambda2 =
 
 
 
-module TestResolutionOfAbbreviatedGenericTypeNameWithTypeArgumentsAsOverloadedConstructor = 
+module TestResolutionOfAbbreviatedGenericTypeNameWithTypeArgumentsAsOverloadedConstructor =
   let w1 = ResizeArray<int>()
   let w2 = () |> ResizeArray<int>
   let w3 = ResizeArray<int>(3)
@@ -70,7 +70,7 @@ module TestResolutionOfAbbreviatedGenericTypeNameWithTypeArgumentsAsOverloadedCo
   let w7 = ResizeArray<int>(seq { yield 1; yield 3 } )
   let w8 = seq { yield 1; yield 3 } |> ResizeArray<int>
 
-module TestResolutionOfAbbreviatedGenericTypeNameAsOverloadedConstructorWithoutTypeAnnotation = 
+module TestResolutionOfAbbreviatedGenericTypeNameAsOverloadedConstructorWithoutTypeAnnotation =
   let x1 : ResizeArray<int> = ResizeArray()
   let x2 : ResizeArray<int> = () |> ResizeArray
   let x3 : ResizeArray<int> = ResizeArray(3)
@@ -80,12 +80,12 @@ module TestResolutionOfAbbreviatedGenericTypeNameAsOverloadedConstructorWithoutT
   let x7 : ResizeArray<int> = ResizeArray(seq { yield 1; yield 3 } )
   let x8 : ResizeArray<int> = seq { yield 1; yield 3 } |> ResizeArray
 
-module TestUseOfAbbreviatedGenericTypeNameAsLambdaForOverloadedConstructor = 
+module TestUseOfAbbreviatedGenericTypeNameAsLambdaForOverloadedConstructor =
   let x1 : unit -> ResizeArray<int> = ResizeArray
   let x4 : int -> ResizeArray<int> = ResizeArray
   let x5 : seq<int> -> ResizeArray<int> = ResizeArray
 
-module TestUseOfAbbreviatedGenericTypeNameWithTypeArgumentsAsLambdaForOverloadedConstructor = 
+module TestUseOfAbbreviatedGenericTypeNameWithTypeArgumentsAsLambdaForOverloadedConstructor =
   let x1 : unit -> ResizeArray<_> = ResizeArray<int>
   let x4 : int -> ResizeArray<_> = ResizeArray<int>
   let x5 : seq<int> -> ResizeArray<_> = ResizeArray<int>
@@ -93,7 +93,7 @@ module TestUseOfAbbreviatedGenericTypeNameWithTypeArgumentsAsLambdaForOverloaded
 
 type IntResizeArray = List<int>
 
-module TestResolutionOfAbbreviatedAndInstantiatedGenericTypeNameWithTypeArgumentsAsOverloadedConstructor = 
+module TestResolutionOfAbbreviatedAndInstantiatedGenericTypeNameWithTypeArgumentsAsOverloadedConstructor =
   let w1 = IntResizeArray()
   let w2 = () |> IntResizeArray
   let w3 = IntResizeArray(3)
@@ -103,7 +103,7 @@ module TestResolutionOfAbbreviatedAndInstantiatedGenericTypeNameWithTypeArgument
   let w7 = IntResizeArray(seq { yield 1; yield 3 } )
   let w8 = seq { yield 1; yield 3 } |> IntResizeArray
 
-module TestResolutionOfAbbreviatedAndInstantiatedGenericTypeNameAsOverloadedConstructorWithoutTypeAnnotation = 
+module TestResolutionOfAbbreviatedAndInstantiatedGenericTypeNameAsOverloadedConstructorWithoutTypeAnnotation =
   let x1 : IntResizeArray = IntResizeArray()
   let x2 : IntResizeArray = () |> IntResizeArray
   let x3 : IntResizeArray = IntResizeArray(3)
@@ -113,26 +113,26 @@ module TestResolutionOfAbbreviatedAndInstantiatedGenericTypeNameAsOverloadedCons
   let x7 : IntResizeArray = IntResizeArray(seq { yield 1; yield 3 } )
   let x8 : IntResizeArray = seq { yield 1; yield 3 } |> IntResizeArray
 
-module TestUseOfAbbreviatedAndInstantiatedGenericTypeNameAsLambdaForOverloadedConstructor = 
+module TestUseOfAbbreviatedAndInstantiatedGenericTypeNameAsLambdaForOverloadedConstructor =
   let x1 : unit -> IntResizeArray = IntResizeArray
   let x4 : int -> IntResizeArray = IntResizeArray
   let x5 : seq<int> -> IntResizeArray = IntResizeArray
 
-module TestUseOfAbbreviatedAndInstantiatedGenericTypeNameWithTypeArgumentsAsLambdaForOverloadedConstructor = 
+module TestUseOfAbbreviatedAndInstantiatedGenericTypeNameWithTypeArgumentsAsLambdaForOverloadedConstructor =
   let x1 : unit -> IntResizeArray = IntResizeArray
   let x4 : int -> IntResizeArray = IntResizeArray
   let x5 : seq<int> -> IntResizeArray = IntResizeArray
 
 
 
-module OverloadedTypeNamesBothWithConstructors = 
-    type OverloadedClassName<'T>(x:int) = 
+module OverloadedTypeNamesBothWithConstructors =
+    type OverloadedClassName<'T>(x:int) =
         new (y:string) = OverloadedClassName<'T>(1)
         member __.P = x
         static member S() = 3
 
 
-    type OverloadedClassName<'T1,'T2>(x:int) = 
+    type OverloadedClassName<'T1,'T2>(x:int) =
         new (y:string) = OverloadedClassName<'T1,'T2>(1)
         member __.P = x
         static member S() = 3
@@ -145,14 +145,14 @@ module OverloadedTypeNamesBothWithConstructors =
     //let t3s = "3" |> OverloadedClassName // expected error (see neg20.fs) - multiple types exist
 
 
-module OverloadedTypeNamesSomeConstructors = 
-    type OverloadedClassName<'T>(x:int) = 
+module OverloadedTypeNamesSomeConstructors =
+    type OverloadedClassName<'T>(x:int) =
         new (y:string) = OverloadedClassName<'T>(1)
         member __.P = x
         static member S() = 3
 
 
-    type OverloadedClassName<'T1,'T2> = 
+    type OverloadedClassName<'T1,'T2> =
         member __.P = 1
         static member S() = 3
 
@@ -163,11 +163,11 @@ module OverloadedTypeNamesSomeConstructors =
     //let t2s = "3" |> OverloadedClassName<int,int> //  expected error (see neg20.fs) - "The value or constructor 'OverloadedClassName' is not defined"
     //let t3s = "3" |> OverloadedClassName // expected error (see neg20.fs) - - multiple types exist
 
-module OverloadedTypeNamesNoConstructors = 
-    type OverloadedClassName<'T> = 
+module OverloadedTypeNamesNoConstructors =
+    type OverloadedClassName<'T> =
         static member S(x:int) = 3
 
-    type OverloadedClassName<'T1,'T2> = 
+    type OverloadedClassName<'T1,'T2> =
         static member S(x:int) = 3
 
     let t1 = 3 |> OverloadedClassName<int>.S
@@ -180,20 +180,20 @@ module OverloadedTypeNamesNoConstructors =
 
 
 
-module OverloadedTypeNamesIncludingNonGenericTypeAllWithConstructors = 
+module OverloadedTypeNamesIncludingNonGenericTypeAllWithConstructors =
 
-    type OverloadedClassName(x:int) = 
+    type OverloadedClassName(x:int) =
         new (y:string) = OverloadedClassName(1)
         member __.P = x
         static member S() = 3
 
-    type OverloadedClassName<'T>(x:int) = 
+    type OverloadedClassName<'T>(x:int) =
         new (y:string) = OverloadedClassName<'T>(1)
         member __.P = x
         static member S() = 3
 
 
-    type OverloadedClassName<'T1,'T2>(x:int) = 
+    type OverloadedClassName<'T1,'T2>(x:int) =
         new (y:string) = OverloadedClassName<'T1,'T2>(1)
         member __.P = x
         static member S() = 3
@@ -206,41 +206,41 @@ module OverloadedTypeNamesIncludingNonGenericTypeAllWithConstructors =
     let t3s = "3" |> OverloadedClassName
 
 
-module OverloadedTypeNamesIncludingNonGenericTypeSomeConstructors = 
-    type OverloadedClassName(x:int) = 
+module OverloadedTypeNamesIncludingNonGenericTypeSomeConstructors =
+    type OverloadedClassName(x:int) =
         new (y:string) = OverloadedClassName(1)
         member __.P = x
         static member S() = 3
 
-    type OverloadedClassName<'T>(x:int) = 
+    type OverloadedClassName<'T>(x:int) =
         new (y:string) = OverloadedClassName<'T>(1)
         member __.P = x
         static member S() = 3
 
 
-    type OverloadedClassName<'T1,'T2> = 
+    type OverloadedClassName<'T1,'T2> =
         member __.P = 1
         static member S() = 3
 
     let t1 = 3 |> OverloadedClassName<int>
     let t1s = "3" |> OverloadedClassName<int>
 
-module OverloadedTypeNamesIncludingNonGenericTypeNoConstructors = 
+module OverloadedTypeNamesIncludingNonGenericTypeNoConstructors =
 
-    type OverloadedClassName = 
+    type OverloadedClassName =
         static member S(x:int) = 3
 
-    type OverloadedClassName<'T> = 
+    type OverloadedClassName<'T> =
         static member S(x:int) = 3
 
-    type OverloadedClassName<'T1,'T2> = 
+    type OverloadedClassName<'T1,'T2> =
         static member S(x:int) = 3
 
     let t1 = 3 |> OverloadedClassName<int>.S
     let t2 = 3 |> OverloadedClassName<int,int>.S
-    let t3 = 3 |> OverloadedClassName.S 
-    let t3b = 3 |> OverloadedClassName<int>.S 
-    let t3c = 3 |> OverloadedClassName<int,int>.S 
+    let t3 = 3 |> OverloadedClassName.S
+    let t3b = 3 |> OverloadedClassName<int>.S
+    let t3c = 3 |> OverloadedClassName<int,int>.S
 
 
 

@@ -258,3 +258,125 @@ module M =
         |> withXmlCommentChecking
         |> compile
         |> shouldSucceed
+
+module XmlCommentCheckingGetSetProperty =
+
+    [<Fact>]
+    let ``Fully documented get-set property produces no xmldoc warning`` () =
+        Fsx """
+type MyClass() =
+    /// <summary>A property</summary>
+    /// <param name="index">The index</param>
+    /// <param name="value">The value</param>
+    member _.Item
+        with get(index: int) = index
+        and set (index: int) (value: int) = ()
+        """
+         |> withXmlCommentChecking
+         |> ignoreWarnings
+         |> compile
+         |> shouldSucceed
+         |> withDiagnostics []
+
+    [<Fact>]
+    let ``Simple get-set property with xmldoc no false warning`` () =
+        Fsx """
+type MyClass() =
+    /// <summary>Gets or sets the value</summary>
+    /// <param name="v">The value</param>
+    member _.Prop
+        with get() = 0
+        and set (v: int) = ()
+        """
+         |> withXmlCommentChecking
+         |> ignoreWarnings
+         |> compile
+         |> shouldSucceed
+         |> withDiagnostics []
+
+    [<Fact>]
+    let ``Get-only property xmldoc check unaffected`` () =
+        Fsx """
+type MyClass() =
+    /// <summary>A property</summary>
+    /// <param name="index">The index</param>
+    member _.Item with get(index: int) = index
+        """
+         |> withXmlCommentChecking
+         |> ignoreWarnings
+         |> compile
+         |> shouldSucceed
+         |> withDiagnostics []
+
+    [<Fact>]
+    let ``Actually missing param doc still warns for get-set`` () =
+        Fsx """
+type MyClass() =
+    /// <summary>A property</summary>
+    /// <param name="index">The index</param>
+    member _.Item
+        with get(index: int) = index
+        and set (index: int) (value: int) = ()
+        """
+         |> withXmlCommentChecking
+         |> ignoreWarnings
+         |> compile
+         |> shouldSucceed
+         |> withDiagnostics
+                [ (Warning 3390, Line 3, Col 5, Line 4, Col 46,
+                   "This XML comment is incomplete: no documentation for parameter 'value'") ]
+
+    [<Fact>]
+    let ``Documented param that exists in neither accessor warns`` () =
+        Fsx """
+type MyClass() =
+    /// <summary>A property</summary>
+    /// <param name="index">The index</param>
+    /// <param name="value">The value</param>
+    /// <param name="ghost">Does not exist</param>
+    member _.Item
+        with get(index: int) = index
+        and set (index: int) (value: int) = ()
+        """
+         |> withXmlCommentChecking
+         |> ignoreWarnings
+         |> compile
+         |> shouldSucceed
+         |> withDiagnostics
+                [ (Warning 3390, Line 3, Col 5, Line 6, Col 51,
+                   "This XML comment is invalid: unknown parameter 'ghost'") ]
+
+    [<Theory>]
+    [<InlineData("int", "int")>]
+    [<InlineData("float", "float")>]
+    let ``Get-set with different types fully documented is clean`` (getType: string) (setType: string) =
+        let source =
+            "\ntype MyClass() =\n"
+            + "    /// <summary>Prop</summary>\n"
+            + "    /// <param name=\"v\">The value</param>\n"
+            + "    member _.Prop\n"
+            + "        with get() : " + getType + " = Unchecked.defaultof<_>\n"
+            + "        and set (v: " + setType + ") = ()\n        "
+        Fsx source
+         |> withXmlCommentChecking
+         |> ignoreWarnings
+         |> compile
+         |> shouldSucceed
+         |> withDiagnostics []
+
+    [<Fact>]
+    let ``Issue 13684 repro indexed property fully documented is clean`` () =
+        Fsx """
+type A =
+    /// <summary></summary>
+    /// <param name="j"></param>
+    /// <param name="k"></param>
+    /// <param name="l"></param>
+    member x.A with get (j: int) : int = 3
+               and set (k: int) (l: int) = ()
+        """
+         |> withXmlCommentChecking
+         |> ignoreWarnings
+         |> compile
+         |> shouldSucceed
+         |> withDiagnostics []

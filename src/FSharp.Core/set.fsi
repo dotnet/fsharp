@@ -13,7 +13,7 @@ open Microsoft.FSharp.Collections
 /// <remarks>See the <see cref="T:Microsoft.FSharp.Collections.SetModule"/> module for further operations on sets.
 ///
 /// All members of this class are thread-safe and may be used concurrently from multiple threads.</remarks>
-#if NETSTANDARD2_1_OR_GREATER
+#if NETSTANDARD2_1_OR_GREATER || NET
 [<System.Runtime.CompilerServices.CollectionBuilder(typeof<Set>, "Create")>]
 #endif
 [<Sealed>]
@@ -263,7 +263,7 @@ type Set<[<EqualityConditionalOn>] 'T when 'T: comparison> =
     interface System.Collections.IStructuralEquatable
     interface IReadOnlyCollection<'T>
 
-#if NETSTANDARD2_1_OR_GREATER
+#if NETSTANDARD2_1_OR_GREATER || NET
 /// <summary>Contains methods for compiler use related to sets.</summary>
 and [<CompilerMessage("This type is for compiler use and should not be used directly", 1204, IsHidden = true);
       Sealed;

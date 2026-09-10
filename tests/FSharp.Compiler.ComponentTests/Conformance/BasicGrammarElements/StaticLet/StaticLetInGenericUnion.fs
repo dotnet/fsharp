@@ -1,19 +1,19 @@
 module Test
 
 [<Struct>]
-type MyUnion<'A,'B> = 
+type MyUnion<'A,'B> =
     | A of aval:'A
     | B of bval:'B
     | C
 
-    static let sizeOfTCached = 
+    static let sizeOfTCached =
         printfn "Creating cached val for %s * %s" (typeof<'A>.Name) (typeof<'B>.Name)
         sizeof<MyUnion<'A,'B>>
-        
+
 
     static let mutable perTyparInstMutableCounter = 0
 
-    static member IncBySize() = 
+    static member IncBySize() =
         perTyparInstMutableCounter <- perTyparInstMutableCounter + sizeOfTCached
 
     static member GetCounter() = perTyparInstMutableCounter

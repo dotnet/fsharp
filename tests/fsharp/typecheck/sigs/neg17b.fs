@@ -2,7 +2,7 @@
 module Test
 
 open Neg17
-           
+
 module N =
    let error1 = M.privateValue
    let error2a = M.DefaultTagOfPrivateType(3)
@@ -44,7 +44,7 @@ module N =
    //let private noError79 x = x.M.InternalFieldOfPublicType
    let noError10 (x:M.RecordTypeWithPrivateField) = ()
 
-   let noError21 = M.internalValue  
+   let noError21 = M.internalValue
    let error22   = M.DefaultTagOfInternalType(3) // returning internal type as public value
    let noError23 = M.Type().InternalProperty
    let noError24 = M.Type.InternalStaticProperty
@@ -55,4 +55,3 @@ module N =
    //let error29 x = x.M.InternalFieldOfPublicType // returning internal type as argument to public function
 
 
-       

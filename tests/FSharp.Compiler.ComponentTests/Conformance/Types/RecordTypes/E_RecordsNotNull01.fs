@@ -1,4 +1,4 @@
-// #Regression #Conformance #TypesAndModules #Records 
+// #Regression #Conformance #TypesAndModules #Records
 
 
 // Verify records cannot have null as a proper value

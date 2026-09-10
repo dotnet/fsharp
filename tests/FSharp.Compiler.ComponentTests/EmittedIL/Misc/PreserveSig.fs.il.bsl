@@ -17,16 +17,6 @@
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
-.mresource public FSharpSignatureCompressedData.assembly
-{
-  
-  
-}
-.mresource public FSharpOptimizationCompressedData.assembly
-{
-  
-  
-}
 .module assembly.exe
 
 .imagebase {value}
@@ -42,8 +32,7 @@
 .class interface public abstract auto ansi serializable Foo.Bar
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
-  .method public hidebysig abstract virtual 
-          instance int32  MyCall() cil managed preservesig
+  .method public hidebysig abstract virtual instance int32  MyCall() cil managed preservesig
   {
   } 
 

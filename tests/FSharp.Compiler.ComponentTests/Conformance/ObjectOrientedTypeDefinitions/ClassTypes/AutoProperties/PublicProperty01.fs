@@ -17,7 +17,7 @@ module M2 =
 
     x.InternalProperty <- 1
     if x.InternalProperty <> 1 then exit 1
-    
+
     T.StaticPublicProperty <- 1
     if T.StaticPublicProperty <> 1 then exit 1
 

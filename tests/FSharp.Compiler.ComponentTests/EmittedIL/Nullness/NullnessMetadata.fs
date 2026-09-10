@@ -25,117 +25,118 @@ module NullnessMetadata =
         |> verifyILBaseline
 
     [<Theory; FileInlineData("ModuleLevelBindings.fs")>]
-    let ``Nullable attr for module bindings`` compilation =  
+    let ``Nullable attr for module bindings`` compilation =
         compilation
         |> getCompilation
         |> verifyCompilation DoNotOptimize
 
     [<Theory; FileInlineData("ModuleLevelFunctions.fs")>]
-    let ``Nullable attr for module functions`` compilation =  
+    let ``Nullable attr for module functions`` compilation =
         compilation
         |> getCompilation
         |> verifyCompilation DoNotOptimize
 
     [<Theory; FileInlineData("ModuleLevelFunctionsOpt.fs")>]
-    let ``Nullable attr for module functions optimize`` compilation =  
+    let ``Nullable attr for module functions optimize`` compilation =
         compilation
         |> getCompilation
         |> verifyCompilation Optimize
 
     [<Theory; FileInlineData("CurriedFunctions.fs")>]
-    let ``Nullable attr for curriedFunc optimize`` compilation =  
+    let ``Nullable attr for curriedFunc optimize`` compilation =
         compilation
         |> getCompilation
         |> verifyCompilation Optimize
 
     [<Theory; FileInlineData("AnonRecords.fs")>]
-    let ``Nullable attr for anon records`` compilation =  
+    let ``Nullable attr for anon records`` compilation =
         compilation
         |> getCompilation
         |> verifyCompilation DoNotOptimize
 
     [<Theory; FileInlineData("Records.fs")>]
-    let ``Nullable attr for records with generics`` compilation =  
+    let ``Nullable attr for records with generics`` compilation =
         compilation
         |> getCompilation
         |> verifyCompilation DoNotOptimize
 
     [<Theory; FileInlineData("PlainRecord.fs")>]
-    let ``Nullable attr for plain records`` compilation =  
+    let ``Nullable attr for plain records`` compilation =
         compilation
         |> getCompilation
         |> verifyCompilation DoNotOptimize
 
     [<Theory; FileInlineData("ExceptionType.fs")>]
-    let ``Nullable attr for exception types`` compilation =  
+    let ``Nullable attr for exception types`` compilation =
         compilation
         |> getCompilation
+        |> withLangVersion10 // ExceptionFieldSerializationSupport (11.0) changes exception IL; pin to pre-11 (nullness stays on, gated at 9.0)
         |> verifyCompilation DoNotOptimize
 
     [<Theory; FileInlineData("ReferenceDU.fs")>]
-    let ``Nullable attr for ref DUs`` compilation =  
+    let ``Nullable attr for ref DUs`` compilation =
         compilation
         |> getCompilation
         |> verifyCompilation DoNotOptimize
 
     [<Theory; FileInlineData("StructDU.fs")>]
-    let ``Nullable attr for struct DUs`` compilation =  
+    let ``Nullable attr for struct DUs`` compilation =
         compilation
         |> getCompilation
         |> verifyCompilation DoNotOptimize
 
     [<Theory; FileInlineData("CustomType.fs")>]
-    let ``Nullable attr for custom type`` compilation =  
+    let ``Nullable attr for custom type`` compilation =
         compilation
         |> getCompilation
         |> verifyCompilation DoNotOptimize
 
     [<Theory; FileInlineData("NullAsTrueValue.fs")>]
-    let ``Nullable attr for Option clones`` compilation =  
+    let ``Nullable attr for Option clones`` compilation =
         compilation
         |> getCompilation
         |> verifyCompilation DoNotOptimize
 
     [<Theory; FileInlineData("GenericStructDu.fs")>]
-    let ``Generic struct DU`` compilation =  
+    let ``Generic struct DU`` compilation =
         compilation
         |> getCompilation
         |> verifyCompilation DoNotOptimize
 
     [<Theory; FileInlineData("NullableInheritance.fs")>]
-    let ``Nullable inheritance`` compilation =  
+    let ``Nullable inheritance`` compilation =
         compilation
         |> getCompilation
         |> verifyCompilation DoNotOptimize
 
     [<Theory; FileInlineData("CustomPipe.fs")>]
-    let ``Custom pipe`` compilation =  
+    let ``Custom pipe`` compilation =
         compilation
         |> getCompilation
         |> verifyCompilation DoNotOptimize
 
     [<Theory; FileInlineData("SupportsNull.fs")>]
-    let ``SupportsNull`` compilation =  
+    let ``SupportsNull`` compilation =
         compilation
         |> getCompilation
         |> withNoWarn 52
         |> verifyCompilation DoNotOptimize
 
     [<Theory; FileInlineData("GenericCode.fs")>]
-    let ``GenericCode`` compilation =  
+    let ``GenericCode`` compilation =
         compilation
         |> getCompilation
         |> withNoWarn 52
         |> verifyCompilation DoNotOptimize
 
     [<Fact>]
-    let ``Override missing in signature`` () =  
+    let ``Override missing in signature`` () =
         FsFromPath (__SOURCE_DIRECTORY__ ++ "HasSignatureWithMissingOverride.fsi")
         |> withAdditionalSourceFile (SourceFromPath (__SOURCE_DIRECTORY__ ++ "HasSignatureWithMissingOverride.fs"))
         |> withNoWarn 52
         |> addOptions DoNotOptimize
         |> compile
-        |> verifyILContains 
+        |> verifyILContains
             [".method public hidebysig virtual instance string ToString() cil managed"
              ".method public hidebysig virtual instance int32 GetHashCode() cil managed"
              "hidebysig virtual instance bool Equals(object obj) cil managed"
@@ -143,14 +144,14 @@ module NullnessMetadata =
         |> shouldSucceed
 
     [<Theory; FileInlineData("NullableDowncasting.fs")>]
-    let ``Downcasting and typetests`` compilation =  
+    let ``Downcasting and typetests`` compilation =
         compilation
         |> getCompilation
         |> withNoWarn 52
         |> verifyCompilation DoNotOptimize
 
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"NullableDowncasting.fs"|], BaselineSuffix = ".opt")>]
-    let ``Downcasting and typetests optimized`` compilation =  
+    let ``Downcasting and typetests optimized`` compilation =
         compilation
         |> withNoWarn 52
         |> verifyCompilation Optimize
@@ -159,27 +160,27 @@ module NullnessMetadata =
     module Interop  =
         open System.IO
 
-        let fsharpLibCreator = 
-            FSharp 
-            >> asLibrary 
-            >> withName "MyFSharpLib" 
+        let fsharpLibCreator =
+            FSharp
+            >> asLibrary
+            >> withName "MyFSharpLib"
             >> withOptions ["--checknulls"]
 
-        let csharpLibCompile fsLibReference = 
-            CSharp 
-            >> withReferences [fsLibReference] 
+        let csharpLibCompile fsLibReference =
+            CSharp
+            >> withReferences [fsLibReference]
             >> withCSharpLanguageVersion CSharpLanguageVersion.Preview
             >> asLibrary
             >> withName "CsharpAppConsumingNullness"
             >> compile
 
-        let FsharpFromFile filename = 
+        let FsharpFromFile filename =
             Path.Combine(__SOURCE_DIRECTORY__, filename)
             |> File.ReadAllText
             |> fsharpLibCreator
 
         [<Fact>]
-        let ``Csharp understands option like type using UseNullAsTrueValue`` () = 
+        let ``Csharp understands option like type using UseNullAsTrueValue`` () =
             let csharpCode = """
 using System;
 using static TestModule;
@@ -208,11 +209,11 @@ public class C {
     }
     }"""
             csharpCode
-            |> csharpLibCompile (FsharpFromFile "NullAsTrueValue.fs")       
+            |> csharpLibCompile (FsharpFromFile "NullAsTrueValue.fs")
             |> withDiagnostics [ Warning 8602, Line 12, Col 27, Line 12, Col 37, "Dereference of a possibly null reference."]
 
         [<Fact>]
-        let ``Csharp understands Fsharp-produced struct unions via IsXXX flow analysis`` () = 
+        let ``Csharp understands Fsharp-produced struct unions via IsXXX flow analysis`` () =
             let csharpCode = """
 #nullable enable
 public class C {
@@ -238,7 +239,7 @@ public class C {
     }
     }"""
             csharpCode
-            |> csharpLibCompile (FsharpFromFile "StructDU.fs")       
+            |> csharpLibCompile (FsharpFromFile "StructDU.fs")
             |> withDiagnostics [
                         Warning 8600, Line 6, Col 35, Line 6, Col 57, "Converting null literal or possible null value to non-nullable type."
                         Warning 8600, Line 14, Col 78, Line 14, Col 97, "Converting null literal or possible null value to non-nullable type."
@@ -246,7 +247,7 @@ public class C {
                         Warning 8625, Line 18, Col 62, Line 18, Col 66, "Cannot convert null literal to non-nullable reference type."]
 
         [<Fact>]
-        let ``Csharp code understands Fsharp-produced generics`` () = 
+        let ``Csharp code understands Fsharp-produced generics`` () =
             let fsharpcode = """
 module MyFSharpLib
 let stringTupleInOut(x:struct(string * string|null)) = x"""
@@ -260,7 +261,7 @@ public class C {
     }
 }"""
             csharpCode
-            |> csharpLibCompile fsLib       
+            |> csharpLibCompile fsLib
             |> withDiagnostics []
 
         [<Fact>]

@@ -7,8 +7,8 @@ open Xunit
 open FSharp.Test.Compiler
 open FSharp.Test.ScriptHelpers
 
-// Run sequentially because of shared fsiSession.
-[<FSharp.Test.RunTestCasesInSequence>]
+// Leverage caching/prevent concurrent mutation via long-lived fsiSession in module state
+[<TestClass(DisableParallelization = true)>]
 module SequenceExpression =
 
     let fsiSession = getSessionForEval [||] LangVersion.Preview
@@ -386,6 +386,61 @@ let whatIsIt =
         |> runCode
         |> shouldSucceed
 
+    // Regression test for https://github.com/dotnet/fsharp/issues/19660
+    [<Fact>]
+    let ``Handler body executes once when source throws immediately and handler yields nothing``() =
+        Fsx """
+let mutable bodyCount = 0
+let result =
+    seq {
+        try yield (1/0)
+        with _ ->
+            bodyCount <- bodyCount + 1
+            ()
+    } |> Array.ofSeq
+if bodyCount <> 1 then failwith $"bodyCount was {bodyCount}"
+if result <> [||] then failwith $"result was %A{result}"
+        """
+        |> runCode
+        |> shouldSucceed
+
+    // When-guard double-execution is by design (RFC FS-1134 L37-38).
+
+    [<Fact>]
+    let ``When guard in seq try-with - false guard falls through correctly``() =
+        Fsx """
+let mutable guard1Count = 0
+let mutable guard2Count = 0
+let result =
+    seq {
+        try yield (1/0)
+        with
+        | _ when (guard1Count <- guard1Count + 1; false) -> yield 1
+        | _ when (guard2Count <- guard2Count + 1; true) -> yield 99
+    } |> Array.ofSeq
+if guard1Count <> 2 then failwith $"guard1Count was {guard1Count}"
+if guard2Count <> 2 then failwith $"guard2Count was {guard2Count}"
+if result <> [|99|] then failwith $"result was %A{result}"
+        """
+        |> runCode
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``When guard in seq try-with executes twice per iteration in for loop``() =
+        Fsx """
+let mutable guardCount = 0
+let result =
+    seq {
+        for x in [0; 0; 0] do
+            try yield (1/x)
+            with _ when (guardCount <- guardCount + 1; true) -> yield 99
+    } |> Array.ofSeq
+if guardCount <> 6 then failwith $"guardCount was {guardCount}"
+if result <> [|99; 99; 99|] then failwith $"result was %A{result}"
+        """
+        |> runCode
+        |> shouldSucceed
+
     [<Theory>]
     [<InlineData("41","42","43")>]
     [<InlineData("()","42","43")>]
@@ -443,7 +498,7 @@ let typedSeq =
         """
         |> withLangVersion80
         |> typecheck
-        |> shouldFail    
+        |> shouldFail
         |> withDiagnosticMessageMatches "This expression returns a value of type 'int' but is implicitly discarded."
         |> withDiagnosticMessageMatches "If you intended to use the expression as a value in the sequence then use an explicit 'yield'."
 
@@ -494,7 +549,7 @@ let typedSeq =
         |> withErrorCode 30
         |> withDiagnosticMessageMatches "Value restriction: The value 'typedSeq' has an inferred generic type"
         |> withDiagnosticMessageMatches "val typedSeq: '_a seq"
- 
+
     [<Fact>]
     let ``yield may only be used within list, array, and sequence expressions``() =
         Fsx """
@@ -507,7 +562,7 @@ let f2 = yield! [ 3; 4 ]
             (Error 747, Line 2, Col 10, Line 2, Col 15, "This construct may only be used within list, array and sequence expressions, e.g. expressions of the form 'seq { ... }', '[ ... ]' or '[| ... |]'. These use the syntax 'for ... in ... do ... yield...' to generate elements");
             (Error 747, Line 3, Col 10, Line 3, Col 16, "This construct may only be used within list, array and sequence expressions, e.g. expressions of the form 'seq { ... }', '[ ... ]' or '[| ... |]'. These use the syntax 'for ... in ... do ... yield...' to generate elements")
         ]
-    
+
     [<Fact>]
     let ``return may only be used within list, array, and sequence expressions``() =
         Fsx """
@@ -541,7 +596,7 @@ let c = [ { 1;10 } ]
             (Error 740, Line 5, Col 12, Line 5, Col 20, "Invalid record, sequence or computation expression. Sequence expressions should be of the form 'seq { ... }'")
             (Error 740, Line 6, Col 11, Line 6, Col 19, "Invalid record, sequence or computation expression. Sequence expressions should be of the form 'seq { ... }'")
         ]
-    
+
     [<Fact>]
     let ``Sequence(SynExpr.Sequential) expressions should be of the form 'seq { ... } lang version preview``() =
         Fsx """
@@ -635,7 +690,7 @@ let c = [ { 1;10 } ]
         |> withLangVersion90
         |> typecheck
         |> shouldSucceed
-    
+
     // SOURCE=SequenceExpressions01.fs 	# SequenceExpressions01.fs
     [<Theory; FileInlineData("SequenceExpressions01.fs")>]
     let ``SequenceExpressions01 lang version preview`` compilation =
@@ -645,7 +700,7 @@ let c = [ { 1;10 } ]
         |> withLangVersion10
         |> typecheck
         |> shouldSucceed
-        
+
     [<Fact>]
     let ``Version 9.0: Allow SE yield and type annotations don't play well together needing parentheses``() =
         FSharp """
@@ -668,7 +723,7 @@ let f1() =
         |> withDiagnostics [
             (Error 3350, Line 7, Col 15, Line 7, Col 22, "Feature 'Allow let! and use! type annotations without requiring parentheses' is not available in F# 9.0. Please use language version 10.0 or greater.")
         ]
-        
+
     [<Fact>]
     let ``Preview: Allow SE yield and type annotations to play well together without needing parentheses``() =
         FSharp """
@@ -690,7 +745,7 @@ let f1() =
         |> ignoreWarnings
         |> compileAndRun
         |> shouldSucceed
-        
+
     [<Fact>]
     let ``Version 9.0: Allow SE yield! and type annotations don't play well together needing parentheses``() =
         FSharp """
@@ -713,7 +768,7 @@ let f1() =
         |> withDiagnostics [
             (Error 3350, Line 7, Col 16, Line 7, Col 32, "Feature 'Allow let! and use! type annotations without requiring parentheses' is not available in F# 9.0. Please use language version 10.0 or greater.")
         ]
-                
+
     [<Fact>]
     let ``Preview: Allow SE yield! and type annotations to play well together without needing parentheses``() =
         FSharp """

@@ -19,10 +19,12 @@ open Xunit
 
 type InteractiveTests() =
 
+#if NETSTANDARD
     let copyHousingToTemp() =
         let tempName = TestFramework.getTemporaryFileName()
         File.Copy(__SOURCE_DIRECTORY__ ++ "housing.csv", tempName + ".csv")
         tempName
+#endif
 
     [<Fact>]
     member _.``ValueRestriction error message should not have type variables fully solved``() =

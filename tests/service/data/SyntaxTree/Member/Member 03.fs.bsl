@@ -6,7 +6,8 @@ ImplFile
           [Types
              ([SynTypeDefn
                  (SynComponentInfo
-                    ([], None, [], [T],
+                    ([], None, [],
+                     Some (LongIdent (SynLongIdent ([T], [], [None]))),
                      PreXmlDoc ((3,0), FSharp.Compiler.Xml.XmlDocCollector),
                      false, None, (3,5--3,6)),
                   ObjectModel
@@ -110,5 +111,5 @@ ImplFile
         WarnDirectives = []
         CodeComments = [] }, set []))
 
-(5,23)-(6,4) parse error Incomplete structured construct at or before this point in member definition
+(5,22)-(5,22) parse error Identifier expected
 (5,23)-(6,4) parse error Expecting member body

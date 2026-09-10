@@ -1,27 +1,27 @@
-// #Regression #Conformance #ObjectOrientedTypes #TypeInference 
+// #Regression #Conformance #ObjectOrientedTypes #TypeInference
 
 // Verify type kind inference based on type members
-module TypeInference 
+module TypeInference
 
 // val binding / explicit field
 [<Class>]
-type TK_C_003 = 
+type TK_C_003 =
  val a : obj
 
 // object constructor
 [<Class>]
-type TK_C_004 = 
+type TK_C_004 =
  new() = {}
 
 // explicit object constructor + implicit constructor
 [<Class>]
-type TK_C_005() = 
+type TK_C_005() =
  new(s:string) = new TK_C_005()
 
 //  implicit constructor
 [<Class>]
 type TK_C_006() = class end
- 
+
 // let binding
 [<Class>]
 type TK_C_007(o:obj) =
@@ -42,8 +42,8 @@ type TK_C_009(o:obj) =
 [<Class>]
 type TK_C_010(o:obj) =
  static do System.Console.WriteLine()
- 
-// non-abstract instance member 
+
+// non-abstract instance member
 [<Class>]
 type TK_C_011 =
  member x.m(b:bool) = 0
@@ -53,18 +53,18 @@ type TK_C_011 =
 type TK_C_012 =
  static member m(c:char) = 0
 
-// non-abstract override member 
+// non-abstract override member
 [<Class>]
-type TK_C_013 = 
+type TK_C_013 =
  override m.ToString()=  "TK_C_006"
- 
-// inherits decl 
+
+// inherits decl
 [<Class>]
-type TK_C_014() = 
+type TK_C_014() =
   inherit TK_C_006()
 
 // inherit interface + concrete element // 2594 & 1978
-type TK_I_003 = 
+type TK_I_003 =
   abstract M: unit -> string
 
 [<Class>]
@@ -72,9 +72,9 @@ type TK_C_015() =
   interface TK_I_003 with
     member x.M() = "M"
 
-  
+
 let mutable a = false
-try 
+try
   a <- (System.Reflection.Assembly.GetExecutingAssembly().GetTypes() |> Array.find (fun t -> t.FullName = "TypeInference+TK_C_003")).IsClass
   a <- (System.Reflection.Assembly.GetExecutingAssembly().GetTypes() |> Array.find (fun t -> t.FullName = "TypeInference+TK_C_004")).IsClass
   a <- (System.Reflection.Assembly.GetExecutingAssembly().GetTypes() |> Array.find (fun t -> t.FullName = "TypeInference+TK_C_005")).IsClass
@@ -88,9 +88,9 @@ try
   a <- (System.Reflection.Assembly.GetExecutingAssembly().GetTypes() |> Array.find (fun t -> t.FullName = "TypeInference+TK_C_013")).IsClass
   a <- (System.Reflection.Assembly.GetExecutingAssembly().GetTypes() |> Array.find (fun t -> t.FullName = "TypeInference+TK_C_014")).IsClass
   a <- (System.Reflection.Assembly.GetExecutingAssembly().GetTypes() |> Array.find (fun t -> t.FullName = "TypeInference+TK_C_015")).IsClass
-with 
-  | _ as e -> 
+with
+  | _ as e ->
     printfn "%A" e
     a <- false
-    
+
 (if (a) then 0 else 1) |> exit

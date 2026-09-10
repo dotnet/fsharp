@@ -21,34 +21,34 @@ open System.Runtime.InteropServices
 open System
 open System.Collections.Generic
 
-module internal VsMocks = 
+module internal VsMocks =
     let private notimpl() = raise (new System.Exception("Not implemented"))
     let private ok = VSConstants.S_OK
     let private fail = VSConstants.E_FAIL
     let private impl1 fo next a =
-        match fo with 
-            Some(f) -> 
+        match fo with
+            Some(f) ->
                 match f a with | Some(r) -> r | _ -> next a
             | _ -> next a
     let private impl2 fo next a b =
-        match fo with 
-            Some(f) -> 
+        match fo with
+            Some(f) ->
                 match f a b with | Some(r) -> r | _ -> next a b
             | _ -> next a b
     let private impl3 fo next a b c=
-        match fo with 
-            Some(f) -> 
+        match fo with
+            Some(f) ->
                 match f a b c with | Some(r) -> r | _ -> next a b c
             | _ -> next a b c
     let private impl4 fo next a b c d=
-        match fo with 
-            Some(f) -> 
+        match fo with
+            Some(f) ->
                 match f a b c d with | Some(r) -> r | _ -> next a b c d
             | _ -> next a b c d
-    let private uimpl fo next = 
-        match fo with 
-                Some(f) -> 
-                    match f() with 
+    let private uimpl fo next =
+        match fo with
+                Some(f) ->
+                    match f() with
                         Some(r)->r
                       | None -> next()
                | _ -> next()
@@ -58,13 +58,13 @@ module internal VsMocks =
             abstract GetInner: unit->'a
         end
 
-    type VSITEMID=int32        
+    type VSITEMID=int32
 
 
-    type VsFileChangeEx() = 
+    type VsFileChangeEx() =
         let fileToEvents = new Dictionary<string,IVsFileChangeEvents list>()
         let Canonicalize (fileName:string) = System.IO.Path.GetFullPath(fileName)
-        
+
         member c.AddedFile(file) =
 //            printfn "VsMocks.VsFileChangeEx: Added file %s " file
             c.SomehowModifiedFile(file, uint32 _VSFILECHANGEFLAGS.VSFILECHG_Add)
@@ -79,13 +79,13 @@ module internal VsMocks =
             let CallFilesChanged(fce:IVsFileChangeEvents) =
 //                printfn "VsMocks.VsFileChangeEx: Calling FilesChanged callback for %s, how = %A " file how
                 fce.FilesChanged(1u,[|file|],[|how|])|>ignore
-            
+
             match fileToEvents.TryGetValue(file) with
             | true, events -> events |> List.iter CallFilesChanged
             | false, _ -> ()
-            
+
         interface IVsFileChangeEx with
-            member fc.AdviseFileChange(pszMkDocument,grfFilter,pFCE,vsCookie) = 
+            member fc.AdviseFileChange(pszMkDocument,grfFilter,pFCE,vsCookie) =
                 let pszMkDocument = Canonicalize pszMkDocument
 //                printfn "VsMocks.VsFileChangeEx: Advise %s " pszMkDocument
                 match fileToEvents.TryGetValue(pszMkDocument) with
@@ -93,20 +93,20 @@ module internal VsMocks =
                 | false, _ -> fileToEvents.Add(pszMkDocument, [pFCE])
                 vsCookie <- 0u
                 ok
-            member fc.UnadviseFileChange(vsCookie) = 
+            member fc.UnadviseFileChange(vsCookie) =
 //                printfn "VsMocks.VsFileChangeEx: Unadvise %d " vsCookie
                 ok
             member fc.SyncFile(pszMkDocument) = notimpl()
             member fc.IgnoreFile(vsCookie, pszMkDocument, fIgnore) = notimpl()
             member fc.AdviseDirChange(pszDir, fWatchSubDir, pFCE,vsCookie) = notimpl()
             member fc.UnadviseDirChange(vsCookie) = notimpl()
-    
+
     /// Mockable versions of various VS interfaces. Use optional function parameters
-    /// so that we don't have to specify all of them.       
-    type Vs() = 
+    /// so that we don't have to specify all of them.
+    type Vs() =
         static let FSharpProjectGuid = new Guid(Microsoft.VisualStudio.FSharp.ProjectSystem.GuidList.guidFSharpProjectFactoryString)
-        
-        static member MakeTextView() = 
+
+        static member MakeTextView() =
             let userData = new Dictionary<Guid,obj>()
             {new IVsTextView with
                 member tv.Initialize(pBuffer, hwndParent, initFlags, pInitView) = notimpl()
@@ -159,14 +159,14 @@ module internal VsMocks =
                     |   _   -> userData.Add(guid,obj) |> ignore
                     VSConstants.S_OK
                 member x.GetData(guid,obj) =
-                    if userData.ContainsKey(guid) then 
+                    if userData.ContainsKey(guid) then
                         obj <- userData.[guid]
                     else
                         obj <- null
                     VSConstants.S_OK
             }
-        
-        
+
+
         static member VsUserContext(?addAttribute) =
             { new IVsUserContext with
                 member this.AddAttribute (usage,key,value) =
@@ -191,8 +191,8 @@ module internal VsMocks =
                 member this.RemoveAttributeIncludeChildren(_,_) = notimpl()
                 member this.GetAttributePri(_,_,_,_,_,_) = notimpl()
             }
-        
-        static member DelegateTextView(oldtv:IVsTextView, ?getBuffer, ?getScrollInfo, ?getTopmostLayer) = 
+
+        static member DelegateTextView(oldtv:IVsTextView, ?getBuffer, ?getScrollInfo, ?getTopmostLayer) =
             let inner:Ref<IVsTextView> = ref oldtv
             {new IVsTextView with
                 member tv.Initialize(pBuffer, hwndParent, initFlags, pInitView) = (!inner).Initialize(pBuffer, hwndParent, initFlags, pInitView)
@@ -211,7 +211,7 @@ module internal VsMocks =
                 member tv.GetTextStream(iTopLine, iTopCol, iBottomLine, iBottomCol, pbstrText) = (!inner).GetTextStream(iTopLine, iTopCol, iBottomLine, iBottomCol, ref pbstrText)
                 member tv.SetBuffer(pBuffer) = (!inner).SetBuffer(pBuffer)
                 member tv.GetWindowHandle() = (!inner).GetWindowHandle()
-                member tv.GetScrollInfo(iBar, piMinUnit, piMaxUnit, piVisibleUnits, piFirstVisibleUnit) = 
+                member tv.GetScrollInfo(iBar, piMinUnit, piMaxUnit, piVisibleUnits, piFirstVisibleUnit) =
                     let next bar = (!inner).GetScrollInfo(bar)
                     let hr,minu,maxu,visu,firstvis= impl1 getScrollInfo next iBar
                     piMinUnit<-minu
@@ -238,7 +238,7 @@ module internal VsMocks =
                 member tv.HighlightMatchingBrace(dwFlags, cSpans, rgBaseSpans) = (!inner).HighlightMatchingBrace(dwFlags, cSpans, rgBaseSpans)
                 member tv.SendExplicitFocus() = (!inner).SendExplicitFocus()
                 member tv.SetTopLine(iBaseLine) = (!inner).SetTopLine(iBaseLine)
-                member tv.GetBuffer(ppbuffer) = 
+                member tv.GetBuffer(ppbuffer) =
                     let next() = (!inner).GetBuffer()
                     let hr,buf = uimpl getBuffer next
                     ppbuffer<-buf
@@ -247,7 +247,7 @@ module internal VsMocks =
                 member ltv.GetSelectedAtom(dwFlags, ppunkAtom) = notimpl()
                 member ltv.GetRelativeSelectionState(dwFlags, pReferenceLayer, pSelState) = notimpl()
                 member ltv.SetRelativeSelectionState(dwFlags, pReferenceLayer, pSelState) = notimpl()
-                member ltv.GetTopmostLayer(ppLayer) = 
+                member ltv.GetTopmostLayer(ppLayer) =
                     let next() = ((box (!inner)):?>IVsLayeredTextView).GetTopmostLayer()
                     let hr,l = uimpl getTopmostLayer next
                     ppLayer<-l
@@ -258,8 +258,8 @@ module internal VsMocks =
             interface IVsUserData with
                 member ud.GetData(guid,o) = ((!inner) :?> IVsUserData).GetData(&guid,&o)
                 member ud.SetData(guid,o) = ((!inner) :?> IVsUserData).SetData(&guid,o)
-             }                
-            
+             }
+
         static member MakeTextLayer() =
            {new IVsTextLayer with
                 member tl.LocalLineIndexToBase(iLocalLine, iLocalIndex, piBaseLine, piBaseIndex) = notimpl()
@@ -285,17 +285,17 @@ module internal VsMocks =
                 member tl.ReplaceLinesEx(dwFlags, iStartLine, iStartIndex, iEndLine, iEndIndex, pszText, iNewLen, pChangedSpan) = notimpl()
                 member tl.MapLocalSpansToTextOriginatingLayer(dwFlags, pLocalSpanEnum, ppTargetLayer, ppTargetSpanEnum) = notimpl()
            }
-        static member DelegateTextLayer(oldtl:IVsTextLayer, ?localLineIndexToBase) = 
+        static member DelegateTextLayer(oldtl:IVsTextLayer, ?localLineIndexToBase) =
             let inner = ref oldtl
             {new IVsTextLayer with
-                member tl.LocalLineIndexToBase(iLocalLine, iLocalIndex, piBaseLine, piBaseIndex) = 
+                member tl.LocalLineIndexToBase(iLocalLine, iLocalIndex, piBaseLine, piBaseIndex) =
                     let next ll li = (!inner).LocalLineIndexToBase(ll,li)
                     let hr,bl,bi = impl2 localLineIndexToBase next iLocalLine iLocalIndex
                     piBaseLine<-bl
                     piBaseIndex<-bi
                     hr
                 member tl.BaseLineIndexToLocal(iBaseLine, iBaseIndex, piLocalLine, piLocalIndex) = notimpl()
-                member tl.LocalLineIndexToDeeperLayer(pTargetLayer, iLocalLine, iLocalIndex, piTargetLine, piTargetIndex) = notimpl() 
+                member tl.LocalLineIndexToDeeperLayer(pTargetLayer, iLocalLine, iLocalIndex, piTargetLine, piTargetIndex) = notimpl()
                 member tl.DeeperLayerLineIndexToLocal(dwFlags, pTargetLayer, iLayerLine, iLayerIndex, piLocalLine, piLocalIndex) = notimpl()
                 member tl.GetBaseBuffer(ppiBuf) = notimpl()
                 member tl.LockBufferEx(dwFlags) = notimpl()
@@ -314,12 +314,12 @@ module internal VsMocks =
                 member tl.CreateTrackingPoint(iLine, iIndex, ppMarker) = notimpl()
                 member tl.EnumLayerMarkers(iStartLine, iStartIndex, iEndLine, iEndIndex, iMarkerType, dwFlags, ppEnum) = notimpl()
                 member tl.ReplaceLinesEx(dwFlags, iStartLine, iStartIndex, iEndLine, iEndIndex, pszText, iNewLen, pChangedSpan) = notimpl()
-                member tl.MapLocalSpansToTextOriginatingLayer(dwFlags, pLocalSpanEnum, ppTargetLayer, ppTargetSpanEnum) = notimpl()            
+                member tl.MapLocalSpansToTextOriginatingLayer(dwFlags, pLocalSpanEnum, ppTargetLayer, ppTargetSpanEnum) = notimpl()
              interface IDelegable<IVsTextLayer> with
                 member id.GetInner() = !inner
                 member id.SetInner(i) = inner:=i
             }
-            
+
         static member MakeTextLineMarker() =
             let mutable markerSpan = new TextSpan(iStartLine = 0, iEndLine = 0, iStartIndex = 0, iEndIndex = 0)
             {new IVsTextLineMarker with
@@ -334,14 +334,14 @@ module internal VsMocks =
                 member tl.GetType(piMarkerType) = notimpl()
                 member tl.GetVisualStyle(pdwFlags) = notimpl()
                 member tl.Invalidate() = 0
-                member tl.ResetSpan(iSL, iSI, iEL, iEI) = 
-                    markerSpan <- new TextSpan(iStartLine = iSL, iEndLine = iEL, iStartIndex = iSI, iEndIndex = iEI) ; 
+                member tl.ResetSpan(iSL, iSI, iEL, iEI) =
+                    markerSpan <- new TextSpan(iStartLine = iSL, iEndLine = iEL, iStartIndex = iSI, iEndIndex = iEI) ;
                     0
                 member tl.SetBehavior(dwBehavior) = notimpl()
                 member tl.SetType(iMarkerType) = notimpl()
                 member tl.SetVisualStyle(dwFlags) = notimpl()
                 member tl.UnadviseClient() = 0
-                
+
             interface IVsTextMarker with
                 member tl.DrawGlyph(hdc, pRect) = notimpl()
                 member tl.ExecMarkerCommand(iItem) = notimpl()
@@ -397,7 +397,7 @@ module internal VsMocks =
                 member tl.CopyLineText(iStartLine, iStartIndex, iEndLine, iEndIndex, pszBuf, pcchBuf)= notimpl()
                 member tl.ReplaceLines(iStartLine, iStartIndex, iEndLine, iEndIndex, pszText, iNewLen, pChangedSpan)= notimpl()
                 member tl.CanReplaceLines(iStartLine, iStartIndex, iEndLine, iEndIndex, iNewLen)= notimpl()
-                member tl.CreateLineMarker(iMarkerType, iStartLine, iStartIndex, iEndLine, iEndIndex, pClient, ppMarker)= 
+                member tl.CreateLineMarker(iMarkerType, iStartLine, iStartIndex, iEndLine, iEndIndex, pClient, ppMarker)=
                     let textLineMarker = Vs.MakeTextLineMarker()
                     textLineMarker.ResetSpan(iStartLine, iStartIndex, iEndLine, iEndIndex) |> ignore
                     ppMarker.[0] <- textLineMarker ;
@@ -415,7 +415,7 @@ module internal VsMocks =
                 member tl.ReplaceLinesEx(udwFlags, iStartLine, iStartIndex, iEndLine, iEndIndex, pszText, iNewLen, pChangedSpan)= notimpl()
                 member tl.CreateTextPoint(iLine, iIndex, ppTextPoint)= notimpl()
 
-            interface IVsTextBuffer with 
+            interface IVsTextBuffer with
                 member tl.LockBuffer() = notimpl()
                 member tl.UnlockBuffer() = notimpl()
                 member tl.InitializeContent(pszText, iLength) = notimpl()
@@ -446,10 +446,10 @@ module internal VsMocks =
                 member tl.Reserved9() = notimpl()
                 member tl.Reserved10() = notimpl()
 
-            interface IVsTextColorState with   
+            interface IVsTextColorState with
                 member tcs.ReColorizeLines(iTopLine, iBottomLine) = notimpl()
                 member tcs.GetColorStateAtStartOfLine(iLine, piState) = notimpl()
-                
+
             interface IVsUserData with
                 member x.SetData(guid,obj) =
                     if userData.ContainsKey(guid) then userData.Remove(guid) |> ignore
@@ -458,13 +458,13 @@ module internal VsMocks =
                     |   _   -> userData.Add(guid,obj) |> ignore
                     VSConstants.S_OK
                 member x.GetData(guid,obj) =
-                    if userData.ContainsKey(guid) then 
+                    if userData.ContainsKey(guid) then
                         obj <- userData.[guid]
                     else
                         obj <- null
                     VSConstants.S_OK
             }
-        static member DelegateTextLines(oldtl:IVsTextLines, ?getLengthOfLine, ?getLineText, ?getLineCount, ?recolorizeLines, ?getColorStateAtStartOfLine, ?getData) = 
+        static member DelegateTextLines(oldtl:IVsTextLines, ?getLengthOfLine, ?getLineText, ?getLineCount, ?recolorizeLines, ?getColorStateAtStartOfLine, ?getData) =
             let inner:Ref<IVsTextLines> = ref oldtl
             {new IVsTextLines with
                 member tl.LockBuffer() = (!inner).LockBuffer()
@@ -475,18 +475,18 @@ module internal VsMocks =
                 member tl.GetPositionOfLine(line,position) = (!inner).GetPositionOfLine(line, ref position)
                 member tl.GetPositionOfLineIndex(line, index, x) = (!inner).GetPositionOfLineIndex(line, index, ref x)
                 member tl.GetLineIndexOfPosition(position, line, x) = (!inner).GetLineIndexOfPosition(position, ref line, ref x)
-                member tl.GetLengthOfLine(line, length) = 
+                member tl.GetLengthOfLine(line, length) =
                     let next line = (!inner).GetLengthOfLine(line)
                     let hr,l = impl1 getLengthOfLine next line
                     length<-l
-                    hr 
-                member tl.GetLineCount(count) = 
+                    hr
+                member tl.GetLineCount(count) =
                     let next () = (!inner).GetLineCount()
-                    let hr,c = uimpl getLineCount next 
+                    let hr,c = uimpl getLineCount next
                     count<-c
-                    hr                     
+                    hr
                 member tl.GetSize(x) = (!inner).GetSize(ref x)
-                member tl.GetLanguageServiceID(pguidLangService:System.Guid byref)  = (!inner).GetLanguageServiceID(ref pguidLangService) 
+                member tl.GetLanguageServiceID(pguidLangService:System.Guid byref)  = (!inner).GetLanguageServiceID(ref pguidLangService)
                 member tl.SetLanguageServiceID(guidLangServ) = (!inner).SetLanguageServiceID(ref guidLangServ)
                 member tl.GetUndoManager(x) = (!inner).GetUndoManager(ref x)
                 member tl.Reserved1() = (!inner).Reserved1()
@@ -507,11 +507,11 @@ module internal VsMocks =
                 member tl.ReleaseMarkerData(pMarkerData) = (!inner).ReleaseMarkerData(pMarkerData)
                 member tl.GetLineData(iLine, pLineData, pMarkerData) = (!inner).GetLineData(iLine, pLineData, pMarkerData)
                 member tl.ReleaseLineData(pLineData)= (!inner).ReleaseLineData(pLineData)
-                member tl.GetLineText(iStartLine, iStartIndex, iEndLine, iEndIndex, pbstrBuf) = 
-                    let next a b c d = (!inner).GetLineText(a,b,c,d) 
+                member tl.GetLineText(iStartLine, iStartIndex, iEndLine, iEndIndex, pbstrBuf) =
+                    let next a b c d = (!inner).GetLineText(a,b,c,d)
                     let hr,b = impl4 getLineText next iStartLine iStartIndex iEndLine iEndIndex
                     pbstrBuf<-b
-                    hr                     
+                    hr
                 member tl.CopyLineText(iStartLine, iStartIndex, iEndLine, iEndIndex, pszBuf, pcchBuf)= (!inner).CopyLineText(iStartLine, iStartIndex, iEndLine, iEndIndex, pszBuf, ref pcchBuf)
                 member tl.ReplaceLines(iStartLine, iStartIndex, iEndLine, iEndIndex, pszText, iNewLen, pChangedSpan)= (!inner).ReplaceLines(iStartLine, iStartIndex, iEndLine, iEndIndex, pszText, iNewLen, pChangedSpan)
                 member tl.CanReplaceLines(iStartLine, iStartIndex, iEndLine, iEndIndex, iNewLen)= (!inner).CanReplaceLines(iStartLine, iStartIndex, iEndLine, iEndIndex, iNewLen)
@@ -529,7 +529,7 @@ module internal VsMocks =
                 member tl.ReplaceLinesEx(udwFlags, iStartLine, iStartIndex, iEndLine, iEndIndex, pszText, iNewLen, pChangedSpan)= (!inner).ReplaceLinesEx(udwFlags, iStartLine, iStartIndex, iEndLine, iEndIndex, pszText, iNewLen, pChangedSpan)
                 member tl.CreateTextPoint(iLine, iIndex, ppTextPoint)= (!inner).CreateTextPoint(iLine, iIndex, ref ppTextPoint)
 
-             interface IVsTextBuffer with 
+             interface IVsTextBuffer with
                 member tl.LockBuffer() = (!inner).LockBuffer()
                 member tl.UnlockBuffer() = (!inner).UnlockBuffer()
                 member tl.InitializeContent(pszText, iLength) = (!inner).InitializeContent(pszText, iLength)
@@ -538,14 +538,14 @@ module internal VsMocks =
                 member tl.GetPositionOfLine(line,position) = (!inner).GetPositionOfLine(line, ref position)
                 member tl.GetPositionOfLineIndex(line, index, x) = (!inner).GetPositionOfLineIndex(line, index, ref x)
                 member tl.GetLineIndexOfPosition(position, line, x) = (!inner).GetLineIndexOfPosition(position, ref line, ref x)
-                member tl.GetLengthOfLine(line, length) = 
+                member tl.GetLengthOfLine(line, length) =
                     let next line = (!inner).GetLengthOfLine(line)
                     let hr,l = impl1 getLengthOfLine next line
                     length<-l
-                    hr 
+                    hr
                 member tl.GetLineCount(x) = (!inner).GetLineCount(ref x)
                 member tl.GetSize(x) = (!inner).GetSize(ref x)
-                member tl.GetLanguageServiceID(pguidLangService:System.Guid byref)  = (!inner).GetLanguageServiceID(ref pguidLangService) 
+                member tl.GetLanguageServiceID(pguidLangService:System.Guid byref)  = (!inner).GetLanguageServiceID(ref pguidLangService)
                 member tl.SetLanguageServiceID(guidLangServ) = (!inner).SetLanguageServiceID(ref guidLangServ)
                 member tl.GetUndoManager(x) = (!inner).GetUndoManager(ref x)
                 member tl.Reserved1() = (!inner).Reserved1()
@@ -563,32 +563,32 @@ module internal VsMocks =
                 member tl.Reserved9() = (!inner).Reserved9()
                 member tl.Reserved10() = (!inner).Reserved10()
 
-            interface IVsTextColorState with   
-                member tcs.ReColorizeLines(iTopLine, iBottomLine) = 
+            interface IVsTextColorState with
+                member tcs.ReColorizeLines(iTopLine, iBottomLine) =
                     let next top bottom = ((box (!inner)):?>IVsTextColorState).ReColorizeLines(top, bottom)
                     let hr:int = impl2 recolorizeLines next iTopLine iBottomLine
                     hr
-                member tcs.GetColorStateAtStartOfLine(iLine, piState) = 
+                member tcs.GetColorStateAtStartOfLine(iLine, piState) =
                     let next iLine = ((box (!inner)):?>IVsTextColorState).GetColorStateAtStartOfLine(iLine)
                     let hr,state = impl1 getColorStateAtStartOfLine next iLine
                     piState<-state
                     hr
-                    
+
             interface IVsUserData with
-                member ud.GetData(riidKey,pvtData) = 
+                member ud.GetData(riidKey,pvtData) =
                     let next riidKey = ((box (!inner)):?>IVsUserData).GetData(riidKey)
                     let (hr:int),data = impl1 getData next (ref riidKey)
                     pvtData<-data
                     hr
-                member ud.SetData(riidKey,vtData) = ((box (!inner)):?>IVsUserData).SetData(ref riidKey,vtData)                    
+                member ud.SetData(riidKey,vtData) = ((box (!inner)):?>IVsUserData).SetData(ref riidKey,vtData)
 
             interface IDelegable<IVsTextLines> with
                 member id.GetInner() = !inner
                 member id.SetInner(i) = inner:=i
-             }            
-            
-// (The RDT is no longer used by the product, but leaving in VsMocks/Salsa in case we need it again in the future            
-        static member MakeRunningDocumentTable() = 
+             }
+
+// (The RDT is no longer used by the product, but leaving in VsMocks/Salsa in case we need it again in the future
+        static member MakeRunningDocumentTable() =
             {new IVsRunningDocumentTable with
                 member rdt.RegisterAndLockDocument(grfRDTLockType, pszMkDocument, pHier, itemid, punkDocData, pdwCookie) = notimpl()
                 member rdt.LockDocument(grfRDTLockType, dwCookie) = notimpl()
@@ -606,18 +606,18 @@ module internal VsMocks =
                 member rdt.RegisterDocumentLockHolder(grfRDLH, dwCookie, pLockHolder, pdwLHCookie) = notimpl()
                 member rdt.UnregisterDocumentLockHolder(dwLHCookie) = notimpl()
                 member rdt.ModifyDocumentFlags(docCookie, grfFlags, fSet) = notimpl() }
-                
-        static member DelegateRunningDocumentTable(oldrdt:IVsRunningDocumentTable, ?getDocumentInfo, ?unadviseRunningDocTableEvents, ?findAndLockDocument) = 
+
+        static member DelegateRunningDocumentTable(oldrdt:IVsRunningDocumentTable, ?getDocumentInfo, ?unadviseRunningDocTableEvents, ?findAndLockDocument) =
             let inner:Ref<IVsRunningDocumentTable> = ref oldrdt
             {new IVsRunningDocumentTable with
                 member rdt.RegisterAndLockDocument(grfRDTLockType, pszMkDocument, pHier, itemid, punkDocData, pdwCookie) = (!inner).RegisterAndLockDocument(grfRDTLockType, pszMkDocument, pHier, itemid, punkDocData, ref pdwCookie)
                 member rdt.LockDocument(grfRDTLockType, dwCookie) = (!inner).LockDocument(grfRDTLockType, dwCookie)
                 member rdt.UnlockDocument(grfRDTLockType, dwCookie) = (!inner).UnlockDocument(grfRDTLockType, dwCookie)
-                member rdt.FindAndLockDocument(dwRDTLockType, pszMkDocument, ppHier, pitemid, ppunkDocData, pdwCookie) = 
+                member rdt.FindAndLockDocument(dwRDTLockType, pszMkDocument, ppHier, pitemid, ppunkDocData, pdwCookie) =
                     let next() = (!inner).FindAndLockDocument(dwRDTLockType,pszMkDocument)
-                    let (hr:int),hier,itemid,docData,cookie =  
+                    let (hr:int),hier,itemid,docData,cookie =
                         match findAndLockDocument with
-                            | Some(f) -> 
+                            | Some(f) ->
                                 match f dwRDTLockType pszMkDocument with
                                     Some(r)-> r
                                     | _ -> next()
@@ -626,25 +626,25 @@ module internal VsMocks =
                     pitemid<- itemid
                     ppunkDocData<-docData
                     pdwCookie <- cookie
-                    hr                
-                
+                    hr
+
                 member rdt.RenameDocument(pszMkDocumentOld, pszMkDocumentNew, pHier, itemidNew) = (!inner).RenameDocument(pszMkDocumentOld, pszMkDocumentNew, pHier, itemidNew)
                 member rdt.AdviseRunningDocTableEvents(pSink, pdwCookie) = (!inner).AdviseRunningDocTableEvents(pSink, ref pdwCookie)
-                member rdt.UnadviseRunningDocTableEvents(dwCookie) = 
+                member rdt.UnadviseRunningDocTableEvents(dwCookie) =
                     let next() = (!inner).UnadviseRunningDocTableEvents(dwCookie)
-                    let hr =  
+                    let hr =
                         match unadviseRunningDocTableEvents with
-                            Some(f) -> 
+                            Some(f) ->
                                 match f dwCookie with
                                     Some(r)-> r
                                     | _ -> next()
                             | _ -> next()
                     hr
-                member rdt.GetDocumentInfo(docCookie, pgrfRDTFlags, pdwReadLocks, pdwEditLocks, pbstrMkDocument, ppHier, pitemid, ppunkDocData) = 
+                member rdt.GetDocumentInfo(docCookie, pgrfRDTFlags, pdwReadLocks, pdwEditLocks, pbstrMkDocument, ppHier, pitemid, ppunkDocData) =
                     let next() = (!inner).GetDocumentInfo(docCookie)
-                    let hr,_,_,_,mkd,hier,itemid,docd =  
+                    let hr,_,_,_,mkd,hier,itemid,docd =
                         match getDocumentInfo with
-                            Some(f) -> 
+                            Some(f) ->
                                 match f docCookie with
                                     Some(r)-> r
                                     | _ -> next()
@@ -654,7 +654,7 @@ module internal VsMocks =
                     pitemid<-itemid
                     ppunkDocData <- docd
                     hr
-                        
+
                 member rdt.NotifyDocumentChanged(dwCookie, grfDocChanged) = (!inner).NotifyDocumentChanged(dwCookie, grfDocChanged)
                 member rdt.NotifyOnAfterSave(dwCookie) = (!inner).NotifyOnAfterSave(dwCookie)
                 member rdt.GetRunningDocumentsEnum(ppenum) = (!inner).GetRunningDocumentsEnum(ref ppenum)
@@ -662,20 +662,20 @@ module internal VsMocks =
                 member rdt.NotifyOnBeforeSave(dwCookie) = (!inner).NotifyOnBeforeSave(dwCookie)
                 member rdt.RegisterDocumentLockHolder(grfRDLH, dwCookie, pLockHolder, pdwLHCookie) = (!inner).RegisterDocumentLockHolder(grfRDLH, dwCookie, pLockHolder, ref pdwLHCookie)
                 member rdt.UnregisterDocumentLockHolder(dwLHCookie) = (!inner).UnregisterDocumentLockHolder(dwLHCookie)
-                member rdt.ModifyDocumentFlags(docCookie, grfFlags, fSet) = (!inner).ModifyDocumentFlags(docCookie, grfFlags, fSet) 
+                member rdt.ModifyDocumentFlags(docCookie, grfFlags, fSet) = (!inner).ModifyDocumentFlags(docCookie, grfFlags, fSet)
              interface IDelegable<IVsRunningDocumentTable> with
                 member id.GetInner() = !inner
                 member id.SetInner(i) = inner:=i
-             }       
-// )             
-        static member MakeHierarchy(projectSiteFactory:IProvideProjectSite) = 
+             }
+// )
+        static member MakeHierarchy(projectSiteFactory:IProvideProjectSite) =
             {new IVsHierarchy with
                 member h.SetSite(psp) = notimpl()
                 member h.GetSite(ppSP) = notimpl()
                 member h.QueryClose(pfCanClose) = notimpl()
                 member h.Close() = notimpl()
-                member h.GetGuidProperty(itemid, propid, pguid) = 
-                    pguid <- FSharpProjectGuid   
+                member h.GetGuidProperty(itemid, propid, pguid) =
+                    pguid <- FSharpProjectGuid
                     VSConstants.S_OK
                 member h.SetGuidProperty(itemid, propid, rguid) = notimpl()
                 member h.GetProperty(itemid, propid, pvar) = notimpl()
@@ -693,17 +693,17 @@ module internal VsMocks =
              interface IProvideProjectSite with
                 member x.GetProjectSite() = projectSiteFactory.GetProjectSite()
             }
-            
-        static member DelegateHierarchy(oldh:IVsHierarchy, ?getCanonicalName, ?getProperty) = 
+
+        static member DelegateHierarchy(oldh:IVsHierarchy, ?getCanonicalName, ?getProperty) =
             let mutable inner = oldh
-            {new IVsHierarchy with            
+            {new IVsHierarchy with
                 member h.SetSite(psp) = inner.SetSite(psp)
                 member h.GetSite(ppSP) = inner.GetSite(ref ppSP)
                 member h.QueryClose(pfCanClose) = inner.QueryClose(ref pfCanClose)
                 member h.Close() = inner.Close()
                 member h.GetGuidProperty(itemid, propid, pguid) = inner.GetGuidProperty(itemid, propid, ref pguid)
                 member h.SetGuidProperty(itemid, propid, rguid) = inner.SetGuidProperty(itemid, propid, ref rguid)
-                member h.GetProperty(itemid, propid, pvar) = 
+                member h.GetProperty(itemid, propid, pvar) =
                     let propid:__VSHPROPID  = enum propid
                     let next itemid propid = inner.GetProperty(itemid, int32 propid)
                     let hr,var = impl2 getProperty next itemid propid
@@ -712,11 +712,11 @@ module internal VsMocks =
                 member h.SetProperty(itemid, propid, var) = inner.SetProperty(itemid, propid, var)
                 member h.GetNestedHierarchy(itemid, iidHierarchyNested, ppHierarchyNested, pitemidNested) = inner.GetNestedHierarchy(itemid,ref iidHierarchyNested, ref ppHierarchyNested, ref pitemidNested)
                 /// For project files, returns the fully qualified path to the file including the fileName itself.
-                member h.GetCanonicalName(itemid, pbstrName) = 
+                member h.GetCanonicalName(itemid, pbstrName) =
                     let next itemid = inner.GetCanonicalName(itemid)
                     let hr,n = impl1 getCanonicalName next itemid
                     pbstrName<-n
-                    hr                     
+                    hr
                 member h.ParseCanonicalName(pszName, pitemid) = inner.ParseCanonicalName(pszName, ref pitemid)
                 member h.Unused0() = inner.Unused0()
                 member h.AdviseHierarchyEvents(pEventSink, pdwCookie) = inner.AdviseHierarchyEvents(pEventSink, ref pdwCookie)
@@ -728,13 +728,13 @@ module internal VsMocks =
              interface IDelegable<IVsHierarchy> with
                 member id.GetInner() = inner
                 member id.SetInner(i) = inner <- i
-                
+
              interface IProvideProjectSite with
                 member x.GetProjectSite() = (inner :?> IProvideProjectSite).GetProjectSite()
 
-             }       
-             
-        static member MakeTextManager() = 
+             }
+
+        static member MakeTextManager() =
             {new IVsTextManager with
                 member tm.RegisterView(pView,pBuffer) = notimpl()
                 member tm.UnregisterView(pView) = notimpl()
@@ -766,10 +766,10 @@ module internal VsMocks =
                 member tm.GetBufferSccStatus2(pszFileName,pbNonEditable,piStatusFlags) = notimpl()
                 member tm.AttemptToCheckOutBufferFromScc2(pszFileName,pfCheckoutSucceeded,piStatusFlags) = notimpl()
                 member tm.EnumLanguageServices(ppEnum) = notimpl()
-                member tm.EnumIndependentViews(pBuffer,ppEnum) = notimpl()              
+                member tm.EnumIndependentViews(pBuffer,ppEnum) = notimpl()
             }
-            
-        static member DelegateTextManager(oldtm:IVsTextManager, ?getActiveView) = 
+
+        static member DelegateTextManager(oldtm:IVsTextManager, ?getActiveView) =
             let inner = ref oldtm
             {new IVsTextManager with
                 member tm.RegisterView(pView,pBuffer) = notimpl()
@@ -780,11 +780,11 @@ module internal VsMocks =
                 member tm.GetRegisteredMarkerTypeID(pguidMarker,piMarkerTypeID) = notimpl()
                 member tm.GetMarkerTypeInterface(iMarkerTypeID, ppMarkerType) = notimpl()
                 member tm.GetMarkerTypeCount(piMarkerTypeCount) = notimpl()
-                member tm.GetActiveView(fMustHaveFocus,pBuffer,ppView) = 
+                member tm.GetActiveView(fMustHaveFocus,pBuffer,ppView) =
                     let next fMustHaveFocus pBuffer = (!inner).GetActiveView(fMustHaveFocus,pBuffer)
                     let hr,v = impl2 getActiveView next fMustHaveFocus pBuffer
                     ppView<-v
-                    hr   
+                    hr
                 member tm.GetUserPreferences(pViewPrefs, pFramePrefs, pLangPrefs, pColorPrefs) = notimpl()
                 member tm.SetUserPreferences(pViewPrefs,pFramePrefs,pLangPrefs,pColorPrefs) = notimpl()
                 member tm.SetFileChangeAdvise(pszFileName,fStart) = notimpl()
@@ -806,22 +806,22 @@ module internal VsMocks =
                 member tm.GetBufferSccStatus2(pszFileName,pbNonEditable,piStatusFlags) = notimpl()
                 member tm.AttemptToCheckOutBufferFromScc2(pszFileName,pfCheckoutSucceeded,piStatusFlags) = notimpl()
                 member tm.EnumLanguageServices(ppEnum) = notimpl()
-                member tm.EnumIndependentViews(pBuffer,ppEnum) = notimpl()              
+                member tm.EnumIndependentViews(pBuffer,ppEnum) = notimpl()
              interface IDelegable<IVsTextManager> with
                 member id.GetInner() = !inner
                 member id.SetInner(i) = inner := i
             }
-    let private getInner (o:'a) = 
+    let private getInner (o:'a) =
         let d = (box o):?>(IDelegable<'a>)
         d.GetInner()
-        
-    let private setInner (o:'a) i = 
+
+    let private setInner (o:'a) i =
         let d = (box o):?>(IDelegable<'a>)
         d.SetInner(i)
-        
 
-    // IVsTextLayer ---------------------------------------------------------------------------------------------------------        
-    let createTextLayer() = 
+
+    // IVsTextLayer ---------------------------------------------------------------------------------------------------------
+    let createTextLayer() =
         let tl = Vs.DelegateTextLayer (Vs.MakeTextLayer())
         let inner = getInner tl
         let localLineIndexToBase (iLocalLine:int) (iLocalIndex:int) =
@@ -829,10 +829,10 @@ module internal VsMocks =
         let inner = Vs.DelegateTextLayer(inner, localLineIndexToBase=localLineIndexToBase)
         setInner tl inner
         tl
-        
-    // IVsTextView ---------------------------------------------------------------------------------------------------------        
+
+    // IVsTextView ---------------------------------------------------------------------------------------------------------
     let createTextView() : IVsTextView = Vs.DelegateTextView(Vs.MakeTextView())
-    let setFileText (fileName:string) (tv:IVsTextView) (lines:string array) (recolorizeLines:int->int->unit) (getColorStateAtStartOfLine:int->int) = 
+    let setFileText (fileName:string) (tv:IVsTextView) (lines:string array) (recolorizeLines:int->int->unit) (getColorStateAtStartOfLine:int->int) =
         let fileName = System.IO.Path.GetFullPath(fileName)
         let inner = getInner tv
         let lineCount = lines.Length
@@ -841,31 +841,31 @@ module internal VsMocks =
         let getLengthOfLine line = Some(ok, lines.[line].Length)
         // It looks like VS has GetLineText taking zero-relative values.
         // The actually cursor position is 1-relative though
-        let getLineText iStartLine iStartIndex iEndLine iEndIndex = 
-            let slice = [iStartLine..iEndLine] 
+        let getLineText iStartLine iStartIndex iEndLine iEndIndex =
+            let slice = [iStartLine..iEndLine]
                             |>List.map(fun i->(lines.[i].Substring(iStartIndex, iEndIndex-iStartIndex)))
             Some(ok, System.String.Join("\r\n",Array.ofList slice))
-        let recolorizeLines (top:int) (bottom:int) = 
+        let recolorizeLines (top:int) (bottom:int) =
             recolorizeLines top bottom
             Some(ok)
-        let getColorStateAtStartOfLine (line:int) = 
+        let getColorStateAtStartOfLine (line:int) =
             Some(ok,getColorStateAtStartOfLine line)
-            
+
         let vsBufferMoniker = Guid("978A8E17-4DF8-432A-9623-D530A26452BC")
-            
-        let getData (riidKey:Guid ref) =            
+
+        let getData (riidKey:Guid ref) =
             if !riidKey = vsBufferMoniker then Some(ok, box fileName)
             else None
-                        
+
         let tl = Vs.DelegateTextLines(Vs.MakeTextLines(),
                                             getLineCount=getLineCount,
-                                            getLengthOfLine=getLengthOfLine, 
+                                            getLengthOfLine=getLengthOfLine,
                                             getLineText=getLineText,
                                             recolorizeLines=recolorizeLines,
                                             getColorStateAtStartOfLine=getColorStateAtStartOfLine,
                                             getData=getData
                                             )
-                                                    
+
         // Maybe overly simplistic: Make the whole file visible in one page
         let getScrollInfo _iBar =
             Some(ok,0,lineCount-1,lineCount-1,0)
@@ -875,14 +875,14 @@ module internal VsMocks =
         let inner = Vs.DelegateTextView(inner, getBuffer=getBuffer, getScrollInfo=getScrollInfo, getTopmostLayer=getTopmostLayer)
         setInner tv inner
 
-        
-// (The RDT is no longer used by the product, but leaving in VsMocks/Salsa in case we need it again in the future            
-    // IVsRunningDocumentTable ---------------------------------------------------------------------------------------------------------        
-    let createRdt() = 
+
+// (The RDT is no longer used by the product, but leaving in VsMocks/Salsa in case we need it again in the future
+    // IVsRunningDocumentTable ---------------------------------------------------------------------------------------------------------
+    let createRdt() =
         let unadviseRunningDocTableEvents _ = Some(ok)
         Vs.DelegateRunningDocumentTable (Vs.MakeRunningDocumentTable(),unadviseRunningDocTableEvents=unadviseRunningDocTableEvents)
-    let openDocumentInRdt rdt cookie fileName (textview:IVsTextView) hier = 
-        let fileName = System.IO.Path.GetFullPath(fileName) 
+    let openDocumentInRdt rdt cookie fileName (textview:IVsTextView) hier =
+        let fileName = System.IO.Path.GetFullPath(fileName)
         let inner = getInner rdt
         let _hr, textlines = textview.GetBuffer()
         let getDocumentInfoResult = (Some(ok,0u,0u,0u,fileName,hier,cookie,Marshal.GetIUnknownForObject(textlines)))
@@ -892,7 +892,7 @@ module internal VsMocks =
             else None
         let findAndLockDocumentResult = (Some(ok,hier,0u,Marshal.GetIUnknownForObject(textlines),0u))
         let refFindAndLockDocumentResult = ref findAndLockDocumentResult
-        let findAndLockDocument _dwRDTLockType pszMkDocument = 
+        let findAndLockDocument _dwRDTLockType pszMkDocument =
             if pszMkDocument = fileName then !refFindAndLockDocumentResult
             else None
         let inner = Vs.DelegateRunningDocumentTable(inner,getDocumentInfo=getDocumentInfo,findAndLockDocument=findAndLockDocument)
@@ -900,16 +900,16 @@ module internal VsMocks =
 // )
 
     let createLanguagePreferences() = null:>LanguagePreferences
-    
-    // IVsHierarchy ---------------------------------------------------------------------------------------------------------        
-    let createHier(projectSiteFactory) =  
+
+    // IVsHierarchy ---------------------------------------------------------------------------------------------------------
+    let createHier(projectSiteFactory) =
         let getProperty _id _prop = Some(VSConstants.E_FAIL,null)
         let hier = Vs.DelegateHierarchy(Vs.MakeHierarchy(projectSiteFactory), getProperty=getProperty)
         hier
-    let setHierRoot hier projectdir projectname = 
+    let setHierRoot hier projectdir projectname =
         let guid = System.Guid.NewGuid().ToString()
         let inner = getInner hier
-        let getCanonicalName itemid = 
+        let getCanonicalName itemid =
             if itemid = VSConstants.VSITEMID_ROOT then Some(ok,projectdir)
             else None
         let getProperty id prop =
@@ -924,24 +924,24 @@ module internal VsMocks =
         setInner hier inner
     let rec getLastSiblingId (hier:IVsHierarchy) (last:uint32) =
         let hr,next = hier.GetProperty(last, int32 __VSHPROPID.VSHPROPID_NextSibling)
-        if hr = VSConstants.S_OK then 
+        if hr = VSConstants.S_OK then
             let nid:int32 = downcast next
             getLastSiblingId hier (uint32 nid)
         else last
-        
+
     let addChild (hier:IVsHierarchy) parentItemId childItemId fileName =
         let hr, child = hier.GetProperty(parentItemId, int32 __VSHPROPID.VSHPROPID_FirstChild)
         let inner = getInner hier
         let cid = (int32)childItemId // VS is confused about whether it wants item IDs to be signed or unsigned.
-        let getCanonicalName id = 
+        let getCanonicalName id =
             if id = childItemId then Some(ok,fileName)
-            else None            
+            else None
         if hr = VSConstants.S_OK then
             // There's already a first child, add as a sibling
             let childi32:int32 = downcast child
             let lastSiblingId = getLastSiblingId hier (uint32 childi32)
-            let getProperty id prop = 
-                if id = lastSiblingId then 
+            let getProperty id prop =
+                if id = lastSiblingId then
                     match prop with
                     | __VSHPROPID.VSHPROPID_NextSibling -> Some(ok, box cid)
                     | _ -> None
@@ -953,10 +953,10 @@ module internal VsMocks =
                 else None
             let inner = Vs.DelegateHierarchy(inner, getProperty=getProperty, getCanonicalName=getCanonicalName)
             setInner hier inner
-        else 
+        else
             let getProperty id prop =
-                if id = parentItemId then 
-                    match prop with 
+                if id = parentItemId then
+                    match prop with
                     | __VSHPROPID.VSHPROPID_FirstChild -> Some(ok, box cid)
                     | _ -> None
                 else if id = childItemId then
@@ -967,22 +967,22 @@ module internal VsMocks =
                 else None
             let inner = Vs.DelegateHierarchy(inner, getProperty=getProperty, getCanonicalName=getCanonicalName)
             setInner hier inner
-    
-    let addRootChild hier childItemId fileName = 
-        addChild hier VSConstants.VSITEMID_ROOT childItemId fileName 
-        
-    // IVsTextManager ---------------------------------------------------------------------------------------------------------        
+
+    let addRootChild hier childItemId fileName =
+        addChild hier VSConstants.VSITEMID_ROOT childItemId fileName
+
+    // IVsTextManager ---------------------------------------------------------------------------------------------------------
     let createTextManager() = Vs.DelegateTextManager (Vs.MakeTextManager())
     let setActiveView tm (view:IVsTextView) =
         let inner = getInner tm
         let getActiveView (_mustHaveFocus:int) (_buffer:IVsTextBuffer) = Some(ok,view)
         let inner = Vs.DelegateTextManager(inner, getActiveView=getActiveView)
         setInner tm inner
-        
+
     type MuxLogger() =
         let mutable innerLoggers = []
         let mutable iEventSource = null
-        member x.Add(logger : ILogger) = 
+        member x.Add(logger : ILogger) =
             innerLoggers <- logger :: innerLoggers
             if iEventSource <> null then
                 logger.Initialize(iEventSource)  // hacky, but works well enough for unit tests, unfortunately 'register' calls can come after 'initialize' call
@@ -1000,18 +1000,18 @@ module internal VsMocks =
 
     /////////////////////////////////
     // mocks
-    let err(line) : int = 
-        printfn "err() called on line %s with %s" line System.Environment.StackTrace 
+    let err(line) : int =
+        printfn "err() called on line %s with %s" line System.Environment.StackTrace
         failwith "not implemented"
     let nothing() = 0
-            
+
     let vsShell() =
         let dict = new Dictionary<int,Object>()
         let shell = { new IVsShell with
             member this.AdviseBroadcastMessages(sink, cookie) = err(__LINE__)
             member this.AdviseShellPropertyChanges(sink, cookie) = err(__LINE__)
             member this.GetPackageEnum e = err(__LINE__)
-            member this.GetProperty (propId : int, result : byref<Object>) = 
+            member this.GetProperty (propId : int, result : byref<Object>) =
                 let value = ref (null : Object)
                 let ok = dict.TryGetValue(propId, value)
                 if ok then
@@ -1034,7 +1034,7 @@ module internal VsMocks =
         shell.SetProperty(int __VSSPROPID.VSSPROPID_IsInCommandLineMode, box false) |> ignore
         shell.SetProperty(int __VSSPROPID.VSSPROPID_InstallDirectory, box "") |> ignore
         shell
-        
+
 
     let vsUIHierarchyWindow =
         { new IVsUIHierarchyWindow with
@@ -1044,7 +1044,7 @@ module internal VsMocks =
             member this.AddUIHierarchy(  pUIH,   grfAddOptions) = err(__LINE__)
             member this.RemoveUIHierarchy(  pUIH) = err(__LINE__)
             member this.SetWindowHelpTopic(  lpszHelpFile,   dwContext) = err(__LINE__)
-            member this.GetItemState(  pHier,   itemid,   dwStateMask,    pdwState) = 
+            member this.GetItemState(  pHier,   itemid,   dwStateMask,    pdwState) =
                 0
             member this.FindCommonSelectedHierarchy(  grfOpt,    lppCommonUIH) = err(__LINE__)
             member this.SetCursor(  hNewCursor,    phOldCursor) = err(__LINE__)
@@ -1060,7 +1060,7 @@ module internal VsMocks =
             member this.CloseFrame(  grfSaveOptions) = err(__LINE__)
             member this.SetFramePos(  dwSFP,    rguidRelativeTo,   x,   y,   cx,   cy) = err(__LINE__)
             member this.GetFramePos(  pdwSFP,   pguidRelativeTo,   px,   py,   pcx,   pcy) = err(__LINE__)
-            member this.GetProperty(  propid,    pvar : byref<obj>) = 
+            member this.GetProperty(  propid,    pvar : byref<obj>) =
                 pvar <- vsUIHierarchyWindow
                 0
             member this.SetProperty(  propid,   var) = err(__LINE__)
@@ -1071,7 +1071,7 @@ module internal VsMocks =
             }
 
     let mutable vsUIShellShowMessageBoxResult = None
-    
+
     let vsUIShell =
         { new IVsUIShell with
             member this.GetToolWindowEnum(   ppenum) = err(__LINE__)
@@ -1102,10 +1102,10 @@ module internal VsMocks =
             member this.SetWaitCursor() = err(__LINE__)
             member this.PostExecCommand(   pCmdGroup,   nCmdID,   nCmdexecopt,    pvaIn) = err(__LINE__)
             member this.ShowContextMenu(  dwCompRole,    rclsidActive,   nMenuId,   pos,   pCmdTrgtActive) = err(__LINE__)
-            member this.ShowMessageBox(  dwCompRole,    rclsidComp,   pszTitle,   pszText,   pszHelpFile,   dwHelpContextID,   msgbtn,   msgdefbtn,   msgicon,   fSysAlert,    pnResult) = 
+            member this.ShowMessageBox(  dwCompRole,    rclsidComp,   pszTitle,   pszText,   pszHelpFile,   dwHelpContextID,   msgbtn,   msgdefbtn,   msgicon,   fSysAlert,    pnResult) =
                 match vsUIShellShowMessageBoxResult with
                 | None -> err(__LINE__)
-                | Some(result) -> pnResult <- result; VSConstants.S_OK 
+                | Some(result) -> pnResult <- result; VSConstants.S_OK
             member this.SetMRUComboText(   pCmdGroup,   dwCmdID,   lpszText,   fAddToList) = err(__LINE__)
             member this.SetToolbarVisibleInFullScreen(  pCmdGroup,   dwToolbarId,   fVisibleInFullScreen) = err(__LINE__)
             member this.FindToolWindowEx(  grfFTW,    rPersistenceSlot,   dwToolWinId,    ppWindowFrame : byref<IVsWindowFrame> ) = err(__LINE__)
@@ -1129,27 +1129,27 @@ module internal VsMocks =
             }
 
     // peekhole to IVsTrackProjectDocuments2 - allows to receive notifications about removed files
-    type public IVsTrackProjectDocuments2Listener = 
+    type public IVsTrackProjectDocuments2Listener =
         abstract member OnAfterRemoveFiles: IEvent<IVsProject * int * string[] * VSREMOVEFILEFLAGS[]>
 
 
-    let vsTrackProjectDocuments2 = 
+    let vsTrackProjectDocuments2 =
         let onAfterRemoveFiles = Event<_>()
-        let track = { 
-            new IVsTrackProjectDocuments2 with            
+        let track = {
+            new IVsTrackProjectDocuments2 with
                 member this.BeginBatch() = err(__LINE__)
                 member this.EndBatch() = err(__LINE__)
                 member this.Flush() = err(__LINE__)
                 member this.OnQueryAddFiles(pProject, cFiles, rgpszMkDocuments, rgFlags, pSummaryResult, rgResults) =
                     pSummaryResult.[0] <- VSQUERYADDFILERESULTS.VSQUERYADDFILERESULTS_AddOK
                     0
-                member this.OnAfterAddFilesEx( pProject,  cFiles,  rgpszMkDocuments,  rgFlags) = 
+                member this.OnAfterAddFilesEx( pProject,  cFiles,  rgpszMkDocuments,  rgFlags) =
                     let proj = (pProject :?> FSharpProjectNode) :> IVsTrackProjectDocumentsEvents2
                     proj.OnAfterAddFilesEx(1, cFiles, [|pProject|], Array.create cFiles 0, rgpszMkDocuments, rgFlags)
                 member this.OnAfterAddFiles( pProject,  cFiles,  rgpszMkDocuments) = nothing()
                 member this.OnAfterAddDirectoriesEx( pProject,  cDirectories,  rgpszMkDocuments,  rgFlags) = err(__LINE__)
                 member this.OnAfterAddDirectories( pProject,  cDirectories,  rgpszMkDocuments) = err(__LINE__)
-                member this.OnAfterRemoveFiles(  pProject, cFiles, rgpszMkDocuments,  rgFlags) = 
+                member this.OnAfterRemoveFiles(  pProject, cFiles, rgpszMkDocuments,  rgFlags) =
                     onAfterRemoveFiles.Trigger(pProject, cFiles, rgpszMkDocuments, rgFlags)
                     0
                 member this.OnAfterRemoveDirectories(  pProject, cDirectories, rgpszMkDocuments,  rgFlags) = err(__LINE__)
@@ -1165,7 +1165,7 @@ module internal VsMocks =
                 member this.AdviseTrackProjectDocumentsEvents( pEventSink,  pdwCookie) = nothing()
                 member this.UnadviseTrackProjectDocumentsEvents( dwCookie) = nothing()
                 member this.OnQueryAddDirectories(  pProject, cDirectories, rgpszMkDocuments,  rgFlags,  pSummaryResult,  rgResults) = err(__LINE__)
-                member this.OnQueryRemoveFiles(  pProject, cFiles, rgpszMkDocuments,  rgFlags,  pSummaryResult,  rgResults) = 
+                member this.OnQueryRemoveFiles(  pProject, cFiles, rgpszMkDocuments,  rgFlags,  pSummaryResult,  rgResults) =
                     if rgResults <> null then
                         for i = 0 to rgResults.Length-1 do
                             rgResults.[i] <- VSQUERYREMOVEFILERESULTS.VSQUERYREMOVEFILERESULTS_RemoveOK
@@ -1177,16 +1177,16 @@ module internal VsMocks =
             interface IVsTrackProjectDocuments2Listener with
                 member this.OnAfterRemoveFiles = onAfterRemoveFiles.Publish
             }
-        track 
-    
-    let vsTaskList() = 
+        track
+
+    let vsTaskList() =
             { new IVsTaskList with
-            member this.RegisterTaskProvider( pProvider, pdwProviderCookie : byref<uint32>) = 
+            member this.RegisterTaskProvider( pProvider, pdwProviderCookie : byref<uint32>) =
                 pdwProviderCookie <- 0u
                 0
             member this.UnregisterTaskProvider( dwProviderCookie) =
                 0
-            member this.RefreshTasks( dwProviderCookie) = 
+            member this.RefreshTasks( dwProviderCookie) =
                 0
             member this.EnumTaskItems( ppenum : byref<IVsEnumTaskItems> ) = err(__LINE__)
             member this.AutoFilter( cat) = err(__LINE__)
@@ -1197,11 +1197,11 @@ module internal VsMocks =
             member this.UnregisterCustomCategory( catAssigned) = err(__LINE__)
             member this.AutoFilter2( guidCustomView : byref<Guid>) = err(__LINE__)
             }
-    let vsMonitorSelection = 
+    let vsMonitorSelection =
         { new IVsMonitorSelection with
         member this.GetCurrentSelection(ppHier,  pitemid,  ppMIS, ppSC) =
             0
-        member this.AdviseSelectionEvents( pSink,  pdwCookie) = 
+        member this.AdviseSelectionEvents( pSink,  pdwCookie) =
             0
         member this.UnadviseSelectionEvents( dwCookie) = err(__LINE__)
         member this.GetCurrentElementValue( elementid,  pvarValue) = err(__LINE__)
@@ -1209,12 +1209,12 @@ module internal VsMocks =
         member this.IsCmdUIContextActive( dwCmdUICookie,  pfActive) = err(__LINE__)
         member this.SetCmdUIContext( dwCmdUICookie,  fActive) = err(__LINE__)
         }
-        
+
     let vsFileChangeManager =
         { new IVsFileChangeEx with
             member this.AdviseDirChange(pszDir, fWatchSubDir, pFCE, pvsCookie) = err(__LINE__)
             member this.AdviseFileChange(pszMkDocument, grfFilter, pFCE, pvsCookie) = nothing()
-            member this.IgnoreFile(vscookie, pszMkDocument, fIgnore) = 
+            member this.IgnoreFile(vscookie, pszMkDocument, fIgnore) =
                 0
             member this.SyncFile(pszMkDocument) = err(__LINE__)
             member this.UnadviseDirChange(vscookie) = err(__LINE__)
@@ -1228,7 +1228,7 @@ module internal VsMocks =
             member x.GenerateUniqueProjectName(lpszRoot,  outpbstrProjectName) = err(__LINE__)
             member x.GetProjectOfGuid(rguidProjectID,  outppHierarchy) = err(__LINE__)
             member x.GetGuidOfProject(pHierarchy,pguidProjectID) = err(__LINE__)
-            member x.GetSolutionInfo( outpbstrSolutionDirectory,  outpbstrSolutionFile,  outpbstrUserOptsFile) = 
+            member x.GetSolutionInfo( outpbstrSolutionDirectory,  outpbstrSolutionFile,  outpbstrUserOptsFile) =
                 outpbstrSolutionDirectory <- ""
                 outpbstrSolutionFile <- ""
                 outpbstrUserOptsFile <- ""
@@ -1268,16 +1268,16 @@ module internal VsMocks =
     let dummyEmptyIEnumRunningDocuments =
         {new IEnumRunningDocuments with
             member ierd.Clone(ppenum) = err(__LINE__)
-            member ierd.Next(celt, rgelt, pceltFetched) = 
+            member ierd.Next(celt, rgelt, pceltFetched) =
                 pceltFetched <- 0u
-                VSConstants.S_FALSE 
+                VSConstants.S_FALSE
             member ierd.Reset() =
                 0
             member ierd.Skip(celt) = err(__LINE__)
         }
     let mutable vsRunningDocumentTableFindAndLockDocumentVsHierarchyMock = null : IVsHierarchy
     let mutable vsRunningDocumentTableNextRenameDocumentCallThrows = false
-    
+
     let vsRunningDocumentTable =
         {new IVsRunningDocumentTable with
             member rdt.RegisterAndLockDocument(grfRDTLockType, pszMkDocument, pHier, itemid, punkDocData, pdwCookie) = err(__LINE__)
@@ -1297,21 +1297,21 @@ module internal VsMocks =
             member rdt.GetDocumentInfo(docCookie, pgrfRDTFlags, pdwReadLocks, pdwEditLocks, pbstrMkDocument, ppHier, pitemid, ppunkDocData) = err(__LINE__)
             member rdt.NotifyDocumentChanged(dwCookie, grfDocChanged) = err(__LINE__)
             member rdt.NotifyOnAfterSave(dwCookie) = err(__LINE__)
-            member rdt.GetRunningDocumentsEnum(ppenum) = 
+            member rdt.GetRunningDocumentsEnum(ppenum) =
                 ppenum <- dummyEmptyIEnumRunningDocuments  // just lie, we don't mock enough of this
                 0
             member rdt.SaveDocuments(grfSaveOpts, pHier, itemid, docCookie) = err(__LINE__)
             member rdt.NotifyOnBeforeSave(dwCookie) = err(__LINE__)
             member rdt.RegisterDocumentLockHolder(grfRDLH, dwCookie, pLockHolder, pdwLHCookie) = err(__LINE__)
             member rdt.UnregisterDocumentLockHolder(dwLHCookie) = err(__LINE__)
-            member rdt.ModifyDocumentFlags(docCookie, grfFlags, fSet) = err(__LINE__) 
+            member rdt.ModifyDocumentFlags(docCookie, grfFlags, fSet) = err(__LINE__)
         }
 
     let MockVsBuildManagerAccessor() =
         let muxLogger = ref Unchecked.defaultof<MuxLogger>
         { new Microsoft.VisualStudio.Shell.Interop.IVsBuildManagerAccessor with
             member x.RegisterLogger(submissionId, logger : obj) =
-                let iLogger = logger :?> ILogger 
+                let iLogger = logger :?> ILogger
                 (!muxLogger).Add(iLogger)
                 0
             member x.ClaimUIThreadForBuild() = 0
@@ -1328,7 +1328,7 @@ module internal VsMocks =
                 BuildManager.DefaultBuildManager.EndBuild()
                 muxLogger := Unchecked.defaultof<MuxLogger>
                 0
-            member x.GetCurrentBatchBuildId(batchId) = 
+            member x.GetCurrentBatchBuildId(batchId) =
                 batchId <- 0u // in the product, this would be non-zero if there are any in-progress builds, but we are not mocking solution manager, so we just always report no build in progress for unit tests
                 0
             member x.GetSolutionConfiguration(rootProject: obj, xmlFragment: byref<string>) =
@@ -1351,7 +1351,7 @@ module internal VsMocks =
                 Debug.Assert((!_cookie = cookie), sprintf "Invalid cookie for advise/unadvise!")
                 0
             member this.AdviseTrackBatchRetargetingEvents(sink, cookie) = 0
-            member this.UnadviseTrackBatchRetargetingEvents(cookie) = 0    
+            member this.UnadviseTrackBatchRetargetingEvents(cookie) = 0
             member this.BeginRetargetingBatch() = 0
             member this.BatchRetargetProject(hier, newFx, unloadProjectIfErrorOrCancel) = 0
             member this.EndRetargetingBatch() = 0
@@ -1376,7 +1376,7 @@ module internal VsMocks =
     let vsTargetFrameworkAssemblies45 = vsTargetFrameworkAssembliesN 0x40005u
     let vsTargetFrameworkAssemblies46 = vsTargetFrameworkAssembliesN 0x40006u
     let vsTargetFrameworkAssemblies472 = vsTargetFrameworkAssembliesN 0x40007u
-    
+
     let vsFrameworkMultiTargeting =
         { new IVsFrameworkMultiTargeting with
             member this.GetInstallableFrameworkForTargetFx(fx, res) =
@@ -1395,10 +1395,10 @@ module internal VsMocks =
             member this.GetDisplayNameForTargetFx(a,b) = notimpl()
             member this.ResolveAssemblyPathsInTargetFx(a,b,c,d,e) = notimpl()
         }
-        
+
     // This provides a mock for LocalRegistry because for the multitargeting
     // code we use this to create a text buffer
-        
+
     let vsLocalRegistry f =
         { new ILocalRegistry3 with
             member this.CreateInstance(a,b,c,d,e) =
@@ -1411,7 +1411,7 @@ module internal VsMocks =
                 0
             member this.CreateManagedInstance(a,b,c,d,e) = notimpl()
             member this.GetClassObjectOfManagedClass(a,b,c,d,e) = notimpl()
-            
+
           interface ILocalRegistry2 with
             member this.CreateInstance(a,b,c,d,e) = notimpl()
             member this.GetTypeLibOfClsid(a,b) = notimpl()
@@ -1419,18 +1419,18 @@ module internal VsMocks =
             member this.GetLocalRegistryRoot(a) =
                 a <- ""
                 0
-            
+
           interface ILocalRegistry with
             member this.CreateInstance(a,b,c,d,e) = notimpl()
             member this.GetTypeLibOfClsid(a,b) = notimpl()
-            member this.GetClassObjectOfClsid(a,b,c,d,e) = notimpl()            
+            member this.GetClassObjectOfClsid(a,b,c,d,e) = notimpl()
         }
 
     let MakeVsSolutionBuildManagerAndConfigChangeNotifier() =
-        let mkEventsStorage () = 
+        let mkEventsStorage () =
             let listeners = Dictionary()
             let id = ref 0u
-            let add l = 
+            let add l =
                 let cookie = !id
                 listeners.Add(cookie, l)
                 id := !id + 1u
@@ -1444,19 +1444,19 @@ module internal VsMocks =
         let add2, remove2, _ = mkEventsStorage()
         let add4, remove4, _ = mkEventsStorage()
         let configDict = new Dictionary<IVsHierarchy,string>()
-        let configChangeNotifier(h : IVsHierarchy, s : string) = 
+        let configChangeNotifier(h : IVsHierarchy, s : string) =
             if configDict.ContainsKey(h) then
                 configDict.[h] <- s
             else
                 configDict.Add(h,s)
             for (kvp : IVsUpdateSolutionEvents) in enumerate1() do
-                kvp.OnActiveProjectCfgChange(h) |> ignore 
-        let vsSolutionBuildManager = 
+                kvp.OnActiveProjectCfgChange(h) |> ignore
+        let vsSolutionBuildManager =
             { new IVsSolutionBuildManager with
                 member x.DebugLaunch(grfLaunch) = err(__LINE__)
                 member x.StartSimpleUpdateSolutionConfiguration(dwFlags, dwDefQueryResults,   fSuppressUI) = err(__LINE__)
                 member x.AdviseUpdateSolutionEvents(  pIVsUpdateSolutionEvents,  outpdwCookie : byref<uint32> ) =
-                    outpdwCookie <- add1 pIVsUpdateSolutionEvents 
+                    outpdwCookie <- add1 pIVsUpdateSolutionEvents
                     0
                 member x.UnadviseUpdateSolutionEvents(dwCookie) =
                     remove1 dwCookie
@@ -1473,8 +1473,8 @@ module internal VsMocks =
                     let (_, vsCfgProvider : IVsCfgProvider) =(pIVsHierarchy_RequestedProject :?> IVsGetCfgProvider).GetCfgProvider()
                     let cfgName = ConfigCanonicalName(s)
                     let (_, cfg : IVsCfg) = (vsCfgProvider :?> IVsCfgProvider2).GetCfgOfName(cfgName.ConfigName, cfgName.Platform)
-                    ppIVsProjectCfg_Active.[0] <- downcast cfg 
-                    0                    
+                    ppIVsProjectCfg_Active.[0] <- downcast cfg
+                    0
                 member x.get_IsDebug(pfIsDebug) = err(__LINE__)
                 member x.put_IsDebug(  fIsDebug) = err(__LINE__)
                 member x.get_CodePage( outpuiCodePage) = err(__LINE__)
@@ -1501,7 +1501,7 @@ module internal VsMocks =
                 member x.StartSimpleUpdateSolutionConfiguration(_dwFlags, _dwDefQueryResults, _fSuppressUI) = err(__LINE__)
                 member x.StartUpdateProjectConfigurations(_cProjs, _rgpHierProjs, _dwFlags, _fSuppressUI) = err(__LINE__)
                 member x.StartUpdateSpecificProjectConfigurations(_cProjs, _rgpHier, _rgpcfg, _rgdwCleanFlags, _rgdwBuildFlags, _rgdwDeployFlags, _dwFlags, _fSuppressUI) = err(__LINE__)
-                member x.UnadviseUpdateSolutionEvents(dwCookie) = 
+                member x.UnadviseUpdateSolutionEvents(dwCookie) =
                     remove2 dwCookie
                     0
                 member x.UpdateSolutionConfigurationIsActive(_pfIsActive) = err(__LINE__)
@@ -1523,11 +1523,11 @@ module internal VsMocks =
                 member x.AdviseUpdateSolutionEvents4(pIVsUpdateSolutionEvents, pdwCookie) =
                     pdwCookie <- add4 pIVsUpdateSolutionEvents
                 member x.AdviseUpdateSolutionEventsAsync(a,b) = err(__LINE__) |> ignore
-                member x.FindActiveProjectCfgName(_projectGuid,outCfgString) = 
+                member x.FindActiveProjectCfgName(_projectGuid,outCfgString) =
                     // For now ignore the _projectGuid and just return the last notified configuration
-                    match configDict |> Seq.tryHead with 
-                    | None -> err(__LINE__) 
-                    | Some (KeyValue(_,v)) -> 
+                    match configDict |> Seq.tryHead with
+                    | None -> err(__LINE__)
+                    | Some (KeyValue(_,v)) ->
                         outCfgString <- v
                         0
 
@@ -1536,7 +1536,7 @@ module internal VsMocks =
                     remove4 dwCookie
         }
         vsSolutionBuildManager, configChangeNotifier
-    
+
     let vsThreadedWaitDialogFactory =
         { new IVsThreadedWaitDialogFactory with
             override x.CreateInstance(vsThreadedWaitDialog) =
@@ -1550,7 +1550,7 @@ module internal VsMocks =
                     }
                 0
         }
-        
+
     let MakeMockServiceProviderAndConfigChangeNotifierNoTargetFrameworkAssembliesService() =
         let vsSolutionBuildManager, configChangeNotifier = MakeVsSolutionBuildManagerAndConfigChangeNotifier()
         let sp = new OleServiceProvider()
@@ -1561,8 +1561,8 @@ module internal VsMocks =
         sp.AddService(typeof<SVsTrackProjectDocuments>, box vsTrackProjectDocuments2, false)
         sp.AddService(typeof<SVsShell>, box (vsShell()), false)
         sp.AddService(typeof<SVsUIShell>, box vsUIShell, false)
-        sp.AddService(typeof<SVsTaskList>, box(vsTaskList()), false) 
-        sp.AddService(typeof<SVsShellMonitorSelection>, box vsMonitorSelection, false) 
+        sp.AddService(typeof<SVsTaskList>, box(vsTaskList()), false)
+        sp.AddService(typeof<SVsShellMonitorSelection>, box vsMonitorSelection, false)
         sp.AddService(typeof<SVsFileChangeEx>, box vsFileChangeManager, false)
         sp.AddService(typeof<SVsSolution>, box vsSolution, false)
         sp.AddService(typeof<SVsSolutionBuildManager>, box vsSolutionBuildManager, false)
@@ -1614,11 +1614,11 @@ module internal VsMocks =
     let MakeMockServiceProviderAndConfigChangeNotifier() =
         MakeMockServiceProviderAndConfigChangeNotifier40()
 
-    let mockServiceProvider = 
+    let mockServiceProvider =
         let sp, _ = MakeMockServiceProviderAndConfigChangeNotifier()
-        sp 
-            
-    let vsOutputWindowPane(owpe : string list ref) = 
+        sp
+
+    let vsOutputWindowPane(owpe : string list ref) =
         { new IVsOutputWindowPane with
             member this.Activate () = err(__LINE__)
             member this.Clear () = owpe := []; 0
@@ -1630,9 +1630,9 @@ module internal VsMocks =
             member this.OutputTaskItemString(pszOutputString, nPriority, nCategory, pszSubcategory, nBitmap, pszFilename, nLineNum, pszTaskItemText) = err(__LINE__)
             member this.OutputTaskItemStringEx(pszOutputString, nPriority, nCategory, pszSubcategory, nBitmap, pszFilename, nLineNum, pszTaskItemText, pszLookupKwd) = err(__LINE__)
             member this.SetName(pszPaneName) = err(__LINE__)
-        }            
+        }
 
-module internal VsActual = 
+module internal VsActual =
     // Since the editor exports MEF components, we can use those components directly from unit tests without having to load too many heavy
     // VS assemblies.  Use editor MEF components directly from the VS product.
 
@@ -1662,7 +1662,7 @@ module internal VsActual =
             if File.Exists(fullPath) then
                 list.Add(new AssemblyCatalog(fullPath))
             else
-                
+
                 failwith <| sprintf "unable to find assembly '%s' in location '%s'" p thisAssemblyDir
 
         list.Add(new AssemblyCatalog(thisAssembly))

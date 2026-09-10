@@ -527,6 +527,18 @@ module Array =
 
         loop 0
 
+    let inline tryPickV ([<InlineIfLambda>] chooser: 'T -> 'U voption) (array: 'T[]) =
+
+        let rec loop i =
+            if i >= array.Length then
+                ValueNone
+            else
+                match chooser array[i] with
+                | ValueNone -> loop (i + 1)
+                | res -> res
+
+        loop 0
+
     let inline chooseV ([<InlineIfLambda>] chooser: 'T -> 'U voption) (array: 'T[]) =
 
         let mutable i = 0
@@ -632,22 +644,9 @@ module TextSpan =
 
 type Async with
 
-    static member RunImmediateExceptOnUI(computation: Async<'T>, ?cancellationToken) =
+    static member RunSynchronouslyImmediateExceptOnUI(computation: Async<'T>, ?cancellationToken) =
         match SynchronizationContext.Current with
-        | null ->
-            let cancellationToken = defaultArg cancellationToken Async.DefaultCancellationToken
-            let ts = TaskCompletionSource<'T>()
-            let task = ts.Task
-
-            Async.StartWithContinuations(
-                computation,
-                (fun k -> ts.SetResult k),
-                (fun exn -> ts.SetException exn),
-                (fun _ -> ts.SetCanceled()),
-                cancellationToken
-            )
-
-            task.Result
+        | null -> Async.RunSynchronouslyImmediate(computation, ?cancellationToken = cancellationToken)
         | _ -> Async.RunSynchronously(computation, ?cancellationToken = cancellationToken)
 
 #if !NET7_0_OR_GREATER

@@ -1,4 +1,4 @@
-// #Regression #Conformance #TypeConstraints 
+// #Regression #Conformance #TypeConstraints
 // Verify error when treating F#-defined classes as null
 //<Expects id="FS0043" status="error">The type 'Foo' does not have 'null' as a proper value</Expects>
 

@@ -23,13 +23,13 @@ module FileVersionTest =
         let findStringAttr n = n |> Assert.shouldBe fileVersionAttrName; Some "1.2.3.4"
         ComputeILFileVersion findStringAttr (ILVersionInfo(1us,0us,0us,0us)) |> Assert.shouldBe (ILVersionInfo(1us,2us,3us,4us))
 
-    [<Fact>] 
+    [<Fact>]
     let ``should fallback if AssemblyFileVersionAttribute is not a valid version`` () =
         ComputeILFileVersion (fun _ -> Some "1.2a.3.3") (ILVersionInfo(3us,7us,8us,6us))
         |> Assert.shouldBe (ILVersionInfo(3us,7us,8us,6us))
 
-    [<Fact>] 
-    let ``should fallback to assemblyVersion if AssemblyFileVersionAttribute not set`` () = 
+    [<Fact>]
+    let ``should fallback to assemblyVersion if AssemblyFileVersionAttribute not set`` () =
         let findStringAttr n = n |> Assert.shouldBe fileVersionAttrName; None;
         ComputeILFileVersion findStringAttr (ILVersionInfo(1us,0us,0us,4us)) |> Assert.shouldBe (ILVersionInfo(1us,0us,0us,4us))
 
@@ -38,19 +38,19 @@ module ProductVersionTest =
     let informationalVersionAttrName = typeof<System.Reflection.AssemblyInformationalVersionAttribute>.FullName
     let fileVersionAttrName = typeof<System.Reflection.AssemblyFileVersionAttribute>.FullName
 
-    [<Fact>] 
-    let ``should use AssemblyInformationalVersionAttribute if set`` () = 
+    [<Fact>]
+    let ``should use AssemblyInformationalVersionAttribute if set`` () =
         let mutable args = []
         let findStrAttr x = args <- List.append args [x]; Some "12.34.56.78"
         ComputeProductVersion findStrAttr (ILVersionInfo(1us,0us,0us,6us)) |> Assert.shouldBe "12.34.56.78"
         args |> Assert.shouldBe [ informationalVersionAttrName ]
 
-    [<Fact>] 
+    [<Fact>]
     let ``should fallback if AssemblyInformationalVersionAttribute is not a valid version`` () =
         ComputeProductVersion (fun _ -> Some "1.2.3-main (build #12)") (ILVersionInfo(1us,0us,0us,6us))
         |> Assert.shouldBe "1.2.3-main (build #12)"
 
-    [<Fact>] 
+    [<Fact>]
     let ``should fallback to fileVersion if AssemblyInformationalVersionAttribute not set or empty`` () =
         ComputeProductVersion (fun _ -> None) (ILVersionInfo(3us,2us,1us,0us)) |> Assert.shouldBe "3.2.1.0"
         ComputeProductVersion (fun _ -> Some "") (ILVersionInfo(3us,2us,1us,0us)) |> Assert.shouldBe "3.2.1.0"
@@ -60,13 +60,13 @@ module ProductVersionTest =
         [ "1.2.3.4", ILVersionInfo(1us,2us,3us,4us)
           "1.0.3.4", ILVersionInfo(1us,0us,3us,4us)
           "7.0.0.4-SomeExtraInformation", ILVersionInfo(7us,0us,0us,4us)
-          "0.0.0.0", ILVersionInfo(0us,0us,0us,0us) 
+          "0.0.0.0", ILVersionInfo(0us,0us,0us,0us)
           "3213.57843.32382.59493", ILVersionInfo(3213us,57843us,32382us,59493us)
           (sprintf "%d.%d.%d.%d" max max max max), ILVersionInfo(max,max,max,max) ]
 
     [<Fact>]
     let ``should use values if valid major.minor.revision.build version format`` () =
-        for v, expected in validValues() do 
+        for v, expected in validValues() do
             v |> ConvertProductVersionToILVersionInfo |> Assert.shouldBe expected
 
     let internal invalidValues () =
@@ -83,6 +83,6 @@ module ProductVersionTest =
           (sprintf "%d.70000.80000.90000" UInt16.MaxValue), ILVersionInfo(UInt16.MaxValue,0us,0us,0us) ]
 
     [<Fact>]
-    let ``should zero starting from first invalid version part`` () = 
+    let ``should zero starting from first invalid version part`` () =
         for v, expected in invalidValues() do
             v |> ConvertProductVersionToILVersionInfo |> Assert.shouldBe expected

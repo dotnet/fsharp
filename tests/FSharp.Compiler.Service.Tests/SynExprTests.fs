@@ -58,6 +58,17 @@ let exprs: obj array list =
           }
           "
         |]
+        // https://github.com/dotnet/fsharp/issues/17826
+        // Sequential expressions used as record / anonymous record field values
+        // require their enclosing parentheses - otherwise the semicolon is parsed
+        // as a field separator.
+        [|[Needed]; "{| A = (1; 2) |}"|]
+        [|[Needed]; "{ A = (1; 2) }"|]
+        [|[Needed]; "{| A = ((); B = 3) |}"|]
+        [|[Needed]; "{| A = (printfn \"hi\"; 3) |}"|]
+        [|[Needed]; "{ existing with A = (1; 2) }"|]
+        [|[Needed; Needed]; "{| A = (1; 2); B = (3; 4) |}"|]
+        [|[Needed; Unneeded]; "{ Outer = ({ Inner = (1; 2) }) }"|]
     ]
 
 #if !NET6_0_OR_GREATER

@@ -68,3 +68,4 @@ ImplFile
         CodeComments = [] }, set []))
 
 (5,0)-(5,42) parse error Incomplete structured construct at or before this point in expression
+(5,0)-(5,4) parse error 'let!' cannot be the final expression in a computation expression. Finish with 'return', 'return!', or a simple expression.

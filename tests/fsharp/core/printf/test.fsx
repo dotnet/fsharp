@@ -17,7 +17,7 @@ let report_failure (s : string) =
 
 // change this to true to run every test case
 // leave as false to randomly execute a subset of cases (this is a very expensive test area)
-let runEveryTest = false
+let runEveryTest = true
 if runEveryTest then stdout.WriteLine "Running every test. Set \"runEveryTest\" to false to reduce runtime"
 else stdout.WriteLine "Running a random subset of tests.  Set \"runEveryTest\" to true to run all tests"
 
@@ -247,7 +247,7 @@ let _ = test "weioj3s" (lazy(sprintf "%d" (-2147483648))) "-2147483648"
 let _ = test "weioj3d" (lazy(sprintf "print test %O with suffix" 1)) "print test 1 with suffix"
 let _ = test "weioj3f" (lazy(sprintf "print test %O %O with suffix" 1 "xyz")) "print test 1 xyz with suffix"
 let _ = test "weioj3g" (lazy(sprintf "print test %M with suffix" (System.Convert.ToDecimal(3)))) "print test 3 with suffix"
-let _ = test "weioj3h" (lazy(sprintf "print test %M with suffix" (System.Convert.ToDecimal(3.02)))) "print test 3.02 with suffix"
+let _ = test "weioj3h" (lazy(sprintf "print test %M with suffix" 3.02M)) "print test 3.02 with suffix"
 
 let _ = test "weioj3j" (lazy(sprintf "%O" 3I)) "3"
 

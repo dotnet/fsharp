@@ -6,7 +6,7 @@
     <!-- Derive repo root: this fsproj is at .github/skills/fsharp-diagnostics/server/ -->
     <_DiagServerRepoRoot>$([MSBuild]::NormalizeDirectory('$(MSBuildThisFileDirectory)', '..', '..', '..', '..'))</_DiagServerRepoRoot>
     <!-- Use Release-built FCS (built from current source, includes latest changes) -->
-    <_ReleaseFcsPath>$(_DiagServerRepoRoot)artifacts/bin/FSharp.Compiler.Service/Release/net10.0/FSharp.Compiler.Service.dll</_ReleaseFcsPath>
+    <_ReleaseFcsPath>$(_DiagServerRepoRoot)artifacts/bin/FSharp.Compiler.Service/Release/netstandard2.0/FSharp.Compiler.Service.dll</_ReleaseFcsPath>
     <!-- Fallback: Proto-built FCS -->
     <_ProtoFcsPath>$(_DiagServerRepoRoot)artifacts/Bootstrap/fsc/FSharp.Compiler.Service.dll</_ProtoFcsPath>
   </PropertyGroup>

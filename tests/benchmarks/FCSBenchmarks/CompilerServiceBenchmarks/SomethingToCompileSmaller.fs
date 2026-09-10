@@ -112,6 +112,8 @@ module internal PervasiveAutoOpens =
 
     type Async with
 
+        // NOTE The impl is similar (with some behavioral variation) to RunSynchronouslyImmediate, introduced in FSharp.Core 11
+        // NOTE Should not be removed as the compilation cost is part of the benchmark baseline
         static member RunImmediate(computation: Async<'T>, ?cancellationToken) =
             let cancellationToken = defaultArg cancellationToken Async.DefaultCancellationToken
             let ts = TaskCompletionSource<'T>()

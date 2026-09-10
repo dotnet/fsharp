@@ -22,6 +22,12 @@ type public XmlDoc =
     /// Get the elaborated XML documentation as XML text
     member GetXmlText: unit -> string
 
+    /// Get the elaborated XML documentation as XML text after expanding includes
+    member internal GetExpandedXmlText: emit: bool -> string
+
+    /// Get the elaborated XML documentation as XML text after expanding includes
+    member internal GetExpandedXmlText: emit: bool * env: XmlDocIncludeExpander.ExpansionEnv -> string
+
     /// Indicates if the XmlDoc is empty
     member IsEmpty: bool
 
@@ -73,6 +79,11 @@ type public PreXmlDoc =
 
     /// Merge two PreXmlDoc
     static member Merge: a: PreXmlDoc -> b: PreXmlDoc -> PreXmlDoc
+
+    /// Wrap a PreXmlDoc with additional parameter names that should be considered valid
+    /// when the doc is checked. Used for property get/set pairs so that each accessor's
+    /// xmldoc validation sees the union of both accessors' parameter names.
+    static member WithExtraParamsForCheck: doc: PreXmlDoc * extraParamNames: string list -> PreXmlDoc
 
     /// Create a PreXmlDoc from a collection of unprocessed lines
     static member Create: unprocessedLines: string[] * range: range -> PreXmlDoc

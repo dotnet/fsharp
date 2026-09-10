@@ -4,11 +4,11 @@ function Normalize-IlverifyOutputLine {
     param(
         [string]$line
     )
-    # Remove F# closure suffixes: +clo@NNN-NNN, +clo@NNN, +NAME@NNN-NNN, +NAME@NNN
+    # Remove F# closure suffixes: +clo@NNN[-NNN], +NAME@NNN[-NNN]
     $line = $line -replace '(\+\w+)@\d+(-\d+)?', '$1'
     # Remove patterns like "Pipe #1 stage #1 at line 1782@1782"
     $line = $line -replace 'Pipe #\d+ stage #\d+ at line \d+@\d+', ''
-    # Remove function suffixes like NAME@NNN or NAME@NNN-NNN in method names
+    # Remove function suffixes like NAME@NNN[-NNN] in method names
     $line = $line -replace '(\w+)@\d+(-\d+)?', '$1'
     # Remove 'at line NNNN'
     $line = $line -replace 'at line \d+', ''
@@ -16,6 +16,18 @@ function Normalize-IlverifyOutputLine {
     $line = $line -replace '\s+', ' '
     $line = $line.Trim()
     return $line
+}
+
+function Remove-IlverifyOffsets {
+    param(
+        [string[]]$lines
+    )
+    # Strip IL byte offsets and trailing whitespace for soft comparison.
+    # Offsets like [offset 0x0000001E] change when code above is modified,
+    # even though the verification error itself is the same.
+    return @($lines | ForEach-Object {
+        ($_ -replace '\[offset 0x[0-9A-Fa-f]+\]', '').Trim()
+    })
 }
 
 # Set build script based on which OS we're running on - Windows (build.cmd), Linux or macOS (build.sh)
@@ -37,18 +49,19 @@ $env:PublishWindowsPdb = "false"
 # Set configurations to build
 [string[]] $configurations = @("Debug", "Release")
 
-# The following are not passing ilverify checks, so we ignore them for now
-[string[]] $ignore_errors = @() # @("StackUnexpected", "UnmanagedPointer", "StackByRef", "ReturnPtrToStack", "ExpectedNumericType", "StackUnderflow")
+# Error types that should be excluded from verification via the -g flag (currently none).
+[string[]] $ignore_errors = @()
 
 [string] $default_tfm = "netstandard2.0"
 # Read product TFM from centralized source of truth via MSBuild
 [string] $product_tfm = (& (Join-Path $repo_path "eng/common/dotnet.ps1") msbuild (Join-Path $repo_path "eng/TargetFrameworks.props") --getProperty:FSharpNetCoreProductTargetFramework).Trim()
+[string] $fsharp_core_net_tfm = (& (Join-Path $repo_path "eng/common/dotnet.ps1") msbuild (Join-Path $repo_path "eng/TargetFrameworks.props") --getProperty:FSharpCoreShippedNetTargetFramework).Trim()
 
 [string] $artifacts_bin_path = Join-Path (Join-Path $repo_path "artifacts") "bin"
 
 # List projects to verify, with TFMs
 $projects = @{
-    "FSharp.Core" = @($default_tfm, "netstandard2.1")
+    "FSharp.Core" = @($default_tfm, "netstandard2.1", $fsharp_core_net_tfm)
     "FSharp.Compiler.Service" = @($default_tfm, $product_tfm)
 }
 
@@ -152,7 +165,10 @@ foreach ($project in $projects.Keys) {
                 }
             }
 
-            $baseline_file = Join-Path $repo_path "tests/ILVerify" "ilverify_${project}_${configuration}_${tfm}.bsl"
+            # Map versioned netcoreapp TFMs (net10.0, net11.0, ...) to generic name so baselines
+            # don't need updating on every TFM bump — the ILVerify output is the same across versions.
+            $baseline_tfm = if ($tfm -match '^net\d+\.0$') { "netcoreapp" } else { $tfm }
+            $baseline_file = Join-Path $repo_path "tests/ILVerify" "ilverify_${project}_${configuration}_${baseline_tfm}.bsl"
 
             $baseline_actual_file = [System.IO.Path]::ChangeExtension($baseline_file, 'bsl.actual')
 
@@ -197,19 +213,31 @@ foreach ($project in $projects.Keys) {
             if (-not $cmp) {
                 Write-Host "ILverify output matches baseline."
             } else {
-                Write-Host "ILverify output does not match baseline, differences:"
+                # Exact match failed — try soft comparison ignoring IL byte offsets and whitespace.
+                # IL offsets drift when code above the error site changes, even though the
+                # verification error itself is semantically identical.
+                $outputSoft = Remove-IlverifyOffsets $ilverify_output
+                $baselineSoft = Remove-IlverifyOffsets $baseline
+                $cmpSoft = Compare-Object $outputSoft $baselineSoft
 
-                $cmp | Format-Table -AutoSize -Wrap | Out-String | Write-Host
-
-                # Update baselines if TEST_UPDATE_BSL is set to 1
-                if ($env:TEST_UPDATE_BSL -eq "1") {
-                    Write-Host "Updating baseline file: $baseline_file"
-                    $ilverify_output | Set-Content $baseline_file
+                if (-not $cmpSoft) {
+                    Write-Host "ILverify output matches baseline (IL offsets differ, errors are the same)."
+                    Write-Host "  Consider updating baselines: run with TEST_UPDATE_BSL=1 or use '/run ilverify' PR comment."
                 } else {
-                    $ilverify_output | Set-Content $baseline_actual_file
+                    Write-Host "ILverify output does not match baseline, differences:"
+
+                    $cmp | Format-Table -AutoSize -Wrap | Out-String | Write-Host
+
+                    # Update baselines if TEST_UPDATE_BSL is set to 1
+                    if ($env:TEST_UPDATE_BSL -eq "1") {
+                        Write-Host "Updating baseline file: $baseline_file"
+                        $ilverify_output | Set-Content $baseline_file
+                    } else {
+                        $ilverify_output | Set-Content $baseline_actual_file
+                    }
+                    $failed = $true
+                    continue
                 }
-                $failed = $true
-                continue
             }
 
 

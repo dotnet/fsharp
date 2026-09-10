@@ -5,7 +5,7 @@ open FSharp.Test.Compiler
 open FSharp.Test
 
 module ExperimentalAttributeCheckingTests =
-    
+
 
     [<FactForNETCOREAPP>]
     let ``C# Experimental(diagnosticId) attribute warning is taken into account`` () =
@@ -39,7 +39,7 @@ let text = Class1.Test()
         |> shouldFail
         |> withDiagnostics [
             (Warning 57, Line 4, Col 12, Line 4, Col 18, """This construct is experimental. This warning can be disabled using '--nowarn:57' or '#nowarn "57"'.""")
-            (Warning 57, Line 4, Col 12, Line 4, Col 23, """This construct is experimental. This warning can be disabled using '--nowarn:57' or '#nowarn "57"'.""")
+            (Warning 57, Line 4, Col 19, Line 4, Col 23, """This construct is experimental. This warning can be disabled using '--nowarn:57' or '#nowarn "57"'.""")
         ]
 
     [<FactForNETCOREAPP>]
@@ -74,7 +74,7 @@ let text = Class1.Test()
         |> shouldFail
         |> withDiagnostics [
             (Warning 57, Line 4, Col 12, Line 4, Col 18, """This construct is experimental. This warning can be disabled using '--nowarn:57' or '#nowarn "57"'.""")
-            (Warning 57, Line 4, Col 12, Line 4, Col 23, """This construct is experimental. This warning can be disabled using '--nowarn:57' or '#nowarn "57"'.""")
+            (Warning 57, Line 4, Col 19, Line 4, Col 23, """This construct is experimental. This warning can be disabled using '--nowarn:57' or '#nowarn "57"'.""")
         ]
 
     [<FactForNETCOREAPP>]
@@ -121,4 +121,3 @@ module TestModule =
         |> withDiagnostics [
             (Warning 57, Line 7, Col 8, Line 7, Col 17, """This construct is experimental. Preview library feature, requires '--langversion:preview'. This warning can be disabled using '--nowarn:57' or '#nowarn "57"'.""")
         ]
-    

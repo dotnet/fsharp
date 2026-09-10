@@ -41,147 +41,146 @@
              class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> V_1,
              int32 V_2,
              int32 V_3)
-    IL_0000:  nop
-    IL_0001:  ldarg.0
-    IL_0002:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
-    IL_0007:  brfalse    IL_015e
+    IL_0000:  ldarg.0
+    IL_0001:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
+    IL_0006:  brfalse    IL_015d
 
-    IL_000c:  ldarg.0
-    IL_000d:  stloc.0
-    IL_000e:  ldloc.0
-    IL_000f:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_HeadOrDefault()
-    IL_0014:  ldc.i4.1
-    IL_0015:  sub
-    IL_0016:  switch     ( 
-                          IL_00df)
-    IL_001f:  ldloc.0
-    IL_0020:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_HeadOrDefault()
-    IL_0025:  ldc.i4.3
-    IL_0026:  sub
-    IL_0027:  switch     ( 
-                          IL_006f)
-    IL_0030:  ldloc.0
-    IL_0031:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
-    IL_0036:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
-    IL_003b:  brfalse    IL_015e
+    IL_000b:  ldarg.0
+    IL_000c:  stloc.0
+    IL_000d:  ldloc.0
+    IL_000e:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_HeadOrDefault()
+    IL_0013:  ldc.i4.1
+    IL_0014:  sub
+    IL_0015:  switch     ( 
+                          IL_00de)
+    IL_001e:  ldloc.0
+    IL_001f:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_HeadOrDefault()
+    IL_0024:  ldc.i4.3
+    IL_0025:  sub
+    IL_0026:  switch     ( 
+                          IL_006e)
+    IL_002f:  ldloc.0
+    IL_0030:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
+    IL_0035:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
+    IL_003a:  brfalse    IL_015d
 
-    IL_0040:  ldloc.0
-    IL_0041:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
-    IL_0046:  stloc.1
-    IL_0047:  ldloc.1
-    IL_0048:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
-    IL_004d:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
-    IL_0052:  brtrue     IL_015e
+    IL_003f:  ldloc.0
+    IL_0040:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
+    IL_0045:  stloc.1
+    IL_0046:  ldloc.1
+    IL_0047:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
+    IL_004c:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
+    IL_0051:  brtrue     IL_015d
 
-    IL_0057:  ldloc.0
-    IL_0058:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_HeadOrDefault()
-    IL_005d:  ldloc.1
-    IL_005e:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_HeadOrDefault()
-    IL_0063:  add
-    IL_0064:  ldc.i4.4
-    IL_0065:  bne.un     IL_015e
+    IL_0056:  ldloc.0
+    IL_0057:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_HeadOrDefault()
+    IL_005c:  ldloc.1
+    IL_005d:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_HeadOrDefault()
+    IL_0062:  add
+    IL_0063:  ldc.i4.4
+    IL_0064:  bne.un     IL_015d
 
-    IL_006a:  br         IL_014a
+    IL_0069:  br         IL_0149
 
-    IL_006f:  ldloc.0
-    IL_0070:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
-    IL_0075:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
-    IL_007a:  brfalse    IL_015e
+    IL_006e:  ldloc.0
+    IL_006f:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
+    IL_0074:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
+    IL_0079:  brfalse    IL_015d
 
-    IL_007f:  ldloc.0
-    IL_0080:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
-    IL_0085:  stloc.1
-    IL_0086:  ldloc.1
-    IL_0087:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_HeadOrDefault()
-    IL_008c:  ldc.i4.4
-    IL_008d:  sub
-    IL_008e:  switch     ( 
-                          IL_00cd)
-    IL_0097:  ldloc.1
-    IL_0098:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
-    IL_009d:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
-    IL_00a2:  brtrue     IL_015e
+    IL_007e:  ldloc.0
+    IL_007f:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
+    IL_0084:  stloc.1
+    IL_0085:  ldloc.1
+    IL_0086:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_HeadOrDefault()
+    IL_008b:  ldc.i4.4
+    IL_008c:  sub
+    IL_008d:  switch     ( 
+                          IL_00cc)
+    IL_0096:  ldloc.1
+    IL_0097:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
+    IL_009c:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
+    IL_00a1:  brtrue     IL_015d
 
-    IL_00a7:  ldloc.0
-    IL_00a8:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_HeadOrDefault()
-    IL_00ad:  ldloc.1
-    IL_00ae:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_HeadOrDefault()
-    IL_00b3:  add
-    IL_00b4:  ldc.i4.4
-    IL_00b5:  bne.un     IL_015e
+    IL_00a6:  ldloc.0
+    IL_00a7:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_HeadOrDefault()
+    IL_00ac:  ldloc.1
+    IL_00ad:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_HeadOrDefault()
+    IL_00b2:  add
+    IL_00b3:  ldc.i4.4
+    IL_00b4:  bne.un     IL_015d
 
-    IL_00ba:  ldloc.1
-    IL_00bb:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_HeadOrDefault()
-    IL_00c0:  ldloc.0
-    IL_00c1:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_HeadOrDefault()
-    IL_00c6:  stloc.3
-    IL_00c7:  stloc.2
-    IL_00c8:  br         IL_0158
+    IL_00b9:  ldloc.1
+    IL_00ba:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_HeadOrDefault()
+    IL_00bf:  ldloc.0
+    IL_00c0:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_HeadOrDefault()
+    IL_00c5:  stloc.3
+    IL_00c6:  stloc.2
+    IL_00c7:  br         IL_0157
 
-    IL_00cd:  ldloc.1
-    IL_00ce:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
-    IL_00d3:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
-    IL_00d8:  brtrue     IL_015e
+    IL_00cc:  ldloc.1
+    IL_00cd:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
+    IL_00d2:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
+    IL_00d7:  brtrue     IL_015d
 
-    IL_00dd:  br.s       IL_0144
+    IL_00dc:  br.s       IL_0143
 
-    IL_00df:  ldloc.0
-    IL_00e0:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
-    IL_00e5:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
-    IL_00ea:  brfalse.s  IL_015e
+    IL_00de:  ldloc.0
+    IL_00df:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
+    IL_00e4:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
+    IL_00e9:  brfalse.s  IL_015d
 
-    IL_00ec:  ldloc.0
-    IL_00ed:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
-    IL_00f2:  stloc.1
-    IL_00f3:  ldloc.1
-    IL_00f4:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_HeadOrDefault()
-    IL_00f9:  ldc.i4.2
-    IL_00fa:  sub
-    IL_00fb:  switch     ( 
-                          IL_0131)
-    IL_0104:  ldloc.1
-    IL_0105:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
-    IL_010a:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
-    IL_010f:  brtrue.s   IL_015e
+    IL_00eb:  ldloc.0
+    IL_00ec:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
+    IL_00f1:  stloc.1
+    IL_00f2:  ldloc.1
+    IL_00f3:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_HeadOrDefault()
+    IL_00f8:  ldc.i4.2
+    IL_00f9:  sub
+    IL_00fa:  switch     ( 
+                          IL_0130)
+    IL_0103:  ldloc.1
+    IL_0104:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
+    IL_0109:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
+    IL_010e:  brtrue.s   IL_015d
 
-    IL_0111:  ldloc.0
-    IL_0112:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_HeadOrDefault()
-    IL_0117:  ldloc.1
-    IL_0118:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_HeadOrDefault()
-    IL_011d:  add
-    IL_011e:  ldc.i4.4
-    IL_011f:  bne.un.s   IL_015e
+    IL_0110:  ldloc.0
+    IL_0111:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_HeadOrDefault()
+    IL_0116:  ldloc.1
+    IL_0117:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_HeadOrDefault()
+    IL_011c:  add
+    IL_011d:  ldc.i4.4
+    IL_011e:  bne.un.s   IL_015d
 
-    IL_0121:  ldloc.1
-    IL_0122:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_HeadOrDefault()
-    IL_0127:  ldloc.0
-    IL_0128:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_HeadOrDefault()
-    IL_012d:  stloc.3
-    IL_012e:  stloc.2
-    IL_012f:  br.s       IL_0158
+    IL_0120:  ldloc.1
+    IL_0121:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_HeadOrDefault()
+    IL_0126:  ldloc.0
+    IL_0127:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_HeadOrDefault()
+    IL_012c:  stloc.3
+    IL_012d:  stloc.2
+    IL_012e:  br.s       IL_0157
 
-    IL_0131:  ldloc.1
-    IL_0132:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
-    IL_0137:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
-    IL_013c:  brtrue.s   IL_015e
+    IL_0130:  ldloc.1
+    IL_0131:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
+    IL_0136:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
+    IL_013b:  brtrue.s   IL_015d
 
-    IL_013e:  ldstr      "three"
-    IL_0143:  ret
+    IL_013d:  ldstr      "three"
+    IL_0142:  ret
 
-    IL_0144:  ldstr      "seven"
-    IL_0149:  ret
+    IL_0143:  ldstr      "seven"
+    IL_0148:  ret
 
-    IL_014a:  ldloc.1
-    IL_014b:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_HeadOrDefault()
-    IL_0150:  stloc.2
-    IL_0151:  ldloc.0
-    IL_0152:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_HeadOrDefault()
-    IL_0157:  stloc.3
-    IL_0158:  ldstr      "four"
-    IL_015d:  ret
+    IL_0149:  ldloc.1
+    IL_014a:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_HeadOrDefault()
+    IL_014f:  stloc.2
+    IL_0150:  ldloc.0
+    IL_0151:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_HeadOrDefault()
+    IL_0156:  stloc.3
+    IL_0157:  ldstr      "four"
+    IL_015c:  ret
 
-    IL_015e:  ldstr      "big"
-    IL_0163:  ret
+    IL_015d:  ldstr      "big"
+    IL_0162:  ret
   } 
 
 } 
@@ -198,7 +197,6 @@
   } 
 
 } 
-
 
 
 

@@ -18,7 +18,18 @@ module internal HashingPrimitives =
 
     type Hash = int
 
-    let inline hashText (s: string) : Hash = hash s
+    /// FNV-1a 32-bit over UTF-16 code units – deterministic across processes
+    /// (unlike String.GetHashCode which is randomized in .NET 6+).
+    let hashStableString (s: string) : Hash =
+        let mutable h = 2166136261u
+
+        for c in s do
+            h <- (h ^^^ uint32 c) * 16777619u
+
+        int h
+
+    let hashText (s: string) : Hash = hashStableString s
+
     let inline combineHash acc y : Hash = (acc <<< 1) + y + 631
     let inline pipeToHash (value: Hash) (acc: Hash) = combineHash acc value
     let inline addFullStructuralHash value (acc: Hash) = combineHash acc (hash value)
@@ -91,7 +102,7 @@ module HashIL =
     let hashILTypeRef (tref: ILTypeRef) =
         tref.Enclosing
         |> hashListOrderMatters hashText
-        |> addFullStructuralHash tref.Name
+        |> pipeToHash (hashText tref.Name)
 
     let private hashILArrayShape (sh: ILArrayShape) = sh.Rank
 
@@ -407,11 +418,36 @@ module StructuralUtilities =
         | Unsolved of int
         | Rigid of int
 
+    let private hashTokenArray (tokens: TypeToken[]) =
+        let mutable acc = 0
+
+        for t in tokens do
+            acc <- combineHash acc (hash t)
+
+        acc
+
+    [<CustomEquality; NoComparison>]
     type TypeStructure =
-        | Stable of TypeToken[]
+        | Stable of hash: int * tokens: TypeToken[]
         // Unstable means that the type structure of a given TType may change because of constraint solving or Trace.Undo.
-        | Unstable of TypeToken[]
+        | Unstable of hash: int * tokens: TypeToken[]
         | PossiblyInfinite
+
+        override this.GetHashCode() =
+            match this with
+            | Stable(h, _) -> h
+            | Unstable(h, _) -> h ||| 0x40000000
+            | PossiblyInfinite -> 0
+
+        override this.Equals(obj) =
+            match obj with
+            | :? TypeStructure as other ->
+                match this, other with
+                | Stable(h1, a), Stable(h2, b) -> h1 = h2 && a = b
+                | Unstable(h1, a), Unstable(h2, b) -> h1 = h2 && a = b
+                | PossiblyInfinite, PossiblyInfinite -> true
+                | _ -> false
+            | _ -> false
 
     type private GenerationContext() =
         member val TyparMap = System.Collections.Generic.Dictionary<Stamp, int>(4)
@@ -565,9 +601,16 @@ module StructuralUtilities =
         let out = ctx.Tokens
 
         // If the sequence got too long, just drop it, we could be dealing with an infinite type.
-        if out.Count >= MaxTokenCount then PossiblyInfinite
-        elif not ctx.Stable then Unstable(out.ToArray())
-        else Stable(out.ToArray())
+        if out.Count >= MaxTokenCount then
+            PossiblyInfinite
+        else
+            let tokens = out.ToArray()
+            let h = hashTokenArray tokens
+
+            if not ctx.Stable then
+                Unstable(h, tokens)
+            else
+                Stable(h, tokens)
 
     // Speed up repeated calls by memoizing results for types that yield a stable structure.
     let private getTypeStructureOfStrippedType =

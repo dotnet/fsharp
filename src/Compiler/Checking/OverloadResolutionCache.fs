@@ -83,12 +83,12 @@ let tryGetTypeStructureForOverloadCache (g: TcGlobals) (ty: TType) : TypeStructu
     let ty = stripTyEqns g ty
 
     match tryGetTypeStructureOfStrippedType ty with
-    | ValueSome(Stable tokens) -> ValueSome(Stable tokens)
-    | ValueSome(Unstable tokens) ->
+    | ValueSome(Stable(h, tokens)) -> ValueSome(Stable(h, tokens))
+    | ValueSome(Unstable(h, tokens)) ->
         if hasUnsolvedTokens tokens then
             ValueNone
         else
-            ValueSome(Stable tokens)
+            ValueSome(Stable(h, tokens))
     | ValueSome PossiblyInfinite -> ValueNone
     | ValueNone -> ValueNone
 
@@ -97,6 +97,7 @@ let rec computeMethInfoHash (minfo: MethInfo) : int =
     | FSMeth(_, _, vref, _) -> HashingPrimitives.combineHash (hash vref.Stamp) (hash vref.LogicalName)
     | ILMeth(_, ilMethInfo, _) -> HashingPrimitives.combineHash (hash ilMethInfo.ILName) (hash ilMethInfo.DeclaringTyconRef.Stamp)
     | DefaultStructCtor(_, _) -> hash "DefaultStructCtor"
+    | RecdCtor(_, _) -> hash "RecdCtor"
     | MethInfoWithModifiedReturnType(original, _) -> computeMethInfoHash original
 #if !NO_TYPEPROVIDERS
     | ProvidedMeth(_, mb, _, _) ->
@@ -162,8 +163,12 @@ let tryComputeOverloadCacheKey
                     | Some retTy ->
                         match tryGetTypeStructureForOverloadCache g retTy with
                         | ValueSome ts -> ValueSome ts
-                        | ValueNone -> if anyHasOutArgs then ValueNone else ValueSome(Stable [||])
-                    | None -> ValueSome(Stable [||])
+                        | ValueNone ->
+                            if anyHasOutArgs then
+                                ValueNone
+                            else
+                                ValueSome(Stable(0, [||]))
+                    | None -> ValueSome(Stable(0, [||]))
 
                 match retTyStructure with
                 | ValueNone -> ValueNone

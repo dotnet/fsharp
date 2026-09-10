@@ -31,7 +31,7 @@ match "foo" with
     let getCaseUsages source line =
          let fileName, options = mkTestFileAndOptions [| |]
          let _, checkResults = parseAndCheckFile fileName source options
-          
+
          checkResults.GetAllUsesOfAllSymbolsInFile()
          |> Array.ofSeq
          |> Array.filter (fun su -> su.Range.StartLine = line && su.Symbol :? FSharpActivePatternCase)
@@ -201,7 +201,7 @@ module Mod1 =
        let func2 () = ()
 """
         let fileName, options = mkTestFileAndOptions [| |]
-        let _, checkResults = parseAndCheckFile fileName source options  
+        let _, checkResults = parseAndCheckFile fileName source options
 
         let mod1 = checkResults.PartialAssemblySignature.FindEntityByPath ["Ns1"; "Mod1"] |> Option.get
         let mod2 = checkResults.PartialAssemblySignature.FindEntityByPath ["Ns1"; "Mod1"; "Mod2"] |> Option.get
@@ -221,7 +221,7 @@ module Mod2 =
     let func2 () = ()
 """
          let fileName, options = mkTestFileAndOptions [| |]
-         let _, checkResults = parseAndCheckFile fileName source options  
+         let _, checkResults = parseAndCheckFile fileName source options
 
          let mod1 = checkResults.PartialAssemblySignature.FindEntityByPath ["Mod1"] |> Option.get
          let mod2 = checkResults.PartialAssemblySignature.FindEntityByPath ["Mod1"; "Mod2"] |> Option.get
@@ -255,6 +255,43 @@ let x = 123
         |> Option.orElseWith (fun _ -> failwith "Could not get symbol")
         |> Option.map (fun su -> su.Symbol :?> FSharpMemberOrFunctionOrValue)
         |> Option.iter (fun symbol -> symbol.Attributes.Count |> shouldEqual 1)
+
+    [<Fact>]
+    let ``FCS - [<X>] surfaces on the method's Attributes only`` () =
+        let source = """
+open System.ComponentModel
+type Calculator() =
+    [<Description "method">]
+    member _.Compu{caret}te () = 1
+"""
+        let mfv = (Checker.getSymbolUse source).Symbol :?> FSharpMemberOrFunctionOrValue
+        mfv.HasAttribute<System.ComponentModel.DescriptionAttribute>() |> shouldEqual true
+        mfv.ReturnParameter.HasAttribute<System.ComponentModel.DescriptionAttribute>() |> shouldEqual false
+
+    [<Fact>]
+    let ``FCS - [<return: X>] surfaces on ReturnParameter.Attributes only`` () =
+        let source = """
+open System.ComponentModel
+type Calculator() =
+    [<return: Description "return">]
+    member _.Compu{caret}te () = 1
+"""
+        let mfv = (Checker.getSymbolUse source).Symbol :?> FSharpMemberOrFunctionOrValue
+        mfv.HasAttribute<System.ComponentModel.DescriptionAttribute>() |> shouldEqual false
+        mfv.ReturnParameter.HasAttribute<System.ComponentModel.DescriptionAttribute>() |> shouldEqual true
+
+    [<Fact>]
+    let ``FCS - [<X>] and [<return: X>] surface independently on the same member`` () =
+        let source = """
+open System.ComponentModel
+type Calculator() =
+    [<Description "method">]
+    [<return: Description "return">]
+    member _.Compu{caret}te () = 1
+"""
+        let mfv = (Checker.getSymbolUse source).Symbol :?> FSharpMemberOrFunctionOrValue
+        mfv.HasAttribute<System.ComponentModel.DescriptionAttribute>() |> shouldEqual true
+        mfv.ReturnParameter.HasAttribute<System.ComponentModel.DescriptionAttribute>() |> shouldEqual true
 
 module Types =
     [<Fact>]
@@ -317,7 +354,7 @@ open System
 """
         findSymbolUseByName "IDisposable" checkResults |> ignore
 
-    
+
     [<Fact>]
     let ``Interface 04 - Type arg`` () =
         let _, checkResults = getParseAndCheckResults """
@@ -438,9 +475,9 @@ let tester2: int Group = []
     [<InlineData 2>]
     [<InlineData 6>]
     [<InlineData 32>]
-    let ``FsharpType.Format default to arrayNd shorthands for multidimensional arrays`` rank = 
+    let ``FsharpType.Format default to arrayNd shorthands for multidimensional arrays`` rank =
             let commas = System.String(',', rank - 1)
-            let _, checkResults = getParseAndCheckResults $""" let myArr : int[{commas}] = Unchecked.defaultOf<_>"""  
+            let _, checkResults = getParseAndCheckResults $""" let myArr : int[{commas}] = Unchecked.defaultOf<_>"""
             let symbolUse = findSymbolUseByName "myArr" checkResults
             match symbolUse.Symbol  with
             | :? FSharpMemberOrFunctionOrValue as v ->
@@ -506,7 +543,7 @@ let f2 b1 b2 b3 b4 b5 =
     g b4
     g b5.
 """
-        let symbolTypes = 
+        let symbolTypes =
             ["a1", Some "unit"
              "a2", Some "unit"
              "a3", Some "unit"
@@ -578,7 +615,7 @@ module FSharpMemberOrFunctionOrValue =
         match su.Symbol with
         | :? FSharpMemberOrFunctionOrValue as mfv when mfv.IsProperty -> Some (mfv, su.Range)
         | _ -> None
-    
+
     [<Fact>]
     let ``Both Set and Get symbols are present`` () =
         let context, checkResults = Checker.getCheckedResolveContext """
@@ -634,18 +671,23 @@ type Foo =
             Assert.True(setMfv.CompiledName.StartsWith("set_"))
         | _ -> failwith $"Expected three symbols, got %A{symbols}"
 
-    [<Fact(Skip = "Should not resolve the `v` name")>]
-    let ``AutoProperty with get, set has property symbol 02`` () =
-        let symbol = Checker.getSymbolUse """
+    // https://github.com/dotnet/fsharp/issues/3939
+    [<Fact>]
+    let ``AutoProperty with get, set does not expose compiler-generated v symbol`` () =
+        let _, checkResults = getParseAndCheckResults """
 namespace Foo
 
 type Foo =
-    member val AutoPropGetSet{caret} = 0 with get, set
+    member val AutoPropGetSet = 0 with get, set
 """
-        // The setter should have a symbol for the generated parameter `v`.
-        let setVMfv = symbol |> chooseMemberOrFunctionOrValue
-        if Option.isNone setVMfv then
-            failwith "No generated v symbol for the setter was found"
+        let allSymbols = checkResults.GetAllUsesOfAllSymbolsInFile()
+        let allMfvs = allSymbols |> Seq.choose (fun su -> match su.Symbol with :? FSharpMemberOrFunctionOrValue as mfv -> Some mfv | _ -> None) |> Seq.toList
+        // The compiler-generated `v` setter parameter should NOT appear in symbol uses
+        let vSymbols = allMfvs |> List.filter (fun mfv -> mfv.DisplayName = "v")
+        Assert.True(vSymbols.IsEmpty, $"Compiler-generated 'v' symbol should not be exposed via GetAllUsesOfAllSymbolsInFile, but found {vSymbols.Length} occurrences")
+        // The compiler-generated backing field should also not appear
+        let backingFieldSymbols = allMfvs |> List.filter (fun mfv -> mfv.DisplayName.Contains("@"))
+        Assert.True(backingFieldSymbols.IsEmpty, $"Compiler-generated backing field should not appear, but found: {backingFieldSymbols |> List.map (fun m -> m.DisplayName)}")
 
     [<Fact>]
     let ``Property symbol is resolved for property`` () =
@@ -674,7 +716,7 @@ type internal SR{caret} () =
                                         and set (b) = swallowResourceText <- b
     // END BOILERPLATE
 """
-        let context = { context with Names = [""] } // Override the context to get the extra symbols 
+        let context = { context with Names = [""] } // Override the context to get the extra symbols
         let symbols = checkResults.GetSymbolUses(context) |> List.map _.Symbol
         match symbols with
         | [ :? FSharpMemberOrFunctionOrValue as cctor
@@ -728,7 +770,7 @@ type Foo() =
             Assert.True mfv.IsPropertySetterMethod
             assertRange (6, 16) (6, 21) mfv.SignatureLocation.Value
         | symbols -> failwith $"Unexpected symbols, got %A{symbols}"
-        
+
     [<Fact>]
     let ``Property with set/get has property symbol`` () =
         let symbolUses = Checker.getSymbolUses """
@@ -874,6 +916,91 @@ let _ = T().Prop
                 Assert.Equal(15, loc.StartColumn)
             | _ -> failwith "Expected FSharpMemberOrFunctionOrValue"
 
+    [<Fact>]
+    let ``IsPropertyAccessor true for getter`` () =
+        let _, checkResults = getParseAndCheckResults """
+module M
+type MyClass() =
+    member _.Prop with get() = 42
+"""
+        let mfv =
+            checkResults.GetAllUsesOfAllSymbolsInFile()
+            |> Seq.choose (fun s ->
+                match s.Symbol with
+                | :? FSharpMemberOrFunctionOrValue as m when m.LogicalName = "get_Prop" -> Some m
+                | _ -> None)
+            |> Seq.head
+        Assert.True(mfv.IsPropertyAccessor)
+
+    [<Fact>]
+    let ``IsPropertyAccessor true for setter`` () =
+        let _, checkResults = getParseAndCheckResults """
+module M
+type MyClass() =
+    member val Prop = 0 with get, set
+"""
+        let setter =
+            checkResults.GetAllUsesOfAllSymbolsInFile()
+            |> Seq.tryPick (fun s ->
+                match s.Symbol with
+                | :? FSharpMemberOrFunctionOrValue as m when m.LogicalName = "set_Prop" -> Some m
+                | _ -> None)
+        match setter with
+        | Some mfv -> Assert.True(mfv.IsPropertyAccessor)
+        | None -> Assert.Fail("set_Prop not found")
+
+    [<Fact>]
+    let ``IsPropertyAccessor false for regular method`` () =
+        let _, checkResults = getParseAndCheckResults """
+module M
+type MyClass() =
+    member _.DoStuff() = 42
+"""
+        let mfv =
+            checkResults.GetAllUsesOfAllSymbolsInFile()
+            |> Seq.choose (fun s ->
+                match s.Symbol with
+                | :? FSharpMemberOrFunctionOrValue as m when m.LogicalName = "DoStuff" -> Some m
+                | _ -> None)
+            |> Seq.head
+        Assert.False(mfv.IsPropertyAccessor)
+
+    [<Fact>]
+    let ``IsPropertyAccessor false for function`` () =
+        let _, checkResults = getParseAndCheckResults """
+module M
+let myFunc x = x + 1
+"""
+        let mfv =
+            checkResults.GetAllUsesOfAllSymbolsInFile()
+            |> Seq.choose (fun s ->
+                match s.Symbol with
+                | :? FSharpMemberOrFunctionOrValue as m when m.LogicalName = "myFunc" -> Some m
+                | _ -> None)
+            |> Seq.head
+        Assert.False(mfv.IsPropertyAccessor)
+
+    [<Fact>]
+    let ``Fable query pattern: filter accessor properties`` () =
+        let _, checkResults = getParseAndCheckResults """
+module M
+type MyClass() =
+    member _.Prop with get() = 42
+    member _.Method() = 42
+"""
+        let members =
+            checkResults.GetAllUsesOfAllSymbolsInFile()
+            |> Seq.choose (fun s ->
+                match s.Symbol with
+                | :? FSharpMemberOrFunctionOrValue as m when m.IsPropertyAccessor -> Some m
+                | _ -> None)
+            |> List.ofSeq
+        Assert.True(members.Length >= 1)
+        Assert.True(
+            members
+            |> List.forall (fun m ->
+                m.LogicalName.StartsWith("get_") || m.LogicalName.StartsWith("set_")))
+
 module GetValSignatureText =
     let private assertSignature (expected:string) source (lineNumber, column, line, identifier) =
         let _, checkResults = getParseAndCheckResults source
@@ -996,7 +1123,7 @@ let f (x: {| A: int |}) =
                 | _ -> false)
 
         Assert.Equal(2, getSymbolUses.Length)
-        
+
     [<Fact>]
     let ``Anonymous anon record copy-and-update symbols usage`` () =
         let _, checkResults = getParseAndCheckResults """
@@ -1013,7 +1140,7 @@ let f (x: {| A: int |}) =
                 | _ -> false)
 
         Assert.Equal(2, getSymbolUses.Length)
-        
+
     [<Fact>]
     let ``Anonymous record copy-and-update symbols usages`` () =
         let _, checkResults = getParseAndCheckResults """
@@ -1032,7 +1159,7 @@ let f (r: {| A: int; C: int |}) =
                 | _ -> false)
 
         Assert.Equal(4, getSymbolUses.Length)
-        
+
     [<Fact>]
     let ``Anonymous anon record copy-and-update symbols usages`` () =
         let _, checkResults = getParseAndCheckResults """
@@ -1063,68 +1190,24 @@ let f (r: {| A: int; C: int |}) =
         | _ -> failwith "Symbol was not FSharpField"
 
     [<Fact>]
-    let ``Nested copy-and-update 01`` () =
-        checkFieldUsage "Zoo" "RecordA`1" ((4, 44), (4, 47)) """
+    let ``Nested copy-and-update`` () =
+        let cases =
+            [ "Zoo", ((4, 44), (4, 47))
+              "Foo", ((4, 48), (4, 51))
+              "Zoo", ((4, 57), (4, 60))
+              "Zoo", ((4, 61), (4, 64))
+              "Bar", ((4, 65), (4, 68))
+              "Zoo", ((4, 74), (4, 77))
+              "Bar", ((4, 78), (4, 81))
+              "Foo", ((4, 87), (4, 90)) ]
+
+        """
 type RecordA<'a> = { Foo: 'a; Bar: int; Zoo: RecordA<'a> }
 
-let nestedFunc (a: RecordA<int>) = { a with Zo{caret}o.Foo = 1; Zoo.Zoo.Bar = 2; Zoo.Bar = 3; Foo = 4 }
+let nestedFunc (a: RecordA<int>) = { a with Zo{caret1}o.Fo{caret2}o = 1; Z{caret3}oo.Zo{caret4}o.B{caret5}ar = 2; Z{caret6}oo.B{caret7}ar = 3; Fo{caret8}o = 4 }
 """
-
-    [<Fact>]
-    let ``Nested copy-and-update 02`` () =
-        checkFieldUsage "Foo" "RecordA`1" ((4, 48), (4, 51)) """
-type RecordA<'a> = { Foo: 'a; Bar: int; Zoo: RecordA<'a> }
-
-let nestedFunc (a: RecordA<int>) = { a with Zoo.Fo{caret}o = 1; Zoo.Zoo.Bar = 2; Zoo.Bar = 3; Foo = 4 }
-"""
-
-    [<Fact>]
-    let ``Nested copy-and-update 03`` () =
-        checkFieldUsage "Zoo" "RecordA`1" ((4, 57), (4, 60)) """
-type RecordA<'a> = { Foo: 'a; Bar: int; Zoo: RecordA<'a> }
-
-let nestedFunc (a: RecordA<int>) = { a with Zoo.Foo = 1; Z{caret}oo.Zoo.Bar = 2; Zoo.Bar = 3; Foo = 4 }
-"""
-
-    [<Fact>]
-    let ``Nested copy-and-update 04`` () =
-        checkFieldUsage "Zoo" "RecordA`1" ((4, 61), (4, 64)) """
-type RecordA<'a> = { Foo: 'a; Bar: int; Zoo: RecordA<'a> }
-
-let nestedFunc (a: RecordA<int>) = { a with Zoo.Foo = 1; Zoo.Zo{caret}o.Bar = 2; Zoo.Bar = 3; Foo = 4 }
-"""
-
-    [<Fact>]
-    let ``Nested copy-and-update 05`` () =
-        checkFieldUsage "Bar" "RecordA`1" ((4, 65), (4, 68)) """
-type RecordA<'a> = { Foo: 'a; Bar: int; Zoo: RecordA<'a> }
-
-let nestedFunc (a: RecordA<int>) = { a with Zoo.Foo = 1; Zoo.Zoo.B{caret}ar = 2; Zoo.Bar = 3; Foo = 4 }
-"""
-
-    [<Fact>]
-    let ``Nested copy-and-update 06`` () =
-        checkFieldUsage "Zoo" "RecordA`1" ((4, 74), (4, 77)) """
-type RecordA<'a> = { Foo: 'a; Bar: int; Zoo: RecordA<'a> }
-
-let nestedFunc (a: RecordA<int>) = { a with Zoo.Foo = 1; Zoo.Zoo.Bar = 2; Z{caret}oo.Bar = 3; Foo = 4 }
-"""
-
-    [<Fact>]
-    let ``Nested copy-and-update 07`` () =
-        checkFieldUsage "Bar" "RecordA`1" ((4, 78), (4, 81)) """
-type RecordA<'a> = { Foo: 'a; Bar: int; Zoo: RecordA<'a> }
-
-let nestedFunc (a: RecordA<int>) = { a with Zoo.Foo = 1; Zoo.Zoo.Bar = 2; Zoo.B{caret}ar = 3; Foo = 4 }
-"""
-
-    [<Fact>]
-    let ``Nested copy-and-update 08`` () =
-        checkFieldUsage "Foo" "RecordA`1" ((4, 87), (4, 90)) """
-type RecordA<'a> = { Foo: 'a; Bar: int; Zoo: RecordA<'a> }
-
-let nestedFunc (a: RecordA<int>) = { a with Zoo.Foo = 1; Zoo.Zoo.Bar = 2; Zoo.Bar = 3; Fo{caret}o = 4 }
-"""
+        |> SourceContext.extractOrderedMarkedSources
+        |> List.iter2 (fun (name, range) source -> checkFieldUsage name "RecordA`1" range source) cases
 
 module ComputationExpressions =
     [<Fact>]
@@ -1318,7 +1401,7 @@ type T() =
             )
 
         Assert.False hasPropertySymbols
-        
+
     [<Fact>]
     let ``CLIEvent is recognized as event`` () =
         let symbolUse = Checker.getSymbolUse """
@@ -1403,6 +1486,78 @@ let test = System.DateTimeKind.Utc
                 failwith "Expected metadata text, got None"
         | _ -> failwith "Expected FSharpEntity symbol"
 
+module MetadataAsTextILField =
+
+    let private getMetadataTextForEntity (entityName: string) (source: string) : string =
+        let _, checkResults = getParseAndCheckResults source
+        let symbolUse = checkResults |> findSymbolUseByName entityName
+        match symbolUse.Symbol with
+        | :? FSharpEntity as entity ->
+            match entity.TryGetMetadataText() with
+            | Some text -> text.ToString()
+            | None -> failwithf "Expected metadata text for %s, got None" entityName
+        | other -> failwithf "Expected FSharpEntity for %s, got %A" entityName other
+
+    [<Theory>]
+    [<InlineData("System.Int32", "MaxValue", "2147483647")>]
+    [<InlineData("System.Int32", "MinValue", "-2147483648")>]
+    [<InlineData("System.Int64", "MaxValue", "9223372036854775807L")>]
+    [<InlineData("System.Byte",  "MaxValue", "255uy")>]
+    [<InlineData("System.SByte", "MinValue", "-128y")>]
+    let ``IL literal static field renders with [<Literal>] attribute and value``
+        (typeName: string, fieldName: string, expectedValueText: string) =
+        let source = $"let _ = typeof<{typeName}>"
+        let shortName = typeName.Substring(typeName.LastIndexOf('.') + 1)
+        let metadataText = getMetadataTextForEntity shortName source
+
+        Assert.Contains(fieldName, metadataText)
+
+        let line =
+            metadataText.Split('\n')
+            |> Array.tryFind (fun l -> l.Contains("val " + fieldName + ":"))
+            |> Option.defaultWith (fun () -> failwithf "field declaration for %s not found in metadata text:\n%s" fieldName metadataText)
+
+        Assert.Contains("[<Literal>]", metadataText)
+        Assert.Contains("= " + expectedValueText, line)
+
+    [<Fact>]
+    let ``System.Char.MaxValue renders as a literal field`` () =
+        let metadataText = getMetadataTextForEntity "Char" "let _ = typeof<System.Char>"
+
+        Assert.Contains("[<Literal>]", metadataText)
+        let line =
+            metadataText.Split('\n')
+            |> Array.tryFind (fun l -> l.Contains("val MaxValue:"))
+            |> Option.defaultWith (fun () -> failwithf "MaxValue declaration not found:\n%s" metadataText)
+        Assert.Contains("=", line)
+        Assert.False(line.TrimEnd().EndsWith(": char"),
+                    sprintf "MaxValue line is missing its literal value: %s" line)
+
+    [<Fact>]
+    let ``IL const string field renders with [<Literal>] and the quoted string value`` () =
+        let metadataText =
+            getMetadataTextForEntity "RuntimeFeature" "let _ = typeof<System.Runtime.CompilerServices.RuntimeFeature>"
+
+        Assert.Contains("[<Literal>]", metadataText)
+        let line =
+            metadataText.Split('\n')
+            |> Array.tryFind (fun l -> l.Contains("val PortablePdb:"))
+            |> Option.defaultWith (fun () -> failwithf "PortablePdb declaration not found:\n%s" metadataText)
+        Assert.Contains("= \"PortablePdb\"", line)
+        Assert.DoesNotContain("value unavailable", line)
+
+    [<Fact>]
+    let ``System.String.Empty (initonly, non-literal) renders without [<Literal>] and without value`` () =
+        let metadataText = getMetadataTextForEntity "String" "let _ = typeof<System.String>"
+
+        let line =
+            metadataText.Split('\n')
+            |> Array.tryFind (fun l -> l.Contains("val Empty:"))
+            |> Option.defaultWith (fun () -> failwithf "Empty not found:\n%s" metadataText)
+
+        Assert.Contains("static val", line)
+        Assert.DoesNotContain("=", line)
+
 module IsByRef =
     // https://github.com/dotnet/fsharp/issues/3532
     [<Fact>]
@@ -1455,7 +1610,7 @@ let f (x: byref<int>) = x <- 42
                 $"Expected parameter TypeDefinition.IsByRef = true for byref<int>, got entity: %s{paramTy.TypeDefinition.DisplayName}"
             )
         | symbol -> failwith $"Expected FSharpMemberOrFunctionOrValue but got %A{symbol}"
-        
+
 module OperatorsWithDots =
     // https://github.com/dotnet/fsharp/issues/14057
     [<Fact>]
@@ -1503,3 +1658,220 @@ let result = 1 -.- 2
         let rangeLength = range.EndColumn - range.StartColumn
 
         Assert.Equal(3, rangeLength)
+
+module TupleTypeExtensions =
+    /// Verifies that GetAllUsesOfAllSymbolsInFile returns only symbols from the original source,
+    /// not synthetic AST nodes created for tuple type extensions like 'type ('T1 * 'T2) with ...'.
+    [<Fact>]
+    let ``Tuple type extension symbols match original source`` () =
+        let _, checkResults =
+            getParseAndCheckResults
+                """
+module Test
+
+type ('T1 * 'T2) with
+    member this.Swap() = (snd this, fst this)
+"""
+
+        let allSymbolUses = checkResults.GetAllUsesOfAllSymbolsInFile() |> Seq.toList
+
+        // Get all symbol ranges - none should have synthetic ranges
+        let symbolRanges =
+            allSymbolUses
+            |> List.map (fun su -> su.Symbol.DisplayName, su.Range)
+
+        // Verify no symbols are reported from synthetic ranges
+        for (name, range) in symbolRanges do
+            Assert.False(range.IsSynthetic, $"Symbol '{name}' has synthetic range {range}")
+
+    [<Fact>]
+    let ``Struct tuple type extension symbols match original source`` () =
+        let _, checkResults =
+            getParseAndCheckResults
+                """
+module Test
+
+type struct ('T1 * 'T2) with
+    member this.Swap() = struct (snd this, fst this)
+"""
+
+        let allSymbolUses = checkResults.GetAllUsesOfAllSymbolsInFile() |> Seq.toList
+
+        // Verify no symbols are reported from synthetic ranges
+        for symbolUse in allSymbolUses do
+            Assert.False(symbolUse.Range.IsSynthetic, $"Symbol '{symbolUse.Symbol.DisplayName}' has synthetic range {symbolUse.Range}")
+
+    [<Fact>]
+    let ``Tuple type extension does not leak tuple type symbol`` () =
+        let _, checkResults =
+            getParseAndCheckResults
+                """
+module Test
+
+type ('T1 * 'T2) with
+    member this.First = fst this
+"""
+
+        let typeSymbolUses =
+            checkResults.GetAllUsesOfAllSymbolsInFile()
+            |> Seq.filter (fun su -> su.Symbol :? FSharpEntity)
+            |> Seq.map (fun su -> su.Symbol.DisplayName, su.Range.StartLine, su.Range.StartColumn)
+            |> Seq.toList
+
+        // Verify no synthetic tuple type symbols (containing '*') appear
+        let syntheticTupleSymbols =
+            typeSymbolUses
+            |> List.filter (fun (name, _, _) -> name.Contains("*"))
+
+        Assert.True(List.isEmpty syntheticTupleSymbols, $"Found unexpected synthetic tuple type symbols: {syntheticTupleSymbols}")
+
+    [<Fact>]
+    let ``Multiple tuple type extensions symbols are all non-synthetic`` () =
+        let _, checkResults =
+            getParseAndCheckResults
+                """
+module Test
+
+type ('T1 * 'T2) with
+    member this.Swap() = (snd this, fst this)
+
+type struct ('A * 'B * 'C) with
+    member this.First = let (a, _, _) = this in a
+"""
+
+        let allSymbolUses = checkResults.GetAllUsesOfAllSymbolsInFile() |> Seq.toList
+
+        // All symbols should come from non-synthetic source locations
+        let syntheticSymbols =
+            allSymbolUses
+            |> List.filter (fun su -> su.Range.IsSynthetic)
+            |> List.map (fun su -> su.Symbol.DisplayName)
+
+        Assert.True(List.isEmpty syntheticSymbols, $"Found symbols with synthetic ranges: {syntheticSymbols}")
+
+
+module NestedCopyAndUpdateSink =
+
+    /// Start columns of every classified use of `name` on `line` (1-based).
+    let private useCols name line source =
+        getSymbolUsesFromSource source
+        |> Seq.filter (fun s -> s.Symbol.DisplayName = name && s.Range.StartLine = line)
+        |> Seq.map (fun s -> s.Range.StartColumn)
+        |> Seq.sort
+        |> List.ofSeq
+
+    /// Start columns of every literal `token` occurrence on `line` (1-based).
+    let private tokenCols (token: string) line (source: string) =
+        let text = source.Replace("\r\n", "\n").Split('\n').[line - 1]
+        let rec go (i: int) acc =
+            match text.IndexOf(token, i) with
+            | -1 -> List.rev acc
+            | j -> go (j + 1) (j :: acc)
+        go 0 []
+
+    // Each type qualifier must be classified exactly once, at its own source column.
+    let private check name line source =
+        Assert.Equal<int list>(tokenCols name line source, useCols name line source)
+
+    [<Fact>]
+    let ``Both type qualifiers in nested update are classified`` () =
+        check "Person" 5 """
+type Info = { X: int; Y: int }
+type Person = { Info: Info }
+let p = { Info = { X = 1; Y = 2 } }
+let p2 = { p with Person.Info.X = 10; Person.Info.Y = 20 }
+"""
+
+    [<Fact>]
+    let ``Three type qualifiers in nested update all classified`` () =
+        check "Person" 5 """
+type Info = { X: int; Y: int; Z: int }
+type Person = { Info: Info }
+let p = { Info = { X = 1; Y = 2; Z = 3 } }
+let p2 = { p with Person.Info.X = 10; Person.Info.Y = 20; Person.Info.Z = 30 }
+"""
+
+    [<Fact>]
+    let ``Single type qualifier in nested update classified once`` () =
+        check "Person" 5 """
+type Info = { X: int; Y: int }
+type Person = { Info: Info }
+let p = { Info = { X = 1; Y = 2 } }
+let p2 = { p with Person.Info.X = 10 }
+"""
+
+    [<Fact>]
+    let ``Mixed qualified and unqualified in nested update`` () =
+        check "Person" 5 """
+type Info = { X: int; Y: int }
+type Person = { Name: string; Info: Info }
+let p = { Name = "test"; Info = { X = 1; Y = 2 } }
+let p2 = { p with Name = "new"; Person.Info.X = 10 }
+"""
+
+    [<Fact>]
+    let ``Qualifier repeated across sibling fields each classified`` () =
+        check "Outer" 6 """
+type Inner1 = { A: int; B: int }
+type Inner2 = { C: int }
+type Outer = { I1: Inner1; I2: Inner2 }
+let o = { I1 = { A = 1; B = 2 }; I2 = { C = 3 } }
+let o2 = { o with Outer.I1.A = 10; Outer.I1.B = 20; Outer.I2.C = 30 }
+"""
+
+module RecordSpreads =
+    open FSharp.Compiler.EditorServices
+
+    [<Fact>]
+    let ``spread - spread operator is not classified as a record field`` () =
+        let _, checkResults =
+            getParseAndCheckResultsPreview """
+type R1 = { A : int; B : int }
+type R2 = { ...R1; C : int }
+"""
+        let items = checkResults.GetSemanticClassification(None, RelatedSymbolUseKind.All)
+        let badItems =
+            items
+            |> Array.filter (fun i ->
+                i.Type = SemanticClassificationType.RecordField
+                && i.Range.StartLine = 3
+                && i.Range.StartColumn < 15
+                && i.Range.EndColumn > 12)
+        if badItems.Length > 0 then
+            failwith $"Expected the '...' spread operator to NOT be classified as RecordField, but found: %A{badItems |> Array.map (fun i -> getRangeCoords i.Range)}"
+
+    [<Fact>]
+    let ``spread - GetSymbolUseAtLocation range excludes leading spread operator`` () =
+        let _, checkResults =
+            getParseAndCheckResultsPreview """
+type R1 = { A : int; B : int }
+let r1 = { A = 1; B = 2 }
+let r2 = { ...r1; C = 3 }
+"""
+        let line4 = "let r2 = { ...r1; C = 3 }"
+        match checkResults.GetSymbolUseAtLocation(4, 16, line4, [ "r1" ]) with
+        | None -> failwith "Expected to resolve symbol 'r1' inside the spread '...r1'."
+        | Some su ->
+            let spreadUse =
+                checkResults.GetUsesOfSymbolInFile(su.Symbol)
+                |> Array.find (fun u -> not u.IsFromDefinition)
+            if getRangeCoords su.Range <> getRangeCoords spreadUse.Range then
+                failwith $"GetSymbolUseAtLocation range %A{getRangeCoords su.Range} should match GetUsesOfSymbolInFile range %A{getRangeCoords spreadUse.Range} (no leading '...')."
+
+    [<Fact>]
+    let ``spread - GetSymbolUseAtLocation range excludes leading spread operator, anonymous`` () =
+        let _, checkResults =
+            getParseAndCheckResultsPreview """
+type R1 = { A : int; B : int }
+let r1 = { A = 1; B = 2 }
+let r2 = {| ...r1; C = 3 |}
+"""
+        let line4 = "let r2 = {| ...r1; C = 3 |}"
+        match checkResults.GetSymbolUseAtLocation(4, 17, line4, [ "r1" ]) with
+        | None -> failwith "Expected to resolve symbol 'r1' inside the spread '...r1'."
+        | Some su ->
+            let spreadUse =
+                checkResults.GetUsesOfSymbolInFile(su.Symbol)
+                |> Array.find (fun u -> not u.IsFromDefinition)
+            if getRangeCoords su.Range <> getRangeCoords spreadUse.Range then
+                failwith $"GetSymbolUseAtLocation range %A{getRangeCoords su.Range} should match GetUsesOfSymbolInFile range %A{getRangeCoords spreadUse.Range} (no leading '...')."

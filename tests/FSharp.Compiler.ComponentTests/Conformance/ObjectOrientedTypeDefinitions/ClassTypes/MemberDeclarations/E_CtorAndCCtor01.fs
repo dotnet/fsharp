@@ -8,10 +8,10 @@
 
 namespace N
 
-type T1() = 
+type T1() =
     static member ``.ctor``() = ()
     member __.``.ctor``() = ()
 
-type T2() = 
+type T2() =
     static member ``.cctor``() = ()
     member __.``.cctor``() = ()

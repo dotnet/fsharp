@@ -45,6 +45,7 @@ let compileScenario (scenario: Scenario) (method: Method) =
     |> withOutputDirectory (Some dir)
     |> ignoreWarnings
     |> withOutputType CompileOutput.Library
+    |> withOptions scenario.CompilerOptions
     |> withMethod method
     |> compile
 

@@ -22,6 +22,7 @@ open FSharp.Compiler.Syntax
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
@@ -76,7 +77,7 @@ let rec TryAdjustHiddenVarNameToCompGenName (cenv: cenv) env (id: Ident) altName
 /// Bind the patterns used in a lambda. Not clear why we don't use TcPat.
 and TcSimplePat optionalArgsOK checkConstraints (cenv: cenv) ty env patEnv p (attribs: SynAttributes) =
     let g = cenv.g
-    let (TcPatLinearEnv(tpenv, names, takenNames)) = patEnv
+    let (TcPatLinearEnv(tpenv, names, takenNames, usesAP)) = patEnv
 
     match p with
     | SynSimplePat.Id (id, altNameRefCellOpt, isCompGen, isMemberThis, isOpt, m) ->
@@ -98,7 +99,7 @@ and TcSimplePat optionalArgsOK checkConstraints (cenv: cenv) ty env patEnv p (at
 
             let vFlags = TcPatValFlags (ValInline.Optional, permitInferTypars, noArgOrRetAttribs, false, None, isCompGen)
             let _, names, takenNames = TcPatBindingName cenv env id ty isMemberThis None None vFlags (names, takenNames)
-            let patEnvR = TcPatLinearEnv(tpenv, names, takenNames)
+            let patEnvR = TcPatLinearEnv(tpenv, names, takenNames, usesAP)
             id.idText, patEnvR
 
     | SynSimplePat.Typed (p, cty, m) ->
@@ -113,7 +114,7 @@ and TcSimplePat optionalArgsOK checkConstraints (cenv: cenv) ty env patEnv p (at
             UnifyTypes cenv env m ty optionalParamTy
         | _ -> UnifyTypes cenv env m ty ctyR
 
-        let patEnvR = TcPatLinearEnv(tpenv, names, takenNames)
+        let patEnvR = TcPatLinearEnv(tpenv, names, takenNames, usesAP)
 
         // Ensure the untyped typar name sticks
         match cty, ty with
@@ -168,17 +169,17 @@ and TcSimplePats (cenv: cenv) optionalArgsOK checkConstraints ty env patEnv synS
 
     let augmentTakenNamesFromFirstGroup (parsedData: SynPat list * bool) (patEnvOut: TcPatLinearEnv) : TcPatLinearEnv =
         match parsedData, patEnvOut with
-        | (pats ,true), TcPatLinearEnv(tpenvR, namesR, takenNamesR) ->
+        | (pats ,true), TcPatLinearEnv(tpenvR, namesR, takenNamesR, usesAPR) ->
             match pats with
             | pat :: _ ->
                 let extra = collectBoundIdTextsFromPat [] pat |> Set.ofList
-                TcPatLinearEnv(tpenvR, namesR, Set.union takenNamesR extra)
+                TcPatLinearEnv(tpenvR, namesR, Set.union takenNamesR extra, usesAPR)
             | _ -> patEnvOut
         | _ -> patEnvOut
 
     let bindCurriedGroup (synSimplePats: SynSimplePats) : string list * TcPatLinearEnv =
         let g = cenv.g
-        let (TcPatLinearEnv(tpenv, names, takenNames)) = patEnv
+        let (TcPatLinearEnv(tpenv, names, takenNames, usesAP)) = patEnv
         match synSimplePats with
         | SynSimplePats.SimplePats ([], _, m) ->
             // Unit "()" patterns in argument position become SynSimplePats.SimplePats([], _) in the
@@ -193,7 +194,7 @@ and TcSimplePats (cenv: cenv) optionalArgsOK checkConstraints ty env patEnv synS
             UnifyTypes cenv env m ty g.unit_ty
             let vFlags = TcPatValFlags (ValInline.Optional, permitInferTypars, noArgOrRetAttribs, false, None, true)
             let _, namesR, takenNamesR = TcPatBindingName cenv env id ty false None None vFlags (names, takenNames)
-            [ id.idText ], TcPatLinearEnv(tpenv, namesR, takenNamesR)
+            [ id.idText ], TcPatLinearEnv(tpenv, namesR, takenNamesR, usesAP)
         | SynSimplePats.SimplePats ([sp], _, _) ->
             // Single parameter: no tuple splitting, check directly
             let v, patEnv' = TcSimplePat optionalArgsOK checkConstraints cenv ty env patEnv sp []
@@ -220,7 +221,7 @@ and TcSimplePats (cenv: cenv) optionalArgsOK checkConstraints ty env patEnv synS
 and TcSimplePatsOfUnknownType (cenv: cenv) optionalArgsOK checkConstraints env tpenv (pat: SynPat) =
     let g = cenv.g
     let argTy = NewInferenceType g
-    let patEnv = TcPatLinearEnv (tpenv, NameMap.empty, Set.empty)
+    let patEnv = TcPatLinearEnv (tpenv, NameMap.empty, Set.empty, false)
     let spats, _ = SimplePatsOfPat cenv.synArgNameGenerator pat
     let names, patEnv = TcSimplePats cenv optionalArgsOK checkConstraints argTy env patEnv spats ([], false)
     names, patEnv, spats
@@ -245,10 +246,10 @@ and TcPatBindingName cenv env id ty isMemberThis vis1 valReprInfo (vFlags: TcPat
                 if not (String.IsNullOrEmpty name) && not (String.isLeadingIdentifierCharacterUpperCase name) then
                     match env.eNameResEnv.ePatItems.TryGetValue name with
                     | true, Item.Value vref when vref.LiteralValue.IsSome ->
-                        warning(Error(FSComp.SR.checkLowercaseLiteralBindingInPattern name, id.idRange))
+                        warning(Error(FSComp.SR.checkLowercaseLiteralBindingInPattern (RichText.mkLocal name), id.idRange))
                     | _ -> ()
                 value
-            | _ -> error(Error(FSComp.SR.tcNameNotBoundInPattern name, id.idRange))
+            | _ -> error(Error(FSComp.SR.tcNameNotBoundInPattern (RichText.mkUnresolvedName name), id.idRange))
 
         // isLeftMost indicates we are processing the left-most path through a disjunctive or pattern.
         // For those binding locations, CallNameResolutionSink is called in MakeAndPublishValue, like all other bindings
@@ -281,13 +282,7 @@ and TcPatAndRecover warnOnUpper cenv (env: TcEnv) valReprInfo (vFlags: TcPatValF
 ///    the second-phase function in terms of a List.map from names to actual
 ///    value specifications.
 and TcPat warnOnUpper (cenv: cenv) env valReprInfo vFlags (patEnv: TcPatLinearEnv) ty synPat =
-    let g = cenv.g
     let ad = env.AccessRights
-
-    match synPat with
-    | SynPat.As (_, SynPat.Named _, _) -> ()
-    | SynPat.As (_, _, m) -> checkLanguageFeatureError g.langVersion LanguageFeature.NonVariablePatternsToRightOfAsPatterns m
-    | _ -> ()
 
     match synPat with
     | SynPat.Const (synConst, m) ->
@@ -313,16 +308,16 @@ and TcPat warnOnUpper (cenv: cenv) env valReprInfo vFlags (patEnv: TcPatLinearEn
 
     | SynPat.OptionalVal (id, m) ->
         errorR (Error (FSComp.SR.tcOptionalArgsOnlyOnMembers (), m))
-        let (TcPatLinearEnv(tpenv, names, takenNames)) = patEnv
+        let (TcPatLinearEnv(tpenv, names, takenNames, usesAP)) = patEnv
         let bindf, namesR, takenNamesR = TcPatBindingName cenv env id ty false None valReprInfo vFlags (names, takenNames)
-        let patEnvR = TcPatLinearEnv(tpenv, namesR, takenNamesR)
+        let patEnvR = TcPatLinearEnv(tpenv, namesR, takenNamesR, usesAP)
         (fun values -> TPat_as (TPat_wild m, bindf values, m)), patEnvR
 
     | SynPat.Typed (p, cty, m) ->
-        let (TcPatLinearEnv(tpenv, names, takenNames)) = patEnv
+        let (TcPatLinearEnv(tpenv, names, takenNames, usesAP)) = patEnv
         let ctyR, tpenvR = TcTypeAndRecover cenv NewTyparsOK CheckCxs ItemOccurrence.UseInType WarnOnIWSAM.Yes env tpenv cty
         UnifyTypes cenv env m ty ctyR
-        let patEnvR = TcPatLinearEnv(tpenvR, names, takenNames)
+        let patEnvR = TcPatLinearEnv(tpenvR, names, takenNames, usesAP)
         TcPat warnOnUpper cenv env valReprInfo vFlags patEnvR ty p
 
     | SynPat.Attrib (innerPat, attrs, _) ->
@@ -394,9 +389,9 @@ and TcConstPat warnOnUpper cenv env vFlags patEnv ty synConst m =
             (fun _ -> TPat_error m), patEnv
 
 and TcPatNamedAs warnOnUpper cenv env valReprInfo vFlags patEnv ty synInnerPat id isMemberThis vis m =
-    let (TcPatLinearEnv(tpenv, names, takenNames)) = patEnv
+    let (TcPatLinearEnv(tpenv, names, takenNames, usesAP)) = patEnv
     let bindf, namesR, takenNamesR = TcPatBindingName cenv env id ty isMemberThis vis valReprInfo vFlags (names, takenNames)
-    let patEnvR = TcPatLinearEnv(tpenv, namesR, takenNamesR)
+    let patEnvR = TcPatLinearEnv(tpenv, namesR, takenNamesR, usesAP)
     let innerPat, acc = TcPat warnOnUpper cenv env None vFlags patEnvR ty synInnerPat
     let phase2 values = TPat_as (innerPat values, bindf values, m)
     phase2, acc
@@ -411,24 +406,24 @@ and TcPatUnnamedAs warnOnUpper cenv env vFlags patEnv ty pat1 pat2 m =
             AllIdsOK
         else
             warnOnUpper
-    
+
     let pat2R, patEnvR = TcPat warnOnUpperForPat2 cenv env None vFlags patEnv1 ty pat2
     let phase2 values = TPat_conjs([pat1R values; pat2R values], m)
     phase2, patEnvR
 
 and TcPatNamed warnOnUpper cenv env vFlags patEnv id ty isMemberThis vis valReprInfo m =
-    let (TcPatLinearEnv(tpenv, names, takenNames)) = patEnv
+    let (TcPatLinearEnv(tpenv, names, takenNames, usesAP)) = patEnv
     let bindf, namesR, takenNamesR = TcPatBindingName cenv env id ty isMemberThis vis valReprInfo vFlags (names, takenNames)
-    let patEnvR = TcPatLinearEnv(tpenv, namesR, takenNamesR)
+    let patEnvR = TcPatLinearEnv(tpenv, namesR, takenNamesR, usesAP)
     let pat', acc = TcPat warnOnUpper cenv env None vFlags patEnvR ty (SynPat.Wild m)
     let phase2 values = TPat_as (pat' values, bindf values, m)
     phase2, acc
 
 and TcPatIsInstance warnOnUpper cenv env valReprInfo vFlags patEnv srcTy synPat synTargetTy m =
-    let (TcPatLinearEnv(tpenv, names, takenNames)) = patEnv
+    let (TcPatLinearEnv(tpenv, names, takenNames, usesAP)) = patEnv
     let tgtTy, tpenv = TcTypeAndRecover cenv NewTyparsOKButWarnIfNotRigid CheckCxs ItemOccurrence.UseInType WarnOnIWSAM.Yes env tpenv synTargetTy
     TcRuntimeTypeTest false true cenv env.DisplayEnv m tgtTy srcTy
-    let patEnv = TcPatLinearEnv(tpenv, names, takenNames)
+    let patEnv = TcPatLinearEnv(tpenv, names, takenNames, usesAP)
     match synPat with
     | SynPat.IsInst(_, m) ->
         (fun _ -> TPat_isinst (srcTy, tgtTy, None, m)), patEnv
@@ -444,11 +439,11 @@ and TcPatAttributed warnOnUpper cenv env vFlags patEnv ty innerPat attrs =
     TcPat warnOnUpper cenv env None vFlags patEnv ty innerPat
 
 and TcPatOr warnOnUpper cenv env vFlags patEnv ty pat1 pat2 m =
-    let (TcPatLinearEnv(_, names, takenNames)) = patEnv
+    let (TcPatLinearEnv(_, names, takenNames, usesAP)) = patEnv
     let pat1R, patEnv1 = TcPat warnOnUpper cenv env None vFlags patEnv ty pat1
-    let (TcPatLinearEnv(tpenv, names1, takenNames1)) = patEnv1
-    let pat2R, patEnv2 = TcPat warnOnUpper cenv env None vFlags (TcPatLinearEnv(tpenv, names, takenNames)) ty pat2
-    let (TcPatLinearEnv(tpenv, names2, takenNames2)) = patEnv2
+    let (TcPatLinearEnv(tpenv, names1, takenNames1, usesAP1)) = patEnv1
+    let pat2R, patEnv2 = TcPat warnOnUpper cenv env None vFlags (TcPatLinearEnv(tpenv, names, takenNames, usesAP)) ty pat2
+    let (TcPatLinearEnv(tpenv, names2, takenNames2, usesAP2)) = patEnv2
 
     if takenNames1 <> takenNames2 then
         errorR (UnionPatternsBindDifferentNames m)
@@ -462,7 +457,7 @@ and TcPatOr warnOnUpper cenv env vFlags patEnv ty pat1 pat2 m =
 
     let namesR = NameMap.layer names1 names2
     let takenNamesR = Set.union takenNames1 takenNames2
-    let patEnvR = TcPatLinearEnv(tpenv, namesR, takenNamesR)
+    let patEnvR = TcPatLinearEnv(tpenv, namesR, takenNamesR, usesAP1 || usesAP2)
     let phase2 values = TPat_disjs ([pat1R values; pat2R (values.WithRightPath())], m)
     phase2, patEnvR
 
@@ -498,19 +493,24 @@ and TcPatArrayOrList warnOnUpper cenv env vFlags patEnv ty isArray args m =
     phase2, acc
 
 and TcRecordPat warnOnUpper (cenv: cenv) env vFlags patEnv ty fieldPats m =
-    let fieldPats = 
-        fieldPats 
-        |> List.map (fun (NamePatPairField(fieldName = fieldLid; pat = pat)) -> 
-            match fieldLid.LongIdent with
-            | [id] -> ([], id), pat
-            | lid -> List.frontAndBack lid, pat)
-    
+    let idents =
+        let (|Last|) = List.last
+        fieldPats
+        |> List.map (fun (NamePatPairField (fieldName = SynLongIdent (id = Last fieldId))) -> fieldId)
+
+    let fieldPats =
+        fieldPats
+        |> List.map (fun (NamePatPairField(fieldName = fieldLid; pat = pat)) ->
+            let path, fieldId = List.frontAndBack fieldLid.LongIdent
+            fieldId, ExplicitOrSpread.Explicit (path, pat))
+
+    CheckRecdExprDuplicateFields idents
     match BuildFieldMap cenv env false ty fieldPats m with
     | None -> (fun _ -> TPat_error m), patEnv
     | Some(tinst, tcref, fldsmap, _fldsList) ->
 
     let gtyp = mkWoNullAppTy tcref tinst
-    let inst = List.zip (tcref.Typars m) tinst
+    let inst = List.zip (tcref.Typars) tinst
 
     UnifyTypes cenv env m ty gtyp
 
@@ -520,13 +520,14 @@ and TcRecordPat warnOnUpper (cenv: cenv) env vFlags patEnv ty fieldPats m =
     let fieldPats, patEnvR =
         (patEnv, ftys) ||> List.mapFold (fun s (ty, fsp) ->
             match fldsmap.TryGetValue fsp.rfield_id.idText with
-            | true, v ->
+            | true, ExplicitOrSpread.Explicit v ->
                 let warnOnUpper =
                     if cenv.g.langVersion.SupportsFeature(LanguageFeature.DontWarnOnUppercaseIdentifiersInBindingPatterns) then
                         AllIdsOK
                     else
                         warnOnUpper
                 TcPat warnOnUpper cenv env None vFlags s ty v
+            | true, ExplicitOrSpread.Spread _ -> (* Unreachable. *) error (InternalError ("Spreads in patterns are not supported.", m))
             | _ -> (fun _ -> TPat_wild m), s)
 
     let phase2 values =
@@ -592,7 +593,7 @@ and TcPatLongIdent warnOnUpper cenv env ad valReprInfo vFlags (patEnv: TcPatLine
 
         match args with
         | SynArgPats.Pats _ -> ()
-        | _ -> errorR (Error (FSComp.SR.tcNamedActivePattern apinfo.ActiveTags[idx], m))
+        | _ -> errorR (Error(FSComp.SR.tcNamedActivePattern (RichText.mkActivePatternCase apinfo.ActiveTags[idx]), m))
 
         let args = GetSynArgPatterns args
 
@@ -615,14 +616,13 @@ and TcPatLongIdent warnOnUpper cenv env ad valReprInfo vFlags (patEnv: TcPatLine
 /// Check a long identifier in a pattern that has been not been resolved to anything else and represents a new value, or nameof
 and TcPatLongIdentNewDef warnOnUpperForId warnOnUpper (cenv: cenv) env ad valReprInfo vFlags patEnv ty (vis, id, args, m) =
     let g = cenv.g
-    let (TcPatLinearEnv(tpenv, _, _)) = patEnv
+    let (TcPatLinearEnv(tpenv, _, _, _)) = patEnv
 
     match GetSynArgPatterns args with
     | [] ->
         TcPat warnOnUpperForId cenv env valReprInfo vFlags patEnv ty (mkSynPatVar vis id)
 
-    | [arg]
-        when g.langVersion.SupportsFeature LanguageFeature.NameOf && IsNameOf cenv env ad m id ->
+    | [arg] when IsNameOf cenv env ad m id ->
         match TcNameOfExpr cenv env tpenv (ConvSynPatToSynExpr arg) with
         | Expr.Const(Const.String s, m, _) ->
             // Record the resolution of the `nameof` usage so that we can classify it correctly later.
@@ -648,7 +648,7 @@ and ApplyUnionCaseOrExn m (cenv: cenv) env overallTy item =
 
     | Item.UnionCase(ucinfo, showDeprecated) ->
         if showDeprecated then
-            let diagnostic = Deprecated(FSComp.SR.nrUnionTypeNeedsQualifiedAccess(ucinfo.DisplayName, ucinfo.Tycon.DisplayName) |> snd, m)
+            let diagnostic = Deprecated(FSComp.SR.nrUnionTypeNeedsQualifiedAccess(RichText.mkUnionCase ucinfo.DisplayName, richTextOfEntity ucinfo.Tycon) |> snd, m)
             if g.langVersion.SupportsFeature(LanguageFeature.ErrorOnDeprecatedRequireQualifiedAccess) then
                 errorR(diagnostic)
             else
@@ -658,7 +658,7 @@ and ApplyUnionCaseOrExn m (cenv: cenv) env overallTy item =
         CheckUnionCaseAttributes g ucref m |> CommitOperationResult
         CheckUnionCaseAccessible cenv.amap m ad ucref |> ignore
         let resTy = actualResultTyOfUnionCase ucinfo.TypeInst ucref
-        let inst = mkTyparInst ucref.TyconRef.TyparsNoRange ucinfo.TypeInst
+        let inst = mkTyparInst ucref.TyconRef.Typars ucinfo.TypeInst
         let mkf =
             try
                 UnifyTypes cenv env m overallTy resTy
@@ -708,7 +708,7 @@ and TcPatLongIdentUnionCaseOrExnCase warnOnUpper cenv env ad vFlags patEnv ty (m
             let extraPatterns = List ()
 
             for NamePatPairField(fieldName = fieldLid; pat = pat) in pairs do
-                let id = 
+                let id =
                     match fieldLid.LongIdent with
                     | [id] -> id
                     | lid -> snd (List.frontAndBack lid)
@@ -717,11 +717,11 @@ and TcPatLongIdentUnionCaseOrExnCase warnOnUpper cenv env ad vFlags patEnv ty (m
                     extraPatterns.Add pat
                     match item with
                     | Item.UnionCase(uci, _) ->
-                        errorR (Error (FSComp.SR.tcUnionCaseConstructorDoesNotHaveFieldWithGivenName (uci.DisplayName, id.idText), id.idRange))
+                        errorR (Error(FSComp.SR.tcUnionCaseConstructorDoesNotHaveFieldWithGivenName (RichText.mkUnionCase uci.DisplayName, RichText.mkUnresolvedName id.idText), id.idRange))
                     | Item.ExnCase tcref ->
-                        errorR (Error (FSComp.SR.tcExceptionConstructorDoesNotHaveFieldWithGivenName (tcref.DisplayName, id.idText), id.idRange))
+                        errorR (Error(FSComp.SR.tcExceptionConstructorDoesNotHaveFieldWithGivenName (richTextOfEntityRef tcref, RichText.mkUnresolvedName id.idText), id.idRange))
                     | _ ->
-                        errorR (Error (FSComp.SR.tcConstructorDoesNotHaveFieldWithGivenName id.idText, id.idRange))
+                        errorR (Error(FSComp.SR.tcConstructorDoesNotHaveFieldWithGivenName (RichText.mkUnresolvedName id.idText), id.idRange))
 
                 | Some idx ->
                     let argItem =
@@ -736,7 +736,7 @@ and TcPatLongIdentUnionCaseOrExnCase warnOnUpper cenv env ad vFlags patEnv ty (m
                     | null -> result[idx] <- pat
                     | _ ->
                         extraPatterns.Add pat
-                        errorR (Error (FSComp.SR.tcUnionCaseFieldCannotBeUsedMoreThanOnce id.idText, id.idRange))
+                        errorR (Error(FSComp.SR.tcUnionCaseFieldCannotBeUsedMoreThanOnce (RichText.mkField id.idText), id.idRange))
 
             for i = 0 to numArgTys - 1 do
                 if isNull (box result[i]) then
@@ -778,12 +778,17 @@ and TcPatLongIdentUnionCaseOrExnCase warnOnUpper cenv env ad vFlags patEnv ty (m
         elif numArgs < numArgTys then
             if numArgTys > 1 then
                 // Expects tuple without enough args
-                let printTy  = NicePrint.minimalStringOfType env.DisplayEnv
                 let missingArgs =
                     argNames.[numArgs..numArgTys - 1]
-                    |> List.map (fun id -> (if id.rfield_name_generated then "" else id.DisplayName + ": ") +  printTy  id.FormalType)
-                    |> String.concat (Environment.NewLine + "\t")
-                    |> fun s -> Environment.NewLine + "\t" + s
+                    |> List.map (fun id ->
+                        RichText.concat
+                            [ if not id.rfield_name_generated then
+                                  RichText.mkRecordField id.DisplayName
+                                  RichText.mkPunctuation ":"
+                                  RichText.mkText " "
+                              NicePrint.minimalRichTextOfType env.DisplayEnv id.FormalType ])
+                    |> RichText.concatWith (RichText.mkText (Environment.NewLine + "\t"))
+                    |> RichText.append (RichText.mkText (Environment.NewLine + "\t"))
 
                 errorR (Error (FSComp.SR.tcUnionCaseExpectsTupledArguments(numArgTys, numArgs, missingArgs), m))
             else
@@ -807,7 +812,7 @@ and TcPatLongIdentILField warnOnUpper (cenv: cenv) env vFlags patEnv ty (mLongId
     CheckILFieldInfoAccessible g cenv.amap mLongId env.AccessRights finfo
 
     if not finfo.IsStatic then
-        errorR (Error (FSComp.SR.tcFieldIsNotStatic finfo.FieldName, mLongId))
+        errorR (Error(FSComp.SR.tcFieldIsNotStatic (RichText.mkField finfo.FieldName), mLongId))
 
     CheckILFieldAttributes g finfo m
 
@@ -828,7 +833,7 @@ and TcPatLongIdentILField warnOnUpper (cenv: cenv) env vFlags patEnv ty (mLongId
 and TcPatLongIdentRecdField warnOnUpper cenv env vFlags patEnv ty (mLongId, rfinfo, args, m) =
     let g = cenv.g
     CheckRecdFieldInfoAccessible cenv.amap mLongId env.AccessRights rfinfo
-    if not rfinfo.IsStatic then errorR (Error (FSComp.SR.tcFieldIsNotStatic(rfinfo.DisplayName), mLongId))
+    if not rfinfo.IsStatic then errorR (Error(FSComp.SR.tcFieldIsNotStatic(RichText.mkRecordField rfinfo.DisplayName), mLongId))
     CheckRecdFieldInfoAttributes g rfinfo mLongId |> CommitOperationResult
 
     match rfinfo.LiteralValue with
@@ -847,13 +852,13 @@ and TcPatLongIdentRecdField warnOnUpper cenv env vFlags patEnv ty (mLongId, rfin
 /// Check a long identifier that has been resolved to an F# value that is a literal
 and TcPatLongIdentLiteral warnOnUpper (cenv: cenv) env vFlags patEnv ty (mLongId, vref, args, m) =
     let g = cenv.g
-    let (TcPatLinearEnv(tpenv, _, _)) = patEnv
+    let (TcPatLinearEnv(tpenv, _, _, _)) = patEnv
 
     match vref.LiteralValue with
     | None -> error (Error(FSComp.SR.tcNonLiteralCannotBeUsedInPattern(), m))
     | Some lit ->
         let _, _, _, vexpty, _, _ = TcVal cenv env tpenv vref None None mLongId
-        CheckValAccessible mLongId env.AccessRights vref
+        CheckValAccessible g mLongId env.AccessRights vref
         CheckFSharpAttributes g vref.Attribs mLongId |> CommitOperationResult
         CheckNoArgsForLiteral args m
         let _, acc = TcArgPats warnOnUpper cenv env vFlags patEnv args

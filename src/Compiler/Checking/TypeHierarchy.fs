@@ -2,7 +2,9 @@
 
 module internal FSharp.Compiler.TypeHierarchy
 
+open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
+open FSharp.Compiler.Text
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Import
@@ -27,13 +29,13 @@ let GetSuperTypeOfType g amap m ty =
 #if !NO_TYPEPROVIDERS
     let ty =
         match tryTcrefOfAppTy g ty with
-        | ValueSome tcref when tcref.IsProvided -> stripTyEqns g ty 
+        | ValueSome tcref when tcref.IsProvided -> stripTyEqns g ty
         | _ -> stripTyEqnsAndMeasureEqns g ty
 #else
     let ty = stripTyEqnsAndMeasureEqns g ty
 #endif
 
-    let resBeforeNull = 
+    let resBeforeNull =
         match metadataOfTy g ty with
 #if !NO_TYPEPROVIDERS
         | ProvidedTypeMetadata info ->
@@ -76,12 +78,12 @@ let GetSuperTypeOfType g amap m ty =
             else
                 None
 
-    match resBeforeNull with 
+    match resBeforeNull with
     | Some superTy ->
         let nullness = nullnessOfTy g ty
         let superTyWithNull = addNullnessToTy nullness superTy
         Some superTyWithNull
-    | None -> 
+    | None ->
         None
 
 /// Make a type for System.Collections.Generic.IList<ty>
@@ -199,15 +201,14 @@ and GetImmediateInterfacesOfMeasureAnnotatedType skipUnref g amap m ty reprTy =
 
 // Check for any System.Numerics type in the interface hierarchy
 and ExistsSystemNumericsTypeInInterfaceHierarchy skipUnref g amap m ity =
-    g.langVersion.SupportsFeature LanguageFeature.InterfacesWithAbstractStaticMembers &&
     ExistsInInterfaceHierarchy
         (fun ity2 ->
             match ity2 with
-            | AppTy g (tcref,_) -> 
+            | AppTy g (tcref,_) ->
                 match tcref.CompilationPath.AccessPath with
                 | [("System", _); ("Numerics", _)] -> true
                 | _ -> false
-            | _ -> false) 
+            | _ -> false)
         skipUnref g amap m ity
 
 // Check for IComparable<A>, IEquatable<A> and interfaces that derive from these
@@ -219,7 +220,7 @@ and ExistsInInterfaceHierarchy p skipUnref g amap m intfTy =
     match intfTy with
     | AppTy g (tcref, tinst) ->
         p intfTy ||
-        (GetImmediateInterfacesOfMetadataType g amap m skipUnref intfTy tcref tinst 
+        (GetImmediateInterfacesOfMetadataType g amap m skipUnref intfTy tcref tinst
          |> List.exists (ExistsInInterfaceHierarchy p skipUnref g amap m))
     | _ -> false
 
@@ -232,30 +233,33 @@ type AllowMultiIntfInstantiations = Yes | No
 let FoldHierarchyOfTypeAux followInterfaces allowMultiIntfInst skipUnref visitor g amap m ty acc =
     let rec loop ndeep ty (visitedTycon, visited: TyconRefMultiMap<_>, acc as state) =
 
-        let seenThisTycon = 
-            match tryTcrefOfAppTy g ty with
+        let tcrefOpt = tryTcrefOfAppTy g ty
+
+        let seenThisTycon =
+            match tcrefOpt with
             | ValueSome tcref -> Set.contains tcref.Stamp visitedTycon
             | _ -> false
 
         // Do not visit the same type twice. Could only be doing this if we've seen this tycon
-        if seenThisTycon && List.exists (typeEquiv g ty) (visited.Find (tcrefOfAppTy g ty)) then state else
+        if seenThisTycon && (match tcrefOpt with ValueSome tcref -> ListInline.exists (typeEquiv g ty) (visited.Find tcref) | ValueNone -> false) then state else
 
         // Do not visit the same tycon twice, e.g. I<int> and I<string>, collect I<int> only, unless directed to allow this
         if seenThisTycon && allowMultiIntfInst = AllowMultiIntfInstantiations.No then state else
 
         let state =
-            match tryTcrefOfAppTy g ty with
+            match tcrefOpt with
             | ValueSome tcref ->
                 let visitedTycon = Set.add tcref.Stamp visitedTycon
                 visitedTycon, visited.Add (tcref, ty), acc
             | _ ->
                 state
 
-        if ndeep > 100 then (errorR(Error((FSComp.SR.recursiveClassHierarchy (showType ty)), m)); (visitedTycon, visited, acc)) else
+        if ndeep > 100 then (errorR(Error((FSComp.SR.recursiveClassHierarchy (RichText.mkText (showType ty))), m)); (visitedTycon, visited, acc)) else
+        // Local 'loop' is passed as a lambda, not 'loop (ndeep+1)': InlineIfLambda then inlines it instead of allocating it as a closure.
         let visitedTycon, visited, acc =
             if isInterfaceTy g ty then
-                List.foldBack
-                   (loop (ndeep+1))
+                ListInline.foldBack
+                   (fun ity st -> loop (ndeep+1) ity st)
                    (GetImmediateInterfacesOfType skipUnref g amap m ty)
                       (loop ndeep g.obj_ty_noNulls state)
             else
@@ -286,15 +290,15 @@ let FoldHierarchyOfTypeAux followInterfaces allowMultiIntfInst skipUnref visitor
                 | _ ->
                     let state =
                         if followInterfaces then
-                            List.foldBack
-                              (loop (ndeep+1))
+                            ListInline.foldBack
+                              (fun ity st -> loop (ndeep+1) ity st)
                               (GetImmediateInterfacesOfType skipUnref g amap m ty)
                               state
                         else
                             state
                     let state =
                         Option.foldBack
-                          (loop (ndeep+1))
+                          (fun sty st -> loop (ndeep+1) sty st)
                           (GetSuperTypeOfType g amap m ty)
                           state
                     state
@@ -384,12 +388,12 @@ let ImportILTypeFromMetadataWithAttributes amap m scoref tinst minst nullnessSou
         ty
 
 /// Get the parameter type of an IL method.
-let ImportParameterTypeFromMetadata amap m nullnessSource ilTy scoref tinst mist =   
+let ImportParameterTypeFromMetadata amap m nullnessSource ilTy scoref tinst mist =
     ImportILTypeFromMetadataWithAttributes amap m scoref tinst mist nullnessSource ilTy
 
 /// Get the return type of an IL method, taking into account instantiations for type, return attributes and method generic parameters, and
 /// translating 'void' to 'None'.
-let ImportReturnTypeFromMetadata amap m nullnessSource ilTy scoref tinst minst =  
+let ImportReturnTypeFromMetadata amap m nullnessSource ilTy scoref tinst minst =
     match ilTy with
     | ILType.Void -> None
     | retTy -> Some(ImportILTypeFromMetadataWithAttributes amap m scoref tinst minst nullnessSource retTy )
@@ -403,7 +407,7 @@ let ImportReturnTypeFromMetadata amap m nullnessSource ilTy scoref tinst minst =
 ///
 /// Note: this now looks identical to constraint instantiation.
 
-let CopyTyparConstraints m tprefInst (tporig: Typar) =
+let CopyTyparConstraints (traitCtxt: ITraitContext option) m tprefInst (tporig: Typar) =
     tporig.Constraints
     // F# does not have escape analysis for authoring 'allows ref struct' generic code. Therefore, typar is not copied, can only come from C# authored code
     |> List.filter (fun tp -> match tp with | TyparConstraint.AllowsRefStruct _ -> false | _ -> true)
@@ -419,7 +423,7 @@ let CopyTyparConstraints m tprefInst (tporig: Typar) =
                TyparConstraint.IsEnum (instType tprefInst underlyingTy, m)
            | TyparConstraint.SupportsComparison _ ->
                TyparConstraint.SupportsComparison m
-           | TyparConstraint.NotSupportsNull _ -> 
+           | TyparConstraint.NotSupportsNull _ ->
                TyparConstraint.NotSupportsNull m
            | TyparConstraint.SupportsEquality _ ->
                TyparConstraint.SupportsEquality m
@@ -437,11 +441,16 @@ let CopyTyparConstraints m tprefInst (tporig: Typar) =
            | TyparConstraint.RequiresDefaultConstructor _ ->
                TyparConstraint.RequiresDefaultConstructor m
            | TyparConstraint.MayResolveMember(traitInfo, _) ->
-               TyparConstraint.MayResolveMember (instTrait tprefInst traitInfo, m))
+               let traitInfo = instTrait tprefInst traitInfo
+               let traitInfo =
+                   match traitCtxt, traitInfo with
+                   | Some _, TTrait(a, b, c, d, e, f, g, None) -> TTrait(a, b, c, d, e, f, g, traitCtxt)
+                   | _ -> traitInfo
+               TyparConstraint.MayResolveMember (traitInfo, m))
 
 /// The constraints for each typar copied from another typar can only be fixed up once
 /// we have generated all the new constraints, e.g. f<A :> List<B>, B :> List<A>> ...
-let FixupNewTypars m (formalEnclosingTypars: Typars) (tinst: TType list) (tpsorig: Typars) (tps: Typars) =
+let FixupNewTypars (traitCtxt: ITraitContext option) m (formalEnclosingTypars: Typars) (tinst: TType list) (tpsorig: Typars) (tps: Typars) =
     // Checks.. These are defensive programming against early reported errors.
     let n0 = formalEnclosingTypars.Length
     let n1 = tinst.Length
@@ -453,5 +462,5 @@ let FixupNewTypars m (formalEnclosingTypars: Typars) (tinst: TType list) (tpsori
     // The real code..
     let renaming, tptys = mkTyparToTyparRenaming tpsorig tps
     let tprefInst = mkTyparInst formalEnclosingTypars tinst @ renaming
-    (tpsorig, tps) ||> List.iter2 (fun tporig tp -> tp.SetConstraints (CopyTyparConstraints  m tprefInst tporig))
+    (tpsorig, tps) ||> List.iter2 (fun tporig tp -> tp.SetConstraints (CopyTyparConstraints traitCtxt m tprefInst tporig))
     renaming, tptys

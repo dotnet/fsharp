@@ -106,6 +106,7 @@ type FSharpChecker
         enableBackgroundItemKeyStoreAndSemanticClassification,
         enablePartialTypeChecking,
         parallelReferenceResolution,
+        shareImportedAssemblies,
         captureIdentifiersWhenParsing,
         getSource,
         useChangeNotifications,
@@ -126,6 +127,7 @@ type FSharpChecker
                 enableBackgroundItemKeyStoreAndSemanticClassification,
                 enablePartialTypeChecking,
                 parallelReferenceResolution,
+                shareImportedAssemblies,
                 captureIdentifiersWhenParsing,
                 getSource,
                 useChangeNotifications,
@@ -144,6 +146,7 @@ type FSharpChecker
                 enableBackgroundItemKeyStoreAndSemanticClassification,
                 enablePartialTypeChecking,
                 parallelReferenceResolution,
+                shareImportedAssemblies,
                 captureIdentifiersWhenParsing,
                 getSource,
                 useChangeNotifications
@@ -190,6 +193,7 @@ type FSharpChecker
             ?enableBackgroundItemKeyStoreAndSemanticClassification,
             ?enablePartialTypeChecking,
             ?parallelReferenceResolution: bool,
+            ?shareImportedAssemblies: bool,
             ?captureIdentifiersWhenParsing: bool,
             ?documentSource: DocumentSource,
             ?useTransparentCompiler: bool,
@@ -224,6 +228,8 @@ type FSharpChecker
         if keepAssemblyContents && enablePartialTypeChecking then
             invalidArg "enablePartialTypeChecking" "'keepAssemblyContents' and 'enablePartialTypeChecking' cannot be both enabled."
 
+        let shareImportedAssemblies = defaultArg shareImportedAssemblies true
+
         let parallelReferenceResolution = inferParallelReferenceResolution parallelReferenceResolution
 
         FSharpChecker(
@@ -237,6 +243,7 @@ type FSharpChecker
             enableBackgroundItemKeyStoreAndSemanticClassification,
             enablePartialTypeChecking,
             parallelReferenceResolution,
+            shareImportedAssemblies,
             captureIdentifiersWhenParsing,
             (match documentSource with
              | Some(DocumentSource.Custom f) -> Some f
@@ -339,6 +346,7 @@ type FSharpChecker
         braceMatchCache.Clear(utok)
         backgroundCompiler.ClearCaches()
         ClearAllILModuleReaderCache()
+        SharedImportedCcus.clear ()
 
     member ic.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients() =
         use _ =
@@ -632,9 +640,6 @@ type FSharpChecker
 
     static member Instance = globalInstance.Force()
 
-    static member internal CreateOverloadCacheMetricsListener() =
-        new CacheMetrics.CacheMetricsListener("overloadResolutionCache")
-
     member internal _.FrameworkImportsCache = backgroundCompiler.FrameworkImportsCache
 
     /// Compile a DLL from cached typecheck results, skipping parse/typecheck/optimization.
@@ -708,7 +713,7 @@ type FSharpChecker
             let sigDataAttributes, sigDataResources =
                 EncodeSignatureData(tcConfig, tcGlobals, exportRemapping, generatedCcu, outfile, false)
 
-            let tcVal = LightweightTcValForUsingInBuildMethodCall tcGlobals
+            let tcVal = LightweightTcValForUsingInBuildMethodCall tcGlobals traitCtxtNone
             let importMap = tcImports.GetImportMap()
             let optEnv0 = GetInitialOptimizationEnv(tcImports, tcGlobals)
 
@@ -842,6 +847,8 @@ type FSharpChecker
                     referenceAssemblyAttribOpt = None
                     referenceAssemblySignatureHash = None
                     pathMap = tcConfig.pathMap
+                    moduleCustomDebugInfoRows = []
+                    methodCustomDebugInfoRows = Map.empty
                 },
                 ilxMainModule,
                 normalizeAssemblyRefs
@@ -854,7 +861,7 @@ type FSharpChecker
 
     /// Tokenize a single line, returning token information and a tokenization state represented by an integer
     member _.TokenizeLine(line: string, state: FSharpTokenizerLexState) =
-        let tokenizer = FSharpSourceTokenizer([], None, None, None)
+        let tokenizer = FSharpSourceTokenizer([], None, None)
         let lineTokenizer = tokenizer.CreateLineTokenizer line
         let mutable state = (None, state)
 

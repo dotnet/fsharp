@@ -6,15 +6,24 @@ open Xunit
 open FSharp.Test.Assert
 open FSharp.Test.Compiler
 
+module StateMachineTests =
 
-// Inlined helper containing a "if __useResumableCode ..." construct failed to expand correctly,
-// executing the dynmamic branch at runtime even when the state machine was compiled statically.
-// see https://github.com/dotnet/fsharp/issues/19296
+    let verifyOptimizedAndRun code =
+        Fsx code
+        |> withOptimize
+        |> compileExeAndRun
+
+    // Inlined helper containing a "if __useResumableCode ..." construct failed to expand correctly,
+    // executing the dynmamic branch at runtime even when the state machine was compiled statically.
+    // see https://github.com/dotnet/fsharp/issues/19296
+    [<Fact>]
+    let ``Nested __useResumableCode is expanded correctly`` () =
+        Fsx """
+open FSharp.Core.CompilerServices
+open FSharp.Core.CompilerServices.StateMachineHelpers
+open System.Runtime.CompilerServices
+
 module FailingInlinedHelper =
-    open FSharp.Core.CompilerServices
-    open FSharp.Core.CompilerServices.StateMachineHelpers
-    open System.Runtime.CompilerServices
-
     let inline MoveOnce(x: byref<'T> when 'T :> IAsyncStateMachine and 'T :> IResumableStateMachine<'Data>) =
         x.MoveNext()
         x.Data
@@ -27,7 +36,7 @@ module FailingInlinedHelper =
             else
                 failwith "unexpected dynamic branch at runtime")
 
-    #nowarn 3513 // Resumable code invocation.
+    #nowarn 3513
     let inline repro x =
         if __useResumableCode then
             __stateMachine<int, int>
@@ -38,28 +47,13 @@ module FailingInlinedHelper =
             failwith "dynamic state machine"
     #warnon 3513
 
-module StateMachineTests =
-
-    let verify3511AndRun code = 
-        Fsx code
-        |> withNoOptimize
-        |> compile
-        |> shouldFail
-        |> withWarningCode 3511
-        |> ignore
-
-        Fsx code
-        |> withNoOptimize
-        |> withOptions ["--nowarn:3511"]
+if FailingInlinedHelper.repro 42 <> 42 then failwith "unexpected result"
+"""
         |> compileExeAndRun
-
-    [<Fact>]
-    let ``Nested __useResumableCode is expanded correctly`` () =
-        FailingInlinedHelper.repro 42
-        |> shouldEqual 42
+        |> shouldSucceed
 
     [<Fact>] // https://github.com/dotnet/fsharp/issues/13067
-    let ``Local function with a flexible type``() = 
+    let ``Local function with a flexible type``() =
         """
 task {
     let m1 f s = Seq.map f s
@@ -74,11 +68,11 @@ task {
 }
 |> fun f -> f.Wait()
 """
-        |> verify3511AndRun
+        |> verifyOptimizedAndRun
         |> shouldSucceed
 
     [<Fact>] // https://github.com/dotnet/fsharp/issues/14806
-    let ``Explicit returns types + constraints on generics``() = 
+    let ``Explicit returns types + constraints on generics``() =
         """
 module Foo
 
@@ -98,12 +92,12 @@ let run() =
 run()
 |> fun f -> f.Wait()
 """
-        |> verify3511AndRun
+        |> verifyOptimizedAndRun
         |> shouldSucceed
-        
+
 
     [<Fact>] // https://github.com/dotnet/fsharp/issues/14807
-    let ``let _ = null``() = 
+    let ``let _ = null``() =
         """
 module TestProject1
 
@@ -120,7 +114,7 @@ let foo() = task {
 foo()
 |> fun f -> f.Wait()
 """
-        |> verify3511AndRun
+        |> verifyOptimizedAndRun
         |> shouldSucceed
 
     [<FSharp.Test.FactForNETCOREAPP>] // https://github.com/dotnet/fsharp/issues/13386
@@ -146,7 +140,7 @@ for i in 1 .. 100 do
         |> shouldSucceed
 
     [<Fact>] // https://github.com/dotnet/fsharp/issues/16068
-    let ``Decision tree with 32+ binds with nested expression is not getting splitted and state machine is successfully statically compiles``() = 
+    let ``Decision tree with 32+ binds with nested expression is not getting splitted and state machine is successfully statically compiles``() =
         FSharp """
 module Testing
 
@@ -243,6 +237,7 @@ let test = task {
         ()
 }
     """
+        |> withOptions [ "--nowarn:3886" ]
         |> compile
         |> verifyIL [ ".override [runtime]System.Runtime.CompilerServices.IAsyncStateMachine::MoveNext" ]
 
@@ -465,4 +460,35 @@ if result[0].x <> 1 then failwith $"unexpected result {result[0]}"
         """
         |> asExe
         |> compileExeAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Debug-mode: mixing resumable and standard computation expressions compiles``() =
+        FSharp """
+module ReproMixedBuilders
+open System.Threading.Tasks
+
+type TaskMaybeBuilder() =
+
+    member inline _.Zero() = Task.FromResult None
+
+    member inline _.Delay([<InlineIfLambda>] f) = task { return! f () }
+
+    member inline _.Bind(value, [<InlineIfLambda>] f) =
+        task {
+            match value with
+            | None -> return None
+            | Some result -> return! f result
+        }
+
+let taskMaybe = TaskMaybeBuilder()
+
+let trigger() =
+    taskMaybe {
+        do! None
+    }
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> compile
         |> shouldSucceed

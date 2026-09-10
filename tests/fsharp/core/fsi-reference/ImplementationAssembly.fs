@@ -1,4 +1,4 @@
 ﻿namespace ReferenceAssembly
 
-type MyClass() = 
+type MyClass() =
     member this.X = printfn "Implemented MyClass.X in F#"

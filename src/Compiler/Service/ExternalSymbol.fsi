@@ -26,6 +26,7 @@ module internal FindDeclExternalType =
     val internal tryOfILType: string array -> ILType -> FindDeclExternalType option
 
 /// Represents the type of a single method parameter
+[<RequireQualifiedAccess>]
 [<Sealed>]
 type public FindDeclExternalParam =
 
@@ -37,6 +38,7 @@ type public FindDeclExternalParam =
 
     override ToString: unit -> string
 
+[<RequireQualifiedAccess>]
 module internal FindDeclExternalParam =
 
     val internal tryOfILType: string array -> ILType -> FindDeclExternalParam option

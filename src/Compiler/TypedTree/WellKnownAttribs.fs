@@ -57,6 +57,7 @@ type internal WellKnownEntityAttributes =
     | EditorBrowsableAttribute = (1uL <<< 46)
     | CompiledNameAttribute = (1uL <<< 47)
     | DebuggerDisplayAttribute = (1uL <<< 48)
+    | ExtendedLayoutAttribute = (1uL <<< 49)
     | NotComputed = (1uL <<< 63)
 
 /// Flags enum for well-known assembly-level attributes.
@@ -116,7 +117,22 @@ type internal WellKnownValAttributes =
     | NoEagerConstraintApplicationAttribute = (1uL <<< 38)
     | ValueAsStaticPropertyAttribute = (1uL <<< 39)
     | TailCallAttribute = (1uL <<< 40)
+    | NotNullIfNotNullAttribute = (1uL <<< 41)
+    | OverloadResolutionPriorityAttribute = (1uL <<< 42)
     | NotComputed = (1uL <<< 63)
+
+module internal Flags =
+    let inline private bits (f: ^F when ^F: enum<uint64>) = LanguagePrimitives.EnumToValue f
+    let inline private ofBits<'F when 'F: enum<uint64>> (v: uint64) : 'F = LanguagePrimitives.EnumOfValue v
+
+    let inline isEmpty (flags: 'F when 'F: enum<uint64>) = bits flags = 0uL
+    let inline union (a: 'F when 'F: enum<uint64>) (b: 'F) : 'F = ofBits<'F> (bits a ||| bits b)
+    let inline intersect (other: 'F when 'F: enum<uint64>) (flags: 'F) : 'F = ofBits<'F> (bits flags &&& bits other)
+    let inline except (b: 'F when 'F: enum<uint64>) (a: 'F) : 'F = ofBits<'F> (bits a &&& ~~~(bits b))
+    let inline intersects (other: 'F when 'F: enum<uint64>) (flags: 'F) = bits flags &&& bits other <> 0uL
+
+    let inline isSubsetOf (superset: 'F when 'F: enum<uint64>) (subset: 'F) =
+        bits subset &&& ~~~(bits superset) = 0uL
 
 /// Generic wrapper for an item list together with cached well-known attribute flags.
 /// Used for O(1) lookup of well-known attributes on entities and vals.
@@ -139,6 +155,8 @@ type internal WellKnownAttribs<'TItem, 'TFlags when 'TFlags: enum<uint64>> =
     /// Get the current flags value.
     member x.Flags = x.flags
 
+    member x.NeedsCompute = LanguagePrimitives.EnumToValue x.flags &&& (1uL <<< 63) <> 0uL
+
     /// Add a single item and OR-in its flag.
     member x.Add(attrib: 'TItem, flag: 'TFlags) =
         let combined =
@@ -152,18 +170,3 @@ type internal WellKnownAttribs<'TItem, 'TFlags when 'TFlags: enum<uint64>> =
             WellKnownAttribs<'TItem, 'TFlags>([], LanguagePrimitives.EnumOfValue 0uL)
         else
             WellKnownAttribs<'TItem, 'TFlags>(x.attribs, LanguagePrimitives.EnumOfValue(1uL <<< 63))
-
-    /// Caller must write back the returned wrapper if needsWriteBack is true.
-    member x.CheckFlag(flag: 'TFlags, compute: 'TItem list -> 'TFlags) : struct (bool * WellKnownAttribs<'TItem, 'TFlags> * bool) =
-        let f = LanguagePrimitives.EnumToValue x.flags
-
-        if f &&& (1uL <<< 63) <> 0uL then
-            let computed = compute x.attribs
-            let wa = WellKnownAttribs<'TItem, 'TFlags>(x.attribs, computed)
-
-            struct (LanguagePrimitives.EnumToValue computed &&& LanguagePrimitives.EnumToValue flag
-                    <> 0uL,
-                    wa,
-                    true)
-        else
-            struct (x.HasWellKnownAttribute(flag), x, false)

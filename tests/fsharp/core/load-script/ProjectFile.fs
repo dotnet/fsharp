@@ -1,4 +1,4 @@
-// #Conformance #FSI 
+// #Conformance #FSI
 namespace Namespace
-type Type = 
+type Type =
     static member Method() = 99

@@ -1,4 +1,4 @@
-// #Regression #Conformance #DeclarationElements #Attributes 
+// #Regression #Conformance #DeclarationElements #Attributes
 
 
 // FSB 1437, Assembly attribute w/array parameter fails to build
@@ -23,10 +23,10 @@ do
             let tyAttributes = t.GetCustomAttributes(false)
             let attrib = tyAttributes |> Array.find (fun attrib -> match attrib with :? TestAttribute -> true | _ -> false)
             (attrib :?> TestAttribute)
-        
+
         let tyFoo = typeof<Foo>
         let testAtt = getTestAttribute tyFoo
-        if testAtt.Value <> [|0|] then 
+        if testAtt.Value <> [|0|] then
             false
         else
             true

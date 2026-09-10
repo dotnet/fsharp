@@ -47,7 +47,7 @@ module Array =
             Some array.[array.Length - 1]
 
     [<CompiledName("Initialize")>]
-    let inline init count initializer =
+    let inline init count ([<InlineIfLambda>] initializer) =
         Microsoft.FSharp.Primitives.Basics.Array.init count initializer
 
     [<CompiledName("ZeroCreate")>]
@@ -2385,7 +2385,7 @@ module Array =
         let createPartitionsUpTo maxIdxExclusive (array: 'T array) =
             createPartitionsUpToWithMinChunkSize maxIdxExclusive minChunkSize array
 
-        (* This function is there also as a support vehicle for other aggregations. 
+        (* This function is there also as a support vehicle for other aggregations.
            It is public in order to be called from inlined functions, the benefit of inlining call into it is significant *)
         [<CompiledName("ReduceBy")>]
         let reduceBy (projection: 'T -> 'U) (reduction: 'U -> 'U -> 'U) (array: 'T array) =

@@ -98,6 +98,12 @@ type ResolvedExtensionReference =
     | ResolvedExtensionReference of string * AssemblyReference list * Tainted<ITypeProvider> list
 #endif
 
+/// Shares one copy of an assembly's Entity graph between the projects resolving that assembly, and
+/// everything it can reach, to the same files. Entries are weak: nothing is retained on a project's behalf.
+module internal SharedImportedCcus =
+
+    val clear: unit -> unit
+
 /// Represents a resolved imported binary
 [<RequireQualifiedAccess>]
 type ImportedBinary =

@@ -214,7 +214,9 @@ let StaticLinkILModules
         let topTypeDefs, normalTypeDefs =
             moduls
             |> List.map (fun m ->
+                // Type defs come grouped by namespace, which is not the TypeDef row order. Emit them as read.
                 m.TypeDefs.AsList()
+                |> List.sortBy (fun td -> td.MetadataIndex)
                 |> List.partition (fun td -> isTypeNameForGlobalFunctions td.Name))
             |> List.unzip
 

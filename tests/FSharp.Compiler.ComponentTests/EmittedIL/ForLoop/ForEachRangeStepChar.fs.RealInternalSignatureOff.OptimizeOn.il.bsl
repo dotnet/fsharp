@@ -17,16 +17,6 @@
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
-.mresource public FSharpSignatureCompressedData.assembly
-{
-  
-  
-}
-.mresource public FSharpOptimizationCompressedData.assembly
-{
-  
-  
-}
 .module assembly.exe
 
 .imagebase {value}
@@ -58,9 +48,7 @@
       IL_0006:  ret
     } 
 
-    .method public strict virtual instance char 
-            Invoke(char x,
-                   char y) cil managed
+    .method public strict virtual instance char Invoke(char x, char y) cil managed
     {
       
       .maxstack  8
@@ -97,9 +85,7 @@
       IL_0006:  ret
     } 
 
-    .method public strict virtual instance char 
-            Invoke(char x,
-                   char y) cil managed
+    .method public strict virtual instance char Invoke(char x, char y) cil managed
     {
       
       .maxstack  8
@@ -136,9 +122,7 @@
       IL_0006:  ret
     } 
 
-    .method public strict virtual instance char 
-            Invoke(char x,
-                   char y) cil managed
+    .method public strict virtual instance char Invoke(char x, char y) cil managed
     {
       
       .maxstack  8
@@ -175,9 +159,7 @@
       IL_0006:  ret
     } 
 
-    .method public strict virtual instance char 
-            Invoke(char x,
-                   char y) cil managed
+    .method public strict virtual instance char Invoke(char x, char y) cil managed
     {
       
       .maxstack  8

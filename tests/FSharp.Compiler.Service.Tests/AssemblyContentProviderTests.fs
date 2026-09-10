@@ -8,7 +8,7 @@ open FSharp.Test
 
 let private filePath = "C:\\test.fs"
 
-let private projectOptions : FSharpProjectOptions = 
+let private projectOptions : FSharpProjectOptions =
     { ProjectFileName = "C:\\test.fsproj"
       ProjectId = None
       SourceFiles =  [| filePath |]
@@ -27,10 +27,10 @@ let private assertAreEqual (expected, actual) =
     if actual <> expected then
         failwithf "\n\nExpected\n\n%A\n\nbut was\n\n%A" expected actual
 
-let private checkFile (source: string) = 
-    let _, checkFileAnswer = 
-        checker.ParseAndCheckFileInProject(filePath, 0, FSharp.Compiler.Text.SourceText.ofString source, projectOptions) 
-        |> Async.RunImmediate
+let private checkFile (source: string) =
+    let _, checkFileAnswer =
+        checker.ParseAndCheckFileInProject(filePath, 0, FSharp.Compiler.Text.SourceText.ofString source, projectOptions)
+        |> Async.RunSynchronouslyImmediate
 
     match checkFileAnswer with
     | FSharpCheckFileAnswer.Aborted -> failwithf "ParseAndCheckFileInProject aborted"
@@ -47,7 +47,7 @@ let private getTopRequireQualifiedAccessParentName (symbol: AssemblySymbol) =
 let private (=>) (source: string) (expected: string list) =
     let checkFileResults = checkFile source
 
-    let actual = 
+    let actual =
         checkFileResults.PartialAssemblySignature
         |> AssemblyContent.GetAssemblySignatureContent AssemblyContentType.Full
         |> List.map getCleanedFullName
@@ -74,7 +74,7 @@ module MyType =
         "Test.MyType"
         "Test.MyType"
         "Test.MyType.func123"]
-        
+
 [<FactForDESKTOP>]
 let ``Module suffix added by an explicitly applied ModuleSuffix attribute is removed``() =
     """
@@ -120,8 +120,8 @@ let ``TopRequireQualifiedAccessParent property should be valid``() =
                         let v1211 = 1
     """
 
-    let expectedResult = 
-        [ 
+    let expectedResult =
+        [
             "Test", "";
             "Test.M1", "";
             "Test.M1.v1", "";
@@ -191,8 +191,8 @@ module Test =
         let (++) s s2 = s + "/" + s2
     """
 
-    let expectedResult = 
-        [ 
+    let expectedResult =
+        [
             "1 2 3.Test", "open ``1 2 3`` - Test";
             "1 2 3.Test.M1", "open ``1 2 3`` - Test.M1";
             "1 2 3.Test.M1.(++)", "open ``1 2 3`` - Test.M1.``(++)``";
@@ -222,7 +222,7 @@ module Test =
         ]
         |> Map.ofList
 
-    let actual = source |> getSymbolMap (fun i -> 
+    let actual = source |> getSymbolMap (fun i ->
         let ns = i.UnresolvedSymbol.Namespace |> String.concat "."
         $"open {ns} - {i.UnresolvedSymbol.DisplayName}")
 

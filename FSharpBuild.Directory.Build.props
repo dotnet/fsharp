@@ -30,7 +30,7 @@
     <WarningsAsErrors>0025;$(WarningsAsErrors)</WarningsAsErrors>
     <OtherFlags>$(OtherFlags) --nowarn:3384</OtherFlags>
     <OtherFlags>$(OtherFlags) --times --nowarn:75</OtherFlags>
-    <OtherFlags Condition="$(AdditionalFscCmdFlags) != ''">$(OtherFlags) $(AdditionalFscCmdFlags)</OtherFlags>
+    <OtherFlags Condition="'$(AdditionalFscCmdFlags)' != ''">$(OtherFlags) $(AdditionalFscCmdFlags)</OtherFlags>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)' == 'Proto'">

@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-// Because of shared fsi session.
-[<FSharp.Test.RunTestCasesInSequence>]
+// Leverage caching/prevent concurrent mutation via long-lived fsiSession in module state
+[<Xunit.TestClass(DisableParallelization = true)>]
 module Language.BooleanReturningAndReturnTypeDirectedPartialActivePatternTests
 
 open Xunit
@@ -26,7 +26,7 @@ let ``Partial struct active pattern returns bool`` () =
     |> withLangVersion10
     |> typecheck
     |> shouldSucceed
-    
+
 [<Fact>]
 let ``Single case active pattern returning bool should success`` () =
     FSharp """
@@ -35,7 +35,7 @@ let (IsA r) = "A"
     """
     |> typecheck
     |> shouldSucceed
-    
+
 [<Fact>]
 let ``Partial struct active pattern results can be retrieved`` () =
     Fsx """
@@ -99,4 +99,23 @@ match "A" with
         (Error 0039, Line 9, Col 17, Line 9, Col 23, "The value or constructor 'result' is not defined. Maybe you want one of the following:
    Result")
         (Error 3868, Line 13, Col 3, Line 13, Col 30, "This active pattern does not expect any arguments, i.e., it should be used like 'IsA' instead of 'IsA x'.")
+    ]
+
+[<Fact>]
+let ``Language version check`` () =
+    FSharp """
+let (|LessThan|_|) (other: int) x = x <= other
+
+match 1 with
+| LessThan "" -> UnresolvedName
+| _ -> ()
+"""
+    |> withLangVersion80
+    |> typecheck
+    |> shouldFail
+    |> withDiagnostics [
+        Error 3350, Line 2, Col 6, Line 2, Col 18, "Feature 'Boolean-returning and return-type-directed partial active patterns' is not available in F# 8.0. Please use language version 9.0 or greater."
+        Error 3350, Line 5, Col 3, Line 5, Col 14, "Feature 'Boolean-returning and return-type-directed partial active patterns' is not available in F# 8.0. Please use language version 9.0 or greater."
+        Error 1, Line 5, Col 12, Line 5, Col 14, "This expression was expected to have type\n        'int' \n        but here has type\n        'string' "
+        Error 39, Line 5, Col 18, Line 5, Col 32, "The value or constructor 'UnresolvedName' is not defined."
     ]

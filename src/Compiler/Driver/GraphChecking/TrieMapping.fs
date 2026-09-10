@@ -158,13 +158,7 @@ let processSynModuleOrNamespace<'Decl>
                         mkSingletonDict name { Current = current; Children = node } |> continuation)
                     tail
 
-        if kind = SynModuleOrNamespaceKind.AnonModule then
-            // We collect the child nodes from the decls
-            decls
-            |> List.choose (mkTrieForDeclaration idx)
-            |> mkImmutableDictFromKeyValuePairs
-        else
-            visit id name
+        visit id name
 
     {
         Current = Root(ImmutableHashSet.empty ())
@@ -223,7 +217,8 @@ let rec mkTrieNodeFor (file: FileInProject) : FileIndex * TrieNode =
 
 and mkTrieForSynModuleDecl (fileIndex: FileIndex) (decl: SynModuleDecl) : KeyValuePair<string, TrieNode> option =
     match decl with
-    | SynModuleDecl.NestedModule(moduleInfo = SynComponentInfo(longId = [ nestedModuleIdent ]); decls = decls) ->
+    | SynModuleDecl.NestedModule(moduleInfo = compInfo; decls = decls) when compInfo.LongIdent.Length = 1 ->
+        let nestedModuleIdent = compInfo.LongIdent.Head
         let name = nestedModuleIdent.idText
 
         let children =
@@ -244,7 +239,8 @@ and mkTrieForSynModuleDecl (fileIndex: FileIndex) (decl: SynModuleDecl) : KeyVal
 
 and mkTrieForSynModuleSigDecl (fileIndex: FileIndex) (decl: SynModuleSigDecl) : KeyValuePair<string, TrieNode> option =
     match decl with
-    | SynModuleSigDecl.NestedModule(moduleInfo = SynComponentInfo(longId = [ nestedModuleIdent ]); moduleDecls = decls) ->
+    | SynModuleSigDecl.NestedModule(moduleInfo = compInfo; moduleDecls = decls) when compInfo.LongIdent.Length = 1 ->
+        let nestedModuleIdent = compInfo.LongIdent.Head
         let name = nestedModuleIdent.idText
 
         let children =

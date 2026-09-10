@@ -68,6 +68,14 @@ let startServer (config: ServerConfig) =
                     match command with
                     | "ping" -> return $"""{{ "status":"ok", "pid":{Environment.ProcessId} }}"""
 
+                    | "warmup" ->
+                        // Forces the lazy DesignTimeBuild + FCS project load so the next real
+                        // request doesn't hang for 5-15 min on a cold clone.
+                        let! optionsResult = getOptions (Path.Combine(config.RepoRoot, "src", "Compiler", "FSharp.Compiler.Service.fsproj"))
+                        match optionsResult with
+                        | Ok _ -> return """{ "status":"warmed" }"""
+                        | Error msg -> return $"""{{ "error":"warmup failed: {msg}" }}"""
+
                     | "parseOnly" ->
                         let file = doc.RootElement.GetProperty("file").GetString()
 
@@ -203,16 +211,14 @@ let startServer (config: ServerConfig) =
                                 let addHint line hint =
                                     if not (annotations.ContainsKey line) then annotations.[line] <- ResizeArray()
                                     annotations.[line].Add(hint)
-                                let tagsToStr (tags: FSharp.Compiler.Text.TaggedText[]) =
-                                    tags |> Array.map (fun t -> t.Text) |> String.concat ""
                                 for su in allSymbols do
                                     let r = su.Range
                                     if r.StartLine >= startLine && r.StartLine <= endLine && su.IsFromDefinition then
                                         match su.Symbol with
                                         | :? FSharpMemberOrFunctionOrValue as mfv ->
-                                            match mfv.GetReturnTypeLayout(su.DisplayContext) with
-                                            | Some tags ->
-                                                let typeStr = tagsToStr tags
+                                            match mfv.GetReturnTypeRichText(su.DisplayContext) with
+                                            | Some typeInfo ->
+                                                let typeStr = typeInfo.Text
                                                 // Format as F# type annotation: (name: Type)
                                                 addHint r.StartLine $"({mfv.DisplayName}: {typeStr})"
                                             | None ->

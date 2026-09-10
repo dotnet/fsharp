@@ -32,16 +32,16 @@ let test5() =
          printfn "%A" x
 
 // more complex enumerable expression
-let test6() = 
+let test6() =
     for i in (
                 [1;2;3;4]
                 |> List.map (fun x ->
                     x + 1)
                 ) do
         printfn "%O" i
- 
-// multiline body 
-let test7() = 
+
+// multiline body
+let test7() =
     for i in (
                 [1;2;3;4]
                 |> List.map (fun x ->

@@ -1,4 +1,4 @@
-// #Conformance #LexFilter 
+// #Conformance #LexFilter
 // Verify correct lexing of a complex type application
 
 let typeApp = typeof<Map<Map<Map<Map<_,_>[],Map<_,_[]>>,_>,_>>.FullName

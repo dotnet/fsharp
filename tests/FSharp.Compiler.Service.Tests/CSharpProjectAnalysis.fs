@@ -33,7 +33,7 @@ let internal getProjectReferences (content: string, dllFiles, libDirs, otherFlag
                for libDir in libDirs do
                  yield "-I:"+libDir
                yield! otherFlags |]) with SourceFiles = [| fileName1 |] }
-    let results = checker.ParseAndCheckProject(options) |> Async.RunImmediate
+    let results = checker.ParseAndCheckProject(options) |> Async.RunSynchronouslyImmediate
     if results.HasCriticalErrors then
         let builder = System.Text.StringBuilder()
         for err in results.Diagnostics do
@@ -120,7 +120,7 @@ let _ = CSharpGenericOuterClass<int>.InnerClass.StaticMember()
     let results, _ = getProjectReferences(content, [csharpAssembly], None, None)
     results.GetAllUsesOfAllSymbols()
     |> Array.map (fun su -> su.Symbol.ToString())
-    |> shouldEqual 
+    |> shouldEqual
         [|"FSharp"; "Compiler"; "Service"; "Tests"; "FSharp"; "member .ctor"; "int";
           "CSharpGenericOuterClass`1"; "CSharpGenericOuterClass`1"; "int";
           "CSharpGenericOuterClass`1"; "InnerEnum"; "field Case1";

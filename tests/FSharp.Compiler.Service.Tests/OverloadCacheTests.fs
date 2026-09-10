@@ -1,5 +1,10 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
+// These tests are serialized (NotThreadSafeResourceCollection) because they read process-global state:
+// the shared language-service `checker`, and the process-global cache metrics that
+// `CacheMetrics.ListenToAll` aggregates by name (see the `use _ = CacheMetrics.ListenToAll()` in each
+// test). Running them in parallel with each other, or alongside anything else that drives caches while
+// a listener is attached, would let counts from unrelated work bleed into the before/after deltas.
 [<Xunit.Collection(nameof FSharp.Test.NotThreadSafeResourceCollection)>]
 module FSharp.Compiler.Service.Tests.OverloadCacheTests
 
@@ -26,7 +31,7 @@ let generateRepetitiveOverloadCalls (callCount: int) =
     let sb = StringBuilder()
     sb.AppendLine("open System") |> ignore
     sb.AppendLine() |> ignore
-    
+
     sb.AppendLine("type TestAssert =") |> ignore
     sb.AppendLine("    static member Equal(expected: int, actual: int) = expected = actual") |> ignore
     sb.AppendLine("    static member Equal(expected: string, actual: string) = expected = actual") |> ignore
@@ -37,7 +42,7 @@ let generateRepetitiveOverloadCalls (callCount: int) =
     sb.AppendLine("    static member Equal(expected: int64, actual: int64) = expected = actual") |> ignore
     sb.AppendLine("    static member Equal(expected: obj, actual: obj) = obj.Equals(expected, actual)") |> ignore
     sb.AppendLine() |> ignore
-    
+
     sb.AppendLine("let runTests() =") |> ignore
     sb.AppendLine("    let mutable x: int = 0") |> ignore
     sb.AppendLine("    let mutable y: int = 0") |> ignore
@@ -45,32 +50,40 @@ let generateRepetitiveOverloadCalls (callCount: int) =
         sb.AppendLine(sprintf "    x <- %d" i) |> ignore
         sb.AppendLine(sprintf "    y <- %d" (i + 1)) |> ignore
         sb.AppendLine("    ignore (TestAssert.Equal(x, y))") |> ignore
-    
+
     sb.AppendLine() |> ignore
     sb.AppendLine("runTests()") |> ignore
-    
+
     sb.ToString()
 
 
 [<Fact>]
 let ``Overload cache hit rate exceeds 70 percent for repetitive int-int calls`` () =
-    use listener = FSharpChecker.CreateOverloadCacheMetricsListener()
+    use _ = CacheMetrics.ListenToAll()
     checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
-    
+
+    // Measure only this compilation's activity: the per-name totals are process-global, so snapshot
+    // before/after and diff rather than reading absolute counts.
+    let before = CacheMetrics.getTotalsByName "overloadResolutionCache"
+
     let callCount = 150
     let source = generateRepetitiveOverloadCalls callCount
     checkSourceHasNoErrors source |> ignore
-    
-    let hits = listener.Hits
-    let misses = listener.Misses
+
+    let after = CacheMetrics.getTotalsByName "overloadResolutionCache"
+    let hits = after.["hits"] - before.["hits"]
+    let misses = after.["misses"] - before.["misses"]
     Assert.True(hits + misses > 0L, "Expected cache activity but got no hits or misses - is the cache enabled?")
-    Assert.True(listener.Ratio > 0.70, sprintf "Expected hit ratio > 70%%, but got %.2f%%" (listener.Ratio * 100.0))
+    let ratio = float hits / float (hits + misses)
+    Assert.True(ratio > 0.70, sprintf "Expected hit ratio > 70%%, but got %.2f%%" (ratio * 100.0))
 
 [<Fact>]
 let ``Overload cache returns correct resolution`` () =
-    use listener = FSharpChecker.CreateOverloadCacheMetricsListener()
+    use _ = CacheMetrics.ListenToAll()
     checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
-    
+
+    let before = CacheMetrics.getTotalsByName "overloadResolutionCache"
+
     let source = """
 type Overloaded =
     static member Process(x: int) = "int"
@@ -89,9 +102,11 @@ let s2 = Overloaded.Process("b")
 let f1 = Overloaded.Process(1.0)
 let f2 = Overloaded.Process(2.0)
 """
-    
+
     checkSourceHasNoErrors source |> ignore
-    Assert.True(listener.Hits > 0L, "Expected cache hits for repeated overload calls")
+
+    let after = CacheMetrics.getTotalsByName "overloadResolutionCache"
+    Assert.True(after.["hits"] - before.["hits"] > 0L, "Expected cache hits for repeated overload calls")
 
 let overloadCorrectnessTestCases () : obj[] seq =
     seq {
@@ -273,9 +288,8 @@ let ``Overload resolution correctness`` (_scenario: string, source: string) =
 
 [<Fact>]
 let ``Overload cache benefits from rigid generic type parameters`` () =
-    use listener = FSharpChecker.CreateOverloadCacheMetricsListener()
     checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
-    
+
     let source = """
 type Assert =
     static member Equal(expected: int, actual: int) = expected = actual
@@ -298,5 +312,5 @@ let d2 = Assert.Equal<int>(30, 40)
 let d3 = Assert.Equal<string>("x", "y")
 let d4 = Assert.Equal<string>("z", "w")
 """
-    
+
     checkSourceHasNoErrors source |> ignore

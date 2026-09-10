@@ -24,14 +24,14 @@ module UseBindings =
         |> withLangVersion80
         |> compileAndRun
         |> shouldSucceed
-        
+
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"UseBindingDiscard03.fs"|])>]
     let ``UseBindings - UseBindingDiscard03_fs - Current LangVersion`` compilation =
         compilation
         |> asExe
         |> compileAndRun
         |> shouldSucceed
-        
+
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"UseBinding01.fs"|])>]
     let ``UseBindings - UseBinding01_fs - Current LangVersion`` compilation =
         compilation
@@ -43,5 +43,31 @@ module UseBindings =
     let ``UseBindings - UseBinding02_fs - Current LangVersion`` compilation =
         compilation
         |> asFsx
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``use binding does not ICE when Dispose extension method is in scope`` () =
+        FSharp """
+open System
+open System.Runtime.CompilerServices
+
+type Disposable() =
+    interface IDisposable with
+        member _.Dispose() = ()
+
+[<Extension>]
+type PublicExtensions =
+    [<Extension>]
+    static member inline Dispose(this: #IDisposable) =
+        this
+
+let foo() =
+    use a = new Disposable()
+    ()
+
+foo()
+        """
+        |> asExe
         |> compile
         |> shouldSucceed

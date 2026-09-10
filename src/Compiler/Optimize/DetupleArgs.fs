@@ -2,9 +2,11 @@
 
 module internal FSharp.Compiler.Detuple
 
+open System.Collections.Generic
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open FSharp.Compiler.DiagnosticsLogger
+open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
@@ -172,6 +174,9 @@ module GlobalUsageAnalysis =
 
     type accessor = TupleGet of int * TType list
 
+    let valStampEquality =
+        HashIdentity.FromFunctions (fun (v: Val) -> int v.Stamp) (fun (v1: Val) v2 -> v1.Stamp = v2.Stamp)
+
     /// Expr information.
     /// For each v,
     ///  (a) log it's usage site context = accessors // APP type-inst args
@@ -180,7 +185,7 @@ module GlobalUsageAnalysis =
     type Results =
         {
             ///  v -> context / APP inst args
-            Uses: Zmap<Val, (accessor list * TType list * Expr list) list>
+            Uses: Dictionary<Val, (accessor list * TType list * Expr list) list>
 
             /// v -> binding repr
             Defns: Zmap<Val, Expr>
@@ -196,8 +201,9 @@ module GlobalUsageAnalysis =
             IterationIsAtTopLevel: bool
         }
 
-    let z0 =
-        { Uses = Zmap.empty valOrder
+    /// New instance per file: Uses is mutable and implementation files are optimized in parallel.
+    let mkInitialResults () =
+        { Uses = Dictionary<Val, _>(valStampEquality)
           Defns = Zmap.empty valOrder
           RecursiveBindings = Zmap.empty valOrder
           DecisionTreeBindings = Zset.empty valOrder
@@ -207,11 +213,8 @@ module GlobalUsageAnalysis =
     /// Log the use of a value with a particular tuple shape at a callsite
     /// Note: this routine is called very frequently
     let logUse (f: Val) tup z =
-        { z with
-            Uses =
-                match Zmap.tryFind f z.Uses with
-                | Some sites -> Zmap.add f (tup :: sites) z.Uses
-                | None -> Zmap.add f [ tup ] z.Uses }
+        z.Uses.BagAdd(f, tup)
+        z
 
     /// Log the definition of a binding
     let logBinding z (isInDTree, v) =
@@ -341,7 +344,7 @@ module GlobalUsageAnalysis =
 
     let GetUsageInfoOfImplFile g expr =
         let folder = UsageFolders g
-        let z = FoldImplFile folder z0 expr
+        let z = FoldImplFile folder (mkInitialResults ()) expr
         z
 
 let internalError str = raise (Failure(str))
@@ -496,7 +499,7 @@ type Transform =
 // transform - mkTransform - decided, create necessary stuff
 //-------------------------------------------------------------------------
 
-let mkTransform g (f: Val) m tps x1Ntys retTy (callPattern, tyfringes: (TType list * Val list) list) =
+let mkTransform (scope: PerFileNamingScope) g (f: Val) m tps x1Ntys retTy (callPattern, tyfringes: (TType list * Val list) list) =
     // Create formal choices for x1...xp under callPattern
     let transformedFormals =
         (callPattern, tyfringes)
@@ -547,12 +550,9 @@ let mkTransform g (f: Val) m tps x1Ntys retTy (callPattern, tyfringes: (TType li
     let fCty = mkLambdaTy g tps argTys retTy
 
     let transformedVal =
-        // Ensure that we have an g.CompilerGlobalState
-        assert (g.CompilerGlobalState |> Option.isSome)
-
         mkLocalVal
             f.Range
-            (g.CompilerGlobalState.Value.NiceNameGenerator.FreshCompilerGeneratedName(f.LogicalName, f.Range))
+            (scope.Fresh(f.LogicalName, f.Range))
             fCty
             valReprInfo
 
@@ -612,9 +612,9 @@ let decideFormalSuggestedCP g z tys vss =
             TupleTS tss
 
     let trimTsByVal z ts v =
-        match Zmap.tryFind v z.Uses with
-        | None -> UnknownTS (* formal has no usage info, it is unused *)
-        | Some sites ->
+        match z.Uses.TryGetValue v with
+        | false, _ -> UnknownTS (* formal has no usage info, it is unused *)
+        | true, sites ->
             let trim ts (accessors, _inst, _args) = trimTsByAccess accessors ts
             List.fold trim ts sites
 
@@ -638,7 +638,7 @@ let decideFormalSuggestedCP g z tys vss =
 // transform - decideTransform
 //-------------------------------------------------------------------------
 
-let decideTransform g z v callPatterns (m, tps, vss: Val list list, retTy) =
+let decideTransform (scope: PerFileNamingScope) g z v callPatterns (m, tps, vss: Val list list, retTy) =
     let tys = List.map (typeOfLambdaArg m) vss
 
     // NOTE: 'a in arg types may have been instanced at different tuples...
@@ -664,7 +664,7 @@ let decideTransform g z v callPatterns (m, tps, vss: Val list list, retTy) =
     if isTrivialCP callPattern then
         None // no transform
     else
-        Some(v, mkTransform g v m tps tys retTy (callPattern, tyfringes))
+        Some(v, mkTransform scope g v m tps tys retTy (callPattern, tyfringes))
 
 
 //-------------------------------------------------------------------------
@@ -686,7 +686,7 @@ let eligibleVal g m (v: Val) =
     && not //  .IsCompiledAsTopLevel &&
         v.IsCompiledAsTopLevel
 
-let determineTransforms g (z: Results) =
+let determineTransforms (scope: PerFileNamingScope) g (z: Results) =
     let selectTransform (f: Val) sites =
         if not (eligibleVal g f.Range f) then
             None
@@ -702,9 +702,13 @@ let determineTransforms g (z: Results) =
                 | arg1 :: _ -> // consider f
                     let m = arg1.Range // mark of first arg, mostly for error reporting
                     let callPatterns = sitesCPs sites // callPatterns from sites
-                    decideTransform g z f callPatterns (m, tps, vss, retTy) // make transform (if required)
+                    decideTransform scope g z f callPatterns (m, tps, vss, retTy) // make transform (if required)
 
-    let vtransforms = Zmap.chooseL selectTransform z.Uses
+    let vtransforms =
+        z.Uses
+        |> Seq.sortBy (fun (KeyValue(f, _)) -> struct (valSourceOrderKey f, f.Stamp))
+        |> Seq.choose (fun (KeyValue(f, sites)) -> selectTransform f sites)
+        |> List.ofSeq
     let vtransforms = Zmap.ofList valOrder vtransforms
     vtransforms
 
@@ -948,12 +952,12 @@ let passImplFile penv assembly =
 // entry point
 //-------------------------------------------------------------------------
 
-let DetupleImplFile ccu g expr =
+let DetupleImplFile (scope: PerFileNamingScope) ccu g expr =
     // Collect expr info - wanting usage contexts and bindings
     let z = GetUsageInfoOfImplFile g expr
 
     // For each Val, decide Some "transform", or None if not changing
-    let vtrans = determineTransforms g z
+    let vtrans = determineTransforms scope g z
 
     // Pass over term, rewriting bindings and fixing up call sites, under penv
     let penv =

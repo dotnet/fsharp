@@ -24,6 +24,12 @@ module UnusedOpens =
         /// Compute an indexed table of the set of symbols revealed by 'open', on-demand
         let revealedSymbols: Lazy<HashSet<FSharpSymbol>> =
             lazy
+                let unionCasesRevealedByOpen (e: FSharpEntity) =
+                    if e.IsFSharpUnion && not (e.HasAttribute<RequireQualifiedAccessAttribute>()) then
+                        e.UnionCases :> seq<_>
+                    else
+                        Seq.empty
+
                 let symbols: FSharpSymbol[] =
                     [|
                         for ent in entity.NestedEntities do
@@ -33,9 +39,8 @@ module UnusedOpens =
                                 for rf in ent.FSharpFields do
                                     rf
 
-                            if ent.IsFSharpUnion && not (ent.HasAttribute<RequireQualifiedAccessAttribute>()) then
-                                for unionCase in ent.UnionCases do
-                                    unionCase
+                            for unionCase in unionCasesRevealedByOpen ent do
+                                unionCase
 
                             if ent.HasAttribute<ExtensionAttribute>() then
                                 for fv in ent.MembersFunctionsAndValues do
@@ -57,6 +62,9 @@ module UnusedOpens =
                                 for field in entity.FSharpFields do
                                     if field.IsStatic && field.IsLiteral then
                                         field
+
+                            for unionCase in unionCasesRevealedByOpen entity do
+                                unionCase
                     |]
 
                 HashSet<_>(symbols, symbolHash)
@@ -278,14 +286,31 @@ module UnusedOpens =
             let symbolUsesRangesByDeclaringEntity =
                 Dictionary<FSharpEntity, range list>(entityHash)
 
-            for symbolUse in symbolUses1 do
-                match symbolUse.Symbol with
-                | :? FSharpMemberOrFunctionOrValue as f ->
-                    match f.DeclaringEntity with
-                    | Some entity when entity.IsNamespace || entity.IsFSharpModule ->
-                        symbolUsesRangesByDeclaringEntity.BagAdd(entity, symbolUse.Range)
-                    | _ -> ()
+            let recordByDeclaringEntity (symbolUse: FSharpSymbolUse) =
+                // `importedByOpenType` records a use of a static/non-instance member or static field against its
+                // declaring entity so that `open type T` is considered used when such a member is referenced.
+                // This mirrors how `open <module>` already works: a use is recorded against the declaring module
+                // regardless of whether the reference was unqualified (`member`) or fully qualified (`T.member`).
+                // Consequently an `open type T` whose members are only ever used fully qualified is treated as
+                // used, exactly as `open M` is when its members are only ever used as `M.member`. This is an
+                // accepted, pre-existing trade-off shared with module opens, and removes the prior false positive
+                // where a genuinely-used `open type` was reported as unused.
+                let declaringEntity, importedByOpenType =
+                    match symbolUse.Symbol with
+                    | :? FSharpMemberOrFunctionOrValue as f -> f.DeclaringEntity, not f.IsInstanceMember
+                    | :? FSharpField as f -> f.DeclaringEntity, f.IsStatic
+                    | _ -> None, false
+
+                match declaringEntity with
+                | Some entity when entity.IsNamespace || entity.IsFSharpModule || importedByOpenType ->
+                    symbolUsesRangesByDeclaringEntity.BagAdd(entity, symbolUse.Range)
                 | _ -> ()
+
+            for symbolUse in symbolUses1 do
+                recordByDeclaringEntity symbolUse
+
+            for symbolUse in symbolUses2 do
+                recordByDeclaringEntity symbolUse
 
             let! results =
                 filterOpenStatementsIncremental

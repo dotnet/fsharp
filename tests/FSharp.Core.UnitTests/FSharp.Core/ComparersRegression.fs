@@ -4,7 +4,7 @@
 namespace FSharp.Core.UnitTests
 
 open System
-open System.Numerics 
+open System.Numerics
 open FSharp.Core.UnitTests.LibraryTestFx
 open Xunit
 
@@ -96,11 +96,11 @@ module ComparersRegression =
         type TestType = bool
 
         let Values : TestType array  = [| true; false|]
-    
+
         type RefType = {
             Item : TestType
         }
-    
+
         [<Struct>]
         type ValueType =
             val Item : TestType
@@ -133,11 +133,11 @@ module ComparersRegression =
         type TestType = Nullable<bool>
 
         let Values : TestType array  = createNullables Bools.Values
-    
+
         type RefType = {
             Item : TestType
         }
-    
+
         [<Struct>]
         type ValueType =
             val Item : TestType
@@ -172,11 +172,11 @@ module ComparersRegression =
         type TestType = sbyte
 
         let Values : TestType array  = [| SByte.MinValue; SByte.MaxValue; -1y; 0y; +1y |]
-    
+
         type RefType = {
             Item : TestType
         }
-    
+
         [<Struct>]
         type ValueType =
             val Item : TestType
@@ -211,11 +211,11 @@ module ComparersRegression =
         type TestType = Nullable<sbyte>
 
         let Values : TestType array  = createNullables SBytes.Values
-    
+
         type RefType = {
             Item : TestType
         }
-    
+
         [<Struct>]
         type ValueType =
             val Item : TestType
@@ -250,11 +250,11 @@ module ComparersRegression =
         type TestType = int16
 
         let Values : TestType array  = [| Int16.MaxValue; Int16.MaxValue; -1s; 0s; +1s |]
-    
+
         type RefType = {
             Item : TestType
         }
-    
+
         [<Struct>]
         type ValueType =
             val Item : TestType
@@ -289,11 +289,11 @@ module ComparersRegression =
         type TestType = Nullable<int16>
 
         let Values : TestType array  = createNullables Int16s.Values
-    
+
         type RefType = {
             Item : TestType
         }
-    
+
         [<Struct>]
         type ValueType =
             val Item : TestType
@@ -328,11 +328,11 @@ module ComparersRegression =
         type TestType = int32
 
         let Values : TestType array  = [| Int32.MinValue; Int32.MaxValue; -1; 0; +1 |]
-    
+
         type RefType = {
             Item : TestType
         }
-    
+
         [<Struct>]
         type ValueType =
             val Item : TestType
@@ -367,11 +367,11 @@ module ComparersRegression =
         type TestType = Nullable<int32>
 
         let Values : TestType array  = createNullables Int32s.Values
-    
+
         type RefType = {
             Item : TestType
         }
-    
+
         [<Struct>]
         type ValueType =
             val Item : TestType
@@ -406,11 +406,11 @@ module ComparersRegression =
         type TestType = int64
 
         let Values : TestType array  = [| Int64.MinValue; Int64.MaxValue; -1L; 0L; +1L |]
-    
+
         type RefType = {
             Item : TestType
         }
-    
+
         [<Struct>]
         type ValueType =
             val Item : TestType
@@ -445,11 +445,11 @@ module ComparersRegression =
         type TestType = Nullable<int64>
 
         let Values : TestType array  = createNullables Int64s.Values
-    
+
         type RefType = {
             Item : TestType
         }
-    
+
         [<Struct>]
         type ValueType =
             val Item : TestType
@@ -484,11 +484,11 @@ module ComparersRegression =
         type TestType = nativeint
 
         let Values : TestType array  = [| -1n; 0n; +1n |]
-    
+
         type RefType = {
             Item : TestType
         }
-    
+
         [<Struct>]
         type ValueType =
             val Item : TestType
@@ -523,11 +523,11 @@ module ComparersRegression =
         type TestType = Nullable<nativeint>
 
         let Values : TestType array  = createNullables NativeInts.Values
-    
+
         type RefType = {
             Item : TestType
         }
-    
+
         [<Struct>]
         type ValueType =
             val Item : TestType
@@ -562,11 +562,11 @@ module ComparersRegression =
         type TestType = byte
 
         let Values : TestType array  = [| Byte.MinValue; Byte.MaxValue; 0uy; 1uy; 2uy |]
-    
+
         type RefType = {
             Item : TestType
         }
-    
+
         [<Struct>]
         type ValueType =
             val Item : TestType
@@ -601,11 +601,11 @@ module ComparersRegression =
         type TestType = Nullable<byte>
 
         let Values : TestType array  = createNullables Bytes.Values
-    
+
         type RefType = {
             Item : TestType
         }
-    
+
         [<Struct>]
         type ValueType =
             val Item : TestType
@@ -640,11 +640,11 @@ module ComparersRegression =
         type TestType = uint16
 
         let Values : TestType array  = [| UInt16.MinValue; UInt16.MaxValue; 0us; 1us; 2us |]
-    
+
         type RefType = {
             Item : TestType
         }
-    
+
         [<Struct>]
         type ValueType =
             val Item : TestType
@@ -679,11 +679,11 @@ module ComparersRegression =
         type TestType = Nullable<uint16>
 
         let Values : TestType array  = createNullables Uint16s.Values
-    
+
         type RefType = {
             Item : TestType
         }
-    
+
         [<Struct>]
         type ValueType =
             val Item : TestType
@@ -718,11 +718,11 @@ module ComparersRegression =
         type TestType = uint32
 
         let Values : TestType array  = [| UInt32.MinValue; UInt32.MaxValue; 0u; 1u; 2u|]
-    
+
         type RefType = {
             Item : TestType
         }
-    
+
         [<Struct>]
         type ValueType =
             val Item : TestType
@@ -757,11 +757,11 @@ module ComparersRegression =
         type TestType = Nullable<uint32>
 
         let Values : TestType array  = createNullables UInt32s.Values
-    
+
         type RefType = {
             Item : TestType
         }
-    
+
         [<Struct>]
         type ValueType =
             val Item : TestType
@@ -796,11 +796,11 @@ module ComparersRegression =
         type TestType = uint64
 
         let Values : TestType array  = [| UInt64.MinValue; UInt64.MaxValue; 0UL; 1UL; 2UL|]
-    
+
         type RefType = {
             Item : TestType
         }
-    
+
         [<Struct>]
         type ValueType =
             val Item : TestType
@@ -835,11 +835,11 @@ module ComparersRegression =
         type TestType = Nullable<uint64>
 
         let Values : TestType array  = createNullables UInt64s.Values
-    
+
         type RefType = {
             Item : TestType
         }
-    
+
         [<Struct>]
         type ValueType =
             val Item : TestType
@@ -874,11 +874,11 @@ module ComparersRegression =
         type TestType = unativeint
 
         let Values : TestType array  = [| 0un; 1un; 2un |]
-    
+
         type RefType = {
             Item : TestType
         }
-    
+
         [<Struct>]
         type ValueType =
             val Item : TestType
@@ -913,11 +913,11 @@ module ComparersRegression =
         type TestType = Nullable<unativeint>
 
         let Values : TestType array  = createNullables UNativeInts.Values
-    
+
         type RefType = {
             Item : TestType
         }
-    
+
         [<Struct>]
         type ValueType =
             val Item : TestType
@@ -952,11 +952,11 @@ module ComparersRegression =
         type TestType = char
 
         let Values : TestType array  = [| Char.MinValue; Char.MaxValue; '0'; '1'; '2' |]
-    
+
         type RefType = {
             Item : TestType
         }
-    
+
         [<Struct>]
         type ValueType =
             val Item : TestType
@@ -991,11 +991,11 @@ module ComparersRegression =
         type TestType = Nullable<char>
 
         let Values : TestType array  = createNullables Chars.Values
-    
+
         type RefType = {
             Item : TestType
         }
-    
+
         [<Struct>]
         type ValueType =
             val Item : TestType
@@ -1030,11 +1030,11 @@ module ComparersRegression =
         type TestType = string
 
         let Values : TestType array  = [| null; String.Empty; "Hello, world!"; String('\u0000', 3); "\u0061\u030a"; "\u00e5" |]
-    
+
         type RefType = {
             Item : TestType
         }
-    
+
         [<Struct>]
         type ValueType =
             val Item : TestType
@@ -1069,11 +1069,11 @@ module ComparersRegression =
         type TestType = decimal
 
         let Values : TestType array  = [| Decimal.MinValue; Decimal.MaxValue; Decimal.MinusOne; Decimal.Zero; Decimal.One |]
-    
+
         type RefType = {
             Item : TestType
         }
-    
+
         [<Struct>]
         type ValueType =
             val Item : TestType
@@ -1108,11 +1108,11 @@ module ComparersRegression =
         type TestType = Nullable<decimal>
 
         let Values : TestType array  = createNullables Decimals.Values
-    
+
         type RefType = {
             Item : TestType
         }
-    
+
         [<Struct>]
         type ValueType =
             val Item : TestType
@@ -1147,11 +1147,11 @@ module ComparersRegression =
         type TestType = float
 
         let Values : TestType array  = [| Double.MinValue; Double.MaxValue; Double.Epsilon; Double.NaN; Double.NegativeInfinity; Double.PositiveInfinity; -1.; 0.; 1. |]
-    
+
         type RefType = {
             Item : TestType
         }
-    
+
         [<Struct>]
         type ValueType =
             val Item : TestType
@@ -1186,11 +1186,11 @@ module ComparersRegression =
         type TestType = Nullable<float>
 
         let Values : TestType array  = createNullables Floats.Values
-    
+
         type RefType = {
             Item : TestType
         }
-    
+
         [<Struct>]
         type ValueType =
             val Item : TestType
@@ -1225,11 +1225,11 @@ module ComparersRegression =
         type TestType = float32
 
         let Values : TestType array  = [| Single.MinValue; Single.MaxValue; Single.Epsilon; Single.NaN; Single.NegativeInfinity; Single.PositiveInfinity; -1.f; 0.f; 1.f |]
-    
+
         type RefType = {
             Item : TestType
         }
-    
+
         [<Struct>]
         type ValueType =
             val Item : TestType
@@ -1264,11 +1264,11 @@ module ComparersRegression =
         type TestType = Nullable<float32>
 
         let Values : TestType array  = createNullables Float32s.Values
-    
+
         type RefType = {
             Item : TestType
         }
-    
+
         [<Struct>]
         type ValueType =
             val Item : TestType
@@ -1303,11 +1303,11 @@ module ComparersRegression =
         type TestType = System.DateTime
 
         let Values : TestType array  = [| DateTime.MinValue; DateTime.MaxValue; DateTime(2015, 10, 8, 5, 39, 23) |]
-    
+
         type RefType = {
             Item : TestType
         }
-    
+
         [<Struct>]
         type ValueType =
             val Item : TestType
@@ -1342,11 +1342,11 @@ module ComparersRegression =
         type TestType = Nullable<DateTime>
 
         let Values : TestType array  = createNullables DateTimes.Values
-    
+
         type RefType = {
             Item : TestType
         }
-    
+
         [<Struct>]
         type ValueType =
             val Item : TestType
@@ -1381,11 +1381,11 @@ module ComparersRegression =
         type TestType = float*float
 
         let Values : TestType array  = [| (nan, nan); (nan, 0.0); (0.0, nan); (0.0, 0.0) |]
-    
+
         type RefType = {
             Item : TestType
         }
-    
+
         [<Struct>]
         type ValueType =
             val Item : TestType
@@ -1421,11 +1421,11 @@ module ComparersRegression =
         let Values : TestType array  = [|
             (nan, nan, nan); (nan, nan, 0.0); (nan, 0.0, nan); (nan, 0.0, 0.0);
             (0.0, nan, nan); (0.0, nan, 0.0); (0.0, 0.0, nan); (0.0, 0.0, 0.0) |]
-    
+
         type RefType = {
             Item : TestType
         }
-    
+
         [<Struct>]
         type ValueType =
             val Item : TestType
@@ -1465,11 +1465,11 @@ module ComparersRegression =
             (0.0, nan, nan, nan); (0.0, nan, nan, 0.0); (0.0, nan, 0.0, nan); (0.0, nan, 0.0, 0.0);
             (0.0, 0.0, nan, nan); (0.0, 0.0, nan, 0.0); (0.0, 0.0, 0.0, nan); (0.0, 0.0, 0.0, 0.0);
         |]
-    
+
         type RefType = {
             Item : TestType
         }
-    
+
         [<Struct>]
         type ValueType =
             val Item : TestType
@@ -1513,11 +1513,11 @@ module ComparersRegression =
             (0.0, 0.0, nan, nan, nan); (0.0, 0.0, nan, nan, 0.0); (0.0, 0.0, nan, 0.0, nan); (0.0, 0.0, nan, 0.0, 0.0);
             (0.0, 0.0, 0.0, nan, nan); (0.0, 0.0, 0.0, nan, 0.0); (0.0, 0.0, 0.0, 0.0, nan); (0.0, 0.0, 0.0, 0.0, 0.0);
         |]
-    
+
         type RefType = {
             Item : TestType
         }
-    
+
         [<Struct>]
         type ValueType =
             val Item : TestType
@@ -1557,7 +1557,7 @@ module ComparersRegression =
         for i = 0 to items.Length-1 do
             for j = 0 to items.Length-1 do
                 let index = i * items.Length + j
-                let lhs = items.[i] 
+                let lhs = items.[i]
                 let rhs = items.[j]
                 let result = f.Exec lhs rhs
 
@@ -1588,7 +1588,7 @@ module ComparersRegression =
         member inline _.greater_or_equal   = { new IOperation<'a> with member _.Exec lhs rhs = toint (lhs >= rhs) }
 
     type NoninlinableEqualityOperations<'a when 'a : equality>() =
-        let operations = 
+        let operations =
             let underlyingType = typedefof<EqualityOperations<_>>.MakeGenericType [| typeof<'a> |]
             match System.Activator.CreateInstance underlyingType with
             | :? EqualityOperations<'a> as operations -> operations
@@ -1599,7 +1599,7 @@ module ComparersRegression =
         member _.not_equal     = operations.not_equal
 
     type NoninlinableComparisonOperations<'a when 'a : comparison>() =
-        let operations = 
+        let operations =
             let underlyingType = typedefof<ComparisonOperations<_>>.MakeGenericType [| typeof<'a> |]
             match System.Activator.CreateInstance underlyingType with
             | :? ComparisonOperations<'a> as operations -> operations
@@ -1624,11 +1624,11 @@ module ComparersRegression =
     type C<'a when 'a : comparison>() =
         static let inlinable    = ComparisonOperations<'a> ()
         static let noninlinable = NoninlinableComparisonOperations<'a> ()
-        
+
         static member I = inlinable
         static member N = noninlinable
 
-    module TestGenerationMethods = 
+    module TestGenerationMethods =
         let create<'a,'b when 'b : equality> name operation (f:IOperation<'a>) (items: 'a array) =
             printf """ [<Fact>]
      member _.``%s %s``() =
@@ -1636,7 +1636,7 @@ module ComparersRegression =
 
             make_result_set f items None
             |> Seq.iteri (fun n result ->
-                if n = 0 
+                if n = 0
                     then printf "[|"
                     else printf ";"
                 if n % 40 = 0 then printf "\n   "

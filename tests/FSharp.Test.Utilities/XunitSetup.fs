@@ -17,17 +17,31 @@ type FSharpTestAssemblyFixture() =
         log $"Server GC enabled: {Runtime.GCSettings.IsServerGC}"
         logConfig initialConfig
 
-/// Exclude from parallelization. Execute test cases in sequence and do not run any other collections at the same time.
+module XUnitSetup =
+
+    // FnGuardTestFramework (see FnGuard.fs) only customizes discovery, so AssemblyFixture,
+    // CaptureConsole/Trace and the whole stock runner chain still apply.
+    [<assembly: TestFramework(typeof<FnGuardTestFramework>)>]
+    [<assembly: AssemblyFixture(typeof<FSharpTestAssemblyFixture>); CaptureConsole; CaptureTrace>]
+    do ()
+
+/// Modules/Types included in this Collection (via `[<Collection(nameof NotThreadSafeResourceCollection>`)):
+/// 1. do not run concurrently with other tests or modules in the collection (typical behavior)
+/// 2. run entirely isolated from all other tests in a given test run (including ones not included in a Collection) due to `DisableParallelization = true`
 /// see https://github.com/xunit/xunit/issues/1999#issuecomment-522635397
 [<CollectionDefinition(nameof NotThreadSafeResourceCollection, DisableParallelization = true)>]
 type NotThreadSafeResourceCollection() = class end
 
-/// Mark test cases as not safe to run in parallel with other test cases of the same test collection.
-/// In case Xunit 3 enables internal parallelization of test collections.
-[<AttributeUsage(AttributeTargets.Class ||| AttributeTargets.Method, AllowMultiple = false)>]
-type RunTestCasesInSequenceAttribute() = inherit Attribute()
+namespace Xunit
 
-module XUnitSetup =
+#nowarn "1182" // the DisableParallelization properties are unused as these are shims waiting for us to move to xunit3 >= 4
 
-    [<assembly: AssemblyFixture(typeof<FSharpTestAssemblyFixture>); CaptureConsole; CaptureTrace>]
-    do ()
+// Shim to be deleted when xunit dependency updates to >= 4
+[<System.AttributeUsage(System.AttributeTargets.Class, AllowMultiple = false, Inherited = true)>]
+type TestClassAttribute(DisableParallelization: bool) =
+    inherit System.Attribute()
+
+// Shim to be removed and replaced with direct usage of FactAttribute from xunit >= 4 when xunit dependency updates to >= 4
+[<System.AttributeUsage(System.AttributeTargets.Method, AllowMultiple = false, Inherited = true)>]
+type Fact4Attribute(DisableParallelization: bool) =
+    inherit FactAttribute()

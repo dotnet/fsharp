@@ -4,6 +4,7 @@
 /// constraint solving and method overload resolution.
 module internal FSharp.Compiler.TypeRelations
 
+open FSharp.Compiler.Text
 open FSharp.Compiler.Features
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
@@ -45,7 +46,7 @@ let getTypeSubsumptionCache =
             | CompilationMode.OneOff -> Caches.CacheOptions.getDefault HashIdentity.Structural |> Caches.CacheOptions.withNoEviction
             | _ -> { Caches.CacheOptions.getDefault HashIdentity.Structural with TotalCapacity = 65536; HeadroomPercentage = 75 }
         new Caches.Cache<TTypeCacheKey, bool>(options, "typeSubsumptionCache")
-    Extras.WeakMap.getOrCreate factory     
+    Extras.WeakMap.getOrCreate factory
 
 /// Implements a :> b without coercion based on finalized (no type variable) types
 // Note: This relation is approximate and not part of the language specification.
@@ -193,20 +194,20 @@ let ChooseTyparSolutionAndRange (g: TcGlobals) amap (tp:Typar) =
              let join m x =
                  if TypeFeasiblySubsumesType 0 g amap m x CanCoerce maxTy then maxTy, isRefined
                  elif TypeFeasiblySubsumesType 0 g amap m maxTy CanCoerce x then x, true
-                 else errorR(Error(FSComp.SR.typrelCannotResolveImplicitGenericInstantiation((DebugPrint.showType x), (DebugPrint.showType maxTy)), m)); maxTy, isRefined
+                 else errorR(Error(FSComp.SR.typrelCannotResolveImplicitGenericInstantiation(RichText.mkText (DebugPrint.showType x), RichText.mkText (DebugPrint.showType maxTy)), m)); maxTy, isRefined
              // Don't continue if an error occurred and we set the value eagerly
              if tp.IsSolved then (maxTy, isRefined), m else
              match tpc with
              | TyparConstraint.CoercesTo(x, m) ->
                  join m x, m
-             | TyparConstraint.SimpleChoice(_, m) -> 
+             | TyparConstraint.SimpleChoice(_, m) ->
                  errorR(Error(FSComp.SR.typrelCannotResolveAmbiguityInPrintf(), m))
                  (maxTy, isRefined), m
              | TyparConstraint.SupportsNull m ->
                  ((addNullnessToTy KnownWithNull maxTy), isRefined), m
-             | TyparConstraint.SupportsComparison m -> 
+             | TyparConstraint.SupportsComparison m ->
                  join m g.mk_IComparable_ty, m
-             | TyparConstraint.IsEnum(_, m) -> 
+             | TyparConstraint.IsEnum(_, m) ->
                  errorR(Error(FSComp.SR.typrelCannotResolveAmbiguityInEnum(), m))
                  (maxTy, isRefined), m
              | TyparConstraint.IsDelegate(_, _, m) ->
@@ -227,12 +228,10 @@ let ChooseTyparSolutionAndRange (g: TcGlobals) amap (tp:Typar) =
                  (maxTy, isRefined), m
              )
 
-    if g.langVersion.SupportsFeature LanguageFeature.DiagnosticForObjInference then
-        match tp.Kind with
-        | TyparKind.Type ->
-            if not isRefined then
-                informationalWarning(Error(FSComp.SR.typrelNeverRefinedAwayFromTop(), m))
-        | TyparKind.Measure -> ()
+    match tp.Kind with
+    | TyparKind.Type when not isRefined ->
+        informationalWarning(Error(FSComp.SR.typrelNeverRefinedAwayFromTop(), m))
+    | _ -> ()
 
     maxTy, m
 
@@ -355,10 +354,10 @@ let FindUniqueFeasibleSupertype g amap m ty1 ty2 =
     let n2 = nullnessOfTy g ty2
     let nullify t = addNullnessToTy n2 t
 
-    let supertypes = 
-        Option.toList (GetSuperTypeOfType g amap m ty2) @ 
+    let supertypes =
+        Option.toList (GetSuperTypeOfType g amap m ty2) @
         (GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g amap m ty2)
 
-    supertypes 
+    supertypes
     |> List.tryFind (TypeFeasiblySubsumesType 0 g amap m ty1 NoCoerce)
     |> Option.map nullify

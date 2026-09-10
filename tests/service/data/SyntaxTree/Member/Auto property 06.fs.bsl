@@ -6,7 +6,8 @@ ImplFile
           [Types
              ([SynTypeDefn
                  (SynComponentInfo
-                    ([], None, [], [T],
+                    ([], None, [],
+                     Some (LongIdent (SynLongIdent ([T], [], [None]))),
                      PreXmlDoc ((3,0), FSharp.Compiler.Xml.XmlDocCollector),
                      false, None, (3,5--3,6)),
                   ObjectModel
@@ -43,4 +44,4 @@ ImplFile
         WarnDirectives = []
         CodeComments = [] }, set []))
 
-(4,18)-(4,19) parse error Unexpected symbol '=' in member definition
+(4,18)-(4,19) parse error Unexpected symbol '=' in auto property definition

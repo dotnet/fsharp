@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 //----------------------------------------------------------------------------
-// Open up the compiler as an incremental service for parsing, 
+// Open up the compiler as an incremental service for parsing,
 // type checking and intellisense-like environment-reporting.
 //--------------------------------------------------------------------------
 
@@ -63,6 +63,7 @@ module ExtendedData =
             | ContextInfo.PatternMatchGuard _ -> PatternMatchGuard
             | ContextInfo.SequenceExpression _ -> SequenceExpression
             | ContextInfo.NullnessCheckOfCapturedArg _ -> NoContext
+            | ContextInfo.MemberAccessOnNullable _ -> NoContext
 
     type IFSharpDiagnosticExtendedData =
         interface end
@@ -78,7 +79,7 @@ module ExtendedData =
 
         member this.DiagnosticId: string option = diagnosticId
         member this.UrlFormat: string option = urlFormat
-    
+
     type TypeMismatchDiagnosticExtendedData internal (symbolEnv: SymbolEnv, dispEnv: DisplayEnv, expectedType: TType, actualType: TType,
             context: DiagnosticContextInfo) =
         interface IFSharpDiagnosticExtendedData
@@ -121,7 +122,7 @@ module ExtendedData =
         member x.ImplementationName = implArg.idText
         member x.SignatureRange = sigArg.idRange
         member x.ImplementationRange = implArg.idRange
-        
+
     type DefinitionsInSigAndImplNotCompatibleAbbreviationsDifferExtendedData internal (signatureType: Tycon, implementationType: Tycon) =
         interface IFSharpDiagnosticExtendedData
 
@@ -130,11 +131,12 @@ module ExtendedData =
 
 open ExtendedData
 
-type FSharpDiagnostic(m: range, severity: FSharpDiagnosticSeverity, defaultSeverity: FSharpDiagnosticSeverity, message: string, subcategory: string, errorNum: int, numberPrefix: string, extendedData: IFSharpDiagnosticExtendedData option) =
+type FSharpDiagnostic(m: range, severity: FSharpDiagnosticSeverity, defaultSeverity: FSharpDiagnosticSeverity, message: RichText, subcategory: string, errorNum: int, numberPrefix: string, extendedData: IFSharpDiagnosticExtendedData option) =
     member _.Range = m
     member _.Severity = severity
     member _.DefaultSeverity = defaultSeverity
-    member _.Message = message
+    member _.Message = message.Text
+    member _.RichMessage = message
     member _.Subcategory = subcategory
     member _.ErrorNumber = errorNum
     member _.ErrorNumberPrefix = numberPrefix
@@ -161,13 +163,13 @@ type FSharpDiagnostic(m: range, severity: FSharpDiagnosticSeverity, defaultSever
         let fileName = m.FileName
         let s = m.Start
         let e = m.End
-        let severity = 
+        let severity =
             match severity with
             | FSharpDiagnosticSeverity.Warning -> "warning"
             | FSharpDiagnosticSeverity.Error -> "error"
             | FSharpDiagnosticSeverity.Info -> "info"
             | FSharpDiagnosticSeverity.Hidden -> "hidden"
-        sprintf "%s (%d,%d)-(%d,%d) %s %s %s" fileName s.Line (s.Column + 1) e.Line (e.Column + 1) subcategory severity message
+        sprintf "%s (%d,%d)-(%d,%d) %s %s %s" fileName s.Line (s.Column + 1) e.Line (e.Column + 1) subcategory severity message.Text
 
     /// Decompose a warning or error into parts: position, severity, message, error number
     static member CreateFromException(diagnostic: PhasedDiagnostic, suggestNames: bool, flatErrors: bool, symbolEnv: SymbolEnv option) =
@@ -216,7 +218,7 @@ type FSharpDiagnostic(m: range, severity: FSharpDiagnosticSeverity, defaultSever
 
             | ObsoleteDiagnostic(diagnosticId = diagnosticId; urlFormat = urlFormat) ->
                 Some(ObsoleteDiagnosticExtendedData(diagnosticId, urlFormat))
-                
+
             | Experimental(diagnosticId = diagnosticId; urlFormat = urlFormat) ->
                 Some(ExperimentalExtendedData(diagnosticId, urlFormat))
 
@@ -227,8 +229,8 @@ type FSharpDiagnostic(m: range, severity: FSharpDiagnosticSeverity, defaultSever
 
         let msg =
              match diagnostic.Exception.Data["CachedFormatCore"] with
-             | :? string as message -> message
-             | _ -> diagnostic.FormatCore(flatErrors, suggestNames)
+             | :? RichText as message -> message
+             | _ -> diagnostic.FormatRichCore(flatErrors, suggestNames)
 
         let errorNum = diagnostic.Number
         let m = match diagnostic.Range with Some m -> m.ApplyLineDirectives() | None -> range0
@@ -237,66 +239,71 @@ type FSharpDiagnostic(m: range, severity: FSharpDiagnosticSeverity, defaultSever
     static member NewlineifyErrorString(message) = NewlineifyErrorString(message)
 
     static member NormalizeErrorString(text) = NormalizeErrorString(text)
-    
-    static member Create(severity, message, number, range, ?numberPrefix, ?subcategory) =
+
+    static member Create(severity, message: string, number, range, ?numberPrefix, ?subcategory) =
+        let subcategory = defaultArg subcategory BuildPhaseSubcategory.TypeCheck
+        let numberPrefix = defaultArg numberPrefix "FS"
+        FSharpDiagnostic(range, severity, severity, RichText.mkText message, subcategory, number, numberPrefix, None)
+
+    static member Create(severity, message: RichText, number, range, ?numberPrefix, ?subcategory) =
         let subcategory = defaultArg subcategory BuildPhaseSubcategory.TypeCheck
         let numberPrefix = defaultArg numberPrefix "FS"
         FSharpDiagnostic(range, severity, severity, message, subcategory, number, numberPrefix, None)
 
-/// Use to reset error and warning handlers            
+/// Use to reset error and warning handlers
 [<Sealed>]
-type DiagnosticsScope(flatErrors: bool)  = 
-    let mutable diags = [] 
+type DiagnosticsScope(flatErrors: bool)  =
+    let mutable diags = []
     let unwindBP = UseBuildPhase BuildPhase.TypeCheck
-    let unwindEL =        
-        UseDiagnosticsLogger 
-            { new DiagnosticsLogger("DiagnosticsScope") with 
+    let unwindEL =
+        UseDiagnosticsLogger
+            { new DiagnosticsLogger("DiagnosticsScope") with
 
-                member _.DiagnosticSink(diagnostic) = 
+                member _.DiagnosticSink(diagnostic) =
                     let diagnostic = FSharpDiagnostic.CreateFromException(diagnostic, false, flatErrors, None)
                     diags <- diagnostic :: diags
 
                 member _.ErrorCount = diags.Length }
-        
+
     member _.Errors = diags |> List.filter (fun error -> error.Severity = FSharpDiagnosticSeverity.Error)
 
     member _.Diagnostics = diags
 
     member x.TryGetFirstErrorText() =
-        match x.Errors with 
+        match x.Errors with
         | error :: _ -> Some error.Message
         | [] -> None
-    
+
     interface IDisposable with
-        member _.Dispose() = 
+        member _.Dispose() =
             unwindEL.Dispose()
             unwindBP.Dispose()
 
     /// Used at entry points to FSharp.Compiler.Service (service.fsi) which manipulate symbols and
-    /// perform other operations which might expose us to either bona-fide F# error messages such 
-    /// "missing assembly" (for incomplete assembly reference sets), or, if there is a compiler bug, 
+    /// perform other operations which might expose us to either bona-fide F# error messages such
+    /// "missing assembly" (for incomplete assembly reference sets), or, if there is a compiler bug,
     /// may hit internal compiler failures.
     ///
     /// In some calling cases, we get a chance to report the error as part of user text. For example
     /// if there is a "missing assembly" error while formatting the text of the description of an
     /// autocomplete, then the error message is shown in replacement of the text (rather than crashing Visual
     /// Studio, or swallowing the exception completely)
-    static member Protect<'a> (m: range) (f: unit->'a) (err: string->'a): 'a = 
+    static member Protect<'a> (m: range) (f: unit->'a) (err: string->'a): 'a =
         use diagnosticsScope = new DiagnosticsScope(false)
-        let res = 
-            try 
+        let res =
+            try
                 Some (f())
-            with e -> 
+            with e ->
                 // Here we only call errorRecovery to save the error message for later use by TryGetFirstErrorText.
-                try 
+                try
                     errorRecovery e m
-                with RecoverableException _ -> 
+                with RecoverableException _ ->
                     ()
                 None
-        match res with 
+        match res with
         | Some res -> res
-        | None -> 
-            match diagnosticsScope.TryGetFirstErrorText() with 
+        | None ->
+            match diagnosticsScope.TryGetFirstErrorText() with
             | Some text -> err text
             | None -> err ""
 
@@ -304,11 +311,11 @@ type DiagnosticsScope(flatErrors: bool)  =
 type internal CompilationDiagnosticLogger(debugName: string, options: FSharpDiagnosticOptions, ?preprocess:
                                               PhasedDiagnostic -> PhasedDiagnostic) =
     inherit DiagnosticsLogger("CompilationDiagnosticLogger("+debugName+")")
-            
+
     let mutable errorCount = 0
     let diagnostics = ResizeArray<_>()
 
-    override _.DiagnosticSink(diagnostic) = 
+    override _.DiagnosticSink(diagnostic) =
         let diagnostic =
             match preprocess with
             | Some f -> f diagnostic
@@ -325,14 +332,14 @@ type internal CompilationDiagnosticLogger(debugName: string, options: FSharpDiag
 
     member _.GetDiagnostics() = diagnostics.ToArray()
 
-module DiagnosticHelpers =                            
+module DiagnosticHelpers =
 
     let ReportDiagnostic (options: FSharpDiagnosticOptions, allErrors, mainInputFileName, diagnostic: PhasedDiagnostic, suggestNames, flatErrors, symbolEnv) =
         match diagnostic.AdjustSeverity(options) with
         | FSharpDiagnosticSeverity.Hidden -> []
         | adjustedSeverity ->
             let diagnostic = { diagnostic with Severity = adjustedSeverity }
-            let fileName = 
+            let fileName =
                 match diagnostic.Range with
                 | Some r -> r.FileName
                 | None -> TcGlobals.DummyFileNameForRangesWithoutASpecificLocation
@@ -342,5 +349,5 @@ module DiagnosticHelpers =
             else []
 
     let CreateDiagnostics (options, allErrors, mainInputFileName, diagnostics, suggestNames, flatErrors, symbolEnv) =
-        [| for diagnostic in diagnostics do 
+        [| for diagnostic in diagnostics do
               yield! ReportDiagnostic (options, allErrors, mainInputFileName, diagnostic, suggestNames, flatErrors, symbolEnv) |]

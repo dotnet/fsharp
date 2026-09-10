@@ -155,7 +155,7 @@ type B = { Y : int }
                     Idx = 2
                     FileName = "B.fs"
                     // The last file shouldn't be processed
-                    ParsedInput = Unchecked.defaultof<FSharp.Compiler.Syntax.ParsedInput> 
+                    ParsedInput = Unchecked.defaultof<FSharp.Compiler.Syntax.ParsedInput>
                 }
             |]
 
@@ -198,7 +198,7 @@ type B = { Y : int }
                     Idx = 2
                     FileName = "B.fs"
                     // The last file shouldn't be processed
-                    ParsedInput = Unchecked.defaultof<FSharp.Compiler.Syntax.ParsedInput> 
+                    ParsedInput = Unchecked.defaultof<FSharp.Compiler.Syntax.ParsedInput>
                 }
             |]
 
@@ -490,6 +490,9 @@ module ``module`` =
                 }
             |]
 
+    // Dive into the anonymous module created for Program.fs
+    let trie = trie.Children["Program"]
+
     Assert.Equal(1, trie.Children.Count)
     Assert.True(trie.Children.ContainsKey("module"))
 
@@ -609,12 +612,12 @@ let ``Tries are built up incrementally`` () =
                 {
                     Idx = 0
                     FileName = "A.fs"
-                    ParsedInput = parseSourceCode ("A.fs", "module A") 
+                    ParsedInput = parseSourceCode ("A.fs", "module A")
                 }
                 {
                     Idx = 1
                     FileName = "B.fs"
-                    ParsedInput = parseSourceCode ("B.fs", "module B") 
+                    ParsedInput = parseSourceCode ("B.fs", "module B")
                 }
                 {
                     Idx = 2

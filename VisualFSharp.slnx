@@ -1,0 +1,245 @@
+<Solution>
+  <Configurations>
+    <BuildType Name="Debug" />
+    <BuildType Name="Proto" />
+    <BuildType Name="Release" />
+    <Platform Name="Any CPU" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Folder Name="/Compiler/">
+    <Project Path="src/Compiler/FSharp.Compiler.Service.fsproj">
+      <BuildType Solution="Proto|*" Project="Debug" />
+    </Project>
+    <Project Path="src/FSharp.DependencyManager.Nuget/FSharp.DependencyManager.Nuget.fsproj">
+      <BuildType Solution="Proto|*" Project="Debug" />
+    </Project>
+  </Folder>
+  <Folder Name="/Libraries/">
+    <Project Path="src/FSharp.Core/FSharp.Core.fsproj">
+      <BuildType Solution="Proto|*" Project="Release" />
+    </Project>
+  </Folder>
+  <Folder Name="/Setup/">
+    <Project Path="setup/Swix/Microsoft.FSharp.Compiler.MSBuild/Microsoft.FSharp.Compiler.MSBuild.csproj">
+      <BuildType Solution="Proto|*" Project="Release" />
+    </Project>
+    <Project Path="setup/Swix/Microsoft.FSharp.Dependencies/Microsoft.FSharp.Dependencies.csproj">
+      <BuildType Solution="Proto|*" Project="Debug" />
+    </Project>
+    <Project Path="setup/Swix/Microsoft.FSharp.IDE/Microsoft.FSharp.IDE.csproj">
+      <BuildType Solution="Proto|*" Project="Debug" />
+    </Project>
+    <Project Path="setup/Swix/Microsoft.FSharp.SDK/Microsoft.FSharp.SDK.csproj">
+      <BuildType Solution="Proto|*" Project="Debug" />
+    </Project>
+  </Folder>
+  <Folder Name="/Tests/">
+    <Project Path="tests/FSharp.Build.UnitTests/FSharp.Build.UnitTests.fsproj">
+      <BuildType Solution="Proto|*" Project="Release" />
+    </Project>
+    <Project Path="tests/FSharp.Compiler.ComponentTests/FSharp.Compiler.ComponentTests.fsproj">
+      <BuildType Solution="Proto|*" Project="Debug" />
+    </Project>
+    <Project Path="tests/FSharp.Compiler.LanguageServer.Tests/FSharp.Compiler.LanguageServer.Tests.fsproj">
+      <BuildType Solution="Proto|*" Project="Debug" />
+    </Project>
+    <Project Path="tests/FSharp.Compiler.Private.Scripting.UnitTests/FSharp.Compiler.Private.Scripting.UnitTests.fsproj">
+      <BuildType Solution="Proto|*" Project="Debug" />
+    </Project>
+    <Project Path="tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj">
+      <BuildDependency Project="tests/service/data/CSharp_Analysis/CSharp_Analysis.csproj" />
+      <BuildDependency Project="tests/service/data/TestTP/TestTP.fsproj" />
+      <BuildType Solution="Proto|*" Project="Debug" />
+    </Project>
+    <Project Path="tests/FSharp.Core.UnitTests/FSharp.Core.UnitTests.fsproj">
+      <BuildType Solution="Proto|*" Project="Release" />
+    </Project>
+    <Project Path="tests/FSharp.Test.Utilities/FSharp.Test.Utilities.fsproj">
+      <BuildType Solution="Proto|*" Project="Release" />
+    </Project>
+    <Project Path="tests/fsharp/FSharpSuite.Tests.fsproj">
+      <BuildDependency Project="src/fsc/fscAnyCpuProject/fscAnyCpu.fsproj" />
+      <BuildDependency Project="src/fsc/fscArm64Project/fscArm64.fsproj" />
+      <BuildDependency Project="src/fsc/fscProject/fsc.fsproj" />
+      <BuildDependency Project="src/fsi/fsiAnyCpuProject/fsiAnyCpu.fsproj" />
+      <BuildDependency Project="src/fsi/fsiArm64Project/fsiArm64.fsproj" />
+      <BuildDependency Project="src/fsi/fsiProject/fsi.fsproj" />
+      <BuildType Solution="Proto|*" Project="Release" />
+    </Project>
+  </Folder>
+  <Folder Name="/Tools/">
+    <Project Path="src/fsc/fscAnyCpuProject/fscAnyCpu.fsproj">
+      <BuildType Solution="Proto|*" Project="Debug" />
+    </Project>
+    <Project Path="src/fsc/fscArm64Project/fscArm64.fsproj">
+      <BuildType Solution="Proto|*" Project="Debug" />
+    </Project>
+    <Project Path="src/fsc/fscProject/fsc.fsproj">
+      <BuildType Solution="Proto|*" Project="Debug" />
+    </Project>
+    <Project Path="src/FSharp.Build/FSharp.Build.fsproj">
+      <BuildType Solution="Proto|*" Project="Release" />
+    </Project>
+    <Project Path="src/FSharp.Compiler.Interactive.Settings/FSharp.Compiler.Interactive.Settings.fsproj">
+      <BuildType Solution="Proto|*" Project="Release" />
+    </Project>
+    <Project Path="src/fsi/fsiAnyCpuProject/fsiAnyCpu.fsproj">
+      <BuildType Solution="Proto|*" Project="Debug" />
+    </Project>
+    <Project Path="src/fsi/fsiArm64Project/fsiArm64.fsproj">
+      <BuildType Solution="Proto|*" Project="Debug" />
+    </Project>
+    <Project Path="src/fsi/fsiProject/fsi.fsproj">
+      <BuildType Solution="Proto|*" Project="Debug" />
+    </Project>
+  </Folder>
+  <Folder Name="/VisualFSharp/">
+    <File Path="vsintegration/Directory.Build.props" />
+    <File Path="vsintegration/Directory.Build.targets" />
+    <File Path="vsintegration/readme.md" />
+    <File Path="vsintegration/Templates.Directory.Build.props" />
+    <File Path="vsintegration/Templates.Directory.Build.targets" />
+    <Project Path="vsintegration/shims/shims.csproj">
+      <BuildType Solution="Proto|*" Project="Debug" />
+    </Project>
+    <Project Path="vsintegration/src/FSharp.Editor/FSharp.Editor.fsproj">
+      <BuildType Solution="Proto|*" Project="Release" />
+    </Project>
+    <Project Path="vsintegration/src/FSharp.ProjectSystem.PropertyPages/FSharp.ProjectSystem.PropertyPages.vbproj">
+      <BuildType Solution="Proto|*" Project="Release" />
+    </Project>
+    <Project Path="vsintegration/src/FSharp.UIResources/FSharp.UIResources.csproj">
+      <BuildType Solution="Proto|*" Project="Release" />
+    </Project>
+    <Project Path="vsintegration/src/FSharp.VS.FSI/FSharp.VS.FSI.fsproj">
+      <BuildType Solution="Proto|*" Project="Release" />
+    </Project>
+    <Project Path="vsintegration/Vsix/VisualFSharpFull/VisualFSharpDebug.csproj">
+      <BuildType Solution="Proto|*" Project="Debug" />
+    </Project>
+    <Project Path="vsintegration/Vsix/VisualFSharpFull/VisualFSharpFull.csproj">
+      <BuildType Solution="Proto|*" Project="Release" />
+    </Project>
+    <Project Path="vsintegration/Vsix/VisualFSharpTemplates/VisualFSharpTemplates.csproj">
+      <BuildType Solution="Proto|*" Project="Debug" />
+    </Project>
+  </Folder>
+  <Folder Name="/VisualFSharp/ItemTemplates/">
+    <Project Path="vsintegration/ItemTemplates/AppConfig/AppConfig.csproj">
+      <BuildType Solution="Proto|*" Project="Release" />
+    </Project>
+    <Project Path="vsintegration/ItemTemplates/CodeFile/CodeFile.csproj">
+      <BuildType Solution="Proto|*" Project="Release" />
+    </Project>
+    <Project Path="vsintegration/ItemTemplates/ResourceFile/ResourceFile.csproj">
+      <BuildType Solution="Proto|*" Project="Release" />
+    </Project>
+    <Project Path="vsintegration/ItemTemplates/ScriptFile/ScriptFile.csproj">
+      <BuildType Solution="Proto|*" Project="Release" />
+    </Project>
+    <Project Path="vsintegration/ItemTemplates/SignatureFile/SignatureFile.csproj">
+      <BuildType Solution="Proto|*" Project="Release" />
+    </Project>
+    <Project Path="vsintegration/ItemTemplates/TextFile/TextFile.csproj">
+      <BuildType Solution="Proto|*" Project="Release" />
+    </Project>
+    <Project Path="vsintegration/ItemTemplates/XMLFile/XMLFile.csproj">
+      <BuildType Solution="Proto|*" Project="Release" />
+    </Project>
+  </Folder>
+  <Folder Name="/VisualFSharp/Legacy/">
+    <Project Path="vsintegration/src/FSharp.LanguageService.Base/FSharp.LanguageService.Base.csproj">
+      <BuildType Solution="Proto|*" Project="Release" />
+    </Project>
+    <Project Path="vsintegration/src/FSharp.LanguageService/FSharp.LanguageService.fsproj">
+      <BuildType Solution="Proto|*" Project="Release" />
+    </Project>
+    <Project Path="vsintegration/src/FSharp.ProjectSystem.Base/FSharp.ProjectSystem.Base.csproj">
+      <BuildType Solution="Proto|*" Project="Release" />
+    </Project>
+    <Project Path="vsintegration/src/FSharp.ProjectSystem.FSharp/FSharp.ProjectSystem.FSharp.fsproj">
+      <BuildType Solution="Proto|*" Project="Release" />
+    </Project>
+  </Folder>
+  <Folder Name="/VisualFSharp/ProjectTemplates/">
+    <Project Path="vsintegration/ProjectTemplates/ConsoleProject/ConsoleProject.csproj">
+      <BuildType Solution="Proto|*" Project="Debug" />
+    </Project>
+    <Project Path="vsintegration/ProjectTemplates/LibraryProject/LibraryProject.csproj">
+      <BuildType Solution="Proto|*" Project="Debug" />
+    </Project>
+    <Project Path="vsintegration/ProjectTemplates/TutorialProject/TutorialProject.csproj">
+      <BuildType Solution="Proto|*" Project="Debug" />
+    </Project>
+  </Folder>
+  <Folder Name="/VisualFSharp/Tests/">
+    <Project Path="vsintegration/tests/FSharp.Editor.IntegrationTests/FSharp.Editor.IntegrationTests.csproj">
+      <BuildType Solution="Proto|*" Project="Debug" />
+    </Project>
+    <Project Path="vsintegration/tests/FSharp.Editor.Tests/FSharp.Editor.Tests.fsproj">
+      <BuildType Solution="Proto|*" Project="Debug" />
+    </Project>
+    <Project Path="vsintegration/tests/Salsa/VisualFSharp.Salsa.fsproj">
+      <BuildType Solution="Proto|*" Project="Release" />
+    </Project>
+    <Project Path="vsintegration/tests/UnitTests/VisualFSharp.UnitTests.fsproj">
+      <BuildType Solution="Proto|*" Project="Release" />
+    </Project>
+  </Folder>
+  <Folder Name="/VisualFSharp/Tests/FSharp.Compiler.Service.tests Support/">
+    <Project Path="tests/service/data/CSharp_Analysis/CSharp_Analysis.csproj">
+      <BuildType Solution="Proto|*" Project="Release" />
+    </Project>
+    <Project Path="tests/service/data/TestTP/TestTP.fsproj">
+      <BuildType Solution="Proto|*" Project="Release" />
+    </Project>
+  </Folder>
+  <Folder Name="/VisualFSharp/Tests/VisualFSharp.UnitTests Support/">
+    <Project Path="vsintegration/tests/MockTypeProviders/DefinitionLocationAttribute/DefinitionLocationAttribute.csproj">
+      <BuildType Solution="Proto|*" Project="Release" />
+    </Project>
+    <Project Path="vsintegration/tests/MockTypeProviders/DefinitionLocationAttributeFileDoesnotExist/DefinitionLocationAttributeFileDoesnotExist.csproj">
+      <BuildType Solution="Proto|*" Project="Release" />
+    </Project>
+    <Project Path="vsintegration/tests/MockTypeProviders/DefinitionLocationAttributeLineDoesnotExist/DefinitionLocationAttributeLineDoesnotExist.csproj">
+      <BuildType Solution="Proto|*" Project="Release" />
+    </Project>
+    <Project Path="vsintegration/tests/MockTypeProviders/DefinitionLocationAttributeWithSpaceInTheType/DefinitionLocationAttributeWithSpaceInTheType.csproj">
+      <BuildType Solution="Proto|*" Project="Release" />
+    </Project>
+    <Project Path="vsintegration/tests/MockTypeProviders/DummyProviderForLanguageServiceTesting/DummyProviderForLanguageServiceTesting.fsproj">
+      <BuildType Solution="Proto|*" Project="Release" />
+    </Project>
+    <Project Path="vsintegration/tests/MockTypeProviders/EditorHideMethodsAttribute/EditorHideMethodsAttribute.csproj">
+      <BuildType Solution="Proto|*" Project="Release" />
+    </Project>
+    <Project Path="vsintegration/tests/MockTypeProviders/EmptyAssembly/EmptyAssembly.fsproj">
+      <BuildType Solution="Proto|*" Project="Release" />
+    </Project>
+    <Project Path="vsintegration/tests/MockTypeProviders/XmlDocAttributeWithAdequateComment/XmlDocAttributeWithAdequateComment.csproj">
+      <BuildType Solution="Proto|*" Project="Release" />
+    </Project>
+    <Project Path="vsintegration/tests/MockTypeProviders/XmlDocAttributeWithEmptyComment/XmlDocAttributeWithEmptyComment.csproj">
+      <BuildType Solution="Proto|*" Project="Release" />
+    </Project>
+    <Project Path="vsintegration/tests/MockTypeProviders/XmlDocAttributeWithLocalizedComment/XmlDocAttributeWithLocalizedComment.csproj">
+      <BuildType Solution="Proto|*" Project="Release" />
+    </Project>
+    <Project Path="vsintegration/tests/MockTypeProviders/XmlDocAttributeWithLongComment/XmlDocAttributeWithLongComment.csproj">
+      <BuildType Solution="Proto|*" Project="Release" />
+    </Project>
+    <Project Path="vsintegration/tests/MockTypeProviders/XmlDocAttributeWithNullComment/XmlDocAttributeWithNullComment.csproj">
+      <BuildType Solution="Proto|*" Project="Release" />
+    </Project>
+  </Folder>
+  <Project Path="src/FSharp.Compiler.LanguageServer/FSharp.Compiler.LanguageServer.fsproj">
+    <BuildType Solution="Proto|*" Project="Debug" />
+  </Project>
+  <Project Path="src/FSharp.VisualStudio.Extension/FSharp.VisualStudio.Extension.csproj">
+    <BuildType Solution="Proto|*" Project="Debug" />
+  </Project>
+  <Project Path="src/Microsoft.CommonLanguageServerProtocol.Framework.Proxy/Microsoft.CommonLanguageServerProtocol.Framework.Proxy.csproj">
+    <BuildType Solution="Proto|*" Project="Debug" />
+  </Project>
+  <Project Path="buildtools/Misc/Misc.csproj" />
+</Solution>

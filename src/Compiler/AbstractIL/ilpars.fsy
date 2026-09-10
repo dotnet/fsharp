@@ -189,11 +189,11 @@ typSpec:
 
 callConv: 
      INSTANCE callKind 
-        { Callconv (ILThisConvention.Instance,$2) }
+        { ILCallingConv.Create (ILThisConvention.Instance,$2) }
    | EXPLICIT callKind 
-        { Callconv (ILThisConvention.InstanceExplicit,$2) }
+        { ILCallingConv.Create (ILThisConvention.InstanceExplicit,$2) }
    | callKind 
-        { Callconv (ILThisConvention.Static,$1) }
+        { ILCallingConv.Create (ILThisConvention.Static,$1) }
 
 callKind: 
      /* EMPTY */  

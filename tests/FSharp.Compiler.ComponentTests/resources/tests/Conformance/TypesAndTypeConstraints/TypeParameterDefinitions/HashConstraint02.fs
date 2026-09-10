@@ -1,4 +1,4 @@
-// #Regression #Conformance #TypeConstraints 
+// #Regression #Conformance #TypeConstraints
 // Regression test for FSHARP1.0:1419
 // Tokens beginning with # should not match greedily with directives
 //<Expects id="FS0001" span="(14,13)" status="error">The type 'float' is not compatible with the type 'light_'</Expects>

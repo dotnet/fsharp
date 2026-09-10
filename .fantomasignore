@@ -75,6 +75,7 @@ src/Compiler/SyntaxTree/LexFilter.fs
 
 src/FSharp.Core/array2.fs
 src/FSharp.Core/array3.fs
+src/FSharp.Core/fslib-extra-pervasives.fs
 src/FSharp.Core/Linq.fs
 src/FSharp.Core/local.fs
 src/FSharp.Core/nativeptr.fs

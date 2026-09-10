@@ -37,222 +37,214 @@
   {
     
     .maxstack  8
-    IL_0000:  nop
-    IL_0001:  ldarg.0
-    IL_0002:  brfalse.s  IL_0010
+    IL_0000:  ldarg.0
+    IL_0001:  brfalse.s  IL_000f
 
-    IL_0004:  ldarg.0
-    IL_0005:  callvirt   instance int32 [runtime]System.String::get_Length()
-    IL_000a:  ldc.i4.0
-    IL_000b:  ceq
-    IL_000d:  nop
-    IL_000e:  br.s       IL_0012
+    IL_0003:  ldarg.0
+    IL_0004:  callvirt   instance int32 [runtime]System.String::get_Length()
+    IL_0009:  ldc.i4.0
+    IL_000a:  ceq
+    IL_000c:  nop
+    IL_000d:  br.s       IL_0011
 
-    IL_0010:  ldc.i4.0
-    IL_0011:  nop
-    IL_0012:  brtrue.s   IL_0019
+    IL_000f:  ldc.i4.0
+    IL_0010:  nop
+    IL_0011:  brtrue.s   IL_0018
 
-    IL_0014:  ldarg.0
-    IL_0015:  brfalse.s  IL_001f
+    IL_0013:  ldarg.0
+    IL_0014:  brfalse.s  IL_001e
 
-    IL_0017:  br.s       IL_0025
+    IL_0016:  br.s       IL_0024
 
-    IL_0019:  ldstr      "empty"
-    IL_001e:  ret
+    IL_0018:  ldstr      "empty"
+    IL_001d:  ret
 
-    IL_001f:  ldstr      "null"
-    IL_0024:  ret
+    IL_001e:  ldstr      "null"
+    IL_0023:  ret
 
-    IL_0025:  ldstr      "other"
-    IL_002a:  ret
+    IL_0024:  ldstr      "other"
+    IL_0029:  ret
   } 
 
   .method public static int32  testEmptyStringOnly(string s) cil managed
   {
     
     .maxstack  8
-    IL_0000:  nop
-    IL_0001:  ldarg.0
-    IL_0002:  brfalse.s  IL_000e
+    IL_0000:  ldarg.0
+    IL_0001:  brfalse.s  IL_000d
 
-    IL_0004:  ldarg.0
-    IL_0005:  callvirt   instance int32 [runtime]System.String::get_Length()
-    IL_000a:  brtrue.s   IL_000e
+    IL_0003:  ldarg.0
+    IL_0004:  callvirt   instance int32 [runtime]System.String::get_Length()
+    IL_0009:  brtrue.s   IL_000d
 
-    IL_000c:  ldc.i4.1
-    IL_000d:  ret
+    IL_000b:  ldc.i4.1
+    IL_000c:  ret
 
-    IL_000e:  ldc.i4.0
-    IL_000f:  ret
+    IL_000d:  ldc.i4.0
+    IL_000e:  ret
   } 
 
   .method public static int32  testBundledNullAndEmpty(string s) cil managed
   {
     
     .maxstack  8
-    IL_0000:  nop
-    IL_0001:  ldarg.0
-    IL_0002:  brfalse.s  IL_0017
+    IL_0000:  ldarg.0
+    IL_0001:  brfalse.s  IL_0016
 
-    IL_0004:  ldarg.0
-    IL_0005:  brfalse.s  IL_0013
+    IL_0003:  ldarg.0
+    IL_0004:  brfalse.s  IL_0012
 
-    IL_0007:  ldarg.0
-    IL_0008:  callvirt   instance int32 [runtime]System.String::get_Length()
-    IL_000d:  ldc.i4.0
-    IL_000e:  ceq
-    IL_0010:  nop
-    IL_0011:  br.s       IL_0015
+    IL_0006:  ldarg.0
+    IL_0007:  callvirt   instance int32 [runtime]System.String::get_Length()
+    IL_000c:  ldc.i4.0
+    IL_000d:  ceq
+    IL_000f:  nop
+    IL_0010:  br.s       IL_0014
 
-    IL_0013:  ldc.i4.0
-    IL_0014:  nop
-    IL_0015:  brfalse.s  IL_0019
+    IL_0012:  ldc.i4.0
+    IL_0013:  nop
+    IL_0014:  brfalse.s  IL_0018
 
-    IL_0017:  ldc.i4.0
-    IL_0018:  ret
+    IL_0016:  ldc.i4.0
+    IL_0017:  ret
 
-    IL_0019:  ldc.i4.1
-    IL_001a:  ret
+    IL_0018:  ldc.i4.1
+    IL_0019:  ret
   } 
 
   .method public static int32  testBundledEmptyAndNull(string s) cil managed
   {
     
     .maxstack  8
-    IL_0000:  nop
-    IL_0001:  ldarg.0
-    IL_0002:  brfalse.s  IL_0010
+    IL_0000:  ldarg.0
+    IL_0001:  brfalse.s  IL_000f
 
-    IL_0004:  ldarg.0
-    IL_0005:  callvirt   instance int32 [runtime]System.String::get_Length()
-    IL_000a:  ldc.i4.0
-    IL_000b:  ceq
-    IL_000d:  nop
-    IL_000e:  br.s       IL_0012
+    IL_0003:  ldarg.0
+    IL_0004:  callvirt   instance int32 [runtime]System.String::get_Length()
+    IL_0009:  ldc.i4.0
+    IL_000a:  ceq
+    IL_000c:  nop
+    IL_000d:  br.s       IL_0011
 
-    IL_0010:  ldc.i4.0
-    IL_0011:  nop
-    IL_0012:  brtrue.s   IL_0017
+    IL_000f:  ldc.i4.0
+    IL_0010:  nop
+    IL_0011:  brtrue.s   IL_0016
 
-    IL_0014:  ldarg.0
-    IL_0015:  brtrue.s   IL_0019
+    IL_0013:  ldarg.0
+    IL_0014:  brtrue.s   IL_0018
 
-    IL_0017:  ldc.i4.0
-    IL_0018:  ret
+    IL_0016:  ldc.i4.0
+    IL_0017:  ret
 
-    IL_0019:  ldc.i4.1
-    IL_001a:  ret
+    IL_0018:  ldc.i4.1
+    IL_0019:  ret
   } 
 
   .method public static string  useClassifyString(string s) cil managed
   {
     
     .maxstack  8
-    IL_0000:  nop
-    IL_0001:  ldarg.0
-    IL_0002:  brfalse.s  IL_0010
+    IL_0000:  ldarg.0
+    IL_0001:  brfalse.s  IL_000f
 
-    IL_0004:  ldarg.0
-    IL_0005:  callvirt   instance int32 [runtime]System.String::get_Length()
-    IL_000a:  ldc.i4.0
-    IL_000b:  ceq
-    IL_000d:  nop
-    IL_000e:  br.s       IL_0012
+    IL_0003:  ldarg.0
+    IL_0004:  callvirt   instance int32 [runtime]System.String::get_Length()
+    IL_0009:  ldc.i4.0
+    IL_000a:  ceq
+    IL_000c:  nop
+    IL_000d:  br.s       IL_0011
 
-    IL_0010:  ldc.i4.0
-    IL_0011:  nop
-    IL_0012:  brtrue.s   IL_0019
+    IL_000f:  ldc.i4.0
+    IL_0010:  nop
+    IL_0011:  brtrue.s   IL_0018
 
-    IL_0014:  ldarg.0
-    IL_0015:  brfalse.s  IL_001f
+    IL_0013:  ldarg.0
+    IL_0014:  brfalse.s  IL_001e
 
-    IL_0017:  br.s       IL_0025
+    IL_0016:  br.s       IL_0024
 
-    IL_0019:  ldstr      "empty"
-    IL_001e:  ret
+    IL_0018:  ldstr      "empty"
+    IL_001d:  ret
 
-    IL_001f:  ldstr      "null"
-    IL_0024:  ret
+    IL_001e:  ldstr      "null"
+    IL_0023:  ret
 
-    IL_0025:  ldstr      "other"
-    IL_002a:  ret
+    IL_0024:  ldstr      "other"
+    IL_0029:  ret
   } 
 
   .method public static int32  useTestEmptyStringOnly(string s) cil managed
   {
     
     .maxstack  8
-    IL_0000:  nop
-    IL_0001:  ldarg.0
-    IL_0002:  brfalse.s  IL_000e
+    IL_0000:  ldarg.0
+    IL_0001:  brfalse.s  IL_000d
 
-    IL_0004:  ldarg.0
-    IL_0005:  callvirt   instance int32 [runtime]System.String::get_Length()
-    IL_000a:  brtrue.s   IL_000e
+    IL_0003:  ldarg.0
+    IL_0004:  callvirt   instance int32 [runtime]System.String::get_Length()
+    IL_0009:  brtrue.s   IL_000d
 
-    IL_000c:  ldc.i4.1
-    IL_000d:  ret
+    IL_000b:  ldc.i4.1
+    IL_000c:  ret
 
-    IL_000e:  ldc.i4.0
-    IL_000f:  ret
+    IL_000d:  ldc.i4.0
+    IL_000e:  ret
   } 
 
   .method public static int32  useBundledNullAndEmpty(string s) cil managed
   {
     
     .maxstack  8
-    IL_0000:  nop
-    IL_0001:  ldarg.0
-    IL_0002:  brfalse.s  IL_0017
+    IL_0000:  ldarg.0
+    IL_0001:  brfalse.s  IL_0016
 
-    IL_0004:  ldarg.0
-    IL_0005:  brfalse.s  IL_0013
+    IL_0003:  ldarg.0
+    IL_0004:  brfalse.s  IL_0012
 
-    IL_0007:  ldarg.0
-    IL_0008:  callvirt   instance int32 [runtime]System.String::get_Length()
-    IL_000d:  ldc.i4.0
-    IL_000e:  ceq
-    IL_0010:  nop
-    IL_0011:  br.s       IL_0015
+    IL_0006:  ldarg.0
+    IL_0007:  callvirt   instance int32 [runtime]System.String::get_Length()
+    IL_000c:  ldc.i4.0
+    IL_000d:  ceq
+    IL_000f:  nop
+    IL_0010:  br.s       IL_0014
 
-    IL_0013:  ldc.i4.0
-    IL_0014:  nop
-    IL_0015:  brfalse.s  IL_0019
+    IL_0012:  ldc.i4.0
+    IL_0013:  nop
+    IL_0014:  brfalse.s  IL_0018
 
-    IL_0017:  ldc.i4.0
-    IL_0018:  ret
+    IL_0016:  ldc.i4.0
+    IL_0017:  ret
 
-    IL_0019:  ldc.i4.1
-    IL_001a:  ret
+    IL_0018:  ldc.i4.1
+    IL_0019:  ret
   } 
 
   .method public static int32  useBundledEmptyAndNull(string s) cil managed
   {
     
     .maxstack  8
-    IL_0000:  nop
-    IL_0001:  ldarg.0
-    IL_0002:  brfalse.s  IL_0010
+    IL_0000:  ldarg.0
+    IL_0001:  brfalse.s  IL_000f
 
-    IL_0004:  ldarg.0
-    IL_0005:  callvirt   instance int32 [runtime]System.String::get_Length()
-    IL_000a:  ldc.i4.0
-    IL_000b:  ceq
-    IL_000d:  nop
-    IL_000e:  br.s       IL_0012
+    IL_0003:  ldarg.0
+    IL_0004:  callvirt   instance int32 [runtime]System.String::get_Length()
+    IL_0009:  ldc.i4.0
+    IL_000a:  ceq
+    IL_000c:  nop
+    IL_000d:  br.s       IL_0011
 
-    IL_0010:  ldc.i4.0
-    IL_0011:  nop
-    IL_0012:  brtrue.s   IL_0017
+    IL_000f:  ldc.i4.0
+    IL_0010:  nop
+    IL_0011:  brtrue.s   IL_0016
 
-    IL_0014:  ldarg.0
-    IL_0015:  brtrue.s   IL_0019
+    IL_0013:  ldarg.0
+    IL_0014:  brtrue.s   IL_0018
 
-    IL_0017:  ldc.i4.0
-    IL_0018:  ret
+    IL_0016:  ldc.i4.0
+    IL_0017:  ret
 
-    IL_0019:  ldc.i4.1
-    IL_001a:  ret
+    IL_0018:  ldc.i4.1
+    IL_0019:  ret
   } 
 
 } 

@@ -1,44 +1,70 @@
 ---
 name: fsharp-diagnostics
-description: "Always invoke after editing .fs files. Provides fast parse/typecheck feedback without a full dotnet build. Prefer this over dotnet build for iterative changes. Also finds symbol references and inferred type hints."
+description: Always invoke after editing `.fs` files under `src/Compiler/`. Fast parse/typecheck without `dotnet build`, plus symbol references and inferred type hints. Use whenever the user asks about F# errors, compile errors, type inference, finding usages, or renaming a symbol in the compiler tree.
 ---
 
 # F# Diagnostics
 
-**Scope:** `src/Compiler/` files only (`FSharp.Compiler.Service.fsproj`, Release, net10.0).
+**Scope:** `src/Compiler/` files only.
 
-## Setup (run once per shell session)
+## Setup (once per session)
 
-```bash
-GetErrors() { "$(git rev-parse --show-toplevel)/.github/skills/fsharp-diagnostics/scripts/get-fsharp-errors.sh" "$@"; }
+Requires pwsh 7+ (`brew install powershell` / `winget install Microsoft.PowerShell` / `apt install powershell`).
+
+```pwsh
+function GetErrors { & "$(git rev-parse --show-toplevel)/.github/skills/fsharp-diagnostics/scripts/get-fsharp-errors.ps1" @args }
 ```
 
-## Rules
+From bash/zsh without a function: `pwsh -File <repo>/.github/skills/fsharp-diagnostics/scripts/get-fsharp-errors.ps1 <args>`.
 
-1. **After every edit** to a `src/Compiler/*.fs` file → typecheck it before proceeding. This catches errors in ~2s vs ~35s for a full build. Do NOT attempt `dotnet build` or `dotnet test` until the file typechecks clean.
-2. **Use `--find-refs` instead of grep** for finding usages of a symbol (function, type, member, field). Returns semantically resolved references — no false positives from comments, strings, or similarly-named symbols.
-3. **Use `--type-hints` to read code blocks** — F# infers most types, so bindings like `env`, `state`, `x` are opaque without it.
-   - ⚠️ Output has `// (name: Type)` annotations. These are **read-only overlays**. When editing, use `view` to get the real unannotated source.
-4. **Parse first, typecheck second** — fix `--parse-only` errors before running a full typecheck.
+## Parse first, typecheck second
 
-## Commands
+```pwsh
+GetErrors -ParseOnly src/Compiler/Checking/CheckBasics.fs   # syntax only
+GetErrors            src/Compiler/Checking/CheckBasics.fs   # full typecheck
+```
+Fix all parse errors before typechecking; type errors on top of bad syntax are noise.
 
-```bash
-GetErrors --parse-only src/Compiler/path/File.fs        # parse errors only
-GetErrors src/Compiler/path/File.fs                     # full typecheck
-GetErrors --find-refs src/Compiler/path/File.fs 30 5    # references (line 1-based, col 0-based)
-GetErrors --type-hints src/Compiler/path/File.fs 50 60  # annotated code (line range, 1-based)
-GetErrors --check-project                               # typecheck entire project
-GetErrors --ping                                        # server alive?
-GetErrors --shutdown                                    # stop server
+## Symbol references (line 1-based, col 0-based)
+
+```pwsh
+GetErrors -FindRefs src/Compiler/Checking/CheckBasics.fs 30 5
+```
+Use before any rename.
+
+## Type hints (line range, 1-based)
+
+Returns the range with inferred types as inline `// (name: Type)` comments:
+```pwsh
+GetErrors -TypeHints src/Compiler/TypedTree/TypedTreeOps.Transforms.fs 100 120
+```
+
+## Other
+
+```pwsh
+GetErrors -CheckProject   # typecheck entire project
+GetErrors -Ping           # liveness check, no side effects
+GetErrors -Shutdown
 ```
 
 ## Cached test runs
 
-No separate `dotnet build` of FSharp.Compiler.Service needed — `dotnet test` builds all dependencies automatically.
+`dotnet test` builds dependencies automatically. Use cached compilation for development only, not for shipping.
 
-```bash
-dotnet test tests/FSharp.Compiler.ComponentTests/FSharp.Compiler.ComponentTests.fsproj -c Release /p:FastBuildFromCache=true
+```pwsh
+dotnet test tests\FSharp.Compiler.ComponentTests\FSharp.Compiler.ComponentTests.fsproj -c Release /p:FastBuildFromCache=true
 ```
 
-First call starts server (~70s cold start, set initial_wait=600). Auto-shuts down after 4h idle. ~3 GB RAM.
+To compile directly from cached project results:
+
+```pwsh
+GetErrors -Compile src\Compiler\FSharp.Compiler.Service.fsproj artifacts\FSharp.Compiler.Service.dll
+```
+
+## Timing
+
+- First real call after a fresh clone: server build + in-memory warmup, 5–15 min → `initial_wait=1200`.
+- After warmup: real commands answer in seconds → `initial_wait=180`.
+- `-Ping` / `-Shutdown`: sub-second; never trigger build or warmup.
+
+Auto-shuts down after 4h idle; ~3 GB RAM while running.

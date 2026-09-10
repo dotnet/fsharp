@@ -16,12 +16,14 @@ Use this skill when:
 - Troubleshooting performance regressions
 - Examining warning/error message issues
 
+> **Related:** for a build / compile / restore failure, run the `binlog-analysis` skill first — it fetches the build's MSBuild binary log and analyzes it live via the `binlog-mcp` MCP (structured errors + root-cause diagnosis), a fast way to scope the minimal reproduction below.
+
 ## Core Principles
 
 1. **Always start with a minimal reproduction**
 2. **Form multiple competing hypotheses**
 3. **Design verification for each hypothesis**
-4. **Document findings rigorously**
+4. **Record each hypothesis's verification method, result, and implications**
 5. **Re-run builds and tests after every change**
 
 ## Process

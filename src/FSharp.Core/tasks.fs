@@ -19,7 +19,6 @@ open System.Threading
 open System.Threading.Tasks
 open Microsoft.FSharp.Core
 open Microsoft.FSharp.Core.CompilerServices
-open Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers
 open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 open Microsoft.FSharp.Collections
 
@@ -89,7 +88,7 @@ type TaskBuilderBase() =
     member inline _.For(sequence: seq<'T>, body: 'T -> TaskCode<'TOverall, unit>) : TaskCode<'TOverall, unit> =
         ResumableCode.For(sequence, body)
 
-#if NETSTANDARD2_1
+#if NETSTANDARD2_1 || NET
     member inline internal this.TryFinallyAsync
         (body: TaskCode<'TOverall, 'T>, compensation: unit -> ValueTask)
         : TaskCode<'TOverall, 'T> =
@@ -115,7 +114,7 @@ type TaskBuilderBase() =
 
                     let cont =
                         TaskResumptionFunc<'TOverall>(fun sm ->
-                            awaiter.GetResult() |> ignore
+                            awaiter.GetResult()
                             true)
 
                     // shortcut to continue immediately
@@ -284,7 +283,6 @@ open System.Runtime.CompilerServices
 open System.Threading.Tasks
 open Microsoft.FSharp.Core
 open Microsoft.FSharp.Core.CompilerServices
-open Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers
 open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 
 module LowPriority =
@@ -716,3 +714,237 @@ module LowPlusPriority =
                         this.Bind(computation, fun (result2: ^TResult2) -> this.Return struct (result1, result2))
                 )
             )
+
+namespace Microsoft.FSharp.Control
+
+open System.Threading
+open System.Threading.Tasks
+open Microsoft.FSharp.Core
+open Microsoft.FSharp.Core.CompilerServices
+open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
+open Microsoft.FSharp.Collections
+open Microsoft.FSharp.Control.TaskBuilder
+open Microsoft.FSharp.Control.TaskBuilderExtensions.LowPriority
+open Microsoft.FSharp.Control.TaskBuilderExtensions.HighPriority
+
+[<RequireQualifiedAccess>]
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module Task =
+
+    [<CompiledName("Result")>]
+    let inline result (value: 'T) : Task<'T> =
+        Task.FromResult value
+
+    [<CompiledName("Empty")>]
+    let empty: Task<unit> = result ()
+
+    [<CompiledName("Bind")>]
+    let inline bind ([<InlineIfLambda>] binder: 'T -> Task<'U>) (task: Task<'T>) : Task<'U> =
+        if task.Status = TaskStatus.RanToCompletion then
+            try
+                binder task.Result
+            with e ->
+                Task.FromException<'U>(e)
+        else
+            TaskBuilder.task {
+                let! v = task
+                return! binder v
+            }
+
+    [<CompiledName("Map")>]
+    let inline map ([<InlineIfLambda>] mapping: 'T -> 'U) (task: Task<'T>) : Task<'U> =
+        if task.Status = TaskStatus.RanToCompletion then
+            try
+                mapping task.Result |> result
+            with e ->
+                Task.FromException<'U>(e)
+        else
+            TaskBuilder.task {
+                let! v = task
+                return mapping v
+            }
+
+    [<CompiledName("Ignore")>]
+    [<RequiresExplicitTypeArguments>]
+    let inline ignore<'T> (task: Task<'T>) : Task<unit> =
+        if task.Status = TaskStatus.RanToCompletion then
+            empty
+        else
+            map ignore task
+
+    [<CompiledName("CatchWith")>]
+    let inline catchWith ([<InlineIfLambda>] handler: exn -> 'T) (task: Task<'T>) : Task<'T> =
+        if task.Status = TaskStatus.RanToCompletion then
+            task
+        else
+            TaskBuilder.task {
+                try
+                    return! task
+                with
+                | :? System.OperationCanceledException as e -> return! raise e
+                | e -> return handler e
+            }
+
+    [<CompiledName("Catch")>]
+    let catch (task: Task<'T>) : Task<Result<'T, exn>> =
+        task |> map Ok |> catchWith Error
+
+    [<CompiledName("Sequential")>]
+    let sequential (ct: CancellationToken) (computations: seq<CancellationToken -> Task<'T>>) : Task<'T[]> =
+        task {
+            let mutable results = ArrayCollector<'T>()
+
+            for f in computations do
+                let! result = f ct
+                results.Add result
+
+            return results.Close()
+        }
+
+    [<CompiledName("SequentialDo")>]
+    let sequentialDo (ct: CancellationToken) (computations: seq<CancellationToken -> Task<unit>>) : Task<unit> =
+        task {
+            for f in computations do
+                do! f ct
+        }
+
+    [<CompiledName("ParallelLimit")>]
+    let parallelLimit
+        (maxDegreeOfParallelism: int)
+        (ct: CancellationToken)
+        (computations: seq<CancellationToken -> Task<'T>>)
+        : Task<'T[]> =
+        if maxDegreeOfParallelism < 1 then
+            System.String.Format(SR.GetString(SR.maxDegreeOfParallelismNotPositive), maxDegreeOfParallelism)
+            |> invalidArg (nameof maxDegreeOfParallelism)
+        // materialize first so exceptions from enumeration can't trigger ObjectDisposedException
+        // from started children touching semaphore or innerCts
+        match Seq.toArray computations with
+        | _ when ct.IsCancellationRequested -> Task.FromCanceled<'T[]> ct
+        | [||] -> result [||]
+        | req when maxDegreeOfParallelism = 1 || req.Length = 1 -> sequential ct req
+        | req ->
+            task {
+                let mutable pos = -1
+                let res = Array.zeroCreate<'T> req.Length
+
+                use innerCts = CancellationTokenSource.CreateLinkedTokenSource ct
+
+                let worker () =
+                    backgroundTask {
+                        let mutable index = Interlocked.Increment &pos
+
+                        while index < req.Length && not innerCts.IsCancellationRequested do
+                            let mutable completed = false
+
+                            try
+                                let! r = req.[index] innerCts.Token
+                                completed <- true
+                                res[index] <- r
+                            finally
+                                if not completed then
+                                    innerCts.Cancel()
+
+                            index <- Interlocked.Increment &pos
+                    }
+
+                // Awaits completion of all workers (whether through success, cancellation or faulting)
+                do! Task.WhenAll [| for _ in 1 .. min req.Length maxDegreeOfParallelism -> worker () :> Task |]
+                // Where cancellation was requested on the outer ct, but none of the inners saw and/or honored it by throwing TCE,
+                // res may only be partially complete so we certainly can't return it
+                // we instead yield a TaskCanceledException to honor standard Task Cancellation semantics
+                innerCts.Token.ThrowIfCancellationRequested()
+                return res
+            }
+
+    [<CompiledName("ParallelDoLimit")>]
+    let parallelDoLimit
+        (maxDegreeOfParallelism: int)
+        (ct: CancellationToken)
+        (computations: seq<CancellationToken -> Task<unit>>)
+        : Task<unit> =
+        parallelLimit maxDegreeOfParallelism ct computations |> ignore<unit[]>
+
+    [<CompiledName("StartAsyncImmediate")>]
+    let startAsyncImmediate (ct: CancellationToken) (computation: Async<'T>) : Task<'T> =
+        Async.StartImmediateAsTask(computation, cancellationToken = ct)
+
+#if NETSTANDARD2_1 || NET
+    [<CompiledName("OfValueTask")>]
+    let inline ofValueTask (valueTask: ValueTask<'T>) : Task<'T> =
+        valueTask.AsTask()
+#endif
+
+#if NETSTANDARD2_1 || NET
+[<RequireQualifiedAccess>]
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module ValueTask =
+
+    [<CompiledName("Result")>]
+    let inline result (value: 'T) : ValueTask<'T> =
+        ValueTask<'T>(value)
+
+    [<CompiledName("Empty")>]
+    let empty: ValueTask<unit> = result ()
+
+    [<CompiledName("OfTask")>]
+    let inline ofTask (task: Task<'T>) : ValueTask<'T> =
+        ValueTask<'T>(task)
+
+    [<CompiledName("Bind")>]
+    let inline bind ([<InlineIfLambda>] binder: 'T -> ValueTask<'U>) (task: ValueTask<'T>) : ValueTask<'U> =
+        if task.IsCompletedSuccessfully then
+            try
+                binder task.Result
+            with e ->
+                Task.FromException<'U>(e) |> ofTask
+        else
+            let t: Task<'U> =
+                TaskBuilder.task {
+                    let! v = task
+                    return! binder v
+                }
+
+            ValueTask<'U>(t)
+
+    [<CompiledName("Map")>]
+    let inline map ([<InlineIfLambda>] mapping: 'T -> 'U) (task: ValueTask<'T>) : ValueTask<'U> =
+        if task.IsCompletedSuccessfully then
+            try
+                mapping task.Result |> result
+            with e ->
+                Task.FromException<'U>(e) |> ofTask
+        else
+            let t: Task<'U> =
+                TaskBuilder.task {
+                    let! v = task
+                    return mapping v
+                }
+
+            ValueTask<'U>(t)
+
+    [<CompiledName("Ignore")>]
+    [<RequiresExplicitTypeArguments>]
+    let inline ignore<'T> (task: ValueTask<'T>) : ValueTask<unit> =
+        map ignore task
+
+    [<CompiledName("CatchWith")>]
+    let inline catchWith ([<InlineIfLambda>] handler: exn -> 'T) (task: ValueTask<'T>) : ValueTask<'T> =
+        if task.IsCompletedSuccessfully then
+            task
+        else
+            let t: Task<'T> =
+                TaskBuilder.task {
+                    try
+                        return! task
+                    with
+                    | :? System.OperationCanceledException as e -> return! raise e
+                    | e -> return handler e
+                }
+
+            ValueTask<'T>(t)
+
+    [<CompiledName("Catch")>]
+    let catch (task: ValueTask<'T>) : ValueTask<Result<'T, exn>> =
+        task |> map Ok |> catchWith Error
+#endif

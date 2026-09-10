@@ -13,13 +13,13 @@ open Internal.Utilities.Library
 open FSharp.Compiler.Diagnostics
 
 module BuildGraphTests =
-    
+
     [<MethodImpl(MethodImplOptions.NoInlining)>]
     let private createNode () =
         let o = obj ()
-        GraphNode(async { 
+        GraphNode(async {
             Assert.shouldBeTrue (o <> null)
-            return 1 
+            return 1
         }), WeakReference(o)
 
     [<Fact>]
@@ -33,11 +33,11 @@ module BuildGraphTests =
         let resetEvent = new ManualResetEvent(false)
         let resetEventInAsync = new ManualResetEvent(false)
 
-        let graphNode = 
-            GraphNode(async { 
+        let graphNode =
+            GraphNode(async {
                 resetEventInAsync.Set() |> ignore
                 let! _ = Async.AwaitWaitHandle(resetEvent)
-                return 1 
+                return 1
             })
 
         let task1 =
@@ -66,15 +66,15 @@ module BuildGraphTests =
         let requests = 10000
         let mutable computationCount = 0
 
-        let graphNode = 
-            GraphNode(async { 
+        let graphNode =
+            GraphNode(async {
                 computationCount <- computationCount + 1
-                return 1 
+                return 1
             })
 
         let work = Async.Parallel(Array.init requests (fun _ -> graphNode.GetOrComputeValue() ))
 
-        Async.RunImmediate(work)
+        Async.RunSynchronouslyImmediate(work)
         |> ignore
 
         Assert.shouldBe 1 computationCount
@@ -87,7 +87,7 @@ module BuildGraphTests =
 
         let work = Async.Parallel(Array.init requests (fun _ -> graphNode.GetOrComputeValue() ))
 
-        let result = Async.RunImmediate(work)
+        let result = Async.RunSynchronouslyImmediate(work)
 
         Assert.shouldNotBeEmpty result
         Assert.shouldBe requests result.Length
@@ -102,7 +102,7 @@ module BuildGraphTests =
 
         Assert.shouldBeTrue weak.IsAlive
 
-        Async.RunImmediate(graphNode.GetOrComputeValue())
+        Async.RunSynchronouslyImmediate(graphNode.GetOrComputeValue())
         |> ignore
 
         GC.Collect(2, GCCollectionMode.Forced, true)
@@ -116,10 +116,10 @@ module BuildGraphTests =
         let graphNode, weak = createNode ()
 
         GC.Collect(2, GCCollectionMode.Forced, true)
-        
+
         Assert.shouldBeTrue weak.IsAlive
 
-        Async.RunImmediate(Async.Parallel(Array.init requests (fun _ -> graphNode.GetOrComputeValue() )))
+        Async.RunSynchronouslyImmediate(Async.Parallel(Array.init requests (fun _ -> graphNode.GetOrComputeValue() )))
         |> ignore
 
         GC.Collect(2, GCCollectionMode.Forced, true)
@@ -128,9 +128,9 @@ module BuildGraphTests =
 
     [<Fact>]
     let ``A request can cancel``() =
-        let graphNode = 
-            GraphNode(async { 
-                return 1 
+        let graphNode =
+            GraphNode(async {
+                return 1
             })
 
         use cts = new CancellationTokenSource()
@@ -143,7 +143,7 @@ module BuildGraphTests =
 
         let ex =
             try
-                Async.RunImmediate(work, cancellationToken = cts.Token)
+                Async.RunSynchronouslyImmediate(work, cancellationToken = cts.Token)
                 |> ignore
                 failwith "Should have canceled"
             with
@@ -156,10 +156,10 @@ module BuildGraphTests =
     let ``A request can cancel 2``() =
         let resetEvent = new ManualResetEvent(false)
 
-        let graphNode = 
-            GraphNode(async { 
+        let graphNode =
+            GraphNode(async {
                 let! _ = Async.AwaitWaitHandle(resetEvent)
-                return 1 
+                return 1
             })
 
         use cts = new CancellationTokenSource()
@@ -173,7 +173,7 @@ module BuildGraphTests =
 
         let ex =
             try
-                Async.RunImmediate(graphNode.GetOrComputeValue(), cancellationToken = cts.Token)
+                Async.RunSynchronouslyImmediate(graphNode.GetOrComputeValue(), cancellationToken = cts.Token)
                 |> ignore
                 failwith "Should have canceled"
             with
@@ -190,18 +190,18 @@ module BuildGraphTests =
         let mutable computationCountBeforeSleep = 0
         let mutable computationCount = 0
 
-        let graphNode = 
-            GraphNode(async { 
+        let graphNode =
+            GraphNode(async {
                 computationCountBeforeSleep <- computationCountBeforeSleep + 1
                 let! _ = Async.AwaitWaitHandle(resetEvent)
                 computationCount <- computationCount + 1
-                return 1 
+                return 1
             })
 
         use cts = new CancellationTokenSource()
 
-        let work = 
-            async { 
+        let work =
+            async {
                 let! _ = graphNode.GetOrComputeValue()
                 ()
             }
@@ -218,7 +218,7 @@ module BuildGraphTests =
 
         cts.Cancel()
         resetEvent.Set() |> ignore
-        Async.RunImmediate(work)
+        Async.RunSynchronouslyImmediate(work)
         |> ignore
 
         Assert.shouldBeTrue cts.IsCancellationRequested
@@ -226,7 +226,7 @@ module BuildGraphTests =
         Assert.shouldBeTrue(computationCount >= 0)
 
         tasks
-        |> Seq.iter (fun x -> 
+        |> Seq.iter (fun x ->
             try x.Wait(1000) |> ignore with | :? TimeoutException -> reraise() | _ -> ())
 
     [<Fact>]
@@ -243,7 +243,7 @@ module BuildGraphTests =
         let random =
             let rng = Random()
             fun n -> rng.Next n
-    
+
         let job phase i = async {
             do! random 10 |> Async.Sleep
             Assert.Equal(phase, DiagnosticsThreadStatics.BuildPhase)
@@ -252,7 +252,7 @@ module BuildGraphTests =
 
             errorR (ExampleException $"job {i}")
         }
-    
+
         let work (phase: BuildPhase) =
             async {
                 let n = 8
@@ -268,7 +268,7 @@ module BuildGraphTests =
 
                 Assert.Equal(phase, DiagnosticsThreadStatics.BuildPhase)
             }
-    
+
         let phases = [|
             BuildPhase.DefaultPhase
             BuildPhase.Compile
@@ -282,7 +282,7 @@ module BuildGraphTests =
             BuildPhase.Output
             BuildPhase.Interactive
         |]
-    
+
         let pickRandomPhase _ = phases[random phases.Length]
         Seq.init 100 pickRandomPhase
         |> Seq.map work
@@ -310,9 +310,9 @@ module BuildGraphTests =
     [<Fact>]
     let ``AsyncLocal diagnostics context works with TPL`` () =
 
-        let task1 () = 
+        let task1 () =
             List.init 20 (sprintf "ListParallel logger %d")
-            |> Extras.ListParallel.map (fun name -> 
+            |> Extras.ListParallel.map (fun name ->
                 let logger = CapturingDiagnosticsLogger(name)
                 use _ = UseDiagnosticsLogger logger
                 for _ in 1 .. 10 do
@@ -322,12 +322,12 @@ module BuildGraphTests =
                 loggerShouldBe logger )
             |> ignore
 
-        let task2 () =         
+        let task2 () =
             let commonLogger = SimpleConcurrentLogger "ListParallel concurrent logger"
             use _ = UseDiagnosticsLogger commonLogger
 
             [1 .. 20]
-            |> Extras.ListParallel.map (fun _ -> 
+            |> Extras.ListParallel.map (fun _ ->
                 for _ in 1 .. 10 do
                     errorR TestException
                     Thread.Sleep 5
@@ -365,12 +365,12 @@ module BuildGraphTests =
 
         let logger = DiagnosticsLoggerWithCallback errorCommitted
         use _ = UseDiagnosticsLogger logger
-        tasks |> Seq.take 50 |> MultipleDiagnosticsLoggers.Parallel |> Async.Ignore |> Async.RunImmediate
+        tasks |> Seq.take 50 |> MultipleDiagnosticsLoggers.Parallel |> Async.Ignore |> Async.RunSynchronouslyImmediate
 
         // all errors committed
         errorCountShouldBe 300
 
-        tasks |> Seq.skip 50 |> MultipleDiagnosticsLoggers.Sequential |> Async.Ignore |> Async.RunImmediate
+        tasks |> Seq.skip 50 |> MultipleDiagnosticsLoggers.Sequential |> Async.Ignore |> Async.RunSynchronouslyImmediate
 
         errorCountShouldBe 600
 
@@ -500,7 +500,7 @@ module BuildGraphTests =
         async {
 
             // After Async.Parallel the continuation runs in the context of the last computation that finished.
-            do! 
+            do!
                 [ async {
                     SetThreadDiagnosticsLoggerNoUnwind DiscardErrorsLogger } ]
                 |> Async.Parallel
@@ -517,7 +517,7 @@ module BuildGraphTests =
                 |> Async.Ignore
             loggerShouldBe logger
         }
-        |> Async.RunImmediate
+        |> Async.RunSynchronouslyImmediate
 
         // Synchronous code will affect current context:
 
@@ -527,7 +527,7 @@ module BuildGraphTests =
             do! Async.SwitchToNewThread()
             loggerShouldBe DiscardErrorsLogger
         }
-        |> Async.RunImmediate
+        |> Async.RunSynchronouslyImmediate
         loggerShouldBe DiscardErrorsLogger
 
         SetThreadDiagnosticsLoggerNoUnwind logger
@@ -538,7 +538,7 @@ module BuildGraphTests =
             do! Async.SwitchToNewThread()
             loggerShouldBe DiscardErrorsLogger
         }
-        |> Async.RunImmediate
+        |> Async.RunSynchronouslyImmediate
         loggerShouldBe logger
 
 

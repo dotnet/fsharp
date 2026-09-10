@@ -9,7 +9,7 @@ E_TwoDifferentTypeVariablesGen00.fsx(62,52,62,53): typecheck error FS0064: This 
 
 E_TwoDifferentTypeVariablesGen00.fsx(62,18,62,21): typecheck error FS0043: The type ''b' does not match the type 'int'
 
-E_TwoDifferentTypeVariablesGen00.fsx(63,45,63,55): typecheck error FS0041: A unique overload for method 'M' could not be determined based on type information prior to this program point. A type annotation may be needed.
+E_TwoDifferentTypeVariablesGen00.fsx(63,49,63,50): typecheck error FS0041: A unique overload for method 'M' could not be determined based on type information prior to this program point. A type annotation may be needed.
 
 Known types of arguments: 'a * 'b
 
@@ -29,7 +29,7 @@ E_TwoDifferentTypeVariablesGen00.fsx(65,56,65,57): typecheck error FS0064: This 
 
 E_TwoDifferentTypeVariablesGen00.fsx(65,18,65,21): typecheck error FS0043: The type ''a' does not match the type 'int'
 
-E_TwoDifferentTypeVariablesGen00.fsx(66,45,66,59): typecheck error FS0041: A unique overload for method 'M' could not be determined based on type information prior to this program point. A type annotation may be needed.
+E_TwoDifferentTypeVariablesGen00.fsx(66,49,66,50): typecheck error FS0041: A unique overload for method 'M' could not be determined based on type information prior to this program point. A type annotation may be needed.
 
 Known types of arguments: 'a * 'b
 
@@ -43,7 +43,7 @@ E_TwoDifferentTypeVariablesGen00.fsx(67,18,67,21): typecheck error FS0064: This 
 
 E_TwoDifferentTypeVariablesGen00.fsx(67,18,67,21): typecheck error FS0043: The type ''b' does not match the type ''b0'
 
-E_TwoDifferentTypeVariablesGen00.fsx(68,45,68,58): typecheck error FS0041: A unique overload for method 'M' could not be determined based on type information prior to this program point. A type annotation may be needed.
+E_TwoDifferentTypeVariablesGen00.fsx(68,49,68,50): typecheck error FS0041: A unique overload for method 'M' could not be determined based on type information prior to this program point. A type annotation may be needed.
 
 Known types of arguments: 'a * 'b
 

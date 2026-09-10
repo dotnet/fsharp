@@ -1,5 +1,5 @@
 
-E_LeftToRightOverloadResolution01.fsx(7,23,7,51): typecheck error FS0041: A unique overload for method 'WriteLine' could not be determined based on type information prior to this program point. A type annotation may be needed.
+E_LeftToRightOverloadResolution01.fsx(7,38,7,47): typecheck error FS0041: A unique overload for method 'WriteLine' could not be determined based on type information prior to this program point. A type annotation may be needed.
 
 Known type of argument: 'a
 
@@ -18,7 +18,7 @@ Candidates:
  - System.Console.WriteLine(value: uint32) : unit
  - System.Console.WriteLine(value: uint64) : unit
 
-E_LeftToRightOverloadResolution01.fsx(9,23,9,51): typecheck error FS0041: A unique overload for method 'WriteLine' could not be determined based on type information prior to this program point. A type annotation may be needed.
+E_LeftToRightOverloadResolution01.fsx(9,38,9,47): typecheck error FS0041: A unique overload for method 'WriteLine' could not be determined based on type information prior to this program point. A type annotation may be needed.
 
 Known type of argument: 'a
 

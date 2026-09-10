@@ -17,16 +17,6 @@
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
-.mresource public FSharpSignatureCompressedData.assembly
-{
-  
-  
-}
-.mresource public FSharpOptimizationCompressedData.assembly
-{
-  
-  
-}
 .module assembly.exe
 
 .imagebase {value}
@@ -48,8 +38,7 @@
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
     .field assembly int32 size
-    .method public specialname rtspecialname 
-            instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!t> somelist) cil managed
+    .method public specialname rtspecialname instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!t> somelist) cil managed
     {
       
       .maxstack  8
@@ -59,13 +48,12 @@
       IL_0007:  pop
       IL_0008:  ldarg.0
       IL_0009:  ldarg.1
-      IL_000a:  call       int32 [FSharp.Core]Microsoft.FSharp.Collections.ListModule::Length<!t>(class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0>)
+      IL_000a:  callvirt   instance int32 class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!t>::get_Length()
       IL_000f:  stfld      int32 class assembly/ListSizeCounter`1<!t>::size
       IL_0014:  ret
     } 
 
-    .method public hidebysig specialname 
-            instance int32  get_Size() cil managed
+    .method public hidebysig specialname instance int32  get_Size() cil managed
     {
       
       .maxstack  8
@@ -94,7 +82,6 @@
   } 
 
 } 
-
 
 
 

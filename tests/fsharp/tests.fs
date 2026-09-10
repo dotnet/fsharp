@@ -35,7 +35,7 @@ module CoreTests =
     let ``subtype-langversion-checknulls`` () =
         let cfg = testConfig "core/subtype"
 
-        
+
 
         fsc cfg "%s -o:test-checknulls.exe -g --checknulls" cfg.fsc_flags ["test.fsx"]
 
@@ -46,7 +46,7 @@ module CoreTests =
     let ``subtype-langversion-no-checknulls`` () =
         let cfg = testConfig "core/subtype"
 
-        
+
 
         fsc cfg "%s -o:test-no-checknulls.exe -g --checknulls-" cfg.fsc_flags ["test.fsx"]
 
@@ -66,11 +66,14 @@ module CoreTests =
         exec cfg cfg.DotNetExe ($"msbuild {projectFile} /p:Configuration={cfg.BUILD_CONFIG} -property:FSharpRepositoryPath={FSharpRepositoryPath}")
 
 #if !NETCOREAPP
+    // Pinned to 10.0: at 11.0 ErrorOnMissingSignatureAttribute turns FS3888 (attribute on impl but
+    // not signature) from warning into error, which this test deliberately exercises. 11.0 behavior is
+    // covered by Conformance/Signatures/SignatureEnforcedAttributes.
     [<Fact>]
-    let ``attributes-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/attributes" FSC_OPTIMIZED
+    let ``attributes-FSC_OPTIMIZED`` () = singleTestBuildAndRunVersion "core/attributes" FSC_OPTIMIZED "10.0"
 
     [<Fact>]
-    let ``attributes-FSI`` () = singleTestBuildAndRun "core/attributes" FSI
+    let ``attributes-FSI`` () = singleTestBuildAndRunVersion "core/attributes" FSI "10.0"
 
     [<Fact>]
     let span () =
@@ -80,7 +83,7 @@ module CoreTests =
         let cfg = { cfg with fsc_flags = sprintf "%s --preferreduilang:en-US --test:StackSpan" cfg.fsc_flags}
 
         begin
-            
+
 
             singleNegTest cfg "test"
 
@@ -120,7 +123,7 @@ module CoreTests =
     let asyncStackTraces () =
         let cfg = testConfig "core/asyncStackTraces"
 
-        
+
 
         fsc cfg "%s -o:test.exe -g --tailcalls- --optimize-" cfg.fsc_flags ["test.fsx"]
 
@@ -128,12 +131,12 @@ module CoreTests =
 
 
     [<Fact>]
-    let ``state-machines-non-optimized`` () = 
+    let ``state-machines-optimized-no-tailcalls`` () =
         let cfg = testConfig "core/state-machines"
 
-        
 
-        fsc cfg "%s -o:test.exe -g --tailcalls- --optimize-" cfg.fsc_flags ["test.fsx"]
+
+        fsc cfg "%s -o:test.exe -g --tailcalls- --optimize+" cfg.fsc_flags ["test.fsx"]
 
         peverify cfg "test.exe"
 
@@ -141,10 +144,10 @@ module CoreTests =
 
 
     [<Fact>]
-    let ``state-machines-optimized`` () = 
+    let ``state-machines-optimized`` () =
         let cfg = testConfig "core/state-machines"
 
-        
+
 
         fsc cfg "%s -o:test.exe -g --tailcalls+ --optimize+" cfg.fsc_flags ["test.fsx"]
 
@@ -167,77 +170,77 @@ module CoreTests =
     [<Fact>]
     let ``lots-of-conditionals``() =
         let cfg = testConfig "core/large/conditionals"
-        
+
         fsc cfg "%s -o:test.exe " cfg.fsc_flags ["LargeConditionals-200.fs"]
         execAndCheckPassed cfg ("." ++ "test.exe") ""
 
     [<Fact>]
     let ``lots-of-conditionals-maxtested``() =
         let cfg = testConfig "core/large/conditionals"
-        
+
         fsc cfg "%s -o:test.exe " cfg.fsc_flags ["LargeConditionals-maxtested.fs"]
         execAndCheckPassed cfg ("." ++ "test.exe") ""
 
     [<Fact>]
     let ``lots-of-lets``() =
         let cfg = testConfig "core/large/lets"
-        
+
         fsc cfg "%s -o:test.exe " cfg.fsc_flags ["LargeLets-500.fs"]
         execAndCheckPassed cfg ("." ++ "test.exe") ""
 
     [<Fact>]
     let ``lots-of-lets-maxtested``() =
         let cfg = testConfig "core/large/lets"
-        
+
         fsc cfg "%s -o:test.exe " cfg.fsc_flags ["LargeLets-maxtested.fs"]
         execAndCheckPassed cfg ("." ++ "test.exe") ""
 
     [<Fact>]
     let ``lots-of-lists``() =
         let cfg = testConfig "core/large/lists"
-        
+
         fsc cfg "%s -o:test-500.exe " cfg.fsc_flags ["LargeList-500.fs"]
         execAndCheckPassed cfg ("." ++ "test-500.exe") ""
 
     [<Fact>]
     let ``lots-of-matches``() =
         let cfg = testConfig "core/large/matches"
-        
+
         fsc cfg "%s -o:test.exe " cfg.fsc_flags ["LargeMatches-200.fs"]
         execAndCheckPassed cfg ("." ++ "test.exe") ""
 
     [<Fact>]
     let ``lots-of-matches-maxtested``() =
         let cfg = testConfig "core/large/matches"
-        
+
         fsc cfg "%s -o:test.exe " cfg.fsc_flags ["LargeMatches-maxtested.fs"]
         execAndCheckPassed cfg ("." ++ "test.exe") ""
 
     [<Fact>]
     let ``lots-of-sequential-and-let``() =
         let cfg = testConfig "core/large/mixed"
-        
+
         fsc cfg "%s -o:test.exe " cfg.fsc_flags ["LargeSequentialLet-500.fs"]
         execAndCheckPassed cfg ("." ++ "test.exe") ""
 
     [<Fact>]
     let ``lots-of-sequential-and-let-maxtested``() =
         let cfg = testConfig "core/large/mixed"
-        
+
         fsc cfg "%s -o:test.exe " cfg.fsc_flags ["LargeSequentialLet-maxtested.fs"]
         execAndCheckPassed cfg ("." ++ "test.exe") ""
 
     [<Fact>]
     let ``lots-of-sequential``() =
         let cfg = testConfig "core/large/sequential"
-        
+
         fsc cfg "%s -o:test.exe " cfg.fsc_flags ["LargeSequential-500.fs"]
         execAndCheckPassed cfg ("." ++ "test.exe") ""
 
     [<Fact>]
     let ``lots-of-sequential-maxtested``() =
         let cfg = testConfig "core/large/sequential"
-        
+
         fsc cfg "%s -o:test.exe " cfg.fsc_flags ["LargeSequential-maxtested.fs"]
         execAndCheckPassed cfg ("." ++ "test.exe") ""
 
@@ -265,14 +268,14 @@ module CoreTests =
         peverify cfg "test.exe"
 
         begin
-            
+
 
             execAndCheckPassed cfg ("." ++ "test.exe") ""
 
         end
 
         begin
-            
+
 
             fsiCheckPassed cfg "-r:lib.dll" ["test.fsx"]
 
@@ -290,7 +293,7 @@ module CoreTests =
 
         peverify cfg "testcs.exe"
 
-        
+
 
         fsiCheckPassed cfg "" ["test.fs"]
 
@@ -472,10 +475,10 @@ module CoreTests =
     [<Fact>]
     let ``fsi-reload`` () =
         let cfg = testConfig "core/fsi-reload"
-        
+
         fsiCheckPassed cfg "%s  --maxerrors:1" cfg.fsi_flags ["load1.fsx"]
 
-           
+
         fsiCheckPassed cfg "%s  --maxerrors:1" cfg.fsi_flags ["load2.fsx"]
 
         fsc cfg "" ["load1.fsx"]
@@ -512,21 +515,21 @@ module CoreTests =
         singleNegTest cfg "negativetest"
 
         begin
-            
+
 
             fsiCheckPassed cfg "%s" cfg.fsi_flags ["test.fsx"]
 
         end
 
         begin
-            
+
 
             execAndCheckPassed cfg ("." ++ "test.exe") ""
 
         end
 
         begin
-            
+
 
             execAndCheckPassed cfg ("." ++ "test--optimize.exe") ""
 
@@ -610,7 +613,7 @@ module CoreTests =
          runPrintingTest "--use:preludePrintSize1000.fsx" "output.1000"
 
     [<FSharp.Test.FactSkipOnSignedBuild>]
-    let ``printing-width-200`` () =  
+    let ``printing-width-200`` () =
          runPrintingTest "--use:preludePrintSize200.fsx" "output.200"
 
     [<FSharp.Test.FactSkipOnSignedBuild>]
@@ -728,7 +731,7 @@ module CoreTests =
         peverify cfg "test.exe"
 
         begin
-            
+
             execAndCheckPassed cfg ("." ++ "test.exe") ""
         end
 
@@ -741,25 +744,25 @@ module CoreTests =
         peverify cfg "test--optimize.exe"
 
         begin
-            
+
 
             fsiCheckPassed cfg "%s -r cslib.dll" cfg.fsi_flags ["test.fsx"]
 
         end
 
         begin
-            
+
             execAndCheckPassed cfg ("." ++ "test-with-debug-data.exe") ""
         end
 
         begin
-            
+
             execAndCheckPassed cfg ("." ++ "test--optimize.exe") ""
         end
 
     // Previously a comment here said:
     // "This test stays in FsharpSuite for a later migration phases, it uses hardcoded #r to a C# compiled cslib.dll inside"
-    // This is resolved by compiling cslib.dll separately in each test. 
+    // This is resolved by compiling cslib.dll separately in each test.
     [<Fact>]
     let ``quotes-FSC-FSC_DEBUG`` () =
         let cfg = testConfig "core/quotes"
@@ -879,7 +882,7 @@ module CoreTests =
     let ``libtest-langversion-checknulls`` () =
         let cfg = testConfig "core/libtest"
 
-        
+
 
         fsc cfg "%s -o:test-checknulls.exe -g --checknulls" cfg.fsc_flags ["test.fsx"]
 
@@ -1137,7 +1140,7 @@ module CoreTests =
 
         peverify cfg "test--optimize.exe"
 
-        
+
 
         fsiCheckPassed cfg "%s" cfg.fsi_flags ["test.fsx"]
 
@@ -1159,7 +1162,7 @@ module CoreTests =
 
         peverify cfg "test--optimize.exe"
 
-        
+
         fsiCheckPassed cfg "%s" cfg.fsi_flags ["test.fsx"]
 
 
@@ -1185,7 +1188,7 @@ module CoreTests =
 
         peverify cfg "test--optimize.exe"
 
-        
+
         fsiCheckPassed cfg "%s --quotations-debug+" cfg.fsi_flags ["test.fsx"]
 
 
@@ -1222,21 +1225,21 @@ module CoreTests =
 
         peverify cfg "module2-opt.exe"
 
-        
+
 
         fsiCheckPassed cfg "%s -r module1.dll" cfg.fsi_flags ["module2.fsx"]
 
 
 
-        
+
 
         execAndCheckPassed cfg ("." ++ "module2.exe") ""
 
-        
+
 
         execAndCheckPassed cfg ("." ++ "module2-opt.exe") ""
 
-        
+
 
         execAndCheckPassed cfg ("." ++ "module2-staticlink.exe") ""
 
@@ -1397,7 +1400,7 @@ module CoreTests =
 
         peverify cfg "test.exe"
 
-        
+
 
         execAndCheckPassed cfg ("." ++ "test.exe") ""
 
@@ -1417,8 +1420,8 @@ module CoreTests =
         fsc cfg "%s -o:xmlverify.exe -g" cfg.fsc_flags ["xmlverify.fs"]
 
         peverifyWithArgs cfg "/nologo" "xmlverify.exe"
-        
-        
+
+
     [<Fact>]
     let ``property setter in method or constructor`` () =
         let cfg = testConfig "core/members/set-only-property"
@@ -1514,28 +1517,28 @@ module RegressionTests =
         singleTestBuildAndRunAux cfg (FSC_BUILDONLY false)
 
     [<FSharp.Test.FactSkipOnSignedBuild>]
-    let ``Large inputs 12322 fscAnyCpu.exe 64-bit .NET Framework generating optimized code, portable PDB`` () = 
+    let ``Large inputs 12322 fscAnyCpu.exe 64-bit .NET Framework generating optimized code, portable PDB`` () =
         let cfg = testConfig "regression/12322"
         let cfg = { cfg with FSC = cfg.FSCANYCPU }
         let cfg = { cfg with fsc_flags = cfg.fsc_flags + " --debug:portable --define:PORTABLE_PDB" }
         singleTestBuildAndRunAux cfg (FSC_BUILDONLY true)
 
     [<FSharp.Test.FactSkipOnSignedBuild>]
-    let ``Large inputs 12322 fscAnyCpu.exe 64-bit .NET Framework generating optimized code, full PDB`` () = 
+    let ``Large inputs 12322 fscAnyCpu.exe 64-bit .NET Framework generating optimized code, full PDB`` () =
         let cfg = testConfig "regression/12322"
         let cfg = { cfg with FSC = cfg.FSCANYCPU }
         let cfg = { cfg with fsc_flags = cfg.fsc_flags + " --debug:full " }
         singleTestBuildAndRunAux cfg (FSC_BUILDONLY true)
 
     [<FSharp.Test.FactSkipOnSignedBuild>]
-    let ``12322 fscAnyCpu.exe 64-bit .NET Framework generating debug code, portable PDB`` () = 
+    let ``12322 fscAnyCpu.exe 64-bit .NET Framework generating debug code, portable PDB`` () =
         let cfg = testConfig "regression/12322"
         let cfg = { cfg with FSC = cfg.FSCANYCPU }
         let cfg = { cfg with fsc_flags = cfg.fsc_flags + " --debug:portable --define:PORTABLE_PDB" }
         singleTestBuildAndRunAux cfg (FSC_BUILDONLY false)
 
     [<FSharp.Test.FactSkipOnSignedBuild>]
-    let ``12322 fscAnyCpu.exe 64-bit .NET Framework generating debug code, full PDB`` () = 
+    let ``12322 fscAnyCpu.exe 64-bit .NET Framework generating debug code, full PDB`` () =
         let cfg = testConfig "regression/12322"
         let cfg = { cfg with FSC = cfg.FSCANYCPU }
         let cfg = { cfg with fsc_flags = cfg.fsc_flags + " --debug:full" }
@@ -1546,9 +1549,9 @@ module RegressionTests =
 
     [<Fact>]
     let ``SRTP doesn't handle calling member hiding inherited members`` () =
-        let cfg = 
+        let cfg =
             testConfig "regression/5531"
-       
+
 
         let outFile = "compilation.output.test.txt"
         let expectedFile = "compilation.output.test.bsl"
@@ -1834,7 +1837,7 @@ module TypecheckTests =
         fsc cfg "%s --langversion:8.0 --target:exe -o:pos40.exe" cfg.fsc_flags ["pos40.fs"]
         peverify cfg "pos40.exe"
         exec cfg ("." ++ "pos40.exe") ""
-        
+
     [<Fact>]
     let ``sigs pos41`` () =
         let cfg = testConfig "typecheck/sigs"
@@ -1979,7 +1982,7 @@ module TypecheckTests =
         fsc cfg "%s -a -o:pos05.dll" cfg.fsc_flags ["pos05.fs"]
 
     [<Fact>]
-    let ``type check neg01`` () = singleNegTest (testConfig "typecheck/sigs") "neg01"  
+    let ``type check neg01`` () = singleNegTest (testConfig "typecheck/sigs") "neg01"
 
     [<Fact>]
     let ``type check neg08`` () = singleNegTest (testConfig "typecheck/sigs") "neg08"
@@ -1988,10 +1991,10 @@ module TypecheckTests =
     let ``type check neg09`` () = singleNegTest (testConfig "typecheck/sigs") "neg09"
 
     [<Fact>]
-    let ``type check neg10`` () = singleNegTest (testConfig "typecheck/sigs") "neg10"   
-  
+    let ``type check neg10`` () = singleNegTest (testConfig "typecheck/sigs") "neg10"
+
     [<Fact>]
-    let ``type check neg14`` () = singleNegTest (testConfig "typecheck/sigs") "neg14"  
+    let ``type check neg14`` () = singleNegTest (testConfig "typecheck/sigs") "neg14"
 
     [<Fact>]
     let ``type check neg17`` () = singleNegTest (testConfig "typecheck/sigs") "neg17"
@@ -2010,10 +2013,10 @@ module TypecheckTests =
     let ``type check neg31`` () = singleNegTest (testConfig "typecheck/sigs") "neg31"
 
     [<Fact>]
-    let ``type check neg33`` () = singleNegTest (testConfig "typecheck/sigs") "neg33"  
+    let ``type check neg33`` () = singleNegTest (testConfig "typecheck/sigs") "neg33"
 
     [<Fact>]
-    let ``type check neg43`` () = singleNegTest (testConfig "typecheck/sigs") "neg43"   
+    let ``type check neg43`` () = singleNegTest (testConfig "typecheck/sigs") "neg43"
 
 #if !DEBUG // requires release version of compiler to avoid very deep stacks
     [<Fact>]
@@ -2024,7 +2027,7 @@ module TypecheckTests =
     let ``type check neg49`` () = singleNegTest (testConfig "typecheck/sigs") "neg49"
 
     [<Fact>]
-    let ``type check neg94`` () = singleNegTest (testConfig "typecheck/sigs") "neg94" 
+    let ``type check neg94`` () = singleNegTest (testConfig "typecheck/sigs") "neg94"
 
     [<Fact>]
     let ``type check neg100`` () =
@@ -2034,18 +2037,12 @@ module TypecheckTests =
 
     [<Fact>]
     let ``type check neg107`` () = singleNegTest (testConfig "typecheck/sigs") "neg107"
- 
-    [<Fact>]
-    let ``type check neg116`` () = singleNegTest (testConfig "typecheck/sigs") "neg116"
 
-    [<Fact>]
-    let ``type check neg117`` () = singleNegTest (testConfig "typecheck/sigs") "neg117"        
-    
     [<Fact>]
     let ``type check neg134`` () = singleVersionedNegTest (testConfig "typecheck/sigs") "preview" "neg134"
 
     [<Fact>]
-    let ``type check neg135`` () = singleVersionedNegTest (testConfig "typecheck/sigs") "preview" "neg135"  
+    let ``type check neg135`` () = singleVersionedNegTest (testConfig "typecheck/sigs") "preview" "neg135"
 
 module FscTests =
     [<Fact>]

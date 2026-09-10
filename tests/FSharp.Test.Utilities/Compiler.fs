@@ -5,9 +5,7 @@ namespace FSharp.Test
 open FSharp.Compiler.Interactive.Shell
 open FSharp.Compiler.IO
 open FSharp.Compiler.Diagnostics
-open FSharp.Compiler.Symbols
 open FSharp.Compiler.Text
-open FSharp.Test.Assert
 open FSharp.Test.Utilities
 open FSharp.Test.ScriptHelpers
 open Microsoft.CodeAnalysis
@@ -19,7 +17,9 @@ open System.IO
 open System.Text
 open System.Text.RegularExpressions
 open System.Reflection
+open System.Reflection.Emit
 open System.Reflection.Metadata
+open System.Reflection.Metadata.Ecma335
 open System.Reflection.PortableExecutable
 
 open FSharp.Test.CompilerAssertHelpers
@@ -27,9 +27,53 @@ open TestFramework
 
 open System.Runtime.CompilerServices
 open System.Runtime.InteropServices
-open FSharp.Compiler.CodeAnalysis
 
 module rec Compiler =
+    let shouldUpdateBaselines =
+        Environment.GetEnvironmentVariable("TEST_UPDATE_BSL") <> null
+
+    let private baselineFailureMessage (expectedFile: string) (outFile: string) (diff: string) =
+        $"""Baseline mismatch for {expectedFile}
+to update the baseline:
+$ cp {outFile} {expectedFile}
+to compare:
+$ code --diff {outFile} {expectedFile}
+(or set TEST_UPDATE_BSL=1 and re-run to update the baseline automatically)
+{diff}"""
+
+    let private baselineOutputFile (expectedFile: string) =
+        if Path.GetExtension(expectedFile) = ".bsl" then
+            Path.ChangeExtension(expectedFile, ".out")
+        else
+            expectedFile + ".out"
+
+    let checkBaselineWith (compare: string -> string -> string option) (expected: string) (expectedFile: string) =
+        let outFile = baselineOutputFile expectedFile
+        let baselineContent =
+            if FileSystem.FileExistsShim expectedFile then File.ReadAllText expectedFile else ""
+        let diff = compare baselineContent expected
+
+        match diff with
+        | None ->
+            if FileSystem.FileExistsShim outFile then
+                FileSystem.FileDeleteShim outFile
+        | Some diff ->
+            Directory.CreateDirectory(Path.GetDirectoryName expectedFile) |> ignore
+            if shouldUpdateBaselines then
+                if FileSystem.FileExistsShim outFile then
+                    FileSystem.FileDeleteShim outFile
+                File.WriteAllText(expectedFile, expected)
+            else
+                File.WriteAllText(outFile, expected)
+
+            Assert.True(false, baselineFailureMessage expectedFile outFile diff)
+
+    let checkBaseline (expected: string) (expectedFile: string) =
+        let compare fileContent produced =
+            let e = normalizeNewlines fileContent
+            let a = normalizeNewlines produced
+            if e = a then None else Some $"Expected:\n{e}\nActual:\n{a}"
+        checkBaselineWith compare expected expectedFile
 
     [<AutoOpen>]
     type SourceUtilities () =
@@ -37,7 +81,6 @@ module rec Compiler =
 
     type BaselineFile =
         {
-            FilePath: string
             BslSource: string
             Content: string option
         }
@@ -237,27 +280,12 @@ module rec Compiler =
         let ilBslFilePath =
             let ilBslPaths = [|
                 for baselineSuffix in ilBaselineSuffixes do
-#if DEBUG
-    #if NETCOREAPP
-                    yield sourceFilePath + baselineSuffix + ".il.netcore.debug.bsl"
+#if NETCOREAPP
                     yield sourceFilePath + baselineSuffix + ".il.netcore.bsl"
-    #else
-                    yield sourceFilePath + baselineSuffix + ".il.net472.debug.bsl"
-                    yield sourceFilePath + baselineSuffix + ".il.net472.bsl"
-    #endif
-                    yield sourceFilePath + baselineSuffix + ".il.debug.bsl"
-                    yield sourceFilePath + baselineSuffix + ".il.bsl"
 #else
-    #if NETCOREAPP
-                    yield sourceFilePath + baselineSuffix + ".il.netcore.release.bsl"
-                    yield sourceFilePath + baselineSuffix + ".il.netcore.bsl"
-    #else
-                    yield sourceFilePath + baselineSuffix + ".il.net472.release.bsl"
                     yield sourceFilePath + baselineSuffix + ".il.net472.bsl"
-    #endif
-                    yield sourceFilePath + baselineSuffix + ".il.release.bsl"
-                    yield sourceFilePath + baselineSuffix + ".il.bsl"
 #endif
+                    yield sourceFilePath + baselineSuffix + ".il.bsl"
                 |]
 
             let findBaseline =
@@ -267,8 +295,6 @@ module rec Compiler =
             | Some s -> s
             | None -> sourceFilePath + sourceBaselineSuffix + ".il.bsl"
 
-        let fsOutFilePath = normalizePathSeparator (Path.ChangeExtension(outputDirectoryPath ++ filename, ".err"))
-        let ilOutFilePath = normalizePathSeparator (Path.ChangeExtension(outputDirectoryPath ++ filename, ".il"))
         let fsBslSource = readFileOrDefault fsBslFilePath
         let ilBslSource = readFileOrDefault ilBslFilePath
 
@@ -278,8 +304,8 @@ module rec Compiler =
                 Some
                     {
                         SourceFilename = Some sourceFilePath
-                        FSBaseline = { FilePath = fsOutFilePath; BslSource = fsBslFilePath; Content = fsBslSource }
-                        ILBaseline = { FilePath = ilOutFilePath; BslSource = ilBslFilePath; Content = ilBslSource }
+                        FSBaseline = { BslSource = fsBslFilePath; Content = fsBslSource }
+                        ILBaseline = { BslSource = ilBslFilePath; Content = ilBslSource }
                     }
             Options           = Compiler.defaultOptions
             OutputType        = Library
@@ -396,6 +422,11 @@ module rec Compiler =
 
     let private fromFSharpDiagnostic (errors: FSharpDiagnostic[]) : (SourceCodeFileName * ErrorInfo) list =
         let toErrorInfo (e: FSharpDiagnostic) : SourceCodeFileName * ErrorInfo =
+            // Every diagnostic assertion in the test suite doubles as a check that classifying message
+            // parts doesn't change the message itself. See docs/rich-diagnostics.md.
+            if e.RichMessage.Text <> e.Message then
+                failwith $"Rich message text doesn't match the message.\nMessage: %A{e.Message}\nParts:\n%s{dumpRichText e.RichMessage}"
+
             let errorNumber = e.ErrorNumber
             let severity = e.Severity
             let error =
@@ -619,6 +650,9 @@ module rec Compiler =
     let withLangVersion10 (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--langversion:10.0" ] "withLangVersion10 is only supported on F#" cUnit
 
+    let withLangVersion11 (cUnit: CompilationUnit) : CompilationUnit =
+        withOptionsHelper [ "--langversion:11.0" ] "withLangVersion11 is only supported on F#" cUnit
+
     let withLangVersionPreview (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--langversion:preview" ] "withLangVersionPreview is only supported on F#" cUnit
 
@@ -735,8 +769,17 @@ module rec Compiler =
     let asNetStandard20 (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
         | FS fs -> FS { fs with TargetFramework = TargetFramework.NetStandard20 }
-        | CS _ -> failwith "References are not supported in CS"
+        | CS cs -> CS { cs with TargetFramework = TargetFramework.NetStandard20 }
         | IL _ ->  failwith "References are not supported in IL"
+
+    /// Compile against the current BCL but reference the shipped .NETCoreApp FSharp.Core (e.g. net10.0)
+    /// instead of the netstandard2.1 build, so tests can exercise its .NETCoreApp-only surface.
+    /// Execution runs in a new process (dotnet app.dll) with that FSharp.Core copied beside the app;
+    /// external file references (withReferences) are not copied, so keep such snippets self-contained.
+    let withFSharpCoreShippedNet (cUnit: CompilationUnit) : CompilationUnit =
+        match cUnit with
+        | FS fs -> FS { fs with TargetFramework = TargetFramework.FSharpCoreShippedNet }
+        | CS _ | IL _ -> failwith "withFSharpCoreShippedNet is only supported for F# compilations"
 
     let withPlatform (platform:ExecutionPlatform) (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
@@ -1096,10 +1139,18 @@ module rec Compiler =
                         | SourceCodeFileKind.Fsx _ -> true
                         | _ -> false
                     | _ -> false
-                let output = CompilerAssert.ExecuteAndReturnResult (p, isFsx, s.Dependencies, false)
+                let useShippedNetFSharpCore =
+                    match s.Compilation with
+                    | FS fs -> fs.TargetFramework = TargetFramework.FSharpCoreShippedNet
+                    | _ -> false
+                if useShippedNetFSharpCore then
+                    File.Copy(TargetFrameworkUtil.shippedNetFSharpCorePath.Value, Path.Combine(Path.GetDirectoryName p, "FSharp.Core.dll"), overwrite = true)
+                let output = CompilerAssert.ExecuteAndReturnResult (p, isFsx, s.Dependencies, useShippedNetFSharpCore)
                 let executionResult = { s with Output = Some (ExecutionOutput output) }
                 match output.Outcome with
                 | Failure _ -> CompilationResult.Failure executionResult
+                // Shipped-net runs execute a new process, so surface a non-zero exit code as failure (in-process runs keep prior behaviour).
+                | ExitCode n when n <> 0 && useShippedNetFSharpCore -> CompilationResult.Failure executionResult
                 | _  -> CompilationResult.Success executionResult
 
     let compileAndRun = compile >> run
@@ -1154,7 +1205,7 @@ module rec Compiler =
             evalFSharp fs script
         | _ -> failwith "Script evaluation is only supported for F#."
 
-    let internal sessionCache = 
+    let internal sessionCache =
         Collections.Concurrent.ConcurrentDictionary<Set<string> * LangVersion, FSharpScript>()
 
     let internal createSessionWithShadowedExit args version =
@@ -1164,12 +1215,12 @@ module rec Compiler =
 
     let getIsolatedSessionForEval args version =
         createSessionWithShadowedExit args version
-    
+
     let getSessionForEval args version =
         let key = Set args, version
         match sessionCache.TryGetValue(key) with
         | true, script -> script
-        | _ -> 
+        | _ ->
             let script = createSessionWithShadowedExit args version
             sessionCache.TryAdd(key, script) |> ignore
             script
@@ -1236,38 +1287,6 @@ module rec Compiler =
         | _ -> failwith "FSI running only supports F#."
 
 
-    let convenienceBaselineInstructions baseline expected actual =
-        $"""to update baseline:
-$ cp {baseline.FilePath} {baseline.BslSource}
-to compare baseline:
-$ code --diff {baseline.FilePath} {baseline.BslSource}
-Expected:
-{expected}
-Actual:
-{actual}"""
-    let updateBaseline () =
-        snd (Int32.TryParse(Environment.GetEnvironmentVariable("TEST_UPDATE_BSL"))) <> 0
-    let updateBaseLineIfEnvironmentSaysSo baseline =
-        if updateBaseline () then
-            if FileSystem.FileExistsShim baseline.FilePath then
-                FileSystem.CopyShim(baseline.FilePath, baseline.BslSource, true)
-
-    let assertBaseline expected actual baseline fOnFail =
-        if expected <> actual then
-            fOnFail()
-            updateBaseLineIfEnvironmentSaysSo baseline
-            createBaselineErrors baseline actual
-            Assert.True((expected = actual), convenienceBaselineInstructions baseline expected actual)
-        elif FileSystem.FileExistsShim baseline.FilePath then
-            FileSystem.FileDeleteShim baseline.FilePath
-
-
-    let private createBaselineErrors (baselineFile: BaselineFile) (actualErrors: string) : unit =
-        printfn $"creating baseline error file for convenience: {baselineFile.FilePath}, expected: {baselineFile.BslSource}"
-        let file = FileSystem.OpenFileForWriteShim(baselineFile.FilePath)
-        file.SetLength(0)
-        file.WriteAllText(actualErrors)
-
     /// Turn our ErrorInfo back into a genuine FSharpDiagnostic
     let private toFSharpDiagnostic (ei: ErrorInfo) : FSharpDiagnostic =
 
@@ -1327,19 +1346,8 @@ Actual:
                 match o.Compilation with
                 | FS fs -> fs
                 | _     -> failwith "verifyBaseline only supports F#"
-        let expected =
-            fsSource.Baseline.Value.FSBaseline.Content
-            |> Option.defaultValue ""
-            |> normalizeNewlines
-
         // 4) Compare or update
-        if expected <> formattedActual then
-            // same update mechanism you already have:
-            fsSource.CreateOutputDirectory()
-            createBaselineErrors fsSource.Baseline.Value.FSBaseline formattedActual
-            updateBaseLineIfEnvironmentSaysSo fsSource.Baseline.Value.FSBaseline
-            let msg = convenienceBaselineInstructions fsSource.Baseline.Value.FSBaseline expected formattedActual
-            Assert.True(false, msg)
+        checkBaseline formattedActual fsSource.Baseline.Value.FSBaseline.BslSource
 
         // 5) Return the original result for fluent chaining
         cResult
@@ -1360,14 +1368,15 @@ Actual:
             | Some p ->
                 match ILChecker.verifyILAndReturnActual [] p expected with
                 | true, _, _ -> result
-                | false, errorMsg, _actualIL ->
-                    CompilationResult.Failure( {s with Output = Some (ExecutionOutput {Outcome = NoExitCode; StdOut = errorMsg; StdErr = ""})} )
+                | false, errorMsg, _actualIL -> failwith $"IL verification failed:\n{errorMsg}"
         | CompilationResult.Failure f ->
             printfn "Failure:"
             printfn $"{f}"
             failwith $"Result should be \"Success\" in order to get IL."
 
     let verifyIL = doILCheck ILChecker.checkIL
+
+    let verifyILPresent = doILCheck ILChecker.checkILPresent
 
     let verifyILNotPresent = doILCheck ILChecker.checkILNotPresent
 
@@ -1405,14 +1414,8 @@ Actual:
                 | None ->  String.Empty
             let success, errorMsg, actualIL = ILChecker.verifyILAndReturnActual [] p [expectedIL]
 
-            if not success then
-                // Failed try update baselines if required
-                // If we are here then the il file has been produced we can write it back to the baseline location
-                // if the environment variable TEST_UPDATE_BSL has been set
-                updateBaseLineIfEnvironmentSaysSo baseline.ILBaseline
-                createBaselineErrors baseline.ILBaseline actualIL
-                let errorMsg = (convenienceBaselineInstructions baseline.ILBaseline expectedIL actualIL) + errorMsg
-                Assert.Fail(errorMsg)
+            let compare _ _ = if success then None else Some errorMsg
+            checkBaselineWith compare actualIL baseline.ILBaseline.BslSource
 
     let verifyILBaseline (compilationResult: CompilationResult) : CompilationResult =
         match compilationResult with
@@ -1561,27 +1564,29 @@ Actual:
             if expectedScope <> imports then
                 failwith $"Expected imports are different from PDB.\nExpected:\n%A{expectedScope}\nActual:%A{imports}"
 
+    let private getMethodDebugInfos (assemblyReader: MetadataReader) (pdbReader: MetadataReader) =
+        [ for typeDefHandle in assemblyReader.TypeDefinitions do
+            let td = assemblyReader.GetTypeDefinition typeDefHandle
+            let typeName = assemblyReader.GetString td.Name
+            for methodHandle in td.GetMethods() do
+                let md = assemblyReader.GetMethodDefinition methodHandle
+                let methodName = assemblyReader.GetString md.Name
+                let rowNumber = System.Reflection.Metadata.Ecma335.MetadataTokens.GetRowNumber methodHandle
+                let debugInfoHandle = System.Reflection.Metadata.Ecma335.MetadataTokens.MethodDebugInformationHandle rowNumber
+                let debugInfo = pdbReader.GetMethodDebugInformation debugInfoHandle
+                yield typeName, methodName, methodHandle, debugInfo ]
+
     let private getMethodSequencePoints (assemblyPath: string) (pdbReader: MetadataReader) (methodName: string) =
         use peStream = File.OpenRead(assemblyPath)
         use peReader = new PEReader(peStream)
-        let assemblyReader = peReader.GetMetadataReader()
+        let methods =
+            getMethodDebugInfos (peReader.GetMetadataReader()) pdbReader
+            |> List.filter (fun (_, name, _, _) -> name = methodName)
 
-        let methodHandles =
-            [ for typeDef in assemblyReader.TypeDefinitions do
-                let td = assemblyReader.GetTypeDefinition(typeDef)
-                for methodHandle in td.GetMethods() do
-                    let md = assemblyReader.GetMethodDefinition(methodHandle)
-                    let name = assemblyReader.GetString(md.Name)
-                    if name = methodName then
-                        yield methodHandle ]
-
-        if methodHandles.IsEmpty then
+        if methods.IsEmpty then
             failwith (sprintf "Method '%s' not found in assembly '%s'" methodName assemblyPath)
 
-        [ for methodHandle in methodHandles do
-            let rowNumber = System.Reflection.Metadata.Ecma335.MetadataTokens.GetRowNumber(methodHandle)
-            let debugInfoHandle = System.Reflection.Metadata.Ecma335.MetadataTokens.MethodDebugInformationHandle(rowNumber)
-            let debugInfo = pdbReader.GetMethodDebugInformation(debugInfoHandle)
+        [ for _, _, _, debugInfo in methods do
             yield!
                 debugInfo.GetSequencePoints()
                 |> Seq.filter (fun sp -> not sp.IsHidden)
@@ -1776,6 +1781,126 @@ Actual:
                 verifyNoDebuggerHiddenOnMethodWithLine (optOutputPath |> Option.defaultValue "") reader line
             | _ -> failwith $"Unknown verification option: {option.ToString()}"
 
+    module private Il =
+        // Keyed by the encoded opcode value: one-byte ops as 0x00-0xFF, two-byte (0xFE-prefixed) as 0xFExx.
+        let private opsByValue =
+            dict [ for f in typeof<OpCodes>.GetFields(BindingFlags.Public ||| BindingFlags.Static) do
+                       match f.GetValue null with
+                       | :? OpCode as op -> yield (int op.Value &&& 0xffff), op
+                       | _ -> () ]
+
+        // The simple name of a type handle (TypeDef/TypeRef); "" for anything else (e.g. TypeSpec).
+        let private declaringTypeName (mdReader: MetadataReader) (handle: EntityHandle) =
+            if handle.IsNil then ""
+            else
+                let row = MetadataTokens.GetRowNumber handle
+                match handle.Kind with
+                | HandleKind.TypeDefinition -> mdReader.GetString (mdReader.GetTypeDefinition(MetadataTokens.TypeDefinitionHandle row)).Name
+                | HandleKind.TypeReference -> mdReader.GetString (mdReader.GetTypeReference(MetadataTokens.TypeReferenceHandle row)).Name
+                | _ -> ""
+
+        let rec private tokenName (mdReader: MetadataReader) (token: int) =
+            let handle = MetadataTokens.EntityHandle token
+            let row = MetadataTokens.GetRowNumber handle
+            // Qualify members with their declaring type so closure/continuation creation is visible.
+            let qualify ty nm = if ty = "" then nm else ty + "::" + nm
+            match handle.Kind with
+            | HandleKind.MethodDefinition ->
+                let md = mdReader.GetMethodDefinition(MetadataTokens.MethodDefinitionHandle row)
+                qualify (declaringTypeName mdReader (TypeDefinitionHandle.op_Implicit (md.GetDeclaringType()))) (mdReader.GetString md.Name)
+            | HandleKind.MemberReference ->
+                let mr = mdReader.GetMemberReference(MetadataTokens.MemberReferenceHandle row)
+                qualify (declaringTypeName mdReader mr.Parent) (mdReader.GetString mr.Name)
+            | HandleKind.FieldDefinition ->
+                let fd = mdReader.GetFieldDefinition(MetadataTokens.FieldDefinitionHandle row)
+                qualify (declaringTypeName mdReader (TypeDefinitionHandle.op_Implicit (fd.GetDeclaringType()))) (mdReader.GetString fd.Name)
+            | HandleKind.TypeReference -> mdReader.GetString (mdReader.GetTypeReference(MetadataTokens.TypeReferenceHandle row)).Name
+            | HandleKind.TypeDefinition -> mdReader.GetString (mdReader.GetTypeDefinition(MetadataTokens.TypeDefinitionHandle row)).Name
+            | HandleKind.MethodSpecification -> tokenName mdReader (MetadataTokens.GetToken (mdReader.GetMethodSpecification(MetadataTokens.MethodSpecificationHandle row)).Method)
+            | _ -> sprintf "0x%08x" token
+
+        let decodeMethodIL (mdReader: MetadataReader) (bytes: byte[]) =
+            [ let mutable pos = 0
+              while pos < bytes.Length do
+                  let offset = pos
+                  let b0 = int bytes.[pos]
+                  pos <- pos + 1
+                  let key = if b0 = 0xFE then (let b1 = int bytes.[pos] in pos <- pos + 1; 0xFE00 ||| b1) else b0
+                  let op = opsByValue.[key]
+                  let operand = pos
+                  let next size = pos <- operand + size
+                  let text =
+                      match op.OperandType with
+                      | OperandType.InlineNone -> next 0; ""
+                      | OperandType.ShortInlineBrTarget -> next 1; sprintf " IL_%04x" (operand + 1 + int (sbyte bytes.[operand]))
+                      | OperandType.InlineBrTarget -> next 4; sprintf " IL_%04x" (operand + 4 + BitConverter.ToInt32(bytes, operand))
+                      | OperandType.ShortInlineI -> next 1; sprintf " %d" (sbyte bytes.[operand])
+                      | OperandType.InlineI -> next 4; sprintf " %d" (BitConverter.ToInt32(bytes, operand))
+                      | OperandType.InlineI8 -> next 8; sprintf " %d" (BitConverter.ToInt64(bytes, operand))
+                      | OperandType.ShortInlineR -> next 4; sprintf " %f" (BitConverter.ToSingle(bytes, operand))
+                      | OperandType.InlineR -> next 8; sprintf " %f" (BitConverter.ToDouble(bytes, operand))
+                      | OperandType.ShortInlineVar -> next 1; sprintf " %d" (int bytes.[operand])
+                      | OperandType.InlineVar -> next 2; sprintf " %d" (int (BitConverter.ToUInt16(bytes, operand)))
+                      | OperandType.InlineString -> next 4; sprintf " \"%s\"" (mdReader.GetUserString(MetadataTokens.UserStringHandle(BitConverter.ToInt32(bytes, operand))))
+                      | OperandType.InlineSwitch -> next (4 + 4 * BitConverter.ToInt32(bytes, operand)); sprintf " (%d targets)" (BitConverter.ToInt32(bytes, operand))
+                      | _ -> next 4; " " + tokenName mdReader (BitConverter.ToInt32(bytes, operand))
+                  yield offset, op.Name + text ]
+
+    let private formatSequencePoints (source: string) (assemblyPath: string) (pdbReader: MetadataReader) =
+        let normalizedSource = source.Replace("\r\n", "\n").Replace("\r", "\n")
+        let lines = normalizedSource.Split('\n')
+
+        let textOf (sp: SequencePoint) =
+            let sb = StringBuilder()
+            for lineNo in sp.StartLine .. sp.EndLine do
+                if lineNo >= 1 && lineNo <= lines.Length then
+                    let line = lines.[lineNo - 1]
+                    let startCol = if lineNo = sp.StartLine then sp.StartColumn - 1 else 0
+                    let endCol = if lineNo = sp.EndLine then sp.EndColumn - 1 else line.Length
+                    let startCol = max 0 (min startCol line.Length)
+                    let endCol = max startCol (min endCol line.Length)
+                    sb.Append(line.Substring(startCol, endCol - startCol)).Append(' ') |> ignore
+            Regex.Replace(sb.ToString().Trim(), @"\s+", " ")
+
+        use peStream = File.OpenRead assemblyPath
+        use peReader = new PEReader(peStream)
+        let mdReader = peReader.GetMetadataReader()
+
+        let sb = StringBuilder()
+        for typeName, methodName, methodHandle, debugInfo in getMethodDebugInfos mdReader pdbReader do
+            let points = debugInfo.GetSequencePoints() |> Seq.sortBy (fun sp -> sp.Offset) |> Seq.toList
+            if not points.IsEmpty then
+                let md = mdReader.GetMethodDefinition methodHandle
+                let instructions =
+                    if md.RelativeVirtualAddress = 0 then []
+                    else Il.decodeMethodIL mdReader ((peReader.GetMethodBody md.RelativeVirtualAddress).GetILBytes())
+
+                sb.AppendLine($"{typeName}::{methodName}") |> ignore
+                points |> List.iteri (fun i sp ->
+                    let nextOffset = if i + 1 < points.Length then points.[i + 1].Offset else Int32.MaxValue
+                    if sp.IsHidden then
+                        sb.AppendLine("  <hidden>") |> ignore
+                    else
+                        sb.AppendLine(sprintf "  (%d,%d-%d,%d)  %s" sp.StartLine sp.StartColumn sp.EndLine sp.EndColumn (textOf sp)) |> ignore
+                    for offset, text in instructions do
+                        if offset >= sp.Offset && offset < nextOffset then
+                            sb.AppendLine(sprintf "    IL_%04x:  %s" offset text) |> ignore
+                    sb.AppendLine() |> ignore)
+
+        normalizedSource.Trim() + "\n" + String.replicate 80 "-" + "\n\n" + sb.ToString().Trim() + "\n"
+
+    let verifySequencePointsBaseline (source: string) (baselineFilePath: string) (result: CompilationResult) : CompilationResult =
+        match result with
+        | CompilationResult.Success r ->
+            match r.OutputPath with
+            | Some assemblyPath ->
+                use fileStream = File.OpenRead(Path.ChangeExtension(assemblyPath, ".pdb"))
+                use provider = MetadataReaderProvider.FromPortablePdbStream fileStream
+                checkBaseline (formatSequencePoints source assemblyPath (provider.GetMetadataReader())) baselineFilePath
+                result
+            | None -> failwith "Operation didn't produce any output!"
+        | CompilationResult.Failure f -> failwith $"Compilation failed: {f}"
+
     let private verifyPortablePdb (result: CompilationOutput) options : unit =
         match result.OutputPath with
         | Some assemblyPath ->
@@ -1911,7 +2036,7 @@ Actual:
                 | Some (ExecutionOutput {Outcome = Failure ex }) ->
                     failwithf $"Eval or Execution has failed (expected to succeed): %A{ex}\n{diagnostics}"
                 | _ ->
-                    
+
                     failwithf $"Operation failed (expected to succeed).\n{diagnostics} \n OUTPUTs: %A{r.Output}"
 
         let shouldFail (result: CompilationResult) : CompilationResult =
@@ -2029,22 +2154,9 @@ Actual:
                 |> String.Concat
 
             let withResultsMatchingFile (path:string) (result:CompilationResult) =
-                let expectedContent = File.ReadAllText(path) |> normalizeNewLines
-                let actualErrors = renderToString result
-
-                match Assert.shouldBeSameMultilineStringSets expectedContent actualErrors with
-                | None -> ()
-                | Some diff ->
-                    if Environment.GetEnvironmentVariable("TEST_UPDATE_BSL") <> null then
-                        File.WriteAllText(path, actualErrors)
-
-                    printfn $"{Path.GetFullPath path} \n {diff}"
-                    printfn "==========================EXPECTED==========================="
-                    printfn "%s" expectedContent
-                    printfn "===========================ACTUAL============================"
-                    printfn "%s" actualErrors
-                    Assert.True(String.IsNullOrEmpty(diff), path)
-
+                let compare fileContent produced =
+                    Assert.shouldBeSameMultilineStringSets (normalizeNewLines fileContent) produced
+                checkBaselineWith compare (renderToString result) path
                 result
 
         let checkCodes (expected: int list) (selector: CompilationOutput -> ErrorInfo list) (result: CompilationResult) : CompilationResult =
@@ -2149,10 +2261,10 @@ Actual:
                 let m = Regex(pattern, RegexOptions.Multiline).Match(input)
                 if m.Success then
                     m.Index
-                else 
+                else
                     -1
             | MatchStyle.Standard ->
-                input.IndexOf(pattern) 
+                input.IndexOf(pattern)
 
         let private checkOutputInOrderCore matchStyle (category: string) (substrings: string list) (selector: ExecutionOutput -> string) (result: CompilationResult) : CompilationResult =
             match result.RunOutput with
@@ -2289,6 +2401,14 @@ Actual:
         | Some h -> h
         | None -> failwith "Implied signature hash returned 'None' which should not happen"
 
+    let withXmlDoc (cUnit: CompilationUnit) : CompilationUnit =
+        match cUnit with
+        | FS fs ->
+            let outputDir = fs.OutputDirectory |> Option.defaultWith createTemporaryDirectory
+            let xmlPath = Path.Combine(outputDir.FullName, (defaultArg fs.Name "output") + ".xml")
+            cUnit |> withOutputDirectory (Some outputDir) |> withOptions [ $"--doc:{xmlPath}" ]
+        | _ -> failwith "withXmlDoc is only supported for F#"
+
     /// Result type for CLI subprocess execution (runFsiProcess / runFscProcess).
     type ProcessResult = { ExitCode: int; StdOut: string; StdErr: string }
 
@@ -2311,3 +2431,19 @@ Actual:
     /// Run FSC as a subprocess with the given arguments. For CLI-level tests only (missing files, exit codes, etc.).
     let runFscProcess (args: string list) : ProcessResult =
         runToolProcess TestFramework.initialConfig.FSC args
+
+    /// Compile-and-run a compilation unit that depends on a FSharp.Core attribute
+    /// which may not yet be shipped in the SDK's NuGet package.
+    /// When the attribute is present, compiles and runs expecting success.
+    /// When absent, expects compilation failure with error 39 (undefined type).
+    let compileAndRunOrExpectMissingAttribute (fsharpCoreTypeName: string) (cu: CompilationUnit) =
+        if
+            not (
+                isNull (
+                    typeof<RequireQualifiedAccessAttribute>.Assembly.GetType(fsharpCoreTypeName)
+                )
+            )
+        then
+            cu |> compileAndRun |> shouldSucceed |> ignore
+        else
+            cu |> compile |> shouldFail |> withErrorCode 39 |> ignore

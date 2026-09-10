@@ -42,7 +42,7 @@ module CompiledNameAttribute =
     let ``CompiledNameAttribute04_RealInternalSignatureOn_fs`` compilation =
         compilation
         |> getCompilation
-        |> verifyCompilation 
+        |> verifyCompilation
 
     [<Theory; FileInlineData("CompiledNameAttribute05.fs")>]
     let ``CompiledNameAttribute05_fs`` compilation =
@@ -56,3 +56,15 @@ module CompiledNameAttribute =
         |> compile
         |> shouldSucceed
         |> ignore
+
+    [<Theory; FileInlineData("CompiledNameAttribute06.fs")>]
+    let ``CompiledNameAttribute06_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> verifyCompilation
+
+    [<Theory; FileInlineData("CompiledNameAttribute07.fs")>]
+    let ``CompiledNameAttribute07_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> verifyCompilation

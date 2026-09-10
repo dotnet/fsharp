@@ -10,6 +10,14 @@
     <AllowCrossTargeting>true</AllowCrossTargeting>
   </PropertyGroup>
 
+  <!-- MSBuild 18.9+ transitively brings System.Resources.Extensions/System.Text.Json which reference
+       System.ValueTuple 4.0.5.0, conflicting with the .NET Framework 4.7.2 facade (4.0.2.0).
+       Binding redirects resolve this at runtime; suppress the build error under /warnaserror.
+       Harmless on .NET Core targets where MSB3277 does not fire. -->
+  <PropertyGroup>
+    <NoWarn>$(NoWarn);MSB3277</NoWarn>
+  </PropertyGroup>
+
   <!--  The fsc application does not provide a referencable public interface  -->
   <PropertyGroup>
     <NoOptimizationData>true</NoOptimizationData>
@@ -35,7 +43,7 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(FSHARPCORE_USE_PACKAGE)' == 'true'">
-    <PackageReference Include="FSharp.Core" Version="$(FSharpCoreShippedPackageVersionValue)" />
+    <PackageReference Include="FSharp.Core" />
   </ItemGroup>
 
   <ItemGroup>
@@ -45,14 +53,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Build.Framework" Version="$(MicrosoftBuildFrameworkVersion)" />
-    <PackageReference Include="Microsoft.Build.Tasks.Core" Version="$(MicrosoftBuildTasksCoreVersion)" />
-    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="$(MicrosoftBuildUtilitiesCoreVersion)" />
-  </ItemGroup>
-
-  <ItemGroup Condition="'$(TargetFrameworkIdentifier)' != '.NETCoreApp'">
-    <PackageReference Include="System.Memory" Version="$(SystemMemoryVersion)" />
-    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="$(SystemRuntimeCompilerServicesUnsafeVersion)" />
+    <PackageReference Include="Microsoft.Build.Framework" />
+    <PackageReference Include="Microsoft.Build.Tasks.Core" />
+    <PackageReference Include="Microsoft.Build.Utilities.Core" />
   </ItemGroup>
 
 </Project>

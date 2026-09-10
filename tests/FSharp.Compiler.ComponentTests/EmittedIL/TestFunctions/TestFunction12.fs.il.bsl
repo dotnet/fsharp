@@ -17,16 +17,6 @@
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
-.mresource public FSharpSignatureCompressedData.assembly
-{
-  
-  
-}
-.mresource public FSharpOptimizationCompressedData.assembly
-{
-  
-  
-}
 .module assembly.exe
 
 .imagebase {value}
@@ -43,8 +33,7 @@
        extends [runtime]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-  .method public static class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> 
-          assembly(int32 p) cil managed
+  .method public static class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> assembly(int32 p) cil managed
   {
     
     .maxstack  8

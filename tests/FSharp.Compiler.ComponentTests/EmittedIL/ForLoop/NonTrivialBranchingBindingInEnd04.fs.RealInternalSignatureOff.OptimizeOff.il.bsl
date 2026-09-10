@@ -197,24 +197,23 @@
     IL_00b8:  brtrue.s   IL_008a
 
     IL_00ba:  nop
-    IL_00bb:  nop
-    IL_00bc:  call       int32[] assembly::get_r()
-    IL_00c1:  ldc.i4.0
-    IL_00c2:  ldelem.i4
-    IL_00c3:  ldc.i4.3
-    IL_00c4:  bne.un.s   IL_00ca
+    IL_00bb:  call       int32[] assembly::get_r()
+    IL_00c0:  ldc.i4.0
+    IL_00c1:  ldelem.i4
+    IL_00c2:  ldc.i4.3
+    IL_00c3:  bne.un.s   IL_00c9
 
-    IL_00c6:  ldc.i4.0
-    IL_00c7:  nop
-    IL_00c8:  br.s       IL_00cc
+    IL_00c5:  ldc.i4.0
+    IL_00c6:  nop
+    IL_00c7:  br.s       IL_00cb
 
-    IL_00ca:  ldc.i4.1
-    IL_00cb:  nop
-    IL_00cc:  stloc.s    V_12
-    IL_00ce:  ldloc.s    V_12
-    IL_00d0:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.Operators::Exit<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(int32)
-    IL_00d5:  pop
-    IL_00d6:  ret
+    IL_00c9:  ldc.i4.1
+    IL_00ca:  nop
+    IL_00cb:  stloc.s    V_12
+    IL_00cd:  ldloc.s    V_12
+    IL_00cf:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.Operators::Exit<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(int32)
+    IL_00d4:  pop
+    IL_00d5:  ret
   } 
 
 } 

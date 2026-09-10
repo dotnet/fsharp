@@ -5,7 +5,7 @@ namespace FSharp.Compiler
 #if !NO_TYPEPROVIDERS
 
 open System
-open Internal.Utilities.Library 
+open Internal.Utilities.Library
 open FSharp.Core.CompilerServices
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.Text
@@ -23,36 +23,38 @@ type internal TypeProviderError
         errNum: int,
         tpDesignation: string,
         m: range,
-        errors: string list,
+        errors: RichText list,
         typeNameContext: string option,
         methodNameContext: string option
     ) =
 
     inherit Exception()
 
-    new((errNum, msg: string), tpDesignation,m) = 
+    new((errNum, msg: RichText), tpDesignation,m) =
         TypeProviderError(errNum, tpDesignation, m, [msg])
-    
-    new(errNum, tpDesignation, m, messages: seq<string>) =         
+
+    new(errNum, tpDesignation, m, messages: seq<RichText>) =
         TypeProviderError(errNum, tpDesignation, m, List.ofSeq messages, None, None)
 
     member _.Number = errNum
     member _.Range = m
 
-    override _.Message = 
+    member _.RichMessage =
         match errors with
         | [text] -> text
-        | inner -> 
+        | inner ->
             // imitates old-fashioned behavior with merged text
             // usually should not fall into this case (only if someone takes Message directly instead of using Iter)
-            inner            
-            |> String.concat Environment.NewLine
+            inner
+            |> RichText.concatWith (RichText.mkText Environment.NewLine)
 
-    member _.MapText(f, tpDesignation, m) = 
-        let (errNum: int), _ = f ""
+    override this.Message = this.RichMessage.Text
+
+    member _.MapText(f, tpDesignation, m) =
+        let (errNum: int), _ = f RichText.empty
         TypeProviderError(errNum, tpDesignation, m,  (Seq.map (f >> snd) errors))
 
-    member _.WithContext(typeNameContext:string, methodNameContext:string) = 
+    member _.WithContext(typeNameContext:string, methodNameContext:string) =
         TypeProviderError(errNum, tpDesignation, m, errors, Some typeNameContext, Some methodNameContext)
 
     // .Message is just the error, whereas .ContextualErrorMessage has contextual prefix information
@@ -60,17 +62,24 @@ type internal TypeProviderError
     // TPE having type\method name as contextual information
     // without context: Type Provider 'TP' has reported the error: MSG
     // with context: Type Provider 'TP' has reported the error in method M of type T: MSG
-    member this.ContextualErrorMessage= 
+    member this.ContextualErrorRichMessage =
         match typeNameContext, methodNameContext with
         | Some tc, Some mc ->
-            let _,msgWithPrefix = FSComp.SR.etProviderErrorWithContext(tpDesignation, tc, mc, this.Message)
+            let _,msgWithPrefix =
+                FSComp.SR.etProviderErrorWithContext(
+                    RichText.mkText tpDesignation,
+                    RichText.ofQualifiedTypeName tc,
+                    RichText.mkMethod mc,
+                    this.RichMessage)
             msgWithPrefix
         | _ ->
-            let _,msgWithPrefix = FSComp.SR.etProviderError(tpDesignation, this.Message)
+            let _,msgWithPrefix = FSComp.SR.etProviderError(RichText.mkText tpDesignation, this.RichMessage)
             msgWithPrefix
-    
+
+    member this.ContextualErrorMessage = this.ContextualErrorRichMessage.Text
+
     /// provides uniform way to handle plain and composite instances of TypeProviderError
-    member this.Iter f = 
+    member this.Iter f =
         match errors with
         | [_] -> f this
         | errors ->
@@ -79,74 +88,74 @@ type internal TypeProviderError
 
 type TaintedContext = { TypeProvider: ITypeProvider; TypeProviderAssemblyRef: ILScopeRef; Lock: TypeProviderLock }
 
-[<NoEquality>][<NoComparison>] 
+[<NoEquality>][<NoComparison>]
 type internal Tainted<'T> (context: TaintedContext, value: 'T) =
     do
-        match box context.TypeProvider with 
-        | null -> 
+        match box context.TypeProvider with
+        | null ->
             assert false
             failwith "null ITypeProvider in Tainted constructor"
         | _ -> ()
 
-    member _.TypeProviderDesignation = 
+    member _.TypeProviderDesignation =
         !! context.TypeProvider.GetType().FullName
 
-    member _.TypeProviderAssemblyRef = 
+    member _.TypeProviderAssemblyRef =
         context.TypeProviderAssemblyRef
 
     member this.Protect f  (range: range) =
-        try 
+        try
             context.Lock.AcquireLock(fun _ -> f value)
         with
             | :? TypeProviderError -> reraise()
             | :? AggregateException as ae ->
                     let errNum,_ = FSComp.SR.etProviderError("", "")
-                    let messages = [for e in ae.InnerExceptions -> if isNull e.InnerException then e.Message else (e.Message + ": " + e.GetBaseException().Message)]
+                    let messages = [for e in ae.InnerExceptions -> RichText.mkText (if isNull e.InnerException then e.Message else (e.Message + ": " + e.GetBaseException().Message))]
                     raise <| TypeProviderError(errNum, this.TypeProviderDesignation, range, messages)
-            | e -> 
+            | e ->
                     let errNum,_ = FSComp.SR.etProviderError("", "")
-                    let error = if isNull e.InnerException then e.Message else (e.Message + ": " + e.GetBaseException().Message)
+                    let error = RichText.mkText (if isNull e.InnerException then e.Message else (e.Message + ": " + e.GetBaseException().Message))
                     raise <| TypeProviderError((errNum, error), this.TypeProviderDesignation, range)
 
     member _.TypeProvider = Tainted<_>(context, context.TypeProvider)
 
-    member this.PApply(f,range: range) = 
+    member this.PApply(f,range: range) =
         let u = this.Protect f range
         Tainted(context, u)
 
-    member this.PApply2(f,range: range) = 
+    member this.PApply2(f,range: range) =
         let u1,u2 = this.Protect f range
         Tainted(context, u1), Tainted(context, u2)
 
-    member this.PApply3(f,range: range) = 
+    member this.PApply3(f,range: range) =
         let u1,u2,u3 = this.Protect f range
         Tainted(context, u1), Tainted(context, u2), Tainted(context, u3)
 
-    member this.PApply4(f,range: range) = 
+    member this.PApply4(f,range: range) =
         let u1,u2,u3,u4 = this.Protect f range
         Tainted(context, u1), Tainted(context, u2), Tainted(context, u3), Tainted(context, u4)
 
     member this.PApplyNoFailure f = this.PApply (f, range0)
 
-    member this.PApplyWithProvider(f, range: range) = 
+    member this.PApplyWithProvider(f, range: range) =
         let u = this.Protect (fun x -> f (x, context.TypeProvider)) range
         Tainted(context, u)
 
-    member this.PApplyArray(f, methodName, range:range) =        
+    member this.PApplyArray(f, methodName: string, range:range) =
         let a : 'U[] | null = this.Protect f range
-        match a with 
-        | Null -> raise <| TypeProviderError(FSComp.SR.etProviderReturnedNull(methodName), this.TypeProviderDesignation, range)
+        match a with
+        | Null -> raise <| TypeProviderError(FSComp.SR.etProviderReturnedNull(RichText.mkMethod methodName), this.TypeProviderDesignation, range)
         | NonNull a -> a |> Array.map (fun u -> Tainted(context,u))
 
-    member this.PApplyFilteredArray(factory, filter, methodName, range:range) =        
+    member this.PApplyFilteredArray(factory, filter, methodName: string, range:range) =
         let a : 'U[] | null = this.Protect factory range
-        match a with 
-        | Null -> raise <| TypeProviderError(FSComp.SR.etProviderReturnedNull(methodName), this.TypeProviderDesignation, range)
+        match a with
+        | Null -> raise <| TypeProviderError(FSComp.SR.etProviderReturnedNull(RichText.mkMethod methodName), this.TypeProviderDesignation, range)
         | NonNull a -> a |> Array.filter filter |> Array.map (fun u -> Tainted(context,u))
 
-    member this.PApplyOption(f, range: range) =        
+    member this.PApplyOption(f, range: range) =
         let a = this.Protect f range
-        match a with 
+        match a with
         | None ->  None
         | Some x -> Some (Tainted(context, x))
 
@@ -159,7 +168,7 @@ type internal Tainted<'T> (context: TaintedContext, value: 'T) =
 
     static member CreateAll(providerSpecs: (ITypeProvider * ILScopeRef) list) =
         [for tp,nm in providerSpecs do
-             yield Tainted<_>({ TypeProvider=tp; TypeProviderAssemblyRef=nm; Lock=TypeProviderLock() },tp) ] 
+             yield Tainted<_>({ TypeProvider=tp; TypeProviderAssemblyRef=nm; Lock=TypeProviderLock() },tp) ]
 
     member _.OfType<'U> () =
         match box value with
@@ -176,10 +185,10 @@ module internal Tainted =
 
     let Eq (p:Tainted<'T>) (v:'T) = p.PUntaintNoFailure (fun pv -> pv = v)
 
-    let EqTainted (t1:Tainted<'T>) (t2:Tainted<'T>) = 
+    let EqTainted (t1:Tainted<'T>) (t2:Tainted<'T>) =
         t1.PUntaintNoFailure(fun t1 -> t1 === t2.AccessObjectDirectly)
 
     let GetHashCodeTainted (t:Tainted<'T>) = t.PUntaintNoFailure hash
-    
+
 #endif
-    
+

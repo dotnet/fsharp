@@ -241,6 +241,8 @@ function Make-BootstrapBuild() {
 
     # prepare FsLex and Fsyacc and AssemblyCheck
     $dotnetPath = InitializeDotNetCli
+    # Ensure apphosts spawned by this publish see the repo-local runtime even if the caller forgot DOTNET_ROOT.
+    $env:DOTNET_ROOT = $dotnetPath
     $dotnetExe = Join-Path $dotnetPath "dotnet.exe"
 
     # prepare compiler

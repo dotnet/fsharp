@@ -6,12 +6,12 @@ ImplFile
          ([Module], false, NamedModule,
           [NestedModule
              (SynComponentInfo
-                ([], None, [], [A],
+                ([], None, [], Some (LongIdent (SynLongIdent ([A], [], []))),
                  PreXmlDoc ((3,0), FSharp.Compiler.Xml.XmlDocCollector), false,
                  None, (3,0--3,8)), false,
               [NestedModule
                  (SynComponentInfo
-                    ([], None, [], [B],
+                    ([], None, [], Some (LongIdent (SynLongIdent ([B], [], []))),
                      PreXmlDoc ((4,4), FSharp.Compiler.Xml.XmlDocCollector),
                      false, None, (4,4--4,12)), false, [], false, (4,4--4,14),
                   { ModuleKeyword = Some (4,4--4,10)
@@ -26,5 +26,4 @@ ImplFile
         CodeComments = [] }, set []))
 
 (6,4)-(6,5) parse error Unexpected syntax or possible incorrect indentation: this token is offside of context started at position (4:5). Try indenting this further.
-To continue using non-conforming indentation, pass the '--strict-indentation-' flag to the compiler, or set the language version to F# 7.
 (6,4)-(6,5) parse error Incomplete structured construct at or before this point in definition

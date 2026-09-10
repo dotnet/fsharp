@@ -1,5 +1,5 @@
 module Module
 
-try 
+try
 
 let _ = ()

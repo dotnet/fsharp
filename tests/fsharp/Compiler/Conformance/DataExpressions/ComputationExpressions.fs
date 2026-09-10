@@ -11,7 +11,7 @@ module ``ComputationExpressions`` =
     let tmp = 1
 
     type Flags = { includeMergeSourcesOverloads: bool; includeBindReturnExtras: bool }
-    let applicativeLib  (opts: Flags) = 
+    let applicativeLib  (opts: Flags) =
         """
 /// Used for tracking what operations a Trace builder was asked to perform
 [<RequireQualifiedAccess>]
@@ -646,7 +646,8 @@ let _ =
         and! y = Trace 2
     }
     """
-            [|(FSharpDiagnosticSeverity.Error, 10, (8, 5, 8, 6), "Unexpected symbol '}' in expression")|]
+            [|(FSharpDiagnosticSeverity.Error, 10, (8, 5, 8, 6), "Unexpected symbol '}' in expression")
+              (FSharpDiagnosticSeverity.Error, 3885, (6, 9, 6, 13), "'let!' cannot be the final expression in a computation expression. Finish with 'return', 'return!', or a simple expression.")|]
 
     [<Fact>]
     let ``AndBang TraceApplicative conditional return`` () =
@@ -698,7 +699,7 @@ let ceResult =
 check "grwerjkrwejgk42" ceResult.Value 2
     """
 
-    let overloadLib includeInternalExtensions includeExternalExtensions = 
+    let overloadLib includeInternalExtensions includeExternalExtensions =
         """
 open System
 

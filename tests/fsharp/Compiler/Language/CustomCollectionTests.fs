@@ -40,7 +40,7 @@ a[^"2"..^"1"] <- "-1"
 
 if a["2".."1"] <> "2 1 -1" then failwithf "expected 2 1 -1 but got %A" a["2".."1"]           
             """)
- 
+
     [<Fact>]
     let ``Custom collection with Item and GetReverseIndex should support reverse index indexing``() =
         CompilerAssert.CompileExeAndRunWithOptions([| "--langversion:preview" |],
@@ -107,7 +107,7 @@ if a.[^2] <> 12 then failwith "expected 12"
             FSharpDiagnosticSeverity.Error
             39
             (9,7,9,9)
-            "The type 'foo' does not define the field, constructor or member 'GetReverseIndex'."
+            "The type 'foo' does not define a field, constructor, or member named 'GetReverseIndex'."
 
     [<Fact>]
     let ``Custom collection with GetSlice and GetReverseIndex should support reverse index slicing``() =
@@ -128,7 +128,7 @@ let a = foo()
 
 if a[^2..1] <> 13 then failwith "expected 13"
             """)
- 
+
     [<Fact>]
     let ``Custom collection without GetReverseIndex should not support reverse index slicing``() =
         CompilerAssert.TypeCheckSingleErrorWithOptions [| "--langversion:preview" |]
@@ -148,4 +148,4 @@ if a[^2..1] <> 13 then failwith "expected 13"
             FSharpDiagnosticSeverity.Error
             39
             (12,6,12,8)
-            "The type 'foo' does not define the field, constructor or member 'GetReverseIndex'."
+            "The type 'foo' does not define a field, constructor, or member named 'GetReverseIndex'."

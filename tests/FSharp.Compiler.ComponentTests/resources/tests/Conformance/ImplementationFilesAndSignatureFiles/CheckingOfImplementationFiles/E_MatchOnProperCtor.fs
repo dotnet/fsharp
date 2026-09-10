@@ -1,4 +1,4 @@
-// #Conformance #SignatureFiles  
+// #Conformance #SignatureFiles
 
 // Regression test for bug 6465
 namespace MyNamespace

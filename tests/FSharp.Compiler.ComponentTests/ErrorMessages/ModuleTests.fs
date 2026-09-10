@@ -23,7 +23,7 @@ module Modules =
         |> shouldFail
         |> withSingleDiagnostic (Error 536, Line 1, Col 1, Line 1, Col 7,
                                  "The 'Private' accessibility attribute is not allowed on module abbreviation. Module abbreviations are always private.")
-                                 
+
     [<Fact>]
     let ``Internal Module Abbreviation``() =
         FSharp "module internal L1 = List"
@@ -46,7 +46,7 @@ module Modules =
         |> shouldFail
         |> withSingleDiagnostic (Error 535, Line 1, Col 1, Line 1, Col 32,
                                  "Ignoring attributes on module abbreviation")
-                                 
+
     [<Fact>]
     let ``Right Attribute Module Abbreviation``() =
         FSharp """module [<Experimental "Hello">] L1 = List"""
@@ -54,7 +54,7 @@ module Modules =
         |> shouldFail
         |> withSingleDiagnostic (Error 535, Line 1, Col 1, Line 1, Col 35,
                                  "Ignoring attributes on module abbreviation")
-                                 
+
     [<Fact>]
     let ``Right Attribute Module Abbreviation with version 5_0 (compile)``() =
         FSharp """module [<Experimental "Hello">] L1 = List"""
@@ -65,7 +65,7 @@ module Modules =
             Error 535, Line 1, Col 1, Line 1, Col 35, "Ignoring attributes on module abbreviation"
             Error 222, Line 1, Col 1, Line 1, Col 42, "Files in libraries or multiple-file applications must begin with a namespace or module declaration, e.g. 'namespace SomeNamespace.SubNamespace' or 'module SomeNamespace.SomeModule'. Only the last source file of an application may omit such a declaration."
         ]
-                                 
+
     [<Fact>]
     let ``Attribute Module Abbreviation``() =
         FSharp """[<System.Obsolete "Hi">] module [<Experimental "Hello">] internal L1 = List"""
@@ -73,7 +73,7 @@ module Modules =
         |> shouldFail
         |> withSingleDiagnostic (Error 535, Line 1, Col 1, Line 1, Col 32,
                                  "Ignoring attributes on module abbreviation")
-                                 
+
     [<Fact>]
     let ``Attributes applied successfully``() =
         Fsx """
@@ -167,7 +167,7 @@ match typeof<L2>.DeclaringType.GetCustomAttributes false with
          """
         |> compileExeAndRun
         |> shouldSucceed
-    
+
     [<Fact>]
     let ``Offside rule works for attributes inside module declarations``() =
         Fsx """
@@ -192,3 +192,124 @@ AutoOpen>] L1 = do ()
         |> withDiagnostics [
             Error 10, Line 3, Col 1, Line 3, Col 9, "Unexpected start of structured construct in attribute list"
         ]
+
+    [<Fact>]
+    let ``Recursive module with duplicate sibling modules emits FS0037`` () =
+        FSharp """
+module rec A
+
+module Foobar = let x = 1
+module Foobar = let y = 2
+"""
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 37
+        |> withDiagnosticMessageMatches "Foobar"
+        |> ignore
+
+    [<Fact>]
+    let ``Recursive module with duplicate sibling modules still analyzes second module body`` () =
+        let results =
+            FSharp """
+module rec A
+
+module Foobar = let x = 1
+module Foobar = let y = 2
+"""
+            |> typecheckResults
+
+        // The duplicate definition error must still be reported.
+        results.Diagnostics
+        |> Array.exists (fun d -> d.ErrorNumber = 37)
+        |> fun found -> Assert.True(found, "Expected FS0037 duplicate definition error")
+
+        // Despite the duplicate, the body of the second module must still be analyzed
+        // and its binding 'y' reported to the symbol sink (so IDE features keep working).
+        let yUses =
+            results.GetAllUsesOfAllSymbolsInFile()
+            |> Seq.filter (fun su -> su.Symbol.DisplayName = "y")
+            |> Seq.toArray
+
+        Assert.True(yUses.Length >= 1, $"Expected 'y' from the second module to be reported to the sink, got {yUses.Length}")
+
+    [<Fact>]
+    let ``Recursive namespace with duplicate sibling modules emits FS0037`` () =
+        FSharp """
+namespace rec N
+
+module Foobar = let x = 1
+module Foobar = let y = 2
+"""
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 37
+        |> withDiagnosticMessageMatches "Foobar"
+        |> ignore
+
+    [<Fact>]
+    let ``Recursive module nested cousins with same name compile`` () =
+        FSharp """
+module rec Outer
+
+module A =
+    module Inner = let x = 1
+
+module B =
+    module Inner = let y = 2
+"""
+        |> typecheck
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Recursive module nested siblings with duplicate name emit FS0037`` () =
+        FSharp """
+module rec Outer
+
+module Inner =
+    module Dup = let x = 1
+    module Dup = let y = 2
+"""
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 37
+        |> withDiagnosticMessageMatches "Dup"
+        |> ignore
+
+    [<Fact>]
+    let ``Non-recursive module with duplicate sibling modules still emits FS0037`` () =
+        FSharp """
+module A
+
+module Foobar = let x = 1
+module Foobar = let y = 2
+"""
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 37
+        |> withDiagnosticMessageMatches "Foobar"
+        |> ignore
+
+    [<Fact>]
+    let ``Single file with two namespace fragments and different modules compiles`` () =
+        FSharp """
+namespace N
+
+module M = let x = 1
+
+namespace N
+
+module M2 = let y = 2
+"""
+        |> typecheck
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Recursive module siblings differing only in case compile`` () =
+        FSharp """
+module rec A
+
+module Foobar = let x = 1
+module FooBar = let y = 2
+"""
+        |> typecheck
+        |> shouldSucceed

@@ -154,9 +154,8 @@ let ListExpressionSteppingTest4 () =
   .maxstack  4
   .locals init (valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32> V_0,
            class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> V_1,
-           class [runtime]System.Collections.Generic.IEnumerable`1<int32> V_2,
-           class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> V_3,
-           int32 V_4)
+           class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> V_2,
+           int32 V_3)
   IL_0000:  nop
   IL_0001:  ldc.i4.0
   IL_0002:  call       class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<!!0> [FSharp.Core]Microsoft.FSharp.Core.Operators::Ref<int32>(!!0)
@@ -166,8 +165,8 @@ let ListExpressionSteppingTest4 () =
     IL_0008:  nop
     IL_0009:  ldc.i4.0
     IL_000a:  call       class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<!!0> [FSharp.Core]Microsoft.FSharp.Core.Operators::Ref<int32>(!!0)
-    IL_000f:  stloc.3
-    IL_0010:  ldloc.3
+    IL_000f:  stloc.2
+    IL_0010:  ldloc.2
     IL_0011:  call       void [FSharp.Core]Microsoft.FSharp.Core.Operators::Increment(class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>)
     IL_0016:  nop
     IL_0017:  ldloca.s   V_0
@@ -177,36 +176,32 @@ let ListExpressionSteppingTest4 () =
     IL_0024:  nop
     IL_0025:  ldloc.1
     IL_0026:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.Operators::op_Dereference<int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<!!0>)
-    IL_002b:  ldloc.3
+    IL_002b:  ldloc.2
     IL_002c:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.Operators::op_Dereference<int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<!!0>)
     IL_0031:  add
-    IL_0032:  stloc.s    V_4
-    IL_0034:  ldloca.s   V_0
-    IL_0036:  ldloc.s    V_4
-    IL_0038:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Add(!0)
-    IL_003d:  nop
-    IL_003e:  ldnull
-    IL_003f:  stloc.2
-    IL_0040:  leave.s    IL_005b
+    IL_0032:  stloc.3
+    IL_0033:  ldloca.s   V_0
+    IL_0035:  ldloc.3
+    IL_0036:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Add(!0)
+    IL_003b:  nop
+    IL_003c:  leave.s    IL_0057
     
   }  
   finally
   {
-    IL_0042:  nop
-    IL_0043:  ldloc.1
-    IL_0044:  call       void [FSharp.Core]Microsoft.FSharp.Core.Operators::Increment(class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>)
-    IL_0049:  nop
-    IL_004a:  ldstr      "done"
-    IL_004f:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
-    IL_0054:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
-    IL_0059:  pop
-    IL_005a:  endfinally
+    IL_003e:  nop
+    IL_003f:  ldloc.1
+    IL_0040:  call       void [FSharp.Core]Microsoft.FSharp.Core.Operators::Increment(class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32>)
+    IL_0045:  nop
+    IL_0046:  ldstr      "done"
+    IL_004b:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
+    IL_0050:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
+    IL_0055:  pop
+    IL_0056:  endfinally
   }  
-  IL_005b:  ldloc.2
-  IL_005c:  pop
-  IL_005d:  ldloca.s   V_0
-  IL_005f:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Close()
-  IL_0064:  ret
+  IL_0057:  ldloca.s   V_0
+  IL_0059:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Close()
+  IL_005e:  ret
 } 
     
         """
@@ -235,41 +230,47 @@ let ListExpressionSteppingTest5 () =
     .locals init (valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32> V_0,
              uint64 V_1,
              int32 V_2,
-             int32 V_3)
+             int32 V_3,
+             valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>& V_4,
+             valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>& V_5)
     IL_0000:  ldc.i4.0
     IL_0001:  conv.i8
     IL_0002:  stloc.1
     IL_0003:  ldc.i4.1
     IL_0004:  stloc.2
-    IL_0005:  br.s       IL_002b
+    IL_0005:  br.s       IL_0033
 
-    IL_0007:  ldloca.s   V_0
-    IL_0009:  ldloc.2
-    IL_000a:  stloc.3
-    IL_000b:  ldstr      "hello"
-    IL_0010:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
-    IL_0015:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
-    IL_001a:  pop
-    IL_001b:  ldloc.3
-    IL_001c:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Add(!0)
-    IL_0021:  nop
-    IL_0022:  ldloc.2
-    IL_0023:  ldc.i4.1
-    IL_0024:  add
-    IL_0025:  stloc.2
-    IL_0026:  ldloc.1
-    IL_0027:  ldc.i4.1
-    IL_0028:  conv.i8
-    IL_0029:  add
-    IL_002a:  stloc.1
-    IL_002b:  ldloc.1
-    IL_002c:  ldc.i4.4
-    IL_002d:  conv.i8
-    IL_002e:  blt.un.s   IL_0007
+    IL_0007:  ldloc.2
+    IL_0008:  stloc.3
+    IL_0009:  ldloca.s   V_0
+    IL_000b:  stloc.s    V_4
+    IL_000d:  ldloc.s    V_4
+    IL_000f:  ldstr      "hello"
+    IL_0014:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
+    IL_0019:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
+    IL_001e:  pop
+    IL_001f:  stloc.s    V_5
+    IL_0021:  ldloc.s    V_5
+    IL_0023:  ldloc.3
+    IL_0024:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Add(!0)
+    IL_0029:  nop
+    IL_002a:  ldloc.2
+    IL_002b:  ldc.i4.1
+    IL_002c:  add
+    IL_002d:  stloc.2
+    IL_002e:  ldloc.1
+    IL_002f:  ldc.i4.1
+    IL_0030:  conv.i8
+    IL_0031:  add
+    IL_0032:  stloc.1
+    IL_0033:  ldloc.1
+    IL_0034:  ldc.i4.4
+    IL_0035:  conv.i8
+    IL_0036:  blt.un.s   IL_0007
 
-    IL_0030:  ldloca.s   V_0
-    IL_0032:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Close()
-    IL_0037:  ret
+    IL_0038:  ldloca.s   V_0
+    IL_003a:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Close()
+    IL_003f:  ret
   } 
 
 } 
@@ -302,9 +303,8 @@ let ListExpressionSteppingTest6 () =
 .maxstack  5
     .locals init (valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32> V_0,
      class [runtime]System.Collections.Generic.IEnumerator`1<int32> V_1,
-     class [runtime]System.Collections.Generic.IEnumerable`1<int32> V_2,
-     int32 V_3,
-     class [runtime]System.IDisposable V_4)
+     int32 V_2,
+     class [runtime]System.IDisposable V_3)
     IL_0000:  nop
     IL_0001:  ldc.i4.1
     IL_0002:  ldc.i4.1
@@ -320,9 +320,9 @@ let ListExpressionSteppingTest6 () =
 
       IL_0011:  ldloc.1
       IL_0012:  callvirt   instance !0 class [runtime]System.Collections.Generic.IEnumerator`1<int32>::get_Current()
-      IL_0017:  stloc.3
+      IL_0017:  stloc.2
       IL_0018:  nop
-      IL_0019:  ldloc.3
+      IL_0019:  ldloc.2
       IL_001a:  ldc.i4.1
       IL_001b:  sub
       IL_001c:  switch     ( 
@@ -335,7 +335,7 @@ let ListExpressionSteppingTest6 () =
       IL_0035:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
       IL_003a:  pop
       IL_003b:  ldloca.s   V_0
-      IL_003d:  ldloc.3
+      IL_003d:  ldloc.2
       IL_003e:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Add(!0)
       IL_0043:  nop
       IL_0044:  nop
@@ -346,14 +346,14 @@ let ListExpressionSteppingTest6 () =
       IL_0051:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
       IL_0056:  pop
       IL_0057:  ldloca.s   V_0
-      IL_0059:  ldloc.3
+      IL_0059:  ldloc.2
       IL_005a:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Add(!0)
       IL_005f:  nop
       IL_0060:  nop
       IL_0061:  br.s       IL_006d
 
       IL_0063:  ldloca.s   V_0
-      IL_0065:  ldloc.3
+      IL_0065:  ldloc.2
       IL_0066:  call       instance void valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Add(!0)
       IL_006b:  nop
       IL_006c:  nop
@@ -361,29 +361,25 @@ let ListExpressionSteppingTest6 () =
       IL_006e:  callvirt   instance bool [runtime]System.Collections.IEnumerator::MoveNext()
       IL_0073:  brtrue.s   IL_0011
 
-      IL_0075:  ldnull
-      IL_0076:  stloc.2
-      IL_0077:  leave.s    IL_008e
+      IL_0075:  leave.s    IL_0089
 
     }  
     finally
     {
-      IL_0079:  ldloc.1
-      IL_007a:  isinst     [runtime]System.IDisposable
-      IL_007f:  stloc.s    V_4
-      IL_0081:  ldloc.s    V_4
-      IL_0083:  brfalse.s  IL_008d
+      IL_0077:  ldloc.1
+      IL_0078:  isinst     [runtime]System.IDisposable
+      IL_007d:  stloc.3
+      IL_007e:  ldloc.3
+      IL_007f:  brfalse.s  IL_0088
 
-      IL_0085:  ldloc.s    V_4
-      IL_0087:  callvirt   instance void [runtime]System.IDisposable::Dispose()
-      IL_008c:  endfinally
-      IL_008d:  endfinally
+      IL_0081:  ldloc.3
+      IL_0082:  callvirt   instance void [runtime]System.IDisposable::Dispose()
+      IL_0087:  endfinally
+      IL_0088:  endfinally
     }  
-    IL_008e:  ldloc.2
-    IL_008f:  pop
-    IL_0090:  ldloca.s   V_0
-    IL_0092:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Close()
-    IL_0097:  ret
+    IL_0089:  ldloca.s   V_0
+    IL_008b:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.ListCollector`1<int32>::Close()
+    IL_0090:  ret
 } 
         """
             ]))

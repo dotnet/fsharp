@@ -431,14 +431,15 @@ New features must be gated behind language version checks. Breaking changes requ
 
 ## Review Workflow
 
-Execute review in five waves, each building on the previous.
+Execute review in six waves, each building on the previous.
 
-### Wave 0: Orientation
+### Wave 0: Orientation & Dimension Dispatch
 
 1. Read the PR title, description, and linked issues.
-2. Identify which dimensions are relevant based on files changed.
+2. Identify which dimensions are relevant based on files changed — use the `reviewing-compiler-prs` skill dimension table.
 3. Use the hotspot table below to prioritize dimensions.
 4. Check if existing instructions files apply (`.github/instructions/`).
+5. **Dispatch independent subagents** — for each selected dimension, launch a separate background agent (via the task tool) to assess that dimension in parallel. Each subagent receives: the dimension's CHECK rules, the PR diff, and the file paths it should focus on. Collect results before proceeding to consolidation.
 
 ### Wave 1: Structural Scan
 
@@ -472,6 +473,52 @@ Execute review in five waves, each building on the previous.
 2. Verify naming consistency and F# idiom adherence.
 3. Verify build and packaging correctness.
 4. Confirm all test baselines are updated and explained.
+
+### Wave 5: Deliver Review as Inline Comments
+
+**This wave is mandatory.** Analysis without posting is worthless — the review MUST appear on the PR as inline comments anchored to the exact file and line. A prose review body is the failure this wave exists to prevent: the author wrote the diff, so narrating it back is noise. Every review body and every comment begins with the robot+detective disclosure `🤖🕵️`.
+
+1. **Deduplicate first.**
+   ```bash
+   gh api repos/{owner}/{repo}/pulls/{number}/reviews --jq 'length'
+   ```
+   If reviews from automated accounts already exist, skip posting and apply the label only.
+
+2. **Findings exist → one review, inline comments only.** Every finding — *including minor and "nice to have" ones* — is its own inline comment anchored to a file+line, so each becomes an independent, resolvable thread. Never collect findings into the body.
+   ```bash
+   gh api repos/{owner}/{repo}/pulls/{number}/reviews \
+     --method POST \
+     --field event=COMMENT \
+     --field 'body=🤖🕵️ AI review — verify independently.' \
+     --field 'comments=[
+      {"path":"src/Compiler/CodeGen/IlxGen.fs","line":1234,"body":"🤖🕵️ Type abbreviation slips past the match — wrong branch taken.\n```fsharp\ntype Alias = int\nlet f (x: Alias) = ()  // reaches this case, mishandled\n```"}
+     ]'
+   ```
+   - Review **`body` = one short line**, the `🤖🕵️` disclosure. Never a summary, never a finding list.
+   - `path`: file path from the diff. `line`: line in the **new** file (right side of diff); use `start_line`+`line` for a range.
+   - Comment body: `🤖🕵️` + one fragment naming the **consequence** (what breaks), then a fenced **user-code** sample — the input/usage that triggers it, or the fix. Show how the problem looks in *user* code; do not restate the product diff.
+   - **Validated, not guessed.** If you have not run it and seen the result, drop the finding. "Would allocate" / "could box" / "may cancel" without a repro → drop.
+   - At most ~6–10 comments, ranked Behavioral > Quality > Nitpick.
+
+3. **No significant issues → approve.** Body is the disclosure plus, optionally, a collapsed list of what was covered — the ONE permitted multi-line body:
+   ```bash
+   gh pr review {number} --repo {owner}/{repo} --approve \
+     --body $'🤖🕵️ LGTM ✅\n\n<details>\n<summary>Dimensions covered (expand)</summary>\n\n- IL emission\n- Binary compatibility\n- Concurrency\n</details>'
+   ```
+   The `<details>` block is a bare list of the dimensions/subagents that ran — no prose, no per-dimension write-up.
+
+4. **Apply the label and request human review:**
+   ```bash
+   gh pr edit {number} --repo {owner}/{repo} --add-label AI-reviewed --add-reviewer T-Gro
+   ```
+
+**Delivery rules:**
+- Every review body and every inline comment begins with `🤖🕵️`. Non-negotiable — readers must know this is AI-generated.
+- The review **body** is only ever: the one-line `🤖🕵️` disclosure (findings present), or `🤖🕵️ LGTM ✅` + the optional collapsed dimensions list (no findings). Anything else in the body — a summary, a numbered list of notes, praise, "two tiny things" — is a bug.
+- Every finding is an inline comment anchored to a specific file+line from the diff. No exception for "minor" or "nice" notes: if it is worth saying, anchor it.
+- Each comment carries a concrete **user-code** sample and describes **validated** behavior, not a guess.
+- **Banned in any body or comment:** prose summary, restating what the PR does, `**[Dimension]**`/`file:LINE` as a text header in the body, hedge/filler ("consider", "might want to", "non-blocking nit", "for consistency"), and any finding lacking a file+line or a concrete code sample.
+- Never post duplicate content if reviews already exist on the PR.
 
 ## Folder Hotspot Mapping
 

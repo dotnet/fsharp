@@ -35,7 +35,7 @@ jobs:
     # If not, create a new comment
     - name: Create comment
       if: steps.fc.outputs.comment-id == '' && failure()
-      uses: actions/github-script@v6
+      uses: actions/github-script@v7
       with:
         github-token: ${{ github.token }}
         script: |
@@ -50,7 +50,7 @@ jobs:
     # If yes, update the comment
     - name: Update comment
       if: steps.fc.outputs.comment-id != '' && failure()
-      uses: actions/github-script@v6
+      uses: actions/github-script@v7
       with:
         github-token: ${{ github.token }}
         script: |
@@ -65,7 +65,7 @@ jobs:
     # If comment exists, but we are no longer in maintenance mode, delete the comment.
     - name: Delete comment
       if: steps.fc.outputs.comment-id != '' && success()
-      uses: actions/github-script@v6
+      uses: actions/github-script@v7
       with:
         github-token: ${{ github.token }}
         script: |

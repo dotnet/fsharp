@@ -468,7 +468,7 @@ module internal XmlDocumentation =
         let usageCollector: ITaggedTextCollector =
             TextSanitizingCollector(usage.Add, lineLimit = lineLimit)
 
-        let ProcessGenericParameters (tps: TaggedText[] list) =
+        let ProcessGenericParameters (tps: RichText list) =
             if not tps.IsEmpty then
                 AppendHardLine typeParameterMapCollector
                 AppendOnNewLine typeParameterMapCollector (SR.GenericParametersHeader())
@@ -476,7 +476,7 @@ module internal XmlDocumentation =
                 for tp in tps do
                     AppendHardLine typeParameterMapCollector
                     typeParameterMapCollector.Add(tagSpace "    ")
-                    tp |> Array.iter typeParameterMapCollector.Add
+                    tp.Parts |> Array.iter typeParameterMapCollector.Add
 
         let collectDocumentation () =
             [ documentation; typeParameterMap; exceptions; usage ]
@@ -489,7 +489,7 @@ module internal XmlDocumentation =
         match dataTipElement with
         | ToolTipElement.Group overloads when not overloads.IsEmpty ->
             overloads[.. overLoadsLimit - 1]
-            |> List.map (fun item -> item.MainDescription)
+            |> List.map (fun item -> item.MainDescription.Parts)
             |> List.intersperse [| lineBreak |]
             |> Seq.concat
             |> Seq.iter textCollector.Add
@@ -501,9 +501,9 @@ module internal XmlDocumentation =
 
             item0.Remarks
             |> Option.iter (fun r ->
-                if TaggedText.toString r <> "" then
+                if r.Text <> "" then
                     AppendHardLine usageCollector
-                    r |> Seq.iter usageCollector.Add)
+                    r.Parts |> Seq.iter usageCollector.Add)
 
             AppendXmlComment(documentationProvider, xmlCollector, exnCollector, item0.XmlDoc, true, false, showRemarks, item0.ParamName)
 
@@ -552,7 +552,7 @@ module internal XmlDocumentation =
                 AddSeparator textCollector
                 AddSeparator xmlCollector
 
-        let ProcessGenericParameters (tps: TaggedText[] list) =
+        let ProcessGenericParameters (tps: RichText list) =
             if not tps.IsEmpty then
                 AppendHardLine typeParameterMapCollector
                 AppendOnNewLine typeParameterMapCollector (SR.GenericParametersHeader())
@@ -560,7 +560,7 @@ module internal XmlDocumentation =
                 for tp in tps do
                     AppendHardLine typeParameterMapCollector
                     typeParameterMapCollector.Add(tagSpace "    ")
-                    tp |> Array.iter typeParameterMapCollector.Add
+                    tp.Parts |> Array.iter typeParameterMapCollector.Add
 
         let Process add (dataTipElement: ToolTipElement) =
 
@@ -576,11 +576,11 @@ module internal XmlDocumentation =
 
                     if showText then
                         let AppendOverload (item: ToolTipElementData) =
-                            if TaggedText.toString item.MainDescription <> "" then
+                            if item.MainDescription.Text <> "" then
                                 if not textCollector.IsEmpty then
                                     AppendHardLine textCollector
 
-                                item.MainDescription |> Seq.iter textCollector.Add
+                                item.MainDescription.Parts |> Seq.iter textCollector.Add
 
                         AppendOverload(overloads.[0])
 
@@ -604,9 +604,9 @@ module internal XmlDocumentation =
 
                     item0.Remarks
                     |> Option.iter (fun r ->
-                        if TaggedText.toString r <> "" then
+                        if r.Text <> "" then
                             AppendHardLine usageCollector
-                            r |> Seq.iter usageCollector.Add)
+                            r.Parts |> Seq.iter usageCollector.Add)
 
                     AppendXmlComment(
                         documentationProvider,

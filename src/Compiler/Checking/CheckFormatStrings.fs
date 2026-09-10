@@ -18,7 +18,8 @@ open FSharp.Compiler.TcGlobals
 type FormatItem = Simple of TType | FuncAndVal
 
 let copyAndFixupFormatTypar g m tp =
-    let _,_,tinst = FreshenAndFixupTypars g m TyparRigidity.Flexible [] [] [tp]
+    // traitCtxtNone: format string typars — unrelated to SRTP member constraints (audited for RFC FS-1043)
+    let _,_,tinst = FreshenAndFixupTypars g traitCtxtNone m TyparRigidity.Flexible [] [] [tp]
     List.head tinst
 
 let lowestDefaultPriority = 0 (* See comment on TyparConstraint.DefaultsTo *)
@@ -36,6 +37,9 @@ let mkFlexibleDecimalFormatTypar (g: TcGlobals) m =
 
 let mkFlexibleFloatFormatTypar (g: TcGlobals) m =
     mkFlexibleFormatTypar g m [ g.float_ty; g.float32_ty; g.decimal_ty ] g.float_ty
+
+let stringFormatTy (g: TcGlobals) =
+    if g.checkNullness && g.langFeatureNullness then g.string_ty_ambivalent else g.string_ty
 
 type FormatInfoRegister =
   { mutable leftJustify    : bool
@@ -241,8 +245,6 @@ let parseFormatStringInternal
     // there are no accurate intra-string ranges available for exact error message locations within the string.
     // The 'm' range passed as an input is however accurate and covers the whole string.
     //
-    let escapeFormatStringEnabled = g.langVersion.SupportsFeature Features.LanguageFeature.EscapeDotnetFormattableStrings
-
     let fmt, fragments, delimLen =
         match context with
         | Some context when fragRanges.Length > 0 ->
@@ -261,7 +263,7 @@ let parseFormatStringInternal
         | _ ->
             // Don't muck with the fmt when there is no source code context to go get the original
             // source code (i.e. when compiling or background checking)
-            (if escapeFormatStringEnabled then escapeDotnetFormatString fmt else fmt), [ (0, 1, m) ], 1
+            escapeDotnetFormatString fmt, [ (0, 1, m) ], 1
 
     let len = fmt.Length
 
@@ -396,7 +398,6 @@ let parseFormatStringInternal
             let ch = fmt[i]
             match ch with
             | 'd' | 'i' | 'u' | 'B' | 'o' | 'x' | 'X' ->
-                if ch = 'B' then checkLanguageFeatureError g.langVersion Features.LanguageFeature.PrintfBinaryFormat m
                 if info.precision then failwith (FSComp.SR.forFormatDoesntSupportPrecision(ch.ToString()))
                 collectSpecifierLocation fragLine fragCol 1
                 let i = skipPossibleInterpolationHole (i+1)
@@ -448,8 +449,7 @@ let parseFormatStringInternal
                 checkOtherFlags ch
                 collectSpecifierLocation fragLine fragCol 1
                 let i = skipPossibleInterpolationHole (i+1)
-                let stringTy = if g.checkNullness && g.langFeatureNullness then g.string_ty_ambivalent else g.string_ty
-                parseLoop ((posi, stringTy) :: acc) (i, fragLine, fragCol+1) fragments
+                parseLoop ((posi, stringFormatTy g) :: acc) (i, fragLine, fragCol+1) fragments
 
             | 'O' ->
                 checkOtherFlags ch
@@ -459,8 +459,7 @@ let parseFormatStringInternal
 
             // residue of hole "...{n}..." in interpolated strings become %P(...)
             | 'P' when isInterpolated ->
-                let code, message = FSComp.SR.alwaysUseTypedStringInterpolation()
-                warning(DiagnosticWithText(code, message, m))
+                warning(Error(FSComp.SR.alwaysUseTypedStringInterpolation(), m))
                 checkOtherFlags ch
                 let i = requireAndSkipInterpolationHoleFormat (i+1)
                 // Note, the fragCol doesn't advance at all as these are magically inserted.
@@ -498,7 +497,7 @@ let parseFormatStringInternal
             | '%' ->
                 // This allows for things like `printf "%-4.2%"` to compile and print just a `%`
                 // For now we are adding a warning, but keeping this behavior.
-                warning(DiagnosticWithText(3376, FSComp.SR.forBadFormatSpecifierGeneral("%"), m))
+                warning(Error((3376, RichText.mkText (FSComp.SR.forBadFormatSpecifierGeneral("%"))), m))
                 collectSpecifierLocation fragLine fragCol 0
                 appendToDotnetFormatString "%"
                 parseLoop acc (i+1, fragLine, fragCol+1) fragments

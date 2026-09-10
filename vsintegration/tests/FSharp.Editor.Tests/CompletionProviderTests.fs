@@ -20,7 +20,7 @@ module CompletionProviderTests =
     let filePath = "C:\\test.fs"
 
     let mkGetInfo documentId =
-        fun () -> documentId, filePath, [], (Some "preview"), None
+        fun () -> documentId, filePath, [], (Some "preview")
 
     let formatCompletions (completions: string seq) =
         "\n\t" + String.Join("\n\t", completions)
@@ -145,16 +145,7 @@ module CompletionProviderTests =
         let sourceText = SourceText.From(fileContents)
 
         let resultSpan =
-            CompletionUtils.getDefaultCompletionListSpan (
-                sourceText,
-                caretPosition,
-                documentId,
-                filePath,
-                [],
-                None,
-                None,
-                CancellationToken.None
-            )
+            CompletionUtils.getDefaultCompletionListSpan (sourceText, caretPosition, documentId, filePath, [], None, CancellationToken.None)
 
         Assert.Equal(expected, sourceText.ToString(resultSpan))
 
@@ -1936,11 +1927,11 @@ let _ =
         let fileContents =
             """
 type G<'a> () =
-    override _.
+    override _.g
 
     override x.ToString () = ""
 
-[<AbstractClass]
+[<AbstractClass>]
 type A () =
     abstract member A1: unit -> unit
     abstract member A1: string -> unit
@@ -1962,7 +1953,7 @@ type C () =
     override A1 s = ()
 """
 
-        VerifyCompletionListExactly(fileContents, "override _.", [ "Equals (obj: obj): bool"; "Finalize (): unit"; "GetHashCode (): int" ])
+        VerifyCompletionListExactly(fileContents, "override _.g", [ "Equals (obj: obj): bool"; "Finalize (): unit"; "GetHashCode (): int" ])
 
         VerifyCompletionListExactly(
             fileContents,
@@ -2111,7 +2102,7 @@ match { A = 1; B = 2 } with
 | { f = () }
 """
 
-        VerifyCompletionList(fileContents, "| { f = ()", [ "A"; "B"; "C"; "D" ], [])
+        VerifyCompletionList(fileContents, "| { f = ()", [ "A"; "B" ], [ "C"; "D" ])
 
     [<Fact>]
     let ``issue #16260 [TO-BE-IMPROVED] operators are fumbling for now`` () =

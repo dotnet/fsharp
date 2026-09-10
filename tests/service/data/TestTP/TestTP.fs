@@ -19,15 +19,15 @@ module Helper =
     let doNothingGenericWithTypeConstraint(x: 'T when 'T :> _ seq) = ()
 
     let mutable moduleValue = 0
-    
+
     type I =
         abstract DoNothing: unit -> unit
-    
+
     type B() =
         abstract VirtualDoNothing: unit -> unit
-        default this.VirtualDoNothing() = () 
+        default this.VirtualDoNothing() = ()
 
-    type C() = 
+    type C() =
         inherit B()
         let mutable p = 0
         static member DoNothing() = ()
@@ -52,10 +52,10 @@ module Helper =
         member val AutoProperty = 0 with get, set
         static member val StaticAutoProperty = 0 with get, set
 
-        interface I with 
+        interface I with
             member this.DoNothing() = ()
 
-    type G<'U>() = 
+    type G<'U>() =
         static member DoNothing() = ()
         static member DoNothingOneArg(x:int) = ()
         static member DoNothingTwoArg(c:C, x:int) = ()
@@ -202,7 +202,7 @@ type BasicProvider (config : TypeProviderConfig) as this =
 
         // These do not seem to compile correctly when used in provided expressions:
         //Helper.G<int>().InstanceDoNothingGeneric(3)
-                                                         
+
         let someMethod = ProvidedMethod("GenericClassDoNothingOneArg", [], typeof<unit>,
                             invokeCode = fun args -> <@@ Helper.G<int>.DoNothingOneArg(3) @@>)
         myType.AddMember(someMethod)
@@ -285,7 +285,7 @@ type BasicProvider (config : TypeProviderConfig) as this =
                             invokeCode = fun args -> <@@ Helper.C.StaticAutoProperty <- 1; Helper.C.StaticAutoProperty @@>)
         myType.AddMember(someMethod)
 
-        [myType]  
+        [myType]
 
     do
         this.AddNamespace(ns, createTypes())
@@ -307,7 +307,7 @@ type BasicGenerativeProvider (config : TypeProviderConfig) as this =
         let ctor2 = ProvidedConstructor([ProvidedParameter("InnerState", typeof<string>)], invokeCode = fun args -> <@@ (%%(args[1]):string) :> obj @@>)
         myType.AddMember(ctor2)
 
-        for i in 1 .. count do 
+        for i in 1 .. count do
             let prop = ProvidedProperty("Property" + string i, typeof<int>, getterCode = fun args -> <@@ i @@>)
             myType.AddMember(prop)
 
@@ -317,7 +317,7 @@ type BasicGenerativeProvider (config : TypeProviderConfig) as this =
 
         myType
 
-    let myParamType = 
+    let myParamType =
         let t = ProvidedTypeDefinition(asm, ns, "GenerativeProvider", Some typeof<obj>, isErased=false)
         t.DefineStaticParameters( [ProvidedStaticParameter("Count", typeof<int>)], fun typeName args -> createType typeName (unbox<int> args[0]))
         t

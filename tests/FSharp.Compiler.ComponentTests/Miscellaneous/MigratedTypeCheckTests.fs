@@ -3,8 +3,8 @@ module Miscellaneous.FsharpSuiteMigrated_TypeCheckTests
 
 open Xunit
 open FSharp.Test
-open FSharp.Test.ScriptHelpers 
-open Miscellaneous.FsharpSuiteMigrated.TestFrameworkAdapter  
+open FSharp.Test.ScriptHelpers
+open Miscellaneous.FsharpSuiteMigrated.TestFrameworkAdapter
 
 [<FactForDESKTOP(Skip = "Failing in new test framework")>]
 let ``type check neg01`` () = singleNegTest ( "typecheck/sigs") "neg01"
@@ -46,7 +46,9 @@ let ``type check neg10_a`` () = singleNegTest ( "typecheck/sigs") "neg10_a"
 let ``type check neg11`` () = singleNegTest ( "typecheck/sigs") "neg11"
 
 [<FactForDESKTOP>]
-let ``type check neg12`` () = singleNegTest ( "typecheck/sigs") "neg12"
+// Pinned to 10.0: at 11.0 AccessProtectedBaseFieldFromClosure lets the protected-member-from-closure
+// cases compile, dropping baseline errors. 11.0 behavior is covered by dedicated conformance tests.
+let ``type check neg12`` () = singleVersionedNegTest ("typecheck/sigs") LangVersion.V10 "neg12"
 
 [<FactForDESKTOP>]
 let ``type check neg13`` () = singleNegTest ( "typecheck/sigs") "neg13"
@@ -312,7 +314,7 @@ let ``type check neg98`` () = singleNegTest ( "typecheck/sigs") "neg98"
 let ``type check neg99`` () = singleNegTest ( "typecheck/sigs") "neg99"
 
 [<FactForDESKTOP(Skip = "Failing in new test framework")>]
-let ``type check neg100`` () = singleVersionedNegTestAux "typecheck/sigs"  ["--warnon:3218" ] LangVersion.Latest "neg100"  
+let ``type check neg100`` () = singleVersionedNegTestAux "typecheck/sigs"  ["--warnon:3218" ] LangVersion.Latest "neg100"
 
 [<FactForDESKTOP>]
 let ``type check neg101`` () = singleNegTest ( "typecheck/sigs") "neg101"
@@ -344,9 +346,9 @@ let ``type check neg110`` () = singleNegTest ( "typecheck/sigs") "neg110"
 [<FactForDESKTOP>]
 let ``type check neg111`` () = singleNegTest ( "typecheck/sigs") "neg111"
 
-[<FactForDESKTOP>] 
+[<FactForDESKTOP>]
 let ``type check neg112`` () = singleNegTest ( "typecheck/sigs") "neg112"
-    
+
 [<FactForDESKTOP>]
 let ``type check neg113`` () = singleNegTest ( "typecheck/sigs") "neg113"
 
@@ -355,12 +357,6 @@ let ``type check neg114`` () = singleNegTest ( "typecheck/sigs") "neg114"
 
 [<FactForDESKTOP>]
 let ``type check neg115`` () = singleNegTest ( "typecheck/sigs") "neg115"
-
-[<FactForDESKTOP(Skip = "Failing in new test framework")>]
-let ``type check neg116`` () = singleNegTest ( "typecheck/sigs") "neg116"
-
-[<FactForDESKTOP(Skip = "Failing in new test framework")>]
-let ``type check neg117`` () = singleNegTest ( "typecheck/sigs") "neg117"
 
 [<FactForDESKTOP>]
 let ``type check neg118`` () = singleNegTest ( "typecheck/sigs") "neg118"
@@ -409,7 +405,7 @@ let ``type check neg131`` () = singleVersionedNegTest ( "typecheck/sigs") LangVe
 
 [<FactForDESKTOP>]
 let ``type check neg132`` () = singleVersionedNegTest ( "typecheck/sigs") LangVersion.V80 "neg132"
-    
+
 [<FactForDESKTOP>]
 let ``type check neg133`` () = singleNegTest ( "typecheck/sigs") "neg133"
 

@@ -47,7 +47,7 @@ module Utils =
 
 module Build =
     type MSBuildProps = (string * string) list
-        
+
     module MSBuildProps =
         let private makeVersionDefines (v : NuGetVersion) =
             if v.Major < 30 then "SERVICE_13_0_0"
@@ -70,7 +70,7 @@ module Build =
                 "FcsReferenceType", "dll"
                 "FcsDllPath", fcsDllPath
                 "FSharpCoreDllPath", fsharpCoreDllPath
-                "DefineConstants", "" // This means the 'revision' method doesn't support codebases prior to v40 
+                "DefineConstants", "" // This means the 'revision' method doesn't support codebases prior to v40
             ]
 
     let buildFCS (dir : string) =
@@ -86,7 +86,7 @@ module Build =
 module Local =
     let build () =
         Build.buildFCS @"..\..\..\..\"
-    
+
     let benchmark (outputDir : string) =
         let msBuildArgs = Build.MSBuildProps.makeProject @"..\..\..\..\src\Compiler\FSharp.Compiler.Service.fsproj"
         Build.runBenchmark outputDir msBuildArgs
@@ -96,7 +96,7 @@ module Local =
 module NuGet =
     let private source = "https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet-public/nuget/v3/index.json"
     let private packageId = "FSharp.Compiler.Service"
-    
+
     let private getAllVersionsMetadata () =
         let cache = new SourceCacheContext()
         let repo = Repository.Factory.GetCoreV3(source);
@@ -105,14 +105,14 @@ module NuGet =
         |> Async.AwaitTask
         |> Async.RunSynchronously
         |> Seq.toList
-    
+
     let allVersionsMetadata = lazy getAllVersionsMetadata
-    
+
     /// Fetch a given version of FCS into the global packages folder
     let private downloadPackage (version : NuGetVersion) =
         let logger = NullLogger.Instance
         let cancellationToken = CancellationToken.None
-        
+
         let settings = Settings.LoadDefaultSettings(null)
         let globalPackagesFolder = SettingsUtility.GetGlobalPackagesFolder(settings);
 
@@ -141,7 +141,7 @@ module NuGet =
         )
         |> Async.AwaitTask |> Async.RunSynchronously
         |> ignore
-        
+
     let resolvePackageRevision (v : NuGetVersion) =
         printfn $"Downloading FCS package version {v} to find out its revision"
         downloadPackage v
@@ -153,7 +153,7 @@ module NuGet =
         match Regex.Match(pv, "\+([a-zA-Z0-9]+)$") with
         | r when r.Success -> r.Groups[1].Value
         | _ -> failwith $"Couldn't match product version {pv}"
-            
+
     let findVersionMetadata (version : string) =
         allVersionsMetadata.Value()
         |> List.find (fun v -> v.Identity.Version.OriginalVersion = version)
@@ -162,15 +162,15 @@ module NuGet =
         version.OriginalVersion
         |> findVersionMetadata
         |> fun metadata -> metadata.Published.Value.UtcDateTime
-        
+
     let getMetadataVersion (metadata : IPackageSearchMetadata) =
         metadata.Identity.Version
-        
+
     let findVersion (versionString : string) =
         versionString
         |> findVersionMetadata
         |> getMetadataVersion
-        
+
     let benchmark (outputDir : string) (version : NuGetVersion) =
         Build.runBenchmark outputDir (Build.MSBuildProps.makeNuGet version)
 
@@ -205,7 +205,7 @@ module RunConfig =
 [<RequireQualifiedAccess>]
 module Git =
     open LibGit2Sharp
-            
+
     let clone (path : string) : Repository =
         printfn $"Fetching 'dotnet/fsharp.git' in '{path}'..."
         Repository.Init(path) |> ignore
@@ -213,14 +213,14 @@ module Git =
         let remote = repo.Network.Remotes.Add("origin", "https://github.com/dotnet/fsharp.git")
         repo.Network.Fetch(remote.Name, [])
         repo
-        
+
     let checkout (commit : string) (repo : Repository) : unit =
         printfn $"Checkout {commit} in {repo.Info.Path}"
         Commands.Checkout(repo, commit) |> ignore
-    
+
     let revisionDir (baseDir : string) (revision : string) =
         Path.Combine(baseDir, revision)
-    
+
     let prepareRevisionCheckout (baseDir : string) (revision : string) =
         let dir = revisionDir baseDir revision
         if Repository.IsValid dir |> not then
@@ -230,16 +230,16 @@ module Git =
             checkout revision repo
         else
             printfn $"{revision} already checked out in {dir}"
-    
+
     let private fcsDllPath (checkoutDir : string) =
         Path.Combine(checkoutDir, "artifacts/bin/FSharp.Compiler.Service/Release/netstandard2.0/FSharp.Compiler.Service.dll")
-        
+
     let private fsharpCoreDllPath (rootDir : string) =
         (fcsDllPath rootDir).Replace("FSharp.Compiler.Service.dll", "FSharp.Core.dll")
-    
+
     let checkoutContainsBuiltFcs (checkoutDir : string) =
         File.Exists(fcsDllPath checkoutDir)
-    
+
     let private prepareRevisionBuild (checkoutsBaseDir : string) (revision : string) =
         let dir = revisionDir checkoutsBaseDir revision
         if checkoutContainsBuiltFcs dir |> not then
@@ -247,16 +247,16 @@ module Git =
             Build.buildFCS dir
         else
             printfn $"{revision} already built in {dir}"
-    
+
     let checkoutAndBuild (checkoutsBaseDir : string) (revision : string) =
         prepareRevisionCheckout checkoutsBaseDir revision
         prepareRevisionBuild checkoutsBaseDir revision
-    
+
     let private prepareMainRepo (config : RunConfig) =
         let dir = revisionDir config.CheckoutBaseDir "main"
         if Directory.Exists dir then new Repository(dir)
         else clone dir
-    
+
     let findCommitsBetweenInclusive (config : RunConfig) (older : Commit) (newer : Commit) =
         let repo = prepareMainRepo config
         let filter : CommitFilter = CommitFilter(IncludeReachableFrom=newer, ExcludeReachableFrom=older)
@@ -264,21 +264,21 @@ module Git =
         |> Seq.toList
         |> fun l ->
             if l |> List.contains older then l
-            else l @ [older] 
-    
+            else l @ [older]
+
     /// Some revisions don't build - exclude them
     let excludeBadCommits (badCommits : string list) (commits : Commit list) =
         let knownBadCommits = badCommits
         let goodCommits = commits |> List.filter (fun c -> knownBadCommits |> List.contains c.Sha |> not)
         printfn $"Resolved {goodCommits.Length} valid commits out of {goodCommits.Length}"
         goodCommits
-    
+
     let benchmark (checkoutsBaseDir : string) (bdnOutputDir : string) (commitHash: string) =
         checkoutAndBuild checkoutsBaseDir commitHash
         let root = revisionDir checkoutsBaseDir commitHash
         let fcsDll = fcsDllPath root
         let fsharpCoreDll = fsharpCoreDllPath root
-        
+
         printfn $"Benchmarking revision {commitHash}, fcsDllPath={fcsDll} fsharpCoreDll={fsharpCoreDll}"
         if File.Exists(fcsDll) |> not then
             failwith $"{fcsDll} doesn't exist"
@@ -286,11 +286,11 @@ module Git =
             failwith $"{fsharpCoreDll} doesn't exist"
         let msBuildArgs = Build.MSBuildProps.makeDll fcsDll fsharpCoreDll
         Build.runBenchmark bdnOutputDir msBuildArgs
-    
+
     let findCommit (config : RunConfig) (revision : string) =
         let repo = prepareMainRepo config
-        repo.Lookup<Commit>(revision)    
-    
+        repo.Lookup<Commit>(revision)
+
     let findCommitDate (config : RunConfig) (revision : string) =
         let commit = findCommit config revision
         commit.Committer.When
@@ -319,7 +319,7 @@ type RunResults =
         MeanS : double
         AllocatedMB : double
     }
-    
+
 type Run =
     {
         Version : FCSVersion
@@ -344,13 +344,13 @@ module Runner =
                 let time = r.VersionTime.ToString("yyyy-MM-dd")
                 $"{r.Version.ShortName()} - {time}"
             )
-            
+
         let getMeanMS {Results = {MeanS = mean}} = Math.Round(mean / 1000000.0, 2)
         let getAllocatedMB { Results = {AllocatedMB = allocated}} = Math.Round(allocated / 1024.0 / 1024.0, 2)
-                
+
         let meanMS = (x, (results |> List.map getMeanMS)) ||> List.zip
         let allocatedMB = (x, (results |> List.map getAllocatedMB)) ||> List.zip
-        
+
         let meanLine = Chart.Line(meanMS, Name="Mean (ms)")
         let allocatedLine = Chart.Line(allocatedMB, Name="Allocated (MB)")
 
@@ -359,7 +359,7 @@ module Runner =
     let exportEntriesAsJson (path : string) (entries : Run list) =
         printfn $"Saving {entries.Length} aggregate results as JSON in {path}"
         File.WriteAllText(path, JsonConvert.SerializeObject(entries, Formatting.Indented))
-        
+
     let exportEntriesAsCsv (path : string) (entries : Run list) =
         printfn $"Saving {entries.Length} aggregate results as CSV in {path}"
         let header = "Version,MeanS,AllocatedMB"
@@ -369,10 +369,10 @@ module Runner =
             |> fun rows -> header :: rows
             |> fun lines -> String.Join(Environment.NewLine, lines)
         File.WriteAllText(path, csv)
-        
+
     let bdnBaseDir (config : RunConfig) =
         Path.Combine(config.BDNOutputBaseDir, config.Time.ToString("yyyy-MM-dd_HH-mm"))
-    
+
     let exportEntries (config : RunConfig) (entries : Run list) : GenericChart =
         let dir = Path.Combine(bdnBaseDir config, config.ResultsSuffix)
         Directory.CreateDirectory dir |> ignore
@@ -384,36 +384,36 @@ module Runner =
         printfn $"Saving chart for {entries.Length} results as HTML in {htmlPath}"
         Chart.saveHtml (htmlPath, false) chart
         chart
-    
+
     let getBdnArtifactDir (bdnsBaseDir : string) (version : FCSVersion) =
         Path.Combine(bdnsBaseDir, $"{version}")
 
     let resultsJsonPath (bdnArtifactDir : string) =
         Path.Combine(bdnArtifactDir, @"results/HistoricalBenchmark.DecentlySizedStandAloneFileBenchmark-report.json")
-    
+
     let readBDNJsonResults (bdnArtifactDir : string) =
         let json = File.ReadAllText(resultsJsonPath bdnArtifactDir)
         JsonConvert.DeserializeObject<JObject>(json)
-    
+
     let extractResultsFromJson (summary : JObject) : RunResults =
         let benchmark = summary["Benchmarks"][0]
         let stats = benchmark["Statistics"]
         let mean = stats["Mean"].ToString() |> Double.Parse
-        
+
         let metrics = benchmark["Metrics"] :?> JArray
         let am =
             let found =
                 metrics
                 |> Seq.find (fun m -> (m["Descriptor"]["Id"]).ToString() = "Allocated Memory")
             found["Value"].ToString() |> Double.Parse
-            
+
         { MeanS = mean; AllocatedMB = am }
-    
+
     let bdnResultExists (config : RunConfig) (v : FCSVersion) =
         let dir = getBdnArtifactDir (bdnBaseDir config) v
         let jsonReportPath = resultsJsonPath dir
         File.Exists jsonReportPath
-    
+
     let benchmark (config : RunConfig) (version : FCSVersion) =
         let outputDir = getBdnArtifactDir (bdnBaseDir config) version
         if bdnResultExists config version then
@@ -434,7 +434,7 @@ module Runner =
             with e ->
                 printfn $"Failed to benchmark {version}: {e.Message}"
                 e.Message|> Error
-            
+
     let loadResultsFromDisk (config : RunConfig) (v : FCSVersion) =
         try
             let bdnDir = getBdnArtifactDir (bdnBaseDir config) v
@@ -446,7 +446,7 @@ module Runner =
             |> Ok
         with e ->
             Error e.Message
-    
+
     /// Prepare version but don't run any benchmarks
     let prepareVersion (config : RunConfig) (version : FCSVersion) =
         printfn $"*** Preparing version {version}"
@@ -461,7 +461,7 @@ module Runner =
             |> Some
         | FCSVersion.Local
         | FCSVersion.NuGet _ -> None
-    
+
     let prepareVersions (config : RunConfig) (parallelism : int) (versions : FCSVersion list) =
         printfn $"Preparing {versions.Length} versions"
         versions
@@ -470,7 +470,7 @@ module Runner =
         |> fun jobs -> Async.Parallel(jobs, parallelism)
         |> Async.RunSynchronously
         |> ignore
-        
+
     let runAll (config : RunConfig) (versions : FCSVersion list) =
         printfn $"*** Preparing and running benchmarks for the following {versions.Length} versions:"
         versions |> List.iter (fun v -> printfn $"- {v}")

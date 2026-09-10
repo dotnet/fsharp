@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Non-building project for IDE visibility of miscellaneous files.
+       Uses globbing so new files are picked up automatically.
+       Referenced from multiple .slnx solutions. -->
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <DisableImplicitNamespaceImports>true</DisableImplicitNamespaceImports>
+    <EnableDefaultNoneItems>false</EnableDefaultNoneItems>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Docs -->
+    <None Include="../../docs/**/*.md;../../docs/**/*.fsx" Link="docs/%(RecursiveDir)%(Filename)%(Extension)" />
+
+    <!-- Build infrastructure (props, targets) — repo root and source dirs, no obj/bin -->
+    <None Include="../../*.props;../../*.targets" Link="%(Filename)%(Extension)" />
+    <None Include="../../eng/*.props;../../eng/*.targets" Link="eng/%(Filename)%(Extension)" />
+    <None Include="../../src/**/*.props;../../src/**/*.targets" Exclude="../../**/obj/**;../../**/bin/**" Link="src/%(RecursiveDir)%(Filename)%(Extension)" />
+    <None Include="../../tests/**/*.props;../../tests/**/*.targets" Exclude="../../**/obj/**;../../**/bin/**" Link="tests/%(RecursiveDir)%(Filename)%(Extension)" />
+    <None Include="../../vsintegration/**/*.props;../../vsintegration/**/*.targets" Exclude="../../**/obj/**;../../**/bin/**" Link="vsintegration/%(RecursiveDir)%(Filename)%(Extension)" />
+    <None Include="../../eng/Version.Details.xml" Link="eng/Version.Details.xml" />
+
+    <!-- Root config -->
+    <None Include="../../global.json;../../NuGet.config" Link="%(Filename)%(Extension)" />
+
+    <!-- Compiler key files -->
+    <None Include="../../src/Compiler/FSComp.txt" Link="src/Compiler/FSComp.txt" />
+  </ItemGroup>
+
+</Project>

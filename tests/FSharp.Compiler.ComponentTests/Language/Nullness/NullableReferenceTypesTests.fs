@@ -1,6 +1,7 @@
 module Language.NullableReferenceTypes
 
 open Xunit
+open FSharp.Test
 open FSharp.Test.Compiler
 
 let withNullnessOptions cu =
@@ -26,7 +27,7 @@ let ``Can imply notstruct for classconstraint`` () =
     """
     |> asLibrary
     |> typecheck  // This has nullable off!
-    |> shouldSucceed  
+    |> shouldSucceed
 
 [<Fact>]
 let ``Warning on nullness hidden behind interface upcast`` () =
@@ -64,7 +65,7 @@ let main _args =
     |> asLibrary
     |> typeCheckWithStrictNullness
     |> shouldFail
-    |> withDiagnostics 
+    |> withDiagnostics
             [ Error 3265, Line 8, Col 13, Line 8, Col 60, "Application of method 'Deserialize' attempted to create a nullable type ('T | null) for '{| x: int |}'. Nullness warnings won't be reported correctly for such types."
               Error 3265, Line 11, Col 13, Line 11, Col 50, "Application of method 'Deserialize' attempted to create a nullable type ('T | null) for '{| x: int |}'. Nullness warnings won't be reported correctly for such types."
               Error 3261, Line 15, Col 14, Line 15, Col 17, "Nullness warning: The types 'R' and 'R | null' do not have compatible nullability."]
@@ -100,14 +101,14 @@ let main _args =
     |> asLibrary
     |> typeCheckWithStrictNullness
     |> shouldFail
-    |> withDiagnostics 
+    |> withDiagnostics
             [ Error 3265, Line 13, Col 13, Line 13, Col 60, "Application of method 'Deserialize' attempted to create a nullable type ('T | null) for '{| x: int |}'. Nullness warnings won't be reported correctly for such types."
               Error 3265, Line 14, Col 13, Line 14, Col 51, "Application of method 'Deserialize' attempted to create a nullable type ('T | null) for 'System.Int32'. Nullness warnings won't be reported correctly for such types."
               Error 3265, Line 15, Col 13, Line 15, Col 59, "Application of method 'Deserialize' attempted to create a nullable type ('T | null) for 'int * float'. Nullness warnings won't be reported correctly for such types."
               Error 3265, Line 16, Col 13, Line 16, Col 67, "Application of method 'Deserialize' attempted to create a nullable type ('T | null) for 'struct (int * float)'. Nullness warnings won't be reported correctly for such types."
               Error 3265, Line 17, Col 13, Line 17, Col 57, "Application of method 'Deserialize' attempted to create a nullable type ('T | null) for 'int<mykg>'. Nullness warnings won't be reported correctly for such types."
               Error 3265, Line 18, Col 13, Line 18, Col 57, "Application of method 'Deserialize' attempted to create a nullable type ('T | null) for 'int<mykg>'. Nullness warnings won't be reported correctly for such types."]
-   
+
 
 
 
@@ -123,13 +124,13 @@ let parsedDate3 = DateTime.Parse(null)
     |> asLibrary
     |> typeCheckWithStrictNullness
     |> shouldFail
-    |> withDiagnostics     
+    |> withDiagnostics
                 [Error 3261, Line 3, Col 18, Line 3, Col 52, "Nullness warning: The types 'string' and 'string | null' do not have compatible nullability."
                  Error 3261, Line 4, Col 33, Line 4, Col 50, "Nullness warning: The types 'string' and 'string | null' do not have compatible nullability."
                  Error 3261, Line 5, Col 19, Line 5, Col 39, "Nullness warning: The type 'string' does not support 'null'."]
 
 [<Fact>]
-let ``Downcasts and typetests with nullables``() = 
+let ``Downcasts and typetests with nullables``() =
     FSharp """module MyLib
 type AB = A | B
 
@@ -295,7 +296,7 @@ let getLength (x: string | null) = x.Length
     |> asLibrary
     |> typeCheckWithStrictNullness
     |> shouldFail
-    |> withDiagnostics [Error 3261, Line 3, Col 36, Line 3, Col 44, "Nullness warning: The types 'string' and 'string | null' do not have compatible nullability."]
+    |> withDiagnostics [Error 3261, Line 3, Col 36, Line 3, Col 37, "Nullness warning: Possible dereference of a null value when accessing member 'Length' on the nullable value 'x' of type 'string | null'."]
 
 [<Fact>]
 let ``Does report warning on obj to static member`` () =
@@ -316,7 +317,7 @@ Test.XString("x":(string|null))
     |> asLibrary
     |> typeCheckWithStrictNullness
     |> shouldFail
-    |> withDiagnostics 
+    |> withDiagnostics
               [ Error 3261, Line 7, Col 8, Line 7, Col 9, "Nullness warning: The type 'obj | null' supports 'null' but a non-null type is expected."
                 Error 3261, Line 7, Col 1, Line 7, Col 9, "Nullness warning: The types 'obj' and 'obj | null' do not have compatible nullability."
                 Error 3261, Line 8, Col 17, Line 8, Col 18, "Nullness warning: The type 'obj | null' supports 'null' but a non-null type is expected."
@@ -352,12 +353,12 @@ let result8 = genericWithNull ("":(obj|null))
     |> asLibrary
     |> typeCheckWithStrictNullness
     |> shouldFail
-    |> withDiagnostics 
+    |> withDiagnostics
             [ Error 43, Line 8, Col 34, Line 8, Col 38, "The constraints 'null' and 'not null' are inconsistent"
               Error 3261, Line 9, Col 35, Line 9, Col 48, "Nullness warning: The type 'obj | null' supports 'null' but a non-null type is expected."
               Error 3261, Line 12, Col 35, Line 12, Col 54, "Nullness warning: The type 'string | null' supports 'null' but a non-null type is expected."]
 
-    
+
 [<Fact>]
 let ``Cannot pass possibly null value to a strict function``() =
     FSharp """
@@ -370,7 +371,7 @@ let nonStrictFunc(x:string | null) = strictFunc(x)
     |> shouldFail
     |> withDiagnostics [
         Error 3261, Line 4, Col 49, Line 4, Col 50, "Nullness warning: A non-nullable 'string' was expected but this expression is nullable. Consider either changing the target to also be nullable, or use pattern matching to safely handle the null case of this expression."]
- 
+
 [<Fact>]
 let ``Can have nullable prop of same type T within a custom type T``() =
     FSharp """
@@ -513,7 +514,7 @@ let %s{inln} f (x %s{xArg}) =
     |> shouldSucceed
 
 [<Fact>]
-let ``Mutable string binding initially assigned to null should not need type annotation``() = 
+let ``Mutable string binding initially assigned to null should not need type annotation``() =
     FSharp """
 module MyLib
 
@@ -527,7 +528,7 @@ cache <- name
     |> shouldSucceed
 
 [<Fact>]
-let ``Mutable string binding assigned to null and matched against null``() = 
+let ``Mutable string binding assigned to null and matched against null``() =
     FSharp """
 module MyLib
 
@@ -552,7 +553,7 @@ match cache with
     |> shouldSucceed
 
 [<Fact>]
-let ``Mutable cache binding initially assigned to null should not need type annotation``() = 
+let ``Mutable cache binding initially assigned to null should not need type annotation``() =
     FSharp """
 module MyLib
 open System.Collections.Concurrent
@@ -583,7 +584,7 @@ let mkCacheInt32 ()   =
     |> shouldSucceed
 
 [<Fact>]
-let ``Can  infer underscore or null``() = 
+let ``Can  infer underscore or null``() =
     FSharp """
 module MyLib
 let iAcceptNullPartiallyInferred(arg: _ | null) = 42
@@ -594,7 +595,7 @@ let iHaveMissingContraint(arg: 'a | null) = 42
     |> shouldSucceed
 
 [<Fact>]
-let ``Invalid usages of WithNull syntax``() = 
+let ``Invalid usages of WithNull syntax``() =
     FSharp """
 module MyLib
 let f1(x: option<string> | null) = ()
@@ -607,7 +608,7 @@ let f6(x: 'a | null when 'a:null) = ()
     |> asLibrary
     |> typeCheckWithStrictNullness
     |> shouldFail
-    |> withDiagnostics 
+    |> withDiagnostics
         [ Error 3261, Line 3, Col 11, Line 3, Col 32, "Nullness warning: The type 'string option' uses 'null' as a representation value but a non-null type is expected."
           Error 3260, Line 4, Col 11, Line 4, Col 21, "The type 'int' does not support a nullness qualification."
           Error 43, Line 4, Col 11, Line 4, Col 21, "A generic construct requires that the type 'int' have reference semantics, but it does not, i.e. it is a struct"
@@ -617,7 +618,7 @@ let f6(x: 'a | null when 'a:null) = ()
           Error 43, Line 8, Col 26, Line 8, Col 33, "The constraints 'null' and 'not null' are inconsistent"]
 
 [<Fact>]
-let ``Boolean literal to string is not nullable`` () = 
+let ``Boolean literal to string is not nullable`` () =
     FSharp """module MyLibrary
 let onlyWantNotNullString(x:string) = ()
 
@@ -633,7 +634,7 @@ let processBool () : string =
     |> shouldSucceed
 
 [<Fact>]
-let ``Boolean to string is not nullable`` () = 
+let ``Boolean to string is not nullable`` () =
     FSharp """module MyLibrary
 let onlyWantNotNullString(x:string) = ()
 
@@ -660,7 +661,7 @@ type MyCustomType with
     override x.ToString() = null
     """
 
-let toStringCodeSnippet myTypeDef = 
+let toStringCodeSnippet myTypeDef =
     FSharp $"""module MyLibrary
 
 type MyCustomType = {myTypeDef}
@@ -684,14 +685,14 @@ let processBool (x:MyCustomType) =
 [<InlineData(" (struct{| F : string |}) ")>]
 [<InlineData(" int * string ")>]
 [<InlineData(" (struct(string * int)) ")>]
-let ``Generated ToString() methods are not nullable`` (myTypeDef) = 
+let ``Generated ToString() methods are not nullable`` (myTypeDef) =
     toStringCodeSnippet myTypeDef
     |> shouldSucceed
 
 [<Theory>]
 [<InlineData( """A | B with override this.ToString() : (string|null) = null """)>]
 [<InlineData(duWithExtensionProvidedNullableToString)>]
-let ``ToString override warns if it returns nullable`` (myTypeDef) = 
+let ``ToString override warns if it returns nullable`` (myTypeDef) =
     toStringCodeSnippet myTypeDef
     |> shouldFail
     |> withDiagnosticMessage "With nullness checking enabled, overrides of .ToString() method must return a non-nullable string. You can handle potential nulls via the built-in string function."
@@ -758,7 +759,7 @@ let main _ =
     |> withStdOutContains expected
 
 [<Fact>]
-let ``Printing a nullable string should pass`` () = 
+let ``Printing a nullable string should pass`` () =
     FSharp """module MyLibrary
 let maybeNull : string | null = null
 let nonNullString = "abc"
@@ -776,7 +777,7 @@ let sprintfnNullLiteral = sprintf "This is null: %s" null
 
 
 [<Fact>]
-let ``Printing a nullable object should pass`` () = 
+let ``Printing a nullable object should pass`` () =
     FSharp """module MyLibrary
 let maybeNull : string | null = null
 let maybeUri : System.Uri | null = null
@@ -789,7 +790,7 @@ let printViaO = sprintf "This is null: %O and this is null %O and this is not nu
 
 
 [<Fact>]
-let ``Printing a nullable array via percent A should pass`` () = 
+let ``Printing a nullable array via percent A should pass`` () =
     FSharp """module MyLibrary
 let maybeArray : ((string array) | null) = null
 let arrayOfMaybes : ((string | null) array ) = [|null|]
@@ -800,7 +801,7 @@ let printViaA = sprintf "This is null: %A and this has null inside %A" maybeArra
     |> shouldSucceed
 
 [<Fact>]
-let ``Type inference with sprintfn`` () = 
+let ``Type inference with sprintfn`` () =
     FSharp """module MyLibrary
 let needsString(x:string) = ()
 
@@ -813,7 +814,7 @@ let myTopFunction inferredVal =
     |> shouldSucceed
 
 [<Fact>]
-let ``WhatIf the format itself is null`` () = 
+let ``WhatIf the format itself is null`` () =
     FSharp """module MyLibrary
 [<Literal>]
 let thisCannotBeAFormat : string | null = null
@@ -833,7 +834,7 @@ let doStuff() =
     |> shouldSucceed
 
 [<Fact>]
-let ``Match null on two strings`` () = 
+let ``Match null on two strings`` () =
     FSharp """module MyLibrary
 let len2r (str1: string | null) (str2: string | null) =
     match str1, str2 with
@@ -852,7 +853,7 @@ let len2r (str1: string | null) (str2: string | null) =
 [<InlineData("(null)")>]
 [<InlineData("(null) as _myUselessNullValue")>]
 [<Theory>]
-let ``Eliminate nullness after matching`` (tp) = 
+let ``Eliminate nullness after matching`` (tp) =
     FSharp $"""module MyLibrary
 
 let myFunction (input : string | null) : string = 
@@ -867,7 +868,7 @@ let myFunction (input : string | null) : string =
 [<InlineData("""(null,_aVal) | (_aVal, null) """)>]
 [<InlineData("""(null,("" | null | _)) | (_, null)""")>]
 [<Theory>]
-let ``Eliminate tupled nullness after matching`` (tp) = 
+let ``Eliminate tupled nullness after matching`` (tp) =
     FSharp $"""module MyLibrary
 
 let myFunction (input1 : string | null) (input2 : string | null): (string*string) = 
@@ -887,7 +888,7 @@ let myFunction (input1 : string | null) (input2 : string | null): (string*string
 [<InlineData(""" (_a,_b) when System.Console.ReadLine() = "lucky"  """)>]
 [<InlineData("(_,null)")>]
 [<Theory>]
-let ``Should NOT eliminate tupled nullness after matching`` (tp) = 
+let ``Should NOT eliminate tupled nullness after matching`` (tp) =
     FSharp $"""module MyLibrary
 
 let myFunction (input1 : string | null) (input2 : string | null): (string*string) = 
@@ -901,7 +902,7 @@ let myFunction (input1 : string | null) (input2 : string | null): (string*string
     |> withErrorCode 3261
 
 [<Fact>]
-let ``Eliminate aliased nullness after matching`` () = 
+let ``Eliminate aliased nullness after matching`` () =
     FSharp $"""module MyLibrary
 
 type Maybe<'T when 'T:not struct> = 'T | null
@@ -914,9 +915,9 @@ let myFunction (input : string Maybe) : string =
     |> asLibrary
     |> typeCheckWithStrictNullness
     |> shouldSucceed
-    
+
 [<Fact>]
-let ``WithNull used on anon type`` () = 
+let ``WithNull used on anon type`` () =
     FSharp """module MyLibrary
 
 let maybeAnon : _ | null = {|Hello="there"|}
@@ -925,13 +926,13 @@ let maybeAnon2 : {|Hello:string|} | null = null
     |> asLibrary
     |> typeCheckWithStrictNullness
     |> shouldFail
-    |> withDiagnostics 
+    |> withDiagnostics
             [ Error 3260, Line 4, Col 18, Line 4, Col 41, "The type '{| Hello: string |}' does not support a nullness qualification."
               Error 43, Line 4, Col 44, Line 4, Col 48, "The type '{| Hello: string |}' does not have 'null' as a proper value"]
-    
-    
+
+
 [<Fact>]
-let ``WithNull on a DU`` () = 
+let ``WithNull on a DU`` () =
     FSharp """module MyLibrary
 
 type MyDu = A | B
@@ -962,9 +963,9 @@ looseFunc(maybeDu2) |> ignore
     |> withDiagnostics [
         Error 3261, Line 18, Col 12, Line 18, Col 19, "Nullness warning: The type 'MyDu | null' supports 'null' but a non-null type is expected."
         Error 3261, Line 19, Col 12, Line 19, Col 20, "Nullness warning: The type ''a | null' supports 'null' but a non-null type is expected."]
-    
+
 [<Fact>]
-let ``Strict func handling of obj type`` () = 
+let ``Strict func handling of obj type`` () =
     FSharp """module MyLibrary
 let strictFunc(arg: 'x when 'x : not null) = printfn "%s" (arg.ToString())
  
@@ -977,15 +978,15 @@ strictFunc(null:(string|null)) |> ignore
     |> asLibrary
     |> typeCheckWithStrictNullness
     |> shouldFail
-    |> withDiagnostics     
+    |> withDiagnostics
             [ Error 3261, Line 6, Col 12, Line 6, Col 16, "Nullness warning: The type 'obj' does not support 'null'."
               Error 3261, Line 7, Col 12, Line 7, Col 27, "Nullness warning: The type 'obj | null' supports 'null' but a non-null type is expected."
               Error 3261, Line 8, Col 12, Line 8, Col 30, "Nullness warning: The type 'string | null' supports 'null' but a non-null type is expected."]
-        
-        
+
+
 
 [<Fact>]
-let ``Strict func null literal`` () = 
+let ``Strict func null literal`` () =
     FSharp """module MyLibrary
 let strictFunc(arg: 'x when 'x : not null) = printfn "%s" (arg.ToString()) 
 
@@ -993,11 +994,11 @@ strictFunc(null) |> ignore    """
     |> asLibrary
     |> typeCheckWithStrictNullness
     |> shouldFail
-    |> withDiagnostics     
+    |> withDiagnostics
             [ Error 43, Line 4, Col 12, Line 4, Col 16, "The constraints 'null' and 'not null' are inconsistent"]
-    
+
 [<Fact>]
-let ``Strict func null literal2`` () = 
+let ``Strict func null literal2`` () =
     FSharp """module MyLibrary
 let strictFunc(arg: 'x when 'x : not null) = printfn "%s" (arg.ToString()) 
 
@@ -1007,9 +1008,9 @@ strictFunc("hi") |> ignore   """
     |> asLibrary
     |> typeCheckWithStrictNullness
     |> shouldFail
-    |> withDiagnostics     
+    |> withDiagnostics
             [ Error 43, Line 4, Col 12, Line 4, Col 16, "The constraints 'null' and 'not null' are inconsistent"]
-      
+
 [<Fact>]
 let ``Supports null in generic code`` () =
     FSharp """module MyLibrary
@@ -1070,7 +1071,7 @@ myNullReturningFunction myValOfY                     |> ignore
     |> asLibrary
     |> typeCheckWithStrictNullness
     |> shouldFail
-    |> withDiagnostics     
+    |> withDiagnostics
                 [Error 3261, Line 17, Col 25, Line 17, Col 34, "Nullness warning: The type 'string' does not support 'null'."
                  Error 193, Line 19, Col 26, Line 19, Col 45, "The type 'System.DateTime' does not have 'null' as a proper value"
                  Error 1, Line 20, Col 25, Line 20, Col 36, "The type '{| Anon: 'a |}' does not have 'null' as a proper value"
@@ -1090,13 +1091,13 @@ let test =
     |> asLibrary
     |> typeCheckWithStrictNullness
     |> shouldFail
-    |> withDiagnostics 
+    |> withDiagnostics
              [Error 1, Line 5, Col 7, Line 5, Col 9, "The type 'int' does not have 'null' as a proper value. See also test.fs(3,10)-(3,14)."
               Error 25, Line 3, Col 11, Line 3, Col 15, "Incomplete pattern matches on this expression."]
 
-                 
+
 [<Fact>]
-let ``Nullness support for F# types`` () = 
+let ``Nullness support for F# types`` () =
     FSharp """module MyLibrary
 type MyDu = A | B
 type MyRecord = {X:int;Y:string}
@@ -1143,15 +1144,15 @@ looseFunc(maybeTuple2) |> ignore
     |> asLibrary
     |> typeCheckWithStrictNullness
     |> shouldFail
-    |> withDiagnostics     
+    |> withDiagnostics
             [ Error 43, Line 21, Col 12, Line 21, Col 16, "The constraints 'null' and 'not null' are inconsistent"
               Error 3260, Line 27, Col 18, Line 27, Col 34, "The type 'int * int' does not support a nullness qualification."
               Error 43, Line 27, Col 37, Line 27, Col 41, "The type 'int * int' does not have 'null' as a proper value"
               Error 3261, Line 29, Col 12, Line 29, Col 19, "Nullness warning: The type 'MyDu | null' supports 'null' but a non-null type is expected."
               Error 3261, Line 30, Col 12, Line 30, Col 21, "Nullness warning: The type 'MyRecord | null' supports 'null' but a non-null type is expected."
               Error 43, Line 40, Col 36, Line 40, Col 40, "The type 'Maybe<int * int>' does not have 'null' as a proper value"]
-    
-    
+
+
 [<Fact>]
 let ``Nullness support for flexible types`` () =
     FSharp """module MyLibrary
@@ -1204,13 +1205,13 @@ let thisShouldAlsoWarn = MyRecord.Create(maybeNull)
     |> asLibrary
     |> typeCheckWithStrictNullness
     |> shouldFail
-    |> withDiagnostics  
+    |> withDiagnostics
         [Error 3261, Line 7, Col 38, Line 7, Col 42, "Nullness warning: The type 'string' does not support 'null'."
          Error 3261, Line 9, Col 42, Line 9, Col 51, "Nullness warning: A non-nullable 'string' was expected but this expression is nullable. Consider either changing the target to also be nullable, or use pattern matching to safely handle the null case of this expression."]
 
 
 [<Fact>]
-let ``Option ofObj should remove nullness when used in a function`` () = 
+let ``Option ofObj should remove nullness when used in a function`` () =
     FSharp """module MyLibrary
 let processOpt2 (s: string | null) : string option = Option.ofObj s"""
     |> asLibrary
@@ -1218,7 +1219,7 @@ let processOpt2 (s: string | null) : string option = Option.ofObj s"""
     |> shouldSucceed
 
 [<Fact>]
-let ``Option ofObj should remove nullness when piping`` () = 
+let ``Option ofObj should remove nullness when piping`` () =
     FSharp """module MyLibrary
 let processOpt (s: string | null) : string option =
     let stringOpt = Option.ofObj s
@@ -1230,7 +1231,7 @@ let processOpt3 (s: string | null) : string option = s |> Option.ofObj
     |> shouldSucceed
 
 [<Fact>]
-let ``Option ofObj called in a useless way raises warning`` () = 
+let ``Option ofObj called in a useless way raises warning`` () =
     FSharp """module MyLibrary
 
 let processOpt1 (s: string) = Option.ofObj s
@@ -1243,14 +1244,14 @@ let processOpt3 (s: string) : string option =
     |> asLibrary
     |> typeCheckWithStrictNullness
     |> shouldFail
-    |> withDiagnostics 
+    |> withDiagnostics
         [ Error 3262, Line 3, Col 44, Line 3, Col 45, "Value known to be without null passed to a function meant for nullables: You can create 'Some value' directly instead of 'ofObj', or consider not using an option for this value."
           Error 3262, Line 5, Col 18, Line 5, Col 19, "Value known to be without null passed to a function meant for nullables: You can create 'Some value' directly instead of 'ofObj', or consider not using an option for this value."
           Error 3262, Line 7, Col 29, Line 7, Col 30, "Value known to be without null passed to a function meant for nullables: You can create 'Some value' directly instead of 'ofObj', or consider not using an option for this value."]
 
 
 [<Fact>]
-let ``Option ofObj called on a string literal`` () = 
+let ``Option ofObj called on a string literal`` () =
     FSharp """module MyLibrary
 let whatIsThis = Option.ofObj "abc123"
 """
@@ -1260,7 +1261,7 @@ let whatIsThis = Option.ofObj "abc123"
     |> withErrorCodes [3262]
 
 [<Fact>]
-let ``Option ofObj for PathGetDirectoryName`` () = 
+let ``Option ofObj for PathGetDirectoryName`` () =
     FSharp """module MyLibrary
 open System.IO
 
@@ -1274,7 +1275,7 @@ let whatIsThis3 = Option.ofObj ("" |> Path.GetDirectoryName )  // Warnings were 
     |> shouldSucceed
 
 [<Fact>]
-let ``Option ofObj with fully annotated nullsupportive func`` () = 
+let ``Option ofObj with fully annotated nullsupportive func`` () =
     FSharp """module MyLibrary
 
 let nullSupportiveFunc (x: string | null) : string | null = x
@@ -1286,7 +1287,7 @@ let whatIsThis3 = Option.ofObj (maybePath |> nullSupportiveFunc)
     |> shouldSucceed
 
 [<Fact>]
-let ``Option ofObj with calling id inside`` () = 
+let ``Option ofObj with calling id inside`` () =
     FSharp """module MyLibrary
 
 let maybePath : string | null = null
@@ -1297,7 +1298,7 @@ let whatIsThis5 = Option.ofObj (id maybePath)
     |> shouldSucceed
 
 [<Fact>]
-let ``Useless null pattern match`` () = 
+let ``Useless null pattern match`` () =
     FSharp """module MyLibrary
 
 let clearlyNotNull = "42"
@@ -1312,7 +1313,7 @@ let mappedVal =
     |> withDiagnostics [Error 3261, Line 6, Col 7, Line 6, Col 11, "Nullness warning: The type 'string' does not support 'null'."]
 
 [<Fact>]
-let ``Useless usage of nonNull utility from fscore`` () = 
+let ``Useless usage of nonNull utility from fscore`` () =
     FSharp """module MyLibrary
 
 let clearlyNotNull = "42"
@@ -1326,7 +1327,7 @@ let mappedMaybe = nonNull maybeNull
     |> withDiagnostics [Error 3262, Line 4, Col 25, Line 4, Col 39, "Value known to be without null passed to a function meant for nullables: You can remove this `nonNull` assertion."]
 
 [<Fact>]
-let ``Useless null check when used in piping`` () = 
+let ``Useless null check when used in piping`` () =
     FSharp """module MyLibrary
 
 let foo = "test"
@@ -1338,7 +1339,7 @@ let bar = foo |> Option.ofObj // Should produce FS3262, but did not
     |> withDiagnostics [Error 3262, Line 4, Col 18, Line 4, Col 30, "Value known to be without null passed to a function meant for nullables: You can create 'Some value' directly instead of 'ofObj', or consider not using an option for this value."]
 
 [<Fact>]
-let ``Useless null check when used in multi piping`` () = 
+let ``Useless null check when used in multi piping`` () =
     FSharp """module MyLibrary
 
 let myFunc whateverArg = 
@@ -1350,7 +1351,7 @@ let myFunc whateverArg =
     |> withDiagnostics [Error 3262, Line 4, Col 30, Line 4, Col 42, "Value known to be without null passed to a function meant for nullables: You can create 'Some value' directly instead of 'ofObj', or consider not using an option for this value."]
 
 [<Fact>]
-let ``Useless null check when used in more exotic pipes`` () = 
+let ``Useless null check when used in more exotic pipes`` () =
     FSharp """module MyLibrary
 
 let functionComposition x = x |> (string >> Option.ofObj)
@@ -1361,13 +1362,13 @@ let pointfree = intToint >> string >> Option.ofObj
     |> asLibrary
     |> typeCheckWithStrictNullness
     |> shouldFail
-    |> withDiagnostics 
+    |> withDiagnostics
         [ Error 3262, Line 3, Col 45, Line 3, Col 57, "Value known to be without null passed to a function meant for nullables: You can create 'Some value' directly instead of 'ofObj', or consider not using an option for this value."
           Error 3262, Line 4, Col 60, Line 4, Col 61, "Value known to be without null passed to a function meant for nullables: You can create 'Some value' directly instead of 'ofObj', or consider not using an option for this value."
           Error 3262, Line 6, Col 39, Line 6, Col 51, "Value known to be without null passed to a function meant for nullables: You can create 'Some value' directly instead of 'ofObj', or consider not using an option for this value."]
 
 [<Fact>]
-let ``Regression: Useless usage in nested calls`` () = 
+let ``Regression: Useless usage in nested calls`` () =
     FSharp """module MyLibrary
 open System.IO
 
@@ -1379,7 +1380,7 @@ let meTry = Option.ofObj (Path.GetDirectoryName "")
 
 
 [<Fact>]
-let ``Useless usage of null active patterns from fscore`` () = 
+let ``Useless usage of null active patterns from fscore`` () =
     FSharp """module MyLibrary
 
 let clearlyNotNull = "42"
@@ -1395,13 +1396,13 @@ let mapped2 =
     |> asLibrary
     |> typeCheckWithStrictNullness
     |> shouldFail
-    |> withDiagnostics 
+    |> withDiagnostics
         [ Error 3262, Line 6, Col 7, Line 6, Col 24, "Value known to be without null passed to a function meant for nullables: You can remove this |NonNullQuick| pattern usage."
           Error 3262, Line 10, Col 6, Line 10, Col 10, "Value known to be without null passed to a function meant for nullables: You can remove this |Null|NonNull| pattern usage."
           Error 3262, Line 11, Col 6, Line 11, Col 15, "Value known to be without null passed to a function meant for nullables: You can remove this |Null|NonNull| pattern usage."]
 
 [<Fact>]
-let ``Obj can be passed to not null constrained methods`` () = 
+let ``Obj can be passed to not null constrained methods`` () =
     FSharp """module MyLibrary
 
 let objVal:(obj | null) = box 42
@@ -1417,8 +1418,8 @@ let mappableFunc =
     |> shouldSucceed
 
 [<Fact>]
-let ``Importing and processing contravariant interfaces`` () = 
-    
+let ``Importing and processing contravariant interfaces`` () =
+
     FSharp """module MyLibrary
 
 open System
@@ -1462,8 +1463,8 @@ let test<'T> () =
 [<InlineData("(if false then [] else null) : (_ list | null)")>]
 [<InlineData("[] : (_ list | null)")>]
 [<Theory>]
-let ``Nullness in inheritance chain`` (returnExp:string) = 
-    
+let ``Nullness in inheritance chain`` (returnExp:string) =
+
     FSharp $"""module MyLibrary
 
 [<AbstractClass>]
@@ -1482,7 +1483,7 @@ type ListGenerator<'T>() =
 
 
 [<Fact>]
-let ``Notnull constraint and inline annotated value`` () = 
+let ``Notnull constraint and inline annotated value`` () =
     FSharp """module MyLibrary
 open System
 
@@ -1500,7 +1501,7 @@ let v3WithNull = f3 (null: obj | null)
     |> asLibrary
     |> typeCheckWithStrictNullness
     |> shouldFail
-    |> withDiagnostics     
+    |> withDiagnostics
             [ Error 3261, Line 6, Col 14, Line 6, Col 18, "Nullness warning: The type 'obj' does not support 'null'."
               Error 3261, Line 7, Col 14, Line 7, Col 33, "Nullness warning: The type 'String | null' supports 'null' but a non-null type is expected."
               Error 3261, Line 8, Col 14, Line 8, Col 20, "Nullness warning: The type ''a option' uses 'null' as a representation value but a non-null type is expected."
@@ -2066,6 +2067,146 @@ let processMyStr (x:mystring<mykg>) =
     ]
 
 [<FSharp.Test.FactForNETCOREAPPAttribute>]
+let ``MeasureAnnotatedAbbreviation over string allows nullable annotation in all positions`` () =
+    FSharp """module MyLibrary
+
+[<MeasureAnnotatedAbbreviation>]
+type string<[<Measure>] 'm> = string
+
+[<Measure>] type test
+type TestType = string<test>
+
+let x: (TestType | null) = Unchecked.defaultof<TestType>
+
+let consume (s: TestType | null) = ()
+
+let produce () : TestType | null = null
+
+type NullableTestType = TestType | null
+
+let y: (string<test> | null) = null
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<FSharp.Test.FactForNETCOREAPPAttribute>]
+let ``MeasureAnnotatedAbbreviation over user reference type allows nullable annotation`` () =
+    FSharp """module MyLibrary
+
+type MyRef() = member _.Hello = "hi"
+
+[<MeasureAnnotatedAbbreviation>]
+type MyRef<[<Measure>] 'm> = MyRef
+
+[<Measure>] type tag
+type Tagged = MyRef<tag>
+
+let f (x: Tagged | null) : Tagged | null = x
+let g : Tagged | null = null
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<FSharp.Test.FactForNETCOREAPPAttribute>]
+let ``MeasureAnnotatedAbbreviation over value type rejects nullable annotation`` () =
+    FSharp """module MyLibrary
+
+[<MeasureAnnotatedAbbreviation>]
+type int<[<Measure>] 'm> = int
+
+[<MeasureAnnotatedAbbreviation>]
+type DateTime<[<Measure>] 'm> = System.DateTime
+
+[<Measure>] type kg
+[<Measure>] type s
+
+let bad1 : (int<kg> | null) = null
+let bad2 : (DateTime<s> | null) = null
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [
+        Error 3260, Line 12, Col 13, Line 12, Col 27, "The type 'int<kg>' does not support a nullness qualification."
+        Error 43, Line 12, Col 13, Line 12, Col 27, "A generic construct requires that the type 'int<kg>' have reference semantics, but it does not, i.e. it is a struct"
+        Error 3260, Line 13, Col 13, Line 13, Col 31, "The type 'DateTime<s>' does not support a nullness qualification."
+        Error 43, Line 13, Col 13, Line 13, Col 31, "A generic construct requires that the type 'DateTime<s>' have reference semantics, but it does not, i.e. it is a struct"
+    ]
+
+[<FSharp.Test.FactForNETCOREAPPAttribute>]
+let ``Nullness flow and not-null constraints work with MeasureAnnotatedAbbreviation over string`` () =
+    FSharp """module MyLibrary
+
+[<MeasureAnnotatedAbbreviation>]
+type string<[<Measure>] 'm> = string
+
+[<Measure>] type tag
+type S = string<tag>
+
+let onlyNotNull (s: S) = ()
+
+let widen (x: S) : S | null = x
+
+let narrowBad (x: S | null) : S = x
+
+let matched (x: S | null) =
+    match x with
+    | null -> ()
+    | nn -> onlyNotNull nn
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [
+        Error 3261, Line 13, Col 35, Line 13, Col 36, "Nullness warning: A non-nullable 'S' was expected but this expression is nullable. Consider either changing the target to also be nullable, or use pattern matching to safely handle the null case of this expression."
+    ]
+
+[<FSharp.Test.FactForNETCOREAPPAttribute>]
+let ``MeasureAnnotatedAbbreviation satisfies not-struct constraint`` () =
+    FSharp """module MyLibrary
+
+[<MeasureAnnotatedAbbreviation>]
+type string<[<Measure>] 'm> = string
+
+[<Measure>] type tag
+type S = string<tag>
+
+let needsRef<'T when 'T : not struct> (x: 'T) = ()
+let callIt (s: S) = needsRef s
+let callNullable (s: S | null) = needsRef s
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<FSharp.Test.FactForNETCOREAPPAttribute>]
+let ``MeasureAnnotatedAbbreviation over obj, interface, and chained abbreviation allows nullable`` () =
+    FSharp """module MyLibrary
+
+[<MeasureAnnotatedAbbreviation>]
+type obj<[<Measure>] 'm> = obj
+
+[<MeasureAnnotatedAbbreviation>]
+type IDisposable<[<Measure>] 'm> = System.IDisposable
+
+[<MeasureAnnotatedAbbreviation>]
+type string<[<Measure>] 'm> = string
+
+type chainedString<[<Measure>] 'm> = string<'m>
+
+[<Measure>] type tag
+
+let a : obj<tag> | null = null
+let b : IDisposable<tag> | null = null
+let c : chainedString<tag> | null = null
+"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldSucceed
+
+[<FSharp.Test.FactForNETCOREAPPAttribute>]
 let ``ToString on reference type still returns nullable string`` () =
     FSharp """module MyLibrary
 
@@ -2373,3 +2514,255 @@ let main _ = 0
     |> compile
     |> run
     |> verifyOutputContains [|"-1"|]
+
+[<Theory>]
+// (source, line, col1, col2, memberName, bindingName, typeName)
+[<InlineData("module MyLib\nlet f (x: string | null) = x.PadLeft(1)",
+             2, 28, 29, "PadLeft", "x", "string | null")>]
+[<InlineData("module MyLib\nlet f (x: string | null) = x.Length",
+             2, 28, 29, "Length", "x", "string | null")>]
+[<InlineData("module MyLib\nlet f (x: string | null) = x.Trim().Length",
+             2, 28, 29, "Trim", "x", "string | null")>]
+[<InlineData("module MyLib\nlet f (x: string | null) = x.Split(',')",
+             2, 28, 29, "Split", "x", "string | null")>]
+[<InlineData("module MyLib\nlet f (xs: System.Collections.Generic.List<int> | null) = xs.Contains(1)",
+             2, 59, 61, "Contains", "xs", "System.Collections.Generic.List<int> | null")>]
+[<InlineData("module MyLib\nlet f (xs: System.Collections.Generic.IEnumerable<int> | null) = xs.GetEnumerator()",
+             2, 66, 68, "GetEnumerator", "xs", "System.Collections.Generic.IEnumerable<int> | null")>]
+[<InlineData("module MyLib\nopen System.Text\nlet f (sb: StringBuilder | null) = sb.Length <- 0",
+             3, 36, 38, "Length", "sb", "StringBuilder | null")>]
+let ``Issue 19658 - dot-access on nullable receiver names the binding and member``
+        (source: string, line: int, col1: int, col2: int,
+         memberName: string, bindingName: string, typeName: string) =
+    FSharp source
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [
+        Error 3261, Line line, Col col1, Line line, Col col2,
+            $"Nullness warning: Possible dereference of a null value when accessing member '{memberName}' on the nullable value '{bindingName}' of type '{typeName}'."
+    ]
+
+// LINQ extension methods: on net472, BCL lacks NullableAttribute so the
+// extension-method parameter is ambivalent and no FS3261 fires.
+[<FactForNETCOREAPP>]
+let ``Issue 19658 - LINQ extension method dot-access on nullable receiver`` () =
+    FSharp """module MyLib
+open System.Linq
+let f (xs: System.Collections.Generic.List<int> | null) = xs.First()"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [
+        Error 3261, Line 3, Col 59, Line 3, Col 61,
+            "Nullness warning: Possible dereference of a null value when accessing member 'First' on the nullable value 'xs' of type 'int seq | null'."
+    ]
+
+[<Fact>]
+let ``Issue 19658 - nullness warning on complex receiver omits binding name`` () =
+    FSharp """module MyLib
+let getStr () : string | null = ""
+let f () = (getStr()).Length"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [
+        Error 3261, Line 3, Col 13, Line 3, Col 21,
+            "Nullness warning: Possible dereference of a null value when accessing member 'Length' on a nullable expression of type 'string | null'."
+    ]
+
+[<Fact>]
+let ``Issue 19658 - mutable receiver shows binding name`` () =
+    FSharp """module MyLib
+let f () =
+    let mutable s: string | null = null
+    s.Length"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [
+        Error 3261, Line 4, Col 5, Line 4, Col 6,
+            "Nullness warning: Possible dereference of a null value when accessing member 'Length' on the nullable value 's' of type 'string | null'."
+    ]
+
+[<Fact>]
+let ``Issue 19658 - nested nullable generic receiver does not produce misleading inner-type-arg message`` () =
+    FSharp """module MyLib
+let f (xs: System.Collections.Generic.List<string | null> | null) =
+    xs.Count"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [
+        Error 3261, Line 3, Col 5, Line 3, Col 7,
+            "Nullness warning: Possible dereference of a null value when accessing member 'Count' on the nullable value 'xs' of type 'System.Collections.Generic.List<string | null> | null'."
+    ]
+
+[<Fact>]
+let ``Issue 19658 - static call still uses generic nullness warning`` () =
+    FSharp """module MyLib
+type C() =
+    static member Do(x: string) = ()
+let x: string | null = ""
+C.Do(x)"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [
+        Error 3261, Line 5, Col 6, Line 5, Col 7,
+            "Nullness warning: A non-nullable 'string' was expected but this expression is nullable. Consider either changing the target to also be nullable, or use pattern matching to safely handle the null case of this expression."
+    ]
+
+[<Fact>]
+let ``Issue 19658 - no FS3261 when nullness checking is off`` () =
+    // Without strict nullness, x.PadLeft compiles clean - the new context
+    // must not introduce diagnostics when --checknulls is not enabled.
+    FSharp """module MyLib
+let f (x: string) = x.PadLeft(1)"""
+    |> asLibrary
+    |> compile
+    |> shouldSucceed
+
+[<Fact>]
+let ``Issue 19658 - multi-line receiver emits SeeAlso pointing at member call site`` () =
+    FSharp """module MyLib
+let f (x: string | null) =
+    x
+        .Length"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [
+        Error 3261, Line 3, Col 5, Line 3, Col 6,
+            "Nullness warning: Possible dereference of a null value when accessing member 'Length' on the nullable value 'x' of type 'string | null'. See also test.fs(3,4)-(4,15)."
+    ]
+
+[<Fact>]
+let ``Issue 19658 - implicit 'this' receiver does not leak name`` () =
+    // 'this.Get()' is an Expr.App, not an Expr.Val, so tryGetBindingName
+    // returns None and the "expression" form fires - documents the contract
+    // that complex expressions get the "expression" wording.
+    FSharp """module MyLib
+type C() =
+    member _.Get () : string | null = null
+    member this.Use () = this.Get().Length"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [
+        Error 3261, Line 4, Col 26, Line 4, Col 36,
+            "Nullness warning: Possible dereference of a null value when accessing member 'Length' on a nullable expression of type 'string | null'."
+    ]
+
+// -------- Coverage tests (positive: new dot-access message is used) --------
+
+[<Fact>]
+let ``Issue 19658 - piped lambda receiver uses new message`` () =
+    FSharp """module MyLib
+let f () =
+    let x: string | null = ""
+    x |> fun s -> s.Length"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [
+        Error 3261, Line 4, Col 19, Line 4, Col 20,
+            "Nullness warning: Possible dereference of a null value when accessing member 'Length' on the nullable value 's' of type 'string | null'."
+    ]
+
+[<Fact>]
+let ``Issue 19658 - inref receiver shows binding name`` () =
+    FSharp """module MyLib
+let useIt (s: inref<string | null>) = s.Length"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [
+        Error 3261, Line 2, Col 39, Line 2, Col 40,
+            "Nullness warning: Possible dereference of a null value when accessing member 'Length' on the nullable value 's' of type 'string | null'."
+    ]
+
+// -------- Out-of-scope-path tests (positive: old generic message still used) --------
+// These pin the current behavior of paths intentionally NOT routed through
+// TcMethodApplication. Widening coverage to these paths is tracked separately
+// under #17409. If a future change starts emitting the new dot-access message
+// for any of these, that change must update these tests deliberately.
+
+[<Fact>]
+let ``Issue 19658 - indexer access falls back to generic nullness warning`` () =
+    FSharp """module MyLib
+let f (x: string | null) = x.[0]"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [
+        Error 3261, Line 2, Col 28, Line 2, Col 33,
+            "Nullness warning: A non-nullable 'string' was expected but this expression is nullable. Consider either changing the target to also be nullable, or use pattern matching to safely handle the null case of this expression."
+    ]
+
+[<Fact>]
+let ``Issue 19658 - F# record field access falls back to generic nullness warning`` () =
+    FSharp """module MyLib
+type R = { Field: int }
+let f (r: R | null) = r.Field"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [
+        Error 3261, Line 3, Col 23, Line 3, Col 30,
+            "Nullness warning: The types 'R' and 'R | null' do not have compatible nullability."
+    ]
+
+[<Fact>]
+let ``Issue 19658 - anonymous record type cannot be marked nullable`` () =
+    // Anonymous record types do not support a `| null` qualification at all,
+    // so the dot-access nullness path cannot fire on them. This pins the
+    // current behavior: instead of FS3261, the language rejects the type.
+    FSharp """module MyLib
+let f (r: {| Field: int |} | null) = r.Field"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [
+        Error 3260, Line 2, Col 11, Line 2, Col 34,
+            "The type '{| Field: int |}' does not support a nullness qualification."
+    ]
+
+[<Fact>]
+let ``Issue 19658 - SRTP member call uses generic nullness warning`` () =
+    // SRTP-constrained members do not go through TcMethodApplication's
+    // overload resolution path; objArgInfo is None. The generic FS3261
+    // message fires. If/when SRTP gets routed through the same path, this
+    // test should be updated.
+    FSharp """module MyLib
+let inline f (x: ^T when ^T: (member Length: int)) : int = x.Length
+let g (s: string | null) = f s"""
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnostics [
+        Error 3261, Line 3, Col 30, Line 3, Col 31,
+            "Nullness warning: The types 'string' and 'string | null' do not have compatible nullability."
+    ]
+
+// https://github.com/dotnet/fsharp/issues/19646
+// After `| null -> … | s -> …`, `s` must keep its type alias, not the BCL type.
+[<Theory>]
+[<InlineData("", "string", "'string'")>]
+[<InlineData("type MyStr = string", "MyStr", "'MyStr'")>]
+[<InlineData("open System\ntype MyUri = Uri", "MyUri", "'MyUri'")>]
+let ``Issue 19646 - type alias is preserved after null pattern``
+    (typeDef: string, paramTypeName: string, expectedSubstring: string) =
+    FSharp $"""module Test
+
+{typeDef}
+
+let test (x: {paramTypeName} | null) : int =
+    match x with
+    | null -> 0
+    | s -> s
+    """
+    |> asLibrary
+    |> typeCheckWithStrictNullness
+    |> shouldFail
+    |> withDiagnosticMessageMatches expectedSubstring

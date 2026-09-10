@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<sort>
+  <arrayUnstable><remarks>This is not a stable sort, i.e. the original order of equal elements is not necessarily preserved.
+For a stable sort, consider using <see cref="M:Microsoft.FSharp.Collections.SeqModule.Sort"/>. This is an O(n log n) operation, where n is the length of the array.</remarks></arrayUnstable>
+  <arrayUnstableInPlace><remarks>This is not a stable sort, i.e. the original order of equal elements is not necessarily preserved.
+For a stable sort, consider using <see cref="M:Microsoft.FSharp.Collections.SeqModule.Sort"/>. This is an O(n log n) operation, modifying the array in place.</remarks></arrayUnstableInPlace>
+  <listStable><remarks>This is a stable sort, i.e. the original order of equal elements is preserved. This is an O(n log n) operation, where n is the length of the list.</remarks></listStable>
+  <seqStable><remarks>This function returns a sequence that digests the whole initial sequence as soon as
+that sequence is iterated. As a result this function should not be used with
+large or infinite sequences.
+
+The function makes no assumption on the ordering of the original
+sequence and uses a stable sort, that is the original order of equal elements is preserved. This is an O(n log n) operation, where n is the length of the sequence.</remarks></seqStable>
+  <seqStableDescending><remarks>This function returns a sequence that digests the whole initial sequence as soon as
+that sequence is iterated. As a result this function should not be used with
+large or infinite sequences. The function makes no assumption on the ordering of the original
+sequence.
+
+This is a stable sort, that is the original order of equal elements is preserved. This is an O(n log n) operation, where n is the length of the sequence.</remarks></seqStableDescending>
+</sort>

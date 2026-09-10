@@ -39,7 +39,7 @@
   <!-- Build FsYacc files. -->
   <Target Name="CallFsYacc"
           Inputs="@(FsYacc)"
-          Outputs="@(FsYacc->'$(FsYaccOutputFolder)%(Filename).fs')"
+          Outputs="@(FsYacc->'$(FsYaccOutputFolder)%(Filename).fs');@(FsYacc->'$(FsYaccOutputFolder)%(Filename).fsi')"
           Condition="'@(FsYacc)'!=''"
           BeforeTargets="CoreCompile">
 
@@ -58,6 +58,15 @@
       <Output TaskParameter="Include" ItemName="FsGeneratedSource"/>
       <Output TaskParameter="Include" ItemName="FileWrites"/>
     </CreateItem>
+    <CreateItem Include="$(FsYaccOutputFolder)%(FsYacc.Filename).fsi">
+      <Output TaskParameter="Include" ItemName="FileWrites"/>
+    </CreateItem>
   </Target>
+
+  <!-- Register .fsl/.fsy files as build inputs for IDE fast up-to-date checks -->
+  <ItemGroup>
+    <UpToDateCheckInput Include="@(FsLex)" />
+    <UpToDateCheckInput Include="@(FsYacc)" />
+  </ItemGroup>
 
 </Project>

@@ -7,6 +7,7 @@ open FSharp.Compiler.SyntaxTrivia
 open FSharp.Compiler.Text
 open FSharp.Compiler.UnicodeLexing
 
+[<RequireQualifiedAccess>]
 module internal WarnScopes =
 
     /// To be called during lexing to save #nowarn / #warnon directives.

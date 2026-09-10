@@ -12,7 +12,7 @@ module MyModule =
     let test(x: int) = ()
 
 // Running in parallel is unstable with occasional System.IO.FileLoadException: Could not load file or assembly 'FSI-ASSEMBLY...
-[<RunTestCasesInSequence>]
+[<TestClass(DisableParallelization = true)>]
 module FsiTests =
 
     let createFsiSession (useOneDynamicAssembly: bool) =
@@ -661,7 +661,7 @@ module FsiTests =
         | Choice2Of2 e ->
             printfn "exception: %A" e
             raise e
-            
+
     [<Fact>]
     let ``LineDirectivesWork`` () =
         use fsiSession = createFsiSession false
@@ -669,3 +669,37 @@ module FsiTests =
         let y = __LINE__""")
         let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
         Assert.shouldBe "100" boundValue.Value.ReflectionValue
+
+    let private createFsiSessionPreview (useOneDynamicAssembly: bool) =
+        let argv = [| "C:\\fsi.exe" |]
+        let allArgs =
+            Array.append argv [| "--noninteractive"; "--langversion:preview"; if useOneDynamicAssembly then "--multiemit-" else "--multiemit+" |]
+        let fsiConfig = FsiEvaluationSession.GetDefaultConfiguration()
+        FsiEvaluationSession.Create(fsiConfig, allArgs, stdin, stdout, stderr, collectible = true)
+
+    // RFC FS-1043: each EvalInteraction reuses the dummy file name "input.fsx" and a fresh lexbuf, so two
+    // identical-layout submissions produce identical source ranges while sharing one session CcuThunk (and its
+    // extension-operator solution sink). Submission 0 defines two different String '*' extensions; submissions
+    // 1 and 2 open one each with IDENTICAL layout, so their trait-call ranges coincide. Without resetting the
+    // sink per fragment the stale record from submission 1 is indistinguishable from submission 2's, the
+    // ambiguous file-global re-resolution is used, and the second use of '*' falls back to FSharp.Core's
+    // throwing dynamic stub (NotSupportedException) instead of the freshly opened extension.
+    [<TheoryForNETCOREAPP>]
+    [<InlineData(true)>]
+    [<InlineData(false)>]
+    let ``Extension operator SRTP resolution is not poisoned across FSI submissions`` (useOneDynamicAssembly: bool) =
+        use fsiSession = createFsiSessionPreview useOneDynamicAssembly
+
+        let submit code =
+            let res, errors = fsiSession.EvalInteractionNonThrowing(code)
+            match res with
+            | Choice2Of2 ex -> failwith $"submission raised {ex.GetType().Name}: {ex.Message}"
+            | Choice1Of2 _ -> errors |> Array.iter (fun e -> printfn "diag: %A" e)
+
+        submit "module A =\n    type System.String with\n        static member ( * ) (s1: string, s2: string) : string = s1 + s2\nmodule B =\n    type System.String with\n        static member ( * ) (s1: string, s2: string) : string = s2 + s1"
+        submit "open A\nlet r1 = \"ha\" * \"ho\""
+        submit "open B\nlet r2 = \"ha\" * \"ho\""
+
+        let byName name = fsiSession.GetBoundValues() |> List.find (fun v -> v.Name = name)
+        Assert.shouldBe (box "haho") ((byName "r1").Value.ReflectionValue)
+        Assert.shouldBe (box "hoha") ((byName "r2").Value.ReflectionValue)

@@ -7,18 +7,21 @@ SigFile
           [Types
              ([SynTypeDefnSig
                  (SynComponentInfo
-                    ([], None, [], [MyRecord],
+                    ([], None, [],
+                     Some (LongIdent (SynLongIdent ([MyRecord], [], [None]))),
                      PreXmlDoc ((3,0), FSharp.Compiler.Xml.XmlDocCollector),
                      false, None, (3,5--3,13)),
                   Simple
                     (Record
                        (None,
-                        [SynField
-                           ([], false, Some Level,
-                            LongIdent (SynLongIdent ([int], [], [None])), false,
-                            PreXmlDoc ((4,6), FSharp.Compiler.Xml.XmlDocCollector),
-                            None, (4,6--4,16), { LeadingKeyword = None
-                                                 MutableKeyword = None })],
+                        [Field
+                           (SynField
+                              ([], false, Some Level,
+                               LongIdent (SynLongIdent ([int], [], [None])),
+                               false,
+                               PreXmlDoc ((4,6), FSharp.Compiler.Xml.XmlDocCollector),
+                               None, (4,6--4,16), { LeadingKeyword = None
+                                                    MutableKeyword = None }))],
                         (4,4--4,18)), (4,4--4,18)),
                   [Member
                      (SynValSig

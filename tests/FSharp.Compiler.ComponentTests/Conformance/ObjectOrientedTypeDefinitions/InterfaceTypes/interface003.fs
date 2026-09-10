@@ -1,4 +1,4 @@
-// #Conformance #ObjectOrientedTypes #InterfacesAndImplementations 
+// #Conformance #ObjectOrientedTypes #InterfacesAndImplementations
 // Regression test for FSHARP1.0:
 //<Expects status="success"></Expects>
 type I<'t> =

@@ -1,4 +1,4 @@
 ﻿namespace ReferenceAssembly
 
-type MyClass() = 
+type MyClass() =
     member this.X = raise (new System.NotImplementedException("Not Implemented !!!!!!!!!"))

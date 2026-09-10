@@ -1,4 +1,4 @@
-// #Regression #Conformance #ObjectOrientedTypes #Classes 
+// #Regression #Conformance #ObjectOrientedTypes #Classes
 
 
 // FS1 1326: Generic unit types do not work with the implicit class syntax

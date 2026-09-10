@@ -1,4 +1,4 @@
-// #Regression #Conformance #ObjectOrientedTypes #Classes #MethodsAndProperties #MemberDefinitions 
+// #Regression #Conformance #ObjectOrientedTypes #Classes #MethodsAndProperties #MemberDefinitions
 // Verify that omitting "()" for the getter simply yields an error (instead of internal error)
 // (Note: in 1.9.6.16, the compiler was throwing an ICE). This is regression test for FSHARP1.0:4537
 // Regression test for FSHARP1.0:5375

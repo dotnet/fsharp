@@ -1,4 +1,4 @@
-// #Regression #Conformance #ControlFlow 
+// #Regression #Conformance #ControlFlow
 // Regression test for FSharp1.0:1713
 // FS0025: Incomplete pattern matches on this expression... - wording could be improved a bit
 //<Expects id="FS0025" span="(8,14-8,24)" status="warning">'0.0'</Expects>

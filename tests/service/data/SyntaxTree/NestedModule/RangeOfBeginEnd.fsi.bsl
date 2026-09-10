@@ -6,7 +6,7 @@ SigFile
          ([X], false, DeclaredNamespace,
           [NestedModule
              (SynComponentInfo
-                ([], None, [], [Y],
+                ([], None, [], Some (LongIdent (SynLongIdent ([Y], [], []))),
                  PreXmlDoc ((3,0), FSharp.Compiler.Xml.XmlDocCollector), false,
                  None, (3,0--3,8)), false, [], (3,0--4,13),
               { ModuleKeyword = Some (3,0--3,6)

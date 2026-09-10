@@ -148,3 +148,47 @@ module IdentifiersAndKeywords =
         |> shouldFail
         |> withErrorCode 0883
         |> ignore
+
+    // https://github.com/dotnet/fsharp/issues/1255
+    [<Fact>]
+    let ``Issue 1255 - Identifiers with at sign produce correct codegen`` () =
+        FSharp """
+type Foo() =
+  static let ``BarAt@`` = "hello"
+  static member BarAt = ``BarAt@``
+  static member val Bar = "bar"
+
+[<EntryPoint>]
+let main _ =
+  if Foo.BarAt <> "hello" then
+    failwithf "Expected BarAt='hello' but got '%s'" Foo.BarAt
+  if Foo.Bar <> "bar" then
+    failwithf "Expected Bar='bar' but got '%s'" Foo.Bar
+  0
+        """
+        |> ignoreWarnings
+        |> asExe
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    // A member whose compiled name contains '@' (valid F# via double-backticks, warns FS1104) must
+    // still compile, run, and emit deterministically. The IlxGen method sort buckets names with '@'
+    // as compiler-generated, but ordering stays total/deterministic, so such members are harmless.
+    [<Fact>]
+    let ``Member name with at sign emits and runs correctly`` () =
+        FSharp """
+type C() =
+  member _.a () = 1
+  member _.``weird@name`` () = 42
+  member _.b () = 2
+
+[<EntryPoint>]
+let main _ =
+  let c = C()
+  if c.a() + c.``weird@name``() + c.b() <> 45 then failwith "wrong"
+  0
+        """
+        |> ignoreWarnings
+        |> asExe
+        |> compileExeAndRun
+        |> shouldSucceed

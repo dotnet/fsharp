@@ -341,13 +341,13 @@ namespace ProviderImplementation.ProvidedTypes
         member AddDefinitionLocation: line:int * column:int * filePath:string -> unit
 
         /// Suppress Object entries in intellisense menus in instances of this provided type
-        member HideObjectMethods: bool 
+        member HideObjectMethods: bool
 
         /// Disallows the use of the null literal.
         member NonNullable: bool
 
         /// Get a flag indicating if the ProvidedTypeDefinition is erased
-        member IsErased: bool 
+        member IsErased: bool
 
         /// Get or set a flag indicating if the ProvidedTypeDefinition has type-relocation suppressed
         [<Experimental("SuppressRelocation is a workaround and likely to be removed")>]
@@ -404,13 +404,13 @@ namespace ProviderImplementation.ProvidedTypes
 
     [<Class>]
     /// Represents the context for which code is to be generated. Normally you should not need to use this directly.
-    type ProvidedTypesContext = 
-        
-        /// Try to find the given target assembly in the context
-        member TryBindAssemblyNameToTarget: aref: AssemblyName -> Choice<Assembly, exn> 
+    type ProvidedTypesContext =
 
         /// Try to find the given target assembly in the context
-        member TryBindSimpleAssemblyNameToTarget: assemblyName: string  -> Choice<Assembly, exn> 
+        member TryBindAssemblyNameToTarget: aref: AssemblyName -> Choice<Assembly, exn>
+
+        /// Try to find the given target assembly in the context
+        member TryBindSimpleAssemblyNameToTarget: assemblyName: string  -> Choice<Assembly, exn>
 
         /// Get the list of referenced assemblies determined by the type provider configuration
         member ReferencedAssemblyPaths: string list
@@ -454,7 +454,7 @@ namespace ProviderImplementation.ProvidedTypes
         ///    The transitive dependencies of these assemblies are also included. By default
         ///    Assembly.GetCallingAssembly() and its transitive dependencies are used.
         /// </param>
-        ///               
+        ///
         /// <param name="assemblyReplacementMap">
         ///    Optionally specify a map of assembly names from source model to referenced assemblies.
         /// </param>
@@ -466,7 +466,7 @@ namespace ProviderImplementation.ProvidedTypes
         ///    The transitive dependencies of these assemblies are also included. By default
         ///    Assembly.GetCallingAssembly() and its transitive dependencies are used.
         /// </param>
-        ///               
+        ///
         /// <param name="assemblyReplacementMap">
         ///    Optionally specify a map of assembly names from source model to referenced assemblies.
         /// </param>
@@ -511,7 +511,7 @@ namespace ProviderImplementation.ProvidedTypes
         member Disposing: IEvent<EventHandler,EventArgs>
 
         /// The context for which code is eventually to be generated. You should not normally
-        /// need to use this property directly, as translation from the compiler-hosted context to 
+        /// need to use this property directly, as translation from the compiler-hosted context to
         /// the design-time context will normally be performed automatically.
         member TargetContext: ProvidedTypesContext
 
@@ -544,6 +544,6 @@ namespace ProviderImplementation.ProvidedTypes
 
 
     // Used by unit testing to check that invalidation handlers are being disconnected
-    module GlobalCountersForInvalidation = 
+    module GlobalCountersForInvalidation =
         val GetInvalidationHandlersAdded : unit -> int
         val GetInvalidationHandlersRemoved : unit -> int

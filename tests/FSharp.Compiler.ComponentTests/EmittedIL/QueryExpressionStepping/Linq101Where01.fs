@@ -7,7 +7,7 @@ open System.Linq
 
 
 let numbers = [ 5; 4; 1; 3; 9; 8; 6; 7; 2; 0 ]
- 
+
  // Where - Simple 1
 let lowNums =
     query {
@@ -50,6 +50,6 @@ let shortDigits =
     query {
         for d in digits do
         select d
-    } 
-    |> Seq.mapi (fun i d -> if d.Length < i then Some(d) else None) 
+    }
+    |> Seq.mapi (fun i d -> if d.Length < i then Some(d) else None)
     |> Seq.choose id

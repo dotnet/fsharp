@@ -11,6 +11,13 @@ open FSharp.Compiler.Tokenization
 
 #nowarn "1182" // Unused bindings when ignored parsed results etc.
 
+/// Virtual source filename used by tests that don't need a real on-disk path.
+/// Path.Combine keeps this OS-neutral for any test that compares the resulting range filename.
+let private testFile = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "Test.fsx")
+
+/// Parses and type-checks an inline source snippet against the shared `testFile` identifier.
+let private parseAndCheck (source: string) = parseAndCheckScript (testFile, source)
+
 let stringMethods =
     [
         "Chars"; "Clone"; "CompareTo"; "Contains"; "CopyTo"; "EndsWith";
@@ -29,7 +36,11 @@ let stringMethods =
         "ReplaceLineEndings";
 #endif
         "Split"; "StartsWith"; "Substring";
-        "ToCharArray"; "ToLower"; "ToLowerInvariant"; "ToString"; "ToUpper";
+        "ToCharArray"; "ToLower"; "ToLowerInvariant";
+#if NET11_0_OR_GREATER
+        "ToLowerOrdinal"; "ToUpperOrdinal";
+#endif
+        "ToString"; "ToUpper";
         "ToUpperInvariant"; "Trim"; "TrimEnd"; "TrimStart";
 #if NETCOREAPP
         "TryCopyTo"
@@ -58,7 +69,7 @@ let ``Intro test`` () =
     let file = "/home/user/Test.fsx"
     let parseResult, typeCheckResults =  parseAndCheckScript(file, input)
     let identToken = FSharpTokenTag.IDENT
-//    let projectOptions = checker.GetProjectOptionsFromScript(file, input) |> Async.RunImmediate
+//    let projectOptions = checker.GetProjectOptionsFromScript(file, input) |> Async.RunSynchronouslyImmediate
 
     // So we check that the messages are the same
     for msg in typeCheckResults.Diagnostics do
@@ -91,7 +102,7 @@ let ``Intro test`` () =
 
     // Print concatenated parameter lists
     [ for mi in methods.Methods do
-        yield methods.MethodName , [ for p in mi.Parameters do yield p.Display |> taggedTextToString ] ]
+        yield methods.MethodName , [ for p in mi.Parameters do yield p.Display.Text ] ]
         |> shouldEqual
               [("Concat", ["[<ParamArray>] args: obj []"]);
                ("Concat", ["[<ParamArray>] values: string []"]);
@@ -156,7 +167,7 @@ let ``GetMethodsAsSymbols should return all overloads of a method as FSharpSymbo
              ("Concat", [("arg0", "obj"); ("arg1", "obj"); ("arg2", "obj"); ("arg3", "obj")]);
 #endif
              ("Concat", [("str0", "string"); ("str1", "string"); ("str2", "string"); ("str3", "string")])]
-        
+
         results |> shouldEqual expected
 
     | None -> failwith "No symbols returned"
@@ -541,6 +552,52 @@ let _ = debug "[LanguageService] Type checking fails for '%s' with content=%A an
                      (4, 82, 4, 84, 1);
                      (4, 108, 4, 110, 1)|]
 
+// Regression for issue #16419: in `seq { e }` with implicit-yield, the body 'e' was
+// type-checked twice (once as a statement via TryTcStmt, once as a yielded expression).
+// Both passes used to notify the sink, leading to duplicate format-specifier entries
+// when 'e' contained a printf-style format string.
+[<Theory>]
+[<InlineData("let _ = seq { sprintf \"%d\" 1 }", 1)>]
+[<InlineData("let _ = seq { sprintf \"%d %s %A\" 1 \"x\" 2 }", 3)>]
+[<InlineData("let _ = seq { printfn \"%d\" 1 }", 1)>]
+let ``Format specifier locations are not duplicated in seq computation expression`` (source: string, expectedCount: int) =
+    let _, typeCheckResults = parseAndCheck source
+    let locs = typeCheckResults.GetFormatSpecifierLocationsAndArity()
+    Assert.Equal(expectedCount, locs.Length)
+
+// Validates that the implicit-yield classification probe does not break
+// expected-type-driven inference (subsumption, type-directed conversion,
+// nullness flex, overload resolution).
+[<Theory>]
+[<InlineData("let xs : seq<obj> = seq { 1 }")>]
+[<InlineData("let ys : seq<obj> = seq { yield 1 }")>]
+[<InlineData("let xs : seq<obj> = seq { \"hi\" }")>]
+[<InlineData("#nowarn \"0025\"\nlet xs : seq<string | null> = seq { \"hi\" }")>]
+[<InlineData("type T() =\n    static member M(x: int) = \"int\"\n    static member M(x: string) = \"string\"\nlet xs : seq<string> = seq { T.M(1) }")>]
+let ``Implicit-yield in seq preserves expected-type-driven inference`` (source: string) =
+    let _, typeCheckResults = parseAndCheck source
+    let errors =
+        typeCheckResults.Diagnostics
+        |> Array.filter (fun d -> d.Severity = FSharp.Compiler.Diagnostics.FSharpDiagnosticSeverity.Error)
+        |> Array.map (fun d -> d.Message)
+    Assert.Equal<_ seq>(Array.empty, errors)
+
+// Regression for #16419: the implicit-yield body was checked twice, doubling every diagnostic, not just
+// format specifiers. The probe is now silenced, so body warnings/errors are reported once, while a fatal
+// body error (e.g. a bad format string) still surfaces.
+[<Theory>]
+[<InlineData("[<System.Obsolete(\"x\")>]\nlet f () = 1\nlet _ = seq { f () }")>]
+[<InlineData("let _ = seq { 1 + \"x\" }")>]
+[<InlineData("let _ = seq { sprintf \"%Z\" }")>]
+let ``Implicit-yield seq body diagnostics are reported once`` (source: string) =
+    let _, typeCheckResults = parseAndCheck source
+    Assert.NotEmpty typeCheckResults.Diagnostics
+    let duplicated =
+        typeCheckResults.Diagnostics
+        |> Array.countBy (fun d -> d.ErrorNumber, d.StartLine, d.StartColumn, d.EndLine, d.EndColumn)
+        |> Array.filter (fun (_, n) -> n > 1)
+    Assert.Empty duplicated
+
 #if ASSUME_PREVIEW_FSHARP_CORE
 [<Fact>]
 let ``Printf specifiers for regular and verbatim interpolated strings`` () =
@@ -707,6 +764,9 @@ let test3 = System.Text.RegularExpressions.RegexOptions.Compiled
                              ("CultureInvariant", Some (box 512))
 #if NETCOREAPP
                              ("NonBacktracking", Some 1024)
+#endif
+#if NET11_0_OR_GREATER
+                             ("AnyNewLine", Some 2048)
 #endif
                            ]
         |]
@@ -1156,18 +1216,18 @@ let getBreakpointLocations (input: string) (parseResult: FSharpParseFileResults)
     let positions = [ for i,line in Seq.indexed lines do for j, c in Seq.indexed line do yield Position.mkPos (Line.fromZ i) j, line ]
     [ for pos, line in positions do
         match parseResult.ValidateBreakpointLocation pos with
-        | Some r -> 
-            let text = 
+        | Some r ->
+            let text =
                 [ if r.StartLine = r.EndLine then
                       lines[r.StartLine-1][r.StartColumn..r.EndColumn-1]
                   else
                       lines[r.StartLine-1][r.StartColumn..]
-                      for l in r.StartLine..r.EndLine-2 do 
+                      for l in r.StartLine..r.EndLine-2 do
                             lines[l]
                       lines[r.EndLine-1][..r.EndColumn-1] ]
                 |> String.concat "$"
             ((pos.Line, pos.Column), (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn, text))
-        | None -> 
+        | None ->
             ()]
 
 [<Fact>]
@@ -1257,7 +1317,7 @@ let f () =
     let parseResult, typeCheckResults = parseAndCheckScript(file, input)
     let results = getBreakpointLocations input parseResult
     printfn "%A" results
-    results |> shouldEqual 
+    results |> shouldEqual
         [((3, 0), (3, 5, 3, 8, "[1]")); ((3, 1), (3, 5, 3, 8, "[1]"));
          ((3, 2), (3, 5, 3, 8, "[1]")); ((3, 3), (3, 5, 3, 8, "[1]"));
          ((3, 4), (3, 5, 3, 8, "[1]")); ((3, 5), (3, 5, 3, 8, "[1]"));
@@ -1316,7 +1376,7 @@ let f () =
          ((6, 14), (6, 7, 6, 17, "List.unzip")); ((6, 15), (6, 7, 6, 17, "List.unzip"));
          ((6, 16), (6, 7, 6, 17, "List.unzip"))]
 
-    
+
 [<Fact>]
 let ``ValidateBreakpointLocation tests for pipe3`` () =
     let input =
@@ -1330,7 +1390,7 @@ let f () =
     let parseResult, typeCheckResults = parseAndCheckScript(file, input)
     let results = getBreakpointLocations input parseResult
     printfn "%A" results
-    results |> shouldEqual 
+    results |> shouldEqual
         [((3, 0), (3, 5, 3, 8, "[1]")); ((3, 1), (3, 5, 3, 8, "[1]"));
          ((3, 2), (3, 5, 3, 8, "[1]")); ((3, 3), (3, 5, 3, 8, "[1]"));
          ((3, 4), (3, 5, 3, 8, "[1]")); ((3, 5), (3, 5, 3, 8, "[1]"));
@@ -1415,7 +1475,7 @@ let bodyWrapper () =
     // on line 4 and 5, and the ones actually on the interior text of the lambda.
     //
     // This is correct
-    results |> shouldEqual 
+    results |> shouldEqual
         [((3, 0), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
          ((3, 1), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
          ((3, 2), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
@@ -1473,7 +1533,7 @@ let bodyWrapper (a, b, c) = a || b && c"""
     // on line 4 and 5, and the ones actually on the interior text of the lambda.
     //
     // This is correct
-    results |> shouldEqual 
+    results |> shouldEqual
         [((2, 0), (2, 28, 2, 29, "a")); ((2, 1), (2, 28, 2, 29, "a"));
          ((2, 2), (2, 28, 2, 29, "a")); ((2, 3), (2, 28, 2, 29, "a"));
          ((2, 4), (2, 28, 2, 29, "a")); ((2, 5), (2, 28, 2, 29, "a"));
@@ -1515,7 +1575,7 @@ module M =
     // on line 4 and 5, and the ones actually on the interior text of the lambda.
     //
     // This is correct
-    results |> shouldEqual 
+    results |> shouldEqual
             [((2, 0), (2, 14, 2, 16, "()")); ((2, 1), (2, 14, 2, 16, "()"));
              ((2, 2), (2, 14, 2, 16, "()")); ((2, 3), (2, 14, 2, 16, "()"));
              ((2, 4), (2, 14, 2, 16, "()")); ((2, 5), (2, 14, 2, 16, "()"));
@@ -1633,7 +1693,7 @@ let _ = RegexTypedStatic.IsMatch<"ABC" >(  (*$*) ) // TEST: no assert on Ctrl-sp
 [<Fact>]
 let ``Test TPProject all symbols`` () =
 
-    let wholeProjectResults = checker.ParseAndCheckProject(TPProject.options) |> Async.RunImmediate
+    let wholeProjectResults = checker.ParseAndCheckProject(TPProject.options) |> Async.RunSynchronouslyImmediate
     let allSymbolUses = wholeProjectResults.GetAllUsesOfAllSymbols()
     let allSymbolUsesInfo =  [ for s in allSymbolUses -> s.Symbol.DisplayName, tups s.Range, attribsOfSymbol s.Symbol ]
     //printfn "allSymbolUsesInfo = \n----\n%A\n----" allSymbolUsesInfo
@@ -1671,8 +1731,8 @@ let ``Test TPProject all symbols`` () =
 
 [<Fact>]
 let ``Test TPProject errors`` () =
-    let wholeProjectResults = checker.ParseAndCheckProject(TPProject.options) |> Async.RunImmediate
-    let parseResult, typeCheckAnswer = checker.ParseAndCheckFileInProject(TPProject.fileName1, 0, TPProject.fileSource1, TPProject.options) |> Async.RunImmediate
+    let wholeProjectResults = checker.ParseAndCheckProject(TPProject.options) |> Async.RunSynchronouslyImmediate
+    let parseResult, typeCheckAnswer = checker.ParseAndCheckFileInProject(TPProject.fileName1, 0, TPProject.fileSource1, TPProject.options) |> Async.RunSynchronouslyImmediate
     let typeCheckResults =
         match typeCheckAnswer with
         | FSharpCheckFileAnswer.Succeeded(res) -> res
@@ -1690,7 +1750,7 @@ let ``Test TPProject errors`` () =
          (11, 8, 11, 35, "The static parameter 'pattern1' of the provided type or method 'IsMatch' requires a value. Static parameters to type providers may be optionally specified using named arguments, e.g. 'IsMatch<pattern1=...>'.");
          (12, 8, 12, 41, "The static parameter 'pattern1' of the provided type or method 'IsMatch' requires a value. Static parameters to type providers may be optionally specified using named arguments, e.g. 'IsMatch<pattern1=...>'.");
          (14, 46, 14, 50, "This expression was expected to have type    'string'    but here has type    'unit'    ");
-         (15, 33, 15, 38, "No static parameter exists with name ''");
+         (15, 33, 15, 38, "No static parameter exists with name ''. Available parameters: pattern1.");
          (16, 40, 16, 50, "This expression was expected to have type    'string'    but here has type    'unit'    ")]
 
 let internal extractToolTipText (ToolTipText(els)) =
@@ -1702,8 +1762,8 @@ let internal extractToolTipText (ToolTipText(els)) =
 
 [<Fact>]
 let ``Test TPProject quick info`` () =
-    let wholeProjectResults = checker.ParseAndCheckProject(TPProject.options) |> Async.RunImmediate
-    let parseResult, typeCheckAnswer = checker.ParseAndCheckFileInProject(TPProject.fileName1, 0, TPProject.fileSource1, TPProject.options) |> Async.RunImmediate
+    let wholeProjectResults = checker.ParseAndCheckProject(TPProject.options) |> Async.RunSynchronouslyImmediate
+    let parseResult, typeCheckAnswer = checker.ParseAndCheckFileInProject(TPProject.fileName1, 0, TPProject.fileSource1, TPProject.options) |> Async.RunSynchronouslyImmediate
     let typeCheckResults =
         match typeCheckAnswer with
         | FSharpCheckFileAnswer.Succeeded(res) -> res
@@ -1736,8 +1796,8 @@ let ``Test TPProject quick info`` () =
 
 [<Fact>]
 let ``Test TPProject param info`` () =
-    let wholeProjectResults = checker.ParseAndCheckProject(TPProject.options) |> Async.RunImmediate
-    let parseResult, typeCheckAnswer = checker.ParseAndCheckFileInProject(TPProject.fileName1, 0, TPProject.fileSource1, TPProject.options) |> Async.RunImmediate
+    let wholeProjectResults = checker.ParseAndCheckProject(TPProject.options) |> Async.RunSynchronouslyImmediate
+    let parseResult, typeCheckAnswer = checker.ParseAndCheckFileInProject(TPProject.fileName1, 0, TPProject.fileSource1, TPProject.options) |> Async.RunSynchronouslyImmediate
     let typeCheckResults =
         match typeCheckAnswer with
         | FSharpCheckFileAnswer.Succeeded(res) -> res
@@ -1917,7 +1977,7 @@ do let x = 1 in ()
     let su = checkResults |> findSymbolUseByName "x"
     match checkResults.GetDescription(su.Symbol, su.GenericArguments, true, su.Range) with
     | ToolTipText [ToolTipElement.Group [data]] ->
-        data.MainDescription |> Array.map (fun text -> text.Text) |> String.concat "" |> shouldEqual "val x: int"
+        data.MainDescription.Text |> shouldEqual "val x: int"
     | elements -> failwith $"Tooltip elements: {elements}"
 
 let hasRecordField (fieldName:string) (symbolUses: FSharpSymbolUse list) =
@@ -1937,15 +1997,6 @@ let hasRecordType (recordTypeName: string) (symbolUses: FSharpSymbolUse list) =
         | _ -> false
     )
     |> fun exists -> Assert.True(exists, $"Record type {recordTypeName} not found.")
-    
-let private assertItemsWithNames contains names (completionInfo: DeclarationListInfo) =
-    let itemNames = completionInfo.Items |> Array.map _.NameInCode |> set
-
-    for name in names do
-        Assert.True(Set.contains name itemNames = contains)
-
-let assertHasItemWithNames names (completionInfo: DeclarationListInfo) =
-    assertItemsWithNames true names completionInfo
 
 [<Fact>]
 let ``Record fields are completed via type name usage`` () =
@@ -1977,7 +2028,7 @@ let x =
                 EndColumn = 13
                 LastDotPos = Some 13
                 PartialIdent = ""
-                QualifyingIdents = [ "Entry" ] 
+                QualifyingIdents = [ "Entry" ]
             },
             fun _ -> List.empty
         )
@@ -2013,7 +2064,7 @@ module Module2 =
                 EndColumn = 13
                 LastDotPos = Some 13
                 PartialIdent = ""
-                QualifyingIdents = [ "Module1" ] 
+                QualifyingIdents = [ "Module1" ]
             },
             fun _ -> List.empty
         )
@@ -2050,7 +2101,7 @@ module Module2 =
                 EndColumn = 8
                 LastDotPos = Some 8
                 PartialIdent = ""
-                QualifyingIdents = [ "R1" ] 
+                QualifyingIdents = [ "R1" ]
             },
             fun _ -> List.empty
         )
@@ -2082,7 +2133,7 @@ module Module2 =
                 EndColumn = 16
                 LastDotPos = Some 16
                 PartialIdent = ""
-                QualifyingIdents = [ "Module1"; "R1" ] 
+                QualifyingIdents = [ "Module1"; "R1" ]
             },
             fun _ -> List.empty
         )
@@ -2154,7 +2205,7 @@ let rUpdate =
 """
 
     assertHasItemWithNames ["Field1"; "Field2"] info
-    
+
 [<Fact>]
 let ``No record field completion after '=' with missing value in first binding (after =;)`` () =
     let info = Checker.getCompletionInfo """
@@ -2182,3 +2233,26 @@ let x = new X()
 let _ = { field1 =; f{caret} }
 """
     assertItemsWithNames false ["field1"; "field2"] info
+
+[<Fact>]
+let ``19905 - object-initializer property completion still works`` () =
+    let parseResults, checkResults = getParseAndCheckResults "\ntype A() =\n    member val SettableProperty = 1 with get,set\n    member val NonSettableProperty = 1\nA()\n"
+    let decls = checkResults.GetDeclarationListInfo(Some parseResults, 5, "A()", PartialLongName.Empty(2), (fun _ -> []))
+    let names = decls.Items |> Array.map (fun i -> i.NameInCode) |> Set.ofArray
+    Assert.True(names.Contains "SettableProperty", sprintf "object-initializer completion regressed: %d items" names.Count)
+
+[<Fact>]
+let ``19905 - generic constructor parameter info still works`` () =
+    let parseResults, checkResults = getParseAndCheckResults "\nopen System.Collections.Generic\nlet _ = new Dictionary<_, _>()\n"
+    match parseResults.FindParameterLocations(FSharp.Compiler.Text.Position.mkPos 3 29) with
+    | None -> Assert.True(false, "FindParameterLocations returned None for generic ctor")
+    | Some nwpl ->
+        let lidEnd = nwpl.LongIdEndLocation
+        let methods = checkResults.GetMethods(lidEnd.Line, lidEnd.Column, "", Some nwpl.LongId)
+        Assert.True(methods.Methods.Length > 0, "generic constructor parameter info regressed (no methods)")
+
+[<Fact>]
+let ``19905 - custom GetSlice usage via slice syntax is found`` () =
+    let _, checkResults = getParseAndCheckResults "\ntype T() =\n    member _.GetSlice(a: int option, b: int option) = [a; b]\nlet xs = T()\nlet ys = xs.[0..2]\n"
+    let callSites = checkResults.GetAllUsesOfAllSymbolsInFile() |> Seq.filter (fun u -> u.Symbol.DisplayName = "GetSlice" && not u.IsFromDefinition) |> Seq.length
+    Assert.True(callSites > 0, "custom GetSlice slice call site not found by find-all-references")

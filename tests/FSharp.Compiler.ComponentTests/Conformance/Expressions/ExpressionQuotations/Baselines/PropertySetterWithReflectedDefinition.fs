@@ -1,4 +1,4 @@
-// #Conformance #Quotations 
+// #Conformance #Quotations
 open Microsoft.FSharp.Quotations
 open Microsoft.FSharp.Quotations.ExprShape
 open Microsoft.FSharp.Quotations.DerivedPatterns
@@ -32,7 +32,7 @@ let hasReflectedDefinitionPropertySetter quote =
                          | ShapeLambda (v,expr) -> Expr.Lambda (v, traverse expr)
                          | ShapeCombination (o, exprs) -> RebuildShapeCombination(o, List.map traverse exprs)
     (traverse quote, found)
-                     
+
 // ensure the quotation matches and that the rebuilt quotation retained the ReflectedDefinition attribute
 let q1, f1 = hasReflectedDefinitionPropertySetter q
 let r1 = match !f1 with

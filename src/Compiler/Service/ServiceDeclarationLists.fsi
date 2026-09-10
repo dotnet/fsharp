@@ -15,31 +15,31 @@ open FSharp.Compiler.AccessibilityLogic
 
 /// A single data tip display element
 [<RequireQualifiedAccess>]
-type public ToolTipElementData = 
+type public ToolTipElementData =
     {
       Symbol: FSharpSymbol option
 
-      MainDescription: TaggedText[]
+      MainDescription: RichText
 
       XmlDoc: FSharpXmlDoc
 
       /// typar instantiation text, to go after xml
-      TypeMapping: TaggedText[] list
+      TypeMapping: RichText list
 
       /// Extra text, goes at the end
-      Remarks: TaggedText[] option
+      Remarks: RichText option
 
       /// Parameter name
       ParamName: string option
     }
 
-    static member internal Create: layout: TaggedText[] * xml: FSharpXmlDoc * ?typeMapping: TaggedText[] list * ?paramName: string * ?remarks: TaggedText[] * ?symbol: FSharpSymbol  -> ToolTipElementData
+    static member internal Create: mainDescription: RichText * xml: FSharpXmlDoc * ?typeMapping: RichText list * ?paramName: string * ?remarks: RichText * ?symbol: FSharpSymbol  -> ToolTipElementData
 
 /// A single tool tip display element
 //
 // Note: instances of this type do not hold any references to any compiler resources.
 [<RequireQualifiedAccess>]
-type public ToolTipElement = 
+type public ToolTipElement =
     | None
 
     /// A single type, method, etc with comment. May represent a method overload group.
@@ -48,12 +48,12 @@ type public ToolTipElement =
     /// An error occurred formatting this element
     | CompositionError of errorText: string
 
-    static member Single: layout: TaggedText[] * xml: FSharpXmlDoc * ?typeMapping: TaggedText[] list * ?paramName: string * ?remarks: TaggedText[] * ?symbol: FSharpSymbol  -> ToolTipElement
+    static member Single: mainDescription: RichText * xml: FSharpXmlDoc * ?typeMapping: RichText list * ?paramName: string * ?remarks: RichText * ?symbol: FSharpSymbol  -> ToolTipElement
 
 /// Information for building a tool tip box.
 //
 // Note: instances of this type do not hold any references to any compiler resources.
-type public ToolTipText = 
+type public ToolTipText =
 
     /// A list of data tip elements to display.
     | ToolTipText of ToolTipElement list
@@ -88,10 +88,10 @@ type internal CompletionItem =
 
       MinorPriority: int
 
-      Type: TyconRef option 
+      Type: TyconRef option
 
       Unresolved: UnresolvedSymbol option
-      
+
       CustomInsertText: string voption
       CustomDisplayText: string voption
     }
@@ -156,25 +156,25 @@ type public DeclarationListInfo =
 
     member IsError: bool
 
-    // Implementation details used by other code in the compiler    
+    // Implementation details used by other code in the compiler
     static member internal Create:
-        infoReader:InfoReader * 
+        infoReader:InfoReader *
         ad:AccessorDomain *
-        m:range * 
-        denv:DisplayEnv * 
-        getAccessibility:(Item -> FSharpAccessibility) * 
-        items:CompletionItem list * 
-        currentNamespace:string[] option * 
-        isAttributeApplicationContext:bool 
+        m:range *
+        denv:DisplayEnv *
+        getAccessibility:(Item -> FSharpAccessibility) *
+        items:CompletionItem list *
+        currentNamespace:string[] option *
+        isAttributeApplicationContext:bool
             -> DeclarationListInfo
 
     static member internal Error: message:string -> DeclarationListInfo
 
     static member Empty: DeclarationListInfo
 
-/// Represents one parameter for one method (or other item) in a group. 
+/// Represents one parameter for one method (or other item) in a group.
 [<Sealed>]
-type public MethodGroupItemParameter = 
+type public MethodGroupItemParameter =
 
     /// The name of the parameter.
     member ParameterName: string
@@ -184,15 +184,15 @@ type public MethodGroupItemParameter =
 
     /// The representation for the parameter including its name, its type and visual indicators of other
     /// information such as whether it is optional.
-    member Display: TaggedText[]
+    member Display: RichText
 
     /// Is the parameter optional
     member IsOptional: bool
 
-/// Represents one method (or other item) in a method group. The item may represent either a method or 
+/// Represents one method (or other item) in a method group. The item may represent either a method or
 /// a single, non-overloaded item such as union case or a named function value.
-[<Sealed>]
-type public MethodGroupItem = 
+[<Sealed; NoEquality; NoComparison>]
+type public MethodGroupItem =
 
     /// The documentation for the item
     member XmlDoc: FSharpXmlDoc
@@ -201,7 +201,7 @@ type public MethodGroupItem =
     member Description: ToolTipText
 
     /// The tagged text for the return type for the method (or other item)
-    member ReturnTypeText: TaggedText[]
+    member ReturnTypeText: RichText
 
     /// The parameters of the method in the overload set
     member Parameters: MethodGroupItemParameter[]
@@ -215,9 +215,9 @@ type public MethodGroupItem =
     /// Does the type name or method support a static arguments list, like TP<42,"foo"> or conn.CreateCommand<42, "foo">(arg1, arg2)?
     member StaticParameters: MethodGroupItemParameter[]
 
-/// Represents a group of methods (or other items) returned by GetMethods.  
+/// Represents a group of methods (or other items) returned by GetMethods.
 [<Sealed>]
-type public MethodGroup = 
+type public MethodGroup =
 
     internal new: string * MethodGroupItem[] -> MethodGroup
 
@@ -225,7 +225,7 @@ type public MethodGroup =
     member MethodName: string
 
     /// The methods (or other items) in the group
-    member Methods: MethodGroupItem[] 
+    member Methods: MethodGroupItem[]
 
     static member internal Create: InfoReader * AccessorDomain * range * DisplayEnv * ItemWithInst list -> MethodGroup
 

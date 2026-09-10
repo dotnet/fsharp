@@ -1824,7 +1824,7 @@ val it: unit
 > {"AnonRecordField2":10}
 val it: unit = ()
 
-> val it: {| AnonRecordField2: int |} = { AnonRecordField2 = 11 }
+> val it: {| AnonRecordField2: int |} = {| AnonRecordField2 = 11 |}
 
 module FSI_0326.Project.fsproj
 

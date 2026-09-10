@@ -46,27 +46,27 @@ val (|StopProcessing|_|): exn: exn -> unit voption
 val StopProcessing<'T> : exn
 
 /// Represents a diagnostic exception whose text comes via SR.*
-exception DiagnosticWithText of number: int * message: string * range: range
+exception DiagnosticWithText of number: int * message: RichText * range: range
 
 /// A diagnostic that is raised when enabled manually, or by default with a language feature
 exception DiagnosticEnabledWithLanguageFeature of
     number: int *
-    message: string *
+    message: RichText *
     range: range *
     enabledByLangFeature: bool
 
 /// Creates a diagnostic exception whose text comes via SR.*
-val Error: (int * string) * range -> exn
+val Error: (int * RichText) * range -> exn
 
 exception InternalError of message: string * range: range
 
 exception InternalException of exn: Exception * msg: string * range: range
 
-exception UserCompilerMessage of message: string * number: int * range: range
+exception UserCompilerMessage of message: RichText * number: int * range: range
 
 exception LibraryUseOnly of range: range
 
-exception Deprecated of message: string * range: range
+exception Deprecated of message: RichText * range: range
 
 exception Experimental of message: string option * diagnosticId: string option * urlFormat: string option * range: range
 
@@ -82,23 +82,30 @@ exception UnresolvedPathReference of assemblyName: string * path: string * range
 
 exception DiagnosticWithSuggestions of
     number: int *
-    message: string *
+    message: RichText *
     range: range *
     identifier: string *
     suggestions: Suggestions
 
+type ObsoleteDiagnosticInfo =
+    | ObsoleteDiagnosticInfo of
+        isError: bool *
+        diagnosticId: string option *
+        message: string option *
+        urlFormat: string option
+
 exception ObsoleteDiagnostic of
     isError: bool *
     diagnosticId: string option *
-    message: string option *
+    message: RichText option *
     urlFormat: string option *
     range: range
 
 /// Creates a DiagnosticWithSuggestions whose text comes via SR.*
-val ErrorWithSuggestions: (int * string) * range * string * Suggestions -> exn
+val ErrorWithSuggestions: (int * RichText) * range * string * Suggestions -> exn
 
 /// Creates a DiagnosticEnabledWithLanguageFeature whose text comes via SR.*
-val ErrorEnabledWithLanguageFeature: (int * string) * range * bool -> exn
+val ErrorEnabledWithLanguageFeature: (int * RichText) * range * bool -> exn
 
 val inline protectAssemblyExploration: dflt: 'T -> f: (unit -> 'T) -> 'T
 
@@ -323,7 +330,7 @@ val stopProcessingRecovery: exn: exn -> m: range -> unit
 
 val errorRecoveryNoRange: exn: exn -> unit
 
-val deprecatedWithError: s: string -> m: range -> unit
+val deprecatedWithError: s: RichText -> m: range -> unit
 
 val libraryOnlyError: m: range -> unit
 
@@ -401,7 +408,7 @@ val IterateIdxD: f: (int -> 'T -> OperationResult<unit>) -> xs: 'T list -> Opera
 /// Stop on first error. Accumulate warnings and continue.
 val Iterate2D: f: ('T -> 'b -> OperationResult<unit>) -> xs: 'T list -> ys: 'b list -> OperationResult<unit>
 
-val TryD: f: (unit -> OperationResult<'T>) -> g: (exn -> OperationResult<'T>) -> OperationResult<'T>
+val inline TryD: f: (unit -> OperationResult<'T>) -> g: (exn -> OperationResult<'T>) -> OperationResult<'T>
 
 val RepeatWhileD: nDeep: int -> body: (int -> OperationResult<bool>) -> OperationResult<unit>
 
@@ -420,6 +427,7 @@ val inline MapReduce2D:
     ys: 'T2 list ->
         OperationResult<'c>
 
+[<RequireQualifiedAccess>]
 module OperationResult =
     val inline ignore: res: OperationResult<'T> -> OperationResult<unit>
 
@@ -433,12 +441,9 @@ val NewlineifyErrorString: message: string -> string
 /// which is decoded by the IDE with 'NewlineifyErrorString' back into newlines, so that multi-line errors can be displayed in QuickInfo
 val NormalizeErrorString: text: string -> string
 
-/// Indicates whether a language feature check should be skipped. Typically used in recursive functions
-/// where we don't want repeated recursive calls to raise the same diagnostic multiple times.
-[<RequireQualifiedAccess>]
-type SuppressLanguageFeatureCheck =
-    | Yes
-    | No
+/// Same as 'NormalizeErrorString', but applied to the parts of a rich message, so that the
+/// classification of each part is preserved. Parts left empty by normalization are dropped.
+val NormalizeErrorRichText: text: RichText -> RichText
 
 val languageFeatureError: langVersion: LanguageVersion -> langFeature: LanguageFeature -> m: range -> exn
 
@@ -461,9 +466,16 @@ module internal StackGuardMetrics =
 type StackGuard =
     new: name: string -> StackGuard
 
+    member EnterGuard: unit -> unit
+
+    member ExitGuard: unit -> unit
+
+    /// The rare slow path: run the continuation on a fresh thread with a bigger stack.
+    member RunOnNewStack: f: (unit -> 'T) * memberName: string * path: string * line: int -> 'T
+
     /// Execute the new function, on a new thread if necessary
-    member Guard:
-        f: (unit -> 'T) *
+    member inline Guard:
+        [<InlineIfLambda>] f: (unit -> 'T) *
         [<CallerMemberName; Optional; DefaultParameterValue("")>] memberName: string *
         [<CallerFilePath; Optional; DefaultParameterValue("")>] path: string *
         [<CallerLineNumber; Optional; DefaultParameterValue(0)>] line: int ->
