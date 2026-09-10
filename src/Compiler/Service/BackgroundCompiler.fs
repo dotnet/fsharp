@@ -416,9 +416,18 @@ type internal BackgroundCompiler
 
     // STATIC ROOT: FSharpLanguageServiceTestable.FSharpChecker.parseFileInProjectCache. Most recently used cache for parsing files.
     let parseFileCache =
-        MruCache<ParseCacheLockToken, _ * SourceTextHash * _, GraphNode<FSharpParseFileResults>>(
+        MruCache<ParseCacheLockToken, _ * SourceTextHash * _, FSharpParseFileResults>(
             parseFileCacheSize,
             areSimilar = AreSimilarForParsing,
+            areSame = AreSameForParsing
+        )
+
+    /// Parses that have not finished yet. They are kept apart from parseFileCache because it holds its older entries weakly,
+    /// and a node is not kept alive by the result its caller retains.
+    let parseFileInFlight =
+        MruCache<ParseCacheLockToken, _ * SourceTextHash * _, GraphNode<FSharpParseFileResults>>(
+            parseFileCacheSize,
+            areSimilar = AreSameForParsing,
             areSame = AreSameForParsing
         )
 
@@ -565,6 +574,32 @@ type internal BackgroundCompiler
                 checkFileInProjectCache.Set(ltok, key, res)
                 res)
 
+    /// Ensures there is one parse per file, source and options while it runs; a finished parse lives in parseFileCache.
+    let getParseFileNode (key, parse: Async<FSharpParseFileResults>) =
+        parseCacheLock.AcquireLock(fun ltok ->
+            match parseFileCache.TryGet(ltok, key) with
+            | Some res -> GraphNode.FromResult res
+            | None ->
+                match parseFileInFlight.TryGet(ltok, key) with
+                | Some node -> node
+                | None ->
+                    Interlocked.Increment(&actualParseFileCount) |> ignore
+
+                    let node =
+                        GraphNode(
+                            async {
+                                try
+                                    let! res = parse
+                                    parseCacheLock.AcquireLock(fun ltok -> parseFileCache.Set(ltok, key, res))
+                                    return res
+                                finally
+                                    parseCacheLock.AcquireLock(fun ltok -> parseFileInFlight.RemoveAnySimilar(ltok, key))
+                            }
+                        )
+
+                    parseFileInFlight.Set(ltok, key, node)
+                    node)
+
     member _.ParseFile
         (fileName: string, sourceText: ISourceText, options: FSharpParsingOptions, cache: bool, flatErrors: bool, userOpName: string)
         =
@@ -599,19 +634,8 @@ type internal BackgroundCompiler
 
             if cache then
                 let key = (fileName, sourceText.GetHashCode() |> int64, options)
-
-                // The node is created under the lock so concurrent requests for the same source share one parse.
-                let parseNode =
-                    parseCacheLock.AcquireLock(fun ltok ->
-                        match parseFileCache.TryGet(ltok, key) with
-                        | Some node -> node
-                        | None ->
-                            Interlocked.Increment(&actualParseFileCount) |> ignore
-                            let node = GraphNode(parse suggestNamesForErrors)
-                            parseFileCache.Set(ltok, key, node)
-                            node)
-
-                return! parseNode.GetOrComputeValue()
+                let node = getParseFileNode (key, parse suggestNamesForErrors)
+                return! node.GetOrComputeValue()
             else
                 return! parse false
         }

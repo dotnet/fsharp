@@ -5,6 +5,7 @@ open System
 open System.IO
 open System.Collections.Concurrent
 open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Text
 open FSharp.Compiler.Service.Tests.Common
 open FSharp.Test.Assert
 open Xunit
@@ -48,3 +49,26 @@ let ``Concurrent requests after a file change type check each file once`` () =
         checkedFiles () |> shouldEqual [ for i in 1 .. 5 -> $"File{i}.fs", 1 ]
     finally
         try Directory.Delete(dir, true) with _ -> ()
+
+[<Fact>]
+let ``Parse results the caller retains are served from the cache after a collection`` () =
+    let checker = FSharpChecker.Create(useTransparentCompiler = false)
+
+    // One file more than the cache holds strongly, so the oldest entry is only reachable through its result.
+    let fileNames =
+        [| for i in 1 .. EnvMisc.parseFileCacheSize + 1 -> Path.GetFullPath $"CacheProbe{i}.fs" |]
+
+    let options = { FSharpParsingOptions.Default with SourceFiles = fileNames }
+    let sourceText = SourceText.ofString "module CacheProbe\nlet value = 1\n"
+
+    let parse fileName =
+        checker.ParseFile(fileName, sourceText, options, cache = true) |> Async.RunSynchronouslyImmediate
+
+    let retained = fileNames |> Array.map parse
+
+    GC.Collect()
+    GC.WaitForPendingFinalizers()
+    GC.Collect()
+
+    Object.ReferenceEquals(retained[0], parse fileNames[0]) |> shouldBeTrue
+    GC.KeepAlive retained
