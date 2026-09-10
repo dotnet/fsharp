@@ -65,7 +65,14 @@ module TryCatch =
            let result = CompilerAssert.ExecuteAndReturnResult (dllFile, isFsx=false, deps = s.Dependencies, newProcess=true)
            printfn "%A" result
 
-           Assert.True(result.StdErr.Contains "stack overflow" || result.StdErr.Contains "StackOverflow", result.StdErr)
+           Assert.True(
+               result.StdErr.Contains "stack overflow"
+               || result.StdErr.Contains "StackOverflow"
+               // On macOS, a stack overflow can cause SIGSEGV (128 + 11) without a runtime diagnostic.
+               || (TestFramework.getOperatingSystem () = "osx"
+                   && result.Outcome = ExitCode 139
+                   && result.StdErr = ""),
+               sprintf "%A" result)
 
         | _ -> failwith (sprintf "%A" compilationResult)
 
