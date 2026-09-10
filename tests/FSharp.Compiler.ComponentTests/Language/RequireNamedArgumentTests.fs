@@ -192,6 +192,7 @@ type Curried =
     let ``Same compilation unit - positional and positional-like calls are all rejected`` () =
         withZoo """
 module Use =
+    let name = nameof Api.Basic
     let basic = Api.Basic(1, 2)
     let mixed = Api.Mixed(1, y = 2)
     let firstClass = Api.FirstClass
@@ -224,6 +225,55 @@ module Use =
     let curried = Curried.Add 1 2
 """
         |> acceptsNamed
+
+    [<Fact>]
+    let ``Nameof accepts annotated methods in the same compilation unit`` () =
+        withZoo """
+module Use =
+    let basic = nameof Api.Basic
+    let generic = nameof Api.Generic<int>
+    let viaInterface (i: IFace) = nameof i.ViaSlot
+    let extension (h: Holder) = nameof h.Ext
+    let pattern = function nameof Api.Basic -> true | _ -> false
+"""
+        |> acceptsNamed
+
+    [<TheoryForNETCOREAPP>]
+    [<InlineData(false)>]
+    [<InlineData(true)>]
+    let ``Nameof accepts annotated methods from another assembly`` (csharp: bool) =
+        FSharp """
+module Test
+open AnnotatedLib
+let name = nameof Api.Add
+"""
+        |> withReferences [ if csharp then csAnnotatedLib else fsAnnotatedLib ]
+        |> acceptsCompiled
+
+    [<Theory>]
+    [<InlineData("9.0")>]
+    [<InlineData("preview")>]
+    let ``Local DllImport attribute does not replace a managed method body`` (langVersion: string) =
+        FSharp """
+namespace System.Runtime.InteropServices
+open System
+[<Sealed; AttributeUsage(AttributeTargets.Method)>]
+type DllImportAttribute(libraryName: string) =
+    inherit Attribute()
+
+namespace Test
+open System.Runtime.InteropServices
+module Program =
+    [<DllImport("missing-library")>]
+    let add (x: int) (y: int) = x + y
+
+    [<EntryPoint>]
+    let main _ = if add 20 22 = 42 then 0 else 1
+"""
+        |> withLangVersion langVersion
+        |> compileExeAndRun
+        |> shouldSucceed
+        |> ignore
 
     [<Fact>]
     let ``Different F# assembly - positional call is an error`` () =

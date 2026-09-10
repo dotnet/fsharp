@@ -131,6 +131,9 @@ type TcEnv =
 
         eIsControlFlow: bool
 
+        /// Resolving a nameof operand, rather than an executable expression.
+        eInNameOf: bool
+
         /// Are we checking the body of an object expression? Such a body has family access to the
         /// implemented type, but its closures are not nested under that type, so they cannot keep it (#5302).
         eInObjectExpr: bool

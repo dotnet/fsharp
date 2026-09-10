@@ -796,7 +796,7 @@ type CalledMeth<'T>
 
     member x.TryGetRequireNamedArgumentViolationName(m: range) : string option =
         if
-            MethInfoHasWellKnownAttribute g m WellKnownILAttributes.RequireNamedArgumentAttribute WellKnownValAttributes.RequireNamedArgumentAttribute ValueNone x.Method
+            MethInfoHasWellKnownAttribute g m WellKnownILAttributes.RequireNamedArgumentAttribute WellKnownValAttributes.RequireNamedArgumentAttribute "System.Runtime.CompilerServices.RequireNamedArgumentAttribute" x.Method
             && x.AssociatedPropertyInfo.IsNone
             && x.NumArgSets <= 1
             && (x.TotalNumUnnamedCallerArgs > 0 || (x.ParamArrayCallerArgs |> Option.exists (fun args -> not (isNil args))))
@@ -932,7 +932,7 @@ let ExamineMethodForLambdaPropagation (g: TcGlobals) m (meth: CalledMeth<SynExpr
             m
             { ILFlag = WellKnownILAttributes.NoEagerConstraintApplicationAttribute
               ValFlag = WellKnownValAttributes.NoEagerConstraintApplicationAttribute
-              AttribInfo = g.attrib_NoEagerConstraintApplicationAttribute }
+              AttributeName = "Microsoft.FSharp.Core.CompilerServices.NoEagerConstraintApplicationAttribute" }
             meth.Method
 
     // The logic associated with NoEagerConstraintApplicationAttribute is part of the

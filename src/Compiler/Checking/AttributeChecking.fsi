@@ -66,14 +66,14 @@ val MethInfoHasAttribute: g: TcGlobals -> m: range -> attribSpec: BuiltinAttribI
 type WellKnownMethAttribute =
     { ILFlag: WellKnownILAttributes
       ValFlag: WellKnownValAttributes
-      AttribInfo: BuiltinAttribInfo }
+      AttributeName: string }
 
 val MethInfoHasWellKnownAttribute:
     g: TcGlobals ->
     m: range ->
     ilFlag: WellKnownILAttributes ->
     valFlag: WellKnownValAttributes ->
-    attribSpec: BuiltinAttribInfo voption ->
+    attribName: string ->
     minfo: MethInfo ->
         bool
 

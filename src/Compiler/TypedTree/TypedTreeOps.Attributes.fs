@@ -259,10 +259,12 @@ module internal AttributeHelpers =
             | ValueSome pubpath -> struct (ValueNone, ValueSome pubpath.FullPath)
             | ValueNone -> struct (ValueNone, ValueNone)
         else
-            // Resolve PublicPath for a local ref too, so a same-compilation-unit definition of an
-            // attribute recognised by full type name is still classified (cf. the compilingFSharpCore branch above).
             match tcref.Deref.PublicPath with
-            | ValueSome pubpath -> struct (ValueSome pubpath.FullPath, ValueNone)
+            | ValueSome pubpath ->
+                match pubpath.FullPath with
+                | [| "System"; "Runtime"; "CompilerServices"; "RequireNamedArgumentAttribute" |] as path ->
+                    struct (ValueSome path, ValueNone)
+                | _ -> struct (ValueNone, ValueNone)
             | ValueNone -> struct (ValueNone, ValueNone)
 
     /// Decode a bool-arg attribute and set the appropriate true/false flag.
