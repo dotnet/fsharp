@@ -1,5 +1,9 @@
 {
   "prs": {
+    "20510": {
+      "sha": "862526d06be3db28716cfcfbcbaa5a30d8416718",
+      "cats": []
+    },
     "20509": {
       "sha": "d16961bd59531008d63a871f94e0123aab141240",
       "cats": [
@@ -33,7 +37,7 @@
       ]
     },
     "20500": {
-      "sha": "21f852d0b3b165e878795b0e1b7ae6641b20f2cc",
+      "sha": "ca89ff8ce56c6fe47e638dac5ce4b4b04a5e21d1",
       "cats": [
         "Affects-Design-Time"
       ]
@@ -49,10 +53,6 @@
       "cats": [
         "Affects-Agent-Config"
       ]
-    },
-    "20496": {
-      "sha": "61bc8f505ed3c17802c315ed483ece183974884f",
-      "cats": []
     },
     "20495": {
       "sha": "c827e351dd43370ff7045b9e55abd6d6efebb36a",
@@ -341,15 +341,8 @@
       "cats": []
     },
     "20340": {
-      "sha": "7296a1340457aaf6a070f44d294963f75b24f028",
+      "sha": "6d8b8ad919f237baaef6c4868ad6b1ac55d03999",
       "cats": []
-    },
-    "20338": {
-      "sha": "791342d9bac60ed700eafb6a1441e34536d7318a",
-      "cats": [
-        "Affects-Build-Infra",
-        "Affects-Test-Tooling"
-      ]
     },
     "20275": {
       "sha": "d4751a82d3a67fed01ba27d1f51a4745fe4bf835",
