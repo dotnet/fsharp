@@ -5269,6 +5269,7 @@ FSharp.Compiler.Symbols.FSharpDelegateSignature: System.Collections.Generic.ILis
 FSharp.Compiler.Symbols.FSharpDelegateSignature: System.Collections.Generic.IList`1[System.Tuple`2[Microsoft.FSharp.Core.FSharpOption`1[System.String],FSharp.Compiler.Symbols.FSharpType]] get_DelegateArguments()
 FSharp.Compiler.Symbols.FSharpDelegateSignature: System.String ToString()
 FSharp.Compiler.Symbols.FSharpDisplayContext: FSharp.Compiler.Symbols.FSharpDisplayContext Empty
+FSharp.Compiler.Symbols.FSharpDisplayContext: FSharp.Compiler.Symbols.FSharpDisplayContext WithNullnessAnnotations(Boolean)
 FSharp.Compiler.Symbols.FSharpDisplayContext: FSharp.Compiler.Symbols.FSharpDisplayContext WithPrefixGenericParameters()
 FSharp.Compiler.Symbols.FSharpDisplayContext: FSharp.Compiler.Symbols.FSharpDisplayContext WithShortTypeNames(Boolean)
 FSharp.Compiler.Symbols.FSharpDisplayContext: FSharp.Compiler.Symbols.FSharpDisplayContext WithSuffixGenericParameters()
