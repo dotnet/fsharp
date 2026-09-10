@@ -50,7 +50,7 @@ let ``QuickInfoForTypesWithHiddenRepresentation`` () =
         // on netstandard2.0, Await doesn't have ValueTask overloads
         |> _.Replace("static member Await: task: Task<'T> -> Async<'T> + 3 overloads",
                      "static member Await: task: Task<'T> -> Async<'T> + 1 overload")
-#endif        
+#endif
     assertTooltipContainsInOrder
         [ signatureListing; "Full name: Microsoft.FSharp.Control.Async" ]
         (markAtEndOfMarker "let x = Async.AsBeginEnd\n1" "Asyn")

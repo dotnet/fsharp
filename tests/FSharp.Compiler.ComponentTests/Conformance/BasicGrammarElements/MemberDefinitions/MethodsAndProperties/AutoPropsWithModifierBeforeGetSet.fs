@@ -40,7 +40,7 @@ let ``Instance Properties Test`` () =
     member val internal B14: int = 0 with get, set
     member val internal B15: int = 0 with get
     // should fail
-    member val internal B16: int = 0 with set""" 
+    member val internal B16: int = 0 with set"""
     |> withLangVersionPreview
     |> typecheck
     |> shouldFail
@@ -76,7 +76,7 @@ let ``Static Properties Test`` () =
     static member val internal B14: int = 0 with get, set
     static member val internal B15: int = 0 with get
     // should fail
-    static member val internal B16: int = 0 with set""" 
+    static member val internal B16: int = 0 with set"""
     |> withLangVersionPreview
     |> typecheck
     |> shouldFail
@@ -105,7 +105,7 @@ let ``Abstract Properties Test: access modifiers are not allowed`` () =
     // should fail
     abstract member B7: int with internal get
     // should fail
-    abstract member B8: int with internal set""" 
+    abstract member B8: int with internal set"""
     |> withLangVersionPreview
     |> typecheck
     |> shouldFail
@@ -128,7 +128,7 @@ type A =
     member internal C: int with get, set    
     member D: int with internal get, private set
     abstract E: int with get, set
-    abstract F: int with get, private set""" 
+    abstract F: int with get, private set"""
     |> withLangVersionPreview
     |> verifyCompile
     |> shouldFail
@@ -153,7 +153,7 @@ type A =
     member internal B: int
     member internal C: int with get, set
     member D: int with internal get, private set
-    member E: int with get, set""" 
+    member E: int with get, set"""
     |> withAdditionalSourceFile encodeFs
     |> withLangVersionPreview
     |> compile
@@ -186,7 +186,7 @@ type A =
     new: unit -> A
     member B: int with internal get
     member C: int with internal set
-    member D: int with internal get, private set""" 
+    member D: int with internal get, private set"""
     |> withAdditionalSourceFile encodeFs
     |> withLangVersion80
     |> compile

@@ -9,7 +9,7 @@ open Xunit
 
 // These tests are sensitive to the fact that FSharp.Core is compiled release, not debug
 // The code generated changes slightly in debug mode
-#if !DEBUG 
+#if !DEBUG
 // Check the exact code produced for tasks
 
 module TaskGeneratedCode =
@@ -1171,7 +1171,7 @@ printfn "test passed"
             """)
 
 
-#if !DEBUG 
+#if !DEBUG
 
     [<Fact>]
     let ``check generic task exact code``() =
@@ -1329,20 +1329,20 @@ let main _ =
 
 // Test that the SRTP Bind on a ValueTask is still generic in the bind type
 
-module ``Check return attributes`` = 
+module ``Check return attributes`` =
     let incr (x:int) : [<Experimental("a")>] (int -> int) = (fun a -> a + x)
 
     // Putting a return attribute of any kind on f function should be respected
-    // If the function is curried its inferred arity should be no more than 
-    // the declared arguments (the F# rule that infers additional arguments 
+    // If the function is curried its inferred arity should be no more than
+    // the declared arguments (the F# rule that infers additional arguments
     // should not kick in).
     [<Fact>]
     let ``check return attribute of curried function``() =
         match <@ incr 3 4 @> with
         | Quotations.Patterns.Application (Quotations.Patterns.Call(None, mi, [Quotations.DerivedPatterns.Int32 3]), Quotations.DerivedPatterns.Int32 4) ->
-            if mi.GetParameters().Length <> 1 then  
+            if mi.GetParameters().Length <> 1 then
                failwith "wrong number of parameters"
-            if mi.ReturnTypeCustomAttributes.GetCustomAttributes(false).Length <> 1 then  
+            if mi.ReturnTypeCustomAttributes.GetCustomAttributes(false).Length <> 1 then
                failwith "wrong number of attributes"
             ()
         | _ -> failwith "curried function expected"
@@ -1359,7 +1359,7 @@ module ``SRTP Bind on a ValueTask is still generic in the bind type (nested)`` =
         }
     let t1 : Task<int voption> = TryFindAsync() // test TryFindAsync is generic
     let t2 : Task<string voption> = TryFindAsync() // test TryFindAsync is generic
-    
+
 // Compilation test
 // Test that the SRTP Bind on a ValueTask is still generic in the bind type
 module ``SRTP Bind on a ValueTask is still generic in the bind type`` =
@@ -1368,13 +1368,13 @@ module ``SRTP Bind on a ValueTask is still generic in the bind type`` =
             let! r = FindAsync()
             return r
         }
-    
+
 // Compilation test
 module ``SRTP ReturnFrom on a ValueTask is still generic in the bind type`` =
     let FindAsync() = ValueTask<'T>(Unchecked.defaultof<'T>)
     let TryFindAsync() : Task<'T> = task {
             return! FindAsync()
         }
-    
+
     let t1 : Task<int voption> = TryFindAsync() // test TryFindAsync is generic
     let t2 : Task<string voption> = TryFindAsync() // test TryFindAsync is generic

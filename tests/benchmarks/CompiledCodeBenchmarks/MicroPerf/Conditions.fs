@@ -1,4 +1,4 @@
-module Conditions 
+module Conditions
 
 open BenchmarkDotNet.Attributes
 open BenchmarkDotNet.Diagnosers

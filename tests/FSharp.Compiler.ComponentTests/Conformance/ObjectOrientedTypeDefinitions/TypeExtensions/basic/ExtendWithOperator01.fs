@@ -1,11 +1,11 @@
-// #Conformance #ObjectOrientedTypes #TypeExtensions 
+// #Conformance #ObjectOrientedTypes #TypeExtensions
 
 
 // Verify ability to add a type extension for an operator
 // Note that C# and VB do NOT support this.
 
-type System.Int32 with 
-    member x.GetSlice(idx1,idx2) = 
+type System.Int32 with
+    member x.GetSlice(idx1,idx2) =
         let idx1 = defaultArg idx1 0
         let idx2 = defaultArg idx2 10
         idx2 - idx1

@@ -1,4 +1,4 @@
-// #Conformance #SignatureFiles #Namespaces 
+// #Conformance #SignatureFiles #Namespaces
 // Verify no warning about the second file in the project being
 // an anonymous module, since the project compiles to an EXE
 

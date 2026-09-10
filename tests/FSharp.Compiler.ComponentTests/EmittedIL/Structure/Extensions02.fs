@@ -1,4 +1,4 @@
-// #NoMT #CodeGen #Interop 
+// #NoMT #CodeGen #Interop
 // Verify extension methods do NOT become intrinsic if in different modules
 
 module Test
@@ -8,7 +8,7 @@ module Parts =
         member this.PropA = 1
         member this.MethA(a) = a + this.PropA
 
-module Extensions = 
+module Extensions =
 
     type Parts.Foo with
         member this.PropB = this.PropA + 1
@@ -24,7 +24,7 @@ module Tester =
     printfn "Testing..."
 
     try
-        //System.Reflection.Assembly.GetExecutingAssembly().GetTypes() 
+        //System.Reflection.Assembly.GetExecutingAssembly().GetTypes()
         //|> Array.iter(fun ty -> printfn "%s" ty.FullName)
 
         // Since they are nested modules, the name is somewhat mangled. As of Beta1 there
@@ -47,7 +47,7 @@ module Tester =
         System.Reflection.Assembly.GetExecutingAssembly()
         |> getType "Test+Parts+Foo"
         |> should notContainProp "PropB"
-       
+
     with
-    | e -> printfn "Unhandled Exception: %s" e.Message 
+    | e -> printfn "Unhandled Exception: %s" e.Message
            raise (Exception($"Oops: {e}"))

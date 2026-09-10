@@ -1,4 +1,4 @@
-// #NoMono #NoMT #CodeGen #EmittedIL   
+// #NoMono #NoMT #CodeGen #EmittedIL
 
 
 type R = { x:int; y:int }

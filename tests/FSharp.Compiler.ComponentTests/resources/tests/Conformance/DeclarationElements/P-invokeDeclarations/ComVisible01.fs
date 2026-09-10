@@ -1,4 +1,4 @@
-// #Conformance #DeclarationElements #PInvoke 
+// #Conformance #DeclarationElements #PInvoke
 
 
 // Verify we can place the ComVisible attribute on Records

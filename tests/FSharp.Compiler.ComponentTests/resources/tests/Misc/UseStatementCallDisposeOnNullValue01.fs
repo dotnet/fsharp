@@ -7,7 +7,7 @@ let _ =
         let _ =
             use key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey("nonexistent")
             ()
-        let _ = 
+        let _ =
             use key : System.IDisposable = null
             ()
         exit 0

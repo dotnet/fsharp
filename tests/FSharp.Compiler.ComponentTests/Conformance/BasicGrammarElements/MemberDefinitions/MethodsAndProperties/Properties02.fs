@@ -5,10 +5,10 @@ let mutable globalPt : obj = null
 
 type Pt =
     { X : float; Y : float }
-    member this.Move with set x y = 
+    member this.Move with set x y =
                                 globalPt <- { X = this.X + x; Y = this.Y + y}
                                 ()
-    member this.Move2 with set ((x, y)) = 
+    member this.Move2 with set ((x, y)) =
                                 globalPt <- { X = this.X + x; Y = this.Y + y}
                                 ()
 

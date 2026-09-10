@@ -5,7 +5,7 @@ open FSharp.Test.Compiler
 open FSharp.Test
 
 module ExperimentalAttributeCheckingTests =
-    
+
 
     [<FactForNETCOREAPP>]
     let ``C# Experimental(diagnosticId) attribute warning is taken into account`` () =
@@ -121,4 +121,3 @@ module TestModule =
         |> withDiagnostics [
             (Warning 57, Line 7, Col 8, Line 7, Col 17, """This construct is experimental. Preview library feature, requires '--langversion:preview'. This warning can be disabled using '--nowarn:57' or '#nowarn "57"'.""")
         ]
-    

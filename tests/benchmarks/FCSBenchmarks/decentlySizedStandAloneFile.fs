@@ -1,7 +1,7 @@
-﻿module Parser = 
-  
+﻿module Parser =
+
   (*
-  F# implementation of a generic Top-Down-Operator-Precedence Parser 
+  F# implementation of a generic Top-Down-Operator-Precedence Parser
   as described in this paper http://portal.acm.org/citation.cfm?id=512931.
 
   The parser has been extended to allow for statements in comparison to Pratt's
@@ -43,32 +43,32 @@
       Stmt : Map<'c, 'a -> T<'a, 'b, 'c> -> 'b>
       Left : Map<'c, 'a -> 'b -> T<'a, 'b, 'c> -> 'b>
   }
-  
-  type Pattern<'a, 'b, 'c> when 'c : comparison 
+
+  type Pattern<'a, 'b, 'c> when 'c : comparison
     = Sym of 'c
     | Get of (T<'a, 'b, 'c> -> 'b)
 
   //Errors
-  type Exn (msg, pos) = 
+  type Exn (msg, pos) =
     inherit System.Exception(msg)
     member x.Position = pos
 
   (*
-    Creates a string error snippet 
+    Creates a string error snippet
     that points out the exact source position
     where the error occurred, for example:
-  
+
     4: if(x == y) {
     5:   print'x equals y');
     ----------^
   *)
   let errorSource pos source =
-    
-    let splitLines (text:string) = 
+
+    let splitLines (text:string) =
       let text = text.Replace("\r\n", "\n").Replace("\r", "\n")
       System.Text.RegularExpressions.Regex.Split(text, "\n")
 
-    let lineNum (input:int) n = 
+    let lineNum (input:int) n =
       (input.ToString()).PadLeft(n, '0')
 
     let stringRepeat n input =
@@ -79,8 +79,8 @@
 
     match source with
     | None -> ""
-    | Some(source:string) -> 
-      let source = source |> splitLines 
+    | Some(source:string) ->
+      let source = source |> splitLines
       let result = ref ""
       let line, column = pos
 
@@ -90,7 +90,7 @@
 
         //previous line
         let pline = line - 1
-        if pline >= 1 then 
+        if pline >= 1 then
           let num = lineNum pline nrl
           result.Value <- num+": "+source.[pline-1]+"\n"
 
@@ -103,7 +103,7 @@
       result.Value
 
   let exn msg = Exn(msg, (0, 0)) |> raise
-  let exnLine pos msg = 
+  let exnLine pos msg =
     let line = sprintf "Error on line: %i col: %i\n" (fst pos) (snd pos)
     Exn(line + msg, pos) |> raise
 
@@ -115,25 +115,25 @@
       | Some f -> token |> f
 
     let pos = token |> parser.Position
-    let source = parser.Lines |> errorSource pos 
+    let source = parser.Lines |> errorSource pos
     let expected = sprintf "Unexpected: %s" type'
     (source + expected) |> exnLine pos
 
-  let inline private getBindingPower tok parser = 
+  let inline private getBindingPower tok parser =
     let pwr = parser.BindingPower.TryFind (parser.Type tok)
     match pwr with Some pwr -> pwr | _ -> 0
 
-  let current parser =  
+  let current parser =
     match parser.Input.Value with
     | token::_ -> token
     | _ -> unexpectedEnd ()
 
-  let currentTry parser = 
+  let currentTry parser =
     match parser.Input.Value with
     | token::_ -> Some token
     | _ -> None
 
-  let currentType parser = 
+  let currentType parser =
     parser |> current |> parser.Type
 
   let currentTypeTry parser =
@@ -148,10 +148,10 @@
 
   let skipIf type' parser =
     match parser.Input.Value with
-    | token::xs when parser.Type token = type' -> 
+    | token::xs when parser.Type token = type' ->
       parser.Input.Value <- xs
 
-    | token::_ -> 
+    | token::_ ->
       unexpectedToken token parser
 
     | _ -> unexpectedEnd ()
@@ -160,15 +160,15 @@
     let current = parser |> current
     parser |> skip
     current
-   
+
   let exprPwr rbpw parser =
     let rec expr left =
       match parser |> currentTry with
-      | Some token when rbpw < (parser |> getBindingPower token) -> 
+      | Some token when rbpw < (parser |> getBindingPower token) ->
         parser |> skip
 
         let type' = parser.Type token
-        let led = 
+        let led =
           match parser.Left.TryFind type' with
           | None -> unexpectedToken token parser
           | Some led -> led
@@ -184,9 +184,9 @@
       | None -> unexpectedToken tok parser
       | Some nud -> nud
 
-    nud tok parser |> expr 
+    nud tok parser |> expr
 
-  let expr parser = 
+  let expr parser =
     parser |> exprPwr 0
 
   let exprSkip type' parser =
@@ -215,60 +215,60 @@
       match pattern with
       | [] -> acc |> List.rev
 
-      | Sym(symbol)::pattern -> 
+      | Sym(symbol)::pattern ->
         parser |> skipIf symbol
         parser |> match' acc pattern
 
       | Get(f)::pattern ->
         let acc = (f parser) :: acc
-        parser |> match' acc pattern 
+        parser |> match' acc pattern
 
     parser |> match' [] pattern
 
   (*
-    Convenience functions exposed for 
+    Convenience functions exposed for
     easing parser definition and usage
   *)
 
   let create<'a, 'b, 'c when 'c : comparison> type' position prettyPrint = {
     Input = ref []
     Lines = None
-    
+
     Type = type'
     Position = position
     PrettyPrint = prettyPrint
-    
+
     BindingPower = Map.empty<'c, int>
     Null = Map.empty<'c, 'a -> T<'a, 'b, 'c> -> 'b>
     Stmt = Map.empty<'c, 'a -> T<'a, 'b, 'c> -> 'b>
     Left = Map.empty<'c, 'a -> 'b -> T<'a, 'b, 'c> -> 'b>
   }
-  
+
   let matchError () = exn "Match pattern failed"
   let smd token funct parser = {parser with T.Stmt = parser.Stmt.Add(token, funct)}
   let nud token funct parser = {parser with T.Null = parser.Null.Add(token, funct)}
   let led token funct parser = {parser with T.Left = parser.Left.Add(token, funct)}
   let bpw token power parser = {parser with T.BindingPower = parser.BindingPower.Add(token, power)}
-  
+
   (*Defines a left-associative infix operator*)
   let infix f typ pwr p =
-    let infix tok left p = 
+    let infix tok left p =
       f tok left (p |> exprPwr pwr)
 
     p |> bpw typ pwr |> led typ infix
-    
+
   (*Defines a right-associative infix operator*)
   let infixr f typ pwr p =
     let lpwr = pwr - 1
 
-    let infix tok left p = 
+    let infix tok left p =
       f tok left (p |> exprPwr lpwr)
 
     p |> bpw typ pwr |> led typ infix
 
   (*Defines a prefix/unary operator*)
   let prefix f typ pwr p =
-    let prefix tok parser = 
+    let prefix tok parser =
       f tok (parser |> exprPwr pwr)
 
     p |> nud typ prefix
@@ -276,23 +276,23 @@
   (*Defines a constant*)
   let constant symbol value p =
     p |> nud symbol (fun _ _ -> value)
-    
-  (*  
-    Runs the parser and treats all 
-    top level construct as expressions 
+
+  (*
+    Runs the parser and treats all
+    top level construct as expressions
   *)
   let runExpr input source parser =
-    {parser with 
+    {parser with
       T.Input = ref input
       T.Lines = source
     } |> exprList
-    
-  (*  
-    Runs the parser and treats all 
-    top level construct as statements 
+
+  (*
+    Runs the parser and treats all
+    top level construct as statements
   *)
   let runStmt input source term parser =
-    {parser with 
+    {parser with
       T.Input = ref input
       T.Lines = source
     } |> stmtList term
@@ -305,7 +305,7 @@
 type UnaryOp
   = Plus
   | Minus
-  
+
 type BinaryOp
   = Multiply
   | Add
@@ -380,10 +380,10 @@ let toUnaryOp tok =
   | _ -> P.exn (sprintf "Couldn't convert %s-token to UnaryOp" (type' tok))
 
 //Utility function for defining infix operators
-let infix = 
-  P.infix (fun token left right -> 
+let infix =
+  P.infix (fun token left right ->
     Binary(token |> toBinaryOp, left, right))
-  
+
 //Utility function for defining prefix operators
 let prefix =
   P.prefix (fun token ast ->
@@ -393,7 +393,7 @@ let prefix =
 let constant typ value p =
   p |> P.nud typ (fun _ _ -> value)
 
-//Utility function for parsing a block 
+//Utility function for parsing a block
 let block p =
   let rec stmts p =
     match p |> P.currentTypeTry with
@@ -417,14 +417,14 @@ let example_parser =
   (P.create type' pos (Some prettyPrint))
 
   //Literals and identifiers
-  |> P.nud "#number" (fun t _ -> t |> value |> int |> Number) 
+  |> P.nud "#number" (fun t _ -> t |> value |> int |> Number)
   |> P.nud "#identifier" (fun t _ -> t |> value |> Identifier)
   |> P.nud "#string" (fun t _ -> t |> value |> String)
 
   //Constants
   |> constant "true" Ast.True
   |> constant "false" Ast.False
-  
+
   //Infix Operators <expr> <op> <expr>
   |> infix "==" 40
   |> infix "+" 50
@@ -436,7 +436,7 @@ let example_parser =
   //Prefix Operators <op> <expr>
   |> prefix "+" 70
   |> prefix "-" 70
-  
+
   //Grouping expressions (<expr>)
   |> P.nud "(" (fun t p -> p |> P.exprSkip ")")
 
@@ -455,7 +455,7 @@ let example_parser =
       let else' = [P.Sym "else"; P.Get block]
 
       match p |> P.match' if' with
-      | test::ifTrue::_ -> 
+      | test::ifTrue::_ ->
         match p |> P.match' else' with
         | ifFalse::_ -> If(test, ifTrue, Some(ifFalse))
         | _ -> If(test, ifTrue, None)
@@ -473,12 +473,12 @@ let example_parser =
 
       Call(func, args p)
     )
-    
+
 //Code to parse
 (*
 1: x = 5;
 2: y = 5;
-3: 
+3:
 4: if(x == y) {
 5:   print("x equals y");
 6: } else {
@@ -498,7 +498,7 @@ if(x == y) {
 //The code in tokens, manually entered
 //since we don't have a lexer to produce
 //the tokens for us
-let tokens = 
+let tokens =
   [
     //x = 5;
     identifier "x" (1, 1)

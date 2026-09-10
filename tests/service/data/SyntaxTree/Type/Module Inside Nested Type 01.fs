@@ -5,5 +5,5 @@ module Level2 =
     module Level3 =
         type MyType =
             | A
-            module InvalidModule = 
+            module InvalidModule =
                 let x = 1

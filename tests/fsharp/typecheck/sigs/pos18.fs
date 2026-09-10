@@ -2,7 +2,7 @@
 //
 // In this test, we check we can do basic operations like "open FSharp.Collections" without needing the "Microsoft" prefix
 
-module Pos18 = 
+module Pos18 =
   // Check we can open 'FSharp.Collections' unqualified, without warning
   open FSharp.Collections
 
@@ -14,12 +14,12 @@ module Pos18 =
   // Check we can access 'FSharp.Quotations' via full path
   let v2 = FSharp.Quotations.Expr.Value 3
 
-  // Check we can access 'FSharp.Quotations' via 'global' 
+  // Check we can access 'FSharp.Quotations' via 'global'
   let v3 = global.FSharp.Quotations.Expr.Value 3
 
-module Pos18b = 
+module Pos18b =
   open Microsoft // Adding "open Microsoft" shouldn't trigger additional warnings
-  
+
   // Check we can open 'FSharp.Collections' unqualified, without warning
   open FSharp.Collections
 
@@ -31,5 +31,5 @@ module Pos18b =
   // Check we can access 'FSharp.Quotations' via full path
   let v2 = FSharp.Quotations.Expr.Value 3
 
-  // Check we can access 'FSharp.Quotations' via 'global' 
+  // Check we can access 'FSharp.Quotations' via 'global'
   let v3 = global.FSharp.Quotations.Expr.Value 3

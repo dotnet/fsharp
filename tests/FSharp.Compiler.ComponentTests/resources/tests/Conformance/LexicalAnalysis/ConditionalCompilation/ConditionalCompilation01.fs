@@ -1,7 +1,7 @@
-// #Conformance #LexicalAnalysis 
+// #Conformance #LexicalAnalysis
 
 
-// Test conditional compilation flags. 
+// Test conditional compilation flags.
 // To run this test please define "THIS_IS_DEFINED"
 
 let runTest () =

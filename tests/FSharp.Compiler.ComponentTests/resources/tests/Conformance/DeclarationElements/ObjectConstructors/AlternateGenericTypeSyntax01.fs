@@ -1,4 +1,4 @@
-// #Regression #Conformance #DeclarationElements #ObjectConstructors 
+// #Regression #Conformance #DeclarationElements #ObjectConstructors
 
 
 // Test for alternate syntax for declaring generic types
@@ -8,7 +8,7 @@
 // vs.
 // ClassName<'a, 'b>
 
-type ('a, 'b) StoreValues(a : 'a, b : 'b) = 
+type ('a, 'b) StoreValues(a : 'a, b : 'b) =
     member this.Value1 = a
     member this.Value2 = b
 

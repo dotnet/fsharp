@@ -1,7 +1,7 @@
-// #Regression #Conformance #SignatureFiles 
+// #Regression #Conformance #SignatureFiles
 
 
-// Marked internal in FSI but marked private in FS 
+// Marked internal in FSI but marked private in FS
 //<Expects id="FS0034" status="error">Module 'PublicPrivateInternal' contains</Expects>
 
 

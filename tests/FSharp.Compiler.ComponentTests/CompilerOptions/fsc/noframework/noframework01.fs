@@ -1,4 +1,4 @@
-// #Regression #NoMT #CompilerOptions 
+// #Regression #NoMT #CompilerOptions
 // Regression test for FSHARP1.0:5976
 
 // System.Func<...> is in System.Core.dll (NetFx3.5)

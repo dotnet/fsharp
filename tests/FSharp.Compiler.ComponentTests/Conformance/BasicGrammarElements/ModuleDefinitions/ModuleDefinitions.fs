@@ -103,7 +103,7 @@ module ModuleDefinitions =
             (Error 37, Line 9, Col 1, Line 9, Col 18, "Duplicate definition of type, exception or module 'module'")
         ]
 
-    // SOURCE="E_ModuleWithSameNameInNamespace02a.fsx E_ModuleWithSameNameInNamespace02b.fsx" SCFLAGS="--test:ErrorRanges" # E_ModuleWithSameNameInNamespace02 
+    // SOURCE="E_ModuleWithSameNameInNamespace02a.fsx E_ModuleWithSameNameInNamespace02b.fsx" SCFLAGS="--test:ErrorRanges" # E_ModuleWithSameNameInNamespace02
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_ModuleWithSameNameInNamespace02a.fsx"|])>]
     let ``E_ModuleWithSameNameInNamespace02a_fsx`` compilation =
         compilation
@@ -256,7 +256,7 @@ module ModuleDefinitions =
             (Error 965, Line 8, Col 1, Line 9, Col 26, "The path 'Microsoft.FSharp.Core' is a namespace. A module abbreviation may not abbreviate a namespace.")
         ]
 
-    // 
+    //
     // #These 2 are not actual testcases, just test libraries for the next 2
     // SOURCE=LibFoo1.fs SCFLAGS="-a"
     // SOURCE=LibFOo2.fs SCFLAGS="-a"

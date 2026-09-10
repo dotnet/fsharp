@@ -1,4 +1,4 @@
-// #NoMT #CodeGen #Interop 
+// #NoMT #CodeGen #Interop
 
 
 // Verify the ability to put attributes on let-bindings
@@ -28,5 +28,5 @@ try
     |> should haveAttribute "ObsoleteAttribute"
 
 with
-| e -> printfn "Unhandled Exception: %s" e.Message 
+| e -> printfn "Unhandled Exception: %s" e.Message
        raise (Exception($"Oops: {e}"))

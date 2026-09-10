@@ -989,8 +989,8 @@ module Query =
     let (|MacroReduction|_|) (p: Expr) =
 
         match p with
-        | Applications(Lambdas(vs, body), args) 
-            when vs.Length = args.Length 
+        | Applications(Lambdas(vs, body), args)
+            when vs.Length = args.Length
                  && (vs, args) ||> List.forall2 (fun vs args -> vs.Length = args.Length) ->
             let tab = Map.ofSeq (List.concat (List.map2 List.zip vs args))
             let body = body.Substitute tab.TryFind
@@ -1004,10 +1004,10 @@ module Query =
         | Call(None, MethodWithReflectedDefinition(Lambdas(vs, body)), args) ->
             let tab =
                 (vs, args)
-                ||> List.map2 (fun vs arg -> 
+                ||> List.map2 (fun vs arg ->
                     match vs, arg with
                     | [v], arg -> [(v, arg)]
-                    | vs, NewTuple args -> List.zip vs args 
+                    | vs, NewTuple args -> List.zip vs args
                     | _ -> List.zip vs [arg])
                 |> List.concat |> Map.ofSeq
             let body = body.Substitute tab.TryFind
@@ -1465,7 +1465,7 @@ module Query =
 
         | CallGroupValBy
               (_, [_; _; _; qTy],
-               immutSource, 
+               immutSource,
                Lambda(immutVar1, immutElementSelector),
                Lambda(immutVar2, immutKeySelector)) ->
 
@@ -1474,7 +1474,7 @@ module Query =
             let mutVar1, mutElementSelector = ConvertImmutableConsumerToMutableConsumer sourceConv (immutVar1, MacroExpand immutElementSelector)
             let mutElementSelector, selectorConv = ProduceMoreMutables TransInnerNoCheck mutElementSelector
             let mutElementSelector = CleanupLeaf mutElementSelector
-            let conv = 
+            let conv =
                 match selectorConv with
                 | NoConv -> NoConv
                 | _ -> GroupingConv (immutKeySelector.Type, immutElementSelector.Type, selectorConv)
@@ -1497,14 +1497,14 @@ module Query =
 
             let joinExpr =
                 MakeJoin
-                    (qTyIsIQueryable qTy, mutOuterKeyVar.Type, mutInnerKeyVar.Type, mutInnerKeySelector.Type, 
+                    (qTyIsIQueryable qTy, mutOuterKeyVar.Type, mutInnerKeyVar.Type, mutInnerKeySelector.Type,
                      mutElementSelector.Type, mutOuterSource, mutInnerSource, mutOuterKeyVar, mutOuterKeySelector,
                      mutInnerKeyVar, mutInnerKeySelector, mutOuterResultVar, mutInnerResultKeyVar, mutElementSelector)
 
             TransInnerResult.Other joinExpr, elementSelectorConv
 
         | CallGroupJoin
-              (_, GenericArgs [_; qTy; _; _; _], 
+              (_, GenericArgs [_; qTy; _; _; _],
                [ immutOuterSource
                  immutInnerSource
                  Lambda(immutOuterKeyVar, immutOuterKeySelector)
@@ -1520,9 +1520,9 @@ module Query =
             let mutElementSelector, elementSelectorConv = ProduceMoreMutables TransInnerNoCheck mutElementSelector
             let mutElementSelector = CleanupLeaf mutElementSelector
 
-            let joinExpr = 
-                MakeGroupJoin 
-                    (qTyIsIQueryable qTy, mutOuterKeyVar.Type, mutInnerKeyVar.Type, 
+            let joinExpr =
+                MakeGroupJoin
+                    (qTyIsIQueryable qTy, mutOuterKeyVar.Type, mutInnerKeyVar.Type,
                      mutInnerKeySelector.Type, mutElementSelector.Type, mutOuterSource,
                      mutInnerSource, mutOuterKeyVar, mutOuterKeySelector, mutInnerKeyVar,
                      mutInnerKeySelector, mutOuterResultGroupVar, mutInnerResultKeyVar, mutElementSelector)

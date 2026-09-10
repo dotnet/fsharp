@@ -1,4 +1,4 @@
-// #Regression #Conformance #Quotations 
+// #Regression #Conformance #Quotations
 // Regression for FSHARP1.0:5861
 // Previously this would give an error that quotations cannot contain inline assembly code
 

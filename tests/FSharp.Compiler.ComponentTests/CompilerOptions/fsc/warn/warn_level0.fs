@@ -1,4 +1,4 @@
-// #NoMT #CompilerOptions 
+// #NoMT #CompilerOptions
 
 [<NoComparison>]
 /// Meh - Informational diagnostics "XML comment is not placed on a valid language element."

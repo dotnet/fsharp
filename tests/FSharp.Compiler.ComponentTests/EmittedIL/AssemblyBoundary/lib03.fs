@@ -1,10 +1,10 @@
-// #CodeGen #Optimizations #Assemblies 
+// #CodeGen #Optimizations #Assemblies
 namespace N
 
 module L3 =
     type internal T1 = { rf1 : int }
     type internal T3 = | C3
-    type internal T4 = | C4 of int    
+    type internal T4 = | C4 of int
 
     let internal x1 = { rf1 = 1 }       // type is is internal
     let f1 (x:obj) = unbox x = x1       // f1 rhs contains internals
@@ -16,7 +16,7 @@ module L3 =
 
     let mutable internal a6 = true
     let f6() = a6                       // f6 rhs contains internals
-    
+
     exception internal E of int
 
     let k1() = typeof<T1>

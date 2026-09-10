@@ -1,4 +1,4 @@
-// #Regression #NoMT #CompilerOptions 
+// #Regression #NoMT #CompilerOptions
 // Regression test for FSHARP1.0:6108
 // Note: --warnon *WAS* for test purposes only, now it is NOT.
 //<Expects status="notin" id="FS0075">The command-line option '--warnon' is for test purposes only</Expects>
@@ -15,5 +15,5 @@ let ff x =
     match [x] with
     //| [X(s,n) as r] -> ()
     | [] -> ()
-    | X(s,n) as r::_ -> ignore r; ()    
+    | X(s,n) as r::_ -> ignore r; ()
 

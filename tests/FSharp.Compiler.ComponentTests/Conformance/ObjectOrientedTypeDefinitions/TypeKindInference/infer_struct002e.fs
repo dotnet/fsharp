@@ -1,4 +1,4 @@
-// #Regression #Conformance #ObjectOrientedTypes #TypeInference 
+// #Regression #Conformance #ObjectOrientedTypes #TypeInference
 
 // attribute must match inferred type-kind
 //<Expects id="FS0927" status="error">kind.*does not match</Expects>
@@ -15,7 +15,7 @@ type TK_S_001 =
   struct
     val StructsMustContainAtLeastOneField: int
   end
-  
+
 [<Class>]
 [<Struct>]
 type TK_S_002 =

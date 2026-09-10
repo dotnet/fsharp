@@ -1,4 +1,4 @@
-﻿// #Globalization 
+﻿// #Globalization
 
 
 // Note that the first two characters in the string below are not accepted by F#

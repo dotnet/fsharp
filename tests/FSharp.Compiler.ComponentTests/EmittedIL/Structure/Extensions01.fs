@@ -1,4 +1,4 @@
-// #NoMT #CodeGen #Interop 
+// #NoMT #CodeGen #Interop
 // Verify extension methods become intrinsic if in same namespace
 
 namespace Test

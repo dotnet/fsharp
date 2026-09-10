@@ -8,5 +8,5 @@ val z : int
 val w : string = "w"
 val q : string
 [<Literal>]
-val u : string = 
+val u : string =
  "u"

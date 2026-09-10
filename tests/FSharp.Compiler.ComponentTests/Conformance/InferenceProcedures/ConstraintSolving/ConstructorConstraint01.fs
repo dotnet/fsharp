@@ -1,4 +1,4 @@
-// #Regression #Conformance #TypeInference #TypeConstraints 
+// #Regression #Conformance #TypeInference #TypeConstraints
 // Regression test for FSHARP1.0:4850
 // Title: incorrectly unsatisfied default constructor constraints
 
@@ -20,7 +20,7 @@ type D() =
   let f = 0
   interface I<D> with
     member x.foo = f + 1
-    
+
 let c = new C()
 let d = new D()
 

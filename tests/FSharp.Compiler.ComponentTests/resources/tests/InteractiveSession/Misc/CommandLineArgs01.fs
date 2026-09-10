@@ -1,4 +1,4 @@
-// #Regression #NoMT #FSI 
+// #Regression #NoMT #FSI
 // Regression test for FSHARP1.0:2439
 // fsi.CommandLineArgs
 // scenario: no arguments

@@ -86,7 +86,9 @@ type PrelimVal1 =
 
 type UnscopedTyparEnv = UnscopedTyparEnv of NameMap<Typar>
 
-type TcPatLinearEnv = TcPatLinearEnv of tpenv: UnscopedTyparEnv * names: NameMap<PrelimVal1> * takenNames: Set<string>
+/// Represents the context flowed left-to-right through pattern checking.
+/// 'usesActivePattern' is true if an active pattern occurs in the pattern; see TcLetBinding.
+type TcPatLinearEnv = TcPatLinearEnv of tpenv: UnscopedTyparEnv * names: NameMap<PrelimVal1> * takenNames: Set<string> * usesActivePattern: bool
 
 /// Translation of patterns is split into three phases. The first collects names.
 /// The second is run after val_specs have been created for those names and inference
@@ -105,13 +107,13 @@ type SafeInitData =
     | SafeInitField of RecdFieldRef * RecdField
     | NoSafeInitInfo
 
-type TcPatValFlags = 
-    | TcPatValFlags of 
-        inlineFlag: ValInline * 
-        explicitTyparInfo: ExplicitTyparInfo * 
-        argAndRetAttribs: ArgAndRetAttribs * 
-        isMutable: bool * 
-        visibility: SynAccess option * 
+type TcPatValFlags =
+    | TcPatValFlags of
+        inlineFlag: ValInline *
+        explicitTyparInfo: ExplicitTyparInfo *
+        argAndRetAttribs: ArgAndRetAttribs *
+        isMutable: bool *
+        visibility: SynAccess option *
         isCompilerGenerated: bool
 
 /// Represents information about object constructors
@@ -243,7 +245,7 @@ type TcEnv =
       /// Are we checking the body of an object expression? Such a body has family access to the
       /// implemented type, but its closures are not nested under that type, so they cannot keep it (#5302).
       eInObjectExpr: bool
-      
+
       // In order to avoid checking implicit-yield expressions multiple times, we cache the resulting checked expressions.
       // This avoids exponential behavior in the type checker when nesting implicit-yield expressions.
       eCachedImplicitYieldExpressions : HashMultiMap<range, SynExpr * TType * Expr>

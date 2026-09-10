@@ -12,13 +12,13 @@ type C(x:int) =
    let mutable m_value = x
 
    [<AttrOnProperty>]
-   member this.ReadWrite 
-        with [<AttrOnGetter>] get() = m_value 
+   member this.ReadWrite
+        with [<AttrOnGetter>] get() = m_value
         and  [<AttrOnSetter>] set x = m_value <- x
 
 open CodeGenHelper
 
-try  
+try
     System.Reflection.Assembly.GetExecutingAssembly()
     |> getType "bug1539+C"
     |> getProperty "ReadWrite"
@@ -35,6 +35,6 @@ try
     |> should haveAttribute "AttrOnSetter"
 
 with
-| e -> printfn "Unhandled Exception: %s" e.Message 
+| e -> printfn "Unhandled Exception: %s" e.Message
        raise (Exception($"Oops: {e}"))
 

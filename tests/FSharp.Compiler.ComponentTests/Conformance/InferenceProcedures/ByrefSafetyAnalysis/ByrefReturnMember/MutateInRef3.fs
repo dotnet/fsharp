@@ -8,7 +8,7 @@ module MutateInRef3 =
         member this.XAddr = &x.contents
 
     let testIn (m: inref<TestMut>) =
-        // If the struct API indirectly reveals a byref return of a field in a reference type then  
+        // If the struct API indirectly reveals a byref return of a field in a reference type then
         // there is nothing stopping it being written to.
         m.XAddr <- 1
 

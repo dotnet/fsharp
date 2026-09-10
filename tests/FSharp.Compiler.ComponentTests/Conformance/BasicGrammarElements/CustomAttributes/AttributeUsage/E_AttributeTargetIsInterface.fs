@@ -14,8 +14,8 @@ type IFoo = interface end
 [<CustomStruct>]
 type IFoo2 =
     abstract A :int
- 
-[<CustomClass>] 
+
+[<CustomClass>]
 [<CustomStruct>]
 [<Interface>]
 type IFoo3 =

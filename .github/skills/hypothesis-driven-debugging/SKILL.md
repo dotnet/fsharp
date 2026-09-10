@@ -23,7 +23,7 @@ Use this skill when:
 1. **Always start with a minimal reproduction**
 2. **Form multiple competing hypotheses**
 3. **Design verification for each hypothesis**
-4. **Document findings rigorously**
+4. **Record each hypothesis's verification method, result, and implications**
 5. **Re-run builds and tests after every change**
 
 ## Process

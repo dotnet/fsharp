@@ -1,4 +1,4 @@
-// #Conformance #PatternMatching #Constants 
+// #Conformance #PatternMatching #Constants
 // Constant expressions
 // This is the example quoted from the specs
 // Verification:
@@ -8,5 +8,5 @@
 
 let v = 17s           // int16
 let check(x:int16) = true
- 
+
 exit (if check(v) then 0 else 1)

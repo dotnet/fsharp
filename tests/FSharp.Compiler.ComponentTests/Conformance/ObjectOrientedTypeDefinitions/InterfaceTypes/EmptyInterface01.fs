@@ -1,11 +1,11 @@
-// #Conformance #ObjectOrientedTypes #InterfacesAndImplementations 
+// #Conformance #ObjectOrientedTypes #InterfacesAndImplementations
 // Verify ability to define and implement an empty interface
 
 type IDoNothing =
     interface
     end
 
-type IDoSomething = 
+type IDoSomething =
     interface
         abstract DoStuff : unit -> unit
     end
@@ -13,7 +13,7 @@ type IDoSomething =
 type Foo() =
     interface IDoNothing
     interface IDoSomething with
-        member this.DoStuff() = ()    
+        member this.DoStuff() = ()
 
 type Bar() =
     interface IDoSomething with

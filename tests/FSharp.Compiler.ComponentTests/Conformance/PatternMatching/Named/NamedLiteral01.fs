@@ -1,4 +1,4 @@
-// #Conformance #PatternMatching #ActivePatterns 
+// #Conformance #PatternMatching #ActivePatterns
 
 
 // Match against an enum const defined in another assembly
@@ -12,10 +12,10 @@ let isWeekend day =
         -> false
     | DayOfWeek.Friday -> false
     | _ -> failwith "Invalid value"
-    
-    
+
+
 if isWeekend DayOfWeek.Saturday <> true then exit 1
 
 exit 0
-    
-    
+
+

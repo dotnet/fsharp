@@ -1,4 +1,4 @@
-// #NoMono #NoMT #CodeGen #EmittedIL   
+// #NoMono #NoMT #CodeGen #EmittedIL
 
 
 type U = U of int * int

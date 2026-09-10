@@ -1,4 +1,4 @@
-// #Regression #Conformance #PatternMatching 
+// #Regression #Conformance #PatternMatching
 // Regression test for DevDiv:198999 ("Warning messages for incomplete matches involving enum types are wrong")
 // Not really regression tests for the bug, but these 2 cases cover code that was touched
 //<Expects status="success"></Expects>
@@ -14,7 +14,7 @@ let h1 =
     | :? System.NotFiniteNumberException -> ()
 
 // Unterminated try-with in a computation expr
-let a = 
+let a =
     async {
         try
             ()

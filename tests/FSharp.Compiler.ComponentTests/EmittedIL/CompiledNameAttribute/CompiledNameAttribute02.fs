@@ -1,4 +1,4 @@
-// #NoMono #NoMT #CodeGen #EmittedIL #Attributes 
+// #NoMono #NoMT #CodeGen #EmittedIL #Attributes
 // EXPECTED behavior: compile to an assembly where "Method" has custom attribute Microsoft.FSharp.Core.CompilationSourceNameAttribute with value "Method"
 module Program
 

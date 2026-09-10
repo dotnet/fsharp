@@ -15,7 +15,7 @@ Reviewers read code, not prose. Add bytes only when they pay for themselves.
 
 Write comments for the future maintainer modifying accepted code, not for the reviewer deciding whether to accept the change. If a comment only defends the change, delete it or move that rationale to the PR. It should still be useful a year from now to someone who never saw the diff.
 
-Good names **always** beat comments. Before writing a comment, ask: *can I rename a value, extract a function, or use an active pattern so the comment becomes unnecessary?* If yes, do that instead.
+Prefer good names to comments. Before writing a comment, ask: *can I rename a value, extract a function, or use an active pattern so the comment becomes unnecessary?* If yes, do that instead.
 
 - **Do not** restate what the code says (variable name, type name, attribute name, function signature).
 - **Do not** narrate the algorithm step-by-step. The diff is the algorithm.

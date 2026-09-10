@@ -11,7 +11,7 @@ module ``ComputationExpressions`` =
     let tmp = 1
 
     type Flags = { includeMergeSourcesOverloads: bool; includeBindReturnExtras: bool }
-    let applicativeLib  (opts: Flags) = 
+    let applicativeLib  (opts: Flags) =
         """
 /// Used for tracking what operations a Trace builder was asked to perform
 [<RequireQualifiedAccess>]
@@ -699,7 +699,7 @@ let ceResult =
 check "grwerjkrwejgk42" ceResult.Value 2
     """
 
-    let overloadLib includeInternalExtensions includeExternalExtensions = 
+    let overloadLib includeInternalExtensions includeExternalExtensions =
         """
 open System
 

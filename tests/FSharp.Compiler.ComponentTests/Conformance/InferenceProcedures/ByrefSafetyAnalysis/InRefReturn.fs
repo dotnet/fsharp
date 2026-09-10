@@ -1,7 +1,7 @@
 open Prelude
 
-module InRefReturn  = 
-    type C() = 
+module InRefReturn  =
+    type C() =
          static member M(x: inref<int>) = &x
     let mutable res = 9
     let v =  C.M(&res)

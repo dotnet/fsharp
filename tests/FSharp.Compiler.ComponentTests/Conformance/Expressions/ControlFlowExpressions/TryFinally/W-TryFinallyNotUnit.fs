@@ -1,4 +1,4 @@
-// #Regression #Conformance #ControlFlow #Exceptions 
+// #Regression #Conformance #ControlFlow #Exceptions
 
 
 // Verify warning if a finally block does not return 'unit'

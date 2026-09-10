@@ -1,4 +1,4 @@
-﻿// #Conformance #DeclarationElements #MemberDefinitions #OptionalDefaultParameterValueArguments 
+﻿// #Conformance #DeclarationElements #MemberDefinitions #OptionalDefaultParameterValueArguments
 
 open System.Runtime.InteropServices
 open System
@@ -32,7 +32,7 @@ type Class() =
     static member Mix1(a:int, b:string, [<Optional;DefaultParameterValue(-12)>]c:int) = c
     // can omit optional in the middle of the arg list; this works in C# too.
     static member Mix2(a:int, b:string, [<Optional;DefaultParameterValue(-12)>]c:int, d: int) = c
-    static member Mix3(a:int, [<Optional;DefaultParameterValue("str")>]b:string, 
+    static member Mix3(a:int, [<Optional;DefaultParameterValue("str")>]b:string,
                        [<Optional;DefaultParameterValue(-12)>]c:int, [<Optional;DefaultParameterValue(-123)>]d: int) = (b,c,d)
 
     // compiler should be able to figure out default to pass to Optional parameters without DefaultParameterValue.
@@ -48,7 +48,7 @@ type Class() =
 let checkMethod (f:'a->'a) value (defaultFun:unit->'a) defaultValue =
     let result = f value
     if result <> value then printfn "normal case failed for type %s. Expected %A <> %A" typeof<'a>.Name value result; failwith "Failed: 1"
-    let result = defaultFun() 
+    let result = defaultFun()
     if defaultFun() <> defaultValue then printf "default case failed for type %s. Expected %A <> %A" typeof<'a>.Name defaultValue result; failwith "Failed: 2"
 
 do checkMethod (fun v -> Class.Method1 (v)) 1y       (fun () -> Class.Method1 ()) 42y
