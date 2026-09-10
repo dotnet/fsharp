@@ -793,6 +793,19 @@ type internal FSharpNavigation(metadataAsSource: FSharpMetadataAsSourceService, 
             | _ -> return ImmutableArray.empty
         }
 
+    /// The same search, minus the definitions that only exist once a metadata document has been generated:
+    /// generating one takes the main thread, and Peek's broker holds it in `JoinableTaskFactory.Run` without
+    /// pumping messages until this returns, so asking for it there deadlocks Visual Studio.
+    member _.FindDefinitionsWithoutMetadataAsync(position) =
+        cancellableTask {
+            let gtd = GoToDefinition(metadataAsSource)
+            let! result = gtd.FindDefinitionAtPosition(initialDoc, position)
+
+            match result with
+            | ValueSome(FSharpGoToDefinitionResult.NavigableItem(navItem), _) -> return ImmutableArray.create navItem
+            | _ -> return ImmutableArray.empty
+        }
+
     member _.TryGoToDefinition(position, cancellationToken) =
         // Once we migrate to Roslyn-exposed MAAS and sourcelink (https://github.com/dotnet/fsharp/issues/13951), this can be a "normal" task.
         // The IFSharpGoToDefinitionService contract is synchronous, so the main thread has to wait here: the threaded-wait dialog
