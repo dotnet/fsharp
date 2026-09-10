@@ -59,8 +59,6 @@ type internal TcInfo =
 
         latestCcuSigForFile: ModuleOrNamespaceType option
 
-        latestOwnSigForFile: ModuleOrNamespaceType option
-
         /// Accumulated diagnostics, last file first
         tcDiagnosticsRev: PhasedDiagnostic[] list
 
@@ -725,7 +723,6 @@ type internal TransparentCompiler
                     tcEnvAtEndOfFile = tcInitial
                     topAttribs = None
                     latestCcuSigForFile = None
-                    latestOwnSigForFile = None
                     tcDiagnosticsRev = [ initialErrors ]
                     moduleNamesDict = Map.empty
                     tcDependencyFiles = basicDependencies
@@ -1486,7 +1483,7 @@ type internal TransparentCompiler
 
                             let partialResult, tcState = finisher tcInfo.tcState
 
-                            let tcEnv, topAttribs, _, ccuSigForFile, ownSigForFile = partialResult
+                            let tcEnv, topAttribs, _, ccuSigForFile, _ = partialResult
 
                             let tcEnvAtEndOfFile =
                                 if keepAllBackgroundResolutions then
@@ -1503,7 +1500,6 @@ type internal TransparentCompiler
                                 tcDiagnosticsRev = tcIntermediate.tcDiagnosticsRev @ tcInfo.tcDiagnosticsRev
                                 tcDependencyFiles = tcIntermediate.tcDependencyFiles @ tcInfo.tcDependencyFiles
                                 latestCcuSigForFile = Some ccuSigForFile
-                                latestOwnSigForFile = Some ownSigForFile
                                 graphNode = Some node
                                 stateContainsNodes = tcInfo.stateContainsNodes |> Set.add node
                                 sink =
@@ -1533,7 +1529,7 @@ type internal TransparentCompiler
                                      parsedInput)
                                     tcInfo.tcState
 
-                            let tcEnv, topAttribs, _, ccuSigForFile, ownSigForFile = partialResult
+                            let tcEnv, topAttribs, _, ccuSigForFile, _ = partialResult
 
                             let tcEnvAtEndOfFile =
                                 if keepAllBackgroundResolutions then
@@ -1547,7 +1543,6 @@ type internal TransparentCompiler
                                 tcEnvAtEndOfFile = tcEnvAtEndOfFile
                                 topAttribs = Some topAttribs
                                 latestCcuSigForFile = Some ccuSigForFile
-                                latestOwnSigForFile = Some ownSigForFile
                                 graphNode = Some fileNode
                                 stateContainsNodes = tcInfo.stateContainsNodes |> Set.add fileNode
                             })

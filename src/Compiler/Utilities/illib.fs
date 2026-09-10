@@ -571,11 +571,6 @@ module List =
         let c, d = List.unzip cd
         a, b, c, d
 
-    let unzip5 l =
-        let a, b, c, de = unzip4 (List.map (fun (x, y, z, w, v) -> (x, y, z, (w, v))) l)
-        let d, e = List.unzip de
-        a, b, c, d, e
-
     let rec iter3 f l1 l2 l3 =
         match l1, l2, l3 with
         | h1 :: t1, h2 :: t2, h3 :: t3 ->

@@ -1358,7 +1358,9 @@ let CheckOneInputEntry (ctok, checkForErrors, tcConfig: TcConfig, tcImports, tcG
 
 /// Finish checking multiple files (or one interactive entry into F# Interactive)
 let CheckMultipleInputsFinish (results, tcState: TcState) =
-    let tcEnvsAtEndFile, topAttrs, implFiles, ccuSigsForFiles, _ = List.unzip5 results
+    let tcEnvsAtEndFile, topAttrs, implFiles, ccuSigsForFiles =
+        results |> List.map (fun (a, b, c, d, _) -> a, b, c, d) |> List.unzip4
+
     let topAttrs = List.foldBack CombineTopAttrs topAttrs EmptyTopAttrs
     let implFiles = List.choose id implFiles
     // This is the environment required by fsi.exe when incrementally adding definitions

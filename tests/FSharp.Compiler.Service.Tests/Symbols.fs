@@ -1887,9 +1887,12 @@ module FileSignature =
         | Item.ModuleOrNamespaces [ tcref ] -> tcref.Stamp
         | item -> failwith $"Unexpected item %A{item}"
 
-    let private check (fileName: string) files =
+    let private projectFile (fileName: string) files =
         let options = createProjectOptionsFromNamedSources files []
-        let filePath = options.SourceFiles |> Array.find (fun path -> path.EndsWith fileName)
+        options, options.SourceFiles |> Array.find (fun path -> path.EndsWith fileName)
+
+    let private check fileName files =
+        let options, filePath = projectFile fileName files
         let _, checkResults = parseAndCheckFile filePath (System.IO.File.ReadAllText filePath) options
         checkResults
 
@@ -1975,3 +1978,36 @@ let y = First.x
         let test = checkResults.FileSignature.FindEntityByPath [ "Test" ] |> Option.get
         names (members test) |> shouldEqual [ "Visible"; "f" ]
         shouldMatchDefinitions checkResults test
+
+    [<Fact>]
+    let ``FileSignature of a background check with the incremental builder`` () =
+        let checker = FSharpChecker.Create(useTransparentCompiler = false)
+        let options, filePath = projectFile "Test.fs" [ "Test.fsi", fsi; "Test.fs", fs ]
+        let _, checkResults = checker.GetBackgroundCheckResultsForFileInProject(filePath, options) |> Async.RunSynchronouslyImmediate
+
+        let test = checkResults.FileSignature.FindEntityByPath [ "Test" ] |> Option.get
+        names (members test) |> shouldEqual [ "Hidden"; "Visible"; "f"; "g" ]
+        shouldMatchDefinitions checkResults test
+
+    [<Fact>]
+    let ``Entities in FileSignature are declared in its entities`` () =
+        let fsi = """
+module Test
+
+val visible: int
+"""
+        let fs = """
+module Test
+
+let visible = 1
+
+module Hidden =
+    type Secret = class end
+"""
+        for files in [ [ "Test.fs", fs ]; [ "Test.fsi", fsi; "Test.fs", fs ] ] do
+            let checkResults = check "Test.fs" files
+            let test = checkResults.FileSignature.FindEntityByPath [ "Test" ] |> Option.get
+            let hidden = test.NestedEntities |> Seq.exactlyOne
+            let secret = hidden.NestedEntities |> Seq.exactlyOne
+            stampOf (Option.get hidden.DeclaringEntity) |> shouldEqual (stampOf test)
+            stampOf (Option.get secret.DeclaringEntity) |> shouldEqual (stampOf hidden)

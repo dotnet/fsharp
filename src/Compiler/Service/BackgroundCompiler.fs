@@ -973,7 +973,7 @@ type internal BackgroundCompiler
                 let tcSymbolUses = tcInfoExtras.tcSymbolUses
                 let tcOpenDeclarations = tcInfoExtras.tcOpenDeclarations
                 let latestCcuSigForFile = tcInfo.latestCcuSigForFile
-                let latestOwnSigForFile = tcInfo.latestOwnSigForFile
+                let latestOwnSigForFile = tcInfoExtras.latestOwnSigForFile
                 let tcState = tcInfo.tcState
                 let tcEnvAtEnd = tcInfo.tcEnvAtEndOfFile
                 let latestImplementationFile = tcInfoExtras.latestImplFile

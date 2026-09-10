@@ -2847,7 +2847,7 @@ type internal TypeCheckInfo
         FSharpAssemblySignature(g, thisCcu, ccuSigForFile, tcImports, None, ccuSigForFile)
 
     member _.FileSignature =
-        FSharpAssemblySignature(g, thisCcu, ccuSigForFile, tcImports, None, ownSigForFile)
+        FSharpAssemblySignature(g, thisCcu, ownSigForFile, tcImports, None, ownSigForFile)
 
     member _.AccessRights = tcAccessRights
 

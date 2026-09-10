@@ -68,8 +68,6 @@ type internal TcInfo =
 
         latestCcuSigForFile: ModuleOrNamespaceType option
 
-        latestOwnSigForFile: ModuleOrNamespaceType option
-
         /// Accumulated errors, last file first
         tcDiagnosticsRev: PhasedDiagnostic[] list
 
@@ -91,6 +89,9 @@ type internal TcInfoExtras =
 
         /// Result of checking most recent file, if any
         latestImplFile: CheckedImplFile option
+
+        /// Inferred signature of the most recent file, before any signature file is applied
+        latestOwnSigForFile: ModuleOrNamespaceType option
 
         /// If enabled, stores a linear list of ranges and strings that identify an Item(symbol) in a file. Used for background find all references.
         itemKeyStore: ItemKeyStore option
