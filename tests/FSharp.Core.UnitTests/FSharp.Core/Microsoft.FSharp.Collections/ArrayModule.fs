@@ -618,6 +618,28 @@ type ArrayModule() =
         
         ()
 
+    static member CovariantCopyCases =
+        seq {
+            for length in [0; 1] do
+                for name, copy in
+                    [ "Array.copy", Array.copy<obj>
+                      "Seq.toArray", (fun source -> Seq.toArray (source: obj[]))
+                      "Array.ofSeq", (fun source -> Array.ofSeq (source: obj[]))
+                      "Array.insertManyAt", Array.insertManyAt 0 Seq.empty<obj> ] do
+                    yield [| box name; box length; box copy |]
+        }
+
+    [<Theory; MemberData(nameof ArrayModule.CovariantCopyCases)>]
+    member _.CopyPreservesCovariantArrayType(_name: string, length: int, copy: obj[] -> obj[]) =
+        let source = Array.create length "value"
+        let result = copy (box source :?> obj[])
+        Assert.IsType<string[]>(result) |> ignore
+        Assert.AreEqual(source, result)
+        if length > 0 then
+            Assert.NotSame(source, result)
+            result.[0] <- "changed"
+            Assert.AreEqual("value", source.[0])
+
     [<Fact>]
     member this.Create() =
         // int array

@@ -290,7 +290,7 @@ module Array =
     let copy (array: 'T array) =
         checkNonNull "array" array
 
-        if array.Length = 0 then
+        if array.Length = 0 && array.GetType() = typeof<'T array> then
             [||]
         else
             array.Clone() :?> 'T array // this is marginally faster

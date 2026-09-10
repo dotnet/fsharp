@@ -1012,7 +1012,7 @@ module Seq =
 
         match source with
         | :? ('T array) as res ->
-            if res.Length = 0 then
+            if res.Length = 0 && res.GetType() = typeof<'T array> then
                 [||]
             else
                 (res.Clone() :?> 'T array)
