@@ -500,6 +500,12 @@
       "cats": [
         "Affects-Compiler-Output"
       ]
+    },
+    "20503": {
+      "sha": "0cb53b89d148ed825c37e75c4724773675decc4f",
+      "cats": [
+        "Affects-Design-Time"
+      ]
     }
   }
 }
