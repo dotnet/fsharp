@@ -25,11 +25,27 @@ type internal FSharpNavigateToSearchService
     [<ImportingConstructor>]
     (patternMatcherFactory: IPatternMatcherFactory, [<Import(AllowDefault = true)>] workspace: VisualStudioWorkspace) =
 
-    let cache = ConcurrentDictionary<DocumentId, VersionStamp * NavigableItem array>()
+    /// A multi-targeted project is one Roslyn project per target framework over the same files, so the same
+    /// file is searched once per instance. What that costs is the parse, and a parse whose tree holds no
+    /// conditional directives does not depend on the defines: it is stored under `AnyDefines` and every
+    /// instance reuses it. One that does hold them is stored per define set, because those instances
+    /// genuinely parse the file differently.
+    ///
+    /// The duplicate results this produces are not for this service to remove. `NavigateToSearcher` pools its
+    /// seen set with `NavigateToSearchResultComparer`, which already collapses results by file path and span.
+    let cache =
+        ConcurrentDictionary<
+            struct (string * string),
+            struct {|
+                Version: VersionStamp
+                Items: NavigableItem array
+            |}
+         >()
 
-    /// Whether the file's parse depends on the defines, by file path: known once any instance has parsed it.
-    let conditionalDirectives =
-        ConcurrentDictionary<string, bool>(StringComparer.OrdinalIgnoreCase)
+    /// The key for a parse that does not depend on the defines. Not a define set any instance can have,
+    /// since defines are identifiers — an instance with none of its own must not read this entry as its own.
+    [<Literal>]
+    let AnyDefines = "?"
 
     do
         if workspace <> null then
@@ -37,9 +53,8 @@ type internal FSharpNavigateToSearchService
             <| fun e ->
                 if e.NewSolution.Id <> e.OldSolution.Id then
                     cache.Clear()
-                    conditionalDirectives.Clear()
 
-    let hasConditionalDirectives (parseTree: ParsedInput) =
+    let dependsOnDefines (parseTree: ParsedInput) =
         match parseTree with
         | ParsedInput.ImplFile file -> not file.Trivia.ConditionalDirectives.IsEmpty
         | ParsedInput.SigFile file -> not file.Trivia.ConditionalDirectives.IsEmpty
@@ -49,47 +64,39 @@ type internal FSharpNavigateToSearchService
             let! ct = CancellableTask.getCancellationToken ()
             let! currentVersion = document.GetTextVersionAsync(ct)
 
-            match cache.TryGetValue document.Id with
-            | true, (version, items) when version = currentVersion -> return items
-            | _ ->
+            match document.FilePath with
+            | null ->
                 let! parseResults = document.GetFSharpParseResultsAsync(nameof (FSharpNavigateToSearchService))
-                let items = NavigateTo.GetNavigableItems parseResults.ParseTree
-                cache[document.Id] <- currentVersion, items
+                return NavigateTo.GetNavigableItems parseResults.ParseTree
+            | path ->
+                let defines = document.GetFSharpQuickDefines() |> String.concat ";"
 
-                match document.FilePath with
-                | null -> ()
-                | path -> conditionalDirectives[path] <- hasConditionalDirectives parseResults.ParseTree
+                let cached key =
+                    match cache.TryGetValue(struct (key, path)) with
+                    | true, entry when entry.Version = currentVersion -> ValueSome entry.Items
+                    | _ -> ValueNone
 
-                return items
+                match cached AnyDefines, cached defines with
+                | ValueSome items, _
+                | _, ValueSome items -> return items
+                | ValueNone, ValueNone ->
+                    let! parseResults = document.GetFSharpParseResultsAsync(nameof (FSharpNavigateToSearchService))
+                    let items = NavigateTo.GetNavigableItems parseResults.ParseTree
+
+                    let key =
+                        if dependsOnDefines parseResults.ParseTree then
+                            defines
+                        else
+                            AnyDefines
+
+                    cache[struct (key, path)] <-
+                        {|
+                            Version = currentVersion
+                            Items = items
+                        |}
+
+                    return items
         }
-
-    /// A multi-targeted project is one Roslyn project per target framework over the same files. The
-    /// first instance in the solution searches every file; the others only the files they alone compile
-    /// and the files whose parse depends on the defines.
-    let searchedIn (project: Project) =
-        match project.FilePath with
-        | null -> fun (_: Document) -> true
-        | projectPath ->
-            let instances =
-                project.Solution.Projects
-                |> Seq.filter (fun p -> p.FilePath = projectPath)
-                |> Seq.map _.Id
-                |> List.ofSeq
-
-            fun (document: Document) ->
-                match document.FilePath with
-                | null -> true
-                | path ->
-                    let documentIds = project.Solution.GetDocumentIdsWithFilePath path
-
-                    let owner =
-                        instances
-                        |> List.find (fun id -> documentIds |> Seq.exists (fun documentId -> documentId.ProjectId = id))
-
-                    owner = project.Id
-                    || (match conditionalDirectives.TryGetValue path with
-                        | true, dependsOnDefines -> dependsOnDefines
-                        | _ -> true)
 
     let kindsProvided =
         ImmutableHashSet.Create(
@@ -238,7 +245,6 @@ type internal FSharpNavigateToSearchService
 
                 let! results =
                     project.Documents
-                    |> Seq.filter (searchedIn project)
                     |> Seq.map (processDocument tryMatch kinds)
                     // Throttle to avoid launching a parse per document in the project all at once.
                     |> CancellableTask.whenAllThrottled (max 1 Environment.ProcessorCount)
