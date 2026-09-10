@@ -66,6 +66,7 @@ let ``goto definition into a project built with a path map reaches its source`` 
     | ValueSome(FSharpGoToDefinitionResult.NavigableItem item, _) -> Assert.Equal(library.GetFilePath "Library", item.Document.FilePath)
     | result -> failwith $"expected a navigable item, got %A{result}"
 
+/// The one rule the document lookup and the search for a declaration inside a document both go through.
 /// A mapped name arrives with the separator its replacement doubled (`.\` + `\rest`), which is what the
 /// compiler writes and what a build on a path map hands back.
 [<Theory>]
