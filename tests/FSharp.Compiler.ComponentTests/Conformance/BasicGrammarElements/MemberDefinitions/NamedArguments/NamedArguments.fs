@@ -173,7 +173,9 @@ module MemberDefinitions_NamedArguments =
         let result =
             Fsx $"""#r @"{provider.OutputPath.Value}"
 let result = Provided.C.M({arguments})"""
+#if NETCOREAPP
             |> withOptions ["--usesdkrefs-"]
+#endif
             |> withLangVersion langVersion
             |> eval
 
