@@ -1,21 +1,272 @@
 {
   "prs": {
+    "20509": {
+      "sha": "d16961bd59531008d63a871f94e0123aab141240",
+      "cats": [
+        "Affects-Compiler-Output"
+      ]
+    },
     "20507": {
       "sha": "ece9ed9c27947a3e4297e7614266d960424bc542",
       "cats": [
         "Affects-Bootstrap"
       ]
     },
-    "20421": {
-      "sha": "bf73bc8d3267477e6b6ffceb11aa2ef2120b66f4",
+    "20505": {
+      "sha": "c42d17fdbf029d9ed04cbd7257ed3755e9aed2e2",
       "cats": []
     },
-    "20419": {
-      "sha": "520114dd6df60aa50573f9e45b8e4e29c5f109e1",
+    "20504": {
+      "sha": "5156913007a93abf5e0c1f430d9d632a6aa25217",
+      "cats": []
+    },
+    "20503": {
+      "sha": "0cb53b89d148ed825c37e75c4724773675decc4f",
+      "cats": [
+        "Affects-Design-Time"
+      ]
+    },
+    "20501": {
+      "sha": "f7e3ac603cb96052f403962eb053a31f7bf4fd11",
+      "cats": [
+        "Affects-Design-Time"
+      ]
+    },
+    "20500": {
+      "sha": "21f852d0b3b165e878795b0e1b7ae6641b20f2cc",
+      "cats": [
+        "Affects-Design-Time"
+      ]
+    },
+    "20499": {
+      "sha": "bddd2eb39132a06569b193ec84b5b2085fbd16c1",
+      "cats": [
+        "Affects-Design-Time"
+      ]
+    },
+    "20497": {
+      "sha": "7261e4dd1ac2f4227f5e387a429be6c12e5d2153",
+      "cats": [
+        "Affects-Agent-Config"
+      ]
+    },
+    "20496": {
+      "sha": "61bc8f505ed3c17802c315ed483ece183974884f",
+      "cats": []
+    },
+    "20495": {
+      "sha": "c827e351dd43370ff7045b9e55abd6d6efebb36a",
+      "cats": [
+        "Affects-Agent-Config",
+        "Affects-Build-Infra",
+        "Suspicious-Prompting"
+      ]
+    },
+    "20494": {
+      "sha": "33b30174249ba2b44ccdf6f8cbfdde82998f15fc",
+      "cats": [
+        "Affects-Bootstrap",
+        "Affects-Compiler-Output"
+      ]
+    },
+    "20491": {
+      "sha": "f0587a9f973453393aa162d5063f3a87dc50f1b1",
+      "cats": []
+    },
+    "20490": {
+      "sha": "3bb87bb5616607d21f8e39e85aa6bcfc90a7c50f",
+      "cats": [
+        "Affects-Bootstrap",
+        "Affects-Compiler-Output"
+      ]
+    },
+    "20489": {
+      "sha": "7cfe5466541aae46ec73451a835b89a39764e69e",
+      "cats": [
+        "Affects-Bootstrap",
+        "Affects-Compiler-Output"
+      ]
+    },
+    "20488": {
+      "sha": "0f682463a3b9cabe5b9d3848546358290ed3a389",
+      "cats": []
+    },
+    "20487": {
+      "sha": "a8eeb1f57767d68bc72aa73827a112bd4d4ca7a8",
+      "cats": []
+    },
+    "20486": {
+      "sha": "df2c9ad40ab4cdaec95cbee991c740e28cb4c2a2",
+      "cats": [
+        "Affects-Bootstrap",
+        "Affects-Compiler-Output"
+      ]
+    },
+    "20485": {
+      "sha": "c9564eff026a6b451ff645317cdaec9ad7e27d3c",
+      "cats": []
+    },
+    "20483": {
+      "sha": "6daf31f730f6358af0a2920131aee71d856bbec8",
+      "cats": [
+        "Affects-Design-Time"
+      ]
+    },
+    "20482": {
+      "sha": "b46ceaab750350b25625a135c91d44d2b5089dbc",
+      "cats": []
+    },
+    "20481": {
+      "sha": "9fda86c75837a35a475658abc780c315a5d2a7f1",
+      "cats": []
+    },
+    "20480": {
+      "sha": "324aeff119328e40979ad3c868d817d4fba2922a",
+      "cats": []
+    },
+    "20478": {
+      "sha": "d6303c7d429c6441c794b7364f7be50776e452ab",
+      "cats": []
+    },
+    "20477": {
+      "sha": "3635579f33726c239c35c42d05779a4f293708ba",
+      "cats": []
+    },
+    "20476": {
+      "sha": "0c4b74a47d45d1df38cb47cd9548fe862d3325cc",
+      "cats": []
+    },
+    "20473": {
+      "sha": "11997b42112f9db267503cd11b7d0d5cd6b3cd9b",
+      "cats": []
+    },
+    "20470": {
+      "sha": "aee336185089ee2652bc506bd7c579e5c9c86315",
+      "cats": []
+    },
+    "20468": {
+      "sha": "0be82285ef41f0eb493935b327ac276d643fcf97",
+      "cats": [
+        "Affects-Design-Time"
+      ]
+    },
+    "20467": {
+      "sha": "6ddb240b6b64dc795cba6fd0ed657fc29c7d1210",
+      "cats": [
+        "Affects-Build-Infra",
+        "Affects-Restore"
+      ]
+    },
+    "20465": {
+      "sha": "7f76c360b6c648bc0f080d56c6b5fe9239d0c730",
+      "cats": []
+    },
+    "20463": {
+      "sha": "8b67667b17ca6fbcd32b8b632de62f0bb82b8811",
+      "cats": [
+        "Affects-Build-Infra",
+        "Affects-Restore"
+      ]
+    },
+    "20462": {
+      "sha": "a0e2ac3565decd20ac1ceede5b4fc5439f132ec8",
+      "cats": []
+    },
+    "20461": {
+      "sha": "4cbe68a3b86971fd8cf2aebeea67f4031355283d",
+      "cats": []
+    },
+    "20460": {
+      "sha": "3d74593a23bc4e0e161d4bc52c63fe0ba1e9bddd",
+      "cats": [
+        "Affects-Design-Time"
+      ]
+    },
+    "20459": {
+      "sha": "dab34eea1bcc9466165ce1485d030d9bab2806f6",
+      "cats": []
+    },
+    "20458": {
+      "sha": "86954e4d4d5a17d21f46894f544aecc65615e6c4",
+      "cats": [
+        "Affects-Design-Time"
+      ]
+    },
+    "20457": {
+      "sha": "6617485b0a42ecb0778415cf44bc98c5e53b52d1",
+      "cats": [
+        "Affects-Design-Time"
+      ]
+    },
+    "20456": {
+      "sha": "d04d68c3da09d99f9fb9655016cadfa756662561",
+      "cats": [
+        "Affects-Compiler-Output"
+      ]
+    },
+    "20455": {
+      "sha": "e66a0f8bb89828085a1c5f956b13e78ea36530af",
+      "cats": [
+        "Affects-Design-Time"
+      ]
+    },
+    "20454": {
+      "sha": "9daa9230e3c13c9158bcc2a8732cca753c5832ce",
+      "cats": [
+        "Affects-Bootstrap",
+        "Affects-Compiler-Output"
+      ]
+    },
+    "20452": {
+      "sha": "25a249c6a095b1aa07660e0adf6a63e581c9f3a3",
+      "cats": [
+        "Affects-Design-Time"
+      ]
+    },
+    "20451": {
+      "sha": "74fb616b63aa539c0063bcc62f60033e47654b8a",
+      "cats": [
+        "Affects-Design-Time"
+      ]
+    },
+    "20450": {
+      "sha": "9f0f5f83eb61408c08ed259f23102cd363c8fb65",
+      "cats": [
+        "Affects-Design-Time"
+      ]
+    },
+    "20444": {
+      "sha": "b12cb3628a924d5ac8e5d77295aa805b662c63b6",
+      "cats": []
+    },
+    "20443": {
+      "sha": "ac311575054322de6f860cb95d589fd501d46881",
+      "cats": [
+        "Affects-Build-Infra",
+        "Affects-Compiler-Output",
+        "Affects-Restore"
+      ]
+    },
+    "20442": {
+      "sha": "09c979ff523ed1fb2abd0f2da5631e76a32d3e0e",
+      "cats": []
+    },
+    "20428": {
+      "sha": "6519f4d20c46f5dc962fb3ea4c051e85ec8ecedb",
+      "cats": [
+        "Affects-Compiler-Output"
+      ]
+    },
+    "20426": {
+      "sha": "14f78674ab2cda78ba594cf382b67d1794a746f8",
+      "cats": []
+    },
+    "20422": {
+      "sha": "5c4d6c7bd165747a5db2d792c89380f692230304",
       "cats": []
     },
     "20418": {
-      "sha": "622669aa1ed8332e452cd7dbe0dc43eeecab28f2",
+      "sha": "7d6306cdea09fea9ec9e519d2d58aeacf590273e",
       "cats": []
     },
     "20417": {
@@ -23,7 +274,7 @@
       "cats": []
     },
     "20416": {
-      "sha": "09afc51a0c97ad5d71862020baca814808323b4d",
+      "sha": "7ee068dbb612351f3fff45f43c21ae566dc76c11",
       "cats": [
         "Affects-Compiler-Output"
       ]
@@ -48,10 +299,6 @@
         "Affects-Compiler-Output"
       ]
     },
-    "20404": {
-      "sha": "a1e8888a90c4261c2fa0e1b3d293607d90214d24",
-      "cats": []
-    },
     "20403": {
       "sha": "0df50009b71aca018126a219aae4e85ba9e90ff6",
       "cats": []
@@ -69,7 +316,7 @@
       ]
     },
     "20396": {
-      "sha": "2afb51bc7a898fe4c47224cf8f5515661d724fd4",
+      "sha": "4c8c5fd13bffa246f3bb3e4dffdcacc1d58b135f",
       "cats": [
         "Affects-Build-Infra",
         "Affects-Compiler-Output",
@@ -86,11 +333,7 @@
       "cats": []
     },
     "20388": {
-      "sha": "1748e9e10df376dfbe2913c9a1f5bd639604aeff",
-      "cats": []
-    },
-    "20374": {
-      "sha": "1c466a1bd429ec2f3e8cb673dde9b003f55c47c2",
+      "sha": "f918082c3c7e473abe7056b473f3f5c1276af11d",
       "cats": []
     },
     "20342": {
@@ -98,11 +341,11 @@
       "cats": []
     },
     "20340": {
-      "sha": "44bf3afb2dcae11a743c5530a7fa6ec32efdcdcb",
+      "sha": "7296a1340457aaf6a070f44d294963f75b24f028",
       "cats": []
     },
     "20338": {
-      "sha": "d6ddb09641c9f1d5fc5a260d5a5c5785193ec077",
+      "sha": "791342d9bac60ed700eafb6a1441e34536d7318a",
       "cats": [
         "Affects-Build-Infra",
         "Affects-Test-Tooling"
@@ -116,14 +359,24 @@
       "sha": "eb0c6a2197eeb4f0241378ec26c7fce39385363b",
       "cats": [
         "Affects-Bootstrap",
+        "Affects-Build-Infra",
         "Affects-Compiler-Output",
         "Affects-Design-Time",
         "Scope-Review-Needed"
       ]
     },
     "20261": {
-      "sha": "5b1a724e089cee38e71ca61f2a8a5093a1b1014d",
+      "sha": "9d8662d93106e401d67e480e5fb0d812b04cb57c",
       "cats": []
+    },
+    "20235": {
+      "sha": "382ae42355199db46c4b9fa816a5496d6867515e",
+      "cats": [
+        "Affects-Bootstrap",
+        "Affects-Build-Infra",
+        "Affects-Compiler-Output",
+        "Affects-Test-Tooling"
+      ]
     },
     "20126": {
       "sha": "1a5fbb2a6d0d80c196cc4faec1ad8a08950a2beb",
@@ -133,240 +386,11 @@
     },
     "20121": {
       "sha": "6e4e9c44fede809776195138632397f4e11b485a",
-      "cats": []
-    },
-    "20426": {
-      "sha": "14f78674ab2cda78ba594cf382b67d1794a746f8",
-      "cats": []
-    },
-    "20235": {
-      "sha": "866a1693de791609e4f233b97822d77726ee3dfb",
-      "cats": [
-        "Affects-Bootstrap",
-        "Affects-Build-Infra",
-        "Affects-Compiler-Output",
-        "Affects-Test-Tooling"
-      ]
-    },
-    "20436": {
-      "sha": "8576a9b2c6eb8b80e95f050c6b5fb685f5166146",
-      "cats": []
-    },
-    "20437": {
-      "sha": "3fc3a58dfd4e4feec9c2d9e66d5056b79ef87b2b",
-      "cats": []
-    },
-    "20442": {
-      "sha": "09c979ff523ed1fb2abd0f2da5631e76a32d3e0e",
-      "cats": []
-    },
-    "20444": {
-      "sha": "b12cb3628a924d5ac8e5d77295aa805b662c63b6",
-      "cats": []
-    },
-    "20443": {
-      "sha": "ac311575054322de6f860cb95d589fd501d46881",
       "cats": [
         "Affects-Build-Infra",
         "Affects-Compiler-Output",
-        "Affects-Restore"
-      ]
-    },
-    "20452": {
-      "sha": "25a249c6a095b1aa07660e0adf6a63e581c9f3a3",
-      "cats": [
-        "Affects-Design-Time"
-      ]
-    },
-    "20451": {
-      "sha": "74fb616b63aa539c0063bcc62f60033e47654b8a",
-      "cats": [
-        "Affects-Design-Time"
-      ]
-    },
-    "20450": {
-      "sha": "9f0f5f83eb61408c08ed259f23102cd363c8fb65",
-      "cats": [
-        "Affects-Design-Time"
-      ]
-    },
-    "20455": {
-      "sha": "e66a0f8bb89828085a1c5f956b13e78ea36530af",
-      "cats": [
-        "Affects-Design-Time"
-      ]
-    },
-    "20457": {
-      "sha": "6617485b0a42ecb0778415cf44bc98c5e53b52d1",
-      "cats": [
-        "Affects-Design-Time"
-      ]
-    },
-    "20456": {
-      "sha": "d04d68c3da09d99f9fb9655016cadfa756662561",
-      "cats": [
-        "Affects-Compiler-Output"
-      ]
-    },
-    "20458": {
-      "sha": "86954e4d4d5a17d21f46894f544aecc65615e6c4",
-      "cats": [
-        "Affects-Design-Time"
-      ]
-    },
-    "20459": {
-      "sha": "dab34eea1bcc9466165ce1485d030d9bab2806f6",
-      "cats": []
-    },
-    "20461": {
-      "sha": "4cbe68a3b86971fd8cf2aebeea67f4031355283d",
-      "cats": []
-    },
-    "20460": {
-      "sha": "3d74593a23bc4e0e161d4bc52c63fe0ba1e9bddd",
-      "cats": [
-        "Affects-Design-Time"
-      ]
-    },
-    "20462": {
-      "sha": "a0e2ac3565decd20ac1ceede5b4fc5439f132ec8",
-      "cats": []
-    },
-    "20464": {
-      "sha": "a670ed8d9234befb35d95149ec6bd20f702ef57e",
-      "cats": [
-        "Affects-Design-Time"
-      ]
-    },
-    "20463": {
-      "sha": "8b67667b17ca6fbcd32b8b632de62f0bb82b8811",
-      "cats": [
-        "Affects-Build-Infra",
-        "Affects-Restore"
-      ]
-    },
-    "20465": {
-      "sha": "7f76c360b6c648bc0f080d56c6b5fe9239d0c730",
-      "cats": []
-    },
-    "20467": {
-      "sha": "6ddb240b6b64dc795cba6fd0ed657fc29c7d1210",
-      "cats": [
-        "Affects-Build-Infra",
-        "Affects-Restore"
-      ]
-    },
-    "20468": {
-      "sha": "0be82285ef41f0eb493935b327ac276d643fcf97",
-      "cats": [
-        "Affects-Design-Time"
-      ]
-    },
-    "20470": {
-      "sha": "aee336185089ee2652bc506bd7c579e5c9c86315",
-      "cats": []
-    },
-    "20473": {
-      "sha": "11997b42112f9db267503cd11b7d0d5cd6b3cd9b",
-      "cats": []
-    },
-    "20476": {
-      "sha": "0c4b74a47d45d1df38cb47cd9548fe862d3325cc",
-      "cats": []
-    },
-    "20477": {
-      "sha": "3635579f33726c239c35c42d05779a4f293708ba",
-      "cats": []
-    },
-    "20478": {
-      "sha": "3d971085ecea27a2eb89057b1f004b91f15036b2",
-      "cats": []
-    },
-    "20422": {
-      "sha": "5c4d6c7bd165747a5db2d792c89380f692230304",
-      "cats": []
-    },
-    "20480": {
-      "sha": "324aeff119328e40979ad3c868d817d4fba2922a",
-      "cats": []
-    },
-    "20481": {
-      "sha": "f3c8c749635b4b8ffbe907558edc1f8c161bf367",
-      "cats": []
-    },
-    "20428": {
-      "sha": "6519f4d20c46f5dc962fb3ea4c051e85ec8ecedb",
-      "cats": [
-        "Affects-Compiler-Output"
-      ]
-    },
-    "20454": {
-      "sha": "9daa9230e3c13c9158bcc2a8732cca753c5832ce",
-      "cats": [
-        "Affects-Bootstrap",
-        "Affects-Compiler-Output"
-      ]
-    },
-    "20482": {
-      "sha": "b46ceaab750350b25625a135c91d44d2b5089dbc",
-      "cats": []
-    },
-    "20483": {
-      "sha": "6daf31f730f6358af0a2920131aee71d856bbec8",
-      "cats": [
-        "Affects-Design-Time"
-      ]
-    },
-    "20485": {
-      "sha": "c9564eff026a6b451ff645317cdaec9ad7e27d3c",
-      "cats": []
-    },
-    "20486": {
-      "sha": "df2c9ad40ab4cdaec95cbee991c740e28cb4c2a2",
-      "cats": [
-        "Affects-Bootstrap",
-        "Affects-Compiler-Output"
-      ]
-    },
-    "20487": {
-      "sha": "a8eeb1f57767d68bc72aa73827a112bd4d4ca7a8",
-      "cats": []
-    },
-    "20488": {
-      "sha": "0f682463a3b9cabe5b9d3848546358290ed3a389",
-      "cats": []
-    },
-    "20490": {
-      "sha": "3bb87bb5616607d21f8e39e85aa6bcfc90a7c50f",
-      "cats": [
-        "Affects-Bootstrap",
-        "Affects-Compiler-Output"
-      ]
-    },
-    "20489": {
-      "sha": "57c504f6738e57d4ac9c1e6d00044d3911e76110",
-      "cats": [
-        "Affects-Bootstrap",
-        "Affects-Compiler-Output"
-      ]
-    },
-    "20491": {
-      "sha": "f0587a9f973453393aa162d5063f3a87dc50f1b1",
-      "cats": []
-    },
-    "20494": {
-      "sha": "33b30174249ba2b44ccdf6f8cbfdde82998f15fc",
-      "cats": [
-        "Affects-Bootstrap",
-        "Affects-Compiler-Output"
-      ]
-    },
-    "20495": {
-      "sha": "c827e351dd43370ff7045b9e55abd6d6efebb36a",
-      "cats": [
-        "Affects-Agent-Config",
-        "Affects-Build-Infra",
-        "Suspicious-Prompting"
+        "Affects-Design-Time",
+        "Scope-Review-Needed"
       ]
     },
     "20113": {
@@ -379,6 +403,7 @@
     "20111": {
       "sha": "e83a149b149f21a841f66bcf90a869d1eccb25af",
       "cats": [
+        "Affects-Bootstrap",
         "Affects-Compiler-Output"
       ]
     },
@@ -392,30 +417,38 @@
       "sha": "8cf5f8a411d0ad1fbe287a4918a42b6e9fd20a5f",
       "cats": [
         "Affects-Build-Infra",
+        "Affects-Restore",
         "Affects-Test-Tooling"
       ]
     },
     "20031": {
       "sha": "b713d69480ebb259fd8474bf56ba133ea8db9bdf",
       "cats": [
-        "Affects-Compiler-Output"
+        "Affects-Bootstrap",
+        "Affects-Build-Infra",
+        "Affects-Compiler-Output",
+        "Affects-Test-Tooling"
       ]
     },
     "20030": {
       "sha": "98001b2e15d63e374e17898d40c95f6fb1000586",
       "cats": [
+        "Affects-Build-Infra",
         "Affects-Compiler-Output"
       ]
     },
     "20027": {
       "sha": "56540495c995bcc30bed5c99b9789a8abd21d628",
       "cats": [
+        "Affects-Build-Infra",
         "Affects-Compiler-Output"
       ]
     },
     "20025": {
       "sha": "b60372859149228943672888d78b89fa63f1f320",
-      "cats": []
+      "cats": [
+        "Affects-Compiler-Output"
+      ]
     },
     "20016": {
       "sha": "88e64501a0db50d05a18a0267434fa18f254527d",
@@ -433,6 +466,7 @@
     "19941": {
       "sha": "3ca5dd6038a534ab739bd79d48018d6c83da0262",
       "cats": [
+        "Affects-Build-Infra",
         "Affects-Compiler-Output"
       ]
     },
@@ -440,71 +474,16 @@
       "sha": "fdb49f9abb55a8d81abaeb6d415c8bf9d3ef5c5e",
       "cats": [
         "Affects-Build-Infra",
+        "Affects-Design-Time",
+        "Affects-Restore",
         "Affects-Test-Tooling"
       ]
     },
     "19774": {
       "sha": "0e262c5de4cbc31f0d594c589c0e4ac30c95c6a9",
-      "cats": []
-    },
-    "20497": {
-      "sha": "e31956a6c1b4b639894fcd49629a4b4f9322be92",
       "cats": [
-        "Affects-Agent-Config"
-      ]
-    },
-    "20496": {
-      "sha": "53bb90deef34fa4dd591fa6f2e5dfbd01b14e927",
-      "cats": []
-    },
-    "20499": {
-      "sha": "bddd2eb39132a06569b193ec84b5b2085fbd16c1",
-      "cats": [
-        "Affects-Design-Time"
-      ]
-    },
-    "20501": {
-      "sha": "93b84ca41f68d485e152f5193e90fe89e32ee482",
-      "cats": [
-        "Affects-Design-Time"
-      ]
-    },
-    "20500": {
-      "sha": "ee9eddfd0e00569727d2e1d958c865f850bf7c76",
-      "cats": [
-        "Affects-Design-Time"
-      ]
-    },
-    "20503": {
-      "sha": "0cb53b89d148ed825c37e75c4724773675decc4f",
-      "cats": [
-        "Affects-Design-Time"
-      ]
-    },
-    "20505": {
-      "sha": "a7b9150fb5f3a308323c80be4fedf099d3f7c289",
-      "cats": []
-    },
-    "20504": {
-      "sha": "5156913007a93abf5e0c1f430d9d632a6aa25217",
-      "cats": []
-    },
-    "20507": {
-      "sha": "ece9ed9c27947a3e4297e7614266d960424bc542",
-      "cats": [
-        "Affects-Bootstrap"
-      ]
-    },
-    "20509": {
-      "sha": "d16961bd59531008d63a871f94e0123aab141240",
-      "cats": [
-        "Affects-Compiler-Output"
-      ]
-    },
-    "20503": {
-      "sha": "0cb53b89d148ed825c37e75c4724773675decc4f",
-      "cats": [
-        "Affects-Design-Time"
+        "Affects-Build-Infra",
+        "Affects-Restore"
       ]
     }
   }
