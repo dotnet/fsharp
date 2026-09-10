@@ -1,13 +1,18 @@
 {
   "prs": {
+    "20511": {
+      "sha": "38f645cdd539a59a1bd3f20a747a832854581611",
+      "cats": []
+    },
     "20510": {
       "sha": "862526d06be3db28716cfcfbcbaa5a30d8416718",
       "cats": []
     },
     "20509": {
-      "sha": "d16961bd59531008d63a871f94e0123aab141240",
+      "sha": "e16b51c07a9048c353e306671a712293015ee9a9",
       "cats": [
-        "Affects-Compiler-Output"
+        "Affects-Compiler-Output",
+        "Affects-Test-Tooling"
       ]
     },
     "20507": {
@@ -257,10 +262,6 @@
         "Affects-Compiler-Output"
       ]
     },
-    "20426": {
-      "sha": "14f78674ab2cda78ba594cf382b67d1794a746f8",
-      "cats": []
-    },
     "20422": {
       "sha": "5c4d6c7bd165747a5db2d792c89380f692230304",
       "cats": []
@@ -333,7 +334,7 @@
       "cats": []
     },
     "20388": {
-      "sha": "f918082c3c7e473abe7056b473f3f5c1276af11d",
+      "sha": "39644e8937e6c326f33f6e9b85d5ca988f6c2dc5",
       "cats": []
     },
     "20342": {
