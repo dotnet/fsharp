@@ -264,12 +264,6 @@
       "sha": "11997b42112f9db267503cd11b7d0d5cd6b3cd9b",
       "cats": []
     },
-    "20475": {
-      "sha": "cf78cf1996b23c59163d352096b06f3bec4905e5",
-      "cats": [
-        "Affects-Agent-Config"
-      ]
-    },
     "20476": {
       "sha": "0c4b74a47d45d1df38cb47cd9548fe862d3325cc",
       "cats": []
@@ -493,6 +487,12 @@
       "sha": "ece9ed9c27947a3e4297e7614266d960424bc542",
       "cats": [
         "Affects-Bootstrap"
+      ]
+    },
+    "20508": {
+      "sha": "84d02f2ac196c62f69bbcfa9022c4b76723646ee",
+      "cats": [
+        "Affects-Agent-Config"
       ]
     }
   }
