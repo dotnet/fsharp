@@ -1,17 +1,22 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-/// The types exchanged between F# Interactive and the editor hosting it.
-///
+/// <summary>The types exchanged between F# Interactive and the editor hosting it.</summary>
+/// <remarks>
+/// <para>
 /// This file is compiled into fsi and linked into the host, so that the two ends of the protocol
 /// cannot drift apart. Roslyn achieves the same by having both sides reference one assembly; fsi
 /// exposes no public surface to reference, so the source is shared instead.
-///
-/// The members are named as they appear on the wire, and the records are `CLIMutable` so that the
-/// JSON-RPC formatter can construct them.
-///
+/// </para>
+/// <para>
+/// The members are named as they appear on the wire, and the records are <c>CLIMutable</c> so that
+/// the JSON-RPC formatter can construct them.
+/// </para>
+/// <para>
 /// Public rather than internal, even in fsi's own copy: the handlers that carry them have to be
 /// public for StreamJsonRpc to find them by reflection, and a public member cannot expose a type
 /// less accessible than itself.
+/// </para>
+/// </remarks>
 namespace FSharp.Compiler.Interactive.Protocol
 
 /// Method names. Both ends use these rather than repeating string literals.
@@ -45,10 +50,13 @@ type InitializeRequest =
 [<CLIMutable>]
 type InitializeResult =
     {
+        /// <summary>
         /// The process actually evaluating code, which is what a debugger attaches to.
-        ///
-        /// On .NET this is not the process the host launched: `dotnet fsi` starts a second process,
-        /// and it is the inner one that matters.
+        /// </summary>
+        /// <remarks>
+        /// On .NET this is not the process the host launched: <c>dotnet fsi</c> starts a second
+        /// process, and it is the inner one that matters.
+        /// </remarks>
         processId: int
 
         frameworkDescription: string
@@ -63,9 +71,11 @@ type ExecuteRequest =
     {
         code: string
 
+        /// <summary>
         /// Where the text came from, when the host is executing a selection from a file. Together
-        /// with `startLine` this makes diagnostics point at the user's own source rather than at a
-        /// position within the submission.
+        /// with <c>startLine</c> this makes diagnostics point at the user's own source rather than
+        /// at a position within the submission.
+        /// </summary>
         sourcePath: string
 
         startLine: System.Nullable<int>

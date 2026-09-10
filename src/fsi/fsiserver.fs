@@ -1,28 +1,37 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-/// The JSON-RPC server mode of F# Interactive, activated by `--fsi-server-jsonrpc:<pipe name>`.
-///
+/// <summary>
+/// The JSON-RPC server mode of F# Interactive, activated by <c>--fsi-server-jsonrpc:&lt;pipe name&gt;</c>.
+/// </summary>
+/// <remarks>
+/// <para>
 /// An editor hosting F# Interactive needs two things from the process: a control channel to submit
 /// interactions and receive structured results, and the program's own console output. This server
 /// keeps those apart. Control traffic is JSON-RPC over a named pipe; everything the script itself
 /// prints continues to flow through the redirected standard output and error streams, exactly as it
 /// does for a console session. That separation is what removes the need for a host to recognise
 /// prompts in the output text in order to tell one interaction's results from the next.
-///
+/// </para>
+/// <para>
 /// The transport is StreamJsonRpc over a header-delimited stream, the same combination Roslyn's
 /// interactive host uses, so a client built on that library talks to this one with its stock
 /// message handler.
-///
+/// </para>
+/// <para>
 /// Threading mirrors the standard input path of a console session. Interactions are evaluated on
-/// the event loop thread by way of `EventLoopInvoke`, so scripts that create user interface objects
-/// behave as they do at the console. Interactions are queued onto a single worker so that they run
-/// in the order they arrived, while requests that must not wait behind them — an interrupt above
-/// all — are served as they arrive.
-///
-/// Not `module internal`: `FsiRpcTarget` needs its members to be genuinely public IL, and under
-/// `--realsig-` a member's own accessibility is capped by its enclosing module's, so an internal
-/// module would take that away no matter what the type itself declares. Everything else here goes
-/// back to `private`/`internal` explicitly instead of inheriting it from the module.
+/// the event loop thread by way of <c>EventLoopInvoke</c>, so scripts that create user interface
+/// objects behave as they do at the console. Interactions are queued onto a single worker so that
+/// they run in the order they arrived, while requests that must not wait behind them — an interrupt
+/// above all — are served as they arrive.
+/// </para>
+/// <para>
+/// Not <c>module internal</c>: <c>FsiRpcTarget</c> needs its members to be genuinely public IL, and
+/// under <c>--realsig-</c> a member's own accessibility is capped by its enclosing module's, so an
+/// internal module would take that away no matter what the type itself declares. Everything else
+/// here goes back to <c>private</c>/<c>internal</c> explicitly instead of inheriting it from the
+/// module.
+/// </para>
+/// </remarks>
 module FSharp.Compiler.Interactive.Server
 
 open System
@@ -109,11 +118,14 @@ let private toExecutionResult (outcome: Choice<FsiValue option, exn>) (diagnosti
 // The server
 //-------------------------------------------------------------------------
 
+/// <summary>
 /// Serialises the interactions submitted by the host onto a single worker, so that they are
 /// evaluated strictly in the order they were received.
-///
+/// </summary>
+/// <remarks>
 /// Owned by the server loop rather than by the target the host calls into: closing the queue ends
 /// the session's willingness to run anything, and must not be reachable from the wire.
+/// </remarks>
 [<Sealed>]
 type internal ExecutionQueue() =
     let queue = new BlockingCollection<unit -> unit>()
@@ -134,9 +146,11 @@ type internal ExecutionQueue() =
 
     do worker.Start()
 
-    /// False once the queue is closed, when the job will never run. Checking `IsAddingCompleted`
-    /// first would still race with the close, and a job silently dropped leaves the host waiting on
-    /// a task nothing completes.
+    /// <summary>
+    /// False once the queue is closed, when the job will never run. Checking
+    /// <c>IsAddingCompleted</c> first would still race with the close, and a job silently dropped
+    /// leaves the host waiting on a task nothing completes.
+    /// </summary>
     member _.TryEnqueue(job: unit -> unit) =
         try
             queue.Add job
@@ -146,19 +160,25 @@ type internal ExecutionQueue() =
 
     member _.Complete() = queue.CompleteAdding()
 
-/// The object the host calls into.
-///
+/// <summary>The object the host calls into.</summary>
+/// <remarks>
+/// <para>
 /// Everything that evaluates code goes onto the execution queue and completes its task when the
 /// interaction finishes, which leaves StreamJsonRpc free to dispatch an interrupt in the meantime.
-///
-/// Public, not `internal`: AddLocalRpcTarget discovers `[<JsonRpcMethod>]` members by reflecting
-/// over the instance it is handed, and under `--realsig-` a member's own IL visibility is capped by
-/// its enclosing scope's, so an internal type (or an internal module around a public one) would
-/// take away the public visibility that reflection needs regardless of what the members declare.
-///
+/// </para>
+/// <para>
+/// Public, not <c>internal</c>: <c>AddLocalRpcTarget</c> discovers <c>JsonRpcMethod</c> members by
+/// reflecting over the instance it is handed, and under <c>--realsig-</c> a member's own IL
+/// visibility is capped by its enclosing scope's, so an internal type (or an internal module around
+/// a public one) would take away the public visibility that reflection needs regardless of what the
+/// members declare.
+/// </para>
+/// <para>
 /// StreamJsonRpc offers every public member, not only the attributed ones, so the public members
 /// here are exactly the handlers the protocol defines. The construction the server loop needs goes
 /// through the internal constructor instead.
+/// </para>
+/// </remarks>
 [<Sealed>]
 type FsiRpcTarget
     internal
@@ -175,11 +195,14 @@ type FsiRpcTarget
     let mutable currentCancellation: CancellationTokenSource = null
     let mutable initialized = false
 
+    /// <summary>
     /// Evaluate on the event loop thread, the same thread a console session evaluates on.
-    ///
-    /// `EvalInteractionNonThrowing` reports diagnostics and execution failures through its result,
-    /// but a failure inside the event loop machinery itself would still escape, so it is caught
-    /// here and reported as an ordinary failed interaction.
+    /// </summary>
+    /// <remarks>
+    /// <c>EvalInteractionNonThrowing</c> reports diagnostics and execution failures through its
+    /// result, but a failure inside the event loop machinery itself would still escape, so it is
+    /// caught here and reported as an ordinary failed interaction.
+    /// </remarks>
     let evaluateOnEventLoop (evaluate: unit -> Choice<FsiValue option, exn> * FSharpDiagnostic[]) =
         try
             fsiConfig.EventLoopInvoke evaluate
@@ -210,9 +233,11 @@ type FsiRpcTarget
             lock interruptLock (fun () -> currentCancellation <- null)
             cancellation.Dispose()
 
+    /// <summary>
     /// Queue an interaction and hand back the task the host is waiting on. A request that arrives
     /// once the session has stopped accepting work fails, rather than waiting for a turn that will
     /// never come.
+    /// </summary>
     let queueInteraction (run: unit -> ExecutionResult) =
         let completion =
             TaskCompletionSource<ExecutionResult>(TaskCreationOptions.RunContinuationsAsynchronously)
@@ -236,7 +261,7 @@ type FsiRpcTarget
         if String.IsNullOrEmpty sourcePath || not startLine.HasValue then
             code
         else
-            sprintf "# %d @\"%s\"\n%s" startLine.Value sourcePath code
+            $"# %d{startLine.Value} @\"%s{sourcePath}\"\n%s{code}"
 
     /// Refuse anything that arrives before the handshake, so that a mis-sequenced host gets a clear
     /// answer rather than an obscure failure later on.
@@ -298,7 +323,7 @@ type FsiRpcTarget
 
         // Routed through #load so that the file joins the session the same way it would from a
         // script, rather than being replayed as anonymous text.
-        queueInteraction (fun () -> runInteraction (sprintf "#load @\"%s\"" request.path) request.path)
+        queueInteraction (fun () -> runInteraction $"#load @\"%s{request.path}\"" request.path)
 
     /// Apply the host's notion of where to look for sources and references, expressed as the
     /// directives a script would use.
@@ -324,24 +349,25 @@ type FsiRpcTarget
                 with _ ->
                     ()
 
-                directives.Add(sprintf "#silentCd @\"%s\"" request.workingDirectory)
+                directives.Add $"#silentCd @\"%s{request.workingDirectory}\""
 
             match request.includePaths with
             | null -> ()
             | paths ->
                 for path in paths do
                     if not (String.IsNullOrWhiteSpace path) then
-                        directives.Add(sprintf "#I @\"%s\"" path)
+                        directives.Add $"#I @\"%s{path}\""
 
             if directives.Count = 0 then
                 toExecutionResult (Choice1Of2 None) [||] false
             else
                 runInteraction (String.Join("\n", directives)) DefaultInteractionName)
 
-    /// Interrupt the interaction in flight.
-    ///
+    /// <summary>Interrupt the interaction in flight.</summary>
+    /// <remarks>
     /// Served straight away rather than queued, which is the point: an interrupt that waited its
     /// turn behind the interaction it is meant to stop would never arrive.
+    /// </remarks>
     [<JsonRpcMethod(Methods.Interrupt)>]
     member _.Interrupt() : InterruptResult =
         requireInitialized ()
@@ -405,9 +431,8 @@ let private runServer
     // Diagnostic breadcrumb: a host that gets "method not found" against a target that plainly
     // declares the method has almost certainly loaded a second, different copy of this library, so
     // its identity here is worth more than the rest of the trace.
-    errorWriter.WriteLine(
-        sprintf "FSI-SERVER: StreamJsonRpc %O from %s" (typeof<JsonRpc>.Assembly.GetName().Version) typeof<JsonRpc>.Assembly.Location
-    )
+    let streamJsonRpc = typeof<JsonRpc>.Assembly
+    errorWriter.WriteLine $"FSI-SERVER: StreamJsonRpc %O{streamJsonRpc.GetName().Version} from %s{streamJsonRpc.Location}"
 
     errorWriter.Flush()
     rpc.StartListening()
@@ -437,7 +462,7 @@ let internal startOnBackgroundThread
                 try
                     runServer fsiSession fsiConfig pipeName outWriter errorWriter
                 with e ->
-                    errorWriter.WriteLine(sprintf "F# Interactive server terminated: %s" (e.ToString()))
+                    errorWriter.WriteLine $"F# Interactive server terminated: %O{e}"
                     errorWriter.Flush()
 
                 // The session exists only to serve this host. Once the connection is gone there is
@@ -449,7 +474,9 @@ let internal startOnBackgroundThread
 
     thread.Start()
 
-/// Recognise `--fsi-server-jsonrpc:<pipe name>` in a command line, returning the pipe name.
+/// <summary>
+/// Recognise <c>--fsi-server-jsonrpc:&lt;pipe name&gt;</c> in a command line, returning the pipe name.
+/// </summary>
 let internal tryGetPipeName (argv: string[]) =
     argv
     |> Array.tryPick (fun arg ->

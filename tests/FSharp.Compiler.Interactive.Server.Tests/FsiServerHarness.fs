@@ -67,14 +67,14 @@ let private locateFsi () =
         let fsi = Path.Combine(fsiDirectory, "fsi.exe")
 
         if not (File.Exists fsi) then
-            failwithf "Could not find the fsi under test at '%s'. Build src/fsi first." fsi
+            failwith $"Could not find the fsi under test at '%s{fsi}'. Build src/fsi first."
 
         fsi, []
     else
         let fsi = Path.Combine(fsiDirectory, "fsi.dll")
 
         if not (File.Exists fsi) then
-            failwithf "Could not find the fsi under test at '%s'. Build src/fsi first." fsi
+            failwith $"Could not find the fsi under test at '%s{fsi}'. Build src/fsi first."
 
         locateDotnetHost (), [ fsi ]
 
@@ -147,11 +147,11 @@ type FsiServerHarness(?extraArguments: string list, ?workingDirectory: string) =
         with e ->
             let detail =
                 if session.HasExited then
-                    sprintf "The session exited with code %d." session.ExitCode
+                    $"The session exited with code %d{session.ExitCode}."
                 else
                     "The session is still running."
 
-            failwithf "Could not connect to the session on pipe '%s'. %s\n%s" pipeName detail e.Message
+            failwith $"Could not connect to the session on pipe '%s{pipeName}'. %s{detail}\n%s{e.Message}"
 
         pipe
 
@@ -310,15 +310,16 @@ let exceptionMessage (result: ExecutionResult) =
 let describeResult (result: ExecutionResult) =
     let diagnosticText =
         diagnostics result
-        |> Array.map (fun d -> sprintf "%s(%d,%d): %s FS%04d: %s" d.fileName d.startLine d.startColumn d.severity d.errorNumber d.message)
+        |> Array.map (fun d ->
+            $"%s{d.fileName}(%d{d.startLine},%d{d.startColumn}): %s{d.severity} FS%04d{d.errorNumber}: %s{d.message}")
         |> String.concat "\n    "
 
-    sprintf
-        "success=%b cancelled=%b workingDirectory=%s exception=%s\n    %s"
-        result.success
-        result.cancelled
-        result.workingDirectory
-        (match exceptionMessage result with
-         | Some m -> m
-         | None -> "<none>")
-        diagnosticText
+    let exceptionText =
+        match exceptionMessage result with
+        | Some message -> message
+        | None -> "<none>"
+
+    let outcome =
+        $"success=%b{result.success} cancelled=%b{result.cancelled} workingDirectory=%s{result.workingDirectory}"
+
+    $"%s{outcome} exception=%s{exceptionText}\n    %s{diagnosticText}"

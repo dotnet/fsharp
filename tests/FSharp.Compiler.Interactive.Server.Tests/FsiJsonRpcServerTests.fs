@@ -24,11 +24,11 @@ let private withInitializedSession (test: FsiServerHarness -> unit) =
 /// Include the result and the session's output in a failure, since a protocol result alone rarely
 /// explains what the session actually did.
 let private describe (session: FsiServerHarness) (result: ExecutionResult) =
-    sprintf
-        "result: %s\nstandard output:\n%s\nstandard error:\n%s"
-        (describeResult result)
-        session.StandardOutput
-        session.StandardError
+    $"""result: {describeResult result}
+standard output:
+{session.StandardOutput}
+standard error:
+{session.StandardError}"""
 
 //-------------------------------------------------------------------------
 // Handshake
@@ -48,7 +48,7 @@ let ``initialize reports the session process`` () =
 
         Assert.True(
             Directory.Exists result.workingDirectory,
-            sprintf "'%s' is not a directory" result.workingDirectory
+            $"'%s{result.workingDirectory}' is not a directory"
         ))
 
 [<Fact>]
@@ -146,7 +146,7 @@ let ``reports type errors as structured diagnostics`` () =
         // FS0001 is the type mismatch error, and it must carry a usable position.
         let error = reported[0]
         Assert.Equal(1, error.errorNumber)
-        Assert.True(error.startLine >= 1, sprintf "unexpected start line %d" error.startLine)
+        Assert.True(error.startLine >= 1, $"unexpected start line %d{error.startLine}")
         Assert.False(String.IsNullOrWhiteSpace error.message))
 
 [<Fact>]
@@ -222,7 +222,7 @@ let ``keeps serving after a failed interaction`` () =
 let ``loads a script file`` () =
     withInitializedSession (fun session ->
         let script =
-            Path.Combine(Path.GetTempPath(), sprintf "fsiServerTest_%s.fsx" (Guid.NewGuid().ToString "N"))
+            Path.Combine(Path.GetTempPath(), $"""fsiServerTest_%s{Guid.NewGuid().ToString "N"}.fsx""")
 
         File.WriteAllText(script, "printfn \"the script ran\"\n")
 
@@ -246,7 +246,7 @@ let ``loads a script file`` () =
 let ``setPaths changes the working directory`` () =
     withInitializedSession (fun session ->
         let directory =
-            Path.Combine(Path.GetTempPath(), sprintf "fsiServerTest_%s" (Guid.NewGuid().ToString "N"))
+            Path.Combine(Path.GetTempPath(), $"""fsiServerTest_%s{Guid.NewGuid().ToString "N"}""")
 
         Directory.CreateDirectory directory |> ignore
 
@@ -276,7 +276,7 @@ let ``setPaths changes the working directory`` () =
 let ``setPaths waits its turn behind a running interaction`` () =
     withInitializedSession (fun session ->
         let directory =
-            Path.Combine(Path.GetTempPath(), sprintf "fsiServerTest_%s" (Guid.NewGuid().ToString "N"))
+            Path.Combine(Path.GetTempPath(), $"""fsiServerTest_%s{Guid.NewGuid().ToString "N"}""")
 
         Directory.CreateDirectory directory |> ignore
 
@@ -315,7 +315,7 @@ printfn "interaction saw [%s]" (System.IO.Directory.GetCurrentDirectory())
             // The process directory moves on the queue like everything else, so an interaction that
             // was already running keeps the directory it started in.
             Assert.True(
-                session.WaitForOutput(sprintf "interaction saw [%s]" warmUp.workingDirectory),
+                session.WaitForOutput $"interaction saw [%s{warmUp.workingDirectory}]",
                 describe session result
             )
         finally
