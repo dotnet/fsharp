@@ -918,15 +918,11 @@ type InfoReader(g: TcGlobals, amap: ImportMap) as this =
     member _.GetPrimaryTypeHierarchy (allowMultiIntfInst, m, ty) =
         primaryTypeHierarchyCache.Apply((allowMultiIntfInst, m, ty))
 
-    /// Check if the given language feature is supported by the runtime.
-    member _.IsLanguageFeatureRuntimeSupported langFeature =
-        match langFeature with
-        // Static abstract interface member consumption is tied to the runtime support of virtual statics in interfaces.
-        | LanguageFeature.InterfacesWithAbstractStaticMembers -> isRuntimeFeatureVirtualStaticsInInterfacesSupported.Value
-        | _ -> true
-
     /// Check if the target runtime supports default implementations of interfaces (DefaultImplementationsOfInterfaces).
     member _.IsRuntimeSupportForDefaultImplementationsOfInterfaces = isRuntimeFeatureDefaultImplementationsOfInterfacesSupported.Value
+
+    /// Check if the target runtime supports static abstract members in interfaces (VirtualStaticsInInterfaces).
+    member _.IsRuntimeSupportForVirtualStaticsInInterfaces = isRuntimeFeatureVirtualStaticsInInterfacesSupported.Value
 
     /// Get the declared constructors of any F# type
     member infoReader.GetIntrinsicConstructorInfosOfTypeAux m origTy metadataTy =
@@ -1032,15 +1028,8 @@ type InfoReader(g: TcGlobals, amap: ImportMap) as this =
     member _.TryFindUnimplementedStaticAbstractMemberOfType (m: range) (interfaceTy: TType) : string option =
         if not (isInterfaceTy g interfaceTy) then
             None
-        elif not (g.langVersion.SupportsFeature LanguageFeature.InterfacesWithAbstractStaticMembers) then
-            None
         else
             unimplementedStaticAbstractMemberCache.Apply(((None, AccessibleFromSomewhere, AllowMultiIntfInstantiations.Yes), m, interfaceTy))
-
-let checkLanguageFeatureRuntimeAndRecover (infoReader: InfoReader) langFeature m =
-    if not (infoReader.IsLanguageFeatureRuntimeSupported langFeature) then
-        let featureStr = LanguageVersion.GetFeatureString langFeature
-        errorR (Error(FSComp.SR.chkFeatureNotRuntimeSupported (RichText.mkText featureStr), m))
 
 let checkRuntimeSupportForDefaultInterfaceMembersAndRecover (infoReader: InfoReader) m =
     if not infoReader.IsRuntimeSupportForDefaultImplementationsOfInterfaces then

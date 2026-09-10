@@ -1064,13 +1064,13 @@ module internal ExprFreeVars =
         | _ -> fvs
 
     and accFreeInMethod opts (TObjExprMethod(slotsig, _attribs, tps, tmvs, e, _)) acc =
-        accFreeInSlotSig
-            opts
-            slotsig
-            (unionFreeVars (accFreeTyvars opts boundTypars tps (List.foldBack (boundLocalVals opts) tmvs (freeInExpr opts e))) acc)
+        let boundAcc =
+            ListInline.foldBack (fun v acc -> boundLocalVals opts v acc) tmvs (freeInExpr opts e)
+
+        accFreeInSlotSig opts slotsig (unionFreeVars (accFreeTyvars opts boundTypars tps boundAcc) acc)
 
     and accFreeInMethods opts methods acc =
-        List.foldBack (accFreeInMethod opts) methods acc
+        ListInline.foldBack (fun m acc -> accFreeInMethod opts m acc) methods acc
 
     and accFreeInInterfaceImpl opts (ty, overrides) acc =
         accFreeVarsInTy opts ty (accFreeInMethods opts overrides acc)
@@ -1127,7 +1127,10 @@ module internal ExprFreeVars =
         | Expr.LetRec(binds, bodyExpr, _, cache) ->
             unionFreeVars
                 (freeVarsCacheCompute opts cache (fun () ->
-                    List.foldBack (bindLhs opts) binds (List.foldBack (accBindRhs opts) binds (freeInExpr opts bodyExpr))))
+                    ListInline.foldBack
+                        (fun b acc -> bindLhs opts b acc)
+                        binds
+                        (ListInline.foldBack (fun b acc -> accBindRhs opts b acc) binds (freeInExpr opts bodyExpr))))
                 acc
 
         | Expr.Let _ -> failwith "unreachable - linear expr"
@@ -1144,7 +1147,10 @@ module internal ExprFreeVars =
                             (accFreeInExpr
                                 opts
                                 basecall
-                                (accFreeInMethods opts overrides (List.foldBack (accFreeInInterfaceImpl opts) iimpls emptyFreeVars))))
+                                (accFreeInMethods
+                                    opts
+                                    overrides
+                                    (ListInline.foldBack (fun i acc -> accFreeInInterfaceImpl opts i acc) iimpls emptyFreeVars))))
                 ))
                 acc
 
@@ -1282,7 +1288,7 @@ module internal ExprFreeVars =
 
     and accFreeInTarget opts (TTarget(vs, expr, flags)) acc =
         match flags with
-        | None -> List.foldBack (boundLocalVal opts) vs (accFreeInExpr opts expr acc)
+        | None -> ListInline.foldBack (fun v acc -> boundLocalVal opts v acc) vs (accFreeInExpr opts expr acc)
         | Some xs ->
             List.foldBack2
                 (fun v isStateVar acc -> if isStateVar then acc else boundLocalVal opts v acc)
@@ -1291,7 +1297,7 @@ module internal ExprFreeVars =
                 (accFreeInExpr opts expr acc)
 
     and accFreeInFlatExprs opts (exprs: Exprs) acc =
-        List.foldBack (accFreeInExpr opts) exprs acc
+        ListInline.foldBack (fun e acc -> accFreeInExpr opts e acc) exprs acc
 
     and accFreeInExprs opts (exprs: Exprs) acc =
         match exprs with
@@ -1693,7 +1699,7 @@ module internal ExprRemapping =
 
         let memberInfoR =
             d.MemberInfo
-            |> Option.map (remapMemberInfo ctxt d.val_range valReprInfo ty tyR tmenv)
+            |> Option.map (fun mi -> remapMemberInfo ctxt d.val_range valReprInfo ty tyR tmenv mi)
 
         let attribsR = d.Attribs |> remapAttribs ctxt tmenv
 
@@ -2583,7 +2589,8 @@ module internal ExprAnalysis =
     and remarkInterfaceImpl m (ty, overrides) =
         (ty, List.map (remarkObjExprMethod m) overrides)
 
-    and remarkExprs m es = es |> List.map (remarkExpr m)
+    and remarkExprs m es =
+        es |> ListInline.map (fun e -> remarkExpr m e)
 
     and remarkDecisionTree m x =
         match x with

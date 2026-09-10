@@ -1877,8 +1877,7 @@ let MakeAndPublishSimpleValsForMergedScope (cenv: cenv) env m (names: NameMap<_>
 
 let FreshenTyconRef (g: TcGlobals) (traitCtxt: ITraitContext option) m rigid (tcref: TyconRef) declaredTyconTypars =
     let origTypars = declaredTyconTypars
-    let clearStaticReq = g.langVersion.SupportsFeature LanguageFeature.InterfacesWithAbstractStaticMembers
-    let freshTypars = copyTypars clearStaticReq origTypars
+    let freshTypars = copyTypars true origTypars
     if rigid <> TyparRigidity.Rigid then
         for tp in freshTypars do
             tp.SetRigidity rigid
@@ -4342,10 +4341,7 @@ and TcPseudoMemberSpec cenv newOk env synTypes tpenv synMemberSig m =
                     let info = CrackParamAttribsInfo g argInfo
                     let (ParamAttribs(isParamArrayArg, isInArg, isOutArg, optArgInfo, callerInfo, reflArgInfo)) = info
                     if isParamArrayArg || isInArg || isOutArg || optArgInfo.IsOptional || callerInfo <> CallerInfo.NoCallerInfo || reflArgInfo <> ReflectedArgInfo.None then
-                        if g.langVersion.SupportsFeature(LanguageFeature.InterfacesWithAbstractStaticMembers) then
-                            errorR(Error(FSComp.SR.tcTraitMayNotUseComplexThings(), m))
-                        else
-                            warning(Error(FSComp.SR.tcTraitMayNotUseComplexThings(), m))
+                        errorR(Error(FSComp.SR.tcTraitMayNotUseComplexThings(), m))
 
             let item = Item.OtherName (Some id, memberConstraintTy, None, None, id.idRange)
             CallNameResolutionSink cenv.tcSink (id.idRange, env.NameEnv, item, emptyTyparInst, ItemOccurrence.Use, env.AccessRights)

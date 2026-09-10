@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="ru" original="../FSComp.resx">
     <body>
@@ -367,11 +367,6 @@
         <target state="new">Don't warn on uppercase identifiers in binding patterns</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureDotlessFloat32Literal">
-        <source>dotless float32 literal</source>
-        <target state="translated">литерал float32 без точки</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureEmptyBodiedComputationExpressions">
         <source>Support for computation expressions with empty bodies: builder {{ }}</source>
         <target state="new">Support for computation expressions with empty bodies: builder {{ }}</target>
@@ -417,11 +412,6 @@
         <target state="translated">другие типы поддерживают единицы измерения</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureExtendedStringInterpolation">
-        <source>Extended string interpolation similar to C# raw string literals.</source>
-        <target state="translated">Расширенная интерполяция строк, аналогичная литералам необработанных строк C#.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureExtensionConstraintSolutions">
         <source>Allow extension members to participate in SRTP constraint resolution</source>
         <target state="new">Allow extension members to participate in SRTP constraint resolution</target>
@@ -440,11 +430,6 @@
       <trans-unit id="featureImprovedImpliedArgumentNamesPartTwo">
         <source>Improved implied argument names with partial application</source>
         <target state="new">Improved implied argument names with partial application</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureInterfacesWithAbstractStaticMembers">
-        <source>static abstract interface members</source>
-        <target state="translated">статические абстрактные элементы интерфейса</target>
         <note />
       </trans-unit>
       <trans-unit id="featureLowerInterpolatedStringToConcat">
@@ -475,11 +460,6 @@
       <trans-unit id="featureNonInlineLiteralsAsPrintfFormat">
         <source>String values marked as literals and IL constants as printf format</source>
         <target state="translated">Значения строк, помеченные как литералы, и константы IL в формате printf</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureNonVariablePatternsToRightOfAsPatterns">
-        <source>non-variable patterns to the right of 'as' patterns</source>
-        <target state="translated">шаблоны без переменных справа от шаблонов "as"</target>
         <note />
       </trans-unit>
       <trans-unit id="featureNotNullIfNotNull">
@@ -760,11 +740,6 @@
       <trans-unit id="lexColonDirectiveMustBeFirst">
         <source>#: directives must start at the beginning of a line</source>
         <target state="new">#: directives must start at the beginning of a line</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="lexExtendedStringInterpolationNotSupported">
-        <source>Extended string interpolation is not supported in this version of F#.</source>
-        <target state="translated">Расширенная интерполяция строк не поддерживается в этой версии F#.</target>
         <note />
       </trans-unit>
       <trans-unit id="lexHashElifAfterElse">
@@ -1260,6 +1235,11 @@
       <trans-unit id="reprStateMachineNotCompilableNoAlternative">
         <source>This state machine is not statically compilable and no alternative is available. {0}. Use an 'if __useResumableCode then &lt;state-machine&gt; else &lt;alternative&gt;' to give an alternative.</source>
         <target state="translated">Этот конечный автомат не является статически компилируемым, и альтернатива недоступна {0}. Чтобы предоставить альтернативу, используйте "if __useResumableCode then &lt;state-machine&gt; else &lt;alternative&gt;".</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="runtimeStaticAbstractInterfaceMembers">
+        <source>static abstract interface members</source>
+        <target state="new">static abstract interface members</target>
         <note />
       </trans-unit>
       <trans-unit id="scriptSdkNotDetermined">

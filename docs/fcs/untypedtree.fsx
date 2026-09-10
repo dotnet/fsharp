@@ -141,7 +141,7 @@ let rec visitExpression e =
       visitExpression trueBranch
       falseBranchOpt |> Option.iter visitExpression 
 
-  | SynExpr.LetOrUse(_, _, bindings, body, _, _) ->
+  | SynExpr.LetOrUse { Bindings = bindings; Body = body } ->
       // Visit bindings (there may be multiple 
       // for 'let .. = .. and .. = .. in ...'
       printfn "LetOrUse with the following bindings:"
@@ -172,7 +172,7 @@ functions):
 let visitDeclarations decls = 
   for declaration in decls do
     match declaration with
-    | SynModuleDecl.Let(isRec, bindings, range) ->
+    | SynModuleDecl.Let(bindings = bindings) ->
         // Let binding as a declaration is similar to let binding
         // as an expression (in visitExpression), but has no body
         for binding in bindings do

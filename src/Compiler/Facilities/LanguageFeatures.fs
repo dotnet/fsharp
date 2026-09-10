@@ -16,7 +16,6 @@ module internal FSharp.Compiler.Features
 
 [<RequireQualifiedAccess>]
 type LanguageFeature =
-    | DotlessFloat32Literal
     | PackageManagement
     | FromEndSlicing
     | ResumableStateMachines
@@ -27,12 +26,10 @@ type LanguageFeature =
     | NullnessChecking
     | RefCellNotationInformationals
     | UnionIsPropertiesVisible
-    | NonVariablePatternsToRightOfAsPatterns
     | AttributesToRightOfModuleKeyword
     | ReallyLongLists
     | ErrorOnDeprecatedRequireQualifiedAccess
     | RequiredPropertiesSupport
-    | InterfacesWithAbstractStaticMembers
     | SelfTypeConstraints
     | MatchNotAllowedForUnionCaseWithNoData
     | CSharpExtensionAttributeNotRequired
@@ -40,7 +37,6 @@ type LanguageFeature =
     | ErrorReportingOnStaticClasses
     | WarningWhenCopyAndUpdateRecordChangesAllFields
     | NonInlineLiteralsAsPrintfFormat
-    | ExtendedStringInterpolation
     | WarningWhenMultipleRecdTypeChoice
     | ConstraintIntersectionOnFlexibleTypes
     | StaticLetInRecordsDusEmptyTypes
@@ -125,7 +121,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
         dict
             [
                 // F# 5.0
-                LanguageFeature.DotlessFloat32Literal, languageVersion50
                 LanguageFeature.PackageManagement, languageVersion50
                 LanguageFeature.WitnessPassing, languageVersion50
                 LanguageFeature.StringInterpolation, languageVersion50
@@ -135,14 +130,12 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
                 LanguageFeature.ExpandedMeasurables, languageVersion60
                 LanguageFeature.ResumableStateMachines, languageVersion60
                 LanguageFeature.RefCellNotationInformationals, languageVersion60
-                LanguageFeature.NonVariablePatternsToRightOfAsPatterns, languageVersion60
                 LanguageFeature.AttributesToRightOfModuleKeyword, languageVersion60
 
                 // F# 7.0
                 LanguageFeature.ReallyLongLists, languageVersion70
                 LanguageFeature.ErrorOnDeprecatedRequireQualifiedAccess, languageVersion70
                 LanguageFeature.RequiredPropertiesSupport, languageVersion70
-                LanguageFeature.InterfacesWithAbstractStaticMembers, languageVersion70
                 LanguageFeature.SelfTypeConstraints, languageVersion70
 
                 // F# 8.0
@@ -152,7 +145,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
                 LanguageFeature.ErrorReportingOnStaticClasses, languageVersion80
                 LanguageFeature.WarningWhenCopyAndUpdateRecordChangesAllFields, languageVersion80
                 LanguageFeature.NonInlineLiteralsAsPrintfFormat, languageVersion80
-                LanguageFeature.ExtendedStringInterpolation, languageVersion80
                 LanguageFeature.WarningWhenMultipleRecdTypeChoice, languageVersion80
                 LanguageFeature.WarningWhenTailRecAttributeButNonTailRecUsage, languageVersion80
                 LanguageFeature.StaticLetInRecordsDusEmptyTypes, languageVersion80
@@ -304,7 +296,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
     /// Get a string name for the given feature.
     static member GetFeatureString feature =
         match feature with
-        | LanguageFeature.DotlessFloat32Literal -> FSComp.SR.featureDotlessFloat32Literal ()
         | LanguageFeature.PackageManagement -> FSComp.SR.featurePackageManagement ()
         | LanguageFeature.FromEndSlicing -> FSComp.SR.featureFromEndSlicing ()
         | LanguageFeature.NullnessChecking -> FSComp.SR.featureNullnessChecking ()
@@ -315,12 +306,10 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
         | LanguageFeature.ExpandedMeasurables -> FSComp.SR.featureExpandedMeasurables ()
         | LanguageFeature.RefCellNotationInformationals -> FSComp.SR.featureRefCellNotationInformationals ()
         | LanguageFeature.UnionIsPropertiesVisible -> FSComp.SR.featureUnionIsPropertiesVisible ()
-        | LanguageFeature.NonVariablePatternsToRightOfAsPatterns -> FSComp.SR.featureNonVariablePatternsToRightOfAsPatterns ()
         | LanguageFeature.AttributesToRightOfModuleKeyword -> FSComp.SR.featureAttributesToRightOfModuleKeyword ()
         | LanguageFeature.ReallyLongLists -> FSComp.SR.featureReallyLongList ()
         | LanguageFeature.ErrorOnDeprecatedRequireQualifiedAccess -> FSComp.SR.featureErrorOnDeprecatedRequireQualifiedAccess ()
         | LanguageFeature.RequiredPropertiesSupport -> FSComp.SR.featureRequiredProperties ()
-        | LanguageFeature.InterfacesWithAbstractStaticMembers -> FSComp.SR.featureInterfacesWithAbstractStaticMembers ()
         | LanguageFeature.SelfTypeConstraints -> FSComp.SR.featureSelfTypeConstraints ()
         | LanguageFeature.MatchNotAllowedForUnionCaseWithNoData -> FSComp.SR.featureMatchNotAllowedForUnionCaseWithNoData ()
         | LanguageFeature.CSharpExtensionAttributeNotRequired -> FSComp.SR.featureCSharpExtensionAttributeNotRequired ()
@@ -329,7 +318,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
         | LanguageFeature.WarningWhenCopyAndUpdateRecordChangesAllFields ->
             FSComp.SR.featureWarningWhenCopyAndUpdateRecordChangesAllFields ()
         | LanguageFeature.NonInlineLiteralsAsPrintfFormat -> FSComp.SR.featureNonInlineLiteralsAsPrintfFormat ()
-        | LanguageFeature.ExtendedStringInterpolation -> FSComp.SR.featureExtendedStringInterpolation ()
         | LanguageFeature.WarningWhenMultipleRecdTypeChoice -> FSComp.SR.featureWarningWhenMultipleRecdTypeChoice ()
         | LanguageFeature.StaticLetInRecordsDusEmptyTypes -> FSComp.SR.featureStaticLetInRecordsDusEmptyTypes ()
         | LanguageFeature.ConstraintIntersectionOnFlexibleTypes -> FSComp.SR.featureConstraintIntersectionOnFlexibleTypes ()
