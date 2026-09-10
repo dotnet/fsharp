@@ -532,11 +532,6 @@
         <target state="translated">與參考儲存格相關的資訊訊息</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureRequiredProperties">
-        <source>support for required properties</source>
-        <target state="translated">對所需屬性的支援</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureResumableStateMachines">
         <source>resumable state machines</source>
         <target state="translated">可繼續的狀態機器</target>

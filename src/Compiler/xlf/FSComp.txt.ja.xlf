@@ -532,11 +532,6 @@
         <target state="translated">参照セルに関連する情報メッセージ</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureRequiredProperties">
-        <source>support for required properties</source>
-        <target state="translated">必要なプロパティのサポート</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureResumableStateMachines">
         <source>resumable state machines</source>
         <target state="translated">再開可能なステート マシン</target>
