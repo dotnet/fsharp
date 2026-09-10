@@ -48,7 +48,7 @@ let ``initialize reports the session process`` () =
 
         Assert.True(
             Directory.Exists result.workingDirectory,
-            $"'%s{result.workingDirectory}' is not a directory"
+            $"'{result.workingDirectory}' is not a directory"
         ))
 
 [<Fact>]
@@ -146,7 +146,7 @@ let ``reports type errors as structured diagnostics`` () =
         // FS0001 is the type mismatch error, and it must carry a usable position.
         let error = reported[0]
         Assert.Equal(1, error.errorNumber)
-        Assert.True(error.startLine >= 1, $"unexpected start line %d{error.startLine}")
+        Assert.True(error.startLine >= 1, $"unexpected start line {error.startLine}")
         Assert.False(String.IsNullOrWhiteSpace error.message))
 
 [<Fact>]
@@ -315,7 +315,7 @@ printfn "interaction saw [%s]" (System.IO.Directory.GetCurrentDirectory())
             // The process directory moves on the queue like everything else, so an interaction that
             // was already running keeps the directory it started in.
             Assert.True(
-                session.WaitForOutput $"interaction saw [%s{warmUp.workingDirectory}]",
+                session.WaitForOutput $"interaction saw [{warmUp.workingDirectory}]",
                 describe session result
             )
         finally

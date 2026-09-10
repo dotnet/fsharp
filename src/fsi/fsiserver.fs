@@ -261,7 +261,7 @@ type FsiRpcTarget
         if String.IsNullOrEmpty sourcePath || not startLine.HasValue then
             code
         else
-            $"# %d{startLine.Value} @\"%s{sourcePath}\"\n%s{code}"
+            $"# {startLine.Value} @\"{sourcePath}\"\n{code}"
 
     /// Refuse anything that arrives before the handshake, so that a mis-sequenced host gets a clear
     /// answer rather than an obscure failure later on.
@@ -323,7 +323,7 @@ type FsiRpcTarget
 
         // Routed through #load so that the file joins the session the same way it would from a
         // script, rather than being replayed as anonymous text.
-        queueInteraction (fun () -> runInteraction $"#load @\"%s{request.path}\"" request.path)
+        queueInteraction (fun () -> runInteraction $"#load @\"{request.path}\"" request.path)
 
     /// Apply the host's notion of where to look for sources and references, expressed as the
     /// directives a script would use.
@@ -349,14 +349,14 @@ type FsiRpcTarget
                 with _ ->
                     ()
 
-                directives.Add $"#silentCd @\"%s{request.workingDirectory}\""
+                directives.Add $"#silentCd @\"{request.workingDirectory}\""
 
             match request.includePaths with
             | null -> ()
             | paths ->
                 for path in paths do
                     if not (String.IsNullOrWhiteSpace path) then
-                        directives.Add $"#I @\"%s{path}\""
+                        directives.Add $"#I @\"{path}\""
 
             if directives.Count = 0 then
                 toExecutionResult (Choice1Of2 None) [||] false
@@ -432,7 +432,7 @@ let private runServer
     // declares the method has almost certainly loaded a second, different copy of this library, so
     // its identity here is worth more than the rest of the trace.
     let streamJsonRpc = typeof<JsonRpc>.Assembly
-    errorWriter.WriteLine $"FSI-SERVER: StreamJsonRpc %O{streamJsonRpc.GetName().Version} from %s{streamJsonRpc.Location}"
+    errorWriter.WriteLine $"FSI-SERVER: StreamJsonRpc {streamJsonRpc.GetName().Version} from {streamJsonRpc.Location}"
 
     errorWriter.Flush()
     rpc.StartListening()
@@ -462,7 +462,7 @@ let internal startOnBackgroundThread
                 try
                     runServer fsiSession fsiConfig pipeName outWriter errorWriter
                 with e ->
-                    errorWriter.WriteLine $"F# Interactive server terminated: %O{e}"
+                    errorWriter.WriteLine $"F# Interactive server terminated: {e}"
                     errorWriter.Flush()
 
                 // The session exists only to serve this host. Once the connection is gone there is

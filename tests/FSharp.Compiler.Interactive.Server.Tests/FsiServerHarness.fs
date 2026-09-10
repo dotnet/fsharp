@@ -67,14 +67,14 @@ let private locateFsi () =
         let fsi = Path.Combine(fsiDirectory, "fsi.exe")
 
         if not (File.Exists fsi) then
-            failwith $"Could not find the fsi under test at '%s{fsi}'. Build src/fsi first."
+            failwith $"Could not find the fsi under test at '{fsi}'. Build src/fsi first."
 
         fsi, []
     else
         let fsi = Path.Combine(fsiDirectory, "fsi.dll")
 
         if not (File.Exists fsi) then
-            failwith $"Could not find the fsi under test at '%s{fsi}'. Build src/fsi first."
+            failwith $"Could not find the fsi under test at '{fsi}'. Build src/fsi first."
 
         locateDotnetHost (), [ fsi ]
 
@@ -147,11 +147,11 @@ type FsiServerHarness(?extraArguments: string list, ?workingDirectory: string) =
         with e ->
             let detail =
                 if session.HasExited then
-                    $"The session exited with code %d{session.ExitCode}."
+                    $"The session exited with code {session.ExitCode}."
                 else
                     "The session is still running."
 
-            failwith $"Could not connect to the session on pipe '%s{pipeName}'. %s{detail}\n%s{e.Message}"
+            failwith $"Could not connect to the session on pipe '{pipeName}'. {detail}\n{e.Message}"
 
         pipe
 
@@ -311,7 +311,7 @@ let describeResult (result: ExecutionResult) =
     let diagnosticText =
         diagnostics result
         |> Array.map (fun d ->
-            $"%s{d.fileName}(%d{d.startLine},%d{d.startColumn}): %s{d.severity} FS%04d{d.errorNumber}: %s{d.message}")
+            $"{d.fileName}({d.startLine},{d.startColumn}): {d.severity} FS{d.errorNumber:D4}: {d.message}")
         |> String.concat "\n    "
 
     let exceptionText =
@@ -320,6 +320,6 @@ let describeResult (result: ExecutionResult) =
         | None -> "<none>"
 
     let outcome =
-        $"success=%b{result.success} cancelled=%b{result.cancelled} workingDirectory=%s{result.workingDirectory}"
+        $"success={result.success} cancelled={result.cancelled} workingDirectory={result.workingDirectory}"
 
-    $"%s{outcome} exception=%s{exceptionText}\n    %s{diagnosticText}"
+    $"{outcome} exception={exceptionText}\n    {diagnosticText}"
