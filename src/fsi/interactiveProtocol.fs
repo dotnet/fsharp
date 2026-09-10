@@ -8,6 +8,10 @@
 ///
 /// The members are named as they appear on the wire, and the records are `CLIMutable` so that the
 /// JSON-RPC formatter can construct them.
+///
+/// Public rather than internal, even in fsi's own copy: the handlers that carry them have to be
+/// public for StreamJsonRpc to find them by reflection, and a public member cannot expose a type
+/// less accessible than itself.
 namespace FSharp.Compiler.Interactive.Protocol
 
 /// Method names. Both ends use these rather than repeating string literals.
