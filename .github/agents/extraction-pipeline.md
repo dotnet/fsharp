@@ -508,4 +508,3 @@ Final check on the complete artifact set:
 - No rules referencing specific function names or line numbers unless those functions are long-lived stable APIs (verified by grep in 5.6)
 - Every CHECK item is phrased as a generalizable principle, not a transcription of one PR's feedback
 - Dimension frequency was counted by PRs, not by comments — a PR with 50 comments counts the same as one with 1 comment
-

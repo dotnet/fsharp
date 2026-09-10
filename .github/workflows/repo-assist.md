@@ -19,9 +19,6 @@ imports:
 on:
   schedule: every 12h
   workflow_dispatch:
-  slash_command:
-    name: repo-assist
-  reaction: "eyes"
 
 timeout-minutes: 60
 

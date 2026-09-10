@@ -290,9 +290,7 @@ let bignum =  integer ('I'  | 'N' | 'Z' | 'Q' | 'R' | 'G')
 
 let ieee64 = float
 
-let ieee32 = float ('f' | 'F')
-
-let ieee32_dotless_no_exponent = integer ('f' | 'F')
+let ieee32 = (float | integer) ('f' | 'F')
 
 let decimal = (float | integer) ('m' | 'M')
 
@@ -475,13 +473,6 @@ rule token (args: LexArgs) (skip: bool) = parse
 
  | ieee32
      { IEEE32 (evalFloat args lexbuf) }
-
- | ieee32_dotless_no_exponent
-     { if lexbuf.SupportsFeature LanguageFeature.DotlessFloat32Literal then
-          IEEE32 (evalFloat args lexbuf)
-       else
-          fail args lexbuf (FSComp.SR.lexInvalidFloat()) (IEEE32 0.0f)
-     }
 
  | ieee64
      { IEEE64 (try float(lexeme lexbuf) with _ -> fail args lexbuf (FSComp.SR.lexInvalidFloat()) 0.0) }
