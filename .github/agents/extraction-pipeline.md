@@ -19,7 +19,7 @@ Phase 1: Collect        Phase 2: Enrich        Phase 3: Generate      Phase 5: V
 1.3 Collect PR context      → comment_analysis         (raw)              → final artifacts
     → pr_contexts       2.2b Deduplicate       3.2 Anonymize
 1.4 Reconcile paths         → pr_rule_votes        → *.md (anon)      Phase 4 is NOT a pipeline
-    → user_comments     2.3 Synthesize         3.3 Anthropic guide    step — it defines the
+    → user_comments     2.3 Synthesize         3.3 Skill guidance     step — it defines the
        (paths updated)      → dimensions.json      → *.md (polished)  review workflow EMBEDDED
 1.5 Backup                  → principles.json  3.4 Deduplicate        in the generated agent.
     → JSON files            → dim_evidence         → *.md (deduped)
@@ -35,7 +35,7 @@ This pipeline processes **thousands** of GitHub items (typically 3,000–10,000+
 
 **Context management:** Store all intermediate results in **SQLite** (queryable) and **JSON backup files** (recoverable). Sub-agents write results to files; the orchestrator imports into SQLite and dispatches the next phase. Never pass large datasets through agent context — use the filesystem.
 
-**Model selection:** Use the best available reasoning model (e.g., `claude-opus-4.6`) for classification and synthesis sub-agents. Fast/cheap models produce shallow rules. Collection sub-agents can use standard models. Use background mode so agents run in parallel.
+**Model selection:** Use a high-capability reasoning model for classification and synthesis sub-agents, respecting the user's model selection. Collection sub-agents can use standard models. Use background mode so agents run in parallel.
 
 **Reliability:** After each batch of sub-agents completes, validate output files: >500 bytes, parseable JSON, contains entries for all assigned items. Re-dispatch incomplete outputs up to 3 times. Keep batch assignments to ≤5 batches per agent — agents given too much work produce placeholders or give up.
 
@@ -182,7 +182,7 @@ Store feature areas in SQLite: `CREATE TABLE feature_areas (area_name TEXT, fold
 > **Output:** SQLite `comment_analysis` table, `taxonomy.json`
 > **Context per sub-agent:** taxonomy + CI summary + 15 PR packets (all comments on each PR)
 
-For each collected comment, classify using a sub-agent (Opus). **Do not use a hardcoded category list** — derive categories from the data:
+For each collected comment, classify using a sub-agent. **Do not use a hardcoded category list** — derive categories from the data:
 
 1. **Bootstrap pass**: Take a stratified sample of ~300 comments: proportional by year, at least 5 per major feature area from §2.1, and at least 20 each of review_comments, pr_descriptions, and issue_comments. Ask a sub-agent to read them and propose a category taxonomy. The agent should identify recurring themes, name them, and define each in one sentence. Expect 15–40 categories to emerge. After deriving the taxonomy, cross-check it against the feature area table — if any area representing >10% of the codebase has zero categories, re-sample with enforced coverage.
 
@@ -223,7 +223,7 @@ This ensures a PR with 50 comments gets weight=1, same as a PR with 1 comment. T
 
 ### 2.3 Clustering
 
-> **Sub-agents:** 1 (Opus, synthesis)
+> **Sub-agents:** 1 (synthesis)
 > **Input:** `pr_rule_votes` table, `taxonomy.json`, `feature_areas` table, `ci_summary.txt`
 > **NOT available:** raw `user_comments`, JSON backups — synthesis works only with classified, deduplicated data
 > **Output:** `dimensions.json`, `principles.json`, `folder_hotspots.json`, SQLite `dimension_evidence` table
@@ -298,12 +298,12 @@ Remove all personal names, comment counts, PR number references, evidence statis
 
 **Commit** after anonymization.
 
-### 3.3 Improve per Anthropic guide
+### 3.3 Apply skill-authoring guidance
 
 > **Input:** `*.md` (anonymized)
 > **Output:** `*.md` (polished)
 
-Apply https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices:
+Apply these skill-authoring practices:
 - `name`: gerund form, lowercase+hyphens
 - `description`: third person, specific triggers, ≤1024 chars
 - Concise — only add what the model doesn't already know
@@ -387,7 +387,7 @@ For each non-LGTM finding, actively prove or disprove it:
 - **Write and run tests for claims**: Write a minimal test that demonstrates the claimed issue. Run it against the PR branch. If the test fails as predicted → confirmed. If it passes → disputed.
 - **Proof-of-concept snippet**: When a full test is too complex to run inline, write pseudocode or partial code demonstrating the issue. Include in PR feedback as evidence — enough for another engineer to implement.
 - **Scenario simulation**: For complex issues (concurrency, state machines, protocol interactions), write a step-by-step execution trace showing how the bug manifests.
-- **Multi-model consensus**: For borderline findings, validate with 3 models (Opus, Codex, Gemini). Keep findings confirmed by ≥2/3.
+- **Multi-model consensus**: For borderline findings, validate with 3 distinct available model families. Keep findings confirmed by ≥2/3.
 
 A finding is confirmed only with concrete evidence. Never validate against `main` — PR code only exists in the PR branch.
 
@@ -436,7 +436,7 @@ All `[x]` → APPROVE. Any BLOCKING → REQUEST_CHANGES. Otherwise → COMMENT.
 
 ## Phase 5: Final Quality Gate
 
-### 5.1 Anthropic guide compliance
+### 5.1 Skill-authoring compliance
 
 Verify all artifacts against best practices:
 - YAML frontmatter: name (gerund, ≤64), description (third person, ≤1024, triggers)
@@ -508,5 +508,3 @@ Final check on the complete artifact set:
 - No rules referencing specific function names or line numbers unless those functions are long-lived stable APIs (verified by grep in 5.6)
 - Every CHECK item is phrased as a generalizable principle, not a transcription of one PR's feedback
 - Dimension frequency was counted by PRs, not by comments — a PR with 50 comments counts the same as one with 1 comment
-
-

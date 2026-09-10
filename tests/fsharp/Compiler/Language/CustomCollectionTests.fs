@@ -40,7 +40,7 @@ a[^"2"..^"1"] <- "-1"
 
 if a["2".."1"] <> "2 1 -1" then failwithf "expected 2 1 -1 but got %A" a["2".."1"]           
             """)
- 
+
     [<Fact>]
     let ``Custom collection with Item and GetReverseIndex should support reverse index indexing``() =
         CompilerAssert.CompileExeAndRunWithOptions([| "--langversion:preview" |],
@@ -128,7 +128,7 @@ let a = foo()
 
 if a[^2..1] <> 13 then failwith "expected 13"
             """)
- 
+
     [<Fact>]
     let ``Custom collection without GetReverseIndex should not support reverse index slicing``() =
         CompilerAssert.TypeCheckSingleErrorWithOptions [| "--langversion:preview" |]

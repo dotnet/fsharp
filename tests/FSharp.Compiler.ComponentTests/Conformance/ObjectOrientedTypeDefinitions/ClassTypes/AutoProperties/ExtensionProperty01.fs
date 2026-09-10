@@ -1,7 +1,7 @@
 // #Conformance #ObjectOrientedTypes #Classes #MethodsAndProperties #TypeExtensions
 
 module M =
-    type T() =     
+    type T() =
         let mutable x = 0
         member this.NormalProperty with get() = x and set(v) = x <- v
         member this.DoStuff() = ()

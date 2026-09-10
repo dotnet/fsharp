@@ -1,7 +1,7 @@
 
 let mutable failures = []
 
-let report_failure (s : string) = 
+let report_failure (s : string) =
     stderr.Write" NO: "
     stderr.WriteLine s
     failures <- failures @ [s]
@@ -9,16 +9,16 @@ let report_failure (s : string) =
 let test s b =
     stderr.Write(s:string)
     if b then stderr.WriteLine " OK" else report_failure s
-    stderr.WriteLine "" 
+    stderr.WriteLine ""
 
-let check s v1 v2 = 
-   stderr.Write(s:string);  
-   if (v1 = v2) then 
-       stderr.WriteLine " OK" 
-       stderr.WriteLine "" 
+let check s v1 v2 =
+   stderr.Write(s:string);
+   if (v1 = v2) then
+       stderr.WriteLine " OK"
+       stderr.WriteLine ""
    else
-       eprintf " FAILED: got %A, expected %A" v1 v2 
-       stderr.WriteLine "" 
+       eprintf " FAILED: got %A, expected %A" v1 v2
+       stderr.WriteLine ""
        report_failure s
 
 
@@ -35,7 +35,7 @@ type T() =
 
 type TheType = { A : int; B : int; D : int; G : seq<int> } with
     static member Create a b _ d _ _ g = { A = a; B = b; D = d; G = g }
-    
+
 let CreateBadImageFormatException () =
     let create a b c d (e:int<_>) (f:int) g = TheType.Create a b (int c) d e f g
     seq { yield create 0 0 0 0 0 0 [0] }
@@ -72,7 +72,7 @@ module TopLevelTypeFunctionGenericOnlyByMeasure =
        abstract Invoke: float<'u> list -> int
 
     let rec loop<[<Measure>]'u>  =
-        { new C<'u> with 
+        { new C<'u> with
             member _.Invoke(xs) =
                 match xs with
                 | [] -> 1
@@ -86,60 +86,60 @@ module TopLevelTypeFunctionGenericOnlyByMeasure =
 
 module TestLibrary =
 
-    [<Measure>] 
+    [<Measure>]
     type unit =
-        //converts an integer into a  unit of measureof type int<seconds> 
-        static member convertLP x = LanguagePrimitives.Int32WithMeasure x  
-        static member convert x = x * 1<unit> 
-        static member convertFromInt (x: int) = x * 1<unit>  //not generic 
- 
+        //converts an integer into a  unit of measureof type int<seconds>
+        static member convertLP x = LanguagePrimitives.Int32WithMeasure x
+        static member convert x = x * 1<unit>
+        static member convertFromInt (x: int) = x * 1<unit>  //not generic
+
 
     //add a unit of measure to a number and convert it back again
-    let test1 num =  
+    let test1 num =
         let output = unit.convertLP(num)
         int output
-    let test2 num =  
+    let test2 num =
         let output = unit.convert(num)
         int output
 
 
     //convert the number in a sub function
-    let test3 num = 
-        let convert i =         
+    let test3 num =
+        let convert i =
             unit.convertLP(i)
         let output = convert num //BadImageFormatException is thrown here
         int output               //type of output inferred as int ?!
 
-    let test4 num = 
+    let test4 num =
         let convert (i : int) =  //type of i is specified
             unit.convertLP(i)
         let output = convert num //BadImageFormatException is thrown here
         int output               //type of output inferred as int ?!
 
-    let test5 num =  //type of num is inferred as int<u'> but no compile errors are reported 
-        let convert i =          
+    let test5 num =  //type of num is inferred as int<u'> but no compile errors are reported
+        let convert i =
             unit.convert(i)
         let output = convert num //BadImageFormatException is thrown here
-        int output 
+        int output
 
-    let test6 (num : int) =  
+    let test6 (num : int) =
         let convert i =          //inference looks incorrect
-            unit.convert(i)   
+            unit.convert(i)
         let output = convert num //BadImageFormatException is thrown here
-        int output 
+        int output
 
 
     //two workarounds to the problem
-    let test7 num =  
+    let test7 num =
         let convert (i : int) =  //with the type specified here, this doesn't crash
             unit.convert(i)
-        let output = convert num 
-        int output 
+        let output = convert num
+        int output
 
-    let test8 num =  
-        let convert i  =  
+    let test8 num =
+        let convert i  =
             unit.convertFromInt(i)  //with the type specified in the converter no exception
-        let output = convert num  
+        let output = convert num
         int output
 
 
@@ -164,13 +164,13 @@ module InterfacesOfMeasureAnnotatedTypes =
         inherit IEquatable<'T>
 
     type Prim() =
-        interface IComparable with 
+        interface IComparable with
             member x.CompareTo(y) = 0
-        interface IDerivedComparable<Prim> with 
+        interface IDerivedComparable<Prim> with
             member x.CompareTo(y) = 0
-        interface IDerivedEquatable<Prim> with 
+        interface IDerivedEquatable<Prim> with
             member x.Equals(y) = true
-        interface IRandomOtherInterface<Prim> with 
+        interface IRandomOtherInterface<Prim> with
             member x.M(y) = y
         override x.Equals(y) = true
         override x.GetHashCode() = 0
@@ -191,21 +191,21 @@ module CheckModuleNames =
 
     module WithMeasure = ()
     type A = class end
-    
+
     test "celjcelwj" (typeof<A>.DeclaringType.GetNestedType("WithMeasureModule") <> null)
 
 [<EntryPoint>]
-let main argv = 
+let main argv =
     // test1
     let _ = T().F (LanguagePrimitives.Int32WithMeasure<M> 0)
     // test2
     for _ in CreateBadImageFormatException () do ()
 
-    printf "TEST PASSED OK"; 
+    printf "TEST PASSED OK";
 
-    match failures with 
-    | [] -> 
+    match failures with
+    | [] ->
         stdout.WriteLine "Test Passed"
-    | _ -> 
+    | _ ->
         stdout.WriteLine "Test Failed"
     0

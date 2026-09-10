@@ -74,7 +74,7 @@ module CustomAttributes_AttributeUsage =
         compilation
         |> verifyCompileAndRun
         |> shouldSucceed
-        
+
     // SOURCE=AttributeTargetsIsMethod01.fs				# AttributeTargetsIsMethod01.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AttributeTargetsIsMethod01.fs"|])>]
     let ``Preview: AttributeTargetsIsMethod01_fs opt-in warning`` compilation =
@@ -90,7 +90,7 @@ module CustomAttributes_AttributeUsage =
         |> withLangVersion80
         |> verifyCompile
         |> shouldSucceed
-        
+
     // SOURCE=AttributeTargetsIsProperty.fs	# AttributeTargetsIsProperty.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AttributeTargetsIsProperty.fs"|])>]
     let ``AttributeTargetsIsProperty_fs`` compilation =
@@ -131,9 +131,9 @@ module CustomAttributes_AttributeUsage =
             (Warning 842, Line 14, Col 7, Line 14, Col 34, "This attribute cannot be applied to field. Valid targets are: class, struct, enum, constructor, method, property, field, event, interface, delegate");
             (Warning 842, Line 24, Col 7, Line 24, Col 36, "This attribute cannot be applied to property, event, return value. Valid targets are: class, struct, enum, constructor, method, property, field, event, interface, delegate");
             (Warning 842, Line 29, Col 15, Line 29, Col 47, "This attribute cannot be applied to method, event, return value. Valid targets are: class, struct, enum, constructor, method, property, field, event, interface, delegate");
-            (Error 3172, Line 28, Col 14, Line 28, Col 17, "A property's getter and setter must have the same type. Property 'Foo' has getter of type 'int' but setter of type 'obj'.") 
+            (Error 3172, Line 28, Col 14, Line 28, Col 17, "A property's getter and setter must have the same type. Property 'Foo' has getter of type 'int' but setter of type 'obj'.")
         ]
-        
+
     // SOURCE=E_AttributeTargetIsField01.fs					# E_AttributeTargetIsField01.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsField01.fs"|])>]
     let ``E_AttributeTargetIsField01_fs 9_0`` compilation =
@@ -142,7 +142,7 @@ module CustomAttributes_AttributeUsage =
         |> withOptions ["--nowarn:25"]
         |> verifyCompile
         |> shouldSucceed
-        
+
     // SOURCE=E_AttributeTargetIsField01.fs					# E_AttributeTargetIsField01.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsField01.fs"|])>]
     let ``E_AttributeTargetIsField01_fs`` compilation =
@@ -169,7 +169,7 @@ module CustomAttributes_AttributeUsage =
             (Warning 842, Line 64, Col 3, Line 64, Col 12, "This attribute cannot be applied to method, return value. Valid targets are: field")
             (Warning 842, Line 66, Col 7, Line 66, Col 16, "This attribute cannot be applied to method, return value. Valid targets are: field")
         ]
-        
+
     // SOURCE=E_AttributeTargetIsField02.fs					# E_AttributeTargetIsField02.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsField02.fs"|])>]
     let ``E_AttributeTargetIsField02_fs 9.0`` compilation =
@@ -178,7 +178,7 @@ module CustomAttributes_AttributeUsage =
         |> withOptions ["--nowarn:25"]
         |> verifyCompile
         |> shouldSucceed
-        
+
     // SOURCE=E_AttributeTargetIsField02.fs					# E_AttributeTargetIsField02.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsField02.fs"|])>]
     let ``E_AttributeTargetIsField02_fs`` compilation =
@@ -186,7 +186,7 @@ module CustomAttributes_AttributeUsage =
         |> withOptions ["--nowarn:25"]
         |> verifyCompile
         |> shouldSucceed
-        
+
     // SOURCE=E_AttributeTargetIsMethod02.fs					# E_AttributeTargetIsMethod02.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsMethod02.fs"|])>]
     let ``E_AttributeTargetIsMethod02_fs 9_0`` compilation =
@@ -195,7 +195,7 @@ module CustomAttributes_AttributeUsage =
         |> withOptions ["--nowarn:25"]
         |> verifyCompile
         |> shouldSucceed
-        
+
     // SOURCE=E_AttributeTargetIsMethod02.fs					# E_AttributeTargetIsMethod02.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsMethod02.fs"|])>]
     let ``E_AttributeTargetIsMethod02_fs`` compilation =
@@ -216,7 +216,7 @@ module CustomAttributes_AttributeUsage =
             (Warning 842, Line 34, Col 3, Line 34, Col 13, "This attribute cannot be applied to property, field, return value. Valid targets are: method")
             (Warning 842, Line 39, Col 3, Line 39, Col 13, "This attribute cannot be applied to property, field, return value. Valid targets are: method")
         ]
-        
+
     // SOURCE=E_AttributeTargetIsMethod03.fs					# E_AttributeTargetIsMethod03.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsMethod03.fs"|])>]
     let ``E_AttributeTargetIsMethod03_fs 9_0`` compilation =
@@ -225,7 +225,7 @@ module CustomAttributes_AttributeUsage =
         |> withOptions ["--nowarn:25"]
         |> verifyCompile
         |> shouldSucceed
-        
+
     // SOURCE=E_AttributeTargetIsMethod03.fs					# E_AttributeTargetIsMethod03.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsMethod03.fs"|])>]
     let ``E_AttributeTargetIsMethod03_fs`` compilation =
@@ -250,7 +250,7 @@ module CustomAttributes_AttributeUsage =
             (Warning 842, Line 13, Col 3, Line 13, Col 15, "This attribute cannot be applied to class, struct, enum, interface, delegate. Valid targets are: method")
             (Warning 842, Line 13, Col 3, Line 13, Col 15, "This attribute cannot be applied to struct. Valid targets are: method")
         ]
-        
+
     // SOURCE=E_ConditionalAttribute.fs SCFLAGS="--test:ErrorRanges"	# E_ConditionalAttribute.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_ConditionalAttribute.fs"|])>]
     let ``E_ConditionalAttribute_fs`` compilation =
@@ -293,7 +293,7 @@ module CustomAttributes_AttributeUsage =
             (Warning 842, Line 12, Col 3, Line 12, Col 6, "This attribute cannot be applied to method, property, field, return value. Valid targets are: assembly, class")
             (Warning 842, Line 12, Col 3, Line 12, Col 6, "This attribute cannot be applied to property, field, return value. Valid targets are: assembly, class")
         ]
-        
+
     // SOURCE=AttributeTargetIsStruct.fs 	# AttributeTargetIsStruct.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AttributeTargetsIsStruct.fs"|])>]
     let ``AttributeTargetIsStruct_fs 9.0`` compilation =
@@ -301,14 +301,14 @@ module CustomAttributes_AttributeUsage =
         |> withLangVersion90
         |> verifyCompile
         |> shouldSucceed
-        
+
     // SOURCE=AttributeTargetIsStruct.fs 	# AttributeTargetIsStruct.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AttributeTargetsIsStruct.fs"|])>]
     let ``AttributeTargetIsStruct_fs`` compilation =
         compilation
         |> verifyCompile
         |> shouldSucceed
-        
+
     // SOURCE=AttributeTargetIsClass.fs 	# AttributeTargetIsClass.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AttributeTargetsIsClass.fs"|])>]
     let ``AttributeTargetIsClass_fs 9.0`` compilation =
@@ -316,14 +316,14 @@ module CustomAttributes_AttributeUsage =
         |> withLangVersion90
         |> verifyCompile
         |> shouldSucceed
-        
+
     // SOURCE=AttributeTargetIsClass.fs 	# AttributeTargetIsClass.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AttributeTargetsIsClass.fs"|])>]
     let ``AttributeTargetIsClass_fs`` compilation =
         compilation
         |> verifyCompile
         |> shouldSucceed
-        
+
     // SOURCE=E_AttributeTargetIsStruct.fs 	# E_AttributeTargetIsStruct.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsStruct.fs"|])>]
     let ``E_AttributeTargetIsStruct_fs 9.0`` compilation =
@@ -331,7 +331,7 @@ module CustomAttributes_AttributeUsage =
         |> withLangVersion90
         |> verifyCompile
         |> shouldSucceed
-        
+
     // SOURCE=E_AttributeTargetIsStruct.fs 	# E_AttributeTargetIsStruct.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsStruct.fs"|])>]
     let ``E_AttributeTargetIsStruct_fs`` compilation =
@@ -360,7 +360,7 @@ module CustomAttributes_AttributeUsage =
         |> withLangVersion90
         |> verifyCompile
         |> shouldSucceed
-        
+
     // SOURCE=E_AttributeTargetIsClass.fs 	# E_AttributeTargetIsClass.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsClass.fs"|])>]
     let ``E_AttributeTargetIsClass_fs`` compilation =
@@ -372,7 +372,7 @@ module CustomAttributes_AttributeUsage =
             (Warning 842, Line 19, Col 3, Line 19, Col 15, "This attribute cannot be applied to class. Valid targets are: struct")
             (Warning 842, Line 22, Col 10, Line 22, Col 22, "This attribute cannot be applied to class. Valid targets are: struct")
         ]
-        
+
     // SOURCE=E_AttributeTargetIsClass01.fs 	# E_AttributeTargetIsClass01.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsClass01.fs"|])>]
     let ``E_AttributeTargetIsClass01_fs 9_0`` compilation =
@@ -380,7 +380,7 @@ module CustomAttributes_AttributeUsage =
         |> withLangVersion90
         |> verifyCompile
         |> shouldSucceed
-        
+
     // SOURCE=E_AttributeTargetIsClass01.fs 	# E_AttributeTargetIsClass01.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsClass01.fs"|])>]
     let ``E_AttributeTargetIsClass01_fs`` compilation =
@@ -466,7 +466,7 @@ module CustomAttributes_AttributeUsage =
         |> withDiagnostics [
             (Warning 2003, Line 5, Col 59, Line 5, Col 68, "The attribute System.Reflection.AssemblyFileVersionAttribute specified version '9.8.*.6', but this value is invalid and has been ignored")
         ]
-        
+
     // SOURCE=E_AttributeTargetIsField03.fs	# E_AttributeTargetIsField03.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsField03.fs"|])>]
     let ``E_AttributeTargetIsField03_fs 9_0`` compilation =
@@ -477,7 +477,7 @@ module CustomAttributes_AttributeUsage =
         |> withDiagnostics [
             (Warning 842, Line 14, Col 5, Line 14, Col 15, "This attribute cannot be applied to method, property. Valid targets are: field")
         ]
-        
+
     // SOURCE=E_AttributeTargetIsField03.fs	# E_AttributeTargetIsField03.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsField03.fs"|])>]
     let ``E_AttributeTargetIsField03_fs opt-in warning`` compilation =
@@ -489,7 +489,7 @@ module CustomAttributes_AttributeUsage =
         |> withDiagnostics [
             (Warning 842, Line 14, Col 5, Line 14, Col 15, "This attribute cannot be applied to method, property. Valid targets are: field")
         ]
-    
+
     // SOURCE=E_AttributeTargetIsField03.fs	# E_AttributeTargetIsField03.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsField03.fs"|])>]
     let ``E_AttributeTargetIsField03_fs`` compilation =
@@ -499,7 +499,7 @@ module CustomAttributes_AttributeUsage =
         |> withDiagnostics [
             (Warning 842, Line 14, Col 5, Line 14, Col 15, "This attribute cannot be applied to method, property. Valid targets are: field")
         ]
-        
+
     // SOURCE=E_AttributeTargetIsField03.fs	# E_AttributeTargetIsField03.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsField03.fs"|])>]
     let ``Preview: E_AttributeTargetIsField03_fs opt-in warning`` compilation =
@@ -512,7 +512,7 @@ module CustomAttributes_AttributeUsage =
             (Warning 3878, Line 14, Col 18, Line 14, Col 23, "This attribute is not valid for use on union cases with fields.")
             (Warning 3878, Line 15, Col 28, Line 15, Col 33, "This attribute is not valid for use on union cases with fields.")
         ]
-        
+
     // SOURCE=E_AttributeTargetIsProperty01.fs	# E_AttributeTargetIsField03.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsProperty01.fs"|])>]
     let ``E_AttributeTargetIsProperty01_fs 9_0`` compilation =
@@ -520,14 +520,14 @@ module CustomAttributes_AttributeUsage =
         |> withLangVersion90
         |> verifyCompile
         |> shouldSucceed
-    
+
     // SOURCE=E_AttributeTargetIsProperty01.fs	# E_AttributeTargetIsField03.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsProperty01.fs"|])>]
     let ``E_AttributeTargetIsProperty01_fs`` compilation =
         compilation
         |> verifyCompile
         |> shouldSucceed
-        
+
     // SOURCE=E_AttributeTargetIsCtor01.fs	# E_AttributeTargetIsCtor01.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsCtor01.fs"|])>]
     let ``E_AttributeTargetIsCtor01_fs 9_0`` compilation =
@@ -535,7 +535,7 @@ module CustomAttributes_AttributeUsage =
         |> withLangVersion90
         |> verifyCompile
         |> shouldSucceed
-    
+
     // SOURCE=E_AttributeTargetIsCtor01.fs	# E_AttributeTargetIsCtor01.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsCtor01.fs"|])>]
     let ``E_AttributeTargetIsCtor01_fs`` compilation =
@@ -548,7 +548,7 @@ module CustomAttributes_AttributeUsage =
             (Warning 842, Line 14, Col 15, Line 14, Col 27, "This attribute cannot be applied to constructor. Valid targets are: method")
             (Warning 842, Line 17, Col 16, Line 17, Col 28, "This attribute cannot be applied to constructor. Valid targets are: method")
         ]
-        
+
     // SOURCE=AttributeTargetsIsEnum01.fs	# AttributeTargetsIsEnum01.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AttributeTargetsIsEnum01.fs"|])>]
     let ``AttributeTargetsIsEnum01_fs 9.0`` compilation =
@@ -556,14 +556,14 @@ module CustomAttributes_AttributeUsage =
         |> withLangVersion90
         |> verifyCompile
         |> shouldSucceed
-    
+
     // SOURCE=AttributeTargetsIsEnum01.fs	# AttributeTargetsIsEnum01.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AttributeTargetsIsEnum01.fs"|])>]
     let ``AttributeTargetsIsEnum01_fs`` compilation =
         compilation
         |> verifyCompile
         |> shouldSucceed
-        
+
     // SOURCE=E_AttributeTargetIsEnum01.fs	# E_AttributeTargetIsEnum01.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsEnum01.fs"|])>]
     let ``E_AttributeTargetIsEnum01_fs 9_0`` compilation =
@@ -571,7 +571,7 @@ module CustomAttributes_AttributeUsage =
         |> withLangVersion90
         |> verifyCompile
         |> shouldSucceed
-    
+
     // SOURCE=E_AttributeTargetIsEnum01.fs	# E_AttributeTargetIsEnum01.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsEnum01.fs"|])>]
     let ``E_AttributeTargetIsEnum01_fs`` compilation =
@@ -583,7 +583,7 @@ module CustomAttributes_AttributeUsage =
             (Warning 842, Line 20, Col 3, Line 20, Col 14, "This attribute cannot be applied to enum. Valid targets are: class")
             (Warning 842, Line 21, Col 3, Line 21, Col 18, "This attribute cannot be applied to enum. Valid targets are: interface")
             (Warning 842, Line 22, Col 3, Line 22, Col 17, "This attribute cannot be applied to enum. Valid targets are: delegate")
-        ]        
+        ]
 
      // SOURCE=AttributeTargetsIsDelegate01.fs	# AttributeTargetsIsDelegate01.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AttributeTargetsIsDelegate01.fs"|])>]
@@ -592,14 +592,14 @@ module CustomAttributes_AttributeUsage =
         |> withLangVersion90
         |> verifyCompile
         |> shouldSucceed
-    
+
     // SOURCE=AttributeTargetsIsDelegate01.fs	# AttributeTargetsIsDelegate01.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AttributeTargetsIsDelegate01.fs"|])>]
     let ``AttributeTargetsIsDelegate01_fs`` compilation =
         compilation
         |> verifyCompile
         |> shouldSucceed
-        
+
     // SOURCE=E_AttributeTargetIsDelegate01.fs	# E_AttributeTargetIsDelegate01.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsDelegate01.fs"|])>]
     let ``E_AttributeTargetIsDelegate01_fs 9.0`` compilation =
@@ -607,7 +607,7 @@ module CustomAttributes_AttributeUsage =
         |> withLangVersion90
         |> verifyCompile
         |> shouldSucceed
-    
+
     // SOURCE=E_AttributeTargetIsDelegate01.fs	# E_AttributeTargetIsDelegate01.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsDelegate01.fs"|])>]
     let ``E_AttributeTargetsIsDelegate01_fs`` compilation =
@@ -631,7 +631,7 @@ type InterruptibleLazy<'T> private (valueFactory: unit -> 'T) =
         """
         |> compile
         |> shouldSucceed
-        
+
      // SOURCE=AttributeTargetsIsInterface.fs	# AttributeTargetsIsInterface.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AttributeTargetsIsInterface.fs"|])>]
     let ``AttributeTargetsIsInterface_fs 9.0`` compilation =
@@ -639,7 +639,7 @@ type InterruptibleLazy<'T> private (valueFactory: unit -> 'T) =
         |> withLangVersion90
         |> verifyCompile
         |> shouldSucceed
-    
+
     // SOURCE=AttributeTargetsIsInterface.fs	# AttributeTargetsIsInterface.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AttributeTargetsIsInterface.fs"|])>]
     let ``AttributeTargetsIsInterface_fs`` compilation =
@@ -647,7 +647,7 @@ type InterruptibleLazy<'T> private (valueFactory: unit -> 'T) =
         |> withLangVersion90
         |> verifyCompile
         |> shouldSucceed
-        
+
     // SOURCE=E_AttributeTargetIsInterface.fs	# E_AttributeTargetIsInterface.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsInterface.fs"|])>]
     let ``E_AttributeTargetIsInterface_fs 9_0`` compilation =
@@ -655,7 +655,7 @@ type InterruptibleLazy<'T> private (valueFactory: unit -> 'T) =
         |> withLangVersion90
         |> verifyCompile
         |> shouldSucceed
-    
+
     // SOURCE=E_AttributeTargetIsInterface.fs	# E_AttributeTargetIsInterface.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsInterface.fs"|])>]
     let ``E_AttributeTargetIsInterface_fs`` compilation =
@@ -676,7 +676,7 @@ type InterruptibleLazy<'T> private (valueFactory: unit -> 'T) =
         |> withLangVersion90
         |> verifyCompile
         |> shouldSucceed
-    
+
     // SOURCE=E_AttributeTargetIsClass02.fs	# E_AttributeTargetIsClass02.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AttributeTargetIsClass02.fs"|])>]
     let ``E_AttributeTargetIsClass02_fs`` compilation =
@@ -697,7 +697,7 @@ type InterruptibleLazy<'T> private (valueFactory: unit -> 'T) =
             (Warning 842, Line 47, Col 3, Line 47, Col 14, "This attribute cannot be applied to struct. Valid targets are: class")
             (Warning 842, Line 48, Col 3, Line 48, Col 18, "This attribute cannot be applied to struct. Valid targets are: interface")
         ]
-        
+
     // SOURCE= CLIMutableAttribute01.fs	# CLIMutableAttribute01.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"CLIMutableAttribute01.fs"|])>]
     let ``CLIMutableAttribute01 8.0`` compilation =
@@ -705,7 +705,7 @@ type InterruptibleLazy<'T> private (valueFactory: unit -> 'T) =
         |> withLangVersion80
         |> verifyCompile
         |> shouldSucceed
-    
+
     // SOURCE=CLIMutableAttribute01.fs	# CLIMutableAttribute01.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"CLIMutableAttribute01.fs"|])>]
     let ``CLIMutableAttribute01 90`` compilation =
@@ -713,7 +713,7 @@ type InterruptibleLazy<'T> private (valueFactory: unit -> 'T) =
         |> withLangVersion90
         |> verifyCompile
         |> shouldSucceed
-        
+
     // SOURCE= E_CLIMutableAttribute.fs	# E_CLIMutableAttribute.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_CLIMutableAttribute.fs"|])>]
     let ``E_CLIMutableAttribute 8.0`` compilation =
@@ -731,7 +731,7 @@ type InterruptibleLazy<'T> private (valueFactory: unit -> 'T) =
             (Error 3132, Line 22, Col 8, Line 22, Col 17, "This type definition may not have the 'CLIMutable' attribute. Only record types may have this attribute.")
             (Error 3132, Line 25, Col 8, Line 25, Col 18, "This type definition may not have the 'CLIMutable' attribute. Only record types may have this attribute.")
         ]
-    
+
     // SOURCE=E_CLIMutableAttribute.fs	# E_CLIMutableAttribute.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_CLIMutableAttribute.fs"|])>]
     let ``E_CLIMutableAttribute 90`` compilation =
@@ -768,7 +768,7 @@ type InterruptibleLazy<'T> private (valueFactory: unit -> 'T) =
             (Warning 842, Line 44, Col 7, Line 44, Col 23, "This attribute cannot be applied to method, property, field, return value. Valid targets are: class, interface")
             (Error 935, Line 54, Col 10, Line 54, Col 11, "Types with the 'AllowNullLiteral' attribute may only inherit from or implement types which also allow the use of the null literal")
         ]
-    
+
     // SOURCE=E_AllowNullLiteral.fs	# E_AllowNullLiteral.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AllowNullLiteral.fs"|])>]
     let ``E_AllowNullLiteral 90`` compilation =
@@ -787,7 +787,7 @@ type InterruptibleLazy<'T> private (valueFactory: unit -> 'T) =
             (Warning 842, Line 44, Col 7, Line 44, Col 23, "This attribute cannot be applied to method, property, field, return value. Valid targets are: class, interface");
             (Error 935, Line 54, Col 10, Line 54, Col 11, "Types with the 'AllowNullLiteral' attribute may only inherit from or implement types which also allow the use of the null literal")
         ]
-        
+
     // SOURCE= AllowNullLiteral01.fs	# AllowNullLiteral01.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AllowNullLiteral01.fs"|])>]
     let ``AllowNullLiteral01 8.0`` compilation =
@@ -795,7 +795,7 @@ type InterruptibleLazy<'T> private (valueFactory: unit -> 'T) =
         |> withLangVersion80
         |> verifyCompile
         |> shouldSucceed
-    
+
     // SOURCE=AllowNullLiteral01.fs	# AllowNullLiteral01.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AllowNullLiteral01.fs"|])>]
     let ``AllowNullLiteral01 90`` compilation =
@@ -803,7 +803,7 @@ type InterruptibleLazy<'T> private (valueFactory: unit -> 'T) =
         |> withLangVersion90
         |> verifyCompile
         |> shouldSucceed
-        
+
     // SOURCE= E_VolatileField.fs	# E_VolatileField.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_VolatileField.fs"|])>]
     let ``E_VolatileField 9.0`` compilation =
@@ -824,7 +824,7 @@ type InterruptibleLazy<'T> private (valueFactory: unit -> 'T) =
             (Error 879, Line 20, Col 9, Line 20, Col 11, "Volatile fields must be marked 'mutable' and cannot be thread-static")
             (Error 879, Line 23, Col 9, Line 23, Col 10, "Volatile fields must be marked 'mutable' and cannot be thread-static")
         ]
-    
+
     // SOURCE=E_VolatileField.fs	# E_VolatileField.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_VolatileField.fs"|])>]
     let ``E_VolatileField 90`` compilation =
@@ -845,7 +845,7 @@ type InterruptibleLazy<'T> private (valueFactory: unit -> 'T) =
             (Error 879, Line 20, Col 9, Line 20, Col 11, "Volatile fields must be marked 'mutable' and cannot be thread-static")
             (Error 879, Line 23, Col 9, Line 23, Col 10, "Volatile fields must be marked 'mutable' and cannot be thread-static")
         ]
-        
+
     // SOURCE= VolatileField01.fs	# VolatileField01.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"VolatileField01.fs"|])>]
     let ``VolatileField01 9.0`` compilation =
@@ -853,7 +853,7 @@ type InterruptibleLazy<'T> private (valueFactory: unit -> 'T) =
         |> withLangVersion90
         |> verifyCompile
         |> shouldSucceed
-    
+
     // SOURCE=VolatileField01.fs	# VolatileField01.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"VolatileField01.fs"|])>]
     let ``VolatileField01 90`` compilation =
@@ -861,7 +861,7 @@ type InterruptibleLazy<'T> private (valueFactory: unit -> 'T) =
         |> withLangVersion90
         |> verifyCompile
         |> shouldSucceed
-        
+
     // SOURCE= E_SealedAttribute01.fs	# E_SealedAttribute01.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_SealedAttribute01.fs"|])>]
     let ``E_SealedAttribute01 9.0`` compilation =
@@ -874,7 +874,7 @@ type InterruptibleLazy<'T> private (valueFactory: unit -> 'T) =
             (Error 948, Line 8, Col 6, Line 8, Col 24, "Interface types cannot be sealed")
             (Error 942, Line 14, Col 6, Line 14, Col 33, "Delegate types are always sealed")
         ]
-    
+
     // SOURCE=E_SealedAttribute01.fs	# E_SealedAttribute01.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_SealedAttribute01.fs"|])>]
     let ``E_SealedAttribute01 90`` compilation =

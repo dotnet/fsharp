@@ -1,8 +1,8 @@
-// #Regression 
+// #Regression
 // Regression for 353661 [FSharp] The code below shows an error when editing, but no error when compiled.
 open System.Linq
 
-type T = 
+type T =
     abstract Count : int -> bool
     default this.Count(_ : int) = true
 

@@ -1,4 +1,4 @@
-// #Conformance #LexicalAnalysis 
+// #Conformance #LexicalAnalysis
 
 
 let x =
@@ -9,12 +9,12 @@ let x =
     #else
     2
     #endif
-    
-    
+
+
 if x <> 2 then exit 1
 
 
-let y = 
+let y =
     #if NOTDEFINED
     1
     (* multi

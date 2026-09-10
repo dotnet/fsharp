@@ -10,8 +10,8 @@ type IFoo = interface end
 [<CustomInterface>]
 type IFoo2 =
     abstract A :int
- 
-[<CustomInterface>]  
+
+[<CustomInterface>]
 [<Interface>]
 type IFoo3 =
     abstract A :int

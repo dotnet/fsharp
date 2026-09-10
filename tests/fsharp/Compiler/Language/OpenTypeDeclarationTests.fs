@@ -850,7 +850,7 @@ module Test =
 
     [<Fact>]
     let ``Open C# enum should have access to its cases`` () =
-        let csharp = 
+        let csharp =
             CSharp """
 namespace CSharpTest
 {

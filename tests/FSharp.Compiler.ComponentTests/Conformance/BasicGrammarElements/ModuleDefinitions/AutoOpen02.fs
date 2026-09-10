@@ -1,11 +1,11 @@
-// #Regression #Conformance #TypesAndModules #Modules 
+// #Regression #Conformance #TypesAndModules #Modules
 
 
 
 
 module A =
     [<AutoOpen>]
-    module B = 
+    module B =
         let x = 0
 
 

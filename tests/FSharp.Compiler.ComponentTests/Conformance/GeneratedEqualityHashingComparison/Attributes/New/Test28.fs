@@ -1,4 +1,4 @@
-// #Regression #Conformance #TypesAndModules #GeneratedEqualityAndHashing #Attributes 
+// #Regression #Conformance #TypesAndModules #GeneratedEqualityAndHashing #Attributes
 // Regression test for FSHARP1.0:4571
 //<Expects status="error" span="(10,6-10,12)" id="FS0378">The 'NoEquality' attribute must be used in conjunction with the 'NoComparison' attribute$</Expects>
 //<Expects status="warning" span="(10,6-10,12)" id="FS0346">The struct, record or union type 'MyType' has an explicit implementation of 'Object\.Equals'\. Consider implementing a matching override for 'Object\.GetHashCode\(\)'$</Expects>

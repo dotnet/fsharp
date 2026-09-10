@@ -1,4 +1,4 @@
-// #Regression #Conformance #PatternMatching 
+// #Regression #Conformance #PatternMatching
 // Regression test for DevDiv:198999 ("Warning messages for incomplete matches involving enum types are wrong")
 //<Expects status="warning" span="(14,10-14,18)" id="FS0025">Incomplete pattern matches on this expression\. For example, the value '"a"' may indicate a case not covered by the pattern\(s\)\.$</Expects>
 //<Expects status="warning" span="(18,10-18,18)" id="FS0025">Incomplete pattern matches on this expression\. For example, the value '0\.0' may indicate a case not covered by the pattern\(s\)\.$</Expects>
@@ -10,7 +10,7 @@
 module M
 
 type T = | X = 0 | Y = 1
- 
+
 let f1 = function
          | "X" -> T.X
          | "Y" -> T.Y

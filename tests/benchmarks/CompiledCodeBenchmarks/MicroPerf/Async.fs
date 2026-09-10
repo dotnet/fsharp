@@ -1,4 +1,4 @@
-module Async 
+module Async
 
 open BenchmarkDotNet.Attributes
 

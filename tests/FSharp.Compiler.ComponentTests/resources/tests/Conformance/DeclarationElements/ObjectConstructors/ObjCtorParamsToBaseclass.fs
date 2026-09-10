@@ -1,4 +1,4 @@
-// #Conformance #DeclarationElements #ObjectConstructors 
+// #Conformance #DeclarationElements #ObjectConstructors
 // Verify ability to pass parameters in obj ctor to constructor of base class.
 
 type s1 = string
@@ -16,7 +16,7 @@ type Father (name : s2, gfName : s1) =
     let m_name = name
     member this.FatherName = m_name
     member this.GetName() = sprintf "%s son of %s" m_name ((this :> Grandfather).GetName())
-    
+
 type Son (name : s3, fName : s2, gfName : s1) =
     inherit Father(fName, gfName)
     let m_name = name

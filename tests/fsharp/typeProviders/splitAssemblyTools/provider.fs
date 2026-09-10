@@ -4,8 +4,8 @@ type TypeProviderAssemblyAttribute(assemblyName) =
     inherit System.Attribute()
 
     new() = TypeProviderAssemblyAttribute(null)
-    member this.AssemblyName 
-        with get () = assemblyName 
+    member this.AssemblyName
+        with get () = assemblyName
 
 [<assembly:TypeProviderAssembly("providerDesigner")>]
 do()

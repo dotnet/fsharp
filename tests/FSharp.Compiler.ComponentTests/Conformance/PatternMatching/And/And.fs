@@ -16,7 +16,7 @@ module And =
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
-        
+
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/And)
     [<Theory; FileInlineData("andPattern02.fs")>]
     let ``And - andPattern02_fs - --test:ErrorRanges`` compilation =
@@ -26,7 +26,7 @@ module And =
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
-        
+
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/And)
     [<Theory; FileInlineData("andPattern03.fs")>]
     let ``And - andPattern03_fs - --test:ErrorRanges`` compilation =
@@ -36,7 +36,7 @@ module And =
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
-        
+
     [<Theory; FileInlineData("andPattern04.fs")>]
     let ``And - andPattern04_fs`` compilation =
         compilation

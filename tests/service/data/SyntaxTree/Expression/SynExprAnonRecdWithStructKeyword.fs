@@ -1,5 +1,5 @@
 
-struct 
+struct
     {| Foo =
     //  meh
     someValue |}

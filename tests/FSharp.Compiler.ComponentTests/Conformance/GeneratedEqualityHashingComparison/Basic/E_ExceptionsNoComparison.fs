@@ -1,4 +1,4 @@
-// #Regression #Conformance #TypesAndModules #GeneratedEqualityAndHashing 
+// #Regression #Conformance #TypesAndModules #GeneratedEqualityAndHashing
 // Regression test for FSHARP1.0:5345
 // exception types do not allow structural comparison
 //<Expects span="(9,9-9,15)" status="error" id="FS0001">The type 'exn' does not support the 'comparison' constraint\. For example, it does not support the 'System\.IComparable' interface</Expects>

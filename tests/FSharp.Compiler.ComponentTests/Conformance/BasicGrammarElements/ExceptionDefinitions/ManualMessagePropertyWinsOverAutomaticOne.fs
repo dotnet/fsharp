@@ -4,7 +4,7 @@ let f() =
         raise (MyCustomExc("This should be the message!"))
     with
         | MyCustomExc m as e  -> e.Message
-    
+
 
 let result = f()
 printfn "%s" result

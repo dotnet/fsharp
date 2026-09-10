@@ -4,7 +4,7 @@ open Xunit
 open FSharp.Test.Compiler
 
 /// `'%s' is not a valid character literal.` with note about wrapped value and error soon
-let private invalidCharWarningMsg (value: string) (wrapped: string) = 
+let private invalidCharWarningMsg (value: string) (wrapped: string) =
     FSComp.SR.lexInvalidCharLiteralInString (value, wrapped)
     |> snd
     |> _.Text

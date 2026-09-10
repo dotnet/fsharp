@@ -261,7 +261,7 @@ let LexerStateToNfa ctx (macros: Map<string,_>) (clauses: Clause list) =
         // Note we've delayed the expansion of these until we've worked out all the 'special' Unicode characters
         // mentioned in the entire lexer spec, i.e. we wait until GetAlphabet returns a reliable and stable answer.
         | Inp (UnicodeCategory uc) ->
-            let re = Alt(fun ctx -> 
+            let re = Alt(fun ctx ->
                 [ yield Inp(Alphabet(EncodeUnicodeCategory uc))
                   // Also include any specific characters in this category
                   for c in GetSingleCharAlphabet ctx do
@@ -277,7 +277,7 @@ let LexerStateToNfa ctx (macros: Map<string,_>) (clauses: Clause list) =
 
         | Inp (NotCharSet chars) ->
             let chars = chars ctx
-            let re = Alt(fun ctx -> 
+            let re = Alt(fun ctx ->
                 [ // Include any characters from those in the alphabet besides those that are not immediately excluded
                    for c in GetSingleCharAlphabet ctx do
                        let ec = EncodeChar c ctx
@@ -327,12 +327,12 @@ type NfaNodeIdSet(nodes: NfaNodeIdSetBuilder) =
     member x.Representation = s
     member x.Elements = s
     member x.Fold f z = Array.fold f z s
-    interface System.IComparable with 
+    interface System.IComparable with
         member x.CompareTo(y:obj) =
             Array.compareWith compare x.Representation (y :?> NfaNodeIdSet).Representation
 
-    override x.Equals(y:obj) = 
-        match y with 
+    override x.Equals(y:obj) =
+        match y with
         | :? NfaNodeIdSet as y ->
             let xr = x.Representation
             let yr = y.Representation

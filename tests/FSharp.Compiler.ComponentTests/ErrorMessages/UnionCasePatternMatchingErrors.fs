@@ -18,7 +18,7 @@ let myVal =
     match x with
     | B  -> 42"""
         |> typecheck
-        |> shouldFail   
+        |> shouldFail
         |> withSingleDiagnostic (Error 727, Line 9, Col 7, Line 9, Col 8,
                                     "This union case expects 4 arguments in tupled form, but was given 0. The missing field arguments may be any of:
 \tf1: int list
@@ -37,7 +37,7 @@ let myVal =
     match x with
     | B (field = x; field = z) -> let y = x + z + 1 in ()"""
         |> typecheck
-        |> shouldFail   
+        |> shouldFail
         |> withSingleDiagnostic (Error 3175, Line 8, Col 21, Line 8, Col 26, "Union case/exception field 'field' cannot be used more than once.")
 
     [<Fact>]
@@ -52,7 +52,7 @@ let myVal =
     match x with
     | B x z -> let y = x + z + 1 in ()"""
         |> typecheck
-        |> shouldFail   
+        |> shouldFail
         |> withSingleDiagnostic (Error 727, Line 9, Col 7, Line 9, Col 12, "This union case expects 2 arguments in tupled form, but was given 0. The missing field arguments may be any of:
 \tfield: int
 \tint")
@@ -70,10 +70,10 @@ let myVal =
     | A -> 15
     | B (x, _) -> 16"""
         |> typecheck
-        |> shouldFail   
+        |> shouldFail
         |> withSingleDiagnostic (Error 727, Line 10, Col 7, Line 10, Col 15, "This union case expects 3 arguments in tupled form, but was given 2. The missing field arguments may be any of:
 \tint")
-      
+
     [<Fact>]
     let ``Union Pattern discard not allowed for union case that takes no data with Lang preview`` () =
          FSharp """
@@ -89,7 +89,7 @@ let myVal =
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Warning 3548, Line 9, Col 7, Line 9, Col 10, "Pattern discard is not allowed for union case that takes no data.")
- 
+
     [<Fact>]
     let ``Union Pattern discard allowed for union case that takes no data with Lang version preview`` () =
          FSharp """
@@ -105,7 +105,7 @@ let myVal =
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Warning 3548, Line 9, Col 7, Line 9, Col 10, "Pattern discard is not allowed for union case that takes no data.")
-    
+
     [<Fact>]
     let ``Union function Pattern discard allowed for union case that takes no data with Lang version preview`` () =
          FSharp """
@@ -121,7 +121,7 @@ let myVal =
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Warning 3548, Line 9, Col 7, Line 9, Col 10, "Pattern discard is not allowed for union case that takes no data.")
-    
+
     [<Fact>]
     let ``Union function Pattern discard not allowed for union case that takes no data with Lang version preview`` () =
          FSharp """
@@ -137,7 +137,7 @@ let myVal =
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Warning 3548, Line 9, Col 7, Line 9, Col 10, "Pattern discard is not allowed for union case that takes no data.")
-    
+
     [<Fact>]
     let ``Pattern discard not allowed for union case that takes no data with Lang preview`` () =
          FSharp """
@@ -179,7 +179,7 @@ let myVal =
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Warning 3548, Line 12, Col 7, Line 12, Col 10, "Pattern discard is not allowed for union case that takes no data.")
-    
+
     [<Fact>]
     let ``Pattern discard allowed for union case that takes no data with Lang version preview`` () =
          FSharp """
@@ -200,7 +200,7 @@ let myVal =
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Warning 3548, Line 12, Col 7, Line 12, Col 10, "Pattern discard is not allowed for union case that takes no data.")
- 
+
     [<Fact>]
     let ``Grouped Pattern discard not allowed for union case that takes no data with Lang preview`` () =
          FSharp """
@@ -249,7 +249,7 @@ let myVal =
             (Warning 3548, Line 16, Col 7, Line 16, Col 10, "Pattern discard is not allowed for union case that takes no data.")
             (Warning 3548, Line 17, Col 20, Line 17, Col 23, "Pattern discard is not allowed for union case that takes no data.")
         ]
-    
+
     [<Fact>]
     let ``Multiple pattern discards not allowed for union case that takes no data with Lang preview2`` () =
          FSharp """
@@ -277,7 +277,7 @@ let myVal =
             (Warning 3548, Line 16, Col 7, Line 16, Col 10, "Pattern discard is not allowed for union case that takes no data.")
             (Warning 3548, Line 17, Col 20, Line 17, Col 23, "Pattern discard is not allowed for union case that takes no data.")
         ]
-    
+
     [<Fact>]
     let ``Multiple function pattern discards is not allowed for union case that takes no data with Lang preview`` () =
          FSharp """
@@ -305,7 +305,7 @@ let myVal =
             (Warning 3548, Line 16, Col 7, Line 16, Col 10, "Pattern discard is not allowed for union case that takes no data.")
             (Warning 3548, Line 17, Col 20, Line 17, Col 23, "Pattern discard is not allowed for union case that takes no data.")
         ]
-    
+
     [<Fact>]
     let ``Multiple function pattern discards is not allowed for union case that takes no data with Lang preview2`` () =
          FSharp """
@@ -334,7 +334,7 @@ let myVal =
             (Warning 3548, Line 17, Col 7, Line 17, Col 10, "Pattern discard is not allowed for union case that takes no data.")
             (Warning 3548, Line 18, Col 20, Line 18, Col 23, "Pattern discard is not allowed for union case that takes no data.")
         ]
-    
+
     [<Theory; FileInlineData("E_UnionCaseTakesNoArguments.fs")>]
     let ``Pattern named not allowed union case does not take any arguments with Lang preview`` compilation =
         compilation

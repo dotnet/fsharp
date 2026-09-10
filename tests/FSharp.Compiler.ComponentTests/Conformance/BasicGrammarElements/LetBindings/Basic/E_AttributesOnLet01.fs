@@ -1,4 +1,4 @@
-// #Regression #Conformance #DeclarationElements #LetBindings 
+// #Regression #Conformance #DeclarationElements #LetBindings
 
 
 // Regression test for FSharp1.0:3744 - Unable to apply attributes on individual patterns in a tupled pattern match let binding - Implementation doesn't match spec
@@ -11,5 +11,5 @@
 
 open System
 
-let ([<System.Obsolete()>] venus, earth, [<System.Obsolete()>] mars) = 
+let ([<System.Obsolete()>] venus, earth, [<System.Obsolete()>] mars) =
         ("too hot","just right", "too cold")

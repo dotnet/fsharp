@@ -12,7 +12,7 @@ module ``Static Methods In Interfaces`` =
         | CS cs -> CS { cs with LangVersion = ver }
         | _ -> failwith "Only supported in C#"
 
-    let csharpBaseClass = 
+    let csharpBaseClass =
         CSharp """
     namespace StaticsInInterfaces
     {
@@ -38,7 +38,7 @@ module ``Static Methods In Interfaces`` =
 
     }""" |> withCSharpLanguageVersion CSharpLanguageVersion.Preview |> withName "csLib"
 
-    
+
     let csharpOperators =
         CSharp """
         namespace StaticsInInterfaces
@@ -110,7 +110,7 @@ let main _ =
     [<FactForNETCOREAPP>]
     let ``F# can call static methods declared in interfaces from C#`` () =
 
-        let csharpLib = csharpBaseClass 
+        let csharpLib = csharpBaseClass
 
         let fsharpSource =
             """
@@ -145,18 +145,18 @@ let main _ =
         .class interface public auto ansi abstract IGetNext`1<(class IGetNext`1<!T>) T>
         {
             // Methods
-            .method public hidebysig abstract virtual static 
+            .method public hidebysig abstract virtual static
             !T Next (
                 !T other
-            ) cil managed 
+            ) cil managed
             {
             } // end of method IGetNext`1::Next
 
         } // end of class IGetNext`1
 
         And the following implementation:
-        .method public hidebysig static 
-        class RepeatSequence Next (class RepeatSequence other) cil managed 
+        .method public hidebysig static
+        class RepeatSequence Next (class RepeatSequence other) cil managed
         {
             .override method !0 class IGetNext`1<class RepeatSequence>::Next(!0)
             ...
@@ -165,7 +165,7 @@ let main _ =
     [<FactForNETCOREAPP>]
     let ``F# generates valid IL for abstract static interface methods`` () =
 
-        let csharpLib = csharpBaseClass 
+        let csharpLib = csharpBaseClass
 
         let fsharpSource =
             """
@@ -250,11 +250,11 @@ implements class [csLib]StaticsInInterfaces.IGetNext`1<class StaticsTesting/MyRe
     
     }
         """]
-    
+
     [<FactForNETCOREAPP>]
     let ``F# can implement static methods declared in interfaces from C#`` () =
 
-        let csharpLib = csharpBaseClass 
+        let csharpLib = csharpBaseClass
 
         let fsharpSource =
             """

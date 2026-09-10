@@ -57,7 +57,7 @@ let compute (x: int) =
 // We had a regression in debug code regression where we were falsely marking pipelines
 // as non-side-effecting, causing them to be eliminated in loops.
 //
-// After the fix 
+// After the fix
 //   1. pipelines are correctly marked as having effect
 //   2. we don't eliminate loops anyway
 module DontEliminateForLoopsInDebugCode =

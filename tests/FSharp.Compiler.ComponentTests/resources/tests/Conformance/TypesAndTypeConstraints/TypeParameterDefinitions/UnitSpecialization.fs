@@ -1,4 +1,4 @@
-// #UnitGenericAbstractType 
+// #UnitGenericAbstractType
 //<Expects status="success"></Expects>
 
 type Foo<'t> =

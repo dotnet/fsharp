@@ -5,7 +5,7 @@ module TestRecordParam =
     type R = { mutable z : int }
     let f (x:R) = &x.z
 
-    let test() = 
+    let test() =
         let r = { z = 1 }
         let addr = &f r
         addr <- addr + 1

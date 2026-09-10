@@ -12,7 +12,7 @@ let typeCheckWithStrictNullness cu =
     |> typecheck
 
 [<FactForNETCOREAPP>]
-let ``Can unsafely forgive null using Unchecked nonNull function`` () = 
+let ``Can unsafely forgive null using Unchecked nonNull function`` () =
     FSharp """module MyLibrary
 
 let readAllLines (reader:System.IO.StreamReader) : seq<string> =
@@ -26,7 +26,7 @@ let readAllLines (reader:System.IO.StreamReader) : seq<string> =
     |> shouldSucceed
 
 [<FactForNETCOREAPP>]
-let ``Can unsafely forgive null using Unchecked NonNullQuick active pattern`` () = 
+let ``Can unsafely forgive null using Unchecked NonNullQuick active pattern`` () =
     FSharp """module MyLibrary
 
 let readAllLines (reader:System.IO.StreamReader) : seq<string> =

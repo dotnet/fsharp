@@ -15,8 +15,8 @@ type UsingMSBuild() =
     inherit LanguageServiceBaseTests()
 
         (* Files for testing and tests --------------------------------------------------------- *)
-                
-    let NavigationFile1 = 
+
+    let NavigationFile1 =
       [
         "module Example.Module"
         ""
@@ -38,7 +38,7 @@ type UsingMSBuild() =
         ""
         "    type EnumOneLine = (*5s*)| OUAaa = 0 | OUBbb = 3(*5e*)" ]
 
-    let NavigationFile2 = 
+    let NavigationFile2 =
       [
         "module A =   "
         ""
@@ -94,8 +94,8 @@ type UsingMSBuild() =
         "      module OtherNested ="
         "        let aa () ="
         "          1(*15e*)        " ]
-    
+
 
 // Context project system
-type UsingProjectSystem() = 
+type UsingProjectSystem() =
     inherit UsingMSBuild(VsOpts = LanguageServiceExtension.ProjectSystemTestFlavour)

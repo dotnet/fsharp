@@ -1,11 +1,11 @@
-// #Conformance #DeclarationElements #MemberDefinitions #OptionalArguments 
+// #Conformance #DeclarationElements #MemberDefinitions #OptionalArguments
 
 
 // Test an optional parameter of type 'option option option a'
 type Foo<'a>() =
     member this.Test (?param1:'a option option option) =
         match param1 with
-        | Some(a) -> 
+        | Some(a) ->
                     match a with
                     | Some(b) ->
                                  match b with

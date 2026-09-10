@@ -71,18 +71,18 @@ module WorkspaceTests =
 
     let getDocumentId (workspace: Workspace) filePath =
         let solution = workspace.CurrentSolution
-        solution.GetDocumentIdsWithFilePath(filePath) 
+        solution.GetDocumentIdsWithFilePath(filePath)
         |> Seq.exactlyOne
 
     let getDocument (workspace: Workspace) filePath =
         let solution = workspace.CurrentSolution
-        solution.GetDocumentIdsWithFilePath(filePath) 
+        solution.GetDocumentIdsWithFilePath(filePath)
         |> Seq.exactlyOne
         |> solution.GetDocument
 
     let openDocument (workspace: Workspace) (filePath: string) =
         let docId =
-            workspace.CurrentSolution.GetDocumentIdsWithFilePath(filePath) 
+            workspace.CurrentSolution.GetDocumentIdsWithFilePath(filePath)
             |> Seq.exactlyOne
         use waitHandle = new ManualResetEventSlim(false)
         use _sub = workspace.DocumentOpened.Subscribe(fun _ ->
@@ -97,9 +97,9 @@ module WorkspaceTests =
         let doc = getDocument workspace filePath
         // The adhoc workspaces do not listen for files changing on disk,
         // so we simulate the update here.
-        let newSolution = 
+        let newSolution =
             doc.Project.Solution.WithDocumentTextLoader(
-                doc.Id, 
+                doc.Id,
                 new FileTextLoader(doc.FilePath, Encoding.Default),
                 PreservationMode.PreserveIdentity)
         workspace.TryApplyChanges(newSolution) |> ignore
@@ -113,9 +113,9 @@ module WorkspaceTests =
         try
             compileFileAsDll workspace filePath dllPath
 
-            let newMetadataReference = 
+            let newMetadataReference =
                 PortableExecutableReference.CreateFromFile(
-                    dllPath, 
+                    dllPath,
                     MetadataReferenceProperties.Assembly
                 )
             // The adhoc workspaces do not listen for files changing on disk,
@@ -168,14 +168,14 @@ module WorkspaceTests =
     let assertEmptyDocumentDiagnostics (workspace: Workspace) (filePath: string) =
         let doc = getDocument workspace filePath
         let parseResults, checkResults = doc.GetFSharpParseAndCheckResultsAsync("assertEmptyDocumentDiagnostics") |> CancellableTask.runSynchronouslyWithoutCancellation
-        
+
         Assert.Empty(parseResults.Diagnostics)
         Assert.Empty(checkResults.Diagnostics)
 
     let assertHasDocumentDiagnostics (workspace: Workspace) (filePath: string) =
         let doc = getDocument workspace filePath
         let parseResults, checkResults = doc.GetFSharpParseAndCheckResultsAsync("assertHasDocumentDiagnostics") |> CancellableTask.runSynchronouslyWithoutCancellation
-        
+
         Assert.Empty(parseResults.Diagnostics)
         Assert.NotEmpty(checkResults.Diagnostics)
 
@@ -193,7 +193,7 @@ module WorkspaceTests =
 
 //            member _.FilePath: string = mainProj.FilePath
 
-//            member _.HasProjectReference(filePath: string): bool = 
+//            member _.HasProjectReference(filePath: string): bool =
 //                mainProj.ProjectReferences
 //                |> Seq.exists (fun x ->
 //                    let projRef = mainProj.Solution.GetProject(x.ProjectId)
@@ -207,7 +207,7 @@ module WorkspaceTests =
 
 //            member _.ProjectReferenceCount: int = mainProj.ProjectReferences.Count()
 
-//            member _.SetProjectReferences(projRefs: seq<IFSharpWorkspaceProjectContext>): unit = 
+//            member _.SetProjectReferences(projRefs: seq<IFSharpWorkspaceProjectContext>): unit =
 //                let currentProj = mainProj
 //                let mutable solution = currentProj.Solution
 
@@ -218,9 +218,9 @@ module WorkspaceTests =
 
 //                projRefs
 //                |> Seq.iter (fun projRef ->
-//                    solution <- 
+//                    solution <-
 //                        solution.AddProjectReference(
-//                            currentProj.Id, 
+//                            currentProj.Id,
 //                            ProjectReference(projRef.Id)
 //                        )
 //                )
@@ -233,7 +233,7 @@ module WorkspaceTests =
 
 //            member _.HasMetadataReference(referencePath: string): bool =
 //                mainProj.MetadataReferences
-//                |> Seq.exists (fun x -> 
+//                |> Seq.exists (fun x ->
 //                    match x with
 //                    | :? PortableExecutableReference as r ->
 //                        String.Equals(r.FilePath, referencePath, StringComparison.OrdinalIgnoreCase)
@@ -251,9 +251,9 @@ module WorkspaceTests =
 
 //                referencePaths
 //                |> Seq.iter (fun referencePath ->
-//                    solution <- 
+//                    solution <-
 //                        solution.AddMetadataReference(
-//                            currentProj.Id, 
+//                            currentProj.Id,
 //                            PortableExecutableReference.CreateFromFile(
 //                                referencePath,
 //                                MetadataReferenceProperties.Assembly
@@ -269,7 +269,7 @@ module WorkspaceTests =
 //            member _.AddSourceFile(_: string, _: SourceCodeKind): unit = ()
 
 //    type TestFSharpWorkspaceProjectContextFactory(workspace: Workspace, miscFilesWorkspace: Workspace) =
-                
+
 //        interface IFSharpWorkspaceProjectContextFactory with
 //            member _.CreateProjectContext(filePath: string, uniqueName: string): IFSharpWorkspaceProjectContext =
 //                match miscFilesWorkspace.CurrentSolution.GetDocumentIdsWithFilePath(filePath) |> Seq.tryExactlyOne with
@@ -293,14 +293,14 @@ module WorkspaceTests =
 
 //        let _miscFileService = FSharpMiscellaneousFileService(workspace, miscFilesWorkspace, projectContextFactory)
 
-//        let filePath = 
-//            createOnDiskScript 
+//        let filePath =
+//            createOnDiskScript
 //                """
 //module Script1
 
 //let x = 1
 //                """
-        
+
 //        try
 //            let projInfo = createProjectInfoWithFileOnDisk filePath
 //            addProject miscFilesWorkspace projInfo
@@ -331,27 +331,27 @@ module WorkspaceTests =
 
 //        let _miscFileService = FSharpMiscellaneousFileService(workspace, miscFilesWorkspace, projectContextFactory)
 
-//        let filePath1 = 
-//            createOnDiskScript 
+//        let filePath1 =
+//            createOnDiskScript
 //                """
 //module Script1
 
 //let x = 1
 //                """
 
-//        let filePath2 = 
-//            createOnDiskScript 
+//        let filePath2 =
+//            createOnDiskScript
 //                $"""
 //module Script2
 //#load "{ Path.GetFileName(filePath1) }"
 
 //let x = Script1.x
 //                """
-        
+
 //        try
 //            let projInfo2 = createProjectInfoWithFileOnDisk filePath2
 //            addProject miscFilesWorkspace projInfo2
-//            openDocument miscFilesWorkspace filePath2       
+//            openDocument miscFilesWorkspace filePath2
 //            assertEmptyDocumentDiagnostics workspace filePath2
 
 //        finally
@@ -366,21 +366,21 @@ module WorkspaceTests =
 
 //        let _miscFileService = FSharpMiscellaneousFileService(workspace, miscFilesWorkspace, projectContextFactory)
 
-//        let filePath1 = 
-//            createOnDiskScript 
+//        let filePath1 =
+//            createOnDiskScript
 //                """
 //module Script1
 //                """
 
-//        let filePath2 = 
-//            createOnDiskScript 
+//        let filePath2 =
+//            createOnDiskScript
 //                $"""
 //module Script2
 //#load "{ Path.GetFileName(filePath1) }"
 
 //let x = Script1.x
 //                """
-        
+
 //        try
 //            let projInfo1 = createProjectInfoWithFileOnDisk filePath1
 //            let projInfo2 = createProjectInfoWithFileOnDisk filePath2
@@ -389,8 +389,8 @@ module WorkspaceTests =
 //            addProject miscFilesWorkspace projInfo2
 
 //            openDocument miscFilesWorkspace filePath1
-//            openDocument miscFilesWorkspace filePath2           
-            
+//            openDocument miscFilesWorkspace filePath2
+
 //            assertEmptyDocumentDiagnostics workspace filePath1
 //            assertHasDocumentDiagnostics workspace filePath2
 
@@ -415,21 +415,21 @@ module WorkspaceTests =
 
 //        let _miscFileService = FSharpMiscellaneousFileService(workspace, miscFilesWorkspace, projectContextFactory)
 
-//        let filePath1 = 
-//            createOnDiskScript 
+//        let filePath1 =
+//            createOnDiskScript
 //                """
 //module Script1
 //                """
 
-//        let filePath2 = 
-//            createOnDiskScript 
+//        let filePath2 =
+//            createOnDiskScript
 //                $"""
 //module Script2
 //#load "{ Path.GetFileName(filePath1) }"
 
 //let x = Script1.x
 //                """
-        
+
 //        try
 //            let projInfo1 = createProjectInfoWithFileOnDisk filePath1
 //            let projInfo2 = createProjectInfoWithFileOnDisk filePath2
@@ -438,9 +438,9 @@ module WorkspaceTests =
 //            addProject miscFilesWorkspace projInfo2
 
 //            openDocument miscFilesWorkspace filePath2
-//            openDocument miscFilesWorkspace filePath1         
-            
-//            assertHasDocumentDiagnostics workspace filePath2 
+//            openDocument miscFilesWorkspace filePath1
+
+//            assertHasDocumentDiagnostics workspace filePath2
 //            assertEmptyDocumentDiagnostics workspace filePath1
 
 //            updateDocumentOnDisk workspace filePath1
@@ -464,7 +464,7 @@ module WorkspaceTests =
 
 //        let _miscFileService = FSharpMiscellaneousFileService(workspace, miscFilesWorkspace, projectContextFactory)
 
-//        let dllPath1 = 
+//        let dllPath1 =
 //            createOnDiskCompiledScriptAsDll workspace
 //                """
 //module Script1
@@ -472,21 +472,21 @@ module WorkspaceTests =
 //let x = 1
 //                """
 
-//        let filePath1 = 
-//            createOnDiskScript 
+//        let filePath1 =
+//            createOnDiskScript
 //                $"""
 //module Script2
 //#r "{ Path.GetFileName(dllPath1) }"
 
 //let x = Script1.x
 //                """
-        
+
 //        try
 //            let projInfo1 = createProjectInfoWithFileOnDisk filePath1
 
 //            addProject miscFilesWorkspace projInfo1
 
-//            openDocument miscFilesWorkspace filePath1         
+//            openDocument miscFilesWorkspace filePath1
 
 //            assertEmptyDocumentDiagnostics workspace filePath1
 

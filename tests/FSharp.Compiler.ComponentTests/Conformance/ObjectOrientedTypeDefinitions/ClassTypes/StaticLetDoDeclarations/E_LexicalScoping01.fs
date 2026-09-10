@@ -1,4 +1,4 @@
-// #Regression #Conformance #ObjectOrientedTypes #Classes #LetBindings 
+// #Regression #Conformance #ObjectOrientedTypes #Classes #LetBindings
 // Scoping:
 // identifier introduced by let is local
 //<Expects status="error" span="(11,14-11,15)" id="FS0039">The value, namespace, type or module 'm' is not defined</Expects>

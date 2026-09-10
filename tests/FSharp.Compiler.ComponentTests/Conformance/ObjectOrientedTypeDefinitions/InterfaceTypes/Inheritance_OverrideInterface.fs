@@ -1,4 +1,4 @@
-// #Conformance #ObjectOrientedTypes #InterfacesAndImplementations 
+// #Conformance #ObjectOrientedTypes #InterfacesAndImplementations
 // It should be possible to override interface implementations
 
 
@@ -6,7 +6,7 @@ type MyInt = int
 [<Measure>] type kg
 
 type IB<'a> =
-    interface 
+    interface
         abstract X : unit -> int
     end
 

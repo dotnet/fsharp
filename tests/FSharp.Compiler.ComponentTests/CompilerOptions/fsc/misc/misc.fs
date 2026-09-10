@@ -23,7 +23,7 @@ module help_options =
         |> verifyOutputWithBaseline (Path.Combine(__SOURCE_DIRECTORY__, "compiler_help_output.bsl"))
         |> shouldSucceed
 
-    // ReqENU	SOURCE=dummy.fsx COMPILE_ONLY=1  PRECMD="\$FSC_PIPE >help40.txt /? 2>&1" POSTCMD="\$FSI_PIPE --nologo --quiet --exec ..\\..\\..\\comparer.fsx help40.txt help40.437.1033.bsl"	# --help 
+    // ReqENU	SOURCE=dummy.fsx COMPILE_ONLY=1  PRECMD="\$FSC_PIPE >help40.txt /? 2>&1" POSTCMD="\$FSI_PIPE --nologo --quiet --exec ..\\..\\..\\comparer.fsx help40.txt help40.437.1033.bsl"	# --help
     [<Fact>]
     let ``Help - variant 2``() =
         FSharp ""

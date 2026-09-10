@@ -1,4 +1,4 @@
-// #Conformance #DataExpressions #ObjectConstructors 
+// #Conformance #DataExpressions #ObjectConstructors
 // Verify Dispatch Slot Checking when the interface has an overloaded method.
 
 open System
@@ -10,10 +10,10 @@ type IHaveOverload =
 type SomeClass<'a> (arg : 'a) =
     member this.Value = arg
 
-let test = { 
+let test = {
             new SomeClass<_>("ConstructorArgument") with
                 override this.ToString() = "SomeClass"
-                
+
             interface IHaveOverload with
                   override this.DoStuff (x : int) = x
                   override this.DoStuff (x : string) = Int32.Parse(x)

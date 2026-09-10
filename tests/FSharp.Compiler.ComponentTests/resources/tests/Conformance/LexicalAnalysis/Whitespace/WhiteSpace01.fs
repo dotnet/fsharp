@@ -1,5 +1,4 @@
-// #Conformance #LexicalAnalysis 
-                               
+// #Conformance #LexicalAnalysis
 
 
 
@@ -9,26 +8,27 @@
 
 
 
-                                  
 
 
 
 
 
 
-                          let                                      
+
+
+                          let
 
 
 
-                                     square  
-                                                            x                        
+                                     square
+                                                            x
 
                                                                          =   x * x
 
 
 
                             in
-         
+
                  printf
                                             "%d"                                                   (
 
@@ -46,4 +46,4 @@
 
                                                   42
 
-)                              
+)

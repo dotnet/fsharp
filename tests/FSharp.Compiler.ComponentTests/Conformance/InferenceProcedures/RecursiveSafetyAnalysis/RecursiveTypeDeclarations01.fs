@@ -1,16 +1,16 @@
-// #Conformance #TypeInference #Recursion 
+// #Conformance #TypeInference #Recursion
 
 
 // Define a set of mutually recursive types. Verify compiles and works OK
 
-type ClassType<'a>(x:'a) =         
+type ClassType<'a>(x:'a) =
     member self.Value = x
-    
+
 and RecordType =
     { field1 : int;
       field2 : ClassType<int> }
     member self.GetField2() = self.field2
-    
+
 and UnionType =
     | Case1 of string * AbbrevType1
     | Case2 of string * AbbrevType2
@@ -20,12 +20,12 @@ and AbbrevType1 = ClassType<int>
 
 and AbbrevType2 = ClassType<string>
 
-and AnotherClassType<'a>(x:'a) = 
+and AnotherClassType<'a>(x:'a) =
     member self.X = x
-    interface InterfaceType<'a> with 
+    interface InterfaceType<'a> with
         member self.Ident = x
-    
-and InterfaceType<'a> = 
+
+and InterfaceType<'a> =
     abstract Ident : 'a
 
 let test1 = new ClassType<int>(3)

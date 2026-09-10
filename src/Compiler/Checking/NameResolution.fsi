@@ -30,8 +30,6 @@ type NameResolver =
 
     member g: TcGlobals
 
-    member languageSupportsNameOf: bool
-
 /// Get the active pattern elements defined in a module, if any. Cache in the slot in the module type.
 val ActivePatternElemsOfModuleOrNamespace: g: TcGlobals -> ModuleOrNamespaceRef -> NameMap<ActivePatternElemRef>
 

@@ -1,4 +1,4 @@
-module FsLexYacc.FsLex.Driver 
+module FsLexYacc.FsLex.Driver
 
 open FsLexYacc.FsLex.AST
 open System
@@ -51,16 +51,16 @@ type Writer(outputFileName, outputFileInterface) =
         os.Write "us;"
 
     member x.LineCount = lineCount
-    
-    member x.WriteInterface format = 
+
+    member x.WriteInterface format =
         fprintf osi format
-    
-    member x.WriteLineInterface format = 
-        Printf.kfprintf (fun _ -> 
+
+    member x.WriteLineInterface format =
+        Printf.kfprintf (fun _ ->
             interfaceLineCount <- interfaceLineCount + 1
             osi.WriteLine ()
         ) osi format
-        
+
     member x.InterfaceLineCount = interfaceLineCount
 
     interface IDisposable with
@@ -97,7 +97,7 @@ let writeModuleExpression genModuleName isInternal (writer: Writer) =
 let writeOpens opens (writer: Writer) =
     writer.WriteLine ""
     writer.WriteLineInterface ""
-    
+
     for s in opens do
         writer.WriteLine "open %s" s
         writer.WriteLineInterface "open %s" s
@@ -109,7 +109,7 @@ let writeOpens opens (writer: Writer) =
 let writeTopCode code (writer: Writer) = writer.WriteCode code
 
 let writeUnicodeTranslationArray dfaNodes domain (writer: Writer) =
-    let parseContext = 
+    let parseContext =
         { unicode = match domain with | Unicode -> true | ASCII -> false
           caseInsensitive = false }
     writer.WriteLine "let trans : uint16[] array = "
@@ -213,7 +213,7 @@ let writeRules (rules: Rule list) (perRuleData: PerRuleData) outputFileName (wri
             |> String.concat " "
 
         writer.WriteLine "and %s %s lexbuf =" ident arguments
-        
+
         let signature =
             if List.isEmpty args then
                 sprintf "val %s: lexbuf: LexBuffer<char> -> token" ident
@@ -228,7 +228,7 @@ let writeRules (rules: Rule list) (perRuleData: PerRuleData) outputFileName (wri
                 |> sprintf "val %s: %s -> lexbuf: LexBuffer<char> -> token" ident
 
         writer.WriteLineInterface "%s" signature
-        
+
         writer.WriteLine "  match _fslex_tables.Interpret(%d,lexbuf) with" startNode.Id
         actions |> Seq.iteri (fun i (code:string, pos) ->
             writer.WriteLine "  | %d -> ( " i

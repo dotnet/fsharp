@@ -1,11 +1,11 @@
 [<Sealed>]
-type UnnecessarilySealedStruct = 
+type UnnecessarilySealedStruct =
     struct
         member x.P = 1
     end
 
 [<Sealed>]
-type BadSealedInterface = 
+type BadSealedInterface =
     interface
         abstract P : int
     end

@@ -1,4 +1,4 @@
-// #Regression #Conformance #TypeConstraints 
+// #Regression #Conformance #TypeConstraints
 // <Expects status="error" id="FS0001" span="(7,9-7,16)">The type 'int' does not have 'null' as a proper value</Expects>
 // <Expects status="error" id="FS0001" span="(14,9-14,16)">The type 'StructRecd' does not have 'null' as a proper value</Expects>
 // <Expects status="error" id="FS0001" span="(15,9-15,16)">The type 'StdRecd' does not have 'null' as a proper value</Expects>

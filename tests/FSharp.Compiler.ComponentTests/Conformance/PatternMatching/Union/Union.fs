@@ -19,7 +19,7 @@ module Union =
             (Error 18, Line 10, Col 7, Line 10, Col 28, "The two sides of this 'or' pattern bind different sets of variables")
             (Error 18, Line 10, Col 7, Line 10, Col 40, "The two sides of this 'or' pattern bind different sets of variables")
         ]
-        
+
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Union)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes = [|"E_NotAllCaptureSameVal01.fs"|])>]
     let ``Union - E_NotAllCaptureSameVal01_fs - --test:ErrorRanges`` compilation =
@@ -29,7 +29,7 @@ module Union =
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Error 18, Line 10, Col 7, Line 10, Col 31, "The two sides of this 'or' pattern bind different sets of variables")
-        
+
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Union)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes = [|"E_UnionCapturesDiffType01.fs"|])>]
     let ``Union - E_UnionCapturesDiffType01_fs - --test:ErrorRanges`` compilation =
@@ -42,7 +42,7 @@ module Union =
     'int'    
 but here has type
     'float'    ")
-        
+
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Union)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes = [|"unionPattern01.fs"|])>]
     let ``Union - unionPattern01_fs - --test:ErrorRanges`` compilation =
@@ -51,7 +51,7 @@ but here has type
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
-        
+
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Union)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes = [|"unionPattern02.fs"|])>]
     let ``Union - unionPattern02_fs - --test:ErrorRanges`` compilation =
@@ -60,7 +60,7 @@ but here has type
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
-        
+
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Union)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes = [|"unionPattern03.fs"|])>]
     let ``Union - unionPattern03_fs - --test:ErrorRanges`` compilation =
@@ -73,7 +73,7 @@ but here has type
             (Warning 26, Line 12, Col 7, Line 12, Col 12, "This rule will never be matched")
             (Warning 26, Line 21, Col 7, Line 21, Col 12, "This rule will never be matched")
         ]
-        
+
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Union)
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes = [|"unionPattern04.fs"|])>]
     let ``Union - unionPattern04_fs - --test:ErrorRanges`` compilation =
@@ -82,7 +82,7 @@ but here has type
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
-        
+
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes = [|"E_UnionPattern01.fs"|])>]
     let ``Union - E_UnionPattern1_fs - --test:ErrorRanges`` compilation =
         compilation
@@ -94,7 +94,7 @@ but here has type
             (Warning 25, Line 6, Col 9, Line 6, Col 10, "Incomplete pattern matches on this expression. For example, the value 'C' may indicate a case not covered by the pattern(s).")
             (Warning 26, Line 9, Col 5, Line 9, Col 22, "This rule will never be matched")
         ]
-        
+
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes = [|"E_UnionPattern02.fs"|])>]
     let ``Union - E_UnionPattern2_fs - --test:ErrorRanges`` compilation =
         compilation
@@ -106,7 +106,7 @@ but here has type
             (Warning 25, Line 6, Col 9, Line 6, Col 10, "Incomplete pattern matches on this expression. For example, the value 'C' may indicate a case not covered by the pattern(s).")
             (Warning 26, Line 9, Col 5, Line 9, Col 27, "This rule will never be matched")
         ]
-        
+
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes = [|"E_UnionPattern03.fs"|])>]
     let ``Union - E_UnionPattern3_fs - --test:ErrorRanges`` compilation =
         compilation
@@ -119,7 +119,7 @@ but here has type
             (Warning 25, Line 7, Col 11, Line 7, Col 12, "Incomplete pattern matches on this expression. For example, the value 'B' may indicate a case not covered by the pattern(s).")
             (Warning 26, Line 9, Col 7, Line 9, Col 8, "This rule will never be matched")
         ]
-        
+
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes = [|"E_UnionPattern04.fs"|])>]
     let ``Union - E_UnionPattern4_fs - --test:ErrorRanges`` compilation =
         compilation
@@ -130,7 +130,7 @@ but here has type
         |> withDiagnostics [
             (Warning 26, Line 4, Col 7, Line 4, Col 13, "This rule will never be matched")
         ]
-        
+
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes = [|"E_UnionPattern05.fs"|])>]
     let ``Union - E_UnionPattern5_fs - --test:ErrorRanges`` compilation =
         compilation
@@ -141,7 +141,7 @@ but here has type
         |> withDiagnostics [
             (Warning 26, Line 8, Col 7, Line 8, Col 23, "This rule will never be matched")
         ]
-        
+
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes = [|"E_UnionPattern06.fs"|])>]
     let ``Union - E_UnionPattern6_fs - --test:ErrorRanges`` compilation =
         compilation
@@ -153,7 +153,7 @@ but here has type
             (Warning 25, Line 6, Col 11, Line 6, Col 12, "Incomplete pattern matches on this expression. For example, the value 'B' may indicate a case not covered by the pattern(s).")
             (Warning 26, Line 8, Col 7, Line 8, Col 15, "This rule will never be matched")
         ]
-        
+
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes = [|"E_UnionPattern07.fs"|])>]
     let ``Union - E_UnionPattern7_fs - --test:ErrorRanges`` compilation =
         compilation
@@ -165,7 +165,7 @@ but here has type
             (Warning 25, Line 6, Col 11, Line 6, Col 12, "Incomplete pattern matches on this expression. For example, the value 'B' may indicate a case not covered by the pattern(s).")
             (Warning 26, Line 8, Col 7, Line 8, Col 26, "This rule will never be matched")
         ]
-        
+
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes = [|"E_UnionPattern08.fs"|])>]
     let ``Union - E_UnionPattern8_fs - --test:ErrorRanges`` compilation =
         compilation
@@ -177,7 +177,7 @@ but here has type
             (Warning 25, Line 6, Col 11, Line 6, Col 12, "Incomplete pattern matches on this expression. For example, the value 'B' may indicate a case not covered by the pattern(s).")
             (Warning 26, Line 8, Col 7, Line 8, Col 8, "This rule will never be matched")
         ]
-        
+
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes = [|"E_UnionPattern09.fs"|])>]
     let ``Union - E_UnionPattern9_fs - --test:ErrorRanges`` compilation =
         compilation
@@ -188,7 +188,7 @@ but here has type
         |> withDiagnostics [
             (Warning 26, Line 8, Col 7, Line 8, Col 39, "This rule will never be matched")
         ]
-        
+
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes = [|"E_UnionPattern10.fs"|])>]
     let ``Union - E_UnionPattern10_fs - --test:ErrorRanges`` compilation =
         compilation
@@ -199,7 +199,7 @@ but here has type
         |> withDiagnostics [
             (Warning 26, Line 8, Col 7, Line 8, Col 52, "This rule will never be matched")
         ]
-        
+
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes = [|"E_UnionPattern11.fs"|])>]
     let ``Union - E_UnionPattern11_fs - --test:ErrorRanges`` compilation =
         compilation
@@ -210,7 +210,7 @@ but here has type
         |> withDiagnostics [
             (Warning 26, Line 8, Col 7, Line 8, Col 55, "This rule will never be matched")
         ]
-        
+
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes = [|"UpperUnionCasePattern01.fs"|])>]
     let ``Union - UpperUnionCasePattern01_fs LangVersion90 - --test:ErrorRanges`` compilation =
         compilation
@@ -261,7 +261,7 @@ but here has type
             (Warning 49, Line 55, Col 14, Line 55, Col 17, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.");
             (Warning 49, Line 56, Col 14, Line 56, Col 17, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
         ]
-        
+
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes = [|"UpperUnionCasePattern02.fs"|])>]
     let ``Union - UpperUnionCasePattern02_fs - --test:ErrorRanges`` compilation =
         compilation

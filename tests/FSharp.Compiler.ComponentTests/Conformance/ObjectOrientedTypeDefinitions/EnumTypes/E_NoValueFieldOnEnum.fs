@@ -1,8 +1,8 @@
-// #Regression #Conformance #ObjectOrientedTypes #Enums 
+// #Regression #Conformance #ObjectOrientedTypes #Enums
 // FS1 992: ilreflect error triggered with Enum value__ calls.
 //<Expects id="FS0039" status="error">The type 'EnumType' does not define a field, constructor, or member named 'value__'</Expects>
 
-type EnumType = 
+type EnumType =
     | A = 1
     | B = 2
     | C = 3

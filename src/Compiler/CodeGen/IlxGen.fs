@@ -639,7 +639,8 @@ let rec GenTypeArgAux cenv m tyenv tyarg =
     GenTypeAux cenv m tyenv VoidNotOK PtrTypesNotOK tyarg
 
 and GenTypeArgsAux cenv m tyenv tyargs =
-    List.map (GenTypeArgAux cenv m tyenv) (DropErasedTyargs tyargs)
+    DropErasedTyargs tyargs
+    |> ListInline.map (fun tyarg -> GenTypeArgAux cenv m tyenv tyarg)
 
 and GenTyAppAux cenv m tyenv repr tinst =
     match repr with

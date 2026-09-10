@@ -1,16 +1,16 @@
-// #Regression #Conformance #TypesAndModules #Records 
+// #Regression #Conformance #TypesAndModules #Records
 // Implicitly implemented Equals should not throw
 // Regression test for FSHARP1.0:1633
 // Records
 
 
-type R = { A : string } 
-type S = { B : int } 
+type R = { A : string }
+type S = { B : int }
 
 let r = { A = "Hello" }
 let s = { B = 10 }
 
-let e = 
+let e =
     try
        let _ = r.Equals(r)                // compare to itself
        let _ = r.Equals({A = "World"})    // compare to another record (same type)

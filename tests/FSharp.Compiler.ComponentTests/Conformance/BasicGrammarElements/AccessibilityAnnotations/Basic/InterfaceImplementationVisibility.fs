@@ -7,7 +7,7 @@ module Definitions =
 
     type PublicArg() = class end
 
-    type private IPrivateInterface =  
+    type private IPrivateInterface =
         abstract A : PublicArg -> InternalArg
         abstract B : PublicArg -> PrivateArg
         abstract C : InternalArg  -> PrivateArg

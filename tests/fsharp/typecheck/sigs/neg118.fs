@@ -14,7 +14,7 @@ type FoldArgs<'t> with
     static member        ($) (FoldArgs f, _:'t        ) = f
 
 let test1() =
-    let x:int     = foldArgs (+) 2 3 
+    let x:int     = foldArgs (+) 2 3
     let y:int     = foldArgs (+) 2 3 4
     let z:int     = foldArgs (+) 2 3 4 5
     let d:decimal = foldArgs (+) 2M 3M 4M

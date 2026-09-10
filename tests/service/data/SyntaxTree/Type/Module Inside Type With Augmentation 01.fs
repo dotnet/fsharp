@@ -1,7 +1,7 @@
 // Expected: Warning for module in type augmentation
 module Module
 
-type A = 
+type A =
     | A
     with
         module M = begin end

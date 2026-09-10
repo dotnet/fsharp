@@ -1,12 +1,12 @@
-// #Conformance #BasicGrammarElements #Operators 
+// #Conformance #BasicGrammarElements #Operators
 // Test issue FSHARP1.0:902
 
 open System
 open Operators.Checked
 
-let testNoOverflow op overflowArg = 
-    try 
-        let r = op overflowArg 
+let testNoOverflow op overflowArg =
+    try
+        let r = op overflowArg
         ()
     with
         | :? OverflowException -> failwith "Failed: 1"
@@ -38,7 +38,7 @@ testNoOverflow uint16 65535
 testNoOverflow uint32 4294967295L
 testNoOverflow uint64 8446744073709551615.0f
 testNoOverflow unativeint 4294967295L
-    
+
 testNoOverflow int -2147483647L
 testNoOverflow int16 -32767
 testNoOverflow int32 -2147483647L

@@ -1,4 +1,4 @@
-// #Regression #Conformance #TypesAndModules #Records 
+// #Regression #Conformance #TypesAndModules #Records
 // Regression test for FSHARP1.0:5535
 // Record type
 type R = { A : int; B : char }
