@@ -14,8 +14,8 @@ type DocumentCacheTests() =
     // project's dependent semantic version without touching `Target`'s own text.
     let openTwoFileProject () =
         let projectId = ProjectId.CreateNewId()
-        let otherPath = @"C:\Other.fs"
-        let targetPath = @"C:\Target.fs"
+        let otherPath = "C:\Other.fs"
+        let targetPath = "C:\Target.fs"
 
         let otherInfo =
             RoslynTestHelpers.CreateDocumentInfo projectId otherPath "let value = 1"
@@ -24,7 +24,7 @@ type DocumentCacheTests() =
             RoslynTestHelpers.CreateDocumentInfo projectId targetPath "let read () = 1"
 
         let projectInfo =
-            RoslynTestHelpers.CreateProjectInfo projectId @"C:\test.fsproj" [ otherInfo; targetInfo ]
+            RoslynTestHelpers.CreateProjectInfo projectId "C:\test.fsproj" [ otherInfo; targetInfo ]
 
         let solution = RoslynTestHelpers.CreateSolution [ projectInfo ]
 
