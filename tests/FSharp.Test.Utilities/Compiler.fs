@@ -2412,14 +2412,25 @@ $ code --diff {outFile} {expectedFile}
     /// Result type for CLI subprocess execution (runFsiProcess / runFscProcess).
     type ProcessResult = { ExitCode: int; StdOut: string; StdErr: string }
 
+    /// Quote an argument that contains whitespace so the child process's command line
+    /// parser sees it as a single token. Arguments routinely embed paths with spaces,
+    /// e.g. a temp directory under "C:\Users\First Last", or the .NET Framework
+    /// reference assemblies under "C:\Program Files (x86)".
+    let private quoteArg (arg: string) =
+        if arg |> Seq.exists Char.IsWhiteSpace && not (arg.StartsWith("\"", StringComparison.Ordinal)) then
+            "\"" + arg + "\""
+        else
+            arg
+
     /// Run an F# tool (FSI or FSC) as a subprocess. Shared helper for runFsiProcess / runFscProcess.
     let private runToolProcess (toolPath: string) (args: string list) : ProcessResult =
+        let quotedArgs = args |> List.map quoteArg |> String.concat " "
 #if NETCOREAPP
         let exe = TestFramework.initialConfig.DotNetExe
-        let arguments = toolPath + " " + (args |> String.concat " ")
+        let arguments = quoteArg toolPath + " " + quotedArgs
 #else
         let exe = toolPath
-        let arguments = args |> String.concat " "
+        let arguments = quotedArgs
 #endif
         let exitCode, stdout, stderr = Commands.executeProcess exe arguments (Directory.GetCurrentDirectory())
         { ExitCode = exitCode; StdOut = stdout; StdErr = stderr }

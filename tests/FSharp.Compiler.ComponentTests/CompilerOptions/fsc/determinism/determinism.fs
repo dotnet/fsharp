@@ -194,7 +194,9 @@ module Determinism
             if unicodeMappedPath then "/mapped/" + String.replicate 128 "日本語"
             else "/mapped"
         let tempRoot =
-            Path.Combine(Path.GetTempPath(), "fsharp-pdb-path-length-" + Guid.NewGuid().ToString("N"))
+            // The space is deliberate: argument quoting must survive a temp root
+            // containing spaces (e.g. TEMP under "C:\Users\First Last").
+            Path.Combine(Path.GetTempPath(), "fsharp pdb path length " + Guid.NewGuid().ToString("N"))
         try
             let compileIn directory value =
                 let workDir = Path.Combine(tempRoot, directory)
