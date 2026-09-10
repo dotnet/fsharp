@@ -81,7 +81,7 @@ let private locateFsi () =
 /// A running session, plus everything needed to talk to it and to explain a failure.
 [<Sealed>]
 type FsiServerHarness(?extraArguments: string list, ?workingDirectory: string) =
-    let pipeName = "FsiServerTests_" + Guid.NewGuid().ToString("N")
+    let pipeName = $"FsiServerTests_{Guid.NewGuid():N}"
     let standardOutput = StringBuilder()
     let standardError = StringBuilder()
     let outputLock = obj ()
@@ -93,7 +93,7 @@ type FsiServerHarness(?extraArguments: string list, ?workingDirectory: string) =
             argument.IndexOf(" ", StringComparison.Ordinal) >= 0
             && not (argument.StartsWith("\"", StringComparison.Ordinal))
         then
-            "\"" + argument + "\""
+            $"\"{argument}\""
         else
             argument
 
@@ -104,7 +104,7 @@ type FsiServerHarness(?extraArguments: string list, ?workingDirectory: string) =
             [
                 yield! leadingArguments
                 "--nologo"
-                "--fsi-server-jsonrpc:" + pipeName
+                $"--fsi-server-jsonrpc:{pipeName}"
                 yield! defaultArg extraArguments []
             ]
 

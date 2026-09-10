@@ -222,7 +222,7 @@ let ``keeps serving after a failed interaction`` () =
 let ``loads a script file`` () =
     withInitializedSession (fun session ->
         let script =
-            Path.Combine(Path.GetTempPath(), $"""fsiServerTest_%s{Guid.NewGuid().ToString "N"}.fsx""")
+            Path.Combine(Path.GetTempPath(), $"fsiServerTest_{Guid.NewGuid():N}.fsx")
 
         File.WriteAllText(script, "printfn \"the script ran\"\n")
 
@@ -246,7 +246,7 @@ let ``loads a script file`` () =
 let ``setPaths changes the working directory`` () =
     withInitializedSession (fun session ->
         let directory =
-            Path.Combine(Path.GetTempPath(), $"""fsiServerTest_%s{Guid.NewGuid().ToString "N"}""")
+            Path.Combine(Path.GetTempPath(), $"fsiServerTest_{Guid.NewGuid():N}")
 
         Directory.CreateDirectory directory |> ignore
 
@@ -276,7 +276,7 @@ let ``setPaths changes the working directory`` () =
 let ``setPaths waits its turn behind a running interaction`` () =
     withInitializedSession (fun session ->
         let directory =
-            Path.Combine(Path.GetTempPath(), $"""fsiServerTest_%s{Guid.NewGuid().ToString "N"}""")
+            Path.Combine(Path.GetTempPath(), $"fsiServerTest_{Guid.NewGuid():N}")
 
         Directory.CreateDirectory directory |> ignore
 
