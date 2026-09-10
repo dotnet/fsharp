@@ -4,6 +4,9 @@ description: |
   state machine they define, renders Mermaid diagrams + tables in
   .github/docs/state-machine.md. Weekly. Opens PR if changed.
 
+imports:
+  - shared/model-defaults.md
+
 on:
   schedule: every 7d
   workflow_dispatch:
@@ -261,7 +264,7 @@ You are a workflow-automation documentor. You read all workflow files in `.githu
 38. **`always()` in guard expressions MUST be preserved.** When a job `if:` uses `always() && <condition>`, the `always()` modifier is semantically significant — it means the job evaluates even when predecessors fail/are skipped. Document the FULL expression including `always()`. Dropping `always()` changes the semantics and is HIGH error.
 
 39. **gh-aw `safe-outputs:` — signature, not enumeration.** For each gh-aw `.md` workflow, document its safe-output **signature**: which action verbs it can emit (`create-pull-request`, `add-comment`, `push-to-pull-request-branch`, `add-labels`, etc.) and the distinguishing config per verb. **Do NOT exhaustively list every leaf key.** Universal defaults are suppressed: `target: "*"`, `noop.report-as-issue: false`, `draft: false`. Per-workflow blocks list only OVERRIDES + behaviorally distinguishing fields: `max`, `title-prefix`, `labels`/`allowed`, `allowed-files`, `protected-files`, `reviewers`, `auto-merge`, `hide-older-comments` (when true), `base`.
-    **Format — PREFER PER-WORKFLOW MINI-TABLES** with columns `| Workflow | Output | Max | Key Constraints |`. Tables scan faster than run-on prose for any workflow with ≥3 actions or any action with ≥3 distinguishing fields. Multi-reviewer feedback (Sonnet + GPT-5.4 + Gemini, average 2.67/5 on first pass) ranked run-on safe-output prose as the #1 readability failure mode. Example:
+    **Format — PREFER PER-WORKFLOW MINI-TABLES** with columns `| Workflow | Output | Max | Key Constraints |`. Tables scan faster than run-on prose for any workflow with ≥3 actions or any action with ≥3 distinguishing fields. Example:
     ```
     | Workflow | Output | Max | Key Constraints |
     |---|---|---|---|

@@ -61,8 +61,8 @@ routing); steps 3–4 are per-mode prep once a mode is picked:
 
 Dispatch **3–5 background reviewers in parallel** — never sequentially.
 **Cross-model > cross-angle**: three same-model agents with different
-prompts ≠ three different models (Opus high/xhigh, newer Opus, GPT). Each
-agent picks one angle from the mode's template. Record
+prompts ≠ three different models. Use distinct available model families.
+Each agent picks one angle from the mode's template. Record
 `model × angle × LOC × tests × reuse × verdict`. Cross-model agreement is
 signal; lone-model claims need code citations before promotion.
 
