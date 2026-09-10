@@ -431,7 +431,7 @@ New features must be gated behind language version checks. Breaking changes requ
 
 ## Review Workflow
 
-Execute review in five waves, each building on the previous.
+Execute review in six waves, each building on the previous.
 
 ### Wave 0: Orientation & Dimension Dispatch
 
