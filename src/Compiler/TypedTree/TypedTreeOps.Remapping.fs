@@ -1699,7 +1699,7 @@ module internal ExprRemapping =
 
         let memberInfoR =
             d.MemberInfo
-            |> Option.map (remapMemberInfo ctxt d.val_range valReprInfo ty tyR tmenv)
+            |> Option.map (fun mi -> remapMemberInfo ctxt d.val_range valReprInfo ty tyR tmenv mi)
 
         let attribsR = d.Attribs |> remapAttribs ctxt tmenv
 

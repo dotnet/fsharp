@@ -37,3 +37,6 @@ Array3D.get array3D 0 0 0 |> Array3D.set array3D 0 0 0
 // Array4D Renamings
 (Array4D.length1 array4D, Array4D.length2 array4D, Array4D.length3 array4D, Array4D.length4 array4D) |> ignore
 Array4D.get array4D 0 0 0 0 |> Array4D.set array4D 0 0 0 0
+
+// Array2D.init renaming, appended here rather than above to limit IL baseline churn.
+Array2D.init 2 2 (fun i j -> i + j) |> ignore
