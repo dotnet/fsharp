@@ -65,6 +65,19 @@ let ``unknown methods are refused`` () =
         | None -> failwith "the session accepted an unknown method"
         | Some code -> Assert.Equal(-32601, code))
 
+[<Fact>]
+let ``only the protocol's own methods are reachable`` () =
+    withInitializedSession (fun session ->
+        // StreamJsonRpc offers every public member of the target it is given, so a member that
+        // closed the execution queue would let a host silently stop the session from ever running
+        // another interaction.
+        match session.RequestExpectingError("Complete", obj ()) with
+        | None -> failwith "the session accepted a method that is not part of the protocol"
+        | Some code -> Assert.Equal(-32601, code)
+
+        let result = session.Execute "1 + 1"
+        Assert.True(succeeded result, describe session result))
+
 //-------------------------------------------------------------------------
 // Evaluating interactions
 //-------------------------------------------------------------------------
@@ -253,6 +266,58 @@ let ``setPaths changes the working directory`` () =
             let expected = Path.GetFullPath(directory).TrimEnd(Path.DirectorySeparatorChar)
             let actual = Path.GetFullPath(result.workingDirectory).TrimEnd(Path.DirectorySeparatorChar)
             Assert.Equal(expected, actual)
+        finally
+            try
+                Directory.Delete(directory, true)
+            with _ ->
+                ())
+
+[<Fact>]
+let ``setPaths waits its turn behind a running interaction`` () =
+    withInitializedSession (fun session ->
+        let directory =
+            Path.Combine(Path.GetTempPath(), sprintf "fsiServerTest_%s" (Guid.NewGuid().ToString "N"))
+
+        Directory.CreateDirectory directory |> ignore
+
+        try
+            // Warm the session up, so that the interaction below is genuinely running by the time
+            // the request to move the directory arrives.
+            let warmUp = session.Execute "1"
+            Assert.True(succeeded warmUp, describe session warmUp)
+
+            let running =
+                session.BeginRequest<ExecutionResult>(
+                    Methods.Execute,
+                    FsiServerHarness.ExecuteParams
+                        """
+System.Threading.Thread.Sleep 5000
+printfn "interaction saw [%s]" (System.IO.Directory.GetCurrentDirectory())
+"""
+                )
+
+            Thread.Sleep 2000
+
+            let moved =
+                session.Request<ExecutionResult>(
+                    Methods.SetPaths,
+                    {
+                        includePaths = [||]
+                        workingDirectory = directory
+                    }
+                )
+
+            Assert.True(succeeded moved, describe session moved)
+
+            let result = session.EndRequest(running, TimeSpan.FromSeconds 60.0)
+            Assert.True(succeeded result, describe session result)
+
+            // The process directory moves on the queue like everything else, so an interaction that
+            // was already running keeps the directory it started in.
+            Assert.True(
+                session.WaitForOutput(sprintf "interaction saw [%s]" warmUp.workingDirectory),
+                describe session result
+            )
         finally
             try
                 Directory.Delete(directory, true)

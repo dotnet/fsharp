@@ -111,8 +111,11 @@ let private toExecutionResult (outcome: Choice<FsiValue option, exn>) (diagnosti
 
 /// Serialises the interactions submitted by the host onto a single worker, so that they are
 /// evaluated strictly in the order they were received.
+///
+/// Owned by the server loop rather than by the target the host calls into: closing the queue ends
+/// the session's willingness to run anything, and must not be reachable from the wire.
 [<Sealed>]
-type private ExecutionQueue() =
+type internal ExecutionQueue() =
     let queue = new BlockingCollection<unit -> unit>()
 
     let worker =
@@ -131,13 +134,17 @@ type private ExecutionQueue() =
 
     do worker.Start()
 
-    member _.Enqueue(job: unit -> unit) =
-        if not queue.IsAddingCompleted then
+    /// False once the queue is closed, when the job will never run. Checking `IsAddingCompleted`
+    /// first would still race with the close, and a job silently dropped leaves the host waiting on
+    /// a task nothing completes.
+    member _.TryEnqueue(job: unit -> unit) =
+        try
             queue.Add job
+            true
+        with :? InvalidOperationException ->
+            false
 
-    member _.Complete() =
-        if not queue.IsAddingCompleted then
-            queue.CompleteAdding()
+    member _.Complete() = queue.CompleteAdding()
 
 /// The object the host calls into.
 ///
@@ -148,17 +155,22 @@ type private ExecutionQueue() =
 /// over the instance it is handed, and under `--realsig-` a member's own IL visibility is capped by
 /// its enclosing scope's, so an internal type (or an internal module around a public one) would
 /// take away the public visibility that reflection needs regardless of what the members declare.
+///
+/// StreamJsonRpc offers every public member, not only the attributed ones, so the public members
+/// here are exactly the handlers the protocol defines. The construction the server loop needs goes
+/// through the internal constructor instead.
 [<Sealed>]
 type FsiRpcTarget
+    internal
     (
         fsiSession: FsiEvaluationSession,
         fsiConfig: FsiEvaluationSessionHostConfig,
         outWriter: TextWriter,
         errorWriter: TextWriter,
-        shutdownRequested: TaskCompletionSource<unit>
+        shutdownRequested: TaskCompletionSource<unit>,
+        executionQueue: ExecutionQueue
     ) =
 
-    let executionQueue = ExecutionQueue()
     let interruptLock = obj ()
     let mutable currentCancellation: CancellationTokenSource = null
     let mutable initialized = false
@@ -198,16 +210,23 @@ type FsiRpcTarget
             lock interruptLock (fun () -> currentCancellation <- null)
             cancellation.Dispose()
 
-    /// Queue an interaction and hand back the task the host is waiting on.
+    /// Queue an interaction and hand back the task the host is waiting on. A request that arrives
+    /// once the session has stopped accepting work fails, rather than waiting for a turn that will
+    /// never come.
     let queueInteraction (run: unit -> ExecutionResult) =
         let completion =
             TaskCompletionSource<ExecutionResult>(TaskCreationOptions.RunContinuationsAsynchronously)
 
-        executionQueue.Enqueue(fun () ->
-            try
-                completion.TrySetResult(run ()) |> ignore
-            with e ->
-                completion.TrySetException e |> ignore)
+        let queued =
+            executionQueue.TryEnqueue(fun () ->
+                try
+                    completion.TrySetResult(run ()) |> ignore
+                with e ->
+                    completion.TrySetException e |> ignore)
+
+        if not queued then
+            completion.TrySetException(LocalRpcException("The F# Interactive session is shutting down", ErrorCode = -32001))
+            |> ignore
 
         completion.Task
 
@@ -239,8 +258,6 @@ type FsiRpcTarget
         with _ ->
             // An unknown process id is not fatal: the session simply loses orphan protection.
             ()
-
-    member _.Complete() = executionQueue.Complete()
 
     [<JsonRpcMethod(Methods.Initialize, UseSingleObjectParameterDeserialization = true)>]
     member _.Initialize(request: InitializeRequest) : InitializeResult =
@@ -289,33 +306,37 @@ type FsiRpcTarget
     member _.SetPaths(request: SetPathsRequest) : Task<ExecutionResult> =
         requireInitialized ()
 
-        let directives = ResizeArray()
+        // The process directory moves on the queue, alongside the directive that moves the
+        // compiler's: doing it as the request arrives would move it under an earlier interaction
+        // that is still running.
+        queueInteraction (fun () ->
+            let directives = ResizeArray()
 
-        if
-            not (String.IsNullOrWhiteSpace request.workingDirectory)
-            && Directory.Exists request.workingDirectory
-        then
-            // Two different notions of "current directory" have to agree here. The directive moves
-            // the compiler's, which is what relative #load and #r resolve against; the process one
-            // is what the running script sees when it opens a file by relative path.
-            try
-                Directory.SetCurrentDirectory request.workingDirectory
-            with _ ->
-                ()
+            if
+                not (String.IsNullOrWhiteSpace request.workingDirectory)
+                && Directory.Exists request.workingDirectory
+            then
+                // Two different notions of "current directory" have to agree here. The directive
+                // moves the compiler's, which is what relative #load and #r resolve against; the
+                // process one is what the running script sees when it opens a file by relative path.
+                try
+                    Directory.SetCurrentDirectory request.workingDirectory
+                with _ ->
+                    ()
 
-            directives.Add(sprintf "#silentCd @\"%s\"" request.workingDirectory)
+                directives.Add(sprintf "#silentCd @\"%s\"" request.workingDirectory)
 
-        match request.includePaths with
-        | null -> ()
-        | paths ->
-            for path in paths do
-                if not (String.IsNullOrWhiteSpace path) then
-                    directives.Add(sprintf "#I @\"%s\"" path)
+            match request.includePaths with
+            | null -> ()
+            | paths ->
+                for path in paths do
+                    if not (String.IsNullOrWhiteSpace path) then
+                        directives.Add(sprintf "#I @\"%s\"" path)
 
-        if directives.Count = 0 then
-            queueInteraction (fun () -> toExecutionResult (Choice1Of2 None) [||] false)
-        else
-            queueInteraction (fun () -> runInteraction (String.Join("\n", directives)) DefaultInteractionName)
+            if directives.Count = 0 then
+                toExecutionResult (Choice1Of2 None) [||] false
+            else
+                runInteraction (String.Join("\n", directives)) DefaultInteractionName)
 
     /// Interrupt the interaction in flight.
     ///
@@ -371,8 +392,10 @@ let private runServer
     let shutdownRequested =
         TaskCompletionSource<unit>(TaskCreationOptions.RunContinuationsAsynchronously)
 
+    let executionQueue = ExecutionQueue()
+
     let target =
-        FsiRpcTarget(fsiSession, fsiConfig, outWriter, errorWriter, shutdownRequested)
+        FsiRpcTarget(fsiSession, fsiConfig, outWriter, errorWriter, shutdownRequested, executionQueue)
 
     use rpc =
         new JsonRpc(new HeaderDelimitedMessageHandler(pipe, new JsonMessageFormatter()))
@@ -397,7 +420,7 @@ let private runServer
         // disappears from under it.
         Task.Delay(250).Wait()
 
-    target.Complete()
+    executionQueue.Complete()
 
 /// Start the server on a background thread and return, leaving the caller's thread free to drive
 /// the event loop. Mirrors how a console session spawns its standard input reader.
