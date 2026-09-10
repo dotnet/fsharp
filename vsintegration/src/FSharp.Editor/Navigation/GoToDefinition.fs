@@ -355,7 +355,7 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
             let! ct = Async.CancellationToken |> liftAsync
 
             match targetSymbolUse.Symbol.DeclarationLocation with
-            | Some decl when decl.FileName = filePath -> return decl
+            | Some decl when decl.FileName |> isTheFileAt filePath -> return decl
             | _ ->
                 let! _, checkFileResults =
                     document.GetFSharpParseAndCheckResultsAsync("FindSymbolDeclarationInDocument")
