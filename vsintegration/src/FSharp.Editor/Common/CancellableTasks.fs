@@ -777,7 +777,9 @@ module CancellableTasks =
                     }
 
             // try not to yield if on bg thread already
-            let tcs = new TaskCompletionSource<_>(TaskCreationOptions.None)
+            let tcs =
+                new TaskCompletionSource<_>(TaskCreationOptions.RunContinuationsAsynchronously)
+
             let barrier = VolatileBarrier()
 
             let reg =
