@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CodeSnippets xmlns="http://schemas.microsoft.com/VisualStudio/2005/CodeSnippet">
+  <CodeSnippet Format="1.0.0">
+    <Header>
+      <Title>du</Title>
+      <Shortcut>du</Shortcut>
+      <Description>Code snippet for a discriminated union type</Description>
+      <Author>Microsoft Corporation</Author>
+      <SnippetTypes>
+        <SnippetType>Expansion</SnippetType>
+      </SnippetTypes>
+    </Header>
+    <Snippet>
+      <Declarations>
+        <Literal>
+          <ID>name</ID>
+          <ToolTip>Union name</ToolTip>
+          <Default>MyUnion</Default>
+        </Literal>
+        <Literal>
+          <ID>case1</ID>
+          <ToolTip>First case</ToolTip>
+          <Default>Case1</Default>
+        </Literal>
+        <Literal>
+          <ID>case2</ID>
+          <ToolTip>Second case</ToolTip>
+          <Default>Case2</Default>
+        </Literal>
+        <Literal>
+          <ID>type</ID>
+          <ToolTip>Field type of the second case</ToolTip>
+          <Default>int</Default>
+        </Literal>
+      </Declarations>
+      <Code Language="FSharp"><![CDATA[type $name$ =
+    | $case1$
+    | $case2$ of $type$
+$end$]]></Code>
+    </Snippet>
+  </CodeSnippet>
+</CodeSnippets>

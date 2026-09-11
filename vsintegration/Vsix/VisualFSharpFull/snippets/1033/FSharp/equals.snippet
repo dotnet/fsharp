@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CodeSnippets xmlns="http://schemas.microsoft.com/VisualStudio/2005/CodeSnippet">
+  <CodeSnippet Format="1.0.0">
+    <Header>
+      <Title>equals</Title>
+      <Shortcut>equals</Shortcut>
+      <Description>Code snippet for Equals and GetHashCode overrides</Description>
+      <Author>Microsoft Corporation</Author>
+      <SnippetTypes>
+        <SnippetType>Expansion</SnippetType>
+      </SnippetTypes>
+    </Header>
+    <Snippet>
+      <Declarations>
+        <Literal Editable="false">
+          <ID>classname</ID>
+          <ToolTip>Class name</ToolTip>
+          <Function>ClassName()</Function>
+          <Default>ClassNamePlaceholder</Default>
+        </Literal>
+      </Declarations>
+      <Code Language="FSharp"><![CDATA[override this.Equals(other) =
+    match other with
+    | :? $classname$ as other -> $end$
+    | _ -> false
+
+override this.GetHashCode() = 0]]></Code>
+    </Snippet>
+  </CodeSnippet>
+</CodeSnippets>
