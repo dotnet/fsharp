@@ -105,6 +105,13 @@ Sugerir nombres para identificadores sin resolver;</target>
         <target state="translated">Usar la resta en lugar de la negación</target>
         <note />
       </trans-unit>
+      <trans-unit id="CopilotSymbolTooltip">
+        <source>{0} in {1}
+{2}</source>
+        <target state="new">{0} in {1}
+{2}</target>
+        <note>Tooltip of an F# declaration in the Copilot Chat "#" picker, as Copilot shows a C# one. {0} is the kind of declaration (Class, Method, Field...), {1} the file name, {2} the declaration's name.</note>
+      </trans-unit>
       <trans-unit id="FSharpDisposableLocalValuesClassificationType">
         <source>F# Disposable Values (locals)</source>
         <target state="translated">Valores de F# descartables (locales)</target>
