@@ -737,6 +737,38 @@ let test (f: Foo) = C.M<Foo, int>(f, 0)
         |> shouldSucceed
         |> ignore
 
+    [<Theory>]
+    [<InlineData("Foo, int")>]
+    [<InlineData("Foo, string")>]
+    [<InlineData("_, int")>]
+    [<InlineData("_, string")>]
+    let ``Same arity overload resolution rolls back failed candidate constraints`` (typeArguments: string) =
+        FSharp $"""
+module ReproCompetingOverloads
+
+type I<'a> = interface end
+
+type Foo() =
+    interface I<int>
+    interface I<string>
+
+type C =
+    static member M<'a, 'b when 'a :> I<'b> and 'a : struct>(x: 'a, y: obj) = 1
+    static member M<'a, 'b when 'a :> I<'b>>(x: obj, y: 'a) = 2
+
+[<EntryPoint>]
+let main _ =
+    let f = Foo()
+    let selected = C.M<{typeArguments}>(f, f)
+    if selected <> 2 then failwithf "Expected overload 2, got %%d" selected
+    0
+"""
+        |> asExe
+        |> withLangVersion11
+        |> compileExeAndRun
+        |> shouldSucceed
+        |> ignore
+
     [<Fact>]
     let ``Workaround ordering keeps compiling under langversion 10`` () =
         FSharp """
