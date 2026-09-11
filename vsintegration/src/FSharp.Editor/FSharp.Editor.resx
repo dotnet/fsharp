@@ -368,4 +368,9 @@ Use live (unsaved) buffers for analysis</value>
   <data name="ReturnsHeader" xml:space="preserve">
     <value>Returns:</value>
   </data>
+  <data name="CopilotSymbolTooltip" xml:space="preserve">
+    <value>{0} in {1}
+{2}</value>
+    <comment>Tooltip of an F# declaration in the Copilot Chat "#" picker, as Copilot shows a C# one. {0} is the kind of declaration (Class, Method, Field...), {1} the file name, {2} the declaration's name.</comment>
+  </data>
 </root>
