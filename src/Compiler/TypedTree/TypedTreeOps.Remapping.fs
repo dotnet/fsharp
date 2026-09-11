@@ -123,6 +123,9 @@ module internal SignatureOps =
                 }
 
             (mrpi, mhi)
+        | Some sigtycon when sigtycon.Stamp = entity.Stamp ->
+            // The signature is the inferred one, so nothing is repackaged or hidden
+            (mrpi, mhi)
         | Some sigtycon ->
             // The type constructor is in the signature. Hence record the repackage entry
             let sigtcref = mkLocalTyconRef sigtycon
@@ -196,6 +199,7 @@ module internal SignatureOps =
                 }
 
             (mrpi, mhi)
+        | Some sigtycon when sigtycon.Stamp = entity.Stamp -> (mrpi, mhi)
         | Some sigtycon ->
             // The type constructor is in the signature. Hence record the repackage entry
             let sigtcref = mkLocalTyconRef sigtycon
@@ -233,6 +237,7 @@ module internal SignatureOps =
                 }
 
             (mrpi, mhi)
+        | Some(sigVal: Val) when sigVal.Stamp = implVal.Stamp -> (mrpi, mhi)
         | Some(sigVal: Val) ->
             // The value is in the signature. Add the repackage entry.
             let mrpi =
@@ -2466,15 +2471,6 @@ module internal ExprRemapping =
             }
 
         remapPossibleForallTyImpl ctxt tmenv ty
-
-    let copyModuleOrNamespaceType g compgen mtyp =
-        let ctxt =
-            {
-                g = g
-                stackGuard = StackGuard("RemapExprStackGuardDepth")
-            }
-
-        copyAndRemapAndBindModTy ctxt compgen Remap.Empty mtyp |> fst
 
     let copyExpr g compgen e =
         let ctxt =

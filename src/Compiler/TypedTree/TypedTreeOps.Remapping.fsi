@@ -221,9 +221,6 @@ module internal ExprRemapping =
     /// Remap a (possible generic) type using the given remapping substitution
     val remapPossibleForallTy: TcGlobals -> Remap -> TType -> TType
 
-    /// Copy an entire module or namespace type using the given copying flags
-    val copyModuleOrNamespaceType: TcGlobals -> ValCopyFlag -> ModuleOrNamespaceType -> ModuleOrNamespaceType
-
     /// Copy an entire expression using the given copying flags
     val copyExpr: TcGlobals -> ValCopyFlag -> Expr -> Expr
 

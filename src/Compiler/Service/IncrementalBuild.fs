@@ -219,6 +219,8 @@ type TcInfoExtras =
       /// Result of checking most recent file, if any
       latestImplFile: CheckedImplFile option
 
+      latestOwnSigForFile: ModuleOrNamespaceType option
+
       /// If enabled, stores a linear list of ranges and strings that identify an Item(symbol) in a file. Used for background find all references.
       itemKeyStore: ItemKeyStore option
 
@@ -230,7 +232,7 @@ type TcInfoExtras =
         x.tcSymbolUses
 
 type private SingleFileDiagnostics = PhasedDiagnostic array
-type private TypeCheck = TcInfo * TcResultsSinkImpl * CheckedImplFile option * string * SingleFileDiagnostics
+type private TypeCheck = TcInfo * TcResultsSinkImpl * CheckedImplFile option * ModuleOrNamespaceType option * string * SingleFileDiagnostics
 
 /// Bound model of an underlying syntax and typed tree.
 type BoundModel private (
@@ -264,7 +266,7 @@ type BoundModel private (
             let hadParseErrors = not (Array.isEmpty parseErrors)
             let input, moduleNamesDict = DeduplicateParsedInputModuleName prevTcInfo.moduleNamesDict input
 
-            let! (tcEnvAtEndOfFile, topAttribs, implFile, ccuSigForFile), tcState =
+            let! (tcEnvAtEndOfFile, topAttribs, implFile, ccuSigForFile, ownSigForFile), tcState =
                 CheckOneInput (
                         (fun () -> hadParseErrors || diagnosticsLogger.ErrorCount > 0),
                         tcConfig, tcImports,
@@ -295,7 +297,7 @@ type BoundModel private (
                         | _ ->
                             None
                 }
-            return tcInfo, sink, implFile, fileName, newErrors
+            return tcInfo, sink, implFile, Some ownSigForFile, fileName, newErrors
         }
 
     let skippedImplementationTypeCheck =
@@ -303,7 +305,7 @@ type BoundModel private (
         | Some syntaxTree, Some (_, qualifiedName) when syntaxTree.HasSignature ->
             let input, _, fileName, _ = syntaxTree.Skip qualifiedName
             SkippedImplFilePlaceholder(tcConfig, tcImports, tcGlobals, prevTcInfo.tcState, input)
-            |> Option.map (fun ((_, topAttribs, _, ccuSigForFile), tcState) ->
+            |> Option.map (fun ((_, topAttribs, _, ccuSigForFile, _), tcState) ->
                     {
                         tcState = tcState
                         tcEnvAtEndOfFile = tcState.TcEnvFromImpls
@@ -318,13 +320,13 @@ type BoundModel private (
 
     let getTcInfo (typeCheck: GraphNode<TypeCheck>) =
         async {
-            let! tcInfo , _, _, _, _ = typeCheck.GetOrComputeValue()
+            let! tcInfo , _, _, _, _, _ = typeCheck.GetOrComputeValue()
             return tcInfo
         } |> GraphNode
 
     let getTcInfoExtras (typeCheck: GraphNode<TypeCheck>) =
         async {
-            let! _ , sink, implFile, fileName, _ = typeCheck.GetOrComputeValue()
+            let! _ , sink, implFile, ownSigForFile, fileName, _ = typeCheck.GetOrComputeValue()
             // Build symbol keys
             let itemKeyStore, semanticClassification =
                 if enableBackgroundItemKeyStoreAndSemanticClassification then
@@ -359,6 +361,7 @@ type BoundModel private (
                 {
                     // Only keep the typed interface files when doing a "full" build for fsc.exe, otherwise just throw them away
                     latestImplFile = if keepAssemblyContents then implFile else None
+                    latestOwnSigForFile = ownSigForFile
                     tcResolutions = (if keepAllBackgroundResolutions then sink.GetResolutions() else TcResolutions.Empty)
                     tcSymbolUses = (if keepAllBackgroundSymbolUses then sink.GetSymbolUses() else TcSymbolUses.Empty)
                     tcOpenDeclarations = sink.GetOpenDeclarations()
@@ -367,12 +370,12 @@ type BoundModel private (
                 }
         } |> GraphNode
 
-    let defaultTypeCheck = async { return prevTcInfo, TcResultsSinkImpl(tcGlobals), None, "default typecheck - no syntaxTree", [||] }
+    let defaultTypeCheck = async { return prevTcInfo, TcResultsSinkImpl(tcGlobals), None, None, "default typecheck - no syntaxTree", [||] }
     let typeCheckNode = syntaxTreeOpt |> Option.map getTypeCheck |> Option.defaultValue defaultTypeCheck |> GraphNode
     let tcInfoExtras = getTcInfoExtras typeCheckNode
     let diagnostics  =
         async {
-            let! _, _, _, _, diags = typeCheckNode.GetOrComputeValue()
+            let! _, _, _, _, _, diags = typeCheckNode.GetOrComputeValue()
             return diags
         } |> GraphNode
 
@@ -803,7 +806,7 @@ module IncrementalBuilderHelpers =
 
         let results = [
             for tcInfo, latestImplFile in Seq.zip tcInfos latestImplFiles ->
-                tcInfo.tcEnvAtEndOfFile, defaultArg tcInfo.topAttribs EmptyTopAttrs, latestImplFile, tcInfo.latestCcuSigForFile
+                tcInfo.tcEnvAtEndOfFile, defaultArg tcInfo.topAttribs EmptyTopAttrs, latestImplFile, tcInfo.latestCcuSigForFile, ()
         ]
 
         // Get the state at the end of the type-checking of the last file

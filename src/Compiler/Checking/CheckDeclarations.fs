@@ -6189,13 +6189,9 @@ let SolveInternalUnknowns g (cenv: cenv) denvAtEnd moduleContents extraAttribs =
         if (tp.Rigidity <> TyparRigidity.Rigid) && not tp.IsSolved then
             ChooseTyparSolutionAndSolve cenv.css denvAtEnd tp
 
-let CheckModuleSignature g (cenv: cenv) m denvAtEnd rootSigOpt implFileTypePriorToSig implFileSpecPriorToSig moduleContents fileName qualifiedNameOfFile =
+let CheckModuleSignature (g: TcGlobals) (cenv: cenv) m denvAtEnd rootSigOpt implFileTypePriorToSig implFileSpecPriorToSig moduleContents fileName qualifiedNameOfFile =
     match rootSigOpt with
-    | None ->
-        // Deep copy the inferred type of the module
-        let implFileTypePriorToSigCopied = copyModuleOrNamespaceType g CloneAll implFileTypePriorToSig
-
-        (implFileTypePriorToSigCopied, moduleContents)
+    | None -> implFileTypePriorToSig, moduleContents
 
     | Some sigFileType ->
         use _ =
@@ -6392,7 +6388,8 @@ let CheckOneImplFile
 
         let implFile = CheckedImplFile (qualNameOfFile, implFileTy, implFileContents, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)
 
-        return (topAttrs, implFile, envAtEnd, cenv.createsGeneratedProvidedTypes)
+        // implFile.Signature is the explicit signature when there is one; only the inferred type shares its entities with the symbol uses
+        return (topAttrs, implFile, envAtEnd, cenv.createsGeneratedProvidedTypes, implFileTypePriorToSig)
      }
 
 
