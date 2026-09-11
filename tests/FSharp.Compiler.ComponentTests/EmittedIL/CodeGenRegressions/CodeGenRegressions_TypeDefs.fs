@@ -287,3 +287,112 @@ type MyOption<'T> =
         ]
         |> ignore
 
+
+    // https://github.com/dotnet/fsharp/issues/19445
+    [<Fact>]
+    let ``Issue_19445_GenericDuNullaryCaseWithStaticMemberVal`` () =
+        let source = """
+module Test
+
+open System.Reflection
+
+type U<'T> =
+    | A
+    static member val X = 3
+
+if U<int>.X <> 3 then failwith "expected U<int>.X = 3"
+if U<string>.X <> 3 then failwith "expected U<string>.X = 3"
+
+match U<int>.A with
+| A -> ()
+
+let cctors =
+    typedefof<U<_>>.GetConstructors(BindingFlags.Static ||| BindingFlags.NonPublic ||| BindingFlags.Public)
+
+if cctors.Length <> 1 then failwithf "expected exactly one static constructor, got %d" cctors.Length
+"""
+        FSharp source
+        |> asExe
+        |> compile
+        |> shouldSucceed
+        |> run
+        |> shouldSucceed
+        |> ignore
+
+    // https://github.com/dotnet/fsharp/issues/19445
+    [<Fact>]
+    let ``Issue_19445_TwoCaseGenericDuWithStaticMemberVal`` () =
+        let source = """
+module Test
+
+type U<'T> =
+    | A
+    | B of 'T
+    static member val X = 3
+
+if U<int>.X <> 3 then failwith "expected U<int>.X = 3"
+
+match U<string>.A, B "b" with
+| A, B "b" -> ()
+| _ -> failwith "unexpected match result"
+"""
+        FSharp source
+        |> asExe
+        |> compile
+        |> shouldSucceed
+        |> run
+        |> shouldSucceed
+        |> ignore
+
+    // https://github.com/dotnet/fsharp/issues/19445
+    [<Fact>]
+    let ``Issue_19445_GenericDuNullaryCaseWithStaticLet`` () =
+        let source = """
+module Test
+
+type U<'T> =
+    | A
+    static let mutable counter = 1
+    static member Next() =
+        counter <- counter + 1
+        counter
+
+if U<int>.Next() <> 2 then failwith "expected U<int>.Next() = 2"
+if U<int>.Next() <> 3 then failwith "expected U<int>.Next() = 3"
+if U<string>.Next() <> 2 then failwith "expected U<string>.Next() = 2"
+
+match U<int>.A with
+| A -> ()
+"""
+        FSharp source
+        |> asExe
+        |> compile
+        |> shouldSucceed
+        |> run
+        |> shouldSucceed
+        |> ignore
+
+    // https://github.com/dotnet/fsharp/issues/19445
+    // The singleton case field must be initialized before user static bindings run.
+    [<Fact>]
+    let ``Issue_19445_StaticMemberValReadsNullaryCaseSingleton`` () =
+        let source = """
+module Test
+
+type U<'T> =
+    | A
+    static member val X : U<'T> = A
+
+if not (obj.ReferenceEquals(U<int>.X, U<int>.A)) then
+    failwith "expected U<int>.X to be the initialized A singleton"
+
+if not (obj.ReferenceEquals(U<string>.X, U<string>.A)) then
+    failwith "expected U<string>.X to be the initialized A singleton"
+"""
+        FSharp source
+        |> asExe
+        |> compile
+        |> shouldSucceed
+        |> run
+        |> shouldSucceed
+        |> ignore
