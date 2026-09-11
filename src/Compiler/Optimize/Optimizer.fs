@@ -441,8 +441,7 @@ type cenv =
 
       specializedInlineVals: HashMultiMap<Stamp, TType * Expr>
 
-      /// Cache for 'HasFrameLocalBody'
-      frameLocalVals: Dictionary<Stamp, bool>
+      forcedInlineVals: Dictionary<Stamp, bool>
 
       signatureHidingInfo: SignatureHidingInfo
     }
@@ -2469,28 +2468,25 @@ let instrIsFrameLocal instr =
     | I_localloc -> true
     | _ -> false
 
-/// The FSharp.Core values expanding to frame-local IL are marked [<NoDynamicInvocation>] and so are
-/// always inlined. A user 'inline' function wrapping one inherits the property but not the
-/// attribute - the callee is already inlined into the recorded body, leaving only its IL - so
-/// recover it from the body and propagate it through further wrappers.
-/// See https://github.com/dotnet/fsharp/issues/20063.
-let rec HasFrameLocalBody cenv env (vref: ValRef) =
+/// Frame-local IL and resumable templates must remain in the caller's method.
+/// Inline wrappers inherit this requirement even when they do not inherit the callee's attributes.
+let rec HasForcedInlineBody cenv env (vref: ValRef) =
     let stamp = vref.Stamp
 
-    match cenv.frameLocalVals.TryGetValue stamp with
+    match cenv.forcedInlineVals.TryGetValue stamp with
     | true, res -> res
     | _ ->
         // Values bound within the body being walked have no info yet, but the walk covers them anyway.
         match TryGetInfoForVal cenv env vref |> Option.map (fun info -> stripValue info.ValExprInfo) with
         | Some(CurriedLambdaValue (_, _, _, body, _)) ->
-            cenv.frameLocalVals[stamp] <- false // Break cycles while the body is inspected
-            let res = ExprIsFrameLocal cenv env body
-            cenv.frameLocalVals[stamp] <- res
+            cenv.forcedInlineVals[stamp] <- false // Break cycles while the body is inspected
+            let res = ExprNeedsForcedInlining cenv env body
+            cenv.forcedInlineVals[stamp] <- res
             res
 
         | _ -> false
 
-and ExprIsFrameLocal cenv env expr =
+and ExprNeedsForcedInlining cenv env expr =
     let folder =
         { ExprFolder0 with
             exprIntercept =
@@ -2499,7 +2495,9 @@ and ExprIsFrameLocal cenv env expr =
 
                     match expr with
                     | Expr.Op (TOp.ILAsm (instrs, _), _, _, _) when List.exists instrIsFrameLocal instrs -> true
-                    | Expr.Val (vref, _, _) when vref.ShouldInline -> HasFrameLocalBody cenv env vref
+                    // Lowering must see the template and its resumable-code arguments in the same method.
+                    | StructStateMachineExpr cenv.g _ -> true
+                    | Expr.Val (vref, _, _) when vref.ShouldInline -> HasForcedInlineBody cenv env vref
                     | _ -> noInterceptF acc expr }
 
     FoldExpr folder false expr
@@ -2512,7 +2510,9 @@ let shouldForceInlineInDebug cenv env (vref: ValRef) : bool =
 
     (vref.HasDeclaringEntity && shouldForceInlineMembersInDebug g vref.DeclaringEntity) ||
 
-    HasFrameLocalBody cenv env vref
+    isReturnsResumableCodeTy g vref.TauType ||
+
+    HasForcedInlineBody cenv env vref
 
 /// Optimize/analyze an expression
 let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
@@ -3695,6 +3695,18 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
             let specLambda = MakeApplicationAndBetaReduce g (f2R, origLambdaTy, [tyargs], [], m)
             let specLambdaTy = tyOfExpr g specLambda
 
+            let hasStateMachineTemplate =
+                (false, specLambdaTy)
+                ||> SimplifyTypes.foldTypeButNotConstraints (stripTyEqns g) (fun found ty ->
+                    found ||
+                    (tryTcrefOfAppTy g ty |> ValueOption.exists (tyconRefEq g g.ResumableStateMachine_tcr)))
+
+            // A separate helper loses type parameters of the struct that replaces this template during lowering.
+            if hasStateMachineTemplate then
+                let cenv = { cenv with settings = { cenv.settings with alwaysInline = true } }
+                Some(OptimizeApplication cenv { env with debugInlineCallSite = Some m } (valExpr, vref.Type, tyargs, argsR, m))
+            else
+
             // Typars that flow in from the enclosing scope when tyargs are non-concrete. A tyarg can reach
             // only the body, and typars left unabstracted below are erased to 'object'.
             let freeTypars =
@@ -4843,7 +4855,7 @@ let OptimizeImplFile (settings, ccu, tcGlobals: TcGlobals, tcVal, importMap, opt
           stackGuard = StackGuard("OptimizerStackGuardDepth")
           realsig = tcGlobals.realsig
           specializedInlineVals = HashMultiMap(HashIdentity.Structural, true)
-          frameLocalVals = Dictionary<Stamp, bool>()
+          forcedInlineVals = Dictionary<Stamp, bool>()
           signatureHidingInfo = SignatureHidingInfo.Empty
         }
 
