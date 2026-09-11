@@ -118,6 +118,11 @@ module internal SignatureOps =
 
     val MakeExportRemapping: CcuThunk -> ModuleOrNamespace -> Remap
 
+    /// As MakeExportRemapping, carrying the rebinding while the table is built, so the types inside each
+    /// ValLinkageFullKey are rewritten too
+    val MakeExportRemappingWith:
+        ccuRebind: (CcuThunk -> CcuThunk) option -> viewedCcu: CcuThunk -> mspec: ModuleOrNamespace -> Remap
+
     /// Updates the IsPrefixDisplay to false for the Microsoft.FSharp.Collections.seq`1 entity
     val updateSeqTypeIsPrefix: fsharpCoreMSpec: ModuleOrNamespace -> unit
 
@@ -241,9 +246,17 @@ module internal ExprRemapping =
 
     val mkRemapContext: TcGlobals -> StackGuard -> RemapContext
 
+    /// For a tree read as another assembly's contents; every accessibility is rescoped.
+    val mkRemapContextLeavingAssembly:
+        TcGlobals -> StackGuard -> rescopeAccessTo: FSharp.Compiler.AbstractIL.IL.ILScopeRef -> RemapContext
+
     val tryStripLambdaN: int -> Expr -> (Val list list * Expr) option
 
     val tmenvCopyRemapAndBindTypars: (Attribs -> Attribs) -> Remap -> Typars -> Typars * Remap
+
+    val remapCompPath: RemapContext -> CompilationPath -> CompilationPath
+
+    val remapAccess: RemapContext -> Accessibility -> Accessibility
 
     val remapAttribs: RemapContext -> Remap -> Attribs -> Attribs
 

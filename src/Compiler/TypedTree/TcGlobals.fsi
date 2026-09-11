@@ -156,6 +156,14 @@ type internal TcGlobals =
 
     static member IsInEmbeddableKnownSet: name: string -> bool
 
+    /// The same framework import at another project's language settings; every entity is shared.
+    member WithLanguageSettings:
+        newLangVersion: Features.LanguageVersion *
+        newRealsig: bool *
+        newCompilationMode: CompilationMode *
+        newCheckNullness: bool ->
+            TcGlobals
+
     member directoryToResolveRelativePaths: string
 
     member noDebugAttributes: bool
