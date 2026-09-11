@@ -27,6 +27,7 @@
     <Compile Include="IndentationServiceTests.fs" />
     <Compile Include="CompletionProviderTests.fs" />
     <Compile Include="FindReferencesTests.fs" />
+    <Compile Include="FindReferencesFromCSharpTests.fs" />
     <Compile Include="GoToDefinitionServiceTests.fs" />
     <Compile Include="HelpContextServiceTests.fs" />
     <Compile Include="QuickInfoTests.fs" />
@@ -94,6 +95,7 @@
   <ItemGroup>
 	<PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" />
 	<PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
+	<PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" />
 
 	<PackageReference Include="Microsoft.VisualStudio.LanguageServices.ExternalAccess" />
     <PackageReference Include="Microsoft.VisualStudio.Platform.VSEditor" />

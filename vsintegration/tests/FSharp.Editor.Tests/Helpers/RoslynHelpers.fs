@@ -6,15 +6,22 @@ open System
 open System.IO
 open System.Reflection
 open System.Linq
+open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Collections.Immutable
+open System.Threading
+open System.Threading.Tasks
 open Microsoft.CodeAnalysis
+open Microsoft.CodeAnalysis.CSharp
+open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor.FindUsages
+open Microsoft.CodeAnalysis.ExternalAccess.FSharp.FindUsages
 open Microsoft.VisualStudio.Composition
 open Microsoft.CodeAnalysis.Host
 open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.CodeAnalysis.Host.Mef
 open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Diagnostics
 open FSharp.Test.ProjectGeneration
 
 [<AutoOpen>]
@@ -27,6 +34,7 @@ module MefHelpers =
         let imports =
             [|
                 "Microsoft.CodeAnalysis.Workspaces.dll"
+                "Microsoft.CodeAnalysis.CSharp.Workspaces.dll"
                 "Microsoft.VisualStudio.Shell.15.0.dll"
                 "Microsoft.VisualStudio.Platform.VSEditor.dll"
                 "FSharp.Editor.dll"
@@ -170,8 +178,7 @@ type TestHostWorkspaceServices(hostServices: HostServices, workspace: Workspace)
         |> Seq.distinctBy (fun x -> x.Key)
         |> System.Collections.Concurrent.ConcurrentDictionary
 
-    let langServices =
-        new TestHostLanguageServices(this, LanguageNames.FSharp, exportProvider)
+    let languageServices = ConcurrentDictionary<string, HostLanguageServices>()
 
     override _.Workspace = workspace
 
@@ -189,9 +196,10 @@ type TestHostWorkspaceServices(hostServices: HostServices, workspace: Workspace)
     override _.FindLanguageServices(_filter) = Seq.empty
 
     override _.GetLanguageServices(languageName) =
-        match languageName with
-        | LanguageNames.FSharp -> langServices :> HostLanguageServices
-        | _ -> raise (NotSupportedException(sprintf "Language '%s' not supported in FSharp VS tests." languageName))
+        languageServices.GetOrAdd(
+            languageName,
+            (fun language -> new TestHostLanguageServices(this, language, exportProvider) :> HostLanguageServices)
+        )
 
     override _.HostServices = hostServices
 
@@ -200,6 +208,14 @@ type TestHostServices() =
 
     override this.CreateWorkspaceServices(workspace) =
         new TestHostWorkspaceServices(this, workspace)
+
+/// One Roslyn project instance of a multi-targeted F# project: its extra defines and the
+/// synthetic files left out of it, as VS does per target framework.
+type TargetInstance =
+    {
+        Defines: string list
+        ExcludedFileIds: string list
+    }
 
 [<AbstractClass; Sealed>]
 type RoslynTestHelpers private () =
@@ -224,7 +240,8 @@ type RoslynTestHelpers private () =
 
         match extension with
         | ".fsx" -> SourceCodeKind.Script
-        | ".fsi" -> SourceCodeKind.Regular
+        | ".fsi"
+        | ".cs" -> SourceCodeKind.Regular
         | ".fs" -> SourceCodeKind.Regular
         | _ -> failwith "not supported"
 
@@ -258,6 +275,33 @@ type RoslynTestHelpers private () =
             filePath = filePath
         )
 
+    static member private ProjectInfoFor
+        (id, name, filePath, outputFilePath, documents, projectReferences: ProjectReference list, metadataReferences: MetadataReference seq)
+        =
+        ProjectInfo.Create(
+            id,
+            VersionStamp.Create(DateTime.UtcNow),
+            name,
+            name,
+            LanguageNames.FSharp,
+            filePath = filePath,
+            outputFilePath = outputFilePath,
+            documents = documents,
+            projectReferences = projectReferences,
+            metadataReferences = metadataReferences
+        )
+
+    static member private MetadataReferencesOf(options: FSharpProjectOptions, excludedPaths: string seq) =
+        let excluded = HashSet(excludedPaths, StringComparer.OrdinalIgnoreCase)
+
+        options.OtherOptions
+        |> Seq.filter (fun x -> x.StartsWith("-r:", StringComparison.Ordinal))
+        |> Seq.map _.Substring(3)
+        |> Seq.filter (excluded.Contains >> not)
+        |> Seq.map MetadataReference.CreateFromFile
+        |> Seq.cast<MetadataReference>
+        |> Seq.toList
+
     static member SetProjectOptions projId (solution: Solution) (options: FSharpProjectOptions) =
         solution.Workspace.Services
             .GetService<IFSharpWorkspaceService>()
@@ -269,6 +313,92 @@ type RoslynTestHelpers private () =
 
     static member SetEditorOptions (solution: Solution) options =
         solution.Workspace.Services.GetService<EditorOptions>().With(options)
+
+    static member CreateFindUsagesContext() =
+        let foundDefinitions = ConcurrentBag<FSharpDefinitionItem>()
+        let foundReferences = ConcurrentBag<FSharpSourceReferenceItem>()
+
+        let context =
+            { new IFSharpFindUsagesContext with
+                member _.OnDefinitionFoundAsync definition =
+                    foundDefinitions.Add definition
+                    Task.CompletedTask
+
+                member _.OnReferenceFoundAsync reference =
+                    foundReferences.Add reference
+                    Task.CompletedTask
+
+                member _.ReportMessageAsync _ = Task.CompletedTask
+                member _.ReportProgressAsync(_, _) = Task.CompletedTask
+                member _.SetSearchTitleAsync _ = Task.CompletedTask
+                member _.CancellationToken = CancellationToken.None
+            }
+
+        context, foundDefinitions, foundReferences
+
+    /// Compiles the synthetic project to its OutputFilename with the options the checker sees.
+    static member CompileToAssembly(syntheticProject: SyntheticProject, checker: FSharpChecker) =
+        let options = syntheticProject.GetProjectOptions checker
+
+        let diagnostics, exn =
+            checker.Compile
+                [|
+                    "fsc.exe"
+                    "--target:library"
+                    $"-o:{syntheticProject.OutputFilename}"
+                    yield! options.OtherOptions
+                    yield! options.SourceFiles
+                |]
+            |> Async.RunSynchronously
+
+        exn |> Option.iter raise
+
+        match
+            diagnostics
+            |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
+        with
+        | [||] -> syntheticProject.OutputFilename
+        | errors -> failwith $"Compilation of {syntheticProject.Name} failed: %A{errors}"
+
+    /// Adds a C# library that references the framework of `options` and the given assemblies, the way
+    /// VS references an F# project from C# through its built assembly.
+    static member AddCSharpProject
+        (solution: Solution, name: string, source: string, options: FSharpProjectOptions, referencedAssemblies: string list)
+        =
+        let projectId = ProjectId.CreateNewId()
+        let projectDir = $"C:\\{name}"
+
+        let projectInfo =
+            ProjectInfo.Create(
+                projectId,
+                VersionStamp.Create(DateTime.UtcNow),
+                name,
+                name,
+                LanguageNames.CSharp,
+                filePath = Path.Combine(projectDir, $"{name}.csproj"),
+                compilationOptions = CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary),
+                documents =
+                    [
+                        RoslynTestHelpers.CreateDocumentInfo projectId (Path.Combine(projectDir, "Program.cs")) source
+                    ],
+                metadataReferences = RoslynTestHelpers.MetadataReferencesOf(options, [])
+            )
+
+        let workspace = solution.Workspace :?> AdhocWorkspace
+        let project = workspace.AddProject projectInfo
+
+        // AdhocWorkspace.AddProject turns a reference to another project's output into a project reference,
+        // whereas VS keeps a C# → F# reference as metadata; the assemblies are added afterwards.
+        let withAssemblies =
+            referencedAssemblies
+            |> List.fold
+                (fun (project: Project) assembly -> project.AddMetadataReference(MetadataReference.CreateFromFile assembly))
+                project
+
+        if not (workspace.TryApplyChanges withAssemblies.Solution) then
+            failwith $"Could not add the references of {name}"
+
+        workspace.CurrentSolution
 
     static member CreateSolution(source, ?options: FSharpProjectOptions, ?extraFSharpProjectOtherOptions: string array, ?editorOptions) =
         let projId = ProjectId.CreateNewId()
@@ -331,18 +461,117 @@ type RoslynTestHelpers private () =
 
         let options = syntheticProject.GetProjectOptions checker
 
-        let metadataReferences =
-            options.OtherOptions
-            |> Seq.filter (fun x -> x.StartsWith("-r:"))
-            |> Seq.map (fun x -> x.Substring(3) |> MetadataReference.CreateFromFile :> MetadataReference)
-
-        let projInfo = projInfo.WithMetadataReferences metadataReferences
+        let projInfo =
+            projInfo.WithMetadataReferences(RoslynTestHelpers.MetadataReferencesOf(options, []))
 
         let solution = RoslynTestHelpers.CreateSolution [ projInfo ]
 
         options |> RoslynTestHelpers.SetProjectOptions projId solution
 
         solution, checker
+
+    /// One Roslyn project per synthetic project, wired with project references the way VS wires
+    /// project-to-project references, so the options manager builds in-memory F# references.
+    static member CreateMultiProjectSolution(syntheticProject: SyntheticProject) =
+        let checker = syntheticProject.SaveAndCheck()
+
+        let projects =
+            syntheticProject.GetAllProjects()
+            |> List.distinctBy _.Name
+            |> List.map (fun project -> project, ProjectId.CreateNewId())
+
+        let projectIds = dict [ for project, id in projects -> project.Name, id ]
+
+        let projectInfos =
+            [
+                for project, id in projects do
+                    let options = project.GetProjectOptions checker
+
+                    RoslynTestHelpers.ProjectInfoFor(
+                        id,
+                        project.Name,
+                        project.ProjectFileName,
+                        project.OutputFilename,
+                        [
+                            for path in project.SourceFilePaths -> RoslynTestHelpers.CreateDocumentInfo id path (File.ReadAllText path)
+                        ],
+                        [
+                            for dependency in project.DependsOn -> ProjectReference projectIds[dependency.Name]
+                        ],
+                        RoslynTestHelpers.MetadataReferencesOf(options, project.DependsOn |> List.map _.OutputFilename)
+                    )
+            ]
+
+        let solution = RoslynTestHelpers.CreateSolution projectInfos
+
+        for project, id in projects do
+            project.GetProjectOptions checker
+            |> RoslynTestHelpers.SetProjectOptions id solution
+
+        solution, checker
+
+    /// One Roslyn project per target instance, all sharing the .fsproj path and the document file
+    /// paths, like the per-target-framework projects VS creates for a multi-targeted project.
+    static member CreateMultiTargetSolution(syntheticProject: SyntheticProject, instances: TargetInstance list) =
+        assert (syntheticProject.DependsOn = [])
+
+        let checker = syntheticProject.SaveAndCheck()
+        let options = syntheticProject.GetProjectOptions checker
+        let metadataReferences = RoslynTestHelpers.MetadataReferencesOf(options, [])
+
+        let instances =
+            [
+                for instance in instances ->
+                    let excludedPaths =
+                        HashSet(
+                            [
+                                for fileId in instance.ExcludedFileIds do
+                                    syntheticProject.GetFilePath fileId
+
+                                    if (syntheticProject.Find fileId).HasSignatureFile then
+                                        syntheticProject.GetSignatureFilePath fileId
+                            ],
+                            StringComparer.OrdinalIgnoreCase
+                        )
+
+                    let sourceFiles =
+                        syntheticProject.SourceFilePaths |> List.filter (excludedPaths.Contains >> not)
+
+                    let id = ProjectId.CreateNewId()
+
+                    let projectInfo =
+                        RoslynTestHelpers.ProjectInfoFor(
+                            id,
+                            syntheticProject.Name,
+                            syntheticProject.ProjectFileName,
+                            syntheticProject.OutputFilename,
+                            [
+                                for path in sourceFiles -> RoslynTestHelpers.CreateDocumentInfo id path (File.ReadAllText path)
+                            ],
+                            [],
+                            metadataReferences
+                        )
+
+                    let instanceOptions =
+                        { options with
+                            SourceFiles = List.toArray sourceFiles
+                            OtherOptions =
+                                [|
+                                    yield! options.OtherOptions
+                                    for define in instance.Defines -> $"--define:{define}"
+                                |]
+                        }
+
+                    id, projectInfo, instanceOptions
+            ]
+
+        let solution =
+            RoslynTestHelpers.CreateSolution [ for _, projectInfo, _ in instances -> projectInfo ]
+
+        for id, _, instanceOptions in instances do
+            RoslynTestHelpers.SetProjectOptions id solution instanceOptions
+
+        solution, [ for id, _, _ in instances -> id ]
 
     static member GetFsDocument(code, ?customProjectOption: string, ?customEditorOptions) =
         let customProjectOptions =

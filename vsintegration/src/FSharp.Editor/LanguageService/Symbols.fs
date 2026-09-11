@@ -1,6 +1,7 @@
 ﻿[<AutoOpen>]
 module internal Microsoft.VisualStudio.FSharp.Editor.Symbols
 
+open System
 open System.IO
 open Microsoft.CodeAnalysis
 open FSharp.Compiler.CodeAnalysis
@@ -34,6 +35,25 @@ type FSharpSymbol with
         | :? FSharpUnionCase -> not publicOrInternal
         | :? FSharpField -> not publicOrInternal
         | _ -> false
+
+    /// The documentation comment id of the symbol's compiled form, as C# and VB compilations resolve it.
+    member this.DocumentationCommentId =
+        let xmlDocSig =
+            match this with
+            | :? FSharpMemberOrFunctionOrValue as value ->
+                match value.XmlDocSig with
+                // A literal compiles to a field, which Roslyn names F: where FCS says P:.
+                | docSig when value.LiteralValue.IsSome && docSig.StartsWith("P:", StringComparison.Ordinal) -> $"F:{docSig.Substring 2}"
+                | docSig -> docSig
+            | :? FSharpEntity as entity -> entity.XmlDocSig
+            | :? FSharpField as field -> field.XmlDocSig
+            | :? FSharpUnionCase as unionCase -> unionCase.XmlDocSig
+            | _ -> ""
+
+        if String.IsNullOrEmpty xmlDocSig then
+            ValueNone
+        else
+            ValueSome xmlDocSig
 
 type FSharpSymbolUse with
 
