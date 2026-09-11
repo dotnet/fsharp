@@ -32,6 +32,7 @@ CI runs this harness as required steps in the existing `Linux` and Windows `EndT
 Both reuse their built products and publish the SDK evidence. There are no separate MT jobs.
 The existing Linux and macOS build jobs use Arcade's `--mt true` option.
 The three `Plain_Build_*` SDK jobs pass `-mt` directly to MSBuild.
+Those plain builds use SDK-shipped tasks; the redirected product builds and this harness exercise the migrated tasks.
 VS/MSBuild.exe jobs and Arcade-managed source-build configuration are unchanged.
 No repository-wide environment override or replacement for Arcade's MT controls is added.
 
@@ -59,10 +60,10 @@ Evidence includes:
 - Matching artifact hashes and executed resource checks across clean and incremental builds, with zero incremental Fsc executions.
 - Expected malformed-resource and type errors, with baseline-identical, runnable sibling projects.
 - Self-contained `PublishTrimmed` builds in both modes, with substitutions enabled and disabled.
-  Enabled substitutions must remove all F# metadata resources. The `DisableILLinkSubstitutions=true` controls must retain the original metadata.
+  Both settings must retain the original application metadata, matching the existing target scheduling.
   All four published executables must pass resource checks.
 
-Generated ILLink XML alone is not evidence of trimming. The publish checks establish actual ILLink consumption.
+Generated ILLink XML alone is not evidence of trimming. These publish checks establish MP/MT parity, not activation of metadata stripping.
 A trimming failure fails the harness, even when the generated XML and build hashes match.
 Missing concurrency, task-loading, or routing evidence fails the run.
 Logs, binlogs, event records, generated fixtures, and hash manifests remain under `artifacts/MultithreadedTasks/<timestamp>/`.

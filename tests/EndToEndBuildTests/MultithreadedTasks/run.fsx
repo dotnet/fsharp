@@ -255,7 +255,7 @@ for mt in [ false; true ] do
         finally
             File.WriteAllText(file, original)
 
-// Publishing must consume the substitutions, not just produce an XML file.
+// Compare published behavior without changing the existing substitutions target scheduling.
 let resourceNames file =
     use stream = File.OpenRead file
     use pe = new PEReader(stream)
@@ -284,7 +284,7 @@ for disabled in [ true; false ] do
         succeed (label + "-run") [ dll ] |> ignore
         let names = resourceNames dll
         write (Path.Combine(root, label + "-resources.txt")) (String.concat "\n" names)
-        let expected = if disabled then originalMetadata else Set.empty
+        let expected = originalMetadata
         let actual = metadata names
         if actual <> expected then trimFailures.Add(sprintf "%s: expected F# metadata %A, found %A" label expected actual)
         if mt && hash dll <> trimmedHash then failwith "MP/MT trimmed assemblies differ"
