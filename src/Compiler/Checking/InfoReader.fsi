@@ -151,8 +151,8 @@ type InfoReader =
     member GetRecordOrClassFieldsOfType:
         optFilter: string option * ad: AccessorDomain * m: range * ty: TType -> RecdFieldInfo list
 
-    /// Check if the given language feature is supported by the runtime.
-    member IsLanguageFeatureRuntimeSupported: langFeature: Features.LanguageFeature -> bool
+    /// Check if the target runtime supports default implementations of interfaces (DefaultImplementationsOfInterfaces).
+    member IsRuntimeSupportForDefaultImplementationsOfInterfaces: bool
 
     /// Check if the target runtime supports static abstract members in interfaces (VirtualStaticsInInterfaces).
     member IsRuntimeSupportForVirtualStaticsInInterfaces: bool
@@ -233,8 +233,7 @@ type InfoReader =
     /// Results are cached per interface type definition.
     member TryFindUnimplementedStaticAbstractMemberOfType: m: range -> interfaceTy: TType -> string option
 
-val checkLanguageFeatureRuntimeAndRecover:
-    infoReader: InfoReader -> langFeature: Features.LanguageFeature -> m: range -> unit
+val checkRuntimeSupportForDefaultInterfaceMembersAndRecover: infoReader: InfoReader -> m: range -> unit
 
 /// Get the declared constructors of any F# type
 val GetIntrinsicConstructorInfosOfType: infoReader: InfoReader -> m: range -> ty: TType -> MethInfo list

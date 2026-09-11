@@ -918,12 +918,8 @@ type InfoReader(g: TcGlobals, amap: ImportMap) as this =
     member _.GetPrimaryTypeHierarchy (allowMultiIntfInst, m, ty) =
         primaryTypeHierarchyCache.Apply((allowMultiIntfInst, m, ty))
 
-    /// Check if the given language feature is supported by the runtime.
-    member _.IsLanguageFeatureRuntimeSupported langFeature =
-        match langFeature with
-        // Default interface method consumption is tied to the runtime support of DIMs.
-        | LanguageFeature.DefaultInterfaceMemberConsumption -> isRuntimeFeatureDefaultImplementationsOfInterfacesSupported.Value
-        | _ -> true
+    /// Check if the target runtime supports default implementations of interfaces (DefaultImplementationsOfInterfaces).
+    member _.IsRuntimeSupportForDefaultImplementationsOfInterfaces = isRuntimeFeatureDefaultImplementationsOfInterfacesSupported.Value
 
     /// Check if the target runtime supports static abstract members in interfaces (VirtualStaticsInInterfaces).
     member _.IsRuntimeSupportForVirtualStaticsInInterfaces = isRuntimeFeatureVirtualStaticsInInterfacesSupported.Value
@@ -1035,10 +1031,9 @@ type InfoReader(g: TcGlobals, amap: ImportMap) as this =
         else
             unimplementedStaticAbstractMemberCache.Apply(((None, AccessibleFromSomewhere, AllowMultiIntfInstantiations.Yes), m, interfaceTy))
 
-let checkLanguageFeatureRuntimeAndRecover (infoReader: InfoReader) langFeature m =
-    if not (infoReader.IsLanguageFeatureRuntimeSupported langFeature) then
-        let featureStr = LanguageVersion.GetFeatureString langFeature
-        errorR (Error(FSComp.SR.chkFeatureNotRuntimeSupported (RichText.mkText featureStr), m))
+let checkRuntimeSupportForDefaultInterfaceMembersAndRecover (infoReader: InfoReader) m =
+    if not infoReader.IsRuntimeSupportForDefaultImplementationsOfInterfaces then
+        errorR (Error(FSComp.SR.chkFeatureNotRuntimeSupported (RichText.mkText "default interface member consumption"), m))
 
 let GetIntrinsicConstructorInfosOfType (infoReader: InfoReader) m ty =
     infoReader.GetIntrinsicConstructorInfosOfTypeAux m ty ty
