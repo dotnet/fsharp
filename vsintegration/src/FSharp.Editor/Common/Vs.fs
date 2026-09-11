@@ -97,6 +97,17 @@ module internal ServiceProviderExtensions =
 
         member sp.TextManager = sp.GetService<SVsTextManager, IVsTextManager>()
 
+        member sp.ExpansionManager =
+            match sp.GetService<SVsTextManager, IVsTextManager2>() with
+            | null -> null
+            | textManager ->
+                let mutable expansionManager = Unchecked.defaultof<IVsExpansionManager>
+
+                if Com.Succeeded(textManager.GetExpansionManager(&expansionManager)) then
+                    expansionManager
+                else
+                    null
+
         member sp.RunningDocumentTable =
             sp.GetService<SVsRunningDocumentTable, IVsRunningDocumentTable>()
 

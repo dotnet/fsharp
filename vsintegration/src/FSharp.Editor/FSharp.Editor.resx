@@ -372,5 +372,10 @@ Use live (unsaved) buffers for analysis</value>
     <value>{0} in {1}
 {2}</value>
     <comment>Tooltip of an F# declaration in the Copilot Chat "#" picker, as Copilot shows a C# one. {0} is the kind of declaration (Class, Method, Field...), {1} the file name, {2} the declaration's name.</comment>
+  <data name="InsertSnippet" xml:space="preserve">
+    <value>Insert Snippet</value>
+  </data>
+  <data name="SurroundWith" xml:space="preserve">
+    <value>Surround With</value>
   </data>
 </root>
