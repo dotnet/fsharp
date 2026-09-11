@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CodeSnippets xmlns="http://schemas.microsoft.com/VisualStudio/2005/CodeSnippet">
+  <CodeSnippet Format="1.0.0">
+    <Header>
+      <Title>ife</Title>
+      <Shortcut>ife</Shortcut>
+      <Description>Code snippet for an if/else expression</Description>
+      <Author>Microsoft Corporation</Author>
+      <SnippetTypes>
+        <SnippetType>Expansion</SnippetType>
+        <SnippetType>SurroundsWith</SnippetType>
+      </SnippetTypes>
+    </Header>
+    <Snippet>
+      <Declarations>
+        <Literal>
+          <ID>condition</ID>
+          <ToolTip>Condition to test</ToolTip>
+          <Default>true</Default>
+        </Literal>
+      </Declarations>
+      <Code Language="FSharp"><![CDATA[if $condition$ then
+    $selected$$end$
+else
+    ()]]></Code>
+    </Snippet>
+  </CodeSnippet>
+</CodeSnippets>
