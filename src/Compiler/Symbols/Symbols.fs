@@ -567,6 +567,9 @@ type FSharpDisplayContext(denv: TcGlobals -> DisplayEnv) =
     member _.WithShortTypeNames shortNames =
          FSharpDisplayContext(fun g -> { denv g with shortTypeNames = shortNames })
 
+    member _.WithNullnessAnnotations show =
+         FSharpDisplayContext(fun g -> { denv g with showNullnessAnnotations = Some show })
+
     member _.WithPrefixGenericParameters () =
         FSharpDisplayContext(fun g -> { denv g with genericParameterStyle = GenericParameterStyle.Prefix }  )
 
