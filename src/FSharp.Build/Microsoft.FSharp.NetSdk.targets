@@ -209,17 +209,27 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
   <!-- Register the GenerateILLinkSubstitutions task -->
   <UsingTask TaskName="GenerateILLinkSubstitutions" AssemblyFile="$(FSharpBuildAssemblyFile)" />
   
-  <!-- Generate ILLink.Substitutions.xml to remove F# metadata resources during trimming. F# Core already has the resource defined -->
-  <Target Name="GenerateFSharpILLinkSubstitutions" BeforeTargets="AssignTargetPaths" Condition="'$(DisableILLinkSubstitutions)' != 'true' and '$(AssemblyName)' != 'FSharp.Core'">
-    <GenerateILLinkSubstitutions
-      AssemblyName="$(AssemblyName)"
-      IntermediateOutputPath="$(IntermediateOutputPath)"
-      EmbeddedResources="@(EmbeddedResource)">
-      <Output TaskParameter="ReplacedItems" ItemName="_FSharpReplacedSubstitutions" />
-      <Output TaskParameter="GeneratedItems" ItemName="EmbeddedResource" />
-    </GenerateILLinkSubstitutions>
+  <!-- Pass generated rules to the trimmer, not into assemblies that may later be statically linked. -->
+  <Target Name="GenerateFSharpILLinkSubstitutions" AfterTargets="PrepareForILLink"
+          Condition="'$(PublishTrimmed)' == 'true' and '$(AssemblyName)' != 'FSharp.Core'">
+    <WriteLinesToFile File="$(IntermediateOutputPath)FSharpILLink.cache" Lines="$(DisableILLinkSubstitutions)"
+                      Overwrite="true" WriteOnlyWhenDifferent="true" />
     <ItemGroup>
-      <EmbeddedResource Remove="@(_FSharpReplacedSubstitutions)" />
+      <_FSharpAssembliesToStrip Include="@(ManagedAssemblyToLink)" Exclude="@(RuntimePackAsset)"
+                               Condition="'%(Filename)' != 'FSharp.Core'" />
+    </ItemGroup>
+    <GenerateILLinkSubstitutions
+      AssemblyName="%(_FSharpAssembliesToStrip.Filename)"
+      IntermediateOutputPath="$(IntermediateOutputPath)FSharpILLink/%(_FSharpAssembliesToStrip.Filename)"
+      Condition="'$(DisableILLinkSubstitutions)' != 'true' and '@(_FSharpAssembliesToStrip)' != ''">
+      <Output TaskParameter="GeneratedItems" ItemName="_FSharpILLinkSubstitutions" />
+    </GenerateILLinkSubstitutions>
+    <PropertyGroup>
+      <MSBuildAllProjects>$(MSBuildAllProjects);$(IntermediateOutputPath)FSharpILLink.cache</MSBuildAllProjects>
+      <_ExtraTrimmerArgs>$(_ExtraTrimmerArgs) @(_FSharpILLinkSubstitutions->'--substitutions &quot;%(Identity)&quot;', ' ')</_ExtraTrimmerArgs>
+    </PropertyGroup>
+    <ItemGroup>
+      <FileWrites Include="@(_FSharpILLinkSubstitutions);$(IntermediateOutputPath)FSharpILLink.cache" />
     </ItemGroup>
   </Target>
 

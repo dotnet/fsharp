@@ -667,11 +667,6 @@
         <target state="translated">'끝에서부터 조각화' 기능을 사용하려면 언어 버전 '미리 보기'가 필요합니다.</target>
         <note />
       </trans-unit>
-      <trans-unit id="fscInvalidILLinkSubstitutions">
-        <source>Invalid embedded ILLink.Substitutions.xml: {0}</source>
-        <target state="new">Invalid embedded ILLink.Substitutions.xml: {0}</target>
-        <note />
-      </trans-unit>
       <trans-unit id="fsiInvalidDirective">
         <source>Invalid directive '#{0} {1}'</source>
         <target state="translated">잘못된 지시문 '#{0} {1}'</target>

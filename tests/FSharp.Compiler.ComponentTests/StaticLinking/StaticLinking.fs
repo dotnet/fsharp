@@ -4,22 +4,8 @@ open System.IO
 open Xunit
 open FSharp.Test
 open FSharp.Test.Compiler
-open TestFramework
 
 module StaticLinking =
-
-    [<Fact>]
-    let ``invalid embedded substitutions report a compiler diagnostic`` () =
-        let directory = createTemporaryDirectory ()
-        let resource = Path.Combine(directory.FullName, "ILLink.Substitutions.xml")
-        File.WriteAllText(resource, "<linker>")
-
-        FSharp """printfn "Hello" """
-        |> asExe
-        |> withOptions [ "--standalone"; $"--resource:{resource},ILLink.Substitutions.xml" ]
-        |> compile
-        |> shouldFail
-        |> withErrorCode 3916
 
     let myRecordLibrary =
         FSharp """

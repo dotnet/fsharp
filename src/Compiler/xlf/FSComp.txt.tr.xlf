@@ -667,11 +667,6 @@
         <target state="translated">'Uçtan dilimleme' özelliği, 'önizleme' dil sürümünü gerektirir.</target>
         <note />
       </trans-unit>
-      <trans-unit id="fscInvalidILLinkSubstitutions">
-        <source>Invalid embedded ILLink.Substitutions.xml: {0}</source>
-        <target state="new">Invalid embedded ILLink.Substitutions.xml: {0}</target>
-        <note />
-      </trans-unit>
       <trans-unit id="fsiInvalidDirective">
         <source>Invalid directive '#{0} {1}'</source>
         <target state="translated">Geçersiz yönerge '#{0} {1}'</target>
