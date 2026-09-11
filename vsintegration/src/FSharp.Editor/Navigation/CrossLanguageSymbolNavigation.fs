@@ -39,6 +39,15 @@ type internal DocCommentId =
     | Type of EntityPath: string list
     | None
 
+/// Where a declaration is, for a feature that shows it in place rather than navigating to it.
+[<Struct>]
+type internal FileLocation =
+    {
+        FilePath: string
+        /// 0-based, the way Roslyn counts lines.
+        Position: Microsoft.CodeAnalysis.Text.LinePosition
+    }
+
 type FSharpNavigableLocation(metadataAsSource: FSharpMetadataAsSourceService, symbolRange: range, project: Project) =
     interface IFSharpNavigableLocation with
         member _.NavigateToAsync(_options: FSharpNavigationOptions2, cancellationToken: CancellationToken) : Task<bool> =
@@ -380,6 +389,32 @@ module internal CrossLanguageSymbolNavigation =
                         |> CancellableTask.tryPick (located (tryLocateInProject documentationCommentId path))
             }
 
+    /// The file and position of the declaration, for a feature that shows it in place rather than navigating to it.
+    /// Peek opens the path it is handed, and a range names its file the way the compiler recorded it - relative,
+    /// under a path map - so the path handed back is the document's.
+    let tryFindFileLocation (solution: Solution) (assemblyName: string) (documentationCommentId: string) =
+        cancellableTask {
+            match! tryFindDeclaration solution assemblyName documentationCommentId with
+            | ValueNone -> return ValueNone
+            | ValueSome(struct (range, project)) ->
+                match solution.TryGetDocumentFromFSharpRange(range, project.Id) with
+                | None -> return ValueNone
+                | Some document ->
+                    return
+                        ValueSome
+                            {
+                                FilePath = document.FilePath
+                                // FCS lines are 1-based; columns are 0-based in both.
+                                Position = Microsoft.CodeAnalysis.Text.LinePosition(range.StartLine - 1, range.StartColumn)
+                            }
+        }
+
+    /// The file location in the shape the Roslyn contract carries it.
+    let toContract (location: FileLocation voption) : Nullable<struct (string * Microsoft.CodeAnalysis.Text.LinePosition)> =
+        match location with
+        | ValueSome location -> Nullable(struct (location.FilePath, location.Position))
+        | ValueNone -> Nullable()
+
 [<Export(typeof<IFSharpCrossLanguageSymbolNavigationService>)>]
 [<Export(typeof<FSharpCrossLanguageSymbolNavigationService>)>]
 type internal FSharpCrossLanguageSymbolNavigationService
@@ -405,5 +440,20 @@ type internal FSharpCrossLanguageSymbolNavigationService
                     | ValueNone ->
                         // Roslyn falls back to its own metadata-as-source when no location comes back.
                         return null
+            }
+            |> CancellableTask.start cancellationToken
+
+    interface IFSharpCrossLanguageSymbolNavigationService2 with
+        member _.TryGetNavigableFileLocationAsync
+            (assemblyName: string, documentationCommentId: string, cancellationToken: CancellationToken)
+            : Task<Nullable<struct (string * Microsoft.CodeAnalysis.Text.LinePosition)>> =
+            cancellableTask {
+                match workspace with
+                | null -> return CrossLanguageSymbolNavigation.toContract ValueNone
+                | workspace ->
+                    let! location =
+                        CrossLanguageSymbolNavigation.tryFindFileLocation workspace.CurrentSolution assemblyName documentationCommentId
+
+                    return CrossLanguageSymbolNavigation.toContract location
             }
             |> CancellableTask.start cancellationToken
