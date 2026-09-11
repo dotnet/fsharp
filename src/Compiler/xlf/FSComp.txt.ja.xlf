@@ -667,6 +667,11 @@
         <target state="translated">'from the end slicing' (最後からのスライス) 機能には、言語バージョン 'preview' が必要です。</target>
         <note />
       </trans-unit>
+      <trans-unit id="fscInvalidILLinkSubstitutions">
+        <source>Invalid embedded ILLink.Substitutions.xml: {0}</source>
+        <target state="new">Invalid embedded ILLink.Substitutions.xml: {0}</target>
+        <note />
+      </trans-unit>
       <trans-unit id="fsiInvalidDirective">
         <source>Invalid directive '#{0} {1}'</source>
         <target state="translated">無効なディレクティブ '#{0} {1}'</target>

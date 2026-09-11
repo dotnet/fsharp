@@ -667,6 +667,11 @@
         <target state="translated">Für das Feature „Vom Ende ausgehende Slicing“ ist Sprachversion „Vorschau“ erforderlich.</target>
         <note />
       </trans-unit>
+      <trans-unit id="fscInvalidILLinkSubstitutions">
+        <source>Invalid embedded ILLink.Substitutions.xml: {0}</source>
+        <target state="new">Invalid embedded ILLink.Substitutions.xml: {0}</target>
+        <note />
+      </trans-unit>
       <trans-unit id="fsiInvalidDirective">
         <source>Invalid directive '#{0} {1}'</source>
         <target state="translated">Ungültige Direktive "#{0} {1}"</target>

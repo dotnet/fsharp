@@ -667,6 +667,11 @@
         <target state="translated">La característica "desde el final del recorte" requiere la versión de lenguaje "preview" (vista previa).</target>
         <note />
       </trans-unit>
+      <trans-unit id="fscInvalidILLinkSubstitutions">
+        <source>Invalid embedded ILLink.Substitutions.xml: {0}</source>
+        <target state="new">Invalid embedded ILLink.Substitutions.xml: {0}</target>
+        <note />
+      </trans-unit>
       <trans-unit id="fsiInvalidDirective">
         <source>Invalid directive '#{0} {1}'</source>
         <target state="translated">Directiva '#{0} {1}' no válida.</target>

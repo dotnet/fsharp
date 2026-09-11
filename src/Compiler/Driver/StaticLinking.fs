@@ -4,6 +4,8 @@
 module internal FSharp.Compiler.StaticLinking
 
 open System
+open System.Xml
+open System.Xml.Linq
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
@@ -22,6 +24,102 @@ open FSharp.Compiler.TypedTree
 #if !NO_TYPEPROVIDERS
 open FSharp.Compiler.TypeProviders
 #endif
+
+let combineMetadataSubstitutions assemblyName linkedAssemblies (resources: ILResource list) =
+    let xname = XName.Get
+
+    let attribute name (element: XElement) =
+        match element.Attribute(xname name) with
+        | null -> ""
+        | value -> value.Value
+
+    let resourceNames = resources |> List.map _.Name |> Set.ofList
+
+    let substitutions, others =
+        resources
+        |> List.partition (fun r ->
+            r.Name.Equals("ILLink.Substitutions.xml", StringComparison.OrdinalIgnoreCase)
+            && (match r.Location with
+                | ILResourceLocation.Local _ -> true
+                | _ -> false))
+
+    let documents =
+        substitutions
+        |> List.choose (fun resource ->
+            use stream = resource.GetBytes().AsStream()
+
+            let document =
+                try
+                    XElement.Load(stream, LoadOptions.PreserveWhitespace)
+                with :? XmlException as ex ->
+                    error (Error(FSComp.SR.fscInvalidILLinkSubstitutions ex.Message, rangeStartup))
+
+            let isMetadataAssembly (element: XElement) =
+                element.Name = xname "assembly"
+                && (element.Attributes() |> Seq.forall (fun attr -> attr.Name = xname "fullname"))
+                && Set.contains (attribute "fullname" element) linkedAssemblies
+                && element.HasElements
+                && (element.Elements()
+                    |> Seq.forall (fun node ->
+                        let name = attribute "name" node
+                        let namedResource = { resource with Name = name }
+
+                        node.Name = xname "resource"
+                        && not node.HasElements
+                        && (node.Attributes()
+                            |> Seq.forall (fun attr -> attr.Name = xname "name" || attr.Name = xname "action"))
+                        && attribute "action" node = "remove"
+                        && (IsSignatureDataResource namedResource
+                            || IsSignatureDataResourceB namedResource
+                            || IsOptimizationDataResource namedResource
+                            || IsOptimizationDataResourceB namedResource)))
+
+            if document.Name = xname "linker" then
+                for element in document.Elements() |> Seq.filter isMetadataAssembly |> Seq.toArray do
+                    for node in element.Elements() |> Seq.toArray do
+                        if not (resourceNames.Contains(attribute "name" node)) then
+                            node.Remove()
+
+                    if element.HasElements then
+                        element.SetAttributeValue(xname "fullname", assemblyName)
+                    else
+                        element.Remove()
+
+            if document.Name = xname "linker" && not document.HasElements then
+                None
+            else
+                Some(
+                    resource,
+                    document,
+                    document.Name = xname "linker"
+                    && not document.HasAttributes
+                    && (document.Elements() |> Seq.forall isMetadataAssembly)
+                ))
+
+    let metadata, custom =
+        documents |> List.partition (fun (_, _, metadata) -> metadata)
+
+    let documents =
+        match custom @ metadata with
+        | [] -> []
+        | (resource, document, _) :: rest ->
+            let toAppend, toKeep = rest |> List.partition (fun (_, _, metadata) -> metadata)
+
+            for _, source, _ in toAppend do
+                document.Add(source.Elements() |> Seq.toArray)
+
+            (resource, document)
+            :: (toKeep |> List.map (fun (resource, document, _) -> resource, document))
+
+    others
+    @ (documents
+       |> List.map (fun (resource, document) ->
+           { resource with
+               Location =
+                   ILResourceLocation.Local(
+                       ByteStorage.FromByteArray(System.Text.Encoding.UTF8.GetBytes(document.ToString(SaveOptions.DisableFormatting)))
+                   )
+           }))
 
 // Handles TypeForwarding for the generated IL model
 type TypeForwarding(tcImports: TcImports) =
@@ -248,7 +346,10 @@ let StaticLinkILModules
                                 ]
                         )
                     TypeDefs = mkILTypeDefs (topTypeDef :: List.concat normalTypeDefs)
-                    Resources = mkILResources (savedResources @ ilxMainModule.Resources.AsList())
+                    Resources =
+                        savedResources @ ilxMainModule.Resources.AsList()
+                        |> combineMetadataSubstitutions oldManifest.Name (assems.Add oldManifest.Name)
+                        |> mkILResources
                     NativeResources = savedNativeResources
                 }
 

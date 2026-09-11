@@ -1,0 +1,13 @@
+<Project>
+  <Import Project="../../Directory.Build.props" />
+  <PropertyGroup>
+    <FSharpBuildAssemblyFile>$(LocalFSharpBuildBinPath)/FSharp.Build.dll</FSharpBuildAssemblyFile>
+    <DotnetFscCompilerPath>$(LocalFSharpBuildBinPath)/fsc.dll</DotnetFscCompilerPath>
+    <Fsc_DotNET_DotnetFscCompilerPath>$(LocalFSharpBuildBinPath)/fsc.dll</Fsc_DotNET_DotnetFscCompilerPath>
+    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+  </PropertyGroup>
+  <Import Project="../../../../eng/Versions.props" />
+  <ItemGroup>
+    <PackageReference Include="FSharp.Core" Version="$(FSharpCorePreviewPackageVersionValue)" />
+  </ItemGroup>
+</Project>

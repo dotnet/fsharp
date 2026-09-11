@@ -667,6 +667,11 @@
         <target state="translated">“从末尾切片”功能需要语言版本“预览”。</target>
         <note />
       </trans-unit>
+      <trans-unit id="fscInvalidILLinkSubstitutions">
+        <source>Invalid embedded ILLink.Substitutions.xml: {0}</source>
+        <target state="new">Invalid embedded ILLink.Substitutions.xml: {0}</target>
+        <note />
+      </trans-unit>
       <trans-unit id="fsiInvalidDirective">
         <source>Invalid directive '#{0} {1}'</source>
         <target state="translated">无效的指令“#{0} {1}”</target>

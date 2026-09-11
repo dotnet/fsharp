@@ -1,13 +1,15 @@
-function CheckTrim($root, $tfm, $outputfile, $expected_len, $callerLineNumber) {
+function CheckTrim($root, $tfm, $outputfile, $expected_len, $callerLineNumber, $properties = @(), $caseName = "") {
     Write-Host "Publish and Execute: ${tfm} - ${root}"
-    Write-Host "Expecting ${expected_len} for ${outputfile}"
+    if ($null -ne $expected_len) { Write-Host "Expecting ${expected_len} for ${outputfile}" }
+    $logName = if ($caseName) { "${root}_${caseName}" } else { $root }
+    if ($caseName) { $properties += "-p:BaseIntermediateOutputPath=obj/$caseName/" }
 
     $errors = @()
     $scriptFile = $PSCommandPath
 
     $cwd = Get-Location
     Set-Location (Join-Path $PSScriptRoot "${root}")
-    $build_output = dotnet publish -restore -c release -f:$tfm "${root}.fsproj" -bl:"../../../../artifacts/log/Release/AheadOfTime/Trimming/${root}_${tfm}.binlog"
+    $build_output = dotnet publish -restore -c release -f:$tfm "${root}.fsproj" @properties -bl:"../../../../artifacts/log/Release/AheadOfTime/Trimming/${logName}_${tfm}.binlog"
     Set-Location ${cwd}
     if ($LASTEXITCODE -ne 0)
     {
@@ -43,7 +45,7 @@ function CheckTrim($root, $tfm, $outputfile, $expected_len, $callerLineNumber) {
     {
         Write-Host "Actual ${tfm} - trimmed ${outputfile} length: ${file_len} Bytes (expected length is placeholder -1, update test with this actual value)"
     }
-    elseif ($file_len -ne $expected_len)
+    elseif ($null -ne $expected_len -and $file_len -ne $expected_len)
     {
         $errors += "Test failed with unexpected ${tfm} - trimmed ${outputfile} length: Expected ${expected_len} Bytes, Actual ${file_len} Bytes"
         Write-Host "##vso[task.logissue type=error;sourcepath=${scriptFile};linenumber=${callerLineNumber}]Trimmed ${outputfile} size mismatch for ${root}: Expected ${expected_len} Bytes, Actual ${file_len} Bytes. Either codegen or trimming logic have changed. Please investigate and update expected dll size or report an issue."
@@ -71,7 +73,18 @@ $allErrors += CheckTrim -root "SelfContained_Trimming_Test" -tfm "net9.0" -outpu
 $allErrors += CheckTrim -root "StaticLinkedFSharpCore_Trimming_Test" -tfm "net9.0" -outputfile "StaticLinkedFSharpCore_Trimming_Test.dll" -expected_len 9174528 -callerLineNumber 71
 
 # Check net9.0 trimmed assemblies with F# metadata resources removed
-$allErrors += CheckTrim -root "FSharpMetadataResource_Trimming_Test" -tfm "net9.0" -outputfile "FSharpMetadataResource_Trimming_Test.dll" -expected_len 7613440 -callerLineNumber 74
+$allErrors += CheckTrim -root "FSharpMetadataResource_Trimming_Test" -tfm "net9.0" -outputfile "FSharpMetadataResource_Trimming_Test.dll" -expected_len 7607296 -callerLineNumber 74
+
+# These cases assert resource presence and user substitutions in Program.fs rather than assembly size.
+foreach ($case in @(
+    @{ Name = "app"; Properties = @("-p:UserSubstitutions=App") },
+    @{ Name = "library"; Properties = @("-p:UserSubstitutions=Library", "-p:CompressMetadata=false") },
+    @{ Name = "static"; Properties = @("-p:UserSubstitutions=Library", "-p:LinkMode=Static") },
+    @{ Name = "standalone"; Properties = @("-p:UserSubstitutions=Library", "-p:LinkMode=Standalone") },
+    @{ Name = "disabled"; Properties = @("-p:UserSubstitutions=Library", "-p:DisableILLinkSubstitutions=true") }
+)) {
+    $allErrors += CheckTrim -root "MetadataSubstitutions" -tfm "net9.0" -outputfile "MetadataSubstitutions.dll" -expected_len $null -callerLineNumber $MyInvocation.ScriptLineNumber -properties $case.Properties -caseName $case.Name
+}
 
 # Report all errors and exit with failure if any occurred
 if ($allErrors.Count -gt 0) {

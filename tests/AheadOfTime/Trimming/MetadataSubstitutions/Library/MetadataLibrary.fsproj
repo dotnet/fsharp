@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <!-- Static linking needs implementation IL, not reference-assembly stubs. -->
+    <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Library.fs" />
+    <EmbeddedResource Include="../Substitutions.xml" LogicalName="ILLink.Substitutions.xml" Condition="'$(UserSubstitutions)' == 'Library'" />
+    <EmbeddedResource Include="Library.fs" LogicalName="marker" Condition="'$(UserSubstitutions)' == 'Library'" />
+  </ItemGroup>
+</Project>
