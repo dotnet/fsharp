@@ -12,7 +12,7 @@ open FSharp.Compiler.EditorServices
 let MaxSnippetLines = 200
 
 /// Inclusive, 1-based line bounds of the whole declaration `item` names, including its doc comment.
-let declarationLines (sourceLines: ReadOnlyMemory<char> array) (scopes: Structure.ScopeRange seq) (item: NavigableItem) =
+let declarationLines (sourceLines: string array) (scopes: Structure.ScopeRange seq) (item: NavigableItem) =
     let declarationLine = item.Range.StartLine
 
     // A construct's outlining range reaches back over the doc comment in front of it, so it is the
@@ -40,7 +40,7 @@ let declarationLines (sourceLines: ReadOnlyMemory<char> array) (scopes: Structur
     // Outlining reports a doc comment only once it spans several lines, so a one-line "///" in front of
     // a declaration is invisible to the scopes above.
     let isDocComment line =
-        sourceLines[line - 1].Span.TrimStart().StartsWith("///".AsSpan(), StringComparison.Ordinal)
+        sourceLines[line - 1].AsSpan().TrimStart().StartsWith("///".AsSpan(), StringComparison.Ordinal)
 
     let rec docCommentStart line =
         if line > 1 && isDocComment (line - 1) then
@@ -51,6 +51,6 @@ let declarationLines (sourceLines: ReadOnlyMemory<char> array) (scopes: Structur
     struct (docCommentStart firstLine, lastLine)
 
 /// The lines of the declaration `item` names that a chat prompt carries.
-let definitionLines (sourceLines: ReadOnlyMemory<char> array) (scopes: Structure.ScopeRange seq) (item: NavigableItem) =
+let definitionLines (sourceLines: string array) (scopes: Structure.ScopeRange seq) (item: NavigableItem) =
     let struct (firstLine, lastLine) = declarationLines sourceLines scopes item
     struct (firstLine, min lastLine (firstLine + MaxSnippetLines - 1))
