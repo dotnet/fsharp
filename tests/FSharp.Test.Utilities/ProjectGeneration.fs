@@ -1126,6 +1126,18 @@ type ProjectWorkflowBuilder
 
             { project with SourceFiles = project.SourceFiles |> List.insertAt index newFile })
 
+    /// Add a file below given file in the project.
+    [<CustomOperation "addFileBelow">]
+    member this.AddFileBelow(workflow: Async<WorkflowContext>, addBelowId: string, newFile) =
+        workflow
+        |> mapProject (fun project ->
+            let index =
+                project.SourceFiles
+                |> List.tryFindIndex (fun f -> f.Id = addBelowId)
+                |> Option.defaultWith (fun () -> failwith $"File {addBelowId} not found")
+
+            { project with SourceFiles = project.SourceFiles |> List.insertAt (index + 1) newFile })
+
     /// Remove a file from the project. The file is not deleted from disk.
     [<CustomOperation "removeFile">]
     member this.RemoveFile(workflow: Async<WorkflowContext>, fileId: string) =
@@ -1143,7 +1155,7 @@ type ProjectWorkflowBuilder
                 use _ = Activity.start "ProjectWorkflowBuilder.CheckFile" [ Activity.Tags.project, initialProject.Name; "fileId", fileId ]
                 checkFile fileId ctx.Project checker
 
-            let oldSignature = ctx.Signatures[fileId]
+            let oldSignature = ctx.Signatures |> Map.tryFind fileId |> Option.defaultValue ""
             let newSignature = getSignature results
 
             processResults results (oldSignature, newSignature)
