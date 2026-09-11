@@ -15,7 +15,6 @@ type LanguageFeature =
     | StringInterpolation
     | ExpandedMeasurables
     | NullnessChecking
-    | RefCellNotationInformationals
     | UnionIsPropertiesVisible
     | AttributesToRightOfModuleKeyword
     | ReallyLongLists
