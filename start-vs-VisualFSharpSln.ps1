@@ -8,15 +8,37 @@
 # alone when they already match, which is the common case for a hive built from this same source.
 #
 # -RoslynVersion forces a package version; any 5.Y.* binds identically within a minor.
+# -RoslynRepo is the Roslyn repository whose packages a locally built hive Roslyn comes from (default:
+# a roslyn folder next to this repository).
 [CmdletBinding()]
 param(
     [string]$RoslynVersion,
+    [string]$RoslynRepo,
     [string]$DevEnv,
     [string]$RootSuffix = 'RoslynDev',
     [string]$Solution = 'VisualFSharp.slnx',
     [switch]$DryRun
 )
 Set-StrictMode -Version Latest; $ErrorActionPreference = 'Stop'; $root = $PSScriptRoot
+
+# The package folders of a locally built Roslyn, checked to actually hold that version: a hive can carry
+# a dev build whose packages were cleaned or never packed, and NU1101 halfway through a restore says far
+# less about that than a message here does.
+function Get-RoslynDevFeeds([string]$repo, [string]$version) {
+    if (-not $repo) { $repo = Join-Path (Split-Path $PSScriptRoot) 'roslyn' }
+    if (-not (Test-Path $repo)) {
+        throw "$RootSuffix runs a locally built Roslyn $version, which only its own packages provide, but there is no repository at $repo; pass -RoslynRepo."
+    }
+
+    $feeds = 'Shipping', 'NonShipping' | ForEach-Object { Join-Path $repo "artifacts\packages\Release\$_" }
+    $probe = "Microsoft.VisualStudio.LanguageServices.ExternalAccess.$version.nupkg"
+
+    if (-not ($feeds | Where-Object { Test-Path (Join-Path $_ $probe) })) {
+        throw "$repo has no $probe; pack that Roslyn (.\Build.cmd -restore -pack -c Release) or pass -RoslynVersion to build against a published one instead."
+    }
+
+    $feeds
+}
 
 if (-not $DevEnv) {
     $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
@@ -51,25 +73,33 @@ if (-not $RoslynVersion) {
     }
     Write-Host "Roslyn in force: $target ($source)."
 
-    # A dev build's "5.12.0-dev" is no package version, so only its minor is usable - and when that is
-    # the minor the repo already flows, the flowed packages are the match and no override belongs here.
-    $targetMinor = [version](($target -split '-')[0])
-    $flowedMinor = [version](($flowed -split '-')[0])
-    if ($targetMinor.Major -eq $flowedMinor.Major -and $targetMinor.Minor -eq $flowedMinor.Minor) {
-        Write-Host "Repo already flows Roslyn $flowed - building against it, no override."
+    # A locally built Roslyn is deployed precisely because its API surface differs from the flowed
+    # package - it is where an ExternalAccess contract lives before it flows - so a matching minor says
+    # nothing and the override belongs here whatever the repo flows. Its own packages are the only ones
+    # that carry the difference, so the feeds they sit in come along; without them restore cannot find
+    # the version at all.
+    if ($target -match '-dev$') { $RoslynVersion = $target }
+    else {
+        # A shipped Roslyn is a real package version, and within a minor any 5.Y.* binds identically,
+        # so the flowed packages are the match when the minors agree.
+        $targetMinor = [version](($target -split '-')[0])
+        $flowedMinor = [version](($flowed -split '-')[0])
+
+        if ($targetMinor.Major -eq $flowedMinor.Major -and $targetMinor.Minor -eq $flowedMinor.Minor) {
+            Write-Host "Repo already flows Roslyn $flowed - building against it, no override."
+        }
+        else { $RoslynVersion = $target }
     }
-    elseif ($target -match '-dev$') {
-        throw "$RootSuffix has a locally built Roslyn $target but the repo flows $flowed; pass -RoslynVersion with a $($targetMinor.Major).$($targetMinor.Minor).* package version to build against that minor."
-    }
-    else { $RoslynVersion = $target }
 }
 
+$feeds = $null
 if ($RoslynVersion) {
     $minor = [version](($RoslynVersion -split '-')[0])
     if ($minor -lt [version]'5.10.0') {
         throw "Roslyn $RoslynVersion is older than the 5.10 the repo's sources expect (unified ExternalAccess, #20099). Update VS or deploy a local Roslyn."
     }
-    Write-Host "Building the F# extension against Roslyn $RoslynVersion ($DevEnv)."
+    if ($RoslynVersion -match '-dev$') { $feeds = Get-RoslynDevFeeds $RoslynRepo $RoslynVersion }
+    Write-Host "Building the F# extension against Roslyn $RoslynVersion ($DevEnv)$(if ($feeds) { ' from its own packages' })."
 }
 
 # Repoint every Roslyn package (versions set in eng/Version.Details.props) via a props file MSBuild
@@ -81,8 +111,14 @@ $names = 'MicrosoftCodeAnalysis', 'MicrosoftCodeAnalysisCompilers', 'MicrosoftCo
 # whichever ran last decides what a long-lived VS session restores against.
 $override = Join-Path $root 'artifacts\RoslynOverride.start-vs.props'
 if ($RoslynVersion) {
+    # RestoreAdditionalProjectSources has to arrive through the props import rather than on the command
+    # line: Microsoft.FSharp.NetSdk.targets declares it TreatAsLocalProperty and appends to it.
+    $sources =
+        if ($feeds) { "<RestoreAdditionalProjectSources>`$(RestoreAdditionalProjectSources);$($feeds -join ';')</RestoreAdditionalProjectSources>" }
+        else { '' }
+
     New-Item -ItemType Directory -Force (Split-Path $override) | Out-Null
-    "<Project><PropertyGroup>$(-join ($names | ForEach-Object { "<${_}Version>$RoslynVersion</${_}Version>" }))</PropertyGroup></Project>" |
+    "<Project><PropertyGroup>$(-join ($names | ForEach-Object { "<${_}Version>$RoslynVersion</${_}Version>" }))$sources</PropertyGroup></Project>" |
         Set-Content -LiteralPath $override -Encoding UTF8
 }
 
