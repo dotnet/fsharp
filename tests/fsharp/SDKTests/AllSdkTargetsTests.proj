@@ -6,6 +6,8 @@
 
   <ItemGroup>
     <TestsToRun Include="tests\*.proj" />
+    <TestsToRun Include="tests\WhichFSharpCompiler - Missing SDK Paths.proj" AdditionalProperties="MissingSdkPath=Root" />
+    <TestsToRun Include="tests\WhichFSharpCompiler - Missing SDK Paths.proj" AdditionalProperties="MissingSdkPath=Version" />
   </ItemGroup>
 
   <Target Name="Build">

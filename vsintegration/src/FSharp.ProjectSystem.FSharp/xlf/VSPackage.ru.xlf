@@ -422,6 +422,11 @@
         <target state="translated">Файлы Visual F# (*.fs,*.fsi,*.fsx,*.fsscript);*.fs,*.fsi,*.fsx,*.fsscript</target>
         <note />
       </trans-unit>
+      <trans-unit id="6015">
+        <source>Compiler</source>
+        <target state="new">Compiler</target>
+        <note />
+      </trans-unit>
       <trans-unit id="7000">
         <source>Visual F#</source>
         <target state="translated">Visual F#</target>
