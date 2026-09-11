@@ -790,3 +790,17 @@ let f1() =
         |> ignoreWarnings
         |> compileAndRun
         |> shouldSucceed
+
+    [<Fact>]
+    let ``Long sequence of implicit yields does not overflow the stack``() =
+        let elements = String.concat "\n" [ for i in 1..1000 -> $"        {{ Name = \"n{i}\"; Id = {i} }}" ]
+        FSharp $"""
+module M
+type Data = {{ Name: string; Id: int }}
+let all =
+    seq {{
+{elements}
+    }}
+"""
+        |> typecheck
+        |> shouldSucceed

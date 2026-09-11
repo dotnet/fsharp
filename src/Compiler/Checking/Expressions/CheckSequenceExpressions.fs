@@ -412,45 +412,46 @@ let TcSequenceExpression (cenv: TcFileState) env tpenv comp (overallTy: OverallT
             resExpr, tpenv
 
     and tcSequenceExprBodyAsSequenceOrStatement env genOuterTy tpenv comp =
-        match tryTcSequenceExprBody env genOuterTy tpenv comp with
-        | Some(expr, tpenv) -> Choice1Of2 expr, tpenv
-        | None ->
+        cenv.stackGuard.Guard(fun () ->
+            match tryTcSequenceExprBody env genOuterTy tpenv comp with
+            | Some(expr, tpenv) -> Choice1Of2 expr, tpenv
+            | None ->
 
-            let env =
-                { env with
-                    eContextInfo = ContextInfo.SequenceExpression genOuterTy
-                }
+                let env =
+                    { env with
+                        eContextInfo = ContextInfo.SequenceExpression genOuterTy
+                    }
 
-            if enableImplicitYield then
-                // The body is speculatively type-checked once to classify it as a statement or a yielded
-                // element. Reporting is buffered so the kept interpretation reports exactly once (else
-                // format-specifier locations and diagnostics double - #16419): a unit statement keeps the
-                // probe result and its buffered reporting is committed; a yielded element drops it and
-                // TcExprFlex re-checks with the element's target type.
-                let hasTypeUnit, _ty, expr, tpenv =
-                    RunWithBufferedReporting
-                        cenv.tcSink
-                        "SeqImplicitYieldProbe"
-                        (fun () -> TryTcStmt cenv env tpenv comp)
-                        (fun (hasTypeUnit, _, _, _) -> hasTypeUnit)
+                if enableImplicitYield then
+                    // The body is speculatively type-checked once to classify it as a statement or a yielded
+                    // element. Reporting is buffered so the kept interpretation reports exactly once (else
+                    // format-specifier locations and diagnostics double - #16419): a unit statement keeps the
+                    // probe result and its buffered reporting is committed; a yielded element drops it and
+                    // TcExprFlex re-checks with the element's target type.
+                    let hasTypeUnit, _ty, expr, tpenv =
+                        RunWithBufferedReporting
+                            cenv.tcSink
+                            "SeqImplicitYieldProbe"
+                            (fun () -> TryTcStmt cenv env tpenv comp)
+                            (fun (hasTypeUnit, _, _, _) -> hasTypeUnit)
 
-                if hasTypeUnit then
-                    Choice2Of2 expr, tpenv
+                    if hasTypeUnit then
+                        Choice2Of2 expr, tpenv
+                    else
+                        let genResultTy = NewInferenceType g
+                        let mExpr = expr.Range
+                        UnifyTypes cenv env mExpr genOuterTy (mkSeqTy cenv.g genResultTy)
+                        let expr, tpenv = TcExprFlex cenv flex true genResultTy env tpenv comp
+                        let exprTy = tyOfExpr cenv.g expr
+                        AddCxTypeMustSubsumeType env.eContextInfo env.DisplayEnv cenv.css mExpr NoTrace genResultTy exprTy
+
+                        let resExpr =
+                            mkCallSeqSingleton cenv.g mExpr genResultTy (mkCoerceExpr (expr, genResultTy, mExpr, exprTy))
+
+                        Choice1Of2 resExpr, tpenv
                 else
-                    let genResultTy = NewInferenceType g
-                    let mExpr = expr.Range
-                    UnifyTypes cenv env mExpr genOuterTy (mkSeqTy cenv.g genResultTy)
-                    let expr, tpenv = TcExprFlex cenv flex true genResultTy env tpenv comp
-                    let exprTy = tyOfExpr cenv.g expr
-                    AddCxTypeMustSubsumeType env.eContextInfo env.DisplayEnv cenv.css mExpr NoTrace genResultTy exprTy
-
-                    let resExpr =
-                        mkCallSeqSingleton cenv.g mExpr genResultTy (mkCoerceExpr (expr, genResultTy, mExpr, exprTy))
-
-                    Choice1Of2 resExpr, tpenv
-            else
-                let stmt, tpenv = TcStmtThatCantBeCtorBody cenv env tpenv comp
-                Choice2Of2 stmt, tpenv
+                    let stmt, tpenv = TcStmtThatCantBeCtorBody cenv env tpenv comp
+                    Choice2Of2 stmt, tpenv)
 
     let coreExpr, tpenv = tcSequenceExprBody env overallTy.Commit tpenv comp
     let delayedExpr = mkSeqDelayedExpr coreExpr.Range coreExpr

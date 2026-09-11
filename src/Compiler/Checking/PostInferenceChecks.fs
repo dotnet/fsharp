@@ -890,7 +890,7 @@ let (|OptionalCoerce|) expr =
 let CheckNoReraise cenv freesOpt (body: Expr) =
     if cenv.reportErrors then
         // Avoid recomputing the free variables
-        let fvs = match freesOpt with None -> freeInExpr CollectLocals body | Some fvs -> fvs
+        let fvs = match freesOpt with None -> freeInExpr (CollectLocalsWithStackGuard()) body | Some fvs -> fvs
         if fvs.UsesUnboundRethrow then
             errorR(Error(FSComp.SR.chkErrorContainsCallToRethrow(), body.Range))
 
