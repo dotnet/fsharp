@@ -20,6 +20,19 @@ open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Syntax
 open CancellableTasks
 
+/// Where a parse of a file is kept: under the defines it was parsed with, or under `AnyDefines` when its tree
+/// holds no conditional directives and so reads the same under any of them.
+[<Struct>]
+type private NavigableItemsKey = { Defines: string; FilePath: string }
+
+/// The navigable items of one parse of a file, and the text version it was taken from.
+[<Struct>]
+type private NavigableItemsEntry =
+    {
+        Version: VersionStamp
+        Items: NavigableItem array
+    }
+
 [<Export(typeof<IFSharpNavigateToSearchService>); Shared>]
 type internal FSharpNavigateToSearchService
     [<ImportingConstructor>]
@@ -33,14 +46,7 @@ type internal FSharpNavigateToSearchService
     ///
     /// The duplicate results this produces are not for this service to remove. `NavigateToSearcher` pools its
     /// seen set with `NavigateToSearchResultComparer`, which already collapses results by file path and span.
-    let cache =
-        ConcurrentDictionary<
-            struct (string * string),
-            struct {|
-                Version: VersionStamp
-                Items: NavigableItem array
-            |}
-         >()
+    let cache = ConcurrentDictionary<NavigableItemsKey, NavigableItemsEntry>()
 
     /// The key for a parse that does not depend on the defines. Not a define set any instance can have,
     /// since defines are identifiers — an instance with none of its own must not read this entry as its own.
@@ -72,7 +78,7 @@ type internal FSharpNavigateToSearchService
                 let defines = document.GetFSharpQuickDefines() |> String.concat ";"
 
                 let cached key =
-                    match cache.TryGetValue(struct (key, path)) with
+                    match cache.TryGetValue({ Defines = key; FilePath = path }) with
                     | true, entry when entry.Version = currentVersion -> ValueSome entry.Items
                     | _ -> ValueNone
 
@@ -89,11 +95,11 @@ type internal FSharpNavigateToSearchService
                         else
                             AnyDefines
 
-                    cache[struct (key, path)] <-
-                        {|
+                    cache[{ Defines = key; FilePath = path }] <-
+                        {
                             Version = currentVersion
                             Items = items
-                        |}
+                        }
 
                     return items
         }
