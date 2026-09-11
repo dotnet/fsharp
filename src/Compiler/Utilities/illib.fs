@@ -464,6 +464,24 @@ module ListInline =
 
         result
 
+    /// List.forall, but inline so the predicate is inlined (InlineIfLambda) rather than allocated as a closure.
+    let inline forall ([<InlineIfLambda>] predicate: 'T -> bool) (list: 'T list) =
+        let rec loop list =
+            match list with
+            | [] -> true
+            | head :: tail -> predicate head && loop tail
+
+        loop list
+
+    /// List.tryFind, but inline so the predicate is inlined (InlineIfLambda) rather than allocated as a closure.
+    let inline tryFind ([<InlineIfLambda>] predicate: 'T -> bool) (list: 'T list) =
+        let rec loop list =
+            match list with
+            | [] -> None
+            | head :: tail -> if predicate head then Some head else loop tail
+
+        loop list
+
     /// List.foldBack, but inline so the folder is inlined (InlineIfLambda). Folds lengths up to 5 directly; longer lists use an array, staying stack-safe like List.foldBack.
     let inline foldBack ([<InlineIfLambda>] folder: 'T -> 'State -> 'State) (list: 'T list) (state: 'State) =
         match list with

@@ -1,3 +1,9 @@
+---
+title: Pending breaking changes
+category: Release Notes
+categoryindex: 600
+index: 5
+---
 # Breaking Changes in Query Expression Fixes
 
 ## AnonymousObject Structural Equality 🔴

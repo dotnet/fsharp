@@ -48,7 +48,7 @@ One difference is that we set keepAssemblyContents to true.
 // Create an interactive checker instance 
 let checker = FSharpChecker.Create(keepAssemblyContents=true)
 
-let parseAndCheckSingleFile (input) = 
+let parseAndCheckSingleFile (input: string) = 
     let file = Path.ChangeExtension(System.IO.Path.GetTempFileName(), "fsx")  
     File.WriteAllText(file, input)
     // Get context representing a stand-alone (script) file

@@ -158,6 +158,12 @@ module internal ListInline =
     /// List.exists, but inline so the predicate is inlined (InlineIfLambda) rather than allocated as a closure.
     val inline exists: [<InlineIfLambda>] predicate: ('T -> bool) -> list: 'T list -> bool
 
+    /// List.forall, but inline so the predicate is inlined (InlineIfLambda) rather than allocated as a closure.
+    val inline forall: [<InlineIfLambda>] predicate: ('T -> bool) -> list: 'T list -> bool
+
+    /// List.tryFind, but inline so the predicate is inlined (InlineIfLambda) rather than allocated as a closure.
+    val inline tryFind: [<InlineIfLambda>] predicate: ('T -> bool) -> list: 'T list -> 'T option
+
     /// List.foldBack, but inline so the folder is inlined (InlineIfLambda). Folds lengths up to 5 directly; longer lists use an array, staying stack-safe like List.foldBack.
     val inline foldBack: [<InlineIfLambda>] folder: ('T -> 'State -> 'State) -> list: 'T list -> state: 'State -> 'State
 

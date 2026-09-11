@@ -72,6 +72,8 @@ FSharp.Core is the one assembly every F# program references. Changes here have o
 - XML doc comments are mandatory for all public APIs. New API additions require an RFC.
 - Apply `InlineIfLambda` to inlined functions taking a lambda applied only once — eliminates closure allocation at call sites.
 
+For allocation, copy, sharing, or collection fast-path changes, apply **Representation-Preserving Optimizations** below. An unchanged signature and equal elements do not establish behavioral compatibility.
+
 **Severity:** Binary compat break in FSharp.Core → **critical**. Missing tests → **high**. Missing XML docs → **medium**.
 
 **Hotspots:** `src/FSharp.Core/`
@@ -139,6 +141,7 @@ Optimizer changes must preserve program semantics. Inlining and tail-call change
 - Prefer general approaches (e.g., improved inlining) that cover many cases at once over hand-implementing function-by-function optimizations.
 - Verify that expression restructuring optimizations don't regress code quality — compare IL before and after.
 - Require performance evidence for optimization changes.
+- For allocation elimination, caching, or replacement of general operations with fast paths, apply **Representation-Preserving Optimizations** below.
 
 **Severity:** Semantic-altering optimization → **critical**. Tail-call regression → **high**. Missing evidence → **medium**.
 
@@ -365,6 +368,23 @@ New features must be gated behind language version checks. Breaking changes requ
 
 ### Additional Dimensions (Evaluate When Applicable)
 
+#### Representation-Preserving Optimizations
+
+Apply to allocation/copy elimination, singleton sharing, caching, and specialized fast paths.
+
+**CHECK:**
+- Identify properties preserved by the old implementation and `.fsi` contract beyond values: runtime type, aliasing, comparer, evaluation order, and exception timing. Separate intended changes from regressions.
+- Exercise inputs whose static type hides their runtime representation (covariant arrays, interface-wrapped collections), pairing boundary and ordinary cases.
+- Compare merge-base and PR behavior using a downstream observer: runtime-type assertion, cast, mutation, comparer-sensitive lookup, or effect trace. Element equality alone is insufficient.
+- Trace affected callers and equivalent fast paths; cover shared contracts with compact parameterized tests. Require a concrete unintended behavioral difference before flagging.
+
+Example (#20388): replacing `Clone()` with an empty `'T[]` singleton changes this copy from `string[]` to `obj[]`, breaking a previously valid cast:
+
+```fsharp
+let source = box ([||] : string[]) :?> obj[]
+let recovered = box (Array.copy source) :?> string[]
+```
+
 #### Compiler Performance Measurement
 
 - Require `--times` output, benchmarks, or profiler data for performance claims.
@@ -431,7 +451,7 @@ New features must be gated behind language version checks. Breaking changes requ
 
 ## Review Workflow
 
-Execute review in five waves, each building on the previous.
+Execute review in six waves, each building on the previous.
 
 ### Wave 0: Orientation & Dimension Dispatch
 

@@ -1654,9 +1654,42 @@ module internal ExprRemapping =
         tps', tmenvinner
 
     type RemapContext =
-        { g: TcGlobals; stackGuard: StackGuard }
+        {
+            g: TcGlobals
+            stackGuard: StackGuard
+            // When set, an Expr.Link that refers to a recursive value still in its letrec scope is copied as a
+            // fresh link that keeps pointing at the original fixup node, rather than being inlined at copy time.
+            // This lets an auto-quoted (WithValue) copy of a recursive-value use receive the inferred type
+            // arguments that AdjustAndForgetUsesOfRecValue inserts at the letrec point. See issue #20379.
+            keepRecursiveValLinks: bool
+        }
 
-    let mkRemapContext g stackGuard = { g = g; stackGuard = stackGuard }
+    let mkRemapContext g stackGuard =
+        {
+            g = g
+            stackGuard = stackGuard
+            keepRecursiveValLinks = false
+        }
+
+    /// Detect an Expr.Link that stands for a use of a recursive *function* value which is still within its
+    /// letrec scope (and will therefore be fixed up by AdjustAndForgetUsesOfRecValue once type arguments are
+    /// inferred). Only function-valued recursive bindings are matched: they are bound as lambdas and so are
+    /// never rewritten by the lazy-initialization morph in EliminateInitializationGraphs, whereas a monomorphic
+    /// recursive *data* value would have this same shared fixup node re-mutated to a lazy 'Force', leaking that
+    /// node into the captured quotation. See issue #20379.
+    let isRecursiveValFixupLink (eref: Expr ref) =
+        match stripDebugPoints eref.Value with
+        | Expr.Val(vref, _, _)
+        // A recursive-use fixup node is always a type-only application with no value args (see mkTyAppExpr and
+        // the shape AdjustAndForgetUsesOfRecValue accepts), so match that exact shape.
+        | Expr.App(Expr.Val(vref, _, _), _, _, [], _) ->
+            match vref.RecursiveValInfo with
+            | ValInRecScope _ ->
+                match vref.ValReprInfo with
+                | Some info -> info.NumCurriedArgs > 0
+                | None -> false
+            | ValNotInRecScope -> false
+        | _ -> false
 
     let rec remapAttribImpl ctxt tmenv (Attrib(tcref, kind, args, props, isGetOrSetAttr, targets, m)) =
         Attrib(
@@ -1699,7 +1732,7 @@ module internal ExprRemapping =
 
         let memberInfoR =
             d.MemberInfo
-            |> Option.map (remapMemberInfo ctxt d.val_range valReprInfo ty tyR tmenv)
+            |> Option.map (fun mi -> remapMemberInfo ctxt d.val_range valReprInfo ty tyR tmenv mi)
 
         let attribsR = d.Attribs |> remapAttribs ctxt tmenv
 
@@ -1862,7 +1895,14 @@ module internal ExprRemapping =
 
             | Expr.App(e1, e1ty, tyargs, args, m) -> remapAppExpr ctxt compgen tmenv (e1, e1ty, tyargs, args, m) expr
 
-            | Expr.Link eref -> remapExprImpl ctxt compgen tmenv eref.Value
+            | Expr.Link eref ->
+                if ctxt.keepRecursiveValLinks && isRecursiveValFixupLink eref then
+                    // Keep a fresh link that still points at the original recursive-use fixup node so the
+                    // quoted copy also receives the inferred type arguments inserted later at the letrec point,
+                    // instead of snapshotting the not-yet-generalized value. See issue #20379.
+                    Expr.Link(ref (Expr.Link eref))
+                else
+                    remapExprImpl ctxt compgen tmenv eref.Value
 
             | Expr.StaticOptimization(cs, e2, e3, m) ->
                 // note that type instantiation typically resolve the static constraints here
@@ -2445,6 +2485,7 @@ module internal ExprRemapping =
             {
                 g = g
                 stackGuard = StackGuard("RemapExprStackGuardDepth")
+                keepRecursiveValLinks = false
             }
 
         remapAttribImpl ctxt tmenv attrib
@@ -2454,6 +2495,7 @@ module internal ExprRemapping =
             {
                 g = g
                 stackGuard = StackGuard("RemapExprStackGuardDepth")
+                keepRecursiveValLinks = false
             }
 
         remapExprImpl ctxt compgen tmenv expr
@@ -2463,6 +2505,7 @@ module internal ExprRemapping =
             {
                 g = g
                 stackGuard = StackGuard("RemapExprStackGuardDepth")
+                keepRecursiveValLinks = false
             }
 
         remapPossibleForallTyImpl ctxt tmenv ty
@@ -2472,6 +2515,7 @@ module internal ExprRemapping =
             {
                 g = g
                 stackGuard = StackGuard("RemapExprStackGuardDepth")
+                keepRecursiveValLinks = false
             }
 
         copyAndRemapAndBindModTy ctxt compgen Remap.Empty mtyp |> fst
@@ -2481,6 +2525,20 @@ module internal ExprRemapping =
             {
                 g = g
                 stackGuard = StackGuard("RemapExprStackGuardDepth")
+                keepRecursiveValLinks = false
+            }
+
+        remapExprImpl ctxt compgen Remap.Empty e
+
+    /// Copy an expression for use as the definition inside an auto-quotation (Expr.WithValue), keeping fresh
+    /// links to any recursive-value uses that are still within their letrec scope so the copy also receives
+    /// the inferred type arguments applied later by AdjustAndForgetUsesOfRecValue. See issue #20379.
+    let copyExprKeepingRecursiveValLinks g compgen e =
+        let ctxt =
+            {
+                g = g
+                stackGuard = StackGuard("RemapExprStackGuardDepth")
+                keepRecursiveValLinks = true
             }
 
         remapExprImpl ctxt compgen Remap.Empty e
@@ -2490,6 +2548,7 @@ module internal ExprRemapping =
             {
                 g = g
                 stackGuard = StackGuard("RemapExprStackGuardDepth")
+                keepRecursiveValLinks = false
             }
 
         remapImplFile ctxt compgen Remap.Empty e |> fst
@@ -2499,6 +2558,7 @@ module internal ExprRemapping =
             {
                 g = g
                 stackGuard = StackGuard("RemapExprStackGuardDepth")
+                keepRecursiveValLinks = false
             }
 
         remapExprImpl ctxt CloneAll (mkInstRemap tpinst) e

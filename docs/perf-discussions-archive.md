@@ -1,3 +1,9 @@
+---
+title: Perf discussions archive
+category: Compiler Internals
+categoryindex: 200
+index: 970
+---
 This is just a typed version of [these notes](https://github.com/dotnet/fsharp/issues/16498), generated during perf discussions on summer of 2023. Can be used as a reference point.
 
 ---

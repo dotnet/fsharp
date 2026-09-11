@@ -2514,6 +2514,37 @@ let shouldForceInlineInDebug cenv env (vref: ValRef) : bool =
 
     HasFrameLocalBody cenv env vref
 
+/// `let p = f a b`, p an [<InlineIfLambda>] parameter binding whose right-hand side is an under-applied
+/// call to a known-arity value.
+[<return: Struct>]
+let private (|EtaFloatableValLet|_|) g expr =
+    match expr with
+    | Expr.Let(bind, body, m, _) when bind.Var.InlineIfLambda ->
+        match stripExpr bind.Expr with
+        | Expr.App(Expr.Val(vf, flags, _), f0ty, tyargs, args, mApp) ->
+            match TryEtaExpandUnderAppliedValApp g mApp vf flags tyargs f0ty args with
+            | Some etaExpanded -> ValueSome(bind, body, m, etaExpanded)
+            | None -> ValueNone
+        | _ -> ValueNone
+    | _ -> ValueNone
+
+/// `let p = f a`  ~>  `let p = fun x -> f a0 x`, with `let a0 = a` floated above the binding.
+let private floatEtaCaptures (bind: Binding) body m etaExpanded =
+    let rec rebindP e =
+        match e with
+        | Expr.Let(capture, inner, mLet, _) -> mkLetBind mLet capture (rebindP inner)
+        | rhs -> mkLet bind.DebugPoint m bind.Var rhs body
+
+    rebindP etaExpanded
+
+/// Float a let-bound partial application so its right-hand side is a bare lambda (`CurriedLambdaValue`) the
+/// optimizer can inline away the closure. LowerCalls does the same eta-expansion later but nests the
+/// captures, so the binding keeps `UnknownValue`.
+let EtaExpandUnderAppliedValBinding g expr =
+    match expr with
+    | EtaFloatableValLet g (bind, body, m, etaExpanded) -> floatEtaCaptures bind body m etaExpanded
+    | _ -> expr
+
 /// Optimize/analyze an expression
 let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
     cenv.stackGuard.Guard(fun () ->
@@ -3034,6 +3065,7 @@ and OptimizeLinearExpr cenv env expr contf =
     // complete inference types.
     let expr = DetectAndOptimizeForEachExpression g OptimizeAllForExpressions expr
     let expr = if cenv.settings.ExpandStructuralValues() then ExpandStructuralBinding cenv expr else expr
+    let expr = if cenv.settings.alwaysInline then EtaExpandUnderAppliedValBinding g expr else expr
     let expr = stripExpr expr
 
     // Matching on 'match __resumableEntry() with ...` is really a first-class language construct which we
