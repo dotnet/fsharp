@@ -309,7 +309,7 @@ You are a workflow-automation documentor. You read all workflow files in `.githu
     Place the glossary IMMEDIATELY after the title and intro paragraph, BEFORE the Overview table. A first-time reader rated 2/5 on a 5-point readability scale citing exactly these gaps. Missing glossary entry for a term used 3+ times = MAJOR. Missing emoji legend = MAJOR.
 
 45. **Self-contained — never use source-file pointers as documentation.** Any phrase like `"(see file.md L100–110)"`, `"per source line N"`, `"refer to <file>"`, or `"as defined in <other-doc>"` in PLACE of actual content is a documentation failure. Inline the content. Citations `(src Lnn)` are permitted ONLY as provenance markers AFTER the documented content, never AS the content. Example:
-    - ❌ WRONG: `RA_T2_SkipCheck --> RA_TaskFinal : ⚙️ check skip conditions (repo-assist.md L296–306)`
+    - ❌ WRONG: `RA_T2_SkipCheck --> RA_TaskFinal : ⚙️ check skip conditions (repo-assist-scheduled.md L296–306)`
     - ✅ CORRECT: `RA_T2_SkipCheck --> RA_TaskFinal : ⚙️ check 6 skip conditions` + an inline `> **Skip conditions**: 1. closed; 2. existing PR; 3. existing coverage; 4. test-link comment; 5. untestable comment; 6. human coverage comment.` callout below the diagram.
     Any source-pointer-as-content = MAJOR. Inlined skip conditions, taxonomy enumerations, and predicate lists belong in the doc itself.
 

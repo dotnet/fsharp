@@ -45,7 +45,7 @@ This document maps the 16 GitHub Actions workflows and AI agents in this reposit
 | 11 | `labelops-pr-security-scan.md` | ⏰ hourly, 👤 dispatch | none | add-labels, add-comment, repo-memory write |
 | 12 | `msbuild-quality-review.md` | ⏰ weekly, 👤 dispatch | none | create-issue, create-pull-request (draft) |
 | 13 | `regression-pr-shepherd.md` | ⏰ every 4h, 👤 dispatch | none | push-to-PR, add-comment, remove-labels |
-| 14 | `repo-assist.md` | ⏰ every 12h, 👤 dispatch, 👤 slash_command | none | create-pull-request, add-comment, add/remove-labels, create/update-issue, push-to-PR |
+| 14 | `repo-assist-scheduled.md` | ⏰ every 12h, 👤 dispatch | none | create-pull-request, add-comment, add/remove-labels, create/update-issue, push-to-PR |
 | 15 | `repository_lockdown_check.yml` | 👤 pull_request_target | none | PR comment (lockdown warning) |
 | 16 | `skill-validation.yml` | 👤 PR, ⚙️ push (main), 👤 dispatch | none | validate skills/agents |
 
@@ -56,15 +56,15 @@ Cross-workflow interactions (producer → consumer):
 | Signal | Producer | Consumer | Mechanism |
 |--------|----------|----------|-----------|
 | `AI-Auto-Resolve-CI/Conflicts` labels | Human maintainer | `labelops-pr-maintenance` | Label filter on PR list |
-| `AI-Issue-Regression-PR` label | `repo-assist` | `regression-pr-shepherd` | Label filter on PR list |
-| `AI-thinks-issue-fixed` label | `repo-assist` | `regression-pr-shepherd` (remove) | Label on linked issue |
+| `AI-Issue-Regression-PR` label | `repo-assist-scheduled` | `regression-pr-shepherd` | Label filter on PR list |
+| `AI-thinks-issue-fixed` label | `repo-assist-scheduled` | `regression-pr-shepherd` (remove) | Label on linked issue |
 | `dispatch-workflow: labelops-flake-fix` | `labelops-pr-maintenance` | `labelops-flake-fix` | workflow_dispatch with inputs |
 | `Flaky` label | `labelops-flake-fix` | Human triage | always-applied on PR/issue |
 | `AI-needs-CI-fix-input` label | `labelops-pr-maintenance` | Human maintainer | escalation signal |
 | `⚠️ Affects-*` labels | `labelops-pr-security-scan` | Human reviewer | informational |
 | `Needs-Triage` label | `add_to_project.yml` | Human triage | imperative on new issues |
 | State-store `safety/scanned-PRs` | `labelops-pr-security-scan` | `labelops-pr-security-scan` | repo-memory persistence |
-| State-store `memory/repo-assist` | `repo-assist` | `repo-assist` | repo-memory persistence |
+| State-store `memory/repo-assist` | `repo-assist-scheduled` | `repo-assist-scheduled` | repo-memory persistence |
 
 ## Group A — LabelOps Ecosystem
 
@@ -141,7 +141,7 @@ stateDiagram-v2
 
 ## Group B — Regression Test Pipeline
 
-Workflows: `repo-assist` (RA), `regression-pr-shepherd` (RPS).
+Workflows: `repo-assist-scheduled` (RA), `regression-pr-shepherd` (RPS).
 
 RA creates regression test PRs and labels issues. RPS shepherds those PRs to merge.
 
@@ -149,8 +149,8 @@ RA creates regression test PRs and labels issues. RPS shepherds those PRs to mer
 stateDiagram-v2
   direction LR
 
-  state "repo-assist" as RA {
-    [*] --> RA_FetchData : ⏰ every 12h / 👤 dispatch / 👤 slash_command
+  state "repo-assist-scheduled" as RA {
+    [*] --> RA_FetchData : ⏰ every 12h / 👤 dispatch
     RA_FetchData --> RA_Task1 : ⚙️ task selection
     RA_Task1 --> RA_Task3 : ⚙️ issue investigation
     RA_Task3 --> RA_Task2 : ⚙️ windows-only revisit
@@ -341,12 +341,12 @@ gh-aw safe-output defaults (suppressed below): `target: "*"`, `noop.report-as-is
 | `regression-pr-shepherd` | `push-to-pull-request-branch` | 10 | allowed-files: tests/**, vsintegration/tests/** |
 | `regression-pr-shepherd` | `add-comment` | 5 | hide-older-comments: true |
 | `regression-pr-shepherd` | `remove-labels` | 5 | allowed: AI-thinks-issue-fixed |
-| `repo-assist` | `create-pull-request` | 10 | title `Add regression test: `, labels: NO_RELEASE_NOTES+AI-Issue-Regression-PR, reviewers: abonie+T-Gro, auto-merge: true |
-| `repo-assist` | `add-comment` | 10 | hide-older-comments: true |
-| `repo-assist` | `add-labels` | 30 | allowed: AI-thinks-issue-fixed, AI-thinks-windows-only |
-| `repo-assist` | `remove-labels` | 10 | allowed: AI-thinks-issue-fixed, AI-thinks-windows-only |
-| `repo-assist` | `create-issue` | 4 | title `[Repo Assist] `, labels: automation+repo-assist |
-| `repo-assist` | `push-to-pull-request-branch` | 4 | title `[Repo Assist] `, protected-files: fallback-to-issue |
+| `repo-assist-scheduled` | `create-pull-request` | 10 | title `Add regression test: `, labels: NO_RELEASE_NOTES+AI-Issue-Regression-PR, reviewers: abonie+T-Gro, auto-merge: true |
+| `repo-assist-scheduled` | `add-comment` | 10 | hide-older-comments: true |
+| `repo-assist-scheduled` | `add-labels` | 30 | allowed: AI-thinks-issue-fixed, AI-thinks-windows-only |
+| `repo-assist-scheduled` | `remove-labels` | 10 | allowed: AI-thinks-issue-fixed, AI-thinks-windows-only |
+| `repo-assist-scheduled` | `create-issue` | 4 | title `[Repo Assist] `, labels: automation+repo-assist |
+| `repo-assist-scheduled` | `push-to-pull-request-branch` | 4 | title `[Repo Assist] `, protected-files: fallback-to-issue |
 
 ## Label Index
 
