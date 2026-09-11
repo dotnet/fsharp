@@ -684,3 +684,160 @@ module TypeParameterDefinitions =
     [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/TypesAndTypeConstraints/TypeParameterDefinitions", Includes = [| "UnitSpecialization.fs" |])>]
     let ``UnitSpecialization_fs`` compilation =
         compilation |> asExe |> typecheck |> shouldSucceed |> ignore
+
+// https://github.com/dotnet/fsharp/issues/20103
+module GenericInterfaceConstraintDependencyOrdering =
+
+    let private source = """
+module Repro
+
+type I<'a> = interface end
+
+type IServices =
+    abstract member Register<'a, 'b when 'a :> I<'b>> : ctor: (IServices -> 'a) -> unit
+
+type Foo(services: IServices) =
+    interface I<int>
+    interface I<string>
+
+let register (services: IServices) =
+    services.Register<Foo, int> Foo
+    services.Register<Foo, string> Foo
+"""
+
+    [<Theory>]
+    [<InlineData("11.0", true)>]
+    [<InlineData("10.0", false)>]
+    let ``Explicit type args are ordered by constraint dependencies only from langversion 11`` (langVersion: string) (succeeds: bool) =
+        let result = FSharp source |> asLibrary |> withLangVersion langVersion |> typecheck
+        if succeeds then result |> shouldSucceed |> ignore
+        else result |> shouldFail |> withErrorCode 1 |> ignore
+
+    // Overloaded generic method: reordering must not disturb overload resolution (CanMemberSigsMatchUpToCheck).
+    [<Fact>]
+    let ``Overloaded generic method with a dependent constraint resolves under langversion 11`` () =
+        FSharp """
+module ReproOverload
+
+type I<'a> = interface end
+
+type Foo() =
+    interface I<int>
+    interface I<string>
+
+type C =
+    static member M<'a, 'b when 'a :> I<'b>>(x: 'a, y: 'b) = 1
+    static member M<'a, 'b when 'a :> I<'b>>(x: 'a, y: 'b, z: int) = 2
+
+let test (f: Foo) = C.M<Foo, int>(f, 0)
+"""
+        |> asLibrary
+        |> withLangVersion11
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Theory>]
+    [<InlineData("Foo, int")>]
+    [<InlineData("Foo, string")>]
+    [<InlineData("_, int")>]
+    [<InlineData("_, string")>]
+    let ``Same arity overload resolution rolls back failed candidate constraints`` (typeArguments: string) =
+        FSharp $"""
+module ReproCompetingOverloads
+
+type I<'a> = interface end
+
+type Foo() =
+    interface I<int>
+    interface I<string>
+
+type C =
+    static member M<'a, 'b when 'a :> I<'b> and 'a : struct>(x: 'a, y: obj) = 1
+    static member M<'a, 'b when 'a :> I<'b>>(x: obj, y: 'a) = 2
+
+[<EntryPoint>]
+let main _ =
+    let f = Foo()
+    let selected = C.M<{typeArguments}>(f, f)
+    if selected <> 2 then failwithf "Expected overload 2, got %%d" selected
+    0
+"""
+        |> asExe
+        |> withLangVersion11
+        |> compileExeAndRun
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``Workaround ordering keeps compiling under langversion 10`` () =
+        FSharp """
+module ReproWA
+
+type I<'a> = interface end
+
+type IServices =
+    abstract member Register<'a, 'b when 'b :> I<'a>> : ctor: (IServices -> 'b) -> unit
+
+type Foo(services: IServices) =
+    interface I<int>
+    interface I<string>
+
+let register (services: IServices) =
+    services.Register<int, Foo> Foo
+    services.Register<string, Foo> Foo
+"""
+        |> asLibrary
+        |> withLangVersion10
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``A genuinely unsatisfiable interface argument is still rejected`` () =
+        FSharp """
+module ReproNeg
+
+type I<'a> = interface end
+
+type IServices =
+    abstract member Register<'a, 'b when 'a :> I<'b>> : ctor: (IServices -> 'a) -> unit
+
+type Foo(services: IServices) =
+    interface I<int>
+    interface I<string>
+
+let register (services: IServices) =
+    services.Register<Foo, bool> Foo
+"""
+        |> asLibrary
+        |> withLangVersion11
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 1
+        |> ignore
+
+    // Mutually-referential constraints ('a :> I<'b> and 'b :> J<'a>) form a dependency cycle; the
+    // reordering must degrade to the original order rather than loop forever (topological-sort cycle path).
+    [<Fact>]
+    let ``Cyclic constraint dependencies degrade gracefully without hanging`` () =
+        FSharp """
+module ReproCycle
+
+type I<'a> = interface end
+type J<'a> = interface end
+
+type C =
+    static member M<'a, 'b when 'a :> I<'b> and 'b :> J<'a>>() = ()
+
+type Foo() =
+    interface I<Foo>
+    interface J<Foo>
+
+let test () = C.M<Foo, Foo>()
+"""
+        |> asLibrary
+        |> withLangVersion11
+        |> typecheck
+        |> shouldSucceed
+        |> ignore

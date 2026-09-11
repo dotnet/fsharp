@@ -778,6 +778,22 @@ module List =
 
         go state list []
 
+    let stableTopologicalSort (mustPrecede: 'T -> 'T -> bool) (xs: 'T list) =
+        let rec emit remaining =
+            match remaining with
+            | [] -> []
+            | _ ->
+                // A node is ready once nothing still remaining must precede it. List.partition is stable,
+                // so ready nodes keep their original order; a leftover cycle is emitted in original order.
+                match
+                    remaining
+                    |> List.partition (fun x -> remaining |> List.forall (fun y -> not (mustPrecede y x)))
+                with
+                | [], cycle -> cycle
+                | ready, rest -> ready @ emit rest
+
+        emit xs
+
 module ResizeArray =
 
     /// Split a ResizeArray into an array of smaller chunks.
