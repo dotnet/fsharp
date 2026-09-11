@@ -3,6 +3,11 @@
   <ItemGroup>
     <FileSignInfo Include="Nerdbank.Streams.dll" CertificateName="None" />
     <FileSignInfo Include="Newtonsoft.Json.dll" CertificateName="None" />
+    <!-- StreamJsonRpc's own serialization stack, shipped for real by fsi's JSON-RPC server mode. -->
+    <FileSignInfo Include="MessagePack.dll" CertificateName="None" />
+    <FileSignInfo Include="MessagePack.Annotations.dll" CertificateName="None" />
+    <FileSignInfo Include="Nerdbank.MessagePack.dll" CertificateName="None" />
+    <FileSignInfo Include="PolyType.dll" CertificateName="None" />
   </ItemGroup>
 
   <PropertyGroup>
