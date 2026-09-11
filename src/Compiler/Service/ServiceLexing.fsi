@@ -312,6 +312,11 @@ type FSharpLineTokenizer =
     /// Scan one token from the line
     member ScanToken: lexState: FSharpTokenizerLexState -> FSharpTokenInfo option * FSharpTokenizerLexState
 
+    /// Scan one token from the line, without allocating an option for the result. Prefer this over
+    /// ScanToken on hot paths that tokenize every token of a file, such as classification or brace matching.
+    member ScanTokenValue:
+        lexState: FSharpTokenizerLexState -> struct (FSharpTokenInfo voption * FSharpTokenizerLexState)
+
     /// Get the color state from the lexer state
     static member ColorStateOfLexState: FSharpTokenizerLexState -> FSharpTokenizerColorState
 
