@@ -209,27 +209,32 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
   <!-- Register the GenerateILLinkSubstitutions task -->
   <UsingTask TaskName="GenerateILLinkSubstitutions" AssemblyFile="$(FSharpBuildAssemblyFile)" />
   
-  <!-- Pass generated rules to the trimmer, not into assemblies that may later be statically linked. -->
+  <!-- CoreCompile is too late to add EmbeddedResource items. Give the rules directly to ILLink instead. -->
   <Target Name="GenerateFSharpILLinkSubstitutions" AfterTargets="PrepareForILLink"
           Condition="'$(PublishTrimmed)' == 'true' and '$(AssemblyName)' != 'FSharp.Core'">
-    <WriteLinesToFile File="$(IntermediateOutputPath)FSharpILLink.cache" Lines="$(DisableILLinkSubstitutions)"
-                      Overwrite="true" WriteOnlyWhenDifferent="true" />
-    <ItemGroup>
-      <_FSharpAssembliesToStrip Include="@(ManagedAssemblyToLink)" Exclude="@(RuntimePackAsset)"
-                               Condition="'%(Filename)' != 'FSharp.Core'" />
+    <ItemGroup Condition="'$(DisableILLinkSubstitutions)' != 'true'">
+      <_FSharpTrimAssemblies Include="@(ManagedAssemblyToLink)" Exclude="@(RuntimePackAsset)"
+                            Condition="'%(Filename)' != 'FSharp.Core'" />
     </ItemGroup>
+
     <GenerateILLinkSubstitutions
-      AssemblyName="%(_FSharpAssembliesToStrip.Filename)"
-      IntermediateOutputPath="$(IntermediateOutputPath)FSharpILLink/%(_FSharpAssembliesToStrip.Filename)"
-      Condition="'$(DisableILLinkSubstitutions)' != 'true' and '@(_FSharpAssembliesToStrip)' != ''">
-      <Output TaskParameter="GeneratedItems" ItemName="_FSharpILLinkSubstitutions" />
+      AssemblyName="%(_FSharpTrimAssemblies.Filename)"
+      IntermediateOutputPath="$(IntermediateOutputPath)FSharpILLink/%(_FSharpTrimAssemblies.Filename)"
+      Condition="'@(_FSharpTrimAssemblies)' != ''">
+      <Output TaskParameter="GeneratedItems" ItemName="_FSharpSubstitutionFiles" />
     </GenerateILLinkSubstitutions>
     <PropertyGroup>
+      <_ExtraTrimmerArgs>$(_ExtraTrimmerArgs) @(_FSharpSubstitutionFiles->'--substitutions "%(Identity)"', ' ')</_ExtraTrimmerArgs>
+    </PropertyGroup>
+
+    <!-- Changing the opt-out must rerun ILLink even when the assemblies have not changed. -->
+    <WriteLinesToFile File="$(IntermediateOutputPath)FSharpILLink.cache" Lines="$(DisableILLinkSubstitutions)"
+                      Overwrite="true" WriteOnlyWhenDifferent="true" />
+    <PropertyGroup>
       <MSBuildAllProjects>$(MSBuildAllProjects);$(IntermediateOutputPath)FSharpILLink.cache</MSBuildAllProjects>
-      <_ExtraTrimmerArgs>$(_ExtraTrimmerArgs) @(_FSharpILLinkSubstitutions->'--substitutions &quot;%(Identity)&quot;', ' ')</_ExtraTrimmerArgs>
     </PropertyGroup>
     <ItemGroup>
-      <FileWrites Include="@(_FSharpILLinkSubstitutions);$(IntermediateOutputPath)FSharpILLink.cache" />
+      <FileWrites Include="@(_FSharpSubstitutionFiles);$(IntermediateOutputPath)FSharpILLink.cache" />
     </ItemGroup>
   </Target>
 
