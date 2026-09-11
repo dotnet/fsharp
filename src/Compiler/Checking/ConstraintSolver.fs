@@ -3091,7 +3091,22 @@ and SolveTypeIsEnum (csenv: ConstraintSolverEnv) ndeep m2 trace ty underlying =
         AddConstraint csenv ndeep m2 trace destTypar (TyparConstraint.IsEnum(underlying, m))
     | _ ->
         if isEnumTy g ty then
-            SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace underlying (underlyingTypeOfEnumTy g ty)
+            match tryUnderlyingTypeOfEnumTy g ty with
+            | ValueSome underlyingTyOfEnum ->
+                SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace underlying underlyingTyOfEnum
+            // The underlying type is unknown until the representations of the recursive group are established
+            | ValueNone ->
+                csenv.SolverState.PushPostInferenceCheck(
+                    false,
+                    fun () ->
+                        PostponeOnFailedMemberConstraintResolution
+                            csenv
+                            NoTrace
+                            (fun csenv -> SolveTypeIsEnum csenv ndeep m2 NoTrace ty underlying)
+                            (fun res -> ErrorD(ErrorFromAddingConstraint(denv, res, m)))
+                        |> RaiseOperationResult)
+
+                CompleteD
         else
             ErrorD (ConstraintSolverError(FSComp.SR.csTypeIsNotEnumType(NicePrint.minimalRichTextOfType denv ty), m, m2))
 
