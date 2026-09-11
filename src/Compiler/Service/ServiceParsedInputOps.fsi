@@ -131,7 +131,8 @@ type public InsertionContext =
         /// Current scope kind.
         ScopeKind: ScopeKind
 
-        /// Current position (F# compiler line number).
+        /// Where the `open` belongs (F# compiler line number): the first line inside the scope, that
+        /// is, below the declaration header or below the open declarations and directives above it.
         Pos: pos
     }
 
@@ -161,6 +162,11 @@ type public InsertionContextEntity =
 
         /// Namespace that is needed to open to make the entity resolvable in the current scope.
         Namespace: string option
+
+        /// How many leading idents of the entity's full name that namespace covers. Compare it with
+        /// `AssemblySymbol.OpenableIdentCount` to tell a namespace a plain `open` reaches from a type,
+        /// which only `open type` opens.
+        NamespaceIdentCount: int
 
         /// Full display name (i.e. last ident plus modules with `RequireQualifiedAccess` attribute prefixed).
         FullDisplayName: string
@@ -207,7 +213,9 @@ module public ParsedInput =
     /// Returns long identifier at position.
     val GetLongIdentAt: parsedInput: ParsedInput -> pos: pos -> LongIdent option
 
-    /// Corrects insertion line number based on kind of scope and text surrounding the insertion point.
+    /// Nudges the insertion point past the blank line that conventionally follows a declaration header,
+    /// so that the `open` joins the code below it instead of the gap above it. `getLineStr` returns the
+    /// trimmed text of a zero-based line, or an empty string past the end of the file.
     val AdjustInsertionPoint: getLineStr: (int -> string) -> ctx: InsertionContext -> pos
 
 // implementation details used by other code in the compiler

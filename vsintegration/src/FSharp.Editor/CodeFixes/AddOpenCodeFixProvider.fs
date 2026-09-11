@@ -19,7 +19,21 @@ open CancellableTasks
 type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentProvider: AssemblyContentProvider) =
     inherit CodeFixProvider()
 
-    static let br = Environment.NewLine
+    // A name can be reachable from a great many places, and the lightbulb is a menu a person reads.
+    // The same reason Roslyn's add-import fix stops at five suggestions and its fully-qualify at three.
+    let maxOpenSuggestions = 5
+    let maxQualifySuggestions = 3
+
+    // Which assembly the entity crawler reached first is no order to offer suggestions in. Sort them
+    // the way Roslyn's add-import fix does: what `System` holds first, the rest alphabetically after.
+    let suggestionOrder (declaration: string) =
+        let opened = declaration.Substring(declaration.LastIndexOf ' ' + 1)
+
+        let isSystem =
+            opened.Equals("System", StringComparison.Ordinal)
+            || opened.StartsWith("System.", StringComparison.Ordinal)
+
+        (if isSystem then 0 else 1), declaration
 
     let fixUnderscoresInMenuText (text: string) = text.Replace("_", "__")
 
@@ -30,39 +44,11 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
             Changes = [ TextChange(context.Span, qualifier) ]
         }
 
-    // With the fix in ServiceParsedInputOps, the InsertionContext now correctly
-    // points to the line after the module/namespace keyword (excluding attributes).
-    // However, we still need to handle implicit top-level modules and nested modules.
-    let getOpenDeclaration (sourceText: SourceText) (ctx: InsertionContext) (ns: string) =
-        // insertion context counts from 2, make the world sane
-        let insertionLineNumber = ctx.Pos.Line - 2
-        let margin = String(' ', ctx.Pos.Column)
+    let openNamespaceFix ctx name declaration multipleNames sourceText =
+        let displayText = declaration + (if multipleNames then " (" + name + ")" else "")
 
-        let startLineNumber, openDeclaration =
-            match ctx.ScopeKind with
-            | ScopeKind.TopModule ->
-                match sourceText.Lines[insertionLineNumber].ToString().Trim() with
-
-                // explicit top level module
-                | line when line.StartsWith "module" && not (line.EndsWith "=") -> insertionLineNumber + 2, $"{margin}open {ns}{br}{br}"
-
-                // nested module, shouldn't be here
-                | line when line.StartsWith "module" -> insertionLineNumber, $"{margin}open {ns}{br}{br}"
-
-                // implicit top level module
-                | _ -> insertionLineNumber, $"{margin}open {ns}{br}{br}"
-
-            | ScopeKind.Namespace -> insertionLineNumber + 3, $"{margin}open {ns}{br}{br}"
-            | ScopeKind.NestedModule -> insertionLineNumber + 2, $"{margin}open {ns}{br}{br}"
-            | ScopeKind.OpenDeclaration -> insertionLineNumber + 1, $"{margin}open {ns}{br}"
-            | ScopeKind.HashDirective -> insertionLineNumber + 1, $"open {ns}{br}{br}"
-
-        let start = sourceText.Lines[startLineNumber].Start
-        TextChange(TextSpan(start, 0), openDeclaration)
-
-    let openNamespaceFix ctx name ns multipleNames sourceText =
-        let displayText = $"open {ns}" + (if multipleNames then " (" + name + ")" else "")
-        let change = getOpenDeclaration sourceText ctx ns
+        let change =
+            OpenDeclarationHelper.getOpenDeclarationChange sourceText ctx declaration
 
         {
             Name = CodeFix.AddOpen
@@ -70,33 +56,46 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
             Changes = [ change ]
         }
 
+    // A plain `open` reaches namespaces and F# modules. When the entity sits deeper than that - a type
+    // nested in a type, or a static member of one - the type itself has to be opened.
+    let openDeclaration (entity: InsertionContextEntity) openableIdentCount ns =
+        if entity.NamespaceIdentCount > openableIdentCount then
+            $"open type {ns}"
+        else
+            $"open {ns}"
+
     let getSuggestionsAsCodeFixes
         (context: CodeFixContext)
         (sourceText: SourceText)
-        (candidates: (InsertionContextEntity * InsertionContext) list)
+        (candidates: (InsertionContextEntity * InsertionContext * int) list)
         =
         seq {
             candidates
-            |> Seq.choose (fun (entity, ctx) -> entity.Namespace |> Option.map (fun ns -> ns, entity.FullDisplayName, ctx))
-            |> Seq.groupBy (fun (ns, _, _) -> ns)
-            |> Seq.map (fun (ns, xs) ->
-                ns,
+            |> Seq.choose (fun (entity, ctx, openableIdentCount) ->
+                entity.Namespace
+                |> Option.map (fun ns -> openDeclaration entity openableIdentCount ns, entity.FullDisplayName, ctx))
+            |> Seq.groupBy (fun (declaration, _, _) -> declaration)
+            |> Seq.map (fun (declaration, xs) ->
+                declaration,
                 xs
                 |> Seq.map (fun (_, name, ctx) -> name, ctx)
                 |> Seq.distinctBy (fun (name, _) -> name)
                 |> Seq.sortBy fst
                 |> Seq.toArray)
-            |> Seq.map (fun (ns, names) ->
+            |> Seq.sortBy (fst >> suggestionOrder)
+            |> Seq.map (fun (declaration, names) ->
                 let multipleNames = names |> Array.length > 1
-                names |> Seq.map (fun (name, ctx) -> ns, name, ctx, multipleNames))
+                names |> Seq.map (fun (name, ctx) -> declaration, name, ctx, multipleNames))
             |> Seq.concat
-            |> Seq.map (fun (ns, name, ctx, multipleNames) -> openNamespaceFix ctx name ns multipleNames sourceText)
+            |> Seq.truncate maxOpenSuggestions
+            |> Seq.map (fun (declaration, name, ctx, multipleNames) -> openNamespaceFix ctx name declaration multipleNames sourceText)
 
             candidates
-            |> Seq.filter (fun (entity, _) -> not (entity.LastIdent.StartsWith "op_")) // Don't include qualified operator names. The resultant codefix won't compile because it won't be an infix operator anymore.
-            |> Seq.map (fun (entity, _) -> entity.FullRelativeName, entity.Qualifier)
+            |> Seq.filter (fun (entity, _, _) -> not (entity.LastIdent.StartsWith "op_")) // Don't include qualified operator names. The resultant codefix won't compile because it won't be an infix operator anymore.
+            |> Seq.map (fun (entity, _, _) -> entity.FullRelativeName, entity.Qualifier)
             |> Seq.distinct
             |> Seq.sort
+            |> Seq.truncate maxQualifySuggestions
             |> Seq.map (qualifySymbolFix context)
 
         }
@@ -104,10 +103,10 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
 
     override _.FixableDiagnosticIds = ImmutableArray.Create("FS0039", "FS0043")
 
-    override this.RegisterCodeFixesAsync context = context.RegisterFsharpFix this
+    override this.RegisterCodeFixesAsync context = context.RegisterFsharpFixes this
 
-    interface IFSharpCodeFixProvider with
-        member _.GetCodeFixIfAppliesAsync context =
+    interface IFSharpMultiCodeFixProvider with
+        member _.GetCodeFixesAsync context =
             cancellableTask {
                 let document = context.Document
 
@@ -162,7 +161,9 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
                             assemblyContentProvider.GetAllEntitiesInProjectAndReferencedAssemblies checkResults
                             |> Array.collect (fun s ->
                                 [|
-                                    yield s.TopRequireQualifiedAccessParent, s.AutoOpenParent, s.Namespace, s.CleanedIdents
+                                    yield
+                                        s.OpenableIdentCount,
+                                        (s.TopRequireQualifiedAccessParent, s.AutoOpenParent, s.Namespace, s.CleanedIdents)
                                     if isAttribute then
                                         let lastIdent = s.CleanedIdents.[s.CleanedIdents.Length - 1]
 
@@ -171,17 +172,18 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
                                             && s.Kind LookupType.Precise = EntityKind.Attribute
                                         then
                                             yield
-                                                s.TopRequireQualifiedAccessParent,
-                                                s.AutoOpenParent,
-                                                s.Namespace,
-                                                s.CleanedIdents
-                                                |> Array.replace
-                                                    (s.CleanedIdents.Length - 1)
-                                                    (lastIdent.Substring(0, lastIdent.Length - 9))
+                                                s.OpenableIdentCount,
+                                                (s.TopRequireQualifiedAccessParent,
+                                                 s.AutoOpenParent,
+                                                 s.Namespace,
+                                                 s.CleanedIdents
+                                                 |> Array.replace
+                                                     (s.CleanedIdents.Length - 1)
+                                                     (lastIdent.Substring(0, lastIdent.Length - 9)))
                                 |])
 
                         ParsedInput.GetLongIdentAt parseResults.ParseTree unresolvedIdentRange.End
-                        |> Option.bind (fun longIdent ->
+                        |> Option.map (fun longIdent ->
                             let maybeUnresolvedIdents =
                                 longIdent
                                 |> List.map (fun ident ->
@@ -205,11 +207,11 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
                                     insertionPoint
 
                             entities
-                            |> Seq.map createEntity
-                            |> Seq.concat
+                            |> Seq.collect (fun (openableIdentCount, symbol) ->
+                                createEntity symbol
+                                |> Seq.map (fun (entity, ctx) -> entity, ctx, openableIdentCount))
                             |> Seq.toList
-                            |> getSuggestionsAsCodeFixes context sourceText
-                            |> Seq.tryHead))
+                            |> getSuggestionsAsCodeFixes context sourceText))
 
-                    |> ValueOption.ofOption
+                    |> Option.defaultValue Seq.empty
             }
