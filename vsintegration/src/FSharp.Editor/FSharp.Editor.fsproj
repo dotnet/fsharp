@@ -94,6 +94,7 @@
     <Compile Include="Navigation\NavigateToSearchService.fs" />
     <Compile Include="Navigation\FindUsagesService.fs" />
     <Compile Include="Navigation\FindDefinitionService.fs" />
+    <Compile Include="Copilot\ActiveDocumentTracker.fs" />
     <Compile Include="Copilot\CopilotSymbolMapping.fs" />
     <Compile Include="Copilot\CopilotSymbolSnippets.fs" />
     <Compile Include="Copilot\CopilotContextProvider.fs" />
