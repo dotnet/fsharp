@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!--
+    Microsoft ResX Schema
+
+    Version 2.0
+
+    The primary goals of this format is to allow a simple XML format
+    that is mostly human readable. The generation and parsing of the
+    various data types are done through the TypeConverter classes
+    associated with the data types.
+
+    Example:
+
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+
+    There are any number of "resheader" rows that contain simple
+    name/value pairs.
+
+    Each data row contains a name, and value. The row also contains a
+    type or mimetype. Type corresponds to a .NET class that support
+    text/value conversion through the TypeConverter architecture.
+    Classes that don't support this are serialized and stored with the
+    mimetype set.
+
+    The mimetype is used for serialized objects, and tells the
+    ResXResourceReader how to depersist the object. This is currently not
+    extensible. For a given mimetype the value must be set accordingly:
+
+    Note - application/x-microsoft.net.object.binary.base64 is the format
+    that the ResXResourceWriter will generate, however the reader can
+    read any of the formats listed below.
+
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <!--
+    Only the strings the Visual Studio shell resolves on FSharpPackage's behalf belong here.
+    The shell goes through SVsResourceManager, which looks up the numeric ID against the fixed
+    basename "VSPackage" in the package assembly, so this file must embed as VSPackage.resources
+    (see ManifestResourceName in FSharp.Editor.fsproj). Strings the managed option-page code looks
+    up itself - the *PageKeywords named as the last argument of each ProvideLanguageEditorOptionPage
+    - come from the assembly's default resource set and stay in FSharp.Editor.resx.
+  -->
+  <!-- FSharpPackage's own display name, resolved via ProvideLanguageService's languageResourceID. -->
+  <data name="100" xml:space="preserve">
+    <value>F#</value>
+  </data>
+  <!-- File-type name shown for FSharpEditorFactory, resolved via ProvideEditorFactory's nameResourceID. Same wording as FSharp.ProjectSystem.FSharp's 5011. -->
+  <data name="101" xml:space="preserve">
+    <value>F# Source File</value>
+  </data>
+  <!-- Tools > Options category, resolved via ProvideOptionPage's categoryResourceID. Mirrors the "F# Tools" literal fallback already on the attribute. -->
+  <data name="6000" xml:space="preserve">
+    <value>F# Tools</value>
+  </data>
+  <!-- Tools > Options page name, resolved via ProvideOptionPage's pageNameResourceID and ProvideKeyBindingTable's resource ID. Mirrors the "F# Interactive" literal fallback already on the attributes. -->
+  <data name="6001" xml:space="preserve">
+    <value>F# Interactive</value>
+  </data>
+  <!-- ProvideLanguageEditorOptionPage pageNameResourceId for OptionsUI.IntelliSenseOptionPage. Mirrors its "IntelliSense" literal fallback. -->
+  <data name="6008" xml:space="preserve">
+    <value>IntelliSense</value>
+  </data>
+  <!-- ProvideLanguageEditorOptionPage pageNameResourceId for OptionsUI.QuickInfoOptionPage. Mirrors its "QuickInfo" literal fallback. -->
+  <data name="6009" xml:space="preserve">
+    <value>QuickInfo</value>
+  </data>
+  <!-- ProvideLanguageEditorOptionPage pageNameResourceId for OptionsUI.CodeFixesOptionPage. Mirrors its "Code Fixes" literal fallback. -->
+  <data name="6010" xml:space="preserve">
+    <value>Code Fixes</value>
+  </data>
+  <!-- ProvideLanguageEditorOptionPage pageNameResourceId for OptionsUI.LanguageServicePerformanceOptionPage. Mirrors its "Performance" literal fallback. -->
+  <data name="6011" xml:space="preserve">
+    <value>Performance</value>
+  </data>
+  <!-- ProvideLanguageEditorOptionPage pageNameResourceId for OptionsUI.AdvancedSettingsOptionPage. Mirrors its "Advanced" literal fallback. -->
+  <data name="6012" xml:space="preserve">
+    <value>Advanced</value>
+  </data>
+  <!-- ProvideLanguageEditorOptionPage pageNameResourceId for OptionsUI.FormattingOptionPage. Mirrors its "Formatting" literal fallback. -->
+  <data name="6014" xml:space="preserve">
+    <value>Formatting</value>
+  </data>
+</root>
