@@ -88,12 +88,15 @@ if ($RoslynVersion) {
 
 # Apply to THIS process only, restoring in finally so it can't leak into a later build.cmd/CI run
 # (which must keep the flowed Roslyn); the launched VS snapshots the env for its F5/restore builds.
+# VSRootSuffix is what the VSIX projects deploy into and what F5 passes as /rootsuffix, so the hive
+# probed above is also the one the extension lands in.
 $vars = @{
     DOTNET_ROOT                     = Join-Path $root '.dotnet'
     'DOTNET_ROOT(x86)'              = Join-Path $root '.dotnet\x86'
     PATH                            = "$(Join-Path $root '.dotnet');$env:PATH"
     RunNetFrameworkApiCompat        = 'false'
     RunRefApiCompat                 = 'false'
+    VSRootSuffix                    = $RootSuffix
 }
 if ($RoslynVersion) { $vars.CustomAfterMicrosoftCommonProps = $override }
 $saved = @{}; foreach ($k in $vars.Keys) { $saved[$k] = [Environment]::GetEnvironmentVariable($k) }
@@ -101,13 +104,13 @@ try {
     foreach ($k in $vars.Keys) { Set-Item -LiteralPath "Env:\$k" -Value $vars[$k] }
     if ($DryRun) {
         if ($RoslynVersion) { Write-Host "DryRun: wrote $override" } else { Write-Host 'DryRun: no override needed' }
-        Write-Host "Would restore, then open $Solution in $DevEnv"
+        Write-Host "Would restore, then open $Solution in $DevEnv; F5 deploys into and launches $RootSuffix"
         return
     }
     & (Join-Path $root 'Restore.cmd')
     if ($LASTEXITCODE) { throw "Restore failed for Roslyn $RoslynVersion; try another 5.$($minor.Minor).* build via -RoslynVersion." }
     Start-Process $DevEnv "`"$(Join-Path $root $Solution)`""
-    Write-Host 'Launched VS. Set VisualFSharpDebug as the startup project, then F5 / Ctrl+F5.'
+    Write-Host "Launched VS. Set VisualFSharpDebug as the startup project, then F5 / Ctrl+F5 to run in $RootSuffix."
 }
 finally {
     foreach ($k in $saved.Keys) {
