@@ -642,7 +642,7 @@ type FSharpChecker
         let mutable token = ValueNone
 
         let scanNext () =
-            let struct (t, s) = lineTokenizer.ScanToken(lexState)
+            let struct (t, s) = lineTokenizer.ScanTokenValue(lexState)
             token <- t
             lexState <- s
             token.IsSome
