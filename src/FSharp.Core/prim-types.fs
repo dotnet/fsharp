@@ -450,6 +450,24 @@ namespace System.Diagnostics.CodeAnalysis
 
 #endif
 
+#if !NET7_0_OR_GREATER
+namespace System.Diagnostics.CodeAnalysis
+
+    open System
+    open Microsoft.FSharp.Core
+
+    /// <summary>
+    /// Indicates that the specified member requires the ability to generate new code at runtime.
+    /// </summary>
+    [<AttributeUsage(AttributeTargets.Class ||| AttributeTargets.Constructor ||| AttributeTargets.Method,
+                     Inherited = false)>]
+    type internal RequiresDynamicCodeAttribute (message: string) =
+        inherit Attribute ()
+
+        member _.Message = message
+
+#endif
+
 namespace Microsoft.FSharp.Core
     open System
     open System.Collections

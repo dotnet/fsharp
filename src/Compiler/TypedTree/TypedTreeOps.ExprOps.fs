@@ -1491,7 +1491,7 @@ module internal Makers =
         // Use "Expr.WithValue" if it exists in FSharp.Core
         match vref.TryDeref with
         | ValueSome _ ->
-            let copyOfExpr = copyExpr g ValCopyFlag.CloneAll e1
+            let copyOfExpr = copyExprKeepingRecursiveValLinks g ValCopyFlag.CloneAll e1
             let quoteOfCopyOfExpr = Expr.Quote(copyOfExpr, ref None, false, m, qty)
 
             mkApps
@@ -1915,6 +1915,13 @@ module internal ExprTransforms =
             List.foldBack (fun vs (e, ty) -> mkMultiLambda m vs (e, ty), (mkFunTy g (mkRefTupledVarsTy g vs) ty)) vsl (call, rtyR)
         // Build a type-lambda expression for the toplevel value if needed...
         mkTypeLambda m tpsR (tauexpr, tauty), tpsR +-> tauty
+
+    let TryEtaExpandUnderAppliedValApp g m (vref: ValRef) flags tyargs fty args =
+        match vref.ValReprInfo with
+        | Some valReprInfo when valReprInfo.NumCurriedArgs > List.length args ->
+            let etaExpr = fst (AdjustValForExpectedValReprInfo g m vref flags valReprInfo)
+            Some(MakeApplicationAndBetaReduce g (etaExpr, fty, [ tyargs ], args, m))
+        | _ -> None
 
     let stripTupledFunTy g ty =
         let argTys, retTy = stripFunTy g ty
