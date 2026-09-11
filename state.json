@@ -307,9 +307,10 @@
       "cats": []
     },
     "20416": {
-      "sha": "7ee068dbb612351f3fff45f43c21ae566dc76c11",
+      "sha": "552a152bbcb7d50c94c3d9d97b49200affc94eb9",
       "cats": [
-        "Affects-Compiler-Output"
+        "Affects-Compiler-Output",
+        "Affects-Design-Time"
       ]
     },
     "20409": {
