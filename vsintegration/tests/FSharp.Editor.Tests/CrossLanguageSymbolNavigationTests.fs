@@ -1,0 +1,187 @@
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+
+module FSharp.Editor.Tests.CrossLanguageSymbolNavigationTests
+
+open System
+open System.Threading
+open Xunit
+open Microsoft.CodeAnalysis
+open Microsoft.VisualStudio.FSharp.Editor
+open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
+open FSharp.Compiler.EditorServices
+open FSharp.Compiler.Text
+open FSharp.Editor.Tests.Helpers
+open FSharp.Test.ProjectGeneration
+
+let private source =
+    """
+module Widgets
+
+type Counter(start: int) =
+    member val Value = start with get, set
+    member this.Bump() = this.Value <- this.Value + 1
+
+let twice x = x * 2
+
+[<CompiledName "Thrice">]
+let thrice x = x * 3
+
+type Shape =
+    | Circle of radius: float
+    | Square of side: float
+    | Dot
+
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module Shape =
+    let area shape =
+        match shape with
+        | Circle r -> Math.PI * r * r
+        | Square s -> s * s
+        | Dot -> 0.0
+
+[<Literal>]
+let Answer = 42
+
+type Box<'T> = { Value: 'T }
+
+type Point = { X: int; Y: int }
+
+exception MyError of string
+"""
+
+let private document = RoslynTestHelpers.GetFsDocument source
+let private project = document.Project
+
+let private run computation =
+    computation |> CancellableTask.start CancellationToken.None |> _.Result
+
+/// The 1-based line of the first source line containing the text.
+let private lineOf (text: string) =
+    source.Split('\n')
+    |> Array.findIndex (fun line -> line.IndexOf(text, StringComparison.Ordinal) >= 0)
+    |> (+) 1
+
+let private items =
+    document.GetFSharpParseResultsAsync "test"
+    |> run
+    |> _.ParseTree
+    |> NavigateTo.GetNavigableItems
+
+[<Theory>]
+[<InlineData("T:Widgets.Counter", "type Counter")>]
+[<InlineData("M:Widgets.Counter.#ctor(System.Int32)", "type Counter")>]
+[<InlineData("M:Widgets.Counter.Bump", "member this.Bump")>]
+[<InlineData("P:Widgets.Counter.Value", "member val Value")>]
+[<InlineData("M:Widgets.twice(System.Int32)", "let twice")>]
+[<InlineData("M:Widgets.Thrice(System.Int32)", "let thrice")>]
+[<InlineData("T:Widgets.Shape", "type Shape")>]
+[<InlineData("M:Widgets.ShapeModule.area(Widgets.Shape)", "let area")>]
+[<InlineData("M:Widgets.Shape.NewCircle(System.Double)", "| Circle")>]
+[<InlineData("P:Widgets.Shape.IsSquare", "| Square")>]
+[<InlineData("P:Widgets.Shape.Dot", "| Dot")>]
+[<InlineData("F:Widgets.Answer", "let Answer")>]
+[<InlineData("T:Widgets.Box`1", "type Box")>]
+[<InlineData("P:Widgets.Box`1.Value", "type Box")>]
+[<InlineData("P:Widgets.Point.X", "type Point")>]
+[<InlineData("M:Widgets.Point.#ctor(System.Int32,System.Int32)", "type Point")>]
+[<InlineData("T:Widgets.MyError", "exception MyError")>]
+let ``the fast path finds the declaration and agrees with the whole project check`` (docId: string, declaration: string) =
+    let path = CrossLanguageSymbolNavigation.docCommentIdToPath docId
+
+    let fast =
+        CrossLanguageSymbolNavigation.tryLocateViaNavigableItems docId path project
+        |> run
+
+    let full =
+        CrossLanguageSymbolNavigation.tryLocateInProject docId path project |> run
+
+    match fast, full with
+    | ValueSome fast, ValueSome full ->
+        Assert.Equal<range>(full, fast)
+        Assert.Equal(document.FilePath, fast.FileName)
+        Assert.Equal(lineOf declaration, fast.StartLine)
+    | fast, full -> failwith $"fast path: %A{fast}, whole project: %A{full}"
+
+[<Theory>]
+[<InlineData("T:Widgets.Nope")>]
+[<InlineData("M:Widgets.Counter.Nope")>]
+[<InlineData("not a doc id")>]
+let ``an unknown or malformed id yields no location`` (docId: string) =
+    let found =
+        CrossLanguageSymbolNavigation.tryFindDeclaration project.Solution project.AssemblyName docId
+        |> run
+
+    Assert.True(found.IsNone, $"%A{found}")
+
+[<Theory>]
+[<InlineData("Widgets", "Widgets")>]
+[<InlineData("Widgets.Counter", "Counter")>]
+[<InlineData("Widgets.ShapeModule", "Shape")>]
+[<InlineData("Widgets.Box`1", "Box")>]
+[<InlineData("Widgets.MyError", "MyError")>]
+let ``the parsed declarations of an entity are recognised through compiled-name artifacts`` (entityPath: string, declaration: string) =
+    let declaring =
+        items
+        |> Array.filter (CrossLanguageSymbolNavigation.declaresEntity (List.ofArray (entityPath.Split '.')))
+        |> Array.map _.Name
+
+    Assert.Equal<string list>([ declaration ], List.ofArray declaring |> List.distinct)
+
+[<Fact>]
+let ``members and unknown entities never pass as declarations`` () =
+    for entityPath in [ [ "Widgets"; "twice" ]; [ "Widgets"; "Counter"; "Bump" ]; [ "Nope" ] ] do
+        Assert.Empty(items |> Array.filter (CrossLanguageSymbolNavigation.declaresEntity entityPath))
+
+[<Fact>]
+let ``candidate documents come in compile order, signature first`` () =
+    let syntheticProject =
+        SyntheticProject.Create(
+            sourceFile "First" [],
+            { sourceFile "Second" [] with
+                SignatureFile = AutoGenerated
+            },
+            sourceFile "Third" [ "Second" ]
+        )
+
+    let solution, _ = RoslynTestHelpers.CreateSolution syntheticProject
+    let project = solution.Projects |> Seq.exactlyOne
+
+    let candidates =
+        CrossLanguageSymbolNavigation.candidateDocuments [ syntheticProject.Name; "ModuleSecond" ] project
+        |> run
+        |> List.map _.FilePath
+
+    Assert.Equal<string list>(
+        [
+            syntheticProject.GetSignatureFilePath "Second"
+            syntheticProject.GetFilePath "Second"
+        ],
+        candidates
+    )
+
+[<Fact>]
+let ``the first instance of a multi-targeted project answers`` () =
+    let instance () =
+        let id = ProjectId.CreateNewId()
+
+        id, RoslynTestHelpers.CreateProjectInfo id "C:\\test.fsproj" [ RoslynTestHelpers.CreateDocumentInfo id "C:\\test.fs" source ]
+
+    let firstId, first = instance ()
+    let secondId, second = instance ()
+    let solution = RoslynTestHelpers.CreateSolution [ first; second ]
+
+    let options =
+        { RoslynTestHelpers.DefaultProjectOptions with
+            OtherOptions = [| "--targetprofile:netcore"; "--nowarn:3384" |]
+        }
+
+    for id in [ firstId; secondId ] do
+        RoslynTestHelpers.SetProjectOptions id solution options
+
+    let found =
+        CrossLanguageSymbolNavigation.tryFindDeclaration solution "test.dll" "M:Widgets.twice(System.Int32)"
+        |> run
+
+    match found with
+    | ValueSome(struct (_, project)) -> Assert.Equal(firstId, project.Id)
+    | ValueNone -> failwith "declaration not found"
