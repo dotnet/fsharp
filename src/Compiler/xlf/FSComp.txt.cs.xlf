@@ -532,11 +532,6 @@
         <target state="translated">informační zprávy související s referenčními buňkami</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureRequiredProperties">
-        <source>support for required properties</source>
-        <target state="translated">podpora požadovaných vlastností</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureResumableStateMachines">
         <source>resumable state machines</source>
         <target state="translated">obnovitelné stavové stroje</target>

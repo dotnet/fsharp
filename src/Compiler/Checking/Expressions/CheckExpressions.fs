@@ -1288,8 +1288,7 @@ let CheckRequiredProperties (g:TcGlobals) (env: TcEnv) (cenv: TcFileState) (minf
     //      2.1. If there are none, proceed as usual
     //      2.2. If there are any, make sure all of them (or their setters) are in `finalAssignedItemSetters`.
     // 3. If some are missing, produce a diagnostic which missing ones.
-    if g.langVersion.SupportsFeature(LanguageFeature.RequiredPropertiesSupport)
-        && minfo.IsConstructor
+    if minfo.IsConstructor
         && not (minfo.GetCustomAttrs().HasWellKnownAttribute(WellKnownILAttributes.SetsRequiredMembersAttribute))
         then
 
@@ -10013,7 +10012,7 @@ and TcLookupItemThen cenv overallTy env tpenv mObjExpr objExpr objExprTy delayed
                 TcMethodApplicationThen cenv env overallTy None tpenv tyArgsOpt objArgs mExprAndItem mItemIdent nm ad PossiblyMutates true meths afterResolution NormalValUse args atomicFlag None delayed
             else
 
-                if g.langVersion.SupportsFeature(LanguageFeature.RequiredPropertiesSupport) && pinfo.IsSetterInitOnly then
+                if pinfo.IsSetterInitOnly then
                     errorR (Error(FSComp.SR.tcInitOnlyPropertyCannotBeSet1 (RichText.mkProperty nm), mItemIdent))
 
                 let args = if pinfo.IsIndexer then args else []
@@ -10955,7 +10954,7 @@ and TcSetterArgExpr (cenv: cenv) env denv objExpr ad assignedSetter calledFromCo
 
             CheckPropInfoAttributes pinfo id.idRange  |> CommitOperationResult
 
-            if g.langVersion.SupportsFeature(LanguageFeature.RequiredPropertiesSupport) && pinfo.IsSetterInitOnly && not calledFromConstructor then
+            if pinfo.IsSetterInitOnly && not calledFromConstructor then
                 errorR (Error(FSComp.SR.tcInitOnlyPropertyCannotBeSet1 (RichText.mkProperty pinfo.PropertyName), m))
 
             MethInfoChecks g cenv.amap true None [objExpr] ad m pminfo
