@@ -29,6 +29,9 @@ module Constants =
     [<Literal>]
     let FSharpAnalysisSaveFileHandler = "FSharp Analysis Save File Handler"
 
+    [<Literal>]
+    let FSharpSnippetsCommandHandler = "FSharp Snippets Command Handler"
+
 [<Guid(Constants.FSharpEditorFactoryIdString)>]
 type FSharpEditorFactory(parentPackage: ShellPackage) =
 
