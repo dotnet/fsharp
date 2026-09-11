@@ -1,4 +1,8 @@
 ---
+title: SRTP guide (draft)
+category: Compiler Internals
+categoryindex: 200
+index: 980
 status: draft
 target: Microsoft Learn (F# language guide)
 notes: >

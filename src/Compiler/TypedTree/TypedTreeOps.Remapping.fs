@@ -1699,7 +1699,7 @@ module internal ExprRemapping =
 
         let memberInfoR =
             d.MemberInfo
-            |> Option.map (remapMemberInfo ctxt d.val_range valReprInfo ty tyR tmenv)
+            |> Option.map (fun mi -> remapMemberInfo ctxt d.val_range valReprInfo ty tyR tmenv mi)
 
         let attribsR = d.Attribs |> remapAttribs ctxt tmenv
 
@@ -2589,7 +2589,8 @@ module internal ExprAnalysis =
     and remarkInterfaceImpl m (ty, overrides) =
         (ty, List.map (remarkObjExprMethod m) overrides)
 
-    and remarkExprs m es = es |> List.map (remarkExpr m)
+    and remarkExprs m es =
+        es |> ListInline.map (fun e -> remarkExpr m e)
 
     and remarkDecisionTree m x =
         match x with

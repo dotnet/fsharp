@@ -30,13 +30,13 @@ To use the tokenizer, reference `FSharp.Compiler.Service.dll` and open the
 #r "FSharp.Compiler.Service.dll"
 open FSharp.Compiler.Tokenization
 (**
-Now you can create an instance of `FSharpSourceTokenizer`. The class takes two 
-arguments - the first is the list of defined symbols and the second is the
-file name of the source code. The defined symbols are required because the
-tokenizer handles `#if` directives. The file name is required only to specify
-locations of the source code (and it does not have to exist):
+Now you can create an instance of `FSharpSourceTokenizer`. The class takes three
+arguments - the first is the list of defined symbols, the second is the
+file name of the source code and the third is the language version. The defined symbols
+are required because the tokenizer handles `#if` directives. The file name is required only
+to specify locations of the source code (and it does not have to exist):
 *)
-let sourceTok = FSharpSourceTokenizer([], Some "C:\\test.fsx", Some "PREVIEW", None)
+let sourceTok = FSharpSourceTokenizer([], Some "C:\\test.fsx", Some "PREVIEW")
 (**
 Using the `sourceTok` object, we can now (repeatedly) tokenize lines of 
 F# source code.
