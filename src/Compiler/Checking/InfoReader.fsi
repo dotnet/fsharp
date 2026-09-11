@@ -157,9 +157,6 @@ type InfoReader =
     /// Check if the target runtime supports static abstract members in interfaces (VirtualStaticsInInterfaces).
     member IsRuntimeSupportForVirtualStaticsInInterfaces: bool
 
-    /// Check if the target runtime supports static abstract members in interfaces (VirtualStaticsInInterfaces).
-    member IsRuntimeSupportForVirtualStaticsInInterfaces: bool
-
     /// Try and find a record or class field for a type.
     member TryFindRecdOrClassFieldInfoOfType: nm: string * m: range * ty: TType -> RecdFieldInfo voption
     member amap: ImportMap
