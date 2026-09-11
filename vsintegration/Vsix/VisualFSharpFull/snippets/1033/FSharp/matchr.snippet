@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CodeSnippets xmlns="http://schemas.microsoft.com/VisualStudio/2005/CodeSnippet">
+  <CodeSnippet Format="1.0.0">
+    <Header>
+      <Title>matchr</Title>
+      <Shortcut>matchr</Shortcut>
+      <Description>Code snippet for a match expression over a result</Description>
+      <Author>Microsoft Corporation</Author>
+      <SnippetTypes>
+        <SnippetType>Expansion</SnippetType>
+      </SnippetTypes>
+    </Header>
+    <Snippet>
+      <Declarations>
+        <Literal>
+          <ID>expression</ID>
+          <ToolTip>Result to match on</ToolTip>
+          <Default>expression</Default>
+        </Literal>
+        <Literal>
+          <ID>value</ID>
+          <ToolTip>Name bound to the success value</ToolTip>
+          <Default>value</Default>
+        </Literal>
+        <Literal>
+          <ID>error</ID>
+          <ToolTip>Name bound to the error value</ToolTip>
+          <Default>error</Default>
+        </Literal>
+      </Declarations>
+      <Code Language="FSharp"><![CDATA[match $expression$ with
+| Ok $value$ -> $end$
+| Error $error$ -> ()]]></Code>
+    </Snippet>
+  </CodeSnippet>
+</CodeSnippets>

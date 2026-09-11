@@ -22,6 +22,20 @@
       <Link>License.txt</Link>
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
+
+    <!-- The code snippet catalog, laid out as RegisterFsharpPackage.pkgdef's CodeExpansions paths
+         expect to find it under $PackageFolder$. -->
+    <Content Include="$(MSBuildThisFileDirectory)snippets\1033\SnippetsIndex.xml">
+      <VSIXSubPath>Snippets\1033</VSIXSubPath>
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
+
+    <!-- The directory is `FSharp`, not `Visual F#`, because a '#' in a VSIX part URI reads as a URI
+         fragment and the packaging step refuses it. SnippetsIndex.xml supplies the display name. -->
+    <Content Include="$(MSBuildThisFileDirectory)snippets\1033\FSharp\*.snippet">
+      <VSIXSubPath>Snippets\1033\FSharp</VSIXSubPath>
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>

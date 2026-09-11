@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CodeSnippets xmlns="http://schemas.microsoft.com/VisualStudio/2005/CodeSnippet">
+  <CodeSnippet Format="1.0.0">
+    <Header>
+      <Title>match</Title>
+      <Shortcut>match</Shortcut>
+      <Description>Code snippet for a match expression</Description>
+      <Author>Microsoft Corporation</Author>
+      <SnippetTypes>
+        <SnippetType>Expansion</SnippetType>
+      </SnippetTypes>
+    </Header>
+    <Snippet>
+      <Declarations>
+        <Literal>
+          <ID>expression</ID>
+          <ToolTip>Expression to match on</ToolTip>
+          <Default>expression</Default>
+        </Literal>
+        <Literal Editable="false">
+          <ID>cases</ID>
+          <ToolTip>Cases</ToolTip>
+          <Function>GenerateMatchCases($expression$)</Function>
+          <Default>| _ -&gt; ()</Default>
+        </Literal>
+      </Declarations>
+      <Code Language="FSharp"><![CDATA[match $expression$ with
+$cases$
+$end$]]></Code>
+    </Snippet>
+  </CodeSnippet>
+</CodeSnippets>
