@@ -3877,9 +3877,25 @@ FSharp.Compiler.EditorServices.ModuleKind: Int32 GetHashCode()
 FSharp.Compiler.EditorServices.ModuleKind: Int32 GetHashCode(System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.ModuleKind: System.String ToString()
 FSharp.Compiler.EditorServices.ModuleKind: Void .ctor(Boolean, Boolean)
+FSharp.Compiler.EditorServices.NavigableContainer+Container: FSharp.Compiler.EditorServices.NavigableContainerInfo get_info()
+FSharp.Compiler.EditorServices.NavigableContainer+Container: FSharp.Compiler.EditorServices.NavigableContainerInfo info
+FSharp.Compiler.EditorServices.NavigableContainer+File: System.String fileName
+FSharp.Compiler.EditorServices.NavigableContainer+File: System.String get_fileName()
+FSharp.Compiler.EditorServices.NavigableContainer+Tags: Int32 Container
+FSharp.Compiler.EditorServices.NavigableContainer+Tags: Int32 File
 FSharp.Compiler.EditorServices.NavigableContainer: Boolean Equals(FSharp.Compiler.EditorServices.NavigableContainer)
+FSharp.Compiler.EditorServices.NavigableContainer: Boolean Equals(FSharp.Compiler.EditorServices.NavigableContainer, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.NavigableContainer: Boolean Equals(System.Object)
 FSharp.Compiler.EditorServices.NavigableContainer: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.EditorServices.NavigableContainer: Boolean IsContainer
+FSharp.Compiler.EditorServices.NavigableContainer: Boolean IsFile
+FSharp.Compiler.EditorServices.NavigableContainer: Boolean get_IsContainer()
+FSharp.Compiler.EditorServices.NavigableContainer: Boolean get_IsFile()
+FSharp.Compiler.EditorServices.NavigableContainer: FSharp.Compiler.EditorServices.NavigableContainer NewContainer(FSharp.Compiler.EditorServices.NavigableContainerInfo)
+FSharp.Compiler.EditorServices.NavigableContainer: FSharp.Compiler.EditorServices.NavigableContainer NewFile(System.String)
+FSharp.Compiler.EditorServices.NavigableContainer: FSharp.Compiler.EditorServices.NavigableContainer+Container
+FSharp.Compiler.EditorServices.NavigableContainer: FSharp.Compiler.EditorServices.NavigableContainer+File
+FSharp.Compiler.EditorServices.NavigableContainer: FSharp.Compiler.EditorServices.NavigableContainer+Tags
 FSharp.Compiler.EditorServices.NavigableContainer: FSharp.Compiler.EditorServices.NavigableContainerType Type
 FSharp.Compiler.EditorServices.NavigableContainer: FSharp.Compiler.EditorServices.NavigableContainerType get_Type()
 FSharp.Compiler.EditorServices.NavigableContainer: Int32 CompareTo(FSharp.Compiler.EditorServices.NavigableContainer)
@@ -3887,11 +3903,30 @@ FSharp.Compiler.EditorServices.NavigableContainer: Int32 CompareTo(System.Object
 FSharp.Compiler.EditorServices.NavigableContainer: Int32 CompareTo(System.Object, System.Collections.IComparer)
 FSharp.Compiler.EditorServices.NavigableContainer: Int32 GetHashCode()
 FSharp.Compiler.EditorServices.NavigableContainer: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.EditorServices.NavigableContainer: Int32 Tag
+FSharp.Compiler.EditorServices.NavigableContainer: Int32 get_Tag()
 FSharp.Compiler.EditorServices.NavigableContainer: System.String FullName
 FSharp.Compiler.EditorServices.NavigableContainer: System.String Name
 FSharp.Compiler.EditorServices.NavigableContainer: System.String ToString()
 FSharp.Compiler.EditorServices.NavigableContainer: System.String get_FullName()
 FSharp.Compiler.EditorServices.NavigableContainer: System.String get_Name()
+FSharp.Compiler.EditorServices.NavigableContainerInfo: Boolean Equals(FSharp.Compiler.EditorServices.NavigableContainerInfo)
+FSharp.Compiler.EditorServices.NavigableContainerInfo: Boolean Equals(FSharp.Compiler.EditorServices.NavigableContainerInfo, System.Collections.IEqualityComparer)
+FSharp.Compiler.EditorServices.NavigableContainerInfo: Boolean Equals(System.Object)
+FSharp.Compiler.EditorServices.NavigableContainerInfo: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.EditorServices.NavigableContainerInfo: FSharp.Compiler.EditorServices.NavigableContainer Parent
+FSharp.Compiler.EditorServices.NavigableContainerInfo: FSharp.Compiler.EditorServices.NavigableContainer get_Parent()
+FSharp.Compiler.EditorServices.NavigableContainerInfo: FSharp.Compiler.EditorServices.NavigableContainerType ContainerType
+FSharp.Compiler.EditorServices.NavigableContainerInfo: FSharp.Compiler.EditorServices.NavigableContainerType get_ContainerType()
+FSharp.Compiler.EditorServices.NavigableContainerInfo: Int32 CompareTo(FSharp.Compiler.EditorServices.NavigableContainerInfo)
+FSharp.Compiler.EditorServices.NavigableContainerInfo: Int32 CompareTo(System.Object)
+FSharp.Compiler.EditorServices.NavigableContainerInfo: Int32 CompareTo(System.Object, System.Collections.IComparer)
+FSharp.Compiler.EditorServices.NavigableContainerInfo: Int32 GetHashCode()
+FSharp.Compiler.EditorServices.NavigableContainerInfo: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.EditorServices.NavigableContainerInfo: Microsoft.FSharp.Collections.FSharpList`1[System.String] NameParts
+FSharp.Compiler.EditorServices.NavigableContainerInfo: Microsoft.FSharp.Collections.FSharpList`1[System.String] get_NameParts()
+FSharp.Compiler.EditorServices.NavigableContainerInfo: System.String ToString()
+FSharp.Compiler.EditorServices.NavigableContainerInfo: Void .ctor(FSharp.Compiler.EditorServices.NavigableContainerType, Microsoft.FSharp.Collections.FSharpList`1[System.String], FSharp.Compiler.EditorServices.NavigableContainer)
 FSharp.Compiler.EditorServices.NavigableContainerType+Tags: Int32 Exception
 FSharp.Compiler.EditorServices.NavigableContainerType+Tags: Int32 File
 FSharp.Compiler.EditorServices.NavigableContainerType+Tags: Int32 Module
