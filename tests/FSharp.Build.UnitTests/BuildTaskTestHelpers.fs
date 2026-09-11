@@ -42,6 +42,16 @@ type MockEngine() =
 
         member _.ProjectFileOfTaskNode: string = ""
 
+    interface IBuildEngine2 with
+        member _.IsRunningMultipleNodes = false
+        member _.BuildProjectFile(_, _, _, _, _) = failwith "Not Implemented"
+        member _.BuildProjectFilesInParallel(_, _, _, _, _, _, _) = failwith "Not Implemented"
+
+    interface IBuildEngine3 with
+        member _.BuildProjectFilesInParallel(_, _, _, _, _, _) = failwith "Not Implemented"
+        member _.Yield() = ()
+        member _.Reacquire() = ()
+
 module BuildTaskTestHelpers =
 
     let createTaskEnvironmentInTemporaryDirectory () =

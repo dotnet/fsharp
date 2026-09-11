@@ -12,14 +12,14 @@ open FSharp.Build
 open Xunit
 open BuildTaskTestHelpers
 
-type FauxHostObject() =
+type FauxHostObject(?executeCompiler: bool) =
     let mutable flags: string[] = [||]
     let mutable sources: string[] = [||]
 
-    member _.Compile(_compile: Func<int>, flagsIn: string[], sourcesIn: string[]) =
+    member _.Compile(compile: Func<int>, flagsIn: string[], sourcesIn: string[]) =
         flags <- flagsIn
         sources <- sourcesIn
-        0
+        if defaultArg executeCompiler false then compile.Invoke() else 0
 
     member _.Flags = flags
     member _.Sources = sources
@@ -180,3 +180,65 @@ type FscFsiMultiThreadedTaskTests() =
             if RuntimeInformation.IsOSPlatform OSPlatform.Windows then
                 for input in [ $@"\tools\{executable}"; $@"C:tools\{executable}" ] do
                     Assert.Equal(environment.GetAbsolutePath(input).Value, normalize input))
+
+    static member HostCallbackCases =
+        [ for kind in [ Compiler; Interactive ] do
+            for exitCode in [ 0; 7 ] do
+                yield [| box kind; box exitCode |] ]
+
+    [<Theory>]
+    [<MemberData(nameof FscFsiMultiThreadedTaskTests.HostCallbackCases)>]
+    member _.``host callbacks execute relative tools in isolated task environments``(kind: CompilerTaskKind, exitCode: int) =
+        withTaskEnvironmentPairUsing createTaskEnvironmentInTemporaryDirectory (fun environmentA directoryA environmentB directoryB ->
+            let run (environment: TaskEnvironment) (directory: DirectoryInfo) marker release =
+                let engine = MockEngine()
+                let toolPaths = ResizeArray<string>()
+                let task: ToolTask =
+                    match kind with
+                    | Compiler ->
+                        { new Fsc() with
+                            override _.GenerateCommandLineCommands() = "fsi --exec probe.fsx"
+                            override _.GenerateResponseFileCommands() = ""
+                            override _.GetProcessStartInfo(pathToTool, commands, responseFileSwitch) =
+                                toolPaths.Add pathToTool
+                                base.GetProcessStartInfo(pathToTool, commands, responseFileSwitch) }
+                    | Interactive ->
+                        { new Fsi() with
+                            override _.GenerateCommandLineCommands() = "fsi --exec probe.fsx"
+                            override _.GenerateResponseFileCommands() = ""
+                            override _.GetProcessStartInfo(pathToTool, commands, responseFileSwitch) =
+                                toolPaths.Add pathToTool
+                                base.GetProcessStartInfo(pathToTool, commands, responseFileSwitch) }
+
+                let toolDirectory = Path.GetFullPath(Path.Combine(TestFramework.repoRoot, ".dotnet")) + string Path.DirectorySeparatorChar
+                let projectDirectory = Uri(directory.FullName + string Path.DirectorySeparatorChar)
+                task.ToolPath <- projectDirectory.MakeRelativeUri(Uri(toolDirectory)).ToString() |> Uri.UnescapeDataString
+                task.ToolExe <- if RuntimeInformation.IsOSPlatform OSPlatform.Windows then "dotnet.exe" else "dotnet"
+                task.BuildEngine <- engine
+                task.HostObject <- FauxHostObject(executeCompiler = true)
+                task.Timeout <- 20000
+                assignTaskEnvironment environment task |> ignore
+                environment.SetEnvironmentVariable("FSHARP_MT_CALLBACK", marker)
+                File.WriteAllText(Path.Combine(directory.FullName, "input.txt"), marker)
+                File.WriteAllText(
+                    Path.Combine(directory.FullName, "probe.fsx"),
+                    String.concat "\n" [
+                        "open System"
+                        "open System.IO"
+                        """printfn "CALLBACK=%s|%s" (Environment.GetEnvironmentVariable "FSHARP_MT_CALLBACK") (File.ReadAllText "input.txt")"""
+                        """File.WriteAllText("result.txt", Environment.CurrentDirectory)"""
+                        $"exit {exitCode}"
+                    ])
+                Assert.False(Path.IsPathRooted task.ToolPath)
+                Assert.NotEqual<string>(Environment.CurrentDirectory, directory.FullName)
+                release ()
+                Assert.Equal((exitCode = 0), task.Execute())
+                Assert.Equal(exitCode, task.ExitCode)
+                Assert.Equal(environment.GetAbsolutePath(Path.Combine(task.ToolPath, task.ToolExe)).Value, Assert.Single(toolPaths))
+                Assert.Equal(directory.FullName, File.ReadAllText(Path.Combine(directory.FullName, "result.txt")))
+                Assert.Contains(engine.Messages, fun message -> message.Message.Contains($"CALLBACK={marker}|{marker}"))
+                if exitCode = 0 then Assert.Empty(engine.Errors)
+                else Assert.Single(engine.Errors) |> ignore
+
+            runConcurrentlyWithBarrier "compiler host callbacks" [ run environmentA directoryA "first"; run environmentB directoryB "second" ]
+            |> ignore)
