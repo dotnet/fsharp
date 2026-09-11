@@ -55,8 +55,8 @@ let twice x = x * 2
         hits
         |> Array.map (fun (struct (item, _, _)) -> CopilotSymbolMapping.fullyQualifiedName item)
 
-    let private searchFocused cache openDocumentIds focusedFilePath solution pattern =
-        CopilotSymbolQuery.search cache openDocumentIds focusedFilePath solution [| pattern |]
+    let private searchFocused cache openDocumentIds focus solution pattern =
+        CopilotSymbolQuery.search cache openDocumentIds focus solution [| pattern |]
         |> run
         |> Array.head
         |> namesOf
@@ -66,6 +66,16 @@ let twice x = x * 2
 
     let private search pattern =
         searchIn cache Seq.empty solution pattern
+
+    let private itemNamed (fullyQualifiedName: string) =
+        CopilotSymbolQuery.search cache Seq.empty ValueNone solution [| fullyQualifiedName |]
+        |> run
+        |> Array.head
+        |> Array.pick (fun (struct (item, _, _)) ->
+            if CopilotSymbolMapping.fullyQualifiedName item = fullyQualifiedName then
+                Some item
+            else
+                None)
 
     let private symbolContext name =
         CopilotSymbolQuery.symbolContext cache Seq.empty solution name |> run
@@ -91,17 +101,15 @@ let twice x = x * 2
     [<InlineData("Counter", false)>]
     [<InlineData("", false)>]
     let ``a name matches only the declaration it spells out`` (candidate: string, expected: bool) =
-        let item =
-            CopilotSymbolQuery.search cache Seq.empty ValueNone solution [| "Counter" |]
-            |> run
-            |> Array.head
-            |> Array.pick (fun (struct (item, _, _)) ->
-                if CopilotSymbolMapping.fullyQualifiedName item = "Widgets.Counter" then
-                    Some item
-                else
-                    None)
+        Assert.Equal(expected, CopilotSymbolMapping.hasFullyQualifiedName candidate (itemNamed "Widgets.Counter"))
 
-        Assert.Equal(expected, CopilotSymbolMapping.hasFullyQualifiedName candidate item)
+    [<Theory>]
+    [<InlineData("Widgets.Counter", "Counter")>]
+    [<InlineData("Widgets.Counter.Bump", "Counter.Bump")>]
+    [<InlineData("Widgets.Shape.Circle", "Shape.Circle")>]
+    [<InlineData("Widgets.describeShape", "Widgets.describeShape")>]
+    let ``a tooltip names a member by its container and a type by itself`` (fullyQualifiedName: string, expected: string) =
+        Assert.Equal(expected, CopilotSymbolMapping.tooltipName (itemNamed fullyQualifiedName))
 
     [<Fact>]
     let ``search reports each declaration once`` () =
@@ -148,6 +156,14 @@ let twice x = x * 2
         $"module {name}Module\n\ntype {name}Holder() =\n{members}\n"
 
     let private coldFile = "C:\\cold.fs", "module Cold\n\nlet widgetCounter = 1\n"
+
+    let private caretOn filePath line =
+        ValueSome
+            {
+                FilePath = filePath
+                FirstLine = line
+                LastLine = line
+            }
 
     [<Fact>]
     let ``an open document answers without parsing the rest of the solution`` () =
@@ -217,6 +233,33 @@ let twice x = x * 2
         Assert.Equal(expected, Array.head names)
         Assert.Equal(2, names.Length)
 
+    /// A bare "#" is the first thing the picker asks, and Copilot's own provider fills it from the open files.
+    [<Fact>]
+    let ``no text at all answers with the declarations of the open files`` () =
+        let cache = freshCache ()
+        let solution = solutionOf [ "C:\\open.fs", manyDeclarations "Widget" 3; coldFile ]
+
+        let names =
+            searchFocused cache [ (documentNamed "open.fs" solution).Id ] (caretOn "C:\\open.fs" 1) solution ""
+
+        Assert.Contains("WidgetModule.WidgetHolder", names)
+        Assert.All(names, fun name -> Assert.StartsWith("WidgetModule", name, StringComparison.Ordinal))
+        Assert.True((cache.TryGetCachedNavigableItems (documentNamed "cold.fs" solution).Id).IsNone)
+
+    [<Theory>]
+    [<InlineData("wi")>]
+    [<InlineData("widgetCounter")>]
+    let ``a short text is looked up in the open files alone`` (pattern: string) =
+        let cache = freshCache ()
+
+        let solution =
+            solutionOf [ "C:\\open.fs", "module Open\n\nlet other = 1\n"; coldFile ]
+
+        let names =
+            searchIn cache [ (documentNamed "open.fs" solution).Id ] solution pattern
+
+        Assert.Equal(pattern.Length >= 3, Array.contains "Cold.widgetCounter" names)
+
     /// The focused file outranks the merely open one, which is how Copilot's own provider separates
     /// the tab being edited from the rest of the tabs.
     [<Fact>]
@@ -233,9 +276,29 @@ let twice x = x * 2
         let openDocumentIds = documentsOf solution |> Array.map _.Id
 
         let names =
-            searchFocused cache openDocumentIds (ValueSome "C:\\holder.fs") solution "Widget"
+            searchFocused cache openDocumentIds (caretOn "C:\\holder.fs" 1) solution "Widget"
 
         Assert.Equal("Holder.WidgetHolder", Array.head names)
+
+    /// The type around the caret loses on name length to the other one, so it can only come first by
+    /// holding the caret - on a line of its member's body, not of its own name.
+    [<Theory>]
+    [<InlineData(4, "Selection.Short")>]
+    [<InlineData(8, "Selection.AroundTheCaret")>]
+    let ``the declaration around the caret answers before the rest of the focused file`` (caretLine: int) (expected: string) =
+        let cache = freshCache ()
+
+        let source =
+            "module Selection\n\ntype Short() =\n    member _.Value = 1\n\ntype AroundTheCaret() =\n    member _.Compute() =\n        2\n"
+
+        let solution = solutionOf [ "C:\\selection.fs", source ]
+        let focused = documentNamed "selection.fs" solution
+
+        let names =
+            searchFocused cache [ focused.Id ] (caretOn "C:\\selection.fs" caretLine) solution ""
+            |> Array.filter (fun name -> name = "Selection.Short" || name = "Selection.AroundTheCaret")
+
+        Assert.Equal(expected, Array.head names)
 
     [<Fact>]
     let ``a batch of texts answers like the same texts one by one`` () =
