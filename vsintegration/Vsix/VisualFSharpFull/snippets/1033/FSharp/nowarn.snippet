@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CodeSnippets xmlns="http://schemas.microsoft.com/VisualStudio/2005/CodeSnippet">
+  <CodeSnippet Format="1.0.0">
+    <Header>
+      <Title>nowarn</Title>
+      <Shortcut>nowarn</Shortcut>
+      <Description>Code snippet for a scoped #nowarn</Description>
+      <Author>Microsoft Corporation</Author>
+      <SnippetTypes>
+        <SnippetType>Expansion</SnippetType>
+        <SnippetType>SurroundsWith</SnippetType>
+      </SnippetTypes>
+    </Header>
+    <Snippet>
+      <Declarations>
+        <Literal>
+          <ID>code</ID>
+          <ToolTip>Warning number to suppress</ToolTip>
+          <Default>0040</Default>
+        </Literal>
+      </Declarations>
+      <Code Language="FSharp"><![CDATA[#nowarn $code$
+$selected$$end$
+#warnon $code$]]></Code>
+    </Snippet>
+  </CodeSnippet>
+</CodeSnippets>

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CodeSnippets xmlns="http://schemas.microsoft.com/VisualStudio/2005/CodeSnippet">
+  <CodeSnippet Format="1.0.0">
+    <Header>
+      <Title>interface</Title>
+      <Shortcut>interface</Shortcut>
+      <Description>Code snippet for an interface type</Description>
+      <Author>Microsoft Corporation</Author>
+      <SnippetTypes>
+        <SnippetType>Expansion</SnippetType>
+      </SnippetTypes>
+    </Header>
+    <Snippet>
+      <Declarations>
+        <Literal>
+          <ID>name</ID>
+          <ToolTip>Interface name</ToolTip>
+          <Default>IMyInterface</Default>
+        </Literal>
+        <Literal>
+          <ID>member</ID>
+          <ToolTip>Member name</ToolTip>
+          <Default>Member</Default>
+        </Literal>
+        <Literal>
+          <ID>type</ID>
+          <ToolTip>Member type</ToolTip>
+          <Default>int -&gt; unit</Default>
+        </Literal>
+      </Declarations>
+      <Code Language="FSharp"><![CDATA[type $name$ =
+    abstract member $member$: $type$
+$end$]]></Code>
+    </Snippet>
+  </CodeSnippet>
+</CodeSnippets>

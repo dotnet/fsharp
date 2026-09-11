@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CodeSnippets xmlns="http://schemas.microsoft.com/VisualStudio/2005/CodeSnippet">
+  <CodeSnippet Format="1.0.0">
+    <Header>
+      <Title>#if</Title>
+      <Shortcut>#if</Shortcut>
+      <Description>Code snippet for #if</Description>
+      <Author>Microsoft Corporation</Author>
+      <SnippetTypes>
+        <SnippetType>Expansion</SnippetType>
+        <SnippetType>SurroundsWith</SnippetType>
+      </SnippetTypes>
+    </Header>
+    <Snippet>
+      <Declarations>
+        <Literal>
+          <ID>symbol</ID>
+          <ToolTip>Conditional compilation symbol</ToolTip>
+          <Default>DEBUG</Default>
+        </Literal>
+      </Declarations>
+      <Code Language="FSharp"><![CDATA[#if $symbol$
+$selected$$end$
+#endif]]></Code>
+    </Snippet>
+  </CodeSnippet>
+</CodeSnippets>
