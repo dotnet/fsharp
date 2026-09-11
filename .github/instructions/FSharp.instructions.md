@@ -25,7 +25,8 @@ When the IDE's F# semantic tools are unavailable, use the `F#` MCP server (`.mcp
 
 ## Values and types
 
-- `voption` – `ValueSome`/`ValueNone` – over `option` when the value does not escape; it is this compiler's option type. Exception: when an API hands you `'T option` and has no `voption` counterpart, unwrap with `Option.defaultValue`/`Option.defaultWith` directly – do not insert `ValueOption.ofOption` just to switch modules.
+- `voption` – `ValueSome`/`ValueNone` – over `option`; it is this compiler's option type. Fields, members, parameters and values shared between threads included: none of them is a reason to pick `option`. Exception: when an API hands you `'T option` and has no `voption` counterpart, unwrap with `Option.defaultValue`/`Option.defaultWith` directly – do not insert `ValueOption.ofOption` just to switch modules.
+- The mirror case, an API that *takes* `'T option` (an optional argument `?caret = …`, a field typed `IDisposable option`): stay in `ValueOption` through the whole chain and convert once, last – `x |> ValueOption.bind _.Position |> ValueOption.toOption`, never `x |> ValueOption.toOption |> Option.bind _.Position`.
 - `vsintegration` has `voption`-returning counterparts of the FSharp.Core collection functions, suffixed `V`, in `FSharp.Editor/Common/Extensions.fs`: `Seq.tryHeadV`/`tryFindV`/`tryFindIndexV`/`tryPickV`/`chooseV`, `Array.tryHeadV`/`tryFindV`/`tryPickV`/`chooseV`, `List.tryFindV`, `ImmutableArray.tryHeadV`. Reach for those rather than the `option`-returning original. The module is `[<AutoOpen>]` and compiles before the rest of `FSharp.Editor`, so a file in the `Microsoft.VisualStudio.FSharp.Editor` namespace needs no `open` for them. `src/Compiler` has no equivalents.
 - `struct ('T1 * 'T2)` tuples and `[<Struct>]` types on allocation-sensitive paths.
 - Anonymous struct records (`struct {| … |}`) over bare tuples for multi-value returns of internal helpers. Public FCS surface is governed by `.fsi` files and compatibility – do not change it for style.
@@ -35,7 +36,7 @@ When the IDE's F# semantic tools are unavailable, use the `F#` MCP server (`.mcp
 
 ## Lambdas and collections
 
-- Prefer the `_.Property` shorthand in pipeline position: `tys |> List.map _.Type`. Complex expressions (`fun x -> x.Name = name`, `fun x -> x.A, x.B`) cannot use it. Never add a space – `_.MethodCall ()` breaks parsing. Unrelated to the `member _.Foo` self-identifier.
+- Prefer the `_.Property` shorthand in pipeline position: `tys |> List.map _.Type`. Complex expressions (`fun x -> x.Name = name`, `fun x -> x.A, x.B`) cannot use it; a member chain ending in a method call is not complex: `_.LineChanged.Subscribe(handler)`. The shorthand needs its input type known, so pipe the value in first – `position |> ValueOption.map _.Line`, not `ValueOption.map _.Line position` (FS0072). Never add a space – `_.MethodCall ()` breaks parsing. Unrelated to the `member _.Foo` self-identifier.
 - Eta-reduce: `Seq.map (fun x -> someFunction x)` must become `Seq.map someFunction` – unless the lambda is load-bearing. A method group names its captured receiver with a synthesized name that varies by optimization setting, so a closure something reflects over needs the explicit lambda (the Type Provider SDK's `tcImports` capture in `CompilerImports.fs`).
 - Prefer a single traversal – one `fold`, loop, or comprehension – to a chain of transformations: it allocates nothing per element, where a chain allocates at every stage.
 - When the chain reads better than one pass, route it through `Seq` and materialize once at the end – a `List`/`Array` chain allocates a whole intermediate collection per stage, a `Seq` chain only an enumerator.
