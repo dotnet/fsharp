@@ -4744,7 +4744,7 @@ FSharp.Compiler.EditorServices.Structure+ScopeRange: Void .ctor(Scope, Collapse,
 FSharp.Compiler.EditorServices.Structure: FSharp.Compiler.EditorServices.Structure+Collapse
 FSharp.Compiler.EditorServices.Structure: FSharp.Compiler.EditorServices.Structure+Scope
 FSharp.Compiler.EditorServices.Structure: FSharp.Compiler.EditorServices.Structure+ScopeRange
-FSharp.Compiler.EditorServices.Structure: System.Collections.Generic.IEnumerable`1[FSharp.Compiler.EditorServices.Structure+ScopeRange] getOutliningRanges(System.String[], FSharp.Compiler.Syntax.ParsedInput)
+FSharp.Compiler.EditorServices.Structure: System.Collections.Generic.IEnumerable`1[FSharp.Compiler.EditorServices.Structure+ScopeRange] getOutliningRanges(System.ReadOnlyMemory`1[System.Char][], FSharp.Compiler.Syntax.ParsedInput)
 FSharp.Compiler.EditorServices.ToolTipElement+CompositionError: System.String errorText
 FSharp.Compiler.EditorServices.ToolTipElement+CompositionError: System.String get_errorText()
 FSharp.Compiler.EditorServices.ToolTipElement+Group: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.EditorServices.ToolTipElementData] elements
