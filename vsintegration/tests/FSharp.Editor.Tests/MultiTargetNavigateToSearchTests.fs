@@ -89,10 +89,7 @@ let ``a declaration an edit puts behind a directive is reported by the instance 
         ||> Seq.fold (fun (solution: Solution) instance ->
             let document = solution.GetProject instance |> documentNamed "Second"
 
-            solution.WithDocumentText(
-                document.Id,
-                SourceText.From "module ModuleSecond\n#if FOO\nlet addedFoo = 1\n#endif\n"
-            ))
+            solution.WithDocumentText(document.Id, SourceText.From "module ModuleSecond\n#if FOO\nlet addedFoo = 1\n#endif\n"))
 
     let foo = edited.GetProject instances[1]
     let plain = edited.GetProject instances[0]
