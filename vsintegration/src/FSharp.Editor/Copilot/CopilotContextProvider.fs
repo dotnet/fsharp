@@ -22,10 +22,12 @@ open Microsoft.VisualStudio.Shell.ServiceBroker
 open FSharp.Compiler.EditorServices
 open CancellableTasks
 
-/// Where a declaration sits relative to what the user is working on. The picker merges answers from
-/// every provider, so a match in a file the user has open has to say so rather than rely on its position.
+/// Where a declaration sits relative to what the user is working on. The picker merges answers from every
+/// provider and ranks them by the priority each one reports, so a match has to say where it sits rather
+/// than rely on its position. The tiers mirror what Copilot's own symbol provider reports for C#.
 [<RequireQualifiedAccess>]
 type internal DocumentFocus =
+    | Focused
     | Open
     | Elsewhere
 
@@ -33,6 +35,8 @@ type internal DocumentFocus =
 /// Kept apart from the brokered service so it can be exercised without a Visual Studio workspace.
 module internal CopilotSymbolQuery =
 
+    /// Also the point at which the search stops parsing files nobody has opened, so it bounds the cold
+    /// scan as much as the answer. Copilot's own provider reads an index and can afford a far larger cap.
     [<Literal>]
     let private MaxMentions = 20
 
@@ -55,11 +59,11 @@ module internal CopilotSymbolQuery =
         |> Seq.where (fun project -> project.Language = FSharpConstants.FSharpLanguageName)
         |> Seq.collect _.Documents
 
-    let focusOf (openIds: HashSet<DocumentId>) (document: Document) =
-        if openIds.Contains document.Id then
-            DocumentFocus.Open
-        else
-            DocumentFocus.Elsewhere
+    let focusOf (focusedFilePath: string voption) (openIds: HashSet<DocumentId>) (document: Document) =
+        match focusedFilePath with
+        | ValueSome path when String.Equals(path, document.FilePath, StringComparison.OrdinalIgnoreCase) -> DocumentFocus.Focused
+        | _ when openIds.Contains document.Id -> DocumentFocus.Open
+        | _ -> DocumentFocus.Elsewhere
 
     /// The documents in the order a query visits them: the ones the user has open, the ones already
     /// parsed into the cache, and the ones that would have to be parsed to answer.
@@ -91,7 +95,13 @@ module internal CopilotSymbolQuery =
 
     /// Declarations whose fully qualified name matches each search text, best match first, one entry
     /// per name. Every document is visited once for all of the texts.
-    let search (cache: FSharpNavigableItemsCache) (openDocumentIds: DocumentId seq) (solution: Solution) (searchTexts: string[]) =
+    let search
+        (cache: FSharpNavigableItemsCache)
+        (openDocumentIds: DocumentId seq)
+        (focusedFilePath: string voption)
+        (solution: Solution)
+        (searchTexts: string[])
+        =
         cancellableTask {
             let! ct = CancellableTask.getCancellationToken ()
             let openIds = HashSet openDocumentIds
@@ -147,10 +157,10 @@ module internal CopilotSymbolQuery =
                 hits
                 |> Array.map (
                     Seq.sortBy (fun (struct (kind, item: NavigableItem, document: Document)) ->
-                        focusOf openIds document, document.IsFSharpSignatureFile, kind, item.Name.Length)
+                        focusOf focusedFilePath openIds document, document.IsFSharpSignatureFile, kind, item.Name.Length)
                     >> Seq.distinctBy (fun (struct (_, item, _)) -> CopilotSymbolMapping.fullyQualifiedName item)
                     >> Seq.truncate MaxMentions
-                    >> Seq.map (fun (struct (_, item, document)) -> struct (item, document, focusOf openIds document))
+                    >> Seq.map (fun (struct (_, item, document)) -> struct (item, document, focusOf focusedFilePath openIds document))
                     >> Seq.toArray
                 )
         }
@@ -278,7 +288,11 @@ module internal CopilotSymbolQuery =
                         Audience = (ServiceAudience.PublicSdk ||| ServiceAudience.Local))>]
 type internal FSharpCopilotContextProvider
     [<ImportingConstructor>]
-    (cache: FSharpNavigableItemsCache, [<Import(AllowDefault = true)>] workspace: VisualStudioWorkspace | null) =
+    (
+        cache: FSharpNavigableItemsCache,
+        activeDocument: FSharpActiveDocumentTracker,
+        [<Import(AllowDefault = true)>] workspace: VisualStudioWorkspace | null
+    ) =
 
     static let moniker =
         ServiceMoniker(FSharpConstants.copilotSymbolProviderName, Version CopilotDescriptors.CurrentContextProviderVersion)
@@ -307,7 +321,8 @@ type internal FSharpCopilotContextProvider
 
     let priorityOf focus =
         match focus with
-        | DocumentFocus.Open -> CopilotQueriedMentionPriority.High
+        | DocumentFocus.Focused -> CopilotQueriedMentionPriority.High
+        | DocumentFocus.Open -> CopilotQueriedMentionPriority.Low
         | DocumentFocus.Elsewhere -> CopilotQueriedMentionPriority.None
 
     let mentionFor (item: NavigableItem) (document: Document) focus =
@@ -337,11 +352,13 @@ type internal FSharpCopilotContextProvider
         :> CopilotQueriedMention
 
     /// The user is still typing, so the trailing input is the search text. It is preceded by the member
-    /// name once the mention has been committed, as in "#fsharpSymbol:Namespace.Type".
+    /// name once the mention has been committed, as in "#fsharpSymbol:Namespace.Type". The picker asks
+    /// before it has resolved what kind of mention is being typed, which Copilot's own provider answers
+    /// as readily as a resolved one.
     let searchTextOf (query: CopilotMentionQuery) =
         match query.Type, query.Inputs with
-        | CopilotMentionType.Context, null -> ValueNone
-        | CopilotMentionType.Context, inputs when inputs.Count > 0 ->
+        | (CopilotMentionType.Context | CopilotMentionType.Unknown), null -> ValueNone
+        | (CopilotMentionType.Context | CopilotMentionType.Unknown), inputs when inputs.Count > 0 ->
             match inputs[inputs.Count - 1] with
             | text when String.IsNullOrWhiteSpace text -> ValueNone
             | text when String.Equals(text, CopilotSymbolMapping.SymbolMember, StringComparison.Ordinal) -> ValueNone
@@ -358,7 +375,13 @@ type internal FSharpCopilotContextProvider
             | null -> return searchTexts |> Array.map (fun _ -> noMentions)
             | _ when Array.isEmpty distinct -> return searchTexts |> Array.map (fun _ -> noMentions)
             | workspace ->
-                let! hits = CopilotSymbolQuery.search cache (workspace.GetOpenDocumentIds()) workspace.CurrentSolution distinct
+                let! hits =
+                    CopilotSymbolQuery.search
+                        cache
+                        (workspace.GetOpenDocumentIds())
+                        activeDocument.FocusedFilePath
+                        workspace.CurrentSolution
+                        distinct
 
                 let byText = Dictionary(StringComparer.Ordinal)
 
