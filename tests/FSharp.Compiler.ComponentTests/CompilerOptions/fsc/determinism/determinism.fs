@@ -184,3 +184,59 @@ module Determinism
             Assert.Equal(readMvid dll1, readMvid dll2)
         finally
             try Directory.Delete(tempRoot, true) with _ -> ()
+
+    [<Theory>]
+    [<InlineData("portable", false)>]
+    [<InlineData("embedded", false)>]
+    [<InlineData("portable", true)>]
+    let ``Path mapping removes original PDB path length from the entire binary`` debugType unicodeMappedPath =
+        let mappedRoot =
+            if unicodeMappedPath then "/mapped/" + String.replicate 128 "日本語"
+            else "/mapped"
+        let tempRoot =
+            // The space is deliberate: argument quoting must survive a temp root
+            // containing spaces (e.g. TEMP under "C:\Users\First Last").
+            Path.Combine(Path.GetTempPath(), "fsharp pdb path length " + Guid.NewGuid().ToString("N"))
+        try
+            let compileIn directory value =
+                let workDir = Path.Combine(tempRoot, directory)
+                Directory.CreateDirectory workDir |> ignore
+                let source = Path.Combine(workDir, "Library.fs")
+                let output = Path.Combine(workDir, "Library.dll")
+                File.WriteAllText(source, $"module Library\nlet value = {value}\n")
+                let defaultOpts = CompilerAssert.DefaultProjectOptions(TargetFramework.Current).OtherOptions
+                let result = runFscProcess [
+                    yield! defaultOpts |> Array.toList
+                    yield "--target:library"
+                    yield "--deterministic+"
+                    yield $"--debug:{debugType}"
+                    yield $"--pathmap:{workDir}={mappedRoot}"
+                    yield $"-o:{output}"
+                    yield source
+                ]
+                if result.ExitCode <> 0 then
+                    failwithf "fsc exit %d\nstdout:%s\nstderr:%s" result.ExitCode result.StdOut result.StdErr
+                use stream = File.OpenRead output
+                use pe = new PEReader(stream)
+                let codeViewEntry =
+                    pe.ReadDebugDirectory()
+                    |> Seq.find (fun entry -> entry.Type = DebugDirectoryEntryType.CodeView)
+                let codeView = pe.ReadCodeViewDebugDirectoryData codeViewEntry
+                let expectedPdbPath =
+                    if debugType = "embedded" then "Library.pdb"
+                    else mappedRoot + "/Library.pdb"
+                Assert.Equal(expectedPdbPath, codeView.Path)
+                output
+
+            let first = compileIn "short" 1
+            let second = compileIn "a-much-longer-output-directory" 1
+            Assert.True(File.ReadAllBytes first = File.ReadAllBytes second, "Mapped DLL bytes must agree, including debug directory layout")
+            if debugType = "portable" then
+                Assert.True(
+                    File.ReadAllBytes(Path.ChangeExtension(first, "pdb")) = File.ReadAllBytes(Path.ChangeExtension(second, "pdb")),
+                    "Mapped portable PDB bytes must agree")
+
+            let changed = compileIn "changed-source" 2
+            Assert.False(File.ReadAllBytes first = File.ReadAllBytes changed, "A real source change must still change the binary")
+        finally
+            if Directory.Exists tempRoot then Directory.Delete(tempRoot, true)
