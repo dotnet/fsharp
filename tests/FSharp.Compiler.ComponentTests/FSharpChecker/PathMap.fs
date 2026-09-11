@@ -70,7 +70,7 @@ let ``a declaration in a project with a path map is named from the root once`` (
 
         let library =
             { library with
-                OtherOptions = [ $"--pathmap:{root}=.\\" ] }
+                OtherOptions = [ $"--pathmap:{root}=.{Path.DirectorySeparatorChar}" ] }
 
         let app =
             { SyntheticProject.Create("MappedApp", sourceFile "App" [ "Library" ]) with
