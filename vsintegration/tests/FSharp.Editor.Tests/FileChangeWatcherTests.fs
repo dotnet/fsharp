@@ -39,7 +39,7 @@ type private MockFileChangeContext() =
 
         member _.EnqueueWatchingFile path =
             watched.Add path
-            let token = MockWatchedFile(fun () -> watched.Remove path |> ignore)
+            let token = new MockWatchedFile(fun () -> watched.Remove path |> ignore)
             tokens[path] <- token
             token :> IFSharpWatchedFile
 
@@ -141,6 +141,9 @@ module FileChangeWatcherTests =
 
     let private createWatcher (service: RecordingFileChangeService) =
         new FSharpFileChangeWatcher(Task.FromResult(service :> IVsAsyncFileChangeEx2), batchDelay)
+
+    let private becomesActive (watched: IFSharpWatchedFile) =
+        SpinWait.SpinUntil((fun () -> watched.IsActive), TimeSpan.FromSeconds 10.)
 
     [<Fact>]
     let ``WatchedDirectory covers files under it matching the extension filter`` () =
@@ -313,8 +316,10 @@ module FileChangeWatcherTests =
 
     [<Fact>]
     let ``A directory-covered watch becomes active once the directory's advise succeeds`` () =
-        let service = RecordingFileChangeService()
-        use watcher = createWatcher service
+        let serviceAvailable =
+            TaskCompletionSource<IVsAsyncFileChangeEx2>(TaskCreationOptions.RunContinuationsAsynchronously)
+
+        use watcher = new FSharpFileChangeWatcher(serviceAvailable.Task, batchDelay)
 
         let directories =
             ImmutableArray.Create(WatchedDirectory(@"C:\refs", ImmutableArray.Create ".dll"))
@@ -322,9 +327,11 @@ module FileChangeWatcherTests =
         use context = (watcher :> IFSharpFileChangeWatcher).CreateContext directories
         let watched = context.EnqueueWatchingFile @"C:\refs\a.dll"
 
+        // The advise is queued but cannot run until the service is available, however long that takes.
         Assert.False watched.IsActive
-        service.WaitForCalls 2 |> ignore
-        Assert.True watched.IsActive
+
+        serviceAvailable.SetResult(RecordingFileChangeService())
+        Assert.True(becomesActive watched)
 
     [<Fact>]
     let ``A failing directory advise does not block the rest of the batch`` () =
@@ -342,11 +349,10 @@ module FileChangeWatcherTests =
         let badWatch = context.EnqueueWatchingFile @"C:\bad\a.dll"
         let goodWatch = context.EnqueueWatchingFile @"C:\good\a.dll"
 
-        // The failing directory's advise never gets recorded; the good one still does.
-        service.WaitForCalls 2 |> ignore
-
+        // Both directories are advised in the same batch, the failing one first, so once the good
+        // one is active the bad one has already had its only chance.
+        Assert.True(becomesActive goodWatch)
         Assert.False badWatch.IsActive
-        Assert.True goodWatch.IsActive
 
     let private t0 = DateTime(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc)
     let private t1 = t0.AddHours 1.
