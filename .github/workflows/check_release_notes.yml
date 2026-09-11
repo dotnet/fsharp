@@ -288,9 +288,13 @@ jobs:
         if [[ $RELEASE_NOTES_NOT_FOUND != "" && "$OPT_OUT_RELEASE_NOTES" != true ]]; then
             RELEASE_NOTES_REQUIRED=true
         fi
+        RELEASE_NOTES_COMMENT_NEEDED=$RELEASE_NOTES_REQUIRED
+        if [[ "$PULL_REQUEST_FOUND" = false && "$OPT_OUT_RELEASE_NOTES" != true ]]; then
+            RELEASE_NOTES_COMMENT_NEEDED=true
+        fi
 
         {
-            echo "release-notes-required=$RELEASE_NOTES_REQUIRED"
+            echo "release-notes-comment-needed=$RELEASE_NOTES_COMMENT_NEEDED"
             echo "release-notes-exempt=$OPT_OUT_RELEASE_NOTES"
             echo "release-notes-check-message<<$EOF"
 
@@ -322,7 +326,7 @@ jobs:
       uses: actions/github-script@v9
       env:
         COMMENT_BODY: ${{ steps.release_notes_changes.outputs.release-notes-check-message }}
-        RELEASE_NOTES_REQUIRED: ${{ steps.release_notes_changes.outputs.release-notes-required }}
+        COMMENT_NEEDED: ${{ steps.release_notes_changes.outputs.release-notes-comment-needed }}
         RELEASE_NOTES_EXEMPT: ${{ steps.release_notes_changes.outputs.release-notes-exempt }}
       with:
         github-token: ${{ github.token }}
@@ -341,7 +345,7 @@ jobs:
                 if (existing?.body === process.env.COMMENT_BODY) {
                     return existing.id;
                 }
-                if (!existing && process.env.RELEASE_NOTES_REQUIRED !== 'true') {
+                if (!existing && process.env.COMMENT_NEEDED !== 'true') {
                     return;
                 }
 

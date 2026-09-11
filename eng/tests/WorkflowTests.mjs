@@ -57,7 +57,7 @@ function check({ labels = [], currentLabels = labels, finalLabels = currentLabel
     }
 }
 
-for (const [name, options, status, heading] of [
+for (const [name, options, status, heading, commentNeeded = status === 1] of [
     ['missing notes fail', {}, 1, 'Release notes required'],
     ['exemption added before execution', { currentLabels: ['NO_RELEASE_NOTES'] }, 0, 'Release-note check exempted'],
     ['exemption added during validation', { finalLabels: ['NO_RELEASE_NOTES'] }, 0, 'Release-note check exempted'],
@@ -66,6 +66,15 @@ for (const [name, options, status, heading] of [
         files: ['src/Compiler/Checking/CheckExpressions.fs', notePath],
         note: '* Fix the bug. (https://github.com/dotnet/fsharp/pull/123)'
     }, 0, 'Release notes checked'],
+    ['missing PR links retain a nonblocking warning', {
+        files: ['src/Compiler/Checking/CheckExpressions.fs', notePath],
+        note: '* Fix the bug.'
+    }, 0, 'No PR link found', true],
+    ['exempt PRs do not need a link warning', {
+        currentLabels: ['NO_RELEASE_NOTES'],
+        files: ['src/Compiler/Checking/CheckExpressions.fs', notePath],
+        note: '* Fix the bug.'
+    }, 0, 'Release-note check exempted'],
     ['untracked paths need no notes', { files: ['README.md'] }, 0, 'No release notes required']
 ]) {
     test(name, () => {
@@ -73,7 +82,7 @@ for (const [name, options, status, heading] of [
         assert.equal(result.status, status, result.stdout + result.stderr);
         assert.ok(result.output.includes(heading), result.output);
         assert.ok(!result.output.includes('@dotnet/fsharp-team-msft'), result.output);
-        assert.ok(result.output.includes(`release-notes-required=${status === 1}`), result.output);
+        assert.ok(result.output.includes(`release-notes-comment-needed=${commentNeeded}`), result.output);
         const labels = options.finalLabels ?? options.currentLabels ?? options.labels ?? [];
         assert.ok(result.output.includes(`release-notes-exempt=${labels.includes('NO_RELEASE_NOTES')}`), result.output);
     });
@@ -95,12 +104,12 @@ for (const phase of ['apiError', 'finalApiError']) {
     });
 }
 
-async function publish({ existing, required = true, body = `${marker}\nResult`, error,
+async function publish({ existing, needed = true, body = `${marker}\nResult`, error,
     exempt = false, currentExempt = exempt, currentHead = head } = {}) {
     const calls = [];
     const warnings = [];
     const environment = {
-        COMMENT_BODY: body, RELEASE_NOTES_REQUIRED: String(required),
+        COMMENT_BODY: body, COMMENT_NEEDED: String(needed),
         RELEASE_NOTES_EXEMPT: String(exempt), PR_HEAD_SHA: head
     };
     const previous = Object.fromEntries(Object.keys(environment).map(key => [key, process.env[key]]));
@@ -146,12 +155,12 @@ test('unchanged bot comments are not updated', async () => {
 });
 
 test('successful checks do not create a new comment', async () => {
-    assert.deepEqual((await publish({ required: false })).calls, []);
+    assert.deepEqual((await publish({ needed: false })).calls, []);
 });
 
 test('successful checks resolve an existing failure comment', async () => {
     const result = await publish({
-        required: false, body: `${marker}\nResolved`,
+        needed: false, body: `${marker}\nResolved`,
         existing: { id: 10, user: { login: 'github-actions[bot]' }, body: `${marker}\nMissing notes` }
     });
     assert.equal(result.calls.length, 1);
@@ -190,7 +199,7 @@ test('label events cannot skip the validation job or bypass its verdict', () => 
 test('comment environment carries the validated outputs', () => {
     for (const [variable, output] of [
         ['COMMENT_BODY', 'release-notes-check-message'],
-        ['RELEASE_NOTES_REQUIRED', 'release-notes-required'],
+        ['COMMENT_NEEDED', 'release-notes-comment-needed'],
         ['RELEASE_NOTES_EXEMPT', 'release-notes-exempt']
     ]) {
         assert.ok(releaseNotes.includes(`${variable}: \${{ steps.release_notes_changes.outputs.${output} }}`));
