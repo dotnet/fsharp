@@ -322,6 +322,223 @@ let main _ =
     |> compileExeAndRun
     |> shouldSucceed
 
+[<InlineData(false)>]
+[<InlineData(true)>]
+[<Theory>]
+let ``runtime async preserves reraise after a suspending handler`` (optimize: bool) =
+    FSharp """
+module RuntimeAsyncReraiseTest
+
+open System
+open System.Threading.Tasks
+open System.Runtime.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices
+
+let f () : Task<int> =
+    StateMachineHelpers.__runtimeAsyncReturn (
+        try
+            failwith "boom"
+            0
+        with _ ->
+            AsyncHelpers.Await(Task.Delay 1)
+            reraise ())
+
+[<EntryPoint>]
+let main _ =
+    f().GetAwaiter().GetResult()
+"""
+    |> withLangVersionPreview
+    |> withFSharpCoreShippedNet
+    |> withOptimization optimize
+    |> compileExeAndRun
+    |> shouldSucceed
+
+[<Fact>]
+let ``runtime async rejects stackalloc across suspension`` () =
+    FSharp """
+module RuntimeAsyncStackallocTest
+
+open System.Threading.Tasks
+open System.Runtime.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices
+open Microsoft.FSharp.NativeInterop
+
+let f () : Task<int> =
+    StateMachineHelpers.__runtimeAsyncReturn (
+        let p = NativePtr.stackalloc<int> 1
+        NativePtr.write p 42
+        AsyncHelpers.Await(Task.Delay 1)
+        NativePtr.read p)
+"""
+    |> withLangVersionPreview
+    |> withFSharpCoreShippedNet
+    |> compile
+    |> shouldFail
+
+[<Fact>]
+let ``runtime async rejects stackalloc without suspension`` () =
+    FSharp """
+module RuntimeAsyncStackallocWithoutSuspensionTest
+
+open System.Threading.Tasks
+open System.Runtime.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices
+open Microsoft.FSharp.NativeInterop
+
+let f () : Task<int> =
+    StateMachineHelpers.__runtimeAsyncReturn (
+        let p = NativePtr.stackalloc<int> 1
+        NativePtr.write p 42
+        NativePtr.read p)
+"""
+    |> withLangVersionPreview
+    |> withFSharpCoreShippedNet
+    |> compile
+    |> shouldFail
+
+[<Fact>]
+let ``runtime async rejects a byref captured by an inlined closure`` () =
+    FSharp """
+module RuntimeAsyncByrefClosureTest
+
+open System.Threading.Tasks
+open Microsoft.FSharp.Core.CompilerServices
+
+[<NoCompilerInlining>]
+let f (x: byref<int>) : Task<int> =
+    let y = x
+    StateMachineHelpers.__runtimeAsyncReturn (x + y)
+"""
+    |> withLangVersionPreview
+    |> withFSharpCoreShippedNet
+    |> compile
+    |> shouldFail
+    |> withErrorCode 406
+
+[<InlineData(false)>]
+[<InlineData(true)>]
+[<Theory>]
+let ``runtime async does not duplicate effectful InlineIfLambda arguments`` (optimize: bool) =
+    FSharp """
+module RuntimeAsyncInlineIfLambdaEffectsTest
+
+open System.Threading.Tasks
+open System.Runtime.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices
+
+let mutable calls = 0
+
+let effect () =
+    calls <- calls + 1
+    fun () -> 1
+
+let inline plainTwice ([<InlineIfLambda>] f) = f () + f ()
+let inline twice ([<InlineIfLambda>] f) = StateMachineHelpers.__runtimeAsyncReturn (f () + f ())
+let inline unused ([<InlineIfLambda>] f) = StateMachineHelpers.__runtimeAsyncReturn 20
+
+[<EntryPoint>]
+let main _ =
+    let plainResult = plainTwice (effect ())
+    let plainCalls = calls
+    calls <- 0
+    let twiceResult = (twice (effect ())).GetAwaiter().GetResult()
+    let twiceCalls = calls
+    calls <- 0
+    let unusedResult = (unused (effect ())).GetAwaiter().GetResult()
+    let unusedCalls = calls
+
+    if plainResult = 2 && plainCalls = 1
+       && twiceResult = 2 && twiceCalls = 1
+       && unusedResult = 20 && unusedCalls = 1 then
+        0
+    else
+        1
+"""
+    |> withLangVersionPreview
+    |> withFSharpCoreShippedNet
+    |> withOptimization optimize
+    |> compileExeAndRun
+    |> shouldSucceed
+
+[<Fact>]
+let ``runtime async pipe syntax is gated by the language version`` () =
+    FSharp """
+module RuntimeAsyncPipeGateTest
+
+open System.Threading.Tasks
+open Microsoft.FSharp.Core.CompilerServices
+
+let f (x: int) : Task<int> =
+    x |> StateMachineHelpers.__runtimeAsyncReturn
+"""
+    |> withLangVersion90
+    |> withFSharpCoreShippedNet
+    |> compile
+    |> shouldFail
+    |> withErrorCode 3350
+
+[<InlineData(false)>]
+[<InlineData(true)>]
+[<Theory>]
+let ``runtime async preserves evaluation order for curried inline applications`` (optimize: bool) =
+    FSharp """
+module RuntimeAsyncCurriedApplicationTest
+
+open System.Threading.Tasks
+open Microsoft.FSharp.Core.CompilerServices
+
+let events = ResizeArray<string>()
+
+let step name value =
+    events.Add name
+    value
+
+let inline apply f x y = f x y
+
+let f () : Task<int> =
+    StateMachineHelpers.__runtimeAsyncReturn (
+        apply
+            (fun x ->
+                events.Add "body"
+                fun y -> x + y)
+            (step "arg1" 1)
+            (step "arg2" 2))
+
+[<EntryPoint>]
+let main _ =
+    let result = f().GetAwaiter().GetResult()
+
+    if result = 3 && (events |> Seq.toList) = [ "arg1"; "arg2"; "body" ] then
+        0
+    else
+        1
+"""
+    |> withLangVersionPreview
+    |> withFSharpCoreShippedNet
+    |> withOptimization optimize
+    |> compileExeAndRun
+    |> shouldSucceed
+
+[<Fact>]
+let ``runtime async rejects synchronized methods`` () =
+    FSharp """
+module RuntimeAsyncSynchronizedTest
+
+open System
+open System.Threading.Tasks
+open System.Runtime.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices
+
+[<MethodImpl(MethodImplOptions.Synchronized)>]
+let f () : Task<int> =
+    StateMachineHelpers.__runtimeAsyncReturn (
+        AsyncHelpers.Await(Task.Delay(1).ContinueWith(fun _ -> 1)))
+"""
+    |> withLangVersionPreview
+    |> withFSharpCoreShippedNet
+    |> compile
+    |> shouldFail
+
 [<Fact>]
 let ``runtime async combines awaited chunks without delegates`` () =
     FSharp runtimeAsyncRawSource
@@ -355,6 +572,7 @@ let ``runtime task builder fixture executes through runtime async`` (optimize: b
     |> withFSharpCoreShippedNet
     |> withOptimization optimize
     |> compileExeAndRun
+    |> shouldSucceed
 
 [<Fact>]
 let ``runtime task AsyncLocal values propagate through runtime async`` () =

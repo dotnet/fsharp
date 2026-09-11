@@ -43,6 +43,17 @@ let private compileDirect body =
     |> withLangVersionPreview
     |> compile
 
+let private assertSingleDiagnostic errorNumber (result: CompilationResult) =
+    let diagnostics =
+        result.Output.Diagnostics
+        |> List.filter (fun diagnostic ->
+            match diagnostic.Error with
+            | Error number -> number = errorNumber
+            | _ -> false)
+
+    Assert.Equal(1, List.length diagnostics)
+    result
+
 // ---- CE-builder sources (compiled against RuntimeTaskBuilder.fs, the hypothetical library) -------
 
 // ref-struct-across-suspension written through the CE builder: the `do!` desugars to a continuation
@@ -433,6 +444,19 @@ let ``non-preservable value not used after suspension is allowed`` () =
     compileDirect
         "let f (x: byref<int>) : Task<int> = StateMachineHelpers.__runtimeAsyncReturn (AsyncHelpers.Await(Task.Delay(1)); 1)"
     |> shouldSucceed
+
+[<Fact>]
+let ``runtime async reports a byref local after suspension once`` () =
+    FSharp(
+        directIntrinsicSource
+            "let f (a: int[]) : Task<int> = StateMachineHelpers.__runtimeAsyncReturn (let p = &a.[0] in AsyncHelpers.Await(Task.Delay(1)); p)"
+    )
+    |> withOptions [ "--extraoptimizationloops:1" ]
+    |> withFSharpCoreShippedNet
+    |> withLangVersionPreview
+    |> compile
+    |> shouldFail
+    |> assertSingleDiagnostic 3917
 
 [<Fact>]
 // The CE builder rejects a ref-struct local captured by its continuation lambda (FS0406).
