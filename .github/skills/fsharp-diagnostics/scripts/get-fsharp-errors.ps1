@@ -11,6 +11,7 @@ param(
     [switch]$Shutdown,
     [switch]$FindRefs,
     [switch]$TypeHints,
+    [switch]$Compile,
     [Parameter(ValueFromRemainingArguments = $true)]
     [string[]]$Rest
 )
@@ -31,6 +32,7 @@ Usage:
   get-fsharp-errors.ps1 [-ParseOnly] <file.fs>
   get-fsharp-errors.ps1 -FindRefs   <file.fs> <line> <col>
   get-fsharp-errors.ps1 -TypeHints  <file.fs> <startLine> <endLine>
+  get-fsharp-errors.ps1 -Compile    <project.fsproj> <output.dll>
   get-fsharp-errors.ps1 -CheckProject | -Ping | -Shutdown
 "@ | Out-Host
 }
@@ -209,6 +211,7 @@ $payload =
     elseif ($ParseOnly)    { Assert-RequiredArg 1 '-ParseOnly'; @{ command = 'parseOnly'; file = (Resolve-AbsFile $Rest[0]) } }
     elseif ($FindRefs)     { Assert-RequiredArg 3 '-FindRefs';  @{ command = 'findRefs';  file = (Resolve-AbsFile $Rest[0]); line = (ConvertTo-Int32Arg $Rest[1] 'line'); col = (ConvertTo-Int32Arg $Rest[2] 'col') } }
     elseif ($TypeHints)    { Assert-RequiredArg 3 '-TypeHints'; @{ command = 'typeHints'; file = (Resolve-AbsFile $Rest[0]); startLine = (ConvertTo-Int32Arg $Rest[1] 'startLine'); endLine = (ConvertTo-Int32Arg $Rest[2] 'endLine') } }
+    elseif ($Compile)      { Assert-RequiredArg 2 '-Compile';   @{ command = 'compile'; project = (Resolve-AbsFile $Rest[0]); output = (Resolve-AbsFile $Rest[1]) } }
     elseif ($Rest -and $Rest.Count -ge 1) { @{ command = 'check'; file = (Resolve-AbsFile $Rest[0]) } }
     else   { Show-Usage; exit 1 }
 
@@ -226,7 +229,9 @@ if ($Ping -or $Shutdown) {
 Start-DiagServer $root $sock
 
 try {
-    Send-Request $sock $payload
+    $response = Send-Request $sock $payload
+    Write-Output $response
+    if ($Compile -and $response.Trim() -ne 'OK') { exit 1 }
 } catch {
     Write-Error "Cannot reach diagnostics server at $sock`: $($_.Exception.Message)"
     exit 1
