@@ -55,11 +55,14 @@ let twice x = x * 2
         hits
         |> Array.map (fun (struct (item, _, _)) -> CopilotSymbolMapping.fullyQualifiedName item)
 
-    let private searchIn cache openDocumentIds solution pattern =
-        CopilotSymbolQuery.search cache openDocumentIds solution [| pattern |]
+    let private searchFocused cache openDocumentIds focusedFilePath solution pattern =
+        CopilotSymbolQuery.search cache openDocumentIds focusedFilePath solution [| pattern |]
         |> run
         |> Array.head
         |> namesOf
+
+    let private searchIn cache openDocumentIds solution pattern =
+        searchFocused cache openDocumentIds ValueNone solution pattern
 
     let private search pattern =
         searchIn cache Seq.empty solution pattern
@@ -89,7 +92,7 @@ let twice x = x * 2
     [<InlineData("", false)>]
     let ``a name matches only the declaration it spells out`` (candidate: string, expected: bool) =
         let item =
-            CopilotSymbolQuery.search cache Seq.empty solution [| "Counter" |]
+            CopilotSymbolQuery.search cache Seq.empty ValueNone solution [| "Counter" |]
             |> run
             |> Array.head
             |> Array.pick (fun (struct (item, _, _)) ->
@@ -214,6 +217,26 @@ let twice x = x * 2
         Assert.Equal(expected, Array.head names)
         Assert.Equal(2, names.Length)
 
+    /// The focused file outranks the merely open one, which is how Copilot's own provider separates
+    /// the tab being edited from the rest of the tabs.
+    [<Fact>]
+    let ``the focused file answers before the other open ones`` () =
+        let cache = freshCache ()
+
+        let solution =
+            solutionOf
+                [
+                    "C:\\elsewhere.fs", "module Elsewhere\n\ntype Widget() =\n    member _.Value = 1\n"
+                    "C:\\holder.fs", "module Holder\n\ntype WidgetHolder() =\n    member _.Value = 2\n"
+                ]
+
+        let openDocumentIds = documentsOf solution |> Array.map _.Id
+
+        let names =
+            searchFocused cache openDocumentIds (ValueSome "C:\\holder.fs") solution "Widget"
+
+        Assert.Equal("Holder.WidgetHolder", Array.head names)
+
     [<Fact>]
     let ``a batch of texts answers like the same texts one by one`` () =
         let cache = freshCache ()
@@ -226,7 +249,7 @@ let twice x = x * 2
                 ]
 
         let batched =
-            CopilotSymbolQuery.search cache Seq.empty solution [| "alpha"; "beta" |]
+            CopilotSymbolQuery.search cache Seq.empty ValueNone solution [| "alpha"; "beta" |]
             |> run
             |> Array.map namesOf
 
