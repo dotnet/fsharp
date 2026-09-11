@@ -1949,7 +1949,11 @@ type internal FsiDynamicCompiler
             {
                 ilg = tcGlobals.ilg
                 outfile = $"{multiAssemblyName}-{dynamicAssemblyId}.dll"
-                pdbfile = Some(Path.Combine(scriptingSymbolsPath, $"{multiAssemblyName}-{dynamicAssemblyId}.pdb"))
+                pdbfile =
+                    if tcConfig.debuginfo then
+                        Some(Path.Combine(scriptingSymbolsPath, $"{multiAssemblyName}-{dynamicAssemblyId}.pdb"))
+                    else
+                        None
                 emitTailcalls = tcConfig.emitTailcalls
                 deterministic = tcConfig.deterministic
                 portablePDB = true
