@@ -2,6 +2,7 @@ module FSharp.Compiler.ComponentTests.Miscellaneous.TestUtilities
 
 open System
 open System.Threading
+open System.Threading.Tasks
 open Xunit
 open Xunit.Sdk
 open FSharp.Test
@@ -21,26 +22,27 @@ type RunOrFail(name) =
 let passing = RunOrFail "Passing"
 
 [<Fact>]
-let ``TestConsole captures output`` () =
-    let rnd = Random()
+let ``TestConsole captures output`` () : Task =
+    task {
+        let rnd = Random()
 
-    let task n =
-        async {
-            use console = new TestConsole.ExecutionCapture()
-            do! Async.Sleep(rnd.Next 50)
-            printf $"Hello, world! {n}"
-            do! Async.Sleep(rnd.Next 50)
-            eprintf $"Some error {n}"
-            return console.OutText, console.ErrorText
-        }
+        let capture n =
+            async {
+                use console = new TestConsole.ExecutionCapture()
+                do! Async.Sleep(rnd.Next 50)
+                printf $"Hello, world! {n}"
+                do! Async.Sleep(rnd.Next 50)
+                eprintf $"Some error {n}"
+                return console.OutText, console.ErrorText
+            }
 
-    let expected =
-        [ for n in 0..9 -> $"Hello, world! {n}", $"Some error {n}" ]
+        let expected =
+            [ for n in 0..9 -> $"Hello, world! {n}", $"Some error {n}" ]
 
-    let results =
-        Seq.init 10 task |> Async.Parallel |> Async.RunSynchronously
+        let! results = Seq.init 10 capture |> Async.Parallel
 
-    Assert.Equal(expected, results)
+        Assert.Equal(expected, results)
+    }
 
 /// Roundtrip-serialize a CompilationHelper through xUnit3's XunitSerializationInfo
 /// and verify all fields survive the trip.
