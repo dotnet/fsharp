@@ -382,8 +382,9 @@ type RoslynTestHelpers private () =
 
         let projects =
             syntheticProject.GetAllProjects()
-            |> List.distinctBy _.Name
-            |> List.map (fun project -> project, ProjectId.CreateNewId())
+            |> Seq.distinctBy _.Name
+            |> Seq.map (fun project -> project, ProjectId.CreateNewId())
+            |> Seq.toList
 
         let projectIds = dict [ for project, id in projects -> project.Name, id ]
 
