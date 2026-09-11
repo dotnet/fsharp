@@ -209,13 +209,33 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
   <!-- Register the GenerateILLinkSubstitutions task -->
   <UsingTask TaskName="GenerateILLinkSubstitutions" AssemblyFile="$(FSharpBuildAssemblyFile)" />
   
-  <!-- Generate ILLink.Substitutions.xml to remove F# metadata resources during trimming. F# Core already has the resource defined -->
-  <Target Name="GenerateFSharpILLinkSubstitutions" BeforeTargets="CoreCompile" Condition="'$(DisableILLinkSubstitutions)' != 'true' and '$(AssemblyName)' != 'FSharp.Core'">
+  <!-- CoreCompile is too late to add EmbeddedResource items. Give the rules directly to ILLink instead. -->
+  <Target Name="GenerateFSharpILLinkSubstitutions" AfterTargets="PrepareForILLink"
+          Condition="'$(PublishTrimmed)' == 'true' and '$(AssemblyName)' != 'FSharp.Core'">
+    <ItemGroup Condition="'$(DisableILLinkSubstitutions)' != 'true'">
+      <_FSharpTrimAssemblies Include="@(ManagedAssemblyToLink)" Exclude="@(RuntimePackAsset)"
+                            Condition="'%(Filename)' != 'FSharp.Core'" />
+    </ItemGroup>
+
     <GenerateILLinkSubstitutions
-      AssemblyName="$(AssemblyName)"
-      IntermediateOutputPath="$(IntermediateOutputPath)">
-      <Output TaskParameter="GeneratedItems" ItemName="EmbeddedResource" />
+      AssemblyName="%(_FSharpTrimAssemblies.Filename)"
+      IntermediateOutputPath="$(IntermediateOutputPath)FSharpILLink/%(_FSharpTrimAssemblies.Filename)"
+      Condition="'@(_FSharpTrimAssemblies)' != ''">
+      <Output TaskParameter="GeneratedItems" ItemName="_FSharpSubstitutionFiles" />
     </GenerateILLinkSubstitutions>
+    <PropertyGroup>
+      <_ExtraTrimmerArgs>$(_ExtraTrimmerArgs) @(_FSharpSubstitutionFiles->'--substitutions "%(Identity)"', ' ')</_ExtraTrimmerArgs>
+    </PropertyGroup>
+
+    <!-- Changing the opt-out must rerun ILLink even when the assemblies have not changed. -->
+    <WriteLinesToFile File="$(IntermediateOutputPath)FSharpILLink.cache" Lines="$(DisableILLinkSubstitutions)"
+                      Overwrite="true" WriteOnlyWhenDifferent="true" />
+    <PropertyGroup>
+      <MSBuildAllProjects>$(MSBuildAllProjects);$(IntermediateOutputPath)FSharpILLink.cache</MSBuildAllProjects>
+    </PropertyGroup>
+    <ItemGroup>
+      <FileWrites Include="@(_FSharpSubstitutionFiles);$(IntermediateOutputPath)FSharpILLink.cache" />
+    </ItemGroup>
   </Target>
 
   <!-- 
