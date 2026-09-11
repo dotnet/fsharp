@@ -8809,6 +8809,7 @@ and delayRest rest mPrior delayed =
 and TcNameOfExpr (cenv: cenv) env tpenv (synArg: SynExpr) =
 
     let g = cenv.g
+    let env = { env with eInNameOf = true }
 
     let rec stripParens expr =
         match expr with
@@ -10557,7 +10558,7 @@ and TcMethodApplication_CheckArguments
                                     mMethExpr
                                     { ILFlag = WellKnownILAttributes.NoEagerConstraintApplicationAttribute
                                       ValFlag = WellKnownValAttributes.NoEagerConstraintApplicationAttribute
-                                      AttribInfo = g.attrib_NoEagerConstraintApplicationAttribute }
+                                      AttributeName = "Microsoft.FSharp.Core.CompilerServices.NoEagerConstraintApplicationAttribute" }
                                     meth.Method
 
                             // The logic associated with NoEagerConstraintApplicationAttribute is part of the
@@ -10818,6 +10819,12 @@ and TcMethodApplication
     MethInfoChecks g cenv.amap isInstance tyArgsOpt objArgs ad mItem finalCalledMethInfo
 
     TcAdhocChecksOnLibraryMethods cenv env isInstance finalCalledMeth finalCalledMethInfo objArgs mMethExpr mItem
+
+    // FS-1095: reject positional calls to a method/constructor carrying RequireNamedArgumentAttribute.
+    if not env.eInNameOf && g.langVersion.SupportsFeature LanguageFeature.RequireNamedArgument then
+        finalCalledMeth.TryGetRequireNamedArgumentViolationName mMethExpr
+        |> Option.iter (fun calledName ->
+            errorR(Error(FSComp.SR.tcMethodRequiresNamedArguments(RichText.mkMethod calledName), mMethExpr)))
 
     // Indexer setters: when index args are named, the remaining unnamed args'
     // position values won't form a prefix (the 'value' arg has a non-zero j).

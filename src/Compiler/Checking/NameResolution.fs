@@ -564,7 +564,7 @@ let IsMethInfoPlainCSharpStyleExtensionMember g m isEnclExtTy (minfo: MethInfo) 
         m
         { ILFlag = WellKnownILAttributes.ExtensionAttribute
           ValFlag = WellKnownValAttributes.ExtensionAttribute
-          AttribInfo = g.attrib_ExtensionAttribute }
+          AttributeName = "System.Runtime.CompilerServices.ExtensionAttribute" }
         minfo
 
 let GetTyconRefForExtensionMembers minfo (deref: Entity) amap m g =
