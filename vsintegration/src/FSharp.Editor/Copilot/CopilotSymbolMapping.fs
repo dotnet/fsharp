@@ -58,6 +58,15 @@ let fullyQualifiedName (item: NavigableItem) =
     | "" -> item.Name
     | container -> $"{container}.{item.Name}"
 
+/// How Copilot's own tooltip names a declaration: a member by the container it is declared in, a type
+/// or module by itself.
+let tooltipName (item: NavigableItem) =
+    match symbolContextType item.Kind, item.Container.Type, item.Container.Name with
+    | CopilotSymbolContextType.Class, _, _
+    | _, NavigableContainerType.File, _
+    | _, _, "" -> item.Name
+    | _, _, container -> $"{container}.{item.Name}"
+
 /// Answers what comparing against `fullyQualifiedName` would, without building the dotted path -
 /// a solution-wide scan asks this of every declaration it walks past.
 let hasFullyQualifiedName (candidate: string) (item: NavigableItem) =
