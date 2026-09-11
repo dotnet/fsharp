@@ -33,11 +33,13 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="VisualFSharp.UnitTests" />
+    <InternalsVisibleTo Include="FSharp.Build.UnitTests" />
     <Compile Include="..\Compiler\Utilities\NullHelpers.fs" />
     <EmbeddedText Include="FSBuild.txt" />
     <EmbeddedText Include="..\Compiler\Facilities\UtilsStrings.txt" />
     <Compile Include="..\Compiler\Facilities\CompilerLocation.fs" />
     <Compile Include="FSharpCommandLineBuilder.fs" />
+    <Compile Include="TaskEnvironmentPaths.fs" />
     <Compile Include="Fsc.fs" />
     <Compile Include="Fsi.fs" />
     <Compile Include="FSharpEmbedResourceText.fs" />

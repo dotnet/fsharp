@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net11.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <UseAppHost>false</UseAppHost>
+    <Deterministic>true</Deterministic>
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <EnableSourceControlManagerQueries>false</EnableSourceControlManagerQueries>
+  </PropertyGroup>
+  <ItemGroup>
+    <AssemblyMetadata Include="ProjectMarker" Value="$(MSBuildProjectName)" />
+    <SourceRoot Include="$(MSBuildProjectDirectory)/" />
+    <Compile Include="Program.fs" />
+    <EmbeddedText Include="Messages.txt" />
+    <EmbeddedResource Update="Strings.resx" GenerateSource="true" GenerateLegacyCode="false" GenerateLiterals="true" />
+    <EmbeddedResource Include="dependent.txt" DependentUpon="Program.fs" />
+    <Replacement Include="template.txt" Pattern1="@MARKER@" Replacement1="$(MSBuildProjectName)" IntermediateTargetPath="obj/substituted" />
+  </ItemGroup>
+  <UsingTask TaskName="ProjectEnvironment" AssemblyFile="$(ProbeAssembly)" />
+  <UsingTask TaskName="SerialControl" AssemblyFile="$(ProbeAssembly)" />
+  <Target Name="CheckTaskEnvironment" BeforeTargets="PrepareForBuild">
+    <SerialControl />
+    <ProjectEnvironment Marker="$(MSBuildProjectName)" />
+    <Fsi ToolPath="$(FscToolPath)" ToolExe="$(FscToolExe)"
+         DotnetFsiCompilerPath="$(LocalFsi)" Sources="check.fsx" FsiExec="true"
+         EnvironmentVariables="FSHARP_MT_TOOL_MARKER=$(MSBuildProjectName)" />
+    <SubstituteText EmbeddedResources="@(Replacement)" />
+  </Target>
+  <Target Name="CheckLoadedAssembly" AfterTargets="Build">
+    <ProjectEnvironment Marker="$(MSBuildProjectName)" LoadedTasks="$(FSharpBuildAssemblyFile)" />
+  </Target>
+</Project>

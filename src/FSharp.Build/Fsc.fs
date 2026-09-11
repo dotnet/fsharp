@@ -16,6 +16,7 @@ open Internal.Utilities
 //The goal is to have the most common/important flags available via the Fsc class, and the
 //rest can be "backdoored" through the .OtherFlags property.
 
+[<MSBuildMultiThreadableTask>]
 type public Fsc() as this =
 
     inherit ToolTask()
@@ -73,15 +74,7 @@ type public Fsc() as this =
     let mutable targetType: string | null = null
 
     let defaultToolPath =
-        let locationOfThisDll =
-            try
-                Some(Path.GetDirectoryName(typeof<Fsc>.Assembly.Location))
-            with _ ->
-                None
-
-        match FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(locationOfThisDll) with
-        | Some s -> s
-        | None -> ""
+        lazy (TaskEnvironmentPaths.defaultCompilerToolPath this.TaskEnvironment typeof<Fsc>)
 
     let mutable treatWarningsAsErrors: bool = false
     let mutable useStandardResourceNames: bool = false
@@ -727,10 +720,12 @@ type public Fsc() as this =
             base.StandardOutputEncoding
 
     override fsc.GenerateFullPathToTool() =
+        let defaultToolPath = defaultToolPath.Value
+
         if defaultToolPath = "" then
             raise (new System.InvalidOperationException(FSBuild.SR.toolpathUnknown ()))
 
-        System.IO.Path.Combine(defaultToolPath, fsc.ToolExe)
+        TaskEnvironmentPaths.normalizePathToTool fsc.TaskEnvironment (System.IO.Path.Combine(defaultToolPath, fsc.ToolExe))
 
     override fsc.LogToolCommand(message: string) =
         fsc.Log.LogMessageFromText(message, MessageImportance.Normal) |> ignore
@@ -751,6 +746,10 @@ type public Fsc() as this =
         if skipCompilerExecution then
             0
         else
+            // Root once so both the base call and the HostObject delegate use the same rooted path.
+            let pathToTool =
+                TaskEnvironmentPaths.normalizePathToTool fsc.TaskEnvironment pathToTool
+
             let host = box fsc.HostObject
 
             match host with

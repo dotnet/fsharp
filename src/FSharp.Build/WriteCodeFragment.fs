@@ -12,6 +12,7 @@ open Microsoft.Build.Utilities
 [<Struct>]
 type EscapedValue = { Escaped: string; Raw: string }
 
+[<MSBuildMultiThreadableTask>]
 type WriteCodeFragment() as this =
     inherit Task()
     let mutable _outputDirectory: ITaskItem | null = null
@@ -202,8 +203,11 @@ type WriteCodeFragment() as this =
                             TaskItem(Path.Combine(outputDirectory.ItemSpec, fileName)) :> ITaskItem
 
                 let codeText = code.ToString()
-                File.WriteAllText(fileName, codeText)
+                File.WriteAllText(TaskEnvironmentPaths.rootedPath this fileName, codeText)
                 _outputFile <- outputFileItem
                 not this.Log.HasLoggedErrors
         with TaskFailed ->
             false
+
+    interface IMultiThreadableTask with
+        member val TaskEnvironment = TaskEnvironment.Fallback with get, set

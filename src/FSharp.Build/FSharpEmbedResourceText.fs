@@ -11,12 +11,17 @@ open Microsoft.Build.Utilities
 /// the task has already emitted the error message.
 exception TaskFailed
 
+[<MSBuildMultiThreadableTask>]
 type FSharpEmbedResourceText() as this =
     inherit Task()
     let mutable _embeddedText: ITaskItem[] = [||]
     let mutable _generatedSource: ITaskItem[] = [||]
     let mutable _generatedResx: ITaskItem[] = [||]
     let mutable _outputPath: string = ""
+
+    // Bound against `this` once; each call reads the injected TaskEnvironment late.
+    let rootedPath = TaskEnvironmentPaths.rootedPath this
+    let restorePaths = TaskEnvironmentPaths.restoreTaskPaths this
 
     let PrintErr (fileName, line, msg) =
         this.Log.LogError(null, null, null, fileName, line, 0, 0, 0, msg, Array.empty)
@@ -400,15 +405,27 @@ open Printf
     let generateResxAndSource (item: ITaskItem) =
         let fileName = item.ItemSpec
 
+        // Record paths inside the try so failures during derivation still reach the shared handler below.
+        let mutable originalPaths = [ fileName ]
+
         try
+            let justFileName = Path.GetFileNameWithoutExtension(fileName) // .txt
+            let outFileName = Path.Combine(_outputPath, justFileName + ".fs")
+            let outFileSignatureName = Path.Combine(_outputPath, justFileName + ".fsi")
+            let outXmlFileName = Path.Combine(_outputPath, justFileName + ".resx")
+            originalPaths <- [ fileName; outFileName; outFileSignatureName; outXmlFileName ]
+
+            let rootedInput = rootedPath fileName
+            let rootedOut = rootedPath outFileName
+            let rootedSignature = rootedPath outFileSignatureName
+            let rootedXml = rootedPath outXmlFileName
+
             let printMessage fmt = Printf.ksprintf this.Log.LogMessage fmt
 
             // Opt in with <RichText>true</RichText> on the EmbeddedText item. Only assemblies that can
             // see FSharp.Compiler.Text.RichText are able to compile the classified overloads.
             let richText =
                 System.String.Equals(item.GetMetadata "RichText", "true", System.StringComparison.OrdinalIgnoreCase)
-
-            let justFileName = Path.GetFileNameWithoutExtension(fileName) // .txt
 
             if justFileName |> Seq.exists (System.Char.IsLetterOrDigit >> not) then
                 Err(
@@ -419,50 +436,45 @@ open Printf
                         justFileName
                 )
 
-            let outFileName = Path.Combine(_outputPath, justFileName + ".fs")
-            let outFileSignatureName = Path.Combine(_outputPath, justFileName + ".fsi")
-            let outXmlFileName = Path.Combine(_outputPath, justFileName + ".resx")
-
-            let condition1 = File.Exists(outFileName)
-            let condition2 = condition1 && File.Exists(outXmlFileName)
-            let condition3 = condition2 && File.Exists(fileName)
-
-            let condition4 =
-                condition3
-                && (File.GetLastWriteTimeUtc(fileName) <= File.GetLastWriteTimeUtc(outFileName))
-
-            let condition5 =
-                condition4
-                && (File.GetLastWriteTimeUtc(fileName) <= File.GetLastWriteTimeUtc(outXmlFileName))
-
             // A generated file does not record whether it was generated with RichText, so the flag has
             // to be recovered from the open the generator emits for it, or an existing file would be
             // taken as up-to-date after the flag changed
-            let condition6 =
-                condition5
-                && (richText = (File.ReadLines(outFileName) |> Seq.truncate 40 |> Seq.contains richTextOpen))
+            let failedCondition =
+                if not (File.Exists rootedOut) then
+                    Some 1
+                elif not (File.Exists rootedXml) then
+                    Some 2
+                elif not (File.Exists rootedInput) then
+                    Some 3
+                elif File.GetLastWriteTimeUtc rootedInput > File.GetLastWriteTimeUtc rootedOut then
+                    Some 4
+                elif File.GetLastWriteTimeUtc rootedInput > File.GetLastWriteTimeUtc rootedXml then
+                    Some 5
+                elif
+                    richText
+                    <> (File.ReadLines rootedOut |> Seq.truncate 40 |> Seq.contains richTextOpen)
+                then
+                    Some 6
+                else
+                    None
 
-            if condition6 then
+            match failedCondition with
+            | None ->
                 printMessage "Skipping generation of %s and %s from %s since up-to-date" outFileName outXmlFileName fileName
 
                 Some(fileName, outFileSignatureName, outFileName, outXmlFileName)
-            else
+            | Some failedCondition ->
                 printMessage
                     "Generating %s and %s from %s, because condition %d is false, see FSharpEmbedResourceText.fs in the F# source"
                     outFileName
                     outXmlFileName
                     fileName
-                    (if not condition1 then 1
-                     elif not condition2 then 2
-                     elif not condition3 then 3
-                     elif not condition4 then 4
-                     elif not condition5 then 5
-                     else 6)
+                    failedCondition
 
                 printMessage "Reading %s" fileName
 
                 let lines =
-                    File.ReadAllLines(fileName)
+                    File.ReadAllLines rootedInput
                     |> Array.mapi (fun i s -> i, s) // keep line numbers
                     |> Array.filter (fun (_i, s) -> not (s.StartsWith "#")) // filter out comments
 
@@ -508,9 +520,11 @@ open Printf
                     allStrs.Add(str, (line, ident))
 
                 printMessage "Generating %s" outFileName
-                use outStream = File.Create outFileName
+                use outStream = File.Create rootedOut
                 use out = new StreamWriter(outStream)
-                use outSignatureStream = File.Create outFileSignatureName
+
+                use outSignatureStream = File.Create rootedSignature
+
                 use outSignature = new StreamWriter(outSignatureStream)
                 fprintfn out "// This is a generated file; the original input is '%s'" fileName
                 fprintfn outSignature "// This is a generated file; the original input is '%s'" fileName
@@ -689,13 +703,23 @@ open Printf
                     xnc.AppendChild(xd.CreateTextNode netFormatString) |> ignore
                     xd.LastChild.AppendChild xn |> ignore)
 
-                use outXmlStream = File.Create outXmlFileName
+                use outXmlStream = File.Create rootedXml
                 xd.Save outXmlStream
                 printMessage "Done %s" outFileName
                 Some(fileName, outFileSignatureName, outFileName, outXmlFileName)
-        with e ->
-            PrintErr(fileName, 0, sprintf "An exception occurred when processing '%s'\n%s" fileName (e.ToString()))
+        with
+        | TaskFailed -> None
+        | e ->
+            PrintErr(
+                fileName,
+                0,
+                sprintf "An exception occurred when processing '%s'\n%s" fileName (restorePaths (e.ToString()) originalPaths)
+            )
+
             None
+
+    interface IMultiThreadableTask with
+        member val TaskEnvironment = TaskEnvironment.Fallback with get, set
 
     [<Required>]
     member _.EmbeddedText
