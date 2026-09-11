@@ -40,3 +40,4 @@
 ### Changed
 
 * Inline functions now keep SRTP constraints generic instead of eagerly resolving through weak resolution. This changes inferred types for some inline code — see [RFC FS-1043 compatibility section](https://github.com/fsharp/fslang-design/blob/main/RFCs/FS-1043-extension-members-for-operators-and-srtp-constraints.md) for details and workarounds.
+* Remove the always-on `ErrorReportingOnStaticClasses` language feature flag. Static-class validation remains unchanged for all supported language versions. ([Issue #20180](https://github.com/dotnet/fsharp/issues/20180), [PR #20513](https://github.com/dotnet/fsharp/pull/20513))
