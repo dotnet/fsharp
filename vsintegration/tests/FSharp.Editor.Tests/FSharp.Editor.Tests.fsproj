@@ -85,6 +85,17 @@
     <Compile Include="SemanticClassificationServiceTests.fs" />
     <Compile Include="SyntacticColorizationServiceTests.fs" />
     <Compile Include="DocumentHighlightsServiceTests.fs" />
+    <Compile Include="Snippets\SnippetIndentationTests.fs" />
+    <Compile Include="Snippets\SnippetCatalogTests.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The shipped snippet catalog, laid out beside the test binary the way the VSIX lays it out
+         beside FSharp.Editor.dll. -->
+    <Content Include="..\..\Vsix\VisualFSharpFull\snippets\**\*">
+      <Link>Snippets\%(RecursiveDir)%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>
