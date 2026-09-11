@@ -7,6 +7,9 @@ description: |
   behind-main). On proven flakes, dispatches labelops-flake-fix. On
   unfixable CI, escalates with AI-needs-CI-fix-input label.
 
+imports:
+  - shared/model-defaults.md
+
 on:
   schedule: every 3h
   workflow_dispatch:

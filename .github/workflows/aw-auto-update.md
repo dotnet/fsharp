@@ -11,6 +11,9 @@ description: |
   the write work to a Copilot Coding Agent session, which runs under its own
   identity (COPILOT_GITHUB_TOKEN) and can write workflow files.
 
+imports:
+  - shared/model-defaults.md
+
 on:
   # Schedule disabled: `create-agent-session` needs a Copilot-licensed token, which
   # the default GITHUB_TOKEN lacks, so every scheduled detection that finds an update

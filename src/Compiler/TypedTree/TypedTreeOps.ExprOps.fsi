@@ -524,6 +524,11 @@ module internal ExprTransforms =
 
     val AdjustValForExpectedValReprInfo: TcGlobals -> range -> ValRef -> ValUseFlag -> ValReprInfo -> Expr * TType
 
+    /// Eta-expand an under-applied application of a known-arity value, binding the supplied arguments;
+    /// None when the value is not under-applied (or has no known arity).
+    val TryEtaExpandUnderAppliedValApp:
+        TcGlobals -> range -> ValRef -> ValUseFlag -> tyargs: TypeInst -> fty: TType -> args: Exprs -> Expr option
+
     val AdjustValToHaveValReprInfo: Val -> ParentRef -> ValReprInfo -> unit
 
     val stripTupledFunTy: TcGlobals -> TType -> TType list list * TType

@@ -7,6 +7,9 @@ description: |
   dotnet/fsharp) are bypass-labeled `AI-Tooling-Check-Bypassed` without a
   diff scan; only fork PRs get phase (`⚠️ Affects-*`) labels.
 
+imports:
+  - shared/model-defaults.md
+
 on:
   schedule: every 1h
   workflow_dispatch:

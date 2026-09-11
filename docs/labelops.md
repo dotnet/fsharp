@@ -1,3 +1,9 @@
+---
+title: LabelOps
+category: Compiler Internals
+categoryindex: 200
+index: 960
+---
 # LabelOps
 
 Opt-in, label-gated agentic workflows that keep open PRs healthy. Add a label to a PR → the agent checks it every 3 hours.
