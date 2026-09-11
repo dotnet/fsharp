@@ -227,6 +227,11 @@ module internal ExprRemapping =
     /// Copy an entire expression using the given copying flags
     val copyExpr: TcGlobals -> ValCopyFlag -> Expr -> Expr
 
+    /// Copy an expression for use as the definition inside an auto-quotation (Expr.WithValue), keeping fresh
+    /// links to recursive-value uses still within their letrec scope so the copy also receives the inferred
+    /// type arguments applied later by AdjustAndForgetUsesOfRecValue. See issue #20379.
+    val copyExprKeepingRecursiveValLinks: TcGlobals -> ValCopyFlag -> Expr -> Expr
+
     /// Copy an entire implementation file using the given copying flags
     val copyImplFile: TcGlobals -> ValCopyFlag -> CheckedImplFile -> CheckedImplFile
 
