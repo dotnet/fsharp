@@ -29,6 +29,7 @@ open FSharp.Compiler.MethodCalls
 open FSharp.Compiler.MethodOverrides
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.PatternMatchCompilation
+open FSharp.Compiler.RuntimeAsync
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTrivia
 open FSharp.Compiler.Syntax.PrettyNaming
@@ -8687,6 +8688,17 @@ and Propagate (cenv: cenv) (overallTy: OverallTy) (env: TcEnv) tpenv (expr: Appl
 
         | DelayedApp (atomicFlag, isSugar, synLeftExprOpt, synArg, mExprAndArg) :: delayedList' ->
             let denv = env.DisplayEnv
+
+            match expr.Expr with
+            | RuntimeAsyncReturnFunction g _ ->
+                checkLanguageFeatureAndRecover g.langVersion LanguageFeature.RuntimeAsync mExpr
+            | OpPipeRight g (_, _, fExpr, _)
+            | OpPipeRight2 g (_, _, _, fExpr, _)
+            | OpPipeRight3 g (_, _, _, _, fExpr, _)
+                when TryGetRuntimeAsyncReturn g fExpr |> Option.isSome ->
+                checkLanguageFeatureAndRecover g.langVersion LanguageFeature.RuntimeAsync mExpr
+            | _ ->
+
             match UnifyFunctionTypeUndoIfFailed cenv denv mExpr exprTy with
             | ValueSome (_, resultTy) ->
 
@@ -8977,6 +8989,45 @@ and TcApplicationThen (cenv: cenv) (overallTy: OverallTy) env tpenv mExprAndArg 
             Some (SpreadsOnly spreadRanges)
         else
             None
+
+    let (|RuntimeAsyncApplication|_|) =
+        function
+        | ApplicableExpr(expr = (RuntimeAsyncReturnFunction g (vref, flags, m))) ->
+            checkLanguageFeatureAndRecover g.langVersion LanguageFeature.RuntimeAsync m
+
+            let _, carrierTy = stripFunTy g exprTy
+
+            let bodyResultTy, markerTyargs =
+                match stripTyEqns g carrierTy with
+                | AppTy g (_, [ resultTy ]) -> resultTy, [ resultTy ]
+                | AppTy g (_, []) -> g.unit_ty, []
+                | AppTy g (_, _) -> error (InternalError("Unexpected runtime-async return carrier arity", m))
+                | _ -> error (InternalError("Unexpected runtime-async return carrier type", m))
+
+            checkLanguageFeatureRuntimeAndRecover cenv.infoReader LanguageFeature.RuntimeAsync m
+
+            let arg, tpenv = TcExprFlex2 cenv bodyResultTy env false tpenv synArg
+            let marker =
+                Expr.App(Expr.Val(vref, flags, m), vref.Type, markerTyargs, [ arg ], mExprAndArg)
+
+            ValueSome(
+                TcDelayed
+                    cenv
+                    overallTy
+                    env
+                    tpenv
+                    mExprAndArg
+                    (MakeApplicableExprNoFlex cenv marker)
+                    carrierTy
+                    atomicFlag
+                    delayed
+            )
+        | _ ->
+            ValueNone
+
+    match leftExpr with
+    | RuntimeAsyncApplication result -> result
+    | _ ->
 
     // If the type of 'synArg' unifies as a function type, then this is a function application, otherwise
     // it is an error or a computation expression or indexer or delegate invoke
@@ -12138,7 +12189,12 @@ and TcLetBinding (cenv: cenv) isUse env containerInfo declKind tpenv (synBinds, 
         let valSchemes = NameMap.map (UseCombinedValReprInfo g declKind rhsExpr) prelimValSchemes2
         let values = MakeAndPublishVals cenv env (altActualParent, false, declKind, ValNotInRecScope, valSchemes, attrs, xmlDoc, literalValue)
         let checkedPat = tcPatPhase2 (TcPatPhase2Input (values, true))
-        let prelimRecValues = NameMap.map fst values
+        let prelimRecValues =
+            let prelimRecValues = NameMap.map fst values
+            if isFixed then
+                NameMap.map (fun (v: Val) -> v.SetIsPinning(); v) prelimRecValues
+            else
+                prelimRecValues
 
         // Now bind the r.h.s. to the l.h.s.
         let rhsExpr = mkTypeLambda m generalizedTypars (rhsExpr, tauTy)

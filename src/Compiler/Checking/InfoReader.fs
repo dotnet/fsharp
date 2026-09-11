@@ -860,6 +860,15 @@ type InfoReader(g: TcGlobals, amap: ImportMap) as this =
     let isRuntimeFeatureVirtualStaticsInInterfacesSupported =
         lazy isRuntimeFeatureSupported "VirtualStaticsInInterfaces"
 
+    let isRuntimeAsyncSupported =
+        lazy (
+            match g.System_Runtime_CompilerServices_MethodImplOptions_ty with
+            | Some methodImplOptionsTy ->
+                GetIntrinsicILFieldInfosUncached ((None, AccessorDomain.AccessibleFromEverywhere), range0, methodImplOptionsTy)
+                |> List.exists (fun (ilFieldInfo: ILFieldInfo) -> ilFieldInfo.FieldName = "Async")
+            | _ ->
+                false)
+
     member _.g = g
     member _.amap = amap
 
@@ -923,6 +932,7 @@ type InfoReader(g: TcGlobals, amap: ImportMap) as this =
         match langFeature with
         // Default interface method consumption is tied to the runtime support of DIMs.
         | LanguageFeature.DefaultInterfaceMemberConsumption -> isRuntimeFeatureDefaultImplementationsOfInterfacesSupported.Value
+        | LanguageFeature.RuntimeAsync -> isRuntimeAsyncSupported.Value
         | _ -> true
 
     /// Check if the target runtime supports static abstract members in interfaces (VirtualStaticsInInterfaces).

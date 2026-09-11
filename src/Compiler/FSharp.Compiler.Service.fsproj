@@ -377,6 +377,8 @@
     <Compile Include="TypedTree\TypedTreeOps.ExprOps.fs" />
     <Compile Include="TypedTree\TypedTreeOps.Transforms.fsi" />
     <Compile Include="TypedTree\TypedTreeOps.Transforms.fs" />
+    <Compile Include="TypedTree\RuntimeAsync.fsi" />
+    <Compile Include="TypedTree\RuntimeAsync.fs" />
     <Compile Include="TypedTree\TypedTreePickle.fsi" />
     <Compile Include="TypedTree\TypedTreePickle.fs" />
     <Compile Include="TypedTree\UpdatePrettyTyparNames.fsi" />
@@ -449,6 +451,10 @@
     <Compile Include="Checking\SignatureHash.fsi" />
     <Compile Include="Checking\SignatureHash.fs" />
     <Compile Include="Optimize\DelegateForwarding.fs" />
+    <Compile Include="Optimize\RuntimeAsyncAnalysis.fsi" />
+    <Compile Include="Optimize\RuntimeAsyncAnalysis.fs" />
+    <Compile Include="Optimize\RuntimeAsyncExceptionRewrite.fsi" />
+    <Compile Include="Optimize\RuntimeAsyncExceptionRewrite.fs" />
     <Compile Include="Optimize\Optimizer.fsi" />
     <Compile Include="Optimize\Optimizer.fs" />
     <Compile Include="Optimize\DetupleArgs.fsi" />
