@@ -2114,8 +2114,7 @@ let TcMutRecDefns_Phase2 (cenv: cenv) envInitial mBinds scopem mutRecNSInfo (env
       // Some preliminary checks
       mutRecDefns |> MutRecShapes.iterTycons (fun tyconData ->
              let (MutRecDefnsPhase2DataForTycon(_, _, declKind, tcref, _, _, _, members, m, newslotsOK, _)) = tyconData
-             let tcaug = tcref.TypeContents
-             if tcaug.tcaug_closed && declKind <> ExtrinsicExtensionBinding then
+             if tcref.IsAugmentationClosed && declKind <> ExtrinsicExtensionBinding then
                  error(InternalError("Intrinsic augmentations of types are only permitted in the same file as the definition of the type", m))
              for mem in members do
                     match mem with
