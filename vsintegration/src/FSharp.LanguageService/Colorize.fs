@@ -124,13 +124,13 @@ type internal FSharpScanner_DEPRECATED(makeLineTokenizer : string -> FSharpLineT
     /// Scan a token from a line. This should only be used in cases where color information is irrelevant.
     /// Used by GetFullLineInfo (and only thus in a small workaround in GetDeclarations) and GetTokenInformationAt (thus GetF1KeywordString).
     member ws.ScanTokenWithDetails (lexState: _ ref) =
-        let struct (colorInfoOption, newLexState) = lineTokenizer.ScanToken(lexState.Value)
+        let struct (colorInfoOption, newLexState) = lineTokenizer.ScanTokenValue(lexState.Value)
         lexState.Value <- newLexState
         colorInfoOption
 
     /// Scan a token from a line and write information about it into the tokeninfo object.
     member ws.ScanTokenAndProvideInfoAboutIt(_line, tokenInfo:TokenInfo, lexState: _ ref) =
-        let struct (colorInfoOption, newLexState) = lineTokenizer.ScanToken(!lexState)
+        let struct (colorInfoOption, newLexState) = lineTokenizer.ScanTokenValue(!lexState)
         lexState.Value <- newLexState
         match colorInfoOption with
         | ValueNone -> false
