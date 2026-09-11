@@ -1903,6 +1903,68 @@ let rec (|KnownValApp|_|) expr =
     | Expr.App (KnownValApp(vref, typeArgs1, otherArgs1), _, typeArgs2, otherArgs2, _) -> ValueSome(vref, typeArgs1@typeArgs2, otherArgs1@otherArgs2)
     | _ -> ValueNone
 
+let AdaptOpaqueOptimizedClosureArgs g (lambdaExpr: Expr) f0ty (arginfos: Summary<ExprValueInfo> list) m =
+    // Hot path: probe the flag before stripping the spine.
+    let rec hasFlaggedFormal expr =
+        match expr with
+        | Expr.TyLambda(_, _, body, _, _) -> hasFlaggedFormal body
+        | Expr.Lambda(_, _, _, vs, body, _, _) -> List.exists (fun (v: Val) -> v.OptimizeClosureIfNotInlined) vs || hasFlaggedFormal body
+        | _ -> false
+
+    if not (hasFlaggedFormal lambdaExpr) then
+        lambdaExpr
+    else
+
+    let tps, vsl, body, bodyTy = stripTopLambda (lambdaExpr, f0ty)
+
+    let tryFlag (group, info: Summary<ExprValueInfo>) =
+        match group, info.Info with
+        | [ (v: Val) ], _ when not v.OptimizeClosureIfNotInlined -> None
+        | [ _ ], StripLambdaValue _ -> None
+        | [ v ], _ ->
+            match stripFunTy g v.Type with
+            | argTys, retTy when argTys.Length >= 2 && argTys.Length <= 5 -> Some(v, argTys, retTy)
+            | _ -> None
+        | _ -> None
+
+    let flagged =
+        if List.length vsl = List.length arginfos then
+            List.choose tryFlag (List.zip vsl arginfos)
+        else
+            []
+
+    if List.isEmpty flagged then
+        lambdaExpr
+    else
+
+    let adaptFormal body (folderVal: Val, argTys, retTy) =
+        let adaptCall, adaptTy = mkCallOptimizedClosuresAdapt g m argTys retTy (exprForVal m folderVal)
+        let adaptedVal, adaptedExpr = mkCompGenLocal m "adaptedClosure" adaptTy
+        let folderVref = mkLocalValRef folderVal
+        let arity = List.length argTys
+        let mutable rewrote = false
+
+        // Reroute one saturated application node. A staged chain keeps its effect order.
+        let env =
+            { PreIntercept = None
+              PostTransform =
+                (fun e ->
+                    match e with
+                    | ValApp g folderVref (_, args, _) when List.length args = arity ->
+                        rewrote <- true
+                        Some(mkCallOptimizedClosuresInvoke g m argTys retTy adaptedExpr args)
+                    | _ -> None)
+              PreInterceptBinding = None
+              RewriteQuotations = false
+              StackGuard = StackGuard("OptimizeClosureIfNotInlinedStackGuard") }
+
+        let rewrittenBody = RewriteExpr env body
+        if rewrote then mkCompGenLet m adaptedVal adaptCall rewrittenBody else body
+
+    let rewrittenBody = List.fold adaptFormal body flagged
+    if body === rewrittenBody then lambdaExpr
+    else mkMultiLambdas g m tps vsl (rewrittenBody, bodyTy)
+
 /// Matches boolean decision tree:
 /// check single case with bool const.
 [<return: Struct>]
@@ -4053,6 +4115,8 @@ and OptimizeApplication cenv env (f0, f0ty, tyargs, args, m) =
             | _ -> args |> List.map (fun arg -> UnknownValue, arg)
 
         let newArgs, arginfos = OptimizeExprsThenReshapeAndConsiderSplits cenv env shapes
+        // Run before beta reduction removes the flagged formals.
+        let newf0 = AdaptOpaqueOptimizedClosureArgs g newf0 f0ty arginfos m
         // beta reducing
         let reducedExpr = MakeApplicationAndBetaReduce g (newf0, f0ty, [tyargs], newArgs, m)
         let newExpr = reducedExpr |> remake

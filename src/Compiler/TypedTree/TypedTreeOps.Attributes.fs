@@ -657,6 +657,7 @@ module internal AttributeHelpers =
                     | "OptionalArgumentAttribute" -> WellKnownValAttributes.OptionalArgumentAttribute
                     | "ProjectionParameterAttribute" -> WellKnownValAttributes.ProjectionParameterAttribute
                     | "InlineIfLambdaAttribute" -> WellKnownValAttributes.InlineIfLambdaAttribute
+                    | "OptimizeClosureIfNotInlinedAttribute" -> WellKnownValAttributes.OptimizeClosureIfNotInlinedAttribute
                     | "StructAttribute" -> WellKnownValAttributes.StructAttribute
                     | "NoCompilerInliningAttribute" -> WellKnownValAttributes.NoCompilerInliningAttribute
                     | "GeneralizableValueAttribute" -> WellKnownValAttributes.GeneralizableValueAttribute

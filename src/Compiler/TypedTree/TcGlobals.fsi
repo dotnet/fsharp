@@ -544,6 +544,8 @@ type internal TcGlobals =
 
     member fastFunc_tcr: TypedTree.EntityRef
 
+    member optimizedClosures_FSharpFunc_tcref: int -> TypedTree.EntityRef
+
     member float32_operator_info: IntrinsicValRef
 
     member float32_tcr: TypedTree.EntityRef

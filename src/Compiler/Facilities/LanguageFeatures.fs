@@ -83,6 +83,7 @@ type LanguageFeature =
     | ImprovedImpliedArgumentNamesPartTwo
     | RecordSpreads
     | ErrorOnBitwiseOpsOnNonIntegralEnums
+    | OptimizeClosureIfNotInlined
 
 /// LanguageVersion management
 type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array) =
@@ -209,6 +210,7 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
                 // Unfinished features that still need work before they can be assigned a release language version.
                 LanguageFeature.FromEndSlicing, previewVersion // Unfinished features --- needs work
                 LanguageFeature.ExtensionConstraintSolutions, previewVersion
+                LanguageFeature.OptimizeClosureIfNotInlined, previewVersion
             ]
 
     static let defaultLanguageVersion = LanguageVersion("default")
@@ -371,6 +373,7 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
         | LanguageFeature.ImprovedImpliedArgumentNamesPartTwo -> FSComp.SR.featureImprovedImpliedArgumentNamesPartTwo ()
         | LanguageFeature.RecordSpreads -> FSComp.SR.featureRecordSpreads ()
         | LanguageFeature.ErrorOnBitwiseOpsOnNonIntegralEnums -> FSComp.SR.featureErrorOnBitwiseOpsOnNonIntegralEnums ()
+        | LanguageFeature.OptimizeClosureIfNotInlined -> FSComp.SR.featureOptimizeClosureIfNotInlined ()
 
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =
