@@ -366,8 +366,10 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
                             [|
                                 // Clear any references from CompilationOptions.
                                 // We get the references from Project.ProjectReferences/Project.MetadataReferences.
+                                // A path map belongs to the build output: applied here it rewrites the file name of
+                                // every range imported from a referenced project, and navigation finds no document.
                                 for x in projectSite.CompilationOptions do
-                                    if not (x.Contains("-r:")) then
+                                    if not (x.Contains("-r:") || x.StartsWith("--pathmap:", StringComparison.Ordinal)) then
                                         x
 
                                 for x in project.MetadataReferences.OfType<PortableExecutableReference>() do
