@@ -102,6 +102,21 @@ let ``the fast path finds the declaration and agrees with the whole project chec
         Assert.Equal(lineOf declaration, fast.StartLine)
     | fast, full -> failwith $"fast path: %A{fast}, whole project: %A{full}"
 
+/// Peek opens the file it is handed, at a line counted the way Roslyn counts them.
+[<Theory>]
+[<InlineData("T:Widgets.Counter", "type Counter")>]
+[<InlineData("M:Widgets.twice(System.Int32)", "let twice")>]
+[<InlineData("P:Widgets.Shape.Dot", "| Dot")>]
+let ``the file location of a declaration is its document and a zero-based line`` (docId: string, declaration: string) =
+    match
+        CrossLanguageSymbolNavigation.tryFindFileLocation project.Solution project.AssemblyName docId
+        |> run
+    with
+    | ValueSome location ->
+        Assert.Equal(document.FilePath, location.FilePath)
+        Assert.Equal(lineOf declaration - 1, location.Position.Line)
+    | ValueNone -> failwith $"no file location for {docId}"
+
 [<Theory>]
 [<InlineData("T:Widgets.Nope")>]
 [<InlineData("M:Widgets.Counter.Nope")>]
