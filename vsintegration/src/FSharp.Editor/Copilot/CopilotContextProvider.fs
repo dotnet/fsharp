@@ -22,6 +22,13 @@ open Microsoft.VisualStudio.Shell.ServiceBroker
 open FSharp.Compiler.EditorServices
 open CancellableTasks
 
+/// Where a declaration sits relative to what the user is working on. The picker merges answers from
+/// every provider, so a match in a file the user has open has to say so rather than rely on its position.
+[<RequireQualifiedAccess>]
+type internal DocumentFocus =
+    | Open
+    | Elsewhere
+
 /// Solution-wide lookup of F# declarations behind the Copilot chat "#" mention picker.
 /// Kept apart from the brokered service so it can be exercised without a Visual Studio workspace.
 module internal CopilotSymbolQuery =
@@ -48,10 +55,15 @@ module internal CopilotSymbolQuery =
         |> Seq.where (fun project -> project.Language = FSharpConstants.FSharpLanguageName)
         |> Seq.collect _.Documents
 
+    let focusOf (openIds: HashSet<DocumentId>) (document: Document) =
+        if openIds.Contains document.Id then
+            DocumentFocus.Open
+        else
+            DocumentFocus.Elsewhere
+
     /// The documents in the order a query visits them: the ones the user has open, the ones already
     /// parsed into the cache, and the ones that would have to be parsed to answer.
-    let private tiers (cache: FSharpNavigableItemsCache) (openDocumentIds: DocumentId seq) (solution: Solution) =
-        let openIds = HashSet openDocumentIds
+    let private tiers (cache: FSharpNavigableItemsCache) (openIds: HashSet<DocumentId>) (solution: Solution) =
         let opened = ResizeArray()
         let cached = ResizeArray()
         let cold = ResizeArray()
@@ -82,6 +94,7 @@ module internal CopilotSymbolQuery =
     let search (cache: FSharpNavigableItemsCache) (openDocumentIds: DocumentId seq) (solution: Solution) (searchTexts: string[]) =
         cancellableTask {
             let! ct = CancellableTask.getCancellationToken ()
+            let openIds = HashSet openDocumentIds
             let matchers = searchTexts |> Array.map cache.CreateMatcherFor
             let hits = Array.init searchTexts.Length (fun _ -> ResizeArray())
             let found = Array.init searchTexts.Length (fun _ -> HashSet StringComparer.Ordinal)
@@ -108,7 +121,7 @@ module internal CopilotSymbolQuery =
                     collect document items
                 }
 
-            let struct (opened, cached, cold) = tiers cache openDocumentIds solution
+            let struct (opened, cached, cold) = tiers cache openIds solution
 
             do! opened |> CancellableTask.forEachThrottled parallelism parseAndCollect
 
@@ -134,10 +147,10 @@ module internal CopilotSymbolQuery =
                 hits
                 |> Array.map (
                     Seq.sortBy (fun (struct (kind, item: NavigableItem, document: Document)) ->
-                        document.IsFSharpSignatureFile, kind, item.Name.Length)
+                        focusOf openIds document, document.IsFSharpSignatureFile, kind, item.Name.Length)
                     >> Seq.distinctBy (fun (struct (_, item, _)) -> CopilotSymbolMapping.fullyQualifiedName item)
                     >> Seq.truncate MaxMentions
-                    >> Seq.map (fun (struct (_, item, document)) -> struct (item, document))
+                    >> Seq.map (fun (struct (_, item, document)) -> struct (item, document, focusOf openIds document))
                     >> Seq.toArray
                 )
         }
@@ -171,7 +184,7 @@ module internal CopilotSymbolQuery =
                     collect document items
                 }
 
-            let struct (opened, cached, cold) = tiers cache openDocumentIds solution
+            let struct (opened, cached, cold) = tiers cache (HashSet openDocumentIds) solution
 
             do! opened |> CancellableTask.forEachThrottled parallelism parseAndCollect
 
@@ -292,11 +305,21 @@ type internal FSharpCopilotContextProvider
     static let noMentions =
         Array.empty<CopilotQueriedMention> :> IReadOnlyCollection<CopilotQueriedMention>
 
-    let mentionFor (item: NavigableItem) (document: Document) =
-        let inputs = Dictionary<string, CopilotValue>(StringComparer.Ordinal)
+    let priorityOf focus =
+        match focus with
+        | DocumentFocus.Open -> CopilotQueriedMentionPriority.High
+        | DocumentFocus.Elsewhere -> CopilotQueriedMentionPriority.None
 
-        inputs[CopilotSymbolMapping.FullyQualifiedNameInput] <-
-            CopilotValue(CopilotDefaultTypes.StringName, CopilotSymbolMapping.fullyQualifiedName item)
+    let mentionFor (item: NavigableItem) (document: Document) focus =
+        let inputs =
+            Dictionary<string, CopilotValue>(
+                dict
+                    [
+                        CopilotSymbolMapping.FullyQualifiedNameInput,
+                        CopilotValue(CopilotDefaultTypes.StringName, CopilotSymbolMapping.fullyQualifiedName item)
+                    ],
+                StringComparer.Ordinal
+            )
 
         let description = CopilotSymbolQuery.describe item document
 
@@ -308,7 +331,8 @@ type internal FSharpCopilotContextProvider
             Description = description,
             Tooltip = description,
             Icon = Nullable(CopilotSymbolMapping.icon item.Kind),
-            IsNavigable = true
+            IsNavigable = true,
+            Priority = priorityOf focus
         )
         :> CopilotQueriedMention
 
@@ -341,7 +365,7 @@ type internal FSharpCopilotContextProvider
                 for index in 0 .. distinct.Length - 1 do
                     byText[distinct[index]] <-
                         hits[index]
-                        |> Array.map (fun (struct (item, document)) -> mentionFor item document)
+                        |> Array.map (fun (struct (item, document, focus)) -> mentionFor item document focus)
                         :> IReadOnlyCollection<CopilotQueriedMention>
 
                 return

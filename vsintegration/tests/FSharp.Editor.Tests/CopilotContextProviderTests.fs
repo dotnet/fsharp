@@ -53,7 +53,7 @@ let twice x = x * 2
 
     let private namesOf hits =
         hits
-        |> Array.map (fun (struct (item, _)) -> CopilotSymbolMapping.fullyQualifiedName item)
+        |> Array.map (fun (struct (item, _, _)) -> CopilotSymbolMapping.fullyQualifiedName item)
 
     let private searchIn cache openDocumentIds solution pattern =
         CopilotSymbolQuery.search cache openDocumentIds solution [| pattern |]
@@ -92,7 +92,7 @@ let twice x = x * 2
             CopilotSymbolQuery.search cache Seq.empty solution [| "Counter" |]
             |> run
             |> Array.head
-            |> Array.pick (fun (struct (item, _)) ->
+            |> Array.pick (fun (struct (item, _, _)) ->
                 if CopilotSymbolMapping.fullyQualifiedName item = "Widgets.Counter" then
                     Some item
                 else
@@ -187,6 +187,32 @@ let twice x = x * 2
             documentsOf solution
             |> Array.filter (fun document -> (cache.TryGetCachedNavigableItems document.Id).IsNone)
         )
+
+    /// The declaration in the open file loses on every other part of the ordering - the name it is
+    /// matched against is longer - so it can only come first by being the file the user has open.
+    [<Theory>]
+    [<InlineData(false, "Elsewhere.Widget")>]
+    [<InlineData(true, "Holder.WidgetHolder")>]
+    let ``an open file answers before the rest`` (holderIsOpen: bool) (expected: string) =
+        let cache = freshCache ()
+
+        let solution =
+            solutionOf
+                [
+                    "C:\\elsewhere.fs", "module Elsewhere\n\ntype Widget() =\n    member _.Value = 1\n"
+                    "C:\\holder.fs", "module Holder\n\ntype WidgetHolder() =\n    member _.Value = 2\n"
+                ]
+
+        let openDocumentIds =
+            if holderIsOpen then
+                [ (documentNamed "holder.fs" solution).Id ]
+            else
+                []
+
+        let names = searchIn cache openDocumentIds solution "Widget"
+
+        Assert.Equal(expected, Array.head names)
+        Assert.Equal(2, names.Length)
 
     [<Fact>]
     let ``a batch of texts answers like the same texts one by one`` () =
