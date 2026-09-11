@@ -17,7 +17,9 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 open CancellableTasks
 
 [<Export(typeof<IFSharpUnusedOpensDiagnosticAnalyzer>)>]
-type internal UnusedOpensDiagnosticAnalyzer [<ImportingConstructor>] () =
+type internal UnusedOpensDiagnosticAnalyzer
+    [<ImportingConstructor>]
+    ([<Import("Microsoft.VisualStudio.Shell.SVsServiceProvider")>] serviceProvider: IServiceProvider) =
 
     static member GetUnusedOpenRanges(document: Document) =
         cancellableTask {
@@ -41,7 +43,10 @@ type internal UnusedOpensDiagnosticAnalyzer [<ImportingConstructor>] () =
     interface IFSharpUnusedOpensDiagnosticAnalyzer with
 
         member _.AnalyzeSemanticsAsync(descriptor, document: Document, cancellationToken: CancellationToken) =
-            if document.Project.IsFSharpMiscellaneousOrMetadata && not document.IsFSharpScript then
+            if
+                (document.Project.IsFSharpMiscellaneousOrMetadata && not document.IsFSharpScript)
+                || not (ActiveDocumentDetection.isActiveDocument serviceProvider document)
+            then
                 Tasks.Task.FromResult(ImmutableArray.Empty)
             else
                 cancellableTask {

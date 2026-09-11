@@ -13,7 +13,9 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 open CancellableTasks
 
 [<Export(typeof<IFSharpUnusedDeclarationsDiagnosticAnalyzer>)>]
-type internal UnusedDeclarationsAnalyzer [<ImportingConstructor>] () =
+type internal UnusedDeclarationsAnalyzer
+    [<ImportingConstructor>]
+    ([<Import("Microsoft.VisualStudio.Shell.SVsServiceProvider")>] serviceProvider: IServiceProvider) =
 
     interface IFSharpUnusedDeclarationsDiagnosticAnalyzer with
 
@@ -21,6 +23,7 @@ type internal UnusedDeclarationsAnalyzer [<ImportingConstructor>] () =
             if
                 (document.Project.IsFSharpMiscellaneousOrMetadata && not document.IsFSharpScript)
                 || not document.Project.IsFSharpCodeFixesUnusedDeclarationsEnabled
+                || not (ActiveDocumentDetection.isActiveDocument serviceProvider document)
             then
                 Threading.Tasks.Task.FromResult(ImmutableArray.Empty)
             else
