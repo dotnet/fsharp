@@ -25,7 +25,7 @@ open FSharp.Compiler.TypeProviders
 type OverloadResolutionCacheKey =
     {
         /// Hash combining all method identities in the method group
-        MethodGroupHash: int
+        MethodGroupHash: int64
         /// Type structures for caller object arguments (the 'this' argument for instance/extension methods)
         /// This is critical for extension methods where the 'this' type determines the overload
         ObjArgTypeStructures: TypeStructure[]
@@ -92,19 +92,20 @@ let tryGetTypeStructureForOverloadCache (g: TcGlobals) (ty: TType) : TypeStructu
     | ValueSome PossiblyInfinite -> ValueNone
     | ValueNone -> ValueNone
 
-let rec computeMethInfoHash (minfo: MethInfo) : int =
+let rec computeMethInfoHash (minfo: MethInfo) : int64 =
     match minfo with
-    | FSMeth(_, _, vref, _) -> HashingPrimitives.combineHash (hash vref.Stamp) (hash vref.LogicalName)
-    | ILMeth(_, ilMethInfo, _) -> HashingPrimitives.combineHash (hash ilMethInfo.ILName) (hash ilMethInfo.DeclaringTyconRef.Stamp)
-    | DefaultStructCtor(_, _) -> hash "DefaultStructCtor"
-    | RecdCtor(_, _) -> hash "RecdCtor"
+    | FSMeth(_, _, vref, _) -> HashingPrimitives.combineHash (int64 (hash vref.Stamp)) (int64 (hash vref.LogicalName))
+    | ILMeth(_, ilMethInfo, _) ->
+        HashingPrimitives.combineHash (int64 (hash ilMethInfo.ILName)) (int64 (hash ilMethInfo.DeclaringTyconRef.Stamp))
+    | DefaultStructCtor(_, _) -> int64 (hash "DefaultStructCtor")
+    | RecdCtor(_, _) -> int64 (hash "RecdCtor")
     | MethInfoWithModifiedReturnType(original, _) -> computeMethInfoHash original
 #if !NO_TYPEPROVIDERS
     | ProvidedMeth(_, mb, _, _) ->
         let name, declTypeName =
             mb.PUntaint((fun m -> m.Name, (nonNull<ProvidedType> m.DeclaringType).FullName |> string), Range.range0)
 
-        HashingPrimitives.combineHash (hash name) (hash declTypeName)
+        HashingPrimitives.combineHash (int64 (hash name)) (int64 (hash declTypeName))
 #endif
 
 /// Try to compute a cache key for overload resolution.
@@ -124,7 +125,7 @@ let tryComputeOverloadCacheKey
         ValueNone
     else
 
-        let mutable methodGroupHash = 0
+        let mutable methodGroupHash = 0L
 
         for cmeth in calledMethGroup do
             let methHash = computeMethInfoHash cmeth.Method
