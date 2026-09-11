@@ -227,7 +227,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
                     checker.GetProjectOptionsFromScript(
                         document.FilePath,
                         sourceText.ToFSharpSourceText(),
-                        ?caret = (focusedCaret |> ValueOption.toOption |> Option.bind _.Position),
+                        ?caret = (focusedCaret |> ValueOption.bind _.Position |> ValueOption.toOption),
                         previewEnabled = SessionsProperties.fsiPreview,
                         assumeDotNetFramework = not SessionsProperties.fsiUseNetCore,
                         userOpName = userOpName
@@ -279,8 +279,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
 
                 let addToCacheAndSubscribe (entry: SingleFileCacheEntry) =
                     let subscription =
-                        focusedCaret
-                        |> ValueOption.map (fun caret -> caret.LineChanged.Subscribe updateProjectOptions)
+                        focusedCaret |> ValueOption.map _.LineChanged.Subscribe(updateProjectOptions)
 
                     { entry with
                         Subscription = subscription
