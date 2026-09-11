@@ -360,3 +360,31 @@ let twice x = x * 2
 
         Assert.Equal(document.FilePath, location.FilePath)
         Assert.Equal(context.Snippet.Length, location.Span.Length)
+
+    /// A value and a module whose names hold a dot, beside the nested paths that would spell the same
+    /// without the double backticks.
+    let private dottedNames =
+        "module M\n\nlet ``a.b`` = 1\n\nmodule a =\n    let b = 2\n\nmodule ``x.y`` =\n    let z = 3\n\nmodule x =\n    module y =\n        let z = 4\n"
+
+    [<Fact>]
+    let ``names that differ only in double backticks answer as two mentions`` () =
+        let names =
+            searchIn (freshCache ()) Seq.empty (solutionOf [ "C:\\dotted.fs", dottedNames ]) "a.b"
+
+        Assert.Contains("M.``a.b``", names)
+        Assert.Contains("M.a.b", names)
+
+    [<Theory>]
+    [<InlineData("M.``a.b``", "let ``a.b`` = 1")>]
+    [<InlineData("M.a.b", "let b = 2")>]
+    [<InlineData("M.``x.y``.z", "let z = 3")>]
+    [<InlineData("M.x.y.z", "let z = 4")>]
+    let ``a name holding a dot resolves to its own declaration`` (fullyQualifiedName: string, declaration: string) =
+        let solution = solutionOf [ "C:\\dotted.fs", dottedNames ]
+
+        match
+            CopilotSymbolQuery.symbolContext (freshCache ()) Seq.empty solution fullyQualifiedName
+            |> run
+        with
+        | ValueSome context -> Assert.Equal(declaration, context.Snippet.Trim())
+        | ValueNone -> failwith $"expected a symbol context for {fullyQualifiedName}"
