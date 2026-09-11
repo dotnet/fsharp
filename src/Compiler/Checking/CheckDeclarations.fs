@@ -1166,9 +1166,6 @@ module MutRecBindingChecking =
                             if isStatic && isExtrinsic then
                                 errorR(Error(FSComp.SR.tcStaticBindingInExtrinsicAugmentation(), m))
 
-                            elif isStatic && incrCtorInfoOpt.IsNone && not (g.langVersion.SupportsFeature(LanguageFeature.StaticLetInRecordsDusEmptyTypes)) then
-                                errorR(Error(FSComp.SR.tcStaticLetBindingsRequireClassesWithImplicitConstructors(), m))
-
                             // Phase2A: let-bindings - pass through
                             let innerState = (incrCtorInfoOpt, envForTycon, tpenv, recBindIdx, uncheckedBindsRev)
                             [Phase2AIncrClassBindings (tcref, letBinds, isStatic, isRec, m)], innerState
