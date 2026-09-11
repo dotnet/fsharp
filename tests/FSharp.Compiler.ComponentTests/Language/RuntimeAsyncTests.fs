@@ -345,7 +345,12 @@ let f () : Task<int> =
 
 [<EntryPoint>]
 let main _ =
-    f().GetAwaiter().GetResult()
+    try
+        f().GetAwaiter().GetResult() |> ignore
+        1
+    with
+    | e when e.Message = "boom" -> 0
+    | _ -> 1
 """
     |> withLangVersionPreview
     |> withFSharpCoreShippedNet
@@ -374,6 +379,7 @@ let f () : Task<int> =
     |> withFSharpCoreShippedNet
     |> compile
     |> shouldFail
+    |> withErrorCode 3918
 
 [<Fact>]
 let ``runtime async rejects stackalloc without suspension`` () =
@@ -395,6 +401,7 @@ let f () : Task<int> =
     |> withFSharpCoreShippedNet
     |> compile
     |> shouldFail
+    |> withErrorCode 3918
 
 [<Fact>]
 let ``runtime async rejects a byref captured by an inlined closure`` () =
@@ -424,7 +431,7 @@ module RuntimeAsyncInlineIfLambdaEffectsTest
 
 open System.Threading.Tasks
 open System.Runtime.CompilerServices
-open Microsoft.FSharp.Core.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers
 
 let mutable calls = 0
 
@@ -432,9 +439,11 @@ let effect () =
     calls <- calls + 1
     fun () -> 1
 
-let inline plainTwice ([<InlineIfLambda>] f) = f () + f ()
-let inline twice ([<InlineIfLambda>] f) = StateMachineHelpers.__runtimeAsyncReturn (f () + f ())
-let inline unused ([<InlineIfLambda>] f) = StateMachineHelpers.__runtimeAsyncReturn 20
+let inline plainTwice ([<InlineIfLambda>] f: unit -> int) = f () + f ()
+let inline twice ([<InlineIfLambda>] f: unit -> int) =
+    __runtimeAsyncReturn (f () + f ())
+let inline unused ([<InlineIfLambda>] f: unit -> int) =
+    __runtimeAsyncReturn 20
 
 [<EntryPoint>]
 let main _ =
@@ -538,6 +547,7 @@ let f () : Task<int> =
     |> withFSharpCoreShippedNet
     |> compile
     |> shouldFail
+    |> withErrorCode 3919
 
 [<Fact>]
 let ``runtime async combines awaited chunks without delegates`` () =

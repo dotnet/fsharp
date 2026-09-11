@@ -692,9 +692,19 @@
         <target state="new">A byref, byref-like, or pinned local '{0}' cannot be used after a runtime async suspension.</target>
         <note />
       </trans-unit>
+      <trans-unit id="ilRuntimeAsyncStackAllocation">
+        <source>Stack allocation is not permitted in a runtime async method.</source>
+        <target state="new">Stack allocation is not permitted in a runtime async method.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ilRuntimeAsyncSuspensionOutsideRuntimeAsync">
         <source>Runtime async suspension method '{0}' may only be called from a runtime async method.</source>
         <target state="new">Runtime async suspension method '{0}' may only be called from a runtime async method.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ilRuntimeAsyncSynchronizedMethod">
+        <source>A runtime async method cannot use MethodImplOptions.Synchronized.</source>
+        <target state="new">A runtime async method cannot use MethodImplOptions.Synchronized.</target>
         <note />
       </trans-unit>
       <trans-unit id="ilxGenUnknownDebugPoint">

@@ -506,6 +506,9 @@ type IncrementalOptimizationEnv =
       /// Indicates that the expression being optimized is the body of a runtime-async marker.
       runtimeAsyncContext: bool
 
+      /// Runtime async diagnostics must only be reported once across optimization passes.
+      runtimeAsyncReportedRanges: HashSet<range>
+
     }
 
     static member Empty =
@@ -521,7 +524,8 @@ type IncrementalOptimizationEnv =
           referencedCcus = []
           earlierImplFileSignatures = []
           debugInlineCallSite = None
-          runtimeAsyncContext = false }
+          runtimeAsyncContext = false
+          runtimeAsyncReportedRanges = HashSet<range>() }
 
     override x.ToString() = "<IncrementalOptimizationEnv>"
 
@@ -2589,10 +2593,8 @@ let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
     | Expr.App (f, fty, tyargs, _, m) when runtimeAsyncReturn.IsSome ->
         let info = runtimeAsyncReturn.Value
         let bodyR, bodyInfo = OptimizeExpr cenv { env with runtimeAsyncContext = true } info.Body
-        let reportedStamps = HashSet<Stamp>()
-
         for v in GetRuntimeAsyncNonPreservableUses g bodyR do
-            if reportedStamps.Add v.Stamp then
+            if env.runtimeAsyncReportedRanges.Add v.Range then
                 errorR(Error(FSComp.SR.ilRuntimeAsyncLocalUsedAfterSuspension(RichText.mkText v.DisplayName), v.Range))
 
         let bodyR = RewriteRuntimeAsyncExceptionHandlers g bodyR
@@ -3694,8 +3696,17 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
         | CurriedLambdaValue (_, _, _, body, _) -> Some body
         | _ -> None
 
-    let runtimeAsyncAnalyzer = RuntimeAsyncAnalyzer(g, getRuntimeAsyncLambdaBody)
-    let containsRuntimeAsyncFragment = runtimeAsyncAnalyzer.ContainsFragment
+    let runtimeAsyncAnalyzer =
+        if g.langVersion.SupportsFeature LanguageFeature.RuntimeAsync then
+            Some(RuntimeAsyncAnalyzer(g, getRuntimeAsyncLambdaBody))
+        else
+            None
+
+    let containsRuntimeAsyncFragment expr =
+        match runtimeAsyncAnalyzer with
+        | Some analyzer -> analyzer.ContainsFragment expr
+        | None -> false
+
     let reoptimizeRuntimeAsync reduced =
         let reduced = InlineRuntimeAsyncLambdaArgument g containsRuntimeAsyncFragment reduced
 
@@ -3708,14 +3719,9 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
         InlineRuntimeAsyncLambdaArgument g containsRuntimeAsyncFragment reduced
 
     let mustInlineRuntimeAsync =
-        match stripExpr valExpr with
-        | Expr.Val(vref, _, _) ->
-            ShouldForceRuntimeAsyncApplication
-                runtimeAsyncAnalyzer
-                env.runtimeAsyncContext
-                vref
-                inlineBody
-                args
+        match runtimeAsyncAnalyzer, stripExpr valExpr with
+        | Some analyzer, Expr.Val(vref, _, _) ->
+            ShouldForceRuntimeAsyncApplication analyzer env.runtimeAsyncContext vref inlineBody args
         | _ -> false
 
     match cenv.settings.alwaysInline, stripExpr valExpr with

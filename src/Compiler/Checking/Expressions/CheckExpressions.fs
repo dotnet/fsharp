@@ -8690,7 +8690,13 @@ and Propagate (cenv: cenv) (overallTy: OverallTy) (env: TcEnv) tpenv (expr: Appl
             let denv = env.DisplayEnv
 
             match expr.Expr with
-            | RuntimeAsyncReturnFunction g _  -> ()
+            | RuntimeAsyncReturnFunction g _ ->
+                checkLanguageFeatureAndRecover g.langVersion LanguageFeature.RuntimeAsync mExpr
+            | OpPipeRight g (_, _, fExpr, _)
+            | OpPipeRight2 g (_, _, _, fExpr, _)
+            | OpPipeRight3 g (_, _, _, _, fExpr, _)
+                when TryGetRuntimeAsyncReturn g fExpr |> Option.isSome ->
+                checkLanguageFeatureAndRecover g.langVersion LanguageFeature.RuntimeAsync mExpr
             | _ ->
 
             match UnifyFunctionTypeUndoIfFailed cenv denv mExpr exprTy with

@@ -129,11 +129,22 @@ let ShouldForceRuntimeAsyncApplication (analyzer: RuntimeAsyncAnalyzer) runtimeA
                 | _ -> false)
             args)
 
+let rec private IsRuntimeAsyncEffectFree expr =
+    match stripExpr expr with
+    | Expr.Const _
+    | Expr.Lambda _
+    | Expr.TyLambda _ -> true
+    | Expr.Val(vref, _, _) -> not vref.IsMutable && not vref.IsTypeFunction
+    | Expr.App(funcExpr, _, _, [], _) -> IsRuntimeAsyncEffectFree funcExpr
+    | Expr.Op(TOp.Tuple _, _, args, _)
+    | Expr.Op(TOp.AnonRecd _, _, args, _) -> List.forall IsRuntimeAsyncEffectFree args
+    | _ -> false
+
 let InlineRuntimeAsyncLambdaArgument (g: TcGlobals) (isRuntimeAsyncFragment: Expr -> bool) expr =
     let rec isLambdaExpression expr =
         match stripExpr expr with
-        | Expr.DebugPoint(_, innerExpr)
-        | Expr.Let(_, innerExpr, _, _) -> isLambdaExpression innerExpr
+        | Expr.DebugPoint(_, innerExpr) -> isLambdaExpression innerExpr
+        | Expr.Let(TBind(_, rhs, _), innerExpr, _, _) -> IsRuntimeAsyncEffectFree rhs && isLambdaExpression innerExpr
         | Expr.Lambda _
         | Expr.TyLambda _ -> true
         | _ -> false
@@ -173,7 +184,11 @@ let InlineRuntimeAsyncLambdaArgument (g: TcGlobals) (isRuntimeAsyncFragment: Exp
 
                 match f with
                 | Expr.Let(bind, body, mLet, _) -> apply body (tyOfExpr g body) tyargs args m |> Option.map (mkLetBind mLet bind)
-                | Expr.Lambda(_, _, _, valParams, _, _, _) when valParams.Length = 1 && not rest.IsEmpty ->
+                | Expr.Lambda(_, _, _, valParams, body, _, _) when
+                    valParams.Length = 1
+                    && not rest.IsEmpty
+                    && (IsRuntimeAsyncEffectFree body || List.forall IsRuntimeAsyncEffectFree rest)
+                    ->
                     let reduced = MakeApplicationAndBetaReduce g (f, fty, [ tyargs ], [ firstArg ], m)
 
                     match reduced with
@@ -224,7 +239,12 @@ let InlineRuntimeAsyncLambdaArgument (g: TcGlobals) (isRuntimeAsyncFragment: Exp
                 Some(fun cont expr ->
                     match stripExpr expr with
                     | Expr.Let(TBind(boundVal, boundExpr, _), body, _, _) when
-                        boundVal.InlineIfLambda
+                        (boundVal.InlineIfLambda
+                         && (isLambdaExpression boundExpr
+                             || isRuntimeAsyncFragment boundExpr
+                             || match stripExpr boundExpr with
+                                | Expr.App(_, _, _, args, _) -> List.isEmpty args
+                                | _ -> true))
                         || (isLambdaExpression boundExpr && isRuntimeAsyncFragment boundExpr)
                         ->
                         if not boundVal.InlineIfLambda then

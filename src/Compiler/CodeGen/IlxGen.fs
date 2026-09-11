@@ -3428,6 +3428,16 @@ and GenExprAux (cenv: cenv) (cgbuf: CodeGenBuffer) eenv expr (sequel: sequel) =
 // changes, the marker expression would reach GenExprAux again and recurse without bound.
 and GenRuntimeAsyncReturnAsStartedTask cenv cgbuf eenv expr sequel =
     let m = expr.Range
+
+    let nonPreservableFreeVal =
+        (freeInExpr CollectLocals expr).FreeLocals
+        |> Zset.elements
+        |> List.tryFind (fun v -> v.IsPinning || isByrefTy cenv.g v.Type || isByrefLikeTy cenv.g m v.Type)
+
+    match nonPreservableFreeVal with
+    | Some v -> errorR (Error(FSComp.SR.chkByrefUsedInInvalidWay (richTextOfValName cenv.g v), v.Range))
+    | None -> ()
+
     let unitVal, _ = mkLocal m "unit" cenv.g.unit_ty
     let lambdaExpr = mkLambda m unitVal (expr, tyOfExpr cenv.g expr)
     let lambdaTy = tyOfExpr cenv.g lambdaExpr
@@ -5522,6 +5532,14 @@ and GenWhileLoop cenv cgbuf eenv (spWhile, condExpr, bodyExpr, m) sequel =
 
 and GenAsmCode cenv cgbuf eenv (il, tyargs, args, returnTys, m) sequel =
     let g = cenv.g
+
+    if
+        eenv.inRuntimeAsyncMethod
+        && not eenv.inInlineMethod
+        && List.contains I_localloc il
+    then
+        errorR (Error(FSComp.SR.ilRuntimeAsyncStackAllocation (), m))
+
     let ilTyArgs = GenTypesPermitVoid cenv m eenv.tyenv tyargs
     let ilReturnTys = GenTypesPermitVoid cenv m eenv.tyenv returnTys
 
@@ -7173,6 +7191,11 @@ and GenGenericArgs cenv m (tyenv: TypeReprEnv) tps =
     |> DropErasedTypars
     |> List.map (fun tp -> GenType cenv m tyenv (mkTyparTy tp))
 
+and CheckRuntimeAsyncFreeVars g m (cloinfo: IlxClosureInfo) =
+    for fv in cloinfo.cloFreeVars do
+        if fv.IsPinning || isByrefTy g fv.Type || isByrefLikeTy g m fv.Type then
+            errorR (Error(FSComp.SR.chkByrefUsedInInvalidWay (richTextOfValName g fv), fv.Range))
+
 /// Generate a local type function contract class and implementation
 and GenClosureAsLocalTypeFunction cenv (cgbuf: CodeGenBuffer) eenv thisVars expr m =
     let g = cenv.g
@@ -7204,6 +7227,9 @@ and GenClosureAsLocalTypeFunction cenv (cgbuf: CodeGenBuffer) eenv thisVars expr
         match TryGetRuntimeAsyncReturn g body with
         | Some info -> true, List.isEmpty info.TypeArgs, info.Body
         | None -> false, false, body
+
+    if isRuntimeAsync then
+        CheckRuntimeAsyncFreeVars g m cloinfo
 
     let eenvinner =
         { eenvinner with
@@ -7269,6 +7295,9 @@ and GenClosureAsFirstClassFunction cenv (cgbuf: CodeGenBuffer) eenv thisVars m e
         match TryGetRuntimeAsyncReturn g body with
         | Some info -> true, List.isEmpty info.TypeArgs, info.Body
         | None -> false, false, body
+
+    if isRuntimeAsync then
+        CheckRuntimeAsyncFreeVars g m cloinfo
 
     let eenvinner =
         { eenvinner with
@@ -9942,6 +9971,9 @@ and GenMethodForBinding
         | Some info -> true, List.isEmpty info.TypeArgs, info.Body
         | None -> false, false, methLambdaBody
 
+    if isRuntimeAsync then
+        checkLanguageFeatureError g.langVersion LanguageFeature.RuntimeAsync m
+
     let nonUnitNonSelfMethodVars, body =
         BindUnitVars cenv.g (nonSelfMethodVars, paramInfos, methLambdaBody)
 
@@ -10090,6 +10122,9 @@ and GenMethodForBinding
     // check if the hasPreserveSigNamedArg and hasSynchronizedImplFlag implementation flags have been specified
     let hasPreserveSigImplFlag, hasSynchronizedImplFlag, hasNoInliningFlag, hasAggressiveInliningImplFlag, attrs =
         ComputeMethodImplAttribs cenv v attrs
+
+    if isRuntimeAsync && hasSynchronizedImplFlag then
+        error (Error(FSComp.SR.ilRuntimeAsyncSynchronizedMethod (), m))
 
     let securityAttributes, attrs =
         attrs
