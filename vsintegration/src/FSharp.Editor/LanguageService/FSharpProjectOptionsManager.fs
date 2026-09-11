@@ -557,7 +557,13 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
         commandLineOptions.Clear()
         legacyProjectSites.Clear()
         cache.Clear()
-        singleFileCache.Clear()
+        // Dispose only the entries we actually removed: the subscription is not idempotent
+        // and the agent loop disposes what it removes on its own.
+        for entry in singleFileCache do
+            match singleFileCache.TryRemove(entry.Key) with
+            | true, (_, _, _, _, subscription) -> subscription |> Option.iter (fun s -> s.Dispose())
+            | _ -> ()
+
         lastSuccessfulCompilations.Clear()
 
     member _.ScriptUpdated = scriptUpdatedEvent.Publish
