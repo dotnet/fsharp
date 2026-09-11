@@ -39,6 +39,7 @@ tools:
   bash: true
 
 safe-outputs:
+  activation-comments: false
   # Transient gh-aw infra crashes (e.g. unhealthy firewall container) and engine
   # hiccups must not open tracking issues — real problems surface as PR labels/comments.
   report-failure-as-issue: false
@@ -53,6 +54,7 @@ safe-outputs:
     target: "*"
     max: 5
     protected-files: allowed
+    signed-commits: false
   add-labels:
     allowed: ["AI-needs-CI-fix-input"]
     max: 3
@@ -131,6 +133,14 @@ Can't resolve → `git merge --abort`, comment explaining which files and why. N
 
 ## Hygiene
 
-- At most one comment per PR per run.
+- At most one explicit comment per PR per run. Automatic push confirmations are disabled.
+- Do not post routine healthy or no-op reports.
+- Before posting, read all existing workflow-authored comments, including minimized comments.
+- End each report with `<!-- labelops:result:<head-sha>:<base-sha>:<subtopic>:<outcome> -->`.
+  Use the PR head and `origin/main` SHA examined for this attempt. Use `ci` or `conflicts` for the subtopic.
+  Use `fix-submitted`, `needs-input`, or `unresolved` for the outcome.
+- If the same marker and substantive outcome already exist, omit the duplicate comment. Continue any eligible repair attempt.
+  A failed-push warning is not a successful repair. Do not claim a submitted push has already been applied.
+- Keep the CI escalation marker from Step 3 in addition to the report marker.
 - `hide-older-comments: true` collapses previous LabelOps comments.
 - `regression-pr-shepherd` owns `AI-Issue-Regression-PR` PRs — don't touch those.

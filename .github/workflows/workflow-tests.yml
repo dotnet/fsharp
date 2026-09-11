@@ -1,0 +1,42 @@
+name: Workflow tests
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/**'
+      - 'eng/tests/WorkflowTests.mjs'
+      - 'eng/tests/fixtures/release-notes-gh.cjs'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/**'
+      - 'eng/tests/WorkflowTests.mjs'
+      - 'eng/tests/fixtures/release-notes-gh.cjs'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: workflow-tests-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: '24'
+      - name: Check generated workflows
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh extension install github/gh-aw --pin v0.76.1
+          gh aw compile repo-assist-scheduled labelops-pr-maintenance --schedule-seed dotnet/fsharp --no-check-update
+          git diff --exit-code -- .github/workflows/*.lock.yml .github/aw/actions-lock.json
+      - run: node --test eng/tests/WorkflowTests.mjs

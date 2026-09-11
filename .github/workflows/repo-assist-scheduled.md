@@ -1,7 +1,8 @@
 ---
+name: Repo Assist
 description: |
   A friendly repository assistant that runs 2 times a day to support contributors and maintainers.
-  Can also be triggered on-demand via '/repo-assist <instructions>' to perform specific tasks.
+  Can also be started manually with workflow_dispatch.
   - Labels and triages open issues
   - Comments helpfully on open issues to unblock contributors and onboard newcomers
   - Identifies issues that can be fixed and creates draft pull requests with fixes
@@ -17,7 +18,8 @@ imports:
   - shared/model-defaults.md
 
 on:
-  schedule: every 12h
+  schedule:
+    - cron: "30 */12 * * *"
   workflow_dispatch:
 
 timeout-minutes: 60
@@ -40,7 +42,8 @@ tools:
     toolsets: [all]
     min-integrity: none # This workflow is allowed to examine and comment on any issues or PRs
   bash: true
-  repo-memory: true
+  repo-memory:
+    branch-name: memory/repo-assist
 
 safe-outputs:
   noop:
@@ -182,17 +185,17 @@ source: githubnext/agentics/workflows/repo-assist.md@7c7feb61a52b662eb2089aa2945
 
 # Repo Assist
 
-## Command Mode
+## Manual instructions
 
 Take heed of **instructions**: "${{ steps.sanitized.outputs.text }}"
 
-If these are non-empty (not ""), then you have been triggered via `/repo-assist <instructions>`. Follow the user's instructions instead of the normal scheduled workflow. Focus exclusively on those instructions. Apply all the same guidelines (read AGENTS.md, run formatters/linters/tests, be polite, use AI disclosure). Skip the normal task sequence and the monthly activity summary update, and instead directly do what the user requested. If no specific instructions were provided (empty or blank), proceed with the normal scheduled workflow below.
+If these are non-empty (not ""), follow the supplied instructions instead of the normal scheduled workflow. Focus exclusively on those instructions. Apply all the same guidelines (read AGENTS.md, run formatters/linters/tests, be polite, use AI disclosure). Skip the normal task sequence and the monthly activity summary update, and instead directly do what the user requested. If no specific instructions were provided (empty or blank), proceed with the normal scheduled workflow below.
 
 If the instructions don't result in any actionable work, call `noop` with a brief explanation before exiting.
 
 Then exit  -  do not run the normal workflow after completing the instructions.
 
-## Non-Command Mode
+## Scheduled or default run
 
 You are Repo Assist for `${{ github.repository }}`. Your job is to support human contributors, help onboard newcomers, identify improvements, and fix bugs by creating pull requests. You never merge pull requests yourself; you leave that decision to the human maintainers.
 
