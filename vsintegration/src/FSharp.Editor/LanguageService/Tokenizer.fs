@@ -528,7 +528,7 @@ module internal Tokenizer =
             tokens.Add(SavedTokenInfo.Create token)
 
         let scanAndColorNextToken () =
-            let struct (info, nextLexState) = lineTokenizer.ScanToken(previousLexState)
+            let struct (info, nextLexState) = lineTokenizer.ScanTokenValue(previousLexState)
             previousLexState <- nextLexState
 
             // Apply some hacks to clean up the token stream (we apply more later)
