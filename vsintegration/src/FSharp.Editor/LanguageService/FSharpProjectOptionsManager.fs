@@ -20,7 +20,6 @@ open Microsoft.VisualStudio.FSharp.Editor.Extensions
 open System.Windows
 open Microsoft.VisualStudio
 open FSharp.Compiler.Text
-open Microsoft.VisualStudio.TextManager.Interop
 
 #nowarn "57"
 
@@ -129,7 +128,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
         ConcurrentDictionary<ProjectId, struct (Project * FSharpParsingOptions * FSharpProjectOptions)>()
 
     let singleFileCache =
-        ConcurrentDictionary<DocumentId, Project * VersionStamp * FSharpParsingOptions * FSharpProjectOptions * ConnectionPointSubscription>()
+        ConcurrentDictionary<DocumentId, Project * VersionStamp * FSharpParsingOptions * FSharpProjectOptions * IDisposable option>()
 
     // This is used to not constantly emit the same compilation.
     let weakPEReferences = ConditionalWeakTable<Compilation, FSharpReferencedProject>()
@@ -204,36 +203,29 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
         cancellableTask {
             let! ct = CancellableTask.getCancellationToken ()
             let! fileStamp = document.GetTextVersionAsync(ct)
-            let textViewAndCaret () : (IVsTextView * Position) option = document.TryGetTextViewAndCaretPos()
 
             match singleFileCache.TryGetValue(document.Id) with
             | false, _ ->
                 let! sourceText = document.GetTextAsync(ct)
 
-                let getProjectOptionsFromScript textViewAndCaret =
-                    let caret = textViewAndCaret ()
+                // FCS reads the caret only to skip resolving the `#r "nuget: …"` line being typed, and only scripts have those.
+                let focusedCaret =
+                    if isScriptFile document.FilePath then
+                        FocusedCaret.TryGet sourceText
+                    else
+                        ValueNone
 
-                    match caret with
-                    | None ->
-                        checker.GetProjectOptionsFromScript(
-                            document.FilePath,
-                            sourceText.ToFSharpSourceText(),
-                            previewEnabled = SessionsProperties.fsiPreview,
-                            assumeDotNetFramework = not SessionsProperties.fsiUseNetCore,
-                            userOpName = userOpName
-                        )
+                let getProjectOptionsFromScript () =
+                    checker.GetProjectOptionsFromScript(
+                        document.FilePath,
+                        sourceText.ToFSharpSourceText(),
+                        ?caret = (focusedCaret |> ValueOption.bind _.Position |> ValueOption.toOption),
+                        previewEnabled = SessionsProperties.fsiPreview,
+                        assumeDotNetFramework = not SessionsProperties.fsiUseNetCore,
+                        userOpName = userOpName
+                    )
 
-                    | Some(_, caret) ->
-                        checker.GetProjectOptionsFromScript(
-                            document.FilePath,
-                            sourceText.ToFSharpSourceText(),
-                            caret,
-                            previewEnabled = SessionsProperties.fsiPreview,
-                            assumeDotNetFramework = not SessionsProperties.fsiUseNetCore,
-                            userOpName = userOpName
-                        )
-
-                let! scriptProjectOptions, _ = getProjectOptionsFromScript textViewAndCaret
+                let! scriptProjectOptions, _ = getProjectOptionsFromScript ()
                 let project = document.Project
 
                 let otherOptions =
@@ -272,25 +264,20 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
 
                 let updateProjectOptions () =
                     async {
-                        let! scriptProjectOptions, _ = getProjectOptionsFromScript textViewAndCaret
+                        let! scriptProjectOptions, _ = getProjectOptionsFromScript ()
 
                         checker.NotifyFileChanged(document.FilePath, scriptProjectOptions)
                         |> Async.Start
                     }
                     |> Async.Start
 
-                let onChangeCaretHandler (_, _newline: int, _oldline: int) = updateProjectOptions ()
-                let onKillFocus (_) = updateProjectOptions ()
-                let onSetFocus (_) = updateProjectOptions ()
-
                 let addToCacheAndSubscribe value =
                     match value with
                     | projectId, fileStamp, parsingOptions, projectOptions, _ ->
                         let subscription =
-                            match textViewAndCaret () with
-                            | Some(textView, _) ->
-                                subscribeToTextViewEvents (textView, (Some onChangeCaretHandler), (Some onKillFocus), (Some onSetFocus))
-                            | None -> None
+                            focusedCaret
+                            |> ValueOption.map _.LineChanged.Subscribe(updateProjectOptions)
+                            |> ValueOption.toOption
 
                         (projectId, fileStamp, parsingOptions, projectOptions, subscription)
 
