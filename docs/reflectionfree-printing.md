@@ -1,3 +1,9 @@
+---
+title: Reflection-free printing
+category: FSharp.Core
+categoryindex: 500
+index: 200
+---
 # Simple vs Reflection-based DU and Record printing
 
 This document describes two modes for printing Discriminated Unions (DUs) and Records in F#: a **simple** reflection-free mode that delegates to a `string`-like operator for printing field values, and a `sprintf` mode (`sprintf "%A"`), which uses **reflection** to create output looking like F# code. In this document, the terms *simple* and *reflection* are used to distinguish the two modes.

@@ -9,42 +9,41 @@
 $ErrorActionPreference = "Stop"
 
 $root = "NativeAOT_Test"
-$tfm = "net10.0"
 
 $cwd = Get-Location
 Set-Location $PSScriptRoot
 
-dotnet publish -restore -c release -f:$tfm "$root.fsproj" -bl:"$PSScriptRoot/../../../artifacts/log/Release/AheadOfTime/NativeAOT/$root.binlog"
+dotnet publish -restore -c release "$root.fsproj" -bl:"$PSScriptRoot/../../../artifacts/log/Release/AheadOfTime/NativeAOT/$root.binlog"
 if (-not ($LASTEXITCODE -eq 0)) {
     Set-Location $cwd
     Write-Error "NativeAOT publish failed with exit code $LASTEXITCODE" -ErrorAction Stop
 }
 
-# Prove this is a genuine net10 dogfood: a net10.0 consumer must resolve the locally-packed
-# FSharp.Core's lib/net10.0 asset, not the netstandard2.1 fallback. Assert on the *selected*
-# compile/runtime asset under "targets" (the "libraries" manifest lists every lib folder, so a
-# plain substring search would false-pass even when ns2.1 was chosen). Without this the test would
-# still succeed on the ns2.1 asset and the net10 target framework would go unexercised.
+# Read the frameworks from the project; passing -f above would override TargetFramework globally.
+$props = dotnet msbuild "$root.fsproj" -getProperty:TargetFramework -getProperty:FSharpCoreShippedNetTargetFramework -nologo | ConvertFrom-Json
+$tfm = $props.Properties.TargetFramework
+$coreAsset = "lib/$($props.Properties.FSharpCoreShippedNetTargetFramework)/FSharp.Core.dll"
+
+# Assert on the selected compile/runtime asset, not the "libraries" manifest, which lists every
+# lib folder and would false-pass on the netstandard2.1 fallback.
 $assets = Join-Path $PSScriptRoot "obj/project.assets.json"
 $assetsJson = Get-Content $assets -Raw | ConvertFrom-Json
-$net10Selected = $false
+$netAssetSelected = $false
 foreach ($target in $assetsJson.targets.PSObject.Properties) {
     foreach ($package in $target.Value.PSObject.Properties) {
         if ($package.Name -like "FSharp.Core/*") {
             $compileKeys = if ($package.Value.compile) { @($package.Value.compile.PSObject.Properties.Name) } else { @() }
             $runtimeKeys = if ($package.Value.runtime) { @($package.Value.runtime.PSObject.Properties.Name) } else { @() }
-            # FSharp.Core packs only lib/{tfm} (no ref/, no runtimes/), so compile and runtime resolve
-            # from the same folder; require both to be net10 - anything else means a fallback was chosen.
-            if (($compileKeys -contains "lib/net10.0/FSharp.Core.dll") -and
-                ($runtimeKeys -contains "lib/net10.0/FSharp.Core.dll")) {
-                $net10Selected = $true
+            # FSharp.Core packs only lib/{tfm}, so both must resolve there; anything else is a fallback.
+            if (($compileKeys -contains $coreAsset) -and ($runtimeKeys -contains $coreAsset)) {
+                $netAssetSelected = $true
             }
         }
     }
 }
-if (-not $net10Selected) {
+if (-not $netAssetSelected) {
     Set-Location $cwd
-    Write-Error "The net10.0 consumer did not resolve the lib/net10.0 FSharp.Core asset (it fell back to a lower target framework). The net10 FSharp.Core target framework is not being dogfooded. See $assets." -ErrorAction Stop
+    Write-Error "The $tfm consumer did not resolve the $coreAsset FSharp.Core asset (it fell back to a lower target framework). The shipped net FSharp.Core target framework is not being dogfooded. See $assets." -ErrorAction Stop
 }
 
 $exe = Join-Path $PSScriptRoot "bin/release/$tfm/win-x64/publish/$root.exe"
@@ -58,7 +57,7 @@ if (-not ($exitCode -eq 0)) {
 }
 
 if ($output.Trim() -ne "Finished") {
-    Write-Error "NativeAOT interpolation checks failed.`nOutput:`n$output" -ErrorAction Stop
+    Write-Error "NativeAOT behavior checks failed.`nOutput:`n$output" -ErrorAction Stop
 }
 
-Write-Host "NativeAOT interpolated-string test passed."
+Write-Host "NativeAOT test passed."

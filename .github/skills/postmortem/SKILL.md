@@ -32,6 +32,17 @@ Before writing a single line, answer these questions:
 
 Write the file in `docs/postmortems/` with a descriptive filename (e.g., `regression-fs0229-bstream-misalignment.md`).
 
+Start the file with fsdocs front matter so the page lands under "Postmortems" in the navigation of the published docs at https://fsharp.github.io/fsharp-compiler-docs/. Without it, the page ends up in an unnamed group. Keep `title` short (it is the navigation entry; the `# Regression: ...` heading below stays descriptive), and pick the next free `index` after the existing postmortems:
+
+```yaml
+---
+title: FS0229 B-stream misalignment
+category: Postmortems
+categoryindex: 550
+index: 600
+---
+```
+
 Use this outline:
 
 ### Summary
@@ -72,4 +83,4 @@ What has been or should be added to prevent recurrence: tests, agentic instructi
 
 3. **Do not create instructions without path scoping.** A postmortem lesson that applies "everywhere" is too vague to be actionable. If you can't name the files where the lesson matters, the postmortem may not meet the threshold for this skill.
 
-4. **Update `docs/postmortems/README.md`** if it maintains an index.
+4. **Update `docs/postmortems/README.md`**, which maintains an index. Links there must be relative to the file or absolute GitHub URLs; paths that climb out of `docs/` (such as `../../.github/`) do not resolve on the published site.
