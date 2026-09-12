@@ -167,3 +167,40 @@ let main _ =
         |> asExe
         |> compileExeAndRun
         |> shouldSucceed
+
+    // https://github.com/dotnet/fsharp/issues/14580
+    // The implementation file has an extra line, so the two diagnostics have distinct ranges.
+    [<Fact>]
+    let ``Mismatched 'enum' constraint in a recursive group is reported in the signature file`` () =
+        let signature = """module rec Mismatch
+
+type MyEnum =
+    | Alpha = 1
+
+type MyInter<'TEnum when 'TEnum : enum<int64>> = interface end
+
+type MyAlias = MyInter<MyEnum>
+"""
+
+        let implementation = """module rec Mismatch
+
+
+type MyEnum =
+    | Alpha = 1
+
+type MyInter<'TEnum when 'TEnum : enum<int64>> = interface end
+
+type MyAlias = MyInter<MyEnum>
+"""
+
+        FsiSource signature
+        |> fsFromString
+        |> FS
+        |> withAdditionalSourceFile (FsSource implementation)
+        |> withOptions ["--test:ErrorRanges"]
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 43, Line 8, Col 16, Line 8, Col 31, "The type 'int64' does not match the type 'int'")
+            (Error 43, Line 9, Col 16, Line 9, Col 31, "The type 'int64' does not match the type 'int'")
+        ]
