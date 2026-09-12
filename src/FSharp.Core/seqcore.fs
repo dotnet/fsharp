@@ -59,7 +59,7 @@ module internal IEnumerator =
 
         interface IDisposable with
              member _.Dispose() = ()
-            
+
     let Empty<'T> () = (new EmptyEnumerator<'T>() :> IEnumerator<'T>)
 
     [<NoEquality; NoComparison>]
@@ -385,7 +385,7 @@ module RuntimeHelpers =
     let EnumerateTryWith (source : seq<'T>) (exceptionFilter:exn -> int) (exceptionHandler:exn -> seq<'T>) =
         let originalSource = lazy source.GetEnumerator()
         let mutable shouldDisposeOriginalAtTheEnd = true
-        let mutable exceptionalSource : IEnumerator<'T> option = None     
+        let mutable exceptionalSource : IEnumerator<'T> option = None
 
         let current() =
             match exceptionalSource with
@@ -396,15 +396,15 @@ module RuntimeHelpers =
             if shouldDisposeOriginalAtTheEnd then
                 shouldDisposeOriginalAtTheEnd <- false
                 if originalSource.IsValueCreated then
-                    originalSource.Value.Dispose() 
+                    originalSource.Value.Dispose()
 
-        let moveExceptionHandler exn = 
+        let moveExceptionHandler exn =
             exceptionalSource <- Some ((exceptionHandler exn).GetEnumerator())
             exceptionalSource.Value.MoveNext()
 
         let tryIfDisposalLeadsToExceptionHandlerSeq() =
-            try 
-                disposeOriginal() 
+            try
+                disposeOriginal()
                 false
             with
             | e when exceptionFilter e = 1 -> moveExceptionHandler(e)
@@ -423,22 +423,22 @@ module RuntimeHelpers =
                         | None ->
                             try
                                 let hasNext = originalSource.Value.MoveNext()
-                                if not hasNext then   
+                                if not hasNext then
                                     // What if Moving does not fail, but Disposing does?
                                     // In that case, the 'when' guards could actually produce new elements to by yielded
                                     // Let's try it. If the Dispose() call below fails and gets caught by the guards, enumeration might continue
-                                    disposeOriginal()                                 
+                                    disposeOriginal()
                                 hasNext
-                            with 
+                            with
                             // Try .Dispose() original. If that fails && also matches with guards, let's use the exn from. Dispose() call for next enumeration
-                            | _ when tryIfDisposalLeadsToExceptionHandlerSeq() -> true     
+                            | _ when tryIfDisposalLeadsToExceptionHandlerSeq() -> true
                             // We go here when either original's disposal not fail, or failed but with an unmatched exception
                             | e when exceptionFilter e = 1 ->  moveExceptionHandler(e)
 
                     member x.Reset() = noReset()
 
                 interface IDisposable with
-                    member x.Dispose() = 
+                    member x.Dispose() =
                         match exceptionalSource with
                         | Some es -> es.Dispose()
                         // We are no longer at a phase where anyone should be calling .MoveNext()
@@ -535,23 +535,23 @@ type ListCollector<'T> =
     val mutable LastCons : 'T list
 
     member this.Add (value: 'T) =
-        match box this.Result with 
-        | null -> 
+        match box this.Result with
+        | null ->
             let ra = RuntimeHelpers.FreshConsNoTail value
             this.Result <- ra
             this.LastCons <- ra
-        | _ -> 
+        | _ ->
             let ra = RuntimeHelpers.FreshConsNoTail value
             RuntimeHelpers.SetFreshConsTail this.LastCons ra
             this.LastCons <- ra
 
     member this.AddMany (values: seq<'T>) =
         // cook a faster iterator for lists and arrays
-        match values with 
-        | :? ('T array) as valuesAsArray -> 
+        match values with
+        | :? ('T array) as valuesAsArray ->
             for v in valuesAsArray do
                this.Add v
-        | :? ('T list) as valuesAsList -> 
+        | :? ('T list) as valuesAsList ->
             for v in valuesAsList do
                this.Add v
         | _ ->
@@ -561,13 +561,13 @@ type ListCollector<'T> =
     // In the particular case of closing with a final add of an F# list
     // we can simply stitch the list into the end of the resulting list
     member this.AddManyAndClose (values: seq<'T>) =
-        match values with 
-        | :? ('T list) as valuesAsList -> 
+        match values with
+        | :? ('T list) as valuesAsList ->
             let res =
-                match box this.Result with 
-                | null -> 
+                match box this.Result with
+                | null ->
                     valuesAsList
-                | _ -> 
+                | _ ->
                     RuntimeHelpers.SetFreshConsTail this.LastCons valuesAsList
                     this.Result
             this.Result <- Unchecked.defaultof<_>
@@ -578,7 +578,7 @@ type ListCollector<'T> =
             this.Close()
 
     member this.Close() =
-        match box this.Result with 
+        match box this.Result with
         | null -> []
         | _ ->
             RuntimeHelpers.SetFreshConsTail this.LastCons []
@@ -602,12 +602,12 @@ type ArrayCollector<'T> =
     [<DefaultValue(false)>]
     val mutable Count: int
 
-    member this.Add (value: 'T) = 
-        match this.Count with 
-        | 0 -> 
+    member this.Add (value: 'T) =
+        match this.Count with
+        | 0 ->
             this.Count <- 1
             this.First <- value
-        | 1 -> 
+        | 1 ->
             this.Count <- 2
             this.Second <- value
         | 2 ->
@@ -617,7 +617,7 @@ type ArrayCollector<'T> =
             ra.Add(value)
             this.Count <- 3
             this.ResizeArray <- ra
-        | _ -> 
+        | _ ->
             this.ResizeArray.Add(value)
 
     member this.AddMany (values: seq<'T>) =
@@ -625,11 +625,11 @@ type ArrayCollector<'T> =
             this.ResizeArray.AddRange(values)
         else
             // cook a faster iterator for lists and arrays
-            match values with 
-            | :? ('T array) as valuesAsArray -> 
+            match values with
+            | :? ('T array) as valuesAsArray ->
                 for v in valuesAsArray do
                    this.Add v
-            | :? ('T list) as valuesAsList -> 
+            | :? ('T list) as valuesAsList ->
                 for v in valuesAsList do
                    this.Add v
             | _ ->
@@ -641,21 +641,21 @@ type ArrayCollector<'T> =
         this.Close()
 
     member this.Close() =
-        match this.Count with 
+        match this.Count with
         | 0 -> Array.Empty<'T>()
-        | 1 -> 
+        | 1 ->
             let res = [| this.First |]
             this.Count <- 0
             this.First <- Unchecked.defaultof<_>
             res
-        | 2 -> 
+        | 2 ->
             let res = [| this.First; this.Second |]
             this.Count <- 0
             this.First <- Unchecked.defaultof<_>
             this.Second <- Unchecked.defaultof<_>
-            res           
+            res
         | _ ->
             let res = this.ResizeArray.ToArray()
             this <- ArrayCollector<'T>()
             res
-        
+

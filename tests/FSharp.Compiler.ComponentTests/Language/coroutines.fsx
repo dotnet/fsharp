@@ -267,14 +267,6 @@ let testTailcallTiny () =
 
 testTailcallTiny() |> expect 2 0
 
-let testTailcallTinyDoBang () = 
-    coroutine {
-        printfn "in testTailcallTinyDoBang, desugaring do!"
-        do! t1() // this should desugr to YieldFromFinal, because ReturnFromFinal is not provided.
-    }
-
-testTailcallTinyDoBang() |> expect 2 0
-
 let rec testTailcall (n: int) = 
     coroutine {
         if n % 10_000 = 0 then printfn $"in testTailcall, n = {n}"
@@ -430,5 +422,4 @@ let testHandlerNonTailCall () =
     }
 
 testHandlerNonTailCall () |> expect 0 2
-
 

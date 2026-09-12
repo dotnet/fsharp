@@ -11,13 +11,13 @@ open Microsoft.VisualStudio.Utilities
 // It provides the API for writing directly to the read-only part of the buffer.
 // It extends the read-only marker on the buffer (making the written text read-only).
 //
-type internal TextBufferStream(textLines:ITextBuffer, contentTypeRegistry: IContentTypeRegistryService) = 
+type internal TextBufferStream(textLines:ITextBuffer, contentTypeRegistry: IContentTypeRegistryService) =
     do if null = textLines then raise (new ArgumentNullException("textLines"))
     // The following line causes unhandled exception on a background thread, see https://github.com/dotnet/fsharp/issues/2318#issuecomment-279340343
     // It seems we should provide a Quick Info Provider at the same time as uncommenting it.
-    
+
     //do textLines.ChangeContentType(contentTypeRegistry.GetContentType Guids.fsiContentTypeName, Guid Guids.guidFsiLanguageService)
-    
+
     let mutable readonlyRegion  = null : IReadOnlyRegion
 
     let extendReadOnlyRegion position =
@@ -27,24 +27,24 @@ type internal TextBufferStream(textLines:ITextBuffer, contentTypeRegistry: ICont
             |   _ -> readonlyEdit.RemoveReadOnlyRegion(readonlyRegion)
             readonlyRegion <- readonlyEdit.CreateReadOnlyRegion(Span(0, position))
             readonlyEdit.Apply() |> ignore
-        
-            
-    let appendReadOnlyText (text:string) = 
+
+
+    let appendReadOnlyText (text:string) =
         let snapshot = textLines.CurrentSnapshot
         let insertionPosition =
             match readonlyRegion with
             |   null -> 0
             |   _ -> readonlyRegion.Span.GetEndPoint(snapshot).Position
 
-        do 
+        do
             use edit = textLines.CreateEdit()
             edit.Insert(insertionPosition, text) |> ignore
             edit.Apply() |> ignore
         extendReadOnlyRegion (insertionPosition + text.Length)
         ()
 
-    member this.ReadOnlyMarkerSpan 
-        with get() = 
+    member this.ReadOnlyMarkerSpan
+        with get() =
             match readonlyRegion with
             |   null -> TextSpan()
             |   _ ->
@@ -52,11 +52,11 @@ type internal TextBufferStream(textLines:ITextBuffer, contentTypeRegistry: ICont
                     let endpoint = readonlyRegion.Span.GetEndPoint(snapshot)
                     let line = endpoint.GetContainingLine()
                     TextSpan(iStartLine = 0, iStartIndex = 0, iEndLine = line.LineNumber, iEndIndex = line.Start.Difference(endpoint))
-        
-    member this.ExtendReadOnlyMarker() = 
+
+    member this.ExtendReadOnlyMarker() =
         extendReadOnlyRegion textLines.CurrentSnapshot.Length
 
-    member this.ResetReadOnlyMarker() = 
+    member this.ResetReadOnlyMarker() =
         match readonlyRegion with
         |   null -> ()
         |   _ ->

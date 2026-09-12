@@ -588,7 +588,7 @@ let (|TyparsCloseOp|_|) (txt: string) =
                 | StartsWith "/"
                 | StartsWith "%" -> ValueSome (INFIX_STAR_DIV_MOD_OP (afterAngles.ToString()))
                 | _ -> ValueNone
-        
+
             ValueSome(struct (Array.init angles (fun _ -> GREATER), afterOp))
 
 [<Struct>]
@@ -692,7 +692,7 @@ type LexFilterImpl (
         | COMMENT _
         | WHITESPACE _
         | LBRACE _ // XML doc comments after opening brace are legitimate
-        | EQUALS -> () // XML doc comments after = (before {) are also legitimate  
+        | EQUALS -> () // XML doc comments after = (before {) are also legitimate
         | _ -> XmlDocStore.SetLastNonCommentTokenLine lexbuf tokenLexbufState.EndPos.Line
 
         let tokenTup = pool.Rent()
@@ -1204,7 +1204,7 @@ type LexFilterImpl (
                             delayToken (pool.UseShiftedLocation(tokenTup, INFIX_AT_HAT_OP "^", 1, 0))
                             delayToken (pool.UseShiftedLocation(tokenTup, LESS res, 0, -1))
                             pool.Return tokenTup
-                            
+
                         | INFIX_COMPARE_OP ">:" ->
                             delayToken (pool.UseShiftedLocation(tokenTup, COLON, 1, 0))
                             delayToken (pool.UseShiftedLocation(tokenTup, GREATER res, 0, -1))
@@ -1401,24 +1401,24 @@ type LexFilterImpl (
                     match stack with
                     | [] -> false
                     | CtxtParen _ :: _ -> true
-                    | CtxtSeqBlock _ :: rest 
+                    | CtxtSeqBlock _ :: rest
                     | CtxtVanilla _ :: rest -> hasParenContext rest
                     | _ -> false
-                
+
                 // Don't validate if we're in a paren context (could be inline IL or other valid syntax)
                 if not (hasParenContext offsideStack) then
                     // Find the nearest type definition context and check if we're inappropriately nested
                     let rec checkNesting stack typeDefnsSeen =
                         match stack with
-                        | [] -> 
+                        | [] ->
                             // We've traversed the whole stack without finding issues
                             false
-                            
-                        | CtxtModuleBody _ :: _ 
-                        | CtxtNamespaceBody _ :: _ -> 
+
+                        | CtxtModuleBody _ :: _
+                        | CtxtNamespaceBody _ :: _ ->
                             // We've escaped to module/namespace level - constructs here are OK
                             false
-                            
+
                         | CtxtTypeDefns(typePos, _) :: rest ->
                             // Found a type definition - check if we're inappropriately inside it
                             // IMPORTANT: Same-line declarations are sequential, not nested
@@ -1430,47 +1430,47 @@ type LexFilterImpl (
                                 let rec isInMemberContext s =
                                     match s with
                                     | [] -> false
-                                    | CtxtMemberHead _ :: _ 
+                                    | CtxtMemberHead _ :: _
                                     | CtxtMemberBody _ :: _ -> true
                                     | CtxtWithAsAugment _ :: _ -> true  // Type augmentation with 'with'
-                                    | CtxtSeqBlock _ :: tail 
+                                    | CtxtSeqBlock _ :: tail
                                     | CtxtVanilla _ :: tail -> isInMemberContext tail
                                     | _ -> false
-                                
+
                                 not (isInMemberContext stack)
                             else
                                 // Not indented inside this type (same column or less), check deeper in the stack
                                 checkNesting rest true
-                                
-                        | CtxtSeqBlock _ :: rest 
-                        | CtxtVanilla _ :: rest 
+
+                        | CtxtSeqBlock _ :: rest
+                        | CtxtVanilla _ :: rest
                         | CtxtParen _ :: rest ->
                             // Transparent contexts - continue checking
                             checkNesting rest typeDefnsSeen
-                            
-                        | CtxtMemberHead _ :: _ 
+
+                        | CtxtMemberHead _ :: _
                         | CtxtMemberBody _ :: _ when typeDefnsSeen ->
                             // We're in a member context after seeing a type - this is OK
                             false
-                            
+
                         | _ :: rest ->
                             // Other contexts - continue checking
                             checkNesting rest typeDefnsSeen
-                    
+
                     if checkNesting offsideStack false then
-                        let errorMessage = 
+                        let errorMessage =
                             match keyword with
-                            | "TYPE" -> 
+                            | "TYPE" ->
                                 FSComp.SR.lexfltInvalidNestedTypeDefinition()
-                            | "MODULE" -> 
+                            | "MODULE" ->
                                 FSComp.SR.lexfltInvalidNestedModule()
-                            | "EXCEPTION" -> 
+                            | "EXCEPTION" ->
                                 FSComp.SR.lexfltInvalidNestedExceptionDefinition()
-                            | "OPEN" -> 
+                            | "OPEN" ->
                                 FSComp.SR.lexfltInvalidNestedOpenDeclaration()
-                            | _ -> 
+                            | _ ->
                                 FSComp.SR.lexfltInvalidNestedConstruct(keyword)
-                        
+
                         error tokenTup errorMessage
 
         let isSemiSemi = match token with SEMICOLON_SEMICOLON -> true | _ -> false
@@ -1830,8 +1830,8 @@ type LexFilterImpl (
                             //
                             //  namespace A.B.C
                             //  ...
-                            //  
-                            //  namespace <-- close the namespace body context here 
+                            //
+                            //  namespace <-- close the namespace body context here
                         | _, CtxtNamespaceBody posNamespace :: _ when offsidePos.Column = posNamespace.Column && (match token with NAMESPACE -> true | _ -> false) -> -1
 
                         | _ ->
@@ -1878,8 +1878,8 @@ type LexFilterImpl (
         //  [< ... >]
         //  decl
 
-        | _, CtxtSeqBlock(NotFirstInSeqBlock, offsidePos, addBlockEnd) :: _ 
-                    when (match token with GREATER_RBRACK -> true | _ -> false) -> 
+        | _, CtxtSeqBlock(NotFirstInSeqBlock, offsidePos, addBlockEnd) :: _
+                    when (match token with GREATER_RBRACK -> true | _ -> false) ->
             // Attribute-end tokens mean CtxtSeqBlock rule is NOT applied to the next token
             replaceCtxt tokenTup (CtxtSeqBlock (FirstInSeqBlock, offsidePos, addBlockEnd))
             reprocessWithoutBlockRule()
@@ -2128,7 +2128,7 @@ type LexFilterImpl (
         | MODULE, _ :: _ ->
             // Check if this module definition is inappropriately nested in a type
             checkForInvalidDeclsInTypeDefn "MODULE"
-                
+
             insertComingSoonTokens("MODULE", MODULE_COMING_SOON, MODULE_IS_HERE)
             if debug then dprintf "MODULE: entering CtxtModuleHead, awaiting EQUALS to go to CtxtSeqBlock (%a)\n" outputPos tokenStartPos
             let isNested = match offsideStack with | [ CtxtSeqBlock _ ] -> false | _ -> true
@@ -2592,7 +2592,7 @@ type LexFilterImpl (
         | TYPE, _ ->
             // Check if this type definition is inappropriately nested in another type
             checkForInvalidDeclsInTypeDefn "TYPE"
-                
+
             insertComingSoonTokens("TYPE", TYPE_COMING_SOON, TYPE_IS_HERE)
             if debug then dprintf "TYPE, pushing CtxtTypeDefns(%a)\n" outputPos tokenStartPos
             pushCtxt tokenTup (CtxtTypeDefns(tokenStartPos, None))
@@ -2624,7 +2624,7 @@ type LexFilterImpl (
             hwTokenFetch useBlockRule
 
         | BAR, _ when (lexbuf.SupportsFeature(LanguageFeature.NullnessChecking) && match peekNextToken() with NULL -> true | _ -> false) ->
-            returnToken tokenLexbufState BAR_JUST_BEFORE_NULL            
+            returnToken tokenLexbufState BAR_JUST_BEFORE_NULL
 
         // Ordinary tokens start a vanilla block
         | _, CtxtSeqBlock _ :: _ ->

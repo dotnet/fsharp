@@ -445,13 +445,6 @@ val NormalizeErrorString: text: string -> string
 /// classification of each part is preserved. Parts left empty by normalization are dropped.
 val NormalizeErrorRichText: text: RichText -> RichText
 
-/// Indicates whether a language feature check should be skipped. Typically used in recursive functions
-/// where we don't want repeated recursive calls to raise the same diagnostic multiple times.
-[<RequireQualifiedAccess>]
-type SuppressLanguageFeatureCheck =
-    | Yes
-    | No
-
 val languageFeatureError: langVersion: LanguageVersion -> langFeature: LanguageFeature -> m: range -> exn
 
 val checkLanguageFeatureError: langVersion: LanguageVersion -> langFeature: LanguageFeature -> m: range -> unit

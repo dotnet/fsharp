@@ -155,6 +155,8 @@ type internal WellKnownAttribs<'TItem, 'TFlags when 'TFlags: enum<uint64>> =
     /// Get the current flags value.
     member x.Flags = x.flags
 
+    member x.NeedsCompute = LanguagePrimitives.EnumToValue x.flags &&& (1uL <<< 63) <> 0uL
+
     /// Add a single item and OR-in its flag.
     member x.Add(attrib: 'TItem, flag: 'TFlags) =
         let combined =
@@ -168,18 +170,3 @@ type internal WellKnownAttribs<'TItem, 'TFlags when 'TFlags: enum<uint64>> =
             WellKnownAttribs<'TItem, 'TFlags>([], LanguagePrimitives.EnumOfValue 0uL)
         else
             WellKnownAttribs<'TItem, 'TFlags>(x.attribs, LanguagePrimitives.EnumOfValue(1uL <<< 63))
-
-    /// Caller must write back the returned wrapper if needsWriteBack is true.
-    member x.CheckFlag(flag: 'TFlags, compute: 'TItem list -> 'TFlags) : struct (bool * WellKnownAttribs<'TItem, 'TFlags> * bool) =
-        let f = LanguagePrimitives.EnumToValue x.flags
-
-        if f &&& (1uL <<< 63) <> 0uL then
-            let computed = compute x.attribs
-            let wa = WellKnownAttribs<'TItem, 'TFlags>(x.attribs, computed)
-
-            struct (LanguagePrimitives.EnumToValue computed &&& LanguagePrimitives.EnumToValue flag
-                    <> 0uL,
-                    wa,
-                    true)
-        else
-            struct (x.HasWellKnownAttribute(flag), x, false)

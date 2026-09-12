@@ -19,7 +19,6 @@ open System.Threading
 open System.Threading.Tasks
 open Microsoft.FSharp.Core
 open Microsoft.FSharp.Core.CompilerServices
-open Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers
 open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 open Microsoft.FSharp.Collections
 
@@ -115,7 +114,7 @@ type TaskBuilderBase() =
 
                     let cont =
                         TaskResumptionFunc<'TOverall>(fun sm ->
-                            awaiter.GetResult() |> ignore
+                            awaiter.GetResult()
                             true)
 
                     // shortcut to continue immediately
@@ -284,7 +283,6 @@ open System.Runtime.CompilerServices
 open System.Threading.Tasks
 open Microsoft.FSharp.Core
 open Microsoft.FSharp.Core.CompilerServices
-open Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers
 open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 
 module LowPriority =
@@ -719,10 +717,13 @@ module LowPlusPriority =
 
 namespace Microsoft.FSharp.Control
 
+open System.Threading
 open System.Threading.Tasks
 open Microsoft.FSharp.Core
-open TaskBuilder
-open Microsoft.FSharp.Control.TaskBuilderExtensions
+open Microsoft.FSharp.Core.CompilerServices
+open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
+open Microsoft.FSharp.Collections
+open Microsoft.FSharp.Control.TaskBuilder
 open Microsoft.FSharp.Control.TaskBuilderExtensions.LowPriority
 open Microsoft.FSharp.Control.TaskBuilderExtensions.HighPriority
 
@@ -787,6 +788,86 @@ module Task =
     [<CompiledName("Catch")>]
     let catch (task: Task<'T>) : Task<Result<'T, exn>> =
         task |> map Ok |> catchWith Error
+
+    [<CompiledName("Sequential")>]
+    let sequential (ct: CancellationToken) (computations: seq<CancellationToken -> Task<'T>>) : Task<'T[]> =
+        task {
+            let mutable results = ArrayCollector<'T>()
+
+            for f in computations do
+                let! result = f ct
+                results.Add result
+
+            return results.Close()
+        }
+
+    [<CompiledName("SequentialDo")>]
+    let sequentialDo (ct: CancellationToken) (computations: seq<CancellationToken -> Task<unit>>) : Task<unit> =
+        task {
+            for f in computations do
+                do! f ct
+        }
+
+    [<CompiledName("ParallelLimit")>]
+    let parallelLimit
+        (maxDegreeOfParallelism: int)
+        (ct: CancellationToken)
+        (computations: seq<CancellationToken -> Task<'T>>)
+        : Task<'T[]> =
+        if maxDegreeOfParallelism < 1 then
+            System.String.Format(SR.GetString(SR.maxDegreeOfParallelismNotPositive), maxDegreeOfParallelism)
+            |> invalidArg (nameof maxDegreeOfParallelism)
+        // materialize first so exceptions from enumeration can't trigger ObjectDisposedException
+        // from started children touching semaphore or innerCts
+        match Seq.toArray computations with
+        | _ when ct.IsCancellationRequested -> Task.FromCanceled<'T[]> ct
+        | [||] -> result [||]
+        | req when maxDegreeOfParallelism = 1 || req.Length = 1 -> sequential ct req
+        | req ->
+            task {
+                let mutable pos = -1
+                let res = Array.zeroCreate<'T> req.Length
+
+                use innerCts = CancellationTokenSource.CreateLinkedTokenSource ct
+
+                let worker () =
+                    backgroundTask {
+                        let mutable index = Interlocked.Increment &pos
+
+                        while index < req.Length && not innerCts.IsCancellationRequested do
+                            let mutable completed = false
+
+                            try
+                                let! r = req.[index] innerCts.Token
+                                completed <- true
+                                res[index] <- r
+                            finally
+                                if not completed then
+                                    innerCts.Cancel()
+
+                            index <- Interlocked.Increment &pos
+                    }
+
+                // Awaits completion of all workers (whether through success, cancellation or faulting)
+                do! Task.WhenAll [| for _ in 1 .. min req.Length maxDegreeOfParallelism -> worker () :> Task |]
+                // Where cancellation was requested on the outer ct, but none of the inners saw and/or honored it by throwing TCE,
+                // res may only be partially complete so we certainly can't return it
+                // we instead yield a TaskCanceledException to honor standard Task Cancellation semantics
+                innerCts.Token.ThrowIfCancellationRequested()
+                return res
+            }
+
+    [<CompiledName("ParallelDoLimit")>]
+    let parallelDoLimit
+        (maxDegreeOfParallelism: int)
+        (ct: CancellationToken)
+        (computations: seq<CancellationToken -> Task<unit>>)
+        : Task<unit> =
+        parallelLimit maxDegreeOfParallelism ct computations |> ignore<unit[]>
+
+    [<CompiledName("StartAsyncImmediate")>]
+    let startAsyncImmediate (ct: CancellationToken) (computation: Async<'T>) : Task<'T> =
+        Async.StartImmediateAsTask(computation, cancellationToken = ct)
 
 #if NETSTANDARD2_1 || NET
     [<CompiledName("OfValueTask")>]
