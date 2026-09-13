@@ -87,3 +87,30 @@ let tryGetRefactoringActions (code: string) (cursorPosition) (context: TestConte
     }
     |> CancellableTask.startWithoutCancellation
     |> fun task -> task.Result
+
+let private refactoringActionsAt (code: string) (span: TextSpan) (context: TestContext) (refactorProvider: CodeRefactoringProvider) =
+    let actions = List<CodeAction>()
+    let existingDocument = RoslynTestHelpers.GetLastDocument context.Solution
+    context.Solution <- context.Solution.WithDocumentText(existingDocument.Id, SourceText.From(code))
+    let document = RoslynTestHelpers.GetLastDocument context.Solution
+
+    let refactoringContext =
+        CodeRefactoringContext(document, span, (fun action -> actions.Add action), context.CancellationToken)
+
+    refactorProvider.ComputeRefactoringsAsync(refactoringContext).GetAwaiter().GetResult()
+    actions
+
+let tryGetRefactoringActionsForSpan (code: string) (span: TextSpan) (context: TestContext) (refactorProvider: #CodeRefactoringProvider) =
+    refactoringActionsAt code span context refactorProvider
+
+let refactorSpan (code: string) (span: TextSpan) (title: string) (context: TestContext) (refactorProvider: #CodeRefactoringProvider) =
+    let action =
+        refactoringActionsAt code span context refactorProvider
+        |> Seq.find (fun action -> String.Equals(action.Title, title, StringComparison.Ordinal))
+
+    for operation in action.GetOperationsAsync(context.CancellationToken) |> GetTaskResult do
+        let applyChanges = operation :?> ApplyChangesOperation
+        applyChanges.Apply(context.Solution.Workspace, context.CancellationToken)
+        context.Solution <- applyChanges.ChangedSolution
+
+    RoslynTestHelpers.GetLastDocument context.Solution

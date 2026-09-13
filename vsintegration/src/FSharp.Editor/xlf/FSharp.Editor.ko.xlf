@@ -105,12 +105,15 @@ Suggest names for unresolved identifiers;</source>
         <target state="translated">부정 대신 빼기 사용</target>
         <note />
       </trans-unit>
-      <trans-unit id="CopilotSymbolTooltip">
-        <source>{0} in {1}
-{2}</source>
-        <target state="new">{0} in {1}
-{2}</target>
-        <note>Tooltip of an F# declaration in the Copilot Chat "#" picker, as Copilot shows a C# one. {0} is the kind of declaration (Class, Method, Field...), {1} the file name, {2} the declaration's name.</note>
+      <trans-unit id="ExtractToLetBinding">
+        <source>Extract to let binding</source>
+        <target state="new">Extract to let binding</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ExtractToLiteral">
+        <source>Extract to literal</source>
+        <target state="new">Extract to literal</target>
+        <note />
       </trans-unit>
       <trans-unit id="FSharpDisposableLocalValuesClassificationType">
         <source>F# Disposable Values (locals)</source>
