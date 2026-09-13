@@ -260,41 +260,39 @@ let private ceAwaitInsideTry = """
       {
         .try
         {
-          IL_0039:  ldc.i4.1
-          IL_003a:  call       class [System.Runtime]System.Threading.Tasks.Task [System.Runtime]System.Threading.Tasks.Task::Delay(int32)
-          IL_003f:  stloc.s    V_8
-          IL_0041:  ldloc.s    V_8
-          IL_0043:  call       void [System.Runtime]System.Runtime.CompilerServices.AsyncHelpers::Await(class [System.Runtime]System.Threading.Tasks.Task)
-          IL_0048:  ldloc.0
-          IL_0049:  ldc.i4.1
-          IL_004a:  add
-          IL_004b:  stloc.0
-          IL_004c:  leave.s    IL_0054
+          IL_0035:  ldc.i4.1
+          IL_0036:  call       class [runtime]System.Threading.Tasks.Task [runtime]System.Threading.Tasks.Task::Delay(int32)
+          IL_003b:  call       void [runtime]System.Runtime.CompilerServices.AsyncHelpers::Await(class [runtime]System.Threading.Tasks.Task)
+          IL_0040:  ldloc.0
+          IL_0041:  ldc.i4.1
+          IL_0042:  add
+          IL_0043:  stloc.0
+          IL_0044:  leave.s    IL_004c
 
-        }  // end .try
+        }  
         finally
         {
-          IL_004e:  ldloc.0
-          IL_004f:  ldc.i4.s   100
-          IL_0051:  add
-          IL_0052:  stloc.0
-          IL_0053:  endfinally
-        }  // end handler
+          IL_0046:  ldloc.0
+          IL_0047:  ldc.i4.s   100
+          IL_0049:  add
+          IL_004a:  stloc.0
+          IL_004b:  endfinally
+        }  
 """
 
 // (2) `use` disposal emitted AFTER the protected region: the compiler rewrite hoists the awaited
 // DisposeAsync out of the finally — isinst IAsyncDisposable -> DisposeAsync() -> Await(ValueTask).
 let private ceDisposalHoist = """
-      IL_0086:  isinst     [System.Runtime]System.IAsyncDisposable
-      IL_008b:  stloc.s    V_11
-      IL_008d:  ldloc.s    V_11
-      IL_008f:  brfalse.s  IL_00a3
+      IL_007e:  isinst     [runtime]System.IAsyncDisposable
+      IL_0083:  stloc.s    V_9
+      IL_0085:  ldloc.s    V_9
+      IL_0087:  brfalse.s  IL_009b
 
-      IL_0091:  ldloc.s    V_11
-      IL_0093:  stloc.s    V_12
-      IL_0095:  ldloc.s    V_12
-      IL_0097:  callvirt   instance valuetype [System.Runtime]System.Threading.Tasks.ValueTask [System.Runtime]System.IAsyncDisposable::DisposeAsync()
-      IL_009c:  call       void [System.Runtime]System.Runtime.CompilerServices.AsyncHelpers::Await(valuetype [System.Runtime]System.Threading.Tasks.ValueTask)
+      IL_0089:  ldloc.s    V_9
+      IL_008b:  stloc.s    V_10
+      IL_008d:  ldloc.s    V_10
+      IL_008f:  callvirt   instance valuetype [runtime]System.Threading.Tasks.ValueTask [runtime]System.IAsyncDisposable::DisposeAsync()
+      IL_0094:  call       void [runtime]System.Runtime.CompilerServices.AsyncHelpers::Await(valuetype [runtime]System.Threading.Tasks.ValueTask)
 """
 
 // MethodImplOptions.Async (0x2000) is a *method header* flag, not an IL instruction — neither the
