@@ -88,6 +88,33 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
+        ///   查找类似 Annotate every parameter 的本地化字符串。
+        /// </summary>
+        public static string Annotate_parameters_always {
+            get {
+                return ResourceManager.GetString("Annotate_parameters_always", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Leave parameter types to type inference 的本地化字符串。
+        /// </summary>
+        public static string Annotate_parameters_never {
+            get {
+                return ResourceManager.GetString("Annotate_parameters_never", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Annotate parameters whose type inference cannot determine from the extracted code 的本地化字符串。
+        /// </summary>
+        public static string Annotate_parameters_when_needed {
+            get {
+                return ResourceManager.GetString("Annotate_parameters_when_needed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查找类似 Background analysis 的本地化字符串。
         /// </summary>
         public static string Background_analysis {
@@ -246,6 +273,15 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         public static string Enter_Key_Rule {
             get {
                 return ResourceManager.GetString("Enter_Key_Rule", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 Parameter types in Extract to function 的本地化字符串。
+        /// </summary>
+        public static string Extract_function_parameter_annotations {
+            get {
+                return ResourceManager.GetString("Extract_function_parameter_annotations", resourceCulture);
             }
         }
         

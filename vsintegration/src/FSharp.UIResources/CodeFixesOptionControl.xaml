@@ -35,6 +35,13 @@
                                   Content="{x:Static local:Strings.Remove_parens_code_fix}"/>
                     </StackPanel>
                 </GroupBox>
+                <GroupBox Header="{x:Static local:Strings.Extract_function_parameter_annotations}">
+                    <StackPanel>
+                        <RadioButton x:Name="annotateAlways" Content="{x:Static local:Strings.Annotate_parameters_always}" />
+                        <RadioButton x:Name="annotateWhenNeeded" Content="{x:Static local:Strings.Annotate_parameters_when_needed}" />
+                        <RadioButton x:Name="annotateNever" Content="{x:Static local:Strings.Annotate_parameters_never}" />
+                    </StackPanel>
+                </GroupBox>
             </StackPanel>
         </ScrollViewer>
     </Grid>
