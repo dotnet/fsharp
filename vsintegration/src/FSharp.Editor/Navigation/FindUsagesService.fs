@@ -8,6 +8,7 @@ open System.Threading.Tasks
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp
+open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Classification
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.FindUsages
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor.FindUsages
 
@@ -48,11 +49,21 @@ module FSharpFindUsagesService =
                             |> Option.map (fun (definitionItem, _) -> definitionItem)
                             |> Option.defaultValue externalDefinitionItem
 
-                    let referenceItem =
-                        FSharpSourceReferenceItem(definitionItem, FSharpDocumentSpan(doc, fixedSpan))
+                    let classifier = FSharpClassificationService() :> IFSharpClassificationService
                     // REVIEW: OnReferenceFoundAsync is throwing inside Roslyn, putting a try/with so find-all refs doesn't fail.
                     try
-                        do! onReferenceFoundAsync referenceItem
+                        let! struct (classifiedSpans, highlightSpan) =
+                            ClassifiedReferenceLine.classifyAsync classifier doc sourceText fixedSpan
+
+                        do!
+                            onReferenceFoundAsync (
+                                FSharpSourceReferenceItem(
+                                    definitionItem,
+                                    FSharpDocumentSpan(doc, fixedSpan),
+                                    classifiedSpans,
+                                    highlightSpan
+                                )
+                            )
                     with _ ->
                         ()
                 | _ -> ()
