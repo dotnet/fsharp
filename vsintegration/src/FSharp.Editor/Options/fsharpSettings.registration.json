@@ -296,6 +296,20 @@
       "migration": { "roamingOnly": true },
       "order": 5
     },
+    "languages.fsharp.codeFixes.extractFunctionParameterAnnotations": {
+      "type": "string",
+      "title": "@FSharp.Editor:UnifiedSettingsExtractFunctionParameterAnnotationsTitle;FSharp.Editor.dll",
+      "enum": [ "Always", "WhenNeeded", "Never" ],
+      "enumItemLabels": [
+        "@FSharp.Editor:UnifiedSettingsAnnotateParametersAlwaysLabel;FSharp.Editor.dll",
+        "@FSharp.Editor:UnifiedSettingsAnnotateParametersWhenNeededLabel;FSharp.Editor.dll",
+        "@FSharp.Editor:UnifiedSettingsAnnotateParametersNeverLabel;FSharp.Editor.dll"
+      ],
+      "default": "Always",
+      "transientScopesSupported": false,
+      "migration": { "roamingOnly": true },
+      "order": 6
+    },
     "languages.fsharp.performance.enableInMemoryCrossProjectReferences": {
       "type": "boolean",
       "placements": [ { "category": "languages.fsharp.performance.projectAndCaching" } ],

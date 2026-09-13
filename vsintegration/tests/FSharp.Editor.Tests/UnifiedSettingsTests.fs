@@ -257,9 +257,9 @@ module UnifiedSettingsTests =
             member _.Dispose() = (migration :> IDisposable).Dispose()
 
     [<Fact>]
-    let ``All 43 native settings roam individually and only Compiler is external`` () =
+    let ``All 44 native settings roam individually and only Compiler is external`` () =
         let settings = registrations ()
-        Assert.Equal(44, settings.Count)
+        Assert.Equal(45, settings.Count)
 
         let native =
             settings.Properties()
@@ -268,7 +268,7 @@ module UnifiedSettingsTests =
                 setting["type"].Value<string>() <> "external")
             |> Seq.toArray
 
-        Assert.Equal(43, native.Length)
+        Assert.Equal(44, native.Length)
 
         for property in native do
             let setting = property.Value
@@ -566,6 +566,8 @@ module UnifiedSettingsTests =
                 host.Set(name, "NewlineOnCompleteWord")
             elif property.PropertyType = typeof<QuickInfoUnderlineStyle> then
                 host.Set(name, "Dash")
+            elif property.PropertyType = typeof<ParameterAnnotationSetting> then
+                host.Set(name, "Never")
             else
                 host.Set(name + "InCharacters", 91)
                 host.Set(name, true)
@@ -828,7 +830,7 @@ module UnifiedSettingsTests =
             let source = fixture.Legacy |> Seq.map (fun (KeyValue(k, v)) -> k, v) |> Seq.toArray
             do! fixture.Run()
             Assert.Empty fixture.Errors
-            Assert.Equal(42, fixture.Native.Values.Count)
+            Assert.Equal(43, fixture.Native.Values.Count)
             Assert.Equal(UnifiedSettingsMigration.CompletionKey, Assert.Single fixture.Checkpoints)
             Assert.Equal(1, fixture.Native.CommitCount)
 
@@ -1140,7 +1142,7 @@ module UnifiedSettingsTests =
                 let! rejected = provider.GetValueAsync<obj>(name, CancellationToken.None)
                 Assert.IsType<ExternalSettingOperationResult<obj>.Failure>(rejected) |> ignore
 
-            Assert.Equal(37, errors.Count)
+            Assert.Equal(38, errors.Count)
             use cancellation = new CancellationTokenSource()
             cancellation.Cancel()
 
