@@ -58,6 +58,12 @@ type QuickInfoOptions =
             ShowRemarks = true
         }
 
+[<RequireQualifiedAccess>]
+type ParameterAnnotationSetting =
+    | Always
+    | WhenNeeded
+    | Never
+
 type CodeFixesOptions =
     {
         SimplifyName: bool
@@ -66,6 +72,7 @@ type CodeFixesOptions =
         UnusedDeclarations: bool
         SuggestNamesForErrors: bool
         RemoveParens: bool
+        ExtractFunctionParameterAnnotations: ParameterAnnotationSetting
     }
 
     static member Default =
@@ -77,6 +84,7 @@ type CodeFixesOptions =
             UnusedDeclarations = true
             SuggestNamesForErrors = true
             RemoveParens = false
+            ExtractFunctionParameterAnnotations = ParameterAnnotationSetting.Always
         }
 
 type LanguageServicePerformanceOptions =
@@ -196,6 +204,12 @@ type EditorOptions private (reader: ISettingsReader option) =
                 UnusedDeclarations = boolean "codeFixes.unusedDeclarations"
                 SuggestNamesForErrors = boolean "codeFixes.suggestNamesForErrors"
                 RemoveParens = boolean "codeFixes.removeParens"
+                ExtractFunctionParameterAnnotations =
+                    match text "codeFixes.extractFunctionParameterAnnotations" with
+                    | "Always" -> ParameterAnnotationSetting.Always
+                    | "WhenNeeded" -> ParameterAnnotationSetting.WhenNeeded
+                    | "Never" -> ParameterAnnotationSetting.Never
+                    | value -> invalidOp $"Unknown F# parameter annotation setting: {value}."
             }
 
         register
@@ -308,6 +322,9 @@ module EditorOptionsExtensions =
             this.EditorOptions.CodeFixes.UnusedOpens
 
         member this.IsFsharpRemoveParensEnabled = this.EditorOptions.CodeFixes.RemoveParens
+
+        member this.FSharpExtractFunctionParameterAnnotations =
+            this.EditorOptions.CodeFixes.ExtractFunctionParameterAnnotations
 
         member this.IsFSharpCodeFixesSuggestNamesForErrorsEnabled =
             this.EditorOptions.CodeFixes.SuggestNamesForErrors
