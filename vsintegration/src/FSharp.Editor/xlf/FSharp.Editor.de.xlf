@@ -105,6 +105,16 @@ Namen für nicht aufgelöste Bezeichner vorschlagen;</target>
         <target state="translated">Subtraktion anstelle von Negation verwenden</target>
         <note />
       </trans-unit>
+      <trans-unit id="ExtractToLetBinding">
+        <source>Extract to let binding</source>
+        <target state="new">Extract to let binding</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ExtractToLiteral">
+        <source>Extract to literal</source>
+        <target state="new">Extract to literal</target>
+        <note />
+      </trans-unit>
       <trans-unit id="FSharpDisposableLocalValuesClassificationType">
         <source>F# Disposable Values (locals)</source>
         <target state="translated">Disposable-Werte in F# (lokal)</target>
