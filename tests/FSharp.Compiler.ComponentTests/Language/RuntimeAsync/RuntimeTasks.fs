@@ -17,7 +17,7 @@ open Microsoft.FSharp.Control
 open Microsoft.FSharp.Core.CompilerServices
 
 open RuntimeTaskBuilder.RuntimeTask
-open RuntimeTaskBuilder.RuntimeTaskAwaitableExtensions
+open RuntimeTaskBuilder.Extensions
 
 exception TestException of string
 
@@ -1052,7 +1052,7 @@ module Issue12184f =
 // Exception-handling and disposal coverage.
 // ---------------------------------------------------------------------------
 
-let knownDivergent_testNoDelay () =
+let testNoDelay () =
     let mutable x = 0
 
     let t =
@@ -1607,6 +1607,7 @@ let main _ =
     testTryFinallyHappyPath ()
     testTryFinallySadPath ()
     testTryFinallyCaught ()
+    testNoDelay()
     testUsing ()
     testUsingFromTask ()
     testUsingSadPath ()

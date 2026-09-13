@@ -463,6 +463,7 @@ let ``runtime async reports a byref local after suspension once`` () =
 let ``ref struct across a suspension is rejected through the CE builder`` () =
     FsFromPath builderPath
     |> withAdditionalSourceFile (FsSource refStructAcrossAwaitCE)
+    |> withFSharpCoreShippedNet
     |> withLangVersionPreview
     |> compile
     |> shouldFail

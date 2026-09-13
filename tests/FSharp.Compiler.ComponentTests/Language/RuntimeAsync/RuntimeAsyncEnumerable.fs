@@ -10,7 +10,6 @@ open System.Threading.Tasks.Sources
 open Microsoft.FSharp.Control
 open Microsoft.FSharp.Core.CompilerServices
 open Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers
-open RuntimeTaskBuilder
 
 [<NoComparison; NoEquality>]
 type AsyncSequenceEvent<'t> =
@@ -137,9 +136,6 @@ type AsyncSeqBuilder() =
     member inline _.ReturnFrom(computation: Async<'U>) : AsyncSequenceBody<'T> =
         fun _ -> AsyncHelpers.Await(Async.StartImmediateAsTask computation) |> ignore
 
-    member inline _.ReturnFrom(computation: RuntimeTask<'U>) : AsyncSequenceBody<'T> =
-        fun _ -> computation() |> ignore
-
     member inline _.Bind(task: Task, [<InlineIfLambda>] continuation: unit -> AsyncSequenceBody<'T>) : AsyncSequenceBody<'T> =
         fun state ->
             AsyncHelpers.Await task
@@ -161,10 +157,6 @@ type AsyncSeqBuilder() =
     member inline _.Bind(computation: Async<'U>, [<InlineIfLambda>] continuation: 'U -> AsyncSequenceBody<'T>) : AsyncSequenceBody<'T> =
         fun state ->
             continuation (AsyncHelpers.Await(Async.StartImmediateAsTask computation)) state
-
-    member inline _.Bind(computation: RuntimeTask<'U>, [<InlineIfLambda>] continuation: 'U -> AsyncSequenceBody<'T>) : AsyncSequenceBody<'T> =
-        fun state ->
-            continuation (computation()) state
 
     member inline _.Bind(
         values: struct ('U1 * 'U2),
