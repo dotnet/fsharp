@@ -90,9 +90,19 @@ Suggérer des noms pour les identificateurs non résolus ;</target>
         <target state="translated">Convertir en enregistrement anonyme</target>
         <note />
       </trans-unit>
+      <trans-unit id="ConvertToNamespaceWithNestedModule">
+        <source>Convert to 'namespace {0}' with nested module '{1}'</source>
+        <target state="new">Convert to 'namespace {0}' with nested module '{1}'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ConvertToNotEqualsEqualityExpression">
         <source>Use '&lt;&gt;' for inequality check</source>
         <target state="translated">Utiliser '&lt;&gt;' pour vérifier l'inégalité</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConvertToRootModule">
+        <source>Convert to 'module {0}'</source>
+        <target state="new">Convert to 'module {0}'</target>
         <note />
       </trans-unit>
       <trans-unit id="ConvertToSingleEqualsEqualityExpression">
