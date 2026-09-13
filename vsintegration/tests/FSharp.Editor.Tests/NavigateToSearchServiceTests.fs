@@ -72,3 +72,8 @@ module HeyHo =
     [<Fact>]
     let ``nested containers`` () =
         assertResultsContain "hh.a.b.g.d" "Delta"
+
+    [<Fact>]
+    let ``results carry the counts Navigate To sorts equal matches by`` () =
+        let result = navigateToSearch "+>" |> Seq.find (fun i -> i.Name = "+>")
+        Assert.Equal((2, 0), (result.ParameterCount, result.TypeParameterCount))
