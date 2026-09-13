@@ -312,23 +312,33 @@ module OperatorsModuleDynamic =
         let result = Operators.int16 Single.MaxValue
         if Info.isNetFramework then
             Assert.AreEqual(0s, result)
+        elif Info.isNet11OrGreater then
+            Assert.AreEqual(Int16.MaxValue, result)
         else
             Assert.AreEqual(-1s, result)
 
         // Overflow
         let result = Operators.int16 Single.MinValue
-        Assert.AreEqual(0s, result)
+        if Info.isNet11OrGreater then
+            Assert.AreEqual(Int16.MinValue, result)
+        else
+            Assert.AreEqual(0s, result)
 
         // Overflow
         let result = Operators.int16 Double.MaxValue
         if Info.isNetFramework then
             Assert.AreEqual(0s, result)
+        elif Info.isNet11OrGreater then
+            Assert.AreEqual(Int16.MaxValue, result)
         else
             Assert.AreEqual(-1s, result)
 
         // Overflow
         let result = Operators.int16 Double.MinValue
-        Assert.AreEqual(0s, result)
+        if Info.isNet11OrGreater then
+            Assert.AreEqual(Int16.MinValue, result)
+        else
+            Assert.AreEqual(0s, result)
 
         let result = Operators.int16 Int64.MaxValue
         Assert.AreEqual(-1s, result)
@@ -590,23 +600,33 @@ module OperatorsModuleDynamic =
 
         // Overflow
         let result = Operators.sbyte Single.MinValue
-        Assert.AreEqual(0y, result)
+        if Info.isNet11OrGreater then
+            Assert.AreEqual(SByte.MinValue, result)
+        else
+            Assert.AreEqual(0y, result)
 
         // Overflow
         let result = Operators.sbyte Single.MaxValue
         if Info.isNetFramework then
             Assert.AreEqual(0y, result)
+        elif Info.isNet11OrGreater then
+            Assert.AreEqual(SByte.MaxValue, result)
         else
             Assert.AreEqual(-1y, result)
 
         // Overflow
         let result = Operators.sbyte Double.MinValue
-        Assert.AreEqual(0y, result)
+        if Info.isNet11OrGreater then
+            Assert.AreEqual(SByte.MinValue, result)
+        else
+            Assert.AreEqual(0y, result)
 
         // Overflow
         let result = Operators.sbyte Double.MaxValue
         if Info.isNetFramework then
             Assert.AreEqual(0y, result)
+        elif Info.isNet11OrGreater then
+            Assert.AreEqual(SByte.MaxValue, result)
         else
             Assert.AreEqual(-1y, result)
 

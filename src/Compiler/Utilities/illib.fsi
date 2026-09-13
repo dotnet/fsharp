@@ -159,6 +159,9 @@ module internal ListInline =
     /// List.foldBack, but inline so the folder is inlined (InlineIfLambda). Folds lengths up to 5 directly; longer lists use an array, staying stack-safe like List.foldBack.
     val inline foldBack: [<InlineIfLambda>] folder: ('T -> 'State -> 'State) -> list: 'T list -> state: 'State -> 'State
 
+    /// List.fold, but inline so the folder is inlined (InlineIfLambda) rather than allocated as a closure.
+    val inline fold: [<InlineIfLambda>] folder: ('State -> 'T -> 'State) -> state: 'State -> list: 'T list -> 'State
+
 module internal List =
 
     val sortWithOrder: c: IComparer<'T> -> elements: 'T list -> 'T list
