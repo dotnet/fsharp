@@ -52,6 +52,7 @@
     <Compile Include="ExprTests.fs" />
     <Compile Include="CSharpProjectAnalysis.fs" />
     <Compile Include="ServiceUntypedParseTests.fs" />
+    <Compile Include="NavigateToTests.fs" />
     <Compile Include="PatternMatchCompilationTests.fs" />
     <Compile Include="CompletionTests.fs" />
     <Compile Include="ScriptOptionsTests.fs" />
