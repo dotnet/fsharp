@@ -381,7 +381,7 @@ let tryEnclosingModuleLet (path: SyntaxVisitorPath) =
 let private padding (width: int) = String(' ', width)
 
 /// `header = <content>`, with a multi-line content starting on its own line at bodyColumn.
-let private tryDeclaration (sourceText: SourceText) (content: TextSpan) (header: string) (bodyColumn: int) literalLines lineBreak =
+let tryDeclaration (sourceText: SourceText) (content: TextSpan) (header: string) (bodyColumn: int) literalLines lineBreak =
     tryIndentedText sourceText content bodyColumn literalLines
     |> ValueOption.map (fun body ->
         let lines = sourceText.Lines

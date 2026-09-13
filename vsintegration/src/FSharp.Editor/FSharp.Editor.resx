@@ -374,4 +374,13 @@ Use live (unsaved) buffers for analysis</value>
   <data name="ExtractToLiteral" xml:space="preserve">
     <value>Extract to literal</value>
   </data>
+  <data name="ExtractToLocalFunction" xml:space="preserve">
+    <value>Extract to local function</value>
+  </data>
+  <data name="ExtractToModuleFunction" xml:space="preserve">
+    <value>Extract to module function</value>
+  </data>
+  <data name="ExtractToPrivateMember" xml:space="preserve">
+    <value>Extract to private member</value>
+  </data>
 </root>
