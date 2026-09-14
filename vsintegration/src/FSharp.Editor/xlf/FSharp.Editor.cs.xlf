@@ -403,6 +403,11 @@ Zobrazit poznámky v Rychlých informacích</target>
         <target state="translated">Použít nameof</target>
         <note />
       </trans-unit>
+      <trans-unit id="UseOptionForOptionalParameter">
+        <source>Use 'option' for optional parameter</source>
+        <target state="new">Use 'option' for optional parameter</target>
+        <note />
+      </trans-unit>
       <trans-unit id="UseTripleQuotedInterpolation">
         <source>Use triple quoted string interpolation.</source>
         <target state="translated">Použijte interpolaci řetězce v trojitých uvozovkách.</target>
@@ -426,6 +431,11 @@ Zobrazit poznámky v Rychlých informacích</target>
       <trans-unit id="UseValueInsteadOfDeref">
         <source>Use '.Value' to dereference expression</source>
         <target state="translated">Pokud chcete k výrazu přistupovat přes ukazatel, použijte .Value.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UseValueOptionForOptionalParameter">
+        <source>Use 'voption' for optional parameter</source>
+        <target state="new">Use 'voption' for optional parameter</target>
         <note />
       </trans-unit>
       <trans-unit id="WrapExpressionInParentheses">
