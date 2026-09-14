@@ -3,12 +3,9 @@
 module internal Microsoft.VisualStudio.FSharp.Editor.TupleConversion
 
 open System
-open System.Globalization
 
 open Microsoft.CodeAnalysis.Text
 
-open FSharp.Compiler.CodeAnalysis
-open FSharp.Compiler.Symbols
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 
@@ -17,17 +14,15 @@ let spanOf (sourceText: SourceText) (m: range) =
 
 let isSame (node: 'T) (other: 'T) = obj.ReferenceEquals(node, other)
 
+let containsPos (m: range) (position: pos) =
+    Position.posGeq position m.Start && Position.posGeq m.End position
+
 let rec stripParenTypes (ty: SynType) =
     match ty with
     | SynType.Paren(innerType = inner) -> stripParenTypes inner
     | _ -> ty
 
-let private charAt (sourceText: SourceText) (position: int) =
-    if position >= 0 && position < sourceText.Length then
-        sourceText[position]
-    else
-        '\000'
-
+/// `struct` and the blanks after it, at the start of a struct tuple's range.
 let private structKeyword (sourceText: SourceText) (m: range) =
     let start = (spanOf sourceText m).Start
     let mutable finish = start + "struct".Length
@@ -37,84 +32,8 @@ let private structKeyword (sourceText: SourceText) (m: range) =
 
     TextSpan.FromBounds(start, finish)
 
-let private endOfBlockComment (sourceText: SourceText) (start: int) =
-    let mutable depth = 1
-    let mutable current = start + 2
-
-    while depth > 0 && current < sourceText.Length do
-        match charAt sourceText current, charAt sourceText (current + 1) with
-        | '(', '*' ->
-            depth <- depth + 1
-            current <- current + 2
-        | '*', ')' ->
-            depth <- depth - 1
-            current <- current + 2
-        | _ -> current <- current + 1
-
-    current
-
-let rec private skipTrivia (sourceText: SourceText) (position: int) =
-    let at offset = charAt sourceText (position + offset)
-
-    if position >= sourceText.Length then
-        position
-    elif Char.IsWhiteSpace(at 0) then
-        skipTrivia sourceText (position + 1)
-    elif at 0 = '/' && at 1 = '/' then
-        let line = sourceText.Lines.GetLineFromPosition position
-        skipTrivia sourceText line.EndIncludingLineBreak
-    elif at 0 = '(' && at 1 = '*' && at 2 <> ')' then
-        skipTrivia sourceText (endOfBlockComment sourceText position)
-    else
-        position
-
-let isIdentifierCharBefore (sourceText: SourceText) (position: int) =
-    if position <= 0 then
-        false
-    else
-        let last = sourceText[position - 1]
-
-        let category =
-            if
-                Char.IsLowSurrogate last
-                && position >= 2
-                && Char.IsHighSurrogate sourceText[position - 2]
-            then
-                CharUnicodeInfo.GetUnicodeCategory(String([| sourceText[position - 2]; last |]), 0)
-            else
-                CharUnicodeInfo.GetUnicodeCategory last
-
-        match category with
-        | UnicodeCategory.UppercaseLetter
-        | UnicodeCategory.LowercaseLetter
-        | UnicodeCategory.TitlecaseLetter
-        | UnicodeCategory.ModifierLetter
-        | UnicodeCategory.OtherLetter
-        | UnicodeCategory.LetterNumber
-        | UnicodeCategory.DecimalDigitNumber
-        | UnicodeCategory.ConnectorPunctuation
-        | UnicodeCategory.NonSpacingMark
-        | UnicodeCategory.SpacingCombiningMark
-        | UnicodeCategory.Format -> true
-        | _ -> last = '\''
-
-let needsSpaceBefore (sourceText: SourceText) (position: int) =
-    isIdentifierCharBefore sourceText position
-    || match charAt sourceText (position - 1) with
-       | '`'
-       | ')'
-       | ']'
-       | '}'
-       | '>' -> true
-       | _ -> false
-
-let private structAt (sourceText: SourceText) (position: int) =
-    if needsSpaceBefore sourceText position then
-        " struct "
-    else
-        "struct "
-
-let private nonBlankAround (sourceText: SourceText) (span: TextSpan) =
+/// The position of the `(` that, with its `)`, encloses only the span and blanks.
+let private tryEnclosingParen (sourceText: SourceText) (span: TextSpan) =
     let mutable before = span.Start - 1
 
     while before >= 0 && Char.IsWhiteSpace sourceText[before] do
@@ -125,153 +44,109 @@ let private nonBlankAround (sourceText: SourceText) (span: TextSpan) =
     while after < sourceText.Length && Char.IsWhiteSpace sourceText[after] do
         after <- after + 1
 
-    struct (before, after)
-
-let private tryEnclosingParen (sourceText: SourceText) (span: TextSpan) =
-    let struct (before, after) = nonBlankAround sourceText span
-
-    if charAt sourceText before = '(' && charAt sourceText after = ')' then
+    if
+        before >= 0
+        && after < sourceText.Length
+        && sourceText[before] = '('
+        && sourceText[after] = ')'
+    then
         ValueSome before
     else
         ValueNone
 
-let private isGenericArgument (sourceText: SourceText) (span: TextSpan) =
-    let struct (before, after) = nonBlankAround sourceText span
+/// Whether the text between start and finish is a whole generic argument: `<` or `,` before it, `>` or `,` after.
+let private isGenericArgument (sourceText: SourceText) (start: int) (finish: int) =
+    let mutable before = start - 1
 
-    (charAt sourceText before = '<' || charAt sourceText before = ',')
-    && (charAt sourceText after = '>' || charAt sourceText after = ',')
+    while before >= 0 && Char.IsWhiteSpace sourceText[before] do
+        before <- before - 1
 
-let private insertStructParens (span: TextSpan) =
-    [
-        TextChange(TextSpan(span.Start, 0), "struct (")
-        TextChange(TextSpan(span.End, 0), ")")
-    ]
+    let mutable after = finish
 
-let private addStructChanges (sourceText: SourceText) (m: range) =
-    let span = spanOf sourceText m
+    while after < sourceText.Length && Char.IsWhiteSpace sourceText[after] do
+        after <- after + 1
 
-    match tryEnclosingParen sourceText span with
-    | ValueSome openParen -> [ TextChange(TextSpan(openParen, 0), "struct ") ]
-    | ValueNone -> insertStructParens span
+    before >= 0
+    && after < sourceText.Length
+    && (sourceText[before] = '<' || sourceText[before] = ',')
+    && (sourceText[after] = '>' || sourceText[after] = ',')
 
-let private dropStructChanges (sourceText: SourceText) (isWholeAnnotation: bool) (m: range) =
-    let span = spanOf sourceText m
-    let keyword = structKeyword sourceText m
-    let openParen = skipTrivia sourceText keyword.End
-
-    let hasRedundantParens =
-        (isWholeAnnotation
-         || isGenericArgument sourceText (TextSpan.FromBounds(keyword.Start, span.End)))
-        && openParen < span.End
-        && sourceText[openParen] = '('
-
-    if hasRedundantParens then
-        [
-            TextChange(keyword, "")
-            TextChange(TextSpan(openParen, 1), "")
-            TextChange(TextSpan(span.End - 1, 1), "")
-        ]
-    else
-        [ TextChange(keyword, "") ]
-
+/// Changes giving a tuple type the target kind; a whole annotation also loses the parentheses `struct` needed.
 let typeChanges (sourceText: SourceText) (toStruct: bool) (isWholeAnnotation: bool) (tupleType: SynType) =
     match tupleType with
     | SynType.Tuple(isStruct = isStruct; range = m) when isStruct <> toStruct ->
+        let span = spanOf sourceText m
+
         if toStruct then
-            addStructChanges sourceText m
+            match tryEnclosingParen sourceText span with
+            | ValueSome openParen -> [ TextChange(TextSpan(openParen, 0), "struct ") ]
+            | ValueNone ->
+                [
+                    TextChange(TextSpan(span.Start, 0), "struct (")
+                    TextChange(TextSpan(span.End, 0), ")")
+                ]
         else
-            dropStructChanges sourceText isWholeAnnotation m
+            let keyword = structKeyword sourceText m
+
+            if isWholeAnnotation || isGenericArgument sourceText keyword.Start span.End then
+                [
+                    TextChange(TextSpan(keyword.Start, keyword.Length + 1), "")
+                    TextChange(TextSpan(span.End - 1, 1), "")
+                ]
+            else
+                [ TextChange(keyword, "") ]
     | _ -> []
 
-let rec tryCallee (expr: SynExpr) (applied: int) =
-    match expr with
-    | SynExpr.App(isInfix = false; funcExpr = funcExpr) -> tryCallee funcExpr (applied + 1)
-    | SynExpr.TypeApp(expr = inner)
-    | SynExpr.Paren(expr = inner) -> tryCallee inner applied
-    | SynExpr.Ident ident -> ValueSome(struct (ident, applied))
-    | SynExpr.LongIdent(longDotId = SynLongIdent(id = ids))
-    | SynExpr.DotGet(longDotId = SynLongIdent(id = ids)) ->
-        match List.tryLast ids with
-        | Some ident -> ValueSome(struct (ident, applied))
-        | None -> ValueNone
-    | _ -> ValueNone
-
-let symbolUseAtIdent (sourceText: SourceText) (checkResults: FSharpCheckFileResults) (ident: Ident) =
-    let line = sourceText.Lines[Line.toZ ident.idRange.EndLine].ToString()
-    checkResults.GetSymbolUseAtLocation(ident.idRange.EndLine, ident.idRange.EndColumn, line, [ ident.idText ])
-
-let private takesArgumentList (symbol: FSharpSymbol) =
-    match symbol with
-    | :? FSharpMemberOrFunctionOrValue as mfv ->
-        mfv.IsMember
-        && not mfv.IsProperty
-        && not mfv.IsEvent
-        && mfv.CurriedParameterGroups.Count <= 1
-    | :? FSharpUnionCase as unionCase ->
-        unionCase.Fields.Count > 1
-        || unionCase.Fields |> Seq.exists _.FieldType.IsTupleType
-    | :? FSharpEntity -> true
-    | _ -> false
-
-let callsMethod (sourceText: SourceText) (checkResults: FSharpCheckFileResults) (funcExpr: SynExpr) =
-    match tryCallee funcExpr 0 with
-    | ValueSome(struct (ident, 0)) ->
-        symbolUseAtIdent sourceText checkResults ident
-        |> Option.forall (fun symbolUse -> takesArgumentList symbolUse.Symbol)
-    | _ -> false
-
-let isArgumentList (callsMethod: SynExpr -> bool) (tuple: SynExpr) (path: SyntaxVisitorPath) =
+/// Whether the tuple is the argument list of a method, constructor or union case call rather than a tuple value.
+let isArgumentList (tuple: SynExpr) (path: SyntaxVisitorPath) =
     match path with
-    | SyntaxNode.SynExpr(SynExpr.Paren(expr = inner) as paren) :: SyntaxNode.SynExpr(SynExpr.New(expr = arg)) :: _ ->
-        isSame inner tuple && isSame arg paren
-    | SyntaxNode.SynExpr(SynExpr.Paren(expr = inner) as paren) :: SyntaxNode.SynExpr(SynExpr.App(
-        isInfix = false; funcExpr = funcExpr; argExpr = arg)) :: _ when isSame inner tuple && isSame arg paren -> callsMethod funcExpr
+    | SyntaxNode.SynExpr(SynExpr.Paren(expr = inner) as paren) :: SyntaxNode.SynExpr(SynExpr.App(flag = ExprAtomicFlag.Atomic; argExpr = arg) | SynExpr.New(
+        expr = arg)) :: _ -> isSame inner tuple && isSame arg paren
     | _ -> false
 
-let isParameterList (pat: SynPat) (path: SyntaxVisitorPath) =
-    let struct (argument, headPath) =
-        match path with
-        | SyntaxNode.SynPat(SynPat.Paren(pat = inner) as paren) :: rest when isSame inner pat -> struct (paren, rest)
-        | _ -> struct (pat, path)
-
-    match headPath with
-    | SyntaxNode.SynPat(SynPat.LongIdent(argPats = SynArgPats.Pats [ only ])) :: SyntaxNode.SynBinding(SynBinding(
-        valData = SynValData(memberFlags = Some _))) :: _ -> isSame only argument
-    | _ -> false
-
-let private tupleChanges (sourceText: SourceText) (toStruct: bool) (isStruct: bool) (m: range) (enclosingParen: range voption) =
-    if isStruct = toStruct then
-        ValueSome []
-    elif not toStruct then
-        ValueSome [ TextChange(structKeyword sourceText m, "") ]
-    else
-        match enclosingParen with
-        | ValueSome parenRange ->
-            let start = (spanOf sourceText parenRange).Start
-            ValueSome [ TextChange(TextSpan(start, 0), structAt sourceText start) ]
-        | ValueNone when m.StartLine = m.EndLine -> ValueSome(insertStructParens (spanOf sourceText m))
-        | ValueNone -> ValueNone
-
+/// Changes giving a tuple expression the target kind; ValueNone when it is not a tuple or cannot change in place.
 let tryExprChanges (sourceText: SourceText) (toStruct: bool) (tuple: SynExpr) (path: SyntaxVisitorPath) =
-    match tuple, path with
-    | SynExpr.Tuple(isStruct = isStruct; range = m), SyntaxNode.SynExpr(SynExpr.Paren(expr = inner; range = parenRange)) :: _ when
-        isSame inner tuple
-        ->
-        tupleChanges sourceText toStruct isStruct m (ValueSome parenRange)
-    | SynExpr.Tuple(isStruct = isStruct; range = m), _ -> tupleChanges sourceText toStruct isStruct m ValueNone
+    match tuple with
+    | SynExpr.Tuple(isStruct = isStruct) when isStruct = toStruct -> ValueSome []
+    | SynExpr.Tuple(range = m) when not toStruct -> ValueSome [ TextChange(structKeyword sourceText m, "") ]
+    | SynExpr.Tuple(range = m) ->
+        match path with
+        | SyntaxNode.SynExpr(SynExpr.Paren(expr = inner; range = parenRange)) :: _ when isSame inner tuple ->
+            ValueSome [ TextChange(TextSpan((spanOf sourceText parenRange).Start, 0), "struct ") ]
+        | _ when m.StartLine = m.EndLine ->
+            let span = spanOf sourceText m
+
+            ValueSome
+                [
+                    TextChange(TextSpan(span.Start, 0), "struct (")
+                    TextChange(TextSpan(span.End, 0), ")")
+                ]
+        | _ -> ValueNone
     | _ -> ValueNone
 
+/// Changes giving a tuple pattern the target kind; ValueNone when it is not a tuple or cannot change in place.
 let tryPatChanges (sourceText: SourceText) (toStruct: bool) (tuple: SynPat) (path: SyntaxVisitorPath) =
-    match tuple, path with
-    | SynPat.Tuple(isStruct = isStruct; range = m), SyntaxNode.SynPat(SynPat.Paren(pat = inner; range = parenRange)) :: _ when
-        isSame inner tuple
-        ->
-        tupleChanges sourceText toStruct isStruct m (ValueSome parenRange)
-    | SynPat.Tuple(isStruct = isStruct; range = m), _ -> tupleChanges sourceText toStruct isStruct m ValueNone
+    match tuple with
+    | SynPat.Tuple(isStruct = isStruct) when isStruct = toStruct -> ValueSome []
+    | SynPat.Tuple(range = m) when not toStruct -> ValueSome [ TextChange(structKeyword sourceText m, "") ]
+    | SynPat.Tuple(range = m) ->
+        match path with
+        | SyntaxNode.SynPat(SynPat.Paren(pat = inner; range = parenRange)) :: _ when isSame inner tuple ->
+            ValueSome [ TextChange(TextSpan((spanOf sourceText parenRange).Start, 0), "struct ") ]
+        | _ when m.StartLine = m.EndLine ->
+            let span = spanOf sourceText m
+
+            ValueSome
+                [
+                    TextChange(TextSpan(span.Start, 0), "struct (")
+                    TextChange(TextSpan(span.End, 0), ")")
+                ]
+        | _ -> ValueNone
     | _ -> ValueNone
 
+/// The innermost tuple type within the type that contains the position.
 let rec tryTupleTypeAt (position: pos) (ty: SynType) =
-    if not (Range.rangeContainsPos ty.Range position) then
+    if not (containsPos ty.Range position) then
         ValueNone
     else
         let inner =
@@ -295,6 +170,7 @@ let rec tryTupleTypeAt (position: pos) (ty: SynType) =
         | ValueNone, SynType.Tuple _ -> ValueSome ty
         | ValueNone, _ -> ValueNone
 
+/// What a tuple type under the caret annotates.
 [<RequireQualifiedAccess; NoComparison; NoEquality>]
 type Annotated =
     | Pattern of pat: SynPat * path: SyntaxVisitorPath
@@ -315,26 +191,8 @@ let isStructNode (node: CaretNode) =
     | CaretNode.Type(tuple = SynType.Tuple(isStruct = isStruct)) -> isStruct
     | _ -> false
 
-// A lambda parameter that is not a plain name is matched again in the body, without its parentheses and annotation.
-let private isLambdaParameterAgain (pat: SynPat) (path: SyntaxVisitorPath) =
-    let rec lambdaArgs (path: SyntaxVisitorPath) =
-        match path with
-        | SyntaxNode.SynMatchClause _ :: SyntaxNode.SynExpr(SynExpr.Match _) :: rest -> lambdaArgs rest
-        | SyntaxNode.SynExpr(SynExpr.Lambda(parsedData = Some(args, _))) :: _ -> args
-        | _ -> []
-
-    let rec abovePatterns (path: SyntaxVisitorPath) =
-        match path with
-        | SyntaxNode.SynPat _ :: rest -> abovePatterns rest
-        | _ -> path
-
-    match abovePatterns path with
-    | SyntaxNode.SynMatchClause _ :: _ as clausePath ->
-        lambdaArgs clausePath
-        |> List.exists (fun arg -> Range.rangeContainsRange arg.Range pat.Range)
-    | _ -> false
-
-let tryCaretNode (callsMethod: SynExpr -> bool) (caret: pos) (parseTree: ParsedInput) =
+/// The innermost tuple expression, pattern or annotated tuple type under the caret.
+let tryCaretNode (caret: pos) (parseTree: ParsedInput) =
     let annotationAt (annotation: SynType) (annotated: Annotated) =
         tryTupleTypeAt caret annotation
         |> ValueOption.map (fun tuple -> CaretNode.Type(tuple, annotated, isSame (stripParenTypes annotation) tuple))
@@ -342,38 +200,25 @@ let tryCaretNode (callsMethod: SynExpr -> bool) (caret: pos) (parseTree: ParsedI
     (ValueNone, parseTree)
     ||> ParsedInput.fold (fun found path node ->
         match node with
-        | SyntaxNode.SynExpr(SynExpr.Tuple(range = m) as tuple) when
-            Range.rangeContainsPos m caret && not (isArgumentList callsMethod tuple path)
-            ->
+        | SyntaxNode.SynExpr(SynExpr.Tuple(range = m) as tuple) when containsPos m caret && not (isArgumentList tuple path) ->
             ValueSome(CaretNode.Expr(tuple, path))
-        | SyntaxNode.SynPat pat when Range.rangeContainsPos pat.Range caret && isLambdaParameterAgain pat path -> found
-        | SyntaxNode.SynPat(SynPat.Tuple(range = m) as tuple) when Range.rangeContainsPos m caret && not (isParameterList tuple path) ->
-            ValueSome(CaretNode.Pat(tuple, path))
-        | SyntaxNode.SynPat(SynPat.Typed(targetType = annotation) as pat) when Range.rangeContainsPos annotation.Range caret ->
-            match annotationAt annotation (Annotated.Pattern(pat, path)) with
-            | ValueSome(CaretNode.Type(isWholeAnnotation = true)) when isParameterList pat path -> found
-            | node -> node |> ValueOption.orElse found
-        | SyntaxNode.SynExpr(SynExpr.Typed(targetType = annotation) as expr) when Range.rangeContainsPos annotation.Range caret ->
+        | SyntaxNode.SynPat(SynPat.Tuple(range = m) as tuple) when containsPos m caret -> ValueSome(CaretNode.Pat(tuple, path))
+        | SyntaxNode.SynPat(SynPat.Typed(targetType = annotation) as pat) when containsPos annotation.Range caret ->
+            annotationAt annotation (Annotated.Pattern(pat, path))
+            |> ValueOption.orElse found
+        | SyntaxNode.SynExpr(SynExpr.Typed(targetType = annotation) as expr) when containsPos annotation.Range caret ->
             annotationAt annotation (Annotated.Expression(expr, path))
             |> ValueOption.orElse found
         | SyntaxNode.SynBinding(SynBinding(returnInfo = Some(SynBindingReturnInfo(typeName = annotation))) as binding) when
-            Range.rangeContainsPos annotation.Range caret
+            containsPos annotation.Range caret
             ->
             annotationAt annotation (Annotated.Return binding) |> ValueOption.orElse found
         | SyntaxNode.SynTypeDefn(SynTypeDefn(
             typeRepr = SynTypeDefnRepr.Simple(SynTypeDefnSimpleRepr.Record(recordFieldsAndSpreads = fields), _))) ->
             fields
             |> Seq.tryPickV (function
-                | SynFieldOrSpread.Field(SynField(fieldType = annotation) as field) when Range.rangeContainsPos annotation.Range caret ->
+                | SynFieldOrSpread.Field(SynField(fieldType = annotation) as field) when containsPos annotation.Range caret ->
                     annotationAt annotation (Annotated.Field field)
                 | _ -> ValueNone)
             |> ValueOption.orElse found
         | _ -> found)
-
-let canChange (sourceText: SourceText) (node: CaretNode) =
-    let toStruct = not (isStructNode node)
-
-    match node with
-    | CaretNode.Expr(tuple, path) -> (tryExprChanges sourceText toStruct tuple path).IsSome
-    | CaretNode.Pat(tuple, path) -> (tryPatChanges sourceText toStruct tuple path).IsSome
-    | CaretNode.Type _ -> true
