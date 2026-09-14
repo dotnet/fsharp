@@ -403,6 +403,11 @@ Açıklamaları Hızlı Bilgide göster</target>
         <target state="translated">“Nameof” kullanın</target>
         <note />
       </trans-unit>
+      <trans-unit id="UseOptionForOptionalParameter">
+        <source>Use 'option' for optional parameter</source>
+        <target state="new">Use 'option' for optional parameter</target>
+        <note />
+      </trans-unit>
       <trans-unit id="UseTripleQuotedInterpolation">
         <source>Use triple quoted string interpolation.</source>
         <target state="translated">Üçlü tırnak içine alınmış dize ilişkilendirmesini kullanın.</target>
@@ -426,6 +431,11 @@ Açıklamaları Hızlı Bilgide göster</target>
       <trans-unit id="UseValueInsteadOfDeref">
         <source>Use '.Value' to dereference expression</source>
         <target state="translated">İfadeye başvurmak için '.Value' kullanın</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UseValueOptionForOptionalParameter">
+        <source>Use 'voption' for optional parameter</source>
+        <target state="new">Use 'voption' for optional parameter</target>
         <note />
       </trans-unit>
       <trans-unit id="WrapExpressionInParentheses">
