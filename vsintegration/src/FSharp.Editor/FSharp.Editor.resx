@@ -300,6 +300,9 @@
   <data name="UseFSharpOptionalParameter" xml:space="preserve">
     <value>Use F# '?' optional parameter</value>
   </data>
+  <data name="UseFSharpStructOptionalParameter" xml:space="preserve">
+    <value>Use F# '[&lt;Struct&gt;] ?' optional parameter</value>
+  </data>
   <data name="UnifiedSettingsIntelliSenseTitle" xml:space="preserve">
     <value>IntelliSense</value>
   </data>
