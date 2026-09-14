@@ -4,6 +4,8 @@ namespace FSharp.Editor.Tests
 
 open Xunit
 
+open FSharp.Compiler.Tokenization
+
 open Microsoft.VisualStudio.FSharp.Editor.SnippetIndentation
 
 /// Every case here is a real insertion that came out wrong at some point, recorded as the columns the
@@ -32,6 +34,9 @@ module SnippetIndentationTests =
 
     let private selectedRest indent =
         { Kind = SelectedRest; Indent = indent }
+
+    let private insideString indent =
+        { Kind = InsideString; Indent = indent }
 
     [<Fact>]
     let ``Surround With for over two lines nests both under the loop`` () =
@@ -99,3 +104,26 @@ module SnippetIndentationTests =
         let lines = [ template 0; selectedFirst 16; selectedRest 16 ]
 
         Assert.Equal<int list>([ 12; 16; 20 ], columnsAfter (AroundSelection(12, 4)) lines)
+
+    [<Fact>]
+    let ``A line inside a string carried over from the selection is left alone`` () =
+        // captured <- """a        <- selectedFirst, untouched regardless of placement
+        // b"""                    <- selectedRest, but "b\"\"\"" is the string's own content
+        let lines = [ template 0; selectedFirst 0; insideString 0 ]
+
+        Assert.Equal<int list>([ 20; 0; 0 ], columnsAfter (AroundSelection(20, 4)) lines)
+
+    [<Theory>]
+    [<InlineData(FSharpTokenizerColorState.String)>]
+    [<InlineData(FSharpTokenizerColorState.VerbatimString)>]
+    [<InlineData(FSharpTokenizerColorState.TripleQuoteString)>]
+    let ``A string color state is recognized as a string continuation`` (state: FSharpTokenizerColorState) =
+        Assert.True(isInsideString state)
+
+    [<Theory>]
+    [<InlineData(FSharpTokenizerColorState.Token)>]
+    [<InlineData(FSharpTokenizerColorState.Comment)>]
+    [<InlineData(FSharpTokenizerColorState.SingleLineComment)>]
+    [<InlineData(FSharpTokenizerColorState.IfDefSkip)>]
+    [<InlineData(FSharpTokenizerColorState.InitialState)>]
+    let ``A non-string color state is not`` (state: FSharpTokenizerColorState) = Assert.False(isInsideString state)

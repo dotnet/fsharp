@@ -111,7 +111,13 @@ module internal SnippetFunctionHelpers =
                             | _ -> ValueSome declaration)
                     ValueNone
 
-            return innermost |> ValueOption.map _.LogicalName
+            // `LogicalName` is qualified by every enclosing module (`Outer.C`), which does not
+            // resolve from a constructor sitting inside `C`'s own scope.
+            return
+                innermost
+                |> ValueOption.map (fun declaration ->
+                    let name = declaration.LogicalName
+                    name.Substring(name.LastIndexOf('.') + 1))
         }
 
     /// The type an expression evaluates to: for a call, what is left once its arguments are applied.
@@ -125,12 +131,20 @@ module internal SnippetFunctionHelpers =
     /// so no intermediate collection of rules is ever built.
     let private matchRulesFor (entity: FSharpEntity) =
         if entity.IsFSharpUnion then
+            // A `[<RequireQualifiedAccess>]` union rejects a bare case pattern (`A`, not `U.A`) -
+            // that reads as binding a fresh variable named `A`, not testing the case.
+            let qualifier =
+                if entity.HasAttribute<RequireQualifiedAccessAttribute>() then
+                    $"%s{entity.DisplayName}."
+                else
+                    ""
+
             entity.UnionCases
             |> Seq.map (fun case ->
                 if case.HasFields then
-                    $"| %s{case.Name} _ -> ()"
+                    $"| %s{qualifier}%s{case.Name} _ -> ()"
                 else
-                    $"| %s{case.Name} -> ()")
+                    $"| %s{qualifier}%s{case.Name} -> ()")
         elif entity.IsEnum then
             seq {
                 for field in entity.FSharpFields do
@@ -143,40 +157,33 @@ module internal SnippetFunctionHelpers =
         else
             Seq.empty
 
-    let private matchRulesForUse (symbolUse: FSharpSymbolUse) =
-        match symbolUse.Symbol with
-        | :? FSharpMemberOrFunctionOrValue as value ->
-            let resultType = resultTypeOf value.FullType
-
-            if resultType.HasTypeDefinition then
-                matchRulesFor resultType.TypeDefinition
-            else
-                Seq.empty
-        | _ -> Seq.empty
-
-    /// The match rules covering the union or enum at `position`, or ValueNone for anything else.
-    let tryGetMatchRules (document: Document) position =
+    /// The match rules covering the union or enum `$expression$` evaluates to, or ValueNone for
+    /// anything else. Reads the type the checker captured for the field's own span rather than the
+    /// symbol nearest the caret: that resolves to whatever token sits there, which is the wrong type
+    /// the moment `$expression$` is itself a call - `f x` would resolve the type of `x`, not of `f x`.
+    let tryGetMatchRules (document: Document) (span: VsTextSpan) =
         cancellableTask {
-            let! lexerSymbol = document.TryFindFSharpLexerSymbolAsync(position, SymbolLookupKind.Greedy, false, false, userOpName)
             let! _, checkResults = document.GetFSharpParseAndCheckResultsAsync userOpName
             let! ct = CancellableTask.getCancellationToken ()
             let! sourceText = document.GetTextAsync ct
 
-            let line = sourceText.Lines.GetLineFromPosition position
+            let range =
+                Range.mkRange
+                    document.FilePath
+                    (Position.mkPos (span.iStartLine + 1) span.iStartIndex)
+                    (Position.mkPos (span.iEndLine + 1) span.iEndIndex)
+
+            let position = sourceText.Lines[span.iEndLine].Start + span.iEndIndex
 
             let rules =
-                lexerSymbol
-                |> ValueOption.ofOption
-                |> ValueOption.bind (fun symbol ->
-                    checkResults.GetSymbolUseAtLocation(
-                        line.LineNumber + 1,
-                        symbol.Ident.idRange.EndColumn,
-                        line.ToString(),
-                        symbol.FullIsland
-                    )
-                    |> ValueOption.ofOption)
-                |> ValueOption.map matchRulesForUse
-                |> ValueOption.defaultValue Seq.empty
+                checkResults.TryGetCapturedType range
+                |> Option.map resultTypeOf
+                |> Option.bind (fun resultType ->
+                    if resultType.HasTypeDefinition then
+                        Some(matchRulesFor resultType.TypeDefinition)
+                    else
+                        None)
+                |> Option.defaultValue Seq.empty
 
             return
                 match String.Join(sourceText.LineBreakAt position, rules) with
@@ -263,9 +270,7 @@ type internal SnippetFunctionGenerateMatchCases(getSession, subjectBuffer: IText
     override this.TryGetValue() =
         match tryGetDocument subjectBuffer, matchedField |> ValueOption.bind (tryGetFieldSpan this.Session) with
         | ValueSome document, ValueSome span ->
-            let position = positionOf subjectBuffer.CurrentSnapshot span.iEndLine span.iEndIndex
-
             // Resolving the user's expression needs a check of the text they just typed, so there is
             // no cached answer to fall back on - only the literal's declared default.
-            runSynchronously document.Project.FSharpTimeUntilStaleCompletion (tryGetMatchRules document position)
+            runSynchronously document.Project.FSharpTimeUntilStaleCompletion (tryGetMatchRules document span)
         | _ -> ValueNone
