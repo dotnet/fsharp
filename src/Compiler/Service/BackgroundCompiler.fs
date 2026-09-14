@@ -462,14 +462,14 @@ type internal BackgroundCompiler
         )
 
     let tryGetBuilderNode options =
-        incrementalBuildersCache.TryGet(AnyCallerThread, options)
+        lock gate (fun () -> incrementalBuildersCache.TryGet(AnyCallerThread, options))
 
     let tryGetSimilarBuilder options : Async<IncrementalBuilder option * FSharpDiagnostic[]> option =
-        incrementalBuildersCache.TryGetSimilar(AnyCallerThread, options)
+        lock gate (fun () -> incrementalBuildersCache.TryGetSimilar(AnyCallerThread, options))
         |> Option.map (fun x -> x.GetOrComputeValue())
 
     let tryGetAnyBuilder options : Async<IncrementalBuilder option * FSharpDiagnostic[]> option =
-        incrementalBuildersCache.TryGetAny(AnyCallerThread, options)
+        lock gate (fun () -> incrementalBuildersCache.TryGetAny(AnyCallerThread, options))
         |> Option.map (fun x -> x.GetOrComputeValue())
 
     let createBuilderNode (options, userOpName, ct: CancellationToken) =
