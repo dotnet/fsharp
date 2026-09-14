@@ -84,8 +84,8 @@ let _ =
         expectFix code expected
 
     [<Fact>]
-    let ``Beginning of file: (printfn "Hello, world")`` () =
-        TopLevel.expectFix "(printfn \"Hello, world\")" "printfn \"Hello, world\""
+    let ``Beginning of file: (printn "Hello, world")`` () =
+        TopLevel.expectFix "(printn \"Hello, world\")" "printn \"Hello, world\""
 
     [<Fact>]
     let ``End of file: let x = (1)`` () =
@@ -897,21 +897,21 @@ in x
             "lazy (id 3)", "lazy (id 3)" // Technically we could remove here, but probably better not to.
 
             // Sequential
-            """ (printfn "1"); printfn "2" """, """ printfn "1"; printfn "2" """
-            """ printfn "1"; (printfn "2") """, """ printfn "1"; printfn "2" """
+            """ (printn "1"); printn "2" """, """ printn "1"; printn "2" """
+            """ printn "1"; (printn "2") """, """ printn "1"; printn "2" """
             "let x = 3; (5) in x", "let x = 3; 5 in x"
 
             """
             [
                 ()
-                (printfn "1"; ())
+                (printn "1"; ())
                 ()
             ]
             """,
             """
             [
                 ()
-                (printfn "1"; ())
+                (printn "1"; ())
                 ()
             ]
             """
@@ -1138,14 +1138,14 @@ in x
 
             """
             if
-                (printfn "1"
+                (printn "1"
                  true)
             then
                 ()
             """,
             """
             if
-                (printfn "1"
+                (printn "1"
                  true)
             then
                 ()
@@ -1739,7 +1739,7 @@ in x
                 "id <| (id <| fun x -> x) |> id", "id <| (id <| fun x -> x) |> id"
                 "id <| (id <| id <| id <| fun x -> x) |> id", "id <| (id <| id <| id <| fun x -> x) |> id"
                 "(id <| fun x -> x) |> id", "(id <| fun x -> x) |> id"
-                """(printfn ""; fun x -> x) |> id""", """(printfn ""; fun x -> x) |> id"""
+                """(printn ""; fun x -> x) |> id""", """(printn ""; fun x -> x) |> id"""
 
                 // MatchLambda
                 "id (function x when true -> x | y -> y)", "id (function x when true -> x | y -> y)"

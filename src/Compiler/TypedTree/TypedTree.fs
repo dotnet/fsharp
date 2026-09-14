@@ -3589,7 +3589,7 @@ type ValPublicPath =
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
 
-    override _.ToString() = sprintf "ValPubPath(...)"
+    override _.ToString() = "ValPubPath(...)"
 
 /// Represents an index into the namespace/module structure of an assembly
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
@@ -4877,7 +4877,7 @@ type AttribExpr =
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
 
-    override x.ToString() = sprintf "AttribExpr(...)"
+    override x.ToString() = "AttribExpr(...)"
 
 /// AttribNamedArg(name, type, isField, value)
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
@@ -4887,7 +4887,7 @@ type AttribNamedArg =
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
 
-    override x.ToString() = sprintf "AttribNamedArg(...)"
+    override x.ToString() = "AttribNamedArg(...)"
 
 /// Constants in expressions
 [<RequireQualifiedAccess; StructuredFormatDisplay("{DebugText}")>]

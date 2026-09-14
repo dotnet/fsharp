@@ -2257,7 +2257,7 @@ module internal ExprTransforms =
         | None -> inputExpr
         | Some(exprR, []) -> exprR
         | Some(exprR, argsR) ->
-            //printfn "adjusted...."
+            //printn "adjusted...."
             Expr.App(exprR, tyOfExpr g exprR, [], argsR, inputExpr.Range)
 
     //---------------------------------------------------------------------------
