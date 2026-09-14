@@ -178,8 +178,6 @@ let (a, b) = A.pair
     use context = TestContext.CreateWithCodeAndDependency code definition
     let document = refactorIn context code "a, b"
 
-    Assert.Empty(errorsOf document)
-
     Assert.Equal(
         """
 module B
@@ -197,6 +195,15 @@ let pair = struct (1, 2)
 """,
         (context.Solution.Projects |> Seq.head).Documents |> Seq.head |> textOf
     )
+
+    // The checker reads the other file of a synthetic project from disk, so the result is checked as a new project.
+    let definitionAfter =
+        (context.Solution.Projects |> Seq.head).Documents |> Seq.head |> textOf
+
+    use checkContext =
+        TestContext.CreateWithCodeAndDependency (textOf document) definitionAfter
+
+    Assert.Empty((checkContext.Solution.Projects |> Seq.head).Documents |> Seq.last |> errorsOf)
 
 [<Fact>]
 let ``Use that cannot be followed is left for the compiler to report`` () =
