@@ -368,4 +368,10 @@ Use live (unsaved) buffers for analysis</value>
   <data name="ReturnsHeader" xml:space="preserve">
     <value>Returns:</value>
   </data>
+  <data name="UseStructActivePatternReturn" xml:space="preserve">
+    <value>Use struct return for active pattern</value>
+  </data>
+  <data name="UseOptionActivePatternReturn" xml:space="preserve">
+    <value>Use option return for active pattern</value>
+  </data>
 </root>
