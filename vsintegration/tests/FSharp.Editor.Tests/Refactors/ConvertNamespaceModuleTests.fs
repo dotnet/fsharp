@@ -155,6 +155,25 @@ open System
 
 let x = 1
 """)>]
+[<InlineData("""
+namespace A.B
+
+// Opens move under the header.
+open System
+open System.Text
+
+module C =
+    let x = 1
+""",
+             """
+// Opens move under the header.
+module A.B.C
+
+open System
+open System.Text
+
+let x = 1
+""")>]
 let ``Nested module converts to a root module`` (before: string, after: string) =
     Assert.Equal(after, refactored before "namespace")
 
