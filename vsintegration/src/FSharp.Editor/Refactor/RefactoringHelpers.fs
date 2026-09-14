@@ -371,6 +371,36 @@ let isLiteralConstant (expr: SynExpr) =
                     _) -> true
     | _ -> false
 
+/// The literal constant the caret is in or touches.
+let tryConstantAtCaret (sourceText: SourceText) (parseTree: ParsedInput) (caret: int) =
+    let position = positionOf sourceText caret
+
+    let constant =
+        (position, parseTree)
+        ||> ParsedInput.tryPickLast (fun path node ->
+            match node with
+            | SyntaxNode.SynExpr(SynExpr.Const(range = m) as expr) when
+                isLiteralConstant expr
+                && Position.posGeq position m.Start
+                && Position.posGeq m.End position
+                && not (isInExcludedContext expr path)
+                ->
+                Some(expr, path)
+            | _ -> None)
+
+    match constant with
+    | Some(expr, path) ->
+        let span = textSpanOf sourceText expr.Range
+
+        ValueSome
+            {
+                Expr = expr
+                Path = path
+                Content = span
+                Replaced = span
+            }
+    | None -> ValueNone
+
 /// The module-level let declaration containing the path, with its first binding.
 let tryEnclosingModuleLet (path: SyntaxVisitorPath) =
     path
