@@ -24,7 +24,7 @@ let kind: StructKind =
                 match expr with
                 | SynExpr.AnonRecd _ -> true
                 | _ -> false
-        IsPat = fun _ -> false
+        IsPat = fun _ _ -> false
         IsType =
             function
             | SynType.AnonRecd _ -> true
