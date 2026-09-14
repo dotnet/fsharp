@@ -61,7 +61,12 @@ let private titlesFor (code: string) (selected: string) =
 [<Fact>]
 let ``Caret in the header of a parenthesized lambda extracts it as if it were selected`` () =
     let code =
-        "module M\n\nlet f (xs: int list) (n: int) =\n    xs |> List.map (fun x -> x + n)\n"
+        """
+module M
+
+let f (xs: int list) (n: int) =
+    xs |> List.map (fun x -> x + n)
+"""
 
     let lambda = "(fun x -> x + n)"
     let titles = titlesFor code lambda
@@ -75,45 +80,85 @@ let ``Caret in the header of a parenthesized lambda extracts it as if it were se
     Assert.Empty(titlesAt code (caretAt code "x + n"))
 
 let private area =
-    "module M\n\nlet area (w: int) (h: int) =\n    printfn \"%d\" (w * h + 1)\n"
+    """
+module M
+
+let area (w: int) (h: int) =
+    printfn "%d" (w * h + 1)
+"""
+
+let private areaWithLocalFunction =
+    """
+module M
+
+let area (w: int) (h: int) =
+    let extractedFunction (w: int) (h: int) = w * h + 1
+    printfn "%d" (extractedFunction w h)
+"""
 
 [<Fact>]
 let ``Captured parameters become parameters of a local function`` () =
-    let expected =
-        "module M\n\nlet area (w: int) (h: int) =\n    let extractedFunction (w: int) (h: int) = w * h + 1\n    printfn \"%d\" (extractedFunction w h)\n"
-
-    Assert.Equal(expected, extracted extractToLocalFunction area "w * h + 1")
+    Assert.Equal(areaWithLocalFunction, extracted extractToLocalFunction area "w * h + 1")
 
 [<Fact>]
 let ``Module function is declared in front of the declaration using it`` () =
     let expected =
-        "module M\n\nlet private extractedFunction (w: int) (h: int) = w * h + 1\n\nlet area (w: int) (h: int) =\n    printfn \"%d\" (extractedFunction w h)\n"
+        """
+module M
+
+let private extractedFunction (w: int) (h: int) = w * h + 1
+
+let area (w: int) (h: int) =
+    printfn "%d" (extractedFunction w h)
+"""
 
     Assert.Equal(expected, extracted extractToModuleFunction area "w * h + 1")
 
 [<Fact>]
 let ``Call keeps its parentheses where the selection lost them`` () =
-    let expected =
-        "module M\n\nlet area (w: int) (h: int) =\n    let extractedFunction (w: int) (h: int) = w * h + 1\n    printfn \"%d\" (extractedFunction w h)\n"
-
-    Assert.Equal(expected, extracted extractToLocalFunction area "(w * h + 1)")
+    Assert.Equal(areaWithLocalFunction, extracted extractToLocalFunction area "(w * h + 1)")
 
 [<Fact>]
 let ``Selection without captures becomes a function of unit`` () =
-    let code = "module M\n\nlet f () =\n    printfn \"%d\" (1 + 2)\n"
+    let code =
+        """
+module M
+
+let f () =
+    printfn "%d" (1 + 2)
+"""
 
     let expected =
-        "module M\n\nlet f () =\n    let extractedFunction () = 1 + 2\n    printfn \"%d\" (extractedFunction ())\n"
+        """
+module M
+
+let f () =
+    let extractedFunction () = 1 + 2
+    printfn "%d" (extractedFunction ())
+"""
 
     Assert.Equal(expected, extracted extractToLocalFunction code "1 + 2")
 
 [<Fact>]
 let ``Selection using this becomes a private member`` () =
     let code =
-        "module M\n\ntype Order(lines: int list) =\n    member this.Rate = 3\n    member this.Total = lines |> List.sumBy (fun l -> l * this.Rate)\n"
+        """
+module M
+
+type Order(lines: int list) =
+    member this.Rate = 3
+    member this.Total = lines |> List.sumBy (fun l -> l * this.Rate)
+"""
 
     let expected =
-        "module M\n\ntype Order(lines: int list) =\n    member this.Rate = 3\n    member this.Total = lines |> List.sumBy (fun l -> this.ExtractedMethod(l))\n    member private this.ExtractedMethod(l: int) = l * this.Rate\n"
+        """
+module M
+
+type Order(lines: int list) =
+    member this.Rate = 3
+    member this.Total = lines |> List.sumBy (fun l -> this.ExtractedMethod(l))
+    member private this.ExtractedMethod(l: int) = l * this.Rate
+"""
 
     Assert.Equal(expected, extracted extractToPrivateMember code "l * this.Rate")
 
@@ -129,10 +174,21 @@ let ``Parameter annotations follow the option`` (setting: string, header: string
         | _ -> ParameterAnnotationSetting.Never
 
     let code =
-        "module M\n\nlet shout (s: string) (n: int) =\n    printfn \"%s\" (s.ToUpper() + string n)\n"
+        """
+module M
+
+let shout (s: string) (n: int) =
+    printfn "%s" (s.ToUpper() + string n)
+"""
 
     let expected =
-        $"module M\n\nlet shout (s: string) (n: int) =\n    {header} s.ToUpper() + string n\n    printfn \"%%s\" (extractedFunction s n)\n"
+        $"""
+module M
+
+let shout (s: string) (n: int) =
+    {header} s.ToUpper() + string n
+    printfn "%%s" (extractedFunction s n)
+"""
 
     Assert.Equal(expected, extractedWith setting extractToLocalFunction code "s.ToUpper() + string n")
 
@@ -141,12 +197,45 @@ let ``Variants follow what the selection uses`` () =
     Assert.Equal<string list>([ extractToLocalFunction; extractToModuleFunction ], titlesFor area "w * h + 1")
 
     let derived =
-        "module M\n\ntype Derived() =\n    inherit System.Object()\n    override this.ToString() = base.ToString() + \"!\"\n"
+        """
+module M
+
+type Derived() =
+    inherit System.Object()
+    override this.ToString() = base.ToString() + "!"
+"""
 
     Assert.Equal<string list>([ extractToPrivateMember ], titlesFor derived "base.ToString() + \"!\"")
 
-[<Theory>]
-[<InlineData("module M\n\nlet counter () =\n    let mutable n = 0\n    for i in 1 .. 3 do\n        n <- n + i\n    n\n",
-             "for i in 1 .. 3 do\n        n <- n + i")>]
-[<InlineData("module M\n\nlet incr (x: byref<int>) =\n    x <- x + 1\n", "x + 1")>]
-let ``No action`` (code: string, selected: string) = Assert.Empty(titlesFor code selected)
+[<Fact>]
+let ``No action when the selection assigns to a captured mutable local`` () =
+    let code =
+        """
+module M
+
+let counter () =
+    let mutable n = 0
+    for i in 1 .. 3 do
+        n <- n + i
+    n
+"""
+
+    let start = code.IndexOf("for i in", StringComparison.Ordinal)
+
+    let finish =
+        code.IndexOf("n <- n + i", start, StringComparison.Ordinal)
+        + "n <- n + i".Length
+
+    Assert.Empty(titlesAt code (TextSpan.FromBounds(start, finish)))
+
+[<Fact>]
+let ``No action when the selection reads a byref parameter`` () =
+    let code =
+        """
+module M
+
+let incr (x: byref<int>) =
+    x <- x + 1
+"""
+
+    Assert.Empty(titlesFor code "x + 1")
