@@ -725,7 +725,7 @@ let CheckInterfaceTypeArgForUnimplementedStaticAbstractMembers (cenv: cenv) m (t
     if cenv.reportErrors then
         // Only check if the type parameter has interface constraints
         let hasInterfaceConstraint =
-            typar.Constraints |> List.exists (function
+            typar.Constraints |> ListInline.exists (function
                 | TyparConstraint.CoercesTo(constraintTy, _) -> isInterfaceTy cenv.g constraintTy
                 | _ -> false)
 

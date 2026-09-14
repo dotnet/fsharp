@@ -23,9 +23,9 @@ NOT a search for existing helpers — that comes next.
 *name*; it misses functions that match by *shape* but not by name —
 which is the exact reuse the bloated patch should have used. Dispatch a
 real subagent with the agent's full toolset (code intelligence,
-semantic search, LSP, symbol search). **Spend the tokens** — a thorough
-reuse hunt up front saves Round 1 reviewers from proposing new code
-that duplicates existing infrastructure.
+semantic search, LSP, symbol search). A thorough reuse hunt up front
+saves Round 1 reviewers from proposing new code that duplicates existing
+infrastructure.
 
 ### Subagent dispatch prompt
 
@@ -56,8 +56,8 @@ YOUR JOB:
    empty. Round 1 reviewers need to know what's actually new vs
    reinvented.
 
-Spend the tokens. Recurse into multiple search strategies if the first
-one returns weak matches.
+If the first search strategy returns weak matches, recurse into multiple
+search strategies.
 
 OUTPUT:
 - list of reuse candidates with file:line and relevance note
