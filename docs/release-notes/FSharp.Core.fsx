@@ -15,28 +15,9 @@ open Markdig
 open Common
 
 let path = Path.Combine(__SOURCE_DIRECTORY__, ".FSharp.Core")
-let nugetPackage = "FSharp.Core"
-let availableNuGetVersions = getAvailableNuGetVersions nugetPackage
 
-processFolder path (fun file ->
-    let version = Path.GetFileNameWithoutExtension(file)
-
-    // TODO: Can we determine if the current version is in code freeze based on the Version.props info?
-    let title =
-        if not (availableNuGetVersions.Contains version) then
-            $"%s{version} - Unreleased"
-        else
-            match tryGetReleaseDate nugetPackage version with
-            | None -> $"%s{version} - Unreleased"
-            | Some d -> $"%s{version} - %s{d}"
-
-    let nugetBadge =
-        if not (availableNuGetVersions.Contains version) then
-            System.String.Empty
-        else
-            $"<a href=\"https://www.nuget.org/packages/%s{nugetPackage}/%s{version}\" target=\"_blank\"><img alt=\"Nuget\" src=\"https://img.shields.io/badge/NuGet-%s{version}-blue\"></a>"
-
-    let content = File.ReadAllText file |> Markdown.ToHtml |> transformH3 version
-
-    $"""<h2><a name="%s{version}" class="anchor" href="#%s{version}">%s{title}</a></h2>%s{nugetBadge}%s{content}""")
+// FSharp.Core mostly follows the F# version, but not always: the F# 10 packages shipped as 10.1.x
+// to signal breaking changes, while the notes file stays 10.0.x. The lookup by source commit
+// handles that. Packages before 8.0 predate the release notes folder.
+renderPackageReleaseNotes "FSharp.Core" path (System.Version(8, 0, 0)) id upcomingFSharpVersion
 (*** include-it-raw ***)

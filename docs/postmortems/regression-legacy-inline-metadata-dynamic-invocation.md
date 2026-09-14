@@ -1,3 +1,9 @@
+---
+title: Legacy inline metadata dynamic invocation
+category: Postmortems
+categoryindex: 550
+index: 300
+---
 # Regression: Legacy inline metadata decoded as non-inline, breaking cross-assembly SRTP
 
 ## Summary

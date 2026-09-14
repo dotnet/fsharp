@@ -265,6 +265,7 @@
     <Compile Include="EmittedIL\TailCalls.fs" />
     <Compile Include="EmittedIL\TupleElimination.fs" />
     <Compile Include="EmittedIL\UncheckedDefaultofOptimization.fs" />
+    <Compile Include="EmittedIL\InlineIfLambdaEtaFloat.fs" />
     <Compile Include="EmittedIL\TypeTestsInPatternMatching.fs" />
     <Compile Include="EmittedIL\WhileLoops.fs" />
     <Compile Include="EmittedIL\ArgumentNames.fs" />
@@ -295,6 +296,7 @@
     <Compile Include="EmittedIL\Misc\Misc.fs" />
     <Compile Include="Misc.fs" />
     <Compile Include="Optimizations\TaskCEUnitPropertyAccess.fs" />
+    <Compile Include="Optimizations\InlineIfLambdaEtaFloat.fs" />
     <Compile Include="EmittedIL\operators\Operators.fs" />
     <Compile Include="EmittedIL\Platform\Platform.fs" />
     <Compile Include="EmittedIL\QueryExpressionStepping\QueryExpressionStepping.fs" />
