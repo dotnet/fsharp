@@ -288,6 +288,8 @@ type internal TcGlobals =
 
     member ResumableCode_tcr: TypedTree.EntityRef
 
+    member ResumableStateMachine_tcr: TypedTree.EntityRef
+
     member System_Runtime_CompilerServices_RuntimeFeature_ty: TypedTree.TType option
 
     member System_Runtime_CompilerServices_MethodImplOptions_ty: TypedTree.TType option
