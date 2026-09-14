@@ -115,7 +115,7 @@ Use the **`pr-build-status`** skill. Collect ALL errors from ALL platforms first
 
 3. **Proven flake** — invoke `flaky-test-detector`. Needs ≥3 distinct unrelated PRs. If insufficient evidence, `noop`. If proven and test not introduced by this PR → check for existing `[LabelOps Flake]` PR, then dispatch `labelops-flake-fix`.
 
-4. **Can't fix** → reproduce locally, add `AI-needs-CI-fix-input` label, post escalation with what's failing, minimal repro, and options. End comment with `<!-- labelops:ci-escalation:<headRefOid> -->`.
+4. **Can't fix** → reproduce locally, add `AI-needs-CI-fix-input` label, post escalation with what's failing, minimal repro, and options. End comment with `<!-- labelops:ci-escalation:<headRefOid> -->` as inline code, including literal backticks in the posted body.
 
 **If Step 3 pushed → stop this PR for this run.** CI restarts; next run sees fresh status.
 
@@ -136,7 +136,7 @@ Can't resolve → `git merge --abort`, comment explaining which files and why. N
 - At most one explicit comment per PR per run. Automatic push confirmations are disabled.
 - Do not post routine healthy or no-op reports.
 - Before posting, read all existing workflow-authored comments, including minimized comments.
-- End each report with `<!-- labelops:result:<head-sha>:<base-sha>:<subtopic>:<outcome> -->`.
+- End each report with `<!-- labelops:result:<head-sha>:<base-sha>:<subtopic>:<outcome> -->` as inline code, including literal backticks in the posted body.
   Use the PR head and `origin/main` SHA examined for this attempt. Use `ci` or `conflicts` for the subtopic.
   Use `fix-submitted`, `needs-input`, or `unresolved` for the outcome.
 - If the same marker and substantive outcome already exist, omit the duplicate comment. Continue any eligible repair attempt.
