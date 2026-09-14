@@ -41,7 +41,7 @@ module Observable =
     ///
     /// let result = Observable.merge observableFirstTimer observableSecondTimer
     ///
-    /// result.Subscribe(fun output -> printfn $"Output - {output.SignalTime} ")
+    /// result.Subscribe(fun output -> printn $"Output - {output.SignalTime} ")
     /// |> ignore
     ///
     /// Console.ReadLine() |> ignore
@@ -139,9 +139,9 @@ module Observable =
     /// let leftPartition, rightPartition =
     ///     Observable.partition isEvenNumber observableNumbers
     ///
-    /// leftPartition.Subscribe(fun x -> printfn $"Left partition: {x}") |> ignore
+    /// leftPartition.Subscribe(fun x -> printn $"Left partition: {x}") |> ignore
     ///
-    /// rightPartition.Subscribe(fun x -> printfn $"Right partition: {x}") |> ignore
+    /// rightPartition.Subscribe(fun x -> printn $"Right partition: {x}") |> ignore
     /// </code>
     /// The sample evaluates to: <c>Left partition: 2, 4, Right partition: 1, 3, 5</c>
     /// </example>
@@ -179,7 +179,7 @@ module Observable =
     /// let printOutput observable functionName =
     ///     use subscription =
     ///         Observable.subscribe
-    ///             (fun output -> printfn $"{functionName} - Split output: {output}. Type: {output.GetType()}")
+    ///             (fun output -> printn $"{functionName} - Split output: {output}. Type: {output.GetType()}")
     ///             observable
     ///
     ///     subscription
