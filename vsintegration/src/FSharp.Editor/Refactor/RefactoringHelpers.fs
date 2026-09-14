@@ -401,6 +401,26 @@ let tryConstantAtCaret (sourceText: SourceText) (parseTree: ParsedInput) (caret:
             }
     | None -> ValueNone
 
+/// The parenthesized lambda whose `fun <params> ->` the caret is in, as if it were selected with its parentheses.
+let tryParenthesizedLambdaAtCaret (sourceText: SourceText) (parseTree: ParsedInput) (caret: int) =
+    let position = positionOf sourceText caret
+
+    let parenthesized =
+        (position, parseTree)
+        ||> ParsedInput.tryPickLast (fun _ node ->
+            match node with
+            | SyntaxNode.SynExpr(SynExpr.Paren(
+                expr = SynExpr.Lambda(parsedData = Some _; trivia = { ArrowRange = Some arrow }) as lambda; range = m)) when
+                Position.posGeq position lambda.Range.Start
+                && Position.posGeq arrow.End position
+                ->
+                Some m
+            | _ -> None)
+
+    match parenthesized with
+    | Some m -> tryExtractionTarget sourceText parseTree (textSpanOf sourceText m)
+    | None -> ValueNone
+
 /// The module-level let declaration containing the path, with its first binding.
 let tryEnclosingModuleLet (path: SyntaxVisitorPath) =
     path
