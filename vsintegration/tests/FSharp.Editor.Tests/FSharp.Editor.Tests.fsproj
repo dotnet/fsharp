@@ -75,6 +75,7 @@
     <Compile Include="Refactors\RefactorTestFramework.fs" />
     <Compile Include="Refactors\AddReturnTypeTests.fs" />
     <Compile Include="Refactors\ConvertTupleTests.fs" />
+    <Compile Include="Refactors\ConvertAnonymousRecordTests.fs" />
     <Compile Include="Hints\HintTestFramework.fs" />
     <Compile Include="Hints\OptionParserTests.fs" />
     <Compile Include="Hints\InlayParameterNameHintTests.fs" />

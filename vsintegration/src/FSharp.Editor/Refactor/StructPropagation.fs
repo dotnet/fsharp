@@ -1,11 +1,15 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal Microsoft.VisualStudio.FSharp.Editor.TuplePropagation
+module internal Microsoft.VisualStudio.FSharp.Editor.StructPropagation
 
 open System
 open System.Collections.Generic
+open System.Threading
+open System.Threading.Tasks
 
 open Microsoft.CodeAnalysis
+open Microsoft.CodeAnalysis.CodeActions
+open Microsoft.CodeAnalysis.CodeRefactorings
 open Microsoft.CodeAnalysis.Text
 
 open FSharp.Compiler.CodeAnalysis
@@ -14,7 +18,7 @@ open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 
 open CancellableTasks
-open TupleConversion
+open StructConversion
 
 [<NoComparison; NoEquality>]
 type private Source =
@@ -25,7 +29,7 @@ type private Source =
         Check: FSharpCheckFileResults
     }
 
-/// A place whose tuple type changes kind, and so passes the change on to what flows in and out of it.
+/// A place whose type changes form, and so passes the change on to what flows in and out of it.
 [<RequireQualifiedAccess; NoComparison; NoEquality>]
 type private Slot =
     /// A value, a parameter's value or a record field.
@@ -119,7 +123,7 @@ let rec private tryParameterPosition (pat: SynPat) (path: SyntaxVisitorPath) =
     | _ :: rest -> tryParameterPosition pat rest
     | [] -> ValueNone
 
-/// The expression a tuple pattern takes apart: the right-hand side of its binding or the matched expression.
+/// The expression a pattern takes apart: the right-hand side of its binding or the matched expression.
 let rec private tryMatchedExpression (pat: SynPat) (path: SyntaxVisitorPath) =
     match path with
     | SyntaxNode.SynPat(SynPat.Paren _ as paren) :: rest -> tryMatchedExpression paren rest
@@ -185,17 +189,17 @@ let private tryParameterPattern (tree: ParsedInput) (declaration: range) (group:
             | parameter, ValueNone -> ValueSome parameter
         | _ -> found)
 
-let private annotationChanges (sourceText: SourceText) (toStruct: bool) (annotation: SynType) =
-    match stripParenTypes annotation with
-    | SynType.Tuple _ as tuple -> typeChanges sourceText toStruct true tuple
-    | _ -> []
-
-type private Engine(solution: Solution, toStruct: bool, userOpName: string) =
+type private Engine(solution: Solution, kind: StructKind, toStruct: bool, userOpName: string) =
     let sources = Dictionary<DocumentId, Source>()
     let changes = Dictionary<DocumentId, ResizeArray<TextChange>>()
     let visited = HashSet<string>(StringComparer.Ordinal)
     let pending = Queue<Slot>()
     let mutable failed = false
+
+    let annotationChanges (sourceText: SourceText) (annotation: SynType) =
+        match stripParenTypes annotation with
+        | ty when kind.IsType ty -> kind.TypeChanges sourceText toStruct true ty
+        | _ -> []
 
     let isDeclaration (useRange: range) (declaration: range) =
         String.Equals(useRange.FileName, declaration.FileName, StringComparison.OrdinalIgnoreCase)
@@ -208,9 +212,9 @@ type private Engine(solution: Solution, toStruct: bool, userOpName: string) =
             |> ValueOption.map (fun document -> struct (declaration, document))
         | None -> ValueNone
 
-    let keyOf (kind: string) (symbol: FSharpSymbol) =
+    let keyOf (slotKind: string) (symbol: FSharpSymbol) =
         symbol.DeclarationLocation
-        |> Option.map (fun m -> $"{kind}|{m.FileName}|{m.StartLine}|{m.StartColumn}")
+        |> Option.map (fun m -> $"{slotKind}|{m.FileName}|{m.StartLine}|{m.StartColumn}")
 
     member _.Load(document: Document) =
         cancellableTask {
@@ -300,24 +304,24 @@ type private Engine(solution: Solution, toStruct: bool, userOpName: string) =
             | _ -> ()
         | _ -> ()
 
-    /// A value of the changing kind flows into a pattern.
+    /// A value of the changing form flows into a pattern.
     member this.IntoPattern (source: Source) (pat: SynPat) (path: SyntaxVisitorPath) =
         match pat with
         | SynPat.Paren(pat = inner) -> this.IntoPattern source inner (SyntaxNode.SynPat pat :: path)
         | SynPat.Typed(pat = inner; targetType = annotation) ->
-            this.Add source (annotationChanges source.Text toStruct annotation)
+            this.Add source (annotationChanges source.Text annotation)
             this.IntoPattern source inner (SyntaxNode.SynPat pat :: path)
         | SynPat.Named(ident = SynIdent(ident, _))
         | SynPat.LongIdent(longDotId = SynLongIdent(id = [ ident ]); argPats = SynArgPats.Pats []) -> this.EnqueueSymbol source ident
-        | SynPat.Tuple _ -> this.AddOrFail source (tryPatChanges source.Text toStruct pat path)
+        | _ when kind.IsPat pat -> this.AddOrFail source (kind.PatChanges source.Text toStruct pat path)
         | _ -> ()
 
-    /// The value of the node now has the changing kind: pass that on to where it goes.
+    /// The value of the node now has the changing form: pass that on to where it goes.
     member this.FlowOut (source: Source) (node: SynExpr) (path: SyntaxVisitorPath) =
         match path with
         | SyntaxNode.SynExpr(SynExpr.Paren(expr = inner) as paren) :: rest when isSame inner node -> this.FlowOut source paren rest
         | SyntaxNode.SynExpr(SynExpr.Typed(expr = inner; targetType = annotation) as typed) :: rest when isSame inner node ->
-            this.Add source (annotationChanges source.Text toStruct annotation)
+            this.Add source (annotationChanges source.Text annotation)
             this.FlowOut source typed rest
         | SyntaxNode.SynBinding(SynBinding(headPat = headPat; expr = body)) :: _ when isSame body node ->
             match headPat with
@@ -362,26 +366,26 @@ type private Engine(solution: Solution, toStruct: bool, userOpName: string) =
         | SyntaxNode.SynExpr(SynExpr.Match(expr = scrutinee; clauses = clauses) as matchExpr) :: rest when isSame scrutinee node ->
             for SynMatchClause(pat = pat) as clause in clauses do
                 match stripParenPats pat with
-                | SynPat.Tuple _ as tuple ->
-                    let tuplePath =
+                | stripped when kind.IsPat stripped ->
+                    let strippedPath =
                         match pat with
                         | SynPat.Paren _ -> [ SyntaxNode.SynPat pat ]
                         | _ -> [ SyntaxNode.SynMatchClause clause; SyntaxNode.SynExpr matchExpr ] @ rest
 
-                    this.AddOrFail source (tryPatChanges source.Text toStruct tuple tuplePath)
+                    this.AddOrFail source (kind.PatChanges source.Text toStruct stripped strippedPath)
                 | _ -> ()
         | _ -> ()
 
-    /// The expression must now produce the changing kind: change what it is built from.
+    /// The expression must now produce the changing form: change what it is built from.
     member this.Retarget (source: Source) (expr: SynExpr) (path: SyntaxVisitorPath) =
         let childPath = SyntaxNode.SynExpr expr :: path
 
         match expr with
         | SynExpr.Paren(expr = inner) -> this.Retarget source inner childPath
         | SynExpr.Typed(expr = inner; targetType = annotation) ->
-            this.Add source (annotationChanges source.Text toStruct annotation)
+            this.Add source (annotationChanges source.Text annotation)
             this.Retarget source inner childPath
-        | SynExpr.Tuple _ when not (isArgumentList expr path) -> this.AddOrFail source (tryExprChanges source.Text toStruct expr path)
+        | _ when kind.IsExpr expr path -> this.AddOrFail source (kind.ExprChanges source.Text toStruct expr path)
         | SynExpr.Ident ident -> this.EnqueueSymbol source ident
         | SynExpr.LongIdent(longDotId = SynLongIdent(id = ids))
         | SynExpr.DotGet(longDotId = SynLongIdent(id = ids)) ->
@@ -415,13 +419,13 @@ type private Engine(solution: Solution, toStruct: bool, userOpName: string) =
             | SyntaxNode.SynPat(SynPat.Typed(pat = inner; targetType = annotation)) when
                 tryPatternIdent inner |> ValueOption.exists isDeclared
                 ->
-                this.Add source (annotationChanges source.Text toStruct annotation)
+                this.Add source (annotationChanges source.Text annotation)
             | SyntaxNode.SynTypeDefn(SynTypeDefn(
                 typeRepr = SynTypeDefnRepr.Simple(SynTypeDefnSimpleRepr.Record(recordFieldsAndSpreads = fields), _))) ->
                 for field in fields do
                     match field with
                     | SynFieldOrSpread.Field(SynField(idOpt = Some ident; fieldType = annotation)) when isDeclared ident ->
-                        this.Add source (annotationChanges source.Text toStruct annotation)
+                        this.Add source (annotationChanges source.Text annotation)
                     | _ -> ()
             | _ -> ())
 
@@ -489,7 +493,7 @@ type private Engine(solution: Solution, toStruct: bool, userOpName: string) =
                 match tryParameterPattern definition.Tree declaration group index with
                 | ValueSome parameter ->
                     match parameter with
-                    | SynPat.Typed(targetType = annotation) -> this.Add definition (annotationChanges definition.Text toStruct annotation)
+                    | SynPat.Typed(targetType = annotation) -> this.Add definition (annotationChanges definition.Text annotation)
                     | _ -> ()
 
                     match tryPatternIdent parameter with
@@ -520,17 +524,17 @@ type private Engine(solution: Solution, toStruct: bool, userOpName: string) =
 
     member this.Seed (source: Source) (caretNode: CaretNode) =
         match caretNode with
-        | CaretNode.Expr(tuple, path) ->
-            this.AddOrFail source (tryExprChanges source.Text toStruct tuple path)
-            this.FlowOut source tuple path
-        | CaretNode.Pat(tuple, path) ->
-            this.AddOrFail source (tryPatChanges source.Text toStruct tuple path)
+        | CaretNode.Expr(node, path) ->
+            this.AddOrFail source (kind.ExprChanges source.Text toStruct node path)
+            this.FlowOut source node path
+        | CaretNode.Pat(node, path) ->
+            this.AddOrFail source (kind.PatChanges source.Text toStruct node path)
 
-            match tryMatchedExpression tuple path with
+            match tryMatchedExpression node path with
             | ValueSome(struct (matched, matchedPath)) -> this.Retarget source matched matchedPath
             | ValueNone -> ()
-        | CaretNode.Type(tuple, annotated, isWholeAnnotation) ->
-            this.Add source (typeChanges source.Text toStruct isWholeAnnotation tuple)
+        | CaretNode.Type(node, annotated, isWholeAnnotation) ->
+            this.Add source (kind.TypeChanges source.Text toStruct isWholeAnnotation node)
 
             if isWholeAnnotation then
                 match annotated with
@@ -588,6 +592,71 @@ type private Engine(solution: Solution, toStruct: bool, userOpName: string) =
             return if failed then ValueNone else result
         }
 
-/// Changes the tuple under the caret to the other kind, together with everything its value flows through.
-let tryConvert (document: Document) (caretNode: CaretNode) (userOpName: string) =
-    Engine(document.Project.Solution, not (isStructNode caretNode), userOpName).Run(document, caretNode)
+let private hasSignatureFile (document: Document) =
+    let signaturePath = document.FilePath + "i"
+
+    document.Project.Documents
+    |> Seq.exists (fun d -> String.Equals(d.FilePath, signaturePath, StringComparison.OrdinalIgnoreCase))
+
+let private isInQuotation (caretNode: CaretNode) =
+    let path =
+        match caretNode with
+        | CaretNode.Expr(path = path)
+        | CaretNode.Pat(path = path)
+        | CaretNode.Type(annotated = Annotated.Pattern(path = path))
+        | CaretNode.Type(annotated = Annotated.Expression(path = path)) -> path
+        | CaretNode.Type _ -> []
+
+    path
+    |> List.exists (function
+        | SyntaxNode.SynExpr(SynExpr.Quote _) -> true
+        | _ -> false)
+
+/// Offers to change the node of the kind under the caret to its other form, together with everything its value flows
+/// through.
+let registerConversion
+    (context: CodeRefactoringContext)
+    (kind: StructKind)
+    (toStructTitle: unit -> string)
+    (toReferenceTitle: unit -> string)
+    (userOpName: string)
+    =
+    cancellableTask {
+        let document = context.Document
+
+        if not (document.IsFSharpSignatureFile || hasSignatureFile document) then
+            let! cancellationToken = CancellableTask.getCancellationToken ()
+            let! sourceText = document.GetTextAsync cancellationToken
+            let! parseResults = document.GetFSharpParseResultsAsync userOpName
+
+            let caret =
+                let linePosition = sourceText.Lines.GetLinePosition context.Span.Start
+                Position.mkPos (Line.fromZ linePosition.Line) linePosition.Character
+
+            match tryCaretNode kind caret parseResults.ParseTree with
+            | ValueSome caretNode when not (isInQuotation caretNode) ->
+                let isStruct = kind.IsStruct caretNode
+
+                let title = if isStruct then toReferenceTitle () else toStructTitle ()
+
+                let changedSolution =
+                    cancellableTask {
+                        let! converted = Engine(document.Project.Solution, kind, not isStruct, userOpName).Run(document, caretNode)
+
+                        return
+                            match converted with
+                            | ValueSome solution -> solution
+                            | ValueNone -> document.Project.Solution
+                    }
+
+                let action =
+                    CodeAction.Create(
+                        title,
+                        Func<CancellationToken, Task<Solution>>(fun cancellationToken ->
+                            CancellableTask.start cancellationToken changedSolution),
+                        title
+                    )
+
+                context.RegisterRefactoring action
+            | _ -> ()
+    }

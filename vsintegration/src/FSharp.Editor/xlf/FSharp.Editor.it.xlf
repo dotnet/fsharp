@@ -95,6 +95,11 @@ Suggerisci i nomi per gli identificatori non risolti;</target>
         <target state="translated">Usare '&lt;&gt;' per il controllo di disuguaglianza</target>
         <note />
       </trans-unit>
+      <trans-unit id="ConvertToReferenceAnonymousRecord">
+        <source>Convert to reference anonymous record</source>
+        <target state="new">Convert to reference anonymous record</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ConvertToReferenceTuple">
         <source>Convert to reference tuple</source>
         <target state="new">Convert to reference tuple</target>
@@ -108,6 +113,11 @@ Suggerisci i nomi per gli identificatori non risolti;</target>
       <trans-unit id="ChangePrefixNegationToInfixSubtraction">
         <source>Use subtraction instead of negation</source>
         <target state="translated">Usare la sottrazione invece della negazione</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConvertToStructAnonymousRecord">
+        <source>Convert to struct anonymous record</source>
+        <target state="new">Convert to struct anonymous record</target>
         <note />
       </trans-unit>
       <trans-unit id="ConvertToStructTuple">

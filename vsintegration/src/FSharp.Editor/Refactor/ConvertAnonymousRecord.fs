@@ -8,15 +8,15 @@ open Microsoft.CodeAnalysis.CodeRefactorings
 
 open CancellableTasks
 
-[<ExportCodeRefactoringProvider(FSharpConstants.FSharpLanguageName, Name = "ConvertTuple"); Shared>]
-type internal FSharpConvertTupleRefactoring [<ImportingConstructor>] () =
+[<ExportCodeRefactoringProvider(FSharpConstants.FSharpLanguageName, Name = "ConvertAnonymousRecord"); Shared>]
+type internal FSharpConvertAnonymousRecordRefactoring [<ImportingConstructor>] () =
     inherit CodeRefactoringProvider()
 
     override _.ComputeRefactoringsAsync context =
         StructPropagation.registerConversion
             context
-            TupleConversion.kind
-            SR.ConvertToStructTuple
-            SR.ConvertToReferenceTuple
-            (nameof FSharpConvertTupleRefactoring)
+            AnonymousRecordConversion.kind
+            SR.ConvertToStructAnonymousRecord
+            SR.ConvertToReferenceAnonymousRecord
+            (nameof FSharpConvertAnonymousRecordRefactoring)
         |> CancellableTask.startAsTask context.CancellationToken

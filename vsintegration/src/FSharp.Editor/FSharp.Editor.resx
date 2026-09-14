@@ -374,4 +374,10 @@ Use live (unsaved) buffers for analysis</value>
   <data name="ConvertToReferenceTuple" xml:space="preserve">
     <value>Convert to reference tuple</value>
   </data>
+  <data name="ConvertToStructAnonymousRecord" xml:space="preserve">
+    <value>Convert to struct anonymous record</value>
+  </data>
+  <data name="ConvertToReferenceAnonymousRecord" xml:space="preserve">
+    <value>Convert to reference anonymous record</value>
+  </data>
 </root>
