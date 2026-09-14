@@ -78,7 +78,7 @@ module Observable =
     /// let multiplyByTwo = fun number -> number * 2
     /// let map = Observable.map multiplyByTwo observableNumbers
     ///
-    /// map.Subscribe(fun x -> printf $"{x} ") |> ignore
+    /// map.Subscribe(fun x -> print $"{x} ") |> ignore
     /// </code>
     /// The sample will output: <c>2 4 6 8 10</c>
     /// </example>
@@ -106,7 +106,7 @@ module Observable =
     /// let getEvenNumbers = fun number -> number % 2 = 0
     /// let map = Observable.filter multiplyByTwo observableNumbers
     ///
-    /// map.Subscribe(fun x -> printf $"{x} ") |> ignore
+    /// map.Subscribe(fun x -> print $"{x} ") |> ignore
     /// </code>
     /// The sample will output: <c>2 4</c>
     /// </example>
@@ -220,7 +220,7 @@ module Observable =
     ///
     /// let map = Observable.choose getOddNumbers observableNumbers
     ///
-    /// map.Subscribe(fun x -> printf $"{x} ") |> ignore
+    /// map.Subscribe(fun x -> print $"{x} ") |> ignore
     /// </code>
     /// The sample will output: <c>1 3 5</c>
     /// </example>
@@ -270,7 +270,7 @@ module Observable =
     /// open System.Reactive.Linq
     /// let numbers = seq { 1..5 }
     /// let observableNumbers = Observable.ToObservable numbers
-    /// let multiplyByTwo = fun number -> printf $"{number * 2} "
+    /// let multiplyByTwo = fun number -> print $"{number * 2} "
     /// Observable.add multiplyByTwo observableNumbers
     /// </code>
     /// The sample evaluates to: <c>2 4 6 8 10</c>
@@ -321,7 +321,7 @@ module Observable =
     ///
     /// let pairWise = Observable.pairwise observableNumbers
     ///
-    /// pairWise.Subscribe(fun pair -> printf $"{pair} ")
+    /// pairWise.Subscribe(fun pair -> print $"{pair} ")
     /// |> ignore
     /// </code>
     /// The sample evaluates to: <c>(1, 2), (2, 3), (3, 4), (4, 5)</c>

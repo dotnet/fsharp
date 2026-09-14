@@ -71,7 +71,7 @@ module Event =
     ///
     /// let evenSecondsEvent = Event.map transformSeconds timer
     ///
-    /// evenSecondsEvent.Subscribe(fun x -> printf $"{x} ")
+    /// evenSecondsEvent.Subscribe(fun x -> print $"{x} ")
     /// |> ignore
     ///
     /// Console.ReadLine() |> ignore
