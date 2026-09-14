@@ -403,6 +403,11 @@ Hinweise in QuickInfo anzeigen</target>
         <target state="new">Use F# '?' optional parameter</target>
         <note />
       </trans-unit>
+      <trans-unit id="UseFSharpStructOptionalParameter">
+        <source>Use F# '[&lt;Struct&gt;] ?' optional parameter</source>
+        <target state="new">Use F# '[&lt;Struct&gt;] ?' optional parameter</target>
+        <note />
+      </trans-unit>
       <trans-unit id="UseMutationWhenValueIsMutable">
         <source>Use '&lt;-' to mutate value</source>
         <target state="translated">"&lt;-" zum Ändern des Werts verwenden</target>

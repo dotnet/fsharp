@@ -403,6 +403,11 @@ F# 구문 규칙에 맞는 줄 바꿈을 추가하여 지정된 너비에 시그
         <target state="new">Use F# '?' optional parameter</target>
         <note />
       </trans-unit>
+      <trans-unit id="UseFSharpStructOptionalParameter">
+        <source>Use F# '[&lt;Struct&gt;] ?' optional parameter</source>
+        <target state="new">Use F# '[&lt;Struct&gt;] ?' optional parameter</target>
+        <note />
+      </trans-unit>
       <trans-unit id="UseMutationWhenValueIsMutable">
         <source>Use '&lt;-' to mutate value</source>
         <target state="translated">'&lt;-'를 사용하여 값 변경</target>
