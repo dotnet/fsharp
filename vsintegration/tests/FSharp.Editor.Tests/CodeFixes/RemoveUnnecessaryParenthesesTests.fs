@@ -2395,28 +2395,28 @@ let _ = (2 + 2) { return 5 }
 
             // See https://github.com/dotnet/fsharp/issues/16999
             """
-            printfn "1"; printfn ("2"); (id <| match y with Some y -> let y = y
-                                                                      y
-                                                          | None -> 3)
+            printn "1"; printn ("2"); (id <| match y with Some y -> let y = y
+                                                                    y
+                                                        | None -> 3)
             """,
             """
-            printfn "1"; printfn ("2"); (id <| match y with Some y -> let y = y
-                                                                      y
-                                                          | None -> 3)
+            printn "1"; printn ("2"); (id <| match y with Some y -> let y = y
+                                                                    y
+                                                        | None -> 3)
             """
 
             // See https://github.com/dotnet/fsharp/issues/16999
             """
-            printfn ("1"
-                        ); printfn "2"; (id <| match y with Some y -> let y = y
-                                                                      y
-                                                          | None -> 3)
+            printn ("1"
+                        ); printn "2"; (id <| match y with Some y -> let y = y
+                                                                     y
+                                                         | None -> 3)
             """,
             """
-            printfn ("1"
-                        ); printfn "2"; (id <| match y with Some y -> let y = y
-                                                                      y
-                                                          | None -> 3)
+            printn ("1"
+                        ); printn "2"; (id <| match y with Some y -> let y = y
+                                                                     y
+                                                         | None -> 3)
             """
         }
 
