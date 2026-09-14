@@ -47,11 +47,19 @@ type internal FSharpExtractLetBindingRefactoring [<ImportingConstructor>] () =
                 let! sourceText = document.GetTextAsync cancellationToken
                 let! parseResults = document.GetFSharpParseResultsAsync(nameof FSharpExtractLetBindingRefactoring)
 
-                let target =
+                let lambdaAtCaret =
                     if context.Span.IsEmpty then
-                        tryConstantAtCaret sourceText parseResults.ParseTree context.Span.Start
+                        tryParenthesizedLambdaAtCaret sourceText parseResults.ParseTree context.Span.Start
                     else
-                        tryExtractionTarget sourceText parseResults.ParseTree context.Span
+                        ValueNone
+
+                let isSelected = not context.Span.IsEmpty || lambdaAtCaret.IsSome
+
+                let target =
+                    match lambdaAtCaret with
+                    | ValueSome _ -> lambdaAtCaret
+                    | ValueNone when context.Span.IsEmpty -> tryConstantAtCaret sourceText parseResults.ParseTree context.Span.Start
+                    | ValueNone -> tryExtractionTarget sourceText parseResults.ParseTree context.Span
 
                 match target with
                 | ValueNone -> ()
@@ -64,7 +72,7 @@ type internal FSharpExtractLetBindingRefactoring [<ImportingConstructor>] () =
                     let names = usedNames parseResults.ParseTree
                     let literalLines = linesInsideLiterals parseResults.ParseTree
 
-                    if not context.Span.IsEmpty then
+                    if isSelected then
                         match anchorsOf target.Expr target.Path with
                         | anchor :: _ ->
                             let name = uniqueName "extracted" names
