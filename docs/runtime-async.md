@@ -168,9 +168,10 @@ Dead branches eliminated by optimization do not reach code generation and do
 not produce a suspension-outside-runtime-async diagnostic.
 
 Runtime-async boundary recognition is centralized in
-`TypedTree/RuntimeAsync.fs`. The `RuntimeAsyncBoundary` type distinguishes a
-return marker from a suspension call, and consumers use the shared
-recognizers rather than matching typed-tree shapes independently.
+`TypedTree/RuntimeAsync.fs`. `IsRuntimeAsyncBoundary` (with the more specific
+`TryGetRuntimeAsyncReturn` and `IsRuntimeAsyncSuspensionExpr`) lets consumers
+use the shared recognizers rather than matching typed-tree shapes
+independently.
 
 The optimizer uses a context-local `RuntimeAsyncAnalyzer`. It memoizes
 completed expression results by reference identity and inline-value results by

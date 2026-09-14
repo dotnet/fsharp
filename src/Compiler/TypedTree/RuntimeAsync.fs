@@ -8,17 +8,7 @@ open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 
-type RuntimeAsyncReturnInfo =
-    {
-        Value: ValRef
-        Flags: ValUseFlag
-        Body: Expr
-        TypeArgs: TType list
-    }
-
-type RuntimeAsyncBoundary =
-    | ReturnMarker of RuntimeAsyncReturnInfo
-    | Suspension of ILMethodRef
+type RuntimeAsyncReturnInfo = { Body: Expr; TypeArgs: TType list }
 
 let (|RuntimeAsyncReturn|_|) (g: TcGlobals) (vref: ValRef) =
     valRefEq g vref g.cgh__runtimeAsyncReturn_vref
@@ -29,14 +19,7 @@ let (|RuntimeAsyncReturn|_|) (g: TcGlobals) (vref: ValRef) =
 let rec TryGetRuntimeAsyncReturn (g: TcGlobals) expr =
     match expr with
     | Expr.DebugPoint(_, innerExpr) -> TryGetRuntimeAsyncReturn g innerExpr
-    | Expr.App(Expr.Val(RuntimeAsyncReturn g as value, flags, _), _, typeArgs, [ body ], _) ->
-        Some
-            {
-                Value = value
-                Flags = flags
-                Body = body
-                TypeArgs = typeArgs
-            }
+    | Expr.App(Expr.Val(RuntimeAsyncReturn g, _, _), _, typeArgs, [ body ], _) -> Some { Body = body; TypeArgs = typeArgs }
     | _ -> None
 
 let (|RuntimeAsyncReturnFunction|_|) (g: TcGlobals) expr =
@@ -45,28 +28,36 @@ let (|RuntimeAsyncReturnFunction|_|) (g: TcGlobals) expr =
     | Expr.App(Expr.Val(RuntimeAsyncReturn g as value, flags, m), _, [ _ ], [], _) -> ValueSome(value, flags, m)
     | _ -> ValueNone
 
+let private runtimeAsyncHelpersTypeName =
+    "System.Runtime.CompilerServices.AsyncHelpers"
+
+let private runtimeAsyncSuspensionMethodNames =
+    [ "Await"; "AwaitAwaiter"; "UnsafeAwaitAwaiter" ]
+
 let IsRuntimeAsyncSuspensionMethod (g: TcGlobals) (ilMethRef: ILMethodRef) =
     let (TILObjectReprData(coreLibScope, _, _)) = g.system_Object_tcref.ILTyconInfo
 
     ilMethRef.DeclaringTypeRef.Scope = coreLibScope
-    && ilMethRef.DeclaringTypeRef.FullName = "System.Runtime.CompilerServices.AsyncHelpers"
-    && ilMethRef.Name
-       |> function
-           | "Await"
-           | "AwaitAwaiter"
-           | "UnsafeAwaitAwaiter" -> true
-           | _ -> false
+    && ilMethRef.DeclaringTypeRef.FullName = runtimeAsyncHelpersTypeName
+    && List.contains ilMethRef.Name runtimeAsyncSuspensionMethodNames
 
 let IsRuntimeAsyncSuspensionExpr (g: TcGlobals) expr =
     match stripExpr expr with
     | Expr.Op(TOp.ILCall(_, _, _, _, _, _, _, ilMethodRef, _, _, _), _, _, _) -> IsRuntimeAsyncSuspensionMethod g ilMethodRef
     | _ -> false
 
-let TryGetRuntimeAsyncBoundary (g: TcGlobals) expr =
-    match TryGetRuntimeAsyncReturn g expr with
-    | Some info -> Some(RuntimeAsyncBoundary.ReturnMarker info)
-    | None ->
-        match stripExpr expr with
-        | Expr.Op(TOp.ILCall(_, _, _, _, _, _, _, ilMethodRef, _, _, _), _, _, _) when IsRuntimeAsyncSuspensionMethod g ilMethodRef ->
-            Some(RuntimeAsyncBoundary.Suspension ilMethodRef)
-        | _ -> None
+let IsRuntimeAsyncBoundary (g: TcGlobals) expr =
+    (TryGetRuntimeAsyncReturn g expr).IsSome || IsRuntimeAsyncSuspensionExpr g expr
+
+/// Returns true when any sub-expression matches the predicate, short-circuiting at the first match.
+let ExistsExpr (predicate: Expr -> bool) expr =
+    let folder =
+        { ExprFolder0 with
+            exprIntercept =
+                fun _ noInterceptF acc expr ->
+                    if acc then true
+                    elif predicate expr then true
+                    else noInterceptF acc expr
+        }
+
+    FoldExpr folder false expr

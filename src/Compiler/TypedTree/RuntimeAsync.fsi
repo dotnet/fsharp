@@ -7,15 +7,7 @@ open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 
-type RuntimeAsyncReturnInfo =
-    { Value: ValRef
-      Flags: ValUseFlag
-      Body: Expr
-      TypeArgs: TType list }
-
-type RuntimeAsyncBoundary =
-    | ReturnMarker of RuntimeAsyncReturnInfo
-    | Suspension of ILMethodRef
+type RuntimeAsyncReturnInfo = { Body: Expr; TypeArgs: TType list }
 
 val TryGetRuntimeAsyncReturn: g: TcGlobals -> expr: Expr -> RuntimeAsyncReturnInfo option
 
@@ -25,4 +17,6 @@ val IsRuntimeAsyncSuspensionMethod: g: TcGlobals -> ilMethRef: ILMethodRef -> bo
 
 val IsRuntimeAsyncSuspensionExpr: g: TcGlobals -> expr: Expr -> bool
 
-val TryGetRuntimeAsyncBoundary: g: TcGlobals -> expr: Expr -> RuntimeAsyncBoundary option
+val IsRuntimeAsyncBoundary: g: TcGlobals -> expr: Expr -> bool
+
+val ExistsExpr: predicate: (Expr -> bool) -> expr: Expr -> bool

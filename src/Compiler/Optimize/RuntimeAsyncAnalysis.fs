@@ -56,19 +56,18 @@ type RuntimeAsyncAnalyzer(g: TcGlobals, getLambdaBody: ValRef -> Expr option) =
                         fun _ noInterceptF acc expr ->
                             if acc then
                                 true
+                            elif IsRuntimeAsyncBoundary g expr then
+                                true
                             else
-                                match TryGetRuntimeAsyncBoundary g expr with
-                                | Some _ -> true
-                                | None ->
-                                    match stripExpr expr with
-                                    | Expr.Val(vref, _, _) when vref.ShouldInline || vref.IsLocalRef ->
-                                        let result, valueComplete = containsValue vref
+                                match stripExpr expr with
+                                | Expr.Val(vref, _, _) when vref.ShouldInline || vref.IsLocalRef ->
+                                    let result, valueComplete = containsValue vref
 
-                                        if not valueComplete then
-                                            complete <- false
+                                    if not valueComplete then
+                                        complete <- false
 
-                                        result
-                                    | _ -> noInterceptF acc expr
+                                    result
+                                | _ -> noInterceptF acc expr
                 }
 
             let result = FoldExpr folder false expr
@@ -78,25 +77,15 @@ type RuntimeAsyncAnalyzer(g: TcGlobals, getLambdaBody: ValRef -> Expr option) =
 
             result, complete
 
+    new(g: TcGlobals) = RuntimeAsyncAnalyzer(g, fun _ -> None)
+
     member _.ContainsFragment expr = containsExpression expr |> fst
 
     member _.ContainsSuspension expr =
         match suspensionCache.TryGetValue expr with
         | true, result -> result
         | _ ->
-            let folder =
-                { ExprFolder0 with
-                    exprIntercept =
-                        fun _ noInterceptF acc expr ->
-                            if acc then
-                                true
-                            else
-                                match TryGetRuntimeAsyncBoundary g expr with
-                                | Some(RuntimeAsyncBoundary.Suspension _) -> true
-                                | _ -> noInterceptF acc expr
-                }
-
-            let result = FoldExpr folder false expr
+            let result = ExistsExpr (IsRuntimeAsyncSuspensionExpr g) expr
             suspensionCache[expr] <- result
             result
 
@@ -205,58 +194,49 @@ let InlineRuntimeAsyncLambdaArgument (g: TcGlobals) (isRuntimeAsyncFragment: Exp
         | Expr.App(f, fty, tyargs, args, m) -> apply f fty tyargs args m
         | _ -> None
 
-    let inlineBinding (boundVal: Val) boundExpr body =
-        let rwenv =
-            {
-                PreIntercept =
-                    Some(fun _ expr ->
-                        match betaReduceLambdaApplication expr with
-                        | Some reduced -> Some reduced
-                        | None ->
-                            match stripExpr expr with
-                            | Expr.App(f, _, tyargs, args, m) ->
-                                match stripDebugPoints f with
-                                | Expr.Val(vref, _, _) when valEq boundVal vref.Deref ->
-                                    Some(
-                                        MakeApplicationAndBetaReduce
-                                            g
-                                            (copyExpr g CloneAll boundExpr, tyOfExpr g boundExpr, [ tyargs ], args, m)
-                                    )
-                                | _ -> None
-                            | Expr.Val(vref, _, _) when valEq boundVal vref.Deref -> Some(copyExpr g CloneAll boundExpr)
-                            | _ -> None)
-                PreInterceptBinding = None
-                PostTransform = betaReduceLambdaApplication
-                RewriteQuotations = false
-                StackGuard = StackGuard("InlineRuntimeAsyncLambdaArgument")
-            }
-
-        RewriteExpr rwenv body
-
-    let rwenv =
+    let mkRwenv (preIntercept: (Expr -> Expr) -> Expr -> Expr option) : ExprRewritingEnv =
         {
-            PreIntercept =
-                Some(fun cont expr ->
-                    match stripExpr expr with
-                    | Expr.Let(TBind(boundVal, boundExpr, _), body, _, _) when
-                        (boundVal.InlineIfLambda
-                         && (isLambdaExpression boundExpr
-                             || isRuntimeAsyncFragment boundExpr
-                             || match stripExpr boundExpr with
-                                | Expr.App(_, _, _, args, _) -> List.isEmpty args
-                                | _ -> true))
-                        || (isLambdaExpression boundExpr && isRuntimeAsyncFragment boundExpr)
-                        ->
-                        if not boundVal.InlineIfLambda then
-                            boundVal.SetInlineIfLambda()
-
-                        Some(cont (inlineBinding boundVal boundExpr body))
-                    | _ -> None)
+            PreIntercept = Some preIntercept
             PreInterceptBinding = None
             PostTransform = betaReduceLambdaApplication
             RewriteQuotations = false
             StackGuard = StackGuard("InlineRuntimeAsyncLambdaArgument")
         }
+
+    let inlineBinding (boundVal: Val) boundExpr body =
+        let rwenv =
+            mkRwenv (fun _ expr ->
+                match betaReduceLambdaApplication expr with
+                | Some reduced -> Some reduced
+                | None ->
+                    match stripExpr expr with
+                    | Expr.App(f, _, tyargs, args, m) ->
+                        match stripDebugPoints f with
+                        | Expr.Val(vref, _, _) when valEq boundVal vref.Deref ->
+                            Some(MakeApplicationAndBetaReduce g (copyExpr g CloneAll boundExpr, tyOfExpr g boundExpr, [ tyargs ], args, m))
+                        | _ -> None
+                    | Expr.Val(vref, _, _) when valEq boundVal vref.Deref -> Some(copyExpr g CloneAll boundExpr)
+                    | _ -> None)
+
+        RewriteExpr rwenv body
+
+    let rwenv =
+        mkRwenv (fun cont expr ->
+            match stripExpr expr with
+            | Expr.Let(TBind(boundVal, boundExpr, _), body, _, _) when
+                (boundVal.InlineIfLambda
+                 && (isLambdaExpression boundExpr
+                     || isRuntimeAsyncFragment boundExpr
+                     || match stripExpr boundExpr with
+                        | Expr.App(_, _, _, args, _) -> List.isEmpty args
+                        | _ -> true))
+                || (isLambdaExpression boundExpr && isRuntimeAsyncFragment boundExpr)
+                ->
+                if not boundVal.InlineIfLambda then
+                    boundVal.SetInlineIfLambda()
+
+                Some(cont (inlineBinding boundVal boundExpr body))
+            | _ -> None)
 
     RewriteExpr rwenv expr
 
@@ -322,13 +302,15 @@ let private analyzeRuntimeAsyncExpr (g: TcGlobals) expr =
             summary
 
     and analyzeExprCore expr =
-        match stripExpr expr with
+        let expr = stripExpr expr
+
+        match expr with
         | Expr.Const _
         | Expr.Val _
         | Expr.WitnessArg _
         | Expr.Lambda _
         | Expr.TyLambda _ ->
-            match stripExpr expr with
+            match expr with
             | Expr.Val(vref, _, _) ->
                 { emptyRuntimeAsyncFlowSummary with
                     FreeLocals = Zset.add vref.Deref (Zset.empty valOrder)

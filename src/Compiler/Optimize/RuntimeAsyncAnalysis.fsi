@@ -6,6 +6,8 @@ open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
 
 type RuntimeAsyncAnalyzer =
+    new: g: TcGlobals -> RuntimeAsyncAnalyzer
+
     new: g: TcGlobals * getLambdaBody: (ValRef -> Expr option) -> RuntimeAsyncAnalyzer
 
     member ContainsFragment: expr: Expr -> bool

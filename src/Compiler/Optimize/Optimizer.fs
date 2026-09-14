@@ -4499,7 +4499,7 @@ and ComputeSplitToMethodCondition flag threshold cenv env (e: Expr, einfo) =
     not env.disableMethodSplitting &&
     // Never split a runtime-async body: the split-off method would not be a runtime-async
     // method, so its Await calls would be rejected by IlxGen (FS3916).
-    not (env.runtimeAsyncContext && RuntimeAsyncAnalyzer(g, fun _ -> None).ContainsSuspension e) &&
+    not (env.runtimeAsyncContext && RuntimeAsyncAnalyzer(g).ContainsSuspension e) &&
     einfo.FunctionSize >= threshold &&
 
      // We can only split an expression out as a method if certain conditions are met.

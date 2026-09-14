@@ -53,20 +53,10 @@ let private IsRuntimeAsyncExceptionHandler (analyzer: RuntimeAsyncAnalyzer) expr
     | _ -> false
 
 let private ExprContainsRuntimeAsyncExceptionHandler (analyzer: RuntimeAsyncAnalyzer) expr =
-    let folder =
-        { ExprFolder0 with
-            exprIntercept =
-                fun _ noInterceptF acc expr ->
-                    if acc || IsRuntimeAsyncExceptionHandler analyzer expr then
-                        true
-                    else
-                        noInterceptF acc expr
-        }
-
-    FoldExpr folder false expr
+    ExistsExpr (IsRuntimeAsyncExceptionHandler analyzer) expr
 
 let RewriteRuntimeAsyncExceptionHandlers (g: TcGlobals) expr =
-    let analyzer = RuntimeAsyncAnalyzer(g, fun _ -> None)
+    let analyzer = RuntimeAsyncAnalyzer(g)
 
     let rewriteCapturedException m resultTy body buildResult =
         let choiceTy = RuntimeAsyncChoiceTy g resultTy
