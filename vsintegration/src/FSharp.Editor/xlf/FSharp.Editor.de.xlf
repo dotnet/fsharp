@@ -95,6 +95,11 @@ Namen für nicht aufgelöste Bezeichner vorschlagen;</target>
         <target state="translated">"&lt;&gt;" für die Überprüfung auf Ungleichheit verwenden</target>
         <note />
       </trans-unit>
+      <trans-unit id="ConvertToReferenceAnonymousRecord">
+        <source>Convert to reference anonymous record</source>
+        <target state="new">Convert to reference anonymous record</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ConvertToReferenceTuple">
         <source>Convert to reference tuple</source>
         <target state="new">Convert to reference tuple</target>
@@ -108,6 +113,11 @@ Namen für nicht aufgelöste Bezeichner vorschlagen;</target>
       <trans-unit id="ChangePrefixNegationToInfixSubtraction">
         <source>Use subtraction instead of negation</source>
         <target state="translated">Subtraktion anstelle von Negation verwenden</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConvertToStructAnonymousRecord">
+        <source>Convert to struct anonymous record</source>
+        <target state="new">Convert to struct anonymous record</target>
         <note />
       </trans-unit>
       <trans-unit id="ConvertToStructTuple">
