@@ -185,3 +185,77 @@ let ``the first instance of a multi-targeted project answers`` () =
     match found with
     | ValueSome(struct (_, project)) -> Assert.Equal(firstId, project.Id)
     | ValueNone -> failwith "declaration not found"
+
+[<Fact>]
+let ``candidate documents narrow to the file that declares the entity among several`` () =
+    let syntheticProject =
+        SyntheticProject.Create(
+            sourceFile "First" [],
+            { sourceFile "Second" [] with
+                ExtraSource = "let onlyHere x = x * 5\n"
+            },
+            sourceFile "Third" []
+        )
+
+    let solution, _ = RoslynTestHelpers.CreateSolution syntheticProject
+    let project = solution.Projects |> Seq.exactlyOne
+
+    let candidates =
+        CrossLanguageSymbolNavigation.candidateDocuments [ syntheticProject.Name; "ModuleSecond" ] project
+        |> run
+        |> List.map _.FilePath
+
+    Assert.Equal<string list>([ syntheticProject.GetFilePath "Second" ], candidates)
+
+    let docId = $"M:{syntheticProject.Name}.ModuleSecond.onlyHere(System.Int32)"
+    let path = CrossLanguageSymbolNavigation.docCommentIdToPath docId
+
+    match
+        CrossLanguageSymbolNavigation.tryLocateViaNavigableItems docId path project
+        |> run
+    with
+    | ValueSome range -> Assert.Equal(syntheticProject.GetFilePath "Second", range.FileName)
+    | ValueNone -> failwith "declaration not found"
+
+[<Fact>]
+let ``a later instance of a multi-targeted project answers when an earlier one does not declare the entity`` () =
+    let conditionalSource =
+        """
+module Widgets
+
+#if LATER
+let onlyLater x = x * 4
+#endif
+"""
+
+    let instance () =
+        let id = ProjectId.CreateNewId()
+
+        id,
+        RoslynTestHelpers.CreateProjectInfo id "C:\\test.fsproj" [ RoslynTestHelpers.CreateDocumentInfo id "C:\\test.fs" conditionalSource ]
+
+    let firstId, first = instance ()
+    let secondId, second = instance ()
+    let solution = RoslynTestHelpers.CreateSolution [ first; second ]
+
+    RoslynTestHelpers.SetProjectOptions
+        firstId
+        solution
+        { RoslynTestHelpers.DefaultProjectOptions with
+            OtherOptions = [| "--targetprofile:netcore"; "--nowarn:3384" |]
+        }
+
+    RoslynTestHelpers.SetProjectOptions
+        secondId
+        solution
+        { RoslynTestHelpers.DefaultProjectOptions with
+            OtherOptions = [| "--targetprofile:netcore"; "--nowarn:3384"; "--define:LATER" |]
+        }
+
+    let found =
+        CrossLanguageSymbolNavigation.tryFindDeclaration solution "test.dll" "M:Widgets.onlyLater(System.Int32)"
+        |> run
+
+    match found with
+    | ValueSome(struct (_, project)) -> Assert.Equal(secondId, project.Id)
+    | ValueNone -> failwith "declaration not found"
