@@ -115,6 +115,9 @@
     <Compile Include="Refactor\StructPropagation.fs" />
     <Compile Include="Refactor\ConvertTuple.fs" />
     <Compile Include="Refactor\ConvertAnonymousRecord.fs" />
+    <Compile Include="Refactor\TupleConversion.fs" />
+    <Compile Include="Refactor\TuplePropagation.fs" />
+    <Compile Include="Refactor\ConvertTuple.fs" />
     <Compile Include="CodeFixes\IFSharpCodeFix.fs" />
     <Compile Include="CodeFixes\CodeFixHelpers.fs" />
     <Compile Include="CodeFixes\ChangeEqualsInFieldTypeToColon.fs" />
