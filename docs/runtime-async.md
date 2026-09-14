@@ -189,13 +189,12 @@ shared runtime-async boundary contract, which strips `DebugPoint` wrappers:
    top of the method lambda body; the generated `ILMethodDef` gets
    `.WithAsync(true)`, which sets impl attribute bit `0x2000`
    (`MethodImplOptions.Async`, written as a literal because older reference
-   assemblies do not define the enum member). `NoInlining` is forced on the
-   method.
+   assemblies do not define the enum member).
 2. **Closure body** (`GenClosureAsLocalTypeFunction` and
    `GenClosureAsFirstClassFunction`): the same unwrapping marks the closure
    `Invoke` method's IL body (`ILMethodBody.IsRuntimeAsync`).
    `EraseClosures.convIlxClosureDef` copies that flag onto the emitted
-   method, again with `NoInlining`.
+   method.
 3. **Any other expression position** (`GenRuntimeAsyncReturnAsStartedTask`), e.g.
    a `let`-bound value initializer: the marker application is wrapped in a
    fresh `fun () -> ...` lambda that is immediately applied to `unit` and

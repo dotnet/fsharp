@@ -108,7 +108,7 @@ let ``runtime async edge cases execute through the CE builder`` (optimize: bool)
 // `Await(Task); 1` — direct call to the non-generic Await overload, then push 1 and ret.
 let private simpleAwaitBody = """
   .method public static class [System.Runtime]System.Threading.Tasks.Task`1<int32> 
-          f() cil managed noinlining
+          f() cil managed
   {
     // Code size       13 (0xd)
     .maxstack  8
@@ -124,7 +124,7 @@ let private simpleAwaitBody = """
 // into `add` with no spill local (optimized).
 let private genericAwaitBody = """
   .method public static class [System.Runtime]System.Threading.Tasks.Task`1<int32> 
-          f(class [System.Runtime]System.Threading.Tasks.Task`1<int32> t) cil managed noinlining
+          f(class [System.Runtime]System.Threading.Tasks.Task`1<int32> t) cil managed
   {
     // Code size       9 (0x9)
     .maxstack  8
@@ -139,7 +139,7 @@ let private genericAwaitBody = """
 // `Await(ValueTask); 1` — the ValueTask (non-generic) Await overload bound by operand type.
 let private valueTaskAwaitBody = """
   .method public static class [System.Runtime]System.Threading.Tasks.Task`1<int32> 
-          f(valuetype [System.Runtime]System.Threading.Tasks.ValueTask vt) cil managed noinlining
+          f(valuetype [System.Runtime]System.Threading.Tasks.ValueTask vt) cil managed
   {
     // Code size       8 (0x8)
     .maxstack  8
@@ -194,7 +194,7 @@ let ``the CE builder lowers to Await with no state machine`` () =
 let private tailPrefixBody = """
   .method public static class [System.Runtime]System.Threading.Tasks.Task`1<int32> 
           f(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32> g,
-            int32 x) cil managed noinlining
+            int32 x) cil managed
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 02 00 00 00 01 00 00 00 01 00 00 00 00 00 ) 
     // Code size       20 (0x14)
@@ -218,7 +218,7 @@ let ``runtime async avoids a forbidden tail prefix (C1)`` () =
 // ===== composed CE case: async marking follows the emitted method, not F# source layout =====
 // A larger `outer` (nested `inner`, non-async code before/after, a runtimeTask CE combining
 // for/let!/use/try-finally/do!/if). Empirically the 0x2000 (MethodImplOptions.Async) bit lands on
-// the lifted `outer@<line>::Invoke` (0x2008, +noinlining) and RuntimeTaskBuilder::Run, never on
+// the lifted `outer@<line>::Invoke` (0x2000, async) and RuntimeTaskBuilder::Run, never on
 // `M::outer`/`M::helper` — asserted via assertAsyncFlagOnLiftedClosureOnly (ildasm/.bsl can't show it).
 let private composedLayoutProgram = """
 module M
@@ -300,7 +300,7 @@ let private ceDisposalHoist = """
 // sequence-points baseline show the lifted async body as an ordinary `outer@<line>` closure. This
 // reads it from metadata and pins the placement: the flag lands only on that lifted `__runtimeAsyncReturn`
 // body and never leaks onto the user's own `outer`/`helper` methods just because the async part is
-// written lexically inside `outer`. Empirically the lifted `Invoke` is 0x2008 (async + noinlining).
+// written lexically inside `outer`. The lifted `Invoke` carries 0x2000 (async).
 let private assertAsyncFlagOnLiftedClosureOnly (md: MetadataReader) =
     let asyncBit = 0x2000
     let methods =

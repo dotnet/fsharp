@@ -722,7 +722,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                             mkILReturn fixedNowReturnTy,
                             MethodBody.IL(notlazy convil)
                         )
-                        |> fun mdef -> mdef.WithAsync(clo.cloCode.Value.IsRuntimeAsync).WithNoInlining(clo.cloCode.Value.IsRuntimeAsync)
+                        |> fun mdef -> mdef.WithAsync(clo.cloCode.Value.IsRuntimeAsync)
 
                     let ctorMethodDef =
                         mkILStorageCtor (

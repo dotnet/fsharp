@@ -7260,7 +7260,7 @@ and GenClosureAsLocalTypeFunction cenv (cgbuf: CodeGenBuffer) eenv thisVars expr
                 mkILReturn ilCloFormalReturnTy,
                 MethodBody.IL(InterruptibleLazy.FromValue ilCloBody)
             )
-            |> fun mdef -> mdef.WithAsync(isRuntimeAsync).WithNoInlining(isRuntimeAsync)
+            |> fun mdef -> mdef.WithAsync(isRuntimeAsync)
         ]
 
     let cloTypeDefs =
@@ -10415,7 +10415,7 @@ and GenMethodForBinding
                 .WithSynchronized(hasSynchronizedImplFlag)
                 .WithAggressiveInlining(hasAggressiveInliningImplFlag)
                 .WithAsync(isRuntimeAsync)
-                .WithNoInlining(hasNoInliningFlag || isRuntimeAsync)
+                .WithNoInlining(hasNoInliningFlag)
                 .With(isEntryPoint = isExplicitEntryPoint, securityDecls = secDecls)
 
         let mdef =
