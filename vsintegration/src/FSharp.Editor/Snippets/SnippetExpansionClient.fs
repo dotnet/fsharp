@@ -17,6 +17,8 @@ open Microsoft.VisualStudio.Text
 open Microsoft.VisualStudio.Text.Editor
 open Microsoft.VisualStudio.TextManager.Interop
 
+open FSharp.Compiler.Tokenization
+
 open MSXML
 
 [<AutoOpen>]
@@ -44,10 +46,53 @@ module internal SnippetExpansionHelpers =
             String('\t', width / tabSize) + String(' ', width % tabSize)
 
     /// Whether the line starts a directive wrapper, asking the snapshot for the one character that
-    /// settles it before copying the line out to compare prefixes.
-    let startsRootLevelDirective (line: ITextSnapshotLine) indent =
+    /// settles it before falling back to comparing the already-fetched text against known prefixes.
+    let startsRootLevelDirective (line: ITextSnapshotLine) indent (text: string) =
         line.Snapshot[line.Start.Position + indent] = '#'
-        && SnippetIndentation.isRootLevelDirective (line.GetText())
+        && SnippetIndentation.isRootLevelDirective text
+
+    /// Scans one line's text from `lexState`, threading the state a later line needs to know whether
+    /// it opens inside an unfinished string.
+    let rec private lexStateAfter (tokenizer: FSharpLineTokenizer) lexState =
+        match tokenizer.ScanToken lexState with
+        | None, atEndOfLine -> atEndOfLine
+        | Some _, afterToken -> lexStateAfter tokenizer afterToken
+
+    /// The kind and indentation of every line `FormatSpan` was given, threading the lexer state
+    /// across them so a `SelectedRest` line that opens inside a string - continuing one that started
+    /// on an earlier selected line - is left alone rather than reindented into the string's value.
+    let classifyLines (snapshot: ITextSnapshot) (span: VsTextSpan) selectedLines =
+        let sourceTokenizer = FSharpSourceTokenizer([], None, None)
+        let lastLine = min span.iEndLine (snapshot.LineCount - 1)
+        let mutable lexState = FSharpTokenizerLexState.Initial
+
+        [
+            for lineNumber in span.iStartLine .. lastLine ->
+                let line = snapshot.GetLineFromLineNumber lineNumber
+                let indent = leadingWhitespaceOf line
+                let text = line.GetText()
+                let enteringLexState = lexState
+
+                lexState <- lexStateAfter (sourceTokenizer.CreateLineTokenizer text) lexState
+
+                let kind =
+                    if indent = line.Length then
+                        SnippetIndentation.Blank
+                    elif SnippetIndentation.isInsideString (FSharpLineTokenizer.ColorStateOfLexState enteringLexState) then
+                        SnippetIndentation.InsideString
+                    elif startsRootLevelDirective line indent text then
+                        SnippetIndentation.RootLevelDirective
+                    else
+                        match selectedLines with
+                        | ValueSome(first, _) when lineNumber = first -> SnippetIndentation.SelectedFirst
+                        | ValueSome(first, last) when lineNumber > first && lineNumber <= last -> SnippetIndentation.SelectedRest
+                        | _ -> SnippetIndentation.Template
+
+                {
+                    SnippetIndentation.Kind = kind
+                    SnippetIndentation.Indent = indent
+                }
+        ]
 
     /// Where `$selected$` sits in a snippet's `<Code>`: which of its lines holds the field, and the
     /// column the template indents it to. That is the one nesting level a wrapper contributes, and the
@@ -307,7 +352,9 @@ type internal FSharpSnippetExpansionClient
         ///
         ///  - a root-level directive (`#if`, `#endif`) belongs at column 0 whatever it wraps;
         ///  - text the engine substituted into `$selected$` already carries the indentation it had in
-        ///    the buffer, and needs only the nesting the template adds around the field;
+        ///    the buffer, and needs only the nesting the template adds around the field - except a
+        ///    line that opens inside a string continued from an earlier one, whose whitespace is the
+        ///    string's own value and is left untouched;
         ///  - every other line is the snippet's own, and takes the column of the code it wraps -
         ///    the caret's for Insert Snippet, the selection's for Surround With.
         member _.FormatSpan(_buffer, ts: VsTextSpan[]) =
@@ -329,31 +376,7 @@ type internal FSharpSnippetExpansionClient
                     | ValueSome s -> SnippetIndentation.AroundSelection(s.Column, s.FieldIndent)
                     | ValueNone -> SnippetIndentation.AtCaret span.iStartIndex
 
-                let lastLine = min span.iEndLine (snapshot.LineCount - 1)
-
-                let lines =
-                    [
-                        for lineNumber in span.iStartLine .. lastLine ->
-                            let line = snapshot.GetLineFromLineNumber lineNumber
-                            let indent = leadingWhitespaceOf line
-
-                            let kind =
-                                if indent = line.Length then
-                                    SnippetIndentation.Blank
-                                elif startsRootLevelDirective line indent then
-                                    SnippetIndentation.RootLevelDirective
-                                else
-                                    match selectedLines with
-                                    | ValueSome(first, _) when lineNumber = first -> SnippetIndentation.SelectedFirst
-                                    | ValueSome(first, last) when lineNumber > first && lineNumber <= last ->
-                                        SnippetIndentation.SelectedRest
-                                    | _ -> SnippetIndentation.Template
-
-                            {
-                                SnippetIndentation.Kind = kind
-                                SnippetIndentation.Indent = indent
-                            }
-                    ]
+                let lines = classifyLines snapshot span selectedLines
 
                 use edit = subjectBuffer.CreateEdit()
 
