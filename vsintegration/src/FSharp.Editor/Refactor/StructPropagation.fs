@@ -134,6 +134,20 @@ let rec private tryMatchedExpression (pat: SynPat) (path: SyntaxVisitorPath) =
         ValueSome(struct (scrutinee, SyntaxNode.SynExpr matchExpr :: rest))
     | _ -> ValueNone
 
+/// The function and the curried group of which the pattern is the whole argument, parenthesized or (a struct tuple) not.
+let private tryWholeArgument (pat: SynPat) (path: SyntaxVisitorPath) =
+    let struct (argument, headPath) =
+        match path with
+        | SyntaxNode.SynPat(SynPat.Paren(pat = inner) as paren) :: rest when isSame inner pat -> struct (paren, rest)
+        | _ -> struct (pat, path)
+
+    match headPath with
+    | SyntaxNode.SynPat(SynPat.LongIdent(longDotId = SynLongIdent(id = ids); argPats = SynArgPats.Pats args)) :: SyntaxNode.SynBinding _ :: _ ->
+        match List.tryFindIndex (isSame argument) args, List.tryLast ids with
+        | Some group, Some name -> ValueSome(struct (name, group))
+        | _ -> ValueNone
+    | _ -> ValueNone
+
 /// The expression node a symbol use stands for: an identifier, or the last part of a dotted name.
 let private tryUseNode (tree: ParsedInput) (useRange: range) =
     let isUse (ident: Ident) =
@@ -172,21 +186,30 @@ let private tryRecordFieldValue (tree: ParsedInput) (useRange: range) =
 /// The pattern declaring a parameter of the function declared at the range: its whole curried argument, or one
 /// element of an argument that is a tuple of parameters.
 let private tryParameterPattern (tree: ParsedInput) (declaration: range) (group: int) (index: int voption) =
+    let pathTo (pat: SynPat) (parentPath: SyntaxVisitorPath) =
+        match pat with
+        | SynPat.Paren _ -> SyntaxNode.SynPat pat :: parentPath
+        | _ -> parentPath
+
     (ValueNone, tree)
-    ||> ParsedInput.fold (fun found _ node ->
+    ||> ParsedInput.fold (fun found path node ->
         match found, node with
         | ValueNone,
-          SyntaxNode.SynBinding(SynBinding(headPat = SynPat.LongIdent(longDotId = SynLongIdent(id = ids); argPats = SynArgPats.Pats args))) when
+          SyntaxNode.SynBinding(SynBinding(
+              headPat = SynPat.LongIdent(longDotId = SynLongIdent(id = ids); argPats = SynArgPats.Pats args) as headPat)) when
             group < args.Length
             && List.tryLast ids
                |> Option.exists (fun ident -> Position.posEq ident.idRange.Start declaration.Start)
             ->
-            match stripParenPats (List.item group args), index with
-            | SynPat.Tuple(elementPats = elements), ValueSome index when index < elements.Length ->
-                ValueSome(stripParenPats (List.item index elements))
-            | SynPat.Tuple _, _
+            let argument = List.item group args
+            let argumentPath = pathTo argument (SyntaxNode.SynPat headPat :: node :: path)
+
+            match stripParenPats argument, index with
+            | SynPat.Tuple(elementPats = elements) as tuple, ValueSome index when index < elements.Length ->
+                let element = List.item index elements
+                ValueSome(struct (stripParenPats element, pathTo element (SyntaxNode.SynPat tuple :: argumentPath)))
             | _, ValueSome _ -> ValueNone
-            | parameter, ValueNone -> ValueSome parameter
+            | parameter, ValueNone -> ValueSome(struct (parameter, argumentPath))
         | _ -> found)
 
 type private Engine(solution: Solution, kind: StructKind, toStruct: bool, userOpName: string) =
@@ -313,7 +336,7 @@ type private Engine(solution: Solution, kind: StructKind, toStruct: bool, userOp
             this.IntoPattern source inner (SyntaxNode.SynPat pat :: path)
         | SynPat.Named(ident = SynIdent(ident, _))
         | SynPat.LongIdent(longDotId = SynLongIdent(id = [ ident ]); argPats = SynArgPats.Pats []) -> this.EnqueueSymbol source ident
-        | _ when kind.IsPat pat -> this.AddOrFail source (kind.PatChanges source.Text toStruct pat path)
+        | _ when kind.IsPat pat path -> this.AddOrFail source (kind.PatChanges source.Text toStruct pat path)
         | _ -> ()
 
     /// The value of the node now has the changing form: pass that on to where it goes.
@@ -365,15 +388,15 @@ type private Engine(solution: Solution, kind: StructKind, toStruct: bool, userOp
                 | _ -> ()
         | SyntaxNode.SynExpr(SynExpr.Match(expr = scrutinee; clauses = clauses) as matchExpr) :: rest when isSame scrutinee node ->
             for SynMatchClause(pat = pat) as clause in clauses do
-                match stripParenPats pat with
-                | stripped when kind.IsPat stripped ->
-                    let strippedPath =
-                        match pat with
-                        | SynPat.Paren _ -> [ SyntaxNode.SynPat pat ]
-                        | _ -> [ SyntaxNode.SynMatchClause clause; SyntaxNode.SynExpr matchExpr ] @ rest
+                let stripped = stripParenPats pat
 
+                let strippedPath =
+                    match pat with
+                    | SynPat.Paren _ -> [ SyntaxNode.SynPat pat ]
+                    | _ -> [ SyntaxNode.SynMatchClause clause; SyntaxNode.SynExpr matchExpr ] @ rest
+
+                if kind.IsPat stripped strippedPath then
                     this.AddOrFail source (kind.PatChanges source.Text toStruct stripped strippedPath)
-                | _ -> ()
         | _ -> ()
 
     /// The expression must now produce the changing form: change what it is built from.
@@ -491,9 +514,12 @@ type private Engine(solution: Solution, kind: StructKind, toStruct: bool, userOp
                 let! definition = this.Load document
 
                 match tryParameterPattern definition.Tree declaration group index with
-                | ValueSome parameter ->
+                | ValueSome(struct (SynPat.Tuple _ as parameter, parameterPath)) when not (kind.IsPat parameter parameterPath) -> ()
+                | ValueSome(struct (parameter, parameterPath)) ->
                     match parameter with
                     | SynPat.Typed(targetType = annotation) -> this.Add definition (annotationChanges definition.Text annotation)
+                    | _ when kind.IsPat parameter parameterPath ->
+                        this.AddOrFail definition (kind.PatChanges definition.Text toStruct parameter parameterPath)
                     | _ -> ()
 
                     match tryPatternIdent parameter with
@@ -530,9 +556,10 @@ type private Engine(solution: Solution, kind: StructKind, toStruct: bool, userOp
         | CaretNode.Pat(node, path) ->
             this.AddOrFail source (kind.PatChanges source.Text toStruct node path)
 
-            match tryMatchedExpression node path with
-            | ValueSome(struct (matched, matchedPath)) -> this.Retarget source matched matchedPath
-            | ValueNone -> ()
+            match tryMatchedExpression node path, tryWholeArgument node path with
+            | ValueSome(struct (matched, matchedPath)), _ -> this.Retarget source matched matchedPath
+            | ValueNone, ValueSome(struct (name, group)) -> this.EnqueueParameter source name group ValueNone
+            | ValueNone, ValueNone -> ()
         | CaretNode.Type(node, annotated, isWholeAnnotation) ->
             this.Add source (kind.TypeChanges source.Text toStruct isWholeAnnotation node)
 

@@ -52,7 +52,8 @@ type StructKind =
     {
         /// Whether the expression is a node of the kind, not only shaped like one (a method's argument list).
         IsExpr: SynExpr -> SyntaxVisitorPath -> bool
-        IsPat: SynPat -> bool
+        /// Whether the pattern is a node of the kind, not only shaped like one (a method's parameter list).
+        IsPat: SynPat -> SyntaxVisitorPath -> bool
         IsType: SynType -> bool
         IsStruct: CaretNode -> bool
         /// Changes giving a node of the kind the target form; ValueNone when it cannot change in place.
@@ -99,7 +100,7 @@ let tryCaretNode (kind: StructKind) (caret: pos) (parseTree: ParsedInput) =
     ||> ParsedInput.fold (fun found path node ->
         match node with
         | SyntaxNode.SynExpr expr when containsPos expr.Range caret && kind.IsExpr expr path -> ValueSome(CaretNode.Expr(expr, path))
-        | SyntaxNode.SynPat pat when containsPos pat.Range caret && kind.IsPat pat -> ValueSome(CaretNode.Pat(pat, path))
+        | SyntaxNode.SynPat pat when containsPos pat.Range caret && kind.IsPat pat path -> ValueSome(CaretNode.Pat(pat, path))
         | SyntaxNode.SynPat(SynPat.Typed(targetType = annotation) as pat) when containsPos annotation.Range caret ->
             annotationAt annotation (Annotated.Pattern(pat, path))
             |> ValueOption.orElse found
