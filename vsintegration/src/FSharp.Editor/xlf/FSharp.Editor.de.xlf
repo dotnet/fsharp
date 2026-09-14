@@ -388,9 +388,19 @@ Hinweise in QuickInfo anzeigen</target>
         <target state="translated">Formatierung</target>
         <note />
       </trans-unit>
+      <trans-unit id="UseDotNetOptionalParameter">
+        <source>Use [&lt;Optional; DefaultParameterValue&gt;] for optional parameter</source>
+        <target state="new">Use [&lt;Optional; DefaultParameterValue&gt;] for optional parameter</target>
+        <note />
+      </trans-unit>
       <trans-unit id="UseFSharpLambda">
         <source>Use F# lambda syntax</source>
         <target state="translated">F#-Lambdasyntax verwenden</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UseFSharpOptionalParameter">
+        <source>Use F# '?' optional parameter</source>
+        <target state="new">Use F# '?' optional parameter</target>
         <note />
       </trans-unit>
       <trans-unit id="UseMutationWhenValueIsMutable">

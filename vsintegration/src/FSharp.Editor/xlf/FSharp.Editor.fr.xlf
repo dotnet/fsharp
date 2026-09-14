@@ -388,9 +388,19 @@ Afficher les notes dans Info express</target>
         <target state="translated">Mise en forme</target>
         <note />
       </trans-unit>
+      <trans-unit id="UseDotNetOptionalParameter">
+        <source>Use [&lt;Optional; DefaultParameterValue&gt;] for optional parameter</source>
+        <target state="new">Use [&lt;Optional; DefaultParameterValue&gt;] for optional parameter</target>
+        <note />
+      </trans-unit>
       <trans-unit id="UseFSharpLambda">
         <source>Use F# lambda syntax</source>
         <target state="translated">Utiliser la syntaxe lambda F#</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UseFSharpOptionalParameter">
+        <source>Use F# '?' optional parameter</source>
+        <target state="new">Use F# '?' optional parameter</target>
         <note />
       </trans-unit>
       <trans-unit id="UseMutationWhenValueIsMutable">
