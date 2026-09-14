@@ -4,6 +4,8 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
 
+open FSharp.Compiler.Tokenization
+
 /// Where the lines of an inserted snippet belong, as arithmetic over columns.
 ///
 /// The expansion engine inserts a snippet verbatim: the opening line lands at the insertion column
@@ -25,6 +27,9 @@ module internal SnippetIndentation =
         | SelectedFirst
         /// A later line of that text. It starts its own buffer line at its original column.
         | SelectedRest
+        /// A later line of that text which begins inside a string literal continued from an earlier
+        /// selected line - its whitespace is part of the string's value, not its layout.
+        | InsideString
         /// Whitespace only; left alone so the snippet does not leave trailing spaces behind.
         | Blank
 
@@ -51,12 +56,21 @@ module internal SnippetIndentation =
         rootLevelDirectives
         |> Array.exists (fun directive -> text.StartsWith(directive, StringComparison.Ordinal))
 
+    /// Whether a line beginning in this lexer color state is a continuation of a string literal.
+    let isInsideString (colorState: FSharpTokenizerColorState) =
+        match colorState with
+        | FSharpTokenizerColorState.String
+        | FSharpTokenizerColorState.VerbatimString
+        | FSharpTokenizerColorState.TripleQuoteString -> true
+        | _ -> false
+
     /// How far each line has to move. Positive inserts, negative removes, zero leaves it alone.
     let deltas placement (lines: Line list) =
         lines
         |> List.mapi (fun index line ->
             match line.Kind, placement with
-            | Blank, _ -> 0
+            | Blank, _
+            | InsideString, _ -> 0
             | RootLevelDirective, _ -> -line.Indent
             | Template, AtCaret column -> if index = 0 then 0 else column
             | Template, AroundSelection(column, _) -> column
