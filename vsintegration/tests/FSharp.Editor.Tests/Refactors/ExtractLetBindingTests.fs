@@ -178,6 +178,28 @@ let ``Literal is offered only for constants outside types`` () =
     Assert.Equal<string list>([ extractToLetBinding ], titlesFor "module M\n\nlet f x = g (x + 1)\n" "x + 1")
 
 [<Theory>]
+[<InlineData("fun x")>]
+[<InlineData("x ->")>]
+[<InlineData("-> x")>]
+[<InlineData(" x + 1)")>]
+let ``Caret in the header of a parenthesized lambda extracts the lambda`` (marker: string) =
+    let code = "module M\n\nlet f xs =\n    xs |> List.map (fun x -> x + 1)\n"
+
+    let expected =
+        "module M\n\nlet f xs =\n    let extracted = fun x -> x + 1\n    xs |> List.map extracted\n"
+
+    Assert.Equal<string list>([ extractToLetBinding ], titlesAt code (caretAt code marker))
+    Assert.Equal(expected, extractedAt extractToLetBinding code (caretAt code marker))
+
+[<Theory>]
+[<InlineData("module M\n\nlet f xs =\n    xs |> List.map (fun x -> x + 1)\n", "x + 1)")>]
+[<InlineData("module M\n\nlet f xs =\n    xs |> List.map (fun x -> x + 1)\n", "+ 1)")>]
+[<InlineData("module M\n\nlet f xs =\n    xs |> List.map (fun x -> x + 1)\n", "(fun")>]
+[<InlineData("module M\n\nlet f = fun x -> x + 1\n", "fun")>]
+let ``No action without a selection outside a parenthesized lambda header`` (code: string, marker: string) =
+    Assert.Empty(titlesAt code (caretAt code marker))
+
+[<Theory>]
 [<InlineData("\"Hello %s\" name")>]
 [<InlineData("llo %s")>]
 [<InlineData(" name\n")>]
