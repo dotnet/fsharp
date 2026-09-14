@@ -403,6 +403,16 @@ Hinweise in QuickInfo anzeigen</target>
         <target state="translated">"nameof" verwenden</target>
         <note />
       </trans-unit>
+      <trans-unit id="UseOptionActivePatternReturn">
+        <source>Use option return for active pattern</source>
+        <target state="new">Use option return for active pattern</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UseStructActivePatternReturn">
+        <source>Use struct return for active pattern</source>
+        <target state="new">Use struct return for active pattern</target>
+        <note />
+      </trans-unit>
       <trans-unit id="UseTripleQuotedInterpolation">
         <source>Use triple quoted string interpolation.</source>
         <target state="translated">Verwenden Sie die Interpolation von dreifachen Zeichenfolgen in Anführungszeichen.</target>
