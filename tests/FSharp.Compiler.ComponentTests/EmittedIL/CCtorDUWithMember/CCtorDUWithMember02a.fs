@@ -1,4 +1,4 @@
-// #NoMono #NoMT #CodeGen #EmittedIL #Unions 
+// #NoMono #NoMT #CodeGen #EmittedIL #Unions
 module CCtorDUWithMember02a
 printfn "hello1"
 

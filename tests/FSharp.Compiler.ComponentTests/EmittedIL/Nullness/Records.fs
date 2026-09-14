@@ -3,7 +3,7 @@ module MyTestModule
 let maybeString : string | null = null
 
 [<NoComparison;NoEquality>]
-type MyRecord<'X,'Y,'Z when 'Y:null and 'Z:not null> = 
+type MyRecord<'X,'Y,'Z when 'Y:null and 'Z:not null> =
     {
         JustInt : int
         NullInt : System.Nullable<int>
@@ -22,6 +22,6 @@ let createAnInstance () =
         GenericNormalField = 42
         GenericNullableField = maybeString
         GenericNotNullField = ""}
-    
+
 
 let stringOfInst() : string = createAnInstance().ToString()

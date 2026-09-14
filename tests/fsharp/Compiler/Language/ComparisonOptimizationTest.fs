@@ -8,7 +8,7 @@ module ComparisonOptimizationTests =
 
     [<Fact>]
     let Script_Compare_int() =
-        let script = 
+        let script =
             """
 module Test 
 open System
@@ -16,7 +16,7 @@ open System
 
 let f (x: int) (y: int) = compare x y
             """
-        
+
         CompilerAssert.CompileLibraryAndVerifyILWithOptions([|"-g"; "--optimize+"|], script,
             (fun verifier ->
                 verifier.VerifyIL
@@ -37,7 +37,7 @@ let f (x: int) (y: int) = compare x y
 
     [<Fact>]
     let Script_Compare_uint() =
-        let script = 
+        let script =
             """
 module Test 
 open System
@@ -45,7 +45,7 @@ open System
 
 let f (x: uint) (y: uint) = compare x y
             """
-        
+
         CompilerAssert.CompileLibraryAndVerifyILWithOptions([|"-g"; "--optimize+"|], script,
             (fun verifier ->
                 verifier.VerifyIL
@@ -66,7 +66,7 @@ let f (x: uint) (y: uint) = compare x y
 
     [<Fact>]
     let Script_Compare_int64() =
-        let script = 
+        let script =
             """
 module Test 
 open System
@@ -74,7 +74,7 @@ open System
 
 let f (x: int64) (y: int64) = compare x y
             """
-        
+
         CompilerAssert.CompileLibraryAndVerifyILWithOptions([|"-g"; "--optimize+"|], script,
             (fun verifier ->
                 verifier.VerifyIL
@@ -95,7 +95,7 @@ let f (x: int64) (y: int64) = compare x y
 
     [<Fact>]
     let Script_Compare_uint64() =
-        let script = 
+        let script =
             """
 module Test 
 open System
@@ -103,7 +103,7 @@ open System
 
 let f (x: uint64) (y: uint64) = compare x y
             """
-        
+
         CompilerAssert.CompileLibraryAndVerifyILWithOptions([|"-g"; "--optimize+"|], script,
             (fun verifier ->
                 verifier.VerifyIL
@@ -125,7 +125,7 @@ let f (x: uint64) (y: uint64) = compare x y
 
     [<Fact>]
     let Script_Compare_int16() =
-        let script = 
+        let script =
             """
 module Test 
 open System
@@ -133,7 +133,7 @@ open System
 
 let f (x: int16) (y: int16) = compare x y
             """
-        
+
         CompilerAssert.CompileLibraryAndVerifyILWithOptions([|"-g"; "--optimize+"|], script,
             (fun verifier ->
                 verifier.VerifyIL
@@ -154,7 +154,7 @@ let f (x: int16) (y: int16) = compare x y
 
     [<Fact>]
     let Script_Compare_uint16() =
-        let script = 
+        let script =
             """
 module Test 
 open System
@@ -162,7 +162,7 @@ open System
 
 let f (x: uint16) (y: uint16) = compare x y
             """
-        
+
         CompilerAssert.CompileLibraryAndVerifyILWithOptions([|"-g"; "--optimize+"|], script,
             (fun verifier ->
                 verifier.VerifyIL
@@ -183,7 +183,7 @@ let f (x: uint16) (y: uint16) = compare x y
 
     [<Fact>]
     let Script_Compare_byte() =
-        let script = 
+        let script =
             """
 module Test 
 open System
@@ -191,7 +191,7 @@ open System
 
 let f (x: byte) (y: byte) = compare x y
             """
-        
+
         CompilerAssert.CompileLibraryAndVerifyILWithOptions([|"-g"; "--optimize+"|], script,
             (fun verifier ->
                 verifier.VerifyIL
@@ -213,7 +213,7 @@ let f (x: byte) (y: byte) = compare x y
 
     [<Fact>]
     let Script_Compare_sbyte() =
-        let script = 
+        let script =
             """
 module Test 
 open System
@@ -221,7 +221,7 @@ open System
 
 let f (x: sbyte) (y: sbyte) = compare x y
             """
-        
+
         CompilerAssert.CompileLibraryAndVerifyILWithOptions([|"-g"; "--optimize+"|], script,
             (fun verifier ->
                 verifier.VerifyIL
@@ -243,7 +243,7 @@ let f (x: sbyte) (y: sbyte) = compare x y
 
     [<Fact>]
     let Script_Compare_char() =
-        let script = 
+        let script =
             """
 module Test 
 open System
@@ -251,7 +251,7 @@ open System
 
 let f (x: char) (y: char) = compare x y
             """
-        
+
         CompilerAssert.CompileLibraryAndVerifyILWithOptions([|"-g"; "--optimize+"|], script,
             (fun verifier ->
                 verifier.VerifyIL
@@ -272,7 +272,7 @@ let f (x: char) (y: char) = compare x y
 
     [<Fact>]
     let Script_Compare_bool() =
-        let script = 
+        let script =
             """
 module Test 
 open System
@@ -280,7 +280,7 @@ open System
 
 let f (x: bool) (y: bool) = compare x y
             """
-        
+
         CompilerAssert.CompileLibraryAndVerifyILWithOptions([|"-g"; "--optimize+"|], script,
             (fun verifier ->
                 verifier.VerifyIL
@@ -296,7 +296,7 @@ let f (x: bool) (y: bool) = compare x y
         )
 
 
-    
+
 
     module Assert =
         /// Checks that x and y have same sign.

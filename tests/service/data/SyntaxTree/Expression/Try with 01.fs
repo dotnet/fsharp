@@ -1,4 +1,4 @@
 module Module
 
-try () 
+try ()
 with _ -> ()

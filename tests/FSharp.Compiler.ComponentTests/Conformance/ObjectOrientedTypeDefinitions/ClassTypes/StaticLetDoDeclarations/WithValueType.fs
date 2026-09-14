@@ -5,7 +5,7 @@
 type S = member x.M() = 1
 
 let m (s:S) = s.M()
- 
+
 type T() =
   static let s = S()
   let s2 = S()

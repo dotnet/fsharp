@@ -407,13 +407,7 @@ val AnalyzeAndMakeAndPublishRecursiveValue:
 
 /// Check that a member can be included in an interface
 val CheckForNonAbstractInterface:
-    g: TcGlobals ->
-    declKind: DeclKind ->
-    tcref: TyconRef ->
-    memberFlags: SynMemberFlags ->
-    isMemberStatic: bool ->
-    m: range ->
-        unit
+    declKind: DeclKind -> tcref: TyconRef -> memberFlags: SynMemberFlags -> isMemberStatic: bool -> m: range -> unit
 
 /// Check the flags on a member definition for consistency
 val CheckMemberFlags:

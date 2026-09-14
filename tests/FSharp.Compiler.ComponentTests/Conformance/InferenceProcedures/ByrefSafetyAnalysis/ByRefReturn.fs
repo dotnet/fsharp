@@ -1,7 +1,7 @@
 open Prelude
 
-module ByRefReturn = 
-    type C() = 
+module ByRefReturn =
+    type C() =
          static member M(x: byref<int>) = x <- x + 1; &x
     let mutable res = 9
     let v =  C.M(&res)

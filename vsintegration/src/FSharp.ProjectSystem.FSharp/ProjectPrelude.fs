@@ -8,7 +8,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
     open Microsoft.VisualStudio.Shell.Interop
 
     type internal IFSharpLibraryManager =
-          abstract RegisterHierarchy : hierarchy:IVsHierarchy  -> unit 
+          abstract RegisterHierarchy : hierarchy:IVsHierarchy  -> unit
           abstract UnregisterHierarchy : hierarchy:IVsHierarchy -> unit
 
 //--------------------------------------------------------------------------------------
@@ -48,7 +48,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
     type IOleServiceProvider = Microsoft.VisualStudio.OLE.Interop.IServiceProvider
 
-    module internal FSharpSDKHelper = 
+    module internal FSharpSDKHelper =
         [<Literal>]
         let v20 = "v2.0"
         [<Literal>]
@@ -70,7 +70,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 else candidate
             Path.Combine (root, @"Reference Assemblies\Microsoft\FSharp")
 
-        let private listReferenceFoldersForPlatform platform = 
+        let private listReferenceFoldersForPlatform platform =
             let path = Path.Combine(FSharpReferenceAssembliesLocation, platform)
             let root = DirectoryInfo(path)
             if not root.Exists then Seq.empty else
@@ -79,8 +79,8 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                     let ok, _ = Version.TryParse di.Name
                     if ok then yield di.FullName
             }
-        
-        let ListAllReferenceFolders() = 
+
+        let ListAllReferenceFolders() =
             seq {
                 yield! listReferenceFoldersForPlatform (Path.Combine(NETFramework, v20))
                 yield! listReferenceFoldersForPlatform (Path.Combine(NETFramework, v40))
@@ -90,47 +90,47 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
 
     module internal Helpers =
-        let GetOutputExtension(outputType) = 
+        let GetOutputExtension(outputType) =
             if (outputType = OutputType.Library) then ".dll" else ".exe"
 
-        let ParseEnum<'a> (s:string) = 
+        let ParseEnum<'a> (s:string) =
             Enum.Parse(typeof<'a>, s, true (*ignorecase*)) |> unbox<'a>
 
         /// A helper to get ther service 'service at interface 'intf from the given service provider
-        let TryGetService2<'service, 'intf>(serviceProvider: System.IServiceProvider) : 'intf option = 
+        let TryGetService2<'service, 'intf>(serviceProvider: System.IServiceProvider) : 'intf option =
             match serviceProvider.GetService(typeof<'service>) with
             | :? ('intf) as v -> Some(v)
             | _ -> None
 
         /// Like TryGetService2, but where the service and interface types are identical
-        let TryGetService<'service>(serviceProvider: System.IServiceProvider) : 'service option = 
+        let TryGetService<'service>(serviceProvider: System.IServiceProvider) : 'service option =
             TryGetService2<'service,'service>(serviceProvider)
 
-        let GetService2<'service, 'intf>(serviceProvider: System.IServiceProvider) : 'intf = 
-            match TryGetService2<'service, 'intf>(serviceProvider) with 
+        let GetService2<'service, 'intf>(serviceProvider: System.IServiceProvider) : 'intf =
+            match TryGetService2<'service, 'intf>(serviceProvider) with
             | Some(service) -> service
             | None -> raise <| InvalidOperationException(sprintf "Could not get service %A at interface %A. Make sure the package is Sited before calling this method" (typeof<'service>) (typeof<'intf>))
-                
+
         /// Like GetService2, but where the service and interface types are identical
-        let GetService<'service>(serviceProvider: System.IServiceProvider) : 'service = 
+        let GetService<'service>(serviceProvider: System.IServiceProvider) : 'service =
             GetService2<'service,'service>(serviceProvider)
 
-        let GetProvider(node: HierarchyNode) = 
+        let GetProvider(node: HierarchyNode) =
             let serviceProvider = node.OleServiceProvider
             new Microsoft.VisualStudio.Shell.ServiceProvider(serviceProvider,true)
-                
+
     open Helpers
 
     //--------------------------------------------------------------------------------------
-    // Attributes used to mark up editable properties 
+    // Attributes used to mark up editable properties
 
     [<AttributeUsage(AttributeTargets.All)>]
     type internal SRDescriptionAttribute(description:string ) =
         inherit DescriptionAttribute(description)
         let mutable replaced = false
 
-        override x.Description = 
-            if not (replaced) then 
+        override x.Description =
+            if not (replaced) then
                 replaced <- true
                 x.DescriptionValue <- FSharpSR.GetString(base.Description)
             base.Description
@@ -142,12 +142,12 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             FSharpSR.GetString(value)
 
     [<AttributeUsage(AttributeTargets.Class ||| AttributeTargets.Property ||| AttributeTargets.Field, Inherited = false, AllowMultiple = false)>]
-    type internal LocDisplayNameAttribute(name:string) =  
+    type internal LocDisplayNameAttribute(name:string) =
         inherit DisplayNameAttribute()
 
-        override x.DisplayName = 
-          match FSharpSR.GetString(name) with 
-          | null -> 
+        override x.DisplayName =
+          match FSharpSR.GetString(name) with
+          | null ->
               Debug.Assert(false, "String resource '" + name + "' is missing")
               name
           | result -> result
@@ -164,7 +164,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         let guidFSharpProjectFactoryStringWithCurlies = "{F2A71F9B-5D33-465A-A702-920D77279786}"
 
     // General properties page
-    type internal GeneralPropertyPageTag = 
+    type internal GeneralPropertyPageTag =
         | AssemblyName = 0
         | OutputType = 1
         | RootNamespace = 2
@@ -173,14 +173,14 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         | TargetPlatform = 5
         | TargetPlatformLocation = 6
 
-    type internal FSharpImageName = 
+    type internal FSharpImageName =
         | FsFile = 0
         | FsProject = 1
         | FsxFile = 2
         | FsiFile = 3
-        
-    module internal Attributes = 
-#if NO_ASSEM_ATTRS_YET    
+
+    module internal Attributes =
+#if NO_ASSEM_ATTRS_YET
         //
         // General Information about an assembly is controlled through the following 
         // set of attributes. Change these attribute values to modify the information

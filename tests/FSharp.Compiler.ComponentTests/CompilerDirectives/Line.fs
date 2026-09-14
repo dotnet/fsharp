@@ -35,7 +35,7 @@ module Line =
 printfn ""
 )
     """
-    
+
     [<Literal>]
     let private case2 = """module A
 (
@@ -43,7 +43,7 @@ printfn ""
 printfn ""
 )
     """
-    
+
     [<Literal>]
     let private case3 = """module A
 (
@@ -340,7 +340,7 @@ namespace CSharpLib
             csharpLibSource
             |> CSharp
             |> withFileName "CallerInfoLib.cs"
-        
+
         fsharpSource
         |> FSharp
         |> withFileName "CallerInfo.fs"
@@ -348,17 +348,17 @@ namespace CSharpLib
         |> withReferences [csharp]
         |> compileExeAndRun
         |> shouldSucceed
-    
+
     let sourceIdSource = """
 #line 100 "/temp/target.fs"
 let dir = __SOURCE_DIRECTORY__
 let d = dir[dir.Length - 4 ..]
 printf $"{__LINE__} in {__SOURCE_FILE__} in {d}"
-"""    
+"""
 
     [<Fact>]
     let ``LineDirectivesAreAppliedToSourceIdentifiers`` () =
-        let result = 
+        let result =
             sourceIdSource
             |> FSharp
             |> withFileName "original.fs"
@@ -371,4 +371,3 @@ printf $"{__LINE__} in {__SOURCE_FILE__} in {d}"
         | _ ->
             Assert.Fail "unexpected: no execution output"
 
-        

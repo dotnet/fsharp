@@ -24,14 +24,14 @@ module UseBindings =
         |> withLangVersion80
         |> compileAndRun
         |> shouldSucceed
-        
+
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"UseBindingDiscard03.fs"|])>]
     let ``UseBindings - UseBindingDiscard03_fs - Current LangVersion`` compilation =
         compilation
         |> asExe
         |> compileAndRun
         |> shouldSucceed
-        
+
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"UseBinding01.fs"|])>]
     let ``UseBindings - UseBinding01_fs - Current LangVersion`` compilation =
         compilation

@@ -1,4 +1,4 @@
 
 type Shape =
-    | Square of int 
+    | Square of int
     | Rectangle of int * int

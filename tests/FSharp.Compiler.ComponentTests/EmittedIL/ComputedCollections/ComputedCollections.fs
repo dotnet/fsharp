@@ -15,7 +15,7 @@ module ComputedCollections =
         |> verifyILBaseline
 
     [<Theory; FileInlineData("Int32RangeArrays.fs", Realsig = BooleanOptions.Both, Optimize = BooleanOptions.True)>]
-    let Int32RangeArrays_fs compilation = 
+    let Int32RangeArrays_fs compilation =
         compilation
         |> getCompilation
         |> verifyCompilation

@@ -1,4 +1,4 @@
-// #Regression #Conformance #TypeInference #ByRef 
+// #Regression #Conformance #TypeInference #ByRef
 
 
 let f (x : byref<'a>) = ()

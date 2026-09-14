@@ -1,4 +1,4 @@
-// #Regression #Conformance #ObjectOrientedTypes #TypeExtensions 
+// #Regression #Conformance #ObjectOrientedTypes #TypeExtensions
 // Regression test for FSharp1.0:5249
 // Title: Compiler exception and type-checker crash when using type extension.
 
@@ -13,5 +13,5 @@ module Test =
 
 type Test.T with member x.Bar = T()
 
-module Test1 = 
+module Test1 =
     type System.DateTime with member x.FooBaz = DateTime.Now

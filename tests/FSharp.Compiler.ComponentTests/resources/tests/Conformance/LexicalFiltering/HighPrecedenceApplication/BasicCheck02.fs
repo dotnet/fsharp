@@ -1,4 +1,4 @@
-// #Conformance #LexFilter #Precedence 
+// #Conformance #LexFilter #Precedence
 
 
 let mutable z=0;; // #light must not touch these. (non-#light will)
@@ -7,30 +7,30 @@ let mutable x=1;; // #light must reset these. (non-#light will not)
 let mutable w=1;;
 
 
-// In #light this means �if x then (y;z)�, in non-#light means �(if x then y); z�. 
+// In #light this means �if x then (y;z)�, in non-#light means �(if x then y); z�.
 if false then (); z<-z+1
 ;;
 
 
 //In #light means �if x then (if y then z else w)�, in non-#light means �if x then (if y then z) else w�
-if false then 
-   if true then 
+if false then
+   if true then
        ()
-else 
+else
    x<-0
 ;;
 
-if false then 
-   if false  then 
+if false then
+   if false  then
        ()
-else 
+else
    w<-0
 ;;
 
-if true then 
-   if false then 
+if true then
+   if false then
        ()
-else 
+else
    y<-y+1
 ;;
 

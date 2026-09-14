@@ -1,3 +1,9 @@
+---
+title: FS0229 B-stream misalignment
+category: Postmortems
+categoryindex: 550
+index: 200
+---
 # Regression: FS0229 B-Stream Misalignment in TypedTreePickle
 
 ## Summary

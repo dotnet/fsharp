@@ -1,4 +1,4 @@
-// #Regression #Conformance #LexicalAnalysis 
+// #Regression #Conformance #LexicalAnalysis
 // Related to FSHARP1.0:4287
 
 // Test the __SOURCE_FILE__ directive

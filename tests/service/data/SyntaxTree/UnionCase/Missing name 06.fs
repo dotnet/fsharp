@@ -2,5 +2,5 @@ module Module
 
 type U =
     | A
-    | internal of 
+    | internal of
     | C

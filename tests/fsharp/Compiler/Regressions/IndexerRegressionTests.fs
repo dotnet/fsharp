@@ -10,7 +10,7 @@ module IndexerRegressionTests =
 
     [<Fact>]
     let ``Indexer has qualified type value``() =
-        CompilerAssert.Pass 
+        CompilerAssert.Pass
             """
 let a = [| 1 |]
 let f y = a.[y:int]

@@ -1,4 +1,4 @@
-// #CodeGen #Optimizations #Assemblies 
+// #CodeGen #Optimizations #Assemblies
 namespace N
 
 module L4 =
@@ -20,4 +20,4 @@ module L4 =
     let s1() = sizeof<T1<int>>
     let s2() = sizeof<T3<int>>
     let s3() = sizeof<T4<int>>
-    
+

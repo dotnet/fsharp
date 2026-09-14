@@ -275,7 +275,7 @@ module Project =
             __SOURCE_DIRECTORY__ + @"\..\..\..\..\artifacts\bin\FSharp.Core\Debug\netstandard2.1\FSharp.Core.dll",
             projectOptions
         )
-    
+
     let FSharpDependencyManagerNuget =
         let projectOptions =
             { ProjectFileName = __SOURCE_DIRECTORY__ + @"\..\..\..\..\src\FSharp.DependencyManager.Nuget\FSharp.DependencyManager.Nuget.fsproj"
@@ -464,7 +464,7 @@ module Project =
             __SOURCE_DIRECTORY__ + @"\..\..\..\..\artifacts\bin\FSharp.DependencyManager.Nuget\Debug\netstandard2.0\FSharp.DependencyManager.Nuget.dll",
             projectOptions
         )
-        
+
     let FSharpCompilerService =
         { ProjectFileName = __SOURCE_DIRECTORY__ + @"\..\..\..\..\src\Compiler\FSharp.Compiler.Service.fsproj"
           ProjectId = None
@@ -892,8 +892,8 @@ type CompilerService() =
         | _ -> ()
 
         match sourceOpt with
-        | None -> 
-            sourceOpt <- 
+        | None ->
+            sourceOpt <-
                 projectOptions.SourceFiles
                 |> Array.filter (fun filePath -> filePath.EndsWith("CheckDeclarations.fs"))
                 |> Array.map (fun filePath -> filePath, SourceText.ofString (File.ReadAllText(filePath)))

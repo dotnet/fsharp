@@ -5,7 +5,7 @@
 
 namespace N
 
-type T1(``.ctor`` : char) = 
+type T1(``.ctor`` : char) =
     let ``.ctor`` = 10
     static member ``.ctor ``(``.ctor`` : int) = ``.ctor`` + 1
     member __.``.ctoR``(?``.ctor``) = T1.``.ctor ``(10) + ``.ctor``.Value

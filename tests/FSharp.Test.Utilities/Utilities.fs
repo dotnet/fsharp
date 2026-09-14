@@ -29,7 +29,7 @@ type TheoryForNETCOREAPPAttribute() =
 
 type FactForNETCOREAPPAttribute() =
     inherit FactAttribute()
-    #if !NETCOREAPP    
+    #if !NETCOREAPP
         do base.Skip <- "Only NETCOREAPP is supported runtime for this kind of test."
     #endif
 
@@ -48,7 +48,7 @@ type FactForWINDOWSAttribute() =
 module SignedBuildSkip =
     let isSignedBuild = System.Environment.GetEnvironmentVariable("SIGNTYPE") = "Real"
     let skipMessage = "Test skipped on signed builds due to NuGet package restore restrictions"
-    
+
     let skipIfSigned (attr: #FactAttribute) =
         if isSignedBuild then
             attr.Skip <- skipMessage
@@ -64,7 +64,7 @@ type TheorySkipOnSignedBuildAttribute() as this =
 type FactForNETCOREAPPSkipOnSignedBuildAttribute() as this =
     inherit FactAttribute()
     do SignedBuildSkip.skipIfSigned this
-    #if !NETCOREAPP    
+    #if !NETCOREAPP
     do base.Skip <- "Only NETCOREAPP is supported runtime for this kind of test."
     #endif
 
@@ -104,7 +104,7 @@ module Utilities =
     let inline getTestsDirectory src dir = src ++ dir
 
     module private TestReferences =
-        let testDirectory = lazy ( 
+        let testDirectory = lazy (
             let path = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString())
             Directory.CreateDirectory(path) |> ignore
             path)
@@ -216,7 +216,7 @@ let main argv = 0"""
                     File.WriteAllText(directoryBuildTargetsFileName, directoryBuildTargets)
 
                     let exitCode, dotnetoutput, dotneterrors = Commands.executeProcess config.DotNetExe "build" projectDirectory
-                    
+
                     if exitCode <> 0 || errors.Length > 0 then
                         errors <- dotneterrors
                         output <- dotnetoutput
@@ -256,10 +256,10 @@ An error occurred getting netcoreapp references (compare the output of `dotnet -
 
         let private netStandard20References =
             lazy ImmutableArray.Create(
-                NetStandard20.References.netStandardRef.Value, 
-                NetStandard20.References.mscorlibRef.Value, 
-                NetStandard20.References.systemRuntimeRef.Value, 
-                NetStandard20.References.systemCoreRef.Value, 
+                NetStandard20.References.netStandardRef.Value,
+                NetStandard20.References.mscorlibRef.Value,
+                NetStandard20.References.systemRuntimeRef.Value,
+                NetStandard20.References.systemCoreRef.Value,
                 NetStandard20.References.systemDynamicRuntimeRef.Value,
                 NetStandard20.References.systemCollectionsImmutableRef.Value)
 

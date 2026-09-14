@@ -21,7 +21,7 @@ module Checked =
     [<Theory; FileInlineData("unchecked01.fs")>]
     let ``fsc-unchecked - unchecked01_fs --checked`` compilation =
        compilation
-        |> getCompilation 
+        |> getCompilation
         |> asFs
         |> withOptions ["--checked"]
         |> compile
@@ -31,7 +31,7 @@ module Checked =
     [<Theory; FileInlineData("unchecked01.fs")>]
     let ``fsc-unchecked - unchecked01_fs --checked+`` compilation =
        compilation
-        |> getCompilation 
+        |> getCompilation
         |> asFs
         |> withOptions ["--checked+"]
         |> compile
@@ -41,7 +41,7 @@ module Checked =
     [<Theory; FileInlineData("unchecked01.fs")>]
     let ``fsc-unchecked - unchecked01_fs --checked-`` compilation =
        compilation
-        |> getCompilation 
+        |> getCompilation
         |> asFs
         |> withOptions ["--checked-"]
         |> compile
@@ -51,7 +51,7 @@ module Checked =
     [<Theory; FileInlineData("unchecked01.fs")>]
     let ``fsi-unchecked - unchecked01_fs --checked-`` compilation =
        compilation
-        |> getCompilation 
+        |> getCompilation
         |> asFsx
         |> withOptions ["--checked-"]
         |> compile
@@ -61,7 +61,7 @@ module Checked =
     [<Theory; FileInlineData("checked01.fs")>]
     let ``fsi-checked - checked01_fs --checked`` compilation =
        compilation
-        |> getCompilation 
+        |> getCompilation
         |> asFsx
         |> withOptions ["--checked"]
         |> compile
@@ -71,7 +71,7 @@ module Checked =
     [<Theory; FileInlineData("checked01.fs")>]
     let ``fsi-checked - checked01_fs --checked+`` compilation =
        compilation
-        |> getCompilation 
+        |> getCompilation
         |> asFsx
         |> withOptions ["--checked+"]
         |> compile
@@ -81,7 +81,7 @@ module Checked =
     [<Theory; FileInlineData("checked01.fs")>]
     let ``fsi-checked - checked01_fs --checked-`` compilation =
        compilation
-        |> getCompilation 
+        |> getCompilation
         |> asFsx
         |> withOptions ["--checked-"]
         |> compile
@@ -94,7 +94,7 @@ module Checked =
     [<Theory; FileInlineData("checked01.fs")>]
     let ``fsc-checked - checked01_fs --checked  --checked+`` compilation =
        compilation
-        |> getCompilation 
+        |> getCompilation
         |> asFs
         |> withOptions ["--checked"; "--checked+"]
         |> compile
@@ -104,7 +104,7 @@ module Checked =
     [<Theory; FileInlineData("checked01.fs")>]
     let ``fsc-checked - checked01_fs --checked- --checked+`` compilation =
        compilation
-        |> getCompilation 
+        |> getCompilation
         |> asFs
         |> withOptions ["--checked-"; "--checked+"]
         |> compile
@@ -114,7 +114,7 @@ module Checked =
     [<Theory; FileInlineData("unchecked01.fs")>]
     let ``fsc-checked - unchecked01_fs --checked+ --checked-`` compilation =
        compilation
-        |> getCompilation 
+        |> getCompilation
         |> asFs
         |> withOptions ["--checked+"; "--checked-"]
         |> compile
@@ -124,7 +124,7 @@ module Checked =
     [<Theory; FileInlineData("checked01.fs")>]
     let ``fsi-checked - checked01_fs --checked  --checked+`` compilation =
        compilation
-        |> getCompilation 
+        |> getCompilation
         |> asFsx
         |> withOptions ["--checked"; "--checked+"]
         |> compile
@@ -134,7 +134,7 @@ module Checked =
     [<Theory; FileInlineData("checked01.fs")>]
     let ``fsi-checked - checked01_fs --checked- --checked+`` compilation =
        compilation
-        |> getCompilation 
+        |> getCompilation
         |> asFsx
         |> withOptions ["--checked-"; "--checked+"]
         |> compile
@@ -144,7 +144,7 @@ module Checked =
     [<Theory; FileInlineData("unchecked01.fs")>]
     let ``fsi-checked - unchecked01_fs --checked+ --checked-`` compilation =
        compilation
-        |> getCompilation 
+        |> getCompilation
         |> asFsx
         |> withOptions ["--checked+"; "--checked-"]
         |> compile
@@ -155,7 +155,7 @@ module Checked =
     [<Theory; FileInlineData("unrecogarg.fs")>]
     let ``fsc-checked - unchecked01_fs Checked`` compilation =
        compilation
-        |> getCompilation 
+        |> getCompilation
         |> asFs
         |> withOptions ["--Checked"]
         |> compile
@@ -168,7 +168,7 @@ module Checked =
     [<Theory; FileInlineData("unrecogarg.fs")>]
     let ``fsc-checked - unchecked01_fs --checked-star`` compilation =
        compilation
-        |> getCompilation 
+        |> getCompilation
         |> asFs
         |> withOptions ["--checked*"]
         |> compile
@@ -181,7 +181,7 @@ module Checked =
     [<Theory; FileInlineData( "UncheckedDefaultOf01.fs")>]
     let ``fsc-checked - UncheckedDefaultOf01`` compilation =
        compilation
-        |> getCompilation 
+        |> getCompilation
         |> asFs
         |> asExe
         |> compile

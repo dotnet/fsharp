@@ -2,5 +2,5 @@
 let x = 7
 
 [<EntryPoint>]
-let main argv = 
+let main argv =
     0

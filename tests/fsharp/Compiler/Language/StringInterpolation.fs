@@ -776,7 +776,7 @@ let TripleInterpolatedInVerbatimInterpolated = $\"123{456}789{$\"\"\"012\"\"\"}3
                "Invalid interpolated string. Triple quote string literals may not be used in interpolated expressions. Consider using an explicit 'let' binding for the interpolation expression.");
               (FSharpDiagnosticSeverity.Error, 3374, (9, 62, 9, 66),
                "Invalid interpolated string. Triple quote string literals may not be used in interpolated expressions. Consider using an explicit 'let' binding for the interpolation expression.")|]
-  
+
     [<Fact>]
     let ``String interpolation negative incomplete string`` () =
         let code =    """let x1 = $"one %d{System.String.Empty}"""
@@ -786,7 +786,7 @@ let TripleInterpolatedInVerbatimInterpolated = $\"123{456}789{$\"\"\"012\"\"\"}3
                "Incomplete structured construct at or before this point in binding. Expected interpolated string (final part), interpolated string (part) or other token.");
               (FSharpDiagnosticSeverity.Error, 3379, (1, 38, 1, 39),
                "Incomplete interpolated string begun at or before here")|]
-  
+
     [<Fact>]
     let ``String interpolation negative incomplete string fill`` () =
         let code =    """let x1 = $"one %d{System.String.Empty"""
@@ -796,7 +796,7 @@ let TripleInterpolatedInVerbatimInterpolated = $\"123{456}789{$\"\"\"012\"\"\"}3
                "Incomplete structured construct at or before this point in binding. Expected interpolated string (final part), interpolated string (part) or other token.");
               (FSharpDiagnosticSeverity.Error, 3378, (1, 18, 1, 19),
                "Incomplete interpolated string expression fill begun at or before here")|]
-  
+
     [<Fact>]
     let ``String interpolation negative incomplete verbatim string`` () =
         let code =    """let x1 = @$"one %d{System.String.Empty} """
@@ -806,7 +806,7 @@ let TripleInterpolatedInVerbatimInterpolated = $\"123{456}789{$\"\"\"012\"\"\"}3
                "Incomplete structured construct at or before this point in binding. Expected interpolated string (final part), interpolated string (part) or other token.");
               (FSharpDiagnosticSeverity.Error, 3380, (1, 39, 1, 40),
                "Incomplete interpolated verbatim string begun at or before here")|]
-  
+
     [<Fact>]
     let ``String interpolation negative incomplete triple quote string`` () =
         let code = "let x1 = $\"\"\"one"

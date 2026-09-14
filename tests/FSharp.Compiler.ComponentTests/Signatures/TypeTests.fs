@@ -109,7 +109,7 @@ module Extensions
 type Map<'K,'V when 'K: comparison> with
 
   member X: t: 'T -> k: 'K -> 'K option * ({| n: 'K array |} * int) when 'K: comparison"""
- 
+
 [<Fact>]
 let ``Type extension with lowercase type parameters names from source`` () =
     FSharp """

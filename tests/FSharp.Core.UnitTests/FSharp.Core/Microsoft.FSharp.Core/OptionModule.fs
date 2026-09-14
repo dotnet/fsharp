@@ -24,7 +24,7 @@ type OptionModule() =
         Assert.AreEqual( Option.flatten None, None)
         Assert.AreEqual( Option.flatten (Some None), None)
         Assert.AreEqual( Option.flatten (Some <| Some 1), Some 1)
-        Assert.AreEqual( Option.flatten (Some <| Some ""), Some "") 
+        Assert.AreEqual( Option.flatten (Some <| Some ""), Some "")
 
     [<Fact>]
     member this.FilterSomeIntegerWhenPredicateReturnsTrue () =
@@ -32,7 +32,7 @@ type OptionModule() =
             let actual = x |> Some |> Option.filter (fun _ -> true)
 
             let expected = x |> Some
-            Assert.AreEqual(expected, actual)            
+            Assert.AreEqual(expected, actual)
         [0;1;-1;42] |> List.iter test
 
     [<Fact>]
@@ -131,9 +131,9 @@ type OptionModule() =
     member this.OfToObj() =
         Assert.True( Option.toObj (Some "3") = "3")
         Assert.True( Option.toObj (Some "") = "")
-        Assert.True( Option.toObj (Some null) = null) // TODO NULLNESS: this type annotation should not be needed 
-        Assert.True( Option.toObj None = null)     
-     
+        Assert.True( Option.toObj (Some null) = null) // TODO NULLNESS: this type annotation should not be needed
+        Assert.True( Option.toObj None = null)
+
         Assert.True( Option.ofObj "3" = Some "3")
         Assert.True( Option.ofObj "" = Some "")
         Assert.True( Option.ofObj [| "" |] = Some [| "" |])
@@ -232,7 +232,7 @@ type ValueOptionTests() =
     member _.``ValueNone gives "ValueNone" when calling ToString`` () =
         Assert.AreEqual("ValueNone", ValueNone.ToString())
         Assert.AreEqual("ValueNone", string ValueNone)
-    
+
     [<Fact>]
     member _.``ValueNone with sprintf`` () =
         Assert.AreEqual("ValueNone", sprintf "%O" (ValueNone.ToString()))
@@ -264,13 +264,13 @@ type ValueOptionTests() =
         Assert.AreEqual((ValueSome (1,2)).Value, (1,2))
         Assert.AreEqual(defaultValueArg ValueNone 1, 1)
         Assert.AreEqual(defaultValueArg (ValueSome 3) 1, 3)
-    
+
     [<Fact>]
     member this.Flatten () =
         Assert.AreEqual(ValueOption.flatten ValueNone, ValueNone)
         Assert.AreEqual(ValueOption.flatten (ValueSome ValueNone), ValueNone)
         Assert.AreEqual(ValueOption.flatten (ValueSome <| ValueSome 1), ValueSome 1)
-        Assert.AreEqual(ValueOption.flatten (ValueSome <| ValueSome ""), ValueSome "") 
+        Assert.AreEqual(ValueOption.flatten (ValueSome <| ValueSome ""), ValueSome "")
 
     [<Fact>]
     member this.FilterValueSomeIntegerWhenPredicateReturnsTrue () =
@@ -377,8 +377,8 @@ type ValueOptionTests() =
         Assert.True(ValueOption.toObj (ValueSome "3") = "3")
         Assert.True(ValueOption.toObj (ValueSome "") = "")
         Assert.True(ValueOption.toObj (ValueSome null) = null)
-        Assert.True(ValueOption.toObj ValueNone = null)     
-     
+        Assert.True(ValueOption.toObj ValueNone = null)
+
         Assert.True(ValueOption.ofObj "3" = ValueSome "3")
         Assert.True(ValueOption.ofObj "" = ValueSome "")
         Assert.True(ValueOption.ofObj [| "" |] = ValueSome [| "" |])
@@ -393,7 +393,7 @@ type ValueOptionTests() =
         Assert.Equal(None, ValueOption.toOption (ValueNone: int voption))
         Assert.Equal(ValueSome 3, ValueOption.ofOption (Some 3))
         Assert.Equal(ValueNone, ValueOption.ofOption (None: int option))
-     
+
     [<Fact>]
     member this.DefaultValue() =
         Assert.AreEqual(ValueOption.defaultValue 3 ValueNone, 3)
