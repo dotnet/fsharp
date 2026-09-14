@@ -374,4 +374,7 @@ Use live (unsaved) buffers for analysis</value>
   <data name="UseFSharpOptionalParameter" xml:space="preserve">
     <value>Use F# '?' optional parameter</value>
   </data>
+  <data name="UseFSharpStructOptionalParameter" xml:space="preserve">
+    <value>Use F# '[&lt;Struct&gt;] ?' optional parameter</value>
+  </data>
 </root>
