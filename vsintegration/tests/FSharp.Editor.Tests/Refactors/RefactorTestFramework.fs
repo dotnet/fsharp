@@ -8,6 +8,8 @@ open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
 
+open FSharp.Compiler.CodeAnalysis
+
 open FSharp.Editor.Tests.Helpers
 open Microsoft.CodeAnalysis.CodeRefactorings
 open Microsoft.CodeAnalysis.CodeActions
@@ -31,7 +33,13 @@ type TestContext(Solution: Solution) =
         new TestContext(solution)
 
     static member CreateWithCodeAndDependency (code: string) (codeForPreviousFile: string) =
-        let mutable solution = RoslynTestHelpers.CreateSolution(codeForPreviousFile)
+        let options =
+            { RoslynTestHelpers.DefaultProjectOptions with
+                SourceFiles = [| "C:\\test.fs"; "C:\\test2.fs" |]
+            }
+
+        let mutable solution =
+            RoslynTestHelpers.CreateSolution(codeForPreviousFile, options)
 
         let firstProject = solution.Projects.First()
         solution <- solution.AddDocument(DocumentId.CreateNewId(firstProject.Id), "test2.fs", code, filePath = "C:\\test2.fs")
