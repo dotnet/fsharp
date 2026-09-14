@@ -84,6 +84,16 @@
         <target state="new">Convert to struct tuple</target>
         <note />
       </trans-unit>
+      <trans-unit id="ConvertToReferenceAnonymousRecord">
+        <source>Convert to reference anonymous record</source>
+        <target state="new">Convert to reference anonymous record</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConvertToStructAnonymousRecord">
+        <source>Convert to struct anonymous record</source>
+        <target state="new">Convert to struct anonymous record</target>
+        <note />
+      </trans-unit>
       <trans-unit id="FSharpDisposableLocalValuesClassificationType">
         <source>F# Disposable Values (locals)</source>
         <target state="translated">F# 可释放值(局部值)</target>

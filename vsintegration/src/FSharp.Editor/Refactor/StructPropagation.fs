@@ -1,11 +1,15 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal Microsoft.VisualStudio.FSharp.Editor.TuplePropagation
+module internal Microsoft.VisualStudio.FSharp.Editor.StructPropagation
 
 open System
 open System.Collections.Generic
+open System.Threading
+open System.Threading.Tasks
 
 open Microsoft.CodeAnalysis
+open Microsoft.CodeAnalysis.CodeActions
+open Microsoft.CodeAnalysis.CodeRefactorings
 open Microsoft.CodeAnalysis.Text
 
 open FSharp.Compiler.CodeAnalysis
@@ -14,7 +18,7 @@ open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 
 open CancellableTasks
-open TupleConversion
+open StructConversion
 
 [<NoComparison; NoEquality>]
 type private Source =
@@ -39,6 +43,17 @@ let private startsAt (position: pos) (ident: Ident) =
 
 let private endsAt (position: pos) (ident: Ident) =
     Position.posEq ident.idRange.End position
+
+let private isGenericParameter (mfv: FSharpMemberOrFunctionOrValue) (group: int) (index: int voption) =
+    if group >= mfv.CurriedParameterGroups.Count then
+        false
+    else
+        let parameters = mfv.CurriedParameterGroups[group]
+
+        match index with
+        | ValueSome index when index < parameters.Count -> parameters[index].Type.IsGenericParameter
+        | ValueSome _ -> false
+        | ValueNone -> parameters.Count = 1 && parameters[0].Type.IsGenericParameter
 
 let rec private tryPatternIdent (pat: SynPat) =
     match pat with
@@ -267,17 +282,14 @@ let private tryParameterPattern (tree: ParsedInput) (declaration: range) (group:
         |> ValueOption.bind (fun struct (body, bodyPath) -> tryLambda body bodyPath)
         |> ValueOption.bind (fun struct (args, _, argsPath) -> parameterIn args argsPath))
 
-let private annotationChanges (sourceText: SourceText) (toStruct: bool) (annotation: SynType) =
-    typeChanges sourceText toStruct true (stripParenTypes annotation)
-
-let rec private isTupleAbbreviation (source: Source) (annotation: SynType) =
+let rec private isStructCandidateAbbreviation (source: Source) (annotation: SynType) =
     match stripParenTypes annotation with
-    | SynType.App(typeName = typeName) -> isTupleAbbreviation source typeName
+    | SynType.App(typeName = typeName) -> isStructCandidateAbbreviation source typeName
     | SynType.LongIdent(SynLongIdent(id = ids)) ->
         match List.tryLast ids |> Option.bind (symbolUseAt source) |> Option.map _.Symbol with
-        | Some(:? FSharpEntity as entity) ->
-            entity.IsFSharpAbbreviation
-            && entity.AbbreviatedType.StripAbbreviations().IsTupleType
+        | Some(:? FSharpEntity as entity) when entity.IsFSharpAbbreviation ->
+            let abbreviated = entity.AbbreviatedType.StripAbbreviations()
+            abbreviated.IsTupleType || abbreviated.IsAnonRecordType
         | _ -> false
     | _ -> false
 
@@ -338,8 +350,11 @@ let private groupCount (mfv: FSharpMemberOrFunctionOrValue) =
 
 let private isValueSymbol (symbol: FSharpSymbol) =
     match symbol with
-    | :? FSharpField -> true
-    | :? FSharpMemberOrFunctionOrValue as mfv -> not mfv.IsFunction && not mfv.IsMember
+    | :? FSharpField as field -> not field.FieldType.IsGenericParameter
+    | :? FSharpMemberOrFunctionOrValue as mfv ->
+        not mfv.IsFunction
+        && not mfv.IsMember
+        && not (mfv.FullTypeSafe |> Option.exists _.IsGenericParameter)
     | _ -> false
 
 let private tryPartiallyAppliedFunction (source: Source) (body: SynExpr) =
@@ -350,12 +365,15 @@ let private tryPartiallyAppliedFunction (source: Source) (body: SynExpr) =
 
     tryForwardedFunction body |> ValueOption.filter isPartiallyApplied
 
-type private Engine(solution: Solution, toStruct: bool, userOpName: string) =
+type private Engine(solution: Solution, kind: StructKind, toStruct: bool, userOpName: string) =
     let sources = Dictionary<DocumentId, Source>()
     let changes = Dictionary<DocumentId, ResizeArray<TextChange>>()
     let visited = HashSet<string>(StringComparer.Ordinal)
     let pending = Queue<Slot>()
     let mutable failed = false
+
+    let annotationChanges (sourceText: SourceText) (annotation: SynType) =
+        kind.TypeChanges sourceText toStruct true (stripParenTypes annotation)
 
     let isDeclaration (useRange: range) (declaration: range) =
         String.Equals(useRange.FileName, declaration.FileName, StringComparison.OrdinalIgnoreCase)
@@ -368,15 +386,15 @@ type private Engine(solution: Solution, toStruct: bool, userOpName: string) =
             |> ValueOption.map (fun document -> struct (declaration, document))
         | None -> ValueNone
 
-    let keyOf (kind: string) (symbol: FSharpSymbol) =
+    let keyOf (slotKind: string) (symbol: FSharpSymbol) =
         symbol.DeclarationLocation
-        |> Option.map (fun m -> $"{kind}|{m.FileName}|{m.StartLine}|{m.StartColumn}")
+        |> Option.map (fun m -> $"{slotKind}|{m.FileName}|{m.StartLine}|{m.StartColumn}")
 
     let tryFunctionUse (source: Source) (name: Ident) =
         match symbolUseAt source name with
         | Some functionUse when (tryDeclarationDocument functionUse.Symbol).IsSome ->
             match functionUse.Symbol with
-            | :? FSharpMemberOrFunctionOrValue as mfv when mfv.IsFunction || mfv.IsMember -> ValueSome functionUse
+            | :? FSharpMemberOrFunctionOrValue as mfv when mfv.IsFunction || mfv.IsMember -> ValueSome(struct (functionUse, mfv))
             | _ -> ValueNone
         | _ -> ValueNone
 
@@ -426,10 +444,10 @@ type private Engine(solution: Solution, toStruct: bool, userOpName: string) =
         | ValueNone -> failed <- true
 
     member this.AddAnnotation (source: Source) (annotation: SynType) =
-        if isTupleAbbreviation source annotation then
+        if isStructCandidateAbbreviation source annotation then
             failed <- true
         else
-            this.Add source (annotationChanges source.Text toStruct annotation)
+            this.Add source (annotationChanges source.Text annotation)
 
     member _.Enqueue (key: string option) (slot: Slot) =
         match key with
@@ -447,12 +465,13 @@ type private Engine(solution: Solution, toStruct: bool, userOpName: string) =
 
     member this.EnqueueResult (source: Source) (name: Ident) =
         match tryFunctionUse source name with
-        | ValueSome functionUse -> this.Enqueue (keyOf "R" functionUse.Symbol) (Slot.Result(functionUse, source))
-        | ValueNone -> ()
+        | ValueSome(struct (functionUse, mfv)) when not mfv.ReturnParameter.Type.IsGenericParameter ->
+            this.Enqueue (keyOf "R" functionUse.Symbol) (Slot.Result(functionUse, source))
+        | _ -> ()
 
     member this.EnqueueParameter (source: Source) (functionName: Ident) (group: int) (index: int voption) =
         match tryFunctionUse source functionName with
-        | ValueSome functionUse ->
+        | ValueSome(struct (functionUse, mfv)) when not (isGenericParameter mfv group index) ->
             let position =
                 match index with
                 | ValueSome index -> $"{group}|{index}"
@@ -461,7 +480,7 @@ type private Engine(solution: Solution, toStruct: bool, userOpName: string) =
             this.Enqueue
                 (keyOf "P" functionUse.Symbol |> Option.map (fun key -> $"{key}|{position}"))
                 (Slot.Parameter(functionUse, source, group, index))
-        | ValueNone -> ()
+        | _ -> ()
 
     member this.EnqueueNamedParameter (source: Source) (methodName: Ident) (group: int) (parameterName: Ident) =
         match symbolUseAt source methodName |> Option.map _.Symbol with
@@ -482,7 +501,7 @@ type private Engine(solution: Solution, toStruct: bool, userOpName: string) =
             this.IntoPattern source inner (SyntaxNode.SynPat pat :: path)
         | SynPat.Named(ident = SynIdent(ident, _))
         | SynPat.LongIdent(longDotId = SynLongIdent(id = [ ident ]); argPats = SynArgPats.Pats []) -> this.EnqueueValue source ident
-        | SynPat.Tuple _ when not (isParameterList pat path) -> this.AddOrFail source (tryPatChanges source.Text toStruct pat path)
+        | _ when kind.IsPat pat path -> this.AddOrFail source (kind.PatChanges source.Text toStruct pat path)
         | SynPat.As(lhsPat = lhs; rhsPat = rhs) ->
             this.IntoPattern source lhs (SyntaxNode.SynPat pat :: path)
             this.IntoPattern source rhs (SyntaxNode.SynPat pat :: path)
@@ -563,8 +582,8 @@ type private Engine(solution: Solution, toStruct: bool, userOpName: string) =
         | SynExpr.Typed(expr = inner; targetType = annotation) ->
             this.AddAnnotation source annotation
             this.Retarget source inner childPath
-        | SynExpr.Tuple _ when not (isArgumentList (callsMethod source.Text source.Check) expr path) ->
-            this.AddOrFail source (tryExprChanges source.Text toStruct expr path)
+        | _ when kind.IsExpr (callsMethod source.Text source.Check) expr path ->
+            this.AddOrFail source (kind.ExprChanges source.Text toStruct expr path)
         | SynExpr.Ident ident -> this.EnqueueValue source ident
         | SynExpr.LongIdent(longDotId = SynLongIdent(id = ids))
         | SynExpr.DotGet(longDotId = SynLongIdent(id = ids)) -> List.tryLast ids |> Option.iter (this.EnqueueValue source)
@@ -709,12 +728,13 @@ type private Engine(solution: Solution, toStruct: bool, userOpName: string) =
 
     member this.DefineParameter (definition: Source) (declaration: range) (group: int) (index: int voption) =
         match tryParameterPattern definition.Tree declaration group index with
-        | ValueSome(struct (SynPat.Tuple _ as parameter, parameterPath)) when isParameterList parameter parameterPath -> false
+        | ValueSome(struct (SynPat.Tuple _ as parameter, parameterPath)) when not (kind.IsPat parameter parameterPath) -> false
         | ValueSome(struct (parameter, parameterPath)) ->
             match parameter with
             | SynPat.Typed _
             | SynPat.As _ -> this.IntoPattern definition parameter parameterPath
-            | SynPat.Tuple _ -> this.AddOrFail definition (tryPatChanges definition.Text toStruct parameter parameterPath)
+            | _ when kind.IsPat parameter parameterPath ->
+                this.AddOrFail definition (kind.PatChanges definition.Text toStruct parameter parameterPath)
             | _ -> ()
 
             tryPatternIdent parameter |> ValueOption.iter (this.EnqueueValue definition)
@@ -753,21 +773,21 @@ type private Engine(solution: Solution, toStruct: bool, userOpName: string) =
 
     member this.Seed (source: Source) (caretNode: CaretNode) =
         match caretNode with
-        | CaretNode.Expr(tuple, path) ->
-            this.AddOrFail source (tryExprChanges source.Text toStruct tuple path)
-            this.FlowOut source tuple path
-        | CaretNode.Pat(tuple, path) ->
-            this.AddOrFail source (tryPatChanges source.Text toStruct tuple path)
+        | CaretNode.Expr(node, path) ->
+            this.AddOrFail source (kind.ExprChanges source.Text toStruct node path)
+            this.FlowOut source node path
+        | CaretNode.Pat(node, path) ->
+            this.AddOrFail source (kind.PatChanges source.Text toStruct node path)
 
-            for annotation in annotationsOn tuple path do
+            for annotation in annotationsOn node path do
                 this.AddAnnotation source annotation
 
-            match tryMatchedExpression tuple path, tryWholeArgument tuple path with
+            match tryMatchedExpression node path, tryWholeArgument node path with
             | ValueSome matched, _ -> this.FromMatched source matched
             | ValueNone, ValueSome(struct (name, group)) -> this.EnqueueParameter source name group ValueNone
             | ValueNone, ValueNone -> ()
-        | CaretNode.Type(tuple, annotated, isWholeAnnotation) ->
-            this.Add source (typeChanges source.Text toStruct isWholeAnnotation tuple)
+        | CaretNode.Type(node, annotated, isWholeAnnotation) ->
+            this.Add source (kind.TypeChanges source.Text toStruct isWholeAnnotation node)
 
             if isWholeAnnotation then
                 this.SeedAnnotated source annotated
@@ -823,5 +843,69 @@ type private Engine(solution: Solution, toStruct: bool, userOpName: string) =
             return if failed then ValueNone else result
         }
 
-let tryConvert (document: Document) (caretNode: CaretNode) (userOpName: string) =
-    Engine(document.Project.Solution, not (isStructNode caretNode), userOpName).Run(document, caretNode)
+let private hasSignatureFile (document: Document) =
+    let signaturePath = document.FilePath + "i"
+
+    document.Project.Documents
+    |> Seq.exists (fun d -> String.Equals(d.FilePath, signaturePath, StringComparison.OrdinalIgnoreCase))
+
+let private isInQuotation (caretNode: CaretNode) =
+    let path =
+        match caretNode with
+        | CaretNode.Expr(path = path)
+        | CaretNode.Pat(path = path)
+        | CaretNode.Type(annotated = Annotated.Pattern(path = path))
+        | CaretNode.Type(annotated = Annotated.Expression(path = path)) -> path
+        | CaretNode.Type _ -> []
+
+    path
+    |> List.exists (function
+        | SyntaxNode.SynExpr(SynExpr.Quote _) -> true
+        | _ -> false)
+
+let private conversionAction (title: string) (solution: Solution) =
+    CodeAction.Create(title, Func<CancellationToken, Task<Solution>>(fun _ -> Task.FromResult solution), title)
+
+let registerConversion
+    (context: CodeRefactoringContext)
+    (kind: StructKind)
+    (toStructTitle: unit -> string)
+    (toReferenceTitle: unit -> string)
+    (userOpName: string)
+    =
+    cancellableTask {
+        let document = context.Document
+
+        if not (document.IsFSharpSignatureFile || hasSignatureFile document) then
+            let! cancellationToken = CancellableTask.getCancellationToken ()
+            let! sourceText = document.GetTextAsync cancellationToken
+            let! parseResults = document.GetFSharpParseResultsAsync userOpName
+
+            let caret =
+                let linePosition = sourceText.Lines.GetLinePosition context.Span.Start
+                Position.mkPos (Line.fromZ linePosition.Line) linePosition.Character
+
+            let hasCandidate =
+                (tryCaretNode kind (fun _ -> false) caret parseResults.ParseTree).IsSome
+
+            let! found =
+                if hasCandidate then
+                    cancellableTask {
+                        let! _, checkResults = document.GetFSharpParseAndCheckResultsAsync userOpName
+                        return tryCaretNode kind (callsMethod sourceText checkResults) caret parseResults.ParseTree
+                    }
+                else
+                    CancellableTask.singleton ValueNone
+
+            match found with
+            | ValueSome caretNode when not (isInQuotation caretNode) && canChange kind sourceText caretNode ->
+                let isStruct = kind.IsStruct caretNode
+                let! converted = Engine(document.Project.Solution, kind, not isStruct, userOpName).Run(document, caretNode)
+
+                match converted with
+                | ValueSome solution ->
+                    let title = if isStruct then toReferenceTitle () else toStructTitle ()
+                    context.RegisterRefactoring(conversionAction title solution)
+                | ValueNone -> ()
+            | _ -> ()
+    }
