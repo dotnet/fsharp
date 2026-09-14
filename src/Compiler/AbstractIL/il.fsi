@@ -2320,12 +2320,6 @@ val internal appendInstrsToMethod: ILInstr list -> ILMethodDef -> ILMethodDef
 val internal prependInstrsToCode: ILInstr list -> ILCode -> ILCode
 val internal prependInstrsToMethod: ILInstr list -> ILMethodDef -> ILMethodDef
 
-/// Injecting initialization code into a class.
-/// Add some code to the end of the .cctor for a type.  Create a .cctor
-/// if one doesn't exist already.
-val internal prependInstrsToClassCtor:
-    ILInstr list -> ILDebugPoint option -> ILDebugImports option -> ILTypeDef -> ILTypeDef
-
 /// Derived functions for making some simple constructors
 val internal mkILStorageCtor:
     ILInstr list *

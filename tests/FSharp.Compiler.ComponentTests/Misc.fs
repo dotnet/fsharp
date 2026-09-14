@@ -31,8 +31,8 @@ IL_0005:  ret"""
 IL_0000:  call       !!0[] [runtime]System.Array::Empty<!!0>()
 IL_0005:  ret""" ]
 
-    [<Fact(Skip = "Blocked on compiler fix: duplicate .cctor in generic DU with static member val and nullary cases")>]
-    let ``Discriminated union with generic statics generates single cctor calling renamed methods``() =
+    [<Fact>]
+    let ``Discriminated union with generic statics generates a single cctor initializing singletons first``() =
         FSharp """
 module DuplicateCctorFix
 
@@ -49,14 +49,11 @@ type TestUnion<'T when 'T: comparison> =
          """
          |> compile
          |> shouldSucceed
-         |> verifyIL [""".method private specialname rtspecialname static 
-          void  .cctor() cil managed
+         |> verifyIL [""".method private specialname rtspecialname static void  .cctor() cil managed
   {
-    // Code size
-    IL_0000:  call       void DuplicateCctorFix/TestUnion`1::cctor_renamed_0()
-    IL_0005:  call       void DuplicateCctorFix/TestUnion`1::cctor_renamed_1()
-    IL_000a:  ret
-  } // end of method TestUnion`1::.cctor
 
-  .method private static void cctor_renamed_0() cil managed
-  .method private static void cctor_renamed_1() cil managed"""]
+    .maxstack  8
+    IL_0000:  newobj     instance void class DuplicateCctorFix/TestUnion`1/_C<!T>::.ctor()
+    IL_0005:  stsfld     class DuplicateCctorFix/TestUnion`1<!0> class DuplicateCctorFix/TestUnion`1<!T>::_unique_C
+    IL_000a:  ldstr      "test"
+    IL_000f:  stsfld     string class DuplicateCctorFix/TestUnion`1<!T>::StaticProperty@"""]

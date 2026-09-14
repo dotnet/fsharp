@@ -4539,60 +4539,6 @@ let appendInstrsToMethod newCode md =
 let prependInstrsToMethod newCode md =
     mdef_code2code (prependInstrsToCode newCode) md
 
-// Creates cctor if needed
-let cdef_cctorCode2CodeOrCreate tag imports f (cd: ILTypeDef) =
-    let mdefs = cd.Methods
-
-    let cctor, renamedCctors =
-        match mdefs.FindByName ".cctor" with
-        | [ mdef ] -> mdef, []
-        | [] ->
-            let body = mkMethodBody (false, [], 1, nonBranchingInstrsToCode [], tag, imports)
-            mkILClassCtor body, []
-        | multipleCctors ->
-            // Handle multiple .cctor methods by renaming them and creating a new .cctor that calls them
-            // This resolves the "duplicate entry '.cctor' in method table" error (FS2014)
-            let renamedCctors =
-                multipleCctors
-                |> List.mapi (fun i mdef ->
-                    let newName = sprintf "cctor_renamed_%d" i
-                    mdef.With(name = newName))
-
-            // Create call instructions for each renamed .cctor
-            // Use a simple self-referencing type
-            let currentTypeRef = mkILTyRef (ILScopeRef.Local, cd.Name)
-            let currentType = mkILNonGenericBoxedTy currentTypeRef
-
-            let callInstrs =
-                renamedCctors
-                |> List.map (fun mdef ->
-                    let mspec =
-                        mkILNonGenericStaticMethSpecInTy (currentType, mdef.Name, [], ILType.Void)
-
-                    mkNormalCall mspec)
-
-            // Create new .cctor that calls all renamed methods
-            let newCctorInstrs = callInstrs @ [ I_ret ]
-
-            let newCctorBody =
-                mkMethodBody (false, [], 8, nonBranchingInstrsToCode newCctorInstrs, tag, imports)
-
-            let newCctor = mkILClassCtor newCctorBody
-
-            newCctor, renamedCctors
-
-    let methods =
-        ILMethodDefs(fun () ->
-            [|
-                yield f cctor
-                yield! renamedCctors
-                for md in mdefs do
-                    if md.Name <> ".cctor" then
-                        yield md
-            |])
-
-    cd.With(methods = methods)
-
 let mkRefToILMethod (tref, md: ILMethodDef) =
     mkILMethRef (tref, md.CallingConv, md.Name, md.GenericParams.Length, md.ParameterTypes, md.Return.Type)
 
@@ -4604,10 +4550,6 @@ let mkRefForILMethod scope (tdefs, tdef) mdef =
 
 let mkRefForILField scope (tdefs, tdef) (fdef: ILFieldDef) =
     mkILFieldRef (mkRefForNestedILTypeDef scope (tdefs, tdef), fdef.Name, fdef.FieldType)
-
-// Creates cctor if needed
-let prependInstrsToClassCtor instrs tag imports cd =
-    cdef_cctorCode2CodeOrCreate tag imports (prependInstrsToMethod instrs) cd
 
 let mkILField (isStatic, nm, ty, init: ILFieldInit option, at: byte[] option, access, isLiteral) =
     ILFieldDef(

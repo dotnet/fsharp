@@ -2033,62 +2033,6 @@ type CodegenFileScope private () =
 // Buffers for compiling modules. The entire assembly gets compiled via an AssemblyBuilder
 //--------------------------------------------------------------------------
 
-let private (|ControlFlowInstr|_|) instr =
-    match instr with
-    | I_ret
-    | I_br _
-    | I_jmp _
-    | I_brcmp _
-    | I_switch _
-    | I_throw
-    | I_rethrow
-    | I_endfinally
-    | I_endfilter
-    | I_leave _ -> true
-    | _ -> false
-
-/// The instructions (without the trailing 'ret') and stack depth of a straight-line initializer:
-/// no locals, no exception handlers, no control flow.
-let private tryGetStraightLineInitInstrs (md: ILMethodDef) =
-    match md.Body with
-    | MethodBody.IL il ->
-        let body = il.Value
-        let instrs = body.Code.Instrs
-
-        let isStraightLine instr =
-            match instr with
-            | ControlFlowInstr -> false
-            | _ -> true
-
-        if
-            body.Locals.IsEmpty
-            && body.Code.Exceptions.IsEmpty
-            && body.Code.Locals.IsEmpty
-            && instrs.Length > 0
-            && instrs[instrs.Length - 1] = I_ret
-            && instrs[0 .. instrs.Length - 2] |> Array.forall isStraightLine
-        then
-            Some(List.ofArray instrs[0 .. instrs.Length - 2], body.MaxStack)
-        else
-            None
-    | _ -> None
-
-/// Prepend a straight-line static initializer to another .cctor.
-let private mergeCctorInitInstrs instrs maxStack (target: ILMethodDef) =
-    let merged = prependInstrsToMethod instrs target
-
-    match merged.Body with
-    | MethodBody.IL il ->
-        let body = il.Value
-
-        let body =
-            { body with
-                MaxStack = max body.MaxStack maxStack
-            }
-
-        merged.With(body = notlazy (MethodBody.IL(notlazy body)))
-    | _ -> merged
-
 /// Information collected imperatively for each type definition
 type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
     let keyed (initial: 'T list) =
@@ -2107,6 +2051,11 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
         Dictionary<_, _>(3, HashIdentity.Structural)
 
     let gnested = TypeDefsBuilder()
+
+    /// Union erasure seeds a .cctor initializing the nullary case singleton fields. A generic type's
+    /// static bindings arrive later as a second .cctor and IL permits only one, so the seeded slot and
+    /// its instructions are kept here until they can be merged into that one (issue #19445).
+    let mutable unionCctorInit = ValueNone
 
     member _.Close(g: TcGlobals) =
 
@@ -2150,29 +2099,22 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
             | None -> false
 
         if not discard then
-            // Union erasure emits a .cctor for nullary-case singleton fields, and a generic type's
-            // static bindings are compiled into a .cctor member. IL permits only one: merge the
-            // singleton initializer into the other .cctor, so it runs first (issue #19445).
-            let merged =
-                ilMethodDef.Name = ".cctor"
-                && match ResizeArray.tryFindIndexi (fun _ (_, md: ILMethodDef) -> md.Name = ".cctor") gmethods with
-                   | Some idx ->
-                       let k, existing = gmethods[idx]
+            match unionCctorInit with
+            | ValueSome(idx, instrs) when ilMethodDef.Name = ".cctor" ->
+                // Prefix the singletons onto the incoming .cctor and put it in the seeded slot, so they
+                // are initialized first and only one .cctor is emitted.
+                let k, _ = gmethods[idx]
+                gmethods[idx] <- (k, prependInstrsToMethod instrs ilMethodDef)
+                unionCctorInit <- ValueNone
+            | _ -> gmethods.Add(CodegenFileScope.OrderKey gmethods.Count, ilMethodDef)
 
-                       match tryGetStraightLineInitInstrs existing with
-                       | Some(instrs, maxStack) ->
-                           gmethods[idx] <- (k, mergeCctorInitInstrs instrs maxStack ilMethodDef)
-                           true
-                       | None ->
-                           match tryGetStraightLineInitInstrs ilMethodDef with
-                           | Some(instrs, maxStack) ->
-                               gmethods[idx] <- (k, mergeCctorInitInstrs instrs maxStack existing)
-                               true
-                           | None -> false
-                   | None -> false
-
-            if not merged then
-                gmethods.Add(CodegenFileScope.OrderKey gmethods.Count, ilMethodDef)
+    /// Keep the instructions union erasure seeded into the .cctor, so a .cctor arriving later for the
+    /// type's static bindings can be merged with them instead of duplicating the entry.
+    member _.RetainUnionCctorInit(instrs: ILInstr list) =
+        if not (List.isEmpty instrs) then
+            match ResizeArray.tryFindIndexi (fun _ (_, md: ILMethodDef) -> md.Name = ".cctor") gmethods with
+            | Some idx -> unionCctorInit <- ValueSome(idx, instrs)
+            | None -> ()
 
     member _.NestedTypeDefs = gnested
 
@@ -2672,6 +2614,9 @@ and AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbuf
 
         if ilMethodDef.IsEntryPoint then
             explicitEntryPointInfo <- Some tref
+
+    member _.RetainUnionCctorInit(tref: ILTypeRef, instrs) =
+        gtdefs.FindNestedTypeDefBuilder(tref).RetainUnionCctorInit(instrs)
 
     member _.AddExplicitInitToEntryPoint(tref, fspec, sourceOpt, imports, feefee, seqpt) =
 
@@ -12391,6 +12336,9 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                 else
                     ILTypeInit.BeforeField
 
+            // Set by the union branch below to the instructions initializing the nullary case singletons.
+            let mutable unionCctorInitInstrs = []
+
             let tdef, tdefDiscards =
                 let isSerializable =
                     (not (EntityHasWellKnownAttribute g WellKnownEntityAttributes.AutoSerializableAttribute_False tycon))
@@ -12661,7 +12609,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                                     typeDefTrigger
                             )
 
-                    let tdef2 =
+                    let tdef2, cctorInitInstrs =
                         EraseUnions.mkClassUnionDef
                             (g.AddMethodGeneratedAttributes,
                              g.AddPropertyGeneratedAttributes,
@@ -12673,6 +12621,8 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                             tref
                             tdef
                             cuinfo
+
+                    unionCctorInitInstrs <- cctorInitInstrs
 
                     // Discard the user-supplied (i.e. prim-type.fs) implementations of the get_Empty, get_IsEmpty, get_Value and get_None and Some methods.
                     // This is because we will replace their implementations by ones that load the unique
@@ -12724,6 +12674,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
             let tdef = tdef.WithHasSecurity(not (List.isEmpty securityAttrs))
             let tdef = tdef.With(securityDecls = secDecls)
             mgbuf.AddTypeDef(tref, tdef, false, false, tdefDiscards, m)
+            mgbuf.RetainUnionCctorInit(tref, unionCctorInitInstrs)
 
             // If a non-generic type is written with "static let" and "static do" (i.e. it has a ".cctor")
             // then the code for the .cctor is placed into .cctor for the backing static class for the file.
