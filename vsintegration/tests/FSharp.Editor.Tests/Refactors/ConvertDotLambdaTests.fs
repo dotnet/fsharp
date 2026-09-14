@@ -8,7 +8,12 @@ open Xunit
 
 open FSharp.Editor.Tests.Refactors.RefactorTestFramework
 
-let private inModule (binding: string) = $"module M\n\nlet r = {binding}\n"
+let private inModule (binding: string) =
+    $"""
+module M
+
+let r = {binding}
+"""
 
 let private caretAt (code: string) (marker: string) =
     code.IndexOf(marker, StringComparison.Ordinal)
@@ -37,7 +42,9 @@ let private actionsIn (context: TestContext) (code: string) (marker: string) =
 [<InlineData("x.M(fun y -> y.P)", "x.M(_.P)")>]
 [<InlineData("fun x -> x.P", "_.P")>]
 [<InlineData("(fun x -> x.P)", "(_.P)")>]
-[<InlineData("List.map (fun x ->\n    x.Prop) xs", "List.map _.Prop xs")>]
+[<InlineData("""List.map (fun x ->
+    x.Prop) xs""",
+             "List.map _.Prop xs")>]
 let ``Lambda reading a member of its parameter converts to shorthand`` (before: string, after: string) =
     Assert.Equal(inModule after, refactored (inModule before) "fun")
 
@@ -87,8 +94,23 @@ let ``No action`` (binding: string) =
 
 [<Fact>]
 let ``Lambda spanning multiple lines still converts to shorthand`` () =
-    let before = "module M\n\nlet r =\n    fun x ->\n        x.P\n"
-    let after = "module M\n\nlet r =\n    _.P\n"
+    let before =
+        """
+module M
+
+let r =
+    fun x ->
+        x.P
+"""
+
+    let after =
+        """
+module M
+
+let r =
+    _.P
+"""
+
     Assert.Equal(after, refactored before "fun")
 
 [<Fact>]
