@@ -388,9 +388,19 @@ Mostrar os comentários nas Informações Rápidas</target>
         <target state="translated">Formatação</target>
         <note />
       </trans-unit>
+      <trans-unit id="UseDotNetOptionalParameter">
+        <source>Use [&lt;Optional; DefaultParameterValue&gt;] for optional parameter</source>
+        <target state="new">Use [&lt;Optional; DefaultParameterValue&gt;] for optional parameter</target>
+        <note />
+      </trans-unit>
       <trans-unit id="UseFSharpLambda">
         <source>Use F# lambda syntax</source>
         <target state="translated">Usar a sintaxe lambda F#</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UseFSharpOptionalParameter">
+        <source>Use F# '?' optional parameter</source>
+        <target state="new">Use F# '?' optional parameter</target>
         <note />
       </trans-unit>
       <trans-unit id="UseMutationWhenValueIsMutable">

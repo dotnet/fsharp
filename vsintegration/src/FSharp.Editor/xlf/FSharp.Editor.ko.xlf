@@ -388,9 +388,19 @@ F# 구문 규칙에 맞는 줄 바꿈을 추가하여 지정된 너비에 시그
         <target state="translated">서식</target>
         <note />
       </trans-unit>
+      <trans-unit id="UseDotNetOptionalParameter">
+        <source>Use [&lt;Optional; DefaultParameterValue&gt;] for optional parameter</source>
+        <target state="new">Use [&lt;Optional; DefaultParameterValue&gt;] for optional parameter</target>
+        <note />
+      </trans-unit>
       <trans-unit id="UseFSharpLambda">
         <source>Use F# lambda syntax</source>
         <target state="translated">F# 람다 구문 사용</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UseFSharpOptionalParameter">
+        <source>Use F# '?' optional parameter</source>
+        <target state="new">Use F# '?' optional parameter</target>
         <note />
       </trans-unit>
       <trans-unit id="UseMutationWhenValueIsMutable">
