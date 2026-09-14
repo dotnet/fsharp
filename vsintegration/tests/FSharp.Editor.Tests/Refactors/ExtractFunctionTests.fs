@@ -27,11 +27,14 @@ let private contextFor (setting: ParameterAnnotationSetting) (code: string) =
 
     new TestContext(RoslynTestHelpers.CreateSolution(code, editorOptions = options))
 
-let private extractedWith (setting: ParameterAnnotationSetting) (title: string) (code: string) (selected: string) =
+let private caretAt (code: string) (marker: string) =
+    TextSpan(code.IndexOf(marker, StringComparison.Ordinal), 0)
+
+let private extractedAtWith (setting: ParameterAnnotationSetting) (title: string) (code: string) (span: TextSpan) =
     use context = contextFor setting code
 
     let document =
-        refactorSpan code (selectionOf code selected) title context (new FSharpExtractFunctionRefactoring())
+        refactorSpan code span title context (new FSharpExtractFunctionRefactoring())
 
     let parseResults =
         document.GetFSharpParseResultsAsync "test"
@@ -40,14 +43,36 @@ let private extractedWith (setting: ParameterAnnotationSetting) (title: string) 
     Assert.Empty(parseResults.Diagnostics)
     (document.GetTextAsync() |> GetTaskResult).ToString()
 
+let private extractedWith (setting: ParameterAnnotationSetting) (title: string) (code: string) (selected: string) =
+    extractedAtWith setting title code (selectionOf code selected)
+
 let private extracted = extractedWith ParameterAnnotationSetting.Always
 
-let private titlesFor (code: string) (selected: string) =
+let private titlesAt (code: string) (span: TextSpan) =
     use context = contextFor ParameterAnnotationSetting.Always code
 
-    tryGetRefactoringActionsForSpan code (selectionOf code selected) context (new FSharpExtractFunctionRefactoring())
+    tryGetRefactoringActionsForSpan code span context (new FSharpExtractFunctionRefactoring())
     |> Seq.map _.Title
     |> List.ofSeq
+
+let private titlesFor (code: string) (selected: string) =
+    titlesAt code (selectionOf code selected)
+
+[<Fact>]
+let ``Caret in the header of a parenthesized lambda extracts it as if it were selected`` () =
+    let code =
+        "module M\n\nlet f (xs: int list) (n: int) =\n    xs |> List.map (fun x -> x + n)\n"
+
+    let lambda = "(fun x -> x + n)"
+    let titles = titlesFor code lambda
+
+    Assert.NotEmpty(titles)
+    Assert.Equal<string list>(titles, titlesAt code (caretAt code "x ->"))
+
+    for title in titles do
+        Assert.Equal(extracted title code lambda, extractedAtWith ParameterAnnotationSetting.Always title code (caretAt code "x ->"))
+
+    Assert.Empty(titlesAt code (caretAt code "x + n"))
 
 let private area =
     "module M\n\nlet area (w: int) (h: int) =\n    printfn \"%d\" (w * h + 1)\n"
