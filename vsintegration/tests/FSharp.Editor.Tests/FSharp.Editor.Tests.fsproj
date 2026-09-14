@@ -27,6 +27,7 @@
     <Compile Include="IndentationServiceTests.fs" />
     <Compile Include="CompletionProviderTests.fs" />
     <Compile Include="FindReferencesTests.fs" />
+    <Compile Include="MultiTargetFindReferencesTests.fs" />
     <Compile Include="GoToDefinitionServiceTests.fs" />
     <Compile Include="HelpContextServiceTests.fs" />
     <Compile Include="QuickInfoTests.fs" />
