@@ -403,6 +403,11 @@ Show remarks in Quick Info</source>
         <target state="new">Use F# '?' optional parameter</target>
         <note />
       </trans-unit>
+      <trans-unit id="UseFSharpStructOptionalParameter">
+        <source>Use F# '[&lt;Struct&gt;] ?' optional parameter</source>
+        <target state="new">Use F# '[&lt;Struct&gt;] ?' optional parameter</target>
+        <note />
+      </trans-unit>
       <trans-unit id="UseMutationWhenValueIsMutable">
         <source>Use '&lt;-' to mutate value</source>
         <target state="translated">使用 '&lt;-' 來變動值</target>
