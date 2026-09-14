@@ -54,6 +54,12 @@ let private tryEnclosingParen (sourceText: SourceText) (span: TextSpan) =
     else
         ValueNone
 
+/// `struct ` to insert in front of the `(` at the position, after a space when it would run into a name: `f(a, b)`.
+let private structAt (sourceText: SourceText) (position: int) =
+    match if position > 0 then sourceText[position - 1] else ' ' with
+    | c when Char.IsLetterOrDigit c || c = '_' || c = '\'' || c = '`' || c = ')' || c = ']' -> " struct "
+    | _ -> "struct "
+
 /// Whether the text between start and finish is a whole generic argument: `<` or `,` before it, `>` or `,` after.
 let private isGenericArgument (sourceText: SourceText) (start: int) (finish: int) =
     let mutable before = start - 1
@@ -104,6 +110,19 @@ let isArgumentList (tuple: SynExpr) (path: SyntaxVisitorPath) =
         expr = arg)) :: _ -> isSame inner tuple && isSame arg paren
     | _ -> false
 
+/// Whether the tuple pattern is the parameter list of a member or constructor: its only argument, parenthesized or
+/// (a struct tuple) not.
+let isParameterList (tuple: SynPat) (path: SyntaxVisitorPath) =
+    let struct (argument, headPath) =
+        match path with
+        | SyntaxNode.SynPat(SynPat.Paren(pat = inner) as paren) :: rest when isSame inner tuple -> struct (paren, rest)
+        | _ -> struct (tuple, path)
+
+    match headPath with
+    | SyntaxNode.SynPat(SynPat.LongIdent(argPats = SynArgPats.Pats [ only ])) :: SyntaxNode.SynBinding(SynBinding(
+        valData = SynValData(memberFlags = Some _))) :: _ -> isSame only argument
+    | _ -> false
+
 /// Changes giving a tuple expression the target kind; ValueNone when it is not a tuple or cannot change in place.
 let tryExprChanges (sourceText: SourceText) (toStruct: bool) (tuple: SynExpr) (path: SyntaxVisitorPath) =
     match tuple with
@@ -112,7 +131,8 @@ let tryExprChanges (sourceText: SourceText) (toStruct: bool) (tuple: SynExpr) (p
     | SynExpr.Tuple(range = m) ->
         match path with
         | SyntaxNode.SynExpr(SynExpr.Paren(expr = inner; range = parenRange)) :: _ when isSame inner tuple ->
-            ValueSome [ TextChange(TextSpan((spanOf sourceText parenRange).Start, 0), "struct ") ]
+            let start = (spanOf sourceText parenRange).Start
+            ValueSome [ TextChange(TextSpan(start, 0), structAt sourceText start) ]
         | _ when m.StartLine = m.EndLine ->
             let span = spanOf sourceText m
 
@@ -132,7 +152,8 @@ let tryPatChanges (sourceText: SourceText) (toStruct: bool) (tuple: SynPat) (pat
     | SynPat.Tuple(range = m) ->
         match path with
         | SyntaxNode.SynPat(SynPat.Paren(pat = inner; range = parenRange)) :: _ when isSame inner tuple ->
-            ValueSome [ TextChange(TextSpan((spanOf sourceText parenRange).Start, 0), "struct ") ]
+            let start = (spanOf sourceText parenRange).Start
+            ValueSome [ TextChange(TextSpan(start, 0), structAt sourceText start) ]
         | _ when m.StartLine = m.EndLine ->
             let span = spanOf sourceText m
 
@@ -202,7 +223,8 @@ let tryCaretNode (caret: pos) (parseTree: ParsedInput) =
         match node with
         | SyntaxNode.SynExpr(SynExpr.Tuple(range = m) as tuple) when containsPos m caret && not (isArgumentList tuple path) ->
             ValueSome(CaretNode.Expr(tuple, path))
-        | SyntaxNode.SynPat(SynPat.Tuple(range = m) as tuple) when containsPos m caret -> ValueSome(CaretNode.Pat(tuple, path))
+        | SyntaxNode.SynPat(SynPat.Tuple(range = m) as tuple) when containsPos m caret && not (isParameterList tuple path) ->
+            ValueSome(CaretNode.Pat(tuple, path))
         | SyntaxNode.SynPat(SynPat.Typed(targetType = annotation) as pat) when containsPos annotation.Range caret ->
             annotationAt annotation (Annotated.Pattern(pat, path))
             |> ValueOption.orElse found
