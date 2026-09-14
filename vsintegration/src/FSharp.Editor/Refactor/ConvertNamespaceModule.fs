@@ -189,15 +189,28 @@ module private NamespaceModuleConversion =
                 |> List.collect (fun m -> [ Line.toZ m.StartLine .. Line.toZ m.EndLine ])
                 |> Set.ofList
 
-            // The first line after the namespace that is neither blank nor part of a moved `open`: a plain
-            // comment, an XML doc comment, an attribute, or (absent all of those) the module keyword itself.
-            // Everything before it — the namespace line, the opens, the blank lines around them — is deleted;
-            // everything from it onward stays exactly where it is.
-            let firstKeptLine =
-                seq { namespaceLine + 1 .. headerLine }
-                |> Seq.find (fun i ->
-                    not (openLines.Contains i)
-                    && not (String.IsNullOrWhiteSpace(lines[i].ToString())))
+            // The namespace line and the moved `open`s are deleted, each with the blank lines right after it;
+            // comments, XML doc comments and attributes among them stay in front of the new header.
+            let deletedRanges =
+                let removedLines = openLines.Add namespaceLine
+
+                let deletedLines =
+                    ((false, []), [ namespaceLine .. headerLine - 1 ])
+                    ||> List.fold (fun (afterDeleted, deleted) i ->
+                        if
+                            removedLines.Contains i
+                            || (afterDeleted && String.IsNullOrWhiteSpace(lines[i].ToString()))
+                        then
+                            true, i :: deleted
+                        else
+                            false, deleted)
+                    |> snd
+
+                ([], deletedLines)
+                ||> List.fold (fun ranges i ->
+                    match ranges with
+                    | struct (first, last) :: rest when first = i + 1 -> struct (i, last) :: rest
+                    | _ -> struct (i, i) :: ranges)
 
             let moduleSpan = spanOf sourceText moduleIdent.idRange
             let equalsEnd = (spanOf sourceText equals).End
@@ -218,10 +231,11 @@ module private NamespaceModuleConversion =
                 $"{recursive}{textBetween sourceText namespacePath.Head (List.last namespacePath)}.{sourceText.ToString moduleSpan}"
 
             [
-                // The namespace line and every `open` before the module's own doc/attributes move to right after
-                // the header: a root-style `module A.B.C` must be the file's first declaration, so nothing — not
-                // even a leading `open` — can precede it.
-                TextChange(TextSpan.FromBounds(lines[namespaceLine].Start, lines[firstKeptLine].Start), "")
+                // A root-style `module A.B.C` must be the file's first declaration, so the `open`s move to right
+                // after the header.
+                for struct (first, last) in deletedRanges do
+                    TextChange(TextSpan.FromBounds(lines[first].Start, lines[last].EndIncludingLineBreak), "")
+
                 TextChange(TextSpan.FromBounds(moduleSpan.Start, headerEnd), rootPath)
 
                 if not (List.isEmpty opens) then
