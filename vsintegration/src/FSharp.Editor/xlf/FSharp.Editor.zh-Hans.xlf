@@ -403,6 +403,16 @@ Show remarks in Quick Info</source>
         <target state="translated">使用 "nameof"</target>
         <note />
       </trans-unit>
+      <trans-unit id="UseOptionActivePatternReturn">
+        <source>Use option return for active pattern</source>
+        <target state="new">Use option return for active pattern</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UseStructActivePatternReturn">
+        <source>Use struct return for active pattern</source>
+        <target state="new">Use struct return for active pattern</target>
+        <note />
+      </trans-unit>
       <trans-unit id="UseTripleQuotedInterpolation">
         <source>Use triple quoted string interpolation.</source>
         <target state="translated">使用三引号字符串内插。</target>
