@@ -12,6 +12,7 @@ open Microsoft.CodeAnalysis.Formatting
 open Microsoft.CodeAnalysis.Text
 
 open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Features
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
@@ -291,13 +292,15 @@ module private OptionalParameterDefaultValueConversion =
         let after = sourceText.ToString(TextSpan.FromBounds(listSpan.End, line.End))
         TextSpan(listSpan.Start, listSpan.Length + after.Length - after.TrimStart().Length)
 
-    /// `[<Optional; DefaultParameterValue(c)>] x: T` becomes `?x: T` with `let x = defaultArg x c` starting the body.
+    /// `[<Optional; DefaultParameterValue(c)>] x: T` becomes `?x: T` with `let x = defaultArg x c` starting the body,
+    /// or `[<Struct>] ?x: T` with `let x = defaultValueArg x c`.
     let tryToFSharpChanges
         (sourceText: SourceText)
         (indentSize: int)
         (parameter: Parameter)
         (lists: SynAttributeList list)
         (defaultValue: SynExpr voption)
+        (asStruct: bool)
         =
         let name = parameter.Ident.idText
 
@@ -306,7 +309,13 @@ module private OptionalParameterDefaultValueConversion =
             | ValueSome value -> sourceText.ToString(spanOf sourceText value.Range)
             | ValueNone -> "Unchecked.defaultof<_>"
 
-        let declaration = $"let {name} = defaultArg {name} {defaultText}"
+        let struct (prefix, defaultFunction) =
+            if asStruct then
+                struct ("[<Struct>] ?", "defaultValueArg")
+            else
+                struct ("?", "defaultArg")
+
+        let declaration = $"let {name} = {defaultFunction} {name} {defaultText}"
 
         let (SynBinding(expr = body; returnInfo = returnInfo; trivia = trivia)) =
             parameter.MemberBinding
@@ -341,7 +350,7 @@ module private OptionalParameterDefaultValueConversion =
                 for list in lists do
                     TextChange(listRemoval sourceText list, "")
 
-                TextChange(TextSpan((spanOf sourceText parameter.Ident.idRange).Start, 0), "?")
+                TextChange(TextSpan((spanOf sourceText parameter.Ident.idRange).Start, 0), prefix)
                 bodyChange
             ]
             |> List.sortBy _.Span.Start)
@@ -436,25 +445,33 @@ type internal FSharpConvertOptionalParameterDefaultValueRefactoring [<ImportingC
                         | OptionalParameterDefaultValueConversion.Form.DotNet(lists, defaultValue) ->
                             let! options = document.GetOptionsAsync cancellationToken
 
+                            let! _, langVersion =
+                                document.GetFsharpParsingOptionsAsync(nameof FSharpConvertOptionalParameterDefaultValueRefactoring)
+
                             let indentSize =
                                 options.GetOption(FormattingOptions.IndentationSize, FSharpConstants.FSharpLanguageName)
 
-                            match
-                                OptionalParameterDefaultValueConversion.tryToFSharpChanges
-                                    sourceText
-                                    indentSize
-                                    parameter
-                                    lists
-                                    defaultValue
-                            with
-                            | ValueSome changes ->
-                                let title = SR.UseFSharpOptionalParameter()
+                            let register (asStruct: bool) (title: string) =
+                                match
+                                    OptionalParameterDefaultValueConversion.tryToFSharpChanges
+                                        sourceText
+                                        indentSize
+                                        parameter
+                                        lists
+                                        defaultValue
+                                        asStruct
+                                with
+                                | ValueSome changes ->
+                                    let changedDocument =
+                                        cancellableTask { return document.WithText(sourceText.WithChanges changes) }
 
-                                let changedDocument =
-                                    cancellableTask { return document.WithText(sourceText.WithChanges changes) }
+                                    context.RegisterRefactoring(CodeAction.Create(title, changedDocument, title))
+                                | ValueNone -> ()
 
-                                context.RegisterRefactoring(CodeAction.Create(title, changedDocument, title))
-                            | ValueNone -> ()
+                            register false (SR.UseFSharpOptionalParameter())
+
+                            if LanguageVersion(langVersion).SupportsFeature LanguageFeature.SupportValueOptionsAsOptionalParameters then
+                                register true (SR.UseFSharpStructOptionalParameter())
                     | _ -> ()
         }
         |> CancellableTask.startAsTask context.CancellationToken

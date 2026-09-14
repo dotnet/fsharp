@@ -20,11 +20,22 @@ open FSharp.Editor.Tests.Refactors.RefactorTestFramework
 let private caretAt (code: string) (marker: string) =
     code.IndexOf(marker, StringComparison.Ordinal)
 
-let private refactored (code: string) (marker: string) =
+let private fsharpTitle = "Use F# '?' optional parameter"
+let private structTitle = "Use F# '[<Struct>] ?' optional parameter"
+
+let private refactoredBy (pick: CodeAction seq -> CodeAction) (code: string) (marker: string) =
     use context = TestContext.CreateWithCode code
 
-    let document =
-        tryRefactor code (caretAt code marker) context (new FSharpConvertOptionalParameterDefaultValueRefactoring())
+    let action =
+        tryGetRefactoringActions code (caretAt code marker) context (new FSharpConvertOptionalParameterDefaultValueRefactoring())
+        |> pick
+
+    for operation in action.GetOperationsAsync CancellationToken.None |> GetTaskResult do
+        let applyChanges = operation :?> ApplyChangesOperation
+        applyChanges.Apply(context.Solution.Workspace, CancellationToken.None)
+        context.Solution <- applyChanges.ChangedSolution
+
+    let document = RoslynTestHelpers.GetLastDocument context.Solution
 
     let _, checkResults =
         document.GetFSharpParseAndCheckResultsAsync "test"
@@ -36,6 +47,11 @@ let private refactored (code: string) (marker: string) =
     )
 
     (document.GetTextAsync() |> GetTaskResult).ToString()
+
+let private refactored (code: string) (marker: string) = refactoredBy Seq.head code marker
+
+let private refactoredWith (title: string) (code: string) (marker: string) =
+    refactoredBy (Seq.find (fun action -> String.Equals(action.Title, title, StringComparison.Ordinal))) code marker
 
 let private actionsAt (code: string) (marker: string) =
     use context = TestContext.CreateWithCode code
@@ -218,10 +234,8 @@ type C() =
     static member M(?x: int) = defaultArg x 0
 """
 
-[<Fact>]
-let ``Title names the target form`` () =
-    let dotNetForm =
-        """
+let private dotNetForm =
+    """
 module M
 
 open System.Runtime.InteropServices
@@ -230,8 +244,65 @@ type C() =
     static member M([<Optional; DefaultParameterValue(0)>] x: int) = x
 """
 
+let private titlesOf (actions: CodeAction seq) =
+    actions |> Seq.map _.Title |> List.ofSeq
+
+[<Fact>]
+let ``Title names the target form`` () =
     Assert.Equal("Use [<Optional; DefaultParameterValue>] for optional parameter", (actionsAt fsharpForm "?x" |> Seq.exactlyOne).Title)
-    Assert.Equal("Use F# '?' optional parameter", (actionsAt dotNetForm "x:" |> Seq.exactlyOne).Title)
+    Assert.Equal<string list>([ fsharpTitle; structTitle ], titlesOf (actionsAt dotNetForm "x:"))
+
+[<Theory>]
+[<InlineData("""
+module M
+
+open System.Runtime.InteropServices
+
+type Counter() =
+    static member Next(value: int, [<Optional; DefaultParameterValue(1)>] step: int) =
+        value + step
+""",
+             """
+module M
+
+open System.Runtime.InteropServices
+
+type Counter() =
+    static member Next(value: int, [<Struct>] ?step: int) =
+        let step = defaultValueArg step 1
+        value + step
+""")>]
+[<InlineData("""
+module M
+
+open System.Runtime.InteropServices
+
+type C() =
+    static member M([<Optional>] step: int) =
+        step + 1
+""",
+             """
+module M
+
+open System.Runtime.InteropServices
+
+type C() =
+    static member M([<Struct>] ?step: int) =
+        let step = defaultValueArg step Unchecked.defaultof<_>
+        step + 1
+""")>]
+let ``Converting back to a struct optional parameter uses defaultValueArg`` (dotNetForm: string, structForm: string) =
+    Assert.Equal(structForm, refactoredWith structTitle dotNetForm "step:")
+
+[<Fact>]
+let ``Struct optional parameter is not offered before F# 10`` () =
+    use context =
+        new TestContext(RoslynTestHelpers.CreateSolution(dotNetForm, extraFSharpProjectOtherOptions = [| "--langversion:9.0" |]))
+
+    let actions =
+        tryGetRefactoringActions dotNetForm (caretAt dotNetForm "x:") context (new FSharpConvertOptionalParameterDefaultValueRefactoring())
+
+    Assert.Equal<string list>([ fsharpTitle ], titlesOf actions)
 
 [<Theory>]
 [<InlineData("""
