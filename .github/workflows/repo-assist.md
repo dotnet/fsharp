@@ -13,6 +13,9 @@ description: |
   - Maintains a persistent memory of work done and what remains
   Always polite, constructive, and mindful of the project's goals.
 
+imports:
+  - shared/model-defaults.md
+
 on:
   schedule: every 12h
   workflow_dispatch:

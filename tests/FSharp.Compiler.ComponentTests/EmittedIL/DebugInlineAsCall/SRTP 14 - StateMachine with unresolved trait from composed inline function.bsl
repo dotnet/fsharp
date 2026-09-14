@@ -41,60 +41,64 @@ Test::g
 Test::h
   (19,18-19,25)  g (f a)
     IL_0000:  ldsfld @_instance
-    IL_0005:  stloc.0
-    IL_0006:  ldloc.0
+    IL_0005:  stloc.1
+    IL_0006:  ldloc.1
     IL_0007:  ldarg.0
     IL_0008:  callvirt Invoke
-    IL_000d:  tail.
-    IL_000f:  call Test::g
-    IL_0014:  ret
+    IL_000d:  stloc.0
+    IL_000e:  ldloca.s 2
+    IL_0010:  initobj h@19-1
+    IL_0016:  ldloca.s 2
+    IL_0018:  stloc.3
+    IL_0019:  ldc.i4.0
+    IL_001a:  ret
 
 Test::h$W
   (19,18-19,25)  g (f a)
     IL_0000:  ldarg.0
     IL_0001:  newobj .ctor
-    IL_0006:  stloc.0
-    IL_0007:  ldloc.0
+    IL_0006:  stloc.1
+    IL_0007:  ldloc.1
     IL_0008:  ldarg.1
     IL_0009:  callvirt Invoke
-    IL_000e:  tail.
-    IL_0010:  call Test::g
-    IL_0015:  ret
+    IL_000e:  stloc.0
+    IL_000f:  ldloca.s 2
+    IL_0011:  initobj h@19-3
+    IL_0017:  ldloca.s 2
+    IL_0019:  stloc.3
+    IL_001a:  ldc.i4.0
+    IL_001b:  ret
 
 Test::main
   (23,13-23,25)  h (S<int>())
-    IL_0000:  ldloc.0
-    IL_0001:  call Test::<h>__debug@23
-    IL_0006:  pop
+    IL_0000:  ldsfld main@23::@_instance
+    IL_0005:  stloc.2
+    IL_0006:  ldloc.2
+    IL_0007:  ldloc.0
+    IL_0008:  callvirt Invoke
+    IL_000d:  stloc.1
+    IL_000e:  ldloca.s 3
+    IL_0010:  initobj main@23-1
+    IL_0016:  ldloca.s 3
+    IL_0018:  stloc.s 4
 
   (24,5-24,6)  0
-    IL_0007:  ldc.i4.0
-    IL_0008:  ret
-
-Test::<h>__debug@23
-  (19,18-19,25)  g (f a)
-    IL_0000:  ldsfld main@9::@_instance
-    IL_0005:  stloc.0
-    IL_0006:  ldloc.0
-    IL_0007:  ldarg.0
-    IL_0008:  callvirt Invoke
-    IL_000d:  tail.
-    IL_000f:  call Test::g
-    IL_0014:  ret
+    IL_001a:  ldc.i4.0
+    IL_001b:  ret
 
 S`1::Equals
   <hidden>
     IL_0000:  ldarg.1
     IL_0001:  stloc.0
     IL_0002:  ldloc.0
-    IL_0003:  isinst 0x1b000008
+    IL_0003:  isinst 0x1b00000a
     IL_0008:  ldnull
     IL_0009:  cgt.un
     IL_000b:  brfalse.s IL_001d
 
   <hidden>
     IL_000d:  ldarg.1
-    IL_000e:  unbox.any 0x1b000008
+    IL_000e:  unbox.any 0x1b00000a
     IL_0013:  stloc.1
     IL_0014:  ldarg.0
     IL_0015:  ldloc.1
@@ -115,14 +119,14 @@ S`1::Equals
     IL_0000:  ldarg.1
     IL_0001:  stloc.0
     IL_0002:  ldloc.0
-    IL_0003:  isinst 0x1b000008
+    IL_0003:  isinst 0x1b00000a
     IL_0008:  ldnull
     IL_0009:  cgt.un
     IL_000b:  brfalse.s IL_001c
 
   <hidden>
     IL_000d:  ldarg.1
-    IL_000e:  unbox.any 0x1b000008
+    IL_000e:  unbox.any 0x1b00000a
     IL_0013:  stloc.1
     IL_0014:  ldarg.0
     IL_0015:  ldloc.1
@@ -138,12 +142,7 @@ h@9::Invoke
     IL_0000:  ldloc.0
     IL_0001:  ret
 
-h@9-1::Invoke
-  (9,104-9,123)  Unchecked.defaultof
-    IL_0000:  ldloc.0
-    IL_0001:  ret
-
-main@9::Invoke
+h@9-2::Invoke
   (9,104-9,123)  Unchecked.defaultof
     IL_0000:  ldloc.0
     IL_0001:  ret
