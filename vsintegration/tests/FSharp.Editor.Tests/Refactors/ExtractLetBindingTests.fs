@@ -17,11 +17,14 @@ let private extractToLiteral = "Extract to literal"
 let private selectionOf (code: string) (selected: string) =
     TextSpan(code.IndexOf(selected, StringComparison.Ordinal), selected.Length)
 
-let private extracted (title: string) (code: string) (selected: string) =
+let private caretAt (code: string) (marker: string) =
+    TextSpan(code.IndexOf(marker, StringComparison.Ordinal), 0)
+
+let private extractedAt (title: string) (code: string) (span: TextSpan) =
     use context = TestContext.CreateWithCode code
 
     let document =
-        refactorSpan code (selectionOf code selected) title context (new FSharpExtractLetBindingRefactoring())
+        refactorSpan code span title context (new FSharpExtractLetBindingRefactoring())
 
     let parseResults =
         document.GetFSharpParseResultsAsync "test"
@@ -30,12 +33,18 @@ let private extracted (title: string) (code: string) (selected: string) =
     Assert.Empty(parseResults.Diagnostics)
     (document.GetTextAsync() |> GetTaskResult).ToString()
 
-let private titlesFor (code: string) (selected: string) =
+let private extracted (title: string) (code: string) (selected: string) =
+    extractedAt title code (selectionOf code selected)
+
+let private titlesAt (code: string) (span: TextSpan) =
     use context = TestContext.CreateWithCode code
 
-    tryGetRefactoringActionsForSpan code (selectionOf code selected) context (new FSharpExtractLetBindingRefactoring())
+    tryGetRefactoringActionsForSpan code span context (new FSharpExtractLetBindingRefactoring())
     |> Seq.map _.Title
     |> List.ofSeq
+
+let private titlesFor (code: string) (selected: string) =
+    titlesAt code (selectionOf code selected)
 
 [<Theory>]
 [<InlineData("w * h + 1", "    let extracted = w * h + 1\n    printfn \"%d\" (extracted)\n")>]
@@ -63,6 +72,19 @@ let ``Multi-line right-hand side is bound in front of its let`` () =
         "module M\n\nlet run items =\n    let mutable acc = 0\n    let extracted =\n        items\n        |> List.filter (fun i -> i > acc)\n        |> List.sum\n    let total =\n        extracted\n    total\n"
 
     Assert.Equal(expected, extracted extractToLetBinding code "items\n        |> List.filter (fun i -> i > acc)\n        |> List.sum")
+
+[<Fact>]
+let ``Whole lines selected with their indentation and line break are extracted`` () =
+    let code =
+        "module M\n\nlet run items =\n    let mutable acc = 0\n\n    let total =\n        items\n        |> List.filter (fun i -> i > acc)\n        |> List.sum\n\n    total\n"
+
+    let expected =
+        "module M\n\nlet run items =\n    let mutable acc = 0\n\n    let extracted =\n        items\n        |> List.filter (fun i -> i > acc)\n        |> List.sum\n    let total =\n        extracted\n\n    total\n"
+
+    Assert.Equal(
+        expected,
+        extracted extractToLetBinding code "        items\n        |> List.filter (fun i -> i > acc)\n        |> List.sum\n"
+    )
 
 [<Fact>]
 let ``Match clause body on the arrow line moves to its own lines`` () =
@@ -154,6 +176,30 @@ let ``Literal is offered only for constants outside types`` () =
     Assert.Equal<string list>([ extractToLetBinding; extractToLiteral ], titlesFor "module M\n\nlet f () = g 42\n" "42")
     Assert.Equal<string list>([ extractToLetBinding ], titlesFor "module M\n\ntype T() =\n    member _.M() = 42\n" "42")
     Assert.Equal<string list>([ extractToLetBinding ], titlesFor "module M\n\nlet f x = g (x + 1)\n" "x + 1")
+
+[<Theory>]
+[<InlineData("\"Hello %s\" name")>]
+[<InlineData("llo %s")>]
+[<InlineData(" name\n")>]
+let ``Constant at the caret becomes a literal without a selection`` (marker: string) =
+    let code = "module M\n\nlet greet name =\n    printfn \"Hello %s\" name\n"
+
+    let expected =
+        "module M\n\n[<Literal>]\nlet ExtractedConstant = \"Hello %s\"\n\nlet greet name =\n    printfn ExtractedConstant name\n"
+
+    Assert.Equal(expected, extractedAt extractToLiteral code (caretAt code marker))
+
+[<Fact>]
+let ``Only the literal is offered without a selection`` () =
+    let code = "module M\n\nlet f () = g 42\n"
+    Assert.Equal<string list>([ extractToLiteral ], titlesAt code (caretAt code "2\n"))
+
+[<Theory>]
+[<InlineData("module M\n\nlet f x = g x\n", "g x")>]
+[<InlineData("module M\n\ntype T() =\n    member _.M() = 42\n", "42")>]
+[<InlineData("module M\n\nlet f a = $\"{a + 1}\"\n", "1}")>]
+let ``No action without a selection`` (code: string, marker: string) =
+    Assert.Empty(titlesAt code (caretAt code marker))
 
 [<Theory>]
 [<InlineData("module M\n\nlet f w h = w * h + 1\n", "w * h +")>]
