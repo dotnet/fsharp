@@ -159,6 +159,65 @@ let ``Parameter converts the matching argument of every call`` (reference: strin
     Assert.Equal(structs, refactored reference "int * int")
     Assert.Equal(reference, refactored structs "int * int")
 
+[<Theory>]
+[<InlineData("""
+module M
+
+let add (a, b) c = a + b + c
+
+let total = add (1, 2) 3
+""",
+             "a, b",
+             """
+module M
+
+let add struct (a, b) c = a + b + c
+
+let total = add struct (1, 2) 3
+""")>]
+[<InlineData("""
+module M
+
+type Calc() =
+    member _.Add (a: int, b: int) (c: int) = a + b + c
+
+let total = Calc().Add (1, 2) 3
+""",
+             "a: int",
+             """
+module M
+
+type Calc() =
+    member _.Add struct (a: int, b: int) (c: int) = a + b + c
+
+let total = Calc().Add struct (1, 2) 3
+""")>]
+let ``Tuple argument of a curried function or member converts with its calls`` (reference: string, marker: string, structs: string) =
+    Assert.Equal(structs, refactored reference marker)
+    Assert.Equal(reference, refactored structs marker)
+
+[<Fact>]
+let ``Struct keyword is separated from a name the parenthesis follows`` () =
+    let code =
+        """
+module M
+
+let add(a, b) c = a + b + c
+
+let total = add (1, 2) 3
+"""
+
+    Assert.Equal(
+        """
+module M
+
+let add struct (a, b) c = a + b + c
+
+let total = add struct (1, 2) 3
+""",
+        refactored code "a, b"
+    )
+
 [<Fact>]
 let ``Value declared in another file converts there`` () =
     let definition =
@@ -314,4 +373,25 @@ module M
 let quoted = <@ (1, 2) @>
 """,
              "1, 2")>]
+[<InlineData("""
+module M
+
+type Greeter() =
+    member _.Greet(name: string, ?greeting: string) = name
+""",
+             "?greeting")>]
+[<InlineData("""
+module M
+
+type Calc() =
+    member _.Add struct (a: int, b: int) = a + b
+""",
+             "a: int")>]
+[<InlineData("""
+module M
+
+type Point(x: int, y: int) =
+    new(x: int, y: int, z: int) = Point(x + z, y)
+""",
+             "z: int")>]
 let ``No action`` (code: string, marker: string) = Assert.Empty(actionsAt code marker)
