@@ -46,10 +46,34 @@ let private actionsAt (code: string) (marker: string) =
     actionsIn context code marker
 
 let private greeter =
-    "module M\n\ntype Greeter() =\n    member _.Greet(name: string, ?greeting: string) =\n        let greeting = defaultArg greeting \"Hello\"\n        $\"{greeting}, {name}\"\n\nlet a = Greeter().Greet(\"Ada\")\nlet b = Greeter().Greet(\"Ada\", greeting = \"Hi\")\nlet c = Greeter().Greet(\"Ada\", ?greeting = Some \"Hey\")\nlet d (g: string option) = Greeter().Greet(\"Ada\", ?greeting = g)\n"
+    """
+module M
+
+type Greeter() =
+    member _.Greet(name: string, ?greeting: string) =
+        let greeting = defaultArg greeting "Hello"
+        $"{greeting}, {name}"
+
+let a = Greeter().Greet("Ada")
+let b = Greeter().Greet("Ada", greeting = "Hi")
+let c = Greeter().Greet("Ada", ?greeting = Some "Hey")
+let d (g: string option) = Greeter().Greet("Ada", ?greeting = g)
+"""
 
 let private structGreeter =
-    "module M\n\ntype Greeter() =\n    member _.Greet(name: string, [<Struct>] ?greeting: string) =\n        let greeting = defaultValueArg greeting \"Hello\"\n        $\"{greeting}, {name}\"\n\nlet a = Greeter().Greet(\"Ada\")\nlet b = Greeter().Greet(\"Ada\", greeting = \"Hi\")\nlet c = Greeter().Greet(\"Ada\", ?greeting = ValueSome \"Hey\")\nlet d (g: string option) = Greeter().Greet(\"Ada\", ?greeting = ValueOption.ofOption g)\n"
+    """
+module M
+
+type Greeter() =
+    member _.Greet(name: string, [<Struct>] ?greeting: string) =
+        let greeting = defaultValueArg greeting "Hello"
+        $"{greeting}, {name}"
+
+let a = Greeter().Greet("Ada")
+let b = Greeter().Greet("Ada", greeting = "Hi")
+let c = Greeter().Greet("Ada", ?greeting = ValueSome "Hey")
+let d (g: string option) = Greeter().Greet("Ada", ?greeting = ValueOption.ofOption g)
+"""
 
 [<Fact>]
 let ``Optional parameter and its optional arguments convert to value options`` () =
@@ -60,12 +84,54 @@ let ``Struct optional parameter and its optional arguments convert back to optio
     Assert.Equal(greeter, refactored structGreeter "?greeting")
 
 [<Theory>]
-[<InlineData("module M\n\ntype Counter() =\n    member _.Next(?step: int) =\n        match step with\n        | Some s -> s\n        | None -> 1\n",
-             "module M\n\ntype Counter() =\n    member _.Next([<Struct>] ?step: int) =\n        match step with\n        | ValueSome s -> s\n        | ValueNone -> 1\n")>]
-[<InlineData("module M\n\ntype Counter() =\n    static member Describe(?step: int) =\n        if Option.isSome step && step.IsSome then step |> Option.defaultValue 0 else 1\n",
-             "module M\n\ntype Counter() =\n    static member Describe([<Struct>] ?step: int) =\n        if ValueOption.isSome step && step.IsSome then step |> ValueOption.defaultValue 0 else 1\n")>]
-[<InlineData("module M\n\ntype Counter() =\n    static member Next(?step: int) = defaultArg step 1\n\nlet next (step: int option) = Counter.Next(?step = (if true then step else None))\n",
-             "module M\n\ntype Counter() =\n    static member Next([<Struct>] ?step: int) = defaultValueArg step 1\n\nlet next (step: int option) = Counter.Next(?step = ValueOption.ofOption (if true then step else None))\n")>]
+[<InlineData("""
+module M
+
+type Counter() =
+    member _.Next(?step: int) =
+        match step with
+        | Some s -> s
+        | None -> 1
+""",
+             """
+module M
+
+type Counter() =
+    member _.Next([<Struct>] ?step: int) =
+        match step with
+        | ValueSome s -> s
+        | ValueNone -> 1
+""")>]
+[<InlineData("""
+module M
+
+type Counter() =
+    static member Describe(?step: int) =
+        if Option.isSome step && step.IsSome then step |> Option.defaultValue 0 else 1
+""",
+             """
+module M
+
+type Counter() =
+    static member Describe([<Struct>] ?step: int) =
+        if ValueOption.isSome step && step.IsSome then step |> ValueOption.defaultValue 0 else 1
+""")>]
+[<InlineData("""
+module M
+
+type Counter() =
+    static member Next(?step: int) = defaultArg step 1
+
+let next (step: int option) = Counter.Next(?step = (if true then step else None))
+""",
+             """
+module M
+
+type Counter() =
+    static member Next([<Struct>] ?step: int) = defaultValueArg step 1
+
+let next (step: int option) = Counter.Next(?step = ValueOption.ofOption (if true then step else None))
+""")>]
 let ``Uses of the parameter in the member body follow the conversion`` (before: string, after: string) =
     Assert.Equal(after, refactored before "?step")
     Assert.Equal(before, refactored after "?step")
@@ -73,10 +139,24 @@ let ``Uses of the parameter in the member body follow the conversion`` (before: 
 [<Fact>]
 let ``Value option passed to a struct optional parameter is converted to an option`` () =
     let before =
-        "module M\n\ntype Counter() =\n    static member Next([<Struct>] ?step: int) = defaultValueArg step 1\n\nlet next (step: int voption) = Counter.Next(?step = step)\n"
+        """
+module M
+
+type Counter() =
+    static member Next([<Struct>] ?step: int) = defaultValueArg step 1
+
+let next (step: int voption) = Counter.Next(?step = step)
+"""
 
     let after =
-        "module M\n\ntype Counter() =\n    static member Next(?step: int) = defaultArg step 1\n\nlet next (step: int voption) = Counter.Next(?step = ValueOption.toOption step)\n"
+        """
+module M
+
+type Counter() =
+    static member Next(?step: int) = defaultArg step 1
+
+let next (step: int voption) = Counter.Next(?step = ValueOption.toOption step)
+"""
 
     Assert.Equal(after, refactored before "?step")
 
@@ -85,35 +165,76 @@ let ``Title names the target option kind`` () =
     Assert.Equal("Use 'voption' for optional parameter", (actionsAt greeter "?greeting" |> Seq.exactlyOne).Title)
     Assert.Equal("Use 'option' for optional parameter", (actionsAt structGreeter "?greeting" |> Seq.exactlyOne).Title)
 
+let private counter =
+    """
+module M
+
+type C() =
+    static member M(?x: int) = defaultArg x 0
+"""
+
 [<Theory>]
-[<InlineData("module M\n\ntype C() =\n    static member M(?x: int) = printfn \"%A\" x\n", "?x")>]
-[<InlineData("module M\n\ntype C() =\n    static member M(?x: int) = Option.map string x\n", "?x")>]
-[<InlineData("module M\n\ntype B() =\n    abstract M: ?x: int -> int\n    default _.M(?x) = defaultArg x 0\n", "?x)")>]
-[<InlineData("module M\n\ntype C() =\n    static member M(?x: int) = defaultArg x 0\n", "M(")>]
-[<InlineData("module M\n\ntype C() =\n    static member M(x: int option) = defaultArg x 0\n", "x:")>]
+[<InlineData("""
+module M
+
+type C() =
+    static member M(?x: int) = printfn "%A" x
+""",
+             "?x")>]
+[<InlineData("""
+module M
+
+type C() =
+    static member M(?x: int) = Option.map string x
+""",
+             "?x")>]
+[<InlineData("""
+module M
+
+type B() =
+    abstract M: ?x: int -> int
+    default _.M(?x) = defaultArg x 0
+""",
+             "?x)")>]
+[<InlineData("""
+module M
+
+type C() =
+    static member M(?x: int) = defaultArg x 0
+""",
+             "M(")>]
+[<InlineData("""
+module M
+
+type C() =
+    static member M(x: int option) = defaultArg x 0
+""",
+             "x:")>]
 let ``No action`` (code: string, marker: string) = Assert.Empty(actionsAt code marker)
 
 [<Fact>]
 let ``Value option is not offered before F# 10`` () =
-    let code = "module M\n\ntype C() =\n    static member M(?x: int) = defaultArg x 0\n"
-
     use context =
-        new TestContext(RoslynTestHelpers.CreateSolution(code, extraFSharpProjectOtherOptions = [| "--langversion:9.0" |]))
+        new TestContext(RoslynTestHelpers.CreateSolution(counter, extraFSharpProjectOtherOptions = [| "--langversion:9.0" |]))
 
-    Assert.Empty(actionsIn context code "?x")
+    Assert.Empty(actionsIn context counter "?x")
 
 [<Fact>]
 let ``No action when the file has a signature`` () =
-    let code = "module M\n\ntype C() =\n    static member M(?x: int) = defaultArg x 0\n"
-
     let signature =
-        "module M\n\ntype C =\n    new: unit -> C\n    static member M: ?x: int -> int\n"
+        """
+module M
 
-    let document = RoslynTestHelpers.GetFsiAndFsDocuments signature code |> Seq.last
+type C =
+    new: unit -> C
+    static member M: ?x: int -> int
+"""
+
+    let document = RoslynTestHelpers.GetFsiAndFsDocuments signature counter |> Seq.last
     let actions = ResizeArray<CodeAction>()
 
     let context =
-        CodeRefactoringContext(document, TextSpan(caretAt code "?x", 1), (fun action -> actions.Add action), CancellationToken.None)
+        CodeRefactoringContext(document, TextSpan(caretAt counter "?x", 1), (fun action -> actions.Add action), CancellationToken.None)
 
     (new FSharpConvertOptionalParameterStructRefactoring()).ComputeRefactoringsAsync(context).GetAwaiter().GetResult()
 
