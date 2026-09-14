@@ -29,6 +29,7 @@ let private actionsAt (code: string) (marker: string) =
     use context = TestContext.CreateWithCode code
     tryGetRefactoringActions code (caretAt code marker) context (new FSharpConvertNamespaceModuleRefactoring())
 
+// Both contain a triple-quoted string, which a triple-quoted literal cannot hold.
 let private nestedHelpers =
     "namespace My.Company\n\n/// Utilities.\n[<AutoOpen; RequireQualifiedAccess>]\nmodule private Helpers =\n    let inline twice x = x + x\n    let banner = \"\"\"\n  not\n    touched\"\"\"\n"
 
@@ -46,57 +47,284 @@ let ``Root module converts to a namespace with a nested module`` () =
     Assert.Equal(nestedHelpers, refactored rootHelpers "module")
 
 [<Theory>]
-[<InlineData("namespace rec A.B\n\nmodule C =\n    let a = 1\n", "module rec A.B.C\nlet a = 1\n")>]
-[<InlineData("namespace A.B\n\nmodule rec C =\n    let a = 1\n", "module rec A.B.C\nlet a = 1\n")>]
-[<InlineData("namespace rec A.B\n\nmodule rec C =\n    let a = 1\n", "module rec A.B.C\nlet a = 1\n")>]
-[<InlineData("namespace A.B\n\n// Helpers for B.\nmodule C =\n    let x = 1\n", "// Helpers for B.\nmodule A.B.C\nlet x = 1\n")>]
-[<InlineData("namespace A.B\n\nmodule C =\n    let x = 1\n#if DEBUG\n    let y = 2\n#endif\n",
-             "module A.B.C\nlet x = 1\n#if DEBUG\nlet y = 2\n#endif\n")>]
+[<InlineData("""
+namespace rec A.B
+
+module C =
+    let a = 1
+""",
+             """
+module rec A.B.C
+let a = 1
+""")>]
+[<InlineData("""
+namespace A.B
+
+module rec C =
+    let a = 1
+""",
+             """
+module rec A.B.C
+let a = 1
+""")>]
+[<InlineData("""
+namespace rec A.B
+
+module rec C =
+    let a = 1
+""",
+             """
+module rec A.B.C
+let a = 1
+""")>]
+[<InlineData("""
+namespace A.B
+
+// Helpers for B.
+module C =
+    let x = 1
+""",
+             """
+// Helpers for B.
+module A.B.C
+let x = 1
+""")>]
+[<InlineData("""
+namespace A.B
+
+module C =
+    let x = 1
+#if DEBUG
+    let y = 2
+#endif
+""",
+             """
+module A.B.C
+let x = 1
+#if DEBUG
+let y = 2
+#endif
+""")>]
 [<InlineData("namespace A.B\r\n\r\nmodule C =\r\n    let x = 1\r\n", "module A.B.C\r\nlet x = 1\r\n")>]
-[<InlineData("namespace A.B\n\nopen System\n\nmodule C =\n    let x = 1\n", "module A.B.C\n\nopen System\n\nlet x = 1\n")>]
-[<InlineData("namespace A.B\n\nopen System\nopen System.Text\n\nmodule C =\n    let x = 1\n",
-             "module A.B.C\n\nopen System\nopen System.Text\n\nlet x = 1\n")>]
-[<InlineData("namespace A.B\n\nopen System\n\n/// Doc.\nmodule C =\n    let x = 1\n", "/// Doc.\nmodule A.B.C\n\nopen System\n\nlet x = 1\n")>]
+[<InlineData("""
+namespace A.B
+
+open System
+
+module C =
+    let x = 1
+""",
+             """
+module A.B.C
+
+open System
+
+let x = 1
+""")>]
+[<InlineData("""
+namespace A.B
+
+open System
+open System.Text
+
+module C =
+    let x = 1
+""",
+             """
+module A.B.C
+
+open System
+open System.Text
+
+let x = 1
+""")>]
+[<InlineData("""
+namespace A.B
+
+open System
+
+/// Doc.
+module C =
+    let x = 1
+""",
+             """
+/// Doc.
+module A.B.C
+
+open System
+
+let x = 1
+""")>]
 let ``Nested module converts to a root module`` (before: string, after: string) =
     Assert.Equal(after, refactored before "namespace")
 
 [<Theory>]
-[<InlineData("module A.B.C\n\nlet x = 1\n", "namespace A.B\n\nmodule C =\n\n    let x = 1\n")>]
-[<InlineData("module rec A.B.C\nlet a = 1\n", "namespace A.B\n\nmodule rec C =\n    let a = 1\n")>]
-[<InlineData("module [<AutoOpen>] internal A.B.C\nlet x = 1\n", "namespace A.B\n\nmodule [<AutoOpen>] internal C =\n    let x = 1\n")>]
-[<InlineData("module ``A-B``.C // header\nlet x = 1\n", "namespace ``A-B``\n\nmodule C = // header\n    let x = 1\n")>]
+[<InlineData("""
+module A.B.C
+
+let x = 1
+""",
+             """
+namespace A.B
+
+module C =
+
+    let x = 1
+""")>]
+[<InlineData("""
+module rec A.B.C
+let a = 1
+""",
+             """
+namespace A.B
+
+module rec C =
+    let a = 1
+""")>]
+[<InlineData("""
+module [<AutoOpen>] internal A.B.C
+let x = 1
+""",
+             """
+namespace A.B
+
+module [<AutoOpen>] internal C =
+    let x = 1
+""")>]
+[<InlineData("""
+module ``A-B``.C // header
+let x = 1
+""",
+             """
+namespace ``A-B``
+
+module C = // header
+    let x = 1
+""")>]
 [<InlineData("module A.B.C\r\nlet x = 1\r\n", "namespace A.B\r\n\r\nmodule C =\r\n    let x = 1\r\n")>]
 let ``Root module converts to a nested module`` (before: string, after: string) =
     Assert.Equal(after, refactored before "module")
 
 [<Fact>]
 let ``Converting to a nested module and back restores the root module`` () =
-    let original = "module A.B.C\n\nlet x = 1\n"
+    let original =
+        """
+module A.B.C
+
+let x = 1
+"""
+
     Assert.Equal(original, refactored (refactored original "module") "namespace")
 
 [<Theory>]
-[<InlineData("namespace A.B\n\nmodule C =\n    let x = 1\n\nmodule D =\n    let y = 2\n", "namespace")>]
-[<InlineData("namespace A.B\n\ntype T = int\n", "namespace")>]
-[<InlineData("namespace global\n\nmodule C =\n    let x = 1\n", "namespace")>]
-[<InlineData("module C\n\nlet x = 1\n", "module")>]
-[<InlineData("namespace A.B\n\nmodule C = begin\n    let x = 1\nend\n", "namespace")>]
-[<InlineData("namespace A.B // B\n\nmodule C =\n    let x = 1\n", "namespace")>]
-[<InlineData("namespace A.B\n\nmodule C =\n    let x = 1\n", "let")>]
-[<InlineData("module A.B.C\n\nlet x = 1\n", "let")>]
-[<InlineData("namespace A.B\n\nmodule C =\n", "namespace")>]
-[<InlineData("namespace A.B\n\nmodule C =\n    let x = 1\n\nopen System\n", "namespace")>]
-[<InlineData("namespace A.B\n\nopen System\n\ntype T = int\n\nmodule C =\n    let x = 1\n", "namespace")>]
+[<InlineData("""
+namespace A.B
+
+module C =
+    let x = 1
+
+module D =
+    let y = 2
+""",
+             "namespace")>]
+[<InlineData("""
+namespace A.B
+
+type T = int
+""",
+             "namespace")>]
+[<InlineData("""
+namespace global
+
+module C =
+    let x = 1
+""",
+             "namespace")>]
+[<InlineData("""
+module C
+
+let x = 1
+""",
+             "module")>]
+[<InlineData("""
+namespace A.B
+
+module C = begin
+    let x = 1
+end
+""",
+             "namespace")>]
+[<InlineData("""
+namespace A.B // B
+
+module C =
+    let x = 1
+""",
+             "namespace")>]
+[<InlineData("""
+namespace A.B
+
+module C =
+    let x = 1
+""",
+             "let")>]
+[<InlineData("""
+module A.B.C
+
+let x = 1
+""",
+             "let")>]
+[<InlineData("""
+namespace A.B
+
+module C =
+""",
+             "namespace")>]
+[<InlineData("""
+namespace A.B
+
+module C =
+    let x = 1
+
+open System
+""",
+             "namespace")>]
+[<InlineData("""
+namespace A.B
+
+open System
+
+type T = int
+
+module C =
+    let x = 1
+""",
+             "namespace")>]
 let ``No action`` (code: string, marker: string) = Assert.Empty(actionsAt code marker)
 
 [<Fact>]
 let ``No action when the file has a signature`` () =
-    let code = "namespace A.B\n\nmodule C =\n    let x = 1\n"
-    let signature = "namespace A.B\n\nmodule C =\n    val x: int\n"
+    let code =
+        """
+namespace A.B
+
+module C =
+    let x = 1
+"""
+
+    let signature =
+        """
+namespace A.B
+
+module C =
+    val x: int
+"""
+
     let document = RoslynTestHelpers.GetFsiAndFsDocuments signature code |> Seq.last
     let actions = ResizeArray<CodeAction>()
 
     let context =
-        CodeRefactoringContext(document, TextSpan(0, 1), (fun action -> actions.Add action), CancellationToken.None)
+        CodeRefactoringContext(document, TextSpan(caretAt code "namespace", 1), (fun action -> actions.Add action), CancellationToken.None)
 
     (new FSharpConvertNamespaceModuleRefactoring()).ComputeRefactoringsAsync(context).GetAwaiter().GetResult()
 
