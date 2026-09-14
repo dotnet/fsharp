@@ -42,12 +42,18 @@ type internal FSharpExtractLetBindingRefactoring [<ImportingConstructor>] () =
         cancellableTask {
             let document = context.Document
 
-            if not (context.Span.IsEmpty || document.IsFSharpSignatureFile) then
+            if not document.IsFSharpSignatureFile then
                 let! cancellationToken = CancellableTask.getCancellationToken ()
                 let! sourceText = document.GetTextAsync cancellationToken
                 let! parseResults = document.GetFSharpParseResultsAsync(nameof FSharpExtractLetBindingRefactoring)
 
-                match tryExtractionTarget sourceText parseResults.ParseTree context.Span with
+                let target =
+                    if context.Span.IsEmpty then
+                        tryConstantAtCaret sourceText parseResults.ParseTree context.Span.Start
+                    else
+                        tryExtractionTarget sourceText parseResults.ParseTree context.Span
+
+                match target with
                 | ValueNone -> ()
                 | ValueSome target ->
                     let! options = document.GetOptionsAsync cancellationToken
@@ -58,14 +64,15 @@ type internal FSharpExtractLetBindingRefactoring [<ImportingConstructor>] () =
                     let names = usedNames parseResults.ParseTree
                     let literalLines = linesInsideLiterals parseResults.ParseTree
 
-                    match anchorsOf target.Expr target.Path with
-                    | anchor :: _ ->
-                        let name = uniqueName "extracted" names
+                    if not context.Span.IsEmpty then
+                        match anchorsOf target.Expr target.Path with
+                        | anchor :: _ ->
+                            let name = uniqueName "extracted" names
 
-                        match tryDeclareInFront sourceText target anchor $"let {name}" name indentSize literalLines with
-                        | ValueSome changes -> register context sourceText (SR.ExtractToLetBinding()) "let" changes
-                        | ValueNone -> ()
-                    | [] -> ()
+                            match tryDeclareInFront sourceText target anchor $"let {name}" name indentSize literalLines with
+                            | ValueSome changes -> register context sourceText (SR.ExtractToLetBinding()) "let" changes
+                            | ValueNone -> ()
+                        | [] -> ()
 
                     let constant =
                         match target.Expr with
