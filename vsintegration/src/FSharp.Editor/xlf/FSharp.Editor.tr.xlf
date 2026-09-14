@@ -403,6 +403,11 @@ Açıklamaları Hızlı Bilgide göster</target>
         <target state="new">Use F# '?' optional parameter</target>
         <note />
       </trans-unit>
+      <trans-unit id="UseFSharpStructOptionalParameter">
+        <source>Use F# '[&lt;Struct&gt;] ?' optional parameter</source>
+        <target state="new">Use F# '[&lt;Struct&gt;] ?' optional parameter</target>
+        <note />
+      </trans-unit>
       <trans-unit id="UseMutationWhenValueIsMutable">
         <source>Use '&lt;-' to mutate value</source>
         <target state="translated">Değeri değiştirmek için '&lt;-' kullan</target>
