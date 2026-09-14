@@ -88,7 +88,7 @@ module IsPrivateToFile =
     // [<Fact>] This is a bug - https://github.com/dotnet/fsharp/issues/14419
     let ``Private function, with signature file`` () =
         SyntheticProject.Create(
-            { sourceFile "First" [] with ExtraSource = "let private f3 x = x + 1" } 
+            { sourceFile "First" [] with ExtraSource = "let private f3 x = x + 1" }
             |> addSignatureFile).Workflow {
             checkFile "First" (fun (typeCheckResult: FSharpCheckFileResults) ->
                 let symbolUse = typeCheckResult.GetSymbolUseAtLocation(6, 14, "let private f3 x = x + 1", ["f3"]) |> Option.defaultWith (fun () -> failwith "no symbol use found")

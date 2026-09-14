@@ -9,5 +9,5 @@ let query =
         select i
     }
 
-let r = "seq [10; 8; 6; 4; ...]" = sprintf "%A" query 
+let r = "seq [10; 8; 6; 4; ...]" = sprintf "%A" query
 if not r then exit 1 else exit 0

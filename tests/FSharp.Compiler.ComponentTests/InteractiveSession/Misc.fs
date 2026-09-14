@@ -1,8 +1,8 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 /// Tests for FSI Interactive Session - migrated from tests/fsharpqa/Source/InteractiveSession/Misc/
-/// NOTE: Many InteractiveSession tests from fsharpqa require FSI-specific features (fsi.CommandLineArgs, 
-/// FSIMODE=PIPE with stdin, #r with relative paths, etc.) that cannot be easily migrated to the 
+/// NOTE: Many InteractiveSession tests from fsharpqa require FSI-specific features (fsi.CommandLineArgs,
+/// FSIMODE=PIPE with stdin, #r with relative paths, etc.) that cannot be easily migrated to the
 /// ComponentTests framework which runs FSI externally. The tests migrated here are the subset that
 /// work with the runFsi external process approach.
 namespace InteractiveSession
@@ -575,7 +575,7 @@ exit 1;;
         |> ignore
 
     // INTERACTIVE is defined for FSI sessions
-    // Note: This test is skipped because preprocessor directives work differently 
+    // Note: This test is skipped because preprocessor directives work differently
     // when running FSI externally via runFsi vs. in-process
     //[<Fact>]
     let ``DefinesInteractive - INTERACTIVE is defined - SKIPPED``() =
@@ -920,7 +920,7 @@ if person.Age <> 30 then failwith "test assertion failed";;
         |> shouldSucceed
         |> ignore
 
-    // Struct tuple in FSI  
+    // Struct tuple in FSI
     [<Fact>]
     let ``StructTuple - struct tuple syntax``() =
         Fsx """
@@ -1441,7 +1441,7 @@ type T() =
         |> withStdErrContains "implicitly ignored"
         |> ignore
 
-    // Test: E_let_id_equal01 - incomplete let x = 
+    // Test: E_let_id_equal01 - incomplete let x =
     // Regression for FSHARP1.0:5629
     [<Fact>]
     let ``E_let_id_equal01 - incomplete let binding``() =
@@ -2063,9 +2063,9 @@ if fsi.CommandLineArgs.Length >= 1 then exit 0 else exit 1
         let tmpFile = Path.GetTempFileName() + ".fsx"
         try
             File.WriteAllText(tmpFile, scriptContent)
-            let errors, _, _ = 
-                CompilerAssert.RunScriptWithOptionsAndReturnResult 
-                    [| tmpFile |] 
+            let errors, _, _ =
+                CompilerAssert.RunScriptWithOptionsAndReturnResult
+                    [| tmpFile |]
                     ""
             Assert.True((errors: ResizeArray<string>).Count = 0, sprintf "Expected no errors, got: %A" errors)
         finally
@@ -2084,9 +2084,9 @@ exit 0
         let tmpFile = Path.GetTempFileName() + ".fsx"
         try
             File.WriteAllText(tmpFile, scriptContent)
-            let errors, _, _ = 
-                CompilerAssert.RunScriptWithOptionsAndReturnResult 
-                    [| tmpFile |] 
+            let errors, _, _ =
+                CompilerAssert.RunScriptWithOptionsAndReturnResult
+                    [| tmpFile |]
                     ""
             Assert.True((errors: ResizeArray<string>).Count = 0, sprintf "Expected no errors, got: %A" errors)
         finally
@@ -2106,9 +2106,9 @@ exit 0
         let tmpFile = Path.GetTempFileName() + ".fsx"
         try
             File.WriteAllText(tmpFile, scriptContent)
-            let errors, _, _ = 
-                CompilerAssert.RunScriptWithOptionsAndReturnResult 
-                    [| tmpFile; "Hello" |] 
+            let errors, _, _ =
+                CompilerAssert.RunScriptWithOptionsAndReturnResult
+                    [| tmpFile; "Hello" |]
                     ""
             Assert.True((errors: ResizeArray<string>).Count = 0, sprintf "Expected no errors, got: %A" errors)
         finally
@@ -2339,11 +2339,11 @@ let f x y = x + y
         // Get a full path to a framework assembly
         let fwkDir = System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory()
         let dllPath = Path.Combine(fwkDir, "System.dll")
-        
+
         // Verify the assembly exists
         if not (File.Exists(dllPath)) then
             failwith $"Expected framework assembly not found: {dllPath}"
-        
+
         // Test #r with full absolute path (using sprintf to inject path)
         Fsx (sprintf "#r @\"%s\"\nopen System\nlet now = DateTime.Now\nnow |> ignore\n()" dllPath)
         |> withOptions ["--nologo"]
@@ -2362,13 +2362,13 @@ let f x y = x + y
             let file2 = writeScript tempDir "LoadOrder2.fsx" file2Content
             let file3Content = sprintf "#load @\"%s\"\nprintfn \"let w = y 10\"" (file2.Replace("\\", "\\\\"))
             let file3 = writeScript tempDir "LoadOrder3.fsx" file3Content
-            
+
             // Execute and verify load order via Loading messages
-            let result = 
+            let result =
                 FsxFromPath file3
                 |> runFsi
                 |> shouldSucceed
-            
+
             // The stdout should show loading messages in correct order
             // We can't rely on printfn from #load'ed files as they don't get captured properly
             // Instead verify the files were loaded in correct order: 1 -> 2 -> 3

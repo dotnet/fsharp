@@ -39,43 +39,32 @@ Test::f$W
 
 Test::g
   (15,19-15,26)  f (S())
-    IL_0000:  ldsfld @_instance
-    IL_0005:  stloc.0
-    IL_0006:  ldloc.0
-    IL_0007:  ldloc.1
-    IL_0008:  tail.
-    IL_000a:  callvirt Invoke
-    IL_000f:  ret
+    IL_0000:  ldloc.0
+    IL_0001:  newobj .ctor
+    IL_0006:  ldftn Invoke
+    IL_000c:  newobj .ctor
+    IL_0011:  ret
 
 Test::g$W
   (15,19-15,26)  f (S())
     IL_0000:  ldarg.0
-    IL_0001:  newobj .ctor
-    IL_0006:  stloc.0
-    IL_0007:  ldloc.0
-    IL_0008:  ldloc.1
-    IL_0009:  tail.
-    IL_000b:  callvirt Invoke
-    IL_0010:  ret
+    IL_0001:  ldloc.0
+    IL_0002:  newobj .ctor
+    IL_0007:  ldftn Invoke
+    IL_000d:  newobj .ctor
+    IL_0012:  ret
 
 Test::main
   (19,35-19,39)  g ()
-    IL_0000:  call Test::<g>__debug@19
-    IL_0005:  pop
+    IL_0000:  ldloc.0
+    IL_0001:  newobj main@19::.ctor
+    IL_0006:  ldftn main@19::Invoke
+    IL_000c:  newobj .ctor
+    IL_0011:  pop
 
   (20,5-20,6)  0
-    IL_0006:  ldc.i4.0
-    IL_0007:  ret
-
-Test::<g>__debug@19
-  (15,19-15,26)  f (S())
-    IL_0000:  ldsfld main@9::@_instance
-    IL_0005:  stloc.0
-    IL_0006:  ldloc.0
-    IL_0007:  ldloc.1
-    IL_0008:  tail.
-    IL_000a:  callvirt Invoke
-    IL_000f:  ret
+    IL_0012:  ldc.i4.0
+    IL_0013:  ret
 
 S::Equals
   <hidden>
@@ -133,32 +122,6 @@ D::Bar
     IL_0000:  ldc.i4.1
     IL_0001:  ret
 
-g@9::Invoke
-  (10,26-13,6)  (fun sm -> (^A: (member Foo: unit -> unit) x) (^B: (member Bar: unit -> bool) sm.Data) )
-    IL_0000:  ldarg.1
-    IL_0001:  newobj .ctor
-    IL_0006:  ldftn Invoke
-    IL_000c:  newobj .ctor
-    IL_0011:  ret
-
-g@9-2::Invoke
-  (10,26-13,6)  (fun sm -> (^A: (member Foo: unit -> unit) x) (^B: (member Bar: unit -> bool) sm.Data) )
-    IL_0000:  ldarg.0
-    IL_0001:  ldfld bar
-    IL_0006:  ldarg.1
-    IL_0007:  newobj .ctor
-    IL_000c:  ldftn Invoke
-    IL_0012:  newobj .ctor
-    IL_0017:  ret
-
-main@9::Invoke
-  (10,26-13,6)  (fun sm -> (^A: (member Foo: unit -> unit) x) (^B: (member Bar: unit -> bool) sm.Data) )
-    IL_0000:  ldarg.1
-    IL_0001:  newobj main@10-1::.ctor
-    IL_0006:  ldftn main@10-1::Invoke
-    IL_000c:  newobj .ctor
-    IL_0011:  ret
-
 f@10::Invoke
   (11,9-11,43)  (^A: (member Foo: unit -> unit) x)
     IL_0000:  ldc.i4.0
@@ -193,44 +156,3 @@ f@10-1::Invoke
     IL_001e:  tail.
     IL_0020:  callvirt Invoke
     IL_0025:  ret
-
-g@10-1::Invoke
-  (11,9-11,43)  (^A: (member Foo: unit -> unit) x)
-    IL_0000:  ldarg.0
-    IL_0001:  ldflda x
-    IL_0006:  call S::Foo
-    IL_000b:  nop
-
-  (12,9-12,49)  (^B: (member Bar: unit -> bool) sm.Data)
-    IL_000c:  ldstr "Dynamic invocation of Bar is not supported"
-    IL_0011:  newobj NotSupportedException::.ctor
-    IL_0016:  throw
-
-g@10-3::Invoke
-  (11,9-11,43)  (^A: (member Foo: unit -> unit) x)
-    IL_0000:  ldarg.0
-    IL_0001:  ldflda x
-    IL_0006:  call S::Foo
-    IL_000b:  nop
-
-  (12,9-12,49)  (^B: (member Bar: unit -> bool) sm.Data)
-    IL_000c:  ldarg.0
-    IL_000d:  ldfld bar
-    IL_0012:  ldarg.1
-    IL_0013:  ldfld Data
-    IL_0018:  tail.
-    IL_001a:  callvirt Invoke
-    IL_001f:  ret
-
-main@10-1::Invoke
-  (11,9-11,43)  (^A: (member Foo: unit -> unit) x)
-    IL_0000:  ldarg.0
-    IL_0001:  ldflda main@10-1::x
-    IL_0006:  call S::Foo
-    IL_000b:  nop
-
-  (12,9-12,49)  (^B: (member Bar: unit -> bool) sm.Data)
-    IL_000c:  ldarg.1
-    IL_000d:  ldfld Data
-    IL_0012:  callvirt D::Bar
-    IL_0017:  ret

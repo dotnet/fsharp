@@ -1,14 +1,14 @@
-// #Conformance #ObjectOrientedTypes #TypeExtensions 
+// #Conformance #ObjectOrientedTypes #TypeExtensions
 
 
 // Verify type extensions extend the full hierarchy of a type
 // Verify that if you extend an interface a class implements, the class is extended
 
-type System.Collections.Generic.IEnumerable<'a> with 
+type System.Collections.Generic.IEnumerable<'a> with
     member x.SeqLength = Seq.length x
-    
+
 let aString = "abc"
-if aString.SeqLength <> aString.Length then 
+if aString.SeqLength <> aString.Length then
     exit 1
 
 let aList = [1; 2; 3]

@@ -1,7 +1,7 @@
 
 module Neg50
 
-module EnumPatternWithFunkyTypes_Dev11_13904 = 
+module EnumPatternWithFunkyTypes_Dev11_13904 =
     [<Struct>]
 
     type Struct =
@@ -24,7 +24,7 @@ module EnumPatternWithFunkyTypes_Dev11_13904 =
     // This is not allowed - 'a (and the type of "a") are not known to be "bool"
     let v a = seq { for i in T a -> i }
 
-module EnumPatternWithFunkyTypes2_Dev11_13904 = 
+module EnumPatternWithFunkyTypes2_Dev11_13904 =
     [<Struct>]
 
     type Struct =
@@ -42,7 +42,7 @@ module EnumPatternWithFunkyTypes2_Dev11_13904 =
     let t = seq { for i in T() -> i }
 
 
-module EnumPatternWithFunkyTypes3_Dev11_13904 = 
+module EnumPatternWithFunkyTypes3_Dev11_13904 =
     [<Struct>]
 
     type Struct =
@@ -59,7 +59,7 @@ module EnumPatternWithFunkyTypes3_Dev11_13904 =
     // This is not allowed - Current has an arg
     let t = seq { for i in T() -> i }
 
-module EnumPatternWithFunkyTypes4_Dev11_13904 = 
+module EnumPatternWithFunkyTypes4_Dev11_13904 =
     [<Struct>]
 
     type Struct =

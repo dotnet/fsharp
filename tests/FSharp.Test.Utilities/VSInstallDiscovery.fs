@@ -3,7 +3,7 @@
 namespace FSharp.Test
 
 /// Test-only Visual Studio installation discovery infrastructure.
-/// Provides a centralized, robust, and graceful discovery mechanism for Visual Studio installations 
+/// Provides a centralized, robust, and graceful discovery mechanism for Visual Studio installations
 /// used by integration/editor/unit tests under vsintegration/tests.
 module VSInstallDiscovery =
 
@@ -12,13 +12,13 @@ module VSInstallDiscovery =
     open System.Diagnostics
 
     /// Result of VS installation discovery
-    type VSInstallResult = 
+    type VSInstallResult =
         | Found of installPath: string * source: string
         | NotFound of reason: string
 
     /// Attempts to find a Visual Studio installation using multiple fallback strategies
     let tryFindVSInstallation () : VSInstallResult =
-        
+
         /// Check if a path exists and looks like a valid VS installation
         let validateVSPath path =
             if String.IsNullOrEmpty(path) then false
@@ -50,12 +50,12 @@ module VSInstallDiscovery =
             let vsVersions = [
                 ("VS180COMNTOOLS", 18) // Visual Studio 2026
                 ("VS170COMNTOOLS", 17) // Visual Studio 2022
-                ("VS160COMNTOOLS", 16) // Visual Studio 2019  
+                ("VS160COMNTOOLS", 16) // Visual Studio 2019
                 ("VS150COMNTOOLS", 15) // Visual Studio 2017
                 ("VS140COMNTOOLS", 14) // Visual Studio 2015
                 ("VS120COMNTOOLS", 12) // Visual Studio 2013
             ]
-            
+
             vsVersions
             |> List.tryPick (fun (envName, version) ->
                 let envVar = Environment.GetEnvironmentVariable(envName)
@@ -74,7 +74,7 @@ module VSInstallDiscovery =
             try
                 let programFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86)
                 let vswherePath = Path.Combine(programFiles, "Microsoft Visual Studio", "Installer", "vswhere.exe")
-                
+
                 if File.Exists(vswherePath) then
                     let startInfo = ProcessStartInfo(
                         FileName = vswherePath,
@@ -84,10 +84,10 @@ module VSInstallDiscovery =
                         RedirectStandardError = true,
                         CreateNoWindow = true
                     )
-                    
+
                     use proc = Process.Start(startInfo)
                     proc.WaitForExit(5000) |> ignore // 5 second timeout
-                    
+
                     if proc.ExitCode = 0 then
                         let output = proc.StandardOutput.ReadToEnd().Trim()
                         if validateVSPath output then
@@ -120,10 +120,10 @@ module VSInstallDiscovery =
     /// Useful for debugging installation discovery issues in tests.
     let getVSInstallDirWithLogging (logAction: string -> unit) : string option =
         match tryFindVSInstallation () with
-        | Found (path, source) -> 
+        | Found (path, source) ->
             logAction $"Visual Studio installation found at: {path} (via {source})"
             Some path
-        | NotFound reason -> 
+        | NotFound reason ->
             logAction $"Visual Studio installation not found: {reason}"
             None
 
@@ -132,7 +132,7 @@ module VSInstallDiscovery =
     let getVSInstallDirOrFail () : string =
         match tryFindVSInstallation () with
         | Found (path, _) -> path
-        | NotFound reason -> 
+        | NotFound reason ->
             failwith $"Visual Studio installation not found: {reason}. Ensure VS is installed or environment variables (VSAPPIDDIR, VS*COMNTOOLS) are set."
 
 /// Assembly resolver for Visual Studio test infrastructure.
@@ -147,7 +147,7 @@ module VSAssemblyResolver =
     /// This should be called early in test initialization to ensure VS assemblies can be loaded.
     let addResolver () =
         let vsInstallDir = VSInstallDiscovery.getVSInstallDirOrFail ()
-        
+
         let probingPaths =
             [|
                 Path.Combine(vsInstallDir, @"IDE\CommonExtensions\Microsoft\Editor")

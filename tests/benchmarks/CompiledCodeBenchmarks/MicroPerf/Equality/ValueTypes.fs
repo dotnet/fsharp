@@ -3,7 +3,7 @@ namespace Equality
 open System
 open BenchmarkDotNet.Attributes
 
-type SomeEnum = 
+type SomeEnum =
     | Case0 = 0
     | Case1 = 1
     | Case2 = 2
@@ -14,13 +14,13 @@ type ValueTypes() =
     let numbers = Array.init 1000 id
     let now = DateTimeOffset.Now
 
-    let createFSharpStruct (x: int) = 
+    let createFSharpStruct (x: int) =
         struct (x % 7, x % 7)
 
     let createFSharpEnum (x: int) =
         enum<SomeEnum>(x % 3)
 
-    let createCSharpStruct (x: int) = 
+    let createCSharpStruct (x: int) =
         now.AddMinutes x
 
     let createCSharpEnum (x: int) =

@@ -4,7 +4,7 @@ open System
 open System.Diagnostics
 
 [<AttributeUsage(AttributeTargets.Field)>]
-type FieldOnlyAttribute() = 
+type FieldOnlyAttribute() =
    inherit Attribute()
 
 type TestClass() =
@@ -15,7 +15,7 @@ type TestClass() =
    static let rec func2() = "someFunction"
 
    [<FieldOnly>]// Should succeed (special exception when function can be lifted to a field)
-   static let rec func3() = "someFunction" 
+   static let rec func3() = "someFunction"
    and [<FieldOnly>] fun4() = "someFunction" // Should succeed (special exception when function can be lifted to a field)
 
    [<FieldOnly>] // Should succeed (special exception when function can be lifted to a field)
@@ -49,16 +49,16 @@ type TestClass() =
    [<FieldOnly>] // Should succeed (special exception when function can be lifted to a field)
    let (|BoolExpr3|_|) x =
     match x with
-        | "true" -> Some true 
-        | "false" -> Some false 
+        | "true" -> Some true
+        | "false" -> Some false
         | _ -> None
 
    [<FieldOnly>] // Should succeed (special exception when function can be lifted to a field)
    [<return: Struct>]
    let (|BoolExpr4|_|) x =
         match x with
-        | "true" -> ValueSome true 
-        | "false" -> ValueSome false 
+        | "true" -> ValueSome true
+        | "false" -> ValueSome false
         | _ -> ValueNone
 
    [<FieldOnly>] // Should succeed (special exception when function can be lifted to a field)

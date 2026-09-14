@@ -249,9 +249,9 @@ module internal FreeTypeVars =
         // Bound type vars form a recursively-referential set due to constraints, e.g. A: I<B>, B: I<A>
         // So collect up free vars in all constraints first, then bind all variables
         let acc =
-            List.foldBack (fun (tp: Typar) acc -> accFreeInTyparConstraints opts tp.Constraints acc) tps acc
+            ListInline.foldBack (fun (tp: Typar) acc -> accFreeInTyparConstraints opts tp.Constraints acc) tps acc
 
-        List.foldBack
+        ListInline.foldBack
             (fun tp acc ->
                 { acc with
                     FreeTypars = Zset.remove tp acc.FreeTypars
@@ -260,7 +260,7 @@ module internal FreeTypeVars =
             acc
 
     and accFreeInTyparConstraints opts cxs acc =
-        List.foldBack (accFreeInTyparConstraint opts) cxs acc
+        ListInline.foldBack (accFreeInTyparConstraint opts) cxs acc
 
     and accFreeInTyparConstraint opts tpc acc =
         match tpc with
@@ -357,7 +357,7 @@ module internal FreeTypeVars =
         | TupInfo.Const _ -> acc
 
     and accFreeInMeasure opts unt acc =
-        List.foldBack (fun (tp, _) acc -> accFreeTyparRef opts tp acc) (ListMeasureVarOccsWithNonZeroExponents unt) acc
+        ListInline.foldBack (fun (tp, _) acc -> accFreeTyparRef opts tp acc) (ListMeasureVarOccsWithNonZeroExponents unt) acc
 
     and accFreeInTypes opts tys acc =
         match tys with
@@ -375,7 +375,7 @@ module internal FreeTypeVars =
         accFreeInTyparConstraints opts v emptyFreeTyvars
 
     let accFreeInTypars opts tps acc =
-        List.foldBack (accFreeTyparRef opts) tps acc
+        ListInline.foldBack (accFreeTyparRef opts) tps acc
 
     let rec addFreeInModuleTy (mtyp: ModuleOrNamespaceType) acc =
         QueueList.foldBack
@@ -403,10 +403,10 @@ module internal FreeTypeVars =
     let rec boundTyparsLeftToRight g cxFlag thruFlag acc tps =
         // Bound type vars form a recursively-referential set due to constraints, e.g. A: I<B>, B: I<A>
         // So collect up free vars in all constraints first, then bind all variables
-        List.fold (fun acc (tp: Typar) -> accFreeInTyparConstraintsLeftToRight g cxFlag thruFlag acc tp.Constraints) tps acc
+        ListInline.fold (fun acc (tp: Typar) -> accFreeInTyparConstraintsLeftToRight g cxFlag thruFlag acc tp.Constraints) tps acc
 
     and accFreeInTyparConstraintsLeftToRight g cxFlag thruFlag acc cxs =
-        List.fold (accFreeInTyparConstraintLeftToRight g cxFlag thruFlag) acc cxs
+        ListInline.fold (fun acc cx -> accFreeInTyparConstraintLeftToRight g cxFlag thruFlag acc cx) acc cxs
 
     and accFreeInTyparConstraintLeftToRight g cxFlag thruFlag acc tpc =
         match tpc with
@@ -470,7 +470,7 @@ module internal FreeTypeVars =
 
         | TType_measure unt ->
             let mvars = ListMeasureVarOccsWithNonZeroExponents unt
-            List.foldBack (fun (tp, _) acc -> accFreeTyparRefLeftToRight g cxFlag thruFlag acc tp) mvars acc
+            ListInline.foldBack (fun (tp, _) acc -> accFreeTyparRefLeftToRight g cxFlag thruFlag acc tp) mvars acc
 
     and accFreeInTupInfoLeftToRight _g _cxFlag _thruFlag acc unt =
         match unt with
@@ -1082,19 +1082,20 @@ module internal MemberRepresentation =
     module SimplifyTypes =
 
         // CAREFUL! This function does NOT walk constraints
-        let rec foldTypeButNotConstraints f z ty =
-            let ty = stripTyparEqns ty
+        let rec foldTypeButNotConstraints normalizeType f z ty =
+            let ty = normalizeType ty
             let z = f z ty
 
             match ty with
-            | TType_forall(_, bodyTy) -> foldTypeButNotConstraints f z bodyTy
+            | TType_forall(_, bodyTy) -> foldTypeButNotConstraints normalizeType f z bodyTy
 
             | TType_app(_, tys, _)
             | TType_ucase(_, tys)
             | TType_anon(_, tys)
-            | TType_tuple(_, tys) -> List.fold (foldTypeButNotConstraints f) z tys
+            | TType_tuple(_, tys) -> List.fold (foldTypeButNotConstraints normalizeType f) z tys
 
-            | TType_fun(domainTy, rangeTy, _) -> foldTypeButNotConstraints f (foldTypeButNotConstraints f z domainTy) rangeTy
+            | TType_fun(domainTy, rangeTy, _) ->
+                foldTypeButNotConstraints normalizeType f (foldTypeButNotConstraints normalizeType f z domainTy) rangeTy
 
             | TType_var _ -> z
 
@@ -1109,7 +1110,7 @@ module internal MemberRepresentation =
         let accTyparCounts z ty =
             // Walk type to determine typars and their counts (for pprinting decisions)
             (z, ty)
-            ||> foldTypeButNotConstraints (fun z ty ->
+            ||> foldTypeButNotConstraints stripTyparEqns (fun z ty ->
                 match ty with
                 | TType_var(tp, _) when tp.Rigidity = TyparRigidity.Rigid -> incM tp z
                 | _ -> z)

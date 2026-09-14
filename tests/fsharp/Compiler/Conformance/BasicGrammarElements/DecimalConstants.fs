@@ -17,24 +17,24 @@ module ``Decimal Constants`` =
 
     [<Fact>]
     let ``Sum of decimal constants``() =
-        let x = 
-            1.0E0M 
+        let x =
+            1.0E0M
             + 2.0E1M
             + 3.0E2M
             + 4.0E3M
             + 5.0E4M
             + 6.0E5M
-            + 7.0E6M 
+            + 7.0E6M
             + 8.0E7M
-            + 9.0E8M 
+            + 9.0E8M
             + 1.0E-1M
             + 2.0E-2M
-            + 3.0E-3M 
+            + 3.0E-3M
             + 4.0E-4M
-            + 5.0E-5M 
-            + 6.0E-6M 
-            + 7.0E-7M 
-            + 8.0E-8M 
+            + 5.0E-5M
+            + 6.0E-6M
+            + 7.0E-7M
+            + 8.0E-8M
             + 9.0E-9M
 
         Assert.areEqual 987654321.123456789M x

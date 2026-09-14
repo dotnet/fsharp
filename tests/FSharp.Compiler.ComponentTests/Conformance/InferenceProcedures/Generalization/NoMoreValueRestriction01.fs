@@ -1,4 +1,4 @@
-// #Conformance #TypeInference 
+// #Conformance #TypeInference
 // Verify error if you only specify some, but not all, type args
 //<Expects status="success"></Expects>
 

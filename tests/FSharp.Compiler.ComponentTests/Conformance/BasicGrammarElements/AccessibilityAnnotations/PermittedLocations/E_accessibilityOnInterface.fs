@@ -1,4 +1,4 @@
-// #Regression #Conformance #DeclarationElements #Accessibility 
+// #Regression #Conformance #DeclarationElements #Accessibility
 
 
 //<Expects status="error">\(17,14-18,12\): error FS0191: abstract slots always have the same visibility as the enclosing type</Expects>
@@ -10,7 +10,7 @@
 
 type public IDoStuffAsWell =
     abstract SomeStuff : int -> unit
-    
+
 type internal IMightDoStuffAsWell =
     abstract SomeStuff : int -> unit
 
@@ -21,4 +21,4 @@ type private IDoStuff =
     abstract public   SomeStuffb1 : int -> int -> (int * int)
     abstract private  SomeStuffb2 : int -> int -> (int * int)
     abstract internal SomeStuffb3 : int -> int -> (int * int)
-    
+

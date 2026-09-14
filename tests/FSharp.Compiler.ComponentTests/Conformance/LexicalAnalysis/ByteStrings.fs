@@ -4,7 +4,7 @@ open Xunit
 open FSharp.Test.Compiler
 
 /// `'%s' is not a valid character literal.` with note about wrapped value and error soon
-let private invalidCharWarningMsg (value: string) (wrapped: string) = 
+let private invalidCharWarningMsg (value: string) (wrapped: string) =
     FSComp.SR.lexInvalidCharLiteralInString (value, wrapped)
     |> snd
     |> _.Text
@@ -79,7 +79,7 @@ let ``Values in different notations are invalid above 127``() =
         (Warning 1253, Line 6, Col 5, Line 6, Col 14, invalidAsciiWarningMsg 1)
         (Warning 1253, Line 7, Col 5, Line 7, Col 18, invalidAsciiWarningMsg 1)
     ]
-    
+
 [<Fact>]
 let ``Error messages for different notations only span invalid notation``() =
     Fs """
@@ -94,7 +94,7 @@ let ``Error messages for different notations only span invalid notation``() =
 
         // Note: Error for `\U00005678` spans full byte string:
         //       Is a valid char, but two bytes -> not valid inside byte string
-        //       But check for correct byte happens after string is finished 
+        //       But check for correct byte happens after string is finished
         //           (because `B` suffix -> only know at end if it's a byte string)
         //       -> Don't have direct access to range of invalid char any more
         (Error 1140, Line 2, Col 1, Line 2, Col 54,invalidTwoByteErrorMsg 1)

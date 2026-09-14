@@ -11,37 +11,20 @@ title: FSharp.Compiler.Service
 #load "./.aux/Common.fsx"
 
 open System.IO
-open System.Xml.XPath
+open System.Xml.Linq
 open Markdig
 open Common
 
 let path = Path.Combine(__SOURCE_DIRECTORY__, ".FSharp.Compiler.Service")
-let fcsMajorVersion = versionPropsDoc.XPathSelectElement("//FCSMajorVersion").Value
-let nugetPackage = "FSharp.Compiler.Service"
-let availableNuGetVersions = getAvailableNuGetVersions nugetPackage
 
-processFolder path (fun file ->
-    let versionInFileName = Path.GetFileNameWithoutExtension(file)
-    // Example: 8.0.200
-    let versionParts = versionInFileName.Split '.'
-
-    let version = $"%s{fcsMajorVersion}.%s{versionParts.[0]}.%s{versionParts.[2]}"
-    // TODO: Can we determine if the current version is in code freeze based on the Version.props info?
-    let title =
-        if not (availableNuGetVersions.Contains version) then
-            $"%s{version} - Unreleased"
-        else
-            match tryGetReleaseDate nugetPackage version with
-            | None -> $"%s{version} - Unreleased"
-            | Some d -> $"%s{version} - %s{d}"
-
-    let nugetBadge =
-        if not (availableNuGetVersions.Contains version) then
-            System.String.Empty
-        else
-            $"<a href=\"https://www.nuget.org/packages/%s{nugetPackage}/%s{version}\" target=\"_blank\"><img alt=\"Nuget\" src=\"https://img.shields.io/badge/NuGet-%s{version}-blue\"></a>"
-
-    let content = File.ReadAllText file |> Markdown.ToHtml |> transformH3 version
-
-    $"""<h2><a name="%s{version}" class="anchor" href="#%s{version}">%s{title}</a></h2>%s{nugetBadge}%s{content}""")
+// The FCS package version cannot be derived from the release notes file name: its minor number
+// is bumped independently of the F# version (43.12.100 is F# 11.0.100, 43.12.204 is F# 10.0.204).
+// The lookup by source commit handles that; the F# major is only used to place notes that never
+// shipped. Packages before 43.8 predate the release notes folder.
+renderPackageReleaseNotes
+    "FSharp.Compiler.Service"
+    path
+    (System.Version(43, 8, 0))
+    (fun notes -> System.Version(43, notes.Major, notes.Build))
+    upcomingFcsVersion
 (*** include-it-raw ***)

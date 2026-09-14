@@ -67,7 +67,7 @@ let bar{caret} a b = a - b
 """
 
     testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource "Comment"
-    
+
 
 [<Fact>]
 let ``Display XML doc of signature file for partial AP if implementation doesn't have one`` () =
@@ -87,7 +87,7 @@ let (|IsThr{caret}ee|_|) x = if x = 3 then Some x else None
 """
 
     testXmlDocFallbackToSigFileWhileInImplFile sigSource implSource "Comment"
-    
+
 
 [<Fact>]
 let ``Display XML doc of signature file for DU if implementation doesn't have one`` () =
@@ -100,7 +100,7 @@ type Bar =
     | Case1 of int * string
     | Case2 of string
 """
-               
+
     let implSource =
         """
 module Foo
@@ -197,7 +197,7 @@ type Bar =
     new: unit -> Bar
     member Foo: string
 """
-               
+
     let implSource =
         """
 module Foo
@@ -244,7 +244,7 @@ module Foo
 
 val a: int
 """
-               
+
     let implSource =
         """
 module Fo{caret}o
@@ -258,7 +258,7 @@ let a = 23
 let testToolTipSquashing source =
     let context = Checker.getResolveContext source
     let files = Map.ofArray [| "A.fs", SourceText.ofString context.Source |]
-    
+
     let documentSource fileName = Map.tryFind fileName files |> async.Return
 
     let projectOptions =
@@ -423,7 +423,7 @@ let exists() = System.IO.Path.Exist{caret}s(null:string)
 """
     |> assertAndGetSingleToolTipText
     |> Assert.shouldBeEquivalentTo "System.IO.Path.Exists([<NotNullWhenAttribute (true)>] path: string | null) : bool"
-    
+
 [<FactForNETCOREAPP>]
 let ``Should display xml doc on a nullable BLC method`` () =
     Checker.getTooltipWithOptions [|"--checknulls+";"--langversion:preview"|] """
@@ -438,7 +438,7 @@ let exists() = System.IO.Path.Exi{caret}sts(null:string)
             | FSharpXmlDoc.FromXmlFile (_dll,sigPath) -> sigPath |> Assert.shouldBeEquivalentTo "M:System.IO.Path.Exists(System.String)"
             | _ -> failwith $"Xml wrong type %A{xml}"
 
-            
+
 [<FactForNETCOREAPP>]
 let ``Should display xml doc on fsharp hosted nullable function`` () =
     Checker.getTooltipWithOptions [|"--checknulls+";"--langversion:preview"|] """
@@ -455,7 +455,7 @@ let exists() = myFu{caret}nc(null)
             | FSharpXmlDoc.FromXmlText t ->
                  t.UnprocessedLines |> Assert.shouldBeEquivalentTo [|" This is a xml doc above myFunc"|]
             | _ -> failwith $"xml was %A{xml}"
-            text |> Assert.shouldBeEquivalentTo "val myFunc: x: (string | null) -> string | null"            
+            text |> Assert.shouldBeEquivalentTo "val myFunc: x: (string | null) -> string | null"
             remarks |> Assert.shouldBeEquivalentTo (Some "Full name: Foo.myFunc")
 
 
@@ -471,7 +471,7 @@ let getPath() = System.IO.Path.GetFile{caret}Name(null:string)
 System.IO.Path.GetFileName(path: string | null) : string | null""" |> normalize)
 
 [<FactForNETCOREAPP>]
-let ``Should display nullable Csharp code analysis annotations on TryParse pattern`` () =   
+let ``Should display nullable Csharp code analysis annotations on TryParse pattern`` () =
     Checker.getTooltipWithOptions [|"--checknulls+";"--langversion:preview"|] """
 module Foo
 
@@ -481,7 +481,7 @@ let success,version = System.Version.TryPar{caret}se(null)
     |> Assert.shouldBeEquivalentTo """System.Version.TryParse([<NotNullWhenAttribute (true)>] input: string | null, [<NotNullWhenAttribute (true)>] result: byref<System.Version | null>) : bool"""
 
 [<FactForNETCOREAPP>]
-let ``Display with nullable annotations can be squashed`` () =   
+let ``Display with nullable annotations can be squashed`` () =
     Checker.getTooltipWithOptions [|"--checknulls+";"--langversion:preview"|] """
 module Foo
 
@@ -489,9 +489,9 @@ let success,version = System.Version.Try{caret}Parse(null)
 """
     |> assertAndGetSingleToolTipText
     |> Assert.shouldBeEquivalentTo ("""System.Version.TryParse([<NotNullWhenAttribute (true)>] input: string | null, [<NotNullWhenAttribute (true)>] result: byref<System.Version | null>) : bool""" |> normalize)
-    
+
 [<FactForNETCOREAPP>]
-let ``Allows ref struct is shown on BCL interface declaration`` () =   
+let ``Allows ref struct is shown on BCL interface declaration`` () =
     Checker.getTooltipWithOptions [|"--checknulls+";"--langversion:preview"|] """
 module Foo
 
@@ -500,9 +500,9 @@ let myAction : Acti{caret}on<int> | null = null
 """
     |> assertAndGetSingleToolTipText
     |> Assert.shouldStartWith ("""type Action<'T (allows ref struct)>""" |> normalize)
-    
+
 [<FactForNETCOREAPP>]
-let ``Allows ref struct is shown for each T on BCL interface declaration`` () =   
+let ``Allows ref struct is shown for each T on BCL interface declaration`` () =
     Checker.getTooltipWithOptions [|"--checknulls+";"--langversion:preview"|] """
 module Foo
 
@@ -511,7 +511,7 @@ let myAction : Acti{caret}on<int,_,_,_> | null = null
 """
     |> assertAndGetSingleToolTipText
     |> Assert.shouldStartWith ("""type Action<'T1,'T2,'T3,'T4 (allows ref struct and allows ref struct and allows ref struct and allows ref struct)>""" |> normalize)
-    
+
 [<FactForNETCOREAPP>]
 let ``Allows ref struct is shown on BCL method usage`` () =
     Checker.getTooltip """
@@ -523,9 +523,9 @@ let doIt (dict:Dictionary<'a,'b>) = dict.GetAltern{caret}ateLookup<'a,'b,ReadOnl
 """
     |> assertAndGetSingleToolTipText
     |> Assert.shouldContain ("""'TAlternateKey (allows ref struct)""" |> normalize)
-    
+
 [<FactForNETCOREAPP>]
-let ``Allows ref struct is not shown on BCL interface usage`` () =   
+let ``Allows ref struct is not shown on BCL interface usage`` () =
     Checker.getTooltip """
 module Foo
 

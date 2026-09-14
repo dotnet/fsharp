@@ -378,8 +378,11 @@ module internal MemberRepresentation =
 
     val prefixOfInferenceTypar: Typar -> string
 
-    /// Utilities used in simplifying types for visual presentation
+    /// Utilities for traversing and simplifying types
     module SimplifyTypes =
+
+        /// Fold normalized type structure without following type-parameter constraints.
+        val foldTypeButNotConstraints: (TType -> TType) -> ('State -> TType -> 'State) -> 'State -> TType -> 'State
 
         type TypeSimplificationInfo =
             { singletons: Typar Zset

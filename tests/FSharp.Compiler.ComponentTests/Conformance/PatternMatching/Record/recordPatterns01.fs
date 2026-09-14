@@ -1,4 +1,4 @@
-// #Conformance #PatternMatching #Records 
+// #Conformance #PatternMatching #Records
 
 
 // Test ability to match records even if a subset of tags are specified.
@@ -7,17 +7,17 @@ type Type = Plant | Animal | Mineral
 type Thing = {Name : string; Age : int; Type : Type}
 
 // Single part
-let isAnimal thing = 
-    match thing with 
-    | {Type=Animal} -> true 
+let isAnimal thing =
+    match thing with
+    | {Type=Animal} -> true
     | _ -> false
-    
+
 // Multi part
 let isSteve thing =
     match thing with
     | {Name = "Steve"; Age = 2} -> true
     | _ -> false
-   
+
 
 let animal = {Name = "Steve"; Age = 2; Type = Animal}
 let plant  = {Name = "Sunflower"; Age = 5; Type = Plant}

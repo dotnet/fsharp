@@ -1,4 +1,4 @@
-// #Conformance #SignatureFiles 
+// #Conformance #SignatureFiles
 
 
 module AbstractSlot01
@@ -12,4 +12,4 @@ type Bar =
     inherit Foo
     new : unit -> Bar
     override AbstractMethod : unit -> int
-    
+

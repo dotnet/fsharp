@@ -1,12 +1,12 @@
 module MyLibrary
 let strictlyNotNull (x:obj) = ()
 
-let myGenericFunction1 (p:_|null) = 
+let myGenericFunction1 (p:_|null) =
     match p with
     | null -> ()
     | p -> strictlyNotNull p
 
-let myGenericFunction2 p = 
+let myGenericFunction2 p =
     match p with
     | Null -> ()
     | NonNull p -> strictlyNotNull p

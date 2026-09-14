@@ -3,27 +3,27 @@ module Neg127
 // Variation on test case mentioned in https://github.com/dotnet/fsharp/pull/6805#issuecomment-580368303
 //
 // See also pos35.fs, neg125.fs
-// 
+//
 // This no longer passes a dummy ^output but keeps ^output as a witness selector
 //
 // When both ^witnesses and ^input are known, the overload determining the ^output still can't be determined.
 // However overload resolution is **not** delayed because the language rule is that overload resolution
 // goes ahead once the support in the **argument** types of the constraint have all been resolved.
-// 
+//
 // This design decision for SRTP resolution was based on the (technically false but normally true) assumption that
 // overload resolution will not depend on return type.
 //
 // The workaround for this in SRTP generic code is to pass a dummy Unchecked.defaultof<_> argument of the type of the
 // return type.
 
-module Negative_SelectOverloadedWitnessBasedOnReturnTypeWithoutPassingDummyArgument = 
+module Negative_SelectOverloadedWitnessBasedOnReturnTypeWithoutPassingDummyArgument =
     open System
     open System.Numerics
     let _uint8max = bigint (uint32 Byte.MaxValue)
     let _uint16max = bigint (uint32 UInt16.MaxValue)
     let _uint32max = bigint UInt32.MaxValue
     let _uint64max = bigint UInt64.MaxValue
-    type witnesses = 
+    type witnesses =
       static member inline convert_witness (x : bigint) = int (uint32 (x &&& _uint32max))
       static member inline convert_witness (x : bigint) = int64 (uint64 (x &&& _uint64max))
       static member inline convert_witness (x : bigint) = x
@@ -43,7 +43,7 @@ module Negative_SelectOverloadedWitnessBasedOnReturnTypeWithoutPassingDummyArgum
 
     let inline convert num =
       call_convert_witness<witnesses, _, _> (num)
-    // These all cause errors 
+    // These all cause errors
     let v1 : int32 = convert 0I
     let v2 : int64 = convert 0I
     let v3 : bigint = convert 0I

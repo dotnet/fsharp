@@ -1,3 +1,9 @@
+---
+title: Regression testing pipeline
+category: Compiler Internals
+categoryindex: 200
+index: 950
+---
 # F# Compiler Regression Testing
 
 This document describes the F# compiler regression testing functionality implemented as a reusable Azure DevOps template in `eng/templates/regression-test-jobs.yml` and integrated into the main PR pipeline (`azure-pipelines-PR.yml`).

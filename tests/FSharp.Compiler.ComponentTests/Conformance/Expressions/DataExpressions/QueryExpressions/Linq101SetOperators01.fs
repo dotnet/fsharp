@@ -8,7 +8,7 @@ open System.Linq
 // Distinct - 1
 let factorsOf300 = [2;2;3;5;5]
 
-let uniqueFactors = 
+let uniqueFactors =
     query {
         for n in factorsOf300 do
         distinct
@@ -29,7 +29,7 @@ if categoryNames <> ["Beverages"; "Condiments"; "Produce"; "Meat/Poultry"; "Seaf
 // Union - 2
 let customers = getCustomerList()
 
-let productFirstChars = 
+let productFirstChars =
     query {
         for p in products do
         select p.ProductName.[0]

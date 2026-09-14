@@ -1,4 +1,4 @@
-// #Regression #Conformance #SignatureFiles #Namespaces 
+// #Regression #Conformance #SignatureFiles #Namespaces
 
 
 // Verify an empty file with just hash directives

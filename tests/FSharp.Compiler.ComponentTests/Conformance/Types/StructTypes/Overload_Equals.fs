@@ -1,4 +1,4 @@
-// #Regression #Conformance #ObjectOrientedTypes #Structs #ReqNOMT 
+// #Regression #Conformance #ObjectOrientedTypes #Structs #ReqNOMT
 // Regression test for FSHARP1.0:5223
 // Overloading of Equals()
 

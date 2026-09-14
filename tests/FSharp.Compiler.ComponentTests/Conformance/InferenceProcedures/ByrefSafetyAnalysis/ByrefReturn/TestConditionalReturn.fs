@@ -6,7 +6,7 @@ module TestConditionalReturn =
 
     let f inp = if inp = 3 then &x else &y
 
-    let test() = 
+    let test() =
         let addr = &f 3
         addr <- addr + 1
         check2 "cepojcwem6" 2 x
@@ -16,7 +16,7 @@ module TestConditionalReturn =
         check2 "cepojcwem8" 2 x
         check2 "cepojcwem9" 2 y
 
-    let test2() = 
+    let test2() =
         let res = f 3
         let res2 = res + 1
         check2 "cepojcwem8b" 3 res2

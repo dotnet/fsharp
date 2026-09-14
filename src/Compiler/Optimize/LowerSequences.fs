@@ -40,7 +40,7 @@ type LoweredSeqFirstPhaseResult =
    {
      /// The second phase of the transformation.  This rebuilds the 'generate', 'dispose' and 'checkDispose' expressions for the
      /// state machine.  It is run after all code labels and their mapping to program counters have been determined
-     /// after the first phase. 
+     /// after the first phase.
      ///
      /// The arguments to phase2 are as follows:
      ///     'pc' is the state machine variable allocated to hold the "program counter" for the state machine
@@ -49,7 +49,7 @@ type LoweredSeqFirstPhaseResult =
      ///               that holds the "goto" destination for a tailcalling sequence expression
      ///     'pcMap' is the mapping from code labels to values for 'pc'
      ///
-     /// The phase2 function returns the core of the generate, dispose and checkDispose implementations. 
+     /// The phase2 function returns the core of the generate, dispose and checkDispose implementations.
      phase2 : ValRef * (* current: *) ValRef * (* nextVar: *) ValRef * Map<ILCodeLabel, int> -> Expr * Expr * Expr
 
      /// The labels allocated for one portion of the sequence expression
@@ -68,11 +68,11 @@ type LoweredSeqFirstPhaseResult =
 let IsPossibleSequenceExpr g overallExpr =
     match overallExpr with Seq g _ -> true | _ -> false
 
-let tyConfirmsToSeq g ty = 
+let tyConfirmsToSeq g ty =
     match tryTcrefOfAppTy g ty with
     | ValueSome tcref ->
         tyconRefEq g tcref g.tcref_System_Collections_Generic_IEnumerable
-    | _ -> false 
+    | _ -> false
 
 [<return: Struct>]
 let (|SeqElemTy|_|) g amap m ty =
@@ -98,7 +98,7 @@ let (|SeqElemTy|_|) g amap m ty =
 let ConvertSequenceExprToObject g amap overallExpr =
     /// Implement a decision to represent a 'let' binding as a non-escaping local variable (rather than a state machine variable)
     let RepresentBindingAsLocal (bind: Binding) resBody m =
-        if verbose then 
+        if verbose then
             printfn "LowerSeq: found local variable %s" bind.Var.DisplayName
 
         { resBody with
@@ -112,7 +112,7 @@ let ConvertSequenceExprToObject g amap overallExpr =
 
     /// Implement a decision to represent a 'let' binding as a state machine variable
     let RepresentBindingAsStateMachineLocal (bind: Binding) resBody m =
-        if verbose then 
+        if verbose then
             printfn "LowerSeq: found state variable %s" bind.Var.DisplayName
 
         let (TBind(v, e, sp)) = bind
@@ -137,7 +137,7 @@ let ConvertSequenceExprToObject g amap overallExpr =
             stateVars = vref :: resBody.stateVars }
 
     let RepresentBindingsAsLifted mkBinds resBody =
-        if verbose then 
+        if verbose then
             printfn "found top level let  "
 
         { resBody with
@@ -173,10 +173,10 @@ let ConvertSequenceExprToObject g amap overallExpr =
                                         (Expr.Op (TOp.Return, [], [mkOne g m], m))
                                         (Expr.Op (TOp.Label label, [], [], m))))
                         let dispose =
-                            mkLabelled m label 
+                            mkLabelled m label
                                 (Expr.Op (TOp.Goto currentDisposeContinuationLabel, [], [], m))
                         let checkDispose =
-                            mkLabelled m label 
+                            mkLabelled m label
                                 (Expr.Op (TOp.Return, [], [mkBool g m (not (noDisposeContinuationLabel = currentDisposeContinuationLabel))], m))
                         generate, dispose, checkDispose)
                    entryPoints=[label]
@@ -270,15 +270,15 @@ let ConvertSequenceExprToObject g amap overallExpr =
             let reduction =
                 mkInvisibleLet mFor enumv (callNonOverloadedILMethod g amap mFor "GetEnumerator" (mkSeqTy g inpElemTy) [inp])
                     // try..finally - will get reduced again
-                    (mkCallSeqFinally g mFor genElemTy 
+                    (mkCallSeqFinally g mFor genElemTy
                         // while e.MoveNext do (will get reduced again)
                         //    - The lambda of the call to Seq.generated gets mIn as expected by SeqWhile
-                        (mkCallSeqGenerated g mFor genElemTy 
+                        (mkCallSeqGenerated g mFor genElemTy
                             (mkUnitDelayLambda g mIn (callNonOverloadedILMethod g amap mIn "MoveNext" inpEnumTy [enume]))
                             // let v = e.Current
-                            (mkInvisibleLet mIn v 
+                            (mkInvisibleLet mIn v
                                 (callNonOverloadedILMethod g amap mIn "get_Current" inpEnumTy [enume])
-                                (mkCoerceIfNeeded g (mkSeqTy g genElemTy) (tyOfExpr g body) 
+                                (mkCoerceIfNeeded g (mkSeqTy g genElemTy) (tyOfExpr g body)
                                     body)))
                         (mkUnitDelayLambda g mFor (mkCallDispose g mFor enumv.Type enume)))
                 |> addForDebugPoint
@@ -432,9 +432,9 @@ let ConvertSequenceExprToObject g amap overallExpr =
                     ||> Array.fold (fun fvs (TTarget(_vs, _, _), res) ->
                         if res.entryPoints.IsEmpty then fvs else unionFreeVars fvs res.asyncVars)
 
-                let stateVars = 
-                    (targets, tglArray) ||> Array.zip |> Array.toList |> List.collect (fun (TTarget(vs, _, _), res) -> 
-                        let stateVars = vs |> List.filter (fun v -> res.asyncVars.FreeLocals.Contains(v)) |> List.map mkLocalValRef 
+                let stateVars =
+                    (targets, tglArray) ||> Array.zip |> Array.toList |> List.collect (fun (TTarget(vs, _, _), res) ->
+                        let stateVars = vs |> List.filter (fun v -> res.asyncVars.FreeLocals.Contains(v)) |> List.map mkLocalValRef
                         stateVars @ res.stateVars)
 
                 let significantClose = tgl |> List.exists (fun res -> res.significantClose)
@@ -443,7 +443,7 @@ let ConvertSequenceExprToObject g amap overallExpr =
                             let gtgs, disposals, checkDisposes =
                                 (Array.toList targets, tgl)
                                   ||> List.map2 (fun (TTarget(vs, _, _)) res ->
-                                        let flags = vs |> List.map (fun v -> res.asyncVars.FreeLocals.Contains(v)) 
+                                        let flags = vs |> List.map (fun v -> res.asyncVars.FreeLocals.Contains(v))
                                         let generate, dispose, checkDispose = res.phase2 ctxt
                                         let gtg = TTarget(vs, generate, Some flags)
                                         gtg, dispose, checkDispose)
@@ -461,7 +461,7 @@ let ConvertSequenceExprToObject g amap overallExpr =
 
         | Expr.DebugPoint(dp, innerExpr) ->
             let resInnerExpr = ConvertSeqExprCode isWholeExpr isTailCall noDisposeContinuationLabel currentDisposeContinuationLabel innerExpr
-            match resInnerExpr with 
+            match resInnerExpr with
             | Some res2 ->
                 Some { res2 with
                         phase2 = (fun ctxt ->
@@ -558,11 +558,11 @@ let ConvertSequenceExprToObject g amap overallExpr =
             // Execute phase2, building the core of the GenerateNext, Dispose and CheckDispose methods
             let generateExprCore, disposalExprCore, checkDisposeExprCore =
                 res.phase2 (pcVarRef, currVarRef, nextVarRef, lab2pc)
-            
-            // Add on the final label and cleanup to the GenerateNext method 
+
+            // Add on the final label and cleanup to the GenerateNext method
             //    generateExpr;
             //    pc <- PC_DONE
-            //    noDispose: 
+            //    noDispose:
             //       current <- null
             //       return 0
             let generateExprWithCleanup =
@@ -579,7 +579,7 @@ let ConvertSequenceExprToObject g amap overallExpr =
 
             // Add on the final label to the 'CheckDispose' method
             //    checkDisposeExprCore
-            //    noDispose: 
+            //    noDispose:
             //        return false
             let checkDisposeExprWithCleanup =
                 mkSequential m
@@ -611,10 +611,10 @@ let ConvertSequenceExprToObject g amap overallExpr =
                 let table = mbuilder.Close(dtree, m, g.int_ty)
                 mkCompGenSequential m table (mkLabelled m initLabel expr)
 
-            // A utility to handle the cases where exceptions are raised by the disposal logic.  
+            // A utility to handle the cases where exceptions are raised by the disposal logic.
             // We wrap the disposal state machine in a loop that repeatedly drives the disposal logic of the
             // state machine through each disposal state, then re-raise the last exception raised.
-            // 
+            //
             // let mutable exn : exn = null
             // while(this.pc <> END_STATE) do
             //    try

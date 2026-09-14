@@ -16,7 +16,7 @@ module MemberDefinitions_MethodsAndProperties =
 
     let verifyCompileAndRun = verifyCompile >> run
 
-    // SOURCE=PartiallyOverriddenProperty.fs							
+    // SOURCE=PartiallyOverriddenProperty.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"PartiallyOverriddenProperty.fs"|])>]
     let ``Partially Overridden Property`` compilation =
         compilation
@@ -31,7 +31,7 @@ module MemberDefinitions_MethodsAndProperties =
         |> withCheckNulls
         |> verifyCompileAndRun
         |> shouldSucceed
-   
+
     // SOURCE=E_AbstractAndConcreteProp.fs SCFLAGS="--test:ErrorRanges"		# E_AbstractAndConcreteProp.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_AbstractAndConcreteProp.fs"|])>]
     let ``E_AbstractAndConcreteProp_fs`` compilation =
@@ -86,7 +86,7 @@ module MemberDefinitions_MethodsAndProperties =
             (Error 3868, Line 17, Col 11, Line 17, Col 14, "This active pattern expects 1 expression argument(s) and a pattern argument, e.g., 'Bar e1 pat'.");
             (Warning 25, Line 15, Col 15, Line 15, Col 16, "Incomplete pattern matches on this expression.")
         ]
-        
+
 
     // SOURCE=E_ActivePatternMember03.fs  SCFLAGS="--test:ErrorRanges"	# E_ActivePatternMember03.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_ActivePatternMember03.fs"|])>]
@@ -458,7 +458,7 @@ type I =
             (Error 3550, Line 11, Col 5, Line 11, Col 54, "Duplicate parameter. The parameter 'i' has been used more that once in this method.")
             (Error 3550, Line 11, Col 5, Line 11, Col 54, "Duplicate parameter. The parameter 'j' has been used more that once in this method.")
         ]
-        
+
     [<Fact>]
     let ``Error in signature file with no implementation file with abstract methods when reusing parameters`` () =
         let encodeFsi =
@@ -594,14 +594,14 @@ type I =
             (Error 3550, Line 7, Col 5, Line 7, Col 54, "Duplicate parameter. The parameter 'i' has been used more that once in this method.")
             (Error 3550, Line 7, Col 5, Line 7, Col 54, "Duplicate parameter. The parameter 'j' has been used more that once in this method.")
         ]
-    
+
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"IndexedPropertiesSameType.fs"|])>]
     let ``IndexedPropertiesSameType_fs`` compilation =
         compilation
         |> withLangVersion80
         |> verifyCompileAndRun
         |> shouldSucceed
-        
+
     [<Fact>]
     let ``Indexed1PropertiesSameType preview``() =
         Fsx """
@@ -613,7 +613,7 @@ type MyIndexerClass() =
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Warning 3581, Line 3, Col 14, Line 3, Col 22, "An indexed property's getter and setter must have the same type. Property 'Indexer1' has getter of type 'string' but setter of type 'float'.")
-        
+
     [<Fact>]
     let ``Indexed2PropertiesSameType_fs preview``() =
         Fsx """
@@ -625,7 +625,7 @@ type MyIndexerClass() =
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Warning 3581, Line 3, Col 14, Line 3, Col 22, "An indexed property's getter and setter must have the same type. Property 'Indexer2' has getter of type 'int' but setter of type 'float'.")
-    
+
     [<Fact>]
     let ``Indexed3PropertiesSameType_fs preview``() =
         Fsx """
@@ -638,7 +638,7 @@ type MyIndexerClass() =
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Warning 3581, Line 3, Col 14, Line 3, Col 22, "An indexed property's getter and setter must have the same type. Property 'Indexer3' has getter of type 'int' but setter of type 'float'.")
-    
+
     [<Fact>]
     let ``Indexed4PropertiesSameType_fs preview``() =
         Fsx """
@@ -650,7 +650,7 @@ type MyIndexerClass() =
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Warning 3581, Line 3, Col 14, Line 3, Col 22, "An indexed property's getter and setter must have the same type. Property 'Indexer4' has getter of type 'float' but setter of type 'string'.")
-        
+
     [<Fact>]
     let ``Indexed5PropertiesSameType_fs preview``() =
         Fsx """
@@ -662,7 +662,7 @@ type MyIndexerClass() =
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Warning 3581, Line 3, Col 14, Line 3, Col 22, "An indexed property's getter and setter must have the same type. Property 'Indexer5' has getter of type 'float' but setter of type 'obj'.")
-            
+
     [<Fact>]
     let ``GenericIndexerPropertiesSameType_fs preview``() =
         Fsx """

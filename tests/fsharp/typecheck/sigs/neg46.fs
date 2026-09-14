@@ -15,25 +15,25 @@ type System.Random with
        static member Factory() = 1
 
 type System.Random with
-       static let rec f x = g x 
+       static let rec f x = g x
        and g x = f x
        static member Factory() = 1
 
 type System.Random with
-       static let rec f x = f x 
+       static let rec f x = f x
        static member Factory() = 1
 
 type System.Random with
-       let rec f x = f x 
+       let rec f x = f x
        static member Factory() = 1
 
 type System.Random with
-       let rec f x = g x 
+       let rec f x = g x
        and g x = f x
        static member Factory() = 1
 
 type System.Random with
-       let rec f x = g x 
+       let rec f x = g x
        static member Factory() = 1
 
 type System.Random with
@@ -65,11 +65,11 @@ type System.Random with
        static member Factory() = 1
 
 type System.Random with
-       interface System.IComparable with 
+       interface System.IComparable with
           member x.A = 1
        static member Factory() = 1
 
 type System.Random with
-       interface System.IComparable 
+       interface System.IComparable
        static member Factory() = 1
 

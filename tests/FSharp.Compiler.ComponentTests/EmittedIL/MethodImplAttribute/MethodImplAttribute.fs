@@ -37,7 +37,7 @@ module MethodImplAttribute =
         compilation
         |> getCompilation
         |> verifyCompilation
-     
+
     [<Theory; FileInlineData("MethodImplAttribute.NoInlining_InlineKeyword.fs")>]
     let ``NoInlining_fs with inline keyword => should warn in preview version`` compilation =
         compilation
@@ -45,7 +45,7 @@ module MethodImplAttribute =
         |> withLangVersion80
         |> typecheck
         |> withSingleDiagnostic (Warning 3151, Line 3, Col 12, Line 3, Col 19, "This member, function or value declaration may not be declared 'inline'")
-    
+
     // SOURCE=MethodImplAttribute.AggressiveInlining.fs SCFLAGS="-a -g --optimize-" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd MethodImplAttribute.AggressiveInlining.dll"	# MethodImplAttribute.AggressiveInlining.fs
     [<Theory; FileInlineData("MethodImplAttribute.AggressiveInlining.fs")>]
     let ``AggressiveInlining_fs`` compilation =

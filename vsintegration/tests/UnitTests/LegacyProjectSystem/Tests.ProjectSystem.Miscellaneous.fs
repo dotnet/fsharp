@@ -10,7 +10,7 @@ open System.IO
 open System.Text
 open System.Text.RegularExpressions
 
-// VS namespaces 
+// VS namespaces
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
@@ -24,7 +24,7 @@ open UnitTests.TestLib.Utils.Asserts
 open UnitTests.TestLib.Utils.FilesystemHelpers
 open UnitTests.TestLib.ProjectSystem
 
-type Miscellaneous() = 
+type Miscellaneous() =
     inherit TheTests()
 
     //TODO: look for a way to remove the helper functions
@@ -33,7 +33,7 @@ type Miscellaneous() =
     static let SaveProject(project : UnitTestingFSharpProjectNode) =
         project.Save(null, 1, 0u) |> ignore
 
-    //[<Fact>]   // keep disabled unless trying to prove that UnhandledExceptionHandler is working 
+    //[<Fact>]   // keep disabled unless trying to prove that UnhandledExceptionHandler is working
     member public this.EnsureThatUnhandledExceptionsCauseAnAssert() =
         this.MakeProjectAndDo([], ["System"], "", (fun proj ->
             let t = new System.Threading.Thread(new System.Threading.ThreadStart(fun () -> failwith "foo"))
@@ -45,40 +45,40 @@ type Miscellaneous() =
     member public this.``Miscellaneous.CreatePropertiesObject`` () =
         DoWithTempFile "Test.fsproj" (fun projFile ->
             File.AppendAllText(projFile, TheTests.SimpleFsprojText([], [], ""))
-            use project = TheTests.CreateProject(projFile) 
+            use project = TheTests.CreateProject(projFile)
             let prop = project.CreatePropertiesObject()
             Assert.Equal(typeof<FSharpProjectNodeProperties>, prop.GetType())
             )
-            
+
     [<Fact>]
     member public this.``Miscellaneous.TestProperties`` () =
         DoWithTempFile "Test.fsproj" (fun projFile ->
             File.AppendAllText(projFile, TheTests.SimpleFsprojText([], [], ""))
-            use project = TheTests.CreateProject(projFile) 
+            use project = TheTests.CreateProject(projFile)
             let prop = new FSharpProjectNodeProperties(project)
-            
+
             prop.AssemblyName <- "a"
-            Assert.Equal("a", prop.AssemblyName)            
-            
+            Assert.Equal("a", prop.AssemblyName)
+
             // Output type and output file name
             prop.OutputType <- OutputType.Exe
             Assert.Equal(OutputType.Exe, prop.OutputType)
             Assert.Equal("a.exe", prop.OutputFileName)
-            
+
             prop.OutputType <- OutputType.Library
             Assert.Equal(OutputType.Library, prop.OutputType)
             Assert.Equal("a.dll", prop.OutputFileName)
-            
+
             prop.OutputType <- OutputType.WinExe
             Assert.Equal(OutputType.WinExe, prop.OutputType)
             Assert.Equal("a.exe", prop.OutputFileName)
-            )            
-            
+            )
+
     [<Fact>]
     member public this.``Miscellaneous.CreateServices`` () =
         DoWithTempFile "Test.fsproj" (fun projFile ->
             File.AppendAllText(projFile, TheTests.SimpleFsprojText([], [], ""))
-            use project = TheTests.CreateProject(projFile) 
+            use project = TheTests.CreateProject(projFile)
             let proj = project.CreateServices(typeof<VSLangProj.VSProject>)
             Assert.Equal(typeof<Microsoft.VisualStudio.FSharp.ProjectSystem.Automation.OAVSProject>, proj.GetType())
             let eproj = project.CreateServices(typeof<EnvDTE.Project>)
@@ -86,7 +86,7 @@ type Miscellaneous() =
             let badservice = project.CreateServices(typeof<string>)
             Assert.Null(badservice)
             )
-            
+
     [<Fact>]
     member public this.``Miscellaneous.FSharpFileNode.RelativeFilePath`` () =
         this.MakeProjectAndDo(["orig1.fs"], [], "", (fun project ->
@@ -98,7 +98,7 @@ type Miscellaneous() =
             let path = file.RelativeFilePath
             Assert.Equal("orig1.fs", path)
             ))
-           
+
     [<Fact>]
     member public this.``Miscellaneous.FSharpFileNode.CreateServices`` () =
         this.MakeProjectAndDo(["orig1.fs"], [], "", (fun project ->
@@ -113,8 +113,8 @@ type Miscellaneous() =
             Assert.Equal(typeof<Microsoft.VisualStudio.FSharp.ProjectSystem.Automation.OAFileItem>, eproj.GetType())
             ))
 
-    
-    //[<Fact>]    
+
+    //[<Fact>]
     member public this.AttemptDragAndDrop() =
         printfn "starting..."
         let fsproj = "D:\Depot\staging\Test.fsproj"
@@ -151,20 +151,20 @@ type Miscellaneous() =
         while not finished do
             match node with
             | :? FSharpFileNode as fileNode ->
-                printfn "file %s" fileNode.FileName 
+                printfn "file %s" fileNode.FileName
                 if fileNode.FileName = "aaa.fs" then
                     finished <- true
             | _ ->
-                node <- node.NextSibling 
+                node <- node.NextSibling
                 if node = null then
                     finished <- true
         Assert.NotEqual(node, null)
         let itemId = node.ID
-        
+
         project.DragEnter(iOleDataObject, keyboardState, itemId, &dwEffect) |> ignore
         ()
 
-    
+
     [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.``Automation.OutputGroup.OUTPUTLOC``() =
         this.MakeProjectAndDoWithProjectFile(["foo.fs"], [],
@@ -197,7 +197,7 @@ type Miscellaneous() =
             File.AppendAllText(file, text)
             let dirName = Path.GetDirectoryName(file)
             let sp, cnn = VsMocks.MakeMockServiceProviderAndConfigChangeNotifier()
-            let project = TheTests.CreateProject(file, "false", cnn, sp)            
+            let project = TheTests.CreateProject(file, "false", cnn, sp)
             use project = project
             let prjCfg = project.ConfigProvider.GetProjectConfiguration(new ConfigCanonicalName("Debug","AnyCPU")) :> IVsProjectCfg2
             let count = [| 0u |]
@@ -205,28 +205,28 @@ type Miscellaneous() =
             let ogs : IVsOutputGroup array = Array.create (int count.[0]) null
             prjCfg.get_OutputGroups(count.[0], ogs, count)  |> ValidateOK
             let ogs : IVsOutputGroup2 array = ogs |> Array.map (fun x -> downcast x)
-            let ogInfos = 
+            let ogInfos =
                 [for og in ogs do
                     let mutable canonicalName = ""
                     og.get_CanonicalName(&canonicalName) |> ValidateOK
                     let mutable description = ""
-                    og.get_Description(&description) |> ValidateOK 
+                    og.get_Description(&description) |> ValidateOK
                     let mutable displayName = ""
-                    og.get_DisplayName(&displayName) |> ValidateOK 
+                    og.get_DisplayName(&displayName) |> ValidateOK
                     let mutable keyOutput = ""
                     let keyOutputResult = og.get_KeyOutput(&keyOutput)
                     let count = [| 0u |]
-                    og.get_Outputs(0u, null, count) |> ValidateOK 
+                    og.get_Outputs(0u, null, count) |> ValidateOK
                     let os : IVsOutput2 array = Array.create (int count.[0]) null
-                    og.get_Outputs(count.[0], os, count) |> ValidateOK 
+                    og.get_Outputs(count.[0], os, count) |> ValidateOK
                     yield canonicalName, description, displayName, keyOutput, keyOutputResult, [
                         for o in os do
                             let mutable canonicalName = ""
-                            o.get_CanonicalName(&canonicalName) |> ValidateOK 
+                            o.get_CanonicalName(&canonicalName) |> ValidateOK
                             let mutable url = ""
-                            o.get_DeploySourceURL(&url) |> ValidateOK 
+                            o.get_DeploySourceURL(&url) |> ValidateOK
                             let mutable displayName = ""
-                            o.get_DisplayName(&displayName) |> ValidateOK 
+                            o.get_DisplayName(&displayName) |> ValidateOK
                             let mutable relativeUrl = ""
                             o.get_RootRelativeURL(&relativeUrl) |> ValidateOK
                             yield canonicalName, url, displayName, relativeUrl]
@@ -261,25 +261,25 @@ type Miscellaneous() =
 
     [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.``BuildAndClean``() =
-        this.MakeProjectAndDoWithProjectFileAndConfigChangeNotifier(["foo.fs"], [], 
-             this.MSBuildProjectBoilerplate "Library", 
+        this.MakeProjectAndDoWithProjectFileAndConfigChangeNotifier(["foo.fs"], [],
+             this.MSBuildProjectBoilerplate "Library",
              (fun project ccn projFileName ->
                 let fooPath = Path.Combine(project.ProjectFolder, "foo.fs")
                 File.AppendAllLines(fooPath, ["module Foo"])
-                
+
                 //ccn((project :> IVsHierarchy), "Debug|Any CPU")
-                let configName = "Debug"                
+                let configName = "Debug"
                 let (hr, configurationInterface) = project.ConfigProvider.GetCfgOfName(configName, ProjectConfig.Any_CPU)
                 AssertEqual VSConstants.S_OK hr
                 let config = configurationInterface :?> ProjectConfig
                 let (hr, vsBuildableCfg) = config.get_BuildableProjectCfg()
                 let buildableCfg = vsBuildableCfg :?> BuildableProjectConfig
                 AssertEqual VSConstants.S_OK hr
-                
+
                 let mutable isCleaning = false
                 let mutable success = false
                 use event = new System.Threading.ManualResetEvent(false)
-                let (hr, cookie) = 
+                let (hr, cookie) =
                     buildableCfg.AdviseBuildStatusCallback(
                         { new IVsBuildStatusCallback with
                             member this.BuildBegin pfContinue = pfContinue <- 1; VSConstants.S_OK
@@ -308,7 +308,7 @@ type Miscellaneous() =
                     doBuild "Build"
                     AssertEqual true (File.Exists (Path.Combine(project.ProjectFolder, "bin\\Debug\\Blah.dll")))
                     printfn "Output files present."
-                    
+
                     isCleaning <- true
                     printfn "Cleaning..."
                     doBuild "Clean"
@@ -318,8 +318,8 @@ type Miscellaneous() =
                 finally
                     buildableCfg.UnadviseBuildStatusCallback(cookie) |> AssertEqual VSConstants.S_OK
         ))
-        
-        
+
+
     //KnownFail: [<Fact>]
     member public this.``ErrorReporting.EmptyModuleReportedAtTheLastLine``() =
         let (outputWindowPaneErrors : string list ref) = ref [] // output window pane errors
@@ -332,21 +332,21 @@ type Miscellaneous() =
             File.AppendAllText(projFile, TheTests.SimpleFsprojText(compileItem, [], ""))
             use project = TheTests.CreateProject(projFile)
             let srcFile = (Path.GetDirectoryName projFile) + "\\" + "foo.fs"
-            File.AppendAllText(srcFile, "let foo () =\n  printfn \"A\"\n") 
+            File.AppendAllText(srcFile, "let foo () =\n  printfn \"A\"\n")
             project.BuildToOutput("Build", vso, null) |> ignore // Build the project using vso as the output logger
-            let errors = List.filter (fun (s:string) -> s.Contains(expectedError)) !outputWindowPaneErrors    
+            let errors = List.filter (fun (s:string) -> s.Contains(expectedError)) !outputWindowPaneErrors
             AssertEqual 1 (List.length errors)
-        )        
+        )
 
     member public this.``DebuggingDLLFailsFunc``() =
-        this.MakeProjectAndDoWithProjectFileAndConfigChangeNotifier(["foo.fs"], [], 
-               this.MSBuildProjectBoilerplate "Library",  
+        this.MakeProjectAndDoWithProjectFileAndConfigChangeNotifier(["foo.fs"], [],
+               this.MSBuildProjectBoilerplate "Library",
                (fun project ccn projFileName ->
                    ccn((project :> IVsHierarchy), "Debug|Any CPU")
                    let fooPath = Path.Combine(project.ProjectFolder, "foo.fs")
                    let mutable configurationInterface : IVsCfg = null
                    let hr = project.ConfigProvider.GetCfgOfName("Debug", "Any CPU", &configurationInterface)
-                   AssertEqual VSConstants.S_OK hr                
+                   AssertEqual VSConstants.S_OK hr
                    let config = configurationInterface :?> ProjectConfig
                    config.DebugLaunch(0ul) |> ignore
                    ()
@@ -358,8 +358,8 @@ type Miscellaneous() =
 
     [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.``DebuggingEXESucceeds``() =
-        this.MakeProjectAndDoWithProjectFileAndConfigChangeNotifier(["foo.fs"], [], 
-            this.MSBuildProjectBoilerplate "Exe",  
+        this.MakeProjectAndDoWithProjectFileAndConfigChangeNotifier(["foo.fs"], [],
+            this.MSBuildProjectBoilerplate "Exe",
             (fun project ccn projFileName ->
                 ccn((project :> IVsHierarchy), "Debug|Any CPU")
                 let fooPath = Path.Combine(project.ProjectFolder, "foo.fs")
@@ -378,14 +378,14 @@ type Miscellaneous() =
                 | _ -> failwith "" // DmiLom: Currently DebugLaunch() swallows most exceptions, in future if we improve DebugLaunch() we will expect it to throw a particular exception here
                 ()
         ))
-        
+
     [<Fact>]
     member public this.``IsDocumentInProject`` () =
         DoWithTempFile "Test.fsproj" (fun file ->
-            let fakeCsLibProjectFile = @"..\CsLib\CsLib.csproj"            
+            let fakeCsLibProjectFile = @"..\CsLib\CsLib.csproj"
             File.AppendAllText(file, TheTests.FsprojTextWithProjectReferences(["foo.fs"; @"bar\baz.fs"],["System.dll";"Foo.Bar.Baz.dll"],[fakeCsLibProjectFile],""))
             let sp, cnn = VsMocks.MakeMockServiceProviderAndConfigChangeNotifier()
-            let project = TheTests.CreateProject(file, "false", cnn, sp)            
+            let project = TheTests.CreateProject(file, "false", cnn, sp)
             use project = project
             let checkInProject shouldBeInProject relPath  =
                 let mkDoc = Path.Combine(project.ProjectFolder, relPath)
@@ -414,26 +414,26 @@ type Miscellaneous() =
                 let regexStr = "<Import Project=.*?Microsoft.FSharp.Targets(.|\\n)*?<PreBuildEvent>"
                 TheTests.HelpfulAssertMatches '<' regexStr fsprojFileText
                 // ensure it runs
-                let outputWindowPaneErrors : string list ref = ref [] 
+                let outputWindowPaneErrors : string list ref = ref []
                 let vso = VsMocks.vsOutputWindowPane(outputWindowPaneErrors)
                 let srcFile = (Path.GetDirectoryName projFileName) + "\\" + "foo.fs"
-                File.AppendAllText(srcFile, "let x = 5\n") 
+                File.AppendAllText(srcFile, "let x = 5\n")
                 project.BuildToOutput("Build", vso, null) |> ignore // Build the project using vso as the output logger
                 printfn "Build output:"
                 !outputWindowPaneErrors |> Seq.iter (printfn "%s")
-                let expectedRegex = new Regex("\\s*ProjectExt\\[.fsproj\\]")                
+                let expectedRegex = new Regex("\\s*ProjectExt\\[.fsproj\\]")
                 Assert.True(!outputWindowPaneErrors |> List.exists (fun s -> expectedRegex.IsMatch(s)), "did not see expected value in build output")
             ))
-        
+
     [<Fact>]
-    member public this.``BuildMacroValues`` () = 
+    member public this.``BuildMacroValues`` () =
         let logger (message:string) = System.IO.File.AppendAllText(@"c:\temp\logfile.txt", (message + Environment.NewLine))
 
         DoWithTempFile "MyAssembly.fsproj" (fun file ->
 
             File.AppendAllText(file, TheTests.FsprojTextWithProjectReferences([],[],[],""))
             let sp, cnn = VsMocks.MakeMockServiceProviderAndConfigChangeNotifier()
-            use project = TheTests.CreateProject(file, "false", cnn, sp) 
+            use project = TheTests.CreateProject(file, "false", cnn, sp)
             let targetPath = project.GetBuildMacroValue("TargetPath")
             let expectedTargetPath = Path.Combine(Path.GetDirectoryName(file), @"bin\Debug\MyAssembly.exe")
             AssertEqual expectedTargetPath targetPath
@@ -458,7 +458,7 @@ type Miscellaneous() =
             Assert.NotNull(solutionExt)
             Assert.False ( (solutionExt = "*Undefined*"), "SolutionExt not defined")
         )
-     
+
     [<Fact>]
     member public this.CreateFSharpManifestResourceName () =
         DoWithTempFile "Test.fsproj" (fun file ->
@@ -467,11 +467,11 @@ type Miscellaneous() =
             let result = Salsa.Salsa.CreateFSharpManifestResourceName file "" "" |> List.sort
             let expected =
                 ["Abc.resources", "Abc.resources";
-                 "Bar.de.resx", "Bar.de"; 
-                 "Bar.resx", "Bar"; 
+                 "Bar.de.resx", "Bar.de";
+                 "Bar.resx", "Bar";
                  "Xyz\Baz.ru.resx", "Xyz.Baz.ru"] |> List.sort
             if expected <> result then
-                Assert.Fail ((sprintf "%A" expected) + "<>" + (sprintf "%A" result))            
+                Assert.Fail ((sprintf "%A" expected) + "<>" + (sprintf "%A" result))
             ()
         )
 
@@ -501,9 +501,9 @@ type Miscellaneous() =
                 <ErrorReport>prompt</ErrorReport>
                 <WarningLevel>3</WarningLevel>
             </PropertyGroup>",
-            fun project configChangeNotifier projFile -> 
+            fun project configChangeNotifier projFile ->
                 let projFileText = File.ReadAllText(projFile)
-                // We need to add text _after_ the import of Microsoft.FSharp.Targets.  
+                // We need to add text _after_ the import of Microsoft.FSharp.Targets.
                 let i = projFileText.IndexOf("<Import Project=")
                 let i = projFileText.IndexOf(">", i)
                 let newProjFileText = projFileText.Insert(i+1, @"
@@ -532,7 +532,7 @@ type Miscellaneous() =
     member public this.TestBuildActions () =
         DoWithTempFile "Test.fsproj" (fun file ->
             let text = TheTests.FsprojTextWithProjectReferences(["foo.fs";"Bar.resx"; "Bar.de.resx"; "Xyz\Baz.ru.resx"; "Abc.resources"],[],[],"<Import Project=\"My.targets\" />")
-            
+
             File.AppendAllText(file, text)
             let dirName = Path.GetDirectoryName(file)
             let targetsFile = Path.Combine(dirName, "My.targets")
@@ -545,14 +545,14 @@ type Miscellaneous() =
                 </Project>"
             File.AppendAllText(targetsFile, targetsText)
             let sp, cnn = VsMocks.MakeMockServiceProviderAndConfigChangeNotifier()
-            let project = TheTests.CreateProject(file, "false", cnn, sp)            
+            let project = TheTests.CreateProject(file, "false", cnn, sp)
             use project = project
             let values = project.BuildActionConverter.GetStandardValues()
             let list = values |> Seq.cast |> Seq.map (fun (ba : BuildAction)-> ba.Name) |> Seq.toList
-            // expected list of build actions is union of standard actions, custom actions, and "extended" standard actions 
+            // expected list of build actions is union of standard actions, custom actions, and "extended" standard actions
             // this is not exhaustive (exhaustive list is not static), but covers the main equivalence classes
             let expected = ["Compile"; "Content"; "EmbeddedResource"; "None"; "MyBuildAction"; "MyBuildAction3"; "Resource"]
-            if expected |> List.forall (fun i -> List.exists ((=)i) list) |> not then                
+            if expected |> List.forall (fun i -> List.exists ((=)i) list) |> not then
                 let s0 = sprintf "%A" expected
                 let s1 = sprintf "%A" list
                 Assert.Fail(s0 + "<>" + s1)
@@ -564,12 +564,12 @@ type Miscellaneous() =
 
         let replace (pattern:string) (replacement:string) (input:string) = Regex.Replace(input, pattern, replacement)
 
-        let getBuildableNodeProps project caption = 
+        let getBuildableNodeProps project caption =
             let node = TheTests.FindNodeWithCaption (project, caption)
             let props = node.CreatePropertiesObject()
             props :?> BuildableNodeProperties
 
-        let checkNotStandardBuildAction buildAction = 
+        let checkNotStandardBuildAction buildAction =
             Assert.False(VSLangProj.prjBuildAction.prjBuildActionNone = buildAction, "Unexpected None match")
             Assert.False(VSLangProj.prjBuildAction.prjBuildActionCompile = buildAction, "Unexpected Compile match")
             Assert.False(VSLangProj.prjBuildAction.prjBuildActionContent = buildAction, "Unexpected Content match")
@@ -578,7 +578,7 @@ type Miscellaneous() =
         DoWithTempFile "Test.fsproj" (fun file ->
             let text =
                 TheTests.FsprojTextWithProjectReferences(["Compile.fs"; "None.fs"; "Resource.fs"; "SplashScreen.fs"; "Dude.fs"],[],[],"")
-                |> replace "Compile\s+Include='([a-zA-Z]+)\.fs'" "$1 Include='$1.fs'"            
+                |> replace "Compile\s+Include='([a-zA-Z]+)\.fs'" "$1 Include='$1.fs'"
             File.AppendAllText(file, text)
             let sp, cnn = VsMocks.MakeMockServiceProviderAndConfigChangeNotifier()
             let project = TheTests.CreateProject(file, "false", cnn, sp)
@@ -629,7 +629,7 @@ type Miscellaneous() =
                     AssertEqual "Compile" e.ItemType
             Assert.True(exceptionThrown)
         )
-        
+
     [<Fact>]
     member this.``WildcardsInProjectFile.OkCase`` () =
         DoWithTempFile "Test.fsproj"(fun file ->
@@ -639,7 +639,7 @@ type Miscellaneous() =
             let fileName = Path.Combine(dirName, "Foo.fs")
             File.AppendAllText(fileName, "do ()")
             let sp, cnn = VsMocks.MakeMockServiceProviderAndConfigChangeNotifier()
-            let project = TheTests.CreateProject(file, "false", cnn, sp) 
+            let project = TheTests.CreateProject(file, "false", cnn, sp)
             try
                 project.ComputeSourcesAndFlags()
                 let items = project.CompilationSourceFiles |> Array.toList
@@ -653,12 +653,12 @@ type Miscellaneous() =
                 project.Close() |> ignore
         )
 
-type Utilities() = 
+type Utilities() =
     (*
         Simulation of the code found in Xaml editor that we were crashing. The relevent code is pasted below.
         Note that they're assuming PKT is eight bytes. This need not be true and we don't enforce it from our
         side. We're just going to make sure to send an even number of characters (two per-byte).
-        
+
         private static AssemblyName EnsureAssemblyName(Reference r) {
             if (r.Type != prjReferenceType.prjReferenceTypeAssembly)
                 return null;
@@ -669,9 +669,9 @@ type Utilities() =
 
             AssemblyName an = new AssemblyName();
             // Reference.Name does not have to be the actual assembly name here (seen in Project ref cases)
-            // Identity (for Reference.Type == prjReferenceType.prjReferenceTypeAssembly) is the assembly name 
+            // Identity (for Reference.Type == prjReferenceType.prjReferenceTypeAssembly) is the assembly name
             // without path or extension and is reserved so it can't be set in the project file by users
-            an.Name = r.Identity; 
+            an.Name = r.Identity;
             an.CultureInfo = new CultureInfo(r.Culture);
             an.Version = new Version(
                 r.MajorVersion,
@@ -702,17 +702,17 @@ type Utilities() =
 
             return an;
         }
-        
-        
-        
+
+
+
     *)
-    
-    let SimulateXamlEditorReceivingThroughDTE(publicToken:string) = 
+
+    let SimulateXamlEditorReceivingThroughDTE(publicToken:string) =
         printfn "Simulating xaml pkt parsing for %s" publicToken
         // ----------------------------------------------------------------------------------------------------
         // Don't change code between these lines. Its simulating external code.
         // ----------------------------------------------------------------------------------------------------
-        let ParseOneByte(i:int) = 
+        let ParseOneByte(i:int) =
             let byteString = publicToken.Substring(i * 2, 2)
             System.Byte.Parse(byteString, NumberStyles.HexNumber, CultureInfo.InvariantCulture) |> ignore
         [0..7] |> List.iter ParseOneByte
@@ -725,7 +725,7 @@ type Utilities() =
 
     [<Fact>]
     member public this.``PublicKeyToken.0000000000000000``() = CheckPublicKeyToString([|0uy;0uy;0uy;0uy;0uy;0uy;0uy;0uy|], "0000000000000000")
-        
+
     [<Fact>]
     member public this.``PublicKeyToken.0000000000000001``() = CheckPublicKeyToString([|0uy;0uy;0uy;0uy;0uy;0uy;0uy;1uy|], "0000000000000001")
 
@@ -733,7 +733,7 @@ type Utilities() =
     member public this.``PublicKeyToken.0a00000000000001``() = CheckPublicKeyToString([|0xauy;0uy;0uy;0uy;0uy;0uy;0uy;1uy|], "0a00000000000001")
 
     [<Fact>]
-    member public this.``Parse MSBuild property of type Int64`` () = 
+    member public this.``Parse MSBuild property of type Int64`` () =
         Assert.Equal(123L, ProjectNode.ParsePropertyValueToInt64("123").Value)
         Assert.Equal(255L, ProjectNode.ParsePropertyValueToInt64("0xFF").Value)
         Assert.Null(ProjectNode.ParsePropertyValueToInt64(""))

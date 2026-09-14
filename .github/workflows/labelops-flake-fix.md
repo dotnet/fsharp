@@ -8,6 +8,9 @@ description: |
   all together. May include small, non-invasive product-code fixes when the
   root cause lives outside test files. Opens one PR, comments on originator.
 
+imports:
+  - shared/model-defaults.md
+
 on:
   workflow_dispatch:
     inputs:

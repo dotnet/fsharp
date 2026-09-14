@@ -49,7 +49,7 @@ type SmokeTestsForCompilation() =
         task {
             return 1
         }
-        |> fun t -> 
+        |> fun t ->
             t.Wait()
             if t.Result <> 1 then failwith "failed"
 
@@ -59,7 +59,7 @@ type SmokeTestsForCompilation() =
             let! x = Task.FromResult(1)
             return 1 + x
         }
-        |> fun t -> 
+        |> fun t ->
             t.Wait()
             if t.Result <> 2 then failwith "failed"
 
@@ -69,32 +69,32 @@ type SmokeTestsForCompilation() =
             let! x = task { return 1 }
             return x
         }
-        |> fun t -> 
+        |> fun t ->
             t.Wait()
             if t.Result <> 1 then failwith "failed"
 
     [<Fact>]
     member _.tcatch0() =
         task {
-            try 
+            try
                return 1
-            with e -> 
+            with e ->
                return 2
         }
-        |> fun t -> 
+        |> fun t ->
             t.Wait()
             if t.Result <> 1 then failwith "failed"
 
     [<Fact>]
     member _.tcatch1() =
         task {
-            try 
+            try
                let! x = Task.FromResult 1
                return x
-            with e -> 
+            with e ->
                return 2
         }
-        |> fun t -> 
+        |> fun t ->
             t.Wait()
             if t.Result <> 1 then failwith "failed"
 
@@ -112,7 +112,7 @@ type SmokeTestsForCompilation() =
             System.Console.WriteLine("world")
             return 1 + x
         }
-        |> fun t -> 
+        |> fun t ->
             t.Wait()
             if t.Result <> 2 then failwith "failed"
 
@@ -124,7 +124,7 @@ type SmokeTestsForCompilation() =
             System.Console.WriteLine("world")
             return 1 + x
         }
-        |> fun t -> 
+        |> fun t ->
             t.Wait()
             if t.Result <> 2 then failwith "failed"
 
@@ -134,9 +134,9 @@ type SmokeTestsForCompilation() =
             System.Console.WriteLine("hello")
             do! Task.Delay(100)
             System.Console.WriteLine("world")
-            return 1 
+            return 1
         }
-        |> fun t -> 
+        |> fun t ->
             t.Wait()
             if t.Result <> 1 then failwith "failed"
 
@@ -147,12 +147,12 @@ type SmokeTestsForCompilation() =
             try
                 do! Task.Delay(0)
             with
-            | :? ArgumentException -> 
+            | :? ArgumentException ->
                 ()
-            | _ -> 
+            | _ ->
                 ()
         }
-        |> fun t -> 
+        |> fun t ->
             t.Wait()
             if t.Result <> () then failwith "failed"
 
@@ -163,10 +163,10 @@ type SmokeTestsForCompilation() =
             try
                 do! Task.Delay(0)
             with
-            | :? ArgumentException -> 
+            | :? ArgumentException ->
                 ()
         }
-        |> fun t -> 
+        |> fun t ->
             t.Wait()
             if t.Result <> () then failwith "failed"
 
@@ -179,7 +179,7 @@ type SmokeTestsForCompilation() =
                 do! Task.Yield()
             return i
         }
-        |> fun t -> 
+        |> fun t ->
             t.Wait()
             if t.Result <> 5 then failwith "failed"
 
@@ -190,10 +190,10 @@ type SmokeTestsForCompilation() =
             and! y = Task.FromResult(2)
             return x + y
         }
-        |> fun t -> 
+        |> fun t ->
             t.Wait()
-            if t.Result <> 3 then failwith "failed"    
-            
+            if t.Result <> 3 then failwith "failed"
+
     [<Fact>]
     member _.merge3tasks() =
         task {
@@ -202,7 +202,7 @@ type SmokeTestsForCompilation() =
             and! z = Task.FromResult(3)
             return x + y + z
         }
-        |> fun t -> 
+        |> fun t ->
             t.Wait()
             if t.Result <> 6 then failwith "failed"
 
@@ -213,7 +213,7 @@ type SmokeTestsForCompilation() =
             and! y = Task.FromResult(1)
             return y
         }
-        |> fun t -> 
+        |> fun t ->
             t.Wait()
             if t.Result <> 1 then failwith "failed"
 
@@ -224,7 +224,7 @@ type SmokeTestsForCompilation() =
             and! _ = Task.Yield()
             return x
         }
-        |> fun t -> 
+        |> fun t ->
             t.Wait()
             if t.Result <> 1 then failwith "failed"
 
@@ -235,7 +235,7 @@ type SmokeTestsForCompilation() =
             and! y = ValueTask<int>(Task.FromResult(2))
             return x + y
         }
-        |> fun t -> 
+        |> fun t ->
             t.Wait()
             if t.Result <> 3 then failwith "failed"
 
@@ -247,7 +247,7 @@ type SmokeTestsForCompilation() =
             and! _ = Task.Yield()
             return x + y
         }
-        |> fun t -> 
+        |> fun t ->
             t.Wait()
             if t.Result <> 3 then failwith "failed"
 
@@ -259,7 +259,7 @@ type SmokeTestsForCompilation() =
             and! y = Task.FromResult(2)
             return x + y
         }
-        |> fun t -> 
+        |> fun t ->
             t.Wait()
             if t.Result <> 3 then failwith "failed"
 
@@ -271,7 +271,7 @@ type SmokeTestsForCompilation() =
             and! z = ValueTask<int>(Task.FromResult(3))
             return x + y + z
         }
-        |> fun t -> 
+        |> fun t ->
             t.Wait()
             if t.Result <> 6 then failwith "failed"
 
@@ -282,7 +282,7 @@ type SmokeTestsForCompilation() =
             and! y = async { return 2 }
             return x + y
         }
-        |> fun t -> 
+        |> fun t ->
             t.Wait()
             if t.Result <> 3 then failwith "failed"
 
@@ -294,7 +294,7 @@ type SmokeTestsForCompilation() =
             and! z = async { return 3 }
             return x + y + z
         }
-        |> fun t -> 
+        |> fun t ->
             t.Wait()
             if t.Result <> 6 then failwith "failed"
 
@@ -305,7 +305,7 @@ type SmokeTestsForCompilation() =
             and! y = async { return 1 }
             return y
         }
-        |> fun t -> 
+        |> fun t ->
             t.Wait()
             if t.Result <> 1 then failwith "failed"
 
@@ -316,7 +316,7 @@ type SmokeTestsForCompilation() =
             and! _ = Task.Yield()
             return x
         }
-        |> fun t -> 
+        |> fun t ->
             t.Wait()
             if t.Result <> 1 then failwith "failed"
 
@@ -328,7 +328,7 @@ type SmokeTestsForCompilation() =
             and! y = async { return 2 }
             return x + y
         }
-        |> fun t -> 
+        |> fun t ->
             t.Wait()
             if t.Result <> 3 then failwith "failed"
 
@@ -340,7 +340,7 @@ type SmokeTestsForCompilation() =
             and! z = ValueTask<int>(Task.FromResult(3))
             return x + y + z
         }
-        |> fun t -> 
+        |> fun t ->
             t.Wait()
             if t.Result <> 6 then failwith "failed"
 
@@ -352,21 +352,21 @@ type SmokeTestsForCompilation() =
             and! z = ValueTask<int>(Task.FromResult(3))
             return x + y + z
         }
-        |> fun t -> 
+        |> fun t ->
             t.Wait()
             if t.Result <> 6 then failwith "failed"
 
 exception TestException of string
 
 [<AutoOpen>]
-module Helpers = 
+module Helpers =
     let BIG = 10
     // let BIG = 10000
     let require x msg = if not x then failwith msg
     let failtest str = raise (TestException str)
 
 [<Collection(nameof FSharp.Test.NotThreadSafeResourceCollection)>]
-type Basics() = 
+type Basics() =
     [<Fact>]
     member _.testShortCircuitResult() =
         printfn "Running testShortCircuitResult..."
@@ -479,11 +479,11 @@ type Basics() =
         let t =
             task {
                 try
-                    let! _ = task { 
+                    let! _ = task {
                         do! Task.Delay(100)
                         x <- 1
                     }
-                    and! _ = task { 
+                    and! _ = task {
                         failtest "hello"
                     }
                     ()
@@ -552,7 +552,7 @@ type Basics() =
     [<Fact>]
     member _.testWhileLoopAsyncZeroIteration() =
         printfn "Running testWhileLoopAsyncZeroIteration..."
-        for i in 1 .. 5 do 
+        for i in 1 .. 5 do
             let t =
                 task {
                     let mutable i = 0
@@ -567,7 +567,7 @@ type Basics() =
     [<Fact>]
     member _.testWhileLoopAsyncOneIteration() =
         printfn "Running testWhileLoopAsyncOneIteration..."
-        for i in 1 .. 5 do 
+        for i in 1 .. 5 do
             let t =
                 task {
                     let mutable i = 0
@@ -582,7 +582,7 @@ type Basics() =
     [<Fact>]
     member _.testWhileLoopAsync() =
         printfn "Running testWhileLoopAsync..."
-        for i in 1 .. 5 do 
+        for i in 1 .. 5 do
             let t =
                 task {
                     let mutable i = 0
@@ -597,7 +597,7 @@ type Basics() =
     [<Fact>]
     member _.testTryFinallyHappyPath() =
         printfn "Running testTryFinallyHappyPath..."
-        for i in 1 .. 5 do 
+        for i in 1 .. 5 do
             let mutable ran = false
             let t =
                 task {
@@ -613,7 +613,7 @@ type Basics() =
     [<Fact>]
     member _.testTryFinallySadPath() =
         printfn "Running testTryFinallySadPath..."
-        for i in 1 .. 5 do 
+        for i in 1 .. 5 do
             let mutable ran = false
             let t =
                 task {
@@ -634,7 +634,7 @@ type Basics() =
     [<Fact>]
     member _.testTryFinallyCaught() =
         printfn "Running testTryFinallyCaught..."
-        for i in 1 .. 5 do 
+        for i in 1 .. 5 do
             let mutable ran = false
             let t =
                 task {
@@ -652,11 +652,11 @@ type Basics() =
                 }
             require (t.Result = 2) "wrong return"
             require ran "never ran"
-    
+
     [<Fact>]
     member _.testUsing() =
         printfn "Running testUsing..."
-        for i in 1 .. 5 do 
+        for i in 1 .. 5 do
             let mutable disposed = false
             let t =
                 task {
@@ -900,14 +900,14 @@ type Basics() =
         let list = ["a"; "b"; "c"] |> Seq.ofList
         let t =
             task {
-                printfn "entering loop..." 
+                printfn "entering loop..."
                 let mutable x = Unchecked.defaultof<_>
                 let e = list.GetEnumerator()
-                while e.MoveNext() do 
+                while e.MoveNext() do
                     x <- e.Current
-                    printfn "x = %A" x 
+                    printfn "x = %A" x
                     do! Task.Yield()
-                    printfn "x = %A" x 
+                    printfn "x = %A" x
             }
         t.Wait()
 
@@ -945,24 +945,24 @@ type Basics() =
             task {
                 let mutable index = 0
                 do! Task.Yield()
-                printfn "entering loop..." 
+                printfn "entering loop..."
                 for x in wrapList do
                     printfn "x = %A, index = %d" x index
                     do! Task.Yield()
-                    printfn "back from yield" 
+                    printfn "back from yield"
                     do! Task.Yield()
-                    printfn "back from yield" 
+                    printfn "back from yield"
                     match index with
                     | 0 -> require (x = "a") "wrong first value"
                     | 1 -> require (x = "b") "wrong second value"
                     | 2 -> require (x = "c") "wrong third value"
                     | _ -> require false "iterated too far!"
                     index <- index + 1
-                    printfn "yield again" 
+                    printfn "yield again"
                     do! Task.Yield()
-                    printfn "yield again again" 
+                    printfn "yield again again"
                     do! Task.Yield()
-                    printfn "looping again..." 
+                    printfn "looping again..."
                 do! Task.Yield()
                 return 1
             }
@@ -973,7 +973,7 @@ type Basics() =
     [<Fact>]
     member _.testForLoopSadPath() =
         printfn "Running testForLoopSadPath..."
-        for i in 1 .. 5 do 
+        for i in 1 .. 5 do
             let wrapList = ["a"; "b"; "c"]
             let t =
                 task {
@@ -989,7 +989,7 @@ type Basics() =
     [<Fact>]
     member _.testForLoopSadPathComplex() =
         printfn "Running testForLoopSadPathComplex..."
-        for i in 1 .. 5 do 
+        for i in 1 .. 5 do
             let mutable disposed = false
             let wrapList =
                 let raw = ["a"; "b"; "c"] |> Seq.ofList
@@ -1040,10 +1040,10 @@ type Basics() =
             require (t.Result = 2) "wrong result"
             require caught "didn't catch exception"
             require disposed "never disposed A"
-    
+
     [<Fact>]
     member _.testExceptionAttachedToTaskWithoutAwait() =
-        for i in 1 .. 5 do 
+        for i in 1 .. 5 do
             let mutable ranA = false
             let mutable ranB = false
             let t =
@@ -1077,7 +1077,7 @@ type Basics() =
     [<Fact>]
     member _.testExceptionAttachedToTaskWithAwait() =
         printfn "running testExceptionAttachedToTaskWithAwait"
-        for i in 1 .. 5 do 
+        for i in 1 .. 5 do
             let mutable ranA = false
             let mutable ranB = false
             let t =
@@ -1108,7 +1108,7 @@ type Basics() =
             require ranCatcher "didn't run"
             require catcher.Result "didn't catch"
             require caught "didn't catch"
-    
+
     [<Fact>]
     member _.testExceptionThrownInFinally() =
         printfn "running testExceptionThrownInFinally"
@@ -1142,7 +1142,7 @@ type Basics() =
     [<Fact>]
     member _.test2ndExceptionThrownInFinally() =
         printfn "running test2ndExceptionThrownInFinally"
-        for i in 1 .. 5 do 
+        for i in 1 .. 5 do
             use ranInitial = new ManualResetEventSlim()
             use continueTask = new SemaphoreSlim(0)
             use ranNext = new ManualResetEventSlim()
@@ -1168,11 +1168,11 @@ type Basics() =
             | _ -> ()
             require ranNext.IsSet "didn't run next"
             require (ranFinally = 1) "didn't run finally exactly once"
-    
+
     [<Fact>]
     member _.testFixedStackWhileLoop() =
         printfn "running testFixedStackWhileLoop"
-        for i in 1 .. 100 do 
+        for i in 1 .. 100 do
             let t =
                 task {
                     let mutable maxDepth = Nullable()
@@ -1192,7 +1192,7 @@ type Basics() =
 
     [<Fact>]
     member _.testFixedStackForLoop() =
-        for i in 1 .. 100 do 
+        for i in 1 .. 100 do
             printfn "running testFixedStackForLoop"
             let mutable ran = false
             let t =
@@ -1235,7 +1235,7 @@ type Basics() =
                     return! Task.FromResult(())
             }
         longLoop.Wait()
-    
+
     [<Fact>]
     member _.testNoStackOverflowWithYieldResult() =
         printfn "running testNoStackOverflowWithYieldResult"
@@ -1270,7 +1270,7 @@ type Basics() =
                 return! loop 0
             }
         shortLoop.Wait()
-    
+
     [<Fact>]
     member _.testTryOverReturnFrom() =
         printfn "running testTryOverReturnFrom"
@@ -1313,7 +1313,7 @@ type Basics() =
         with
         | :? AggregateException -> ()
         require (m = 1) "didn't run finally"
-    
+
     [<Fact>]
     member _.testTryFinallyOverReturnFromWithoutException() =
         printfn "running testTryFinallyOverReturnFromWithoutException"
@@ -1381,7 +1381,7 @@ type Basics() =
         let actual = $"{t.Result}, after task: {d}"
 
         require (actual = $"Before: {d}, in async: {d}, after async: {d}, after task: {d}") actual
-        
+
 
     [<Fact>]
     // no need to call this, we just want to check that it compiles w/o warnings
@@ -1390,7 +1390,7 @@ type Basics() =
         task {
             let! r = t
             if r = None then
-                return! failwithf "Could not find x" 
+                return! failwithf "Could not find x"
             else
                 return r
         }
@@ -1409,19 +1409,19 @@ type Basics() =
     [<Fact; >]
     member _.testTaskUsesSyncContext() =
         printfn "Running testBackgroundTask..."
-        for i in 1 .. 5 do 
+        for i in 1 .. 5 do
             let mutable ran = false
             let mutable posted = false
             let oldSyncContext = SynchronizationContext.Current
             let syncContext = { new SynchronizationContext()  with member _.Post(d,state) = posted <- true; d.Invoke(state) }
-            try 
+            try
                 SynchronizationContext.SetSynchronizationContext syncContext
-                let tid = System.Threading.Thread.CurrentThread.ManagedThreadId 
+                let tid = System.Threading.Thread.CurrentThread.ManagedThreadId
                 require (not (isNull SynchronizationContext.Current)) "need sync context non null on foreground thread A"
                 require (SynchronizationContext.Current = syncContext) "need sync context known on foreground thread A"
                 let t =
                     task {
-                        let tid2 = System.Threading.Thread.CurrentThread.ManagedThreadId 
+                        let tid2 = System.Threading.Thread.CurrentThread.ManagedThreadId
                         require (not (isNull SynchronizationContext.Current)) "need sync context non null on foreground thread B"
                         require (SynchronizationContext.Current = syncContext) "need sync context known on foreground thread B"
                         require (tid = tid2) "expected synchronous start for task B2"
@@ -1435,16 +1435,16 @@ type Basics() =
                 require posted "never posted"
             finally
                 SynchronizationContext.SetSynchronizationContext oldSyncContext
-                 
+
     [<Fact; >]
     member _.testBackgroundTaskEscapesSyncContext() =
         printfn "Running testBackgroundTask..."
-        for i in 1 .. 5 do 
+        for i in 1 .. 5 do
             let mutable ran = false
             let mutable posted = false
             let oldSyncContext = SynchronizationContext.Current
             let syncContext = { new SynchronizationContext()  with member _.Post(d,state) = posted <- true; d.Invoke(state) }
-            try 
+            try
                 SynchronizationContext.SetSynchronizationContext syncContext
                 let t =
                     backgroundTask {
@@ -1456,22 +1456,22 @@ type Basics() =
                 require (not posted) "did not expect post to sync context"
             finally
                 SynchronizationContext.SetSynchronizationContext oldSyncContext
-                 
+
     [<Fact; >]
     member _.testBackgroundTaskStaysOnSameThreadIfAlreadyOnBackground() =
         printfn "Running testBackgroundTask..."
-        for i in 1 .. 5 do 
+        for i in 1 .. 5 do
             let mutable ran = false
             let taskOuter =
                 Task.Run(fun () ->
-                    let tid = System.Threading.Thread.CurrentThread.ManagedThreadId 
+                    let tid = System.Threading.Thread.CurrentThread.ManagedThreadId
                     // In case other thread pool activities have polluted this one, sigh
                     SynchronizationContext.SetSynchronizationContext null
                     require (System.Threading.Thread.CurrentThread.IsThreadPoolThread) "expected thread pool thread (1)"
                     let t =
                         backgroundTask {
                             require (System.Threading.Thread.CurrentThread.IsThreadPoolThread) "expected thread pool thread (2)"
-                            let tid2 = System.Threading.Thread.CurrentThread.ManagedThreadId 
+                            let tid2 = System.Threading.Thread.CurrentThread.ManagedThreadId
                             require (tid = tid2) "expected synchronous starts when already on background thread"
                             do! Task.Delay(200)
                             ran <- true
@@ -1479,16 +1479,16 @@ type Basics() =
                     t.Wait()
                     require ran "never ran")
             taskOuter.Wait()
-                 
+
     [<Fact; >]
     member _.testGenericBackgroundTasks() =
         printfn "Running testBackgroundTask..."
-        for i in 1 .. 5 do 
+        for i in 1 .. 5 do
             let mutable ran = false
             let mutable posted = false
             let oldSyncContext = SynchronizationContext.Current
             let syncContext = { new SynchronizationContext()  with member _.Post(d,state) = posted <- true; d.Invoke(state) }
-            try 
+            try
                 SynchronizationContext.SetSynchronizationContext syncContext
                 let f (result: 'T ref) (x: 'T) =
                     backgroundTask {
@@ -1504,7 +1504,7 @@ type Basics() =
                 require (not posted) "did not expect post to sync context"
             finally
                 SynchronizationContext.SetSynchronizationContext oldSyncContext
-                 
+
 
 /// https://github.com/dotnet/fsharp/issues/12761
 module Test12761A =
@@ -1520,7 +1520,7 @@ module Test12761A =
     }
 
     type ProblematicType<'Key, 'Value, 'Dto, 'E>( fromDto : 'Dto -> Result<MyGenericType<'Key,'Value>,'E> ) =
-        let myTask = 
+        let myTask =
             backgroundTask {
                     let dto =  """{"DtoValue":"1","Key":"key1"}""" |> box |> unbox<'Dto>
                 return fromDto dto |> printfn "%A"
@@ -1536,7 +1536,7 @@ module Test12761A =
                 {
                     Value = int dto.DtoValue
                     Key = dto.Key
-                } 
+                }
                 |> Ok
             with | e -> Error e
 
@@ -1573,7 +1573,7 @@ type Issue12184b() =
     member _.AsyncMethod(_value: int) : System.Runtime.CompilerServices.YieldAwaitable =
         Task.Yield()
 
-// check this compiles 
+// check this compiles
 module Issue12184c =
     let TaskMethod(t) =
         task {
@@ -1604,7 +1604,7 @@ module Issue12184e =
         }
 #endif
 
-// check this compiles 
+// check this compiles
 module Issue12184f =
     let TaskMethod(t: Task) =
         task {

@@ -1,4 +1,4 @@
-// #Regression #Conformance #ObjectOrientedTypes #InterfacesAndImplementations 
+// #Regression #Conformance #ObjectOrientedTypes #InterfacesAndImplementations
 // Regression test for FSHARP1.0:5540
 // See also FSHARP1.0:5597
 // It is forbidden to implement an interface at multiple instantiations
@@ -9,17 +9,17 @@
 //<Expects status="error" id="FS0855" span="(23,18-23,19)">No abstract or interface member was found that corresponds to this override$</Expects>
 
 type IB<'a> =
-    interface 
+    interface
         abstract X : 'a -> char
     end
 
-type C<'a>() = 
-    interface IB<int> 
+type C<'a>() =
+    interface IB<int>
      with
         member m.X(x) = 'a'
-        
-    interface IB<int> 
+
+    interface IB<int>
      with
         member m.X(c) = 'a'
-    
-    
+
+

@@ -1,4 +1,4 @@
-// #Conformance #Quotations 
+// #Conformance #Quotations
 // Verify bad casts throw at runtime and valid ones succeed
 open System
 open Microsoft.FSharp.Quotations
@@ -18,7 +18,7 @@ let r2 =
         1
     with
         | :? ArgumentException -> 0
-        
+
 let r3 =
     try
         let uq = <@@ let x = 1 in x @@>
@@ -26,5 +26,5 @@ let r3 =
         0
     with
         | :? ArgumentException -> 1
-        
+
 exit <| if r1 = 0 && r2 = 0 && r3 = 0 then 0 else 1

@@ -1,4 +1,4 @@
-// #inline #FSharpQA #Conformance #TypeConstraints  
+// #inline #FSharpQA #Conformance #TypeConstraints
 //<Expects status="error" id="FS3151" span="(17,19-17,45)">This member, function or value declaration may not be declared 'inline'</Expects>
 //<Expects status="error" id="FS3151" span="(17,19-17,45)">This member, function or value declaration may not be declared 'inline'</Expects>
 //<Expects status="error" id="FS3151" span="(27,20-27,34)">This member, function or value declaration may not be declared 'inline'</Expects>

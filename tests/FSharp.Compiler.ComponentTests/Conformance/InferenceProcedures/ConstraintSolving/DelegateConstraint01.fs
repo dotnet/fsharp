@@ -1,4 +1,4 @@
-// #Conformance #TypeInference #TypeConstraints 
+// #Conformance #TypeInference #TypeConstraints
 
 
 // Sanity check delegate constraints
@@ -7,18 +7,18 @@ type CallbackAlpha = delegate of obj * unit * unit -> int
 type CallbackBravo = delegate of obj * unit * unit -> int
 
 type DelegateUtils<'del when 'del : delegate<unit * unit, int> and 'del :> System.Delegate> =
-    static member Invoke (x : 'del) = 
+    static member Invoke (x : 'del) =
         // null is the 'sender', the two units are normal parameters
         x.DynamicInvoke([| null; box (); box () |])
 
 // ---------------------------------------
 
 let timesInvoked = ref 0
-let lambda = fun (_ : obj) (_ : unit) (_ : unit) -> 
+let lambda = fun (_ : obj) (_ : unit) (_ : unit) ->
                 printfn "Lamda invoked!"
                 timesInvoked := !timesInvoked + 1
                 !timesInvoked
-                
+
 let alpha = new CallbackAlpha(lambda)
 let bravo = new CallbackBravo(lambda)
 

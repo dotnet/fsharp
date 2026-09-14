@@ -39,7 +39,7 @@ let fe start finish = [| for x in seq { start..finish } -> x |]
 for x in seq { 1..10 }  do ()
 
 for x in seq { 1..5..10 } do ()
-    
+
 let f = Seq.head
 
 let a2 = f (seq { 1..6 })

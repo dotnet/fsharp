@@ -1,4 +1,4 @@
-// #Regression #Conformance #DataExpressions #ObjectConstructors 
+// #Regression #Conformance #DataExpressions #ObjectConstructors
 // good - bug 6350
 module mod6350
 

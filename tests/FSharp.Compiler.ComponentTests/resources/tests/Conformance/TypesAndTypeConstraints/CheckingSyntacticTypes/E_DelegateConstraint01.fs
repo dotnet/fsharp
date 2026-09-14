@@ -1,4 +1,4 @@
-// #Regression #Conformance #TypeConstraints 
+// #Regression #Conformance #TypeConstraints
 // Verify error if the delegate constraint isn't met
 // Note this constraint requires that the delegate obey the
 // standard .NET idiom (obj sender, EventArgs args) -> unit

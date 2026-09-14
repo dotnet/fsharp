@@ -44,7 +44,7 @@ type PrintfTests() =
         test "%-10d" 123   "123       "
         test "%10c"  'a'   "         a"
         test "%-10c" 'a'   "a         "
-    
+
     [<Fact>]
     member this.NumbersInDifferentBases() =
         test "%10u"  123   "       123"
@@ -57,7 +57,7 @@ type PrintfTests() =
         test "%-10x" 123   "7b        "
         test "%10X"  123   "        7B"
         test "%-10X" 123   "7B        "
-        
+
     [<Fact>]
     member this.VariableWidth() =
         Assert.AreEqual("       a", sprintf "%*c"  8 'a'  )
@@ -73,8 +73,8 @@ type PrintfTests() =
         Assert.AreEqual("      7b", sprintf "%*x"  8 123  )
         Assert.AreEqual("7b      ", sprintf "%-*x" 8 123  )
         Assert.AreEqual("      7B", sprintf "%*X"  8 123  )
-        Assert.AreEqual("7B      ", sprintf "%-*X" 8 123  ) 
-        
+        Assert.AreEqual("7B      ", sprintf "%-*X" 8 123  )
+
     // test cases for https://github.com/dotnet/fsharp/issues/15557
     [<Fact>]
     member this.``sign flag - positive and negative one``() =
@@ -82,17 +82,17 @@ type PrintfTests() =
         test "%f"  -1.0         "-1.000000"
         test "%+f" +1.0         "+1.000000"
         test "%+f" -1.0         "-1.000000"
-        
+
         test "%f"  +1.0f        "1.000000"
         test "%f"  -1.0f        "-1.000000"
         test "%+f" +1.0f        "+1.000000"
         test "%+f" -1.0f        "-1.000000"
-        
+
         test "%f"  +1.0M        "1.000000"
         test "%f"  -1.0M        "-1.000000"
         test "%+f" +1.0M        "+1.000000"
         test "%+f" -1.0M        "-1.000000"
-            
+
     [<Fact>]
     member this.``sign flag - positive and negative zero``() =
         test "%f"  +0.0         "0.000000"
@@ -109,7 +109,7 @@ type PrintfTests() =
 #else
                                 "+0.000000"
 #endif
-        
+
         test "%f"  +0.0f        "0.000000"
         test "%f"  -0.0f
 #if NETCOREAPP
@@ -124,12 +124,12 @@ type PrintfTests() =
 #else
                                 "+0.000000"
 #endif
-        
+
         test "%f"  +0.0M        "0.000000"
         test "%f"  -0.0M        "0.000000"
         test "%+f" +0.0M        "+0.000000"
         test "%+f" -0.0M        "+0.000000"
-    
+
     [<Fact>]
     member this.``sign flag - positive and negative zero - corner cases`` () =
         test "%-10.3f" +0.0f    "0.000     "
@@ -153,7 +153,7 @@ type PrintfTests() =
 #else
                                 "+0000000.000000e+000"
 #endif
-        
+
         test "%-10.3f" +0.0    "0.000     "
         test "%-10.3f" -0.0
 #if NETCOREAPP
@@ -175,8 +175,8 @@ type PrintfTests() =
 #else
                                 "+0000000.000000e+000"
 #endif
-        
-    
+
+
     [<Fact>]
     member this.``sign flag - very small positive and negative numbers``() =
         test "%f"  -0.0000001
@@ -191,8 +191,8 @@ type PrintfTests() =
 #else
                                 "+0.000000"
 #endif
-        
-        
+
+
         test "%f"  -0.0000001f
 #if NETCOREAPP
                                 "-0.000000"
@@ -205,18 +205,18 @@ type PrintfTests() =
 #else
                                 "+0.000000"
 #endif
-        
+
         test "%f"  -0.0000001M  "0.000000"
 
         test "%+f" -0.0000001M  "+0.000000"
-    
+
     [<Fact>]
     member this.``sign flag - infinity``() =
         test "%f"  +infinity    "Infinity"
         test "%f"  -infinity    "-Infinity"
         test "%+f" +infinity    "Infinity"
         test "%+f" -infinity    "-Infinity"
-        
+
         test "%f"  +infinityf   "Infinity"
         test "%f"  -infinityf   "-Infinity"
         test "%+f" +infinityf   "Infinity"
@@ -228,24 +228,24 @@ type PrintfTests() =
         test "%f"  -nan         "NaN"
         test "%+f" +nan         "NaN"
         test "%+f" -nan         "NaN"
-        
+
         test "%f"  +nanf        "NaN"
         test "%f"  -nanf        "NaN"
         test "%+f" +nanf        "NaN"
         test "%+f" -nanf        "NaN"
-    
+
     // test cases for https://github.com/dotnet/fsharp/issues/15558 (same root cause as #15557; listing for completeness)
     [<Fact>]
     member this.``zero padding - positive and negative one`` () =
         test "%010.3f" +1.0  "000001.000"
         test "%010.3f" -1.0  "-00001.000"
-        
+
         test "%010.3f" +1.0f "000001.000"
         test "%010.3f" -1.0f "-00001.000"
-        
+
         test "%010.3f" +1.0M "000001.000"
         test "%010.3f" -1.0M "-00001.000"
-    
+
     [<Fact>]
     member this.``zero padding - positive and negative zero`` () =
         test "%010.3f" +0.0         "000000.000"
@@ -255,7 +255,7 @@ type PrintfTests() =
 #else
                                     "000000.000"
 #endif
-        
+
         test "%010.3f" +0.0f        "000000.000"
         test "%010.3f" -0.0f
 #if NETCOREAPP
@@ -263,10 +263,10 @@ type PrintfTests() =
 #else
                                     "000000.000"
 #endif
-        
+
         test "%010.3f" +0.0M        "000000.000"
         test "%010.3f" -0.0M        "000000.000"
-    
+
     [<Fact>]
     member _.``union case formatting`` () =
         Assert.AreEqual("CaseOne", sprintf "%A" CaseOne)
