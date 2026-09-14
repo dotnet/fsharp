@@ -925,6 +925,12 @@ Microsoft.FSharp.Core.CompilerServices.ArrayCollector`1[T]: T[] AddManyAndClose(
 Microsoft.FSharp.Core.CompilerServices.ArrayCollector`1[T]: T[] Close()
 Microsoft.FSharp.Core.CompilerServices.ArrayCollector`1[T]: Void Add(T)
 Microsoft.FSharp.Core.CompilerServices.ArrayCollector`1[T]: Void AddMany(System.Collections.Generic.IEnumerable`1[T])
+Microsoft.FSharp.Core.CompilerServices.GeneratedRuntimeAsyncSequenceBase`1[T]: System.Collections.Generic.IAsyncEnumerator`1[T] GetFreshEnumerator()
+Microsoft.FSharp.Core.CompilerServices.GeneratedRuntimeAsyncSequenceBase`1[T]: System.Threading.Tasks.ValueTask DisposeAsync()
+Microsoft.FSharp.Core.CompilerServices.GeneratedRuntimeAsyncSequenceBase`1[T]: System.Threading.Tasks.ValueTask`1[System.Boolean] MoveNextAsync()
+Microsoft.FSharp.Core.CompilerServices.GeneratedRuntimeAsyncSequenceBase`1[T]: T LastGenerated
+Microsoft.FSharp.Core.CompilerServices.GeneratedRuntimeAsyncSequenceBase`1[T]: T get_LastGenerated()
+Microsoft.FSharp.Core.CompilerServices.GeneratedRuntimeAsyncSequenceBase`1[T]: Void .ctor()
 Microsoft.FSharp.Core.CompilerServices.GeneratedSequenceBase`1[T]: Boolean CheckClose
 Microsoft.FSharp.Core.CompilerServices.GeneratedSequenceBase`1[T]: Boolean get_CheckClose()
 Microsoft.FSharp.Core.CompilerServices.GeneratedSequenceBase`1[T]: Int32 GenerateNext(System.Collections.Generic.IEnumerable`1[T] ByRef)
@@ -1009,6 +1015,7 @@ Microsoft.FSharp.Core.CompilerServices.SetStateMachineMethodImpl`1[TData]: Void 
 Microsoft.FSharp.Core.CompilerServices.SetStateMachineMethodImpl`1[TData]: Void Invoke(Microsoft.FSharp.Core.CompilerServices.ResumableStateMachine`1[TData] ByRef, System.Runtime.CompilerServices.IAsyncStateMachine)
 Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers: Boolean __useResumableCode[T]()
 Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers: Microsoft.FSharp.Core.FSharpOption`1[System.Int32] __resumableEntry()
+Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers: System.Collections.Generic.IAsyncEnumerable`1[T] __runtimeAsyncSequence[T](Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,System.Collections.Generic.IEnumerable`1[T]])
 Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers: System.Threading.Tasks.Task __runtimeAsyncReturnUnit()
 Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers: System.Threading.Tasks.Task`1[T] __runtimeAsyncReturn[T](T)
 Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers: System.Threading.Tasks.ValueTask __runtimeAsyncReturnValueTaskUnit()

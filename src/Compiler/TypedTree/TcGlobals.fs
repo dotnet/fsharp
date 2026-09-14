@@ -425,6 +425,8 @@ type TcGlobals(
   let v_date_tcr                 = findSysTyconRef sys "DateTime"
   let v_IEnumerable_tcr          = findSysTyconRef sysGenerics "IEnumerable`1"
   let v_IEnumerator_tcr          = findSysTyconRef sysGenerics "IEnumerator`1"
+  let v_IAsyncEnumerable_tcr     = findSysTyconRef sysGenerics "IAsyncEnumerable`1"
+  let v_IAsyncEnumerator_tcr     = findSysTyconRef sysGenerics "IAsyncEnumerator`1"
   let v_System_Attribute_tcr     = findSysTyconRef sys "Attribute"
   let v_expr_tcr                 = mk_MFQuotations_tcref fslibCcu "Expr`1"
   let v_raw_expr_tcr             = mk_MFQuotations_tcref fslibCcu "Expr"
@@ -908,6 +910,7 @@ type TcGlobals(
   let v_cgh__runtimeAsyncReturnValueTask_info = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,      "__runtimeAsyncReturnValueTask"           , None                 , None          , [vara],     ([[varaTy]], TType_app(v_valueTask_tcr, [varaTy], v_knownWithoutNull))) // handled specially by the checker
   let v_cgh__runtimeAsyncReturnUnit_info = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,           "__runtimeAsyncReturnUnit"                 , None                 , None          , [],        ([[v_unit_ty]], mkNonGenericTy v_task_nonGeneric_tcr)) // handled specially by the checker
   let v_cgh__runtimeAsyncReturnValueTaskUnit_info = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref, "__runtimeAsyncReturnValueTaskUnit"          , None                 , None          , [],        ([[v_unit_ty]], mkNonGenericTy v_valueTask_nonGeneric_tcr)) // handled specially by the checker
+  let v_cgh__runtimeAsyncSequence_info = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref, "__runtimeAsyncSequence", None, None, [vara], ([[v_unit_ty --> mkSeqTy varaTy]], TType_app(v_IAsyncEnumerable_tcr, [varaTy], v_knownWithoutNull)))
   let v_seq_to_array_info          = makeIntrinsicValRef(fslib_MFSeqModule_nleref,                             "toArray"                              , None                 , Some "ToArray", [varb],     ([[mkSeqTy varbTy]], mkArrayType 1 varbTy))
   let v_seq_to_list_info           = makeIntrinsicValRef(fslib_MFSeqModule_nleref,                             "toList"                               , None                 , Some "ToList" , [varb],     ([[mkSeqTy varbTy]], mkListTy varbTy))
   let v_seq_map_info               = makeIntrinsicValRef(fslib_MFSeqModule_nleref,                             "map"                                  , None                 , Some "Map"    , [vara;varb], ([[varaTy --> varbTy]; [mkSeqTy varaTy]], mkSeqTy varbTy))
@@ -1312,6 +1315,7 @@ type TcGlobals(
   member _.seq_tcr = v_seq_tcr
 
   member val seq_base_tcr = mk_MFCompilerServices_tcref fslibCcu "GeneratedSequenceBase`1"
+  member val runtime_async_seq_base_tcr = mk_MFCompilerServices_tcref fslibCcu "GeneratedRuntimeAsyncSequenceBase`1"
 
   member val ListCollector_tcr = mk_MFCompilerServices_tcref fslibCcu "ListCollector`1"
 
@@ -1324,6 +1328,9 @@ type TcGlobals(
         embeddedILTypeDefs.TryAdd(tref.Name, mkEmbeddableType()) |> ignore
 
   member g.mk_GeneratedSequenceBase_ty seqElemTy = TType_app(g.seq_base_tcr,[seqElemTy], v_knownWithoutNull)
+  member g.mk_GeneratedRuntimeAsyncSequenceBase_ty seqElemTy = TType_app(g.runtime_async_seq_base_tcr, [seqElemTy], v_knownWithoutNull)
+  member _.mk_IAsyncEnumerable_ty seqElemTy = TType_app(v_IAsyncEnumerable_tcr, [seqElemTy], v_knownWithoutNull)
+  member _.mk_IAsyncEnumerator_ty seqElemTy = TType_app(v_IAsyncEnumerator_tcr, [seqElemTy], v_knownWithoutNull)
 
   member val ResumableStateMachine_tcr = mk_MFCompilerServices_tcref fslibCcu "ResumableStateMachine`1"
 
@@ -1853,6 +1860,7 @@ type TcGlobals(
   member val cgh__runtimeAsyncReturnValueTask_vref = ValRefForIntrinsic v_cgh__runtimeAsyncReturnValueTask_info
   member val cgh__runtimeAsyncReturnUnit_vref = ValRefForIntrinsic v_cgh__runtimeAsyncReturnUnit_info
   member val cgh__runtimeAsyncReturnValueTaskUnit_vref = ValRefForIntrinsic v_cgh__runtimeAsyncReturnValueTaskUnit_info
+  member val cgh__runtimeAsyncSequence_vref = ValRefForIntrinsic v_cgh__runtimeAsyncSequence_info
   member val cgh__useResumableCode_vref = ValRefForIntrinsic v_cgh__useResumableCode_info
   member val cgh__debugPoint_vref = ValRefForIntrinsic v_cgh__debugPoint_info
   member val cgh__resumeAt_vref = ValRefForIntrinsic v_cgh__resumeAt_info

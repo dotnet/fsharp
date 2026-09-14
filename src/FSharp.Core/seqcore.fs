@@ -526,6 +526,26 @@ type GeneratedSequenceBase<'T>() =
 
         member _.Reset() = raise <| NotSupportedException()
 
+#if NET
+[<AbstractClass>]
+type GeneratedRuntimeAsyncSequenceBase<'T>() =
+    abstract GetFreshEnumerator: unit -> IAsyncEnumerator<'T>
+    abstract MoveNextAsync: unit -> System.Threading.Tasks.ValueTask<bool>
+    abstract DisposeAsync: unit -> System.Threading.Tasks.ValueTask
+    abstract LastGenerated: 'T
+
+    interface IAsyncEnumerable<'T> with
+        member x.GetAsyncEnumerator(cancellationToken) =
+            if cancellationToken.CanBeCanceled then
+                raise (NotSupportedException("Cancellable enumeration tokens are not supported by this experimental runtime-async sequence host."))
+            x.GetFreshEnumerator()
+
+    interface IAsyncEnumerator<'T> with
+        member x.Current = x.LastGenerated
+        member x.MoveNextAsync() = x.MoveNextAsync()
+        member x.DisposeAsync() = x.DisposeAsync()
+#endif
+
 [<Struct; NoEquality; NoComparison>]
 type ListCollector<'T> =
     [<DefaultValue(false)>]

@@ -284,6 +284,52 @@ These builders are examples rather than FSharp.Core APIs. Applications can
 define their own inline builders over the same intrinsics, subject to the
 runtime-async restrictions and inline-fragment rules described above.
 
+### Direct async-sequence proposal
+
+`__runtimeAsyncSequence` consumes a statically known `unit -> seq<'T>` recipe. It reuses sequence lowering, but emits runtime-async `MoveNextAsync(): ValueTask<bool>` and `DisposeAsync(): ValueTask` methods on a reference type. User awaits remain in these methods. Yield positions persist between calls. Ordinary nested sequences remain synchronous.
+
+The [example builder](../tests/FSharp.Compiler.ComponentTests/Language/RuntimeAsync/RuntimeAsyncSequenceBuilder.fs) uses existing sequence combinators. Its `Bind` supports tasks, value tasks, and typed custom/configured awaiters. `For` and `YieldFrom` select synchronous or asynchronous enumeration through library overloads, not compiler syntax cases.
+
+```fsharp
+let values (work: Task<int>) (resource: IAsyncDisposable) =
+    runtimeAsyncSeq {
+        use cleanup = resource
+        let! value = work
+        for offset in [1; 2] do
+            yield value + offset
+        yield! [10]
+        for value in runtimeAsyncSeq { yield 11 } do
+            yield value
+        yield! runtimeAsyncSeq { yield 12 }
+    }
+```
+
+The library's `withCancellation (fun token -> runtimeAsyncSeq { ... })` receives each enumeration token without adding an awaiting `MoveNextAsync` wrapper. The callback chooses cancellation checks and passes the token to its operations. The bare compiler host rejects cancellable tokens rather than silently ignoring them. The example does not automatically propagate tokens through nested `For`.
+
+```fsharp
+let tokens =
+    withCancellation (fun token -> runtimeAsyncSeq {
+        token.ThrowIfCancellationRequested()
+        yield token
+    })
+```
+
+Recipes undergo mandatory local normalization even with `--optimize-`. This does not enable optimization for surrounding code. It can remove intermediate recipe locals. Body faults await active cleanup before rethrowing with their original dispatch information. Successful moves do not allocate an exception-transport object.
+
+Builder-generated `MoveNextAsync` can lose visible sequence points. The optimized control has no visible points, and its nonoptimized form omits the terminal yield's range. Direct-intrinsic and ordinary-sequence controls retain their ranges. This proposal does not guarantee complete source stepping.
+
+This is a proposal, not a drop-in TaskSeq replacement. Producer `try/with`, opaque recipes, and optimized tail handoff are rejected. Early disposal retains ordinary sequence exception precedence: an outer cleanup failure replaces an inner cleanup failure. Concurrent move/dispose calls are unsupported. Awaiting a non-cancellable operation does not make it cancellable. Performance qualification must include genuinely pending operations, not only completed awaits.
+
+Build and run the small [usage and lifecycle example](../tests/FSharp.Compiler.ComponentTests/Language/RuntimeAsync/RuntimeAsyncSequence.fs) with the matching preview SDK:
+
+```sh
+./build.sh -c Release
+dotnet test --project tests/FSharp.Compiler.ComponentTests/FSharp.Compiler.ComponentTests.fsproj \
+  -c Release --no-build --filter-class 'Language.RuntimeAsyncSequenceTests'
+```
+
+The tests compile the library and consumer together and separately, with optimization enabled and disabled.
+
 ### Unsupported inline-fragment positions
 
 An inline fragment that escapes as a first-class value, is passed to a

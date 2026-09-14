@@ -2576,6 +2576,7 @@ let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
     let env = { env with disableMethodSplitting = env.disableMethodSplitting || isStateMachineE }
 
     let runtimeAsyncReturn = TryGetRuntimeAsyncReturn g expr
+    let runtimeAsyncSequence = TryGetRuntimeAsyncSequence g expr
 
     match expr with
     // treat the common linear cases to avoid stack overflows, using an explicit continuation
@@ -2620,6 +2621,16 @@ let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
 
     | Expr.Op (op, tyargs, args, m) ->
         OptimizeExprOp cenv env (op, tyargs, args, m)
+
+    | Expr.App (f, fty, tyargs, _, m) when runtimeAsyncSequence.IsSome ->
+        let recipe, _ = runtimeAsyncSequence.Value
+        let recipeCenv =
+            { cenv with
+                settings = { cenv.settings with alwaysInline = true; localOptUser = Some true } }
+        let recipeR, recipeInfo =
+            OptimizeExpr recipeCenv { env with runtimeAsyncContext = true; disableMethodSplitting = true } recipe
+        Expr.App(f, fty, tyargs, [recipeR], m),
+        { recipeInfo with HasEffect = true; Info = UnknownValue }
 
     | Expr.App (f, fty, tyargs, _, m) when runtimeAsyncReturn.IsSome ->
         let info = runtimeAsyncReturn.Value
@@ -4746,7 +4757,8 @@ and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
                // FSharp.Core).
                (let nvref = mkLocalValRef vref
                 g.compilingFSharpCore &&
-                   (valRefEq g nvref g.seq_vref ||
+                   (valRefEq g nvref g.cgh__runtimeAsyncSequence_vref ||
+                    valRefEq g nvref g.seq_vref ||
                     valRefEq g nvref g.seq_generated_vref ||
                     valRefEq g nvref g.seq_finally_vref ||
                     valRefEq g nvref g.seq_using_vref ||

@@ -8990,6 +8990,12 @@ and TcApplicationThen (cenv: cenv) (overallTy: OverallTy) env tpenv mExprAndArg 
         else
             None
 
+    match leftExpr with
+    | ApplicableExpr(expr = RuntimeAsyncSequenceFunction g _) ->
+        checkLanguageFeatureAndRecover g.langVersion LanguageFeature.RuntimeAsync mExprAndArg
+        checkLanguageFeatureRuntimeAndRecover cenv.infoReader LanguageFeature.RuntimeAsync mExprAndArg
+    | _ -> ()
+
     let (|RuntimeAsyncApplication|_|) =
         function
         | ApplicableExpr(expr = (RuntimeAsyncReturnFunction g (vref, flags, m))) ->
