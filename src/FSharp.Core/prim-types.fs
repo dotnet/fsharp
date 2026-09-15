@@ -6274,9 +6274,27 @@ namespace Microsoft.FSharp.Core
 
                 low, high
 
+            let inline ComputeSliceRange bound start finish length =
+                let low =
+                    match start with
+                    | Some n when n >= bound -> n
+                    | _ -> bound
+                let count =
+                    if length = 0 then
+                        0
+                    else
+                        let upper = bound + (length - 1)
+                        let high =
+                            match finish with
+                            | Some n when n < upper -> n
+                            | _ -> upper
+                        if high < low then 0 else high - low + 1
+
+                low, count
+
             let inline GetArraySlice (source: _ array) start finish =
-                let start, finish = ComputeSlice 0 start finish source.Length
-                GetArraySub source start (finish - start + 1)
+                let start, len = ComputeSliceRange 0 start finish source.Length
+                GetArraySub source start len
 
             let inline SetArraySlice (target: _ array) start finish (source: _ array) =
                 let start = (match start with None -> 0 | Some n -> n)
@@ -6286,16 +6304,13 @@ namespace Microsoft.FSharp.Core
             let inline GetArraySlice2D (source: _[,]) start1 finish1 start2 finish2 =
                 let bound1 = source.GetLowerBound(0)
                 let bound2 = source.GetLowerBound(1)
-                let start1, finish1 = ComputeSlice bound1 start1 finish1 (GetArray2DLength1 source)
-                let start2, finish2 = ComputeSlice bound2 start2 finish2 (GetArray2DLength2 source)
-                let len1 = (finish1 - start1 + 1)
-                let len2 = (finish2 - start2 + 1)
+                let start1, len1 = ComputeSliceRange bound1 start1 finish1 (GetArray2DLength1 source)
+                let start2, len2 = ComputeSliceRange bound2 start2 finish2 (GetArray2DLength2 source)
                 GetArray2DSub source start1 start2 len1 len2
 
             let inline GetArraySlice2DFixed (source: _[,]) start finish index nonFixedDim =
                 let bound = source.GetLowerBound(nonFixedDim)
-                let start, finish = ComputeSlice bound start finish (GetArray2DLength source nonFixedDim)
-                let len = (finish - start + 1)
+                let start, len = ComputeSliceRange bound start finish (GetArray2DLength source nonFixedDim)
                 let dst = zeroCreate (if len < 0 then 0 else len)
                 let getArrayElem =
                     match nonFixedDim with
@@ -6339,21 +6354,16 @@ namespace Microsoft.FSharp.Core
                 let bound1 = source.GetLowerBound(0)
                 let bound2 = source.GetLowerBound(1)
                 let bound3 = source.GetLowerBound(2)
-                let start1, finish1 = ComputeSlice bound1 start1 finish1 (GetArray3DLength1 source)
-                let start2, finish2 = ComputeSlice bound2 start2 finish2 (GetArray3DLength2 source)
-                let start3, finish3 = ComputeSlice bound3 start3 finish3 (GetArray3DLength3 source)
-                let len1 = (finish1 - start1 + 1)
-                let len2 = (finish2 - start2 + 1)
-                let len3 = (finish3 - start3 + 1)
+                let start1, len1 = ComputeSliceRange bound1 start1 finish1 (GetArray3DLength1 source)
+                let start2, len2 = ComputeSliceRange bound2 start2 finish2 (GetArray3DLength2 source)
+                let start3, len3 = ComputeSliceRange bound3 start3 finish3 (GetArray3DLength3 source)
                 GetArray3DSub source start1 start2 start3 len1 len2 len3
 
             let inline GetArraySlice3DFixedSingle (source: _[,,]) start1 finish1 start2 finish2 index nonFixedDim1 nonFixedDim2 =
                 let bound1 = source.GetLowerBound(nonFixedDim1)
                 let bound2 = source.GetLowerBound(nonFixedDim2)
-                let start1, finish1 = ComputeSlice bound1 start1 finish1 (GetArray3DLength source nonFixedDim1)
-                let start2, finish2 = ComputeSlice bound2 start2 finish2 (GetArray3DLength source nonFixedDim2)
-                let len1 = (finish1 - start1 + 1)
-                let len2 = (finish2 - start2 + 1)
+                let start1, len1 = ComputeSliceRange bound1 start1 finish1 (GetArray3DLength source nonFixedDim1)
+                let start2, len2 = ComputeSliceRange bound2 start2 finish2 (GetArray3DLength source nonFixedDim2)
 
                 let dst = Array2DZeroCreate (max 0 len1) (max 0 len2)
                 let getArrayElem =
@@ -6377,8 +6387,7 @@ namespace Microsoft.FSharp.Core
 
             let inline GetArraySlice3DFixedDouble (source: _[,,]) start finish index1 index2 nonFixedDim =
                 let bound = source.GetLowerBound(nonFixedDim)
-                let start, finish = ComputeSlice bound start finish (GetArray3DLength source nonFixedDim)
-                let len = (finish - start + 1)
+                let start, len = ComputeSliceRange bound start finish (GetArray3DLength source nonFixedDim)
                 let dst = zeroCreate (if len < 0 then 0 else len)
                 let getArrayElem =
                     match nonFixedDim with
@@ -6465,26 +6474,19 @@ namespace Microsoft.FSharp.Core
                 let bound2 = source.GetLowerBound(1)
                 let bound3 = source.GetLowerBound(2)
                 let bound4 = source.GetLowerBound(3)
-                let start1, finish1 = ComputeSlice bound1 start1 finish1 (GetArray4DLength1 source)
-                let start2, finish2 = ComputeSlice bound2 start2 finish2 (GetArray4DLength2 source)
-                let start3, finish3 = ComputeSlice bound3 start3 finish3 (GetArray4DLength3 source)
-                let start4, finish4 = ComputeSlice bound4 start4 finish4 (GetArray4DLength4 source)
-                let len1 = (finish1 - start1 + 1)
-                let len2 = (finish2 - start2 + 1)
-                let len3 = (finish3 - start3 + 1)
-                let len4 = (finish4 - start4 + 1)
+                let start1, len1 = ComputeSliceRange bound1 start1 finish1 (GetArray4DLength1 source)
+                let start2, len2 = ComputeSliceRange bound2 start2 finish2 (GetArray4DLength2 source)
+                let start3, len3 = ComputeSliceRange bound3 start3 finish3 (GetArray4DLength3 source)
+                let start4, len4 = ComputeSliceRange bound4 start4 finish4 (GetArray4DLength4 source)
                 GetArray4DSub source start1 start2 start3 start4 len1 len2 len3 len4
 
             let inline GetArraySlice4DFixedSingle (source: _[,,,]) start1 finish1 start2 finish2 start3 finish3 index nonFixedDim1 nonFixedDim2 nonFixedDim3 =
                 let bound1 = source.GetLowerBound(nonFixedDim1)
                 let bound2 = source.GetLowerBound(nonFixedDim2)
                 let bound3 = source.GetLowerBound(nonFixedDim3)
-                let start1, finish1 = ComputeSlice bound1 start1 finish1 (GetArray4DLength source nonFixedDim1)
-                let start2, finish2 = ComputeSlice bound2 start2 finish2 (GetArray4DLength source nonFixedDim2)
-                let start3, finish3 = ComputeSlice bound3 start3 finish3 (GetArray4DLength source nonFixedDim3)
-                let len1 = (finish1 - start1 + 1)
-                let len2 = (finish2 - start2 + 1)
-                let len3 = (finish3 - start3 + 1)
+                let _, len1 = ComputeSliceRange bound1 start1 finish1 (GetArray4DLength source nonFixedDim1)
+                let _, len2 = ComputeSliceRange bound2 start2 finish2 (GetArray4DLength source nonFixedDim2)
+                let _, len3 = ComputeSliceRange bound3 start3 finish3 (GetArray4DLength source nonFixedDim3)
 
                 let dst = Array3DZeroCreate (max len1 0) (max len2 0) (max len3 0)
                 let getArrayElem =
@@ -6516,10 +6518,8 @@ namespace Microsoft.FSharp.Core
             let inline GetArraySlice4DFixedDouble (source: _[,,,]) start1 finish1 start2 finish2 index1 index2 nonFixedDim1 nonFixedDim2 =
                 let bound1 = source.GetLowerBound(nonFixedDim1)
                 let bound2 = source.GetLowerBound(nonFixedDim2)
-                let start1, finish1 = ComputeSlice bound1 start1 finish1 (GetArray4DLength source nonFixedDim1)
-                let start2, finish2 = ComputeSlice bound2 start2 finish2 (GetArray4DLength source nonFixedDim2)
-                let len1 = (finish1 - start1 + 1)
-                let len2 = (finish2 - start2 + 1)
+                let _, len1 = ComputeSliceRange bound1 start1 finish1 (GetArray4DLength source nonFixedDim1)
+                let _, len2 = ComputeSliceRange bound2 start2 finish2 (GetArray4DLength source nonFixedDim2)
 
                 let dst = Array2DZeroCreate (max len1 0) (max len2 0)
                 let getArrayElem =
@@ -6557,8 +6557,7 @@ namespace Microsoft.FSharp.Core
 
             let inline GetArraySlice4DFixedTriple (source: _[,,,]) start1 finish1 index1 index2 index3 nonFixedDim1 =
                 let bound1 = source.GetLowerBound(nonFixedDim1)
-                let start1, finish1 = ComputeSlice bound1 start1 finish1 (GetArray4DLength source nonFixedDim1)
-                let len1 = (finish1 - start1 + 1)
+                let _, len1 = ComputeSliceRange bound1 start1 finish1 (GetArray4DLength source nonFixedDim1)
                 let dst = zeroCreate (max len1 0)
                 let getArrayElem =
                     match nonFixedDim1 with
@@ -6702,8 +6701,7 @@ namespace Microsoft.FSharp.Core
                 SetArraySlice4DFixedTriple target source index1 index2 index3 start4 finish4 3
 
             let inline GetStringSlice (source: string) start finish =
-                let start, finish = ComputeSlice 0 start finish source.Length
-                let len = finish-start+1
+                let start, len = ComputeSliceRange 0 start finish source.Length
                 if len <= 0 then String.Empty
                 else source.Substring(start, len)
 
