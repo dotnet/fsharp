@@ -249,6 +249,7 @@ type internal FSharpSettingsFactory [<Composition.ImportingConstructor>] (settin
 
 [<Guid(FSharpConstants.packageGuidString)>]
 [<ProvideOptionPage(typeof<FSharp.Interactive.FsiPropertyPage>, "F# Tools", "F# Interactive", 6000s, 6001s, true)>] // true = supports automation
+[<ProvideOptionPage(typeof<FSharp.Interactive.FSharpCompilerPropertyPage>, "F# Tools", "Compiler", 6000s, 6015s, true)>]
 
 [<ProvideKeyBindingTable("{dee22b65-9761-4a26-8fb2-759b971d6dfc}", 6001s)>] // <-- resource ID for localised name
 

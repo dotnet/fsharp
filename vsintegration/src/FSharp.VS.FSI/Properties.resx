@@ -162,4 +162,13 @@
   <data name="FSharpInteractiveUseNetCoreDescr" xml:space="preserve">
     <value>Enable .NET Core script editing and execution for all F# scripts and the F# Interactive window</value>
   </data>
+  <data name="FSharpCompilerMisc" xml:space="preserve">
+    <value>Compiler</value>
+  </data>
+  <data name="FSharpCompilerUseNetSdk" xml:space="preserve">
+    <value>Use the .NET SDK F# compiler for builds</value>
+  </data>
+  <data name="FSharpCompilerUseNetSdkDescr" xml:space="preserve">
+    <value>When enabled (the default), Visual Studio builds F# projects with the compiler from the installed .NET SDK, matching command-line 'dotnet build'. Turn it off to build with the .NET Framework F# compiler bundled with Visual Studio - for example when a project uses a type provider that ships only a .NET Framework build. Command-line builds are unaffected. Changing this takes effect on the next (re)build.</value>
+  </data>
 </root>
