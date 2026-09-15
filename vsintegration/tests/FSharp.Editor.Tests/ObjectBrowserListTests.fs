@@ -3,6 +3,7 @@
 namespace FSharp.Editor.Tests
 
 open System
+open System.IO
 
 open Xunit
 
@@ -231,6 +232,61 @@ module ObjectBrowserListTests =
 
         Assert.Equal(VSConstants.S_FALSE, root.LocateNavInfoNode(FSharpNavInfoNode("Unknown", _LIB_LISTTYPE.LLT_PACKAGE), &index))
         Assert.Equal(UInt32.MaxValue, index)
+
+    [<Fact>]
+    let ``Path-backed reference nav info round-trips through LocateNavInfoNode`` () =
+        let host = ScriptedHost(ValueSome emptySymbols)
+
+        let references =
+            FSharpObjectList(
+                ObjectListKind.References,
+                classViewFlags,
+                host,
+                ValueNone,
+                ValueNone,
+                fun () ->
+                    [|
+                        ObjectBrowserItems.referenceItem projectId "FSharp.Core" (ValueSome(Path.Combine("refs", "FSharp.Core.dll")))
+                    |]
+            )
+            :> IVsSimpleObjectList2
+
+        let mutable navInfo = null
+        Assert.Equal(VSConstants.S_OK, references.GetNavInfo(0u, &navInfo))
+
+        let mutable enumerate = null
+        navInfo.EnumCanonicalNodes(&enumerate) |> ignore
+
+        let buffer = Array.zeroCreate<IVsNavInfoNode> 1
+
+        let rec lastPackageName acc =
+            let mutable fetched = 0u
+
+            if enumerate.Next(1u, buffer, &fetched) = VSConstants.S_OK && fetched = 1u then
+                let mutable name = null
+                let mutable listType = 0u
+                buffer[0].get_Name (&name) |> ignore
+                buffer[0].get_Type (&listType) |> ignore
+
+                if listType = uint32 _LIB_LISTTYPE.LLT_PACKAGE then
+                    lastPackageName (ValueSome name)
+                else
+                    lastPackageName acc
+            else
+                acc
+
+        match lastPackageName ValueNone with
+        | ValueNone -> Assert.Fail "canonical nodes carry no package node"
+        | ValueSome assemblyNode ->
+            let mutable nodeName = null
+            let mutable node = null
+            Assert.Equal(VSConstants.S_OK, references.GetNavInfoNode(0u, &node))
+            node.get_Name (&nodeName) |> ignore
+            Assert.Equal<string>(assemblyNode, nodeName)
+
+            let mutable index = UInt32.MaxValue
+            Assert.Equal(VSConstants.S_OK, references.LocateNavInfoNode(FSharpNavInfoNode(assemblyNode, _LIB_LISTTYPE.LLT_PACKAGE), &index))
+            Assert.Equal(0u, index)
 
     [<Fact>]
     let ``Project category fields report a visible project node`` () =
