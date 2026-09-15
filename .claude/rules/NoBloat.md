@@ -7,4 +7,4 @@ paths:
   - "vsintegration/tests/**/*.fs"
 ---
 
-@../../.github/instructions/NoBloat.instructions.md
+Read `.github/instructions/NoBloat.instructions.md`.
