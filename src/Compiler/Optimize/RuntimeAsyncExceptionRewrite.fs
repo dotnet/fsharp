@@ -35,6 +35,8 @@ let private RewriteRuntimeAsyncReraise g resultTy handlerVal handler =
             PreIntercept =
                 Some(fun _ expr ->
                     match stripExpr expr with
+                    | TryWithExpr _
+                    | TryFinallyExpr _ -> Some expr
                     | Expr.Op(TOp.Reraise, _, _, m) -> Some(mkThrow m resultTy (exprForVal m handlerVal))
                     | Expr.App(Expr.Val(vref, _, m), _, _, _, _) when valRefEq g vref g.reraise_vref ->
                         Some(mkThrow m resultTy (exprForVal m handlerVal))
