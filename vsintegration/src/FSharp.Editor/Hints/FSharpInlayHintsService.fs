@@ -2,6 +2,7 @@
 
 namespace Microsoft.VisualStudio.FSharp.Editor.Hints
 
+open System
 open System.Collections.Immutable
 open System.ComponentModel.Composition
 open System.Threading.Tasks
@@ -15,7 +16,10 @@ open CancellableTasks
 // e.g. signature hints above the line, pipeline hints on the side and so on.
 
 [<Export(typeof<IFSharpInlineHintsService2>)>]
-type internal FSharpInlayHintsService [<ImportingConstructor>] (settings: EditorOptions) =
+type internal FSharpInlayHintsService
+    [<ImportingConstructor>]
+    (settings: EditorOptions,
+     [<Import("Microsoft.VisualStudio.Shell.SVsServiceProvider")>] serviceProvider: IServiceProvider) =
 
     static let userOpName = "Hints"
 
@@ -27,7 +31,7 @@ type internal FSharpInlayHintsService [<ImportingConstructor>] (settings: Editor
                 else
                     OptionParser.getHintKinds settings.Advanced
 
-            if hintKinds.IsEmpty then
+            if hintKinds.IsEmpty || not (ActiveDocumentDetection.isActiveDocument serviceProvider document) then
                 Task.FromResult ImmutableArray.Empty
             else
                 cancellableTask {
