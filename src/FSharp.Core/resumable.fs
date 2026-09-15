@@ -415,10 +415,10 @@ module ResumableCode =
                 match __resumableEntry () with
                 | Some contID ->
                     sm.ResumptionPoint <- contID
-                    //if verbose then printfn $"[{sm.Id}] Yield: returning false to indicate yield, contID = {contID}"
+                    //if verbose then printn $"[{sm.Id}] Yield: returning false to indicate yield, contID = {contID}"
                     false
                 | None ->
-                    //if verbose then printfn $"[{sm.Id}] Yield: returning true to indicate post-yield"
+                    //if verbose then printn $"[{sm.Id}] Yield: returning true to indicate post-yield"
                     true
             //-- RESUMABLE CODE END
             else
