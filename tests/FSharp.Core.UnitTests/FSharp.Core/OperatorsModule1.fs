@@ -101,7 +101,6 @@ type OperatorsModule1() =
         let a4 = Array4D.zeroCreate<int> 2 3 4 5
         let positive = Array2D.zeroCreateBased<int> 3 5 2 3
         let negative = Array2D.zeroCreateBased<int> -3 5 2 3
-        let endpoint = Array.CreateInstance(typeof<int>, [|1;2|], [|hi;0|]) :?> int[,]
         let empty = Array.CreateInstance(typeof<int>, [|0;2|], [|lo;0|]) :?> int[,]
         let body name (args: obj[]) () =
             let m = typeof<int option>.Assembly.GetType("Microsoft.FSharp.Core.Operators+OperatorIntrinsics").GetMethod(name)
@@ -131,7 +130,11 @@ type OperatorsModule1() =
                 "syntax 4D fixed loop", [0;4;5], (fun () -> a4[0, 1..lo, *, *])
                 "positive based", [0;3], (fun () -> positive[hi..lo, *])
                 "negative based", [0;3], (fun () -> negative[hi..lo, *])
-                "inclusive endpoint", [0;2], (fun () -> endpoint[..lo, *])
+#if NETCOREAPP
+                "inclusive endpoint", [0;2], (fun () ->
+                    let endpoint = Array.CreateInstance(typeof<int>, [|1;2|], [|hi;0|]) :?> int[,]
+                    endpoint[..lo, *])
+#endif
                 "empty based explicit finish", [0;2], (fun () -> empty[hi..lo, *])
                 "empty based omitted finish", [0;2], (fun () -> empty[hi.., *])
                 "body 1D count two", [0], body "GetArraySlice" [|a1; Some hi; Some lo|]
@@ -176,6 +179,7 @@ type OperatorsModule1() =
                 "hello"[start..Int32.MinValue]
         Assert.AreEqual(String.Empty, actual)
 
+#if NETCOREAPP
     [<Fact>]
     member _.GetterSlicingOverflowFinishBeforeUpperEndpoint() =
         let start = Int32.MaxValue - 1
@@ -186,6 +190,7 @@ type OperatorsModule1() =
         OperatorsModule1.CheckSliceShape([1;2], actual)
         Assert.AreEqual(42, actual[0, 0])
         Assert.AreEqual(43, actual[0, 1])
+#endif
 
     [<Fact>]
     member _.GetterSlicingControls() =
