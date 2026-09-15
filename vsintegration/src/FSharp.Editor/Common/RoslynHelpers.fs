@@ -230,63 +230,73 @@ module internal RoslynHelpers =
 
 module internal OpenDeclarationHelper =
     /// <summary>
+    /// The change that adds an open declaration at the point the insertion context names.
+    /// </summary>
+    /// <param name="sourceText">SourceText.</param>
+    /// <param name="ctx">Insertion context. Typically returned from tryGetInsertionContext</param>
+    /// <param name="ns">Namespace to open.</param>
+    let getOpenDeclarationChange (sourceText: SourceText) (ctx: InsertionContext) (ns: string) : TextChange =
+        let getLineStr line =
+            if line >= 0 && line < sourceText.Lines.Count then
+                sourceText.Lines[line].ToString().Trim()
+            else
+                ""
+
+        let pos = ParsedInput.AdjustInsertionPoint getLineStr ctx
+        let line = sourceText.Lines[min (Line.toZ pos.Line) (sourceText.Lines.Count - 1)]
+
+        // Follow the line endings the file itself uses rather than assuming the host's.
+        let lineBreak =
+            match line.Text.ToString(TextSpan(line.End, line.EndIncludingLineBreak - line.End)) with
+            | "" -> Environment.NewLine
+            | breakChars -> breakChars
+
+        let isHeaderScope =
+            match ctx.ScopeKind with
+            | ScopeKind.TopModule
+            | ScopeKind.Namespace
+            | ScopeKind.NestedModule -> true
+            | _ -> false
+
+        // A declaration header sitting directly above becomes its own paragraph, so the open block
+        // below it reads as a block rather than as part of the header.
+        let separatorAbove =
+            if isHeaderScope && getLineStr (line.LineNumber - 1) <> "" then
+                lineBreak
+            else
+                ""
+
+        let separatorBelow =
+            match ctx.ScopeKind with
+            // The open joins the block of opens right above it.
+            | ScopeKind.OpenDeclaration -> lineBreak
+            | _ when getLineStr line.LineNumber = "" -> lineBreak
+            | _ -> lineBreak + lineBreak
+
+        let margin = String(' ', pos.Column)
+        let column = min pos.Column (line.End - line.Start)
+        let trivia = sourceText.ToString(TextSpan(line.Start, column)).TrimEnd()
+
+        // Anything but whitespace before the insertion point is trivia the scope's first declaration
+        // follows on its line - a block comment closing there, say. Break the line at the declaration
+        // rather than write the open into the middle of what precedes it.
+        if trivia.Length > 0 then
+            TextChange(
+                TextSpan(line.Start + trivia.Length, column - trivia.Length),
+                lineBreak + margin + "open " + ns + lineBreak + lineBreak + margin
+            )
+        else
+            TextChange(TextSpan(line.Start, 0), separatorAbove + margin + "open " + ns + separatorBelow)
+
+    /// <summary>
     /// Inserts open declaration into `SourceText`.
     /// </summary>
     /// <param name="sourceText">SourceText.</param>
     /// <param name="ctx">Insertion context. Typically returned from tryGetInsertionContext</param>
     /// <param name="ns">Namespace to open.</param>
     let insertOpenDeclaration (sourceText: SourceText) (ctx: InsertionContext) (ns: string) : SourceText * int =
-        let mutable minPos = None
-
-        let insert line lineStr (sourceText: SourceText) : SourceText =
-            let ln = sourceText.Lines.[line]
-            let pos = ln.Start
-
-            minPos <-
-                match minPos with
-                | None -> Some pos
-                | Some oldPos -> Some(min oldPos pos)
-
-            // find the line break characters on the previous line to use, Environment.NewLine should not be used
-            // as it makes assumptions on the line endings in the source.
-            let lineBreak =
-                ln.Text.ToString(TextSpan(ln.End, ln.EndIncludingLineBreak - ln.End))
-
-            sourceText.WithChanges(TextChange(TextSpan(pos, 0), lineStr + lineBreak))
-
-        let getLineStr line =
-            sourceText.Lines.[line].ToString().Trim()
-
-        let pos = ParsedInput.AdjustInsertionPoint getLineStr ctx
-        let docLine = Line.toZ pos.Line
-        let lineStr = (String.replicate pos.Column " ") + "open " + ns
-
-        // If we're at the top of a file (e.g., F# script) then add a newline before adding the open declaration
-        let sourceText =
-            if docLine = 0 then
-                sourceText |> insert docLine Environment.NewLine |> insert docLine lineStr
-            else
-                sourceText |> insert docLine lineStr
-
-        // if there's no a blank line between open declaration block and the rest of the code, we add one
-        let sourceText =
-            if sourceText.Lines.[docLine + 1].ToString().Trim() <> "" then
-                sourceText |> insert (docLine + 1) ""
-            else
-                sourceText
-
-        let sourceText =
-            // for top level module we add a blank line between the module declaration and first open statement
-            if
-                (pos.Column = 0 || ctx.ScopeKind = ScopeKind.Namespace)
-                && docLine > 0
-                && not (sourceText.Lines.[docLine - 1].ToString().Trim().StartsWith "open")
-            then
-                sourceText |> insert docLine ""
-            else
-                sourceText
-
-        sourceText, minPos |> Option.defaultValue 0
+        let change = getOpenDeclarationChange sourceText ctx ns
+        sourceText.WithChanges change, change.Span.Start
 
 // http://www.fssnip.net/7S3/title/Intersperse-a-list
 module List =
