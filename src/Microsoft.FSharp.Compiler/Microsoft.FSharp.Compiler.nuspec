@@ -28,8 +28,9 @@
         <!-- assemblies -->
         <file src="fsc\$configuration$\$fSharpNetCoreProductTargetFramework$\fsc.dll"                      target="lib\$fSharpNetCoreProductTargetFramework$" />
         <file src="fsi\$configuration$\$fSharpNetCoreProductTargetFramework$\fsi.dll"                      target="lib\$fSharpNetCoreProductTargetFramework$" />
-        <file src="FSharp.Core\$configuration$\netstandard2.0\FSharp.Core.dll"                             target="lib\$fSharpNetCoreProductTargetFramework$" />
-        <file src="FSharp.Core\$configuration$\netstandard2.0\FSharp.Core.xml"                             target="lib\$fSharpNetCoreProductTargetFramework$" />
+        <!-- FSI needs the .NET-only FSharp.Core APIs for IAsyncDisposable support (dotnet/fsharp#14454). -->
+        <file src="FSharp.Core\$configuration$\$fSharpCoreShippedNetTargetFramework$\FSharp.Core.dll"      target="lib\$fSharpNetCoreProductTargetFramework$" />
+        <file src="FSharp.Core\$configuration$\$fSharpCoreShippedNetTargetFramework$\FSharp.Core.xml"      target="lib\$fSharpNetCoreProductTargetFramework$" />
         <file src="FSharp.Compiler.Service\$configuration$\netstandard2.0\FSharp.Compiler.Service.dll"     target="lib\$fSharpNetCoreProductTargetFramework$" />
         <file src="FSharp.Build\$configuration$\netstandard2.0\FSharp.Build.dll"                           target="lib\$fSharpNetCoreProductTargetFramework$" />
         <file src="FSharp.DependencyManager.Nuget\$configuration$\netstandard2.0\FSharp.DependencyManager.Nuget.dll"
@@ -48,7 +49,7 @@
         <file src="$mibcRoot$\**\*.mibc"            target="contentFiles\mibc" />
 
         <!-- resources -->
-        <file src="FSharp.Core\$configuration$\netstandard2.0\**\FSharp.Core.resources.dll"
+        <file src="FSharp.Core\$configuration$\$fSharpCoreShippedNetTargetFramework$\**\FSharp.Core.resources.dll"
                                                                                                              target="lib\$fSharpNetCoreProductTargetFramework$" />
         <file src="FSharp.Compiler.Service\$configuration$\netstandard2.0\**\FSharp.Compiler.Service.resources.dll"
                                                                                                              target="lib\$fSharpNetCoreProductTargetFramework$" />
