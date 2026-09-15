@@ -3,4 +3,4 @@ paths:
   - "src/Compiler/FSComp.txt"
 ---
 
-@../../.github/instructions/FSComp.instructions.md
+Read `.github/instructions/FSComp.instructions.md`.
