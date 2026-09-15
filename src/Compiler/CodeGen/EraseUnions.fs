@@ -864,36 +864,27 @@ let private emitRootConstructors (ctx: TypeDefContext) rootCaseFields tagFieldsI
             |> ctx.stamping.stampMethodAsGenerated
         ]
 
-/// Generate static constructor code to initialize nullary case singleton fields.
+/// The instructions initializing the nullary case singleton fields, empty when there are none.
 let private emitConstFieldInitializers (ctx: TypeDefContext) (altNullaryFields: NullaryConstFieldInfo list) =
     let g = ctx.g
-    let cud = ctx.cud
     let baseTy = ctx.baseTy
 
-    fun (cd: ILTypeDef) ->
-        if List.isEmpty altNullaryFields then
-            cd
-        else
-            prependInstrsToClassCtor
-                [
-                    for r in altNullaryFields do
-                        let constFieldId = (r.Field.Name, baseTy)
-                        let constFieldSpec = mkConstFieldSpecFromId baseTy constFieldId
+    [
+        for r in altNullaryFields do
+            let constFieldId = (r.Field.Name, baseTy)
+            let constFieldSpec = mkConstFieldSpecFromId baseTy constFieldId
 
-                        match ctx.layout with
-                        | NoTagField -> yield mkNormalNewobj (mkILCtorMethSpecForTy (r.CaseType, []))
-                        | HasTagField ->
-                            if r.InRootClass then
-                                yield mkLdcInt32 r.CaseIndex
-                                yield mkNormalNewobj (mkILCtorMethSpecForTy (r.CaseType, [ mkTagFieldType g.ilg ]))
-                            else
-                                yield mkNormalNewobj (mkILCtorMethSpecForTy (r.CaseType, []))
+            match ctx.layout with
+            | NoTagField -> yield mkNormalNewobj (mkILCtorMethSpecForTy (r.CaseType, []))
+            | HasTagField ->
+                if r.InRootClass then
+                    yield mkLdcInt32 r.CaseIndex
+                    yield mkNormalNewobj (mkILCtorMethSpecForTy (r.CaseType, [ mkTagFieldType g.ilg ]))
+                else
+                    yield mkNormalNewobj (mkILCtorMethSpecForTy (r.CaseType, []))
 
-                        yield mkNormalStsfld constFieldSpec
-                ]
-                cud.DebugPoint
-                cud.DebugImports
-                cd
+            yield mkNormalStsfld constFieldSpec
+    ]
 
 /// Create the Tag property, get_Tag method, and Tags enum-like constants.
 let private emitTagInfrastructure (ctx: TypeDefContext) =
@@ -1032,12 +1023,46 @@ let private assembleUnionTypeDef
     let altTypeDefs = results |> List.collect (fun r -> r.NestedTypeDefs)
     let altDebugTypeDefs = results |> List.collect (fun r -> r.DebugProxyTypeDefs)
     let enumTypeDef = computeEnumTypeDef g td cud tagEnumFields
-    let addConstFieldInit = emitConstFieldInitializers ctx altNullaryFields
+    let constFieldInitInstrs = emitConstFieldInitializers ctx altNullaryFields
 
     let existingMeths = td.Methods.AsList()
     let existingProps = td.Properties.AsList()
     // The root type is abstract when every case has its own nested subtype.
     let isAbstract = (altTypeDefs.Length = cud.UnionCases.Length)
+
+    let allMeths =
+        ctorMeths
+        @ baseMethsFromAlt
+        @ rootCaseMethods
+        @ tagMeths
+        @ altUniqObjMeths
+        @ existingMeths
+
+    // Seed the .cctor initializing the nullary case singletons, merging into one the type already has.
+    let allMeths =
+        if List.isEmpty constFieldInitInstrs then
+            allMeths
+        else
+            let cctors, others =
+                allMeths |> List.partition (fun (md: ILMethodDef) -> md.Name = ".cctor")
+
+            let cctor, extraCctors =
+                match cctors with
+                | md :: rest -> prependInstrsToMethod constFieldInitInstrs md, rest
+                | [] ->
+                    let body =
+                        mkMethodBody (
+                            false,
+                            [],
+                            1,
+                            nonBranchingInstrsToCode (constFieldInitInstrs @ [ I_ret ]),
+                            cud.DebugPoint,
+                            cud.DebugImports
+                        )
+
+                    mkILClassCtor body, []
+
+            cctor :: extraCctors @ others
 
     let baseTypeDef: ILTypeDef =
         td
@@ -1054,15 +1079,7 @@ let private assembleUnionTypeDef
                     (match td.Extends.Value with
                      | None -> Some g.ilg.typ_Object |> notlazy
                      | _ -> td.Extends),
-                methods =
-                    mkILMethods (
-                        ctorMeths
-                        @ baseMethsFromAlt
-                        @ rootCaseMethods
-                        @ tagMeths
-                        @ altUniqObjMeths
-                        @ existingMeths
-                    ),
+                methods = mkILMethods allMeths,
                 fields =
                     mkILFields (
                         rootAndTagFields
@@ -1072,9 +1089,8 @@ let private assembleUnionTypeDef
                 properties = mkILProperties (tagProps @ basePropsFromAlt @ rootCaseProperties @ existingProps),
                 customAttrs = rootTypeNullableAttrs g td cud
             )
-        |> addConstFieldInit
 
-    baseTypeDef.WithAbstract(isAbstract).WithSealed(altTypeDefs.IsEmpty)
+    baseTypeDef.WithAbstract(isAbstract).WithSealed(altTypeDefs.IsEmpty), constFieldInitInstrs
 
 let mkClassUnionDef
     (

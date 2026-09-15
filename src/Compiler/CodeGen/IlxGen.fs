@@ -2053,6 +2053,11 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
 
     let gnested = TypeDefsBuilder()
 
+    /// Union erasure seeds a .cctor initializing the nullary case singleton fields. A generic type's
+    /// static bindings arrive later as a second .cctor and IL permits only one, so the seeded slot and
+    /// its instructions are kept here until they can be merged into that one (issue #19445).
+    let mutable unionCctorInit = ValueNone
+
     member _.Close(g: TcGlobals) =
 
         let attrs =
@@ -2095,7 +2100,22 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
             | None -> false
 
         if not discard then
-            gmethods.Add(CodegenFileScope.OrderKey gmethods.Count, ilMethodDef)
+            match unionCctorInit with
+            | ValueSome(idx, instrs) when ilMethodDef.Name = ".cctor" ->
+                // Prefix the singletons onto the incoming .cctor and put it in the seeded slot, so they
+                // are initialized first and only one .cctor is emitted.
+                let k, _ = gmethods[idx]
+                gmethods[idx] <- (k, prependInstrsToMethod instrs ilMethodDef)
+                unionCctorInit <- ValueNone
+            | _ -> gmethods.Add(CodegenFileScope.OrderKey gmethods.Count, ilMethodDef)
+
+    /// Keep the instructions union erasure seeded into the .cctor, so a .cctor arriving later for the
+    /// type's static bindings can be merged with them instead of duplicating the entry.
+    member _.RetainUnionCctorInit(instrs: ILInstr list) =
+        if not (List.isEmpty instrs) then
+            match ResizeArray.tryFindIndexi (fun _ (_, md: ILMethodDef) -> md.Name = ".cctor") gmethods with
+            | Some idx -> unionCctorInit <- ValueSome(idx, instrs)
+            | None -> ()
 
     member _.NestedTypeDefs = gnested
 
@@ -2595,6 +2615,9 @@ and AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbuf
 
         if ilMethodDef.IsEntryPoint then
             explicitEntryPointInfo <- Some tref
+
+    member _.RetainUnionCctorInit(tref: ILTypeRef, instrs) =
+        gtdefs.FindNestedTypeDefBuilder(tref).RetainUnionCctorInit(instrs)
 
     member _.AddExplicitInitToEntryPoint(tref, fspec, sourceOpt, imports, feefee, seqpt) =
 
@@ -12314,6 +12337,9 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                 else
                     ILTypeInit.BeforeField
 
+            // Set by the union branch below to the instructions initializing the nullary case singletons.
+            let mutable unionCctorInitInstrs = []
+
             let tdef, tdefDiscards =
                 let isSerializable =
                     (not (EntityHasWellKnownAttribute g WellKnownEntityAttributes.AutoSerializableAttribute_False tycon))
@@ -12584,7 +12610,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                                     typeDefTrigger
                             )
 
-                    let tdef2 =
+                    let tdef2, cctorInitInstrs =
                         EraseUnions.mkClassUnionDef
                             (g.AddMethodGeneratedAttributes,
                              g.AddPropertyGeneratedAttributes,
@@ -12596,6 +12622,8 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
                             tref
                             tdef
                             cuinfo
+
+                    unionCctorInitInstrs <- cctorInitInstrs
 
                     // Discard the user-supplied (i.e. prim-type.fs) implementations of the get_Empty, get_IsEmpty, get_Value and get_None and Some methods.
                     // This is because we will replace their implementations by ones that load the unique
@@ -12647,6 +12675,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) : ILTypeRef option 
             let tdef = tdef.WithHasSecurity(not (List.isEmpty securityAttrs))
             let tdef = tdef.With(securityDecls = secDecls)
             mgbuf.AddTypeDef(tref, tdef, false, false, tdefDiscards, m)
+            mgbuf.RetainUnionCctorInit(tref, unionCctorInitInstrs)
 
             // If a non-generic type is written with "static let" and "static do" (i.e. it has a ".cctor")
             // then the code for the .cctor is placed into .cctor for the backing static class for the file.
