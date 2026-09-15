@@ -81,7 +81,8 @@ let private locateFsi () =
 /// A running session, plus everything needed to talk to it and to explain a failure.
 [<Sealed>]
 type FsiServerHarness(?extraArguments: string list, ?workingDirectory: string) =
-    let pipeName = $"FsiServerTests_{Guid.NewGuid():N}"
+    // On Unix the pipe is a socket under $TMPDIR, and macOS caps socket paths at 104 characters.
+    let pipeName = $"fsi{Guid.NewGuid():N}".Substring(0, 15)
     let standardOutput = StringBuilder()
     let standardError = StringBuilder()
     let outputLock = obj ()
@@ -151,7 +152,8 @@ type FsiServerHarness(?extraArguments: string list, ?workingDirectory: string) =
                 else
                     "The session is still running."
 
-            failwith $"Could not connect to the session on pipe '{pipeName}'. {detail}\n{e.Message}"
+            let error = lock outputLock (fun () -> standardError.ToString())
+            failwith $"Could not connect to the session on pipe '{pipeName}'. {detail}\n{e.Message}\n-- stderr --\n{error}"
 
         pipe
 
