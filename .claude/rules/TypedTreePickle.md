@@ -5,4 +5,4 @@ paths:
   - "src/Compiler/Driver/CompilerImports.{fs,fsi}"
 ---
 
-@../../.github/instructions/TypedTreePickle.instructions.md
+Read `.github/instructions/TypedTreePickle.instructions.md`.
