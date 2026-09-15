@@ -1506,7 +1506,7 @@ module Array =
     /// <code lang="fsharp">
     /// let inputs = [| "a"; "b"; "c" |]
     ///
-    /// inputs |> Array.iteri (fun i v -> printfn "{i}: {v}")
+    /// inputs |> Array.iteri (fun i v -> printn $"{i}: {v}")
     /// </code>
     /// Evaluates to <c>unit</c> and prints
     /// <code>
@@ -4292,7 +4292,7 @@ module Array =
         /// <code lang="fsharp">
         /// let inputs = [| "a"; "b"; "c" |]
         ///
-        /// inputs |> Array.Parallel.iteri (fun i v -> printfn "{i}: {v}")
+        /// inputs |> Array.Parallel.iteri (fun i v -> printn $"{i}: {v}")
         /// </code>
         /// Evaluates to <c>unit</c> and prints the following to the console in an unspecified order:
         /// <code>

@@ -1251,7 +1251,7 @@ module List =
     /// <code lang="fsharp">
     /// let inputs = [ "a"; "b"; "c" ]
     ///
-    /// inputs |> List.iteri (fun i v -> printfn "{i}: {v}")
+    /// inputs |> List.iteri (fun i v -> printn $"{i}: {v}")
     /// </code>
     /// Evaluates to <c>unit</c> and prints
     /// <code lang="fsharp">
