@@ -399,18 +399,19 @@ type CapturingDiagnosticsLogger(nm, ?eagerFormat) =
             | None -> diagnostic
             | Some f -> f diagnostic
 
-        if diagnostic.Severity = FSharpDiagnosticSeverity.Error then
-            errorCount <- errorCount + 1
+        lock diagnostics (fun () ->
+            if diagnostic.Severity = FSharpDiagnosticSeverity.Error then
+                errorCount <- errorCount + 1
 
-        diagnostics.Add(diagnostic)
+            diagnostics.Add(diagnostic))
 
     override _.ErrorCount = errorCount
 
-    member _.Diagnostics = diagnostics |> Seq.toList
+    member _.Diagnostics = lock diagnostics (fun () -> List.ofSeq diagnostics)
 
     member _.CommitDelayedDiagnostics(diagnosticsLogger: DiagnosticsLogger) =
         // Eagerly grab all the errors and warnings from the mutable collection
-        let errors = diagnostics.ToArray()
+        let errors = lock diagnostics diagnostics.ToArray
         errors |> Array.iter diagnosticsLogger.DiagnosticSink
 
 let buildPhase = AsyncLocal<BuildPhase voption>()
