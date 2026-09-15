@@ -49,6 +49,19 @@ type internal FSharpObjectBrowserLibrary(workspace: VisualStudioWorkspace, libra
     let checking = ConcurrentDictionary<ProjectId, bool>()
     let stale = ConcurrentDictionary<ProjectId, bool>()
 
+    /// Moves whenever the workspace replaces a project, so a check that read the previous snapshot
+    /// cannot store its result over the drop the change handler just performed.
+    let generations = ConcurrentDictionary<ProjectId, int64>()
+
+    let generationOf projectId =
+        match generations.TryGetValue projectId with
+        | true, generation -> generation
+        | _ -> 0L
+
+    let bumpGeneration (projectId: ProjectId) =
+        generations.AddOrUpdate(projectId, 1L, (fun _ current -> current + 1L))
+        |> ignore
+
     /// A whole-project check is heavy, and expanding a few nodes in a row queues several; keep the
     /// checker from being flooded while still making progress on the ones the user is looking at.
     let checkThrottle = new SemaphoreSlim(2)
@@ -111,18 +124,6 @@ type internal FSharpObjectBrowserLibrary(workspace: VisualStudioWorkspace, libra
 
     let mutable warmingReferences = 0
 
-    let referenceItemsOf (project: Project) =
-        match referenceRows.TryGetValue project.Id with
-        | true, rows -> rows
-        | _ ->
-            match ProjectCache.Projects.TryGetValue project with
-            | true, (_, _, _, options) ->
-                let rows = ObjectBrowserItems.referenceItemsOfOptions project.Id options
-                referenceRows[project.Id] <- rows
-                rows
-            | _ -> Array.empty
-
-    /// Options are what the editor loads for every keystroke, so this is cheap next to a check.
     /// Options are what the editor loads for every keystroke, so this is cheap next to a check.
     /// `TryGetOptionsByProject` is the no-exception form: a project whose options the project system
     /// has not delivered yet answers ValueNone, where `GetFSharpCompilationOptionsAsync` would raise
@@ -174,6 +175,21 @@ type internal FSharpObjectBrowserLibrary(workspace: VisualStudioWorkspace, libra
             }
             |> ignore
 
+    let referenceItemsOf (project: Project) =
+        match referenceRows.TryGetValue project.Id with
+        | true, rows -> rows
+        | _ ->
+            match ProjectCache.Projects.TryGetValue project with
+            | true, (_, _, _, options) ->
+                let rows = ObjectBrowserItems.referenceItemsOfOptions project.Id options
+                referenceRows[project.Id] <- rows
+                rows
+            | _ ->
+                // Invalidated or never warmed: refill in the background; the package counter
+                // rebuilds the folder when the options land.
+                warmReferenceOptions [| project |]
+                Array.empty
+
     let checkProject (project: Project) (checker: FSharpChecker) =
         cancellableTask {
             if checker.UsesTransparentCompiler then
@@ -200,12 +216,17 @@ type internal FSharpObjectBrowserLibrary(workspace: VisualStudioWorkspace, libra
 
     /// At most one check per project is in flight. The stale mark is consumed *before* computing,
     /// so an edit arriving mid-check re-marks the project and is picked up by the next check.
-    /// A failed check leaves the placeholder in place without bumping the counters — retrying is
-    /// driven by the next edit or expansion, not by a refresh loop.
-    let startCheck projectId =
+    /// A check whose project generation moved on mid-flight discards its result and reruns against
+    /// the fresh snapshot. A failed check leaves the placeholder in place without bumping the
+    /// counters — retrying is driven by the next edit or expansion, not by a refresh loop.
+    let rec startCheck projectId =
         match tryProject projectId with
         | ValueSome project when checking.TryAdd(projectId, true) ->
+            let generation = generationOf projectId
+
             backgroundTask {
+                let mutable rerun = false
+
                 try
                     try
                         // A re-check after an edit is delayed a little so a typing burst coalesces
@@ -219,11 +240,15 @@ type internal FSharpObjectBrowserLibrary(workspace: VisualStudioWorkspace, libra
                             stale.TryRemove projectId |> ignore
                             let! computed = computeSymbols project
 
-                            // Keep the result only while the project is still part of the solution;
-                            // anything else would resurrect symbols for a project that is gone.
+                            // Keep the result only while the solution still holds the project this
+                            // check read; a result from a removed or replaced snapshot would
+                            // resurrect symbols the workspace-change handler just dropped.
                             if (tryProject projectId).IsSome then
-                                symbols[projectId] <- computed
-                                bumpContent ()
+                                if generationOf projectId = generation then
+                                    symbols[projectId] <- computed
+                                    bumpContent ()
+                                else
+                                    rerun <- true
                         finally
                             checkThrottle.Release() |> ignore
                     // A project whose options are not ready raises this: a "not yet", not a failure,
@@ -233,6 +258,9 @@ type internal FSharpObjectBrowserLibrary(workspace: VisualStudioWorkspace, libra
                     | ex -> Trace.TraceError($"F# Object Browser: checking '{projectName projectId}' failed: {ex}")
                 finally
                     checking.TryRemove projectId |> ignore
+
+                if rerun then
+                    startCheck projectId
             }
             |> ignore
         | _ -> ()
@@ -249,6 +277,9 @@ type internal FSharpObjectBrowserLibrary(workspace: VisualStudioWorkspace, libra
             ValueNone
 
     let dropAll () =
+        for KeyValue(projectId, _) in checking do
+            bumpGeneration projectId
+
         symbols.Clear()
         stale.Clear()
         projectIcons.Clear()
@@ -273,7 +304,9 @@ type internal FSharpObjectBrowserLibrary(workspace: VisualStudioWorkspace, libra
             match args.ProjectId with
             | null -> ()
             | projectId ->
+                bumpGeneration projectId
                 symbols.TryRemove projectId |> ignore
+                referenceRows.TryRemove projectId |> ignore
                 bumpContent ()
         | WorkspaceChangeKind.ProjectAdded
         | WorkspaceChangeKind.ProjectReloaded
@@ -281,6 +314,7 @@ type internal FSharpObjectBrowserLibrary(workspace: VisualStudioWorkspace, libra
             match args.ProjectId with
             | null -> dropAll ()
             | projectId ->
+                bumpGeneration projectId
                 symbols.TryRemove projectId |> ignore
                 stale.TryRemove projectId |> ignore
                 projectIcons.TryRemove projectId |> ignore
