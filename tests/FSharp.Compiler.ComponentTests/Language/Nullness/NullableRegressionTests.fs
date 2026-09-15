@@ -13,6 +13,112 @@ let withVersionAndCheckNulls (version,checknulls) cu =
 
 
 [<Theory>]
+[<InlineData("""
+module rec M
+
+open System.Collections.Generic
+
+[<Struct>]
+type Hole = Hole of string with
+    member this.Value =
+        let (Hole value) = this in value
+
+type Substitution = Dictionary<Hole,obj>
+""", true)>]
+[<InlineData("""
+module M
+
+open System.Collections.Generic
+
+[<Struct>]
+type Hole = Hole of string with
+    member this.Value =
+        let (Hole value) = this in value
+
+and Substitution = Dictionary<Hole,obj>
+""", true)>]
+[<InlineData("""
+module rec M
+open System.Collections.Generic
+type Hole = Hole of string
+type Substitution = Dictionary<Hole,obj>
+""", true)>]
+[<InlineData("""
+module rec M
+open System.Collections.Generic
+[<Struct>]
+type Hole<'T> = Hole of 'T
+type Substitution = Dictionary<Hole<string | null>,obj>
+""", true)>]
+[<InlineData("""
+module rec M
+open System.Collections.Generic
+[<NoComparison>]
+type Container = { Values: Dictionary<Hole,obj> }
+[<Struct>]
+type Hole = Hole of string
+""", true)>]
+[<InlineData("""
+module rec M
+type Keyed<'T when 'T : not null>() = class end
+[<Struct>]
+type Hole = Hole of string
+type Substitution = Keyed<Hole>
+""", false)>]
+[<InlineData("""
+module M
+
+open System.Collections.Generic
+
+[<Struct>]
+type Hole = Hole of string with
+    member this.Value =
+        let (Hole value) = this in value
+
+type Substitution = Dictionary<Hole,obj>
+""", true)>]
+[<InlineData("""
+module M
+open System.Collections.Generic
+type Substitution = Dictionary<Choice<string,int>,obj>
+""", true)>]
+let ``Issue 20211 - ordinary union constraints during declaration checking`` source checknulls =
+    FSharp source
+    |> asLibrary
+    |> withVersionAndCheckNulls ("preview", checknulls)
+    |> (if checknulls then id else withOptions ["--checknulls-"])
+    |> typecheck
+    |> shouldSucceed
+    |> withDiagnostics []
+
+[<Theory>]
+[<InlineData("""
+module M
+open System.Collections.Generic
+type Substitution = Dictionary<Maybe,obj>
+and [<CompilationRepresentation(CompilationRepresentationFlags.UseNullAsTrueValue)>] Maybe =
+    | Missing
+    | Present of string
+""", 42, "Nullness warning: The type 'Maybe' uses 'null' as a representation value but a non-null type is expected.")>]
+[<InlineData("""
+module M
+open System.Collections.Generic
+type Substitution = Dictionary<string option,obj>
+""", 50, "Nullness warning: The type 'string option' uses 'null' as a representation value but a non-null type is expected.")>]
+[<InlineData("""
+module M
+open System.Collections.Generic
+type Substitution = Dictionary<(string | null),obj>
+""", 52, "Nullness warning: The type 'string | null' supports 'null' but a non-null type is expected.")>]
+let ``Issue 20211 - nullable constrained keys still warn`` source endColumn message =
+    FSharp source
+    |> asLibrary
+    |> withVersionAndCheckNulls ("preview", true)
+    |> typecheck
+    |> shouldFail
+    |> withDiagnostics [Error 3261, Line 4, Col 21, Line 4, Col endColumn, message]
+
+[<Theory>]
 [<InlineData("preview",true)>]
 [<InlineData("preview",false)>]
 [<InlineData("8.0",false)>]
