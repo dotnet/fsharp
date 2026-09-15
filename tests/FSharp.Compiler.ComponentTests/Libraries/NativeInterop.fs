@@ -171,3 +171,204 @@ let call (s: Sink) =
       IL_000f:  callvirt   instance int32 Test/Sink::Put(native int)
       IL_0014:  ret
     }""" ]
+
+    // Regression tests for https://github.com/dotnet/fsharp/issues/20295 (Case 1): 'NativePtr.stackalloc'
+    // emits the 'localloc' IL instruction, which the JIT rejects inside an exception-handling region.
+    // Such code used to compile and then throw InvalidProgramException at method load; it must now be
+    // rejected at compile time with FS3916.
+    [<Theory>]
+    [<InlineData("try () with _ -> NativePtr.stackalloc<int> 1 |> ignore")>]
+    [<InlineData("try () with :? System.Exception -> NativePtr.stackalloc<int> 1 |> ignore")>]
+    [<InlineData("try () finally NativePtr.stackalloc<int> 1 |> ignore")>]
+    [<InlineData("try () with _ -> (try () with _ -> NativePtr.stackalloc<int> 1 |> ignore)")>]
+    // An immediately-applied lambda in a handler is inlined into the handler's IL region by the
+    // optimizer, so its 'localloc' still lands inside the exception region and must be rejected.
+    [<InlineData("try () with _ -> (fun () -> NativePtr.stackalloc<int> 1 |> ignore) ()")>]
+    let ``stackalloc in a handler is rejected`` (handler: string) =
+        $"""
+module Test
+open Microsoft.FSharp.NativeInterop
+let f () = {handler}
+"""
+        |> FSharp
+        |> withNoWarn 9
+        |> compile
+        |> shouldFail
+        |> withErrorCode 3916
+
+    // A 'let inline' wrapper around 'stackalloc' is inlined into the handler's IL region, so its
+    // 'localloc' still lands inside the exception region and must be rejected. The pre-codegen syntactic
+    // check missed this because the wrapper hid the 'stackalloc' call behind an inlinable function.
+    [<Fact>]
+    let ``stackalloc via an inline wrapper inside a handler is rejected`` () =
+        FSharp """
+module Test
+open Microsoft.FSharp.NativeInterop
+let inline alloc () = NativePtr.stackalloc<int> 1 |> ignore
+let f () = try () with _ -> alloc ()
+"""
+        |> withNoWarn 9
+        |> compile
+        |> shouldFail
+        |> withErrorCode 3916
+
+    // An escaping closure defined in a handler is compiled to its own method, so its 'localloc' lives
+    // outside the exception region and is legal. Such code must not be rejected (regression guard against
+    // the pre-codegen syntactic check's false positive).
+    [<Fact>]
+    let ``stackalloc in an escaping closure inside a handler is allowed`` () =
+        FSharp """
+module Test
+open Microsoft.FSharp.NativeInterop
+let f () =
+    try ()
+    with _ ->
+        let g = fun () -> NativePtr.stackalloc<int> 1 |> ignore
+        System.Action<unit>(g).Invoke()
+[<EntryPoint>]
+let main _ =
+    f ()
+    printfn "ran-closure"
+    0
+"""
+        |> withNoWarn 9
+        |> compileExeAndRun
+        |> shouldSucceed
+        |> withStdOutContains "ran-closure"
+
+    // 'localloc' is legal in the protected 'try' body itself (only handler/filter/finally/fault
+    // regions reject it), so 'stackalloc' directly inside a 'try' must still compile.
+    [<Fact>]
+    let ``stackalloc in the try body is allowed`` () =
+        FSharp """
+module Test
+open Microsoft.FSharp.NativeInterop
+let f () = try NativePtr.stackalloc<int> 1 |> ignore with _ -> ()
+"""
+        |> withNoWarn 9
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``stackalloc in an object-expression method inside a handler is allowed`` () =
+        FSharp """
+module Test
+open Microsoft.FSharp.NativeInterop
+let f () =
+    try ()
+    with _ ->
+        let d = { new System.IDisposable with member _.Dispose() = NativePtr.stackalloc<int> 1 |> ignore }
+        d.Dispose()
+[<EntryPoint>]
+let main _ =
+    f ()
+    printfn "ok"
+    0
+"""
+        |> withNoWarn 9
+        |> compileExeAndRun
+        |> shouldSucceed
+        |> withStdOutContains "ok"
+
+    [<Fact>]
+    let ``stackalloc outside any try compiles and runs`` () =
+        FSharp """
+module Test
+open Microsoft.FSharp.NativeInterop
+[<EntryPoint>]
+let main _ =
+    NativePtr.stackalloc<int> 1 |> ignore
+    printfn "ok"
+    0
+"""
+        |> withNoWarn 9
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``handler without stackalloc is unaffected`` () =
+        FSharp """
+module Test
+let f () = try () with _ -> printfn "handled"
+"""
+        |> compile
+        |> shouldSucceed
+
+    // Regression tests for https://github.com/dotnet/fsharp/issues/20295 (Case 2): a 'NativePtr.stackalloc'
+    // used as a chained base-constructor argument loads the uninitialized 'this' before evaluating the
+    // argument, so its 'localloc' ran with 'this' pending on the stack and could not be spilled - the
+    // emitted IL threw InvalidProgramException at load. The args are now hoisted into locals before 'this'.
+    [<TheoryForNETCOREAPP>]
+    // simple nativeptr<int> base-ctor arg
+    [<InlineData("type A(p: nativeptr<int>) = class end",
+                 "type B() = inherit A(NativePtr.stackalloc<int> 1)")>]
+    // stackalloc as one of several base-ctor args
+    [<InlineData("type A(n: int, p: nativeptr<int>) = class end",
+                 "type B() = inherit A(1, NativePtr.stackalloc<int> 1)")>]
+    // generic base type instantiated concretely
+    [<InlineData("type A<'T when 'T: unmanaged>(p: nativeptr<'T>) = class end",
+                 "type B() = inherit A<int>(NativePtr.stackalloc<int> 1)")>]
+    let ``stackalloc as a base-ctor argument compiles and runs`` (baseType: string) (derived: string) =
+        $"""
+module Test
+open Microsoft.FSharp.NativeInterop
+{baseType}
+{derived}
+[<EntryPoint>]
+let main _ =
+    B() |> ignore
+    printfn "ok"
+    0
+"""
+        |> FSharp
+        |> withNoWarn 9
+        |> compileExeAndRun
+        |> shouldSucceed
+        |> withStdOutContains "ok"
+
+    // The hoist evaluates the base-ctor args left-to-right into locals before pushing 'this'; a
+    // side-effecting normal arg before the stackalloc arg must still run first.
+    [<FactForNETCOREAPP>]
+    let ``stackalloc base-ctor argument preserves left-to-right order`` () =
+        FSharp """
+module Test
+open Microsoft.FSharp.NativeInterop
+let trace = System.Text.StringBuilder()
+let step (name: string) x = trace.Append name |> ignore; x
+type A(n: int, p: nativeptr<int>) = class end
+type B() = inherit A(step "a" 1, step "b" (NativePtr.stackalloc<int> 1))
+[<EntryPoint>]
+let main _ =
+    B() |> ignore
+    if string trace <> "ab" then failwithf "wrong order: %O" trace
+    printfn "ok"
+    0
+"""
+        |> withNoWarn 9
+        |> compileExeAndRun
+        |> shouldSucceed
+        |> withStdOutContains "ok"
+
+    // No-regression: an ordinary base ctor without a 'localloc' argument must not hoist - the arg is
+    // pushed directly onto 'this', with no extra local introduced by the hoist.
+    [<Fact>]
+    let ``ordinary base-ctor argument is not hoisted`` () =
+        FSharp """
+module Test
+type A(n: int) = class end
+type B() = inherit A(1)
+"""
+        |> compile
+        |> shouldSucceed
+        |> verifyILContains [
+            """.method public specialname rtspecialname instance void  .ctor() cil managed
+      {
+        
+        .maxstack  8
+        IL_0000:  ldarg.0
+        IL_0001:  ldc.i4.1
+        IL_0002:  callvirt   instance void Test/A::.ctor(int32)
+        IL_0007:  ldarg.0
+        IL_0008:  pop
+        IL_0009:  ret
+      }""" ]

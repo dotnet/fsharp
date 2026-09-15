@@ -1262,6 +1262,12 @@ and IlxGenEnv =
         /// Are we under the scope of a try, catch or finally? If so we can't tailcall. SEH = structured exception handling
         withinSEH: bool
 
+        /// Are we within the 'with'/filter/'finally'/fault handler region of a 'try' (but not merely its try body)?
+        /// The JIT rejects the 'localloc' IL instruction (emitted by NativePtr.stackalloc) inside such a region, so
+        /// emitting it here is reported as error FS3916. This is checked at codegen, after inlining and closure
+        /// conversion, so an escaping closure whose 'localloc' lives in its own method stays legal.
+        withinExnHandler: bool
+
         /// Suppresses filter block emission inside finally/fault handlers (workaround for dotnet/runtime#112406).
         insideFinallyOrFaultHandler: bool
 
@@ -3056,6 +3062,7 @@ let CodeGenThen (cenv: cenv) mgbuf (entryPointInfo, methodName, eenv, alreadyUse
         cgbuf
         { eenv with
             withinSEH = false
+            withinExnHandler = false
             insideFinallyOrFaultHandler = false
             liveLocals = IntMap.empty ()
             innerVals = innerVals
@@ -3166,6 +3173,21 @@ let ComputeDebugPointForBinding g bind =
 //-------------------------------------------------------------------------
 // Generate expressions
 //-------------------------------------------------------------------------
+
+/// True if evaluating this expression may emit the 'localloc' IL instruction (e.g. NativePtr.stackalloc,
+/// which the optimizer inlines to inline IL containing 'localloc' before IlxGen runs).
+let exprMayLocalloc expr =
+    (false, expr)
+    ||> FoldExpr
+            { ExprFolder0 with
+                exprIntercept =
+                    (fun _exprF noInterceptF z expr ->
+                        z
+                        || (match expr with
+                            | Expr.Op(TOp.ILAsm(instrs, _), _, _, _) -> instrs |> List.contains I_localloc
+                            | _ -> false)
+                        || noInterceptF false expr)
+            }
 
 let rec GenExpr cenv cgbuf eenv (expr: Expr) sequel =
     cenv.stackGuard.Guard(fun () ->
@@ -4718,21 +4740,47 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
                 else
                     mspec.DeclaringType
 
-            if isSuperInit || isSelfInit then
-                CG.EmitInstr cgbuf (pop 0) (Push [ thisTy ]) mkLdarg0
-
             let pendingUninitializedThis = (isSuperInit || isSelfInit) && not valu
 
-            if pendingUninitializedThis then
+            let genArgs () =
+                if not cenv.g.generateWitnesses || witnessInfos.IsEmpty then
+                    () // no witness args
+                else
+                    let _ctyargs, mtyargs = List.splitAt ctps.Length tyargs
+                    GenWitnessArgs cenv cgbuf eenv m mtps mtyargs
+
+                GenUntupledArgsDiscardingLoneUnit cenv cgbuf eenv m vref.NumObjArgs curriedArgInfos nowArgs
+
+            // An uninitialized 'this' cannot be spilled, so a 'localloc' emitted by a base/self-ctor
+            // argument while 'this' is pending on the stack yields invalid IL (InvalidProgramException at
+            // load). When that can happen, evaluate the args into locals first (at a clean stack), then
+            // push 'this' and reload them; left-to-right evaluation order is preserved and ordinary ctors
+            // are unaffected.
+            let hoistArgsBeforeThis =
+                pendingUninitializedThis && List.exists exprMayLocalloc nowArgs
+
+            if hoistArgsBeforeThis then
+                let stackBefore = cgbuf.GetCurrentStack()
+                genArgs ()
+
+                let argTys =
+                    let stackAfter = cgbuf.GetCurrentStack()
+                    stackAfter |> List.truncate (stackAfter.Length - stackBefore.Length)
+
+                let argLocals = [ for ty in argTys -> cgbuf.SpillToLocal(ty, false) ]
+                CG.EmitInstr cgbuf (pop 0) (Push [ thisTy ]) mkLdarg0
                 cgbuf.StartUninitializedThisOnStack()
 
-            if not cenv.g.generateWitnesses || witnessInfos.IsEmpty then
-                () // no witness args
+                for local in List.rev argLocals do
+                    cgbuf.ReloadFromLocal local
             else
-                let _ctyargs, mtyargs = List.splitAt ctps.Length tyargs
-                GenWitnessArgs cenv cgbuf eenv m mtps mtyargs
+                if isSuperInit || isSelfInit then
+                    CG.EmitInstr cgbuf (pop 0) (Push [ thisTy ]) mkLdarg0
 
-            GenUntupledArgsDiscardingLoneUnit cenv cgbuf eenv m vref.NumObjArgs curriedArgInfos nowArgs
+                if pendingUninitializedThis then
+                    cgbuf.StartUninitializedThisOnStack()
+
+                genArgs ()
 
             // Generate laterArgs (for effects) and save
             LocalScope "callstack" cgbuf (fun scopeMarks ->
@@ -5179,6 +5227,7 @@ and GenTryWith cenv cgbuf eenv (e1, valForFilter: Val, filterExpr, valForHandler
 
                 let eenvinner =
                     { eenvinner with
+                        withinExnHandler = true
                         exitSequel = sequelOnBranches
                     }
                 // We emit the debug point for the 'with' keyword span on the start of the filter
@@ -5249,6 +5298,7 @@ and GenTryWith cenv cgbuf eenv (e1, valForFilter: Val, filterExpr, valForHandler
 
                 let eenvinner =
                     { eenvinner with
+                        withinExnHandler = true
                         exitSequel = exitSequel
                     }
 
@@ -5294,6 +5344,7 @@ and GenTryFinally cenv cgbuf eenv (bodyExpr, handlerExpr, m, resTy, spTry, spFin
 
         let eenvHandler =
             { eenvinner with
+                withinExnHandler = true
                 insideFinallyOrFaultHandler = true
             }
 
@@ -5601,6 +5652,13 @@ and GenAsmCode cenv cgbuf eenv (il, tyargs, args, returnTys, m) sequel =
         && ilReturnTys |> List.forall (fun ty -> ty <> ILType.Void)
         ->
 
+        // The JIT rejects 'localloc' inside an exception-handling region, producing an
+        // InvalidProgramException at method load. By this point inlining and closure conversion have run,
+        // so eenv.withinExnHandler reflects the true handler region: an escaping closure carrying the
+        // 'localloc' into its own method has had the flag reset and stays legal.
+        if eenv.withinExnHandler then
+            errorR (Error(FSComp.SR.chkNativePtrStackallocInHandler (), m))
+
         CG.EmitLocallocCode cgbuf (fun () ->
             GenExprs cenv cgbuf eenv args
             CG.EmitInstrs cgbuf (pop args.Length) (Push ilReturnTys) ilAfterInst)
@@ -5810,17 +5868,41 @@ and GenILCall
         else
             ilMethSpec.DeclaringType
 
-    // Load the 'this' pointer to pass to the superclass constructor. This argument is not
-    // in the expression tree since it can't be treated like an ordinary value
-    if isSuperInit then
-        CG.EmitInstr cgbuf (pop 0) (Push [ thisTy ]) mkLdarg0
-
+    // An uninitialized 'this' cannot be spilled, so a 'localloc' emitted by a base-ctor argument while
+    // 'this' is pending on the stack produces invalid IL (InvalidProgramException at load). When that
+    // can happen, evaluate the args into locals first (at a clean stack), then push 'this' and reload
+    // them. Left-to-right evaluation order is preserved; ordinary base ctors are unaffected.
     let pendingUninitializedThis = isSuperInit && not valu
 
-    if pendingUninitializedThis then
+    let hoistArgsBeforeThis =
+        pendingUninitializedThis && List.exists exprMayLocalloc argExprs
+
+    if hoistArgsBeforeThis then
+        let g = cenv.g
+
+        let argLocals =
+            [
+                for argExpr in argExprs ->
+                    let ilTy = argExpr |> tyOfExpr g |> GenType cenv m eenv.tyenv
+                    GenExpr cenv cgbuf eenv argExpr Continue
+                    cgbuf.SpillToLocal(ilTy, false)
+            ]
+
+        CG.EmitInstr cgbuf (pop 0) (Push [ thisTy ]) mkLdarg0
         cgbuf.StartUninitializedThisOnStack()
 
-    GenExprs cenv cgbuf eenv argExprs
+        for local in argLocals do
+            cgbuf.ReloadFromLocal local
+    else
+        // Load the 'this' pointer to pass to the superclass constructor. This argument is not
+        // in the expression tree since it can't be treated like an ordinary value
+        if isSuperInit then
+            CG.EmitInstr cgbuf (pop 0) (Push [ thisTy ]) mkLdarg0
+
+        if pendingUninitializedThis then
+            cgbuf.StartUninitializedThisOnStack()
+
+        GenExprs cenv cgbuf eenv argExprs
 
     let il =
         if newobj then
@@ -13067,6 +13149,7 @@ let GetEmptyIlxGenEnv (g: TcGlobals) ccu =
         innerVals = []
         sigToImplRemapInfo = [] (* "module remap info" *)
         withinSEH = false
+        withinExnHandler = false
         insideFinallyOrFaultHandler = false
         isInLoop = false
         initLocals = true
