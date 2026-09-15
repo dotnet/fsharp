@@ -534,6 +534,7 @@
     <Compile Include="Driver\XmlDocFileWriter.fs" />
     <Compile Include="Driver\BinaryResourceFormats.fsi" />
     <Compile Include="Driver\BinaryResourceFormats.fs" />
+    <Compile Include="Driver\ILLinkSubstitutions.fs" />
     <Compile Include="Driver\StaticLinking.fsi" />
     <Compile Include="Driver\StaticLinking.fs" />
     <Compile Include="Driver\CreateILModule.fsi" />
