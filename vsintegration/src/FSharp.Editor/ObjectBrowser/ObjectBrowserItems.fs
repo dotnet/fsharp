@@ -235,12 +235,9 @@ module internal ObjectBrowserItems =
             ProjectId = projectId
         }
 
+    /// The nav path carries the display name, not the assembly path: `LocateNavInfoNode` resolves
+    /// nodes against display text, so canonical nav-info nodes must be spelled the same way.
     let referenceItem projectId name (path: string voption) =
-        let library =
-            match path with
-            | ValueSome path -> path
-            | ValueNone -> name
-
         {
             Data = ObjectItemData.Reference(name, path)
             DisplayText = name
@@ -251,7 +248,7 @@ module internal ObjectBrowserItems =
             NavPath =
                 ValueSome
                     {
-                        Library = library
+                        Library = name
                         Namespace = ValueNone
                         Class = ValueNone
                         Member = ValueNone
