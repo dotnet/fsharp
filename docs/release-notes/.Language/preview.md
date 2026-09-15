@@ -35,6 +35,7 @@
 
 ### Fixed
 
+* Explicit generic type arguments are now unified in constraint-dependency order, so a subtype constraint that references a later type parameter (e.g. `Register<'a, 'b when 'a :> I<'b>>` called as `<Foo, int>`) no longer fails with FS0001 when the argument implements the interface at several instantiations. ([Issue #20103](https://github.com/dotnet/fsharp/issues/20103), [PR #20342](https://github.com/dotnet/fsharp/pull/20342))
 * Bitwise operators (`|||`, `&&&`, `^^^`) on enums whose underlying type is not an integer type (e.g. `char`) are now a compile-time error (FS0001, consistent with `~~~`, `<<<`, `>>>`) instead of a runtime `NotSupportedException`. ([Issue #11785](https://github.com/dotnet/fsharp/issues/11785), [PR #20322](https://github.com/dotnet/fsharp/pull/20322))
 
 ### Changed
