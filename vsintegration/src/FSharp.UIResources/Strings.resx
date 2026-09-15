@@ -315,4 +315,16 @@
   <data name="Generate_Body_For_Overridden_Method" xml:space="preserve">
     <value>Generate default implementation body for overridden method</value>
   </data>
+  <data name="Extract_function_parameter_annotations" xml:space="preserve">
+    <value>Parameter types in Extract to function</value>
+  </data>
+  <data name="Annotate_parameters_always" xml:space="preserve">
+    <value>Annotate every parameter</value>
+  </data>
+  <data name="Annotate_parameters_when_needed" xml:space="preserve">
+    <value>Annotate parameters whose type inference cannot determine from the extracted code</value>
+  </data>
+  <data name="Annotate_parameters_never" xml:space="preserve">
+    <value>Leave parameter types to type inference</value>
+  </data>
 </root>
