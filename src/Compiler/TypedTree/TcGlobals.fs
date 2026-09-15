@@ -280,6 +280,11 @@ type TcGlobals(
   let v_voidptr_tcr     = mk_MFCore_tcref fslibCcu "voidptr"
   let v_ilsigptr_tcr    = mk_MFCore_tcref fslibCcu "ilsigptr`1"
   let v_fastFunc_tcr    = mk_MFCore_tcref fslibCcu "FSharpFunc`2"
+  let v_optimizedClosures_nleref = mkNonLocalEntityRef fslibCcu (Array.append CorePathArray [| "OptimizedClosures" |])
+  let v_optimizedClosures_FSharpFunc3_tcr = mkNonLocalTyconRef v_optimizedClosures_nleref "FSharpFunc`3"
+  let v_optimizedClosures_FSharpFunc4_tcr = mkNonLocalTyconRef v_optimizedClosures_nleref "FSharpFunc`4"
+  let v_optimizedClosures_FSharpFunc5_tcr = mkNonLocalTyconRef v_optimizedClosures_nleref "FSharpFunc`5"
+  let v_optimizedClosures_FSharpFunc6_tcr = mkNonLocalTyconRef v_optimizedClosures_nleref "FSharpFunc`6"
   let v_refcell_tcr_canon = mk_MFCore_tcref fslibCcu "Ref`1"
   let v_refcell_tcr_nice  = mk_MFCore_tcref fslibCcu "ref`1"
   let v_mfe_tcr           = mk_MFCore_tcref fslibCcu "MatchFailureException"
@@ -1289,6 +1294,14 @@ type TcGlobals(
   member _.ilsigptr_tcr = v_ilsigptr_tcr
 
   member _.fastFunc_tcr = v_fastFunc_tcr
+
+  member _.optimizedClosures_FSharpFunc_tcref arity =
+      match arity with
+      | 2 -> v_optimizedClosures_FSharpFunc3_tcr
+      | 3 -> v_optimizedClosures_FSharpFunc4_tcr
+      | 4 -> v_optimizedClosures_FSharpFunc5_tcr
+      | 5 -> v_optimizedClosures_FSharpFunc6_tcr
+      | _ -> failwith "optimizedClosures_FSharpFunc_tcref: arity out of range 2..5"
 
   member _.MatchFailureException_tcr = v_mfe_tcr
 
