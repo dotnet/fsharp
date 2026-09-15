@@ -3448,6 +3448,8 @@ and GenRuntimeAsyncSequenceExpr cenv cgbuf eenv expr sequel =
 and GenRuntimeAsyncReturnAsStartedTask cenv cgbuf eenv expr sequel =
     let m = expr.Range
 
+    checkLanguageFeatureError cenv.g.langVersion LanguageFeature.RuntimeAsync m
+
     let nonPreservableFreeVal =
         (freeInExpr CollectLocals expr).FreeLocals
         |> Zset.elements

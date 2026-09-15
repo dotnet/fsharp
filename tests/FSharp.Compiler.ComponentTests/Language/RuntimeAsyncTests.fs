@@ -92,9 +92,7 @@ let inline getValue () : Task<int> =
         42)
 """
 
-[<Fact>]
-let ``runtime async methods are not imported as inline definitions across assemblies`` () =
-    FSharp """
+let private runtimeAsyncCrossAssemblyConsumer = """
 module RuntimeAsyncCrossAssemblyConsumer
 
 open RuntimeAsyncCrossAssemblyLibrary
@@ -103,8 +101,15 @@ open RuntimeAsyncCrossAssemblyLibrary
 let main _ =
     if getValue().GetAwaiter().GetResult() = 42 then 0 else 1
 """
+
+[<InlineData(false)>]
+[<InlineData(true)>]
+[<Theory>]
+let ``runtime async methods execute across assemblies`` (optimize: bool) =
+    FSharp runtimeAsyncCrossAssemblyConsumer
     |> withLangVersionPreview
     |> withFSharpCoreShippedNet
+    |> withOptimization optimize
     |> withReferences [
         FSharp runtimeAsyncCrossAssemblyLibrary
         |> withName "RuntimeAsyncCrossAssemblyLibrary"
