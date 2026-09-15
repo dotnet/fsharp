@@ -567,11 +567,6 @@
         <target state="translated">kendi kendine tür kısıtlamaları</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureStaticLetInRecordsDusEmptyTypes">
-        <source>Allow static let bindings in union, record, struct, non-incremental-class types</source>
-        <target state="translated">Birleşim, kayıt, yapı ve artımlı olmayan sınıf türlerinde statik let bağlamalarına izin ver</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureStringInterpolation">
         <source>string interpolation</source>
         <target state="translated">dizede düz metin arasına kod ekleme</target>
@@ -5475,11 +5470,6 @@
       <trans-unit id="tcStructsMayNotContainLetBindings">
         <source>Structs cannot contain value definitions because the default constructor for structs will not execute these bindings. Consider adding additional arguments to the primary constructor for the type.</source>
         <target state="translated">Yapıların varsayılan oluşturucusu bu bağlamaları yürütmeyeceği için yapılar değer tanımlarını içeremez. Türün birincil oluşturucusuna ek bağımsız değişkenler eklemeyi düşünün.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcStaticLetBindingsRequireClassesWithImplicitConstructors">
-        <source>For F#7 and lower, static 'let','do' and 'member val' definitions may only be used in types with a primary constructor ('type X(args) = ...'). To enable them in all other types, use language version '8' or higher.</source>
-        <target state="translated">F#7 ve altı için, 'let', 'do' ve 'member val' statik değer tanımları yalnızca birincil oluşturucu ('type X(args) = ...') içeren türlerde kullanılabilir. Bunları diğer tüm türlerde etkinleştirmek için dil sürümü '8' ve üstünü kullanın.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcMeasureDeclarationsRequireStaticMembersNotConstructors">

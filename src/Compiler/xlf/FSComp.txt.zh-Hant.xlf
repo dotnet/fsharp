@@ -567,11 +567,6 @@
         <target state="translated">自我類型限制式</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureStaticLetInRecordsDusEmptyTypes">
-        <source>Allow static let bindings in union, record, struct, non-incremental-class types</source>
-        <target state="translated">允許在等位、記錄、結構、非累加類別類型中使用靜態 let 繫結</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureStringInterpolation">
         <source>string interpolation</source>
         <target state="translated">字串內插補點</target>
@@ -5475,11 +5470,6 @@
       <trans-unit id="tcStructsMayNotContainLetBindings">
         <source>Structs cannot contain value definitions because the default constructor for structs will not execute these bindings. Consider adding additional arguments to the primary constructor for the type.</source>
         <target state="translated">結構不能包含值定義，因為結構的預設建構函式不會執行這些繫結。請考慮將其他引數加入類型的主要建構函式。</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcStaticLetBindingsRequireClassesWithImplicitConstructors">
-        <source>For F#7 and lower, static 'let','do' and 'member val' definitions may only be used in types with a primary constructor ('type X(args) = ...'). To enable them in all other types, use language version '8' or higher.</source>
-        <target state="translated">對於 F#7 和更低版本，靜態 'let'、'do' 和 'member val' 定義只能用於具有主要建構函式的類型 ('type X(args) = ...')。若要在所有其他類型中啟用，請使用語言版本 '8' 或更新版本。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcMeasureDeclarationsRequireStaticMembersNotConstructors">

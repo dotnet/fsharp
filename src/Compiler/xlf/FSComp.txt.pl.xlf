@@ -567,11 +567,6 @@
         <target state="translated">ograniczenia typu własnego</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureStaticLetInRecordsDusEmptyTypes">
-        <source>Allow static let bindings in union, record, struct, non-incremental-class types</source>
-        <target state="translated">Zezwalaj na statyczne powiązania let w typach związku, rekordu, struktur, nieprzyrostowych klas</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureStringInterpolation">
         <source>string interpolation</source>
         <target state="translated">interpolacja ciągu</target>
@@ -5475,11 +5470,6 @@
       <trans-unit id="tcStructsMayNotContainLetBindings">
         <source>Structs cannot contain value definitions because the default constructor for structs will not execute these bindings. Consider adding additional arguments to the primary constructor for the type.</source>
         <target state="translated">Struktury nie mogą zawierać definicji wartości, ponieważ domyślny konstruktor konstrukcji nie wykona tych powiązań. Rozważ dodanie kolejnych argumentów do podstawowego konstruktora typu.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcStaticLetBindingsRequireClassesWithImplicitConstructors">
-        <source>For F#7 and lower, static 'let','do' and 'member val' definitions may only be used in types with a primary constructor ('type X(args) = ...'). To enable them in all other types, use language version '8' or higher.</source>
-        <target state="translated">W przypadku języka F#7 i niższych wersji, definicje statyczne „let”,„do” i „member val” mogą być używane tylko w typach z konstruktorem podstawowym („type X(args) = ...”). Aby włączyć je we wszystkich innych typach, użyj wersji „8” języka lub wyższej.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcMeasureDeclarationsRequireStaticMembersNotConstructors">
