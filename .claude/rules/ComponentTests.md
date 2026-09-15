@@ -3,4 +3,4 @@ paths:
   - "tests/FSharp.Compiler.ComponentTests/**/*.fs"
 ---
 
-@../../.github/instructions/ComponentTests.instructions.md
+Read `.github/instructions/ComponentTests.instructions.md`.
