@@ -368,4 +368,10 @@ Use live (unsaved) buffers for analysis</value>
   <data name="ReturnsHeader" xml:space="preserve">
     <value>Returns:</value>
   </data>
+  <data name="ConvertToStructTuple" xml:space="preserve">
+    <value>Convert to struct tuple</value>
+  </data>
+  <data name="ConvertToReferenceTuple" xml:space="preserve">
+    <value>Convert to reference tuple</value>
+  </data>
 </root>
