@@ -637,7 +637,9 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
 
             // This check is required because constructors etc. are externally visible
             // and thus compiled representations do pick up dependencies on the field order
-            (if List.forall2 (checkField aenv infoReader implTycon sigTycon)  implFields sigFields
+            (if List.forall2 (fun (implField: RecdField) (sigField: RecdField) ->
+                    implField.LogicalName = sigField.LogicalName &&
+                    checkField aenv infoReader implTycon sigTycon implField sigField) implFields sigFields
              then true
              else (errorR(Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleFieldOrderDiffer(kindText, implTyconName), m)); false))
 
