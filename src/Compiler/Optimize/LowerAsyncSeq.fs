@@ -45,7 +45,9 @@ let private prepareMethods (g: TcGlobals) amap m (stateVars: ValRef list) genera
         if value.Deref.IsPinning || isByrefTy g value.Type || isByrefLikeTy g m value.Type then
             error (Error(FSComp.SR.ilRuntimeAsyncSequenceNotStaticallyKnown (), value.Range))
 
-    let resultVar, resultExpr = mkMutableCompGenLocal m "__sequenceStepResult" g.bool_ty
+    let resultVar, resultExpr =
+        mkMutableCompGenLocal m "__sequenceStepResult" g.int32_ty
+
     let stepExit = generateCodeLabel ()
 
     let body =
@@ -55,7 +57,7 @@ let private prepareMethods (g: TcGlobals) amap m (stateVars: ValRef list) genera
                 Some(
                     mkCompGenSequential
                         range
-                        (mkValSet range (mkLocalValRef resultVar) (mkBool g range (status = 1)))
+                        (mkValSet range (mkLocalValRef resultVar) (mkInt32 g range status))
                         (Expr.Op(TOp.Goto stepExit, [], [], range))
                 )
             | _ -> None)
@@ -105,6 +107,8 @@ let private prepareMethods (g: TcGlobals) amap m (stateVars: ValRef list) genera
         MakeMethInfoCall amap m methodInfo [] (objArgs @ args) None
 
     let dispatchVar, dispatchExpr = mkMutableCompGenLocal m "__sequenceException" ediTy
+    // Keep the exception out of every continuation when cleanup can suspend.
+    let preserveDispatch = RuntimeAsyncAnalyzer(g).ContainsSuspension close
 
     let guardedBody =
         mkTryWith
@@ -113,7 +117,10 @@ let private prepareMethods (g: TcGlobals) amap m (stateVars: ValRef list) genera
              filterVar,
              mkTrue g m,
              errorVar,
-             mkValSet m (mkLocalValRef dispatchVar) (callEdi "Capture" ediTy [] [ errorExpr ]),
+             mkCompGenSequential
+                 m
+                 (mkValSet m (mkLocalValRef dispatchVar) (callEdi "Capture" ediTy [] [ errorExpr ]))
+                 (mkValSet m (mkLocalValRef resultVar) (mkInt32 g m -1)),
              m,
              g.unit_ty,
              DebugPointAtTry.No,
@@ -125,16 +132,39 @@ let private prepareMethods (g: TcGlobals) amap m (stateVars: ValRef list) genera
             closeOnFailure
             (mkCompGenSequential m (callEdi "Throw" g.unit_ty [ dispatchExpr ] []) (mkDefault (m, g.bool_ty)))
 
+    let failure =
+        if preserveDispatch then
+            mkTryFinally
+                g
+                (failure,
+                 mkValSet m (mkLocalValRef dispatchVar) (mkDefault (m, ediTy)),
+                 m,
+                 g.bool_ty,
+                 DebugPointAtTry.No,
+                 DebugPointAtFinally.No)
+        else
+            failure
+
     let body =
-        mkCompGenLet
-            m
-            resultVar
-            (mkFalse g m)
-            (mkCompGenLet
+        let body =
+            mkCompGenSequential
                 m
-                dispatchVar
-                (mkDefault (m, ediTy))
-                (mkCompGenSequential m guardedBody (mkNonNullCond g m g.bool_ty dispatchExpr failure resultExpr)))
+                guardedBody
+                (mkCond
+                    DebugPointAtBinding.NoneAtInvisible
+                    m
+                    g.bool_ty
+                    (mkILAsmCeq g m resultExpr (mkInt32 g m -1))
+                    failure
+                    (mkILAsmCeq g m resultExpr (mkInt32 g m 1)))
+
+        let body =
+            if preserveDispatch then
+                body
+            else
+                mkCompGenLet m dispatchVar (mkDefault (m, ediTy)) body
+
+        mkCompGenLet m resultVar (mkInt32 g m 0) body
 
     let envelope marker typeArgs body =
         for value in GetRuntimeAsyncNonPreservableUses g body do
@@ -143,7 +173,15 @@ let private prepareMethods (g: TcGlobals) amap m (stateVars: ValRef list) genera
         let body = RewriteRuntimeAsyncExceptionHandlers g body
         primMkApp (exprForValRef m marker, marker.Type) typeArgs [ body ] m
 
-    envelope g.cgh__runtimeAsyncReturnValueTask_vref [ g.bool_ty ] body, envelope g.cgh__runtimeAsyncReturnValueTaskUnit_vref [] close
+    let stateVars =
+        if preserveDispatch then
+            mkLocalValRef dispatchVar :: stateVars
+        else
+            stateVars
+
+    stateVars,
+    envelope g.cgh__runtimeAsyncReturnValueTask_vref [ g.bool_ty ] body,
+    envelope g.cgh__runtimeAsyncReturnValueTaskUnit_vref [] close
 
 let TryConvert g amap (expr: Expr) =
     let m = expr.Range
@@ -175,7 +213,8 @@ let TryConvert g amap (expr: Expr) =
         | Some(next, pc, current, stateVars, generateNext, close, checkClose, elementTy, range) when
             not ((freeInExpr CollectLocals generateNext).FreeLocals.Contains next.Deref)
             ->
-            let generateNext, close = prepareMethods g amap range stateVars generateNext close
+            let stateVars, generateNext, close =
+                prepareMethods g amap range stateVars generateNext close
 
             Some(Sequence(next, pc, current, stateVars, generateNext, close, checkClose, elementTy, range))
         | _ -> None

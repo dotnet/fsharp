@@ -49,6 +49,11 @@ type RuntimeAsyncSequenceBuilder() =
     member inline _.Bind(source: ConfiguredValueTaskAwaitable, [<InlineIfLambda>] continuation: unit -> seq<'T>) =
         AsyncHelpers.Await source
         continuation()
+    member inline _.Bind(source: ConfiguredTaskAwaitable<'U>, [<InlineIfLambda>] continuation: 'U -> seq<'T>) =
+        continuation (AsyncHelpers.Await source)
+    member inline _.Bind(source: ConfiguredTaskAwaitable, [<InlineIfLambda>] continuation: unit -> seq<'T>) =
+        AsyncHelpers.Await source
+        continuation()
     member inline _.Run([<InlineIfLambda>] recipe: unit -> seq<'T>) : IAsyncEnumerable<'T> =
         StateMachineHelpers.__runtimeAsyncSequence recipe
 

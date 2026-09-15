@@ -1809,7 +1809,7 @@ let AddDirectDelegateTargetToDontInlineSet cenv env (slotsig: SlotSig) tmvs body
     else
         env
 
-let TryEliminateBinding cenv _env bind e2 _m =
+let TryEliminateBinding cenv env bind e2 _m =
     let g = cenv.g
 
     let (TBind(vspec1, e1, spBind)) = bind
@@ -1842,7 +1842,54 @@ let TryEliminateBinding cenv _env bind e2 _m =
               | _ -> None
 
         let (DebugPoints(e2, recreate0)) = e2
+        // Effect-free projections can still throw before the source has been evaluated.
+        let rec canMovePast expr =
+            match stripDebugPoints expr with
+            | Expr.Const _ -> true
+            | Expr.Val(vref, _, _) ->
+                not vref.IsMutable && not vref.IsTypeFunction &&
+                (match vref.ValReprInfo with
+                 | None -> true
+                 | Some info -> info.NumCurriedArgs > 0)
+            | Expr.App(f, _, _, [], _) -> canMovePast f
+            | _ -> false
+
+        let rec inlineAwaitInput insideAwait expr =
+            cenv.stackGuard.Guard(fun () ->
+                let (DebugPoints(expr, recreate)) = expr
+                let result =
+                    match expr with
+                    | Expr.Val(VRefLocal value, _, _) when insideAwait && valEq vspec1 value -> Some e1
+                    | Expr.App(f, fty, tyargs, args, m) ->
+                        inlineAwaitArgs insideAwait [] (f :: args)
+                        |> Option.map (fun args -> Expr.App(List.head args, fty, tyargs, List.tail args, m))
+                    | Expr.Op((TOp.ILCall _ | TOp.ILAsm _ | TOp.Coerce | TOp.Tuple _ | TOp.Recd _ | TOp.UnionCase _) as op, tyargs, args, m) ->
+                        inlineAwaitArgs (insideAwait || IsRuntimeAsyncSuspensionExpr g expr) [] args
+                        |> Option.map (fun args -> Expr.Op(op, tyargs, args, m))
+                    | Expr.Let(TBind(v, rhs, sp), rest, m, _) when IsUniqueUse vspec1 [rest] ->
+                        inlineAwaitInput insideAwait rhs
+                        |> Option.map (fun rhs -> mkLetBind m (TBind(v, rhs, sp)) rest)
+                    | Expr.Sequential(first, rest, NormalSeq, m) when IsUniqueUse vspec1 [rest] ->
+                        inlineAwaitInput insideAwait first
+                        |> Option.map (fun first -> Expr.Sequential(first, rest, NormalSeq, m))
+                    | _ -> None
+                result |> Option.map recreate)
+
+        and inlineAwaitArgs insideAwait prefix args =
+            match args with
+            | arg :: rest ->
+                match inlineAwaitInput insideAwait arg with
+                | Some arg when IsUniqueUse vspec1 (List.rev prefix @ rest) -> Some(List.rev prefix @ (arg :: rest))
+                | _ when canMovePast arg -> inlineAwaitArgs insideAwait (arg :: prefix) rest
+                | _ -> None
+            | [] -> None
+
+        let (|ImmediateRuntimeAwait|_|) expr =
+            if env.runtimeAsyncContext then inlineAwaitInput false expr else None
+
         match e2 with
+
+         | ImmediateRuntimeAwait expr -> Some(expr |> recreate0)
 
          // Immediate consumption of value as itself 'let x = e in x'
          | Expr.Val (VRefLocal vspec2, _, _)

@@ -925,11 +925,11 @@ Microsoft.FSharp.Core.CompilerServices.ArrayCollector`1[T]: T[] AddManyAndClose(
 Microsoft.FSharp.Core.CompilerServices.ArrayCollector`1[T]: T[] Close()
 Microsoft.FSharp.Core.CompilerServices.ArrayCollector`1[T]: Void Add(T)
 Microsoft.FSharp.Core.CompilerServices.ArrayCollector`1[T]: Void AddMany(System.Collections.Generic.IEnumerable`1[T])
-Microsoft.FSharp.Core.CompilerServices.GeneratedRuntimeAsyncSequenceBase`1[T]: System.Collections.Generic.IAsyncEnumerator`1[T] GetFreshEnumerator()
+Microsoft.FSharp.Core.CompilerServices.GeneratedRuntimeAsyncSequenceBase`1[T]: Microsoft.FSharp.Core.CompilerServices.GeneratedRuntimeAsyncSequenceBase`1[T] GetFreshEnumerator()
 Microsoft.FSharp.Core.CompilerServices.GeneratedRuntimeAsyncSequenceBase`1[T]: System.Threading.Tasks.ValueTask DisposeAsync()
 Microsoft.FSharp.Core.CompilerServices.GeneratedRuntimeAsyncSequenceBase`1[T]: System.Threading.Tasks.ValueTask`1[System.Boolean] MoveNextAsync()
-Microsoft.FSharp.Core.CompilerServices.GeneratedRuntimeAsyncSequenceBase`1[T]: T LastGenerated
-Microsoft.FSharp.Core.CompilerServices.GeneratedRuntimeAsyncSequenceBase`1[T]: T get_LastGenerated()
+Microsoft.FSharp.Core.CompilerServices.GeneratedRuntimeAsyncSequenceBase`1[T]: T Current
+Microsoft.FSharp.Core.CompilerServices.GeneratedRuntimeAsyncSequenceBase`1[T]: T get_Current()
 Microsoft.FSharp.Core.CompilerServices.GeneratedRuntimeAsyncSequenceBase`1[T]: Void .ctor()
 Microsoft.FSharp.Core.CompilerServices.GeneratedSequenceBase`1[T]: Boolean CheckClose
 Microsoft.FSharp.Core.CompilerServices.GeneratedSequenceBase`1[T]: Boolean get_CheckClose()

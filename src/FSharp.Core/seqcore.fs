@@ -529,19 +529,26 @@ type GeneratedSequenceBase<'T>() =
 #if NET
 [<AbstractClass>]
 type GeneratedRuntimeAsyncSequenceBase<'T>() =
-    abstract GetFreshEnumerator: unit -> IAsyncEnumerator<'T>
+    [<DefaultValue>]
+    val mutable private claimed: int
+    abstract GetFreshEnumerator: unit -> GeneratedRuntimeAsyncSequenceBase<'T>
     abstract MoveNextAsync: unit -> System.Threading.Tasks.ValueTask<bool>
     abstract DisposeAsync: unit -> System.Threading.Tasks.ValueTask
-    abstract LastGenerated: 'T
+    abstract Current: 'T
 
     interface IAsyncEnumerable<'T> with
         member x.GetAsyncEnumerator(cancellationToken) =
             if cancellationToken.CanBeCanceled then
                 raise (NotSupportedException("Cancellable enumeration tokens are not supported by this experimental runtime-async sequence host."))
-            x.GetFreshEnumerator()
+            if System.Threading.Interlocked.CompareExchange(&x.claimed, 1, 0) = 0 then
+                x :> IAsyncEnumerator<'T>
+            else
+                let fresh = x.GetFreshEnumerator()
+                fresh.claimed <- 1
+                fresh :> IAsyncEnumerator<'T>
 
     interface IAsyncEnumerator<'T> with
-        member x.Current = x.LastGenerated
+        member x.Current = x.Current
         member x.MoveNextAsync() = x.MoveNextAsync()
         member x.DisposeAsync() = x.DisposeAsync()
 #endif
@@ -678,4 +685,3 @@ type ArrayCollector<'T> =
             let res = this.ResizeArray.ToArray()
             this <- ArrayCollector<'T>()
             res
-

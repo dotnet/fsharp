@@ -37,6 +37,78 @@ open Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers
 [<Theory>]
 [<InlineData(false)>]
 [<InlineData(true)>]
+let ``runtime async input evaluation precedes throwing projections`` optimized =
+    FSharp """
+module PrefixOrder
+open System
+open System.Threading.Tasks
+open System.Runtime.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices
+
+let events = ResizeArray<string>()
+[<NoCompilerInlining; MethodImpl(MethodImplOptions.NoInlining)>]
+let source () = events.Add "source"; Task.FromResult 42
+type Holder = { Pair: int * int }
+[<NoCompilerInlining>]
+let probe (holder: Holder) =
+    StateMachineHelpers.__runtimeAsyncReturn (
+        let input = source()
+        (fst holder.Pair, AsyncHelpers.Await input))
+
+[<EntryPoint>]
+let main _ =
+    for holder, shouldThrow in
+        [{ Pair = (1, 2) }, false
+         { Pair = Unchecked.defaultof<int * int> }, true
+         Unchecked.defaultof<Holder>, true] do
+        events.Clear()
+        let mutable threw = false
+        try
+            let result = (probe holder).GetAwaiter().GetResult()
+            if result <> (1, 42) then failwith "result"
+        with :? NullReferenceException -> threw <- true
+        if threw <> shouldThrow then failwith "exception"
+        if List.ofSeq events <> ["source"] then failwith "source must precede projection"
+    0
+"""
+    |> preview
+    |> optimize optimized
+    |> compileExeAndRun
+    |> shouldSucceed
+
+[<Theory>]
+[<InlineData(false, "value")>]
+[<InlineData(true, "value")>]
+[<InlineData(false, "value + 1")>]
+[<InlineData(true, "value + 1")>]
+[<InlineData(false, "value + value")>]
+[<InlineData(true, "value + value")>]
+let ``runtime async sequence keeps source calls adjacent to awaits`` (optimized, resultExpression) =
+    let inputs =
+        CSharp "public static class AwaitInputs { public static System.Threading.Tasks.Task<int> Next() => System.Threading.Tasks.Task.FromResult(42); }"
+        |> withName "AwaitInputs"
+    let builder = FsFromPath(source "RuntimeAsyncSequenceBuilder.fs") |> preview |> asLibrary
+    let result =
+        FSharp(header + "\nlet values () = RuntimeAsyncSequenceBuilder.runtimeAsyncSeq { let! value = AwaitInputs.Next() in yield " + resultExpression + " }")
+        |> withReferences [inputs; builder]
+        |> preview
+        |> optimize optimized
+        |> compile
+        |> shouldSucceed
+    match result with
+    | CompilationResult.Success output ->
+        let _, _, il = ILChecker.verifyILAndReturnActual [] output.OutputPath.Value []
+        let start = il.IndexOf("AwaitInputs::Next()")
+        let finish = il.IndexOf("AsyncHelpers::Await", start)
+        Assert.True(start >= 0 && finish > start)
+        Assert.DoesNotContain("stfld", il.Substring(start, finish - start))
+        Assert.DoesNotContain("stloc", il.Substring(start, finish - start))
+        Assert.DoesNotContain("ldloc", il.Substring(start, finish - start))
+    | _ -> failwith "expected compiled sequence"
+
+[<Theory>]
+[<InlineData(false)>]
+[<InlineData(true)>]
 let ``runtime async sequence isolates ordinary sources`` optimized =
     let body = """
 let factory (work: Task<int>) = __runtimeAsyncSequence(fun () -> seq {
@@ -53,7 +125,7 @@ let factory (work: Task<int>) = __runtimeAsyncSequence(fun () -> seq {
             let method = md.GetMethodDefinition handle
             let name = md.GetString method.Name
             if name = "MoveNextAsync" || name = "DisposeAsync" then
-                Assert.Equal(0x2008, int method.ImplAttributes)
+                Assert.Equal(0x2000, int method.ImplAttributes &&& 0x2000)
                 let mutable signature = md.GetBlobReader method.Signature
                 Assert.False(signature.ReadSignatureHeader().IsGeneric)
                 Assert.Equal(0, signature.ReadCompressedInteger())

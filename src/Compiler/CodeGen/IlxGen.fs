@@ -7009,11 +7009,7 @@ and GenSequenceExpr
                          else
                              GenGetFreeVarForClosure cenv cgbuf eenv m fv
 
-                     CG.EmitInstr
-                         cgbuf
-                         (pop ilCloAllFreeVars.Length)
-                         (Push [ ilCloRetTyInner ])
-                         (I_newobj(formalClospec.Constructor, None))
+                     CG.EmitInstr cgbuf (pop ilCloAllFreeVars.Length) (Push [ ilCloTyInner ]) (I_newobj(formalClospec.Constructor, None))
 
                      GenSequel cenv eenv.cloc cgbuf Return),
                  m)
@@ -7022,7 +7018,12 @@ and GenSequenceExpr
             "GetFreshEnumerator",
             ILMemberAccess.Public,
             [],
-            mkILReturn ilCloEnumeratorTy,
+            mkILReturn (
+                if directRuntimeSequence then
+                    ilCloBaseTy
+                else
+                    ilCloEnumeratorTy
+            ),
             MethodBody.IL(InterruptibleLazy.FromValue mbody)
         )
         |> AddNonUserCompilerGeneratedAttribs g
@@ -7061,7 +7062,7 @@ and GenSequenceExpr
             mkILReturn resultTy,
             MethodBody.IL(InterruptibleLazy.FromValue ilCode)
         )
-        |> fun methodDef -> methodDef.WithAsync(marker.IsSome).WithNoInlining(marker.IsSome)
+        |> fun methodDef -> methodDef.WithAsync(marker.IsSome)
 
     let checkCloseMethod =
         let ilCode =
@@ -7121,14 +7122,20 @@ and GenSequenceExpr
             )
 
         mkILNonGenericVirtualInstanceMethod (name, ILMemberAccess.Public, ilParams, ilReturn, ilCode)
-        |> fun methodDef -> methodDef.WithAsync(marker.IsSome).WithNoInlining(marker.IsSome)
+        |> fun methodDef -> methodDef.WithAsync(marker.IsSome)
 
     let lastGeneratedMethod =
+        let name =
+            if directRuntimeSequence then
+                "get_Current"
+            else
+                "get_LastGenerated"
+
         let ilCode =
-            CodeGenMethodForExpr cenv cgbuf.mgbuf ([], "get_LastGenerated", eenvinner, 1, None, exprForValRef m currvref, Return)
+            CodeGenMethodForExpr cenv cgbuf.mgbuf ([], name, eenvinner, 1, None, exprForValRef m currvref, Return)
 
         mkILNonGenericVirtualInstanceMethod (
-            "get_LastGenerated",
+            name,
             ILMemberAccess.Public,
             [],
             mkILReturn ilCloSeqElemTy,
@@ -7149,6 +7156,13 @@ and GenSequenceExpr
             getFreshMethod
         ]
 
+    let ilInterfaceTys =
+        if directRuntimeSequence then
+            AllInterfacesOfType g cenv.amap m AllowMultiIntfInstantiations.Yes (g.mk_IAsyncEnumerator_ty seqElemTy)
+            |> List.map (GenType cenv m eenvinner.tyenv >> InterfaceImpl.Create)
+        else
+            []
+
     let cloTypeDefs =
         GenClosureTypeDefs
             cenv
@@ -7161,7 +7175,7 @@ and GenSequenceExpr
              cloMethods,
              [],
              ilCloBaseTy,
-             [],
+             ilInterfaceTys,
              Some ilxCloSpec)
 
     for cloTypeDef in cloTypeDefs do

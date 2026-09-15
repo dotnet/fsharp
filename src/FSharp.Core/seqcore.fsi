@@ -166,10 +166,10 @@ type GeneratedSequenceBase<'T> =
 [<AbstractClass>]
 type GeneratedRuntimeAsyncSequenceBase<'T> =
     new: unit -> GeneratedRuntimeAsyncSequenceBase<'T>
-    abstract GetFreshEnumerator: unit -> IAsyncEnumerator<'T>
+    abstract GetFreshEnumerator: unit -> GeneratedRuntimeAsyncSequenceBase<'T>
     abstract MoveNextAsync: unit -> System.Threading.Tasks.ValueTask<bool>
     abstract DisposeAsync: unit -> System.Threading.Tasks.ValueTask
-    abstract LastGenerated: 'T
+    abstract Current: 'T
     interface IAsyncEnumerable<'T>
     interface IAsyncEnumerator<'T>
     interface IAsyncDisposable
