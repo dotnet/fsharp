@@ -4702,6 +4702,12 @@ and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
             let size = localVarSize
             exprOptimized, {einfo with FunctionSize=einfo.FunctionSize+size; TotalSize = einfo.TotalSize+size}
 
+        // A runtime-async method cannot be exported as an F# inline definition. Its body contains
+        // suspension calls that are valid only in the generated runtime-async method, not at an
+        // arbitrary consumer call site.
+        if TryGetRuntimeAsyncReturn g exprOptimized |> Option.isSome then
+            vref.SetInlineInfo ValInline.Never
+
         // Trim out optimization information for large lambdas we'll never inline
         // Trim out optimization information for expressions that call protected members
         let rec cut ivalue =

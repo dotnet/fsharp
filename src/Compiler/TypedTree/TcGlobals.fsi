@@ -274,6 +274,8 @@ type internal TcGlobals =
 
     member DebuggerBrowsableNeverAttribute: FSharp.Compiler.AbstractIL.IL.ILAttribute
 
+    member NoCompilerInliningAttribute: FSharp.Compiler.AbstractIL.IL.ILAttribute
+
     member DebuggerNonUserCodeAttribute: FSharp.Compiler.AbstractIL.IL.ILAttribute
 
     member IComparer_ty: TypedTree.TType

@@ -722,7 +722,21 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                             mkILReturn fixedNowReturnTy,
                             MethodBody.IL(notlazy convil)
                         )
-                        |> fun mdef -> mdef.WithAsync(clo.cloCode.Value.IsRuntimeAsync)
+                        |> fun mdef ->
+                            let mdef = mdef.WithAsync(clo.cloCode.Value.IsRuntimeAsync)
+
+                            if clo.cloCode.Value.IsRuntimeAsync then
+                                let noCompilerInliningAttribute =
+                                    mkILCustomAttribute (
+                                        mkILTyRef (cenv.ilg.fsharpCoreAssemblyScopeRef, "Microsoft.FSharp.Core.NoCompilerInliningAttribute"),
+                                        [],
+                                        [],
+                                        []
+                                    )
+
+                                mdef.With(customAttrs = mkILCustomAttrs [ noCompilerInliningAttribute ])
+                            else
+                                mdef
 
                     let ctorMethodDef =
                         mkILStorageCtor (

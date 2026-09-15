@@ -78,6 +78,43 @@ type Calculator() =
 
 """
 
+#if NETCOREAPP
+let private runtimeAsyncCrossAssemblyLibrary = """
+module RuntimeAsyncCrossAssemblyLibrary
+
+open System.Threading.Tasks
+open System.Runtime.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices
+
+let inline getValue () : Task<int> =
+    StateMachineHelpers.__runtimeAsyncReturn (
+        AsyncHelpers.Await(Task.Delay(1))
+        42)
+"""
+
+[<Fact>]
+let ``runtime async methods are not imported as inline definitions across assemblies`` () =
+    FSharp """
+module RuntimeAsyncCrossAssemblyConsumer
+
+open RuntimeAsyncCrossAssemblyLibrary
+
+[<EntryPoint>]
+let main _ =
+    if getValue().GetAwaiter().GetResult() = 42 then 0 else 1
+"""
+    |> withLangVersionPreview
+    |> withFSharpCoreShippedNet
+    |> withReferences [
+        FSharp runtimeAsyncCrossAssemblyLibrary
+        |> withName "RuntimeAsyncCrossAssemblyLibrary"
+        |> withLangVersionPreview
+        |> withFSharpCoreShippedNet
+    ]
+    |> compileExeAndRun
+    |> shouldSucceed
+#endif
+
 let private runtimeAsyncNestedInlineSource = """
 module RuntimeAsyncNestedInlineTest
 
