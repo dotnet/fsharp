@@ -4,6 +4,7 @@ open Xunit
 open FSharp.Test
 open FSharp.Test.Compiler
 open System.IO
+open System.Runtime.InteropServices
 
 module TryCatch =
 
@@ -47,8 +48,38 @@ module TryCatch =
         compilation
         |> withOptions ["--generate-filter-blocks"]
         |> verifyCompilation
-        
-        
+
+    let private isExpectedStackOverflow isMacOS (result: ExecutionOutput) =
+        match result.Outcome with
+        | ExitCode exitCode when exitCode <> 0 ->
+            result.StdErr.Contains "stack overflow"
+            || result.StdErr.Contains "StackOverflow"
+            // On macOS, this reproduction can exit with SIGSEGV (128 + 11) before the runtime writes a diagnostic.
+            || (isMacOS && exitCode = 139 && result.StdOut = "" && result.StdErr = "")
+        | _ -> false
+
+    [<Theory>]
+    [<InlineData(true, 139, "", "", true)>]
+    [<InlineData(false, 139, "", "", false)>]
+    [<InlineData(true, 0, "", "", false)>]
+    [<InlineData(true, 1, "", "", false)>]
+    [<InlineData(true, 134, "", "", false)>]
+    [<InlineData(true, 139, "", "Unhandled exception", false)>]
+    [<InlineData(true, 139, "System.OperationCanceledException", "", false)>]
+    [<InlineData(false, 134, "", "stack overflow", true)>]
+    [<InlineData(false, -1073741571, "", "StackOverflowException", true)>]
+    [<InlineData(true, 134, "", "stack overflow", true)>]
+    [<InlineData(true, 0, "", "stack overflow", false)>]
+    let ``Stackoverflow result classification`` isMacOS exitCode stdout stderr expected =
+        let result = { Outcome = ExitCode exitCode; StdOut = stdout; StdErr = stderr }
+        Assert.Equal(expected, isExpectedStackOverflow isMacOS result)
+
+    [<Fact>]
+    let ``Stackoverflow requires a process exit code`` () =
+        for outcome in [ NoExitCode; Failure (System.Exception("Process failed to start")) ] do
+            let result = { Outcome = outcome; StdOut = ""; StdErr = "stack overflow" }
+            Assert.False(isExpectedStackOverflow true result)
+
     [<Theory; FileInlineData("StackOverflowRepro.fs")>]
     let ``Stackoverflow reproduction`` compilation =
         let compilationResult = 
@@ -65,7 +96,7 @@ module TryCatch =
            let result = CompilerAssert.ExecuteAndReturnResult (dllFile, isFsx=false, deps = s.Dependencies, newProcess=true)
            printfn "%A" result
 
-           Assert.True(result.StdErr.Contains "stack overflow" || result.StdErr.Contains "StackOverflow", result.StdErr)
+           Assert.True(isExpectedStackOverflow (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) result, sprintf "%A" result)
 
         | _ -> failwith (sprintf "%A" compilationResult)
 
