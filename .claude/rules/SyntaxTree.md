@@ -6,4 +6,4 @@ paths:
   - "src/Compiler/pars.fsy"
 ---
 
-@../../.github/instructions/SyntaxTree.instructions.md
+Read `.github/instructions/SyntaxTree.instructions.md`.
