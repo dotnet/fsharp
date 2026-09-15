@@ -105,6 +105,7 @@
     <Compile Include="Refactor\ChangeTypeofWithNameToNameofExpression.fs" />
     <Compile Include="Refactor\AddExplicitTypeToParameter.fs" />
     <Compile Include="Refactor\ChangeDerefToValueRefactoring.fs" />
+    <Compile Include="Refactor\ConvertDotLambda.fs" />
     <Compile Include="CodeFixes\IFSharpCodeFix.fs" />
     <Compile Include="CodeFixes\CodeFixHelpers.fs" />
     <Compile Include="CodeFixes\ChangeEqualsInFieldTypeToColon.fs" />

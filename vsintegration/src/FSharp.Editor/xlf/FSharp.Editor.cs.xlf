@@ -90,9 +90,19 @@ Navrhnout názvy pro nerozpoznané identifikátory;</target>
         <target state="translated">Převést na anonymní záznam</target>
         <note />
       </trans-unit>
+      <trans-unit id="ConvertToFunLambda">
+        <source>Convert to 'fun' lambda</source>
+        <target state="new">Convert to 'fun' lambda</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ConvertToNotEqualsEqualityExpression">
         <source>Use '&lt;&gt;' for inequality check</source>
         <target state="translated">Pro kontrolu nerovnosti použijte &lt;&gt;.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConvertToShorthandLambda">
+        <source>Convert to '_.' shorthand lambda</source>
+        <target state="new">Convert to '_.' shorthand lambda</target>
         <note />
       </trans-unit>
       <trans-unit id="ConvertToSingleEqualsEqualityExpression">
