@@ -3,4 +3,4 @@ paths:
   - "src/Compiler/CodeGen/**/*.{fs,fsi}"
 ---
 
-@../../.github/instructions/CodeGen.instructions.md
+Read `.github/instructions/CodeGen.instructions.md`.
