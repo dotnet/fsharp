@@ -6392,7 +6392,8 @@ let CheckOneImplFile
 
         let implFile = CheckedImplFile (qualNameOfFile, implFileTy, implFileContents, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)
 
-        return (topAttrs, implFile, envAtEnd, cenv.createsGeneratedProvidedTypes)
+        // implFile.Signature is a fresh copy or the explicit signature; only the inferred type shares its entities with the symbol uses
+        return (topAttrs, implFile, envAtEnd, cenv.createsGeneratedProvidedTypes, implFileTypePriorToSig)
      }
 
 
