@@ -95,7 +95,7 @@ let (|SeqElemTy|_|) g amap m ty =
 /// The analysis is done in two phases. The first phase determines the state variables and state labels (as Abstract IL code labels).
 /// We then allocate an integer pc for each state label and proceed with the second phase, which builds two related state machine
 /// expressions: one for 'MoveNext' and one for 'Dispose'.
-let ConvertSequenceExprToObject g amap overallExpr =
+let ConvertSequenceExprToObject g amap isRuntimeAsync overallExpr =
     /// Implement a decision to represent a 'let' binding as a non-escaping local variable (rather than a state machine variable)
     let RepresentBindingAsLocal (bind: Binding) resBody m =
         if verbose then
@@ -338,6 +338,9 @@ let ConvertSequenceExprToObject g amap overallExpr =
                        asyncVars = asyncVars }
             | _ ->
                 None
+
+        | ValApp g (FSharp.Compiler.TcGlobals.ValRefForIntrinsic g.seq_trywith_info) _ when isRuntimeAsync ->
+            None
 
         | SeqEmpty g m ->
             // printfn "found Seq.empty"

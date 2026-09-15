@@ -19,6 +19,14 @@ open FSharp.Compiler.TypeRelations
 
 open FSharp.Compiler.RuntimeAsync
 
+let rec private containsRecipeConstruction visit expr =
+    match stripDebugPoints expr with
+    | Expr.Lambda _
+    | Expr.TyLambda _ -> false
+    | Expr.Let(binding, body, _, _) -> visit binding.Expr || containsRecipeConstruction visit body
+    | Expr.Sequential(first, rest, _, _) -> visit first || containsRecipeConstruction visit rest
+    | _ -> visit expr
+
 type RuntimeAsyncAnalyzer(g: TcGlobals, getLambdaBody: ValRef -> Expr option) =
     let expressionCache = Dictionary<Expr, bool>(HashIdentity.Reference)
     let suspensionCache = Dictionary<Expr, bool>(HashIdentity.Reference)
@@ -56,7 +64,7 @@ type RuntimeAsyncAnalyzer(g: TcGlobals, getLambdaBody: ValRef -> Expr option) =
                         fun _ noInterceptF acc expr ->
                             if acc then
                                 true
-                            elif IsRuntimeAsyncBoundary g expr then
+                            elif IsRuntimeAsyncBoundary g expr || (TryGetRuntimeAsyncSequence g expr).IsSome then
                                 true
                             else
                                 match stripExpr expr with
@@ -81,11 +89,23 @@ type RuntimeAsyncAnalyzer(g: TcGlobals, getLambdaBody: ValRef -> Expr option) =
 
     member _.ContainsFragment expr = containsExpression expr |> fst
 
-    member _.ContainsSuspension expr =
+    member this.ContainsSuspension expr =
         match suspensionCache.TryGetValue expr with
         | true, result -> result
         | _ ->
-            let result = ExistsExpr (IsRuntimeAsyncSuspensionExpr g) expr
+            let folder =
+                { ExprFolder0 with
+                    exprIntercept =
+                        fun _ noInterceptF acc expr ->
+                            if acc then
+                                true
+                            else
+                                match TryGetRuntimeAsyncSequence g expr with
+                                | Some(recipe, _) -> containsRecipeConstruction this.ContainsSuspension recipe
+                                | None -> IsRuntimeAsyncSuspensionExpr g expr || noInterceptF acc expr
+                }
+
+            let result = FoldExpr folder false expr
             suspensionCache[expr] <- result
             result
 
@@ -203,22 +223,31 @@ let InlineRuntimeAsyncLambdaArgument (g: TcGlobals) (isRuntimeAsyncFragment: Exp
             StackGuard = StackGuard("InlineRuntimeAsyncLambdaArgument")
         }
 
-    let inlineBinding (boundVal: Val) boundExpr body =
-        let rwenv =
-            mkRwenv (fun _ expr ->
-                match betaReduceLambdaApplication expr with
-                | Some reduced -> Some reduced
-                | None ->
-                    match stripExpr expr with
-                    | Expr.App(f, _, tyargs, args, m) ->
-                        match stripDebugPoints f with
-                        | Expr.Val(vref, _, _) when valEq boundVal vref.Deref ->
-                            Some(MakeApplicationAndBetaReduce g (copyExpr g CloneAll boundExpr, tyOfExpr g boundExpr, [ tyargs ], args, m))
-                        | _ -> None
-                    | Expr.Val(vref, _, _) when valEq boundVal vref.Deref -> Some(copyExpr g CloneAll boundExpr)
-                    | _ -> None)
+    let rec inlineBinding (boundVal: Val) boundExpr body =
+        match boundExpr with
+        | Expr.DebugPoint(point, inner) -> Expr.DebugPoint(point, inlineBinding boundVal inner body)
+        | Expr.Let(binding, rest, m, _) -> mkLetBind m binding (inlineBinding boundVal rest body)
+        | Expr.Sequential(first, rest, NormalSeq, m) -> Expr.Sequential(first, inlineBinding boundVal rest body, NormalSeq, m)
+        | _ ->
+            let rwenv =
+                mkRwenv (fun _ expr ->
+                    match betaReduceLambdaApplication expr with
+                    | Some reduced -> Some reduced
+                    | None ->
+                        match stripExpr expr with
+                        | Expr.App(f, _, tyargs, args, m) ->
+                            match stripDebugPoints f with
+                            | Expr.Val(vref, _, _) when valEq boundVal vref.Deref ->
+                                Some(
+                                    MakeApplicationAndBetaReduce
+                                        g
+                                        (copyExpr g CloneAll boundExpr, tyOfExpr g boundExpr, [ tyargs ], args, m)
+                                )
+                            | _ -> None
+                        | Expr.Val(vref, _, _) when valEq boundVal vref.Deref -> Some(copyExpr g CloneAll boundExpr)
+                        | _ -> None)
 
-        RewriteExpr rwenv body
+            RewriteExpr rwenv body
 
     let rwenv =
         mkRwenv (fun cont expr ->

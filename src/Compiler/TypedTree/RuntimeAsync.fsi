@@ -13,6 +13,10 @@ val TryGetRuntimeAsyncReturn: g: TcGlobals -> expr: Expr -> RuntimeAsyncReturnIn
 
 val (|RuntimeAsyncReturnFunction|_|): g: TcGlobals -> expr: Expr -> (ValRef * ValUseFlag * range) voption
 
+val TryGetRuntimeAsyncSequence: g: TcGlobals -> expr: Expr -> (Expr * TType) option
+
+val (|RuntimeAsyncSequenceFunction|_|): g: TcGlobals -> expr: Expr -> ValRef voption
+
 val IsRuntimeAsyncSuspensionMethod: g: TcGlobals -> ilMethRef: ILMethodRef -> bool
 
 val IsRuntimeAsyncSuspensionExpr: g: TcGlobals -> expr: Expr -> bool

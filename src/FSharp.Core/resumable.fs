@@ -134,6 +134,11 @@ module StateMachineHelpers =
     let __runtimeAsyncReturnValueTaskUnit () : ValueTask =
         failwith
             "__runtimeAsyncReturnValueTaskUnit is a compiler intrinsic and should only be used in runtime-async method bodies"
+
+    [<MethodImpl(MethodImplOptions.NoInlining)>]
+    let __runtimeAsyncSequence (recipe: unit -> seq<'T>) : System.Collections.Generic.IAsyncEnumerable<'T> =
+        ignore recipe
+        failwith "__runtimeAsyncSequence is a compiler intrinsic and requires a statically known sequence recipe"
 #endif
 
 module ResumableCode =

@@ -28,6 +28,17 @@ let (|RuntimeAsyncReturnFunction|_|) (g: TcGlobals) expr =
     | Expr.App(Expr.Val(RuntimeAsyncReturn g as value, flags, m), _, [ _ ], [], _) -> ValueSome(value, flags, m)
     | _ -> ValueNone
 
+let TryGetRuntimeAsyncSequence (g: TcGlobals) expr =
+    match expr with
+    | ValApp g g.cgh__runtimeAsyncSequence_vref ([ elementTy ], [ recipe ], _) -> Some(recipe, elementTy)
+    | _ -> None
+
+let (|RuntimeAsyncSequenceFunction|_|) (g: TcGlobals) expr =
+    match stripExpr expr with
+    | Expr.Val(value, _, _)
+    | Expr.App(Expr.Val(value, _, _), _, [ _ ], [], _) when valRefEq g value g.cgh__runtimeAsyncSequence_vref -> ValueSome value
+    | _ -> ValueNone
+
 let private runtimeAsyncHelpersTypeName =
     "System.Runtime.CompilerServices.AsyncHelpers"
 

@@ -465,6 +465,8 @@
     <Compile Include="Optimize\LowerCalls.fs" />
     <Compile Include="Optimize\LowerSequences.fsi" />
     <Compile Include="Optimize\LowerSequences.fs" />
+    <Compile Include="Optimize\LowerAsyncSeq.fsi" />
+    <Compile Include="Optimize\LowerAsyncSeq.fs" />
     <Compile Include="Optimize\LowerComputedCollections.fsi" />
     <Compile Include="Optimize\LowerComputedCollections.fs" />
     <Compile Include="Optimize\LowerStateMachines.fsi" />

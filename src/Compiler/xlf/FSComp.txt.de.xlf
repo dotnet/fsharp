@@ -692,6 +692,11 @@
         <target state="new">A byref, byref-like, or pinned local '{0}' cannot be used after a runtime async suspension.</target>
         <note />
       </trans-unit>
+      <trans-unit id="ilRuntimeAsyncSequenceNotStaticallyKnown">
+        <source>The runtime-async sequence recipe could not be statically lowered. Supply a statically known delayed sequence recipe through an inline builder.</source>
+        <target state="new">The runtime-async sequence recipe could not be statically lowered. Supply a statically known delayed sequence recipe through an inline builder.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ilRuntimeAsyncStackAllocation">
         <source>Stack allocation is not permitted in a runtime async method.</source>
         <target state="new">Stack allocation is not permitted in a runtime async method.</target>

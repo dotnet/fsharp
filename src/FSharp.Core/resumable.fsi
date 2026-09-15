@@ -208,6 +208,11 @@ module StateMachineHelpers =
 
     [<MethodImpl(MethodImplOptions.NoInlining)>]
     val __runtimeAsyncReturnValueTaskUnit : unit -> System.Threading.Tasks.ValueTask
+
+    /// <summary>Compiles a statically known delayed sequence recipe as an experimental runtime-async sequence.</summary>
+    /// <remarks>This compiler intrinsic requires preview language and runtime support. It must not be called directly.</remarks>
+    [<MethodImpl(MethodImplOptions.NoInlining)>]
+    val __runtimeAsyncSequence: recipe: (unit -> seq<'T>) -> System.Collections.Generic.IAsyncEnumerable<'T>
 #endif
 
 /// <summary>Adding this attribute to the method adjusts the processing of some generic methods
