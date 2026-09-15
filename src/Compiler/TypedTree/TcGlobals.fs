@@ -160,8 +160,6 @@ let tname_RuntimeFieldHandle = "System.RuntimeFieldHandle"
 [<Literal>]
 let tname_CompilerGeneratedAttribute = "System.Runtime.CompilerServices.CompilerGeneratedAttribute"
 [<Literal>]
-let tname_NoCompilerInliningAttribute = "Microsoft.FSharp.Core.NoCompilerInliningAttribute"
-[<Literal>]
 let tname_ReferenceAssemblyAttribute = "System.Runtime.CompilerServices.ReferenceAssemblyAttribute"
 [<Literal>]
 let tname_UnmanagedType = "System.Runtime.InteropServices.UnmanagedType"
@@ -957,8 +955,6 @@ type TcGlobals(
 
   let debuggerNonUserCodeAttribute = mkILCustomAttribute (tref_DebuggerNonUserCodeAttribute, [], [], [])
   let compilerGeneratedAttribute = mkILCustomAttribute (tref_CompilerGeneratedAttribute, [], [], [])
-  let noCompilerInliningAttribute =
-      mkILCustomAttribute (mkILTyRef(ilg.fsharpCoreAssemblyScopeRef, tname_NoCompilerInliningAttribute), [], [], [])
   let generatedAttributes = if noDebugAttributes then [||] else [| compilerGeneratedAttribute; debuggerNonUserCodeAttribute |]
   let compilerGlobalState = CompilerGlobalState()
 
@@ -1949,8 +1945,6 @@ type TcGlobals(
   member internal _.CompilerGlobalState = Some compilerGlobalState
 
   member _.CompilerGeneratedAttribute = compilerGeneratedAttribute
-
-  member _.NoCompilerInliningAttribute = noCompilerInliningAttribute
 
   member _.DebuggerNonUserCodeAttribute = debuggerNonUserCodeAttribute
 
