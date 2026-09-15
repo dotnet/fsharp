@@ -3946,10 +3946,14 @@ FSharp.Compiler.EditorServices.NavigableItem: FSharp.Compiler.Text.Range Range
 FSharp.Compiler.EditorServices.NavigableItem: FSharp.Compiler.Text.Range get_Range()
 FSharp.Compiler.EditorServices.NavigableItem: Int32 GetHashCode()
 FSharp.Compiler.EditorServices.NavigableItem: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.EditorServices.NavigableItem: Int32 ParameterCount
+FSharp.Compiler.EditorServices.NavigableItem: Int32 TypeParameterCount
+FSharp.Compiler.EditorServices.NavigableItem: Int32 get_ParameterCount()
+FSharp.Compiler.EditorServices.NavigableItem: Int32 get_TypeParameterCount()
 FSharp.Compiler.EditorServices.NavigableItem: System.String Name
 FSharp.Compiler.EditorServices.NavigableItem: System.String ToString()
 FSharp.Compiler.EditorServices.NavigableItem: System.String get_Name()
-FSharp.Compiler.EditorServices.NavigableItem: Void .ctor(System.String, Boolean, FSharp.Compiler.Text.Range, Boolean, FSharp.Compiler.EditorServices.NavigableItemKind, FSharp.Compiler.EditorServices.NavigableContainer)
+FSharp.Compiler.EditorServices.NavigableItem: Void .ctor(System.String, Boolean, FSharp.Compiler.Text.Range, Boolean, FSharp.Compiler.EditorServices.NavigableItemKind, FSharp.Compiler.EditorServices.NavigableContainer, Int32, Int32)
 FSharp.Compiler.EditorServices.NavigableItemKind+Tags: Int32 Constructor
 FSharp.Compiler.EditorServices.NavigableItemKind+Tags: Int32 EnumCase
 FSharp.Compiler.EditorServices.NavigableItemKind+Tags: Int32 Exception
