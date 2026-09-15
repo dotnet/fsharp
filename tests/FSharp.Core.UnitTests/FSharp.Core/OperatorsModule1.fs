@@ -93,6 +93,118 @@ type OperatorsModule1() =
         // null
         CheckThrowsNullRefException(fun () -> Operators.OperatorIntrinsics.GetStringSlice null param1 param2 |> ignore)
 
+    static member GetterSlicingOverflowCases() =
+        let hi, lo = Int32.MaxValue, Int32.MinValue
+        let a1 = [|1;2;3|]
+        let a2 = Array2D.zeroCreate<int> 2 3
+        let a3 = Array3D.zeroCreate<int> 2 3 4
+        let a4 = Array4D.zeroCreate<int> 2 3 4 5
+        let positive = Array2D.zeroCreateBased<int> 3 5 2 3
+        let negative = Array2D.zeroCreateBased<int> -3 5 2 3
+        let endpoint = Array.CreateInstance(typeof<int>, [|1;2|], [|hi;0|]) :?> int[,]
+        let empty = Array.CreateInstance(typeof<int>, [|0;2|], [|lo;0|]) :?> int[,]
+        let body name (args: obj[]) () =
+            let m = typeof<int option>.Assembly.GetType("Microsoft.FSharp.Core.Operators+OperatorIntrinsics").GetMethod(name)
+            Assert.NotNull m
+            m.MakeGenericMethod(typeof<int>).Invoke(null, args) :?> Array
+        let cases: (string * int list * (unit -> Array)) list =
+            [
+                "syntax 1D count two", [0], (fun () -> a1[hi..lo])
+                "syntax 1D count three", [0], (fun () -> a1[hi..(lo + 1)])
+                "syntax 2D axis 0", [0;3], (fun () -> a2[hi..lo, *])
+                "syntax 2D axis 1", [2;0], (fun () -> a2[*, hi..lo])
+                "syntax 3D axis 0", [0;3;4], (fun () -> a3[hi..lo, *, *])
+                "syntax 3D axis 1", [2;0;4], (fun () -> a3[*, hi..lo, *])
+                "syntax 3D axis 2", [2;3;0], (fun () -> a3[*, *, hi..lo])
+                "syntax 4D axis 0", [0;3;4;5], (fun () -> a4[hi..lo, *, *, *])
+                "syntax 4D axis 1", [2;0;4;5], (fun () -> a4[*, hi..lo, *, *])
+                "syntax 4D axis 2", [2;3;0;5], (fun () -> a4[*, *, hi..lo, *])
+                "syntax 4D axis 3", [2;3;4;0], (fun () -> a4[*, *, *, hi..lo])
+                "syntax 2D fixed", [0], (fun () -> a2[0, hi..lo])
+                "syntax 3D fixed single", [0;4], (fun () -> a3[0, hi..lo, *])
+                "syntax 3D fixed double", [0], (fun () -> a3[0, 0, hi..lo])
+                "syntax 4D fixed single", [0;4;5], (fun () -> a4[0, hi..lo, *, *])
+                "syntax 4D fixed double", [0;5], (fun () -> a4[0, 0, hi..lo, *])
+                "syntax 4D fixed triple", [0], (fun () -> a4[0, 0, 0, hi..lo])
+                "syntax 2D fixed loop", [0], (fun () -> a2[0, 1..lo])
+                "syntax 3D fixed loop", [0;4], (fun () -> a3[0, 1..lo, *])
+                "syntax 4D fixed loop", [0;4;5], (fun () -> a4[0, 1..lo, *, *])
+                "positive based", [0;3], (fun () -> positive[hi..lo, *])
+                "negative based", [0;3], (fun () -> negative[hi..lo, *])
+                "inclusive endpoint", [0;2], (fun () -> endpoint[..lo, *])
+                "empty based explicit finish", [0;2], (fun () -> empty[hi..lo, *])
+                "empty based omitted finish", [0;2], (fun () -> empty[hi.., *])
+                "body 1D count two", [0], body "GetArraySlice" [|a1; Some hi; Some lo|]
+                "body 1D count three", [0], body "GetArraySlice" [|a1; Some hi; Some(lo + 1)|]
+                "body 2D", [0;3], body "GetArraySlice2D" [|a2; Some hi; Some lo; None; None|]
+                "body 3D", [0;3;4], body "GetArraySlice3D" [|a3; Some hi; Some lo; None; None; None; None|]
+                "body 4D", [0;3;4;5], body "GetArraySlice4D" [|a4; Some hi; Some lo; None; None; None; None; None; None|]
+                "body 2D fixed", [0], body "GetArraySlice2DFixed1" [|a2; 0; Some hi; Some lo|]
+                "body 3D fixed single", [0;4], body "GetArraySlice3DFixedSingle1" [|a3; 0; Some hi; Some lo; None; None|]
+                "body 3D fixed double", [0], body "GetArraySlice3DFixedDouble1" [|a3; 0; 0; Some hi; Some lo|]
+                "body 4D fixed single", [0;4;5], body "GetArraySlice4DFixedSingle1" [|a4; 0; Some hi; Some lo; None; None; None; None|]
+                "body 4D fixed double", [0;5], body "GetArraySlice4DFixedDouble1" [|a4; 0; 0; Some hi; Some lo; None; None|]
+                "body 4D fixed triple", [0], body "GetArraySlice4DFixedTriple4" [|a4; 0; 0; 0; Some hi; Some lo|]
+                "body 2D fixed loop", [0], body "GetArraySlice2DFixed1" [|a2; 0; Some 1; Some lo|]
+                "body 3D fixed loop", [0;4], body "GetArraySlice3DFixedSingle1" [|a3; 0; Some 1; Some lo; None; None|]
+                "body 4D fixed loop", [0;4;5], body "GetArraySlice4DFixedSingle1" [|a4; 0; Some 1; Some lo; None; None; None; None|]
+            ]
+        cases |> Seq.map (fun (name, shape, slice) -> [|box name; box shape; box slice|])
+
+    static member private CheckSliceShape(expected: int list, actual: Array) =
+        Assert.AreEqual(expected.Length, actual.Rank)
+        expected |> List.iteri (fun d length ->
+            Assert.AreEqual(length, actual.GetLength(d))
+            Assert.AreEqual(0, actual.GetLowerBound(d)))
+
+    [<Theory; MemberData(nameof OperatorsModule1.GetterSlicingOverflowCases)>]
+    member _.GetterSlicingOverflowShape(_name: string, expected: int list, slice: unit -> Array) =
+        OperatorsModule1.CheckSliceShape(expected, slice())
+
+    [<Theory>]
+    [<InlineData(3, false)>]
+    [<InlineData(Int32.MaxValue, false)>]
+    [<InlineData(3, true)>]
+    [<InlineData(Int32.MaxValue, true)>]
+    member _.GetterSlicingOverflowString(start: int, callableBody: bool) =
+        let actual =
+            if callableBody then
+                let m = typeof<int option>.Assembly.GetType("Microsoft.FSharp.Core.Operators+OperatorIntrinsics").GetMethod("GetStringSlice")
+                Assert.NotNull m
+                m.Invoke(null, [|"hello"; Some start; Some Int32.MinValue|]) :?> string
+            else
+                "hello"[start..Int32.MinValue]
+        Assert.AreEqual(String.Empty, actual)
+
+    [<Fact>]
+    member _.GetterSlicingOverflowFinishBeforeUpperEndpoint() =
+        let start = Int32.MaxValue - 1
+        let source = Array.CreateInstance(typeof<int>, [|2;2|], [|start;0|]) :?> int[,]
+        source[start, 0] <- 42
+        source[start, 1] <- 43
+        let actual = source[start..start, *]
+        OperatorsModule1.CheckSliceShape([1;2], actual)
+        Assert.AreEqual(42, actual[0, 0])
+        Assert.AreEqual(43, actual[0, 1])
+
+    [<Fact>]
+    member _.GetterSlicingControls() =
+        let hi, lo = Int32.MaxValue, Int32.MinValue
+        Assert.AreEqual([], [1..5][3..lo])
+        OperatorsModule1.CheckSliceShape([0], [|1;2;3|][3..(lo + 10)])
+        let source = Array2D.initBased -3 5 2 3 (fun i j -> 100 * i + j)
+        let actual = source[-3..-2, *]
+        OperatorsModule1.CheckSliceShape([2;3], actual)
+        for i in 0..1 do
+            for j in 0..2 do
+                Assert.AreEqual(source[i - 3, j + 5], actual[i, j])
+        let a2 = Array2D.zeroCreate<int> 2 3
+        OperatorsModule1.CheckSliceShape([0], a2[2, 1..0])
+        CheckThrowsIndexOutRangException(fun () -> a2[2, 0..0] |> ignore)
+        CheckThrowsNullRefException(fun () -> Operators.OperatorIntrinsics.GetArraySlice (null: int[]) (Some hi) (Some lo) |> ignore)
+        CheckThrowsNullRefException(fun () -> Operators.OperatorIntrinsics.GetArraySlice2DFixed1 (null: int[,]) 0 (Some hi) (Some lo) |> ignore)
+        CheckThrowsNullRefException(fun () -> Operators.OperatorIntrinsics.GetStringSlice null (Some hi) (Some lo) |> ignore)
+
     [<Fact>]
     member _.OptimizedRangesSetArraySlice() =
         let param1 = Some(1)
