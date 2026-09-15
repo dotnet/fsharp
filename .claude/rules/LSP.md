@@ -3,4 +3,4 @@ paths:
   - "src/FSharp.Compiler.LanguageServer/**/*.{fs,fsi}"
 ---
 
-@../../.github/instructions/LSP.instructions.md
+Read `.github/instructions/LSP.instructions.md`.
