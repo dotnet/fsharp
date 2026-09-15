@@ -9999,9 +9999,6 @@ and GenMethodForBinding
             (WellKnownValAttributes.DllImportAttribute
              ||| WellKnownValAttributes.CompiledNameAttribute)
 
-    let attrsAppliedToGetterOrSetter, attrs =
-        List.partition (fun (Attrib(_, _, _, _, isAppliedToGetterOrSetter, _, _)) -> isAppliedToGetterOrSetter) attrs
-
     let sourceNameAttribs, compiledName =
         match tryFindValAttribByFlag g WellKnownValAttributes.CompiledNameAttribute v.Attribs with
         | Some(Attrib(_, _, [ AttribStringArg b ], _, _, _, _)) -> [ mkCompilationSourceNameAttr g v.LogicalName ], Some b
@@ -10010,6 +10007,9 @@ and GenMethodForBinding
     // check if the hasPreserveSigNamedArg and hasSynchronizedImplFlag implementation flags have been specified
     let hasPreserveSigImplFlag, hasSynchronizedImplFlag, hasNoInliningFlag, hasAggressiveInliningImplFlag, attrs =
         ComputeMethodImplAttribs cenv v attrs
+
+    let attrsAppliedToGetterOrSetter, attrs =
+        List.partition (fun (Attrib(_, _, _, _, isAppliedToGetterOrSetter, _, _)) -> isAppliedToGetterOrSetter) attrs
 
     let securityAttributes, attrs =
         attrs
