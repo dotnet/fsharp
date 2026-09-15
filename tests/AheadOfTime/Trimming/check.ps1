@@ -38,10 +38,14 @@ function CheckTrim($root, $tfm, $outputfile, $expected_len, $callerLineNumber) {
 
     # Checking that the trimmed outputfile binary is of expected size (needs adjustments if test is updated).
     $file = Get-Item (Join-Path $PSScriptRoot "${root}\bin\release\${tfm}\win-x64\publish\${outputfile}")
-    $metadataResources = [System.Reflection.Assembly]::LoadFile($file.FullName).GetManifestResourceNames() |
+    $metadata = [System.Reflection.Assembly]::LoadFile($file.FullName).GetManifestResourceNames() |
         Where-Object { $_ -match '^FSharp(Signature|Optimization)' }
-    if ($metadataResources) {
-        $errors += "F# metadata resources remain in ${outputfile}: $($metadataResources -join ', ')"
+    if ($metadata) {
+        $errors += "Metadata remains in ${outputfile}: $($metadata -join ', ')"
+    }
+    $app = [System.Reflection.Assembly]::LoadFile((Join-Path $file.DirectoryName "${root}.dll"))
+    if ($app.GetManifestResourceNames() -contains "custom.marker") {
+        $errors += "Custom resource-removal rule was not applied in ${root}"
     }
     $file_len = $file.Length
     if ($expected_len -eq -1)

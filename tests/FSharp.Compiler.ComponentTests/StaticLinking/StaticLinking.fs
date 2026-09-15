@@ -26,6 +26,7 @@ module First
         FSharp """
 module Second
     type Number = IntNumber of int | DoubleNumber of double
+    let getMyRecord () = First.getMyRecord()
 
     let getMyIntDU() = IntNumber 10
 
@@ -34,37 +35,45 @@ module Second
             |> withOptimize
             |> asLibrary
 
-    [<Fact>]
-    let ``staticlinking_multiple_fs_libraries`` () =
-        let tripleQuote = "\"\"\""
-        let expectedRecord = """{ A = "Hello, World!";  B = 1.027M;  C = 1028;  D = 1.029 }""".Replace("\n", ";")
-        let expectedIntDU = """IntNumber 10""".Replace("\n", ";")
-        let expectedDoubleDU = """DoubleNumber 12.0""".Replace("\n", ";")
+    [<Theory>]
+    [<InlineData(false)>]
+    [<InlineData(true)>]
+    let ``staticlinking_multiple_fs_libraries`` chained =
+        let withSubstitutions name compilation =
+            let path = Path.Combine(TestFramework.createTemporaryDirectory().FullName, "ILLink.Substitutions.xml")
+            File.WriteAllText(path, $"""<linker><assembly fullname="{name}"><resource name="FSharpSignatureData.{name}" action="remove" /></assembly></linker>""")
+            compilation |> withName name |> withOptions [ "--compressmetadata-"; $"--resource:{path},ILLink.Substitutions.xml" ]
 
-        FSharp ("""open System
+        let first = myRecordLibrary |> withSubstitutions "First"
+        let second =
+            myDiscriminatedUnionLibrary |> withSubstitutions "Second"
+            |> withReferences [ first.WithStaticLink(chained) ]
+
+        FSharp """open System
 open First
 open Second
 
-let expectedRecord = $(expectedRecord)
-let actualRecord = (sprintf "%A" (getMyRecord())).Replace("\r\n", "\n").Replace("\n", ";")
-if expectedRecord <> actualRecord then
-    raise (new Exception $"Text failed:{Environment.NewLine}Expected: '{expectedRecord}'{Environment.NewLine}Actual: '{actualRecord}'{Environment.NewLine}")
-
-let expectedIntDU = $(expectedIntDU)
-let actualIntDU = (sprintf "%A" (getMyIntDU())).Replace("\r\n", "\n").Replace("\n", ";")
-if expectedIntDU <> actualIntDU then
-    raise (new Exception $"Text failed:{Environment.NewLine}Expected: '{expectedIntDU}'{Environment.NewLine}Actual: '{actualIntDU}'{Environment.NewLine}")
-
-let expectedDoubleDU = $(expectedDoubleDU)
-let actualDoubleDU = (sprintf "%A" (getMyDoubleDU())).Replace("\r\n", "\n").Replace("\n", ";")
-if expectedDoubleDU <> actualDoubleDU then
-    raise (new Exception $"Text failed:{Environment.NewLine}Expected: '{expectedDoubleDU}'{Environment.NewLine}Actual: '{actualDoubleDU}'{Environment.NewLine}")
-        """.Replace("$(expectedRecord)",  tripleQuote + expectedRecord + tripleQuote)
-           .Replace("$(expectedIntDU)",   tripleQuote + expectedIntDU + tripleQuote)
-           .Replace("$(expectedDoubleDU)", tripleQuote + expectedDoubleDU + tripleQuote))
+let check expected value =
+    let actual = (sprintf "%A" value).Replace("\r\n", "\n").Replace("\n", ";")
+    if actual <> expected then failwithf "Expected %s, got %s" expected actual
+check "{ A = \"Hello, World!\";  B = 1.027M;  C = 1028;  D = 1.029 }" (getMyRecord())
+check "IntNumber 10" (getMyIntDU())
+check "DoubleNumber 12.0" (getMyDoubleDU())
+let resources = Reflection.Assembly.GetExecutingAssembly().GetManifestResourceNames()
+if Array.filter ((=) "ILLink.Substitutions.xml") resources |> Array.length <> 1 then
+    failwith "Static linking must produce one substitutions resource"
+let xml =
+    use reader = new IO.StreamReader(Reflection.Assembly.GetExecutingAssembly().GetManifestResourceStream("ILLink.Substitutions.xml"))
+    reader.ReadToEnd()
+for name in ["First"; "Second"; "Final"] do
+    if not (xml.Contains("FSharpSignatureData." + name)) then failwith "A linked library lost its removal rule"
+        """
         |> asExe
         |> withOptimize
-        |> withReferences [ myRecordLibrary.WithStaticLink(true) ]
-        |> withReferences [ myDiscriminatedUnionLibrary.WithStaticLink(true) ]
+        |> withSubstitutions "Final"
+        |> withReferences [
+            if not chained then first.WithStaticLink(true)
+            second.WithStaticLink(true)
+        ]
         |> compileExeAndRun
         |> shouldSucceed
