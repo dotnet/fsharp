@@ -532,11 +532,6 @@
         <target state="translated">mensagens informativas relacionadas a células de referência</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureRequiredProperties">
-        <source>support for required properties</source>
-        <target state="translated">suporte para propriedades necessárias</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureResumableStateMachines">
         <source>resumable state machines</source>
         <target state="translated">máquinas de estado retomável</target>

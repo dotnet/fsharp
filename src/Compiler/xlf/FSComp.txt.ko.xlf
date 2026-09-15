@@ -532,11 +532,6 @@
         <target state="translated">참조 셀과 관련된 정보 메시지</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureRequiredProperties">
-        <source>support for required properties</source>
-        <target state="translated">필수 속성 지원</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureResumableStateMachines">
         <source>resumable state machines</source>
         <target state="translated">다시 시작 가능한 상태 시스템</target>

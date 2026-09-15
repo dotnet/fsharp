@@ -532,11 +532,6 @@
         <target state="translated">mensajes informativos relacionados con las celdas de referencia</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureRequiredProperties">
-        <source>support for required properties</source>
-        <target state="translated">compatibilidad con las propiedades necesarias</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureResumableStateMachines">
         <source>resumable state machines</source>
         <target state="translated">máquinas de estado reanudables</target>
