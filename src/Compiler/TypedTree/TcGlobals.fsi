@@ -255,6 +255,9 @@ type internal TcGlobals =
     member mk_ArrayCollector_ty: seqElemTy: TypedTree.TType -> TypedTree.TType
 
     member mk_GeneratedSequenceBase_ty: seqElemTy: TypedTree.TType -> TypedTree.TType
+    member mk_GeneratedRuntimeAsyncSequenceBase_ty: seqElemTy: TypedTree.TType -> TypedTree.TType
+    member mk_IAsyncEnumerable_ty: seqElemTy: TypedTree.TType -> TypedTree.TType
+    member mk_IAsyncEnumerator_ty: seqElemTy: TypedTree.TType -> TypedTree.TType
 
     member mk_IResumableStateMachine_ty: dataTy: TypedTree.TType -> TypedTree.TType
 
@@ -291,6 +294,8 @@ type internal TcGlobals =
     member ResumableStateMachine_tcr: TypedTree.EntityRef
 
     member System_Runtime_CompilerServices_RuntimeFeature_ty: TypedTree.TType option
+
+    member System_Runtime_CompilerServices_MethodImplOptions_ty: TypedTree.TType option
 
     member addrof2_vref: TypedTree.ValRef
 
@@ -457,6 +462,15 @@ type internal TcGlobals =
     member cgh__resumeAt_vref: TypedTree.ValRef
 
     member cgh__stateMachine_vref: TypedTree.ValRef
+
+    member cgh__runtimeAsyncReturn_vref: TypedTree.ValRef
+
+    member cgh__runtimeAsyncReturnValueTask_vref: TypedTree.ValRef
+
+    member cgh__runtimeAsyncReturnUnit_vref: TypedTree.ValRef
+
+    member cgh__runtimeAsyncReturnValueTaskUnit_vref: TypedTree.ValRef
+    member cgh__runtimeAsyncSequence_vref: TypedTree.ValRef
 
     member cgh__useResumableCode_vref: TypedTree.ValRef
 

@@ -409,6 +409,10 @@ type TcGlobals(
   let v_tcref_IObservable      = findSysTyconRef sys "IObservable`1"
   let v_tcref_IObserver        = findSysTyconRef sys "IObserver`1"
   let v_fslib_IDelegateEvent_tcr = mk_MFControl_tcref fslibCcu "IDelegateEvent`1"
+  let v_task_tcr                = findSysTyconRef ["System"; "Threading"; "Tasks"] "Task`1"
+  let v_task_nonGeneric_tcr     = findSysTyconRef ["System"; "Threading"; "Tasks"] "Task"
+  let v_valueTask_tcr            = findSysTyconRef ["System"; "Threading"; "Tasks"] "ValueTask`1"
+  let v_valueTask_nonGeneric_tcr = findSysTyconRef ["System"; "Threading"; "Tasks"] "ValueTask"
 
   let v_option_tcr_nice     = mk_MFCore_tcref fslibCcu "option`1"
   let v_valueoption_tcr_nice = mk_MFCore_tcref fslibCcu "voption`1"
@@ -421,6 +425,8 @@ type TcGlobals(
   let v_date_tcr                 = findSysTyconRef sys "DateTime"
   let v_IEnumerable_tcr          = findSysTyconRef sysGenerics "IEnumerable`1"
   let v_IEnumerator_tcr          = findSysTyconRef sysGenerics "IEnumerator`1"
+  let v_IAsyncEnumerable_tcr     = findSysTyconRef sysGenerics "IAsyncEnumerable`1"
+  let v_IAsyncEnumerator_tcr     = findSysTyconRef sysGenerics "IAsyncEnumerator`1"
   let v_System_Attribute_tcr     = findSysTyconRef sys "Attribute"
   let v_expr_tcr                 = mk_MFQuotations_tcref fslibCcu "Expr`1"
   let v_raw_expr_tcr             = mk_MFQuotations_tcref fslibCcu "Expr"
@@ -900,6 +906,11 @@ type TcGlobals(
   let v_cgh__resumeAt_info         = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,                   "__resumeAt"                           , None                 , None          , [vara],     ([[v_int_ty]; [varaTy]], varaTy))
   let v_cgh__stateMachine_info     = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,                   "__stateMachine"                       , None                 , None          , [vara; varb],     ([[varaTy]], varbTy)) // inaccurate type but it doesn't matter for linking
   let v_cgh__resumableEntry_info   = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,                   "__resumableEntry"                     , None                 , None          , [vara],     ([[v_int_ty --> varaTy]; [v_unit_ty --> varaTy]], varaTy))
+  let v_cgh__runtimeAsyncReturn_info = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,               "__runtimeAsyncReturn"                 , None                 , None          , [vara],     ([[varaTy]], TType_app(v_task_tcr, [varaTy], v_knownWithoutNull))) // handled specially by the checker
+  let v_cgh__runtimeAsyncReturnValueTask_info = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,      "__runtimeAsyncReturnValueTask"           , None                 , None          , [vara],     ([[varaTy]], TType_app(v_valueTask_tcr, [varaTy], v_knownWithoutNull))) // handled specially by the checker
+  let v_cgh__runtimeAsyncReturnUnit_info = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,           "__runtimeAsyncReturnUnit"                 , None                 , None          , [],        ([[v_unit_ty]], mkNonGenericTy v_task_nonGeneric_tcr)) // handled specially by the checker
+  let v_cgh__runtimeAsyncReturnValueTaskUnit_info = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref, "__runtimeAsyncReturnValueTaskUnit"          , None                 , None          , [],        ([[v_unit_ty]], mkNonGenericTy v_valueTask_nonGeneric_tcr)) // handled specially by the checker
+  let v_cgh__runtimeAsyncSequence_info = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref, "__runtimeAsyncSequence", None, None, [vara], ([[v_unit_ty --> mkSeqTy varaTy]], TType_app(v_IAsyncEnumerable_tcr, [varaTy], v_knownWithoutNull)))
   let v_seq_to_array_info          = makeIntrinsicValRef(fslib_MFSeqModule_nleref,                             "toArray"                              , None                 , Some "ToArray", [varb],     ([[mkSeqTy varbTy]], mkArrayType 1 varbTy))
   let v_seq_to_list_info           = makeIntrinsicValRef(fslib_MFSeqModule_nleref,                             "toList"                               , None                 , Some "ToList" , [varb],     ([[mkSeqTy varbTy]], mkListTy varbTy))
   let v_seq_map_info               = makeIntrinsicValRef(fslib_MFSeqModule_nleref,                             "map"                                  , None                 , Some "Map"    , [vara;varb], ([[varaTy --> varbTy]; [mkSeqTy varaTy]], mkSeqTy varbTy))
@@ -1304,6 +1315,7 @@ type TcGlobals(
   member _.seq_tcr = v_seq_tcr
 
   member val seq_base_tcr = mk_MFCompilerServices_tcref fslibCcu "GeneratedSequenceBase`1"
+  member val runtime_async_seq_base_tcr = mk_MFCompilerServices_tcref fslibCcu "GeneratedRuntimeAsyncSequenceBase`1"
 
   member val ListCollector_tcr = mk_MFCompilerServices_tcref fslibCcu "ListCollector`1"
 
@@ -1316,6 +1328,9 @@ type TcGlobals(
         embeddedILTypeDefs.TryAdd(tref.Name, mkEmbeddableType()) |> ignore
 
   member g.mk_GeneratedSequenceBase_ty seqElemTy = TType_app(g.seq_base_tcr,[seqElemTy], v_knownWithoutNull)
+  member g.mk_GeneratedRuntimeAsyncSequenceBase_ty seqElemTy = TType_app(g.runtime_async_seq_base_tcr, [seqElemTy], v_knownWithoutNull)
+  member _.mk_IAsyncEnumerable_ty seqElemTy = TType_app(v_IAsyncEnumerable_tcr, [seqElemTy], v_knownWithoutNull)
+  member _.mk_IAsyncEnumerator_ty seqElemTy = TType_app(v_IAsyncEnumerator_tcr, [seqElemTy], v_knownWithoutNull)
 
   member val ResumableStateMachine_tcr = mk_MFCompilerServices_tcref fslibCcu "ResumableStateMachine`1"
 
@@ -1530,6 +1545,8 @@ type TcGlobals(
 
   // Review: Does this need to be an option type?
   member val System_Runtime_CompilerServices_RuntimeFeature_ty = tryFindSysTyconRef sysCompilerServices "RuntimeFeature" |> Option.map mkNonGenericTy
+  member val System_Runtime_CompilerServices_MethodImplOptions_ty =
+      tryFindSysTyconRef sysCompilerServices "MethodImplOptions" |> Option.map mkNonGenericTy
 
   member val iltyp_StreamingContext = tryFindSysILTypeRef tname_StreamingContext  |> Option.map mkILNonGenericValueTy
   member val iltyp_SerializationInfo = tryFindSysILTypeRef tname_SerializationInfo  |> Option.map mkILNonGenericBoxedTy
@@ -1839,6 +1856,11 @@ type TcGlobals(
 
 
   member val cgh__stateMachine_vref = ValRefForIntrinsic v_cgh__stateMachine_info
+  member val cgh__runtimeAsyncReturn_vref = ValRefForIntrinsic v_cgh__runtimeAsyncReturn_info
+  member val cgh__runtimeAsyncReturnValueTask_vref = ValRefForIntrinsic v_cgh__runtimeAsyncReturnValueTask_info
+  member val cgh__runtimeAsyncReturnUnit_vref = ValRefForIntrinsic v_cgh__runtimeAsyncReturnUnit_info
+  member val cgh__runtimeAsyncReturnValueTaskUnit_vref = ValRefForIntrinsic v_cgh__runtimeAsyncReturnValueTaskUnit_info
+  member val cgh__runtimeAsyncSequence_vref = ValRefForIntrinsic v_cgh__runtimeAsyncSequence_info
   member val cgh__useResumableCode_vref = ValRefForIntrinsic v_cgh__useResumableCode_info
   member val cgh__debugPoint_vref = ValRefForIntrinsic v_cgh__debugPoint_info
   member val cgh__resumeAt_vref = ValRefForIntrinsic v_cgh__resumeAt_info

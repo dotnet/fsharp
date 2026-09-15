@@ -160,6 +160,21 @@ type GeneratedSequenceBase<'T> =
     interface IEnumerator
     interface IDisposable
 
+#if NET
+/// <summary>The compiler emits subclasses of this experimental runtime-async sequence host.</summary>
+/// <remarks>Cancellable enumeration tokens are not supported. The sequence recipe runs when the enumerator advances.</remarks>
+[<AbstractClass>]
+type GeneratedRuntimeAsyncSequenceBase<'T> =
+    new: unit -> GeneratedRuntimeAsyncSequenceBase<'T>
+    abstract GetFreshEnumerator: unit -> GeneratedRuntimeAsyncSequenceBase<'T>
+    abstract MoveNextAsync: unit -> System.Threading.Tasks.ValueTask<bool>
+    abstract DisposeAsync: unit -> System.Threading.Tasks.ValueTask
+    abstract Current: 'T
+    interface IAsyncEnumerable<'T>
+    interface IAsyncEnumerator<'T>
+    interface IAsyncDisposable
+#endif
+
 /// Collects elements and builds a list
 [<Struct; NoEquality; NoComparison>]
 type ListCollector<'T> =

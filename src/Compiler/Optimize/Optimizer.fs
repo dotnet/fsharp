@@ -15,6 +15,9 @@ open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.DelegateForwarding
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Features
+open FSharp.Compiler.RuntimeAsync
+open FSharp.Compiler.RuntimeAsyncAnalysis
+open FSharp.Compiler.RuntimeAsyncExceptionRewrite
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.Syntax
@@ -498,6 +501,13 @@ type IncrementalOptimizationEnv =
       /// definition-site replay finds no match; this call site does, letting the correct extension be honored
       /// instead of degrading to the throwing dynamic stub. None outside the debug-specialization path.
       debugInlineCallSite: range option
+
+      /// Indicates that the expression being optimized is the body of a runtime-async marker.
+      runtimeAsyncContext: bool
+
+      /// Runtime async diagnostics must only be reported once across optimization passes.
+      runtimeAsyncReportedRanges: HashSet<range>
+
     }
 
     static member Empty =
@@ -512,7 +522,9 @@ type IncrementalOptimizationEnv =
           methEnv = { pipelineCount = 0 }
           referencedCcus = []
           earlierImplFileSignatures = []
-          debugInlineCallSite = None }
+          debugInlineCallSite = None
+          runtimeAsyncContext = false
+          runtimeAsyncReportedRanges = HashSet<range>() }
 
     override x.ToString() = "<IncrementalOptimizationEnv>"
 
@@ -1796,7 +1808,7 @@ let AddDirectDelegateTargetToDontInlineSet cenv env (slotsig: SlotSig) tmvs body
     else
         env
 
-let TryEliminateBinding cenv _env bind e2 _m =
+let TryEliminateBinding cenv env bind e2 _m =
     let g = cenv.g
 
     let (TBind(vspec1, e1, spBind)) = bind
@@ -1829,7 +1841,54 @@ let TryEliminateBinding cenv _env bind e2 _m =
               | _ -> None
 
         let (DebugPoints(e2, recreate0)) = e2
+        // Effect-free projections can still throw before the source has been evaluated.
+        let rec canMovePast expr =
+            match stripDebugPoints expr with
+            | Expr.Const _ -> true
+            | Expr.Val(vref, _, _) ->
+                not vref.IsMutable && not vref.IsTypeFunction &&
+                (match vref.ValReprInfo with
+                 | None -> true
+                 | Some info -> info.NumCurriedArgs > 0)
+            | Expr.App(f, _, _, [], _) -> canMovePast f
+            | _ -> false
+
+        let rec inlineAwaitInput insideAwait expr =
+            cenv.stackGuard.Guard(fun () ->
+                let (DebugPoints(expr, recreate)) = expr
+                let result =
+                    match expr with
+                    | Expr.Val(VRefLocal value, _, _) when insideAwait && valEq vspec1 value -> Some e1
+                    | Expr.App(f, fty, tyargs, args, m) ->
+                        inlineAwaitArgs insideAwait [] (f :: args)
+                        |> Option.map (fun args -> Expr.App(List.head args, fty, tyargs, List.tail args, m))
+                    | Expr.Op((TOp.ILCall _ | TOp.ILAsm _ | TOp.Coerce | TOp.Tuple _ | TOp.Recd _ | TOp.UnionCase _) as op, tyargs, args, m) ->
+                        inlineAwaitArgs (insideAwait || IsRuntimeAsyncSuspensionExpr g expr) [] args
+                        |> Option.map (fun args -> Expr.Op(op, tyargs, args, m))
+                    | Expr.Let(TBind(v, rhs, sp), rest, m, _) when IsUniqueUse vspec1 [rest] ->
+                        inlineAwaitInput insideAwait rhs
+                        |> Option.map (fun rhs -> mkLetBind m (TBind(v, rhs, sp)) rest)
+                    | Expr.Sequential(first, rest, NormalSeq, m) when IsUniqueUse vspec1 [rest] ->
+                        inlineAwaitInput insideAwait first
+                        |> Option.map (fun first -> Expr.Sequential(first, rest, NormalSeq, m))
+                    | _ -> None
+                result |> Option.map recreate)
+
+        and inlineAwaitArgs insideAwait prefix args =
+            match args with
+            | arg :: rest ->
+                match inlineAwaitInput insideAwait arg with
+                | Some arg when IsUniqueUse vspec1 (List.rev prefix @ rest) -> Some(List.rev prefix @ (arg :: rest))
+                | _ when canMovePast arg -> inlineAwaitArgs insideAwait (arg :: prefix) rest
+                | _ -> None
+            | [] -> None
+
+        let (|ImmediateRuntimeAwait|_|) expr =
+            if env.runtimeAsyncContext then inlineAwaitInput false expr else None
+
         match e2 with
+
+         | ImmediateRuntimeAwait expr -> Some(expr |> recreate0)
 
          // Immediate consumption of value as itself 'let x = e in x'
          | Expr.Val (VRefLocal vspec2, _, _)
@@ -2563,6 +2622,9 @@ let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
 
     let env = { env with disableMethodSplitting = env.disableMethodSplitting || isStateMachineE }
 
+    let runtimeAsyncReturn = TryGetRuntimeAsyncReturn g expr
+    let runtimeAsyncSequence = TryGetRuntimeAsyncSequence g expr
+
     match expr with
     // treat the common linear cases to avoid stack overflows, using an explicit continuation
     | LinearOpExpr _
@@ -2607,7 +2669,30 @@ let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
     | Expr.Op (op, tyargs, args, m) ->
         OptimizeExprOp cenv env (op, tyargs, args, m)
 
-    | Expr.App (f, fty, tyargs, argsl, m) ->
+    | Expr.App (f, fty, tyargs, _, m) when runtimeAsyncSequence.IsSome ->
+        let recipe, _ = runtimeAsyncSequence.Value
+        let recipeCenv =
+            { cenv with
+                settings = { cenv.settings with alwaysInline = true; localOptUser = Some true } }
+        let recipeR, recipeInfo =
+            OptimizeExpr recipeCenv { env with runtimeAsyncContext = true; disableMethodSplitting = true } recipe
+        Expr.App(f, fty, tyargs, [recipeR], m),
+        { recipeInfo with HasEffect = true; Info = UnknownValue }
+
+    | Expr.App (f, fty, tyargs, _, m) when runtimeAsyncReturn.IsSome ->
+        let info = runtimeAsyncReturn.Value
+        let bodyR, bodyInfo = OptimizeExpr cenv { env with runtimeAsyncContext = true } info.Body
+        for v in GetRuntimeAsyncNonPreservableUses g bodyR do
+            if env.runtimeAsyncReportedRanges.Add v.Range then
+                errorR(Error(FSComp.SR.ilRuntimeAsyncLocalUsedAfterSuspension(RichText.mkText v.DisplayName), v.Range))
+
+        let bodyR = RewriteRuntimeAsyncExceptionHandlers g bodyR
+        Expr.App(f, fty, tyargs, [ bodyR ], m),
+        { bodyInfo with
+            HasEffect = true
+            Info = UnknownValue }
+
+    | Expr.App (f, fty, tyargs, argsl, m) -> 
         match expr with
         | DelegateInvokeExpr g (delInvokeRef, delInvokeTy, tyargs, delExpr, delInvokeArg, m) ->
             OptimizeFSharpDelegateInvoke cenv env (delInvokeRef, delExpr, delInvokeTy, tyargs, delInvokeArg, m)
@@ -3689,9 +3774,52 @@ and TryDevirtualizeApplication cenv env (f, tyargs, args, m) =
 /// Attempt to inline an application of a known value at callsites
 and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, args: Expr list, m) =
     let g = cenv.g
+    let getRuntimeAsyncLambdaBody (vref: ValRef) =
+        TryGetInfoForVal cenv env vref
+        |> Option.map (fun info -> stripValue info.ValExprInfo)
+        |> Option.bind (function
+            | CurriedLambdaValue (_, _, _, body, _) -> Some body
+            | _ -> None)
+
+    let inlineBody =
+        match stripValue finfo.Info with
+        | CurriedLambdaValue (_, _, _, body, _) -> Some body
+        | _ -> None
+
+    let runtimeAsyncAnalyzer =
+        if g.langVersion.SupportsFeature LanguageFeature.RuntimeAsync then
+            Some(RuntimeAsyncAnalyzer(g, getRuntimeAsyncLambdaBody))
+        else
+            None
+
+    let containsRuntimeAsyncFragment expr =
+        match runtimeAsyncAnalyzer with
+        | Some analyzer -> analyzer.ContainsFragment expr
+        | None -> false
+
+    let reoptimizeRuntimeAsync reduced =
+        let reduced = InlineRuntimeAsyncLambdaArgument g containsRuntimeAsyncFragment reduced
+
+        let reduced =
+            if containsRuntimeAsyncFragment reduced then
+                fst (OptimizeExpr cenv { env with runtimeAsyncContext = true } reduced)
+            else
+                reduced
+
+        InlineRuntimeAsyncLambdaArgument g containsRuntimeAsyncFragment reduced
+
+    let mustInlineRuntimeAsync =
+        match runtimeAsyncAnalyzer, stripExpr valExpr with
+        | Some analyzer, Expr.Val(vref, _, _) ->
+            ShouldForceRuntimeAsyncApplication analyzer env.runtimeAsyncContext vref inlineBody args
+        | _ -> false
 
     match cenv.settings.alwaysInline, stripExpr valExpr with
-    | false, Expr.Val(vref, _, _) when vref.ShouldInline && not (shouldForceInlineInDebug cenv env vref) ->
+    | alwaysInline, Expr.Val(vref, _, _)
+        when mustInlineRuntimeAsync
+             || (not alwaysInline
+                 && vref.ShouldInline
+                 && not (shouldForceInlineInDebug cenv env vref)) ->
         let hasNoTraits =
             let tps, _ = tryDestForallTy g vref.Type
             GetTraitConstraintInfosOfTypars g tps |> List.isEmpty
@@ -3710,19 +3838,39 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
         // so route those through the specialization path which inlines the body.
         let isHiddenBySignature = cenv.signatureHidingInfo.HiddenVals.Contains vref.Deref
         let canCallDirectly =
+            not mustInlineRuntimeAsync &&
             (cenv.optimizing || (vref.Accessibility.IsPublic && not isHiddenBySignature)) &&
             (hasNoTraits || (allTyargsAreBareTypars && vref.ValReprInfo.IsSome))
 
-        let argsR = args |> List.map (OptimizeExpr cenv env >> fst)
+        let argEnv =
+            if mustInlineRuntimeAsync then
+                { env with runtimeAsyncContext = true }
+            else
+                env
+
+        let argsR = args |> List.map (OptimizeExpr cenv argEnv >> fst)
         let info = { TotalSize = 1; FunctionSize = 1; HasEffect = true; MightMakeCriticalTailcall = false; Info = UnknownValue }
+        let reduceRuntimeAsyncApplication specLambdaR specLambdaTy =
+            let reduced = MakeApplicationAndBetaReduce g (specLambdaR, specLambdaTy, [], argsR, m)
+            let reduced =
+                match reduced with
+                | Expr.Let(bind, body, _, _) -> fst (TryEliminateLet cenv env bind body m)
+                | _ -> reduced
+            Some(reoptimizeRuntimeAsync reduced, info)
 
         if canCallDirectly then
             Some(mkApps g ((exprForValRef m vref, vref.Type), [tyargs], argsR, m), info)
         else
 
         let origFinfo = GetInfoForVal cenv env m vref
-        match stripValue origFinfo.ValExprInfo with
-        | CurriedLambdaValue(origLambdaId, _, _, origLambda, origLambdaTy) ->
+        let lambdaInfo =
+            match stripValue finfo.Info, stripValue origFinfo.ValExprInfo with
+            | (CurriedLambdaValue _ as info), _
+            | _, (CurriedLambdaValue _ as info) -> Some info
+            | _ -> None
+
+        match lambdaInfo with
+        | Some(CurriedLambdaValue(origLambdaId, _, _, origLambda, origLambdaTy)) ->
             let f2R = CopyExprForInlining cenv true origLambda m
             let specLambda = MakeApplicationAndBetaReduce g (f2R, origLambdaTy, [tyargs], [], m)
             let specLambdaTy = tyOfExpr g specLambda
@@ -3761,7 +3909,10 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
                 | None -> true
 
             if not canSpecialize then
-                None else
+                if mustInlineRuntimeAsync then
+                    errorR(Error(FSComp.SR.optFailedToInlineValue(RichText.mkText vref.LogicalName), m))
+                None
+            else
 
             let specLambdaR =
                 if allTyargsAreConcrete then
@@ -3769,13 +3920,25 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
                     | Some (_, body) -> copyExpr g CloneAll body
                     | None ->
 
-                    let existingTypes = defaultArg (Map.tryFind origLambdaId env.dontInline) []
-                    let env = { env with dontInline = Map.add origLambdaId (specLambdaTy :: existingTypes) env.dontInline; debugInlineCallSite = Some m }
+                    let existingTypes = defaultArg (Map.tryFind origLambdaId argEnv.dontInline) []
+                    let env = { argEnv with dontInline = Map.add origLambdaId (specLambdaTy :: existingTypes) argEnv.dontInline; debugInlineCallSite = Some m }
                     let specLambdaR, _ = OptimizeExpr cenv env specLambda
                     cenv.specializedInlineVals.Add(origLambdaId, (specLambdaTy, specLambdaR))
                     specLambdaR
                 else
-                    let specLambdaR, _ = OptimizeExpr cenv { env with dontInline = Map.add origLambdaId [] env.dontInline; debugInlineCallSite = Some m } specLambda
+                    let specLambdaR, _ =
+                        OptimizeExpr
+                            cenv
+                            { argEnv with
+                                dontInline = Map.add origLambdaId [] argEnv.dontInline
+                                debugInlineCallSite = Some m }
+                            specLambda
+                    specLambdaR
+
+            let specLambdaR =
+                if mustInlineRuntimeAsync then
+                    remarkExpr m specLambdaR
+                else
                     specLambdaR
 
             // Abstract the specialized lambda over its free typars so IlxGen emits a static
@@ -3806,7 +3969,8 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
                 || capturedVals |> List.exists (fun v -> v.IsMutable)
 
             if not (List.isEmpty capturedVals) && cannotLiftCapturedVals then
-                Some(MakeApplicationAndBetaReduce g (specLambdaR, specLambdaTy, [], argsR, m), info) else
+                reduceRuntimeAsyncApplication specLambdaR specLambdaTy
+            else
 
             let debugValName = $"<{vref.LogicalName}>__debug"
 
@@ -3829,39 +3993,44 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
                 check specLambdaTy
 
             if freeTyparsNeedWitnesses && specArgsHaveByref then
-                None else
-
-            // Static method path (no witnesses needed): abstract over free typars so IlxGen emits
-            // a method with flattened arguments rather than a closure that wraps args in Tuple<>.
-            // Closure path (witnesses needed, no byref): keep the body as-is; witnesses from the
-            // enclosing scope flow through the closure, so no typar abstraction is needed.
-            let debugValTy, debugValBody, valReprInfo, typeInstForCall, capturedArgs =
-                if not freeTyparsNeedWitnesses then
-                    let liftedBody, liftedTy = mkMultiLambdasCore g m capturedArgGroups (specLambdaR, specLambdaTy)
-                    let ty = mkForallTyIfNeeded freeTypars liftedTy
-                    let body = mkTypeLambda m freeTypars (liftedBody, liftedTy)
-                    let argInfos, retInfo =
-                        match vref.ValReprInfo with
-                        | Some(ValReprInfo(_, argInfos, retInfo)) -> argInfos, retInfo
-                        | None ->
-                            let (ValReprInfo(_, a, r)) =
-                                InferValReprInfoOfExpr g AllowTypeDirectedDetupling.No specLambdaTy [] [] specLambdaR
-                            a, r
-                    let capturedArgInfos =
-                        capturedArgGroups
-                        |> List.map (List.map (fun (v: Val) -> { ValReprInfo.unnamedTopArg1 with Name = Some v.Id }))
-                    let reprInfo = ValReprInfo(ValReprInfo.InferTyparInfo freeTypars, capturedArgInfos @ argInfos, retInfo)
-                    ty, body, Some reprInfo, [List.map mkTyparTy freeTypars], List.map (mkRefTupledVars g m) capturedArgGroups
+                if mustInlineRuntimeAsync then
+                    errorR(Error(FSComp.SR.optFailedToInlineValue(RichText.mkText vref.LogicalName), m))
+                None
+            else
+                if mustInlineRuntimeAsync then
+                    reduceRuntimeAsyncApplication specLambdaR specLambdaTy
                 else
-                    specLambdaTy, specLambdaR, None, [], []
+                    // Static method path (no witnesses needed): abstract over free typars so IlxGen emits
+                    // a method with flattened arguments rather than a closure that wraps args in Tuple<>.
+                    // Closure path (witnesses needed, no byref): keep the body as-is; witnesses from the
+                    // enclosing scope flow through the closure, so no typar abstraction is needed.
+                    let debugValTy, debugValBody, valReprInfo, typeInstForCall, capturedArgs =
+                        if not freeTyparsNeedWitnesses then
+                            let liftedBody, liftedTy = mkMultiLambdasCore g m capturedArgGroups (specLambdaR, specLambdaTy)
+                            let ty = mkForallTyIfNeeded freeTypars liftedTy
+                            let body = mkTypeLambda m freeTypars (liftedBody, liftedTy)
+                            let argInfos, retInfo =
+                                match vref.ValReprInfo with
+                                | Some(ValReprInfo(_, argInfos, retInfo)) -> argInfos, retInfo
+                                | None ->
+                                    let (ValReprInfo(_, a, r)) =
+                                        InferValReprInfoOfExpr g AllowTypeDirectedDetupling.No specLambdaTy [] [] specLambdaR
+                                    a, r
+                            let capturedArgInfos =
+                                capturedArgGroups
+                                |> List.map (List.map (fun (v: Val) -> { ValReprInfo.unnamedTopArg1 with Name = Some v.Id }))
+                            let reprInfo = ValReprInfo(ValReprInfo.InferTyparInfo freeTypars, capturedArgInfos @ argInfos, retInfo)
+                            ty, body, Some reprInfo, [List.map mkTyparTy freeTypars], List.map (mkRefTupledVars g m) capturedArgGroups
+                        else
+                            specLambdaTy, specLambdaR, None, [], []
 
-            let debugVal =
-                Construct.NewVal(debugValName, m, None, debugValTy, Immutable, true, valReprInfo, taccessPublic, ValNotInRecScope, None,
-                    NormalVal, [], ValInline.InlinedDefinition, XmlDoc.Empty, true, false, false, false, false, false, None,
-                    ParentNone)
+                    let debugVal =
+                        Construct.NewVal(debugValName, m, None, debugValTy, Immutable, true, valReprInfo, taccessPublic, ValNotInRecScope, None,
+                            NormalVal, [], ValInline.InlinedDefinition, XmlDoc.Empty, true, false, false, false, false, false, None,
+                            ParentNone)
 
-            let callExpr = mkApps g ((exprForVal m debugVal, debugValTy), typeInstForCall, capturedArgs @ argsR, m)
-            Some(mkCompGenLet m debugVal debugValBody callExpr, info)
+                    let callExpr = mkApps g ((exprForVal m debugVal, debugValTy), typeInstForCall, capturedArgs @ argsR, m)
+                    Some(mkCompGenLet m debugVal debugValBody callExpr, info)
 
         | _ -> None
     | _ ->
@@ -4398,6 +4567,9 @@ and ComputeSplitToMethodCondition flag threshold cenv env (e: Expr, einfo) =
     // NOTE: The method splitting optimization is completely disabled if we are not taking tailcalls.
     cenv.emitTailcalls &&
     not env.disableMethodSplitting &&
+    // Never split a runtime-async body: the split-off method would not be a runtime-async
+    // method, so its Await calls would be rejected by IlxGen (FS3916).
+    not (env.runtimeAsyncContext && RuntimeAsyncAnalyzer(g).ContainsSuspension e) &&
     einfo.FunctionSize >= threshold &&
 
      // We can only split an expression out as a method if certain conditions are met.
@@ -4588,6 +4760,12 @@ and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
             let size = localVarSize
             exprOptimized, {einfo with FunctionSize=einfo.FunctionSize+size; TotalSize = einfo.TotalSize+size}
 
+        // A runtime-async method cannot be exported as an F# inline definition. Its body contains
+        // suspension calls that are valid only in the generated runtime-async method, not at an
+        // arbitrary consumer call site.
+        if TryGetRuntimeAsyncReturn g exprOptimized |> Option.isSome then
+            vref.SetInlineInfo ValInline.Never
+
         // Trim out optimization information for large lambdas we'll never inline
         // Trim out optimization information for expressions that call protected members
         let rec cut ivalue =
@@ -4644,7 +4822,8 @@ and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
                // FSharp.Core).
                (let nvref = mkLocalValRef vref
                 g.compilingFSharpCore &&
-                   (valRefEq g nvref g.seq_vref ||
+                   (valRefEq g nvref g.cgh__runtimeAsyncSequence_vref ||
+                    valRefEq g nvref g.seq_vref ||
                     valRefEq g nvref g.seq_generated_vref ||
                     valRefEq g nvref g.seq_finally_vref ||
                     valRefEq g nvref g.seq_using_vref ||

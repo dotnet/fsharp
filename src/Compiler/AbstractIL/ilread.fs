@@ -3824,6 +3824,7 @@ and seekReadMethodRVA (pectxt: PEReader) (ctxt: ILMetadataReader) (nm, noinline,
                             MaxStack = 8
                             NoInlining = noinline
                             AggressiveInlining = aggressiveinline
+                            IsRuntimeAsync = false
                             Locals = List.empty
                             Code = code
                             DebugRange = None
@@ -3972,6 +3973,7 @@ and seekReadMethodRVA (pectxt: PEReader) (ctxt: ILMetadataReader) (nm, noinline,
                             MaxStack = maxstack
                             NoInlining = noinline
                             AggressiveInlining = aggressiveinline
+                            IsRuntimeAsync = false
                             Locals = locals
                             Code = code
                             DebugRange = None
