@@ -44,9 +44,9 @@ module FSharpFindUsagesService =
                             externalDefinitionItem
                         else
                             definitionItems
-                            |> Array.tryFind (snd >> (=) doc.Project.FilePath)
-                            |> Option.map (fun (definitionItem, _) -> definitionItem)
-                            |> Option.defaultValue externalDefinitionItem
+                            |> Array.tryFindV (snd >> (=) doc.Project.FilePath)
+                            |> ValueOption.map (fun (definitionItem, _) -> definitionItem)
+                            |> ValueOption.defaultValue externalDefinitionItem
 
                     let referenceItem =
                         FSharpSourceReferenceItem(definitionItem, FSharpDocumentSpan(doc, fixedSpan))
