@@ -40,7 +40,7 @@ module Second
     [<InlineData(true)>]
     let ``staticlinking_multiple_fs_libraries`` chained =
         let withSubstitutions name compilation =
-            let path = Path.Combine(TestFramework.createTemporaryDirectory().FullName, "ILLink.Substitutions.xml")
+            let path = TestFramework.getTemporaryFileName()
             File.WriteAllText(path, $"""<linker><assembly fullname="{name}"><resource name="FSharpSignatureData.{name}" action="remove" /></assembly></linker>""")
             compilation |> withName name |> withOptions [ "--compressmetadata-"; $"--resource:{path},ILLink.Substitutions.xml" ]
 
@@ -50,7 +50,6 @@ module Second
             |> withReferences [ first.WithStaticLink(chained) ]
 
         FSharp """open System
-open First
 open Second
 
 let check expected value =

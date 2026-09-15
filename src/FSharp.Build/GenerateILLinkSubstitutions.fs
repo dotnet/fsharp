@@ -42,10 +42,7 @@ type GenerateILLinkSubstitutions() =
 
             Directory.CreateDirectory(this.IntermediateOutputPath) |> ignore
 
-            if
-                not (File.Exists outputFileName)
-                || File.ReadAllText(outputFileName) <> xmlContent
-            then
+            if not (File.Exists outputFileName && File.ReadAllText(outputFileName) = xmlContent) then
                 File.WriteAllText(outputFileName, xmlContent)
 
             let item = TaskItem(outputFileName.Replace("%", "%25")) :> ITaskItem

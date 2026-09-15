@@ -26,6 +26,7 @@ open FSharp.Compiler.TypeProviders
 
 let linkMetadataResources assemblyName (resources: (string * ILResource) list) =
     let xname = XName.Get
+    let prefixes = ILLinkSubstitutions.names "" |> Seq.toList
 
     let generated, retained =
         resources
@@ -35,7 +36,6 @@ let linkMetadataResources assemblyName (resources: (string * ILResource) list) =
                 try
                     use stream = resource.GetBytes().AsStream()
                     let xml = XElement.Load stream
-                    let prefixes = ILLinkSubstitutions.names "" |> Seq.toList
 
                     let names =
                         [

@@ -87,7 +87,7 @@ printfn "%A" y
     let ``Static link quotes and metadata rules in multiple modules`` optimized =
         let options = if optimized then [|"--optimize+"|] else [||]
         let resource name =
-            let path = Path.Combine(TestFramework.createTemporaryDirectory().FullName, "ILLink.Substitutions.xml")
+            let path = TestFramework.getTemporaryFileName()
             File.WriteAllText(path, $"""<linker><assembly fullname="{name}"><resource name="FSharpSignatureData.{name}" action="remove" /><resource name="FSharpSignatureCompressedData.{name}" action="remove" /></assembly></linker>""")
             $"--resource:{path},ILLink.Substitutions.xml"
         let module1 =
@@ -163,13 +163,16 @@ if not test3 then
 
 if test1 && test2 && test3 then ()
 else failwith "Test Failed"
-let rules = typeof<D>.Assembly.GetManifestResourceNames() |> Array.filter ((=) "ILLink.Substitutions.xml")
-if rules.Length <> 1 then failwith "Metadata rules must compose without losing quotation resources"
+let resources = typeof<D>.Assembly.GetManifestResourceNames()
+if resources |> Array.filter ((=) "ILLink.Substitutions.xml") |> Array.length <> 1 then failwith "Metadata rules must compose without losing quotation resources"
 let xml =
-    use reader = new System.IO.StreamReader(typeof<D>.Assembly.GetManifestResourceStream(rules[0]))
+    use reader = new System.IO.StreamReader(typeof<D>.Assembly.GetManifestResourceStream("ILLink.Substitutions.xml"))
     reader.ReadToEnd()
-for name in ["QuotedLibrary"; "QuotedApp"] do
-    if not (xml.Contains("FSharpSignature")) || not (xml.Contains(name)) then failwith "A removal rule was lost"
+for owner in ["QuotedLibrary"; "QuotedApp"] do
+    let expected =
+        resources |> Array.filter (fun name -> name = $"FSharpSignatureData.{owner}" || name = $"FSharpSignatureCompressedData.{owner}")
+    if expected.Length = 0 || Array.exists (fun name -> not (xml.Contains($"<resource name=\"{name}\" action=\"remove\""))) expected then
+        failwithf "Removal rule missing for %s" owner
                 """
             Compilation.Create(source, Exe, [|yield! options; resource "QuotedApp"|], TargetFramework.Current, [CompilationReference.CreateFSharp(module1, staticLink=true)], name = "QuotedApp")
 
