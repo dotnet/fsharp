@@ -230,14 +230,20 @@ module internal SymbolHelpers =
     let fileNameOfItem (g: TcGlobals) qualProjectDir (m: range) h =
         let file = m.FileName
         if verbose then dprintf "file stored in metadata is '%s'\n" file
+
+        // A build that maps its source paths maps the directory it compiled in as well, so that directory
+        // and the file name reach the same unrecorded root on their own: joining them repeats the directory.
+        let underDirectory (dir: string) =
+            if FileSystem.IsPathRootedShim dir then Path.Combine(dir, file) else file
+
         if not (FileSystem.IsPathRootedShim file) then
             match ccuOfItem g h with
             | Some ccu ->
-                Path.Combine(ccu.SourceCodeDirectory, file)
+                underDirectory ccu.SourceCodeDirectory
             | None ->
                 match qualProjectDir with
                 | None     -> file
-                | Some dir -> Path.Combine(dir, file)
+                | Some dir -> underDirectory dir
          else file
 
     let ParamNameAndTypesOfUnaryCustomOperation g minfo =
