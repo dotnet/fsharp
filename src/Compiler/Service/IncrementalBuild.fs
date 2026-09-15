@@ -1206,21 +1206,20 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
 
     let mutable currentState = state
 
-    let setCurrentState state cache (ct: CancellationToken) =
+    let updateCurrentState (update: IncrementalBuilderState -> IncrementalBuilderState) cache =
         async {
+            let! ct = Async.CancellationToken
             do! semaphore.WaitAsync(ct) |> Async.AwaitTask
             try
                 ct.ThrowIfCancellationRequested()
-                currentState <- computeStampedFileNames initialState state cache
+                // Read the state only under the lock: concurrent updates starting from the same stale snapshot
+                // would each build a fresh chain of bound models and lose each other's notifications.
+                currentState <- computeStampedFileNames initialState (update currentState) cache
             finally
                 semaphore.Release() |> ignore
         }
 
-    let checkFileTimeStamps (cache: TimeStampCache) =
-        async {
-            let! ct = Async.CancellationToken
-            do! setCurrentState currentState cache ct
-        }
+    let checkFileTimeStamps (cache: TimeStampCache) = updateCurrentState id cache
 
     do IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBECreated)
 
@@ -1400,11 +1399,9 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
         async {
             let slotOfFile = builder.GetSlotOfFileName fileName
             let cache = TimeStampCache defaultTimeStamp
-            let! ct = Async.CancellationToken
-            do! setCurrentState
-                    { currentState with
-                        slots = currentState.slots |> List.updateAt slotOfFile (currentState.slots[slotOfFile].Notify timeStamp) }
-                    cache ct
+            do! updateCurrentState
+                    (fun state -> { state with slots = state.slots |> List.updateAt slotOfFile (state.slots[slotOfFile].Notify timeStamp) })
+                    cache
         }
 
     member _.SourceFiles = fileNames |> Seq.map (fun f -> f.Source.FilePath) |> List.ofSeq
