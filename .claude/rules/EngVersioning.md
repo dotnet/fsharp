@@ -6,4 +6,4 @@ paths:
   - "eng/Version.Details.props"
 ---
 
-@../../.github/instructions/EngVersioning.instructions.md
+Read `.github/instructions/EngVersioning.instructions.md`.
