@@ -101,10 +101,12 @@
     <Compile Include="Commands\HelpContextService.fs" />
     <Compile Include="Commands\FsiCommandService.fs" />
     <Compile Include="Commands\XmlDocCommandService.fs" />
+    <Compile Include="Refactor\RefactoringHelpers.fs" />
     <Compile Include="Refactor\AddReturnType.fs" />
     <Compile Include="Refactor\ChangeTypeofWithNameToNameofExpression.fs" />
     <Compile Include="Refactor\AddExplicitTypeToParameter.fs" />
     <Compile Include="Refactor\ChangeDerefToValueRefactoring.fs" />
+    <Compile Include="Refactor\ExtractLetBinding.fs" />
     <Compile Include="CodeFixes\IFSharpCodeFix.fs" />
     <Compile Include="CodeFixes\CodeFixHelpers.fs" />
     <Compile Include="CodeFixes\ChangeEqualsInFieldTypeToColon.fs" />

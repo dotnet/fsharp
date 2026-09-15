@@ -368,4 +368,10 @@ Use live (unsaved) buffers for analysis</value>
   <data name="ReturnsHeader" xml:space="preserve">
     <value>Returns:</value>
   </data>
+  <data name="ExtractToLetBinding" xml:space="preserve">
+    <value>Extract to let binding</value>
+  </data>
+  <data name="ExtractToLiteral" xml:space="preserve">
+    <value>Extract to literal</value>
+  </data>
 </root>
