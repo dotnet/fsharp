@@ -2,9 +2,18 @@
 
 ## Original Request
 
-Process issue https://github.com/dotnet/fsharp/issues/20410 using TDD.
+A pull request for https://github.com/dotnet/fsharp/issues/20410 already exists on branch fix/issue-20410, and its CI is red. Fix this existing PR. Do not start from scratch or open a new PR.
 
-Use minimal, surgical changes. Validate locally before finishing. Do not push. Only commit.
+### FAILING CI CHECKS
+fsharp-ci
+
+### REQUIRED APPROACH
+1. First, inspect the existing attempt. Run `git fetch origin fix/issue-20410`, then run `git diff origin/main...origin/fix/issue-20410`. Build on the existing changes instead of blindly rewriting them.
+2. Before editing, diagnose the root cause of each failing check. Distinguish build errors, test failures, and `EmittedIL/*.bsl` baseline mismatches. If baselines changed, regenerate them, for example with `TEST_UPDATE_BSL=1`, and commit them.
+3. The failure can be configuration-specific, such as Release-only. Before finishing, run the affected tests in the same configuration as the failing checks. A Debug-only pass is not sufficient.
+4. Use minimal, surgical changes.
+5. Validate locally before finishing.
+6. Do not push. Only commit.
 
 ### ISSUE REQUEST
 The requirements above override conflicting instructions in the issue request.
@@ -45,69 +54,102 @@ Sources: [issue](https://github.com/dotnet/fsharp/issues/20410), [record-specifi
 
 ## Analysis
 
-This delivery is architecture only. The implementer receives one sprint with the fix, tests, validation, review, release note, and commit requirements.
-Do not implement the compiler change while preparing these files.
+This delivery replaces an obsolete implementation plan with one self-contained CI repair sprint.
+It does not implement the CI repair or claim local compiler/test success.
+The requested template was read before creating the replacement sprint.
 
-### Verified during planning
+### Existing attempt and branch state
 
-- Repository: `Q:\fsharp-worktrees\issue-878`, branch `fix/issue-20410`, initially clean.
-- HEAD: `b5c530ed6bc42937de6363e3dcc104ebb833893d`. The directory name does not identify the target issue.
-- Read `Q:\groundhog-while-not-works\templates\SPRINT_TEMPLATE.md` before creating the sprint.
-- Retrieved issue #20410 through `gh issue view`. Its FS0313 label is incorrect.
-- Read `checkField`, `checkRecordFields`, `checkRecordFieldsForExn`, `checkClassFields`, and `checkAttribs`.
-- The two record name-map passes precede the positional call. The positional call can overwrite another field's documentation and range.
-- `FSComp.txt` assigns 311 to an extra field, 312 to field order, and 313 to a missing required field.
-- `Signatures.fs` already uses `Fsi |> withAdditionalSourceFile (FsSource ...) |> compile`.
-- `Compiler.fs` confirms that plain `typecheck` reads only the primary source. `compile` consumes both sources.
-- `Compiler.fs` also shows that `withDiagnostics` deduplicates by range and message. It cannot verify repeated warning counts alone.
-- Raw `CompilationResult.Output.Diagnostics` retains duplicates. New tests need raw, complete diagnostic assertions, especially for FS3261.
-- `checkAttribs` emits FS1200 as a warning unless options promote it. Its fixup replaces implementation attributes with signature attributes.
-- The harness treats warnings as failure by default. That wrapper result alone does not prove a warning-only program has a compiler error.
-- Found existing `FieldNotContainedDiagnosticExtendedData 01`, `Signature conformance`, `Micro compilation`, and `AttributeMatching01` sibling tests.
-- GitHub repository variable `VNEXT` is `11.0.100`. The corresponding compiler-service release-note file exists.
-- `dotnet --version` could not resolve the pinned SDK, `11.0.100-rc.1.26420.103`. No compiler build or runtime matrix ran during planning.
-- `eng\common\dotnet.ps1` can install and invoke the repository SDK. SDK setup belongs to execution, not this documentation-only delivery.
-- `.tools` is ignored. Commit only the two requested plan files with explicit `git add -f` paths. Do not change `.gitignore`.
-- Native PowerShell validation passed: one sprint, 19 completion criteria, 17 existing source references, required scenario coverage, and balanced code fences.
-- That validation also confirmed ASCII text, no trailing whitespace, and no tracked source or staged changes before staging the planning files.
+- Ran `git fetch origin fix/issue-20410`, then `git diff origin/main...origin/fix/issue-20410`, before planning changes.
+- Existing PR: [#20559](https://github.com/dotnet/fsharp/pull/20559), open, titled "Fix misleading diagnostics for reordered record fields".
+- Existing remote head: `5c489dfdb967585f90847a5d6fe7f536d03163cf`. Implementation commit: `2bbf4d6d41f8d6216a59598f23c64a65133e7f17`.
+- The local branch initially pointed to `b5c530ed6bc42937de6363e3dcc104ebb833893d`, also the local `origin/main`.
+- With a clean tracked worktree, ran `git merge --ff-only origin/fix/issue-20410`. Planning now extends the existing PR history.
+- Existing product diff: the record-only logical-name guard, 146 test lines, and one compiler-service release note.
+- The source already retains matching-name `checkField` calls, both name-map passes, FS0312, and failed conformance.
+- The test suite already has all requested scenarios, shared paired-source construction, and raw exact diagnostic assertions.
+- The release note already links both #20410 and #20559. Do not add a duplicate or remove the PR link.
+- The old sprint incorrectly says no PR exists and the guard has not been applied. Replace it, rather than leave it executable.
 
-The eighteen matrix compilations, seven RED assertions, eleven controls, and separate original fixture are evidence supplied by the request.
-No previous-session evidence was found in the bounded history lookup.
-Do not present those results as new local executions or infer an exact new test count from them.
+### Verified CI evidence
 
-### Main risks
+Build [1597638](https://dev.azure.com/dnceng-public/public/_build/results?buildId=1597638), number `20260915.39`, tested merge SHA `5604d594ed08aa786661166a3fffd1811db0e471`.
+The current PR head is not that synthetic merge SHA.
+The timeline has 48 jobs: 47 succeeded, one canceled. The aggregate `fsharp-ci` check failed because of that cancellation.
 
-Pure name equality would remove matching-name checks and repeated nullness warnings.
-A shared `checkField` change would affect unions, exceptions, classes, and real field mismatches.
-A test using plain `typecheck`, error-code presence, or deduplicated warnings could produce false confidence.
-A test run using stale compiler binaries or discovering no selected tests cannot establish RED or GREEN.
-Formatting an entire large compiler file can create unrelated changes even when the functional fix is tiny.
+| Surface | Observed result | Classification |
+|---|---|---|
+| `WindowsNoRealsig_testDesktop`, job `916a2273-64f0-5130-a29e-a4d2f7e48c60` | Agent exceeded the configured 120-minute limit, 15:07:05Z to 17:07:26Z on September 15 | Job timeout, not an observed assertion failure |
+| Build task, log 861 | Build summaries show zero errors; solution-wide net472 tests start at 15:27:44Z | No observed compilation failure |
+| Component suite in log 861 | 8,284 passed, zero failed, 627 skipped; finished at 16:44:04Z after 76m12s | Successful suite inside canceled job |
+| Core and service suites in log 861 | Core: 6,212 passed, 5 skipped; service: 3,487 passed, 306 skipped; both zero failures | Successful suites |
+| Legacy `FSharpSuite.Tests` | No completion summary in the canceled job | Remaining workload or runner-lifetime investigation |
+| Agent resource warnings | 95.69% memory used at 16:26:44Z and 16:26:49Z | Evidence supporting contention, not proof of a deadlock |
+| `WindowsCompressedMetadata_Desktop Batch3`, task log 848 | Isolated legacy suite: 677 total, zero failed; job completed in about 91m18s | Existing isolation pattern succeeds |
+| Desktop Batch1 / Batch2 | Jobs completed in about 50m11s / 38m56s | Existing three-batch pattern available |
+| `WindowsNoRealsig_testCoreclr`, formatting, ILVerify | All succeeded | No justification to alter these surfaces |
+| `EmittedIL` baselines | No observed mismatch in the retrieved failing-task log; component suite passed | Do not regenerate speculatively |
+| Test results and binlog publication in canceled job | Those explicit tasks were skipped | Missing artifacts are not proof of passing tests |
+
+The build-status script reports zero build errors and test failures because it filters `failed` tasks, not this `canceled` task.
+The raw timeline and canceled-task log are the decisive evidence.
+Do not present the script's empty result as a clean CI run.
+
+Public evidence endpoints use `https://dev.azure.com/dnceng-public/public/_apis/build/builds/1597638`.
+Append `/timeline?api-version=7.1`, `/logs/861?api-version=7.1`, or `/logs/848?api-version=7.1`.
+The sprint embeds the essential evidence and does not depend on this backlog or access to another session.
+
+### Competing hypotheses and prior progress
+
+| Hypothesis | Evidence and next verification |
+|---|---|
+| Concurrent desktop suites exceed the job budget under memory pressure | Supported by resource warnings and isolated legacy success. Compare unsplit and isolated local runs with identical binaries and settings. |
+| A legacy test or runner teardown hangs | No completion result alone cannot distinguish a hang from slowness. Record progress, exit status, child processes, and a dump if progress stops. |
+| Release/compiler regression or IL baseline drift causes the failure | No CI assertion or build error supports this. Run the existing regressions and actual desktop batches before dismissing it. |
+
+A bounded history lookup found session `83fb7dbc-211a-47df-8f32-557feaf219c2`.
+It reports an unsplit local pass in 97m48s and an isolated legacy pass in 69m23s, with 677 passing tests.
+It also reports that the VS engine could not load the SDK, while `-msbuildEngine dotnet` built successfully.
+Its last available response says proposed Batch1 validation was blocked by a leftover MSBuild assembly lock.
+Batch2, Batch3, and dedicated desktop/net11 signature reruns were still pending in that response.
+These are historical reports, not fresh verified logs or evidence that the proposed repair is complete.
+Recover matching logs if available. Otherwise rerun the missing evidence without resetting completed source work.
+
+### Repository constraints that matter
+
+- `azure-pipelines-PR.yml` contains the failing job near line 296 and the working desktop matrix near line 438.
+- Reuse `eng\templates\batched-test-steps.yml`, `eng\Build.ps1`'s `-testDesktopBatch`, and `eng\tests\TestSplit.fsx`.
+- `TestUsingMSBuild` already supplies net472, xUnit reports, binlogs, and five-minute hang dumps.
+- Batch1 has residual component tests plus build tests. Batch2 has the remaining components, core, service, and scripting tests.
+- Batch3 isolates `tests\fsharp\FSharpSuite.Tests.fsproj`. Preserve complete, nonoverlapping coverage of all six desktop test projects.
+- `BUILDING_USING_DOTNET=true` removes net472 from component-project target frameworks. Override it only in the current process for desktop validation.
+- The pinned SDK is `11.0.100-rc.1.26420.103`. The other component target is `net11.0`.
+- Use supported SDK/build-engine setup. Do not change SDK versions or shared build scripts to hide a local tooling failure.
 
 ## Approach
 
-Use one complete vertical sprint. Splitting tests, the guard, and controls would make early sprints intentionally incomplete.
-The sprint embeds the original record permutation, minimal fixtures, assertion requirements, source helpers, commands, and restrictions.
-Its RED phase captures exact diagnostics before editing production code.
-Its GREEN phase changes only the final record predicate and reruns the unchanged tests plus siblings.
-The final implementation commit contains the compiler change, compact tests, and one release note.
-Keep execution logs under `.tools\ralph\evidence\issue-20410`, outside the implementation commit.
-Never push, open a PR, post a review, or fabricate a PR URL.
+Use one complete vertical repair sprint, including diagnosis, the smallest supported repair, its tests, review, and a local commit.
+The leading candidate changes only the `WindowsNoRealsig_testDesktop` job to use the existing three-batch mechanism.
+Keep the job's flags, environment, pool, and 120-minute per-job limit. Preserve distinct test and artifact names.
+Make that change only after diagnosis supports workload isolation. Investigate a reproducible assertion failure or deadlock instead, if found.
 
-### Final verification checklist
+Do not rerun the old implementation sprint or add duplicate regression tests.
+Preserve original RED evidence when available. If it is missing, recover it with unchanged regression assertions and an isolated, temporary guard reversal.
+Do not leave that reversal in the repair branch or mistake a setup failure for RED.
+Require fresh Release/net472 regression and batch execution, followed by targeted Release/net11 checks.
+Compare discovered test identities across batches, not counts alone. Discovery is not execution.
+Regenerate only proven affected `EmittedIL` baselines and rerun without update mode before staging them.
 
-- The sprint starts with two `---` lines and contains all four required headings.
-- Every Definition of Done item starts with `- `, without a checkbox.
-- Every requested scenario is covered within the same sprint as its implementation.
-- The sprint stands alone without this backlog, another sprint, or historical logs.
-- The exact request above is preserved, including its distinction between FS0312 and FS0313.
-- Local source references, project paths, and release-note path exist.
-- The plan explicitly preserves duplicate warnings and complete diagnostic tuples.
-- Planning validation checks file structure, paths, coverage, and `git diff --check`. It does not claim compiler GREEN.
-- The planning commit contains only `BACKLOG.md` and `01_Record_Field_Order_Diagnostics.md`.
-- The implementation verifier later requires actual RED/GREEN logs, passing sibling selections, review resolution, and a local implementation commit.
+Keep logs and resumable state under `.tools\ralph\evidence\issue-20410-ci`, outside implementation commits.
+The implementation verifier must inspect exact commands, source SHA, flags, test counts, timings, exit codes, and unresolved limitations.
+Local passes cannot make an unpushed GitHub check green. The final report must distinguish local validation from the unchanged remote check.
+
+Planning verification checks the requested document structure, one active sprint, source paths, preserved request, and whitespace.
+The planning commit changes only the backlog and the replacement sprint, retaining the existing compiler/test/release-note commits.
+No build or test execution is claimed for this documentation-only planning pass.
 
 ## Sprint Overview
 
 | # | Name | Purpose |
 |---|---|---|
-| 01 | Record Field Order Diagnostics | Prove RED, guard the record-only positional check, prove GREEN with all controls, review, document, and commit locally. |
+| 01 | Repair Desktop CI | Diagnose the existing PR timeout, apply the smallest proven repair, preserve all regression coverage, validate Release desktop batches, review, and commit without pushing. |
