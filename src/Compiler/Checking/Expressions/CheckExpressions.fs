@@ -8695,7 +8695,9 @@ and Propagate (cenv: cenv) (overallTy: OverallTy) (env: TcEnv) tpenv (expr: Appl
             | OpPipeRight g (_, _, fExpr, _)
             | OpPipeRight2 g (_, _, _, fExpr, _)
             | OpPipeRight3 g (_, _, _, _, fExpr, _)
-                when TryGetRuntimeAsyncReturn g fExpr |> Option.isSome ->
+                when (match fExpr with
+                      | RuntimeAsyncReturnFunction g _ -> true
+                      | _ -> false) ->
                 checkLanguageFeatureAndRecover g.langVersion LanguageFeature.RuntimeAsync mExpr
             | _ ->
 
