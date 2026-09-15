@@ -715,6 +715,108 @@ let ``runtime async suspension in exception region executes`` () =
     |> compileExeAndRun
     |> shouldSucceed
 
+[<Fact>]
+let ``runtime async reraise preserves the innermost exception after suspension`` () =
+    FSharp """
+module RuntimeAsyncReraiseTest
+
+open System
+open System.Threading.Tasks
+open System.Runtime.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices
+
+let f () : Task<int> =
+    StateMachineHelpers.__runtimeAsyncReturn (
+        try
+            raise (InvalidOperationException("outer"))
+        with _ ->
+            AsyncHelpers.Await(Task.Delay(1))
+            try
+                raise (ArgumentException("inner"))
+            with _ ->
+                reraise ())
+
+[<EntryPoint>]
+let main _ =
+    try
+        f().GetAwaiter().GetResult() |> ignore
+        1
+    with
+    | :? ArgumentException as ex when ex.Message = "inner" -> 0
+    | _ -> 1
+"""
+    |> withLangVersionPreview
+    |> withFSharpCoreShippedNet
+    |> compileExeAndRun
+    |> shouldSucceed
+
+[<Fact>]
+let ``runtime async evaluates inline callback construction once`` () =
+    FSharp """
+module RuntimeAsyncCallbackConstructionTest
+
+open System.Threading.Tasks
+open Microsoft.FSharp.Core.CompilerServices
+
+let mutable constructed = 0
+
+let inline twice ([<InlineIfLambda>] f: unit -> int) =
+    StateMachineHelpers.__runtimeAsyncReturn (f () + f ())
+
+let run () =
+    twice (constructed <- constructed + 1; fun () -> 21)
+
+[<EntryPoint>]
+let main _ =
+    let result = run().GetAwaiter().GetResult()
+    if result = 42 && constructed = 1 then 0 else 1
+"""
+    |> withLangVersionPreview
+    |> withFSharpCoreShippedNet
+    |> compileExeAndRun
+    |> shouldSucceed
+
+[<Fact>]
+let ``runtime async is gated without preview when optimization is disabled`` () =
+    FSharp """
+module RuntimeAsyncNoOptimizePreviewTest
+
+open System.Threading.Tasks
+open Microsoft.FSharp.Core.CompilerServices
+
+let f (x: int) : Task<int> =
+    x |> StateMachineHelpers.__runtimeAsyncReturn
+"""
+    |> withLangVersion90
+    |> withFSharpCoreShippedNet
+    |> withNoOptimize
+    |> compile
+    |> shouldFail
+    |> withErrorCode 3350
+
+[<Fact>]
+let ``runtime async rejects suspension inside an ordinary sequence`` () =
+    FSharp """
+module RuntimeAsyncNestedSequenceTest
+
+open System.Threading.Tasks
+open System.Runtime.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices
+
+let f (gate: Task<int>) : Task<int seq> =
+    StateMachineHelpers.__runtimeAsyncReturn (
+        seq {
+            let value = AsyncHelpers.Await gate
+            yield value
+            yield value + 1
+        })
+"""
+    |> withLangVersionPreview
+    |> withFSharpCoreShippedNet
+    |> compile
+    |> shouldFail
+    |> withErrorCode 3916
+
 #else
 [<Fact>]
 let ``runtime async intrinsic is only available in the shipped net FSharp.Core`` () =
