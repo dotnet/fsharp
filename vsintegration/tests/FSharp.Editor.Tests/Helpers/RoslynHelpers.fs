@@ -203,6 +203,7 @@ type TestHostServices() =
 
 /// One Roslyn project instance of a multi-targeted F# project: its extra defines and the
 /// synthetic files left out of it, as VS does per target framework.
+[<Struct>]
 type TargetInstance =
     {
         Defines: string list
