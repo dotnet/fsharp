@@ -91,7 +91,7 @@ let ``Issue 20211 - ordinary union constraints during declaration checking`` sou
     |> shouldSucceed
     |> withDiagnostics []
 
-[<Theory>]
+[<TheoryForNETCOREAPP>]
 [<InlineData("""
 module M
 open System.Collections.Generic
@@ -126,7 +126,7 @@ let ``Issue 20211 - nullable constrained keys still warn`` source endColumn mess
     |> shouldFail
     |> withDiagnostics [Error 3261, Line 4, Col 21, Line 4, Col endColumn, message]
 
-[<Theory>]
+[<TheoryForNETCOREAPP>]
 [<InlineData("module rec M", "", false)>]
 [<InlineData("module rec M", "[<Struct>]", false)>]
 [<InlineData("module rec M", "[<CompilationRepresentation(CompilationRepresentationFlags.None)>]", false)>]
@@ -230,7 +230,7 @@ and Repr = CompilationRepresentationAttribute
     else
         result |> shouldSucceed |> withDiagnostics []
 
-[<Theory>]
+[<TheoryForNETCOREAPP>]
 [<InlineData("module rec M", "UseNullAsTrueValue", false)>]
 [<InlineData("namespace rec M", "UseNullAsTrueValue", false)>]
 [<InlineData("module M", "UseNullAsTrueValue", false)>]
