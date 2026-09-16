@@ -20,6 +20,11 @@ let SymbolMember = "fsharpSymbol"
 [<Literal>]
 let FullyQualifiedNameInput = "fullyQualifiedName"
 
+/// Disambiguates which overload or partial definition a mention was picked for - several of them share
+/// one fully qualified name, and only the one at this line is the one the user meant.
+[<Literal>]
+let DeclarationLineInput = "declarationLine"
+
 /// The parse tree cannot tell an interface, struct or record apart from a plain class, so every
 /// type-like declaration is reported as a class.
 let symbolContextType kind =

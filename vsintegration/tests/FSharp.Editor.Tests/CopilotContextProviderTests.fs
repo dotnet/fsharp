@@ -319,6 +319,49 @@ let twice x = x * 2
 
         Assert.Equal(expected, Array.head names)
 
+    /// Two overloads answer to the same fully qualified name, so navigating one after the picker has
+    /// closed - when there is no caret to consult any more - has to go by the line recorded when it was
+    /// picked, not by whichever overload a solution-wide scan happens to reach first.
+    [<Fact>]
+    let ``navigating a mention goes to the overload it was picked for`` () =
+        let cache = freshCache ()
+
+        let source =
+            "module Overloads\n\ntype Counter() =\n    member _.Bump() =\n        1\n\n    member _.Bump(step: int) =\n        step\n"
+
+        let solution = solutionOf [ "C:\\overloads.fs", source ]
+
+        let declarations =
+            CopilotSymbolQuery.declarationsOf cache Seq.empty solution "Overloads.Counter.Bump"
+            |> run
+
+        let lineOf index =
+            let struct (item: FSharp.Compiler.EditorServices.NavigableItem, _) =
+                declarations[index]
+
+            item.Range.StartLine
+
+        Assert.Equal(2, declarations.Length)
+
+        let firstLine, secondLine = lineOf 0, lineOf 1
+
+        let picked line =
+            CopilotSymbolQuery.declarationAt (ValueSome line) declarations
+            |> ValueOption.map (fun (struct (item, _)) -> item.Range.StartLine)
+
+        Assert.Equal(ValueSome firstLine, picked firstLine)
+        Assert.Equal(ValueSome secondLine, picked secondLine)
+
+        // An unknown line, or none at all, falls back to the first - the only choice before this line
+        // was tracked, and still the answer for a mention picked before this change shipped.
+        Assert.Equal(ValueSome firstLine, picked -1)
+
+        Assert.Equal(
+            ValueSome firstLine,
+            CopilotSymbolQuery.declarationAt ValueNone declarations
+            |> ValueOption.map (fun (struct (item, _)) -> item.Range.StartLine)
+        )
+
     [<Fact>]
     let ``a batch of texts answers like the same texts one by one`` () =
         let cache = freshCache ()
