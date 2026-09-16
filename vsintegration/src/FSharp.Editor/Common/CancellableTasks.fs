@@ -1136,7 +1136,7 @@ module CancellableTasks =
         let forEachThrottled maxDegreeOfParallelism (work: 'T -> CancellableTask<unit>) (items: 'T seq) =
             cancellableTask {
                 let! ct = getCancellationToken ()
-                return! Task.parallelDoLimit maxDegreeOfParallelism ct (Seq.map work items)
+                return! Task.parallelDoLimit maxDegreeOfParallelism ct (items |> Seq.map work)
             }
 
         let inline whenAllTasks (tasks: CancellableTask seq) =
