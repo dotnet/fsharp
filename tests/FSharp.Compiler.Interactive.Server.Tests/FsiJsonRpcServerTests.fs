@@ -4,6 +4,7 @@ module FSharp.Compiler.Interactive.Server.Tests.FsiJsonRpcServerTests
 
 open System
 open System.IO
+open System.Runtime.InteropServices
 open System.Threading
 open Xunit
 
@@ -14,6 +15,16 @@ open FSharp.Compiler.Interactive.Server.Tests.FsiServerHarness
 let private withSession (test: FsiServerHarness -> unit) =
     use session = new FsiServerHarness()
     test session
+
+/// macOS resolves `/tmp`, `/var` and `/etc` through their `/private` targets when a path is
+/// canonicalised by the kernel — which is what happens to the session's own working directory
+/// after it changes there — but not when `Path.GetTempPath()`/`GetFullPath` builds one in this
+/// process. The two would otherwise disagree on the very directory both sides just agreed on.
+let private stripMacPrivatePrefix (path: string) =
+    if RuntimeInformation.IsOSPlatform OSPlatform.OSX && path.StartsWith("/private/", StringComparison.Ordinal) then
+        path.Substring "/private".Length
+    else
+        path
 
 /// Start a session that has already completed the handshake.
 let private withInitializedSession (test: FsiServerHarness -> unit) =
@@ -263,8 +274,13 @@ let ``setPaths changes the working directory`` () =
             Assert.True(succeeded result, describe session result)
 
             // The host mirrors this value so that its own reference resolution matches the session.
-            let expected = Path.GetFullPath(directory).TrimEnd(Path.DirectorySeparatorChar)
-            let actual = Path.GetFullPath(result.workingDirectory).TrimEnd(Path.DirectorySeparatorChar)
+            let expected =
+                Path.GetFullPath(directory).TrimEnd(Path.DirectorySeparatorChar) |> stripMacPrivatePrefix
+
+            let actual =
+                Path.GetFullPath(result.workingDirectory).TrimEnd(Path.DirectorySeparatorChar)
+                |> stripMacPrivatePrefix
+
             Assert.Equal(expected, actual)
         finally
             try
