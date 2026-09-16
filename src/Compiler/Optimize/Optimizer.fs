@@ -441,8 +441,7 @@ type cenv =
 
       specializedInlineVals: HashMultiMap<Stamp, TType * Expr>
 
-      /// Cache for 'HasFrameLocalBody'
-      frameLocalVals: Dictionary<Stamp, bool>
+      forcedInlineVals: Dictionary<Stamp, bool>
 
       signatureHidingInfo: SignatureHidingInfo
     }
@@ -1903,6 +1902,68 @@ let rec (|KnownValApp|_|) expr =
     | Expr.App (KnownValApp(vref, typeArgs1, otherArgs1), _, typeArgs2, otherArgs2, _) -> ValueSome(vref, typeArgs1@typeArgs2, otherArgs1@otherArgs2)
     | _ -> ValueNone
 
+let AdaptOpaqueOptimizedClosureArgs g (lambdaExpr: Expr) f0ty (arginfos: Summary<ExprValueInfo> list) m =
+    // Hot path: probe the flag before stripping the spine.
+    let rec hasFlaggedFormal expr =
+        match expr with
+        | Expr.TyLambda(_, _, body, _, _) -> hasFlaggedFormal body
+        | Expr.Lambda(_, _, _, vs, body, _, _) -> List.exists (fun (v: Val) -> v.OptimizeClosureIfNotInlined) vs || hasFlaggedFormal body
+        | _ -> false
+
+    if not (hasFlaggedFormal lambdaExpr) then
+        lambdaExpr
+    else
+
+    let tps, vsl, body, bodyTy = stripTopLambda (lambdaExpr, f0ty)
+
+    let tryFlag (group, info: Summary<ExprValueInfo>) =
+        match group, info.Info with
+        | [ (v: Val) ], _ when not v.OptimizeClosureIfNotInlined -> None
+        | [ _ ], StripLambdaValue _ -> None
+        | [ v ], _ ->
+            match stripFunTy g v.Type with
+            | argTys, retTy when argTys.Length >= 2 && argTys.Length <= 5 -> Some(v, argTys, retTy)
+            | _ -> None
+        | _ -> None
+
+    let flagged =
+        if List.length vsl = List.length arginfos then
+            List.choose tryFlag (List.zip vsl arginfos)
+        else
+            []
+
+    if List.isEmpty flagged then
+        lambdaExpr
+    else
+
+    let adaptFormal body (folderVal: Val, argTys, retTy) =
+        let adaptCall, adaptTy = mkCallOptimizedClosuresAdapt g m argTys retTy (exprForVal m folderVal)
+        let adaptedVal, adaptedExpr = mkCompGenLocal m "adaptedClosure" adaptTy
+        let folderVref = mkLocalValRef folderVal
+        let arity = List.length argTys
+        let mutable rewrote = false
+
+        // Reroute one saturated application node. A staged chain keeps its effect order.
+        let env =
+            { PreIntercept = None
+              PostTransform =
+                (fun e ->
+                    match e with
+                    | ValApp g folderVref (_, args, _) when List.length args = arity ->
+                        rewrote <- true
+                        Some(mkCallOptimizedClosuresInvoke g m argTys retTy adaptedExpr args)
+                    | _ -> None)
+              PreInterceptBinding = None
+              RewriteQuotations = false
+              StackGuard = StackGuard("OptimizeClosureIfNotInlinedStackGuard") }
+
+        let rewrittenBody = RewriteExpr env body
+        if rewrote then mkCompGenLet m adaptedVal adaptCall rewrittenBody else body
+
+    let rewrittenBody = List.fold adaptFormal body flagged
+    if body === rewrittenBody then lambdaExpr
+    else mkMultiLambdas g m tps vsl (rewrittenBody, bodyTy)
+
 /// Matches boolean decision tree:
 /// check single case with bool const.
 [<return: Struct>]
@@ -2469,28 +2530,25 @@ let instrIsFrameLocal instr =
     | I_localloc -> true
     | _ -> false
 
-/// The FSharp.Core values expanding to frame-local IL are marked [<NoDynamicInvocation>] and so are
-/// always inlined. A user 'inline' function wrapping one inherits the property but not the
-/// attribute - the callee is already inlined into the recorded body, leaving only its IL - so
-/// recover it from the body and propagate it through further wrappers.
-/// See https://github.com/dotnet/fsharp/issues/20063.
-let rec HasFrameLocalBody cenv env (vref: ValRef) =
+/// Frame-local IL and resumable templates must remain in the caller's method.
+/// Inline wrappers inherit this requirement even when they do not inherit the callee's attributes.
+let rec HasForcedInlineBody cenv env (vref: ValRef) =
     let stamp = vref.Stamp
 
-    match cenv.frameLocalVals.TryGetValue stamp with
+    match cenv.forcedInlineVals.TryGetValue stamp with
     | true, res -> res
     | _ ->
         // Values bound within the body being walked have no info yet, but the walk covers them anyway.
         match TryGetInfoForVal cenv env vref |> Option.map (fun info -> stripValue info.ValExprInfo) with
         | Some(CurriedLambdaValue (_, _, _, body, _)) ->
-            cenv.frameLocalVals[stamp] <- false // Break cycles while the body is inspected
-            let res = ExprIsFrameLocal cenv env body
-            cenv.frameLocalVals[stamp] <- res
+            cenv.forcedInlineVals[stamp] <- false // Break cycles while the body is inspected
+            let res = ExprNeedsForcedInlining cenv env body
+            cenv.forcedInlineVals[stamp] <- res
             res
 
         | _ -> false
 
-and ExprIsFrameLocal cenv env expr =
+and ExprNeedsForcedInlining cenv env expr =
     let folder =
         { ExprFolder0 with
             exprIntercept =
@@ -2499,7 +2557,9 @@ and ExprIsFrameLocal cenv env expr =
 
                     match expr with
                     | Expr.Op (TOp.ILAsm (instrs, _), _, _, _) when List.exists instrIsFrameLocal instrs -> true
-                    | Expr.Val (vref, _, _) when vref.ShouldInline -> HasFrameLocalBody cenv env vref
+                    // Lowering must see the template and its resumable-code arguments in the same method.
+                    | StructStateMachineExpr cenv.g _ -> true
+                    | Expr.Val (vref, _, _) when vref.ShouldInline -> HasForcedInlineBody cenv env vref
                     | _ -> noInterceptF acc expr }
 
     FoldExpr folder false expr
@@ -2512,7 +2572,9 @@ let shouldForceInlineInDebug cenv env (vref: ValRef) : bool =
 
     (vref.HasDeclaringEntity && shouldForceInlineMembersInDebug g vref.DeclaringEntity) ||
 
-    HasFrameLocalBody cenv env vref
+    isReturnsResumableCodeTy g vref.TauType ||
+
+    HasForcedInlineBody cenv env vref
 
 /// `let p = f a b`, p an [<InlineIfLambda>] parameter binding whose right-hand side is an under-applied
 /// call to a known-arity value.
@@ -3727,6 +3789,18 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
             let specLambda = MakeApplicationAndBetaReduce g (f2R, origLambdaTy, [tyargs], [], m)
             let specLambdaTy = tyOfExpr g specLambda
 
+            let hasStateMachineTemplate =
+                (false, specLambdaTy)
+                ||> SimplifyTypes.foldTypeButNotConstraints (stripTyEqns g) (fun found ty ->
+                    found ||
+                    (tryTcrefOfAppTy g ty |> ValueOption.exists (tyconRefEq g g.ResumableStateMachine_tcr)))
+
+            // A separate helper loses type parameters of the struct that replaces this template during lowering.
+            if hasStateMachineTemplate then
+                let cenv = { cenv with settings = { cenv.settings with alwaysInline = true } }
+                Some(OptimizeApplication cenv { env with debugInlineCallSite = Some m } (valExpr, vref.Type, tyargs, argsR, m))
+            else
+
             // Typars that flow in from the enclosing scope when tyargs are non-concrete. A tyarg can reach
             // only the body, and typars left unabstracted below are erased to 'object'.
             let freeTypars =
@@ -4085,6 +4159,8 @@ and OptimizeApplication cenv env (f0, f0ty, tyargs, args, m) =
             | _ -> args |> List.map (fun arg -> UnknownValue, arg)
 
         let newArgs, arginfos = OptimizeExprsThenReshapeAndConsiderSplits cenv env shapes
+        // Run before beta reduction removes the flagged formals.
+        let newf0 = AdaptOpaqueOptimizedClosureArgs g newf0 f0ty arginfos m
         // beta reducing
         let reducedExpr = MakeApplicationAndBetaReduce g (newf0, f0ty, [tyargs], newArgs, m)
         let newExpr = reducedExpr |> remake
@@ -4875,7 +4951,7 @@ let OptimizeImplFile (settings, ccu, tcGlobals: TcGlobals, tcVal, importMap, opt
           stackGuard = StackGuard("OptimizerStackGuardDepth")
           realsig = tcGlobals.realsig
           specializedInlineVals = HashMultiMap(HashIdentity.Structural, true)
-          frameLocalVals = Dictionary<Stamp, bool>()
+          forcedInlineVals = Dictionary<Stamp, bool>()
           signatureHidingInfo = SignatureHidingInfo.Empty
         }
 

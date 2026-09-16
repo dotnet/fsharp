@@ -453,6 +453,12 @@ let TypeNameForInitClass cloc =
 
 let TypeNameForImplicitMainMethod cloc = TypeNameForInitClass cloc + "$Main"
 
+let TypeNameForTopLevelFunctions cloc =
+    "<TopLevelFunctions$"
+    + (CleanUpGeneratedTypeName cloc.QualifiedNameOfFile)
+    + ">.$"
+    + cloc.TopImplQualifiedName
+
 let TypeNameForPrivateImplementationDetails cloc =
     "<PrivateImplementationDetails$"
     + (CleanUpGeneratedTypeName cloc.QualifiedNameOfFile)
@@ -461,6 +467,12 @@ let TypeNameForPrivateImplementationDetails cloc =
 let CompLocForInitClass cloc =
     { cloc with
         Enclosing = [ TypeNameForInitClass cloc ]
+        Namespace = None
+    }
+
+let CompLocForTopLevelFunctions cloc =
+    { cloc with
+        Enclosing = [ TypeNameForTopLevelFunctions cloc ]
         Namespace = None
     }
 
@@ -1264,7 +1276,7 @@ and IlxGenEnv =
 
         /// Are we within the 'with'/filter/'finally'/fault handler region of a 'try' (but not merely its try body)?
         /// The JIT rejects the 'localloc' IL instruction (emitted by NativePtr.stackalloc) inside such a region, so
-        /// emitting it here is reported as error FS3916. This is checked at codegen, after inlining and closure
+        /// emitting it here is reported as error FS3918. This is checked at codegen, after inlining and closure
         /// conversion, so an escaping closure whose 'localloc' lives in its own method stays legal.
         withinExnHandler: bool
 
@@ -10753,12 +10765,15 @@ and AllocValReprWithinExpr cenv cgbuf endMark cloc v eenv =
         else
             NoShadowLocal, eenv
 
-    // TLR lifts avoid generic enclosing scopes (#17607); namespace-root lifts use the per-file
-    // init class to avoid generated-name collisions in the shared <PrivateImplementationDetails$Asm>.
+    // TLR lifts avoid generic enclosing scopes (#17607). Namespace-root lifts need per-file
+    // storage without triggering the file's initialization when a lifted method is called.
     let effectiveCloc =
         if v.IsCompiledAsTopLevel && not v.IsMemberOrModuleBinding then
             if eenv.moduleCloc.Enclosing.IsEmpty then
-                CompLocForInitClass eenv.moduleCloc
+                if IsFSharpValCompiledAsMethod cenv.g v then
+                    CompLocForTopLevelFunctions eenv.moduleCloc
+                else
+                    CompLocForInitClass eenv.moduleCloc
             else
                 eenv.moduleCloc
         else
@@ -11046,6 +11061,7 @@ and GenTypeDefForCompLoc
                             [
                                 TypeNameForImplicitMainMethod cloc
                                 TypeNameForInitClass cloc
+                                TypeNameForTopLevelFunctions cloc
                                 TypeNameForPrivateImplementationDetails cloc
                             ]
                     then
@@ -11339,6 +11355,19 @@ and GenImplFile cenv (mgbuf: AssemblyBuilder) mainInfoOpt eenv (implFile: Checke
     //     internal static class $<StartupCode...> {}
     // Put it at the end since that gives an approximation of dependency order (to aid FSI.EXE's code generator - see FSharp 1.0 5548)
     GenTypeDefForCompLoc(cenv, eenv, mgbuf, initClassCompLoc, useHiddenInitCode, taccessInternal, [], initClassTrigger, false, true)
+
+    GenTypeDefForCompLoc(
+        cenv,
+        eenv,
+        mgbuf,
+        CompLocForTopLevelFunctions eenv.cloc,
+        true,
+        taccessInternal,
+        [],
+        ILTypeInit.BeforeField,
+        true,
+        true
+    )
 
     // lazyInitInfo is an accumulator of functions which add the forced initialization of the storage module to
     //    - mutable fields in public modules
