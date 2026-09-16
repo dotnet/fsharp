@@ -248,6 +248,7 @@
     <Compile Include="EmittedIL\Literals.fs" />
     <Compile Include="EmittedIL\PrintFunction.fs" />
     <Compile Include="EmittedIL\NoCompilerInlining.fs" />
+    <Compile Include="EmittedIL\OptimizeClosureIfNotInlined.fs" />
     <Compile Include="EmittedIL\DebugInlineAsCall.fs" />
     <Compile Include="EmittedIL\RealInternalSignature\ModuleVisibility.fs" />
     <Compile Include="EmittedIL\RealInternalSignature\ModuleInitialization.fs" />

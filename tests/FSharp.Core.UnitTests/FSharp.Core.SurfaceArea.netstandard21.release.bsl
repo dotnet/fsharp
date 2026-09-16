@@ -1533,6 +1533,7 @@ Microsoft.FSharp.Core.FuncConvert: Microsoft.FSharp.Core.FSharpFunc`2[T1,Microso
 Microsoft.FSharp.Core.FuncConvert: Microsoft.FSharp.Core.FSharpFunc`2[T1,Microsoft.FSharp.Core.FSharpFunc`2[T2,TResult]] FuncFromTupled[T1,T2,TResult](Microsoft.FSharp.Core.FSharpFunc`2[System.Tuple`2[T1,T2],TResult])
 Microsoft.FSharp.Core.GeneralizableValueAttribute: Void .ctor()
 Microsoft.FSharp.Core.InlineIfLambdaAttribute: Void .ctor()
+Microsoft.FSharp.Core.OptimizeClosureIfNotInlinedAttribute: Void .ctor()
 Microsoft.FSharp.Core.InterfaceAttribute: Void .ctor()
 Microsoft.FSharp.Core.LanguagePrimitives+ErrorStrings: System.String AddressOpNotFirstClassString
 Microsoft.FSharp.Core.LanguagePrimitives+ErrorStrings: System.String InputArrayEmptyString
@@ -2721,3 +2722,9 @@ Microsoft.FSharp.Reflection.UnionCaseInfo: System.String ToString()
 Microsoft.FSharp.Reflection.UnionCaseInfo: System.String get_Name()
 Microsoft.FSharp.Reflection.UnionCaseInfo: System.Type DeclaringType
 Microsoft.FSharp.Reflection.UnionCaseInfo: System.Type get_DeclaringType()
+Microsoft.FSharp.Collections.ListModule: T indexNotFound[T]()
+Microsoft.FSharp.Collections.ListModule: T emptyListError[T]()
+Microsoft.FSharp.Collections.ListModule: T differentLengthLists[T](System.String, System.String, Int32)
+Microsoft.FSharp.Collections.ListModule: T listsDifferentLengths[T]()
+Microsoft.FSharp.Collections.ArrayModule: T indexNotFound[T]()
+Microsoft.FSharp.Collections.ArrayModule: T differentLengthArrays[T](System.String, Int32, System.String, Int32)
