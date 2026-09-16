@@ -99,8 +99,24 @@ type NavigableContainerType =
     | Type
     | Exception
 
-[<Sealed>]
-type NavigableContainer =
+/// What a container declared inside a file is, and what encloses it.
+[<Struct>]
+type NavigableContainerInfo =
+    {
+        /// The kind of container.
+        ContainerType: NavigableContainerType
+
+        /// The name of the container, one element per dotted part.
+        NameParts: string list
+
+        /// The container this one is declared in, ending at the file.
+        Parent: NavigableContainer
+    }
+
+and NavigableContainer =
+    | File of fileName: string
+    | Container of info: NavigableContainerInfo
+
     /// The kind of container.
     member Type: NavigableContainerType
 

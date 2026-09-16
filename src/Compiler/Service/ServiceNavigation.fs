@@ -731,28 +731,36 @@ type NavigableContainerType =
     | Type
     | Exception
 
-type NavigableContainer =
+[<Struct>]
+type NavigableContainerInfo =
+    {
+        ContainerType: NavigableContainerType
+        NameParts: string list
+        Parent: NavigableContainer
+    }
+
+and NavigableContainer =
     | File of fileName: string
-    | Container of containerType: NavigableContainerType * nameParts: string list * parent: NavigableContainer
+    | Container of info: NavigableContainerInfo
 
     member x.FullName =
         let rec loop acc =
             function
             | File _ -> acc
-            | Container(_, nameParts, parent) -> loop (nameParts @ acc) parent
+            | Container info -> loop (info.NameParts @ acc) info.Parent
 
         loop [] x |> textOfPath
 
     member x.Type =
         match x with
         | File _ -> NavigableContainerType.File
-        | Container(t, _, _) -> t
+        | Container info -> info.ContainerType
 
     member x.Name =
         match x with
         | File name -> name
-        | Container(nameParts = []) -> ""
-        | Container(nameParts = ns) -> ns |> List.last
+        | Container { NameParts = [] } -> ""
+        | Container { NameParts = ns } -> ns |> List.last
 
 type NavigableItem =
     {
@@ -813,13 +821,24 @@ module NavigateTo =
         let addExceptionRepr exnRepr isSig container =
             let (SynExceptionDefnRepr(_, SynUnionCase(ident = SynIdent(id, _)), _, _, _, _)) = exnRepr
             addIdent NavigableItemKind.Exception id isSig container
-            NavigableContainer.Container(NavigableContainerType.Exception, [ id.idText ], container)
+
+            NavigableContainer.Container
+                {
+                    ContainerType = NavigableContainerType.Exception
+                    NameParts = [ id.idText ]
+                    Parent = container
+                }
 
         let addComponentInfo containerType kind (info: SynComponentInfo) isSig container =
             let lid = info.LongIdent
             addLongIdent kind lid isSig container
 
-            NavigableContainer.Container(containerType, pathOfLid lid, container)
+            NavigableContainer.Container
+                {
+                    ContainerType = containerType
+                    NameParts = pathOfLid lid
+                    Parent = container
+                }
 
         let addValSig kind synValSig isSig container =
             let (SynValSig(ident = SynIdent(id, _))) = synValSig
@@ -897,7 +916,14 @@ module NavigateTo =
                     NavigableContainerType.Namespace
 
             for decl in decls do
-                walkSynModuleSigDecl decl (NavigableContainer.Container(ctype, pathOfLid lid, container))
+                walkSynModuleSigDecl
+                    decl
+                    (NavigableContainer.Container
+                        {
+                            ContainerType = ctype
+                            NameParts = pathOfLid lid
+                            Parent = container
+                        })
 
         and walkSynModuleSigDecl (decl: SynModuleSigDecl) container =
             match decl with
@@ -956,7 +982,14 @@ module NavigateTo =
                     NavigableContainerType.Namespace
 
             for decl in decls do
-                walkSynModuleDecl decl (NavigableContainer.Container(ctype, pathOfLid lid, container))
+                walkSynModuleDecl
+                    decl
+                    (NavigableContainer.Container
+                        {
+                            ContainerType = ctype
+                            NameParts = pathOfLid lid
+                            Parent = container
+                        })
 
         and walkSynModuleDecl (decl: SynModuleDecl) container =
             match decl with
