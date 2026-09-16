@@ -6424,6 +6424,12 @@ let CheckOneSigFile (g, amap, thisCcu, checkForErrors, conditionalDefines, tcSin
 
     let sigFileType = moduleTyAcc.Value
 
+    do
+        for check in cenv.css.GetPostInferenceChecksPreDefaults() do
+            try
+                check()
+            with RecoverableException exn -> errorRecovery exn m
+
     if not (checkForErrors()) then
         try
             sigFileType |> IterTyconsOfModuleOrNamespaceType (fun tycon ->

@@ -101,6 +101,14 @@ and [<CompilationRepresentation(CompilationRepresentationFlags.UseNullAsTrueValu
     | Present of string
 """, 42, "Nullness warning: The type 'Maybe' uses 'null' as a representation value but a non-null type is expected.")>]
 [<InlineData("""
+module rec M
+open System.Collections.Generic
+type Substitution = Dictionary<Maybe,obj>
+[<Rep(CompilationRepresentationFlags.UseNullAsTrueValue)>]
+type Maybe = Missing | Present of string
+type RepAttribute = CompilationRepresentationAttribute
+""", 42, "Nullness warning: The type 'Maybe' uses 'null' as a representation value but a non-null type is expected.")>]
+[<InlineData("""
 module M
 open System.Collections.Generic
 type Substitution = Dictionary<string option,obj>
@@ -145,6 +153,44 @@ type C = class end
         |> shouldFail
         |> withDiagnostics [
             Error 3261, Line 7, Col 24, Line 7, Col 41, "Nullness warning: The type 'U' uses 'null' as a representation value but a non-null type is expected."
+        ]
+    else
+        result |> shouldSucceed |> withDiagnostics []
+
+[<Theory>]
+[<InlineData("module rec M", "UseNullAsTrueValue", false)>]
+[<InlineData("namespace rec M", "UseNullAsTrueValue", false)>]
+[<InlineData("module M", "UseNullAsTrueValue", false)>]
+[<InlineData("module rec M", "None", false)>]
+[<InlineData("module rec M", "UseNullAsTrueValue", true)>]
+[<InlineData("namespace rec M", "UseNullAsTrueValue", true)>]
+[<InlineData("module M", "UseNullAsTrueValue", true)>]
+[<InlineData("module rec M", "None", true)>]
+let ``Issue 20211 - union constraints with deferred representation attributes`` (scope: string) (flags: string) isSignature =
+    let result =
+        $"""
+{scope}
+
+type RepAttribute = CompilationRepresentationAttribute
+
+[<Rep(CompilationRepresentationFlags.{flags})>]
+type U = A | B of int
+
+[<System.ComponentModel.TypeConverter(
+    typeof<System.Collections.Generic.Dictionary<U, obj>>)>]
+type T = T
+"""
+        |> (if isSignature then Fsi else FSharp)
+        |> withName (if isSignature then "test.fsi" else "test.fs")
+        |> asLibrary
+        |> withVersionAndCheckNulls ("preview", true)
+        |> typecheck
+
+    if flags = "UseNullAsTrueValue" then
+        result
+        |> shouldFail
+        |> withDiagnostics [
+            Error 3261, Line 10, Col 12, Line 10, Col 57, "Nullness warning: The type 'U' uses 'null' as a representation value but a non-null type is expected."
         ]
     else
         result |> shouldSucceed |> withDiagnostics []

@@ -2937,7 +2937,7 @@ and SolveNullnessSupportsNull (csenv: ConstraintSolverEnv) ndeep m2 (trace: Opti
         | Nullness.KnownFromConstructor -> () // Unreachable after Normalize()
     }
 
-and SolveTypeUseNotSupportsNull (csenv: ConstraintSolverEnv) ndeep m2 trace ty =
+and SolveTypeUseNotSupportsNull (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTrace) ty =
     trackErrors {
         let g = csenv.g
         let m = csenv.m
@@ -2961,6 +2961,17 @@ and SolveTypeUseNotSupportsNull (csenv: ConstraintSolverEnv) ndeep m2 trace ty =
             | ValueSome tp ->
                 do! AddConstraint csenv ndeep m2 trace tp (TyparConstraint.NotSupportsNull m)
             | ValueNone ->
+                match tryTcrefOfAppTy g ty with
+                | ValueSome tcref when tcref.IsUnionTycon && tcref.UnionCasesArray.Length = 0 ->
+                    // Representation attributes can still be unresolved while union cases are provisional.
+                    trace.Exec
+                        (fun () ->
+                            csenv.SolverState.PushPostInferenceCheck (preDefaults=true, check = fun () ->
+                                if TypeNullIsTrueValue g ty then
+                                    SolveTypeUseNotSupportsNull csenv ndeep m2 NoTrace ty |> RaiseOperationResult))
+                        (fun () -> csenv.SolverState.PopPostInferenceCheck (preDefaults=true))
+                | _ -> ()
+
                 let nullness = nullnessOfTy g ty
                 do! SolveNullnessNotSupportsNull csenv ndeep m2 trace ty nullness
     }
