@@ -930,8 +930,6 @@ type InfoReader(g: TcGlobals, amap: ImportMap) as this =
     /// Check if the given language feature is supported by the runtime.
     member _.IsLanguageFeatureRuntimeSupported langFeature =
         match langFeature with
-        // Default interface method consumption is tied to the runtime support of DIMs.
-        | LanguageFeature.DefaultInterfaceMemberConsumption -> isRuntimeFeatureDefaultImplementationsOfInterfacesSupported.Value
         | LanguageFeature.RuntimeAsync -> isRuntimeAsyncSupported.Value
         | _ -> true
 
@@ -1047,6 +1045,11 @@ type InfoReader(g: TcGlobals, amap: ImportMap) as this =
             None
         else
             unimplementedStaticAbstractMemberCache.Apply(((None, AccessibleFromSomewhere, AllowMultiIntfInstantiations.Yes), m, interfaceTy))
+
+let checkLanguageFeatureRuntimeAndRecover (infoReader: InfoReader) langFeature m =
+    if not (infoReader.IsLanguageFeatureRuntimeSupported langFeature) then
+        let featureStr = LanguageVersion.GetFeatureString langFeature
+        errorR (Error(FSComp.SR.chkFeatureNotRuntimeSupported (RichText.mkText featureStr), m))
 
 let checkRuntimeSupportForDefaultInterfaceMembersAndRecover (infoReader: InfoReader) m =
     if not infoReader.IsRuntimeSupportForDefaultImplementationsOfInterfaces then
