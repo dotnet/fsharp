@@ -201,7 +201,7 @@ let f_IWSAM_flex_StaticProperty(x: #IStaticProperty<'T>) =
                 DependsOn = [ library ]
             }
 
-        let solution, _ = RoslynTestHelpers.CreateMultiProjectSolution app
+        let struct (solution, _) = RoslynTestHelpers.CreateMultiProjectSolution app
         let appPath = app.GetFilePath "App"
         let libraryPath = library.GetFilePath "Library"
 
