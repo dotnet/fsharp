@@ -18,10 +18,6 @@ module Test
 
 let eqf (env: int) (a: string) (b: string) = a.Length = b.Length + env
 
-// Forwards the function to a non-inline callee (the OLD List.lengthsEqAndForall2 shape).
-let inline forall2Forward ([<InlineIfLambda>] p: string -> string -> bool) l1 l2 =
-    List.length l1 = List.length l2 && List.forall2 p l1 l2
-
 // Applies the function directly in a loop (the NEW shape).
 let inline forall2Direct ([<InlineIfLambda>] p: string -> string -> bool) l1 l2 =
     let mutable r1 = l1
@@ -120,6 +116,13 @@ let test (h: H) (env: int) = h.M <| (fun () -> env)
 
     module AllocatesClosure =
 
+        // List.forall2 is inline, so this helper can allocate even when unused by the caller.
+        let private forwardingPrelude =
+            """
+let inline forall2Forward ([<InlineIfLambda>] p: string -> string -> bool) l1 l2 =
+    List.length l1 = List.length l2 && List.forall2 p l1 l2
+"""
+
         // Vanilla List.map is not inline, so the mapping function is always materialised as a value -
         // a closure is allocated whatever the syntactic form.
 
@@ -140,24 +143,25 @@ let test (env: int) (xs: string list) =
     List.map (g env) xs
 """
 
-        // An inline + InlineIfLambda HOF that FORWARDS the function to a non-inline callee still allocates,
-        // and eta-expanding the call site does not change that.
+        // Forwarding the function to List.forall2 still allocates, even with an eta-expanded call site.
 
         [<Fact>]
         let ``forwarding inline HOF, partial application`` () =
-            allocatesClosure
-                """
+            """
 let test (env: int) (a: string list) (b: string list) =
     forall2Forward (eqf env) a b
 """
+            |> (+) forwardingPrelude
+            |> allocatesClosure
 
         [<Fact>]
         let ``forwarding inline HOF, eta-expanded lambda`` () =
-            allocatesClosure
-                """
+            """
 let test (env: int) (a: string list) (b: string list) =
     forall2Forward (fun x y -> eqf env x y) a b
 """
+            |> (+) forwardingPrelude
+            |> allocatesClosure
 
         // Partial application of a LOCAL function that closes over a local: unlike a top-level function
         // (see DoesNotAllocate), the local is itself a closure value the optimizer cannot reduce, so it is
