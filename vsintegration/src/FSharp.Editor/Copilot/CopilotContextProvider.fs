@@ -98,6 +98,7 @@ module internal CopilotSymbolQuery =
             let! ct = CancellableTask.getCancellationToken ()
             let! sourceText = document.GetTextAsync ct
             let! parseResults = document.GetFSharpParseResultsAsync UserOpName
+
             let sourceLines =
                 Array.init sourceText.Lines.Count (fun line -> sourceText.Lines[line].ToString())
 
