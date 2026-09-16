@@ -272,6 +272,11 @@ namespace Microsoft.FSharp.Core
     type InlineIfLambdaAttribute() =
         inherit Attribute()
 
+    [<AttributeUsage (AttributeTargets.Parameter,AllowMultiple=false)>]  
+    [<Sealed>]
+    type OptimizeClosureIfNotInlinedAttribute() = 
+        inherit Attribute()
+
     [<AttributeUsage(AttributeTargets.Method, AllowMultiple=false)>]
     [<Sealed>]
     type CompilationArgumentCountsAttribute(counts:int array) =
@@ -447,6 +452,24 @@ namespace System.Diagnostics.CodeAnalysis
 
         member this.DynamicallyAccessedMembersAttribute(memberTypes: DynamicallyAccessedMemberTypes) =
             this.MemberTypes <- memberTypes
+
+#endif
+
+#if !NET7_0_OR_GREATER
+namespace System.Diagnostics.CodeAnalysis
+
+    open System
+    open Microsoft.FSharp.Core
+
+    /// <summary>
+    /// Indicates that the specified member requires the ability to generate new code at runtime.
+    /// </summary>
+    [<AttributeUsage(AttributeTargets.Class ||| AttributeTargets.Constructor ||| AttributeTargets.Method,
+                     Inherited = false)>]
+    type internal RequiresDynamicCodeAttribute (message: string) =
+        inherit Attribute ()
+
+        member _.Message = message
 
 #endif
 

@@ -357,7 +357,7 @@ module DispatchSlotChecking =
 
             // Always try to raise a target runtime error if we have a DIM.
             if reqdSlot.HasDefaultInterfaceImplementation then
-                checkLanguageFeatureRuntimeAndRecover infoReader LanguageFeature.DefaultInterfaceMemberConsumption m
+                checkRuntimeSupportForDefaultInterfaceMembersAndRecover infoReader m
 
             let maybeResolvedSlot =
                 NameMultiMap.find dispatchSlot.LogicalName overridesKeyed
@@ -377,10 +377,6 @@ module DispatchSlotChecking =
                    // Check that no available prior override implements this dispatch slot
                    not (DispatchSlotIsAlreadyImplemented g amap m availPriorOverridesKeyed dispatchSlot)
                 then
-                    // Always try to raise a language version error if we have a DIM that is not explicitly implemented.
-                    if reqdSlot.HasDefaultInterfaceImplementation then
-                        checkLanguageFeatureAndRecover g.langVersion LanguageFeature.DefaultInterfaceMemberConsumption m
-
                     if reqdSlot.PossiblyNoMostSpecificImplementation then
                         errorR(Error(FSComp.SR.typrelInterfaceMemberNoMostSpecificImplementation(NicePrint.richTextOfMethInfo infoReader m denv dispatchSlot), m))
 
@@ -545,8 +541,6 @@ module DispatchSlotChecking =
                       // IL methods might have default implementations.
                       else
                           let isMethodOptional (minfo: MethInfo) =
-                            // A DIM is considered *not* 'optional' if it is not language supported.
-                            g.langVersion.SupportsFeature LanguageFeature.DefaultInterfaceMemberConsumption &&
                             not minfo.IsAbstract
 
                           match GetMostSpecificOverrideInterfaceMethodsByMethod g amap m mostSpecificOverrides minfo with
@@ -564,11 +558,7 @@ module DispatchSlotChecking =
 
                           // We found multiple override methods, means we might have ambiguity.
                           | _ ->
-                            // If DIMs are not language supported, then do not consider a slot to have a specific implementation.
-                            let possiblyNoMostSpecific =
-                                g.langVersion.SupportsFeature LanguageFeature.DefaultInterfaceMemberConsumption
-
-                            yield DefaultInterfaceImplementationSlot (minfo, false, possiblyNoMostSpecific) ]
+                            yield DefaultInterfaceImplementationSlot (minfo, false, true) ]
             else
                 []
 
@@ -985,10 +975,9 @@ let FinalTypeDefinitionChecksAtEndOfInferenceScope (infoReader: InfoReader, nenv
 /// at the member signature prior to type inference. This is used to pre-assign type information if it does
 let GetAbstractMethInfosForSynMethodDecl(infoReader: InfoReader, ad, memberName: Ident, bindm, typToSearchForAbstractMembers, valSynData, memberFlags: SynMemberFlags, findFlag: FindMemberFlag) =
 
-    let g = infoReader.g
     if not memberFlags.IsInstance && memberFlags.IsOverrideOrExplicitImpl then
-        checkLanguageFeatureRuntimeAndRecover infoReader LanguageFeature.InterfacesWithAbstractStaticMembers bindm
-        checkLanguageFeatureAndRecover g.langVersion LanguageFeature.InterfacesWithAbstractStaticMembers bindm
+        if not infoReader.IsRuntimeSupportForVirtualStaticsInInterfaces then
+            errorR(Error(FSComp.SR.chkFeatureNotRuntimeSupported(RichText.mkText (FSComp.SR.runtimeStaticAbstractInterfaceMembers())), bindm))
 
     let minfos =
         match typToSearchForAbstractMembers with
