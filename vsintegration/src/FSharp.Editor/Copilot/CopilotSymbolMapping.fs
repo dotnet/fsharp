@@ -157,3 +157,64 @@ let searchTextOf (query: CopilotMentionQuery) =
         else
             searchTextAt 0 inputs
     | _ -> ValueNone
+
+/// The number of lines before `offset` in `content`, 1-based - `DocumentSelection.Caret` is always the
+/// offset of the start of a line, so no column arithmetic is needed.
+let private lineOf (content: string) offset =
+    let mutable line = 1
+
+    for i in 0 .. offset - 1 do
+        if content[i] = '\n' then
+            line <- line + 1
+
+    line
+
+let private totalLinesIn (content: string) = lineOf content content.Length
+
+/// Where Copilot's document context says the user is. Copilot widens an empty selection to the
+/// enclosing block, and to the whole file when a language has no block expander, as F# has not: the
+/// caret line then comes from the selection's caret, which Copilot leaves out when the caret is on the
+/// range's first or last line - so a caret on the file's first or last line reports no line.
+let editorFocusOf (document: DocumentContext) =
+    match document.FilePath with
+    | null -> ValueNone
+    | filePath ->
+        match document.Selections |> Seq.tryHeadV with
+        | ValueSome selection when selection.Caret.HasValue ->
+            let line = lineOf document.Content selection.Caret.Value
+
+            ValueSome
+                {
+                    FilePath = filePath
+                    FirstLine = line
+                    LastLine = line
+                }
+        | ValueSome selection when selection.LineRange.HasValue ->
+            let range = selection.LineRange.Value
+
+            let totalLines =
+                document.TotalLinesInFile
+                |> ValueOption.ofNullable
+                |> ValueOption.defaultWith (fun () -> totalLinesIn document.Content)
+
+            if range.StartLine <= 1 && range.EndLine >= totalLines then
+                ValueSome
+                    {
+                        FilePath = filePath
+                        FirstLine = 0
+                        LastLine = 0
+                    }
+            else
+                ValueSome
+                    {
+                        FilePath = filePath
+                        FirstLine = range.StartLine
+                        LastLine = range.EndLine
+                    }
+        | _ ->
+            ValueSome
+                {
+                    FilePath = filePath
+                    FirstLine = 0
+                    LastLine = 0
+                }
