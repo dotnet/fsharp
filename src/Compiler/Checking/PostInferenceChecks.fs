@@ -2181,9 +2181,29 @@ and CheckValInfo cenv env (ValReprInfo(_, args, ret)) =
 and CheckArgInfo cenv env (argInfo : ArgReprInfo)  =
     CheckAttribs cenv env (argInfo.Attribs.AsList())
 
+// Reject the attribute where the optimizer cannot act on it (see AdaptOpaqueOptimizedClosureArgs).
+and CheckOptimizeClosureIfNotInlinedAttribute cenv (v: Val) =
+    let g = cenv.g
+    let hasOptimizeClosureIfNotInlined = ArgReprInfoHasWellKnownAttribute g WellKnownValAttributes.OptimizeClosureIfNotInlinedAttribute
+    match v.ValReprInfo with
+    | Some (ValReprInfo(_, argInfos, _) as valReprInfo) when List.existsSquared hasOptimizeClosureIfNotInlined argInfos ->
+        let _, curriedArgInfos, _, _ = GetValReprTypeInFSharpForm g valReprInfo v.Type v.Range
+        for argGroup in curriedArgInfos do
+            for argTy, argInfo in argGroup do
+                if hasOptimizeClosureIfNotInlined argInfo then
+                    let m = match argInfo.Name with Some id -> id.idRange | None -> v.Range
+                    checkLanguageFeatureError g.langVersion LanguageFeature.OptimizeClosureIfNotInlined m
+                    let hasInlineIfLambda = ArgReprInfoHasWellKnownAttribute g WellKnownValAttributes.InlineIfLambdaAttribute argInfo
+                    let arity = List.length (fst (stripFunTyN g 6 argTy))
+                    let valid = v.ShouldInline && hasInlineIfLambda && List.isSingleton argGroup && arity >= 2 && arity <= 5
+                    if not valid then
+                        errorR(Error(FSComp.SR.tcOptimizeClosureIfNotInlinedRequiresInlineIfLambdaAndMultiArg(), m))
+    | _ -> ()
+
 and CheckValSpecAux permitByRefLike cenv env (v: Val) byrefError =
     v.Attribs |> CheckAttribs cenv env
     v.ValReprInfo |> Option.iter (CheckValInfo cenv env)
+    CheckOptimizeClosureIfNotInlinedAttribute cenv v
     CheckTypeAux permitByRefLike cenv env v.Range v.Type byrefError
 
 and CheckValSpec permitByRefLike cenv env v =
@@ -2248,6 +2268,7 @@ and CheckBinding cenv env alwaysCheckNoReraise ctxt (TBind(v, bindRhs, _) as bin
     v.Type |> CheckTypePermitAllByrefs cenv env v.Range
     v.Attribs |> CheckAttribs cenv env
     v.ValReprInfo |> Option.iter (CheckValInfo cenv env)
+    CheckOptimizeClosureIfNotInlinedAttribute cenv v
 
     // Check accessibility
     if (v.IsMemberOrModuleBinding || v.IsMember) && not v.IsIncrClassGeneratedMember then
@@ -2732,6 +2753,7 @@ let CheckEntityDefn cenv env (tycon: Entity) =
 
     // Abstract slots can have byref arguments and returns
     for vref in abstractSlotValsOfTycons [tycon] do
+        CheckOptimizeClosureIfNotInlinedAttribute cenv vref
         match vref.ValReprInfo with
         | Some valReprInfo ->
             let tps, argTysl, retTy, _ = GetValReprTypeInFSharpForm g valReprInfo vref.Type m
