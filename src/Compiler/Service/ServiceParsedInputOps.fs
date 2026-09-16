@@ -2476,6 +2476,18 @@ module ParsedInput =
                 | _ -> None
                 |> Option.map (fun r -> r.StartColumn)
 
+        // The line a declaration's header ends on: its leading keyword, the name it introduces and,
+        // for a nested module, the `=`. Attributes and doc comments sit above it, the body below.
+        let headerEndLine (keyword: range) (ident: LongIdent) (equals: range option) =
+            let nameEnd =
+                match List.tryLast ident with
+                | Some lastIdent -> max keyword.EndLine lastIdent.idRange.EndLine
+                | None -> keyword.EndLine
+
+            match equals with
+            | Some equalsRange -> max nameEnd equalsRange.EndLine
+            | None -> nameEnd
+
         let rec walkImplFileInput (file: ParsedImplFileInput) =
             List.iter (walkSynModuleOrNamespace []) file.Contents
 
@@ -2496,14 +2508,12 @@ module ParsedInput =
 
                 let fullIdent = parent @ ident
 
-                // Use trivia to get the actual module/namespace keyword line, which excludes attributes
-                let startLine =
+                let headerLine =
                     match trivia.LeadingKeyword with
-                    | SynModuleOrNamespaceLeadingKeyword.Module moduleRange -> moduleRange.StartLine
-                    | SynModuleOrNamespaceLeadingKeyword.Namespace namespaceRange -> namespaceRange.StartLine - 1
-                    | SynModuleOrNamespaceLeadingKeyword.None ->
-                        // No keyword (implicit module), use range.StartLine
-                        if isModule then range.StartLine else range.StartLine - 1
+                    | SynModuleOrNamespaceLeadingKeyword.Module keyword
+                    | SynModuleOrNamespaceLeadingKeyword.Namespace keyword -> headerEndLine keyword ident None
+                    // An implicit module has no header, so its first declaration opens the scope.
+                    | SynModuleOrNamespaceLeadingKeyword.None -> range.StartLine - 1
 
                 let scopeKind =
                     match isModule, parent with
@@ -2511,7 +2521,7 @@ module ParsedInput =
                     | true, _ -> NestedModule
                     | _ -> Namespace
 
-                doRange scopeKind fullIdent startLine range.StartColumn
+                doRange scopeKind fullIdent headerLine range.StartColumn
                 addModule (fullIdent, range)
                 List.iter (walkSynModuleDecl fullIdent) decls
 
@@ -2524,16 +2534,15 @@ module ParsedInput =
                 addModule (fullIdent, range)
 
                 if range.EndLine >= currentLine then
-                    // Use trivia to get the actual module keyword line, which excludes attributes
-                    let moduleKeywordLine =
+                    let headerLine =
                         match trivia.ModuleKeyword with
-                        | Some moduleKeywordRange -> moduleKeywordRange.StartLine
+                        | Some moduleKeyword -> headerEndLine moduleKeyword ident trivia.EqualsRange
                         | None -> range.StartLine // Fallback if trivia unavailable
 
                     let moduleBodyIndentation =
                         getMinColumn decls |> Option.defaultValue (range.StartColumn + 4)
 
-                    doRange NestedModule fullIdent moduleKeywordLine moduleBodyIndentation
+                    doRange NestedModule fullIdent headerLine moduleBodyIndentation
                     List.iter (walkSynModuleDecl fullIdent) decls
             | SynModuleDecl.Open(_, range) -> doRange OpenDeclaration [] range.EndLine (range.StartColumn - 5)
             | SynModuleDecl.HashDirective(_, range) -> doRange HashDirective [] range.EndLine range.StartColumn
@@ -2609,50 +2618,14 @@ module ParsedInput =
                 entities
                 |> Array.map (fun e -> e, findBestPositionToInsertOpenDeclaration modules scope pos entity)
 
-    /// Corrects insertion line number based on kind of scope and text surrounding the insertion point.
+    /// Nudges the insertion point past the blank line that conventionally follows a declaration
+    /// header, so that the `open` joins the code below it instead of the gap above it.
     let AdjustInsertionPoint (getLineStr: int -> string) ctx =
-        let line =
-            match ctx.ScopeKind with
-            | ScopeKind.TopModule ->
-                if ctx.Pos.Line > 1 then
-                    // it's an implicit module without any open declarations
-                    let line = getLineStr (ctx.Pos.Line - 2)
-
-                    let isImplicitTopLevelModule =
-                        not (line.StartsWithOrdinal("module") && not (line.EndsWithOrdinal("=")))
-
-                    if isImplicitTopLevelModule then 1 else ctx.Pos.Line
-                else
-                    1
-
-            | ScopeKind.Namespace ->
-                // For namespaces the start line is start line of the first nested entity
-                // If we are not on the first line, try to find opening namespace, and return line after it (in F# format)
-                if ctx.Pos.Line > 1 then
-                    [ 0 .. ctx.Pos.Line - 1 ]
-                    |> List.mapi (fun i line -> i, getLineStr line)
-                    |> List.tryPick (fun (i, lineStr) ->
-                        if lineStr.StartsWithOrdinal("namespace") then
-                            Some i
-                        else
-                            None)
-                    |> function
-                        // move to the next line below "namespace" and convert it to F# 1-based line number
-                        | Some line -> line + 2
-                        | None -> ctx.Pos.Line
-                // If we are on 1st line in the namespace ctx, this line _should_ be the namespace declaration, check it and return next line.
-                // Otherwise, return first line (which theoretically should not happen).
-                else
-                    let lineStr = getLineStr (ctx.Pos.Line - 1)
-
-                    if lineStr.StartsWithOrdinal("namespace") then
-                        ctx.Pos.Line + 1
-                    else
-                        ctx.Pos.Line
-
-            | _ -> ctx.Pos.Line
-
-        mkPos line ctx.Pos.Column
+        match ctx.ScopeKind with
+        | ScopeKind.TopModule
+        | ScopeKind.Namespace
+        | ScopeKind.NestedModule when getLineStr (Line.toZ ctx.Pos.Line) = "" -> mkPos (ctx.Pos.Line + 1) ctx.Pos.Column
+        | _ -> ctx.Pos
 
     let FindNearestPointToInsertOpenDeclaration
         (currentLine: int)
@@ -2695,8 +2668,8 @@ module ParsedInput =
                 | _ -> 0
 
             if lastReferenceLine > 0 then
-                // `AdjustInsertionPoint` snaps a `TopModule` position up to line 1, above the directives;
-                // remap it to `HashDirective`, which (like the other scopes) it passes through unchanged.
+                // The open belongs directly under the directives, so report the scope that keeps it
+                // there rather than the module scope, which would push it past the blank line below.
                 let scopeKind =
                     if ctx.ScopeKind = ScopeKind.TopModule then
                         ScopeKind.HashDirective
