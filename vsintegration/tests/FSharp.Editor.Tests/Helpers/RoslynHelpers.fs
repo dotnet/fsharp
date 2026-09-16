@@ -471,7 +471,7 @@ type RoslynTestHelpers private () =
                                 |]
                         }
 
-                    id, projectInfo, instanceOptions
+                    struct (id, projectInfo, instanceOptions)
             ]
 
         let solution =
