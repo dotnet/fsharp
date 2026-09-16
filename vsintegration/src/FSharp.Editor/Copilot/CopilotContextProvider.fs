@@ -422,9 +422,34 @@ type internal FSharpCopilotContextProvider
     [<ImportingConstructor>]
     (
         cache: FSharpNavigableItemsCache,
-        activeDocument: FSharpActiveDocumentTracker,
+        [<Import(typeof<SVsFullAccessServiceBroker>)>] serviceBroker: IServiceBroker,
         [<Import(AllowDefault = true)>] workspace: VisualStudioWorkspace | null
     ) =
+
+    /// The client Copilot's own document-context provider uses to reach the broker; never disposed, since
+    /// disposing it would dispose the broker it wraps, and it is meant to outlive every query.
+    let documentContexts =
+        new ServiceBrokerClient(serviceBroker, ThreadHelper.JoinableTaskFactory)
+
+    /// Where the user is, from the service that answers the same question for Copilot's own C# provider.
+    /// The proxy is null when Copilot is not installed; the picker then ranks nothing as focused.
+    let focusOf () =
+        cancellableTask {
+            let! ct = CancellableTask.getCancellationToken ()
+            use! rental = documentContexts.GetProxyAsync<ICopilotDocumentContextProvider>(CopilotDescriptors.Context.Document, ct).AsTask()
+
+            match rental.Proxy with
+            | null -> return ValueNone
+            | proxy ->
+                let! context = proxy.GetActiveDocumentAsync(CopilotCorrelationId.New(), ct)
+
+                match context with
+                | null -> return ValueNone
+                | context ->
+                    match context.TryGetValue<DocumentContext>() with
+                    | true, document -> return CopilotSymbolMapping.editorFocusOf document
+                    | _ -> return ValueNone
+        }
 
     static let moniker =
         ServiceMoniker(FSharpConstants.copilotSymbolProviderName, Version CopilotDescriptors.CurrentContextProviderVersion)
@@ -495,8 +520,9 @@ type internal FSharpCopilotContextProvider
             | null, _
             | _, [||] -> return Array.create searchTexts.Length noMentions
             | workspace, distinct ->
-                let! hits =
-                    CopilotSymbolQuery.search cache (workspace.GetOpenDocumentIds()) activeDocument.Focus workspace.CurrentSolution distinct
+                let! focus = focusOf ()
+
+                let! hits = CopilotSymbolQuery.search cache (workspace.GetOpenDocumentIds()) focus workspace.CurrentSolution distinct
 
                 let byText = Dictionary(StringComparer.Ordinal)
 
