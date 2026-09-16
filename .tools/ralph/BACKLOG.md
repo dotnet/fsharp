@@ -4,7 +4,11 @@
 
 Repair the existing PR #20562 for https://github.com/dotnet/fsharp/issues/20211 on branch `fix/issue-20211`.
 
-The failing check is `fsharp-ci (Build WindowsCompressedMetadata_Desktop Batch2)`.
+The failing checks are `fsharp-ci (Build Linux)`, `fsharp-ci (Build MacOS Batch2)`,
+`fsharp-ci (Build WindowsCompressedMetadata coreclr_release)`,
+`fsharp-ci (Build WindowsCompressedMetadata transparent_compiler_release)`,
+`fsharp-ci (Build WindowsCompressedMetadata_Desktop Batch2)`, and
+`fsharp-ci (Build WindowsNoRealsig_testCoreclr)`.
 
 First run `git fetch origin fix/issue-20211`, then `git diff origin/main...origin/fix/issue-20211`. Build on the existing changes.
 
@@ -51,125 +55,120 @@ Sources: [issue and follow-up](https://github.com/dotnet/fsharp/issues/20211), [
 
 ## Analysis
 
-### Decision: continue the existing implementation
+### Decision: preserve the implementation and repair the merged-state IL fixture
 
-Recovery inspected the fetched branch diff, issue, PR, previous sprint, execution history, and live CI logs on September 16, 2026.
-
-The actual feature is implemented and committed. Do not restart from the original two-line candidate.
+Recovery ran the required fetch and branch diff on September 16, 2026.
+It also read the previous sprint, execution log, final verifier evidence, and all six current failed-task logs.
 
 | Reference | Revision |
 |---|---|
-| Existing PR | #20562, `fix/issue-20211` |
-| Local HEAD and fetched PR head at inspection | `1dfad28cc4cdc60c5f77fa75c79ac3a07b42c0be` |
-| Main and PR base | `b5c530ed6bc42937de6363e3dcc104ebb833893d` |
-| CI build | `1598754`, testing merge `e13dc43184169c4e8af3b64402d95882afb154d8` |
+| Existing PR and branch | #20562, `fix/issue-20211` |
+| Local HEAD and fetched PR head | `d7af5d9f109806cac12ae9d47da48ce416cd2cb7` |
+| Original feature base | `b5c530ed6bc42937de6363e3dcc104ebb833893d` |
+| Current CI main parent | `c9213bc6f2ebae94a59d563319483c6ce8c527c7` |
+| Current CI merge | `53091b2e594a7d0be25ab037bedff06243318a01` |
+| Current Azure build | `1599006` |
 
-The product diff contains six compiler files, 42 regression rows, and a release note linked to #20211 and #20562.
+The fetched merge has exactly the listed main and PR parents.
+The PR head lacks three main commits, including `ec437d5ac2f` (#20422).
+That commit makes `List.forall2` inline and introduces opaque-callback adaptation.
 
-The compiler already requires the representation attribute before accepting an empty union table. It publishes known attributes early and tracks unresolved attributes by union stamp. Deferred checks use trace undo/replay. Signature checking runs the pending checks. Finalized ordinary unions avoid case scans and callbacks.
+The existing compiler fix and 42 issue rows remain implemented.
+Commit `d7af5d9f109` also already applies the three `TheoryForNETCOREAPP` guards.
+Do not repeat that repair or return to the original two-line compiler candidate.
+The supplied orchestration diff is not the product diff. Leave the runner unchanged.
 
-The supplied `Prompting.fsx`, `Ralph.fsx`, and verifier diff concerns orchestration, not this PR's product code. Do not modify those files.
+### What the previous run actually missed
 
-### Lessons from the previous run
+The execution log ends with successful verification, not a documented crash.
+Earlier iterations addressed real deferred-attribute and performance findings.
+The last recovery then spent several iterations obtaining a compatible Windows MSBuild host.
 
-The execution log ends with local verification success, not a compiler crash. The new failure is a CI configuration gap.
+The exact Desktop Batch2 command eventually passed 12,422 tests on the unmerged PR head.
+Those results do not validate the later CI merge with the changed FSharp.Core.
+Repeated source reviews and nullness selections cannot detect a changed dependency in an IL fixture.
 
-Earlier review found three real problems: early attribute publication, deferred attribute aliases, and excessive deferral for finalized unions. Commits through `610b0ea124c` address them. Preserve these changes and their tests.
+The previous statement that all remote failures concern an old, unpushed repair is now false.
+Current CI includes `d7af5d9f109`. It no longer reports the 13 Dictionary diagnostic failures.
+Always record both PR and merge revisions before reusing validation evidence.
 
-Repeated modern-runtime runs did not validate Desktop framework metadata. Release configuration alone does not establish configuration parity.
+### Diagnosis of every current failure
 
-The SDK now exists at `.dotnet\dotnet.exe`, version `11.0.100-rc.1.26420.103`. The old missing-SDK instructions are stale.
+Every listed job reports seven failures in `EmittedIL.InlineIfLambdaClosureForms+DoesNotAllocate`.
+The exact assertion is `Found in actual IL: 'newobj'`.
 
-The Release `net11.0` test runner exists. The Release `net472` runner does not exist locally. Build it before claiming Desktop validation.
+| Job | Configuration | Log | Component passed / failed / skipped |
+|---|---|---:|---|
+| Linux | Release, net11.0 | 162 | 8827 / 7 / 259 |
+| MacOS Batch2 | Release, net11.0 | 147 | 2953 / 7 / 10 |
+| WindowsCompressedMetadata coreclr_release | Release, compressed, net11.0 | 773 | 8839 / 7 / 247 |
+| WindowsCompressedMetadata transparent_compiler_release | Same, transparent compiler enabled | 772 | 8839 / 7 / 247 |
+| WindowsCompressedMetadata_Desktop Batch2 | Release, compressed, net472 on net48 x64 | 267 | 2649 / 7 / 289 |
+| WindowsNoRealsig_testCoreclr | Release, compressed, BuildNoRealsig, net11.0 | 798 | 8839 / 7 / 247 |
 
-The previous diagnostics server failed on Windows socket initialization. If compiler changes become necessary, invoke `fsharp-diagnostics` and record any limitation honestly.
+All six logs contain successful build summaries.
+These are IL fragment assertions, not build errors or `.bsl` comparisons.
+No baseline regeneration is indicated by the collected failures.
 
-### CI diagnosis
+`InlineIfLambdaClosureForms.fs:14-42` compiles the same prelude into every test.
+That prelude includes `forall2Forward`, which calls the newly inline `List.forall2`.
+`ILChecker.fs:204-221` searches the entire assembly, not just `Test.test`.
 
-The only completed failed job at inspection was `WindowsCompressedMetadata_Desktop Batch2`. Desktop Batch3 and WindowsNoRealsig Desktop were still running. Refresh all jobs before implementation and final delivery.
+All six IL dumps locate the offending constructor at `Test/forall2Forward@8::.ctor`.
+All seven tested caller bodies contain no `newobj`.
+Each log repeats its seven dumps, giving 14 caller-body copies and zero caller allocations.
+The shared helper therefore causes false negatives and can also conceal false positives in the five allocation-required controls.
 
-CI used:
+| Hypothesis | Evidence and result |
+|---|---|
+| Nullness repair broke closure elimination at the tested call sites | CI dumps show closure-free caller bodies. No caller regression demonstrated. |
+| Shared fixture became allocation-bearing after #20422 | Supported by all six dumps, whole-assembly checker code, and the `List.forall2` diff. Confirm with local merged-state RED/GREEN. |
+| Missing baseline updates or a build failure | Rejected for the six collected jobs. Builds succeed and assertions do not read baselines. |
 
-```powershell
-eng\CIBuildNoPublish.cmd -compressallmetadata -configuration Release -testDesktopBatch 2
-```
+Desktop Batch3 and WindowsNoRealsig Desktop were still running at collection.
+Refresh the timeline before implementation and final delivery. Classify any additional failures separately.
 
-Log 427 reports successful builds with zero warnings and errors. Component tests target `net472` and execute on `net48|x64`.
+### Evidence and existing tools
 
-The component run reports 2,937 tests: 2,638 passed, 13 failed, and 286 skipped. All 13 failures say:
+Current artifacts: `C:\Users\tomasgrosup\.copilot\session-state\61f33263-9eb9-40a0-b21d-926dd61c3f8f\files`.
+This directory contains the required branch diff, PR snapshot, build metadata, timeline, six complete logs, and `ci-failure-analysis.json`.
+`CI_ERRORS.md` records the current diagnosis and remaining reproduction work.
+The old sprint and backlog are archived there.
+The runner had already emptied the sprint directory. The requested scoped `rm` cleanup found zero remaining files.
 
-```text
-System.Exception : Operation succeeded (expected to fail).
-```
-
-The assertion is `tests\FSharp.Test.Utilities\Compiler.fs:2044`, not an MSBuild compiler error.
-
-| Theory in `Language.NullableRegressions` | Failing rows | Existing assertion line |
-|---|---|---|
-| `Issue 20211 - nullable constrained keys still warn` | 4 | 127 |
-| `Issue 20211 - union constraints in early attribute arguments` | 3, all `expectWarning = true` | 153 |
-| `Issue 20211 - union constraints with deferred representation attributes` | 6, all `UseNullAsTrueValue` | 265 |
-
-All failures rely on imported `Dictionary<TKey,TValue>` nullness metadata. The Desktop framework does not expose its modern `notnull` key annotation.
-
-`Utilities.fs:209-213` selects references for the test runner's framework. `typecheck` uses `TargetFramework.Current` through `CompilerAssert.TypeCheckWithOptionsAndName`.
-
-There are no observed `EmittedIL/*.bsl` mismatches. The skill script labels the generic `(Test) Failure running tests` marker as a build error. The actual log disproves that classification.
-
-### Competing hypotheses and evidence
-
-| Hypothesis | Verification | Result |
-|---|---|---|
-| Compiler build or compressed metadata emission failed | Inspect complete failed-task log and build summaries | Rejected: builds succeeded and tests executed. |
-| Desktop references lack the expected Dictionary constraint | Compare identical sources and compiler with Desktop and modern reference sets | Confirmed for constrained aliases, early attributes, and deferred attributes. |
-| Release IL baselines changed | Enumerate all 13 failed rows and assertion stacks | Rejected for this failure: every failure is `shouldFail`, not a baseline comparison. |
-
-Eight local FCS probes passed. Dictionary probes produced no diagnostics with `net472` references and FS3261 with `net11.0` references. An explicit F# `not null` constraint produced FS3261 with both reference sets.
-
-The current Release modern-runtime runner also passed all 42 issue rows, with zero skips. These used existing artifacts, not a new build.
-
-The FCS copies used by the probes and component runner have the same SHA256: `0D75E536B421139C0874AE974F5873CC2B9938D2A83B2668C6AE75C337E42303`.
-
-These probes isolate reference metadata. They do not replace a real Desktop test run or prove a CI fix has been applied.
-
-One exploratory local `NN<'T when 'T : not null>` replacement inside `module rec` lost the early-attribute warning. Do not substitute an unfinished local constraint blindly.
-
-### Persistent evidence
-
-Session artifacts are under `C:\Users\tomasgrosup\.copilot\session-state\8a029053-27d4-45ea-8a08-1a91c6b6fb41\files`:
-
-- `ci-1598754-timeline.json` contains the cross-platform timeline.
-- `ci-1598754-desktop-batch2.log` contains the complete failed task log.
-- `CI_ERRORS.md` records classification, hypotheses, and evidence limits.
-- `reference-metadata-probe.fsx` and `.log` preserve the eight reference-set checks.
-- `existing-net11-regressions.log` records the 42 passing current-branch tests.
-
-At recovery entry, all sprint files were already absent. The tracked original sprint appeared as deleted. The requested scoped `rm` cleanup found zero remaining files.
-
-Leave the unrelated untracked `.copilot-prompt.txt` and runner files untouched.
+Previous completed validation: `C:\Users\tomasgrosup\.copilot\session-state\0f9743a6-4c3e-4893-ac96-754dc0219e99\files`.
+Read `CI_ERRORS.md` there only as historical evidence.
+Reuse its existing `vs-host\MSBuild\Current\Bin\amd64\MSBuild.exe` and `run-exact.ps1` host-selection pattern.
+The compatible Full MSBuild 18.10.1 toolset is present. Do not repeat its installation investigation.
+The repository SDK is `11.0.100-rc.1.26420.103`.
 
 ## Approach
 
-Use one independently testable recovery sprint. Change the three Dictionary-metadata theories to the existing `TheoryForNETCOREAPP` attribute.
+Use one recovery sprint with tests and repair together.
+Validate the same merged source and FSharp.Core as CI, not cached unmerged binaries.
+Preserve the existing PR branch and commits. Integrate the pinned main parent without rewriting history.
 
-Preserve their sources, row sets, warning promotion, and exact diagnostics. All 42 issue rows must still execute on the modern runtime.
+Repair only the allocation fixture unless a local counterexample requires more.
+Prefer a small, explicitly non-inline test callee over dependence on `List.forall2` remaining non-inline.
+Keep all seven no-allocation and five allocation-required scenarios meaningful.
+Prove the prelude cannot satisfy allocation-required assertions by itself.
+Do not merely delete the negative assertion, skip tests, or change the optimizer.
 
-Keep the other 24 rows active on Desktop. They include explicit F# constraints, record-order controls, signature controls, and finalized-union controls.
+Run the affected class in Release across standard modern, compressed modern, transparent, no-realsig, and Desktop configurations.
+Then run the related IL/optimizer tests, original nullness selections, and complete affected Desktop batch.
+Report Windows execution as Windows execution, not native Linux or macOS validation.
+Use the collected cross-platform IL evidence to explain equivalent local coverage.
 
-This is a runtime requirement, not permission to suppress warnings or skip the entire suite. No compiler, harness, project, or baseline edit is justified by the current evidence.
+Preserve all 42 modern issue rows, 24 Desktop-active rows, and five representation controls.
+Keep the existing compiler behavior and release note. Use the required final expert review.
+Commit only validated changes locally, without pushing or publishing.
+Keep evidence in session storage. Do not add more orchestration files beyond this requested handoff.
 
-The implementer must reproduce Desktop RED, apply the narrow guards, and validate Release `net472` with `CompressAllMetadata=true`. Then run modern Release regressions and the compatibility controls.
-
-Require the full affected Desktop batch to pass after the focused checks. Its remaining projects were not reached after the failing component run.
-
-Reuse the existing release note. Obtain final expert review of the complete feature and recovery diff. Commit locally without pushing or modifying the existing PR remotely.
-
-Keep exact commands, revisions, exit codes, counts, and review findings in persistent session artifacts. Do not rerun the entire historical implementation workflow.
-
-Planning validation checks file structure, evidence links, paths, scenario coverage, and staged scope. Product changes and real Desktop GREEN remain the implementation sprint's responsibility.
+Planning ends with replacement files and a local planning commit.
+The implementation sprint owns local merged-state RED/GREEN and the product repair.
 
 ## Sprint Overview
 
 | # | Name | Purpose |
 |---|---|---|
-| 01 | Repair Desktop Nullness CI | Reproduce the 13 Desktop failures, apply narrow metadata-dependent test guards, verify both Release runtimes and the affected batch, review, and commit. |
+| 01 | Repair Merged IL Fixture | Reproduce all seven assertions with CI's FSharp.Core, repair the shared fixture, validate the configuration matrix, preserve nullness coverage, review, and commit. |
