@@ -1875,3 +1875,139 @@ let r2 = {| ...r1; C = 3 |}
                 |> Array.find (fun u -> not u.IsFromDefinition)
             if getRangeCoords su.Range <> getRangeCoords spreadUse.Range then
                 failwith $"GetSymbolUseAtLocation range %A{getRangeCoords su.Range} should match GetUsesOfSymbolInFile range %A{getRangeCoords spreadUse.Range} (no leading '...')."
+
+module FileSignature =
+    open FSharp.Compiler.NameResolution
+
+    // Copies of definitions keep the name and range, only the stamp tells them apart
+    let private stampOf (symbol: FSharpSymbol) =
+        match symbol.Item with
+        | Item.Value vref -> vref.Stamp
+        | Item.UnqualifiedType [ tcref ]
+        | Item.ModuleOrNamespaces [ tcref ] -> tcref.Stamp
+        | item -> failwith $"Unexpected item %A{item}"
+
+    let private projectFile (fileName: string) files =
+        let options = createProjectOptionsFromNamedSources files []
+        options, options.SourceFiles |> Array.find (fun path -> path.EndsWith fileName)
+
+    let private check fileName files =
+        let options, filePath = projectFile fileName files
+        let _, checkResults = parseAndCheckFile filePath (System.IO.File.ReadAllText filePath) options
+        checkResults
+
+    let private names (symbols: seq<#FSharpSymbol>) =
+        symbols |> Seq.map (fun symbol -> symbol.DisplayName) |> List.ofSeq |> List.sort
+
+    let private find name (symbols: seq<#FSharpSymbol>) =
+        symbols |> Seq.find (fun symbol -> symbol.DisplayName = name)
+
+    let private members (entity: FSharpEntity) =
+        Seq.append (Seq.cast<FSharpSymbol> entity.NestedEntities) (Seq.cast entity.MembersFunctionsAndValues)
+
+    let private shouldMatchDefinitions (checkResults: FSharpCheckFileResults) (entity: FSharpEntity) =
+        for symbol in members entity do
+            let definition =
+                checkResults |> findSymbolUse (fun u -> u.IsFromDefinition && u.Symbol.DisplayName = symbol.DisplayName)
+
+            stampOf symbol |> shouldEqual (stampOf definition.Symbol)
+
+    let private fsi = """
+module Test
+
+type Visible = class end
+
+val f: int -> int
+"""
+
+    let private fs = """
+module Test
+
+type Visible = class end
+
+type Hidden = class end
+
+let g (x: int) = x + 1
+
+let f x = g x
+"""
+
+    [<Fact>]
+    let ``FileSignature contains the declarations of the checked file only`` () =
+        let firstSource = """
+module First
+
+let x = 1
+"""
+        let secondSource = """
+module Second
+
+type U = class end
+
+let y = First.x
+"""
+        let checkResults = check "Second.fs" [ "First.fs", firstSource; "Second.fs", secondSource ]
+
+        names checkResults.PartialAssemblySignature.Entities |> shouldEqual [ "First"; "Second" ]
+        names checkResults.FileSignature.Entities |> shouldEqual [ "Second" ]
+
+        let second = checkResults.FileSignature.FindEntityByPath [ "Second" ] |> Option.get
+        names (members second) |> shouldEqual [ "U"; "y" ]
+        shouldMatchDefinitions checkResults second
+
+        // The partial assembly signature is built from a copy
+        let secondCopy = checkResults.PartialAssemblySignature.FindEntityByPath [ "Second" ] |> Option.get
+        Assert.NotEqual(stampOf (find "y" (members secondCopy)), stampOf (find "y" (members second)))
+
+    [<Fact>]
+    let ``FileSignature of an implementation file hidden by a signature file`` () =
+        let checkResults = check "Test.fs" [ "Test.fsi", fsi; "Test.fs", fs ]
+
+        let visible = checkResults.PartialAssemblySignature.FindEntityByPath [ "Test" ] |> Option.get
+        names (members visible) |> shouldEqual [ "Visible"; "f" ]
+
+        let test = checkResults.FileSignature.FindEntityByPath [ "Test" ] |> Option.get
+        names (members test) |> shouldEqual [ "Hidden"; "Visible"; "f"; "g" ]
+        shouldMatchDefinitions checkResults test
+        Assert.NotEqual(stampOf (find "f" (members visible)), stampOf (find "f" (members test)))
+
+    [<Fact>]
+    let ``FileSignature of a signature file`` () =
+        let checkResults = check "Test.fsi" [ "Test.fsi", fsi; "Test.fs", fs ]
+
+        let test = checkResults.FileSignature.FindEntityByPath [ "Test" ] |> Option.get
+        names (members test) |> shouldEqual [ "Visible"; "f" ]
+        shouldMatchDefinitions checkResults test
+
+    [<Fact>]
+    let ``FileSignature of a background check with the incremental builder`` () =
+        let checker = FSharpChecker.Create(useTransparentCompiler = false)
+        let options, filePath = projectFile "Test.fs" [ "Test.fsi", fsi; "Test.fs", fs ]
+        let _, checkResults = checker.GetBackgroundCheckResultsForFileInProject(filePath, options) |> Async.RunSynchronouslyImmediate
+
+        let test = checkResults.FileSignature.FindEntityByPath [ "Test" ] |> Option.get
+        names (members test) |> shouldEqual [ "Hidden"; "Visible"; "f"; "g" ]
+        shouldMatchDefinitions checkResults test
+
+    [<Fact>]
+    let ``Entities in FileSignature are declared in its entities`` () =
+        let fsi = """
+module Test
+
+val visible: int
+"""
+        let fs = """
+module Test
+
+let visible = 1
+
+module Hidden =
+    type Secret = class end
+"""
+        for files in [ [ "Test.fs", fs ]; [ "Test.fsi", fsi; "Test.fs", fs ] ] do
+            let checkResults = check "Test.fs" files
+            let test = checkResults.FileSignature.FindEntityByPath [ "Test" ] |> Option.get
+            let hidden = test.NestedEntities |> Seq.exactlyOne
+            let secret = hidden.NestedEntities |> Seq.exactlyOne
+            stampOf (Option.get hidden.DeclaringEntity) |> shouldEqual (stampOf test)
+            stampOf (Option.get secret.DeclaringEntity) |> shouldEqual (stampOf hidden)
