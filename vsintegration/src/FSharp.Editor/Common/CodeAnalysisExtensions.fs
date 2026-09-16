@@ -138,6 +138,7 @@ type Document with
             | ids -> ValueSome [ for id in ids -> solution.GetDocument id ])
         |> ValueOption.defaultValue []
 
+    /// The first document with the file path, from whichever project includes it.
     member document.TryGetSolutionDocumentFromPath(filePath: string) =
         document.GetSolutionDocumentsWithFilePath filePath |> Seq.tryHeadV
 
