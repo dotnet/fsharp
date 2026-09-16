@@ -3088,6 +3088,7 @@ module EstablishTypeDefinitionCores =
 
         // OK, now fill in the (partially computed) type representation
         tycon.entity_tycon_repr <- repr
+        tycon.entity_attribs <- WellKnownEntityAttribs.Create(attrs)
         attrs, getFinalAttrs
 
 #if !NO_TYPEPROVIDERS
@@ -3399,9 +3400,6 @@ module EstablishTypeDefinitionCores =
                 let envinner = MakeInnerEnvForTyconRef envinner tcref false
 
                 let implementedTys, _ = List.mapFold (mapFoldFst (TcTypeAndRecover cenv NoNewTypars checkConstraints ItemOccurrence.UseInType WarnOnIWSAM.No envinner)) tpenv explicitImplements
-
-                if firstPass then
-                    tycon.entity_attribs <- WellKnownEntityAttribs.Create(attrs)
 
                 let implementedTys, inheritedTys =
                     match synTyconRepr with

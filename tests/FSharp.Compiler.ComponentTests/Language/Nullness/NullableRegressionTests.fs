@@ -119,6 +119,37 @@ let ``Issue 20211 - nullable constrained keys still warn`` source endColumn mess
     |> withDiagnostics [Error 3261, Line 4, Col 21, Line 4, Col endColumn, message]
 
 [<Theory>]
+[<InlineData("module rec M", "", false)>]
+[<InlineData("module rec M", "[<Struct>]", false)>]
+[<InlineData("module rec M", "[<CompilationRepresentation(CompilationRepresentationFlags.None)>]", false)>]
+[<InlineData("module rec M", "[<CompilationRepresentation(CompilationRepresentationFlags.UseNullAsTrueValue)>]", true)>]
+[<InlineData("namespace rec M", "[<CompilationRepresentation(CompilationRepresentationFlags.UseNullAsTrueValue)>]", true)>]
+[<InlineData("module M", "[<CompilationRepresentation(CompilationRepresentationFlags.UseNullAsTrueValue)>]", true)>]
+let ``Issue 20211 - union constraints in early attribute arguments`` (scope: string) (attributes: string) expectWarning =
+    let result =
+        FSharp $"""
+{scope}
+open System.Collections.Generic
+open System.ComponentModel
+{attributes}
+type U = N | S of string
+[<TypeConverter(typeof<Dictionary<U,obj>>)>]
+type C = class end
+"""
+        |> asLibrary
+        |> withVersionAndCheckNulls ("preview", true)
+        |> typecheck
+
+    if expectWarning then
+        result
+        |> shouldFail
+        |> withDiagnostics [
+            Error 3261, Line 7, Col 24, Line 7, Col 41, "Nullness warning: The type 'U' uses 'null' as a representation value but a non-null type is expected."
+        ]
+    else
+        result |> shouldSucceed |> withDiagnostics []
+
+[<Theory>]
 [<InlineData("preview",true)>]
 [<InlineData("preview",false)>]
 [<InlineData("8.0",false)>]
