@@ -492,6 +492,46 @@ module internal FreeTypeVars =
     let freeInTypesLeftToRightSkippingConstraints g ty =
         accFreeInTypesLeftToRight g false true emptyFreeTyparsLeftToRight ty |> List.rev
 
+    /// The stamps of the sibling type parameters referenced by a type parameter's subtype (:>)
+    /// constraints — i.e. the parameters it must be unified after (the #20103 dependency).
+    let constraintDependencyStamps (g: TcGlobals) (tp: Typar) =
+        tp.Constraints
+        |> List.choose (function
+            | TyparConstraint.CoercesTo(ty, _) -> Some ty
+            | _ -> None)
+        |> freeInTypesLeftToRight g true
+        |> List.choose (fun ftp -> if ftp.Stamp = tp.Stamp then None else Some ftp.Stamp)
+        |> Set.ofList
+
+    /// Stable-sort the (formalTypar, actualType) unification pairs of an explicit generic
+    /// instantiation so a type parameter used in another's subtype constraint (the 'b in 'a :> I<'b>)
+    /// is unified first. Returns the pairs unchanged when no such cross-reference exists.
+    /// See https://github.com/dotnet/fsharp/issues/20103
+    let reorderTyArgsByConstraintDependencies (g: TcGlobals) (pairs: (TType * TType) list) =
+        match pairs with
+        | []
+        | [ _ ] -> pairs
+        | _ ->
+            let node pair =
+                match stripTyEqns g (fst pair) with
+                | TType_var(tp, _) -> pair, ValueSome tp.Stamp, constraintDependencyStamps g tp
+                | _ -> pair, ValueNone, Set.empty
+
+            let nodes = pairs |> List.map node
+
+            if nodes |> List.forall (fun (_, _, deps) -> Set.isEmpty deps) then
+                pairs
+            else
+                // 'a' must precede 'b' when b's subtype constraint references a's parameter.
+                let mustPrecede (_, stamp, _) (_, _, deps) =
+                    match stamp with
+                    | ValueSome s -> Set.contains s deps
+                    | ValueNone -> false
+
+                nodes
+                |> List.stableTopologicalSort mustPrecede
+                |> List.map (fun (pair, _, _) -> pair)
+
 [<AutoOpen>]
 module internal MemberRepresentation =
 

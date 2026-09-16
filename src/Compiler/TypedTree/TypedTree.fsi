@@ -123,6 +123,7 @@ type ValFlags =
     member IgnoresByrefScope: bool
 
     member InlineIfLambda: bool
+    member OptimizeClosureIfNotInlined: bool
 
     member InlineInfo: ValInline
 
@@ -164,6 +165,7 @@ type ValFlags =
     member WithIgnoresByrefScope: ValFlags
 
     member WithInlineIfLambda: ValFlags
+    member WithOptimizeClosureIfNotInlined: ValFlags
 
     member WithInlineInfo: inlineInfo: ValInline -> ValFlags
 
@@ -2057,6 +2059,7 @@ type Val =
     member SetIgnoresByrefScope: unit -> unit
 
     member SetInlineIfLambda: unit -> unit
+    member SetOptimizeClosureIfNotInlined: unit -> unit
 
     /// Sets the inline information for this value. Used by the type checker
     /// to downgrade an erroneously-recursive inline binding to non-inline
@@ -2180,6 +2183,7 @@ type Val =
 
     /// Get the inline declaration on a parameter or other non-function-declaration value, used for optimization
     member InlineIfLambda: bool
+    member OptimizeClosureIfNotInlined: bool
 
     /// Get the inline declaration on the value
     member InlineInfo: ValInline
@@ -2925,6 +2929,7 @@ type ValRef =
 
     /// Get the inline declaration on a parameter or other non-function-declaration value, used for optimization
     member InlineIfLambda: bool
+    member OptimizeClosureIfNotInlined: bool
 
     /// Determines if the values is implied by another construct, e.g. a `IsA` property is implied by the union case for A
     member IsImplied: bool
