@@ -49,7 +49,7 @@ let inline applyDirect ([<InlineIfLambda>] f: unit -> int) = f ()
             | Some path -> path
             | None -> failwith "Compilation did not produce an assembly"
 
-        let _, _, actualIL = ILChecker.verifyILAndReturnActual [ "/item:Test::test" ] path []
+        let _, _, actualIL = ILChecker.verifyILAndReturnActual [ "-item=Test::test" ] path []
         Assert.True(actualIL.Contains(" test("), $"Could not find Test.test in emitted IL:\n{actualIL}")
         Assert.True(actualIL.Contains("newobj") = expected, $"Expected closure allocation in Test.test: {expected}\n{actualIL}")
 
