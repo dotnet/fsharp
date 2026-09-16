@@ -368,9 +368,7 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
     /// The navigable item for the target symbol's declaration in the implementation document.
     member private this.FindNavigableDeclarationIn(targetSymbolUse: FSharpSymbolUse, implDocument: Document) =
         cancellableTask {
-            let! declarationRange = this.FindSymbolDeclarationInDocument(targetSymbolUse, implDocument)
-
-            match declarationRange with
+            match! this.FindSymbolDeclarationInDocument(targetSymbolUse, implDocument) with
             | None -> return ValueNone
             | Some declarationRange -> return! navigableItemAt implDocument declarationRange
         }
