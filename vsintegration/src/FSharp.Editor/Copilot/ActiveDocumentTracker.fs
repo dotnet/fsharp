@@ -10,6 +10,7 @@ open Microsoft.VisualStudio.Utilities
 
 /// The file of the editor that last took focus, and the lines its caret or selection covers - 1-based
 /// and inclusive, as the parse tree counts them.
+[<Struct>]
 type internal EditorFocus =
     {
         FilePath: string
@@ -42,7 +43,7 @@ type internal FSharpActiveDocumentListener
     (tracker: FSharpActiveDocumentTracker, textDocumentFactory: ITextDocumentFactoryService) =
 
     static let lineOf (point: SnapshotPoint) =
-        point.GetContainingLine().LineNumber + 1
+        point.Snapshot.GetLineNumberFromPosition point.Position + 1
 
     /// A selection ends before its End point: one of whole lines ends at the start of the line after them.
     static let linesOf (textView: ITextView) =
@@ -57,9 +58,10 @@ type internal FSharpActiveDocumentListener
 
     interface IWpfTextViewCreationListener with
         member _.TextViewCreated(textView: IWpfTextView) =
-            let recordFocus () =
-                match textDocumentFactory.TryGetTextDocument textView.TextBuffer with
-                | true, document ->
+            match textDocumentFactory.TryGetTextDocument textView.TextBuffer with
+            | false, _ -> ()
+            | true, document ->
+                let recordFocus () =
                     let struct (firstLine, lastLine) = linesOf textView
 
                     tracker.SetFocus
@@ -68,13 +70,20 @@ type internal FSharpActiveDocumentListener
                             FirstLine = firstLine
                             LastLine = lastLine
                         }
-                | _ -> ()
 
-            let recordWhileFocused () =
-                if textView.HasAggregateFocus then
-                    recordFocus ()
+                let recordWhileFocused () =
+                    if textView.HasAggregateFocus then
+                        recordFocus ()
 
-            textView.GotAggregateFocus.Add(fun _ -> recordFocus ())
-            textView.Caret.PositionChanged.Add(fun _ -> recordWhileFocused ())
-            textView.Selection.SelectionChanged.Add(fun _ -> recordWhileFocused ())
-            recordWhileFocused ()
+                let subscriptions =
+                    [
+                        textView.GotAggregateFocus.Subscribe(fun _ -> recordFocus ())
+                        textView.Caret.PositionChanged.Subscribe(fun _ -> recordWhileFocused ())
+                        textView.Selection.SelectionChanged.Subscribe(fun _ -> recordWhileFocused ())
+                    ]
+
+                textView.Closed.Add(fun _ ->
+                    for subscription in subscriptions do
+                        subscription.Dispose())
+
+                recordWhileFocused ()
