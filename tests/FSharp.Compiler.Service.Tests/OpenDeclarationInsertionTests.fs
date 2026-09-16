@@ -116,7 +116,33 @@ let ``Open not forced above named module in fsx`` () =
 let x = System.IO.File.ReadAllText "a"
 """
     let line = findOpenInsertionLine "test.fsx" source "System.IO"
-    // Below the `module Foo` header (line 1), inside the module.
+    // Inside the module, next to the code rather than in the gap under the header.
+    Assert.Equal(3, line)
+
+[<Fact>]  // Regression: an attribute sharing the header's line must not read as an implicit module
+let ``Open not forced above module with attribute on same line`` () =
+    let source = """[<AutoOpen>] module Foo
+
+let x = System.IO.File.ReadAllText "a"
+"""
+    let line = findOpenInsertionLine "test.fs" source "System.IO"
+    Assert.Equal(3, line)
+
+[<Fact>]  // Regression: the header line is known from the tree, not from a blank line below it
+let ``Open placed inside module without a blank line under the header`` () =
+    let source = """module Foo
+let x = System.IO.File.ReadAllText "a"
+"""
+    let line = findOpenInsertionLine "test.fs" source "System.IO"
+    Assert.Equal(2, line)
+
+[<Fact>]
+let ``Open placed under namespace without a blank line under the header`` () =
+    let source = """namespace Ns
+type T() =
+    member _.M() = System.IO.File.ReadAllText "a"
+"""
+    let line = findOpenInsertionLine "test.fs" source "System.IO"
     Assert.Equal(2, line)
 
 [<Fact>]  // Only #r/#load drive placement; other directives (#time/#help/#I/...) must not

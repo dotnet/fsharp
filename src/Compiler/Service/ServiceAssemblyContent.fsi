@@ -37,6 +37,10 @@ type public AssemblySymbol =
         /// `FSharpEntity.Namespace`.
         Namespace: ShortIdents option
 
+        /// How many leading `CleanedIdents` a plain `open` reaches: the namespace plus the enclosing
+        /// F# modules. Idents past it name types, whose contents `open type` brings into scope instead.
+        OpenableIdentCount: int
+
         /// The most narrative parent module that has `RequireQualifiedAccess` attribute.
         NearestRequireQualifiedAccessParent: ShortIdents option
 
