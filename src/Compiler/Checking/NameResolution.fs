@@ -3127,7 +3127,7 @@ let rec ResolveLongIdentInTypePrim (ncenv: NameResolver) nenv lookupKind (resInf
                                 // * is function type e.g.:
                                 // ```fsharp
                                 // member x.Prop with
-                                //    get () = fun a -> printfn $"{a}"
+                                //    get () = fun a -> printn $"{a}"
                                 // ```
                                 // which is called like this: obj.Prop 123
                                 if p.IsIndexer then
