@@ -964,13 +964,14 @@ type internal TransparentCompiler
                 // Prepare the frameworkTcImportsCache
                 let! tcGlobals, frameworkTcImports = ComputeFrameworkImports tcConfig frameworkDLLs nonFrameworkResolutions
 
-                // If the tcGlobals was loaded from a different project, langVersion and realsig may be different
-                // for each cached project.  So here we create a new tcGlobals, with the existing framework values
-                // and updated realsig and langversion
+                // If the tcGlobals was loaded from a different project, langVersion, realsig and pathMap may be
+                // different for each cached project.  So here we create a new tcGlobals, with the existing
+                // framework values and the updated realsig, langversion and pathMap
                 let tcGlobals =
                     if
                         tcGlobals.langVersion <> tcConfig.langVersion
                         || tcGlobals.realsig <> tcConfig.realsig
+                        || tcGlobals.pathMap <> tcConfig.pathMap
                     then
                         TcGlobals(
                             tcGlobals.compilingFSharpCore,
@@ -983,7 +984,7 @@ type internal TransparentCompiler
                             tcGlobals.tryFindSysTypeCcuHelper,
                             tcGlobals.emitDebugInfoInQuotations,
                             tcGlobals.noDebugAttributes,
-                            tcGlobals.pathMap,
+                            tcConfig.pathMap,
                             tcConfig.langVersion,
                             tcConfig.realsig,
                             tcConfig.compilationMode
