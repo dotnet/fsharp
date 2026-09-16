@@ -158,6 +158,51 @@ type C = class end
         result |> shouldSucceed |> withDiagnostics []
 
 [<Theory>]
+[<InlineData(false, false, "Repr", "UseNullAsTrueValue")>]
+[<InlineData(false, true, "Repr", "UseNullAsTrueValue")>]
+[<InlineData(true, false, "Repr", "UseNullAsTrueValue")>]
+[<InlineData(true, true, "Repr", "UseNullAsTrueValue")>]
+[<InlineData(false, false, "Repr", "None")>]
+[<InlineData(false, true, "Repr", "None")>]
+[<InlineData(true, false, "Repr", "None")>]
+[<InlineData(true, true, "Repr", "None")>]
+[<InlineData(false, false, "CompilationRepresentation", "UseNullAsTrueValue")>]
+[<InlineData(false, true, "CompilationRepresentation", "UseNullAsTrueValue")>]
+[<InlineData(true, false, "CompilationRepresentation", "UseNullAsTrueValue")>]
+[<InlineData(true, true, "CompilationRepresentation", "UseNullAsTrueValue")>]
+let ``Issue 20211 - record constraints before representation attributes resolve`` isSignature unionFirst (attribute: string) (flags: string) =
+    let union = $"[<{attribute}(CompilationRepresentationFlags.{flags})>]"
+    let declarations =
+        if unionFirst then
+            $"{union}\ntype U = Nil | Node of int\nand R = {{ Item: NN<U> }}"
+        else
+            $"type R = {{ Item: NN<U> }}\nand {union} U = Nil | Node of int"
+
+    let result =
+        $"""
+module M
+
+type NN<'T when 'T : not null> = {{ Value: 'T }}
+{declarations}
+and Repr = CompilationRepresentationAttribute
+"""
+        |> (if isSignature then Fsi else FSharp)
+        |> withName (if isSignature then "test.fsi" else "test.fs")
+        |> asLibrary
+        |> withVersionAndCheckNulls ("preview", true)
+        |> typecheck
+
+    if flags = "UseNullAsTrueValue" then
+        let line, column = if unionFirst then 7, 17 else 5, 18
+        result
+        |> shouldFail
+        |> withDiagnostics [
+            Error 3261, Line line, Col column, Line line, Col (column + 5), "Nullness warning: The type 'U' uses 'null' as a representation value but a non-null type is expected."
+        ]
+    else
+        result |> shouldSucceed |> withDiagnostics []
+
+[<Theory>]
 [<InlineData("module rec M", "UseNullAsTrueValue", false)>]
 [<InlineData("namespace rec M", "UseNullAsTrueValue", false)>]
 [<InlineData("module M", "UseNullAsTrueValue", false)>]

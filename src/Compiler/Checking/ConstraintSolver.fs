@@ -2962,8 +2962,8 @@ and SolveTypeUseNotSupportsNull (csenv: ConstraintSolverEnv) ndeep m2 (trace: Op
                 do! AddConstraint csenv ndeep m2 trace tp (TyparConstraint.NotSupportsNull m)
             | ValueNone ->
                 match tryTcrefOfAppTy g ty with
-                | ValueSome tcref when tcref.IsUnionTycon && tcref.UnionCasesArray.Length = 0 ->
-                    // Representation attributes can still be unresolved while union cases are provisional.
+                | ValueSome tcref when not tcref.TypeContents.tcaug_closed && CanHaveUseNullAsTrueValueAttribute g tcref.Deref ->
+                    // Representation attributes can remain unresolved after union cases are populated.
                     trace.Exec
                         (fun () ->
                             csenv.SolverState.PushPostInferenceCheck (preDefaults=true, check = fun () ->
