@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="zh-Hans" original="../FSComp.resx">
     <body>
@@ -317,11 +317,6 @@
         <target state="new">Allow object expressions without overrides</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureArithmeticInLiterals">
-        <source>Arithmetic and logical operations in literals, enum definitions and attributes</source>
-        <target state="translated">文本、枚举定义和属性中的算术和逻辑运算</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureAttributesToRightOfModuleKeyword">
         <source>attributes to the right of the 'module' keyword</source>
         <target state="translated">"module" 关键字右侧的属性</target>
@@ -357,11 +352,6 @@
         <target state="translated">灵活类型的约束交集</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureDefaultInterfaceMemberConsumption">
-        <source>default interface member consumption</source>
-        <target state="translated">默认接口成员消耗</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureDeprecatePlacesWhereSeqCanBeOmitted">
         <source>Deprecate places where 'seq' can be omitted</source>
         <target state="new">Deprecate places where 'seq' can be omitted</target>
@@ -375,11 +365,6 @@
       <trans-unit id="featureDontWarnOnUppercaseIdentifiersInBindingPatterns">
         <source>Don't warn on uppercase identifiers in binding patterns</source>
         <target state="new">Don't warn on uppercase identifiers in binding patterns</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureDotlessFloat32Literal">
-        <source>dotless float32 literal</source>
-        <target state="translated">无点 float32 文本</target>
         <note />
       </trans-unit>
       <trans-unit id="featureEmptyBodiedComputationExpressions">
@@ -417,24 +402,9 @@
         <target state="new">error (rather than warning) when an enforced compiler-semantic attribute is present in the .fs but missing from the .fsi</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureErrorReportingOnStaticClasses">
-        <source>Error reporting on static classes</source>
-        <target state="translated">有关静态类的错误报告</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureExpandedMeasurables">
         <source>more types support units of measure</source>
         <target state="translated">更多类型支持度量单位</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureExtendedFixedBindings">
-        <source>extended fixed bindings for byref and GetPinnableReference</source>
-        <target state="translated">byref 和 GetPinnableReference 的扩展固定绑定</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureExtendedStringInterpolation">
-        <source>Extended string interpolation similar to C# raw string literals.</source>
-        <target state="translated">扩展字符串内插类似于 C# 原始字符串字面量。</target>
         <note />
       </trans-unit>
       <trans-unit id="featureExtensionConstraintSolutions">
@@ -455,11 +425,6 @@
       <trans-unit id="featureImprovedImpliedArgumentNamesPartTwo">
         <source>Improved implied argument names with partial application</source>
         <target state="new">Improved implied argument names with partial application</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureInterfacesWithAbstractStaticMembers">
-        <source>static abstract interface members</source>
-        <target state="translated">静态抽象接口成员</target>
         <note />
       </trans-unit>
       <trans-unit id="featureLowerInterpolatedStringToConcat">
@@ -492,11 +457,6 @@
         <target state="translated">标记为文本和 IL 常量的字符串值为 printf 格式</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureNonVariablePatternsToRightOfAsPatterns">
-        <source>non-variable patterns to the right of 'as' patterns</source>
-        <target state="translated">"as" 模式右侧的非变量模式</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureNotNullIfNotNull">
         <source>honor the 'NotNullIfNotNull' attribute on a method's return value</source>
         <target state="new">honor the 'NotNullIfNotNull' attribute on a method's return value</target>
@@ -507,14 +467,14 @@
         <target state="new">nullness checking</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureOptimizeClosureIfNotInlined">
+        <source>optimize a curried closure argument when its inlining fails</source>
+        <target state="new">optimize a curried closure argument when its inlining fails</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureOverloadResolutionPriority">
         <source>Support for OverloadResolutionPriorityAttribute to prioritize method overloads.</source>
         <target state="new">Support for OverloadResolutionPriorityAttribute to prioritize method overloads.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureOverloadsForCustomOperations">
-        <source>overloads for custom operations</source>
-        <target state="translated">自定义操作的重载</target>
         <note />
       </trans-unit>
       <trans-unit id="featurePackageManagement">
@@ -620,6 +580,11 @@
       <trans-unit id="featureSupportWarnWhenUnitPassedToObjArg">
         <source>Warn when unit is passed to a member accepting `obj` argument, e.g. `Method(o:obj)` will warn if called via `Method()`.</source>
         <target state="new">Warn when unit is passed to a member accepting `obj` argument, e.g. `Method(o:obj)` will warn if called via `Method()`.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureTypeArgumentDependencyOrdering">
+        <source>ordering explicit type arguments by their constraint dependencies</source>
+        <target state="new">ordering explicit type arguments by their constraint dependencies</target>
         <note />
       </trans-unit>
       <trans-unit id="featureUnionIsPropertiesVisible">
@@ -737,6 +702,11 @@
         <target state="translated">"InlineIfLambda" 属性存在于签名中，但实现中不存在。</target>
         <note />
       </trans-unit>
+      <trans-unit id="implMissingOptimizeClosureIfNotInlined">
+        <source>The 'OptimizeClosureIfNotInlined' attribute is present in the signature but not the implementation.</source>
+        <target state="new">The 'OptimizeClosureIfNotInlined' attribute is present in the signature but not the implementation.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="invalidXmlDocPosition">
         <source>XML comment is not placed on a valid language element.</source>
         <target state="translated">未将 XML 注释放在有效语言元素上。</target>
@@ -780,11 +750,6 @@
       <trans-unit id="lexColonDirectiveMustBeFirst">
         <source>#: directives must start at the beginning of a line</source>
         <target state="new">#: directives must start at the beginning of a line</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="lexExtendedStringInterpolationNotSupported">
-        <source>Extended string interpolation is not supported in this version of F#.</source>
-        <target state="translated">此版本的 F# 不支持扩展字符串内插。</target>
         <note />
       </trans-unit>
       <trans-unit id="lexHashElifAfterElse">
@@ -1282,6 +1247,11 @@
         <target state="translated">此状态机不可静态编译，并且没有可用的替代方法。{0}。 请使用 "if __useResumableCode 然后 &lt;state-machine&gt; else &lt;alternative&gt;' 以提供替代方法。</target>
         <note />
       </trans-unit>
+      <trans-unit id="runtimeStaticAbstractInterfaceMembers">
+        <source>static abstract interface members</source>
+        <target state="new">static abstract interface members</target>
+        <note />
+      </trans-unit>
       <trans-unit id="scriptSdkNotDetermined">
         <source>The .NET SDK for this script could not be determined. If the script is in a directory using a 'global.json' then ensure the relevant .NET SDK is installed. The output from '{0} --version' in the directory '{1}' was: '{2}' and the exit code was '{3}'.</source>
         <target state="translated">无法确定此脚本的 .NET SDK。如果脚本在使用 "global.json" 的目录中，请确保已安装相关的 .NET SDK。目录“{1}”中 "{0} --version" 的输出为“{2}”，退出代码为“{3}”。</target>
@@ -1635,6 +1605,11 @@
       <trans-unit id="tcOnlyStructsCanHaveExtendedLayout">
         <source>Only structs may be given the 'ExtendedLayoutAttribute'</source>
         <target state="new">Only structs may be given the 'ExtendedLayoutAttribute'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcOptimizeClosureIfNotInlinedRequiresInlineIfLambdaAndMultiArg">
+        <source>The 'OptimizeClosureIfNotInlined' attribute requires 'InlineIfLambda' on a separately curried parameter of an inline function or method whose type is a curried F# function of arity 2 to 5.</source>
+        <target state="new">The 'OptimizeClosureIfNotInlined' attribute requires 'InlineIfLambda' on a separately curried parameter of an inline function or method whose type is a curried F# function of arity 2 to 5.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcOtherThenAdjacentListArgumentNeedsAdjustment">

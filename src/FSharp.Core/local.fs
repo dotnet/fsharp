@@ -974,11 +974,11 @@ module internal List =
             takeWhileFreshConsTail cons p xs
             cons
 
-    let rec tryLastV (list: 'T list) = 
+    let rec tryLastV (list: 'T list) =
         match list with
         | [] -> ValueNone
-        | [x] -> ValueSome x        
-        | _ :: tail -> tryLastV tail           
+        | [x] -> ValueSome x
+        | _ :: tail -> tryLastV tail
 
 module internal Array =
 
@@ -1085,12 +1085,12 @@ module internal Array =
             Array.Sort<_, _>(keys, array, fastComparerForArraySort())
 
     let unstableSortInPlace (array: 'T array) =
-        if array.Length > 1 then 
+        if array.Length > 1 then
             Array.Sort<_>(array, fastComparerForArraySort())
 
     let stableSortWithKeysAndComparer (cFast:IComparer<'Key> | null) (c:IComparer<'Key>) (array:array<'T>) (keys:array<'Key>)  =
 
-        // 'places' is an array or integers storing the permutation performed by the sort        
+        // 'places' is an array or integers storing the permutation performed by the sort
         let len = array.Length
         let places = zeroCreateUnchecked len
         for i = 0 to len - 1 do
@@ -1181,17 +1181,17 @@ module internal Seq =
     let tryLastV (source : seq<_>) =
         //checkNonNull "source" source //done in main Seq.tryLast
         match source with
-        | :? ('T array) as a -> 
+        | :? ('T array) as a ->
             if a.Length = 0 then ValueNone
             else ValueSome(a.[a.Length - 1])
-        
+
         | :? ('T IList) as a -> //ResizeArray and other collections
             if a.Count = 0 then ValueNone
             else ValueSome(a.[a.Count - 1])
-        
-        | :? ('T list) as a -> List.tryLastV a 
-        
-        | _ -> 
+
+        | :? ('T list) as a -> List.tryLastV a
+
+        | _ ->
             use e = source.GetEnumerator()
             if e.MoveNext() then
                 let mutable res = e.Current

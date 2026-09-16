@@ -374,7 +374,7 @@ let reqdItemOrder =
 /// The reqdTypars   are the free reqdTypars of the defns, and those required by any direct TLR arity-met calls.
 /// The reqdItems are the ids/subEnvs required from calls to freeVars.
 type ReqdItemsForDefn =
-    { 
+    {
         reqdTypars: Zset<Typar>
         reqdItems: Zset<ReqdItem>
         m: range
@@ -528,9 +528,9 @@ module Pass2_DetermineReqdItems =
     ///   "app (f, tps, args)"                             - occurrence
     ///
     /// On intercepted nodes, must recurseF fold to collect from subexpressions.
-    let ExprEnvIntercept (tlrS, arityM) recurseF noInterceptF z expr = 
+    let ExprEnvIntercept (tlrS, arityM) recurseF noInterceptF z expr =
 
-         let accInstance z (fvref: ValRef, tps, args) = 
+         let accInstance z (fvref: ValRef, tps, args) =
              let f = fvref.Deref
              match Zmap.tryFind f arityM with
 
@@ -557,49 +557,49 @@ module Pass2_DetermineReqdItems =
              // what determines env?
              let frees = FreeInBindings tlrBs
              // put in env
-             let reqdTypars0 = frees.FreeTyvars.FreeTypars |> Zset.elements     
-             // occurrences contribute to env 
+             let reqdTypars0 = frees.FreeTyvars.FreeTypars |> Zset.elements
+             // occurrences contribute to env
              let reqdVals0 = frees.FreeLocals |> Zset.elements
-             // tlrBs are not reqdVals0 for themselves 
-             let reqdVals0 = reqdVals0 |> List.filter (fclass.Contains >> not) 
-             let reqdVals0 = reqdVals0 |> Zset.ofList valOrder 
-             // collect into env over bodies 
+             // tlrBs are not reqdVals0 for themselves
+             let reqdVals0 = reqdVals0 |> List.filter (fclass.Contains >> not)
+             let reqdVals0 = reqdVals0 |> Zset.ofList valOrder
+             // collect into env over bodies
              let z = PushFrame fclass (reqdTypars0, reqdVals0,m) z
-             let z = (z, tlrBs) ||> List.fold (foldOn (fun b -> b.Expr) recurseF) 
+             let z = (z, tlrBs) ||> List.fold (foldOn (fun b -> b.Expr) recurseF)
              let z = SaveFrame fclass z
-             // for bindings not marked TRL, collect 
-             let z = (z, nonTlrBs) ||> List.fold (foldOn (fun b -> b.Expr) recurseF) 
+             // for bindings not marked TRL, collect
+             let z = (z, nonTlrBs) ||> List.fold (foldOn (fun b -> b.Expr) recurseF)
              z
 
          match expr with
-         | Expr.Val (v, _, _) -> 
+         | Expr.Val (v, _, _) ->
              accInstance z (v, [], [])
 
-         | Expr.Op (TOp.LValueOp (_, v), _tys, args, _) -> 
+         | Expr.Op (TOp.LValueOp (_, v), _tys, args, _) ->
              let z = accInstance z (v, [], [])
              List.fold recurseF z args
 
-         | Expr.App (f, fty, tys, args, m) -> 
+         | Expr.App (f, fty, tys, args, m) ->
              let f, _fty, tys, args, _m = destApp (f, fty, tys, args, m)
              match f with
              | Expr.Val (f, _, _) ->
-                 // YES: APP vspec tps args - log 
+                 // YES: APP vspec tps args - log
                  let z = accInstance z (f, tys, args)
                  List.fold recurseF z args
              | _ ->
-                 // NO: app, but function is not val - no log 
+                 // NO: app, but function is not val - no log
                  noInterceptF z expr
 
-         | Expr.LetRec (binds, body, m, _) -> 
+         | Expr.LetRec (binds, body, m, _) ->
              let z = accBinds m z binds
              recurseF z body
 
-         | Expr.Let (bind,body,m,_) -> 
+         | Expr.Let (bind,body,m,_) ->
              let z = accBinds m z [bind]
              // tailcall for linear sequences
              recurseF z body
 
-         | _ -> 
+         | _ ->
              noInterceptF z expr
 
     /// Initially, reqdTypars(fclass) = freetps(bodies).
@@ -698,13 +698,13 @@ type PackedReqdItems =
     {
         /// The actual typars
         ep_etps: Typars
-      
+
         /// The actual env carrier values
         ep_aenvs: Val   list
-        
+
         /// Sequentially define the aenvs in terms of the fvs
         ep_pack: Bindings
-        
+
         /// Sequentially define the fvs   in terms of the aenvs
         ep_unpack: Bindings
     }
@@ -990,7 +990,7 @@ module Pass4_RewriteAssembly =
 
     let AdjustBindToValRepr g (TBind(v, repr, _)) =
         match v.ValReprInfo with
-        | None -> 
+        | None ->
             v.SetValReprInfo (Some (InferValReprInfoOfBinding g AllowTypeDirectedDetupling.Yes v repr ))
             // Things that don't have an arity from type inference but are top-level are compiler-generated
             v.SetIsCompilerGenerated(true)
@@ -1018,8 +1018,8 @@ module Pass4_RewriteAssembly =
             let vsExprs = vss |> List.map (mkRefTupledVars penv.g m)
             let fHat = Zmap.force fOrig penv.fHatM ("fRebinding", nameOfVal)
 
-            // REVIEW: is this mutation really, really necessary? 
-            // Why are we applying TLR if the thing already has an arity? 
+            // REVIEW: is this mutation really, really necessary?
+            // Why are we applying TLR if the thing already has an arity?
             let fOrig = ClearValReprInfo fOrig
 
             let fBind =
@@ -1130,13 +1130,13 @@ module Pass4_RewriteAssembly =
         penv.stackGuard.Guard(fun () ->
 
         match expr with
-        // Use TransLinearExpr with a rebuild-continuation for some forms to avoid stack overflows on large terms 
+        // Use TransLinearExpr with a rebuild-continuation for some forms to avoid stack overflows on large terms
         | LinearOpExpr _
-        | LinearMatchExpr _ 
+        | LinearMatchExpr _
         | Expr.LetRec _ // note, Expr.LetRec not normally considered linear, but keeping it here as it's always been here
-        | Expr.Let    _ 
+        | Expr.Let    _
         | Expr.DebugPoint _
-        | Expr.Sequential _ -> 
+        | Expr.Sequential _ ->
              TransLinearExpr penv z expr id
 
         // app - call sites may require z.
@@ -1168,7 +1168,7 @@ module Pass4_RewriteAssembly =
             let iimpls, z =
                 (z, iimpls) ||> List.mapFold (fun z (tType, objExprs) ->
                     let objExprs', z' = List.mapFold (TransMethod penv) z objExprs
-                    (tType, objExprs'), z') 
+                    (tType, objExprs'), z')
             let expr = Expr.Obj (newUnique(), ty, basev, basecall, overrides, iimpls, m)
             let pds, z = ExtractPreDecs z
             MakePreDecs m pds expr, z (* if TopLevel, lift preDecs over the ilobj expr *)
@@ -1194,21 +1194,21 @@ module Pass4_RewriteAssembly =
             let targets = Array.toList targets
             let dtree, z = TransDecisionTree penv z dtree
             let targets, z = List.mapFold (TransDecisionTreeTarget penv) z targets
-            // TransDecisionTreeTarget wraps EnterInner/exitInner, so need to collect any top decs 
+            // TransDecisionTreeTarget wraps EnterInner/exitInner, so need to collect any top decs
             let pds,z = ExtractPreDecs z
             MakePreDecs m pds (mkAndSimplifyMatch spBind mExpr m ty dtree targets), z
 
-        // all others - below - rewrite structurally - so boiler plate code after this point... 
-        | Expr.Const _ -> 
-            expr,z 
+        // all others - below - rewrite structurally - so boiler plate code after this point...
+        | Expr.Const _ ->
+            expr,z
 
-        | Expr.Quote (a,dataCell,isFromQueryExpression,m,ty) -> 
-            let doData (typeDefs,argTypes,argExprs,data) z = 
+        | Expr.Quote (a,dataCell,isFromQueryExpression,m,ty) ->
+            let doData (typeDefs,argTypes,argExprs,data) z =
                 let argExprs,z = List.mapFold (TransExpr penv) z argExprs
                 (typeDefs,argTypes,argExprs,data), z
 
             let data, z =
-                match dataCell.Value with 
+                match dataCell.Value with
                 | Some (data1, data2) ->
                    let data1, z = doData data1 z
                    let data2, z = doData data2 z
@@ -1217,7 +1217,7 @@ module Pass4_RewriteAssembly =
 
             Expr.Quote (a,ref data,isFromQueryExpression,m,ty),z
 
-        | Expr.Op (c,tyargs,args,m) -> 
+        | Expr.Op (c,tyargs,args,m) ->
             let args,z = List.mapFold (TransExpr penv) z args
             Expr.Op (c,tyargs,args,m),z
 
@@ -1226,14 +1226,14 @@ module Pass4_RewriteAssembly =
             let e3,z = TransExpr penv z e3
             Expr.StaticOptimization (constraints,e2,e3,m),z
 
-        | Expr.TyChoose (_,_,m) -> 
+        | Expr.TyChoose (_,_,m) ->
             error(Error(FSComp.SR.tlrUnexpectedTExpr(),m))
 
         | Expr.WitnessArg (_witnessInfo, _m) ->
             expr, z)
 
-    /// Walk over linear structured terms in tail-recursive loop, using a continuation 
-    /// to represent the rebuild-the-term stack 
+    /// Walk over linear structured terms in tail-recursive loop, using a continuation
+    /// to represent the rebuild-the-term stack
     and TransLinearExpr penv z expr (contf: Expr * RewriteState -> Expr * RewriteState) =
         match expr with
         | Expr.Sequential (e1, e2, dir, m) ->
@@ -1293,7 +1293,7 @@ module Pass4_RewriteAssembly =
              TransLinearExpr penv z argLast (contf << (fun (argLast, z) ->
                  rebuildLinearOpExpr (op, tyargs, argsHead, argLast, m), z))
 
-         | _ -> 
+         | _ ->
             // not a linear expression
             contf (TransExpr penv z expr)
 

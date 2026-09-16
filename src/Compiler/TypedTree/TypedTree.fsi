@@ -123,6 +123,7 @@ type ValFlags =
     member IgnoresByrefScope: bool
 
     member InlineIfLambda: bool
+    member OptimizeClosureIfNotInlined: bool
 
     member InlineInfo: ValInline
 
@@ -162,6 +163,7 @@ type ValFlags =
     member WithIgnoresByrefScope: ValFlags
 
     member WithInlineIfLambda: ValFlags
+    member WithOptimizeClosureIfNotInlined: ValFlags
 
     member WithInlineInfo: inlineInfo: ValInline -> ValFlags
 
@@ -494,13 +496,6 @@ type Entity =
 
     /// Set the custom attributes wrapper on an F# type definition.
     member SetEntityAttribs: WellKnownEntityAttribs -> unit
-
-    /// Check if this entity has a specific well-known attribute, computing and caching flags if needed.
-    member HasWellKnownAttribute:
-        flag: WellKnownEntityAttributes * computeFlags: (Attribs -> WellKnownEntityAttributes) -> bool
-
-    /// Get the computed well-known attribute flags, computing and caching if needed.
-    member GetWellKnownEntityFlags: computeFlags: (Attribs -> WellKnownEntityAttributes) -> WellKnownEntityAttributes
 
     member SetCompiledName: name: string option -> unit
 
@@ -2050,10 +2045,6 @@ type Val =
 
     member SetValAttribs: attribs: WellKnownValAttribs -> unit
 
-    /// Check if this val has a specific well-known attribute, computing and caching flags if needed.
-    member HasWellKnownAttribute:
-        flag: WellKnownValAttributes * computeFlags: (Attribs -> WellKnownValAttributes) -> bool
-
     /// Set all the data on a value
     member SetData: tg: ValData -> unit
 
@@ -2064,6 +2055,7 @@ type Val =
     member SetIgnoresByrefScope: unit -> unit
 
     member SetInlineIfLambda: unit -> unit
+    member SetOptimizeClosureIfNotInlined: unit -> unit
 
     /// Sets the inline information for this value. Used by the type checker
     /// to downgrade an erroneously-recursive inline binding to non-inline
@@ -2185,6 +2177,7 @@ type Val =
 
     /// Get the inline declaration on a parameter or other non-function-declaration value, used for optimization
     member InlineIfLambda: bool
+    member OptimizeClosureIfNotInlined: bool
 
     /// Get the inline declaration on the value
     member InlineInfo: ValInline
@@ -2927,6 +2920,7 @@ type ValRef =
 
     /// Get the inline declaration on a parameter or other non-function-declaration value, used for optimization
     member InlineIfLambda: bool
+    member OptimizeClosureIfNotInlined: bool
 
     /// Determines if the values is implied by another construct, e.g. a `IsA` property is implied by the union case for A
     member IsImplied: bool

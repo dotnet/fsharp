@@ -228,8 +228,6 @@ module ExtendedFixedBindings =
     [<Theory>]
     [<InlineData("preview")>]
     let ``Pin address of explicit field on this with default constructor class syntax`` langVersion =
-        // I think F# 7 and lower should have allowed this and that this was really just a bug, but we should preserve the existing behavior
-        // when turning the feature off
         FsFromPath (__SOURCE_DIRECTORY__ ++ "PinAddressOfExplicitFieldOnThisWithDefaultCtorClassSyntax.fs")
         |> withLangVersion langVersion
         |> ignoreWarnings

@@ -282,13 +282,7 @@ and TcPatAndRecover warnOnUpper cenv (env: TcEnv) valReprInfo (vFlags: TcPatValF
 ///    the second-phase function in terms of a List.map from names to actual
 ///    value specifications.
 and TcPat warnOnUpper (cenv: cenv) env valReprInfo vFlags (patEnv: TcPatLinearEnv) ty synPat =
-    let g = cenv.g
     let ad = env.AccessRights
-
-    match synPat with
-    | SynPat.As (_, SynPat.Named _, _) -> ()
-    | SynPat.As (_, _, m) -> checkLanguageFeatureAndRecover g.langVersion LanguageFeature.NonVariablePatternsToRightOfAsPatterns m
-    | _ -> ()
 
     match synPat with
     | SynPat.Const (synConst, m) ->
@@ -412,7 +406,7 @@ and TcPatUnnamedAs warnOnUpper cenv env vFlags patEnv ty pat1 pat2 m =
             AllIdsOK
         else
             warnOnUpper
-    
+
     let pat2R, patEnvR = TcPat warnOnUpperForPat2 cenv env None vFlags patEnv1 ty pat2
     let phase2 values = TPat_conjs([pat1R values; pat2R values], m)
     phase2, patEnvR
@@ -505,11 +499,11 @@ and TcRecordPat warnOnUpper (cenv: cenv) env vFlags patEnv ty fieldPats m =
         |> List.map (fun (NamePatPairField (fieldName = SynLongIdent (id = Last fieldId))) -> fieldId)
 
     let fieldPats =
-        fieldPats 
+        fieldPats
         |> List.map (fun (NamePatPairField(fieldName = fieldLid; pat = pat)) ->
             let path, fieldId = List.frontAndBack fieldLid.LongIdent
             fieldId, ExplicitOrSpread.Explicit (path, pat))
-    
+
     CheckRecdExprDuplicateFields idents
     match BuildFieldMap cenv env false ty fieldPats m with
     | None -> (fun _ -> TPat_error m), patEnv
@@ -714,7 +708,7 @@ and TcPatLongIdentUnionCaseOrExnCase warnOnUpper cenv env ad vFlags patEnv ty (m
             let extraPatterns = List ()
 
             for NamePatPairField(fieldName = fieldLid; pat = pat) in pairs do
-                let id = 
+                let id =
                     match fieldLid.LongIdent with
                     | [id] -> id
                     | lid -> snd (List.frontAndBack lid)

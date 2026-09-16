@@ -8,6 +8,9 @@ description: |
   every F# project — plus the VS integration shims. Creates an issue with
   findings and can submit a draft PR for safe, low-risk fixes.
 
+imports:
+  - shared/model-defaults.md
+
 on:
   schedule: weekly
   workflow_dispatch:

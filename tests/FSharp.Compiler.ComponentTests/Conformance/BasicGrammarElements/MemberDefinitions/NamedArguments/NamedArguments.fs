@@ -180,6 +180,6 @@ let result = Provided.C.M({arguments})"""
             |> eval
 
         if shouldReject then
-            result |> shouldFail |> withErrorCode 3916
+            result |> shouldFail |> withErrorCode 3918
         else
             result |> shouldSucceed

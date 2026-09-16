@@ -869,13 +869,6 @@ let NormalizeErrorRichText (text: RichText) =
 
     RichText.ofParts (parts.ToArray())
 
-/// Indicates whether a language feature check should be skipped. Typically used in recursive functions
-/// where we don't want repeated recursive calls to raise the same diagnostic multiple times.
-[<RequireQualifiedAccess>]
-type internal SuppressLanguageFeatureCheck =
-    | Yes
-    | No
-
 let internal languageFeatureError (langVersion: LanguageVersion) (langFeature: LanguageFeature) (m: range) =
     let featureStr = LanguageVersion.GetFeatureString langFeature
     let currentVersionStr = langVersion.SpecifiedVersionString

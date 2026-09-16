@@ -6,41 +6,32 @@ module internal FSharp.Compiler.Features
 /// LanguageFeature enumeration
 [<RequireQualifiedAccess>]
 type LanguageFeature =
-    | DotlessFloat32Literal
     | PackageManagement
     | FromEndSlicing
     | ResumableStateMachines
-    | DefaultInterfaceMemberConsumption
     | WitnessPassing
     | AdditionalTypeDirectedConversions
     | StringInterpolation
-    | OverloadsForCustomOperations
     | ExpandedMeasurables
     | NullnessChecking
     | RefCellNotationInformationals
     | UnionIsPropertiesVisible
-    | NonVariablePatternsToRightOfAsPatterns
     | AttributesToRightOfModuleKeyword
     | ReallyLongLists
     | ErrorOnDeprecatedRequireQualifiedAccess
     | RequiredPropertiesSupport
-    | InterfacesWithAbstractStaticMembers
     | SelfTypeConstraints
     | MatchNotAllowedForUnionCaseWithNoData
     | CSharpExtensionAttributeNotRequired
     | ErrorForNonVirtualMembersOverrides
-    | ArithmeticInLiterals
-    | ErrorReportingOnStaticClasses
     | WarningWhenCopyAndUpdateRecordChangesAllFields
     | NonInlineLiteralsAsPrintfFormat
-    | ExtendedStringInterpolation
     | WarningWhenMultipleRecdTypeChoice
     | ConstraintIntersectionOnFlexibleTypes
     | StaticLetInRecordsDusEmptyTypes
     | WarningWhenTailRecAttributeButNonTailRecUsage
     | UnmanagedConstraintCsharpInterop
     | ReuseSameFieldsInStructUnions
-    | ExtendedFixedBindings
     /// RFC-1137
     | PreferExtensionMethodOverPlainProperty
     | WarningIndexedPropertiesGetSetSameType
@@ -81,7 +72,9 @@ type LanguageFeature =
     | ImprovedImpliedArgumentNamesPartTwo
     | RecordSpreads
     | RequireNamedArgument
+    | TypeArgumentDependencyOrdering
     | ErrorOnBitwiseOpsOnNonIntegralEnums
+    | OptimizeClosureIfNotInlined
 
 /// LanguageVersion management
 type LanguageVersion =
