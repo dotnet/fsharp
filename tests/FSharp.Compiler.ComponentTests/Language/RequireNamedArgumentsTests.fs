@@ -6,27 +6,21 @@ open Xunit
 open FSharp.Test
 open FSharp.Test.Compiler
 
-/// FS-1095: RequireNamedArgumentAttribute (recognised by full type name) forces named-argument call syntax.
-module RequireNamedArgumentTests =
+/// FS-1095: RequireNamedArgumentsAttribute (recognised by full type name) forces named-argument call syntax.
+module RequireNamedArgumentsTests =
 
-    let private fsPolyfillTargeting (targets: string) =
-        $"""
-namespace System.Runtime.CompilerServices
+    let private fsPolyfill =
+        """
+namespace System.Diagnostics.CodeAnalysis
 
 open System
 
-[<AttributeUsage({targets})>]
-type RequireNamedArgumentAttribute() =
+[<Sealed; AttributeUsage(AttributeTargets.Method ||| AttributeTargets.Constructor ||| AttributeTargets.Property ||| AttributeTargets.Delegate ||| AttributeTargets.Parameter, AllowMultiple = false, Inherited = false)>]
+type RequireNamedArgumentsAttribute() =
     inherit Attribute()
 """
 
-    let private fsPolyfill = fsPolyfillTargeting "AttributeTargets.Method"
-
     let private withPolyfill (extra: string) = FSharp(fsPolyfill + extra)
-
-    // Variant that also targets constructors, so the constructor fixtures can apply it without an AttributeUsage error at the declaration.
-    let private withPolyfillCtor (extra: string) =
-        FSharp(fsPolyfillTargeting "AttributeTargets.Method ||| AttributeTargets.Constructor" + extra)
 
     let private acceptsNamed cu =
         cu |> withLangVersionPreview |> typecheck |> shouldSucceed |> ignore
@@ -51,30 +45,28 @@ type RequireNamedArgumentAttribute() =
         withPolyfill """
 namespace AnnotatedLib
 
-open System.Runtime.CompilerServices
+open System.Diagnostics.CodeAnalysis
 
 type Api =
-    [<RequireNamedArgument>]
+    [<RequireNamedArguments>]
     static member Add(x: int, y: int) = x + y
 """
         |> asLibrary
         |> withName "FsAnnotatedLib"
 
-    let private csPolyfillTargeting (targets: string) =
+    let private csPolyfill =
         """
 using System;
-using System.Runtime.CompilerServices;
+using System.Diagnostics.CodeAnalysis;
 
-namespace System.Runtime.CompilerServices
+namespace System.Diagnostics.CodeAnalysis
 {
-    [AttributeUsage(""" + targets + """, AllowMultiple = false, Inherited = false)]
-    public sealed class RequireNamedArgumentAttribute : Attribute { }
+    [AttributeUsage(AttributeTargets.Method | AttributeTargets.Constructor | AttributeTargets.Property | AttributeTargets.Delegate | AttributeTargets.Parameter, AllowMultiple = false, Inherited = false)]
+    public sealed class RequireNamedArgumentsAttribute : Attribute { }
 }
 """
 
-    let private csharpWithPolyfillTargeting (targets: string) (extra: string) = CSharp(csPolyfillTargeting targets + extra)
-
-    let private csharpWithPolyfill (extra: string) = csharpWithPolyfillTargeting "AttributeTargets.Method" extra
+    let private csharpWithPolyfill (extra: string) = CSharp(csPolyfill + extra)
 
     let private csAnnotatedLib =
         csharpWithPolyfill """
@@ -82,10 +74,10 @@ namespace AnnotatedLib
 {
     public static class Api
     {
-        [RequireNamedArgument]
+        [RequireNamedArguments]
         public static int Add(int x, int y) => x + y;
 
-        [RequireNamedArgument]
+        [RequireNamedArguments]
         public static int Scale(int x, int factor = 2) => x * factor;
     }
 }
@@ -93,38 +85,16 @@ namespace AnnotatedLib
         |> asLibrary
         |> withName "CsAnnotatedLib"
 
-    let private csWrongNamespaceLib =
-        CSharp """
-using System;
-
-namespace MyApp
-{
-    [AttributeUsage(AttributeTargets.Method)]
-    public sealed class RequireNamedArgumentAttribute : Attribute { }
-}
-
-namespace AnnotatedLib
-{
-    public static class WrongApi
-    {
-        [MyApp.RequireNamedArgument]
-        public static int Add(int x, int y) => x + y;
-    }
-}
-"""
-        |> asLibrary
-        |> withName "CsWrongNamespaceLib"
-
     let private csExtensionLib =
         csharpWithPolyfill """
 namespace AnnotatedLib
 {
     public static class Ext
     {
-        [RequireNamedArgument]
+        [RequireNamedArguments]
         public static int AddTo(this int self, int y) => self + y;
 
-        [RequireNamedArgument]
+        [RequireNamedArguments]
         public static int SumTo(this int self, params int[] rest)
         {
             int s = self;
@@ -143,25 +113,29 @@ namespace AnnotatedLib
 namespace Test
 
 open System
-open System.Runtime.CompilerServices
+open System.Diagnostics.CodeAnalysis
 open System.Runtime.InteropServices
 
 type Api =
-    [<RequireNamedArgument>] static member Basic(x: int, y: int) = x + y
-    [<RequireNamedArgument>] static member Mixed(x: int, y: int) = x + y
-    [<RequireNamedArgument>] static member FirstClass(x: int, y: int) = x + y
-    [<RequireNamedArgument>] static member Zero() = 42
-    [<RequireNamedArgument>] static member Optional(x: int, [<Optional; DefaultParameterValue(0)>] y: int) = x + y
-    [<RequireNamedArgument>] static member Params([<ParamArray>] rest: int[]) = Array.sum rest
-    [<RequireNamedArgument>] static member Generic<'T>(value: 'T) = value
+    [<RequireNamedArguments>] static member Basic(x: int, y: int) = x + y
+    [<RequireNamedArguments>] static member Mixed(x: int, y: int) = x + y
+    [<RequireNamedArguments>] static member FirstClass(x: int, y: int) = x + y
+    [<RequireNamedArguments>] static member Zero() = 42
+    [<RequireNamedArguments>] static member Optional(x: int, [<Optional; DefaultParameterValue(0)>] y: int) = x + y
+    [<RequireNamedArguments>] static member Params([<ParamArray>] rest: int[]) = Array.sum rest
+    [<RequireNamedArguments>] static member Generic<'T>(value: 'T) = value
+    static member Parameter([<RequireNamedArguments>] x: int) = x
     static member Overloaded(x: int, y: int) = x + y
-    [<RequireNamedArgument>] static member Overloaded(x: string, y: string) = x + y
+    [<RequireNamedArguments>] static member Overloaded(x: string, y: string) = x + y
 
 type IFace =
-    [<RequireNamedArgument>] abstract member ViaSlot: x: int * y: int -> int
+    [<RequireNamedArguments>] abstract member ViaSlot: x: int * y: int -> int
 
 type Delegated =
-    [<RequireNamedArgument>] static member Ping(x: int) = x
+    [<RequireNamedArguments>] static member Ping(x: int) = x
+
+[<RequireNamedArguments>]
+type Callback = delegate of x: int -> int
 
 type Holder() =
     member _.Value = 0
@@ -169,21 +143,22 @@ type Holder() =
 [<AutoOpen>]
 module Extensions =
     type Holder with
-        [<RequireNamedArgument>] member _.Ext(x: int, y: int) = x + y
+        [<RequireNamedArguments>] member _.Ext(x: int, y: int) = x + y
 
 type IndexerGet() =
-    member _.Item with [<RequireNamedArgument>] get (i: int) = i * 2
+    member _.Item with [<RequireNamedArguments>] get (i: int) = i * 2
 
 type IndexerSet() =
     let mutable store = 0
-    member _.Item with [<RequireNamedArgument>] set (i: int) (v: int) = store <- i + v
+    member _.Item with [<RequireNamedArguments>] set (i: int) (v: int) = store <- i + v
 
 type PropertySet() =
     let mutable store = 0
-    member _.P with [<RequireNamedArgument>] set (v: int) = store <- v
+    [<RequireNamedArguments>]
+    member _.P with [<RequireNamedArguments>] set (v: int) = store <- v
 
 type Curried =
-    [<RequireNamedArgument>] static member Add (x: int) (y: int) = x + y
+    [<RequireNamedArguments>] static member Add (x: int) (y: int) = x + y
 """
 
     let private withZoo (extra: string) = withPolyfill (annotatedApi + extra)
@@ -223,6 +198,8 @@ module Use =
     let indexerSet = let c = IndexerSet() in c.[1] <- 2
     let propertySet = let c = PropertySet() in c.P <- 5
     let curried = Curried.Add 1 2
+    let parameter = Api.Parameter(1)
+    let callback = Callback(fun x -> x).Invoke(1)
 """
         |> acceptsNamed
 
@@ -322,10 +299,10 @@ let optionalOmitted = Api.Scale(x = 5)
         withPolyfill """
 namespace Test
 
-open System.Runtime.CompilerServices
+open System.Diagnostics.CodeAnalysis
 
 type C =
-    [<RequireNamedArgument>]
+    [<RequireNamedArguments>]
     static member Add(x: int, y: int) = x + y
 
 module Use =
@@ -336,38 +313,44 @@ module Use =
         |> shouldSucceed
         |> ignore
 
-    [<Fact>]
-    let ``Same-named attribute in a different F# namespace is not recognised`` () =
-        FSharp """
-namespace MyApp
-
-open System
-
-[<AttributeUsage(AttributeTargets.Method)>]
-type RequireNamedArgumentAttribute() =
-    inherit Attribute()
-
-namespace Test
-
-open MyApp
-
-type C =
-    [<RequireNamedArgument>]
-    static member Add(x: int, y: int) = x + y
-
+    [<Theory>]
+    [<InlineData("MyApp", "RequireNamedArguments")>]
+    [<InlineData("System.Runtime.CompilerServices", "RequireNamedArguments")>]
+    [<InlineData("System.Runtime.CompilerServices", "RequireNamedArgument")>]
+    [<InlineData("System.Diagnostics.CodeAnalysis", "RequireNamedArgument")>]
+    let ``Local attribute with a different namespace or name is not recognised`` (ns: string) (name: string) =
+        FSharp(
+            (fsPolyfill + annotatedApi).Replace("System.Diagnostics.CodeAnalysis", ns).Replace("RequireNamedArguments", name)
+            + """
 module Use =
-    let r = C.Add(1, 2)
+    let r = Api.Basic(1, 2)
 """
+        )
         |> acceptsNamed
 
-    [<FactForNETCOREAPP>]
-    let ``Same-named attribute from a different C# namespace is not recognised`` () =
+    [<TheoryForNETCOREAPP>]
+    [<InlineData("MyApp", "RequireNamedArguments")>]
+    [<InlineData("System.Runtime.CompilerServices", "RequireNamedArguments")>]
+    [<InlineData("System.Runtime.CompilerServices", "RequireNamedArgument")>]
+    [<InlineData("System.Diagnostics.CodeAnalysis", "RequireNamedArgument")>]
+    let ``Imported attribute with a different namespace or name is not recognised`` (ns: string) (name: string) =
+        let source =
+            csPolyfill + """
+public static class Api
+{
+    [RequireNamedArguments]
+    public static int Add(int x, int y) => x + y;
+}
+"""
+
         FSharp """
 module Test
-open AnnotatedLib
-let r = WrongApi.Add(1, 2)
+let r = Api.Add(1, 2)
 """
-        |> withReferences [ csWrongNamespaceLib ]
+        |> withReferences [
+            CSharp(source.Replace("System.Diagnostics.CodeAnalysis", ns).Replace("RequireNamedArguments", name))
+            |> withName "WrongAttributeLib"
+        ]
         |> acceptsCompiled
 
     [<FactForNETCOREAPP>]
@@ -394,10 +377,10 @@ let paramArray = (1).SumTo(rest = [| 2; 3 |])
 
     [<Fact>]
     let ``Constructor positional call is rejected and the diagnostic names the type`` () =
-        withPolyfillCtor """
+        withPolyfill """
 namespace Test
-open System.Runtime.CompilerServices
-type C [<RequireNamedArgument>] (x: int, y: int) =
+open System.Diagnostics.CodeAnalysis
+type C [<RequireNamedArguments>] (x: int, y: int) =
     member _.V = x + y
 module Use =
     let c = C(1, 2)
@@ -411,10 +394,10 @@ module Use =
 
     [<Fact>]
     let ``Constructor named call succeeds`` () =
-        withPolyfillCtor """
+        withPolyfill """
 namespace Test
-open System.Runtime.CompilerServices
-type C [<RequireNamedArgument>] (x: int, y: int) =
+open System.Diagnostics.CodeAnalysis
+type C [<RequireNamedArguments>] (x: int, y: int) =
     member _.V = x + y
 module Use =
     let c = C(x = 1, y = 2)
@@ -427,13 +410,13 @@ namespace AnnotatedLib
 {
     public interface IFoo
     {
-        [RequireNamedArgument]
+        [RequireNamedArguments]
         int ViaSlot(int x, int y);
     }
 
     public class FooImpl : IFoo
     {
-        [RequireNamedArgument]
+        [RequireNamedArguments]
         public int ViaSlot(int x, int y) => x + y;
     }
 }
@@ -442,7 +425,7 @@ namespace AnnotatedLib
         |> withName "CsInterfaceLib"
 
     let private csStructCtorLib =
-        csharpWithPolyfillTargeting "AttributeTargets.Constructor" """
+        csharpWithPolyfill """
 namespace AnnotatedLib
 {
     public struct S
@@ -450,7 +433,7 @@ namespace AnnotatedLib
         public int X;
         public int Y;
 
-        [RequireNamedArgument]
+        [RequireNamedArguments]
         public S(int x, int y) { X = x; Y = y; }
     }
 }
@@ -504,9 +487,9 @@ let s = AnnotatedLib.S(x = 1, y = 2)
     let ``Local F# method annotated with an attribute imported from a referenced assembly is enforced`` () =
         FSharp """
 module Test
-open System.Runtime.CompilerServices
+open System.Diagnostics.CodeAnalysis
 type C =
-    [<RequireNamedArgument>]
+    [<RequireNamedArguments>]
     static member Add(x: int, y: int) = x + y
 let r = C.Add(1, 2)
 """

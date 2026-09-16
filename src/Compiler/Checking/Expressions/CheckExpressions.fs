@@ -10827,9 +10827,9 @@ and TcMethodApplication
 
     TcAdhocChecksOnLibraryMethods cenv env isInstance finalCalledMeth finalCalledMethInfo objArgs mMethExpr mItem
 
-    // FS-1095: reject positional calls to a method/constructor carrying RequireNamedArgumentAttribute.
-    if not env.eInNameOf && g.langVersion.SupportsFeature LanguageFeature.RequireNamedArgument then
-        finalCalledMeth.TryGetRequireNamedArgumentViolationName mMethExpr
+    // FS-1095: reject positional calls to a method/constructor carrying RequireNamedArgumentsAttribute.
+    if not env.eInNameOf && g.langVersion.SupportsFeature LanguageFeature.RequireNamedArguments then
+        finalCalledMeth.TryGetRequireNamedArgumentsViolationName mMethExpr
         |> Option.iter (fun calledName ->
             errorR(Error(FSComp.SR.tcMethodRequiresNamedArguments(RichText.mkMethod calledName), mMethExpr)))
 

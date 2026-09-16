@@ -165,7 +165,6 @@ module internal ILExtensions =
                 | "System.Runtime.CompilerServices.RequiredMemberAttribute" -> WellKnownILAttributes.RequiredMemberAttribute
                 | "System.Runtime.CompilerServices.OverloadResolutionPriorityAttribute" ->
                     WellKnownILAttributes.OverloadResolutionPriorityAttribute
-                | "System.Runtime.CompilerServices.RequireNamedArgumentAttribute" -> WellKnownILAttributes.RequireNamedArgumentAttribute
                 | _ -> WellKnownILAttributes.None
 
             elif name.StartsWith("Microsoft.FSharp.Core.") then
@@ -187,6 +186,7 @@ module internal ILExtensions =
                 | "System.ObsoleteAttribute" -> WellKnownILAttributes.ObsoleteAttribute
                 | "System.Diagnostics.CodeAnalysis.ExperimentalAttribute" -> WellKnownILAttributes.ExperimentalAttribute
                 | "System.Diagnostics.CodeAnalysis.NotNullIfNotNullAttribute" -> WellKnownILAttributes.NotNullIfNotNullAttribute
+                | "System.Diagnostics.CodeAnalysis.RequireNamedArgumentsAttribute" -> WellKnownILAttributes.RequireNamedArgumentsAttribute
                 | "System.AttributeUsageAttribute" -> WellKnownILAttributes.AttributeUsageAttribute
                 | _ -> WellKnownILAttributes.None
 
@@ -262,7 +262,7 @@ module internal AttributeHelpers =
             match tcref.Deref.PublicPath with
             | ValueSome pubpath ->
                 match pubpath.FullPath with
-                | [| "System"; "Runtime"; "CompilerServices"; "RequireNamedArgumentAttribute" |] as path ->
+                | [| "System"; "Diagnostics"; "CodeAnalysis"; "RequireNamedArgumentsAttribute" |] as path ->
                     struct (ValueSome path, ValueNone)
                 | _ -> struct (ValueNone, ValueNone)
             | ValueNone -> struct (ValueNone, ValueNone)
@@ -598,7 +598,6 @@ module internal AttributeHelpers =
                 | "CallerLineNumberAttribute" -> WellKnownValAttributes.CallerLineNumberAttribute
                 | "MethodImplAttribute" -> WellKnownValAttributes.MethodImplAttribute
                 | "OverloadResolutionPriorityAttribute" -> WellKnownValAttributes.OverloadResolutionPriorityAttribute
-                | "RequireNamedArgumentAttribute" -> WellKnownValAttributes.RequireNamedArgumentAttribute
                 | _ -> WellKnownValAttributes.None
 
             | [| "System"; "Runtime"; "InteropServices"; name |] ->
@@ -621,6 +620,7 @@ module internal AttributeHelpers =
             | [| "System"; "Diagnostics"; "CodeAnalysis"; name |] ->
                 match name with
                 | "NotNullIfNotNullAttribute" -> WellKnownValAttributes.NotNullIfNotNullAttribute
+                | "RequireNamedArgumentsAttribute" -> WellKnownValAttributes.RequireNamedArgumentsAttribute
                 | _ -> WellKnownValAttributes.None
 
             | [| "System"; name |] ->

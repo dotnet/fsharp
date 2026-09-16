@@ -13,8 +13,8 @@ type Provider() =
     let modul = typeof<Provider>.Module
     let attributeType =
         TypeBuilder.CreateType(
-            TypeContainer.Namespace(modul, "System.Runtime.CompilerServices"),
-            "RequireNamedArgumentAttribute",
+            TypeContainer.Namespace(modul, "System.Diagnostics.CodeAnalysis"),
+            "RequireNamedArgumentsAttribute",
             baseType = typeof<Attribute>)
 
     let attribute =

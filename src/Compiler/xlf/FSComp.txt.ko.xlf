@@ -8982,9 +8982,9 @@
         <target state="new">Tuple type extensions are supported only for tuples of up to 7 elements, but this tuple type has {0} elements. Extensions of larger tuples are not supported.</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureRequireNamedArgument">
-        <source>enforce named arguments at call sites of methods annotated with RequireNamedArgumentAttribute</source>
-        <target state="new">enforce named arguments at call sites of methods annotated with RequireNamedArgumentAttribute</target>
+      <trans-unit id="featureRequireNamedArguments">
+        <source>enforce named arguments at call sites of methods annotated with RequireNamedArgumentsAttribute</source>
+        <target state="new">enforce named arguments at call sites of methods annotated with RequireNamedArgumentsAttribute</target>
         <note />
       </trans-unit>
       <trans-unit id="tcMethodRequiresNamedArguments">

@@ -120,7 +120,7 @@ type internal WellKnownValAttributes =
     | NotNullIfNotNullAttribute = (1uL <<< 41)
     | OverloadResolutionPriorityAttribute = (1uL <<< 42)
     | OptimizeClosureIfNotInlinedAttribute = (1uL <<< 43)
-    | RequireNamedArgumentAttribute = (1uL <<< 44)
+    | RequireNamedArgumentsAttribute = (1uL <<< 44)
     | NotComputed = (1uL <<< 63)
 
 module internal Flags =

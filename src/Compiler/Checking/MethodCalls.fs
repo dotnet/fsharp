@@ -794,9 +794,9 @@ type CalledMeth<'T>
 
     member x.NumArgSets = x.ArgSets.Length
 
-    member x.TryGetRequireNamedArgumentViolationName(m: range) : string option =
+    member x.TryGetRequireNamedArgumentsViolationName(m: range) : string option =
         if
-            MethInfoHasWellKnownAttribute g m WellKnownILAttributes.RequireNamedArgumentAttribute WellKnownValAttributes.RequireNamedArgumentAttribute "System.Runtime.CompilerServices.RequireNamedArgumentAttribute" x.Method
+            MethInfoHasWellKnownAttribute g m WellKnownILAttributes.RequireNamedArgumentsAttribute WellKnownValAttributes.RequireNamedArgumentsAttribute "System.Diagnostics.CodeAnalysis.RequireNamedArgumentsAttribute" x.Method
             && x.AssociatedPropertyInfo.IsNone
             && x.NumArgSets <= 1
             && (x.TotalNumUnnamedCallerArgs > 0 || (x.ParamArrayCallerArgs |> Option.exists (fun args -> not (isNil args))))
