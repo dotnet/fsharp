@@ -532,11 +532,6 @@
         <target state="translated">başvuru hücreleriyle ilgili bilgi mesajları</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureRequiredProperties">
-        <source>support for required properties</source>
-        <target state="translated">gerekli özellikler için destek</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureResumableStateMachines">
         <source>resumable state machines</source>
         <target state="translated">sürdürülebilir durum makineleri</target>

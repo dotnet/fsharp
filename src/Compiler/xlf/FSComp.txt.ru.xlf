@@ -532,11 +532,6 @@
         <target state="translated">информационные сообщения, связанные с ссылочными ячейками</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureRequiredProperties">
-        <source>support for required properties</source>
-        <target state="translated">поддержка обязательных свойств</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureResumableStateMachines">
         <source>resumable state machines</source>
         <target state="translated">возобновляемые конечные автоматы</target>
