@@ -9,7 +9,6 @@ type LanguageFeature =
     | PackageManagement
     | FromEndSlicing
     | ResumableStateMachines
-    | DefaultInterfaceMemberConsumption
     | WitnessPassing
     | AdditionalTypeDirectedConversions
     | StringInterpolation
@@ -25,7 +24,6 @@ type LanguageFeature =
     | MatchNotAllowedForUnionCaseWithNoData
     | CSharpExtensionAttributeNotRequired
     | ErrorForNonVirtualMembersOverrides
-    | ErrorReportingOnStaticClasses
     | WarningWhenCopyAndUpdateRecordChangesAllFields
     | NonInlineLiteralsAsPrintfFormat
     | WarningWhenMultipleRecdTypeChoice
