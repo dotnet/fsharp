@@ -394,3 +394,67 @@ let twice x = x * 2
     [<InlineData("M.x.y.z", "let z = 4")>]
     let ``a name holding a dot resolves to its own declaration`` (fullyQualifiedName: string, declaration: string) =
         Assert.Equal(declaration, (contextIn cache dottedSolution fullyQualifiedName).Snippet.Trim())
+
+    /// Six lines, counting newlines: "module M", "", "let a = 1", "", "let b = 2", and the blank line a
+    /// trailing newline leaves after it.
+    let private focusContent = "module M\n\nlet a = 1\n\nlet b = 2\n"
+
+    let private focusFilePath = "C:\\focus.fs"
+
+    let private documentFocus caretOffset startLine endLine =
+        let caret = if caretOffset < 0 then Nullable() else Nullable caretOffset
+
+        let lineRange =
+            if startLine < 0 then
+                Nullable()
+            else
+                Nullable(Microsoft.VisualStudio.RpcContracts.Utilities.Range(startLine, -1, endLine, -1))
+
+        let selection =
+            DocumentSelection(0, focusContent.Length, Caret = caret, LineRange = lineRange)
+
+        DocumentContext(focusContent, FilePath = focusFilePath, TotalLinesInFile = 6, Selections = [| selection |])
+        |> CopilotSymbolMapping.editorFocusOf
+
+    /// Copilot reports the caret as the offset of its line's start (10, the start of "let a = 1"), a
+    /// line range as 1-based line numbers, and the whole file as a range covering every line - which no
+    /// declaration can be "around", so it answers "focused, no line known", the same as no selection at all.
+    [<Theory>]
+    [<InlineData(10, -1, -1, 3, 3)>]
+    [<InlineData(-1, 2, 5, 2, 5)>]
+    [<InlineData(-1, 1, 6, 0, 0)>]
+    let ``the caret or selection maps onto a focused line range``
+        (caretOffset: int)
+        (startLine: int)
+        (endLine: int)
+        (expectedFirst: int)
+        (expectedLast: int)
+        =
+        let expected =
+            ValueSome
+                {
+                    FilePath = focusFilePath
+                    FirstLine = expectedFirst
+                    LastLine = expectedLast
+                }
+
+        Assert.Equal(expected, documentFocus caretOffset startLine endLine)
+
+    [<Fact>]
+    let ``no selection at all is focused with no line known`` () =
+        let document = DocumentContext(focusContent, FilePath = focusFilePath)
+
+        let expected =
+            ValueSome
+                {
+                    FilePath = focusFilePath
+                    FirstLine = 0
+                    LastLine = 0
+                }
+
+        Assert.Equal(expected, CopilotSymbolMapping.editorFocusOf document)
+
+    [<Fact>]
+    let ``a document with no file path is not focused`` () =
+        let document = DocumentContext(focusContent)
+        Assert.True((CopilotSymbolMapping.editorFocusOf document).IsNone)
