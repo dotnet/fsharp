@@ -3,13 +3,15 @@
 namespace EmittedIL
 
 open Xunit
+open FSharp.Test
 open FSharp.Test.Compiler
 
 /// Characterization (emitted IL, --optimize+) of when a higher-order-function call site allocates a
 /// heap closure for its function argument (a `newobj` of a closure). Each test compiles the shared
-/// `prelude` plus one `test` function; the argument captures `env`, so any closure it needs is a real
-/// per-call allocation, and the probe HOFs return `bool` (no list building) so the only `newobj` a
-/// caller could show is the function closure itself. The two sub-modules split the cases by outcome.
+/// `prelude` plus one `test` function and inspects only that function; the argument captures `env`,
+/// so any closure it needs is a real per-call allocation, and the probe HOFs return `bool` (no list
+/// building) so the only `newobj` a caller could show is the function closure itself.
+/// The two sub-modules split the cases by outcome.
 module InlineIfLambdaClosureForms =
 
     let private prelude =
@@ -17,6 +19,10 @@ module InlineIfLambdaClosureForms =
 module Test
 
 let eqf (env: int) (a: string) (b: string) = a.Length = b.Length + env
+
+// Forwards the function to List.forall2's recursive loop.
+let inline forall2Forward ([<InlineIfLambda>] p: string -> string -> bool) l1 l2 =
+    List.length l1 = List.length l2 && List.forall2 p l1 l2
 
 // Applies the function directly in a loop (the NEW shape).
 let inline forall2Direct ([<InlineIfLambda>] p: string -> string -> bool) l1 l2 =
@@ -31,11 +37,21 @@ let inline forall2Direct ([<InlineIfLambda>] p: string -> string -> bool) l1 l2 
 let inline applyDirect ([<InlineIfLambda>] f: unit -> int) = f ()
 """
 
+    let private testMethodIL body =
+        let result = FSharp(prelude + body) |> withOptimize |> compile |> shouldSucceed
+
+        match result with
+        | CompilationResult.Success { OutputPath = Some path } ->
+            let _, _, il = ILChecker.verifyILAndReturnActual [ "-item:Test::test" ] path []
+            Assert.Contains("test(", il)
+            il
+        | _ -> failwith "Compilation did not produce an assembly"
+
     let private allocatesClosure body =
-        FSharp(prelude + body) |> withOptimize |> compile |> shouldSucceed |> verifyILPresent [ "newobj" ]
+        Assert.Contains("newobj", testMethodIL body)
 
     let private allocatesNoClosure body =
-        FSharp(prelude + body) |> withOptimize |> compile |> shouldSucceed |> verifyILNotPresent [ "newobj" ]
+        Assert.DoesNotContain("newobj", testMethodIL body)
 
     module DoesNotAllocate =
 
@@ -52,13 +68,22 @@ let test (env: int) (a: string list) (b: string list) =
 """
 
         // Partial application of a TOP-LEVEL function: the optimizer knows its arity and forms the
-        // saturated call, so no closure. (Contrast with the local-function case in AllocatesClosure.)
+        // saturated call, so no closure.
         [<Fact>]
         let ``direct-apply inline HOF, partial application of a top-level function`` () =
             allocatesNoClosure
                 """
 let test (env: int) (a: string list) (b: string list) =
     forall2Direct (eqf env) a b
+"""
+
+        [<Fact>]
+        let ``direct-apply inline HOF, partial application of a local closure`` () =
+            allocatesNoClosure
+                """
+let test (env: int) (a: string list) (b: string list) =
+    let local (cap: int) (x: string) (y: string) = x.Length = y.Length + cap + env
+    forall2Direct (local 5) a b
 """
 
         [<Fact>]
@@ -116,13 +141,6 @@ let test (h: H) (env: int) = h.M <| (fun () -> env)
 
     module AllocatesClosure =
 
-        // List.forall2 is inline, so this helper can allocate even when unused by the caller.
-        let private forwardingPrelude =
-            """
-let inline forall2Forward ([<InlineIfLambda>] p: string -> string -> bool) l1 l2 =
-    List.length l1 = List.length l2 && List.forall2 p l1 l2
-"""
-
         // Vanilla List.map is not inline, so the mapping function is always materialised as a value -
         // a closure is allocated whatever the syntactic form.
 
@@ -143,34 +161,21 @@ let test (env: int) (xs: string list) =
     List.map (g env) xs
 """
 
-        // Forwarding the function to List.forall2 still allocates, even with an eta-expanded call site.
+        // Forwarding to List.forall2 still allocates its recursive loop closure,
+        // and eta-expanding the call site does not change that.
 
         [<Fact>]
         let ``forwarding inline HOF, partial application`` () =
-            """
-let test (env: int) (a: string list) (b: string list) =
-    forall2Forward (eqf env) a b
-"""
-            |> (+) forwardingPrelude
-            |> allocatesClosure
-
-        [<Fact>]
-        let ``forwarding inline HOF, eta-expanded lambda`` () =
-            """
-let test (env: int) (a: string list) (b: string list) =
-    forall2Forward (fun x y -> eqf env x y) a b
-"""
-            |> (+) forwardingPrelude
-            |> allocatesClosure
-
-        // Partial application of a LOCAL function that closes over a local: unlike a top-level function
-        // (see DoesNotAllocate), the local is itself a closure value the optimizer cannot reduce, so it is
-        // materialised even though the HOF applies it directly.
-        [<Fact>]
-        let ``direct-apply inline HOF, partial application of a local closure`` () =
             allocatesClosure
                 """
 let test (env: int) (a: string list) (b: string list) =
-    let local (cap: int) (x: string) (y: string) = x.Length = y.Length + cap + env
-    forall2Direct (local 5) a b
+    forall2Forward (eqf env) a b
+"""
+
+        [<Fact>]
+        let ``forwarding inline HOF, eta-expanded lambda`` () =
+            allocatesClosure
+                """
+let test (env: int) (a: string list) (b: string list) =
+    forall2Forward (fun x y -> eqf env x y) a b
 """
