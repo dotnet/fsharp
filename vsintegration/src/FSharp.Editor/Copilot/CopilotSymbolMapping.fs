@@ -4,6 +4,7 @@
 module internal Microsoft.VisualStudio.FSharp.Editor.CopilotSymbolMapping
 
 open System
+open System.Collections.Generic
 
 open Microsoft.VisualStudio.Copilot
 open Microsoft.VisualStudio.Imaging
@@ -65,19 +66,24 @@ let private isContainerQuoted (container: NavigableContainer) =
     && PrettyNaming.DoesIdentifierNeedBackticks container.Name
 
 let private containerPath (container: NavigableContainer) =
+    let path = container.FullName
+
     if isContainerQuoted container then
-        let path = container.FullName
-        $"{path.Substring(0, path.Length - container.Name.Length)}``{container.Name}``"
+        String.Concat(path.Substring(0, path.Length - container.Name.Length), "``", container.Name, "``")
     else
-        container.FullName
+        path
 
 /// Dotted path that identifies a picked mention when it is resolved back to source.
 let fullyQualifiedName (item: NavigableItem) =
-    let name = if isQuoted item then $"``{item.Name}``" else item.Name
+    let name =
+        if isQuoted item then
+            String.Concat("``", item.Name, "``")
+        else
+            item.Name
 
     match containerPath item.Container with
     | "" -> name
-    | container -> $"{container}.{name}"
+    | container -> String.Concat(container, ".", name)
 
 /// How Copilot's own tooltip names a declaration: a member by the container it is declared in, a type
 /// or module by itself.
@@ -91,8 +97,8 @@ let tooltipName (item: NavigableItem) =
 /// How much of `candidate` is left in front of `segment` - spelled in double backticks when `quoted` -
 /// or -1 when the candidate does not end with it.
 let private lengthBefore (candidate: ReadOnlySpan<char>) (segment: string) quoted =
-    let ticks = if quoted then 2 else 0
-    let length = segment.Length + 2 * ticks
+    let quotes = if quoted then 2 else 0
+    let length = segment.Length + quotes * 2
 
     if candidate.Length < length then
         -1
@@ -100,7 +106,7 @@ let private lengthBefore (candidate: ReadOnlySpan<char>) (segment: string) quote
         let tail = candidate.Slice(candidate.Length - length)
 
         if
-            tail.Slice(ticks, segment.Length).Equals(segment.AsSpan(), StringComparison.Ordinal)
+            tail.Slice(quotes, segment.Length).Equals(segment.AsSpan(), StringComparison.Ordinal)
             && (not quoted
                 || tail.StartsWith("``".AsSpan(), StringComparison.Ordinal)
                    && tail.EndsWith("``".AsSpan(), StringComparison.Ordinal))
@@ -129,3 +135,25 @@ let hasFullyQualifiedName (candidate: string) (item: NavigableItem) =
 
         lengthBefore spelledPath container.Name (isContainerQuoted container) = enclosing
         && spelledPath.Slice(0, enclosing).Equals(path.AsSpan(0, enclosing), StringComparison.Ordinal)
+
+/// The text a picker query searches for. The inputs are positional: the member name first once the
+/// mention has been committed, as in "#fsharpSymbol:Namespace.Type", then the search text, then
+/// qualifiers the search ignores. The picker asks before it has resolved what kind of mention is typed.
+let searchTextOf (query: CopilotMentionQuery) =
+    let searchTextAt index (inputs: IReadOnlyList<string>) =
+        if index < inputs.Count then
+            ValueSome(
+                match inputs[index] with
+                | null -> ""
+                | text -> text.Trim()
+            )
+        else
+            ValueNone
+
+    match query.Type, query.Inputs with
+    | (CopilotMentionType.Context | CopilotMentionType.Unknown), inputs when inputs.Count > 0 ->
+        if String.Equals(inputs[0], SymbolMember, StringComparison.Ordinal) then
+            searchTextAt 1 inputs
+        else
+            searchTextAt 0 inputs
+    | _ -> ValueNone
