@@ -158,6 +158,34 @@ type C = class end
         result |> shouldSucceed |> withDiagnostics []
 
 [<Theory>]
+[<InlineData(false, false)>]
+[<InlineData(false, true)>]
+[<InlineData(true, false)>]
+[<InlineData(true, true)>]
+let ``Issue 20211 - repeated nullable fields of finalized ordinary unions`` isSignature hasNullaryCase =
+    let cases =
+        [ if hasNullaryCase then yield "| Missing"
+          for i in 1..64 -> $"| Case{i} of int" ]
+        |> String.concat "\n"
+    let fields =
+        [ for i in 1..64 -> $"Field{i}: Token | null" ]
+        |> String.concat "; "
+
+    $"""
+module M
+type Token =
+{cases}
+type Envelope = {{ {fields} }}
+"""
+    |> (if isSignature then Fsi else FSharp)
+    |> withName (if isSignature then "test.fsi" else "test.fs")
+    |> asLibrary
+    |> withVersionAndCheckNulls ("preview", true)
+    |> typecheck
+    |> shouldSucceed
+    |> withDiagnostics []
+
+[<Theory>]
 [<InlineData(false, false, "Repr", "UseNullAsTrueValue")>]
 [<InlineData(false, true, "Repr", "UseNullAsTrueValue")>]
 [<InlineData(true, false, "Repr", "UseNullAsTrueValue")>]

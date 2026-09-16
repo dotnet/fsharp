@@ -292,6 +292,8 @@ type ConstraintSolverState =
       /// Checks to run after all inference is complete.
       PostInferenceChecksFinal: ResizeArray<unit -> unit>
 
+      mutable UnionsWithDeferredAttributes: Set<Stamp>
+
       WarnWhenUsingWithoutNullOnAWithNullTarget: string option
 
       /// RFC FS-1043: the CCU currently being compiled, used to scope the optimizer-replay cache of
@@ -308,6 +310,7 @@ type ConstraintSolverState =
           TcVal = tcVal
           PostInferenceChecksPreDefaults = ResizeArray()
           PostInferenceChecksFinal = ResizeArray()
+          UnionsWithDeferredAttributes = Set.empty
           WarnWhenUsingWithoutNullOnAWithNullTarget = None
           CompilingCcu = compilingCcu }
 
@@ -2962,7 +2965,7 @@ and SolveTypeUseNotSupportsNull (csenv: ConstraintSolverEnv) ndeep m2 (trace: Op
                 do! AddConstraint csenv ndeep m2 trace tp (TyparConstraint.NotSupportsNull m)
             | ValueNone ->
                 match tryTcrefOfAppTy g ty with
-                | ValueSome tcref when not tcref.TypeContents.tcaug_closed && CanHaveUseNullAsTrueValueAttribute g tcref.Deref ->
+                | ValueSome tcref when csenv.SolverState.UnionsWithDeferredAttributes.Contains tcref.Stamp ->
                     // Representation attributes can remain unresolved after union cases are populated.
                     trace.Exec
                         (fun () ->
@@ -4406,6 +4409,7 @@ let CreateCodegenState tcVal g amap =
       InfoReader = InfoReader(g, amap)
       PostInferenceChecksPreDefaults = ResizeArray()
       PostInferenceChecksFinal = ResizeArray()
+      UnionsWithDeferredAttributes = Set.empty
       WarnWhenUsingWithoutNullOnAWithNullTarget = None
       CompilingCcu = None }
 
@@ -4669,6 +4673,7 @@ let IsApplicableMethApprox g amap m (minfo: MethInfo) availObjTy =
               InfoReader = InfoReader(g, amap)
               PostInferenceChecksPreDefaults = ResizeArray()
               PostInferenceChecksFinal = ResizeArray()
+              UnionsWithDeferredAttributes = Set.empty
               WarnWhenUsingWithoutNullOnAWithNullTarget = None
               CompilingCcu = None }
         let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m (DisplayEnv.Empty g)

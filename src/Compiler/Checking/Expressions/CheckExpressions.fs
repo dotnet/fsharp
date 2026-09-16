@@ -12054,7 +12054,7 @@ and TcAttributesMaybeFail canFail cenv env attrTgt synAttribs =
 
 and TcAttributesCanFail cenv env attrTgt synAttribs =
     let attrs, didFail = TcAttributesMaybeFail TcCanFail.IgnoreAllErrors cenv env attrTgt synAttribs
-    attrs, (fun () -> if didFail then TcAttributes cenv env attrTgt synAttribs else attrs)
+    attrs, (fun () -> if didFail then TcAttributes cenv env attrTgt synAttribs else attrs), didFail
 
 and TcAttributes cenv env attrTgt synAttribs =
     TcAttributesMaybeFail TcCanFail.ReportAllErrors cenv env attrTgt synAttribs |> fst

@@ -597,7 +597,7 @@ module TcRecdUnionAndEnumDeclarations =
 
         let checkXmlDocs = cenv.diagnosticOptions.CheckXmlDocs
         let xmlDoc = xmldoc.ToXmlDoc(checkXmlDocs, Some names)
-        let attrs, getFinalAttrs = TcAttributesCanFail cenv env AttributeTargets.UnionCaseDecl synAttrs
+        let attrs, getFinalAttrs, _ = TcAttributesCanFail cenv env AttributeTargets.UnionCaseDecl synAttrs
         let unionCase = Construct.NewUnionCase id rfields recordTy attrs xmlDoc vis
 
         // Attribute types from the same recursive group resolve only once the group is established.
@@ -2962,7 +2962,7 @@ module EstablishTypeDefinitionCores =
 
         // 'Check' the attributes. We return the results to avoid having to re-check them in all other phases.
         // Allow failure of constructor resolution because Vals for members in the same recursive group are not yet available
-        let attrs, getFinalAttrs = TcAttributesCanFail cenv envinner AttributeTargets.TyconDecl synAttrs
+        let attrs, getFinalAttrs, hasDeferredAttrs = TcAttributesCanFail cenv envinner AttributeTargets.TyconDecl synAttrs
         let entityFlags = computeEntityWellKnownFlags g attrs
         let hasMeasureAttr = hasFlag entityFlags WellKnownEntityAttributes.MeasureAttribute
         let hasStructAttr = hasFlag entityFlags WellKnownEntityAttributes.StructAttribute
@@ -3089,6 +3089,8 @@ module EstablishTypeDefinitionCores =
         // OK, now fill in the (partially computed) type representation
         tycon.entity_tycon_repr <- repr
         tycon.entity_attribs <- WellKnownEntityAttribs.Create(attrs)
+        if hasDeferredAttrs && tycon.IsUnionTycon then
+            cenv.css.UnionsWithDeferredAttributes <- cenv.css.UnionsWithDeferredAttributes.Add tycon.Stamp
         attrs, getFinalAttrs
 
 #if !NO_TYPEPROVIDERS
@@ -4529,6 +4531,8 @@ module EstablishTypeDefinitionCores =
                             let (MutRecDefnsPhase1DataForTycon(SynComponentInfo(typeParams=TyparDecls synTypars), _, _, _, _, _)) = typeDefCore
                             let fixupFinalAttrs () =
                                 tycon.entity_attribs <- WellKnownEntityAttribs.Create(getFinalAttrs())
+                                if cenv.css.UnionsWithDeferredAttributes.Contains tycon.Stamp then
+                                    cenv.css.UnionsWithDeferredAttributes <- cenv.css.UnionsWithDeferredAttributes.Remove tycon.Stamp
                                 fixupTyparAttrs cenv envForDecls synTypars tycon.Typars
                                 for fixup in fixups do fixup()
                             info, Some tycon, fixupFinalAttrs
