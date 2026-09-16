@@ -935,6 +935,9 @@ type InfoReader(g: TcGlobals, amap: ImportMap) as this =
         | LanguageFeature.RuntimeAsync -> isRuntimeAsyncSupported.Value
         | _ -> true
 
+    /// Check if the target runtime supports default implementations of interfaces (DefaultImplementationsOfInterfaces).
+    member _.IsRuntimeSupportForDefaultImplementationsOfInterfaces = isRuntimeFeatureDefaultImplementationsOfInterfacesSupported.Value
+
     /// Check if the target runtime supports static abstract members in interfaces (VirtualStaticsInInterfaces).
     member _.IsRuntimeSupportForVirtualStaticsInInterfaces = isRuntimeFeatureVirtualStaticsInInterfacesSupported.Value
 
@@ -1045,10 +1048,9 @@ type InfoReader(g: TcGlobals, amap: ImportMap) as this =
         else
             unimplementedStaticAbstractMemberCache.Apply(((None, AccessibleFromSomewhere, AllowMultiIntfInstantiations.Yes), m, interfaceTy))
 
-let checkLanguageFeatureRuntimeAndRecover (infoReader: InfoReader) langFeature m =
-    if not (infoReader.IsLanguageFeatureRuntimeSupported langFeature) then
-        let featureStr = LanguageVersion.GetFeatureString langFeature
-        errorR (Error(FSComp.SR.chkFeatureNotRuntimeSupported (RichText.mkText featureStr), m))
+let checkRuntimeSupportForDefaultInterfaceMembersAndRecover (infoReader: InfoReader) m =
+    if not infoReader.IsRuntimeSupportForDefaultImplementationsOfInterfaces then
+        errorR (Error(FSComp.SR.chkFeatureNotRuntimeSupported (RichText.mkText "default interface member consumption"), m))
 
 let GetIntrinsicConstructorInfosOfType (infoReader: InfoReader) m ty =
     infoReader.GetIntrinsicConstructorInfosOfTypeAux m ty ty
