@@ -24,7 +24,6 @@ type LanguageFeature =
     | MatchNotAllowedForUnionCaseWithNoData
     | CSharpExtensionAttributeNotRequired
     | ErrorForNonVirtualMembersOverrides
-    | ErrorReportingOnStaticClasses
     | WarningWhenCopyAndUpdateRecordChangesAllFields
     | NonInlineLiteralsAsPrintfFormat
     | WarningWhenMultipleRecdTypeChoice
