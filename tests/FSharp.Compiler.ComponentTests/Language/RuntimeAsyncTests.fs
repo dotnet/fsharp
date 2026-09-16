@@ -171,7 +171,7 @@ let f () =
     |> withFSharpCoreShippedNet
     |> compile
     |> shouldFail
-    |> withErrorCodes [ 3916; 3916; 3916 ]
+    |> withErrorCodes [ 3918; 3918; 3918 ]
 
 [<Fact>]
 let ``runtime async rejects non Task result carriers`` () =
@@ -421,7 +421,7 @@ let f () : Task<int> =
     |> withFSharpCoreShippedNet
     |> compile
     |> shouldFail
-    |> withErrorCode 3918
+    |> withErrorCode 3920
 
 [<Fact>]
 let ``runtime async rejects stackalloc without suspension`` () =
@@ -443,7 +443,7 @@ let f () : Task<int> =
     |> withFSharpCoreShippedNet
     |> compile
     |> shouldFail
-    |> withErrorCode 3918
+    |> withErrorCode 3920
 
 [<Fact>]
 let ``runtime async rejects a byref captured by an inlined closure`` () =
@@ -589,7 +589,7 @@ let f () : Task<int> =
     |> withFSharpCoreShippedNet
     |> compile
     |> shouldFail
-    |> withErrorCode 3919
+    |> withErrorCode 3921
 
 [<Fact>]
 let ``runtime async combines awaited chunks without delegates`` () =
@@ -820,7 +820,7 @@ let f (gate: Task<int>) : Task<int seq> =
     |> withFSharpCoreShippedNet
     |> compile
     |> shouldFail
-    |> withErrorCode 3916
+    |> withErrorCode 3918
 
 #else
 [<Fact>]

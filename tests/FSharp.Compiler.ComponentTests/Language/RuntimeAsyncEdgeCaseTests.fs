@@ -412,7 +412,7 @@ let ``exception handling block suspensions compile and run correctly`` (_label: 
 let ``non-preservable values after suspension are rejected`` (_label: string) (body: string) =
     compileDirect body
     |> shouldFail
-    |> withErrorCode 3917
+    |> withErrorCode 3919
 
 [<Fact>]
 let ``non-preservable value in an unrelated branch is allowed`` () =
@@ -454,7 +454,7 @@ let ``runtime async reports a byref local after suspension once`` () =
     |> withLangVersionPreview
     |> compile
     |> shouldFail
-    |> assertSingleDiagnostic 3917
+    |> assertSingleDiagnostic 3919
 
 [<Fact>]
 // The CE builder rejects a ref-struct local captured by its continuation lambda (FS0406).

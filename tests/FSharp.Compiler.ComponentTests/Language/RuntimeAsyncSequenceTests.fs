@@ -142,10 +142,10 @@ let factory (work: Task<int>) = __runtimeAsyncSequence(fun () -> seq {
     | _ -> failwith "expected compiled sequence"
 
 [<Theory>]
-[<InlineData("preview", 3920, "let opaque (recipe: unit -> seq<int>) = __runtimeAsyncSequence recipe")>]
-[<InlineData("preview", 3920, "let tail (input: seq<int>) = __runtimeAsyncSequence(fun () -> seq { yield 1; yield! input })")>]
-[<InlineData("preview", 3920, "let handling () = __runtimeAsyncSequence(fun () -> seq { try yield 1 with _ -> yield 2 })")>]
-[<InlineData("preview", 3916, "let nested () = __runtimeAsyncSequence(fun () -> seq { for n in seq { yield AsyncHelpers.Await(Task.FromResult 1) } do yield n })")>]
+[<InlineData("preview", 3922, "let opaque (recipe: unit -> seq<int>) = __runtimeAsyncSequence recipe")>]
+[<InlineData("preview", 3922, "let tail (input: seq<int>) = __runtimeAsyncSequence(fun () -> seq { yield 1; yield! input })")>]
+[<InlineData("preview", 3922, "let handling () = __runtimeAsyncSequence(fun () -> seq { try yield 1 with _ -> yield 2 })")>]
+[<InlineData("preview", 3918, "let nested () = __runtimeAsyncSequence(fun () -> seq { for n in seq { yield AsyncHelpers.Await(Task.FromResult 1) } do yield n })")>]
 [<InlineData("9.0", 3350, "let sequence () = __runtimeAsyncSequence(fun () -> seq { yield 1 })")>]
 let ``runtime async sequence rejects unsupported entries`` (language: string, code: int, body: string) =
     FSharp(header + body)
