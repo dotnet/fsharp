@@ -76,11 +76,11 @@ type internal FSharpActiveDocumentListener
                         recordFocus ()
 
                 let subscriptions =
-                    [
+                    [|
                         textView.GotAggregateFocus.Subscribe(fun _ -> recordFocus ())
                         textView.Caret.PositionChanged.Subscribe(fun _ -> recordWhileFocused ())
                         textView.Selection.SelectionChanged.Subscribe(fun _ -> recordWhileFocused ())
-                    ]
+                    |]
 
                 textView.Closed.Add(fun _ ->
                     for subscription in subscriptions do
