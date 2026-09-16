@@ -431,13 +431,13 @@ type RoslynTestHelpers private () =
                 for instance in instances ->
                     let excludedPaths =
                         HashSet(
-                            [
+                            seq {
                                 for fileId in instance.ExcludedFileIds do
                                     syntheticProject.GetFilePath fileId
 
                                     if (syntheticProject.Find fileId).HasSignatureFile then
                                         syntheticProject.GetSignatureFilePath fileId
-                            ],
+                            },
                             StringComparer.OrdinalIgnoreCase
                         )
 
