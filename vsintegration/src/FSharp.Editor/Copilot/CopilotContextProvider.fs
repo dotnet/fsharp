@@ -358,6 +358,17 @@ module internal CopilotSymbolQuery =
                 | implementations -> implementations
         }
 
+    /// The declaration among `declarations` that a mention was picked for, when its line is still known
+    /// and still matches one of them - several overloads and partial definitions answer to the same
+    /// fully qualified name, so the first one found is no substitute once a line has been recorded.
+    let declarationAt (line: int voption) (declarations: struct (NavigableItem * Document) array) =
+        match line with
+        | ValueSome line ->
+            declarations
+            |> Array.tryFindV (fun (struct (item, _)) -> item.Range.StartLine = line)
+            |> ValueOption.orElseWith (fun () -> Array.tryHeadV declarations)
+        | ValueNone -> Array.tryHeadV declarations
+
     /// The source of the whole declaration `item` names, together with the span it occupies.
     let private snippetOf (outline: Outline) (item: NavigableItem) =
         let struct (firstLine, lastLine) =
@@ -466,6 +477,12 @@ type internal FSharpCopilotContextProvider
                     CopilotDefaultTypes.StringName,
                     IsRequired = true
                 )
+                CopilotInputDescriptor(
+                    CopilotSymbolMapping.DeclarationLineInput,
+                    "Line the picked overload or partial definition is declared on.",
+                    CopilotDefaultTypes.IntegerName,
+                    IsRequired = false
+                )
             |]
         )
 
@@ -484,10 +501,12 @@ type internal FSharpCopilotContextProvider
         | DocumentFocus.Elsewhere -> CopilotQueriedMentionPriority.None
 
     let mentionFor (item: NavigableItem) (document: Document) focus =
-        let inputs = Dictionary<string, CopilotValue>(1, StringComparer.Ordinal)
+        let inputs = Dictionary<string, CopilotValue>(2, StringComparer.Ordinal)
 
         inputs[CopilotSymbolMapping.FullyQualifiedNameInput] <-
             CopilotValue(CopilotDefaultTypes.StringName, CopilotSymbolMapping.fullyQualifiedName item)
+
+        inputs[CopilotSymbolMapping.DeclarationLineInput] <- CopilotValue(CopilotDefaultTypes.IntegerName, item.Range.StartLine)
 
         let fileName = Path.GetFileName document.FilePath
 
@@ -550,6 +569,19 @@ type internal FSharpCopilotContextProvider
                 | _ -> ValueNone
             | _ -> ValueNone
 
+    /// Which overload or partial definition of a fully qualified name a mention was picked for -
+    /// several of them share the same name, so navigating one has to tell them apart by more than that.
+    let declarationLineOf (inputs: IReadOnlyDictionary<string, CopilotValue> | null) =
+        match inputs with
+        | null -> ValueNone
+        | inputs ->
+            match inputs.TryGetValue CopilotSymbolMapping.DeclarationLineInput with
+            | true, value ->
+                match value.TryGetValue<int>() with
+                | true, line -> ValueSome line
+                | _ -> ValueNone
+            | _ -> ValueNone
+
     interface IExportedBrokeredService with
         member _.Descriptor = CopilotDescriptors.CreateContextProviderDescriptor moniker
 
@@ -603,7 +635,7 @@ type internal FSharpCopilotContextProvider
 
                     let! declarations = CopilotSymbolQuery.declarationsOf cache (workspace.GetOpenDocumentIds()) solution fullyQualifiedName
 
-                    match Array.tryHeadV declarations with
+                    match CopilotSymbolQuery.declarationAt (declarationLineOf mention.Inputs) declarations with
                     | ValueNone -> return false
                     | ValueSome(struct (item, document)) ->
                         let! sourceText = document.GetTextAsync ct
