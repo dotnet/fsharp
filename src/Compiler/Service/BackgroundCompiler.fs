@@ -996,6 +996,7 @@ type internal BackgroundCompiler
                 let tcSymbolUses = tcInfoExtras.tcSymbolUses
                 let tcOpenDeclarations = tcInfoExtras.tcOpenDeclarations
                 let latestCcuSigForFile = tcInfo.latestCcuSigForFile
+                let latestOwnSigForFile = tcInfoExtras.latestOwnSigForFile
                 let tcState = tcInfo.tcState
                 let tcEnvAtEnd = tcInfo.tcEnvAtEndOfFile
                 let latestImplementationFile = tcInfoExtras.latestImplFile
@@ -1058,6 +1059,7 @@ type internal BackgroundCompiler
                         tcDiagnostics,
                         keepAssemblyContents,
                         Option.get latestCcuSigForFile,
+                        Option.get latestOwnSigForFile,
                         tcState.Ccu,
                         tcProj.TcImports,
                         tcEnvAtEnd.AccessRights,
