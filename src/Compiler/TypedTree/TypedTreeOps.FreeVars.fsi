@@ -114,6 +114,10 @@ module internal FreeTypeVars =
 
     val freeInTypesLeftToRightSkippingConstraints: TcGlobals -> TType list -> Typars
 
+    /// Stable-sort explicit generic unification pairs so a type parameter used in another parameter's
+    /// subtype constraint (the 'b in 'a :> I<'b>) is solved first. See https://github.com/dotnet/fsharp/issues/20103
+    val reorderTyArgsByConstraintDependencies: g: TcGlobals -> pairs: (TType * TType) list -> (TType * TType) list
+
     val freeInModuleTy: ModuleOrNamespaceType -> FreeTyvars
 
 [<AutoOpen>]

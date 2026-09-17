@@ -272,6 +272,11 @@ namespace Microsoft.FSharp.Core
     type InlineIfLambdaAttribute() =
         inherit Attribute()
 
+    [<AttributeUsage (AttributeTargets.Parameter,AllowMultiple=false)>]  
+    [<Sealed>]
+    type OptimizeClosureIfNotInlinedAttribute() = 
+        inherit Attribute()
+
     [<AttributeUsage(AttributeTargets.Method, AllowMultiple=false)>]
     [<Sealed>]
     type CompilationArgumentCountsAttribute(counts:int array) =

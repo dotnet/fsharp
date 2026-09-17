@@ -1166,9 +1166,6 @@ module MutRecBindingChecking =
                             if isStatic && isExtrinsic then
                                 errorR(Error(FSComp.SR.tcStaticBindingInExtrinsicAugmentation(), m))
 
-                            elif isStatic && incrCtorInfoOpt.IsNone && not (g.langVersion.SupportsFeature(LanguageFeature.StaticLetInRecordsDusEmptyTypes)) then
-                                errorR(Error(FSComp.SR.tcStaticLetBindingsRequireClassesWithImplicitConstructors(), m))
-
                             // Phase2A: let-bindings - pass through
                             let innerState = (incrCtorInfoOpt, envForTycon, tpenv, recBindIdx, uncheckedBindsRev)
                             [Phase2AIncrClassBindings (tcref, letBinds, isStatic, isRec, m)], innerState
@@ -2135,11 +2132,11 @@ let TcMutRecDefns_Phase2 (cenv: cenv) envInitial mBinds scopem mutRecNSInfo (env
 
       let binds: MutRecDefnsPhase2Info =
           (envMutRec, mutRecDefns) ||> MutRecShapes.mapTyconsWithEnv (fun envForDecls tyconData ->
-              let (MutRecDefnsPhase2DataForTycon(tyconOpt, _x, declKind, tcref, _, _, declaredTyconTypars, synMembers, _, _, fixupFinalAttrs)) = tyconData
+              let (MutRecDefnsPhase2DataForTycon(tyconOpt, _, declKind, tcref, _, _, declaredTyconTypars, synMembers, _, _, fixupFinalAttrs)) = tyconData
 
               // If a tye uses both [<Sealed>] and [<AbstractClass>] attributes it means it is a static class.
               let isStaticClass = EntityHasWellKnownAttribute g WellKnownEntityAttributes.SealedAttribute_True tcref.Deref && EntityHasWellKnownAttribute g WellKnownEntityAttributes.AbstractClassAttribute tcref.Deref
-              if isStaticClass && g.langVersion.SupportsFeature(LanguageFeature.ErrorReportingOnStaticClasses) then
+              if isStaticClass then
                   ReportErrorOnStaticClass synMembers
                   match tyconOpt with
                   | Some tycon ->
@@ -6392,7 +6389,8 @@ let CheckOneImplFile
 
         let implFile = CheckedImplFile (qualNameOfFile, implFileTy, implFileContents, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)
 
-        return (topAttrs, implFile, envAtEnd, cenv.createsGeneratedProvidedTypes)
+        // implFile.Signature is a fresh copy or the explicit signature; only the inferred type shares its entities with the symbol uses
+        return (topAttrs, implFile, envAtEnd, cenv.createsGeneratedProvidedTypes, implFileTypePriorToSig)
      }
 
 
