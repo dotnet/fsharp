@@ -1166,7 +1166,10 @@ let AddCheckResultsToTcState
 
     ccuSigForFile, tcState
 
-type PartialResult = TcEnv * TopAttribs * CheckedImplFile option * ModuleOrNamespaceType
+type PartialResult = TcEnv * TopAttribs * CheckedImplFile option * ModuleOrNamespaceType * ModuleOrNamespaceType
+
+let private PartialResultOnError (tcState: TcState) : PartialResult =
+    tcState.TcEnvFromSignatures, EmptyTopAttrs, None, tcState.tcsCcuSig, Construct.NewEmptyModuleOrNamespaceType(Namespace true)
 
 /// Returns partial type check result for skipped implementation files.
 let SkippedImplFilePlaceholder (tcConfig: TcConfig, tcImports: TcImports, tcGlobals, tcState, input: ParsedInput) =
@@ -1205,7 +1208,7 @@ let SkippedImplFilePlaceholder (tcConfig: TcConfig, tcImports: TcImports, tcGlob
                 CheckedImplFile(qualNameOfFile, rootSigTy, ModuleOrNamespaceContents.TMDefs [], false, false, StampMap [], Map.empty)
 
             let tcEnvAtEnd = tcStateForImplFile.TcEnvFromImpls
-            Some((tcEnvAtEnd, EmptyTopAttrs, Some emptyImplFile, ccuSigForFile), tcState)
+            Some((tcEnvAtEnd, EmptyTopAttrs, Some emptyImplFile, ccuSigForFile, rootSigTy), tcState)
 
         | _ -> None
     | _ -> None
@@ -1285,7 +1288,7 @@ let CheckOneInput
                         tcsCreatesGeneratedProvidedTypes = tcState.tcsCreatesGeneratedProvidedTypes || createsGeneratedProvidedTypes
                     }
 
-                return (tcEnv, EmptyTopAttrs, None, ccuSigForFile), tcState
+                return (tcEnv, EmptyTopAttrs, None, ccuSigForFile, sigFileType), tcState
 
             | ParsedInput.ImplFile file ->
                 let qualNameOfFile = file.QualifiedName
@@ -1300,7 +1303,7 @@ let CheckOneInput
                 let hadSig = rootSigOpt.IsSome
 
                 // Typecheck the implementation file
-                let! topAttrs, implFile, tcEnvAtEnd, createsGeneratedProvidedTypes =
+                let! topAttrs, implFile, tcEnvAtEnd, createsGeneratedProvidedTypes, ownSigForFile =
                     CheckOneImplFile(
                         tcGlobals,
                         amap,
@@ -1326,12 +1329,12 @@ let CheckOneInput
                         (tcGlobals, amap, hadSig, prefixPathOpt, tcSink, tcState.tcsTcImplEnv, qualNameOfFile, implFile.Signature)
                         tcState
 
-                let result = (tcEnvAtEnd, topAttrs, Some implFile, ccuSigForFile)
+                let result = (tcEnvAtEnd, topAttrs, Some implFile, ccuSigForFile, ownSigForFile)
                 return result, tcState
 
         with RecoverableException e ->
             errorRecovery e range0
-            return (tcState.TcEnvFromSignatures, EmptyTopAttrs, None, tcState.tcsCcuSig), tcState
+            return PartialResultOnError tcState, tcState
     }
 
 // Within a file, equip loggers to locally filter w.r.t. scope pragmas in each input
@@ -1355,7 +1358,9 @@ let CheckOneInputEntry (ctok, checkForErrors, tcConfig: TcConfig, tcImports, tcG
 
 /// Finish checking multiple files (or one interactive entry into F# Interactive)
 let CheckMultipleInputsFinish (results, tcState: TcState) =
-    let tcEnvsAtEndFile, topAttrs, implFiles, ccuSigsForFiles = List.unzip4 results
+    let tcEnvsAtEndFile, topAttrs, implFiles, ccuSigsForFiles =
+        results |> List.map (fun (a, b, c, d, _) -> a, b, c, d) |> List.unzip4
+
     let topAttrs = List.foldBack CombineTopAttrs topAttrs EmptyTopAttrs
     let implFiles = List.choose id implFiles
     // This is the environment required by fsi.exe when incrementally adding definitions
@@ -1365,13 +1370,6 @@ let CheckMultipleInputsFinish (results, tcState: TcState) =
          | _ -> tcState.TcEnvFromSignatures)
 
     (tcEnvAtEndOfLastFile, topAttrs, implFiles, ccuSigsForFiles), tcState
-
-let CheckOneInputAndFinish (checkForErrors, tcConfig: TcConfig, tcImports, tcGlobals, prefixPathOpt, tcSink, tcState, input) =
-    cancellable {
-        let! result, tcState = CheckOneInput(checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcSink, tcState, input)
-        let finishedResult = CheckMultipleInputsFinish([ result ], tcState)
-        return finishedResult
-    }
 
 let CheckClosedInputSetFinish (declaredImpls: CheckedImplFile list, tcState) =
     // Latest contents to the CCU
@@ -1393,7 +1391,7 @@ let CheckMultipleInputsSequential (ctok, checkForErrors, tcConfig, tcImports, tc
 open FSharp.Compiler.GraphChecking
 
 type State = TcState * bool
-type FinalFileResult = TcEnv * TopAttribs * CheckedImplFile option * ModuleOrNamespaceType
+type FinalFileResult = PartialResult
 
 /// Auxiliary type for re-using signature information in TcEnvFromImpls.
 ///
@@ -1501,7 +1499,7 @@ let CheckOneInputWithCallback
                             // Add the signature to the signature env (unless it had an explicit signature)
                             let ccuSigForFile = CombineCcuContentFragments [ sigFileType; tcState.tcsCcuSig ]
 
-                            let partialResult = tcEnv, EmptyTopAttrs, None, ccuSigForFile
+                            let partialResult = tcEnv, EmptyTopAttrs, None, ccuSigForFile, sigFileType
 
                             let tcState =
                                 { tcState with
@@ -1521,7 +1519,7 @@ let CheckOneInputWithCallback
                 let rootSigOpt = tcState.tcsRootSigs.TryFind qualNameOfFile
 
                 // Typecheck the implementation file
-                let! topAttrs, implFile, tcEnvAtEnd, createsGeneratedProvidedTypes =
+                let! topAttrs, implFile, tcEnvAtEnd, createsGeneratedProvidedTypes, ownSigForFile =
                     CheckOneImplFile(
                         tcGlobals,
                         amap,
@@ -1557,7 +1555,8 @@ let CheckOneInputWithCallback
                                      implFile.Signature)
                                     tcState
 
-                            let partialResult = tcEnvAtEnd, topAttrs, Some implFile, ccuSigForFile
+                            let partialResult =
+                                (tcEnvAtEnd, topAttrs, Some implFile, ccuSigForFile, ownSigForFile)
 
                             let tcState =
                                 { fsTcState with
@@ -1570,7 +1569,7 @@ let CheckOneInputWithCallback
 
         with RecoverableException e ->
             errorRecovery e range0
-            return Finisher(node, (fun tcState -> (tcState.TcEnvFromSignatures, EmptyTopAttrs, None, tcState.tcsCcuSig), tcState))
+            return Finisher(node, (fun tcState -> PartialResultOnError tcState, tcState))
     }
 
 let AddSignatureResultToTcImplEnv (tcImports: TcImports, tcGlobals, prefixPathOpt, tcSink, tcState, input: ParsedInput) =
@@ -1591,7 +1590,7 @@ let AddSignatureResultToTcImplEnv (tcImports: TcImports, tcGlobals, prefixPathOp
 
             // This partial result will be discarded in the end of the graph resolution.
             let partialResult: PartialResult =
-                tcState.tcsTcSigEnv, EmptyTopAttrs, None, ccuSigForFile
+                tcState.tcsTcSigEnv, EmptyTopAttrs, None, ccuSigForFile, rootSig
 
             partialResult, tcState
 

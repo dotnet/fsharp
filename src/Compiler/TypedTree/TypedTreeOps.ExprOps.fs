@@ -1578,6 +1578,56 @@ module internal Makers =
             m
         )
 
+    let private optimizedClosureILShape (g: TcGlobals) (argTys: TType list) retTy =
+        let arity = List.length argTys
+        let formalArgTys = List.init arity (fun i -> ILType.TypeVar(uint16 i))
+        let formalRetTy = ILType.TypeVar(uint16 arity)
+
+        let optClosILTy =
+            mkILBoxedTy (g.optimizedClosures_FSharpFunc_tcref arity).CompiledRepresentationForNamedType (formalArgTys @ [ formalRetTy ])
+
+        formalArgTys, formalRetTy, optClosILTy, argTys @ [ retTy ]
+
+    let mkCallOptimizedClosuresAdapt (g: TcGlobals) m (argTys: TType list) (retTy: TType) folderExpr =
+        let formalArgTys, formalRetTy, optClosILTy, tinst =
+            optimizedClosureILShape g argTys retTy
+
+        let formalFolderTy =
+            (formalArgTys, formalRetTy)
+            ||> List.foldBack (fun dty rty -> mkILBoxedTy g.fastFunc_tcr.CompiledRepresentationForNamedType [ dty; rty ])
+
+        let mspec =
+            mkILNonGenericStaticMethSpecInTy (optClosILTy, "Adapt", [ formalFolderTy ], optClosILTy)
+
+        let resultTy =
+            mkWoNullAppTy (g.optimizedClosures_FSharpFunc_tcref argTys.Length) tinst
+
+        let call =
+            Expr.Op(
+                TOp.ILCall(false, false, false, false, ValUseFlag.NormalValUse, false, false, mspec.MethodRef, tinst, [], [ resultTy ]),
+                [],
+                [ folderExpr ],
+                m
+            )
+
+        call, resultTy
+
+    let mkCallOptimizedClosuresInvoke (g: TcGlobals) m (argTys: TType list) (retTy: TType) fExpr argExprs =
+        assert (List.length argExprs = argTys.Length)
+
+        let formalArgTys, formalRetTy, optClosILTy, tinst =
+            optimizedClosureILShape g argTys retTy
+
+        let mspec =
+            mkILNonGenericInstanceMethSpecInTy (optClosILTy, "Invoke", formalArgTys, formalRetTy)
+
+        Expr.Op(
+            TOp.ILCall(true, false, false, false, ValUseFlag.NormalValUse, false, false, mspec.MethodRef, tinst, [], [ retTy ]),
+            [],
+            fExpr :: argExprs,
+            m
+        )
+
     /// Concatenate string-valued expressions, choosing the cheapest String.Concat overload by arity.
     /// An empty list yields "" and a singleton yields itself.
     let mkStringConcat (g: TcGlobals, m: range, exprs: Expr list) =

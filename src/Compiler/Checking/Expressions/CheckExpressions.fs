@@ -1288,8 +1288,7 @@ let CheckRequiredProperties (g:TcGlobals) (env: TcEnv) (cenv: TcFileState) (minf
     //      2.1. If there are none, proceed as usual
     //      2.2. If there are any, make sure all of them (or their setters) are in `finalAssignedItemSetters`.
     // 3. If some are missing, produce a diagnostic which missing ones.
-    if g.langVersion.SupportsFeature(LanguageFeature.RequiredPropertiesSupport)
-        && minfo.IsConstructor
+    if minfo.IsConstructor
         && not (minfo.GetCustomAttrs().HasWellKnownAttribute(WellKnownILAttributes.SetsRequiredMembersAttribute))
         then
 
@@ -2882,7 +2881,12 @@ let TcVal (cenv: cenv) env (tpenv: UnscopedTyparEnv) (vref: ValRef) instantiatio
 
                                 if tpTys.Length <> tinst.Length then error(Error(FSComp.SR.tcTypeParameterArityMismatch(tps.Length, tinst.Length), m))
 
-                                List.iter2 (UnifyTypes cenv env m) tpTys tinst
+                                let tyargPairs =
+                                    let pairs = List.zip tpTys tinst
+                                    if g.langVersion.SupportsFeature LanguageFeature.TypeArgumentDependencyOrdering then
+                                        reorderTyArgsByConstraintDependencies g pairs
+                                    else pairs
+                                tyargPairs |> List.iter (fun (formalTy, actualTy) -> UnifyTypes cenv env m formalTy actualTy)
 
                                 TcValEarlyGeneralizationConsistencyCheck cenv env (v, valRecInfo, tinst, vTy, vTauTy, m)
 
@@ -6706,7 +6710,10 @@ and TcIteratedLambdas (cenv: cenv) isFirst (env: TcEnv) overallTy takenNames tpe
                         v.SetArgReprInfoForDisplay (Some argInfo)
                         let inlineIfLambda = ArgReprInfoHasWellKnownAttribute g WellKnownValAttributes.InlineIfLambdaAttribute argInfo
                         if inlineIfLambda then
-                            v.SetInlineIfLambda())
+                            v.SetInlineIfLambda()
+                        let optimizeClosureIfNotInlined = ArgReprInfoHasWellKnownAttribute g WellKnownValAttributes.OptimizeClosureIfNotInlinedAttribute argInfo
+                        if optimizeClosureIfNotInlined then
+                            v.SetOptimizeClosureIfNotInlined())
                  { envinner with eLambdaArgInfos = rest }
             | [] -> envinner
 
@@ -10013,7 +10020,7 @@ and TcLookupItemThen cenv overallTy env tpenv mObjExpr objExpr objExprTy delayed
                 TcMethodApplicationThen cenv env overallTy None tpenv tyArgsOpt objArgs mExprAndItem mItemIdent nm ad PossiblyMutates true meths afterResolution NormalValUse args atomicFlag None delayed
             else
 
-                if g.langVersion.SupportsFeature(LanguageFeature.RequiredPropertiesSupport) && pinfo.IsSetterInitOnly then
+                if pinfo.IsSetterInitOnly then
                     errorR (Error(FSComp.SR.tcInitOnlyPropertyCannotBeSet1 (RichText.mkProperty nm), mItemIdent))
 
                 let args = if pinfo.IsIndexer then args else []
@@ -10955,7 +10962,7 @@ and TcSetterArgExpr (cenv: cenv) env denv objExpr ad assignedSetter calledFromCo
 
             CheckPropInfoAttributes pinfo id.idRange  |> CommitOperationResult
 
-            if g.langVersion.SupportsFeature(LanguageFeature.RequiredPropertiesSupport) && pinfo.IsSetterInitOnly && not calledFromConstructor then
+            if pinfo.IsSetterInitOnly && not calledFromConstructor then
                 errorR (Error(FSComp.SR.tcInitOnlyPropertyCannotBeSet1 (RichText.mkProperty pinfo.PropertyName), m))
 
             MethInfoChecks g cenv.amap true None [objExpr] ad m pminfo

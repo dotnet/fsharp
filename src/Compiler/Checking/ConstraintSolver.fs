@@ -3301,7 +3301,13 @@ and CanMemberSigsMatchUpToCheck
             if minst.Length <> uminst.Length then
                 return! ErrorD(Error(FSComp.SR.csTypeInstantiationLengthMismatch(), m))
             else
-                let! usesTDC1 = MapCombineTDC2D unifyTypes minst uminst
+                let! usesTDC1 =
+                    let tyargPairs =
+                        let pairs = List.zip minst uminst
+                        if g.langVersion.SupportsFeature LanguageFeature.TypeArgumentDependencyOrdering then
+                            reorderTyArgsByConstraintDependencies g pairs
+                        else pairs
+                    tyargPairs |> MapCombineTDCD (fun (formalTy, callerTy) -> unifyTypes formalTy callerTy)
                 let! usesTDC2 =
                     if not (permitOptArgs || isNil unnamedCalledOptArgs) then
                         ErrorD(Error(FSComp.SR.csOptionalArgumentNotPermittedHere(), m))
@@ -3926,10 +3932,9 @@ and ResolveOverloading
     match calledMethOpt with
     | Some calledMeth ->
 
-        // Static IL interfaces methods are not supported in lower F# versions.
+        // Static IL interface methods require target-runtime support for default interface members.
         if calledMeth.Method.IsILMethod && not calledMeth.Method.IsInstance && isInterfaceTy g calledMeth.Method.ApparentEnclosingType then
-            checkLanguageFeatureRuntimeAndRecover csenv.InfoReader LanguageFeature.DefaultInterfaceMemberConsumption m
-            checkLanguageFeatureAndRecover g.langVersion LanguageFeature.DefaultInterfaceMemberConsumption m
+            checkRuntimeSupportForDefaultInterfaceMembersAndRecover csenv.InfoReader m
 
         calledMethOpt,
         trackErrors {
