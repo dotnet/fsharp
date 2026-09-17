@@ -6092,6 +6092,7 @@ let emptyTcEnv g =
       eCtorInfo = None
       eCallerMemberName = None
       eLambdaArgInfos = []
+      eIsIndexerSetter = false
       eIsControlFlow = false
       eInObjectExpr = false
       eCachedImplicitYieldExpressions = HashMultiMap(HashIdentity.Structural, useConcurrentDictionary = true)

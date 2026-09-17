@@ -373,6 +373,7 @@
     <Compile Include="ErrorMessages\NameIsBoundMultipleTimesTests.fs" />
     <Compile Include="ErrorMessages\FSharpDiagnosticTests.fs" />
     <Compile Include="Language\IndexerSetterParamArray.fs" />
+    <Compile Include="Language\IndexerSetterOptionalArguments.fs" />
     <Compile Include="Language\MultiDimensionalArrayTests.fs" />
     <Compile Include="Language\RegressionTests.fs" />
     <Compile Include="Language\AttributeCheckingTests.fs" />
