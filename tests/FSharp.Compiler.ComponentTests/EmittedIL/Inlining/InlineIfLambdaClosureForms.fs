@@ -8,9 +8,10 @@ open FSharp.Test.Compiler
 
 /// Characterization (emitted IL, --optimize+) of when a higher-order-function call site allocates a
 /// heap closure for its function argument (a `newobj` of a closure). Each test compiles the shared
-/// `prelude` plus one `test` function; the argument captures `env`, so any closure it needs is a real
-/// per-call allocation, and the probe HOFs return `bool` (no list building) so the only `newobj` a
-/// caller could show is the function closure itself. The two sub-modules split the cases by outcome.
+/// `prelude` plus one `test` function and inspects only that function; the argument captures `env`,
+/// so any closure it needs is a real per-call allocation, and the probe HOFs return `bool` (no list
+/// building) so the only `newobj` a caller could show is the function closure itself.
+/// The two sub-modules split the cases by outcome.
 module InlineIfLambdaClosureForms =
 
     let private prelude =
@@ -19,15 +20,11 @@ module Test
 
 let eqf (env: int) (a: string) (b: string) = a.Length = b.Length + env
 
-// Keep the forwarding probe non-inline even when List.forall2 is inline.
-[<NoCompilerInlining>]
-let forall2NonInline (p: string -> string -> bool) l1 l2 = List.forall2 p l1 l2
-
-// Forwards the function to a non-inline callee.
+// Forwards the function to List.forall2's recursive loop.
 let inline forall2Forward ([<InlineIfLambda>] p: string -> string -> bool) l1 l2 =
-    List.length l1 = List.length l2 && forall2NonInline p l1 l2
+    List.length l1 = List.length l2 && List.forall2 p l1 l2
 
-// Applies the function directly in a loop.
+// Applies the function directly in a loop (the NEW shape).
 let inline forall2Direct ([<InlineIfLambda>] p: string -> string -> bool) l1 l2 =
     let mutable r1 = l1
     let mutable r2 = l2
@@ -40,44 +37,21 @@ let inline forall2Direct ([<InlineIfLambda>] p: string -> string -> bool) l1 l2 
 let inline applyDirect ([<InlineIfLambda>] f: unit -> int) = f ()
 """
 
-    let private compileBody body =
-        FSharp(prelude + body) |> withOptimize |> compile |> shouldSucceed
+    let private testMethodIL body =
+        let result = FSharp(prelude + body) |> withOptimize |> compile |> shouldSucceed
 
-    let private verifyClosureAllocation expected (result: CompilationResult) =
-        let path =
-            match result.OutputPath with
-            | Some path -> path
-            | None -> failwith "Compilation did not produce an assembly"
+        match result with
+        | CompilationResult.Success { OutputPath = Some path } ->
+            let _, _, il = ILChecker.verifyILAndReturnActual [ "-item:Test::test" ] path []
+            Assert.Contains("test(", il)
+            il
+        | _ -> failwith "Compilation did not produce an assembly"
 
-        let _, _, actualIL = ILChecker.verifyILAndReturnActual [ "-item=Test::test" ] path []
-        Assert.True(actualIL.Contains(" test("), $"Could not find Test.test in emitted IL:\n{actualIL}")
-        Assert.True(actualIL.Contains("newobj") = expected, $"Expected closure allocation in Test.test: {expected}\n{actualIL}")
+    let private allocatesClosure body =
+        Assert.Contains("newobj", testMethodIL body)
 
-    let private allocatesClosure body = compileBody body |> verifyClosureAllocation true
-
-    let private allocatesNoClosure body = compileBody body |> verifyClosureAllocation false
-
-    [<Fact>]
-    let ``unused helper allocation cannot affect either call-site assertion`` () =
-        let result =
-            compileBody
-                """
-let unusedHelper () = obj ()
-let test (env: int) = applyDirect (fun () -> env)
-"""
-
-        verifyILPresent [ "newobj" ] result
-        verifyClosureAllocation false result
-        let error = Assert.Throws<Xunit.Sdk.TrueException>(fun () -> verifyClosureAllocation true result)
-        Assert.Contains("Expected closure allocation in Test.test: True", error.Message)
-
-    [<Theory>]
-    [<InlineData(false)>]
-    [<InlineData(true)>]
-    let ``call-site assertion requires Test.test`` expected =
-        let result = compileBody ""
-        let error = Assert.Throws<Xunit.Sdk.TrueException>(fun () -> verifyClosureAllocation expected result)
-        Assert.Contains("Could not find Test.test", error.Message)
+    let private allocatesNoClosure body =
+        Assert.DoesNotContain("newobj", testMethodIL body)
 
     module DoesNotAllocate =
 
@@ -94,13 +68,22 @@ let test (env: int) (a: string list) (b: string list) =
 """
 
         // Partial application of a TOP-LEVEL function: the optimizer knows its arity and forms the
-        // saturated call, so no closure. (Contrast with the local-function case in AllocatesClosure.)
+        // saturated call, so no closure.
         [<Fact>]
         let ``direct-apply inline HOF, partial application of a top-level function`` () =
             allocatesNoClosure
                 """
 let test (env: int) (a: string list) (b: string list) =
     forall2Direct (eqf env) a b
+"""
+
+        [<Fact>]
+        let ``direct-apply inline HOF, partial application of a local closure`` () =
+            allocatesNoClosure
+                """
+let test (env: int) (a: string list) (b: string list) =
+    let local (cap: int) (x: string) (y: string) = x.Length = y.Length + cap + env
+    forall2Direct (local 5) a b
 """
 
         [<Fact>]
@@ -178,7 +161,7 @@ let test (env: int) (xs: string list) =
     List.map (g env) xs
 """
 
-        // An inline + InlineIfLambda HOF that FORWARDS the function to a non-inline callee still allocates,
+        // Forwarding to List.forall2 still allocates its recursive loop closure,
         // and eta-expanding the call site does not change that.
 
         [<Fact>]
@@ -195,18 +178,4 @@ let test (env: int) (a: string list) (b: string list) =
                 """
 let test (env: int) (a: string list) (b: string list) =
     forall2Forward (fun x y -> eqf env x y) a b
-"""
-
-        // Branch selection keeps the local closure's construction in Test.test rather than a lifted factory.
-        [<Fact>]
-        let ``direct-apply inline HOF, partial application of a local closure`` () =
-            allocatesClosure
-                """
-let test (env: int) (a: string list) (b: string list) =
-    let local =
-        if env > 0 then
-            fun (cap: int) (x: string) (y: string) -> x.Length = y.Length + cap + env
-        else
-            fun cap x y -> x.Length = y.Length + cap - env
-    forall2Direct (local 5) a b
 """

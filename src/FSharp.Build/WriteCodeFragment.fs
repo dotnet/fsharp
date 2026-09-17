@@ -74,6 +74,30 @@ type WriteCodeFragment() as this =
 
                     (key, value))
 
+            let isLiteralSuffix = "_IsLiteral"
+
+            let literalParameters =
+                parameterPairs
+                |> List.choose (fun (key, value) ->
+                    if
+                        key.EndsWith(isLiteralSuffix)
+                        && String.Equals(value.Raw, "true", StringComparison.OrdinalIgnoreCase)
+                    then
+                        Some(key.Substring(0, key.Length - isLiteralSuffix.Length))
+                    else
+                        None)
+                |> Set.ofList
+
+            let parameterPairs =
+                parameterPairs
+                |> List.filter (fun (key, _) -> not (key.EndsWith(isLiteralSuffix)))
+
+            let renderValue key value =
+                if Set.contains key literalParameters then
+                    value.Raw
+                else
+                    value.Escaped
+
             let orderedParameters, namedParameters =
                 parameterPairs |> List.partition (fun (key, _) -> key.StartsWith("_Parameter"))
 
@@ -83,7 +107,7 @@ type WriteCodeFragment() as this =
                     let indexString = key.Substring("_Parameter".Length)
 
                     match Int32.TryParse indexString with
-                    | (true, index) -> (index, value)
+                    | (true, index) -> (index, renderValue key value)
                     | (false, _) -> failTask "Unable to parse '%s' as an index" indexString)
                 |> List.sortBy fst
             // assign ordered parameters to array
@@ -93,43 +117,14 @@ type WriteCodeFragment() as this =
                 else
                     Array.create (List.last orderedParametersWithIndex |> fst) "null"
 
-            List.iter (fun (index, value) -> orderedParametersArray.[index - 1] <- value.Escaped) orderedParametersWithIndex
+            List.iter (fun (index, value) -> orderedParametersArray.[index - 1] <- value) orderedParametersWithIndex
             // construct ordered parameter lists
             let combinedOrderedParameters = String.Join(", ", orderedParametersArray)
 
             let combinedNamedParameters =
-                // Define "_IsLiteral" suffix to match MSBuild behavior
-                let isLiteralSuffix = "_IsLiteral"
-
-                // Process named parameters to handle IsLiteral suffix
                 let processedNamedParameters =
-                    // First identify all parameters with _IsLiteral suffix
-                    let isLiteralParams =
-                        namedParameters
-                        |> List.choose (fun (key, value) ->
-                            if key.EndsWith(isLiteralSuffix) && (value.Raw = "true" || value.Raw = "True") then
-                                // Extract the base parameter name by removing the suffix
-                                Some(key.Substring(0, key.Length - isLiteralSuffix.Length))
-                            else
-                                None)
-                        |> Set.ofList
-
-                    // Process all parameters, handling literals appropriately
                     namedParameters
-                    |> List.choose (fun (key, value) ->
-                        // Skip _IsLiteral metadata entries
-                        if key.EndsWith(isLiteralSuffix) then
-                            None
-                        else
-                            // Check if this parameter should be treated as a literal
-                            let isLiteral = Set.contains key isLiteralParams
-
-                            if isLiteral then
-                                // For literals, use the raw value
-                                Some(key, value.Raw)
-                            else
-                                // Regular parameter, use the escaped value
-                                Some(key, value.Escaped))
+                    |> List.map (fun (key, value) -> key, renderValue key value)
                     // Sort parameters alphabetically by key to match MSBuild behavior
                     |> List.sortBy fst
 
