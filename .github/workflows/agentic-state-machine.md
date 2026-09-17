@@ -11,7 +11,7 @@ on:
   schedule: every 7d
   workflow_dispatch:
 
-timeout-minutes: 15
+timeout-minutes: 60
 permissions: read-all
 
 network:
