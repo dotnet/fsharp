@@ -1166,9 +1166,6 @@ module MutRecBindingChecking =
                             if isStatic && isExtrinsic then
                                 errorR(Error(FSComp.SR.tcStaticBindingInExtrinsicAugmentation(), m))
 
-                            elif isStatic && incrCtorInfoOpt.IsNone && not (g.langVersion.SupportsFeature(LanguageFeature.StaticLetInRecordsDusEmptyTypes)) then
-                                errorR(Error(FSComp.SR.tcStaticLetBindingsRequireClassesWithImplicitConstructors(), m))
-
                             // Phase2A: let-bindings - pass through
                             let innerState = (incrCtorInfoOpt, envForTycon, tpenv, recBindIdx, uncheckedBindsRev)
                             [Phase2AIncrClassBindings (tcref, letBinds, isStatic, isRec, m)], innerState
@@ -2114,8 +2111,7 @@ let TcMutRecDefns_Phase2 (cenv: cenv) envInitial mBinds scopem mutRecNSInfo (env
       // Some preliminary checks
       mutRecDefns |> MutRecShapes.iterTycons (fun tyconData ->
              let (MutRecDefnsPhase2DataForTycon(_, _, declKind, tcref, _, _, _, members, m, newslotsOK, _)) = tyconData
-             let tcaug = tcref.TypeContents
-             if tcaug.tcaug_closed && declKind <> ExtrinsicExtensionBinding then
+             if tcref.IsAugmentationClosed && declKind <> ExtrinsicExtensionBinding then
                  error(InternalError("Intrinsic augmentations of types are only permitted in the same file as the definition of the type", m))
              for mem in members do
                     match mem with
@@ -6392,7 +6388,8 @@ let CheckOneImplFile
 
         let implFile = CheckedImplFile (qualNameOfFile, implFileTy, implFileContents, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)
 
-        return (topAttrs, implFile, envAtEnd, cenv.createsGeneratedProvidedTypes)
+        // implFile.Signature is a fresh copy or the explicit signature; only the inferred type shares its entities with the symbol uses
+        return (topAttrs, implFile, envAtEnd, cenv.createsGeneratedProvidedTypes, implFileTypePriorToSig)
      }
 
 

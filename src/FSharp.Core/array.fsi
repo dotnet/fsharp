@@ -334,11 +334,12 @@ module Array =
     [<CompiledName("Contains")>]
     val inline contains: value: 'T -> array: 'T array -> bool when 'T: equality
 
-    /// <summary>Builds a new array that contains the elements of the given array.</summary>
+    /// <summary>Returns an array that contains the elements of the given array.</summary>
     ///
     /// <param name="array">The input array.</param>
     ///
-    /// <returns>A copy of the input array.</returns>
+    /// <returns>A copy of the input array. Nonempty results are new arrays.
+    /// Empty results can share an empty array, including the input array itself.</returns>
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
     ///
@@ -3298,13 +3299,14 @@ module Array =
     [<CompiledName("InsertAt")>]
     val insertAt: index: int -> value: 'T -> source: 'T array -> 'T array
 
-    /// <summary>Return a new array with new items inserted before the given index.</summary>
+    /// <summary>Returns an array with new items inserted before the given index.</summary>
     ///
     /// <param name="index">The index where the items should be inserted.</param>
     /// <param name="values">The values to insert.</param>
     /// <param name="source">The input array.</param>
     ///
-    /// <returns>A new array (even if values is empty).</returns>
+    /// <returns>A new array, even if <c>values</c> is empty, unless both <c>source</c> and <c>values</c> are empty.
+    /// In that case, the result can be a shared empty array, including <c>source</c> itself.</returns>
     ///
     /// <exception cref="T:System.ArgumentException">Thrown when index is below 0 or greater than source.Length.</exception>
     ///
