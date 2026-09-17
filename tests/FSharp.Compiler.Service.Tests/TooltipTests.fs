@@ -1195,3 +1195,17 @@ let _ = List.m{caret}ap id [1]
 """
     Assert.Contains("List.map", remarks)
     Assert.DoesNotContain("ListModule", remarks)
+
+[<Fact>]
+let ``Parameter tooltip has empty remarks`` () =
+    let (ToolTipText items) =
+        Checker.getTooltip """
+module TestNs
+let bar a{caret} b = a - b
+"""
+    match items with
+    | [ ToolTipElement.Group [ element ] ] ->
+        match element.Remarks with
+        | Some remarks -> Assert.True(remarks.IsEmpty, $"Expected empty remarks, got parts: %A{remarks.Parts}")
+        | None -> ()
+    | _ -> failwith $"Expected a single group, got {items}"
