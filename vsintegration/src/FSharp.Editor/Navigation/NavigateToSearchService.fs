@@ -179,7 +179,9 @@ type internal FSharpNavigateToSearchService
                                             ImmutableArray.Create(TaggedText(TextTags.Text, item.Name)),
                                             document,
                                             sourceSpan
-                                        )
+                                        ),
+                                        item.ParameterCount,
+                                        item.TypeParameterCount
                                     )
                         | _ -> ()
                 |]
