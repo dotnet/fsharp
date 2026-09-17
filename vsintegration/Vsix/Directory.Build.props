@@ -4,7 +4,7 @@
 
   <PropertyGroup>
     <VisualStudioInsertionComponent>Microsoft.FSharp</VisualStudioInsertionComponent>
-    <VSRootSuffix>RoslynDev</VSRootSuffix>
+    <VSRootSuffix Condition="'$(VSRootSuffix)' == ''">RoslynDev</VSRootSuffix>
     <VSSDKTargetPlatformRegRootSuffix>$(VSRootSuffix)</VSSDKTargetPlatformRegRootSuffix>
     <!-- Path to the locally built F# compiler for use during VSIX debugging -->
     <FSharpCompilerPathForDebuggingLocally>$(ArtifactsDir)bin\fscAnyCpu\$(Configuration)\net472\</FSharpCompilerPathForDebuggingLocally>
