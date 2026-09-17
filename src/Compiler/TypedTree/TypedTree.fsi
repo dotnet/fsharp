@@ -123,6 +123,7 @@ type ValFlags =
     member IgnoresByrefScope: bool
 
     member InlineIfLambda: bool
+    member OptimizeClosureIfNotInlined: bool
 
     member InlineInfo: ValInline
 
@@ -162,6 +163,7 @@ type ValFlags =
     member WithIgnoresByrefScope: ValFlags
 
     member WithInlineIfLambda: ValFlags
+    member WithOptimizeClosureIfNotInlined: ValFlags
 
     member WithInlineInfo: inlineInfo: ValInline -> ValFlags
 
@@ -284,6 +286,9 @@ type EntityFlags =
 
     new: flags: int64 -> EntityFlags
 
+    /// Mark the entity's augmentation closed
+    member WithIsAugmentationClosed: EntityFlags
+
     /// Adjust the on-demand analysis about whether the entity is assumed to be a readonly struct
     member WithIsAssumedReadOnly: flag: bool -> EntityFlags
 
@@ -311,6 +316,9 @@ type EntityFlags =
 
     /// These two bits represents the on-demand analysis about whether the entity is assumed to be a readonly struct
     member TryIsAssumedReadOnly: bool voption
+
+    /// Indicates no further members can be added to this entity's augmentation
+    member IsAugmentationClosed: bool
 
     /// These two bits represents the on-demand analysis about whether the entity has the IsByRefLike attribute
     member TryIsByRefLike: bool voption
@@ -453,7 +461,7 @@ type Entity =
         mutable entity_tycon_repr: TyconRepresentation
 
         /// The methods type properties of the type
-        mutable entity_tycon_tcaug: TyconAugmentation
+        mutable entity_tycon_tcaug: TyconAugmentation | null
 
         /// This field is used when the 'tycon' is really a module definition. It holds statically nested type definitions type nested modules
         mutable entity_modul_type: MaybeLazy<ModuleOrNamespaceType>
@@ -501,6 +509,11 @@ type Entity =
 
     /// Set the on-demand analysis about whether the entity is assumed to be a readonly struct
     member SetIsAssumedReadOnly: b: bool -> unit
+
+    /// Indicates no further members can be added to this entity's augmentation
+    member IsAugmentationClosed: bool
+
+    member SetAugmentationClosed: unit -> unit
 
     /// Set the on-demand analysis about whether the entity has the IsByRefLike attribute
     member SetIsByRefLike: b: bool -> unit
@@ -790,6 +803,9 @@ type Entity =
     /// These two bits represents the on-demand analysis about whether the entity is assumed to be a readonly struct
     member TryIsAssumedReadOnly: bool voption
 
+    /// Indicates no further members can be added to this entity's augmentation
+    member IsAugmentationClosed: bool
+
     /// The on-demand analysis about whether the entity has the IsByRefLike attribute
     member TryIsByRefLike: bool voption
 
@@ -901,9 +917,6 @@ type TyconAugmentation =
 
         /// Super type, if any
         mutable tcaug_super: TType option
-
-        /// Set to true at the end of the scope where proper augmentations are allowed
-        mutable tcaug_closed: bool
 
         /// Set to true if the type is determined to be abstract
         mutable tcaug_abstract: bool
@@ -2053,6 +2066,7 @@ type Val =
     member SetIgnoresByrefScope: unit -> unit
 
     member SetInlineIfLambda: unit -> unit
+    member SetOptimizeClosureIfNotInlined: unit -> unit
 
     /// Sets the inline information for this value. Used by the type checker
     /// to downgrade an erroneously-recursive inline binding to non-inline
@@ -2174,6 +2188,7 @@ type Val =
 
     /// Get the inline declaration on a parameter or other non-function-declaration value, used for optimization
     member InlineIfLambda: bool
+    member OptimizeClosureIfNotInlined: bool
 
     /// Get the inline declaration on the value
     member InlineInfo: ValInline
@@ -2502,6 +2517,11 @@ type EntityRef =
     /// Set the on-demand analysis about whether the entity is assumed to be a readonly struct
     member SetIsAssumedReadOnly: b: bool -> unit
 
+    /// Indicates no further members can be added to this entity's augmentation
+    member IsAugmentationClosed: bool
+
+    member SetAugmentationClosed: unit -> unit
+
     /// Set the on-demand analysis about whether the entity has the IsByRefLike attribute
     member SetIsByRefLike: b: bool -> unit
 
@@ -2777,6 +2797,9 @@ type EntityRef =
     /// The on-demand analysis about whether the entity is assumed to be a readonly struct
     member TryIsAssumedReadOnly: bool voption
 
+    /// Indicates no further members can be added to this entity's augmentation
+    member IsAugmentationClosed: bool
+
     /// The on-demand analysis about whether the entity has the IsByRefLike attribute
     member TryIsByRefLike: bool voption
 
@@ -2916,6 +2939,7 @@ type ValRef =
 
     /// Get the inline declaration on a parameter or other non-function-declaration value, used for optimization
     member InlineIfLambda: bool
+    member OptimizeClosureIfNotInlined: bool
 
     /// Determines if the values is implied by another construct, e.g. a `IsA` property is implied by the union case for A
     member IsImplied: bool

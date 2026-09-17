@@ -349,14 +349,17 @@ type Basics() =
     member _.testNoDelay() =
         printfn "Running testNoDelay..."
         let mutable x = 0
+        let allowContinue = TaskCompletionSource<unit>()
         let t =
             taskDynamic {
                 x <- x + 1
-                do! Task.Delay(5)
+                do! allowContinue.Task
                 x <- x + 1
             }
         require (x = 1) "first part didn't run yet"
+        allowContinue.SetResult(())
         t.Wait()
+        require (x = 2) "second part didn't run"
 
     [<Fact>]
     member _.testNonBlocking() =
