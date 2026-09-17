@@ -590,6 +590,12 @@ let UnknownValInfo = { ValExprInfo=UnknownValue; ValMakesNoCriticalTailcalls=fal
 
 let mkValInfo info (v: Val) = { ValExprInfo=info.Info; ValMakesNoCriticalTailcalls= v.MakesNoCriticalTailcalls }
 
+let rec private RestoreRuntimeAsyncPinningInValInfo = function
+    | CurriedLambdaValue (_, _, _, expr, _) -> RestoreRuntimeAsyncPinning expr
+    | ValValue (_, info)
+    | SizeValue (_, info) -> RestoreRuntimeAsyncPinningInValInfo info
+    | _ -> ()
+
 (* Bind a value *)
 let BindInternalLocalVal cenv (v: Val) vval env =
     let vval = if v.IsMutable then UnknownValInfo else vval
@@ -701,6 +707,10 @@ let TryGetInfoForNonLocalEntityRef env (nleref: NonLocalEntityRef) =
 
 let GetInfoForNonLocalVal cenv env (vref: ValRef) =
     let g = cenv.g
+    let restorePinning info =
+        if vref.ShouldInline || vref.InlineIfLambda then
+            RestoreRuntimeAsyncPinningInValInfo info.ValExprInfo
+        info
 
     if vref.IsDispatchSlot then
         UnknownValInfo
@@ -709,13 +719,13 @@ let GetInfoForNonLocalVal cenv env (vref: ValRef) =
         match TryGetInfoForNonLocalEntityRef env vref.nlr.EnclosingEntity.nlr with
         | Some structInfo ->
             match structInfo.ValInfos.TryFind vref with
-            | Some ninfo -> snd ninfo
+            | Some ninfo -> restorePinning (snd ninfo)
             | None ->
                   //dprintn ("\n\n*** Optimization info for value "+n+" from module "+(full_name_of_nlpath smv)+" not found, module contains values: "+String.concat ", " (NameMap.domainL structInfo.ValInfos))
                   //System.Diagnostics.Debug.Assert(false, sprintf "Break for module %s, value %s" (full_name_of_nlpath smv) n)
                   if g.compilingFSharpCore then
                       match structInfo.ValInfos.TryFindForFslib (g, vref) with
-                      | true, ninfo -> snd ninfo
+                      | true, ninfo -> restorePinning (snd ninfo)
                       | _ -> UnknownValInfo
                   else
                       UnknownValInfo
@@ -3439,10 +3449,8 @@ and OptimizeTraitCall cenv env (traitInfo, args, m) =
             let argsR, arginfos = OptimizeExprsThenConsiderSplits cenv env args
             OptimizeExprOpFallback cenv env (TOp.TraitCall traitInfo, [], argsR, m) arginfos UnknownValue
 
-and CopyExprForInlining cenv restorePinning isInlineIfLambda expr (m: range) =
+and CopyExprForInlining cenv isInlineIfLambda expr (m: range) =
     let g = cenv.g
-    if restorePinning then
-        RestoreRuntimeAsyncPinning expr
 
     // 'InlineIfLambda' doesn't erase ranges, e.g. if the lambda is user code.
     let result =
@@ -3497,10 +3505,7 @@ and TryOptimizeVal cenv env (vOpt: ValRef option, shouldInline, inlineIfLambda, 
         if usesMethodLocalConstructsOrProtectedField cenv fvs expr then
             None
         else
-            let restorePinning =
-                vOpt
-                |> Option.exists (fun v -> not v.IsLocalRef && (v.ShouldInline || v.InlineIfLambda))
-            let exprCopy = CopyExprForInlining cenv restorePinning inlineIfLambda expr m
+            let exprCopy = CopyExprForInlining cenv inlineIfLambda expr m
             Some exprCopy
 
     | TupleValue _ | UnionCaseValue _ | RecdValue _ when shouldInline ->
@@ -3948,7 +3953,7 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
 
         match lambdaInfo with
         | Some(CurriedLambdaValue(origLambdaId, _, _, origLambda, origLambdaTy)) ->
-            let f2R = CopyExprForInlining cenv (not vref.IsLocalRef) true origLambda m
+            let f2R = CopyExprForInlining cenv true origLambda m
             let specLambda = MakeApplicationAndBetaReduce g (f2R, origLambdaTy, [tyargs], [], m)
             let specLambdaTy = tyOfExpr g specLambda
 
@@ -4196,7 +4201,7 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
                 let bodyR = remapExpr g CloneAllAndMarkExprValsAsCompilerGenerated (mkInstRemap tpinst) body |> remarkExpr m
                 MakeApplicationAndBetaReduce g (bodyR, instType tpinst bodyTy, [], argsR, m)
             | _ ->
-                let f2R = CopyExprForInlining cenv false false f2 m
+                let f2R = CopyExprForInlining cenv false f2 m
                 MakeApplicationAndBetaReduce g (f2R, f2ty, [tyargs], argsR, m)
         // Inlining: reoptimizing
         Some(OptimizeExpr cenv {env with dontInline = Map.add lambdaId [] env.dontInline} exprR)
