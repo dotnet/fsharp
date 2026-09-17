@@ -252,6 +252,10 @@ type ValFlags(flags: int64) =
 
     member x.WithIsParameter                           = ValFlags(flags ||| 0b10000000000000000000000L)
 
+    member x.OptimizeClosureIfNotInlined               =      (flags &&& 0b100000000000000000000000L) <> 0L
+
+    member x.WithOptimizeClosureIfNotInlined           = ValFlags(flags ||| 0b100000000000000000000000L)
+
     /// Get the flags as included in the F# binary metadata
     member x.PickledBits =
         // Clear the RecursiveValInfo, only used during inference and irrelevant across assembly boundaries
@@ -512,8 +516,12 @@ type EntityFlags(flags: int64) =
                       | false ->                                        0b000100000000000L)
             EntityFlags flags
 
+    member x.IsAugmentationClosed                = (flags       &&&     0b001000000000000L) <> 0x0L
+
+    member x.WithIsAugmentationClosed =            EntityFlags(flags ||| 0b001000000000000L)
+
     /// Get the flags as included in the F# binary metadata
-    member x.PickledBits =                         (flags       &&&  ~~~0b000111111000100L)
+    member x.PickledBits =                         (flags       &&&  ~~~0b001111111000100L)
 
 
 
@@ -699,7 +707,7 @@ type Entity =
       /// The methods and properties of the type
       //
       // MUTABILITY; used only during creation and remapping of tycons
-      mutable entity_tycon_tcaug: TyconAugmentation
+      mutable entity_tycon_tcaug: TyconAugmentation | null
 
       /// This field is used when the 'tycon' is really a module definition. It holds statically nested type definitions and nested modules
       //
@@ -891,7 +899,18 @@ type Entity =
     member x.ModuleOrNamespaceType = x.entity_modul_type.Force()
 
     /// The logical contents of the entity when it is a type definition.
-    member x.TypeContents = x.entity_tycon_tcaug
+    member x.TypeContents =
+        match x.entity_tycon_tcaug with
+        | null ->
+            let fresh: TyconAugmentation = TyconAugmentation.Create()
+
+            let prior: TyconAugmentation | null =
+                System.Threading.Interlocked.CompareExchange(&x.entity_tycon_tcaug, fresh, Unchecked.defaultof<_>)
+
+            match prior with
+            | null -> fresh
+            | prior -> prior
+        | tcaug -> tcaug
 
     /// The kind of the type definition - is it a measure definition or a type definition?
     member x.TypeOrMeasureKind =
@@ -1116,7 +1135,7 @@ type Entity =
           entity_range = Unchecked.defaultof<_>
           entity_attribs = Unchecked.defaultof<_>
           entity_tycon_repr= Unchecked.defaultof<_>
-          entity_tycon_tcaug= Unchecked.defaultof<_>
+          entity_tycon_tcaug= null
           entity_modul_type= Unchecked.defaultof<_>
           entity_cpath = Unchecked.defaultof<_>
           entity_il_repr_cache = Unchecked.defaultof<_>
@@ -1185,6 +1204,10 @@ type Entity =
         | TFSharpTyconRepr { fsobjmodel_kind=TFSharpRecord } -> x.entity_flags.IsStructRecordOrUnionType
         | TFSharpTyconRepr { fsobjmodel_kind=TFSharpUnion } -> x.entity_flags.IsStructRecordOrUnionType
         | _ -> false
+
+    member x.IsAugmentationClosed = x.entity_flags.IsAugmentationClosed
+
+    member x.SetAugmentationClosed() = x.entity_flags <- x.entity_flags.WithIsAugmentationClosed
 
     /// The on-demand analysis about whether the entity has the IsByRefLike attribute
     member x.TryIsByRefLike = x.entity_flags.TryIsByRefLike
@@ -1497,9 +1520,6 @@ type TyconAugmentation =
       /// Super type, if any
       mutable tcaug_super: TType option
 
-      /// Set to true at the end of the scope where proper augmentations are allowed
-      mutable tcaug_closed: bool
-
       /// Set to true if the type is determined to be abstract
       mutable tcaug_abstract: bool
     }
@@ -1542,7 +1562,6 @@ type TyconAugmentation =
           tcaug_adhoc_list=null
           tcaug_super=None
           tcaug_interfaces=[]
-          tcaug_closed=false
           tcaug_abstract=false }
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
@@ -3173,6 +3192,8 @@ type Val =
     /// Get the inline declaration on a parameter or other non-function-declaration value, used for optimization
     member x.InlineIfLambda = x.val_flags.InlineIfLambda
 
+    member x.OptimizeClosureIfNotInlined = x.val_flags.OptimizeClosureIfNotInlined
+
     /// Determines if the values is implied by another construct, e.g. a `IsA` property is implied by the union case for A
     member x.IsImplied = x.val_flags.IsImplied
 
@@ -3425,6 +3446,8 @@ type Val =
     member x.SetIgnoresByrefScope() = x.val_flags <- x.val_flags.WithIgnoresByrefScope
 
     member x.SetInlineIfLambda() = x.val_flags <- x.val_flags.WithInlineIfLambda
+
+    member x.SetOptimizeClosureIfNotInlined() = x.val_flags <- x.val_flags.WithOptimizeClosureIfNotInlined
 
     member x.SetInlineInfo (inlineInfo: ValInline) = x.val_flags <- x.val_flags.WithInlineInfo inlineInfo
 
@@ -4079,6 +4102,10 @@ type EntityRef =
     /// it is better to use more specific predicates.
     member x.IsFSharpObjectModelTycon = x.Deref.IsFSharpObjectModelTycon
 
+    member x.IsAugmentationClosed = x.Deref.IsAugmentationClosed
+
+    member x.SetAugmentationClosed() = x.Deref.SetAugmentationClosed()
+
     /// The on-demand analysis about whether the entity has the IsByRefLike attribute
     member x.TryIsByRefLike = x.Deref.TryIsByRefLike
 
@@ -4354,6 +4381,8 @@ type ValRef =
 
     /// Get the inline declaration on a parameter or other non-function-declaration value, used for optimization
     member x.InlineIfLambda = x.Deref.InlineIfLambda
+
+    member x.OptimizeClosureIfNotInlined = x.Deref.OptimizeClosureIfNotInlined
 
     /// Indicates whether the inline declaration for the value indicate that the value must be inlined?
     member x.ShouldInline = x.Deref.ShouldInline
@@ -6341,7 +6370,7 @@ type Construct() =
             entity_attribs=WellKnownEntityAttribs.Empty // fetched on demand via est.fs API
             entity_typars= LazyWithContext.NotLazy []
             entity_tycon_repr = repr
-            entity_tycon_tcaug=TyconAugmentation.Create()
+            entity_tycon_tcaug = null
             entity_modul_type = MaybeLazy.Lazy(InterruptibleLazy(fun _ -> ModuleOrNamespaceType(Namespace true, QueueList.ofList [], QueueList.ofList [])))
             // Generated types get internal accessibility
             entity_cpath = Some cpath
@@ -6366,7 +6395,7 @@ type Construct() =
             entity_flags=EntityFlags(usesPrefixDisplay=false, isModuleOrNamespace=true, preEstablishedHasDefaultCtor=false, hasSelfReferentialCtor=false, isStructRecordOrUnionType=false)
             entity_typars=LazyWithContext.NotLazy []
             entity_tycon_repr = TNoRepr
-            entity_tycon_tcaug=TyconAugmentation.Create()
+            entity_tycon_tcaug=null
             entity_cpath=cpath
             entity_attribs=WellKnownEntityAttribs.Create(attribs)
             entity_il_repr_cache = null
@@ -6440,7 +6469,7 @@ type Construct() =
             entity_attribs = WellKnownEntityAttribs.Create(attribs)
             entity_logical_name = id.idText
             entity_range = id.idRange
-            entity_tycon_tcaug = TyconAugmentation.Create()
+            entity_tycon_tcaug = null
             entity_modul_type = MaybeLazy.Strict (Construct.NewEmptyModuleOrNamespaceType ModuleOrType)
             entity_cpath = cpath
             entity_typars = LazyWithContext.NotLazy []
@@ -6481,7 +6510,7 @@ type Construct() =
             entity_attribs=WellKnownEntityAttribs.Empty // fixed up after
             entity_typars=typars
             entity_tycon_repr = TNoRepr
-            entity_tycon_tcaug=TyconAugmentation.Create()
+            entity_tycon_tcaug = null
             entity_modul_type = mtyp
             entity_cpath = cpath
             entity_il_repr_cache = null
@@ -6495,7 +6524,7 @@ type Construct() =
         let tycon = Construct.NewTycon(nlpath, nm, m, taccessPublic, taccessPublic, TyparKind.Type, tps, XmlDoc.Empty, true, false, false, mtyp)
 
         tycon.entity_tycon_repr <- TILObjectRepr (TILObjectReprData (scoref, enc, tdef))
-        tycon.TypeContents.tcaug_closed <- true
+        tycon.SetAugmentationClosed()
         tycon
 
     /// Create a new Val node

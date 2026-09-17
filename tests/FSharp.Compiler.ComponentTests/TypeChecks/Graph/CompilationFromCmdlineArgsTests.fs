@@ -4,6 +4,7 @@ module CompilationFromCmdlineArgsTests =
 
     open System
     open System.IO
+    open System.Threading.Tasks
     open FSharp.Compiler.CodeAnalysis
     open Xunit
     open CompilationTests
@@ -21,38 +22,40 @@ module CompilationFromCmdlineArgsTests =
 
     let checker = FSharpChecker.Create()
 
-    let testCompilerFromArgs (method: Method) (projectArgumentsFilePath: string) : unit =
-        let oldWorkDir = Environment.CurrentDirectory
+    let testCompilerFromArgs (method: Method) (projectArgumentsFilePath: string) : Task =
+        task {
+            let oldWorkDir = Environment.CurrentDirectory
 
-        try
-            Environment.CurrentDirectory <- FileInfo(projectArgumentsFilePath).Directory.FullName
+            try
+                Environment.CurrentDirectory <- FileInfo(projectArgumentsFilePath).Directory.FullName
 
-            let args =
-                let argsFromFile = File.ReadAllLines(projectArgumentsFilePath)
+                let args =
+                    let argsFromFile = File.ReadAllLines(projectArgumentsFilePath)
 
-                [|
-                    yield "fsc.exe"
-                    yield! argsFromFile
-                    if not (Array.contains "--times" argsFromFile) then
-                        yield "--times"
-                    yield! methodOptions method
-                |]
+                    [|
+                        yield "fsc.exe"
+                        yield! argsFromFile
+                        if not (Array.contains "--times" argsFromFile) then
+                            yield "--times"
+                        yield! methodOptions method
+                    |]
 
-            let diagnostics, exn = checker.Compile(args) |> Async.RunSynchronously
+                let! diagnostics, exn = checker.Compile(args)
 
-            for diag in diagnostics do
-                printfn "%A" diag
+                for diag in diagnostics do
+                    printfn "%A" diag
 
-            Assert.Equal(exn, None)
-        finally
-            Environment.CurrentDirectory <- oldWorkDir
+                Assert.Equal(exn, None)
+            finally
+                Environment.CurrentDirectory <- oldWorkDir
+        }
 
     [<MemberData(nameof localProjects)>]
     [<Theory(Skip = "Slow, only useful as a sanity check that the test codebase is sound and type-checks using the old method")>]
-    let ``Test sequential type-checking`` (projectArgumentsFilePath: string) =
+    let ``Test sequential type-checking`` (projectArgumentsFilePath: string) : Task =
         testCompilerFromArgs Method.Sequential projectArgumentsFilePath
 
     [<MemberData(nameof localProjects)>]
     [<Theory(Skip = "This should only run with the explicitly mentioned projects above")>]
-    let ``Test graph-based type-checking`` (projectArgumentsFilePath: string) =
+    let ``Test graph-based type-checking`` (projectArgumentsFilePath: string) : Task =
         testCompilerFromArgs Method.Graph projectArgumentsFilePath
