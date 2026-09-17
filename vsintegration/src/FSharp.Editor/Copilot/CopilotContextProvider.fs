@@ -145,7 +145,7 @@ module internal CopilotSymbolQuery =
     /// The documents in the order a query visits them: the ones the user has open, the ones already
     /// parsed into the cache, and the ones that would have to be parsed to answer.
     let private tiers (cache: FSharpNavigableItemsCache) (openIds: HashSet<DocumentId>) (solution: Solution) =
-        let opened = ResizeArray()
+        let opened = ResizeArray(openIds.Count)
         let cached = ResizeArray()
         let cold = ResizeArray()
 
