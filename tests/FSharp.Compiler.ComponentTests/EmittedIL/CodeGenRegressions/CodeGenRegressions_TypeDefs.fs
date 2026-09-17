@@ -287,3 +287,248 @@ type MyOption<'T> =
         ]
         |> ignore
 
+
+    // https://github.com/dotnet/fsharp/issues/19445
+    [<Fact>]
+    let ``Issue_19445_GenericDuNullaryCaseWithStaticMemberVal`` () =
+        let source = """
+module Test
+
+open System.Reflection
+
+type U<'T> =
+    | A
+    static member val X = 3
+
+if U<int>.X <> 3 then failwith "expected U<int>.X = 3"
+if U<string>.X <> 3 then failwith "expected U<string>.X = 3"
+
+match U<int>.A with
+| A -> ()
+
+let cctors =
+    typedefof<U<_>>.GetConstructors(BindingFlags.Static ||| BindingFlags.NonPublic ||| BindingFlags.Public)
+
+if cctors.Length <> 1 then failwithf "expected exactly one static constructor, got %d" cctors.Length
+"""
+        FSharp source
+        |> asExe
+        |> compile
+        |> shouldSucceed
+        |> run
+        |> shouldSucceed
+        |> ignore
+
+    // https://github.com/dotnet/fsharp/issues/19445
+    [<Fact>]
+    let ``Issue_19445_TwoCaseGenericDuWithStaticMemberVal`` () =
+        let source = """
+module Test
+
+type U<'T> =
+    | A
+    | B of 'T
+    static member val X = 3
+
+if U<int>.X <> 3 then failwith "expected U<int>.X = 3"
+
+match U<string>.A, B "b" with
+| A, B "b" -> ()
+| _ -> failwith "unexpected match result"
+"""
+        FSharp source
+        |> asExe
+        |> compile
+        |> shouldSucceed
+        |> run
+        |> shouldSucceed
+        |> ignore
+
+    // https://github.com/dotnet/fsharp/issues/19445
+    [<Fact>]
+    let ``Issue_19445_GenericDuNullaryCaseWithStaticLet`` () =
+        let source = """
+module Test
+
+type U<'T> =
+    | A
+    static let mutable counter = 1
+    static member Next() =
+        counter <- counter + 1
+        counter
+
+if U<int>.Next() <> 2 then failwith "expected U<int>.Next() = 2"
+if U<int>.Next() <> 3 then failwith "expected U<int>.Next() = 3"
+if U<string>.Next() <> 2 then failwith "expected U<string>.Next() = 2"
+
+match U<int>.A with
+| A -> ()
+"""
+        FSharp source
+        |> asExe
+        |> compile
+        |> shouldSucceed
+        |> run
+        |> shouldSucceed
+        |> ignore
+
+    // https://github.com/dotnet/fsharp/issues/19445
+    // The singleton case field must be initialized before user static bindings run.
+    [<Fact>]
+    let ``Issue_19445_StaticMemberValReadsNullaryCaseSingleton`` () =
+        let source = """
+module Test
+
+type U<'T> =
+    | A
+    static member val X : U<'T> = A
+
+if not (obj.ReferenceEquals(U<int>.X, U<int>.A)) then
+    failwith "expected U<int>.X to be the initialized A singleton"
+
+if not (obj.ReferenceEquals(U<string>.X, U<string>.A)) then
+    failwith "expected U<string>.X to be the initialized A singleton"
+"""
+        FSharp source
+        |> asExe
+        |> compile
+        |> shouldSucceed
+        |> run
+        |> shouldSucceed
+        |> ignore
+
+    // https://github.com/dotnet/fsharp/issues/19445
+    // Prepending the singleton initializer shifts every label, so the exception handler ranges of a
+    // .cctor that already contains a try/with must still cover the instructions they started on.
+    [<Fact>]
+    let ``Issue_19445_StaticInitializerWithTryWith`` () =
+        let source = """
+module Test
+
+type U<'T> =
+    | A
+    static let value =
+        try
+            failwith "boom"
+        with _ ->
+            42
+
+    static member Value = value
+
+if U<int>.Value <> 42 then failwithf "expected U<int>.Value = 42, got %d" U<int>.Value
+if U<string>.Value <> 42 then failwithf "expected U<string>.Value = 42, got %d" U<string>.Value
+
+if not (obj.ReferenceEquals(U<int>.A, U<int>.A)) then
+    failwith "expected the A singleton to be initialized"
+
+match U<int>.A with
+| A -> ()
+"""
+        FSharp source
+        |> asExe
+        |> compile
+        |> shouldSucceed
+        |> run
+        |> shouldSucceed
+        |> ignore
+
+    // https://github.com/dotnet/fsharp/issues/19445
+    // Prepending the singleton initializer shifts every label by its own length: the .try must still
+    // start at the first instruction it started on, and the handler must not swallow the initializer.
+    [<Fact>]
+    let ``Issue_19445_StaticInitializerTryWithKeepsHandlerBoundaries`` () =
+        let source = """
+module Test
+
+type U<'T> =
+    | A
+    static let value =
+        try
+            failwith "boom"
+        with _ ->
+            42
+
+    static member Value = value
+"""
+        FSharp source
+        |> compile
+        |> shouldSucceed
+        |> verifyIL [ """.method private specialname rtspecialname static void  .cctor() cil managed
+  {
+
+    .maxstack  3
+    .locals init (int32 V_0,
+             class [runtime]System.Exception V_1)
+    IL_0000:  newobj     instance void class Test/U`1<!T>::.ctor()
+    IL_0005:  stsfld     class Test/U`1<!0> class Test/U`1<!T>::_unique_A
+    .try
+    {
+      IL_000a:  ldstr      "boom" """ ]
+
+    // https://github.com/dotnet/fsharp/issues/19445
+    [<Fact>]
+    let ``Issue_19445_StaticInitializerWithTryFinally`` () =
+        let source = """
+module Test
+
+type U<'T> =
+    | A
+    static let mutable finallyRan = false
+
+    static let value =
+        try
+            1
+        finally
+            finallyRan <- true
+
+    static member Value = value
+    static member FinallyRan = finallyRan
+
+if U<int>.Value <> 1 then failwithf "expected U<int>.Value = 1, got %d" U<int>.Value
+if not U<int>.FinallyRan then failwith "expected the finally block to have run"
+
+match U<string>.A with
+| A -> ()
+"""
+        FSharp source
+        |> asExe
+        |> compile
+        |> shouldSucceed
+        |> run
+        |> shouldSucceed
+        |> ignore
+
+    // https://github.com/dotnet/fsharp/issues/19445
+    // The merged .cctor must still run once per instantiation, not once per access.
+    [<Fact>]
+    let ``Issue_19445_MergedCctorRunsOncePerInstantiation`` () =
+        let source = """
+module Test
+
+type U<'T> =
+    | A
+    static let mutable count = 0
+
+    static let value =
+        count <- count + 1
+        count
+
+    static member Value = value
+    static member Count = count
+
+if U<int>.Value <> 1 then failwithf "expected U<int>.Value = 1, got %d" U<int>.Value
+if U<int>.Value <> 1 then failwith "expected U<int>.Value to be stable across accesses"
+if U<int>.Count <> 1 then failwithf "expected U<int> to initialize once, ran %d times" U<int>.Count
+
+if U<string>.Count <> 1 then failwithf "expected U<string> to initialize once, ran %d times" U<string>.Count
+
+if not (obj.ReferenceEquals(U<int>.A, U<int>.A)) then
+    failwith "expected the A singleton to be initialized"
+"""
+        FSharp source
+        |> asExe
+        |> compile
+        |> shouldSucceed
+        |> run
+        |> shouldSucceed
+        |> ignore
