@@ -438,6 +438,18 @@ let ``non-preservable pinned value used before suspension is allowed`` () =
     |> shouldSucceed
 
 [<Fact>]
+let ``captured pinning value is rejected`` () =
+    FSharp(directIntrinsicSource
+        "let f (arr: int[]) : Task<int> = use p = fixed arr in StateMachineHelpers.__runtimeAsyncReturn (FSharp.NativeInterop.NativePtr.get p 0)"
+    )
+    |> withFSharpCoreShippedNet
+    |> withLangVersionPreview
+    |> withNoWarn 9
+    |> compile
+    |> shouldFail
+    |> withErrorCode 406
+
+[<Fact>]
 let ``non-preservable value not used after suspension is allowed`` () =
     compileDirect
         "let f (x: byref<int>) : Task<int> = StateMachineHelpers.__runtimeAsyncReturn (AsyncHelpers.Await(Task.Delay(1)); 1)"

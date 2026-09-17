@@ -27,3 +27,5 @@ val ShouldForceRuntimeAsyncApplication:
 val InlineRuntimeAsyncLambdaArgument: g: TcGlobals -> isRuntimeAsyncFragment: (Expr -> bool) -> expr: Expr -> Expr
 
 val GetRuntimeAsyncNonPreservableUses: g: TcGlobals -> expr: Expr -> Val list
+
+val RestoreRuntimeAsyncPinning: expr: Expr -> unit

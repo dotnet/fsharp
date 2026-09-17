@@ -105,6 +105,48 @@ let main _ =
 [<InlineData(false)>]
 [<InlineData(true)>]
 [<Theory>]
+let ``runtime async rejects pinning from an imported inline function after suspension`` (optimize: bool) =
+    let library =
+        FSharp """
+module RuntimeAsyncPinningCrossAssemblyLibrary
+
+open FSharp.NativeInterop
+
+let inline comparePin (array: byte[]) ([<InlineIfLambda>] action) =
+    use before = fixed array
+    action ()
+    use after = fixed array
+    struct (NativePtr.toNativeInt before, NativePtr.toNativeInt after)
+"""
+        |> withName "RuntimeAsyncPinningCrossAssemblyLibrary"
+        |> withLangVersionPreview
+        |> withFSharpCoreShippedNet
+        |> withNoWarn 9
+
+    FSharp """
+module RuntimeAsyncPinningCrossAssemblyConsumer
+
+open System.Threading.Tasks
+open System.Runtime.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices
+open RuntimeAsyncPinningCrossAssemblyLibrary
+
+let run (data: byte[]) (gate: Task<unit>) =
+    StateMachineHelpers.__runtimeAsyncReturn (
+        comparePin data (fun () -> AsyncHelpers.Await gate))
+"""
+    |> withLangVersionPreview
+    |> withFSharpCoreShippedNet
+    |> withOptimization optimize
+    |> withNoWarn 9
+    |> withReferences [ library ]
+    |> compile
+    |> shouldFail
+    |> withErrorCode 3919
+
+[<InlineData(false)>]
+[<InlineData(true)>]
+[<Theory>]
 let ``runtime async methods execute across assemblies`` (optimize: bool) =
     FSharp runtimeAsyncCrossAssemblyConsumer
     |> withLangVersionPreview

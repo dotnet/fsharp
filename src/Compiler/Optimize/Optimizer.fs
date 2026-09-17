@@ -3439,16 +3439,21 @@ and OptimizeTraitCall cenv env (traitInfo, args, m) =
             let argsR, arginfos = OptimizeExprsThenConsiderSplits cenv env args
             OptimizeExprOpFallback cenv env (TOp.TraitCall traitInfo, [], argsR, m) arginfos UnknownValue
 
-and CopyExprForInlining cenv isInlineIfLambda expr (m: range) =
+and CopyExprForInlining cenv restorePinning isInlineIfLambda expr (m: range) =
     let g = cenv.g
+    if restorePinning then
+        RestoreRuntimeAsyncPinning expr
+
     // 'InlineIfLambda' doesn't erase ranges, e.g. if the lambda is user code.
-    if isInlineIfLambda then
-        expr
-        |> copyExpr g CloneAll
-    else
-        expr
-        |> copyExpr g CloneAllAndMarkExprValsAsCompilerGenerated
-        |> remarkExpr m
+    let result =
+        if isInlineIfLambda then
+            expr |> copyExpr g CloneAll
+        else
+            expr
+            |> copyExpr g CloneAllAndMarkExprValsAsCompilerGenerated
+            |> remarkExpr m
+
+    result
 
 /// Make optimization decisions once we know the optimization information
 /// for a value
@@ -3492,7 +3497,10 @@ and TryOptimizeVal cenv env (vOpt: ValRef option, shouldInline, inlineIfLambda, 
         if usesMethodLocalConstructsOrProtectedField cenv fvs expr then
             None
         else
-            let exprCopy = CopyExprForInlining cenv inlineIfLambda expr m
+            let restorePinning =
+                vOpt
+                |> Option.exists (fun v -> not v.IsLocalRef && (v.ShouldInline || v.InlineIfLambda))
+            let exprCopy = CopyExprForInlining cenv restorePinning inlineIfLambda expr m
             Some exprCopy
 
     | TupleValue _ | UnionCaseValue _ | RecdValue _ when shouldInline ->
@@ -3940,7 +3948,7 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
 
         match lambdaInfo with
         | Some(CurriedLambdaValue(origLambdaId, _, _, origLambda, origLambdaTy)) ->
-            let f2R = CopyExprForInlining cenv true origLambda m
+            let f2R = CopyExprForInlining cenv (not vref.IsLocalRef) true origLambda m
             let specLambda = MakeApplicationAndBetaReduce g (f2R, origLambdaTy, [tyargs], [], m)
             let specLambdaTy = tyOfExpr g specLambda
 
@@ -4188,7 +4196,7 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
                 let bodyR = remapExpr g CloneAllAndMarkExprValsAsCompilerGenerated (mkInstRemap tpinst) body |> remarkExpr m
                 MakeApplicationAndBetaReduce g (bodyR, instType tpinst bodyTy, [], argsR, m)
             | _ ->
-                let f2R = CopyExprForInlining cenv false f2 m
+                let f2R = CopyExprForInlining cenv false false f2 m
                 MakeApplicationAndBetaReduce g (f2R, f2ty, [tyargs], argsR, m)
         // Inlining: reoptimizing
         Some(OptimizeExpr cenv {env with dontInline = Map.add lambdaId [] env.dontInline} exprR)
@@ -5446,7 +5454,7 @@ let rec u_ExprInfo st =
         | 2 -> u_tup2 u_vref loop st |> ValValue
         | 3 -> u_array loop st |> TupleValue
         | 4 -> u_tup2 u_ucref (u_array loop) st |> UnionCaseValue
-        | 5 -> u_tup4 u_int u_int u_expr u_ty st |> (fun (b, c, d, e) -> CurriedLambdaValue (newUnique(), b, c, d, e))
+        | 5 -> u_tup4 u_int u_int u_expr u_ty st |> (fun (b, c, d, e) -> CurriedLambdaValue(newUnique(), b, c, d, e))
         | 6 -> u_tup2 u_int u_expr st |> ConstExprValue
         | 7 -> u_tup2 u_tcref (u_array loop) st |> RecdValue
         | _ -> failwith "loop"

@@ -312,7 +312,7 @@ let private removeRuntimeAsyncBoundVals vals (summary: RuntimeAsyncFlowSummary) 
 let private addRuntimeAsyncSuspension summary = { summary with MaySuspend = true }
 
 let private IsRuntimeAsyncNonPreservableVal (g: TcGlobals) (v: Val) =
-    v.IsPinning || isByrefTy g v.Type || isByrefLikeTy g v.Range v.Type
+    v.IsPinning || v.IsFixed || isByrefTy g v.Type || isByrefLikeTy g v.Range v.Type
 
 let private TryGetRuntimeAsyncNonPreservableAlias (g: TcGlobals) expr =
     match stripExpr expr with
@@ -540,3 +540,34 @@ let GetRuntimeAsyncNonPreservableUses (g: TcGlobals) expr =
     summary.UsedAfterSuspend
     |> Zset.elements
     |> List.filter (IsRuntimeAsyncNonPreservableVal g)
+
+let RestoreRuntimeAsyncPinning expr =
+    let containsFixedBinding (expr: Expr) =
+        ExistsExpr
+            (fun expr ->
+                match stripExpr expr with
+                | Expr.Let(TBind(v, _, _), _, _, _)
+                | Expr.LetRec([ TBind(v, _, _) ], _, _, _) -> v.IsFixed
+                | Expr.Val(vref, _, _) -> vref.Deref.IsFixed
+                | _ -> false)
+            expr
+
+    let restoreBindingPinning (v: Val) (rhs: Expr) =
+        if containsFixedBinding rhs && not v.IsPinning then
+            v.SetIsPinning()
+
+    let folder =
+        { ExprFolder0 with
+            exprIntercept =
+                fun _ noInterceptF () expr ->
+                    match stripExpr expr with
+                    | Expr.Let(TBind(v, rhs, _), _, _, _) -> restoreBindingPinning v rhs
+                    | Expr.LetRec(bindings, _, _, _) ->
+                        for TBind(v, rhs, _) in bindings do
+                            restoreBindingPinning v rhs
+                    | _ -> ()
+
+                    noInterceptF () expr
+        }
+
+    FoldExpr folder () expr |> ignore
