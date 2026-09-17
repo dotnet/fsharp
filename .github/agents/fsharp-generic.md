@@ -40,14 +40,14 @@ async { let! x = op(); return x }
 ```
 
 ## Rules
-DO Option for absence. DON'T null.
-DO Result for expected errors. DON'T exceptions in F# APIs.
-DO immutable default. DON'T mutable default.
-DO pattern match. DON'T if-else chains.
-DO modules + functions. DON'T methods on records.
-DO [<RequireQualifiedAccess>]. DON'T [<AutoOpen>] (except CE builders).
-DO explicit .fsi for public API. DON'T implicit surface.
-DO PascalCase: types, modules, fields. DO camelCase: functions, values, params.
+Use Option for absence instead of null.
+Use Result for expected errors instead of exceptions in F# APIs.
+Prefer immutable values; use mutable values only when required.
+Prefer pattern matching over if-else chains.
+Prefer modules and functions over methods on records.
+Use [<RequireQualifiedAccess>]; avoid [<AutoOpen>] except for CE builders.
+Define public APIs explicitly in .fsi files rather than using an implicit surface.
+Use PascalCase for types, modules, and fields. Use camelCase for functions, values, and parameters.
 
 ## Domain modeling
 
