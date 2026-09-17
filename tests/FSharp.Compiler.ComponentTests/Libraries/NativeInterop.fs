@@ -212,6 +212,230 @@ let f () = try () with _ -> alloc ()
         |> shouldFail
         |> withErrorCode 3918
 
+    [<Theory>]
+    [<InlineData(false)>]
+    [<InlineData(true)>]
+    let ``optional inlining preserves a stackalloc helper called from a handler`` optimize =
+        FSharp """
+module Test
+#nowarn "9"
+open Microsoft.FSharp.NativeInterop
+let allocate () = NativePtr.stackalloc<int> 1 |> ignore
+let run () =
+    try failwith "enter handler"
+    with _ -> allocate ()
+run ()
+[<EntryPoint>]
+let main _ = 0
+"""
+        |> withOptimization optimize
+        |> compileExeAndRun
+        |> shouldSucceed
+        |> verifyILContains [ "call       void Test::allocate()" ]
+        |> ignore
+
+    [<Theory>]
+    [<InlineData("try NativePtr.stackalloc<int> n |> ignore with _ -> ()")>]
+    [<InlineData("try NativePtr.stackalloc<int> n |> ignore finally System.GC.KeepAlive n")>]
+    [<InlineData("for _ in 1..n do NativePtr.stackalloc<int> 1 |> ignore")>]
+    [<InlineData("let mutable i = n in while i > 0 do NativePtr.stackalloc<int> 1 |> ignore; i <- i - 1")>]
+    let ``optional inlining preserves control flow containing stackalloc`` body =
+        FSharp $"""
+module Test
+open Microsoft.FSharp.NativeInterop
+let allocate n = {body}
+[<EntryPoint>]
+let main _ =
+    try failwith "enter handler"
+    with _ -> allocate 2
+    0
+"""
+        |> withNoWarn 9
+        |> withOptimize
+        |> withOptions [ "--inlinethreshold:100" ]
+        |> withNoWarn 75
+        |> compileExeAndRun
+        |> shouldSucceed
+        |> verifyILContains [ "call       void Test::allocate(int32)" ]
+        |> ignore
+
+    [<Theory>]
+    [<InlineData(false, false)>]
+    [<InlineData(false, true)>]
+    [<InlineData(true, false)>]
+    [<InlineData(true, true)>]
+    let ``optional inlining preserves stackalloc in quotation splices`` (optimize, referenced) =
+        let helper = """
+module AllocationHelper
+open Microsoft.FSharp.NativeInterop
+let allocate () =
+    <@ %(let p = NativePtr.stackalloc<int> 1
+         NativePtr.set p 0 42
+         printfn "allocated"
+         <@ 42 @>) @>
+let quoteOnly () = <@ 17 @>
+"""
+        let caller = """
+module Test
+open AllocationHelper
+let run () =
+    try failwith "enter handler"
+    with _ -> allocate ()
+let runQuoteOnly () =
+    try failwith "enter handler"
+    with _ -> quoteOnly ()
+[<EntryPoint>]
+let main _ =
+    printfn "%A" (run ())
+    printfn "%A" (runQuoteOnly ())
+    0
+"""
+        let compilation =
+            if referenced then
+                FSharp caller
+                |> withReferences [
+                    FSharp helper
+                    |> withName "AllocationLibrary"
+                    |> withNoWarn 9
+                    |> withOptimization optimize
+                ]
+            else
+                FSharp helper
+                |> withAdditionalSourceFile (FsSourceWithFileName "Caller.fs" caller)
+
+        let result =
+            compilation
+            |> withNoWarn 9
+            |> withOptimization optimize
+            |> withOptions [ "--inlinethreshold:100" ]
+            |> withNoWarn 75
+            |> compileExeAndRun
+            |> shouldSucceed
+            |> withStdOutContains "allocated"
+            |> withStdOutContains "Value (42)"
+            |> withStdOutContains "Value (17)"
+            |> verifyILContains [ "AllocationHelper::allocate()" ]
+
+        if optimize && not referenced then
+            result |> verifyILNotPresent [ "AllocationHelper::quoteOnly()" ]
+        else
+            result |> verifyILContains [ "AllocationHelper::quoteOnly()" ] |> ignore
+
+    [<Theory>]
+    [<InlineData("try raise original with _ -> allocate false |> ignore", "a")>]
+    [<InlineData("try raise original with _ when allocate false -> ()", "a")>]
+    [<InlineData("try (try raise original finally allocate false |> ignore) with e when obj.ReferenceEquals(e, original) -> ()", "a")>]
+    [<InlineData("try raise original with _ -> try allocate false |> ignore finally trace.Append('f') |> ignore", "af")>]
+    [<InlineData("try raise original with _ -> try allocate false |> ignore with _ -> failwith \"unexpected\"", "a")>]
+    [<InlineData("try (try raise original with _ -> allocate true |> ignore) with e when obj.ReferenceEquals(e, allocated) -> trace.Append('e') |> ignore", "ae")>]
+    let ``stackalloc helper boundaries preserve handler effects`` (body: string, expected: string) =
+        let helper = """
+module AllocationHelper
+open Microsoft.FSharp.NativeInterop
+let trace = System.Text.StringBuilder()
+let original = System.Exception("original")
+let allocated = System.Exception("allocated")
+let allocate shouldThrow =
+    let p = NativePtr.stackalloc<int> 1024
+    NativePtr.set p 0 42
+    trace.Append('a') |> ignore
+    if shouldThrow then raise allocated
+    NativePtr.get p 0 = 42
+"""
+        let caller = $"""
+module Test
+open AllocationHelper
+let run () = {body}
+[<EntryPoint>]
+let main _ =
+    if trace.Length <> 0 then failwith "allocated before handler"
+    for _ in 1..10000 do
+        trace.Clear() |> ignore
+        run ()
+        if string trace <> "{expected}" then failwithf "wrong effects: %%O" trace
+    0
+"""
+        for optimize in [ false; true ] do
+            for referenced in [ false; true ] do
+                let compilation =
+                    if referenced then
+                        FSharp caller
+                        |> withReferences [
+                            FSharp helper
+                            |> withName "AllocationLibrary"
+                            |> withNoWarn 9
+                            |> withOptimization optimize
+                        ]
+                    else
+                        FSharp helper
+                        |> withAdditionalSourceFile (FsSourceWithFileName "Caller.fs" caller)
+
+                compilation
+                |> withNoWarn 9
+                |> withOptimization optimize
+                |> withOptions [ "--inlinethreshold:100" ]
+                |> withNoWarn 75
+                |> compileExeAndRun
+                |> shouldSucceed
+                |> verifyILContains [ "AllocationHelper::allocate(bool)" ]
+                |> ignore
+
+    [<Theory>]
+    [<InlineData("try failwith \"enter\" with _ -> alloc () |> ignore")>]
+    [<InlineData("try failwith \"enter\" with _ when alloc () -> ()")>]
+    [<InlineData("try failwith \"enter\" finally alloc () |> ignore")>]
+    let ``optimized handlers still reject mandatory stackalloc`` (body: string) =
+        for allocation in [ "(NativePtr.stackalloc<int> 1 |> ignore; true)"; "alloc ()" ] do
+            $"""
+module Test
+open Microsoft.FSharp.NativeInterop
+let inline alloc () = NativePtr.stackalloc<int> 1 |> ignore; true
+let run () = {body.Replace("alloc ()", allocation)}
+"""
+            |> FSharp
+            |> withNoWarn 9
+            |> withOptimize
+            |> compile
+            |> shouldFail
+            |> withErrorCode 3918
+            |> ignore
+
+    [<Fact>]
+    let ``stackalloc helpers still inline outside handlers and in separate methods`` () =
+        FSharp """
+module Test
+open Microsoft.FSharp.NativeInterop
+let allocate () = NativePtr.stackalloc<int> 1 |> ignore
+let outside () = allocate ()
+let factory () = [| fun () -> allocate () |]
+let fromFactory () =
+    try failwith "enter handler"
+    with _ -> factory ()
+let make () =
+    try failwith "enter handler"
+    with _ ->
+        let f () = allocate (); 42
+        let d = System.Func<int>(fun () -> allocate (); 42)
+        let o = { new System.IDisposable with member _.Dispose() = allocate () }
+        f, d, o
+[<EntryPoint>]
+let main _ =
+    outside ()
+    (fromFactory ())[0]()
+    let f, d, o = make ()
+    if f () <> 42 || d.Invoke() <> 42 then failwith "wrong result"
+    o.Dispose()
+    0
+"""
+        |> withNoWarn 9
+        |> withOptimize
+        |> withOptions [ "--inlinethreshold:100" ]
+        |> withNoWarn 75
+        |> compileExeAndRun
+        |> shouldSucceed
+        |> verifyILContains [ "localloc" ]
+        |> verifyILNotPresent [ "Test::allocate()"; "Test::factory()" ]
+
     // An escaping closure defined in a handler is compiled to its own method, so its 'localloc' lives
     // outside the exception region and is legal. Such code must not be rejected (regression guard against
     // the pre-codegen syntactic check's false positive).

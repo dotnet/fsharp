@@ -780,17 +780,14 @@ module List =
 
     let stableTopologicalSort (mustPrecede: 'T -> 'T -> bool) (xs: 'T list) =
         let rec emit remaining =
-            match remaining with
-            | [] -> []
-            | _ ->
-                // A node is ready once nothing still remaining must precede it. List.partition is stable,
-                // so ready nodes keep their original order; a leftover cycle is emitted in original order.
-                match
-                    remaining
-                    |> List.partition (fun x -> remaining |> List.forall (fun y -> not (mustPrecede y x)))
-                with
-                | [], cycle -> cycle
-                | ready, rest -> ready @ emit rest
+            let rec emitFirstReady skipped candidates =
+                match candidates with
+                | [] -> remaining
+                | x :: rest when remaining |> List.forall (fun y -> not (mustPrecede y x)) ->
+                    x :: emit (List.fold (fun acc y -> y :: acc) rest skipped)
+                | x :: rest -> emitFirstReady (x :: skipped) rest
+
+            emitFirstReady [] remaining
 
         emit xs
 

@@ -262,8 +262,8 @@ module internal List =
             struct ('Result list * 'State)
 
     /// Stable topological sort by a 'mustPrecede' relation ('mustPrecede x y' means x must come before y).
-    /// Independent elements keep their original order; any leftover dependency cycle is emitted in original
-    /// order. O(n²) per emitted layer, so intended for small inputs.
+    /// Selects the earliest ready element in the original order after each emission. If none is ready,
+    /// the remaining elements are emitted in original order. O(n³) worst case, so intended for small inputs.
     val stableTopologicalSort: mustPrecede: ('T -> 'T -> bool) -> xs: 'T list -> 'T list
 
 module internal ResizeArray =
