@@ -252,6 +252,10 @@ type ValFlags(flags: int64) =
 
     member x.WithIsParameter                           = ValFlags(flags ||| 0b10000000000000000000000L)
 
+    member x.OptimizeClosureIfNotInlined               =      (flags &&& 0b100000000000000000000000L) <> 0L
+
+    member x.WithOptimizeClosureIfNotInlined           = ValFlags(flags ||| 0b100000000000000000000000L)
+
     /// Get the flags as included in the F# binary metadata
     member x.PickledBits =
         // Clear the RecursiveValInfo, only used during inference and irrelevant across assembly boundaries
@@ -3173,6 +3177,8 @@ type Val =
     /// Get the inline declaration on a parameter or other non-function-declaration value, used for optimization
     member x.InlineIfLambda = x.val_flags.InlineIfLambda
 
+    member x.OptimizeClosureIfNotInlined = x.val_flags.OptimizeClosureIfNotInlined
+
     /// Determines if the values is implied by another construct, e.g. a `IsA` property is implied by the union case for A
     member x.IsImplied = x.val_flags.IsImplied
 
@@ -3425,6 +3431,8 @@ type Val =
     member x.SetIgnoresByrefScope() = x.val_flags <- x.val_flags.WithIgnoresByrefScope
 
     member x.SetInlineIfLambda() = x.val_flags <- x.val_flags.WithInlineIfLambda
+
+    member x.SetOptimizeClosureIfNotInlined() = x.val_flags <- x.val_flags.WithOptimizeClosureIfNotInlined
 
     member x.SetInlineInfo (inlineInfo: ValInline) = x.val_flags <- x.val_flags.WithInlineInfo inlineInfo
 
@@ -4354,6 +4362,8 @@ type ValRef =
 
     /// Get the inline declaration on a parameter or other non-function-declaration value, used for optimization
     member x.InlineIfLambda = x.Deref.InlineIfLambda
+
+    member x.OptimizeClosureIfNotInlined = x.Deref.OptimizeClosureIfNotInlined
 
     /// Indicates whether the inline declaration for the value indicate that the value must be inlined?
     member x.ShouldInline = x.Deref.ShouldInline
