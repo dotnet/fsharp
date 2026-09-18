@@ -10266,9 +10266,6 @@ and GenMethodForBinding
             (WellKnownValAttributes.DllImportAttribute
              ||| WellKnownValAttributes.CompiledNameAttribute)
 
-    let attrsAppliedToGetterOrSetter, attrs =
-        List.partition (fun (Attrib(_, _, _, _, isAppliedToGetterOrSetter, _, _)) -> isAppliedToGetterOrSetter) attrs
-
     let sourceNameAttribs, compiledName =
         match tryFindValAttribByFlag g WellKnownValAttributes.CompiledNameAttribute v.Attribs with
         | Some(Attrib(_, _, [ AttribStringArg b ], _, _, _, _)) -> [ mkCompilationSourceNameAttr g v.LogicalName ], Some b
@@ -10280,6 +10277,9 @@ and GenMethodForBinding
 
     if isRuntimeAsync && hasSynchronizedImplFlag then
         error (Error(FSComp.SR.ilRuntimeAsyncSynchronizedMethod (), m))
+
+    let attrsAppliedToGetterOrSetter, attrs =
+        List.partition (fun (Attrib(_, _, _, _, isAppliedToGetterOrSetter, _, _)) -> isAppliedToGetterOrSetter) attrs
 
     let securityAttributes, attrs =
         attrs
