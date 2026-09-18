@@ -11,6 +11,7 @@ import platform
 import random
 import re
 import shutil
+import signal
 import socket
 import statistics
 import subprocess
@@ -334,8 +335,10 @@ def run_process(arguments, cwd, environment, log):
     cpu = rss = None
     unavailable = {}
     with Path(log).open("wb") as output:
+        isolation = ({"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP} if sys.platform == "win32"
+                     else {"start_new_session": True})
         process = subprocess.Popen(arguments, cwd=cwd, env=environment, stdin=subprocess.DEVNULL,
-                                   stdout=output, stderr=subprocess.STDOUT)
+                                   stdout=output, stderr=subprocess.STDOUT, **isolation)
         try:
             if sys.platform == "linux":
                 _, status, usage = os.wait4(process.pid, 0)
@@ -347,7 +350,17 @@ def run_process(arguments, cwd, environment, log):
                 unavailable = {metric: "Per-process rusage collection requires Linux"
                                for metric in METRICS[1:]}
         except BaseException:
-            process.kill()
+            # Kill descendants before reaping the wrapper; never target the caller's group.
+            if sys.platform == "win32":
+                subprocess.run([str(Path(environment["SystemRoot"]) / "System32" / "taskkill.exe"),
+                                "/PID", str(process.pid), "/T", "/F"],
+                               cwd=cwd, env=environment, stdin=subprocess.DEVNULL,
+                               stdout=output, stderr=subprocess.STDOUT, check=True)
+            else:
+                try:
+                    os.killpg(process.pid, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass  # The entire owned group has already exited.
             process.wait()
             raise
     return {"elapsed_ms": (time.perf_counter_ns() - start) / 1_000_000,

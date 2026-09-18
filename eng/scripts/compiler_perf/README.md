@@ -105,6 +105,12 @@ cancelled collection retains incomplete evidence and cannot qualify. Both arm
 files must have `collection_complete: true`, set only after final verification;
 a zero exit without an output assembly is also a failed sample.
 
+Each launched command has an isolated process group. Interrupted waits terminate
+the owned POSIX group, or the Windows PID tree with `taskkill /T /F`, before
+reaping the wrapper and propagating the exception. Windows groups prevent a
+console interrupt from killing the wrapper before its descendants are located.
+Cleanup failures surface explicitly; unrelated processes are never targeted.
+
 Dependency/filesystem caches are warmed, not flushed. Build-server reuse and
 .NET diagnostic attachment are disabled. Collection uses Linux `wait4` on the
 specific compiler child, not cumulative child-process counters or the Python
@@ -194,6 +200,10 @@ values at multiple scales.
 Portable collector fixtures check per-child user plus system CPU accounting,
 millisecond/byte conversions, exit/signal status, cancellation cleanup and explicit
 unavailable-metric reasons without presenting synthetic readings as live evidence.
+Real wrapper/child/grandchild fixtures interrupt collection only after both
+descendants are connected, require their connections to close, and verify that
+an unrelated process remains responsive. They cover cancellation and wait errors;
+portable unit fixtures also check POSIX group-exit races and Windows tree flags.
 Valid workload-pair fixtures refresh all fingerprints and require an explicit
 workload mismatch for changed revisions, flags, ordered inputs, hashes and paths;
 a changed compiler alone remains admissible. Capture guards have SDK-independent
@@ -279,3 +289,15 @@ frozen-source replay passed again with 407/21/178 inputs and 738 unchanged file
 records (`coverage-live/evidence.json`). Current upstream `main` still matches
 the frozen revision. Root build/test commands still require an explicit solution,
 and Linux acceptance collection remains unsupported on this Windows host.
+
+The descendant-cancellation regression failed before the launcher fix
+(`red-cancellation.log`): the wrapper was reaped but its child and grandchild
+remained connected. Isolated process-group/tree cleanup now passes all **32**
+helper tests (`green-cancellation.log`). Both wrapper-only cleanup and omission
+of Windows `/T` are detected by the real-process assertions
+(`mutations-cancellation.log`). The explicit Release build and uninstrumented
+frozen-source replay passed with the same 407/21/178 inputs; 738 file records
+were verified, including the updated helper (`cancellation-live/evidence.json`).
+Upstream `main` still matches the frozen revision. Bare root build/test commands
+still require an explicit solution; this Windows replay is not Linux acceptance
+timing evidence. No F# sources or shipped build targets changed.
