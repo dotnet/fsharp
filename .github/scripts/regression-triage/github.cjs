@@ -260,11 +260,14 @@ function references(snapshot, repo) {
  * Page limits count actual calls across stability passes per endpoint/item.
  * Each item also costs two issue metadata reads; unresolved changes are retryable
  * and incomplete. REST cannot promise an atomic snapshot across these endpoints.
+ * Publication uses recheckTarget for a second bounded target-only pass after
+ * linked reads, so dependency latency cannot bypass the target freshness guard.
  */
-async function readIssueSnapshot(github, { repo, number, limits: overrides }) {
+async function readIssueSnapshot(github, { repo, number, limits: overrides, recheckTarget = false }) {
   if (!Number.isSafeInteger(number) || number < 1) throw new Error("Invalid issue number");
   const limits = readLimits(overrides);
   const snapshot = await readText(github, repo, number, limits);
+  const targetFingerprint = recheckTarget ? fingerprintHumanInput(snapshot) : null;
   const links = references(snapshot, repo);
   if (links.length > limits.linkedItems) {
     snapshot.errors.push({ stage: "linked", number, code: "linked-item-bound", bound: limits.linkedItems });
@@ -277,6 +280,16 @@ async function readIssueSnapshot(github, { repo, number, limits: overrides }) {
     } catch (error) {
       snapshot.errors.push(apiError(error, { stage: "linked", number: link.number, repository: `${link.owner}/${link.repo}` }));
     }
+  }
+  if (recheckTarget && snapshot.linked.length > 0) {
+    const current = await readText(github, repo, number, limits);
+    snapshot.errors.push(...current.errors);
+    if (fingerprintHumanInput(current) !== targetFingerprint
+      || JSON.stringify([...snapshot.labels].sort()) !== JSON.stringify([...current.labels].sort())
+      || snapshot.updatedAt !== current.updatedAt) {
+      snapshot.errors.push({ stage: "issue", number, code: "issue-changed", retryable: true });
+    }
+    snapshot.botComments = current.botComments;
   }
   snapshot.complete = snapshot.errors.length === 0;
   return snapshot;

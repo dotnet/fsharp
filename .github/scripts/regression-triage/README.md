@@ -132,7 +132,12 @@ prepared publication intents. Operation IDs bind repository, issue, policy and
 human fingerprint. A bounded `discoveryReceipt` binds the most recent manifest
 and accepted batch; retries cannot change the accepted decisions. A second CAS
 claims each external attempt before a fresh complete snapshot immediately adjacent
-to the issue write. Only the literal `Regression` label can be added, never removed.
+to the issue write. The publisher calls `readIssueSnapshot` with
+`recheckTarget: true`: when linked evidence is present, it rereads the target's
+metadata, discussion and timeline after those dependencies, using another bounded
+target-only pass. A change or incomplete read prevents the mutation. The collector's
+default read budgets and exported call remain unchanged.
+Only the literal `Regression` label can be added, never removed.
 `Needs-Triage`, human label applications/removals and stored human corrections
 are preserved. Negative/uncertain classifications never remove labels.
 
@@ -141,6 +146,8 @@ citations, policy, missing fact, latest actual outcome, latest human label decis
 correction excerpt, clarification status/receipt and any unfinished intent.
 Compatible unknown fields and fair-read age survive schema-1 policy migration.
 Unsupported schemas and malformed known fields fail instead of resetting history.
+Clarification status, selector, receipt identity/URL and publication intent fields
+are validated on both read and write; older receipts may omit their URL.
 The serialized store is bounded to 1 MiB and fails explicitly when
 full; it never silently evicts human history or receipts.
 
@@ -161,6 +168,14 @@ the publisher conservatively persists `clarificationHistoryUnknown`; absence
 cannot prove that a previous question was never posted. It still records the
 missing fact and can add Regression, but does not start new questions with
 ambiguous history. Restoring the trusted ledger restores its history.
+
+On reanalysis, an unresolved comment attempt moves into
+`clarification.pendingPublication`, retaining its original operation ID and sending
+phase. The current analysis gets its own publication intent: an old question's
+receipt cannot complete a new Regression addition, and an unknown question outcome
+cannot block it. Uncertainty requesting another question stays pending until the
+old receipt is observed; no second question is sent. Known-unsent label rechecks
+also preserve that independent clarification history.
 
 On CAS mismatch the adapter reloads after a failed mutation and throws retryable
 `CAS_CONFLICT`; the publisher never replays a stale whole-manifest queue or cursor.

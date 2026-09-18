@@ -9,11 +9,26 @@ const LIMITS = Object.freeze({
   candidates: 5, issuePages: 10, snapshotReads: 10,
   commentPages: 10, timelinePages: 10, linkedItems: 5, reviewPages: 5,
 });
+const QUESTIONS = Object.freeze({
+  "known-good": "Which earlier version worked with the same source and comparable settings?",
+  "affected-component": "Which component changed: the compiler, FSharp.Core, SDK, or runtime?",
+  "comparable-configuration": "Were the source, target framework, and build settings the same in the working and failing cases?",
+  "producer-consumer": "Which producer and consumer compiler versions worked, and which combination fails?",
+});
 
 const object = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
 const issueNumber = (value) => Number.isSafeInteger(value) && value > 0;
 const timestamp = (value) => typeof value === "string" && Number.isFinite(Date.parse(value));
 const compareText = (a, b) => a < b ? -1 : a > b ? 1 : 0;
+
+function validPublication(value) {
+  return value == null || object(value)
+    && typeof value.operationId === "string" && value.operationId.trim().length > 0 && value.operationId.length <= 64
+    && (value.phase === undefined || ["prepared", "sending"].includes(value.phase))
+    && (value.effect === undefined || ["label", "comment"].includes(value.effect))
+    && (value.phase !== "sending" || value.effect !== undefined)
+    && (value.phase !== "prepared" || value.effect === undefined);
+}
 
 function isEligibleIssue(issue) {
   return object(issue) && issueNumber(issue.number) && issue.state === "open"
@@ -77,6 +92,24 @@ function normalizeMemory(raw, { policyVersion = POLICY_VERSION } = {}) {
       || (record.readAttempt !== undefined && (!object(record.readAttempt) || !timestamp(record.readAttempt.at)
         || (record.readAttempt.updatedAt !== undefined && !timestamp(record.readAttempt.updatedAt))))) {
       throw new Error(`Invalid issue record: ${number}`);
+    }
+    const clarification = record.clarification;
+    if (!validPublication(record.pendingPublication)
+      || clarification != null && (
+        !["pending", "published", "unknown"].includes(clarification.status)
+        || (clarification.selector !== undefined
+          && (typeof clarification.selector !== "string" || !Object.hasOwn(QUESTIONS, clarification.selector)))
+        || (clarification.staged !== undefined && clarification.staged !== true)
+        || (clarification.commentId !== undefined && !issueNumber(clarification.commentId))
+        || (clarification.url !== undefined
+          && clarification.url !== `https://github.com/dotnet/fsharp/issues/${number}#issuecomment-${clarification.commentId}`)
+        || (clarification.reason !== undefined && clarification.reason !== "memory-absent")
+        || (clarification.status === "published" && !issueNumber(clarification.commentId) && clarification.staged !== true)
+        || (clarification.status === "pending" && clarification.selector === undefined)
+        || (clarification.status === "unknown" && clarification.selector === undefined && clarification.reason !== "memory-absent")
+        || !validPublication(clarification.pendingPublication)
+        || (clarification.pendingPublication != null && clarification.pendingPublication.effect !== "comment"))) {
+      throw new Error(`Invalid publication issue record: ${number}`);
     }
   }
   const pending = new Map();
@@ -167,7 +200,7 @@ function selectCandidates({ event, discovered, memory, limit = LIMITS.candidates
 }
 
 module.exports = {
-  POLICY_VERSION, FINGERPRINT_VERSION, OVERLAP_MS, LIMITS,
+  POLICY_VERSION, FINGERPRINT_VERSION, OVERLAP_MS, LIMITS, QUESTIONS,
   isEligibleIssue, eventNumber, normalizeMemory, fingerprintHumanInput,
   isFinishedRecord, needsAnalysis, selectCandidates,
 };

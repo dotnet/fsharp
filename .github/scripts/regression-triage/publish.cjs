@@ -3,7 +3,7 @@
 const { createHash } = require("node:crypto");
 const { isDeepStrictEqual } = require("node:util");
 const {
-  POLICY_VERSION, LIMITS, normalizeMemory, fingerprintHumanInput, isEligibleIssue, isFinishedRecord,
+  POLICY_VERSION, LIMITS, QUESTIONS, normalizeMemory, fingerprintHumanInput, isEligibleIssue, isFinishedRecord,
 } = require("./core.cjs");
 const { MEMORY_BRANCH, MEMORY_PATH, readMemory, readIssueSnapshot } = require("./github.cjs");
 
@@ -12,12 +12,6 @@ const ACKNOWLEDGEMENT = "Proposal received for validation; publication is not co
 const DIMENSIONS = Object.freeze([
   "compiler", "sdk", "fsharpCore", "runtime", "targetFramework", "configuration", "producer", "consumer",
 ]);
-const QUESTIONS = Object.freeze({
-  "known-good": "Which earlier version worked with the same source and comparable settings?",
-  "affected-component": "Which component changed: the compiler, FSharp.Core, SDK, or runtime?",
-  "comparable-configuration": "Were the source, target framework, and build settings the same in the working and failing cases?",
-  "producer-consumer": "Which producer and consumer compiler versions worked, and which combination fails?",
-});
 const object = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
 const positive = (value) => Number.isSafeInteger(value) && value > 0;
 const oid = (value) => typeof value === "string" && /^[a-f0-9]{40}$/.test(value);
@@ -277,14 +271,16 @@ async function publishBatch({ github, store, repo, manifest, output, context, bo
       const prior = state.issues[result.number] ?? {};
       if (isFinishedRecord(prior) && prior.fingerprint === result.fingerprint) continue;
       const operationId = hash([context.repository, result.number, POLICY_VERSION, result.fingerprint]);
-      // An unfinished sending attempt cannot be erased by new analysis/policy.
       const unresolved = prior.pendingPublication && prior.pendingPublication.phase !== "prepared";
+      const priorComment = unresolved && prior.pendingPublication.effect === "comment";
       state.issues[result.number] = {
         ...prior, fingerprint: result.fingerprint, policyVersion: POLICY_VERSION,
         classification: result.classification, evidence: result.evidence, missingFact: result.missingFact,
-        clarification: prior.clarification ?? null, humanCorrection: prior.humanCorrection ?? null,
+        clarification: priorComment
+          ? { ...prior.clarification, pendingPublication: prior.pendingPublication } : prior.clarification ?? null,
+        humanCorrection: prior.humanCorrection ?? null,
         humanLabelDecision: prior.humanLabelDecision ?? null,
-        pendingPublication: unresolved ? prior.pendingPublication : { operationId, phase: "prepared" },
+        pendingPublication: unresolved && !priorComment ? prior.pendingPublication : { operationId, phase: "prepared" },
         lastResult: { status: "pending", operationId },
       };
     }
@@ -315,14 +311,14 @@ async function publishBatch({ github, store, repo, manifest, output, context, bo
     const recheck = async () => {
       const unsent = () => {
         if (claimedHere && !attempted) {
+          if (intent.effect === "comment" && record.clarification?.status === "pending") record.clarification = null;
           intent.phase = "prepared";
           delete intent.effect;
-          if (record.clarification?.status === "pending") record.clarification = null;
         }
       };
       let snapshot;
       try {
-        snapshot = await readIssueSnapshot(github, { repo, number: result.number, limits });
+        snapshot = await readIssueSnapshot(github, { repo, number: result.number, limits, recheckTarget: true });
       } catch (error) {
         unsent();
         await finish("retryable", { code: "snapshot-read-failed", status: error.status ?? null });
@@ -365,6 +361,11 @@ async function publishBatch({ github, store, repo, manifest, output, context, bo
     if (alreadyObserved) { await finish("published", { code: "effect-observed" }); continue; }
     if (intent.phase !== "prepared") {
       await finish("unknown", { code: "prior-attempt-unresolved" });
+      continue;
+    }
+    if (result.clarification !== null && ["pending", "unknown"].includes(record.clarification?.status)
+      && record.clarification.reason !== "memory-absent") {
+      await finish("unknown", { code: "prior-clarification-unresolved" });
       continue;
     }
     if (effect === null) {
