@@ -1,0 +1,503 @@
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+
+namespace FSharp.Editor.Tests
+
+open System
+
+open Xunit
+
+open Microsoft.CodeAnalysis
+open Microsoft.VisualStudio.Copilot
+open Microsoft.VisualStudio.FSharp.Editor
+
+open FSharp.Editor.Tests.Helpers
+open CancellableTasks
+
+module CopilotContextProviderTests =
+
+    let fileContents =
+        """
+module Widgets
+
+/// Counts things that matter.
+type Counter(start: int) =
+    let mutable value = start
+
+    member _.Value = value
+
+    member _.Bump() =
+        value <- value + 1
+        value
+
+type Shape =
+    | Circle of radius: float
+    | Square of side: float
+
+let describeShape shape =
+    match shape with
+    | Circle r -> $"circle {r}"
+    | Square s -> $"square {s}"
+
+/// Twice the value.
+let twice x = x * 2
+"""
+
+    let solution = RoslynTestHelpers.CreateSolution fileContents
+
+    /// One matcher and one parse cache per test, so what a test leaves parsed cannot answer the next one.
+    let private freshCache () =
+        MefHelpers.createExportProvider().GetExportedValue<FSharpNavigableItemsCache>()
+
+    let private cache = freshCache ()
+
+    let private run computation =
+        CancellableTask.runSynchronouslyWithoutCancellation computation
+
+    let private solutionOf files =
+        let projectId = ProjectId.CreateNewId()
+
+        let documents =
+            files
+            |> List.map (fun (path, source) -> RoslynTestHelpers.CreateDocumentInfo projectId path source)
+
+        let solution =
+            RoslynTestHelpers.CreateSolution [ RoslynTestHelpers.CreateProjectInfo projectId "C:\\many.fsproj" documents ]
+
+        { RoslynTestHelpers.DefaultProjectOptions with
+            SourceFiles = files |> List.map fst |> Array.ofList
+        }
+        |> RoslynTestHelpers.SetProjectOptions projectId solution
+
+        solution
+
+    let private documentsOf (solution: Solution) =
+        solution.Projects |> Seq.exactlyOne |> _.Documents |> Seq.toArray
+
+    let private documentNamed (name: string) solution =
+        documentsOf solution
+        |> Array.find _.FilePath.EndsWith(name, StringComparison.Ordinal)
+
+    let private hitsIn cache openDocumentIds focus solution pattern =
+        CopilotSymbolQuery.search cache openDocumentIds focus solution [| pattern |]
+        |> run
+        |> Array.head
+
+    let private namesOf hits =
+        hits
+        |> Array.map (fun (struct (item, _, _)) -> CopilotSymbolMapping.fullyQualifiedName item)
+
+    let private searchFocused cache openDocumentIds focus solution pattern =
+        hitsIn cache openDocumentIds focus solution pattern |> namesOf
+
+    let private searchIn cache openDocumentIds solution pattern =
+        searchFocused cache openDocumentIds ValueNone solution pattern
+
+    let private search pattern =
+        searchIn cache Seq.empty solution pattern
+
+    let private itemNamed (fullyQualifiedName: string) =
+        hitsIn cache Seq.empty ValueNone solution fullyQualifiedName
+        |> Array.tryPickV (fun (struct (item, _, _)) ->
+            if CopilotSymbolMapping.fullyQualifiedName item = fullyQualifiedName then
+                ValueSome item
+            else
+                ValueNone)
+        |> ValueOption.defaultWith (fun () -> failwith $"no declaration named {fullyQualifiedName}")
+
+    let private contextIn cache solution (name: string) =
+        CopilotSymbolQuery.symbolContext cache Seq.empty solution name
+        |> run
+        |> ValueOption.defaultWith (fun () -> failwith $"expected a symbol context for {name}")
+
+    let private contextOf name = contextIn cache solution name
+
+    /// A file holding more declarations matching `name` than one query reports.
+    let private manyDeclarations name count =
+        let members =
+            [ for i in 1..count -> $"    member _.{name}{i} = {i}" ] |> String.concat "\n"
+
+        $"module {name}Module\n\ntype {name}Holder() =\n{members}\n"
+
+    let private coldFile = "C:\\cold.fs", "module Cold\n\nlet widgetCounter = 1\n"
+
+    /// The holder's declaration loses on every other part of the ordering - the name it is matched
+    /// against is longer - so it can only come first through where its file sits.
+    let private twoWidgets =
+        [
+            "C:\\elsewhere.fs", "module Elsewhere\n\ntype Widget() =\n    member _.Value = 1\n"
+            "C:\\holder.fs", "module Holder\n\ntype WidgetHolder() =\n    member _.Value = 2\n"
+        ]
+
+    /// A value and a module whose names hold a dot, beside the nested paths that would spell the same
+    /// without the double backticks.
+    let private dottedSolution =
+        solutionOf
+            [
+                "C:\\dotted.fs",
+                "module M\n\nlet ``a.b`` = 1\n\nmodule a =\n    let b = 2\n\nmodule ``x.y`` =\n    let z = 3\n\nmodule x =\n    module y =\n        let z = 4\n"
+            ]
+
+    let private caretOn filePath line =
+        ValueSome
+            {
+                FilePath = filePath
+                FirstLine = line
+                LastLine = line
+            }
+
+    [<Theory>]
+    [<InlineData("Counter", "Widgets.Counter")>]
+    [<InlineData("Bump", "Widgets.Counter.Bump")>]
+    [<InlineData("Circle", "Widgets.Shape.Circle")>]
+    [<InlineData("describeShape", "Widgets.describeShape")>]
+    let ``search finds a declaration by its fully qualified name`` (pattern: string, expected: string) =
+        Assert.Contains(expected, search pattern)
+
+    [<Theory>]
+    [<InlineData("Widgets.Counter", true)>]
+    [<InlineData("Widgets.Counte", false)>]
+    [<InlineData("Widgets.CounterX", false)>]
+    [<InlineData("WidgetsXCounter", false)>]
+    [<InlineData("Counter", false)>]
+    [<InlineData("", false)>]
+    let ``a name matches only the declaration it spells out`` (candidate: string, expected: bool) =
+        Assert.Equal(expected, CopilotSymbolMapping.hasFullyQualifiedName candidate (itemNamed "Widgets.Counter"))
+
+    [<Theory>]
+    [<InlineData("Widgets.Counter", "Counter")>]
+    [<InlineData("Widgets.Counter.Bump", "Counter.Bump")>]
+    [<InlineData("Widgets.Shape.Circle", "Shape.Circle")>]
+    [<InlineData("Widgets.describeShape", "Widgets.describeShape")>]
+    let ``a tooltip names a member by its container and a type by itself`` (fullyQualifiedName: string, expected: string) =
+        Assert.Equal(expected, CopilotSymbolMapping.tooltipName (itemNamed fullyQualifiedName))
+
+    /// The inputs of a query are split on ':', so "#fsharpSymbol:Ns.Type:15" arrives as three of them.
+    [<Theory>]
+    [<InlineData("Widget", "Widget")>]
+    [<InlineData("", "")>]
+    [<InlineData("fsharpSymbol", null)>]
+    [<InlineData("fsharpSymbol: Ns.Type ", "Ns.Type")>]
+    [<InlineData("fsharpSymbol:Ns.Type:15", "Ns.Type")>]
+    [<InlineData("fsharpSymbol::15", "")>]
+    let ``the search text is the input after the member name`` (inputs: string, expected: string) =
+        let query = CopilotMentionQuery(CopilotMentionType.Unknown, inputs.Split ':')
+
+        Assert.Equal(ValueOption.ofObj expected, CopilotSymbolMapping.searchTextOf query)
+
+    [<Fact>]
+    let ``only context mentions are searched for`` () =
+        let query = CopilotMentionQuery(CopilotMentionType.Command, [| "Widget" |])
+
+        Assert.True((CopilotSymbolMapping.searchTextOf query).IsNone)
+
+    [<Fact>]
+    let ``search reports each declaration once`` () =
+        let names = search "Counter"
+        Assert.Equal((Array.distinct names).Length, names.Length)
+
+    [<Fact>]
+    let ``an unknown name has no context`` () =
+        Assert.True(
+            (CopilotSymbolQuery.symbolContext cache Seq.empty solution "Widgets.NoSuchThing"
+             |> run)
+                .IsNone
+        )
+
+    [<Theory>]
+    [<InlineData(true)>]
+    [<InlineData(false)>]
+    let ``a known file answers without parsing the rest of the solution`` (isOpen: bool) =
+        let cache = freshCache ()
+        let solution = solutionOf [ "C:\\known.fs", manyDeclarations "Widget" 25; coldFile ]
+        let known = documentNamed "known.fs" solution
+
+        let openDocumentIds =
+            if isOpen then
+                [ known.Id ]
+            else
+                cache.GetNavigableItems known |> run |> ignore
+                []
+
+        let names = searchIn cache openDocumentIds solution "Widget"
+
+        Assert.Equal(20, names.Length)
+        Assert.All(names, fun name -> Assert.StartsWith("WidgetModule", name, StringComparison.Ordinal))
+        Assert.True((cache.TryGetCachedNavigableItems (documentNamed "cold.fs" solution).Id).IsNone)
+
+    [<Fact>]
+    let ``the search stops once it has enough declarations`` () =
+        let cache = freshCache ()
+
+        let solution =
+            solutionOf
+                [
+                    for i in 1..150 -> $"C:\\cold{i}.fs", $"module Cold{i}\n\ntype Counter{i}() =\n    member _.Value = {i}\n"
+                ]
+
+        let names = searchIn cache Seq.empty solution "Counter"
+
+        Assert.Equal(20, names.Length)
+
+        Assert.NotEmpty(
+            documentsOf solution
+            |> Array.filter (fun document -> (cache.TryGetCachedNavigableItems document.Id).IsNone)
+        )
+
+    /// Focus outranks being open, which outranks the rest; a focused file that is no longer open counts
+    /// for nothing, since nothing tells the tracker that its tab has closed.
+    [<Theory>]
+    [<InlineData(false, false, "Elsewhere.Widget")>]
+    [<InlineData(true, false, "Holder.WidgetHolder")>]
+    [<InlineData(true, true, "Holder.WidgetHolder")>]
+    [<InlineData(false, true, "Elsewhere.Widget")>]
+    let ``the file the user works in answers first`` (holderIsOpen: bool, holderIsFocused: bool, expected: string) =
+        let cache = freshCache ()
+        let solution = solutionOf twoWidgets
+        let holder = documentNamed "holder.fs" solution
+
+        let openDocumentIds =
+            [
+                if holderIsOpen then
+                    holder.Id
+            ]
+
+        let focus =
+            if holderIsFocused then
+                caretOn "C:\\holder.fs" 1
+            else
+                ValueNone
+
+        let names = searchFocused cache openDocumentIds focus solution "Widget"
+
+        Assert.Equal(expected, Array.head names)
+        Assert.Equal(2, names.Length)
+
+    /// A bare "#" is the first thing the picker asks, and Copilot's own provider fills it from the open files.
+    [<Fact>]
+    let ``no text at all answers with the declarations of the open files`` () =
+        let cache = freshCache ()
+        let solution = solutionOf [ "C:\\open.fs", manyDeclarations "Widget" 3; coldFile ]
+
+        let names =
+            searchFocused cache [ (documentNamed "open.fs" solution).Id ] (caretOn "C:\\open.fs" 1) solution ""
+
+        Assert.Contains("WidgetModule.WidgetHolder", names)
+        Assert.All(names, fun name -> Assert.StartsWith("WidgetModule", name, StringComparison.Ordinal))
+        Assert.True((cache.TryGetCachedNavigableItems (documentNamed "cold.fs" solution).Id).IsNone)
+
+    [<Theory>]
+    [<InlineData("wi")>]
+    [<InlineData("widgetCounter")>]
+    let ``a short text is looked up in the open files alone`` (pattern: string) =
+        let cache = freshCache ()
+
+        let solution =
+            solutionOf [ "C:\\open.fs", "module Open\n\nlet other = 1\n"; coldFile ]
+
+        let names =
+            searchIn cache [ (documentNamed "open.fs" solution).Id ] solution pattern
+
+        Assert.Equal(pattern.Length >= 3, Array.contains "Cold.widgetCounter" names)
+
+    /// The type around the caret loses on name length to the other one, so it can only come first by
+    /// holding the caret - on a line of its member's body, not of its own name.
+    [<Theory>]
+    [<InlineData(4, "Selection.Short")>]
+    [<InlineData(8, "Selection.AroundTheCaret")>]
+    let ``the declaration around the caret answers before the rest of the focused file`` (caretLine: int, expected: string) =
+        let cache = freshCache ()
+
+        let source =
+            "module Selection\n\ntype Short() =\n    member _.Value = 1\n\ntype AroundTheCaret() =\n    member _.Compute() =\n        2\n"
+
+        let solution = solutionOf [ "C:\\selection.fs", source ]
+        let focused = documentNamed "selection.fs" solution
+
+        let names =
+            searchFocused cache [ focused.Id ] (caretOn "C:\\selection.fs" caretLine) solution ""
+            |> Array.filter (fun name -> name = "Selection.Short" || name = "Selection.AroundTheCaret")
+
+        Assert.Equal(expected, Array.head names)
+
+    /// Two overloads answer to the same fully qualified name, so navigating one after the picker has
+    /// closed - when there is no caret to consult any more - has to go by the line recorded when it was
+    /// picked, not by whichever overload a solution-wide scan happens to reach first.
+    [<Fact>]
+    let ``navigating a mention goes to the overload it was picked for`` () =
+        let cache = freshCache ()
+
+        let source =
+            "module Overloads\n\ntype Counter() =\n    member _.Bump() =\n        1\n\n    member _.Bump(step: int) =\n        step\n"
+
+        let solution = solutionOf [ "C:\\overloads.fs", source ]
+
+        let declarations =
+            CopilotSymbolQuery.declarationsOf cache Seq.empty solution "Overloads.Counter.Bump"
+            |> run
+
+        let lineOf index =
+            let struct (item: FSharp.Compiler.EditorServices.NavigableItem, _) =
+                declarations[index]
+
+            item.Range.StartLine
+
+        Assert.Equal(2, declarations.Length)
+
+        let firstLine, secondLine = lineOf 0, lineOf 1
+
+        let picked line =
+            CopilotSymbolQuery.declarationAt (ValueSome line) declarations
+            |> ValueOption.map (fun (struct (item, _)) -> item.Range.StartLine)
+
+        Assert.Equal(ValueSome firstLine, picked firstLine)
+        Assert.Equal(ValueSome secondLine, picked secondLine)
+
+        // An unknown line, or none at all, falls back to the first - the only choice before this line
+        // was tracked, and still the answer for a mention picked before this change shipped.
+        Assert.Equal(ValueSome firstLine, picked -1)
+
+        Assert.Equal(
+            ValueSome firstLine,
+            CopilotSymbolQuery.declarationAt ValueNone declarations
+            |> ValueOption.map (fun (struct (item, _)) -> item.Range.StartLine)
+        )
+
+    [<Fact>]
+    let ``a batch of texts answers like the same texts one by one`` () =
+        let cache = freshCache ()
+
+        let solution =
+            solutionOf
+                [
+                    "C:\\a.fs", "module A\n\nlet alpha = 1\n"
+                    "C:\\b.fs", "module B\n\nlet beta = 2\n"
+                ]
+
+        let batched =
+            CopilotSymbolQuery.search cache Seq.empty ValueNone solution [| "alpha"; "beta" |]
+            |> run
+            |> Array.map namesOf
+
+        Assert.Equal<string>(searchIn cache Seq.empty solution "alpha", batched[0])
+        Assert.Equal<string>(searchIn cache Seq.empty solution "beta", batched[1])
+
+    [<Fact>]
+    let ``a type context carries the whole declaration and its doc comment`` () =
+        let context = contextOf "Widgets.Counter"
+
+        Assert.Equal("Widgets.Counter", context.FullyQualifiedName)
+        Assert.Equal("Counter", context.UnqualifiedName)
+        Assert.Contains("Counts things that matter.", context.Snippet)
+        Assert.Contains("member _.Bump()", context.Snippet)
+
+    [<Fact>]
+    let ``a member context carries the member body alone`` () =
+        let context = contextOf "Widgets.Counter.Bump"
+
+        Assert.Contains("value <- value + 1", context.Snippet)
+        Assert.DoesNotContain("type Counter", context.Snippet)
+
+    [<Fact>]
+    let ``a one-line declaration keeps its doc comment`` () =
+        let context = contextOf "Widgets.twice"
+
+        Assert.Contains("Twice the value.", context.Snippet)
+        Assert.Contains("let twice x", context.Snippet)
+        Assert.DoesNotContain("describeShape", context.Snippet)
+
+    [<Theory>]
+    [<InlineData("Widgets.Counter", CopilotSymbolContextType.Class)>]
+    [<InlineData("Widgets.Counter.Bump", CopilotSymbolContextType.Method)>]
+    [<InlineData("Widgets.Counter.Value", CopilotSymbolContextType.Method)>]
+    [<InlineData("Widgets.Shape.Circle", CopilotSymbolContextType.Union)>]
+    [<InlineData("Widgets.describeShape", CopilotSymbolContextType.Function)>]
+    let ``declaration kinds map onto Copilot symbol types`` (name: string, expected: CopilotSymbolContextType) =
+        Assert.Equal(expected, (contextOf name).SymbolType)
+
+    [<Fact>]
+    let ``a context points back at the source it was taken from`` () =
+        let context = contextOf "Widgets.Counter"
+        let location = Assert.Single<SnippetLocation> context.SnippetLocations
+        let document = RoslynTestHelpers.GetSingleDocument solution
+
+        Assert.Equal(document.FilePath, location.FilePath)
+        Assert.Equal(context.Snippet.Length, location.Span.Length)
+
+    [<Fact>]
+    let ``names that differ only in double backticks answer as two mentions`` () =
+        let names = searchIn cache Seq.empty dottedSolution "a.b"
+
+        Assert.Contains("M.``a.b``", names)
+        Assert.Contains("M.a.b", names)
+
+    [<Theory>]
+    [<InlineData("M.``a.b``", "let ``a.b`` = 1")>]
+    [<InlineData("M.a.b", "let b = 2")>]
+    [<InlineData("M.``x.y``.z", "let z = 3")>]
+    [<InlineData("M.x.y.z", "let z = 4")>]
+    let ``a name holding a dot resolves to its own declaration`` (fullyQualifiedName: string, declaration: string) =
+        Assert.Equal(declaration, (contextIn cache dottedSolution fullyQualifiedName).Snippet.Trim())
+
+    /// Six lines, counting newlines: "module M", "", "let a = 1", "", "let b = 2", and the blank line a
+    /// trailing newline leaves after it.
+    let private focusContent = "module M\n\nlet a = 1\n\nlet b = 2\n"
+
+    let private focusFilePath = "C:\\focus.fs"
+
+    let private documentFocus caretOffset startLine endLine =
+        let caret = if caretOffset < 0 then Nullable() else Nullable caretOffset
+
+        let lineRange =
+            if startLine < 0 then
+                Nullable()
+            else
+                Nullable(Microsoft.VisualStudio.RpcContracts.Utilities.Range(startLine, -1, endLine, -1))
+
+        let selection =
+            DocumentSelection(0, focusContent.Length, Caret = caret, LineRange = lineRange)
+
+        DocumentContext(focusContent, FilePath = focusFilePath, TotalLinesInFile = 6, Selections = [| selection |])
+        |> CopilotSymbolMapping.editorFocusOf
+
+    /// Copilot reports the caret as the offset of its line's start (10, the start of "let a = 1"), a
+    /// line range as 1-based line numbers, and the whole file as a range covering every line - which no
+    /// declaration can be "around", so it answers "focused, no line known", the same as no selection at all.
+    [<Theory>]
+    [<InlineData(10, -1, -1, 3, 3)>]
+    [<InlineData(-1, 2, 5, 2, 5)>]
+    [<InlineData(-1, 1, 6, 0, 0)>]
+    let ``the caret or selection maps onto a focused line range``
+        (caretOffset: int)
+        (startLine: int)
+        (endLine: int)
+        (expectedFirst: int)
+        (expectedLast: int)
+        =
+        let expected =
+            ValueSome
+                {
+                    FilePath = focusFilePath
+                    FirstLine = expectedFirst
+                    LastLine = expectedLast
+                }
+
+        Assert.Equal(expected, documentFocus caretOffset startLine endLine)
+
+    [<Fact>]
+    let ``no selection at all is focused with no line known`` () =
+        let document = DocumentContext(focusContent, FilePath = focusFilePath)
+
+        let expected =
+            ValueSome
+                {
+                    FilePath = focusFilePath
+                    FirstLine = 0
+                    LastLine = 0
+                }
+
+        Assert.Equal(expected, CopilotSymbolMapping.editorFocusOf document)
+
+    [<Fact>]
+    let ``a document with no file path is not focused`` () =
+        let document = DocumentContext(focusContent)
+        Assert.True((CopilotSymbolMapping.editorFocusOf document).IsNone)
