@@ -177,6 +177,13 @@ cannot block it. Uncertainty requesting another question stays pending until the
 old receipt is observed; no second question is sent. Known-unsent label rechecks
 also preserve that independent clarification history.
 
+An older label attempt likewise moves into `pendingLabelPublication` when its
+operation ID differs or the current decision is no longer positive. Its original
+intent is retained until a complete read observes Regression; it is never replayed
+on behalf of the newer decision. An old label receipt cannot complete a new
+clarification or negative decision, and an unknown label outcome cannot block one.
+Retries of the same positive operation still retain their unresolved sending claim.
+
 On CAS mismatch the adapter reloads after a failed mutation and throws retryable
 `CAS_CONFLICT`; the publisher never replays a stale whole-manifest queue or cursor.
 There are no automatic CAS retry loops. Recollect from the latest state on a later

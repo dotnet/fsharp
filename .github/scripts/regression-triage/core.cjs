@@ -49,7 +49,8 @@ function eventNumber(event) {
 // issues:{[number]:record}}. Queue entries have number/firstSeenAt and optional
 // historical/updatedAt/lastAttemptAt. Records retain fingerprint, policyVersion,
 // classification, evidence, missingFact, lastResult, clarification, humanCorrection,
-// humanLabelDecision and pendingPublication. Only published/noop are terminal.
+// humanLabelDecision, pendingPublication and pendingLabelPublication (an older
+// label attempt awaiting observation). Only published/noop are terminal.
 // readAttempt:{at,updatedAt?} survives queue removal; updatedAt is the last
 // complete snapshot's parent timestamp, never proof of unchanged linked input.
 // null means confirmed absence, not a failed read. Migration changes the top-level
@@ -95,6 +96,8 @@ function normalizeMemory(raw, { policyVersion = POLICY_VERSION } = {}) {
     }
     const clarification = record.clarification;
     if (!validPublication(record.pendingPublication)
+      || !validPublication(record.pendingLabelPublication)
+      || (record.pendingLabelPublication != null && record.pendingLabelPublication.effect !== "label")
       || clarification != null && (
         !["pending", "published", "unknown"].includes(clarification.status)
         || (clarification.selector !== undefined

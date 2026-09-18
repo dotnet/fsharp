@@ -273,6 +273,8 @@ async function publishBatch({ github, store, repo, manifest, output, context, bo
       const operationId = hash([context.repository, result.number, POLICY_VERSION, result.fingerprint]);
       const unresolved = prior.pendingPublication && prior.pendingPublication.phase !== "prepared";
       const priorComment = unresolved && prior.pendingPublication.effect === "comment";
+      const priorLabel = unresolved && prior.pendingPublication.effect === "label"
+        && (prior.pendingPublication.operationId !== operationId || result.classification !== "regression");
       state.issues[result.number] = {
         ...prior, fingerprint: result.fingerprint, policyVersion: POLICY_VERSION,
         classification: result.classification, evidence: result.evidence, missingFact: result.missingFact,
@@ -280,7 +282,8 @@ async function publishBatch({ github, store, repo, manifest, output, context, bo
           ? { ...prior.clarification, pendingPublication: prior.pendingPublication } : prior.clarification ?? null,
         humanCorrection: prior.humanCorrection ?? null,
         humanLabelDecision: prior.humanLabelDecision ?? null,
-        pendingPublication: unresolved && !priorComment ? prior.pendingPublication : { operationId, phase: "prepared" },
+        pendingLabelPublication: priorLabel ? prior.pendingPublication : prior.pendingLabelPublication ?? null,
+        pendingPublication: unresolved && !priorComment && !priorLabel ? prior.pendingPublication : { operationId, phase: "prepared" },
         lastResult: { status: "pending", operationId },
       };
     }
@@ -332,6 +335,7 @@ async function publishBatch({ github, store, repo, manifest, output, context, bo
       }
       const receipt = observedReceipt(snapshot, repo, bot);
       if (receipt) record.clarification = receipt;
+      if (snapshot.labels.includes("Regression")) record.pendingLabelPublication = null;
       humanState(record, snapshot, {});
       if (!isEligibleIssue(snapshot) || fingerprintHumanInput(snapshot) !== result.fingerprint) {
         const effect = intent.effect;
