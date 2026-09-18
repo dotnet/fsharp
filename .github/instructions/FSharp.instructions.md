@@ -85,7 +85,9 @@ This codebase implements every F# feature, so finding one here is no evidence th
 
 ## The language version is not uniform
 
-`FSharp.Profiles.props` sets `LangVersion=preview`, but not under `Configuration=Proto` and not when `BUILDING_USING_DOTNET=true`. The compiler bootstraps, so a feature this repository is *adding* cannot be used in its own source until it ships in the SDK compiler named by `global.json` – otherwise the Proto stage fails.
+`FSharp.Profiles.props` sets `LangVersion=preview`, but not under `Configuration=Proto` and not when `BUILDING_USING_DOTNET=true`. The compiler bootstraps, so source must compile under every compiler and language version that builds it.
+
+When FSharp.Core unconditionally adopts a compiler-recognized attribute or optimization metadata, assign its `LanguageFeature` to the language version used by Proto in the same change, not to preview. Test declaration at that version, rejection at the preceding version, and imported-metadata consumption from an older consumer language version. An ordinary source-build can pass because its older compiler treats a new attribute as ordinary metadata; also rebuild Proto FSharp.Core with the freshly built Release compiler at the assigned language version, as the VMR stage-2 build does.
 
 - `src/FSharp.Build` is pinned to `LangVersion 9`; it can load in Visual Studio against an older FSharp.Core.
 - `src/FSharp.Core` leaves nullness off and is bound by `docs/fsharp-core-notes.md`.
