@@ -483,6 +483,73 @@ let ``Issue 20575 runtime async ownership matrix`` optimized =
 let ``Issue 20575 legal synchronous exception region controls`` optimized =
     checkReraiseOwnership optimized "CONTROLS"
 
+let private compileInspectionProbe (body: string) =
+    // C# leaves these calls in their EH regions; these libraries must never be executed.
+    CSharp $"""
+using System;
+using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
+
+public static class Inspection
+{{
+    public static void Probe(Task<int> audit)
+    {{
+        {body}
+    }}
+}}
+"""
+    |> withName "Inspection"
+    |> asLibrary
+    |> compile
+    |> shouldSucceed
+
+[<Theory>]
+[<InlineData("try { throw new Exception(); } catch { AsyncHelpers.Await((Task)audit); }", true)>]
+[<InlineData("try { throw new Exception(); } catch { AsyncHelpers.Await(audit); }", true)>]
+[<InlineData("try { throw new Exception(); } catch { AsyncHelpers.AwaitAwaiter(audit.GetAwaiter()); }", true)>]
+[<InlineData("try { throw new Exception(); } catch { AsyncHelpers.UnsafeAwaitAwaiter(audit.GetAwaiter()); }", true)>]
+[<InlineData("try { throw new Exception(); } finally { AsyncHelpers.Await(audit); }", true)>]
+[<InlineData("try { throw new Exception(); } catch when (audit.IsCompleted) { AsyncHelpers.Await(audit); }", true)>]
+[<InlineData("try { throw new Exception(); } catch when (AsyncHelpers.Await(audit) == 7) { }", true)>]
+[<InlineData("try { AsyncHelpers.Await(audit); } catch { }", false)>]
+let ``Issue 20575 inspection rejects suspension in exception regions`` body forbidden =
+    let result = compileInspectionProbe body
+    if forbidden then
+        let error =
+            Assert.Throws<System.Exception>(fun () ->
+                result |> verifyRuntimeAsyncExceptionRegions ["Inspection::Probe", false] |> ignore)
+        Assert.StartsWith("Inspection::Probe: suspension in exception handler/filter at IL_", error.Message)
+        Assert.Contains("regions (kind, try offset/length, handler offset/length, filter offset):", error.Message)
+    else
+        result |> verifyRuntimeAsyncExceptionRegions ["Inspection::Probe", false] |> ignore
+
+[<Theory>]
+[<InlineData("RuntimeAsyncTest::missing", false, "Missing probe method body: ")>]
+[<InlineData("AbstractProbe::MissingBody", false, "Missing probe method body: ")>]
+[<InlineData("RuntimeAsyncTest::rawBody", true, "Missing runtime-async body with suspension in ")>]
+let ``Issue 20575 inspection rejects missing probes and suspension`` methodName requiresAwait message =
+    let result =
+        FSharp (runtimeAsyncSource + "\ntype AbstractProbe = abstract MissingBody: unit -> unit\n")
+        |> withLangVersionPreview
+        |> withFSharpCoreShippedNet
+        |> asLibrary
+        |> compile
+        |> shouldSucceed
+
+    let error =
+        Assert.Throws<System.Exception>(fun () ->
+            result |> verifyRuntimeAsyncExceptionRegions [methodName, requiresAwait] |> ignore)
+    Assert.Equal($"{message}{methodName}", error.Message)
+
+[<Fact>]
+let ``Issue 20575 inspection requires runtime async metadata even with suspension`` () =
+    let result = compileInspectionProbe "AsyncHelpers.Await(audit);"
+    result |> verifyRuntimeAsyncExceptionRegions ["Inspection::Probe", false] |> ignore
+    let error =
+        Assert.Throws<System.Exception>(fun () ->
+            result |> verifyRuntimeAsyncExceptionRegions ["Inspection::Probe", true] |> ignore)
+    Assert.Equal("Missing runtime-async body with suspension in Inspection::Probe", error.Message)
+
 [<Fact>]
 let ``runtime async rejects stackalloc across suspension`` () =
     FSharp """
