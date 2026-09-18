@@ -522,11 +522,6 @@
         <target state="new">record type and expression spreads</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureRefCellNotationInformationals">
-        <source>informational messages related to reference cells</source>
-        <target state="translated">messaggi informativi relativi alle celle di riferimento</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureResumableStateMachines">
         <source>resumable state machines</source>
         <target state="translated">macchine a stati ripristinabili</target>
