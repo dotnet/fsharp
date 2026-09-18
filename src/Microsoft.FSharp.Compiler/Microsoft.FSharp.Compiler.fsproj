@@ -22,6 +22,7 @@
     <NuspecProperty Include="fSharpCompilerServicePackageVersion=$(FSharpCompilerServicePackageVersion)" />
     <NuspecProperty Include="artifactsPackagesDir=$(ArtifactsPackagesDir)" />
     <NuspecProperty Include="fSharpNetCoreProductTargetFramework=$(FSharpNetCoreProductTargetFramework)" />
+    <NuspecProperty Include="fSharpCoreShippedNetTargetFramework=$(FSharpCoreShippedNetTargetFramework)" />
     <NuspecProperty Include="configuration=$(Configuration)" />
   </ItemGroup>
 
