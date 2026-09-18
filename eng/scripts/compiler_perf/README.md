@@ -31,6 +31,8 @@ local pack. Restore and generated-source
 creation happen before sampling. `Capture.targets` imports the existing local
 Core override and captures evaluated `Fsc.CommandLineArgs` after a real
 `CoreCompile`, with a binlog and explicit compiler/project identity.
+The compiler command prefix is MSBuild-escaped with literal quotes, matching the
+Fsc task's command-line convention even when the installation path contains spaces.
 
 Reference assembly generation is disabled for this workload: the current Fsc
 capture API omits the trailing `--refout`/`--refonly` arguments. Sources, references
@@ -100,6 +102,11 @@ All documents use `schema_version: 1` and a `kind` discriminator. Unsupported
 versions, duplicate JSON keys, nonfinite/negative metrics, malformed input and
 missing metrics without reasons fail closed. Hashes are SHA-256; JSON
 fingerprints sort object keys but never arrays. Raw sample IDs are preserved.
+Workload and sample documents share workload validation: complete ordered input
+inventories, compiler-source target/paths, Core identity, output ownership and
+Release/parallel arguments are mandatory even when both arms agree on invalid
+evidence. Comparison also checks each compiler's actual recorded runtimeconfig
+hash against the shared toolchain, independently of declared fingerprints.
 
 The workload manifest separates six invariant sections:
 
@@ -151,6 +158,12 @@ Run the portable helper fixtures (all fixture timings are synthetic):
 python -m unittest discover -s tests/CompilerPerfWorkflow -p "test_*.py" -v
 ```
 
+Controlled preparation fixtures exercise separate checkouts, Release packing,
+SDK selection, local Core/capture, path quoting, replay and failure handling.
+Replay fixtures launch distinguishable baseline/candidate child processes and
+check the selected installation, response file, working directory and output
+reset for every A/A, warm-up and A/B event.
+
 ## Local validation record
 
 On 2026-09-18, the initial helper fixtures failed with `FileNotFoundError` for
@@ -175,3 +188,19 @@ improvement is claimed. The literal repository-root
 `dotnet build -c Release && dotnet test -c Release` stops at MSB1011 because the
 root contains multiple solutions; the explicit repository Release build and
 the Python helper suite are the applicable validation for these changes.
+
+The verifier regressions were reproduced before corrective implementation in
+`artifacts/compiler-perf-validation/red.log`. All 20 helper tests now pass,
+including actual comparison CLI failures and controlled preparation success and
+failure cases. In-memory mutations bypassing preparation or selecting only the
+baseline compiler are detected by the new assertions.
+
+A second real Release workload build, using the same pack copied to a compiler
+installation path containing spaces, completed with zero warnings/errors.
+Capture and fresh-process replay succeeded with the same ordered input hashes
+and counts above; the captured workload also passes the shared contract
+validator. All 104 copied compiler files match the local Release pack.
+The commands, exit statuses, binlog and hashes are retained in
+`artifacts/compiler-perf-validation/live-replay.json` and `workload.binlog`.
+The standalone root `dotnet test -c Release` also requires an explicit solution;
+no full compiler suite was run for these Python-only changes.

@@ -23,17 +23,28 @@ spec.loader.exec_module(m)
 
 def measurements(candidate_ms=90, primary="elapsed_ms"):
     """All identities and numbers in this fixture are synthetic."""
+    checkout = ROOT / "synthetic" / "workload"
+    cwd = checkout / "src" / "Compiler"
+
+    def record(path):
+        return {"path": str(path), "sha256": m.fingerprint_inputs(str(path))}
+
+    core = record(checkout / "FSharp.Core.dll")
+    arguments = ["-o:output.dll", "--optimize+", "--noframework", "--parallelcompilation-",
+                 f"-r:{core['path']}", "first.fs", "second.fs", "generated.fs"]
     invariants = {
         "workload": {"revision": "a" * 40, "configuration": "Release",
-                     "default_branch_revision": "a" * 40, "target_framework": "synthetic-tfm",
-                     "parallel_compilation": False, "cwd": "synthetic-cwd", "checkout": "synthetic-checkout",
+                     "default_branch_revision": "a" * 40, "target_framework": "net11.0",
+                     "parallel_compilation": False, "cwd": str(cwd), "checkout": str(checkout),
                      "target": "src/Compiler/FSharp.Compiler.Service.fsproj",
-                     "sources": ["first", "second"], "generated": ["generated"],
-                     "references": ["reference"], "resources": ["resource"],
-                     "auxiliary": ["sourcelink"], "outputs": ["output"], "assembly_output": "output",
-                     "core": "core", "core_package": "package", "core_package_asset": "asset",
-                     "arguments_sha256": "a" * 64, "response_file": "synthetic-response",
-                     "arguments": ["--optimize+", "--parallelcompilation-"]},
+                     "sources": [record(cwd / name) for name in ("first.fs", "second.fs")],
+                     "generated": [record(cwd / "generated.fs")],
+                     "references": [copy.deepcopy(core)], "resources": [], "auxiliary": [],
+                     "outputs": [str(cwd / "output.dll")], "assembly_output": str(cwd / "output.dll"),
+                     "core": core, "core_package": record(checkout / "FSharp.Core.1.0.nupkg"),
+                     "core_package_asset": "lib/netstandard2.0/FSharp.Core.dll",
+                     "arguments_sha256": m.fingerprint_inputs(arguments),
+                     "response_file": record(checkout / "compiler.rsp"), "arguments": arguments},
         "bootstrap": {"revision": "a" * 40, "source_tree": "a" * 40,
                       "binaries": "bootstrap", "commands": []},
         "toolchain": {"sdk": "synthetic", "runtime": "synthetic", "dotnet": "synthetic",
@@ -59,6 +70,7 @@ def measurements(candidate_ms=90, primary="elapsed_ms"):
                                      "sha256": m.fingerprint_inputs(arm + name)}
                               for name in ("fsc.dll", "FSharp.Compiler.Service.dll", "fsc.runtimeconfig.json",
                                            "fsc.deps.json", "FSharp.Core.dll")}}
+        compiler["files"]["fsc.runtimeconfig.json"]["sha256"] = invariants["toolchain"]["compiler_runtimeconfig_sha256"]
         doc = {"schema_version": 1, "kind": "samples", "arm": arm,
                "collection_id": "synthetic-collection",
                "collection_complete": True,
@@ -81,6 +93,18 @@ def measurements(candidate_ms=90, primary="elapsed_ms"):
             doc["samples"].append(sample)
         documents.append(doc)
     return documents
+
+
+def refresh_identities(documents):
+    """Keep evidence internally fingerprinted when testing invalid declarations."""
+    for doc in documents:
+        for key in ("bootstrap", "toolchain"):
+            doc["compiler"][f"{key}_fingerprint"] = m.fingerprint_inputs(doc["invariants"][key])
+        doc["compiler_id"] = m.fingerprint_inputs(doc["compiler"])
+        doc["control_compiler_id"] = documents[0]["compiler_id"]
+        for sample in doc["samples"]:
+            sample["compiler_id"] = doc["control_compiler_id"] if sample["phase"] == "aa" else doc["compiler_id"]
+            sample["fingerprints"] = {k: m.fingerprint_inputs(v) for k, v in doc["invariants"].items()}
 
 
 class MeasurementTests(unittest.TestCase):
@@ -116,9 +140,55 @@ class MeasurementTests(unittest.TestCase):
             with self.subTest(section=section, key=key):
                 changed = copy.deepcopy(candidate)
                 changed["invariants"][section][key] = "changed"
-                result = m.compare_measurements(baseline, changed)
+                try:
+                    result = m.compare_measurements(baseline, changed)
+                except ValueError:
+                    continue  # A malformed invariant must fail contract validation.
                 self.assertEqual(result["decision"], "inconclusive")
                 self.assertIn(section, result["invariant_mismatches"])
+
+    def test_matching_invalid_workloads_fail_closed(self):
+        valid = measurements()[0]["invariants"]["workload"]
+        cases = [(f"missing {key}", lambda w, k=key: w.pop(k)) for key in valid]
+        cases += [
+            ("empty sources", lambda w: w.update(sources=[])),
+            ("empty generated", lambda w: w.update(generated=[])),
+            ("empty references", lambda w: w.update(references=[])),
+            ("Core target", lambda w: w.update(target="src/FSharp.Core/FSharp.Core.fsproj")),
+            ("Core sources", lambda w: [r.update(path=str(Path(w["checkout"]) / "src" / "FSharp.Core" / Path(r["path"]).name))
+                                       for r in w["sources"]]),
+            ("outside source", lambda w: w["sources"][0].update(path=str(ROOT / "outside.fs"))),
+            ("bad input hash", lambda w: w["generated"][0].update(sha256="not-a-hash")),
+            ("missing Core", lambda w: w["core"].update(sha256="f" * 64)),
+            ("changed arguments", lambda w: w["arguments"].reverse()),
+            ("parallel flags", lambda w: w.update(parallel_compilation=True)),
+        ]
+        for label, mutate in cases:
+            for kind in ("workload", "samples"):
+                with self.subTest(label=label, kind=kind):
+                    docs = measurements()
+                    for doc in docs:
+                        mutate(doc["invariants"]["workload"])
+                    refresh_identities(docs)
+                    document = docs[0] if kind == "samples" else {
+                        "schema_version": 1, "kind": "workload", "invariants": docs[0]["invariants"],
+                        "baseline_compiler": docs[0]["compiler"]}
+                    with self.assertRaises(ValueError):
+                        m.validate_manifest(document, kind)
+                    if kind == "samples":
+                        with self.assertRaises(ValueError):
+                            m.compare_measurements(*docs)
+
+    def test_runtime_configuration_must_match_toolchain(self):
+        for arms in ((0,), (1,), (0, 1)):
+            with self.subTest(arms=arms):
+                docs = measurements()
+                for arm in arms:
+                    docs[arm]["compiler"]["files"]["fsc.runtimeconfig.json"]["sha256"] = "f" * 64
+                refresh_identities(docs)
+                result = m.compare_measurements(*docs)
+                self.assertEqual(result["decision"], "inconclusive")
+                self.assertTrue(any("runtime configuration" in reason for reason in result["reasons"]), result)
 
     def test_incomplete_or_contaminated_runs(self):
         cases = {
@@ -349,22 +419,31 @@ class MeasurementTests(unittest.TestCase):
     def test_compare_cli_writes_decision_or_explicit_error(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            for valid in (True, False):
-                with self.subTest(valid=valid):
-                    for arm, doc in zip(("baseline", "candidate"), measurements()):
+            for case in ("valid", "truncated", "missing generated", "Core target", "runtime mismatch"):
+                with self.subTest(case=case):
+                    docs = measurements()
+                    for doc in docs:
+                        if case == "missing generated":
+                            doc["invariants"]["workload"]["generated"] = []
+                        elif case == "Core target":
+                            doc["invariants"]["workload"]["target"] = "src/FSharp.Core/FSharp.Core.fsproj"
+                    if case == "runtime mismatch":
+                        docs[1]["compiler"]["files"]["fsc.runtimeconfig.json"]["sha256"] = "f" * 64
+                    refresh_identities(docs)
+                    for arm, doc in zip(("baseline", "candidate"), docs):
                         m.write_json(root / f"{arm}.json", doc)
-                    if not valid:
+                    if case == "truncated":
                         (root / "candidate.json").write_text('{"schema_version":')
-                    output = root / f"comparison-{valid}.json"
+                    output = root / f"comparison-{case}.json"
                     result = subprocess.run(
                         [sys.executable, str(MODULE), "compare", "--baseline", str(root / "baseline.json"),
                          "--candidate", str(root / "candidate.json"), "--output", str(output)],
                         cwd=ROOT, env=m.allowed_environment(root), capture_output=True, text=True)
-                    if valid:
+                    if case in ("valid", "runtime mismatch"):
                         self.assertEqual(result.returncode, 0, result.stderr)
                         decision = m.read_json(output)
                         self.assertEqual(decision["schema_version"], 1)
-                        self.assertEqual(decision["decision"], "measured_improvement")
+                        self.assertEqual(decision["decision"], "measured_improvement" if case == "valid" else "inconclusive")
                     else:
                         self.assertEqual(result.returncode, 2)
                         self.assertIn("error:", result.stderr)
@@ -381,25 +460,26 @@ class MeasurementTests(unittest.TestCase):
         """Real child processes; synthetic compiler files, identities and timings."""
         for outcome in ("success", "failure", "no output", "cancelled", "changed input"):
             with self.subTest(outcome=outcome), tempfile.TemporaryDirectory() as directory:
-                root = Path(directory)
+                root = Path(directory).resolve()
                 cwd = root / "src" / "Compiler"
                 cwd.mkdir(parents=True)
                 for name in ("source.fs", "generated.fs", "FSharp.Core.dll"):
                     (cwd / name).write_text(name)
-                compiler_dir = root / "compiler"
-                compiler_dir.mkdir()
-                for name in ("fsc.dll", "FSharp.Compiler.Service.dll", "fsc.runtimeconfig.json",
-                             "fsc.deps.json", "FSharp.Core.dll"):
-                    (compiler_dir / name).write_text("synthetic binary")
-                write_output = "" if outcome == "no output" else "Path('output.dll').write_text('synthetic output')"
-                (compiler_dir / "fsc.dll").write_text(
-                    "from pathlib import Path\n"
-                    "import sys\n"
-                    "assert sys.argv[1].startswith('@')\n"
-                    "assert not Path('output.dll').exists()\n"
-                    f"{write_output}\n"
-                    f"sys.exit({7 if outcome == 'failure' else 0})\n")
-                arguments = ["-o:output.dll", "--optimize+", "--parallelcompilation-",
+                for arm in ("baseline", "candidate"):
+                    compiler_dir = root / arm
+                    compiler_dir.mkdir()
+                    for name in ("fsc.dll", "FSharp.Compiler.Service.dll", "fsc.runtimeconfig.json",
+                                 "fsc.deps.json", "FSharp.Core.dll"):
+                        (compiler_dir / name).write_text("synthetic binary")
+                    write_output = "" if outcome == "no output" else f"Path('output.dll').write_text('{arm}')"
+                    (compiler_dir / "fsc.dll").write_text(
+                        "from pathlib import Path\n"
+                        "import sys\n"
+                        "assert sys.argv[1].startswith('@')\n"
+                        "assert not Path('output.dll').exists()\n"
+                        f"{write_output}\n"
+                        f"sys.exit({7 if outcome == 'failure' else 0})\n")
+                arguments = ["-o:output.dll", "--optimize+", "--noframework", "--parallelcompilation-",
                              "-r:FSharp.Core.dll", "source.fs", "generated.fs"]
                 response = root / "compile.rsp"
                 response.write_text("\n".join(arguments) + "\n")
@@ -411,14 +491,17 @@ class MeasurementTests(unittest.TestCase):
                              "capture_target": m.file_record(MODULE.with_name("Capture.targets")),
                              "runtime_files": [], "sdk_compiler_files": [],
                              "compiler_runtimeconfig_sha256": m.file_record(compiler_dir / "fsc.runtimeconfig.json")["sha256"]}
-                compiler = m.compiler_manifest(compiler_dir, "a" * 40, "b" * 64, bootstrap, toolchain)
-                workload = dict(inputs, revision="a" * 40, target=m.PROJECT.as_posix(),
+                installations = {arm: m.compiler_manifest(root / arm, "a" * 40, m.fingerprint_inputs(arm), bootstrap, toolchain)
+                                 for arm in ("baseline", "candidate")}
+                workload = dict(inputs, revision="a" * 40, default_branch_revision="a" * 40,
+                                target=m.PROJECT.as_posix(), target_framework="net11.0", parallel_compilation=False,
                                 configuration="Release", arguments=arguments,
                                 arguments_sha256=m.fingerprint_inputs(arguments),
                                 response_file=m.file_record(response), core_package=m.file_record(cwd / "FSharp.Core.dll"),
+                                core_package_asset="lib/netstandard2.0/FSharp.Core.dll",
                                 cwd=str(cwd), checkout=str(root))
                 manifest = {"schema_version": 1, "kind": "workload", "owned_root": str(root),
-                            "baseline_compiler": compiler,
+                            "baseline_compiler": installations["baseline"],
                             "invariants": {"workload": workload, "bootstrap": bootstrap, "toolchain": toolchain,
                                            "environment": m.host_identity(environment), "policy": copy.deepcopy(m.POLICY),
                                            "experiment": {"id": "synthetic", "primary_metric": "elapsed_ms",
@@ -432,6 +515,13 @@ class MeasurementTests(unittest.TestCase):
                         raise KeyboardInterrupt()
                     with mock.patch.object(m, "sys", sys):
                         result = original_run(args, working, env, log)
+                    event = m.schedule()[len(calls) - 1]
+                    arm = "baseline" if event["phase"] == "aa" else event["arm"]
+                    self.assertEqual(Path(args[1]).parent, root / arm)
+                    self.assertEqual(Path(working), cwd)
+                    self.assertEqual(env, environment)
+                    if outcome != "no output":
+                        self.assertEqual((cwd / "output.dll").read_text(), arm)
                     if outcome == "changed input":
                         (cwd / "source.fs").write_text("changed during replay")
                     result.update(elapsed_ms=100, process_cpu_ms=80, process_peak_rss_bytes=1000,
@@ -444,17 +534,19 @@ class MeasurementTests(unittest.TestCase):
                      mock.patch.object(m, "run_process", side_effect=controlled_run):
                     if outcome != "success":
                         with self.assertRaises(KeyboardInterrupt if outcome == "cancelled" else ValueError):
-                            m.run_repetitions(manifest, compiler, output)
+                            m.run_repetitions(manifest, installations["candidate"], output)
                     else:
-                        m.run_repetitions(manifest, compiler, output)
+                        m.run_repetitions(manifest, installations["candidate"], output)
                 docs = [m.read_json(output.with_suffix(".baseline.json")), m.read_json(output)]
                 for doc in docs:
                     m.validate_manifest(doc, "samples")
                 self.assertEqual(docs[0]["collection_id"], docs[1]["collection_id"])
                 self.assertFalse((root / "measurement.lock").exists())
-                self.assertTrue(all(args == [str(Path(sys.executable).resolve()),
-                                            str((compiler_dir / "fsc.dll").resolve()),
-                                            "@" + str(response.resolve())] for args in calls))
+                for args, event in zip(calls, m.schedule()):
+                    arm = "baseline" if event["phase"] == "aa" else event["arm"]
+                    self.assertEqual(args, [str(Path(sys.executable).resolve()),
+                                            str((root / arm / "fsc.dll").resolve()),
+                                            "@" + str(response.resolve())])
                 if outcome == "success":
                     self.assertEqual(len(calls), 24)
                     self.assertEqual(m.compare_measurements(*docs)["decision"], "rejected")

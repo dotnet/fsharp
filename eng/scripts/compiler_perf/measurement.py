@@ -78,6 +78,73 @@ def write_json(path, value):
     temporary.replace(path)
 
 
+def absolute_path(value):
+    require(isinstance(value, str) and value and "\0" not in value, "Missing absolute path")
+    path = PureWindowsPath(value) if PureWindowsPath(value).is_absolute() else PurePosixPath(value)
+    require(path.is_absolute() and ".." not in path.parts, f"Path must be absolute and normalized: {value}")
+    return path
+
+
+def validate_file_record(record):
+    require(type(record) is dict and isinstance(record.get("sha256"), str)
+            and re.fullmatch("[0-9a-f]{64}", record["sha256"]), "Invalid file hash")
+    return absolute_path(record.get("path"))
+
+
+def validate_workload(workload):
+    required = {"revision", "default_branch_revision", "configuration", "target", "target_framework",
+                "parallel_compilation", "cwd", "checkout", "sources", "generated", "references",
+                "resources", "auxiliary", "outputs", "assembly_output", "core", "core_package",
+                "core_package_asset", "arguments", "arguments_sha256", "response_file"}
+    require(type(workload) is dict and required <= workload.keys(), "Missing workload identity")
+    require(workload["configuration"] == "Release", "Only Release is an acceptance workload")
+    require(workload["target"] == PROJECT.as_posix(), "Not the compiler-source workload")
+    for key in ("revision", "default_branch_revision"):
+        require(isinstance(workload[key], str) and re.fullmatch("[0-9a-f]{40}", workload[key]),
+                f"Invalid workload {key}")
+    require(isinstance(workload["target_framework"], str)
+            and re.fullmatch(r"net\d+\.0", workload["target_framework"]), "Invalid workload target framework")
+    checkout, cwd = (absolute_path(workload[key]) for key in ("checkout", "cwd"))
+    require(cwd == checkout / "src" / "Compiler", "Workload cwd is not src/Compiler")
+    for key in ("sources", "generated", "references", "resources", "auxiliary"):
+        records = workload[key]
+        require(type(records) is list and (records or key in ("resources", "auxiliary")),
+                f"Missing workload {key}")
+        for record in records:
+            path = validate_file_record(record)
+            if key in ("sources", "generated"):
+                require(path.is_relative_to(checkout) and path.suffix in (".fs", ".fsi"),
+                        f"Source outside frozen checkout: {path}")
+    require(any(absolute_path(r["path"]).is_relative_to(cwd) for r in workload["sources"]),
+            "No tracked src/Compiler sources")
+    for key in ("core", "core_package", "response_file"):
+        validate_file_record(workload[key])
+    core = [r for r in workload["references"] if absolute_path(r["path"]).name == "FSharp.Core.dll"]
+    require(core == [workload["core"]], "Core identity differs from workload reference")
+    asset = workload["core_package_asset"]
+    require(isinstance(asset, str) and asset.startswith("lib/") and asset.endswith("/FSharp.Core.dll"),
+            "Missing local Core package asset")
+    outputs = workload["outputs"]
+    require(type(outputs) is list and outputs and workload["assembly_output"] in outputs,
+            "Missing workload output assembly")
+    inputs = {r["path"] for key in ("sources", "generated", "references", "resources", "auxiliary")
+              for r in workload[key]}
+    for output in outputs:
+        path = absolute_path(output)
+        require(path.is_relative_to(checkout) and path != checkout and output not in inputs,
+                f"Unsafe workload output: {output}")
+    arguments = workload["arguments"]
+    require(type(arguments) is list and all(isinstance(a, str) and a and a == a.strip()
+            and not any(c in a for c in "\r\n\0") and not a.startswith("@") for a in arguments),
+            "Invalid workload arguments")
+    require(workload["arguments_sha256"] == fingerprint_inputs(arguments), "Argument hash mismatch")
+    require(type(workload["parallel_compilation"]) is bool, "Invalid parallel-compilation identity")
+    parallel = "--parallelcompilation+" if workload["parallel_compilation"] else "--parallelcompilation-"
+    require("--optimize+" in arguments and "--optimize-" not in arguments and "--noframework" in arguments
+            and [a for a in arguments if a.startswith("--parallelcompilation")] == [parallel],
+            "Release/parallel flags differ from workload identity")
+
+
 def validate_manifest(document, kind):
     require(type(document) is dict and type(document.get("schema_version")) is int
             and document["schema_version"] == 1, "Unsupported or missing schema_version")
@@ -92,19 +159,12 @@ def validate_manifest(document, kind):
                      "fsc.deps.json", "FSharp.Core.dll"):
             require(name in document.get("files", {}), f"Missing compiler binary: {name}")
         for record in document["files"].values():
-            require(re.fullmatch("[0-9a-f]{64}", record.get("sha256", "")), "Invalid binary hash")
-            require(PurePosixPath(record["path"]).is_absolute() or PureWindowsPath(record["path"]).is_absolute(),
-                    "Compiler path must be absolute")
+            validate_file_record(record)
     elif kind in ("workload", "samples"):
         require(set(document.get("invariants", {})) == set(SECTIONS), "Missing invariant section")
+        validate_workload(document["invariants"]["workload"])
         if kind == "workload":
             validate_manifest(document["baseline_compiler"], "compiler")
-            workload = document["invariants"]["workload"]
-            require(workload["configuration"] == "Release", "Only Release is an acceptance workload")
-            require(workload["target"] == PROJECT.as_posix(), "Not the compiler-source workload")
-            require(re.fullmatch("[0-9a-f]{40}", workload["revision"]), "Invalid workload revision")
-            require(workload["sources"] and workload["generated"] and workload["references"],
-                    "Missing source, generated source or references")
         else:
             require(document.get("arm") in ("baseline", "candidate"), "Invalid sample arm")
             for key in ("compiler_id", "control_compiler_id"):
@@ -332,8 +392,6 @@ def compare_measurements(baseline, candidate):
         reasons.append("Policy differs from the checked-in production policy")
     if primary not in PRIMARY_METRICS or invariants["experiment"].get("collector") != "process-rusage-v1":
         reasons.append("Unsupported predeclared primary metric or collector")
-    if invariants["workload"].get("configuration") != "Release":
-        reasons.append("Acceptance requires Release")
     if baseline["collection_id"] != candidate["collection_id"]:
         reasons.append("Samples came from separate collection invocations")
     if baseline["control_compiler_id"] != baseline["compiler_id"] or candidate["control_compiler_id"] != baseline["compiler_id"]:
@@ -352,6 +410,8 @@ def compare_measurements(baseline, candidate):
         if any(document["compiler"][f"{key}_fingerprint"] != fingerprint_inputs(invariants[key])
                for key in ("bootstrap", "toolchain")):
             reasons.append(f"{arm}: compiler build provenance differs")
+        if document["compiler"]["files"]["fsc.runtimeconfig.json"]["sha256"] != invariants["toolchain"].get("compiler_runtimeconfig_sha256"):
+            reasons.append(f"{arm}: compiler runtime configuration differs from toolchain")
         if document["arm"] != arm or len(samples) != len(expected):
             reasons.append(f"{arm}: incomplete repetition/warm-up schedule")
         for sample, event in zip(samples, expected):
@@ -519,22 +579,18 @@ def prepare_workload(source_sha, work_dir, output, primary_metric="elapsed_ms", 
                   "-p:FSHARPCORE_USE_PACKAGE=true", "-p:UseSharedCompilation=false",
                   "-p:ProduceReferenceAssembly=false", "-p:ProduceOnlyReferenceAssembly=false", "-p:ProvideCommandLineArgs=true",
                   "-p:SkipCompilerExecution=false", f"-p:ParallelCompilation={str(parallel).lower()}",
-                  f"-p:DotnetFscCompilerPath={installation / 'fsc.dll'}",
+                  f"-p:DotnetFscCompilerPath=%22{installation / 'fsc.dll'}%22",
                   f"-p:FSharpBuildTasksAssembly={installation / 'FSharp.Build.dll'}",
                   f"-p:FscToolPath={dotnet.parent}", f"-p:FscToolExe={dotnet.name}",
                   f"-p:CompilerPerfCaptureDir={capture}", f"-bl:{root / 'workload.binlog'}"]
     run(build_args, workload_dir)
     metadata = (capture / "identity.txt").read_text(encoding="utf-8-sig").splitlines()
-    require(metadata == [str(installation / "fsc.dll"), "Release", str(workload_dir / PROJECT), tfm],
+    require(metadata == [f'"{installation / "fsc.dll"}"', "Release", str(workload_dir / PROJECT), tfm],
             f"Captured compiler/project identity mismatch: {metadata}")
     response = capture / "compiler.rsp"
     arguments = response.read_text(encoding="utf-8-sig").splitlines()
     tracked = set(run(["git", "ls-files"], workload_dir).splitlines())
     inputs = capture_inputs(arguments, (workload_dir / PROJECT).parent, workload_dir, tracked)
-    require(inputs["generated"], "No generated compiler inputs captured")
-    require("--optimize+" in arguments and "--noframework" in arguments
-            and f"--parallelcompilation{'+' if parallel else '-'}" in arguments,
-            "Release/parallel flags not captured")
     inputs["core_package"] = file_record(package)
     inputs["core_package_asset"] = packed_core_asset(inputs["core"], package)
     require(not run(["git", "status", "--porcelain", "--untracked-files=no"], workload_dir),
@@ -554,6 +610,8 @@ def prepare_workload(source_sha, work_dir, output, primary_metric="elapsed_ms", 
     # This smoke replay also works on Windows; its unavailable rusage is not acceptance evidence.
     reset_outputs(workload["outputs"], workload_dir, sum((inputs[k] for k in ("sources", "generated", "references", "resources", "auxiliary")), []))
     run([dotnet, installation / "fsc.dll", "@" + str(response)], workload["cwd"])
+    assembly = Path(workload["assembly_output"])
+    require(assembly.is_file() and assembly.stat().st_size > 0, "Smoke replay produced no assembly")
     document["preparation_commands"] = commands
     write_json(root / "baseline-compiler.json", baseline)
     write_json(output, document)
@@ -568,8 +626,6 @@ def run_repetitions(manifest, compiler, output):
     require(invariants["policy"] == POLICY, "Policy changed since preparation")
     require(compiler["bootstrap_fingerprint"] == fingerprint_inputs(invariants["bootstrap"]), "Candidate bootstrap mismatch")
     require(compiler["toolchain_fingerprint"] == fingerprint_inputs(invariants["toolchain"]), "Candidate toolchain mismatch")
-    require(compiler["files"]["fsc.runtimeconfig.json"]["sha256"] ==
-            invariants["toolchain"]["compiler_runtimeconfig_sha256"], "Candidate runtime configuration changed")
     environment = invariants["environment"]["variables"]
     safe = allowed_environment(manifest["owned_root"])
     require(set(environment) <= set(safe) | LOCAL_ENVIRONMENT_KEYS, "Non-allowlisted execution environment")
@@ -584,9 +640,10 @@ def run_repetitions(manifest, compiler, output):
     records += invariants["toolchain"]["runtime_files"] + invariants["toolchain"]["sdk_compiler_files"]
     installations = {"baseline": manifest["baseline_compiler"], "candidate": compiler}
     for installation in installations.values():
+        require(installation["files"]["fsc.runtimeconfig.json"]["sha256"] ==
+                invariants["toolchain"]["compiler_runtimeconfig_sha256"], "Compiler runtime configuration changed")
         records += list(installation["files"].values())
     verify_files(records)
-    require(fingerprint_inputs(workload["arguments"]) == workload["arguments_sha256"], "Argument hash mismatch")
     require(Path(workload["response_file"]["path"]).read_text(encoding="utf-8-sig").splitlines() == workload["arguments"],
             "Response file differs from arguments")
     tracked = {Path(record["path"]).relative_to(Path(workload["checkout"]).resolve()).as_posix()
