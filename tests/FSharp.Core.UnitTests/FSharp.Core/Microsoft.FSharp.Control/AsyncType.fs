@@ -59,6 +59,96 @@ module Helpers =
 
 open Helpers
 
+(* START FSharp.Core v7 shims *)
+
+// NOTE each Await overload fails on including level2Task in the stacktrace in AsyncAwaitStackTraceTests
+
+type Async =
+
+    /// <summary>
+    ///     Gets the result of given task so that in the event of exception
+    ///     the actual user exception is raised as opposed to being wrapped
+    ///     in a System.AggregateException.
+    /// </summary>
+    /// <param name="task">Task to be awaited.</param>
+    [<System.Diagnostics.DebuggerStepThrough>]
+    static member Await(task : Task<'T>) : Async<'T> =
+        Async.FromContinuations(fun (sc, ec, _cc) ->
+            task.ContinueWith(fun (t : Task<'T>) ->
+                if t.IsFaulted then
+                    let e = t.Exception
+                    if e.InnerExceptions.Count = 1 then ec e.InnerExceptions[0]
+                    else ec e
+                elif t.IsCanceled then ec (TaskCanceledException(task))
+                else sc t.Result)
+            |> ignore)
+
+    /// <summary>
+    ///     Gets the result of given task so that in the event of exception
+    ///     the actual user exception is raised as opposed to being wrapped
+    ///     in a System.AggregateException.
+    /// </summary>
+    /// <param name="task">Task to be awaited.</param>
+    [<System.Diagnostics.DebuggerStepThrough>]
+    static member Await(task : Task) : Async<unit> =
+        Async.FromContinuations(fun (sc, ec, _cc) ->
+            task.ContinueWith(fun (task : Task) ->
+                if task.IsFaulted then
+                    let e = task.Exception
+                    if e.InnerExceptions.Count = 1 then ec e.InnerExceptions[0]
+                    else ec e
+                elif task.IsCanceled then
+                    ec (TaskCanceledException(task))
+                else
+                    sc ())
+            |> ignore)
+    static member Await(task : ValueTask) : Async<unit> =
+        Async.Await(task.AsTask())
+    static member Await(task : ValueTask<'t>) : Async<'t> =
+        Async.Await(task.AsTask())
+    static member StartTaskImmediate(createTask: CancellationToken -> Task<'T>) : Async<'T> =
+        async.Bind(Async.CancellationToken, createTask >> Async.Await)
+    static member StartTaskImmediate(createTask: CancellationToken -> Task) : Async<unit> =
+        async.Bind(Async.CancellationToken, createTask >> Async.Await)
+
+[<AutoOpen>]
+module AwaitTaskLinkExtensions =
+    type Async with
+        [<CompilerServices.NoEagerConstraintApplication>]
+        static member inline Await< ^TaskLike, ^Awaiter, 'T
+            when ^TaskLike: (member GetAwaiter: unit -> ^Awaiter)
+            and ^Awaiter :> System.Runtime.CompilerServices.ICriticalNotifyCompletion
+            and ^Awaiter: (member get_IsCompleted: unit -> bool)
+            and ^Awaiter: (member GetResult: unit -> 'T)>
+            (task: ^TaskLike)
+            : Async<'T> =
+            Async.FromContinuations(fun (cont, econt, _ccont) ->
+                let mutable awaiter = (^TaskLike: (member GetAwaiter: unit -> ^Awaiter) task)
+
+                if (^Awaiter: (member get_IsCompleted: unit -> bool) awaiter) then
+                    try
+                        cont ((^Awaiter: (member GetResult: unit -> 'T) awaiter))
+                    with e ->
+                        econt e
+                else
+                    (awaiter :> System.Runtime.CompilerServices.ICriticalNotifyCompletion)
+                        .OnCompleted(fun () ->
+                            try
+                                cont ((^Awaiter: (member GetResult: unit -> 'T) awaiter))
+                            with e ->
+                                econt e))
+        [<CompilerServices.NoEagerConstraintApplication>]
+        static member inline StartTaskImmediate< ^TaskLike, ^Awaiter, 'T
+            when ^TaskLike: (member GetAwaiter: unit -> ^Awaiter)
+            and ^Awaiter :> System.Runtime.CompilerServices.ICriticalNotifyCompletion
+            and ^Awaiter: (member get_IsCompleted: unit -> bool)
+            and ^Awaiter: (member GetResult: unit -> 'T)>
+            (createTask: CancellationToken -> ^TaskLike)
+            : Async<'T> =
+            async.Bind(Async.CancellationToken, createTask >> Async.Await)
+
+(* END FSharp.Core v7 shims *)
+
 // Multiple tests affect global state via Async.CancelDefaultToken
 [<Collection(nameof FSharp.Test.NotThreadSafeResourceCollection)>]
 type AsyncType() =
