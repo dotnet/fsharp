@@ -19,24 +19,13 @@ let private RuntimeAsyncChoiceCase g m ty caseIndex expr =
 
 let private RuntimeAsyncReraise m resultTy exnExpr = mkThrow m resultTy exnExpr
 
-let private RuntimeAsyncFilterCondition m resultTy filter thenExpr elseExpr =
-    let matchBuilder = MatchBuilder(DebugPointAtBinding.NoneAtInvisible, m)
-
-    let matchCase =
-        TCase(DecisionTreeTest.Const(Const.Int32 1), matchBuilder.AddResultTarget thenExpr)
-
-    let defaultCase = matchBuilder.AddResultTarget elseExpr
-    let decisionTree = TDSwitch(filter, [ matchCase ], Some defaultCase, m)
-    matchBuilder.Close(decisionTree, m, resultTy)
-
 let private RewriteRuntimeAsyncReraise g resultTy handlerVal handler =
     RewriteExpr
         {
             PreIntercept =
                 Some(fun _ expr ->
                     match stripExpr expr with
-                    | TryWithExpr _
-                    | TryFinallyExpr _ -> Some expr
+                    | TryWithExpr _ -> Some expr
                     | Expr.Op(TOp.Reraise, _, _, m) -> Some(mkThrow m resultTy (exprForVal m handlerVal))
                     | Expr.App(Expr.Val(vref, _, m), _, _, _, _) when valRefEq g vref g.reraise_vref ->
                         Some(mkThrow m resultTy (exprForVal m handlerVal))
@@ -109,28 +98,14 @@ let RewriteRuntimeAsyncExceptionHandlers (g: TcGlobals) expr =
 
                     mkCompGenSequential m compensation result)
             )
-        | TryWithExpr(_, _, resultTy, body, filterVal, filter, handlerVal, handler, m) when IsRuntimeAsyncExceptionHandler analyzer expr ->
+        | TryWithExpr(_, _, resultTy, body, _, _, handlerVal, handler, m) when IsRuntimeAsyncExceptionHandler analyzer expr ->
             Some(
                 rewriteCapturedException m resultTy body (fun bodySucceeded bodyValue exceptionExpr ->
                     let handler = RewriteRuntimeAsyncReraise g resultTy handlerVal handler
 
-                    let filter =
-                        mkCompGenLet
-                            m
-                            filterVal
-                            exceptionExpr
-                            (mkCompGenLet
-                                m
-                                handlerVal
-                                exceptionExpr
-                                (RuntimeAsyncFilterCondition
-                                    m
-                                    resultTy
-                                    filter
-                                    handler
-                                    (RuntimeAsyncReraise m resultTy (exprForVal m handlerVal))))
+                    let handler = mkCompGenLet m handlerVal exceptionExpr handler
 
-                    mkCond DebugPointAtBinding.NoneAtInvisible m resultTy bodySucceeded bodyValue filter)
+                    mkCond DebugPointAtBinding.NoneAtInvisible m resultTy bodySucceeded bodyValue handler)
             )
         | _ -> None
 
