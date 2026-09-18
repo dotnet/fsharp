@@ -95,6 +95,11 @@ Kullanılmayan değerleri analiz et ve bunlara düzeltmeler öner;
         <target state="translated">Eşitsizlik denetimi için '&lt;&gt;' kullanın</target>
         <note />
       </trans-unit>
+      <trans-unit id="ConvertToReferenceTuple">
+        <source>Convert to reference tuple</source>
+        <target state="new">Convert to reference tuple</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ConvertToSingleEqualsEqualityExpression">
         <source>Use '=' for equality check</source>
         <target state="translated">Eşitlik denetimi için '=' kullan</target>
@@ -103,6 +108,11 @@ Kullanılmayan değerleri analiz et ve bunlara düzeltmeler öner;
       <trans-unit id="ChangePrefixNegationToInfixSubtraction">
         <source>Use subtraction instead of negation</source>
         <target state="translated">Negatif yapma yerine çıkarmayı kullanın</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConvertToStructTuple">
+        <source>Convert to struct tuple</source>
+        <target state="new">Convert to struct tuple</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpDisposableLocalValuesClassificationType">
