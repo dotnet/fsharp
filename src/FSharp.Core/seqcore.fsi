@@ -162,11 +162,12 @@ type GeneratedSequenceBase<'T> =
 
 #if NET
 /// <summary>The compiler emits subclasses of this experimental runtime-async sequence host.</summary>
-/// <remarks>Cancellable enumeration tokens are not supported. The sequence recipe runs when the enumerator advances.</remarks>
+/// <remarks>The sequence recipe receives the cancellation token for each enumeration and runs when the enumerator advances.</remarks>
 [<AbstractClass>]
 type GeneratedRuntimeAsyncSequenceBase<'T> =
     new: unit -> GeneratedRuntimeAsyncSequenceBase<'T>
     abstract GetFreshEnumerator: unit -> GeneratedRuntimeAsyncSequenceBase<'T>
+    abstract SetCancellationToken: System.Threading.CancellationToken -> unit
     abstract MoveNextAsync: unit -> System.Threading.Tasks.ValueTask<bool>
     abstract DisposeAsync: unit -> System.Threading.Tasks.ValueTask
     abstract Current: 'T

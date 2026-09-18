@@ -213,7 +213,7 @@ let run () = __runtimeAsyncReturnUnit (
         check "prefix once, fresh body" (moved && iterator.Current = enumeration && effects = 1 && entered = enumeration)
         AsyncHelpers.Await(iterator.DisposeAsync())
 
-    let source = withCancellation (fun token -> runtimeAsyncSeq {
+    let source = withCancellation(fun token -> runtimeAsyncSeq {
         token.ThrowIfCancellationRequested()
         yield token
     })

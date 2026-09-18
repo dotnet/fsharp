@@ -339,8 +339,16 @@ let ConvertSequenceExprToObject g amap isRuntimeAsync overallExpr =
             | _ ->
                 None
 
-        | ValApp g (FSharp.Compiler.TcGlobals.ValRefForIntrinsic g.seq_trywith_info) _ when isRuntimeAsync ->
-            None
+        | (ValApp g (FSharp.Compiler.TcGlobals.ValRefForIntrinsic g.seq_trywith_info) ([ elementTy ], [ _source; _filter; _handler ], m) as tryWithExpr)
+            when isRuntimeAsync ->
+            // Keep the try/with sequence as an ordinary nested source. Its exception and disposal
+            // semantics are implemented by EnumerateTryWith; the surrounding producer remains
+            // statically lowered.
+            let value, valueExpr = mkCompGenLocal m "value" elementTy
+            let body = mkCallSeqSingleton g m elementTy valueExpr
+            let body = mkLambdaNoType g m value body
+            let nestedFor = mkCallSeqCollect g m elementTy elementTy body tryWithExpr
+            ConvertSeqExprCode isWholeExpr isTailCall noDisposeContinuationLabel currentDisposeContinuationLabel nestedFor
 
         | SeqEmpty g m ->
             // printfn "found Seq.empty"
@@ -724,4 +732,3 @@ let ConvertSequenceExprToObject g amap isRuntimeAsync overallExpr =
             // printfn "FAILED: no compilation found! %s" (stringOfRange m)
             None
     | _ -> None
-

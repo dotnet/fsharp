@@ -3253,7 +3253,7 @@ and GenExprPreSteps (cenv: cenv) (cgbuf: CodeGenBuffer) eenv expr sequel =
 
             match lowering with
             | Some info ->
-                GenSequenceExpr cenv cgbuf eenv false info sequel
+                GenSequenceExpr cenv cgbuf eenv false info None sequel
                 true
             | None ->
 
@@ -3444,8 +3444,8 @@ and GenRuntimeAsyncSequenceExpr cenv cgbuf eenv expr sequel =
     | Some(LowerAsyncSeq.Evaluate expr) ->
         GenExpr cenv cgbuf eenv expr sequel
         true
-    | Some(LowerAsyncSeq.Sequence info) ->
-        GenSequenceExpr cenv cgbuf eenv true info sequel
+    | Some(LowerAsyncSeq.Sequence(info, cancellationTokenValRef)) ->
+        GenSequenceExpr cenv cgbuf eenv true info cancellationTokenValRef sequel
         true
     | None when eenv.inInlineMethod -> false
     | None -> error (Error(FSComp.SR.ilRuntimeAsyncSequenceNotStaticallyKnown (), m))
@@ -6935,6 +6935,7 @@ and GenSequenceExpr
         seqElemTy,
         m
     )
+    cancellationTokenValRef
     sequel
     =
 
@@ -7041,6 +7042,34 @@ and GenSequenceExpr
             MethodBody.IL(InterruptibleLazy.FromValue mbody)
         )
         |> AddNonUserCompilerGeneratedAttribs g
+
+    let setCancellationTokenMethod =
+        match cancellationTokenValRef with
+        | None -> None
+        | Some cancellationTokenValRef ->
+            let cancellationTokenArg, cancellationTokenArgExpr =
+                mkLocal m "cancellationToken" cancellationTokenValRef.Type
+
+            let methodEnv =
+                eenvinner |> AddStorageForLocalVals g [ (cancellationTokenArg, Arg 1) ]
+
+            let body = mkValSet m cancellationTokenValRef cancellationTokenArgExpr
+
+            let ilCode =
+                CodeGenMethodForExpr cenv cgbuf.mgbuf ([], "SetCancellationToken", methodEnv, 2, None, body, discardAndReturnVoid)
+
+            Some(
+                mkILNonGenericVirtualInstanceMethod (
+                    "SetCancellationToken",
+                    ILMemberAccess.Public,
+                    [
+                        mkILParamNamed (cancellationTokenArg.LogicalName, GenType cenv m eenvinner.tyenv cancellationTokenArg.Type)
+                    ],
+                    mkILReturn ILType.Void,
+                    MethodBody.IL(InterruptibleLazy.FromValue ilCode)
+                )
+                |> AddNonUserCompilerGeneratedAttribs g
+            )
 
     let closeMethod =
         let marker = TryGetRuntimeAsyncReturn g closeExpr
@@ -7164,6 +7193,7 @@ and GenSequenceExpr
         [
             generateNextMethod
             closeMethod
+            yield! Option.toList setCancellationTokenMethod
             if not directRuntimeSequence then
                 checkCloseMethod
             lastGeneratedMethod

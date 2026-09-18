@@ -7,6 +7,9 @@ open System.Threading
 open System.Threading.Tasks
 open Microsoft.FSharp.Core.CompilerServices
 
+let inline cancellationToken () =
+    StateMachineHelpers.__runtimeAsyncSequenceCancellationToken()
+
 type RuntimeAsyncSequenceBuilder() =
     member inline _.Zero() = Seq.empty
     member inline _.Yield(value) = Seq.singleton value

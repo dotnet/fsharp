@@ -23,7 +23,7 @@ open FSharp.Compiler.TypeRelations
 
 type Lowering =
     | Evaluate of Expr
-    | Sequence of (ValRef * ValRef * ValRef * ValRef list * Expr * Expr * Expr * TType * range)
+    | Sequence of ((ValRef * ValRef * ValRef * ValRef list * Expr * Expr * Expr * TType * range) * ValRef option)
 
 let private rewrite (g: TcGlobals) transform =
     RewriteExpr
@@ -40,7 +40,26 @@ let private rewrite (g: TcGlobals) transform =
             StackGuard = StackGuard("LowerAsyncSeq")
         }
 
-let private prepareMethods (g: TcGlobals) amap m (stateVars: ValRef list) generateNext close =
+let private rewriteCancellationToken (g: TcGlobals) tokenExpr =
+    RewriteExpr
+        {
+            PreIntercept =
+                Some(fun _ expr ->
+                    match expr with
+                    | ValApp g g.cgh__runtimeAsyncSequenceCancellationToken_vref ([], [ _ ], _) -> Some tokenExpr
+                    | Expr.App(Expr.Val(value, _, _), _, [], [ _ ], _) ->
+                        if valRefEq g value g.cgh__runtimeAsyncSequenceCancellationToken_vref then
+                            Some tokenExpr
+                        else
+                            None
+                    | _ -> None)
+            PreInterceptBinding = None
+            PostTransform = (fun _ -> None)
+            RewriteQuotations = false
+            StackGuard = StackGuard("LowerAsyncSeqCancellationToken")
+        }
+
+let private prepareMethods (g: TcGlobals) amap m (stateVars: ValRef list) generateNext close cancellationTokenValRef =
     for value in stateVars do
         if value.Deref.IsPinning || isByrefTy g value.Type || isByrefLikeTy g m value.Type then
             error (Error(FSComp.SR.ilRuntimeAsyncSequenceNotStaticallyKnown (), value.Range))
@@ -61,6 +80,19 @@ let private prepareMethods (g: TcGlobals) amap m (stateVars: ValRef list) genera
                         (Expr.Op(TOp.Goto stepExit, [], [], range))
                 )
             | _ -> None)
+
+    let body =
+        match cancellationTokenValRef with
+        | Some cancellationTokenValRef ->
+            let wrap, cancellationTokenAddress, _, _ =
+                mkExprAddrOfExpr g true false NeverMutates (exprForValRef m cancellationTokenValRef) None m
+
+            let cancellationCheck =
+                callNonOverloadedILMethod g amap m "ThrowIfCancellationRequested" g.system_CancellationToken_ty [ cancellationTokenAddress ]
+                |> wrap
+
+            mkCompGenSequential m cancellationCheck body
+        | None -> body
 
     // Yield exits leave the protected body without running fault cleanup.
     let body = mkCompGenSequential m body (mkLabelled m stepExit (mkUnit g m))
@@ -195,8 +227,8 @@ let TryConvert g amap (expr: Expr) =
     | Expr.Let(binding, body, range, _) -> Some(Evaluate(mkLetBind range binding (rebuild body)))
     | Expr.Sequential(first, rest, kind, range) -> Some(Evaluate(Expr.Sequential(first, rebuild rest, kind, range)))
     | Expr.Lambda(_, _, _, [ parameter ], _, _, _) as recipe when isUnitTy g parameter.Type ->
-        let body =
-            MakeApplicationAndBetaReduce g (recipe, tyOfExpr g recipe, [], [ mkUnit g m ], m)
+        let cancellationTokenVar, cancellationTokenExpr =
+            mkMutableCompGenLocal m "__cancellationToken" g.system_CancellationToken_ty
 
         // Unwrap only the recipe's result spine, never nested sequence inputs.
         let rec stripRoot expr =
@@ -207,6 +239,10 @@ let TryConvert g amap (expr: Expr) =
             | Expr.DebugPoint(point, inner) -> Expr.DebugPoint(point, stripRoot inner)
             | _ -> expr
 
+        let body =
+            MakeApplicationAndBetaReduce g (recipe, tyOfExpr g recipe, [], [ mkUnit g m ], m)
+            |> rewriteCancellationToken g cancellationTokenExpr
+
         let root = mkCallSeq g m elementTy (stripRoot body)
 
         match ConvertSequenceExprToObject g amap true root with
@@ -214,8 +250,20 @@ let TryConvert g amap (expr: Expr) =
             not ((freeInExpr CollectLocals generateNext).FreeLocals.Contains next.Deref)
             ->
             let stateVars, generateNext, close =
-                prepareMethods g amap range stateVars generateNext close
+                prepareMethods
+                    g
+                    amap
+                    range
+                    (mkLocalValRef cancellationTokenVar :: stateVars)
+                    generateNext
+                    close
+                    (Some(mkLocalValRef cancellationTokenVar))
 
-            Some(Sequence(next, pc, current, stateVars, generateNext, close, checkClose, elementTy, range))
+            Some(
+                Sequence(
+                    (next, pc, current, stateVars, generateNext, close, checkClose, elementTy, range),
+                    Some(mkLocalValRef cancellationTokenVar)
+                )
+            )
         | _ -> None
     | _ -> None

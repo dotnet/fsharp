@@ -532,19 +532,20 @@ type GeneratedRuntimeAsyncSequenceBase<'T>() =
     [<DefaultValue>]
     val mutable private claimed: int
     abstract GetFreshEnumerator: unit -> GeneratedRuntimeAsyncSequenceBase<'T>
+    abstract SetCancellationToken: System.Threading.CancellationToken -> unit
     abstract MoveNextAsync: unit -> System.Threading.Tasks.ValueTask<bool>
     abstract DisposeAsync: unit -> System.Threading.Tasks.ValueTask
     abstract Current: 'T
 
     interface IAsyncEnumerable<'T> with
         member x.GetAsyncEnumerator(cancellationToken) =
-            if cancellationToken.CanBeCanceled then
-                raise (NotSupportedException("Cancellable enumeration tokens are not supported by this experimental runtime-async sequence host."))
             if System.Threading.Interlocked.CompareExchange(&x.claimed, 1, 0) = 0 then
+                x.SetCancellationToken(cancellationToken)
                 x :> IAsyncEnumerator<'T>
             else
                 let fresh = x.GetFreshEnumerator()
                 fresh.claimed <- 1
+                fresh.SetCancellationToken(cancellationToken)
                 fresh :> IAsyncEnumerator<'T>
 
     interface IAsyncEnumerator<'T> with

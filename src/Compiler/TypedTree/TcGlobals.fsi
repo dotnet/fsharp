@@ -472,6 +472,8 @@ type internal TcGlobals =
     member cgh__runtimeAsyncReturnValueTaskUnit_vref: TypedTree.ValRef
     member cgh__runtimeAsyncSequence_vref: TypedTree.ValRef
 
+    member cgh__runtimeAsyncSequenceCancellationToken_vref: TypedTree.ValRef
+
     member cgh__useResumableCode_vref: TypedTree.ValRef
 
     member char_operator_info: IntrinsicValRef
@@ -1078,6 +1080,8 @@ type internal TcGlobals =
     member system_Bool_tcref: TypedTree.EntityRef
 
     member system_Byte_tcref: TypedTree.EntityRef
+
+    member system_CancellationToken_ty: TypedTree.TType
 
     member system_Char_tcref: TypedTree.EntityRef
 

@@ -518,6 +518,7 @@ type TcGlobals(
   let v_IEqualityComparer_ty = mkSysNonGenericTy sysCollections "IEqualityComparer"
 
   let v_system_RuntimeMethodHandle_ty = mkSysNonGenericTy sys "RuntimeMethodHandle"
+  let v_system_CancellationToken_ty = mkSysNonGenericTy ["System"; "Threading"] "CancellationToken"
 
   let mk_unop_ty ty             = [[ty]], ty
   let mk_binop_ty ty            = [[ty]; [ty]], ty
@@ -916,6 +917,7 @@ type TcGlobals(
   let v_cgh__runtimeAsyncReturnUnit_info = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,           "__runtimeAsyncReturnUnit"                 , None                 , None          , [],        ([[v_unit_ty]], mkNonGenericTy v_task_nonGeneric_tcr)) // handled specially by the checker
   let v_cgh__runtimeAsyncReturnValueTaskUnit_info = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref, "__runtimeAsyncReturnValueTaskUnit"          , None                 , None          , [],        ([[v_unit_ty]], mkNonGenericTy v_valueTask_nonGeneric_tcr)) // handled specially by the checker
   let v_cgh__runtimeAsyncSequence_info = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref, "__runtimeAsyncSequence", None, None, [vara], ([[v_unit_ty --> mkSeqTy varaTy]], TType_app(v_IAsyncEnumerable_tcr, [varaTy], v_knownWithoutNull)))
+  let v_cgh__runtimeAsyncSequenceCancellationToken_info = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref, "__runtimeAsyncSequenceCancellationToken", None, None, [], ([[v_unit_ty]], v_system_CancellationToken_ty))
   let v_seq_to_array_info          = makeIntrinsicValRef(fslib_MFSeqModule_nleref,                             "toArray"                              , None                 , Some "ToArray", [varb],     ([[mkSeqTy varbTy]], mkArrayType 1 varbTy))
   let v_seq_to_list_info           = makeIntrinsicValRef(fslib_MFSeqModule_nleref,                             "toList"                               , None                 , Some "ToList" , [varb],     ([[mkSeqTy varbTy]], mkListTy varbTy))
   let v_seq_map_info               = makeIntrinsicValRef(fslib_MFSeqModule_nleref,                             "map"                                  , None                 , Some "Map"    , [vara;varb], ([[varaTy --> varbTy]; [mkSeqTy varaTy]], mkSeqTy varbTy))
@@ -1500,6 +1502,7 @@ type TcGlobals(
   member val system_IntPtr_tcref = findSysTyconRef sys "IntPtr"
   member val system_Bool_tcref = findSysTyconRef sys "Boolean"
   member val system_Byte_tcref = findSysTyconRef sys "Byte"
+  member _.system_CancellationToken_ty = v_system_CancellationToken_ty
   member val system_UInt16_tcref = findSysTyconRef sys "UInt16"
   member val system_Char_tcref = findSysTyconRef sys "Char"
   member val system_UInt32_tcref = findSysTyconRef sys "UInt32"
@@ -1874,6 +1877,7 @@ type TcGlobals(
   member val cgh__runtimeAsyncReturnUnit_vref = ValRefForIntrinsic v_cgh__runtimeAsyncReturnUnit_info
   member val cgh__runtimeAsyncReturnValueTaskUnit_vref = ValRefForIntrinsic v_cgh__runtimeAsyncReturnValueTaskUnit_info
   member val cgh__runtimeAsyncSequence_vref = ValRefForIntrinsic v_cgh__runtimeAsyncSequence_info
+  member val cgh__runtimeAsyncSequenceCancellationToken_vref = ValRefForIntrinsic v_cgh__runtimeAsyncSequenceCancellationToken_info
   member val cgh__useResumableCode_vref = ValRefForIntrinsic v_cgh__useResumableCode_info
   member val cgh__debugPoint_vref = ValRefForIntrinsic v_cgh__debugPoint_info
   member val cgh__resumeAt_vref = ValRefForIntrinsic v_cgh__resumeAt_info

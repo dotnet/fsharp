@@ -9,6 +9,6 @@ open FSharp.Compiler.TypedTree
 
 type Lowering =
     | Evaluate of Expr
-    | Sequence of (ValRef * ValRef * ValRef * ValRef list * Expr * Expr * Expr * TType * range)
+    | Sequence of ((ValRef * ValRef * ValRef * ValRef list * Expr * Expr * Expr * TType * range) * ValRef option)
 
 val TryConvert: g: TcGlobals -> amap: ImportMap -> expr: Expr -> Lowering option

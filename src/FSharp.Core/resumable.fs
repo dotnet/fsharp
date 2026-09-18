@@ -11,6 +11,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
 
 open System
 open System.Runtime.CompilerServices
+open System.Threading
 open System.Threading.Tasks
 open Microsoft.FSharp.Core
 open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
@@ -139,6 +140,11 @@ module StateMachineHelpers =
     let __runtimeAsyncSequence (recipe: unit -> seq<'T>) : System.Collections.Generic.IAsyncEnumerable<'T> =
         ignore recipe
         failwith "__runtimeAsyncSequence is a compiler intrinsic and requires a statically known sequence recipe"
+
+    [<MethodImpl(MethodImplOptions.NoInlining)>]
+    let __runtimeAsyncSequenceCancellationToken () : CancellationToken =
+        failwith
+            "__runtimeAsyncSequenceCancellationToken is a compiler intrinsic and requires a statically known sequence recipe"
 #endif
 
 module ResumableCode =

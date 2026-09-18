@@ -285,7 +285,7 @@ runtime-async restrictions and inline-fragment rules described above.
 
 ### Direct async-sequence proposal
 
-`__runtimeAsyncSequence` consumes a statically known `unit -> seq<'T>` recipe. It reuses sequence lowering, but emits runtime-async `MoveNextAsync(): ValueTask<bool>` and `DisposeAsync(): ValueTask` methods on a reference type. User awaits remain in these methods. Yield positions persist between calls. Ordinary nested sequences remain synchronous.
+`__runtimeAsyncSequence` consumes a statically known `unit -> seq<'T>` recipe. It reuses sequence lowering, but emits runtime-async `MoveNextAsync(): ValueTask<bool>` and `DisposeAsync(): ValueTask` methods on a reference type. Each resume checks the enumeration's cancellation token before running recipe code. User awaits remain in these methods. Yield positions persist between calls. Ordinary nested sequences remain synchronous.
 
 Generated types implement the enumerator interfaces directly, without base-class forwarding. The first acquisition reuses the factory instance. Later acquisitions return independent, already-acquired clones. Immediately consumed runtime-async inputs remain adjacent to their awaits so the runtime can fuse the calls.
 
@@ -305,14 +305,15 @@ let values (work: Task<int>) (resource: IAsyncDisposable) =
     }
 ```
 
-The library's `withCancellation (fun token -> runtimeAsyncSeq { ... })` receives each enumeration token without adding an awaiting `MoveNextAsync` wrapper. The callback chooses cancellation checks and passes the token to its operations. The bare compiler host rejects cancellable tokens rather than silently ignoring them. The example does not automatically propagate tokens through nested `For`.
+The reference builder uses the compiler-recognized `cancellationToken()` helper to pass the current enumeration token to nested `IAsyncEnumerable` sources. Recipes can call the same helper for explicit cancellation checks without taking a token parameter. The `withCancellation (fun token -> runtimeAsyncSeq { ... })` adapter remains available when the recipe needs to capture the enumeration token explicitly.
 
 ```fsharp
 let tokens =
-    withCancellation (fun token -> runtimeAsyncSeq {
+    runtimeAsyncSeq {
+        let token = cancellationToken()
         token.ThrowIfCancellationRequested()
         yield token
-    })
+    }
 ```
 
 Recipes undergo mandatory local normalization even with `--optimize-`. This does not enable optimization for surrounding code. It can remove intermediate recipe locals. Body faults await active cleanup before rethrowing with their original dispatch information. Successful moves do not allocate an exception-transport object.
@@ -321,7 +322,7 @@ When cleanup can suspend, the saved exception lives on the iterator instead of e
 
 Builder-generated `MoveNextAsync` can lose visible sequence points. The optimized control has no visible points, and its nonoptimized form omits the terminal yield's range. Direct-intrinsic and ordinary-sequence controls retain their ranges. This proposal does not guarantee complete source stepping.
 
-This is a proposal, not a drop-in TaskSeq replacement. Producer `try/with`, opaque recipes, and optimized tail handoff are rejected. Early disposal retains ordinary sequence exception precedence: an outer cleanup failure replaces an inner cleanup failure. Concurrent move/dispose calls are unsupported. Awaiting a non-cancellable operation does not make it cancellable. Performance qualification must include genuinely pending operations, not only completed awaits.
+This is a proposal, not a drop-in TaskSeq replacement. Producer `try/with` is lowered through an ordinary nested sequence, while runtime-async suspensions inside that handler remain unsupported. Opaque recipes and optimized tail handoff are rejected. Early disposal retains ordinary sequence exception precedence: an outer cleanup failure replaces an inner cleanup failure. Concurrent move/dispose calls are unsupported. Awaiting a non-cancellable operation does not make it cancellable. Performance qualification must include genuinely pending operations, not only completed awaits.
 
 Build and run the small [usage and lifecycle example](../tests/FSharp.Compiler.ComponentTests/Language/RuntimeAsync/RuntimeAsyncSequence.fs) with the matching preview SDK:
 
