@@ -105,6 +105,12 @@
     <Compile Include="Refactor\ChangeTypeofWithNameToNameofExpression.fs" />
     <Compile Include="Refactor\AddExplicitTypeToParameter.fs" />
     <Compile Include="Refactor\ChangeDerefToValueRefactoring.fs" />
+    <Compile Include="Refactor\StructConversion.fs" />
+    <Compile Include="Refactor\TupleConversion.fs" />
+    <Compile Include="Refactor\AnonymousRecordConversion.fs" />
+    <Compile Include="Refactor\StructPropagation.fs" />
+    <Compile Include="Refactor\ConvertTuple.fs" />
+    <Compile Include="Refactor\ConvertAnonymousRecord.fs" />
     <Compile Include="CodeFixes\IFSharpCodeFix.fs" />
     <Compile Include="CodeFixes\CodeFixHelpers.fs" />
     <Compile Include="CodeFixes\ChangeEqualsInFieldTypeToColon.fs" />
