@@ -4482,20 +4482,26 @@ and OptimizeDebugPipeRights cenv env expr =
     let inputVals, inputValExprs =
         xs0R
         |> List.mapi (fun i x0R ->
-            let nm = $"Pipe #%d{env.methEnv.pipelineCount} input" + (if nxs0R  > 1 then " #" + string (i+1) else "") + $" at line %d{x0R.Range.StartLine}"
+            let nm = $"Pipe #%d{env.methEnv.pipelineCount} input" + (if nxs0R > 1 then " #" + string (i+1) else "") + $" at line %d{x0R.Range.StartLine}"
             mkLocal x0R.Range nm (tyOfExpr g x0R))
         |> List.unzip
+
     let pipesExprR, pipesInfo = pipesBinder (inputValExprs, xs0Info)
 
     // Build up the chain of 'let' related to the first input
     let expr =
         List.foldBack2
             (fun (x0R: Expr) inputVal e ->
-                let xRange0 = x0R.Range
-                mkLet (DebugPointAtBinding.Yes xRange0) expr.Range inputVal x0R e)
+                mkLet (DebugPointAtBinding.Yes x0R.Range) expr.Range inputVal x0R e)
             xs0R
             inputVals
             pipesExprR
+    // Runtime-async inlining can capture a synthetic pipe input, so reoptimize after its binding is in scope.
+    let expr =
+        if env.runtimeAsyncContext then
+            OptimizeExpr cenv env expr |> fst
+        else
+            expr
     expr, { pipesInfo with HasEffect=true}
 
 and OptimizeFSharpDelegateInvoke cenv env (delInvokeRef, delExpr, delInvokeTy, tyargs, delInvokeArg, m) =

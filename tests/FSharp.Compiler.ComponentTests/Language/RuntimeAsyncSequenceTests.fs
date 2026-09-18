@@ -78,6 +78,40 @@ let main _ =
     |> shouldSucceed
 
 [<Theory>]
+[<InlineData(false)>]
+[<InlineData(true)>]
+let ``runtime async sequence pipe input compiles`` optimized =
+    FSharp """
+module RuntimeAsyncSequencePipeInput
+
+open System.Threading
+open System.Threading.Tasks
+open System.Collections.Generic
+open System.Runtime.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers
+
+let consume (source: IAsyncEnumerable<int>) : Task<int> =
+    StateMachineHelpers.__runtimeAsyncReturn (
+        let iterator = source.GetAsyncEnumerator(CancellationToken.None)
+        let moved = AsyncHelpers.Await(iterator.MoveNextAsync())
+        if moved then iterator.Current else -1)
+
+let run () : Task<int> =
+    StateMachineHelpers.__runtimeAsyncReturn (
+        AsyncHelpers.Await (
+            __runtimeAsyncSequence (fun _ -> seq { yield 42 })
+            |> consume))
+
+[<EntryPoint>]
+let main _ = if run().GetAwaiter().GetResult() = 42 then 0 else 1
+"""
+    |> preview
+    |> optimize optimized
+    |> compileExeAndRun
+    |> shouldSucceed
+
+[<Theory>]
 [<InlineData(false, "value")>]
 [<InlineData(true, "value")>]
 [<InlineData(false, "value + 1")>]
