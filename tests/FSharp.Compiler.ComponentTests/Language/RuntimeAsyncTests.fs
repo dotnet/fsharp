@@ -797,6 +797,164 @@ let main _ =
     |> compileExeAndRun
     |> shouldSucceed
 
+[<InlineData(false)>]
+[<InlineData(true)>]
+[<Theory>]
+let ``runtime async preserves an outer reraise after a nested suspension`` (optimize: bool) =
+    FSharp """
+module RuntimeAsyncNestedReraiseTest
+
+open System
+open System.Threading.Tasks
+open System.Runtime.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices
+
+let run (gate: Task) (outer: exn) (trace: ResizeArray<string>) : Task<int> =
+    StateMachineHelpers.__runtimeAsyncReturn (
+        try
+            raise outer
+        with _ ->
+            AsyncHelpers.Await gate
+            try
+                reraise ()
+            finally
+                trace.Add "finally")
+
+[<EntryPoint>]
+let main _ =
+    let gate = TaskCompletionSource<unit>()
+    let trace = ResizeArray<string>()
+    let outer = InvalidOperationException("outer")
+    let work = run gate.Task outer trace
+    gate.SetResult(())
+
+    try
+        work.GetAwaiter().GetResult() |> ignore
+        1
+    with
+    | ex when obj.ReferenceEquals(ex, outer) && trace.ToArray() = [| "finally" |] -> 0
+    | _ -> 1
+"""
+    |> withLangVersionPreview
+    |> withFSharpCoreShippedNet
+    |> withOptimization optimize
+    |> compileExeAndRun
+    |> shouldSucceed
+
+[<InlineData(false)>]
+[<InlineData(true)>]
+[<Theory>]
+let ``runtime async rejects suspension in an unmarked object member`` (optimize: bool) =
+    FSharp """
+module RuntimeAsyncUnmarkedMemberTest
+
+open System.Threading.Tasks
+open System.Runtime.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices
+
+type IInt =
+    abstract Get : unit -> int
+
+let make (gate: Task<int>) =
+    StateMachineHelpers.__runtimeAsyncReturn (
+        { new IInt with
+            member _.Get() = AsyncHelpers.Await gate })
+"""
+    |> withLangVersionPreview
+    |> withFSharpCoreShippedNet
+    |> withOptimization optimize
+    |> compile
+    |> shouldFail
+    |> withErrorCode 3918
+
+[<InlineData(false)>]
+[<InlineData(true)>]
+[<Theory>]
+let ``runtime async evaluates conditional callback construction once`` (optimize: bool) =
+    FSharp """
+module RuntimeAsyncConditionalCallbackConstructionTest
+
+open System.Threading.Tasks
+open System.Runtime.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices
+
+let events = ResizeArray<string>()
+let note text = events.Add text
+
+[<NoCompilerInlining>]
+let choose () =
+    note "choose"
+    true
+
+let inline twice ([<InlineIfLambda>] body: unit -> int) =
+    StateMachineHelpers.__runtimeAsyncReturn (body() + body())
+
+let run (gate: Task<int>) =
+    twice (
+        if choose() then
+            note "construct"
+            fun () ->
+                note "body"
+                AsyncHelpers.Await gate
+        else
+            fun () -> 0)
+
+[<EntryPoint>]
+let main _ =
+    let gate = TaskCompletionSource<int>()
+    let work = run gate.Task
+    gate.SetResult(21)
+    let result = work.GetAwaiter().GetResult()
+
+    if result = 42 && events.ToArray() = [| "choose"; "construct"; "body"; "body" |] then 0 else 1
+"""
+    |> withLangVersionPreview
+    |> withFSharpCoreShippedNet
+    |> withOptimization optimize
+    |> compileExeAndRun
+    |> shouldSucceed
+
+[<InlineData(false)>]
+[<InlineData(true)>]
+[<Theory>]
+let ``runtime async evaluates a suspending exception filter once`` (optimize: bool) =
+    FSharp """
+module RuntimeAsyncExceptionFilterTest
+
+open System.Threading.Tasks
+open System.Runtime.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices
+
+let run (gate: Task) (predicate: unit -> bool) : Task<int> =
+    StateMachineHelpers.__runtimeAsyncReturn (
+        try
+            failwith "body"
+        with _ when (AsyncHelpers.Await gate; predicate()) ->
+            7)
+
+[<EntryPoint>]
+let main _ =
+    let gate = TaskCompletionSource<unit>()
+    let mutable calls = 0
+
+    let firstTrue () =
+        calls <- calls + 1
+        calls = 1
+
+    let work = run gate.Task firstTrue
+    gate.SetResult(())
+
+    try
+        if work.GetAwaiter().GetResult() = 7 && calls = 1 then 0 else 1
+    with _ ->
+        1
+"""
+    |> withLangVersionPreview
+    |> withFSharpCoreShippedNet
+    |> withOptimization optimize
+    |> compileExeAndRun
+    |> shouldSucceed
+
 [<Fact>]
 let ``runtime async evaluates inline callback construction once`` () =
     FSharp """
