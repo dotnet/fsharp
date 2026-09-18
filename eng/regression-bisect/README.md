@@ -321,7 +321,8 @@ missed. `initializeCheckpoint(transport, context, { allowanceId, deadline })`
 is only for the initial maintainer-authorized allowance, under the issue lock.
 `context.bootstrapDigest` must come from the trusted creation receipt for the
 exact initial placeholder, not from hashing whichever comment is currently
-present. Initialization refuses an existing envelope. There is deliberately no
+present. Initialization refuses an existing envelope except its authenticated,
+interrupted generation-zero checkpoint described below. There is deliberately no
 automatic reset/new-allowance operation; ordinary issue edits, label toggles,
 redispatches, and cancellations cannot replenish any counter.
 
@@ -357,8 +358,15 @@ This preserves observations when cancellation interrupts the two writes; it
 does not grant a second execution permission. An older body, a changed body at
 the same generation, a generation gap, or a wrong predecessor fails closed.
 An interrupted initial write can only be completed by `initializeCheckpoint`
-with the original bootstrap receipt and the identical initial allowance.
-Missing receipts are never synthesized from arbitrary loaded state.
+with the original bootstrap receipt and the identical initial allowance ID and
+deadline. Recovery authenticates and validates the original generation-zero
+checkpoint and appends its missing receipt without rewriting the comment or
+reconstructing state from today's inputs. It preserves the original allowance
+even when the discussion, approval, endpoints, or eligibility changed, or its
+deadline expired. The controller then uses `loadCheckpoint` and
+`invalidateStaleEvidence` to apply current context; recovering a receipt is not
+execution or publication permission. Missing receipts are never synthesized
+from arbitrary loaded state.
 
 ### Controller transaction
 

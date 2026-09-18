@@ -380,6 +380,23 @@ async function initializeCheckpoint(transport, context, { allowanceId, deadline 
         existing.performed_via_github_app?.id === context.actor.appId &&
         existing.issue_url === `https://api.github.com/repos/${context.repository}/issues/${context.issueNumber}`,
     "bootstrap author authentication failed");
+    if (fingerprint(existing.body) !== context.bootstrapDigest || parseRecord(existing.body) !== null) {
+        const record = await authenticatedRecord(transport, context, existing);
+        requireState(record?.kind === "checkpoint", "interrupted initialization authentication failed");
+        const cp = unpack(record.payload);
+        validateCheckpoint(cp);
+        requireState(cp.state.repository === context.repository && cp.state.issueNumber === context.issueNumber &&
+            cp.state.budget.workflowRevision === record.binding.workflowRevision &&
+            cp.generation === 0 && cp.previousDigest === context.bootstrapDigest && cp.sequence === 0 &&
+            cp.history.length === 0 && cp.state.phase === "discovery" && cp.state.interval === null &&
+            cp.state.budget.nextWorkItemId === "none" && cp.publicationStatus === "unpublished" &&
+            equal(cp.state.publication, { digest: null, commentId: null }) &&
+            cp.state.budget.allowanceId === allowanceId && cp.deadline === deadline,
+        "initialization requires the original interrupted checkpoint and allowance");
+        // Recover the original bytes; current inputs gate execution when this checkpoint is loaded.
+        await writeFreshness(transport, context, 0, hashBytes(existing.body));
+        return cp;
+    }
     requireState(timestamp(deadline) && Date.parse(deadline) > Date.parse(context.now), "invalid allowance deadline");
     const budget = {
         schemaVersion: 1, policy: context.policy, policyRevision: context.policyRevision, workflowRevision: context.workflowRevision,
@@ -401,13 +418,6 @@ async function initializeCheckpoint(transport, context, { allowanceId, deadline 
         sequence: 0, pending: null, records: [], observations: {}, history: [], deadline, publicationStatus: "unpublished",
     };
     requireState(currentState(cp, context).reasons.length === 0, "initialization blocked by current eligibility or approval");
-    if (fingerprint(existing.body) !== context.bootstrapDigest || parseRecord(existing.body) !== null) {
-        const record = await authenticatedRecord(transport, context, existing);
-        requireState(record?.kind === "checkpoint" && equal(unpack(record.payload), cp),
-            "initialization requires the exact trusted bootstrap placeholder or interrupted initial checkpoint");
-        await writeFreshness(transport, context, 0, hashBytes(existing.body));
-        return cp;
-    }
     return saveCheckpoint(transport, context, structuredClone(cp));
 }
 

@@ -123,6 +123,9 @@ test("checkpoint authenticates exact author, app, comment, issue and live run pr
         await t.test(name, async () => {
             const h = harness(); await h.start(); mutate(h);
             await assert.rejects(loadCheckpoint(h.transport, h.context), /authentic|provenance/i);
+            h.statuses.length = 0;
+            await assert.rejects(h.start(), /authentic|provenance/i);
+            assert.equal(h.statuses.length, 0);
         });
     }
     const h = harness(); await h.start();
@@ -443,6 +446,99 @@ test("freshness write cancellation recovers only the signed immediate successor 
         else cp.previousDigest = f.digest("unrelated checkpoint");
         h.comment.body = serializeWorkflowRecord({ kind: "checkpoint", status: "invalid predecessor", payload: cp }, h.context);
         await assert.rejects(loadCheckpoint(h.transport, h.context), /freshness|predecessor/i);
+    }
+});
+
+test("interrupted initialization recovers original state before checking changed current inputs", async t => {
+    const changes = {
+        main: h => { h.context.pinnedMainSha = f.sha("new main"); },
+        stable: h => { h.context.stableSdk.releaseIndexDigest = f.digest("new release metadata"); },
+        discussion: h => { h.context.issueFingerprint = f.digest("unapproved correction"); },
+        reproduction: h => {
+            h.context.manifest.sources[0].sha256 = f.digest("corrected reproduction");
+            f.seal(h.context.manifest);
+            h.context.authorization.manifestDigest = model.fingerprintInput(h.context.manifest);
+            h.context.authorization.inputDigest = h.context.manifest.approvedInputDigest;
+        },
+        approval: h => { h.context.authorization = null; },
+        manifest: h => { h.context.manifest = null; },
+        policy: h => { h.context.policyRevision = f.sha("new approval"); h.context.authorization.approvalRevision = h.context.policyRevision; },
+        workflow: h => {
+            h.context.workflowRevision = f.sha("new workflow");
+            h.context.trustedWorkflowRevisions.push(h.context.workflowRevision);
+            h.runs.get(`${h.context.owner.runId}/1`).head_sha = h.context.workflowRevision;
+        },
+        label: h => { h.context.issue.labels = []; },
+        closed: h => { h.context.issue.state = "closed"; },
+        deadline: h => { h.context.now = "2026-10-02T00:00:00Z"; },
+    };
+    for (const point of ["comment-acknowledgement", "receipt"]) {
+        for (const [name, change] of Object.entries(changes)) {
+            await t.test(`${point}: ${name}`, async () => {
+                const h = harness();
+                const original = await harness().start();
+                const { updateComment, request: send } = h.transport;
+                if (point === "comment-acknowledgement") {
+                    h.transport.updateComment = async (...args) => {
+                        await updateComment(...args);
+                        throw new Error("initialization interrupted");
+                    };
+                } else {
+                    h.transport.request = async (route, args) => {
+                        if (route.startsWith("POST")) throw new Error("initialization interrupted");
+                        return send(route, args);
+                    };
+                }
+                await assert.rejects(h.start(), /initialization interrupted/);
+                Object.assign(h.transport, { updateComment, request: send });
+                const originalBody = h.comment.body;
+                assert.equal(h.statuses.length, 0);
+                h.nextRun();
+                change(h);
+                assert.deepEqual(await h.lock(() => h.start()), original);
+                assert.equal(h.comment.body, originalBody);
+                assert.equal(h.statuses.length, 1);
+                const loaded = await loadCheckpoint(h.transport, h.context);
+                assert.deepEqual(loaded.checkpoint, original);
+                assert.deepEqual(loaded.owner, { runId: "12345", attempt: 1 });
+                assert.equal(loaded.executionAllowed, false);
+                assert.equal(loaded.publicationAllowed, false);
+                await assert.rejects(reserve(h), /blocked/);
+                const cp = await invalidateStaleEvidence(h.transport, h.context, { generation: 0 });
+                assert.deepEqual(cp.state.budget.consumed, original.state.budget.consumed);
+                assert.equal(cp.state.budget.allowanceId, original.state.budget.allowanceId);
+                assert.equal(cp.deadline, original.deadline);
+                assert.equal((await loadCheckpoint(h.transport, h.context)).executionAllowed,
+                    ["main", "stable", "reproduction", "policy", "workflow"].includes(name));
+            });
+        }
+    }
+});
+
+test("initialization recovery rejects malformed, noninitial or changed-allowance records without writing", async t => {
+    const changes = {
+        schema: cp => { cp.schemaVersion++; },
+        issue: cp => { cp.state.issueNumber++; },
+        generation: cp => { cp.generation++; },
+        bootstrap: cp => { cp.previousDigest = f.digest("different placeholder"); },
+        history: cp => { cp.history.push({ reason: "not initial state" }); },
+        phase: cp => { cp.state.phase = "stopped"; },
+        allowance: cp => { cp.state.budget.allowanceId = "different allowance"; },
+        deadline: cp => { cp.deadline = "2026-11-01T00:00:00Z"; },
+    };
+    for (const [name, change] of Object.entries(changes)) {
+        await t.test(name, async () => {
+            const h = harness();
+            const cp = await h.start();
+            change(cp);
+            h.comment.body = serializeWorkflowRecord({ kind: "checkpoint", status: "initialization", payload: cp }, h.context);
+            h.statuses.length = 0;
+            h.nextRun();
+            const body = h.comment.body;
+            await assert.rejects(h.lock(() => h.start()));
+            assert.equal(h.comment.body, body);
+            assert.equal(h.statuses.length, 0);
+        });
     }
 });
 
