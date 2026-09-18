@@ -18,7 +18,7 @@ module TyconDefinitionHash =
 
     let private hashRecdField (g: TcGlobals, observer) (fld: RecdField) =
         if HashAccessibility.isHiddenToObserver fld.Accessibility observer then
-            0
+            0L
         else
             let nameHash = hashText fld.DisplayNameCore
 
@@ -31,15 +31,15 @@ module TyconDefinitionHash =
                 nameHash
                 @@ attribHash
                 @@ typeHash
-                @@ (hash fld.IsStatic)
-                @@ (hash fld.IsVolatile)
-                @@ (hash fld.IsMutable)
+                @@ (int64 (hash fld.IsStatic))
+                @@ (int64 (hash fld.IsVolatile))
+                @@ (int64 (hash fld.IsMutable))
 
             combined
 
     let private hashUnionCase (g: TcGlobals, observer) (ucase: UnionCase) =
         if HashAccessibility.isHiddenToObserver ucase.Accessibility observer then
-            0
+            0L
         else
             let nameHash = hashText ucase.Id.idText
             let attribHash = hashAttributeList ucase.Attribs
@@ -71,7 +71,7 @@ module TyconDefinitionHash =
         let tycon = tcref.Deref
 
         if HashAccessibility.isHiddenToObserver tycon.Accessibility observer then
-            0
+            0L
         else
 
             let repr = tycon.TypeReprInfo
@@ -114,10 +114,10 @@ module TyconDefinitionHash =
                     iimplsHash () @@ fieldsHash () @@ membersHash () @@ inheritsHash ()
                     |> pipeToHash (
                         match tfor with
-                        | TFSharpClass -> 1
-                        | TFSharpInterface -> 2
-                        | TFSharpStruct -> 3
-                        | _ -> 4
+                        | TFSharpClass -> 1L
+                        | TFSharpInterface -> 2L
+                        | TFSharpStruct -> 3L
+                        | _ -> 4L
                     )
                 | TAsmRepr ilType -> HashIL.hashILType ilType
                 | TMeasureableRepr ty -> hashTType g ty
@@ -129,7 +129,7 @@ module TyconDefinitionHash =
                     match tycon.ExceptionInfo with
                     | TExnAbbrevRepr exnTcRef -> hashTyconRef exnTcRef
                     | TExnAsmRepr iLTypeRef -> HashIL.hashILTypeRef iLTypeRef
-                    | TExnNone -> 0
+                    | TExnNone -> 0L
                     | TExnFresh _ -> fieldsHash ()
 
 #if !NO_TYPEPROVIDERS
@@ -158,7 +158,7 @@ let calculateHashOfImpliedSignature g observer (expr: ModuleOrNamespaceContents)
 
     let rec hashModuleOrNameSpaceBinding (monb: ModuleOrNamespaceBinding) =
         match monb with
-        | ModuleOrNamespaceBinding.Binding b when b.Var.LogicalName.StartsWithOrdinal("doval@") -> 0
+        | ModuleOrNamespaceBinding.Binding b when b.Var.LogicalName.StartsWithOrdinal("doval@") -> 0L
         | ModuleOrNamespaceBinding.Binding b -> HashTastMemberOrVals.hashValOrMemberNoInst (g, observer) (mkLocalValRef b.Var)
         | ModuleOrNamespaceBinding.Module(moduleInfo, contents) -> hashSingleModuleOrNameSpaceIncludingName (moduleInfo, contents)
 
@@ -169,29 +169,29 @@ let calculateHashOfImpliedSignature g observer (expr: ModuleOrNamespaceContents)
 
             let tyconsHash = TyconDefinitionHash.hashTyconDefns (g, observer) tycons
 
-            if mbindsHash <> 0 || tyconsHash <> 0 then
+            if mbindsHash <> 0L || tyconsHash <> 0L then
                 mbindsHash @@ tyconsHash
             else
-                0
+                0L
 
         | TMDefLet(bind, _) -> HashTastMemberOrVals.hashValOrMemberNoInst (g, observer) (mkLocalValRef bind.Var)
-        | TMDefOpens _ -> 0 (* empty hash *)
+        | TMDefOpens _ -> 0L (* empty hash *)
         | TMDefs defs -> defs |> hashListOrderIndependent hashSingleModuleOrNamespaceContents
-        | TMDefDo _ -> 0 (* empty hash *)
+        | TMDefDo _ -> 0L (* empty hash *)
 
     and hashSingleModuleOrNameSpaceIncludingName (mspec, def) =
         if HashAccessibility.isHiddenToObserver mspec.Accessibility observer then
-            0
+            0L
         else
             let outerPathHash =
                 mspec.CompilationPath.MangledPath |> hashListOrderMatters hashText
 
             let thisNameHash = hashText mspec.entity_logical_name
 
-            let fullNameHash = outerPathHash @@ thisNameHash @@ (hash mspec.IsModule)
+            let fullNameHash = outerPathHash @@ thisNameHash @@ (int64 (hash mspec.IsModule))
             let contentHash = hashSingleModuleOrNamespaceContents def
 
-            if contentHash = 0 then 0 else fullNameHash @@ contentHash
+            if contentHash = 0L then 0L else fullNameHash @@ contentHash
 
     hashSingleModuleOrNamespaceContents expr
 
@@ -205,12 +205,12 @@ let calculateSignatureHashOfFiles (files: CheckedImplFile list) g observer =
 let calculateHashOfAssemblyTopAttributes (attrs: TopAttribs) (platform: ILPlatform option) =
     let platformHash =
         match platform with
-        | None -> 0
-        | Some AMD64 -> 1
-        | Some IA64 -> 2
-        | Some ARM -> 3
-        | Some ARM64 -> 4
-        | Some X86 -> 5
+        | None -> 0L
+        | Some AMD64 -> 1L
+        | Some IA64 -> 2L
+        | Some ARM -> 3L
+        | Some ARM64 -> 4L
+        | Some X86 -> 5L
 
     hashAttributeList attrs.assemblyAttrs
     @@ hashAttributeList attrs.mainMethodAttrs
