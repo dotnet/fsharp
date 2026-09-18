@@ -151,12 +151,27 @@ def validate_workload(workload):
             and not any(c in a for c in "\r\n\0") and not a.startswith("@") for a in arguments),
             "Invalid workload arguments")
     require(workload["arguments_sha256"] == fingerprint_inputs(arguments), "Argument hash mismatch")
-    require(not any(re.match(r"^[-/]+(?:times(?:[:+-]|$)|test:Dump)", a, re.IGNORECASE)
-                    for a in arguments), "Compiler instrumentation is not unprofiled acceptance evidence")
+    # Inspect option names, not reference/resource paths; include legacy and slash spellings.
+    options = [(a, a.lstrip("-/").partition(":")) for a in arguments
+               if a.startswith("-") or (a.startswith("/") and "/" not in a[1:])]
+    diagnostics = {"times", "statistics", "progress", "resolutions", "showextensionresolution",
+                   "pause", "ast", "parseonly", "typecheckonly", "debug-parse", "simulateexception",
+                   "dumpallcommandlineoptions"}
+    require(not any(name.lower().rstrip("+-") in diagnostics or name.lower().startswith(("test", "typedtree", "tokenize"))
+                    for _, (name, _, _) in options),
+            "Compiler instrumentation is not unprofiled acceptance evidence")
     require(type(workload["parallel_compilation"]) is bool, "Invalid parallel-compilation identity")
     parallel = "--parallelcompilation+" if workload["parallel_compilation"] else "--parallelcompilation-"
-    require("--optimize+" in arguments and "--optimize-" not in arguments and "--noframework" in arguments
-            and [a for a in arguments if a.startswith("--parallelcompilation")] == [parallel],
+    disabled_optimization = {"localoptimize-", "crossoptimize-", "jit-",
+                             "no-local-optimize", "no-cross-optimize", "no-jit-optimize"}
+    require([a for a, (name, _, _) in options
+             if name.lower().rstrip("+-") in ("optimize", "ooff") or name.rstrip("+-") == "O"] == ["--optimize+"]
+            and "--noframework" in arguments
+            and [a for a, (name, _, _) in options if name.lower().rstrip("+-") == "parallelcompilation"] == [parallel]
+            and not any(name.lower() in disabled_optimization
+                        or (name.lower() in ("detuple", "tlr", "finalsimplify", "inlinethreshold")
+                            and not (re.fullmatch(r"\s*\+?\d+\s*", value) and int(value) > 0))
+                        for _, (name, _, value) in options),
             "Release/parallel flags differ from workload identity")
 
 
@@ -401,6 +416,11 @@ def reset_outputs(outputs, owned_root, inputs):
 def verify_files(records):
     for record in records:
         require(file_record(record["path"]) == record, f"Input changed: {record['path']}")
+
+
+def verify_collector(toolchain):
+    require(file_record(__file__) == toolchain["measurement"], "Executing measurement collector differs from toolchain")
+    require(platform.python_version() == toolchain["python"], "Executing Python version differs from toolchain")
 
 
 def compiler_manifest(installation, source_revision, patch_sha256, bootstrap, toolchain):
@@ -737,6 +757,10 @@ def run_repetitions(manifest, compiler, output):
     validate_manifest(compiler, "compiler")
     invariants = manifest["invariants"]
     require(invariants["policy"] == POLICY, "Policy changed since preparation")
+    require(invariants["experiment"]["collector"] == "process-rusage-v1"
+            and invariants["experiment"]["primary_metric"] in PRIMARY_METRICS,
+            "Unsupported predeclared primary metric or collector")
+    verify_collector(invariants["toolchain"])
     require(compiler["bootstrap_fingerprint"] == fingerprint_inputs(invariants["bootstrap"]), "Candidate bootstrap mismatch")
     require(compiler["toolchain_fingerprint"] == fingerprint_inputs(invariants["toolchain"]), "Candidate toolchain mismatch")
     environment = invariants["environment"]["variables"]
@@ -795,6 +819,7 @@ def run_repetitions(manifest, compiler, output):
                 write_json(paths[arm], documents[arm])
             require(sample["complete"], f"Compiler failed or produced no assembly (exit {result['exit_status']}): {logs}")
         verify_files(records)
+        verify_collector(invariants["toolchain"])
         if sum(len(d["samples"]) for d in documents.values()) == len(schedule()) and result["complete"]:
             for arm, document in documents.items():
                 document["collection_complete"] = True

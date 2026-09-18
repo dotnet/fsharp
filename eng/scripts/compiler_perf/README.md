@@ -39,9 +39,13 @@ capture API omits the trailing `--refout`/`--refonly` arguments. Sources, refere
 and flags otherwise retain their captured order. Preparation preserves the raw
 `compiler.rsp` and writes a separate `replay.rsp`, removing the bare `--times`
 injected by the local-compiler props. The capture build may be instrumented;
-smoke replay and acceptance collection are not. Remaining timing-file flags or
-compiler dump instrumentation fail validation, even if a sample claims
-`profiler_attached: false`. The response file is one
+smoke replay and acceptance collection are not. Diagnostic instrumentation
+(including statistics, typed-tree output, progress, and all `--test:` switches)
+fails validation, even if a sample claims `profiler_attached: false`.
+Acceptance requires the canonical captured `--optimize+` and parallel switch;
+legacy optimization-disabling aliases and pass-disabling overrides are rejected.
+Option checks cover dash/slash spellings without interpreting source paths or
+reference/resource values as switches. The response file is one
 unquoted argument per line, as in Fsc's own response-file generation; it is not
 shell-tokenized. Generated sources, resources, signing and SourceLink inputs are
 materialized and hashed. Unknown additional compiler tools and nested response
@@ -92,7 +96,11 @@ two unmeasured warm-ups per installation, five A/A pairs using the baseline
 installation in both arms, then five baseline/candidate pairs. Arm order within
 each pair is shuffled with seed 910. Each sample is a fresh process; no restore
 or MSBuild runs occur between samples. Only explicitly owned output files are
-reset. Inputs and binaries are verified before and after collection. Failed or
+reset. Inputs and binaries are verified before and after collection. The executing
+measurement module's path/hash and Python version must also match the recorded
+toolchain at both checks; verifying an alternate collector file is insufficient.
+Offline comparison does not require the collector's Python installation.
+Failed or
 cancelled collection retains incomplete evidence and cannot qualify. Both arm
 files must have `collection_complete: true`, set only after final verification;
 a zero exit without an output assembly is also a failed sample.
@@ -183,6 +191,9 @@ CLI dispatch tests cover preparation/collection arguments, outputs and failures.
 Nonuniform timing fixtures distinguish the memory hypothesis's uncertainty
 guard from its median, and boundary fixtures include adjacent representable
 values at multiple scales.
+Portable collector fixtures check per-child user plus system CPU accounting,
+millisecond/byte conversions, exit/signal status, cancellation cleanup and explicit
+unavailable-metric reasons without presenting synthetic readings as live evidence.
 
 ## Local validation record
 
@@ -239,3 +250,15 @@ and binlog are retained in `artifacts/compiler-perf-validation/identity-live`.
 This Windows smoke result is not an A/A or A/B acceptance measurement. The
 repository-root build/test commands still require an explicit solution; the
 explicit Release build succeeded with zero warnings/errors.
+
+Additional diagnostic/optimization-alias and executing-toolchain regressions
+failed before implementation (`red-gates.log`: 122 subtest failures). All **29**
+helper tests now pass (`green-gates.log`), and all 15 targeted in-memory mutations
+are detected (`mutations-gates.log`), including negative CPU/RSS values, incorrect
+units/status, and bypassed collector/Python checks. Linux-style absolute source
+paths remain valid even when a directory name resembles a diagnostic option.
+The real Release build and frozen-source replay still pass with the same
+407/21/178 input counts; this remains Windows smoke evidence, not an acceptance
+comparison. Logs and hashed evidence are under `artifacts/compiler-perf-validation`.
+`gates-final-live/final-replay.json` records the final helper's identity and replay,
+and links the successful Release build/capture evidence and binlog.

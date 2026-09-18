@@ -173,17 +173,44 @@ class MeasurementTests(unittest.TestCase):
                     m.compare_measurements(*docs)
 
     def test_instrumentation_arguments_are_not_unprofiled_evidence(self):
-        for flag in ("--times", "--times:timings.csv", "-times", "--test:DumpCheckingGraph",
-                     "--test:DumpSignatureData", "--test:DumpDebugInfo"):
+        families = {
+            "instrument": ("times", "times:timings.csv", "test:DumpCheckingGraph", "test:DumpSignatureData",
+                           "test:DumpDebugInfo", "test:Tracking", "test:FunctionSizes", "test:TotalSizes",
+                           "test:HasEffect", "test:NoNeedToTailcall", "test:ShowLoadedAssemblies",
+                           "test:FutureDiagnostic", "typedtree", "typedtreefile", "typedtreestamps",
+                           "typedtreeranges", "typedtreetypes", "typedtreevalreprinfo", "statistics",
+                           "progress", "resolutions", "showextensionresolution", "pause", "ast",
+                           "tokenize", "tokenize-debug", "tokenize-unfiltered", "parseonly", "typecheckonly",
+                           "testInteractionParser", "testparsererrorrecovery", "debug-parse",
+                           "simulateException:OutOfMemory", "dumpAllCommandLineOptions"),
+            "Release/parallel": ("optimize-", "O-", "O-:", "Ooff", "localoptimize-", "crossoptimize-", "jit-",
+                                 "no-local-optimize", "no-cross-optimize", "no-jit-optimize",
+                                 "detuple:0", "detuple: 0", "tlr:0", "finalSimplify:0",
+                                 "inlinethreshold:+00", "inlinethreshold:-1", "parallelcompilation+"),
+        }
+        for reason, flags in families.items():
+            for flag in flags:
+                for prefix in ("--", "-", "/"):
+                    with self.subTest(flag=prefix + flag):
+                        docs = measurements()
+                        for doc in docs:
+                            workload = doc["invariants"]["workload"]
+                            workload["arguments"].append(prefix + flag)
+                            workload["arguments_sha256"] = m.fingerprint_inputs(workload["arguments"])
+                        refresh_identities(docs)
+                        with self.assertRaisesRegex(ValueError, reason):
+                            m.compare_measurements(*docs)
+
+    def test_release_flags_and_flag_looking_paths_remain_valid(self):
+        for flag in ("--debug:embedded", "--extraoptimizationloops:1", "--nowarn:75",
+                     "--detuple:1", "--inlinethreshold:+01",
+                     "--resource:statistics.bin,Logical", "-r:typedtree.dll", "test.fs",
+                     "--sourcelink:/test:Tracking", "/frozen/typedtree.fs", "/test-root/src/Compiler/source.fs"):
             with self.subTest(flag=flag):
-                docs = measurements()
-                for doc in docs:
-                    workload = doc["invariants"]["workload"]
-                    workload["arguments"].append(flag)
-                    workload["arguments_sha256"] = m.fingerprint_inputs(workload["arguments"])
-                refresh_identities(docs)
-                with self.assertRaisesRegex(ValueError, "instrument"):
-                    m.compare_measurements(*docs)
+                workload = measurements()[0]["invariants"]["workload"]
+                workload["arguments"].append(flag)
+                workload["arguments_sha256"] = m.fingerprint_inputs(workload["arguments"])
+                m.validate_workload(workload)
 
     def test_schedule_is_paired_not_blocked(self):
         events = m.schedule()
@@ -542,6 +569,66 @@ class MeasurementTests(unittest.TestCase):
                     self.assertEqual(result["exit_status"], status)
                     self.assertEqual(result["complete"], status == 0)
                     self.assertGreater(result["elapsed_ms"], 0)
+                    for metric in ("process_cpu_ms", "process_peak_rss_bytes"):
+                        if sys.platform == "linux":
+                            self.assertGreaterEqual(result[metric], 0)
+                            self.assertTrue(math.isfinite(result[metric]))
+                            self.assertNotIn(metric, result["unavailable_reasons"])
+                        else:
+                            self.assertIsNone(result[metric])
+                            self.assertIn("requires Linux", result["unavailable_reasons"][metric])
+
+    def test_process_accounting_units_and_status(self):
+        """Synthetic wait4 readings exercise Linux accounting on every test host."""
+        for host in ("linux", "win32", "darwin"):
+            for status, user, system, rss_kib in ((0, .125, .375, 1536), (7, .25, .125, 2), (-9, 0, 0, 0)):
+                with self.subTest(host=host, status=status), tempfile.TemporaryDirectory() as directory:
+                    root = Path(directory)
+                    process = mock.Mock(pid=12345, returncode=None)
+                    process.wait.side_effect = lambda: setattr(process, "returncode", status)
+                    raw_status = status << 8 if status >= 0 else -status
+                    usage = SimpleNamespace(ru_utime=user, ru_stime=system, ru_maxrss=rss_kib)
+                    args, environment = ["controlled", "space ; & argument"], {"FIXTURE": "synthetic"}
+                    with mock.patch.object(m.sys, "platform", host), \
+                         mock.patch.object(m.subprocess, "Popen", return_value=process) as popen, \
+                         mock.patch.object(m.os, "wait4", return_value=(process.pid, raw_status, usage), create=True) as wait4, \
+                         mock.patch.object(m.os, "waitstatus_to_exitcode", return_value=status, create=True) as decode, \
+                         mock.patch.object(m.time, "perf_counter_ns", side_effect=(10_000_000, 14_500_000)):
+                        result = m.run_process(args, root, environment, root / "process.log")
+                    popen.assert_called_once_with(args, cwd=root, env=environment, stdin=subprocess.DEVNULL,
+                                                  stdout=mock.ANY, stderr=subprocess.STDOUT)
+                    self.assertEqual(result["elapsed_ms"], 4.5)
+                    self.assertEqual(result["exit_status"], status)
+                    self.assertEqual(result["complete"], status == 0)
+                    process.kill.assert_not_called()
+                    if host == "linux":
+                        wait4.assert_called_once_with(process.pid, 0)
+                        decode.assert_called_once_with(raw_status)
+                        process.wait.assert_not_called()
+                        self.assertEqual(result["process_cpu_ms"], (user + system) * 1000)
+                        self.assertEqual(result["process_peak_rss_bytes"], rss_kib * 1024)
+                        self.assertEqual(result["unavailable_reasons"], {})
+                    else:
+                        wait4.assert_not_called()
+                        decode.assert_not_called()
+                        process.wait.assert_called_once_with()
+                        self.assertEqual(set(result["unavailable_reasons"]), {"process_cpu_ms", "process_peak_rss_bytes"})
+                        for metric in result["unavailable_reasons"]:
+                            self.assertIsNone(result[metric])
+                            self.assertIn("requires Linux", result["unavailable_reasons"][metric])
+
+    def test_process_cancellation_reaps_child(self):
+        for host in ("linux", "win32"):
+            with self.subTest(host=host), tempfile.TemporaryDirectory() as directory:
+                process = mock.Mock(pid=12345)
+                process.wait.side_effect = [None] if host == "linux" else [KeyboardInterrupt, None]
+                with mock.patch.object(m.sys, "platform", host), \
+                     mock.patch.object(m.subprocess, "Popen", return_value=process), \
+                     mock.patch.object(m.os, "wait4", side_effect=KeyboardInterrupt, create=True), \
+                     self.assertRaises(KeyboardInterrupt):
+                    m.run_process(["controlled"], directory, {}, Path(directory) / "process.log")
+                process.kill.assert_called_once_with()
+                self.assertEqual(process.wait.call_count, 1 if host == "linux" else 2)
 
     def test_capture_target_and_cli(self):
         target = ET.parse(MODULE.with_name("Capture.targets")).getroot()
@@ -637,7 +724,9 @@ class MeasurementTests(unittest.TestCase):
 
     def test_collection_replays_and_persists_failures(self):
         """Real child processes; synthetic compiler files, identities and timings."""
-        for outcome in ("success", "failure", "no output", "cancelled", "changed input"):
+        identity_failures = ("different helper", "different Python", "unsupported collector")
+        for outcome in ("success", "failure", "no output", "cancelled", "changed input",
+                        "Python changed during collection", *identity_failures):
             with self.subTest(outcome=outcome), tempfile.TemporaryDirectory() as directory:
                 root = Path(directory).resolve()
                 cwd = root / "src" / "Compiler"
@@ -664,14 +753,22 @@ class MeasurementTests(unittest.TestCase):
                 response.write_text("\n".join(arguments) + "\n")
                 inputs = m.capture_inputs(arguments, cwd, root, {"src/Compiler/source.fs"})
                 environment = m.allowed_environment(root)
+                executing_python = m.platform.python_version()
                 provenance = measurements()[0]["invariants"]
                 bootstrap, toolchain = provenance["bootstrap"], provenance["toolchain"]
                 bootstrap["binaries"] = [m.file_record(root / "baseline" / "fsc.dll")]
                 toolchain.update(dotnet=m.file_record(sys.executable), measurement=m.file_record(MODULE),
+                                 python=executing_python,
                                  capture_target=m.file_record(MODULE.with_name("Capture.targets")),
                                  runtime_files=[m.file_record(sys.executable)],
                                  sdk_compiler_files=[m.file_record(sys.executable)],
                                  compiler_runtimeconfig_sha256=m.file_record(compiler_dir / "fsc.runtimeconfig.json")["sha256"])
+                if outcome == "different helper":
+                    other_helper = root / "other-measurement.py"
+                    other_helper.write_text("# Different collector; its recorded hash still verifies.\n")
+                    toolchain["measurement"] = m.file_record(other_helper)
+                elif outcome == "different Python":
+                    toolchain["python"] = "0.0.0"
                 installations = {arm: m.compiler_manifest(root / arm, "a" * 40, m.fingerprint_inputs(arm), bootstrap, toolchain)
                                  for arm in ("baseline", "candidate")}
                 workload = dict(inputs, revision="a" * 40, default_branch_revision="a" * 40,
@@ -687,6 +784,8 @@ class MeasurementTests(unittest.TestCase):
                                            "environment": m.host_identity(environment), "policy": copy.deepcopy(m.POLICY),
                                            "experiment": {"id": "synthetic", "primary_metric": "elapsed_ms",
                                                           "collector": "process-rusage-v1", "seed": 910}}}
+                if outcome == "unsupported collector":
+                    manifest["invariants"]["experiment"]["collector"] = "other-collector"
                 original_run = m.run_process
                 calls = []
 
@@ -712,12 +811,21 @@ class MeasurementTests(unittest.TestCase):
                 output = root / "samples.json"
                 with mock.patch.object(m, "sys", SimpleNamespace(platform="linux")), \
                      mock.patch.object(m, "host_identity", return_value=manifest["invariants"]["environment"]), \
+                     mock.patch.object(m.platform, "python_version", side_effect=lambda:
+                                       "0.0.0" if outcome == "Python changed during collection" and calls
+                                       else executing_python), \
                      mock.patch.object(m, "run_process", side_effect=controlled_run):
                     if outcome != "success":
                         with self.assertRaises(KeyboardInterrupt if outcome == "cancelled" else ValueError):
                             m.run_repetitions(manifest, installations["candidate"], output)
                     else:
                         m.run_repetitions(manifest, installations["candidate"], output)
+                if outcome in identity_failures:
+                    self.assertEqual(calls, [])
+                    self.assertFalse(output.exists())
+                    self.assertFalse(output.with_suffix(".baseline.json").exists())
+                    self.assertFalse((root / "measurement.lock").exists())
+                    continue
                 docs = [m.read_json(output.with_suffix(".baseline.json")), m.read_json(output)]
                 for doc in docs:
                     m.validate_manifest(doc, "samples")
