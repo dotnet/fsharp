@@ -721,17 +721,94 @@ for (const loss of ["branch", "file", "stale state"]) {
   });
 }
 
-test("confirmed absent ledger is not proof no question was ever posted", async () => {
-  const { api, args } = await setup();
-  args.store = casStore(emptyMemory(), null, "branch");
-  args.context = context(null);
-  args.manifest.binding = args.context;
+for (const history of ["existing", "branch", "file", "legacy"]) {
+  for (const createdAt of [before, now, "2026-09-18T18:00:01.000Z", null]) {
+    test(`missing-ledger history is bounded: ${history}, created=${createdAt}`, async () => {
+      const { api, store, args } = await setup({ issues: [] });
+      if (history === "branch") store.value.headOid = null;
+      if (["branch", "file"].includes(history)) store.value.missing = history;
+      if (history === "legacy") store.value.state.clarificationHistoryUnknown = true;
+      args.context = args.manifest.binding = context(store.value.headOid);
+      await publishBatch(args);
+
+      // Discovery after initialization does not imply creation after memory loss.
+      api.issues.push(report(42, { created_at: createdAt }));
+      const mayAsk = history === "existing" || Date.parse(createdAt) > Date.parse(now);
+      for (let run = 0; run < 2; run++) {
+        args.now = `2026-09-18T18:0${run + 1}:00.000Z`;
+        args.context = context(store.value.headOid, String(130 + run));
+        args.manifest = { ...await collect(api, store.value.state, { now: args.now }), binding: args.context };
+        assert.equal(args.manifest.selected.length, run === 0 || !mayAsk ? 1 : 0);
+        args.output = envelope(args.manifest.selected.map((item) => proposal(item, uncertain)));
+        const result = await publishBatch(args);
+        const record = result.state.issues[42];
+        assert.equal(writes(api, "createComment").length, mayAsk ? 1 : 0);
+        assert.equal(record.lastResult.status, mayAsk ? "published" : "unknown");
+        assert.equal(record.clarification.status, mayAsk ? "published" : "unknown");
+        assert.equal(record.missingFact, uncertain.missingFact);
+        assert.equal(result.state.pending.some((entry) => entry.number === 42), !mayAsk);
+        assert.deepEqual(api.issues[0].labels, ["Needs-Triage"]);
+        if (history !== "existing") {
+          assert.equal(result.state.clarificationHistoryUnknownThrough, now);
+          assert.equal(result.state.clarificationHistoryUnknown, undefined);
+        }
+      }
+    });
+  }
+}
+
+test("legacy memory-absent noop rechecks unchanged input and recovers a live receipt", async () => {
+  const { api, store, args } = await setup();
+  store.value.state.clarificationHistoryUnknown = true;
+  const item = args.manifest.selected[0];
+  store.value.state.issues[42] = {
+    fingerprint: item.fingerprint, policyVersion: POLICY_VERSION, classification: "uncertain",
+    clarification: { status: "unknown", reason: "memory-absent" },
+    lastResult: { status: "noop", operationId: "legacy", detail: { code: "no-mutation-needed" } },
+  };
+  for (const recovered of [false, true]) {
+    if (recovered) api.comments[42] = [comment(90, {
+      body: receiptMarker(repo, 42), user: { ...bot, type: "Bot" },
+    })];
+    args.context = context(store.value.headOid, recovered ? "133" : "132");
+    args.manifest = { ...await collect(api, store.value.state), binding: args.context };
+    assert.equal(args.manifest.selected.length, 1);
+    args.output = envelope([proposal(args.manifest.selected[0], uncertain)]);
+    const result = await publishBatch(args);
+    assert.equal(result.state.issues[42].lastResult.status, recovered ? "noop" : "unknown");
+    assert.equal(result.state.issues[42].clarification.status, recovered ? "published" : "unknown");
+    assert.equal(result.state.pending.some((entry) => entry.number === 42), !recovered);
+  }
+  assert.equal(writes(api, "createComment").length, 0);
+});
+
+test("a recovered creation timestamp resolves missing-ledger uncertainty without changing human input", async () => {
+  const state = { ...emptyMemory(), clarificationHistoryUnknownThrough: before };
+  const { api, store, args } = await setup({ issues: [report(42, { created_at: null })] }, state);
+  args.output = envelope([proposal(args.manifest.selected[0], uncertain)]);
+  await publishBatch(args);
+  assert.equal(writes(api, "createComment").length, 0);
+  api.issues[0].created_at = now;
+  args.context = context(store.value.headOid, "134");
+  args.manifest = { ...await collect(api, store.value.state), binding: args.context };
   args.output = envelope([proposal(args.manifest.selected[0], uncertain)]);
   const result = await publishBatch(args);
-  assert.equal(writes(api, "createComment").length, 0);
-  assert.equal(result.state.issues[42].clarification.status, "unknown");
-  assert.equal(result.state.clarificationHistoryUnknown, true);
+  assert.equal(result.state.issues[42].lastResult.status, "published");
+  assert.equal(writes(api, "createComment").length, 1);
 });
+
+for (const [field, value] of [
+  ["clarificationHistoryUnknown", "true"],
+  ["clarificationHistoryUnknownThrough", null],
+  ["clarificationHistoryUnknownThrough", "invalid"],
+]) {
+  test(`invalid history boundary fails before writes: ${field}=${value}`, async () => {
+    const { store, args } = await setup();
+    store.value.state[field] = value;
+    await assert.rejects(publishBatch(args), /history/i);
+    assert.equal(store.writes.length, 0);
+  });
+}
 
 test("bot receipt text cannot serve as human classification evidence", async () => {
   const { args, store } = await setup({ comments: { 42: [comment(9, {

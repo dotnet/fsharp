@@ -265,7 +265,10 @@ async function publishBatch({ github, store, repo, manifest, output, context, bo
     // Exact-base application only: this delta contains the WHOLE queue and
     // read-age observations, not a patch safe to replay over another writer.
     state = normalizeMemory({ ...state, ...manifest.stateDelta });
-    if (version.missing !== null) state.clarificationHistoryUnknown = true;
+    if (version.missing !== null || state.clarificationHistoryUnknown === true) {
+      state.clarificationHistoryUnknownThrough ??= now;
+    }
+    delete state.clarificationHistoryUnknown;
     state.discoveryReceipt = { manifestId, proposalHash };
     for (const result of results) {
       const prior = state.issues[result.number] ?? {};
@@ -356,9 +359,14 @@ async function publishBatch({ github, store, repo, manifest, output, context, bo
     const veto = humanState(record, snapshot, result);
     let effect = null;
     if (result.classification === "regression" && !veto && !snapshot.labels.includes("Regression")) effect = "label";
+    const afterHistoryBoundary = state.clarificationHistoryUnknownThrough
+      && Date.parse(snapshot.createdAt) > Date.parse(state.clarificationHistoryUnknownThrough);
+    if (result.clarification !== null && record.clarification?.reason === "memory-absent"
+      && afterHistoryBoundary && record.clarification.pendingPublication == null) record.clarification = null;
     if (result.clarification !== null && record.clarification === null) {
-      if (state.clarificationHistoryUnknown) record.clarification = { status: "unknown", reason: "memory-absent" };
-      else effect = "comment";
+      if (state.clarificationHistoryUnknownThrough && !afterHistoryBoundary) {
+        record.clarification = { status: "unknown", reason: "memory-absent" };
+      } else effect = "comment";
     }
     const alreadyObserved = intent.effect === "label" && snapshot.labels.includes("Regression")
       || intent.effect === "comment" && record.clarification?.status === "published";
@@ -367,8 +375,7 @@ async function publishBatch({ github, store, repo, manifest, output, context, bo
       await finish("unknown", { code: "prior-attempt-unresolved" });
       continue;
     }
-    if (result.clarification !== null && ["pending", "unknown"].includes(record.clarification?.status)
-      && record.clarification.reason !== "memory-absent") {
+    if (result.clarification !== null && ["pending", "unknown"].includes(record.clarification?.status)) {
       await finish("unknown", { code: "prior-clarification-unresolved" });
       continue;
     }

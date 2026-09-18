@@ -330,6 +330,7 @@ test("fingerprint: serialization order and bot/reaction churn are immaterial", (
 
 test("memory: compatible migration preserves receipts, decisions and unknown fields", () => {
   const raw = emptyMemory();
+  raw.clarificationHistoryUnknownThrough = before;
   raw.issues["42"] = completed(report(), {
     humanCorrection: { sourceId: "comment:1" }, humanLabelDecision: { action: "unlabeled" },
     clarification: { status: "published", commentId: 123 }, futureField: { retained: true },
@@ -339,6 +340,7 @@ test("memory: compatible migration preserves receipts, decisions and unknown fie
   const memory = normalizeMemory(raw, { policyVersion: "next-policy" });
   assert.deepEqual(memory.issues, raw.issues);
   assert.equal(memory.policyVersion, "next-policy");
+  assert.equal(memory.clarificationHistoryUnknownThrough, before);
   assert.equal(memory.issues["42"].policyVersion, POLICY_VERSION);
   assert.deepEqual(raw, beforeNormalization);
   memory.issues["42"].clarification.commentId = 999;
@@ -528,11 +530,19 @@ test("snapshot: all comment pages, unknown contributors, exact text and chronolo
   ] } });
   const snapshot = await readIssueSnapshot(api.github, { repo, number: 42, limits });
   assert.equal(snapshot.complete, true);
+  assert.equal(snapshot.createdAt, report().created_at);
   assert.deepEqual(snapshot.humanComments.map((item) => item.id), [1, 2, 3]);
   assert.equal(snapshot.humanComments[0].body, comment(1).body);
   assert.equal(snapshot.humanComments[0].authorId, 20);
   assert.ok(snapshot.humanComments[0].sourceId.includes("comment:1"));
 });
+
+for (const created_at of ["not-a-date", 42, {}]) {
+  test(`snapshot: invalid creation time ${JSON.stringify(created_at)} cannot authorize publication`, async () => {
+    const api = fake({ issues: [report(42, { created_at })] });
+    await assert.rejects(readIssueSnapshot(api.github, { repo, number: 42, limits }), /Invalid current issue/);
+  });
+}
 
 test("snapshot: invalid issue identities cannot become API arguments", async () => {
   const api = fake();

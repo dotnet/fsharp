@@ -150,6 +150,7 @@ async function readText(github, repo, number, limits, includeReviews = false) {
     || !["open", "closed"].includes(issue.state) || typeof issue.title !== "string"
     || (issue.body != null && typeof issue.body !== "string")
     || typeof issue.updated_at !== "string" || !Number.isFinite(Date.parse(issue.updated_at))
+    || (issue.created_at != null && (typeof issue.created_at !== "string" || !Number.isFinite(Date.parse(issue.created_at))))
     || (issue.comments !== undefined && (!Number.isSafeInteger(issue.comments) || issue.comments < 0))) {
     throw new Error("Invalid current issue response");
   }
@@ -172,7 +173,7 @@ async function readText(github, repo, number, limits, includeReviews = false) {
   const { data: current } = await github.rest.issues.get({ ...repo, issue_number: number });
   const metadata = (value) => JSON.stringify([
     value.number, value.title, value.body, value.state, value.user?.id, value.html_url,
-    Object.hasOwn(value, "pull_request"), value.comments, value.updated_at,
+    Object.hasOwn(value, "pull_request"), value.comments, value.updated_at, value.created_at,
     value.labels?.map((label) => typeof label === "string" ? label : label.name).sort(),
   ]);
   if (metadata(issue) !== metadata(current)) {
@@ -198,7 +199,8 @@ async function readText(github, repo, number, limits, includeReviews = false) {
     number, url: issue.html_url, state: issue.state, isPullRequest,
     labels: issue.labels.map((label) => typeof label === "string" ? label : label.name),
     title: issue.title, body: issue.body ?? "", titleSourceId: `${prefix}:title`, bodySourceId: `${prefix}:body`,
-    authorId: issue.user?.id ?? null, author: issue.user?.login ?? null, updatedAt: issue.updated_at,
+    authorId: issue.user?.id ?? null, author: issue.user?.login ?? null,
+    createdAt: issue.created_at ?? null, updatedAt: issue.updated_at,
     humanComments: comments.filter((item) => !item.isBot).sort(chronological),
     botComments: comments.filter((item) => item.isBot).sort(chronological),
     humanDecisions: [...humanDecisions.values()].sort(chronological),
@@ -253,7 +255,7 @@ function references(snapshot, repo) {
 
 /**
  * Snapshot: {number,url,state,isPullRequest,labels,title,body,titleSourceId,
- * bodySourceId,authorId,author,updatedAt,humanComments,humanDecisions,botComments,
+ * bodySourceId,authorId,author,createdAt,updatedAt,humanComments,humanDecisions,botComments,
  * linked,complete,errors}. Every text source has an API identity and exact text.
  * linked has the same shape with no further traversal (including PR discussion).
  * Bot receipts are available for publication deduplication, never human hashes.
@@ -286,7 +288,7 @@ async function readIssueSnapshot(github, { repo, number, limits: overrides, rech
     snapshot.errors.push(...current.errors);
     if (fingerprintHumanInput(current) !== targetFingerprint
       || JSON.stringify([...snapshot.labels].sort()) !== JSON.stringify([...current.labels].sort())
-      || snapshot.updatedAt !== current.updatedAt) {
+      || snapshot.updatedAt !== current.updatedAt || snapshot.createdAt !== current.createdAt) {
       snapshot.errors.push({ stage: "issue", number, code: "issue-changed", retryable: true });
     }
     snapshot.botComments = current.botComments;

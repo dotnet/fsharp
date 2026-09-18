@@ -24,7 +24,9 @@ Exports from `publish.cjs`:
 
 `github.cjs` also exports the backward-compatible
 `readMemory(github, repo, {versioned: true})` form used by the store. Omitting the
-third argument still returns only normalized state.
+third argument still returns only normalized state. Issue snapshots also expose
+the API `created_at` as `createdAt` (or `null` if unavailable); it scopes ledger-loss
+recovery, not the human-evidence fingerprint.
 
 Before collection, call `store.read()`. Pass its state to `collectCandidates` and
 attach this binding to the resulting manifest:
@@ -164,10 +166,22 @@ Clarifications are fixed, short, AI-disclosed questions with an issue-level mark
 independent of policy/fingerprint. Recovery accepts a live marker only from the
 configured **ID + login + API Bot type**, never a human copying it. Durable receipts
 also prevent repeats after comment deletion. If the ledger is confirmed missing,
-the publisher conservatively persists `clarificationHistoryUnknown`; absence
-cannot prove that a previous question was never posted. It still records the
-missing fact and can add Regression, but does not start new questions with
-ambiguous history. Restoring the trusted ledger restores its history.
+the publisher persists the trusted recovery time as
+`clarificationHistoryUnknownThrough`. Issues created at or before that boundary,
+or with no creation timestamp, have ambiguous history: absence cannot prove a
+question was never posted. A requested question remains `unknown` and pending for
+receipt reconciliation, not terminal `noop`. Issues created strictly afterward
+can ask their first question, even if discovered much later. Later runs and policy
+changes do not advance this boundary. A previously missing creation timestamp can
+resolve this uncertainty on recheck, but cannot clear a real unresolved comment
+attempt. Regression additions remain independent.
+
+The legacy repository-wide `clarificationHistoryUnknown: true` flag migrates to a
+boundary at the migration run's trusted time, because its original recovery time
+was not recorded. Legacy memory-absent uncertainty `noop` records become unfinished
+again without discarding receipts, intents or human decisions. Restoring the
+trusted ledger restores its history; no missing-ledger path blindly reposts a
+question.
 
 On reanalysis, an unresolved comment attempt moves into
 `clarification.pendingPublication`, retaining its original operation ID and sending

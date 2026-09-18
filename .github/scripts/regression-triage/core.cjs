@@ -69,6 +69,10 @@ function normalizeMemory(raw, { policyVersion = POLICY_VERSION } = {}) {
     || !object(state.scan) || !object(state.issues) || !Array.isArray(state.pending)) {
     throw new Error("Malformed memory");
   }
+  if ((state.clarificationHistoryUnknown !== undefined && typeof state.clarificationHistoryUnknown !== "boolean")
+    || (state.clarificationHistoryUnknownThrough !== undefined && !timestamp(state.clarificationHistoryUnknownThrough))) {
+    throw new Error("Invalid clarification history boundary");
+  }
   const scan = { updatedThrough: null, incremental: null, sweep: null, ...state.scan };
   if (scan.updatedThrough !== null && !timestamp(scan.updatedThrough)) throw new Error("Invalid scan timestamp");
   for (const key of ["incremental", "sweep"]) {
@@ -113,6 +117,11 @@ function normalizeMemory(raw, { policyVersion = POLICY_VERSION } = {}) {
         || !validPublication(clarification.pendingPublication)
         || (clarification.pendingPublication != null && clarification.pendingPublication.effect !== "comment"))) {
       throw new Error(`Invalid publication issue record: ${number}`);
+    }
+    // Older publishers terminally suppressed questions when the ledger was lost.
+    if (state.clarificationHistoryUnknown === true && record.classification === "uncertain"
+      && clarification?.reason === "memory-absent" && record.lastResult?.status === "noop") {
+      record.lastResult.status = "unknown";
     }
   }
   const pending = new Map();
