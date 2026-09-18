@@ -105,6 +105,13 @@ let ``evaluates an interaction and prints its result`` () =
         Assert.True(session.WaitForOutput "val it: int = 2", describe session result))
 
 [<Fact>]
+let ``returns evaluated values`` () =
+    withInitializedSession (fun session ->
+        let result = session.Execute "let answer = 42"
+        Assert.True(succeeded result, describe session result)
+        Assert.Contains(result.values, fun value -> value.name = "answer" && value.value = "42"))
+
+[<Fact>]
 let ``keeps bindings across interactions`` () =
     withInitializedSession (fun session ->
         let bound = session.Execute "let x = 40"

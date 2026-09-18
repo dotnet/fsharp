@@ -117,6 +117,14 @@ type ExceptionInfo =
     }
 
 [<CLIMutable>]
+type ValueInfo =
+    {
+        name: string
+        typeName: string
+        value: string
+    }
+
+[<CLIMutable>]
 type ExecutionResult =
     {
         /// The interaction was accepted and ran to completion: no error diagnostic, no escaping
@@ -126,6 +134,7 @@ type ExecutionResult =
         cancelled: bool
         diagnostics: DiagnosticInfo[]
         ``exception``: ExceptionInfo
+        values: ValueInfo[]
 
         /// Reported after every interaction so that the host can keep its own view of the session
         /// in step with one that changed directory.

@@ -82,7 +82,22 @@ let private toDiagnosticInfo (diagnostic: FSharpDiagnostic) =
         endColumn = diagnostic.EndColumn
     }
 
-let private toExecutionResult (outcome: Choice<FsiValue option, exn>) (diagnostics: FSharpDiagnostic[]) (cancelled: bool) =
+let private toValueInfo (name: string) (value: FsiValue) =
+    {
+        name = name
+        typeName =
+            match value.ReflectionType with
+            | null -> ""
+            | typeInfo -> typeInfo.FullName
+        value = sprintf "%A" value.ReflectionValue
+    }
+
+let private toExecutionResult
+    (outcome: Choice<FsiValue option, exn>)
+    (diagnostics: FSharpDiagnostic[])
+    (values: ValueInfo[])
+    (cancelled: bool)
+    =
     let hasErrors =
         diagnostics
         |> Array.exists (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
@@ -112,6 +127,7 @@ let private toExecutionResult (outcome: Choice<FsiValue option, exn>) (diagnosti
                         | trace -> trace
                 }
             | None -> Unchecked.defaultof<ExceptionInfo>
+        values = values
         workingDirectory = Directory.GetCurrentDirectory()
     }
 
@@ -273,6 +289,13 @@ type FsiRpcTarget
     let interruptLock = obj ()
     let mutable currentCancellation: CancellationTokenSource = null
     let mutable initialized = false
+    let values = ResizeArray<ValueInfo>()
+
+    do
+        fsiConfig.OnEvaluation.Add(fun evaluation ->
+            match evaluation.FsiValue with
+            | Some value -> values.Add(toValueInfo evaluation.Name value)
+            | None -> ())
 
     /// <summary>
     /// Evaluate on the event loop thread, the same thread a console session evaluates on.
@@ -303,6 +326,7 @@ type FsiRpcTarget
         lock interruptLock (fun () -> currentCancellation <- cancellation)
 
         try
+            values.Clear()
             let outcomes = ResizeArray<Choice<FsiValue option, exn>>()
             let diagnostics = ResizeArray<FSharpDiagnostic>()
             let mutable stop = false
@@ -333,7 +357,7 @@ type FsiRpcTarget
                 | None -> Choice1Of2 None
 
             flushConsole ()
-            toExecutionResult outcome (diagnostics.ToArray()) cancellation.IsCancellationRequested
+            toExecutionResult outcome (diagnostics.ToArray()) (values.ToArray()) cancellation.IsCancellationRequested
         finally
             lock interruptLock (fun () -> currentCancellation <- null)
             cancellation.Dispose()
@@ -465,7 +489,7 @@ type FsiRpcTarget
                         directives.Add $"#I @\"{path}\""
 
             if directives.Count = 0 then
-                toExecutionResult (Choice1Of2 None) [||] false
+                toExecutionResult (Choice1Of2 None) [||] [||] false
             else
                 runInteraction (String.Join("\n", directives)) DefaultInteractionName)
 
