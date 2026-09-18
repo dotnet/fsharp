@@ -15,20 +15,21 @@ open FSharp.Compiler.Text
 [<Sealed>]
 type internal FocusedCaret() =
 
+    // A reference, not an option: the reactor reads it while the UI thread writes, and must never see a torn struct.
     [<VolatileField>]
-    let mutable position: Position voption = ValueNone
+    let mutable position: Position option = None
 
     let lineChanged = Event<unit>()
 
-    /// ValueNone while no editor on the buffer has focus.
+    /// None while no editor on the buffer has focus.
     member _.Position = position
 
     /// Raised on the UI thread when the caret moves to another line, or focus enters or leaves the buffer's editors.
     member _.LineChanged = lineChanged.Publish
 
-    member _.Update(newPosition: Position voption) =
+    member _.Update(newPosition: Position option) =
         let hasLineChanged =
-            (position |> ValueOption.map _.Line) <> (newPosition |> ValueOption.map _.Line)
+            (position |> Option.map _.Line) <> (newPosition |> Option.map _.Line)
 
         position <- newPosition
 
@@ -59,7 +60,7 @@ type internal FocusedCaretTracker() =
                 textView.TextBuffer.Properties.GetOrCreateSingletonProperty(fun () -> FocusedCaret())
 
             let publish _ =
-                focusedCaret.Update(ValueSome(caretOf textView))
+                focusedCaret.Update(Some(caretOf textView))
 
             let subscriptions =
                 [
@@ -67,7 +68,7 @@ type internal FocusedCaretTracker() =
                         if textView.HasAggregateFocus then
                             publish ())
                     textView.GotAggregateFocus.Subscribe publish
-                    textView.LostAggregateFocus.Subscribe(fun _ -> focusedCaret.Update ValueNone)
+                    textView.LostAggregateFocus.Subscribe(fun _ -> focusedCaret.Update None)
                 ]
 
             if textView.HasAggregateFocus then
