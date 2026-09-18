@@ -233,7 +233,7 @@ const observationCell = shape({
     environment: shape({ os, architecture, imageDigest: digest }),
     sdk: nullable(productIdentity), runtime: nullable(productIdentity),
     artifacts: shape({ compiler: nullable(artifact), tasks: nullable(artifact), targets: nullable(artifact), core: nullable(artifact) }),
-    producer: identity, attempts: list(attemptSchema, 1, 2), outcome: validateOutcome,
+    producer: identity, attempts: list(attemptSchema, 1, trustedPolicy.limits.assertionRepetitions), outcome: validateOutcome,
 });
 
 function validateObservation(observation, manifest, options = { finalConfirmation: null }) {
