@@ -111,13 +111,11 @@ extends:
               - checkout: self
                 clean: true
                 fetchDepth: 1
-              # Authenticate the devdiv dotnet-core-internal-tooling feed (main's read-only connection, confirmed
-              # authorized for 499 by build 3030418) so CIBuild Step 7 can restore the modern MicroBuild SwixBuild
-              # plugin for the .vsman drop. Harmless when BUILD_VSMAN is unset.
               - task: NuGetAuthenticate@1
-                displayName: 'Authenticate devdiv/dotnet-core-internal-tooling (SwixBuild plugin feed)'
+                displayName: Authenticate devdiv/dotnet-core-internal-tooling feed (WIF)
                 inputs:
-                  nuGetServiceConnections: 'devdiv/dotnet-core-internal-tooling'
+                  azureDevOpsServiceConnection: dnceng-devdiv-dotnet-core-internal-tooling-feed-rw-wif
+                  feedUrl: https://pkgs.dev.azure.com/devdiv/_packaging/dotnet-core-internal-tooling/nuget/v3/index.json
                   forceReinstallCredentialProvider: true
               - script: eng\CIBuild.cmd -configuration $(_BuildConfig)
                 displayName: 'Build (product) + tests + insertion VSIX + sign + lean .vsman'
