@@ -115,6 +115,16 @@ let ``keeps bindings across interactions`` () =
         Assert.True(session.WaitForOutput "val it: int = 42", describe session result))
 
 [<Fact>]
+let ``evaluates every interaction in a request`` () =
+    withInitializedSession (fun session ->
+        let result = session.Execute "let first = 11;; let second = 22;;"
+        Assert.True(succeeded result, describe session result)
+
+        let next = session.Execute "second"
+        Assert.True(succeeded next, describe session next)
+        Assert.True(session.WaitForOutput "val it: int = 22", describe session next))
+
+[<Fact>]
 let ``reports what the interaction printed`` () =
     withInitializedSession (fun session ->
         let result = session.Execute "printfn \"hello from the session\""
@@ -252,6 +262,29 @@ let ``loads a script file`` () =
                 File.Delete script
             with _ ->
                 ())
+
+[<Fact>]
+let ``loads a script file whose path contains quotes`` () =
+    if RuntimeInformation.IsOSPlatform OSPlatform.Windows then
+        ()
+    else
+        withInitializedSession (fun session ->
+            let directory =
+                Path.Combine(Path.GetTempPath(), $"fsiServerTest_{Guid.NewGuid():N}\"quoted")
+
+            Directory.CreateDirectory directory |> ignore
+            let script = Path.Combine(directory, "script.fsx")
+            File.WriteAllText(script, "printfn \"quoted path loaded\"\n")
+
+            try
+                let loaded = session.Request<ExecutionResult>(Methods.ExecuteFile, { path = script })
+                Assert.True(succeeded loaded, describe session loaded)
+                Assert.True(session.WaitForOutput "quoted path loaded", describe session loaded)
+            finally
+                try
+                    Directory.Delete(directory, true)
+                with _ ->
+                    ())
 
 [<Fact>]
 let ``setPaths changes the working directory`` () =

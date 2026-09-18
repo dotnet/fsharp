@@ -40,6 +40,7 @@ open System.Diagnostics
 open System.IO
 open System.IO.Pipes
 open System.Runtime.InteropServices
+open System.Text
 open System.Threading
 open System.Threading.Tasks
 
@@ -113,6 +114,84 @@ let private toExecutionResult (outcome: Choice<FsiValue option, exn>) (diagnosti
             | None -> Unchecked.defaultof<ExceptionInfo>
         workingDirectory = Directory.GetCurrentDirectory()
     }
+
+let private splitInteractions (code: string) =
+    let interactions = ResizeArray<string>()
+    let current = StringBuilder()
+    let mutable index = 0
+    let mutable inString = false
+    let mutable inChar = false
+    let mutable inLineComment = false
+    let mutable blockCommentDepth = 0
+
+    let addInteraction () =
+        let text = current.ToString().Trim()
+
+        if text.Length > 0 then
+            interactions.Add text
+
+        current.Clear() |> ignore
+
+    while index < code.Length do
+        let character = code[index]
+        let nextCharacter = if index + 1 < code.Length then code[index + 1] else '\000'
+
+        if inLineComment then
+            current.Append character |> ignore
+            inLineComment <- character <> '\n' && character <> '\r'
+        elif blockCommentDepth > 0 then
+            current.Append character |> ignore
+
+            if character = '(' && nextCharacter = '*' then
+                current.Append nextCharacter |> ignore
+                blockCommentDepth <- blockCommentDepth + 1
+                index <- index + 1
+            elif character = '*' && nextCharacter = ')' then
+                current.Append nextCharacter |> ignore
+                blockCommentDepth <- blockCommentDepth - 1
+                index <- index + 1
+        elif inString then
+            current.Append character |> ignore
+
+            if character = '\\' && index + 1 < code.Length then
+                current.Append code[index + 1] |> ignore
+                index <- index + 1
+            elif character = '"' then
+                inString <- false
+        elif inChar then
+            current.Append character |> ignore
+
+            if character = '\\' && index + 1 < code.Length then
+                current.Append code[index + 1] |> ignore
+                index <- index + 1
+            elif character = '\'' then
+                inChar <- false
+        elif character = '/' && nextCharacter = '/' then
+            current.Append character |> ignore
+            current.Append nextCharacter |> ignore
+            inLineComment <- true
+            index <- index + 1
+        elif character = '(' && nextCharacter = '*' then
+            current.Append character |> ignore
+            current.Append nextCharacter |> ignore
+            blockCommentDepth <- 1
+            index <- index + 1
+        elif character = '"' then
+            current.Append character |> ignore
+            inString <- true
+        elif character = '\'' then
+            current.Append character |> ignore
+            inChar <- true
+        elif character = ';' && nextCharacter = ';' then
+            addInteraction ()
+            index <- index + 1
+        else
+            current.Append character |> ignore
+
+        index <- index + 1
+
+    addInteraction ()
+    interactions.ToArray()
 
 //-------------------------------------------------------------------------
 // The server
@@ -224,11 +303,37 @@ type FsiRpcTarget
         lock interruptLock (fun () -> currentCancellation <- cancellation)
 
         try
-            let outcome, diagnostics =
-                evaluateOnEventLoop (fun () -> fsiSession.EvalInteractionNonThrowing(code, scriptPath, cancellation.Token))
+            let outcomes = ResizeArray<Choice<FsiValue option, exn>>()
+            let diagnostics = ResizeArray<FSharpDiagnostic>()
+            let mutable stop = false
+
+            for interaction in splitInteractions code do
+                if not stop then
+                    let outcome, interactionDiagnostics =
+                        evaluateOnEventLoop (fun () -> fsiSession.EvalInteractionNonThrowing(interaction, scriptPath, cancellation.Token))
+
+                    outcomes.Add outcome
+                    diagnostics.AddRange interactionDiagnostics
+
+                    stop <-
+                        match outcome with
+                        | Choice2Of2 _ -> true
+                        | Choice1Of2 _ ->
+                            interactionDiagnostics
+                            |> Array.exists (fun diagnostic -> diagnostic.Severity = FSharpDiagnosticSeverity.Error)
+
+            let outcome =
+                match
+                    outcomes
+                    |> Seq.tryFindBack (function
+                        | Choice2Of2 _ -> true
+                        | Choice1Of2 _ -> false)
+                with
+                | Some outcome -> outcome
+                | None -> Choice1Of2 None
 
             flushConsole ()
-            toExecutionResult outcome diagnostics cancellation.IsCancellationRequested
+            toExecutionResult outcome (diagnostics.ToArray()) cancellation.IsCancellationRequested
         finally
             lock interruptLock (fun () -> currentCancellation <- null)
             cancellation.Dispose()
@@ -323,7 +428,8 @@ type FsiRpcTarget
 
         // Routed through #load so that the file joins the session the same way it would from a
         // script, rather than being replayed as anonymous text.
-        queueInteraction (fun () -> runInteraction $"#load @\"{request.path}\"" request.path)
+        let path = request.path.Replace("\"", "\"\"")
+        queueInteraction (fun () -> runInteraction $"#load @\"{path}\"" request.path)
 
     /// Apply the host's notion of where to look for sources and references, expressed as the
     /// directives a script would use.
