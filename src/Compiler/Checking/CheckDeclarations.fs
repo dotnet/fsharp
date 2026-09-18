@@ -6429,6 +6429,14 @@ let CheckOneSigFile (g, amap, thisCcu, checkForErrors, conditionalDefines, tcSin
                 FinalTypeDefinitionChecksAtEndOfInferenceScope(cenv.infoReader, tcEnv.NameEnv, cenv.tcSink, false, tcEnv.DisplayEnv, tycon))
         with RecoverableException exn -> errorRecovery exn sigFile.QualifiedName.Range
 
+    // Run any additional checks registered to be run at the end of inference
+    conditionallySuppressErrorReporting (checkForErrors()) (fun () ->
+        for check in cenv.css.GetPostInferenceChecksFinal() do
+            try
+                check()
+            with RecoverableException exn ->
+                errorRecovery exn m)
+
     UpdatePrettyTyparNames.updateModuleOrNamespaceType sigFileType
 
     return (tcEnv, sigFileType, cenv.createsGeneratedProvidedTypes)
