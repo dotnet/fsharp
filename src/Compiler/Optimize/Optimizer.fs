@@ -2846,7 +2846,11 @@ and OptimizeMethods cenv env baseValOpt methods =
     OptimizeList (OptimizeMethod cenv env baseValOpt) methods
 
 and OptimizeMethod cenv env baseValOpt (TObjExprMethod(slotsig, attribs, tps, vs, e, m) as tmethod) =
-    let env = {env with latestBoundId=Some tmethod.Id; functionVal = None}
+    let env =
+        { env with
+            latestBoundId = Some tmethod.Id
+            functionVal = None
+            runtimeAsyncContext = false }
     let env = BindTyparsToUnknown tps env
     let env = BindInternalValsToUnknown cenv vs env
     let env = Option.foldBack (BindInternalValToUnknown cenv) baseValOpt env

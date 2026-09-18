@@ -6445,6 +6445,12 @@ and GenObjectExprMethod cenv eenvinner (cgbuf: CodeGenBuffer) useMethodImpl tmet
                  Return)
 
         let ilMethodBody =
+            let eenvForMeth =
+                { eenvForMeth with
+                    inRuntimeAsyncMethod = false
+                    inInlineMethod = false
+                }
+
             CodeGenMethodForExpr cenv cgbuf.mgbuf ([], nameOfOverridenMethod, eenvForMeth, 0, selfArgOpt, methBodyExpr, sequel)
 
         let nameOfOverridingMethod, methodImplGenerator =

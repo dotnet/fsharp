@@ -870,6 +870,36 @@ let make (gate: Task<int>) =
 [<InlineData(false)>]
 [<InlineData(true)>]
 [<Theory>]
+let ``runtime async marker inside an object member remains supported`` (optimize: bool) =
+    FSharp """
+module RuntimeAsyncMarkedObjectMemberTest
+
+open System.Threading.Tasks
+open System.Runtime.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices
+
+type IInt =
+    abstract Get : unit -> Task<int>
+
+let make (gate: Task<int>) =
+    { new IInt with
+        member _.Get() =
+            StateMachineHelpers.__runtimeAsyncReturn (AsyncHelpers.Await gate) }
+
+[<EntryPoint>]
+let main _ =
+    let value = (make (Task.FromResult 41)).Get().GetAwaiter().GetResult()
+    if value = 41 then 0 else 1
+"""
+    |> withLangVersionPreview
+    |> withFSharpCoreShippedNet
+    |> withOptimization optimize
+    |> compileExeAndRun
+    |> shouldSucceed
+
+[<InlineData(false)>]
+[<InlineData(true)>]
+[<Theory>]
 let ``runtime async evaluates conditional callback construction once`` (optimize: bool) =
     FSharp """
 module RuntimeAsyncConditionalCallbackConstructionTest
