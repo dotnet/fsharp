@@ -362,6 +362,29 @@ test("required linked reads and linked-target safety limits fail closed", async 
     blocked(await snapshot(f, { limits: { linkedTargets: 1 } }), /limit/i);
 });
 
+for (const [name, source] of [
+    ["missing source", undefined],
+    ["null source", null],
+    ["missing source issue", { type: "issue" }],
+    ["null source issue", { type: "issue", issue: null }],
+    ["missing target URL", { type: "issue", issue: { number: 321 } }],
+    ["invalid target URL", { type: "issue", issue: { html_url: "https://example.com/pull/321" } }],
+]) {
+    test(`unresolved cross-reference blocks the inventory and freeze: ${name}`, async () => {
+        const f = fixture({ timelinePages: [
+            [{ id: 1, event: "labeled" }],
+            [{ id: 2, event: "cross-referenced", ...(source === undefined ? {} : { source }) }],
+        ] });
+        blocked(await snapshot(f), /required linked timeline target/i);
+        const inventory = await intake().findActiveInvestigations({
+            ...f.options, issue: f.data.issue, comments: [], timeline: f.data.timelinePages[1],
+        });
+        blocked(inventory, /required linked timeline target/i);
+        assert.equal(inventory.links, undefined);
+        assert.equal(inventory.active, undefined);
+    });
+}
+
 test("timeline event and comment identifiers occupy separate namespaces", async () => {
     const f = fixture({ comments: [comment(5)], timeline: [
         { ...comment(5), event: "commented" },
@@ -383,20 +406,39 @@ test("linked PRs require complete current merged status", async () => {
     blocked(await snapshot(f), /linked.*merged/i);
 });
 
-test("lost cursor traversal also reaches dense-page overflow candidates", async () => {
-    const f = fixture({ list: Array.from({ length: 205 }, (_, i) => issue(i + 1)) });
-    const seen = new Set();
-    for (let scheduleOrdinal = 0; scheduleOrdinal < 750; scheduleOrdinal++) {
-        const start = f.calls.length;
-        const found = await intake().discoverEligibleIssues({ ...f.options, issueNumber: undefined, scheduleOrdinal });
-        assert.equal(found.status, "complete");
-        assert.ok(found.issues.length <= 3);
-        assert.ok(f.calls.length - start <= 2);
-        found.issues.forEach(value => seen.add(value.number));
+for (const [stride, startOrdinal, sweeps] of [[1, 0, 18000], [60, 2, 6000]]) {
+    test(`lost cursor traversal reaches every dense-page candidate with schedule stride ${stride}`, async () => {
+        const f = fixture({ list: Array.from({ length: 205 }, (_, i) => issue(i + 1)) });
+        const seen = new Set();
+        for (let sweep = 0; sweep < sweeps && seen.size < f.data.list.length; sweep++) {
+            const start = f.calls.length;
+            const found = await intake().discoverEligibleIssues({
+                ...f.options, issueNumber: undefined, scheduleOrdinal: startOrdinal + stride * sweep,
+                cursor: sweep % 2 ? { version: 1, page: -1, offset: 0 } : undefined,
+            });
+            assert.equal(found.status, "complete");
+            assert.ok(found.issues.length <= 3);
+            assert.ok(f.calls.length - start <= 2);
+            found.issues.forEach(value => seen.add(value.number));
+        }
+        assert.ok(seen.has(1), "lost cursors must revisit issues created exactly at the cutoff");
+        assert.ok(seen.has(4), "lost cursors must not starve the fourth eligible issue");
+        assert.ok(seen.has(101), "lost cursors must not starve the second page");
+        assert.equal(seen.size, 205);
+    });
+}
+
+test("lost cursor round boundaries remain exact for large safe schedule ordinals", async () => {
+    for (const round of [1n, 34n, 300000n]) {
+        const boundary = Number(round * (round + 1n) * (2n * round + 1n) / 6n);
+        for (const [scheduleOrdinal, expectedPage] of [[boundary - 1, Number(round)], [boundary, 1]]) {
+            const f = fixture();
+            const result = await intake().discoverEligibleIssues({ ...f.options, issueNumber: undefined, scheduleOrdinal });
+            assert.equal(result.status, "complete");
+            assert.equal(f.calls[0].args.page, expectedPage);
+            assert.deepEqual(result.nextCursor, { version: 1, page: 1, offset: 0 });
+        }
     }
-    assert.ok(seen.has(4), "lost cursors must not starve the fourth eligible issue");
-    assert.ok(seen.has(101), "lost cursors must not starve the second page");
-    assert.equal(seen.size, 205);
 });
 
 test("trusted checkpoint ownership checks the live run, never a forged marker", async () => {
@@ -499,7 +541,7 @@ test("discovery rotates over sparse pages and a lost cursor uses the independent
     assert.ok(seen.has(401), "losing the cursor each run must not starve later pages");
     f.data.list[0].labels = ["Regression"];
     let recovered = false;
-    for (let sweep = 120; sweep < 750; sweep++) {
+    for (let sweep = 120; sweep < 15000 && !recovered; sweep++) {
         const result = await intake().discoverEligibleIssues({ ...f.options, issueNumber: undefined, scheduleOrdinal: sweep });
         recovered ||= result.issues.some(item => item.number === 1);
     }

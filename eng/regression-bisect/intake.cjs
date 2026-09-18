@@ -215,8 +215,8 @@ async function findActiveInvestigations(options) {
             requireValue(targets.size <= limits.linkedTargets, "linked target limit exceeded");
         };
         for (const event of options.timeline) {
-            if (event.event === "cross-referenced" && event.source?.issue) {
-                const link = issueLink(event.source.issue.html_url);
+            if (event.event === "cross-referenced") {
+                const link = issueLink(event.source?.issue?.html_url);
                 requireValue(link, "required linked timeline target is unreadable");
                 add(link, "timeline-cross-reference");
             }
@@ -303,11 +303,18 @@ async function findActiveInvestigations(options) {
 
 function restartCursor(ordinal) {
     requireValue(Number.isSafeInteger(ordinal) && ordinal >= 0, "scheduleOrdinal must be a nonnegative safe integer");
-    // Triangular rounds revisit pages 1; 1,2; 1,2,3; ... . Each round rotates
-    // the three-item starting slot, so repeated cursor loss starves neither a
-    // later page nor the remaining eligible candidates on a densely eligible page.
-    const round = Math.floor((Math.sqrt(8 * ordinal + 1) - 1) / 2);
-    return { version: 1, page: ordinal - round * (round + 1) / 2 + 1, offset: (round % 34) * 3 };
+    // Round r visits pages 1..r+1, holding each for r+1 schedule slots.
+    // Growing dwell times prevent bounded gaps between ordinals from aliasing
+    // the page/offset rotation. Integer boundaries avoid large-ordinal rounding.
+    const slot = BigInt(ordinal);
+    const start = r => r * (r + 1n) * (2n * r + 1n) / 6n;
+    let round = BigInt(Math.floor(Math.cbrt(3 * ordinal)));
+    while (start(round) > slot) round--;
+    while (start(round + 1n) <= slot) round++;
+    return {
+        version: 1, page: Number((slot - start(round)) / (round + 1n)) + 1,
+        offset: Number(round % 34n) * 3,
+    };
 }
 
 /**
@@ -317,8 +324,9 @@ function restartCursor(ordinal) {
  * its page/offset resumes before any overflow candidate, then wraps after the end.
  * The cursor is discovery optimization, never issue state or deduplication.
  * Missing/corrupt cursor restarts using scheduleOrdinal, a monotonic independent
- * schedule slot (not a counter stored with the cursor). Ordinal defaults to zero
- * for a one-off restart; scheduled callers MUST supply it to guarantee recovery.
+ * schedule slot with bounded gaps (not a counter stored with the cursor).
+ * Expanding page dwell times tolerate nonconsecutive slots. Ordinal defaults to
+ * zero for a one-off restart; scheduled callers MUST supply it for recovery.
  * A shortened page restarts its offset; failures return no candidates and do not
  * advance the supplied cursor. Candidate eligibility must be rechecked at intake.
  */

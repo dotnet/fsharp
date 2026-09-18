@@ -215,8 +215,10 @@ activity, and trusted checkpoints. Suppression requires an open/unmerged target
 active within 14 days and a timeline cross-reference or verified backlink; an
 arbitrary "already investigating" comment is not a permanent veto.
 The controller must inspect `snapshot.investigations.active` before dispatch.
-The result records links, status, and the basis for suppression; unreadable
-required targets block intake rather than silently disappearing.
+The result records links, status, and the basis for suppression. Every timeline
+cross-reference must identify a resolvable issue/PR target; missing/redacted
+source identities and unreadable required targets block intake rather than
+silently disappearing.
 
 To supply trusted checkpoints, adapt `loadCheckpoint()` into
 `readTrustedCheckpoints` records
@@ -249,9 +251,16 @@ eligible creation dates so later bot labeling, including issues created exactly
 at the cutoff, is eventually discovered.
 
 Supply a monotonic schedule ordinal independently of the cursor cache (for
-example, the scheduled UTC slot number from a fixed epoch). Lost or corrupt
-cursors use expanding triangular page rounds and rotating three-item offsets;
-repeated cache loss must not always return page one's first three issues.
+example, the scheduled UTC slot number from a fixed epoch). Scheduled calls must
+continue with bounded gaps between ordinals; consecutive slots are not required.
+Lost or corrupt cursors use expanding rounds: round `r` visits pages `1..r+1`,
+holding each page for `r+1` ordinal slots, at offset `3 * (r % 34)`. Round `r`
+starts at `r * (r+1) * (2*r+1) / 6`. Once the dwell time exceeds the schedule gap,
+every page/offset in subsequent rounds is visited, including all three-item
+slots on dense pages. This prevents fixed cadences such as `2 + 60 * sweep`
+from aliasing the rotation and permanently skipping eligible issues.
+Fallback recovery deliberately repeats candidates and is slower than retaining
+the cursor; sustained unbounded scheduling outages cannot guarantee progress.
 The cursor is only a discovery optimization. Its loss never initializes a new
 allowance, removes a checkpoint, or changes consumed budgets. Event/manual
 paths and discovery candidates still enter the same serialized issue
