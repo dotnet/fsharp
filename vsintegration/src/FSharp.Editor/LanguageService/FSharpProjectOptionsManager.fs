@@ -275,8 +275,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
                     match value with
                     | projectId, fileStamp, parsingOptions, projectOptions, _ ->
                         let subscription =
-                            focusedCaret
-                            |> Option.map _.LineChanged.Subscribe(updateProjectOptions)
+                            focusedCaret |> Option.map _.LineChanged.Subscribe(updateProjectOptions)
 
                         (projectId, fileStamp, parsingOptions, projectOptions, subscription)
 
