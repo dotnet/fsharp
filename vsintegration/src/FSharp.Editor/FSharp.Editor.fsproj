@@ -72,6 +72,7 @@
     <Compile Include="Formatting\EditorFormattingService.fs" />
     <Compile Include="Debugging\BreakpointResolutionService.fs" />
     <Compile Include="Debugging\LanguageDebugInfoService.fs" />
+    <Compile Include="Diagnostics\ActiveDocumentDetection.fs" />
     <Compile Include="Diagnostics\UnnecessaryParenthesesDiagnosticAnalyzer.fs" />
     <Compile Include="Diagnostics\DocumentDiagnosticAnalyzer.fs" />
     <Compile Include="Diagnostics\SimplifyNameDiagnosticAnalyzer.fs" />

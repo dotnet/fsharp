@@ -22,7 +22,9 @@ type private PerDocumentSavedData =
     }
 
 [<Export(typeof<IFSharpSimplifyNameDiagnosticAnalyzer>)>]
-type internal SimplifyNameDiagnosticAnalyzer [<ImportingConstructor>] () =
+type internal SimplifyNameDiagnosticAnalyzer
+    [<ImportingConstructor>]
+    ([<Import("Microsoft.VisualStudio.Shell.SVsServiceProvider")>] serviceProvider: IServiceProvider) =
 
     static let userOpName = "SimplifyNameDiagnosticAnalyzer"
     static let cache = new MemoryCache("FSharp.Editor." + userOpName)
@@ -37,6 +39,7 @@ type internal SimplifyNameDiagnosticAnalyzer [<ImportingConstructor>] () =
 
             asyncMaybe {
                 do! Option.guard document.Project.IsFSharpCodeFixesSimplifyNameEnabled
+                do! Option.guard (ActiveDocumentDetection.isActiveDocument serviceProvider document)
                 do Trace.TraceInformation("{0:n3} (start) SimplifyName", DateTime.Now.TimeOfDay.TotalSeconds)
                 let! textVersion = document.GetTextVersionAsync(cancellationToken)
                 let textVersionHash = textVersion.GetHashCode()
