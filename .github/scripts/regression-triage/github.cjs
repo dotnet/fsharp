@@ -68,19 +68,45 @@ async function readMemory(github, repo) {
 }
 
 async function readPages(method, args, bound, stage, errors) {
-  const items = [];
-  for (let page = 1; page <= bound; page++) {
+  let items = [];
+  let previous;
+  let unstable = false;
+  let page = 1;
+  const context = { stage, number: args.issue_number ?? args.pull_number, retryable: true };
+  // Two matching ordered enumerations detect shifts and edits, not atomicity.
+  // Every request, including consistency rereads, consumes the same page budget.
+  for (let calls = 0; calls < bound; calls++) {
     try {
       const response = await method({ ...args, page, per_page: 100 });
-      if (!Array.isArray(response.data)) throw new Error(`Invalid ${stage} response`);
+      if (!Array.isArray(response.data) || !response.data.every((item) => item && typeof item === "object"
+        && (stage !== "timeline" || typeof item.event === "string")
+        && (stage === "timeline" && !["labeled", "unlabeled", "closed", "reopened"].includes(item.event)
+          || Number.isSafeInteger(item.id) && item.id > 0)
+        && (item.body == null || typeof item.body === "string"))) throw new Error(`Invalid ${stage} response`);
       items.push(...response.data);
-      if (nextPage(response, page) === null) return items;
+      const next = nextPage(response, page);
+      if (next !== null) {
+        page = next;
+        continue;
+      }
+      const ids = items.filter((item) => item.id != null)
+        .map((item) => stage === "timeline" ? `${item.event}:${item.id}` : item.id);
+      if (new Set(ids).size !== ids.length) throw new Error(`Duplicate ${stage} identities`);
+      const stamp = JSON.stringify(items.map((item) => [
+        item.id, item.user?.id, item.user?.login, item.user?.type, item.actor?.id, item.actor?.login, item.actor?.type,
+        item.event, item.label?.name, item.body, item.created_at, item.updated_at, item.submitted_at, item.html_url, item.url,
+      ]));
+      if (stamp === previous) return items;
+      unstable ||= previous !== undefined;
+      previous = stamp;
+      if (calls + 1 < bound) items = [];
+      page = 1;
     } catch (error) {
-      errors.push(apiError(error, { stage, number: args.issue_number ?? args.pull_number, page }));
+      errors.push(apiError(error, { ...context, page }));
       return items;
     }
   }
-  errors.push({ stage, number: args.issue_number ?? args.pull_number, code: `${stage}-page-bound`, bound });
+  errors.push({ ...context, code: `${stage}-${unstable ? "unstable" : "page-bound"}`, bound });
   return items;
 }
 
@@ -101,13 +127,18 @@ function discussion(items, prefix, kind) {
 async function readText(github, repo, number, limits, includeReviews = false) {
   const { data: issue } = await github.rest.issues.get({ ...repo, issue_number: number });
   if (issue.number !== number || !Array.isArray(issue.labels)
-    || !["open", "closed"].includes(issue.state) || typeof issue.title !== "string") {
+    || !issue.labels.every((label) => typeof label === "string" || typeof label?.name === "string")
+    || !["open", "closed"].includes(issue.state) || typeof issue.title !== "string"
+    || (issue.body != null && typeof issue.body !== "string")
+    || typeof issue.updated_at !== "string" || !Number.isFinite(Date.parse(issue.updated_at))
+    || (issue.comments !== undefined && (!Number.isSafeInteger(issue.comments) || issue.comments < 0))) {
     throw new Error("Invalid current issue response");
   }
   const prefix = `${repo.owner.toLowerCase()}/${repo.repo.toLowerCase()}#${number}`;
   const errors = [];
   const comments = discussion(await readPages(github.rest.issues.listComments,
     { ...repo, issue_number: number }, limits.commentPages, "comment", errors), prefix, "comment");
+  const commentCount = comments.length;
   const timeline = await readPages(github.rest.issues.listEventsForTimeline,
     { ...repo, issue_number: number }, limits.timelinePages, "timeline", errors);
   const isPullRequest = Object.hasOwn(issue, "pull_request");
@@ -118,6 +149,18 @@ async function readText(github, repo, number, limits, includeReviews = false) {
       comments.push(...discussion(await readPages(method, { ...repo, pull_number: number },
         limits.reviewPages, kind, errors), prefix, kind));
     }
+  }
+  const { data: current } = await github.rest.issues.get({ ...repo, issue_number: number });
+  const metadata = (value) => JSON.stringify([
+    value.number, value.title, value.body, value.state, value.user?.id, value.html_url,
+    Object.hasOwn(value, "pull_request"), value.comments, value.updated_at,
+    value.labels?.map((label) => typeof label === "string" ? label : label.name).sort(),
+  ]);
+  if (metadata(issue) !== metadata(current)) {
+    errors.push({ stage: "issue", number, code: "issue-changed", retryable: true });
+  }
+  if (current.comments !== undefined && current.comments !== commentCount) {
+    errors.push({ stage: "comment", number, code: "comment-count-mismatch", retryable: true });
   }
   const humanDecisions = new Map();
   for (const item of timeline) {
@@ -158,12 +201,12 @@ function references(snapshot, repo) {
   };
   for (const text of [snapshot.title, snapshot.body, ...snapshot.humanComments.map((item) => item.body)]) {
     // Consume all URLs so fragments in arbitrary URLs cannot become local #refs.
-    const withoutUrls = text.replace(/https?:\/\/[^\s<>"`]+/gi, (raw) => {
+    const withoutUrls = text.replace(/(?:[a-z][a-z\d+.-]*:)?\/\/[^\s<>"`]+/gi, (raw) => {
       const match = raw.match(/^https:\/\/github\.com\/([a-z\d-]+)\/([a-z\d_.-]+)\/(?:issues|pull)\/([1-9]\d*)(?=$|[/?#).,;!])/i);
       if (match && ![".", ".."].includes(match[2])) add(match[1], match[2], match[3]);
       return "";
     });
-    for (const match of withoutUrls.matchAll(/(?:^|[\s(])#([1-9]\d*)\b/g)) add(repo.owner, repo.repo, match[1]);
+    for (const match of withoutUrls.matchAll(/(?:^|[\s([*`~])#([1-9]\d*)\b/g)) add(repo.owner, repo.repo, match[1]);
   }
   return [...found.entries()].sort(([a], [b]) => compareText(a, b)).map(([, value]) => value);
 }
@@ -174,6 +217,9 @@ function references(snapshot, repo) {
  * linked,complete,errors}. Every text source has an API identity and exact text.
  * linked has the same shape with no further traversal (including PR discussion).
  * Bot receipts are available for publication deduplication, never human hashes.
+ * Page limits count actual calls across stability passes per endpoint/item.
+ * Each item also costs two issue metadata reads; unresolved changes are retryable
+ * and incomplete. REST cannot promise an atomic snapshot across these endpoints.
  */
 async function readIssueSnapshot(github, { repo, number, limits: overrides }) {
   if (!Number.isSafeInteger(number) || number < 1) throw new Error("Invalid issue number");
@@ -239,8 +285,10 @@ async function scanPath(github, repo, kind, prior, updatedThrough, now, budget) 
 /**
  * Read-only manifest: selected [{number,snapshot,fingerprint,priorRecord}],
  * incomplete [{number,snapshot?}], errors, scan {incremental,sweep}, and
- * stateDelta {scan,pending}. Pending is deduplicated, retains selected work, and
- * records firstSeenAt/lastAttemptAt for fairness. A publisher must atomically
+ * stateDelta {scan,pending,issues}. Issues retains all prior records plus trusted
+ * readAttempt stamps, including unsuccessful attempts. Pending is deduplicated
+ * and retains selected work. A publisher must preserve stamps when merging
+ * completed records so queue removal/requeue cannot reset read age, and atomically
  * commit this WHOLE delta with results/intents, removing only handled work.
  * Never persist scan alone. No ledger or caller objects are mutated here.
  */
@@ -273,28 +321,38 @@ async function collectCandidates(github, { repo, event, memory, now, limits: ove
   const hint = eventNumber(event);
   if (hint !== null) enqueue(hint, !isFinishedRecord(memory.issues[hint], memory.policyVersion));
   const queue = [...pending.values()];
-  const oldest = (a, b) => compareText(a.lastAttemptAt ?? "", b.lastAttemptAt ?? "")
+  const lastAttempt = (entry) => memory.issues[entry.number]?.readAttempt?.at ?? entry.lastAttemptAt ?? "";
+  const oldest = (a, b) => compareText(lastAttempt(a), lastAttempt(b))
     || compareText(a.firstSeenAt, b.firstSeenAt) || a.number - b.number;
+  const previouslyPending = new Set(memory.pending.map((entry) => entry.number));
+  const outstanding = (entry) => !isFinishedRecord(memory.issues[entry.number], memory.policyVersion)
+    || previouslyPending.has(entry.number)
+    || entry.updatedAt !== memory.issues[entry.number]?.readAttempt?.updatedAt;
   const historical = queue.filter((entry) => entry.historical).sort(oldest)[0];
   queue.sort((a, b) => Number(b === historical) - Number(a === historical)
     || Number(b.number === hint) - Number(a.number === hint)
+    || Number(outstanding(b)) - Number(outstanding(a))
     || compareText(b.updatedAt ?? "", a.updatedAt ?? "") || oldest(a, b));
+  const issues = { ...memory.issues };
   const discovered = [];
   const incomplete = [];
   const errors = [...incremental.errors, ...sweep.errors];
   for (const entry of queue.slice(0, limits.snapshotReads)) {
     pending.set(entry.number, { ...entry, lastAttemptAt: now });
+    const prior = memory.issues[entry.number];
+    issues[entry.number] = { ...prior, readAttempt: { ...prior?.readAttempt, at: now } };
     try {
       const snapshot = await readIssueSnapshot(github, { repo, number: entry.number, limits });
-      if (!isEligibleIssue(snapshot)) {
-        pending.delete(entry.number);
-      } else if (!snapshot.complete) {
+      if (snapshot.complete) issues[entry.number].readAttempt.updatedAt = snapshot.updatedAt;
+      if (!snapshot.complete) {
         incomplete.push({ number: entry.number, snapshot });
         errors.push(...snapshot.errors);
+      } else if (!isEligibleIssue(snapshot)) {
+        pending.delete(entry.number);
       } else if (!needsAnalysis(memory.issues[entry.number], snapshot, memory.policyVersion)) {
         pending.delete(entry.number);
       } else {
-        discovered.push({ ...entry, snapshot });
+        discovered.push({ ...entry, lastAttemptAt: lastAttempt(entry), snapshot });
       }
     } catch (error) {
       incomplete.push({ number: entry.number });
@@ -317,6 +375,7 @@ async function collectCandidates(github, { repo, event, memory, now, limits: ove
         incremental: incremental.cursor, sweep: sweep.cursor,
       },
       pending: [...pending.values()],
+      issues,
     },
   };
 }

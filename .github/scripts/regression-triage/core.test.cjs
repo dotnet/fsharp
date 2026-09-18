@@ -5,7 +5,7 @@
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
 const {
-  POLICY_VERSION, eventNumber, isEligibleIssue, normalizeMemory, fingerprintHumanInput,
+  POLICY_VERSION, LIMITS, eventNumber, isEligibleIssue, normalizeMemory, fingerprintHumanInput,
   needsAnalysis, selectCandidates,
 } = require("./core.cjs");
 const { readMemory, collectCandidates, readIssueSnapshot } = require("./github.cjs");
@@ -13,7 +13,7 @@ const { readMemory, collectCandidates, readIssueSnapshot } = require("./github.c
 const repo = { owner: "dotnet", repo: "fsharp" };
 const now = "2026-09-18T18:00:00.000Z";
 const before = "2026-09-01T00:00:00.000Z";
-const limits = { issuePages: 4, commentPages: 2, timelinePages: 2, linkedItems: 2, reviewPages: 2, snapshotReads: 10 };
+const limits = { issuePages: 4, commentPages: 4, timelinePages: 4, linkedItems: 2, reviewPages: 4, snapshotReads: 10 };
 const clone = (value) => structuredClone(value);
 const failure = (status) => Object.assign(new Error(`HTTP ${status}`), { status });
 
@@ -98,6 +98,268 @@ const completed = (snapshot, fields = {}) => ({
 const collect = (api, memory = emptyMemory(), fields = {}) =>
   collectCandidates(api.github, { repo, memory, now, limits, ...fields });
 
+async function publishRun(api, memory, fields = {}) {
+  const result = await collect(api, memory, fields);
+  memory = { ...memory, ...result.stateDelta };
+  for (const item of result.selected) {
+    memory.issues[item.number] = { ...memory.issues[item.number], ...completed(item.snapshot) };
+  }
+  const handled = new Set(result.selected.map((item) => item.number));
+  memory.pending = memory.pending.filter((entry) => !handled.has(entry.number));
+  return { result, memory: normalizeMemory(JSON.stringify(memory)) };
+}
+
+test("default budgets: eleven stable reports finish in three runs without duplicates after restart", async () => {
+  const api = fake({ issues: Array.from({ length: 11 }, (_, i) => report(i + 1)), pageSize: 100 });
+  let memory = emptyMemory();
+  const seen = [];
+  for (let run = 0; run < 6; run++) {
+    api.calls.length = 0;
+    const published = await publishRun(api, memory, {
+      limits: undefined, now: new Date(Date.parse(now) + run * 60000).toISOString(),
+    });
+    memory = published.memory;
+    assert.deepEqual(published.result.errors, []);
+    seen.push(...published.result.selected.map((item) => item.number));
+    if (run >= 2) assert.deepEqual([...seen].sort((a, b) => a - b), api.issues.map((item) => item.number));
+    if (run >= 3) assert.deepEqual(published.result.selected, []);
+    assert.ok(api.calls.filter((call) => call.name === "list").length <= LIMITS.issuePages);
+    assert.ok(api.calls.filter((call) => call.name === "get").length <= 2 * LIMITS.snapshotReads);
+    for (const [name, bound] of [["comments", LIMITS.commentPages], ["timeline", LIMITS.timelinePages]]) {
+      assert.ok(api.calls.filter((call) => call.name === name).length <= LIMITS.snapshotReads * bound);
+    }
+  }
+});
+
+for (const scenario of ["finite arrivals", "temporarily unreadable", "completed linked rechecks"]) {
+  test(`default budgets: ${scenario} drain across publication, requeue and restart`, async () => {
+    const api = fake({ pageSize: 100, issues: [
+      ...Array.from({ length: 11 }, (_, i) => report(i + 1, { body: i === 9 ? "#99" : "Compiler A worked." })),
+      report(99, { labels: [] }),
+    ] });
+    const original = api.github.rest.issues.get;
+    let memory = emptyMemory();
+    const seen = [];
+    for (let run = 0; run < 12; run++) {
+      if (scenario === "finite arrivals" && run < 6) api.issues.push(report(100 + run, { updated_at: now }));
+      if (scenario === "completed linked rechecks" && run === 5) api.issues.find((item) => item.number === 99).body += " Correction.";
+      api.github.rest.issues.get = async (args) => {
+        if (scenario === "temporarily unreadable" && run < 4 && args.issue_number === 1) throw failure(403);
+        return original(args);
+      };
+      api.calls.length = 0;
+      const published = await publishRun(api, memory, {
+        limits: undefined, now: new Date(Date.parse(now) + run * 60000).toISOString(),
+        event: scenario === "finite arrivals" && run < 6 ? { issue: { number: 100 + run } } : undefined,
+      });
+      memory = published.memory;
+      seen.push(...published.result.selected.map((item) => item.number));
+      if (scenario === "temporarily unreadable" && run === 3) {
+        assert.deepEqual([...seen].sort((a, b) => a - b), Array.from({ length: 10 }, (_, i) => i + 2));
+        assert.ok(memory.pending.some((entry) => entry.number === 1));
+      }
+      if (run === 10) {
+        assert.ok(memory.pending.every((entry) => memory.issues[entry.number].lastResult?.status === "published"));
+        for (const item of api.issues.filter(isEligibleIssue)) assert.ok(memory.issues[item.number].readAttempt.at);
+      }
+      if (run === 11) assert.deepEqual(published.result.selected, []);
+      const parents = api.calls.filter((call) => call.name === "get" && call.issue_number !== 99);
+      assert.ok(parents.length <= 2 * LIMITS.snapshotReads);
+    }
+    const expected = api.issues.filter(isEligibleIssue).map((item) => item.number);
+    if (scenario === "completed linked rechecks") expected.push(10);
+    assert.deepEqual(seen.sort((a, b) => a - b), expected.sort((a, b) => a - b));
+  });
+}
+
+for (const form of [
+  "#2", "**#2**", "[#2]", "(#2)", "`#2`", "#2, #2; #2!",
+  "[history](https://github.com/dotnet/fsharp/issues/2)",
+  "[#2](https://github.com/dotnet/fsharp/pull/2)", "https://github.com/dotnet/fsharp/issues/2.",
+]) {
+  test(`references: linked-only correction is reanalyzed for ${form}`, async () => {
+    const api = fake({ pageSize: 100, issues: [report(1, { body: form }), report(2, { labels: [] })],
+      comments: { 2: [comment(1)] } });
+    const first = await publishRun(api, emptyMemory(), { limits: undefined });
+    const snapshot = first.result.selected[0].snapshot;
+    assert.equal(snapshot.body, form);
+    assert.deepEqual(snapshot.linked.map((item) => item.number), [2]);
+    assert.equal(needsAnalysis(first.memory.issues[1], snapshot), false);
+    api.comments[2][0].body = "Correction: compiler A never worked.";
+    const changed = await readIssueSnapshot(api.github, { repo, number: 1 });
+    assert.equal(needsAnalysis(first.memory.issues[1], changed), true);
+    const second = await publishRun(api, first.memory, { limits: undefined });
+    assert.deepEqual(second.result.selected.map((item) => item.number), [1]);
+    assert.equal(api.issues[0].updated_at, before);
+  });
+}
+
+test("references: arbitrary URL fragments, deceptive hosts and invalid identities are not local references", async () => {
+  const body = [
+    "https://example.org/#2", "[external](https://example.org/#2)", "ftp://example.org/#2",
+    "//example.org/#2", "https://github.com.evil.org/dotnet/fsharp/issues/2",
+    "https://github.com@evil.org/dotnet/fsharp/issues/2", "#0 #9007199254740992 #1",
+    "[self](https://github.com/dotnet/fsharp/issues/1)", "word#2 #2words",
+  ].join(" ");
+  const api = fake({ issues: [report(1, { body })], pageSize: 100 });
+  const snapshot = await readIssueSnapshot(api.github, { repo, number: 1 });
+  assert.equal(snapshot.complete, true);
+  assert.deepEqual(snapshot.linked, []);
+  assert.ok(api.calls.every((call) => call.issue_number === 1));
+});
+
+for (const event of ["labeled", "unlabeled"]) {
+  for (const type of ["User", "Bot"]) {
+    test(`human decisions: ${type} ${event} Regression has the required hash and analysis effect`, async () => {
+      const api = fake({ issues: [report()], timeline: { 42: [] }, comments: { 42: [] }, pageSize: 100 });
+      const original = await readIssueSnapshot(api.github, { repo, number: 42 });
+      const record = completed(original, {
+        clarification: { status: "published", commentId: 90 },
+        humanLabelDecision: { event: "unlabeled", sourceId: "prior:decision" },
+      });
+      assert.equal(needsAnalysis(record, original), false);
+      api.timeline[42].push({
+        id: 1, event, label: { name: "Regression" }, actor: { id: 20, type }, created_at: now,
+        url: "https://api.github.com/repos/dotnet/fsharp/issues/events/1",
+      });
+      if (type === "Bot") api.comments[42].push(comment(90, { user: { id: 99, type, login: "triage[bot]" } }));
+      api.issues[0].labels = event === "labeled" ? ["Needs-Triage", "Regression"] : ["Needs-Triage"];
+      const snapshot = await readIssueSnapshot(api.github, { repo, number: 42 });
+      assert.equal(fingerprintHumanInput(snapshot) !== record.fingerprint, type === "User");
+      assert.equal(needsAnalysis(record, snapshot), type === "User");
+      const memory = emptyMemory();
+      memory.issues[42] = completed(snapshot, {
+        clarification: record.clarification,
+        humanLabelDecision: snapshot.humanDecisions[0] ?? record.humanLabelDecision,
+      });
+      const restarted = normalizeMemory(JSON.stringify(memory), { policyVersion: "next-policy" });
+      assert.deepEqual(restarted.issues[42], memory.issues[42]);
+      assert.equal(needsAnalysis(restarted.issues[42], snapshot, restarted.policyVersion), true);
+      const migrated = await collect(api, restarted, { limits: undefined });
+      assert.deepEqual(migrated.selected[0].priorRecord, memory.issues[42]);
+    });
+  }
+}
+
+for (const [stage, area, method, field, linked] of [
+  ["comment", "issues", "listComments", "comments", false],
+  ["comment", "issues", "listComments", "comments", true],
+  ["timeline", "issues", "listEventsForTimeline", "timeline", false],
+  ["timeline", "issues", "listEventsForTimeline", "timeline", true],
+  ["review", "pulls", "listReviews", "reviews", true],
+  ["review-comment", "pulls", "listReviewComments", "reviewComments", true],
+]) {
+  for (const change of ["deletion", "insertion", "same-count shift", "edit", "continuing instability"]) {
+    test(`stable evidence: ${linked ? "linked " : ""}${stage} ${change} at a 100-item page boundary`, async () => {
+      const number = linked ? 2 : 1;
+      const item = (id) => stage === "timeline"
+        ? { id, event: "unlabeled", label: { name: "Regression" }, actor: { id: 20, type: "User" }, created_at: before }
+        : comment(id, { body: id === 101 ? "Correction: compiler A also failed." : `Evidence ${id}` });
+      const items = Array.from({ length: 101 }, (_, i) => item(i + 1));
+      const api = fake({ pageSize: 100, issues: [
+        report(1, { body: linked ? "#2" : "Compiler A worked." }),
+        ...(linked ? [report(2, { labels: [], ...(area === "pulls" ? { pull_request: {} } : {}) })] : []),
+      ], [field]: { [number]: items } });
+      const original = api.github.rest[area][method];
+      let changed = false;
+      api.github.rest[area][method] = async (args) => {
+        const response = await original(args);
+        if ((args.issue_number ?? args.pull_number) === number && args.page === 1
+          && (!changed || change === "continuing instability")) {
+          changed = true;
+          if (change === "deletion" || change === "same-count shift") items.shift();
+          if (change === "insertion") items.unshift(item(102));
+          if (change === "same-count shift") items.push(item(102));
+          if (change === "edit" || change === "continuing instability") {
+            if (stage === "timeline") items[0].event = items[0].event === "labeled" ? "unlabeled" : "labeled";
+            else items[0].body += " Corrected.";
+          }
+        }
+        return response;
+      };
+      const { result, memory } = await publishRun(api, emptyMemory(), { limits: undefined });
+      const snapshot = result.selected[0]?.snapshot ?? result.incomplete[0]?.snapshot;
+      assert.ok(snapshot);
+      const checkEvidence = (value) => {
+        const evidence = linked ? value.linked[0] : value;
+        const actual = stage === "timeline" ? evidence.humanDecisions : evidence.humanComments;
+        const expected = [...items].sort((a, b) => a.id - b.id);
+        assert.deepEqual(actual.map((entry) => entry.id), expected.map((entry) => entry.id));
+        assert.ok(actual.some((entry) => entry.id === 101));
+        for (let i = 0; i < items.length; i++) {
+          const key = stage === "timeline" ? "event" : "body";
+          assert.equal(actual[i][key], expected[i][key]);
+        }
+      };
+      if (change === "continuing instability") assert.equal(snapshot.complete, false);
+      if (snapshot.complete) checkEvidence(snapshot);
+      else {
+        assert.deepEqual(result.selected, []);
+        assert.ok(snapshot.errors.some((error) => error.stage === stage && error.retryable === true));
+      }
+      const bound = stage === "comment" ? LIMITS.commentPages : stage === "timeline" ? LIMITS.timelinePages : LIMITS.reviewPages;
+      assert.ok(api.calls.filter((call) => call.name === field && (call.issue_number ?? call.pull_number) === number).length <= bound);
+      api.github.rest[area][method] = original;
+      const retry = await publishRun(api, memory, { limits: undefined });
+      assert.deepEqual(retry.result.selected.map((entry) => entry.number), snapshot.complete ? [] : [1]);
+      if (!snapshot.complete) checkEvidence(retry.result.selected[0].snapshot);
+    });
+  }
+}
+
+for (const change of ["title", "body", "state", "labels", "reopened", "newly labeled", "count mismatch"]) {
+  test(`snapshot metadata: ${change} cannot conceal inconsistent discussion`, async () => {
+    const api = fake({ pageSize: 100,
+      issues: [report(1, {
+        comments: change === "count mismatch" ? 2 : 1,
+        state: change === "reopened" ? "closed" : "open", labels: change === "newly labeled" ? [] : ["Needs-Triage"],
+      })],
+      comments: { 1: [comment(1)] } });
+    const original = api.github.rest.issues.listEventsForTimeline;
+    api.github.rest.issues.listEventsForTimeline = async (args) => {
+      if (change === "title" || change === "body") api.issues[0][change] = "Correction";
+      if (change === "state") api.issues[0].state = "closed";
+      if (change === "labels") api.issues[0].labels = [];
+      if (change === "reopened") api.issues[0].state = "open";
+      if (change === "newly labeled") api.issues[0].labels = ["Needs-Triage"];
+      return original(args);
+    };
+    const result = await collect(api, emptyMemory(), { limits: undefined, event: { issue: { number: 1 } } });
+    assert.deepEqual(result.selected, []);
+    assert.ok(result.errors.some((error) => error.retryable));
+    const retry = await publishRun(api, { ...emptyMemory(), ...result.stateDelta }, { limits: undefined });
+    if (["title", "body", "reopened", "newly labeled"].includes(change)) {
+      assert.deepEqual(retry.result.selected.map((item) => item.number), [1]);
+    }
+  });
+}
+
+for (const fields of [{ updated_at: "bad" }, { labels: [{}] }, { body: {} }, { comments: -1 }]) {
+  test(`snapshot metadata: malformed event-only issue ${JSON.stringify(fields)} is an explicit failure`, async () => {
+    const api = fake({ issues: [report(1, fields)] });
+    api.github.rest.issues.listForRepo = async () => ({ data: [] });
+    const result = await collect(api, emptyMemory(), { event: { issue: { number: 1 } } });
+    assert.deepEqual(result.selected, []);
+    assert.equal(result.incomplete.length, 1);
+    assert.ok(result.errors.length > 0);
+    assert.doesNotThrow(() => normalizeMemory({ ...emptyMemory(), ...result.stateDelta }));
+  });
+}
+
+test("timeline identity includes the event kind; malformed evidence remains incomplete", async () => {
+  const api = fake({ issues: [report(1)], pageSize: 100, timeline: { 1: [
+    { id: 1, event: "commented" },
+    { id: 1, event: "unlabeled", actor: { id: 20, type: "User" }, label: { name: "Regression" }, created_at: now },
+  ] } });
+  assert.equal((await readIssueSnapshot(api.github, { repo, number: 1 })).complete, true);
+  for (const invalid of [null, { id: 1, body: {} }, { id: 0 }, comment(1)]) {
+    api.comments[1] = [comment(1), invalid];
+    const result = await collect(api, emptyMemory(), { limits: undefined });
+    assert.deepEqual(result.selected, []);
+    assert.ok(result.errors.some((error) => error.stage === "comment" && error.retryable));
+  }
+});
+
 for (const [name, fields, expected] of [
   ["open labeled issue", {}, true],
   ["object labels and unknown contributor", { labels: [{ name: "Needs-Triage" }], author_association: "FIRST_TIMER" }, true],
@@ -123,6 +385,7 @@ for (const event of [
 
 for (const [name, change, expected] of [
   ["unchanged completed", () => {}, false],
+  ["unchanged noop", (data) => { data.record.lastResult.status = "noop"; }, false],
   ["missing record", (data) => { data.record = undefined; }, true],
   ["unfinished record", (data) => { delete data.record.classification; }, true],
   ["unfinished fingerprint", (data) => { delete data.record.fingerprint; }, true],
@@ -158,6 +421,7 @@ test("memory: compatible migration preserves receipts, decisions and unknown fie
   raw.issues["42"] = completed(report(), {
     humanCorrection: { sourceId: "comment:1" }, humanLabelDecision: { action: "unlabeled" },
     clarification: { status: "published", commentId: 123 }, futureField: { retained: true },
+    readAttempt: { at: now, updatedAt: before },
   });
   const beforeNormalization = clone(raw);
   const memory = normalizeMemory(raw, { policyVersion: "next-policy" });
@@ -293,16 +557,12 @@ test("discovery: repeated bounded runs drain old work despite arrivals and shift
     if (run < 6) api.issues.push(report(100 + run, { updated_at: now }));
     if (run === 1) api.issues.splice(0, 1);
     if (run === 2) api.issues.find((item) => item.number === 3).updated_at = now;
-    const result = await collect(api, memory, {
+    const published = await publishRun(api, memory, {
       now: new Date(Date.parse(now) + run * 60000).toISOString(),
       event: run < 6 ? { issue: { number: 100 + run } } : undefined,
     });
-    memory = { ...memory, ...result.stateDelta };
-    for (const item of result.selected) {
-      visited.add(item.number);
-      memory.issues[item.number] = completed(item.snapshot);
-      memory.pending = memory.pending.filter((queued) => queued.number !== item.number);
-    }
+    memory = published.memory;
+    for (const item of published.result.selected) visited.add(item.number);
   }
   for (const item of api.issues) assert.ok(visited.has(item.number), `never visited ${item.number}`);
 });
@@ -555,13 +815,9 @@ test("boundary shifts invalidate coverage and restarting eventually reaches skip
   let memory = { ...emptyMemory(), ...second.stateDelta };
   const visited = new Set();
   for (let i = 0; i < 12; i++) {
-    const result = await collect(api, memory, { now: new Date(Date.parse(now) + i * 60000).toISOString() });
-    memory = { ...memory, ...result.stateDelta };
-    for (const item of result.selected) {
-      visited.add(item.number);
-      memory.issues[item.number] = completed(item.snapshot);
-      memory.pending = memory.pending.filter((entry) => entry.number !== item.number);
-    }
+    const published = await publishRun(api, memory, { now: new Date(Date.parse(now) + i * 60000).toISOString() });
+    memory = published.memory;
+    for (const item of published.result.selected) visited.add(item.number);
   }
   for (const { number } of api.issues) assert.ok(visited.has(number), `stranded ${number}`);
 });
@@ -576,15 +832,11 @@ test("transiently unreadable historical work cannot monopolize every historical 
   let memory = emptyMemory();
   const seen = new Set();
   for (let i = 0; i < 8; i++) {
-    const result = await collect(api, memory, {
+    const published = await publishRun(api, memory, {
       now: new Date(Date.parse(now) + i * 60000).toISOString(), limits: { ...limits, snapshotReads: 1 },
     });
-    memory = { ...memory, ...result.stateDelta };
-    for (const item of result.selected) {
-      seen.add(item.number);
-      memory.issues[item.number] = completed(item.snapshot);
-      memory.pending = memory.pending.filter((entry) => entry.number !== item.number);
-    }
+    memory = published.memory;
+    for (const item of published.result.selected) seen.add(item.number);
   }
   assert.deepEqual([...seen].sort(), [2, 3, 4]);
   assert.ok(memory.pending.some((entry) => entry.number === 1));

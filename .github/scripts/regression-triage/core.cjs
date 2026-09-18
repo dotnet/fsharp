@@ -35,6 +35,8 @@ function eventNumber(event) {
 // historical/updatedAt/lastAttemptAt. Records retain fingerprint, policyVersion,
 // classification, evidence, missingFact, lastResult, clarification, humanCorrection,
 // humanLabelDecision and pendingPublication. Only published/noop are terminal.
+// readAttempt:{at,updatedAt?} survives queue removal; updatedAt is the last
+// complete snapshot's parent timestamp, never proof of unchanged linked input.
 // null means confirmed absence, not a failed read. Migration changes the top-level
 // policy only: old record policies, human decisions, receipts and intent survive.
 function normalizeMemory(raw, { policyVersion = POLICY_VERSION } = {}) {
@@ -67,7 +69,9 @@ function normalizeMemory(raw, { policyVersion = POLICY_VERSION } = {}) {
     if (!/^[1-9]\d*$/.test(number) || !issueNumber(Number(number)) || !object(record)
       || (record.fingerprint !== undefined && typeof record.fingerprint !== "string")
       || (record.policyVersion !== undefined && typeof record.policyVersion !== "string")
-      || (record.lastResult !== undefined && !object(record.lastResult))) {
+      || (record.lastResult !== undefined && !object(record.lastResult))
+      || (record.readAttempt !== undefined && (!object(record.readAttempt) || !timestamp(record.readAttempt.at)
+        || (record.readAttempt.updatedAt !== undefined && !timestamp(record.readAttempt.updatedAt))))) {
       throw new Error(`Invalid issue record: ${number}`);
     }
   }
