@@ -26,7 +26,7 @@ type RequireNamedArgumentsAttribute() =
         cu |> withLangVersionPreview |> typecheck |> shouldSucceed |> ignore
 
     let private rejectsCompiled cu =
-        cu |> withLangVersionPreview |> compile |> shouldFail |> withErrorCode 3918 |> ignore
+        cu |> withLangVersionPreview |> compile |> shouldFail |> withErrorCode 3923 |> ignore
 
     let private acceptsCompiled cu =
         cu |> withLangVersionPreview |> compile |> shouldSucceed |> ignore
@@ -34,7 +34,7 @@ type RequireNamedArgumentsAttribute() =
     let private requiresNamed (name: string) =
         $"The method '{name}' requires named arguments. Use named-argument syntax, e.g. 'MethodName(argumentName = value)'."
 
-    // Merge several call sites into one run; count-exact (one FS3918 per listed method, identified by name).
+    // Merge several call sites into one run; count-exact (one FS3923 per listed method, identified by name).
     let private rejectsAll (methods: string list) cu =
         cu |> withLangVersionPreview |> typecheck |> shouldFail |> withErrorMessages (List.map requiresNamed methods) |> ignore
 
@@ -108,7 +108,7 @@ namespace AnnotatedLib
         |> withName "CsExtensionLib"
 
     // Shared same-compilation-unit surface: every annotated shape declared once, each member
-    // distinctly named so a merged FS3918 assertion pins the exact violating call site.
+    // distinctly named so a merged FS3923 assertion pins the exact violating call site.
     let private annotatedApi = """
 namespace Test
 
@@ -388,7 +388,7 @@ module Use =
         |> withLangVersionPreview
         |> typecheck
         |> shouldFail
-        |> withErrorCode 3918
+        |> withErrorCode 3923
         |> withDiagnosticMessageMatches "The method 'C' requires named arguments"
         |> ignore
 
@@ -470,7 +470,7 @@ let s = AnnotatedLib.S(1, 2)
         |> withLangVersionPreview
         |> compile
         |> shouldFail
-        |> withErrorCode 3918
+        |> withErrorCode 3923
         |> withDiagnosticMessageMatches "The method 'S' requires named arguments"
         |> ignore
 

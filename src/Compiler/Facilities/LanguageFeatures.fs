@@ -19,6 +19,7 @@ type LanguageFeature =
     | PackageManagement
     | FromEndSlicing
     | ResumableStateMachines
+    | RuntimeAsync
     | WitnessPassing
     | AdditionalTypeDirectedConversions
     | StringInterpolation
@@ -195,18 +196,19 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
                 LanguageFeature.AccessProtectedBaseFieldFromClosure, languageVersion110 // #5302: read a protected base field from a closure
                 LanguageFeature.RecordSpreads, languageVersion110
                 LanguageFeature.TypeArgumentDependencyOrdering, languageVersion110
+                LanguageFeature.OptimizeClosureIfNotInlined, languageVersion110
 
                 // Difference between languageVersion110 and preview - 11.0 gets turned on automatically by picking a preview .NET 11 SDK
                 // previewVersion is only when "preview" is specified explicitly in project files  and users also need a preview SDK
 
                 // F# preview
+                LanguageFeature.RuntimeAsync, previewVersion
                 LanguageFeature.RecordConstructorSyntax, previewVersion // Allow constructing a record via its all-fields constructor, e.g. MyRecord(a, b)
                 LanguageFeature.RequireNamedArguments, previewVersion // FS-1095: enforce named arguments at call sites of methods marked with RequireNamedArgumentsAttribute
 
                 // Unfinished features that still need work before they can be assigned a release language version.
                 LanguageFeature.FromEndSlicing, previewVersion // Unfinished features --- needs work
                 LanguageFeature.ExtensionConstraintSolutions, previewVersion
-                LanguageFeature.OptimizeClosureIfNotInlined, previewVersion
             ]
 
     static let defaultLanguageVersion = LanguageVersion("default")
@@ -300,6 +302,7 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
         | LanguageFeature.FromEndSlicing -> FSComp.SR.featureFromEndSlicing ()
         | LanguageFeature.NullnessChecking -> FSComp.SR.featureNullnessChecking ()
         | LanguageFeature.ResumableStateMachines -> FSComp.SR.featureResumableStateMachines ()
+        | LanguageFeature.RuntimeAsync -> FSComp.SR.featureRuntimeAsync ()
         | LanguageFeature.WitnessPassing -> FSComp.SR.featureWitnessPassing ()
         | LanguageFeature.AdditionalTypeDirectedConversions -> FSComp.SR.featureAdditionalImplicitConversions ()
         | LanguageFeature.StringInterpolation -> FSComp.SR.featureStringInterpolation ()

@@ -9,6 +9,7 @@ type LanguageFeature =
     | PackageManagement
     | FromEndSlicing
     | ResumableStateMachines
+    | RuntimeAsync
     | WitnessPassing
     | AdditionalTypeDirectedConversions
     | StringInterpolation
