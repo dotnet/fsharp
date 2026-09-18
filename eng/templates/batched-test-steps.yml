@@ -38,7 +38,12 @@ steps:
   inputs:
     testResultsFormat: 'XUnit'
     testRunTitle: ${{ parameters.testRunTitlePrefix }} Batch$(batchNumber)
-    mergeTestResults: true
+    # Publish each assembly's result file as its own run. Merging disjoint per-assembly
+    # XUnit files into one run makes the ADO publisher emit a "No matching test case result
+    # found on server" warning for every test in every file after the first (tens of thousands
+    # of warnings per build), and can abort with "TestCaseTitle must be specified", silently
+    # dropping a whole assembly's results.
+    mergeTestResults: false
     testResultsFiles: '*.xml'
     searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/${{ parameters.configuration }}'
   continueOnError: true
