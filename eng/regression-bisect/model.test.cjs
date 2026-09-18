@@ -51,6 +51,33 @@ for (const key of Object.keys(policy().limits)) {
     }
 }
 
+for (const [section, field, value] of [
+    ["limits", "sourceBuilds", 25],
+    ["authorization", "mode", "issue-instructions"],
+    ["selection", "createdAtOrAfter", "2025-09-01T00:00:00Z"],
+]) {
+    test(`policy rejects shared JSON mutation: ${section}.${field}`, () => {
+        const shared = require("../../.github/policies/regression-bisect.json");
+        const original = shared[section][field];
+        const modelPath = require.resolve("./model.cjs");
+        const cachedModel = require.cache[modelPath];
+        try {
+            shared[section][field] = value;
+            delete require.cache[modelPath];
+            for (const model of [cachedModel.exports, require("./model.cjs")]) {
+                rejects(() => model.validatePolicy(shared), /policy/);
+                assert.equal(model.isEligibleIssue({
+                    state: "open", created_at: "2025-09-01T00:00:00Z", labels: ["Regression"],
+                }), false);
+            }
+        } finally {
+            require.cache[modelPath] = cachedModel;
+            shared[section][field] = original;
+        }
+        assert.equal(validatePolicy(shared), true);
+    });
+}
+
 for (const [name, edit] of [
     ["schema", m => m.schemaVersion = 2],
     ["unknown field", m => m.instructions = "run issue commands"],

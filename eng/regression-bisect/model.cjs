@@ -1,5 +1,6 @@
 const { createHash } = require("node:crypto");
-const trustedPolicy = require("../../.github/policies/regression-bisect.json");
+const { readFileSync } = require("node:fs");
+const trustedPolicy = JSON.parse(readFileSync(require.resolve("../../.github/policies/regression-bisect.json"), "utf8"));
 
 class ContractError extends Error {}
 

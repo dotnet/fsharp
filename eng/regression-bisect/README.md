@@ -21,6 +21,9 @@ The host must load this module and `.github/policies/regression-bisect.json` fro
 a pinned, trusted default-branch revision, not from the source revision under
 test. `validatePolicy` accepts only that policy, including its finite limits; an
 issue, dispatch input, or agent cannot override it.
+The module reads its own policy snapshot from that checkout, bypassing Node's
+shared JSON module cache so caller mutations cannot change validation limits,
+authorization, or selection, even before this module is loaded.
 
 The host must construct `budget.authorization` from the reviewed approval at
 `.github/regression-bisect/approved/<issue-number>.json` at `budget.policyRevision`.
