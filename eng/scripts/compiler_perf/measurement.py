@@ -1,6 +1,7 @@
 """Frozen compiler-source replay and paired decisions. Python 3 standard library only."""
 
 import argparse
+from fractions import Fraction
 import hashlib
 import json
 import math
@@ -37,6 +38,18 @@ LOCAL_ENVIRONMENT_KEYS = {
     "RegressionLocalCoreVersion", "RegressionLocalCorePackagesDir",
     "DOTNET_ROOT", "DOTNET_HOST_PATH", "DOTNET_INSTALL_DIR",
 }
+CACHE_POLICY = "restore-once; warm-dependencies-and-filesystem; no-page-cache-flush; fresh-process; no-build-server"
+RUNNER_KEYS = ("ImageOS", "ImageVersion", "RUNNER_NAME", "RUNNER_OS", "RUNNER_ARCH",
+               "GITHUB_RUN_ID", "GITHUB_RUN_ATTEMPT", "GITHUB_JOB")
+INHERITED_ENVIRONMENT_KEYS = ("PATH", "SystemRoot", "COMSPEC", "PATHEXT", "SystemDrive",
+                              "ProgramFiles", "ProgramFiles(x86)", "ProgramW6432", "ProgramData")
+CONTROLLED_ENVIRONMENT = {
+    "DOTNET_CLI_TELEMETRY_OPTOUT": "1", "DOTNET_NOLOGO": "1",
+    "DOTNET_MULTILEVEL_LOOKUP": "0", "DOTNET_CLI_DO_NOT_USE_MSBUILD_SERVER": "1",
+    "DOTNET_EnableDiagnostics": "0", "MSBUILDDISABLENODEREUSE": "1",
+    "BUILDING_USING_DOTNET": "true", "LANG": "C.UTF-8", "LC_ALL": "C.UTF-8",
+}
+OWNED_ENVIRONMENT_KEYS = ("HOME", "USERPROFILE", "DOTNET_CLI_HOME", "NUGET_PACKAGES", "TMP", "TEMP", "TMPDIR")
 
 
 def require(condition, message):
@@ -138,11 +151,85 @@ def validate_workload(workload):
             and not any(c in a for c in "\r\n\0") and not a.startswith("@") for a in arguments),
             "Invalid workload arguments")
     require(workload["arguments_sha256"] == fingerprint_inputs(arguments), "Argument hash mismatch")
+    require(not any(re.match(r"^[-/]+(?:times(?:[:+-]|$)|test:Dump)", a, re.IGNORECASE)
+                    for a in arguments), "Compiler instrumentation is not unprofiled acceptance evidence")
     require(type(workload["parallel_compilation"]) is bool, "Invalid parallel-compilation identity")
     parallel = "--parallelcompilation+" if workload["parallel_compilation"] else "--parallelcompilation-"
     require("--optimize+" in arguments and "--optimize-" not in arguments and "--noframework" in arguments
             and [a for a in arguments if a.startswith("--parallelcompilation")] == [parallel],
             "Release/parallel flags differ from workload identity")
+
+
+def validate_provenance(invariants):
+    for section in SECTIONS:
+        require(type(invariants[section]) is dict and invariants[section], f"Missing {section} identity")
+    bootstrap, toolchain, environment = (invariants[k] for k in ("bootstrap", "toolchain", "environment"))
+    for key in ("revision", "source_tree"):
+        require(isinstance(bootstrap.get(key), str) and re.fullmatch("[0-9a-f]{40}", bootstrap[key]),
+                f"Invalid bootstrap {key}")
+    commands = bootstrap.get("commands")
+    require(type(commands) is list and commands, "Missing bootstrap commands")
+    for command in commands:
+        require(type(command) is dict and type(command.get("exit_status")) is int
+                and command["exit_status"] == 0, "Unsuccessful bootstrap command")
+        args = command.get("arguments")
+        require(type(args) is list and args and all(isinstance(a, str) and a and "\0" not in a for a in args),
+                "Missing bootstrap command arguments")
+        for key in ("cwd", "log"):
+            absolute_path(command.get(key))
+    for owner, key in ((bootstrap, "binaries"), (toolchain, "runtime_files"), (toolchain, "sdk_compiler_files")):
+        records = owner.get(key)
+        require(type(records) is list and records, f"Missing provenance {key}")
+        for record in records:
+            validate_file_record(record)
+    for key in ("dotnet", "measurement", "capture_target"):
+        validate_file_record(toolchain.get(key))
+    for key in ("sdk", "runtime", "info", "python", "git"):
+        require(isinstance(toolchain.get(key), str) and toolchain[key].strip(), f"Missing toolchain {key}")
+    runtime_hash = toolchain.get("compiler_runtimeconfig_sha256")
+    require(isinstance(runtime_hash, str) and re.fullmatch("[0-9a-f]{64}", runtime_hash),
+            "Missing compiler runtime configuration hash")
+    for key in ("os", "architecture", "hostname"):
+        require(isinstance(environment.get(key), str) and environment[key].strip(), f"Missing environment {key}")
+    unavailable = environment.get("unavailable_reasons")
+    require(type(unavailable) is dict and all(isinstance(v, str) and v.strip() for v in unavailable.values()),
+            "Missing environment availability reasons")
+    runner = environment.get("runner")
+    require(type(runner) is dict and set(runner) == set(RUNNER_KEYS), "Missing runner identity")
+    for key, value in list(runner.items()) + [(k, environment.get(k)) for k in
+                                             ("logical_cpus", "affinity", "cpu_topology", "processor")]:
+        reason_key = f"runner.{key}" if key in runner else key
+        require(key in runner or key in environment, f"Missing environment {key}")
+        if value is None:
+            require(reason_key in unavailable, f"Missing unavailability reason: {reason_key}")
+        elif key == "logical_cpus":
+            require(type(value) is int and value > 0, "Invalid CPU count")
+        elif key == "affinity":
+            require(type(value) is list and value and all(type(x) is int and x >= 0 for x in value),
+                    "Invalid CPU affinity")
+        elif key == "cpu_topology":
+            require(type(value) is dict and value and all(isinstance(v, str) and v for v in value.values()),
+                    "Invalid CPU topology")
+        elif key == "processor" and type(value) is list:
+            require(value and all(isinstance(v, str) and v.strip() for v in value), "Invalid processor identity")
+        else:
+            require(isinstance(value, str) and value.strip(), f"Invalid environment {key}")
+    variables = environment.get("variables")
+    allowed = (set(INHERITED_ENVIRONMENT_KEYS) | set(CONTROLLED_ENVIRONMENT) | set(OWNED_ENVIRONMENT_KEYS)
+               | LOCAL_ENVIRONMENT_KEYS | {"OS", "APPDATA", "LOCALAPPDATA"})
+    require(type(variables) is dict and set(variables) <= allowed
+            and all(isinstance(v, str) and v and "\0" not in v for v in variables.values()),
+            "Invalid or non-allowlisted environment variables")
+    require(all(variables.get(k) == v for k, v in CONTROLLED_ENVIRONMENT.items()),
+            "Diagnostics/cache execution controls changed")
+    for key in OWNED_ENVIRONMENT_KEYS:
+        absolute_path(variables.get(key))
+    require(environment.get("cache_policy") == CACHE_POLICY, "Missing or unsupported cache policy")
+    experiment = invariants["experiment"]
+    require(isinstance(experiment.get("id"), str) and experiment["id"].strip(), "Missing experiment identity")
+    for key in ("primary_metric", "collector"):
+        require(isinstance(experiment.get(key), str) and experiment[key].strip(), f"Missing experiment {key}")
+    require(type(experiment.get("seed")) is int, "Missing ordering seed")
 
 
 def validate_manifest(document, kind):
@@ -155,16 +242,28 @@ def validate_manifest(document, kind):
         require(re.fullmatch("[0-9a-f]{40}", document.get("source_revision", "")), "Invalid compiler revision")
         for key in ("patch_sha256", "bootstrap_fingerprint", "toolchain_fingerprint"):
             require(re.fullmatch("[0-9a-f]{64}", document.get(key, "")), f"Invalid {key}")
+        require(type(document.get("files")) is dict, "Missing compiler installation")
         for name in ("fsc.dll", "FSharp.Compiler.Service.dll", "fsc.runtimeconfig.json",
                      "fsc.deps.json", "FSharp.Core.dll"):
             require(name in document.get("files", {}), f"Missing compiler binary: {name}")
-        for record in document["files"].values():
-            validate_file_record(record)
+        installation = validate_file_record(document["files"]["fsc.dll"]).parent
+        for name, record in document["files"].items():
+            relative = PurePosixPath(name)
+            require(name and not relative.is_absolute() and ".." not in relative.parts and "\\" not in name
+                    and not PureWindowsPath(name).drive and str(relative) == name, "Invalid compiler installation entry")
+            require(validate_file_record(record) == installation / relative,
+                    f"Compiler companion is outside its installation or misnamed: {name}")
     elif kind in ("workload", "samples"):
         require(set(document.get("invariants", {})) == set(SECTIONS), "Missing invariant section")
+        validate_provenance(document["invariants"])
         validate_workload(document["invariants"]["workload"])
         if kind == "workload":
             validate_manifest(document["baseline_compiler"], "compiler")
+            baseline, invariants = document["baseline_compiler"], document["invariants"]
+            require(all(baseline[f"{k}_fingerprint"] == fingerprint_inputs(invariants[k])
+                        for k in ("bootstrap", "toolchain")), "Baseline build provenance differs")
+            require(baseline["files"]["fsc.runtimeconfig.json"]["sha256"] ==
+                    invariants["toolchain"]["compiler_runtimeconfig_sha256"], "Baseline runtime configuration differs")
         else:
             require(document.get("arm") in ("baseline", "candidate"), "Invalid sample arm")
             for key in ("compiler_id", "control_compiler_id"):
@@ -195,19 +294,13 @@ def validate_manifest(document, kind):
 
 def allowed_environment(work_dir):
     root = Path(work_dir).resolve()
-    environment = {key: os.environ[key] for key in ("PATH", "SystemRoot", "COMSPEC", "PATHEXT",
-                                                    "SystemDrive", "ProgramFiles", "ProgramFiles(x86)",
-                                                    "ProgramW6432", "ProgramData")
+    environment = {key: os.environ[key] for key in INHERITED_ENVIRONMENT_KEYS
                    if key in os.environ}
     environment.update({
         "HOME": str(root / "home"), "USERPROFILE": str(root / "home"),
         "DOTNET_CLI_HOME": str(root / "home"), "NUGET_PACKAGES": str(root / "packages"),
         "TMP": str(root / "tmp"), "TEMP": str(root / "tmp"), "TMPDIR": str(root / "tmp"),
-        "DOTNET_CLI_TELEMETRY_OPTOUT": "1", "DOTNET_NOLOGO": "1",
-        "DOTNET_MULTILEVEL_LOOKUP": "0", "DOTNET_CLI_DO_NOT_USE_MSBUILD_SERVER": "1",
-        "DOTNET_EnableDiagnostics": "0",
-        "MSBUILDDISABLENODEREUSE": "1", "BUILDING_USING_DOTNET": "true",
-        "LANG": "C.UTF-8", "LC_ALL": "C.UTF-8",
+        **CONTROLLED_ENVIRONMENT,
     })
     for name in ("home", "tmp", "packages"):
         (root / name).mkdir(parents=True, exist_ok=True)
@@ -355,8 +448,14 @@ def schedule():
     return events
 
 
+def percent_difference(baseline, candidate):
+    # JSON decimal values, not binary floating-point cancellation, define policy boundaries.
+    a, b = Fraction(str(baseline)), Fraction(str(candidate))
+    return (a - b) * 100 / a
+
+
 def paired_summary(baseline, candidate):
-    effects = [(a - b) / a * 100 for a, b in zip(baseline, candidate)]
+    effects = [percent_difference(a, b) for a, b in zip(baseline, candidate)]
     rng = random.Random(POLICY["seed"])
     boot = sorted(statistics.median(rng.choices(effects, k=len(effects)))
                   for _ in range(POLICY["bootstrap_resamples"]))
@@ -370,6 +469,7 @@ def paired_summary(baseline, candidate):
 
 
 def relative_mad(values):
+    values = [Fraction(str(x)) for x in values]
     median = statistics.median(values)
     return statistics.median(abs(x - median) for x in values) / median * 100
 
@@ -450,31 +550,33 @@ def compare_measurements(baseline, candidate):
             result["evidence"][metric] = {"summary": paired_summary(*evidence), "unavailable_reason": None}
         else:
             result["evidence"][metric] = {"summary": None, "unavailable_reason": "Incomplete or zero-valued evidence"}
-    aa_difference = abs(statistics.median(aa[0]) - statistics.median(aa[1])) / statistics.median(aa[0]) * 100
+    aa_difference = abs(percent_difference(statistics.median(aa[0]), statistics.median(aa[1])))
     result["aa"]["absolute_median_difference_percent"] = aa_difference
     if aa_difference > POLICY["maximum_aa_difference_percent"]:
         reasons.append("A/A median difference exceeds 1%")
     if primary != "elapsed_ms":
-        primary_aa_difference = abs(statistics.median(aa_primary[0]) - statistics.median(aa_primary[1])) / statistics.median(aa_primary[0]) * 100
+        primary_aa_difference = abs(percent_difference(statistics.median(aa_primary[0]), statistics.median(aa_primary[1])))
         if primary_aa_difference > POLICY["maximum_aa_difference_percent"]:
             reasons.append("Primary metric A/A median difference exceeds 1%")
     if any(relative_mad(v) > POLICY["maximum_relative_mad_percent"] for v in aa + elapsed):
         reasons.append("Timing relative MAD exceeds 2%")
-    if reasons:
-        return result
-    effect = result["primary"]
-    if effect["improvement_percent"] < POLICY["minimum_improvement_percent"] or effect["interval_95_percent"][0] <= 0:
-        reasons.append("Primary improvement is below 3% or its paired interval includes zero")
-    # Regression is relative to baseline, so its upper bound is minus improvement's lower bound.
-    if primary != "elapsed_ms" and -result["elapsed"]["interval_95_percent"][0] >= POLICY["maximum_time_regression_percent"]:
-        reasons.append("Upper elapsed regression bound must be strictly below 1%")
-    result["decision"] = "rejected" if reasons else "measured_improvement"
+    if not reasons:
+        effect = result["primary"]
+        if effect["improvement_percent"] < POLICY["minimum_improvement_percent"] or effect["interval_95_percent"][0] <= 0:
+            reasons.append("Primary improvement is below 3% or its paired interval includes zero")
+        # Regression is relative to baseline, so its upper bound is minus improvement's lower bound.
+        if primary != "elapsed_ms" and -result["elapsed"]["interval_95_percent"][0] >= POLICY["maximum_time_regression_percent"]:
+            reasons.append("Upper elapsed regression bound must be strictly below 1%")
+        result["decision"] = "rejected" if reasons else "measured_improvement"
+    for summary in [result[k] for k in ("aa", "aa_primary", "elapsed", "primary")] + [
+            e["summary"] for e in result["evidence"].values() if e["summary"] is not None]:
+        for key, value in summary.items():
+            summary[key] = ([float(x) for x in value] if isinstance(value, list)
+                            else float(value) if isinstance(value, Fraction) else value)
     return result
 
 
 def host_identity(environment):
-    runner_keys = ("ImageOS", "ImageVersion", "RUNNER_NAME", "RUNNER_OS", "RUNNER_ARCH",
-                   "GITHUB_RUN_ID", "GITHUB_RUN_ATTEMPT", "GITHUB_JOB")
     topology = {}
     processor = os.environ.get("PROCESSOR_IDENTIFIER")
     if sys.platform == "linux":
@@ -485,12 +587,19 @@ def host_identity(environment):
         for path in sorted(Path("/sys/devices/system/cpu").glob("cpu[0-9]*/topology/*")):
             if path.name in ("physical_package_id", "core_id", "thread_siblings_list"):
                 topology[str(path)] = path.read_text().strip()
-    return {"os": f"{platform.system()} {platform.release()} {platform.version()}",
+    result = {"os": f"{platform.system()} {platform.release()} {platform.version()}",
             "architecture": platform.machine(), "hostname": socket.gethostname(),
             "logical_cpus": os.cpu_count(), "affinity": sorted(os.sched_getaffinity(0)) if hasattr(os, "sched_getaffinity") else None,
-            "cpu_topology": topology, "processor": processor,
-            "runner": {key: os.environ.get(key) for key in runner_keys}, "variables": environment,
-            "cache_policy": "restore-once; warm-dependencies-and-filesystem; no-page-cache-flush; fresh-process; no-build-server"}
+            "cpu_topology": topology or None, "processor": processor or None,
+            "runner": {key: os.environ.get(key) or None for key in RUNNER_KEYS}, "variables": environment,
+            "cache_policy": CACHE_POLICY, "unavailable_reasons": {}}
+    for key in ("logical_cpus", "affinity", "cpu_topology", "processor"):
+        if result[key] is None:
+            result["unavailable_reasons"][key] = f"Not exposed by {platform.system()} host APIs"
+    for key, value in result["runner"].items():
+        if value is None:
+            result["unavailable_reasons"][f"runner.{key}"] = "Not provided by the runner environment"
+    return result
 
 
 def prepare_workload(source_sha, work_dir, output, primary_metric="elapsed_ms", parallel=False):
@@ -589,6 +698,10 @@ def prepare_workload(source_sha, work_dir, output, primary_metric="elapsed_ms", 
             f"Captured compiler/project identity mismatch: {metadata}")
     response = capture / "compiler.rsp"
     arguments = response.read_text(encoding="utf-8-sig").splitlines()
+    # The local-compiler props inject --times; keep capture evidence but never replay its instrumentation.
+    arguments = [arg for arg in arguments if arg != "--times"]
+    response = capture / "replay.rsp"
+    response.write_text("\n".join(arguments) + "\n", encoding="utf-8")
     tracked = set(run(["git", "ls-files"], workload_dir).splitlines())
     inputs = capture_inputs(arguments, (workload_dir / PROJECT).parent, workload_dir, tracked)
     inputs["core_package"] = file_record(package)

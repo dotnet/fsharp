@@ -36,7 +36,12 @@ Fsc task's command-line convention even when the installation path contains spac
 
 Reference assembly generation is disabled for this workload: the current Fsc
 capture API omits the trailing `--refout`/`--refonly` arguments. Sources, references
-and flags otherwise retain their captured order. The response file is one
+and flags otherwise retain their captured order. Preparation preserves the raw
+`compiler.rsp` and writes a separate `replay.rsp`, removing the bare `--times`
+injected by the local-compiler props. The capture build may be instrumented;
+smoke replay and acceptance collection are not. Remaining timing-file flags or
+compiler dump instrumentation fail validation, even if a sample claims
+`profiler_attached: false`. The response file is one
 unquoted argument per line, as in Fsc's own response-file generation; it is not
 shell-tokenized. Generated sources, resources, signing and SourceLink inputs are
 materialized and hashed. Unknown additional compiler tools and nested response
@@ -68,7 +73,9 @@ measurement.write_json("candidate-compiler.json", identity)
 ```
 
 The installation includes fsc, FCS, runtimeconfig, deps, Core, and all adjacent
-files. The builder is responsible for supplying truthful source/patch/build
+files. Every relative manifest entry must name that file under the installation
+containing `fsc.dll`; companion hashes from another installation are rejected.
+The builder is responsible for supplying truthful source/patch/build
 provenance; a manifest is not an attestation or a correctness gate. The runtime
 configuration must match the baseline. Candidate compiler/Core binaries can
 differ, but the **Core reference used to compile the frozen workload cannot**.
@@ -107,6 +114,12 @@ inventories, compiler-source target/paths, Core identity, output ownership and
 Release/parallel arguments are mandatory even when both arms agree on invalid
 evidence. Comparison also checks each compiler's actual recorded runtimeconfig
 hash against the shared toolchain, independently of declared fingerprints.
+Matching fingerprints do not excuse missing provenance: bootstrap commands and
+binaries, SDK/runtime/helper identities, host/runner metadata, controlled
+environment variables and experiment declarations are validated in both arms.
+Unavailable host APIs and runner fields are explicitly `null`, with named
+`environment.unavailable_reasons`; missing fields or empty placeholder identities
+are not accepted.
 
 The workload manifest separates six invariant sections:
 
@@ -129,7 +142,9 @@ five complete pairs, median **paired relative improvement** at least 3%, and
 the lower endpoint of a paired 95% bootstrap interval strictly above zero.
 The bootstrap samples the five paired relative effects with replacement 10,000
 times, seed 910, using the median statistic and conservative nearest-rank
-2.5%/97.5% endpoints. No outliers are removed.
+2.5%/97.5% endpoints. Policy arithmetic uses exact rational values derived from
+the recorded decimal numbers, without epsilon tolerances. Summaries are converted
+to JSON numbers only after the decision. No outliers are removed.
 
 A/A absolute difference of arm medians must be at most 1% of the first arm's
 median. Each A/A and A/B timing series must have relative median absolute
@@ -163,6 +178,11 @@ SDK selection, local Core/capture, path quoting, replay and failure handling.
 Replay fixtures launch distinguishable baseline/candidate child processes and
 check the selected installation, response file, working directory and output
 reset for every A/A, warm-up and A/B event.
+Independent schedule assertions require adjacent baseline/candidate pairs;
+CLI dispatch tests cover preparation/collection arguments, outputs and failures.
+Nonuniform timing fixtures distinguish the memory hypothesis's uncertainty
+guard from its median, and boundary fixtures include adjacent representable
+values at multiple scales.
 
 ## Local validation record
 
@@ -190,7 +210,7 @@ root contains multiple solutions; the explicit repository Release build and
 the Python helper suite are the applicable validation for these changes.
 
 The verifier regressions were reproduced before corrective implementation in
-`artifacts/compiler-perf-validation/red.log`. All 20 helper tests now pass,
+`artifacts/compiler-perf-validation/red.log`. At that point, all 20 helper tests passed,
 including actual comparison CLI failures and controlled preparation success and
 failure cases. In-memory mutations bypassing preparation or selecting only the
 baseline compiler are detected by the new assertions.
@@ -204,3 +224,18 @@ The commands, exit statuses, binlog and hashes are retained in
 `artifacts/compiler-perf-validation/live-replay.json` and `workload.binlog`.
 The standalone root `dotnet test -c Release` also requires an explicit solution;
 no full compiler suite was run for these Python-only changes.
+
+The remaining provenance, instrumentation and arithmetic regressions were
+recorded before implementation in `red-identity.log`. All **26** helper tests
+pass (`green-identity.log`); eight in-memory mutations covering the reported
+validation and test gaps are detected (`mutations-identity.log`). Current
+`origin/main` was rechecked at the same frozen revision above.
+
+A fresh explicit Release workload build and **uninstrumented** compiler-source
+replay passed with unchanged source/generated/reference hashes and the same
+407/21/178 input counts. Raw capture contains the inherited `--times`; the replay
+response does not. Commands, exit statuses, compiler/input hashes, environment
+and binlog are retained in `artifacts/compiler-perf-validation/identity-live`.
+This Windows smoke result is not an A/A or A/B acceptance measurement. The
+repository-root build/test commands still require an explicit solution; the
+explicit Release build succeeded with zero warnings/errors.

@@ -1,8 +1,10 @@
 """Synthetic fixtures, not compiler performance measurements."""
 
 import copy
+from decimal import Decimal
 import importlib.util
 import json
+import math
 import os
 from pathlib import Path
 import subprocess
@@ -46,16 +48,31 @@ def measurements(candidate_ms=90, primary="elapsed_ms"):
                      "arguments_sha256": m.fingerprint_inputs(arguments),
                      "response_file": record(checkout / "compiler.rsp"), "arguments": arguments},
         "bootstrap": {"revision": "a" * 40, "source_tree": "a" * 40,
-                      "binaries": "bootstrap", "commands": []},
-        "toolchain": {"sdk": "synthetic", "runtime": "synthetic", "dotnet": "synthetic",
+                      "binaries": [record(ROOT / "synthetic" / "Proto" / "fsc.dll")],
+                      "commands": [{"arguments": ["bash", "build.sh", "-c", "Release", "--pack"],
+                                    "cwd": str(ROOT / "synthetic"), "exit_status": 0,
+                                    "log": str(ROOT / "synthetic" / "build.log")}]},
+        "toolchain": {"sdk": "11.0.100-synthetic", "runtime": "synthetic",
+                      "dotnet": record(ROOT / "synthetic" / "dotnet"),
                       "info": "synthetic", "python": "synthetic", "git": "synthetic",
-                      "measurement": "synthetic", "capture_target": "synthetic",
-                      "runtime_files": ["runtime"], "sdk_compiler_files": ["sdk-compiler"],
+                      "measurement": record(MODULE), "capture_target": record(MODULE.with_name("Capture.targets")),
+                      "runtime_files": [record(ROOT / "synthetic" / "runtime.dll")],
+                      "sdk_compiler_files": [record(ROOT / "synthetic" / "sdk" / "fsc.dll")],
                       "compiler_runtimeconfig_sha256": "a" * 64},
-        "environment": {"runner": "synthetic", "cpu": "synthetic",
+        "environment": {"runner": {key: "synthetic" for key in
+                                  ("ImageOS", "ImageVersion", "RUNNER_NAME", "RUNNER_OS", "RUNNER_ARCH",
+                                   "GITHUB_RUN_ID", "GITHUB_RUN_ATTEMPT", "GITHUB_JOB")},
                         "os": "synthetic", "architecture": "synthetic", "hostname": "synthetic",
-                        "logical_cpus": 1, "affinity": [0], "cpu_topology": {}, "processor": "synthetic",
-                        "cache_policy": "warm", "variables": {}},
+                        "logical_cpus": 1, "affinity": [0], "cpu_topology": {"core_id": "0"}, "processor": "synthetic",
+                        "cache_policy": "restore-once; warm-dependencies-and-filesystem; no-page-cache-flush; fresh-process; no-build-server",
+                        "unavailable_reasons": {},
+                        "variables": {"PATH": str(ROOT), "HOME": str(ROOT), "USERPROFILE": str(ROOT),
+                                      "DOTNET_CLI_HOME": str(ROOT), "NUGET_PACKAGES": str(ROOT),
+                                      "TMP": str(ROOT), "TEMP": str(ROOT), "TMPDIR": str(ROOT),
+                                      "DOTNET_CLI_TELEMETRY_OPTOUT": "1", "DOTNET_NOLOGO": "1",
+                                      "DOTNET_MULTILEVEL_LOOKUP": "0", "DOTNET_CLI_DO_NOT_USE_MSBUILD_SERVER": "1",
+                                      "DOTNET_EnableDiagnostics": "0", "MSBUILDDISABLENODEREUSE": "1",
+                                      "BUILDING_USING_DOTNET": "true", "LANG": "C.UTF-8", "LC_ALL": "C.UTF-8"}},
         "policy": copy.deepcopy(m.POLICY),
         "experiment": {"id": "synthetic-experiment", "primary_metric": primary,
                        "collector": "process-rusage-v1", "seed": 910},
@@ -108,6 +125,121 @@ def refresh_identities(documents):
 
 
 class MeasurementTests(unittest.TestCase):
+    def test_required_provenance_cannot_be_missing_in_both_arms(self):
+        valid = measurements()[0]["invariants"]
+        for section in ("bootstrap", "toolchain", "environment", "experiment"):
+            for key in (None, *valid[section]):
+                for invalid in (None, {}, "", []):
+                    with self.subTest(section=section, key=key, invalid=invalid):
+                        docs = measurements()
+                        for doc in docs:
+                            if key is None:
+                                doc["invariants"][section] = invalid
+                            elif invalid is None:
+                                doc["invariants"][section].pop(key)
+                            else:
+                                doc["invariants"][section][key] = invalid
+                        refresh_identities(docs)
+                        # Empty availability reasons are valid when everything is present.
+                        if key == "unavailable_reasons" and invalid == {}:
+                            continue
+                        with self.assertRaises(ValueError):
+                            m.compare_measurements(*docs)
+
+    def test_nested_provenance_and_compiler_installation(self):
+        cases = (
+            ("failed bootstrap", lambda d: d["invariants"]["bootstrap"]["commands"][0].update(exit_status=7)),
+            ("empty command", lambda d: d["invariants"]["bootstrap"]["commands"][0].update(arguments=[])),
+            ("bad bootstrap hash", lambda d: d["invariants"]["bootstrap"]["binaries"][0].update(sha256="bad")),
+            ("bad dotnet hash", lambda d: d["invariants"]["toolchain"]["dotnet"].update(sha256="bad")),
+            ("runner field absent", lambda d: d["invariants"]["environment"]["runner"].pop("GITHUB_JOB")),
+            ("runner unavailable without reason", lambda d: d["invariants"]["environment"]["runner"].update(GITHUB_JOB=None)),
+            ("profiling environment", lambda d: d["invariants"]["environment"]["variables"].update(CORECLR_ENABLE_PROFILING="1")),
+            ("diagnostics enabled", lambda d: d["invariants"]["environment"]["variables"].update(DOTNET_EnableDiagnostics="1")),
+            ("wrong companion", lambda d: d["compiler"]["files"]["FSharp.Core.dll"].update(
+                path=str(ROOT / "another-installation" / "FSharp.Core.dll"))),
+            ("wrong binary name", lambda d: d["compiler"]["files"]["fsc.deps.json"].update(
+                path=d["compiler"]["files"]["fsc.dll"]["path"])),
+            ("drive-qualified entry", lambda d: d["compiler"]["files"].update(
+                {"C:/outside.dll": {"path": "C:\\outside.dll", "sha256": "a" * 64}})),
+        )
+        for label, mutate in cases:
+            with self.subTest(case=label):
+                docs = measurements()
+                for doc in docs:
+                    mutate(doc)
+                refresh_identities(docs)
+                with self.assertRaises(ValueError):
+                    m.compare_measurements(*docs)
+
+    def test_instrumentation_arguments_are_not_unprofiled_evidence(self):
+        for flag in ("--times", "--times:timings.csv", "-times", "--test:DumpCheckingGraph",
+                     "--test:DumpSignatureData", "--test:DumpDebugInfo"):
+            with self.subTest(flag=flag):
+                docs = measurements()
+                for doc in docs:
+                    workload = doc["invariants"]["workload"]
+                    workload["arguments"].append(flag)
+                    workload["arguments_sha256"] = m.fingerprint_inputs(workload["arguments"])
+                refresh_identities(docs)
+                with self.assertRaisesRegex(ValueError, "instrument"):
+                    m.compare_measurements(*docs)
+
+    def test_schedule_is_paired_not_blocked(self):
+        events = m.schedule()
+        self.assertEqual(events, m.schedule())
+        self.assertEqual([e["ordinal"] for e in events], list(range(24)))
+        for start, phase, role, pairs in ((0, "ab", "warmup", 2), (4, "aa", "measured", 5),
+                                         (14, "ab", "measured", 5)):
+            orders = []
+            for pair in range(pairs):
+                with self.subTest(phase=phase, role=role, pair=pair):
+                    adjacent = events[start + 2 * pair:start + 2 * pair + 2]
+                    self.assertEqual({e["arm"] for e in adjacent}, {"baseline", "candidate"})
+                    self.assertEqual([(e["phase"], e["role"], e["pair"]) for e in adjacent],
+                                     [(phase, role, pair)] * 2)
+                    orders.append(adjacent[0]["arm"])
+            self.assertEqual(set(orders), {"baseline", "candidate"})
+
+    def test_decimal_policy_boundaries_at_multiple_scales(self):
+        for scale in (1, 1.1, 1234.5):
+            for gate, ratio, decisions in (
+                ("improvement", .97, ("measured_improvement", "measured_improvement", "rejected")),
+                ("aa", 1.01, ("measured_improvement", "measured_improvement", "inconclusive")),
+                ("memory time", 1.01, ("measured_improvement", "rejected", "rejected")),
+            ):
+                # Decimal fixture construction avoids introducing binary arithmetic into the expected boundary.
+                boundary = float(Decimal(str(scale)) * Decimal(str(ratio)))
+                for value, expected in zip((math.nextafter(boundary, 0), boundary,
+                                            math.nextafter(boundary, math.inf)), decisions):
+                    with self.subTest(scale=scale, gate=gate, value=value):
+                        docs = measurements(primary="process_peak_rss_bytes" if gate == "memory time" else "elapsed_ms")
+                        for arm, doc in enumerate(docs):
+                            for sample in doc["samples"]:
+                                sample["elapsed_ms"] = scale
+                                if arm == 1 and sample["phase"] == ("aa" if gate == "aa" else "ab"):
+                                    sample["elapsed_ms"] = value
+                                elif arm == 1 and sample["phase"] == "ab" and gate == "aa":
+                                    sample["elapsed_ms"] = scale * .9
+                        self.assertEqual(m.compare_measurements(*docs)["decision"], expected)
+            for direction, expected in ((0, "measured_improvement"), (None, "measured_improvement"),
+                                        (math.inf, "inconclusive")):
+                with self.subTest(scale=scale, mad_direction=direction):
+                    lower = float(Decimal(str(scale)) * Decimal(".98"))
+                    upper = float(Decimal(str(scale)) * Decimal("1.02"))
+                    if direction is not None:
+                        lower = math.nextafter(lower, scale if direction == 0 else 0)
+                        upper = math.nextafter(upper, scale if direction == 0 else math.inf)
+                    docs = measurements()
+                    for doc in docs:
+                        for sample in doc["samples"]:
+                            if sample["phase"] == "aa":
+                                sample["elapsed_ms"] = scale
+                    aa = [s for s in docs[0]["samples"] if s["phase"] == "aa"]
+                    for sample, value in zip(aa, (lower, lower, scale, upper, upper)):
+                        sample["elapsed_ms"] = value
+                    self.assertEqual(m.compare_measurements(*docs)["decision"], expected)
+
     def test_canonical_and_ordered_hashes(self):
         self.assertEqual(m.fingerprint_inputs({"a": 1, "b": 2}),
                          m.fingerprint_inputs({"b": 2, "a": 1}))
@@ -232,6 +364,16 @@ class MeasurementTests(unittest.TestCase):
                 self.assertEqual(m.compare_measurements(*docs)["decision"], expected)
 
     def test_memory_predeclaration_and_time_guard(self):
+        for upper, decision in ((100.999, "measured_improvement"), (101, "rejected"), (101.001, "rejected")):
+            with self.subTest(upper_uncertainty=upper):
+                docs = measurements(100, "process_peak_rss_bytes")
+                measured = [s for s in docs[1]["samples"] if s["phase"] == "ab" and s["role"] == "measured"]
+                for sample, elapsed in zip(measured, (100, upper, 100, upper, 100)):
+                    sample["elapsed_ms"] = elapsed
+                result = m.compare_measurements(*docs)
+                self.assertEqual(result["elapsed"]["improvement_percent"], 0)
+                self.assertAlmostEqual(-result["elapsed"]["interval_95_percent"][0], upper - 100)
+                self.assertEqual(result["decision"], decision)
         for elapsed, decision in ((100, "measured_improvement"), (100.999, "measured_improvement"),
                                   (101, "rejected"), (101.001, "rejected")):
             with self.subTest(elapsed=elapsed):
@@ -416,6 +558,43 @@ class MeasurementTests(unittest.TestCase):
                     self.assertEqual(result.returncode, 0, result.stderr)
                     self.assertIn("--output", result.stdout)
 
+    def test_prepare_and_measure_cli_dispatch(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            manifest, compiler, output = (root / name for name in ("manifest.json", "compiler.json", "output.json"))
+            documents = measurements()
+            m.write_json(manifest, documents[0])
+            m.write_json(compiler, documents[1]["compiler"])
+            cases = (
+                ("prepare_workload", ["prepare", "--source-sha", "a" * 40, "--work-dir", str(root / "owned"),
+                                     "--primary-metric", "process_peak_rss_bytes", "--parallel"],
+                 ("a" * 40, str(root / "owned"), str(output), "process_peak_rss_bytes", True)),
+                ("run_repetitions", ["measure", "--manifest", str(manifest), "--compiler", str(compiler)],
+                 (documents[0], documents[1]["compiler"], str(output))),
+            )
+            for function, arguments, expected in cases:
+                for failed in (False, True):
+                    with self.subTest(command=arguments[0], failed=failed):
+                        def execute(*args):
+                            self.assertEqual(args, expected)
+                            if failed:
+                                raise ValueError("controlled failure")
+                            m.write_json(output, {"executed": function})
+
+                        output.unlink(missing_ok=True)
+                        with mock.patch.object(m, function, side_effect=execute) as invoked, \
+                             mock.patch("sys.stderr") as stderr:
+                            if failed:
+                                with self.assertRaises(SystemExit) as error:
+                                    m.main(arguments + ["--output", str(output)])
+                                self.assertEqual(error.exception.code, 2)
+                                self.assertFalse(output.exists())
+                                self.assertIn("controlled failure", "".join(c.args[0] for c in stderr.write.call_args_list))
+                            else:
+                                self.assertEqual(m.main(arguments + ["--output", str(output)]), 0)
+                                self.assertEqual(m.read_json(output), {"executed": function})
+                            invoked.assert_called_once_with(*expected)
+
     def test_compare_cli_writes_decision_or_explicit_error(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -485,12 +664,14 @@ class MeasurementTests(unittest.TestCase):
                 response.write_text("\n".join(arguments) + "\n")
                 inputs = m.capture_inputs(arguments, cwd, root, {"src/Compiler/source.fs"})
                 environment = m.allowed_environment(root)
-                bootstrap = {"revision": "a" * 40, "binaries": [], "commands": []}
-                toolchain = {"dotnet": m.file_record(sys.executable),
-                             "measurement": m.file_record(MODULE),
-                             "capture_target": m.file_record(MODULE.with_name("Capture.targets")),
-                             "runtime_files": [], "sdk_compiler_files": [],
-                             "compiler_runtimeconfig_sha256": m.file_record(compiler_dir / "fsc.runtimeconfig.json")["sha256"]}
+                provenance = measurements()[0]["invariants"]
+                bootstrap, toolchain = provenance["bootstrap"], provenance["toolchain"]
+                bootstrap["binaries"] = [m.file_record(root / "baseline" / "fsc.dll")]
+                toolchain.update(dotnet=m.file_record(sys.executable), measurement=m.file_record(MODULE),
+                                 capture_target=m.file_record(MODULE.with_name("Capture.targets")),
+                                 runtime_files=[m.file_record(sys.executable)],
+                                 sdk_compiler_files=[m.file_record(sys.executable)],
+                                 compiler_runtimeconfig_sha256=m.file_record(compiler_dir / "fsc.runtimeconfig.json")["sha256"])
                 installations = {arm: m.compiler_manifest(root / arm, "a" * 40, m.fingerprint_inputs(arm), bootstrap, toolchain)
                                  for arm in ("baseline", "candidate")}
                 workload = dict(inputs, revision="a" * 40, default_branch_revision="a" * 40,

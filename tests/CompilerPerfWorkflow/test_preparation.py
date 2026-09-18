@@ -22,7 +22,7 @@ class PreparationTests(unittest.TestCase):
                 sdk, tfm, sha = "11.0.100-synthetic", "net11.0", "a" * 40
                 installation = root / "bootstrap" / "artifacts" / "bin" / "fsc" / "Release" / tfm
                 cwd = root / "workload" / "src" / "Compiler"
-                response = root / "capture" / "compiler.rsp"
+                response = root / "capture" / "replay.rsp"
                 for path in (dotnet, dotnet.parent / "shared" / "Microsoft.NETCore.App" / "11.0.0" / "runtime.dll",
                              dotnet.parent / "sdk" / sdk / "FSharp" / "fsc.dll"):
                     path.parent.mkdir(parents=True, exist_ok=True)
@@ -92,7 +92,7 @@ class PreparationTests(unittest.TestCase):
                         (cwd / "output.dll").write_text("capture output")
                         if outcome == "missing generated":
                             (cwd / "generated.fs").unlink()
-                        response.write_text("\n".join(arguments) + "\n", encoding="utf-8")
+                        response.with_name("compiler.rsp").write_text("\n".join(arguments + ["--times"]) + "\n", encoding="utf-8")
                         identity = ["wrong compiler" if outcome == "wrong compiler" else compiler,
                                     "Release", str(root / "workload" / m.PROJECT), tfm]
                         response.with_name("identity.txt").write_text("\n".join(identity), encoding="utf-8")
@@ -104,7 +104,9 @@ class PreparationTests(unittest.TestCase):
                         if outcome != "no assembly":
                             (cwd / "output.dll").write_text("synthetic replay output")
                         status = 7 if outcome == "replay failure" else 0
-                    elif args[1] not in ("--list-runtimes", "--info"):
+                    elif args[1] in ("--list-runtimes", "--info"):
+                        text = "synthetic runtime"
+                    else:
                         self.fail(f"Unexpected preparation command: {args}")
                     Path(log).write_text(text, encoding="utf-8")
                     return {"exit_status": status, "complete": status == 0}
@@ -125,6 +127,8 @@ class PreparationTests(unittest.TestCase):
                                            ("references", ["FSharp.Core.dll", "reference.dll"])):
                             self.assertEqual([Path(r["path"]).name for r in workload[key]], names)
                         self.assertEqual(workload["arguments"], arguments)
+                        self.assertIn("--times", response.with_name("compiler.rsp").read_text().splitlines())
+                        self.assertNotIn("--times", response.read_text().splitlines())
                         self.assertEqual(workload["revision"], sha)
                         self.assertEqual(workload["response_file"], m.file_record(response))
                         self.assertEqual(document["baseline_compiler"], m.read_json(root / "baseline-compiler.json"))
