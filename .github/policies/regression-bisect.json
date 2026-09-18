@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "repository": "dotnet/fsharp",
+  "selection": {
+    "state": "open",
+    "label": "Regression",
+    "createdAtOrAfter": "2026-09-01T00:00:00Z"
+  },
+  "authorization": {
+    "mode": "reviewed-manifests-only",
+    "policySource": "pinned-trusted-default-branch",
+    "approvalDirectory": ".github/regression-bisect/approved",
+    "assets": "reviewed-repository-paths-and-sha256"
+  },
+  "accounting": {
+    "scope": "issue-allowance",
+    "reserveBeforeExecution": true,
+    "retriesCharged": true,
+    "cancellationRefunds": false,
+    "inputEditsResetAllowance": false,
+    "labelChangesResetAllowance": false,
+    "dispatchResetsAllowance": false,
+    "newAllowanceRequires": "maintainer-authorization"
+  },
+  "limits": {
+    "sourceBuilds": 24,
+    "workerUnits": 40,
+    "reservedMinutes": 720,
+    "attemptsPerItem": 2,
+    "assertionRepetitions": 2,
+    "buildTimeoutMinutes": 90,
+    "reproductionTimeoutSeconds": 300,
+    "workerTimeoutMinutes": 110,
+    "discoveryIssues": 3,
+    "discoveryPages": 2,
+    "discoveryPageSize": 100
+  },
+  "evidenceBytesPerStream": 16384
+}
