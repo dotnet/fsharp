@@ -30,6 +30,7 @@ mono/config.make text eol=lf
 targets.make text eol=lf
 
 *.sh text eol=lf
+eng/regression-bisect/fixtures/checkpoint.txt text eol=lf
 
 *.bsl linguist-vendored=true
 *.xlf linguist-generated=true

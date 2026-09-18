@@ -1,14 +1,16 @@
 # Regression investigation contracts
 
 This directory defines version 1 of the deterministic input, evidence, state,
-and admission contracts. It does not activate a workflow, execute reproductions,
-persist state, or spawn subprocesses. Tests use synthetic records under
-`fixtures`; they are not reproduction approvals.
+and admission contracts, complete issue intake, and authenticated issue-comment
+checkpoints. It does not activate a workflow, execute reproductions, or spawn
+subprocesses. GitHub access is injected by the trusted controller; tests use
+synthetic records and an in-memory transport, never live issue mutations.
+Records under `fixtures` are not reproduction approvals.
 
 Run the dependency-free suite from the repository root:
 
 ```powershell
-node --test eng\regression-bisect\model.test.cjs
+node --test eng\regression-bisect\model.test.cjs eng\regression-bisect\intake.test.cjs eng\regression-bisect\state.test.cjs
 ```
 
 ## Trust boundary
@@ -168,3 +170,195 @@ this gate immediately before the first operation and again after any
 evidence-invalidating change, using the current authenticated context and
 charged reservation. This contract suite does not claim to prove an engine's
 subprocess behavior; there is no engine or subprocess execution here.
+
+## Complete intake and bounded discovery
+
+`intake.cjs` exports `readIssueSnapshot(options)`,
+`discoverEligibleIssues(options)`, and `findActiveInvestigations(options)`.
+They use an injected Octokit-style `transport.request(route, params)` returning
+`{ data, headers }`. Repository/issue identities and all callbacks come from
+the trusted controller, not issue content. The helpers only read GitHub.
+
+`readIssueSnapshot({ transport, repository, issueNumber, ... })` returns
+`{ status: "complete", snapshot }`, or an explicit `ineligible`/`blocked`
+result without a partial snapshot. Opened-with-label, late human/bot labeling,
+scheduled recovery, and manual requests use the same shared exact eligibility
+predicate; no trigger authorizes a reproduction.
+
+The snapshot reads metadata, **all** comments, and timeline/cross-references.
+It preserves stable comment identities, current text, edits, corrections,
+labels, and relevant issue state. Its `input`, `canonicalInput`, `inputDigest`,
+and `discussionFingerprint` describe the complete frozen input; issue
+`updated_at` alone is not an input identity. State's `issueFingerprint` uses
+`snapshot.discussionFingerprint`. Snapshot `inputDigest` is a collection
+fingerprint, distinct from the manifest's `approvedInputDigest`.
+
+Optional `reviewedManifest` must match that discussion fingerprint.
+`readSource({ path, sha256 })` must return the raw reviewed bytes from the pinned
+trusted checkout; intake verifies their hashes and freezes the reproduction,
+exact pass/failure assertions, and dependency identities. A snapshot without a
+reviewed reproduction is suitable for a proposal, not execution. The state
+helpers separately require today's matching default-branch approval.
+
+Optional `authenticateRecord(comment)` must delegate to authenticated state/
+publication provenance. Only exact `true` excludes a record. No callback means
+**nothing is excluded**. Markers and copied JSON remain untrusted input.
+The integration test uses the actual signed checkpoint fixture to verify that
+workflow records are excluded while reporter copies remain hashed.
+Production dispatch must supply both authentication and trusted-checkpoint
+callbacks. Once a record authenticates, omitting `readTrustedCheckpoints` blocks
+the freeze. Omitting both callbacks is only untrusted-input collection, not
+duplicate-safe dispatch.
+
+`findActiveInvestigations` examines linked issues/PRs, their current status and
+activity, and trusted checkpoints. Suppression requires an open/unmerged target
+active within 14 days and a timeline cross-reference or verified backlink; an
+arbitrary "already investigating" comment is not a permanent veto.
+The controller must inspect `snapshot.investigations.active` before dispatch.
+The result records links, status, and the basis for suppression; unreadable
+required targets block intake rather than silently disappearing.
+
+To supply trusted checkpoints, adapt `loadCheckpoint()` into
+`readTrustedCheckpoints` records
+`{ status: "loaded", state, pending, commentId, owner: { runId, attempt } }`,
+using `result.checkpoint.state` and `result.checkpoint.pending`. Required read/
+evidence failures must propagate as blocked, not as an absent checkpoint.
+Use `result.commentId` and `result.owner`, which are recovered from authenticated
+provenance, rather than substituting the new controller's run identity.
+Returning `[]` asserts that a complete trusted-checkpoint lookup found none.
+Pending ownership takes precedence; the specific owning Actions run attempt is
+inspected before suppressing or reclaiming work.
+
+Default safety bounds are 20 comment pages, 20 timeline pages, 100 linked
+targets, 4 MiB of canonical input, and 1 MiB of aggregate source bytes.
+Overrides can only lower these bounds. Exceeding a bound, incomplete pagination,
+or an API failure blocks the freeze; first-page truncation is never accepted.
+
+### Discovery cursor lifetime
+
+`discoverEligibleIssues({ transport, repository, cursor, scheduleOrdinal })`
+uses created-ordered REST issue listing, not Search's 1,000-result-limited
+index. It returns `{ status, issues, nextCursor }`, with at most two pages of
+100 records and three candidates. API label filtering only narrows the query;
+every candidate still passes `isEligibleIssue`.
+
+Persist the returned `{ version, page, offset }` cursor after consuming its
+candidates. The offset retains overflow candidates on a page rather than
+skipping them when three have been selected. Traversal resets and revisits old
+eligible creation dates so later bot labeling, including issues created exactly
+at the cutoff, is eventually discovered.
+
+Supply a monotonic schedule ordinal independently of the cursor cache (for
+example, the scheduled UTC slot number from a fixed epoch). Lost or corrupt
+cursors use expanding triangular page rounds and rotating three-item offsets;
+repeated cache loss must not always return page one's first three issues.
+The cursor is only a discovery optimization. Its loss never initializes a new
+allowance, removes a checkpoint, or changes consumed budgets. Event/manual
+paths and discovery candidates still enter the same serialized issue
+transaction before any dispatch.
+
+## Authenticated comment checkpoints
+
+`state.cjs` wraps the shared model state rather than introducing a second model
+or changing admission. It keeps the full observations and their manifests,
+ordered reservation/completion/cancellation records, cumulative charges,
+per-item attempts, pending owner/request/deadline, endpoint epoch history,
+intervals, skips, and publication digest/comment ID. Identity tables intern
+repeated objects and long assertion streams without dropping observations.
+The entire signed UTF-8 comment must be **less than 48 KiB**. A write that cannot
+fit blocks further work; it never discards evidence or refunds a reservation.
+`fixtures/checkpoint.txt` is a concrete signed checkpoint using a **synthetic
+test key**, replayed through reservation, commit, cancellation, and resume.
+Its checkout line endings are pinned to LF so Windows Git settings cannot
+change the authenticated bytes.
+
+The trusted controller supplies `context`:
+
+* `repository`, `issueNumber`, and the exact authoritative `commentId`;
+  `actor: { id, login, type, appId }` are pinned numeric GitHub author/app
+  identities, not just the shared Actions bot display name.
+* `workflowPath`, `workflowRef` (for example `refs/heads/main`),
+  `workflowRevision`, and `trustedWorkflowRevisions`. Old orchestration
+  revisions may be retained only after independent maintainer review.
+* `keys` maps key IDs to secret `Buffer`s of at least 32 bytes; `keyId` chooses
+  the current signing key. Production keys belong only to the trusted
+  controller's secret store, never this repository, issue input, source builds,
+  reproduction processes, worker output, or caches.
+* `owner: { runId, attempt }`, with a decimal-string run ID; UTC `now`;
+  the freshly read `issue` and complete `issueFingerprint`; today's reviewed
+  `manifest`, `authorization`, `policy`, `policyRevision`, `pinnedMainSha`, and
+  `stableSdk`. These have the shared model shapes above. Missing or mismatched
+  current approval blocks execution even if the old checkpoint is authentic.
+
+The transport implements these asynchronous methods:
+
+| Method | Required result |
+| --- | --- |
+| `getComment(commentId)` | Full REST issue-comment object: `id`, `body`, `issue_url`, `user`, and `performed_via_github_app`. Missing comments throw, never return empty state. |
+| `updateComment(commentId, body)` | The full updated comment. The helper verifies the returned body and provenance before granting execution. |
+| `getRun(runId, attempt)` | The **specific run attempt**, with REST `id`, `run_attempt`, `path`, `head_sha`, `head_branch`, `repository.full_name`, `head_repository.full_name`, `status`, and `conclusion`. Do not silently substitute the latest rerun. |
+| `readEvidence(url)` | Verified downloaded bytes as a `Buffer`, or `null` for confirmed missing/expired content. Authentication, rate-limit, and network errors throw. The controller restricts downloads to its evidence stores. |
+
+The versioned envelope has a human-readable authenticated status, a compact
+payload, and HMAC-SHA256 over its canonical contents. Its signed binding includes
+the exact comment, issue, repository, workflow path/ref/revision, and run attempt.
+Reading also checks GitHub author/app identities and independently fetches the
+bound run. Copying the marker, envelope, or bot name to another comment does not
+establish authority. Untrusted workers must not receive the signing key or
+construct the controller context. `commitObservation` accepts observations
+collected and authenticated by that controller, not arbitrary reproduction
+stdout presented as a worker result.
+
+The controller must retain or rediscover the **same authenticated comment ID**,
+requiring a unique valid checkpoint for the issue; a missing or ambiguous record
+blocks resumption. Never adopt the newest marker or bootstrap because a cache
+missed. `initializeCheckpoint(transport, context, { allowanceId, deadline })`
+is only for the initial maintainer-authorized allowance, under the issue lock.
+`context.bootstrapDigest` must come from the trusted creation receipt for the
+exact initial placeholder, not from hashing whichever comment is currently
+present. Initialization refuses an existing envelope. There is deliberately no
+automatic reset/new-allowance operation; ordinary issue edits, label toggles,
+redispatches, and cancellations cannot replenish any counter.
+
+### Controller transaction
+
+Hold one issue-scoped controller lock across **read, reserve, worker, commit,
+and report**. GitHub comment updates are not compare-and-swap. The generation
+and owner checks below add stale-request protection; they do not replace that
+lock. All state-transition calls reread the authoritative comment.
+
+| Export | Behavior |
+| --- | --- |
+| `loadCheckpoint(transport, context)` | Returns `{ checkpoint, commentId, owner, executionAllowed, publicationAllowed, blockers, warnings }`. Invalid authentication/schema throws; stale approvals/inputs or required evidence loss explicitly block reuse. |
+| `reserveWork(transport, context, { generation, attemptId, request })` | Durably charges and saves the exact request before returning a reservation with `execute: true`. Duplicate requests return `execute: false`; they **must not launch another worker**. Conflicting attempt IDs, stale generations, active pending owners, exhausted counters, and deadlines fail closed. |
+| `commitObservation(transport, context, { generation, attemptId, observation, evidence })` | Checks ownership, request/build/provenance and the shared observation contract, then commits all decisive evidence before clearing pending work. Exact duplicate completion is idempotent. |
+| `invalidateStaleEvidence(transport, context, { generation })` | Invalidates changed input/approval/producer/orchestration dependencies without erasing history or charges. Main/stable changes start a new endpoint epoch while retaining exact-input historical source observations. Closed/unlabeled issues stop publication; existing result identities remain auditable. |
+| `serializeWorkflowRecord({ kind, status, payload }, context)` | Signs a `checkpoint`, `proposal`, or `result` envelope. Low-level serialization is not approval or a storage transition. |
+| `authenticateWorkflowRecord(transport, context, comment)` | Returns true only for a matching signed record and fetched run provenance. Forged records return false; required API failures throw. Bind the expected record ID before using this as intake's exclusion callback. |
+
+A work request is
+`{ kind, target, endpoint, phase }`: `kind`/`target` use the observation shape;
+`endpoint` is `stable`, `main`, `good`, or `null`; `phase` is `stable`, `main`,
+`good-search`, `admission`, `bisect`, or `confirmation`. Work-item identity
+binds kind, target, and approved input digest, so renaming a request or changing
+its role cannot buy extra retries. Every reservation charges one worker unit,
+one source build for source work, and the complete policy worker timeout
+(110 minutes). The policy limits remain 24 builds, 40 worker units,
+720 cumulative reserved minutes, and two attempts per item; the minutes limit
+can bind before the other limits.
+
+The worker uses the returned reservation ID as its `buildInstanceId` and returns
+the exact pinned request's observation. `evidence` contains
+`{ required, sha256, url }` entries for external evidence/logs. Complete assertion
+evidence and product/environment identities are retained in the comment itself.
+Missing required external evidence blocks execution/publication; optional
+expired logs produce an explicit warning. Neither artifacts nor Actions caches
+are authoritative memory.
+
+On restart, an outstanding reservation is reclaimed only after fetching its
+owning run attempt and establishing `status: completed` with a conclusion.
+Queued, active, unknown, or unreadable owners remain blocking even after their
+deadline. No cancellation finalizer is required. The old reservation stays
+charged and a retry consumes another attempt/unit/time reservation; at most the
+one uncommitted observation repeats. If a write succeeded but its acknowledgement
+was lost, retrying that attempt does not grant another execution permission.
