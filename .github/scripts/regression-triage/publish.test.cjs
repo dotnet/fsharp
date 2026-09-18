@@ -1,0 +1,805 @@
+"use strict";
+
+const { test } = require("node:test");
+const assert = require("node:assert/strict");
+const { POLICY_VERSION, fingerprintHumanInput, normalizeMemory } = require("./core.cjs");
+const { readIssueSnapshot, MEMORY_BRANCH, MEMORY_PATH } = require("./github.cjs");
+const {
+  validateProposals, publishBatch, createGitHubStore, OUTPUT_TYPE, ACKNOWLEDGEMENT, receiptMarker,
+} = require("./publish.cjs");
+const {
+  repo, now, before, clone, failure, report, comment, fake, emptyMemory, collect, publishRun,
+} = require("./test-support.cjs");
+
+const oid = (n) => n.toString(16).padStart(40, "0");
+const bot = { id: 99, login: "regression-triage[bot]" };
+const context = (head = oid(1), runId = "123") => ({
+  repository: "dotnet/fsharp", runId, runAttempt: 1, policyVersion: POLICY_VERSION,
+  collectorRevision: oid(100), memoryHead: head,
+});
+const envelope = (results) => ({ items: [{ type: OUTPUT_TYPE,
+  proposals: JSON.stringify({ schemaVersion: 1, policyVersion: POLICY_VERSION, results }) }] });
+const proposal = (item, fields = {}) => ({
+  number: item.number, fingerprint: item.fingerprint, classification: "regression",
+  evidence: [{ sourceId: item.snapshot.bodySourceId, url: item.snapshot.url,
+    quote: item.snapshot.body, dimension: "compiler" }],
+  missingFact: null, clarification: null, ...fields,
+});
+const uncertain = { classification: "uncertain", missingFact: "An earlier working compiler.", clarification: "known-good" };
+
+function casStore(state = emptyMemory(), head = oid(1), missing = null) {
+  const store = {
+    value: { state: clone(state), headOid: head, missing }, writes: [],
+    async read() { return clone(store.value); },
+    async commit({ expectedHeadOid, state }) {
+      await store.beforeCommit?.(state);
+      if (expectedHeadOid !== store.value.headOid) {
+        throw Object.assign(new Error("Memory changed; recollect"), { code: "CAS_CONFLICT", retryable: true });
+      }
+      store.writes.push(clone(state));
+      store.value = { state: clone(state), headOid: oid(store.writes.length + 1), missing: null };
+      await store.afterCommit?.(state);
+      return clone(store.value);
+    },
+  };
+  return store;
+}
+
+function writableApi(options = {}) {
+  const api = fake({ issues: [report()], pageSize: 100, ...options });
+  api.github.rest.issues.addLabels = async (args) => {
+    api.calls.push({ name: "addLabels", ...clone(args) });
+    const issue = api.issues.find((item) => item.number === args.issue_number);
+    issue.labels = [...new Set([...issue.labels, ...args.labels])];
+    return { data: issue.labels.map((name) => ({ name })) };
+  };
+  api.github.rest.issues.createComment = async (args) => {
+    api.calls.push({ name: "createComment", ...clone(args) });
+    const comments = api.comments[args.issue_number] ??= [];
+    const item = comment(1000 + comments.length, { body: args.body, user: { ...bot, type: "Bot" },
+      html_url: `${report(args.issue_number).url}#issuecomment-${1000 + comments.length}` });
+    comments.push(item);
+    return { data: clone(item) };
+  };
+  return api;
+}
+
+async function setup(options = {}, state = emptyMemory()) {
+  const api = writableApi(options);
+  const store = casStore(state);
+  const manifest = { ...await collect(api, state, { limits: undefined }), binding: context() };
+  const output = envelope(manifest.selected.map((item) => proposal(item)));
+  const args = { github: api.github, store, repo, manifest, output, context: context(), bot, now, env: {} };
+  return { api, store, manifest, output, args };
+}
+
+const writes = (api, name) => api.calls.filter((call) => call.name === name);
+
+test("one GH AW route acknowledges validation, not publication", () => {
+  assert.equal(OUTPUT_TYPE, "publish_regression_triage");
+  assert.equal(ACKNOWLEDGEMENT, "Proposal received for validation; publication is not confirmed.");
+});
+
+test("positive reports without a keyword add exactly Regression once, then deduplicate", async () => {
+  const { api, store, args } = await setup();
+  const first = await publishBatch(args);
+  assert.deepEqual(writes(api, "addLabels"), [{ name: "addLabels", ...repo, issue_number: 42, labels: ["Regression"] }]);
+  assert.deepEqual(api.issues[0].labels, ["Needs-Triage", "Regression"]);
+  assert.deepEqual(writes(api, "createComment"), []);
+  const record = first.state.issues[42];
+  assert.equal(record.classification, "regression");
+  assert.equal(record.lastResult.status, "published");
+  assert.equal(record.pendingPublication, null);
+  assert.equal(record.evidence[0].quote, report().body);
+  assert.doesNotMatch(JSON.stringify(record), /reproduced|verified/i);
+  const commits = store.writes.length;
+  await publishBatch(args);
+  assert.equal(store.writes.length, commits);
+  assert.equal(writes(api, "addLabels").length, 1);
+  assert.ok(store.writes[0].issues[42].pendingPublication);
+  assert.ok(store.writes[0].pending.some((entry) => entry.number === 42));
+  assert.ok(first.state.issues[42].readAttempt.at);
+  assert.deepEqual(first.state.pending, []);
+});
+
+for (const { name, input, expected } of require("./fixtures/classification.json").cases) {
+  test(`frozen classification provenance and effects: ${name}`, async () => {
+    const issues = [input, ...input.linked].map((item) => report(item.number, {
+      ...item, html_url: item.url, ...(item.isPullRequest ? { pull_request: {} } : {}),
+    }));
+    const comments = Object.fromEntries([input, ...input.linked].map((item) => [item.number,
+      item.humanComments.map((c) => comment(c.id, { body: c.body, html_url: c.url,
+        user: { id: c.authorId, login: c.author, type: "User" },
+        created_at: c.createdAt, updated_at: c.updatedAt }))]));
+    const timeline = { [input.number]: input.humanDecisions.map((d) => ({
+      id: d.id, event: d.event, label: { name: d.label }, actor: { id: d.actorId, login: d.actor, type: "User" },
+      created_at: d.createdAt, url: d.url,
+    })) };
+    const { api, args } = await setup({ issues, comments, timeline });
+    const selected = args.manifest.selected.find((item) => item.number === input.number);
+    const result = proposal(selected, { classification: expected.classification,
+      evidence: expected.evidence, missingFact: expected.missingFact });
+    args.output = envelope([result]);
+    assert.deepEqual(validateProposals(args.output, args.manifest), [result]);
+    await publishBatch(args);
+    assert.deepEqual(writes(api, "addLabels").flatMap((call) => call.labels), expected.allowedEffect.addLabels);
+    assert.ok(api.issues[0].labels.includes("Needs-Triage"));
+    if (input.labels.includes("Regression")) assert.ok(api.issues[0].labels.includes("Regression"));
+  });
+}
+
+for (const [name, change] of [
+  ...["labels", "comment", "close", "edit", "code", "secret", "dispatch", "repository", "branch", "path",
+    "operations", "stateDelta", "permissions", "reproduced", "staged"].map((key) => [key, (r) => { r[key] = "hostile"; }]),
+  ["unsafe number", (r) => { r.number = 9007199254740992; }],
+  ["unselected", (r) => { r.number = 55; }],
+  ["hash", (r) => { r.fingerprint = "0".repeat(64); }],
+  ["classification", (r) => { r.classification = "verified"; }],
+  ["no evidence", (r) => { r.evidence = []; }],
+  ["missing fact", (r) => { r.classification = "uncertain"; }],
+  ["arbitrary clarification", (r) => { Object.assign(r, uncertain, { clarification: "Run this script" }); }],
+  ["non-string clarification", (r) => { Object.assign(r, uncertain, { clarification: ["known-good"] }); }],
+  ["oversized quote", (r) => { r.evidence[0].quote = "x".repeat(1001); }],
+  ["invented quote", (r) => { r.evidence[0].quote = "This was independently verified."; }],
+  ["invented source", (r) => { r.evidence[0].sourceId = "dotnet/fsharp#42:comment:404"; }],
+  ["invented URL", (r) => { r.evidence[0].url = "https://evil.invalid"; }],
+  ["unsupported dimension", (r) => { r.evidence[0].dimension = "verified"; }],
+  ["arbitrary correction", (r) => { r.correction = { sourceId: "fake", url: "fake", quote: "reject" }; }],
+]) {
+  test(`strict proposal rejects ${name} before any writes`, async () => {
+    const { api, store, args } = await setup();
+    const result = proposal(args.manifest.selected[0]);
+    change(result);
+    args.output = envelope([result]);
+    await assert.rejects(publishBatch(args));
+    assert.equal(store.writes.length, 0);
+    assert.equal(writes(api, "addLabels").length + writes(api, "createComment").length, 0);
+  });
+}
+
+for (const [name, output] of [
+  ["missing", undefined], ["malformed", "{"], ["oversized", " ".repeat(131073)],
+  ["unknown envelope field", { items: [], operations: [] }],
+  ["no envelope", { items: [] }], ["wrong output", { items: [{ type: "add_labels", proposals: "{}" }] }],
+  ["duplicate envelopes", { items: [{ type: OUTPUT_TYPE, proposals: "{}" }, { type: OUTPUT_TYPE, proposals: "{}" }] }],
+  ["duplicate JSON keys", '{"items":[],"items":[]}'],
+]) {
+  test(`strict output rejects ${name}`, async () => {
+    const { store, args } = await setup();
+    await assert.rejects(publishBatch({ ...args, output }));
+    assert.equal(store.writes.length, 0);
+  });
+}
+
+test("duplicate results, wrong batch policy/schema and unknown batch fields fail", async () => {
+  const { args } = await setup();
+  const result = proposal(args.manifest.selected[0]);
+  for (const batch of [
+    { schemaVersion: 1, policyVersion: POLICY_VERSION, results: [result, result] },
+    { schemaVersion: 2, policyVersion: POLICY_VERSION, results: [result] },
+    { schemaVersion: 1, policyVersion: "other", results: [result] },
+    { schemaVersion: 1, policyVersion: POLICY_VERSION, results: [result], runId: "hostile" },
+  ]) {
+    assert.throws(() => validateProposals({ items: [{ type: OUTPUT_TYPE, proposals: JSON.stringify(batch) }] }, args.manifest));
+  }
+});
+
+for (const field of ["repository", "runId", "runAttempt", "policyVersion", "collectorRevision", "memoryHead"]) {
+  test(`trusted artifact must match independent runtime ${field}`, async () => {
+    const { store, args } = await setup();
+    args.manifest.binding[field] = field === "runAttempt" ? 2 : "wrong";
+    await assert.rejects(publishBatch(args));
+    assert.equal(store.writes.length, 0);
+  });
+}
+
+test("incomplete or altered trusted snapshots cannot authorize proposals", async () => {
+  for (const change of [(s) => { s.complete = false; }, (s) => { s.body += "changed"; }]) {
+    const { store, args } = await setup();
+    change(args.manifest.selected[0].snapshot);
+    await assert.rejects(publishBatch(args));
+    assert.equal(store.writes.length, 0);
+  }
+});
+
+const changes = {
+  closed: (api) => { api.issues[0].state = "closed"; },
+  "Needs-Triage removed": (api) => { api.issues[0].labels = []; },
+  title: (api) => { api.issues[0].title += " corrected"; },
+  body: (api) => { api.issues[0].body += " corrected"; },
+  "comment corrected": (api) => { api.comments[42][0].body += " corrected"; },
+  "comment deleted": (api) => { api.comments[42] = []; },
+  "linked claim": (api) => { api.issues[1].body += " corrected"; },
+  "human label applied": (api) => {
+    api.issues[0].labels.push("Regression");
+    api.timeline[42] = [{ id: 3, event: "labeled", label: { name: "Regression" },
+      actor: { id: 20, type: "User" }, created_at: now }];
+  },
+  "human label removed": (api) => {
+    api.timeline[42] = [{ id: 3, event: "unlabeled", label: { name: "Regression" },
+      actor: { id: 20, type: "User" }, created_at: now }];
+  },
+};
+
+for (const kind of ["label", "clarification"]) {
+  for (const [name, change] of Object.entries(changes)) {
+    test(`adjacent ${kind} recheck prevents stale ${name}`, async () => {
+      const { api, store, args } = await setup({
+        issues: [report(42, { body: `${report().body} #43` }), report(43, { labels: [] })],
+        comments: { 42: [comment(1)] },
+      });
+      if (kind === "clarification") args.output = envelope([proposal(args.manifest.selected[0], uncertain)]);
+      let changed = false;
+      store.afterCommit = (state) => {
+        if (!changed && state.issues[42].pendingPublication?.phase === "sending") {
+          changed = true;
+          change(api);
+        }
+      };
+      const result = await publishBatch(args);
+      assert.equal(changed, true, "test reaches the durable claim just before final recheck");
+      assert.equal(writes(api, "addLabels").length + writes(api, "createComment").length, 0);
+      assert.equal(result.state.issues[42].lastResult.status, "stale");
+      assert.ok(result.state.pending.some((entry) => entry.number === 42));
+    });
+  }
+}
+
+test("one templated AI-disclosed clarification over fingerprints and policies", async () => {
+  const { api, store, args } = await setup();
+  args.output = envelope([proposal(args.manifest.selected[0], uncertain)]);
+  await publishBatch(args);
+  const posted = writes(api, "createComment");
+  assert.equal(posted.length, 1);
+  assert.match(posted[0].body, /AI/);
+  assert.ok(posted[0].body.includes(receiptMarker(repo, 42)));
+  assert.ok(!posted[0].body.includes(uncertain.missingFact));
+  api.issues[0].body += " A new detail.";
+  store.value.state.policyVersion = "old-policy";
+  store.value.state.issues[42].policyVersion = "old-policy";
+  const binding = context(store.value.headOid, "124");
+  args.context = binding;
+  args.manifest = { ...await collect(api, normalizeMemory(store.value.state)), binding };
+  args.output = envelope([proposal(args.manifest.selected[0], { ...uncertain, clarification: "affected-component" })]);
+  const result = await publishBatch(args);
+  assert.equal(writes(api, "createComment").length, 1);
+  assert.equal(result.state.issues[42].clarification.status, "published");
+  assert.equal(result.state.issues[42].missingFact, uncertain.missingFact);
+});
+
+for (const identity of ["human forgery", "other bot", "right login wrong id", "authenticated bot"]) {
+  test(`clarification receipts authenticate ${identity}`, async () => {
+    const user = identity === "authenticated bot" ? { ...bot, type: "Bot" }
+      : identity === "human forgery" ? { ...bot, type: "User", login: "reporter" }
+      : { id: 777, type: "Bot", login: identity === "other bot" ? "other[bot]" : bot.login };
+    const { api, args } = await setup({ comments: { 42: [comment(9, {
+      body: receiptMarker(repo, 42), user,
+    })] } });
+    args.output = envelope([proposal(args.manifest.selected[0], uncertain)]);
+    const result = await publishBatch(args);
+    assert.equal(writes(api, "createComment").length, identity === "authenticated bot" ? 0 : 1);
+    assert.equal(result.state.issues[42].clarification.status, "published");
+  });
+}
+
+test("complete current human decisions veto re-add with no record, but later human application survives", async () => {
+  const { api, store, args } = await setup({ timeline: { 42: [{
+    id: 1, event: "unlabeled", label: { name: "Regression" }, actor: { id: 20, type: "User" }, created_at: before,
+  }] } });
+  await publishBatch(args);
+  assert.equal(writes(api, "addLabels").length, 0);
+  assert.equal(store.value.state.issues[42].humanLabelDecision.event, "unlabeled");
+  api.issues[0].labels.push("Regression");
+  api.timeline[42].push({ id: 2, event: "labeled", label: { name: "Regression" },
+    actor: { id: 21, type: "User" }, created_at: now });
+  const binding = context(store.value.headOid, "125");
+  args.manifest = { ...await collect(api, store.value.state), binding };
+  args.context = binding;
+  args.output = envelope([proposal(args.manifest.selected[0], { ...uncertain, clarification: null })]);
+  await publishBatch(args);
+  assert.deepEqual(api.issues[0].labels, ["Needs-Triage", "Regression"]);
+  assert.equal(store.value.state.issues[42].humanLabelDecision.event, "labeled");
+});
+
+test("empty batch commits whole discovery delta, missing output commits nothing", async () => {
+  const { store, args } = await setup({ issues: Array.from({ length: 11 }, (_, i) => report(i + 1)) });
+  await assert.rejects(publishBatch({ ...args, output: undefined }));
+  assert.equal(store.writes.length, 0);
+  const result = await publishBatch({ ...args, output: envelope([]) });
+  assert.deepEqual(result.state.scan, args.manifest.stateDelta.scan);
+  assert.deepEqual(result.state.pending, args.manifest.stateDelta.pending);
+  assert.deepEqual(result.state.issues, args.manifest.stateDelta.issues);
+  assert.equal(result.state.pending.length, 11);
+});
+
+test("real repeated collector-publication drains eleven default-budget reports and restart", async () => {
+  const api = writableApi({ issues: Array.from({ length: 11 }, (_, i) => report(i + 1)) });
+  const store = casStore();
+  let memory = emptyMemory();
+  for (let run = 0; run < 5; run++) {
+    const cycle = await publishRun(api, memory, { limits: undefined,
+      now: new Date(Date.parse(now) + run * 60000).toISOString() }, async (manifest) => {
+      const binding = context(store.value.headOid, String(123 + run));
+      const result = await publishBatch({ github: api.github, store, repo, context: binding, bot, now, env: {},
+        manifest: { ...manifest, binding }, output: envelope(manifest.selected.map((item) => proposal(item))) });
+      return result.state;
+    });
+    memory = cycle.memory;
+    if (run === 2) assert.equal(writes(api, "addLabels").length, 11);
+    if (run > 2) assert.deepEqual(cycle.result.selected, []);
+  }
+  assert.equal(writes(api, "addLabels").length, 11);
+});
+
+test("transient per-issue read failure keeps its queue and other successful outcomes", async () => {
+  const { api, args } = await setup({ issues: [report(42), report(43)] });
+  const get = api.github.rest.issues.get;
+  api.github.rest.issues.get = (a) => a.issue_number === 42 ? Promise.reject(failure(503)) : get(a);
+  const result = await publishBatch(args);
+  assert.equal(result.state.issues[42].lastResult.status, "retryable");
+  assert.equal(result.state.issues[43].lastResult.status, "published");
+  assert.deepEqual(result.state.pending.map((entry) => entry.number), [42]);
+  assert.ok(result.outcomes.some((item) => item.number === 42 && item.status === "retryable"));
+});
+
+for (const kind of ["label", "clarification"]) {
+  for (const point of ["prepared", "sending", "effect", "timeout applied", "timeout absent"]) {
+    test(`${kind} crash/unknown recovery at ${point}`, async () => {
+      const { api, store, args } = await setup();
+      if (kind === "clarification") args.output = envelope([proposal(args.manifest.selected[0], uncertain)]);
+      let crashed = false;
+      const method = kind === "label" ? "addLabels" : "createComment";
+      const mutate = api.github.rest.issues[method];
+      if (point.startsWith("timeout")) {
+        api.github.rest.issues[method] = async (a) => {
+          if (point === "timeout applied") await mutate(a);
+          else api.calls.push({ name: method, ...a });
+          throw Object.assign(new Error("Unknown outcome"), { code: "ETIMEDOUT" });
+        };
+        await publishBatch(args);
+      } else {
+        store.afterCommit = (state) => {
+          if (!crashed && state.issues[42].pendingPublication?.phase === point) {
+            crashed = true;
+            throw new Error("process crash");
+          }
+        };
+        store.beforeCommit = (state) => {
+          if (!crashed && point === "effect" && state.issues[42].lastResult?.status === "published") {
+            crashed = true;
+            throw new Error("process crash");
+          }
+        };
+        await assert.rejects(publishBatch(args), /process crash/);
+      }
+      store.afterCommit = store.beforeCommit = undefined;
+      const result = await publishBatch(args);
+      assert.ok(writes(api, method).length <= 1);
+      if (point === "sending" || point === "timeout absent") {
+        assert.equal(result.state.issues[42].lastResult.status, "unknown");
+        assert.ok(result.state.issues[42].pendingPublication);
+      } else assert.equal(result.state.issues[42].lastResult.status, "published");
+    });
+  }
+}
+
+test("two publishers share a CAS store: controlled collision cannot replay stale discovery", async () => {
+  const { api, store, args } = await setup();
+  let unblock;
+  let arrived;
+  const waiting = new Promise((resolve) => { arrived = resolve; });
+  const gate = new Promise((resolve) => { unblock = resolve; });
+  let first = true;
+  store.beforeCommit = async () => {
+    if (first) { first = false; arrived(); await gate; }
+  };
+  const slower = publishBatch(args);
+  await waiting;
+  const faster = await publishBatch(args);
+  unblock();
+  await assert.rejects(slower, { code: "CAS_CONFLICT", retryable: true });
+  assert.deepEqual(store.value.state, faster.state);
+  assert.equal(writes(api, "addLabels").length, 1);
+  await publishBatch(args);
+  assert.equal(writes(api, "addLabels").length, 1);
+});
+
+test("newer memory rejects an old whole-manifest delta rather than regressing cursor or queue", async () => {
+  const { store, args } = await setup();
+  store.value.headOid = oid(90);
+  store.value.state.scan.updatedThrough = "2026-09-19T00:00:00Z";
+  store.value.state.pending = [{ number: 88, firstSeenAt: now }];
+  await assert.rejects(publishBatch(args), { code: "CAS_CONFLICT", retryable: true });
+  assert.equal(store.writes.length, 0);
+  assert.equal(store.value.state.pending[0].number, 88);
+});
+
+test("a resumed manifest cannot replace its accepted decisions", async () => {
+  const { api, store, args } = await setup();
+  store.afterCommit = () => { throw new Error("crash after intent"); };
+  await assert.rejects(publishBatch(args), /crash/);
+  store.afterCommit = undefined;
+  args.output = envelope([proposal(args.manifest.selected[0], uncertain)]);
+  await assert.rejects(publishBatch(args), /accepted|conflict/i);
+  assert.equal(writes(api, "createComment").length, 0);
+  assert.equal(writes(api, "addLabels").length, 0);
+});
+
+test("a known-unsent stale clarification does not strand the next current analysis", async () => {
+  const { api, store, args } = await setup();
+  args.output = envelope([proposal(args.manifest.selected[0], uncertain)]);
+  let changed = false;
+  store.afterCommit = (state) => {
+    if (!changed && state.issues[42].pendingPublication?.phase === "sending") {
+      changed = true;
+      api.issues[0].body += " More detail.";
+    }
+  };
+  const stale = await publishBatch(args);
+  assert.equal(stale.state.issues[42].lastResult.status, "stale");
+  const binding = context(store.value.headOid, "126");
+  args.manifest = { ...await collect(api, store.value.state), binding };
+  args.context = binding;
+  args.output = envelope([proposal(args.manifest.selected[0], uncertain)]);
+  const result = await publishBatch(args);
+  assert.equal(result.state.issues[42].lastResult.status, "published");
+  assert.equal(writes(api, "createComment").length, 1);
+});
+
+for (const kind of ["label", "clarification"]) {
+  test(`closure after ${kind} records a partial stale outcome, never undoes the effect`, async () => {
+    const { api, store, args } = await setup();
+    if (kind === "clarification") args.output = envelope([proposal(args.manifest.selected[0], uncertain)]);
+    const method = kind === "label" ? "addLabels" : "createComment";
+    const original = api.github.rest.issues[method];
+    api.github.rest.issues[method] = async (a) => {
+      const response = await original(a);
+      api.issues[0].state = "closed";
+      return response;
+    };
+    const result = await publishBatch(args);
+    assert.equal(result.state.issues[42].lastResult.status, "stale");
+    assert.equal(result.state.issues[42].lastResult.detail.effectObserved, true);
+    assert.equal(writes(api, method).length, 1);
+    if (kind === "label") assert.ok(api.issues[0].labels.includes("Regression"));
+    const binding = context(store.value.headOid, "127");
+    api.issues[0].state = "open";
+    args.manifest = { ...await collect(api, store.value.state), binding };
+    args.context = binding;
+    args.output = envelope([proposal(args.manifest.selected[0], kind === "label" ? {} : uncertain)]);
+    await publishBatch(args);
+    assert.equal(writes(api, method).length, 1);
+  });
+}
+
+test("human rejecting correction and fair-read metadata survive migration and a new positive proposal", async () => {
+  const correction = comment(1, { body: "Correction: the earlier compiler also failed." });
+  const { api, store, args } = await setup({ comments: { 42: [correction] } });
+  const source = args.manifest.selected[0].snapshot.humanComments[0];
+  args.output = envelope([proposal(args.manifest.selected[0], { ...uncertain, clarification: null,
+    correction: { sourceId: source.sourceId, url: source.url, quote: source.body } })]);
+  await publishBatch(args);
+  const prior = clone(store.value.state.issues[42]);
+  store.value.state.issues[42].policyVersion = "old-policy";
+  api.issues[0].body += " Another detail.";
+  const binding = context(store.value.headOid, "128");
+  args.manifest = { ...await collect(api, store.value.state), binding };
+  args.context = binding;
+  args.output = envelope([proposal(args.manifest.selected[0])]);
+  await publishBatch(args);
+  assert.equal(writes(api, "addLabels").length, 0);
+  assert.deepEqual(store.value.state.issues[42].humanCorrection, prior.humanCorrection);
+  assert.deepEqual(store.value.state.issues[42].readAttempt, prior.readAttempt);
+  assert.equal(store.value.state.issues[42].lastResult.detail.code, "human-veto");
+});
+
+for (const loss of ["branch", "file", "stale state"]) {
+  test(`lost memory (${loss}) reconciles authenticated receipts without another question`, async () => {
+    const { api, args } = await setup();
+    args.output = envelope([proposal(args.manifest.selected[0], uncertain)]);
+    await publishBatch(args);
+    const head = loss === "branch" ? null : oid(90);
+    const store = casStore(emptyMemory(), head, loss === "stale state" ? null : loss);
+    const binding = context(head, "129");
+    args.store = store;
+    args.manifest = { ...await collect(api), binding };
+    args.context = binding;
+    args.output = envelope([proposal(args.manifest.selected[0], uncertain)]);
+    const result = await publishBatch(args);
+    assert.equal(writes(api, "createComment").length, 1);
+    assert.equal(result.state.issues[42].clarification.status, "published");
+  });
+}
+
+test("confirmed absent ledger is not proof no question was ever posted", async () => {
+  const { api, args } = await setup();
+  args.store = casStore(emptyMemory(), null, "branch");
+  args.context = context(null);
+  args.manifest.binding = args.context;
+  args.output = envelope([proposal(args.manifest.selected[0], uncertain)]);
+  const result = await publishBatch(args);
+  assert.equal(writes(api, "createComment").length, 0);
+  assert.equal(result.state.issues[42].clarification.status, "unknown");
+  assert.equal(result.state.clarificationHistoryUnknown, true);
+});
+
+test("bot receipt text cannot serve as human classification evidence", async () => {
+  const { args, store } = await setup({ comments: { 42: [comment(9, {
+    body: report().body, user: { ...bot, type: "Bot" },
+  })] } });
+  args.output = envelope([proposal(args.manifest.selected[0], {
+    evidence: [{ sourceId: "dotnet/fsharp#42:comment:9", url: `${report().url}#issuecomment-9`, quote: report().body }],
+  })]);
+  await assert.rejects(publishBatch(args), /trusted evidence/);
+  assert.equal(store.writes.length, 0);
+});
+
+test("an API comment must have Bot type as well as the pinned actor ID and login", async () => {
+  const { api, args } = await setup({ comments: { 42: [comment(9, {
+    body: receiptMarker(repo, 42), user: { ...bot, type: "User" },
+  })] } });
+  args.output = envelope([proposal(args.manifest.selected[0], uncertain)]);
+  await publishBatch(args);
+  assert.equal(writes(api, "createComment").length, 1);
+});
+
+for (const forcedBy of ["dispatch", "environment"]) {
+  test(`staged ${forcedBy} uses the real adapter but never invokes a remote write`, async () => {
+    const { api, args } = await setup({ issues: [report(42), report(43)] });
+    const forbidden = async () => { assert.fail("staged remote mutation"); };
+    api.github.rest.issues.addLabels = api.github.rest.issues.createComment = forbidden;
+    api.github.rest.git = { createRef: forbidden };
+    api.github.graphql = forbidden;
+    api.github.rest.repos.getBranch = async () => ({ data: { commit: { sha: oid(1) } } });
+    api.github.rest.repos.getContent = async () => ({ data: {
+      type: "file", encoding: "base64", content: Buffer.from(JSON.stringify(emptyMemory())).toString("base64"),
+    } });
+    args.store = createGitHubStore(api.github, repo);
+    args.output = envelope(args.manifest.selected.map((item) => proposal(item, item.number === 43 ? uncertain : {})));
+    args.staged = forcedBy === "dispatch";
+    args.env = forcedBy === "environment" ? { GH_AW_SAFE_OUTPUTS_STAGED: "true" } : {};
+    const result = await publishBatch(args);
+    for (const type of ["would-add-label", "would-comment", "would-save-memory"]) {
+      assert.ok(result.receipts.some((receipt) => receipt.type === type));
+    }
+    assert.equal(result.state.issues[42].lastResult.status, "published");
+    assert.equal(result.state.issues[43].clarification.status, "published");
+  });
+}
+
+function memoryApi({ head = oid(1), state = emptyMemory(), missingFile = false } = {}) {
+  const calls = [];
+  const github = { rest: { repos: {
+    async getBranch(a) {
+      calls.push({ name: "getBranch", ...a });
+      if (a.branch === MEMORY_BRANCH && head === null) throw failure(404);
+      return { data: { commit: { sha: a.branch === MEMORY_BRANCH ? head : oid(100) } } };
+    },
+    async getContent(a) {
+      calls.push({ name: "getContent", ...a });
+      if (a.path === "") return { data: missingFile || head === null ? [] : [{ name: MEMORY_PATH }] };
+      if (head === null || missingFile) throw failure(404);
+      return { data: { type: "file", encoding: "base64",
+        content: Buffer.from(typeof state === "string" ? state : JSON.stringify(state)).toString("base64") } };
+    },
+    async get(a) { calls.push({ name: "getRepo", ...a }); return { data: { default_branch: "main" } }; },
+  }, git: {
+    async createRef(a) { calls.push({ name: "createRef", ...a }); head = a.sha; return { data: {} }; },
+  } },
+  async graphql(query, { input }) {
+    calls.push({ name: "graphql", query, input });
+    assert.equal(input.expectedHeadOid, head);
+    state = JSON.parse(Buffer.from(input.fileChanges.additions[0].contents, "base64").toString("utf8"));
+    head = oid(2);
+    return { createCommitOnBranch: { commit: { oid: head } } };
+  } };
+  return { github, calls };
+}
+
+for (const absence of ["none", "branch", "file"]) {
+  test(`real CAS adapter reads immutable head and writes only literal state; absence=${absence}`, async () => {
+    const api = memoryApi({ head: absence === "branch" ? null : oid(1), missingFile: absence === "file" });
+    const store = createGitHubStore(api.github, repo);
+    const read = await store.read();
+    assert.equal(read.headOid, absence === "branch" ? null : oid(1));
+    assert.equal(read.missing, absence === "none" ? null : absence);
+    const saved = await store.commit({ expectedHeadOid: read.headOid, state: emptyMemory() });
+    assert.equal(saved.headOid, oid(2));
+    const call = api.calls.find((c) => c.name === "graphql");
+    assert.match(call.query, /createCommitOnBranch/);
+    assert.deepEqual(call.input.branch, { repositoryNameWithOwner: "dotnet/fsharp", branchName: MEMORY_BRANCH });
+    assert.equal(call.input.expectedHeadOid, absence === "branch" ? oid(100) : oid(1));
+    assert.deepEqual(Object.keys(call.input.fileChanges), ["additions"]);
+    assert.deepEqual(call.input.fileChanges.additions.map((a) => a.path), [MEMORY_PATH]);
+    assert.deepEqual(call.input.message, { headline: "Persist regression triage state" });
+    if (absence === "branch") assert.deepEqual(api.calls.find((c) => c.name === "createRef"),
+      { name: "createRef", ...repo, ref: `refs/heads/${MEMORY_BRANCH}`, sha: oid(100) });
+    else assert.ok(api.calls.some((c) => c.name === "getContent" && c.ref === oid(1)));
+  });
+}
+
+for (const kind of ["corrupt", "forbidden", "ambiguous missing file", "unsupported schema", "timeout"]) {
+  test(`real store fails visibly on ${kind}`, async () => {
+    const api = memoryApi({ state: kind === "corrupt" ? "{" : kind === "unsupported schema" ? { schemaVersion: 9 } : emptyMemory() });
+    if (["forbidden", "ambiguous missing file", "timeout"].includes(kind)) {
+      api.github.rest.repos.getContent = async () => { throw failure(kind === "forbidden" ? 403 : kind === "timeout" ? 503 : 404); };
+    }
+
+    await assert.rejects(createGitHubStore(api.github, repo).read());
+    assert.equal(api.calls.filter((c) => c.name === "graphql" || c.name === "createRef").length, 0);
+  });
+}
+
+test("adapter branch initialization collision rereads and returns a bounded retryable conflict", async () => {
+  const api = memoryApi({ head: null });
+  const create = api.github.rest.git.createRef;
+  api.github.rest.git.createRef = async (a) => { await create(a); throw failure(422); };
+  const store = createGitHubStore(api.github, repo);
+  await assert.rejects(store.commit({ expectedHeadOid: null, state: emptyMemory() }), { code: "CAS_CONFLICT", retryable: true });
+  assert.equal(api.calls.filter((c) => c.name === "graphql").length, 0);
+  assert.equal(api.calls.filter((c) => c.name === "createRef").length, 1);
+});
+
+for (const changed of [false, true]) {
+  test(`adapter GraphQL failure reloads without blind retransmission (changed=${changed})`, async () => {
+    const api = memoryApi();
+    const commit = api.github.graphql;
+    api.github.graphql = async (...a) => {
+      if (changed) await commit(...a);
+      throw failure(503);
+    };
+    const store = createGitHubStore(api.github, repo);
+    await assert.rejects(store.commit({ expectedHeadOid: oid(1), state: emptyMemory() }),
+      changed ? { code: "CAS_CONFLICT" } : { status: 503 });
+    assert.ok(api.calls.some((c) => c.name === "getBranch"));
+    assert.ok(api.calls.filter((c) => c.name === "graphql").length <= 1);
+  });
+}
+
+for (const [key, value] of [
+  ["pendingPublication", "invalid"], ["clarification", []], ["humanCorrection", false],
+  ["humanLabelDecision", "removed"], ["evidence", {}], ["classification", "verified"],
+]) {
+  test(`malformed persisted ${key} is not reset or treated as successful`, async () => {
+    const state = emptyMemory();
+    state.issues[42] = { [key]: value };
+    const api = memoryApi({ state });
+    await assert.rejects(createGitHubStore(api.github, repo).read(), /record/);
+  });
+}
+
+for (const kind of ["title", "comment", "linked body", "review", "review-comment"]) {
+  test(`current ${kind} evidence is validated by API identity, URL and exact text`, async () => {
+    const apiOptions = {
+      issues: [report(42, { body: "Comparison in #43" }), report(43, { labels: [], pull_request: {},
+        html_url: "https://github.com/dotnet/fsharp/pull/43" })],
+      comments: { 42: [comment(1)] },
+      reviews: { 43: [comment(2, { html_url: "https://github.com/dotnet/fsharp/pull/43#pullrequestreview-2" })] },
+      reviewComments: { 43: [comment(3, { html_url: "https://github.com/dotnet/fsharp/pull/43#discussion_r3" })] },
+    };
+    const { api, args } = await setup(apiOptions);
+    const { snapshot } = args.manifest.selected[0];
+    const linked = snapshot.linked[0];
+    const source = kind === "title" ? { sourceId: snapshot.titleSourceId, url: snapshot.url, body: snapshot.title }
+      : kind === "linked body" ? { sourceId: linked.bodySourceId, url: linked.url, body: linked.body }
+      : kind === "comment" ? snapshot.humanComments[0]
+      : linked.humanComments.find((c) => c.sourceId.includes(`:${kind}:`));
+    args.output = envelope([proposal(args.manifest.selected[0], {
+      evidence: [{ sourceId: source.sourceId, url: source.url, quote: source.body }],
+    })]);
+    await publishBatch(args);
+    assert.equal(writes(api, "addLabels").length, 1);
+  });
+}
+
+test("a policy migration retains an unknown comment intent and never posts another question", async () => {
+  const { api, store, args } = await setup();
+  args.output = envelope([proposal(args.manifest.selected[0], uncertain)]);
+  store.afterCommit = (state) => {
+    if (state.issues[42].pendingPublication?.phase === "sending") throw new Error("crash");
+  };
+  await assert.rejects(publishBatch(args), /crash/);
+  store.afterCommit = undefined;
+  const intent = clone(store.value.state.issues[42].pendingPublication);
+  store.value.state.issues[42].policyVersion = "old-policy";
+  api.issues[0].body += " changed";
+  const binding = context(store.value.headOid, "130");
+  args.manifest = { ...await collect(api, store.value.state), binding };
+  args.context = binding;
+  args.output = envelope([proposal(args.manifest.selected[0], { ...uncertain, clarification: "producer-consumer" })]);
+  const result = await publishBatch(args);
+  assert.deepEqual(result.state.issues[42].pendingPublication, intent);
+  assert.equal(result.state.issues[42].lastResult.status, "unknown");
+  assert.equal(writes(api, "createComment").length, 0);
+});
+
+test("staged absent-branch initialization is local only, including restart", async () => {
+  const { api, args } = await setup();
+  const memory = memoryApi({ head: null });
+  const forbidden = async () => { assert.fail("staged write"); };
+  memory.github.rest.git.createRef = memory.github.graphql = forbidden;
+  api.github.rest.issues.addLabels = api.github.rest.issues.createComment = forbidden;
+  args.store = createGitHubStore(memory.github, repo);
+  args.context = context(null);
+  args.manifest.binding = args.context;
+  args.staged = true;
+  const result = await publishBatch(args);
+  assert.ok(result.receipts.some((r) => r.type === "would-add-label"));
+  const local = casStore(result.state, result.headOid);
+  local.commit = forbidden;
+  const restarted = await publishBatch({ ...args, store: local });
+  assert.deepEqual(restarted.receipts, []);
+  assert.deepEqual(restarted.state, result.state);
+});
+
+test("actual GH AW staged environment cannot be disabled through trusted option defaults", async () => {
+  const { api, store, args } = await setup();
+  const previous = process.env.GH_AW_SAFE_OUTPUTS_STAGED;
+  process.env.GH_AW_SAFE_OUTPUTS_STAGED = "true";
+  try {
+    const result = await publishBatch({ ...args, staged: false, env: {} });
+    assert.ok(result.receipts.some((r) => r.type === "would-add-label"));
+    assert.equal(writes(api, "addLabels").length, 0);
+    assert.equal(store.writes.length, 0);
+  } finally {
+    if (previous === undefined) delete process.env.GH_AW_SAFE_OUTPUTS_STAGED;
+    else process.env.GH_AW_SAFE_OUTPUTS_STAGED = previous;
+  }
+});
+
+for (const kind of ["missing acknowledgement", "forbidden initialization", "422 without a branch"]) {
+  test(`real store reports ${kind} without proceeding`, async () => {
+    const api = memoryApi({ head: kind === "missing acknowledgement" ? oid(1) : null });
+    if (kind === "missing acknowledgement") api.github.graphql = async () => ({});
+    else api.github.rest.git.createRef = async () => { throw failure(kind === "forbidden initialization" ? 403 : 422); };
+    await assert.rejects(createGitHubStore(api.github, repo).commit({
+      expectedHeadOid: kind === "missing acknowledgement" ? oid(1) : null, state: emptyMemory(),
+    }));
+  });
+}
+
+test("linked canonical API URLs retain repository casing while source IDs are normalized", async () => {
+  const url = "https://github.com/fsharp/FSharp.Compiler.Tools/issues/43";
+  const { api, args } = await setup({ issues: [
+    report(42, { body: `Version comparison: ${url}` }),
+    report(43, { labels: [], html_url: url }),
+  ] });
+  const item = args.manifest.selected[0];
+  const source = item.snapshot.linked[0];
+  args.output = envelope([proposal(item, {
+    evidence: [{ sourceId: source.bodySourceId, url: source.url, quote: source.body }],
+  })]);
+  await publishBatch(args);
+  assert.equal(writes(api, "addLabels").length, 1);
+});
+
+for (const classification of ["regression", "not-regression", "uncertain"]) {
+  test(`${classification} preserves existing human Regression and Needs-Triage`, async () => {
+    const state = emptyMemory();
+    state.futureField = { retained: true };
+    state.issues[42] = { futureField: { retained: true } };
+    const { api, args } = await setup({ issues: [report(42, { labels: ["Needs-Triage", "Regression"] })] }, state);
+    args.output = envelope([proposal(args.manifest.selected[0], {
+      classification, missingFact: classification === "uncertain" ? "A known-good version." : null,
+    })]);
+    const result = await publishBatch(args);
+    assert.deepEqual(api.issues[0].labels, ["Needs-Triage", "Regression"]);
+    assert.equal(writes(api, "addLabels").length + writes(api, "createComment").length, 0);
+    assert.deepEqual(result.state.futureField, state.futureField);
+    assert.deepEqual(result.state.issues[42].futureField, state.issues[42].futureField);
+  });
+}
+
+for (const size of [1048576, 1048577]) {
+  test(`durable file bound is exactly one MiB, not a rounded base64 estimate (${size})`, async () => {
+    const state = { ...emptyMemory(), futureField: "" };
+    state.futureField = "x".repeat(size - Buffer.byteLength(JSON.stringify(state) + "\n"));
+    const api = memoryApi();
+    const commit = createGitHubStore(api.github, repo).commit({ expectedHeadOid: oid(1), state });
+    if (size === 1048576) await commit;
+    else {
+      await assert.rejects(commit, /bound/);
+      assert.equal(api.calls.length, 0);
+    }
+  });
+}

@@ -40,17 +40,35 @@ function apiError(error, context) {
 // A 404 alone is ambiguous (GitHub also hides inaccessible content). Confirm an
 // absent file by listing its branch, or an absent branch with default-branch read
 // access and a branch lookup. Other failures never become an empty ledger.
-async function readMemory(github, repo) {
+async function readMemory(github, repo, { versioned = false } = {}) {
+  let headOid = null;
+  if (versioned) {
+    try {
+      headOid = (await github.rest.repos.getBranch({ ...repo, branch: MEMORY_BRANCH })).data.commit.sha;
+    } catch (error) {
+      if (error.status !== 404) throw error;
+      await github.rest.repos.getContent({ ...repo, path: "" });
+      try {
+        headOid = (await github.rest.repos.getBranch({ ...repo, branch: MEMORY_BRANCH })).data.commit.sha;
+      } catch (confirmation) {
+        if (confirmation.status !== 404) throw confirmation;
+        return { headOid: null, state: normalizeMemory(null), missing: "branch" };
+      }
+    }
+    if (typeof headOid !== "string" || !/^[a-f0-9]{40}$/.test(headOid)) throw new Error("Invalid memory head");
+  }
+  const ref = headOid ?? MEMORY_BRANCH;
+  const result = (state, missing = null) => versioned ? { headOid, state, missing } : state;
   let data;
   try {
-    ({ data } = await github.rest.repos.getContent({ ...repo, path: MEMORY_PATH, ref: MEMORY_BRANCH }));
+    ({ data } = await github.rest.repos.getContent({ ...repo, path: MEMORY_PATH, ref }));
   } catch (error) {
     if (error.status !== 404) throw error;
     let root;
     try {
-      ({ data: root } = await github.rest.repos.getContent({ ...repo, path: "", ref: MEMORY_BRANCH }));
+      ({ data: root } = await github.rest.repos.getContent({ ...repo, path: "", ref }));
     } catch (rootError) {
-      if (rootError.status !== 404) throw rootError;
+      if (rootError.status !== 404 || versioned) throw rootError;
       await github.rest.repos.getContent({ ...repo, path: "" });
       try {
         await github.rest.repos.getBranch({ ...repo, branch: MEMORY_BRANCH });
@@ -60,13 +78,13 @@ async function readMemory(github, repo) {
       }
       throw error;
     }
-    if (Array.isArray(root) && !root.some((entry) => entry.name === MEMORY_PATH)) return normalizeMemory(null);
+    if (Array.isArray(root) && !root.some((entry) => entry.name === MEMORY_PATH)) return result(normalizeMemory(null), "file");
     throw error;
   }
   if (data.type !== "file" || data.encoding !== "base64" || typeof data.content !== "string") {
     throw new Error("Unsupported memory file response");
   }
-  return normalizeMemory(Buffer.from(data.content, "base64").toString("utf8"));
+  return result(normalizeMemory(Buffer.from(data.content, "base64").toString("utf8")));
 }
 
 async function readPages(method, args, bound, stage, errors) {
@@ -117,7 +135,7 @@ function discussion(items, prefix, kind) {
   for (const item of items) {
     unique.set(item.id, {
       id: item.id, sourceId: `${prefix}:${kind}:${item.id}`,
-      authorId: item.user?.id ?? null, author: item.user?.login ?? null,
+      authorId: item.user?.id ?? null, author: item.user?.login ?? null, authorType: item.user?.type ?? null,
       createdAt: item.created_at ?? item.submitted_at ?? null,
       updatedAt: item.updated_at ?? item.submitted_at ?? null,
       url: item.html_url, body: item.body ?? "", isBot: isBot(item.user),

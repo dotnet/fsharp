@@ -69,6 +69,10 @@ function normalizeMemory(raw, { policyVersion = POLICY_VERSION } = {}) {
     if (!/^[1-9]\d*$/.test(number) || !issueNumber(Number(number)) || !object(record)
       || (record.fingerprint !== undefined && typeof record.fingerprint !== "string")
       || (record.policyVersion !== undefined && typeof record.policyVersion !== "string")
+      || (record.classification !== undefined && !["regression", "not-regression", "uncertain"].includes(record.classification))
+      || (record.evidence !== undefined && !Array.isArray(record.evidence))
+      || ["clarification", "humanCorrection", "humanLabelDecision", "pendingPublication"]
+        .some((key) => record[key] != null && !object(record[key]))
       || (record.lastResult !== undefined && !object(record.lastResult))
       || (record.readAttempt !== undefined && (!object(record.readAttempt) || !timestamp(record.readAttempt.at)
         || (record.readAttempt.updatedAt !== undefined && !timestamp(record.readAttempt.updatedAt))))) {
