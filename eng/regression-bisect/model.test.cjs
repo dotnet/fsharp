@@ -188,7 +188,10 @@ for (const [name, edit] of [
     ["released-product-only good", a => a.good = observation("released", "pass", a.manifest)],
     ["nonancestor", a => a.ancestry.isAncestor = false],
     ["unknown ancestry", a => delete a.ancestry.isAncestor],
-    ["same source", a => a.good.target.sourceSha = a.main.target.sourceSha],
+    ["same source", a => {
+        a.good = observation("source", "pass", a.manifest, a.main.target.sourceSha);
+        a.ancestry.goodSha = a.main.target.sourceSha;
+    }],
     ["wrong main SHA", a => a.ancestry.pinnedMainSha = sha("other")],
     ["wrong matrix", a => a.good.matrixFingerprint = digest("other")],
     ["wrong producer", a => a.good.producerFingerprint = digest("other")],
@@ -280,30 +283,81 @@ test("source builds may use pinned prerelease toolchains without treating them a
     assert.equal(admitBisection(a).decision, "admit");
 });
 
-test("assertions preserve signed process exit codes", () => {
-    const m = manifest();
-    m.assertions.failure.exitCode = -1;
-    seal(m);
-    const attempts = [attempt("product-failure"), attempt("product-failure")];
-    for (const a of attempts) a.execution.exitCode = -1;
-    assert.equal(classifyAttempts(attempts, m).outcome, "product-failure");
+for (const exitCode of [-2147483648, -1073741819, -1, 0, 2147483647, 2147483648, 3221225477, 4294967295]) {
+    test(`assertions preserve process exit code ${exitCode}`, () => {
+        const m = manifest();
+        m.matrix[0].id = "windows-x64";
+        m.matrix[0].os = "windows";
+        m.assertions.failure.exitCode = exitCode;
+        seal(m);
+        assert.equal(validateManifest(m), true);
+        const o = observation("source", "product-failure", m);
+        for (const a of o.cells[0].attempts) a.execution.exitCode = exitCode;
+        o.cells[0].outcome = o.outcome = classifyAttempts(o.cells[0].attempts, m);
+        assert.deepEqual(o.outcome, { schemaVersion: 1, outcome: "product-failure", reason: "failure-assertion" });
+        assert.equal(validateObservation(o, m), true);
+    });
+}
+
+for (const exitCode of [-2147483649, 4294967296, 1.5, "1", null, NaN, Infinity]) {
+    test(`invalid process exit code ${exitCode} (${typeof exitCode}) is rejected`, () => {
+        const m = manifest();
+        const attempts = [attempt("product-failure"), attempt("product-failure")];
+        attempts[0].execution.exitCode = exitCode;
+        assert.deepEqual(classifyAttempts(attempts, m), {
+            schemaVersion: 1, outcome: "untestable", reason: "incomplete-evidence",
+        });
+        m.assertions.failure.exitCode = exitCode;
+        rejects(() => validateManifest(m), /manifest.assertions.failure.exitCode: invalid exit code/);
+    });
+}
+
+test("signed and unsigned process statuses do not satisfy each other's exact assertion", () => {
+    for (const [expected, actual] of [[3221225477, -1073741819], [-1073741819, 3221225477]]) {
+        const m = manifest();
+        m.assertions.failure.exitCode = expected;
+        seal(m);
+        const attempts = [attempt("product-failure"), attempt("product-failure")];
+        for (const a of attempts) a.execution.exitCode = actual;
+        assert.deepEqual(classifyAttempts(attempts, m), {
+            schemaVersion: 1, outcome: "untestable", reason: "assertion-mismatch",
+        });
+    }
 });
 
-test("every matrix cell must reproduce consistently, not just the first cell", () => {
-    const a = admission();
-    a.manifest.matrix.push({ ...a.manifest.matrix[0], id: "debug", configuration: "Debug" });
-    seal(a.manifest);
-    a.stable = observation("released", "product-failure", a.manifest);
-    a.main = observation("source", "product-failure", a.manifest);
-    a.good = observation("source", "pass", a.manifest, sha("good"));
-    a.budget.authorization.manifestDigest = fingerprintInput(a.manifest);
-    a.budget.authorization.inputDigest = a.manifest.approvedInputDigest;
-    a.budget.authenticatedObservationDigests = [a.stable, a.main, a.good].map(fingerprintInput);
-    assert.equal(admitBisection(a).decision, "admit");
-    a.good.cells[1].attempts[1] = attempt("product-failure");
-    a.budget.authenticatedObservationDigests = [a.stable, a.main, a.good].map(fingerprintInput);
-    assert.equal(admitBisection(a).decision, "blocked");
-});
+for (const endpoint of ["stable", "main", "good"]) {
+    for (const [first, second, reason] of [
+        ["pass", "product-failure", "flaky"], ["product-failure", "pass", "flaky"],
+        ["pass", "untestable", "assertion-mismatch"], ["untestable", "pass", "assertion-mismatch"],
+        ["product-failure", "untestable", "assertion-mismatch"], ["untestable", "product-failure", "assertion-mismatch"],
+    ]) {
+        test(`matrix aggregation: ${endpoint} ${first}/${second}`, () => {
+            const a = admission();
+            a.manifest.matrix.push({ ...a.manifest.matrix[0], id: "debug", configuration: "Debug" });
+            seal(a.manifest);
+            a.stable = observation("released", "product-failure", a.manifest);
+            a.main = observation("source", "product-failure", a.manifest);
+            a.good = observation("source", "pass", a.manifest, sha("good"));
+            a.budget.authorization.manifestDigest = fingerprintInput(a.manifest);
+            a.budget.authorization.inputDigest = a.manifest.approvedInputDigest;
+            a.budget.authenticatedObservationDigests = [a.stable, a.main, a.good].map(fingerprintInput);
+            assert.equal(admitBisection(a).decision, "admit");
+            const o = a[endpoint];
+            const claimed = o.outcome;
+            for (const [i, result] of [first, second].entries()) {
+                const cell = o.cells[i];
+                cell.attempts = [attempt(result), attempt(result)];
+                cell.outcome = classifyAttempts(cell.attempts, a.manifest);
+            }
+            o.outcome = { schemaVersion: 1, outcome: "untestable", reason };
+            assert.equal(validateObservation(o, a.manifest), true);
+            a.budget.authenticatedObservationDigests = [a.stable, a.main, a.good].map(fingerprintInput);
+            assert.deepEqual(admitBisection(a), { decision: "blocked", reason: "untestable endpoint evidence" });
+            o.outcome = claimed;
+            rejects(() => validateObservation(o, a.manifest), /observation.outcome: does not match matrix evidence/);
+        });
+    }
+}
 
 test("budget boundary includes the whole worker reservation and retry cost", () => {
     const a = admission();

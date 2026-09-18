@@ -82,6 +82,9 @@ not executable assets or approval sources.
 
 Assertions are exact `{ exitCode, stdout, stderr }` triples. Both streams are
 bounded by the policy and compared without trimming or diagnostic normalization.
+Exit codes preserve signed 32-bit statuses and unsigned Windows DWORD statuses
+(`-2147483648` through `4294967295`); signed and unsigned representations are not
+normalized into equivalent assertions.
 A nonzero exit, unrelated exception, truncated output, or missing evidence is
 not proof of the frozen product failure. Required restore/build/setup success is
 separate from the reproduction assertion: an expected compiler rejection can

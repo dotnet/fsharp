@@ -113,7 +113,7 @@ function evidenceText(value, path) {
         path, "missing or oversized assertion evidence");
 }
 
-const exitCode = (v, p) => check(Number.isSafeInteger(v) && v >= -2147483648 && v <= 2147483647, p, "invalid exit code");
+const exitCode = (v, p) => check(Number.isSafeInteger(v) && v >= -2147483648 && v <= 4294967295, p, "invalid exit code");
 const assertion = shape({ exitCode, stdout: evidenceText, stderr: evidenceText });
 const identity = shape({ name: text, version: pinnedVersion, sha256: digest });
 const os = oneOf(["linux", "windows", "macos"]);
