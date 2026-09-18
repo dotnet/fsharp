@@ -635,7 +635,7 @@ let internal tryGetPipeName (argv: string[]) =
                 || arg.Equals("/fsi-server-jsonrpc", StringComparison.Ordinal)
                 ->
                 match rest with
-                | name :: _ when not (String.IsNullOrWhiteSpace name) -> Some (name.Trim('"'))
+                | name :: _ when not (String.IsNullOrWhiteSpace name) -> Some(name.Trim('"'))
                 | _ -> None
             | None when arg.StartsWith("@", StringComparison.Ordinal) ->
                 let responseFile = arg.Substring(1)
