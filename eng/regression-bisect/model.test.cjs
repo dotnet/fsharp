@@ -367,6 +367,36 @@ test("approval and input are independent of main; epoch binds main and stable", 
     }
 });
 
+for (const [name, edit] of [
+    ["missing policy revision", b => delete b.policyRevision],
+    ["unpinned policy revision", b => b.policyRevision = "main"],
+    ["null workflow revision", b => b.workflowRevision = null],
+    ["unpinned workflow revision", b => b.workflowRevision = "main"],
+    ["missing approval", b => delete b.authorization],
+]) {
+    test(`epoch rejects ${name}`, () => {
+        const a = admission();
+        edit(a.budget);
+        rejects(() => fingerprintEpoch(a.manifest, a.budget, a.ancestry.pinnedMainSha), /budget/);
+    });
+}
+
+test("epoch identity excludes charged work and binds both trusted revisions", () => {
+    const a = admission();
+    const epoch = () => fingerprintEpoch(a.manifest, a.budget, a.ancestry.pinnedMainSha);
+    const original = epoch();
+    a.budget.consumed = { sourceBuilds: 3, workerUnits: 4, reservedMinutes: 440 };
+    assert.equal(epoch(), original);
+    for (const field of ["policyRevision", "workflowRevision"]) {
+        const revision = a.budget[field];
+        a.budget[field] = sha("new-revision");
+        if (field === "policyRevision") a.budget.authorization.approvalRevision = a.budget[field];
+        assert.notEqual(epoch(), original);
+        a.budget[field] = revision;
+        a.budget.authorization.approvalRevision = a.budget.policyRevision;
+    }
+});
+
 test("state contract carries durable allowance, reservations, evidence, interval and publication", () => {
     assert.equal(validateState(state()), true);
     for (const edit of [

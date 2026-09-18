@@ -56,7 +56,7 @@ attempt evidence to an explicit `untestable` outcome; `admitBisection` returns
 | `classifyAttempts(attempts, manifest)` | Checks both required repetitions against the frozen assertions and all setup/identity checks. Returns a versioned outcome with an explicit reason. |
 | `validateOutcome(outcome)` | Only `pass`, `product-failure`, or `untestable`, with a reason appropriate to that outcome. |
 | `validateObservation(observation, manifest, options?)` | Validates target, all reproduction fingerprints, matrix evidence, local artifacts, provenance, and recomputed outcomes. |
-| `fingerprintEpoch(manifest, budget, pinnedMainSha)` | Binds the manifest, pinned main, resolved stable release, and policy/workflow revisions. |
+| `fingerprintEpoch(manifest, budget, pinnedMainSha)` | Validates the manifest and trusted budget context, then binds the manifest, pinned main, resolved stable release, and policy/workflow revisions. |
 | `validateState(state)` | Validates the shared persisted-state shape, epoch, authenticated evidence references, cumulative budget, and any charged pending reservation. |
 | `admitBisection({ manifest, stable, main, good, ancestry, budget })` | Fail-closed gate for a verified source interval; no execution side effects. |
 
@@ -86,7 +86,9 @@ satisfy the failure assertion only after the compiler itself was built and
 verified successfully.
 
 `approvedInputDigest` hashes the manifest with only that field omitted. It does
-not include the moving main SHA. The discussion fingerprint must cover the
+not include the moving main SHA. Epochs require the same validated approval and
+pinned policy/workflow identities as admission; charging more work does not
+change the epoch. The discussion fingerprint must cover the
 complete issue and all reporter/maintainer comments, corrections, edits, and
 edit timestamps. The collector must supply the complete snapshot; hashing
 cannot detect omitted input. This module excludes **no** discussion records.

@@ -337,8 +337,8 @@ function validateBudget(budget, manifest) {
 
 function fingerprintEpoch(manifest, budget, pinnedMainSha) {
     validateManifest(manifest);
+    validateBudget(budget, manifest);
     sourceSha(pinnedMainSha, "epoch.pinnedMainSha");
-    stableSdk(budget.stableSdk, "epoch.stableSdk");
     return fingerprintInput({
         schemaVersion: 1, manifestDigest: fingerprintInput(manifest),
         policyRevision: budget.policyRevision, workflowRevision: budget.workflowRevision,
