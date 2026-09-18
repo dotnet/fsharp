@@ -132,6 +132,13 @@ let ``evaluates every interaction in a request`` () =
         Assert.True(session.WaitForOutput "val it: int = 22", describe session next))
 
 [<Fact>]
+let ``keeps apostrophe-terminated identifiers intact`` () =
+    withInitializedSession (fun session ->
+        let result = session.Execute "let value' = 42;; value' + 1"
+        Assert.True(succeeded result, describe session result)
+        Assert.True(session.WaitForOutput "val it: int = 43", describe session result))
+
+[<Fact>]
 let ``reports what the interaction printed`` () =
     withInitializedSession (fun session ->
         let result = session.Execute "printfn \"hello from the session\""
@@ -327,6 +334,22 @@ let ``setPaths changes the working directory`` () =
                 Directory.Delete(directory, true)
             with _ ->
                 ())
+
+[<Fact>]
+let ``setPaths rejects a missing working directory`` () =
+    withInitializedSession (fun session ->
+        let directory = Path.Combine(Path.GetTempPath(), $"fsiServerTest_{Guid.NewGuid():N}")
+        let error =
+            session.RequestExpectingError(
+                Methods.SetPaths,
+                {
+                    includePaths = [||]
+                    workingDirectory = directory
+                }
+            )
+
+        Assert.Equal(Some -32002, error)
+    )
 
 [<Fact>]
 let ``setPaths waits its turn behind a running interaction`` () =
