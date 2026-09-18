@@ -211,15 +211,17 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
                 // FCS reads the caret only to skip resolving the `#r "nuget: …"` line being typed, and only scripts have those.
                 let focusedCaret =
                     if isScriptFile document.FilePath then
-                        FocusedCaret.TryGet sourceText
+                        match FocusedCaret.TryGet sourceText with
+                        | ValueSome caret -> Some caret
+                        | ValueNone -> None
                     else
-                        ValueNone
+                        None
 
                 let getProjectOptionsFromScript () =
                     checker.GetProjectOptionsFromScript(
                         document.FilePath,
                         sourceText.ToFSharpSourceText(),
-                        ?caret = (focusedCaret |> ValueOption.bind _.Position |> ValueOption.toOption),
+                        ?caret = (focusedCaret |> Option.bind _.Position),
                         previewEnabled = SessionsProperties.fsiPreview,
                         assumeDotNetFramework = not SessionsProperties.fsiUseNetCore,
                         userOpName = userOpName
@@ -274,8 +276,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
                     | projectId, fileStamp, parsingOptions, projectOptions, _ ->
                         let subscription =
                             focusedCaret
-                            |> ValueOption.map _.LineChanged.Subscribe(updateProjectOptions)
-                            |> ValueOption.toOption
+                            |> Option.map _.LineChanged.Subscribe(updateProjectOptions)
 
                         (projectId, fileStamp, parsingOptions, projectOptions, subscription)
 
