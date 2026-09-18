@@ -12839,7 +12839,7 @@ and AnalyzeRecursiveDecl
         //
         // Also for
         //    module rec M =
-        //        printfn "hello" // side effects in recursive modules
+        //        printn "hello" // side effects in recursive modules
         //        let x = 1
         | SynPat.Const (SynConst.Unit, m) | SynPat.Wild m ->
              let id = ident (cenv.niceNameGen.FreshCompilerGeneratedName("doval", m), m)
