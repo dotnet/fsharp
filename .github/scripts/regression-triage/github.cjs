@@ -10,6 +10,8 @@ const MEMORY_PATH = "state.json";
 const compareText = (a, b) => a < b ? -1 : a > b ? 1 : 0;
 const chronological = (a, b) => compareText(a.createdAt ?? "", b.createdAt ?? "") || a.id - b.id;
 const isBot = (author) => author?.type === "Bot" || /\[bot\]$/i.test(author?.login ?? "");
+const validLabels = (labels) => Array.isArray(labels)
+  && labels.every((label) => typeof label === "string" || typeof label?.name === "string");
 
 function readLimits(overrides) {
   const limits = { ...LIMITS, ...overrides };
@@ -126,8 +128,7 @@ function discussion(items, prefix, kind) {
 
 async function readText(github, repo, number, limits, includeReviews = false) {
   const { data: issue } = await github.rest.issues.get({ ...repo, issue_number: number });
-  if (issue.number !== number || !Array.isArray(issue.labels)
-    || !issue.labels.every((label) => typeof label === "string" || typeof label?.name === "string")
+  if (issue.number !== number || !validLabels(issue.labels)
     || !["open", "closed"].includes(issue.state) || typeof issue.title !== "string"
     || (issue.body != null && typeof issue.body !== "string")
     || typeof issue.updated_at !== "string" || !Number.isFinite(Date.parse(issue.updated_at))
@@ -201,12 +202,33 @@ function references(snapshot, repo) {
   };
   for (const text of [snapshot.title, snapshot.body, ...snapshot.humanComments.map((item) => item.body)]) {
     // Consume all URLs so fragments in arbitrary URLs cannot become local #refs.
-    const withoutUrls = text.replace(/(?:[a-z][a-z\d+.-]*:)?\/\/[^\s<>"`]+/gi, (raw) => {
-      const match = raw.match(/^https:\/\/github\.com\/([a-z\d-]+)\/([a-z\d_.-]+)\/(?:issues|pull)\/([1-9]\d*)(?=$|[/?#).,;!])/i);
+    const urls = /(?:[a-z][a-z\d+.-]*:)?\/\//gi;
+    let withoutUrls = "";
+    let end = 0;
+    for (let url; (url = urls.exec(text)) !== null;) {
+      const opening = text[url.index - 1];
+      const closing = opening === "(" ? ")" : opening === "[" ? "]" : null;
+      // An enclosing Markdown delimiter ends the URL, not the following link.
+      // Balanced delimiters inside the URL still belong to its path/fragment.
+      let depth = 0;
+      let stop = urls.lastIndex;
+      for (; stop < text.length; stop++) {
+        const char = text[stop];
+        if (/[\s<>"`]/.test(char)) break;
+        if (closing && char === opening) depth++;
+        else if (char === closing && depth-- === 0) break;
+      }
+      urls.lastIndex = stop;
+      const raw = text.slice(url.index, stop);
+      const match = raw.match(/^https:\/\/github\.com\/([a-z\d-]+)\/([a-z\d_.-]+)\/(?:issues|pull)\/([1-9]\d*)(?=$|[/?#]|[)\].,;!:*_~]+$)/i);
       if (match && ![".", ".."].includes(match[2])) add(match[1], match[2], match[3]);
-      return "";
-    });
-    for (const match of withoutUrls.matchAll(/(?:^|[\s([*`~])#([1-9]\d*)\b/g)) add(repo.owner, repo.repo, match[1]);
+      withoutUrls += `${text.slice(end, url.index)} `;
+      end = urls.lastIndex;
+    }
+    withoutUrls += text.slice(end);
+    for (const match of withoutUrls.matchAll(/(?:^|[^\p{L}\p{N}_/#])_*#([1-9]\d*)(?=_*(?:$|[^\p{L}\p{N}_]))/gu)) {
+      add(repo.owner, repo.repo, match[1]);
+    }
   }
   return [...found.entries()].sort(([a], [b]) => compareText(a, b)).map(([, value]) => value);
 }
@@ -256,9 +278,11 @@ async function scanPath(github, repo, kind, prior, updatedThrough, now, budget) 
         ...repo, state: "open", labels: "Needs-Triage", sort: "updated", direction: "asc",
         ...(cursor.since ? { since: cursor.since } : {}), page, per_page: 100,
       });
+      // Validate before eligibility filtering: malformed entries are failed
+      // coverage, not evidence that an issue lacks Needs-Triage.
       if (!Array.isArray(response.data) || !response.data.every((issue) =>
-        Number.isSafeInteger(issue.number) && issue.number > 0
-        && Array.isArray(issue.labels) && typeof issue.updated_at === "string"
+        issue && !Array.isArray(issue) && Number.isSafeInteger(issue.number) && issue.number > 0
+        && ["open", "closed"].includes(issue.state) && validLabels(issue.labels) && typeof issue.updated_at === "string"
         && Number.isFinite(Date.parse(issue.updated_at)))) throw new Error("Invalid issue listing");
       discovered.push(...response.data.filter(isEligibleIssue));
       const boundary = response.data.map((issue) => [issue.number, issue.updated_at]);

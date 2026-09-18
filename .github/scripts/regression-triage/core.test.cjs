@@ -174,8 +174,12 @@ for (const scenario of ["finite arrivals", "temporarily unreadable", "completed 
 
 for (const form of [
   "#2", "**#2**", "[#2]", "(#2)", "`#2`", "#2, #2; #2!",
+  "_#2_", "__#2__", "'#2'", '"#2"', "<#2>", "history:#2", "#1,#2",
   "[history](https://github.com/dotnet/fsharp/issues/2)",
   "[#2](https://github.com/dotnet/fsharp/pull/2)", "https://github.com/dotnet/fsharp/issues/2.",
+  "**https://github.com/dotnet/fsharp/issues/2**", "[https://github.com/dotnet/fsharp/issues/2]",
+  "[self](https://github.com/dotnet/fsharp/issues/1)[history](https://github.com/dotnet/fsharp/issues/2)",
+  "[external](https://example.org/#99)(#2)", "[external](https://example.org/a(b)#99)[#2]",
 ]) {
   test(`references: linked-only correction is reanalyzed for ${form}`, async () => {
     const api = fake({ pageSize: 100, issues: [report(1, { body: form }), report(2, { labels: [] })],
@@ -197,9 +201,12 @@ for (const form of [
 test("references: arbitrary URL fragments, deceptive hosts and invalid identities are not local references", async () => {
   const body = [
     "https://example.org/#2", "[external](https://example.org/#2)", "ftp://example.org/#2",
+    "[external](https://example.org/a(#2))", "https://example.org/a[#2]",
+    "https://example.org/?next=https://github.com/dotnet/fsharp/issues/2",
     "//example.org/#2", "https://github.com.evil.org/dotnet/fsharp/issues/2",
     "https://github.com@evil.org/dotnet/fsharp/issues/2", "#0 #9007199254740992 #1",
-    "[self](https://github.com/dotnet/fsharp/issues/1)", "word#2 #2words",
+    "[self](https://github.com/dotnet/fsharp/issues/1)", "word#2 #2words word_#2 #2_words",
+    "https://github.com/dotnet/fsharp/issues/2wrong", "https://github.com/dotnet/fsharp/issues/2_wrong",
   ].join(" ");
   const api = fake({ issues: [report(1, { body })], pageSize: 100 });
   const snapshot = await readIssueSnapshot(api.github, { repo, number: 1 });
@@ -548,6 +555,42 @@ test("discovery: malformed responses and pagination cannot advance coverage", as
     assert.ok(result.errors.some((error) => error.code === "request-failed"));
   }
 });
+
+for (const fields of [
+  { state: undefined }, { state: "unknown" }, { state: 1 },
+  { labels: [{}] }, { labels: [null] }, { labels: [42] }, { labels: ["Needs-Triage", {}] },
+]) {
+  for (const failedPage of [1, 2]) {
+    test(`discovery: malformed listing ${JSON.stringify(fields)} on page ${failedPage} cannot advance coverage`, async () => {
+      const api = fake({ issues: [report(1), report(2)], pageSize: 1 });
+      const memory = emptyMemory();
+      memory.scan.updatedThrough = before;
+      const original = api.github.rest.issues.listForRepo;
+      api.github.rest.issues.listForRepo = async (args) => {
+        const response = await original(args);
+        if (args.page === failedPage) Object.assign(response.data[0], fields);
+        return response;
+      };
+      const failed = await publishRun(api, memory, { limits: undefined });
+      for (const kind of ["incremental", "sweep"]) {
+        assert.equal(failed.result.scan[kind].complete, false);
+        assert.equal(failed.memory.scan[kind].page, failedPage - 1);
+        assert.deepEqual(failed.memory.scan[kind].boundary, failedPage === 1 ? [] : [[1, before]]);
+        assert.ok(failed.result.errors.some((error) => error.stage === kind && error.page === failedPage
+          && error.code === "request-failed" && error.message === "Invalid issue listing"));
+      }
+      assert.equal(failed.memory.scan.updatedThrough, before);
+      assert.deepEqual(failed.result.selected.map((item) => item.number), failedPage === 1 ? [] : [1]);
+      assert.ok(!failed.memory.pending.some((entry) => entry.number === failedPage));
+      assert.ok(api.calls.filter((call) => call.name === "list").length <= LIMITS.issuePages);
+      api.github.rest.issues.listForRepo = original;
+      const retried = await publishRun(api, failed.memory, { limits: undefined });
+      assert.deepEqual(retried.result.errors, []);
+      assert.equal(retried.memory.scan.updatedThrough, now);
+      assert.deepEqual(retried.result.selected.map((item) => item.number), failedPage === 1 ? [1, 2] : [2]);
+    });
+  }
+}
 
 test("discovery: repeated bounded runs drain old work despite arrivals and shifted page boundaries", async () => {
   const api = fake({ issues: Array.from({ length: 15 }, (_, i) => report(i + 1)) });
