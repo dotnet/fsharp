@@ -25,7 +25,7 @@ module CCtorDUWithMember =
         |> getCompilation
         |> asFs
         |> withAdditionalSourceFile (SourceFromPath (__SOURCE_DIRECTORY__ ++ "CCtorDUWithMember01.fs"))
-        |> verifyCompilation 
+        |> verifyCompilation
 
     [<Theory; FileInlineData("CCtorDUWithMember02a.fs", Realsig=BooleanOptions.Both)>]
     let ``CCtorDUWithMember02a_fs`` compilation =
@@ -49,7 +49,7 @@ module CCtorDUWithMember =
         |> getCompilation
         |> asFs
         |> withAdditionalSourceFile (SourceFromPath (__SOURCE_DIRECTORY__ ++ "CCtorDUWithMember04.fs"))
-        |> verifyCompilation 
+        |> verifyCompilation
 
     [<InlineData(true)>]        // RealSig
     [<InlineData(false)>]       // Regular

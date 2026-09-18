@@ -1,4 +1,4 @@
-// #Regression #Conformance #DeclarationElements #Accessibility 
+// #Regression #Conformance #DeclarationElements #Accessibility
 
 
 type internal A = { x : int }

@@ -1,7 +1,7 @@
-// #Conformance #ObjectOrientedTypes #Enums 
+// #Conformance #ObjectOrientedTypes #Enums
 
 namespace NF
-  module M = 
+  module M =
     type SimpleEnum =
         | A = -1L
         | B = 1L

@@ -1,4 +1,4 @@
-// #Regression #Conformance #TypesAndModules #Unions 
+// #Regression #Conformance #TypesAndModules #Unions
 // Verify error when inherit from union types
 
 

@@ -4,7 +4,7 @@ open Xunit
 open FSharp.Test.Compiler
 
 module UnionStructTypes =
-    
+
     [<Fact>]
     let ``Union struct can share fields with equal name and type`` () =
         Fsx """
@@ -67,11 +67,11 @@ do equalityMustKeepWorking()
 let main _args = 
     printf "BasicThreeLongs=%i;GenericOfInt=%i;GenericOfString=%i;MixWithBool=%i;MixWithString=%i;Erasure=%i" structUnionSize genericSizeForInt genericSizeForString sizeForMixingWithBool sizeForMixingWithString sizeForSharingAfterErasure
     0
-        """   
+        """
         |> asExe
         |> compile
         |> shouldSucceed
-        |> run        
+        |> run
         |> verifyOutput "BasicThreeLongs=32;GenericOfInt=16;GenericOfString=32;MixWithBool=24;MixWithString=24;Erasure=16"
 
     [<Fact>]
@@ -85,7 +85,7 @@ type StructUnion =
         """
         |> typecheck
         |> shouldSucceed
-        
+
     [<Fact>]
     let ``If a union type has more than one case and is a struct, field must be given unique name 2`` () =
         Fsx """
@@ -97,7 +97,7 @@ type StructUnion =
         """
         |> typecheck
         |> shouldSucceed
-        
+
     [<Fact>]
     let ``If a union type has more than one case and is a struct, field must be given unique name 3`` () =
         Fsx """
@@ -123,7 +123,7 @@ type StructUnion =
         """
         |> typecheck
         |> shouldSucceed
-        
+
     [<Fact>]
     let ``If a union type has more than one case and is a struct, field must be given unique name 5`` () =
         Fsx """
@@ -149,7 +149,7 @@ type StructUnion =
         """
         |> typecheck
         |> shouldSucceed
-        
+
     [<Fact>]
     let ``If a union type has more than one case and is a struct, field must be given unique name 7`` () =
         Fsx """
@@ -161,7 +161,7 @@ type NotATree =
         """
         |> typecheck
         |> shouldSucceed
-        
+
     [<Fact>]
     let ``If a union type has more than one case and is a struct, field must be given unique name 8`` () =
         Fsx """
@@ -173,7 +173,7 @@ type NotATree =
         """
         |> typecheck
         |> shouldSucceed
-        
+
     [<Fact>]
     let ``If a union type has more than one case and is a struct, field must be given unique name 9`` () =
         Fsx """
@@ -185,7 +185,7 @@ type NotATree =
         """
         |> typecheck
         |> shouldSucceed
-        
+
     [<Fact>]
     let ``If a union type has more than one case and is a struct, field must be given unique name 10 - v7`` () =
         Fsx """
@@ -202,8 +202,8 @@ type StructUnion =
         |> withDiagnostics [
             Error 3204, Line 5, Col 12, Line 5, Col 15, "If a multicase union type is a struct, then all union cases must have unique names. For example: 'type A = B of b: int | C of c: int'."
             Error 3204, Line 6, Col 12, Line 6, Col 18, "If a multicase union type is a struct, then all union cases must have unique names. For example: 'type A = B of b: int | C of c: int'."
-            Error 3204, Line 7, Col 12, Line 7, Col 18, "If a multicase union type is a struct, then all union cases must have unique names. For example: 'type A = B of b: int | C of c: int'." ]        
-        
+            Error 3204, Line 7, Col 12, Line 7, Col 18, "If a multicase union type is a struct, then all union cases must have unique names. For example: 'type A = B of b: int | C of c: int'." ]
+
     [<Fact>]
     let ``If a union type has more than one case and is a struct, field must be given unique name 11 - preview`` () =
         Fsx """
@@ -216,7 +216,7 @@ type StructUnion =
         """
         |> typecheck
         |> shouldSucceed
-        
+
     [<Fact>]
     let ``If a union type has more than one case and is a struct, field must be given unique name 12`` () =
         Fsx """
@@ -233,8 +233,8 @@ type StructUnion =
         |> withDiagnostics [
                 Error 3204, Line 5, Col 12, Line 5, Col 15, "If a multicase union type is a struct, then all union cases must have unique names. For example: 'type A = B of b: int | C of c: int'."
                 Error 3204, Line 7, Col 12, Line 7, Col 18, "If a multicase union type is a struct, then all union cases must have unique names. For example: 'type A = B of b: int | C of c: int'." ]
-     
-        
+
+
     [<Fact>]
     let ``If a union type has more than one case and is a struct, field must be given unique name 13`` () =
         Fsx """
@@ -259,8 +259,8 @@ type StructUnion =
     | C of c: string
         """
         |> typecheck
-        |> shouldSucceed    
-        
+        |> shouldSucceed
+
     [<Fact>]
     let ``If a union type has more than one case and is a struct, field must be given unique name 15 - v7`` () =
         Fsx """
@@ -275,8 +275,8 @@ type StructUnion =
         |> shouldFail
         |> withDiagnostics [
            Error 3204, Line 5, Col 12, Line 5, Col 16, "If a multicase union type is a struct, then all union cases must have unique names. For example: 'type A = B of b: int | C of c: int'."
-           Error 3204, Line 6, Col 12, Line 6, Col 18, "If a multicase union type is a struct, then all union cases must have unique names. For example: 'type A = B of b: int | C of c: int'." ]   
-        
+           Error 3204, Line 6, Col 12, Line 6, Col 18, "If a multicase union type is a struct, then all union cases must have unique names. For example: 'type A = B of b: int | C of c: int'." ]
+
     [<Fact>]
     let ``If a union type has more than one case and is a struct, field must be given unique name 16 - preview`` () =
         Fsx """
@@ -292,7 +292,7 @@ type StructUnion =
             Error 3585, Line 5, Col 12, Line 5, Col 16, "If a multicase union type is a struct, then all fields with the same name must be of the same type. This rule applies also to the generated 'Item' name in case of unnamed fields."
             Error 3585, Line 6, Col 12, Line 6, Col 16, "If a multicase union type is a struct, then all fields with the same name must be of the same type. This rule applies also to the generated 'Item' name in case of unnamed fields."
          ]
-        
+
     [<Fact>]
     let ``If a union type has more than one case and is a struct, field must be given unique name 17 - preview`` () =
         Fsx """
@@ -304,7 +304,7 @@ type StructUnion =
         """
         |> typecheck
         |> shouldSucceed
-        
+
     [<Fact>]
     let ``If a union type has more than one case and is a struct, field must be given unique name 18 - v7`` () =
         Fsx """
@@ -321,7 +321,7 @@ type StructUnion =
             Error 3204, Line 5, Col 12, Line 5, Col 16, "If a multicase union type is a struct, then all union cases must have unique names. For example: 'type A = B of b: int | C of c: int'."
             Error 3204, Line 6, Col 12, Line 6, Col 16, "If a multicase union type is a struct, then all union cases must have unique names. For example: 'type A = B of b: int | C of c: int'."
         ]
-        
+
     [<Fact>]
     let ``If a union type has more than one case and is a struct, field must be given unique name 19 - v7`` () =
         Fsx """
@@ -338,7 +338,7 @@ type StructUnion =
             (Error 3204, Line 5, Col 12, Line 5, Col 16, "If a multicase union type is a struct, then all union cases must have unique names. For example: 'type A = B of b: int | C of c: int'.")
             (Error 3204, Line 6, Col 12, Line 6, Col 18, "If a multicase union type is a struct, then all union cases must have unique names. For example: 'type A = B of b: int | C of c: int'.")
         ]
-        
+
     [<Fact>]
     let ``If a union type has more than one case and is a struct, field must be given unique name 20 - preview`` () =
         Fsx """
@@ -352,8 +352,8 @@ type StructUnion =
         |> shouldFail
         |> withDiagnostics  [
                 Error 3585, Line 5, Col 12, Line 5, Col 16, "If a multicase union type is a struct, then all fields with the same name must be of the same type. This rule applies also to the generated 'Item' name in case of unnamed fields."
-                Error 3585, Line 6, Col 12, Line 6, Col 18, "If a multicase union type is a struct, then all fields with the same name must be of the same type. This rule applies also to the generated 'Item' name in case of unnamed fields."]  
-        
+                Error 3585, Line 6, Col 12, Line 6, Col 18, "If a multicase union type is a struct, then all fields with the same name must be of the same type. This rule applies also to the generated 'Item' name in case of unnamed fields."]
+
     [<Fact>]
     let ``If a union type has more than one case and is a struct, field must be given unique name 21 - preview`` () =
         Fsx """
@@ -365,7 +365,7 @@ type StructUnion =
         """
         |> typecheck
         |> shouldSucceed
-            
+
     [<Fact>]
     let ``If a union type has more than one case and is a struct, field must be given unique name 22`` () =
         Fsx """
@@ -377,7 +377,7 @@ type StructUnion =
         """
         |> typecheck
         |> shouldSucceed
-        
+
     [<Fact>]
     let ``If a union type has more than one case and is a struct, field must be given unique name 23`` () =
         Fsx """
@@ -406,7 +406,7 @@ type StructUnion =
             (Error 3585, Line 5, Col 12, Line 5, Col 16, "If a multicase union type is a struct, then all fields with the same name must be of the same type. This rule applies also to the generated 'Item' name in case of unnamed fields.");
             (Error 3585, Line 5, Col 27, Line 5, Col 31, "If a multicase union type is a struct, then all fields with the same name must be of the same type. This rule applies also to the generated 'Item' name in case of unnamed fields.")
         ]
-        
+
     [<Fact>]
     let ``If a union type has more than one case and is a struct, field must be given unique name 25`` () =
         Fsx """
@@ -434,7 +434,7 @@ type StructUnion = A of a: int | B of b:string
         """
         |> typecheck
         |> shouldSucceed
-        
+
     [<Fact>]
     let ``If a union type has more than one case and is a struct, field must be given unique name 27`` () =
         Fsx """
@@ -458,7 +458,7 @@ type StructUnion =
         """
         |> typecheck
         |> shouldSucceed
-        
+
     [<Fact>]
     let ``If a union type has more than one case and is a struct, field must be given unique name 29`` () =
         Fsx """
@@ -470,7 +470,7 @@ type StructUnion =
         """
         |> typecheck
         |> shouldSucceed
-        
+
     [<Fact>]
     let ``If a union type has more than one case and is a struct, field must be given unique name 30`` () =
         Fsx """
@@ -482,7 +482,7 @@ type StructUnion =
         """
         |> typecheck
         |> shouldSucceed
-   
+
     [<Fact>]
     let ``If a union type has more than one case and is a struct, field must be given unique name 31`` () =
         Fsx """
@@ -494,7 +494,7 @@ type StructUnion =
         """
         |> typecheck
         |> shouldSucceed
-        
+
     [<Fact>]
     let ``If a union type has more than one case and is a struct, field must be given unique name 32`` () =
         Fsx """
@@ -518,7 +518,7 @@ type StructUnion =
         """
         |> typecheck
         |> shouldSucceed
-        
+
     [<Fact>]
     let ``If a union type has more than one case and is a struct, field must be given unique name 34 - preview`` () =
         Fsx """
@@ -531,7 +531,7 @@ type StructUnion = A of int | B of string
         |> withDiagnostics [
               Error 3585, Line 4, Col 25, Line 4, Col 28, "If a multicase union type is a struct, then all fields with the same name must be of the same type. This rule applies also to the generated 'Item' name in case of unnamed fields."
               Error 3585, Line 4, Col 36, Line 4, Col 42, "If a multicase union type is a struct, then all fields with the same name must be of the same type. This rule applies also to the generated 'Item' name in case of unnamed fields." ]
-        
+
     [<Fact>]
     let ``If a union type has more than one case and is a struct, field must be given unique name 35`` () =
         Fsx """
@@ -543,7 +543,7 @@ type StructUnion =
         """
         |> typecheck
         |> shouldSucceed
-         
+
     [<Fact>]
     let ``If a union type has more than one case and is a struct, field must be given unique name 36 - preview`` () =
         Fsx """
@@ -557,7 +557,7 @@ type StructUnion =
         |> typecheck
         |> shouldSucceed
 
-        
+
     [<Fact>]
     let ``If a union type has more than one case and is a struct, field must be given unique name 37 - preview`` () =
         Fsx """
@@ -570,7 +570,7 @@ type StructUnion =
         """
         |> typecheck
         |> shouldSucceed
-        
+
     [<Fact>]
     let ``If a union type has more than one case and is a struct, field must be given unique name 38 - preview`` () =
         Fsx """
@@ -583,7 +583,7 @@ type StructUnion =
         """
         |> typecheck
         |> shouldSucceed
-        
+
     [<Fact>]
     let ``If a union type has more than one case and is a struct, field must be given unique name 39 - preview`` () =
         Fsx """
@@ -609,7 +609,7 @@ type StructUnion =
         """
         |> typecheck
         |> shouldSucceed
-        
+
     [<Fact>]
     let ``If a union type has more than one case and is a struct, field must be given unique name 41`` () =
         Fsx """
@@ -635,7 +635,7 @@ type StructUnion =
         """
         |> typecheck
         |> shouldSucceed
-        
+
     [<Fact>]
     let ``If a union type has more than one case and is a struct, field must be given unique name 43 - preview`` () =
         Fsx """
@@ -646,9 +646,9 @@ type StructUnion =
     | B of string * b: string
     | C of c: string * string * c3: int
         """
-        |> typecheck        
+        |> typecheck
         |> shouldSucceed
-        
+
     [<Fact>]
     let ``If a union type has more than one case and is a struct, field must be given unique name 44`` () =
         Fsx """
@@ -661,7 +661,7 @@ type StructUnion =
         """
         |> typecheck
         |> shouldSucceed
-        
+
     [<Fact>]
     let ``If a union type has more than one case and is a struct, field must be given unique name involves an immediate cyclic reference`` () =
         Fsx """
@@ -700,7 +700,7 @@ type StructUnion = A of X:int | B of Y:StructUnion
         |> withSingleDiagnostic (Error 954, Line 4, Col 18, Line 4, Col 29, "This type definition involves an immediate cyclic reference through a struct field or inheritance relation")
 
     let createMassiveStructDuProgram countOfCases =
-        let codeSb = 
+        let codeSb =
             System.Text.StringBuilder("""
 module Foo
 [<Struct;NoEquality;NoComparison>]
@@ -708,14 +708,14 @@ type StructUnion =
 """         )
 
         let basicTypes = [|"";"";"int";"string";"byte";"System.Uri";"int[]";"option<int>";"voption<int>";"System.Uri[]"|]
-        
+
         for i=1 to countOfCases do
             let t = basicTypes[i%basicTypes.Length]
-            if t = "" then 
+            if t = "" then
                 codeSb.AppendLine($"  | Case{i}") |> ignore
             else
                 codeSb.AppendLine($"  | Case{i} of field1_{i}:{t} * field2_{i}:{t}") |> ignore
-        
+
         codeSb.AppendLine($"""
 [<EntryPoint>]
 let main _argv = 
@@ -723,7 +723,7 @@ let main _argv =
     0""") |> ignore
 
         Fs (codeSb.ToString())
-        
+
 
     [<InlineData(5)>]
     [<InlineData(15)>]
@@ -768,7 +768,7 @@ type GenericStructDu<'T> = EmptyFirst | SingleVal of f:'T | DoubleVal of f2:'T *
         """
         |> compile
         |> shouldSucceed
-        
+
     [<Fact>]
     let ``Error when declaring an abstract member in union struct type`` () =
         Fsx """
@@ -777,7 +777,7 @@ type U =
   | A | B
   abstract M : unit -> unit
        """
-        |> typecheck 
+        |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Error 912, Line 5, Col 3, Line 5, Col 28, "This declaration element is not permitted in an augmentation")
 
@@ -899,7 +899,7 @@ type MySharedStructDu =
     }   """ ]
 
     [<Fact>]
-    let ``Custom ValueOption keeps working`` () = 
+    let ``Custom ValueOption keeps working`` () =
         Fsx """
 module XX
 open System
@@ -927,7 +927,7 @@ let main args =
         |> verifyOutput "MyValueSome 42"
 
     [<Literal>]
-    let sysDiagnostics = 
+    let sysDiagnostics =
     #if NETCOREAPP
         "[runtime]System.Diagnostics"
     #else

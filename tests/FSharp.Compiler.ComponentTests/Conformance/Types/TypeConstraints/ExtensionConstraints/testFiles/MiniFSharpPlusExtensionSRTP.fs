@@ -62,14 +62,14 @@ module MiniFSharpPlus =
                 let union = HashSet<'T> (max source1.Count source2.Count)
                 for item in source1 do union.Add item |> ignore
                 for item in source2 do union.Add item |> ignore
-                union    
+                union
 
         /// Additional operations on Exception
         [<RequireQualifiedAccess>]
         module Exception =
             open System
             open System.Runtime.ExceptionServices
-    
+
             /// Combines exceptions from 2 exceptions into a single AggregateException.
             /// Exceptions already present in the first argument won't be added.
             let add (exn1: exn) (exn2: exn) =
@@ -146,7 +146,7 @@ module MiniFSharpPlus =
                     let x2: 't2 = if true then Unchecked.defaultof<_> else (^t : (member Item2: 't2) x)
                     let x1: 't1 = if true then Unchecked.defaultof<_> else (^t : (member Item1: 't1) x)
                     Tuple<'t1,'t2,'t3,'t4,'t5,'t6,'t7,'tr> (Zero.Invoke (), Zero.Invoke (), Zero.Invoke (), Zero.Invoke (), Zero.Invoke (), Zero.Invoke (), Zero.Invoke (), Zero.Invoke ()) |> retype : 't
-            
+
             and ValueTuple<'t> with static member inline get_Zer0 () = ValueTuple<'T> (Zero.Invoke ()) : ValueTuple<'T>
             and struct ('t1 * 't2) with static member inline get_Zer0 () = struct (Zero.Invoke (), Zero.Invoke ())
 
@@ -158,7 +158,7 @@ module MiniFSharpPlus =
     [<AutoOpen>]
     module Semigroup =
         type Plus = class end
-        
+
         module Default3 = type Plus with static member inline ``+`` (x: 'Plus, y: 'Plus) = printfn "Default3"; (^Plus :  (static member (<|>) : _*_ -> _) x, y) : ^Plus
         module Default2 = type Plus with static member inline ``+`` (x: 'Plus, y: 'Plus) = printfn "Default2"; x + y : ^Plus
 
@@ -179,7 +179,7 @@ module MiniFSharpPlus =
             type Exception          with static member (++) (x: exn               , y: exn               ) = Exception.add x y :> exn
 
             type Plus with static member inline ``+`` (x: 'Plus, y: 'Plus) = printfn "Default1"; x ++ y : ^Plus
-            and Plus with        
+            and Plus with
                 static member inline Invoke (x: 'Plus) (y: 'Plus) : 'Plus =
                     let inline call (mthd : ^M, input1 : ^I, input2 : ^I) = ((^M or ^I) : (static member ``+`` : _*_ -> _) input1, input2)
                     call (Unchecked.defaultof<Plus>, x, y)
@@ -268,7 +268,7 @@ module MiniFSharpPlus =
             type List<'t> with static member Return (x: 'T) : list<'T> = [x]
             type 't``[]`` with static member Return (x: 'T) : 'T[] = [|x|]
 
-            
+
             type Option<'t> with
                 [<AllowOverloadOnReturnType>]
                 static member Return (x: 'T) : option<'T> = Some x
@@ -283,7 +283,7 @@ module MiniFSharpPlus =
             type Return with
                 [<AllowOverloadOnReturnType>]
                 static member inline Invoke x : '``Pointed<'T>`` = (^``Pointed<'T>`` : (static member Return : _ -> _) x)
-    
+
     [<AutoOpen>]
     module Monad =
         type Bind = class end
@@ -299,8 +299,8 @@ module MiniFSharpPlus =
             type Microsoft.FSharp.Core.FSharpFunc<'r, 'a> with static member (>>=) (m: 'R -> 'T, k: 'T -> 'R -> 'U) : 'R -> 'U = fun r -> let a = m r in k a r
 
             type Bind with static member inline Invoke (x: '``Monad<'T>``) (f: 'T -> '``Monad<'U>``) : '``Monad<'U>`` = (^``Monad<'T>`` : (static member (>>=) : _*_ -> _) x, f)
-    
-    
+
+
     [<AutoOpen>]
     module Applicative =
         type Apply = class end
@@ -395,7 +395,7 @@ module MiniFSharpPlus =
             // type 't``[]`` with static member inline Traverse (x: 't``[]``, f) = let cons head tail = Map.Invoke (fun h t -> Array.append [|h|] t) head tail in Array.foldBack cons x (Return.Invoke [||])
             type Option<'t> with static member inline Traverse (t: option<'``Functor<'T>``>, f) = match t with Some x -> Map.Invoke Some (f x) | _ -> Return.Invoke None
             type ValueOption<'t> with static member inline Traverse (t: ValueOption<'``Functor<'T>``>, f) = match t with ValueSome x -> Map.Invoke ValueSome (f x) | _ -> Return.Invoke ValueNone
-            
+
             type Traverse with
                 static member inline Invoke (x: '``Traversable<'T>``) (f: 'T -> '``Applicative<'U>``) : '``Applicative<Traversable<'U>>`` =
                     ((^``Traversable<'T>`` or Traverse) : (static member Traverse : _*_ -> _) x, f)
@@ -423,7 +423,7 @@ module MiniFSharpPlus =
 
             type Option<'t> with static member inline Sequence (t: option<'``Applicative<'T>``>) = match t with Some x -> Map.Invoke Some x | _ -> Return.Invoke None
             type ValueOption<'t> with static member inline Sequence (t: voption<'``Applicative<'T>``>) = match t with ValueSome x -> Map.Invoke ValueSome x | _ -> Return.Invoke ValueNone
-            
+
             type Sequence with
                 static member inline Invoke (x: '``Traversable<'Applicative<'T>>``) : '``Applicative<Traversable<'T>>`` =
                     ((^``Traversable<'Applicative<'T>>`` or Sequence) : (static member Sequence : _ -> _) x)
@@ -496,10 +496,10 @@ module SimpleFSharpPlus =
 
     let inline (<*>) f x : ^``Applicative<'U>`` = Apply.Invoke f x // ((^``Applicative<'T -> 'U>``) : (static member (<*>) : ^``Applicative<'T -> 'U>`` * ^``Applicative<'T>`` -> ^``Applicative<'U>``) (f, x))
     let inline (>>=) x f : ^``Monad<'U>`` = Bind.Invoke x f // ((^``Monad<'T>``) : (static member (>>=) : ^``Monad<'T>`` * ('T -> ^``Monad<'U>``) -> ^``Monad<'U>``) (x, f))
-    
+
     let inline traverse f x = Traverse.Invoke x f
     let inline sequence x = Sequence.Invoke x
-    
+
     let inline (|>>>) x f : ^``Functor<Functor<'U>>`` = ((^``Functor<Functor<'T>>``) : (static member (|>>>) : ^``Functor<Functor<'T>>`` * ('T -> 'U) -> ^``Functor<Functor<'U>>``) (x, f))
     let inline (|>>>>) x f : ^``Functor<Functor<Functor<'U>>>`` = ((^``Functor<Functor<Functor<'T>>>``) : (static member (|>>>>) : ^``Functor<Functor<Functor<'T>>>`` * ('T -> 'U) -> ^``Functor<Functor<Functor<'U>>>``) (x, f))
 

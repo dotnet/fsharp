@@ -6,7 +6,7 @@ let (|SetV|) x _ = x
 let c = Cond.Foo
 
 match c with
-| Baz -> 
+| Baz ->
     printfn "Baz"
 | Foo & SetV "and" kwd
 | Bar & SetV "or" kwd ->

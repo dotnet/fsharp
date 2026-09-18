@@ -153,7 +153,7 @@ let main _ =
 
     [<FSharp.Test.FactForNETCOREAPP>]
     let ``Regression: typechecker does not fail when attribute is on type variable (https://github.com/dotnet/fsharp/issues/13525)`` () =
-        let csharpBaseClass = 
+        let csharpBaseClass =
             CSharp """
         using System.Diagnostics.CodeAnalysis;
         
@@ -170,7 +170,7 @@ let main _ =
                     node;
             }
         }""" |> withName "csLib"
-        
+
         let fsharpSource =
             """
     module FooBar

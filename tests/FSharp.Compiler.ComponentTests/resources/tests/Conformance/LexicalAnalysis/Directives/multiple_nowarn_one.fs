@@ -1,4 +1,4 @@
-// #Regression #Conformance #LexicalAnalysis #ReqNOMT 
+// #Regression #Conformance #LexicalAnalysis #ReqNOMT
 // Regression test for FSHARP1.0:6044
 // Just one #nowarn
 #nowarn "49"

@@ -1,4 +1,4 @@
-// #Conformance #DeclarationElements #Fields #MemberDefinitions 
+// #Conformance #DeclarationElements #Fields #MemberDefinitions
 // Verify the ability to create public, static fields
 
 
@@ -13,9 +13,9 @@ type ClassType =
 [<Struct>]
 type StructType =
 //    [<DefaultValue>]
-//    static val mutable public  FieldPub : string 
+//    static val mutable public  FieldPub : string
     [<DefaultValue>]
-    static val mutable private FieldPri : string 
+    static val mutable private FieldPri : string
 
-    override this.ToString() = "StructType"    
+    override this.ToString() = "StructType"
 

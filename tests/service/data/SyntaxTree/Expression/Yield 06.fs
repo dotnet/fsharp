@@ -1,6 +1,6 @@
 module Module
 
 seq {
-    yield [ 1 .. 10 ] : 
+    yield [ 1 .. 10 ] :
 }
 

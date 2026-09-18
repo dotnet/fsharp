@@ -319,13 +319,8 @@ let private compareArg (ctx: OverloadResolutionContext) (calledArg1: CalledArg) 
                 // T is always better than inref<T>
                 | _ when isInByrefTy g ty2 && typeEquiv g ty1 (destByrefTy g ty2) -> true
 
-                // T is always better than Nullable<T> from F# 5.0 onwards
-                | _ when
-                    g.langVersion.SupportsFeature(LanguageFeature.NullableOptionalInterop)
-                    && isNullableTy g ty2
-                    && typeEquiv g ty1 (destNullableTy g ty2)
-                    ->
-                    true
+                // T is always better than Nullable<T>
+                | _ when isNullableTy g ty2 && typeEquiv g ty1 (destNullableTy g ty2) -> true
 
                 | _ -> false)
 
@@ -490,7 +485,7 @@ let private moreConcreteRule: TiebreakRule =
 let private nullableOptionalInteropRule: TiebreakRule =
     {
         Id = TiebreakRuleId.NullableOptionalInterop
-        RequiredFeature = Some LanguageFeature.NullableOptionalInterop
+        RequiredFeature = None
         Compare =
             fun ctx (struct (candidate, _, _)) (struct (other, _, _)) ->
                 let args1 = candidate.AllCalledArgs |> List.concat

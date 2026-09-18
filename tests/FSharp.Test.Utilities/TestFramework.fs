@@ -320,7 +320,7 @@ let config configurationName envVars =
     let artifactsBinPath = artifactsPath ++ "bin"
     let csc_flags = "/nologo"
     let vbc_flags = "/nologo"
-    let fsc_flags = "-r:System.Core.dll --nowarn:20 --define:COMPILED --preferreduilang:en-US" 
+    let fsc_flags = "-r:System.Core.dll --nowarn:20 --define:COMPILED --preferreduilang:en-US"
     let fsi_flags = "-r:System.Core.dll --nowarn:20 --define:INTERACTIVE --maxerrors:1 --abortonerror --preferreduilang:en-US"
     let operatingSystem = getOperatingSystem ()
     let Is64BitOperatingSystem = DotnetPlatform.Is64BitOperatingSystem envVars
@@ -534,13 +534,13 @@ module Command =
         let inputWriter sources (writer: StreamWriter) =
             let pipeFile name = async {
                 let path = Commands.getfullpath dir name
-                
+
                 // Read file content as text using UTF-8 (the standard encoding for F# source files)
                 let! content = async {
                     use reader = new StreamReader(path, Text.Encoding.UTF8, detectEncodingFromByteOrderMarks = true)
                     return! reader.ReadToEndAsync() |> Async.AwaitTask
                 }
-                
+
                 // Write using the StreamWriter which now uses UTF-8 encoding (set in ensureConsole).
                 try
                     do! writer.WriteAsync(content) |> Async.AwaitTask

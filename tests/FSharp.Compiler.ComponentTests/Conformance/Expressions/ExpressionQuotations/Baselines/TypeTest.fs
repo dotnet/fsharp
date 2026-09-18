@@ -1,4 +1,4 @@
-// #Conformance #Quotations 
+// #Conformance #Quotations
 open System
 open Microsoft.FSharp.Quotations
 open Microsoft.FSharp.Quotations.DerivedPatterns

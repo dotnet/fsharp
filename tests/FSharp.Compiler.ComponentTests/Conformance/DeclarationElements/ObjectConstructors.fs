@@ -131,7 +131,7 @@ module ObjectConstructors =
         |> ignore
 
     // SOURCE=ImplicitCtorsCallingBaseclassPassingSelf.fs
-    // This test intentionally throws exceptions to test exception handling 
+    // This test intentionally throws exceptions to test exception handling
     // and can crash the test host on some platforms
     [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/DeclarationElements/ObjectConstructors", Includes=[|"ImplicitCtorsCallingBaseclassPassingSelf.fs"|])>]
     let ``ImplicitCtorsCallingBaseclassPassingSelf_fs`` compilation =

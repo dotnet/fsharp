@@ -1,4 +1,4 @@
-// #Conformance #PatternMatching #ActivePatterns 
+// #Conformance #PatternMatching #ActivePatterns
 
 
 // Test ability to specify multiple active patterns in the same pattern match
@@ -32,7 +32,7 @@ let (|Z|_|) x = if x = 'Z' then Some() else None
 
 let isLetter x =
     match x with
-    | A | B | C | D | E 
+    | A | B | C | D | E
     | F | G | H | I | J
     | K | L | M | N | O
     | P | Q | R | S | T

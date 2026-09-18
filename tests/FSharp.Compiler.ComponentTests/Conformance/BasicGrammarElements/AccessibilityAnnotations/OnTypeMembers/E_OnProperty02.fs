@@ -1,4 +1,4 @@
-// #Regression #Conformance #DeclarationElements #Accessibility #MethodsAndProperties #MemberDefinitions 
+// #Regression #Conformance #DeclarationElements #Accessibility #MethodsAndProperties #MemberDefinitions
 // Regression test for FSharp1.0:4169
 // Title: Accessibility modifier in front of property is ignored if either get() or set() is mentioned explicitly
 // Verify accessibility annotations cannot be duplicated in various places with properties
@@ -14,10 +14,10 @@ type T() =
     // Getters
     member this.test1 with private get private () = 0
     member private this.test2 with private get () = 0
-    
+
     // Setters
     member public this.test3 with private set (x : int) = ()
     member private this.test4 with set private (x : int) = ()
-    
+
     // Getters & Setters together
     member this.test5 with private public get () = 0

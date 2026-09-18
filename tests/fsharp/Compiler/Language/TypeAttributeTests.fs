@@ -5,17 +5,17 @@ open FSharp.Test
 open FSharp.Compiler.Diagnostics
 
 
-module TypeAttributeTests = 
+module TypeAttributeTests =
 
     [<Fact>]
-    let ``Attribute can be applied to type definition``() = 
+    let ``Attribute can be applied to type definition``() =
         CompilerAssert.Pass
             """
 [<Struct>]
 type Point = {x:int; y:int}
             """
     [<Fact>]
-    let ``Attribute cannot be applied to optional type extension``() = 
+    let ``Attribute cannot be applied to optional type extension``() =
         CompilerAssert.TypeCheckSingleError
             """
 open System
@@ -30,7 +30,7 @@ type String with
             "Attributes cannot be applied to type extensions."
 
     [<Fact>]
-    let ``Attribute cannot be applied to intrinsic type extension``() = 
+    let ``Attribute cannot be applied to intrinsic type extension``() =
         CompilerAssert.TypeCheckSingleError
             """
 type Point = {x:int; y:int}

@@ -24,7 +24,7 @@ let WAOrders =
     } |> Seq.toArray
 
 // Skip - simple
-let allButFirst4Numbers = 
+let allButFirst4Numbers =
     query {
         for n in numbers do
         skip 4
@@ -47,7 +47,7 @@ let firstNumbersLessThan6 =
     } |> Seq.toList
 
 // SkipWhile - simple
-let allButFirst3Numbers = 
+let allButFirst3Numbers =
     query {
         for n in numbers do
         skipWhile (n % 3 <> 0)

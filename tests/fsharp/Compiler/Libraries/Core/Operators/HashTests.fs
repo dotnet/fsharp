@@ -15,7 +15,7 @@ module ``Hash Tests`` =
         // You should not be able to hash F# function values
         // Note: most positive cases already covered under fsharp\typecheck\sigs
         // I'm adding this simple one since I did not see it there.
-        
+
         CompilerAssert.TypeCheckSingleError
             """
 hash id |> ignore

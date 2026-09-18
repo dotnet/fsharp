@@ -11,5 +11,5 @@ module TestOverloadsWithSrtpThatDontResolve1 =
 
     // this will give a "requires version 6.0 or greater" error
 
-    let inline f x = 
-        OverloadsWithSrtp.SomeMethod (x, (fun a -> 1)) 
+    let inline f x =
+        OverloadsWithSrtp.SomeMethod (x, (fun a -> 1))

@@ -1,4 +1,4 @@
-// #NoMono #NoMT #CodeGen #EmittedIL 
+// #NoMono #NoMT #CodeGen #EmittedIL
 // Verify that the deprecated command line option "--no-generate-filter-blocks" is honored
 try
   ()

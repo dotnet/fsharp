@@ -1,5 +1,6 @@
 ### Added
 
+* Runtime async: `task`/`async`-style computation expressions can be compiled to use the .NET runtime async support (RuntimeAsync preview feature). ([PR #20235](https://github.com/dotnet/fsharp/pull/20235))
 * **Extension members for operators and SRTP constraints** ([RFC FS-1043](https://github.com/fsharp/fslang-design/blob/main/RFCs/FS-1043-extension-members-for-operators-and-srtp-constraints.md), [fslang-suggestions#230](https://github.com/fsharp/fslang-suggestions/issues/230), [PR #19602](https://github.com/dotnet/fsharp/pull/19602)): Extension methods now participate in SRTP constraint resolution. This allows defining operators on types you don't own via type extensions:
 
   ```fsharp
@@ -35,8 +36,10 @@
 
 ### Fixed
 
+* Explicit generic type arguments are now unified in constraint-dependency order, so a subtype constraint that references a later type parameter (e.g. `Register<'a, 'b when 'a :> I<'b>>` called as `<Foo, int>`) no longer fails with FS0001 when the argument implements the interface at several instantiations. ([Issue #20103](https://github.com/dotnet/fsharp/issues/20103), [PR #20342](https://github.com/dotnet/fsharp/pull/20342))
 * Bitwise operators (`|||`, `&&&`, `^^^`) on enums whose underlying type is not an integer type (e.g. `char`) are now a compile-time error (FS0001, consistent with `~~~`, `<<<`, `>>>`) instead of a runtime `NotSupportedException`. ([Issue #11785](https://github.com/dotnet/fsharp/issues/11785), [PR #20322](https://github.com/dotnet/fsharp/pull/20322))
 
 ### Changed
 
 * Inline functions now keep SRTP constraints generic instead of eagerly resolving through weak resolution. This changes inferred types for some inline code — see [RFC FS-1043 compatibility section](https://github.com/fsharp/fslang-design/blob/main/RFCs/FS-1043-extension-members-for-operators-and-srtp-constraints.md) for details and workarounds.
+* Remove the always-on `ErrorReportingOnStaticClasses` language feature flag. Static-class validation remains unchanged for all supported language versions. ([Issue #20180](https://github.com/dotnet/fsharp/issues/20180), [PR #20513](https://github.com/dotnet/fsharp/pull/20513))

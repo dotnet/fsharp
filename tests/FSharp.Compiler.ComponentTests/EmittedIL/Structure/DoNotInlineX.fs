@@ -6,13 +6,13 @@ open System.IO
 
 let longtime = int(System.TimeSpan.FromSeconds(30.0).TotalMilliseconds)               // longtime is 30 seconds
 
-let programFiles = 
+let programFiles =
     let pf86 = Environment.GetEnvironmentVariable("ProgramFiles(x86)")
     if String.IsNullOrEmpty(pf86) then Environment.GetEnvironmentVariable("ProgramFiles") else pf86
 let fsc =
     let overridePath = Environment.GetEnvironmentVariable("FSC")
-    if not (String.IsNullOrEmpty(overridePath)) then 
-        overridePath 
+    if not (String.IsNullOrEmpty(overridePath)) then
+        overridePath
     else
         let fsc41_SxS = Path.Combine(programFiles, @"Microsoft SDKs\F#\4.1\Framework\v4.0\fsc.exe")
         let fsc40_SxS = Path.Combine(programFiles, @"Microsoft SDKs\F#\4.0\Framework\v4.0\fsc.exe")
@@ -26,7 +26,7 @@ let fsc =
 
 let start (p1 : string) = Process.Start(p1)
 
-let CompileFile file args = 
+let CompileFile file args =
     let p = Process.Start(fsc, file + " " + args)
     p.WaitForExit()
 

@@ -1,7 +1,7 @@
-// #Conformance #DeclarationElements #MemberDefinitions #MethodsAndProperties 
+// #Conformance #DeclarationElements #MemberDefinitions #MethodsAndProperties
 
 
-type Record = 
+type Record =
     { A : int; B : int; C : int; D : int }
     member this.AddTo a b c d = (this.A + a, this.B + b, this.C + c, this.D + d)
 

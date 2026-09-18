@@ -813,6 +813,7 @@ type internal ILMethodBody =
       MaxStack: int32
       NoInlining: bool
       AggressiveInlining: bool
+      IsRuntimeAsync: bool
       Locals: ILLocals
       Code: ILCode
       DebugRange: ILDebugPoint option
@@ -1246,6 +1247,8 @@ type ILMethodDef =
     member internal WithAggressiveInlining: bool -> ILMethodDef
 
     member internal WithRuntime: bool -> ILMethodDef
+
+    member internal WithAsync: bool -> ILMethodDef
 
 /// Tables of methods.  Logically equivalent to a list of methods but
 /// the table is kept in a form optimized for looking up methods by

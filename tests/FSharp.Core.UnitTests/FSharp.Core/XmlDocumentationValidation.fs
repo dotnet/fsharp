@@ -41,7 +41,7 @@ let extractXmlDocBlocks (content: string) =
                 // Keep the current XML documentation block open across conditional directives and blank lines
                 // Handles docs that have internal #if/#else/#endif guards within xmldoc blocks to cover TFM variations.
                 ()
-            else    
+            else
                 match tryFlushCurrentBlock () with
                 | Some block -> yield block
                 | None -> ()
@@ -61,7 +61,7 @@ let validateXmlBlock (xmlLines: (string * int) list) =
     else
         let xmlContent = xmlLines |> List.map fst |> String.concat "\n"
         let firstLineNumber = xmlLines |> List.head |> snd
-        
+
         // Skip empty or whitespace-only blocks
         if String.IsNullOrWhiteSpace(xmlContent) then
             Ok ()
@@ -91,18 +91,18 @@ let getFSharpCoreFsiFiles () =
 [<Fact>]
 let ``XML documentation in FSharp.Core fsi files should be well-formed`` () =
     let fsiFiles = getFSharpCoreFsiFiles()
-    
+
     Assert.False(List.isEmpty fsiFiles, "No .fsi files found in FSharp.Core directory")
-    
+
     let mutable errors = []
     let mutable totalBlocks = 0
-    
+
     for fsiFile in fsiFiles do
         let relativePath = Path.GetFileName(fsiFile)
         try
             let content = File.ReadAllText(fsiFile)
             let xmlBlocks = extractXmlDocBlocks content
-            
+
             for xmlBlock in xmlBlocks do
                 totalBlocks <- totalBlocks + 1
                 match validateXmlBlock xmlBlock with
@@ -114,12 +114,12 @@ let ``XML documentation in FSharp.Core fsi files should be well-formed`` () =
         | ex ->
             let error = sprintf "%s: Failed to read file - %s" relativePath ex.Message
             errors <- error :: errors
-    
+
     // Report statistics
     let validBlocks = totalBlocks - List.length errors
-    let message = sprintf "Validated %d XML documentation blocks in %d .fsi files. %d valid, %d invalid." 
+    let message = sprintf "Validated %d XML documentation blocks in %d .fsi files. %d valid, %d invalid."
                     totalBlocks (List.length fsiFiles) validBlocks (List.length errors)
-    
+
     if not (List.isEmpty errors) then
         let errorDetails = errors |> List.rev |> String.concat "\n"
         Assert.Fail(sprintf "%s\n\nErrors:\n%s" message errorDetails)

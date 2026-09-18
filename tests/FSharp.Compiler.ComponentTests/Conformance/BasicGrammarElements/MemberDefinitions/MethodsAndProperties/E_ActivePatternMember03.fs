@@ -5,7 +5,7 @@ let (|A|B|) x = if x = "Foo" then A else B
 let (|A|B|_|) = None
 
 type APUsageInClass() =
-    
+
     let (|A|) = 7
 
     let (|A|B|) x =

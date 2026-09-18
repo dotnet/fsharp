@@ -3,7 +3,7 @@ module M
 let test1 (x: string) = ()
 let test2 (x: string | null) = ()
 
-let iRejectNulls (x:_|null) = 
+let iRejectNulls (x:_|null) =
     match x with
     | null -> "null"
     | s -> String.length s |> string

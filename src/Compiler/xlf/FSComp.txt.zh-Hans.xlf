@@ -317,11 +317,6 @@
         <target state="new">Allow object expressions without overrides</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureArithmeticInLiterals">
-        <source>Arithmetic and logical operations in literals, enum definitions and attributes</source>
-        <target state="translated">文本、枚举定义和属性中的算术和逻辑运算</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureAttributesToRightOfModuleKeyword">
         <source>attributes to the right of the 'module' keyword</source>
         <target state="translated">"module" 关键字右侧的属性</target>
@@ -357,16 +352,6 @@
         <target state="translated">灵活类型的约束交集</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureDefaultInterfaceMemberConsumption">
-        <source>default interface member consumption</source>
-        <target state="translated">默认接口成员消耗</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureDelegateTypeNameResolutionFix">
-        <source>fix to resolution of delegate type names, see https://github.com/dotnet/fsharp/issues/10228</source>
-        <target state="translated">修复了委托类型名称的解析，请参阅 https://github.com/dotnet/fsharp/issues/10228</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureDeprecatePlacesWhereSeqCanBeOmitted">
         <source>Deprecate places where 'seq' can be omitted</source>
         <target state="new">Deprecate places where 'seq' can be omitted</target>
@@ -380,11 +365,6 @@
       <trans-unit id="featureDontWarnOnUppercaseIdentifiersInBindingPatterns">
         <source>Don't warn on uppercase identifiers in binding patterns</source>
         <target state="new">Don't warn on uppercase identifiers in binding patterns</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureDotlessFloat32Literal">
-        <source>dotless float32 literal</source>
-        <target state="translated">无点 float32 文本</target>
         <note />
       </trans-unit>
       <trans-unit id="featureEmptyBodiedComputationExpressions">
@@ -422,29 +402,9 @@
         <target state="new">error (rather than warning) when an enforced compiler-semantic attribute is present in the .fs but missing from the .fsi</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureErrorReportingOnStaticClasses">
-        <source>Error reporting on static classes</source>
-        <target state="translated">有关静态类的错误报告</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureEscapeBracesInFormattableString">
-        <source>Escapes curly braces before calling FormattableStringFactory.Create when interpolated string literal is typed as FormattableString</source>
-        <target state="translated">当内插字符串文本键入为 FormattableString 时，在调用 FormattableStringFactory.Create 之前转义大括号</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureExpandedMeasurables">
         <source>more types support units of measure</source>
         <target state="translated">更多类型支持度量单位</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureExtendedFixedBindings">
-        <source>extended fixed bindings for byref and GetPinnableReference</source>
-        <target state="translated">byref 和 GetPinnableReference 的扩展固定绑定</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureExtendedStringInterpolation">
-        <source>Extended string interpolation similar to C# raw string literals.</source>
-        <target state="translated">扩展字符串内插类似于 C# 原始字符串字面量。</target>
         <note />
       </trans-unit>
       <trans-unit id="featureExtensionConstraintSolutions">
@@ -462,19 +422,9 @@
         <target state="new">Implicit dispatch slot coverage for default interface member implementations</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureImprovedImpliedArgumentNames">
-        <source>Improved implied argument names</source>
-        <target state="translated">改进了默示的参数名称</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureImprovedImpliedArgumentNamesPartTwo">
         <source>Improved implied argument names with partial application</source>
         <target state="new">Improved implied argument names with partial application</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureInterfacesWithAbstractStaticMembers">
-        <source>static abstract interface members</source>
-        <target state="translated">静态抽象接口成员</target>
         <note />
       </trans-unit>
       <trans-unit id="featureLowerInterpolatedStringToConcat">
@@ -492,11 +442,6 @@
         <target state="new">Lowers [for x in xs -&gt; f x] and [|for x in xs -&gt; f x|] to fast loops when xs is a list or an array, respectively.</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureLowercaseDUWhenRequireQualifiedAccess">
-        <source>Allow lowercase DU when RequireQualifiedAccess attribute</source>
-        <target state="translated">当 RequireQualifiedAccess 属性时允许小写 DU</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureMatchNotAllowedForUnionCaseWithNoData">
         <source>Pattern match discard is not allowed for union case that takes no data.</source>
         <target state="translated">不允许将模式匹配丢弃用于不采用数据的联合事例。</target>
@@ -507,19 +452,9 @@
         <target state="new">Use 'most concrete' tiebreaker for overload resolution when methods differ only by type parameter concreteness.</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureNameOf">
-        <source>nameof</source>
-        <target state="translated">nameof</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureNonInlineLiteralsAsPrintfFormat">
         <source>String values marked as literals and IL constants as printf format</source>
         <target state="translated">标记为文本和 IL 常量的字符串值为 printf 格式</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureNonVariablePatternsToRightOfAsPatterns">
-        <source>non-variable patterns to the right of 'as' patterns</source>
-        <target state="translated">"as" 模式右侧的非变量模式</target>
         <note />
       </trans-unit>
       <trans-unit id="featureNotNullIfNotNull">
@@ -527,24 +462,19 @@
         <target state="new">honor the 'NotNullIfNotNull' attribute on a method's return value</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureNullableOptionalInterop">
-        <source>nullable optional interop</source>
-        <target state="translated">可以为 null 的可选互操作</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureNullnessChecking">
         <source>nullness checking</source>
         <target state="new">nullness checking</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureOptimizeClosureIfNotInlined">
+        <source>optimize a curried closure argument when its inlining fails</source>
+        <target state="new">optimize a curried closure argument when its inlining fails</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureOverloadResolutionPriority">
         <source>Support for OverloadResolutionPriorityAttribute to prioritize method overloads.</source>
         <target state="new">Support for OverloadResolutionPriorityAttribute to prioritize method overloads.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureOverloadsForCustomOperations">
-        <source>overloads for custom operations</source>
-        <target state="translated">自定义操作的重载</target>
         <note />
       </trans-unit>
       <trans-unit id="featurePackageManagement">
@@ -572,11 +502,6 @@
         <target state="translated">首选扩展方法而不是纯属性</target>
         <note />
       </trans-unit>
-      <trans-unit id="featurePreferStringGetPinnableReference">
-        <source>prefer String.GetPinnableReference in fixed bindings</source>
-        <target state="translated">在固定绑定中首选 String.GetPinnableReference</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featurePreprocessorElif">
         <source>#elif preprocessor directive</source>
         <target state="new">#elif preprocessor directive</target>
@@ -602,11 +527,6 @@
         <target state="translated">与引用单元格相关的信息性消息</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureRequiredProperties">
-        <source>support for required properties</source>
-        <target state="translated">对所需属性的支持</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureResumableStateMachines">
         <source>resumable state machines</source>
         <target state="translated">可恢复状态机</target>
@@ -627,6 +547,11 @@
         <target state="translated">只要它们具有相同的名称和类型，即可在 [&lt;Struct&gt;] 中共享基础字段</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureRuntimeAsync">
+        <source>runtime async</source>
+        <target state="new">runtime async</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureScopedNowarn">
         <source>Support for scoped enabling / disabling of warnings by #warn and #nowarn directives, also inside modules</source>
         <target state="new">Support for scoped enabling / disabling of warnings by #warn and #nowarn directives, also inside modules</target>
@@ -635,16 +560,6 @@
       <trans-unit id="featureSelfTypeConstraints">
         <source>self type constraints</source>
         <target state="translated">自类型约束</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureStaticLetInRecordsDusEmptyTypes">
-        <source>Allow static let bindings in union, record, struct, non-incremental-class types</source>
-        <target state="translated">允许在联合、记录、结构、非增量类类型中使用静态 let 绑定</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureStaticMembersInInterfaces">
-        <source>Static members in interfaces</source>
-        <target state="translated">接口中的静态成员</target>
         <note />
       </trans-unit>
       <trans-unit id="featureStringInterpolation">
@@ -660,6 +575,11 @@
       <trans-unit id="featureSupportWarnWhenUnitPassedToObjArg">
         <source>Warn when unit is passed to a member accepting `obj` argument, e.g. `Method(o:obj)` will warn if called via `Method()`.</source>
         <target state="new">Warn when unit is passed to a member accepting `obj` argument, e.g. `Method(o:obj)` will warn if called via `Method()`.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureTypeArgumentDependencyOrdering">
+        <source>ordering explicit type arguments by their constraint dependencies</source>
+        <target state="new">ordering explicit type arguments by their constraint dependencies</target>
         <note />
       </trans-unit>
       <trans-unit id="featureUnionIsPropertiesVisible">
@@ -757,6 +677,31 @@
         <target state="new">The type '{0}' is not a valid custom attribute argument type. Custom attribute arrays must have elements of primitive types, enums, string, System.Type, or System.Object.</target>
         <note />
       </trans-unit>
+      <trans-unit id="ilRuntimeAsyncLocalUsedAfterSuspension">
+        <source>A byref, byref-like, or pinned local '{0}' cannot be used after a runtime async suspension.</source>
+        <target state="new">A byref, byref-like, or pinned local '{0}' cannot be used after a runtime async suspension.</target>
+        <note />
+      </trans-unit>
+<trans-unit id="ilRuntimeAsyncSequenceNotStaticallyKnown">
+        <source>The runtime-async sequence recipe could not be statically lowered. Supply a statically known delayed sequence recipe through an inline builder.</source>
+        <target state="new">The runtime-async sequence recipe could not be statically lowered. Supply a statically known delayed sequence recipe through an inline builder.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ilRuntimeAsyncStackAllocation">
+        <source>Stack allocation is not permitted in a runtime async method.</source>
+        <target state="new">Stack allocation is not permitted in a runtime async method.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ilRuntimeAsyncSuspensionOutsideRuntimeAsync">
+        <source>Runtime async suspension method '{0}' may only be called from a runtime async method.</source>
+        <target state="new">Runtime async suspension method '{0}' may only be called from a runtime async method.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ilRuntimeAsyncSynchronizedMethod">
+        <source>A runtime async method cannot use MethodImplOptions.Synchronized.</source>
+        <target state="new">A runtime async method cannot use MethodImplOptions.Synchronized.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ilxGenUnknownDebugPoint">
         <source>Unknown debug point '{0}'. The available debug points are '{1}'.</source>
         <target state="translated">调试点“{0}”未知。可用的调试点为“{1}”。</target>
@@ -775,6 +720,11 @@
       <trans-unit id="implMissingInlineIfLambda">
         <source>The 'InlineIfLambda' attribute is present in the signature but not the implementation.</source>
         <target state="translated">"InlineIfLambda" 属性存在于签名中，但实现中不存在。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="implMissingOptimizeClosureIfNotInlined">
+        <source>The 'OptimizeClosureIfNotInlined' attribute is present in the signature but not the implementation.</source>
+        <target state="new">The 'OptimizeClosureIfNotInlined' attribute is present in the signature but not the implementation.</target>
         <note />
       </trans-unit>
       <trans-unit id="invalidXmlDocPosition">
@@ -820,11 +770,6 @@
       <trans-unit id="lexColonDirectiveMustBeFirst">
         <source>#: directives must start at the beginning of a line</source>
         <target state="new">#: directives must start at the beginning of a line</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="lexExtendedStringInterpolationNotSupported">
-        <source>Extended string interpolation is not supported in this version of F#.</source>
-        <target state="translated">此版本的 F# 不支持扩展字符串内插。</target>
         <note />
       </trans-unit>
       <trans-unit id="lexHashElifAfterElse">
@@ -1093,8 +1038,8 @@
         <note />
       </trans-unit>
       <trans-unit id="optsUnrecognizedLanguageFeature">
-        <source>Unrecognized language feature name: '{0}'. Use a valid feature name such as 'NameOf' or 'StringInterpolation'.</source>
-        <target state="new">Unrecognized language feature name: '{0}'. Use a valid feature name such as 'NameOf' or 'StringInterpolation'.</target>
+        <source>Unrecognized language feature name: '{0}'. Use a valid feature name such as 'StringInterpolation' or 'FromEndSlicing'.</source>
+        <target state="new">Unrecognized language feature name: '{0}'. Use a valid feature name such as 'StringInterpolation' or 'FromEndSlicing'.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsUnrecognizedLanguageVersion">
@@ -1320,6 +1265,11 @@
       <trans-unit id="reprStateMachineNotCompilableNoAlternative">
         <source>This state machine is not statically compilable and no alternative is available. {0}. Use an 'if __useResumableCode then &lt;state-machine&gt; else &lt;alternative&gt;' to give an alternative.</source>
         <target state="translated">此状态机不可静态编译，并且没有可用的替代方法。{0}。 请使用 "if __useResumableCode 然后 &lt;state-machine&gt; else &lt;alternative&gt;' 以提供替代方法。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="runtimeStaticAbstractInterfaceMembers">
+        <source>static abstract interface members</source>
+        <target state="new">static abstract interface members</target>
         <note />
       </trans-unit>
       <trans-unit id="scriptSdkNotDetermined">
@@ -1675,6 +1625,11 @@
       <trans-unit id="tcOnlyStructsCanHaveExtendedLayout">
         <source>Only structs may be given the 'ExtendedLayoutAttribute'</source>
         <target state="new">Only structs may be given the 'ExtendedLayoutAttribute'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcOptimizeClosureIfNotInlinedRequiresInlineIfLambdaAndMultiArg">
+        <source>The 'OptimizeClosureIfNotInlined' attribute requires 'InlineIfLambda' on a separately curried parameter of an inline function or method whose type is a curried F# function of arity 2 to 5.</source>
+        <target state="new">The 'OptimizeClosureIfNotInlined' attribute requires 'InlineIfLambda' on a separately curried parameter of an inline function or method whose type is a curried F# function of arity 2 to 5.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcOtherThenAdjacentListArgumentNeedsAdjustment">
@@ -5550,11 +5505,6 @@
       <trans-unit id="tcStructsMayNotContainLetBindings">
         <source>Structs cannot contain value definitions because the default constructor for structs will not execute these bindings. Consider adding additional arguments to the primary constructor for the type.</source>
         <target state="translated">结构不能包含值定义，因为结构的默认构造函数将不会执行这些绑定。请考虑为该类型的主构造函数添加更多参数。</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcStaticLetBindingsRequireClassesWithImplicitConstructors">
-        <source>For F#7 and lower, static 'let','do' and 'member val' definitions may only be used in types with a primary constructor ('type X(args) = ...'). To enable them in all other types, use language version '8' or higher.</source>
-        <target state="translated">对于 F#7 及更低版本，静态“let”、“do”和“member val”定义只能用于具有主构造函数的类型 ("type X(args) = ...")。若要在所有其他类型中启用它们，请使用语言版本“8”或更高版本。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcMeasureDeclarationsRequireStaticMembersNotConstructors">

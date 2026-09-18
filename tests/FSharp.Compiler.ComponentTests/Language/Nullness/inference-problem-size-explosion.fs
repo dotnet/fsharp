@@ -8,7 +8,7 @@ type ToSeq =
     static member inline ToSeq (x: 'Foldable                      , _: ToSeq) = (^Foldable: (static member ToSeq : _ -> _) x)
     static member inline ToSeq (_: 'T when 'T: null and 'T: struct, _: ToSeq) = ()
 
-type Append =    
+type Append =
     static member inline Append (x: 'AltT        , y: 'AltT           , _: obj   ) = (^AltT : (static member Append : _*_ -> _) x, y) : 'AltT
     static member inline Append (_: ^t when ^t: null and ^t: struct, _, _: obj   ) = ()
     static member inline Append (x: Result<_,_>  , y                  , _: Append) = match x, y with Ok _, _ -> x | Error x, Error y -> Error (x + y) | _, _ -> y

@@ -317,11 +317,6 @@
         <target state="new">Allow object expressions without overrides</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureArithmeticInLiterals">
-        <source>Arithmetic and logical operations in literals, enum definitions and attributes</source>
-        <target state="translated">Operações aritméticas e lógicas em literais, definições de enumeração e atributos</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureAttributesToRightOfModuleKeyword">
         <source>attributes to the right of the 'module' keyword</source>
         <target state="translated">atributos à direita da palavra-chave 'módulo'</target>
@@ -357,16 +352,6 @@
         <target state="translated">Interseção de restrição em tipos flexíveis</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureDefaultInterfaceMemberConsumption">
-        <source>default interface member consumption</source>
-        <target state="translated">consumo de membro da interface padrão</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureDelegateTypeNameResolutionFix">
-        <source>fix to resolution of delegate type names, see https://github.com/dotnet/fsharp/issues/10228</source>
-        <target state="translated">corrigir para resolução de nomes de tipos delegados, consulte https://github.com/dotnet/fsharp/issues/10228</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureDeprecatePlacesWhereSeqCanBeOmitted">
         <source>Deprecate places where 'seq' can be omitted</source>
         <target state="new">Deprecate places where 'seq' can be omitted</target>
@@ -380,11 +365,6 @@
       <trans-unit id="featureDontWarnOnUppercaseIdentifiersInBindingPatterns">
         <source>Don't warn on uppercase identifiers in binding patterns</source>
         <target state="new">Don't warn on uppercase identifiers in binding patterns</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureDotlessFloat32Literal">
-        <source>dotless float32 literal</source>
-        <target state="translated">literal float32 sem ponto</target>
         <note />
       </trans-unit>
       <trans-unit id="featureEmptyBodiedComputationExpressions">
@@ -422,29 +402,9 @@
         <target state="new">error (rather than warning) when an enforced compiler-semantic attribute is present in the .fs but missing from the .fsi</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureErrorReportingOnStaticClasses">
-        <source>Error reporting on static classes</source>
-        <target state="translated">Relatório de erros em classes estáticas</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureEscapeBracesInFormattableString">
-        <source>Escapes curly braces before calling FormattableStringFactory.Create when interpolated string literal is typed as FormattableString</source>
-        <target state="translated">Sai das chaves antes de chamar FormattableStringFactory.Create quando o literal de cadeia de caracteres é digitado como FormattableString</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureExpandedMeasurables">
         <source>more types support units of measure</source>
         <target state="translated">mais tipos dão suporte para unidades de medida</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureExtendedFixedBindings">
-        <source>extended fixed bindings for byref and GetPinnableReference</source>
-        <target state="translated">associações fixas estendidas para byref e GetPinnableReference</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureExtendedStringInterpolation">
-        <source>Extended string interpolation similar to C# raw string literals.</source>
-        <target state="translated">Interpolação de cadeia de caracteres estendida semelhante a literais de cadeia de caracteres bruta C#.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureExtensionConstraintSolutions">
@@ -462,19 +422,9 @@
         <target state="new">Implicit dispatch slot coverage for default interface member implementations</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureImprovedImpliedArgumentNames">
-        <source>Improved implied argument names</source>
-        <target state="translated">Nomes de argumento implícitos aprimorados</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureImprovedImpliedArgumentNamesPartTwo">
         <source>Improved implied argument names with partial application</source>
         <target state="new">Improved implied argument names with partial application</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureInterfacesWithAbstractStaticMembers">
-        <source>static abstract interface members</source>
-        <target state="translated">membros de interface abstrata estática</target>
         <note />
       </trans-unit>
       <trans-unit id="featureLowerInterpolatedStringToConcat">
@@ -492,11 +442,6 @@
         <target state="new">Lowers [for x in xs -&gt; f x] and [|for x in xs -&gt; f x|] to fast loops when xs is a list or an array, respectively.</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureLowercaseDUWhenRequireQualifiedAccess">
-        <source>Allow lowercase DU when RequireQualifiedAccess attribute</source>
-        <target state="translated">Permitir DU em minúsculas quando o atributo RequireQualifiedAccess</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureMatchNotAllowedForUnionCaseWithNoData">
         <source>Pattern match discard is not allowed for union case that takes no data.</source>
         <target state="translated">O descarte de correspondência de padrão não é permitido para casos união que não aceitam dados.</target>
@@ -507,19 +452,9 @@
         <target state="new">Use 'most concrete' tiebreaker for overload resolution when methods differ only by type parameter concreteness.</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureNameOf">
-        <source>nameof</source>
-        <target state="translated">nameof</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureNonInlineLiteralsAsPrintfFormat">
         <source>String values marked as literals and IL constants as printf format</source>
         <target state="translated">Valores de cadeia de caracteres marcados como literais e constantes IL como formato printf</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureNonVariablePatternsToRightOfAsPatterns">
-        <source>non-variable patterns to the right of 'as' patterns</source>
-        <target state="translated">padrões não-variáveis à direita dos padrões 'as'.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureNotNullIfNotNull">
@@ -527,24 +462,19 @@
         <target state="new">honor the 'NotNullIfNotNull' attribute on a method's return value</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureNullableOptionalInterop">
-        <source>nullable optional interop</source>
-        <target state="translated">interoperabilidade opcional anulável</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureNullnessChecking">
         <source>nullness checking</source>
         <target state="new">nullness checking</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureOptimizeClosureIfNotInlined">
+        <source>optimize a curried closure argument when its inlining fails</source>
+        <target state="new">optimize a curried closure argument when its inlining fails</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureOverloadResolutionPriority">
         <source>Support for OverloadResolutionPriorityAttribute to prioritize method overloads.</source>
         <target state="new">Support for OverloadResolutionPriorityAttribute to prioritize method overloads.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureOverloadsForCustomOperations">
-        <source>overloads for custom operations</source>
-        <target state="translated">sobrecargas para operações personalizadas</target>
         <note />
       </trans-unit>
       <trans-unit id="featurePackageManagement">
@@ -572,11 +502,6 @@
         <target state="translated">preferir o método de extensão em vez da propriedade simples</target>
         <note />
       </trans-unit>
-      <trans-unit id="featurePreferStringGetPinnableReference">
-        <source>prefer String.GetPinnableReference in fixed bindings</source>
-        <target state="translated">preferir String.GetPinnableReference em associações fixas</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featurePreprocessorElif">
         <source>#elif preprocessor directive</source>
         <target state="new">#elif preprocessor directive</target>
@@ -602,11 +527,6 @@
         <target state="translated">mensagens informativas relacionadas a células de referência</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureRequiredProperties">
-        <source>support for required properties</source>
-        <target state="translated">suporte para propriedades necessárias</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureResumableStateMachines">
         <source>resumable state machines</source>
         <target state="translated">máquinas de estado retomável</target>
@@ -627,6 +547,11 @@
         <target state="translated">Compartilhar campos subjacentes em uma união discriminada [&lt;Struct&gt;], desde que tenham o mesmo nome e tipo</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureRuntimeAsync">
+        <source>runtime async</source>
+        <target state="new">runtime async</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureScopedNowarn">
         <source>Support for scoped enabling / disabling of warnings by #warn and #nowarn directives, also inside modules</source>
         <target state="new">Support for scoped enabling / disabling of warnings by #warn and #nowarn directives, also inside modules</target>
@@ -635,16 +560,6 @@
       <trans-unit id="featureSelfTypeConstraints">
         <source>self type constraints</source>
         <target state="translated">restrições de auto-tipo</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureStaticLetInRecordsDusEmptyTypes">
-        <source>Allow static let bindings in union, record, struct, non-incremental-class types</source>
-        <target state="translated">Permitir associações let estáticas em tipos de união, registro, struct e não incremental</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureStaticMembersInInterfaces">
-        <source>Static members in interfaces</source>
-        <target state="translated">Membros estáticos em interfaces</target>
         <note />
       </trans-unit>
       <trans-unit id="featureStringInterpolation">
@@ -660,6 +575,11 @@
       <trans-unit id="featureSupportWarnWhenUnitPassedToObjArg">
         <source>Warn when unit is passed to a member accepting `obj` argument, e.g. `Method(o:obj)` will warn if called via `Method()`.</source>
         <target state="new">Warn when unit is passed to a member accepting `obj` argument, e.g. `Method(o:obj)` will warn if called via `Method()`.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureTypeArgumentDependencyOrdering">
+        <source>ordering explicit type arguments by their constraint dependencies</source>
+        <target state="new">ordering explicit type arguments by their constraint dependencies</target>
         <note />
       </trans-unit>
       <trans-unit id="featureUnionIsPropertiesVisible">
@@ -757,6 +677,31 @@
         <target state="new">The type '{0}' is not a valid custom attribute argument type. Custom attribute arrays must have elements of primitive types, enums, string, System.Type, or System.Object.</target>
         <note />
       </trans-unit>
+      <trans-unit id="ilRuntimeAsyncLocalUsedAfterSuspension">
+        <source>A byref, byref-like, or pinned local '{0}' cannot be used after a runtime async suspension.</source>
+        <target state="new">A byref, byref-like, or pinned local '{0}' cannot be used after a runtime async suspension.</target>
+        <note />
+      </trans-unit>
+<trans-unit id="ilRuntimeAsyncSequenceNotStaticallyKnown">
+        <source>The runtime-async sequence recipe could not be statically lowered. Supply a statically known delayed sequence recipe through an inline builder.</source>
+        <target state="new">The runtime-async sequence recipe could not be statically lowered. Supply a statically known delayed sequence recipe through an inline builder.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ilRuntimeAsyncStackAllocation">
+        <source>Stack allocation is not permitted in a runtime async method.</source>
+        <target state="new">Stack allocation is not permitted in a runtime async method.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ilRuntimeAsyncSuspensionOutsideRuntimeAsync">
+        <source>Runtime async suspension method '{0}' may only be called from a runtime async method.</source>
+        <target state="new">Runtime async suspension method '{0}' may only be called from a runtime async method.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ilRuntimeAsyncSynchronizedMethod">
+        <source>A runtime async method cannot use MethodImplOptions.Synchronized.</source>
+        <target state="new">A runtime async method cannot use MethodImplOptions.Synchronized.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ilxGenUnknownDebugPoint">
         <source>Unknown debug point '{0}'. The available debug points are '{1}'.</source>
         <target state="translated">Ponto de depuração desconhecido '{0}'. Os pontos de depuração disponíveis são '{1}'.</target>
@@ -775,6 +720,11 @@
       <trans-unit id="implMissingInlineIfLambda">
         <source>The 'InlineIfLambda' attribute is present in the signature but not the implementation.</source>
         <target state="translated">O atributo 'InlineIfLambda' está presente na assinatura, mas não na implementação.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="implMissingOptimizeClosureIfNotInlined">
+        <source>The 'OptimizeClosureIfNotInlined' attribute is present in the signature but not the implementation.</source>
+        <target state="new">The 'OptimizeClosureIfNotInlined' attribute is present in the signature but not the implementation.</target>
         <note />
       </trans-unit>
       <trans-unit id="invalidXmlDocPosition">
@@ -820,11 +770,6 @@
       <trans-unit id="lexColonDirectiveMustBeFirst">
         <source>#: directives must start at the beginning of a line</source>
         <target state="new">#: directives must start at the beginning of a line</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="lexExtendedStringInterpolationNotSupported">
-        <source>Extended string interpolation is not supported in this version of F#.</source>
-        <target state="translated">Não há suporte para interpolação de cadeia de caracteres estendida nesta versão do F#.</target>
         <note />
       </trans-unit>
       <trans-unit id="lexHashElifAfterElse">
@@ -1093,8 +1038,8 @@
         <note />
       </trans-unit>
       <trans-unit id="optsUnrecognizedLanguageFeature">
-        <source>Unrecognized language feature name: '{0}'. Use a valid feature name such as 'NameOf' or 'StringInterpolation'.</source>
-        <target state="new">Unrecognized language feature name: '{0}'. Use a valid feature name such as 'NameOf' or 'StringInterpolation'.</target>
+        <source>Unrecognized language feature name: '{0}'. Use a valid feature name such as 'StringInterpolation' or 'FromEndSlicing'.</source>
+        <target state="new">Unrecognized language feature name: '{0}'. Use a valid feature name such as 'StringInterpolation' or 'FromEndSlicing'.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsUnrecognizedLanguageVersion">
@@ -1320,6 +1265,11 @@
       <trans-unit id="reprStateMachineNotCompilableNoAlternative">
         <source>This state machine is not statically compilable and no alternative is available. {0}. Use an 'if __useResumableCode then &lt;state-machine&gt; else &lt;alternative&gt;' to give an alternative.</source>
         <target state="translated">Esta máquina de estado não é estaticamente compilável e não há nenhuma alternativa disponível. {0}. Usar um 'se __useResumableCode então &lt;estado-máquina&gt;outra &lt;alternative&gt;' para dar uma alternativa.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="runtimeStaticAbstractInterfaceMembers">
+        <source>static abstract interface members</source>
+        <target state="new">static abstract interface members</target>
         <note />
       </trans-unit>
       <trans-unit id="scriptSdkNotDetermined">
@@ -1675,6 +1625,11 @@
       <trans-unit id="tcOnlyStructsCanHaveExtendedLayout">
         <source>Only structs may be given the 'ExtendedLayoutAttribute'</source>
         <target state="new">Only structs may be given the 'ExtendedLayoutAttribute'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcOptimizeClosureIfNotInlinedRequiresInlineIfLambdaAndMultiArg">
+        <source>The 'OptimizeClosureIfNotInlined' attribute requires 'InlineIfLambda' on a separately curried parameter of an inline function or method whose type is a curried F# function of arity 2 to 5.</source>
+        <target state="new">The 'OptimizeClosureIfNotInlined' attribute requires 'InlineIfLambda' on a separately curried parameter of an inline function or method whose type is a curried F# function of arity 2 to 5.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcOtherThenAdjacentListArgumentNeedsAdjustment">
@@ -5550,11 +5505,6 @@
       <trans-unit id="tcStructsMayNotContainLetBindings">
         <source>Structs cannot contain value definitions because the default constructor for structs will not execute these bindings. Consider adding additional arguments to the primary constructor for the type.</source>
         <target state="translated">Structs não podem conter definições de valores porque o construtor padrão para structs não executará essas vinculações. Considere adicionar argumentos complementares ao construtor primário para o tipo.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcStaticLetBindingsRequireClassesWithImplicitConstructors">
-        <source>For F#7 and lower, static 'let','do' and 'member val' definitions may only be used in types with a primary constructor ('type X(args) = ...'). To enable them in all other types, use language version '8' or higher.</source>
-        <target state="translated">Para F#7 e inferior, as definições de valores estáticos só podem ser usadas em tipos com um construtor primário ('type X(args) = ...'). Para habilitá-los em todos os outros tipos, use a versão do idioma “versão prévia”.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcMeasureDeclarationsRequireStaticMembersNotConstructors">

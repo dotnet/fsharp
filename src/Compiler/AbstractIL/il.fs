@@ -1310,14 +1310,18 @@ type WellKnownILAttributes =
     | OverloadResolutionPriorityAttribute = (1u <<< 26)
     | NotComputed = (1u <<< 31)
 
-type internal ILAttributesStoredRepr =
-    | Reader of (int32 -> ILAttribute[])
-    | Given of ILAttributes
-
 [<Sealed; NoEquality; NoComparison>]
-type ILAttributesStored private (metadataIndex: int32, initial: ILAttributesStoredRepr) =
+type ILAttributesStored private (metadataIndex: int32, reader: int32 -> ILAttribute[], given: ILAttribute[] | null) =
+
+    /// Stands in for the reader when the attributes are already in hand, so the field can stay non-null.
+    static let noReader: int32 -> ILAttribute[] = fun _ -> [||]
+
+    // Holds the array rather than an ILAttributesStoredRepr. The reader function is shared per metadata
+    // reader per attribute table, so it is held directly; wrapping it cost one object per owner, and most
+    // owners are never forced, so most of those existed only to say "not read yet". ILAttributes is a
+    // struct over the array, so rewrapping on each read allocates nothing.
     [<VolatileField>]
-    let mutable repr = initial
+    let mutable attrArray: ILAttribute[] | null = given
 
     [<VolatileField>]
     let mutable wellKnownFlags = WellKnownILAttributes.NotComputed
@@ -1325,12 +1329,12 @@ type ILAttributesStored private (metadataIndex: int32, initial: ILAttributesStor
     member _.MetadataIndex = metadataIndex
 
     member x.CustomAttrs: ILAttributes =
-        match repr with
-        | Given a -> a
-        | Reader f ->
-            let r = ILAttributes(f metadataIndex)
-            repr <- Given r
-            r
+        match attrArray with
+        | null ->
+            let a = reader metadataIndex
+            attrArray <- a
+            ILAttributes a
+        | a -> ILAttributes a
 
     member x.HasWellKnownAttribute(flag: WellKnownILAttributes, compute: ILAttributes -> WellKnownILAttributes) : bool =
         x.GetOrComputeWellKnownFlags(compute) &&& flag <> WellKnownILAttributes.None
@@ -1346,9 +1350,10 @@ type ILAttributesStored private (metadataIndex: int32, initial: ILAttributesStor
             wellKnownFlags <- computed
             computed
 
-    static member CreateReader(idx: int32, f: int32 -> ILAttribute[]) = ILAttributesStored(idx, Reader f)
+    static member CreateReader(idx: int32, f: int32 -> ILAttribute[]) = ILAttributesStored(idx, f, null)
 
-    static member CreateGiven(attrs: ILAttributes) = ILAttributesStored(-1, Given attrs)
+    static member CreateGiven(attrs: ILAttributes) =
+        ILAttributesStored(-1, noReader, attrs.AsArray())
 
 let emptyILCustomAttrs = ILAttributes [||]
 
@@ -1634,6 +1639,7 @@ type ILMethodBody =
         MaxStack: int32
         NoInlining: bool
         AggressiveInlining: bool
+        IsRuntimeAsync: bool
         Locals: ILLocals
         Code: ILCode
         DebugRange: ILDebugPoint option
@@ -2273,6 +2279,11 @@ type ILMethodDef
 
     member x.WithRuntime(condition) =
         x.With(implAttributes = (x.ImplAttributes |> conditionalAdd condition MethodImplAttributes.Runtime))
+
+    member x.WithAsync(condition) =
+        // MethodImplOptions.Async is not present in all target reference assemblies.
+        let asyncFlag = enum<MethodImplAttributes> 0x2000
+        x.With(implAttributes = (x.ImplAttributes |> conditionalAdd condition asyncFlag))
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
@@ -4283,6 +4294,7 @@ let mkILMethodBody (initlocals, locals, maxstack, code, tag, imports) : ILMethod
         MaxStack = maxstack
         NoInlining = false
         AggressiveInlining = false
+        IsRuntimeAsync = false
         Locals = locals
         Code = code
         DebugRange = tag

@@ -1,4 +1,4 @@
-// #Regression #Conformance #Quotations 
+// #Regression #Conformance #Quotations
 
 
 // FSB 2384, "Try with in quotations generates a stack overflow

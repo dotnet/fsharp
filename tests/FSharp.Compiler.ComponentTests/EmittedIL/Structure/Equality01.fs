@@ -1,8 +1,8 @@
-// #Regression #NoMT #CodeGen #Interop 
+// #Regression #NoMT #CodeGen #Interop
 // Regression test for FSHARP1.0:4324 - Generated structural equality for structs does not take into consideration implicit fields captured as constructor parameters
 open System
 
-type T (a: int, b: int) = 
+type T (a: int, b: int) =
     struct
         member x.a' = a
         member x.b' = b

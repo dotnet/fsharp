@@ -4,7 +4,7 @@ module TestTwoArguments =
 
     let f (x:byref<int>, y:byref<int>) = &x
 
-    let test() = 
+    let test() =
         let mutable r1 = 1
         let mutable r2 = 0
         let addr = &f (&r1, &r2)

@@ -25,19 +25,19 @@ type C2() =
 let TestOneColumnOfTypeTestsWithUnSealedClassTypes_Redundant1(x: obj) =
     match x with
     | :? A -> 1
-    | :? B1 -> 2 // expect - never matched 
+    | :? B1 -> 2 // expect - never matched
     | _ -> 3
 
 let TestOneColumnOfTypeTestsWithUnSealedClassTypes_Redundant2(x: obj) =
     match x with
     | :? A -> 1
-    | :? C1 -> 2 // expect - never matched 
+    | :? C1 -> 2 // expect - never matched
     | _ -> 3
 
 let TestOneColumnOfTypeTestsWithUnSealedClassTypes_Redundant3(x: obj) =
     match x with
     | :? B1 -> 1
-    | :? C1 -> 2 // expect - never matched 
+    | :? C1 -> 2 // expect - never matched
     | _ -> 3
 
 let TestColumnOfTypeTestsWithNullTrueValue_Redundant(x: obj) =
@@ -65,7 +65,7 @@ let Misc_Redundant4(x: obj) =
 
 let Misc_Redundant5(x: obj) =
     match x with
-    | :? IComparable -> 1  
+    | :? IComparable -> 1
     | :? string -> 2  // expect - never matched
     | g -> 3
 

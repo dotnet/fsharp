@@ -2,7 +2,7 @@ module Neg124
 
 // Variation on test case mentioned in https://github.com/dotnet/fsharp/pull/6805#issuecomment-580368303
 module Negative_SelectOverloadedWitnessBasedOnInputAndReturnTypeWithoutOutputTypeSelector =
-    type witnesses = 
+    type witnesses =
       static member inline unsigned_witness (x : sbyte) = uint8 x
       static member inline unsigned_witness (x : byte) = x
       static member inline unsigned_witness (x : int16) = uint16 x
@@ -37,4 +37,3 @@ module Negative_SelectOverloadedWitnessBasedOnInputAndReturnTypeWithoutOutputTyp
 
     // Negative case - not enough information here
     let h1 : _ -> uint8 = unsigned
-    

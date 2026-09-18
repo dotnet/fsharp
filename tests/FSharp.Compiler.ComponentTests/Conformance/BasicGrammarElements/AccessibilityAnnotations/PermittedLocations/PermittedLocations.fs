@@ -179,7 +179,7 @@ type A =
     static abstract internal B2: int ->int
     static abstract member internal E2: int ->int
     static abstract member C2: int with internal get, private set
-    static abstract internal D2: int with get, set""" 
+    static abstract internal D2: int with get, set"""
         |> withOptions ["--nowarn:3535"]
         |> verifyCompile
         |> shouldFail

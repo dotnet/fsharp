@@ -32,19 +32,20 @@ ImplFile
                             SynValInfo
                               ([[SynArgInfo ([], false, None)]; []],
                                SynArgInfo ([], false, None)), None),
-                         FromParseError (Wild (6,10--6,10), (6,10--6,10)), None,
-                         ArbitraryAfterError ("classDefnMember1", (6,10--6,10)),
-                         (6,4--6,10), NoneAtInvisible,
+                         Named (SynIdent (_, None), false, None, (6,11--6,12)),
+                         None, ArbitraryAfterError ("memberCore2", (6,12--6,12)),
+                         (6,11--6,12), NoneAtInvisible,
                          { LeadingKeyword = Member (6,4--6,10)
                            InlineKeyword = None
-                           EqualsRange = None }), (6,4--6,10))], None,
-                  (3,5--6,10), { LeadingKeyword = Type (3,0--3,4)
+                           EqualsRange = None }), (6,4--6,12))], None,
+                  (3,5--6,12), { LeadingKeyword = Type (3,0--3,4)
                                  EqualsRange = Some (3,7--3,8)
-                                 WithKeyword = None })], (3,0--6,10))],
+                                 WithKeyword = None })], (3,0--6,12))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
-          (1,0--6,10), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
+          (1,0--6,12), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
       { ConditionalDirectives = []
         WarnDirectives = []
         CodeComments = [] }, set []))
 
-(7,0)-(7,0) parse error Incomplete structured construct at or before this point in member definition. Expected identifier, '(', '(*)' or other token.
+(7,0)-(7,0) parse error Identifier expected
+(7,0)-(7,0) parse error Expecting member body

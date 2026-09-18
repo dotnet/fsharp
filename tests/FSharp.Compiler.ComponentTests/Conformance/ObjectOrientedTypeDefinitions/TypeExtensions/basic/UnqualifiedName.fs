@@ -1,4 +1,4 @@
-// #Conformance #ObjectOrientedTypes #TypeExtensions 
+// #Conformance #ObjectOrientedTypes #TypeExtensions
 
 
 // Verify type extensions on non-fully qualified names
