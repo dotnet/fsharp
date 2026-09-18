@@ -95,6 +95,26 @@ module internal Guids =
 
     let blueHighContrastThemeId = Guid "{ce94d289-8481-498b-8ca9-9b6191a315b9}"
 
+    /// Identifies the F# library in Object Browser, Class View and every `IVsNavInfo` we hand out.
+    /// It is baked into persisted window state, so it must never change.
+    let fsharpLibraryId = Guid "{56BF9F1D-EE02-46C7-9A6A-7C66674863E9}"
+
+    [<Literal>]
+    /// UI context that is active whenever the solution contains an F# project; the package
+    /// auto-loads on it so Object Browser and Class View list F# projects even when no F# file
+    /// has been opened yet.
+    let solutionHasFSharpProjectIdString = "6E4C1338-8CE0-4148-A813-AE36530A0729"
+
+    // Roslyn's package ids live in its internal Microsoft.VisualStudio.LanguageServices.Guids;
+    // there is no public constant to reference.
+    [<Literal>]
+    /// "13c3bbb4-f18f-4111-9f54-a0fb010d9194" - Roslyn CSharpPackage
+    let roslynCSharpPackageIdString = "13c3bbb4-f18f-4111-9f54-a0fb010d9194"
+
+    [<Literal>]
+    /// "574fc912-f74f-4b4e-92c3-f695c208a2bb" - Roslyn VisualBasicPackage
+    let roslynVisualBasicPackageIdString = "574fc912-f74f-4b4e-92c3-f695c208a2bb"
+
 [<RequireQualifiedAccess>]
 module internal CodeFix =
 
