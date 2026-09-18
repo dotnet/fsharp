@@ -140,6 +140,9 @@ let private splitInteractions (code: string) =
     let mutable inLineComment = false
     let mutable blockCommentDepth = 0
 
+    let isIdentifierPart (character: char) =
+        Char.IsLetterOrDigit character || character = '_' || character = '\''
+
     let addInteraction () =
         let text = current.ToString().Trim()
 
@@ -195,7 +198,7 @@ let private splitInteractions (code: string) =
         elif character = '"' then
             current.Append character |> ignore
             inString <- true
-        elif character = '\'' then
+        elif character = '\'' && (index = 0 || not (isIdentifierPart code[index - 1])) then
             current.Append character |> ignore
             inChar <- true
         elif character = ';' && nextCharacter = ';' then
@@ -461,16 +464,19 @@ type FsiRpcTarget
     member _.SetPaths(request: SetPathsRequest) : Task<ExecutionResult> =
         requireInitialized ()
 
+        if
+            not (String.IsNullOrWhiteSpace request.workingDirectory)
+            && not (Directory.Exists request.workingDirectory)
+        then
+            raise (LocalRpcException($"The working directory '{request.workingDirectory}' does not exist.", ErrorCode = -32002))
+
         // The process directory moves on the queue, alongside the directive that moves the
         // compiler's: doing it as the request arrives would move it under an earlier interaction
         // that is still running.
         queueInteraction (fun () ->
             let directives = ResizeArray()
 
-            if
-                not (String.IsNullOrWhiteSpace request.workingDirectory)
-                && Directory.Exists request.workingDirectory
-            then
+            if not (String.IsNullOrWhiteSpace request.workingDirectory) then
                 // Two different notions of "current directory" have to agree here. The directive
                 // moves the compiler's, which is what relative #load and #r resolve against; the
                 // process one is what the running script sees when it opens a file by relative path.
@@ -608,11 +614,40 @@ let internal startOnBackgroundThread
 /// Recognise <c>--fsi-server-jsonrpc:&lt;pipe name&gt;</c> in a command line, returning the pipe name.
 /// </summary>
 let internal tryGetPipeName (argv: string[]) =
-    argv
-    |> Array.tryPick (fun arg ->
-        if arg.StartsWith(JsonRpcServerOption, StringComparison.Ordinal) then
-            let name = arg.Substring(JsonRpcServerOption.Length).Trim('"')
+    let optionName = JsonRpcServerOption.TrimStart('-')
+    let optionPrefixes = [| JsonRpcServerOption; "-" + optionName; "/" + optionName |]
 
-            if String.IsNullOrWhiteSpace name then None else Some name
-        else
-            None)
+    let rec scan (args: string list) =
+        match args with
+        | [] -> None
+        | arg :: rest ->
+            let prefix =
+                optionPrefixes
+                |> Array.tryFind (fun prefix -> arg.StartsWith(prefix, StringComparison.Ordinal))
+
+            match prefix with
+            | Some prefix ->
+                let name = arg.Substring(prefix.Length).Trim('"')
+                if String.IsNullOrWhiteSpace name then None else Some name
+            | None when
+                arg.Equals("--fsi-server-jsonrpc", StringComparison.Ordinal)
+                || arg.Equals("-fsi-server-jsonrpc", StringComparison.Ordinal)
+                || arg.Equals("/fsi-server-jsonrpc", StringComparison.Ordinal)
+                ->
+                match rest with
+                | name :: _ when not (String.IsNullOrWhiteSpace name) -> Some (name.Trim('"'))
+                | _ -> None
+            | None when arg.StartsWith("@", StringComparison.Ordinal) ->
+                let responseFile = arg.Substring(1)
+
+                if File.Exists responseFile then
+                    let arguments =
+                        File.ReadAllText(responseFile)
+                        |> fun text -> text.Split([| ' '; '\t'; '\r'; '\n' |], StringSplitOptions.RemoveEmptyEntries)
+
+                    scan (Array.toList arguments @ rest)
+                else
+                    scan rest
+            | None -> scan rest
+
+    scan (Array.toList argv)
