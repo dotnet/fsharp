@@ -288,6 +288,8 @@ type internal TcGlobals =
 
     member ResumableCode_tcr: TypedTree.EntityRef
 
+    member ResumableStateMachine_tcr: TypedTree.EntityRef
+
     member System_Runtime_CompilerServices_RuntimeFeature_ty: TypedTree.TType option
 
     member addrof2_vref: TypedTree.ValRef
@@ -543,6 +545,8 @@ type internal TcGlobals =
     member failwithf_vref: TypedTree.ValRef
 
     member fastFunc_tcr: TypedTree.EntityRef
+
+    member optimizedClosures_FSharpFunc_tcref: int -> TypedTree.EntityRef
 
     member float32_operator_info: IntrinsicValRef
 

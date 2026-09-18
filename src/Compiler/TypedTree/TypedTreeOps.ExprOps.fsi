@@ -438,6 +438,12 @@ module internal Makers =
 
     val mkGetStringLength: TcGlobals -> range -> Expr -> Expr
 
+    /// `OptimizedClosures.FSharpFunc<argTys, retTy>.Adapt(folderExpr)`. Returns the call and its result type.
+    val mkCallOptimizedClosuresAdapt: TcGlobals -> range -> TType list -> TType -> Expr -> Expr * TType
+
+    /// `fExpr.Invoke(argExprs)` on an `OptimizedClosures.FSharpFunc<argTys, retTy>`.
+    val mkCallOptimizedClosuresInvoke: TcGlobals -> range -> TType list -> TType -> Expr -> Expr list -> Expr
+
     val mkStaticCall_String_Concat2: TcGlobals -> range -> Expr -> Expr -> Expr
 
     val mkStaticCall_String_Concat3: TcGlobals -> range -> Expr -> Expr -> Expr -> Expr
@@ -523,6 +529,11 @@ module internal ExprTransforms =
     val MakeArgsForTopArgs: TcGlobals -> range -> (TType * ArgReprInfo) list list -> TyparInstantiation -> Val list list
 
     val AdjustValForExpectedValReprInfo: TcGlobals -> range -> ValRef -> ValUseFlag -> ValReprInfo -> Expr * TType
+
+    /// Eta-expand an under-applied application of a known-arity value, binding the supplied arguments;
+    /// None when the value is not under-applied (or has no known arity).
+    val TryEtaExpandUnderAppliedValApp:
+        TcGlobals -> range -> ValRef -> ValUseFlag -> tyargs: TypeInst -> fty: TType -> args: Exprs -> Expr option
 
     val AdjustValToHaveValReprInfo: Val -> ParentRef -> ValReprInfo -> unit
 
