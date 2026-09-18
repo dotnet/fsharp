@@ -442,6 +442,47 @@ let main _ =
     |> compileExeAndRun
     |> shouldSucceed
 
+let private checkReraiseOwnership optimized mode =
+    let methods =
+        match mode with
+        | "CONTROLS" -> [ "synchronousSelection", false; "synchronousCleanup", false; "filteredReraise", false; "Await", false ]
+        | "PRIMARY" -> [ "recover", true ]
+        | _ ->
+            [ "recover", true; "recoverString", true; "recoverValue", true; "innerOwner", true
+              "selection", true; "cleanup", true ]
+    let result =
+        FsFromPath(Path.Combine(__SOURCE_DIRECTORY__, "RuntimeAsync", "RuntimeAsyncReraiseOwnership.fs"))
+        |> withLangVersionPreview
+        |> withFSharpCoreShippedNet
+        |> withOptimization optimized
+        |> withDefines [mode]
+        |> asExe
+        |> compile
+        |> shouldSucceed
+
+    result
+    |> verifyRuntimeAsyncExceptionRegions (methods |> List.map (fun (name, awaits) -> $"Reraise::{name}", awaits))
+    |> run
+    |> shouldSucceed
+
+[<Theory>]
+[<InlineData(false)>]
+[<InlineData(true)>]
+let ``Issue 20575 runtime async nested reraise ownership`` optimized =
+    checkReraiseOwnership optimized "PRIMARY"
+
+[<Theory>]
+[<InlineData(false)>]
+[<InlineData(true)>]
+let ``Issue 20575 runtime async ownership matrix`` optimized =
+    checkReraiseOwnership optimized "MATRIX"
+
+[<Theory>]
+[<InlineData(false)>]
+[<InlineData(true)>]
+let ``Issue 20575 legal synchronous exception region controls`` optimized =
+    checkReraiseOwnership optimized "CONTROLS"
+
 [<Fact>]
 let ``runtime async rejects stackalloc across suspension`` () =
     FSharp """
