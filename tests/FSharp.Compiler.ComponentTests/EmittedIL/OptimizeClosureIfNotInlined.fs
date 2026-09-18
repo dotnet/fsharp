@@ -20,14 +20,14 @@ let mkFolder () : int -> int -> int -> int = fun s x y -> s + x * y
 
     let private optimized source =
         FSharp source
-        |> withLangVersionPreview
+        |> withLangVersion "11.0"
         |> withOptions [ "--optimize+" ]
         |> compile
         |> shouldSucceed
 
     let private runOutput source =
         FSharp source
-        |> withLangVersionPreview
+        |> withLangVersion "11.0"
         |> withOptions [ "--optimize+" ]
         |> compileExeAndRun
         |> shouldSucceed
@@ -201,7 +201,7 @@ let inline fold2 ([<InlineIfLambda; OptimizeClosureIfNotInlined>] folder: 'S -> 
     for i in 0 .. a.Length - 1 do s <- folder s a.[i] b.[i]
     s
 """
-            |> withLangVersionPreview
+            |> withLangVersion "11.0"
             |> withOptions [ "--optimize+" ]
             |> asLibrary
 
@@ -234,15 +234,15 @@ let callOpaque (a: int[]) (b: int[]) = Lib.fold2 (mkFolder ()) 0 a b
     [<InlineData("type D = delegate of [<InlineIfLambda; OptimizeClosureIfNotInlined>] f: (int -> int -> int) -> unit")>]
     let ``attribute is rejected where it cannot take effect`` (decl: string) =
         FSharp ("module M\n" + decl)
-        |> withLangVersionPreview
+        |> withLangVersion "11.0"
         |> compile
         |> shouldFail
         |> withErrorCode 3916
 
     [<Fact>]
-    let ``attribute requires the preview language feature`` () =
+    let ``attribute requires FSharp 11`` () =
         FSharp "module M\nlet inline f ([<InlineIfLambda; OptimizeClosureIfNotInlined>] g: int -> int -> int) x y = g x y"
-        |> withLangVersion "8.0"
+        |> withLangVersion "10.0"
         |> compile
         |> shouldFail
         |> withErrorCode 3350
