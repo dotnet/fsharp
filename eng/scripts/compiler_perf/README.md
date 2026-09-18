@@ -194,6 +194,12 @@ values at multiple scales.
 Portable collector fixtures check per-child user plus system CPU accounting,
 millisecond/byte conversions, exit/signal status, cancellation cleanup and explicit
 unavailable-metric reasons without presenting synthetic readings as live evidence.
+Valid workload-pair fixtures refresh all fingerprints and require an explicit
+workload mismatch for changed revisions, flags, ordered inputs, hashes and paths;
+a changed compiler alone remains admissible. Capture guards have SDK-independent
+structural assertions plus isolated MSBuild fixtures for Release/execution,
+argument capture, reference-assembly exclusions and target scope. The latter
+explicitly skip if the pinned SDK is unavailable; they do not compile F# sources.
 
 ## Local validation record
 
@@ -262,3 +268,14 @@ The real Release build and frozen-source replay still pass with the same
 comparison. Logs and hashed evidence are under `artifacts/compiler-perf-validation`.
 `gates-final-live/final-replay.json` records the final helper's identity and replay,
 and links the successful Release build/capture evidence and binlog.
+
+The final coverage check reproduced four surviving mutations against the original
+29-test suite: accepting different workloads and removing each capture guard
+(`surviving-coverage-mutations.log`). New assertions detect all four
+(`red-coverage-mutations.log`, `mutations-coverage.log`); all **31** tests pass
+(`green-coverage.log`), including 27 valid workload-pair cases and nine evaluated
+capture cases. No production behavior changed. The explicit Release build and
+frozen-source replay passed again with 407/21/178 inputs and 738 unchanged file
+records (`coverage-live/evidence.json`). Current upstream `main` still matches
+the frozen revision. Root build/test commands still require an explicit solution,
+and Linux acceptance collection remains unsupported on this Windows host.

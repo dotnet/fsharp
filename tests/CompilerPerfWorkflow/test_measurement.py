@@ -2,6 +2,7 @@
 
 import copy
 from decimal import Decimal
+import hashlib
 import importlib.util
 import json
 import math
@@ -113,7 +114,7 @@ def measurements(candidate_ms=90, primary="elapsed_ms"):
 
 
 def refresh_identities(documents):
-    """Keep evidence internally fingerprinted when testing invalid declarations."""
+    """Keep evidence internally fingerprinted when changing declarations."""
     for doc in documents:
         for key in ("bootstrap", "toolchain"):
             doc["compiler"][f"{key}_fingerprint"] = m.fingerprint_inputs(doc["invariants"][key])
@@ -305,6 +306,67 @@ class MeasurementTests(unittest.TestCase):
                     continue  # A malformed invariant must fail contract validation.
                 self.assertEqual(result["decision"], "inconclusive")
                 self.assertIn(section, result["invariant_mismatches"])
+
+    def test_valid_different_workloads_are_inconclusive(self):
+        inventories = ("sources", "generated", "references", "resources", "auxiliary")
+        changes = [
+            ("compiler only", lambda w: None),
+            ("revision", lambda w: w.update(revision="b" * 40)),
+            ("default branch", lambda w: w.update(default_branch_revision="b" * 40)),
+            ("framework", lambda w: w.update(target_framework="net12.0")),
+            ("parallel", lambda w: w.update(parallel_compilation=True)),
+            ("flags", lambda w: w["arguments"].append("--define:CHANGED")),
+            ("flag order", lambda w: w["arguments"].reverse()),
+            ("response bytes", lambda w: None),
+            ("Core", lambda w: w["references"][0].update(sha256="b" * 64)),
+            ("package", lambda w: w["core_package"].update(sha256="b" * 64)),
+            ("package asset", lambda w: w.update(core_package_asset="lib/net12.0/FSharp.Core.dll")),
+            ("output", lambda w: w.update(assembly_output=str(Path(w["cwd"]) / "other.dll"))),
+        ]
+        for key in inventories:
+            changes.extend((
+                (f"{key} content", lambda w, k=key: w[k][-1].update(sha256="b" * 64)),
+                (f"{key} order", lambda w, k=key: w[k].reverse()),
+                (f"{key} path", lambda w, k=key: w[k][-1].update(
+                    path=str(Path(w[k][-1]["path"]).with_stem("renamed")))),
+            ))
+        for label, change in changes:
+            with self.subTest(change=label):
+                docs = measurements()
+                for arm, doc in enumerate(docs):
+                    workload = doc["invariants"]["workload"]
+                    for key, extension in (("generated", ".fs"), ("references", ".dll"),
+                                           ("resources", ".bin"), ("auxiliary", ".fs")):
+                        while len(workload[key]) < 2:
+                            path = str(Path(workload["cwd"]) / f"{key}{len(workload[key])}{extension}")
+                            workload[key].append({"path": path, "sha256": m.fingerprint_inputs(path)})
+                    workload["arguments"] = ["--optimize+", "--noframework"]
+                    if arm:
+                        change(workload)
+                    workload["core"] = next(r for r in workload["references"]
+                                            if Path(r["path"]).name == "FSharp.Core.dll")
+                    workload["outputs"] = [workload["assembly_output"]]
+                    arguments = [f"-o:{workload['assembly_output']}", *workload["arguments"],
+                                 "--parallelcompilation" + ("+" if workload["parallel_compilation"] else "-")]
+                    for key, prefix in (("references", "-r:"), ("resources", "--resource:"),
+                                        ("auxiliary", "--embed:"), ("sources", ""), ("generated", "")):
+                        arguments.extend(prefix + r["path"] for r in workload[key])
+                    workload["arguments"] = arguments
+                    workload["arguments_sha256"] = m.fingerprint_inputs(arguments)
+                    newline = "\r\n" if arm and label == "response bytes" else "\n"
+                    workload["response_file"]["sha256"] = hashlib.sha256(
+                        (newline.join(arguments) + newline).encode()).hexdigest()
+                refresh_identities(docs)
+                for doc in docs:
+                    m.validate_manifest(doc, "samples")
+                    self.assertTrue(all(s["fingerprints"]["workload"] == m.fingerprint_inputs(doc["invariants"]["workload"])
+                                        for s in doc["samples"]))
+                self.assertNotEqual(docs[0]["compiler_id"], docs[1]["compiler_id"])
+                result = m.compare_measurements(*docs)
+                self.assertEqual(result["decision"], "measured_improvement" if label == "compiler only" else "inconclusive")
+                self.assertEqual(result["invariant_mismatches"], [] if label == "compiler only" else ["workload"])
+                if label != "compiler only":
+                    self.assertEqual(result["reasons"], ["Comparison invariants differ"])
 
     def test_matching_invalid_workloads_fail_closed(self):
         valid = measurements()[0]["invariants"]["workload"]
@@ -636,6 +698,18 @@ class MeasurementTests(unittest.TestCase):
         self.assertEqual(capture.get("AfterTargets"), "CoreCompile")
         self.assertTrue(any("@(FscCommandLineArgs)" in x.get("Lines", "")
                             for x in capture.findall("WriteLinesToFile")))
+        guards = (
+            "'$(Configuration)' != 'Release' or '$(SkipCompilerExecution)' == 'true'",
+            "'@(FscCommandLineArgs)' == ''",
+            "'$(ProduceReferenceAssembly)' != 'false' or '$(ProduceOnlyReferenceAssembly)' == 'true'",
+        )
+        for condition in guards:
+            with self.subTest(guard=condition):
+                errors = [e for e in capture.findall("Error") if e.get("Condition") == condition]
+                self.assertEqual(len(errors), 1)
+                self.assertTrue(errors[0].get("Text"))
+                self.assertIsNone(errors[0].get("ContinueOnError"))
+                self.assertLess(list(capture).index(errors[0]), list(capture).index(capture.find("WriteLinesToFile")))
         with tempfile.TemporaryDirectory() as directory:
             for command in ("prepare", "measure", "compare"):
                 with self.subTest(command=command):

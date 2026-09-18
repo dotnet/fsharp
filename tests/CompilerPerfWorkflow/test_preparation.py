@@ -2,15 +2,75 @@
 
 import os
 from pathlib import Path
+import shutil
+import subprocess
 import tempfile
 import unittest
 from unittest import mock
+import xml.etree.ElementTree as ET
 import zipfile
 
-from test_measurement import m
+from test_measurement import ROOT, m
 
 
 class PreparationTests(unittest.TestCase):
+    def test_evaluated_capture_guards(self):
+        dotnet = shutil.which("dotnet")
+        if dotnet is None:
+            self.skipTest("Capture target evaluation requires the pinned .NET SDK")
+        with tempfile.TemporaryDirectory(prefix="compiler perf capture ") as directory:
+            root = Path(directory).resolve()
+            environment = m.allowed_environment(root)
+            probe = subprocess.run([dotnet, "--version"], cwd=ROOT, env=environment, capture_output=True, text=True)
+            if probe.returncode:
+                self.skipTest(f"Pinned .NET SDK unavailable: {probe.stderr.strip()}")
+            cases = (
+                ("valid", {}, None),
+                ("Debug", {"Configuration": "Debug"}, "requires a real Release compilation"),
+                ("skipped", {"SkipCompilerExecution": "true"}, "requires a real Release compilation"),
+                ("no arguments", {}, "did not return evaluated compiler arguments"),
+                ("refout", {"ProduceReferenceAssembly": "true"}, "Reference assembly generation must be disabled"),
+                ("unspecified refout", {"ProduceReferenceAssembly": ""}, "Reference assembly generation must be disabled"),
+                ("refonly", {"ProduceOnlyReferenceAssembly": "true"}, "Reference assembly generation must be disabled"),
+                ("other project", {}, None),
+                ("outer build", {"IsCrossTargetingBuild": "true"}, None),
+            )
+            for label, overrides, error in cases:
+                with self.subTest(case=label), tempfile.TemporaryDirectory(dir=root) as case_directory:
+                    capture_dir = Path(case_directory)
+                    project = capture_dir / ("Other.proj" if label == "other project" else "FSharp.Compiler.Service.proj")
+                    tree = ET.Element("Project")
+                    properties = ET.SubElement(tree, "PropertyGroup")
+                    for key, value in {
+                        "LocalFSharpCompilerPath": str(ROOT), "CompilerPerfCaptureDir": str(capture_dir),
+                        "Configuration": "Release", "SkipCompilerExecution": "false",
+                        "ProduceReferenceAssembly": "false", "ProduceOnlyReferenceAssembly": "false",
+                        "DotnetFscCompilerPath": str(capture_dir / "local compiler" / "fsc.dll"),
+                        "TargetFramework": "net11.0", **overrides,
+                    }.items():
+                        ET.SubElement(properties, key).text = value
+                    compile_target = ET.SubElement(tree, "Target", Name="CoreCompile")
+                    items = ET.SubElement(compile_target, "ItemGroup")
+                    arguments = ["--optimize+", "-r:reference with spaces.dll", "first.fs", "generated.fs"]
+                    for argument in ([] if label == "no arguments" else arguments):
+                        ET.SubElement(items, "FscCommandLineArgs", Include=argument)
+                    ET.SubElement(tree, "Import", Project=str(m.HERE / "Capture.targets"))
+                    ET.ElementTree(tree).write(project, encoding="utf-8")
+                    result = subprocess.run([dotnet, "msbuild", str(project), "-t:CoreCompile", "-nologo",
+                                             "-v:quiet", "-nr:false"], cwd=ROOT, env=environment,
+                                            capture_output=True, text=True)
+                    output = result.stdout + result.stderr
+                    self.assertEqual(result.returncode, 1 if error else 0, output)
+                    if error:
+                        self.assertIn(error, output)
+                    if label == "valid":
+                        self.assertEqual((capture_dir / "compiler.rsp").read_text(encoding="utf-8-sig").splitlines(), arguments)
+                        self.assertEqual((capture_dir / "identity.txt").read_text(encoding="utf-8-sig").splitlines(),
+                                         [str(capture_dir / "local compiler" / "fsc.dll"), "Release", str(project), "net11.0"])
+                    else:
+                        for name in ("compiler.rsp", "identity.txt"):
+                            self.assertFalse((capture_dir / name).exists(), output)
+
     def test_preparation_capture_and_failures(self):
         outcomes = ("success", "sdk mismatch", "bootstrap failure", "capture failure", "wrong compiler",
                     "missing generated", "wrong Core", "dirty source", "replay failure", "no assembly")
