@@ -277,6 +277,10 @@ The trusted controller supplies `context`:
 * `repository`, `issueNumber`, and the exact authoritative `commentId`;
   `actor: { id, login, type, appId }` are pinned numeric GitHub author/app
   identities, not just the shared Actions bot display name.
+* `checkpointAnchorSha` is the immutable trusted commit SHA from the initial
+  checkpoint creation receipt. Retain that same anchor across main advances,
+  policy changes, redispatch, and key rotation; never derive it from issue text,
+  the current comment, or a disposable cache.
 * `workflowPath`, `workflowRef` (for example `refs/heads/main`),
   `workflowRevision`, and `trustedWorkflowRevisions`. Old orchestration
   revisions may be retained only after independent maintainer review.
@@ -298,6 +302,7 @@ The transport implements these asynchronous methods:
 | `updateComment(commentId, body)` | The full updated comment. The helper verifies the returned body and provenance before granting execution. |
 | `getRun(runId, attempt)` | The **specific run attempt**, with REST `id`, `run_attempt`, `path`, `head_sha`, `head_branch`, `repository.full_name`, `head_repository.full_name`, `status`, and `conclusion`. Do not silently substitute the latest rerun. |
 | `readEvidence(url)` | Verified downloaded bytes as a `Buffer`, or `null` for confirmed missing/expired content. Authentication, rate-limit, and network errors throw. The controller restricts downloads to its evidence stores. |
+| `request(route, params)` | Octokit-style REST `{ data, headers, status? }` for listing **all** commit statuses on the pinned anchor and appending a status. Pass through pagination headers and errors; never use the combined/latest-status endpoint or a cached status list. |
 
 The versioned envelope has a human-readable authenticated status, a compact
 payload, and HMAC-SHA256 over its canonical contents. Its signed binding includes
@@ -320,6 +325,41 @@ present. Initialization refuses an existing envelope. There is deliberately no
 automatic reset/new-allowance operation; ordinary issue edits, label toggles,
 redispatches, and cancellations cannot replenish any counter.
 
+### Independent freshness
+
+A valid HMAC authenticates an old body too. Every checkpoint write therefore
+appends a signed freshness receipt to GitHub's commit-status history on
+`checkpointAnchorSha`, under `regression-bisect/<issueNumber>/<commentId>`.
+Receipts bind the repository, issue, comment, anchor, generation, exact body
+digest, and key identity. Reads verify the numeric writer identity and signature
+and select the **highest authenticated generation across every page**, not the
+most recently posted status. Reposting an old receipt cannot lower that mark.
+The status is only an anti-rollback witness; the single issue comment still
+contains the authoritative observations, reservation ledger, and publication
+state. No memory branch or product-content writer is introduced.
+
+The controller needs `statuses: read` for normal loads and `statuses: write` for
+transitions/recovery, in addition to its issue-comment permissions. The
+[commit-status REST API](https://docs.github.com/en/rest/commits/statuses)
+appends statuses rather than editing/deleting them and does not depend on
+Actions log/artifact retention. Keep the anchor commit reachable and retain
+verification keys for existing receipts. Unavailable history, invalid receipts,
+conflicting digests, or more than ten pages of 100 statuses block work.
+Exhausting GitHub's per-context status limit likewise blocks, never resets the
+allowance. This context must not be configured as a required product-build check.
+
+The signed checkpoint includes `previousDigest`, the exact predecessor body
+hash (the trusted bootstrap digest for generation zero). A transition writes
+the comment, then its receipt, and grants execution only after both succeed.
+Under the issue lock, `loadCheckpoint` can finish the receipt write for exactly
+one authenticated successor whose predecessor matches the independent mark.
+This preserves observations when cancellation interrupts the two writes; it
+does not grant a second execution permission. An older body, a changed body at
+the same generation, a generation gap, or a wrong predecessor fails closed.
+An interrupted initial write can only be completed by `initializeCheckpoint`
+with the original bootstrap receipt and the identical initial allowance.
+Missing receipts are never synthesized from arbitrary loaded state.
+
 ### Controller transaction
 
 Hold one issue-scoped controller lock across **read, reserve, worker, commit,
@@ -329,12 +369,12 @@ lock. All state-transition calls reread the authoritative comment.
 
 | Export | Behavior |
 | --- | --- |
-| `loadCheckpoint(transport, context)` | Returns `{ checkpoint, commentId, owner, executionAllowed, publicationAllowed, blockers, warnings }`. Invalid authentication/schema throws; stale approvals/inputs or required evidence loss explicitly block reuse. |
+| `loadCheckpoint(transport, context)` | Returns `{ checkpoint, bodyDigest, commentId, owner, executionAllowed, publicationAllowed, blockers, warnings }`. Authenticates freshness and can finish an interrupted receipt write under the issue lock. Invalid authentication/schema/freshness throws; stale approvals/inputs or required evidence loss explicitly block reuse. |
 | `reserveWork(transport, context, { generation, attemptId, request })` | Durably charges and saves the exact request before returning a reservation with `execute: true`. Duplicate requests return `execute: false`; they **must not launch another worker**. Conflicting attempt IDs, stale generations, active pending owners, exhausted counters, and deadlines fail closed. |
 | `commitObservation(transport, context, { generation, attemptId, observation, evidence })` | Checks ownership, request/build/provenance and the shared observation contract, then commits all decisive evidence before clearing pending work. Exact duplicate completion is idempotent. |
 | `invalidateStaleEvidence(transport, context, { generation })` | Invalidates changed input/approval/producer/orchestration dependencies without erasing history or charges. Main/stable changes start a new endpoint epoch while retaining exact-input historical source observations. Closed/unlabeled issues stop publication; existing result identities remain auditable. |
 | `serializeWorkflowRecord({ kind, status, payload }, context)` | Signs a `checkpoint`, `proposal`, or `result` envelope. Low-level serialization is not approval or a storage transition. |
-| `authenticateWorkflowRecord(transport, context, comment)` | Returns true only for a matching signed record and fetched run provenance. Forged records return false; required API failures throw. Bind the expected record ID before using this as intake's exclusion callback. |
+| `authenticateWorkflowRecord(transport, context, comment)` | Returns true only for a matching signed record and fetched run provenance, not its freshness. Forged records return false; required API failures throw. Bind the expected record ID before using this as intake's exclusion callback, and use `loadCheckpoint` in the mandatory trusted-checkpoint reader to detect rollback before freezing. |
 
 A work request is
 `{ kind, target, endpoint, phase }`: `kind`/`target` use the observation shape;

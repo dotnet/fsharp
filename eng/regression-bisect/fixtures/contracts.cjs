@@ -112,4 +112,25 @@ function state() {
     };
 }
 
-module.exports = { policy, manifest, attempt, observation, admission, state, seal, sha, digest };
+function statusTransport(context) {
+    const statuses = [];
+    return {
+        statuses,
+        async request(route, args) {
+            if (args.owner !== "dotnet" || args.repo !== "fsharp" ||
+                (args.sha ?? args.ref) !== context.checkpointAnchorSha) throw new Error("unexpected freshness repository or anchor");
+            if (route === "POST /repos/{owner}/{repo}/statuses/{sha}") {
+                const status = { ...structuredClone(args), id: statuses.length + 1, creator: structuredClone(context.actor) };
+                statuses.push(status);
+                return { data: structuredClone(status) };
+            }
+            if (route !== "GET /repos/{owner}/{repo}/commits/{ref}/statuses") throw new Error("unexpected freshness route");
+            return {
+                data: structuredClone(statuses.toReversed().slice((args.page - 1) * 100, args.page * 100)),
+                headers: { link: args.page * 100 < statuses.length ? '<https://api.github.com/next>; rel="next"' : "" },
+            };
+        },
+    };
+}
+
+module.exports = { policy, manifest, attempt, observation, admission, state, seal, sha, digest, statusTransport };

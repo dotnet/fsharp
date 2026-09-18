@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { manifest, seal, digest, state, sha } = require("./fixtures/contracts.cjs");
+const { manifest, seal, digest, state, sha, statusTransport } = require("./fixtures/contracts.cjs");
 const { fingerprintInput, isEligibleIssue } = require("./model.cjs");
 const intake = () => require("./intake.cjs");
 const repository = "dotnet/fsharp";
@@ -156,7 +156,7 @@ test("authenticated records require an explicit trusted checkpoint reader before
 });
 
 test("real checkpoint authentication excludes only the pinned signed workflow record", async () => {
-    const { authenticateWorkflowRecord, loadCheckpoint, reserveWork } = require("./state.cjs");
+    const { initializeCheckpoint, authenticateWorkflowRecord, loadCheckpoint, reserveWork } = require("./state.cjs");
     const body = require("node:fs").readFileSync(require.resolve("./fixtures/checkpoint.txt"), "utf8").trimEnd();
     const actor = { id: 77, login: "github-actions[bot]", type: "Bot", appId: 88 };
     const baseline = state();
@@ -164,6 +164,7 @@ test("real checkpoint authentication excludes only the pinned signed workflow re
         repository, issueNumber: 123, commentId: 456, actor,
         workflowPath: ".github/workflows/regression-bisect.yml", workflowRef: "refs/heads/main",
         workflowRevision: sha("workflow"), trustedWorkflowRevisions: [sha("workflow")],
+        checkpointAnchorSha: sha("workflow"), bootstrapDigest: fingerprintInput("unused placeholder"),
         keys: { fixture: Buffer.from("synthetic-test-key-not-a-production-secret") }, keyId: "fixture",
         owner: { runId: "12345", attempt: 1 }, now, issue: issue(),
         policy: baseline.budget.policy, policyRevision: baseline.budget.policyRevision,
@@ -171,7 +172,7 @@ test("real checkpoint authentication excludes only the pinned signed workflow re
         authorization: baseline.budget.authorization, stableSdk: baseline.budget.stableSdk, pinnedMainSha: baseline.pinnedMainSha,
     };
     let runReads = 0;
-    const stateTransport = { async getRun(runId, attempt) {
+    const stateTransport = { request: statusTransport(context).request, async getRun(runId, attempt) {
         assert.equal(runId, "12345");
         assert.equal(attempt, 1);
         runReads++;
@@ -182,7 +183,7 @@ test("real checkpoint authentication excludes only the pinned signed workflow re
         };
     } };
     const managed = {
-        ...comment(456, body), issue_url: "https://api.github.com/repos/dotnet/fsharp/issues/123",
+        ...comment(456, "unused placeholder"), issue_url: "https://api.github.com/repos/dotnet/fsharp/issues/123",
         user: { id: actor.id, login: actor.login, type: actor.type }, performed_via_github_app: { id: actor.appId },
     };
     const copied = comment(457, body);
@@ -195,6 +196,11 @@ test("real checkpoint authentication excludes only the pinned signed workflow re
         managed.body = updatedBody;
         return structuredClone(managed);
     };
+    await initializeCheckpoint(stateTransport, context, {
+        allowanceId: "maintainer-approved-investigation-1", deadline: "2026-10-01T00:00:00Z",
+    });
+    assert.equal(managed.body, body);
+    runReads = 0;
     const f = fixture({
         comments: [comment(1), managed, copied],
         timeline: [{ ...managed, event: "commented" }, { ...copied, event: "commented" }],
@@ -230,6 +236,12 @@ test("real checkpoint authentication excludes only the pinned signed workflow re
     assert.equal(pending.snapshot.investigations.active.length, 1);
     assert.deepEqual(pending.snapshot.investigations.active[0].owner, loaded.checkpoint.pending.owner);
     assert.equal(pending.snapshot.inputDigest, result.snapshot.inputDigest);
+    const currentBody = managed.body;
+    managed.body = body;
+    f.data.timeline[0].body = body;
+    blocked(await snapshot(f, { authenticateRecord, readTrustedCheckpoints }), /freshness|rollback/i);
+    managed.body = currentBody;
+    f.data.timeline[0].body = currentBody;
     assert.equal(await authenticateRecord({ ...managed, user: copied.user }), false);
     assert.equal(await authenticateRecord({ ...managed, body: `${body} ` }), false);
     stateTransport.getRun = async () => { throw new Error("workflow run provenance unavailable"); };

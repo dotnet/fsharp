@@ -17,6 +17,7 @@ function harness() {
         actor: { id: 77, login: "github-actions[bot]", type: "Bot", appId: 88 },
         workflowPath: ".github/workflows/regression-bisect.yml",
         workflowRef: "refs/heads/main", trustedWorkflowRevisions: [f.sha("workflow")],
+        checkpointAnchorSha: f.sha("workflow"), bootstrapDigest: model.fingerprintInput("unused placeholder"),
         keys: { fixture: Buffer.from("synthetic-test-key-not-a-production-secret") }, keyId: "fixture",
         owner: { runId: "12345", attempt: 1 }, now: "2026-09-18T00:00:00Z",
         issue: { number: 123, state: "open", created_at: "2026-09-01T00:00:00Z", labels: ["Regression"] },
@@ -40,7 +41,9 @@ function harness() {
         body: "unused placeholder",
     };
     let tail = Promise.resolve();
+    const freshness = f.statusTransport(context);
     const transport = {
+        request: freshness.request,
         getComment: async id => { assert.equal(id, 456); return clone(comment); },
         updateComment: async (id, body) => { assert.equal(id, 456); comment.body = body; return clone(comment); },
         getRun: async (id, attempt) => {
@@ -51,9 +54,14 @@ function harness() {
         readEvidence: async () => Buffer.from("durable evidence"),
     };
     return {
-        context, transport, runs,
+        context, transport, runs, statuses: freshness.statuses,
         get comment() { return comment; },
         set comment(c) { comment = c; },
+        checkpoint(cp) {
+            cp.previousDigest = f.digest(comment.body);
+            cp.generation++;
+            comment.body = serializeWorkflowRecord({ kind: "checkpoint", status: "fixture transition", payload: cp }, context);
+        },
         // This stands for the controller's whole issue concurrency group, not comment CAS.
         lock(action) {
             const next = tail.then(action);
@@ -61,7 +69,6 @@ function harness() {
             return next;
         },
         async start() {
-            context.bootstrapDigest = model.fingerprintInput(comment.body);
             return initializeCheckpoint(transport, context, {
                 allowanceId: "maintainer-approved-investigation-1", deadline: "2026-10-01T00:00:00Z",
             });
@@ -87,6 +94,7 @@ function completion(h, pending, outcome = "product-failure") {
     for (const cell of data.cells) {
         cell.attempts = cell.attempts.map(a => ({ ...a, execution: {
             ...a.execution, ...h.context.manifest.assertions[outcome === "pass" ? "pass" : "failure"],
+            status: outcome === "untestable" ? "timeout" : a.execution.status,
         } }));
         cell.outcome = model.classifyAttempts(cell.attempts, h.context.manifest);
         for (const artifact of Object.values(cell.artifacts)) artifact.buildInstanceId = pending.id;
@@ -337,6 +345,107 @@ test("two attempts per item, cumulative reservation limit and absolute deadline 
     await assert.rejects(reserve(h, generation, "late", request(f.sha("last"), null)), /deadline/);
 });
 
+test("restoring an authentic old body to the same comment cannot roll back evidence or budgets", async () => {
+    const h = harness(); await h.start();
+    const initialBody = h.comment.body;
+    const first = await reserve(h);
+    await commitObservation(h.transport, h.context, completion(h, first));
+    for (let i = 0; i < 5; i++) {
+        const cp = (await loadCheckpoint(h.transport, h.context)).checkpoint;
+        await reserve(h, cp.generation, `charged-${i}`, request(f.sha(`charged-${i}`), null));
+        h.nextRun();
+    }
+    const latestBody = h.comment.body;
+    const latest = (await loadCheckpoint(h.transport, h.context)).checkpoint;
+    assert.equal(latest.state.budget.consumed.reservedMinutes, 660);
+    assert.equal(Object.keys(latest.observations).length, 1);
+    await assert.rejects(reserve(h, latest.generation, "exhausted", request(f.sha("last"), null)), /budget/);
+    h.comment.body = initialBody;
+    await assert.rejects(loadCheckpoint(h.transport, h.context), /freshness|rollback/i);
+    await assert.rejects(reserve(h, 0, "rollback"), /freshness|rollback/i);
+    await assert.rejects(invalidateStaleEvidence(h.transport, h.context, { generation: 0 }), /freshness|rollback/i);
+    h.comment.body = "unused placeholder";
+    await assert.rejects(h.start(), /freshness|initializ/i);
+    h.comment.body = latestBody;
+    assert.deepEqual((await loadCheckpoint(h.transport, h.context)).checkpoint, latest);
+});
+
+test("freshness receipts cannot be forged, omitted, truncated or replaced by a newer replay", async t => {
+    for (const [name, change] of [
+        ["missing", h => { h.statuses.length = 0; }],
+        ["writer", h => { h.statuses[0].creator.id++; }],
+        ["signature", h => { h.statuses[0].target_url += "0"; }],
+        ["generation", h => { h.statuses[0].description = h.statuses[0].description.replace("checkpoint:0:", "checkpoint:1:"); }],
+        ["status", h => { h.statuses[0].state = "pending"; }],
+        ["wrong issue", h => { h.statuses[0].target_url = h.statuses[0].target_url.replace("/123#", "/124#"); }],
+        ["wrong comment", h => { h.statuses[0].context = "regression-bisect/123/789"; }],
+        ["wrong anchor", h => { h.context.checkpointAnchorSha = f.sha("another anchor"); }],
+        ["API failure", h => { h.transport.request = async () => { throw new Error("freshness unavailable"); }; }],
+        ["HTTP error", h => { h.transport.request = async () => ({ status: 403, data: [] }); }],
+        ["incomplete pagination", h => { h.transport.request = async () => ({ data: [], headers: { link: '<https://api.github.com/next>; rel="next"' } }); }],
+        ["same-generation replacement", async h => {
+            const cp = (await loadCheckpoint(h.transport, h.context)).checkpoint;
+            h.comment.body = serializeWorkflowRecord({ kind: "checkpoint", status: "different authentic body",
+                payload: cp }, h.context);
+        }],
+    ]) {
+        await t.test(name, async () => {
+            const h = harness(); await h.start();
+            await change(h);
+            await assert.rejects(loadCheckpoint(h.transport, h.context), /freshness/i);
+        });
+    }
+    const h = harness(); await h.start();
+    const initialBody = h.comment.body, oldReceipt = clone(h.statuses[0]);
+    await reserve(h);
+    for (let i = 0; i < 101; i++) h.statuses.push({ ...clone(oldReceipt), id: i + 10 });
+    const receiptCount = h.statuses.length;
+    assert.equal((await loadCheckpoint(h.transport, h.context)).checkpoint.state.budget.consumed.workerUnits, 1);
+    assert.equal(h.statuses.length, receiptCount);
+    h.comment.body = initialBody;
+    await assert.rejects(loadCheckpoint(h.transport, h.context), /freshness|rollback/i);
+});
+
+test("freshness write cancellation recovers only the signed immediate successor without refund or execution", async t => {
+    for (const stage of ["initialization", "reservation", "observation", "receipt-acknowledgement"]) {
+        await t.test(stage, async () => {
+            const h = harness();
+            let pending;
+            if (stage !== "initialization") await h.start();
+            if (stage === "observation") pending = await reserve(h);
+            const send = h.transport.request;
+            h.transport.request = async (route, args) => {
+                if (route.startsWith("POST")) {
+                    if (stage === "receipt-acknowledgement") await send(route, args);
+                    throw new Error("cancelled before freshness acknowledgement");
+                }
+                return send(route, args);
+            };
+            await assert.rejects(stage === "initialization" ? h.start() : stage === "observation"
+                ? commitObservation(h.transport, h.context, completion(h, pending)) : reserve(h), /cancelled/);
+            h.transport.request = send;
+            h.nextRun();
+            if (stage === "initialization") await h.start();
+            const cp = (await loadCheckpoint(h.transport, h.context)).checkpoint;
+            assert.equal(cp.state.budget.consumed.workerUnits, stage === "initialization" ? 0 : 1);
+            assert.equal(Object.keys(cp.observations).length, stage === "observation" ? 1 : 0);
+            if (cp.pending) {
+                const retry = await reserve(h, cp.generation, "retry");
+                assert.equal(retry.attempt, 2);
+                assert.equal((await loadCheckpoint(h.transport, h.context)).checkpoint.state.budget.consumed.workerUnits, 2);
+            }
+        });
+    }
+    for (const gap of [false, true]) {
+        const h = harness(); const cp = await h.start();
+        h.checkpoint(cp);
+        if (gap) cp.generation++;
+        else cp.previousDigest = f.digest("unrelated checkpoint");
+        h.comment.body = serializeWorkflowRecord({ kind: "checkpoint", status: "invalid predecessor", payload: cp }, h.context);
+        await assert.rejects(loadCheckpoint(h.transport, h.context), /freshness|predecessor/i);
+    }
+});
+
 test("input changes and label toggles invalidate evidence but never replenish an allowance", async () => {
     const h = harness(); await h.start();
     const p = await reserve(h);
@@ -382,9 +491,9 @@ test("withdrawn approval invalidates evidence and label removal retains publishe
     const published = await commitObservation(h.transport, h.context, completion(h, p));
     published.state.publication = { digest: f.digest("result"), commentId: 789 };
     published.publicationStatus = "published";
-    h.comment.body = serializeWorkflowRecord({ kind: "checkpoint", status: "published", payload: published }, h.context);
+    h.checkpoint(published);
     h.context.issue.state = "closed";
-    let cp = await invalidateStaleEvidence(h.transport, h.context, { generation: 2 });
+    let cp = await invalidateStaleEvidence(h.transport, h.context, { generation: published.generation });
     assert.deepEqual(cp.state.publication, published.state.publication);
     assert.equal(cp.publicationStatus, "blocked");
     h.context.issue.state = "open";
@@ -414,12 +523,7 @@ test("observation size overflow leaves the charged reservation durable and block
 test("untestable observations retain ordered tested and skipped reasons and full evidence", async () => {
     const h = harness(); await h.start();
     const p = await reserve(h);
-    const done = completion(h, p);
-    for (const cell of done.observation.cells) {
-        cell.attempts.forEach(a => { a.execution.status = "timeout"; });
-        cell.outcome = model.classifyAttempts(cell.attempts, h.context.manifest);
-    }
-    done.observation.outcome = done.observation.cells[0].outcome;
+    const done = completion(h, p, "untestable");
     const cp = await commitObservation(h.transport, h.context, done);
     assert.equal(cp.state.skips[0].reason, "timeout");
     assert.equal(cp.state.skips[0].observationDigest, cp.state.testedRevisions[0].observationDigest);
@@ -450,23 +554,39 @@ test("changed approval, reproduction, producer and orchestration invalidate depe
     }
 });
 
-test("moving main and stable start endpoint epochs while retaining exact historical source evidence", async () => {
-    const h = harness(); await h.start();
-    const p = await reserve(h, 0, "good", request(f.sha("good"), "good"));
-    const done = completion(h, p, "pass");
-    await commitObservation(h.transport, h.context, done);
-    const old = (await loadCheckpoint(h.transport, h.context)).checkpoint;
-    h.context.pinnedMainSha = f.sha("new main");
-    let cp = await invalidateStaleEvidence(h.transport, h.context, { generation: old.generation });
-    assert.notEqual(cp.state.epoch, old.state.epoch);
-    assert.equal(cp.state.endpointEvidence.good, model.fingerprintInput(done.observation));
-    assert.equal(cp.observations[model.fingerprintInput(done.observation)].valid, true);
-    assert.equal(cp.state.testedRevisions.length, 1);
-    assert.equal(cp.state.interval, null);
-    h.context.stableSdk.releaseIndexDigest = f.digest("new release metadata");
-    cp = await invalidateStaleEvidence(h.transport, h.context, { generation: cp.generation });
-    assert.equal(cp.state.endpointEvidence.good, model.fingerprintInput(done.observation));
-    assert.equal(cp.history.length, 2);
+test("moving main or stable clears only that endpoint and the interval, retaining historical evidence", async t => {
+    for (const changed of ["main", "stable"]) {
+        await t.test(changed, async () => {
+            const h = harness(); let old = await h.start();
+            for (const endpoint of ["stable", "main", "good", null]) {
+                const work = endpoint === "stable"
+                    ? { kind: "released", target: { sdk: h.context.stableSdk }, endpoint, phase: "stable" }
+                    : request(f.sha(endpoint ?? "skipped"), endpoint);
+                const p = await reserve(h, old.generation, endpoint ?? "skipped", work);
+                old = await commitObservation(h.transport, h.context,
+                    completion(h, p, endpoint === "good" ? "pass" : endpoint === null ? "untestable" : "product-failure"));
+            }
+            old.state.interval = { goodSha: f.sha("good"), badSha: f.sha("main"), gitLog: ["verified ancestry"] };
+            old.state.publication = { digest: f.digest("result"), commentId: 789 };
+            old.publicationStatus = "published";
+            h.checkpoint(old);
+            if (changed === "main") h.context.pinnedMainSha = f.sha("new main");
+            else h.context.stableSdk.releaseIndexDigest = f.digest("new release metadata");
+            const cp = await invalidateStaleEvidence(h.transport, h.context, { generation: old.generation });
+            assert.notEqual(cp.state.epoch, old.state.epoch);
+            assert.deepEqual(cp.state.endpointEvidence, { ...old.state.endpointEvidence, [changed]: null });
+            assert.equal(cp.state.interval, null);
+            assert.deepEqual(cp.state.publication, { digest: null, commentId: null });
+            assert.equal(cp.publicationStatus, "unpublished");
+            for (const field of ["observations", "records", "sequence"]) assert.deepEqual(cp[field], old[field]);
+            for (const field of ["testedRevisions", "skips", "budget"]) assert.deepEqual(cp.state[field],
+                field === "budget" ? { ...old.state.budget, stableSdk: h.context.stableSdk } : old.state[field]);
+            assert.equal(cp.history.length, 1);
+            assert.deepEqual(cp.history[0].endpointEvidence, old.state.endpointEvidence);
+            assert.deepEqual(cp.history[0].interval, old.state.interval);
+            assert.deepEqual(cp.history[0].publication, old.state.publication);
+        });
+    }
 });
 
 test("mandatory external evidence loss blocks reuse; optional expired logs are disclosed", async t => {
@@ -516,6 +636,7 @@ test("repeated identity/evidence tables compact below 48 KiB without dropping ob
 
 test("serialized checkpoint fixture replays reservation, observation, cancellation and resume", async () => {
     const h = harness();
+    await h.start();
     h.comment.body = readFileSync(join(__dirname, "fixtures", "checkpoint.txt"), "utf8").trimEnd();
     const initial = await loadCheckpoint(h.transport, h.context);
     assert.equal(initial.checkpoint.generation, 0);

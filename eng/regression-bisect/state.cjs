@@ -153,10 +153,10 @@ function validateEvidence(evidence) {
 }
 
 function validateCheckpoint(cp) {
-    fields(cp, "schemaVersion generation state inputDigest reproductionDigest policyDigest sequence pending records observations history deadline publicationStatus", "checkpoint");
+    fields(cp, "schemaVersion generation previousDigest state inputDigest reproductionDigest policyDigest sequence pending records observations history deadline publicationStatus", "checkpoint");
     requireState(cp.schemaVersion === 1, "unsupported checkpoint schema");
     validateState(cp.state);
-    requireState(Number.isSafeInteger(cp.generation) && cp.generation >= 0 && timestamp(cp.deadline) &&
+    requireState(Number.isSafeInteger(cp.generation) && cp.generation >= 0 && digest(cp.previousDigest) && timestamp(cp.deadline) &&
         cp.inputDigest === cp.state.manifest.approvedInputDigest &&
         cp.reproductionDigest === reproductionDigest(cp.state.manifest) &&
         cp.policyDigest === fingerprint(cp.state.budget.policy), "checkpoint digest or generation mismatch");
@@ -264,6 +264,66 @@ async function evidenceWarnings(transport, observations) {
     return { warnings, missingRequired };
 }
 
+function freshnessStatus(context, generation, bodyDigest, keyId = context.keyId) {
+    requireState(context.repository === "dotnet/fsharp" && positive(context.issueNumber) && positive(context.commentId) &&
+        /^[a-f0-9]{40}$/.test(context.checkpointAnchorSha), "invalid trusted freshness anchor");
+    const key = context.keys[keyId];
+    requireState(/^[\w-]{1,64}$/.test(keyId) && Buffer.isBuffer(key) && key.length >= 32, "freshness authentication key unavailable");
+    const name = `regression-bisect/${context.issueNumber}/${context.commentId}`;
+    const description = `checkpoint:${generation}:${bodyDigest}`;
+    const url = `https://github.com/${context.repository}/issues/${context.issueNumber}#checkpoint-${keyId}:`;
+    const signature = createHmac("sha256", key).update(fingerprint({
+        anchor: context.checkpointAnchorSha, name, description, url,
+    })).digest("hex");
+    return { state: "success", context: name, description, target_url: url + signature };
+}
+
+async function readFreshness(transport, context) {
+    const expected = freshnessStatus(context, 0, "");
+    let head = null;
+    for (let page = 1; page <= 10; page++) {
+        const response = await transport.request("GET /repos/{owner}/{repo}/commits/{ref}/statuses", {
+            owner: "dotnet", repo: "fsharp", ref: context.checkpointAnchorSha, per_page: 100, page,
+        });
+        requireState(response && (!response.status || response.status === 200) &&
+            Array.isArray(response.data) && response.data.length <= 100, "incomplete freshness response");
+        for (const status of response.data) {
+            if (status.context !== expected.context || status.creator?.id !== context.actor.id) continue;
+            const parts = /^checkpoint:(0|[1-9]\d*):([a-f0-9]{64})$/.exec(status.description);
+            const key = /#checkpoint-([\w-]{1,64}):[a-f0-9]{64}$/.exec(status.target_url);
+            requireState(parts && key && Number.isSafeInteger(Number(parts[1])) &&
+                positive(status.id) && status.creator.login === context.actor.login &&
+                status.creator.type === context.actor.type, "freshness receipt authentication failed");
+            const receipt = { generation: Number(parts[1]), bodyDigest: parts[2] };
+            const signed = freshnessStatus(context, receipt.generation, receipt.bodyDigest, key[1]);
+            requireState(Object.entries(signed).every(([k, v]) => status[k] === v), "freshness receipt authentication failed");
+            requireState(head?.generation !== receipt.generation || head.bodyDigest === receipt.bodyDigest,
+                "conflicting freshness receipts");
+            if (head === null || receipt.generation > head.generation) head = receipt;
+        }
+        const next = response.headers?.link === undefined ? response.data.length === 100 :
+            /;\s*rel="?next"?/.test(response.headers.link);
+        if (!next) return head;
+    }
+    throw new StateError("freshness page limit exceeded; history incomplete");
+}
+
+async function writeFreshness(transport, context, generation, bodyDigest) {
+    const run = await verifyRun(transport, context, {
+        runId: context.owner.runId, runAttempt: context.owner.attempt, workflowRevision: context.workflowRevision,
+    });
+    requireState(run.status === "in_progress", "freshness writer must be the active owning run");
+    const status = freshnessStatus(context, generation, bodyDigest);
+    const response = await transport.request("POST /repos/{owner}/{repo}/statuses/{sha}", {
+        owner: "dotnet", repo: "fsharp", sha: context.checkpointAnchorSha, ...status,
+    });
+    const written = response?.data;
+    requireState((!response?.status || response.status === 201) && positive(written?.id) &&
+        written.creator?.id === context.actor.id && written.creator?.login === context.actor.login &&
+        written.creator?.type === context.actor.type &&
+        Object.entries(status).every(([k, v]) => written[k] === v), "freshness write authentication failed");
+}
+
 async function loadCheckpoint(transport, context) {
     const comment = await transport.getComment(context.commentId);
     const record = await authenticatedRecord(transport, context, comment);
@@ -272,11 +332,20 @@ async function loadCheckpoint(transport, context) {
     validateCheckpoint(checkpoint);
     requireState(checkpoint.state.repository === context.repository && checkpoint.state.issueNumber === context.issueNumber,
         "checkpoint issue authentication failed");
+    const head = await readFreshness(transport, context);
+    const bodyDigest = hashBytes(comment.body);
+    requireState(head !== null, "checkpoint freshness receipt missing; initialization or repair required");
+    if (checkpoint.generation !== head.generation || bodyDigest !== head.bodyDigest) {
+        requireState(checkpoint.generation === head.generation + 1 && checkpoint.previousDigest === head.bodyDigest,
+            "checkpoint freshness rollback or predecessor mismatch");
+        // Complete an interrupted comment -> receipt write, under the controller lock.
+        await writeFreshness(transport, context, checkpoint.generation, bodyDigest);
+    }
     const current = currentState(checkpoint, context);
     const evidence = await evidenceWarnings(transport, Object.values(checkpoint.observations).filter(o => o.valid));
     const blockers = [...current.reasons, ...(evidence.missingRequired ? ["required evidence unavailable; blocked"] : [])];
     return {
-        checkpoint, commentId: context.commentId,
+        checkpoint, bodyDigest, commentId: context.commentId,
         owner: { runId: record.binding.runId, attempt: record.binding.runAttempt },
         executionAllowed: blockers.length === 0,
         publicationAllowed: blockers.length === 0 && checkpoint.state.phase !== "stopped",
@@ -284,7 +353,8 @@ async function loadCheckpoint(transport, context) {
     };
 }
 
-async function saveCheckpoint(transport, context, checkpoint) {
+async function saveCheckpoint(transport, context, checkpoint, previousDigest = checkpoint.previousDigest) {
+    checkpoint.previousDigest = previousDigest;
     validateCheckpoint(checkpoint);
     const owner = await verifyRun(transport, context, {
         runId: context.owner.runId, runAttempt: context.owner.attempt, workflowRevision: context.workflowRevision,
@@ -297,13 +367,14 @@ async function saveCheckpoint(transport, context, checkpoint) {
     const written = await transport.updateComment(context.commentId, body);
     requireState(written?.body === body && await authenticateWorkflowRecord(transport, context, written),
         "checkpoint write authentication failed");
+    await writeFreshness(transport, context, checkpoint.generation, hashBytes(body));
     return checkpoint;
 }
 
 async function initializeCheckpoint(transport, context, { allowanceId, deadline }) {
+    requireState(await readFreshness(transport, context) === null, "initialization forbidden: freshness history already exists");
     const existing = await transport.getComment(context.commentId);
-    requireState(digest(context.bootstrapDigest) && fingerprint(existing.body) === context.bootstrapDigest &&
-        parseRecord(existing.body) === null, "initialization requires the exact trusted bootstrap placeholder");
+    requireState(digest(context.bootstrapDigest), "initialization requires the trusted bootstrap digest");
     requireState(existing.id === context.commentId && existing.user?.id === context.actor.id &&
         existing.user?.login === context.actor.login && existing.user?.type === context.actor.type &&
         existing.performed_via_github_app?.id === context.actor.appId &&
@@ -325,11 +396,18 @@ async function initializeCheckpoint(transport, context, { allowanceId, deadline 
         publication: { digest: null, commentId: null },
     };
     const cp = {
-        schemaVersion: 1, generation: 0, state, inputDigest: context.manifest.approvedInputDigest,
+        schemaVersion: 1, generation: 0, previousDigest: context.bootstrapDigest, state, inputDigest: context.manifest.approvedInputDigest,
         reproductionDigest: reproductionDigest(context.manifest), policyDigest: fingerprint(context.policy),
         sequence: 0, pending: null, records: [], observations: {}, history: [], deadline, publicationStatus: "unpublished",
     };
     requireState(currentState(cp, context).reasons.length === 0, "initialization blocked by current eligibility or approval");
+    if (fingerprint(existing.body) !== context.bootstrapDigest || parseRecord(existing.body) !== null) {
+        const record = await authenticatedRecord(transport, context, existing);
+        requireState(record?.kind === "checkpoint" && equal(unpack(record.payload), cp),
+            "initialization requires the exact trusted bootstrap placeholder or interrupted initial checkpoint");
+        await writeFreshness(transport, context, 0, hashBytes(existing.body));
+        return cp;
+    }
     return saveCheckpoint(transport, context, structuredClone(cp));
 }
 
@@ -402,7 +480,7 @@ async function reserveWork(transport, context, { generation, attemptId, request 
     budget.nextWorkItemId = workItemId;
     budget.pendingWork = { id: attemptId, allowanceId: budget.allowanceId, workItemId, attempt, reserved, status: "reserved" };
     cp.state.phase = request.phase;
-    await saveCheckpoint(transport, context, cp);
+    await saveCheckpoint(transport, context, cp, loaded.bodyDigest);
     return { ...structuredClone(pending), execute: true };
 }
 
@@ -447,7 +525,7 @@ async function commitObservation(transport, context, { generation, attemptId, ob
     cp.pending = null;
     cp.state.budget.pendingWork = null;
     cp.generation++;
-    return saveCheckpoint(transport, context, cp);
+    return saveCheckpoint(transport, context, cp, loaded.bodyDigest);
 }
 
 async function invalidateStaleEvidence(transport, context, { generation }) {
@@ -494,7 +572,7 @@ async function invalidateStaleEvidence(transport, context, { generation }) {
     cp.publicationStatus = !eligible || current.state === null ? "blocked" :
         cp.state.publication.commentId !== null ? "published" : "unpublished";
     cp.generation++;
-    return saveCheckpoint(transport, context, cp);
+    return saveCheckpoint(transport, context, cp, loaded.bodyDigest);
 }
 
 module.exports = {
