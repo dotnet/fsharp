@@ -327,6 +327,158 @@ was regenerated through its existing harness for the new pinned public-feed
 policy; an old-policy checkpoint is not silently accepted as a new-policy one.
 Root compiler Release builds/tests are not this Node adapter's acceptance gate.
 
+## Reproduction execution
+
+`repro.cjs` is an execution adapter, not an authorization boundary. Its caller
+must first admit the frozen manifest and place execution in a disposable,
+credential-free worker. It does not fetch issue code, choose revisions, bisect,
+or publish results. A manifest digest alone is not approval.
+
+The exports are `runReproduction`, `selectFsiCommand`,
+`verifyProjectIdentities`, and `evaluateAssertion`. Outcomes and the two-run
+consistency rule come from `model.cjs`. A successful build never substitutes
+for the runtime assertion.
+
+`runReproduction` takes:
+
+* `manifest`, `sourceDirectory` containing exactly the reviewed source assets,
+  and `workDirectory` for fresh per-observation/per-attempt workspaces;
+* `toolchain`: the verified `identity` returned by `acquireToolchain`;
+* `product`: `{ kind, root, sourceSha, buildInstanceId, configuration,
+  runtime: { name, version }, corePackageVersion, files }`. `kind` is `source`
+  or `released`; local `root` is the clean build checkout, not this adapter's
+  checkout. Each inventoried file has `role`, absolute `path`, and `sha256`;
+  assemblies also have `assemblyVersion`. Roles are `fsi`, `compiler`,
+  `tasks`, `props`, `targets`, `sdkTargets`, `overrides`, `core`, and
+  `corePackage`. Managed FSI/compiler records carry
+  `runtimeConfig: { path, sha256 }`. There must be exactly one selected
+  artifact per role: this adapter does not search for the newest build;
+* `helper`: `{ executable, runtimeVersion, dll, hook }`, identifying the
+  separately built evidence reader and Core-load startup hook;
+* optional `sampleRuntimes`, mapping each TFM to an explicitly acquired
+  `{ name, version }`. Omission uses the product's explicit runtime, never
+  automatic major-version roll-forward.
+
+The adapter checks inventory bytes and assembly versions, then rechecks frozen
+inputs and product bytes after execution. Local FSI uses the selected `fsi.dll`
+with an absolute acquired host and `exec --fx-version`; it never invokes
+`dotnet fsi`. Windows executable layouts use a separate fixed Core-load probe.
+Managed executions capture the actual loaded Core through a startup hook,
+including its path, digest, assembly version, runtime version and architecture.
+Unsupported host/runtime/helper combinations are untestable.
+
+Project builds reuse **both** `UseLocalCompiler.Directory.Build` imports.
+The local compiler TFM comes from the inventoried runtimeconfig, not this
+checkout's current product TFM. Each repetition has a distinct `NUGET_PACKAGES`;
+same-version packages from different builds cannot share an extraction cache.
+Core package bytes and the selected compile/runtime DLL entries are checked,
+not just their version strings. Other packages must match the manifest's
+frozen versions and package digests.
+
+MSBuild's compiler child uses an explicit `LatestPatch` policy only when there
+is exactly one compatible, acquired runtime in that host. PID-separated startup
+hook records must prove that the actual `fsc.dll` process loaded that runtime's
+CoreLib bytes and the inventoried compiler Core. This permits a pinned compatible
+prerelease runtime without editing the built runtimeconfig or silently selecting
+another installed runtime. FSI and application execution use `--fx-version`.
+
+`ReproEvidence.targets` contributes build-context evidence; that evidence alone
+is insufficient. The pinned structured binlog reader must find the executed
+Fsc task and correlate its assembly, command, references and flags with imports,
+assets and the expected project/TFM/configuration cell. Missing inner builds,
+skipped Fsc tasks, fallbacks and late flag overrides are untestable.
+
+Assertions compare complete, bounded streams and exit codes. Line endings are
+normalized to LF. Compile-time assertions use a frozen diagnostic of the form
+`Program.fs(line,column[,endLine,endColumn]): error FSnnnn: message`, including
+the relevant message and span. The reader supplies structured diagnostics with
+workspace-relative paths; unrelated diagnostics or restore errors cannot
+satisfy the assertion. All other manifests execute the produced application.
+Timeouts terminate the process tree; truncated output, unexpected crashes,
+missing identity evidence and mixed repetitions are untestable.
+
+An immutable producer is declared in a reviewed `*.producer.json` source asset:
+`{ role: "immutable-producer", compiler: { version, sha256 }, flags, tfm,
+packages, dll: { path, sha256, resources }, package: { path, id, version,
+sha256 } }`. The DLL and optional package are themselves reviewed source
+assets; `manifest.producer.sha256` identifies the DLL. Resource records contain
+the F# metadata resource names and digests. Consumers must reference those bytes,
+not rebuild a producer ProjectReference. An explicit absence of producers is
+`{ name: "no-producer", version: "0.0.0", sha256: SHA256(empty bytes) }`.
+Producer dependency provenance is retained separately from the candidate's Core;
+the adapter never rewrites or repacks a frozen producer.
+
+`result.json` retains outcomes, attempts, command arrays and evidence paths.
+`identities.json` retains the exact product/host/SDK/runtime/package identities
+and the acquisition digest. Binlogs and loaded-Core evidence remain alongside
+each attempt. These are execution records, not authenticated controller
+observations or publication-ready issue text.
+
+### Bounded reproduction smoke
+
+The opt-in `repro.smoke.cjs <verified-products.json> <new-output-directory>`
+entrypoint generates only small synthetic fixtures. The configuration has
+`released` and `source` objects containing `{ product, toolchain, tfm,
+sampleRuntimes? }`, plus the shared `helper` above. Supply an acquired released
+SDK and products from a separate clean checkout built with:
+
+```powershell
+eng\Build.ps1 -restore -build -c Release -pack -bootstrap -noVisualStudio -msbuildEngine dotnet
+```
+
+Use an explicit credential-free environment for that build. Do not reuse this
+worktree's product artifacts or run competing builds in the temporary checkout.
+Windows requires static `OS=Windows_NT` and `PATHEXT=.COM;.EXE;.BAT;.CMD`;
+NuGet also needs private `ProgramFiles`/`ProgramFiles(x86)` paths. Do not copy
+the user's credentials or machine-wide NuGet configuration to satisfy these.
+Build the reader with the explicit
+`eng\regression-bisect\evidence\Evidence.csproj` project. Its pinned
+`MSBuild.StructuredLogger` dependency reads binlogs, and its dependency-free
+`netstandard2.0` hook can run on older Core runtimes independently of the
+reader's .NET 8+ host.
+
+The smoke covers FSI, Debug/Release projects, successful compilation followed by
+an intended runtime failure, intended diagnostics, late compiler flag overrides,
+explicit/central Core package overrides, two inner TFMs on Windows, and an immutable released
+producer. Its source-evaluation control illustrates how rebuilding a producer
+without its old flags would hide the failure; candidate consumers only receive
+the frozen DLL/package. Results are written to `smoke-results.json`.
+An explicit final `released` or `source` argument selects just that phase while
+preparing the other product; a released-only pass is not completion of the
+clean-local-product acceptance gate.
+
+Scoped checks (a full compiler test run does not prove injection):
+
+```powershell
+node --test eng\regression-bisect\model.test.cjs eng\regression-bisect\toolchains.test.cjs eng\regression-bisect\repro.test.cjs
+node eng\regression-bisect\repro.smoke.cjs <verified-products.json> <new-output-directory>
+git diff --check
+```
+
+Syntax-check changed `.cjs` files with `node --check` as well. Do not report
+the real smoke as passing based on mocked process output or Node tests.
+
+Validation recorded on 2026-09-19: all **466** scoped Node tests passed. The
+prescribed clean Release/bootstrap/pack build completed with exit 0 at source
+`553101960fcb8551d305fc5c0dabad9f2a3e70f3`. All **21** bounded fixture scenarios
+matched their expected outcomes, including both deliberate late-override
+rejections; normal assertions were repeated twice and both declared inner TFMs
+were verified. The reproduction SDK was **10.0.401**, with runtime **10.0.12**
+for released FSI/applications and explicitly acquired runtime
+**11.0.0-rc.1.26425.128** for the clean local FSI/compiler. Local Core package
+**11.0.101** and the released producer's DLL, package and compressed F# metadata
+were preserved and checked by digest.
+
+The clean build itself used the repository entrypoint's pinned SDK
+`11.0.100-rc.1.26420.103`. Its unavailable archive checksum sidecar was recorded
+as a separate acquisition failure, not converted into an acquisition success:
+the source reproduction instead used the independently acquired SDK/runtime
+above, both of which passed the existing acquisition identity guard.
+Complete execution evidence is retained at `Q:\rb912-s4-validated-fixtures`;
+`smoke-results.json` SHA-256 is
+`b182f1a3c504a9d4da94b0cfda10cde5e5280c0e20deb89338160038e3991ff1`.
+These checks do not imply a full compiler-test-suite pass.
+
 ## Complete intake and bounded discovery
 
 `intake.cjs` exports `readIssueSnapshot(options)`,

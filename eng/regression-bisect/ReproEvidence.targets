@@ -1,0 +1,20 @@
+<Project>
+  <!-- Context only: the binlog reader takes compiler flags, references, command line,
+       task assembly and imports from actual execution/evaluation, not this snapshot. -->
+  <Target Name="_ReproEvidenceSnapshot" BeforeTargets="CoreCompile"
+          Condition="'$(MSBuildProjectExtension)' == '.fsproj' and '$(IsCrossTargetingBuild)' != 'true'">
+    <Message Importance="High" Text="REPRO_EVIDENCE_V1|Project|$(MSBuildProjectFullPath)" />
+    <Message Importance="High" Text="REPRO_EVIDENCE_V1|TargetFramework|$(TargetFramework)" />
+    <Message Importance="High" Text="REPRO_EVIDENCE_V1|Configuration|$(Configuration)" />
+    <Message Importance="High" Text="REPRO_EVIDENCE_V1|NETCoreSdkVersion|$(NETCoreSdkVersion)" />
+    <Message Importance="High" Text="REPRO_EVIDENCE_V1|DotnetHostPath|$(DotnetHostPath)" />
+    <Message Importance="High" Text="REPRO_EVIDENCE_V1|ProjectAssetsFile|$(ProjectAssetsFile)" />
+    <Message Importance="High" Text="REPRO_EVIDENCE_V1|TargetPath|$(TargetPath)" />
+    <Message Importance="High" Text="REPRO_EVIDENCE_V1|LangVersion|$(LangVersion)" />
+    <Message Importance="High" Text="REPRO_EVIDENCE_V1|Optimize|$(Optimize)" />
+    <Message Importance="High" Text="REPRO_EVIDENCE_V1|DefineConstants|$(DefineConstants)" />
+    <Message Importance="High" Text="REPRO_EVIDENCE_V1|OtherFlags|$(OtherFlags)" />
+    <Message Importance="High" Text="REPRO_EVIDENCE_V1|ProjectReference|%(ProjectReference.FullPath)"
+             Condition="'@(ProjectReference)' != ''" />
+  </Target>
+</Project>
