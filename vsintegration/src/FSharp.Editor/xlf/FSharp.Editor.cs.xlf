@@ -105,6 +105,16 @@ Navrhnout názvy pro nerozpoznané identifikátory;</target>
         <target state="translated">Použít místo negace odčítání</target>
         <note />
       </trans-unit>
+      <trans-unit id="ExtractToLetBinding">
+        <source>Extract to let binding</source>
+        <target state="new">Extract to let binding</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ExtractToLiteral">
+        <source>Extract to literal</source>
+        <target state="new">Extract to literal</target>
+        <note />
+      </trans-unit>
       <trans-unit id="FSharpDisposableLocalValuesClassificationType">
         <source>F# Disposable Values (locals)</source>
         <target state="translated">Uvolnitelné hodnoty jazyka F# (místní)</target>

@@ -105,6 +105,16 @@ Sugeruj nazwy dla nierozpoznanych identyfikatorów;</target>
         <target state="translated">Użyj odejmowania zamiast negacji</target>
         <note />
       </trans-unit>
+      <trans-unit id="ExtractToLetBinding">
+        <source>Extract to let binding</source>
+        <target state="new">Extract to let binding</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ExtractToLiteral">
+        <source>Extract to literal</source>
+        <target state="new">Extract to literal</target>
+        <note />
+      </trans-unit>
       <trans-unit id="FSharpDisposableLocalValuesClassificationType">
         <source>F# Disposable Values (locals)</source>
         <target state="translated">Wartości możliwe do likwidacji języka F# (lokalne)</target>
