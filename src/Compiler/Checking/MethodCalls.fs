@@ -560,7 +560,7 @@ type CalledMeth<'T>
     let fullCurriedCalledArgs = MakeCalledArgs infoReader.amap m minfo calledTyArgs
     do assert (fullCurriedCalledArgs.Length = fullCurriedCalledArgs.Length)
 
-    // Detect the special case where an indexer setter using param aray takes 'value' argument after ParamArray arguments
+    // Indexer setters take the assignment value after the index arguments.
     let isIndexerSetter =
         match pinfoOpt with
         | Some pinfo when pinfo.HasSetter && minfo.LogicalName.StartsWithOrdinal("set_") && (List.concat fullCurriedCalledArgs).Length >= 2 -> true
@@ -625,7 +625,15 @@ type CalledMeth<'T>
                 let nUnnamedCallerArgs = unnamedCallerArgs.Length
                 let nUnnamedCalledArgs = unnamedCalledArgs.Length
                 if allowOutAndOptArgs && nUnnamedCallerArgs < nUnnamedCalledArgs then
-                    let unnamedCalledArgsTrimmed, unnamedCalledOptOrOutArgs = List.splitAt nUnnamedCallerArgs unnamedCalledArgs
+                    let indexArgs, nCallerIndexArgs, setterValueArgOpt =
+                        if isIndexerSetter && nUnnamedCallerArgs > 0 &&
+                           (List.last unnamedCalledArgs).Position = (List.last fullCalledArgs).Position then
+                            let indexArgs, valueArg = List.frontAndBack unnamedCalledArgs
+                            indexArgs, nUnnamedCallerArgs - 1, ValueSome valueArg
+                        else
+                            unnamedCalledArgs, nUnnamedCallerArgs, ValueNone
+
+                    let unnamedCalledArgsTrimmed, unnamedCalledOptOrOutArgs = List.splitAt nCallerIndexArgs indexArgs
 
                     // take the last ParamArray arg out, make it not break the optional/out params check
                     let unnamedCalledArgsTrimmed, unnamedCalledOptOrOutArgs =
@@ -639,6 +647,10 @@ type CalledMeth<'T>
                     // Check if all args are optional or byref-out args, same arg cannot be both.
                     if unnamedCalledOptOrOutArgs |> List.forall (fun x -> isOpt x <> isOut x) then
                         let unnamedCalledOptArgs, unnamedCalledOutArgs = unnamedCalledOptOrOutArgs |> List.partition isOpt
+                        let unnamedCalledArgsTrimmed =
+                            match setterValueArgOpt with
+                            | ValueSome valueArg -> unnamedCalledArgsTrimmed @ [valueArg]
+                            | ValueNone -> unnamedCalledArgsTrimmed
                         unnamedCalledArgsTrimmed, unnamedCalledOptArgs, unnamedCalledOutArgs
                     // Otherwise drop them on the floor
                     else
@@ -1809,7 +1821,6 @@ let AdjustCallerArgs tcVal tcFieldInit eCallerMemberName (infoReader: InfoReader
         // IsIndexParamArraySetter only occurs for
         //     expr.[indexes] <- value
         // where the 'value' arg to the setter is always the last unnamed argument (there is no syntax to use a named argument for it)
-        // Indeed in this case there will be no named/optional/out arguments.
         if calledMeth.IsIndexParamArraySetter && not adjustedNormalUnnamedArgs.IsEmpty then
             let a,b = List.frontAndBack adjustedNormalUnnamedArgs
             a, [b]

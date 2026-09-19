@@ -239,6 +239,8 @@ type TcEnv =
       // Active arg infos in iterated lambdas , allowing us to determine the attributes of arguments
       eLambdaArgInfos: ArgReprInfo list list
 
+      eIsIndexerSetter: bool
+
       // Do we lay down an implicit debug point?
       eIsControlFlow: bool
 

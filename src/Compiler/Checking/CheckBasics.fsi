@@ -129,6 +129,9 @@ type TcEnv =
         // Active arg infos in iterated lambdas , allowing us to determine the attributes of arguments
         eLambdaArgInfos: ArgReprInfo list list
 
+        /// Whether the pending member argument groups belong to an indexed setter.
+        eIsIndexerSetter: bool
+
         eIsControlFlow: bool
 
         /// Resolving a nameof operand, rather than an executable expression.
