@@ -23,7 +23,11 @@ import memory as mem
 c, m, require = mem.c, mem.m, mem.require
 COMPONENT = "tests/FSharp.Compiler.ComponentTests/FSharp.Compiler.ComponentTests.fsproj"
 SERVICE = "tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj"
-COMPATIBILITY = "tests/FSharp.Compiler.ComponentTests/CompilerCompatibilityTests.fsx"
+COMPATIBILITY = "tests/projects/CompilerCompat"
+COMPAT_SCENARIOS = (("local", "local"), ("latest", "local"), ("local", "latest"),
+                    ("latest", "latest"), ("net9", "local"), ("local", "net9"))
+RELEASE_PROPERTIES = ["-p:BUILDING_USING_DOTNET=false", "-p:BuildNoRealsig=true"]
+PACK_COMMAND = ["bash", "build.sh", "-c", "Release", "--pack"]
 RELEASE_NOTE = "docs/release-notes/.FSharp.Compiler.Service/11.0.100.md"
 MAX_PATCH = 1024 * 1024
 PLATFORM_EXCLUSIONS = {
@@ -279,7 +283,7 @@ def correctness_plan(changes, regressions, target_framework):
 
     def build(project, category):
         add(category, ["build", project, "-c", "Release", "-f", target_framework,
-                       "--disable-build-servers", "-p:UseSharedCompilation=false"])
+                       "--disable-build-servers", "-p:UseSharedCompilation=false", *RELEASE_PROPERTIES])
 
     def test(project, category, selector=None):
         args = ["test", "--project", project, "-c", "Release", "-f", target_framework,
@@ -305,24 +309,28 @@ def correctness_plan(changes, regressions, target_framework):
         test(SERVICE, "service")
     if api:
         test(SERVICE, "surface-area", ("--filter-method", "*SurfaceArea*"))
-    # The fixed compatibility script compiles AND executes six baseline/forward/backward scenarios.
-    for category in ("runtime", "compatibility"):
-        add(category, ["fsi", COMPATIBILITY], "compatibility")
+    for lib, app in COMPAT_SCENARIOS:
+        add("runtime" if (lib, app) == ("local", "local") else "compatibility",
+            ["exec", "--roll-forward", "Major",
+             COMPATIBILITY + "/CompilerCompatApp/bin/Release/net8.0/CompilerCompatApp.dll"], "compatibility")
+        plan[-1]["scenario"] = [lib, app]
     return plan
 
 
-def unredirected(path):
+def unredirected(path, *, missing_ok=False):
     for part in reversed((path, *path.parents)):
         try:
             info = part.lstat()
         except FileNotFoundError:
+            if missing_ok:
+                continue
             return False
         if stat.S_ISLNK(info.st_mode) or getattr(info, "st_file_attributes", 0) & stat.FILE_ATTRIBUTE_REPARSE_POINT:
             return False
     return True
 
 
-def test_counts(path, *, platform_exclusions=False, required_test=None):
+def test_counts(path, *, platform_exclusions=False, required_test=None, allowed_skips=(), baseline=False):
     path = Path(path)
     require(unredirected(path) and path.is_file() and
             0 < path.stat().st_size <= 16 * 1024 * 1024,
@@ -333,18 +341,33 @@ def test_counts(path, *, platform_exclusions=False, required_test=None):
     require(root.tag == "assemblies", "Expected xUnit result")
     assemblies = list(root.findall("assembly"))
     require(assemblies, "Missing test assemblies")
-    counts = {k: sum(int(a.attrib[k]) for a in assemblies) for k in ("total", "passed", "failed", "skipped", "errors")}
+    counts = dict.fromkeys(("total", "passed", "failed", "skipped", "errors"), 0)
+    all_tests = []
+    for assembly in assemblies:
+        tests = list(assembly.findall("./collection/test"))
+        actual = {key: sum(t.get("result") == value for t in tests)
+                  for key, value in (("passed", "Pass"), ("failed", "Fail"), ("skipped", "Skip"))}
+        actual.update(total=len(tests), errors=len(assembly.findall("./errors/error")))
+        require(all(t.get("result") in ("Pass", "Fail", "Skip") for t in tests) and
+                all(int(assembly.attrib[k]) == v for k, v in actual.items()) and
+                len(list(assembly.iter("test"))) == len(tests),
+                "Test totals differ from individual results")
+        for key, value in actual.items():
+            counts[key] += value
+        all_tests.extend(tests)
+    require(len(list(root.iter("test"))) == len(all_tests), "Tests outside assembly collections")
     excluded = [{"name": t.get("name"), "reason": t.findtext("reason/message") or t.findtext("reason")}
-                for t in root.iter("test") if t.get("result") == "Skip"]
+                for t in all_tests if t.get("result") == "Skip"]
     require(counts["passed"] > 0 and counts["total"] == counts["passed"] + counts["skipped"] and
             counts["failed"] == counts["errors"] == 0 and counts["skipped"] == len(excluded) and
-            (not excluded or platform_exclusions) and
-            all(mem.text(t["name"]) and t["reason"] in PLATFORM_EXCLUSIONS for t in excluded),
+            all(mem.text(t["name"]) and mem.text(t["reason"]) and
+                (baseline or t in allowed_skips or platform_exclusions and t["reason"] in PLATFORM_EXCLUSIONS)
+                for t in excluded),
             "Required matched tests did not all pass")
     if required_test is not None:
         require(any(t.get("result") == "Pass" and t.get("method") == required_test["method"] and
                     t.get("source-file", "").replace("\\", "/") == required_test["path"].replace("\\", "/")
-                    for t in root.iter("test")), "Required regression source/method did not match")
+                    for t in all_tests), "Required regression source/method did not match")
     return {"matched": counts["passed"], "passed": counts["passed"], "excluded": excluded}
 
 
@@ -435,11 +458,92 @@ def evaluate_candidate(baseline, candidate):
     return m.compare_measurements(baseline, candidate)
 
 
+def verify_compatibility_output(output, expected):
+    require("SUCCESS: All compiler compatibility tests passed" in output, "Missing runtime compatibility result")
+    for section, (sdk, compiler, local) in zip(("Library", "Application"), expected):
+        pattern = (re.escape(section) + r" Build Info:\s+SDK Version: ([^\r\n]+)\s+"
+                   r"F# Compiler Path: ([^\r\n]+)\s+Is Local Build: (true|false)")
+        found = re.search(pattern, output)
+        require(found and tuple(s.strip() for s in found.groups()) ==
+                (sdk, compiler, str(local).lower()), "Compatibility SDK/compiler execution differs")
+
+
+def prepare_compatibility(root, manifest, compiler, isolation, environment, check, inputs):
+    tree = root / "tree"
+    directory = tree / COMPATIBILITY
+    toolchain = manifest["invariants"]["toolchain"]
+    dotnet = toolchain["dotnet"]["path"]
+    historical = re.findall(r"(?m)^(9\.0\.(?:[3-9]\d\d|\d{4,}))\s", toolchain["sdks"])
+    require(historical, "Required .NET 9 compatibility SDK unavailable")
+    net9 = max(historical, key=lambda v: tuple(map(int, v.split("."))))
+    commands, expected, files = [], [], []
+    feed = directory / "local-nuget-packages"
+    if feed.exists():
+        require(unredirected(feed), "Redirected compatibility feed")
+        shutil.rmtree(feed)
+    feed.mkdir()
+    package = Path(environment["NUGET_PACKAGES"]) / "compilercompatlib"
+    require(not (Path(manifest["invariants"]["environment"]["variables"]["NUGET_PACKAGES"]) / "compilercompatlib").exists(),
+            "Compatibility package must not be a frozen dependency")
+    if package.exists():
+        require(unredirected(package), "Redirected compatibility package")
+        shutil.rmtree(package)
+    for part, mode in zip(("Lib", "App"), check["scenario"]):
+        project = directory / ("CompilerCompat" + part)
+        for name in ("bin", "obj"):
+            output = project / name
+            if output.exists():
+                require(unredirected(output), "Redirected compatibility output")
+                shutil.rmtree(output)
+        sdk = net9 if mode == "net9" else toolchain["sdk"]
+        require(all(unredirected(directory / name, missing_ok=True) for name in ("global.json", "global.json.tmp")),
+                "Redirected compatibility SDK configuration")
+        m.write_json(directory / "global.json", {"sdk": {"version": sdk, "rollForward": "disable"}})
+        selected = (compiler["files"]["fsc.dll"]["path"] if mode == "local" else
+                    str(Path(dotnet).parent / "sdk" / sdk / "FSharp" / "fsc.dll"))
+        m.verify_files([m.file_record(selected)])
+        expected.append([sdk, selected, mode == "local"])
+        properties = [f"-p:LoadLocalFSharpBuild={'True' if mode == 'local' else 'False'}",
+                      "-p:LocalFSharpCompilerConfiguration=Release", f"-p:LocalFSharpCompilerPath={tree}",
+                      "-p:PackageVersion=1.0.1", "--disable-build-servers", "-p:UseSharedCompilation=false"]
+        arguments = (["pack", "CompilerCompatLib.fsproj", "-o", str(feed)] if part == "Lib" else
+                     ["build", "CompilerCompatApp.fsproj", "--source", str(feed)])
+        # External packages are already frozen in the private cache; only the fixture package is new.
+        for suffix in (["--version"], [*arguments, "-c", "Release", *properties]):
+            frozen_records(manifest)
+            m.verify_files(inputs)
+            verify_candidate(root)
+            result = isolation.command([dotnet, *suffix], project, environment, root,
+                                       check["id"] + "-" + part)
+            commands.append(result)
+            m.write_json(root / (check["id"] + "-preparation.json"), commands)
+            require(result["status"] == "collected" and result["exit_status"] == 0,
+                    "Required compatibility preparation failed")
+            if suffix == ["--version"]:
+                require(result["stdout"].strip() == sdk, "Historical SDK was not selected")
+            files.extend(result["logs"])
+            frozen_records(manifest)
+            m.verify_files(inputs)
+            verify_candidate(root)
+        info = project / (part + "BuildInfo.fs")
+        require(unredirected(info) and info.is_file(), "Missing compatibility build identity")
+        destination = root / (uuid.uuid4().hex + "-" + info.name)
+        shutil.copyfile(info, destination)
+        files.append(m.file_record(destination))
+    (directory / "global.json").unlink()
+    return {"expected": expected, "commands": commands, "files": files}
+
+
 def validate_correctness(checks, candidate, policy, *, current=False, passed=True):
-    require(checks.get("schema_version") == 2, "Historical correctness is not a fresh validator receipt")
-    plan = correctness_plan(checks["changes"], checks["regressions"], checks["target_framework"])
+    require(type(checks.get("schema_version")) is int and checks["schema_version"] in (2, 3) and
+            (not current or checks["schema_version"] == 3),
+            "Historical correctness is not a fresh validator receipt")
+    plan = (checks["plan"] if checks["schema_version"] == 2 else
+            correctness_plan(checks["changes"], checks["regressions"], checks["target_framework"]))
     require(checks["plan"] == plan and checks["plan_sha256"] == m.fingerprint_inputs(plan) and
-            checks["required"] == [p["id"] for p in plan], "Correctness plan changed or weakened")
+            checks["required"] == [p["id"] for p in plan] and
+            {"compiler-build", "test-build", "regression", "siblings", "runtime", "compatibility"} <=
+            {p["category"] for p in plan}, "Correctness plan changed or weakened")
     results = checks["results"]
     require(len(results) <= len(plan) and len({r["check_id"] for r in results}) == len(results) and
             (not passed or len(results) == len(plan)),
@@ -466,37 +570,97 @@ def validate_correctness(checks, candidate, policy, *, current=False, passed=Tru
         require(result["files"], "Missing correctness output evidence")
         if current:
             m.verify_files(result["files"] + [checks["tool"]])
+            if check["result"] == "xunit":
+                allowed = ()
+                if check["platform_exclusions"]:
+                    base = result["baseline"]
+                    require(base["report"] in base["files"] and base["exit_status"] == 0 and
+                            base["check_id"] == check["id"], "Missing matching baseline skip evidence")
+                    m.verify_files(base["files"])
+                    allowed = test_counts(base["report"]["path"], baseline=True)["excluded"]
+                counts = test_counts(result["report"]["path"], allowed_skips=allowed,
+                                     required_test=result.get("regression"))
+                require(result["report"] in result["files"] and result["matched"] == counts["matched"] and
+                        result["excluded_count"] == len(counts["excluded"]) and
+                        result["excluded_sha256"] == m.fingerprint_inputs(counts["excluded"]),
+                        "Test receipt differs from raw results")
+            elif check["result"] == "compatibility":
+                evidence = result["compatibility"]
+                require(len(evidence["commands"]) == 4 and
+                        all(r["status"] == "collected" and r["exit_status"] == 0
+                            for r in evidence["commands"]), "Incomplete compatibility execution")
+                m.verify_files(evidence["files"])
+                verify_compatibility_output(result["stdout"], evidence["expected"])
     if current:
         m.verify_files(checks["inputs"])
 
 
-def run_correctness(root, manifest, compiler, isolation):
+def run_correctness(root, manifest, compiler, isolation, *, baseline=False):
     state = verify_candidate(root)
-    tree = root / "tree"
+    tree = isolation.tree
     invariants = manifest["invariants"]
     dotnet = invariants["toolchain"]["dotnet"]
     plan = correctness_plan(state["changed_paths"], state["request"]["regressions"],
                             invariants["workload"]["target_framework"])
     nonce = uuid.uuid4().hex
-    if (root / "correctness.json").exists():
-        previous = m.read_json(root / "correctness.json")
-        shutil.copyfile(root / "correctness.json", root / (previous["nonce"] + "-correctness.json"))
+    receipt_path = root / ("baseline-correctness.json" if baseline else "correctness.json")
+    if receipt_path.exists():
+        previous = m.read_json(receipt_path)
+        shutil.copyfile(receipt_path, root / (previous["nonce"] + "-correctness.json"))
     results_dir = tree / "artifacts" / "perf-results" / nonce
+    require(unredirected(results_dir, missing_ok=True), "Redirected correctness results")
     results_dir.mkdir(parents=True)
-    checks = {"schema_version": 2, "changes": state["changed_paths"], "regressions": state["request"]["regressions"],
+    checks = {"schema_version": 3, "changes": state["changed_paths"], "regressions": state["request"]["regressions"],
               "target_framework": invariants["workload"]["target_framework"], "plan": plan,
               "plan_sha256": m.fingerprint_inputs(plan), "required": [p["id"] for p in plan],
               "results": [], "nonce": nonce, "cwd": str(tree), "tool": dotnet,
               "inputs": state["inputs"] + state["git_files"] + state.get("frozen", []) +
                         [m.file_record(root / "proposal.patch")] + list(compiler["files"].values()), "validation": None}
+    require(all(unredirected(tree / "artifacts" / "validation" / name, missing_ok=True)
+                for name in ("home", "tmp", "packages")), "Redirected correctness environment")
     environment = m.allowed_environment(tree / "artifacts" / "validation")
     environment.update(DOTNET_ROOT=str(Path(dotnet["path"]).parent),
                        DOTNET_HOST_PATH=dotnet["path"],
+                       DOTNET_INSTALL_DIR=str(Path(dotnet["path"]).parent),
                        PATH=str(Path(dotnet["path"]).parent) + os.pathsep + os.defpath,
-                       NUGET_PACKAGES=manifest["invariants"]["environment"]["variables"]["NUGET_PACKAGES"])
+                       NUGET_PACKAGES=str(tree / "artifacts" / "validation" / "packages"))
+    packages = Path(environment["NUGET_PACKAGES"])
+    frozen_packages = Path(invariants["environment"]["variables"]["NUGET_PACKAGES"])
+    require(unredirected(packages) and all(unredirected(p) for p in packages.rglob("*")),
+            "Correctness cache contains redirected paths")
+    shutil.copytree(frozen_packages, packages, dirs_exist_ok=True)
+    copied = [{"path": str(packages / Path(r["path"]).relative_to(frozen_packages)), "sha256": r["sha256"]}
+              for r in invariants["toolchain"]["build_inputs"]["packages"]]
+    m.verify_files(copied)
+    checks["inputs"] += copied
+    base_results = {}
+    if baseline:
+        build = isolation.command(PACK_COMMAND, tree, environment, root, "baseline-pack", 3600)
+        m.write_json(root / (nonce + "-baseline-pack.json"), build)
+        require(build["status"] == "collected" and build["exit_status"] == 0, "Baseline Release pack failed")
+        compiler = m.compiler_manifest(tree / "artifacts" / "bin" / "fsc" / "Release" /
+                                       invariants["workload"]["target_framework"], state["request"]["base_sha"],
+                                       hashlib.sha256(b"").hexdigest(), invariants["bootstrap"], invariants["toolchain"])
+        checks["compiler"] = compiler
+    else:
+        base_tree = tree / "artifacts" / ("baseline-" + nonce)
+        git(tree, "clone", "--quiet", "--local", "--no-hardlinks", "--no-checkout", "--template=",
+            "--", tree, base_tree)
+        git(base_tree, "checkout", "--quiet", "--detach", state["request"]["base_sha"])
+        shutil.copytree(Path(manifest["owned_root"]) / "bootstrap" / "artifacts" / "Bootstrap",
+                        base_tree / "artifacts" / "Bootstrap")
+        base_isolation = Isolation(base_tree, isolation.readonly)
+        base_checks = run_correctness(root, manifest, compiler, base_isolation, baseline=True)
+        base_results = {r["check_id"]: r for r in base_checks["results"]}
+        checks["inputs"].append(m.file_record(root / "baseline-correctness.json"))
+    binaries = list(compiler["files"].values())
+    checks["inputs"] += binaries
     probed = set()
     for check in plan:
+        if baseline and not (check["category"] in ("compiler-build", "test-build") or check["platform_exclusions"]):
+            continue
         frozen_records(manifest)
+        m.verify_files(binaries)
         verify_candidate(root)
         if check["argv"][0] == "test" and check["argv"][2] not in probed:
             project = check["argv"][2]
@@ -507,38 +671,46 @@ def run_correctness(root, manifest, compiler, isolation):
                     "Pinned MTP runner does not expose required selectors/results")
             probed.add(project)
             outputs = list((tree / "artifacts" / "bin" / Path(project).stem / "Release").rglob("FSharp.Compiler.Service.dll"))
-            require(outputs and all(m.file_record(p)["sha256"] == compiler["files"]["FSharp.Compiler.Service.dll"]["sha256"]
-                                    for p in outputs), "Tests did not load candidate compiler service")
+            require(outputs and (baseline or all(
+                m.file_record(p)["sha256"] == compiler["files"]["FSharp.Compiler.Service.dll"]["sha256"] for p in outputs)),
+                "Tests did not load candidate compiler service")
         result_path = str(results_dir / (check["id"] + ".xml"))
         require(not Path(result_path).exists(), "Stale correctness result")
         argv = [dotnet["path"], *[arg.format(result_dir=str(results_dir), result_name=Path(result_path).name) for arg in check["argv"]]]
+        compatibility = (prepare_compatibility(root, manifest, compiler, isolation, environment, check, copied + binaries)
+                         if check["result"] == "compatibility" else None)
         result = isolation.command(argv, tree, environment, root, check["id"], check["timeout_seconds"])
         receipt = {key: result[key] for key in ("command", "cwd", "exit_status", "started_at", "finished_at")}
         receipt.update(check_id=check["id"], category=check["category"], nonce=nonce, tool=dotnet,
                        candidate=m.fingerprint_inputs(compiler), policy=m.fingerprint_inputs(m.POLICY),
                        matched=None, result_path=result_path, files=result["logs"])
         checks["results"].append(receipt)
-        m.write_json(root / "correctness.json", checks)
+        m.write_json(receipt_path, checks)
         require(result["exit_status"] == 0 and result["status"] == "collected",
                 f"Required check failed: {check['id']}")
         if check["result"] == "xunit":
             regression = (dict(check["regression"], path=str(tree / check["regression"]["path"]))
                           if "regression" in check else None)
-            counts = test_counts(result_path, platform_exclusions=check["platform_exclusions"], required_test=regression)
+            base = base_results.get(check["id"])
+            allowed = test_counts(base["report"]["path"], baseline=True)["excluded"] if base else ()
+            counts = test_counts(result_path, allowed_skips=allowed, baseline=baseline, required_test=regression)
             receipt.update(matched=counts["matched"], excluded_count=len(counts["excluded"]),
                            excluded_sha256=m.fingerprint_inputs(counts["excluded"]))
             if regression:
                 receipt["regression"] = regression
             destination = root / f"{nonce}-{check['id']}.xml"
             shutil.copyfile(result_path, destination)
-            receipt["files"].append(m.file_record(destination))
+            receipt["report"] = m.file_record(destination)
+            receipt["files"].append(receipt["report"])
+            if base:
+                receipt["baseline"] = base
         elif check["result"] == "compatibility":
-            require("Results: 6/6 tests passed" in result["stdout"] and "All tests PASSED" in result["stdout"],
-                    "Missing forward/backward/runtime compatibility results")
-            receipt["matched"] = 6
+            verify_compatibility_output(result["stdout"], compatibility["expected"])
+            receipt.update(matched=1, compatibility=compatibility, stdout=result["stdout"])
         frozen_records(manifest)
+        m.verify_files(copied + binaries)
         verify_candidate(root)
-        m.write_json(root / "correctness.json", checks)
+        m.write_json(receipt_path, checks)
     return checks
 
 
@@ -556,6 +728,8 @@ def build_candidate(root, manifest, isolation):
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(record["path"], target)
         copied.append({"path": str(target), "sha256": record["sha256"]})
+    require(all(unredirected(tree / "artifacts" / "validation" / name, missing_ok=True)
+                for name in ("home", "tmp", "packages")), "Redirected build environment")
     environment = m.allowed_environment(tree / "artifacts" / "validation")
     dotnet = invariants["toolchain"]["dotnet"]["path"]
     environment.update(DOTNET_ROOT=str(Path(dotnet).parent), DOTNET_HOST_PATH=dotnet,
@@ -572,7 +746,7 @@ def build_candidate(root, manifest, isolation):
             "Required compatibility SDK 9.0.300 or later is unavailable in the frozen toolchain")
     pinned = m.read_json(tree / "global.json")["sdk"]["version"]
     require(pinned == invariants["toolchain"]["sdk"], "Pinned SDK unavailable; global.json must not change")
-    command = ["bash", "build.sh", "-c", "Release", "--pack"]
+    command = PACK_COMMAND
     require(any(r["arguments"] == command and r["exit_status"] == 0
                 for r in invariants["bootstrap"]["commands"]), "Release pack flags differ from recorded bootstrap")
     build = isolation.command(command, tree, environment, root, "candidate-pack", 3600)
@@ -609,7 +783,7 @@ def candidate_attempt(state, manifest, profile=None, correctness=None, documents
         fingerprints["candidate"] = m.fingerprint_inputs(state["compiler"])
     if correctness is None:
         plan = correctness_plan(state["changed_paths"], request["regressions"], invariants["workload"]["target_framework"])
-        correctness = {"schema_version": 2, "changes": state["changed_paths"], "regressions": request["regressions"],
+        correctness = {"schema_version": 3, "changes": state["changed_paths"], "regressions": request["regressions"],
                        "target_framework": invariants["workload"]["target_framework"], "plan": plan,
                        "plan_sha256": m.fingerprint_inputs(plan), "required": [p["id"] for p in plan],
                        "results": [], "nonce": uuid.uuid4().hex, "cwd": state["tree"],
@@ -652,12 +826,13 @@ def validate_candidate(path, profile_path, *, checkpoint_on_cancel=False):
     cancelled = False
     manifest = profile = None
     with owned_lock(root):
-        state = verify_candidate(root)
+        state = m.read_json(root / "candidate.json")
         resume = state["outcome"] == "cancelled" and "checkpoint" in state
         require(state["outcome"] is None or resume, "Terminal experiments require a new attempt, not replacement")
         state.update(lifecycle="validating", draft_eligible=False)
         m.write_json(root / "candidate.json", state)
         try:
+            state = verify_candidate(root)
             manifest = c.read_bounded_json(root / "workload.json")
             if resume:
                 require(state["checkpoint"] == m.fingerprint_inputs(
@@ -674,8 +849,7 @@ def validate_candidate(path, profile_path, *, checkpoint_on_cancel=False):
                     "Dependency cache inventory changed")
             tool_root = Path(invariants["toolchain"]["dotnet"]["path"]).parent
             tree = root / "tree"
-            # Compatibility's fixed script generates projects/configs in its own fixture tree.
-            compatibility = tree / "tests" / "projects" / "CompilerCompat"
+            compatibility = tree / COMPATIBILITY
             readonly = [tool_root, packages]
             isolation = Isolation(tree, readonly, [compatibility])
             compiler = state["compiler"] or build_candidate(root, manifest, isolation)
@@ -776,11 +950,12 @@ def complete_no_finding(path, profile_path):
     root = owned_root(path)
     cancelled = False
     with owned_lock(root):
-        state = verify_candidate(root)
+        state = m.read_json(root / "candidate.json")
         require(state["outcome"] is None and not (root / "runs").exists(),
                 "An existing measurement outcome cannot become a healthy no-finding")
         phase = "setup"
         try:
+            state = verify_candidate(root)
             manifest = c.read_bounded_json(root / "workload.json")
             frozen_records(manifest)
             phase = "collection"
@@ -814,7 +989,9 @@ def discard_candidate(path):
         require(not state["draft_eligible"], "Accepted candidate is retained for human draft review")
         tree = root / "tree"
         if tree.exists():
-            require((tree / ".git").is_dir() and not (tree / ".git").is_symlink(), "Unproven disposable Git tree")
+            require(((tree / ".git").is_dir() and not (tree / ".git").is_symlink()) or
+                    (state["source_tree"] is None and not (tree / ".git").exists()),
+                    "Unproven disposable Git tree")
             state["discarded_diff_sha256"] = (hashlib.sha256(
                 git(tree, "diff", "HEAD", "--binary", "--no-ext-diff")).hexdigest() if state["source_tree"] else None)
             def remove_readonly(function, name, error):

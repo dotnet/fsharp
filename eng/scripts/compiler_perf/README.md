@@ -85,7 +85,11 @@ Locks serialize candidate operations and the existing measurement lock serialize
 frozen-workload outputs. An existing lock is an unproven owner, never reclaimed.
 
 Validation reuses the recorded Release pack recipe and bootstrap, then checks
-explicit Release compiler/component projects. Changed-area plans require the
+explicit Release compiler/component projects with the pack's
+`BUILDING_USING_DOTNET=false` and `BuildNoRealsig=true` properties. Correctness uses
+an owned copy of the frozen dependency cache; existing package hashes are checked
+after each command, and generated compatibility packages never enter the frozen cache.
+Changed-area plans require the
 new regression selectors, the component siblings, runtime execution and all six
 compatibility scenarios. Codegen/optimizer/IL areas add emitted-IL and optimizer
 checks; service/typed-tree/API areas add service tests, and `.fsi` changes add
@@ -95,11 +99,18 @@ xUnit reporter; tests use explicit `--project`, `--no-build` and
 `--minimum-expected-tests 1`. Empty, failing, missing or stale reports block
 approval. Required regressions must be skip-free and match the declared method
 and source file in the runner's report, not merely a nonzero wildcard match.
-Broad suites can report only
-the two explicit Windows/desktop exclusions from the unchanged test utilities;
-their names/reasons are retained, never counted as matched passing tests. Unknown
-skips and categories with no applicable passing tests block approval. Test
+Broad suites first run serially in a separate checkout of the frozen base, including
+its own Release pack and test builds. Only exact test-name/reason skips observed
+there can be excluded from candidate checks; new skips and skipped regressions
+block approval. Individual XML results must agree with assembly totals; claimed
+totals alone are not evidence. Skips never count as matched passes, and categories
+with no applicable passing tests block approval. Test
 outputs must contain the selected candidate service binary.
+The controller drives the existing compatibility projects through six explicit
+pack/build/runtime scenarios, pinning each SDK with `rollForward: disable` in the
+owned fixture directory. It checks both SDK probes and the application's reported
+library/application SDK and compiler paths. A success banner or the presence of
+.NET 9 in `--list-sdks` cannot substitute for historical compiler execution.
 On the pinned SDK, probe help before the `--` separator, and supply report
 basenames with a separate `--results-directory`. A real xUnit 3.2.2 probe on
 11.0.100-rc.1.26420.103 verified both selectors, one matched passing test and
@@ -128,7 +139,8 @@ is no overall experiment or investigation timeout.
 Approval uses a process-local attestation, not a portable JSON permission token.
 `acceptance_ready` and `publication_intent` reject forged or reloaded attestations
 without fresh trusted validation. Historical journal schema 1 is preserved;
-correctness schema 2 is nested within it. `draft_eligible` records a validation
+correctness schema 3 is nested within it. Older root-command and schema-2 receipts
+remain readable history but cannot authorize new publication. `draft_eligible` records a validation
 decision, not permission for a later publisher to skip revalidation. Human draft
 review must still assess relevance and complexity. The controller only creates
 local receipts/commit objects; it never pushes, creates a PR or dispatches work.

@@ -116,21 +116,36 @@ def improvement(*, legacy=False):
         regressions = [{"path": changes[1], "method": "regression"}]
         plan = experiment.correctness_plan(changes, regressions, "net11.0")
         tool = mem.m.file_record(HERE / "measurement.py")
-        checks = {"schema_version": 2, "changes": changes, "regressions": regressions,
+        checks = {"schema_version": 3, "changes": changes, "regressions": regressions,
                   "target_framework": "net11.0", "plan": plan, "plan_sha256": mem.m.fingerprint_inputs(plan),
                   "required": [p["id"] for p in plan], "results": [], "nonce": "synthetic-nonce",
-                  "cwd": str(ROOT), "tool": tool, "inputs": [tool], "validation": None}
+                  "cwd": "/synthetic", "tool": tool, "inputs": [tool], "validation": None}
         for check in plan:
             checks["results"].append({
                 "check_id": check["id"], "category": check["category"], "nonce": checks["nonce"],
                 "command": [tool["path"], *[arg.format(result_dir=".", result_name="synthetic.xml") for arg in check["argv"]]],
-                "cwd": str(ROOT), "tool": tool, "exit_status": 0, "matched": 1,
+                "cwd": checks["cwd"], "tool": tool, "exit_status": 0, "matched": 1,
                 "result_path": "synthetic.xml", "files": [tool],
                 "candidate": a["fingerprints"]["candidate"], "policy": a["fingerprints"]["policy"],
                 "started_at": "2026-09-19T00:00:00Z", "finished_at": "2026-09-19T00:00:01Z"})
             if "regression" in check:
-                checks["results"][-1]["regression"] = dict(check["regression"], path=str(ROOT / check["regression"]["path"]))
+                checks["results"][-1]["regression"] = dict(check["regression"], path=str(Path(checks["cwd"]) / check["regression"]["path"]))
         a["correctness"] = checks
+        report = mem.m.file_record(FIXTURES / "ExperimentResults.xml")
+        for check, result in zip(plan, checks["results"]):
+            if check["result"] == "xunit":
+                result.update(report=report, files=[tool, report], excluded_count=0,
+                              excluded_sha256=mem.m.fingerprint_inputs([]),
+                              baseline={"files": [report], "report": report, "exit_status": 0, "check_id": check["id"]})
+            elif check["result"] == "compatibility":
+                expected = [["9.0.300", "/sdk/9.0.300/FSharp/fsc.dll", False],
+                            ["11.0.100", "/candidate/fsc.dll", True]]
+                output = "\n".join(
+                    f"{section} Build Info:\nSDK Version: {sdk}\nF# Compiler Path: {compiler}\nIs Local Build: {str(local).lower()}"
+                    for section, (sdk, compiler, local) in zip(("Library", "Application"), expected))
+                result.update(stdout=output + "\nSUCCESS: All compiler compatibility tests passed",
+                              compatibility={"expected": expected, "files": [tool],
+                                             "commands": [{"status": "collected", "exit_status": 0}] * 4})
         mem._attest_correctness(a)
     return a
 
@@ -141,6 +156,13 @@ class MemoryTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "fresh|validator|historical"):
             mem.acceptance_ready(a)
         self.assertEqual(mem.load_state(response={"status": 200, "body": json.dumps(state(a))})["state"], state(a))
+        previous = improvement()
+        previous["correctness"]["schema_version"] = 2
+        mem.acceptance_ready(previous, current=False)
+        self.assertEqual(mem.load_state(response={"status": 200, "body": json.dumps(state(previous))})["state"],
+                         state(previous))
+        with self.assertRaisesRegex(ValueError, "Historical|fresh"):
+            mem.acceptance_ready(previous)
 
     def test_explicit_plan_receipts_cannot_be_forged_or_weakened(self):
         a = improvement()
@@ -169,6 +191,19 @@ class MemoryTests(unittest.TestCase):
                                  state(failed))
                 with self.assertRaises(ValueError):
                     mem.acceptance_ready(failed)
+
+    def test_attestation_rechecks_leaf_results_not_passed_arrays(self):
+        for leaf in ("", '<test name="failed" result="Fail" />'):
+            with self.subTest(leaf=leaf), tempfile.TemporaryDirectory() as directory:
+                a = improvement()
+                report = Path(directory) / "forged.xml"
+                report.write_text('<assemblies><assembly total="1" passed="1" failed="0" skipped="0" errors="0">'
+                                  f'<collection>{leaf}</collection></assembly></assemblies>')
+                result = next(r for r in a["correctness"]["results"] if r["category"] == "regression")
+                result["report"] = mem.m.file_record(report)
+                result["files"] = [result["report"]]
+                with self.assertRaisesRegex(ValueError, "totals|pass"):
+                    mem._attest_correctness(a)
 
     def test_load_transition_table_and_original_preservation(self):
         for response, expected in TRANSITIONS["loads"]:

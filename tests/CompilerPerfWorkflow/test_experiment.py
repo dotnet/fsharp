@@ -19,7 +19,7 @@ import memory as mem
 import experiment as e
 
 
-SOURCE = "src/Compiler/Checking/Test.fs"
+SOURCE = "src/Compiler/CodeGen/Test.fs"
 TEST = "tests/FSharp.Compiler.ComponentTests/Conformance/Regression.fs"
 NOTE = "docs/release-notes/.FSharp.Compiler.Service/11.0.100.md"
 
@@ -31,8 +31,12 @@ class Repository:
         self.git("init", "-q")
         for name, content in ((SOURCE, "module Test\nlet answer = 0\n"),
                               (TEST, "module Regression\nlet regression () = 42\n"),
-                              (NOTE, "# Changes\n"), (".gitignore", "artifacts/\ngenerated.fs\n*.dll\n"),
+                              (NOTE, "# Changes\n"), (".gitignore", "artifacts/\ngenerated.fs\n*.dll\n"
+                                                      "**/*BuildInfo.fs\nlocal-nuget-packages/\n"),
                               ("tests/projects/CompilerCompat/.gitkeep", ""),
+                              ("tests/projects/CompilerCompat/.gitignore", "global.json\n"),
+                              ("tests/projects/CompilerCompat/CompilerCompatLib/CompilerCompatLib.fsproj", "<Project />"),
+                              ("tests/projects/CompilerCompat/CompilerCompatApp/CompilerCompatApp.fsproj", "<Project />"),
                               (e.COMPONENT, "<Project>\n  <ItemGroup>\n  </ItemGroup>\n</Project>\n"),
                               ("global.json", '{"sdk":{"version":"11.0.100-synthetic"}}')):
             path = root / name
@@ -129,8 +133,8 @@ class ExperimentTests(unittest.TestCase):
             attacks = [
                 patch + b"\ndiff --git a/x b/x\nnew file mode 120000\n",
                 patch + b"\nGIT binary patch\nliteral 1\nA\n",
-                patch.replace(b"b/src/Compiler/Checking/Test.fs", b"b/../escape.fs"),
-                patch.replace(b"b/src/Compiler/Checking/Test.fs", b"b/C:/escape.fs"),
+                patch.replace(b"b/" + SOURCE.encode(), b"b/../escape.fs"),
+                patch.replace(b"b/" + SOURCE.encode(), b"b/C:/escape.fs"),
                 patch.replace(b"100644", b"100755"),
                 patch + b"\ndiff --git a/x b/x\nnew file mode 160000\n",
                 patch + b"\ndiff --git a/global.json b/src/Compiler/Checking/New.fs\n"
@@ -226,13 +230,119 @@ class ExperimentTests(unittest.TestCase):
                     (1, 1, 0, 0, True), (0, 0, 0, 0, False),
                     (2, 1, 1, 0, False), (2, 1, 0, 1, False)):
                 path.write_text(f'<assemblies><assembly total="{total}" passed="{passed}" '
-                                f'failed="{failed}" skipped="{skipped}" errors="0" /></assemblies>')
+                                f'failed="{failed}" skipped="{skipped}" errors="0">'
+                                '<collection><test name="passing" result="Pass" /></collection>'
+                                '</assembly></assemblies>')
                 with self.subTest(total=total, failed=failed, skipped=skipped):
                     if accepted:
                         self.assertEqual(e.test_counts(path)["matched"], 1)
                     else:
                         with self.assertRaises(ValueError):
                             e.test_counts(path)
+
+    def test_xml_leaf_results_cannot_be_replaced_by_claimed_totals(self):
+        leaves = ('', '<test name="failed" result="Fail" />',
+                  '<test name="unknown" result="Unknown" />',
+                  '<test name="pass" result="Pass" /><test name="hidden" result="Fail" />',
+                  '<test name="duplicate" result="Pass" /><test name="duplicate" result="Pass" />')
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "forged.xml"
+            for tests in leaves:
+                with self.subTest(tests=tests):
+                    path.write_text('<assemblies><assembly total="1" passed="1" failed="0" skipped="0" errors="0">'
+                                    f'<collection>{tests}</collection></assembly></assemblies>')
+                    with self.assertRaises(ValueError):
+                        e.test_counts(path)
+
+    def test_correctness_builds_preserve_release_pack_properties_and_api_checks(self):
+        for extension in (".fs", ".fsi"):
+            plan = e.correctness_plan([SOURCE.replace(".fs", extension), TEST, NOTE],
+                                      [{"path": TEST, "method": "regression"}], "net11.0")
+            with self.subTest(extension=extension):
+                for check in plan:
+                    if check["argv"][0] == "build":
+                        for prop in ("-p:BUILDING_USING_DOTNET=false", "-p:BuildNoRealsig=true"):
+                            self.assertIn(prop, check["argv"])
+                self.assertEqual(any(c["category"] == "surface-area" for c in plan), extension == ".fsi")
+
+    def test_baseline_skips_are_exact_and_never_excuse_regressions(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "tests.xml"
+            template = ('<assemblies><assembly total="2" passed="1" failed="0" skipped="1" errors="0">'
+                        '<collection><test name="Pass" result="Pass" /><test name="{name}" result="Skip">'
+                        '<reason>{reason}</reason></test></collection></assembly></assemblies>')
+            path.write_text(template.format(name="DisabledUpstream", reason="issue 123"))
+            exclusions = e.test_counts(path, baseline=True)["excluded"]
+            for name, reason, allowed in (("DisabledUpstream", "issue 123", True),
+                                          ("NewSkip", "issue 123", False),
+                                          ("DisabledUpstream", "new reason", False)):
+                path.write_text(template.format(name=name, reason=reason))
+                with self.subTest(name=name, reason=reason):
+                    if allowed:
+                        self.assertEqual(e.test_counts(path, allowed_skips=exclusions)["matched"], 1)
+                    else:
+                        with self.assertRaises(ValueError):
+                            e.test_counts(path, allowed_skips=exclusions)
+                    with self.assertRaises(ValueError):
+                        e.test_counts(path, required_test={"path": TEST, "method": "regression"})
+
+    def test_compatibility_requires_runtime_sdk_and_compiler_evidence(self):
+        expected = [("9.0.300", "/sdk/9.0.300/FSharp/fsc.dll", False),
+                    ("11.0.100", "/candidate/fsc.dll", True)]
+        output = "\n".join(
+            f"{section} Build Info:\nSDK Version: {sdk}\nF# Compiler Path: {compiler}\nIs Local Build: {str(local).lower()}"
+            for section, (sdk, compiler, local) in zip(("Library", "Application"), expected))
+        output += "\nSUCCESS: All compiler compatibility tests passed"
+        for text, allowed in ((output, True), (output.replace("9.0.300", "11.0.100"), False),
+                              (output.replace("/candidate/", "/baseline/"), False),
+                              ("Results: 6/6 tests passed\nAll tests PASSED", False)):
+            with self.subTest(output=text):
+                if allowed:
+                    e.verify_compatibility_output(text, expected)
+                else:
+                    with self.assertRaises(ValueError):
+                        e.verify_compatibility_output(text, expected)
+
+    def test_early_verification_cancellation_discards_without_checkpoint(self):
+        for operation in (e.validate_candidate, e.complete_no_finding):
+            with self.subTest(operation=operation.__name__), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                repo = Repository(root / "repo")
+                owned = root / "owned"
+                e.prepare_candidate(repo.root, owned, repo.request(), repo.patch())
+                sentinel = root / "sentinel"
+                sentinel.write_text("unchanged")
+                with mock.patch.object(e, "verify_candidate", side_effect=KeyboardInterrupt):
+                    with self.assertRaises(KeyboardInterrupt):
+                        operation(owned, root / "unused-profile.json")
+                result = mem.m.read_json(owned / "candidate.json")
+                self.assertEqual(result["outcome"], "cancelled")
+                self.assertTrue(result["reason"])
+                self.assertNotIn("checkpoint", result)
+                self.assertFalse((owned / "tree").exists())
+                self.assertEqual(repo.git("status", "--porcelain"), b"")
+                self.assertEqual(sentinel.read_text(), "unchanged")
+
+    def test_preparation_cancellation_discards_partial_owned_clone(self):
+        for phase in ("clone", "checkout"):
+            with self.subTest(phase=phase), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                repo = Repository(root / "repo")
+                git = e.git
+
+                def interrupt(tree, *args, **kwargs):
+                    if args[0] == phase:
+                        if phase == "clone":
+                            Path(args[-1]).mkdir()
+                        raise KeyboardInterrupt
+                    return git(tree, *args, **kwargs)
+
+                with mock.patch.object(e, "git", side_effect=interrupt), self.assertRaises(KeyboardInterrupt):
+                    e.prepare_candidate(repo.root, root / "owned", repo.request(), repo.patch())
+                state = mem.m.read_json(root / "owned" / "candidate.json")
+                self.assertEqual(state["outcome"], "cancelled")
+                self.assertFalse((root / "owned" / "tree").exists())
+                self.assertEqual(repo.git("status", "--porcelain"), b"")
 
     def test_platform_exclusions_do_not_excuse_required_or_unknown_skips(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -244,7 +354,8 @@ class ExperimentTests(unittest.TestCase):
                     ("This test is only supported on Windows", 0, False)):
                 path.write_text(
                     f'<assemblies><assembly total="{applicable + 1}" passed="{applicable}" failed="0" skipped="1" errors="0">'
-                    f'<collection><test name="NonApplicable" result="Skip"><reason><message>{reason}</message></reason>'
+                    '<collection>' + ('<test name="Applicable" result="Pass" />' if applicable else '') +
+                    f'<test name="NonApplicable" result="Skip"><reason><message>{reason}</message></reason>'
                     '</test></collection></assembly></assemblies>')
                 with self.subTest(reason=reason, applicable=applicable):
                     with self.assertRaises(ValueError):
@@ -329,7 +440,8 @@ class ExperimentTests(unittest.TestCase):
             sentinel.write_text("trusted")
             for success in (False, True):
                 owned = root / str(success)
-                e.prepare_candidate(repo.root, owned, repo.request(), repo.patch())
+                e.prepare_candidate(repo.root, owned, repo.request(),
+                                    repo.patch({SOURCE: "module Test\nlet answer = 1\n"}))
                 tree = owned / "tree"
                 fixture = tree / "artifacts"
                 fixture.mkdir()
@@ -347,15 +459,13 @@ for path in (pathlib.Path({str(sentinel)!r}), pathlib.Path({SOURCE!r})):
     else:
         raise AssertionError('trusted input was writable')
 assert '42' in pathlib.Path({SOURCE!r}).read_text()
-assert pathlib.Path('artifacts/guard').read_text() == 'green'
 """
-                (fixture / "guard").write_text("red")
                 with mock.patch.dict(os.environ, {"GITHUB_TOKEN": "fake-private-token",
                                                   "GITHUB_OUTPUT": str(sentinel), "GITHUB_ENV": str(sentinel)}):
                     environment = mem.m.allowed_environment(fixture)
                 red = runner.command([sys.executable, "-c", script], tree, environment, owned, "red")
                 self.assertNotEqual(red["exit_status"], 0)
-                (fixture / "guard").write_text("green" if success else "red")
+                (tree / SOURCE).write_text(f"module Test\nlet answer = {42 if success else 1}\n")
                 green = runner.command([sys.executable, "-c", script], tree, environment, owned, "green")
                 self.assertEqual(green["exit_status"] == 0, success, green)
                 self.assertEqual(e.evaluate_candidate(*measurements())["decision"], "measured_improvement")
@@ -363,7 +473,8 @@ assert pathlib.Path('artifacts/guard').read_text() == 'green'
                     e.discard_candidate(owned)
                     self.assertFalse(tree.exists())
                 else:
-                    e.verify_candidate(owned)
+                    with self.assertRaises(ValueError):
+                        e.verify_candidate(owned)  # A corrected source still needs a fresh prepared patch.
                     self.assertTrue(tree.exists())
                 self.assertEqual(sentinel.read_text(), "trusted")
                 self.assertEqual(repo.git("status", "--porcelain"), b"")
@@ -371,7 +482,10 @@ assert pathlib.Path('artifacts/guard').read_text() == 'green'
     @unittest.skipUnless(sys.platform == "linux" and shutil.which("bwrap"),
                          "Live controller fixture requires Linux bubblewrap")
     def test_real_controller_retains_only_independently_approved_fixture(self):
-        for failure in ("", "test", "fsi", "identical", "noise", "no-finding", "missing-samples", "altered-samples", "cancel-setup",
+        for failure in ("", "red", "test", "exec", "emitted-il", "wrong-sdk", "new-skip", "forged-xml", "zero-tests",
+                        "redirect-receipt", "redirect-cache",
+                        "wrong-selector", "identical", "noise", "no-finding", "missing-output",
+                        "missing-samples", "altered-samples", "cancel-setup",
                         "cancel-build", "cancel-correctness", "cancel-collection", "cancel-measurement",
                         "cancel-approval", "cancel-child", "checkpoint"):
             with self.subTest(failure=failure), tempfile.TemporaryDirectory() as directory, ExitStack() as lifetime:
@@ -383,12 +497,13 @@ assert pathlib.Path('artifacts/guard').read_text() == 'green'
                 repo = Repository(frozen / "workload")
                 manifest = frozen_fixture(frozen, repo)
                 owned = root / "candidate"
-                e.prepare_candidate(repo.root, owned, repo.request(), repo.patch(), manifest=manifest)
+                patch = repo.patch({SOURCE: "module Test\nlet answer = 1\n"} if failure == "red" else None)
+                e.prepare_candidate(repo.root, owned, repo.request(), patch, manifest=manifest)
                 tree = owned / "tree"
                 artifacts = tree / "artifacts"
                 artifacts.mkdir()
                 shutil.copyfile(Path(__file__).parent / "fixtures" / "ExperimentTool.py", artifacts / "tool.py")
-                (artifacts / "fail").write_text(failure if failure in ("test", "fsi") else "")
+                (artifacts / "fail").write_text(failure)
                 evidence = artifact_profile(root)
                 evidence.update(compiler=manifest["baseline_compiler"],
                                 fingerprints={k: mem.m.fingerprint_inputs(v) for k, v in manifest["invariants"].items()})
@@ -397,6 +512,11 @@ assert pathlib.Path('artifacts/guard').read_text() == 'green'
                 sentinel.write_text("unchanged")
 
                 class FixtureIsolation(e.Isolation):
+                    ordinal = 0
+
+                    def __init__(self, tree, readonly=(), writable=(), sealed=()):
+                        super().__init__(tree, [*readonly, artifacts / "tool.py"], writable, sealed)
+
                     def command(self, args, cwd, environment, receipts, phase, timeout=1800):
                         # Only toolchain executables are substituted; isolation, receipts,
                         # Git ownership, plan execution, reducers and approval are real.
@@ -409,27 +529,35 @@ assert pathlib.Path('artifacts/guard').read_text() == 'green'
                         result["command"] = args
                         return result
 
-                def synthetic_samples(manifest, compiler, output, **unused):
-                    documents = measurements(100 if failure == "identical" else 90)
-                    for arm, doc in enumerate(documents):
-                        doc["invariants"] = copy.deepcopy(manifest["invariants"])
-                        doc["compiler"] = compiler if arm else manifest["baseline_compiler"]
-                    refresh_identities(documents)
-                    if failure == "noise":
-                        for sample in documents[0]["samples"]:
-                            if sample["phase"] == "aa":
-                                sample["elapsed_ms"] = 80 + 10 * sample["pair"]
-                    if failure != "missing-samples":
-                        mem.m.write_json(Path(output).with_suffix(".baseline.json"), documents[0])
-                        saved = copy.deepcopy(documents[1])
-                        if failure == "altered-samples":
-                            saved["samples"][0]["elapsed_ms"] = 1
+                    def process(self, args, cwd, environment, log):
+                        result = super().process([sys.executable, str(artifacts / "tool.py"),
+                                                  "replay", *args[1:], e.m.__file__, failure], cwd, environment, log)
+                        self_test.assertTrue(result["complete"], result)
+                        event = mem.m.schedule()[self.ordinal]
+                        self.ordinal += 1
+                        # Only metric scalars are synthetic; real collection/outputs/isolation must succeed first.
+                        result.update(elapsed_ms=100 if event["phase"] == "aa" or event["arm"] == "baseline" or
+                                      failure == "identical" else 90, process_cpu_ms=50, process_peak_rss_bytes=10000)
+                        if failure == "noise" and event["phase"] == "aa":
+                            result["elapsed_ms"] = 80 + 10 * event["pair"]
+                        return result
+
+                self_test = self
+                collect = e.m.run_repetitions
+
+                def collected_samples(manifest, compiler, output, **kwargs):
+                    documents = collect(manifest, compiler, output, **kwargs)
+                    if failure == "missing-samples":
+                        Path(output).unlink()
+                    elif failure == "altered-samples":
+                        saved = copy.deepcopy(documents["candidate"])
+                        saved["samples"][0]["elapsed_ms"] = 1
                         mem.m.write_json(output, saved)
-                    return dict(zip(("baseline", "candidate"), documents))
+                    return documents
 
                 with ExitStack() as patches:
                     patches.enter_context(mock.patch.object(e, "Isolation", FixtureIsolation))
-                    patches.enter_context(mock.patch.object(e.m, "run_repetitions", side_effect=synthetic_samples))
+                    patches.enter_context(mock.patch.object(e.m, "run_repetitions", side_effect=collected_samples))
                     cancellation = {"cancel-setup": (e, "frozen_records"), "cancel-build": (e, "build_candidate"),
                                     "cancel-correctness": (e, "run_correctness"),
                                     "cancel-collection": (e.c, "analyze_profile"),
@@ -456,7 +584,7 @@ assert pathlib.Path('artifacts/guard').read_text() == 'green'
                 eligible = failure in ("", "checkpoint")
                 expected = ("measured_improvement" if eligible else "inconclusive" if failure == "noise" else
                             "completed_no_finding" if failure == "no-finding" else
-                            "blocked_collection" if failure in ("missing-samples", "altered-samples") else
+                            "blocked_collection" if failure in ("missing-samples", "altered-samples", "missing-output") else
                             "cancelled" if failure.startswith("cancel-") else "rejected")
                 self.assertEqual(result["draft_eligible"], eligible, result)
                 self.assertEqual(result["outcome"], expected, result)
@@ -487,7 +615,7 @@ def frozen_fixture(root, repo):
     core.write_text("core")
     (cwd / "generated.fs").write_text("module Generated")
     args = ["-o:output.dll", "--optimize+", "--noframework", "--parallelcompilation-",
-            "-r:" + str(core), "Checking/Test.fs", "generated.fs"]
+            "-r:" + str(core), str(Path(SOURCE).relative_to("src/Compiler")).replace("\\", "/"), "generated.fs"]
     inputs = m.capture_inputs(args, cwd, repo.root, {SOURCE})
     response = root / "replay.rsp"
     response.write_text("\n".join(args) + "\n")
@@ -511,18 +639,20 @@ def frozen_fixture(root, repo):
     toolchain = invariants["toolchain"]
     tool_root = root / "toolchain"
     sdk_file = tool_root / "sdk" / "11.0.100-synthetic" / "FSharp" / "fsc.dll"
+    old_sdk_file = tool_root / "sdk" / "9.0.300" / "FSharp" / "fsc.dll"
     runtime_file = tool_root / "shared" / "Microsoft.NETCore.App" / "11.0.0-synthetic" / "runtime.dll"
-    for path in (sdk_file, runtime_file):
+    for path in (sdk_file, old_sdk_file, runtime_file):
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text("synthetic toolchain")
     tool = tool_root / "dotnet"
     shutil.copyfile(sys.executable, tool)
     toolchain.update(dotnet=m.file_record(tool), measurement=m.file_record(m.__file__),
+                     python=m.platform.python_version(),
                      capture_target=m.file_record(e.c.HERE / "Capture.targets"),
                      sdk="11.0.100-synthetic", runtime="synthetic runtime",
                      sdks="9.0.300 [synthetic]\n11.0.100-synthetic [synthetic]",
                      runtime_files=[m.file_record(runtime_file)], sdk_compiler_files=[m.file_record(sdk_file)],
-                     build_inputs={"packages": [m.file_record(package)], "sdk": [m.file_record(sdk_file)],
+                     build_inputs={"packages": [m.file_record(package)], "sdk": [m.file_record(sdk_file), m.file_record(old_sdk_file)],
                                    "bootstrap": [m.file_record(boot)]})
     installation = bootstrap / "artifacts" / "bin" / "fsc" / "Release" / "net11.0"
     installation.mkdir(parents=True)
