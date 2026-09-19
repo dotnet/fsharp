@@ -13,6 +13,7 @@ installation = artifacts / "bin" / "fsc" / "Release" / "net11.0"
 failure = (artifacts / "fail").read_text() if (artifacts / "fail").exists() else ""
 category = args[0]
 if category == "--version":
+    assert failure != "unavailable-sdk", "Required pinned SDK is unavailable"
     config = next(p / "global.json" for p in (cwd, *cwd.parents) if (p / "global.json").is_file())
     sdk = json.loads(config.read_text())["sdk"]["version"]
     print(sdk)
@@ -21,6 +22,7 @@ elif category == "--list-runtimes":
 elif category == "--list-sdks":
     print("9.0.300 [synthetic]\n11.0.100-synthetic [synthetic]")
 elif category == "pack" and len(args) == 1:
+    assert failure != "failed-pack", "Deliberate Release pack failure"
     assert os.environ["DOTNET_INSTALL_DIR"] == str(Path(os.environ["DOTNET_HOST_PATH"]).parent)
     installation.mkdir(parents=True)
     fsi = artifacts / "bin" / "fsi" / "Release" / "net11.0"
@@ -55,13 +57,14 @@ elif category == "build":
     target.mkdir(parents=True, exist_ok=True)
     (target / "FSharp.Compiler.Service.dll").write_text("candidate")
 elif "--help" in args:
-    print("--filter-method --filter-class --report-xunit --report-xunit-filename")
+    print("--filter-method --filter-class --fail-skips --report-xunit --report-xunit-filename")
 else:
     source = root / "src" / "Compiler" / "CodeGen" / "Test.fs"
     if "--filter-method" in args:
         assert "let answer = 42" in source.read_text(), "Toy algorithmic RED guard"
     assert failure != category, "Deliberate required-check failure"
     if category == "test":
+        assert failure != "large-inventory-failure", "Required correctness failed with a realistic dependency cache"
         assert (artifacts / "bin" / "fsi" / "Release" / "net11.0" / "fsi.dll").is_file()
         assert failure != "emitted-il" or "*EmittedIL*" not in args
         path = Path(args[args.index("--results-directory") + 1]) / args[args.index("--report-xunit-filename") + 1]
@@ -70,12 +73,18 @@ else:
         name = "NewSkip" if failure == "new-skip" else "DisabledUpstream"
         method = "unrelated" if failure == "wrong-selector" else "regression"
         result = "Fail" if failure == "forged-xml" else "Pass"
-        path.write_text(f'<assemblies><assembly total="{1 + skip}" passed="1" failed="0" skipped="{int(skip)}" errors="0">'
-                        f'<collection><test name="regression" method="{method}" source-file="{source}" result="{result}" />' +
-                        (f'<test name="{name}" result="Skip"><reason>issue 123</reason></test>' if skip else '') +
-                        '</collection></assembly></assemblies>')
+        report = (f'<assemblies><assembly total="{1 + skip}" passed="1" failed="0" skipped="{int(skip)}" errors="0">'
+                  f'<collection><test name="regression" method="{method}" source-file="{source}" result="{result}" />' +
+                  (f'<test name="{name}" result="Skip"><reason>issue 123</reason></test>' if skip else '') +
+                  '</collection></assembly></assemblies>')
         if failure == "zero-tests":
-            path.write_text('<assemblies><assembly total="0" passed="0" failed="0" skipped="0" errors="0" /></assemblies>')
+            report = '<assemblies><assembly total="0" passed="0" failed="0" skipped="0" errors="0" /></assemblies>'
+        if failure == "exit-forgery" and "--filter-method" in args:
+            import atexit
+            atexit.register(path.write_text, report)
+            report = (report.replace('passed="1"', 'passed="0"').replace('skipped="0"', 'skipped="1"')
+                      .replace('result="Pass" />', 'result="Skip"><reason>Not executed</reason></test>'))
+        path.write_text(report)
     elif category == "exec":
         for section, part in (("Library", "Lib"), ("Application", "App")):
             info = root / "tests" / "projects" / "CompilerCompat" / ("CompilerCompat" + part) / (part + "BuildInfo.fs")

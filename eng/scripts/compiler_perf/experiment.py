@@ -1,17 +1,20 @@
 """Disposable compiler experiments. JSON is data; only this validator chooses commands."""
 
 import argparse
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 from datetime import datetime, timezone
 import hashlib
+import hmac
 import os
 from pathlib import Path, PurePosixPath
 import re
+import select
 import shutil
 import stat
 import subprocess
 import sys
 import tempfile
+import threading
 import uuid
 import xml.etree.ElementTree as ET
 
@@ -30,6 +33,7 @@ RELEASE_PROPERTIES = ["-p:BUILDING_USING_DOTNET=false", "-p:BuildNoRealsig=true"
 PACK_COMMAND = ["bash", "build.sh", "-c", "Release", "--pack"]
 RELEASE_NOTE = "docs/release-notes/.FSharp.Compiler.Service/11.0.100.md"
 MAX_PATCH = 1024 * 1024
+MAX_REPORT = 16 * 1024 * 1024
 PLATFORM_EXCLUSIONS = {
     "This test is only supported on Windows",
     "NETCOREAPP is not supported runtime for this kind of test, it is intended for DESKTOP only",
@@ -299,7 +303,7 @@ def correctness_plan(changes, regressions, target_framework):
         build(SERVICE, "test-build")
     for regression in regressions:
         test(SERVICE if regression["path"].startswith("tests/FSharp.Compiler.Service.Tests/") else COMPONENT,
-             "regression", ("--filter-method", "*" + regression["method"] + "*"))
+             "regression", ("--filter-method", "*." + regression["method"], "--fail-skips", "on"))
         plan[-1]["regression"] = regression
     test(COMPONENT, "siblings")
     if codegen:
@@ -333,7 +337,7 @@ def unredirected(path, *, missing_ok=False):
 def test_counts(path, *, platform_exclusions=False, required_test=None, allowed_skips=(), baseline=False):
     path = Path(path)
     require(unredirected(path) and path.is_file() and
-            0 < path.stat().st_size <= 16 * 1024 * 1024,
+            0 < path.stat().st_size <= MAX_REPORT,
             "Missing or oversized test result")
     data = path.read_bytes()
     require(b"<!DOCTYPE" not in data and b"<!ENTITY" not in data, "Invalid test XML")
@@ -371,6 +375,66 @@ def test_counts(path, *, platform_exclusions=False, required_test=None, allowed_
     return {"matched": counts["passed"], "passed": counts["passed"], "excluded": excluded}
 
 
+@contextmanager
+def capture_report(path, destination, isolation):
+    """A mounted FIFO cannot be replaced/truncated by a test's ProcessExit handler."""
+    require(sys.platform == "linux", "Authenticated report capture requires Linux")
+    path = Path(path)
+    require(unredirected(path.parent) and not path.exists(), "Stale or redirected report channel")
+    os.mkfifo(path, 0o600)
+    descriptor = os.open(path, os.O_RDWR | os.O_NONBLOCK)
+    path.chmod(0o200)
+    finished = threading.Event()
+    errors = []
+    size = 0
+
+    def drain():
+        nonlocal size
+        try:
+            with Path(destination).open("xb") as output:
+                while True:
+                    readable = select.select([descriptor], [], [], 0.05)[0]
+                    if not readable:
+                        if finished.is_set():
+                            break
+                        continue
+                    data = os.read(descriptor, 65536)
+                    size += len(data)
+                    if size <= MAX_REPORT:
+                        output.write(data)
+        except OSError as error:
+            errors.append(error)
+
+    reader = threading.Thread(target=drain, name="compiler-perf-report")
+    isolation.sealed.append(path.parent)
+    reader.start()
+    try:
+        yield
+    finally:
+        finished.set()
+        reader.join()
+        os.close(descriptor)
+        isolation.sealed.remove(path.parent)
+        path.unlink()
+    require(not errors and 0 < size <= MAX_REPORT, "Missing, failed or oversized report capture")
+
+
+def execution_signature(receipt):
+    return hmac.digest(mem._VALIDATOR_KEY, b"execution\0" + mem.encoded(
+        {k: v for k, v in receipt.items() if k != "execution"}), "sha256").hex()
+
+
+def compact_correctness(root, checks):
+    checks = dict(checks)
+    require(checks["schema_version"] == 4, "Historical correctness cannot be upgraded")
+    if isinstance(checks["inputs"], list):
+        require(mem.identifier(checks["nonce"]), "Invalid inventory identity")
+        path = Path(root) / (checks["nonce"] + "-inputs.json")
+        m.write_json(path, checks["inputs"])
+        checks["inputs"] = m.file_record(path)
+    return checks
+
+
 class Isolation:
     """Empty Linux mount namespace; no host home, network, credentials or validator files."""
 
@@ -383,10 +447,15 @@ class Isolation:
         self.sealed = [Path(p).resolve(strict=True) for p in sealed]
         self.tool = m.file_record("/usr/bin/bwrap")
 
-    def argv(self, args, cwd, environment):
+    def argv(self, args, cwd, environment, accounts):
+        (Path(accounts) / "passwd").write_text(
+            f"compiler-perf:x:{os.getuid()}:{os.getgid()}::/tmp:/bin/sh\n")
+        (Path(accounts) / "group").write_text(f"compiler-perf:x:{os.getgid()}:\n")
         command = [self.tool["path"], "--die-with-parent", "--new-session", "--unshare-all",
                    "--cap-drop", "ALL", "--clearenv", "--proc", "/proc", "--dev", "/dev",
-                   "--tmpfs", "/tmp"]
+                   "--tmpfs", "/tmp",
+                   "--ro-bind", str(Path(accounts) / "passwd"), "/etc/passwd",
+                   "--ro-bind", str(Path(accounts) / "group"), "/etc/group"]
         system = [Path(p) for p in ("/usr", "/bin", "/sbin", "/lib", "/lib64", "/etc/ld.so.cache",
                                    "/etc/localtime") if Path(p).exists()]
         for path in dict.fromkeys(system + self.readonly + [self.tree]):
@@ -408,19 +477,21 @@ class Isolation:
         return command + ["--chdir", str(cwd), "--", *args]
 
     def command(self, args, cwd, environment, receipts, phase, timeout=1800):
-        invocation = self.argv(args, cwd, environment)
         started = datetime.now(timezone.utc).isoformat()
         logs = Path(receipts) / "commands"
         logs.mkdir(exist_ok=True)
         m.verify_files([self.tool])
-        result = c.run_tool(invocation, cwd, environment, logs, phase, timeout=timeout)
+        with tempfile.TemporaryDirectory(prefix="compiler-perf-accounts-") as accounts:
+            invocation = self.argv(args, cwd, environment, accounts)
+            result = c.run_tool(invocation, cwd, environment, logs, phase, timeout=timeout)
         result.update(command=args, cwd=str(cwd), started_at=started,
                       finished_at=datetime.now(timezone.utc).isoformat(), isolation=self.tool)
         return result
 
     def process(self, args, cwd, environment, log):
         m.verify_files([self.tool])
-        result = m.run_process(self.argv(args, cwd, environment), cwd, environment, log)
+        with tempfile.TemporaryDirectory(prefix="compiler-perf-accounts-") as accounts:
+            result = m.run_process(self.argv(args, cwd, environment, accounts), cwd, environment, log)
         result["isolation"] = self.tool
         return result
 
@@ -535,10 +606,10 @@ def prepare_compatibility(root, manifest, compiler, isolation, environment, chec
 
 
 def validate_correctness(checks, candidate, policy, *, current=False, passed=True):
-    require(type(checks.get("schema_version")) is int and checks["schema_version"] in (2, 3) and
-            (not current or checks["schema_version"] == 3),
+    require(type(checks.get("schema_version")) is int and checks["schema_version"] in (2, 3, 4) and
+            (not current or checks["schema_version"] == 4),
             "Historical correctness is not a fresh validator receipt")
-    plan = (checks["plan"] if checks["schema_version"] == 2 else
+    plan = (checks["plan"] if checks["schema_version"] < 4 else
             correctness_plan(checks["changes"], checks["regressions"], checks["target_framework"]))
     require(checks["plan"] == plan and checks["plan_sha256"] == m.fingerprint_inputs(plan) and
             checks["required"] == [p["id"] for p in plan] and
@@ -591,8 +662,18 @@ def validate_correctness(checks, candidate, policy, *, current=False, passed=Tru
                             for r in evidence["commands"]), "Incomplete compatibility execution")
                 m.verify_files(evidence["files"])
                 verify_compatibility_output(result["stdout"], evidence["expected"])
+            require(isinstance(result.get("execution"), str) and
+                    hmac.compare_digest(result["execution"], execution_signature(result)),
+                    "A fresh trusted validator execution capture is required; receipt changed or stale")
+    if checks["schema_version"] == 4:
+        m.validate_file_record(checks["inputs"])
     if current:
-        m.verify_files(checks["inputs"])
+        inventory = checks["inputs"]
+        m.verify_files([inventory])
+        records = c.read_bounded_json(inventory["path"])
+        require(isinstance(records, list) and records, "Missing correctness input inventory")
+        m.verify_files(records)
+        m.verify_files([inventory])
 
 
 def run_correctness(root, manifest, compiler, isolation, *, baseline=False):
@@ -610,7 +691,7 @@ def run_correctness(root, manifest, compiler, isolation, *, baseline=False):
     results_dir = tree / "artifacts" / "perf-results" / nonce
     require(unredirected(results_dir, missing_ok=True), "Redirected correctness results")
     results_dir.mkdir(parents=True)
-    checks = {"schema_version": 3, "changes": state["changed_paths"], "regressions": state["request"]["regressions"],
+    checks = {"schema_version": 4, "changes": state["changed_paths"], "regressions": state["request"]["regressions"],
               "target_framework": invariants["workload"]["target_framework"], "plan": plan,
               "plan_sha256": m.fingerprint_inputs(plan), "required": [p["id"] for p in plan],
               "results": [], "nonce": nonce, "cwd": str(tree), "tool": dotnet,
@@ -667,7 +748,7 @@ def run_correctness(root, manifest, compiler, isolation, *, baseline=False):
             help_result = isolation.command([dotnet["path"], "test", "--project", project, "-c", "Release",
                                              "--no-build", "--help"], tree, environment, root, "mtp-help")
             require(help_result["status"] == "collected" and help_result["exit_status"] == 0 and all(flag in help_result["stdout"] for flag in
-                    ("--filter-method", "--filter-class", "--report-xunit", "--report-xunit-filename")),
+                    ("--filter-method", "--filter-class", "--fail-skips", "--report-xunit", "--report-xunit-filename")),
                     "Pinned MTP runner does not expose required selectors/results")
             probed.add(project)
             outputs = list((tree / "artifacts" / "bin" / Path(project).stem / "Release").rglob("FSharp.Compiler.Service.dll"))
@@ -679,7 +760,12 @@ def run_correctness(root, manifest, compiler, isolation, *, baseline=False):
         argv = [dotnet["path"], *[arg.format(result_dir=str(results_dir), result_name=Path(result_path).name) for arg in check["argv"]]]
         compatibility = (prepare_compatibility(root, manifest, compiler, isolation, environment, check, copied + binaries)
                          if check["result"] == "compatibility" else None)
-        result = isolation.command(argv, tree, environment, root, check["id"], check["timeout_seconds"])
+        destination = root / f"{nonce}-{check['id']}.xml"
+        capture = (capture_report(result_path, destination, isolation)
+                   if check["result"] == "xunit" else nullcontext())
+        with capture:
+            result = isolation.command(argv, tree, environment, root, check["id"], check["timeout_seconds"])
+            m.write_json(root / f"{nonce}-{check['id']}-command.json", result)
         receipt = {key: result[key] for key in ("command", "cwd", "exit_status", "started_at", "finished_at")}
         receipt.update(check_id=check["id"], category=check["category"], nonce=nonce, tool=dotnet,
                        candidate=m.fingerprint_inputs(compiler), policy=m.fingerprint_inputs(m.POLICY),
@@ -693,13 +779,11 @@ def run_correctness(root, manifest, compiler, isolation, *, baseline=False):
                           if "regression" in check else None)
             base = base_results.get(check["id"])
             allowed = test_counts(base["report"]["path"], baseline=True)["excluded"] if base else ()
-            counts = test_counts(result_path, allowed_skips=allowed, baseline=baseline, required_test=regression)
+            counts = test_counts(destination, allowed_skips=allowed, baseline=baseline, required_test=regression)
             receipt.update(matched=counts["matched"], excluded_count=len(counts["excluded"]),
                            excluded_sha256=m.fingerprint_inputs(counts["excluded"]))
             if regression:
                 receipt["regression"] = regression
-            destination = root / f"{nonce}-{check['id']}.xml"
-            shutil.copyfile(result_path, destination)
             receipt["report"] = m.file_record(destination)
             receipt["files"].append(receipt["report"])
             if base:
@@ -710,6 +794,7 @@ def run_correctness(root, manifest, compiler, isolation, *, baseline=False):
         frozen_records(manifest)
         m.verify_files(copied + binaries)
         verify_candidate(root)
+        receipt["execution"] = execution_signature(receipt)
         m.write_json(receipt_path, checks)
     return checks
 
@@ -740,6 +825,7 @@ def build_candidate(root, manifest, isolation):
                              (["--list-sdks"], invariants["toolchain"].get("sdks", "")),
                              (["--list-runtimes"], invariants["toolchain"]["runtime"])):
         probe = isolation.command([dotnet, *suffix], tree, environment, root, "toolchain", 60)
+        m.write_json(root / ("toolchain-" + suffix[0].lstrip("-") + ".json"), probe)
         require(probe["status"] == "collected" and probe["exit_status"] == 0 and
                 probe["stdout"].strip() == expected.strip(), "SDK/runtime changed")
     require(any(int(version) >= 300 for version in re.findall(r"(?m)^9\.0\.(\d+)\s", invariants["toolchain"]["sdks"])),
@@ -783,11 +869,12 @@ def candidate_attempt(state, manifest, profile=None, correctness=None, documents
         fingerprints["candidate"] = m.fingerprint_inputs(state["compiler"])
     if correctness is None:
         plan = correctness_plan(state["changed_paths"], request["regressions"], invariants["workload"]["target_framework"])
-        correctness = {"schema_version": 3, "changes": state["changed_paths"], "regressions": request["regressions"],
+        correctness = {"schema_version": 4, "changes": state["changed_paths"], "regressions": request["regressions"],
                        "target_framework": invariants["workload"]["target_framework"], "plan": plan,
                        "plan_sha256": m.fingerprint_inputs(plan), "required": [p["id"] for p in plan],
                        "results": [], "nonce": uuid.uuid4().hex, "cwd": state["tree"],
                        "tool": invariants["toolchain"]["dotnet"], "inputs": state["inputs"], "validation": None}
+    correctness = compact_correctness(Path(state["tree"]).parent, correctness)
     outcome = measurement["comparison"]["decision"] if measurement else state["outcome"]
     reason = ("; ".join(measurement["comparison"]["reasons"]) or "Independent correctness and measurement gates passed"
               if measurement else state["reason"])

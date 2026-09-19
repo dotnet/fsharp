@@ -265,6 +265,52 @@ class ExperimentTests(unittest.TestCase):
                             self.assertIn(prop, check["argv"])
                 self.assertEqual(any(c["category"] == "surface-area" for c in plan), extension == ".fsi")
 
+    def test_regression_selector_cannot_select_a_passing_decoy(self):
+        plan = e.correctness_plan([SOURCE, TEST, NOTE],
+                                  [{"path": TEST, "method": "regression"}], "net11.0")
+        check = next(p for p in plan if p["category"] == "regression")
+        self.assertEqual(check["argv"][check["argv"].index("--filter-method") + 1], "*.regression")
+        self.assertIn("--fail-skips", check["argv"])
+
+    def test_large_correctness_inventory_stays_outside_bounded_journal(self):
+        from test_memory import improvement
+
+        for outcome in ("measured_improvement", "rejected"):
+            with self.subTest(outcome=outcome), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                a = improvement()
+                record = mem.m.file_record(e.__file__)
+                a["correctness"]["inputs"] = [record] * 5000
+                a["correctness"] = e.compact_correctness(root, a["correctness"])
+                self.assertIsInstance(a["correctness"]["inputs"], dict)
+                if outcome == "measured_improvement":
+                    mem._attest_correctness(a)
+                    mem.acceptance_ready(a)
+                else:
+                    a.update(outcome=outcome, reason="Required regression failed")
+                    a["correctness"]["results"][-1]["exit_status"] = 1
+                    a["correctness"]["validation"] = None
+                journal = mem.merge_attempt(mem.empty_state(), a)
+                self.assertLess(len(mem.encoded(journal)), mem.LIMITS["file_bytes"])
+                self.assertEqual(mem.load_state(response={"status": 200, "body": mem.encoded(journal)})["status"], "ready")
+                reference = a["correctness"]["inputs"]
+                self.assertEqual(mem.m.read_json(reference["path"]), [record] * 5000)
+                if outcome == "measured_improvement":
+                    for mutation in ("inventory", "referenced-file", "missing"):
+                        with self.subTest(mutation=mutation):
+                            original = Path(reference["path"]).read_bytes()
+                            if mutation == "inventory":
+                                Path(reference["path"]).write_text("[]")
+                            elif mutation == "referenced-file":
+                                mem.m.write_json(Path(reference["path"]), [dict(record, sha256="0" * 64)])
+                                a["correctness"]["inputs"] = mem.m.file_record(reference["path"])
+                            else:
+                                Path(reference["path"]).unlink()
+                            with self.assertRaises((ValueError, FileNotFoundError)):
+                                mem._attest_correctness(a)
+                            Path(reference["path"]).write_bytes(original)
+                            a["correctness"]["inputs"] = reference
+
     def test_baseline_skips_are_exact_and_never_excuse_regressions(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "tests.xml"
@@ -479,10 +525,45 @@ assert '42' in pathlib.Path({SOURCE!r}).read_text()
                 self.assertEqual(sentinel.read_text(), "trusted")
                 self.assertEqual(repo.git("status", "--porcelain"), b"")
 
+    @unittest.skipUnless(sys.platform == "linux" and shutil.which("bwrap") and
+                         os.environ.get("COMPILER_PERF_MTP_ASSEMBLY") and os.environ.get("COMPILER_PERF_DOTNET"),
+                         "Opt-in pinned MTP runner built from fixtures/ExperimentReportForgery.cs")
+    def test_pinned_runner_report_stream_cannot_be_rewritten_at_process_exit(self):
+        dotnet = Path(os.environ["COMPILER_PERF_DOTNET"]).resolve()
+        assembly = Path(os.environ["COMPILER_PERF_MTP_ASSEMBLY"]).resolve()
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            tree = root / "tree"
+            tree.mkdir()
+            runner = e.Isolation(tree, [dotnet.parent, assembly.parent])
+            environment = e.m.allowed_environment(tree / "artifacts")
+            for name, selector, flags, exit_code in (
+                    ("pass", "*.passing", [], 0), ("zero", "*.missing", [], 8),
+                    ("late-forgery", "*regression*", [], 0),
+                    ("exact", "*.regression", ["--fail-skips", "on"], 2)):
+                with self.subTest(name=name):
+                    results = tree / "artifacts" / name
+                    results.mkdir()
+                    report = results / "result.xml"
+                    captured = root / (name + ".xml")
+                    with e.capture_report(report, captured, runner):
+                        receipt = runner.command(
+                            [str(dotnet), str(assembly), "--results-directory", str(results),
+                             "--filter-method", selector, *flags, "--minimum-expected-tests", "1",
+                             "--report-xunit", "--report-xunit-filename", report.name],
+                            tree, environment, root, name, timeout=120)
+                        self.assertEqual(receipt["exit_status"], exit_code, receipt)
+                    if name == "pass":
+                        self.assertEqual(e.test_counts(captured)["matched"], 1)
+                    else:
+                        with self.assertRaises((ValueError, e.ET.ParseError)):
+                            e.test_counts(captured)
+
     @unittest.skipUnless(sys.platform == "linux" and shutil.which("bwrap"),
                          "Live controller fixture requires Linux bubblewrap")
     def test_real_controller_retains_only_independently_approved_fixture(self):
-        for failure in ("", "red", "test", "exec", "emitted-il", "wrong-sdk", "new-skip", "forged-xml", "zero-tests",
+        for failure in ("", "red", "test", "exec", "emitted-il", "wrong-sdk", "new-skip", "forged-xml", "exit-forgery", "zero-tests",
+                        "unavailable-sdk", "failed-pack", "large-inventory", "large-inventory-failure",
                         "redirect-receipt", "redirect-cache",
                         "wrong-selector", "identical", "noise", "no-finding", "missing-output",
                         "missing-samples", "altered-samples", "cancel-setup",
@@ -496,6 +577,14 @@ assert '42' in pathlib.Path({SOURCE!r}).read_text()
                 frozen = root / "frozen"
                 repo = Repository(frozen / "workload")
                 manifest = frozen_fixture(frozen, repo)
+                if failure.startswith("large-inventory"):
+                    packages = frozen / "packages"
+                    for index in range(1600):
+                        (packages / f"dependency-{index:04}.dll").write_text("synthetic dependency")
+                    manifest["invariants"]["toolchain"]["build_inputs"]["packages"] = [
+                        e.m.file_record(p) for p in sorted(packages.rglob("*")) if p.is_file()]
+                    manifest["baseline_compiler"]["toolchain_fingerprint"] = e.m.fingerprint_inputs(
+                        manifest["invariants"]["toolchain"])
                 owned = root / "candidate"
                 patch = repo.patch({SOURCE: "module Test\nlet answer = 1\n"} if failure == "red" else None)
                 e.prepare_candidate(repo.root, owned, repo.request(), patch, manifest=manifest)
@@ -581,9 +670,10 @@ assert '42' in pathlib.Path({SOURCE!r}).read_text()
                         result = e.complete_no_finding(owned, root / "profile.json")
                     else:
                         result = e.validate_candidate(owned, root / "profile.json")
-                eligible = failure in ("", "checkpoint")
+                eligible = failure in ("", "checkpoint", "large-inventory")
                 expected = ("measured_improvement" if eligible else "inconclusive" if failure == "noise" else
                             "completed_no_finding" if failure == "no-finding" else
+                            "blocked_setup" if failure in ("unavailable-sdk", "failed-pack") else
                             "blocked_collection" if failure in ("missing-samples", "altered-samples", "missing-output") else
                             "cancelled" if failure.startswith("cancel-") else "rejected")
                 self.assertEqual(result["draft_eligible"], eligible, result)
@@ -592,6 +682,16 @@ assert '42' in pathlib.Path({SOURCE!r}).read_text()
                 journal = mem.load_state(owned / "attempt.json")
                 self.assertEqual(journal["status"], "ready", journal)
                 self.assertEqual(journal["state"]["attempts"]["attempt-1"]["outcome"], expected)
+                self.assertTrue(result["reason"])
+                self.assertNotIn("journal blocked", result["reason"])
+                if failure in ("unavailable-sdk", "failed-pack"):
+                    self.assertTrue(list((owned / "commands").glob("*.log")))
+                    probe = mem.m.read_json(owned / "toolchain-version.json")
+                    self.assertEqual(probe["command"][-1], "--version")
+                    if failure == "failed-pack":
+                        self.assertNotEqual(mem.m.read_json(owned / "build.json")["exit_status"], 0)
+                    else:
+                        self.assertNotEqual(probe["exit_status"], 0)
                 self.assertEqual(sentinel.read_text(), "unchanged")
                 self.assertIsNone(keepalive.process.poll(), "Cancellation killed the unrelated owned sentinel")
                 self.assertEqual(repo.git("status", "--porcelain", "--untracked-files=no"), b"")

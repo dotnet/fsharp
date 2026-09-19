@@ -1,9 +1,11 @@
 """Independent state-transition expectations; no network or performance claims."""
 
+import atexit
 import copy
 from datetime import datetime, timezone
 import json
 from pathlib import Path
+import runpy
 import subprocess
 import sys
 import tempfile
@@ -25,6 +27,8 @@ PATH = "src/Compiler/Checking/Expressions/CheckExpressions.fs"
 H = "a" * 64
 J = "b" * 64
 SHA = "a" * 40
+RECEIPTS = tempfile.TemporaryDirectory(prefix="compiler-perf-memory-fixture-")
+atexit.register(RECEIPTS.cleanup)
 
 
 def attempt(identifier="attempt-1", outcome=None):
@@ -116,7 +120,7 @@ def improvement(*, legacy=False):
         regressions = [{"path": changes[1], "method": "regression"}]
         plan = experiment.correctness_plan(changes, regressions, "net11.0")
         tool = mem.m.file_record(HERE / "measurement.py")
-        checks = {"schema_version": 3, "changes": changes, "regressions": regressions,
+        checks = {"schema_version": 4, "changes": changes, "regressions": regressions,
                   "target_framework": "net11.0", "plan": plan, "plan_sha256": mem.m.fingerprint_inputs(plan),
                   "required": [p["id"] for p in plan], "results": [], "nonce": "synthetic-nonce",
                   "cwd": "/synthetic", "tool": tool, "inputs": [tool], "validation": None}
@@ -146,23 +150,33 @@ def improvement(*, legacy=False):
                 result.update(stdout=output + "\nSUCCESS: All compiler compatibility tests passed",
                               compatibility={"expected": expected, "files": [tool],
                                              "commands": [{"status": "collected", "exit_status": 0}] * 4})
+            result["execution"] = experiment.execution_signature(result)
+        a["correctness"] = experiment.compact_correctness(Path(RECEIPTS.name), checks)
         mem._attest_correctness(a)
     return a
 
 
 class MemoryTests(unittest.TestCase):
+    def test_cli_and_imported_validator_share_execution_authority(self):
+        import experiment
+        executable = runpy.run_path(experiment.__file__)
+        receipt = {"command": ["dotnet", "test", "--project", "explicit.fsproj"], "nonce": "same-process"}
+        self.assertEqual(executable["execution_signature"](receipt), experiment.execution_signature(receipt))
+
     def test_legacy_correctness_cannot_authorize_fresh_publication(self):
         a = improvement(legacy=True)
         with self.assertRaisesRegex(ValueError, "fresh|validator|historical"):
             mem.acceptance_ready(a)
         self.assertEqual(mem.load_state(response={"status": 200, "body": json.dumps(state(a))})["state"], state(a))
-        previous = improvement()
-        previous["correctness"]["schema_version"] = 2
-        mem.acceptance_ready(previous, current=False)
-        self.assertEqual(mem.load_state(response={"status": 200, "body": json.dumps(state(previous))})["state"],
-                         state(previous))
-        with self.assertRaisesRegex(ValueError, "Historical|fresh"):
-            mem.acceptance_ready(previous)
+        for version in (2, 3):
+            previous = improvement()
+            previous["correctness"]["schema_version"] = version
+            previous["correctness"]["inputs"] = [mem.m.file_record(HERE / "measurement.py")]
+            mem.acceptance_ready(previous, current=False)
+            self.assertEqual(mem.load_state(response={"status": 200, "body": json.dumps(state(previous))})["state"],
+                             state(previous))
+            with self.assertRaisesRegex(ValueError, "Historical|fresh"):
+                mem.acceptance_ready(previous)
 
     def test_explicit_plan_receipts_cannot_be_forged_or_weakened(self):
         a = improvement()
@@ -203,6 +217,25 @@ class MemoryTests(unittest.TestCase):
                 result["report"] = mem.m.file_record(report)
                 result["files"] = [result["report"]]
                 with self.assertRaisesRegex(ValueError, "totals|pass"):
+                    mem._attest_correctness(a)
+
+    def test_consistent_xml_is_not_authenticated_execution_evidence(self):
+        for forgery in ("replacement", "rebound-command", "rebound-nonce"):
+            with self.subTest(forgery=forgery), tempfile.TemporaryDirectory() as directory:
+                a = improvement()
+                result = next(r for r in a["correctness"]["results"] if r["category"] == "regression")
+                report = Path(directory) / "forged.xml"
+                report.write_bytes(Path(result["report"]["path"]).read_bytes())
+                if forgery == "replacement":
+                    result["report"] = mem.m.file_record(report)
+                    result["files"] = [result["report"]]
+                elif forgery == "rebound-command":
+                    result["started_at"] = "2026-09-18T23:59:00Z"
+                else:
+                    a["correctness"]["nonce"] = "another-execution"
+                    for receipt in a["correctness"]["results"]:
+                        receipt["nonce"] = a["correctness"]["nonce"]
+                with self.assertRaisesRegex(ValueError, "execution|capture"):
                     mem._attest_correctness(a)
 
     def test_load_transition_table_and_original_preservation(self):

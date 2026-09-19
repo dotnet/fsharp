@@ -15,7 +15,7 @@ New captures against current main require new workload fingerprints.
 and outstanding publication intents in the local Git journal. Its receipts
 explicitly report `remote_acknowledged: false`; local CAS is not remote
 durability. Historical root `dotnet test -c Release` receipts remain readable,
-but cannot authorize new publication. Correctness schema 2 binds explicit plans,
+but cannot authorize new publication. Correctness schema 4 binds explicit plans,
 candidate identities, matched tests and retained command/result files to a fresh
 trusted validator. Passing memory fixtures does not certify production acceptance.
 
@@ -78,7 +78,8 @@ capabilities, and an allowlisted environment. System tools and frozen inputs are
 read-only; only owned artifacts, compatibility fixture outputs, HOME/temp and
 the exact replay output files are writable. The replay compiler installation is
 also read-only. Host homes, Git credentials, agent tokens, Actions output files,
-canonical memory and validator receipts are not mounted. The parent records
+canonical memory and validator receipts are not mounted. Synthetic account files
+support the runner's user lookup without exposing host account records. The parent records
 exits, launch times, owned PIDs, command arrays, hashes and results. Owned process
 groups/jobs are reaped on failure/cancellation; no process-name killing occurs.
 Locks serialize candidate operations and the existing measurement lock serializes
@@ -97,13 +98,21 @@ surface-area tests. Unknown/general compiler areas receive conservative checks.
 The built pinned MTP runner's `--help` must expose the required selectors and
 xUnit reporter; tests use explicit `--project`, `--no-build` and
 `--minimum-expected-tests 1`. Empty, failing, missing or stale reports block
-approval. Required regressions must be skip-free and match the declared method
+approval. Required regressions use an exact method suffix (`*.Method`, never
+`*Method*`) and `--fail-skips on`; a passing decoy cannot excuse a skipped regression.
+They must match the declared method
 and source file in the runner's report, not merely a nonzero wildcard match.
 Broad suites first run serially in a separate checkout of the frozen base, including
 its own Release pack and test builds. Only exact test-name/reason skips observed
 there can be excluded from candidate checks; new skips and skipped regressions
 block approval. Individual XML results must agree with assembly totals; claimed
-totals alone are not evidence. Skips never count as matched passes, and categories
+totals alone are not evidence. Reports stream through a fresh write-only FIFO in
+a sealed directory to a parent-owned evidence file, rather than a candidate-writable
+XML file. Late writes append to the stream and invalidate it; they cannot truncate
+or replace earlier failures/skips. The parent binds the captured report, command,
+candidate, nonce and exit to a process-local execution receipt, separately from
+final acceptance. Substituting even a self-consistent passing XML file cannot mint
+that receipt. Skips never count as matched passes, and categories
 with no applicable passing tests block approval. Test
 outputs must contain the selected candidate service binary.
 The controller drives the existing compatibility projects through six explicit
@@ -134,12 +143,16 @@ retained. Cancellation returns 130 and normally discards source. Explicit
 its fingerprints; another `validate` verifies that checkpoint and uses fresh
 correctness/sample receipts. Altered source, patch, toolchain or outputs revoke
 eligibility. Individual pack/check commands have bounds (60/30 minutes); there
-is no overall experiment or investigation timeout.
+is no overall experiment or investigation timeout. Full correctness input
+inventories remain in separately hashed JSON evidence beside the receipts; the
+bounded journal contains only their file identities. Fresh validation checks both
+the inventory hash and every referenced input, without increasing the journal limits.
+Historical reads need not have those artifacts available.
 
 Approval uses a process-local attestation, not a portable JSON permission token.
 `acceptance_ready` and `publication_intent` reject forged or reloaded attestations
 without fresh trusted validation. Historical journal schema 1 is preserved;
-correctness schema 3 is nested within it. Older root-command and schema-2 receipts
+correctness schema 4 is nested within it. Older root-command, schema-2 and schema-3 receipts
 remain readable history but cannot authorize new publication. `draft_eligible` records a validation
 decision, not permission for a later publisher to skip revalidation. Human draft
 review must still assess relevance and complexity. The controller only creates
@@ -149,6 +162,14 @@ The controller fixtures use temporary Git repositories and real isolated
 children, including malicious write attempts, RED/GREEN checks, failed checks,
 cancellation with a surviving sentinel, checkpoint resume and rollback. Their
 100-to-90 samples and toy toolchain are **synthetic**, not a live F# speedup.
+The lifecycle matrix also exercises unavailable SDKs, failed packs, late report
+forgery and realistic dependency inventories on both acceptance and rejection paths.
+For the opt-in real runner capture test, build `fixtures/ExperimentReportForgery.cs`
+as an MTP executable using the pinned SDK and `xunit.v3.mtp-v2` 3.2.2, then set
+`COMPILER_PERF_MTP_ASSEMBLY` and `COMPILER_PERF_DOTNET` to its assembly and matching
+Linux dotnet host before running `test_experiment.py`. This adversarial fixture
+contains a skipped regression, a passing decoy and a `ProcessExit` report overwrite;
+it tests reporting integrity, not compiler performance.
 
 ## Process profiling (diagnostic evidence only)
 
