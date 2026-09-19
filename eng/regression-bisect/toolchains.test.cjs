@@ -300,8 +300,10 @@ test("two acquisitions with the same versions never share CLI or NuGet state", a
     for (let i = 0; i < 2; i++) {
         assert.equal((await acquireToolchain({ policy: policy(), toolchain, storageDirectory: root }, deps)).status, "acquired");
     }
-    for (const key of ["DOTNET_ROOT", "NUGET_PACKAGES", "DOTNET_CLI_HOME", "HOME"]) {
+    for (const key of ["DOTNET_ROOT", "NUGET_PACKAGES", "DOTNET_CLI_HOME", "HOME",
+        "ProgramFiles", "ProgramFiles(x86)", "ProgramData", "ALLUSERSPROFILE"]) {
         assert.notEqual(environments[0][key], environments[1][key]);
+        for (const env of environments) assert.ok(env[key].startsWith(root + path.sep), `${key} must remain private`);
     }
 });
 

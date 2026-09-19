@@ -486,3 +486,160 @@ for (const [tamper, compressed] of [[false, false], [true, false], [false, true]
         assert.equal(hash(await fs.readFile(pkg.path)), pkg.sha256);
     }
 });
+
+for (const mode of ["timeout", "cancelled"]) test(`process ${mode} contains descendants after their parent exits`, async t => {
+    const f = await fixture(t);
+    const ready = path.join(f.root, "descendant.json");
+    const controller = new AbortController();
+    const descendant = `
+        const fs = require('node:fs');
+        fs.writeFileSync(${JSON.stringify(ready + ".new")}, JSON.stringify({ pid: process.pid, parent: process.ppid }));
+        fs.renameSync(${JSON.stringify(ready + ".new")}, ${JSON.stringify(ready)});
+        process.stdout.write('descendant stdout\\n');
+        process.stderr.write('descendant stderr\\n');
+        process.send('ready');
+        process.disconnect();
+        setInterval(() => {}, 1000);
+    `;
+    const execution = execute(process.execPath, ["-e", `
+        const child = require('node:child_process').spawn(process.execPath, ['-e', ${JSON.stringify(descendant)}],
+            { stdio: ['ignore', 'inherit', 'inherit', 'ipc'], detached: process.platform === 'win32' });
+        child.once('message', () => process.exit(0));
+    `], {
+        cwd: f.root,
+        env: isolatedEnvironment(f.root, { os: process.platform === "win32" ? "windows" : "linux", architecture: process.arch }),
+        timeoutMs: mode === "timeout" ? 3000 : 30000, signal: controller.signal,
+    });
+    let pid;
+    let deadline;
+    try {
+        const limit = Date.now() + 10000;
+        let parent;
+        while (Date.now() < limit) {
+            try {
+                ({ pid, parent } = JSON.parse(await fs.readFile(ready, "utf8")));
+                try { process.kill(parent, 0); } catch (error) { if (error.code === "ESRCH") break; throw error; }
+            } catch (error) { if (error.code !== "ENOENT") throw error; }
+            await new Promise(resolve => setTimeout(resolve, 20));
+        }
+        assert.ok(pid > 0, "descendant must start");
+        assert.throws(() => process.kill(parent, 0), { code: "ESRCH" }, "parent exits before termination");
+        process.kill(pid, 0);
+        if (mode === "cancelled") controller.abort();
+        const result = await Promise.race([
+            execution,
+            new Promise((_, reject) => { deadline = setTimeout(() => reject(new Error("execution did not terminate within 6 seconds")), 6000); }),
+        ]);
+        assert.equal(result.status, mode, JSON.stringify(result));
+        assert.equal(result.complete, false);
+        assert.equal(result.error, undefined);
+        assert.equal(result.stdout, "descendant stdout\n");
+        assert.equal(result.stderr, "descendant stderr\n");
+        assert.throws(() => process.kill(pid, 0), { code: "ESRCH" }, "descendant must not survive");
+    } finally {
+        clearTimeout(deadline);
+        controller.abort();
+        if (pid) {
+            try { process.kill(pid, "SIGKILL"); } catch (error) { if (error.code !== "ESRCH") throw error; }
+        }
+        await execution;
+    }
+});
+
+test("process already cancelled does not launch", async t => {
+    const f = await fixture(t);
+    const marker = path.join(f.root, "launched");
+    const result = await execute(process.execPath, ["-e", `require('node:fs').writeFileSync(${JSON.stringify(marker)}, '')`], {
+        cwd: f.root,
+        env: isolatedEnvironment(f.root, { os: process.platform === "win32" ? "windows" : "linux", architecture: process.arch }),
+        timeoutMs: 3000, signal: AbortSignal.abort(),
+    });
+    assert.deepEqual(result, { status: "cancelled", complete: false, exitCode: null, stdout: "", stderr: "" });
+    await assert.rejects(fs.stat(marker), { code: "ENOENT" });
+});
+
+test("process preserves arguments, explicit environment, output and exit code", async t => {
+    const f = await fixture(t);
+    const args = ["", "with spaces", 'a\\"b', 'trailing\\', "\u96ea", "line\nbreak", "& | < > %PATH%"];
+    const env = isolatedEnvironment(f.root, { os: process.platform === "win32" ? "windows" : "linux", architecture: process.arch });
+    const previous = process.env.REPRO_PROCESS_SECRET;
+    process.env.REPRO_PROCESS_SECRET = "must not inherit";
+    try {
+        const result = await execute(process.execPath, ["-e", `
+            process.stdout.write(JSON.stringify({ args: process.argv.slice(1),
+                secret: process.env.REPRO_PROCESS_SECRET, allowed: process.env.REPRO_ALLOWED_ENV }));
+            process.stderr.write('stderr\\r\\n');
+            process.exitCode = 17;
+        `, ...args], { cwd: f.root, env: { ...env, REPRO_ALLOWED_ENV: "allowed" }, timeoutMs: 30000 });
+        assert.equal(result.status, "completed", result.error);
+        assert.equal(result.complete, true);
+        assert.equal(result.exitCode, 17);
+        assert.deepEqual(JSON.parse(result.stdout), { args, allowed: "allowed" });
+        assert.equal(result.stderr, "stderr\n");
+    } finally {
+        if (previous === undefined) delete process.env.REPRO_PROCESS_SECRET;
+        else process.env.REPRO_PROCESS_SECRET = previous;
+    }
+});
+
+for (const missing of ["executable", "environment"]) test(`process missing ${missing} remains an exception`, async t => {
+    const f = await fixture(t);
+    const result = await execute(path.join(f.root, "does-not-exist.exe"), [], {
+        cwd: f.root,
+        env: missing === "environment" ? undefined
+            : isolatedEnvironment(f.root, { os: process.platform === "win32" ? "windows" : "linux", architecture: process.arch }),
+        timeoutMs: 30000, maxBytes: 0,
+    });
+    assert.equal(result.status, "exception", JSON.stringify(result));
+    assert.equal(result.complete, false);
+    assert.ok(result.error);
+});
+
+test("process cancellation during launch is bounded and never launches the target", { skip: process.platform !== "win32" }, async t => {
+    const f = await fixture(t);
+    const marker = path.join(f.root, "launched");
+    const controller = new AbortController();
+    const execution = execute(process.execPath, ["-e", `require('node:fs').writeFileSync(${JSON.stringify(marker)}, '')`], {
+        cwd: f.root,
+        env: isolatedEnvironment(f.root, { os: "windows", architecture: process.arch }),
+        timeoutMs: 30000, signal: controller.signal,
+    });
+    controller.abort();
+    const result = await execution;
+    assert.equal(result.status, "cancelled");
+    assert.equal(result.complete, false);
+    assert.equal(result.error, undefined);
+    await assert.rejects(fs.stat(marker), { code: "ENOENT" });
+});
+
+test("process completes and removes detached servers that close their output pipes", { skip: process.platform !== "win32" }, async t => {
+    const f = await fixture(t);
+    const ready = path.join(f.root, "server.pid");
+    const server = `
+        require('node:fs').writeFileSync(${JSON.stringify(ready)}, String(process.pid));
+        process.send('ready');
+        process.disconnect();
+        setInterval(() => {}, 1000);
+    `;
+    try {
+        const result = await execute(process.execPath, ["-e", `
+            const server = require('node:child_process').spawn(process.execPath, ['-e', ${JSON.stringify(server)}],
+                { detached: true, stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
+            server.once('message', () => { process.stdout.write('build complete\\n'); process.exit(17); });
+        `], {
+            cwd: f.root, env: isolatedEnvironment(f.root, { os: "windows", architecture: process.arch }), timeoutMs: 3000,
+        });
+        const pid = Number(await fs.readFile(ready, "utf8"));
+        assert.equal(result.status, "completed", JSON.stringify(result));
+        assert.equal(result.complete, true);
+        assert.equal(result.exitCode, 17);
+        assert.equal(result.stdout, "build complete\n");
+        assert.equal(result.stderr, "");
+        assert.throws(() => process.kill(pid, 0), { code: "ESRCH" }, "detached build server must not survive");
+    } finally {
+        try {
+            const pid = Number(await fs.readFile(ready, "utf8"));
+            if (pid > 0) process.kill(pid, "SIGKILL");
+        } catch (error) { if (!["ENOENT", "ESRCH"].includes(error.code)) throw error; }
+    }
+});

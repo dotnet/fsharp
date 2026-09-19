@@ -378,6 +378,10 @@ entrypoints, declarations or SDK property-query support are explicitly untestabl
 Historical files, TFMs and package versions are never rewritten.
 
 MSBuild-evaluated paths and package identity must agree before/after the build.
+After the product graph finishes, the adapter explicitly packs its built Core
+with `--no-build --no-restore` into Core's evaluated `PackageOutputPath`.
+The graph can place dependency packages under `Dependency/Shipping`; that is not
+the standalone Core output, and the adapter does not guess between the two.
 Inventory verifies bytes, assembly versions, runtimeconfigs and the Core package,
 rejecting missing outputs, SDK-bundled compiler fallback and redirected artifacts.
 No timestamp selection or shared same-version Core cache is used. Exact acquisition
@@ -398,6 +402,15 @@ their output matches the expected diagnostic. Cancellation terminates process
 trees and removes only the UUID-marked, resolved owned scratch child; ordinary
 results retain their scratch artifacts for diagnosis. Results expose no mutation
 or publisher operation. Controller provenance/admission remains separate.
+Cancellation also finalizes staged `buildRevision` calls. An interruption during
+final source verification or observation persistence invalidates a completed
+reproduction, and repeated finalization reuses the same observation.
+On Windows, a trusted PowerShell supervisor joins a kill-on-close Job Object
+before launching the command. It drains inherited output even after the parent
+exits; timeout/cancellation kills the contained descendants. Successful commands
+do not wait for detached build servers that have closed their output pipes.
+The shared environment supplies private Windows machine-configuration paths so
+NuGet can initialize without reading the developer's machine feed configuration.
 
 ### Bounded opt-in clean-build smoke
 
@@ -411,11 +424,17 @@ builds the product graph cleanly and requests two verified local executions.
 It prints its retained result/evidence location and exits 2 on an untestable
 result. No live issue discovery or full compiler test suite is involved.
 
-Local verification on 2026-09-19: RED was observed before `workspace.cjs` existed;
-the final scoped suite passed **498 tests**, including 15 workspace contracts.
+Local verification on 2026-09-19: corrective RED cases reproduced the graph's
+`Dependency/Shipping` output mismatch and three staged/finalization cancellation
+failures. Real subprocess cases reproduced exited-parent hangs and detached-server
+timeouts. The final scoped suite passed **519 tests**, including 28 workspace
+contracts. In-memory mutations to use Debug and bypass package validation failed
+the command-contract case and all four package-identity cases, respectively.
+Changed-script syntax (including the PowerShell helper), formatting, and working/
+sprint-range whitespace checks passed.
 The real Windows x64 smoke pinned
-`e6ee82e2f1e730ea2ac64a05925dd180a7dfe2df`, build instance
-`38b31a09-c802-495f-ad3a-2e4b006515ab`. Its accurate result is
+`bf13cf234bc47e62166bc82748d6784d0aee086f`, build instance
+`20f99ee4-f35e-48c7-8620-b2ecce174da8`. Its accurate result is
 **untestable / unavailable-sdk**, exit 2: exact SDK
 `11.0.100-rc.1.26420.103` has no verified public archive available to acquisition.
 Release metadata returned 200, but
@@ -425,8 +444,8 @@ returned 404 under both `https://builds.dotnet.microsoft.com/dotnet` and
 `global.json` retained its hash. Acquisition stopped before the build entrypoint,
 so no build binlog or local FSI result exists; this is not a green clean build
 or compiler suite. Retained evidence is
-`Q:\fsharp-workspace-smoke-r1n9dF\result.json`, SHA-256
-`4a3bf0528370c54471aa8e81e68f62e4db958a441fab69819e2b540a6c2f7bf5`.
+`Q:\fsharp-workspace-smoke-D70Agl\result.json`, SHA-256
+`28f8a3fe1061f006e8786ef3d426e8e864220f662dd5fc8cb226ef6ff284e302`.
 
 ## Reproduction execution
 

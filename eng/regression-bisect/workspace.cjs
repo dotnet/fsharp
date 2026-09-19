@@ -70,7 +70,7 @@ async function invoke(w, stage, executable, args, settings = {}, boundary = w.ex
     await evidence(w, `command-${w.commands.length}.json`, { ...entry, result });
     if (result.exitCode !== 0 || result.status === "timeout" || result.status === "cancelled" || result.complete === false) {
         throw Object.assign(new Error(
-            `${stage} command failed (${entry.status}, exit ${result.exitCode}): ${executable} ${args.join(" ")}\n${result.stderr}`),
+            `${stage} command failed (${entry.status}, exit ${result.exitCode}): ${executable} ${args.join(" ")}\n${result.error ?? result.stderr}`),
         { code: result.status === "timeout" || result.status === "cancelled" ? result.status : "command-failure" });
     }
     w.signal.throwIfAborted();
@@ -119,8 +119,6 @@ async function prepareRevisionWorkspace(options, dependencies = {}) {
         if (options.request.platform.os === "windows") Object.assign(w.env, {
             OS: "Windows_NT", PATHEXT: ".COM;.EXE;.BAT;.CMD",
             PSModulePath: path.join(w.env.SystemRoot, "System32", "WindowsPowerShell", "v1.0", "Modules"),
-            ProgramFiles: path.join(root, "program-files"), "ProgramFiles(x86)": path.join(root, "program-files-x86"),
-            ProgramData: path.join(root, "program-data"), ALLUSERSPROFILE: path.join(root, "program-data"),
         });
         for (const dir of [w.sourceDirectory, w.sampleDirectory, w.evidenceRoot, path.join(root, "hooks"),
             w.env.HOME, w.env.TEMP, w.env.APPDATA, w.env.LOCALAPPDATA, w.env.NUGET_PACKAGES]) await fs.mkdir(dir, { recursive: true });
@@ -144,6 +142,7 @@ async function prepareRevisionWorkspace(options, dependencies = {}) {
             await fs.mkdir(path.dirname(target), { recursive: true });
             await fs.copyFile(file.path, target);
         }
+        w.signal.throwIfAborted();
         w.status = "prepared";
         return w;
     } catch (error) {
@@ -179,7 +178,7 @@ async function layout(w) {
             !parsed.hash, "historical feed must be public HTTPS without credentials");
     }
     w.adapter = {
-        version: 1, layout: /FSharp\.slnx/.test(windows ? ps : sh) ? "arcade-slnx-products" : "arcade-sln-products",
+        version: 2, layout: /FSharp\.slnx/.test(windows ? ps : sh) ? "arcade-slnx-products" : "arcade-sln-products",
         mapping: "identity: nested fsi/fsc projects with evaluated artifacts/bin/<product>/Release/<tfm> outputs",
         injection: await Promise.all(["UseLocalCompiler.Directory.Build.props", "UseLocalCompiler.Directory.Build.targets"]
             .map(async name => ({ path: name, sha256: hash(await fs.readFile(path.join(trustedRoot, name))) }))),
@@ -360,6 +359,11 @@ async function buildRevision(w, dependencies = {}) {
             await invoke(w, "build", "/bin/bash", [path.join(w.sourceDirectory, "build.sh"),
                 "--configuration", "Release", "--pack", "--bootstrap", "--product-build"]);
         }
+        // Product graphs can pack dependencies elsewhere; repack the built Core into its evaluated standalone output.
+        const packageOutput = path.resolve(w.sourceDirectory, rows.corePackage.PackageOutputPath);
+        requireValue(inside(w.sourceDirectory, packageOutput), "Core package output escapes source checkout");
+        await invoke(w, "build", w.toolchain.hostPath, ["pack", path.join(w.sourceDirectory, projects.corePackage),
+            "--configuration", "Release", "--no-build", "--no-restore", "--output", packageOutput]);
         stage = "identity";
         await sourceUnchanged(w);
         for (const [role, project] of Object.entries(projects)) {
@@ -371,20 +375,26 @@ async function buildRevision(w, dependencies = {}) {
         stage = "identity";
         w.product = await inventory(w, rows);
         await evidence(w, "product.json", w.product);
+        w.signal.throwIfAborted();
         w.status = "built";
         return { status: "built", product: w.product, toolchain: w.toolchain,
             buildInstanceId: w.buildInstanceId, commands: w.commands, evidence: w.evidence };
     } catch (error) {
-        return { ...failure(w, error.code === "unavailable-runtime" ? "runtime" : stage, error),
+        const result = { ...failure(w, error.code === "unavailable-runtime" ? "runtime" : stage, error),
             buildInstanceId: w?.buildInstanceId, commands: w?.commands, evidence: w?.evidence };
+        return owned.has(w) && w.signal.aborted ? finish(w, result) : result;
     }
 }
 
-async function finish(w, result) {
+function finish(w, result) {
+    return w.finalization ??= finalize(w, result);
+}
+
+async function finalize(w, result) {
     if (w.globalJson) {
         try { await sourceUnchanged(w); }
         catch (error) {
-            if (!w.signal.aborted) result = { ...failure(w, "identity", error), ...(result.error ? { priorError: result.error } : {}) };
+            result = { ...failure(w, "identity", error), ...(result.error ? { priorError: result.error } : {}) };
         }
     }
     const logs = path.join(w.sourceDirectory, "artifacts", "log");
@@ -406,17 +416,26 @@ async function finish(w, result) {
             acquisitionDigest: fingerprintInput(w.toolchain) } : w.declaration,
         product: w.product, commands: w.commands, evidence: w.evidence, durationMs: Date.now() - w.started,
     };
-    if (w.signal.aborted) {
-        requireValue(owned.has(w) && path.dirname(w.root) === w.parent &&
-            path.basename(w.root) === `revision-${w.buildInstanceId}` &&
-            !(await fs.lstat(w.root)).isSymbolicLink() && await fs.realpath(w.root) === w.root &&
-            JSON.parse(await fs.readFile(path.join(w.root, "owner.json"))).buildInstanceId === w.buildInstanceId,
-        "refusing cleanup outside owned resolved scratch tree");
-        await fs.rm(w.root, { recursive: true });
-        outcome.scratchRemoved = true;
+    let written = false;
+    for (;;) {
+        if (w.signal.aborted && !outcome.scratchRemoved) {
+            Object.assign(outcome, failure(w, "finalization", w.signal.reason));
+            requireValue(owned.has(w) && path.dirname(w.root) === w.parent &&
+                path.basename(w.root) === `revision-${w.buildInstanceId}` &&
+                !(await fs.lstat(w.root)).isSymbolicLink() && await fs.realpath(w.root) === w.root &&
+                JSON.parse(await fs.readFile(path.join(w.root, "owner.json"))).buildInstanceId === w.buildInstanceId,
+            "refusing cleanup outside owned resolved scratch tree");
+            await fs.rm(w.root, { recursive: true });
+            outcome.scratchRemoved = true;
+        }
+        const bytes = JSON.stringify(outcome, null, 2);
+        await fs.writeFile(path.join(w.evidenceRoot, "observation.json"), bytes, { flag: written ? "w" : "wx" });
+        written = true;
+        // An abort during evidence I/O must invalidate the persisted observation too.
+        if (w.signal.aborted && !outcome.scratchRemoved) continue;
+        w.evidence.push({ path: `${w.buildInstanceId}/observation.json`, sha256: hash(bytes) });
+        return outcome;
     }
-    await evidence(w, "observation.json", outcome);
-    return outcome;
 }
 
 async function testSourceRevision(options, dependencies = {}) {

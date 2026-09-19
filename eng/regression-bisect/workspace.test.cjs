@@ -5,7 +5,7 @@ const path = require("node:path");
 const { fixture } = require("./fixtures/reproduction.cjs");
 const { seal } = require("./fixtures/contracts.cjs");
 const { fingerprintInput } = require("./model.cjs");
-const { hash, isolatedEnvironment } = require("./toolchain-io.cjs");
+const { hash, isolatedEnvironment, run } = require("./toolchain-io.cjs");
 const { execute } = require("./repro-process.cjs");
 const { prepareRevisionWorkspace, buildRevision, testSourceRevision } = require("./workspace.cjs");
 
@@ -13,13 +13,15 @@ const git = process.platform === "win32" ? "C:\\Program Files\\Git\\cmd\\git.exe
 const platform = { os: "windows", architecture: "x64", rid: "win-x64" };
 const ok = stdout => ({ status: "completed", complete: true, exitCode: 0, stdout, stderr: "" });
 
-async function controlled(t) {
+async function controlled(t, os = "windows") {
     const f = await fixture(t);
+    const targetPlatform = { ...platform, os, rid: `${os === "windows" ? "win" : "linux"}-x64` };
     const mirror = path.join(f.root, "mirror");
     await fs.mkdir(mirror);
     await fs.writeFile(path.join(f.root, "gitconfig"), "");
+    const runGit = (args, settings) => run(git, args, settings);
     const command = async args => {
-        const result = await execute(git, ["-c", "core.hooksPath=", ...args], {
+        const result = await runGit(["-c", "core.hooksPath=", ...args], {
             cwd: mirror, env: { ...isolatedEnvironment(f.root, platform),
                 GIT_CONFIG_NOSYSTEM: "1", GIT_CONFIG_GLOBAL: path.join(f.root, "gitconfig") }, timeoutMs: 30000,
         });
@@ -49,12 +51,13 @@ async function controlled(t) {
         shas.push(await command(["rev-parse", "HEAD"]));
     }
     f.manifest.matrix[0].languageVersion = "preview";
+    f.manifest.matrix[0].os = os;
     seal(f.manifest);
     const options = {
         request: {
             schemaVersion: 1, repository: "dotnet/fsharp", sourceSha: shas[0], phase: "main",
             manifestDigest: fingerprintInput(f.manifest), approvalDigest: f.manifest.approvedInputDigest,
-            platform, allocation: { buildTimeoutMs: 60000, workerTimeoutMs: 120000 },
+            platform: targetPlatform, allocation: { buildTimeoutMs: 60000, workerTimeoutMs: 120000 },
         },
         manifest: f.manifest, sourceDirectory: f.sourceDirectory, mirrorDirectory: mirror,
         scratchDirectory: path.join(f.root, "scratch"), evidenceDirectory: path.join(f.root, "evidence"),
@@ -73,7 +76,7 @@ async function controlled(t) {
             activeSdk = request.version;
             const runtime = `${activeSdk.split(".")[0]}.0.0`;
             for (const [name, text] of Object.entries({
-                "dotnet.exe": "host",
+                [os === "windows" ? "dotnet.exe" : "dotnet"]: "host",
                 [`shared/Microsoft.NETCore.App/${runtime}/System.Private.CoreLib.dll`]: "runtime",
                 [`sdk/${activeSdk}/FSharp/fsi.runtimeconfig.json`]: JSON.stringify({ runtimeOptions: { framework: { name: "Microsoft.NETCore.App", version: runtime } } }),
                 [`sdk/${activeSdk}/FSharp/fsi.deps.json`]: '{"libraries":{}}',
@@ -90,7 +93,7 @@ async function controlled(t) {
         },
         run: async (exe, args) => {
             const root = path.dirname(exe), runtime = `${activeSdk.split(".")[0]}.0.0`;
-            if (args[0] === "--info") return ok(`Base Path: ${path.join(root, "sdk", activeSdk)}\nRID: win-x64\n`);
+            if (args[0] === "--info") return ok(`Base Path: ${path.join(root, "sdk", activeSdk)}\nRID: ${targetPlatform.rid}\n`);
             if (args[0] === "--version") return ok(activeSdk);
             if (args[0] === "--list-sdks") return ok(`${activeSdk} [${path.join(root, "sdk")}]`);
             if (args[0] === "--list-runtimes") return ok(`Microsoft.NETCore.App ${runtime} [${path.join(root, "shared", "Microsoft.NETCore.App")}]`);
@@ -108,7 +111,11 @@ async function controlled(t) {
         };
     };
     const deps = { toolchains, execute: async (exe, args, settings) => {
-        if (exe === git) return execute(exe, args, settings);
+        if (exe === git) {
+            const result = await runGit(args, settings);
+            if (args.includes("diff") && f.reproductions === 2) f.finalizeCancellation?.abort();
+            return result;
+        }
         for (const key of ["GITHUB_TOKEN", "GH_TOKEN", "NUGET_AUTH_TOKEN", "SSH_AUTH_SOCK", "MSBuildSDKsPath"]) {
             assert.equal(settings.env[key], undefined);
         }
@@ -120,12 +127,24 @@ async function controlled(t) {
                     assemblyName: path.basename(file, ".dll"),
                     ...(file.endsWith(".nupkg") ? { id: "FSharp.Core", version: "1.0.0", entries: [
                         { path: "lib/netstandard2.0/FSharp.Core.dll", sha256: hash(`core-${builds.at(-1).sha}`) },
-                    ] } : {}) });
+                    ], ...f.packageIdentity } : {}) });
             }
             return ok(JSON.stringify(result));
         }
         if (args[0] === "msbuild") return ok(JSON.stringify({ Properties: await properties(settings.cwd, args[1]) }));
+        if (args[0] === "pack") {
+            assert.deepEqual(args, ["pack", path.join(settings.cwd, "src", "FSharp.Core", "FSharp.Core.fsproj"),
+                "--configuration", "Release", "--no-build", "--no-restore",
+                "--output", (await properties(settings.cwd, args[1])).PackageOutputPath]);
+            if (f.packFail) return { ...ok(""), exitCode: 1, stderr: f.manifest.assertions.failure.stderr };
+            const directory = args.at(-1);
+            await fs.mkdir(directory, { recursive: true });
+            if (!f.missingPackage) await fs.writeFile(path.join(directory, "FSharp.Core.1.0.0.nupkg"), `package-${builds.at(-1).sha}`);
+            f.packs = (f.packs ?? 0) + 1;
+            return ok("");
+        }
         if (args.includes("--exec")) {
+            f.reproductions = (f.reproductions ?? 0) + 1;
             const fsi = args[3];
             const core = path.join(path.dirname(fsi), "FSharp.Core.dll");
             const runtime = args[2];
@@ -137,8 +156,9 @@ async function controlled(t) {
             return ok(f.manifest.assertions.pass.stdout);
         }
         const source = settings.cwd;
-        const sha = (await execute(git, ["rev-parse", "HEAD"], { ...settings, timeoutMs: 30000 })).stdout.trim();
-        builds.push({ sha, source, env: settings.env, args });
+        const sha = (await runGit(["rev-parse", "HEAD"], { ...settings, timeoutMs: 30000 })).stdout.trim();
+        builds.push({ sha, source, exe, env: settings.env, args });
+        if (f.launchFail) return { ...ok(""), status: "exception", complete: false, exitCode: 1, error: "process supervision failed" };
         if (f.fail) {
             const log = path.join(source, "artifacts", "log", "Release", "bootstrap.binlog");
             await fs.mkdir(path.dirname(log), { recursive: true });
@@ -161,8 +181,9 @@ async function controlled(t) {
             }
         }
         const p = await properties(source, "FSharp.Core.fsproj");
-        await fs.mkdir(p.PackageOutputPath, { recursive: true });
-        if (!f.missingPackage) await fs.writeFile(path.join(p.PackageOutputPath, "FSharp.Core.1.0.0.nupkg"), `package-${sha}`);
+        const dependencyOutput = path.join(path.dirname(p.PackageOutputPath), "Dependency", "Shipping");
+        await fs.mkdir(dependencyOutput, { recursive: true });
+        if (!f.missingPackage) await fs.writeFile(path.join(dependencyOutput, "FSharp.Core.1.0.0.nupkg"), `package-${sha}`);
         await f.afterBuild?.(source);
         return ok("");
     } };
@@ -199,8 +220,48 @@ test("fresh revisions use their exact SHA, SDK, TFM and independent same-version
     await assert.rejects(fs.access(hookMarker));
 });
 
+for (const os of ["windows", "linux"]) for (const revision of [0, 1]) {
+    test(`${os} revision ${revision} builds Release products and packs Core into its evaluated output`, async t => {
+        const f = await controlled(t, os);
+        const result = await testSourceRevision({
+            ...f.options, request: { ...f.options.request, sourceSha: f.shas[revision] },
+        }, f.deps);
+        assert.equal(result.outcome.outcome, "pass", JSON.stringify(result));
+        assert.equal(f.builds.length, 1);
+        const { source, args, exe, env } = f.builds[0];
+        assert.equal(exe, os === "windows"
+            ? path.join(env.SystemRoot, "System32", "WindowsPowerShell", "v1.0", "powershell.exe") : "/bin/bash");
+        assert.deepEqual(args, os === "windows"
+            ? ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", path.join(source, "eng", "Build.ps1"),
+                "-restore", "-build", "-c", "Release", "-pack", "-bootstrap", "-noVisualStudio", "-msbuildEngine", "dotnet",
+                `/p:Projects=${path.join(source, "src", "Microsoft.FSharp.Compiler", "Microsoft.FSharp.Compiler.fsproj")}`]
+            : [path.join(source, "build.sh"), "--configuration", "Release", "--pack", "--bootstrap", "--product-build"]);
+        assert.equal(f.packs, 1);
+        assert.equal(result.product.files.find(x => x.role === "corePackage").path,
+            path.join(source, "artifacts", "packages", "Release", "Shipping", "FSharp.Core.1.0.0.nupkg"));
+    });
+}
+
+for (const [name, identity] of [
+    ["ID", { id: "Other.Core" }],
+    ["version", { version: "2.0.0" }],
+    ["Core bytes", { entries: [{ path: "lib/netstandard2.0/FSharp.Core.dll", sha256: hash("different build") }] }],
+    ["Core entry", { entries: [{ path: "tools/FSharp.Core.dll", sha256: hash("different build") }] }],
+]) test(`mismatched package ${name} is rejected before reproduction`, async t => {
+    const f = await controlled(t);
+    f.packageIdentity = identity;
+    const result = await testSourceRevision(f.options, f.deps);
+    assert.equal(result.status, "untestable");
+    assert.equal(result.outcome.outcome, "untestable");
+    assert.equal(result.outcome.reason, "wrong-identity");
+    assert.match(result.error.message, /Core package identity\/bytes/);
+    assert.equal(f.reproductions, undefined);
+});
+
 for (const [name, change, reason] of [
     ["failed source build", f => { f.fail = true; }, "build-failure"],
+    ["failed process launch", f => { f.launchFail = true; }, "build-failure"],
+    ["failed Core pack", f => { f.packFail = true; }, "build-failure"],
     ["timed out source build", f => { f.timeout = true; }, "timeout"],
     ["stale fsi", f => { f.stale = "fsi"; }, "wrong-identity"],
     ["stale fsc", f => { f.stale = "fsc"; }, "wrong-identity"],
@@ -215,6 +276,7 @@ for (const [name, change, reason] of [
     assert.equal(result.outcome.outcome, "untestable");
     assert.equal(result.outcome.reason, reason, JSON.stringify(result));
     assert.ok(result.error);
+    if (f.launchFail) assert.match(result.error.message, /process supervision failed/);
     if (f.fail) assert.ok(result.evidence.some(e => e.path.endsWith(".binlog")));
     assert.ok(result.evidence.every(e => !path.isAbsolute(e.path) && !e.path.split("/").includes("..") && /^[a-f0-9]{64}$/.test(e.sha256)));
 });
@@ -242,6 +304,36 @@ test("cancellation removes only its scratch tree and retains failure evidence", 
     assert.deepEqual(await fs.readdir(f.options.scratchDirectory), [path.basename(sibling.root)]);
     await fs.access(f.options.mirrorDirectory);
 });
+
+for (const when of ["before-build", "during-build", "finalization"]) {
+    test(`${when} cancellation cannot return success or retain its staged scratch tree`, async t => {
+        const f = await controlled(t);
+        const controller = new AbortController();
+        const sibling = await prepareRevisionWorkspace(f.options, f.deps);
+        const options = { ...f.options, signal: controller.signal };
+        let result;
+        if (when === "finalization") {
+            f.finalizeCancellation = controller;
+            result = await testSourceRevision(options, f.deps);
+        } else {
+            const w = await prepareRevisionWorkspace(options, f.deps);
+            assert.equal(w.status, "prepared");
+            if (when === "before-build") controller.abort();
+            else f.cancel = controller;
+            result = await buildRevision(w, f.deps);
+        }
+        assert.equal(result.status, "untestable");
+        assert.equal(result.outcome.outcome, "untestable");
+        assert.equal(result.error.code, "cancelled");
+        assert.equal(result.scratchRemoved, true);
+        assert.deepEqual(await fs.readdir(f.options.scratchDirectory), [path.basename(sibling.root)]);
+        const observation = result.evidence.find(e => e.path.endsWith("/observation.json"));
+        assert.ok(observation);
+        const bytes = await fs.readFile(path.join(f.options.evidenceDirectory, observation.path));
+        assert.equal(hash(bytes), observation.sha256);
+        assert.equal(JSON.parse(bytes).error.code, "cancelled");
+    });
+}
 
 test("concurrent workspace preparation cannot collide and prepared poison is rejected", async t => {
     const f = await controlled(t);

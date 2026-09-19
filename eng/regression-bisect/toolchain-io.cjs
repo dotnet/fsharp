@@ -80,7 +80,11 @@ function isolatedEnvironment(root, platform) {
         ? [path.join(systemRoot, "System32"), systemRoot, path.join(systemRoot, "System32", "WindowsPowerShell", "v1.0")].join(path.delimiter)
         : "/usr/bin:/bin:/usr/sbin:/sbin";
     return {
-        ...(platform.os === "windows" ? { SystemRoot: systemRoot, WINDIR: systemRoot, ComSpec: path.join(systemRoot, "System32", "cmd.exe") } : {}),
+        ...(platform.os === "windows" ? {
+            SystemRoot: systemRoot, WINDIR: systemRoot, ComSpec: path.join(systemRoot, "System32", "cmd.exe"),
+            ProgramFiles: path.join(root, "program-files"), "ProgramFiles(x86)": path.join(root, "program-files-x86"),
+            ProgramData: path.join(root, "program-data"), ALLUSERSPROFILE: path.join(root, "program-data"),
+        } : {}),
         PATH: `${dotnet}${path.delimiter}${systemPath}`,
         HOME: home, USERPROFILE: home, APPDATA: path.join(home, "AppData", "Roaming"), LOCALAPPDATA: path.join(home, "AppData", "Local"),
         TMP: path.join(root, "tmp"), TEMP: path.join(root, "tmp"), TMPDIR: path.join(root, "tmp"),
