@@ -40,6 +40,9 @@
     <Project Path="tests/FSharp.Compiler.ComponentTests/FSharp.Compiler.ComponentTests.fsproj">
       <BuildType Solution="Proto|*" Project="Debug" />
     </Project>
+    <Project Path="tests/FSharp.Compiler.Interactive.Server.Tests/FSharp.Compiler.Interactive.Server.Tests.fsproj">
+      <BuildType Solution="Proto|*" Project="Debug" />
+    </Project>
     <Project Path="tests/FSharp.Compiler.LanguageServer.Tests/FSharp.Compiler.LanguageServer.Tests.fsproj">
       <BuildType Solution="Proto|*" Project="Debug" />
     </Project>
@@ -103,6 +106,9 @@
       <BuildType Solution="Proto|*" Project="Debug" />
     </Project>
     <Project Path="vsintegration/src/FSharp.Editor/FSharp.Editor.fsproj">
+      <BuildType Solution="Proto|*" Project="Release" />
+    </Project>
+    <Project Path="vsintegration/src/FSharp.Interactive.Window/FSharp.Interactive.Window.fsproj">
       <BuildType Solution="Proto|*" Project="Release" />
     </Project>
     <Project Path="vsintegration/src/FSharp.ProjectSystem.PropertyPages/FSharp.ProjectSystem.PropertyPages.vbproj">

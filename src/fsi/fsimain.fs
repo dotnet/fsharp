@@ -183,6 +183,11 @@ let evaluateSession (argv: string[]) =
         Console.InputEncoding <- System.Text.Encoding.UTF8
         Console.OutputEncoding <- System.Text.Encoding.UTF8
 
+    // A host may ask for the JSON-RPC server mode, in which interactions arrive on a named pipe
+    // instead of standard input. Recognised here because the server is driven from this entry
+    // point, alongside the event loop it evaluates on.
+    let jsonRpcPipeName = FSharp.Compiler.Interactive.Server.tryGetPipeName argv
+
     try
         // Create the console reader
         let console = new FSharp.Compiler.Interactive.ReadLineConsole()
@@ -190,7 +195,10 @@ let evaluateSession (argv: string[]) =
         // Define the function we pass to the FsiEvaluationSession
         let getConsoleReadLine (probeToSeeIfConsoleWorks) =
             let consoleIsOperational =
-                if probeToSeeIfConsoleWorks then
+                if jsonRpcPipeName.IsSome then
+                    // The session is driven by a host, so there is no user at a console to read from.
+                    false
+                elif probeToSeeIfConsoleWorks then
                     //if progress then fprintfn outWriter "probing to see if console works..."
                     try
                         // Probe to see if the console looks functional on this version of .NET
@@ -340,6 +348,13 @@ let evaluateSession (argv: string[]) =
                 | Some s -> s + "." + s2
                 | None -> s2
             ))
+
+        // Serve the host on a background thread, leaving this thread to Run() and the event loop
+        // that interactions are evaluated on.
+        match jsonRpcPipeName with
+        | Some pipeName ->
+            FSharp.Compiler.Interactive.Server.startOnBackgroundThread fsiSession fsiConfig pipeName Console.Out Console.Error
+        | None -> ()
 
         // Start the session
         fsiSession.Run()
