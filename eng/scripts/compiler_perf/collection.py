@@ -179,7 +179,7 @@ def normalize_evidence(evidence):
         observations = counters["observations"]
         m.require(observations, "Missing counters")
         # Ordering is per counter because exporters may interleave streams.
-        rates, heap = [], []
+        increments, heap = [], []
         for name in {o["name"] for o in observations}:
             stream = [o for o in observations if o["name"] == name]
             times = [number(o["timestamp_ms"], "counter time") for o in stream]
@@ -189,20 +189,19 @@ def normalize_evidence(evidence):
         for o in observations:
             value = number(o["value"], "counter value")
             if o["name"] == "alloc-rate":
-                m.require(o["unit"] == "B / 1 sec" and o["semantics"] == "rate", "Invalid allocation rate semantics")
-                rates.append(o)
+                m.require(o["unit"] == "B / 1 sec" and o["semantics"] == "increment", "Invalid allocation increment semantics")
+                increments.append(o)
             elif o["name"] == "gc-heap-size":
                 m.require(o["unit"] == "MB" and o["semantics"] == "gauge", "Invalid heap units")
                 heap.append(dict(o, bytes=number(value * 1_000_000, "heap bytes")))
-        m.require(len(rates) >= 2 and heap, "Missing supported System.Runtime counters")
+        m.require(len(increments) >= 2 and heap, "Missing supported System.Runtime counters")
         # One unsampled interval at each edge; counter-tool startup is not target runtime.
         counter_edge_ms = 2 * counters["interval_seconds"] * 1000
-        m.require(rates[0]["timestamp_ms"] <= counter_edge_ms
-                  and rates[-1]["timestamp_ms"] - rates[0]["timestamp_ms"] >= max(1, last - first - counter_edge_ms),
+        m.require(increments[0]["timestamp_ms"] <= counter_edge_ms
+                  and increments[-1]["timestamp_ms"] - increments[0]["timestamp_ms"] >= max(1, last - first - counter_edge_ms),
                   "Insufficient counter coverage")
-        # EventCounter rates describe the interval ending at the reported observation.
-        integrated = number(sum(b["value"] * ((b["timestamp_ms"] - a["timestamp_ms"]) / 1000)
-                                for a, b in zip(rates, rates[1:])), "allocation rate integral")
+        # Pinned v8 CSV exports Increment despite the Rate label; display timestamps do not scale it.
+        observed = number(sum(o["value"] for o in increments), "allocation counter observed byte sum")
         unavailable = {"retained_heap_bytes": "No forced full-GC/live-object retention observation; heap and RSS are not retention"}
         metrics = {"elapsed_ms": number(proc["elapsed_ms"], "elapsed_ms"),
                    "cpu_sample_weight": weight, "cpu_sample_unit": "samples",
@@ -221,7 +220,7 @@ def normalize_evidence(evidence):
                 "profiler_attached": True, "acceptance_eligible": False, "metrics": metrics,
                 "allocation_method": "Sampled GCAllocationTick byte estimate, not exact allocated bytes",
                 "allocation_aggregation": aggregation,
-                "allocation_rate_integral_estimate_bytes": integrated,
+                "allocation_counter_observed_bytes": observed,
                 "heap_observation": heap[-1], "unavailable_reasons": unavailable,
                 "stack_semantics": "Inclusive sampled stacks; not exclusive CPU milliseconds",
                 "stacks": trace["stacks"], "source_hashes": evidence["source_hashes"]}
@@ -232,7 +231,7 @@ def normalize_evidence(evidence):
 def read_counters(path, pid):
     m.require(Path(path).stat().st_size <= LIMITS["json_bytes"], "Counter size budget exceeded")
     observations, origin = [], None
-    names = {"Allocation Rate (B / 1 sec)": ("alloc-rate", "B / 1 sec", "rate", "Rate"),
+    names = {"Allocation Rate (B / 1 sec)": ("alloc-rate", "B / 1 sec", "increment", "Rate"),
              "GC Heap Size (MB)": ("gc-heap-size", "MB", "gauge", "Metric")}
     with Path(path).open(encoding="utf-8-sig", newline="") as stream:
         reader = csv.DictReader(stream)

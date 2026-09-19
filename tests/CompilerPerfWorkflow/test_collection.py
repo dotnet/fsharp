@@ -60,25 +60,36 @@ def artifact_profile(root):
 
 class CollectionTests(unittest.TestCase):
     def test_normalized_metric_meanings(self):
-        result = c.normalize_evidence(profile())
-        self.assertEqual(result["status"], "collected")
-        metrics = result["metrics"]
-        self.assertEqual(metrics["elapsed_ms"], 4000)
-        self.assertEqual(metrics["process_cpu_ms"], 2700)
-        self.assertEqual(metrics["cpu_sample_weight"], 30)
-        self.assertEqual(metrics["cpu_sample_unit"], "samples")
-        self.assertEqual(metrics["allocated_bytes_estimate"], 300000)
-        self.assertIn("sample", result["allocation_method"].lower())
-        self.assertEqual(metrics["gc_pause_ms"], 400)
-        self.assertEqual(metrics["gc_counts"], {"0": 1, "1": 0, "2": 1})
-        self.assertEqual(metrics["managed_heap_bytes"], 12000000)
-        self.assertEqual(metrics["peak_rss_bytes"], 90000000)
-        self.assertIsNone(metrics["retained_heap_bytes"])
-        self.assertIn("retained_heap_bytes", result["unavailable_reasons"])
-        self.assertEqual(result["allocation_rate_integral_estimate_bytes"], 1300)
-        self.assertEqual(result["stacks"][0]["weight"], 20)
-        self.assertFalse(result["acceptance_eligible"])
-        self.assertTrue(result["profiler_attached"])
+        for middle, zero_increment in itertools.product(("01.5000000", "01.0000000", "00.0000000"), (False, True)):
+            with self.subTest(middle=middle, zero_increment=zero_increment), tempfile.TemporaryDirectory() as directory:
+                text = (FIXTURES / "counters.csv").read_text().replace("01.5000000", middle)
+                if zero_increment:
+                    text += "2026-09-18T10:00:04.0000000Z,System.Runtime,Allocation Rate (B / 1 sec),Rate,0\n"
+                path = Path(directory) / "counters.csv"
+                path.write_text(text, encoding="utf-8")
+                evidence = profile()
+                evidence["counters"] = c.read_counters(path, 42)
+                result = c.normalize_evidence(evidence)
+                self.assertEqual(result["status"], "collected")
+                metrics = result["metrics"]
+                self.assertEqual(metrics["elapsed_ms"], 4000)
+                self.assertEqual(metrics["process_cpu_ms"], 2700)
+                self.assertEqual(metrics["cpu_sample_weight"], 30)
+                self.assertEqual(metrics["cpu_sample_unit"], "samples")
+                self.assertEqual(metrics["allocated_bytes_estimate"], 300000)
+                self.assertIn("sample", result["allocation_method"].lower())
+                self.assertEqual(metrics["gc_pause_ms"], 400)
+                self.assertEqual(metrics["gc_counts"], {"0": 1, "1": 0, "2": 1})
+                self.assertEqual(metrics["managed_heap_bytes"], 12000000)
+                self.assertEqual(metrics["peak_rss_bytes"], 90000000)
+                self.assertIsNone(metrics["retained_heap_bytes"])
+                self.assertIn("retained_heap_bytes", result["unavailable_reasons"])
+                # Pinned EventCounters CSV exports Increment, despite its Rate label: 100 + 200 + 400.
+                self.assertEqual(result["allocation_counter_observed_bytes"], 700)
+                self.assertNotIn("allocation_rate_integral_estimate_bytes", result)
+                self.assertEqual(result["stacks"][0]["weight"], 20)
+                self.assertFalse(result["acceptance_eligible"])
+                self.assertTrue(result["profiler_attached"])
 
     def test_invalid_profiles_fail_closed(self):
         mutations = [
@@ -102,6 +113,12 @@ class CollectionTests(unittest.TestCase):
             ("gc reversed", lambda p: p["trace"]["gc_pauses"][0].update(end_ms=0)),
             ("heap units", lambda p: p["counters"]["observations"][-1].update(unit="MiB?")),
             ("counter cumulative", lambda p: p["counters"]["observations"][0].update(semantics="cumulative")),
+            ("counter legacy rate", lambda p: p["counters"]["observations"][0].update(semantics="rate")),
+            ("counter units", lambda p: p["counters"]["observations"][0].update(unit="B")),
+            ("counter negative", lambda p: p["counters"]["observations"][0].update(value=-1)),
+            ("counter nan", lambda p: p["counters"]["observations"][0].update(value=float("nan"))),
+            ("counter infinite", lambda p: p["counters"]["observations"][0].update(value=float("inf"))),
+            ("counter boolean", lambda p: p["counters"]["observations"][0].update(value=True)),
             ("counters missing", lambda p: p["counters"].update(observations=[])),
             ("counter process", lambda p: p["counters"].update(process_id=9)),
             ("counter provider", lambda p: p["counters"].update(provider="Other")),
@@ -110,7 +127,7 @@ class CollectionTests(unittest.TestCase):
             ("huge integer", lambda p: p["process"].update(process_cpu_ms=10**400)),
             ("heap overflow", lambda p: p["counters"]["observations"][-1].update(value=1e308)),
             ("allocation overflow", lambda p: [t.update(bytes=1e308) for t in p["trace"]["allocation_ticks"]]),
-            ("rate overflow", lambda p: [o.update(value=1e308) for o in p["counters"]["observations"][:3]]),
+            ("increment overflow", lambda p: [o.update(value=1e308) for o in p["counters"]["observations"][:3]]),
             ("future counters", lambda p: [o.update(timestamp_ms=o["timestamp_ms"] + 100000)
                                             for o in p["counters"]["observations"]]),
             ("future heap", lambda p: p["counters"]["observations"][-1].update(timestamp_ms=100000)),
@@ -185,7 +202,8 @@ class CollectionTests(unittest.TestCase):
         self.assertEqual(counters, profile()["counters"])
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "bad.csv"
-            for contents in ("{}", "Timestamp,Provider\n", "x,y,z\n1,2,3\n"):
+            for contents in ("{}", "Timestamp,Provider\n", "x,y,z\n1,2,3\n",
+                             (FIXTURES / "counters.csv").read_text().replace(",Rate,", ",Metric,")):
                 path.write_text(contents)
                 with self.assertRaises(ValueError):
                     c.read_counters(path, 42)

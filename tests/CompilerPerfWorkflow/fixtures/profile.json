@@ -24,9 +24,9 @@
   "counters": {
     "process_id": 42, "provider": "System.Runtime", "interval_seconds": 1,
     "observations": [
-      {"timestamp_ms": 0, "name": "alloc-rate", "value": 100, "unit": "B / 1 sec", "semantics": "rate"},
-      {"timestamp_ms": 1500, "name": "alloc-rate", "value": 200, "unit": "B / 1 sec", "semantics": "rate"},
-      {"timestamp_ms": 4000, "name": "alloc-rate", "value": 400, "unit": "B / 1 sec", "semantics": "rate"},
+      {"timestamp_ms": 0, "name": "alloc-rate", "value": 100, "unit": "B / 1 sec", "semantics": "increment"},
+      {"timestamp_ms": 1500, "name": "alloc-rate", "value": 200, "unit": "B / 1 sec", "semantics": "increment"},
+      {"timestamp_ms": 4000, "name": "alloc-rate", "value": 400, "unit": "B / 1 sec", "semantics": "increment"},
       {"timestamp_ms": 4000, "name": "gc-heap-size", "value": 12, "unit": "MB", "semantics": "gauge"}
     ]
   },

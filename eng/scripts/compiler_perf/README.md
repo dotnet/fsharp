@@ -65,13 +65,26 @@ The summary keeps these quantities separate:
 | `process_cpu_ms` | Target user+kernel CPU accounting; not stack duration |
 | `cpu_sample_weight`, `cpu_sample_unit` | SampleProfiler stack samples, not exclusive CPU milliseconds |
 | `allocated_bytes_estimate` | Sampled GCAllocationTick byte estimate, not exact allocation accounting |
-| `allocation_rate_integral_estimate_bytes` | Independent right-endpoint integration over actual counter observation intervals |
+| `allocation_counter_observed_bytes` | Sum of observed System.Runtime allocation increments, including the first; not exact whole-process allocation |
 | `gc_pause_ms`, `gc_counts` | Union of stop-the-world intervals; collection counts by reported generation |
 | `managed_heap_bytes` | Last System.Runtime heap gauge observation; exporter MB means decimal 1,000,000 bytes |
 | `peak_rss_bytes` | OS peak working set/RSS; Linux KiB is converted to bytes |
 | `retained_heap_bytes` | Null with a reason unless live/post-GC retention was actually measured |
 
-Cumulative counters are not summed. Stack weights are inclusive sampled stacks.
+The pinned `dotnet-counters` 8.0.547301 EventCounters exporter labels allocation
+rows `Rate` / `B / 1 sec`, but exports the payload's `Increment` unchanged
+([payload conversion](https://github.com/dotnet/diagnostics/blob/358ff9556edceba1e8689fbfd1fc67588d8ab6cb/src/Microsoft.Diagnostics.Monitoring.EventPipe/Counters/TraceEventExtensions.cs),
+[CSV exporter](https://github.com/dotnet/diagnostics/blob/358ff9556edceba1e8689fbfd1fc67588d8ab6cb/src/Tools/dotnet-counters/Exporters/CSVExporter.cs)).
+Each increment is counted once, including zero values and distinct rows with
+equal rounded timestamps; timestamps only establish ordering and coverage,
+not allocation weights. This observed-window subtotal can miss startup/tail
+allocation and need not match the sampled trace estimate.
+Old summaries containing `allocation_rate_integral_estimate_bytes` used the
+incorrect timestamp-weighted reducer, identified by their capture manifest's
+collector hash. They are not corrected results; old `rate`-semantics manifests
+are rejected, not silently relabeled.
+
+Cumulative counters are rejected. Stack weights are inclusive sampled stacks.
 Counter timestamps are exporter wall-clock observations, not process elapsed
 time. Tool globalization is invariant; the adapter also recognizes the pinned
 Windows en-US timestamp spelling. Counter coverage is checked against the
@@ -79,7 +92,7 @@ observed trace interval, allowing one counter interval at each edge, rather
 than charging diagnostic-tool startup time to the target. Every observation
 must lie within its time domain (CSV timestamps allow one second of exporter
 rounding); trace allocation buckets may begin before the first event only
-within that event's 100 ms bucket. Numeric inputs and derived sums, integrals
+within that event's 100 ms bucket. Numeric inputs and derived sums
 and unit conversions must remain finite. Allocation events
 are summed into bounded 100 ms buckets with the original event count retained;
 the bucket reduction does not change the allocation-byte sum.
