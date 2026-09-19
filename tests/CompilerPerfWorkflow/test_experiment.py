@@ -778,7 +778,7 @@ class PinnedRunnerTests(unittest.TestCase):
         cls.assembly = cls.tree / "bin" / "Release" / cls.tfm / "ExperimentReportForgery.dll"
         identities = [e.m.file_record(p) for p in cls.assembly.parent.glob("*.dll")]
         e.m.write_json(cls.root / "identities.json", {
-            "head": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=e.m.REPO, text=True).strip(),
+            "head": e.git(e.m.REPO, "rev-parse", "HEAD", receipts=cls.root).decode().strip(),
             "python": sys.version, "sdk": sdk, "global": config, "runner": identities,
             "packages": e.m.read_json(cls.tree / "obj" / "project.assets.json")["libraries"],
             "isolation": "Linux bubblewrap/FIFO" if sys.platform == "linux" else "Windows fixture only; no isolation claim"})
