@@ -632,7 +632,7 @@ for (const url of [
     const fetch = t.mock.method(globalThis, 'fetch', () => assert.fail('must reject before network'));
     await assert.rejects(createHttp(policy())(url, {
       constraints: { allowedUrls: [approval.url], maxBytes: 100, timeoutMs: 1000 },
-    }), /unapproved|exact approved/);
+    }), { code: 'checksum-provenance', message: /unapproved|exact approved/ });
     assert.equal(fetch.mock.callCount(), 0);
   });
 }
@@ -646,7 +646,7 @@ for (const redirect of [
     const fetch = t.mock.method(globalThis, 'fetch', async () => new Response(null, { status: 302, headers: { location: redirect } }));
     await assert.rejects(createHttp(policy())(approval.url, {
       constraints: { allowedUrls: [approval.url], maxBytes: 100, timeoutMs: 1000 },
-    }), /unapproved|exact approved/);
+    }), { code: 'checksum-provenance', message: /unapproved|exact approved/ });
     assert.equal(fetch.mock.callCount(), 1);
   });
 }

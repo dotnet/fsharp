@@ -212,8 +212,13 @@ attempts }`, not reproduction pass/failure. Missing archives, insufficient
 checksum provenance, network failures, unsupported installer flags or declarations,
 SDK/tool declaration disagreement, changed source files, and unfulfilled runtime
 requirements fail closed. Historical previews are allowed, but never selected
-as released stable. `checksum-provenance` means an available archive lacks
-approved provenance or fails its integrity checks; it is distinct from
+as released stable. `checksum-provenance` means an archive lacks
+approved provenance or fails its integrity checks. It also covers rejected
+download URLs or redirect chains, even when an availability HEAD probe cannot
+establish whether the archive exists. Native HTTP and injected response
+validation preserve this reason; they do not report a forbidden redirect as a
+missing SDK. Network operations remain outside that validation boundary.
+It is distinct from
 `unavailable-sdk`/`unavailable-runtime`
 (missing archives) and `network-failure`. None is a positive reproduction.
 Attempt evidence requires `checks.network`: a failed acquisition request sets it
@@ -652,6 +657,20 @@ passed. The audit rehashed both archives, 209 product files, 45 workspace eviden
 files and 72 project binlogs; all three prior acceptance manifests and the original
 failed result remain unchanged. `acceptance-audit.json` has SHA-256
 `cae5825442f29472f95a4490f983926e52b23a01cbfe5a0631017f82b50959b4`.
+
+The redirect-provenance repair was revalidated under `Q:\rb912-s5-i5-20260919`.
+Before the fix, 32 native/injected HTTP provenance assertions failed while the
+three archive-absence/network controls passed; all now pass. The full suite has
+**898 passing tests**, with zero failures or skips. Fresh clean build
+`a03fc535-eaeb-4389-87cd-e7300655dc8a` and both built-FSI executions passed for the
+same pinned historical source. All 43 released/source smoke scenarios matched
+expectations: 23 passes, 6 intended product failures and 14 identity rejections.
+The audit rehashed both archives, 209 product files, 45 workspace evidence files
+and 72 project binlogs, and confirmed all four prior acceptance manifests and
+the original failed result remain unchanged. Exact-SDK Release evidence-helper
+build/test commands, syntax, formatting and whitespace checks passed.
+`acceptance-audit.json` has SHA-256
+`c426ad8a5fbeb65aa0750d00088eaba77051a57c4be112ceb94e47112a9ae8ab`.
 
 ## Reproduction execution
 

@@ -43,13 +43,19 @@ function validateHttpResponse(url, response, policy, constraints) {
     return response;
 }
 
+function validateDownloadProvenance(validate) {
+    // Keep network and filesystem operations outside this synchronous validation boundary.
+    try { return validate(); }
+    catch (error) { throw Object.assign(error, { code: "checksum-provenance" }); }
+}
+
 function createHttp(policy, fileSystem = fs, signal) {
     const networkFailure = error => {
         throw Object.assign(new Error(error.message, { cause: error }), { name: error.name, code: "network-failure" });
     };
     return async (url, { destination, method = "GET", constraints } = {}) => {
         const redirects = [];
-        let current = downloadUrl(url, policy, constraints);
+        let current = validateDownloadProvenance(() => downloadUrl(url, policy, constraints));
         requireValue(["GET", "HEAD"].includes(method), "unsupported download method");
         const deadline = AbortSignal.timeout(constraints?.timeoutMs ?? 300000);
         const downloadSignal = signal ? AbortSignal.any([signal, deadline]) : deadline;
@@ -61,12 +67,15 @@ function createHttp(policy, fileSystem = fs, signal) {
             if (downloadSignal.aborted) networkFailure(downloadSignal.reason);
             if ([301, 302, 303, 307, 308].includes(response.status)) {
                 await response.body?.cancel();
-                const location = response.headers.get("location");
-                requireValue(location?.trim(), "redirect response is missing Location");
-                requireValue(!/[%\\\s]/.test(location) && !location.split(/[/?#]/).some(segment => segment === "." || segment === ".."),
-                    `unapproved public download URL: ${location}`);
-                const next = downloadUrl(new URL(location, current).href, policy, constraints);
-                if (/^https?:/i.test(location)) requireValue(location === next, `unapproved public download URL: ${location}`);
+                const next = validateDownloadProvenance(() => {
+                    const location = response.headers.get("location");
+                    requireValue(location?.trim(), "redirect response is missing Location");
+                    requireValue(!/[%\\\s]/.test(location) && !location.split(/[/?#]/).some(segment => segment === "." || segment === ".."),
+                        `unapproved public download URL: ${location}`);
+                    const next = downloadUrl(new URL(location, current).href, policy, constraints);
+                    if (/^https?:/i.test(location)) requireValue(location === next, `unapproved public download URL: ${location}`);
+                    return next;
+                });
                 redirects.push({ from: current, to: next, status: response.status });
                 current = next;
                 continue;
@@ -119,7 +128,7 @@ function createHttp(policy, fileSystem = fs, signal) {
                 sha256: sha256.digest("hex"), sha512: sha512.digest("hex"), size,
             };
         }
-        throw new Error(`too many redirects: ${url}`);
+        throw Object.assign(new Error(`too many redirects: ${url}`), { code: "checksum-provenance" });
     };
 }
 
@@ -304,4 +313,4 @@ async function capture(request, deps) {
     };
 }
 
-module.exports = { hash, requireValue, inside, publicUrl, validateHttpResponse, createHttp, run, isolatedEnvironment, fileIdentity, capture };
+module.exports = { hash, requireValue, inside, publicUrl, validateHttpResponse, validateDownloadProvenance, createHttp, run, isolatedEnvironment, fileIdentity, capture };

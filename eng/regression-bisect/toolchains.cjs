@@ -1,7 +1,7 @@
 const fs = require("node:fs/promises");
 const path = require("node:path");
 const { validatePolicy, fingerprintInput } = require("./model.cjs");
-const { hash, requireValue, inside, publicUrl, createHttp, validateHttpResponse, run, isolatedEnvironment, capture } = require("./toolchain-io.cjs");
+const { hash, requireValue, inside, publicUrl, createHttp, validateHttpResponse, validateDownloadProvenance, run, isolatedEnvironment, capture } = require("./toolchain-io.cjs");
 const { validateArchiveReceipt } = require("./archive-provenance.cjs");
 
 const indexUrl = "https://builds.dotnet.microsoft.com/dotnet/release-metadata/releases-index.json";
@@ -245,7 +245,7 @@ async function exactArchive(toolchain, product, version, options, deps, attempts
         attempts.push(attempt);
         const response = await deps.http(url, { method: "HEAD", ...(constraints ? { constraints } : {}) });
         attempt.status = response.status;
-        validateHttpResponse(url, response, options.policy, constraints);
+        validateDownloadProvenance(() => validateHttpResponse(url, response, options.policy, constraints));
         if (response.status === 404) continue;
         if (response.status === 200 && approval) return {
             archive: { name, url, rid: toolchain.platform.rid, architecture: toolchain.platform.architecture,

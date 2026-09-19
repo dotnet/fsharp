@@ -408,6 +408,80 @@ for (const location of forbiddenDownloads.filter(url => url.startsWith("https:")
     test(`public feed rejects ${location}`, () => assert.throws(() => publicUrl(location, policy()), /unapproved/));
 }
 
+for (const [name, response, reason, message] of [
+    ...[`${feed}/other-sdk.zip`, ...forbiddenDownloads].map(location => [
+        `redirect to ${location}`, () => new Response(null, { status: 302, headers: { location } }),
+        "checksum-provenance", /unapproved|exact approved/,
+    ]),
+    ["missing Location", () => new Response(null, { status: 302 }), "checksum-provenance", /missing Location/],
+    ["malformed Location", () => new Response(null, { status: 302, headers: { location: "https://[" } }),
+        "checksum-provenance", /Invalid URL/],
+    ["redirect loop", url => new Response(null, { status: 302, headers: { location: url } }),
+        "checksum-provenance", /too many redirects/],
+    ["archive absent", () => new Response(null, { status: 404 }), "unavailable-sdk", /archive unavailable/],
+    ["service unavailable", () => new Response(null, { status: 503 }), "network-failure", /HTTP 503/],
+    ["connection failure", () => { throw new TypeError("fetch failed"); }, "network-failure", /fetch failed/],
+]) {
+    test(`historical availability preserves reason: ${name}`, async t => {
+        const approval = policy().toolchains.measuredArchives[0];
+        const { result: { toolchain } } = await source(t, approval.version);
+        toolchain.sourceSha = approval.sourceSha;
+        const docs = metadata().docs;
+        const requests = [];
+        t.mock.method(globalThis, "fetch", async (url, settings) => {
+            requests.push({ url, method: settings.method });
+            if (docs.has(url)) return new Response(JSON.stringify(docs.get(url)));
+            if (url.endsWith(".sha512")) return new Response(null, { status: 404 });
+            assert.ok(policy().toolchains.measuredArchives.some(a => a.url === url), "no unapproved redirect request");
+            assert.equal(settings.method, "HEAD", "no archive bytes before provenance approval");
+            return response(url);
+        });
+        const result = await acquireToolchain({ policy: policy(), toolchain, storageDirectory: await directory(t) }, {
+            installer: () => assert.fail("blocked probe must not install"),
+            capture: () => assert.fail("blocked probe must not execute a host SDK"),
+        });
+        assert.equal(result.status, "untestable");
+        assert.equal(result.outcome.reason, reason, JSON.stringify(result));
+        assert.equal(result.error.code, reason === "unavailable-sdk" ? "archive-unavailable" : reason);
+        assert.equal(result.error.stage, "sdk");
+        assert.match(result.error.message, message);
+        assert.deepEqual(result.attempts.filter(a => a.url.endsWith(".sha512")).map(a => a.status), [404, 404]);
+        assert.deepEqual(requests.filter(r => r.method === "HEAD").map(r => r.url),
+            name === "archive absent" ? policy().toolchains.measuredArchives.map(a => a.url)
+                : Array(name === "redirect loop" ? 6 : 1).fill(approval.url));
+        assert.ok(result.attempts.every(a => a.status !== "pending"));
+    });
+}
+
+for (const [name, change] of [
+    ["unapproved redirect", r => { r.redirects = [{ from: r.url, to: `${feed}/other-sdk.zip`, status: 302 }]; r.url = `${feed}/other-sdk.zip`; }],
+    ["missing redirects", r => { delete r.redirects; }],
+    ["disconnected redirect", r => { r.redirects = [{ from: `${feed}/other-sdk.zip`, to: r.url, status: 302 }]; }],
+    ["unrecorded final URL", r => { r.url = `${feed}/other-sdk.zip`; }],
+]) {
+    test(`historical availability validates injected provenance: ${name}`, async t => {
+        const approval = policy().toolchains.measuredArchives[0];
+        const { result: { toolchain } } = await source(t, approval.version);
+        toolchain.sourceSha = approval.sourceSha;
+        const deps = metadata();
+        const result = await acquireToolchain({ policy: policy(), toolchain, storageDirectory: await directory(t) }, {
+            http: async (url, settings) => {
+                if (url.endsWith(".sha512")) return { status: 404, url, redirects: [] };
+                if (settings?.method !== "HEAD") return deps.http(url);
+                const response = { status: 200, url, redirects: [] };
+                change(response);
+                return response;
+            },
+            installer: () => assert.fail("invalid response provenance must not install"),
+            capture: () => assert.fail("invalid response provenance must not execute"),
+        });
+        assert.equal(result.outcome.reason, "checksum-provenance", JSON.stringify(result));
+        assert.equal(result.error.code, "checksum-provenance");
+        assert.equal(result.error.stage, "sdk");
+        assert.deepEqual(result.attempts.map(a => a.status), [200, 200, 404, 404, 200]);
+    });
+}
+
 for (const status of [301, 302, 303, 307, 308]) {
     for (const location of forbiddenDownloads) {
         test(`HTTP ${status} rejects redirect before requesting ${location}`, async t => {
