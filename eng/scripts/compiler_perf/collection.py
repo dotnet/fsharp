@@ -280,9 +280,12 @@ def validate_profile_artifacts(evidence):
                  LIMITS["json_bytes"] if path.suffix in (".json", ".csv") else LIMITS["artifact_bytes"])
         size = path.stat().st_size
         m.require(not path.is_symlink() and 0 < size <= limit, "Empty artifact or size budget exceeded")
+        if "size_bytes" in record:
+            m.require(type(record["size_bytes"]) is int and record["size_bytes"] == size,
+                      "Artifact size differs from recorded evidence")
         total += size
     m.require(total <= LIMITS["total_bytes"], "Artifact total budget exceeded")
-    m.verify_files(records)
+    m.verify_files([{"path": r["path"], "sha256": r["sha256"]} for r in records])
     by_name = {Path(r["path"]).name: r["path"] for r in artifacts}
     m.require(read_bounded_json(by_name["trace-reduction.json"]) == evidence["trace"],
               "Reduction differs from the recorded trace evidence")
@@ -414,8 +417,13 @@ class Command:
     def stop(self):
         if self.process.poll() is None:
             if os.name == "nt":
-                subprocess.run(["taskkill", "/PID", str(self.process.pid), "/T", "/F"],
-                               capture_output=True, check=True)
+                try:
+                    subprocess.run(["taskkill", "/PID", str(self.process.pid), "/T", "/F"],
+                                   capture_output=True, check=True)
+                except subprocess.CalledProcessError:
+                    # The owned handle, not taskkill's exit code, proves a concurrent exit.
+                    if self.process.poll() is None:
+                        raise
             else:
                 try:
                     os.killpg(self.process.pid, signal.SIGKILL)

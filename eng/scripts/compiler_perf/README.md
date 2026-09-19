@@ -48,8 +48,9 @@ hashes, reduction identity and exact counter/CSV agreement. Timing evidence
 requires successful build/extraction records, a hashed binlog and extractor,
 and hashed output containing the recorded project-tagged timing rows.
 Requested dumps must retain their verified identity, successful tool records
-and hashed private artifact. Neither a status flag nor an exporter exit code
-alone is evidence.
+and hashed private artifact. Artifact hashes are verified independently of
+metadata; a recorded `size_bytes` must also match the file's actual byte length.
+Neither a status flag nor an exporter exit code alone is evidence.
 
 The summary keeps these quantities separate:
 
@@ -119,6 +120,8 @@ Limits are fixed: one replay per invocation, 180 seconds for the target,
 512 MiB per trace, 1 GiB per other artifact, 2 GiB total, 1 MiB per tool stream,
 and 16 MiB per JSON reduction. Dump capture/validation each allow 120 seconds;
 the diagnostic rebuild allows 600 seconds. Only owned children are terminated.
+On Windows, a failed tree-termination command is ignored only when the owned
+process handle confirms concurrent exit; log sanitization and cleanup still run.
 Target duration and artifact budgets remain monitored during a requested dump,
 including its tool probes and validation. Persisted manifests and summaries
 count toward the disk budget.
@@ -229,6 +232,40 @@ test fixture binaries were restored/built before those successful runs.
 All revision logs and raw evidence remain under the same local validation
 directory, with owner-only collection subdirectories; nothing was pushed,
 dispatched or published.
+
+Dump integration and Windows exit-race corrections were also validated on
+2026-09-19. `iteration3-red.log` records three failures rejecting valid
+`collect_dump` artifacts and the deterministic termination-race error.
+The dump bytes and hash were unchanged: the extra size metadata caused an
+exact-record comparison to fail. The correction verifies path/hash and size
+independently. Cleanup tolerates a concurrent child exit, not a still-live
+child's termination error. The parameterized lifecycle now covers requested
+dump success, failure and early exit. Boundary tests use materialized frozen
+inputs and a local Git index, and exercise the diagnostic build/extractor
+instead of replacing those boundaries with successful status flags.
+
+All **65 helper tests** pass with live diagnostics enabled
+(`iteration3-suite-final.log`), including the real public-child trace and
+private .NET 8 dump smoke tests. Five isolated mutations removing frozen-input
+validation, binlog collection, requested dumps, size verification or live-child
+termination-error propagation were caught (`iteration3-mutations.log`).
+Explicit Release compiler and test-project builds and the surface-area smoke
+test pass. Root build/test commands still require project selection; the test
+project was built with `--disable-build-servers -p:BuildProjectReferences=false`
+after dependency-output locks interrupted its first build. Validation logs
+retain that failure and the successful build/test commands' results.
+
+The fresh frozen-source trial is `iteration3-compiler/evidence-manifest.json`,
+using the same `collect` command above with that new output directory.
+Target PID **17912**, creation time **639253787882168440**, and exact frozen
+command/binary identity were verified. The target, trace, counters, real
+reducer, diagnostic Release build and binlog extractor succeeded.
+The 279,440,926-byte trace has zero lost events and SHA-256
+`afdcc4c201902eb573238632cede4bcac4299c16a68aa7367a9be38cbebdec91`.
+Independent analysis (`iteration3-reanalysis.json`) reproduces 289,156 stack
+samples, a 33,936,879,776-byte allocation estimate and 6,302.7316 ms GC pause
+union. This is diagnostic evidence, not an acceptance sample, optimization
+claim or retention measurement. All evidence remains local and private.
 
 ## Preparation
 
