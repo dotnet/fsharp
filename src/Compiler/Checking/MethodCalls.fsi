@@ -295,6 +295,9 @@ type CalledMeth<'T> =
 
     member TotalNumUnnamedCallerArgs: int
 
+    /// FS-1095: name to report if this positional call targets a RequireNamedArguments method, else None.
+    member TryGetRequireNamedArgumentsViolationName: m: range -> string option
+
     /// Unassigned args
     member UnassignedNamedArgs: CallerNamedArg<'T> list
 
