@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CodeSnippets xmlns="http://schemas.microsoft.com/VisualStudio/2005/CodeSnippet">
+  <CodeSnippet Format="1.0.0">
+    <Header>
+      <Title>matchvo</Title>
+      <Shortcut>matchvo</Shortcut>
+      <Description>Code snippet for a match expression over a voption</Description>
+      <Author>Microsoft Corporation</Author>
+      <SnippetTypes>
+        <SnippetType>Expansion</SnippetType>
+      </SnippetTypes>
+    </Header>
+    <Snippet>
+      <Declarations>
+        <Literal>
+          <ID>expression</ID>
+          <ToolTip>Value option to match on</ToolTip>
+          <Default>expression</Default>
+        </Literal>
+        <Literal>
+          <ID>value</ID>
+          <ToolTip>Name bound to the carried value</ToolTip>
+          <Default>value</Default>
+        </Literal>
+      </Declarations>
+      <Code Language="FSharp"><![CDATA[match $expression$ with
+| ValueSome $value$ -> $end$
+| ValueNone -> ()]]></Code>
+    </Snippet>
+  </CodeSnippet>
+</CodeSnippets>
