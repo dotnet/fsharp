@@ -175,7 +175,7 @@ let call (s: Sink) =
     // Regression tests for https://github.com/dotnet/fsharp/issues/20295 (Case 1): 'NativePtr.stackalloc'
     // emits the 'localloc' IL instruction, which the JIT rejects inside an exception-handling region.
     // Such code used to compile and then throw InvalidProgramException at method load; it must now be
-    // rejected at compile time with FS3923.
+    // rejected at compile time with FS3924.
     [<Theory>]
     [<InlineData("try () with _ -> NativePtr.stackalloc<int> 1 |> ignore")>]
     [<InlineData("try () with :? System.Exception -> NativePtr.stackalloc<int> 1 |> ignore")>]
@@ -194,7 +194,7 @@ let f () = {handler}
         |> withNoWarn 9
         |> compile
         |> shouldFail
-        |> withErrorCode 3923
+        |> withErrorCode 3924
 
     // A 'let inline' wrapper around 'stackalloc' is inlined into the handler's IL region, so its
     // 'localloc' still lands inside the exception region and must be rejected. The pre-codegen syntactic
@@ -210,7 +210,7 @@ let f () = try () with _ -> alloc ()
         |> withNoWarn 9
         |> compile
         |> shouldFail
-        |> withErrorCode 3923
+        |> withErrorCode 3924
 
     [<Theory>]
     [<InlineData(false)>]
@@ -397,7 +397,7 @@ let run () = {body.Replace("alloc ()", allocation)}
             |> withOptimize
             |> compile
             |> shouldFail
-            |> withErrorCode 3923
+            |> withErrorCode 3924
             |> ignore
 
     [<Fact>]

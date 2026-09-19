@@ -1278,7 +1278,7 @@ and IlxGenEnv =
 
         /// Are we within the 'with'/filter/'finally'/fault handler region of a 'try' (but not merely its try body)?
         /// The JIT rejects the 'localloc' IL instruction (emitted by NativePtr.stackalloc) inside such a region, so
-        /// emitting it here is reported as error FS3923. This is checked at codegen, after inlining and closure
+        /// emitting it here is reported as error FS3924. This is checked at codegen, after inlining and closure
         /// conversion, so an escaping closure whose 'localloc' lives in its own method stays legal.
         withinExnHandler: bool
 
