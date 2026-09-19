@@ -20,9 +20,16 @@ module Test
 
 let eqf (env: int) (a: string) (b: string) = a.Length = b.Length + env
 
-// Forwards the function to List.forall2's recursive loop.
+[<System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)>]
+let rec forall2NonInline (p: string -> string -> bool) l1 l2 =
+    match l1, l2 with
+    | [], [] -> true
+    | h1 :: t1, h2 :: t2 -> p h1 h2 && forall2NonInline p t1 t2
+    | _ -> false
+
+// Keep the forwarding probe independent of FSharp.Core's inlining policy.
 let inline forall2Forward ([<InlineIfLambda>] p: string -> string -> bool) l1 l2 =
-    List.length l1 = List.length l2 && List.forall2 p l1 l2
+    List.length l1 = List.length l2 && forall2NonInline p l1 l2
 
 // Applies the function directly in a loop (the NEW shape).
 let inline forall2Direct ([<InlineIfLambda>] p: string -> string -> bool) l1 l2 =
@@ -161,7 +168,7 @@ let test (env: int) (xs: string list) =
     List.map (g env) xs
 """
 
-        // Forwarding to List.forall2 still allocates its recursive loop closure,
+        // Forwarding to a non-inline HOF still allocates the predicate closure,
         // and eta-expanding the call site does not change that.
 
         [<Fact>]
