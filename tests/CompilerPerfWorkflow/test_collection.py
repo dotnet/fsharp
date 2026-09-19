@@ -441,6 +441,7 @@ class CollectionTests(unittest.TestCase):
                 other, _ = server.accept()
                 other.settimeout(5)
                 self.assertEqual(other.recv(1), b"0")
+                identities = [c.snapshot_process(pid) for pid in (unrelated.pid, os.getpid(), os.getppid())]
                 connections = {}
                 with ThreadPoolExecutor(max_workers=1) as executor:
                     future = executor.submit(c.run_tool, args + ["2", mode, streams], root,
@@ -465,6 +466,7 @@ class CollectionTests(unittest.TestCase):
                                 pass  # Windows may reset terminated peers instead of returning EOF.
                         self.assertFalse(list(root.glob("*.raw")))
                         self.assertIsNone(unrelated.poll())
+                        self.assertEqual([c.snapshot_process(identity["pid"]) for identity in identities], identities)
                         other.sendall(b"p")
                         self.assertEqual(other.recv(1), b"p")
                     finally:
@@ -548,23 +550,28 @@ class CollectionTests(unittest.TestCase):
 
     @unittest.skipUnless(os.name == "nt", "Windows suspended job assignment")
     def test_job_assignment_failure_never_runs_child(self):
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            marker = root / "must-not-execute"
-            script = f"from pathlib import Path; Path({str(marker)!r}).touch()"
+        for runner in ("collection", "measurement"):
+            with self.subTest(runner=runner), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                marker = root / "must-not-execute"
+                script = f"from pathlib import Path; Path({str(marker)!r}).touch()"
 
-            def denied(process):
-                with self.assertRaises(subprocess.TimeoutExpired):
-                    process.wait(timeout=.5)
-                raise PermissionError("assign denied")
+                def denied(process):
+                    with self.assertRaises(subprocess.TimeoutExpired):
+                        process.wait(timeout=.5)
+                    raise PermissionError("assign denied")
 
-            with mock.patch.object(c.WindowsJob, "assign_and_resume", side_effect=denied):
-                result = c.run_tool([sys.executable, "-c", script], root, c.tool_environment(), root, "fixture")
-            self.assertEqual(result["status"], "blocked_collection")
-            self.assertEqual(result["reason"], "launch_failed")
-            self.assertIn("assign denied", result["stderr"])
-            self.assertFalse(marker.exists())
-            self.assertFalse(list(root.glob("*.raw")))
+                with mock.patch.object(c.WindowsJob, "assign_and_resume", side_effect=denied):
+                    if runner == "collection":
+                        result = c.run_tool([sys.executable, "-c", script], root, c.tool_environment(), root, "fixture")
+                        self.assertEqual(result["status"], "blocked_collection")
+                        self.assertEqual(result["reason"], "launch_failed")
+                        self.assertIn("assign denied", result["stderr"])
+                    else:
+                        with self.assertRaisesRegex(PermissionError, "assign denied"):
+                            c.m.run_process([sys.executable, "-c", script], root, c.tool_environment(), root / "fixture.log")
+                self.assertFalse(marker.exists())
+                self.assertFalse(list(root.glob("*.raw")))
 
     def test_posix_group_cleanup_runs_after_wrapper_exit(self):
         for failure in (None, ProcessLookupError, PermissionError):

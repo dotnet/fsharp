@@ -653,6 +653,7 @@ class MeasurementTests(unittest.TestCase):
                     usage = SimpleNamespace(ru_utime=user, ru_stime=system, ru_maxrss=rss_kib)
                     args, environment = ["controlled", "space ; & argument"], {"FIXTURE": "synthetic"}
                     with mock.patch.object(m.sys, "platform", host), \
+                         mock.patch.object(m, "WindowsJob", create=True) as job, \
                          mock.patch.object(m.subprocess, "CREATE_NEW_PROCESS_GROUP", 0x200, create=True), \
                          mock.patch.object(m.subprocess, "Popen", return_value=process) as popen, \
                          mock.patch.object(m.os, "wait4", return_value=(process.pid, raw_status, usage), create=True) as wait4, \
@@ -661,8 +662,13 @@ class MeasurementTests(unittest.TestCase):
                         result = m.run_process(args, root, environment, root / "process.log")
                     popen.assert_called_once_with(args, cwd=root, env=environment, stdin=subprocess.DEVNULL,
                                                   stdout=mock.ANY, stderr=subprocess.STDOUT,
-                                                  **({"creationflags": 0x200} if host == "win32"
+                                                  **({"creationflags": 0x204} if host == "win32"
                                                      else {"start_new_session": True}))
+                    if host == "win32":
+                        job.return_value.assign_and_resume.assert_called_once_with(process)
+                        job.return_value.close.assert_called_once_with()
+                    else:
+                        job.assert_not_called()
                     self.assertEqual(result["elapsed_ms"], 4.5)
                     self.assertEqual(result["exit_status"], status)
                     self.assertEqual(result["complete"], status == 0)
@@ -686,11 +692,12 @@ class MeasurementTests(unittest.TestCase):
     def test_process_cancellation_reaps_child(self):
         for host, exited in (("linux", False), ("linux", True), ("win32", False), ("darwin", False)):
             with self.subTest(host=host, exited=exited), tempfile.TemporaryDirectory() as directory:
-                process = mock.Mock(pid=12345)
+                process = mock.Mock(pid=12345, returncode=None)
                 cancelled = KeyboardInterrupt("controlled cancellation")
                 process.wait.side_effect = [None] if host == "linux" else [cancelled, None]
                 environment = {"SystemRoot": directory}
                 with mock.patch.object(m.sys, "platform", host), \
+                     mock.patch.object(m, "WindowsJob", create=True) as job, \
                      mock.patch.object(m.subprocess, "CREATE_NEW_PROCESS_GROUP", 0x200, create=True), \
                      mock.patch.object(m.subprocess, "Popen", return_value=process), \
                      mock.patch.object(m.subprocess, "run") as terminate, \
@@ -701,10 +708,9 @@ class MeasurementTests(unittest.TestCase):
                      self.assertRaisesRegex(KeyboardInterrupt, "controlled cancellation"):
                     m.run_process(["controlled"], directory, environment, Path(directory) / "process.log")
                 if host == "win32":
-                    terminate.assert_called_once_with(
-                        [str(Path(directory) / "System32" / "taskkill.exe"), "/PID", "12345", "/T", "/F"],
-                        cwd=directory, env=environment, stdin=subprocess.DEVNULL,
-                        stdout=mock.ANY, stderr=subprocess.STDOUT, check=True)
+                    job.return_value.assign_and_resume.assert_called_once_with(process)
+                    job.return_value.close.assert_called_once_with()
+                    terminate.assert_not_called()
                     killpg.assert_not_called()
                 else:
                     killpg.assert_called_once_with(process.pid, 9)
@@ -713,36 +719,32 @@ class MeasurementTests(unittest.TestCase):
 
     def test_process_cancellation_terminates_real_descendants(self):
         """Real wrapper/child/grandchild lifetimes, not performance measurements."""
-        for failure in (KeyboardInterrupt, OSError):
-            with self.subTest(failure=failure.__name__), tempfile.TemporaryDirectory() as directory:
+        from test_collection import c
+
+        for failure, exited in ((KeyboardInterrupt, False), (OSError, False),
+                                (KeyboardInterrupt, True), (OSError, True)):
+            with self.subTest(failure=failure.__name__, exited=exited), tempfile.TemporaryDirectory() as directory:
                 root = Path(directory)
-                script = root / "process tree.py"
-                script.write_text(
-                    "import socket, subprocess, sys\n"
-                    "depth = int(sys.argv[2])\n"
-                    "child = subprocess.Popen([sys.executable, __file__, sys.argv[1], str(depth - 1)],\n"
-                    "                         cwd=sys.prefix, stdout=subprocess.DEVNULL,\n"
-                    "                         stderr=subprocess.DEVNULL) if depth else None\n"
-                    "if depth < 2:\n"
-                    "    with socket.create_connection(('127.0.0.1', int(sys.argv[1]))) as connection:\n"
-                    "        while connection.recv(1) == b'p':\n"
-                    "            connection.sendall(b'p')\n"
-                    "if child:\n"
-                    "    child.wait()\n", encoding="utf-8")
+                script = Path(__file__).parent / "fixtures" / "ProcessTree.py"
                 environment = m.allowed_environment(root)
+                owners = [c.snapshot_process(pid) for pid in (os.getpid(), os.getppid())]
                 with socket.socket() as listener:
                     listener.bind(("127.0.0.1", 0))
                     listener.listen()
                     listener.settimeout(15)
                     args = [sys.executable, str(script), str(listener.getsockname()[1])]
                     # A separate live process must remain unaffected by tree cleanup.
-                    with subprocess.Popen(args + ["0"], cwd=root, env=environment,
+                    with subprocess.Popen(args + ["0", "success", "detached"], cwd=root, env=environment,
                                           stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
                                           stderr=subprocess.DEVNULL) as unrelated:
                         witness, _ = listener.accept()
-                        descendants = []
+                        witness.settimeout(10)
+                        self.assertEqual(witness.recv(1), b"0")
+                        sentinel = c.snapshot_process(unrelated.pid)
+                        descendants = {}
                         wrapper = []
                         popen = subprocess.Popen
+                        wait = popen.wait
 
                         def launch(*args, **kwargs):
                             child = popen(*args, **kwargs)
@@ -750,10 +752,13 @@ class MeasurementTests(unittest.TestCase):
                             return child
 
                         def interrupt(*args, **kwargs):
-                            for _ in range(2):
+                            for _ in range(3):
                                 connection, _ = listener.accept()
                                 connection.settimeout(10)
-                                descendants.append(connection)
+                                descendants[connection.recv(1)] = connection
+                            if exited:
+                                descendants[b"2"].sendall(b"s")
+                                wait(wrapper[0], timeout=10)
                             raise failure("controlled cancellation")
 
                         try:
@@ -761,25 +766,26 @@ class MeasurementTests(unittest.TestCase):
                                 if sys.platform == "linux":
                                     patch = mock.patch.object(m.os, "wait4", side_effect=interrupt)
                                 else:
-                                    wait = popen.wait
                                     patch = mock.patch.object(popen, "wait", autospec=True,
                                                               side_effect=lambda child, *a, **kw:
                                                               interrupt() if len(descendants) == 0
                                                               else wait(child, *a, **kw))
                                 with patch, self.assertRaisesRegex(failure, "controlled cancellation"):
-                                    m.run_process(args + ["2"], root, environment, root / "process.log")
+                                    m.run_process(args + ["2", "success", "detached"],
+                                                  root, environment, root / "process.log")
                             self.assertIsNotNone(wrapper[0].returncode)
-                            for connection in descendants:
+                            for connection in descendants.values():
                                 try:
                                     self.assertEqual(connection.recv(1), b"", "Descendant survived cancellation")
                                 except ConnectionResetError:
                                     pass  # Windows can reset rather than gracefully close a killed process's socket.
                             self.assertIsNone(unrelated.poll())
-                            witness.settimeout(10)
+                            self.assertEqual(c.snapshot_process(unrelated.pid), sentinel)
+                            self.assertEqual([c.snapshot_process(owner["pid"]) for owner in owners], owners)
                             witness.sendall(b"p")
                             self.assertEqual(witness.recv(1), b"p")
                         finally:
-                            for connection in [*descendants, witness]:
+                            for connection in [*descendants.values(), witness]:
                                 try:
                                     connection.sendall(b"s")
                                     connection.settimeout(10)

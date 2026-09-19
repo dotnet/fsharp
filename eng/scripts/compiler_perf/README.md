@@ -5,6 +5,19 @@ It prepares and replays **FSharp.Compiler.Service compiler sources**, not the
 FSharp.Core benchmark or generated-program runtime benchmarks. A decision is
 measurement evidence, **not permission to publish** an optimization.
 
+Historical validation records below describe earlier local runs. Their ignored
+interpreters, compiler binaries, logs and traces were not recovered with the
+Git checkpoint and are **unavailable**, not present-day evidence. Recollect
+missing artifacts; verify any recovered file's existence and hash before reuse.
+New captures against current main require new workload fingerprints.
+
+`memory.py` preserves versioned attempts, negative decisions, retry dependencies
+and outstanding publication intents in the local Git journal. Its receipts
+explicitly report `remote_acknowledged: false`; local CAS is not remote
+durability. The current `CORRECTNESS_COMMAND` is the ambiguous root
+`dotnet test -c Release`, not a repository-supported product test receipt.
+Passing memory fixtures does not certify production acceptance or publication.
+
 ## Process profiling (diagnostic evidence only)
 
 `collection.py` consumes the same version-1 frozen workload/compiler manifests.
@@ -451,10 +464,12 @@ files must have `collection_complete: true`, set only after final verification;
 a zero exit without an output assembly is also a failed sample.
 
 Each launched command has an isolated process group. Interrupted waits terminate
-the owned POSIX group, or the Windows PID tree with `taskkill /T /F`, before
-reaping the wrapper and propagating the exception. Windows groups prevent a
-console interrupt from killing the wrapper before its descendants are located.
-Cleanup failures surface explicitly; unrelated processes are never targeted.
+the owned POSIX group before reaping the wrapper and propagating the exception.
+Windows commands start suspended, join the same private kill-on-close job used
+by diagnostic commands, then resume. Job cleanup also runs after a wrapper exits,
+so cancellation never depends on rediscovering descendants from a live wrapper
+PID. Assignment failures prevent execution. Cleanup failures surface explicitly;
+unrelated processes are never targeted.
 
 Dependency/filesystem caches are warmed, not flushed. Build-server reuse and
 .NET diagnostic attachment are disabled. Collection uses Linux `wait4` on the
@@ -547,8 +562,10 @@ millisecond/byte conversions, exit/signal status, cancellation cleanup and expli
 unavailable-metric reasons without presenting synthetic readings as live evidence.
 Real wrapper/child/grandchild fixtures interrupt collection only after both
 descendants are connected, require their connections to close, and verify that
-an unrelated process remains responsive. They cover cancellation and wait errors;
-portable unit fixtures also check POSIX group-exit races and Windows tree flags.
+an unrelated process remains responsive, with unchanged sentinel and
+launcher/executor PID and creation-time identities. They cover cancellation,
+wait errors and already-exited wrappers; portable unit fixtures also check
+POSIX group-exit races and Windows suspended job assignment.
 Valid workload-pair fixtures refresh all fingerprints and require an explicit
 workload mismatch for changed revisions, flags, ordered inputs, hashes and paths;
 a changed compiler alone remains admissible. Capture guards have SDK-independent

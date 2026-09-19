@@ -18,15 +18,11 @@ import sys
 import time
 import uuid
 
-if os.name == "nt":
-    job_spec = importlib.util.spec_from_file_location("windows_job", Path(__file__).with_name("windows_job.py"))
-    job_module = importlib.util.module_from_spec(job_spec)
-    job_spec.loader.exec_module(job_module)
-    WindowsJob = job_module.WindowsJob
-
 spec = importlib.util.spec_from_file_location("measurement", Path(__file__).with_name("measurement.py"))
 m = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(m)
+if os.name == "nt":
+    WindowsJob = m.WindowsJob
 HERE, REPO = m.HERE, m.REPO
 LIMITS = {"duration_seconds": 180, "artifact_bytes": 1024**3, "trace_bytes": 512 * 1024**2,
           "total_bytes": 2 * 1024**3, "log_bytes": 1024**2, "json_bytes": 16 * 1024**2,

@@ -3,6 +3,7 @@
 import argparse
 from fractions import Fraction
 import hashlib
+import importlib.util
 import json
 import math
 import os
@@ -19,6 +20,13 @@ import sys
 import time
 import uuid
 import zipfile
+
+
+if os.name == "nt":
+    job_spec = importlib.util.spec_from_file_location("windows_job", Path(__file__).with_name("windows_job.py"))
+    job_module = importlib.util.module_from_spec(job_spec)
+    job_spec.loader.exec_module(job_module)
+    WindowsJob = job_module.WindowsJob
 
 
 POLICY = {
@@ -335,11 +343,20 @@ def run_process(arguments, cwd, environment, log):
     cpu = rss = None
     unavailable = {}
     with Path(log).open("wb") as output:
-        isolation = ({"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP} if sys.platform == "win32"
+        isolation = ({"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP | 0x4} if sys.platform == "win32"
                      else {"start_new_session": True})
-        process = subprocess.Popen(arguments, cwd=cwd, env=environment, stdin=subprocess.DEVNULL,
-                                   stdout=output, stderr=subprocess.STDOUT, **isolation)
+        job = process = None
         try:
+            if sys.platform == "win32":
+                job = WindowsJob()
+            process = subprocess.Popen(arguments, cwd=cwd, env=environment, stdin=subprocess.DEVNULL,
+                                       stdout=output, stderr=subprocess.STDOUT, **isolation)
+            if job is not None:
+                try:
+                    job.assign_and_resume(process)
+                except BaseException:
+                    process.kill()
+                    raise
             if sys.platform == "linux":
                 _, status, usage = os.wait4(process.pid, 0)
                 process.returncode = os.waitstatus_to_exitcode(status)
@@ -351,18 +368,17 @@ def run_process(arguments, cwd, environment, log):
                                for metric in METRICS[1:]}
         except BaseException:
             # Kill descendants before reaping the wrapper; never target the caller's group.
-            if sys.platform == "win32":
-                subprocess.run([str(Path(environment["SystemRoot"]) / "System32" / "taskkill.exe"),
-                                "/PID", str(process.pid), "/T", "/F"],
-                               cwd=cwd, env=environment, stdin=subprocess.DEVNULL,
-                               stdout=output, stderr=subprocess.STDOUT, check=True)
-            else:
+            if process is not None and job is None:
                 try:
                     os.killpg(process.pid, signal.SIGKILL)
                 except ProcessLookupError:
                     pass  # The entire owned group has already exited.
-            process.wait()
             raise
+        finally:
+            if job is not None:
+                job.close()
+            if process is not None and process.returncode is None:
+                process.wait()
     return {"elapsed_ms": (time.perf_counter_ns() - start) / 1_000_000,
             "process_cpu_ms": cpu, "process_peak_rss_bytes": rss,
             "unavailable_reasons": unavailable, "exit_status": process.returncode,
