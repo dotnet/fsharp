@@ -38,7 +38,9 @@ class Repository:
                               ("tests/projects/CompilerCompat/CompilerCompatLib/CompilerCompatLib.fsproj", "<Project />"),
                               ("tests/projects/CompilerCompat/CompilerCompatApp/CompilerCompatApp.fsproj", "<Project />"),
                               (e.COMPONENT, "<Project>\n  <ItemGroup>\n  </ItemGroup>\n</Project>\n"),
-                              ("global.json", '{"sdk":{"version":"11.0.100-synthetic"}}')):
+                              ("global.json", '{"sdk":{"version":"11.0.100-synthetic"},'
+                                              '"msbuild-sdks":{"Microsoft.DotNet.Arcade.Sdk":"1.0.0",'
+                                              '"Microsoft.DotNet.Helix.Sdk":"2.0.0"}}')):
             path = root / name
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(content)
@@ -348,6 +350,66 @@ class ExperimentTests(unittest.TestCase):
                 else:
                     with self.assertRaises(ValueError):
                         e.verify_compatibility_output(text, expected)
+
+    def test_compatibility_pin_resolves_frozen_msbuild_sdk(self):
+        dotnet = shutil.which("dotnet")
+        if dotnet is None:
+            self.skipTest("SDK resolver evaluation requires the pinned .NET SDK")
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            environment = e.m.allowed_environment(root / "resolver")
+            probe = e.c.run_tool([dotnet, "--version"], e.m.REPO, environment, root, "sdk-probe")
+            if probe["exit_status"]:
+                self.skipTest("Pinned .NET SDK unavailable: " + probe["stderr"])
+            repo = Repository(root / "frozen" / "workload")
+            manifest = frozen_fixture(root / "frozen", repo)
+            owned = root / "candidate"
+            e.prepare_candidate(repo.root, owned, repo.request(), repo.patch(), manifest=manifest)
+            tree = owned / "tree"
+            config = e.m.read_json(tree / "global.json")
+            pins = [e.m.file_record(p / "global.json") for p in (repo.root, tree)]
+            feed = root / "offline-feed"
+            feed.mkdir()
+            # A tiny SDK package exercises the real NuGet SDK resolver, not Arcade's build targets.
+            with zipfile.ZipFile(feed / "Microsoft.DotNet.Arcade.Sdk.1.0.0.nupkg", "w") as package:
+                package.writestr("Microsoft.DotNet.Arcade.Sdk.nuspec",
+                                 '<package><metadata><id>Microsoft.DotNet.Arcade.Sdk</id><version>1.0.0</version>'
+                                 '<authors>Fixture</authors><description>Resolver fixture</description></metadata></package>')
+                package.writestr("Sdk/Sdk.props", '<Project><PropertyGroup><FrozenSdkVersion>1.0.0</FrozenSdkVersion>'
+                                 '</PropertyGroup></Project>')
+                package.writestr("Sdk/Sdk.targets", "<Project />")
+
+            def command(args, cwd, env, receipts, phase):
+                generated = e.m.read_json(tree / e.COMPATIBILITY / "global.json")
+                if args[-1] == "--version":
+                    log = owned / (phase + "-version.log")
+                    log.write_text(generated["sdk"]["version"])
+                    return {"status": "collected", "exit_status": 0, "stdout": log.read_text(),
+                            "logs": [e.m.file_record(log)]}
+                project = tree / e.COMPATIBILITY / "local-nuget-packages" / "Resolver.proj"
+                project.write_text('<Project Sdk="Microsoft.DotNet.Arcade.Sdk" />')
+                (project.parent / "NuGet.Config").write_text(
+                    f'<configuration><packageSources><clear/><add key="offline" value="{feed.as_posix()}" />'
+                    '</packageSources></configuration>')
+                result = e.c.run_tool([dotnet, "msbuild", str(project), "-getProperty:FrozenSdkVersion",
+                                       "-nologo", "-v:quiet", "-nr:false"],
+                                      e.m.REPO, env, receipts, phase)
+                self.assertEqual(result["exit_status"], 0, result["stdout"] + result["stderr"])
+                self.assertEqual(result["stdout"].strip(), "1.0.0")
+                sdk = "9.0.300" if check["scenario"][0 if args[1] == "pack" else 1] == "net9" else config["sdk"]["version"]
+                self.assertEqual(generated, dict(config, sdk={"version": sdk, "rollForward": "disable"}))
+                (cwd / ("LibBuildInfo.fs" if args[1] == "pack" else "AppBuildInfo.fs")).write_text("resolver verified")
+                return result
+
+            plan = e.correctness_plan([SOURCE, TEST, NOTE], repo.request()["regressions"], "net11.0")
+            for check in (p for p in plan if p["result"] == "compatibility"):
+                with self.subTest(scenario=check["scenario"]):
+                    result = e.prepare_compatibility(owned, manifest, manifest["baseline_compiler"],
+                                                     mock.Mock(command=command), environment, check, [])
+                    self.assertEqual(len(result["commands"]), 4)
+                    self.assertFalse((tree / e.COMPATIBILITY / "global.json").exists())
+                    e.m.verify_files(pins)
+                    e.verify_candidate(owned)
 
     def test_early_verification_cancellation_discards_without_checkpoint(self):
         for operation in (e.validate_candidate, e.complete_no_finding):

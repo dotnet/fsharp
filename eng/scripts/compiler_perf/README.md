@@ -120,8 +120,10 @@ with no applicable passing tests block approval. Test
 outputs must contain the selected candidate service binary.
 The controller drives the existing compatibility projects through six explicit
 pack/build/runtime scenarios, pinning each SDK with `rollForward: disable` in the
-owned fixture directory. It checks both SDK probes and the application's reported
-library/application SDK and compiler paths. A success banner or the presence of
+owned fixture directory. The generated pin preserves non-SDK sections of the frozen
+root `global.json`, including `msbuild-sdks`, so versionless Arcade/Helix imports
+keep their frozen package versions. It checks both SDK probes and the application's
+reported library/application SDK and compiler paths. A success banner or the presence of
 .NET 9 in `--list-sdks` cannot substitute for historical compiler execution.
 On the pinned SDK, probe help before the `--` separator, and supply report
 basenames with a separate `--results-directory`. A real xUnit 3.2.2 probe on

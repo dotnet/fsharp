@@ -559,6 +559,7 @@ def prepare_compatibility(root, manifest, compiler, isolation, environment, chec
     if package.exists():
         require(unredirected(package), "Redirected compatibility package")
         shutil.rmtree(package)
+    configuration = m.read_json(tree / "global.json")
     for part, mode in zip(("Lib", "App"), check["scenario"]):
         project = directory / ("CompilerCompat" + part)
         for name in ("bin", "obj"):
@@ -569,7 +570,8 @@ def prepare_compatibility(root, manifest, compiler, isolation, environment, chec
         sdk = net9 if mode == "net9" else toolchain["sdk"]
         require(all(unredirected(directory / name, missing_ok=True) for name in ("global.json", "global.json.tmp")),
                 "Redirected compatibility SDK configuration")
-        m.write_json(directory / "global.json", {"sdk": {"version": sdk, "rollForward": "disable"}})
+        configuration["sdk"] = {"version": sdk, "rollForward": "disable"}
+        m.write_json(directory / "global.json", configuration)
         selected = (compiler["files"]["fsc.dll"]["path"] if mode == "local" else
                     str(Path(dotnet).parent / "sdk" / sdk / "FSharp" / "fsc.dll"))
         m.verify_files([m.file_record(selected)])

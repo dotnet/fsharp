@@ -36,7 +36,9 @@ elif category == "pack" and len(args) == 1:
         packages.rmdir()
         packages.symlink_to(root.parent.parent, target_is_directory=True)
 elif category in ("pack", "build") and "CompilerCompat" in args[1]:
-    sdk = json.loads((cwd.parent / "global.json").read_text())["sdk"]["version"]
+    config = json.loads((cwd.parent / "global.json").read_text())
+    assert config["msbuild-sdks"] == json.loads((root / "global.json").read_text())["msbuild-sdks"]
+    sdk = config["sdk"]["version"]
     local = "-p:LoadLocalFSharpBuild=True" in args
     dotnet = Path(os.environ["DOTNET_HOST_PATH"])
     compiler = installation / "fsc.dll" if local else dotnet.parent / "sdk" / sdk / "FSharp" / "fsc.dll"
