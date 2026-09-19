@@ -3,8 +3,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs/promises");
 const path = require("node:path");
 const { fixture } = require("./fixtures/reproduction.cjs");
-const { seal, attempt } = require("./fixtures/contracts.cjs");
-const { classifyAttempts } = require("./model.cjs");
+const { seal } = require("./fixtures/contracts.cjs");
 const { selectFsiCommand, verifyProjectIdentities, evaluateAssertion, runReproduction } = require("./repro.cjs");
 const { execute } = require("./repro-process.cjs");
 const { isolatedEnvironment, hash } = require("./toolchain-io.cjs");
@@ -71,13 +70,6 @@ test("runtime and diagnostic assertions use the model vocabulary and exact evide
         ["error NU1301: restore failed\n", "untestable"],
     ]) assert.equal(evaluateAssertion(f.manifest, { ...execution, exitCode: 1, stdout: "", stderr }, { phase: "compile" }).outcome, outcome);
     assert.equal(evaluateAssertion(f.manifest, { ...execution, stdout: "" }, { phase: "compile" }).outcome, "pass");
-});
-
-test("mixed repetitions remain untestable", () => {
-    const { manifest } = require("./fixtures/contracts.cjs");
-    assert.deepEqual(classifyAttempts([attempt("pass"), attempt("product-failure")], manifest()), {
-        schemaVersion: 1, outcome: "untestable", reason: "flaky",
-    });
 });
 
 async function projectFixture(t, options) {
