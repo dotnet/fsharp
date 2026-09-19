@@ -921,7 +921,7 @@ class PinnedRunnerTests(unittest.TestCase):
                         state["request"]["regressions"][0]["method"] = "missing" if attack == "zero" else "regression"
                         a = improvement()
                         a["fingerprints"]["candidate"] = a["measurement"]["fingerprints"]["candidate"] = e.m.fingerprint_inputs(compiler)
-                        approved, reason = False, ""
+                        gates = {}
 
                         def gate(condition, message):
                             if mutant and (message.startswith("Required check failed:") or
@@ -933,16 +933,26 @@ class PinnedRunnerTests(unittest.TestCase):
                             try:
                                 checks = e.run_correctness(owned, manifest, compiler, isolation)
                                 a["correctness"] = e.compact_correctness(owned, checks)
-                                e.validate_correctness(a["correctness"], a["fingerprints"]["candidate"],
-                                                       a["fingerprints"]["policy"], current=True)
-                                mem._attest_correctness(a)
-                                mem.acceptance_ready(a)
-                                approved = True
+                                gates["run_correctness"] = {"approved": True, "reason": ""}
                             except (ValueError, e.ET.ParseError) as error:
-                                reason = str(error)
+                                gates["run_correctness"] = {"approved": False, "reason": str(error)}
+                                partial = e.m.read_json(owned / "correctness.json")
+                                a["correctness"] = e.compact_correctness(owned, partial)
+                            approval_calls = (
+                                ("validate_correctness", lambda: e.validate_correctness(a["correctness"],
+                                    a["fingerprints"]["candidate"], a["fingerprints"]["policy"], current=True)),
+                                ("_attest_correctness", lambda: mem._attest_correctness(a)),
+                                ("acceptance_ready", lambda: mem.acceptance_ready(a)))
+                            for name, gate_call in approval_calls:
+                                try:
+                                    gate_call()
+                                    gates[name] = {"approved": True, "reason": ""}
+                                except (ValueError, e.ET.ParseError) as error:
+                                    gates[name] = {"approved": False, "reason": str(error)}
                         # A mutant must violate the same rejection assertion, not merely change an XML parser result.
                         e.m.write_json(owned / "outcome.json", {"phase": attack, "mutant": mutant,
-                            "approved": approved, "reason": reason, "observations": observations,
+                            "approved": all(g["approved"] for g in gates.values()), "gates": gates,
+                            "observations": observations,
                             "reports": [e.m.file_record(p) for p in owned.glob("*.xml")],
                             "required": dict(state["request"]["regressions"][0],
                                              path=str(self.tree / source))})
@@ -954,19 +964,13 @@ class PinnedRunnerTests(unittest.TestCase):
                         if attack == "decoy-completion":
                             self.assertEqual(observations[0]["observations"]["decoy-body"], attack)
                             self.assertEqual(observations[0]["observations"]["child-exit"], "0")
+                        for name, result in gates.items():
+                            with self.subTest(gate=name):
+                                with self.assertRaises(AssertionError) if mutant else nullcontext():
+                                    self.assertEqual(result["approved"], attack == "pass", result["reason"])
                         if mutant:
-                            with self.assertRaises(AssertionError):
-                                self.assertFalse(approved, reason)
-                        else:
-                            self.assertEqual(approved, attack == "pass", reason)
-                        if attack != "pass":
-                            if not approved:
-                                partial = e.m.read_json(owned / "correctness.json")
-                                a["correctness"] = e.compact_correctness(owned, partial)
-                            for gate_call in (lambda: e.validate_correctness(a["correctness"],
-                                a["fingerprints"]["candidate"], a["fingerprints"]["policy"], current=True),
-                                lambda: mem._attest_correctness(a), lambda: mem.acceptance_ready(a)):
-                                with self.assertRaises(ValueError):
+                            for name, gate_call in approval_calls:
+                                with self.subTest(restored_gate=name), self.assertRaises(ValueError):
                                     gate_call()
 
 

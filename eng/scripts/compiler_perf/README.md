@@ -230,7 +230,10 @@ fixture before overall acceptance. Missing opted-in infrastructure fails, rather
 than becoming a passing skip. Direct assembly runs are retained separately as
 diagnostic controls and never feed approval. Each run retains argv/cwd, outer and
 available child exits, report bytes/hashes, required source/method, body sentinel
-and approval/mutation outcomes. Sentinels only diagnose which phase executed.
+and approval/mutation outcomes. Rejection assertions and retained verdicts cover
+`run_correctness`, fresh `validate_correctness`, `_attest_correctness` and
+`acceptance_ready` independently, even when an earlier gate incorrectly approves.
+Sentinels only diagnose which phase executed.
 
 ## Process profiling (diagnostic evidence only)
 
