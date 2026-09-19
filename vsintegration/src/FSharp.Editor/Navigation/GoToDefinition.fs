@@ -793,33 +793,58 @@ type internal FSharpNavigation(metadataAsSource: FSharpMetadataAsSourceService, 
             | _ -> return ImmutableArray.empty
         }
 
+    /// The same search, minus the definitions that only exist once a metadata document has been generated:
+    /// generating one takes the main thread, and Peek's broker holds it in `JoinableTaskFactory.Run` without
+    /// pumping messages until this returns, so asking for it there deadlocks Visual Studio.
+    member _.FindDefinitionsWithoutMetadataAsync(position) =
+        cancellableTask {
+            let gtd = GoToDefinition(metadataAsSource)
+            let! result = gtd.FindDefinitionAtPosition(initialDoc, position)
+
+            match result with
+            | ValueSome(FSharpGoToDefinitionResult.NavigableItem(navItem), _) -> return ImmutableArray.create navItem
+            | _ -> return ImmutableArray.empty
+        }
+
     member _.TryGoToDefinition(position, cancellationToken) =
-        // Once we migrate to Roslyn-exposed MAAS and sourcelink (https://github.com/dotnet/fsharp/issues/13951), this can be a "normal" task
-        // Wrap this in a try/with as if the user clicks "Cancel" on the thread dialog, we'll be cancelled.
-        // Task.Wait throws an exception if the task is cancelled, so be sure to catch it.
+        // Once we migrate to Roslyn-exposed MAAS and sourcelink (https://github.com/dotnet/fsharp/issues/13951), this can be a "normal" task.
+        // The IFSharpGoToDefinitionService contract is synchronous, so the main thread has to wait here: the threaded-wait dialog
+        // keeps it pumping and cancellable, where a bare Task.Wait froze it until the VS watchdog auto-cancelled.
         try
             use _ =
                 TelemetryReporter.ReportSingleEventWithDuration(TelemetryEvents.GoToDefinition, [||])
 
             let gtd = GoToDefinition(metadataAsSource)
-            let gtdTask = gtd.FindDefinitionAsync (initialDoc, position) cancellationToken
+            let navigated = ref false
 
-            gtdTask.Wait()
+            ThreadHelper.JoinableTaskFactory.Run(
+                SR.NavigatingTo(),
+                (fun _progress dialogCancellationToken ->
+                    let linked =
+                        CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, dialogCancellationToken)
 
-            if gtdTask.Status = TaskStatus.RanToCompletion && gtdTask.Result.IsSome then
-                match gtdTask.Result with
-                | ValueSome(FSharpGoToDefinitionResult.NavigableItem(navItem), _) ->
-                    gtd.NavigateToItem(navItem, cancellationToken) |> ignore
-                    true
-                | ValueSome(FSharpGoToDefinitionResult.ExternalAssembly(targetSymbolUse, metadataReferences), _) ->
-                    gtd.NavigateToExternalDeclaration(targetSymbolUse, metadataReferences, cancellationToken)
-                    |> ignore
+                    cancellableTask {
+                        use _ = linked
 
-                    true
-                | _ -> false
-            else
-                false
-        with exc ->
+                        match! gtd.FindDefinitionAsync(initialDoc, position) with
+                        | ValueSome(FSharpGoToDefinitionResult.NavigableItem(navItem), _) ->
+                            gtd.NavigateToItem(navItem, linked.Token) |> ignore
+                            navigated.Value <- true
+                        | ValueSome(FSharpGoToDefinitionResult.ExternalAssembly(targetSymbolUse, metadataReferences), _) ->
+                            gtd.NavigateToExternalDeclaration(targetSymbolUse, metadataReferences, linked.Token)
+                            |> ignore
+
+                            navigated.Value <- true
+                        | _ -> ()
+                    }
+                    |> CancellableTask.start linked.Token),
+                TimeSpan.FromSeconds 1
+            )
+
+            navigated.Value
+        with
+        | :? OperationCanceledException -> false
+        | exc ->
             TelemetryReporter.ReportFault(TelemetryEvents.GoToDefinition, FaultSeverity.General, exc)
             false
 
