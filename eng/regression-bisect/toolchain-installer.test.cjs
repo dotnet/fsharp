@@ -181,21 +181,6 @@ async function measuredFixture(t) {
   return result;
 }
 
-test('measured byte mismatch reports checksum provenance, not archive absence', async t => {
-  const { options, deps } = await measuredFixture(t);
-  const transport = deps.http;
-  deps.http = async (...args) => {
-    const response = await transport(...args);
-    if (args[1].destination) response.sha256 = '0'.repeat(64);
-    return response;
-  };
-  await assert.rejects(installArchive(options, deps), error => {
-    assert.match(error.message, /HTTP sha256 digest/);
-    assert.equal(error.code, 'checksum-provenance');
-    return true;
-  });
-});
-
 for (const conflicting of [false, true]) {
   test(`Windows installer canonicalizes environment aliases: conflicting=${conflicting}`, async t => {
     const { options, deps, state } = await fixture(t);
@@ -272,10 +257,12 @@ for (const [name, mutate] of [
   });
 }
 
-for (const [name, mutate] of [
+for (const [name, mutate, expectedError] of [
   ['missing sha256', r => { delete r.sha256; }],
   ['missing sha512', r => { delete r.sha512; }],
-  ['wrong sha256', r => { r.sha256 = '0'.repeat(64); }],
+  ['wrong sha256', r => { r.sha256 = '0'.repeat(64); }, {
+    code: 'checksum-provenance', message: /HTTP sha256 digest/,
+  }],
   ['wrong sha512', r => { r.sha512 = '0'.repeat(128); }],
   ['missing size', r => { delete r.size; }],
   ['truncated bytes', r => { r.size++; }],
@@ -302,7 +289,7 @@ for (const [name, mutate] of [
       if (args[1].destination) mutate(response);
       return response;
     };
-    await assert.rejects(installArchive(options, deps));
+    await assert.rejects(installArchive(options, deps), expectedError);
     assert.equal(state.calls.length, 0);
   });
 }

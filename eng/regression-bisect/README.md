@@ -638,6 +638,21 @@ acquired exact historical SDK succeeded and changed no files.
 | `repro-both\smoke-results.json` | `3450faeb7139f429d7d49eb2457f4e43630a27f16a6beae2e29a2940c6314691` |
 | `acceptance-audit.json` | `19881e6269b707bd9d06e1e0df031bcf4ab36e434a8c913a307b2fd1ed1b27ce` |
 
+The installer tests were consolidated and revalidated on 2026-09-19: the existing
+wrong-SHA256 table row now also requires `checksum-provenance` and the SHA256
+diagnostic, retaining its no-process-execution assertion. Removing the duplicate
+case reduced the suite to **878 passing tests** without removing a scenario.
+In-memory mutations of the error code and message each failed that row.
+Fresh acceptance is retained under `Q:\rb912-s5-i4-20260919`: clean build
+`03aaca4c-f4cc-4ffd-8da6-90ff66775f9c` and both built-FSI executions passed;
+all 43 released/source scenarios matched their expected outcomes (23 passes,
+6 intended product failures, 14 identity rejections). The exact-SDK Release
+evidence-helper build/test commands, syntax, formatting and whitespace checks
+passed. The audit rehashed both archives, 209 product files, 45 workspace evidence
+files and 72 project binlogs; all three prior acceptance manifests and the original
+failed result remain unchanged. `acceptance-audit.json` has SHA-256
+`cae5825442f29472f95a4490f983926e52b23a01cbfe5a0631017f82b50959b4`.
+
 ## Reproduction execution
 
 `repro.cjs` is an execution adapter, not an authorization boundary. Its caller
