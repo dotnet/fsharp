@@ -250,3 +250,6 @@ git --no-pager diff --check
 
 Tests use the frozen classification corpus, shared collector simulation, fake
 REST/GraphQL and an interleaved CAS store. No live write API is used.
+Regression coverage includes timestamp-only target/linked-issue churn across
+restarts, competing label/clarification claims, and equal issue/comment IDs in
+different repositories with distinct fingerprints and citation provenance.

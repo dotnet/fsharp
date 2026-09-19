@@ -2,8 +2,8 @@
 
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const { POLICY_VERSION, LIMITS, normalizeMemory } = require("./core.cjs");
-const { collectCandidates } = require("./github.cjs");
+const { POLICY_VERSION, LIMITS, normalizeMemory, fingerprintHumanInput } = require("./core.cjs");
+const { collectCandidates, readIssueSnapshot } = require("./github.cjs");
 const { OUTPUT_TYPE, publishBatch } = require("./publish.cjs");
 const { repo, now, before, clone, report, comment, fake, emptyMemory } = require("./test-support.cjs");
 
@@ -77,6 +77,37 @@ for (const hot of [false, true]) {
       if (!hot && run >= 3) assert.deepEqual(args.manifest.selected, []);
     }
     assert.deepEqual([...seen].sort((a, b) => a - b), reports.map((issue) => issue.number));
+    assert.deepEqual(s.mutations, []);
+  });
+}
+
+for (const changedNumber of [1, 2]) {
+  test(`collector/publisher/restart: timestamp-only churn on ${changedNumber === 1 ? "target" : "linked issue"} does not loop`, async () => {
+    const s = stagedCollector({ issues: [
+      report(1, { body: `${report().body} See #2.` }), report(2, { labels: [] }),
+    ] });
+    const initial = await s.collect();
+    const fingerprint = initial.manifest.selected[0].fingerprint;
+    const published = await publishBatch(initial);
+    assert.equal(published.receipts.filter((receipt) => receipt.type === "would-add-label").length, 1);
+    s.restart(published);
+    for (let run = 1; run <= 3; run++) {
+      s.api.issues[changedNumber - 1].updated_at = new Date(Date.parse(now) + run * 60000).toISOString();
+      s.api.calls.length = 0;
+      const args = await s.collect();
+      assert.deepEqual(args.manifest.errors, []);
+      assert.deepEqual(args.manifest.selected, []);
+      assert.deepEqual(args.manifest.stateDelta.pending, []);
+      assert.ok(s.api.calls.some((call) => call.name === "get" && call.issue_number === changedNumber));
+      const snapshot = await readIssueSnapshot(s.api.github, { repo, number: 1 });
+      assert.equal(snapshot.complete, true);
+      assert.equal(fingerprintHumanInput(snapshot), fingerprint);
+      const result = await publishBatch(args);
+      assert.ok(result.receipts.every((receipt) => receipt.type === "would-save-memory"));
+      assert.deepEqual(result.state.pending, []);
+      assert.equal(result.state.issues[1].fingerprint, fingerprint);
+      s.restart(result);
+    }
     assert.deepEqual(s.mutations, []);
   });
 }

@@ -623,26 +623,45 @@ test("the final target read hands a newly visible clarification receipt to the p
   assert.equal(writes(api, "createComment").length + writes(api, "addLabels").length, 0);
 });
 
-test("two publishers share a CAS store: controlled collision cannot replay stale discovery", async () => {
-  const { api, store, args } = await setup();
-  let unblock;
-  let arrived;
-  const waiting = new Promise((resolve) => { arrived = resolve; });
-  const gate = new Promise((resolve) => { unblock = resolve; });
-  let first = true;
-  store.beforeCommit = async () => {
-    if (first) { first = false; arrived(); await gate; }
-  };
-  const slower = publishBatch(args);
-  await waiting;
-  const faster = await publishBatch(args);
-  unblock();
-  await assert.rejects(slower, { code: "CAS_CONFLICT", retryable: true });
-  assert.deepEqual(store.value.state, faster.state);
-  assert.equal(writes(api, "addLabels").length, 1);
-  await publishBatch(args);
-  assert.equal(writes(api, "addLabels").length, 1);
-});
+for (const kind of ["label", "clarification"]) {
+  for (const phase of ["prepared", "sending"]) {
+    test(`two ${kind} publishers collide at ${phase}: only one mutation survives restart`, { timeout: 10000 }, async () => {
+      const { api, store, args } = await setup();
+      if (kind === "clarification") args.output = envelope([proposal(args.manifest.selected[0], uncertain)]);
+      let unblock;
+      let arrived;
+      const waiting = new Promise((resolve) => { arrived = resolve; });
+      const gate = new Promise((resolve) => { unblock = resolve; });
+      let first = true;
+      store.beforeCommit = async (state) => {
+        if (first && state.issues[42].pendingPublication?.phase === phase) {
+          first = false;
+          arrived();
+          await gate;
+        }
+      };
+      const slower = publishBatch(args);
+      await waiting;
+      let faster;
+      try { faster = await publishBatch(args); }
+      finally { unblock(); }
+      await assert.rejects(slower, { code: "CAS_CONFLICT", retryable: true });
+      assert.deepEqual(store.value.state, faster.state);
+      assert.equal(faster.state.issues[42].lastResult.status, "published");
+      assert.equal(faster.state.issues[42].pendingPublication, null);
+      assert.deepEqual(faster.state.pending, []);
+      if (kind === "clarification") {
+        assert.deepEqual(faster.state.issues[42].clarification,
+          { status: "published", commentId: 1000, url: `${report().url}#issuecomment-1000` });
+      }
+      const restarted = casStore(normalizeMemory(JSON.stringify(store.value.state)), store.value.headOid);
+      await publishBatch({ ...args, store: restarted });
+      assert.equal(restarted.writes.length, 0);
+      assert.equal(writes(api, "addLabels").length, kind === "label" ? 1 : 0);
+      assert.equal(writes(api, "createComment").length, kind === "clarification" ? 1 : 0);
+    });
+  }
+}
 
 test("newer memory rejects an old whole-manifest delta rather than regressing cursor or queue", async () => {
   const { store, args } = await setup();
@@ -999,6 +1018,61 @@ for (const [key, value] of [
     assert.equal(writes(run.api, "addLabels").length + writes(run.api, "createComment").length, 0);
   });
 }
+
+test("equal issue and comment IDs across repositories retain distinct fingerprints and citations", async () => {
+  const repositories = ["dotnet/fsharp", "dotnet/runtime", "example/fsharp"];
+  const apis = new Map(repositories.map((repository) => {
+    const url = `https://github.com/${repository}/issues/2`;
+    return [repository, fake({ pageSize: 100, issues: [report(2, {
+      labels: [], url, html_url: url, body: `Reported comparison from ${repository}.`,
+    })], comments: { 2: [comment(7, {
+      body: `Human comparison from ${repository}.`, html_url: `${url}#issuecomment-7`,
+    })] } })];
+  }));
+  const api = apis.get("dotnet/fsharp");
+  api.issues.push(report(1, { body: [
+    "#2 DotNet/FSharp#2 dotnet/runtime#2 example/fsharp#2",
+    "https://github.com/DotNet/Runtime/issues/2 https://github.com/Example/FSharp/issues/2",
+  ].join(" ") }));
+  const github = { rest: { issues: Object.fromEntries(
+    Object.keys(api.github.rest.issues).map((method) => [method, (args) =>
+      apis.get(`${args.owner}/${args.repo}`.toLowerCase()).github.rest.issues[method](args)]),
+  ) } };
+  let memory = emptyMemory();
+  for (const [repository, linkedApi] of apis) {
+    if (memory.issues[1]) linkedApi.comments[2][0].body += " Correction: the earlier compiler also failed.";
+    const manifest = await collect({ github }, memory, { limits: undefined });
+    assert.deepEqual(manifest.errors, []);
+    assert.deepEqual(manifest.selected.map((item) => item.number), [1]);
+    const item = manifest.selected[0];
+    assert.notEqual(item.fingerprint, memory.issues[1]?.fingerprint, repository);
+    const links = item.snapshot.linked;
+    assert.equal(links.length, repositories.length);
+    const evidence = [];
+    for (const repository of repositories) {
+      const linked = links.find((link) => link.bodySourceId === `${repository}#2:body`);
+      assert.ok(linked);
+      assert.equal(linked.url, `https://github.com/${repository}/issues/2`);
+      assert.equal(linked.body, apis.get(repository).issues[0].body);
+      assert.equal(linked.humanComments.length, 1);
+      const source = linked.humanComments[0];
+      assert.equal(source.sourceId, `${repository}#2:comment:7`);
+      assert.equal(source.url, `${linked.url}#issuecomment-7`);
+      assert.equal(source.body, apis.get(repository).comments[2][0].body);
+      evidence.push({ sourceId: linked.bodySourceId, url: linked.url, quote: linked.body },
+        { sourceId: source.sourceId, url: source.url, quote: source.body });
+    }
+    const result = proposal(item, { evidence });
+    assert.deepEqual(validateProposals(envelope([result]), manifest), [result]);
+    for (const field of ["url", "quote"]) {
+      const swapped = clone(result);
+      swapped.evidence[1][field] = evidence[3][field];
+      assert.throws(() => validateProposals(envelope([swapped]), manifest));
+    }
+    memory = (await publishRun({ github }, memory, { limits: undefined })).memory;
+    assert.deepEqual((await collect({ github }, memory, { limits: undefined })).selected, []);
+  }
+});
 
 for (const kind of ["title", "comment", "linked body", "review", "review-comment"]) {
   test(`current ${kind} evidence is validated by API identity, URL and exact text`, async () => {
