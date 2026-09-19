@@ -35,5 +35,13 @@
     "discoveryPages": 2,
     "discoveryPageSize": 100
   },
-  "evidenceBytesPerStream": 16384
+  "evidenceBytesPerStream": 16384,
+  "toolchains": {
+    "publicFeeds": [
+      "https://builds.dotnet.microsoft.com/dotnet",
+      "https://ci.dot.net/public",
+      "https://dotnetcli.blob.core.windows.net/dotnet",
+      "https://download.visualstudio.microsoft.com/download/pr"
+    ]
+  }
 }

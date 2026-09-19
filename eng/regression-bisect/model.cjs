@@ -229,13 +229,20 @@ const artifact = shape({
     sha256: digest, origin: oneOf(["local-build", "released-sdk"]),
     sourceSha: nullable(sourceSha), buildInstanceId: text,
 });
-const observationCell = shape({
+const buildToolchain = shape({
+    sourceSha, globalJsonDigest: digest, evidenceDigest: digest,
+    requestedSdk: pinnedVersion, requestedTools: pinnedVersion, requestedCompilerRuntime: pinnedVersion,
+    sdk: productIdentity, compilerRuntime: productIdentity,
+    verified: literal(true), supported: literal(true),
+});
+const observationCell = (v, p) => object(v, {
     id: text, command: list(text, 2, 2),
     environment: shape({ os, architecture, imageDigest: digest }),
     sdk: nullable(productIdentity), runtime: nullable(productIdentity),
     artifacts: shape({ compiler: nullable(artifact), tasks: nullable(artifact), targets: nullable(artifact), core: nullable(artifact) }),
     producer: identity, attempts: list(attemptSchema, 1, trustedPolicy.limits.assertionRepetitions), outcome: validateOutcome,
-});
+    ...(v && Object.hasOwn(v, "buildToolchain") ? { buildToolchain } : {}),
+}, p);
 
 function validateObservation(observation, manifest, options = { finalConfirmation: null }) {
     validateManifest(manifest);
@@ -265,6 +272,13 @@ function validateObservation(observation, manifest, options = { finalConfirmatio
         check(expected && equal(cell.command, expected.command) && cell.environment.os === expected.os &&
             cell.environment.architecture === expected.architecture, "observation.cells", "matrix or command mismatch");
         check(equal(cell.producer, manifest.producer), "observation.cells.producer", "producer mismatch");
+        if (cell.buildToolchain) {
+            const build = cell.buildToolchain;
+            check(observation.kind === "source" && build.sourceSha === observation.target.sourceSha &&
+                build.requestedSdk === build.sdk.version && build.requestedTools === build.sdk.version &&
+                build.requestedCompilerRuntime === build.compilerRuntime.version,
+            "observation.cells.buildToolchain", "wrong source declaration or resolved build SDK");
+        }
         for (const [name, missing] of Object.entries({
             sdk: cell.sdk === null, runtime: cell.runtime === null,
             identity: Object.values(cell.artifacts).some(a => a === null),
@@ -369,11 +383,17 @@ function admitBisection(input) {
         check(main.target.sourceSha === ancestry.pinnedMainSha && main.target.sourceSha === ancestry.badSha &&
             good.target.sourceSha === ancestry.goodSha && ancestry.goodSha !== ancestry.badSha && ancestry.isAncestor,
         "admission", "good must be a strict ancestor of pinned main");
+        const toolchainTransitions = [];
         for (const cell of main.cells) {
             const older = good.cells.find(c => c.id === cell.id);
             const released = stable.cells.find(c => c.id === cell.id);
             check(equal(cell.environment, older.environment) && equal(cell.environment, released.environment) &&
                 equal(cell.sdk, older.sdk) && equal(cell.runtime, older.runtime), "admission", "incomparable environment or source toolchain");
+            check(!!cell.buildToolchain === !!older.buildToolchain, "admission", "incomplete revision-specific toolchain evidence");
+            if (cell.buildToolchain && (!equal(cell.buildToolchain.sdk, older.buildToolchain.sdk) ||
+                !equal(cell.buildToolchain.compilerRuntime, older.buildToolchain.compilerRuntime))) {
+                toolchainTransitions.push({ cellId: cell.id, good: older.buildToolchain, main: cell.buildToolchain });
+            }
         }
         if ([stable, main, good].some(o => o.outcome.outcome === "untestable")) {
             return { decision: "blocked", reason: "untestable endpoint evidence" };
@@ -387,7 +407,10 @@ function admitBisection(input) {
             budget.consumed.reservedMinutes + limits.workerTimeoutMinutes <= limits.reservedMinutes &&
             (budget.attempts.find(a => a.workItemId === budget.nextWorkItemId)?.count ?? 0) < limits.attemptsPerItem,
         "admission", "insufficient remaining budget");
-        return { decision: "admit", reason: "verified stable failure, pinned-main failure, and comparable ancestor pass" };
+        return {
+            decision: "admit", reason: "verified stable failure, pinned-main failure, and comparable ancestor pass",
+            ...(toolchainTransitions.length ? { toolchainTransitions } : {}),
+        };
     } catch (error) {
         if (!(error instanceof ContractError)) throw error;
         return { decision: "blocked", reason: error.message };

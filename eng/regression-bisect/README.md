@@ -1,16 +1,18 @@
 # Regression investigation contracts
 
 This directory defines version 1 of the deterministic input, evidence, state,
-and admission contracts, complete issue intake, and authenticated issue-comment
-checkpoints. It does not activate a workflow, execute reproductions, or spawn
-subprocesses. GitHub access is injected by the trusted controller; tests use
+and admission contracts, complete issue intake, authenticated issue-comment
+checkpoints, and isolated exact toolchain acquisition. Acquisition runs the
+official installer and fixed product-identity probes, not reproductions, source
+builds, or bisection. It does not activate a workflow.
+GitHub access is injected by the trusted controller; tests use
 synthetic records and an in-memory transport, never live issue mutations.
 Records under `fixtures` are not reproduction approvals.
 
 Run the dependency-free suite from the repository root:
 
 ```powershell
-node --test eng\regression-bisect\model.test.cjs eng\regression-bisect\intake.test.cjs eng\regression-bisect\state.test.cjs
+node --test eng\regression-bisect\model.test.cjs eng\regression-bisect\intake.test.cjs eng\regression-bisect\state.test.cjs eng\regression-bisect\toolchains.test.cjs eng\regression-bisect\toolchain-installer.test.cjs
 ```
 
 ## Trust boundary
@@ -49,6 +51,8 @@ path-qualified error. Unknown or missing fields, unsupported versions, and
 malformed identities are rejected. `classifyAttempts` instead maps incomplete
 attempt evidence to an explicit `untestable` outcome; `admitBisection` returns
 `{ decision, reason }`, with `decision` exactly `admit`, `stop`, or `blocked`.
+An admitted interval with different verified source build toolchains also
+returns `toolchainTransitions` for coupled compiler/toolchain attribution.
 
 `fixtures/contracts.cjs` provides executable examples of every record shape.
 
@@ -122,7 +126,16 @@ can be `null` only in untestable evidence with the corresponding checks failed.
 
 The observation binds the complete manifest, approved input, discussion, matrix,
 producer, and package fingerprints. Admission also compares runner environments
-across all endpoints and SDK/runtime identities across the two source endpoints.
+across all endpoints and **reproduction** SDK/runtime identities across the two
+source endpoints. A source cell can additionally carry `buildToolchain`:
+`sourceSha`, `globalJsonDigest`, `evidenceDigest`, `requestedSdk`,
+`requestedTools`, `requestedCompilerRuntime`, verified `sdk` and
+`compilerRuntime` product identities, and `verified: true`, `supported: true`.
+Requested/resolved versions and source SHA must agree. Both source endpoints
+must supply this field or both omit it; legacy observations retain the original
+SDK/runtime equality checks. Different valid build toolchains are not evidence
+that the compiler source change alone caused the regression: admission retains
+both records in each coupled `toolchainTransitions` entry.
 Cached source observations are reusable only with these same inputs and trusted
 provenance. Different source revisions naturally have different artifact hashes.
 
@@ -169,7 +182,110 @@ Only the orchestration engine may eventually spawn `git bisect`. It must call
 this gate immediately before the first operation and again after any
 evidence-invalidating change, using the current authenticated context and
 charged reservation. This contract suite does not claim to prove an engine's
-subprocess behavior; there is no engine or subprocess execution here.
+subprocess behavior; no bisection engine is implemented here.
+
+## Exact toolchain acquisition
+
+`toolchains.cjs` exports four operations. All options are trusted-controller
+inputs, never instructions extracted from an issue. Each operation requires the
+validated maintainer `policy`. Resolution and acquisition also require
+`platform: { os, rid, architecture }`, either directly or in the frozen toolchain.
+Supported architectures are `x64` and `arm64`; RIDs are `win-*`, `linux-*`,
+`linux-musl-*`, or `osx-*`, matching that OS and architecture.
+
+| Operation | Result |
+| --- | --- |
+| `resolveLatestStableSdk({ policy, platform, signal? }, dependencies?)` | `{ status: "resolved", toolchain, attempts }`; freezes the run clock and raw official index/channel metadata bytes and SHA-256 hashes. Inspects both `sdk` and `sdks`, orders stable versions numerically across LTS/STS channels, excludes future releases, and selects exactly one matching ZIP/tar archive. |
+| `readRevisionToolchain({ policy, platform, sourceDirectory, sourceSha, runtimeConfigs? }, dependencies?)` | Preserves raw `global.json`, both requested SDK declarations, original SDK-selection settings, optional historical build/TFM files, and exact runtimeconfig requirements. Each config is `{ path, role: "compiler" \| "fsi" \| "sample" }`. No source file is rewritten. |
+| `acquireToolchain({ policy, toolchain, storageDirectory, helperRoot?, signal? }, dependencies?)` | `{ status: "acquired", identity, evidencePath, launch, attempts }`; uses a unique child of existing storage, persists complete identity/metadata evidence, and retains verified archives. `helperRoot` is a repository root, defaulting to the historical source for source acquisition and this trusted checkout for released acquisition. |
+| `verifyToolchainIdentity({ policy, toolchain, identity })` | `{ status: "verified" }` only for matching requested/resolved SDK, host/SDK paths, RID/architecture, archive hashes, bundled F# identities, and all exact runtime requirements. The acquisition request binds `toolchain.installationRoot`; evidence cannot nominate a different root. This validates captured evidence, not the authenticity of arbitrary JSON. |
+
+Failures return `{ status: "untestable", outcome, error: { stage, code, message },
+attempts }`, not reproduction pass/failure. Missing historical metadata,
+unavailable/checksum-less archives, unsupported installer flags or declarations,
+SDK/tool declaration disagreement, changed source files, and unfulfilled runtime
+requirements fail closed. Historical previews are allowed, but never selected
+as released stable. Public preview fallback uses an official archive SHA-512
+sidecar; missing checksum provenance cannot become success through a host SDK.
+Exact `global.json.tools.runtimes` arrays (`dotnet`, `aspnetcore`,
+`windowsdesktop`, optionally suffixed with the matching architecture) become
+separate build-runtime requirements. Unevaluated MSBuild version expressions
+and foreign-architecture requirements are explicitly untestable, not guessed.
+
+The shared boundaries are injectable: `fs` (`node:fs/promises`), `clock`
+(`() => Date`), `http(url, { destination?, method? })`, `run(executable, args,
+{ cwd, env, timeoutMs })`, `installer`, and `capture`. HTTP returns status,
+final URL, redirect hops and raw bytes, or streams a large download to
+`destination`. Every production redirect is checked against the policy's
+credential-free public-feed allowlist; downloads, processes and smoke runs
+are bounded. Process execution receives a newly constructed environment, not
+the caller's secrets, private feeds, credential providers or user profile.
+
+`toolchain-installer.cjs` calls the existing Arcade `GetDotNetInstallScript`
+helper with a freshly verified official-script cache. It verifies actual
+script parameter support, then invokes the official installer with exact
+version/architecture and archive-retention flags. A loopback-only, bounded
+feed serves the already downloaded and SHA-512-verified archive to that
+installer. This transport boundary records the **actual public download's**
+redirects/digests without reimplementing extraction or trusting a separate HEAD
+request. The official retained archive is hashed again. Supplemental runtime
+installation uses the official skip-non-versioned-files flag to preserve the
+SDK host. Arcade-owned files are neither edited nor copied.
+
+`launch` contains the explicit executable, historical build working directory,
+isolated environment, and a separate sample directory with exact SDK selection
+and roll-forward disabled. Source search paths that could select a different
+installation are rejected. CLI home and all NuGet caches are unique per
+acquisition. Source `global.json` remains unchanged; no TFM is overridden.
+Callers must retain these launch settings and choose reviewed public NuGet
+sources explicitly when they eventually execute an approved reproduction.
+
+Identity captures `--info`, `--list-sdks`, `--list-runtimes`, resolved SDK base
+path, real host/file paths and hashes, actual process architecture, F# compiler/
+FSI/Core assembly and file versions, dependency-manifest identity, and bundled
+Core nuspec/package identity when present. A fixed FSI probe runs only after
+archive verification. SDK-bundled runtime, supplemental sample requirements,
+and local compiler execution runtimes are separate records. Supplied local
+compiler/FSI runtimeconfigs are verified using the corresponding built DLL's
+`--help` and host trace with the exact runtime; sample code is never executed.
+Only acquisition with both local compiler and FSI execution evidence emits the
+`buildToolchain` admission record. An SDK acquired before a source build does
+not attest the identity of a compiler that has not been built yet.
+
+### Bounded opt-in acquisition smoke
+
+```powershell
+node eng\regression-bisect\toolchains.smoke.cjs --run --storage "$env:TEMP"
+```
+
+The smoke resolves current official metadata, acquires one stable SDK, verifies
+the real archive and running identities, prints a JSON result, and removes only
+its uniquely created child directory. It has a ten-minute cancellation deadline.
+Exit 0 means actual acquisition/identity success; exit 2 records the exact
+block, never mocked download success. This is not a source build or live issue run.
+
+On 2026-09-19 at 00:02 UTC, that command completed successfully on Windows x64:
+requested/resolved SDK `10.0.401`, RID `win-x64`, bundled/executing runtime
+`10.0.12`, compiler and FSI assembly `15.2.401.0`, Core assembly `10.1.0.0`,
+and bundled package `FSharp.Core/10.1.401`. The archive's final public URL was
+`https://builds.dotnet.microsoft.com/dotnet/Sdk/10.0.401/dotnet-sdk-10.0.401-win-x64.zip`
+(no redirects). Official and downloaded SHA-512 were both
+`24b670ad3d923bfcf47df6c3b034152398b42f6dbc388e10d783aee1cfb5e5817d399fc0ae2a12cfa822a55e61d34830ccb15c50ef6efee437ab874bb7c79430`;
+archive SHA-256 was
+`c1b96dea223e1ab2af8a51187e0cc96338d14c68834be1656136be18953cea09`.
+The official PowerShell install script SHA-256 was
+`e8b873e18a81e5c4cd8ab69d84dac8fead291d50b3c44633cd7fddad709a13d6`.
+Temporary acquisition storage was cleaned. These are recorded smoke results,
+not production version constants.
+
+Validation also completed `node --check` for all seven changed/new `.cjs`
+files and the required
+`node --test eng\regression-bisect\model.test.cjs eng\regression-bisect\toolchains.test.cjs`
+command (304 passed). The broader suite above passed all 516 tests, including
+intake, authenticated state replay and installer-boundary coverage. The signed checkpoint fixture
+was regenerated through its existing harness for the new pinned public-feed
+policy; an old-policy checkpoint is not silently accepted as a new-policy one.
+Root compiler Release builds/tests are not this Node adapter's acceptance gate.
 
 ## Complete intake and bounded discovery
 
