@@ -124,6 +124,19 @@ report. The `decoy-completion` production regression intentionally remains RED;
 the earlier startup/in-test exit rejections do not disprove this case. Do not use
 these receipts as independent correctness approval. Linux behavior is unproven.
 
+The pinned SDK receives test identities and outcomes from the in-process MTP
+engine; its [result handler](https://github.com/dotnet/sdk/blob/6bb52e256cd35f45066ee209812c099f2195122a/src/Cli/dotnet/Commands/Test/MTP/TestApplicationHandler.cs#L296-L361)
+checks protocol/session consistency, not execution of the requested method.
+Outer `--output Detailed` can expose a decoy's reported display name, but is
+diagnostic only. Outer minimum counts do not bind identities, and
+`--list-tests json` is discovery, not execution. The supported xUnit
+[out-of-process adapter](https://github.com/xunit/xunit/blob/728c1dce012cd82193035dddfeaba184baaa88c6/src/xunit.v3.runner.utility/Frameworks/v3/TestProcessLauncherAdapter.cs#L156-L201)
+also consumes child-authored result messages. Moving those messages to a
+parent-owned report does not establish independent execution. None of these
+interfaces supplies the missing attestation while arbitrary candidate code
+shares the test-engine process; trusted assertions would need to execute outside
+that domain. Do not substitute these diagnostics for the failing rejection gate.
+
 Reports stream through a fresh write-only FIFO in
 a sealed directory to a parent-owned evidence file, rather than a candidate-writable
 XML file. Late writes append to the stream and invalidate it; they cannot truncate
