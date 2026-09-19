@@ -153,7 +153,7 @@ async function controlled(t, os = "windows") {
                 assemblyName: "FSharp.Core", complete: true, architecture: "x64", runtimeVersion: runtime,
                 runtimePath: path.join(path.dirname(exe), "shared", "Microsoft.NETCore.App", runtime),
             }));
-            return ok(f.manifest.assertions.pass.stdout);
+            return f.outputs ? f.outputs[f.reproductions - 1] : { ...ok(""), ...f.manifest.assertions.pass };
         }
         const source = settings.cwd;
         const sha = (await runGit(["rev-parse", "HEAD"], { ...settings, timeoutMs: 30000 })).stdout.trim();
@@ -218,6 +218,45 @@ test("fresh revisions use their exact SHA, SDK, TFM and independent same-version
     assert.equal(await fs.readFile(path.join(f.root, "nuget/packages/fsharp.core/1.0.0/FSharp.Core.dll"), "utf8"), "host");
     for (const b of f.builds) await assert.rejects(fs.access(path.join(b.source, "bin", "fsi.dll")));
     await assert.rejects(fs.access(hookMarker));
+});
+
+for (const [name, outputs, outcome, reason] of [
+    ["expected failure", a => [a.failure, a.failure], "product-failure", "failure-assertion"],
+    ["unexpected diagnostic", a => [a.failure, { ...a.failure, stderr: "different regression\n" }], "untestable", "assertion-mismatch"],
+    ["reproduction timeout", a => [a.failure, { ...a.failure, status: "timeout", complete: false, exitCode: null }], "untestable", "timeout"],
+    ["mixed repetitions", a => [a.pass, a.failure], "untestable", "flaky"],
+]) test(`source worker preserves ${name} in returned and persisted observations`, async t => {
+    const f = await controlled(t);
+    f.outputs = outputs(f.manifest.assertions).map(output => ({ ...ok(""), ...output }));
+    const expected = { schemaVersion: 1, outcome, reason };
+    const result = await testSourceRevision(f.options, f.deps);
+    assert.equal(result.status, "tested", JSON.stringify(result));
+    assert.equal(f.builds.length, 1);
+    assert.equal(f.packs, 1);
+    assert.equal(f.reproductions, 2);
+    assert.deepEqual(result.outcome, expected);
+    assert.deepEqual(result.reproduction.outcome, expected);
+    assert.equal(result.reproduction.manifestDigest, f.options.request.manifestDigest);
+    assert.equal(result.reproduction.cells.length, 1);
+    const cell = result.reproduction.cells[0];
+    assert.equal(cell.id, f.manifest.matrix[0].id);
+    assert.deepEqual(cell.outcome, expected);
+    assert.deepEqual(cell.attempts.map(a => a.execution), f.outputs);
+    assert.ok(cell.attempts.every(a => Object.values(a.checks).every(Boolean)));
+    for (const name of ["reproduction", "observation"]) {
+        const entry = result.evidence.find(e => e.path === `${result.buildInstanceId}/${name}.json`);
+        assert.ok(entry, `missing ${name} evidence`);
+        const bytes = await fs.readFile(path.join(f.options.evidenceDirectory, entry.path));
+        assert.equal(hash(bytes), entry.sha256);
+        const persisted = JSON.parse(bytes);
+        assert.deepEqual(persisted.outcome, expected);
+        if (name === "observation") {
+            assert.equal(persisted.status, "tested");
+            assert.equal(persisted.actualSourceSha, f.options.request.sourceSha);
+            assert.equal(persisted.buildInstanceId, result.buildInstanceId);
+            assert.deepEqual(persisted.reproduction, result.reproduction);
+        } else assert.deepEqual(persisted, result.reproduction);
+    }
 });
 
 for (const os of ["windows", "linux"]) for (const revision of [0, 1]) {

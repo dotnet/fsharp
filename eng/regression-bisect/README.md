@@ -427,14 +427,21 @@ result. No live issue discovery or full compiler test suite is involved.
 Local verification on 2026-09-19: corrective RED cases reproduced the graph's
 `Dependency/Shipping` output mismatch and three staged/finalization cancellation
 failures. Real subprocess cases reproduced exited-parent hangs and detached-server
-timeouts. The final scoped suite passed **519 tests**, including 28 workspace
+timeouts. The final scoped suite passed **523 tests**, including 32 workspace
 contracts. In-memory mutations to use Debug and bypass package validation failed
 the command-contract case and all four package-identity cases, respectively.
+Four additional parameterized cases first failed with the pass-only process
+fixture, then passed with per-attempt process results: expected failure,
+unexpected diagnostic, reproduction timeout and mixed repetitions. They exercise
+the real worker/classifier and verify returned outcomes, complete repeats, and
+digested `reproduction.json`/`observation.json` evidence. Forcing either the
+worker's returned outcome or only its persisted observation to pass made all
+four cases fail. Production outcome propagation required no change.
 Changed-script syntax (including the PowerShell helper), formatting, and working/
 sprint-range whitespace checks passed.
 The real Windows x64 smoke pinned
-`bf13cf234bc47e62166bc82748d6784d0aee086f`, build instance
-`20f99ee4-f35e-48c7-8620-b2ecce174da8`. Its accurate result is
+`5a8b9adb034f420a5c2c1f577670c5eeeb454b7e`, build instance
+`2f54fabe-fcb6-424d-a63e-dcd508028681`. Its accurate result is
 **untestable / unavailable-sdk**, exit 2: exact SDK
 `11.0.100-rc.1.26420.103` has no verified public archive available to acquisition.
 Release metadata returned 200, but
@@ -443,9 +450,9 @@ returned 404 under both `https://builds.dotnet.microsoft.com/dotnet` and
 `https://ci.dot.net/public`. Checkout/source-integrity checks passed and
 `global.json` retained its hash. Acquisition stopped before the build entrypoint,
 so no build binlog or local FSI result exists; this is not a green clean build
-or compiler suite. Retained evidence is
-`Q:\fsharp-workspace-smoke-D70Agl\result.json`, SHA-256
-`28f8a3fe1061f006e8786ef3d426e8e864220f662dd5fc8cb226ef6ff284e302`.
+or compiler suite. All 18 evidence digests were verified. Retained evidence is
+`Q:\fsharp-workspace-smoke-XI1JHA\result.json`, SHA-256
+`9edb1e7f3786d4df56ad42989420e2de81a2cc518e96f9db3ebf8e48ffd609a5`.
 
 ## Reproduction execution
 
