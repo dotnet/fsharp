@@ -1824,3 +1824,4 @@ featureTypeArgumentDependencyOrdering,"ordering explicit type arguments by their
 3921,ilRuntimeAsyncSynchronizedMethod,"A runtime async method cannot use MethodImplOptions.Synchronized."
 3922,ilRuntimeAsyncSequenceNotStaticallyKnown,"The runtime-async sequence recipe could not be statically lowered. Supply a statically known delayed sequence recipe through an inline builder."
 3923,tcMethodRequiresNamedArguments,"The method '%s' requires named arguments. Use named-argument syntax, e.g. 'MethodName(argumentName = value)'."
+3924,chkNativePtrStackallocInHandler,"'NativePtr.stackalloc' cannot be used inside the 'with' handler, filter or 'finally' block of a 'try' expression. The 'localloc' IL instruction this emits is rejected inside an exception-handling region, producing a 'System.InvalidProgramException' when the method is loaded."

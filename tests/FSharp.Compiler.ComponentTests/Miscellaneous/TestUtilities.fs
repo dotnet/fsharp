@@ -44,6 +44,29 @@ let ``TestConsole captures output`` () : Task =
         Assert.Equal(expected, results)
     }
 
+[<Theory>]
+[<InlineData(false)>]
+[<InlineData(true)>]
+let ``TestConsole preserves nested bulk output`` useError =
+    let text (capture: TestConsole.ExecutionCapture) =
+        if useError then capture.ErrorText else capture.OutText
+
+    use outer = new TestConsole.ExecutionCapture()
+    let writer = if useError then Console.Error else Console.Out
+    writer.Write("before")
+
+    do
+        use inner = new TestConsole.ExecutionCapture()
+        writer.Write("string")
+        writer.Write(null: string)
+        writer.Write("!array!".ToCharArray(), 1, 5)
+        writer.Write('!')
+        writer.WriteLine()
+        Assert.Equal("stringarray!" + Environment.NewLine, text inner)
+
+    writer.Write("after")
+    Assert.Equal("beforestringarray!" + Environment.NewLine + "after", text outer)
+
 /// Roundtrip-serialize a CompilationHelper through xUnit3's XunitSerializationInfo
 /// and verify all fields survive the trip.
 let private roundtripCompilationHelper (filename: obj) (directory: obj) (realsig: obj) (optimize: obj) =
