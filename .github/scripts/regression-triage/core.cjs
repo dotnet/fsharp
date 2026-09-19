@@ -48,7 +48,7 @@ function eventNumber(event) {
 
 // Schema 1: {policyVersion, scan:{updatedThrough,incremental,sweep}, pending,
 // issues:{[number]:record}}. Queue entries have number/firstSeenAt and optional
-// historical/updatedAt/lastAttemptAt. Records retain fingerprint, policyVersion,
+// historical/updatedAt/lastAttemptAt/lastSelectedAt. Records retain fingerprint, policyVersion,
 // classification, evidence, missingFact, lastResult, clarification, humanCorrection,
 // humanLabelDecision, pendingPublication and pendingLabelPublication (an older
 // label attempt awaiting observation). Only published/noop are terminal.
@@ -129,6 +129,7 @@ function normalizeMemory(raw, { policyVersion = POLICY_VERSION } = {}) {
   for (const entry of state.pending) {
     if (!object(entry) || !issueNumber(entry.number) || !timestamp(entry.firstSeenAt)
       || (entry.lastAttemptAt !== undefined && !timestamp(entry.lastAttemptAt))
+      || (entry.lastSelectedAt !== undefined && !timestamp(entry.lastSelectedAt))
       || (entry.updatedAt !== undefined && !timestamp(entry.updatedAt))) {
       throw new Error("Invalid pending work");
     }
@@ -179,10 +180,10 @@ function needsAnalysis(record, snapshot, policyVersion = POLICY_VERSION) {
     || record.fingerprint !== fingerprintHumanInput(snapshot);
 }
 
-// discovered entries are {snapshot, historical, firstSeenAt, lastAttemptAt}.
+// discovered entries are {snapshot, historical, firstSeenAt, lastAttemptAt, lastSelectedAt}.
 // Return at most limit complete, eligible, changed entries. Reserve the oldest
-// pending slot, not the least recently read: reading without selection must not
-// reset analysis priority. Other slots favor the event and recent material input.
+// waiting slot, rotating after selection even when publication stays unresolved.
+// Reading alone must not reset analysis priority. Other slots favor recent input.
 function selectCandidates({ event, discovered, memory, limit = LIMITS.candidates, now }) {
   if (!Number.isSafeInteger(limit) || limit < 1) throw new Error("Invalid candidate limit");
   const unique = new Map();
@@ -197,7 +198,7 @@ function selectCandidates({ event, discovered, memory, limit = LIMITS.candidates
   const historical = entries.filter((entry) => entry.historical
     || !isFinishedRecord(memory.issues[entry.snapshot.number], memory.policyVersion));
   historical.sort((a, b) =>
-    compareText(a.firstSeenAt ?? now, b.firstSeenAt ?? now)
+    compareText(a.lastSelectedAt ?? a.firstSeenAt ?? now, b.lastSelectedAt ?? b.firstSeenAt ?? now)
     || compareText(a.lastAttemptAt ?? "", b.lastAttemptAt ?? "")
     || a.snapshot.number - b.snapshot.number);
   const selected = historical.slice(0, 1);

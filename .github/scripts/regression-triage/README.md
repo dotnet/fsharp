@@ -163,6 +163,9 @@ Each record retains the analyzed fingerprint, classification, compact reported
 citations, policy, missing fact, latest actual outcome, latest human label decision,
 correction excerpt, clarification status/receipt and any unfinished intent.
 Compatible unknown fields and fair-read age survive schema-1 policy migration.
+Pending entries retain `firstSeenAt` and an optional `lastSelectedAt`, stamped only
+on admission to a model batch. The reserved slot uses the latter when present,
+so unresolved historical records cannot permanently outrank later reports.
 Unsupported schemas and malformed known fields fail instead of resetting history.
 Clarification status, selector, receipt identity/URL and publication intent fields
 are validated on both read and write; older receipts may omit their URL.
@@ -253,3 +256,7 @@ REST/GraphQL and an interleaved CAS store. No live write API is used.
 Regression coverage includes timestamp-only target/linked-issue churn across
 restarts, competing label/clarification claims, and equal issue/comment IDs in
 different repositories with distinct fingerprints and citation provenance.
+Unknown, stale and omitted historical results retain their pending state without
+starving later reports across collector/publisher restarts.
+Redirect fixtures cover canonical repository identities, linked issue transfers,
+alias deduplication and freshness, while rejecting out-of-scope root identities.

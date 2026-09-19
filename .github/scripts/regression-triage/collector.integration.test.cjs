@@ -8,9 +8,9 @@ const { OUTPUT_TYPE, publishBatch } = require("./publish.cjs");
 const { repo, now, before, clone, report, comment, fake, emptyMemory } = require("./test-support.cjs");
 
 // Deterministic proposals test collector/publication mechanics, not model judgment.
-function stagedCollector(options) {
+function stagedCollector({ memory = emptyMemory(), ...options }) {
   const api = fake({ pageSize: 100, ...options });
-  let state = emptyMemory();
+  let state = memory;
   let headOid = "b".repeat(40);
   let run = 0;
   const mutations = [];
@@ -42,6 +42,46 @@ function stagedCollector(options) {
     state = normalizeMemory(JSON.stringify(result.state));
     headOid = run.toString(16).padStart(40, "0");
   } };
+}
+
+for (const historicalCount of [6, 11]) for (const outcome of ["unknown", "stale", "omitted"]) {
+  test(`collector/publisher/restart: ${outcome} historical work cannot starve later reports (${historicalCount} unresolved)`, async () => {
+    const memory = emptyMemory();
+    memory.clarificationHistoryUnknownThrough = now;
+    const historical = Array.from({ length: historicalCount }, (_, i) => i + 1);
+    const later = [1, 2, 3].map((offset) => historicalCount + offset);
+    const s = stagedCollector({ memory, issues: historical.map((number) => report(number)) });
+    const seen = [];
+    const retried = new Set();
+    for (let run = 0; run < 2 * (historicalCount + later.length); run++) {
+      if (run === 2) s.api.issues.push(...later.map((number) => report(number)));
+      s.api.calls.length = 0;
+      const args = await s.collect();
+      assert.deepEqual(args.manifest.errors, []);
+      assert.ok(args.manifest.selected.length <= LIMITS.candidates);
+      assert.ok(s.api.calls.filter((call) => call.name === "get").length <= 2 * LIMITS.snapshotReads);
+      const batch = JSON.parse(args.output.items[0].proposals);
+      for (const proposal of batch.results.filter((item) => item.number <= historicalCount)) {
+        if (outcome === "unknown") Object.assign(proposal, {
+          classification: "uncertain", evidence: [], missingFact: "Which earlier version worked?",
+          clarification: "known-good",
+        });
+        if (outcome === "stale") s.api.issues[proposal.number - 1].body += " Correction.";
+        if (run > historicalCount + 1) retried.add(proposal.number);
+      }
+      if (outcome === "omitted") batch.results = batch.results.filter((item) => item.number > historicalCount);
+      args.output.items[0].proposals = JSON.stringify(batch);
+      const result = await publishBatch(args);
+      for (const item of result.outcomes.filter((item) => item.number <= historicalCount)) assert.equal(item.status, outcome);
+      seen.push(...result.receipts.filter((receipt) => receipt.type === "would-add-label").map((receipt) => receipt.number));
+      assert.ok(!result.receipts.some((receipt) => receipt.type === "would-comment"));
+      assert.ok(historical.every((number) => result.state.pending.some((item) => item.number === number)));
+      s.restart(result);
+    }
+    assert.deepEqual([...seen].sort((a, b) => a - b), later);
+    assert.deepEqual([...retried].sort((a, b) => a - b), historical);
+    assert.deepEqual(s.mutations, []);
+  });
 }
 
 for (const hot of [false, true]) {

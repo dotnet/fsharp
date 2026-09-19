@@ -1143,6 +1143,124 @@ for (const kind of ["missing acknowledgement", "forbidden initialization", "422 
   });
 }
 
+for (const [name, rootAlias, canonical, number, pull] of [
+  ["root alias", true, "DotNet/FSharp", 43, true],
+  ["linked rename", false, "Example/Renamed-Compiler", 43, true],
+  ["linked transfer", false, "Example/Transferred-Compiler", 87, false],
+]) test(`repository redirect: ${name} retains canonical provenance through staged reanalysis`, async () => {
+  const alias = "Legacy/Compiler";
+  const readRepo = rootAlias ? { owner: "Legacy", repo: "Compiler" } : repo;
+  const url = `https://github.com/${canonical}/${pull ? "pull" : "issues"}/${number}`;
+  const reviews = { [number]: [comment(2, { html_url: `${url}#pullrequestreview-2` })] };
+  const reviewComments = { [number]: [comment(3, { html_url: `${url}#discussion_r3` })] };
+  const api = writableApi({ issues: [
+    report(42, { body: `${report().body} ` + (rootAlias
+      ? `#43 ${alias}#42 DotNet/FSharp#42` : `${alias}#43 ${canonical}#${number}`) }),
+    report(number, { labels: [], html_url: url, ...(pull ? { pull_request: {} } : {}) }),
+  ], comments: { 42: [comment(1)], [number]: [comment(1, { html_url: `${url}#issuecomment-1` })] },
+  reviews, reviewComments });
+  for (const area of ["issues", "pulls"]) {
+    for (const [method, read] of Object.entries(api.github.rest[area])) {
+      api.github.rest[area][method] = (args) => {
+        const repository = `${args.owner}/${args.repo}`.toLowerCase();
+        const requested = args.issue_number ?? args.pull_number;
+        if (method === "listForRepo") assert.deepEqual([args.owner, args.repo], [readRepo.owner, readRepo.repo]);
+        else {
+          const root = requested === 42 && (repository === "dotnet/fsharp" || rootAlias && repository === alias.toLowerCase());
+          const linked = repository === canonical.toLowerCase() && requested === number
+            || repository === alias.toLowerCase() && requested === 43;
+          assert.ok(root || linked, `Unexpected read: ${repository}#${requested}`);
+          if (rootAlias && linked) assert.equal(repository, "dotnet/fsharp", "local references use the canonical root");
+          if (method !== "get") assert.equal(repository, root ? "dotnet/fsharp" : canonical.toLowerCase());
+          if (method === "get" && linked) args = { ...args, issue_number: number };
+        }
+        return read(args);
+      };
+    }
+  }
+  let memory = emptyMemory();
+  let fingerprint;
+  for (const corrected of [false, true]) {
+    if (corrected) (pull ? reviewComments[number][0] : api.comments[number][0]).body += " Correction: A also failed.";
+    const manifest = { ...await collect(api, memory, { repo: readRepo, limits: undefined }), binding: context() };
+    assert.deepEqual(manifest.errors, []);
+    assert.equal(manifest.selected.length, 1);
+    const item = manifest.selected[0];
+    assert.notEqual(item.fingerprint, fingerprint);
+    fingerprint = item.fingerprint;
+    assert.equal(item.snapshot.linked.length, 1, "alias and canonical references identify one source");
+    const linked = item.snapshot.linked[0];
+    assert.equal(linked.number, number);
+    assert.equal(linked.bodySourceId, `${canonical.toLowerCase()}#${number}:body`);
+    assert.equal(linked.url, url);
+    assert.equal(linked.humanComments.length, pull ? 3 : 1);
+    const evidence = [item.snapshot, linked].flatMap((source) => [
+      { sourceId: source.titleSourceId, url: source.url, quote: source.title },
+      { sourceId: source.bodySourceId, url: source.url, quote: source.body },
+      ...source.humanComments.map((c) => ({ sourceId: c.sourceId, url: c.url, quote: c.body })),
+    ]);
+    const result = proposal(item, { evidence });
+    const output = envelope([result]);
+    assert.deepEqual(validateProposals(output, manifest), [result]);
+    for (const field of ["sourceId", "url"]) {
+      const forged = clone(result);
+      forged.evidence[0][field] = field === "sourceId" ? `${alias.toLowerCase()}#42:title`
+        : "https://github.com/Unrelated/Compiler/issues/42";
+      assert.throws(() => validateProposals(envelope([forged]), manifest));
+    }
+    const store = casStore(memory);
+    const published = await publishBatch({ github: api.github, store, repo, manifest, output,
+      context: context(), bot, now, env: {}, staged: true });
+    assert.ok(published.receipts.some((receipt) => receipt.type === "would-add-label"));
+    assert.equal(store.writes.length, 0);
+    assert.equal(writes(api, "addLabels").length + writes(api, "createComment").length, 0);
+    memory = normalizeMemory(JSON.stringify(published.state));
+    assert.deepEqual((await collect(api, memory, { repo: readRepo, limits: undefined })).selected, []);
+  }
+});
+
+for (const [name, change] of [
+  ["conflicting evidence", (issue) => { issue.body += " Correction: A also failed."; }],
+  ["changed label", (issue) => { issue.labels = []; }],
+]) test(`repository redirect self-alias recheck rejects ${name}`, async () => {
+  const { api, args, store } = await setup({ issues: [report(42, { body: `${report().body} Legacy/Compiler#42` })] });
+  const get = api.github.rest.issues.get;
+  let changed = false;
+  api.github.rest.issues.get = (params) => {
+    if (!changed && params.owner === "Legacy") { changed = true; change(api.issues[0]); }
+    return get(params);
+  };
+  const result = await publishBatch({ ...args, staged: true });
+  assert.equal(result.outcomes[0].status, "retryable");
+  assert.ok(result.receipts.every((receipt) => receipt.type === "would-save-memory"));
+  assert.equal(store.writes.length, 0);
+  assert.equal(writes(api, "addLabels").length + writes(api, "createComment").length, 0);
+});
+
+for (const [name, fields, selected] of [
+  ["out-of-repository root", { html_url: "https://github.com/Unrelated/Compiler/issues/42" }, 1],
+  ["renumbered root", { number: 87, html_url: "https://github.com/dotnet/fsharp/issues/87" }, 0],
+  ["unrelated host", { html_url: "https://evil.invalid/dotnet/fsharp/issues/42" }, 0],
+  ["inconsistent API number", { html_url: "https://github.com/dotnet/fsharp/issues/87" }, 0],
+]) test(`repository redirect rejects ${name} without publication`, async () => {
+  const api = writableApi();
+  const get = api.github.rest.issues.get;
+  api.github.rest.issues.get = async (args) => ({ data: { ...(await get(args)).data, ...fields } });
+  const manifest = { ...await collect(api), binding: context() };
+  assert.equal(manifest.selected.length, selected);
+  const store = casStore();
+  const args = { github: api.github, store, repo, manifest, context: context(), bot, now, env: {}, staged: true };
+  if (selected) await assert.rejects(publishBatch({ ...args, output: envelope([proposal(manifest.selected[0])]) }),
+    /Wrong selected repository/);
+  else {
+    assert.equal(manifest.incomplete.length, 1);
+    const result = await publishBatch({ ...args, output: envelope([]) });
+    assert.ok(result.receipts.every((receipt) => receipt.type === "would-save-memory"));
+  }
+  assert.equal(store.writes.length, 0);
+  assert.equal(writes(api, "addLabels").length + writes(api, "createComment").length, 0);
+});
+
 test("linked canonical API URLs retain repository casing while source IDs are normalized", async () => {
   const url = "https://github.com/fsharp/FSharp.Compiler.Tools/issues/43";
   const { api, args } = await setup({ issues: [

@@ -251,6 +251,7 @@ for (const bytes of [49151, 49152, 49153]) {
     const original = (await s.collect()).manifest.selected[0];
     s.api.issues[0].body += " ".repeat(bytes - Buffer.byteLength(JSON.stringify(original)));
     const collected = await s.collect();
+    assert.equal(collected.manifest.stateDelta.pending[0].lastSelectedAt, bytes <= 49152 ? now : undefined);
     if (bytes <= 49152) {
       assert.equal(Buffer.byteLength(JSON.stringify(collected.manifest.selected[0])), bytes);
       assert.equal(collected.manifest.selected[0].snapshot.body, s.api.issues[0].body);
@@ -271,6 +272,9 @@ test("batch byte limits refill from complete snapshots and retry deferred eviden
   const collected = await s.collect();
   assert.deepEqual(collected.manifest.selected.map((entry) => entry.number), [1, 2, 3, 4, 6]);
   assert.deepEqual(collected.manifest.incomplete, [{ number: 5 }]);
+  for (const entry of collected.manifest.stateDelta.pending) {
+    assert.equal(entry.lastSelectedAt, entry.number === 5 ? undefined : now);
+  }
   assert.ok(collected.manifest.errors.some((error) => error.code === "content-bound" && error.number === 5));
   assert.ok(collected.manifest.selected.reduce((bytes, entry) => {
     const size = Buffer.byteLength(JSON.stringify(entry));

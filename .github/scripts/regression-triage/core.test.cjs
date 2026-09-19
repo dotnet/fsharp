@@ -350,6 +350,7 @@ test("fingerprint: serialization order and bot/reaction churn are immaterial", (
 
 test("memory: compatible migration preserves receipts, decisions and unknown fields", () => {
   const raw = emptyMemory();
+  raw.pending = [{ number: 42, firstSeenAt: before, lastSelectedAt: now }];
   raw.clarificationHistoryUnknownThrough = before;
   raw.issues["42"] = completed(report(), {
     humanCorrection: { sourceId: "comment:1" }, humanLabelDecision: { action: "unlabeled" },
@@ -359,12 +360,19 @@ test("memory: compatible migration preserves receipts, decisions and unknown fie
   const beforeNormalization = clone(raw);
   const memory = normalizeMemory(raw, { policyVersion: "next-policy" });
   assert.deepEqual(memory.issues, raw.issues);
+  assert.deepEqual(memory.pending, raw.pending);
   assert.equal(memory.policyVersion, "next-policy");
   assert.equal(memory.clarificationHistoryUnknownThrough, before);
   assert.equal(memory.issues["42"].policyVersion, POLICY_VERSION);
   assert.deepEqual(raw, beforeNormalization);
   memory.issues["42"].clarification.commentId = 999;
   assert.deepEqual(raw, beforeNormalization);
+});
+
+test("memory: malformed selection age cannot silently reset fairness", () => {
+  const raw = emptyMemory();
+  raw.pending = [{ number: 42, firstSeenAt: before, lastSelectedAt: "invalid" }];
+  assert.throws(() => normalizeMemory(raw), /Invalid pending work/);
 });
 
 for (const [name, raw] of [
@@ -405,6 +413,15 @@ test("selection: stale publication gets a reserved slot ahead of recent complete
   });
   const selected = selectCandidates({ discovered, memory, limit: 5, now });
   assert.ok(selected.some(({ snapshot }) => snapshot.number === 1));
+});
+
+test("selection: only selection resets waiting age, not snapshot reads", () => {
+  const discovered = [1, 2].map((number) => ({
+    snapshot: report(number), historical: true, firstSeenAt: before,
+    ...(number === 1 ? { lastSelectedAt: now } : { lastAttemptAt: now }),
+  }));
+  const selected = selectCandidates({ discovered, memory: emptyMemory(), limit: 1, now });
+  assert.deepEqual(selected.map((entry) => entry.snapshot.number), [2]);
 });
 
 test("opened before label: poll discovers the automation-applied label without an event", async () => {

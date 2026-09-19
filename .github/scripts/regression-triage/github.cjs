@@ -144,9 +144,15 @@ function discussion(items, prefix, kind) {
   return [...unique.values()].sort(chronological);
 }
 
-async function readText(github, repo, number, limits, includeReviews = false) {
-  const { data: issue } = await github.rest.issues.get({ ...repo, issue_number: number });
-  if (issue.number !== number || !validLabels(issue.labels)
+async function readText(github, repo, number, limits, isLinked = false) {
+  const requested = { ...repo, issue_number: number };
+  const { data: issue } = await github.rest.issues.get(requested);
+  const location = issue.html_url?.match(/^https:\/\/github\.com\/([a-z\d-]+)\/([a-z\d_.-]+)\/(issues|pull)\/([1-9]\d*)$/i);
+  const isPullRequest = Object.hasOwn(issue, "pull_request");
+  // Root publication/ledger keys cannot migrate; linked evidence may follow transfers.
+  if (!Number.isSafeInteger(issue.number) || issue.number < 1 || (!isLinked && issue.number !== number)
+    || !location || [".", ".."].includes(location[2]) || Number(location[4]) !== issue.number
+    || !validLabels(issue.labels)
     || !["open", "closed"].includes(issue.state) || typeof issue.title !== "string"
     || (issue.body != null && typeof issue.body !== "string")
     || typeof issue.updated_at !== "string" || !Number.isFinite(Date.parse(issue.updated_at))
@@ -154,6 +160,8 @@ async function readText(github, repo, number, limits, includeReviews = false) {
     || (issue.comments !== undefined && (!Number.isSafeInteger(issue.comments) || issue.comments < 0))) {
     throw new Error("Invalid current issue response");
   }
+  repo = { owner: location[1], repo: location[2] };
+  number = issue.number;
   const prefix = `${repo.owner.toLowerCase()}/${repo.repo.toLowerCase()}#${number}`;
   const errors = [];
   const comments = discussion(await readPages(github.rest.issues.listComments,
@@ -161,8 +169,7 @@ async function readText(github, repo, number, limits, includeReviews = false) {
   const commentCount = comments.length;
   const timeline = await readPages(github.rest.issues.listEventsForTimeline,
     { ...repo, issue_number: number }, limits.timelinePages, "timeline", errors);
-  const isPullRequest = Object.hasOwn(issue, "pull_request");
-  if (includeReviews && isPullRequest) {
+  if (isLinked && isPullRequest) {
     for (const [method, kind] of [
       [github.rest.pulls.listReviews, "review"], [github.rest.pulls.listReviewComments, "review-comment"],
     ]) {
@@ -170,7 +177,7 @@ async function readText(github, repo, number, limits, includeReviews = false) {
         limits.reviewPages, kind, errors), prefix, kind));
     }
   }
-  const { data: current } = await github.rest.issues.get({ ...repo, issue_number: number });
+  const { data: current } = await github.rest.issues.get(requested);
   const metadata = (value) => JSON.stringify([
     value.number, value.title, value.body, value.state, value.user?.id, value.html_url,
     Object.hasOwn(value, "pull_request"), value.comments, value.updated_at, value.created_at,
@@ -210,7 +217,9 @@ async function readText(github, repo, number, limits, includeReviews = false) {
 
 // Only typed GitHub issue/PR references become metadata reads; never fetch a
 // reporter-supplied URL. External text cannot choose a method or write target.
-function references(snapshot, repo) {
+function references(snapshot) {
+  const [owner, name] = snapshot.bodySourceId.split("#")[0].split("/");
+  const repo = { owner, repo: name };
   const found = new Map();
   const add = (owner, name, number) => {
     number = Number(number);
@@ -260,6 +269,8 @@ function references(snapshot, repo) {
  * bodySourceId,authorId,author,createdAt,updatedAt,humanComments,humanDecisions,botComments,
  * linked,complete,errors}. Every text source has an API identity and exact text.
  * linked has the same shape with no further traversal (including PR discussion).
+ * Source identities use canonical API locations, including transferred linked
+ * numbers. The root number remains bound to the requested publication target.
  * Bot receipts are available for publication deduplication, never human hashes.
  * Page limits count actual calls across stability passes per endpoint/item.
  * Each item also costs two issue metadata reads; unresolved changes are retryable
@@ -272,20 +283,28 @@ async function readIssueSnapshot(github, { repo, number, limits: overrides, rech
   const limits = readLimits(overrides);
   const snapshot = await readText(github, repo, number, limits);
   const targetFingerprint = recheckTarget ? fingerprintHumanInput(snapshot) : null;
-  const links = references(snapshot, repo);
+  const links = references(snapshot);
   if (links.length > limits.linkedItems) {
     snapshot.errors.push({ stage: "linked", number, code: "linked-item-bound", bound: limits.linkedItems });
   }
+  const seen = new Map([[snapshot.bodySourceId, snapshot]]);
   for (const link of links.slice(0, limits.linkedItems)) {
+    if (seen.has(`${link.owner}/${link.repo}#${link.number}:body`.toLowerCase())) continue;
     try {
       const linked = await readText(github, { owner: link.owner, repo: link.repo }, link.number, limits, true);
-      snapshot.linked.push(linked);
       snapshot.errors.push(...linked.errors.map((error) => ({ ...error, repository: `${link.owner}/${link.repo}` })));
+      const previous = seen.get(linked.bodySourceId);
+      if (!previous) {
+        snapshot.linked.push(linked);
+        seen.set(linked.bodySourceId, linked);
+      } else if (fingerprintHumanInput({ ...previous, linked: [] }) !== fingerprintHumanInput(linked)) {
+        snapshot.errors.push({ stage: "linked", number: linked.number, code: "issue-changed", retryable: true });
+      }
     } catch (error) {
       snapshot.errors.push(apiError(error, { stage: "linked", number: link.number, repository: `${link.owner}/${link.repo}` }));
     }
   }
-  if (recheckTarget && snapshot.linked.length > 0) {
+  if (recheckTarget && links.length > 0) {
     const current = await readText(github, repo, number, limits);
     snapshot.errors.push(...current.errors);
     if (fingerprintHumanInput(current) !== targetFingerprint
@@ -445,6 +464,7 @@ async function collectCandidates(github, { repo, event, memory, now, limits: ove
     }
     bytes += entry.bytes;
     selected.push(entry.candidate);
+    pending.set(entry.snapshot.number, { ...pending.get(entry.snapshot.number), lastSelectedAt: now });
   }
   const summary = ({ complete, pages, errors }) => ({ complete, pages, errors });
   return {

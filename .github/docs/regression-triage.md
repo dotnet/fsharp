@@ -76,6 +76,10 @@ remaining already-read snapshots without expanding the read budget.
 Direct dependencies include local `#N`, qualified `owner/repo#N`, and HTTP(S)
 GitHub issue/PR URLs (including `www.github.com`), deduplicated case-insensitively.
 They are read through the API; linked-only corrections change the fingerprint.
+Repository renames and linked transfers use the canonical API identity for source
+IDs, discussion reads and local references. Aliases deduplicate only when their
+human evidence agrees; a self-alias still requires the final target recheck.
+Publication remains restricted to the original issue number in `dotnet/fsharp`.
 The manifest is bounded to 4 MiB. The collection step has a ten-minute deadline;
 the agent and publication have fifteen-minute deadlines. Trusted Node watchdogs
 enforce collection/publication deadlines because v0.76.1 discards custom step
@@ -83,11 +87,14 @@ timeouts. An interrupted publisher leaves its persisted intent for recovery.
 
 An update-time scan with fifteen-minute overlap and an independent labeled-backlog
 sweep retain page boundaries and continuations. Snapshot reads reserve
-least-recently attempted work; analysis separately reserves oldest pending work.
-Reading without selecting never resets pending age. Remaining slots favor event
-hints and recent input. The staged suite drains eleven stable reports in three
+least-recently attempted work; analysis separately reserves the longest-waiting
+pending work, using its last selection time or initial discovery time.
+Only admission to the model batch resets that wait, not a snapshot read or a
+content-bound rejection. Unresolved publication and omitted proposals rotate
+without dropping their pending work. Remaining slots favor event hints and recent
+input. The staged suite drains eleven stable reports in three
 runs at production limits and drains a backlog despite continuously changing
-high-priority reports.
+high-priority reports or unresolved historical records.
 
 Authoritative memory is schema 1 `state.json` on **`memory/regression-triage`**:
 scan continuations, pending queue, fingerprints, policy, cited evidence, missing
