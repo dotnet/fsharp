@@ -12,6 +12,7 @@
     <Message Importance="High" Text="REPRO_EVIDENCE_V1|TargetPath|$(TargetPath)" />
     <Message Importance="High" Text="REPRO_EVIDENCE_V1|LangVersion|$(LangVersion)" />
     <Message Importance="High" Text="REPRO_EVIDENCE_V1|Optimize|$(Optimize)" />
+    <Message Importance="High" Text="REPRO_EVIDENCE_V1|Nullable|$(Nullable)" />
     <Message Importance="High" Text="REPRO_EVIDENCE_V1|DefineConstants|$(DefineConstants)" />
     <Message Importance="High" Text="REPRO_EVIDENCE_V1|OtherFlags|$(OtherFlags)" />
     <Message Importance="High" Text="REPRO_EVIDENCE_V1|ProjectReference|%(ProjectReference.FullPath)"

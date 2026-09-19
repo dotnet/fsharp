@@ -365,6 +365,8 @@ with an absolute acquired host and `exec --fx-version`; it never invokes
 `dotnet fsi`. Windows executable layouts use a separate fixed Core-load probe.
 Managed executions capture the actual loaded Core through a startup hook,
 including its path, digest, assembly version, runtime version and architecture.
+The hook deduplicates assemblies weakly so observation does not keep collectible
+load contexts alive.
 Unsupported host/runtime/helper combinations are untestable.
 
 Project builds reuse **both** `UseLocalCompiler.Directory.Build` imports.
@@ -387,6 +389,11 @@ is insufficient. The pinned structured binlog reader must find the executed
 Fsc task and correlate its assembly, command, references and flags with imports,
 assets and the expected project/TFM/configuration cell. Missing inner builds,
 skipped Fsc tasks, fallbacks and late flag overrides are untestable.
+The pre-compile snapshot includes `Nullable`: the reader accounts for Fsc's
+generated `NULLABLE` define and compares the executed `--checknulls` setting,
+including when that define is also explicitly declared. Referenced projects must
+be reviewed sources, with complete compiler/Core evidence for their selected
+TFMs; ambiguous or missing dependency builds cannot be ignored.
 
 Assertions compare complete, bounded streams and exit codes. Line endings are
 normalized to LF. Compile-time assertions use a frozen diagnostic of the form
@@ -440,7 +447,9 @@ reader's .NET 8+ host.
 The smoke covers FSI, Debug/Release projects, successful compilation followed by
 an intended runtime failure, intended diagnostics, late compiler flag overrides,
 explicit/central Core package overrides, two inner TFMs on Windows, and an immutable released
-producer. Its source-evaluation control illustrates how rebuilding a producer
+producer. It also covers nullable settings and late overrides, app/library
+references with same/different TFMs, and collectible Core unloading with and
+without the observation hook. Its source-evaluation control illustrates how rebuilding a producer
 without its old flags would hide the failure; candidate consumers only receive
 the frozen DLL/package. Results are written to `smoke-results.json`.
 An explicit final `released` or `source` argument selects just that phase while
@@ -478,6 +487,25 @@ Complete execution evidence is retained at `Q:\rb912-s4-validated-fixtures`;
 `smoke-results.json` SHA-256 is
 `b182f1a3c504a9d4da94b0cfda10cde5e5280c0e20deb89338160038e3991ff1`.
 These checks do not imply a full compiler-test-suite pass.
+
+Repair validation on 2026-09-19: **483** scoped Node tests and **67** targeted
+reproduction tests passed. Before the fixes, the collectible-Core fixture
+reported a product failure only with the hook, and a normal nullable-enabled
+project was rejected. Both now pass; late nullable changes in either direction
+are rejected even with an explicit `NULLABLE` define. Independently replacing
+containment with prefix comparison or bypassing realpath resolution made the
+corresponding repaired test fail.
+
+All **39** real bounded scenarios matched their expected outcomes under both
+released and local products, including app/library TFM selection and hook-free
+unloading controls. The unchanged clean local product build above was reused
+after rechecking its pristine source checkout, successful build binlog and
+artifact digests; the repaired evidence helper was rebuilt in Release with
+zero warnings/errors. Evidence and exact identities are retained at
+`Q:\rb912-s4-repaired-fixtures`, including `validation-summary.json`.
+`smoke-results.json` SHA-256 is
+`2b61651b316f343a2be775d203467437ab0104d8b6d14765981d1972808ab47c`.
+Syntax checks, `dotnet fantomas .` (no changes), and diff checks passed.
 
 ## Complete intake and bounded discovery
 

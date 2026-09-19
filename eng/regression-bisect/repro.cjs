@@ -131,7 +131,7 @@ async function verifyProjectIdentities({ manifest, product, toolchain, sourceDir
                 requireValue(samePath(await fs.realpath(fsc[field]), file.path), `${field} fallback or late override`);
             }
             requireValue(samePath(fsc.hostPath, toolchain.hostPath) && fsc.commandLine, "wrong Fsc host or missing invocation");
-            requireValue(fsc.languageVersion === cell.languageVersion && fsc.optimize === row.optimize &&
+            requireValue(fsc.languageVersion === cell.languageVersion && fsc.optimize === row.optimize && fsc.nullable === row.nullable &&
                 fingerprintInput([...fsc.defines].sort()) === fingerprintInput([...row.defines].sort()), "late compiler flag override");
             const core = row.core;
             requireValue(core.package.id === "FSharp.Core" && core.package.version === product.corePackageVersion, "Core package version fallback");
@@ -479,6 +479,7 @@ async function runReproduction(options, dependencies = {}) {
                             ...row, fsc: row.fscTasks,
                             languageVersion: row.expectedLanguageVersion,
                             optimize: row.expectedOptimize,
+                            nullable: row.expectedNullable,
                             defines: row.expectedDefines,
                             assetsFile: path.resolve(path.dirname(row.project), row.assetsFile),
                             targetPath: path.resolve(path.dirname(row.project), row.targetPath),

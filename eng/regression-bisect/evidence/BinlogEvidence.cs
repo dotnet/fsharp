@@ -47,11 +47,23 @@ internal static class BinlogEvidence
                 diagnostics.Add("IDE/host-object compilation cannot prove external compiler execution.");
             if (!snapshot.ContainsKey("OtherFlags"))
                 diagnostics.Add("The pre-compilation OtherFlags snapshot is missing.");
+            if (!snapshot.ContainsKey("Nullable"))
+                diagnostics.Add("The pre-compilation Nullable snapshot is missing.");
+            bool? nullable = snapshot.GetValueOrDefault("Nullable") switch
+            {
+                "enable" => true,
+                "disable" => false,
+                _ => null
+            };
+            var defines = snapshot.GetValueOrDefault("DefineConstants")
+                ?.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries) ?? [];
+            // Fsc adds this define from Nullable independently of DefineConstants.
+            if (nullable == true) defines = [.. defines, "NULLABLE"];
             var expected = ReadFlags(
                 SplitArguments(snapshot.GetValueOrDefault("OtherFlags") ?? "", diagnostics),
                 string.IsNullOrWhiteSpace(snapshot.GetValueOrDefault("LangVersion")) ? "default" : snapshot["LangVersion"],
                 bool.TryParse(snapshot.GetValueOrDefault("Optimize"), out bool optimize) ? optimize : null,
-                snapshot.GetValueOrDefault("DefineConstants")?.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+                defines, nullable);
 
             var cell = new Cell
             {
@@ -62,9 +74,11 @@ internal static class BinlogEvidence
                 Configuration = Value("Configuration") ?? project.Configuration,
                 LanguageVersion = fscTasks.LastOrDefault()?.LanguageVersion,
                 Optimize = fscTasks.LastOrDefault()?.Optimize,
+                Nullable = fscTasks.LastOrDefault()?.Nullable,
                 Defines = fscTasks.LastOrDefault()?.Defines ?? [],
                 ExpectedLanguageVersion = expected.LanguageVersion,
                 ExpectedOptimize = expected.Optimize,
+                ExpectedNullable = expected.Nullable,
                 ExpectedDefines = expected.Defines,
                 SdkVersion = Value("NETCoreSdkVersion"),
                 HostPath = fscTasks.LastOrDefault()?.Executable,
@@ -148,7 +162,7 @@ internal static class BinlogEvidence
             tokens = arguments.Split('\n').Select(t => t.Trim()).Where(t => t.Length > 0).ToArray();
         else
             tokens = SplitArguments(arguments, record.MissingEvidence);
-        (record.LanguageVersion, record.Optimize, record.Defines) = ReadFlags(tokens);
+        (record.LanguageVersion, record.Optimize, record.Defines, record.Nullable) = ReadFlags(tokens);
         var references = new List<string>();
         foreach (string token in tokens)
         {
@@ -200,17 +214,19 @@ internal static class BinlogEvidence
         return matches.Select(m => m.Groups[1].Value.Replace("\"", "")).ToArray();
     }
 
-    private static (string LanguageVersion, bool? Optimize, string[] Defines) ReadFlags(
-        string[] tokens, string languageVersion = "default", bool? optimize = null, string[]? defines = null)
+    private static (string LanguageVersion, bool? Optimize, string[] Defines, bool? Nullable) ReadFlags(
+        string[] tokens, string languageVersion = "default", bool? optimize = null, string[]? defines = null, bool? nullable = null)
     {
         var languageFlag = tokens.Select(t => Regex.Match(t, "^(?:--|/)langversion:(.*)$")).LastOrDefault(m => m.Success);
         var optimizeFlag = tokens.Select(t => Regex.Match(t, "^(?:--optimize|/optimize|-O|/O)([+-]?)$")).LastOrDefault(m => m.Success);
+        var nullableFlag = tokens.Select(t => Regex.Match(t, "^(?:--|/)checknulls([+-]?)$")).LastOrDefault(m => m.Success);
         var defineFlags = tokens.Select(t => Regex.Match(t, "^(?:--define|-d|/define|/d):(.*)$"))
             .Where(m => m.Success).Select(m => m.Groups[1].Value);
         return (
             languageFlag?.Groups[1].Value.Trim('"') ?? languageVersion,
             optimizeFlag == null ? optimize : optimizeFlag.Groups[1].Value != "-",
-            (defines ?? []).Concat(defineFlags).Distinct(StringComparer.Ordinal).ToArray());
+            (defines ?? []).Concat(defineFlags).Distinct(StringComparer.Ordinal).ToArray(),
+            nullableFlag == null ? nullable : nullableFlag.Groups[1].Value != "-");
     }
 
     private static Project? Owner(BaseNode node)
@@ -248,9 +264,11 @@ internal static class BinlogEvidence
         public string? Configuration { get; init; }
         public string? LanguageVersion { get; init; }
         public bool? Optimize { get; init; }
+        public bool? Nullable { get; init; }
         public string[] Defines { get; init; } = [];
         public string? ExpectedLanguageVersion { get; init; }
         public bool? ExpectedOptimize { get; init; }
+        public bool? ExpectedNullable { get; init; }
         public string[] ExpectedDefines { get; init; } = [];
         public string? SdkVersion { get; init; }
         public string? HostPath { get; init; }
@@ -275,6 +293,7 @@ internal static class BinlogEvidence
         public string? Arguments { get; set; }
         public string? LanguageVersion { get; set; }
         public bool? Optimize { get; set; }
+        public bool? Nullable { get; set; }
         public string[] Defines { get; set; } = [];
         public required Dictionary<string, string[]> Parameters { get; init; }
         public string[] References { get; set; } = [];

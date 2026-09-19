@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization.Json;
 using System.Security.Cryptography;
@@ -10,7 +11,7 @@ using System.Text;
 public static class StartupHook
 {
     private static readonly object Gate = new();
-    private static readonly HashSet<Assembly> Seen = new();
+    private static readonly ConditionalWeakTable<Assembly, object> Seen = new();
     private static string? destination;
 
     public static void Initialize()
@@ -32,8 +33,9 @@ public static class StartupHook
             return;
         lock (Gate)
         {
-            if (!Seen.Add(assembly))
+            if (Seen.TryGetValue(assembly, out _))
                 return;
+            Seen.Add(assembly, new object());
             try
             {
                 string path = assembly.Location;

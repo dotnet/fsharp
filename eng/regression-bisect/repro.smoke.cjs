@@ -60,6 +60,15 @@ async function main() {
             ["project", "runtime-failure", "Release"],
             ["project", "diagnostic", "Release"],
             ["project", "late-flags", "Release"],
+            ["project", "nullable-enabled", "Release"],
+            ["project", "nullable-disabled", "Debug"],
+            ["project", "late-nullable-enable", "Release"],
+            ["project", "late-nullable-disable", "Release"],
+            ["project", "late-nullable-explicit", "Release"],
+            ["project", "collectible-core", "Release"],
+            ["project", "reference-pass", "Release"],
+            ["project", "reference-late", "Release"],
+            ...(process.platform === "win32" ? [["project", "reference-tfm", "Release"]] : []),
             ["project", "producer-consumer", "Release"],
             ...(process.platform === "win32" ? [["project", "multi-tfm", "Release"]] : []),
             ["fsi", "producer-control", "Release"],
@@ -76,14 +85,25 @@ async function main() {
                 product: input.product, toolchain: input.toolchain, helper: config.helper,
                 sampleRuntimes: input.sampleRuntimes,
             });
-            const expected = scenario === "late-flags" ? "untestable"
+            const lateOverride = scenario.startsWith("late-") || scenario === "reference-late";
+            const expected = lateOverride ? "untestable"
                 : ["runtime-failure", "producer-consumer", "diagnostic"].includes(scenario) ? "product-failure" : "pass";
             results.push({ id, expected, result });
             await fs.writeFile(path.join(root, "smoke-results.json"), JSON.stringify(results, null, 2));
             console.log(`${id}: ${result.outcome.outcome} (${result.outcome.reason})${result.error ? `: ${result.error}` : ""}`);
             requireValue(result.outcome.outcome === expected, `bounded smoke failed: ${id}`);
-            if (scenario === "late-flags") requireValue(result.outcome.reason === "wrong-identity" &&
+            if (lateOverride) requireValue(result.outcome.reason === "wrong-identity" &&
                 result.error === "late compiler flag override", "late override must be rejected for the intended identity mismatch");
+            if (scenario === "collectible-core") {
+                const record = result.cells[0].evidence[0];
+                const invocation = record.commands.at(-1);
+                const env = isolatedEnvironment(path.join(root, "helper"), input.toolchain.requested.platform);
+                const baseline = await execute(invocation.executable, invocation.args, { cwd: root, env, timeoutMs: 30000 });
+                results.at(-1).uninstrumented = baseline;
+                await fs.writeFile(path.join(root, "smoke-results.json"), JSON.stringify(results, null, 2));
+                requireValue(baseline.complete && baseline.exitCode === 0 && baseline.stdout === "PASS\n" && baseline.stderr === "",
+                    "collectible context must unload both with and without observation");
+            }
         }
     }
 }
