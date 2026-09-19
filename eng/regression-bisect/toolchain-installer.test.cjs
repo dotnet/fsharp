@@ -3,6 +3,7 @@
 const assert = require('node:assert/strict');
 const { execFile } = require('node:child_process');
 const crypto = require('node:crypto');
+const fileSystem = require('node:fs');
 const fs = require('node:fs/promises');
 const http = require('node:http');
 const path = require('node:path');
@@ -161,6 +162,37 @@ for (const settings of [
     await assert.rejects(fs.stat(`${options.archivePath}.download`), { code: 'ENOENT' });
   });
 }
+
+test('archive delivery completes before a slow EOF read after its advertised length', async t => {
+  const { options, deps } = await fixture(t);
+  let reads = 0;
+  deps.fs = {
+    ...fs,
+    async open(filename, ...args) {
+      const file = await fs.open(filename, ...args);
+      if (filename !== `${options.archivePath}.download` || ++reads !== 2) return file;
+      return {
+        createReadStream(settings) {
+          return fileSystem.createReadStream(filename, {
+            ...settings, fd: file.fd,
+            fs: {
+              close(_fd, callback) { file.close().then(() => callback(null), callback); },
+              read(fd, buffer, offset, length, position, callback) {
+                fileSystem.read(fd, buffer, offset, length, position, (error, bytesRead, data) => {
+                  if (!error && bytesRead === 0) setTimeout(callback, 100, error, bytesRead, data);
+                  else callback(error, bytesRead, data);
+                });
+              },
+            },
+          });
+        },
+        close: () => file.close(),
+      };
+    },
+  };
+  const result = await installArchive(options, deps);
+  assert.equal(result.archive.actualSha512, options.archive.sha512);
+});
 
 for (const os of ['win', 'linux']) {
   for (const completion of ['success', 'stream error', 'close error', 'installer error']) {

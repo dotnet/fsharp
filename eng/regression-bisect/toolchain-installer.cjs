@@ -123,7 +123,7 @@ async function startFeed(fs, download, archiveName, productDirectory, version, p
         else {
           const file = await fs.open(download, 'r');
           try {
-            await pipeline(file.createReadStream({ autoClose: false }), res);
+            await pipeline(file.createReadStream({ autoClose: false, end: size ? size - 1 : undefined }), res);
             downloads++;
           } finally {
             await file.close();

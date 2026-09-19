@@ -239,7 +239,9 @@ installer. This transport boundary records the **actual public download's**
 redirects/digests without reimplementing extraction or trusting a separate HEAD
 request. Verification waits for pending server deliveries and file closure,
 not just installer exit; cleanup also drains deliveries before removing their
-archive. Late delivery errors still fail acquisition. The official retained
+archive. Reads stop at the advertised archive length so a client's completed
+download cannot race a redundant EOF read. Late delivery errors still fail
+acquisition. The official retained
 archive is hashed again. Supplemental runtime
 installation uses the official skip-non-versioned-files flag to preserve the
 SDK host. Arcade-owned files are neither edited nor copied.
