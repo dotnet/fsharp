@@ -43,23 +43,35 @@ for (const [os, kind] of [
     });
 }
 
-test("checksum provenance is a blocked outcome, not missing SDK or a passing attempt", () => {
+for (const [check, reason] of [["network", "network-failure"], ["checksumProvenance", "checksum-provenance"]])
+test(`${reason} is a blocked outcome, not missing SDK or a passing attempt`, () => {
     const m = manifest(), a = attempt("pass");
-    a.checks.checksumProvenance = false;
-    const blocked = { schemaVersion: 1, outcome: "untestable", reason: "checksum-provenance" };
+    a.checks[check] = false;
+    const blocked = { schemaVersion: 1, outcome: "untestable", reason };
     assert.deepEqual(classifyAttempts([a, a], m), blocked);
     const o = observation("source", "pass", m);
     const cell = o.cells[0];
     cell.sdk = cell.runtime = null;
     cell.artifacts = Object.fromEntries(Object.keys(cell.artifacts).map(name => [name, null]));
     a.checks = Object.fromEntries(Object.keys(a.checks).map(name => [name, false]));
-    a.execution = { status: "exception", complete: false, exitCode: null, stdout: "", stderr: "checksum provenance absent" };
+    a.checks.network = check !== "network";
+    a.execution = { status: "exception", complete: false, exitCode: null, stdout: "", stderr: reason };
     cell.attempts = [a, a];
     cell.outcome = o.outcome = blocked;
     assert.deepEqual(classifyAttempts(cell.attempts, m), blocked);
     assert.equal(validateObservation(JSON.parse(JSON.stringify(o)), m), true);
-    assert.equal(validateOutcome({ schemaVersion: 1, outcome: "untestable", reason: "network-failure" }), true);
-    rejects(() => validateOutcome({ schemaVersion: 1, outcome: "pass", reason: "checksum-provenance" }));
+    assert.equal(validateOutcome(blocked), true);
+    for (const value of ["pass", "product-failure"]) {
+        rejects(() => validateOutcome({ ...blocked, outcome: value }));
+        const changed = structuredClone(o);
+        changed.cells[0].outcome = changed.outcome = {
+            schemaVersion: 1, outcome: value, reason: value === "pass" ? "positive-assertion" : "failure-assertion",
+        };
+        rejects(() => validateObservation(changed, m), /absent identities/);
+    }
+    const changed = structuredClone(o);
+    changed.cells[0].attempts.forEach(a => { a.checks[check] = true; });
+    rejects(() => validateObservation(changed, m), /does not match repeated evidence/);
 });
 
 for (const [name, patch, expected] of [
@@ -190,6 +202,9 @@ for (const [name, results, edit, expected, reason] of [
     ["nonzero is not assertion", ["product-failure", "product-failure"], a => a.execution.stderr = "unrelated", "untestable", "assertion-mismatch"],
     ["incomplete output", ["pass", "pass"], a => a.execution.complete = false, "untestable", "incomplete-evidence"],
     ["missing evidence", ["pass", "pass"], a => delete a.execution, "untestable", "incomplete-evidence"],
+    ["missing network check", ["pass", "pass"], a => delete a.checks.network, "untestable", "incomplete-evidence"],
+    ...[null, "true", 1].map(value => [`invalid network check ${value}`, ["pass", "pass"],
+        a => a.checks.network = value, "untestable", "incomplete-evidence"]),
     ["one repetition", ["pass"], () => {}, "untestable", "incomplete-evidence"],
 ]) {
     test(`classification: ${name}`, () => {

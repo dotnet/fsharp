@@ -216,6 +216,14 @@ as released stable. `checksum-provenance` means an available archive lacks
 approved provenance or fails its integrity checks; it is distinct from
 `unavailable-sdk`/`unavailable-runtime`
 (missing archives) and `network-failure`. None is a positive reproduction.
+Attempt evidence requires `checks.network`: a failed acquisition request sets it
+to `false`, preserving `network-failure` even when checksum, setup and product
+identity checks could not complete. It takes precedence over those checks, never
+overrides a failure into a pass, and survives observation validation and
+authenticated checkpoint reload with the same digest and skip reason. Successful
+acquisition sets it to `true`; missing or non-boolean checks are incomplete
+evidence, not implicitly successful network requests. Older observations lacking
+this required check are rejected rather than silently upgraded.
 Exact `global.json.tools.runtimes` arrays (`dotnet`, `aspnetcore`,
 `windowsdesktop`, optionally suffixed with the matching architecture) become
 separate build-runtime requirements. Unevaluated MSBuild version expressions
@@ -602,6 +610,33 @@ syntax checks, formatting changed no files, and whitespace checks passed.
 | `fsharp-workspace-smoke-G26zT9\result.json` | `cf5cd20c162c063123886a6900a1630221c5a098dd17c1e21c772580690c6935` |
 | `repro-both\smoke-results.json` | `c86d9388032ca912c9a46181398a0922c8cdf06c8c477008f24be6c65fce1d6d` |
 | `acceptance-audit.json` | `54098b840f0c1447010a5469045ee3ce997843dc4840cb14a2b6a94ae0b4be62` |
+
+The network-failure observation repair was verified in another fresh run on
+2026-09-19 under `Q:\rb912-s5-i3-20260919`. Build instance
+`cd911f1f-8f3e-4584-8a81-98bf1339fdf2` cleanly built the same pinned historical
+source and passed both built-FSI repetitions. A separate acquisition again
+resolved publisher-verified stable SDK `10.0.401` / runtime `10.0.12`.
+The released/source smoke exited 0 with **43 expected outcomes**: 23 passes,
+6 intended product failures and 14 identity rejections, including real multi-TFM
+execution and frozen released-producer consumption. The audit rehashed both
+archives, 209 product files, 45 workspace evidence files, 72 project binlogs and
+the producer DLL/package, and verified both prior acceptance manifests and the
+original failed result were unchanged.
+
+All **879 helper tests** passed. The network/checksum cases round-trip through
+observation validation and authenticated checkpoint commit/reload with absent
+product identities, preserving their reason, digest and charged budget.
+Relabelling network failures as unavailable SDKs in memory failed both network
+regressions. Changed-script syntax and whitespace checks passed. The exact-SDK
+Release evidence-helper build/test command exited 0 (no managed test cases).
+The initial formatter command lacked the root's SDK; rerunning with the freshly
+acquired exact historical SDK succeeded and changed no files.
+
+| Fresh record (relative to `Q:\rb912-s5-i3-20260919`) | SHA-256 |
+| --- | --- |
+| `fsharp-workspace-smoke-Np6g88\result.json` | `1d4200a191ca02a5ad9561016fde06468c4d3e0af76168e1b77a5019f69cd4f2` |
+| `repro-both\smoke-results.json` | `3450faeb7139f429d7d49eb2457f4e43630a27f16a6beae2e29a2940c6314691` |
+| `acceptance-audit.json` | `19881e6269b707bd9d06e1e0df031bcf4ab36e434a8c913a307b2fd1ed1b27ce` |
 
 ## Reproduction execution
 

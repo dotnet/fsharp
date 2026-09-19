@@ -175,7 +175,7 @@ function validateOutcome(outcome) {
 const outcome = (value, reason) => ({ schemaVersion: 1, outcome: value, reason });
 const untestable = reason => outcome("untestable", reason);
 const checks = {
-    checksumProvenance: "checksum-provenance",
+    network: "network-failure", checksumProvenance: "checksum-provenance",
     restore: "restore-failure", build: "build-failure", setup: "setup-failure", identity: "wrong-identity",
     sdk: "unavailable-sdk", runtime: "unavailable-runtime",
 };

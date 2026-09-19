@@ -57,7 +57,7 @@ function manifest() {
 function attempt(outcome) {
     return {
         schemaVersion: 1,
-        checks: { restore: true, build: true, setup: true, identity: true, sdk: true, runtime: true, checksumProvenance: true },
+        checks: { restore: true, build: true, setup: true, identity: true, sdk: true, runtime: true, checksumProvenance: true, network: true },
         execution: {
             status: "completed", complete: true,
             ...structuredClone(manifest().assertions[outcome === "pass" ? "pass" : "failure"]),

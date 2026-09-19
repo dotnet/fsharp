@@ -77,7 +77,7 @@ async function selectFsiCommand({ product, toolchain, cell }) {
 
 const compileAssertion = manifest => /(?:^|\n)[^\n]+\(\d+,\d+(?:,\d+,\d+)?\): error FS\d{4}: [^\n]+/.test(manifest.assertions.failure.stderr);
 const attemptFor = ({ status, complete, exitCode, stdout, stderr }) => ({
-    schemaVersion: 1, checks: { restore: true, build: true, setup: true, identity: true, sdk: true, runtime: true, checksumProvenance: true },
+    schemaVersion: 1, checks: { restore: true, build: true, setup: true, identity: true, sdk: true, runtime: true, checksumProvenance: true, network: true },
     execution: { status, complete, exitCode, stdout, stderr },
 });
 

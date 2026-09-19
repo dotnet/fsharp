@@ -637,13 +637,32 @@ test("observation size overflow leaves the charged reservation durable and block
     assert.deepEqual(cp.observations, {});
 });
 
-test("untestable observations retain ordered tested and skipped reasons and full evidence", async () => {
+for (const reason of ["timeout", "network-failure", "checksum-provenance"])
+test(`${reason} observations retain tested and skipped reasons through checkpoint reload`, async () => {
     const h = harness(); await h.start();
     const p = await reserve(h);
     const done = completion(h, p, "untestable");
+    if (reason !== "timeout") {
+        const cell = done.observation.cells[0];
+        cell.sdk = cell.runtime = null;
+        cell.artifacts = Object.fromEntries(Object.keys(cell.artifacts).map(name => [name, null]));
+        for (const attempt of cell.attempts) {
+            attempt.checks = Object.fromEntries(Object.keys(attempt.checks).map(name => [name, false]));
+            attempt.checks.network = reason !== "network-failure";
+            attempt.execution = { status: "exception", complete: false, exitCode: null, stdout: "", stderr: reason };
+        }
+        cell.outcome = done.observation.outcome = { schemaVersion: 1, outcome: "untestable", reason };
+    }
     const cp = await commitObservation(h.transport, h.context, done);
-    assert.equal(cp.state.skips[0].reason, "timeout");
-    assert.equal(cp.state.skips[0].observationDigest, cp.state.testedRevisions[0].observationDigest);
+    const digest = model.fingerprintInput(done.observation);
+    assert.equal(cp.state.skips[0].reason, reason);
+    assert.equal(cp.state.skips[0].observationDigest, digest);
+    assert.equal(cp.state.testedRevisions[0].observationDigest, digest);
+    const loaded = (await loadCheckpoint(h.transport, h.context)).checkpoint;
+    assert.deepEqual(loaded, cp);
+    assert.deepEqual(loaded.observations[digest].data, done.observation);
+    assert.equal(loaded.pending, null);
+    assert.deepEqual(loaded.state.budget.consumed, { sourceBuilds: 1, workerUnits: 1, reservedMinutes: 110 });
 });
 
 test("changed approval, reproduction, producer and orchestration invalidate dependent pending work", async t => {
