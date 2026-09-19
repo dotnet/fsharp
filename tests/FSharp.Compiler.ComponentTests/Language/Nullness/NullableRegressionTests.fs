@@ -13,6 +13,262 @@ let withVersionAndCheckNulls (version,checknulls) cu =
 
 
 [<Theory>]
+[<InlineData("""
+module rec M
+
+open System.Collections.Generic
+
+[<Struct>]
+type Hole = Hole of string with
+    member this.Value =
+        let (Hole value) = this in value
+
+type Substitution = Dictionary<Hole,obj>
+""", true)>]
+[<InlineData("""
+module M
+
+open System.Collections.Generic
+
+[<Struct>]
+type Hole = Hole of string with
+    member this.Value =
+        let (Hole value) = this in value
+
+and Substitution = Dictionary<Hole,obj>
+""", true)>]
+[<InlineData("""
+module rec M
+open System.Collections.Generic
+type Hole = Hole of string
+type Substitution = Dictionary<Hole,obj>
+""", true)>]
+[<InlineData("""
+module rec M
+open System.Collections.Generic
+[<Struct>]
+type Hole<'T> = Hole of 'T
+type Substitution = Dictionary<Hole<string | null>,obj>
+""", true)>]
+[<InlineData("""
+module rec M
+open System.Collections.Generic
+[<NoComparison>]
+type Container = { Values: Dictionary<Hole,obj> }
+[<Struct>]
+type Hole = Hole of string
+""", true)>]
+[<InlineData("""
+module rec M
+type Keyed<'T when 'T : not null>() = class end
+[<Struct>]
+type Hole = Hole of string
+type Substitution = Keyed<Hole>
+""", false)>]
+[<InlineData("""
+module M
+
+open System.Collections.Generic
+
+[<Struct>]
+type Hole = Hole of string with
+    member this.Value =
+        let (Hole value) = this in value
+
+type Substitution = Dictionary<Hole,obj>
+""", true)>]
+[<InlineData("""
+module M
+open System.Collections.Generic
+type Substitution = Dictionary<Choice<string,int>,obj>
+""", true)>]
+let ``Issue 20211 - ordinary union constraints during declaration checking`` source checknulls =
+    FSharp source
+    |> asLibrary
+    |> withVersionAndCheckNulls ("preview", checknulls)
+    |> (if checknulls then id else withOptions ["--checknulls-"])
+    |> typecheck
+    |> shouldSucceed
+    |> withDiagnostics []
+
+[<TheoryForNETCOREAPP>]
+[<InlineData("""
+module M
+open System.Collections.Generic
+type Substitution = Dictionary<Maybe,obj>
+and [<CompilationRepresentation(CompilationRepresentationFlags.UseNullAsTrueValue)>] Maybe =
+    | Missing
+    | Present of string
+""", 42, "Nullness warning: The type 'Maybe' uses 'null' as a representation value but a non-null type is expected.")>]
+[<InlineData("""
+module rec M
+open System.Collections.Generic
+type Substitution = Dictionary<Maybe,obj>
+[<Rep(CompilationRepresentationFlags.UseNullAsTrueValue)>]
+type Maybe = Missing | Present of string
+type RepAttribute = CompilationRepresentationAttribute
+""", 42, "Nullness warning: The type 'Maybe' uses 'null' as a representation value but a non-null type is expected.")>]
+[<InlineData("""
+module M
+open System.Collections.Generic
+type Substitution = Dictionary<string option,obj>
+""", 50, "Nullness warning: The type 'string option' uses 'null' as a representation value but a non-null type is expected.")>]
+[<InlineData("""
+module M
+open System.Collections.Generic
+type Substitution = Dictionary<(string | null),obj>
+""", 52, "Nullness warning: The type 'string | null' supports 'null' but a non-null type is expected.")>]
+let ``Issue 20211 - nullable constrained keys still warn`` source endColumn message =
+    FSharp source
+    |> asLibrary
+    |> withVersionAndCheckNulls ("preview", true)
+    |> typecheck
+    |> shouldFail
+    |> withDiagnostics [Error 3261, Line 4, Col 21, Line 4, Col endColumn, message]
+
+[<TheoryForNETCOREAPP>]
+[<InlineData("module rec M", "", false)>]
+[<InlineData("module rec M", "[<Struct>]", false)>]
+[<InlineData("module rec M", "[<CompilationRepresentation(CompilationRepresentationFlags.None)>]", false)>]
+[<InlineData("module rec M", "[<CompilationRepresentation(CompilationRepresentationFlags.UseNullAsTrueValue)>]", true)>]
+[<InlineData("namespace rec M", "[<CompilationRepresentation(CompilationRepresentationFlags.UseNullAsTrueValue)>]", true)>]
+[<InlineData("module M", "[<CompilationRepresentation(CompilationRepresentationFlags.UseNullAsTrueValue)>]", true)>]
+let ``Issue 20211 - union constraints in early attribute arguments`` (scope: string) (attributes: string) expectWarning =
+    let result =
+        FSharp $"""
+{scope}
+open System.Collections.Generic
+open System.ComponentModel
+{attributes}
+type U = N | S of string
+[<TypeConverter(typeof<Dictionary<U,obj>>)>]
+type C = class end
+"""
+        |> asLibrary
+        |> withVersionAndCheckNulls ("preview", true)
+        |> typecheck
+
+    if expectWarning then
+        result
+        |> shouldFail
+        |> withDiagnostics [
+            Error 3261, Line 7, Col 24, Line 7, Col 41, "Nullness warning: The type 'U' uses 'null' as a representation value but a non-null type is expected."
+        ]
+    else
+        result |> shouldSucceed |> withDiagnostics []
+
+[<Theory>]
+[<InlineData(false, false)>]
+[<InlineData(false, true)>]
+[<InlineData(true, false)>]
+[<InlineData(true, true)>]
+let ``Issue 20211 - repeated nullable fields of finalized ordinary unions`` isSignature hasNullaryCase =
+    let cases =
+        [ if hasNullaryCase then yield "| Missing"
+          for i in 1..64 -> $"| Case{i} of int" ]
+        |> String.concat "\n"
+    let fields =
+        [ for i in 1..64 -> $"Field{i}: Token | null" ]
+        |> String.concat "; "
+
+    $"""
+module M
+type Token =
+{cases}
+type Envelope = {{ {fields} }}
+"""
+    |> (if isSignature then Fsi else FSharp)
+    |> withName (if isSignature then "test.fsi" else "test.fs")
+    |> asLibrary
+    |> withVersionAndCheckNulls ("preview", true)
+    |> typecheck
+    |> shouldSucceed
+    |> withDiagnostics []
+
+[<Theory>]
+[<InlineData(false, false, "Repr", "UseNullAsTrueValue")>]
+[<InlineData(false, true, "Repr", "UseNullAsTrueValue")>]
+[<InlineData(true, false, "Repr", "UseNullAsTrueValue")>]
+[<InlineData(true, true, "Repr", "UseNullAsTrueValue")>]
+[<InlineData(false, false, "Repr", "None")>]
+[<InlineData(false, true, "Repr", "None")>]
+[<InlineData(true, false, "Repr", "None")>]
+[<InlineData(true, true, "Repr", "None")>]
+[<InlineData(false, false, "CompilationRepresentation", "UseNullAsTrueValue")>]
+[<InlineData(false, true, "CompilationRepresentation", "UseNullAsTrueValue")>]
+[<InlineData(true, false, "CompilationRepresentation", "UseNullAsTrueValue")>]
+[<InlineData(true, true, "CompilationRepresentation", "UseNullAsTrueValue")>]
+let ``Issue 20211 - record constraints before representation attributes resolve`` isSignature unionFirst (attribute: string) (flags: string) =
+    let union = $"[<{attribute}(CompilationRepresentationFlags.{flags})>]"
+    let declarations =
+        if unionFirst then
+            $"{union}\ntype U = Nil | Node of int\nand R = {{ Item: NN<U> }}"
+        else
+            $"type R = {{ Item: NN<U> }}\nand {union} U = Nil | Node of int"
+
+    let result =
+        $"""
+module M
+
+type NN<'T when 'T : not null> = {{ Value: 'T }}
+{declarations}
+and Repr = CompilationRepresentationAttribute
+"""
+        |> (if isSignature then Fsi else FSharp)
+        |> withName (if isSignature then "test.fsi" else "test.fs")
+        |> asLibrary
+        |> withVersionAndCheckNulls ("preview", true)
+        |> typecheck
+
+    if flags = "UseNullAsTrueValue" then
+        let line, column = if unionFirst then 7, 17 else 5, 18
+        result
+        |> shouldFail
+        |> withDiagnostics [
+            Error 3261, Line line, Col column, Line line, Col (column + 5), "Nullness warning: The type 'U' uses 'null' as a representation value but a non-null type is expected."
+        ]
+    else
+        result |> shouldSucceed |> withDiagnostics []
+
+[<TheoryForNETCOREAPP>]
+[<InlineData("module rec M", "UseNullAsTrueValue", false)>]
+[<InlineData("namespace rec M", "UseNullAsTrueValue", false)>]
+[<InlineData("module M", "UseNullAsTrueValue", false)>]
+[<InlineData("module rec M", "None", false)>]
+[<InlineData("module rec M", "UseNullAsTrueValue", true)>]
+[<InlineData("namespace rec M", "UseNullAsTrueValue", true)>]
+[<InlineData("module M", "UseNullAsTrueValue", true)>]
+[<InlineData("module rec M", "None", true)>]
+let ``Issue 20211 - union constraints with deferred representation attributes`` (scope: string) (flags: string) isSignature =
+    let result =
+        $"""
+{scope}
+
+type RepAttribute = CompilationRepresentationAttribute
+
+[<Rep(CompilationRepresentationFlags.{flags})>]
+type U = A | B of int
+
+[<System.ComponentModel.TypeConverter(
+    typeof<System.Collections.Generic.Dictionary<U, obj>>)>]
+type T = T
+"""
+        |> (if isSignature then Fsi else FSharp)
+        |> withName (if isSignature then "test.fsi" else "test.fs")
+        |> asLibrary
+        |> withVersionAndCheckNulls ("preview", true)
+        |> typecheck
+
+    if flags = "UseNullAsTrueValue" then
+        result
+        |> shouldFail
+        |> withDiagnostics [
+            Error 3261, Line 10, Col 12, Line 10, Col 57, "Nullness warning: The type 'U' uses 'null' as a representation value but a non-null type is expected."
+        ]
+    else
+        result |> shouldSucceed |> withDiagnostics []
+
+[<Theory>]
 [<InlineData("preview",true)>]
 [<InlineData("preview",false)>]
 [<InlineData("8.0",false)>]
