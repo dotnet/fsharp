@@ -188,6 +188,10 @@ let evaluateSession (argv: string[]) =
     // point, alongside the event loop it evaluates on.
     let jsonRpcPipeName = FSharp.Compiler.Interactive.Server.tryGetPipeName argv
 
+    let jsonRpcClientProcessId =
+        FSharp.Compiler.Interactive.Server.tryGetClientProcessId argv
+        |> ValueOption.ofOption
+
     try
         // Create the console reader
         let console = new FSharp.Compiler.Interactive.ReadLineConsole()
@@ -353,7 +357,13 @@ let evaluateSession (argv: string[]) =
         // that interactions are evaluated on.
         match jsonRpcPipeName with
         | Some pipeName ->
-            FSharp.Compiler.Interactive.Server.startOnBackgroundThread fsiSession fsiConfig pipeName Console.Out Console.Error
+            FSharp.Compiler.Interactive.Server.startOnBackgroundThread
+                fsiSession
+                fsiConfig
+                pipeName
+                jsonRpcClientProcessId
+                Console.Out
+                Console.Error
         | None -> ()
 
         // Start the session

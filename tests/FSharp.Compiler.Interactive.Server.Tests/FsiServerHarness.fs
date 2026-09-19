@@ -106,6 +106,7 @@ type FsiServerHarness(?extraArguments: string list, ?workingDirectory: string) =
                 yield! leadingArguments
                 "--nologo"
                 $"--fsi-server-jsonrpc:{pipeName}"
+                $"--fsi-server-client-pid:{Process.GetCurrentProcess().Id}"
                 yield! defaultArg extraArguments []
             ]
 
