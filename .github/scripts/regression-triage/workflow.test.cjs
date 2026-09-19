@@ -5,7 +5,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const os = require("node:os");
-const { POLICY_VERSION, normalizeMemory } = require("./core.cjs");
+const { POLICY_VERSION, LIMITS, normalizeMemory } = require("./core.cjs");
 const { OUTPUT_TYPE, ACKNOWLEDGEMENT } = require("./publish.cjs");
 const { fake, report, comment, now, clone } = require("./test-support.cjs");
 const { eventOptions, collectWorkflow, publishWorkflow, artifactPrefix, verifyArtifact,
@@ -197,6 +197,98 @@ test("trusted input errors remain visible; oversized evidence is not partially c
   assert.deepEqual(incomplete.manifest.incomplete, [{ number: 42 }]);
   assert.equal(incomplete.manifest.selected.length, 0);
   assert.ok(incomplete.manifest.errors.some((error) => error.stage === "comment"));
+});
+
+for (const [oversized, hot] of [[5, false], [10, false], [5, true]]) {
+  test(`${oversized} oversized reports cannot starve eleven complete reports (${hot ? "changing" : "stable"}) across staged restarts`, async () => {
+    const reports = Array.from({ length: oversized + 11 }, (_, i) =>
+      report(i + 1, i < oversized ? { body: "text ".repeat(10000) } : {}));
+    const s = setup(reports);
+    const seen = new Set();
+    for (let run = 0; run < 18; run++) {
+      const time = new Date(Date.parse(now) + run * 3600000).toISOString();
+      if (hot) for (const issue of reports.slice(-LIMITS.candidates)) {
+        issue.body += " More evidence.";
+        issue.updated_at = time;
+      }
+      s.api.calls.length = 0;
+      const collected = await s.collect({ now: time });
+      assert.ok(s.api.calls.filter((call) => call.name === "get").length <= 2 * LIMITS.snapshotReads);
+      assert.ok(collected.manifest.selected.length <= LIMITS.candidates);
+      assert.ok(collected.manifest.selected.every((entry) => entry.number > oversized));
+      if (oversized === 5 && !hot && run === 0) {
+        assert.deepEqual(collected.manifest.selected.map((entry) => entry.number), [6, 7, 8, 9, 10]);
+      }
+      const result = await s.publish(collected, { now: time });
+      assert.equal(result.incomplete, collected.manifest.incomplete.length > 0);
+      assert.ok(result.receipts.some((receipt) => receipt.type === "would-save-memory"));
+      for (const receipt of result.receipts.filter((receipt) => receipt.type === "would-add-label")) {
+        if (!hot || receipt.number <= reports.length - LIMITS.candidates) {
+          assert.ok(!seen.has(receipt.number), "duplicate staged effect");
+        }
+        seen.add(receipt.number);
+      }
+      for (let number = 1; number <= oversized; number++) {
+        assert.ok(result.state.pending.some((entry) => entry.number === number));
+        assert.equal(result.state.issues[number]?.classification, undefined);
+      }
+      s.restart(result);
+    }
+    assert.deepEqual([...seen].sort((a, b) => a - b), reports.slice(oversized).map((issue) => issue.number));
+    reports[0].body = report().body;
+    const time = new Date(Date.parse(now) + 18 * 3600000).toISOString();
+    const recovered = await s.collect({ now: time });
+    assert.ok(recovered.manifest.selected.some((entry) => entry.number === 1));
+    assert.ok((await s.publish(recovered, { now: time })).receipts.some((receipt) =>
+      receipt.type === "would-add-label" && receipt.number === 1));
+    assert.deepEqual(s.mutations, []);
+  });
+}
+
+for (const bytes of [49151, 49152, 49153]) {
+  test(`model entry content bound uses exact UTF-8 bytes: ${bytes}`, async () => {
+    const s = setup();
+    const original = (await s.collect()).manifest.selected[0];
+    s.api.issues[0].body += " ".repeat(bytes - Buffer.byteLength(JSON.stringify(original)));
+    const collected = await s.collect();
+    if (bytes <= 49152) {
+      assert.equal(Buffer.byteLength(JSON.stringify(collected.manifest.selected[0])), bytes);
+      assert.equal(collected.manifest.selected[0].snapshot.body, s.api.issues[0].body);
+      assert.deepEqual(collected.manifest.incomplete, []);
+    } else {
+      assert.deepEqual(collected.manifest.selected, []);
+      assert.deepEqual(collected.manifest.incomplete, [{ number: 42 }]);
+    }
+  });
+}
+
+test("batch byte limits refill from complete snapshots and retry deferred evidence without truncation", async () => {
+  const s = setup(Array.from({ length: 6 }, (_, i) => report(i + 1)));
+  for (let number = 1; number <= 5; number++) {
+    s.api.comments[number] = [comment(number, { body: "\u96ea".repeat(15000),
+      html_url: `${report(number).url}#issuecomment-${number}` })];
+  }
+  const collected = await s.collect();
+  assert.deepEqual(collected.manifest.selected.map((entry) => entry.number), [1, 2, 3, 4, 6]);
+  assert.deepEqual(collected.manifest.incomplete, [{ number: 5 }]);
+  assert.ok(collected.manifest.errors.some((error) => error.code === "content-bound" && error.number === 5));
+  assert.ok(collected.manifest.selected.reduce((bytes, entry) => {
+    const size = Buffer.byteLength(JSON.stringify(entry));
+    assert.ok(size <= 49152);
+    if (entry.number !== 6) assert.equal(entry.snapshot.humanComments[0].body, s.api.comments[entry.number][0].body);
+    return bytes + size;
+  }, 0) <= 196608);
+  const first = await s.publish(collected);
+  assert.equal(first.incomplete, true);
+  s.restart(first);
+  const retry = await s.collect();
+  assert.deepEqual(retry.manifest.selected.map((entry) => entry.number), [5]);
+  assert.equal(retry.manifest.selected[0].snapshot.humanComments[0].body, s.api.comments[5][0].body);
+  const second = await s.publish(retry);
+  assert.equal(second.incomplete, false);
+  s.restart(second);
+  assert.deepEqual((await s.collect()).manifest.selected, []);
+  assert.deepEqual(s.mutations, []);
 });
 
 test("the Actions entry points bind immutable artifact metadata, dispatch staging and the event file", async () => {

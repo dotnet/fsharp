@@ -8,6 +8,7 @@ const OVERLAP_MS = 15 * 60 * 1000;
 const LIMITS = Object.freeze({
   candidates: 5, issuePages: 10, snapshotReads: 10,
   commentPages: 10, timelinePages: 10, linkedItems: 5, reviewPages: 5,
+  modelEntryBytes: 49152, modelInputBytes: 196608,
 });
 const QUESTIONS = Object.freeze({
   "known-good": "Which earlier version worked with the same source and comparable settings?",

@@ -68,6 +68,9 @@ each, five direct links and five requests per PR review endpoint. Discussion
 enumerations must agree across two passes; moving pages or incomplete dependencies
 are not complete evidence. Input is limited to 48 KiB per selected entry and
 192 KiB per batch; oversized entries remain pending, never silently truncated.
+Content eligibility is checked before fair selection, so oversized reports cannot
+consume classification slots. Batch-capacity rejections are refilled from the
+remaining already-read snapshots without expanding the read budget.
 Direct dependencies include local `#N`, qualified `owner/repo#N`, and HTTP(S)
 GitHub issue/PR URLs (including `www.github.com`), deduplicated case-insensitively.
 They are read through the API; linked-only corrections change the fingerprint.

@@ -418,11 +418,34 @@ async function collectCandidates(github, { repo, event, memory, now, limits: ove
       errors.push(apiError(error, { stage: "snapshot", number: entry.number }));
     }
   }
-  const selected = selectCandidates({ event, discovered, memory, limit: limits.candidates, now })
-    .map(({ snapshot }) => ({
+  const contentBound = (number) => {
+    incomplete.push({ number });
+    errors.push({ stage: "model-input", number, code: "content-bound", retryable: true });
+  };
+  // Reject oversized evidence before reserving the oldest admissible report.
+  const admissible = discovered.filter((entry) => {
+    const { snapshot } = entry;
+    entry.candidate = {
       number: snapshot.number, snapshot, fingerprint: fingerprintHumanInput(snapshot),
       priorRecord: memory.issues[snapshot.number] ?? null,
-    }));
+    };
+    entry.bytes = Buffer.byteLength(JSON.stringify(entry.candidate));
+    if (entry.bytes <= Math.min(limits.modelEntryBytes, limits.modelInputBytes)) return true;
+    contentBound(snapshot.number);
+    return false;
+  });
+  const selected = [];
+  let bytes = 0;
+  // Order every already-read candidate so a batch-size rejection can be refilled.
+  for (const entry of selectCandidates({ event, discovered: admissible, memory, limit: limits.snapshotReads, now })) {
+    if (selected.length === limits.candidates) break;
+    if (bytes + entry.bytes > limits.modelInputBytes) {
+      contentBound(entry.snapshot.number);
+      continue;
+    }
+    bytes += entry.bytes;
+    selected.push(entry.candidate);
+  }
   const summary = ({ complete, pages, errors }) => ({ complete, pages, errors });
   return {
     policyVersion: memory.policyVersion, selected, incomplete, errors,

@@ -78,16 +78,6 @@ async function collectWorkflow({ github, store = createGitHubStore(github, repo)
   });
   manifest.binding = binding(env, memory.headOid);
   manifest.incomplete = manifest.incomplete.map(({ number }) => ({ number }));
-  // Never give the model a silently shortened discussion. Leave oversized work
-  // pending, just like a failed bounded API read.
-  let bytes = 0;
-  manifest.selected = manifest.selected.filter((entry) => {
-    const size = Buffer.byteLength(JSON.stringify(entry));
-    if (size <= 49152 && bytes + size <= 196608) { bytes += size; return true; }
-    manifest.incomplete.push({ number: entry.number });
-    manifest.errors.push({ stage: "model-input", number: entry.number, code: "content-bound", retryable: true });
-    return false;
-  });
   const manifestText = JSON.stringify(manifest);
   requireThat(Buffer.byteLength(manifestText) <= 4194304, "Trusted manifest exceeds 4 MiB; no progress saved");
   const selected = manifest.selected.map(({ number, fingerprint, snapshot, priorRecord }) => ({
