@@ -2,9 +2,9 @@
 
 This directory defines version 1 of the deterministic input, evidence, state,
 and admission contracts, complete issue intake, authenticated issue-comment
-checkpoints, and isolated exact toolchain acquisition. Acquisition runs the
-official installer and fixed product-identity probes, not reproductions, source
-builds, or bisection. It does not activate a workflow.
+checkpoints, and isolated exact toolchain acquisition. The endpoint-first engine composes
+those contracts with the existing reproduction and clean source-build runners.
+It does not activate a workflow or attribute a culprit.
 GitHub access is injected by the trusted controller; tests use
 synthetic records and an in-memory transport, never live issue mutations.
 Records under `fixtures` are not reproduction approvals.
@@ -179,11 +179,144 @@ this relationship from the pinned source graph, never issue claims or timestamps
 Stable pass stops investigation; main pass stops as release-specific/already
 fixed; untestable evidence blocks it.
 
-Only the orchestration engine may eventually spawn `git bisect`. It must call
-this gate immediately before the first operation and again after any
-evidence-invalidating change, using the current authenticated context and
-charged reservation. This contract suite does not claim to prove an engine's
-subprocess behavior; no bisection engine is implemented here.
+Only `engine.cjs` spawns `git bisect`. It calls the admission gate immediately
+before constructing Git state, including every resumed reconstruction. Endpoint
+evidence is already durably authenticated at that point; the selected source
+worker is durably reserved before execution.
+
+## Endpoint-first controller seam
+
+`advanceInvestigation({ now }, dependencies)` re-reads the complete issue through
+`readIssueSnapshot` (including `findActiveInvestigations`), re-resolves official
+latest-stable metadata, and returns **at most one** charged `work` reservation or
+a `stopped`, `blocked`, or `confirmation` report intent. No engine result is
+`complete`, a published report, or an attributed culprit. Controllers must hold
+the existing whole-issue concurrency lock across state transitions.
+
+Required trusted dependencies:
+
+* `context` and `transport` use the authenticated state API described below.
+  An existing initialized allowance is mandatory. Missing, empty, forged or
+  rolled-back state is blocked, never initialized by this engine. Approval and
+  policy/workflow revisions come from the pinned trusted default-branch loader.
+* `approval` supplies intake's `readSource`, `authenticateRecord` and
+  `readTrustedCheckpoints`. These callbacks verify pinned raw reproduction and
+  producer assets and authentic workflow publications, not issue-supplied flags.
+  `intakeTransport` may supply separate read-only GitHub access.
+* `platform` identifies the target worker. `environments` maps **every** matrix
+  cell ID to `{ os, architecture, imageDigest }`. Its canonical fingerprint is
+  part of the authenticated epoch. Changed images invalidate evidence without
+  resetting charges.
+* `history` supplies absolute `gitExecutable`, existing `scratchDirectory`,
+  trusted full `mirrorDirectory`, and `mainRef: "refs/heads/main"`. The engine
+  fetches into its own disposable repository with no checkout, empty hooks,
+  isolated configuration, disabled credentials/replacement objects, and local
+  transport only. It never runs Git in the caller's checkout or mirror.
+
+The initialized context includes the exact released SDK archive SHA-256
+identities already established by trusted acquisition. Every advance resolves
+official metadata at `now` and checks its version/index digest against that
+context. Changed metadata or a new release blocks stale execution: the controller
+must refresh the authenticated stable identity through the existing acquisition
+boundary and invalidate the epoch, **not** create another allowance or substitute
+an installed SDK. The worker reacquires and verifies the matching archive under
+its charged reservation. Main is fetched and pinned only after a verified stable
+failure; the saved SHA precedes its build. A fresh process can recover that pin
+from authenticated state without remembering a prior return value.
+
+The order is stable failure, pinned-main failure, older-source pass, admission,
+then Git selection. Stable pass stops as not reproduced; main pass stops as
+fixed/release-specific. Untestable stable/main endpoints block. The deterministic
+older search considers approved source-SHA hints that ordinary ancestry queries
+verify, then oldest-first candidates in a bounded 4,096-commit main window.
+SDK/version/URL claims are not converted to source observations or trusted tag
+mappings. Every selected source still requires a clean build and repeated sample.
+Search work is bounded by that window and the unchanged issue allowance.
+
+Admission requires comparable sample SDK/runtime, environment, producer, matrix
+and exact assertions, but not equal revision **build** SDKs. Source observations
+used by the engine must retain `buildToolchain`. Different build toolchains are
+returned as transition evidence, never erased to make endpoints comparable.
+
+`executeInvestigationWork(work, dependencies)` executes the returned permission.
+It calls `beginWork` before invoking any runner, making a lost acknowledgement
+or duplicate worker invocation non-executable. The state ledger keeps the
+reservation owner, attempt and execution generation. A cancelled owning run is
+retired only through `reserveWork`/`invalidateStaleEvidence`; retrying costs another
+full reservation and never more than two attempts per item.
+
+Worker dependencies include `worker` options for the existing runners,
+`inventoryReleased(identity, buildInstanceId)`, and
+`collectObservation({ result, reservation, manifest, context })`. These last two
+are **trusted collector** boundaries: inventory the acquired SDK's compiler,
+Core/package, tasks, targets and runtime bytes; authenticate captured worker
+provenance and required artifacts; return `{ observation, evidence }` in the
+existing state format. A worker setting `verified: true` is not a collector.
+The engine checks that successful collected assertions are the original runner's
+matrix repetitions and that source SHA/build IDs match the reserved work. Work
+results carry only public epoch inputs in `binding`, never controller keys.
+Execution takes authentication context from trusted dependencies, not the work
+record. Never send those dependencies to an untrusted worker.
+
+Released execution uses `acquireToolchain`, `verifyToolchainIdentity` and
+`runReproduction`. Source execution uses `testSourceRevision`, which reads each
+revision's declarations, acquires its own build toolchain, and creates fresh
+Bootstrap/Proto, bin/obj and package state. `worker.reproductionToolchain` is
+required separately for engine source work; optional `sampleRuntimes` freezes
+explicit sample runtimes. The workspace runner now accepts a reserved
+`buildInstanceId`; reusing its directory fails rather than reusing outputs.
+Unsupported historical runtime/sample combinations remain untestable. There is
+no engine-specific FSI command, compiler runner, SDK installer, retargeting or
+`global.json` rewrite.
+
+The interval adds strict `decisions: [{ sha, outcome, observationDigest }]` and
+`remaining: [sha]` fields. Decisions are saved with observations and the next
+advance recomputes graph bounds from the authenticated ledger. The legacy
+`gitLog` is never executed. A lost selection worktree is reconstructed using
+`bisect start --no-checkout` and typed `good`, `bad`, or `skip` arguments only;
+there is no stored replay string, `bisect run`, or interpretation of generic
+nonzero build exits as bad. Each selection pass has a five-minute wall-time cap
+and each Git subprocess a one-minute cap. All-skipped results retain possible
+commits and skip reasons.
+
+Observed descendant passes after failures, branches outside main ancestry,
+merges in the asserted interval, and explicit revert/reintroduction/cherry-pick
+messages stop automatic attribution with history/interval uncertainty. This
+bounded inspection does not prove arbitrary histories monotonic. Merges require
+explicit parent analysis rather than first-parent blame.
+
+The policy remains 24 source builds, 40 workers, 720 reserved minutes, two work
+attempts and two assertion repetitions, with 90-minute builds, 110-minute
+workers and 300-second reproductions. **Six reservations consume 660 minutes**;
+the seventh does not fit even when each fixture finishes immediately. Candidate
+selection preserves room for candidate-plus-parent confirmation where feasible.
+Otherwise it returns the unconfirmed interval and consumed budget. A singleton
+interval returns `confirmation` with `candidate`, all relevant `parents`, and
+`requiresFreshConfirmation: true`; a separate consumer must reserve and perform
+fresh confirmation before any attribution.
+
+`engine.test.cjs` uses real temporary Git histories and inexpensive injected
+revision evaluators, not product acceptance. It records every actual bisect
+subprocess and exit code, including zero counts for all denied endpoint tuples
+and malformed/stale evidence. Process/GitHub/clock dependencies are injectable
+at the existing runner boundaries; production defaults call the original modules.
+The scoped suite covers execution claims, cumulative cancellation/retry budgets,
+environment/input/main/stable epochs, lost worktrees, skips, toolchain transitions
+and uncertain histories.
+
+Fresh Windows x64 product acceptance is retained at
+`Q:\rb912-engine-acceptance-20260920`. The original workspace runner clean-built
+`5a8b9adb034f420a5c2c1f577670c5eeeb454b7e` in build instance
+`d6c3ce9a-a9a9-4f70-ae93-3a99a68c9a36` using its approved measured
+`11.0.100-rc.1.26420.103` archive, with unchanged `global.json` and two passing
+FSI assertions. Released SDK `10.0.401` and the fresh source products then matched
+all 43 existing reproduction-smoke expectations (23 passes, six intended product
+failures, 14 identity rejections). The scoped evidence-helper Release build/test
+commands exited 0; that helper project contains no managed test cases.
+`final-acceptance-report.json` has SHA-256
+`ccf46ba63cb50dc9ddc89b824aebb0ada1cf6c96d0c4b2a22310039c299f4864`.
+This validates the original product runners, not a real regression's admitted
+interval, an activated workflow, or fresh culprit attribution.
 
 ## Exact toolchain acquisition
 
@@ -1076,8 +1209,10 @@ lock. All state-transition calls reread the authoritative comment.
 | --- | --- |
 | `loadCheckpoint(transport, context)` | Returns `{ checkpoint, bodyDigest, commentId, owner, executionAllowed, publicationAllowed, blockers, warnings }`. Authenticates freshness and can finish an interrupted receipt write under the issue lock. Invalid authentication/schema/freshness throws; stale approvals/inputs or required evidence loss explicitly block reuse. |
 | `reserveWork(transport, context, { generation, attemptId, request })` | Durably charges and saves the exact request before returning a reservation with `execute: true`. Duplicate requests return `execute: false`; they **must not launch another worker**. Conflicting attempt IDs, stale generations, active pending owners, exhausted counters, and deadlines fail closed. |
+| `beginWork(transport, context, { generation, attemptId })` | Durably claims execution for the owning reservation. Returns `{ execute, generation }`; duplicates cannot execute again. Commit using this execution generation. A claim does not add a second charge or refund cancelled work. |
 | `commitObservation(transport, context, { generation, attemptId, observation, evidence })` | Checks ownership, request/build/provenance and the shared observation contract, then commits all decisive evidence before clearing pending work. Exact duplicate completion is idempotent. |
 | `invalidateStaleEvidence(transport, context, { generation })` | Invalidates changed input/approval/producer/orchestration dependencies without erasing history or charges. Main/stable changes start a new endpoint epoch while retaining exact-input historical source observations. Closed/unlabeled issues stop publication; existing result identities remain auditable. |
+| `recordSearchProgress(transport, context, { generation, phase, interval, goodDigest? })` | Persists engine phase/interval and an optional authenticated passing-source endpoint. Typed decisions must match durable observations. Cannot alter a pending reservation, finish attribution, erase usage or refund work. |
 | `serializeWorkflowRecord({ kind, status, payload }, context)` | Signs a `checkpoint`, `proposal`, or `result` envelope. Low-level serialization is not approval or a storage transition. |
 | `authenticateWorkflowRecord(transport, context, comment)` | Returns true only for a matching signed record and fetched run provenance, not its freshness. Forged records return false; required API failures throw. Bind the expected record ID before using this as intake's exclusion callback, and use `loadCheckpoint` in the mandatory trusted-checkpoint reader to detect rollback before freezing. |
 

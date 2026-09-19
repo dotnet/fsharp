@@ -100,7 +100,8 @@ async function prepareRevisionWorkspace(options, dependencies = {}) {
         const mirror = await fs.realpath(options.mirrorDirectory);
         requireValue(parent !== mirror && !inside(mirror, parent) && !inside(parent, mirror) &&
             parent !== evidenceParent && !inside(parent, evidenceParent), "scratch, mirror and evidence must be separate");
-        const buildInstanceId = randomUUID();
+        const buildInstanceId = options.buildInstanceId ?? randomUUID();
+        requireValue(/^[A-Za-z0-9-]{1,128}$/.test(buildInstanceId), "invalid reserved build instance");
         const root = path.join(parent, `revision-${buildInstanceId}`);
         await fs.mkdir(root);
         const signal = AbortSignal.any([AbortSignal.timeout(options.request.allocation.workerTimeoutMs),
@@ -451,7 +452,8 @@ async function testSourceRevision(options, dependencies = {}) {
     try {
         const reproduction = await runReproduction({
             manifest: options.manifest, sourceDirectory: w.sampleDirectory, workDirectory: path.join(w.root, "executions"),
-            product: w.product, toolchain: w.toolchain, helper: w.helper,
+            product: w.product, toolchain: options.reproductionToolchain ?? w.toolchain, helper: w.helper,
+            sampleRuntimes: options.sampleRuntimes,
         }, {
             execute: (exe, args, settings) => w.execute(exe, args, {
                 ...settings, signal: w.signal, timeoutMs: Math.max(1, Math.min(settings.timeoutMs, w.deadline - Date.now())),

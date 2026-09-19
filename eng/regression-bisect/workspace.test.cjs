@@ -238,6 +238,27 @@ test("evidence helper selects its runtime TFM consistently for restore and build
     assert.match(await fs.readFile(path.join(helper, "NuGet.Config"), "utf8"), /dnceng\/public\/_packaging\/dotnet-public/);
 });
 
+test("reserved source identity and a separate sample toolchain never retarget historical products", async t => {
+    const f = await controlled(t);
+    const buildInstanceId = "reserved-source-build-1";
+    const result = await testSourceRevision({
+        ...f.options, buildInstanceId,
+        request: { ...f.options.request, sourceSha: f.shas[1] },
+        reproductionToolchain: f.toolchain,
+    }, f.deps);
+    assert.equal(result.buildInstanceId, buildInstanceId);
+    assert.equal(result.actualSourceSha, f.shas[1]);
+    assert.equal(result.toolchain.sdkVersion, "9.0.100");
+    assert.equal(f.toolchain.sdkVersion, "10.0.100");
+    assert.equal(result.product.targetFramework, "net9.0");
+    assert.equal(result.outcome.outcome, "untestable");
+    assert.match(result.reproduction.error, /runtime|identity|artifact/);
+    assert.equal(result.globalJson.before, result.globalJson.after);
+    const duplicate = await prepareRevisionWorkspace({ ...f.options, buildInstanceId }, f.deps);
+    assert.equal(duplicate.status, "untestable");
+    assert.match(duplicate.error.message, /EEXIST/);
+});
+
 test("large product inventories hash every dependency without unbounded inspection arguments", async t => {
     const f = await controlled(t);
     f.afterBuild = async source => {

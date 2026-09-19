@@ -166,7 +166,8 @@ function validateCheckpoint(cp) {
     const totals = { sourceBuilds: 0, workerUnits: 0, reservedMinutes: 0 };
     const ids = new Set();
     for (const [index, r] of cp.records.entries()) {
-        fields(r, "id workItemId request requestDigest owner sequence attempt generation deadline inputDigest epoch reserved status observationDigest", "work record");
+        fields(r, "id workItemId request requestDigest owner sequence attempt generation deadline inputDigest epoch reserved status observationDigest" +
+            (Object.hasOwn(r, "executionGeneration") ? " executionGeneration" : ""), "work record");
         requireState(typeof r.id === "string" && r.id.length > 0 && r.id.length <= 128 && !ids.has(r.id) &&
             r.sequence === index + 1 && positive(r.attempt) && positive(r.generation) &&
             timestamp(r.deadline) && digest(r.inputDigest) && digest(r.epoch) &&
@@ -180,6 +181,8 @@ function validateCheckpoint(cp) {
         ids.add(r.id);
         for (const name of counterNames) totals[name] += r.reserved[name];
         requireState(r.status === "committed" ? digest(r.observationDigest) : r.observationDigest === null, "invalid observation identity");
+        if (Object.hasOwn(r, "executionGeneration")) requireState(positive(r.executionGeneration) &&
+            r.executionGeneration > r.generation && r.executionGeneration <= cp.generation, "invalid execution generation");
     }
     requireState(equal(totals, cp.state.budget.consumed), "consumed budgets must equal the durable reservation ledger");
     const counts = new Map();
@@ -209,6 +212,11 @@ function validateCheckpoint(cp) {
         "missing durable observation");
     requireState(equal(Object.entries(cp.observations).filter(([, o]) => o.valid).map(([id]) => id),
         cp.state.budget.authenticatedObservationDigests), "authenticated observation table mismatch");
+    for (const decision of cp.state.interval?.decisions ?? []) {
+        const o = cp.observations[decision.observationDigest];
+        requireState(o?.valid && o.data.kind === "source" && o.data.target.sourceSha === decision.sha &&
+            o.data.outcome.outcome === decision.outcome, "search decision does not match authenticated observation");
+    }
 }
 
 function reproductionDigest(manifest) {
@@ -228,6 +236,7 @@ function currentState(cp, context) {
         const budget = {
             ...cp.state.budget, policy: context.policy, policyRevision: context.policyRevision,
             workflowRevision: context.workflowRevision, authorization: context.authorization, stableSdk: context.stableSdk,
+            ...(context.environmentFingerprint ? { environmentFingerprint: context.environmentFingerprint } : {}),
         };
         state = {
             ...cp.state, manifest: context.manifest, budget,
@@ -403,6 +412,7 @@ async function initializeCheckpoint(transport, context, { allowanceId, deadline 
         allowanceId, authorization: context.authorization, stableSdk: context.stableSdk,
         authenticatedObservationDigests: [], consumed: { sourceBuilds: 0, workerUnits: 0, reservedMinutes: 0 },
         attempts: [], nextWorkItemId: "none", pendingWork: null,
+        ...(context.environmentFingerprint ? { environmentFingerprint: context.environmentFingerprint } : {}),
     };
     const state = {
         schemaVersion: 1, repository: context.repository, issueNumber: context.issueNumber,
@@ -502,7 +512,7 @@ async function commitObservation(transport, context, { generation, attemptId, ob
     const observationDigest = fingerprint(observation);
     validateEvidence(evidence);
     if (record.status === "committed") {
-        requireState(generation === record.generation, "stale completion generation");
+        requireState(generation === (record.executionGeneration ?? record.generation), "stale completion generation");
         requireState(record.observationDigest === observationDigest &&
             equal(cp.observations[observationDigest].evidence, evidence), "observation identity conflict");
         return cp;
@@ -531,11 +541,29 @@ async function commitObservation(transport, context, { generation, attemptId, ob
         const tested = { sourceSha: observation.target.sourceSha, observationDigest };
         cp.state.testedRevisions.push(tested);
         if (observation.outcome.outcome === "untestable") cp.state.skips.push({ ...tested, reason: observation.outcome.reason });
+        if (record.request.phase === "bisect" && cp.state.interval?.decisions)
+            cp.state.interval.decisions.push({ sha: tested.sourceSha, outcome: observation.outcome.outcome, observationDigest });
     }
     cp.pending = null;
     cp.state.budget.pendingWork = null;
     cp.generation++;
     return saveCheckpoint(transport, context, cp, loaded.bodyDigest);
+}
+
+async function beginWork(transport, context, { generation, attemptId }) {
+    const loaded = await loadCheckpoint(transport, context);
+    const cp = loaded.checkpoint;
+    requireState(loaded.executionAllowed, `execution blocked: ${loaded.blockers.join("; ")}`);
+    requireState(cp.pending?.id === attemptId && ownerEqual(cp.pending.owner, context.owner), "work owner mismatch");
+    if (cp.pending.executionGeneration !== undefined) return { execute: false, generation: cp.pending.executionGeneration };
+    checkGeneration(cp, generation);
+    requireState(Date.parse(context.now) < Date.parse(cp.pending.deadline), "reservation deadline exhausted");
+    cp.generation++;
+    cp.pending.executionGeneration = cp.generation;
+    cp.records.find(r => r.id === attemptId).executionGeneration = cp.generation;
+    cp.state.budget.pendingWork.status = "running";
+    await saveCheckpoint(transport, context, cp, loaded.bodyDigest);
+    return { execute: true, generation: cp.generation };
 }
 
 async function invalidateStaleEvidence(transport, context, { generation }) {
@@ -553,7 +581,8 @@ async function invalidateStaleEvidence(transport, context, { generation }) {
     if (current.stale || current.state === null) {
         const sameInputs = current.state !== null && old.approvalFingerprint === current.state.approvalFingerprint &&
             old.budget.workflowRevision === current.state.budget.workflowRevision &&
-            old.budget.policyRevision === current.state.budget.policyRevision;
+            old.budget.policyRevision === current.state.budget.policyRevision &&
+            old.budget.environmentFingerprint === current.state.budget.environmentFingerprint;
         cp.history.push({
             epoch: old.epoch, inputDigest: cp.inputDigest, approvalDigest: old.approvalFingerprint,
             policyDigest: cp.policyDigest, workflowRevision: old.budget.workflowRevision,
@@ -585,7 +614,27 @@ async function invalidateStaleEvidence(transport, context, { generation }) {
     return saveCheckpoint(transport, context, cp, loaded.bodyDigest);
 }
 
+async function recordSearchProgress(transport, context, { generation, phase, interval, goodDigest }) {
+    const loaded = await loadCheckpoint(transport, context);
+    requireState(loaded.executionAllowed, `search blocked: ${loaded.blockers.join("; ")}`);
+    const cp = loaded.checkpoint;
+    checkGeneration(cp, generation);
+    requireState(cp.pending === null, "cannot change search with pending work");
+    requireState(["admission", "bisect", "confirmation", "blocked", "stopped"].includes(phase), "invalid search phase");
+    if (goodDigest !== undefined) {
+        const good = cp.observations[goodDigest];
+        requireState(good?.valid && good.data.kind === "source" && good.data.outcome.outcome === "pass",
+            "search requires authenticated passing source");
+        cp.state.endpointEvidence.good = goodDigest;
+    }
+    if (cp.state.phase === phase && equal(cp.state.interval, interval) && goodDigest === undefined) return cp;
+    cp.state.phase = phase;
+    cp.state.interval = structuredClone(interval);
+    cp.generation++;
+    return saveCheckpoint(transport, context, cp, loaded.bodyDigest);
+}
+
 module.exports = {
     initializeCheckpoint, serializeWorkflowRecord, authenticateWorkflowRecord,
-    loadCheckpoint, reserveWork, commitObservation, invalidateStaleEvidence,
+    loadCheckpoint, reserveWork, beginWork, commitObservation, invalidateStaleEvidence, recordSearchProgress,
 };

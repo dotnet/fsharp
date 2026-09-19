@@ -348,6 +348,7 @@ function validateBudget(budget, manifest) {
         stableSdk, authenticatedObservationDigests: list(digest),
         consumed: counters, attempts: list(shape({ workItemId: text, count: positive })),
         nextWorkItemId: text, pendingWork: nullable(reservation),
+        ...(budget && Object.hasOwn(budget, "environmentFingerprint") ? { environmentFingerprint: digest } : {}),
     }, "budget");
     const auth = budget.authorization;
     check(auth.repository === manifest.repository && auth.issueNumber === manifest.issueNumber &&
@@ -383,6 +384,7 @@ function fingerprintEpoch(manifest, budget, pinnedMainSha) {
         schemaVersion: 1, manifestDigest: fingerprintInput(manifest),
         policyRevision: budget.policyRevision, workflowRevision: budget.workflowRevision,
         pinnedMainSha, stableSdk: budget.stableSdk,
+        ...(budget.environmentFingerprint ? { environmentFingerprint: budget.environmentFingerprint } : {}),
     });
 }
 
@@ -452,7 +454,14 @@ function validateState(state) {
             endpointEvidence: shape({ stable: nullable(digest), main: nullable(digest), good: nullable(digest) }),
             testedRevisions: list(shape({ sourceSha, observationDigest: digest })),
             skips: list(shape({ sourceSha, reason: oneOf(untestableReasons), observationDigest: digest })),
-            interval: nullable(shape({ goodSha: sourceSha, badSha: sourceSha, gitLog: list(text, 0, 1000) })),
+            interval: nullable((v, p) => object(v, {
+                goodSha: sourceSha, badSha: sourceSha, gitLog: list(text, 0, 1000),
+                ...(Object.hasOwn(v, "decisions") ? {
+                    decisions: list(shape({ sha: sourceSha, outcome: oneOf(["pass", "product-failure", "untestable"]),
+                        observationDigest: digest }), 0, trustedPolicy.limits.sourceBuilds),
+                    remaining: list(sourceSha, 1, 4096),
+                } : {}),
+            }, p)),
             publication: shape({ digest: nullable(digest), commentId: nullable(positive) }),
         }, "state");
         validateBudget(state.budget, state.manifest);
@@ -463,8 +472,13 @@ function validateState(state) {
         "state", "identity or epoch mismatch");
         const budget = state.budget;
         const evidence = [...Object.values(state.endpointEvidence).filter(x => x !== null),
-            ...state.testedRevisions.map(r => r.observationDigest), ...state.skips.map(r => r.observationDigest)];
+            ...state.testedRevisions.map(r => r.observationDigest), ...state.skips.map(r => r.observationDigest),
+            ...(state.interval?.decisions ?? []).map(r => r.observationDigest)];
         check(evidence.every(d => budget.authenticatedObservationDigests.includes(d)), "state", "unauthenticated evidence");
+        if (state.interval?.decisions) {
+            unique(state.interval.decisions.map(d => d.sha), "state.interval.decisions");
+            unique(state.interval.remaining, "state.interval.remaining");
+        }
         return true;
     } catch (error) {
         if (!(error instanceof ContractError)) throw error;
