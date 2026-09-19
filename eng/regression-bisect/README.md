@@ -224,7 +224,8 @@ The shared boundaries are injectable: `fs` (`node:fs/promises`), `clock`
 final URL, redirect hops and raw bytes, or streams a large download to
 `destination`. Every production redirect is checked against the policy's
 credential-free public-feed allowlist; downloads, processes and smoke runs
-are bounded. Process execution receives a newly constructed environment, not
+are bounded. Redirects without a nonempty `Location` fail before another
+request. Process execution receives a newly constructed environment, not
 the caller's secrets, private feeds, credential providers or user profile.
 
 `toolchain-installer.cjs` calls the existing Arcade `GetDotNetInstallScript`
@@ -275,7 +276,7 @@ its uniquely created child directory. It has a ten-minute cancellation deadline.
 Exit 0 means actual acquisition/identity success; exit 2 records the exact
 block, never mocked download success. This is not a source build or live issue run.
 
-On 2026-09-19 at 00:35:31 UTC, that command resolved metadata and completed
+On 2026-09-19 at 00:55:06 UTC, that command resolved metadata and completed
 successfully (exit 0) on Windows x64:
 requested/resolved SDK `10.0.401`, RID `win-x64`, bundled/executing runtime
 `10.0.12`, compiler and FSI assembly `15.2.401.0`, Core assembly `10.1.0.0`,
@@ -293,10 +294,10 @@ not production version constants.
 Validation also completed `node --check` for all twelve top-level `.cjs`
 files and the required
 `node --test eng\regression-bisect\model.test.cjs eng\regression-bisect\toolchains.test.cjs`
-command (322 passed), plus
-`node --test eng\regression-bisect\toolchains.test.cjs` (72 passed).
-The broader suite above passed all 538 tests, including intake, authenticated
-state replay and installer-boundary coverage. The repair cases first reproduced
+command (416 passed), plus
+`node --test eng\regression-bisect\toolchains.test.cjs` (166 passed).
+The broader suite above passed all 632 tests without skips, including intake,
+authenticated state replay and installer-boundary coverage. Earlier repair cases reproduced
 seven failures for musl installer arguments, historical host RIDs, and colliding
 trace files. An additional failing case caught missing same-role execution
 evidence hidden by identical config digests. The passing acquisition-to-admission
@@ -304,6 +305,13 @@ cases use captured evidence, preserve differing historical/preview build
 toolchains and their coupled transitions, and reject invalid execution evidence
 and incomparable reproduction runtimes. Cross-platform installer/identity cases
 use injected boundaries; the actual download smoke above ran on Windows only.
+The additional failure-path cases supply malformed trace bytes to production
+capture for compiler, FSI and repeated compiler roles, and exercise production
+HTTP redirects with only `fetch` mocked. Removing trace validation caused 18
+failures; removing redirect allowlist validation caused 45 failures. Both guards
+were restored. Fifteen missing/empty `Location` cases failed before immediate
+rejection was added; permitted relative/public redirects still preserve
+GET/HEAD behavior, provenance and hashes.
 `dotnet fantomas .` completed without changes or errors; working-tree and sprint
 commit-range `git diff --check` checks passed. The signed checkpoint fixture
 was regenerated through its existing harness for the new pinned public-feed

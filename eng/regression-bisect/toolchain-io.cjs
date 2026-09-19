@@ -29,7 +29,9 @@ function createHttp(policy, fileSystem = fs, signal) {
             });
             if ([301, 302, 303, 307, 308].includes(response.status)) {
                 await response.body?.cancel();
-                const next = publicUrl(new URL(response.headers.get("location"), current).href, policy);
+                const location = response.headers.get("location");
+                requireValue(location?.trim(), "redirect response is missing Location");
+                const next = publicUrl(new URL(location, current).href, policy);
                 redirects.push({ from: current, to: next, status: response.status });
                 current = next;
                 continue;

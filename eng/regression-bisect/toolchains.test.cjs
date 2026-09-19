@@ -7,7 +7,7 @@ const { createHash } = require("node:crypto");
 const { resolveLatestStableSdk, readRevisionToolchain, acquireToolchain, verifyToolchainIdentity } = require("./toolchains.cjs");
 const { policy, admission, observation, seal, digest } = require("./fixtures/contracts.cjs");
 const { admitBisection, fingerprintInput } = require("./model.cjs");
-const { capture, publicUrl, isolatedEnvironment } = require("./toolchain-io.cjs");
+const { capture, publicUrl, createHttp, isolatedEnvironment } = require("./toolchain-io.cjs");
 
 const indexUrl = "https://builds.dotnet.microsoft.com/dotnet/release-metadata/releases-index.json";
 const feed = "https://builds.dotnet.microsoft.com/dotnet";
@@ -323,14 +323,79 @@ test("unavailable historical SDK records public fallback attempts without runnin
     assert.ok(result.attempts.some(a => a.status === 404));
 });
 
-for (const location of [
+const forbiddenDownloads = [
     "https://ci.dot.net/public/../../private/sdk.zip",
     "https://ci.dot.net/public/%2e%2e/private/sdk.zip",
     "https://builds.dotnet.microsoft.com/dotnet/sdk.zip?token=private",
     "https://builds.dotnet.microsoft.com.evil.test/dotnet/sdk.zip",
     "http://builds.dotnet.microsoft.com/dotnet/sdk.zip",
-]) {
+    "https://user:secret@builds.dotnet.microsoft.com/dotnet/sdk.zip",
+    "https://builds.dotnet.microsoft.com:8443/dotnet/sdk.zip",
+    "https://builds.dotnet.microsoft.com/dotnet/sdk.zip#fragment",
+    "//unapproved.example/sdk.zip",
+];
+for (const location of forbiddenDownloads.filter(url => url.startsWith("https:") || url.startsWith("http:"))) {
     test(`public feed rejects ${location}`, () => assert.throws(() => publicUrl(location, policy()), /unapproved/));
+}
+
+for (const status of [301, 302, 303, 307, 308]) {
+    for (const location of forbiddenDownloads) {
+        test(`HTTP ${status} rejects redirect before requesting ${location}`, async t => {
+            const allowed = `${feed}/redirected-sdk.zip`;
+            const responses = [
+                new Response("first hop", { status, headers: { location: "/dotnet/redirected-sdk.zip" } }),
+                new Response("forbidden hop", { status, headers: { location } }),
+            ];
+            const cancellations = responses.map(response => t.mock.method(response.body, "cancel"));
+            const requests = [];
+            t.mock.method(globalThis, "fetch", async (url, settings) => {
+                requests.push(url);
+                assert.equal(settings.redirect, "manual");
+                assert.equal(settings.method, "GET");
+                return responses[requests.length - 1] ?? new Response("must not download");
+            });
+            const transport = createHttp(policy(), { open: () => assert.fail("must not write forbidden download") });
+            await assert.rejects(transport(indexUrl, { destination: "unused.zip" }), /unapproved public download URL/);
+            assert.deepEqual(requests, [indexUrl, allowed]);
+            assert.ok(cancellations.every(cancel => cancel.mock.callCount() === 1));
+        });
+    }
+    for (const location of [null, "", "   "]) {
+        test(`HTTP ${status} rejects missing/empty Location ${JSON.stringify(location)}`, async t => {
+            const response = new Response(null, { status, headers: location === null ? {} : { location } });
+            const fetch = t.mock.method(globalThis, "fetch", async () => response);
+            await assert.rejects(createHttp(policy())(indexUrl), /redirect response is missing Location/);
+            assert.equal(fetch.mock.callCount(), 1);
+        });
+    }
+    for (const method of ["GET", "HEAD"]) {
+        test(`HTTP ${status} preserves allowed relative/public redirects for ${method}`, async t => {
+            const relative = `${feed}/release-metadata/channel.json`;
+            const final = "https://ci.dot.net/public/sdk.zip";
+            const responses = [
+                new Response(null, { status, headers: { location: "channel.json" } }),
+                new Response(null, { status, headers: { location: final } }),
+                new Response(method === "GET" ? archiveBytes : null),
+            ];
+            const requests = [];
+            t.mock.method(globalThis, "fetch", async (url, settings) => {
+                requests.push(url);
+                assert.equal(settings.redirect, "manual");
+                assert.equal(settings.method, method);
+                return responses[requests.length - 1];
+            });
+            const result = await createHttp(policy())(indexUrl, { method });
+            const bytes = method === "GET" ? archiveBytes : Buffer.alloc(0);
+            assert.deepEqual(requests, [indexUrl, relative, final]);
+            assert.equal(result.status, 200);
+            assert.equal(result.url, final);
+            assert.deepEqual(result.redirects, [{ from: indexUrl, to: relative, status }, { from: relative, to: final, status }]);
+            assert.deepEqual(result.bytes, bytes);
+            assert.equal(result.size, bytes.length);
+            assert.equal(result.sha256, digest(bytes));
+            assert.equal(result.sha512, hash512(bytes));
+        });
+    }
 }
 
 test("bad archive aborts acquisition before any acquired executable runs", async t => {
@@ -438,7 +503,9 @@ test("historical public preview fallback preserves checksum provenance and exact
     assert.deepEqual(result.attempts.filter(a => a.url.endsWith(".sha512")).map(a => a.status), [404, 200]);
 });
 
-async function captureFixture(request, { packaged = true, rid = request.toolchain.platform.rid } = {}) {
+async function captureFixture(request, {
+    packaged = true, rid = request.toolchain.platform.rid, trace = expected => `Chose FX version [${expected}]\n`,
+} = {}) {
     const { root, executable, toolchain } = request;
     const version = toolchain.sdkVersion;
     const runtimeVersion = toolchain.bundledRuntime.version;
@@ -473,8 +540,8 @@ async function captureFixture(request, { packaged = true, rid = request.toolchai
             assert.equal(file, executable);
             if (args.at(-1) === "--help") {
                 assert.equal(settings.env.DOTNET_ROLL_FORWARD, "Disable");
-                await fs.appendFile(settings.env.DOTNET_HOST_TRACEFILE,
-                    `Probing ${args[3]}\nChose FX version [${path.join(runtime, args[2])}]\n`);
+                const output = trace(path.join(runtime, args[2]), args[3]);
+                if (output !== null) await fs.appendFile(settings.env.DOTNET_HOST_TRACEFILE, output);
                 return { exitCode: 0, stderr: "", stdout: "F# compiler help" };
             }
             const outputs = {
@@ -508,7 +575,7 @@ for (const packaged of [true, false]) {
     });
 }
 
-async function acquireSource(t, version, sourceSha, p, { rid = p.rid, edit = () => {} } = {}) {
+async function acquireSource(t, version, sourceSha, p, { rid = p.rid, edit = () => {}, trace } = {}) {
     const { root, bytes } = await source(t, version);
     const runtimeVersion = `${version.split(".")[0]}.0.0`;
     const runtimeConfigs = [];
@@ -531,13 +598,42 @@ async function acquireSource(t, version, sourceSha, p, { rid = p.rid, edit = () 
         },
         capture: async request => {
             assert.equal(request.cwd, root);
-            const identity = await capture(request, await captureFixture(request, { rid }));
+            const identity = await capture(request, await captureFixture(request, { rid, trace }));
             edit(identity);
             return identity;
         },
     });
     assert.deepEqual(await fs.readFile(path.join(root, "global.json")), bytes);
     return result;
+}
+
+for (const compiler of ["fsc", "fsi", "other-fsc"]) {
+    for (const [name, trace] of [
+        ["missing", () => null],
+        ["empty", () => ""],
+        ["no selection", expected => `Considering FX version [${expected}]\n`],
+        ["unterminated selection", expected => `Chose FX version [${expected}\n`],
+        ["wrong version", expected => `Chose FX version [${path.join(path.dirname(expected), "99.0.0")}]\n`],
+        ["wrong framework", expected => `Chose FX version [${path.join(path.dirname(path.dirname(expected)), "Other.App", path.basename(expected))}]\n`],
+        ["outside installation", expected => `Chose FX version [${path.join(path.parse(expected).root, "machine", "shared", "Microsoft.NETCore.App", path.basename(expected))}]\n`],
+    ]) {
+        test(`capture rejects ${name} runtime trace from ${compiler} before admission`, async t => {
+            let malformed = 0;
+            const result = await acquireSource(t, "6.0.428", "a".repeat(40), platform, {
+                trace: (expected, file) => {
+                    if (path.basename(file, ".dll") !== compiler) return `Chose FX version [${expected}]\n`;
+                    malformed++;
+                    return trace(expected);
+                },
+            });
+            assert.equal(malformed, 1);
+            assert.equal(result.status, "untestable", JSON.stringify(result));
+            assert.equal(result.outcome.reason, "wrong-identity");
+            assert.equal(result.error.stage, "identity");
+            assert.match(result.error.message, name === "missing" ? /ENOENT.*host-trace/ : /host trace did not verify/);
+            for (const field of ["identity", "evidencePath", "launch"]) assert.equal(result[field], undefined);
+        });
+    }
 }
 
 for (const [p, hostRid] of [
