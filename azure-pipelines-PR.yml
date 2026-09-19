@@ -269,7 +269,10 @@ stages:
             inputs:
               testResultsFormat: 'XUnit'
               testRunTitle: WindowsNoRealsig_testCoreclr
-              mergeTestResults: true
+              # See eng/templates/batched-test-steps.yml: merging disjoint per-assembly XUnit
+              # files produces tens of thousands of "No matching test case result" warnings and
+              # can abort the publish, dropping results. Publish each file as its own run.
+              mergeTestResults: false
               testResultsFiles: '*.xml'
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/Release'
             condition: succeededOrFailed()
@@ -375,7 +378,10 @@ stages:
             inputs:
               testResultsFormat: 'XUnit'
               testRunTitle: WindowsCompressedMetadata $(_testKind) $(transparentCompiler)
-              mergeTestResults: true
+              # See eng/templates/batched-test-steps.yml: publish each assembly file as its own
+              # run to avoid the merge-time "No matching test case result" warning flood and the
+              # "TestCaseTitle must be specified" abort that silently drops results.
+              mergeTestResults: false
               testResultsFiles: '*.xml'
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_configuration)'
             continueOnError: true
@@ -485,7 +491,10 @@ stages:
               testResultsFormat: 'XUnit'
               testRunTitle: Linux
               testResultsFiles: '*.xml'
-              mergeTestResults: true
+              # See eng/templates/batched-test-steps.yml: publish each assembly file as its own
+              # run to avoid the merge-time "No matching test case result" warning flood and the
+              # "TestCaseTitle must be specified" abort that silently drops results.
+              mergeTestResults: false
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
             continueOnError: true
             condition: succeededOrFailed()
