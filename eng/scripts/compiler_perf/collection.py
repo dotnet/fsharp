@@ -52,7 +52,7 @@ def classify_failure(phase, exit_status=None, stderr="", issue=None):
 
 
 def number(value, label):
-    m.require(type(value) in (int, float) and math.isfinite(value) and value >= 0,
+    m.require(type(value) in (int, float) and 0 <= value <= sys.float_info.max and math.isfinite(value),
               f"Invalid {label}")
     return value
 
@@ -110,7 +110,8 @@ def normalize_evidence(evidence):
                   "Collection did not cover runtime startup")
         duration = number(coverage["duration_ms"], "coverage duration")
         first, last = (number(trace[k], k) for k in ("first_event_ms", "last_event_ms"))
-        m.require(duration > 0 and last > first and last - first >= max(1, duration - 2000),
+        m.require(duration > 0 and last > first and last <= duration + 2000
+                  and last - first >= max(1, duration - 2000),
                   "Insufficient trace coverage")
         weight = number(trace["cpu_sample_weight"], "CPU samples")
         m.require(weight > 0 and trace["cpu_sample_unit"] == "samples" and trace["stacks"], "Missing CPU stacks")
@@ -120,13 +121,25 @@ def normalize_evidence(evidence):
             number(stack["weight"], "stack weight")
         m.require(0 < sum(s["weight"] for s in trace["stacks"]) <= weight, "Inconsistent stack weights")
 
-        def ordered(items, key):
+        def ordered(items, key, lower=first):
             m.require(items, f"Missing {key} evidence")
             times = [number(i[key], key) for i in items]
-            m.require(times == sorted(times) and times[-1] <= last + 1, "Out-of-order/out-of-coverage timestamps")
+            m.require(times == sorted(times) and lower <= times[0] and times[-1] <= last + 1,
+                      "Out-of-order/out-of-coverage timestamps")
 
-        ordered(trace["allocation_ticks"], "timestamp_ms")
-        allocated = sum(number(t["bytes"], "allocation bytes") for t in trace["allocation_ticks"])
+        aggregation = trace.get("allocation_aggregation", {"kind": "individual-events"})
+        allocation_start = first
+        if aggregation["kind"] == "fixed-time-buckets":
+            m.require(aggregation["bucket_width_ms"] == 100 and aggregation["timestamp"] == "bucket-start"
+                      and type(aggregation["source_event_count"]) is int
+                      and aggregation["source_event_count"] >= len(trace["allocation_ticks"]),
+                      "Invalid allocation aggregation")
+            allocation_start = math.floor(first / 100) * 100
+        else:
+            m.require(aggregation["kind"] == "individual-events", "Unsupported allocation aggregation")
+        ordered(trace["allocation_ticks"], "timestamp_ms", allocation_start)
+        allocated = number(sum(number(t["bytes"], "allocation bytes") for t in trace["allocation_ticks"]),
+                           "allocation byte sum")
         m.require(allocated > 0, "Missing allocation evidence")
         counts = dict.fromkeys(("0", "1", "2"), 0)
         ordered(trace["gc_intervals"], "start_ms")
@@ -142,6 +155,10 @@ def normalize_evidence(evidence):
             m.require(gc["start_ms"] <= stop <= last + 1, "Invalid pause interval")
             pause += max(0, stop - max(end, gc["start_ms"]))
             end = max(end, stop)
+        ordered(trace["heap_observations"], "timestamp_ms")
+        for heap_observation in trace["heap_observations"]:
+            number(heap_observation["bytes"], "trace heap bytes")
+            m.require(heap_observation["kind"] == "gc-heap-stats", "Invalid trace heap observation")
         m.require(counters["provider"] == "System.Runtime" and counters["interval_seconds"] == 1,
                   "Wrong counter provider/interval")
         observations = counters["observations"]
@@ -151,7 +168,9 @@ def normalize_evidence(evidence):
         for name in {o["name"] for o in observations}:
             stream = [o for o in observations if o["name"] == name]
             times = [number(o["timestamp_ms"], "counter time") for o in stream]
-            m.require(times == sorted(times), "Out-of-order counters")
+            # CSV time starts at its first observation; second-resolution exporters round at the edges.
+            m.require(times == sorted(times) and times[-1] <= last - first + 1000,
+                      "Out-of-order/out-of-coverage counters")
         for o in observations:
             value = number(o["value"], "counter value")
             if o["name"] == "alloc-rate":
@@ -159,15 +178,16 @@ def normalize_evidence(evidence):
                 rates.append(o)
             elif o["name"] == "gc-heap-size":
                 m.require(o["unit"] == "MB" and o["semantics"] == "gauge", "Invalid heap units")
-                heap.append(dict(o, bytes=value * 1_000_000))
+                heap.append(dict(o, bytes=number(value * 1_000_000, "heap bytes")))
         m.require(len(rates) >= 2 and heap, "Missing supported System.Runtime counters")
         # One unsampled interval at each edge; counter-tool startup is not target runtime.
         counter_edge_ms = 2 * counters["interval_seconds"] * 1000
-        m.require(rates[-1]["timestamp_ms"] - rates[0]["timestamp_ms"] >= max(1, last - first - counter_edge_ms),
+        m.require(rates[0]["timestamp_ms"] <= counter_edge_ms
+                  and rates[-1]["timestamp_ms"] - rates[0]["timestamp_ms"] >= max(1, last - first - counter_edge_ms),
                   "Insufficient counter coverage")
         # EventCounter rates describe the interval ending at the reported observation.
-        integrated = sum(b["value"] * (b["timestamp_ms"] - a["timestamp_ms"]) / 1000
-                         for a, b in zip(rates, rates[1:]))
+        integrated = number(sum(b["value"] * ((b["timestamp_ms"] - a["timestamp_ms"]) / 1000)
+                                for a, b in zip(rates, rates[1:])), "allocation rate integral")
         unavailable = {"retained_heap_bytes": "No forced full-GC/live-object retention observation; heap and RSS are not retention"}
         metrics = {"elapsed_ms": number(proc["elapsed_ms"], "elapsed_ms"),
                    "cpu_sample_weight": weight, "cpu_sample_unit": "samples",
@@ -185,7 +205,7 @@ def normalize_evidence(evidence):
         return {"schema_version": 1, "kind": "profile-summary", "status": "collected",
                 "profiler_attached": True, "acceptance_eligible": False, "metrics": metrics,
                 "allocation_method": "Sampled GCAllocationTick byte estimate, not exact allocated bytes",
-                "allocation_aggregation": trace.get("allocation_aggregation", {"kind": "individual-events"}),
+                "allocation_aggregation": aggregation,
                 "allocation_rate_integral_estimate_bytes": integrated,
                 "heap_observation": heap[-1], "unavailable_reasons": unavailable,
                 "stack_semantics": "Inclusive sampled stacks; not exclusive CPU milliseconds",
@@ -225,28 +245,68 @@ def read_counters(path, pid):
     return {"process_id": pid, "provider": "System.Runtime", "interval_seconds": 1, "observations": observations}
 
 
+def trace_completed(evidence):
+    return any(c["phase"] == "trace" and c["exit_status"] == 0
+               and "Trace completed." in c.get("stdout", "") for c in evidence["commands"])
+
+
+def validate_profile_artifacts(evidence):
+    m.require(trace_completed(evidence), "Missing trace completion")
+    artifacts = evidence["artifacts"]
+    names = [Path(r["path"]).name for r in artifacts]
+    m.require(len(names) == len(set(names))
+              and {"compiler.nettrace", "trace-reduction.json", "counters.csv"} <= set(names),
+              "Missing or duplicate original trace, reduction or counters")
+    timings = evidence["timings"]
+    m.require(timings["status"] == "collected" and timings["acceptance_eligible"] is False,
+              "Missing diagnostic build/timing evidence")
+    commands = [timings[k] for k in ("build", "extraction")]
+    records = artifacts + [timings[k] for k in ("binlog", "extractor", "output")]
+    if "dump" in evidence:
+        dump = evidence["dump"]
+        m.require(dump["status"] == "collected" and dump["published"] is False
+                  and dump["reason_for_dump"] in REASONS and isinstance(dump["hypothesis"], str)
+                  and dump["hypothesis"].strip(), "Missing requested private dump evidence")
+        select_compiler_process([dump["identity"]], evidence["process"]["start"])
+        commands += [dump[k] for k in ("command", "validation")]
+        records.append(dump["artifact"])
+    for command in commands:
+        m.require(command["status"] == "collected" and type(command["exit_status"]) is int
+                  and command["exit_status"] == 0, "Failed timing/dump command")
+    total = 0
+    for record in records:
+        path = Path(m.validate_file_record(record))
+        limit = (LIMITS["trace_bytes"] if path.suffix == ".nettrace" else
+                 LIMITS["json_bytes"] if path.suffix in (".json", ".csv") else LIMITS["artifact_bytes"])
+        size = path.stat().st_size
+        m.require(not path.is_symlink() and 0 < size <= limit, "Empty artifact or size budget exceeded")
+        total += size
+    m.require(total <= LIMITS["total_bytes"], "Artifact total budget exceeded")
+    m.verify_files(records)
+    by_name = {Path(r["path"]).name: r["path"] for r in artifacts}
+    m.require(read_bounded_json(by_name["trace-reduction.json"]) == evidence["trace"],
+              "Reduction differs from the recorded trace evidence")
+    m.require(read_counters(by_name["counters.csv"], evidence["process"]["start"]["pid"]) == evidence["counters"],
+              "Counters differ from the recorded CSV evidence")
+    output = Path(timings["output"]["path"])
+    m.require(output.stat().st_size <= LIMITS["log_bytes"], "Timing output size budget exceeded")
+    text = output.read_text(encoding="utf-8")
+    m.require(timings["output_sha256"] == timings["output"]["sha256"]
+              and timings["output"] == timings["extraction"]["logs"][0]
+              and text.split() == timings["extraction"]["stdout"].split()
+              and validate_timings(text) == timings["projects"], "Timing output differs from recorded evidence")
+
+
 def analyze_profile(path):
     try:
         evidence = read_bounded_json(path)
         result = normalize_evidence(evidence)
         if result["status"] != "collected":
             return result
-        artifacts = evidence["artifacts"]
-        m.require({".nettrace", ".json", ".csv"} <= {Path(r["path"]).suffix for r in artifacts},
-                  "Missing original trace, reduction or counters")
-        for record in artifacts:
-            m.validate_file_record(record)
-            m.require(Path(record["path"]).stat().st_size <= LIMITS["artifact_bytes"], "Artifact size budget exceeded")
-        m.verify_files(artifacts)
-        reductions = [r for r in artifacts if Path(r["path"]).name == "trace-reduction.json"]
-        m.require(len(reductions) == 1 and read_bounded_json(reductions[0]["path"]) == evidence["trace"],
-                  "Reduction differs from the recorded trace evidence")
-        m.require(evidence["timings"]["status"] == "collected", "Missing diagnostic build/timing evidence")
-        if "dump" in evidence:
-            m.require(evidence["dump"]["status"] == "collected", "Requested dump collection failed")
+        validate_profile_artifacts(evidence)
         result["evidence_manifest"] = m.file_record(path)
         return result
-    except (ValueError, OSError, KeyError, TypeError) as error:
+    except (ValueError, OSError, KeyError, TypeError, IndexError, AttributeError) as error:
         return classify_failure("analyze", issue=str(error))
 
 
@@ -272,10 +332,18 @@ def private_directory(path):
     path = Path(path).resolve()
     path.mkdir(mode=0o700)
     if os.name == "nt":
-        who = subprocess.run(["whoami", "/user", "/fo", "csv", "/nh"], capture_output=True, text=True, check=True)
-        sid = next(csv.reader([who.stdout.strip()]))[1]
-        subprocess.run(["icacls", str(path), "/inheritance:r", "/grant:r", f"*{sid}:(OI)(CI)F"],
-                       capture_output=True, check=True)
+        escaped = str(path).replace("'", "''")
+        script = (
+            "$ErrorActionPreference='Stop';"
+            "$sid=[Security.Principal.WindowsIdentity]::GetCurrent().User;"
+            "$acl=New-Object Security.AccessControl.DirectorySecurity;"
+            "$acl.SetAccessRuleProtection($true,$false);"
+            "$rule=New-Object Security.AccessControl.FileSystemAccessRule("
+            "$sid,'FullControl','ContainerInherit,ObjectInherit','None','Allow');"
+            f"$acl.AddAccessRule($rule);[IO.Directory]::SetAccessControl('{escaped}',$acl)"
+        )
+        subprocess.run(["powershell.exe", "-NoProfile", "-NonInteractive", "-Command", script],
+                       capture_output=True, check=True, timeout=15, env=tool_environment())
     return path
 
 
@@ -285,7 +353,8 @@ def check_budget(root):
         m.require(not path.is_symlink(), "Symlink in owned artifact directory")
         if path.is_file():
             size = path.stat().st_size
-            limit = LIMITS["trace_bytes"] if path.suffix == ".nettrace" else LIMITS["artifact_bytes"]
+            limit = (LIMITS["trace_bytes"] if path.suffix == ".nettrace" else
+                     LIMITS["json_bytes"] if path.suffix in (".json", ".csv") else LIMITS["artifact_bytes"])
             m.require(size <= limit, "budget_exceeded")
             total += size
     m.require(total <= LIMITS["total_bytes"], "budget_exceeded")
@@ -366,7 +435,7 @@ class Command:
                 text = sanitize(stream.read(LIMITS["log_bytes"]).decode("utf-8", errors="replace"))
             texts.append(text)
             clean = path.with_suffix(".log")
-            clean.write_text(text, encoding="utf-8")
+            clean.write_text(text, encoding="utf-8", newline="")
             logs.append(m.file_record(clean))
             unlink_closed(path)
         code = self.process.returncode
@@ -378,15 +447,18 @@ class Command:
         return result
 
 
-def run_tool(arguments, cwd, environment, root, phase, timeout=180):
+def run_tool(arguments, cwd, environment, root, phase, timeout=180, monitor=None):
     command = None
     try:
         command = Command(arguments, cwd, environment, root, phase)
-        while command.process.poll() is None:
+        while True:
             command.check()
+            if monitor:
+                monitor()
             m.require(time.monotonic() - command.start < timeout, "timeout")
+            if command.process.poll() is not None:
+                break
             time.sleep(.05)
-        command.check()
         return command.finish()
     except (OSError, ValueError, KeyboardInterrupt) as error:
         issue = "cancelled" if isinstance(error, KeyboardInterrupt) else str(error)
@@ -516,9 +588,9 @@ def preflight(root, environment, identity=None, dump=False):
     return result
 
 
-def verify_tools(dotnet, root, names=("dotnet-trace", "dotnet-counters", "dotnet-dump")):
+def verify_tools(dotnet, root, names=("dotnet-trace", "dotnet-counters", "dotnet-dump"), monitor=None):
     pinned = m.read_json(REPO / ".config" / "dotnet-tools.json")["tools"]
-    host = run_tool([dotnet, "--info"], REPO, tool_environment(), root, "diagnostics-host")
+    host = run_tool([dotnet, "--info"], REPO, tool_environment(), root, "diagnostics-host", monitor=monitor)
     architecture = re.search(r"Architecture:\s+(x64|x86|arm64|arm)\b", host.get("stdout", ""))
     expected = {"amd64": "x64", "x86_64": "x64", "aarch64": "arm64",
                 "arm64": "arm64", "x86": "x86", "i386": "x86", "armv7l": "arm"}.get(platform.machine().lower())
@@ -528,17 +600,17 @@ def verify_tools(dotnet, root, names=("dotnet-trace", "dotnet-counters", "dotnet
     for name in names:
         m.require(pinned[name]["version"] == TOOL_VERSION and pinned[name]["rollForward"], "Unexpected tool pin")
         prefix = [dotnet, "tool", "run", name, "--"]
-        version = run_tool(prefix + ["--version"], REPO, tool_environment(), root, name + "-version")
+        version = run_tool(prefix + ["--version"], REPO, tool_environment(), root, name + "-version", monitor=monitor)
         if version["status"] != "collected":
             m.require(re.search(r"(?i)dotnet tool restore|cannot find a tool|has not been restored",
                                 version.get("stdout", "") + version["stderr"]),
                       "Diagnostics tool probe failed: " + version["stderr"])
-            restore = run_tool([dotnet, "tool", "restore"], REPO, tool_environment(), root, "tool-restore")
+            restore = run_tool([dotnet, "tool", "restore"], REPO, tool_environment(), root, "tool-restore", monitor=monitor)
             m.require(restore["status"] == "collected", "Pinned tool restore failed: " + restore["stderr"])
-            version = run_tool(prefix + ["--version"], REPO, tool_environment(), root, name + "-version")
+            version = run_tool(prefix + ["--version"], REPO, tool_environment(), root, name + "-version", monitor=monitor)
         m.require(version["status"] == "collected" and version["stdout"].strip().startswith(TOOL_VERSION + "+"),
                   "Incompatible diagnostics tool version")
-        help_result = run_tool(prefix + ["collect", "--help"], REPO, tool_environment(), root, name + "-help")
+        help_result = run_tool(prefix + ["collect", "--help"], REPO, tool_environment(), root, name + "-help", monitor=monitor)
         required = ["--process-id", "--output"]
         if name != "dotnet-dump":
             required += ["--resume-runtime"]
@@ -548,7 +620,7 @@ def verify_tools(dotnet, root, names=("dotnet-trace", "dotnet-counters", "dotnet
     return records
 
 
-def collect_dump(document, reason, output_dir):
+def collect_dump(document, reason, output_dir, monitor=None):
     root, command, dump = None, None, None
     result = {"published": False, "publication_reason": "Private local raw dump; no maintainer encryption configured"}
     phase = "hypothesis"
@@ -556,6 +628,7 @@ def collect_dump(document, reason, output_dir):
         m.require(reason in REASONS and isinstance(document.get("hypothesis"), str)
                   and document["hypothesis"].strip() and document.get("profiling_replay") is True,
                   "A recorded retention/growth/RSS hypothesis and separate profiling replay are required")
+        m.require(LIMITS["collections"] >= 1, "Collection count budget exceeded")
         phase = "select"
         identity = document["identity"]
         select_compiler_process([snapshot_process(identity["pid"])], identity)
@@ -564,7 +637,7 @@ def collect_dump(document, reason, output_dir):
         environment = document.get("environment", target_environment(root))
         result["preflight"] = preflight(root, environment, identity, dump=True)
         dotnet = identity["executable"]
-        tools = verify_tools(dotnet, root, ("dotnet-dump",))
+        tools = verify_tools(dotnet, root, ("dotnet-dump",), monitor=monitor)
         result.update(reason_for_dump=reason, hypothesis=sanitize(document["hypothesis"]),
                       identity=identity, tools=tools, dump_type="Heap")
         select_compiler_process([snapshot_process(identity["pid"])], identity)
@@ -572,7 +645,7 @@ def collect_dump(document, reason, output_dir):
         dump = root / "heap.dmp"
         command = run_tool(tools["dotnet-dump"]["command"] + [
             "collect", "--process-id", str(identity["pid"]), "--type", "Heap", "--output", str(dump)],
-            REPO, tool_environment(environment), root, phase, timeout=120)
+            REPO, tool_environment(environment), root, phase, timeout=120, monitor=monitor)
         result["command"] = command
         m.require(command["status"] == "collected", command["reason"] if "reason" in command else "tool_failure")
         select_compiler_process([snapshot_process(identity["pid"])], identity)
@@ -582,7 +655,7 @@ def collect_dump(document, reason, output_dir):
         phase = "dump-validate"
         validation = run_tool(tools["dotnet-dump"]["command"] + [
             "analyze", str(dump), "-c", "eeversion", "-c", "dumpheap -stat", "-c", "exit"],
-            REPO, tool_environment(), root, phase, timeout=120)
+            REPO, tool_environment(), root, phase, timeout=120, monitor=monitor)
         result["validation"] = validation
         text = validation["stdout"] + validation["stderr"]
         m.require(not re.search(r"(?i)unsupported.*debugging interface|debugging interface.*not supported", text),
@@ -590,9 +663,13 @@ def collect_dump(document, reason, output_dir):
         m.require(validation["status"] == "collected", validation.get("reason", "tool_failure"))
         m.require(re.search(r"Total\s+(?:\d{1,3}(?:,\d{3})+|\d+)\s+objects", text)
                   and not re.search(r"(?i)failed to|invalid dump|could not|error:", text), "corrupt_artifact")
+        check_budget(root)
         result.update(status="collected", artifact=dict(m.file_record(dump), size_bytes=dump.stat().st_size),
                       retained_heap_bytes=None,
                       retention_reason="Heap snapshot includes unreachable objects; no live/post-GC retained-byte claim")
+        result.update(schema_version=1, kind="dump-evidence", profiler_attached=True, acceptance_eligible=False)
+        m.write_json(root / "dump-evidence.json", result)
+        check_budget(root)
     except (ValueError, OSError, KeyError, TypeError, subprocess.SubprocessError) as error:
         issue = ("permission_denied" if isinstance(error, PermissionError) else
                  "early_exit" if isinstance(error, ProcessLookupError) else str(error))
@@ -601,6 +678,7 @@ def collect_dump(document, reason, output_dir):
                                        failed.get("stderr", "") if failed else str(error), issue))
         if dump and dump.is_file():
             result["incomplete_artifact"] = remove_incomplete(dump, root)
+            result.pop("artifact", None)
     result.update(schema_version=1, kind="dump-evidence", profiler_attached=True, acceptance_eligible=False)
     if root:
         m.write_json(root / "dump-evidence.json", result)
@@ -682,6 +760,7 @@ def collect_profile(manifest, compiler, output_dir, dump_reason=None, hypothesis
     phase = "validate"
     try:
         evidence.update(collector=m.file_record(__file__), reducer=m.file_record(HERE / "AnalyzeTrace.fsx"))
+        m.require(LIMITS["collections"] >= evidence["collection_count"], "Collection count budget exceeded")
         m.require(dump_reason is None or (dump_reason in REASONS and isinstance(hypothesis, str)
                                          and hypothesis.strip()), "Dump requires a recorded hypothesis")
         records = frozen_inputs(manifest, compiler)
@@ -745,7 +824,14 @@ def collect_profile(manifest, compiler, output_dir, dump_reason=None, hypothesis
         dumped = False
         last_identity = identity
         profiler_exit_at = None
+
+        def monitor():
+            for command in (target, trace, counters):
+                command.check()
+            m.require(time.monotonic() - target.start < LIMITS["duration_seconds"], "timeout")
+
         while True:
+            monitor()
             if sys.platform == "linux":
                 waited, status, usage_now = os.wait4(target.process.pid, os.WNOHANG)
                 if waited:
@@ -754,17 +840,13 @@ def collect_profile(manifest, compiler, output_dir, dump_reason=None, hypothesis
                     break
             elif target.process.poll() is not None:
                 break
-            target.check()
-            trace.check()
-            counters.check()
-            m.require(time.monotonic() - target.start < LIMITS["duration_seconds"], "timeout")
             if trace.process.poll() is not None or counters.process.poll() is not None:
                 if profiler_exit_at is None:
                     profiler_exit_at = time.monotonic()
                 # EventPipe closes during CLR shutdown, before the OS process handle signals exit.
                 m.require(time.monotonic() - profiler_exit_at < 2, "Profiler exited before target")
             if dump_reason and not dumped and time.monotonic() - resume >= 2:
-                evidence["dump"] = collect_dump(process_document, dump_reason, root / "private-dump")
+                evidence["dump"] = collect_dump(process_document, dump_reason, root / "private-dump", monitor=monitor)
                 dumped = True
             time.sleep(.05)
         ended = time.monotonic()
@@ -814,6 +896,9 @@ def collect_profile(manifest, compiler, output_dir, dump_reason=None, hypothesis
             summary = classify_failure("timings", issue=evidence["timings"]["reason"])
         if dump_reason and evidence["dump"]["status"] != "collected":
             summary = classify_failure("dump", issue=evidence["dump"]["reason"])
+        if summary["status"] == "collected":
+            phase = "artifacts"
+            validate_profile_artifacts(evidence)
         evidence["status"] = summary["status"]
     except (ValueError, OSError, KeyError, TypeError, subprocess.SubprocessError, KeyboardInterrupt) as error:
         failed = next((c for c in reversed(evidence["commands"]) if c["phase"] == phase), {})
@@ -834,8 +919,7 @@ def collect_profile(manifest, compiler, output_dir, dump_reason=None, hypothesis
             evidence["status"] = "blocked_collection"
         if lock_owned:
             lock.rmdir()
-    trace_complete = any(c["phase"] == "trace" and c["exit_status"] == 0
-                         and "Trace completed." in c.get("stdout", "") for c in evidence["commands"])
+    trace_complete = trace_completed(evidence)
     incomplete = []
     for path in root.rglob("*"):
         if path.is_file() and path.suffix in (".nettrace", ".binlog", ".dmp", ".etlx"):
@@ -844,6 +928,8 @@ def collect_profile(manifest, compiler, output_dir, dump_reason=None, hypothesis
                 incomplete.append(remove_incomplete(path, root))
     if incomplete:
         evidence["incomplete_artifacts"] = incomplete
+    m.write_json(root / "evidence-manifest.json", evidence)
+    m.write_json(root / "profile-summary.json", summary)
     try:
         check_budget(root)
     except ValueError as error:

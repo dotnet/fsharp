@@ -44,7 +44,11 @@ globally upgraded. The checked v8 redirected-output startup marker is
 Original `.nettrace`, pinned TraceEvent reductions, System.Runtime CSV,
 sanitized command/stdout/stderr records, source hashes, provider keywords,
 intervals and completeness status stay together. `analyze` verifies artifact
-hashes and reduction identity; neither an empty file nor an exporter exit code
+hashes, reduction identity and exact counter/CSV agreement. Timing evidence
+requires successful build/extraction records, a hashed binlog and extractor,
+and hashed output containing the recorded project-tagged timing rows.
+Requested dumps must retain their verified identity, successful tool records
+and hashed private artifact. Neither a status flag nor an exporter exit code
 alone is evidence.
 
 The summary keeps these quantities separate:
@@ -66,7 +70,11 @@ Counter timestamps are exporter wall-clock observations, not process elapsed
 time. Tool globalization is invariant; the adapter also recognizes the pinned
 Windows en-US timestamp spelling. Counter coverage is checked against the
 observed trace interval, allowing one counter interval at each edge, rather
-than charging diagnostic-tool startup time to the target. Allocation events
+than charging diagnostic-tool startup time to the target. Every observation
+must lie within its time domain (CSV timestamps allow one second of exporter
+rounding); trace allocation buckets may begin before the first event only
+within that event's 100 ms bucket. Numeric inputs and derived sums, integrals
+and unit conversions must remain finite. Allocation events
 are summed into bounded 100 ms buckets with the original event count retained;
 the bucket reduction does not change the allocation-byte sum.
 Unsupported schemas, timestamps, providers,
@@ -101,7 +109,8 @@ timeouts, empty/corrupt dumps and tool failures retain phase/exit/stderr
 evidence and block the requested collection.
 
 **Raw dumps are private local evidence, never standard public-repository Actions
-artifacts.** Output directories are owner-only (POSIX mode or Windows ACL).
+artifacts.** Output directories are owner-only (POSIX mode or a protected
+Windows DACL granting only the current user access).
 Manifests record `published: false`; no encryption/publishing infrastructure is
 implied. Public summaries still require human review for paths or sensitive
 content.
@@ -110,6 +119,9 @@ Limits are fixed: one replay per invocation, 180 seconds for the target,
 512 MiB per trace, 1 GiB per other artifact, 2 GiB total, 1 MiB per tool stream,
 and 16 MiB per JSON reduction. Dump capture/validation each allow 120 seconds;
 the diagnostic rebuild allows 600 seconds. Only owned children are terminated.
+Target duration and artifact budgets remain monitored during a requested dump,
+including its tool probes and validation. Persisted manifests and summaries
+count toward the disk budget.
 Owned incomplete binaries are hashed and recorded before removal; completed
 traces remain available even if another requested collection fails.
 No binary trace is loaded into Python memory.
@@ -175,6 +187,48 @@ multiple solutions. The explicit frozen compiler project Release build and
 the helper/live diagnostics suites above are the successful scoped validation.
 No source-compiler optimization, cloud dispatch, artifact upload or publication
 was performed.
+
+The fail-closed corrections were validated on 2026-09-19. Regression fixtures
+first failed for counter/file disagreement, missing or invalid timing/dump
+evidence, numeric overflow, out-of-window observations, missing trace completion,
+collection-count and aggregate/metadata budgets. The Windows permission assertion
+also exposed explicit grants left behind by inheritance-only ACL removal.
+The final helper run passes **all 62 tests**, including both real diagnostic
+smoke tests (`revision-suite-final.log`). Artifact-backed analysis and a complete
+mocked collection lifecycle are explicitly synthetic unit fixtures, not live
+performance evidence. Four isolated guard-removal mutations (artifact validation,
+collection count, aggregate budget and owner-only permissions) were all rejected
+by those tests (`revision-mutations.log`).
+
+A fresh frozen-source replay, `revision-compiler/evidence-manifest.json`, verified
+target PID **35716**, creation time **639253760992038550**, and the exact frozen
+dotnet/compiler/response-file command. The target, trace, counters, reducer,
+diagnostic Release build and existing binlog extractor all exited zero.
+The trace has zero lost events and SHA-256
+`ef3299afb3b7a6145a0b9536fd66d30a7816476ae5916a5cc1fa73af6e7add2e`.
+It contains 313,583 stack samples, an allocation-tick estimate of
+33,964,057,056 bytes and a 4,740.2302 ms GC pause union. Independent analysis
+with the corrected collector succeeded (`revision-reanalysis.json`).
+This remains diagnostic evidence, not an acceptance sample or improvement claim.
+
+Validation commands used the retained Python executable under
+`artifacts\compiler-perf-validation\python` because the host's `python` alias
+points to the Microsoft Store:
+
+```powershell
+$env:COMPILER_PERF_LIVE = '1'
+artifacts\compiler-perf-validation\python\python.exe -m unittest discover -s tests\CompilerPerfWorkflow -p "test_*.py" -v
+artifacts\compiler-perf-validation\python\python.exe eng\scripts\compiler_perf\collection.py collect --manifest artifacts\compiler-profile-validation\workload.json --compiler artifacts\compiler-profile-validation\compiler.json --output-dir artifacts\compiler-profile-validation\revision-compiler
+```
+
+The literal root build/test chain still requires a solution selection. Explicit
+Release builds of the compiler and required test fixtures passed, followed by
+`dotnet test --project tests\FSharp.Compiler.Service.Tests\FSharp.Compiler.Service.Tests.fsproj -c Release --filter-class "*SurfaceAreaTest*"`
+(1 passed, `revision-dotnet-test.log`). Missing build-task restore assets and
+test fixture binaries were restored/built before those successful runs.
+All revision logs and raw evidence remain under the same local validation
+directory, with owner-only collection subdirectories; nothing was pushed,
+dispatched or published.
 
 ## Preparation
 
