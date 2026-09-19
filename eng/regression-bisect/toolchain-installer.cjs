@@ -102,12 +102,16 @@ async function startFeed(fs, download, archiveName, productDirectory, version, p
   let active = 0;
   let downloads = 0;
   let error;
-  const server = http.createServer(async (req, res) => {
+  const deliveries = [];
+  const server = http.createServer((req, res) => {
     res.setHeader('Connection', 'close');
     if (++requests > 64 || active >= 4) { res.writeHead(429).end(); return; }
     if (!['GET', 'HEAD'].includes(req.method)) { res.writeHead(405).end(); return; }
     if (req.url !== archiveRoute && !versionRoutes.has(req.url)) { res.writeHead(404).end(); return; }
     active++;
+    deliveries.push(deliver(req, res));
+  });
+  async function deliver(req, res) {
     try {
       if (versionRoutes.has(req.url)) {
         res.setHeader('Content-Type', 'text/plain');
@@ -132,7 +136,7 @@ async function startFeed(fs, download, archiveName, productDirectory, version, p
     } finally {
       active--;
     }
-  });
+  }
   server.requestTimeout = server.headersTimeout = 30_000;
   server.timeout = 60_000;
   server.maxHeadersCount = 32;
@@ -142,14 +146,19 @@ async function startFeed(fs, download, archiveName, productDirectory, version, p
   });
   return {
     url: `http://127.0.0.1:${server.address().port}${prefix}`,
-    verify() {
+    async verify() {
+      // Installer exit and client receipt can precede server-side stream completion.
+      await Promise.all(deliveries);
       if (error) throw new Error(`Loopback archive delivery failed: ${error.message}`, { cause: error });
       if (!downloads) throw new Error('Official installer did not download the verified archive');
     },
-    close: () => new Promise((resolve, reject) => {
-      server.close(cause => cause ? reject(cause) : resolve());
-      server.closeAllConnections();
-    }),
+    async close() {
+      await new Promise((resolve, reject) => {
+        server.close(cause => cause ? reject(cause) : resolve());
+        server.closeAllConnections();
+      });
+      await Promise.all(deliveries);
+    },
   };
 }
 
@@ -279,7 +288,7 @@ async function installArchive(options, deps) {
         '--no-path', '--keep-zip', '--zip-path', archivePath, '--azure-feed', feed.url, '--os', os];
     if (product !== 'sdk') args.push(windows ? '-Runtime' : '--runtime', product, windows ? '-SkipNonVersionedFiles' : '--skip-non-versioned-files');
     await run(args, 1_200_000);
-    feed.verify();
+    await feed.verify();
     const retained = await hashFile(fs, archivePath);
     if (retained.sha512 !== digests.sha512 || retained.sha256 !== digests.sha256)
       throw new Error('Retained archive digest does not match verified download');

@@ -163,6 +163,69 @@ for (const settings of [
 }
 
 for (const os of ['win', 'linux']) {
+  for (const completion of ['success', 'stream error', 'close error', 'installer error']) {
+    test(`awaits archive delivery after installer exit: ${os}, ${completion}`, async t => {
+      const { options, deps, state } = await fixture(t, { os });
+      let reads = 0;
+      let releaseDelivery;
+      let deliveryFinished = false;
+      let signalDeliveryReady;
+      const deliveryReady = new Promise(resolve => { signalDeliveryReady = resolve; });
+      const deliveryAllowed = new Promise(resolve => { releaseDelivery = resolve; });
+      let received;
+      deps.fs = {
+        ...fs,
+        async open(filename, ...args) {
+          if (filename === options.archivePath) assert.equal(deliveryFinished, true);
+          const file = await fs.open(filename, ...args);
+          if (filename !== `${options.archivePath}.download` || ++reads !== 2) return file;
+          signalDeliveryReady();
+          await deliveryAllowed;
+          return {
+            createReadStream(settings) {
+              if (completion === 'stream error') throw new Error('controlled stream failure');
+              return file.createReadStream(settings);
+            },
+            async close() {
+              await file.close();
+              deliveryFinished = true;
+              if (completion === 'close error') throw new Error('controlled close failure');
+            },
+          };
+        },
+      };
+      const run = deps.run;
+      deps.run = async (executable, args, execution) => {
+        const feedIndex = args.indexOf(os === 'win' ? '-AzureFeed' : '--azure-feed');
+        if (feedIndex < 0) return run(executable, args, execution);
+        state.archiveUrl = `${args[feedIndex + 1]}/Sdk/${options.version}/${path.basename(options.archivePath)}`;
+        received = request(state.archiveUrl).then(value => value, error => error);
+        await deliveryReady;
+        await fs.copyFile(`${options.archivePath}.download`, options.archivePath);
+        assert.equal(deliveryFinished, false);
+        // Force installer completion before the server's pending delivery settles.
+        setImmediate(releaseDelivery);
+        return { exitCode: completion === 'installer error' ? 17 : 0, stdout: '', stderr: '' };
+      };
+      if (completion === 'success') {
+        const result = await installArchive(options, deps);
+        assert.equal(result.archive.actualSha512, options.archive.sha512);
+        assert.deepEqual(await fs.readFile(options.archivePath), payload);
+      } else {
+        await assert.rejects(installArchive(options, deps),
+          completion === 'stream error' ? /Loopback archive delivery failed: controlled stream failure/
+            : completion === 'close error' ? /Loopback archive delivery failed: controlled close failure/
+              : /Official installer process exited 17/);
+      }
+      assert.equal(deliveryFinished, true);
+      if (completion === 'stream error' || completion === 'installer error')
+        assert.match((await received).message, /ECONNRESET|socket hang up/);
+      else assert.deepEqual((await received).bytes, payload);
+      await assert.rejects(request(state.archiveUrl), /ECONNREFUSED|ECONNRESET/);
+      await assert.rejects(fs.stat(`${options.archivePath}.download`), { code: 'ENOENT' });
+    });
+  }
+
   for (const product of ['sdk', 'dotnet']) {
     test(`missing nonversioned-file protection is ${product === 'sdk' ? 'allowed' : 'rejected'} for ${product} on ${os}`, async t => {
       const { options, deps, state } = await fixture(t, { os, product });
@@ -175,6 +238,22 @@ for (const os of ['win', 'linux']) {
       }
     });
   }
+}
+
+for (const method of [null, 'HEAD']) {
+  test(`rejects installer success without archive GET: ${method || 'no request'}`, async t => {
+    const { options, deps, state } = await fixture(t);
+    const run = deps.run;
+    deps.run = async (executable, args, execution) => {
+      if (!args.includes('-AzureFeed')) return run(executable, args, execution);
+      state.archiveUrl = `${args[args.indexOf('-AzureFeed') + 1]}/Sdk/${options.version}/${path.basename(options.archivePath)}`;
+      if (method) assert.equal((await request(state.archiveUrl, method)).status, 200);
+      await fs.copyFile(`${options.archivePath}.download`, options.archivePath);
+      return { exitCode: 0, stdout: 'already installed', stderr: '' };
+    };
+    await assert.rejects(installArchive(options, deps), /Official installer did not download the verified archive/);
+    await assert.rejects(request(state.archiveUrl), /ECONNREFUSED|ECONNRESET/);
+  });
 }
 
 test('rejects wrong SHA512 before any process runs', async t => {

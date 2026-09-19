@@ -237,7 +237,10 @@ RID. A loopback-only, bounded
 feed serves the already downloaded and SHA-512-verified archive to that
 installer. This transport boundary records the **actual public download's**
 redirects/digests without reimplementing extraction or trusting a separate HEAD
-request. The official retained archive is hashed again. Supplemental runtime
+request. Verification waits for pending server deliveries and file closure,
+not just installer exit; cleanup also drains deliveries before removing their
+archive. Late delivery errors still fail acquisition. The official retained
+archive is hashed again. Supplemental runtime
 installation uses the official skip-non-versioned-files flag to preserve the
 SDK host. Arcade-owned files are neither edited nor copied.
 
@@ -276,7 +279,7 @@ its uniquely created child directory. It has a ten-minute cancellation deadline.
 Exit 0 means actual acquisition/identity success; exit 2 records the exact
 block, never mocked download success. This is not a source build or live issue run.
 
-On 2026-09-19 at 00:55:06 UTC, that command resolved metadata and completed
+On 2026-09-19 at 01:13:39 UTC, that command resolved metadata and completed
 successfully (exit 0) on Windows x64:
 requested/resolved SDK `10.0.401`, RID `win-x64`, bundled/executing runtime
 `10.0.12`, compiler and FSI assembly `15.2.401.0`, Core assembly `10.1.0.0`,
@@ -296,8 +299,14 @@ files and the required
 `node --test eng\regression-bisect\model.test.cjs eng\regression-bisect\toolchains.test.cjs`
 command (416 passed), plus
 `node --test eng\regression-bisect\toolchains.test.cjs` (166 passed).
-The broader suite above passed all 632 tests without skips, including intake,
-authenticated state replay and installer-boundary coverage. Earlier repair cases reproduced
+The broader suite above passed all 642 tests without skips in three consecutive
+runs, including intake, authenticated state replay and installer-boundary coverage.
+`node --test eng\regression-bisect\toolchain-installer.test.cjs` passed all 47
+tests. Controlled Windows/Linux delivery ordering reproduced six failures before
+synchronization was added. The regression cases now verify pending delivery,
+stream/close errors, cleanup after installer failure, and rejection of success
+without an archive GET (including HEAD-only requests).
+Earlier repair cases reproduced
 seven failures for musl installer arguments, historical host RIDs, and colliding
 trace files. An additional failing case caught missing same-role execution
 evidence hidden by identical config digests. The passing acquisition-to-admission
