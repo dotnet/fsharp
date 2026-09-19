@@ -1237,26 +1237,36 @@ for (const [name, change] of [
   assert.equal(writes(api, "addLabels").length + writes(api, "createComment").length, 0);
 });
 
-for (const [name, fields, selected] of [
-  ["out-of-repository root", { html_url: "https://github.com/Unrelated/Compiler/issues/42" }, 1],
-  ["renumbered root", { number: 87, html_url: "https://github.com/dotnet/fsharp/issues/87" }, 0],
-  ["unrelated host", { html_url: "https://evil.invalid/dotnet/fsharp/issues/42" }, 0],
-  ["inconsistent API number", { html_url: "https://github.com/dotnet/fsharp/issues/87" }, 0],
+for (const [name, fields] of [
+  ["out-of-repository root", { html_url: "https://github.com/Unrelated/Compiler/issues/42" }],
+  ["renumbered root", { number: 87, html_url: "https://github.com/dotnet/fsharp/issues/87" }],
+  ["unrelated host", { html_url: "https://evil.invalid/dotnet/fsharp/issues/42" }],
+  ["inconsistent API number", { html_url: "https://github.com/dotnet/fsharp/issues/87" }],
 ]) test(`repository redirect rejects ${name} without publication`, async () => {
   const api = writableApi();
   const get = api.github.rest.issues.get;
   api.github.rest.issues.get = async (args) => ({ data: { ...(await get(args)).data, ...fields } });
   const manifest = { ...await collect(api), binding: context() };
-  assert.equal(manifest.selected.length, selected);
+  assert.equal(manifest.selected.length, 0);
   const store = casStore();
   const args = { github: api.github, store, repo, manifest, context: context(), bot, now, env: {}, staged: true };
-  if (selected) await assert.rejects(publishBatch({ ...args, output: envelope([proposal(manifest.selected[0])]) }),
-    /Wrong selected repository/);
-  else {
-    assert.equal(manifest.incomplete.length, 1);
-    const result = await publishBatch({ ...args, output: envelope([]) });
-    assert.ok(result.receipts.every((receipt) => receipt.type === "would-save-memory"));
-  }
+  assert.equal(manifest.incomplete.length, 1);
+  const result = await publishBatch({ ...args, output: envelope([]) });
+  assert.ok(result.receipts.every((receipt) => receipt.type === "would-save-memory"));
+  assert.equal(store.writes.length, 0);
+  assert.equal(writes(api, "addLabels").length + writes(api, "createComment").length, 0);
+});
+
+test("publisher independently rejects an out-of-repository selected root before saving progress", async () => {
+  const { api, args, store } = await setup();
+  const item = args.manifest.selected[0];
+  Object.assign(item.snapshot, {
+    url: "https://github.com/other/repo/issues/42",
+    titleSourceId: "other/repo#42:title", bodySourceId: "other/repo#42:body",
+  });
+  item.fingerprint = fingerprintHumanInput(item.snapshot);
+  args.output = envelope([proposal(item)]);
+  await assert.rejects(publishBatch(args), /Wrong selected repository/);
   assert.equal(store.writes.length, 0);
   assert.equal(writes(api, "addLabels").length + writes(api, "createComment").length, 0);
 });

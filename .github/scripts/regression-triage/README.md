@@ -260,3 +260,6 @@ Unknown, stale and omitted historical results retain their pending state without
 starving later reports across collector/publisher restarts.
 Redirect fixtures cover canonical repository identities, linked issue transfers,
 alias deduplication and freshness, while rejecting out-of-scope root identities.
+Transferred roots are reported as incomplete before selection; their pending work
+and history survive while valid reports publish and save progress across restarts.
+Publication independently rejects any foreign root in a selected manifest.

@@ -160,6 +160,9 @@ async function readText(github, repo, number, limits, isLinked = false) {
     || (issue.comments !== undefined && (!Number.isSafeInteger(issue.comments) || issue.comments < 0))) {
     throw new Error("Invalid current issue response");
   }
+  if (!isLinked && `${location[1]}/${location[2]}`.toLowerCase() !== "dotnet/fsharp") {
+    throw new Error("Current issue is outside the publication repository");
+  }
   repo = { owner: location[1], repo: location[2] };
   number = issue.number;
   const prefix = `${repo.owner.toLowerCase()}/${repo.repo.toLowerCase()}#${number}`;

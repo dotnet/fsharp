@@ -80,6 +80,9 @@ Repository renames and linked transfers use the canonical API identity for sourc
 IDs, discussion reads and local references. Aliases deduplicate only when their
 human evidence agrees; a self-alias still requires the final target recheck.
 Publication remains restricted to the original issue number in `dotnet/fsharp`.
+An out-of-repository root is rejected before discussion reads and selection, not
+admitted to a batch that would block other reports. It remains visibly incomplete
+and pending, preserving history while valid reports and discovery progress are saved.
 The manifest is bounded to 4 MiB. The collection step has a ten-minute deadline;
 the agent and publication have fifteen-minute deadlines. Trusted Node watchdogs
 enforce collection/publication deadlines because v0.76.1 discards custom step

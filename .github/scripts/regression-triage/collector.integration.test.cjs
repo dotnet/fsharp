@@ -44,6 +44,47 @@ function stagedCollector({ memory = emptyMemory(), ...options }) {
   } };
 }
 
+for (const number of [1, 87]) for (const timing of ["before collection", "before publication"]) {
+  test(`collector/publisher/restart: root transfer to Other/Repo#${number} ${timing} cannot block valid reports`, async () => {
+    const memory = emptyMemory();
+    memory.pending = [{ number: 1, firstSeenAt: before, historical: true }];
+    memory.issues[1] = { clarification: { status: "published", commentId: 7,
+      url: "https://github.com/dotnet/fsharp/issues/1#issuecomment-7" } };
+    const s = stagedCollector({ memory, issues: [report(2)] });
+    let transferred = timing === "before collection";
+    const get = s.api.github.rest.issues.get;
+    s.api.github.rest.issues.get = async (args) => {
+      if (args.issue_number !== 1) return get(args);
+      s.api.calls.push({ name: "get", ...clone(args) });
+      return { data: transferred ? report(number, { html_url: `https://github.com/Other/Repo/issues/${number}` })
+        : report(1) };
+    };
+    for (let run = 0; run < 3; run++) {
+      if (run === 1) s.api.issues.push(report(3));
+      const args = await s.collect();
+      transferred = true;
+      const result = await publishBatch(args);
+      assert.deepEqual(result.receipts.filter((receipt) => receipt.type === "would-add-label")
+        .map((receipt) => receipt.number), run < 2 ? [run + 2] : []);
+      assert.ok(result.receipts.some((receipt) => receipt.type === "would-save-memory"));
+      assert.ok(result.state.pending.some((entry) => entry.number === 1));
+      assert.equal(result.state.issues[1].readAttempt.at, args.now);
+      assert.deepEqual(result.state.issues[1].clarification, memory.issues[1].clarification);
+      if (run === 0 && timing === "before publication") {
+        assert.equal(result.outcomes.find((item) => item.number === 1).status, "retryable");
+      } else {
+        assert.ok(!args.manifest.selected.some((item) => item.number === 1));
+        assert.deepEqual(args.manifest.incomplete.map((item) => item.number), [1]);
+        assert.ok(args.manifest.errors.some((error) => error.stage === "snapshot" && error.number === 1));
+      }
+      s.restart(result);
+    }
+    assert.ok(s.api.calls.every((call) => call.owner === repo.owner && call.repo === repo.repo),
+      "out-of-scope roots must not initiate foreign discussion reads");
+    assert.deepEqual(s.mutations, []);
+  });
+}
+
 for (const historicalCount of [6, 11]) for (const outcome of ["unknown", "stale", "omitted"]) {
   test(`collector/publisher/restart: ${outcome} historical work cannot starve later reports (${historicalCount} unresolved)`, async () => {
     const memory = emptyMemory();
