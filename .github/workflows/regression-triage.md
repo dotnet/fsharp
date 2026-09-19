@@ -148,7 +148,7 @@ safe-outputs:
         actions: read
       inputs:
         proposals:
-          description: Strict schemaVersion/policyVersion/results JSON batch, at most 65536 bytes and five selected results.
+          description: Strict schemaVersion/policyVersion/results JSON batch, at most 64000 bytes and five selected results.
           required: true
           type: string
       steps:
@@ -270,7 +270,7 @@ argument `proposals`, containing this JSON shape:
 
 Use the supplied policyVersion. Return one result for every selected entry, at
 most five, with no duplicate or unselected issue numbers. Copy the trusted
-fingerprint unchanged. A batch is at most 65536 UTF-8 bytes.
+fingerprint unchanged. A batch is at most 64000 UTF-8 bytes.
 `classification` is exactly `regression`, `not-regression` or `uncertain`.
 `evidence` contains at most 12 exact source citations; positives need at least one.
 Use the snapshot's `titleSourceId`, `bodySourceId`, or human comment `sourceId`

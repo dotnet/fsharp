@@ -115,7 +115,8 @@ function validateProposals(output, manifest) {
   const [item] = output.items;
   keys(item, ["type", "proposals"]);
   requireThat(item.type === OUTPUT_TYPE, "Unsupported output route");
-  const batch = parseJson(item.proposals, 65536);
+  // v0.76.1 HTTP offloads strings above 64000 UTF-16 units. A byte cap also covers Unicode.
+  const batch = parseJson(item.proposals, 64000);
   keys(batch, ["schemaVersion", "policyVersion", "results"]);
   requireThat(batch.schemaVersion === 1 && batch.policyVersion === POLICY_VERSION
     && manifest.policyVersion === POLICY_VERSION, "Unsupported schema/policy");

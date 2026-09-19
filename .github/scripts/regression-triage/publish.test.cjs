@@ -200,6 +200,21 @@ test("duplicate results, wrong batch policy/schema and unknown batch fields fail
   }
 });
 
+for (const [name, suffix] of [["ASCII", "x"], ["Unicode", "\u00e9\u{1f600}"], ["escaped", '"\\\n']]) {
+  test(`proposal UTF-8 byte limit matches HTTP transport (${name})`, async () => {
+    const { args, store, api } = await setup({ issues: [report(42, { body: report().body + suffix })] });
+    const output = envelope(args.manifest.selected.map((item) => proposal(item)));
+    const item = output.items[0];
+    item.proposals += " ".repeat(64000 - Buffer.byteLength(item.proposals));
+    assert.equal(Buffer.byteLength(item.proposals), 64000);
+    assert.equal(validateProposals(output, args.manifest).length, 1);
+    item.proposals += " ";
+    await assert.rejects(publishBatch({ ...args, output }), /JSON size/);
+    assert.equal(store.writes.length, 0);
+    assert.equal(writes(api, "addLabels").length + writes(api, "createComment").length, 0);
+  });
+}
+
 for (const field of ["repository", "runId", "runAttempt", "policyVersion", "collectorRevision", "memoryHead"]) {
   test(`trusted artifact must match independent runtime ${field}`, async () => {
     const { store, args } = await setup();

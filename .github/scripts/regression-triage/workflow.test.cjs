@@ -492,6 +492,9 @@ test("source and pinned generated workflow enforce independent triggers and one 
   assert.deepEqual(Object.keys(safeConfig), ["publish-regression-triage"]);
   assert.deepEqual(Object.keys(safeConfig["publish-regression-triage"].inputs), ["proposals"]);
   assert.equal(safeConfig["publish-regression-triage"].output, ACKNOWLEDGEMENT);
+  assert.match(safeConfig["publish-regression-triage"].inputs.proposals.description, /at most 64000 bytes/);
+  assert.match(source, /A batch is at most 64000 UTF-8 bytes/);
+  assert.doesNotMatch(source + lock, /65536/);
   const publisher = lock.slice(lock.indexOf("\n  publish_regression_triage:"));
   assert.match(publisher, /needs\.agent\.result == 'success'/);
   assert.match(publisher, /needs\.detection\.result == 'success'/);

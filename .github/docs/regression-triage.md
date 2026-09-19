@@ -40,7 +40,9 @@ launcher after the checksum-verified CLI installation; the shared model stays
 unchanged. The detector has the same restrictions: its verdict goes to stdout,
 which the trusted framework records, so it needs no model-side file writes.
 One custom safe output accepts a strict bounded proposal batch; receipt is not
-publication. It must cover every selected report and cite each report itself,
+publication. The batch is at most 64000 UTF-8 bytes, not 64 KiB: this stays
+within v0.76.1 HTTP's 64000-character threshold for replacing large strings with
+file-reference text. It must cover every selected report and cite each report itself,
 not just a linked comparison. Missing-data/tool, no-op and failure-as-issue routes
 are disabled.
 
@@ -150,7 +152,9 @@ node --test (Get-ChildItem .github\scripts\regression-triage -Recurse -Filter *.
 
 Without `GH_AW_RUNTIME` only this external-runtime test is skipped; that is not
 a passing framework handoff gate. It uses the compiled tool configuration,
-official dynamic MCP handler and ingestion, then the real staged publisher.
+official tool generation, HTTP server/transport and ingestion, then the real
+staged publisher. Five-result batches exercise the exact byte boundary with
+ASCII, Unicode and escaped text, rejecting oversized output without writes.
 
 Run the deterministic suite before semantic evaluation. Set `$private` to an
 existing directory outside the repository and `$copilot` to a supported Copilot

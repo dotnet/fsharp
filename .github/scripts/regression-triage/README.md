@@ -117,7 +117,11 @@ is preserved as a human veto until a subsequent human Regression application.
 | `dimension` | Optional: `compiler`, `sdk`, `fsharpCore`, `runtime`, `targetFramework`, `configuration`, `producer`, `consumer` |
 | `missingFact` | Nonblank string <= 1000 characters for `uncertain`; otherwise `null` |
 | `clarification` | `null`, or for uncertainty only: `known-good`, `affected-component`, `comparable-configuration`, `producer-consumer` |
-| JSON bounds | Envelope <= 128 KiB, batch <= 64 KiB, nesting <= 16 |
+| JSON bounds | Envelope <= 128 KiB, batch <= 64000 UTF-8 bytes, nesting <= 16 |
+
+The batch byte cap also keeps the string within the pinned HTTP transport's
+64000 UTF-16-unit limit. Larger strings are replaced with file-reference text,
+which is not a valid proposal and cannot authorize publication.
 
 Unknown fields, duplicate envelopes/results/JSON keys, unsupported policies, bot
 citations, invented sources, altered fingerprints and incomplete snapshots fail
