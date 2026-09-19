@@ -12,7 +12,8 @@ Records under `fixtures` are not reproduction approvals.
 Run the dependency-free suite from the repository root:
 
 ```powershell
-node --test eng\regression-bisect\model.test.cjs eng\regression-bisect\intake.test.cjs eng\regression-bisect\state.test.cjs eng\regression-bisect\toolchains.test.cjs eng\regression-bisect\toolchain-installer.test.cjs
+$tests = @(Get-ChildItem 'eng\regression-bisect' -Filter '*.test.cjs' | ForEach-Object FullName)
+node --test @tests
 ```
 
 ## Trust boundary
@@ -129,7 +130,7 @@ producer, and package fingerprints. Admission also compares runner environments
 across all endpoints and **reproduction** SDK/runtime identities across the two
 source endpoints. A source cell can additionally carry `buildToolchain`:
 `sourceSha`, `globalJsonDigest`, `evidenceDigest`, `requestedSdk`,
-`requestedTools`, `requestedCompilerRuntime`, verified `sdk` and
+`requestedTools`, `requestedCompilerRuntime`, the full SDK `archive` receipt, verified `sdk` and
 `compilerRuntime` product identities, and `verified: true`, `supported: true`.
 Requested/resolved versions and source SHA must agree. Both source endpoints
 must supply this field or both omit it; legacy observations retain the original
@@ -207,16 +208,59 @@ never interchangeable. Missing or inconsistent graph evidence is untestable.
 | `verifyToolchainIdentity({ policy, toolchain, identity })` | `{ status: "verified" }` only for matching requested/resolved SDK, host/SDK paths, RID/architecture, archive hashes, bundled F# identities, and all exact runtime requirements. The acquisition request binds `toolchain.installationRoot`; evidence cannot nominate a different root. This validates captured evidence, not the authenticity of arbitrary JSON. |
 
 Failures return `{ status: "untestable", outcome, error: { stage, code, message },
-attempts }`, not reproduction pass/failure. Missing historical metadata,
-unavailable/checksum-less archives, unsupported installer flags or declarations,
+attempts }`, not reproduction pass/failure. Missing archives, insufficient
+checksum provenance, network failures, unsupported installer flags or declarations,
 SDK/tool declaration disagreement, changed source files, and unfulfilled runtime
 requirements fail closed. Historical previews are allowed, but never selected
-as released stable. Public preview fallback uses an official archive SHA-512
-sidecar; missing checksum provenance cannot become success through a host SDK.
+as released stable. `checksum-provenance` means an available archive lacks
+approved provenance or fails its integrity checks; it is distinct from
+`unavailable-sdk`/`unavailable-runtime`
+(missing archives) and `network-failure`. None is a positive reproduction.
 Exact `global.json.tools.runtimes` arrays (`dotnet`, `aspnetcore`,
 `windowsdesktop`, optionally suffixed with the matching architecture) become
 separate build-runtime requirements. Unevaluated MSBuild version expressions
 and foreign-architecture requirements are explicitly untestable, not guessed.
+Acquisition binds each requirement to the archive that supplied it, including
+runtimes already bundled in the SDK; missing supplemental receipts cannot be
+hidden by an incomplete installation list.
+
+Archive provenance is discriminated, not inferred from the existence of a hash:
+
+* `publisher-checksum` retains the independent SHA-512 in `archive.sha512`.
+  Release metadata and official sidecars always take precedence. Released
+  stable selection still requires official release metadata and its checksum.
+* `approved-official-https-measured` has **no** publisher `sha512` field.
+  It requires an exact entry in the pinned policy's `toolchains.measuredArchives`,
+  including historical source SHA, prerelease SDK version, product, RID, HTTPS
+  origin and URL, permitted redirect URLs, byte/time bounds and approval revision.
+  `approvalDigest` is the canonical fingerprint of that entry, not authorization
+  supplied by an issue. Adding a public feed does not authorize measured downloads.
+
+The initial exceptions cover only source
+`5a8b9adb034f420a5c2c1f577670c5eeeb454b7e`, SDK
+`11.0.100-rc.1.26420.103`, product `sdk`, RID `win-x64`, and its exact
+`builds.dotnet.microsoft.com` and `ci.dot.net/public` archives. They permit no redirects, at most 1 GiB,
+and a five-minute download. Other revisions/platforms need an explicitly reviewed
+policy entry or publisher checksum; no version substitution is allowed.
+The recorded approval revision is the preserved recovery base
+`2ec6de6837b5b367e1f1186e850b8faa2d188b16`; authorization still comes from the
+trusted policy checkout, never the existence of that SHA or digest alone.
+After both sidecars are checked, bounded availability probes select an approved
+exact archive before installation; the installer itself has no public fallback.
+
+Both branches retain attempted metadata/sidecar sources and HTTP statuses,
+requested and final archive URLs, every redirect, `bytesReceived`, receipt time,
+measured SHA-256/`actualSha512`, and `retained` path/size/digests. The same
+discriminator appears in requested/resolved identities, installation receipts,
+workspace results and source observation build-toolchain records. Changing the
+receipt or claiming a measured digest is a publisher checksum is rejected.
+Before reproduction reuse, retained archives must still exist as regular,
+non-linked files and are rehashed; missing or changed bytes invalidate reuse.
+Read-only file attributes alone are not proof of immutable identity.
+An installation list cannot replace or omit the SDK receipt, and supplemental
+runtime receipts are verified separately. Receipt/schema and trusted-policy
+changes invalidate old checkpoint evidence rather than upgrading old results
+into measured or publisher-verified claims.
 
 The shared boundaries are injectable: `fs` (`node:fs/promises`), `clock`
 (`() => Date`), `http(url, { destination?, method? })`, `run(executable, args,
@@ -234,7 +278,7 @@ script parameter support, then invokes the official installer with exact
 version/architecture and archive-retention flags. Linux-musl archive requests
 use the official `--os linux-musl` option rather than dropping the ABI from the
 RID. A loopback-only, bounded
-feed serves the already downloaded and SHA-512-verified archive to that
+feed serves the already downloaded and provenance-verified archive to that
 installer. This transport boundary records the **actual public download's**
 redirects/digests without reimplementing extraction or trusting a separate HEAD
 request. Verification waits for pending server deliveries and file closure,
@@ -242,7 +286,8 @@ not just installer exit; cleanup also drains deliveries before removing their
 archive. Reads stop at the advertised archive length so a client's completed
 download cannot race a redundant EOF read. Late delivery errors still fail
 acquisition. The official retained
-archive is hashed again. Supplemental runtime
+archive and original download are hashed again and must agree in both SHA-256
+and SHA-512. No second public archive download is permitted. Supplemental runtime
 installation uses the official skip-non-versioned-files flag to preserve the
 SDK host. Arcade-owned files are neither edited nor copied.
 
@@ -386,6 +431,9 @@ The graph can place dependency packages under `Dependency/Shipping`; that is not
 the standalone Core output, and the adapter does not guess between the two.
 Inventory verifies bytes, assembly versions, runtimeconfigs and the Core package,
 rejecting missing outputs, SDK-bundled compiler fallback and redirected artifacts.
+Only the selected compiler, FSI, tasks, Core and Core package need out-of-process
+metadata inspection. Every dependency is still hashed before and after execution;
+large localized inventories cannot exceed Windows' process command-line limit.
 No timestamp selection or shared same-version Core cache is used. Exact acquisition
 uses the trusted checkout's existing Arcade acquisition helper, not a helper
 assumed to exist in historical source. The evidence helper likewise comes from
@@ -444,8 +492,9 @@ sprint-range whitespace checks passed.
 The real Windows x64 smoke pinned
 `5a8b9adb034f420a5c2c1f577670c5eeeb454b7e`, build instance
 `2f54fabe-fcb6-424d-a63e-dcd508028681`. Its accurate result is
-**untestable / unavailable-sdk**, exit 2: exact SDK
-`11.0.100-rc.1.26420.103` has no verified public archive available to acquisition.
+**untestable / unavailable-sdk**, exit 2, as recorded by the old adapter.
+That reason conflated absent checksum provenance with archive availability:
+the exact SDK `11.0.100-rc.1.26420.103` archive itself returned HTTP 200.
 Release metadata returned 200, but
 `Sdk/11.0.100-rc.1.26420.103/dotnet-sdk-11.0.100-rc.1.26420.103-win-x64.zip.sha512`
 returned 404 under both `https://builds.dotnet.microsoft.com/dotnet` and
@@ -455,6 +504,65 @@ so no build binlog or local FSI result exists; this is not a green clean build
 or compiler suite. All 18 evidence digests were verified. Retained evidence is
 `Q:\fsharp-workspace-smoke-XI1JHA\result.json`, SHA-256
 `9edb1e7f3786d4df56ad42989420e2de81a2cc518e96f9db3ebf8e48ffd609a5`.
+
+### Fresh historical acceptance: 2026-09-19
+
+Fresh evidence is retained separately under
+`Q:\rb912-s5-20260919-acceptance`. The original failed result above was
+rehashed and remains unchanged; no earlier reproduction artifacts were reused.
+The supplied archive-200/checksum-404 case is a deterministic RED fixture.
+During the fresh live run, the exact build-feed archive instead returned 404;
+the existing official CI feed returned 200 for the same version/RID. Its separate
+exact policy approval was used without substituting SDKs or weakening stable
+release checks.
+
+The clean workspace command completed with exit 0 at source
+`5a8b9adb034f420a5c2c1f577670c5eeeb454b7e`, build instance
+`6444a4de-52d5-40f6-b065-8969b515357c`. Bootstrap, Release product build, Core
+pack, evidence-helper build and two **built FSI** executions succeeded.
+Requested/resolved SDK was `11.0.100-rc.1.26420.103`; executing runtime was
+`11.0.0-rc.1.26420.103`, Windows x64. Historical declarations stayed unchanged.
+The measured CI archive contained 332,886,529 bytes, with SHA-256
+`30a36953c458c07ae367c0642d5922973ad84c56be7c7bb8badb86dfa4fd9369`.
+Both measured digests, public sources/statuses, zero redirects, retained archive
+identity and same-byte installer receipt are preserved in the acquisition evidence.
+This is **approved measured HTTPS**, not a claimed publisher checksum.
+
+`verified-products.json` combines that fresh product with a newly acquired
+publisher-verified stable SDK `10.0.401` / runtime `10.0.12`.
+The full released-and-source reproduction command also exited 0:
+**43 scenarios matched their expected outcomes**: 23 positive passes,
+6 intended product failures and 14 intentional identity rejections.
+The latter are negative controls, not accepted product passes. All four source
+compiler/tasks/targets/Core fallback controls compiled successfully before
+`wrong-identity` rejection. Both phases exercised real separate project/TFM
+builds, Debug/Release and language/nullability settings, FSI, runtime execution,
+diagnostics, implicit/explicit/central Core references and immutable older-producer
+consumption. The final audit rehashed the older DLL/package, both SDK archives,
+all inventoried products and all 45 clean-workspace evidence files.
+
+Principal records, relative to that storage root:
+
+| Record | SHA-256 |
+| --- | --- |
+| `fsharp-workspace-smoke-b3FroQ\result.json` | `b9c229bdc3d33001fd4462e6630371e9992b5dfdab070d3668c4be79ed1045b8` |
+| `repro-both-01\smoke-results.json` | `0b14541fa738841a53f3c9c87dc4e82ae1070bd1240eee63461110c1724215be` |
+| `acceptance-audit-final.json` | `ecdd073f5f1856e4d316ebab4a9324c4c040291cdd7e0c87bd53f290426d030d` |
+
+Earlier fresh failures and their logs/receipts remain alongside these records:
+archive absence, Windows environment case aliases, restore/build helper-TFM
+disagreement and an oversized inventory command line. Their corrections have
+deterministic regression coverage; none of those failed runs is relabelled green.
+The final scoped suite passed **858 tests**, with no failures or skips.
+All 17 changed/new JavaScript files passed syntax checks; repository formatting
+changed no files, and whitespace checks passed.
+
+Commands used (the reproduction output directory must be new when repeating):
+
+```powershell
+node eng\regression-bisect\workspace.smoke.cjs --run 5a8b9adb034f420a5c2c1f577670c5eeeb454b7e 'Q:\fsharp-worktrees\.bare' 'Q:\rb912-s5-20260919-acceptance' 'C:\Program Files\Git\cmd\git.exe'
+node eng\regression-bisect\repro.smoke.cjs 'Q:\rb912-s5-20260919-acceptance\verified-products.json' 'Q:\rb912-s5-20260919-acceptance\repro-both-01'
+```
 
 ## Reproduction execution
 
@@ -572,11 +680,18 @@ Build the reader with the explicit
 `MSBuild.StructuredLogger` dependency reads binlogs, and its dependency-free
 `netstandard2.0` hook can run on older Core runtimes independently of the
 reader's .NET 8+ host.
+The workspace builds it against the acquired runtime with
+`-p:EvidenceTargetFramework=net<major>.0`; this property survives restore graph
+evaluation, unlike overriding the special `TargetFramework` global property.
+The hook retains its own `netstandard2.0` target. Helper restore uses the
+repository's public `dotnet-public` mirror, not a machine feed or global cache.
 
 The smoke covers FSI, Debug/Release projects, successful compilation followed by
 an intended runtime failure, intended diagnostics, late compiler flag overrides,
 explicit/central Core package overrides, two inner TFMs on Windows, and an immutable released
-producer. It also covers nullable settings and late overrides, app/library
+producer. Source-only negative cases successfully compile with SDK compiler,
+tasks, targets or Core fallbacks, then require `wrong-identity` rejection.
+It also covers nullable settings and late overrides, app/library
 references with same/different TFMs, and collectible Core unloading with and
 without the observation hook. Its source-evaluation control illustrates how rebuilding a producer
 without its old flags would hide the failure; candidate consumers only receive

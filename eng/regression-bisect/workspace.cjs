@@ -49,7 +49,9 @@ function failure(w, stage, error) {
     const code = w?.signal?.aborted ? (w.options.signal?.aborted ? "cancelled" : "timeout") : error.code ?? stage;
     return {
         status: "untestable", outcome: untestable(code === "timeout" ? "timeout" :
-            { build: "build-failure", identity: "wrong-identity", sdk: "unavailable-sdk", runtime: "unavailable-runtime" }[stage] ?? "setup-failure"),
+            ["checksum-provenance", "network-failure"].includes(code) ? code :
+                stage === "sdk" && ["command-failure", "installation-failure"].includes(code) ? "setup-failure" :
+                { build: "build-failure", identity: "wrong-identity", sdk: "unavailable-sdk", runtime: "unavailable-runtime" }[stage] ?? "setup-failure"),
         error: { stage, code, message: error.message },
     };
 }
@@ -211,9 +213,9 @@ async function helper(w) {
     const tfm = `net${runtime.split(".")[0]}.0`;
     const output = path.join(directory, "output");
     await fs.writeFile(path.join(directory, "NuGet.Config"),
-        '<configuration><packageSources><clear /><add key="public" value="https://api.nuget.org/v3/index.json" /></packageSources></configuration>');
+        '<configuration><packageSources><clear /><add key="public" value="https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet-public/nuget/v3/index.json" /></packageSources></configuration>');
     await invoke(w, "helper", w.toolchain.hostPath, ["build", path.join(directory, "Evidence.csproj"),
-        "-c", "Release", "-o", output, `-p:TargetFramework=${tfm}`, "-nr:false", "--nologo"], { cwd: directory });
+        "-c", "Release", "-o", output, `-p:EvidenceTargetFramework=${tfm}`, "-nr:false", "--nologo"], { cwd: directory });
     w.helper = { executable: w.toolchain.hostPath, dll: path.join(output, "Evidence.dll"),
         runtimeVersion: runtime, hook: path.join(output, "Repro.StartupHook.dll") };
 }
@@ -268,8 +270,9 @@ async function inventory(w, rows) {
             files.push({ role: `dependency-${files.length}`, ...await fileIdentity(location, w.sourceDirectory) });
         }
     }
-    const inspected = await inspect(w, files.map(f => f.path));
-    for (const file of files) {
+    const selected = files.filter(f => ["fsi", "compiler", "core", "tasks", "corePackage"].includes(f.role));
+    const inspected = await inspect(w, selected.map(f => f.path));
+    for (const file of selected) {
         const actual = inspected.find(i => path.resolve(i.path) === file.path);
         requireValue(actual?.sha256 === file.sha256, "artifact inspection digest mismatch");
         if (["fsi", "compiler", "core", "tasks"].includes(file.role)) requireValue(actual.assemblyVersion && actual.fileVersion &&
@@ -317,7 +320,8 @@ async function buildRevision(w, dependencies = {}) {
         });
         await evidence(w, "acquisition.json", acquisition);
         if (acquisition.outcome?.reason === "unavailable-runtime") stage = "runtime";
-        requireValue(acquisition.status === "acquired", acquisition.error?.message ?? "toolchain acquisition failed");
+        if (acquisition.status !== "acquired") throw Object.assign(new Error(acquisition.error?.message ?? "toolchain acquisition failed"),
+            { code: acquisition.error?.code });
         w.toolchain = acquisition.identity;
         const oldRoot = w.env.DOTNET_ROOT;
         for (const [key, value] of Object.entries(w.env)) if (value === oldRoot) w.env[key] = w.toolchain.root;
@@ -412,7 +416,7 @@ async function finalize(w, result) {
     const outcome = {
         ...result, buildInstanceId: w.buildInstanceId, actualSourceSha: w.actualSourceSha,
         requested: w.options.request, adapter: w.adapter, globalJson: w.globalJson,
-        toolchain: w.toolchain ? { sdkVersion: w.toolchain.sdkVersion, requested: w.declaration,
+        toolchain: w.toolchain ? { sdkVersion: w.toolchain.sdkVersion, requested: w.toolchain.requested, archive: w.toolchain.archive,
             acquisitionDigest: fingerprintInput(w.toolchain) } : w.declaration,
         product: w.product, commands: w.commands, evidence: w.evidence, durationMs: Date.now() - w.started,
     };

@@ -7,7 +7,8 @@
   <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net8.0</TargetFramework>
+    <EvidenceTargetFramework Condition="'$(EvidenceTargetFramework)' == ''">net8.0</EvidenceTargetFramework>
+    <TargetFramework>$(EvidenceTargetFramework)</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>

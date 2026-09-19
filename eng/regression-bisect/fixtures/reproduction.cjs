@@ -2,7 +2,7 @@ const fs = require("node:fs/promises");
 const os = require("node:os");
 const path = require("node:path");
 const { hash } = require("../toolchain-io.cjs");
-const { manifest, seal } = require("./contracts.cjs");
+const { manifest, seal, archiveReceipt } = require("./contracts.cjs");
 
 async function fixture(t, { kind = "source", executable = false, tfms = ["net10.0"], configuration = "Release" } = {}) {
     const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "repro-contract-")));
@@ -54,7 +54,9 @@ async function fixture(t, { kind = "source", executable = false, tfms = ["net10.
             path: path.dirname(path.dirname(runtime.path)), sha256: runtime.sha256 }],
     };
     const url = "https://builds.dotnet.microsoft.com/dotnet/Sdk/10.0.100/dotnet-sdk-10.0.100-win-x64.zip";
-    toolchain.archive = { url, redirectUrl: url, sha512: "a".repeat(128), actualSha512: "a".repeat(128), sha256: hash("archive") };
+    toolchain.archive = archiveReceipt({ name: "sdk.zip", url, rid: "win-x64", architecture: "x64",
+        provenance: { kind: "publisher-checksum" } }, (await file("sdk.zip", "archive")).path, "archive");
+    toolchain.archive.sha512 = toolchain.archive.actualSha512;
     toolchain.requested = {
         kind: "released", platform: { os: "windows", architecture: "x64", rid: "win-x64" },
         installationRoot: sdkRoot, sdkVersion: "10.0.100", toolsVersion: "10.0.100",

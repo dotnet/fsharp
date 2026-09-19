@@ -28,7 +28,8 @@ async function main() {
     });
     await fs.writeFile(path.join(root, "result.json"), JSON.stringify(result, null, 2), { flag: "wx" });
     console.log(JSON.stringify({ outcome: result.outcome, buildInstanceId: result.buildInstanceId,
-        actualSourceSha: result.actualSourceSha, error: result.error, result: path.join(root, "result.json") }, null, 2));
+        actualSourceSha: result.actualSourceSha, archiveProvenance: result.toolchain?.archive?.provenance,
+        error: result.error, result: path.join(root, "result.json") }, null, 2));
     process.exitCode = result.outcome.outcome === "pass" ? 0 : 2;
 }
 

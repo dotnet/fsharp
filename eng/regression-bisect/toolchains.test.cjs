@@ -5,7 +5,7 @@ const os = require("node:os");
 const path = require("node:path");
 const { createHash } = require("node:crypto");
 const { resolveLatestStableSdk, readRevisionToolchain, acquireToolchain, verifyToolchainIdentity } = require("./toolchains.cjs");
-const { policy, admission, observation, seal, digest } = require("./fixtures/contracts.cjs");
+const { policy, admission, observation, seal, digest, archiveReceipt } = require("./fixtures/contracts.cjs");
 const { admitBisection, fingerprintInput } = require("./model.cjs");
 const { capture, publicUrl, createHttp, isolatedEnvironment } = require("./toolchain-io.cjs");
 
@@ -207,22 +207,23 @@ for (const [declarations, expected] of [
 }
 
 function captured(toolchain, root) {
+    const runtime = toolchain.bundledRuntime?.version ?? "10.0.0";
     return {
         sdkVersion: toolchain.sdkVersion, architecture: platform.architecture, rid: platform.rid,
         hostPath: path.join(root, "dotnet.exe"), root, sdkBasePath: path.join(root, "sdk", toolchain.sdkVersion),
         sdks: [{ version: toolchain.sdkVersion, path: path.join(root, "sdk") }],
-        runtimes: [{ name: "Microsoft.NETCore.App", version: "10.0.0", path: path.join(root, "shared", "Microsoft.NETCore.App"), sha256: digest("runtime") }],
-        compilerRuntime: { name: "Microsoft.NETCore.App", version: "10.0.0" },
+        runtimes: [{ name: "Microsoft.NETCore.App", version: runtime, path: path.join(root, "shared", "Microsoft.NETCore.App"), sha256: digest("runtime") }],
+        compilerRuntime: { name: "Microsoft.NETCore.App", version: runtime },
         runtimeExecutions: [],
         files: Object.fromEntries(Object.entries({ compiler: "fsc", fsi: "fsi", core: "FSharp.Core" }).map(([name, assemblyName]) => [name, {
             path: path.join(root, "sdk", toolchain.sdkVersion, "FSharp", `${assemblyName}.dll`),
             sha256: digest(name), assemblyName, assemblyVersion: "10.0.0.0", fileVersion: "10.0.0.0",
         }])),
-        archive: { ...toolchain.archive, sha256: digest(archiveBytes), actualSha512: hash512(archiveBytes), redirectUrl: toolchain.archive.url },
+        archive: archiveReceipt(toolchain.archive, path.join(root, "sdk.zip"), archiveBytes),
     };
 }
 
-for (const [name, edit] of [
+const identityMutations = [
     ["wrong architecture", i => i.architecture = "arm64"],
     ["wrong resolved SDK", i => i.sdkVersion = "11.0.100-rc.1"],
     ["host SDK leakage", i => i.sdks.push({ version: "11.0.100", path: path.resolve("host-sdk") })],
@@ -230,13 +231,16 @@ for (const [name, edit] of [
     ["self-asserted host root", i => { i.root = path.resolve("machine"); i.hostPath = path.join(i.root, "dotnet.exe"); }],
     ["same-version SDK outside root", i => i.sdkBasePath = path.resolve("machine", "sdk", "10.0.401")],
     ["archive mismatch", i => i.archive.actualSha512 = "0".repeat(128)],
+    ["wrong archive RID", i => i.archive.rid = "win-arm64"],
+    ["wrong archive architecture", i => i.archive.architecture = "arm64"],
     ["wrong archive URL", i => i.archive.url = `${feed}/Sdk/wrong.zip`],
     ["unapproved redirect destination", i => i.archive.redirectUrl = "https://unapproved.example/sdk.zip"],
     ["missing runtime", i => i.runtimes = []],
     ["wrong compiler runtime", i => i.compilerRuntime.version = "9.0.0"],
     ["outside Core path", i => i.files.core.path = path.resolve("host-core.dll")],
     ["wrong F# assembly", i => i.files.core.assemblyName = "Other.Assembly"],
-]) {
+];
+for (const [name, edit] of identityMutations) {
     test(`identity fails closed: ${name}`, async () => {
         const { toolchain } = await resolveLatestStableSdk(options(), metadata());
         const identity = captured(toolchain, path.resolve("isolated"));
@@ -324,6 +328,67 @@ test("unavailable historical SDK records public fallback attempts without runnin
     assert.ok(urls.some(url => url.startsWith("https://ci.dot.net/public/")));
     assert.ok(result.attempts.some(a => a.status === 404));
 });
+
+for (const [approved, checksum, archiveStatus = 200, ciStatus = archiveStatus] of [
+    [true, null], [true, null, 404, 200], [false, null], [false, null, 404], [false, null, 503], [true, "sidecar"], [true, "manifest"],
+]) {
+    test(`observed historical archive: approved=${approved}, checksum=${checksum}, HTTP=${archiveStatus}/${ciStatus}`, async t => {
+        const version = "11.0.100-rc.1.26420.103";
+        const { result: { toolchain } } = await source(t, version);
+        toolchain.sourceSha = approved ? "5a8b9adb034f420a5c2c1f577670c5eeeb454b7e" : "b".repeat(40);
+        const url = archive(version).url;
+        const requests = [];
+        const deps = checksum === "manifest" ? metadata([["11.0", "sts", [release(version)]]]) : metadata();
+        const documents = deps.http;
+        deps.http = async (requested, settings = {}) => {
+            requests.push({ url: requested, method: settings.method ?? "GET" });
+            if (requested.endsWith(".sha512")) return { status: checksum === "sidecar" ? 200 : 404, url: requested,
+                redirects: [], bytes: Buffer.from(checksum === "sidecar" ? hash512(archiveBytes) : "") };
+            if (requested.endsWith(".zip")) return {
+                status: requested.startsWith(feed) ? archiveStatus : ciStatus, url: requested, redirects: [],
+                bytes: archiveBytes, size: archiveBytes.length,
+                sha256: digest(archiveBytes), sha512: hash512(archiveBytes),
+            };
+            return documents(requested);
+        };
+        deps.installer = async request => {
+            assert.equal(approved, true, "unapproved bytes must never execute");
+            assert.equal(request.archive.sha512, checksum ? hash512(archiveBytes) : undefined, "measured digest is not a publisher checksum");
+            assert.equal(request.archive.provenance.kind, checksum ? "publisher-checksum" : "approved-official-https-measured");
+            await deps.http(request.archive.url);
+            const fsharp = path.join(request.root, "sdk", version, "FSharp");
+            await fs.mkdir(fsharp, { recursive: true });
+            await fs.writeFile(path.join(fsharp, "fsi.runtimeconfig.json"), JSON.stringify({
+                runtimeOptions: { framework: { name: "Microsoft.NETCore.App", version: "10.0.0" } },
+            }));
+            await fs.mkdir(path.join(request.root, "shared", "Microsoft.NETCore.App", "10.0.0"), { recursive: true });
+            await fs.writeFile(request.archivePath, archiveBytes);
+            return { attempts: [{ url: request.archive.url, status: 200 }], archive: archiveReceipt(request.archive, request.archivePath, archiveBytes) };
+        };
+        deps.capture = async request => captured(request.toolchain, request.root);
+        const result = await acquireToolchain({ policy: policy(), toolchain, storageDirectory: await directory(t) }, deps);
+        assert.equal(result.status, approved ? "acquired" : "untestable", JSON.stringify(result));
+        if (!approved) assert.equal(result.outcome.reason,
+            archiveStatus === 404 ? "unavailable-sdk" : archiveStatus === 503 ? "network-failure" : "checksum-provenance", JSON.stringify(result));
+        else {
+            assert.equal(result.identity.requested.archive.provenance.kind, checksum ? "publisher-checksum" : "approved-official-https-measured");
+            assert.deepEqual(result.identity.archive.provenance, result.identity.requested.archive.provenance);
+            for (const [name, edit] of identityMutations) {
+                const changed = structuredClone(result.identity);
+                edit(changed);
+                assert.equal(verifyToolchainIdentity({ policy: policy(), toolchain: result.identity.requested, identity: changed }).status,
+                    "untestable", name);
+            }
+        }
+        assert.deepEqual(result.attempts.filter(a => a.url.endsWith(".sha512")).map(a => a.status),
+            checksum === "manifest" ? [] : checksum === "sidecar" ? [200] : [404, 404]);
+        assert.ok(requests.some(r => r.url === url), "archive availability is independent of checksum availability");
+        if (approved && archiveStatus === 404) {
+            assert.deepEqual(requests.filter(r => r.url.endsWith(".zip")).map(r => [r.method, new URL(r.url).hostname]),
+                [["HEAD", "builds.dotnet.microsoft.com"], ["HEAD", "ci.dot.net"], ["GET", "ci.dot.net"]]);
+        }
+    });
+}
 
 const forbiddenDownloads = [
     "https://ci.dot.net/public/../../private/sdk.zip",
@@ -421,8 +486,8 @@ test("existing historical SDK search directories cannot leak a same-version mach
     assert.deepEqual(await fs.readFile(path.join(root, "global.json")), bytes);
 });
 
-for (const available of [true, false]) {
-    test(`explicit supplemental runtime ${available ? "acquired and separated" : "unavailable is untestable"}`, async t => {
+for (const [available, bundled] of [[true, false], [false, false], [true, true]]) {
+    test(`explicit supplemental runtime ${available ? "acquired and separated" : "unavailable is untestable"}, bundled=${bundled}`, async t => {
         const { root, bytes, result: initial } = await source(t);
         const sampleConfig = path.join(root, "sample.runtimeconfig.json");
         await fs.writeFile(sampleConfig, JSON.stringify({
@@ -443,8 +508,9 @@ for (const available of [true, false]) {
             installer: async request => {
                 products.push(request.product);
                 if (request.product === "dotnet" && !available) throw new Error("runtime archive HTTP 404");
+                if (bundled) await fs.mkdir(path.join(request.root, "shared", "Microsoft.NETCore.App", "9.0.8"), { recursive: true });
                 return {
-                    archive: { ...request.archive, actualSha512: hash512(archiveBytes), sha256: digest(archiveBytes), redirectUrl: request.archive.url },
+                    archive: archiveReceipt(request.archive, request.archivePath, archiveBytes),
                     installer: {}, attempts: [{ url: request.archive.url, version: request.version, status: 200 }],
                 };
             },
@@ -457,13 +523,19 @@ for (const available of [true, false]) {
                 return identity;
             },
         });
-        assert.deepEqual(products, ["sdk", "dotnet"]);
+        assert.deepEqual(products, bundled ? ["sdk"] : ["sdk", "dotnet"]);
         assert.deepEqual(await fs.readFile(path.join(root, "global.json")), bytes);
         if (available) {
             assert.equal(result.status, "acquired", JSON.stringify(result));
             assert.equal(result.identity.compilerRuntime.version, "10.0.0");
             assert.equal(result.identity.requested.runtimeRequirements[0].version, "9.0.8");
             assert.equal(result.identity.buildToolchain, undefined, "SDK-only acquisition cannot attest a not-yet-built local compiler");
+            for (const product of bundled ? ["sdk"] : ["sdk", "dotnet"]) {
+                const identity = structuredClone(result.identity);
+                identity.installations = identity.installations.filter(i => i.product !== product);
+                assert.equal(verifyToolchainIdentity({ policy: policy(), toolchain: identity.requested, identity }).outcome.reason,
+                    "wrong-identity", `missing ${product} receipt must invalidate reuse`);
+            }
         } else {
             assert.equal(result.status, "untestable");
             assert.equal(result.outcome.reason, "unavailable-runtime");
@@ -489,7 +561,7 @@ test("historical public preview fallback preserves checksum provenance and exact
             }));
             await fs.mkdir(path.join(request.root, "shared", "Microsoft.NETCore.App", "8.0.0-preview.1.1"), { recursive: true });
             return {
-                archive: { ...request.archive, actualSha512: hash512(archiveBytes), sha256: digest(archiveBytes), redirectUrl: request.archive.url },
+                archive: archiveReceipt(request.archive, request.archivePath, archiveBytes),
                 installer: {}, attempts: [],
             };
         },
@@ -502,6 +574,7 @@ test("historical public preview fallback preserves checksum provenance and exact
     assert.equal(result.status, "acquired", JSON.stringify(result));
     assert.equal(calls[0].version, toolchain.sdkVersion);
     assert.ok(calls[0].archive.url.startsWith("https://ci.dot.net/public/"));
+    assert.equal(calls[0].archive.provenance.kind, "publisher-checksum");
     assert.deepEqual(result.attempts.filter(a => a.url.endsWith(".sha512")).map(a => a.status), [404, 200]);
 });
 
@@ -594,7 +667,7 @@ async function acquireSource(t, version, sourceSha, p, { rid = p.rid, edit = () 
         installer: async request => {
             await fs.mkdir(path.join(request.root, "shared", "Microsoft.NETCore.App", runtimeVersion), { recursive: true });
             return {
-                archive: { ...request.archive, actualSha512: hash512(archiveBytes), sha256: digest(archiveBytes), redirectUrl: request.archive.url },
+                archive: archiveReceipt(request.archive, request.archivePath, archiveBytes),
                 installer: {}, attempts: [],
             };
         },

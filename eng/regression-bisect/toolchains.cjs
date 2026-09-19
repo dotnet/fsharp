@@ -1,7 +1,8 @@
 const fs = require("node:fs/promises");
 const path = require("node:path");
 const { validatePolicy, fingerprintInput } = require("./model.cjs");
-const { hash, requireValue, inside, publicUrl, createHttp, run, isolatedEnvironment, capture } = require("./toolchain-io.cjs");
+const { hash, requireValue, inside, publicUrl, createHttp, validateHttpResponse, run, isolatedEnvironment, capture } = require("./toolchain-io.cjs");
+const { validateArchiveReceipt } = require("./archive-provenance.cjs");
 
 const indexUrl = "https://builds.dotnet.microsoft.com/dotnet/release-metadata/releases-index.json";
 const exactVersion = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z]+(?:[.-][0-9A-Za-z]+)*)?$/;
@@ -22,9 +23,13 @@ function failure(stage, error, attempts = []) {
         status: "untestable",
         outcome: {
             schemaVersion: 1, outcome: "untestable",
-            reason: { identity: "wrong-identity", sdk: "unavailable-sdk", runtime: "unavailable-runtime" }[stage] ?? "setup-failure",
+            reason: ["checksum-provenance", "network-failure"].includes(error.code) ? error.code :
+                stage === "sdk" && ["command-failure", "installation-failure"].includes(error.code) ? "setup-failure" :
+                { identity: "wrong-identity", sdk: "unavailable-sdk", runtime: "unavailable-runtime" }[stage] ?? "setup-failure",
         },
-        error: { stage, code: error.code ?? "toolchain-unavailable", message: error.message }, attempts,
+        error: { stage, code: error.code ?? "toolchain-unavailable", message: error.message },
+        attempts: attempts.map(a => a.status === "pending" ? { ...a, status: "error", error: error.message } : a),
+        ...(error.acquisition ? { acquisition: error.acquisition } : {}),
     };
 }
 function validatePlatform(platform) {
@@ -47,7 +52,7 @@ async function document(url, options, deps, records, attempts) {
     const response = await deps.http(url);
     attempt.status = response.status;
     validateResponse(url, response, options.policy);
-    requireValue(response.status === 200, `metadata HTTP ${response.status}: ${url}`);
+    if (response.status !== 200) throw Object.assign(new Error(`metadata HTTP ${response.status}: ${url}`), { code: "network-failure" });
     const bytes = Buffer.from(response.bytes);
     records.push({ url, redirectUrl: response.url, sha256: hash(bytes), bytesBase64: bytes.toString("base64") });
     return JSON.parse(bytes.toString("utf8"));
@@ -72,8 +77,10 @@ function selectArchive(product, platform, policy) {
     requireValue(files?.length === 1, `missing or ambiguous ${platform.rid} ${extension} archive for ${product.version}`);
     const file = files[0];
     publicUrl(file.url, policy);
-    requireValue(/^[0-9a-f]{128}$/i.test(file.hash), `malformed SHA-512 for ${file.name}`);
-    return { name: file.name, url: file.url, sha512: file.hash.toLowerCase(), rid: file.rid, architecture: platform.architecture };
+    if (!/^[0-9a-f]{128}$/i.test(file.hash)) throw Object.assign(new Error(`malformed SHA-512 for ${file.name}`),
+        { code: "checksum-provenance" });
+    return { name: file.name, url: file.url, sha512: file.hash.toLowerCase(), rid: file.rid, architecture: platform.architecture,
+        provenance: { kind: "publisher-checksum" } };
 }
 function sdkEntries(release) {
     return [release.sdk, ...(release.sdks ?? [])].filter(Boolean);
@@ -206,26 +213,50 @@ async function exactArchive(toolchain, product, version, options, deps, attempts
             bundledRuntime: { version: found["runtime-version"] ?? row.release.runtime?.version },
         };
     }
-    // Public unreleased build archives have no release record. Require their official
-    // sidecar checksum, never a hash computed from an otherwise unauthenticated archive.
     const family = { sdk: "Sdk", dotnet: "Runtime", aspnetcore: "aspnetcore/Runtime", windowsdesktop: "WindowsDesktop" }[product];
     const prefix = { sdk: "dotnet-sdk", dotnet: "dotnet-runtime", aspnetcore: "aspnetcore-runtime", windowsdesktop: "windowsdesktop-runtime" }[product];
     const name = `${prefix}-${version}-${toolchain.platform.rid}${toolchain.platform.os === "windows" ? ".zip" : ".tar.gz"}`;
-    for (const feed of options.policy.toolchains.publicFeeds.filter(f => /(?:builds\.dotnet\.microsoft\.com\/dotnet|ci\.dot\.net\/public)$/.test(f))) {
-        const url = `${feed}/${family}/${version}/${name}`;
+    const urls = options.policy.toolchains.publicFeeds
+        .filter(f => /(?:builds\.dotnet\.microsoft\.com\/dotnet|ci\.dot\.net\/public)$/.test(f))
+        .map(feed => `${feed}/${family}/${version}/${name}`);
+    for (const url of urls) {
         const attempt = { url: `${url}.sha512`, version, status: "pending" };
         attempts.push(attempt);
         const response = await deps.http(attempt.url);
         attempt.status = response.status;
         validateResponse(attempt.url, response, options.policy);
         if (response.status === 404) continue;
-        requireValue(response.status === 200, `checksum HTTP ${response.status}: ${attempt.url}`);
+        if (response.status !== 200) throw Object.assign(new Error(`checksum HTTP ${response.status}: ${attempt.url}`), { code: "network-failure" });
         const checksum = Buffer.from(response.bytes).toString("utf8").trim().split(/\s+/)[0];
-        requireValue(/^[a-f0-9]{128}$/i.test(checksum), `malformed historical checksum: ${attempt.url}`);
+        if (!/^[a-f0-9]{128}$/i.test(checksum)) throw Object.assign(new Error(`malformed historical checksum: ${attempt.url}`),
+            { code: "checksum-provenance" });
         metadata.push({ url: attempt.url, redirectUrl: response.url, sha256: hash(response.bytes), bytesBase64: Buffer.from(response.bytes).toString("base64") });
-        return { archive: { name, url, sha512: checksum.toLowerCase(), rid: toolchain.platform.rid, architecture: toolchain.platform.architecture }, metadata };
+        return { archive: { name, url, sha512: checksum.toLowerCase(), rid: toolchain.platform.rid,
+            architecture: toolchain.platform.architecture, provenance: { kind: "publisher-checksum" } }, metadata };
     }
-    throw new Error(`exact ${product} ${version} unavailable from permitted public feeds`);
+    // Availability is not checksum provenance. HEAD never downloads or executes unapproved bytes.
+    for (const url of urls) {
+        const approval = options.policy.toolchains.measuredArchives.find(a => toolchain.kind === "source" &&
+            a.sourceSha === toolchain.sourceSha && a.product === product && a.version === version &&
+            a.rid === toolchain.platform.rid && a.url === url);
+        const constraints = approval ? { allowedUrls: [url, ...approval.redirectUrls],
+            maxBytes: approval.maxBytes, timeoutMs: approval.timeoutMs } : undefined;
+        const attempt = { url, version, method: "HEAD", status: "pending" };
+        attempts.push(attempt);
+        const response = await deps.http(url, { method: "HEAD", ...(constraints ? { constraints } : {}) });
+        attempt.status = response.status;
+        validateHttpResponse(url, response, options.policy, constraints);
+        if (response.status === 404) continue;
+        if (response.status === 200 && approval) return {
+            archive: { name, url, rid: toolchain.platform.rid, architecture: toolchain.platform.architecture,
+                provenance: { kind: "approved-official-https-measured", approvalRevision: approval.approvalRevision,
+                    approvalDigest: fingerprintInput(approval) } }, metadata,
+        };
+        if (response.status === 200) throw Object.assign(new Error(`exact ${product} ${version} is available but lacks approved checksum provenance`),
+            { code: "checksum-provenance" });
+        throw Object.assign(new Error(`archive availability HTTP ${response.status}: ${url}`), { code: "network-failure" });
+    }
+    throw Object.assign(new Error(`exact ${product} ${version} archive unavailable from permitted public feeds`), { code: "archive-unavailable" });
 }
 
 function verifyHostRid(toolchain, identity) {
@@ -269,9 +300,24 @@ function verifyToolchainIdentity({ policy, toolchain, identity }) {
         verifyHostRid(toolchain, identity);
         requireValue(identity.sdks.length === 1 && identity.sdks[0].version === toolchain.sdkVersion &&
             identity.sdks[0].path === path.join(root, "sdk"), "unexpected installed SDK or SDK location");
-        requireValue(identity.archive?.sha512 === toolchain.archive.sha512 && identity.archive.actualSha512 === toolchain.archive.sha512 &&
-            identity.archive.url === toolchain.archive.url && /^[a-f0-9]{64}$/.test(identity.archive.sha256), "archive identity mismatch");
-        publicUrl(identity.archive.redirectUrl, policy);
+        validateArchiveReceipt({ policy, ...toolchain, version: toolchain.sdkVersion, product: "sdk" }, identity.archive);
+        if (Object.hasOwn(identity, "installations")) {
+            requireValue(Array.isArray(identity.installations), "missing installation receipts");
+            const sdks = identity.installations.filter(i => i.product === "sdk");
+            requireValue(sdks.length === 1 && sdks[0].version === toolchain.sdkVersion &&
+                fingerprintInput(sdks[0].archive) === fingerprintInput(identity.archive), "missing or mismatched SDK installation receipt");
+            const runtimes = identity.installations.filter(i => i.product !== "sdk");
+            for (const installed of runtimes) {
+                requireValue(toolchain.runtimeRequirements.some(r => runtimeProducts[r.name] === installed.product && r.version === installed.version),
+                    "unexpected supplemental installation receipt");
+                validateArchiveReceipt({ policy, ...toolchain, version: installed.version, product: installed.product,
+                    archive: installed.archive }, installed.archive);
+            }
+            for (const required of toolchain.runtimeRequirements)
+                requireValue(identity.installations.some(i => i.archive.url === required.archiveUrl &&
+                    (i.product === "sdk" || i.product === runtimeProducts[required.name] && i.version === required.version)),
+                "missing required runtime archive receipt");
+        }
         for (const [name, assemblyName] of Object.entries({ compiler: "fsc", fsi: "fsi", core: "FSharp.Core" })) {
             const file = identity.files[name];
             requireValue(file && inside(path.join(root, "sdk", toolchain.sdkVersion, "FSharp"), file.path) &&
@@ -349,10 +395,10 @@ async function acquireToolchain(options, injected = {}) {
                     "eng", "common"),
                 root, archivePath: path.join(work, `${product}-${version}${toolchain.platform.os === "windows" ? ".zip" : ".tar.gz"}`),
                 product, version, platform: toolchain.platform, archive, env, cwd: sampleDirectory,
+                policy: options.policy, kind: toolchain.kind, sourceSha: toolchain.sourceSha, sources: structuredClone(attempts),
             }, deps);
             attempts.push(...result.attempts);
-            requireValue(result.archive.actualSha512 === archive.sha512 && result.archive.url === archive.url, "installer archive checksum or URL mismatch");
-            validateResponse(archive.url, { url: result.archive.redirectUrl, redirects: result.archive.redirects }, options.policy);
+            validateArchiveReceipt({ policy: options.policy, ...toolchain, version, product, archive }, result.archive);
             installed.push({ product, version, ...result });
         };
         stage = "sdk";
@@ -376,6 +422,8 @@ async function acquireToolchain(options, injected = {}) {
                 const exact = await exactArchive(toolchain, product, required.version, options, deps, attempts);
                 await install(product, required.version, exact.archive);
             }
+            required.archiveUrl = (installed.find(i => i.product === runtimeProducts[required.name] &&
+                i.version === required.version) ?? installed[0]).archive.url;
         }
         stage = "identity";
         const executable = path.join(root, toolchain.platform.os === "windows" ? "dotnet.exe" : "dotnet");
@@ -396,6 +444,7 @@ async function acquireToolchain(options, injected = {}) {
                 evidenceDigest: fingerprintInput(identity), requestedSdk: toolchain.sdkVersion, requestedTools: toolchain.toolsVersion,
                 requestedCompilerRuntime: toolchain.runtimeRequirements.find(r => r.role === "compiler" && r.name === "Microsoft.NETCore.App").version,
                 sdk: { version: identity.sdkVersion, sha256: identity.archive.sha256, verified: true },
+                archive: identity.archive,
                 compilerRuntime: {
                     version: localCompilerRuntime.version,
                     sha256: identity.runtimes.find(r => r.name === localCompilerRuntime.name && r.version === localCompilerRuntime.version).sha256,

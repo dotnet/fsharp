@@ -12,45 +12,106 @@ const inside = (root, file) => {
 
 function publicUrl(url, policy) {
     const parsed = new URL(url);
-    requireValue(parsed.protocol === "https:" && !parsed.username && !parsed.password && !parsed.search &&
+    requireValue(typeof url === "string" && parsed.href === url && !/[%\\]/.test(url) &&
+        parsed.protocol === "https:" && !parsed.username && !parsed.password && !parsed.search &&
         !parsed.hash && !parsed.port && policy.toolchains.publicFeeds.some(feed =>
             parsed.href === feed || parsed.href.startsWith(`${feed}/`)), `unapproved public download URL: ${url}`);
     return url;
 }
 
+function downloadUrl(url, policy, constraints) {
+    publicUrl(url, policy);
+    if (constraints) {
+        requireValue(Array.isArray(constraints.allowedUrls) && constraints.allowedUrls.includes(url),
+            `URL is not an exact approved download: ${url}`);
+        requireValue(Number.isSafeInteger(constraints.maxBytes) && constraints.maxBytes > 0 && constraints.maxBytes <= 1073741824 &&
+            Number.isSafeInteger(constraints.timeoutMs) && constraints.timeoutMs > 0 && constraints.timeoutMs <= 300000,
+        "invalid download byte or timeout constraints");
+    }
+    return url;
+}
+
+function validateHttpResponse(url, response, policy, constraints) {
+    let current = downloadUrl(url, policy, constraints);
+    requireValue(Array.isArray(response.redirects) && response.redirects.length <= 5, "HTTP acquisition omitted or exceeded redirect provenance");
+    for (const hop of response.redirects) {
+        requireValue(hop && hop.from === current && [301, 302, 303, 307, 308].includes(hop.status),
+            "HTTP redirect provenance is not a contiguous chain");
+        current = downloadUrl(hop.to, policy, constraints);
+    }
+    requireValue(response.url === current, "HTTP final URL does not match redirect provenance");
+    return response;
+}
+
 function createHttp(policy, fileSystem = fs, signal) {
-    return async (url, { destination, method = "GET" } = {}) => {
+    const networkFailure = error => {
+        throw Object.assign(new Error(error.message, { cause: error }), { name: error.name, code: "network-failure" });
+    };
+    return async (url, { destination, method = "GET", constraints } = {}) => {
         const redirects = [];
-        let current = publicUrl(url, policy);
+        let current = downloadUrl(url, policy, constraints);
+        requireValue(["GET", "HEAD"].includes(method), "unsupported download method");
+        const deadline = AbortSignal.timeout(constraints?.timeoutMs ?? 300000);
+        const downloadSignal = signal ? AbortSignal.any([signal, deadline]) : deadline;
         for (let hop = 0; hop <= 5; hop++) {
+            if (downloadSignal.aborted) networkFailure(downloadSignal.reason);
             const response = await fetch(current, {
-                method, redirect: "manual",
-                signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(300000)]) : AbortSignal.timeout(300000),
-            });
+                method, redirect: "manual", signal: downloadSignal, headers: { "Accept-Encoding": "identity" },
+            }).catch(networkFailure);
+            if (downloadSignal.aborted) networkFailure(downloadSignal.reason);
             if ([301, 302, 303, 307, 308].includes(response.status)) {
                 await response.body?.cancel();
                 const location = response.headers.get("location");
                 requireValue(location?.trim(), "redirect response is missing Location");
-                const next = publicUrl(new URL(location, current).href, policy);
+                requireValue(!/[%\\\s]/.test(location) && !location.split(/[/?#]/).some(segment => segment === "." || segment === ".."),
+                    `unapproved public download URL: ${location}`);
+                const next = downloadUrl(new URL(location, current).href, policy, constraints);
+                if (/^https?:/i.test(location)) requireValue(location === next, `unapproved public download URL: ${location}`);
                 redirects.push({ from: current, to: next, status: response.status });
                 current = next;
                 continue;
             }
+            const maxBytes = Math.min(constraints?.maxBytes ?? Infinity, destination && response.ok ? 1073741824 : 16777216);
+            const length = response.headers.get("content-length");
             const sha256 = createHash("sha256");
             const sha512 = createHash("sha512");
             const chunks = [];
             let size = 0;
-            const file = destination && response.ok ? await fileSystem.open(destination, "wx") : null;
+            let file;
+            let reader;
+            let failure;
             try {
-                for await (const chunk of response.body ?? []) {
+                if (method !== "HEAD" && length !== null)
+                    requireValue(/^\d+$/.test(length) && Number.isSafeInteger(Number(length)) && Number(length) <= maxBytes,
+                        "invalid or oversized download Content-Length");
+                if (method === "GET" && destination && response.ok) file = await fileSystem.open(destination, "wx");
+                if (method === "GET") reader = response.body?.getReader();
+                while (reader) {
+                    const { done, value: chunk } = await reader.read().catch(networkFailure);
+                    if (downloadSignal.aborted) networkFailure(downloadSignal.reason);
+                    if (done) break;
                     size += chunk.length;
-                    requireValue(size <= (file ? 1024 * 1024 * 1024 : 16 * 1024 * 1024), `download exceeds byte limit: ${current}`);
+                    requireValue(size <= maxBytes, `download exceeds byte limit: ${current}`);
                     sha256.update(chunk); sha512.update(chunk);
                     if (file) await file.writeFile(chunk);
                     else chunks.push(chunk);
                 }
+                if (downloadSignal.aborted) networkFailure(downloadSignal.reason);
+                if (method !== "HEAD" && length !== null)
+                    requireValue(size === Number(length), "download Content-Length truncation or mismatch");
+            } catch (error) {
+                failure = error;
+                throw error;
             } finally {
-                await file?.close();
+                reader?.releaseLock();
+                try {
+                    await response.body?.cancel();
+                } catch (error) {
+                    if (!failure) throw error;
+                    if (error !== failure && error !== failure.cause) failure.message += `; response cleanup failed: ${error.message}`;
+                } finally {
+                    await file?.close();
+                }
             }
             return {
                 status: response.status, url: current, redirects,
@@ -243,4 +304,4 @@ async function capture(request, deps) {
     };
 }
 
-module.exports = { hash, requireValue, inside, publicUrl, createHttp, run, isolatedEnvironment, fileIdentity, capture };
+module.exports = { hash, requireValue, inside, publicUrl, validateHttpResponse, createHttp, run, isolatedEnvironment, fileIdentity, capture };

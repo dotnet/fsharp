@@ -16,6 +16,7 @@ async function createFixture(directory, { kind, tfm, configuration = "Release", 
         "late-nullable-explicit": ["enable", "disable"],
     }[scenario];
     const projectTfm = scenario === "reference-tfm" ? `${tfm}-windows7.0` : tfm;
+    const sdkFSharp = "$(MSBuildSDKsPath)/../FSharp";
     const producerSource = [
         "#if OLD_PRODUCER",
         'let inline value () = "OLD_METADATA"',
@@ -81,12 +82,17 @@ let main _ =
     ${nullable ? `<Nullable>${nullable[0]}</Nullable>` : ""}
     ${scenario === "late-nullable-explicit" ? "<DefineConstants>$(DefineConstants);NULLABLE</DefineConstants>" : ""}
     ${scenario.startsWith("core-") ? "<DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>" : ""}
+    ${scenario === "fallback-compiler" ? `<DotnetFscCompilerPath>${sdkFSharp}/fsc.dll</DotnetFscCompilerPath><Fsc_DotNET_DotnetFscCompilerPath>${sdkFSharp}/fsc.dll</Fsc_DotNET_DotnetFscCompilerPath>` : ""}
+    ${scenario === "fallback-tasks" ? `<FSharpBuildAssemblyFile>${sdkFSharp}/FSharp.Build.dll</FSharpBuildAssemblyFile>` : ""}
+    ${scenario === "fallback-targets" ? `<FSharpTargetsPath>${sdkFSharp}/Microsoft.FSharp.Targets</FSharpTargetsPath><FSharpTargetsShim>${sdkFSharp}/Microsoft.FSharp.NetSdk.targets</FSharpTargetsShim><FSharpOverridesTargetsShim>${sdkFSharp}/Microsoft.FSharp.Overrides.NetSdk.targets</FSharpOverridesTargetsShim>` : ""}
+    ${scenario === "fallback-core" ? "<DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>" : ""}
     ${scenario === "producer" ? "<AssemblyName>FrozenProducer</AssemblyName><PackageId>FrozenProducer</PackageId><Version>1.0.0</Version><DefineConstants>$(DefineConstants);OLD_PRODUCER</DefineConstants><GeneratePackageOnBuild>true</GeneratePackageOnBuild>" : ""}
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Program.fs" />
     ${scenario === "core-explicit" ? `<PackageReference Include="FSharp.Core" Version="${coreVersion}" />` : ""}
     ${scenario === "core-central" ? '<PackageReference Include="FSharp.Core" />' : ""}
+    ${scenario === "fallback-core" ? `<Reference Include="FSharp.Core"><HintPath>${sdkFSharp}/FSharp.Core.dll</HintPath></Reference>` : ""}
     ${producer ? '<Reference Include="FrozenProducer"><HintPath>producer/FrozenProducer.dll</HintPath></Reference>' : ""}
     ${referenced ? '<ProjectReference Include="Library/Library.fsproj" />' : ""}
   </ItemGroup>

@@ -71,6 +71,7 @@ async function main() {
             ...(process.platform === "win32" ? [["project", "reference-tfm", "Release"]] : []),
             ["project", "producer-consumer", "Release"],
             ...(process.platform === "win32" ? [["project", "multi-tfm", "Release"]] : []),
+            ...(name === "source" ? ["compiler", "tasks", "targets", "core"].map(role => ["project", `fallback-${role}`, "Release"]) : []),
             ["fsi", "producer-control", "Release"],
         ]) {
             const id = `${name}-${kind}-${scenario}-${configuration}`;
@@ -86,7 +87,8 @@ async function main() {
                 sampleRuntimes: input.sampleRuntimes,
             });
             const lateOverride = scenario.startsWith("late-") || scenario === "reference-late";
-            const expected = lateOverride ? "untestable"
+            const fallback = scenario.startsWith("fallback-");
+            const expected = lateOverride || fallback ? "untestable"
                 : ["runtime-failure", "producer-consumer", "diagnostic"].includes(scenario) ? "product-failure" : "pass";
             results.push({ id, expected, result });
             await fs.writeFile(path.join(root, "smoke-results.json"), JSON.stringify(results, null, 2));
@@ -94,6 +96,9 @@ async function main() {
             requireValue(result.outcome.outcome === expected, `bounded smoke failed: ${id}`);
             if (lateOverride) requireValue(result.outcome.reason === "wrong-identity" &&
                 result.error === "late compiler flag override", "late override must be rejected for the intended identity mismatch");
+            if (fallback) requireValue(result.outcome.reason === "wrong-identity" &&
+                result.pending?.evidence.build?.exitCode === 0,
+            "fallback must compile successfully before product identity rejects it");
             if (scenario === "collectible-core") {
                 const record = result.cells[0].evidence[0];
                 const invocation = record.commands.at(-1);

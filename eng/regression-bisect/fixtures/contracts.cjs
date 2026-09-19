@@ -2,6 +2,13 @@ const { createHash } = require("node:crypto");
 const policy = () => structuredClone(require("../../../.github/policies/regression-bisect.json"));
 const digest = text => createHash("sha256").update(text).digest("hex");
 const sha = text => createHash("sha1").update(text).digest("hex");
+function archiveReceipt(archive, file, bytes) {
+    const sha512 = createHash("sha512").update(bytes).digest("hex");
+    return { ...archive, sha256: digest(bytes), actualSha512: sha512, redirectUrl: archive.url,
+        finalOrigin: new URL(archive.url).origin, redirects: [],
+        bytesReceived: Buffer.byteLength(bytes), receivedAt: "2026-09-19T17:30:00.000Z",
+        retained: { path: file, sha256: digest(bytes), sha512, size: Buffer.byteLength(bytes) } };
+}
 const model = () => require("../model.cjs");
 const seal = m => {
     const { approvedInputDigest, ...input } = m;
@@ -32,7 +39,7 @@ function manifest() {
 function attempt(outcome) {
     return {
         schemaVersion: 1,
-        checks: { restore: true, build: true, setup: true, identity: true, sdk: true, runtime: true },
+        checks: { restore: true, build: true, setup: true, identity: true, sdk: true, runtime: true, checksumProvenance: true },
         execution: {
             status: "completed", complete: true,
             ...structuredClone(manifest().assertions[outcome === "pass" ? "pass" : "failure"]),
@@ -133,4 +140,4 @@ function statusTransport(context) {
     };
 }
 
-module.exports = { policy, manifest, attempt, observation, admission, state, seal, sha, digest, statusTransport };
+module.exports = { policy, manifest, attempt, observation, admission, state, seal, sha, digest, statusTransport, archiveReceipt };

@@ -24,6 +24,24 @@ for (const [name, options] of [
     });
 }
 
+for (const [changed, installations] of [[false, undefined], [true, undefined], [false, []], [false, "runtime-only"]]) {
+    test(`reproduction refuses ${changed ? "changed" : "missing"} retained toolchain bytes with ${JSON.stringify(installations)}`, async t => {
+        const f = await fixture(t);
+        const archive = f.toolchain.archive.retained.path;
+        if (changed) await fs.appendFile(archive, "changed");
+        else await fs.rm(archive);
+        if (installations !== undefined) f.toolchain.installations = installations === "runtime-only"
+            ? [{ product: "dotnet", version: "10.0.0", archive: { ...f.toolchain.archive,
+                retained: { ...f.toolchain.archive.retained, path: (await f.file("runtime.zip", "archive")).path } } }]
+            : installations;
+        const result = await runReproduction({ ...f, workDirectory: path.join(f.root, "executions") },
+            { execute: () => assert.fail("invalid cached acquisition must not execute") });
+        assert.equal(result.outcome.outcome, "untestable");
+        assert.equal(result.outcome.reason, "wrong-identity");
+        assert.equal(result.workDirectory, undefined, "missing retained SDK must fail before creating an execution workspace");
+    });
+}
+
 for (const [name, mutate, options] of [
     ["wrong host", f => { f.toolchain.hostPath = path.join(f.root, "dotnet-other", "dotnet.exe"); }],
     ["host dotnet fsi", f => { f.product.files.find(x => x.role === "fsi").path = "fsi"; }],
@@ -312,6 +330,12 @@ for (const [name, options, error] of [
     ["library Core fallback", { mutate: (s, f) => {
         s.cells[1].fscTasks[0].references = [f.product.files.find(p => p.role === "core").path];
     } }, /Fsc did not reference selected Core/],
+    ["bare Core reference after successful compilation", { mutate: async s => {
+        const file = s.cells[0].assetsFile;
+        const assets = JSON.parse(await fs.readFile(file));
+        assets.libraries = {};
+        await fs.writeFile(file, JSON.stringify(assets));
+    } }, /Core not resolved as expected package/],
 ]) {
     test(`project runner verifies expanded matrix: ${name}`, async t => {
         const f = await projectRunnerFixture(t, options);

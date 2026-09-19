@@ -9,18 +9,44 @@ const http = require('node:http');
 const path = require('node:path');
 const { test } = require('node:test');
 const { promisify } = require('node:util');
-const { installArchive } = require('./toolchain-installer.cjs');
+const { installArchive, verifyRetainedArchive } = require('./toolchain-installer.cjs');
+const { createHttp, publicUrl } = require('./toolchain-io.cjs');
+const { policy } = require('./fixtures/contracts.cjs');
+const { fingerprintInput } = require('./model.cjs');
 
 const digest = (bytes, algorithm) => crypto.createHash(algorithm).update(bytes).digest('hex');
 const parameters = ['Version', 'InstallDir', 'Architecture', 'Runtime', 'NoPath', 'KeepZip', 'ZipPath', 'AzureFeed', 'SkipNonVersionedFiles'];
 const help = '--version --install-dir --architecture --runtime --no-path --keep-zip --zip-path --azure-feed --os --skip-non-versioned-files';
 const payload = Buffer.from('verified archive bytes');
+const approval = {
+  sourceSha: '5a8b9adb034f420a5c2c1f577670c5eeeb454b7e', product: 'sdk', version: '11.0.100-rc.1.26420.103',
+  rid: 'win-x64', origin: 'https://builds.dotnet.microsoft.com',
+  url: 'https://builds.dotnet.microsoft.com/dotnet/Sdk/11.0.100-rc.1.26420.103/dotnet-sdk-11.0.100-rc.1.26420.103-win-x64.zip',
+  redirectUrls: [], maxBytes: 1073741824, timeoutMs: 300000,
+  approvalRevision: '2ec6de6837b5b367e1f1186e850b8faa2d188b16',
+};
+
+for (const oversized of [false, true]) {
+  test(`HTTP cleanup failure is visible after ${oversized ? 'bounded rejection' : 'complete download'}`, async t => {
+    const response = new Response(payload);
+    t.mock.method(response.body, 'cancel', async () => { throw new Error('controlled response cleanup failure'); });
+    t.mock.method(globalThis, 'fetch', async () => response);
+    await assert.rejects(createHttp(policy())(approval.url, {
+      constraints: { allowedUrls: [approval.url], maxBytes: oversized ? 1 : 100, timeoutMs: 1000 },
+    }), error => {
+      assert.match(error.message, /controlled response cleanup failure/);
+      if (oversized) assert.match(error.message, /download exceeds byte limit/);
+      return true;
+    });
+  });
+}
 
 function request(url, method = 'GET') {
   return new Promise((resolve, reject) => {
     const req = http.request(url, { method, agent: false }, response => {
       const chunks = [];
       response.on('data', chunk => chunks.push(chunk));
+      response.on('error', reject);
       response.on('end', () => resolve({ status: response.statusCode, bytes: Buffer.concat(chunks) }));
     });
     req.on('error', reject);
@@ -39,8 +65,11 @@ async function fixture(t, { product = 'sdk', os = 'win', architecture = 'x64', r
   await fs.writeFile(helperPath, '# trusted repository helper');
   const options = {
     helperRoot, root: path.join(directory, 'sdk'), archivePath: path.join(directory, filename),
-    product, version, platform: { os, rid, architecture },
-    archive: { name: `${product}-${rid}`, url: `https://builds.dotnet.microsoft.com/dotnet/${filename}`, sha512: digest(payload, 'sha512') },
+    product, version, platform: { os, rid, architecture }, policy: policy(), kind: 'source', sourceSha: approval.sourceSha,
+    archive: {
+      name: `${product}-${rid}`, rid, architecture, url: `https://builds.dotnet.microsoft.com/dotnet/${filename}`,
+      sha512: digest(payload, 'sha512'), provenance: { kind: 'publisher-checksum' },
+    },
     cwd: directory,
     env: {
       SystemRoot: 'C:\\Windows', PATH: 'trusted-system-path',
@@ -61,7 +90,8 @@ async function fixture(t, { product = 'sdk', os = 'win', architecture = 'x64', r
         await fs.writeFile(transport.destination, state.payload);
         return {
           status: 200, sha256: digest(state.payload, 'sha256'), sha512: digest(state.payload, 'sha512'),
-          url: 'https://ci.dot.net/public/archive', redirects: ['https://ci.dot.net/public/archive'],
+          size: state.payload.length, url: state.finalUrl || 'https://ci.dot.net/public/archive',
+          redirects: state.redirects || [{ from: url, to: 'https://ci.dot.net/public/archive', status: 302 }],
         };
       }
       return { bytes: script, url, redirects: [], status: 200 };
@@ -75,8 +105,12 @@ async function fixture(t, { product = 'sdk', os = 'win', architecture = 'x64', r
       assert.notEqual(execution.env.PSModulePath, 'untrusted');
       const provenance = JSON.parse(await fs.readFile(`${options.archivePath}.provenance.json`, 'utf8'));
       assert.equal(provenance.archive.actualSha512, digest(payload, 'sha512'));
-      assert.equal(provenance.archive.redirectUrl, 'https://ci.dot.net/public/archive');
+      assert.equal(provenance.archive.redirectUrl, state.finalUrl || 'https://ci.dot.net/public/archive');
       if (args.some(arg => arg.includes('GetDotNetInstallScript'))) {
+        if (windows) {
+          const keys = Object.keys(execution.env).map(key => key.toUpperCase());
+          assert.equal(new Set(keys).size, keys.length, 'Windows supervised environment must not contain case aliases');
+        }
         assert.ok(args.some(arg => arg.includes(windows ? '$prepareMachine = $false' : 'prepare_machine=false')));
         assert.ok(args.some(arg => arg.includes(windows ? '$ci = $false' : 'ci=false')));
         assert.ok(!args.some(arg => arg.includes('InitializeDotNetCli')));
@@ -132,6 +166,205 @@ async function fixture(t, { product = 'sdk', os = 'win', architecture = 'x64', r
   return { options, deps, state, script, helperPath };
 }
 
+async function measuredFixture(t) {
+  const result = await fixture(t, { version: approval.version });
+  const { options, state } = result;
+  options.archive.url = approval.url;
+  delete options.archive.sha512;
+  options.archive.provenance = {
+    kind: 'approved-official-https-measured', approvalRevision: approval.approvalRevision,
+    approvalDigest: fingerprintInput(approval),
+  };
+  assert.deepEqual(options.policy.toolchains.measuredArchives[0], approval);
+  state.finalUrl = approval.url;
+  state.redirects = [];
+  return result;
+}
+
+test('measured byte mismatch reports checksum provenance, not archive absence', async t => {
+  const { options, deps } = await measuredFixture(t);
+  const transport = deps.http;
+  deps.http = async (...args) => {
+    const response = await transport(...args);
+    if (args[1].destination) response.sha256 = '0'.repeat(64);
+    return response;
+  };
+  await assert.rejects(installArchive(options, deps), error => {
+    assert.match(error.message, /HTTP sha256 digest/);
+    assert.equal(error.code, 'checksum-provenance');
+    return true;
+  });
+});
+
+for (const conflicting of [false, true]) {
+  test(`Windows installer canonicalizes environment aliases: conflicting=${conflicting}`, async t => {
+    const { options, deps, state } = await fixture(t);
+    options.env.SYSTEMROOT = options.env.SystemRoot;
+    delete options.env.SystemRoot;
+    options.env.path = conflicting ? 'different-path' : options.env.PATH;
+    if (conflicting) {
+      await assert.rejects(installArchive(options, deps), /Conflicting Windows environment aliases/);
+      assert.equal(state.requests.length, 0);
+    } else await installArchive(options, deps);
+  });
+}
+
+test('approved exact historical preview measures bytes without claiming a publisher SHA512', async t => {
+  const { options, deps, state } = await measuredFixture(t);
+  options.sources = [{ url: `${approval.url}.sha512`, status: 404, version: approval.version }];
+  const result = await installArchive(options, deps);
+  assert.equal(Object.hasOwn(result.archive, 'sha512'), false);
+  assert.deepEqual(result.archive.provenance, options.archive.provenance);
+  assert.equal(result.archive.actualSha512, digest(payload, 'sha512'));
+  assert.equal(result.archive.finalOrigin, approval.origin);
+  assert.equal(result.archive.bytesReceived, payload.length);
+  assert.equal(new Date(result.archive.receivedAt).toISOString(), result.archive.receivedAt);
+  assert.deepEqual(result.archive.retained, {
+    path: options.archivePath, sha256: digest(payload, 'sha256'), sha512: digest(payload, 'sha512'), size: payload.length,
+  });
+  assert.deepEqual(state.requests[0].constraints, {
+    allowedUrls: [approval.url], maxBytes: approval.maxBytes, timeoutMs: approval.timeoutMs,
+  });
+  await verifyRetainedArchive(result.archive);
+  assert.deepEqual(result.sources, options.sources);
+  assert.notEqual(result.sources, options.sources);
+  assert.deepEqual(JSON.parse(await fs.readFile(`${options.archivePath}.provenance.json`, 'utf8')).archive, result.archive);
+  assert.deepEqual(JSON.parse(await fs.readFile(`${options.archivePath}.provenance.json`, 'utf8')).sources, options.sources);
+});
+
+test('released publisher-checksum installation remains available without measured approval', async t => {
+  const { options, deps } = await fixture(t, { version: '10.0.401' });
+  options.kind = 'released';
+  delete options.sourceSha;
+  deps.fs = { ...fs, chmod: undefined };
+  const result = await installArchive(options, deps);
+  assert.deepEqual(result.sources, []);
+  assert.equal(result.archive.sha512, digest(payload, 'sha512'));
+  assert.deepEqual(result.archive.provenance, { kind: 'publisher-checksum' });
+  await verifyRetainedArchive(result.archive);
+});
+
+for (const [name, mutate] of [
+  ['missing policy', o => { delete o.policy; }],
+  ['missing approval', o => { o.policy.toolchains.measuredArchives = []; }],
+  ['changed approval revision', o => { o.policy.toolchains.measuredArchives[0].approvalRevision = '0'.repeat(40); }],
+  ['widened approval redirects', o => { o.policy.toolchains.measuredArchives[0].redirectUrls.push('https://ci.dot.net/public/other.zip'); }],
+  ['changed source', o => { o.sourceSha = '0'.repeat(40); }],
+  ['released mode', o => { o.kind = 'released'; }],
+  ['missing mode', o => { delete o.kind; }],
+  ['wrong version', o => { o.version = '11.0.100'; }],
+  ['wrong product', o => { o.product = 'dotnet'; }],
+  ['wrong RID', o => { o.archive.rid = 'win-arm64'; }],
+  ['wrong architecture', o => { o.archive.architecture = 'arm64'; }],
+  ['missing provenance', o => { delete o.archive.provenance; }],
+  ['unapproved provenance kind', o => { o.archive.provenance.kind = 'measured'; }],
+  ['wrong approval digest', o => { o.archive.provenance.approvalDigest = '0'.repeat(64); }],
+  ['wrong provenance revision', o => { o.archive.provenance.approvalRevision = '0'.repeat(40); }],
+  ['measured SHA512 relabeled as publisher', o => { o.archive.sha512 = digest(payload, 'sha512'); }],
+  ['different URL on same origin', o => { o.archive.url = o.archive.url.replace('/Sdk/', '/Runtime/'); }],
+]) {
+  test(`measured request fails closed before network: ${name}`, async t => {
+    const { options, deps, state } = await measuredFixture(t);
+    mutate(options);
+    await assert.rejects(installArchive(options, deps));
+    assert.equal(state.requests.length, 0);
+    assert.equal(state.calls.length, 0);
+  });
+}
+
+for (const [name, mutate] of [
+  ['missing sha256', r => { delete r.sha256; }],
+  ['missing sha512', r => { delete r.sha512; }],
+  ['wrong sha256', r => { r.sha256 = '0'.repeat(64); }],
+  ['wrong sha512', r => { r.sha512 = '0'.repeat(128); }],
+  ['missing size', r => { delete r.size; }],
+  ['truncated bytes', r => { r.size++; }],
+  ['oversized bytes', r => { r.size = approval.maxBytes + 1; }],
+  ['partial status', r => { r.status = 206; }],
+  ['missing redirects', r => { delete r.redirects; }],
+  ['omitted hops', r => { r.url = 'https://ci.dot.net/public/other.zip'; }],
+  ['wrong hop source', r => { r.redirects = [{ from: `${approval.url}.other`, to: approval.url, status: 302 }]; }],
+  ['invalid hop status', r => { r.redirects = [{ from: approval.url, to: approval.url, status: 200 }]; }],
+  ['unapproved intermediate hop', r => {
+    const other = 'https://ci.dot.net/public/other.zip';
+    r.redirects = [{ from: approval.url, to: other, status: 302 }, { from: other, to: approval.url, status: 302 }];
+  }],
+  ['downgrade', r => {
+    r.url = approval.url.replace('https:', 'http:');
+    r.redirects = [{ from: approval.url, to: r.url, status: 302 }];
+  }],
+]) {
+  test(`measured adapter independently rejects HTTP claims: ${name}`, async t => {
+    const { options, deps, state } = await measuredFixture(t);
+    const transport = deps.http;
+    deps.http = async (...args) => {
+      const response = await transport(...args);
+      if (args[1].destination) mutate(response);
+      return response;
+    };
+    await assert.rejects(installArchive(options, deps));
+    assert.equal(state.calls.length, 0);
+  });
+}
+
+for (const phase of ['download', 'helper', 'delivery', 'installer exit', 'retention protection']) {
+  test(`measured archive mutation fails closed during ${phase}`, async t => {
+    const { options, deps, state } = await measuredFixture(t);
+    const changed = Buffer.from(payload);
+    changed[0] ^= 1;
+    if (phase === 'download') state.payload = Buffer.alloc(0);
+    else if (phase === 'delivery') {
+      let reads = 0;
+      deps.fs = {
+        ...fs,
+        async open(filename, ...args) {
+          if (filename === `${options.archivePath}.download` && ++reads === 3)
+            await fs.writeFile(filename, changed);
+          return fs.open(filename, ...args);
+        },
+      };
+    } else if (phase === 'retention protection') {
+      deps.fs = { ...fs, chmod: filename => fs.writeFile(filename, changed) };
+    }
+    const run = deps.run;
+    deps.run = async (exe, args, execution) => {
+      if (phase === 'delivery' && args.includes('-AzureFeed')) {
+        const url = `${args[args.indexOf('-AzureFeed') + 1]}/Sdk/${options.version}/${path.basename(options.archivePath)}`;
+        await request(url).catch(() => {});
+        await fs.writeFile(`${options.archivePath}.download`, payload);
+        await fs.writeFile(options.archivePath, payload);
+        return { exitCode: 0 };
+      }
+      const result = await run(exe, args, execution);
+      if ((phase === 'helper' && args.includes('-Command')) || (phase === 'installer exit' && args.includes('-AzureFeed')))
+        await fs.writeFile(`${options.archivePath}.download`, changed);
+      return result;
+    };
+    await assert.rejects(installArchive(options, deps),
+      phase === 'delivery' ? /changed during installer delivery/ : /changed|digest|empty|delivery/i);
+    await assert.rejects(fs.stat(`${options.archivePath}.download`), { code: 'ENOENT' });
+  });
+}
+
+for (const mutation of ['bytes', 'missing', 'receipt sha256', 'receipt sha512', 'receipt size', 'relative path', 'nonlink', 'directory']) {
+  test(`retained archive reuse rejects ${mutation}`, async t => {
+    const { options, deps } = await measuredFixture(t);
+    const { archive } = await installArchive(options, deps);
+    let verifyFs = fs;
+    if (mutation === 'bytes') {
+      await fs.chmod(options.archivePath, 0o666);
+      await fs.writeFile(options.archivePath, Buffer.alloc(payload.length));
+    } else if (mutation === 'missing') await fs.rm(options.archivePath, { force: true });
+    else if (mutation === 'receipt sha256') archive.sha256 = '0'.repeat(64);
+    else if (mutation === 'receipt sha512') archive.actualSha512 = '0'.repeat(128);
+    else if (mutation === 'receipt size') archive.bytesReceived++;
+    else if (mutation === 'relative path') archive.retained.path = path.basename(options.archivePath);
+    else if (mutation === 'directory') archive.retained.path = options.cwd;
+    else verifyFs = { ...fs, lstat: async filename => ({ ...await fs.lstat(filename), isFile: () => true, isSymbolicLink: () => true }) };
+    await assert.rejects(verifyRetainedArchive(archive, { fs: verifyFs }), /archive|ENOENT|regular/i);
+  });
+}
+
 for (const settings of [
   { product: 'sdk' }, { product: 'dotnet' }, { product: 'aspnetcore' }, { product: 'windowsdesktop' },
   { product: 'windowsdesktop', version: '3.1.32' },
@@ -148,7 +381,7 @@ for (const settings of [
     assert.equal(result.archive.name, options.archive.name);
     assert.equal(result.archive.url, options.archive.url);
     assert.equal(result.archive.redirectUrl, 'https://ci.dot.net/public/archive');
-    assert.deepEqual(result.archive.redirects, ['https://ci.dot.net/public/archive']);
+    assert.deepEqual(result.archive.redirects, [{ from: options.archive.url, to: 'https://ci.dot.net/public/archive', status: 302 }]);
     assert.equal(result.installer.sha256, digest(script, 'sha256'));
     assert.equal(result.installer.helperPath, helperPath);
     assert.equal(result.installer.helperSha256, digest(await fs.readFile(helperPath), 'sha256'));
@@ -170,7 +403,7 @@ test('archive delivery completes before a slow EOF read after its advertised len
     ...fs,
     async open(filename, ...args) {
       const file = await fs.open(filename, ...args);
-      if (filename !== `${options.archivePath}.download` || ++reads !== 2) return file;
+      if (filename !== `${options.archivePath}.download` || ++reads !== 3) return file;
       return {
         createReadStream(settings) {
           return fileSystem.createReadStream(filename, {
@@ -210,7 +443,7 @@ for (const os of ['win', 'linux']) {
         async open(filename, ...args) {
           if (filename === options.archivePath) assert.equal(deliveryFinished, true);
           const file = await fs.open(filename, ...args);
-          if (filename !== `${options.archivePath}.download` || ++reads !== 2) return file;
+          if (filename !== `${options.archivePath}.download` || ++reads !== 3) return file;
           signalDeliveryReady();
           await deliveryAllowed;
           return {
@@ -355,7 +588,8 @@ for (const mutation of [
   o => { o.archive.sha512 = ''; }, o => { o.platform.architecture = 'x64; bad'; },
   o => { o.platform.rid = 'win-arm64'; }, o => { o.platform.rid = 'linux-x64'; },
   o => { o.env = undefined; }, o => { o.archive.url = 'http://example.com/file.zip'; },
-  o => { o.env.SystemRoot = 'relative'; },
+  o => { o.env.SystemRoot = 'relative'; }, o => { delete o.kind; }, o => { delete o.sourceSha; },
+  o => { delete o.archive.provenance; }, o => { delete o.policy; },
 ]) {
   test(`rejects invalid input: ${mutation}`, async t => {
     const { options, deps, state } = await fixture(t);
@@ -366,16 +600,20 @@ for (const mutation of [
   });
 }
 
-test('unavailable archive is explicit, with no fallback or process execution', async t => {
-  const { options, deps, state } = await fixture(t);
-  deps.http = async url => ({ status: 404, url, redirects: [] });
-  await assert.rejects(installArchive(options, deps), error => {
-    assert.match(error.message, /404/);
-    assert.equal(error.attempts[0].url, options.archive.url);
-    return true;
+for (const status of [404, 429, 500, 503]) {
+  test(`HTTP ${status} acquisition fails explicitly, with no fallback or process execution`, async t => {
+    const { options, deps, state } = await fixture(t);
+    deps.http = async url => ({ status, url, redirects: [] });
+    await assert.rejects(installArchive(options, deps), error => {
+      assert.match(error.message, new RegExp(String(status)));
+      assert.equal(error.code, status === 404 ? 'archive-unavailable' : 'network-failure');
+      assert.equal(error.attempts[0].url, options.archive.url);
+      assert.equal(error.attempts.length, 1);
+      return true;
+    });
+    assert.equal(state.calls.length, 0);
   });
-  assert.equal(state.calls.length, 0);
-});
+}
 
 test('real repository helper returns seeded script and parses actual PS parameters', { skip: process.platform !== 'win32' }, async t => {
   const { options, deps } = await fixture(t);
@@ -395,4 +633,120 @@ test('real repository helper returns seeded script and parses actual PS paramete
   };
   await installArchive(options, deps);
   assert.equal(helperRan, true);
+});
+
+for (const url of [
+  approval.url.replace('https:', 'http:'), approval.url.replace('/Sdk/', '/Runtime/'),
+  approval.url.replace('/Sdk/', '/dotnet/../Sdk/'), approval.url.replace('/Sdk/', '/%53dk/'),
+  approval.url.replace('https://', 'https://user:pass@'), `${approval.url}?query=1`, `${approval.url}#fragment`,
+  approval.url.replace('https://builds.', 'https://BUILDS.'), approval.url.replace('/Sdk/', '\\Sdk\\'),
+]) {
+  test(`constrained HTTP rejects nonexact archive URL before network: ${url}`, async t => {
+    const fetch = t.mock.method(globalThis, 'fetch', () => assert.fail('must reject before network'));
+    await assert.rejects(createHttp(policy())(url, {
+      constraints: { allowedUrls: [approval.url], maxBytes: 100, timeoutMs: 1000 },
+    }), /unapproved|exact approved/);
+    assert.equal(fetch.mock.callCount(), 0);
+  });
+}
+
+for (const redirect of [
+  'http://builds.dotnet.microsoft.com/dotnet/other.zip', 'https://ci.dot.net/public/other.zip',
+  `${approval.url}?query=1`, `${approval.url}#fragment`, approval.url.replace('/Sdk/', '/%53dk/'),
+  approval.url.replace('/Sdk/', '/nested/../Sdk/'),
+]) {
+  test(`constrained HTTP rejects redirect before network: ${redirect}`, async t => {
+    const fetch = t.mock.method(globalThis, 'fetch', async () => new Response(null, { status: 302, headers: { location: redirect } }));
+    await assert.rejects(createHttp(policy())(approval.url, {
+      constraints: { allowedUrls: [approval.url], maxBytes: 100, timeoutMs: 1000 },
+    }), /unapproved|exact approved/);
+    assert.equal(fetch.mock.callCount(), 1);
+  });
+}
+
+test('constrained HTTP follows only exact allowed hops with one total deadline and streamed digests', async t => {
+  const directory = await fs.mkdtemp(path.join(__dirname, '.installer-http-'));
+  t.after(() => fs.rm(directory, { recursive: true, force: true }));
+  const redirect = 'https://ci.dot.net/public/approved.zip';
+  const signals = [];
+  const fetch = t.mock.method(globalThis, 'fetch', async (url, options) => {
+    signals.push(options.signal);
+    assert.equal(options.redirect, 'manual');
+    return url === approval.url ? new Response(null, { status: 307, headers: { location: redirect } })
+      : new Response(payload, { headers: { 'content-length': String(payload.length) } });
+  });
+  const destination = path.join(directory, 'archive.zip');
+  const result = await createHttp(policy())(approval.url, {
+    destination, constraints: { allowedUrls: [approval.url, redirect], maxBytes: payload.length, timeoutMs: 1000 },
+  });
+  assert.equal(fetch.mock.callCount(), 2);
+  assert.equal(signals[0], signals[1]);
+  assert.deepEqual(result.redirects, [{ from: approval.url, to: redirect, status: 307 }]);
+  assert.deepEqual(await fs.readFile(destination), payload);
+  assert.equal(result.bytes, undefined);
+  assert.equal(result.size, payload.length);
+  assert.equal(result.sha256, digest(payload, 'sha256'));
+  assert.equal(result.sha512, digest(payload, 'sha512'));
+});
+
+for (const [name, headers, maxBytes] of [
+  ['advertised oversize', { 'content-length': '100' }, 4],
+  ['streamed oversize', {}, 4],
+  ['truncated body', { 'content-length': String(payload.length + 1) }, 100],
+  ['overlong body', { 'content-length': '1' }, 100],
+  ['invalid length', { 'content-length': 'invalid' }, 100],
+  ['infinite limit', {}, Infinity],
+  ['zero limit', {}, 0],
+]) {
+  test(`constrained HTTP rejects ${name}`, async t => {
+    t.mock.method(globalThis, 'fetch', async () => new Response(payload, { headers }));
+    await assert.rejects(createHttp(policy())(approval.url, {
+      constraints: { allowedUrls: [approval.url], maxBytes, timeoutMs: 1000 },
+    }), /limit|Content-Length|constraints/);
+  });
+}
+
+test('constrained HTTP timeout aborts the download rather than resetting on a redirect', async t => {
+  const keepAlive = setTimeout(() => {}, 1000);
+  t.after(() => clearTimeout(keepAlive));
+  t.mock.method(globalThis, 'fetch', (_url, { signal }) => new Promise((_, reject) => {
+    signal.addEventListener('abort', () => reject(signal.reason), { once: true });
+  }));
+  await assert.rejects(createHttp(policy())(approval.url, {
+    constraints: { allowedUrls: [approval.url], maxBytes: 100, timeoutMs: 10 },
+  }), { name: 'TimeoutError', code: 'network-failure' });
+});
+
+for (const phase of ['request', 'body']) {
+  test(`HTTP native ${phase} failure retains network classification and cause`, async t => {
+    const cause = new TypeError('fetch failed');
+    t.mock.method(globalThis, 'fetch', async () => {
+      if (phase === 'request') throw cause;
+      return new Response(new ReadableStream({ start(controller) { controller.error(cause); } }));
+    });
+    await assert.rejects(createHttp(policy())(approval.url), error =>
+      error.code === 'network-failure' && error.cause === cause && error.name === 'TypeError');
+    await assert.rejects(createHttp(policy())(approval.url.replace('https:', 'http:')), error =>
+      error.code !== 'network-failure' && /unapproved/.test(error.message));
+  });
+}
+
+test('HTTP availability HEAD does not consume a body or allocate an archive file', async t => {
+  const body = new Response(payload, { headers: { 'content-length': String(approval.maxBytes + 1) } });
+  const cancel = t.mock.method(body.body, 'cancel');
+  t.mock.method(globalThis, 'fetch', async (_url, options) => {
+    assert.equal(options.method, 'HEAD');
+    return body;
+  });
+  const result = await createHttp(policy(), { open: () => assert.fail('HEAD must not allocate a file') })(approval.url, {
+    destination: 'unused.zip', method: 'HEAD',
+  });
+  assert.equal(cancel.mock.callCount(), 1);
+  assert.equal(result.size, 0);
+  assert.equal(result.bytes.length, 0);
+});
+
+test('public URL canonicalization rejects escaped traversal rather than normalizing it', () => {
+  for (const url of [approval.url.replace('/Sdk/', '/x/../Sdk/'), approval.url.replace('/Sdk/', '/%53dk/')])
+    assert.throws(() => publicUrl(url, policy()), /unapproved/);
 });

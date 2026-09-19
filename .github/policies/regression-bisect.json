@@ -42,6 +42,32 @@
       "https://ci.dot.net/public",
       "https://dotnetcli.blob.core.windows.net/dotnet",
       "https://download.visualstudio.microsoft.com/download/pr"
+    ],
+    "measuredArchives": [
+      {
+        "sourceSha": "5a8b9adb034f420a5c2c1f577670c5eeeb454b7e",
+        "product": "sdk",
+        "version": "11.0.100-rc.1.26420.103",
+        "rid": "win-x64",
+        "origin": "https://builds.dotnet.microsoft.com",
+        "url": "https://builds.dotnet.microsoft.com/dotnet/Sdk/11.0.100-rc.1.26420.103/dotnet-sdk-11.0.100-rc.1.26420.103-win-x64.zip",
+        "redirectUrls": [],
+        "maxBytes": 1073741824,
+        "timeoutMs": 300000,
+        "approvalRevision": "2ec6de6837b5b367e1f1186e850b8faa2d188b16"
+      },
+      {
+        "sourceSha": "5a8b9adb034f420a5c2c1f577670c5eeeb454b7e",
+        "product": "sdk",
+        "version": "11.0.100-rc.1.26420.103",
+        "rid": "win-x64",
+        "origin": "https://ci.dot.net",
+        "url": "https://ci.dot.net/public/Sdk/11.0.100-rc.1.26420.103/dotnet-sdk-11.0.100-rc.1.26420.103-win-x64.zip",
+        "redirectUrls": [],
+        "maxBytes": 1073741824,
+        "timeoutMs": 300000,
+        "approvalRevision": "2ec6de6837b5b367e1f1186e850b8faa2d188b16"
+      }
     ]
   }
 }

@@ -3,7 +3,8 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs/promises");
 const path = require("node:path");
 const { fixture } = require("./fixtures/reproduction.cjs");
-const { seal } = require("./fixtures/contracts.cjs");
+const { seal, archiveReceipt } = require("./fixtures/contracts.cjs");
+const { createHash } = require("node:crypto");
 const { fingerprintInput } = require("./model.cjs");
 const { hash, isolatedEnvironment, run } = require("./toolchain-io.cjs");
 const { execute } = require("./repro-process.cjs");
@@ -70,7 +71,7 @@ async function controlled(t, os = "windows") {
     const toolchains = {
         http: async url => {
             if (url.endsWith("releases-index.json")) return { status: 200, url, bytes: Buffer.from('{"releases-index":[]}') };
-            return { status: 200, url, bytes: Buffer.from("a".repeat(128)) };
+            return { status: 200, url, bytes: Buffer.from(createHash("sha512").update("archive").digest("hex")) };
         },
         installer: async request => {
             activeSdk = request.version;
@@ -88,8 +89,8 @@ async function controlled(t, os = "windows") {
                 await fs.mkdir(path.dirname(file), { recursive: true });
                 await fs.writeFile(file, text);
             }
-            return { attempts: [], archive: { ...request.archive, redirectUrl: request.archive.url,
-                actualSha512: request.archive.sha512, sha256: hash("archive") } };
+            await fs.writeFile(request.archivePath, "archive");
+            return { attempts: [], archive: archiveReceipt(request.archive, request.archivePath, "archive") };
         },
         run: async (exe, args) => {
             const root = path.dirname(exe), runtime = `${activeSdk.split(".")[0]}.0.0`;
@@ -132,6 +133,10 @@ async function controlled(t, os = "windows") {
             return ok(JSON.stringify(result));
         }
         if (args[0] === "msbuild") return ok(JSON.stringify({ Properties: await properties(settings.cwd, args[1]) }));
+        if (args[0] === "build" && path.basename(args[1]) === "Evidence.csproj") {
+            f.helperArgs = args;
+            return ok("");
+        }
         if (args[0] === "pack") {
             assert.deepEqual(args, ["pack", path.join(settings.cwd, "src", "FSharp.Core", "FSharp.Core.fsproj"),
                 "--configuration", "Release", "--no-build", "--no-restore",
@@ -218,6 +223,41 @@ test("fresh revisions use their exact SHA, SDK, TFM and independent same-version
     assert.equal(await fs.readFile(path.join(f.root, "nuget/packages/fsharp.core/1.0.0/FSharp.Core.dll"), "utf8"), "host");
     for (const b of f.builds) await assert.rejects(fs.access(path.join(b.source, "bin", "fsi.dll")));
     await assert.rejects(fs.access(hookMarker));
+});
+
+test("evidence helper selects its runtime TFM consistently for restore and build", async t => {
+    const f = await controlled(t);
+    delete f.options.helper;
+    const result = await testSourceRevision(f.options, f.deps);
+    assert.equal(result.outcome.outcome, "pass", JSON.stringify(result));
+    assert.ok(f.helperArgs.includes("-p:EvidenceTargetFramework=net10.0"));
+    assert.ok(!f.helperArgs.some(a => a.startsWith("-p:TargetFramework=")));
+    const helper = path.dirname(f.helperArgs[1]);
+    assert.match(await fs.readFile(path.join(helper, "Evidence.csproj"), "utf8"),
+        /<TargetFramework>\$\(EvidenceTargetFramework\)<\/TargetFramework>/);
+    assert.match(await fs.readFile(path.join(helper, "NuGet.Config"), "utf8"), /dnceng\/public\/_packaging\/dotnet-public/);
+});
+
+test("large product inventories hash every dependency without unbounded inspection arguments", async t => {
+    const f = await controlled(t);
+    f.afterBuild = async source => {
+        for (let i = 0; i < 180; i++) await fs.writeFile(
+            path.join(source, "artifacts", "bin", "fsc", "Release", "net10.0", `dependency-${i}.dll`), `dependency-${i}`);
+    };
+    const execute = f.deps.execute;
+    const inspected = [];
+    f.deps.execute = async (exe, args, settings) => {
+        if (args.includes("inspect")) {
+            inspected.push(args.slice(args.indexOf("inspect") + 1));
+            assert.equal(inspected.at(-1).length, 5, "only selected assemblies and Core package require metadata inspection");
+        }
+        return execute(exe, args, settings);
+    };
+    const result = await testSourceRevision(f.options, f.deps);
+    assert.equal(result.outcome.outcome, "pass", JSON.stringify(result));
+    assert.ok(inspected.length >= 2, "inventory and reproduction both use bounded inspection");
+    for (let i = 0; i < 180; i++) assert.equal(
+        result.product.files.find(f => path.basename(f.path) === `dependency-${i}.dll`).sha256, hash(`dependency-${i}`));
 });
 
 for (const [name, outputs, outcome, reason] of [
@@ -308,6 +348,12 @@ for (const [name, change, reason] of [
     ["missing FSI", f => { f.afterBuild = source => fs.rm(path.join(source, "artifacts/bin/fsi/Release/net10.0/fsi.dll")); }, "wrong-identity"],
     ["changed global.json", f => { f.afterBuild = source => fs.appendFile(path.join(source, "global.json"), " "); }, "wrong-identity"],
     ["unavailable SDK", f => { f.deps.toolchains.http = async () => { throw new Error("SDK unavailable"); }; }, "unavailable-sdk"],
+    ["installer process failure", f => { f.deps.toolchains.installer = async () => {
+        throw Object.assign(new Error("installer process failed"), { code: "command-failure" });
+    }; }, "setup-failure"],
+    ...["checksum-provenance", "network-failure"].map(code => [code, f => {
+        f.deps.toolchains.http = async () => { throw Object.assign(new Error(code), { code }); };
+    }, code]),
 ]) test(`${name} is untestable, never the reported product failure`, async t => {
     const f = await controlled(t);
     change(f);
@@ -318,6 +364,8 @@ for (const [name, change, reason] of [
     if (f.launchFail) assert.match(result.error.message, /process supervision failed/);
     if (f.fail) assert.ok(result.evidence.some(e => e.path.endsWith(".binlog")));
     assert.ok(result.evidence.every(e => !path.isAbsolute(e.path) && !e.path.split("/").includes("..") && /^[a-f0-9]{64}$/.test(e.sha256)));
+    const saved = JSON.parse(await fs.readFile(path.join(f.options.evidenceDirectory, result.buildInstanceId, "observation.json")));
+    assert.deepEqual(saved.outcome, result.outcome);
 });
 
 test("confirmation and all phases always allocate independent build instances", async t => {

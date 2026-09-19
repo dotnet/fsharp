@@ -4,9 +4,70 @@ const {
     isEligibleIssue, validatePolicy, validateManifest, fingerprintInput, fingerprintEpoch,
     classifyAttempts, validateOutcome, validateObservation, validateState, admitBisection,
 } = require("./model.cjs");
-const { policy, manifest, attempt, observation, admission, state, seal, sha, digest } = require("./fixtures/contracts.cjs");
+const { policy, manifest, attempt, observation, admission, state, seal, sha, digest, archiveReceipt } = require("./fixtures/contracts.cjs");
+const path = require("node:path");
 
 const rejects = (fn, pattern = /./) => assert.throws(fn, pattern);
+
+for (const kind of ["publisher-checksum", "approved-official-https-measured"]) {
+    test(`observation serializes and validates ${kind} without relabelling hashes`, () => {
+        const approval = policy().toolchains.measuredArchives[0];
+        const m = manifest();
+        m.matrix[0].os = "windows";
+        seal(m);
+        const o = observation("source", "pass", m, approval.sourceSha);
+        const archive = archiveReceipt({
+            name: path.basename(new URL(approval.url).pathname), url: approval.url, rid: approval.rid, architecture: "x64",
+            provenance: kind === "publisher-checksum" ? { kind } :
+                { kind, approvalRevision: approval.approvalRevision, approvalDigest: fingerprintInput(approval) },
+        }, path.resolve("retained-sdk.zip"), "archive");
+        if (kind === "publisher-checksum") archive.sha512 = archive.actualSha512;
+        o.cells[0].buildToolchain = {
+            sourceSha: approval.sourceSha, globalJsonDigest: digest("global"), evidenceDigest: digest("receipt"),
+            requestedSdk: approval.version, requestedTools: approval.version, requestedCompilerRuntime: "11.0.0",
+            sdk: { version: approval.version, sha256: archive.sha256, verified: true },
+            compilerRuntime: { version: "11.0.0", sha256: digest("runtime"), verified: true },
+            archive, verified: true, supported: true,
+        };
+        assert.equal(validateObservation(JSON.parse(JSON.stringify(o)), m), true);
+        for (const change of [
+            a => { a.provenance.kind = "unknown"; },
+            a => { a.provenance.approvalDigest = digest("forged"); },
+            a => { a.retained.sha512 = "0".repeat(128); },
+            a => { a.bytesReceived++; },
+            a => { a.url = a.url.replace("26420", "26421"); },
+            a => { a.redirects.push({ from: a.url, to: `${a.url}?other`, status: 302 }); },
+            a => { a.architecture = "arm64"; },
+        ]) {
+            const changed = structuredClone(o);
+            change(changed.cells[0].buildToolchain.archive);
+            rejects(() => validateObservation(changed, m));
+        }
+        if (kind === "approved-official-https-measured") {
+            archive.sha512 = archive.actualSha512;
+            rejects(() => validateObservation(o, m), /missing or unknown fields/);
+        }
+    });
+}
+
+test("checksum provenance is a blocked outcome, not missing SDK or a passing attempt", () => {
+    const m = manifest(), a = attempt("pass");
+    a.checks.checksumProvenance = false;
+    const blocked = { schemaVersion: 1, outcome: "untestable", reason: "checksum-provenance" };
+    assert.deepEqual(classifyAttempts([a, a], m), blocked);
+    const o = observation("source", "pass", m);
+    const cell = o.cells[0];
+    cell.sdk = cell.runtime = null;
+    cell.artifacts = Object.fromEntries(Object.keys(cell.artifacts).map(name => [name, null]));
+    a.checks = Object.fromEntries(Object.keys(a.checks).map(name => [name, false]));
+    a.execution = { status: "exception", complete: false, exitCode: null, stdout: "", stderr: "checksum provenance absent" };
+    cell.attempts = [a, a];
+    cell.outcome = o.outcome = blocked;
+    assert.deepEqual(classifyAttempts(cell.attempts, m), blocked);
+    assert.equal(validateObservation(JSON.parse(JSON.stringify(o)), m), true);
+    assert.equal(validateOutcome({ schemaVersion: 1, outcome: "untestable", reason: "network-failure" }), true);
+    rejects(() => validateOutcome({ schemaVersion: 1, outcome: "pass", reason: "checksum-provenance" }));
+});
 
 for (const [name, patch, expected] of [
     ["before cutoff", { created_at: "2026-08-31T23:59:59.999Z" }, false],

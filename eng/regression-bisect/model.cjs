@@ -158,6 +158,7 @@ function validateManifest(manifest) {
 
 const untestableReasons = [
     "restore-failure", "build-failure", "setup-failure", "wrong-identity", "unavailable-sdk", "unavailable-runtime",
+    "checksum-provenance", "network-failure",
     "timeout", "incomplete-evidence", "flaky", "unrelated-exception", "assertion-mismatch",
 ];
 function validateOutcome(outcome) {
@@ -173,6 +174,7 @@ function validateOutcome(outcome) {
 const outcome = (value, reason) => ({ schemaVersion: 1, outcome: value, reason });
 const untestable = reason => outcome("untestable", reason);
 const checks = {
+    checksumProvenance: "checksum-provenance",
     restore: "restore-failure", build: "build-failure", setup: "setup-failure", identity: "wrong-identity",
     sdk: "unavailable-sdk", runtime: "unavailable-runtime",
 };
@@ -229,10 +231,21 @@ const artifact = shape({
     sha256: digest, origin: oneOf(["local-build", "released-sdk"]),
     sourceSha: nullable(sourceSha), buildInstanceId: text,
 });
+const archiveReceipt = (v, p) => object(v, {
+    name: text, url: httpsUrl, rid: text, architecture,
+    provenance: (v, p) => object(v, v?.kind === "publisher-checksum"
+        ? { kind: literal("publisher-checksum") }
+        : { kind: literal("approved-official-https-measured"), approvalRevision: sourceSha, approvalDigest: digest }, p),
+    ...(v?.provenance?.kind === "publisher-checksum" ? { sha512: matching(/^[a-f0-9]{128}$/) } : {}),
+    sha256: digest, actualSha512: matching(/^[a-f0-9]{128}$/), redirectUrl: httpsUrl, finalOrigin: httpsUrl,
+    redirects: list(shape({ from: httpsUrl, to: httpsUrl, status: oneOf([301, 302, 303, 307, 308]) }), 0, 5),
+    bytesReceived: positive, receivedAt: (v, p) => check(validTimestamp(v), p, "invalid receipt time"),
+    retained: shape({ path: text, sha256: digest, sha512: matching(/^[a-f0-9]{128}$/), size: positive }),
+}, p);
 const buildToolchain = shape({
     sourceSha, globalJsonDigest: digest, evidenceDigest: digest,
     requestedSdk: pinnedVersion, requestedTools: pinnedVersion, requestedCompilerRuntime: pinnedVersion,
-    sdk: productIdentity, compilerRuntime: productIdentity,
+    sdk: productIdentity, compilerRuntime: productIdentity, archive: archiveReceipt,
     verified: literal(true), supported: literal(true),
 });
 const observationCell = (v, p) => object(v, {
@@ -278,6 +291,17 @@ function validateObservation(observation, manifest, options = { finalConfirmatio
                 build.requestedSdk === build.sdk.version && build.requestedTools === build.sdk.version &&
                 build.requestedCompilerRuntime === build.compilerRuntime.version,
             "observation.cells.buildToolchain", "wrong source declaration or resolved build SDK");
+            const { validateArchiveReceipt } = require("./archive-provenance.cjs");
+            try {
+                validateArchiveReceipt({
+                    policy: trustedPolicy, kind: observation.kind, sourceSha: build.sourceSha, product: "sdk",
+                    version: build.requestedSdk, platform: { ...cell.environment, rid: build.archive.rid }, archive: build.archive,
+                }, build.archive);
+            } catch (error) { throw new ContractError(`observation.cells.buildToolchain.archive: ${error.message}`); }
+            const rid = `${{ windows: "win", linux: "linux", macos: "osx" }[cell.environment.os]}-${cell.environment.architecture}`;
+            check(build.archive.sha256 === build.sdk.sha256 && build.archive.architecture === cell.environment.architecture &&
+                (build.archive.rid === rid || cell.environment.os === "linux" && build.archive.rid === `linux-musl-${cell.environment.architecture}`),
+            "observation.cells.buildToolchain.archive", "archive does not match build SDK or platform");
         }
         for (const [name, missing] of Object.entries({
             sdk: cell.sdk === null, runtime: cell.runtime === null,

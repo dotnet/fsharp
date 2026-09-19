@@ -3,6 +3,7 @@ const path = require("node:path");
 const { execute } = require("./repro-process.cjs");
 const { validateManifest, classifyAttempts, fingerprintInput } = require("./model.cjs");
 const { verifyToolchainIdentity } = require("./toolchains.cjs");
+const { verifyRetainedArchive } = require("./toolchain-installer.cjs");
 const { hash, inside, requireValue, isolatedEnvironment } = require("./toolchain-io.cjs");
 const policy = require("../../.github/policies/regression-bisect.json");
 
@@ -76,7 +77,7 @@ async function selectFsiCommand({ product, toolchain, cell }) {
 
 const compileAssertion = manifest => /(?:^|\n)[^\n]+\(\d+,\d+(?:,\d+,\d+)?\): error FS\d{4}: [^\n]+/.test(manifest.assertions.failure.stderr);
 const attemptFor = ({ status, complete, exitCode, stdout, stderr }) => ({
-    schemaVersion: 1, checks: { restore: true, build: true, setup: true, identity: true, sdk: true, runtime: true },
+    schemaVersion: 1, checks: { restore: true, build: true, setup: true, identity: true, sdk: true, runtime: true, checksumProvenance: true },
     execution: { status, complete, exitCode, stdout, stderr },
 });
 
@@ -200,7 +201,7 @@ async function invokeHelper(helper, args, settings, run) {
 
 async function inspectProduct(product, inspect) {
     for (const file of product.files) await checkedFile(file, product.root);
-    const files = product.files.filter(f => /\.(dll|exe|nupkg)$/i.test(f.path));
+    const files = product.files.filter(f => ["fsi", "compiler", "core", "tasks", "corePackage"].includes(f.role));
     const inspected = await inspect(files.map(f => f.path));
     for (const file of files.filter(f => f.assemblyVersion)) {
         const actual = inspected.find(f => samePath(f.path, file.path));
@@ -352,8 +353,12 @@ async function runReproduction(options, dependencies = {}) {
         const { manifest, toolchain, helper } = options;
         validateManifest(manifest);
         await verifySources(manifest, options.sourceDirectory);
+        stage = "identity";
         const verification = verifyToolchainIdentity({ policy, toolchain: toolchain.requested, identity: toolchain });
         requireValue(verification.status === "verified", verification.error?.message ?? "unverified acquisition");
+        await verifyRetainedArchive(toolchain.archive);
+        for (const installation of toolchain.installations ?? [])
+            if (installation.product !== "sdk") await verifyRetainedArchive(installation.archive);
         await checkedFile({ path: toolchain.hostPath, sha256: toolchain.hostSha256 }, toolchain.root);
         requireValue(["source", "released"].includes(options.product.kind) && options.product.buildInstanceId, "unidentified product build");
         if (options.product.kind === "source") requireValue(/^[0-9a-f]{40}$/.test(options.product.sourceSha) &&
@@ -484,8 +489,8 @@ async function runReproduction(options, dependencies = {}) {
                             assetsFile: path.resolve(path.dirname(row.project), row.assetsFile),
                             targetPath: path.resolve(path.dirname(row.project), row.targetPath),
                         }));
-                        for (const row of rows) row.core = await coreAssets(row, attemptEnv.NUGET_PACKAGES, product, manifest);
                         stage = "identity";
+                        for (const row of rows) row.core = await coreAssets(row, attemptEnv.NUGET_PACKAGES, product, manifest);
                         const cellManifest = expectedBuildManifest(manifest, cell, rows, directory);
                         const verified = await verifyProjectIdentities({
                             manifest: cellManifest, product, toolchain, sourceDirectory: directory,
