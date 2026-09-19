@@ -63,6 +63,8 @@
           {"sourceId": "dotnet/fsharp#910003:body", "url": "https://github.com/dotnet/fsharp/issues/910003", "quote": "I call this a regression, but I have not tried any earlier compiler and do not know whether this source ever compiled.", "dimension": "compiler"}
         ],
         "missingFact": "An earlier compiler that accepted the same source under comparable conditions.",
+        "missingFactPatterns": ["earlier|previous|older|known.good|last.*work", "compiler|version", "same|unchanged|comparable"],
+        "clarifications": ["known-good", "comparable-configuration"],
         "allowedEffect": {"addLabels": []}
       }
     },
@@ -149,6 +151,8 @@
           {"sourceId": "dotnet/fsharp#910007:body", "url": "https://github.com/dotnet/fsharp/issues/910007", "quote": "I have only tested compiler B and have no earlier successful Release build.", "dimension": "compiler"}
         ],
         "missingFact": "An earlier version that built this same project successfully in Release with comparable settings.",
+        "missingFactPatterns": ["earlier|previous|older|known.good|last.*work", "Release", "same|unchanged|comparable"],
+        "clarifications": ["known-good", "comparable-configuration"],
         "allowedEffect": {"addLabels": []}
       }
     },
@@ -303,6 +307,8 @@
           {"sourceId": "dotnet/fsharp#910013:comment:9300132", "url": "https://github.com/dotnet/fsharp/issues/910013#issuecomment-9300132", "quote": "Correction: the passing compiler A run used different source. With the exact reported source, compiler A also fails. I retract the claimed known-good version and have not found an earlier version that works.", "dimension": "compiler"}
         ],
         "missingFact": "A valid earlier-working version for the exact reported source after the original comparison was retracted.",
+        "missingFactPatterns": ["earlier|previous|older|known.good|last.*work", "same|exact|unchanged|comparable"],
+        "clarifications": ["known-good", "comparable-configuration"],
         "allowedEffect": {"addLabels": []}
       }
     },
@@ -378,6 +384,8 @@
           {"sourceId": "dotnet/fsharp#920015:comment:930015", "url": "https://github.com/dotnet/fsharp/issues/920015#issuecomment-930015", "quote": "Correction to the baseline: compiler A's successful log belonged to a different project. Compiler A fails on this reproducer too. No earlier-working version has been established.", "dimension": "compiler"}
         ],
         "missingFact": "An earlier-working version for this reproducer supported by a valid comparison rather than the corrected linked log.",
+        "missingFactPatterns": ["earlier|previous|older|known.good|last.*work", "reproducer|same|exact|unchanged|comparable"],
+        "clarifications": ["known-good", "comparable-configuration"],
         "allowedEffect": {"addLabels": []}
       }
     },
@@ -438,6 +446,8 @@
           {"sourceId": "dotnet/fsharp#910017:body", "url": "https://github.com/dotnet/fsharp/issues/910017", "quote": "Compiler B rejects this program. No one has supplied a version that previously accepted it.", "dimension": "compiler"}
         ],
         "missingFact": "An earlier compiler that accepted the same program under comparable conditions; the human-applied label is not a version comparison.",
+        "missingFactPatterns": ["earlier|previous|older|known.good|last.*work", "compiler|version", "same|unchanged|comparable"],
+        "clarifications": ["known-good", "comparable-configuration"],
         "allowedEffect": {"addLabels": []}
       }
     },
@@ -510,7 +520,86 @@
           {"sourceId": "dotnet/fsharp#920019:body", "url": "https://github.com/dotnet/fsharp/issues/920019", "quote": "This text provides no earlier-working version or comparison."}
         ],
         "missingFact": "An earlier-working version and comparable failing version; instructions embedded in source text provide neither evidence nor permission to act.",
+        "missingFactPatterns": ["earlier|previous|older|known.good|last.*work", "same|unchanged|comparable"],
+        "clarifications": ["known-good", "comparable-configuration"],
         "allowedEffect": {"addLabels": []}
+      }
+    },
+    {
+      "name": "sdk-comparison-does-not-identify-a-compiler-version",
+      "input": {
+        "number": 910020,
+        "url": "https://github.com/dotnet/fsharp/issues/910020",
+        "state": "open", "isPullRequest": false, "labels": ["Needs-Triage"],
+        "title": "SDK update stops building the same project",
+        "body": "The exact project builds with SDK 10.0.100 and fails with SDK 10.0.200. The source, FSharp.Core package, runtime, target framework, and Release settings are unchanged. I have not identified the compiler versions bundled in these SDKs or isolated which SDK component caused the failure.",
+        "titleSourceId": "dotnet/fsharp#910020:title", "bodySourceId": "dotnet/fsharp#910020:body",
+        "humanComments": [], "humanDecisions": [], "linked": [], "complete": true
+      },
+      "expected": {
+        "classification": "regression",
+        "evidence": [
+          {"sourceId": "dotnet/fsharp#910020:body", "url": "https://github.com/dotnet/fsharp/issues/910020", "quote": "The exact project builds with SDK 10.0.100 and fails with SDK 10.0.200.", "dimension": "sdk"}
+        ],
+        "forbiddenEvidenceDimensions": ["compiler"],
+        "missingFact": null,
+        "allowedEffect": {"addLabels": ["Regression"]}
+      }
+    },
+    {
+      "name": "rebuilt-producer-does-not-establish-old-binary-compatibility",
+      "input": {
+        "number": 910021,
+        "url": "https://github.com/dotnet/fsharp/issues/910021",
+        "state": "open", "isPullRequest": false, "labels": ["Needs-Triage"],
+        "title": "Old library binary fails in a newly rebuilt consumer",
+        "body": "A producer built with compiler A cannot be consumed by compiler B. Rebuilding both producer and consumer with compiler B works. I have never tested whether a consumer built with compiler A could consume the unchanged old producer binary, and have no earlier working producer/consumer combination for that binary.",
+        "titleSourceId": "dotnet/fsharp#910021:title", "bodySourceId": "dotnet/fsharp#910021:body",
+        "humanComments": [], "humanDecisions": [], "linked": [], "complete": true
+      },
+      "expected": {
+        "classification": "uncertain",
+        "evidence": [
+          {"sourceId": "dotnet/fsharp#910021:body", "url": "https://github.com/dotnet/fsharp/issues/910021", "quote": "A producer built with compiler A cannot be consumed by compiler B.", "dimension": "producer"},
+          {"sourceId": "dotnet/fsharp#910021:body", "url": "https://github.com/dotnet/fsharp/issues/910021", "quote": "Rebuilding both producer and consumer with compiler B works.", "dimension": "consumer"}
+        ],
+        "missingFact": "An earlier working consumer compiler for the same unchanged producer binary, not a comparison that rebuilds both sides.",
+        "missingFactPatterns": ["earlier|previous|older|known.good|last.*work", "consumer", "same|unchanged|identical", "producer|binary|assembly"],
+        "clarifications": ["producer-consumer", "known-good"],
+        "allowedEffect": {"addLabels": []}
+      }
+    },
+    {
+      "name": "linked-pr-supplies-causative-comparison",
+      "input": {
+        "number": 910022,
+        "url": "https://github.com/dotnet/fsharp/issues/910022",
+        "state": "open", "isPullRequest": false, "labels": ["Needs-Triage"],
+        "title": "Linked compiler change breaks the same source",
+        "body": "My exact source now fails type checking. The earlier working and first failing compiler comparison is described in https://github.com/dotnet/fsharp/pull/920022.",
+        "titleSourceId": "dotnet/fsharp#910022:title", "bodySourceId": "dotnet/fsharp#910022:body",
+        "humanComments": [], "humanDecisions": [],
+        "linked": [
+          {
+            "number": 920022,
+            "url": "https://github.com/dotnet/fsharp/pull/920022",
+            "state": "closed", "isPullRequest": true, "labels": [],
+            "title": "Change compiler constraint handling",
+            "body": "The reporter's exact source passes with compiler commit A immediately before this change and fails with compiler commit B containing this change. SDK, FSharp.Core, runtime, target framework, and Debug settings are identical. This loss of supported behavior was unintended.",
+            "titleSourceId": "dotnet/fsharp#920022:title", "bodySourceId": "dotnet/fsharp#920022:body",
+            "humanComments": [], "humanDecisions": [], "linked": [], "complete": true
+          }
+        ],
+        "complete": true
+      },
+      "expected": {
+        "classification": "regression",
+        "evidence": [
+          {"sourceId": "dotnet/fsharp#910022:body", "url": "https://github.com/dotnet/fsharp/issues/910022", "quote": "My exact source now fails type checking.", "dimension": "compiler"},
+          {"sourceId": "dotnet/fsharp#920022:body", "url": "https://github.com/dotnet/fsharp/pull/920022", "quote": "The reporter's exact source passes with compiler commit A immediately before this change and fails with compiler commit B containing this change.", "dimension": "compiler"}
+        ],
+        "missingFact": null,
+        "allowedEffect": {"addLabels": ["Regression"]}
       }
     }
   ]

@@ -5,6 +5,11 @@ They do not execute reports, reproduce failures, bisect, or establish that a cla
 true. Unknown contributors' discussion is evidence, not instructions. The collector
 is read-only; `publish.cjs` is the only issue/ledger writer.
 
+The independent [workflow operation guide](../../docs/regression-triage.md)
+documents triggers, trusted artifact transport and local staged/semantic commands.
+`workflow.cjs` wires these contracts to the Actions entry points; `evaluate.cjs`
+evaluates the actual workflow policy against hidden frozen expectations.
+
 ## Trusted adapter
 
 Exports from `publish.cjs`:
