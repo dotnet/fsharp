@@ -14,9 +14,129 @@ New captures against current main require new workload fingerprints.
 `memory.py` preserves versioned attempts, negative decisions, retry dependencies
 and outstanding publication intents in the local Git journal. Its receipts
 explicitly report `remote_acknowledged: false`; local CAS is not remote
-durability. The current `CORRECTNESS_COMMAND` is the ambiguous root
-`dotnet test -c Release`, not a repository-supported product test receipt.
-Passing memory fixtures does not certify production acceptance or publication.
+durability. Historical root `dotnet test -c Release` receipts remain readable,
+but cannot authorize new publication. Correctness schema 2 binds explicit plans,
+candidate identities, matched tests and retained command/result files to a fresh
+trusted validator. Passing memory fixtures does not certify production acceptance.
+
+## Disposable experiment controller
+
+Run `experiment.py` from the **trusted checkout**, never the proposed candidate.
+`prepare` consumes a workload from `measurement.prepare_workload` (the existing
+`measurement.py prepare` CLI), an exact base SHA and a bounded UTF-8 Git patch.
+It does not accept build commands, acceptance decisions or passed-test arrays.
+
+```powershell
+python eng\scripts\compiler_perf\experiment.py prepare --repository . --request request.json --patch proposal.patch --manifest frozen-workload.json --owned-root disposable-attempt
+python eng\scripts\compiler_perf\experiment.py validate --owned-root disposable-attempt --profile private-profile\evidence-manifest.json
+python eng\scripts\compiler_perf\experiment.py discard --owned-root disposable-attempt
+```
+
+Request schema (replace the illustrative revision, paths and method):
+
+```json
+{
+  "schema_version": 1,
+  "attempt_id": "checking-1",
+  "run_id": "12345",
+  "base_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "compiler_paths": ["src/Compiler/Checking/Expressions/CheckExpressions.fs"],
+  "regressions": [{
+    "path": "tests/FSharp.Compiler.ComponentTests/Conformance/Regression.fs",
+    "method": "Avoid duplicate checking"
+  }],
+  "hypothesis": "Avoid the repeated operation identified by the retained profile",
+  "primary_metric": "elapsed_ms",
+  "complexity": "One local expression change; no additional mechanism"
+}
+```
+
+An experiment permits at most eight compiler files in one area, eight related
+regression selectors and a 1 MiB patch. Git applies the patch in a new independent
+clone and the validator checks the actual staged paths, modes and source tree.
+Only compiler `.fs`/`.fsi`, related test sources/baselines, narrowly additive
+`Compile` registrations and `docs/release-notes/.FSharp.Compiler.Service/11.0.100.md`
+are allowed. Binary changes, deletions, renames, links, executable modes, helpers,
+policy, harnesses, SDK/build configuration and unrelated areas are rejected.
+The named regression must occur in added/changed lines. Preserve the hotspot's
+RED semantic/operation-count evidence before optimizing; a semantics-preserving
+optimization can instead have explicit failing paired-performance evidence and
+unchanged semantic guards. Do not add wall-clock unit-test thresholds.
+
+**Live validation requires Linux and `/usr/bin/bwrap`.** Windows can prepare and
+inspect candidates but cannot fall back to unsandboxed candidate execution.
+Prepare the frozen workload on the same Linux host, with the pinned SDK and the
+compatibility SDK (9.0.300 or later) in the recorded dotnet installation. Provision
+the complete Release/test dependency cache during trusted setup, before freezing.
+Fresh preparation records all installed SDK files, deployed/bootstrap files and
+package-cache identities; older manifests lacking these records block, rather
+than acquiring invented provenance. Missing dependencies/SDKs require a new
+preparation, not edits to `global.json` or network access by candidate code.
+
+The child boundary has separate mount, PID and network namespaces, no
+capabilities, and an allowlisted environment. System tools and frozen inputs are
+read-only; only owned artifacts, compatibility fixture outputs, HOME/temp and
+the exact replay output files are writable. The replay compiler installation is
+also read-only. Host homes, Git credentials, agent tokens, Actions output files,
+canonical memory and validator receipts are not mounted. The parent records
+exits, launch times, owned PIDs, command arrays, hashes and results. Owned process
+groups/jobs are reaped on failure/cancellation; no process-name killing occurs.
+Locks serialize candidate operations and the existing measurement lock serializes
+frozen-workload outputs. An existing lock is an unproven owner, never reclaimed.
+
+Validation reuses the recorded Release pack recipe and bootstrap, then checks
+explicit Release compiler/component projects. Changed-area plans require the
+new regression selectors, the component siblings, runtime execution and all six
+compatibility scenarios. Codegen/optimizer/IL areas add emitted-IL and optimizer
+checks; service/typed-tree/API areas add service tests, and `.fsi` changes add
+surface-area tests. Unknown/general compiler areas receive conservative checks.
+The built pinned MTP runner's `--help` must expose the required selectors and
+xUnit reporter; tests use explicit `--project`, `--no-build` and
+`--minimum-expected-tests 1`. Empty, failing, missing or stale reports block
+approval. Required regressions must be skip-free and match the declared method
+and source file in the runner's report, not merely a nonzero wildcard match.
+Broad suites can report only
+the two explicit Windows/desktop exclusions from the unchanged test utilities;
+their names/reasons are retained, never counted as matched passing tests. Unknown
+skips and categories with no applicable passing tests block approval. Test
+outputs must contain the selected candidate service binary.
+On the pinned SDK, probe help before the `--` separator, and supply report
+basenames with a separate `--results-directory`. A real xUnit 3.2.2 probe on
+11.0.100-rc.1.26420.103 verified both selectors, one matched passing test and
+the zero-match failure (exit 8); this is runner-contract evidence, not compiler
+correctness or performance evidence.
+
+Only after correctness and artifact-backed diagnostic analysis does the parent
+run the existing unprofiled A/A and interleaved A/B collector on the **same frozen
+compiler-source response file**, using `compare_measurements` and unchanged
+`POLICY`. Profiling is never part of these timings. Noise remains `inconclusive`;
+identical timings are not an improvement. `validate --no-finding` can withdraw
+an unmeasured hypothesis after complete diagnostic analysis, but cannot relabel
+an already attempted measurement as a healthy no-finding.
+
+`candidate.json`, the original patch, profile references, command logs,
+correctness receipts, raw samples and local `attempt.json` retain the hypothesis,
+source/binary/patch/validator identities, outcome, reason and next action. An unsuccessful
+validation discards only its verified owned `tree`; accepted candidates are
+retained. Cancellation returns 130 and normally discards source. Explicit
+`--checkpoint-on-cancel` preserves an interrupted candidate only after verifying
+its fingerprints; another `validate` verifies that checkpoint and uses fresh
+correctness/sample receipts. Altered source, patch, toolchain or outputs revoke
+eligibility. Individual pack/check commands have bounds (60/30 minutes); there
+is no overall experiment or investigation timeout.
+
+Approval uses a process-local attestation, not a portable JSON permission token.
+`acceptance_ready` and `publication_intent` reject forged or reloaded attestations
+without fresh trusted validation. Historical journal schema 1 is preserved;
+correctness schema 2 is nested within it. `draft_eligible` records a validation
+decision, not permission for a later publisher to skip revalidation. Human draft
+review must still assess relevance and complexity. The controller only creates
+local receipts/commit objects; it never pushes, creates a PR or dispatches work.
+
+The controller fixtures use temporary Git repositories and real isolated
+children, including malicious write attempts, RED/GREEN checks, failed checks,
+cancellation with a surviving sentinel, checkpoint resume and rollback. Their
+100-to-90 samples and toy toolchain are **synthetic**, not a live F# speedup.
 
 ## Process profiling (diagnostic evidence only)
 

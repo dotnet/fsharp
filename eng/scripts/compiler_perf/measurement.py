@@ -340,6 +340,7 @@ def allowed_environment(work_dir):
 def run_process(arguments, cwd, environment, log):
     require(isinstance(arguments, list) and all(isinstance(x, str) for x in arguments), "Use argument arrays")
     start = time.perf_counter_ns()
+    started_at = time.time_ns()
     cpu = rss = None
     unavailable = {}
     with Path(log).open("wb") as output:
@@ -380,6 +381,7 @@ def run_process(arguments, cwd, environment, log):
             if process is not None and process.returncode is None:
                 process.wait()
     return {"elapsed_ms": (time.perf_counter_ns() - start) / 1_000_000,
+            "command": arguments, "cwd": str(cwd), "pid": process.pid, "started_at_unix_ns": started_at,
             "process_cpu_ms": cpu, "process_peak_rss_bytes": rss,
             "unavailable_reasons": unavailable, "exit_status": process.returncode,
             "complete": process.returncode == 0}
@@ -693,6 +695,7 @@ def prepare_workload(source_sha, work_dir, output, primary_metric="elapsed_ms", 
     else:
         run(["bash", "build.sh", "-c", "Release", "--pack"], bootstrap_dir)
     toolchain = {"dotnet": file_record(dotnet), "sdk": sdk,
+                 "sdks": run([dotnet, "--list-sdks"], bootstrap_dir),
                  "runtime": run([dotnet, "--list-runtimes"], bootstrap_dir),
                  "info": run([dotnet, "--info"], bootstrap_dir), "python": platform.python_version(),
                  "git": run(["git", "--version"], bootstrap_dir), "measurement": file_record(__file__),
@@ -774,13 +777,20 @@ def prepare_workload(source_sha, work_dir, output, primary_metric="elapsed_ms", 
     run([dotnet, installation / "fsc.dll", "@" + str(response)], workload["cwd"])
     assembly = Path(workload["assembly_output"])
     require(assembly.is_file() and assembly.stat().st_size > 0, "Smoke replay produced no assembly")
+    toolchain["build_inputs"] = {
+        "packages": [file_record(p) for p in sorted(Path(environment["NUGET_PACKAGES"]).rglob("*")) if p.is_file()],
+        "sdk": [file_record(p) for p in sorted((dotnet.parent / "sdk").rglob("*")) if p.is_file()],
+        "bootstrap": [file_record(p) for p in sorted((bootstrap_dir / "artifacts").rglob("*"))
+                      if p.is_file() and ("Proto" in p.parts or "Bootstrap" in p.parts)],
+    }
+    baseline["toolchain_fingerprint"] = fingerprint_inputs(toolchain)
     document["preparation_commands"] = commands
     write_json(root / "baseline-compiler.json", baseline)
     write_json(output, document)
     return document
 
 
-def run_repetitions(manifest, compiler, output):
+def run_repetitions(manifest, compiler, output, *, process_runner=None):
     require(sys.platform == "linux", "Live acceptance collection requires Linux (wait4 per-process CPU/peak RSS)")
     validate_manifest(manifest, "workload")
     validate_manifest(compiler, "compiler")
@@ -837,7 +847,7 @@ def run_repetitions(manifest, compiler, output):
             sample = dict(event, sample_id=str(uuid.uuid4()), compiler_id=fingerprint_inputs(installation),
                           fingerprints={k: fingerprint_inputs(v) for k, v in invariants.items()},
                           profiler_attached=False)
-            result = run_process([invariants["toolchain"]["dotnet"]["path"], installation["files"]["fsc.dll"]["path"],
+            result = (process_runner or run_process)([invariants["toolchain"]["dotnet"]["path"], installation["files"]["fsc.dll"]["path"],
                                   "@" + workload["response_file"]["path"]],
                                  workload["cwd"], environment, logs / f"sample-{event['ordinal']:02}.log")
             sample.update(result)

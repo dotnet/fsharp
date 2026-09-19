@@ -164,6 +164,8 @@ class PreparationTests(unittest.TestCase):
                         if outcome != "no assembly":
                             (cwd / "output.dll").write_text("synthetic replay output")
                         status = 7 if outcome == "replay failure" else 0
+                    elif args[1] == "--list-sdks":
+                        text = f"{sdk} [{dotnet.parent / 'sdk'}]"
                     elif args[1] in ("--list-runtimes", "--info"):
                         text = "synthetic runtime"
                     else:
@@ -182,6 +184,12 @@ class PreparationTests(unittest.TestCase):
                         document = m.prepare_workload(sha, root, output)
                         self.assertEqual(document, m.read_json(output))
                         m.validate_manifest(document, "workload")
+                        toolchain = document["invariants"]["toolchain"]
+                        self.assertEqual(toolchain["sdks"], f"{sdk} [{dotnet.parent / 'sdk'}]")
+                        self.assertEqual(toolchain["build_inputs"]["sdk"],
+                                         [m.file_record(dotnet.parent / "sdk" / sdk / "FSharp" / "fsc.dll")])
+                        self.assertEqual(toolchain["build_inputs"]["bootstrap"],
+                                         [m.file_record(root / "bootstrap" / "artifacts" / "bin" / "fsc" / "Proto" / "fsc.dll")])
                         workload = document["invariants"]["workload"]
                         for key, names in (("sources", ["first.fs", "second.fs"]), ("generated", ["generated.fs"]),
                                            ("references", ["FSharp.Core.dll", "reference.dll"])):

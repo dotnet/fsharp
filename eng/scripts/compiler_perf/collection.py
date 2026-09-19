@@ -404,6 +404,7 @@ class Command:
         self.paths = [self.root / f"{stem}.{part}.raw" for part in ("stdout", "stderr")]
         self.streams = [p.open("wb") for p in self.paths]
         self.job, self.process, self.stopped = None, None, False
+        self.started_at_unix_ns = time.time_ns()
         # CREATE_SUSPENDED closes the launch-to-job-assignment race.
         isolation = ({"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP | 0x4} if os.name == "nt"
                      else {"start_new_session": True})
@@ -467,15 +468,23 @@ class Command:
         result = (classify_failure(self.phase, code, texts[1], issue) if issue or code
                   else {"status": "collected", "phase": self.phase, "exit_status": code, "stderr": texts[1]})
         result.update(arguments=[sanitize(a) for a in self.arguments], stdout=texts[0], logs=logs,
-                      elapsed_ms=(time.monotonic() - self.start) * 1000)
+                      elapsed_ms=(time.monotonic() - self.start) * 1000,
+                      started_at_unix_ns=self.started_at_unix_ns)
         result["target_pid" if self.phase == "target" else "profiler_pid"] = self.process.pid
         return result
 
 
-def run_tool(arguments, cwd, environment, root, phase, timeout=180, monitor=None):
+def run_tool(arguments, cwd, environment, root, phase, timeout=180, monitor=None, input_bytes=None):
     command = None
     try:
         command = Command(arguments, cwd, environment, root, phase)
+        if input_bytes is not None:
+            remaining = memoryview(input_bytes)
+            while remaining:
+                written = os.write(command.process.stdin.fileno(), remaining)
+                m.require(written > 0, "Child input pipe closed")
+                remaining = remaining[written:]
+            command.process.stdin.close()
         while True:
             command.check()
             if monitor:

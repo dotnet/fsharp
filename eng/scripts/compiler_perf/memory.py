@@ -30,16 +30,21 @@ import argparse
 import copy
 from datetime import datetime, timezone
 import difflib
+import hmac
 import importlib.util
 import json
 import os
 from pathlib import Path
 import re
+import secrets
 import subprocess
 import sys
 import tempfile
 from urllib.parse import quote
 import uuid
+
+if __name__ == "__main__":
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 spec = importlib.util.spec_from_file_location("collection", Path(__file__).with_name("collection.py"))
 c = importlib.util.module_from_spec(spec)
@@ -58,7 +63,7 @@ LIFECYCLES = ("reserved", "collecting", "experimenting", "validating",
               "publication_pending", "published", "interrupted")
 FINGERPRINTS = ("source", "input", "workload", "compiler", "bootstrap", "sdk", "runtime",
                 "toolchain", "runner", "policy", "candidate", "capture", "reducer")
-CORRECTNESS_COMMAND = ["dotnet", "test", "-c", "Release"]
+_VALIDATOR_KEY = secrets.token_bytes(32)
 ACCEPTANCE_METRICS = [{"name": name, "unit": "bytes" if name.endswith("bytes") else "ms",
                        "aggregation": "unprofiled-paired-samples"} for name in m.METRICS]
 PROFILE_METRICS = (
@@ -203,6 +208,19 @@ def measurement_record(baseline, candidate):
             "metrics": copy.deepcopy(ACCEPTANCE_METRICS)}
 
 
+def _validation_payload(a):
+    checks = dict(a["correctness"], validation=None)
+    return encoded([a["id"], a["source_revision"], a["fingerprints"], a["summary"],
+                    a["measurement"], a["collection"], checks])
+
+
+def _attest_correctness(a):
+    """Trusted in-process validator only; serialized proposals cannot mint approval."""
+    from experiment import validate_correctness
+    validate_correctness(a["correctness"], a["fingerprints"]["candidate"], a["fingerprints"]["policy"], current=True)
+    a["correctness"]["validation"] = hmac.digest(_VALIDATOR_KEY, _validation_payload(a), "sha256").hex()
+
+
 def acceptance_ready(a, *, current=True):
     receipt = a["measurement"]
     require(type(receipt) is dict and receipt["kind"] == "unprofiled-comparison",
@@ -227,8 +245,19 @@ def acceptance_ready(a, *, current=True):
             and not comparison["invariant_mismatches"], "Measurement gate did not pass")
     require(comparison["primary"]["improvement_percent"] >= policy["minimum_improvement_percent"]
             and comparison["primary"]["interval_95_percent"][0] > 0, "Acceptance effect/interval did not pass")
-    required, results = a["correctness"]["required"], a["correctness"]["results"]
-    require(CORRECTNESS_COMMAND in required and all(any(r["command"] == command and type(r["exit_status"]) is int
+    checks = a["correctness"]
+    if checks.get("schema_version") == 2:
+        from experiment import validate_correctness
+        validate_correctness(checks, a["fingerprints"]["candidate"], a["fingerprints"]["policy"], current=current)
+        if current:
+            require(isinstance(checks["validation"], str) and
+                    hmac.compare_digest(checks["validation"],
+                                        hmac.digest(_VALIDATOR_KEY, _validation_payload(a), "sha256").hex()),
+                    "A fresh trusted validator is required; persisted approval is historical")
+        return
+    require(not current, "Historical correctness requires a fresh trusted validator")
+    required, results = checks["required"], checks["results"]
+    require(["dotnet", "test", "-c", "Release"] in required and all(any(r["command"] == command and type(r["exit_status"]) is int
                                 and r["exit_status"] == 0 and r["candidate"] == a["fingerprints"]["candidate"]
                                 and r["policy"] == a["fingerprints"]["policy"] for r in results)
                              for command in required), "Required correctness checks did not pass")
@@ -313,15 +342,22 @@ def validate_attempt(a, *, prospective=False):
         require(note["attempt_id"] == a["id"], "Note belongs to another attempt")
     require(a["supersedes"] is None or identifier(a["supersedes"]), "Invalid superseded attempt")
     checks = a["correctness"]
-    require(set(checks) == {"required", "results"} and type(checks["required"]) is list
-            and CORRECTNESS_COMMAND in checks["required"] and type(checks["results"]) is list,
-            "Invalid correctness record or weakened required commands")
-    for command in checks["required"] + [r["command"] for r in checks["results"]]:
-        require(type(command) is list and command and all(text(arg) for arg in command),
-                "Correctness commands must be argument arrays (never executed here)")
-    for r in checks["results"]:
-        require(set(r) == {"command", "exit_status", "candidate", "policy"} and type(r["exit_status"]) is int
-                and digest(r["candidate"]) and digest(r["policy"]), "Invalid correctness result")
+    if "schema_version" in checks:
+        from experiment import validate_correctness
+        require(type(checks["schema_version"]) is int and checks["schema_version"] == 2,
+                "Unsupported correctness schema")
+        validate_correctness(checks, fp.get("candidate"), fp.get("policy"),
+                             passed=a["outcome"] == "measured_improvement" or a["publication"] is not None)
+    else:
+        require(set(checks) == {"required", "results"} and type(checks["required"]) is list
+                and ["dotnet", "test", "-c", "Release"] in checks["required"] and type(checks["results"]) is list,
+                "Invalid historical correctness record")
+        for command in checks["required"] + [r["command"] for r in checks["results"]]:
+            require(type(command) is list and command and all(text(arg) for arg in command),
+                    "Correctness commands must be argument arrays (never executed here)")
+        for r in checks["results"]:
+            require(set(r) == {"command", "exit_status", "candidate", "policy"} and type(r["exit_status"]) is int
+                    and digest(r["candidate"]) and digest(r["policy"]), "Invalid historical correctness result")
     lease = a["lease"]
     require(set(lease) == {"run_id", "run_attempt", "checkpoint_at", "expires_at"}
             and lease["run_id"] == run["id"] and lease["run_attempt"] == run["attempt"],

@@ -94,7 +94,7 @@ def preflight(s, a=None, prs=None, run_status="completed"):
                                         "attempt": owner["attempt"], "state": run_status}, NOW)
 
 
-def improvement():
+def improvement(*, legacy=False):
     a = attempt()
     baseline, candidate = measurements()
     for document in (baseline, candidate):
@@ -109,10 +109,67 @@ def improvement():
                                    "exit_status": 0, "candidate": a["fingerprints"]["candidate"],
                                    "policy": a["fingerprints"]["policy"]}]
     a.update(outcome="measured_improvement", reason="Both gates passed", lifecycle="validating")
+    if not legacy:
+        import experiment
+        changes = [PATH, "tests/FSharp.Compiler.ComponentTests/Conformance/Regression.fs",
+                   experiment.RELEASE_NOTE]
+        regressions = [{"path": changes[1], "method": "regression"}]
+        plan = experiment.correctness_plan(changes, regressions, "net11.0")
+        tool = mem.m.file_record(HERE / "measurement.py")
+        checks = {"schema_version": 2, "changes": changes, "regressions": regressions,
+                  "target_framework": "net11.0", "plan": plan, "plan_sha256": mem.m.fingerprint_inputs(plan),
+                  "required": [p["id"] for p in plan], "results": [], "nonce": "synthetic-nonce",
+                  "cwd": str(ROOT), "tool": tool, "inputs": [tool], "validation": None}
+        for check in plan:
+            checks["results"].append({
+                "check_id": check["id"], "category": check["category"], "nonce": checks["nonce"],
+                "command": [tool["path"], *[arg.format(result_dir=".", result_name="synthetic.xml") for arg in check["argv"]]],
+                "cwd": str(ROOT), "tool": tool, "exit_status": 0, "matched": 1,
+                "result_path": "synthetic.xml", "files": [tool],
+                "candidate": a["fingerprints"]["candidate"], "policy": a["fingerprints"]["policy"],
+                "started_at": "2026-09-19T00:00:00Z", "finished_at": "2026-09-19T00:00:01Z"})
+            if "regression" in check:
+                checks["results"][-1]["regression"] = dict(check["regression"], path=str(ROOT / check["regression"]["path"]))
+        a["correctness"] = checks
+        mem._attest_correctness(a)
     return a
 
 
 class MemoryTests(unittest.TestCase):
+    def test_legacy_correctness_cannot_authorize_fresh_publication(self):
+        a = improvement(legacy=True)
+        with self.assertRaisesRegex(ValueError, "fresh|validator|historical"):
+            mem.acceptance_ready(a)
+        self.assertEqual(mem.load_state(response={"status": 200, "body": json.dumps(state(a))})["state"], state(a))
+
+    def test_explicit_plan_receipts_cannot_be_forged_or_weakened(self):
+        a = improvement()
+        mem.acceptance_ready(a)
+        for mutate in (lambda x: x["correctness"]["results"].pop(),
+                       lambda x: x["correctness"]["results"][0].update(command=["dotnet", "test", "-c", "Release"]),
+                       lambda x: x["correctness"]["results"][-1].update(matched=0),
+                       lambda x: x["correctness"].update(validation="0" * 64),
+                       lambda x: x["correctness"]["results"][0].update(nonce="stale"),
+                       lambda x: x["correctness"]["results"][0].update(exit_status=1),
+                       lambda x: x["summary"].update(patch_sha256=J)):
+            bad = copy.deepcopy(a)
+            mutate(bad)
+            with self.subTest(mutate=mutate), self.assertRaises(ValueError):
+                mem.acceptance_ready(bad)
+        with mock.patch.object(mem, "_VALIDATOR_KEY", b"new validator process"):
+            with self.assertRaisesRegex(ValueError, "fresh trusted validator"):
+                mem.acceptance_ready(a)
+        for index, result in enumerate(a["correctness"]["results"]):
+            failed = copy.deepcopy(a)
+            failed["correctness"]["results"][index]["exit_status"] = 1
+            failed.update(outcome="rejected", reason="Required " + result["category"] + " failed")
+            failed["correctness"]["validation"] = None
+            with self.subTest(category=result["category"]):
+                self.assertEqual(mem.load_state(response={"status": 200, "body": json.dumps(state(failed))})["state"],
+                                 state(failed))
+                with self.assertRaises(ValueError):
+                    mem.acceptance_ready(failed)
+
     def test_load_transition_table_and_original_preservation(self):
         for response, expected in TRANSITIONS["loads"]:
             with self.subTest(response=response):
