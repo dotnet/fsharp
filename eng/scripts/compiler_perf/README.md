@@ -116,6 +116,14 @@ even if the child exits zero and writes matching passing XML. Direct assembly
 execution is not an equivalent completion check. Stdout, test-body sentinels and
 child-authored reports do not authorize approval.
 
+**The execution-to-result binding is not established.** A module initializer can
+write matching passing XML, then delegate the runner's pipe arguments to a passing
+decoy without executing the required regression. The pinned Windows outer runner
+returns zero, and the current controller and memory gates approve that forged
+report. The `decoy-completion` production regression intentionally remains RED;
+the earlier startup/in-test exit rejections do not disprove this case. Do not use
+these receipts as independent correctness approval. Linux behavior is unproven.
+
 Reports stream through a fresh write-only FIFO in
 a sealed directory to a parent-owned evidence file, rather than a candidate-writable
 XML file. Late writes append to the stream and invalidate it; they cannot truncate
@@ -192,6 +200,9 @@ Release and saves actual runner help/package identities. Restore occurs only
 after missing assets are observed, into owned storage. The shared fixture varies
 only attack phase: pass, fail, zero matches, skipped required method with a passing
 decoy, module-initializer exit, in-test exit and late `ProcessExit` overwrite.
+The decoy-completion phase also combines a forged first report with a genuine
+passing session for a different method, retaining that child's arguments and
+execution sentinel. It is a rejection assertion, not an expected failure or skip.
 All production test launches come from `correctness_plan` through `run_correctness`;
 fresh validation and memory approval remain active. Only unrelated compiler-build,
 compatibility and measurement inputs are synthetic. No live compiler improvement

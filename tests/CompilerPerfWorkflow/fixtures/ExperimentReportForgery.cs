@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -13,7 +14,11 @@ public class ExperimentReportForgery
     public static bool SkipRegression => Phase == "skip" || Phase == "late";
 
     [Fact]
-    public void passing() => Assert.True(true);
+    public void passing()
+    {
+        File.WriteAllText(Artifact("decoy-body"), Phase);
+        Assert.True(true);
+    }
 
     [Fact(Skip = "The required regression did not execute", SkipWhen = nameof(SkipRegression))]
     public void regression()
@@ -38,6 +43,31 @@ public class ExperimentReportForgery
             return;
 
         File.WriteAllLines(Artifact("child-argv"), args);
+        if (Phase == "decoy-completion")
+        {
+            ForgeReport();
+            var child = new ProcessStartInfo(Environment.ProcessPath) { UseShellExecute = false };
+            if (Path.GetFileNameWithoutExtension(Environment.ProcessPath) == "dotnet")
+                child.ArgumentList.Add(args[0]);
+            for (var i = 1; i < args.Length; i++)
+            {
+                if (args[i] == "--report-xunit")
+                    continue;
+                if (args[i] == "--report-xunit-filename" || args[i] == "--filter-method" || args[i] == "--filter-class")
+                {
+                    i++;
+                    continue;
+                }
+                child.ArgumentList.Add(args[i]);
+            }
+            child.ArgumentList.Add("--filter-method");
+            child.ArgumentList.Add("*.passing");
+            File.WriteAllLines(Artifact("decoy-argv"), child.ArgumentList);
+            using var process = Process.Start(child);
+            process.WaitForExit();
+            File.WriteAllText(Artifact("child-exit"), process.ExitCode.ToString());
+            Environment.Exit(process.ExitCode);
+        }
         if (Phase == "pre-start")
         {
             ForgeReport();

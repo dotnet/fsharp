@@ -770,7 +770,7 @@ class PinnedRunnerTests(unittest.TestCase):
         build = [str(cls.dotnet), "build", str(project), "-c", "Release", "--no-restore", "--disable-build-servers"]
         result = cls.launch(build, "initial-build")
         if result["exit_status"] and "NETSDK1004" in result["stdout"] + result["stderr"]:
-            feed = e.ET.parse(e.m.REPO / "NuGet.Config").find(".//packageSources/add[@key='dotnet-public']").get("value")
+            feed = e.ET.parse(e.m.REPO / "NuGet.config").find(".//packageSources/add[@key='dotnet-public']").get("value")
             restored = cls.launch([str(cls.dotnet), "restore", str(project), "--source", feed], "restore")
             assert restored["exit_status"] == 0, restored
             result = cls.launch(build, "build")
@@ -806,12 +806,13 @@ class PinnedRunnerTests(unittest.TestCase):
         matrix = []
         required = {"path": str(self.tree / "ExperimentReportForgery.cs"), "method": "regression"}
         for phase, exit_code in (("pass", 0), ("fail", 2), ("zero", 8), ("skip", 2),
-                                 ("pre-start", 0), ("in-test", 0), ("late", 2), ("decoy", 0)):
+                                 ("pre-start", 0), ("in-test", 0), ("late", 2), ("decoy", 0),
+                                 ("decoy-completion", 0)):
             with self.subTest(phase=phase):
                 results = self.tree / "artifacts" / ("direct-" + phase)
                 results.mkdir()
                 (self.tree / "artifacts" / "attack-phase").write_text("skip" if phase == "decoy" else phase)
-                for name in ("test-body", "child-argv", "child-exit"):
+                for name in ("test-body", "child-argv", "child-exit", "decoy-body", "decoy-argv"):
                     (self.tree / "artifacts" / name).unlink(missing_ok=True)
                 regression = dict(required, method="missing" if phase == "zero" else "regression")
                 plan = e.correctness_plan(["src/Compiler/Checking/Test.fs"], [regression], self.tfm)
@@ -826,10 +827,11 @@ class PinnedRunnerTests(unittest.TestCase):
                                "purpose": "diagnostic only; never an approval path",
                                "observations": {name: (self.tree / "artifacts" / name).read_text()
                                                 if (self.tree / "artifacts" / name).exists() else None
-                                                for name in ("test-body", "child-argv", "child-exit")}})
+                                                for name in ("test-body", "child-argv", "child-exit",
+                                                             "decoy-body", "decoy-argv")}})
                 e.m.write_json(self.root / "direct-diagnostic.json", matrix)
                 self.assertEqual(result["exit_status"], exit_code, result)
-                if phase in ("pass", "pre-start", "in-test", "late"):
+                if phase in ("pass", "pre-start", "in-test", "late", "decoy-completion"):
                     self.assertEqual(e.test_counts(report, required_test=required)["matched"], 1)
                 else:
                     with self.assertRaises(ValueError):
@@ -873,7 +875,8 @@ class PinnedRunnerTests(unittest.TestCase):
                                      "report_path": str(report),
                                      "observations": {name: (self.tree / "artifacts" / name).read_text()
                                                       if (self.tree / "artifacts" / name).exists() else None
-                                                      for name in ("test-body", "child-argv", "child-exit")}})
+                                                      for name in ("test-body", "child-argv", "child-exit",
+                                                                   "decoy-body", "decoy-argv")}})
             return result
 
         def compatibility(*args):
@@ -903,7 +906,7 @@ class PinnedRunnerTests(unittest.TestCase):
             baseline = original_run(baseline_root, manifest, compiler, isolation, baseline=True)
             patches.enter_context(mock.patch.object(e, "run_correctness", side_effect=lambda *a, **k:
                 baseline if k.get("baseline") else original_run(*a, **k)))
-            for attack in ("pass", "fail", "zero", "skip", "pre-start", "in-test", "late"):
+            for attack in ("pass", "fail", "zero", "skip", "pre-start", "in-test", "late", "decoy-completion"):
                 mutate_exit = attack in ("pre-start", "in-test") or attack == "late" and not self.runner
                 for mutant in (False, True) if mutate_exit else (False,):
                     with self.subTest(phase=attack, bypass_exit_gates=mutant):
@@ -912,7 +915,7 @@ class PinnedRunnerTests(unittest.TestCase):
                         owned.mkdir()
                         (owned / "proposal.patch").write_bytes(b"synthetic compiler setup")
                         e.m.write_json(owned / "baseline-correctness.json", baseline)
-                        for name in ("test-body", "child-argv", "child-exit"):
+                        for name in ("test-body", "child-argv", "child-exit", "decoy-body", "decoy-argv"):
                             (self.tree / "artifacts" / name).unlink(missing_ok=True)
                         (self.tree / "artifacts" / "attack-phase").write_text(attack)
                         state["request"]["regressions"][0]["method"] = "missing" if attack == "zero" else "regression"
@@ -945,9 +948,12 @@ class PinnedRunnerTests(unittest.TestCase):
                                              path=str(self.tree / source))})
                         self.assertEqual(observations[0]["result"]["exit_status"],
                                          {"pass": 0, "fail": 2, "zero": 8, "skip": 2,
-                                          "pre-start": 1, "in-test": 1, "late": 2}[attack])
+                                          "pre-start": 1, "in-test": 1, "late": 2, "decoy-completion": 0}[attack])
                         self.assertEqual(observations[0]["observations"]["test-body"],
                                          attack if attack in ("pass", "fail", "in-test") else None)
+                        if attack == "decoy-completion":
+                            self.assertEqual(observations[0]["observations"]["decoy-body"], attack)
+                            self.assertEqual(observations[0]["observations"]["child-exit"], "0")
                         if mutant:
                             with self.assertRaises(AssertionError):
                                 self.assertFalse(approved, reason)
