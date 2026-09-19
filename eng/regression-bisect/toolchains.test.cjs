@@ -208,6 +208,7 @@ for (const [declarations, expected] of [
 
 function captured(toolchain, root) {
     const runtime = toolchain.bundledRuntime?.version ?? "10.0.0";
+    const receipt = archiveReceipt(toolchain.archive, path.join(root, "sdk.zip"), archiveBytes);
     return {
         sdkVersion: toolchain.sdkVersion, architecture: platform.architecture, rid: platform.rid,
         hostPath: path.join(root, "dotnet.exe"), root, sdkBasePath: path.join(root, "sdk", toolchain.sdkVersion),
@@ -219,11 +220,13 @@ function captured(toolchain, root) {
             path: path.join(root, "sdk", toolchain.sdkVersion, "FSharp", `${assemblyName}.dll`),
             sha256: digest(name), assemblyName, assemblyVersion: "10.0.0.0", fileVersion: "10.0.0.0",
         }])),
-        archive: archiveReceipt(toolchain.archive, path.join(root, "sdk.zip"), archiveBytes),
+        archive: receipt,
+        installations: [{ product: "sdk", version: toolchain.sdkVersion, archive: receipt }],
     };
 }
 
 const identityMutations = [
+    ["absent installation receipts", i => { delete i.installations; }],
     ["wrong architecture", i => i.architecture = "arm64"],
     ["wrong resolved SDK", i => i.sdkVersion = "11.0.100-rc.1"],
     ["host SDK leakage", i => i.sdks.push({ version: "11.0.100", path: path.resolve("host-sdk") })],
@@ -536,6 +539,10 @@ for (const [available, bundled] of [[true, false], [false, false], [true, true]]
                 assert.equal(verifyToolchainIdentity({ policy: policy(), toolchain: identity.requested, identity }).outcome.reason,
                     "wrong-identity", `missing ${product} receipt must invalidate reuse`);
             }
+            const identity = structuredClone(result.identity);
+            delete identity.installations;
+            assert.equal(verifyToolchainIdentity({ policy: policy(), toolchain: identity.requested, identity }).outcome?.reason,
+                "wrong-identity", "absent installation list must invalidate reuse");
         } else {
             assert.equal(result.status, "untestable");
             assert.equal(result.outcome.reason, "unavailable-runtime");
@@ -747,7 +754,10 @@ for (const [p, hostRid] of [
                 assert.equal(digest(await fs.readFile(execution.hostTrace.path)), execution.hostTrace.sha256);
             }
             assert.deepEqual(JSON.parse(await fs.readFile(result.evidencePath)).identity, result.identity);
-            a[key].cells[0].buildToolchain = buildToolchain;
+            const serialized = structuredClone(buildToolchain);
+            // The injected worker uses local files; serialized paths belong to its declared OS.
+            serialized.archive.retained.path = p.os === "windows" ? "Q:\\retained\\sdk.zip" : "/retained/sdk.tar.gz";
+            a[key].cells[0].buildToolchain = serialized;
         }
         a.budget.authenticatedObservationDigests = [a.stable, a.main, a.good].map(fingerprintInput);
         const admitted = admitBisection(a);

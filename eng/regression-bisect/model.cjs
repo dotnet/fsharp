@@ -1,5 +1,6 @@
 const { createHash } = require("node:crypto");
 const { readFileSync } = require("node:fs");
+const filePath = require("node:path");
 const trustedPolicy = JSON.parse(readFileSync(require.resolve("../../.github/policies/regression-bisect.json"), "utf8"));
 
 class ContractError extends Error {}
@@ -296,7 +297,7 @@ function validateObservation(observation, manifest, options = { finalConfirmatio
                 validateArchiveReceipt({
                     policy: trustedPolicy, kind: observation.kind, sourceSha: build.sourceSha, product: "sdk",
                     version: build.requestedSdk, platform: { ...cell.environment, rid: build.archive.rid }, archive: build.archive,
-                }, build.archive);
+                }, build.archive, cell.environment.os === "windows" ? filePath.win32 : filePath.posix);
             } catch (error) { throw new ContractError(`observation.cells.buildToolchain.archive: ${error.message}`); }
             const rid = `${{ windows: "win", linux: "linux", macos: "osx" }[cell.environment.os]}-${cell.environment.architecture}`;
             check(build.archive.sha256 === build.sdk.sha256 && build.archive.architecture === cell.environment.architecture &&

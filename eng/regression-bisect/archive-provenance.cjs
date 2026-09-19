@@ -25,7 +25,7 @@ function validateArchiveRequest({ policy, kind, sourceSha, product, version, pla
     return approval;
 }
 
-function validateArchiveReceipt(options, receipt) {
+function validateArchiveReceipt(options, receipt, filePath = path) {
     const { fingerprintInput } = require("./model.cjs");
     const approval = validateArchiveRequest(options);
     const { archive, policy } = options;
@@ -43,7 +43,9 @@ function validateArchiveReceipt(options, receipt) {
         typeof receipt.receivedAt === "string" && Number.isFinite(Date.parse(receipt.receivedAt)) &&
         new Date(receipt.receivedAt).toISOString() === receipt.receivedAt, "invalid archive receipt bounds or time");
     const retained = receipt.retained;
-    requireValue(retained && path.isAbsolute(retained.path) && retained.size === receipt.bytesReceived &&
+    requireValue(retained && typeof retained.path === "string" && !/[\r\n\0]/.test(retained.path) &&
+        filePath.isAbsolute(retained.path) && (filePath !== path.win32 || filePath.parse(retained.path).root.length > 1) &&
+        retained.size === receipt.bytesReceived &&
         retained.sha256 === receipt.sha256 && retained.sha512 === receipt.actualSha512,
     "retained archive identity mismatch");
     return true;

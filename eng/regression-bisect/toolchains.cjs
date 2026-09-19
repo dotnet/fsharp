@@ -301,23 +301,21 @@ function verifyToolchainIdentity({ policy, toolchain, identity }) {
         requireValue(identity.sdks.length === 1 && identity.sdks[0].version === toolchain.sdkVersion &&
             identity.sdks[0].path === path.join(root, "sdk"), "unexpected installed SDK or SDK location");
         validateArchiveReceipt({ policy, ...toolchain, version: toolchain.sdkVersion, product: "sdk" }, identity.archive);
-        if (Object.hasOwn(identity, "installations")) {
-            requireValue(Array.isArray(identity.installations), "missing installation receipts");
-            const sdks = identity.installations.filter(i => i.product === "sdk");
-            requireValue(sdks.length === 1 && sdks[0].version === toolchain.sdkVersion &&
-                fingerprintInput(sdks[0].archive) === fingerprintInput(identity.archive), "missing or mismatched SDK installation receipt");
-            const runtimes = identity.installations.filter(i => i.product !== "sdk");
-            for (const installed of runtimes) {
-                requireValue(toolchain.runtimeRequirements.some(r => runtimeProducts[r.name] === installed.product && r.version === installed.version),
-                    "unexpected supplemental installation receipt");
-                validateArchiveReceipt({ policy, ...toolchain, version: installed.version, product: installed.product,
-                    archive: installed.archive }, installed.archive);
-            }
-            for (const required of toolchain.runtimeRequirements)
-                requireValue(identity.installations.some(i => i.archive.url === required.archiveUrl &&
-                    (i.product === "sdk" || i.product === runtimeProducts[required.name] && i.version === required.version)),
-                "missing required runtime archive receipt");
+        requireValue(Array.isArray(identity.installations), "missing installation receipts");
+        const sdks = identity.installations.filter(i => i.product === "sdk");
+        requireValue(sdks.length === 1 && sdks[0].version === toolchain.sdkVersion &&
+            fingerprintInput(sdks[0].archive) === fingerprintInput(identity.archive), "missing or mismatched SDK installation receipt");
+        const runtimes = identity.installations.filter(i => i.product !== "sdk");
+        for (const installed of runtimes) {
+            requireValue(toolchain.runtimeRequirements.some(r => runtimeProducts[r.name] === installed.product && r.version === installed.version),
+                "unexpected supplemental installation receipt");
+            validateArchiveReceipt({ policy, ...toolchain, version: installed.version, product: installed.product,
+                archive: installed.archive }, installed.archive);
         }
+        for (const required of toolchain.runtimeRequirements)
+            requireValue(identity.installations.some(i => i.archive.url === required.archiveUrl &&
+                (i.product === "sdk" || i.product === runtimeProducts[required.name] && i.version === required.version)),
+            "missing required runtime archive receipt");
         for (const [name, assemblyName] of Object.entries({ compiler: "fsc", fsi: "fsi", core: "FSharp.Core" })) {
             const file = identity.files[name];
             requireValue(file && inside(path.join(root, "sdk", toolchain.sdkVersion, "FSharp"), file.path) &&

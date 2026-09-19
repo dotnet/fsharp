@@ -9,6 +9,24 @@ function archiveReceipt(archive, file, bytes) {
         bytesReceived: Buffer.byteLength(bytes), receivedAt: "2026-09-19T17:30:00.000Z",
         retained: { path: file, sha256: digest(bytes), sha512, size: Buffer.byteLength(bytes) } };
 }
+function buildToolchain(sourceSha, os, kind = "publisher-checksum") {
+    const approval = policy().toolchains.measuredArchives[0];
+    const rid = `${{ windows: "win", linux: "linux", macos: "osx" }[os]}-x64`;
+    const url = approval.url.replace("win-x64.zip", `${rid}${os === "windows" ? ".zip" : ".tar.gz"}`);
+    const archive = archiveReceipt({
+        name: url.split("/").at(-1), url, rid, architecture: "x64",
+        provenance: kind === "publisher-checksum" ? { kind } :
+            { kind, approvalRevision: approval.approvalRevision, approvalDigest: model().fingerprintInput(approval) },
+    }, os === "windows" ? "Q:\\retained\\sdk.zip" : "/retained/sdk.tar.gz", "archive");
+    if (kind === "publisher-checksum") archive.sha512 = archive.actualSha512;
+    return {
+        sourceSha, globalJsonDigest: digest("global"), evidenceDigest: digest("receipt"),
+        requestedSdk: approval.version, requestedTools: approval.version, requestedCompilerRuntime: "11.0.0",
+        sdk: { version: approval.version, sha256: archive.sha256, verified: true },
+        compilerRuntime: { version: "11.0.0", sha256: digest("runtime"), verified: true },
+        archive, verified: true, supported: true,
+    };
+}
 const model = () => require("../model.cjs");
 const seal = m => {
     const { approvedInputDigest, ...input } = m;
@@ -140,4 +158,4 @@ function statusTransport(context) {
     };
 }
 
-module.exports = { policy, manifest, attempt, observation, admission, state, seal, sha, digest, statusTransport, archiveReceipt };
+module.exports = { policy, manifest, attempt, observation, admission, state, seal, sha, digest, statusTransport, archiveReceipt, buildToolchain };

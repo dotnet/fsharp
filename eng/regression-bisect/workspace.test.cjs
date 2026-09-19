@@ -354,6 +354,17 @@ for (const [name, change, reason] of [
     ...["checksum-provenance", "network-failure"].map(code => [code, f => {
         f.deps.toolchains.http = async () => { throw Object.assign(new Error(code), { code }); };
     }, code]),
+    ...[
+        ["wrong acquired SDK", args => args[0] === "--version", "9.0.100"],
+        ["wrong acquired architecture", args => args.some(a => path.basename(a) === "identity.fsx"), "ARCH|arm64"],
+    ].map(([name, matches, replacement]) => [name, f => {
+        const run = f.deps.toolchains.run;
+        f.deps.toolchains.run = async (exe, args, settings) => {
+            const result = await run(exe, args, settings);
+            return matches(args) ? { ...result, stdout: replacement === "ARCH|arm64"
+                ? result.stdout.replace("ARCH|x64", replacement) : replacement } : result;
+        };
+    }, "wrong-identity"]),
 ]) test(`${name} is untestable, never the reported product failure`, async t => {
     const f = await controlled(t);
     change(f);
@@ -363,6 +374,13 @@ for (const [name, change, reason] of [
     assert.ok(result.error);
     if (f.launchFail) assert.match(result.error.message, /process supervision failed/);
     if (f.fail) assert.ok(result.evidence.some(e => e.path.endsWith(".binlog")));
+    if (name.startsWith("wrong acquired")) {
+        assert.equal(result.error.stage, "identity");
+        assert.equal(f.reproductions, undefined);
+        const acquisition = JSON.parse(await fs.readFile(path.join(f.options.evidenceDirectory, result.buildInstanceId, "acquisition.json")));
+        assert.deepEqual(result.outcome, acquisition.outcome);
+        assert.deepEqual(result.error, acquisition.error);
+    }
     assert.ok(result.evidence.every(e => !path.isAbsolute(e.path) && !e.path.split("/").includes("..") && /^[a-f0-9]{64}$/.test(e.sha256)));
     const saved = JSON.parse(await fs.readFile(path.join(f.options.evidenceDirectory, result.buildInstanceId, "observation.json")));
     assert.deepEqual(saved.outcome, result.outcome);

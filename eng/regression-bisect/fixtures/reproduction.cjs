@@ -57,6 +57,7 @@ async function fixture(t, { kind = "source", executable = false, tfms = ["net10.
     toolchain.archive = archiveReceipt({ name: "sdk.zip", url, rid: "win-x64", architecture: "x64",
         provenance: { kind: "publisher-checksum" } }, (await file("sdk.zip", "archive")).path, "archive");
     toolchain.archive.sha512 = toolchain.archive.actualSha512;
+    toolchain.installations = [{ product: "sdk", version: "10.0.100", archive: toolchain.archive }];
     toolchain.requested = {
         kind: "released", platform: { os: "windows", architecture: "x64", rid: "win-x64" },
         installationRoot: sdkRoot, sdkVersion: "10.0.100", toolsVersion: "10.0.100",

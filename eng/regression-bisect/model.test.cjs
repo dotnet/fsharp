@@ -4,31 +4,22 @@ const {
     isEligibleIssue, validatePolicy, validateManifest, fingerprintInput, fingerprintEpoch,
     classifyAttempts, validateOutcome, validateObservation, validateState, admitBisection,
 } = require("./model.cjs");
-const { policy, manifest, attempt, observation, admission, state, seal, sha, digest, archiveReceipt } = require("./fixtures/contracts.cjs");
-const path = require("node:path");
+const { policy, manifest, attempt, observation, admission, state, seal, sha, digest, buildToolchain } = require("./fixtures/contracts.cjs");
 
 const rejects = (fn, pattern = /./) => assert.throws(fn, pattern);
 
-for (const kind of ["publisher-checksum", "approved-official-https-measured"]) {
-    test(`observation serializes and validates ${kind} without relabelling hashes`, () => {
+for (const [os, kind] of [
+    ["windows", "publisher-checksum"], ["windows", "approved-official-https-measured"],
+    ["linux", "publisher-checksum"], ["macos", "publisher-checksum"],
+]) {
+    test(`observation serializes and validates ${os} ${kind} without relabelling hashes`, () => {
         const approval = policy().toolchains.measuredArchives[0];
         const m = manifest();
-        m.matrix[0].os = "windows";
+        m.matrix[0].os = os;
         seal(m);
         const o = observation("source", "pass", m, approval.sourceSha);
-        const archive = archiveReceipt({
-            name: path.basename(new URL(approval.url).pathname), url: approval.url, rid: approval.rid, architecture: "x64",
-            provenance: kind === "publisher-checksum" ? { kind } :
-                { kind, approvalRevision: approval.approvalRevision, approvalDigest: fingerprintInput(approval) },
-        }, path.resolve("retained-sdk.zip"), "archive");
-        if (kind === "publisher-checksum") archive.sha512 = archive.actualSha512;
-        o.cells[0].buildToolchain = {
-            sourceSha: approval.sourceSha, globalJsonDigest: digest("global"), evidenceDigest: digest("receipt"),
-            requestedSdk: approval.version, requestedTools: approval.version, requestedCompilerRuntime: "11.0.0",
-            sdk: { version: approval.version, sha256: archive.sha256, verified: true },
-            compilerRuntime: { version: "11.0.0", sha256: digest("runtime"), verified: true },
-            archive, verified: true, supported: true,
-        };
+        o.cells[0].buildToolchain = buildToolchain(approval.sourceSha, os, kind);
+        const { archive } = o.cells[0].buildToolchain;
         assert.equal(validateObservation(JSON.parse(JSON.stringify(o)), m), true);
         for (const change of [
             a => { a.provenance.kind = "unknown"; },
@@ -38,6 +29,8 @@ for (const kind of ["publisher-checksum", "approved-official-https-measured"]) {
             a => { a.url = a.url.replace("26420", "26421"); },
             a => { a.redirects.push({ from: a.url, to: `${a.url}?other`, status: 302 }); },
             a => { a.architecture = "arm64"; },
+            ...["relative.zip", "Q:relative.zip", os === "windows" ? "/retained/sdk.zip" : "Q:\\retained\\sdk.zip"]
+                .map(file => a => { a.retained.path = file; }),
         ]) {
             const changed = structuredClone(o);
             change(changed.cells[0].buildToolchain.archive);

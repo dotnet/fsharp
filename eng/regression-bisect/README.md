@@ -257,10 +257,20 @@ receipt or claiming a measured digest is a publisher checksum is rejected.
 Before reproduction reuse, retained archives must still exist as regular,
 non-linked files and are rehashed; missing or changed bytes invalidate reuse.
 Read-only file attributes alone are not proof of immutable identity.
-An installation list cannot replace or omit the SDK receipt, and supplemental
-runtime receipts are verified separately. Receipt/schema and trusted-policy
+The installation list is mandatory, even when all required runtimes are bundled
+in the SDK. It cannot replace or omit the SDK receipt; each runtime requirement
+must name its supplying archive. Supplemental runtime bytes are rehashed before
+reuse, independently of the SDK, and missing receipts fail before any reproduction
+process starts. Receipt/schema and trusted-policy
 changes invalidate old checkpoint evidence rather than upgrading old results
 into measured or publisher-verified claims.
+
+Serialized observation/checkpoint receipts use the worker cell's OS path rules,
+not the coordinator's filesystem. Windows receipts therefore round-trip on POSIX
+coordinators without rewriting their digested paths. Relative and drive-relative
+paths are rejected. Live acquisition and archive rehashing still use the worker's
+actual filesystem; accepting a serialized receipt does not prove local byte
+availability.
 
 The shared boundaries are injectable: `fs` (`node:fs/promises`), `clock`
 (`() => Date`), `http(url, { destination?, method? })`, `run(executable, args,
@@ -452,6 +462,8 @@ their output matches the expected diagnostic. Cancellation terminates process
 trees and removes only the UUID-marked, resolved owned scratch child; ordinary
 results retain their scratch artifacts for diagnosis. Results expose no mutation
 or publisher operation. Controller provenance/admission remains separate.
+Acquisition failures retain their original stage, code and message in workspace
+evidence: wrong SDK or architecture is `wrong-identity`, not `unavailable-sdk`.
 Cancellation also finalizes staged `buildRevision` calls. An interruption during
 final source verification or observation persistence invalidates a completed
 reproduction, and repeated finalization reuses the same observation.
@@ -563,6 +575,33 @@ Commands used (the reproduction output directory must be new when repeating):
 node eng\regression-bisect\workspace.smoke.cjs --run 5a8b9adb034f420a5c2c1f577670c5eeeb454b7e 'Q:\fsharp-worktrees\.bare' 'Q:\rb912-s5-20260919-acceptance' 'C:\Program Files\Git\cmd\git.exe'
 node eng\regression-bisect\repro.smoke.cjs 'Q:\rb912-s5-20260919-acceptance\verified-products.json' 'Q:\rb912-s5-20260919-acceptance\repro-both-01'
 ```
+
+The receipt-completeness, workspace-error and cross-coordinator path repairs were
+accepted in a separate fresh run on 2026-09-19, retained under
+`Q:\rb912-s5-i2-20260919`. The same pinned source built cleanly in instance
+`8c180e7a-a99c-4889-8216-8c8b71d89a27`; its built FSI and the full released/source
+project matrix exited 0. All **43 scenarios** matched expectations again:
+23 positive passes, 6 intended product failures and 14 identity rejections.
+Both SDKs were newly acquired, not copied from the prior run. The audit rehashed
+both archives, product inventories, 45 workspace evidence files, 72 project
+binlogs (including negative controls), and the frozen released producer DLL/package.
+The original failed result and all records in the prior acceptance manifest
+remain unchanged.
+
+The scoped suite passed **872 tests**. Removing supplemental-runtime rehashing
+made the otherwise-valid missing/changed-runtime cases fail; restoring it passed.
+Eight observation/checkpoint cases also passed with POSIX receipt-path semantics
+injected on Windows; reverting to coordinator-local paths failed all four
+Windows cases. This is cross-host serialization coverage, not a Linux build smoke.
+The evidence helper's exact-SDK Release build and `dotnet test -c Release` command
+exited 0; that helper has no managed test cases. All 12 changed scripts passed
+syntax checks, formatting changed no files, and whitespace checks passed.
+
+| Fresh record (relative to `Q:\rb912-s5-i2-20260919`) | SHA-256 |
+| --- | --- |
+| `fsharp-workspace-smoke-G26zT9\result.json` | `cf5cd20c162c063123886a6900a1630221c5a098dd17c1e21c772580690c6935` |
+| `repro-both\smoke-results.json` | `c86d9388032ca912c9a46181398a0922c8cdf06c8c477008f24be6c65fce1d6d` |
+| `acceptance-audit.json` | `54098b840f0c1447010a5469045ee3ce997843dc4840cb14a2b6a94ae0b4be62` |
 
 ## Reproduction execution
 

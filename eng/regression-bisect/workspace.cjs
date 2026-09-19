@@ -319,9 +319,10 @@ async function buildRevision(w, dependencies = {}) {
             },
         });
         await evidence(w, "acquisition.json", acquisition);
-        if (acquisition.outcome?.reason === "unavailable-runtime") stage = "runtime";
-        if (acquisition.status !== "acquired") throw Object.assign(new Error(acquisition.error?.message ?? "toolchain acquisition failed"),
-            { code: acquisition.error?.code });
+        if (acquisition.status !== "acquired") {
+            stage = acquisition.error.stage;
+            throw Object.assign(new Error(acquisition.error.message), { code: acquisition.error.code });
+        }
         w.toolchain = acquisition.identity;
         const oldRoot = w.env.DOTNET_ROOT;
         for (const [key, value] of Object.entries(w.env)) if (value === oldRoot) w.env[key] = w.toolchain.root;

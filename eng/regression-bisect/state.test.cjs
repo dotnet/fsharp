@@ -281,6 +281,27 @@ test("commit binds exact request, build identity, owner and observation; duplica
     await assert.rejects(reserve(h, 1, "next"), /generation/);
 });
 
+for (const [os, kind] of [
+    ["windows", "publisher-checksum"], ["windows", "approved-official-https-measured"],
+    ["linux", "publisher-checksum"], ["macos", "publisher-checksum"],
+]) test(`checkpoint roundtrip preserves ${os} ${kind} worker receipt paths`, async () => {
+    const h = harness();
+    const { context } = h;
+    context.manifest.matrix[0].os = os;
+    f.seal(context.manifest);
+    context.authorization.manifestDigest = model.fingerprintInput(context.manifest);
+    context.authorization.inputDigest = context.manifest.approvedInputDigest;
+    context.stableSdk.archives[0].os = os;
+    context.pinnedMainSha = f.policy().toolchains.measuredArchives[0].sourceSha;
+    await h.start();
+    const pending = await reserve(h, 0, "receipt-roundtrip", request(context.pinnedMainSha));
+    const done = completion(h, pending);
+    done.observation.cells[0].buildToolchain = f.buildToolchain(context.pinnedMainSha, os, kind);
+    await commitObservation(h.transport, context, done);
+    const { checkpoint: loaded } = await loadCheckpoint(h.transport, context);
+    assert.deepEqual(loaded.observations[model.fingerprintInput(done.observation)].data, done.observation);
+});
+
 test("a cancelled owner cannot commit a late worker result", async () => {
     const h = harness(); await h.start();
     const pending = await reserve(h);

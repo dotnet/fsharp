@@ -3,7 +3,8 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs/promises");
 const path = require("node:path");
 const { fixture } = require("./fixtures/reproduction.cjs");
-const { seal } = require("./fixtures/contracts.cjs");
+const { seal, archiveReceipt, policy } = require("./fixtures/contracts.cjs");
+const { verifyToolchainIdentity } = require("./toolchains.cjs");
 const { selectFsiCommand, verifyProjectIdentities, evaluateAssertion, runReproduction } = require("./repro.cjs");
 const { execute } = require("./repro-process.cjs");
 const { isolatedEnvironment, hash } = require("./toolchain-io.cjs");
@@ -39,6 +40,51 @@ for (const [changed, installations] of [[false, undefined], [true, undefined], [
         assert.equal(result.outcome.outcome, "untestable");
         assert.equal(result.outcome.reason, "wrong-identity");
         assert.equal(result.workDirectory, undefined, "missing retained SDK must fail before creating an execution workspace");
+    });
+}
+
+for (const state of ["intact", "missing", "changed", "absent-list", "missing-receipt"]) {
+    test(`supplemental runtime archive reuse: ${state}`, async t => {
+        const f = await runnerFixture(t);
+        const bytes = "runtime archive";
+        const receipt = archiveReceipt({
+            name: "runtime.zip",
+            url: "https://builds.dotnet.microsoft.com/dotnet/Runtime/9.0.8/dotnet-runtime-9.0.8-win-x64.zip",
+            rid: "win-x64", architecture: "x64", provenance: { kind: "publisher-checksum" },
+        }, (await f.file("runtime.zip", bytes)).path, bytes);
+        receipt.sha512 = receipt.actualSha512;
+        f.toolchain.installations.push({ product: "dotnet", version: "9.0.8", archive: receipt });
+        const config = Buffer.from(JSON.stringify({
+            runtimeOptions: { framework: { name: "Microsoft.NETCore.App", version: "9.0.8" } },
+        }));
+        f.toolchain.requested.runtimeRequirements.push({
+            name: "Microsoft.NETCore.App", version: "9.0.8", role: "sample", archiveUrl: receipt.url,
+            config: { ...await f.file("sample.runtimeconfig.json", config), bytesBase64: config.toString("base64") },
+        });
+        const runtime = await f.file("dotnet/shared/Microsoft.NETCore.App/9.0.8/System.Private.CoreLib.dll");
+        f.toolchain.runtimes.push({
+            name: "Microsoft.NETCore.App", version: "9.0.8", path: path.dirname(path.dirname(runtime.path)), sha256: runtime.sha256,
+        });
+        assert.equal(verifyToolchainIdentity({ policy: policy(), toolchain: f.toolchain.requested, identity: f.toolchain }).status, "verified");
+        if (state === "missing" || state === "absent-list") await fs.rm(receipt.retained.path);
+        if (state === "changed") await fs.writeFile(receipt.retained.path, "Runtime archive");
+        if (state === "absent-list") delete f.toolchain.installations;
+        if (state === "missing-receipt") f.toolchain.installations.pop();
+        let executions = 0;
+        const result = await runReproduction(f, { execute: (...args) => { executions++; return f.execute(...args); } });
+        assert.equal(result.outcome.outcome, state === "intact" ? "pass" : "untestable", JSON.stringify(result));
+        if (state === "intact") {
+            assert.equal(result.cells[0].attempts.length, 2);
+            assert.ok(executions > 0);
+        } else {
+            assert.equal(result.outcome.reason, "wrong-identity");
+            assert.match(result.error, {
+                missing: /ENOENT/, changed: /digest or size/,
+                "absent-list": /missing installation receipts/, "missing-receipt": /missing required runtime archive receipt/,
+            }[state]);
+            assert.equal(executions, 0);
+            assert.equal(result.workDirectory, undefined);
+        }
     });
 }
 

@@ -357,7 +357,7 @@ async function runReproduction(options, dependencies = {}) {
         const verification = verifyToolchainIdentity({ policy, toolchain: toolchain.requested, identity: toolchain });
         requireValue(verification.status === "verified", verification.error?.message ?? "unverified acquisition");
         await verifyRetainedArchive(toolchain.archive);
-        for (const installation of toolchain.installations ?? [])
+        for (const installation of toolchain.installations)
             if (installation.product !== "sdk") await verifyRetainedArchive(installation.archive);
         await checkedFile({ path: toolchain.hostPath, sha256: toolchain.hostSha256 }, toolchain.root);
         requireValue(["source", "released"].includes(options.product.kind) && options.product.buildInstanceId, "unidentified product build");
