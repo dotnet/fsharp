@@ -82,6 +82,9 @@ Unsupported schemas, timestamps, providers,
 units, runtime/PID mismatches, absent mandatory evidence, incomplete intervals,
 dropped events, tool failures and inadequate coverage return
 `blocked_collection` with a nonzero CLI exit.
+The trace reducer rejects matching full input/output paths before PID validation
+or reduction. This error is reported only on stderr, without writing failure
+JSON over the original trace; failures with a separate output still emit JSON.
 
 After replay, a separate diagnostic Release rebuild with `--times` produces a
 binlog. The existing `ExtractTimingsFromBinlog.fsx` output must contain a real,
@@ -266,6 +269,24 @@ Independent analysis (`iteration3-reanalysis.json`) reproduces 289,156 stack
 samples, a 33,936,879,776-byte allocation estimate and 6,302.7316 ms GC pause
 union. This is diagnostic evidence, not an acceptance sample, optimization
 claim or retention measurement. All evidence remains local and private.
+
+Trace-input preservation was validated on 2026-09-19. The three collision
+regressions first reproduced overwritten trace bytes (`iteration4-red.log`),
+then passed with unchanged bytes and SHA-256 (`iteration4-green.log`).
+The two analyze-CLI failure scenarios now share one parameterized test.
+All **65 helper tests** pass with live diagnostics enabled
+(`iteration4-suite-live.log`); explicit Release compiler/test-project builds,
+the surface-area smoke test and `dotnet fantomas .` also pass. Root build/test
+commands still require project selection.
+
+The fresh `iteration4-compiler/evidence-manifest.json` records verified compiler
+PID **13812**, zero lost events and successful diagnostic build/binlog extraction.
+Independent analysis succeeds (`iteration4-reanalysis.json`). All 935 frozen
+file records were reverified, and attempting same-path reduction of the actual
+275,831,334-byte trace exited nonzero without changing its SHA-256,
+`3fddefce02f394b1fb945e27a7213b3f479504d8cd73f5316e2005b746ef53fe`
+(`iteration4-verification.json`). These are local diagnostic results, not
+acceptance samples.
 
 ## Preparation
 

@@ -814,30 +814,23 @@ class CollectionTests(unittest.TestCase):
             with self.subTest(text=text), self.assertRaises(ValueError):
                 c.validate_timings(text)
 
-    def test_analyze_cli_corrupt_input_is_persistent_blocker(self):
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            input_path, output = root / "bad.json", root / "summary.json"
-            input_path.write_text('{"schema_version":')
-            result = subprocess.run([sys.executable, str(HERE / "collection.py"), "analyze",
-                                     "--input", str(input_path), "--output", str(output)],
-                                    capture_output=True, text=True)
-            self.assertNotEqual(result.returncode, 0)
-            self.assertEqual(json.loads(output.read_text())["status"], "blocked_collection")
-
-    def test_analyze_cli_numeric_overflow_is_persistent_blocker(self):
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            evidence = artifact_profile(root)
-            evidence["process"]["process_cpu_ms"] = 10**400
-            input_path, output = root / "input.json", root / "summary.json"
-            c.m.write_json(input_path, evidence)
-            result = subprocess.run([sys.executable, str(HERE / "collection.py"), "analyze",
-                                     "--input", str(input_path), "--output", str(output)],
-                                    capture_output=True, text=True)
-            self.assertEqual(result.returncode, 2, result.stderr)
-            self.assertTrue(output.exists(), result.stderr)
-            self.assertEqual(json.loads(output.read_text())["status"], "blocked_collection")
+    def test_analyze_cli_invalid_input_is_persistent_blocker(self):
+        for problem in ("corrupt-json", "numeric-overflow"):
+            with self.subTest(problem=problem), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                input_path, output = root / "input.json", root / "summary.json"
+                if problem == "corrupt-json":
+                    input_path.write_text('{"schema_version":')
+                else:
+                    evidence = artifact_profile(root)
+                    evidence["process"]["process_cpu_ms"] = 10**400
+                    c.m.write_json(input_path, evidence)
+                result = subprocess.run([sys.executable, str(HERE / "collection.py"), "analyze",
+                                         "--input", str(input_path), "--output", str(output)],
+                                        capture_output=True, text=True)
+                self.assertEqual(result.returncode, 2, result.stderr)
+                self.assertTrue(output.exists(), result.stderr)
+                self.assertEqual(json.loads(output.read_text())["status"], "blocked_collection")
 
 
 if __name__ == "__main__":

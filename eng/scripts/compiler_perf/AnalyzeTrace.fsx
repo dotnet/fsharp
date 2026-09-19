@@ -197,6 +197,10 @@ if args.Length <> 3 then
     exit 1
 
 let output = Path.GetFullPath args[1]
+if String.Equals(Path.GetFullPath args[0], output, StringComparison.OrdinalIgnoreCase) then
+    eprintfn "Trace reduction blocked: Trace input and output must differ"
+    exit 1
+
 let cache = output + "." + Guid.NewGuid().ToString("N") + ".etlx"
 try
     try
@@ -204,7 +208,6 @@ try
             match Int32.TryParse args[2] with
             | true, value when value > 0 -> value
             | _ -> invalidOp "Expected process PID must be a positive integer"
-        require (not (String.Equals(Path.GetFullPath args[0], output, StringComparison.OrdinalIgnoreCase))) "Trace input and output must differ"
         let data = reduce args[0] pid cache |> JsonSerializer.SerializeToUtf8Bytes
         require (data.Length <= 16 * 1024 * 1024) "Trace reduction exceeds 16 MiB"
         File.WriteAllBytes(output, data)

@@ -1,5 +1,6 @@
 """TraceEvent adapter contract; the live test traces only a tiny public child."""
 
+import hashlib
 import importlib.util
 import json
 import math
@@ -79,6 +80,26 @@ class TraceAdapterTests(unittest.TestCase):
         for pid in ("0", "-1", "not-a-pid"):
             with self.subTest(pid=pid):
                 self.assert_blocked(trace, pid, "(?i)pid|process")
+
+    def test_input_output_collision_preserves_trace(self):
+        trace = self.work / "input.nettrace"
+        payload = b"Nettrace" + bytes(range(32))
+        digest = hashlib.sha256(payload).hexdigest()
+        cases = (("identical", str(trace), "123"),
+                 ("relative", os.path.relpath(trace, ROOT), "123"),
+                 ("invalid-pid", str(trace), "not-a-pid"))
+        for name, output, pid in cases:
+            with self.subTest(case=name):
+                trace.write_bytes(payload)
+                result = subprocess.run(
+                    ["dotnet", "fsi", "--exec", str(ADAPTER), str(trace), output, pid],
+                    cwd=ROOT, capture_output=True, text=True, timeout=180,
+                )
+                self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+                self.assertEqual(trace.read_bytes(), payload)
+                self.assertEqual(hashlib.sha256(trace.read_bytes()).hexdigest(), digest)
+                self.assertIn("Trace input and output must differ", result.stderr)
+                self.assertEqual(list(self.work.iterdir()), [trace])
 
     @unittest.skipUnless(os.environ.get("COMPILER_PERF_LIVE") == "1",
                          "set COMPILER_PERF_LIVE=1 for real EventPipe collection")
