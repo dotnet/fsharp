@@ -24,13 +24,6 @@
 /// they run in the order they arrived, while requests that must not wait behind them — an interrupt
 /// above all — are served as they arrive.
 /// </para>
-/// <para>
-/// Not <c>module internal</c>: <c>FsiRpcTarget</c> needs its members to be genuinely public IL, and
-/// under <c>--realsig-</c> a member's own accessibility is capped by its enclosing module's, so an
-/// internal module would take that away no matter what the type itself declares. Everything else
-/// here goes back to <c>private</c>/<c>internal</c> explicitly instead of inheriting it from the
-/// module.
-/// </para>
 /// </remarks>
 module FSharp.Compiler.Interactive.Server
 
@@ -283,20 +276,12 @@ type internal ExecutionQueue() =
 /// interaction finishes, which leaves StreamJsonRpc free to dispatch an interrupt in the meantime.
 /// </para>
 /// <para>
-/// Public, not <c>internal</c>: <c>AddLocalRpcTarget</c> discovers <c>JsonRpcMethod</c> members by
-/// reflecting over the instance it is handed, and under <c>--realsig-</c> a member's own IL
-/// visibility is capped by its enclosing scope's, so an internal type (or an internal module around
-/// a public one) would take away the public visibility that reflection needs regardless of what the
-/// members declare.
-/// </para>
-/// <para>
-/// StreamJsonRpc offers every public member, not only the attributed ones, so the public members
-/// here are exactly the handlers the protocol defines. The construction the server loop needs goes
-/// through the internal constructor instead.
+/// The server loop registers the six handlers explicitly with StreamJsonRpc, so this implementation
+/// type is internal and no extra members are exposed as RPC methods.
 /// </para>
 /// </remarks>
 [<Sealed>]
-type FsiRpcTarget
+type internal FsiRpcTarget
     internal
     (
         fsiSession: FsiEvaluationSession,
@@ -568,7 +553,31 @@ let private runServer
     use rpc =
         new JsonRpc(new HeaderDelimitedMessageHandler(pipe, new JsonMessageFormatter()))
 
-    rpc.AddLocalRpcTarget(target, JsonRpcTargetOptions(NotifyClientOfEvents = false, AllowNonPublicInvocation = false))
+    let initialize =
+        Func<InitializeRequest, InitializeResult>(fun request -> target.Initialize request)
+
+    rpc.AddLocalRpcMethod(Methods.Initialize, initialize) |> ignore
+
+    let execute =
+        Func<ExecuteRequest, Task<ExecutionResult>>(fun request -> target.Execute request)
+
+    rpc.AddLocalRpcMethod(Methods.Execute, execute) |> ignore
+
+    let executeFile =
+        Func<ExecuteFileRequest, Task<ExecutionResult>>(fun request -> target.ExecuteFile request)
+
+    rpc.AddLocalRpcMethod(Methods.ExecuteFile, executeFile) |> ignore
+
+    let setPaths =
+        Func<SetPathsRequest, Task<ExecutionResult>>(fun request -> target.SetPaths request)
+
+    rpc.AddLocalRpcMethod(Methods.SetPaths, setPaths) |> ignore
+
+    rpc.AddLocalRpcMethod(Methods.Interrupt, Func<InterruptResult>(fun () -> target.Interrupt()))
+    |> ignore
+
+    rpc.AddLocalRpcMethod(Methods.Shutdown, Action(fun () -> target.Shutdown()))
+    |> ignore
 
     // Diagnostic breadcrumb: a host that gets "method not found" against a target that plainly
     // declares the method has almost certainly loaded a second, different copy of this library, so
