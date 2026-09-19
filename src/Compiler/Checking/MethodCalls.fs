@@ -794,6 +794,18 @@ type CalledMeth<'T>
 
     member x.NumArgSets = x.ArgSets.Length
 
+    member x.TryGetRequireNamedArgumentsViolationName(m: range) : string option =
+        if
+            MethInfoHasWellKnownAttribute g m WellKnownILAttributes.RequireNamedArgumentsAttribute WellKnownValAttributes.RequireNamedArgumentsAttribute "System.Diagnostics.CodeAnalysis.RequireNamedArgumentsAttribute" x.Method
+            && x.AssociatedPropertyInfo.IsNone
+            && x.NumArgSets <= 1
+            && (x.TotalNumUnnamedCallerArgs > 0 || (x.ParamArrayCallerArgs |> Option.exists (fun args -> not (isNil args))))
+        then
+            let minfo = x.Method
+            Some(if minfo.IsConstructor then minfo.ApparentEnclosingTyconRef.DisplayName else minfo.LogicalName)
+        else
+            None
+
     member x.HasOptionalArgs = not (isNil x.UnnamedCalledOptArgs)
 
     member x.HasOutArgs = not (isNil x.UnnamedCalledOutArgs)
@@ -920,7 +932,7 @@ let ExamineMethodForLambdaPropagation (g: TcGlobals) m (meth: CalledMeth<SynExpr
             m
             { ILFlag = WellKnownILAttributes.NoEagerConstraintApplicationAttribute
               ValFlag = WellKnownValAttributes.NoEagerConstraintApplicationAttribute
-              AttribInfo = g.attrib_NoEagerConstraintApplicationAttribute }
+              AttributeName = "Microsoft.FSharp.Core.CompilerServices.NoEagerConstraintApplicationAttribute" }
             meth.Method
 
     // The logic associated with NoEagerConstraintApplicationAttribute is part of the
@@ -1305,10 +1317,9 @@ let ILFieldStaticChecks g amap infoReader ad m (finfo : ILFieldInfo) =
     CheckILFieldInfoAccessible g amap m ad finfo
     if not finfo.IsStatic then error (Error(FSComp.SR.tcFieldIsNotStatic(RichText.mkField finfo.FieldName), m))
 
-    // Static IL interfaces fields are not supported in lower F# versions.
+    // Static IL interface fields require target-runtime support for default interface members.
     if isInterfaceTy g finfo.ApparentEnclosingType then
-        checkLanguageFeatureRuntimeAndRecover infoReader LanguageFeature.DefaultInterfaceMemberConsumption m
-        checkLanguageFeatureAndRecover g.langVersion LanguageFeature.DefaultInterfaceMemberConsumption m
+        checkRuntimeSupportForDefaultInterfaceMembersAndRecover infoReader m
 
     CheckILFieldAttributes g finfo m
 

@@ -15,6 +15,7 @@ Welcome to [the F# compiler and tools repository](https://github.com/dotnet/fsha
 * [Memory usage](memory-usage.md)
 * [Optimizations](optimizations.md)
 * [Equality optimizations](optimizations-equality.md)
+* [Runtime async](runtime-async.md)
 * [Project builds](project-builds.md)
 * [Tooling features](tooling-features.md)
 

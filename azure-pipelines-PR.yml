@@ -298,46 +298,29 @@ stages:
             name: $(DncEngPublicBuildPool)
             demands: ImageOverride -equals $(_WindowsMachineQueueName)
           timeoutInMinutes: 120
+          strategy:
+            matrix:
+              Batch1:
+                batchNumber: 1
+              Batch2:
+                batchNumber: 2
+              Batch3:
+                batchNumber: 3
           steps:
-          - checkout: self
-            clean: true
-
-          - script: eng\CIBuildNoPublish.cmd -compressallmetadata -buildnorealsig -testDesktop -configuration Release
-            env:
-              FSharp_CacheEvictionImmediate: true
-              DOTNET_DbgEnableMiniDump: 1
-              DOTNET_DbgMiniDumpType: 2 # 1=mini, 2=heap, 3=triage, 4=full. Heap dumps include managed object data for debugging.
-              DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\Release\$(Build.BuildId)-%e-%p-%t.dmp
-              NativeToolsOnMachine: true
-            displayName: Build
-
-          - task: PublishTestResults@2
-            displayName: Publish Test Results
-            inputs:
-              testResultsFormat: 'XUnit'
-              testRunTitle: WindowsNoRealsig_testDesktop
-              mergeTestResults: true
-              testResultsFiles: '*.xml'
-              searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/Release'
-            condition: succeededOrFailed()
-            continueOnError: true
-          - task: PublishBuildArtifacts@1
-            displayName: Publish Build BinLog
-            continueOnError: true
-            inputs:
-                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.slnx.binlog'
-                ArtifactName: 'Windows Release build binlogs'
-                ArtifactType: Container
-                parallel: true
-          - task: PublishBuildArtifacts@1
-            displayName: Publish Dumps
-            condition: failed()
-            continueOnError: true
-            inputs:
-                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log\Release'
-                ArtifactName: 'Windows Release WindowsNoRealsig_testDesktop process dumps'
-                ArtifactType: Container
-                parallel: true
+          - template: /eng/templates/batched-test-steps.yml
+            parameters:
+              buildCommand: eng\CIBuildNoPublish.cmd -compressallmetadata -buildnorealsig -testDesktopBatch $(batchNumber) -configuration Release
+              buildEnv:
+                FSharp_CacheEvictionImmediate: true
+                DOTNET_DbgEnableMiniDump: 1
+                DOTNET_DbgMiniDumpType: 2
+                DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\Release\$(Build.BuildId)-%e-%p-%t.dmp
+                NativeToolsOnMachine: true
+              testRunTitlePrefix: 'WindowsNoRealsig_testDesktop'
+              artifactNamePrefix: 'WindowsNoRealsig testDesktop'
+              publishBinLog: true
+              binLogPath: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.slnx.binlog'
+              publishDumps: true
 
         # Windows With Compressed Metadata
         - job: WindowsCompressedMetadata

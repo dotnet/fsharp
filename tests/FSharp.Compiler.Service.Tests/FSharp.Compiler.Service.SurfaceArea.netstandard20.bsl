@@ -1863,6 +1863,7 @@ FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes Obsol
 FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes OverloadResolutionPriorityAttribute
 FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes ParamArrayAttribute
 FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes ReflectedDefinitionAttribute
+FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes RequireNamedArgumentsAttribute
 FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes RequiredMemberAttribute
 FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes RequiresLocationAttribute
 FSharp.Compiler.AbstractIL.IL+WellKnownILAttributes: WellKnownILAttributes SetsRequiredMembersAttribute
@@ -2121,7 +2122,9 @@ FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.EditorServi
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.EditorServices.ToolTipText GetDescription(FSharp.Compiler.Symbols.FSharpSymbol, Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[FSharp.Compiler.Symbols.FSharpGenericParameter,FSharp.Compiler.Symbols.FSharpType]], Boolean, FSharp.Compiler.Text.Range)
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.EditorServices.ToolTipText GetKeywordTooltip(Microsoft.FSharp.Collections.FSharpList`1[System.String])
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.EditorServices.ToolTipText GetToolTip(Int32, Int32, System.String, Microsoft.FSharp.Collections.FSharpList`1[System.String], Int32, Microsoft.FSharp.Core.FSharpOption`1[System.Int32])
+FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.Symbols.FSharpAssemblySignature FileSignature
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.Symbols.FSharpAssemblySignature PartialAssemblySignature
+FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.Symbols.FSharpAssemblySignature get_FileSignature()
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.Symbols.FSharpAssemblySignature get_PartialAssemblySignature()
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.Symbols.FSharpOpenDeclaration[] OpenDeclarations
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.Symbols.FSharpOpenDeclaration[] get_OpenDeclarations()
@@ -5269,6 +5272,7 @@ FSharp.Compiler.Symbols.FSharpDelegateSignature: System.Collections.Generic.ILis
 FSharp.Compiler.Symbols.FSharpDelegateSignature: System.Collections.Generic.IList`1[System.Tuple`2[Microsoft.FSharp.Core.FSharpOption`1[System.String],FSharp.Compiler.Symbols.FSharpType]] get_DelegateArguments()
 FSharp.Compiler.Symbols.FSharpDelegateSignature: System.String ToString()
 FSharp.Compiler.Symbols.FSharpDisplayContext: FSharp.Compiler.Symbols.FSharpDisplayContext Empty
+FSharp.Compiler.Symbols.FSharpDisplayContext: FSharp.Compiler.Symbols.FSharpDisplayContext WithNullnessAnnotations(Boolean)
 FSharp.Compiler.Symbols.FSharpDisplayContext: FSharp.Compiler.Symbols.FSharpDisplayContext WithPrefixGenericParameters()
 FSharp.Compiler.Symbols.FSharpDisplayContext: FSharp.Compiler.Symbols.FSharpDisplayContext WithShortTypeNames(Boolean)
 FSharp.Compiler.Symbols.FSharpDisplayContext: FSharp.Compiler.Symbols.FSharpDisplayContext WithSuffixGenericParameters()
