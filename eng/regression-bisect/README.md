@@ -327,6 +327,107 @@ was regenerated through its existing harness for the new pinned public-feed
 policy; an old-policy checkpoint is not silently accepted as a new-policy one.
 Root compiler Release builds/tests are not this Node adapter's acceptance gate.
 
+## Historical revision workspaces
+
+`workspace.cjs` composes acquisition and reproduction without admission, Git
+bisection, or publishing. `prepareRevisionWorkspace(options, dependencies?)`
+returns an owned, fresh workspace handle; `buildRevision(handle, dependencies?)`
+consumes it once. `testSourceRevision(options, dependencies?)` performs both and
+runs the unchanged frozen manifest. All four phases (`main`, `older-search`,
+`bisect`, `confirmation`) use this implementation. Even repeated confirmations
+of the same SHA allocate a new UUID, checkout, SDK, package cache and sample.
+
+Trusted options are `manifest`, its reviewed `sourceDirectory`, an existing
+`mirrorDirectory`, separate existing `scratchDirectory` and `evidenceDirectory`,
+an absolute `gitExecutable`, optional `signal`, and this request:
+
+```json
+{
+  "schemaVersion": 1,
+  "repository": "dotnet/fsharp",
+  "sourceSha": "<full 40-character source SHA>",
+  "manifestDigest": "<fingerprintInput(manifest)>",
+  "approvalDigest": "<manifest.approvedInputDigest>",
+  "phase": "confirmation",
+  "platform": { "os": "windows", "architecture": "x64", "rid": "win-x64" },
+  "allocation": { "buildTimeoutMs": 5400000, "workerTimeoutMs": 6600000 }
+}
+```
+
+The controller must associate the trusted mirror with the repository and reserve
+the execution allocation before calling. The worker does not fetch issue-supplied
+URLs. Git fetches only the pinned object from that mirror into an independent
+repository, with empty templates, disabled hooks/credential helpers/submodules,
+isolated configuration and Windows long-path support. Tracked links/build output
+and unexpected state in a prepared checkout are rejected, not scrubbed or reused.
+The environment is constructed from an allowlist, with private homes, caches and
+temporary directories; source build scripts cannot print inherited tokens.
+This is not an OS sandbox: the credential-free worker/container boundary remains
+mandatory before executing historical source or reproductions.
+
+The explicit adapter supports nested `fsiProject`/`fscProject` Arcade layouts
+with `.sln` or `.slnx` entrypoints and evaluated
+`artifacts/bin/<product>/Release/<tfm>` output. It reads that checkout's
+`global.json`, TFM declaration, bootstrap/build scripts and NuGet configuration.
+Windows uses its `eng\Build.ps1 -restore -build -c Release -pack -bootstrap
+-noVisualStudio -msbuildEngine dotnet`, restricting `Projects` to that revision's
+`Microsoft.FSharp.Compiler.fsproj` product graph rather than building the solution
+or tests. Bash uses root `build.sh --configuration Release --pack --bootstrap
+--product-build` (the root already supplies restore/build). Unsupported
+entrypoints, declarations or SDK property-query support are explicitly untestable.
+Historical files, TFMs and package versions are never rewritten.
+
+MSBuild-evaluated paths and package identity must agree before/after the build.
+Inventory verifies bytes, assembly versions, runtimeconfigs and the Core package,
+rejecting missing outputs, SDK-bundled compiler fallback and redirected artifacts.
+No timestamp selection or shared same-version Core cache is used. Exact acquisition
+uses the trusted checkout's existing Arcade acquisition helper, not a helper
+assumed to exist in historical source. The evidence helper likewise comes from
+the trusted adapter (or the controller's optional `helper` descriptor). Project
+reproduction continues to import the trusted root
+`UseLocalCompiler.Directory.Build.props` and `.targets`; their digests and the
+adapter's layout/version/digest are recorded.
+
+Results contain the three-way `outcome`, requested/actual identities, commands,
+exit codes, durations, build ID and complete reproduction repeats/matrix evidence.
+Only `evidence[].path` entries (relative to `evidenceDirectory`, with SHA-256)
+are upload candidates, not arbitrary paths appearing in command output.
+Build logs/binlogs and observations persist outside scratch. Setup/build errors,
+timeouts and wrong/missing identities cannot become product failures even when
+their output matches the expected diagnostic. Cancellation terminates process
+trees and removes only the UUID-marked, resolved owned scratch child; ordinary
+results retain their scratch artifacts for diagnosis. Results expose no mutation
+or publisher operation. Controller provenance/admission remains separate.
+
+### Bounded opt-in clean-build smoke
+
+```powershell
+node eng\regression-bisect\workspace.smoke.cjs --run <full-current-sha> <trusted-mirror> <existing-storage> <absolute-git-executable>
+node --test eng\regression-bisect\model.test.cjs eng\regression-bisect\toolchains.test.cjs eng\regression-bisect\repro.test.cjs eng\regression-bisect\workspace.test.cjs
+```
+
+The opt-in smoke freezes a harmless FSI fixture, uses the declared revision SDK,
+builds the product graph cleanly and requests two verified local executions.
+It prints its retained result/evidence location and exits 2 on an untestable
+result. No live issue discovery or full compiler test suite is involved.
+
+Local verification on 2026-09-19: RED was observed before `workspace.cjs` existed;
+the final scoped suite passed **498 tests**, including 15 workspace contracts.
+The real Windows x64 smoke pinned
+`e6ee82e2f1e730ea2ac64a05925dd180a7dfe2df`, build instance
+`38b31a09-c802-495f-ad3a-2e4b006515ab`. Its accurate result is
+**untestable / unavailable-sdk**, exit 2: exact SDK
+`11.0.100-rc.1.26420.103` has no verified public archive available to acquisition.
+Release metadata returned 200, but
+`Sdk/11.0.100-rc.1.26420.103/dotnet-sdk-11.0.100-rc.1.26420.103-win-x64.zip.sha512`
+returned 404 under both `https://builds.dotnet.microsoft.com/dotnet` and
+`https://ci.dot.net/public`. Checkout/source-integrity checks passed and
+`global.json` retained its hash. Acquisition stopped before the build entrypoint,
+so no build binlog or local FSI result exists; this is not a green clean build
+or compiler suite. Retained evidence is
+`Q:\fsharp-workspace-smoke-r1n9dF\result.json`, SHA-256
+`4a3bf0528370c54471aa8e81e68f62e4db958a441fab69819e2b540a6c2f7bf5`.
+
 ## Reproduction execution
 
 `repro.cjs` is an execution adapter, not an authorization boundary. Its caller
