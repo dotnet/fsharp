@@ -98,7 +98,7 @@ def preflight(s, a=None, prs=None, run_status="completed"):
                                         "attempt": owner["attempt"], "state": run_status}, NOW)
 
 
-def improvement(*, legacy=False):
+def improvement(*, legacy=False, compiler_path=PATH):
     a = attempt()
     baseline, candidate = measurements()
     for document in (baseline, candidate):
@@ -115,7 +115,7 @@ def improvement(*, legacy=False):
     a.update(outcome="measured_improvement", reason="Both gates passed", lifecycle="validating")
     if not legacy:
         import experiment
-        changes = [PATH, "tests/FSharp.Compiler.ComponentTests/Conformance/Regression.fs",
+        changes = [compiler_path, "tests/FSharp.Compiler.ComponentTests/Conformance/Regression.fs",
                    experiment.RELEASE_NOTE]
         regressions = [{"path": changes[1], "method": "regression"}]
         plan = experiment.correctness_plan(changes, regressions, "net11.0")
@@ -205,6 +205,30 @@ class MemoryTests(unittest.TestCase):
                                  state(failed))
                 with self.assertRaises(ValueError):
                     mem.acceptance_ready(failed)
+
+    def test_attestation_rejects_coherently_omitted_area_requirements(self):
+        for compiler_path, category in (
+                ("src/Compiler/CodeGen/IlxGen.fs", "emitted-il"),
+                ("src/Compiler/Optimize/Optimizer.fs", "optimizer"),
+                ("src/Compiler/Service/FSharpCheckerResults.fs", "service"),
+                ("src/Compiler/Service/FSharpCheckerResults.fsi", "surface-area")):
+            with self.subTest(compiler_path=compiler_path, category=category):
+                a = improvement(compiler_path=compiler_path)
+                mem.acceptance_ready(a)
+                checks = a["correctness"]
+                self.assertIn(compiler_path, checks["changes"])
+                self.assertIn(category, {p["category"] for p in checks["plan"]})
+                checks["plan"] = [p for p in checks["plan"] if p["category"] != category]
+                checks["plan_sha256"] = mem.m.fingerprint_inputs(checks["plan"])
+                checks["required"] = [p["id"] for p in checks["plan"]]
+                checks["results"] = [r for r in checks["results"] if r["category"] != category]
+                self.assertEqual(checks["required"], [r["check_id"] for r in checks["results"]])
+                checks["validation"] = None
+                with self.assertRaisesRegex(ValueError, "Correctness plan changed or weakened"):
+                    mem._attest_correctness(a)
+                self.assertIsNone(checks["validation"])
+                with self.assertRaisesRegex(ValueError, "Correctness plan changed or weakened"):
+                    mem.acceptance_ready(a)
 
     def test_attestation_rechecks_leaf_results_not_passed_arrays(self):
         for leaf in ("", '<test name="failed" result="Fail" />'):

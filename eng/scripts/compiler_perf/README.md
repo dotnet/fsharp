@@ -95,6 +95,9 @@ new regression selectors, the component siblings, runtime execution and all six
 compatibility scenarios. Codegen/optimizer/IL areas add emitted-IL and optimizer
 checks; service/typed-tree/API areas add service tests, and `.fsi` changes add
 surface-area tests. Unknown/general compiler areas receive conservative checks.
+Fresh attestation regenerates the plan from the changed paths; coherently removing
+an area-specific check from the plan, its digest, required IDs and receipts still
+blocks approval.
 The built pinned MTP runner's `--help` must expose the required selectors and
 xUnit reporter; tests use explicit `--project`, `--no-build` and
 `--minimum-expected-tests 1`. Empty, failing, missing or stale reports block
