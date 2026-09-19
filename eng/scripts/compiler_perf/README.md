@@ -30,7 +30,9 @@ selection, `sudo`, container privilege escalation, or cross-namespace fallback.
 
 Process identity includes PID, creation time, full argument array, executable
 hash, parent, session, owner and PID namespace. Windows uses CIM plus the owned
-process handle; Linux uses `/proc` plus `wait4`. The profiler PIDs remain distinct
+process handle, with explicit UTF-8 encoding on both sides of the CIM JSON
+exchange so non-ASCII paths retain their exact identity; Linux uses `/proc`
+plus `wait4`. The profiler PIDs remain distinct
 from the target PID. The end identity is tied to the owned process handle/wait,
 not a lookup of a potentially reused PID. Preflight checks tool pins/help,
 architecture, memory/disk budget and diagnostics ownership. Actual EventPipe
@@ -90,7 +92,10 @@ or reduction. This error is reported only on stderr, without writing failure
 JSON over the original trace; failures with a separate output still emit JSON.
 
 After replay, a separate diagnostic Release rebuild with `--times` produces a
-binlog. The existing `ExtractTimingsFromBinlog.fsx` output must contain a real,
+binlog. The frozen local-compiler props append `--times`; the collector does not
+replace `OtherFlags` with a global MSBuild property, which would suppress project
+flags such as `--realsig+` and `--extraoptimizationloops:1`.
+The existing `ExtractTimingsFromBinlog.fsx` output must contain a real,
 project-tagged Fsc numeric timing row. Its log/hash and binlog are separate from
 unprofiled measurements; “No Fsc tasks” with exit zero is a blocker.
 
@@ -130,6 +135,9 @@ Windows children start suspended, join a private kill-on-close job, then resume;
 job assignment failure blocks launch without executing the child. Jobs and POSIX
 process groups are terminated even after their wrapper exits, before log cleanup.
 An exited wrapper does not hide a descendant-termination failure.
+Cancellation terminates owned children and persists blocked command/collection
+evidence before propagating; it never starts subsequent diagnostic tools.
+The CLI returns exit code 130 for cancellation.
 Target duration and artifact budgets remain monitored during a requested dump,
 including its tool probes and validation. Persisted manifests and summaries
 count toward the disk budget.
@@ -313,6 +321,21 @@ the reduction records 286,562 stack samples, 33,939,106,936 estimated allocated
 bytes and a 5,066.8541 ms GC pause union. Commands and DoD evidence are recorded
 in `iteration5-validation.json`. These remain private local diagnostics, not
 acceptance samples or a retention/improvement claim.
+
+On 2026-09-19, Unicode process-identity, evaluated compiler-flag and cancellation
+regressions reproduced six failures and one error (`iteration6-red.log`).
+All **71 helper tests** now pass with live diagnostics enabled
+(`iteration6-suite-live-final.log`); three isolated guard-removal mutations are
+caught. Explicit Release compiler/test builds, the service smoke test and
+formatting pass. Root build/test commands still require project selection.
+The fresh `iteration6-compiler/evidence-manifest.json` verifies PID **28868**,
+start time **639253864805637210**, zero lost events and successful Fsc timing
+extraction. Independent analysis verifies all **935** frozen files; the
+diagnostic build's **688 arguments** exactly match the frozen replay after
+removing `--times` (`iteration6-verification.json`). Its trace SHA-256 is
+`c5486c1c38f567cd9e753d892185b026d6a62c391d34fa5aa71c34fc560bd3fa`.
+Commands and DoD evidence are in `iteration6-validation.json`; evidence remains
+private, local and excluded from acceptance samples.
 
 ## Preparation
 

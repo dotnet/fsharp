@@ -15,6 +15,7 @@ from types import SimpleNamespace
 from concurrent.futures import ThreadPoolExecutor
 import unittest
 from unittest import mock
+import xml.etree.ElementTree as ET
 
 from test_measurement import measurements
 
@@ -160,6 +161,24 @@ class CollectionTests(unittest.TestCase):
                 c.select_compiler_process(candidates, expected)
         with self.assertRaises(ValueError):
             c.select_compiler_process([{"pid": 42}], {"pid": 42})
+
+    def test_process_identity_roundtrips_unicode_arguments(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            script = root / "public child \u00e9\u6f22.py"
+            script.write_text("import sys; sys.stdin.read()\n", encoding="utf-8")
+            args = [str(Path(sys.executable).resolve()), str(script), "@response \u00e9\u6f22.rsp",
+                    'quoted "value"', "trailing slash\\"]
+            with subprocess.Popen(args, stdin=subprocess.PIPE, stdout=subprocess.DEVNULL,
+                                  stderr=subprocess.DEVNULL, env=c.tool_environment()) as child:
+                try:
+                    identity = c.snapshot_process(child.pid)
+                    self.assertEqual(identity["command"], args)
+                    self.assertEqual(identity["parent_pid"], os.getpid())
+                    self.assertEqual(identity["binary_sha256"], c.m.file_record(sys.executable)["sha256"])
+                    self.assertEqual(c.select_compiler_process([c.snapshot_process(child.pid)], identity), identity)
+                finally:
+                    child.communicate(timeout=10)
 
     def test_counter_adapter_and_irregular_intervals(self):
         counters = c.read_counters(FIXTURES / "counters.csv", 42)
@@ -450,6 +469,37 @@ class CollectionTests(unittest.TestCase):
             self.assertIsNotNone(result["exit_status"])
             self.assertIn("profiler_pid", result)
 
+    def test_tool_cancellation_cleans_up_and_propagates(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            commands = []
+            original = c.Command
+
+            def launch(*args):
+                command = original(*args)
+                commands.append(command)
+                return command
+
+            with mock.patch.object(c, "Command", side_effect=launch):
+                with self.assertRaises(KeyboardInterrupt) as raised:
+                    c.run_tool([sys.executable, "-c", "import time; time.sleep(30)"], root,
+                               c.tool_environment(), root, "fixture",
+                               monitor=mock.Mock(side_effect=KeyboardInterrupt))
+            result = raised.exception.result
+            self.assertEqual(result["reason"], "cancelled")
+            self.assertEqual(result["profiler_pid"], commands[0].process.pid)
+            self.assertIsNotNone(result["exit_status"])
+            self.assertTrue(all(Path(log["path"]).is_file() for log in result["logs"]))
+            self.assertIsNotNone(commands[0].process.poll())
+            self.assertFalse(list(root.glob("*.raw")))
+            self.assertEqual(len(list(root.glob("*.log"))), 2)
+            for action, options in (("collect", ["--manifest", "workload.json", "--compiler", "compiler.json"]),
+                                    ("dump", ["--process", "process.json", "--reason", "retention"])):
+                with self.subTest(action=action), mock.patch.object(c, "read_bounded_json", return_value={}), \
+                        mock.patch.object(c, "collect_profile" if action == "collect" else "collect_dump",
+                                          side_effect=raised.exception), mock.patch.object(c.sys, "stderr"):
+                    self.assertEqual(c.main([action, *options, "--output-dir", str(root)]), 130)
+
     def test_tree_cleanup_failure_is_not_hidden_by_wrapper_exit(self):
         for exited in (True, False):
             with self.subTest(exited=exited), tempfile.TemporaryDirectory() as directory:
@@ -537,11 +587,17 @@ class CollectionTests(unittest.TestCase):
         identity = profile()["process"]["start"]
         document = {"identity": identity, "hypothesis": "RSS grows while managed heap remains stable",
                     "profiling_replay": True}
-        for issue in ("permission_denied", "timeout", "tool_failure", "empty_artifact", "corrupt_artifact"):
+        for issue in ("permission_denied", "timeout", "tool_failure", "empty_artifact", "corrupt_artifact",
+                      "cancelled", "cancelled-tool"):
             with self.subTest(issue=issue), tempfile.TemporaryDirectory() as directory:
                 root = Path(directory) / "private"
 
                 def run(arguments, *args, **kwargs):
+                    if issue.startswith("cancelled"):
+                        (root / "heap.dmp").write_bytes(b"partial dump")
+                        if issue == "cancelled-tool":
+                            raise c.CollectionCancelled(c.classify_failure("dump", 17, "interrupted tool", "cancelled"))
+                        raise KeyboardInterrupt
                     if issue in ("empty_artifact", "corrupt_artifact"):
                         (root / "heap.dmp").write_bytes(b"" if issue == "empty_artifact" else b"bad!" * 2000)
                         return {"status": "collected", "exit_status": 0, "stderr": "tool exited zero"}
@@ -551,15 +607,23 @@ class CollectionTests(unittest.TestCase):
                         mock.patch.object(c, "preflight", return_value={}), \
                         mock.patch.object(c, "verify_tools", return_value={"dotnet-dump": {"command": ["dotnet-dump"]}}), \
                         mock.patch.object(c, "run_tool", side_effect=run):
-                    result = c.collect_dump(document, "unexplained-rss", root)
+                    if issue.startswith("cancelled"):
+                        with self.assertRaises(KeyboardInterrupt):
+                            c.collect_dump(document, "unexplained-rss", root)
+                        result = c.m.read_json(root / "dump-evidence.json")
+                    else:
+                        result = c.collect_dump(document, "unexplained-rss", root)
                 self.assertEqual(result["status"], "blocked_collection")
-                self.assertEqual(result["reason"], issue)
+                self.assertEqual(result["reason"], "cancelled" if issue.startswith("cancelled") else issue)
                 self.assertFalse(result["published"])
-                self.assertEqual(result["exit_status"], 0 if "artifact" in issue else 17)
+                self.assertEqual(result["exit_status"], None if issue == "cancelled" else 0 if "artifact" in issue else 17)
                 self.assertTrue((root / "dump-evidence.json").exists())
                 self.assertFalse((root / "heap.dmp").exists())
-                if "artifact" in issue:
+                if "artifact" in issue or issue.startswith("cancelled"):
                     self.assertEqual(result["incomplete_artifact"]["status"], "removed_incomplete")
+                if issue == "cancelled-tool":
+                    self.assertEqual(result["cancelled_command"]["phase"], "dump")
+                    self.assertEqual(result["stderr"], "interrupted tool")
 
     def test_dump_success_and_aggregate_budget(self):
         identity = profile()["process"]["start"]
@@ -599,7 +663,7 @@ class CollectionTests(unittest.TestCase):
 
     def test_collection_lifecycle_and_failures(self):
         for problem in (None, "trace", "trace-incomplete", "counters", "reduce", "timings", "count", "duration",
-                        "dump", "dump-failure", "dump-early-exit"):
+                        "dump", "dump-failure", "dump-early-exit", "cancel-timings", "cancel-reduce"):
             with self.subTest(problem=problem), tempfile.TemporaryDirectory() as directory, ExitStack() as patches:
                 base = Path(directory)
                 root = base / "profile"
@@ -663,12 +727,18 @@ class CollectionTests(unittest.TestCase):
 
                 def timings(*unused):
                     calls.append("timings")
+                    if problem == "cancel-timings":
+                        raise KeyboardInterrupt
                     result = artifact_profile(root)["timings"]
                     if problem == "timings":
                         result = {"status": "collected"}
                     return result
 
                 def run(arguments, cwd, environment, owned, phase, **kwargs):
+                    if problem == "cancel-timings":
+                        self.fail("Cancelled diagnostic build continued into reduction")
+                    if problem == "cancel-reduce":
+                        raise c.CollectionCancelled(c.classify_failure(phase, 23, "interrupted tool", "cancelled"))
                     if phase in ("dump", "dump-validate"):
                         calls.append(phase)
                         if problem == "dump-failure":
@@ -701,9 +771,13 @@ class CollectionTests(unittest.TestCase):
                 if problem == "duration":
                     patches.enter_context(mock.patch.dict(c.LIMITS, duration_seconds=1))
                 requested_dump = problem is not None and problem.startswith("dump")
-                result = c.collect_profile(manifest, compiler, root,
-                                           dump_reason="heap-growth" if requested_dump else None,
-                                           hypothesis="Heap grows across full GCs" if requested_dump else None)
+                with self.assertRaises(KeyboardInterrupt) if problem and problem.startswith("cancel-") else ExitStack():
+                    result = c.collect_profile(manifest, compiler, root,
+                                               dump_reason="heap-growth" if requested_dump else None,
+                                               hypothesis="Heap grows across full GCs" if requested_dump else None)
+                if problem and problem.startswith("cancel-"):
+                    result = c.m.read_json(root / "profile-summary.json")
+                    self.assertEqual(result["reason"], "cancelled")
                 success = problem in (None, "dump")
                 self.assertEqual(result["status"], "collected" if success else "blocked_collection", result)
                 self.assertFalse(result["acceptance_eligible"])
@@ -711,6 +785,10 @@ class CollectionTests(unittest.TestCase):
                 saved = c.m.read_json(root / "evidence-manifest.json")
                 self.assertEqual(saved["status"], result["status"])
                 self.assertEqual(c.m.read_json(root / "profile-summary.json"), result)
+                if problem == "cancel-reduce":
+                    self.assertEqual(saved["commands"][-1]["exit_status"], 23)
+                    self.assertEqual(result["stderr"], "interrupted tool")
+                    self.assertEqual(result["phase"], "reduce")
                 if problem == "count":
                     self.assertFalse(commands)
                 if requested_dump:
@@ -862,7 +940,7 @@ class CollectionTests(unittest.TestCase):
                 self.assertEqual([phase for phase, _, _ in calls],
                                  ["diagnostic-build"] + ([] if problem == "build" else ["timings-extract"]))
                 arguments, environment = calls[0][1:]
-                self.assertIn("-p:OtherFlags=--times", arguments)
+                self.assertFalse(any(arg.startswith("-p:OtherFlags=") for arg in arguments))
                 self.assertEqual(arguments[arguments.index("-c") + 1], "Release")
                 self.assertEqual(environment["DOTNET_EnableDiagnostics"], "0")
                 self.assertIn("-p:DotnetFscCompilerPath=%22" + sample["compiler"]["files"]["fsc.dll"]["path"] + "%22",
@@ -878,6 +956,47 @@ class CollectionTests(unittest.TestCase):
                 elif problem in ("no-fsc", "no-times"):
                     self.assertEqual(result["exit_status"], 0)
                     self.assertIn("Missing project-tagged Fsc timing data", result["reason"])
+
+    def test_diagnostic_build_preserves_evaluated_compiler_flags(self):
+        # Real MSBuild evaluation, but no compiler execution or performance evidence.
+        for inherited in ("", "--define:PUBLIC_FIXTURE"):
+            with self.subTest(inherited=inherited), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                sample = measurements()[0]
+                workload = sample["invariants"]["workload"]
+                workload["checkout"] = str(root)
+                sample["invariants"]["environment"]["variables"] = c.tool_environment()
+                project = root / c.m.PROJECT
+                project.parent.mkdir(parents=True)
+                tree = ET.Element("Project")
+                properties = ET.SubElement(tree, "PropertyGroup")
+                for key, value in (("OtherFlags", inherited), ("LoadLocalFSharpBuild", "True"),
+                                   ("LocalFSharpCompilerPath", str(ROOT))):
+                    ET.SubElement(properties, key).text = value
+                ET.SubElement(tree, "Import", Project=str(ROOT / "UseLocalCompiler.Directory.Build.props"))
+                properties = ET.SubElement(tree, "PropertyGroup")
+                flags = "--realsig+ --extraoptimizationloops:1 --warnon:3218 --generate-filter-blocks"
+                ET.SubElement(properties, "OtherFlags").text = "$(OtherFlags) " + flags
+                target = ET.SubElement(tree, "Target", Name="Rebuild")
+                output = root / "evaluated-flags.txt"
+                ET.SubElement(target, "WriteLinesToFile", File=str(output), Lines="$(OtherFlags)", Overwrite="true")
+                ET.ElementTree(tree).write(project, encoding="utf-8")
+                run_tool = c.run_tool
+
+                def run(arguments, cwd, environment, owned, phase, **kwargs):
+                    if phase == "diagnostic-build":
+                        return run_tool(arguments, cwd, environment, owned, phase, **kwargs)
+                    log = root / "timings.log"
+                    log.write_text(TIMINGS)
+                    return {"status": "collected", "exit_status": 0, "stdout": TIMINGS, "stderr": "",
+                            "logs": [c.m.file_record(log)]}
+
+                with mock.patch.object(c, "run_tool", side_effect=run):
+                    result = c.diagnostic_timings({"invariants": sample["invariants"]},
+                                                  sample["compiler"], root, "dotnet")
+                self.assertEqual(result["status"], "collected", result)
+                self.assertEqual(output.read_text(encoding="utf-8-sig").split(),
+                                 (inherited + " --nowarn:75 --times " + flags).split())
 
     def test_analyze_cannot_turn_blocked_collection_into_healthy_metrics(self):
         evidence = profile()

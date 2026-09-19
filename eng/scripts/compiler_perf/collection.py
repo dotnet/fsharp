@@ -38,6 +38,12 @@ IDENTITY = ("pid", "start_time", "parent_pid", "session_id", "executable", "comm
 REASONS = ("retention", "heap-growth", "unexplained-rss")
 
 
+class CollectionCancelled(KeyboardInterrupt):
+    def __init__(self, result):
+        super().__init__("Collection cancelled")
+        self.result = result
+
+
 def sanitize(text):
     text = str(text)
     for key, value in os.environ.items():
@@ -486,7 +492,11 @@ def run_tool(arguments, cwd, environment, root, phase, timeout=180, monitor=None
         return command.finish()
     except (OSError, ValueError, KeyboardInterrupt) as error:
         issue = "cancelled" if isinstance(error, KeyboardInterrupt) else str(error)
-        return command.finish(issue) if command else classify_failure(phase, stderr=str(error), issue="launch_failed")
+        result = command.finish(issue) if command else classify_failure(
+            phase, stderr=str(error), issue="cancelled" if isinstance(error, KeyboardInterrupt) else "launch_failed")
+        if isinstance(error, KeyboardInterrupt):
+            raise CollectionCancelled(result) from error
+        return result
 
 
 def validate_timings(text):
@@ -520,6 +530,7 @@ def snapshot_process(pid):
             raise ProcessLookupError("Target exited before identity verification") from error
     m.require(os.name == "nt", "Unsupported process identity platform")
     script = (
+        "[Console]::OutputEncoding=[Text.UTF8Encoding]::new($false);"
         f"$p=Get-CimInstance Win32_Process -Filter 'ProcessId={pid}';"
         "if (!$p) {exit 3}; $owner=Invoke-CimMethod -InputObject $p -MethodName GetOwnerSid;"
         "if ($owner.ReturnValue -ne 0 -or !$p.ExecutablePath -or !$p.CommandLine) {exit 5};"
@@ -528,7 +539,7 @@ def snapshot_process(pid):
         "command_line=$p.CommandLine;uid=$owner.Sid;namespace=('windows-session-'+$p.SessionId)}|ConvertTo-Json -Compress"
     )
     result = subprocess.run(["powershell.exe", "-NoProfile", "-NonInteractive", "-Command", script],
-                            capture_output=True, text=True, timeout=15, env=tool_environment())
+                            capture_output=True, text=True, encoding="utf-8", timeout=15, env=tool_environment())
     if result.returncode == 3:
         raise ProcessLookupError("Target exited before identity verification")
     if result.returncode:
@@ -646,6 +657,7 @@ def verify_tools(dotnet, root, names=("dotnet-trace", "dotnet-counters", "dotnet
 
 def collect_dump(document, reason, output_dir, monitor=None):
     root, command, dump = None, None, None
+    cancelled = None
     result = {"published": False, "publication_reason": "Private local raw dump; no maintainer encryption configured"}
     phase = "hypothesis"
     try:
@@ -694,10 +706,15 @@ def collect_dump(document, reason, output_dir, monitor=None):
         result.update(schema_version=1, kind="dump-evidence", profiler_attached=True, acceptance_eligible=False)
         m.write_json(root / "dump-evidence.json", result)
         check_budget(root)
-    except (ValueError, OSError, KeyError, TypeError, subprocess.SubprocessError) as error:
-        issue = ("permission_denied" if isinstance(error, PermissionError) else
+    except (ValueError, OSError, KeyError, TypeError, subprocess.SubprocessError, KeyboardInterrupt) as error:
+        if isinstance(error, KeyboardInterrupt):
+            cancelled = error
+        if isinstance(error, CollectionCancelled):
+            result["cancelled_command"] = error.result
+        issue = ("cancelled" if cancelled is not None else
+                 "permission_denied" if isinstance(error, PermissionError) else
                  "early_exit" if isinstance(error, ProcessLookupError) else str(error))
-        failed = result.get("validation", command)
+        failed = result.get("cancelled_command", result.get("validation", command))
         result.update(classify_failure(phase, failed.get("exit_status") if failed else None,
                                        failed.get("stderr", "") if failed else str(error), issue))
         if dump and dump.is_file():
@@ -706,6 +723,8 @@ def collect_dump(document, reason, output_dir, monitor=None):
     result.update(schema_version=1, kind="dump-evidence", profiler_attached=True, acceptance_eligible=False)
     if root:
         m.write_json(root / "dump-evidence.json", result)
+    if cancelled is not None:
+        raise cancelled
     return result
 
 
@@ -747,7 +766,7 @@ def diagnostic_timings(manifest, compiler, root, dotnet):
     binlog = root / "diagnostic.binlog"
     args = [dotnet, "build", project, "-c", "Release", "--no-restore", "--disable-build-servers",
             "-t:Rebuild", "-p:BuildProjectReferences=false", f"-p:TargetFramework={workload['target_framework']}",
-            "-p:OtherFlags=--times", "-p:FSHARPCORE_USE_PACKAGE=true", "-p:UseSharedCompilation=false",
+            "-p:FSHARPCORE_USE_PACKAGE=true", "-p:UseSharedCompilation=false",
             "-p:ProduceReferenceAssembly=false", "-p:ProduceOnlyReferenceAssembly=false",
             "-p:ProvideCommandLineArgs=true", "-p:SkipCompilerExecution=false",
             f"-p:ParallelCompilation={str(workload['parallel_compilation']).lower()}",
@@ -779,6 +798,7 @@ def collect_profile(manifest, compiler, output_dir, dump_reason=None, hypothesis
                 "acceptance_eligible": False, "commands": [], "limits": dict(LIMITS),
                 "collection_count": 1}
     target = trace = counters = None
+    cancelled = None
     lock = None
     lock_owned = False
     phase = "validate"
@@ -925,6 +945,11 @@ def collect_profile(manifest, compiler, output_dir, dump_reason=None, hypothesis
             validate_profile_artifacts(evidence)
         evidence["status"] = summary["status"]
     except (ValueError, OSError, KeyError, TypeError, subprocess.SubprocessError, KeyboardInterrupt) as error:
+        if isinstance(error, KeyboardInterrupt):
+            cancelled = error
+        if isinstance(error, CollectionCancelled):
+            evidence["commands"].append(error.result)
+            phase = error.result["phase"]
         failed = next((c for c in reversed(evidence["commands"]) if c["phase"] == phase), {})
         summary = classify_failure(phase, failed.get("exit_status"), failed.get("stderr", ""),
                                    "cancelled" if isinstance(error, KeyboardInterrupt) else str(error))
@@ -964,6 +989,8 @@ def collect_profile(manifest, compiler, output_dir, dump_reason=None, hypothesis
             if p.is_file() and p.suffix in (".nettrace", ".binlog", ".dmp", ".etlx")]
     m.write_json(root / "evidence-manifest.json", evidence)
     m.write_json(root / "profile-summary.json", summary)
+    if cancelled is not None:
+        raise cancelled
     return summary
 
 
@@ -996,6 +1023,9 @@ def main(argv=None):
         else:
             result = analyze_profile(options.input)
             m.write_json(options.output, result)
+    except KeyboardInterrupt:
+        print(json.dumps(classify_failure(options.command, issue="cancelled")), file=sys.stderr)
+        return 130
     except (ValueError, OSError, KeyError, TypeError, subprocess.SubprocessError) as error:
         result = classify_failure(options.command, issue=str(error))
         print(json.dumps(result), file=sys.stderr)
