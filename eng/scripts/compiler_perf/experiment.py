@@ -377,8 +377,8 @@ def test_counts(path, *, platform_exclusions=False, required_test=None, allowed_
 
 @contextmanager
 def capture_report(path, destination, isolation):
-    """A mounted FIFO cannot be replaced/truncated by a test's ProcessExit handler."""
-    require(sys.platform == "linux", "Authenticated report capture requires Linux")
+    """Preserve report bytes against replacement, not authenticate their first writer."""
+    require(sys.platform == "linux", "Sealed report capture requires Linux")
     path = Path(path)
     require(unredirected(path.parent) and not path.exists(), "Stale or redirected report channel")
     os.mkfifo(path, 0o600)
@@ -775,6 +775,8 @@ def run_correctness(root, manifest, compiler, isolation, *, baseline=False):
                        matched=None, result_path=result_path, files=result["logs"])
         checks["results"].append(receipt)
         m.write_json(receipt_path, checks)
+        # The fixed SDK's outer MTP runner rejects missing handshake/session completion.
+        # XML (including the first FIFO writer) and a test executable's exit cannot replace it.
         require(result["exit_status"] == 0 and result["status"] == "collected",
                 f"Required check failed: {check['id']}")
         if check["result"] == "xunit":

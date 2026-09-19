@@ -109,13 +109,22 @@ Broad suites first run serially in a separate checkout of the frozen base, inclu
 its own Release pack and test builds. Only exact test-name/reason skips observed
 there can be excluded from candidate checks; new skips and skipped regressions
 block approval. Individual XML results must agree with assembly totals; claimed
-totals alone are not evidence. Reports stream through a fresh write-only FIFO in
+totals alone are not evidence. Approval also requires successful observed completion
+of the fixed SDK's **outer `dotnet test --project` runner**. On the pinned SDK,
+missing startup handshake and missing test-session end fail that outer invocation,
+even if the child exits zero and writes matching passing XML. Direct assembly
+execution is not an equivalent completion check. Stdout, test-body sentinels and
+child-authored reports do not authorize approval.
+
+Reports stream through a fresh write-only FIFO in
 a sealed directory to a parent-owned evidence file, rather than a candidate-writable
 XML file. Late writes append to the stream and invalidate it; they cannot truncate
-or replace earlier failures/skips. The parent binds the captured report, command,
+or replace earlier failures/skips. **The FIFO does not authenticate its first
+writer.** The parent binds the captured report, command,
 candidate, nonce and exit to a process-local execution receipt, separately from
-final acceptance. Substituting even a self-consistent passing XML file cannot mint
-that receipt. Skips never count as matched passes, and categories
+final acceptance, only after checking the outer invocation and matched results.
+The signature prevents later receipt substitution; it is not an independent
+test-completion signal. Skips never count as matched passes, and categories
 with no applicable passing tests block approval. Test
 outputs must contain the selected candidate service binary.
 The controller drives the existing compatibility projects through six explicit
@@ -126,10 +135,8 @@ keep their frozen package versions. It checks both SDK probes and the applicatio
 reported library/application SDK and compiler paths. A success banner or the presence of
 .NET 9 in `--list-sdks` cannot substitute for historical compiler execution.
 On the pinned SDK, probe help before the `--` separator, and supply report
-basenames with a separate `--results-directory`. A real xUnit 3.2.2 probe on
-11.0.100-rc.1.26420.103 verified both selectors, one matched passing test and
-the zero-match failure (exit 8); this is runner-contract evidence, not compiler
-correctness or performance evidence.
+basenames with a separate `--results-directory`. Selectors, per-application
+minimum test count and report flags go after `--`.
 
 Only after correctness and artifact-backed diagnostic analysis does the parent
 run the existing unprofiled A/A and interleaved A/B collector on the **same frozen
@@ -171,12 +178,35 @@ cancellation with a surviving sentinel, checkpoint resume and rollback. Their
 100-to-90 samples and toy toolchain are **synthetic**, not a live F# speedup.
 The lifecycle matrix also exercises unavailable SDKs, failed packs, late report
 forgery and realistic dependency inventories on both acceptance and rejection paths.
-For the opt-in real runner capture test, build `fixtures/ExperimentReportForgery.cs`
-as an MTP executable using the pinned SDK and `xunit.v3.mtp-v2` 3.2.2, then set
-`COMPILER_PERF_MTP_ASSEMBLY` and `COMPILER_PERF_DOTNET` to its assembly and matching
-Linux dotnet host before running `test_experiment.py`. This adversarial fixture
-contains a skipped regression, a passing decoy and a `ProcessExit` report overwrite;
-it tests reporting integrity, not compiler performance.
+For the real runner matrix, set `COMPILER_PERF_RUNNER_OUTPUT` to an existing
+owned output parent, then run:
+
+```powershell
+.tools\compiler-perf-python\python.exe -m unittest discover -s tests\CompilerPerfWorkflow -p test_experiment.py -k PinnedRunnerTests -v
+```
+
+The fixture creates a new retained directory, resolves `.dotnet/dotnet` (or
+`dotnet.exe`, with optional `COMPILER_PERF_DOTNET` override), preserves root
+`global.json`, checks the SDK/xUnit pins, builds the explicit fixture project in
+Release and saves actual runner help/package identities. Restore occurs only
+after missing assets are observed, into owned storage. The shared fixture varies
+only attack phase: pass, fail, zero matches, skipped required method with a passing
+decoy, module-initializer exit, in-test exit and late `ProcessExit` overwrite.
+All production test launches come from `correctness_plan` through `run_correctness`;
+fresh validation and memory approval remain active. Only unrelated compiler-build,
+compatibility and measurement inputs are synthetic. No live compiler improvement
+is claimed. Temporarily bypassing both execution/receipt exit checks must make
+the first-report attacks violate the rejection assertion; restoring them must
+reject even the resulting signed receipts.
+
+Windows exercises the outer runner and approval checks with ordinary report files,
+not production isolation or FIFO capture. Linux uses bubblewrap and the real FIFO;
+the Linux boundary gate must explicitly execute this matrix and the full-controller
+fixture before overall acceptance. Missing opted-in infrastructure fails, rather
+than becoming a passing skip. Direct assembly runs are retained separately as
+diagnostic controls and never feed approval. Each run retains argv/cwd, outer and
+available child exits, report bytes/hashes, required source/method, body sentinel
+and approval/mutation outcomes. Sentinels only diagnose which phase executed.
 
 ## Process profiling (diagnostic evidence only)
 

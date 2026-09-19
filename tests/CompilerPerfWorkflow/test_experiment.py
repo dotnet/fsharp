@@ -1,7 +1,8 @@
 """Controller fixtures use synthetic timings, never evidence of a compiler speedup."""
 
 import copy
-from contextlib import ExitStack, nullcontext
+from contextlib import ExitStack, contextmanager, nullcontext
+from datetime import datetime, timezone
 import hashlib
 import os
 from pathlib import Path
@@ -11,6 +12,7 @@ import sys
 import tempfile
 import unittest
 from unittest import mock
+import uuid
 import zipfile
 
 from test_measurement import measurements, refresh_identities
@@ -587,40 +589,6 @@ assert '42' in pathlib.Path({SOURCE!r}).read_text()
                 self.assertEqual(sentinel.read_text(), "trusted")
                 self.assertEqual(repo.git("status", "--porcelain"), b"")
 
-    @unittest.skipUnless(sys.platform == "linux" and shutil.which("bwrap") and
-                         os.environ.get("COMPILER_PERF_MTP_ASSEMBLY") and os.environ.get("COMPILER_PERF_DOTNET"),
-                         "Opt-in pinned MTP runner built from fixtures/ExperimentReportForgery.cs")
-    def test_pinned_runner_report_stream_cannot_be_rewritten_at_process_exit(self):
-        dotnet = Path(os.environ["COMPILER_PERF_DOTNET"]).resolve()
-        assembly = Path(os.environ["COMPILER_PERF_MTP_ASSEMBLY"]).resolve()
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            tree = root / "tree"
-            tree.mkdir()
-            runner = e.Isolation(tree, [dotnet.parent, assembly.parent])
-            environment = e.m.allowed_environment(tree / "artifacts")
-            for name, selector, flags, exit_code in (
-                    ("pass", "*.passing", [], 0), ("zero", "*.missing", [], 8),
-                    ("late-forgery", "*regression*", [], 0),
-                    ("exact", "*.regression", ["--fail-skips", "on"], 2)):
-                with self.subTest(name=name):
-                    results = tree / "artifacts" / name
-                    results.mkdir()
-                    report = results / "result.xml"
-                    captured = root / (name + ".xml")
-                    with e.capture_report(report, captured, runner):
-                        receipt = runner.command(
-                            [str(dotnet), str(assembly), "--results-directory", str(results),
-                             "--filter-method", selector, *flags, "--minimum-expected-tests", "1",
-                             "--report-xunit", "--report-xunit-filename", report.name],
-                            tree, environment, root, name, timeout=120)
-                        self.assertEqual(receipt["exit_status"], exit_code, receipt)
-                    if name == "pass":
-                        self.assertEqual(e.test_counts(captured)["matched"], 1)
-                    else:
-                        with self.assertRaises((ValueError, e.ET.ParseError)):
-                            e.test_counts(captured)
-
     @unittest.skipUnless(sys.platform == "linux" and shutil.which("bwrap"),
                          "Live controller fixture requires Linux bubblewrap")
     def test_real_controller_retains_only_independently_approved_fixture(self):
@@ -766,6 +734,234 @@ assert '42' in pathlib.Path({SOURCE!r}).read_text()
                     with self.assertRaises(ValueError):
                         e.verify_candidate(owned)
                     self.assertFalse(mem.m.read_json(owned / "candidate.json")["draft_eligible"])
+
+
+@unittest.skipUnless(os.environ.get("COMPILER_PERF_RUNNER_OUTPUT"),
+                     "Pinned runner matrix requires an explicit owned output parent")
+class PinnedRunnerTests(unittest.TestCase):
+    """Real MTP observations; compiler builds, compatibility and measurements are synthetic."""
+
+    capture = staticmethod(e.capture_report)
+
+    @classmethod
+    def setUpClass(cls):
+        cls.root = Path(os.environ["COMPILER_PERF_RUNNER_OUTPUT"]).resolve() / uuid.uuid4().hex
+        cls.root.mkdir()
+        cls.tree = cls.root / "tree"
+        cls.tree.mkdir()
+        cls.logs = cls.root / "commands"
+        cls.logs.mkdir()
+        cls.environment = e.m.allowed_environment(cls.tree / "artifacts" / "validation")
+        local = e.m.REPO / ".dotnet" / ("dotnet.exe" if os.name == "nt" else "dotnet")
+        cls.dotnet = Path(os.environ.get("COMPILER_PERF_DOTNET") or
+                          (str(local) if local.is_file() else shutil.which("dotnet") or "dotnet")).resolve(strict=True)
+        cls.environment.update(DOTNET_ROOT=str(cls.dotnet.parent), DOTNET_HOST_PATH=str(cls.dotnet))
+        config = e.m.read_json(e.m.REPO / "global.json")
+        e.m.write_json(cls.tree / "global.json", config)
+        fixtures = Path(__file__).parent / "fixtures"
+        for name in ("ExperimentReportForgery.cs", "ExperimentReportForgery.csproj"):
+            shutil.copyfile(fixtures / name, cls.tree / name)
+        project = cls.tree / "ExperimentReportForgery.csproj"
+        properties = e.ET.parse(project)
+        cls.tfm = properties.findtext(".//TargetFramework")
+        assert properties.findtext(".//XunitVersion") == e.ET.parse(e.m.REPO / "eng" / "Versions.props").findtext(".//XunitVersion")
+        sdk = cls.launch([str(cls.dotnet), "--version"], "sdk")
+        assert sdk["exit_status"] == 0 and sdk["stdout"].strip() == config["sdk"]["version"], sdk
+        build = [str(cls.dotnet), "build", str(project), "-c", "Release", "--no-restore", "--disable-build-servers"]
+        result = cls.launch(build, "initial-build")
+        if result["exit_status"] and "NETSDK1004" in result["stdout"] + result["stderr"]:
+            feed = e.ET.parse(e.m.REPO / "NuGet.Config").find(".//packageSources/add[@key='dotnet-public']").get("value")
+            restored = cls.launch([str(cls.dotnet), "restore", str(project), "--source", feed], "restore")
+            assert restored["exit_status"] == 0, restored
+            result = cls.launch(build, "build")
+        assert result["exit_status"] == 0, result
+        cls.assembly = cls.tree / "bin" / "Release" / cls.tfm / "ExperimentReportForgery.dll"
+        identities = [e.m.file_record(p) for p in cls.assembly.parent.glob("*.dll")]
+        e.m.write_json(cls.root / "identities.json", {
+            "head": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=e.m.REPO, text=True).strip(),
+            "python": sys.version, "sdk": sdk, "global": config, "runner": identities,
+            "packages": e.m.read_json(cls.tree / "obj" / "project.assets.json")["libraries"],
+            "isolation": "Linux bubblewrap/FIFO" if sys.platform == "linux" else "Windows fixture only; no isolation claim"})
+        cls.runner = (e.Isolation(cls.tree, [cls.dotnet.parent, Path(sys.executable).resolve().parent.parent])
+                      if sys.platform == "linux" else None)
+
+    @classmethod
+    def launch(cls, args, phase, environment=None):
+        result = e.c.run_tool(args, cls.tree, environment or cls.environment, cls.logs, phase, timeout=120)
+        e.m.write_json(cls.root / (uuid.uuid4().hex + "-" + phase + ".json"), result)
+        return result
+
+    @contextmanager
+    def report_capture(self, path, destination, isolation):
+        if self.runner:
+            with self.capture(path, destination, self.runner):
+                yield
+        else:
+            # Windows tests the outer runner/approval gate, not FIFO integrity or isolation.
+            yield
+            if Path(path).is_file():
+                shutil.copyfile(path, destination)
+
+    def test_direct_assembly_is_only_a_diagnostic_control(self):
+        matrix = []
+        required = {"path": str(self.tree / "ExperimentReportForgery.cs"), "method": "regression"}
+        for phase, exit_code in (("pass", 0), ("fail", 2), ("zero", 8), ("skip", 2),
+                                 ("pre-start", 0), ("in-test", 0), ("late", 2), ("decoy", 0)):
+            with self.subTest(phase=phase):
+                results = self.tree / "artifacts" / ("direct-" + phase)
+                results.mkdir()
+                (self.tree / "artifacts" / "attack-phase").write_text("skip" if phase == "decoy" else phase)
+                for name in ("test-body", "child-argv", "child-exit"):
+                    (self.tree / "artifacts" / name).unlink(missing_ok=True)
+                regression = dict(required, method="missing" if phase == "zero" else "regression")
+                plan = e.correctness_plan(["src/Compiler/Checking/Test.fs"], [regression], self.tfm)
+                check = next(p for p in plan if p["category"] == ("siblings" if phase == "decoy" else "regression"))
+                flags = check["argv"][check["argv"].index("--") + 1:]
+                args = [str(self.dotnet), str(self.assembly), "--results-directory", str(results),
+                        *[a.format(result_name="result.xml") for a in flags]]
+                result = self.launch(args, "direct-" + phase)
+                report = results / "result.xml"
+                matrix.append({"phase": phase, "result": result, "report": e.m.file_record(report),
+                               "cwd": str(self.tree), "controller_approval": None,
+                               "purpose": "diagnostic only; never an approval path",
+                               "observations": {name: (self.tree / "artifacts" / name).read_text()
+                                                if (self.tree / "artifacts" / name).exists() else None
+                                                for name in ("test-body", "child-argv", "child-exit")}})
+                e.m.write_json(self.root / "direct-diagnostic.json", matrix)
+                self.assertEqual(result["exit_status"], exit_code, result)
+                if phase in ("pass", "pre-start", "in-test", "late"):
+                    self.assertEqual(e.test_counts(report, required_test=required)["matched"], 1)
+                else:
+                    with self.assertRaises(ValueError):
+                        e.test_counts(report, required_test=required)
+
+    def test_production_runner_matrix_and_exit_gate_mutations(self):
+        from test_memory import improvement
+
+        source = "ExperimentReportForgery.cs"
+        project = "ExperimentReportForgery.csproj"
+        records = [e.m.file_record(self.tree / p) for p in (source, project, "global.json")]
+        compiler = {"files": {"FSharp.Compiler.Service.dll": e.m.file_record(self.assembly)}}
+        output = self.tree / "artifacts" / "bin" / Path(project).stem / "Release" / self.tfm
+        output.mkdir(parents=True)
+        shutil.copyfile(self.assembly, output / "FSharp.Compiler.Service.dll")
+        frozen = self.root / "frozen"
+        (frozen / "packages").mkdir(parents=True)
+        (frozen / "bootstrap" / "artifacts" / "Bootstrap").mkdir(parents=True)
+        manifest = {"owned_root": str(frozen), "invariants": {
+            "workload": {"target_framework": self.tfm}, "bootstrap": {},
+            "toolchain": {"dotnet": e.m.file_record(self.dotnet), "build_inputs": {"packages": []}},
+            "environment": {"variables": {"NUGET_PACKAGES": str(frozen / "packages")}}}}
+        expected = [["fixture", "synthetic-fsc", True]] * 2
+        compatibility_output = "\n".join(
+            f"{section} Build Info:\nSDK Version: {sdk}\nF# Compiler Path: {path}\nIs Local Build: true"
+            for section, (sdk, path, _) in zip(("Library", "Application"), expected))
+        compatibility_output += "\nSUCCESS: All compiler compatibility tests passed"
+        observations = []
+
+        def command(args, cwd, environment, receipts, phase, timeout=1800):
+            started = datetime.now(timezone.utc).isoformat()
+            is_test = len(args) > 1 and args[1] == "test"
+            actual = args if is_test else [sys.executable, "-c", f"print({compatibility_output!r})"]
+            result = (self.runner.command(actual, cwd, environment, receipts, phase, min(timeout, 120))
+                      if self.runner else self.launch(actual, phase, environment))
+            result.update(command=args, cwd=str(cwd), started_at=started,
+                          finished_at=datetime.now(timezone.utc).isoformat())
+            if is_test and "--help" not in args:
+                report = Path(args[args.index("--results-directory") + 1]) / args[args.index("--report-xunit-filename") + 1]
+                observations.append({"phase": attack, "result": copy.deepcopy(result),
+                                     "report_path": str(report),
+                                     "observations": {name: (self.tree / "artifacts" / name).read_text()
+                                                      if (self.tree / "artifacts" / name).exists() else None
+                                                      for name in ("test-body", "child-argv", "child-exit")}})
+            return result
+
+        def compatibility(*args):
+            commands = [command([str(self.dotnet), "--version"], self.tree, self.environment,
+                                self.root, "synthetic-compatibility") for _ in range(4)]
+            return {"expected": expected, "commands": commands, "files": [f for r in commands for f in r["logs"]]}
+
+        isolation = mock.Mock(tree=self.tree, readonly=[], command=command)
+        state = {"changed_paths": ["src/Compiler/Checking/Test.fs", source],
+                 "request": {"regressions": [{"path": source, "method": "regression"}], "base_sha": "a" * 40},
+                 "inputs": records, "git_files": []}
+        original_run = e.run_correctness
+        original_require = e.require
+        with ExitStack() as patches:
+            for name, replacement in (("COMPONENT", project), ("verify_candidate", lambda _: state),
+                                      ("frozen_records", lambda _: e.m.verify_files(records)),
+                                      ("git", lambda *a, **k: b""), ("Isolation", lambda *a: isolation),
+                                      ("prepare_compatibility", compatibility)):
+                patches.enter_context(mock.patch.object(e, name, replacement))
+            patches.enter_context(mock.patch.object(e.m, "compiler_manifest", return_value=compiler))
+            patches.enter_context(mock.patch.object(e, "capture_report", self.report_capture))
+            attack = "pass"
+            (self.tree / "artifacts" / "attack-phase").write_text(attack)
+            baseline_root = self.root / "baseline"
+            baseline_root.mkdir()
+            (baseline_root / "proposal.patch").write_bytes(b"synthetic compiler setup")
+            baseline = original_run(baseline_root, manifest, compiler, isolation, baseline=True)
+            patches.enter_context(mock.patch.object(e, "run_correctness", side_effect=lambda *a, **k:
+                baseline if k.get("baseline") else original_run(*a, **k)))
+            for attack in ("pass", "fail", "zero", "skip", "pre-start", "in-test", "late"):
+                mutate_exit = attack in ("pre-start", "in-test") or attack == "late" and not self.runner
+                for mutant in (False, True) if mutate_exit else (False,):
+                    with self.subTest(phase=attack, bypass_exit_gates=mutant):
+                        observations.clear()
+                        owned = self.root / f"{attack}-{mutant}"
+                        owned.mkdir()
+                        (owned / "proposal.patch").write_bytes(b"synthetic compiler setup")
+                        e.m.write_json(owned / "baseline-correctness.json", baseline)
+                        for name in ("test-body", "child-argv", "child-exit"):
+                            (self.tree / "artifacts" / name).unlink(missing_ok=True)
+                        (self.tree / "artifacts" / "attack-phase").write_text(attack)
+                        state["request"]["regressions"][0]["method"] = "missing" if attack == "zero" else "regression"
+                        a = improvement()
+                        a["fingerprints"]["candidate"] = a["measurement"]["fingerprints"]["candidate"] = e.m.fingerprint_inputs(compiler)
+                        approved, reason = False, ""
+
+                        def gate(condition, message):
+                            if mutant and (message.startswith("Required check failed:") or
+                                           message == "Failed, forged, stale or mismatched correctness receipt"):
+                                return
+                            original_require(condition, message)
+
+                        with mock.patch.object(e, "require", gate):
+                            try:
+                                checks = e.run_correctness(owned, manifest, compiler, isolation)
+                                a["correctness"] = e.compact_correctness(owned, checks)
+                                e.validate_correctness(a["correctness"], a["fingerprints"]["candidate"],
+                                                       a["fingerprints"]["policy"], current=True)
+                                mem._attest_correctness(a)
+                                mem.acceptance_ready(a)
+                                approved = True
+                            except (ValueError, e.ET.ParseError) as error:
+                                reason = str(error)
+                        # A mutant must violate the same rejection assertion, not merely change an XML parser result.
+                        e.m.write_json(owned / "outcome.json", {"phase": attack, "mutant": mutant,
+                            "approved": approved, "reason": reason, "observations": observations,
+                            "reports": [e.m.file_record(p) for p in owned.glob("*.xml")],
+                            "required": dict(state["request"]["regressions"][0],
+                                             path=str(self.tree / source))})
+                        self.assertEqual(observations[0]["result"]["exit_status"],
+                                         {"pass": 0, "fail": 2, "zero": 8, "skip": 2,
+                                          "pre-start": 1, "in-test": 1, "late": 2}[attack])
+                        self.assertEqual(observations[0]["observations"]["test-body"],
+                                         attack if attack in ("pass", "fail", "in-test") else None)
+                        if mutant:
+                            with self.assertRaises(AssertionError):
+                                self.assertFalse(approved, reason)
+                        else:
+                            self.assertEqual(approved, attack == "pass", reason)
+                        if attack != "pass":
+                            if not approved:
+                                partial = e.m.read_json(owned / "correctness.json")
+                                a["correctness"] = e.compact_correctness(owned, partial)
+                            for gate_call in (lambda: e.validate_correctness(a["correctness"],
+                                a["fingerprints"]["candidate"], a["fingerprints"]["policy"], current=True),
+                                lambda: mem._attest_correctness(a), lambda: mem.acceptance_ready(a)):
+                                with self.assertRaises(ValueError):
+                                    gate_call()
 
 
 def frozen_fixture(root, repo):
