@@ -188,7 +188,8 @@ async function capture(request, deps) {
         requireValue(required.config.path.endsWith(".runtimeconfig.json"), "unsupported local compiler runtimeconfig name");
         const compiler = await deps.fs.realpath(required.config.path.replace(/\.runtimeconfig\.json$/, ".dll"));
         requireValue(inside(toolchain.sourceDirectory, compiler), "local compiler path escapes historical source");
-        const trace = path.join(env.DOTNET_CLI_HOME, `${required.role}-host-trace.txt`);
+        const traceDirectory = await deps.fs.mkdtemp(path.join(env.DOTNET_CLI_HOME, `${required.role}-`));
+        const trace = path.join(traceDirectory, "host-trace.txt");
         const result = await deps.run(executable, ["exec", "--fx-version", required.version, compiler, "--help"], {
             cwd, env: { ...env, COREHOST_TRACE: "1", COREHOST_TRACEFILE: trace, DOTNET_HOST_TRACE: "1", DOTNET_HOST_TRACEFILE: trace },
             timeoutMs: 120000,
@@ -199,7 +200,7 @@ async function capture(request, deps) {
         const selected = [...output.matchAll(/Chose FX version \[([^\]]+)\]/g)].map(m => path.normalize(m[1]));
         requireValue(selected.includes(expected), `local ${required.role} host trace did not verify ${expected}`);
         runtimeExecutions.push({
-            role: required.role, configDigest: required.config.sha256, name: required.name,
+            role: required.role, configPath: required.config.path, configDigest: required.config.sha256, name: required.name,
             version: required.version, architecture, hostTrace: { path: trace, sha256: hash(output) },
             compiler: { path: compiler, sha256: hash(await deps.fs.readFile(compiler)) },
         });
@@ -223,9 +224,15 @@ async function capture(request, deps) {
     }
     const host = await fileIdentity(executable, root, deps.fs);
     const rid = /^\s*RID:\s*(\S+)/m.exec(info)?.[1];
+    let runtimeGraph;
+    if (rid !== toolchain.platform.rid) {
+        runtimeGraph = await fileIdentity(path.join(sdkBasePath, "RuntimeIdentifierGraph.json"), root, deps.fs);
+        runtimeGraph.bytesBase64 = (await deps.fs.readFile(runtimeGraph.path)).toString("base64");
+    }
     return {
         root, hostPath: host.path, hostSha256: host.sha256, sdkVersion, sdkBasePath, sdks, runtimes,
         architecture, rid, compilerRuntime, runtimeExecutions, files, depsFile,
+        ...(runtimeGraph ? { runtimeGraph } : {}),
         evidence: { info, sdkList, runtimeList, probeOutput },
     };
 }

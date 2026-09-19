@@ -192,6 +192,12 @@ validated maintainer `policy`. Resolution and acquisition also require
 `platform: { os, rid, architecture }`, either directly or in the frozen toolchain.
 Supported architectures are `x64` and `arm64`; RIDs are `win-*`, `linux-*`,
 `linux-musl-*`, or `osx-*`, matching that OS and architecture.
+These are archive RIDs. A historical source SDK can report a versioned host RID
+such as `win10-x64` or `ubuntu.22.04-x64`. Its acquired
+`RuntimeIdentifierGraph.json` must prove compatibility with the requested
+portable RID; the raw graph bytes/hash and actual host RID remain in the
+evidence. Traversal stops at portable OS/ABI boundaries, so musl and glibc are
+never interchangeable. Missing or inconsistent graph evidence is untestable.
 
 | Operation | Result |
 | --- | --- |
@@ -224,7 +230,9 @@ the caller's secrets, private feeds, credential providers or user profile.
 `toolchain-installer.cjs` calls the existing Arcade `GetDotNetInstallScript`
 helper with a freshly verified official-script cache. It verifies actual
 script parameter support, then invokes the official installer with exact
-version/architecture and archive-retention flags. A loopback-only, bounded
+version/architecture and archive-retention flags. Linux-musl archive requests
+use the official `--os linux-musl` option rather than dropping the ABI from the
+RID. A loopback-only, bounded
 feed serves the already downloaded and SHA-512-verified archive to that
 installer. This transport boundary records the **actual public download's**
 redirects/digests without reimplementing extraction or trusting a separate HEAD
@@ -248,6 +256,9 @@ archive verification. SDK-bundled runtime, supplemental sample requirements,
 and local compiler execution runtimes are separate records. Supplied local
 compiler/FSI runtimeconfigs are verified using the corresponding built DLL's
 `--help` and host trace with the exact runtime; sample code is never executed.
+Each execution owns a unique trace file and binds both the runtimeconfig's
+resolved path and digest, including when several configs have identical bytes
+or the same compiler role.
 Only acquisition with both local compiler and FSI execution evidence emits the
 `buildToolchain` admission record. An SDK acquired before a source build does
 not attest the identity of a compiler that has not been built yet.
@@ -264,7 +275,8 @@ its uniquely created child directory. It has a ten-minute cancellation deadline.
 Exit 0 means actual acquisition/identity success; exit 2 records the exact
 block, never mocked download success. This is not a source build or live issue run.
 
-On 2026-09-19 at 00:02 UTC, that command completed successfully on Windows x64:
+On 2026-09-19 at 00:35:31 UTC, that command resolved metadata and completed
+successfully (exit 0) on Windows x64:
 requested/resolved SDK `10.0.401`, RID `win-x64`, bundled/executing runtime
 `10.0.12`, compiler and FSI assembly `15.2.401.0`, Core assembly `10.1.0.0`,
 and bundled package `FSharp.Core/10.1.401`. The archive's final public URL was
@@ -278,11 +290,22 @@ The official PowerShell install script SHA-256 was
 Temporary acquisition storage was cleaned. These are recorded smoke results,
 not production version constants.
 
-Validation also completed `node --check` for all seven changed/new `.cjs`
+Validation also completed `node --check` for all twelve top-level `.cjs`
 files and the required
 `node --test eng\regression-bisect\model.test.cjs eng\regression-bisect\toolchains.test.cjs`
-command (304 passed). The broader suite above passed all 516 tests, including
-intake, authenticated state replay and installer-boundary coverage. The signed checkpoint fixture
+command (322 passed), plus
+`node --test eng\regression-bisect\toolchains.test.cjs` (72 passed).
+The broader suite above passed all 538 tests, including intake, authenticated
+state replay and installer-boundary coverage. The repair cases first reproduced
+seven failures for musl installer arguments, historical host RIDs, and colliding
+trace files. An additional failing case caught missing same-role execution
+evidence hidden by identical config digests. The passing acquisition-to-admission
+cases use captured evidence, preserve differing historical/preview build
+toolchains and their coupled transitions, and reject invalid execution evidence
+and incomparable reproduction runtimes. Cross-platform installer/identity cases
+use injected boundaries; the actual download smoke above ran on Windows only.
+`dotnet fantomas .` completed without changes or errors; working-tree and sprint
+commit-range `git diff --check` checks passed. The signed checkpoint fixture
 was regenerated through its existing harness for the new pinned public-feed
 policy; an old-policy checkpoint is not silently accepted as a new-policy one.
 Root compiler Release builds/tests are not this Node adapter's acceptance gate.

@@ -165,7 +165,8 @@ async function installArchive(options, deps) {
   const fs = deps.fs || require('node:fs/promises');
   if (typeof deps.http !== 'function' || typeof deps.run !== 'function')
     throw new Error('Policy-constrained http and trusted run boundaries are required');
-  const os = ({ win32: 'win', windows: 'win', darwin: 'osx', macos: 'osx' })[platform?.os] || platform?.os;
+  const os = platform?.os === 'linux' && platform.rid === `linux-musl-${platform.architecture}` ? 'linux-musl'
+    : ({ win32: 'win', windows: 'win', darwin: 'osx', macos: 'osx' })[platform?.os] || platform?.os;
   const windows = os === 'win';
   if (!['win', 'linux', 'linux-musl', 'osx', 'freebsd', 'rhel.6'].includes(os))
     throw new Error('Unsupported installer OS');
@@ -175,6 +176,8 @@ async function installArchive(options, deps) {
     throw new Error('An exact SDK/runtime version is required, not a channel or latest');
   if (!['x64', 'x86', 'arm', 'arm64', 's390x', 'ppc64le', 'loongarch64', 'riscv64'].includes(platform.architecture))
     throw new Error('Unsupported installer architecture');
+  if (platform.rid !== `${os}-${platform.architecture}`)
+    throw new Error('Installer OS/RID/architecture mismatch');
   if (!archive || !/^[0-9a-f]{128}$/i.test(archive.sha512))
     throw new Error('Official archive SHA512 is required');
   const archiveName = decodeURIComponent(publicUrl(archive.url).pathname.split('/').pop());

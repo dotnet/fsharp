@@ -228,6 +228,34 @@ async function exactArchive(toolchain, product, version, options, deps, attempts
     throw new Error(`exact ${product} ${version} unavailable from permitted public feeds`);
 }
 
+function verifyHostRid(toolchain, identity) {
+    requireValue(identity.architecture === toolchain.platform.architecture, "resolved architecture/RID mismatch");
+    if (identity.rid === toolchain.platform.rid) return;
+    const record = identity.runtimeGraph;
+    requireValue(toolchain.kind === "source" && record?.path === path.join(identity.sdkBasePath, "RuntimeIdentifierGraph.json"),
+        "historical RID requires the acquired SDK's runtime graph");
+    const bytes = Buffer.from(record.bytesBase64, "base64");
+    requireValue(hash(bytes) === record.sha256, "historical RID graph digest mismatch");
+    const graph = JSON.parse(bytes).runtimes;
+    const pending = [identity.rid];
+    const seen = new Set();
+    const portable = new Set();
+    for (const rid of pending) {
+        if (seen.has(rid)) continue;
+        seen.add(rid);
+        requireValue(typeof rid === "string", "invalid historical RID");
+        if (/^(win|linux(?:-musl)?|osx)-(x64|arm64)$/.test(rid)) {
+            // Stop at the ABI boundary: linux-musl imports linux, but is not glibc.
+            portable.add(rid);
+        } else {
+            const imports = graph?.[rid]?.["#import"];
+            requireValue(Array.isArray(imports), `unsupported historical RID: ${rid}`);
+            pending.push(...imports.filter(r => typeof r === "string" && r.endsWith(`-${toolchain.platform.architecture}`)));
+        }
+    }
+    requireValue(portable.size === 1 && portable.has(toolchain.platform.rid), "resolved architecture/RID mismatch");
+}
+
 function verifyToolchainIdentity({ policy, toolchain, identity }) {
     try {
         validatePolicy(policy);
@@ -238,7 +266,7 @@ function verifyToolchainIdentity({ policy, toolchain, identity }) {
             "wrong selected host path");
         requireValue(identity.sdkVersion === toolchain.sdkVersion && toolchain.toolsVersion === toolchain.sdkVersion, "resolved SDK version mismatch");
         requireValue(identity.sdkBasePath === path.join(root, "sdk", toolchain.sdkVersion), "wrong resolved SDK base path");
-        requireValue(identity.architecture === toolchain.platform.architecture && identity.rid === toolchain.platform.rid, "resolved architecture/RID mismatch");
+        verifyHostRid(toolchain, identity);
         requireValue(identity.sdks.length === 1 && identity.sdks[0].version === toolchain.sdkVersion &&
             identity.sdks[0].path === path.join(root, "sdk"), "unexpected installed SDK or SDK location");
         requireValue(identity.archive?.sha512 === toolchain.archive.sha512 && identity.archive.actualSha512 === toolchain.archive.sha512 &&
@@ -259,7 +287,8 @@ function verifyToolchainIdentity({ policy, toolchain, identity }) {
             requireValue(identity.runtimes.some(r => r.name === required.name && r.version === required.version), `missing runtime ${required.name} ${required.version}`);
         }
         for (const required of toolchain.runtimeRequirements.filter(r => r.name === "Microsoft.NETCore.App" && ["compiler", "fsi"].includes(r.role))) {
-            requireValue(identity.runtimeExecutions?.some(r => r.role === required.role && r.configDigest === required.config.sha256 &&
+            requireValue(identity.runtimeExecutions?.some(r => r.role === required.role &&
+                r.configPath === required.config.path && r.configDigest === required.config.sha256 &&
                 r.name === required.name && r.version === required.version && r.architecture === toolchain.platform.architecture),
             `unverified ${required.role} execution runtime ${required.version}`);
         }

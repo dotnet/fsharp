@@ -27,11 +27,10 @@ function request(url, method = 'GET') {
   });
 }
 
-async function fixture(t, { product = 'sdk', os = 'win', architecture = 'x64', version = '11.0.100-preview.3.26159.112' } = {}) {
+async function fixture(t, { product = 'sdk', os = 'win', architecture = 'x64', rid = `${os}-${architecture}`, version = '11.0.100-preview.3.26159.112' } = {}) {
   const directory = await fs.mkdtemp(path.join(__dirname, '.installer-test-'));
   t.after(() => fs.rm(directory, { recursive: true, force: true }));
   const windows = os === 'win';
-  const rid = `${os}-${architecture}`;
   const filename = `${product === 'sdk' ? 'dotnet-sdk' : product === 'dotnet' ? 'dotnet-runtime' : `${product}-runtime`}-${version}-${rid}.${windows ? 'zip' : 'tar.gz'}`;
   const helperRoot = path.join(directory, 'eng', 'common');
   await fs.mkdir(helperRoot, { recursive: true });
@@ -111,13 +110,14 @@ async function fixture(t, { product = 'sdk', os = 'win', architecture = 'x64', v
       } else {
         assert.equal(executable, '/bin/bash');
         assert.deepEqual(args.slice(0, 2), ['--noprofile', '--norc']);
-        assert.equal(flag('Os'), os);
+        assert.equal(flag('Os'), rid.slice(0, -(architecture.length + 1)));
       }
       state.feed = flag('AzureFeed');
       assert.equal(new URL(state.feed).hostname, '127.0.0.1');
       const productDir = product === 'sdk' ? 'Sdk' : product === 'aspnetcore' ? 'aspnetcore/Runtime'
         : product === 'windowsdesktop' && Number(version.split('.')[0]) >= 5 ? 'WindowsDesktop' : 'Runtime';
-      state.archiveUrl = `${state.feed}/${productDir}/${version}/${filename}`;
+      const requestedName = filename.replace(rid, windows ? `win-${flag('Architecture')}` : `${flag('Os')}-${flag('Architecture')}`);
+      state.archiveUrl = `${state.feed}/${productDir}/${version}/${requestedName}`;
       const productVersion = await request(`${state.feed}/${productDir}/${version}/productVersion.txt`);
       assert.equal(productVersion.status, 200);
       assert.equal(productVersion.bytes.toString().trim(), version);
@@ -135,9 +135,11 @@ for (const settings of [
   { product: 'sdk' }, { product: 'dotnet' }, { product: 'aspnetcore' }, { product: 'windowsdesktop' },
   { product: 'windowsdesktop', version: '3.1.32' },
   { product: 'sdk', os: 'linux' }, { product: 'dotnet', os: 'linux-musl' },
+  { product: 'sdk', os: 'linux', rid: 'linux-musl-x64' },
+  { product: 'dotnet', os: 'linux', architecture: 'arm64', rid: 'linux-musl-arm64' },
   { product: 'aspnetcore', os: 'osx' }, { product: 'sdk', architecture: 'arm64' },
 ]) {
-  test(`installs exact ${settings.product} ${settings.os || 'win'} ${settings.architecture || 'x64'} ${settings.version || 'preview'}`, async t => {
+  test(`installs exact ${settings.product} ${settings.rid || settings.os || 'win'} ${settings.architecture || 'x64'} ${settings.version || 'preview'}`, async t => {
     const { options, deps, state, script, helperPath } = await fixture(t, settings);
     const result = await installArchive(options, deps);
     assert.equal(result.archive.sha256, digest(payload, 'sha256'));
@@ -240,6 +242,7 @@ for (const failure of ['exit', 'throw', 'retained digest', 'missing archive']) {
 for (const mutation of [
   o => { o.version = 'latest'; }, o => { o.product = 'invalid'; },
   o => { o.archive.sha512 = ''; }, o => { o.platform.architecture = 'x64; bad'; },
+  o => { o.platform.rid = 'win-arm64'; }, o => { o.platform.rid = 'linux-x64'; },
   o => { o.env = undefined; }, o => { o.archive.url = 'http://example.com/file.zip'; },
   o => { o.env.SystemRoot = 'relative'; },
 ]) {

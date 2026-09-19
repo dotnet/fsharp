@@ -5,7 +5,7 @@ const os = require("node:os");
 const path = require("node:path");
 const { createHash } = require("node:crypto");
 const { resolveLatestStableSdk, readRevisionToolchain, acquireToolchain, verifyToolchainIdentity } = require("./toolchains.cjs");
-const { policy, admission, digest } = require("./fixtures/contracts.cjs");
+const { policy, admission, observation, seal, digest } = require("./fixtures/contracts.cjs");
 const { admitBisection, fingerprintInput } = require("./model.cjs");
 const { capture, publicUrl, isolatedEnvironment } = require("./toolchain-io.cjs");
 
@@ -19,7 +19,7 @@ const archive = (version, rid = "win-x64") => ({
     url: `${feed}/Sdk/${version}/dotnet-sdk-${version}-${rid}${rid.startsWith("win") ? ".zip" : ".tar.gz"}`,
     hash: hash512(archiveBytes),
 });
-const sdk = (version, rids = ["win-x64", "win-arm64", "linux-x64", "osx-arm64"]) => ({
+const sdk = (version, rids = ["win-x64", "win-arm64", "linux-x64", "linux-musl-x64", "osx-arm64"]) => ({
     version, "runtime-version": `${version.split(".")[0]}.0.0`, files: rids.map(rid => archive(version, rid)),
 });
 const release = (version, date = "2026-09-08", others = []) => ({
@@ -76,6 +76,7 @@ for (const [p, suffix] of [
     [platform, "win-x64.zip"],
     [{ os: "windows", rid: "win-arm64", architecture: "arm64" }, "win-arm64.zip"],
     [{ os: "linux", rid: "linux-x64", architecture: "x64" }, "linux-x64.tar.gz"],
+    [{ os: "linux", rid: "linux-musl-x64", architecture: "x64" }, "linux-musl-x64.tar.gz"],
     [{ os: "macos", rid: "osx-arm64", architecture: "arm64" }, "osx-arm64.tar.gz"],
 ]) {
     test(`exact archive: ${p.rid}`, async () => {
@@ -322,40 +323,6 @@ test("unavailable historical SDK records public fallback attempts without runnin
     assert.ok(result.attempts.some(a => a.status === 404));
 });
 
-test("different verified source declarations compose with invariant reproduction identities", () => {
-    const a = admission();
-    for (const [o, version] of [[a.main, "11.0.100-rc.1.26425.128"], [a.good, "9.0.100"]]) {
-        o.cells[0].buildToolchain = {
-            sourceSha: o.target.sourceSha, globalJsonDigest: digest(version), evidenceDigest: digest(`evidence-${version}`),
-            requestedSdk: version, requestedTools: version,
-            requestedCompilerRuntime: `${version.split(".")[0]}.0.0`,
-            sdk: { version, sha256: digest(version), verified: true },
-            compilerRuntime: { version: `${version.split(".")[0]}.0.0`, sha256: digest(`runtime-${version}`), verified: true },
-            verified: true, supported: true,
-        };
-    }
-    a.budget.authenticatedObservationDigests = [a.stable, a.main, a.good].map(fingerprintInput);
-    const result = admitBisection(a);
-    assert.equal(result.decision, "admit", JSON.stringify(result));
-    assert.equal(result.toolchainTransitions.length, 1);
-    for (const patch of [
-        b => b.requestedSdk = "8.0.100",
-        b => b.sourceSha = "0".repeat(40),
-        b => b.verified = false,
-        b => b.supported = false,
-        b => b.compilerRuntime.version = "7.0.0",
-    ]) {
-        const invalid = structuredClone(a);
-        patch(invalid.good.cells[0].buildToolchain);
-        invalid.budget.authenticatedObservationDigests = [invalid.stable, invalid.main, invalid.good].map(fingerprintInput);
-        assert.equal(admitBisection(invalid).decision, "blocked");
-    }
-    const wrongRuntime = structuredClone(a);
-    wrongRuntime.good.cells[0].runtime.version = "7.0.0";
-    wrongRuntime.budget.authenticatedObservationDigests = [wrongRuntime.stable, wrongRuntime.main, wrongRuntime.good].map(fingerprintInput);
-    assert.equal(admitBisection(wrongRuntime).decision, "blocked");
-});
-
 for (const location of [
     "https://ci.dot.net/public/../../private/sdk.zip",
     "https://ci.dot.net/public/%2e%2e/private/sdk.zip",
@@ -471,65 +438,189 @@ test("historical public preview fallback preserves checksum provenance and exact
     assert.deepEqual(result.attempts.filter(a => a.url.endsWith(".sha512")).map(a => a.status), [404, 200]);
 });
 
-for (const [name, packaged, localCompiler] of [
-    ["a bundled nuspec", true, false],
-    ["no NuGet library in FSI deps", false, false],
-    ["local compiler runtime traces", true, true],
-]) {
-    test(`captured identity with ${name}`, async t => {
+async function captureFixture(request, { packaged = true, rid = request.toolchain.platform.rid } = {}) {
+    const { root, executable, toolchain } = request;
+    const version = toolchain.sdkVersion;
+    const runtimeVersion = toolchain.bundledRuntime.version;
+    const fsharp = path.join(root, "sdk", version, "FSharp");
+    await fs.mkdir(fsharp, { recursive: true });
+    for (const name of ["fsc.dll", "fsi.dll", "FSharp.Core.dll"]) await fs.writeFile(path.join(fsharp, name), name);
+    await fs.writeFile(path.join(fsharp, "fsi.deps.json"), JSON.stringify({ libraries: { "fsi/1.0.0": { type: "project" } } }));
+    await fs.writeFile(path.join(fsharp, "fsi.runtimeconfig.json"), JSON.stringify({
+        runtimeOptions: { framework: { name: "Microsoft.NETCore.App", version: runtimeVersion } },
+    }));
+    if (packaged) {
+        await fs.mkdir(path.join(fsharp, "library-packs"));
+        await fs.writeFile(path.join(fsharp, "library-packs", "FSharp.Core.10.1.401.nupkg"), "package");
+    }
+    const runtime = path.join(root, "shared", "Microsoft.NETCore.App");
+    const runtimeVersions = [...new Set([runtimeVersion, ...toolchain.runtimeRequirements.map(r => r.version)])];
+    for (const version of runtimeVersions) {
+        await fs.mkdir(path.join(runtime, version), { recursive: true });
+        await fs.writeFile(path.join(runtime, version, "System.Private.CoreLib.dll"), `runtime-${version}`);
+    }
+    await fs.writeFile(executable, "host");
+    const graph = { runtimes: {
+        "win10-x64": { "#import": ["win10", "win7-x64"] }, "win7-x64": { "#import": ["win-x64"] },
+        "ubuntu.22.04-x64": { "#import": ["ubuntu-x64"] }, "ubuntu-x64": { "#import": ["linux-x64"] },
+        "osx.12-arm64": { "#import": ["osx-arm64"] },
+        "alpine.3.18-x64": { "#import": ["linux-musl-x64"] }, "linux-musl-x64": { "#import": ["linux-x64"] },
+    } };
+    await fs.writeFile(path.join(root, "sdk", version, "RuntimeIdentifierGraph.json"), JSON.stringify(graph));
+    return {
+        fs,
+        run: async (file, args, settings) => {
+            assert.equal(file, executable);
+            if (args.at(-1) === "--help") {
+                assert.equal(settings.env.DOTNET_ROLL_FORWARD, "Disable");
+                await fs.appendFile(settings.env.DOTNET_HOST_TRACEFILE,
+                    `Probing ${args[3]}\nChose FX version [${path.join(runtime, args[2])}]\n`);
+                return { exitCode: 0, stderr: "", stdout: "F# compiler help" };
+            }
+            const outputs = {
+                "--info": `Base Path: ${path.join(root, "sdk", version)}\nRID: ${rid}`,
+                "--version": version,
+                "--list-sdks": `${version} [${path.join(root, "sdk")}]`,
+                "--list-runtimes": runtimeVersions.map(v => `Microsoft.NETCore.App ${v} [${runtime}]`).join("\n"),
+                exec: `ARCH|${toolchain.platform.architecture}\nRUNTIME|${runtimeVersion}\nFILE|fsc.dll|fsc|15.2.401.0|15.204.126.42413\n` +
+                    "FILE|fsi.dll|fsi|15.2.401.0|15.204.126.42413\nFILE|FSharp.Core.dll|FSharp.Core|10.1.0.0|10.104.126.42413\n" +
+                    (packaged ? "PACKAGE|FSharp.Core.10.1.401.nupkg|FSharp.Core|10.1.401" : ""),
+            };
+            return { exitCode: 0, stderr: "", stdout: outputs[args[0]] };
+        },
+    };
+}
+
+for (const packaged of [true, false]) {
+    test(`captured identity with bundled package: ${packaged}`, async t => {
         const root = await directory(t);
         const env = isolatedEnvironment(root, platform);
         await fs.mkdir(env.HOME);
-        const fsharp = path.join(root, "sdk", "10.0.401", "FSharp");
-        await fs.mkdir(fsharp, { recursive: true });
-        for (const name of ["fsc.dll", "fsi.dll", "FSharp.Core.dll"]) await fs.writeFile(path.join(fsharp, name), name);
-        await fs.writeFile(path.join(fsharp, "fsi.deps.json"), JSON.stringify({ libraries: { "fsi/1.0.0": { type: "project" } } }));
-        const configBytes = JSON.stringify({
-            runtimeOptions: { framework: { name: "Microsoft.NETCore.App", version: "10.0.0" } },
-        });
-        await fs.writeFile(path.join(fsharp, "fsi.runtimeconfig.json"), configBytes);
-        await fs.writeFile(path.join(fsharp, "fsc.runtimeconfig.json"), configBytes);
-        if (packaged) {
-            await fs.mkdir(path.join(fsharp, "library-packs"));
-            await fs.writeFile(path.join(fsharp, "library-packs", "FSharp.Core.10.1.401.nupkg"), "package");
-        }
-        const runtime = path.join(root, "shared", "Microsoft.NETCore.App");
-        await fs.mkdir(path.join(runtime, "10.0.12"), { recursive: true });
-        await fs.writeFile(path.join(runtime, "10.0.12", "System.Private.CoreLib.dll"), "runtime");
-        const executable = path.join(root, "dotnet.exe");
-        await fs.writeFile(executable, "host");
-        const runtimeRequirements = localCompiler ? [["compiler", "fsc"], ["fsi", "fsi"]].map(([role, file]) => ({
-            name: "Microsoft.NETCore.App", version: "10.0.12", role,
-            config: { path: path.join(fsharp, `${file}.runtimeconfig.json`), sha256: digest(configBytes) },
-        })) : [];
-        const identity = await capture({
-            root, env, executable, cwd: root,
-            toolchain: { sourceDirectory: root, sdkVersion: "10.0.401", bundledRuntime: { version: "10.0.12" }, runtimeRequirements },
-        }, {
-            fs,
-            run: async (file, args, settings) => {
-                assert.equal(file, executable);
-                if (args.at(-1) === "--help") {
-                    assert.equal(args[2], "10.0.12");
-                    assert.equal(settings.env.DOTNET_ROLL_FORWARD, "Disable");
-                    await fs.writeFile(settings.env.DOTNET_HOST_TRACEFILE, `Chose FX version [${path.join(runtime, "10.0.12")}]`);
-                    return { exitCode: 0, stderr: "", stdout: "F# compiler help" };
-                }
-                const outputs = {
-                    "--info": `Base Path: ${path.join(root, "sdk", "10.0.401")}\nRID: win-x64`,
-                    "--version": "10.0.401",
-                    "--list-sdks": `10.0.401 [${path.join(root, "sdk")}]`,
-                    "--list-runtimes": `Microsoft.NETCore.App 10.0.12 [${runtime}]`,
-                    exec: "ARCH|x64\nRUNTIME|10.0.12\nFILE|fsc.dll|fsc|15.2.401.0|15.204.126.42413\n" +
-                        "FILE|fsi.dll|fsi|15.2.401.0|15.204.126.42413\nFILE|FSharp.Core.dll|FSharp.Core|10.1.0.0|10.104.126.42413\n" +
-                        (packaged ? "PACKAGE|FSharp.Core.10.1.401.nupkg|FSharp.Core|10.1.401" : ""),
-                };
-                return { exitCode: 0, stderr: "", stdout: outputs[args[0]] };
-            },
-        });
+        const request = {
+            root, env, executable: path.join(root, "dotnet.exe"), cwd: root,
+            toolchain: { platform, sdkVersion: "10.0.401", bundledRuntime: { version: "10.0.12" }, runtimeRequirements: [] },
+        };
+        const identity = await capture(request, await captureFixture(request, { packaged }));
         assert.equal(identity.files.core.packageIdentity, packaged ? "FSharp.Core/10.1.401" : null);
         assert.equal(identity.files.core.assemblyVersion, "10.1.0.0");
         assert.equal(identity.compilerRuntime.version, "10.0.12");
-        assert.deepEqual(identity.runtimeExecutions.map(r => [r.role, r.version]), localCompiler ? [["compiler", "10.0.12"], ["fsi", "10.0.12"]] : []);
+        assert.deepEqual(identity.runtimeExecutions, []);
+    });
+}
+
+async function acquireSource(t, version, sourceSha, p, { rid = p.rid, edit = () => {} } = {}) {
+    const { root, bytes } = await source(t, version);
+    const runtimeVersion = `${version.split(".")[0]}.0.0`;
+    const runtimeConfigs = [];
+    // Equal config bytes and repeated roles must still retain independent traces.
+    for (const [name, role] of [["fsc", "compiler"], ["fsi", "fsi"], ["other-fsc", "compiler"]]) {
+        const file = path.join(root, `${name}.runtimeconfig.json`);
+        await fs.writeFile(file, JSON.stringify({ runtimeOptions: { framework: { name: "Microsoft.NETCore.App", version: runtimeVersion } } }));
+        await fs.writeFile(path.join(root, `${name}.dll`), name);
+        runtimeConfigs.push({ path: file, role });
+    }
+    const { toolchain } = await readRevisionToolchain({ ...options(p), sourceDirectory: root, sourceSha, runtimeConfigs });
+    const result = await acquireToolchain({ policy: policy(), toolchain, storageDirectory: await directory(t) }, {
+        ...metadata([[version.split(".").slice(0, 2).join("."), "lts", [release(version)]]]),
+        installer: async request => {
+            await fs.mkdir(path.join(request.root, "shared", "Microsoft.NETCore.App", runtimeVersion), { recursive: true });
+            return {
+                archive: { ...request.archive, actualSha512: hash512(archiveBytes), sha256: digest(archiveBytes), redirectUrl: request.archive.url },
+                installer: {}, attempts: [],
+            };
+        },
+        capture: async request => {
+            assert.equal(request.cwd, root);
+            const identity = await capture(request, await captureFixture(request, { rid }));
+            edit(identity);
+            return identity;
+        },
+    });
+    assert.deepEqual(await fs.readFile(path.join(root, "global.json")), bytes);
+    return result;
+}
+
+for (const [p, hostRid] of [
+    [platform, "win10-x64"],
+    [{ os: "linux", rid: "linux-x64", architecture: "x64" }, "ubuntu.22.04-x64"],
+    [{ os: "macos", rid: "osx-arm64", architecture: "arm64" }, "osx.12-arm64"],
+    [{ os: "linux", rid: "linux-musl-x64", architecture: "x64" }, "alpine.3.18-x64"],
+    [platform, "win-x64"],
+]) {
+    test(`acquisition to admission preserves ${hostRid} source toolchains and execution evidence`, async t => {
+        const a = admission();
+        a.manifest.matrix[0].os = p.os;
+        a.manifest.matrix[0].architecture = p.architecture;
+        seal(a.manifest);
+        a.budget.authorization.manifestDigest = fingerprintInput(a.manifest);
+        a.budget.authorization.inputDigest = a.manifest.approvedInputDigest;
+        a.stable = observation("released", "product-failure", a.manifest);
+        a.budget.stableSdk = a.stable.target.sdk;
+        for (const [key, version, outcome, rid] of [
+            ["good", "6.0.428", "pass", hostRid], ["main", "11.0.100-rc.1.26425.128", "product-failure", p.rid],
+        ]) {
+            const sourceSha = a[key].target.sourceSha;
+            a[key] = observation("source", outcome, a.manifest, sourceSha);
+            const result = await acquireSource(t, version, sourceSha, p, { rid });
+            assert.equal(result.status, "acquired", JSON.stringify(result));
+            const { buildToolchain, ...evidence } = result.identity;
+            assert.equal(buildToolchain.evidenceDigest, fingerprintInput(evidence));
+            assert.equal(buildToolchain.sourceSha, sourceSha);
+            assert.equal(buildToolchain.globalJsonDigest, evidence.requested.globalJson.sha256);
+            assert.equal(buildToolchain.sdk.version, version);
+            assert.equal(buildToolchain.compilerRuntime.version, `${version.split(".")[0]}.0.0`);
+            assert.equal(evidence.rid, rid);
+            const traces = evidence.runtimeExecutions.map(r => r.hostTrace.path);
+            assert.equal(new Set(traces).size, 3, "each execution owns its trace");
+            for (const execution of evidence.runtimeExecutions) {
+                assert.equal(digest(await fs.readFile(execution.hostTrace.path)), execution.hostTrace.sha256);
+            }
+            assert.deepEqual(JSON.parse(await fs.readFile(result.evidencePath)).identity, result.identity);
+            a[key].cells[0].buildToolchain = buildToolchain;
+        }
+        a.budget.authenticatedObservationDigests = [a.stable, a.main, a.good].map(fingerprintInput);
+        const admitted = admitBisection(a);
+        assert.equal(admitted.decision, "admit", JSON.stringify(admitted));
+        assert.deepEqual(admitted.toolchainTransitions, [{
+            cellId: a.main.cells[0].id, good: a.good.cells[0].buildToolchain, main: a.main.cells[0].buildToolchain,
+        }]);
+        for (const edit of [
+            c => c.buildToolchain.requestedSdk = "8.0.100",
+            c => c.buildToolchain.sourceSha = "0".repeat(40),
+            c => c.buildToolchain.verified = false,
+            c => c.buildToolchain.supported = false,
+            c => c.buildToolchain.compilerRuntime.version = "7.0.0",
+            c => c.runtime.version = "7.0.0",
+        ]) {
+            const invalid = structuredClone(a);
+            edit(invalid.good.cells[0]);
+            invalid.budget.authenticatedObservationDigests = [invalid.stable, invalid.main, invalid.good].map(fingerprintInput);
+            assert.equal(admitBisection(invalid).decision, "blocked");
+        }
+    });
+}
+
+for (const [name, edit, message, rid = platform.rid, p = platform] of [
+    ["missing compiler execution", i => i.runtimeExecutions = i.runtimeExecutions.filter(r => r.role !== "compiler"), /unverified compiler/],
+    ["missing FSI execution", i => i.runtimeExecutions = i.runtimeExecutions.filter(r => r.role !== "fsi"), /unverified fsi/],
+    ["missing same-role same-digest config execution", i => i.runtimeExecutions.pop(), /unverified compiler/],
+    ["wrong config digest", i => i.runtimeExecutions.forEach(r => r.configDigest = digest("other")), /unverified compiler/],
+    ["wrong local runtime", i => i.runtimeExecutions.forEach(r => r.version = "7.0.0"), /unverified compiler/],
+    ["wrong local architecture", i => i.runtimeExecutions.forEach(r => r.architecture = "arm64"), /unverified compiler/],
+    ["wrong host OS", i => i.rid = "linux-x64", /RID/],
+    ["wrong host architecture", i => i.rid = "win-arm64", /RID/],
+    ["unproven historical RID", i => delete i.runtimeGraph, /RID/, "win10-x64"],
+    ["changed RID graph", i => { if (i.runtimeGraph) i.runtimeGraph.sha256 = digest("other"); }, /RID/, "win10-x64"],
+    ["foreign RID graph", i => { if (i.runtimeGraph) i.runtimeGraph.path = path.resolve("machine", "RuntimeIdentifierGraph.json"); }, /RID/, "win10-x64"],
+    ["unknown historical RID", () => {}, /RID/, "unknown-x64"],
+    ["musl host for glibc archive", () => {}, /RID/, "alpine.3.18-x64", { os: "linux", rid: "linux-x64", architecture: "x64" }],
+    ["glibc host for musl archive", () => {}, /RID/, "ubuntu.22.04-x64", { os: "linux", rid: "linux-musl-x64", architecture: "x64" }],
+]) {
+    test(`acquisition emits no admission record for ${name}`, async t => {
+        const result = await acquireSource(t, "6.0.428", "a".repeat(40), p, { edit, rid });
+        assert.equal(result.status, "untestable", JSON.stringify(result));
+        assert.equal(result.outcome.reason, "wrong-identity");
+        assert.match(result.error.message, message);
+        assert.equal(result.identity, undefined);
     });
 }
