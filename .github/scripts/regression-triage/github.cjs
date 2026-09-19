@@ -214,7 +214,7 @@ function references(snapshot, repo) {
   const found = new Map();
   const add = (owner, name, number) => {
     number = Number(number);
-    if (!Number.isSafeInteger(number) || number < 1) return;
+    if (!Number.isSafeInteger(number) || number < 1 || [".", ".."].includes(name)) return;
     const key = `${owner}/${name}#${number}`.toLowerCase();
     if (key !== `${repo.owner}/${repo.repo}#${snapshot.number}`.toLowerCase()) {
       found.set(key, { owner, repo: name, number });
@@ -240,12 +240,14 @@ function references(snapshot, repo) {
       }
       urls.lastIndex = stop;
       const raw = text.slice(url.index, stop);
-      const match = raw.match(/^https:\/\/github\.com\/([a-z\d-]+)\/([a-z\d_.-]+)\/(?:issues|pull)\/([1-9]\d*)(?=$|[/?#]|[)\].,;!:*_~]+$)/i);
-      if (match && ![".", ".."].includes(match[2])) add(match[1], match[2], match[3]);
+      const match = raw.match(/^https?:\/\/(?:www\.)?github\.com\/([a-z\d-]+)\/([a-z\d_.-]+)\/(?:issues|pull)\/([1-9]\d*)(?=$|[/?#]|[)\].,;!:*_~]+$)/i);
+      if (match) add(match[1], match[2], match[3]);
       withoutUrls += `${text.slice(end, url.index)} `;
       end = urls.lastIndex;
     }
     withoutUrls += text.slice(end);
+    withoutUrls = withoutUrls.replace(/(?:^|[^\p{L}\p{N}_/#])_*([a-z\d-]+)\/([a-z\d_.-]+)#([1-9]\d*)(?=_*(?:$|[^\p{L}\p{N}_]))/giu,
+      (_, owner, name, number) => { add(owner, name, number); return " "; });
     for (const match of withoutUrls.matchAll(/(?:^|[^\p{L}\p{N}_/#])_*#([1-9]\d*)(?=_*(?:$|[^\p{L}\p{N}_]))/gu)) {
       add(repo.owner, repo.repo, match[1]);
     }

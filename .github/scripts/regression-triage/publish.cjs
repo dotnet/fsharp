@@ -98,16 +98,19 @@ function validateCitation(citation, evidence, correction = false) {
 }
 
 /**
- * Only {items:[{type:OUTPUT_TYPE,proposals:JSON.stringify({
+ * Accepts {items:[{type:OUTPUT_TYPE,proposals:JSON.stringify({
  * schemaVersion:1,policyVersion:POLICY_VERSION,results:[{
  * number,fingerprint,classification,evidence:[{sourceId,url,quote,dimension?}],
  * missingFact,clarification,correction?:{sourceId,url,quote}
- * }]})}]} is accepted. Bounds and nullable fields are described in README.md.
+ * }]})}],errors?:[]} from GH AW ingestion. Any ingestion error fails closed.
+ * Bounds and nullable fields are described in README.md.
  * Provenance validation checks reported text, NOT the semantic truth of a claim.
  */
 function validateProposals(output, manifest) {
   output = typeof output === "string" ? parseJson(output, 131072) : parseJson(JSON.stringify(output), 131072);
-  keys(output, ["items"]);
+  keys(output, ["items"], ["errors"]);
+  requireThat(output.errors === undefined || Array.isArray(output.errors) && output.errors.length === 0,
+    "GH AW ingestion errors; no publication is allowed");
   requireThat(Array.isArray(output.items) && output.items.length === 1, "Exactly one proposal envelope is required");
   const [item] = output.items;
   keys(item, ["type", "proposals"]);

@@ -44,6 +44,15 @@ publication. It must cover every selected report and cite each report itself,
 not just a linked comparison. Missing-data/tool, no-op and failure-as-issue routes
 are disabled.
 
+Pinned ingestion adds an `errors` array; any nonempty or malformed array rejects
+the whole publication, even if it also contains a valid proposal. The trusted
+`output-validation.json` config uses the runtime's `GH_AW_VALIDATION_CONFIG_PATH`
+to preserve the single JSON string field verbatim (`sanitize: false`).
+Markdown sanitization would change generic types, mentions, XML, URLs and even
+JSON syntax. These are evidence bytes, not public comment text: the publisher
+still enforces all schema/size/source bounds and emits only fixed labels/questions.
+Threat detection receives the unchanged proposals and remains mandatory.
+
 The publisher runs only after successful agent/threat detection. Its read/write
 token is confined to that trusted job. It resolves the immutable collector artifact
 by this repository/run/attempt/policy/code-SHA prefix, rejects missing or ambiguous
@@ -59,15 +68,21 @@ each, five direct links and five requests per PR review endpoint. Discussion
 enumerations must agree across two passes; moving pages or incomplete dependencies
 are not complete evidence. Input is limited to 48 KiB per selected entry and
 192 KiB per batch; oversized entries remain pending, never silently truncated.
+Direct dependencies include local `#N`, qualified `owner/repo#N`, and HTTP(S)
+GitHub issue/PR URLs (including `www.github.com`), deduplicated case-insensitively.
+They are read through the API; linked-only corrections change the fingerprint.
 The manifest is bounded to 4 MiB. The collection step has a ten-minute deadline;
 the agent and publication have fifteen-minute deadlines. Trusted Node watchdogs
 enforce collection/publication deadlines because v0.76.1 discards custom step
 timeouts. An interrupted publisher leaves its persisted intent for recovery.
 
 An update-time scan with fifteen-minute overlap and an independent labeled-backlog
-sweep retain page boundaries and continuations. Durable per-issue read ages and
-reserved historical capacity prevent repeatedly reading the same first reports.
-The staged suite drains eleven stable reports at these production limits.
+sweep retain page boundaries and continuations. Snapshot reads reserve
+least-recently attempted work; analysis separately reserves oldest pending work.
+Reading without selecting never resets pending age. Remaining slots favor event
+hints and recent input. The staged suite drains eleven stable reports in three
+runs at production limits and drains a backlog despite continuously changing
+high-priority reports.
 
 Authoritative memory is schema 1 `state.json` on **`memory/regression-triage`**:
 scan continuations, pending queue, fingerprints, policy, cited evidence, missing
@@ -118,6 +133,22 @@ node --check .github\scripts\regression-triage\evaluate.cjs
 git --no-pager diff --check
 ```
 
+Also exercise the actual pinned MCP and ingestion code, not a sanitizer mock.
+Set `$private` to an existing directory outside the repository, then:
+
+```powershell
+curl.exe --fail --silent --show-error --location https://api.github.com/repos/github/gh-aw/tarball/v0.76.1 --output "$private\gh-aw-source.tar.gz"
+New-Item -ItemType Directory -Force "$private\gh-aw-source" | Out-Null
+tar -xf "$private\gh-aw-source.tar.gz" -C "$private\gh-aw-source" --strip-components=1
+$env:GH_AW_RUNTIME = "$private\gh-aw-source\actions\setup\js"
+node --test .github\scripts\regression-triage\framework.test.cjs
+node --test (Get-ChildItem .github\scripts\regression-triage -Recurse -Filter *.test.cjs).FullName
+```
+
+Without `GH_AW_RUNTIME` only this external-runtime test is skipped; that is not
+a passing framework handoff gate. It uses the compiled tool configuration,
+official dynamic MCP handler and ingestion, then the real staged publisher.
+
 Run the deterministic suite before semantic evaluation. Set `$private` to an
 existing directory outside the repository and `$copilot` to a supported Copilot
 CLI executable or JS entry point:
@@ -147,9 +178,9 @@ $expected = (Get-Content "$tools\checksums.txt" | Where-Object { $_ -match '\swi
 if ((Get-FileHash "$tools\windows-amd64.exe" -Algorithm SHA256).Hash.ToLower() -ne $expected[0]) { throw 'Checksum mismatch' }
 & "$tools\windows-amd64.exe" --version
 & "$tools\windows-amd64.exe" compile --help
-& "$tools\windows-amd64.exe" compile regression-triage
+& "$tools\windows-amd64.exe" compile regression-triage --validate --no-check-update
 $hash = (Get-FileHash .github\workflows\regression-triage.lock.yml).Hash
-& "$tools\windows-amd64.exe" compile regression-triage
+& "$tools\windows-amd64.exe" compile regression-triage --validate --no-check-update
 if ((Get-FileHash .github\workflows\regression-triage.lock.yml).Hash -ne $hash) { throw 'Non-reproducible lock' }
 node --test .github\scripts\regression-triage\workflow.test.cjs
 git rev-parse HEAD

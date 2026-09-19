@@ -71,9 +71,16 @@ Its only allowed shape is:
   "items": [{
     "type": "publish_regression_triage",
     "proposals": "{\"schemaVersion\":1,\"policyVersion\":\"reported-regression-v1\",\"results\":[]}"
-  }]
+  }],
+  "errors": []
 }
 ```
+
+GH AW v0.76.1 adds `errors`; it may be omitted by direct callers, but when
+present must be an empty array. Any ingestion error rejects the entire batch.
+The workflow's trusted `output-validation.json` preserves `proposals` verbatim
+through ingestion; it is JSON data, not Markdown to rewrite. The publisher
+still validates every field, size and citation before any effect.
 
 The `proposals` string contains a batch with exactly `schemaVersion`, `policyVersion`
 and `results`. A result has this shape:
@@ -219,13 +226,12 @@ but neither `store.commit`, branch creation nor issue mutations run. Receipts ar
 an in-memory store for staged restart tests; it must never be committed as live
 publication history.
 
-The independently triggered workflow is not implemented here. When wiring it:
-import unchanged `shared/model-defaults.md`, compile with v0.76.1, serialize all
-triggers in one concurrency group with `cancel-in-progress: false`, and give only
-the trusted custom publication job issue/content write permissions. In that
-version custom safe jobs cannot depend directly on `pre_activation`/`activation`;
-use the trusted immutable artifact transport instead. Preserve the existing
-project-labeling and Repo Assist workflows and their separate memory.
+The independent workflow imports unchanged `shared/model-defaults.md`, compiles
+with v0.76.1, and serializes all triggers with `cancel-in-progress: false`.
+Only its trusted publication job has issue/content write permissions. Custom
+safe jobs cannot depend directly on `pre_activation`/`activation` in this version;
+the workflow uses immutable collector artifacts instead. See the
+[operation and validation guide](../../docs/regression-triage.md).
 
 ## Local verification
 

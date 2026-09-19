@@ -85,6 +85,9 @@ for (const form of [
   "**https://github.com/dotnet/fsharp/issues/2**", "[https://github.com/dotnet/fsharp/issues/2]",
   "[self](https://github.com/dotnet/fsharp/issues/1)[history](https://github.com/dotnet/fsharp/issues/2)",
   "[external](https://example.org/#99)(#2)", "[external](https://example.org/a(b)#99)[#2]",
+  "dotnet/fsharp#2", "**dotnet/fsharp#2**", "_dotnet/fsharp#2_", "`dotnet/fsharp#2`",
+  "dotnet/fsharp#1,dotnet/fsharp#2", "DotNet/FSharp#2", "[dotnet/fsharp#2]",
+  "https://www.github.com/dotnet/fsharp/issues/2", "http://github.com/dotnet/fsharp/pull/2",
 ]) {
   test(`references: linked-only correction is reanalyzed for ${form}`, async () => {
     const api = fake({ pageSize: 100, issues: [report(1, { body: form }), report(2, { labels: [] })],
@@ -112,12 +115,29 @@ test("references: arbitrary URL fragments, deceptive hosts and invalid identitie
     "https://github.com@evil.org/dotnet/fsharp/issues/2", "#0 #9007199254740992 #1",
     "[self](https://github.com/dotnet/fsharp/issues/1)", "word#2 #2words word_#2 #2_words",
     "https://github.com/dotnet/fsharp/issues/2wrong", "https://github.com/dotnet/fsharp/issues/2_wrong",
+    "https://example.org/dotnet/fsharp#2", "https://github.com.evil.org/dotnet/fsharp#2",
+    "path/dotnet/fsharp#2", "dotnet/fsharp#2words", "dotnet/fsharp#2_words",
+    "dotnet/.#2", "dotnet/..#2", "dotnet/fsharp#0", "dotnet/fsharp#9007199254740992",
   ].join(" ");
   const api = fake({ issues: [report(1, { body })], pageSize: 100 });
   const snapshot = await readIssueSnapshot(api.github, { repo, number: 1 });
   assert.equal(snapshot.complete, true);
   assert.deepEqual(snapshot.linked, []);
   assert.ok(api.calls.every((call) => call.issue_number === 1));
+});
+
+test("qualified references route exact repositories and deduplicate case, URLs and shorthand", async () => {
+  const api = fake({ pageSize: 100, issues: [
+    report(1, { body: "dotnet/runtime#2 https://github.com/DotNet/Runtime/pull/2 dotnet/fsharp#1" }),
+    report(2, { labels: [], pull_request: {}, url: "https://github.com/dotnet/runtime/pull/2",
+      html_url: "https://github.com/dotnet/runtime/pull/2" }),
+  ] });
+  const snapshot = await readIssueSnapshot(api.github, { repo, number: 1 });
+  assert.equal(snapshot.complete, true);
+  assert.equal(snapshot.linked.length, 1);
+  assert.equal(snapshot.linked[0].bodySourceId, "dotnet/runtime#2:body");
+  assert.ok(api.calls.filter((call) => call.issue_number === 2 || call.pull_number === 2)
+    .every((call) => call.owner.toLowerCase() === "dotnet" && call.repo.toLowerCase() === "runtime"));
 });
 
 for (const event of ["labeled", "unlabeled"]) {

@@ -81,6 +81,21 @@ test("one GH AW route acknowledges validation, not publication", () => {
   assert.equal(ACKNOWLEDGEMENT, "Proposal received for validation; publication is not confirmed.");
 });
 
+for (const issues of [[], [report()]]) test(`pinned GH AW envelope accepts empty ingestion errors (${issues.length} results)`, async () => {
+  const { args, store } = await setup({ issues });
+  const output = { ...args.output, errors: [] };
+  assert.deepEqual(validateProposals(output, args.manifest), JSON.parse(output.items[0].proposals).results);
+  for (const errors of [["Line 2: Unexpected output type"], null, {}, false, ""]) {
+    await assert.rejects(publishBatch({ ...args, output: { ...output, errors } }));
+  }
+  await assert.rejects(publishBatch({ ...args, output: { ...output, stateDelta: {} } }));
+  assert.equal(store.writes.length, 0);
+  const staged = await publishBatch({ ...args, output, staged: true });
+  assert.equal(staged.outcomes.length, issues.length);
+  assert.ok(staged.outcomes.every((outcome) => outcome.status === "published"));
+  assert.ok(staged.receipts.some((receipt) => receipt.type === "would-save-memory"));
+});
+
 test("positive reports without a keyword add exactly Regression once, then deduplicate", async () => {
   const { api, store, args } = await setup();
   const first = await publishBatch(args);
@@ -922,7 +937,9 @@ for (const changed of [false, true]) {
   test(`adapter GraphQL failure reloads without blind retransmission (changed=${changed})`, async () => {
     const api = memoryApi();
     const commit = api.github.graphql;
+    let attempts = 0;
     api.github.graphql = async (...a) => {
+      attempts++;
       if (changed) await commit(...a);
       throw failure(503);
     };
@@ -930,7 +947,7 @@ for (const changed of [false, true]) {
     await assert.rejects(store.commit({ expectedHeadOid: oid(1), state: emptyMemory() }),
       changed ? { code: "CAS_CONFLICT" } : { status: 503 });
     assert.ok(api.calls.some((c) => c.name === "getBranch"));
-    assert.ok(api.calls.filter((c) => c.name === "graphql").length <= 1);
+    assert.equal(attempts, 1);
   });
 }
 

@@ -180,7 +180,8 @@ function needsAnalysis(record, snapshot, policyVersion = POLICY_VERSION) {
 
 // discovered entries are {snapshot, historical, firstSeenAt, lastAttemptAt}.
 // Return at most limit complete, eligible, changed entries. Reserve the oldest
-// retry/historical slot; other slots favor the event and recent material input.
+// pending slot, not the least recently read: reading without selection must not
+// reset analysis priority. Other slots favor the event and recent material input.
 function selectCandidates({ event, discovered, memory, limit = LIMITS.candidates, now }) {
   if (!Number.isSafeInteger(limit) || limit < 1) throw new Error("Invalid candidate limit");
   const unique = new Map();
@@ -195,8 +196,8 @@ function selectCandidates({ event, discovered, memory, limit = LIMITS.candidates
   const historical = entries.filter((entry) => entry.historical
     || !isFinishedRecord(memory.issues[entry.snapshot.number], memory.policyVersion));
   historical.sort((a, b) =>
-    compareText(a.lastAttemptAt ?? "", b.lastAttemptAt ?? "")
-    || compareText(a.firstSeenAt ?? now, b.firstSeenAt ?? now)
+    compareText(a.firstSeenAt ?? now, b.firstSeenAt ?? now)
+    || compareText(a.lastAttemptAt ?? "", b.lastAttemptAt ?? "")
     || a.snapshot.number - b.snapshot.number);
   const selected = historical.slice(0, 1);
   const hint = eventNumber(event);

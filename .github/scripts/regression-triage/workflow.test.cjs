@@ -254,7 +254,7 @@ test("the Actions entry points bind immutable artifact metadata, dispatch stagin
     }
     fs.mkdirSync(path.join(temp, "regression-triage-trusted"));
     fs.writeFileSync(path.join(temp, "regression-triage-trusted", "manifest.json"), manifestText);
-    fs.writeFileSync(process.env.GH_AW_AGENT_OUTPUT, JSON.stringify(envelope(manifest)));
+    fs.writeFileSync(process.env.GH_AW_AGENT_OUTPUT, JSON.stringify({ ...envelope(manifest), errors: [] }));
     process.env.TRIAGE_ARTIFACT_NAME = artifact.name;
     await publishAction({ github: s.api.github, core });
     assert.deepEqual(s.mutations, []);
@@ -344,6 +344,9 @@ test("source and pinned generated workflow enforce independent triggers and one 
   const root = path.resolve(__dirname, "..", "..", "workflows");
   const source = fs.readFileSync(path.join(root, "regression-triage.md"), "utf8");
   const lock = fs.readFileSync(path.join(root, "regression-triage.lock.yml"), "utf8");
+  assert.deepEqual(require("./output-validation.json"), {
+    [OUTPUT_TYPE]: { defaultMax: 1, fields: { proposals: { required: true, type: "string", sanitize: false } } },
+  });
   for (const text of [source, lock]) {
     for (const type of ["opened", "edited", "reopened", "labeled", "transferred", "created", "deleted"]) {
       assert.match(text, new RegExp(`\\b${type}\\b`));
@@ -376,6 +379,11 @@ test("source and pinned generated workflow enforce independent triggers and one 
   assert.match(collector, /github\.sha == github\.workflow_sha && !github\.event\.issue\.pull_request/);
   assert.match(collector, /if: steps\.trusted_helpers\.outcome == 'success'/);
   const agent = lock.slice(lock.indexOf("\n  agent:"), lock.indexOf("\n  conclusion:"));
+  for (const text of [source, lock]) {
+    assert.match(text, /GH_AW_VALIDATION_CONFIG_PATH: \$\{\{ github\.workspace \}\}\/\.github\/scripts\/regression-triage\/output-validation\.json/);
+  }
+  assert.match(agent, /name: Load immutable proposal validation/);
+  assert.match(agent, /ref: \$\{\{ github\.workflow_sha \}\}/);
   assert.doesNotMatch(agent, /--allow-all-tools|--allow-tool shell|needs\.pre_activation|shell\(gh/);
   assert.match(agent, /exec \/tmp\/gh-aw\/copilot-original --deny-tool=write --deny-tool=shell --deny-tool=url --excluded-tools=task/);
   assert.doesNotMatch(agent, /--available-tools/);

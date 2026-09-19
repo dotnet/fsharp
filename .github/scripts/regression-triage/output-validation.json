@@ -1,0 +1,12 @@
+{
+  "publish_regression_triage": {
+    "defaultMax": 1,
+    "fields": {
+      "proposals": {
+        "required": true,
+        "type": "string",
+        "sanitize": false
+      }
+    }
+  }
+}

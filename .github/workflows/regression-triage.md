@@ -76,6 +76,11 @@ permissions:
   issues: read
   pull-requests: read
 
+env:
+  # Proposals are JSON data, not public Markdown. The guarded publisher owns
+  # schema, size and exact-source validation; ingestion must not rewrite quotes.
+  GH_AW_VALIDATION_CONFIG_PATH: ${{ github.workspace }}/.github/scripts/regression-triage/output-validation.json
+
 network:
   allowed: [defaults, github]
 
@@ -91,6 +96,12 @@ tools:
     integrity-proxy: false
 
 steps:
+  - name: Load immutable proposal validation
+    uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+    with:
+      ref: ${{ github.workflow_sha }}
+      persist-credentials: false
+      sparse-checkout: .github/scripts/regression-triage
   - name: Download collector view, not publication authority
     uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
     with:
