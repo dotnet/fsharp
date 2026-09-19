@@ -12,9 +12,8 @@
 /// the JSON-RPC formatter can construct them.
 /// </para>
 /// <para>
-/// Public rather than internal, even in fsi's own copy: the handlers that carry them have to be
-/// public for StreamJsonRpc to find them by reflection, and a public member cannot expose a type
-/// less accessible than itself.
+/// Public in the shared source so the host can use the same wire types. The server registers its
+/// handlers explicitly; these DTOs are not exposed by reflection as part of the server target.
 /// </para>
 /// </remarks>
 namespace FSharp.Compiler.Interactive.Protocol

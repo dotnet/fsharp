@@ -203,7 +203,7 @@ type FsiServerHarness(?extraArguments: string list, ?workingDirectory: string) =
     /// Send a request whose parameters are a single object, as every method of this protocol but
     /// the argument-less ones expects.
     member _.BeginRequest<'T>(method: string, parameters: obj) : Task<'T> =
-        rpc.InvokeWithParameterObjectAsync<'T>(method, parameters)
+        rpc.InvokeAsync<'T>(method, parameters)
 
     member _.BeginRequest<'T>(method: string) : Task<'T> = rpc.InvokeAsync<'T>(method)
 
