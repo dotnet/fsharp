@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "kind": "compiler-profile",
+  "profiler_attached": true,
+  "acceptance_eligible": false,
+  "expected_runtime_major": 8,
+  "process": {
+    "start": {"pid": 42, "start_time": "100", "parent_pid": 7, "session_id": 7, "executable": "/public/dotnet", "command": ["/public/dotnet", "/public/fsc.dll", "@/public/replay.rsp"], "uid": "1000", "namespace": "pid:[1]", "binary_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},
+    "end": {"pid": 42, "start_time": "100", "parent_pid": 7, "session_id": 7, "executable": "/public/dotnet", "command": ["/public/dotnet", "/public/fsc.dll", "@/public/replay.rsp"], "uid": "1000", "namespace": "pid:[1]", "binary_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},
+    "elapsed_ms": 4000, "process_cpu_ms": 2700, "peak_rss_bytes": 90000000, "exit_status": 0
+  },
+  "coverage": {"trace_before_resume": true, "counters_before_resume": true, "duration_ms": 4000},
+  "trace": {
+    "schema_version": 1, "kind": "trace-reduction", "process_id": 42, "runtime": "8.0.1",
+    "providers": ["Microsoft-DotNETCore-SampleProfiler", "Microsoft-Windows-DotNETRuntime"],
+    "complete": true, "lost_events": 0, "first_event_ms": 0, "last_event_ms": 4000,
+    "cpu_sample_weight": 30, "cpu_sample_unit": "samples",
+    "stacks": [{"frames": ["Compiler.Check", "Compiler.Run"], "weight": 20}, {"frames": ["GC.Allocate"], "weight": 10}],
+    "allocation_ticks": [{"timestamp_ms": 100, "bytes": 100000}, {"timestamp_ms": 2100, "bytes": 200000}],
+    "gc_intervals": [{"start_ms": 200, "end_ms": 400, "generation": 0}, {"start_ms": 300, "end_ms": 700, "generation": 2}],
+    "gc_pauses": [{"start_ms": 200, "end_ms": 400}, {"start_ms": 300, "end_ms": 500}, {"start_ms": 600, "end_ms": 700}],
+    "heap_observations": [{"timestamp_ms": 700, "bytes": 12000000, "kind": "gc-heap-stats"}]
+  },
+  "counters": {
+    "process_id": 42, "provider": "System.Runtime", "interval_seconds": 1,
+    "observations": [
+      {"timestamp_ms": 0, "name": "alloc-rate", "value": 100, "unit": "B / 1 sec", "semantics": "rate"},
+      {"timestamp_ms": 1500, "name": "alloc-rate", "value": 200, "unit": "B / 1 sec", "semantics": "rate"},
+      {"timestamp_ms": 4000, "name": "alloc-rate", "value": 400, "unit": "B / 1 sec", "semantics": "rate"},
+      {"timestamp_ms": 4000, "name": "gc-heap-size", "value": 12, "unit": "MB", "semantics": "gauge"}
+    ]
+  },
+  "commands": [{"phase": "trace", "exit_status": 0}, {"phase": "counters", "exit_status": 0}, {"phase": "reduce", "exit_status": 0}],
+  "source_hashes": [{"path": "/public/source.fs", "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"}]
+}

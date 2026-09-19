@@ -5,6 +5,177 @@ It prepares and replays **FSharp.Compiler.Service compiler sources**, not the
 FSharp.Core benchmark or generated-program runtime benchmarks. A decision is
 measurement evidence, **not permission to publish** an optimization.
 
+## Process profiling (diagnostic evidence only)
+
+`collection.py` consumes the same version-1 frozen workload/compiler manifests.
+It performs one **separate, instrumented** replay, never an acceptance sample.
+Use a new output directory under an existing parent:
+
+```powershell
+python eng\scripts\compiler_perf\collection.py collect --manifest workload.json --compiler compiler.json --output-dir private-profile
+python eng\scripts\compiler_perf\collection.py analyze --input private-profile\evidence-manifest.json --output profile-summary.json
+```
+
+The target is the manifest's absolute `dotnet` executable, local Release
+`fsc.dll`, and exact hashed response file, running in the frozen compiler-source
+directory. Inputs, compiler installation, runtime files and arguments are checked
+before and after replay. A shared `measurement.lock` excludes simultaneous
+acceptance collection. The subprocess gets an allowlisted environment with
+private HOME/temp/cache directories, no inherited tokens, startup hooks or
+profiler settings. It starts suspended using
+`DOTNET_DefaultDiagnosticPortSuspend=1`. The pinned `dotnet-trace` attaches
+without resuming; `dotnet-counters` attaches and resumes the runtime. On Linux,
+both use the target's TMPDIR for the diagnostics socket. There is no PID-by-name
+selection, `sudo`, container privilege escalation, or cross-namespace fallback.
+
+Process identity includes PID, creation time, full argument array, executable
+hash, parent, session, owner and PID namespace. Windows uses CIM plus the owned
+process handle; Linux uses `/proc` plus `wait4`. The profiler PIDs remain distinct
+from the target PID. The end identity is tied to the owned process handle/wait,
+not a lookup of a potentially reused PID. Preflight checks tool pins/help,
+architecture, memory/disk budget and diagnostics ownership. Actual EventPipe
+startup and required trace events must also succeed; a help command alone is
+not a compatibility test.
+
+Tools are restored from `.config/dotnet-tools.json` only when missing, never
+globally upgraded. The checked v8 redirected-output startup marker is
+`Output File`, emitted after `StartEventPipeSession`; its interactive
+`Recording trace` status is not emitted when stdout is redirected.
+Original `.nettrace`, pinned TraceEvent reductions, System.Runtime CSV,
+sanitized command/stdout/stderr records, source hashes, provider keywords,
+intervals and completeness status stay together. `analyze` verifies artifact
+hashes and reduction identity; neither an empty file nor an exporter exit code
+alone is evidence.
+
+The summary keeps these quantities separate:
+
+| Field | Interpretation |
+| --- | --- |
+| `elapsed_ms` | Monotonic launch-to-exit time, including diagnostics startup suspension; not acceptance timing |
+| `process_cpu_ms` | Target user+kernel CPU accounting; not stack duration |
+| `cpu_sample_weight`, `cpu_sample_unit` | SampleProfiler stack samples, not exclusive CPU milliseconds |
+| `allocated_bytes_estimate` | Sampled GCAllocationTick byte estimate, not exact allocation accounting |
+| `allocation_rate_integral_estimate_bytes` | Independent right-endpoint integration over actual counter observation intervals |
+| `gc_pause_ms`, `gc_counts` | Union of stop-the-world intervals; collection counts by reported generation |
+| `managed_heap_bytes` | Last System.Runtime heap gauge observation; exporter MB means decimal 1,000,000 bytes |
+| `peak_rss_bytes` | OS peak working set/RSS; Linux KiB is converted to bytes |
+| `retained_heap_bytes` | Null with a reason unless live/post-GC retention was actually measured |
+
+Cumulative counters are not summed. Stack weights are inclusive sampled stacks.
+Counter timestamps are exporter wall-clock observations, not process elapsed
+time. Tool globalization is invariant; the adapter also recognizes the pinned
+Windows en-US timestamp spelling. Counter coverage is checked against the
+observed trace interval, allowing one counter interval at each edge, rather
+than charging diagnostic-tool startup time to the target. Allocation events
+are summed into bounded 100 ms buckets with the original event count retained;
+the bucket reduction does not change the allocation-byte sum.
+Unsupported schemas, timestamps, providers,
+units, runtime/PID mismatches, absent mandatory evidence, incomplete intervals,
+dropped events, tool failures and inadequate coverage return
+`blocked_collection` with a nonzero CLI exit.
+
+After replay, a separate diagnostic Release rebuild with `--times` produces a
+binlog. The existing `ExtractTimingsFromBinlog.fsx` output must contain a real,
+project-tagged Fsc numeric timing row. Its log/hash and binlog are separate from
+unprofiled measurements; “No Fsc tasks” with exit zero is a blocker.
+
+### Conditional private dumps
+
+Record a specific retention, growth or unexplained-RSS hypothesis, then use a
+dedicated profiling replay:
+
+```powershell
+python eng\scripts\compiler_perf\collection.py collect --manifest workload.json --compiler compiler.json --output-dir private-retention --dump-reason heap-growth --hypothesis "Managed heap continues growing across collections"
+python eng\scripts\compiler_perf\collection.py dump --process private-retention\verified-process.json --reason heap-growth --output-dir another-private-dump
+```
+
+The standalone `dump` command is for an **already running** verified replay;
+it fails if the process has exited. Its input records `identity`,
+`profiling_replay: true`, `hypothesis`, and the target diagnostics environment.
+Collection rechecks full identity immediately before attachment and after
+capture. `Heap` is the least supported dump type containing the managed heap;
+Mini/Triage cannot answer these hypotheses. The dump must also load through
+`dotnet-dump analyze` and produce actual heap statistics. A heap snapshot alone
+does not establish live retained bytes. Early exit, permissions/ptrace,
+timeouts, empty/corrupt dumps and tool failures retain phase/exit/stderr
+evidence and block the requested collection.
+
+**Raw dumps are private local evidence, never standard public-repository Actions
+artifacts.** Output directories are owner-only (POSIX mode or Windows ACL).
+Manifests record `published: false`; no encryption/publishing infrastructure is
+implied. Public summaries still require human review for paths or sensitive
+content.
+
+Limits are fixed: one replay per invocation, 180 seconds for the target,
+512 MiB per trace, 1 GiB per other artifact, 2 GiB total, 1 MiB per tool stream,
+and 16 MiB per JSON reduction. Dump capture/validation each allow 120 seconds;
+the diagnostic rebuild allows 600 seconds. Only owned children are terminated.
+Owned incomplete binaries are hashed and recorded before removal; completed
+traces remain available even if another requested collection fails.
+No binary trace is loaded into Python memory.
+
+Portable fixtures use synthetic numbers, not performance measurements. The
+separately opt-in `COMPILER_PERF_LIVE=1` trace-adapter tests use a tiny public
+.NET child to exercise the real diagnostics tools/reducer and negative controls;
+that smoke child is **not** compiler self-compilation. Investigation conclusions
+should cite the frozen-source trial, record tested hypotheses and sampled hot
+paths, and distinguish an infrastructure blocker from a negative finding.
+
+### Process-profiling validation record
+
+On 2026-09-19, collection fixtures first failed because `collection.py` did not
+exist (`artifacts/compiler-profile-validation/red.log`). A subsequent RED
+coverage fixture caught the distinction between tool startup and runtime
+coverage. The final full helper run passes **all 53 tests** with
+`COMPILER_PERF_LIVE=1` (`suite-with-live-final.log`), including a real public .NET child trace, negative
+trace controls and a successfully captured/analyzed private .NET 8 Heap dump.
+The pinned dump analyzer cannot interpret .NET 11's debugging interface
+version 10; that requested dump analysis is an explicit compatibility blocker,
+not evidence of a corrupt managed heap or a successful retention measurement.
+
+The actual compiler-source trial uses the retained Release build and frozen
+revision `cdb9dc5e52e74e5c260e0489e81c0dfef60a3ad9`: **407 tracked sources,
+21 generated inputs, 178 references**. Version-1 provenance was reconstructed
+from the retained successful build/capture records and all 935 materialized
+input/runtime/compiler file records were reverified. Commands and provenance
+are under `artifacts/compiler-profile-validation`; `prepare-retained.py`
+records that migration rather than inventing a new bootstrap build.
+
+The final successful collection is `compiler-verified/evidence-manifest.json`.
+Verified target **PID 39920**, runtime VM `11.0.26.42103`, exited zero, as did
+trace, counters and the real TraceEvent reducer. The retained 279,668,746-byte
+trace has SHA-256
+`90870c8b30f9de5710b648be8d1b558d142b5fcc477318e2a5fbc3398a0bf80a`
+and zero lost events. The independent `analyze` invocation reproduces the
+collected metrics:
+
+| Evidence | Recorded value |
+| --- | --- |
+| Monotonic process duration | 99,101.538 ms, profiled and including startup suspension |
+| Target process CPU | 152,437.5 ms |
+| SampleProfiler stack samples | 288,049 |
+| Allocation-tick estimate | 33,975,719,240 bytes from 314,455 events |
+| GC pause union | 4,490.073 ms |
+| GC counts, generations 0 / 1 / 2 | 62 / 37 / 13 |
+| Last managed heap gauge | 2,223,804,992 bytes |
+| Peak process RSS | 3,093,159,936 bytes |
+
+The trace resolves named F# compiler stacks, including parsing and checking;
+sampled waiting-thread stacks are not exclusive CPU hot spots. This trial
+establishes collection fidelity, **not a performance improvement or retention
+claim**. Original failed trials remain marked blocked, including the
+redirected-output handshake and bounded allocation-row regressions.
+
+The separate diagnostic Release rebuild succeeded with zero warnings/errors;
+the existing binlog extractor produced numeric, project-tagged Fsc phase rows.
+`dotnet fantomas .` reported zero errors and made no unrelated changes.
+The literal root `dotnet build -c Release` and `dotnet test -c Release` were
+also attempted: both require an explicit solution because this repository has
+multiple solutions. The explicit frozen compiler project Release build and
+the helper/live diagnostics suites above are the successful scoped validation.
+No source-compiler optimization, cloud dispatch, artifact upload or publication
+was performed.
+
 ## Preparation
 
 Fetch `origin/main` locally first. Pass a full SHA from that branch's history.
