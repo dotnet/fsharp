@@ -1,22 +1,20 @@
 <Project ToolsVersion="4.0" DefaultTargets="Test" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
-  <!-- Initialize Variables -->
   <PropertyGroup>
     <FSharpCompilerPath></FSharpCompilerPath>
-  </PropertyGroup>
-
-  <!-- Expected Values -->
-  <PropertyGroup>
     <ExpectedFSharpShimPresent>true</ExpectedFSharpShimPresent>
     <ExpectedFSharpCompilerPath>/Common7/IDE/CommonExtensions/Microsoft/FSharp/Tools/</ExpectedFSharpCompilerPath>
-    <ExpectedFscToolExe>dotnet.exe</ExpectedFscToolExe>
-    <ExpectedFscToolPath>/_NetCoreRoot_/</ExpectedFscToolPath>
-    <ExpectedDotnetFscCompilerPath>/FSharp/fsc.dll</ExpectedDotnetFscCompilerPath>
+    <ExpectedFscToolExe>fscAnyCpu.exe</ExpectedFscToolExe>
+    <ExpectedFscToolPath>_VsInstallRoot_/Common7/IDE/CommonExtensions/Microsoft/FSharp/Tools/</ExpectedFscToolPath>
+    <ExpectedDotnetFscCompilerPath></ExpectedDotnetFscCompilerPath>
   </PropertyGroup>
 
   <Import Project="ToolsTest.props" />
 
   <PropertyGroup>
+    <NetCoreRoot Condition="'$(MissingSdkPath)' != 'Version'"></NetCoreRoot>
+    <NETCoreSdkVersion Condition="'$(MissingSdkPath)' != 'Root'"></NETCoreSdkVersion>
+    <FSharpPreferAnyCpuTools>true</FSharpPreferAnyCpuTools>
   </PropertyGroup>
 
   <Import Project="ToolsTest.targets" />
