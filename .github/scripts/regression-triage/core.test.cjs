@@ -106,6 +106,34 @@ for (const form of [
   });
 }
 
+for (const origin of ["title", "body", "human comment", "bot comment"]) {
+  test(`references: ${origin}-only link controls linked-correction reanalysis`, async () => {
+    const human = origin !== "bot comment";
+    const api = fake({ pageSize: 100, issues: [
+      report(1, { title: origin === "title" ? "See #2" : "Compiler changed",
+        body: origin === "body" ? "See #2" : "Earlier compiler worked." }),
+      report(2, { labels: [] }),
+    ], comments: {
+      1: origin.endsWith("comment") ? [comment(7, { body: "See #2",
+        user: { id: 20, login: human ? "contributor" : "triage[bot]", type: human ? "User" : "Bot" } })] : [],
+      2: [comment(8)],
+    } });
+    const first = await publishRun(api, emptyMemory(), { limits: undefined });
+    const snapshot = first.result.selected[0].snapshot;
+    assert.deepEqual(snapshot.linked.map((item) => item.number), human ? [2] : []);
+    assert.equal(needsAnalysis(first.memory.issues[1], snapshot), false);
+    api.calls.length = 0;
+    api.comments[2][0].body = "Correction: the earlier compiler also failed.";
+    const changed = await readIssueSnapshot(api.github, { repo, number: 1 });
+    assert.equal(fingerprintHumanInput(changed) !== fingerprintHumanInput(snapshot), human);
+    assert.equal(needsAnalysis(first.memory.issues[1], changed), human);
+    const second = await publishRun(api, first.memory, { limits: undefined });
+    assert.deepEqual(second.result.selected.map((item) => item.number), human ? [1] : []);
+    assert.equal(api.issues[0].updated_at, before);
+    if (!human) assert.ok(api.calls.every((call) => call.issue_number !== 2));
+  });
+}
+
 test("references: arbitrary URL fragments, deceptive hosts and invalid identities are not local references", async () => {
   const body = [
     "https://example.org/#2", "[external](https://example.org/#2)", "ftp://example.org/#2",
@@ -239,7 +267,7 @@ for (const [stage, area, method, field, linked] of [
   }
 }
 
-for (const change of ["title", "body", "state", "labels", "reopened", "newly labeled", "count mismatch"]) {
+for (const change of ["title", "body", "state", "labels", "reopened", "newly labeled", "count mismatch", "author", "identity"]) {
   test(`snapshot metadata: ${change} cannot conceal inconsistent discussion`, async () => {
     const api = fake({ pageSize: 100,
       issues: [report(1, {
@@ -254,6 +282,8 @@ for (const change of ["title", "body", "state", "labels", "reopened", "newly lab
       if (change === "labels") api.issues[0].labels = [];
       if (change === "reopened") api.issues[0].state = "open";
       if (change === "newly labeled") api.issues[0].labels = ["Needs-Triage"];
+      if (change === "author") api.issues[0].user.type = "Bot";
+      if (change === "identity") api.issues[0].id = 123456;
       return original(args);
     };
     const result = await collect(api, emptyMemory(), { limits: undefined, event: { issue: { number: 1 } } });
@@ -266,7 +296,8 @@ for (const change of ["title", "body", "state", "labels", "reopened", "newly lab
   });
 }
 
-for (const fields of [{ updated_at: "bad" }, { labels: [{}] }, { body: {} }, { comments: -1 }]) {
+for (const fields of [{ updated_at: "bad" }, { labels: [{}] }, { body: {} }, { comments: -1 },
+  { id: null }, { id: 0 }, { id: "123456" }, { id: 9007199254740992 }]) {
   test(`snapshot metadata: malformed event-only issue ${JSON.stringify(fields)} is an explicit failure`, async () => {
     const api = fake({ issues: [report(1, fields)] });
     api.github.rest.issues.listForRepo = async () => ({ data: [] });

@@ -69,8 +69,9 @@ function sources(snapshot) {
       requireThat(!found.has(sourceId), "Duplicate source identity");
       found.set(sourceId, source);
     };
-    add(item.titleSourceId, { url, body: item.title, createdAt: item.updatedAt });
-    add(item.bodySourceId, { url, body: item.body, createdAt: item.updatedAt });
+    const human = item.authorType === "User" && positive(item.authorId) && item.isBot === false;
+    add(item.titleSourceId, { url, body: item.title, createdAt: item.updatedAt, human });
+    add(item.bodySourceId, { url, body: item.body, createdAt: item.updatedAt, human });
     for (const comment of item.humanComments) {
       const match = comment.sourceId?.match(/:(comment|review|review-comment):([1-9]\d*)$/);
       requireThat(match && positive(comment.id) && Number(match[2]) === comment.id && !comment.isBot
@@ -82,7 +83,8 @@ function sources(snapshot) {
         `${base}/pull/${item.number}/files#r${comment.id}`, `${base}/pull/${item.number}/files#discussion_r${comment.id}`];
       requireThat(canonical ? comment.url === canonical : reviewUrls.includes(comment.url),
         "Invalid canonical comment URL");
-      add(comment.sourceId, { url: comment.url, body: comment.body, createdAt: comment.updatedAt ?? comment.createdAt });
+      add(comment.sourceId, { url: comment.url, body: comment.body, createdAt: comment.updatedAt ?? comment.createdAt,
+        human: comment.authorType === "User" && positive(comment.authorId) });
     }
   }
   return found;
@@ -94,6 +96,7 @@ function validateCitation(citation, evidence, correction = false) {
   requireThat(citation.dimension === undefined || DIMENSIONS.includes(citation.dimension), "Unsupported evidence dimension");
   const source = evidence.get(citation.sourceId);
   requireThat(source && source.url === citation.url && source.body.includes(citation.quote), "Citation does not match trusted evidence");
+  requireThat(!correction || source.human, "Durable correction requires a human source");
   return source;
 }
 
@@ -216,10 +219,13 @@ function createGitHubStore(github, repo) {
 
 const receiptMarker = (repo, number) => `<!-- regression-triage:clarification:${repo.owner}/${repo.repo}#${number} -->`;
 
-function observedReceipt(snapshot, repo, bot) {
+function observedReceipt(snapshot, repo, bot, state) {
   const marker = receiptMarker(repo, snapshot.number);
   const comment = snapshot.botComments.find((item) =>
-    item.authorType === "Bot" && item.authorId === bot.id && item.author === bot.login && item.body.includes(marker));
+    item.authorType === "Bot" && item.authorId === bot.id && item.author === bot.login
+    && item.url === `${snapshot.url}#issuecomment-${item.id}`
+    && (item.body.includes(marker) || Object.entries(state.issues).some(([number, record]) =>
+      record.clarification?.commentId === item.id && item.body.includes(receiptMarker(repo, number)))));
   return comment ? { status: "published", commentId: comment.id, url: comment.url } : null;
 }
 
@@ -275,15 +281,27 @@ async function publishBatch({ github, store, repo, manifest, output, context, bo
     delete state.clarificationHistoryUnknown;
     state.discoveryReceipt = { manifestId, proposalHash };
     for (const result of results) {
-      const prior = state.issues[result.number] ?? {};
+      const prior = { ...state.issues[result.number] };
       if (isFinishedRecord(prior) && prior.fingerprint === result.fingerprint) continue;
+      const snapshot = manifest.selected.find((item) => item.number === result.number).snapshot;
+      const history = positive(snapshot.issueId) && Object.values(state.issues).find((record) =>
+        record.issueId === snapshot.issueId && (record.clarification || record.pendingPublication?.effect === "comment"));
+      if (!prior.clarification && history) {
+        prior.clarification = { ...history.clarification };
+        if (history.pendingPublication?.effect === "comment") {
+          prior.clarification.pendingPublication = history.pendingPublication;
+        }
+        if (prior.clarification.url) {
+          prior.clarification.url = `${snapshot.url}#issuecomment-${prior.clarification.commentId}`;
+        }
+      }
       const operationId = hash([context.repository, result.number, POLICY_VERSION, result.fingerprint]);
       const unresolved = prior.pendingPublication && prior.pendingPublication.phase !== "prepared";
       const priorComment = unresolved && prior.pendingPublication.effect === "comment";
       const priorLabel = unresolved && prior.pendingPublication.effect === "label"
         && (prior.pendingPublication.operationId !== operationId || result.classification !== "regression");
       state.issues[result.number] = {
-        ...prior, fingerprint: result.fingerprint, policyVersion: POLICY_VERSION,
+        ...prior, issueId: snapshot.issueId ?? prior.issueId, fingerprint: result.fingerprint, policyVersion: POLICY_VERSION,
         classification: result.classification, evidence: result.evidence, missingFact: result.missingFact,
         clarification: priorComment
           ? { ...prior.clarification, pendingPublication: prior.pendingPublication } : prior.clarification ?? null,
@@ -340,7 +358,7 @@ async function publishBatch({ github, store, repo, manifest, output, context, bo
           .map(({ stage, code, status, number }) => ({ stage, code, status, number })) });
         return null;
       }
-      const receipt = observedReceipt(snapshot, repo, bot);
+      const receipt = observedReceipt(snapshot, repo, bot, state);
       if (receipt) record.clarification = receipt;
       if (snapshot.labels.includes("Regression")) record.pendingLabelPublication = null;
       humanState(record, snapshot, {});

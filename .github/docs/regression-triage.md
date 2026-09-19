@@ -108,7 +108,10 @@ with work/intents using CAS. It is **not** a transaction across GitHub API calls
 See the [helper contract](../scripts/regression-triage/README.md) for state details.
 
 Even empty selections submit `results: []` so the publisher can preserve discovery.
-Missing output or failed agent/detection leaves old memory for retry. Incomplete
+Missing output or failed agent/detection leaves old memory for retry. An independent
+trusted completion job fails active runs if any required stage, including
+publication/staging, did not succeed; absent output cannot silently skip the
+publisher and report success. Incomplete
 scans/reads are summarized; the publisher retains pending work and fails the job
 visibly after saving legitimate progress. A CAS conflict requires recollection,
 not replay over a newer head. Failed memory reads never become empty memory.
@@ -121,6 +124,11 @@ When changing classification semantics, bump `POLICY_VERSION` and the workflow's
 example/artifact-name version together, freeze expectations and rerun evaluation.
 At most one fixed-template question is asked; unresolved/missing historical
 receipts suppress potentially duplicate questions. Never delete memory to retry.
+Stable API issue identity preserves clarification history when an issue transfers
+out and back under a new number, even if its receipt was deleted. Older records
+without that identity migrate only through an authenticated matching live receipt.
+Durable rejecting corrections require human author provenance, not merely a
+matching quote from a bot-authored report.
 
 `staged: true` **or** `GH_AW_SAFE_OUTPUTS_STAGED=true` suppresses all issue writes,
 branch creation and remote memory commits; model fields cannot disable either.

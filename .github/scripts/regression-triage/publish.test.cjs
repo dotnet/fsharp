@@ -238,6 +238,8 @@ const changes = {
   "Needs-Triage removed": (api) => { api.issues[0].labels = []; },
   title: (api) => { api.issues[0].title += " corrected"; },
   body: (api) => { api.issues[0].body += " corrected"; },
+  "issue identity": (api) => { api.issues[0].id = 123456; },
+  "author provenance": (api) => { api.issues[0].user.type = "Bot"; },
   "comment corrected": (api) => { api.comments[42][0].body += " corrected"; },
   "comment deleted": (api) => { api.comments[42] = []; },
   "linked claim": (api) => { api.issues[1].body += " corrected"; },
@@ -311,7 +313,64 @@ test("one templated AI-disclosed clarification over fingerprints and policies", 
   assert.equal(result.state.issues[42].missingFact, uncertain.missingFact);
 });
 
-for (const [identity, user, authenticated] of [
+test("clarification history cannot suppress an unrelated stable issue identity", async () => {
+  const state = emptyMemory();
+  state.issues[41] = { issueId: 123456, clarification: { status: "published", commentId: 9 } };
+  const { api, args } = await setup({ issues: [report(42, { id: 654321 })] }, state);
+  args.output = envelope([proposal(args.manifest.selected[0], uncertain)]);
+  const result = await publishBatch(args);
+  assert.equal(writes(api, "createComment").length, 1);
+  assert.equal(result.state.issues[42].issueId, 654321);
+  assert.deepEqual(result.state.issues[41].clarification, state.issues[41].clarification);
+});
+
+for (const history of ["receipt", "deleted receipt", "legacy receipt", "unresolved attempt"]) {
+  test(`collector/publisher/restart: clarification survives transfer out and back with ${history}`, async () => {
+    const { api, store, args } = await setup({ issues: [report(42, { id: 123456 })] });
+    if (history === "unresolved attempt") api.github.rest.issues.createComment = async (request) => {
+      api.calls.push({ name: "createComment", ...clone(request) });
+      throw failure(503);
+    };
+    args.output = envelope([proposal(args.manifest.selected[0], uncertain)]);
+    await publishBatch(args);
+    if (history === "legacy receipt") delete store.value.state.issues[42].issueId;
+    const original = clone(store.value.state.issues[42]);
+    const get = api.github.rest.issues.get;
+    api.github.rest.issues.get = async (request) => request.issue_number === 42
+      ? { data: report(87, { id: 123456, html_url: "https://github.com/Other/Repo/issues/87" }) }
+      : get(request);
+    api.issues.length = 0;
+    let binding = context(store.value.headOid, "130");
+    args.manifest = { ...await collect(api, store.value.state), binding };
+    args.context = binding;
+    args.output = envelope([]);
+    await publishBatch(args);
+    api.issues.push(report(87, { id: 123456 }));
+    api.comments[87] = history === "deleted receipt" ? [] : (api.comments[42] ?? []).map((item) => ({
+      ...item, html_url: `https://github.com/dotnet/fsharp/issues/87#issuecomment-${item.id}`,
+    }));
+    for (let run = 0; run < 3; run++) {
+      store.value.state = normalizeMemory(JSON.stringify(store.value.state));
+      api.issues[0].body += " More detail.";
+      binding = context(store.value.headOid, String(131 + run));
+      args.manifest = { ...await collect(api, store.value.state), binding };
+      args.context = binding;
+      args.output = envelope([proposal(args.manifest.selected.find((item) => item.number === 87), uncertain)]);
+      const result = await publishBatch(args);
+      assert.equal(writes(api, "createComment").length, 1);
+      assert.equal(writes(api, "addLabels").length, 0);
+      assert.equal(result.state.issues[87].clarification.status, history === "unresolved attempt" ? "unknown" : "published");
+      assert.equal(result.state.issues[87].issueId, 123456);
+      assert.deepEqual(result.state.issues[42].clarification, original.clarification);
+      if (history === "unresolved attempt") {
+        assert.deepEqual(result.state.issues[87].clarification.pendingPublication, original.pendingPublication);
+      }
+      api.comments[87] = [];
+    }
+  });
+}
+
+for (const markerNumber of [42, 41, 40]) for (const [identity, user, authenticated] of [
   ["human forgery", { ...bot, login: "reporter", type: "User" }, false],
   ["other bot", { id: 777, login: "other[bot]", type: "Bot" }, false],
   ["right login wrong id", { ...bot, id: 777, type: "Bot" }, false],
@@ -319,13 +378,16 @@ for (const [identity, user, authenticated] of [
   ["right id and login wrong type", { ...bot, type: "User" }, false],
   ["authenticated bot", { ...bot, type: "Bot" }, true],
 ]) {
-  test(`clarification receipts authenticate ${identity}`, async () => {
-    const { api, args } = await setup({ comments: { 42: [comment(9, {
-      body: receiptMarker(repo, 42), user,
-    })] } });
+  test(`clarification receipts authenticate ${identity} with marker #${markerNumber}`, async () => {
+    const state = emptyMemory();
+    if (markerNumber !== 42) state.issues[41] = { clarification: { status: "published", commentId: 9 } };
+    const { api, args } = await setup({ issues: [report(), report(markerNumber, { labels: [] })],
+      comments: { 42: [comment(9, {
+      body: receiptMarker(repo, markerNumber), user,
+    })] } }, state);
     args.output = envelope([proposal(args.manifest.selected[0], uncertain)]);
     const result = await publishBatch(args);
-    assert.equal(writes(api, "createComment").length, authenticated ? 0 : 1);
+    assert.equal(writes(api, "createComment").length, authenticated && markerNumber !== 40 ? 0 : 1);
     assert.equal(result.state.issues[42].clarification.status, "published");
   });
 }
@@ -752,6 +814,37 @@ test("human rejecting correction and fair-read metadata survive migration and a 
   assert.equal(store.value.state.issues[42].lastResult.detail.code, "human-veto");
 });
 
+for (const origin of ["title", "body", "linked title", "linked body"]) {
+  for (const [author, human] of [
+    [{ id: 10, login: "reporter", type: "User" }, true],
+    [{ id: 10, login: "triage[bot]", type: "Bot" }, false],
+    [{ id: 10, login: "triage[bot]", type: "User" }, false],
+    [{ id: 10, login: "unknown" }, false],
+    [null, false],
+  ]) test(`durable ${origin} corrections require human provenance: ${JSON.stringify(author)}`, async () => {
+    const { api, store, args } = await setup({ issues: [
+      report(42, { body: "Correction: see #43.", ...(origin.startsWith("linked") ? {} : { user: author }) }),
+      report(43, { labels: [], user: author }),
+    ] });
+    const entry = args.manifest.selected[0];
+    const snapshot = origin.startsWith("linked") ? entry.snapshot.linked[0] : entry.snapshot;
+    const field = origin.endsWith("title") ? "title" : "body";
+    const citation = { sourceId: snapshot[`${field}SourceId`], url: snapshot.url, quote: snapshot[field] };
+    const decision = proposal(entry, { classification: "not-regression", evidence: [citation] });
+    assert.deepEqual(validateProposals(envelope([decision]), args.manifest), [decision],
+      "bot-authored reports remain readable evidence, not durable human vetoes");
+    args.output = envelope([{ ...decision, correction: citation }]);
+    if (human) {
+      const result = await publishBatch(args);
+      assert.equal(result.state.issues[42].humanCorrection.sourceId, citation.sourceId);
+    } else {
+      await assert.rejects(publishBatch(args), /human/i);
+      assert.equal(store.writes.length, 0);
+    }
+    assert.equal(writes(api, "addLabels").length + writes(api, "createComment").length, 0);
+  });
+}
+
 for (const loss of ["branch", "file", "stale state"]) {
   test(`lost memory (${loss}) reconciles authenticated receipts without another question`, async () => {
     const { api, args } = await setup();
@@ -986,6 +1079,7 @@ for (const changed of [false, true]) {
 }
 
 for (const [key, value] of [
+  ["issueId", null], ["issueId", -1], ["issueId", "123456"], ["issueId", 9007199254740992],
   ["pendingPublication", "invalid"], ["clarification", []], ["humanCorrection", false],
   ["humanLabelDecision", "removed"], ["evidence", {}], ["classification", "verified"],
   ["clarification", {}], ["clarification", { status: "invented" }],

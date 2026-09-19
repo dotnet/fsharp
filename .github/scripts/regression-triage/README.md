@@ -32,6 +32,9 @@ Exports from `publish.cjs`:
 third argument still returns only normalized state. Issue snapshots also expose
 the API `created_at` as `createdAt` (or `null` if unavailable); it scopes ledger-loss
 recovery, not the human-evidence fingerprint.
+The stable API issue ID is exposed as `issueId`. Author type and bot status are
+retained for human-correction provenance; fingerprint version 2 includes that
+provenance and issue identity, so older completed records are reanalyzed.
 
 Before collection, call `store.read()`. Pass its state to `collectCandidates` and
 attach this binding to the resulting manifest:
@@ -105,6 +108,9 @@ All shown result fields are required. The only optional result field is
 `correction: {sourceId, url, quote}`, identifying a human rejecting correction;
 it is not allowed with `regression`. It uses the same exact-source validation and
 is preserved as a human veto until a subsequent human Regression application.
+Corrections require a positive author ID, API `User` type and non-bot identity,
+including for root/linked titles and bodies. Bot-authored reports remain readable
+classification evidence but cannot establish a durable human veto.
 
 | Field | Contract |
 | --- | --- |
@@ -124,7 +130,7 @@ The batch byte cap also keeps the string within the pinned HTTP transport's
 which is not a valid proposal and cannot authorize publication.
 
 Unknown fields, duplicate envelopes/results/JSON keys, unsupported policies, bot
-citations, invented sources, altered fingerprints and incomplete snapshots fail
+discussion citations, invented sources, altered fingerprints and incomplete snapshots fail
 before writes. Citations can address current title/body, human comments, linked
 issue/PR text, reviews and review comments. Deterministic provenance checks are
 **not semantic proof**: the classifier must consider human corrections, intended
@@ -184,7 +190,12 @@ returns its claim to prepared state.
 Clarifications are fixed, short, AI-disclosed questions with an issue-level marker
 independent of policy/fingerprint. Recovery accepts a live marker only from the
 configured **ID + login + API Bot type**, never a human copying it. Durable receipts
-also prevent repeats after comment deletion. If the ledger is confirmed missing,
+also prevent repeats after comment deletion. On transfer back under a new number,
+the stable API issue ID carries clarification receipts and unresolved attempts
+forward without changing the old record. Legacy receipts can migrate only when an
+authenticated comment at the current canonical URL matches both the old ledger's
+comment ID and issue-number marker. The new record then survives receipt deletion.
+If the ledger is confirmed missing,
 the publisher persists the trusted recovery time as
 `clarificationHistoryUnknownThrough`. Issues created at or before that boundary,
 or with no creation timestamp, have ambiguous history: absence cannot prove a
@@ -239,6 +250,9 @@ Only its trusted publication job has issue/content write permissions. Custom
 safe jobs cannot depend directly on `pre_activation`/`activation` in this version;
 the workflow uses immutable collector artifacts instead. See the
 [operation and validation guide](../../docs/regression-triage.md).
+An independent trusted completion job fails active runs unless collection, agent,
+threat detection and publication/staging all succeed. A missing proposal cannot
+silently skip publication and leave a successful workflow.
 
 ## Local verification
 

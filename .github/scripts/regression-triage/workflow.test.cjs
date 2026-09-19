@@ -436,6 +436,76 @@ for (const change of [
   assert.ok(!result.receipts.some((r) => r.type === "would-add-label"));
 });
 
+test("compiled completion guard rejects missing output and incomplete publication, not gated skips", async (t) => {
+  const root = path.resolve(__dirname, "..", "..", "workflows");
+  const lock = fs.readFileSync(path.join(root, "regression-triage.lock.yml"), "utf8");
+  const job = (text, name) => text.match(new RegExp(`^  ${name}:\\r?\\n[\\s\\S]*?(?=^  [\\w-]+:|^\\S|$(?![\\s\\S]))`, "m"))?.[0];
+  const guard = job(lock, "regression_triage_completion");
+  assert.ok(guard, "missing trusted completion job: a successful agent can omit required output");
+  const condition = (text) => text.match(/^    if: (?:>\r?\n)?([\s\S]*?)(?=^    \S)/m)[1].trim();
+  const evaluate = (expression, needs) => require("node:vm").runInNewContext(expression, {
+    needs, always: () => true, cancelled: () => false, contains: (value, item) => value.includes(item),
+  });
+  const completed = guard.match(/TRIAGE_COMPLETED: \$\{\{ ([\s\S]*?) \}\}/)[1];
+  const script = guard.match(/          script: \|\r?\n([\s\S]*)/)[1].replace(/^            /gm, "");
+  assert.match(guard, /if: always\(\) && needs\.pre_activation\.outputs\.active == 'true'/);
+  assert.match(guard, /permissions:\s+\{\}/);
+  assert.doesNotMatch(guard, /checkout@|continue-on-error|: write/);
+  for (const name of ["pre_activation", "activation", "agent", "detection", "publish_regression_triage"]) {
+    assert.match(guard, new RegExp(`^      - ${name}$`, "m"));
+  }
+  const source = job(fs.readFileSync(path.join(root, "regression-triage.md"), "utf8"), "regression_triage_completion");
+  assert.equal(condition(source), condition(guard));
+  assert.equal(source.match(/TRIAGE_COMPLETED: \$\{\{ ([\s\S]*?) \}\}/)[1], completed);
+  assert.equal(source.match(/          script: \|\r?\n([\s\S]*)/)[1].replace(/\r/g, "").replace(/^            /gm, "").trim(), script.trim());
+  const success = {
+    pre_activation: { result: "success", outputs: { active: "true" } },
+    activation: { result: "success" },
+    agent: { result: "success", outputs: { output_types: OUTPUT_TYPE, has_patch: "false" } },
+    detection: { result: "success", outputs: { detection_success: "true", detection_conclusion: "success" } },
+    publish_regression_triage: { result: "success" },
+  };
+  const cases = [
+    ["valid empty batch (staged)", {}, false],
+    ["published batch", {}, false],
+    ["no safe-output call", { agent: { result: "success", outputs: { output_types: "", has_patch: "false" } } }, true],
+    ["ingestion rejected every item", { agent: { result: "success", outputs: { output_types: "", has_patch: "false" } } }, true],
+    ["ingestion errors alongside valid output", { publish_regression_triage: { result: "failure" } }, true],
+    ["detection rejected output", { detection: { result: "success", outputs: { detection_success: "false", detection_conclusion: "failure" } } }, true],
+    ["missing detection verdict", { detection: { result: "success", outputs: {} } }, true],
+  ];
+  for (const name of Object.keys(success)) for (const result of ["failure", "cancelled", "skipped"]) {
+    cases.push([`${name} ${result}`, { [name]: { ...success[name], result } }, true]);
+  }
+  for (const active of ["false", ""]) {
+    cases.push([active ? "collector rejected event" : "trusted checkout gated out", {
+      pre_activation: { result: "success", outputs: { active } },
+      ...Object.fromEntries(["activation", "agent", "detection", "publish_regression_triage"]
+        .map((name) => [name, { ...success[name], result: "skipped" }])),
+    }, false]);
+  }
+  for (const [name, changes, fails] of cases) await t.test(name, async () => {
+    if (name === "valid empty batch (staged)") {
+      const s = setup([]);
+      const published = await s.publish(await s.collect());
+      assert.equal(published.incomplete, false);
+      assert.ok(published.receipts.some((receipt) => receipt.type === "would-save-memory"));
+      assert.deepEqual(s.mutations, []);
+    }
+    const needs = { ...clone(success), ...clone(changes) };
+    for (const name of ["detection", "publish_regression_triage"]) {
+      if (!evaluate(condition(job(lock, name)), needs)) needs[name].result = "skipped";
+    }
+    const failures = [];
+    if (evaluate(condition(guard), needs)) require("node:vm").runInNewContext(script, {
+      process: { env: { TRIAGE_COMPLETED: String(evaluate(completed, needs)) } },
+      core: { setFailed: (message) => failures.push(message) },
+    });
+    assert.equal(failures.length, fails ? 1 : 0);
+    if (fails) assert.match(failures[0], /required proposal.*publication/i);
+  });
+});
+
 test("source and pinned generated workflow enforce independent triggers and one output route", () => {
   const root = path.resolve(__dirname, "..", "..", "workflows");
   const source = fs.readFileSync(path.join(root, "regression-triage.md"), "utf8");
@@ -499,7 +569,7 @@ test("source and pinned generated workflow enforce independent triggers and one 
   assert.match(safeConfig["publish-regression-triage"].inputs.proposals.description, /at most 64000 bytes/);
   assert.match(source, /A batch is at most 64000 UTF-8 bytes/);
   assert.doesNotMatch(source + lock, /65536/);
-  const publisher = lock.slice(lock.indexOf("\n  publish_regression_triage:"));
+  const publisher = lock.slice(lock.indexOf("\n  publish_regression_triage:"), lock.indexOf("\n  regression_triage_completion:"));
   assert.match(publisher, /needs\.agent\.result == 'success'/);
   assert.match(publisher, /needs\.detection\.result == 'success'/);
   assert.match(publisher, /needs\.detection\.outputs\.detection_success == 'true'/);

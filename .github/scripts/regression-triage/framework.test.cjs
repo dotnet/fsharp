@@ -91,13 +91,17 @@ test("pinned HTTP MCP -> ingestion -> guarded staged publication preserves exact
     'Compiler A worked; B fails for "quotes", C:\\src\\test.fs, `code`, {{template}} and %253A.\nNext line.',
     "Compiler A worked; B fails with Unicode \u00e9 and \u{1f600}.",
   ].map((body) => ({ name: body, body, count: 1 }));
+  examples.push({ name: "valid empty batch preserves discovery", count: 0 });
+  for (const missing of ["absent", "empty", "invalid"]) {
+    examples.push({ name: `${missing} output leaves no publishable output type`, count: 0, missing });
+  }
   for (const [name, character] of [["ASCII", "x"], ["Unicode", "\u00e9\u{1f600}"], ["escaped", '"\\\n']]) {
     for (const bytes of [63999, 64000, 64001, 65536]) {
       examples.push({ name: `${name} five-result batch at ${bytes} bytes`,
         body: "Compiler A worked; compiler B fails. " + character.repeat(150), count: 5, bytes });
     }
   }
-  for (const { name, body, count, bytes } of examples) await t.test(name, async () => {
+  for (const { name, body, count, bytes, missing } of examples) await t.test(name, async () => {
     files.set("proposals.jsonl", "");
     const api = fake({ issues: Array.from({ length: count }, (_, i) => report(42 + i, { body })), pageSize: 100 });
     const mutations = [];
@@ -124,6 +128,16 @@ test("pinned HTTP MCP -> ingestion -> guarded staged publication preserves exact
     const output = { items: [{ type: OUTPUT_TYPE, proposals }], errors: [] };
     const publish = (output) => publishWorkflow({ github: api.github, store, env, event, now,
       manifestText: collected.manifestText, artifactName: collected.artifactName, output });
+    if (missing) {
+      if (missing === "absent") files.delete("proposals.jsonl");
+      if (missing === "invalid") files.set("proposals.jsonl", '{"type":"add_labels"}\n');
+      await ingest();
+      assert.deepEqual(failures, []);
+      assert.equal(outputs.output_types, "");
+      await assert.rejects(publish(outputs.output));
+      assert.deepEqual(mutations, []);
+      return;
+    }
     const rejected = bytes > 64000;
     await call("tools/call", { name: OUTPUT_TYPE, arguments: { proposals } });
     await ingest();
@@ -141,6 +155,8 @@ test("pinned HTTP MCP -> ingestion -> guarded staged publication preserves exact
     assert.equal((await publish(output)).receipts.filter((r) => r.type === "would-add-label").length, count);
     assert.equal(ingested.items[0].proposals, proposals);
     const published = await publish(ingested);
+    assert.equal(published.incomplete, false);
+    assert.ok(published.receipts.some((receipt) => receipt.type === "would-save-memory"));
     for (const entry of collected.manifest.selected) assert.equal(published.state.issues[entry.number].evidence[0].quote, body);
     assert.equal(published.receipts.filter((r) => r.type === "would-add-label").length, count);
     version = { ...version, state: published.state };

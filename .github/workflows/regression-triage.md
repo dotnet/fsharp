@@ -62,6 +62,22 @@ jobs:
   pre-activation:
     outputs:
       active: ${{ steps.collect.outputs.active }}
+  regression_triage_completion:
+    needs: [pre_activation, activation, agent, detection, publish_regression_triage]
+    if: always() && needs.pre_activation.outputs.active == 'true'
+    runs-on: ubuntu-slim
+    permissions: {}
+    steps:
+      # v0.76.1 skips custom safe-output jobs when the agent emits no output.
+      - name: Require validated publication or staging
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          TRIAGE_COMPLETED: ${{ needs.pre_activation.result == 'success' && needs.activation.result == 'success' && needs.agent.result == 'success' && needs.detection.result == 'success' && needs.detection.outputs.detection_success == 'true' && needs.detection.outputs.detection_conclusion == 'success' && needs.publish_regression_triage.result == 'success' }}
+        with:
+          script: |
+            if (process.env.TRIAGE_COMPLETED !== 'true') {
+              core.setFailed('Required proposal validation and publication (or staging) did not complete; pending work must be retried.');
+            }
 
 if: needs.pre_activation.outputs.active == 'true'
 

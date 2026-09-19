@@ -3,7 +3,7 @@
 const { createHash } = require("node:crypto");
 
 const POLICY_VERSION = "reported-regression-v1";
-const FINGERPRINT_VERSION = 1;
+const FINGERPRINT_VERSION = 2;
 const OVERLAP_MS = 15 * 60 * 1000;
 const LIMITS = Object.freeze({
   candidates: 5, issuePages: 10, snapshotReads: 10,
@@ -48,7 +48,7 @@ function eventNumber(event) {
 
 // Schema 1: {policyVersion, scan:{updatedThrough,incremental,sweep}, pending,
 // issues:{[number]:record}}. Queue entries have number/firstSeenAt and optional
-// historical/updatedAt/lastAttemptAt/lastSelectedAt. Records retain fingerprint, policyVersion,
+// historical/updatedAt/lastAttemptAt/lastSelectedAt. Records retain issueId, fingerprint, policyVersion,
 // classification, evidence, missingFact, lastResult, clarification, humanCorrection,
 // humanLabelDecision, pendingPublication and pendingLabelPublication (an older
 // label attempt awaiting observation). Only published/noop are terminal.
@@ -88,6 +88,7 @@ function normalizeMemory(raw, { policyVersion = POLICY_VERSION } = {}) {
   }
   for (const [number, record] of Object.entries(state.issues)) {
     if (!/^[1-9]\d*$/.test(number) || !issueNumber(Number(number)) || !object(record)
+      || (record.issueId !== undefined && !issueNumber(record.issueId))
       || (record.fingerprint !== undefined && typeof record.fingerprint !== "string")
       || (record.policyVersion !== undefined && typeof record.policyVersion !== "string")
       || (record.classification !== undefined && !["regression", "not-regression", "uncertain"].includes(record.classification))
@@ -144,7 +145,8 @@ const byTimeAndId = (a, b) => compareText(a.createdAt ?? "", b.createdAt ?? "")
 
 function humanInput(snapshot) {
   return {
-    number: snapshot.number, url: snapshot.url, state: snapshot.state,
+    number: snapshot.number, issueId: snapshot.issueId ?? null, url: snapshot.url, state: snapshot.state,
+    author: [snapshot.authorId ?? null, snapshot.authorType ?? null, snapshot.isBot ?? null],
     title: snapshot.title ?? "", body: snapshot.body ?? "",
     comments: [...snapshot.humanComments].sort(byTimeAndId).map((comment) => [
       comment.sourceId ?? null, comment.id, comment.authorId ?? null,

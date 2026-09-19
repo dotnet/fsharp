@@ -149,8 +149,9 @@ async function readText(github, repo, number, limits, isLinked = false) {
   const { data: issue } = await github.rest.issues.get(requested);
   const location = issue.html_url?.match(/^https:\/\/github\.com\/([a-z\d-]+)\/([a-z\d_.-]+)\/(issues|pull)\/([1-9]\d*)$/i);
   const isPullRequest = Object.hasOwn(issue, "pull_request");
-  // Root publication/ledger keys cannot migrate; linked evidence may follow transfers.
+  // Root publication stays at the requested location; linked evidence may follow transfers.
   if (!Number.isSafeInteger(issue.number) || issue.number < 1 || (!isLinked && issue.number !== number)
+    || (issue.id !== undefined && (!Number.isSafeInteger(issue.id) || issue.id < 1))
     || !location || [".", ".."].includes(location[2]) || Number(location[4]) !== issue.number
     || !validLabels(issue.labels)
     || !["open", "closed"].includes(issue.state) || typeof issue.title !== "string"
@@ -182,7 +183,8 @@ async function readText(github, repo, number, limits, isLinked = false) {
   }
   const { data: current } = await github.rest.issues.get(requested);
   const metadata = (value) => JSON.stringify([
-    value.number, value.title, value.body, value.state, value.user?.id, value.html_url,
+    value.id, value.number, value.title, value.body, value.state,
+    value.user?.id, value.user?.login, value.user?.type, value.html_url,
     Object.hasOwn(value, "pull_request"), value.comments, value.updated_at, value.created_at,
     value.labels?.map((label) => typeof label === "string" ? label : label.name).sort(),
   ]);
@@ -206,10 +208,11 @@ async function readText(github, repo, number, limits, isLinked = false) {
     });
   }
   return {
-    number, url: issue.html_url, state: issue.state, isPullRequest,
+    number, issueId: issue.id ?? null, url: issue.html_url, state: issue.state, isPullRequest,
     labels: issue.labels.map((label) => typeof label === "string" ? label : label.name),
     title: issue.title, body: issue.body ?? "", titleSourceId: `${prefix}:title`, bodySourceId: `${prefix}:body`,
     authorId: issue.user?.id ?? null, author: issue.user?.login ?? null,
+    authorType: issue.user?.type ?? null, isBot: isBot(issue.user),
     createdAt: issue.created_at ?? null, updatedAt: issue.updated_at,
     humanComments: comments.filter((item) => !item.isBot).sort(chronological),
     botComments: comments.filter((item) => item.isBot).sort(chronological),
@@ -268,8 +271,8 @@ function references(snapshot) {
 }
 
 /**
- * Snapshot: {number,url,state,isPullRequest,labels,title,body,titleSourceId,
- * bodySourceId,authorId,author,createdAt,updatedAt,humanComments,humanDecisions,botComments,
+ * Snapshot: {number,issueId,url,state,isPullRequest,labels,title,body,titleSourceId,
+ * bodySourceId,authorId,author,authorType,isBot,createdAt,updatedAt,humanComments,humanDecisions,botComments,
  * linked,complete,errors}. Every text source has an API identity and exact text.
  * linked has the same shape with no further traversal (including PR discussion).
  * Source identities use canonical API locations, including transferred linked
