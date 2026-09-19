@@ -54,6 +54,9 @@ open FSharp.Compiler.Interactive.Shell
 [<Literal>]
 let internal JsonRpcServerOption = "--fsi-server-jsonrpc:"
 
+[<Literal>]
+let internal JsonRpcClientProcessIdOption = "--fsi-server-client-pid:"
+
 /// File name reported for interactions that the host did not attribute to a source file.
 [<Literal>]
 let private DefaultInteractionName = "stdin.fsx"
@@ -91,6 +94,21 @@ let private toValueInfo (name: string) (value: FsiValue) =
             | typeInfo -> typeInfo.FullName
         value = sprintf "%A" value.ReflectionValue
     }
+
+/// Watch the process that owns this session, so that an F# Interactive left behind by a
+/// crashed host does not survive as an orphan.
+let private watchClientProcess (clientProcessId: int) =
+    try
+        let client = Process.GetProcessById clientProcessId
+        client.EnableRaisingEvents <- true
+        client.Exited.Add(fun _ -> exit 0)
+
+        // The host may already have gone by the time the handler was attached.
+        if client.HasExited then
+            exit 0
+    with _ ->
+        // An unknown process id is not fatal: the session simply loses orphan protection.
+        ()
 
 let private toExecutionResult
     (outcome: Choice<FsiValue option, exn>)
@@ -401,25 +419,10 @@ type FsiRpcTarget
         if not initialized then
             raise (LocalRpcException("'fsi/initialize' must be called first", ErrorCode = -32000))
 
-    /// Watch the process that owns this session, so that an F# Interactive left behind by a
-    /// crashed host does not survive as an orphan.
-    let attachToClientProcess (clientProcessId: int) =
-        try
-            let client = Process.GetProcessById clientProcessId
-            client.EnableRaisingEvents <- true
-            client.Exited.Add(fun _ -> exit 0)
-
-            // The host may already have gone by the time the handler was attached.
-            if client.HasExited then
-                exit 0
-        with _ ->
-            // An unknown process id is not fatal: the session simply loses orphan protection.
-            ()
-
     [<JsonRpcMethod(Methods.Initialize, UseSingleObjectParameterDeserialization = true)>]
     member _.Initialize(request: InitializeRequest) : InitializeResult =
         if request.clientProcessId > 0 then
-            attachToClientProcess request.clientProcessId
+            watchClientProcess request.clientProcessId
 
         initialized <- true
 
@@ -537,9 +540,12 @@ let private runServer
     (fsiSession: FsiEvaluationSession)
     (fsiConfig: FsiEvaluationSessionHostConfig)
     (pipeName: string)
+    (clientProcessId: int voption)
     (outWriter: TextWriter)
     (errorWriter: TextWriter)
     =
+    clientProcessId |> ValueOption.iter watchClientProcess
+
     use pipe =
         new NamedPipeServerStream(
             pipeName,
@@ -589,6 +595,7 @@ let internal startOnBackgroundThread
     (fsiSession: FsiEvaluationSession)
     (fsiConfig: FsiEvaluationSessionHostConfig)
     (pipeName: string)
+    (clientProcessId: int voption)
     (outWriter: TextWriter)
     (errorWriter: TextWriter)
     =
@@ -596,7 +603,7 @@ let internal startOnBackgroundThread
         Thread(
             (fun () ->
                 try
-                    runServer fsiSession fsiConfig pipeName outWriter errorWriter
+                    runServer fsiSession fsiConfig pipeName clientProcessId outWriter errorWriter
                 with e ->
                     errorWriter.WriteLine $"F# Interactive server terminated: {e}"
                     errorWriter.Flush()
@@ -651,3 +658,16 @@ let internal tryGetPipeName (argv: string[]) =
             | None -> scan rest
 
     scan (Array.toList argv)
+
+/// Recognise <c>--fsi-server-client-pid:&lt;pid&gt;</c>, returning the process that owns the session.
+let internal tryGetClientProcessId (argv: string[]) =
+    argv
+    |> Array.tryPick (fun arg ->
+        if arg.StartsWith(JsonRpcClientProcessIdOption, StringComparison.Ordinal) then
+            let value = arg.Substring(JsonRpcClientProcessIdOption.Length)
+
+            match Int32.TryParse value with
+            | true, processId when processId > 0 -> Some processId
+            | _ -> None
+        else
+            None)
