@@ -621,8 +621,9 @@ def validate_correctness(checks, candidate, policy, *, current=False, passed=Tru
     require(len(results) <= len(plan) and len({r["check_id"] for r in results}) == len(results) and
             (not passed or len(results) == len(plan)),
             "Missing required correctness categories")
+    cwd = Path(checks["cwd"]) if current else m.absolute_path(checks["cwd"])
     for check, result in zip(plan, results):
-        path = Path(result["result_path"])
+        path = type(cwd)(result["result_path"])
         expected = [checks["tool"]["path"], *[a.format(result_dir=str(path.parent), result_name=path.name) for a in check["argv"]]]
         require(result["check_id"] == check["id"] and result["command"] == expected and
                 result["cwd"] == checks["cwd"] and result["tool"] == checks["tool"] and
@@ -639,7 +640,7 @@ def validate_correctness(checks, candidate, policy, *, current=False, passed=Tru
                 "Skipped required correctness check")
         if passed and "regression" in check:
             require(result.get("regression") == dict(check["regression"],
-                    path=str(Path(checks["cwd"]) / check["regression"]["path"])), "Missing regression source/method receipt")
+                    path=str(cwd / check["regression"]["path"])), "Missing regression source/method receipt")
         require(result["files"], "Missing correctness output evidence")
         if current:
             m.verify_files(result["files"] + [checks["tool"]])

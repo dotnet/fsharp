@@ -158,8 +158,10 @@ Approval uses a process-local attestation, not a portable JSON permission token.
 `acceptance_ready` and `publication_intent` reject forged or reloaded attestations
 without fresh trusted validation. Historical journal schema 1 is preserved;
 correctness schema 4 is nested within it. Older root-command, schema-2 and schema-3 receipts
-remain readable history but cannot authorize new publication. `draft_eligible` records a validation
-decision, not permission for a later publisher to skip revalidation. Human draft
+remain readable history but cannot authorize new publication. Historical command and regression
+paths retain the producer's POSIX or Windows semantics when read on another platform; no
+artifact availability or fresh approval is inferred from loading them. `draft_eligible`
+records a validation decision, not permission for a later publisher to skip revalidation. Human draft
 review must still assess relevance and complexity. The controller only creates
 local receipts/commit objects; it never pushes, creates a PR or dispatches work.
 

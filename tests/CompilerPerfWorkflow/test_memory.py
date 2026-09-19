@@ -4,7 +4,7 @@ import atexit
 import copy
 from datetime import datetime, timezone
 import json
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 import runpy
 import subprocess
 import sys
@@ -123,7 +123,7 @@ def improvement(*, legacy=False, compiler_path=PATH):
         checks = {"schema_version": 4, "changes": changes, "regressions": regressions,
                   "target_framework": "net11.0", "plan": plan, "plan_sha256": mem.m.fingerprint_inputs(plan),
                   "required": [p["id"] for p in plan], "results": [], "nonce": "synthetic-nonce",
-                  "cwd": "/synthetic", "tool": tool, "inputs": [tool], "validation": None}
+                  "cwd": str(Path(RECEIPTS.name) / "tree"), "tool": tool, "inputs": [tool], "validation": None}
         for check in plan:
             checks["results"].append({
                 "check_id": check["id"], "category": check["category"], "nonce": checks["nonce"],
@@ -135,7 +135,10 @@ def improvement(*, legacy=False, compiler_path=PATH):
             if "regression" in check:
                 checks["results"][-1]["regression"] = dict(check["regression"], path=str(Path(checks["cwd"]) / check["regression"]["path"]))
         a["correctness"] = checks
-        report = mem.m.file_record(FIXTURES / "ExperimentResults.xml")
+        report_path = Path(RECEIPTS.name) / "synthetic.xml"
+        report_path.write_text((FIXTURES / "ExperimentResults.xml").read_text().replace(
+            "/synthetic", Path(checks["cwd"]).as_posix()))
+        report = mem.m.file_record(report_path)
         for check, result in zip(plan, checks["results"]):
             if check["result"] == "xunit":
                 result.update(report=report, files=[tool, report], excluded_count=0,
@@ -177,6 +180,51 @@ class MemoryTests(unittest.TestCase):
                              state(previous))
             with self.assertRaisesRegex(ValueError, "Historical|fresh"):
                 mem.acceptance_ready(previous)
+
+    def test_historical_correctness_uses_producer_paths_without_authorizing_publication(self):
+        original = improvement()
+        for version in (2, 3, 4):
+            for tree in (PurePosixPath("/unavailable/experiment/tree"),
+                         PureWindowsPath(r"C:\unavailable\experiment\tree"),
+                         PureWindowsPath(r"\\fixture-host\unavailable\experiment\tree")):
+                with self.subTest(version=version, tree=str(tree)):
+                    a = copy.deepcopy(original)
+                    checks = a["correctness"]
+                    checks.update(schema_version=version, cwd=str(tree))
+                    tool = dict(checks["tool"], path=str(tree.parent / "dotnet"))
+                    checks["tool"] = tool
+                    checks["inputs"] = tool if version == 4 else [tool]
+                    for check, result in zip(checks["plan"], checks["results"]):
+                        report = tree / "artifacts" / "results" / (check["id"] + ".xml")
+                        result.update(
+                            cwd=str(tree), tool=tool, result_path=str(report), files=[tool],
+                            command=[tool["path"], *[
+                                arg.replace("{result_dir}", str(report.parent)).replace("{result_name}", report.name)
+                                for arg in check["argv"]]])
+                        if "regression" in check:
+                            result["regression"] = dict(check["regression"], path=str(tree / check["regression"]["path"]))
+                    journal = state(a)
+                    with mock.patch.object(mem.m, "verify_files", side_effect=AssertionError("Historical filesystem read")):
+                        loaded = mem.load_state(response={"status": 200, "body": mem.encoded(journal)})
+                        self.assertEqual(loaded["status"], "ready", loaded["reason"])
+                        self.assertEqual(loaded["state"], journal)
+                        mem.acceptance_ready(a, current=False)
+                    with mock.patch.object(mem.m, "verify_files", side_effect=ValueError("Unavailable historical artifacts")):
+                        with self.assertRaises(ValueError):
+                            mem.acceptance_ready(a)
+                        with self.assertRaises(ValueError):
+                            mem.publication_intent(a, SHA)
+                    for field in ("command", "regression"):
+                        bad = copy.deepcopy(a)
+                        result = next(r for r in bad["correctness"]["results"] if r["category"] == "regression")
+                        if field == "command":
+                            index = result["command"].index("--results-directory") + 1
+                            result["command"][index] = str(tree / "other-results")
+                        else:
+                            result["regression"]["path"] = str(tree / "other-source.fs")
+                        with self.subTest(field=field):
+                            self.assertEqual(mem.load_state(response={"status": 200, "body": mem.encoded(state(bad))})["status"],
+                                             "blocked_setup")
 
     def test_explicit_plan_receipts_cannot_be_forged_or_weakened(self):
         a = improvement()
