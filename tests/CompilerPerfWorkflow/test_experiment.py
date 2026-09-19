@@ -40,7 +40,7 @@ class Repository:
                               ("tests/projects/CompilerCompat/CompilerCompatLib/CompilerCompatLib.fsproj", "<Project />"),
                               ("tests/projects/CompilerCompat/CompilerCompatApp/CompilerCompatApp.fsproj", "<Project />"),
                               (e.COMPONENT, "<Project>\n  <ItemGroup>\n  </ItemGroup>\n</Project>\n"),
-                              ("global.json", '{"sdk":{"version":"11.0.100-synthetic"},'
+                              ("global.json", '{"sdk":{"version":"' + e.runner.SDK + '"},'
                                               '"msbuild-sdks":{"Microsoft.DotNet.Arcade.Sdk":"1.0.0",'
                                               '"Microsoft.DotNet.Helix.Sdk":"2.0.0"}}')):
             path = root / name
@@ -79,6 +79,100 @@ class Repository:
 
 
 class ExperimentTests(unittest.TestCase):
+    def test_runner_capture_bound_is_not_silent_truncation(self):
+        from test_memory import captured_command
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for size in (e.c.LIMITS["log_bytes"] - 1, e.c.LIMITS["log_bytes"], e.c.LIMITS["log_bytes"] + 1):
+                with self.subTest(size=size):
+                    text = "x" * size
+                    record = captured_command(root, str(size), ["dotnet", "--version"], str(root), text)
+                    if size < e.c.LIMITS["log_bytes"]:
+                        self.assertEqual(e.runner_capture(record, ["dotnet", "--version"], str(root)), text)
+                    else:
+                        with self.assertRaisesRegex(ValueError, "Truncated"):
+                            e.runner_capture(record, ["dotnet", "--version"], str(root))
+
+    def test_recorded_runner_results_and_strict_framing(self):
+        fixtures = mem.m.read_json(Path(__file__).parent / "fixtures" / "RunnerResults.json")["cases"]
+        for case, fixture in fixtures.items():
+            command = ["dotnet", "test", "--project", fixture["project"], "-f", "net11.0",
+                       "--results-directory", "/capture/results", "--", "--report-xunit-filename", "result.xml"]
+            if case in ("pass", "decoy"):
+                command += ["--filter-method", "*.regression"]
+            with self.subTest(case=case):
+                if case == "decoy":
+                    with self.assertRaises(ValueError):
+                        e.runner.reconcile(fixture["discovery"], fixture["output"],
+                                           e.ET.fromstring(fixture["xml"]), command, "/capture/tree")
+                    continue
+                parsed = e.runner.reconcile(fixture["discovery"], fixture["output"],
+                                            e.ET.fromstring(fixture["xml"]), command, "/capture/tree")
+                self.assertEqual(len(parsed["tests"]), {"pass": 1, "broad": 3, "skip": 3, "parameterized": 4}[case])
+                self.assertEqual(sum(t["outcome"] == "Skip" for t in parsed["tests"]), int(case in ("skip", "parameterized")))
+                with tempfile.TemporaryDirectory() as directory:
+                    report = Path(directory) / "result.xml"
+                    report.write_text(fixture["xml"])
+                    execution = {"discovery": fixture["discovery"], "output": fixture["output"],
+                                 "command": command, "cwd": "/capture/tree"}
+                    baseline = e.test_counts(report, baseline=True, execution=execution)
+                    self.assertEqual(e.test_counts(report, allowed_skips=baseline["excluded"],
+                                                   execution=execution)["runner_reported"], parsed)
+                    if baseline["excluded"]:
+                        for exclusions in ([], [dict(s, reason="new reason") for s in baseline["excluded"]]):
+                            with self.subTest(exclusions=exclusions), self.assertRaises(ValueError):
+                                e.test_counts(report, allowed_skips=exclusions, execution=execution)
+            output = fixture["output"]
+            record = output.splitlines(keepends=True)[1:3]
+            mutations = {
+                "wrong-method": output.replace("regression", "passing"),
+                "wrong-class": output.replace("passed ", "passed Other.", 1),
+                "wrong-module": output.replace("  from /capture/tree/", "  from /other/tree/", 1),
+                "missing-completion": output.replace("".join(record), "", 1),
+                "duplicate": output.replace("".join(record), "".join(record) * 2, 1),
+                "conflict": output.replace("passed ", "failed ", 1),
+                "truncated": output[:-8],
+                "child-log": "  Standard output: " + output.replace("\n", "\n  "),
+                "child-log-prefix": "passed Child.lookalike (0ms)\n  from child.dll (net11.0|x64)\n" + output,
+                "summary": output.replace("  failed: 0", "  failed: 1"),
+                "ansi": "\x1b[32m" + output,
+                "trailing": output + "passed Child.lookalike (0ms)\n",
+            }
+            for mutation, altered in mutations.items():
+                if altered == output:
+                    continue
+                with self.subTest(case=case, mutation=mutation), self.assertRaises(ValueError):
+                    e.runner.reconcile(fixture["discovery"], altered, e.ET.fromstring(fixture["xml"]),
+                                       command, "/capture/tree")
+        fixture = fixtures["pass"]
+        command = ["dotnet", "test", "--project", fixture["project"], "-f", "net11.0",
+                   "--results-directory", "/capture/results", "--", "--report-xunit-filename", "result.xml"]
+        inventory = mem.decoded(fixture["discovery"])
+        for mutation in ("empty", "duplicate-module", "duplicate-test", "duplicate-uid", "wrong-method",
+                         "toolchain", "xml-class", "selector", "corrupt"):
+            discovery, xml, args = copy.deepcopy(inventory), e.ET.fromstring(fixture["xml"]), list(command)
+            module = discovery["testContainers"][0]
+            if mutation == "empty":
+                module["tests"] = []
+            elif mutation == "duplicate-module":
+                discovery["testContainers"].append(copy.deepcopy(module))
+            elif mutation in ("duplicate-test", "duplicate-uid"):
+                module["tests"].append(dict(module["tests"][0], displayName="other" if mutation == "duplicate-uid"
+                                             else module["tests"][0]["displayName"]))
+            elif mutation == "wrong-method":
+                module["tests"][0]["displayName"] = "ExperimentReportForgery.passing"
+            elif mutation == "toolchain":
+                xml.find("assembly").set("test-framework", "xUnit.net v3 9.9.9")
+            elif mutation == "xml-class":
+                xml.find(".//test").set("type", "Other")
+                args += ["--filter-class", "ExperimentReportForgery"]
+            elif mutation == "selector":
+                args += ["--filter-method", "*.passing"]
+            with self.subTest(mutation=mutation), self.assertRaises(ValueError):
+                e.runner.reconcile("{" if mutation == "corrupt" else mem.encoded(discovery),
+                                   fixture["output"], xml, args, "/capture/tree")
+
     def test_isolated_cli_imports_and_historical_correctness_schema(self):
         from test_memory import improvement, state
 
@@ -777,10 +871,12 @@ class PinnedRunnerTests(unittest.TestCase):
         assert result["exit_status"] == 0, result
         cls.assembly = cls.tree / "bin" / "Release" / cls.tfm / "ExperimentReportForgery.dll"
         identities = [e.m.file_record(p) for p in cls.assembly.parent.glob("*.dll")]
+        packages = e.m.read_json(cls.tree / "obj" / "project.assets.json")["libraries"]
+        assert "Microsoft.Testing.Platform/2.0.2" in packages, packages
         e.m.write_json(cls.root / "identities.json", {
             "head": e.git(e.m.REPO, "rev-parse", "HEAD", receipts=cls.root).decode().strip(),
             "python": sys.version, "sdk": sdk, "global": config, "runner": identities,
-            "packages": e.m.read_json(cls.tree / "obj" / "project.assets.json")["libraries"],
+            "packages": packages,
             "isolation": "Linux bubblewrap/FIFO" if sys.platform == "linux" else "Windows fixture only; no isolation claim"})
         cls.runner = (e.Isolation(cls.tree, [cls.dotnet.parent, Path(sys.executable).resolve().parent.parent])
                       if sys.platform == "linux" else None)
@@ -852,7 +948,8 @@ class PinnedRunnerTests(unittest.TestCase):
         (frozen / "bootstrap" / "artifacts" / "Bootstrap").mkdir(parents=True)
         manifest = {"owned_root": str(frozen), "invariants": {
             "workload": {"target_framework": self.tfm}, "bootstrap": {},
-            "toolchain": {"dotnet": e.m.file_record(self.dotnet), "build_inputs": {"packages": []}},
+            "toolchain": {"dotnet": e.m.file_record(self.dotnet), "sdk": e.runner.SDK,
+                          "build_inputs": {"packages": []}},
             "environment": {"variables": {"NUGET_PACKAGES": str(frozen / "packages")}}}}
         expected = [["fixture", "synthetic-fsc", True]] * 2
         compatibility_output = "\n".join(
@@ -864,12 +961,13 @@ class PinnedRunnerTests(unittest.TestCase):
         def command(args, cwd, environment, receipts, phase, timeout=1800):
             started = datetime.now(timezone.utc).isoformat()
             is_test = len(args) > 1 and args[1] == "test"
-            actual = args if is_test else [sys.executable, "-c", f"print({compatibility_output!r})"]
+            actual = args if is_test or phase == "correctness-sdk" else [
+                sys.executable, "-c", f"print({compatibility_output!r})"]
             result = (self.runner.command(actual, cwd, environment, receipts, phase, min(timeout, 120))
                       if self.runner else self.launch(actual, phase, environment))
             result.update(command=args, cwd=str(cwd), started_at=started,
                           finished_at=datetime.now(timezone.utc).isoformat())
-            if is_test and "--help" not in args:
+            if is_test and "--help" not in args and "--list-tests" not in args:
                 report = Path(args[args.index("--results-directory") + 1]) / args[args.index("--report-xunit-filename") + 1]
                 observations.append({"phase": attack, "result": copy.deepcopy(result),
                                      "report_path": str(report),
@@ -890,6 +988,7 @@ class PinnedRunnerTests(unittest.TestCase):
                  "inputs": records, "git_files": []}
         original_run = e.run_correctness
         original_require = e.require
+        original_counts = e.runner_counts
         with ExitStack() as patches:
             for name, replacement in (("COMPONENT", project), ("verify_candidate", lambda _: state),
                                       ("frozen_records", lambda _: e.m.verify_files(records)),
@@ -929,7 +1028,14 @@ class PinnedRunnerTests(unittest.TestCase):
                                 return
                             original_require(condition, message)
 
-                        with mock.patch.object(e, "require", gate):
+                        def completion(receipt, **kwargs):
+                            if mutant and not kwargs.get("baseline"):
+                                counts = e.test_counts(receipt["report"]["path"],
+                                                       required_test=receipt.get("regression"), **kwargs)
+                                return dict(counts, runner_reported={"fault": "completion gate bypassed"})
+                            return original_counts(receipt, **kwargs)
+
+                        with mock.patch.object(e, "require", gate), mock.patch.object(e, "runner_counts", completion):
                             try:
                                 checks = e.run_correctness(owned, manifest, compiler, isolation)
                                 a["correctness"] = e.compact_correctness(owned, checks)
@@ -964,6 +1070,28 @@ class PinnedRunnerTests(unittest.TestCase):
                         if attack == "decoy-completion":
                             self.assertEqual(observations[0]["observations"]["decoy-body"], attack)
                             self.assertEqual(observations[0]["observations"]["child-exit"], "0")
+                            cached = copy.deepcopy(passing_attempt)
+                            receipt = next(r for r in cached["correctness"]["results"] if r["category"] == "regression")
+                            capture = e.m.read_json(receipt["capture"]["path"])
+                            capture.update({k: observations[0]["result"][k] for k in ("stdout", "stderr", "logs")})
+                            e.m.write_json(owned / "rebound-capture.json", capture)
+                            receipt["capture"] = e.m.file_record(owned / "rebound-capture.json")
+                            receipt["files"].append(receipt["capture"])
+                            receipt["execution"] = e.execution_signature(receipt)
+                            cached["correctness"]["validation"] = mem.hmac.digest(
+                                mem._VALIDATOR_KEY, mem._validation_payload(cached), "sha256").hex()
+                            cached_gates = {}
+                            for name, call in (
+                                    ("validate_correctness", lambda: e.validate_correctness(cached["correctness"],
+                                        cached["fingerprints"]["candidate"], cached["fingerprints"]["policy"], current=True)),
+                                    ("_attest_correctness", lambda: mem._attest_correctness(cached)),
+                                    ("acceptance_ready", lambda: mem.acceptance_ready(cached))):
+                                with self.subTest(cached_gate=name), self.assertRaisesRegex(ValueError, "runner completion") as error:
+                                    call()
+                                cached_gates[name] = str(error.exception)
+                            e.m.write_json(owned / "cached-gates.json", cached_gates)
+                        if attack == "pass":
+                            passing_attempt = copy.deepcopy(a)
                         for name, result in gates.items():
                             with self.subTest(gate=name):
                                 with self.assertRaises(AssertionError) if mutant else nullcontext():
@@ -1006,7 +1134,7 @@ def frozen_fixture(root, repo):
                                 "cwd": str(bootstrap), "exit_status": 0, "log": str(root / "bootstrap.log")}]}
     toolchain = invariants["toolchain"]
     tool_root = root / "toolchain"
-    sdk_file = tool_root / "sdk" / "11.0.100-synthetic" / "FSharp" / "fsc.dll"
+    sdk_file = tool_root / "sdk" / e.runner.SDK / "FSharp" / "fsc.dll"
     old_sdk_file = tool_root / "sdk" / "9.0.300" / "FSharp" / "fsc.dll"
     runtime_file = tool_root / "shared" / "Microsoft.NETCore.App" / "11.0.0-synthetic" / "runtime.dll"
     for path in (sdk_file, old_sdk_file, runtime_file):
@@ -1017,8 +1145,8 @@ def frozen_fixture(root, repo):
     toolchain.update(dotnet=m.file_record(tool), measurement=m.file_record(m.__file__),
                      python=m.platform.python_version(),
                      capture_target=m.file_record(e.c.HERE / "Capture.targets"),
-                     sdk="11.0.100-synthetic", runtime="synthetic runtime",
-                     sdks="9.0.300 [synthetic]\n11.0.100-synthetic [synthetic]",
+                     sdk=e.runner.SDK, runtime="synthetic runtime",
+                     sdks="9.0.300 [synthetic]\n" + e.runner.SDK + " [synthetic]",
                      runtime_files=[m.file_record(runtime_file)], sdk_compiler_files=[m.file_record(sdk_file)],
                      build_inputs={"packages": [m.file_record(package)], "sdk": [m.file_record(sdk_file), m.file_record(old_sdk_file)],
                                    "bootstrap": [m.file_record(boot)]})

@@ -246,7 +246,7 @@ def acceptance_ready(a, *, current=True):
     require(comparison["primary"]["improvement_percent"] >= policy["minimum_improvement_percent"]
             and comparison["primary"]["interval_95_percent"][0] > 0, "Acceptance effect/interval did not pass")
     checks = a["correctness"]
-    if checks.get("schema_version") in (2, 3, 4):
+    if checks.get("schema_version") in (2, 3, 4, 5):
         from experiment import validate_correctness
         validate_correctness(checks, a["fingerprints"]["candidate"], a["fingerprints"]["policy"], current=current)
         if current:
@@ -344,7 +344,7 @@ def validate_attempt(a, *, prospective=False):
     checks = a["correctness"]
     if "schema_version" in checks:
         from experiment import validate_correctness
-        require(type(checks["schema_version"]) is int and checks["schema_version"] in (2, 3, 4),
+        require(type(checks["schema_version"]) is int and checks["schema_version"] in (2, 3, 4, 5),
                 "Unsupported correctness schema")
         validate_correctness(checks, fp.get("candidate"), fp.get("policy"),
                              passed=a["outcome"] == "measured_improvement" or a["publication"] is not None)

@@ -11,6 +11,7 @@ import sys
 import tempfile
 import unittest
 from unittest import mock
+import uuid
 
 from test_measurement import measurements, refresh_identities
 from test_collection import profile
@@ -98,6 +99,51 @@ def preflight(s, a=None, prs=None, run_status="completed"):
                                         "attempt": owner["attempt"], "state": run_status}, NOW)
 
 
+def captured_command(root, name, command, cwd, stdout):
+    logs = []
+    for stream, text in (("stdout", stdout), ("stderr", "")):
+        path = root / f"{name}.{stream}.log"
+        path.write_text(text, encoding="utf-8")
+        logs.append(mem.m.file_record(path))
+    path = root / (name + ".json")
+    mem.m.write_json(path, {"command": command, "cwd": cwd, "exit_status": 0, "status": "collected",
+                           "stdout": stdout, "stderr": "", "logs": logs,
+                           "started_at": "2026-09-19T00:00:00Z", "finished_at": "2026-09-19T00:00:01Z"})
+    return mem.m.file_record(path)
+
+
+def runner_fixture(root, check, result):
+    import experiment as e
+    fixture = json.loads((FIXTURES / "RunnerResults.json").read_text())["cases"]["pass"]
+    command, cwd = result["command"], result["cwd"]
+    module = str(Path(cwd) / "bin" / "Release" / "net11.0" /
+                 (Path(command[command.index("--project") + 1]).stem + ".dll"))
+    kind = {"optimizer": "Optimizations.Tests", "emitted-il": "EmittedIL.Tests"}.get(check["category"], "Regression")
+    method = "SurfaceArea" if check["category"] == "surface-area" else "regression"
+    document = e.ET.fromstring(fixture["xml"])
+    document.find("assembly").set("name", module)
+    test = document.find(".//test")
+    test.set("name", kind + "." + method)
+    test.set("type", kind)
+    test.set("method", method)
+    test.set("source-file", str(Path(cwd) / "tests/FSharp.Compiler.ComponentTests/Conformance/Regression.fs"))
+    report_path = root / (check["id"] + ".xml")
+    report_path.write_text(e.ET.tostring(document, encoding="unicode"))
+    inventory = json.loads(fixture["discovery"])
+    inventory["testContainers"][0]["assemblyPath"] = module
+    inventory["testContainers"][0]["tests"][0]["displayName"] = test.get("name")
+    output = fixture["output"].replace("/capture/tree/bin/Release/net11.0/ExperimentReportForgery.dll", module)
+    output = output.replace("ExperimentReportForgery.regression", test.get("name"))
+    output = output.replace("/capture/results/result.xml", str(Path(result["result_path"])))
+    result.update(report=mem.m.file_record(report_path),
+                  capture=captured_command(root, check["id"] + "-execution", command, cwd, output),
+                  discovery=captured_command(root, check["id"] + "-discovery",
+                                             e.runner.discovery_argv(command), cwd, json.dumps(inventory)),
+                  excluded_count=0, excluded_sha256=mem.m.fingerprint_inputs([]))
+    result["files"] += [result[k] for k in ("report", "capture", "discovery")]
+    result["runner_reported"] = mem.m.fingerprint_inputs(e.runner_counts(result)["runner_reported"])
+
+
 def improvement(*, legacy=False, compiler_path=PATH):
     a = attempt()
     baseline, candidate = measurements()
@@ -115,35 +161,42 @@ def improvement(*, legacy=False, compiler_path=PATH):
     a.update(outcome="measured_improvement", reason="Both gates passed", lifecycle="validating")
     if not legacy:
         import experiment
+        root = Path(RECEIPTS.name) / uuid.uuid4().hex
+        root.mkdir()
         changes = [compiler_path, "tests/FSharp.Compiler.ComponentTests/Conformance/Regression.fs",
                    experiment.RELEASE_NOTE]
         regressions = [{"path": changes[1], "method": "regression"}]
         plan = experiment.correctness_plan(changes, regressions, "net11.0")
         tool = mem.m.file_record(HERE / "measurement.py")
-        checks = {"schema_version": 4, "changes": changes, "regressions": regressions,
+        checks = {"schema_version": 5, "changes": changes, "regressions": regressions,
                   "target_framework": "net11.0", "plan": plan, "plan_sha256": mem.m.fingerprint_inputs(plan),
                   "required": [p["id"] for p in plan], "results": [], "nonce": "synthetic-nonce",
-                  "cwd": str(Path(RECEIPTS.name) / "tree"), "tool": tool, "inputs": [tool], "validation": None}
+                  "cwd": str(root / "tree"), "tool": tool, "sdk": experiment.runner.SDK,
+                  "inputs": [tool], "validation": None}
+        checks["sdk_probe"] = captured_command(root, "sdk", [tool["path"], "--version"],
+                                              checks["cwd"], experiment.runner.SDK + "\n")
+        selection = {k: checks[k] for k in ("changes", "regressions", "target_framework", "nonce", "cwd", "tool", "sdk")}
+        mem.m.write_json(root / "selection.json", dict(selection, candidate=a["fingerprints"]["candidate"],
+                                                       policy=a["fingerprints"]["policy"]))
+        checks["selection"] = mem.m.file_record(root / "selection.json")
         for check in plan:
+            result_path = Path(checks["cwd"]) / "artifacts" / "perf-results" / checks["nonce"] / (check["id"] + ".xml")
             checks["results"].append({
                 "check_id": check["id"], "category": check["category"], "nonce": checks["nonce"],
-                "command": [tool["path"], *[arg.format(result_dir=".", result_name="synthetic.xml") for arg in check["argv"]]],
+                "command": [tool["path"], *[arg.format(result_dir=str(result_path.parent),
+                                                   result_name=result_path.name) for arg in check["argv"]]],
                 "cwd": checks["cwd"], "tool": tool, "exit_status": 0, "matched": 1,
-                "result_path": "synthetic.xml", "files": [tool],
+                "result_path": str(result_path), "files": [tool],
                 "candidate": a["fingerprints"]["candidate"], "policy": a["fingerprints"]["policy"],
                 "started_at": "2026-09-19T00:00:00Z", "finished_at": "2026-09-19T00:00:01Z"})
             if "regression" in check:
                 checks["results"][-1]["regression"] = dict(check["regression"], path=str(Path(checks["cwd"]) / check["regression"]["path"]))
         a["correctness"] = checks
-        report_path = Path(RECEIPTS.name) / "synthetic.xml"
-        report_path.write_text((FIXTURES / "ExperimentResults.xml").read_text().replace(
-            "/synthetic", Path(checks["cwd"]).as_posix()))
-        report = mem.m.file_record(report_path)
         for check, result in zip(plan, checks["results"]):
             if check["result"] == "xunit":
-                result.update(report=report, files=[tool, report], excluded_count=0,
-                              excluded_sha256=mem.m.fingerprint_inputs([]),
-                              baseline={"files": [report], "report": report, "exit_status": 0, "check_id": check["id"]})
+                runner_fixture(root, check, result)
+                if check["platform_exclusions"]:
+                    result["baseline"] = copy.deepcopy(result)
             elif check["result"] == "compatibility":
                 expected = [["9.0.300", "/sdk/9.0.300/FSharp/fsc.dll", False],
                             ["11.0.100", "/candidate/fsc.dll", True]]
@@ -154,12 +207,64 @@ def improvement(*, legacy=False, compiler_path=PATH):
                               compatibility={"expected": expected, "files": [tool],
                                              "commands": [{"status": "collected", "exit_status": 0}] * 4})
             result["execution"] = experiment.execution_signature(result)
-        a["correctness"] = experiment.compact_correctness(Path(RECEIPTS.name), checks)
+        a["correctness"] = experiment.compact_correctness(root, checks)
         mem._attest_correctness(a)
     return a
 
 
 class MemoryTests(unittest.TestCase):
+    def test_fresh_gates_reconcile_even_coherently_resigned_receipts(self):
+        import experiment as e
+        for mutation in ("decoy", "class", "module", "missing", "duplicate", "new-skip",
+                         "normalized", "discovery", "sdk", "selection", "candidate", "policy"):
+            with self.subTest(mutation=mutation):
+                a = improvement(compiler_path="src/Compiler/CodeGen/Test.fs")
+                checks = a["correctness"]
+                result = next(r for r in checks["results"] if r["category"] == "regression")
+                capture = mem.m.read_json(result["capture"]["path"])
+                output = capture["stdout"]
+                if mutation in ("decoy", "class", "module", "missing", "duplicate", "new-skip"):
+                    changed = {
+                        "decoy": output.replace("Regression.regression", "Regression.passing"),
+                        "class": output.replace("Regression.regression", "Other.regression"),
+                        "module": output.replace("FSharp.Compiler.ComponentTests.dll", "Other.dll"),
+                        "missing": output[:output.index("Test run summary:")],
+                        "duplicate": output.replace("passed Regression.regression (22ms)\n",
+                                                   "passed Regression.regression (22ms)\n" * 2),
+                        "new-skip": output.replace("passed Regression.regression (22ms)", "skipped Regression.regression"),
+                    }[mutation]
+                    Path(capture["logs"][0]["path"]).write_text(changed, encoding="utf-8")
+                    capture["logs"][0] = mem.m.file_record(capture["logs"][0]["path"])
+                    capture["stdout"] = changed
+                    mem.m.write_json(Path(result["capture"]["path"]), capture)
+                    result["capture"] = mem.m.file_record(result["capture"]["path"])
+                    result["files"] = [result[k] for k in ("report", "capture", "discovery")] + capture["logs"]
+                elif mutation == "normalized":
+                    result["runner_reported"] = H
+                elif mutation == "discovery":
+                    result["discovery"] = result["capture"]
+                elif mutation == "sdk":
+                    checks["sdk"] = "11.0.100-altered"
+                elif mutation == "selection":
+                    checks["changes"][0] = "src/Compiler/Checking/Test.fs"
+                    checks["plan"] = e.correctness_plan(checks["changes"], checks["regressions"], checks["target_framework"])
+                    checks["required"] = [c["id"] for c in checks["plan"]]
+                    checks["plan_sha256"] = mem.m.fingerprint_inputs(checks["plan"])
+                    checks["results"] = [r for r in checks["results"] if r["check_id"] in checks["required"]]
+                else:
+                    a["fingerprints"][mutation] = J
+                    for r in checks["results"]:
+                        r[mutation] = J
+                for r in checks["results"]:
+                    r["execution"] = e.execution_signature(r)
+                checks["validation"] = mem.hmac.digest(mem._VALIDATOR_KEY, mem._validation_payload(a), "sha256").hex()
+                for gate in (
+                        lambda: e.validate_correctness(checks, a["fingerprints"]["candidate"], a["fingerprints"]["policy"], current=True),
+                        lambda: mem._attest_correctness(a), lambda: mem.acceptance_ready(a),
+                        lambda: mem.publication_intent(a, SHA)):
+                    with self.subTest(gate=gate), self.assertRaises(ValueError):
+                        gate()
+
     def test_cli_and_imported_validator_share_execution_authority(self):
         import experiment
         executable = runpy.run_path(experiment.__file__)
@@ -171,10 +276,11 @@ class MemoryTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "fresh|validator|historical"):
             mem.acceptance_ready(a)
         self.assertEqual(mem.load_state(response={"status": 200, "body": json.dumps(state(a))})["state"], state(a))
-        for version in (2, 3):
+        for version in (2, 3, 4):
             previous = improvement()
             previous["correctness"]["schema_version"] = version
-            previous["correctness"]["inputs"] = [mem.m.file_record(HERE / "measurement.py")]
+            if version < 4:
+                previous["correctness"]["inputs"] = [mem.m.file_record(HERE / "measurement.py")]
             mem.acceptance_ready(previous, current=False)
             self.assertEqual(mem.load_state(response={"status": 200, "body": json.dumps(state(previous))})["state"],
                              state(previous))
@@ -183,7 +289,7 @@ class MemoryTests(unittest.TestCase):
 
     def test_historical_correctness_uses_producer_paths_without_authorizing_publication(self):
         original = improvement()
-        for version in (2, 3, 4):
+        for version in (2, 3, 4, 5):
             for tree in (PurePosixPath("/unavailable/experiment/tree"),
                          PureWindowsPath(r"C:\unavailable\experiment\tree"),
                          PureWindowsPath(r"\\fixture-host\unavailable\experiment\tree")):
@@ -193,7 +299,7 @@ class MemoryTests(unittest.TestCase):
                     checks.update(schema_version=version, cwd=str(tree))
                     tool = dict(checks["tool"], path=str(tree.parent / "dotnet"))
                     checks["tool"] = tool
-                    checks["inputs"] = tool if version == 4 else [tool]
+                    checks["inputs"] = tool if version >= 4 else [tool]
                     for check, result in zip(checks["plan"], checks["results"]):
                         report = tree / "artifacts" / "results" / (check["id"] + ".xml")
                         result.update(

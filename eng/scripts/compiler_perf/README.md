@@ -15,9 +15,9 @@ New captures against current main require new workload fingerprints.
 and outstanding publication intents in the local Git journal. Its receipts
 explicitly report `remote_acknowledged: false`; local CAS is not remote
 durability. Historical root `dotnet test -c Release` receipts remain readable,
-but cannot authorize new publication. Correctness schema 4 binds explicit plans,
-candidate identities, matched tests and retained command/result files to a fresh
-trusted validator. Passing memory fixtures does not certify production acceptance.
+but cannot authorize new publication. Correctness schema 5 binds explicit plans,
+candidate identities and runner-reported results to retained invocation, discovery,
+XML and outer-runner captures. Passing memory fixtures does not certify production acceptance.
 
 ## Disposable experiment controller
 
@@ -103,8 +103,8 @@ xUnit reporter; tests use explicit `--project`, `--no-build` and
 `--minimum-expected-tests 1`. Empty, failing, missing or stale reports block
 approval. Required regressions use an exact method suffix (`*.Method`, never
 `*Method*`) and `--fail-skips on`; a passing decoy cannot excuse a skipped regression.
-They must match the declared method
-and source file in the runner's report, not merely a nonzero wildcard match.
+They must match the declared method and source file in the XML, and the selected
+discovery inventory and outer runner's per-test completions must agree.
 Broad suites first run serially in a separate checkout of the frozen base, including
 its own Release pack and test builds. Only exact test-name/reason skips observed
 there can be excluded from candidate checks; new skips and skipped regressions
@@ -113,29 +113,46 @@ totals alone are not evidence. Approval also requires successful observed comple
 of the fixed SDK's **outer `dotnet test --project` runner**. On the pinned SDK,
 missing startup handshake and missing test-session end fail that outer invocation,
 even if the child exits zero and writes matching passing XML. Direct assembly
-execution is not an equivalent completion check. Stdout, test-body sentinels and
-child-authored reports do not authorize approval.
+execution is not an equivalent completion check. Totals, discovery, XML, a success
+banner, a signature or a test-body sentinel alone cannot authorize approval.
 
-**The execution-to-result binding is not established.** A module initializer can
-write matching passing XML, then delegate the runner's pipe arguments to a passing
-decoy without executing the required regression. The pinned Windows outer runner
-returns zero, and the current controller and memory gates approve that forged
-report. The `decoy-completion` production regression intentionally remains RED;
-the earlier startup/in-test exit rejections do not disprove this case. Do not use
-these receipts as independent correctness approval. Linux behavior is unproven.
+**Runner-reported consistency:** SDK `11.0.100-rc.1.26420.103`, MTP 2.0.2 and
+xUnit 3.2.2 are fixed. Outer `--output Detailed --no-ansi --no-progress` and
+`--list-tests json` precede `--`; xUnit `--culture en-US`, selectors and execution
+report flags follow it. `DOTNET_CLI_UI_LANGUAGE=en-US` pins outer messages.
+Discovery uses the same project/framework/selection but omits reports and
+`--minimum-expected-tests` (incompatible with discovery). It supplies an inventory,
+not completion. The pinned outer help exposes no JSON execution export; xUnit's
+CTRF and other exports are additional in-process reports, not outer-runner captures.
+
+`runner_results.py` accepts one complete module, unique discovered identities,
+matching XML leaves and exact per-test completion frames followed by matching
+module and overall totals. XML class/method selectors and module/framework identity
+are checked, including enumerated parameterized tests. Missing, duplicate,
+conflicting, truncated, unknown or ambiguous framing fails closed; child log text
+is not scanned for passing names. Broad-category skips must match fresh baseline
+runner/XML evidence exactly; regressions cannot skip. Non-enumerable or ambiguous
+test identities block approval rather than falling back to totals.
+The concrete `decoy-completion` attack still completes with outer/child exit zero,
+but its `passing` completion disagrees with the requested/discovered `regression`
+and forged XML, so collection and fresh authorization reject it.
+
+Protected parent-side invocation files and bounded stdout/stderr captures (with the
+launcher's existing secret redaction) are hashed outside candidate write access.
+Fresh authorization rederives the category plan, checks the frozen selection and
+SDK probe, re-reads discovery/execution/XML evidence and recomputes the normalized
+runner-reported identity/outcome digest. Cached pass arrays or re-signed receipts
+cannot excuse inconsistent evidence. The optimizing agent cannot change the
+authoritative helpers, command selection, SDK or measurement policy, mint receipts
+or acquire publication credentials.
 
 The pinned SDK receives test identities and outcomes from the in-process MTP
 engine; its [result handler](https://github.com/dotnet/sdk/blob/6bb52e256cd35f45066ee209812c099f2195122a/src/Cli/dotnet/Commands/Test/MTP/TestApplicationHandler.cs#L296-L361)
 checks protocol/session consistency, not execution of the requested method.
-Outer `--output Detailed` can expose a decoy's reported display name, but is
-diagnostic only. Outer minimum counts do not bind identities, and
-`--list-tests json` is discovery, not execution. The supported xUnit
-[out-of-process adapter](https://github.com/xunit/xunit/blob/728c1dce012cd82193035dddfeaba184baaa88c6/src/xunit.v3.runner.utility/Frameworks/v3/TestProcessLauncherAdapter.cs#L156-L201)
-also consumes child-authored result messages. Moving those messages to a
-parent-owned report does not establish independent execution. None of these
-interfaces supplies the missing attestation while arbitrary candidate code
-shares the test-engine process; trusted assertions would need to execute outside
-that domain. Do not substitute these diagnostics for the failing rejection gate.
+The evidence contract is conventional CI: test-host code is trusted to report
+assertions honestly to its framework. It is **not cryptographic proof of
+test-body execution**, nor proof that arbitrary code sharing the framework process
+cannot lie to that framework.
 
 Reports stream through a fresh write-only FIFO in
 a sealed directory to a parent-owned evidence file, rather than a candidate-writable
@@ -144,8 +161,8 @@ or replace earlier failures/skips. **The FIFO does not authenticate its first
 writer.** The parent binds the captured report, command,
 candidate, nonce and exit to a process-local execution receipt, separately from
 final acceptance, only after checking the outer invocation and matched results.
-The signature prevents later receipt substitution; it is not an independent
-test-completion signal. Skips never count as matched passes, and categories
+The signature prevents later receipt substitution; it cannot replace runner-result
+reconciliation or authenticate assertions. Skips never count as matched passes, and categories
 with no applicable passing tests block approval. Test
 outputs must contain the selected candidate service binary.
 The controller drives the existing compatibility projects through six explicit
@@ -185,7 +202,7 @@ Historical reads need not have those artifacts available.
 Approval uses a process-local attestation, not a portable JSON permission token.
 `acceptance_ready` and `publication_intent` reject forged or reloaded attestations
 without fresh trusted validation. Historical journal schema 1 is preserved;
-correctness schema 4 is nested within it. Older root-command, schema-2 and schema-3 receipts
+correctness schema 5 is nested within it. Older root-command and schema-2 through schema-4 receipts
 remain readable history but cannot authorize new publication. Historical command and regression
 paths retain the producer's POSIX or Windows semantics when read on another platform; no
 artifact availability or fresh approval is inferred from loading them. `draft_eligible`
@@ -219,7 +236,7 @@ execution sentinel. It is a rejection assertion, not an expected failure or skip
 All production test launches come from `correctness_plan` through `run_correctness`;
 fresh validation and memory approval remain active. Only unrelated compiler-build,
 compatibility and measurement inputs are synthetic. No live compiler improvement
-is claimed. Temporarily bypassing both execution/receipt exit checks must make
+is claimed. Temporarily bypassing the logical invocation/completion gate must make
 the first-report attacks violate the rejection assertion; restoring them must
 reject even the resulting signed receipts.
 
