@@ -51,6 +51,9 @@ Requested dumps must retain their verified identity, successful tool records
 and hashed private artifact. Artifact hashes are verified independently of
 metadata; a recorded `size_bytes` must also match the file's actual byte length.
 Neither a status flag nor an exporter exit code alone is evidence.
+Persisted command arguments, stdout/stderr and failure reasons redact credential
+assignments, including quoted JSON values, escaped quotes and truncated strings.
+Raw tool streams are deleted after bounded sanitization.
 
 The summary keeps these quantities separate:
 
@@ -123,8 +126,10 @@ Limits are fixed: one replay per invocation, 180 seconds for the target,
 512 MiB per trace, 1 GiB per other artifact, 2 GiB total, 1 MiB per tool stream,
 and 16 MiB per JSON reduction. Dump capture/validation each allow 120 seconds;
 the diagnostic rebuild allows 600 seconds. Only owned children are terminated.
-On Windows, a failed tree-termination command is ignored only when the owned
-process handle confirms concurrent exit; log sanitization and cleanup still run.
+Windows children start suspended, join a private kill-on-close job, then resume;
+job assignment failure blocks launch without executing the child. Jobs and POSIX
+process groups are terminated even after their wrapper exits, before log cleanup.
+An exited wrapper does not hide a descendant-termination failure.
 Target duration and artifact budgets remain monitored during a requested dump,
 including its tool probes and validation. Persisted manifests and summaries
 count toward the disk budget.
@@ -287,6 +292,27 @@ file records were reverified, and attempting same-path reduction of the actual
 `3fddefce02f394b1fb945e27a7213b3f479504d8cd73f5316e2005b746ef53fe`
 (`iteration4-verification.json`). These are local diagnostic results, not
 acceptance samples.
+
+Descendant ownership and credential redaction were validated on 2026-09-19.
+`iteration5-red.log` reproduced seven quoted-value leaks and four surviving
+descendant cases after successful/failed wrapper exits, with both inherited and
+detached streams. The corrected full suite passes **68 tests**, including live
+public-child trace/dump smoke tests (`iteration5-suite-live.log`). Three isolated
+mutations removing redaction, exited-wrapper cleanup or startup suspension are
+all caught (`iteration5-mutations.log`). Explicit Release compiler/test builds,
+the surface-area smoke test and formatting pass; root build/test commands still
+require project selection.
+
+The fresh `iteration5-compiler/evidence-manifest.json` verifies compiler PID
+**50588**, start time **639253839402767020**, exact frozen command/binary identity,
+zero lost events and successful diagnostic build/binlog extraction. Independent
+analysis and all **935** frozen file checks pass (`iteration5-verification.json`).
+Its trace SHA-256 is
+`0277b80fceed3778dd2b91af96f794e4da2e59a4cabacecf85d17975b774bd25`;
+the reduction records 286,562 stack samples, 33,939,106,936 estimated allocated
+bytes and a 5,066.8541 ms GC pause union. Commands and DoD evidence are recorded
+in `iteration5-validation.json`. These remain private local diagnostics, not
+acceptance samples or a retention/improvement claim.
 
 ## Preparation
 

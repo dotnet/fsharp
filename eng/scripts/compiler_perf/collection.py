@@ -18,6 +18,12 @@ import sys
 import time
 import uuid
 
+if os.name == "nt":
+    job_spec = importlib.util.spec_from_file_location("windows_job", Path(__file__).with_name("windows_job.py"))
+    job_module = importlib.util.module_from_spec(job_spec)
+    job_spec.loader.exec_module(job_module)
+    WindowsJob = job_module.WindowsJob
+
 spec = importlib.util.spec_from_file_location("measurement", Path(__file__).with_name("measurement.py"))
 m = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(m)
@@ -39,8 +45,11 @@ def sanitize(text):
             text = text.replace(value, "[REDACTED]")
     text = re.sub(r"(?i)(bearer\s+)\S+", r"\1[REDACTED]", text)
     text = re.sub(r"(https?://)[^/\s@]+@", r"\1[REDACTED]@", text)
-    text = re.sub(r"(?i)((?:token|password|secret|credential|api_key)\s*[=:]\s*)[^\s,;]+",
-                  r"\1[REDACTED]", text)
+    text = re.sub(
+        r"""(?ix)((?:token|password|secret|credentials?|api[_-]?key|authorization)["']?\s*[=:]\s*)"""
+        r"""("(?:\\(?:[\s\S]|$)|[^"\\])*(?:"|$)|'(?:\\(?:[\s\S]|$)|[^'\\])*(?:'|$)|[^\s,;}]+)""",
+        lambda match: match[1] + ('"[REDACTED]"' if match[2].startswith('"') else
+                                  "'[REDACTED]'" if match[2].startswith("'") else "[REDACTED]"), text)
     return re.sub(r"\b(?:gh[pousr]_[A-Za-z0-9_]+|github_pat_[A-Za-z0-9_]+)\b", "[REDACTED]", text)
 
 
@@ -373,7 +382,7 @@ def remove_incomplete(path, root):
 
 
 def unlink_closed(path):
-    # Windows child handle teardown can lag taskkill's successful return.
+    # Windows child handle teardown can lag job termination.
     deadline = time.monotonic() + 5
     while True:
         try:
@@ -386,19 +395,31 @@ def unlink_closed(path):
 
 
 class Command:
-    """Own one child and bounded private streams; persist only sanitized text."""
+    """Own a child tree and bounded private streams; persist only sanitized text."""
 
     def __init__(self, arguments, cwd, environment, root, phase):
         self.root, self.phase, self.arguments = Path(root), phase, arguments
         stem = f"{phase}-{uuid.uuid4().hex[:8]}"
         self.paths = [self.root / f"{stem}.{part}.raw" for part in ("stdout", "stderr")]
         self.streams = [p.open("wb") for p in self.paths]
-        isolation = ({"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP} if os.name == "nt"
+        self.job, self.process, self.stopped = None, None, False
+        # CREATE_SUSPENDED closes the launch-to-job-assignment race.
+        isolation = ({"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP | 0x4} if os.name == "nt"
                      else {"start_new_session": True})
         try:
+            if os.name == "nt":
+                self.job = WindowsJob()
             self.process = subprocess.Popen(arguments, cwd=cwd, env=environment, stdin=subprocess.PIPE,
                                             stdout=self.streams[0], stderr=self.streams[1], **isolation)
+            if self.job is not None:
+                self.job.assign_and_resume(self.process)
         except BaseException:
+            if self.process is not None:
+                self.process.kill()
+                self.process.wait()
+                self.process.stdin.close()
+            if self.job is not None:
+                self.job.close()
             for stream in self.streams:
                 stream.close()
             for path in self.paths:
@@ -415,21 +436,16 @@ class Command:
             return stream.read(LIMITS["log_bytes"]).decode("utf-8", errors="replace")
 
     def stop(self):
-        if self.process.poll() is None:
-            if os.name == "nt":
-                try:
-                    subprocess.run(["taskkill", "/PID", str(self.process.pid), "/T", "/F"],
-                                   capture_output=True, check=True)
-                except subprocess.CalledProcessError:
-                    # The owned handle, not taskkill's exit code, proves a concurrent exit.
-                    if self.process.poll() is None:
-                        raise
+        if not self.stopped:
+            if self.job is not None:
+                self.job.close()
             else:
                 try:
                     os.killpg(self.process.pid, signal.SIGKILL)
                 except ProcessLookupError:
                     pass
             self.process.wait()
+            self.stopped = True
 
     def finish(self, issue=None):
         self.stop()

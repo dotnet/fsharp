@@ -318,6 +318,41 @@ class CollectionTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "budget"):
                     c.check_budget(owned)
 
+    def test_credential_values_are_removed_from_persisted_tool_evidence(self):
+        cases = (
+            '{"token":"json-token-value","stage":"kept"}',
+            '{"Password": "two words", "stage":"kept"}',
+            '{"access_token":"escaped \\"quote\\" value","stage":"kept"}',
+            "{'api_key': 'single quoted value', 'stage':'kept'}",
+            'prefix {"client_secret":"nested secret"} suffix kept',
+            '{"credentials":"credential value","stage":"kept"}',
+            'password=plain-value stage=kept',
+            '{"password":"unfinished secret kept',
+            '{"password":"unfinished secret kept\\',
+            '{"apiKey":"json-token-value","stage":"kept"}',
+            '{"authorization":"Basic credential value","stage":"kept"}',
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for text in cases:
+                with self.subTest(text=text):
+                    script = "import sys; print(sys.argv[1]); print(sys.argv[1], file=sys.stderr); sys.exit(7)"
+                    result = c.run_tool([sys.executable, "-c", script, text], root,
+                                        c.tool_environment(), root, "redaction")
+                    self.assertEqual(result["status"], "blocked_collection")
+                    self.assertEqual(result["exit_status"], 7)
+                    surfaces = [result["stdout"], result["stderr"], result["arguments"][-1],
+                                c.classify_failure("fixture", issue=text)["reason"]]
+                    surfaces += [Path(record["path"]).read_text() for record in result["logs"]]
+                    for surface in surfaces:
+                        self.assertIn("[REDACTED]", surface)
+                        for secret in ("json-token-value", "two words", "escaped", "quote", "single quoted",
+                                       "nested secret", "credential value", "plain-value", "unfinished secret"):
+                            self.assertNotIn(secret, surface)
+                        if "unfinished" not in text:
+                            self.assertIn("kept", surface)
+                    self.assertFalse(list(root.glob("*.raw")))
+
     def test_private_directory_and_dump_inherit_owner_only_access(self):
         with tempfile.TemporaryDirectory() as directory:
             root = c.private_directory(Path(directory) / "private")
@@ -356,45 +391,53 @@ class CollectionTests(unittest.TestCase):
                     self.assertEqual(result["reason"], expected)
                     self.assertIn("exit_status", result)
 
-    def test_tool_timeout_reaps_only_owned_descendants(self):
-        with tempfile.TemporaryDirectory() as directory, socket.socket() as server:
-            root = Path(directory)
-            server.bind(("127.0.0.1", 0))
-            server.listen()
-            server.settimeout(15)
-            port = server.getsockname()[1]
-            client = (f"import socket,time; s=socket.create_connection(('127.0.0.1',{port}));"
-                      "s.sendall(b'1'); time.sleep(60)")
-            unrelated = subprocess.Popen([sys.executable, "-c", client])
-            other, _ = server.accept()
-            other.settimeout(.1)
-            self.assertEqual(other.recv(1), b"1")
-            owned = []
-            try:
-                parent = f"import subprocess,sys; subprocess.Popen([sys.executable,'-c',{client!r}]); {client}"
+    def test_tool_completion_reaps_only_owned_descendants(self):
+        for mode, streams in itertools.product(("timeout", "success", "failure"), ("inherited", "detached")):
+            with self.subTest(mode=mode, streams=streams), tempfile.TemporaryDirectory() as directory, \
+                    socket.socket() as server:
+                root = Path(directory)
+                server.bind(("127.0.0.1", 0))
+                server.listen()
+                server.settimeout(15)
+                args = [sys.executable, str(FIXTURES / "ProcessTree.py"), str(server.getsockname()[1])]
+                unrelated = subprocess.Popen(args + ["0", mode, streams])
+                other, _ = server.accept()
+                other.settimeout(5)
+                self.assertEqual(other.recv(1), b"0")
+                connections = {}
                 with ThreadPoolExecutor(max_workers=1) as executor:
-                    future = executor.submit(c.run_tool, [sys.executable, "-c", parent], root,
-                                             dict(os.environ), root, "owned-tree", 5)
-                    for _ in range(2):
-                        connection, _ = server.accept()
-                        connection.settimeout(10)
-                        self.assertEqual(connection.recv(1), b"1")
-                        owned.append(connection)
-                    result = future.result(timeout=15)
-                self.assertEqual(result["reason"], "timeout")
-                for connection in owned:
+                    future = executor.submit(c.run_tool, args + ["2", mode, streams], root,
+                                             c.tool_environment(), root, "owned-tree", 5)
                     try:
-                        closed = connection.recv(1) == b""
-                    except ConnectionResetError:
-                        closed = True  # Windows reports terminated peers as reset rather than EOF.
-                    self.assertTrue(closed)
-                self.assertIsNone(unrelated.poll())
-            finally:
-                for connection in owned:
-                    connection.close()
-                other.close()
-                unrelated.terminate()
-                unrelated.wait(timeout=10)
+                        for _ in range(3):
+                            connection, _ = server.accept()
+                            connection.settimeout(2)
+                            connections[connection.recv(1)] = connection
+                        if mode != "timeout":
+                            connections[b"2"].sendall(b"s")
+                        result = future.result(timeout=15)
+                        self.assertEqual(result["status"], "collected" if mode == "success" else "blocked_collection")
+                        if mode == "success":
+                            self.assertEqual(result["exit_status"], 0)
+                        else:
+                            self.assertEqual(result["reason"], "timeout" if mode == "timeout" else "tool_failure")
+                        for connection in connections.values():
+                            try:
+                                self.assertEqual(connection.recv(1), b"", "Owned descendant survived wrapper exit")
+                            except ConnectionResetError:
+                                pass  # Windows may reset terminated peers instead of returning EOF.
+                        self.assertFalse(list(root.glob("*.raw")))
+                        self.assertIsNone(unrelated.poll())
+                        other.sendall(b"p")
+                        self.assertEqual(other.recv(1), b"p")
+                    finally:
+                        for connection in [*connections.values(), other]:
+                            try:
+                                connection.sendall(b"s")
+                            except OSError:
+                                pass  # Cleanup must also release children when the regression fails.
+                            connection.close()
+                        unrelated.wait(timeout=10)
 
     def test_tool_monitor_aborts_collection_and_preserves_command(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -407,33 +450,73 @@ class CollectionTests(unittest.TestCase):
             self.assertIsNotNone(result["exit_status"])
             self.assertIn("profiler_pid", result)
 
-    def test_windows_stop_race_only_ignores_an_already_exited_child(self):
+    def test_tree_cleanup_failure_is_not_hidden_by_wrapper_exit(self):
         for exited in (True, False):
             with self.subTest(exited=exited), tempfile.TemporaryDirectory() as directory:
                 root = Path(directory)
-                command = c.Command([sys.executable, "-c", "import sys; sys.exit(7)"],
+                script = "import sys; sys.exit(7)" if exited else "import time; time.sleep(30)"
+                command = c.Command([sys.executable, "-c", script],
                                     root, dict(os.environ), root, "fixture")
-                command.process.wait(timeout=10)
-                error = subprocess.CalledProcessError(128, ["taskkill"], stderr=b"Process not found")
+                if exited:
+                    command.process.wait(timeout=10)
+                error = PermissionError("job termination denied")
                 try:
-                    with mock.patch.object(c.os, "name", "nt"), \
-                            mock.patch.object(command.process, "poll", side_effect=[None, 7 if exited else None]), \
-                            mock.patch.object(c.subprocess, "run", side_effect=error) as kill:
-                        if exited:
+                    job = mock.Mock()
+                    job.close.side_effect = error
+                    with mock.patch.object(command, "job", job):
+                        with self.assertRaises(PermissionError) as raised:
                             command.stop()
-                        else:
-                            with self.assertRaises(subprocess.CalledProcessError) as raised:
-                                command.stop()
-                            self.assertIs(raised.exception, error)
-                        self.assertEqual(kill.call_args.args[0],
-                                         ["taskkill", "/PID", str(command.process.pid), "/T", "/F"])
+                        self.assertIs(raised.exception, error)
+                        job.close.assert_called_once_with()
                 finally:
                     result = command.finish("budget_exceeded")
                 self.assertEqual(result["status"], "blocked_collection")
-                self.assertEqual(result["exit_status"], 7)
+                self.assertIsNotNone(result["exit_status"])
+                if exited:
+                    self.assertEqual(result["exit_status"], 7)
                 self.assertEqual(result["reason"], "budget_exceeded")
                 self.assertFalse(list(root.glob("*.raw")))
                 self.assertTrue(all(stream.closed for stream in command.streams))
+
+    @unittest.skipUnless(os.name == "nt", "Windows suspended job assignment")
+    def test_job_assignment_failure_never_runs_child(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            marker = root / "must-not-execute"
+            script = f"from pathlib import Path; Path({str(marker)!r}).touch()"
+
+            def denied(process):
+                with self.assertRaises(subprocess.TimeoutExpired):
+                    process.wait(timeout=.5)
+                raise PermissionError("assign denied")
+
+            with mock.patch.object(c.WindowsJob, "assign_and_resume", side_effect=denied):
+                result = c.run_tool([sys.executable, "-c", script], root, c.tool_environment(), root, "fixture")
+            self.assertEqual(result["status"], "blocked_collection")
+            self.assertEqual(result["reason"], "launch_failed")
+            self.assertIn("assign denied", result["stderr"])
+            self.assertFalse(marker.exists())
+            self.assertFalse(list(root.glob("*.raw")))
+
+    def test_posix_group_cleanup_runs_after_wrapper_exit(self):
+        for failure in (None, ProcessLookupError, PermissionError):
+            with self.subTest(failure=failure):
+                command = c.Command.__new__(c.Command)
+                command.job, command.stopped = None, False
+                command.process = mock.Mock(pid=123, returncode=0)
+                with mock.patch.object(c.os, "killpg", side_effect=failure, create=True) as killpg, \
+                        mock.patch.object(c.signal, "SIGKILL", 9, create=True):
+                    if failure is PermissionError:
+                        with self.assertRaises(PermissionError):
+                            command.stop()
+                        command.process.wait.assert_not_called()
+                        self.assertFalse(command.stopped)
+                    else:
+                        command.stop()
+                        command.stop()
+                        command.process.wait.assert_called_once_with()
+                        self.assertTrue(command.stopped)
+                    killpg.assert_called_once_with(123, 9)
 
     def test_dump_requires_hypothesis_and_verified_alive_identity(self):
         process = profile()["process"]["start"]
