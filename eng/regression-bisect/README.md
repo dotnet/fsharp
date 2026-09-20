@@ -534,7 +534,8 @@ hosts remain blocked rather than expanding the allowlist automatically.
 A disposable adapter must make this broker the worker's **only** network
 route and keep the broker and its listener away from controller credentials,
 host control sockets and untrusted modifications. Setting `HTTPS_PROXY`
-alone does not enforce that property. No such adapter is wired here; do not
+alone does not enforce that property. The opt-in Docker adapter below creates
+that network topology; it is not wired to an activated controller. Do not
 enable unattended execution using this module alone. The socket tests use
 owned loopback servers and injected DNS/dialers, never public downloads or
 live GitHub writes. Their denials, transfers, quotas and shutdown ledgers
@@ -544,6 +545,142 @@ process, mount, metadata or host-network isolation.
 ```powershell
 node --test eng\regression-bisect\egress.test.cjs eng\regression-bisect\worker-output.test.cjs
 if ($LASTEXITCODE -ne 0) { throw 'Egress and transfer tests failed' }
+```
+
+### Disposable Docker transport and containment acceptance
+
+`container.cjs` provides `validateContainerConfig`, `inspectRuntime` and
+`runContainer(config, options)`. This is a concrete, opt-in transport, **not a
+deployed controller or an authenticated observation collector**. Neither unit
+tests with fake Docker responses nor an unsupported-host receipt establish
+containment. The controller CLI/workflow, durable indispensable-output
+retention and authenticated collector integration are not delivered; do not
+activate unattended investigation with this transport alone.
+
+The supported runtime is an already-provisioned disposable Linux x64 worker:
+Docker Engine 28 or newer, cgroup v2, built-in seccomp, AppArmor, memory/swap/PID
+and CPU-quota support. Windows, Docker Desktop forwarding, rootless Docker,
+remote Docker endpoints and historical Windows/macos matrices are rejected,
+not retargeted. The adapter never starts or installs Docker, changes daemon
+configuration or pulls an image. Provision this exact official Node 24
+bookworm **amd64 manifest digest** on the disposable image first:
+
+```json
+{
+  "schemaVersion": 1,
+  "image": "docker.io/library/node@sha256:5a750d3be5e5c80275f8c9a5367c3aed99c2875656590c8d0701c7ee687f5f0a",
+  "dockerExecutable": "/usr/bin/docker",
+  "limits": {
+    "cpus": 2,
+    "memoryMiB": 16384,
+    "pids": 512,
+    "scratchMiB": 12288,
+    "timeoutMs": 6600000
+  }
+}
+```
+
+The image was resolved from the official registry's `24-bookworm` index;
+tags are not accepted at execution. Runtime inspection rechecks its
+RepoDigest, OS and architecture. Limits may only decrease the adapter's
+8-CPU/32-GiB-memory/1,024-PID/16-GiB-scratch ceilings and the policy's
+110-minute timeout. They do not modify reservation accounting or give a
+reservation another 110 minutes: execution also uses its absolute deadline.
+These resource ceilings are separate from the unchanged issue allowance.
+
+The transport creates two randomly named, launch-labelled networks and two
+containers, with no published ports. The worker has only an internal bridge
+using Docker's `gateway_mode_ipv4=isolated`: unlike an ordinary internal bridge,
+it has no host bridge address through which to reach host services
+([Docker gateway-mode documentation](https://docs.docker.com/engine/network/port-publishing/#gateway-modes)).
+Only the trusted broker is connected to that network and an outward bridge.
+The broker has IP forwarding disabled and accepts only the bounded
+`egress.cjs` CONNECT protocol. Worker DNS is loopback-only; it connects to the
+broker's inspected numeric private address. IPv6 is disabled. Direct public,
+metadata and host traffic must fail even if a build ignores proxy variables.
+The smoke probes this topology; command-line assertions are not acceptance.
+
+Both containers run as UID/GID 1000, with all capabilities dropped,
+no-new-privileges, default seccomp, Docker AppArmor, private PID/IPC/cgroup
+namespaces, read-only roots, zero swap, bounded tmpfs scratch and temporary
+storage, PID/CPU/memory/descriptor limits, and no Docker log-file accumulation.
+Arcade gets a separate 16 MiB generated-output tmpfs at `/trusted/artifacts`;
+its pinned scripts, logging helper and helper-root `global.json` remain
+read-only. That helper-root file is never copied into a historical checkout.
+The only bind mounts are fresh, read-only copies of the trusted helper files
+and explicit public inputs. No checkout, host home, Git configuration,
+credential helper, token, Docker socket or outer environment is mounted.
+Docker itself receives an empty owned client-config directory, a fixed local
+Unix socket and an explicit credential-free environment; child `env -i`
+retains only fixed paths and public proxy settings.
+
+For physical execution, `options` supplies `operation: "execution"`, `input`
+(the existing public execution unit), an **existing resolved absolute**
+`evidenceDirectory`, reviewed `sourceDirectory`, and for source units a regular
+`sourceBundle` with `sourceBundleSha256`. The bundle must be a
+credential-free Git bundle; it is read-only inside the worker, where the
+existing workspace runner fetches only the selected SHA into fresh scratch.
+Only manifest-listed raw sample/producer assets are staged, with hashes
+rechecked. Symlinks, hardlinked inputs, unresolved paths and mount delimiters
+are rejected. The unit's environment fingerprint must match the pinned image.
+`signal` can cancel a launch. No executable, shell command, Docker flag,
+report destination, key or callback is serialized into the job.
+
+The fixed `container-entry.cjs` constructs physical dependencies **inside**
+the worker and invokes `runExecutionUnit`. Exact acquisition, historical
+declarations, unmodified `global.json`, source build scripts and reproduction
+identity checks remain the existing runners' responsibility. Source work
+uses a separately acquired released reproduction SDK, never a host SDK.
+The helper is built and inventories products only inside the container.
+The win-x64 measured-archive exception is unchanged and does not authorize
+Linux downloads. Missing comparable runtimes or permitted historical SDKs
+remain untestable.
+
+After `docker start --attach` closes, the parent checks that the worker stopped
+without an OOM kill, bounds stdout to 16 MiB and parses only strict UTF-8 JSON
+bound to the retained launch/image/unit digests. It does not import, execute
+or open any worker-selected filename. Output paths, hardlinks and generated
+programs cannot cause host extraction: **there is no writable output mount
+or host extraction step**. `result.json` is retained verbatim with its hash,
+but remains untrusted runner data, not a signed observation. In particular,
+references to tmpfs files do not constitute durable retention of those files.
+No worker-reported `verified` field authorizes publication.
+
+`receipt.json` retains helper/config/input/image identities, Docker command
+exit/digest records, owned resource IDs and cleanup results. Resources are
+registered before create calls so a lost create acknowledgement can still be
+cleaned. Cleanup verifies the launch label, force-removes owned containers
+(including descendants), then removes owned networks and verifies absence.
+Cleanup errors block the result. Cancellation is not a refund or permission
+to adopt unauthenticated output.
+
+Run the real acceptance CLI with absolute resolved paths and a new evidence
+directory; the config is operator-reviewed transport configuration, **not an
+issue reproduction approval**:
+
+```powershell
+node eng\regression-bisect\containment.smoke.cjs --run <absolute-approved-worker-config.json> <absolute-new-evidence-directory>
+if ($LASTEXITCODE -ne 0) { throw 'Containment incomplete; do not deploy' }
+```
+
+On the supported Linux host, invoke the same file with the platform's path
+separator. The CLI has a 15-minute overall budget. It uses the production
+adapter with small canary limits, creates only harmless outer canary files and
+an environment canary, and attempts outer-file/environment/process/socket
+reads, direct metadata/control egress, and prohibited broker authorities.
+It checks actual cgroup settings, fills bounded scratch to ENOSPC, exhausts
+PID capacity, measures two busy children under a one-CPU quota, requires a
+Docker OOM-kill receipt from bounded memory pressure, creates a descendant for forced timeout cleanup, rejects a
+malformed/path-bearing output envelope, and requires a bounded official
+release-index transfer. Canary files are removed; launch/denial/exit/cleanup
+receipts persist. Missing runtime/platform or any missing enforcement evidence
+returns exit **2**, records `incomplete`, and is never a mocked pass.
+
+Run transport tests separately:
+
+```powershell
+node --test eng\regression-bisect\container.test.cjs eng\regression-bisect\worker.test.cjs eng\regression-bisect\worker-output.test.cjs eng\regression-bisect\egress.test.cjs
+if ($LASTEXITCODE -ne 0) { throw 'Container transport tests failed' }
 ```
 
 ### Reviewed first-use transaction and GitHub API

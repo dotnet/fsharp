@@ -1,0 +1,311 @@
+const fs = require("node:fs/promises");
+const path = require("node:path");
+const { spawn } = require("node:child_process");
+const { randomBytes } = require("node:crypto");
+const { validateRepositoryPath, fingerprintInput: fingerprint } = require("./model.cjs");
+const { validateExecutionUnit, readExecutionOutput } = require("./worker.cjs");
+const { hash, requireValue } = require("./toolchain-io.cjs");
+
+const image = "docker.io/library/node@sha256:5a750d3be5e5c80275f8c9a5367c3aed99c2875656590c8d0701c7ee687f5f0a";
+const ceilings = { cpus: 8, memoryMiB: 32768, pids: 1024, scratchMiB: 16384, timeoutMs: 110 * 60000 };
+const trustedRoot = path.resolve(__dirname, "..", "..");
+
+function validateContainerConfig(c) {
+    requireValue(c && Object.keys(c).sort().join(" ") === "dockerExecutable image limits schemaVersion" &&
+        c.schemaVersion === 1 && c.image === image, "invalid pinned container config or image");
+    requireValue(typeof c.dockerExecutable === "string" && c.dockerExecutable.startsWith("/") &&
+        path.posix.normalize(c.dockerExecutable) === c.dockerExecutable && !/[\s,\\]/.test(c.dockerExecutable),
+    "absolute Linux Docker executable required");
+    requireValue(c.limits && Object.keys(c.limits).sort().join(" ") === Object.keys(ceilings).sort().join(" ") &&
+        Object.entries(ceilings).every(([k, max]) => Number.isSafeInteger(c.limits[k]) && c.limits[k] > 0 && c.limits[k] <= max),
+    "invalid container limit");
+    return true;
+}
+
+function command(executable, args, { env, signal, timeoutMs = 30000, maxBytes = 1024 * 1024 } = {}) {
+    return new Promise((resolve, reject) => {
+        signal = AbortSignal.any([AbortSignal.timeout(timeoutMs), ...(signal ? [signal] : [])]);
+        signal.throwIfAborted();
+        const child = spawn(executable, args, { env, shell: false, stdio: ["ignore", "pipe", "pipe"] });
+        const chunks = { stdout: [], stderr: [] }, sizes = { stdout: 0, stderr: 0 };
+        let failure;
+        const stop = error => { failure ??= error; child.kill("SIGKILL"); };
+        const abort = () => stop(signal.reason);
+        signal.addEventListener("abort", abort, { once: true });
+        for (const name of Object.keys(chunks)) child[name].on("data", bytes => {
+            sizes[name] += bytes.length;
+            if (sizes[name] > maxBytes) stop(new Error("container command output limit exceeded"));
+            else chunks[name].push(bytes);
+        });
+        child.once("error", error => { failure = error; });
+        child.once("close", exitCode => {
+            signal.removeEventListener("abort", abort);
+            if (failure) reject(failure);
+            else resolve({ exitCode, stdout: Buffer.concat(chunks.stdout), stderr: Buffer.concat(chunks.stderr) });
+        });
+    });
+}
+
+async function inspectRuntime(config, deps = {}) {
+    validateContainerConfig(config);
+    requireValue((deps.platform ?? process.platform) === "linux", "container adapter requires a disposable Linux x64 host; no retargeting");
+    const result = await (deps.command ?? command)(config.dockerExecutable,
+        ["--host", "unix:///var/run/docker.sock", "info", "--format", "{{json .}}"],
+        { env: { PATH: "/usr/bin:/bin", HOME: "/nonexistent", DOCKER_CONFIG: "/nonexistent" } });
+    requireValue(result.exitCode === 0, "Docker runtime unavailable");
+    const info = JSON.parse(result.stdout.toString("utf8"));
+    requireValue(info.OSType === "linux" && info.Architecture === "x86_64" && /^\d+\./.test(info.ServerVersion) &&
+        Number(info.ServerVersion.split(".")[0]) >= 28 && info.CgroupVersion === "2" &&
+        info.SecurityOptions?.includes("name=seccomp,profile=builtin") && info.SecurityOptions.includes("name=apparmor") &&
+        !info.SecurityOptions.includes("name=rootless") &&
+        ["MemoryLimit", "SwapLimit", "PidsLimit", "CpuCfsQuota"].every(k => info[k] === true),
+    "unsupported Docker runtime: require Engine >=28, cgroup v2, seccomp, AppArmor and resource controllers");
+    return info;
+}
+
+async function regularBytes(file, maxBytes) {
+    const stat = await fs.lstat(file);
+    requireValue(stat.isFile() && !stat.isSymbolicLink() && stat.nlink === 1 && stat.size <= maxBytes &&
+        await fs.realpath(file) === file, "input is not a bounded, unlinked regular file");
+    const bytes = await fs.readFile(file);
+    requireValue(bytes.length === stat.size, "input file changed during read");
+    return bytes;
+}
+
+async function stageHelpers(root) {
+    const files = [
+        ".github/policies/regression-bisect.json", "global.json", "UseLocalCompiler.Directory.Build.props",
+        "UseLocalCompiler.Directory.Build.targets", "eng/TargetFrameworks.props",
+        "eng/common/tools.sh", "eng/common/pipeline-logging-functions.sh",
+        ...(await fs.readdir(__dirname)).filter(n => n.endsWith(".cjs") && !/\.(test|smoke)\.cjs$/.test(n))
+            .map(n => `eng/regression-bisect/${n}`),
+        "eng/regression-bisect/ReproEvidence.targets",
+        ...(await fs.readdir(path.join(__dirname, "evidence"), { recursive: true }))
+            .filter(n => /\.(cs|csproj)$/.test(n) && !n.split(/[\\/]/).some(p => ["bin", "obj"].includes(p)))
+            .map(n => `eng/regression-bisect/evidence/${n.split(path.sep).join("/")}`),
+    ];
+    const digests = [];
+    for (const name of files.sort()) {
+        validateRepositoryPath(name);
+        const bytes = await regularBytes(path.join(trustedRoot, name), 1024 * 1024);
+        const target = path.join(root, name);
+        await fs.mkdir(path.dirname(target), { recursive: true });
+        await fs.writeFile(target, bytes, { flag: "wx", mode: 0o444 });
+        digests.push({ path: name, sha256: hash(bytes) });
+    }
+    return digests;
+}
+
+async function readableTree(root) {
+    for (const relative of ["", ...await fs.readdir(root, { recursive: true })]) {
+        const file = path.join(root, relative), stat = await fs.lstat(file);
+        requireValue(!stat.isSymbolicLink() && (stat.isDirectory() || stat.isFile() && stat.nlink === 1),
+            "staged input must contain only directories and regular unlinked files");
+        await fs.chmod(file, stat.isDirectory() ? 0o755 : 0o444);
+    }
+}
+
+async function runContainer(config, options, deps = {}) {
+    const receipt = { schemaVersion: 1, image: config?.image, configDigest: fingerprint(config),
+        launchId: randomBytes(32).toString("hex"), status: "blocked", workerStarted: false,
+        resources: [], commands: [], cleanup: [], startedAt: new Date().toISOString() };
+    const root = await fs.realpath(options.evidenceDirectory);
+    requireValue(root === path.resolve(options.evidenceDirectory) && !(await fs.lstat(root)).isSymbolicLink(),
+        "resolved owned evidence directory required");
+    requireValue(!/[,\r\n]/.test(root), "evidence directory cannot contain Docker mount delimiters");
+    const receiptFile = path.join(root, "receipt.json");
+    await fs.writeFile(receiptFile, JSON.stringify(receipt, null, 2), { flag: "wx" });
+    let staging, answer, failure, cleaning = false;
+    const invoke = deps.command ?? command;
+    const docker = async (args, settings = {}, allowMissing = false) => {
+        const result = await invoke(config.dockerExecutable,
+            ["--host", "unix:///var/run/docker.sock", "--config", path.join(staging, "docker"), ...args],
+            { env: { PATH: "/usr/bin:/bin", HOME: staging },
+                ...(cleaning ? { timeoutMs: 5000 } : { signal: options.signal }), ...settings });
+        receipt.commands.push({ args, exitCode: result.exitCode, stdoutSha256: hash(result.stdout),
+            stderrSha256: hash(result.stderr ?? Buffer.alloc(0)) });
+        if (allowMissing && result.exitCode !== 0 &&
+            /No such (?:object|container|network):/i.test(result.stderr?.toString("utf8") ?? "")) return null;
+        requireValue(result.exitCode === 0, `Docker ${args.slice(0, 2).join(" ")} failed: ${result.stderr?.toString("utf8").slice(0, 1024)}`);
+        return result.stdout;
+    };
+    const inspect = async (kind, name, allowMissing = false) => {
+        const bytes = await docker([kind, "inspect", name], {}, allowMissing);
+        if (bytes === null) return null;
+        const values = JSON.parse(bytes.toString("utf8"));
+        requireValue(Array.isArray(values) && values.length === 1, "ambiguous Docker inspect");
+        return values[0];
+    };
+    const own = (kind, name) => receipt.resources.push({ kind, name });
+    const label = "org.dotnet.fsharp.regression-launch";
+    try {
+        options.signal?.throwIfAborted();
+        receipt.runtime = await inspectRuntime(config, deps);
+        options.signal?.throwIfAborted();
+        requireValue(["execution", "canary"].includes(options.operation), "invalid container operation");
+        if (options.operation === "execution") {
+            validateExecutionUnit(options.input);
+            requireValue(options.input.platform.os === "linux" && options.input.platform.architecture === "x64" &&
+                options.input.platform.rid === "linux-x64", "container cannot retarget reviewed execution platform");
+            requireValue(options.input.environmentFingerprint === fingerprint(Object.fromEntries(options.input.manifest.matrix.map(c =>
+                [c.id, { os: c.os, architecture: c.architecture, imageDigest: image.split(":").at(-1) }]))),
+            "execution environment is not bound to the pinned container image");
+        }
+        staging = await fs.mkdtemp(path.join(root, "staging-"));
+        await fs.chmod(staging, 0o755);
+        const bundle = path.join(staging, "bundle"), input = path.join(staging, "input");
+        await fs.mkdir(bundle); await fs.mkdir(input); await fs.mkdir(path.join(staging, "docker"));
+        receipt.helpers = await stageHelpers(bundle);
+        await fs.mkdir(path.join(bundle, "artifacts"));
+        await readableTree(bundle);
+        receipt.helperDigest = fingerprint(receipt.helpers);
+        const launch = { launchId: receipt.launchId, imageDigest: image.split(":").at(-1), unitDigest: fingerprint(options.input) };
+        receipt.launch = launch;
+        if (options.operation === "execution") {
+            for (const source of options.input.manifest.sources) {
+                const sourceRoot = await fs.realpath(options.sourceDirectory);
+                const bytes = await regularBytes(path.join(sourceRoot, source.path), 1024 * 1024);
+                requireValue(hash(bytes) === source.sha256, "reviewed sample bytes changed");
+                const target = path.join(input, "samples", source.path);
+                await fs.mkdir(path.dirname(target), { recursive: true });
+                await fs.writeFile(target, bytes, { flag: "wx", mode: 0o444 });
+            }
+            if (options.input.request.kind === "source") {
+                const bytes = await regularBytes(path.resolve(options.sourceBundle), 256 * 1024 * 1024);
+                requireValue(hash(bytes) === options.sourceBundleSha256, "source bundle digest mismatch");
+                await fs.writeFile(path.join(input, "source.bundle"), bytes, { flag: "wx", mode: 0o444 });
+                receipt.sourceBundleSha256 = hash(bytes);
+            }
+        }
+        const actualImage = await inspect("image", image);
+        requireValue(actualImage.Os === "linux" && actualImage.Architecture === "amd64" &&
+            actualImage.RepoDigests?.some(d => d.endsWith(`@sha256:${launch.imageDigest}`)), "local image digest/platform mismatch");
+        receipt.imageId = actualImage.Id;
+        const name = `rb-${receipt.launchId.slice(0, 24)}`, internal = `${name}-private`, external = `${name}-public`;
+        for (const [network, internalOnly] of [[internal, true], [external, false]]) {
+            own("network", network);
+            await docker(["network", "create", "--driver", "bridge", "--label", `${label}=${receipt.launchId}`,
+                ...(internalOnly ? ["--internal", "--opt", "com.docker.network.bridge.gateway_mode_ipv4=isolated",
+                    "--opt", "com.docker.network.bridge.enable_ip_masquerade=false"] : []), network]);
+            const inspected = await inspect("network", network);
+            requireValue(inspected.Driver === "bridge" && inspected.Internal === internalOnly &&
+                inspected.EnableIPv6 === false && inspected.Labels?.[label] === receipt.launchId &&
+                (!internalOnly || inspected.Options?.["com.docker.network.bridge.gateway_mode_ipv4"] === "isolated"),
+            "Docker did not enforce the isolated network configuration");
+            receipt[internalOnly ? "privateNetwork" : "publicNetwork"] = inspected;
+        }
+        const common = (containerName, network, limits) => [
+            "container", "create", "--name", containerName, "--label", `${label}=${receipt.launchId}`,
+            "--network", network, "--user", "1000:1000", "--cap-drop", "ALL",
+            "--security-opt", "no-new-privileges=true", "--security-opt", "apparmor=docker-default",
+            "--read-only", "--init", "--cgroupns", "private", "--ipc", "private", "--log-driver", "none", "--restart", "no",
+            "--cpus", String(limits.cpus), "--memory", `${limits.memoryMiB}m`, "--memory-swap", `${limits.memoryMiB}m`,
+            "--pids-limit", String(limits.pids), "--ulimit", "nofile=1024:1024", "--ulimit", "core=0:0",
+            "--sysctl", "net.ipv4.ip_forward=0", "--sysctl", "net.ipv6.conf.all.disable_ipv6=1",
+            "--tmpfs", `/scratch:rw,nosuid,nodev,size=${limits.scratchMiB}m,uid=1000,gid=1000,mode=0700`,
+            "--tmpfs", "/tmp:rw,nosuid,nodev,noexec,size=16m,uid=1000,gid=1000,mode=0700",
+            "--tmpfs", "/trusted/artifacts:rw,nosuid,nodev,noexec,size=16m,uid=1000,gid=1000,mode=0700",
+            "--mount", `type=bind,source=${bundle},target=/trusted,readonly`,
+            "--workdir", "/scratch", "--entrypoint", "/usr/bin/env",
+        ];
+        const broker = `${name}-broker`, worker = `${name}-worker`;
+        own("container", broker);
+        await docker([...common(broker, external, { cpus: 1, memoryMiB: 256, pids: 32, scratchMiB: 16 }),
+            image, "-i", "PATH=/usr/local/bin:/usr/bin:/bin", "HOME=/scratch", "node",
+            "/trusted/eng/regression-bisect/container-entry.cjs", "broker"]);
+        await docker(["network", "connect", internal, broker]);
+        await docker(["container", "start", broker]);
+        const brokerState = await inspect("container", broker);
+        requireValue(brokerState.State?.Running, "egress broker failed to start");
+        const brokerIp = brokerState.NetworkSettings?.Networks?.[internal]?.IPAddress;
+        requireValue(typeof brokerIp === "string" && /^(?:\d{1,3}\.){3}\d{1,3}$/.test(brokerIp), "missing private broker address");
+        const proxy = `http://${brokerIp}:3128`;
+        await fs.writeFile(path.join(input, "input.json"), JSON.stringify({
+            schemaVersion: 1, operation: options.operation, input: options.input, launch, proxy,
+            hostAddresses: [receipt.privateNetwork, receipt.publicNetwork]
+                .flatMap(n => n.IPAM?.Config?.map(c => c.Gateway).filter(Boolean) ?? []),
+            limits: config.limits,
+        }), { flag: "wx", mode: 0o444 });
+        await readableTree(input);
+        own("container", worker);
+        await docker([...common(worker, internal, config.limits), "--dns", "127.0.0.1",
+            "--mount", `type=bind,source=${input},target=/input,readonly`,
+            image, "-i", "PATH=/usr/local/bin:/usr/bin:/bin", "HOME=/scratch", "TMPDIR=/scratch",
+            `HTTPS_PROXY=${proxy}`, `HTTP_PROXY=${proxy}`, `https_proxy=${proxy}`, `http_proxy=${proxy}`,
+            "NO_PROXY=", "NODE_USE_ENV_PROXY=1", "node", "--use-env-proxy",
+            "/trusted/eng/regression-bisect/container-entry.cjs", "worker"]);
+        const created = await inspect("container", worker);
+        requireValue(created.Image === actualImage.Id && created.Config?.User === "1000:1000" &&
+            created.Config.Labels?.[label] === receipt.launchId && created.AppArmorProfile === "docker-default" &&
+            created.HostConfig?.ReadonlyRootfs && created.HostConfig.Privileged === false &&
+            created.HostConfig.PidMode === "" && created.HostConfig.NetworkMode === internal &&
+            created.HostConfig.IpcMode === "private" && created.HostConfig.CgroupnsMode === "private" &&
+            created.HostConfig.CapDrop?.join() === "ALL" && !created.HostConfig.CapAdd?.length &&
+            created.HostConfig.SecurityOpt?.includes("no-new-privileges=true") &&
+            created.HostConfig.Memory === config.limits.memoryMiB * 1024 * 1024 &&
+            created.HostConfig.MemorySwap === created.HostConfig.Memory &&
+            created.HostConfig.PidsLimit === config.limits.pids && created.HostConfig.NanoCpus === config.limits.cpus * 1e9 &&
+            created.HostConfig.Dns?.join() === "127.0.0.1" && !Object.keys(created.HostConfig.PortBindings ?? {}).length &&
+            created.Mounts?.filter(m => m.Type === "bind").length === 2 && created.Mounts.every(m =>
+                m.Type === "tmpfs" && ["/scratch", "/tmp", "/trusted/artifacts"].includes(m.Destination) ||
+                m.Type === "bind" && m.RW === false &&
+                    (m.Destination === "/trusted" && m.Source === bundle || m.Destination === "/input" && m.Source === input)) &&
+            Object.keys(created.NetworkSettings.Networks).join() === internal,
+        "worker launch isolation mismatch");
+        receipt.containerId = created.Id;
+        receipt.workerConfig = created.HostConfig;
+        await docker(["container", "exec", broker, "/usr/local/bin/node",
+            "/trusted/eng/regression-bisect/container-entry.cjs", "ready"]);
+        const remaining = options.operation === "execution" ? Date.parse(options.input.deadline) - Date.now() : config.limits.timeoutMs;
+        requireValue(remaining > 0, "worker reservation deadline exhausted");
+        receipt.workerStarted = true;
+        const output = await docker(["container", "start", "--attach", worker], {
+            signal: options.signal, timeoutMs: Math.min(remaining, config.limits.timeoutMs), maxBytes: 16 * 1024 * 1024,
+        });
+        const stopped = await inspect("container", worker);
+        receipt.exit = stopped.State;
+        requireValue(stopped.State?.Running === false && stopped.State.ExitCode === 0 && stopped.State.OOMKilled === false,
+            "worker did not terminate successfully");
+        const file = { path: "result.json", bytes: output, size: output.length, sha256: hash(output) };
+        if (options.operation === "execution") answer = readExecutionOutput([file], options.input, launch);
+        else {
+            const payload = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(output));
+            requireValue(payload && Object.keys(payload).sort().join(" ") === "imageDigest launchId result schemaVersion unitDigest" &&
+                payload.schemaVersion === 1 && Object.keys(launch).every(k => payload[k] === launch[k]), "canary launch binding mismatch");
+            answer = payload.result;
+        }
+        receipt.resultSha256 = file.sha256;
+        await fs.writeFile(path.join(root, "result.json"), output, { flag: "wx" });
+        receipt.status = "collected";
+    } catch (error) {
+        failure = error;
+        receipt.status = "blocked";
+        receipt.reason = error.message;
+    } finally {
+        cleaning = true;
+        for (const resource of receipt.resources.toReversed()) {
+            try {
+                const value = await inspect(resource.kind, resource.name, true);
+                if (value !== null) {
+                    requireValue((resource.kind === "container" ? value.Config?.Labels : value.Labels)?.[label] === receipt.launchId,
+                        "refusing cleanup of a resource not owned by this launch");
+                    await docker([resource.kind, "rm", ...(resource.kind === "container" ? ["--force"] : []), resource.name]);
+                    requireValue(await inspect(resource.kind, resource.name, true) === null, "owned resource survived removal");
+                }
+                receipt.cleanup.push({ ...resource, removed: true,
+                    ...(resource.kind === "container" && value ? { state: value.State } : {}) });
+            } catch (error) {
+                failure ??= error;
+                receipt.status = "blocked";
+                receipt.reason = `${receipt.reason ?? "cleanup failed"}; ${error.message}`;
+                receipt.cleanup.push({ ...resource, removed: false, reason: error.message });
+            }
+        }
+        if (staging) await fs.rm(staging, { recursive: true });
+        receipt.completedAt = new Date().toISOString();
+        await fs.writeFile(receiptFile, JSON.stringify(receipt, null, 2));
+    }
+    return failure ? { status: "blocked", reason: receipt.reason, receipt } : { status: "collected", result: answer, receipt };
+}
+
+module.exports = { image, validateContainerConfig, inspectRuntime, runContainer };
