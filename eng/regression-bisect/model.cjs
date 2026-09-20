@@ -459,7 +459,6 @@ function validateState(state) {
                 ...(Object.hasOwn(v, "decisions") ? {
                     decisions: list(shape({ sha: sourceSha, outcome: oneOf(["pass", "product-failure", "untestable"]),
                         observationDigest: digest }), 0, trustedPolicy.limits.sourceBuilds),
-                    remaining: list(sourceSha, 1, 4096),
                 } : {}),
             }, p)),
             publication: shape({ digest: nullable(digest), commentId: nullable(positive) }),
@@ -477,7 +476,6 @@ function validateState(state) {
         check(evidence.every(d => budget.authenticatedObservationDigests.includes(d)), "state", "unauthenticated evidence");
         if (state.interval?.decisions) {
             unique(state.interval.decisions.map(d => d.sha), "state.interval.decisions");
-            unique(state.interval.remaining, "state.interval.remaining");
         }
         return true;
     } catch (error) {

@@ -14,24 +14,27 @@ const gitExecutable = process.platform === "win32"
     ? execFileSync("where.exe", ["git.exe"], { encoding: "utf8" }).trim().split(/\r?\n/)[0]
     : execFileSync("which", ["git"], { encoding: "utf8" }).trim();
 
-async function fixture(t, outcomes = ["product-failure", "product-failure", "pass"], messages = ["base", "one", "two", "main"]) {
+async function fixture(t, outcomes = ["product-failure", "product-failure", "pass"], messages = ["base", "one", "two", "main"], hints = [0]) {
     const root = await fs.mkdtemp(path.join(os.tmpdir(), "engine-test-"));
     t.after(() => fs.rm(root, { recursive: true, force: true }));
     const mirror = path.join(root, "mirror"), scratch = path.join(root, "scratch");
     await fs.mkdir(mirror); await fs.mkdir(scratch);
-    const git = (...args) => execFileSync(gitExecutable, ["-c", "core.hooksPath=", "-c", "commit.gpgSign=false", ...args], {
-        cwd: mirror, encoding: "utf8", env: { ...process.env, GIT_CONFIG_NOSYSTEM: "1",
+    const runGit = (args, input) => execFileSync(gitExecutable, ["-c", "core.hooksPath=", "-c", "commit.gpgSign=false", ...args], {
+        cwd: mirror, input, encoding: "utf8", env: { ...process.env, GIT_CONFIG_NOSYSTEM: "1",
             GIT_CONFIG_GLOBAL: path.join(root, "empty"), GIT_AUTHOR_NAME: "Fixture", GIT_AUTHOR_EMAIL: "fixture@example.invalid",
             GIT_COMMITTER_NAME: "Fixture", GIT_COMMITTER_EMAIL: "fixture@example.invalid",
             GIT_AUTHOR_DATE: "2026-09-01T00:00:00Z", GIT_COMMITTER_DATE: "2026-09-01T00:00:00Z" },
     }).trim();
+    const git = (...args) => runGit(args);
     await fs.writeFile(path.join(root, "empty"), "");
     git("init", "--quiet", "--initial-branch=main");
-    const shas = [];
-    for (const message of messages) { git("commit", "--quiet", "--allow-empty", "-m", message); shas.push(git("rev-parse", "HEAD")); }
+    runGit(["fast-import", "--quiet"], messages.map((message, i) =>
+        `commit refs/heads/main\nmark :${i + 1}\ncommitter Fixture <fixture@example.invalid> 1788220800 +0000\n` +
+        `data ${Buffer.byteLength(message)}\n${message}\n${i ? `from :${i}\n` : ""}\n`).join(""));
+    const shas = git("rev-list", "--reverse", "HEAD").split("\n");
     const h = harness();
     h.context.pinnedMainSha = shas.at(-1);
-    h.context.manifest.searchHints.sourceShas = [shas[0]];
+    h.context.manifest.searchHints.sourceShas = hints.map(i => shas[i]);
     f.seal(h.context.manifest);
     h.context.authorization.manifestDigest = model.fingerprintInput(h.context.manifest);
     h.context.authorization.inputDigest = h.context.manifest.approvedInputDigest;
@@ -347,6 +350,124 @@ test("a deterministic midpoint failure narrows bad without turning a build exit 
     assert.ok(h.calls.some(args => args[1] === "bad" && args[2] === h.shas[1]));
 });
 
+test("supported-size intervals round-trip compact checkpoints and reconstruct remaining commits", async t => {
+    for (const size of [1000, 4096]) await t.test(`${size} commits`, async t => {
+        const h = await fixture(t, undefined, Array.from({ length: size + 1 }, (_, i) => `change ${i}`));
+        await endpoints(h);
+        const work = await h.advance();
+        assert.equal(work.status, "work", JSON.stringify(work));
+        const admitted = (await state.loadCheckpoint(h.transport, h.context)).checkpoint.state.interval;
+        assert.equal(admitted.goodSha, h.shas[0]);
+        assert.equal(admitted.badSha, h.shas[size]);
+        await h.finish(work, "pass");
+        h.nextRun();
+        const result = await h.advance();
+        assert.equal(result.status, "blocked", JSON.stringify(result));
+        assert.match(result.reason, /preserving confirmation budget/);
+        const index = h.shas.indexOf(work.reservation.request.target.sourceSha);
+        assert.deepEqual(result.interval.remaining, h.shas.slice(index + 1).toReversed());
+        const cp = (await state.loadCheckpoint(h.transport, h.context)).checkpoint;
+        assert.deepEqual(Object.keys(cp.state.interval).sort(), ["badSha", "decisions", "gitLog", "goodSha"]);
+        assert.equal(cp.state.interval.decisions.length, 1);
+        assert.ok(Buffer.byteLength(h.comment.body) < 48 * 1024);
+        assert.deepEqual(await fs.readdir(h.scratch), []);
+    });
+});
+
+test("retried endpoints do not masquerade as the next item, but confirmation needs fresh attempts", async t => {
+    for (const retry of ["stable", "main", "good-search"]) await t.test(retry, async t => {
+        const h = await fixture(t, undefined, ["base", "main"]);
+        for (const phase of ["stable", "main", "good-search"]) {
+            let work = await h.advance();
+            assert.equal(work.status, "work", JSON.stringify(work));
+            if (phase === retry) {
+                h.nextRun();
+                work = await h.advance();
+                assert.equal(work.reservation.attempt, 2);
+            }
+            await h.finish(work);
+        }
+        const result = await h.advance();
+        assert.equal(result.status, retry === "stable" ? "confirmation" : "blocked", JSON.stringify(result));
+        assert.ok(h.calls.length > 0, "a completed retry is not the next admission work item");
+        if (retry !== "stable") assert.match(result.reason, /fresh confirmation budget/);
+        assert.deepEqual(result.interval.remaining, [h.shas[1]]);
+        const cp = (await state.loadCheckpoint(h.transport, h.context)).checkpoint;
+        assert.equal(cp.state.budget.consumed.reservedMinutes, 440);
+    });
+});
+
+test("older-search failures and skips are replayed only when comparable after resume", async t => {
+    for (const outcome of ["product-failure", "untestable", "incomparable"]) await t.test(outcome, async t => {
+        const h = await fixture(t, undefined, ["base", "introduced", "main"], [1, 0]);
+        for (const value of ["product-failure", "product-failure", outcome, "pass"]) {
+            const work = await h.advance();
+            assert.equal(work.status, "work", JSON.stringify(work));
+            assert.equal(h.calls.length, 0);
+            if (value === "incomparable") {
+                const observation = h.observationFor(work, "product-failure");
+                observation.cells[0].runtime.version = "10.0.1";
+                await state.commitObservation(h.transport, h.context, { generation: work.reservation.generation,
+                    attemptId: work.reservation.id, observation, evidence: [] });
+            } else await h.finish(work, value);
+        }
+        h.nextRun();
+        const result = await h.advance();
+        assert.equal(result.status, outcome === "product-failure" ? "confirmation" : "blocked", JSON.stringify(result));
+        if (outcome === "incomparable") {
+            assert.match(result.reason, /reproduction toolchain changed/);
+            assert.equal(h.calls.length, 0);
+            return;
+        }
+        assert.ok(h.calls.some(args => args[1] === (outcome === "product-failure" ? "bad" : "skip") && args[2] === h.shas[1]));
+        if (outcome === "product-failure") {
+            assert.equal(result.candidate, h.shas[1]);
+            assert.deepEqual(result.parents, [h.shas[0]]);
+            assert.deepEqual(result.interval.remaining, [h.shas[1]]);
+        } else {
+            assert.match(result.reason, /all-skipped/);
+            assert.deepEqual(result.interval.remaining, h.shas.slice(1).toReversed());
+        }
+        const cp = (await state.loadCheckpoint(h.transport, h.context)).checkpoint;
+        assert.equal(cp.state.interval.decisions[0].outcome, outcome);
+        assert.equal(cp.state.budget.consumed.workerUnits, 4);
+    });
+});
+
+test("confirmation checks aggregate and wall-time boundaries and can actually reserve both targets", async t => {
+    for (const [name, extra, minutes, allowed] of [
+        ["normal", 0, 220, true], ["last two units", 1, 220, true],
+        ["only one unit", 2, 220, false], ["one millisecond short", 0, 220 - 1 / 60000, false],
+    ]) await t.test(name, async t => {
+        const h = await fixture(t, undefined, ["base", "main"]);
+        await endpoints(h);
+        for (let i = 0; i < extra; i++) {
+            const cp = (await state.loadCheckpoint(h.transport, h.context)).checkpoint;
+            await state.reserveWork(h.transport, h.context, { generation: cp.generation, attemptId: `cancelled-${i}`,
+                request: { kind: "source", target: { sourceSha: f.sha(`cancelled-${i}`) }, endpoint: null, phase: "bisect" } });
+            h.nextRun();
+        }
+        const cp = (await state.loadCheckpoint(h.transport, h.context)).checkpoint;
+        cp.deadline = new Date(Date.parse(h.context.now) + minutes * 60000).toISOString();
+        h.checkpoint(cp);
+        const result = await h.advance();
+        assert.equal(result.status, allowed ? "confirmation" : "blocked", JSON.stringify(result));
+        if (!allowed) assert.match(result.reason, /fresh confirmation budget/);
+        else for (const sourceSha of [result.candidate, ...result.parents]) {
+            const cp = (await state.loadCheckpoint(h.transport, h.context)).checkpoint;
+            const reservation = await state.reserveWork(h.transport, h.context, {
+                generation: cp.generation, attemptId: `confirm-${sourceSha}`,
+                request: { kind: "source", target: { sourceSha }, endpoint: null, phase: "confirmation" },
+            });
+            assert.equal(reservation.attempt, 2);
+            await h.finish({ reservation }, sourceSha === result.candidate ? "product-failure" : "pass");
+        }
+        const end = (await state.loadCheckpoint(h.transport, h.context)).checkpoint;
+        assert.equal(end.state.budget.consumed.workerUnits, 3 + extra + (allowed ? 2 : 0));
+        assert.equal(result.requiresFreshConfirmation, true);
+    });
+});
+
 test("observed descendant passes and unrelated branch claims stop before admission", async t => {
     for (const mismatch of [false, true]) await t.test(mismatch ? "ancestry" : "nonmonotonic", async t => {
         const h = await fixture(t);
@@ -532,4 +653,48 @@ test("worker seam preserves original FSI/project inputs and charges before invok
         assert.equal(sourceCalls, 1);
         assert.equal(h.calls.length, 0);
     });
+});
+
+test("worker-result integrity mismatches cannot commit collector-shaped success", async t => {
+    const variants = {
+        outcome: r => { r.outcome = f.observation("released", "pass").outcome; },
+        missingMatrix: (r, cells) => { cells.length = 0; },
+        missingRepetition: (r, cells) => { cells[0].attempts.pop(); },
+        alteredAssertion: (r, cells) => { cells[0].attempts[0].execution.stderr = "unrelated failure"; },
+        sourceStatus: r => { r.status = "untestable"; },
+        sourceSha: r => { r.actualSourceSha = f.sha("other source"); },
+        sourceBuild: r => { r.buildInstanceId = "unreserved-build"; },
+    };
+    for (const kind of ["released", "source"])
+        for (const [name, mutate] of Object.entries(variants)) {
+            if (kind === "released" && name.startsWith("source")) continue;
+            await t.test(`${kind}/${name}`, async t => {
+                const h = await fixture(t);
+                if (kind === "source") await h.finish(await h.advance());
+                const work = await h.advance();
+                const observation = h.observationFor(work, "product-failure");
+                const cells = structuredClone(observation.cells);
+                const result = kind === "released" ? { outcome: observation.outcome, cells } :
+                    { status: "tested", outcome: observation.outcome, actualSourceSha: work.reservation.request.target.sourceSha,
+                        buildInstanceId: work.reservation.id, reproduction: { cells } };
+                mutate(result, cells);
+                const before = (await state.loadCheckpoint(h.transport, h.context)).checkpoint;
+                await assert.rejects(executeInvestigationWork(work, {
+                    ...h.deps, clock: () => new Date(h.context.now),
+                    worker: { reproductionToolchain: {}, storageDirectory: "unused" },
+                    acquireToolchain: async () => ({ status: "acquired", identity: {
+                        requested: {}, archive: { sha256: h.context.stableSdk.archives[0].sha256 },
+                    } }),
+                    verifyToolchainIdentity: () => ({ status: "verified" }), inventoryReleased: async () => ({}),
+                    runReproduction: async () => result, testSourceRevision: async () => result,
+                    collectObservation: async () => ({ observation, evidence: [] }),
+                }), /collector changed worker outcome|source result identity mismatch|collector omitted original repeated assertions/);
+                const after = (await state.loadCheckpoint(h.transport, h.context)).checkpoint;
+                assert.deepEqual(after.observations, before.observations);
+                assert.deepEqual(after.state.endpointEvidence, before.state.endpointEvidence);
+                assert.deepEqual(after.state.budget.consumed, before.state.budget.consumed);
+                assert.equal(after.state.budget.pendingWork.status, "running");
+                assert.equal(h.calls.length, 0);
+            });
+        }
 });

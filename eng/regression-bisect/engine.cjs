@@ -77,12 +77,15 @@ function authenticated(cp, id, environments) {
     return o;
 }
 
-function capacity(cp, units, now) {
+function capacity(cp, units, now, sourceShas = []) {
     const { consumed, policy } = cp.state.budget;
     return consumed.sourceBuilds + units <= policy.limits.sourceBuilds &&
         consumed.workerUnits + units <= policy.limits.workerUnits &&
         consumed.reservedMinutes + units * policy.limits.workerTimeoutMinutes <= policy.limits.reservedMinutes &&
-        Date.parse(now) + units * policy.limits.workerTimeoutMinutes * 60000 <= Date.parse(cp.deadline);
+        Date.parse(now) + units * policy.limits.workerTimeoutMinutes * 60000 <= Date.parse(cp.deadline) &&
+        sourceShas.every(sha => cp.records.filter(r => r.inputDigest === cp.inputDigest &&
+            r.request.kind === "source" && r.request.target.sourceSha === sha).length +
+            sourceShas.filter(s => s === sha).length <= policy.limits.attemptsPerItem);
 }
 
 async function selectSource(cp, context, deps, history) {
@@ -91,7 +94,7 @@ async function selectSource(cp, context, deps, history) {
     const stable = get(s.endpointEvidence.stable), main = get(s.endpointEvidence.main);
     const revisions = s.testedRevisions.map(r => ({ ...r, data: get(r.observationDigest) }));
     const all = (await history.git(["rev-list", "--topo-order", `--max-count=${maxHistory + 1}`, history.main])).split("\n");
-    const older = all.slice(1, maxHistory);
+    const older = all.slice(1, maxHistory + 1);
     for (const r of revisions) if ((all.length <= maxHistory && !all.includes(r.sourceSha)) || !(await history.ancestor(r.sourceSha, history.main)))
         return report("blocked", "observed source is outside main ancestry", { historyEvidence: revisions.map(r => r.sourceSha) });
     for (const bad of revisions.filter(r => r.data.outcome.outcome === "product-failure"))
@@ -105,7 +108,7 @@ async function selectSource(cp, context, deps, history) {
             .filter(sha => older.includes(sha) && !revisions.some(r => r.sourceSha === sha))
             .slice(0, s.budget.policy.limits.sourceBuilds);
         if (!candidates.length) return report("stopped", "no verified starting interval", { skips: s.skips });
-        if (!capacity(cp, 3, context.now)) return report("blocked", "no verified starting interval; confirmation budget exhausted",
+        if (!capacity(cp, 3, context.now, [candidates[0]])) return report("blocked", "no verified starting interval; confirmation budget exhausted",
             { budget: s.budget.consumed, skips: s.skips });
         return { request: { kind: "source", target: { sourceSha: candidates[0] }, endpoint: "good", phase: "good-search" } };
     }
@@ -121,10 +124,10 @@ async function selectSource(cp, context, deps, history) {
     const messages = await history.git(["log", "--format=%B%x00", history.main, `^${passing.sourceSha}`]);
     if (/\b(?:revert(?:ed|ing)?|reintroduc\w*|cherry[ -]pick\w*)\b/i.test(messages))
         return report("blocked", "explicit revert/reintroduction/backport history; monotonicity uncertain", { interval: initialInterval });
-    const decisions = cp.records.filter(r => r.status === "committed" && r.epoch === s.epoch && r.request.phase === "bisect")
+    const decisions = [...new Map(revisions.filter(r => r.sourceSha !== history.main && intervalShas.includes(r.sourceSha))
+        .map(r => [r.sourceSha, r])).values()]
         .map(r => {
-            const o = get(r.observationDigest);
-            requireValue(intervalShas.includes(o.target.sourceSha), "decision outside admitted interval");
+            const o = r.data;
             for (const c of o.cells) {
                 const m = main.cells.find(m => m.id === c.id);
                 requireValue(o.outcome.outcome === "untestable" || equal(c.sdk, m.sdk) && equal(c.runtime, m.runtime),
@@ -132,7 +135,9 @@ async function selectSource(cp, context, deps, history) {
             }
             return { sha: o.target.sourceSha, outcome: o.outcome.outcome, observationDigest: r.observationDigest };
         });
-    const admission = admitBisection({ manifest: s.manifest, stable, main, good, ancestry, budget: s.budget });
+    // Git has not selected a next item; the ledger's last completed item is not that item.
+    const admission = admitBisection({ manifest: s.manifest, stable, main, good, ancestry,
+        budget: { ...s.budget, nextWorkItemId: s.budget.pendingWork?.workItemId ?? "none" } });
     if (admission.decision !== "admit") return report(admission.decision === "stop" ? "stopped" : "blocked", admission.reason);
     // No bisect command, including reset, is permitted before this gate.
     await history.git(["bisect", "start", "--no-checkout", history.main, passing.sourceSha]);
@@ -151,7 +156,7 @@ async function selectSource(cp, context, deps, history) {
     if (ambiguous) return report("blocked", "all-skipped ambiguous interval", { interval, skips: s.skips });
     if (remaining.length === 1) {
         const relevantParents = (await history.git(["rev-list", "--parents", "-n", "1", badSha])).split(" ").slice(1);
-        if (!capacity(cp, 1 + relevantParents.length, context.now))
+        if (!capacity(cp, 1 + relevantParents.length, context.now, [badSha, ...relevantParents]))
             return report("blocked", "unconfirmed interval; insufficient fresh confirmation budget", { interval, budget: s.budget.consumed });
         return report("confirmation", "candidate requires fresh candidate and parent assertions", {
             candidate: badSha, parents: relevantParents, interval, toolchainTransitions: admission.toolchainTransitions ?? [],
@@ -161,6 +166,8 @@ async function selectSource(cp, context, deps, history) {
         { interval, skips: s.skips, budget: s.budget.consumed });
     const sha = await history.git(["rev-parse", "BISECT_HEAD"]);
     requireValue(fullSha(sha) && remaining.includes(sha) && !decisions.some(d => d.sha === sha), "invalid repeated Git selection");
+    if (!capacity(cp, 3, context.now, [sha])) return report("blocked", "unconfirmed interval; candidate attempt budget exhausted",
+        { interval, skips: s.skips, budget: s.budget.consumed });
     return { interval, goodDigest: passing.observationDigest,
         request: { kind: "source", target: { sourceSha: sha }, endpoint: null, phase: "bisect" } };
 }
@@ -242,9 +249,11 @@ async function advanceInvestigation({ now }, deps) {
             }
         }
         if ((selected.interval || selected.status) && cp.pending === null) {
+            const { remaining, ...interval } = selected.interval ?? cp.state.interval ?? {};
             cp = await recordSearchProgress(deps.transport, context, {
                 generation: cp.generation, phase: selected.status ?? "bisect",
-                interval: selected.interval ?? cp.state.interval, ...(selected.goodDigest ? { goodDigest: selected.goodDigest } : {}),
+                interval: selected.interval || cp.state.interval ? interval : null,
+                ...(selected.goodDigest ? { goodDigest: selected.goodDigest } : {}),
             });
         }
         if (selected.status) return { ...selected, generation: cp.generation, commands: history?.commands ?? [] };

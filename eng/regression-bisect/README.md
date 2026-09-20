@@ -228,7 +228,7 @@ The order is stable failure, pinned-main failure, older-source pass, admission,
 then Git selection. Stable pass stops as not reproduced; main pass stops as
 fixed/release-specific. Untestable stable/main endpoints block. The deterministic
 older search considers approved source-SHA hints that ordinary ancestry queries
-verify, then oldest-first candidates in a bounded 4,096-commit main window.
+verify, then oldest-first candidates in a bounded 4,096-ancestor main window.
 SDK/version/URL claims are not converted to source observations or trusted tag
 mappings. Every selected source still requires a clean build and repeated sample.
 Search work is bounded by that window and the unchanged issue allowance.
@@ -269,10 +269,14 @@ Unsupported historical runtime/sample combinations remain untestable. There is
 no engine-specific FSI command, compiler runner, SDK installer, retargeting or
 `global.json` rewrite.
 
-The interval adds strict `decisions: [{ sha, outcome, observationDigest }]` and
-`remaining: [sha]` fields. Decisions are saved with observations and the next
-advance recomputes graph bounds from the authenticated ledger. The legacy
-`gitLog` is never executed. A lost selection worktree is reconstructed using
+The persisted interval contains good/bad SHAs, the legacy `gitLog`, and strict
+`decisions: [{ sha, outcome, observationDigest }]`. It does not store the
+potentially thousands of remaining SHAs in the 48 KiB checkpoint. Report intents
+include `interval.remaining: [sha]`, recomputed from Git on each advance.
+Reconstruction uses all valid comparable source observations in the interval,
+including failures and skips from older-endpoint search, not just bisect workers.
+Decisions are saved with observations; the legacy `gitLog` is never executed.
+A lost selection worktree is reconstructed using
 `bisect start --no-checkout` and typed `good`, `bad`, or `skip` arguments only;
 there is no stored replay string, `bisect run`, or interpretation of generic
 nonzero build exits as bad. Each selection pass has a five-minute wall-time cap
@@ -290,10 +294,16 @@ attempts and two assertion repetitions, with 90-minute builds, 110-minute
 workers and 300-second reproductions. **Six reservations consume 660 minutes**;
 the seventh does not fit even when each fixture finishes immediately. Candidate
 selection preserves room for candidate-plus-parent confirmation where feasible.
-Otherwise it returns the unconfirmed interval and consumed budget. A singleton
-interval returns `confirmation` with `candidate`, all relevant `parents`, and
-`requiresFreshConfirmation: true`; a separate consumer must reserve and perform
-fresh confirmation before any attribution.
+Admission has no next selected item yet, so it must not mistake the ledger's
+last completed item for that item after a successful retry. Actual work
+reservations still enforce the two-attempt limit. Confirmation checks both
+aggregate allowance/deadline and the remaining attempts for each concrete
+candidate and parent, including their cancelled reservations under the same
+approved input. Otherwise it returns the unconfirmed interval and consumed
+budget. A singleton interval returns `confirmation` with `candidate`, all
+relevant `parents`, and `requiresFreshConfirmation: true` only when those fresh
+reservations fit; a separate consumer must reserve and perform them before any
+attribution.
 
 `engine.test.cjs` uses real temporary Git histories and inexpensive injected
 revision evaluators, not product acceptance. It records every actual bisect
@@ -302,19 +312,27 @@ and malformed/stale evidence. Process/GitHub/clock dependencies are injectable
 at the existing runner boundaries; production defaults call the original modules.
 The scoped suite covers execution claims, cumulative cancellation/retry budgets,
 environment/input/main/stable epochs, lost worktrees, skips, toolchain transitions
-and uncertain histories.
+and uncertain histories. Real 1,000- and 4,096-commit intervals exercise compact
+checkpoint round-trips. Boundary cases check concrete confirmation attempts,
+the last two worker units, exact deadline capacity, and rejection of worker
+outcome/source/build/matrix/repetition mismatches without committing evidence.
 
 Fresh Windows x64 product acceptance is retained at
-`Q:\rb912-engine-acceptance-20260920`. The original workspace runner clean-built
+`Q:\rb912-engine-repair-20260920`. The original workspace runner clean-built
 `5a8b9adb034f420a5c2c1f577670c5eeeb454b7e` in build instance
-`d6c3ce9a-a9a9-4f70-ae93-3a99a68c9a36` using its approved measured
+`cda0551b-12a9-47bf-a4e7-372ba380a371` using its approved measured
 `11.0.100-rc.1.26420.103` archive, with unchanged `global.json` and two passing
-FSI assertions. Released SDK `10.0.401` and the fresh source products then matched
-all 43 existing reproduction-smoke expectations (23 passes, six intended product
-failures, 14 identity rejections). The scoped evidence-helper Release build/test
+FSI assertions. Released SDK `10.0.401` was reverified against current official
+metadata and its retained archive. It and the fresh source products then matched
+all 43 existing reproduction-smoke expectations (23 passes, six intended
+product failures, 14 identity rejections). The scoped evidence-helper Release build/test
 commands exited 0; that helper project contains no managed test cases.
+The targeted engine/model/state suite passed 498 tests and the full scoped suite
+passed 1,007, including 75 zero-bisect cases and 37 actual bisect subprocesses.
+Negative tests detected all eight in-memory removals of confirmation and
+worker-result integrity guards; repository files were not mutated for those probes.
 `final-acceptance-report.json` has SHA-256
-`ccf46ba63cb50dc9ddc89b824aebb0ada1cf6c96d0c4b2a22310039c299f4864`.
+`f4acb60b0a90bef48fc7df9f119be8cccbc76e664e54f057ec42798c179ef189`.
 This validates the original product runners, not a real regression's admitted
 interval, an activated workflow, or fresh culprit attribution.
 
