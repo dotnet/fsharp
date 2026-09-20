@@ -47,40 +47,48 @@ let private locateDotnetHost () =
 
     search (DirectoryInfo(AppContext.BaseDirectory))
 
-/// Locate the fsi built by this repository, alongside the test assembly's own output, and how to
-/// launch it.
-///
-/// Test output lives at `<artifacts>/bin/<project>/<configuration>/<framework>`, and fsi is its
-/// sibling at `<artifacts>/bin/fsi/<configuration>/<framework>`. net472's fsi is a native
-/// executable that runs directly; every other framework's is a managed dll run under the dotnet
-/// host — the same split `InteractiveHost.fs` makes for the window.
-let private locateFsi () =
+/// Where this build put its outputs: `<artifacts>/bin`, and the configuration and framework this
+/// test assembly was built for, which fsi shares.
+let buildOutput () =
     let baseDirectory =
         DirectoryInfo(AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar))
 
-    let framework = baseDirectory.Name
-    let configuration = baseDirectory.Parent.Name
-    let binDirectory = baseDirectory.Parent.Parent.Parent
-    let fsiDirectory = Path.Combine(binDirectory.FullName, "fsi", configuration, framework)
+    struct {|
+        BinDirectory = baseDirectory.Parent.Parent.Parent.FullName
+        Configuration = baseDirectory.Parent.Name
+        Framework = baseDirectory.Name
+    |}
 
-    if framework = "net472" then
-        let fsi = Path.Combine(fsiDirectory, "fsi.exe")
+/// The fsi built by this repository: a sibling of the test output at
+/// `<artifacts>/bin/fsi/<configuration>/<framework>`.
+let fsiOutputDirectory () =
+    let output = buildOutput ()
+    Path.Combine(output.BinDirectory, "fsi", output.Configuration, output.Framework)
 
-        if not (File.Exists fsi) then
-            failwith $"Could not find the fsi under test at '{fsi}'. Build src/fsi first."
+/// fsi is a managed dll run under the dotnet host — the same way `InteractiveHost.fs` launches it
+/// for the window.
+let private locateFsi (fsiDirectory: string) =
+    let fsi = Path.Combine(fsiDirectory, "fsi.dll")
 
-        fsi, []
-    else
-        let fsi = Path.Combine(fsiDirectory, "fsi.dll")
+    if not (File.Exists fsi) then
+        failwith $"Could not find the fsi under test at '{fsi}'. Build src/fsi first."
 
-        if not (File.Exists fsi) then
-            failwith $"Could not find the fsi under test at '{fsi}'. Build src/fsi first."
-
-        locateDotnetHost (), [ fsi ]
+    locateDotnetHost (), [ fsi ]
 
 /// A running session, plus everything needed to talk to it and to explain a failure.
+///
+/// `serverSwitches` spells the switch that turns the server on, for tests of the forms fsi accepts;
+/// `fsiDirectory` points at an fsi other than the build's own, for tests of what ships;
+/// `clientProcessId` names the process whose exit ends the session, this one by default.
 [<Sealed>]
-type FsiServerHarness(?extraArguments: string list, ?workingDirectory: string) =
+type FsiServerHarness
+    (
+        ?extraArguments: string list,
+        ?workingDirectory: string,
+        ?serverSwitches: string -> string list,
+        ?fsiDirectory: string,
+        ?clientProcessId: int
+    ) =
     // On Unix the pipe is a socket under $TMPDIR, and macOS caps socket paths at 104 characters.
     let pipeName = $"fsi{Guid.NewGuid():N}".Substring(0, 15)
     let standardOutput = StringBuilder()
@@ -99,14 +107,18 @@ type FsiServerHarness(?extraArguments: string list, ?workingDirectory: string) =
             argument
 
     let startInfo =
-        let fsiHost, leadingArguments = locateFsi ()
+        let fsiHost, leadingArguments =
+            locateFsi (defaultArg fsiDirectory (fsiOutputDirectory ()))
+
+        let serverSwitches =
+            defaultArg serverSwitches (fun pipeName -> [ $"--fsi-server-jsonrpc:{pipeName}" ])
 
         let arguments =
             [
                 yield! leadingArguments
                 "--nologo"
-                $"--fsi-server-jsonrpc:{pipeName}"
-                $"--fsi-server-client-pid:{Process.GetCurrentProcess().Id}"
+                yield! serverSwitches pipeName
+                $"--fsi-server-client-pid:{defaultArg clientProcessId (Process.GetCurrentProcess().Id)}"
                 yield! defaultArg extraArguments []
             ]
 
@@ -141,8 +153,15 @@ type FsiServerHarness(?extraArguments: string list, ?workingDirectory: string) =
         session.BeginErrorReadLine()
 
     let pipe =
+        // The server admits its own user only, and a client that says so too is turned away from
+        // a pipe somebody else opened under the same name.
         let pipe =
-            new NamedPipeClientStream(".", pipeName, PipeDirection.InOut, PipeOptions.Asynchronous)
+            new NamedPipeClientStream(
+                ".",
+                pipeName,
+                PipeDirection.InOut,
+                PipeOptions.Asynchronous ||| PipeOptions.CurrentUserOnly
+            )
 
         try
             pipe.Connect 60_000
@@ -163,9 +182,8 @@ type FsiServerHarness(?extraArguments: string list, ?workingDirectory: string) =
         rpc.StartListening()
         rpc
 
-    /// On failure, fold in what the session itself printed — the only way to see, say, which
-    /// StreamJsonRpc the session actually loaded if a request comes back "method not found"
-    /// against a target that plainly declares it.
+    /// On failure, fold in what the session itself printed: a protocol error alone rarely says what
+    /// the session actually did.
     let await (work: Task<'T>) (timeout: TimeSpan) =
         try
             if not (work.Wait timeout) then
@@ -203,7 +221,7 @@ type FsiServerHarness(?extraArguments: string list, ?workingDirectory: string) =
     /// Send a request whose parameters are a single object, as every method of this protocol but
     /// the argument-less ones expects.
     member _.BeginRequest<'T>(method: string, parameters: obj) : Task<'T> =
-        rpc.InvokeAsync<'T>(method, parameters)
+        rpc.InvokeWithParameterObjectAsync<'T>(method, parameters)
 
     member _.BeginRequest<'T>(method: string) : Task<'T> = rpc.InvokeAsync<'T>(method)
 
@@ -241,11 +259,8 @@ type FsiServerHarness(?extraArguments: string list, ?workingDirectory: string) =
             | None -> raise e
 
     /// Perform the handshake every host makes before submitting anything.
-    member this.Initialize(?clientProcessId: int) =
-        let clientProcessId =
-            defaultArg clientProcessId (Process.GetCurrentProcess().Id)
-
-        this.Request<InitializeResult>(Methods.Initialize, { clientProcessId = clientProcessId })
+    member this.Initialize() =
+        this.Request<InitializeResult> Methods.Initialize
 
     static member ExecuteParams(code: string, ?sourcePath: string, ?startLine: int) : ExecuteRequest =
         {

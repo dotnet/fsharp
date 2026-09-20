@@ -39,14 +39,6 @@ module Methods =
     let Shutdown = "fsi/shutdown"
 
 [<CLIMutable>]
-type InitializeRequest =
-    {
-        /// The process that owns this session. F# Interactive watches it and exits when it goes, so
-        /// that a crashed editor does not leave an orphan behind.
-        clientProcessId: int
-    }
-
-[<CLIMutable>]
 type InitializeResult =
     {
         /// <summary>

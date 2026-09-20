@@ -183,15 +183,6 @@ let evaluateSession (argv: string[]) =
         Console.InputEncoding <- System.Text.Encoding.UTF8
         Console.OutputEncoding <- System.Text.Encoding.UTF8
 
-    // A host may ask for the JSON-RPC server mode, in which interactions arrive on a named pipe
-    // instead of standard input. Recognised here because the server is driven from this entry
-    // point, alongside the event loop it evaluates on.
-    let jsonRpcPipeName = FSharp.Compiler.Interactive.Server.tryGetPipeName argv
-
-    let jsonRpcClientProcessId =
-        FSharp.Compiler.Interactive.Server.tryGetClientProcessId argv
-        |> ValueOption.ofOption
-
     try
         // Create the console reader
         let console = new FSharp.Compiler.Interactive.ReadLineConsole()
@@ -199,10 +190,7 @@ let evaluateSession (argv: string[]) =
         // Define the function we pass to the FsiEvaluationSession
         let getConsoleReadLine (probeToSeeIfConsoleWorks) =
             let consoleIsOperational =
-                if jsonRpcPipeName.IsSome then
-                    // The session is driven by a host, so there is no user at a console to read from.
-                    false
-                elif probeToSeeIfConsoleWorks then
+                if probeToSeeIfConsoleWorks then
                     //if progress then fprintfn outWriter "probing to see if console works..."
                     try
                         // Probe to see if the console looks functional on this version of .NET
@@ -263,6 +251,12 @@ let evaluateSession (argv: string[]) =
 
         let legacyReferenceResolver = LegacyMSBuildReferenceResolver.getResolver ()
 
+#if FSI_JSONRPC_SERVER
+        // Set when startup scripts are done and the loop interactions run on is the final one: a
+        // startup script may replace fsi.EventLoop, and a request posted to the old one is lost.
+        let eventLoopStarted = new System.Threading.ManualResetEvent(false)
+#endif
+
         // Update the configuration to include 'StartServer', WinFormsEventLoop and 'GetOptionalConsoleReadLine()'
         let rec fsiConfig =
             { new FsiEvaluationSessionHostConfig() with
@@ -281,6 +275,9 @@ let evaluateSession (argv: string[]) =
                     fsiConfig0.ReportUserCommandLineArgs args
 
                 member _.EventLoopRun() =
+#if FSI_JSONRPC_SERVER
+                    eventLoopStarted.Set() |> ignore
+#endif
 #if !FX_NO_WINFORMS
                     match (if fsiSession.IsGui then fsiWinFormsLoop.Value else None) with
                     | Some l -> (l :> IEventLoop).Run()
@@ -353,17 +350,26 @@ let evaluateSession (argv: string[]) =
                 | None -> s2
             ))
 
+        match fsiSession.JsonRpcServerPipeName with
+#if FSI_JSONRPC_SERVER
         // Serve the host on a background thread, leaving this thread to Run() and the event loop
         // that interactions are evaluated on.
-        match jsonRpcPipeName with
         | Some pipeName ->
             FSharp.Compiler.Interactive.Server.startOnBackgroundThread
                 fsiSession
                 fsiConfig
                 pipeName
-                jsonRpcClientProcessId
+                fsiSession.JsonRpcClientProcessId
+                eventLoopStarted
                 Console.Out
                 Console.Error
+#else
+        // Without the server the session would sit in Run() with nothing feeding it: no prompt, no
+        // standard input reader. An exit code gives the host something to report instead.
+        | Some _ ->
+            eprintfn "The JSON-RPC server mode is not available in this build of F# Interactive."
+            exit 1
+#endif
         | None -> ()
 
         // Start the session

@@ -1,8 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net472;$(FSharpNetCoreProductTargetFramework)</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' == 'Unix' or '$(BUILDING_USING_DOTNET)' == 'true'">$(FSharpNetCoreProductTargetFramework)</TargetFrameworks>
+    <!-- The server mode exists in the .NET fsi only (see src/fsi/fsi.targets). -->
+    <TargetFramework>$(FSharpNetCoreProductTargetFramework)</TargetFramework>
     <!-- xUnit3 requires test projects to be executable -->
     <OutputType>Exe</OutputType>
     <IsPackable>false</IsPackable>

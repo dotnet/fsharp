@@ -32,8 +32,8 @@ open System.Collections.Concurrent
 open System.Diagnostics
 open System.IO
 open System.IO.Pipes
+open System.Reflection
 open System.Runtime.InteropServices
-open System.Text
 open System.Threading
 open System.Threading.Tasks
 
@@ -42,13 +42,7 @@ open StreamJsonRpc
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Interactive.Protocol
 open FSharp.Compiler.Interactive.Shell
-
-/// The name of the command line option that turns on this server.
-[<Literal>]
-let internal JsonRpcServerOption = "--fsi-server-jsonrpc:"
-
-[<Literal>]
-let internal JsonRpcClientProcessIdOption = "--fsi-server-client-pid:"
+open FSharp.Compiler.Symbols
 
 /// File name reported for interactions that the host did not attribute to a source file.
 [<Literal>]
@@ -78,18 +72,12 @@ let private toDiagnosticInfo (diagnostic: FSharpDiagnostic) =
         endColumn = diagnostic.EndColumn
     }
 
-let private toValueInfo (name: string) (value: FsiValue) =
-    {
-        name = name
-        typeName =
-            match value.ReflectionType with
-            | null -> ""
-            | typeInfo -> typeInfo.FullName
-        value = sprintf "%A" value.ReflectionValue
-    }
+/// A path spliced into a directive as a verbatim string literal, in which only a quote needs escaping.
+let private verbatimString (text: string) =
+    "@\"" + text.Replace("\"", "\"\"") + "\""
 
-/// Watch the process that owns this session, so that an F# Interactive left behind by a
-/// crashed host does not survive as an orphan.
+/// Watch the process that owns this session, so that an F# Interactive left behind by a crashed
+/// host does not survive as an orphan.
 let private watchClientProcess (clientProcessId: int) =
     try
         let client = Process.GetProcessById clientProcessId
@@ -142,87 +130,6 @@ let private toExecutionResult
         workingDirectory = Directory.GetCurrentDirectory()
     }
 
-let private splitInteractions (code: string) =
-    let interactions = ResizeArray<string>()
-    let current = StringBuilder()
-    let mutable index = 0
-    let mutable inString = false
-    let mutable inChar = false
-    let mutable inLineComment = false
-    let mutable blockCommentDepth = 0
-
-    let isIdentifierPart (character: char) =
-        Char.IsLetterOrDigit character || character = '_' || character = '\''
-
-    let addInteraction () =
-        let text = current.ToString().Trim()
-
-        if text.Length > 0 then
-            interactions.Add text
-
-        current.Clear() |> ignore
-
-    while index < code.Length do
-        let character = code[index]
-        let nextCharacter = if index + 1 < code.Length then code[index + 1] else '\000'
-
-        if inLineComment then
-            current.Append character |> ignore
-            inLineComment <- character <> '\n' && character <> '\r'
-        elif blockCommentDepth > 0 then
-            current.Append character |> ignore
-
-            if character = '(' && nextCharacter = '*' then
-                current.Append nextCharacter |> ignore
-                blockCommentDepth <- blockCommentDepth + 1
-                index <- index + 1
-            elif character = '*' && nextCharacter = ')' then
-                current.Append nextCharacter |> ignore
-                blockCommentDepth <- blockCommentDepth - 1
-                index <- index + 1
-        elif inString then
-            current.Append character |> ignore
-
-            if character = '\\' && index + 1 < code.Length then
-                current.Append code[index + 1] |> ignore
-                index <- index + 1
-            elif character = '"' then
-                inString <- false
-        elif inChar then
-            current.Append character |> ignore
-
-            if character = '\\' && index + 1 < code.Length then
-                current.Append code[index + 1] |> ignore
-                index <- index + 1
-            elif character = '\'' then
-                inChar <- false
-        elif character = '/' && nextCharacter = '/' then
-            current.Append character |> ignore
-            current.Append nextCharacter |> ignore
-            inLineComment <- true
-            index <- index + 1
-        elif character = '(' && nextCharacter = '*' then
-            current.Append character |> ignore
-            current.Append nextCharacter |> ignore
-            blockCommentDepth <- 1
-            index <- index + 1
-        elif character = '"' then
-            current.Append character |> ignore
-            inString <- true
-        elif character = '\'' && (index = 0 || not (isIdentifierPart code[index - 1])) then
-            current.Append character |> ignore
-            inChar <- true
-        elif character = ';' && nextCharacter = ';' then
-            addInteraction ()
-            index <- index + 1
-        else
-            current.Append character |> ignore
-
-        index <- index + 1
-
-    addInteraction ()
-    interactions.ToArray()
-
 //-------------------------------------------------------------------------
 // The server
 //-------------------------------------------------------------------------
@@ -236,12 +143,17 @@ let private splitInteractions (code: string) =
 /// the session's willingness to run anything, and must not be reachable from the wire.
 /// </remarks>
 [<Sealed>]
-type internal ExecutionQueue() =
+type internal ExecutionQueue(ready: WaitHandle) =
     let queue = new BlockingCollection<unit -> unit>()
 
     let worker =
         Thread(
             (fun () ->
+                // Requests are accepted from the moment the host connects but run only once the session
+                // has finished its startup scripts: their bindings would otherwise be reported as the
+                // first request's, and one posted to an event loop a script then replaces is never run.
+                ready.WaitOne() |> ignore
+
                 for job in queue.GetConsumingEnumerable() do
                     // A job reports its own failures to the host; nothing here may escape and kill
                     // the worker, or the session would stop responding to every later request.
@@ -276,8 +188,8 @@ type internal ExecutionQueue() =
 /// interaction finishes, which leaves StreamJsonRpc free to dispatch an interrupt in the meantime.
 /// </para>
 /// <para>
-/// The server loop registers the six handlers explicitly with StreamJsonRpc, so this implementation
-/// type is internal and no extra members are exposed as RPC methods.
+/// The server loop registers the six handlers one by one, so this type stays internal and nothing
+/// beyond the protocol is callable from the wire.
 /// </para>
 /// </remarks>
 [<Sealed>]
@@ -297,11 +209,35 @@ type internal FsiRpcTarget
     let mutable initialized = false
     let values = ResizeArray<ValueInfo>()
 
+    /// Formatted by the session's own printer, so that the text matches the console's and obeys the
+    /// session's print settings. Formatting runs user code — a <c>ToString</c> override, a lazy
+    /// value — so a failure there becomes the value's text rather than a failed interaction.
+    let toValueInfo (name: string) (value: FsiValue) =
+        {
+            name = name
+            typeName =
+                match value.ReflectionType with
+                | null -> ""
+                | reflectionType -> reflectionType.FullName
+            value =
+                try
+                    fsiSession.FormatValue(value.ReflectionValue, value.ReflectionType)
+                with e ->
+                    $"<{e.GetType().Name}: {e.Message}>"
+        }
+
+    /// The console prints what the user bound, not the helper bindings the compiler introduces
+    /// around it, such as the `patternInput` of `let a, b = …`.
+    let isUserBinding (evaluation: EvaluationEventArgs) =
+        match evaluation.Symbol with
+        | :? FSharpMemberOrFunctionOrValue as value -> not value.IsCompilerGenerated
+        | _ -> true
+
     do
         fsiConfig.OnEvaluation.Add(fun evaluation ->
             match evaluation.FsiValue with
-            | Some value -> values.Add(toValueInfo evaluation.Name value)
-            | None -> ())
+            | Some value when isUserBinding evaluation -> values.Add(toValueInfo evaluation.Name value)
+            | _ -> ())
 
     /// <summary>
     /// Evaluate on the event loop thread, the same thread a console session evaluates on.
@@ -333,37 +269,12 @@ type internal FsiRpcTarget
 
         try
             values.Clear()
-            let outcomes = ResizeArray<Choice<FsiValue option, exn>>()
-            let diagnostics = ResizeArray<FSharpDiagnostic>()
-            let mutable stop = false
 
-            for interaction in splitInteractions code do
-                if not stop then
-                    let outcome, interactionDiagnostics =
-                        evaluateOnEventLoop (fun () -> fsiSession.EvalInteractionNonThrowing(interaction, scriptPath, cancellation.Token))
-
-                    outcomes.Add outcome
-                    diagnostics.AddRange interactionDiagnostics
-
-                    stop <-
-                        match outcome with
-                        | Choice2Of2 _ -> true
-                        | Choice1Of2 _ ->
-                            interactionDiagnostics
-                            |> Array.exists (fun diagnostic -> diagnostic.Severity = FSharpDiagnosticSeverity.Error)
-
-            let outcome =
-                match
-                    outcomes
-                    |> Seq.tryFindBack (function
-                        | Choice2Of2 _ -> true
-                        | Choice1Of2 _ -> false)
-                with
-                | Some outcome -> outcome
-                | None -> Choice1Of2 None
+            let outcome, diagnostics =
+                evaluateOnEventLoop (fun () -> fsiSession.EvalInteractionNonThrowing(code, scriptPath, cancellation.Token))
 
             flushConsole ()
-            toExecutionResult outcome (diagnostics.ToArray()) (values.ToArray()) cancellation.IsCancellationRequested
+            toExecutionResult outcome diagnostics (values.ToArray()) cancellation.IsCancellationRequested
         finally
             lock interruptLock (fun () -> currentCancellation <- null)
             cancellation.Dispose()
@@ -396,7 +307,7 @@ type internal FsiRpcTarget
         if String.IsNullOrEmpty sourcePath || not startLine.HasValue then
             code
         else
-            $"# {startLine.Value} @\"{sourcePath}\"\n{code}"
+            $"# {startLine.Value} {verbatimString sourcePath}\n{code}"
 
     /// Refuse anything that arrives before the handshake, so that a mis-sequenced host gets a clear
     /// answer rather than an obscure failure later on.
@@ -404,11 +315,7 @@ type internal FsiRpcTarget
         if not initialized then
             raise (LocalRpcException("'fsi/initialize' must be called first", ErrorCode = -32000))
 
-    [<JsonRpcMethod(Methods.Initialize, UseSingleObjectParameterDeserialization = true)>]
-    member _.Initialize(request: InitializeRequest) : InitializeResult =
-        if request.clientProcessId > 0 then
-            watchClientProcess request.clientProcessId
-
+    member _.Initialize() : InitializeResult =
         initialized <- true
 
         {
@@ -423,7 +330,6 @@ type internal FsiRpcTarget
             supportsInterrupt = true
         }
 
-    [<JsonRpcMethod(Methods.Execute, UseSingleObjectParameterDeserialization = true)>]
     member _.Execute(request: ExecuteRequest) : Task<ExecutionResult> =
         requireInitialized ()
 
@@ -437,18 +343,15 @@ type internal FsiRpcTarget
 
         queueInteraction (fun () -> runInteraction text scriptPath)
 
-    [<JsonRpcMethod(Methods.ExecuteFile, UseSingleObjectParameterDeserialization = true)>]
     member _.ExecuteFile(request: ExecuteFileRequest) : Task<ExecutionResult> =
         requireInitialized ()
 
         // Routed through #load so that the file joins the session the same way it would from a
         // script, rather than being replayed as anonymous text.
-        let path = request.path.Replace("\"", "\"\"")
-        queueInteraction (fun () -> runInteraction $"#load @\"{path}\"" request.path)
+        queueInteraction (fun () -> runInteraction $"#load {verbatimString request.path}" request.path)
 
     /// Apply the host's notion of where to look for sources and references, expressed as the
     /// directives a script would use.
-    [<JsonRpcMethod(Methods.SetPaths, UseSingleObjectParameterDeserialization = true)>]
     member _.SetPaths(request: SetPathsRequest) : Task<ExecutionResult> =
         requireInitialized ()
 
@@ -473,14 +376,14 @@ type internal FsiRpcTarget
                 with _ ->
                     ()
 
-                directives.Add $"#silentCd @\"{request.workingDirectory}\""
+                directives.Add $"#silentCd {verbatimString request.workingDirectory}"
 
             match request.includePaths with
             | null -> ()
             | paths ->
                 for path in paths do
                     if not (String.IsNullOrWhiteSpace path) then
-                        directives.Add $"#I @\"{path}\""
+                        directives.Add $"#I {verbatimString path}"
 
             if directives.Count = 0 then
                 toExecutionResult (Choice1Of2 None) [||] [||] false
@@ -492,7 +395,6 @@ type internal FsiRpcTarget
     /// Served straight away rather than queued, which is the point: an interrupt that waited its
     /// turn behind the interaction it is meant to stop would never arrive.
     /// </remarks>
-    [<JsonRpcMethod(Methods.Interrupt)>]
     member _.Interrupt() : InterruptResult =
         requireInitialized ()
 
@@ -515,7 +417,6 @@ type internal FsiRpcTarget
 
             { interrupted = true }
 
-    [<JsonRpcMethod(Methods.Shutdown)>]
     member _.Shutdown() : unit =
         requireInitialized ()
         shutdownRequested.TrySetResult() |> ignore
@@ -525,19 +426,25 @@ let private runServer
     (fsiSession: FsiEvaluationSession)
     (fsiConfig: FsiEvaluationSessionHostConfig)
     (pipeName: string)
-    (clientProcessId: int voption)
+    (clientProcessId: int option)
+    (eventLoopStarted: WaitHandle)
     (outWriter: TextWriter)
     (errorWriter: TextWriter)
     =
-    clientProcessId |> ValueOption.iter watchClientProcess
+    // Watched before the host has connected: a host that dies while starting up must not leave a
+    // session waiting on the pipe forever.
+    clientProcessId |> Option.iter watchClientProcess
 
+    // Any local process could otherwise open the pipe, and whoever connects first runs code as this
+    // user. CurrentUserOnly limits the pipe's access list to the current user and rejects a client
+    // running as anyone else.
     use pipe =
         new NamedPipeServerStream(
             pipeName,
             PipeDirection.InOut,
             maxNumberOfServerInstances = 1,
             transmissionMode = PipeTransmissionMode.Byte,
-            options = PipeOptions.Asynchronous
+            options = (PipeOptions.Asynchronous ||| PipeOptions.CurrentUserOnly)
         )
 
     pipe.WaitForConnection()
@@ -545,7 +452,7 @@ let private runServer
     let shutdownRequested =
         TaskCompletionSource<unit>(TaskCreationOptions.RunContinuationsAsynchronously)
 
-    let executionQueue = ExecutionQueue()
+    let executionQueue = ExecutionQueue eventLoopStarted
 
     let target =
         FsiRpcTarget(fsiSession, fsiConfig, outWriter, errorWriter, shutdownRequested, executionQueue)
@@ -553,39 +460,26 @@ let private runServer
     use rpc =
         new JsonRpc(new HeaderDelimitedMessageHandler(pipe, new JsonMessageFormatter()))
 
-    let initialize =
-        Func<InitializeRequest, InitializeResult>(fun request -> target.Initialize request)
+    // Registered one by one rather than by reflecting over the target, so that exactly the
+    // protocol's methods are callable. A request carrying its parameters as one object — the shape
+    // the protocol documents — lands in the handler's single parameter.
+    let register (rpcMethod: string) (takesRequestObject: bool) (handlerName: string) =
+        let handler =
+            typeof<FsiRpcTarget>.GetMethod(handlerName, BindingFlags.Instance ||| BindingFlags.Public ||| BindingFlags.NonPublic)
 
-    rpc.AddLocalRpcMethod(Methods.Initialize, initialize) |> ignore
+        rpc.AddLocalRpcMethod(
+            handler,
+            target,
+            JsonRpcMethodAttribute(rpcMethod, UseSingleObjectParameterDeserialization = takesRequestObject)
+        )
 
-    let execute =
-        Func<ExecuteRequest, Task<ExecutionResult>>(fun request -> target.Execute request)
+    register Methods.Initialize false (nameof target.Initialize)
+    register Methods.Execute true (nameof target.Execute)
+    register Methods.ExecuteFile true (nameof target.ExecuteFile)
+    register Methods.SetPaths true (nameof target.SetPaths)
+    register Methods.Interrupt false (nameof target.Interrupt)
+    register Methods.Shutdown false (nameof target.Shutdown)
 
-    rpc.AddLocalRpcMethod(Methods.Execute, execute) |> ignore
-
-    let executeFile =
-        Func<ExecuteFileRequest, Task<ExecutionResult>>(fun request -> target.ExecuteFile request)
-
-    rpc.AddLocalRpcMethod(Methods.ExecuteFile, executeFile) |> ignore
-
-    let setPaths =
-        Func<SetPathsRequest, Task<ExecutionResult>>(fun request -> target.SetPaths request)
-
-    rpc.AddLocalRpcMethod(Methods.SetPaths, setPaths) |> ignore
-
-    rpc.AddLocalRpcMethod(Methods.Interrupt, Func<InterruptResult>(fun () -> target.Interrupt()))
-    |> ignore
-
-    rpc.AddLocalRpcMethod(Methods.Shutdown, Action(fun () -> target.Shutdown()))
-    |> ignore
-
-    // Diagnostic breadcrumb: a host that gets "method not found" against a target that plainly
-    // declares the method has almost certainly loaded a second, different copy of this library, so
-    // its identity here is worth more than the rest of the trace.
-    let streamJsonRpc = typeof<JsonRpc>.Assembly
-    errorWriter.WriteLine $"FSI-SERVER: StreamJsonRpc {streamJsonRpc.GetName().Version} from {streamJsonRpc.Location}"
-
-    errorWriter.Flush()
     rpc.StartListening()
 
     // Either the host goes away or it asks to stop. Both end the session.
@@ -604,7 +498,8 @@ let internal startOnBackgroundThread
     (fsiSession: FsiEvaluationSession)
     (fsiConfig: FsiEvaluationSessionHostConfig)
     (pipeName: string)
-    (clientProcessId: int voption)
+    (clientProcessId: int option)
+    (eventLoopStarted: WaitHandle)
     (outWriter: TextWriter)
     (errorWriter: TextWriter)
     =
@@ -612,7 +507,7 @@ let internal startOnBackgroundThread
         Thread(
             (fun () ->
                 try
-                    runServer fsiSession fsiConfig pipeName clientProcessId outWriter errorWriter
+                    runServer fsiSession fsiConfig pipeName clientProcessId eventLoopStarted outWriter errorWriter
                 with e ->
                     errorWriter.WriteLine $"F# Interactive server terminated: {e}"
                     errorWriter.Flush()
@@ -625,58 +520,3 @@ let internal startOnBackgroundThread
         )
 
     thread.Start()
-
-/// <summary>
-/// Recognise <c>--fsi-server-jsonrpc:&lt;pipe name&gt;</c> in a command line, returning the pipe name.
-/// </summary>
-let internal tryGetPipeName (argv: string[]) =
-    let optionName = JsonRpcServerOption.TrimStart('-')
-    let optionPrefixes = [| JsonRpcServerOption; "-" + optionName; "/" + optionName |]
-
-    let rec scan (args: string list) =
-        match args with
-        | [] -> None
-        | arg :: rest ->
-            let prefix =
-                optionPrefixes
-                |> Array.tryFind (fun prefix -> arg.StartsWith(prefix, StringComparison.Ordinal))
-
-            match prefix with
-            | Some prefix ->
-                let name = arg.Substring(prefix.Length).Trim('"')
-                if String.IsNullOrWhiteSpace name then None else Some name
-            | None when
-                arg.Equals("--fsi-server-jsonrpc", StringComparison.Ordinal)
-                || arg.Equals("-fsi-server-jsonrpc", StringComparison.Ordinal)
-                || arg.Equals("/fsi-server-jsonrpc", StringComparison.Ordinal)
-                ->
-                match rest with
-                | name :: _ when not (String.IsNullOrWhiteSpace name) -> Some(name.Trim('"'))
-                | _ -> None
-            | None when arg.StartsWith("@", StringComparison.Ordinal) ->
-                let responseFile = arg.Substring(1)
-
-                if File.Exists responseFile then
-                    let arguments =
-                        File.ReadAllText(responseFile)
-                        |> fun text -> text.Split([| ' '; '\t'; '\r'; '\n' |], StringSplitOptions.RemoveEmptyEntries)
-
-                    scan (Array.toList arguments @ rest)
-                else
-                    scan rest
-            | None -> scan rest
-
-    scan (Array.toList argv)
-
-/// Recognise <c>--fsi-server-client-pid:&lt;pid&gt;</c>, returning the process that owns the session.
-let internal tryGetClientProcessId (argv: string[]) =
-    argv
-    |> Array.tryPick (fun arg ->
-        if arg.StartsWith(JsonRpcClientProcessIdOption, StringComparison.Ordinal) then
-            let value = arg.Substring(JsonRpcClientProcessIdOption.Length)
-
-            match Int32.TryParse value with
-            | true, processId when processId > 0 -> Some processId
-            | _ -> None
-        else
-            None)

@@ -6,6 +6,7 @@ open System
 open System.IO
 open System.Runtime.InteropServices
 open System.Threading
+open System.Xml.Linq
 open Xunit
 
 open FSharp.Compiler.Interactive.Protocol
@@ -40,6 +41,9 @@ standard output:
 {session.StandardOutput}
 standard error:
 {session.StandardError}"""
+
+let private temporaryPath (suffix: string) =
+    Path.Combine(Path.GetTempPath(), $"fsiServerTest_{Guid.NewGuid():N}{suffix}")
 
 //-------------------------------------------------------------------------
 // Handshake
@@ -79,15 +83,48 @@ let ``unknown methods are refused`` () =
 [<Fact>]
 let ``only the protocol's own methods are reachable`` () =
     withInitializedSession (fun session ->
-        // StreamJsonRpc offers every public member of the target it is given, so a member that
-        // closed the execution queue would let a host silently stop the session from ever running
-        // another interaction.
+        // The handlers are registered one by one, so an implementation member — here the one that
+        // would close the execution queue and stop the session from ever running another
+        // interaction — is not a method a host can call.
         match session.RequestExpectingError("Complete", obj ()) with
         | None -> failwith "the session accepted a method that is not part of the protocol"
         | Some code -> Assert.Equal(-32601, code)
 
         let result = session.Execute "1 + 1"
         Assert.True(succeeded result, describe session result))
+
+//-------------------------------------------------------------------------
+// The command line
+//-------------------------------------------------------------------------
+
+[<Fact>]
+let ``accepts the switch in its slash spelling`` () =
+    // fsi's own option parser recognises the switch, so the other spelling it takes for a long option
+    // turns the server on too.
+    use session =
+        new FsiServerHarness(serverSwitches = fun pipeName -> [ $"/fsi-server-jsonrpc:{pipeName}" ])
+
+    Assert.Equal(session.ProcessId, session.Initialize().processId)
+
+[<Fact>]
+let ``accepts the switch from a response file`` () =
+    let responseFile = temporaryPath ".rsp"
+
+    try
+        use session =
+            new FsiServerHarness(
+                serverSwitches =
+                    fun pipeName ->
+                        File.WriteAllText(responseFile, $"--fsi-server-jsonrpc:{pipeName}{Environment.NewLine}")
+                        [ $"@{responseFile}" ]
+            )
+
+        Assert.Equal(session.ProcessId, session.Initialize().processId)
+    finally
+        try
+            File.Delete responseFile
+        with _ ->
+            ()
 
 //-------------------------------------------------------------------------
 // Evaluating interactions
@@ -110,6 +147,73 @@ let ``returns evaluated values`` () =
         let result = session.Execute "let answer = 42"
         Assert.True(succeeded result, describe session result)
         Assert.Contains(result.values, fun value -> value.name = "answer" && value.value = "42"))
+
+[<Fact>]
+let ``returns the value of an expression as it`` () =
+    withInitializedSession (fun session ->
+        let result = session.Execute "6 * 7"
+        Assert.True(succeeded result, describe session result)
+        Assert.Contains(result.values, fun value -> value.name = "it" && value.value = "42"))
+
+[<Fact>]
+let ``does not report the helper bindings the compiler introduces`` () =
+    withInitializedSession (fun session ->
+        // `let a, b = …` compiles through a `patternInput` binding of its own, which must not be
+        // taken for the user's.
+        let result = session.Execute """let patternInput = "user";; let a, b = (1, 2)"""
+        Assert.True(succeeded result, describe session result)
+
+        let names = result.values |> Array.map _.name |> Array.sort
+        Assert.Equal<string[]>([| "a"; "b"; "patternInput" |], names))
+
+[<Fact>]
+let ``runs requests only after the startup scripts are done`` () =
+    let startup = temporaryPath ".fsx"
+
+    // Long enough for the request to arrive while the script is still running, and it replaces the
+    // event loop the way a script that drives its own UI toolkit does.
+    File.WriteAllText(
+        startup,
+        """
+System.Threading.Thread.Sleep 3000
+fsi.EventLoop <- System.Activator.CreateInstance(fsi.EventLoop.GetType(), true) :?> FSharp.Compiler.Interactive.IEventLoop
+let startupOnly = 123
+"""
+    )
+
+    try
+        use session = new FsiServerHarness(extraArguments = [ $"--use:{startup}" ])
+        session.Initialize() |> ignore
+
+        let result = session.Execute("let requested = 42", timeout = TimeSpan.FromSeconds 60.0)
+        Assert.True(succeeded result, describe session result)
+
+        // The script's own binding is not this request's.
+        Assert.Equal<string[]>([| "requested" |], result.values |> Array.map _.name)
+    finally
+        try
+            File.Delete startup
+        with _ ->
+            ()
+
+[<Fact>]
+let ``formats values with the session's own printer`` () =
+    withInitializedSession (fun session ->
+        let result = session.Execute "let many = [ 1 .. 200 ]"
+        Assert.True(succeeded result, describe session result)
+
+        // The session's print length applies, so the text is bounded the way the console's is.
+        let many = result.values |> Array.find (fun value -> value.name = "many")
+        Assert.Contains("...", many.value))
+
+[<Fact>]
+let ``a value whose ToString throws does not fail the interaction`` () =
+    withInitializedSession (fun session ->
+        let result =
+            session.Execute "type Loud() = override _.ToString() = failwith \"boom\";; let loud = Loud()"
+
+        Assert.True(succeeded result, describe session result)
+        Assert.Contains(result.values, fun value -> value.name = "loud"))
 
 [<Fact>]
 let ``keeps bindings across interactions`` () =
@@ -137,6 +241,34 @@ let ``keeps apostrophe-terminated identifiers intact`` () =
         let result = session.Execute "let value' = 42;; value' + 1"
         Assert.True(succeeded result, describe session result)
         Assert.True(session.WaitForOutput "val it: int = 43", describe session result))
+
+[<Fact>]
+let ``splits interactions the way the lexer does`` () =
+    withInitializedSession (fun session ->
+        // A verbatim string ending in a backslash, and `(*)` — the operator, not a comment. Each would
+        // fool a splitter that only looks for `;;` outside strings and comments.
+        let result =
+            session.Execute """let path = @"C:\";; let times = (*);; let after = path.Length + times 2 3"""
+
+        Assert.True(succeeded result, describe session result)
+
+        let next = session.Execute "after"
+        Assert.True(succeeded next, describe session next)
+        Assert.True(session.WaitForOutput "val it: int = 9", describe session next))
+
+[<Fact>]
+let ``keeps the bindings that ran before a failing interaction`` () =
+    withInitializedSession (fun session ->
+        let result = session.Execute "let kept = 1;; let broken: int = \"text\";; let never = 2"
+        Assert.False(succeeded result, describe session result)
+        Assert.NotEmpty(errors result)
+
+        let kept = session.Execute "kept"
+        Assert.True(succeeded kept, describe session kept)
+        Assert.True(session.WaitForOutput "val it: int = 1", describe session kept)
+
+        // Nothing after the failure ran.
+        Assert.False(succeeded (session.Execute "never")))
 
 [<Fact>]
 let ``reports what the interaction printed`` () =
@@ -218,6 +350,19 @@ let ``attributes diagnostics to the host's file and line`` () =
         Assert.EndsWith("Library.fs", reported[0].fileName))
 
 [<Fact>]
+let ``positions every interaction of a selection against the host's lines`` () =
+    withInitializedSession (fun session ->
+        // The line directive covers the whole selection, not just the text before its first `;;`.
+        let path = Path.Combine(Path.GetTempPath(), "Library.fs")
+
+        let result =
+            session.Execute("let ok = 1;;\nlet bad: int = \"text\"", sourcePath = path, startLine = 120)
+
+        let reported = errors result
+        Assert.NotEmpty reported
+        Assert.Equal(121, reported[0].startLine))
+
+[<Fact>]
 let ``reports an escaping exception`` () =
     withInitializedSession (fun session ->
         // Annotated so that the interaction compiles: a bare `failwith` is generic and would fail
@@ -256,9 +401,7 @@ let ``keeps serving after a failed interaction`` () =
 [<Fact>]
 let ``loads a script file`` () =
     withInitializedSession (fun session ->
-        let script =
-            Path.Combine(Path.GetTempPath(), $"fsiServerTest_{Guid.NewGuid():N}.fsx")
-
+        let script = temporaryPath ".fsx"
         File.WriteAllText(script, "printfn \"the script ran\"\n")
 
         try
@@ -283,9 +426,7 @@ let ``loads a script file whose path contains quotes`` () =
         ()
     else
         withInitializedSession (fun session ->
-            let directory =
-                Path.Combine(Path.GetTempPath(), $"fsiServerTest_{Guid.NewGuid():N}\"quoted")
-
+            let directory = temporaryPath "\"quoted"
             Directory.CreateDirectory directory |> ignore
             let script = Path.Combine(directory, "script.fsx")
             File.WriteAllText(script, "printfn \"quoted path loaded\"\n")
@@ -303,9 +444,7 @@ let ``loads a script file whose path contains quotes`` () =
 [<Fact>]
 let ``setPaths changes the working directory`` () =
     withInitializedSession (fun session ->
-        let directory =
-            Path.Combine(Path.GetTempPath(), $"fsiServerTest_{Guid.NewGuid():N}")
-
+        let directory = temporaryPath ""
         Directory.CreateDirectory directory |> ignore
 
         try
@@ -338,25 +477,21 @@ let ``setPaths changes the working directory`` () =
 [<Fact>]
 let ``setPaths rejects a missing working directory`` () =
     withInitializedSession (fun session ->
-        let directory = Path.Combine(Path.GetTempPath(), $"fsiServerTest_{Guid.NewGuid():N}")
         let error =
             session.RequestExpectingError(
                 Methods.SetPaths,
                 {
                     includePaths = [||]
-                    workingDirectory = directory
+                    workingDirectory = temporaryPath ""
                 }
             )
 
-        Assert.Equal(Some -32002, error)
-    )
+        Assert.Equal(Some -32002, error))
 
 [<Fact>]
 let ``setPaths waits its turn behind a running interaction`` () =
     withInitializedSession (fun session ->
-        let directory =
-            Path.Combine(Path.GetTempPath(), $"fsiServerTest_{Guid.NewGuid():N}")
-
+        let directory = temporaryPath ""
         Directory.CreateDirectory directory |> ignore
 
         try
@@ -474,11 +609,127 @@ let ``the session exits when its host process exits`` () =
     // A second session stands in for the editor: it is a real, live process to attach to, and
     // killing it must bring down the session that named it as its host.
     use host = new FsiServerHarness()
-    use session = new FsiServerHarness()
+    use session = new FsiServerHarness(clientProcessId = host.ProcessId)
 
-    session.Initialize(clientProcessId = host.ProcessId) |> ignore
+    session.Initialize() |> ignore
     Assert.False session.HasExited
 
     (host :> IDisposable).Dispose()
 
     Assert.True(session.WaitForExit 30_000, "the session outlived its host process")
+
+//-------------------------------------------------------------------------
+// What ships
+//-------------------------------------------------------------------------
+
+/// The `Microsoft.FSharp.Compiler` package is what the .NET SDK lays out as `dotnet fsi`: a file its
+/// manifest does not list is a file no installed SDK has.
+module private CompilerPackage =
+
+    let private repositoryRoot () =
+        let rec search (directory: DirectoryInfo) =
+            match directory with
+            | null -> failwith "the repository root was not found above the test output"
+            | directory ->
+                if File.Exists(Path.Combine(directory.FullName, "src", "Microsoft.FSharp.Compiler", "Microsoft.FSharp.Compiler.nuspec")) then
+                    directory.FullName
+                else
+                    search directory.Parent
+
+        search (DirectoryInfo AppContext.BaseDirectory)
+
+    let private projectDirectory () =
+        Path.Combine(repositoryRoot (), "src", "Microsoft.FSharp.Compiler")
+
+    let private localName (name: string) (element: XElement) = element.Name.LocalName = name
+
+    /// The assemblies the project file adds next to fsi.dll for the JSON-RPC server.
+    let serverAssemblies () =
+        XDocument.Load(Path.Combine(projectDirectory (), "Microsoft.FSharp.Compiler.fsproj")).Descendants()
+        |> Seq.filter (localName "FsiJsonRpcServerAssembly")
+        |> Seq.map (fun element -> element.Attribute(XName.Get "Include").Value)
+        |> Seq.toArray
+
+    /// The assemblies the manifest puts into the package's lib folder beside fsi.dll — by name, since
+    /// fsi's own output holds the same builds of them that the pack step picks up.
+    let libraryAssemblies () =
+        XDocument.Load(Path.Combine(projectDirectory (), "Microsoft.FSharp.Compiler.nuspec")).Descendants()
+        |> Seq.filter (localName "file")
+        |> Seq.choose (fun element ->
+            let source = element.Attribute(XName.Get "src").Value
+            let target = element.Attribute(XName.Get "target").Value
+
+            // Resource satellites are globbed. The compiler driver and the MSBuild tasks share the
+            // folder but are not fsi's to load, and fsi's own build does not produce them.
+            // The nuspec spells paths with backslashes, which Path.GetFileName only splits on Windows.
+            let name = source.Substring(source.LastIndexOf '\\' + 1)
+
+            if
+                target.StartsWith("lib", StringComparison.Ordinal)
+                && source.IndexOf("**", StringComparison.Ordinal) < 0
+                && name.EndsWith(".dll", StringComparison.Ordinal)
+                && name <> "fsc.dll"
+                && name <> "FSharp.Build.dll"
+            then
+                Some name
+            else
+                None)
+        |> Seq.toArray
+
+    /// Assemblies the SDK provides beside fsi from its own build, so the package leaves them out.
+    let providedBySdk (fileName: string) =
+        fileName.StartsWith("Microsoft.Build.", StringComparison.Ordinal)
+        || fileName.StartsWith("Microsoft.NET.StringTools", StringComparison.Ordinal)
+        || fileName.StartsWith("System.", StringComparison.Ordinal)
+
+[<Fact>]
+let ``the compiler package lists every assembly the server loads`` () =
+    // Whatever fsi's build restored beyond what this repository builds and what the SDK provides is
+    // there for the server, and has to be in the package or the shipped fsi cannot start the server.
+    let restoredForServer =
+        Directory.EnumerateFiles(fsiOutputDirectory (), "*.dll")
+        |> Seq.map Path.GetFileName
+        |> Seq.filter (fun name ->
+            not (name.StartsWith("FSharp.", StringComparison.Ordinal))
+            && name <> "fsi.dll"
+            && not (CompilerPackage.providedBySdk name))
+        |> Seq.sort
+        |> Seq.toArray
+
+    Assert.Equal<string[]>(restoredForServer, CompilerPackage.serverAssemblies () |> Array.sort)
+
+[<Fact>]
+let ``the shipped files are enough to start the server`` () =
+    // Stage exactly what an SDK has beside fsi.dll — the package's lib folder plus the assemblies the
+    // SDK adds from its own build — and start a session from there.
+    let staged = temporaryPath ""
+    Directory.CreateDirectory staged |> ignore
+
+    let fsiDirectory = fsiOutputDirectory ()
+
+    let stage (fileName: string) =
+        File.Copy(Path.Combine(fsiDirectory, fileName), Path.Combine(staged, fileName), true)
+
+    try
+        CompilerPackage.libraryAssemblies () |> Array.iter stage
+        CompilerPackage.serverAssemblies () |> Array.iter stage
+
+        Directory.EnumerateFiles(fsiDirectory, "*.dll")
+        |> Seq.map Path.GetFileName
+        |> Seq.filter CompilerPackage.providedBySdk
+        |> Seq.iter stage
+
+        // No fsi.deps.json: the SDK generates its own, and without one the host probes the directory,
+        // so the files themselves are what is under test.
+        stage "fsi.runtimeconfig.json"
+
+        use session = new FsiServerHarness(fsiDirectory = staged)
+        session.Initialize() |> ignore
+
+        let result = session.Execute "1 + 1"
+        Assert.True(succeeded result, describe session result)
+    finally
+        try
+            Directory.Delete(staged, true)
+        with _ ->
+            ()
