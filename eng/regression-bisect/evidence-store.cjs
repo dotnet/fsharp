@@ -136,11 +136,10 @@ async function reserveBlob(c, binding, receipt) {
     finally { if (quotaQueues.get(key) === settled) quotaQueues.delete(key); }
 }
 
-async function stage(c, source, binding, blob) {
+async function stage(c, source, binding, blob, signal = AbortSignal.timeout(c.timeoutMs)) {
     const stream = Buffer.isBuffer(source) ? Readable.from([source]) : source;
     requireValue(stream && typeof stream[Symbol.asyncIterator] === "function" &&
         typeof stream.destroy === "function", "bounded raw evidence stream required");
-    const signal = AbortSignal.timeout(c.timeoutMs);
     const abort = () => stream.destroy();
     signal.addEventListener("abort", abort, { once: true });
     // Filesystem I/O cannot be cancelled. Reject on time, but let outstanding I/O
@@ -272,19 +271,33 @@ function createFileEvidenceStore(config) {
     // Bound the entire lifecycle; an outstanding filesystem call may only finish cleanup after expiry.
     const read = (info, sink, signal = AbortSignal.timeout(c.timeoutMs)) =>
         boundedWait(readFile(info, sink, signal), signal);
-    const write = async (source, binding, blob) => {
-        const info = await stage(c, source, binding, blob);
+    const writeFile = async (source, binding, blob, signal) => {
+        const info = await stage(c, source, binding, blob, signal);
         const provisional = parseReference(reference(c, info, "1").url, c);
         const artifactId = (BigInt(`0x${hash(provisional.name).slice(0, 15)}`) + 1n).toString();
         const record = reference(c, info, artifactId);
+        const stored = parseReference(record.url, c);
+        let published = false, complete = false;
         try {
-            // The whole-issue lock protects this check/rename. A crash leaves either
-            // unpublished staging bytes or one complete, discoverable regular file.
-            if (await read(parseReference(record.url, c)) === null)
-                await fs.rename(info.file, provisional.file);
-            await read(parseReference(record.url, c));
+            try {
+                // The whole-issue lock protects this check/rename. Only this write's
+                // newly published object may be rolled back after late filesystem I/O.
+                if (await readFile(stored, undefined, signal) === null) {
+                    signal.throwIfAborted();
+                    await fs.rename(info.file, stored.file);
+                    published = true;
+                }
+                signal.throwIfAborted();
+                requireValue(await readFile(stored, undefined, signal) !== null, "published evidence disappeared");
+            } finally { await fs.rm(info.file, { force: true }); }
+            signal.throwIfAborted();
+            complete = true;
             return record;
-        } finally { await fs.rm(info.file, { force: true }); }
+        } finally { if (published && !complete) await fs.rm(stored.file, { force: true }); }
+    };
+    const write = (source, binding, blob) => {
+        const signal = AbortSignal.timeout(c.timeoutMs);
+        return boundedWait(writeFile(source, binding, blob, signal), signal);
     };
     return { ...readers(c, read),
         async findEvidence(query) {

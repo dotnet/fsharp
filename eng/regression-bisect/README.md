@@ -737,6 +737,10 @@ File reads use one deadline from directory validation through open, stat,
 streaming and final close, including failed-open cleanup. Discovery shares one
 deadline across directory enumeration and all candidate reads. Late filesystem
 completion cannot turn a timeout into successful verification or absence.
+File writes share one deadline across staging, replay checks, atomic publication,
+verification and staging cleanup. Expiry rejects without waiting for stalled
+filesystem calls; once they settle, a newly published object is rolled back.
+An already accepted replay object is never removed by that rollback.
 Download-time 404/410 responses require authenticated metadata confirmation
 before becoming absence; a missing signed blob alone is not that confirmation.
 If artifact finalization succeeds but its response is lost, a new store instance

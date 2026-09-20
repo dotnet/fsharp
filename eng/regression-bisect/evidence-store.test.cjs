@@ -22,6 +22,17 @@ async function fixture(t) {
     return { config, store: createFileEvidenceStore(config) };
 }
 
+function deadlineAtFault(t) {
+    // Arm the real timer at the injected stall, not during unrelated fixture I/O.
+    const timeout = AbortSignal.timeout;
+    const controller = new AbortController();
+    t.mock.method(AbortSignal, "timeout", () => controller.signal);
+    return () => {
+        const signal = timeout(20);
+        signal.addEventListener("abort", () => controller.abort(signal.reason), { once: true });
+    };
+}
+
 test("durable required bytes survive a fresh process without worker scratch or memory", async t => {
     const { config, store } = await fixture(t);
     const record = await store.writeEvidence(payload, binding);
@@ -205,6 +216,11 @@ async function actionsFixture(t) {
     const send = async (url, options) => {
         state.calls.push({ url, options });
         assert.equal(options.redirect, "manual");
+        const headers = new Headers(options.headers);
+        assert.equal(headers.get("Authorization"), url.startsWith(`${api}/`) ? `Bearer ${config.token}` :
+            url.startsWith("https://results-receiver.actions.githubusercontent.com/") ? `Bearer ${config.runtimeToken}` : null);
+        assert.equal(headers.get("Cookie"), null);
+        assert.equal(headers.get("Proxy-Authorization"), null);
         if (state.hook) {
             const result = await state.hook(url, options);
             if (result) return result;
@@ -273,6 +289,28 @@ test("Actions discovers an acknowledged-lost artifact using only reservation own
         buildInstanceId: binding.workId }), [record]);
     assert.deepEqual(await replay.findEvidence({ runId: config.runId, attempt: config.attempt,
         buildInstanceId: "not-completed" }), []);
+});
+
+test("Actions recovers and verifies owned evidence on the second discovery page", async t => {
+    const { store, config, state, send, response } = await actionsFixture(t);
+    const record = await store.writeEvidence(payload, binding);
+    const pages = [];
+    state.hook = url => {
+        if (!url.includes("/artifacts?")) return null;
+        const page = Number(new URL(url).searchParams.get("page"));
+        pages.push(page);
+        assert.ok(page === 1 || page === 2);
+        return response({ total_count: 101, artifacts: page === 1
+            ? Array.from({ length: 100 }, (_, i) => ({ id: i + 1, name: `unrelated-${i}` }))
+            : state.artifacts });
+    };
+    const replay = createActionsEvidenceStore(config, { send });
+    assert.deepEqual(await replay.findEvidence({
+        runId: config.runId, attempt: config.attempt, buildInstanceId: binding.workId,
+    }), [record]);
+    assert.deepEqual(pages, [1, 2]);
+    assert.deepEqual(await replay.readEvidence(record.url), payload);
+    assert.equal(state.calls.filter(c => c.options.method === "PUT").length, 1);
 });
 
 for (const lane of ["evidence", "blob"])
@@ -524,6 +562,7 @@ test(`file ${method} deadline bounds ${operation} and rejects late verification`
     const { config, store } = await fixture(t);
     const blob = method === "readBlob";
     const record = blob ? await store.writeBlob(Readable.from([payload]), approved()) : await store.writeEvidence(payload, binding);
+    const expire = deadlineAtFault(t);
     let release, entered, closed, handle, streams = 0;
     const stalled = new Promise(resolve => { release = resolve; });
     const reached = new Promise(resolve => { entered = resolve; });
@@ -558,6 +597,7 @@ test(`file ${method} deadline bounds ${operation} and rejects late verification`
     let timer, result;
     try {
         await reached;
+        expire();
         result = await Promise.race([outcome,
             new Promise(resolve => { timer = setTimeout(resolve, 500, "deadline missed"); })]);
     } finally {
@@ -583,6 +623,7 @@ for (const lane of ["evidence", "blob"])
 for (const stalledOperation of ["source", "open", "writeFile", "sync", "close", "failed-write-close"]) {
     test(`${provider} ${lane} staging deadline bounds stalled ${stalledOperation}`, { timeout: 5000 }, async t => {
         const { config, send } = await (provider === "file" ? fixture(t) : actionsFixture(t));
+        const expire = deadlineAtFault(t);
         let release, entered, cleaned;
         const stalled = new Promise(resolve => { release = resolve; });
         const reached = new Promise(resolve => { entered = resolve; });
@@ -619,6 +660,7 @@ for (const stalledOperation of ["source", "open", "writeFile", "sync", "close", 
         let timer;
         try {
             await reached;
+            expire();
             const result = await Promise.race([outcome,
                 new Promise(resolve => { timer = setTimeout(resolve, 1000, "deadline missed"); })]);
             assert.equal(result, "TimeoutError");
@@ -640,6 +682,75 @@ for (const stalledOperation of ["source", "open", "writeFile", "sync", "close", 
         assert.equal((await replay.verifyEvidence(record.url)).sha256, hash(payload));
     });
 }
+
+for (const lane of ["evidence", "blob"])
+for (const fault of ["rename-before", "rename-after", "verification", "cleanup", "failed-rename-cleanup", "replay-cleanup"])
+test(`file ${lane} post-staging deadline bounds ${fault} without late acceptance`, { timeout: 5000 }, async t => {
+    const { config, store } = await fixture(t);
+    const write = store => lane === "blob" ? store.writeBlob(Readable.from([payload]), approved())
+        : store.writeEvidence(payload, binding);
+    const existing = fault === "replay-cleanup" ? await write(store) : null;
+    const expire = deadlineAtFault(t);
+    let entered, release, cleaned, published = false;
+    const reached = new Promise(resolve => { entered = resolve; });
+    const stalled = new Promise(resolve => { release = resolve; });
+    const cleanup = new Promise(resolve => { cleaned = resolve; });
+    const pause = async () => { entered(); await stalled; };
+    const rename = fs.rename, rm = fs.rm, open = fs.open;
+    t.mock.method(fs, "rename", async (...args) => {
+        if (fault === "rename-before") await pause();
+        if (fault === "failed-rename-cleanup") throw new Error("lost rename");
+        await rename(...args);
+        published = true;
+        if (fault === "rename-after") await pause();
+    });
+    t.mock.method(fs, "open", async (...args) => {
+        if (fault === "verification" && published && args[0].endsWith(".bin")) await pause();
+        return open(...args);
+    });
+    t.mock.method(fs, "rm", async (file, ...args) => {
+        if (fault.endsWith("cleanup") && path.basename(file).startsWith(".upload-")) await pause();
+        await rm(file, ...args);
+        if (file.endsWith(".bin") || !published) cleaned();
+    });
+    const outcome = write(createFileEvidenceStore({ ...config, timeoutMs: 100 }))
+        .then(() => "accepted", error => error.name);
+    let timer, result;
+    try {
+        await reached;
+        expire();
+        result = await Promise.race([outcome,
+            new Promise(resolve => { timer = setTimeout(resolve, 500, "deadline missed"); })]);
+    } finally {
+        clearTimeout(timer);
+        release();
+        await outcome;
+    }
+    assert.equal(result, "TimeoutError");
+    assert.equal(await outcome, "TimeoutError");
+    assert.equal(AbortSignal.timeout.mock.callCount(), 1, "the complete write must share one deadline");
+    try {
+        assert.equal(await Promise.race([cleanup.then(() => "cleaned"),
+            new Promise(resolve => { timer = setTimeout(resolve, 500, "cleanup missed"); })]), "cleaned");
+    } finally { clearTimeout(timer); }
+    t.mock.restoreAll();
+    const files = (await fs.readdir(config.directory)).filter(n => !n.startsWith("quota-"));
+    assert.equal(files.length, existing ? 1 : 0, "only previously accepted objects may survive rollback");
+    if (existing) assert.equal((await store.verifyEvidence(existing.url)).sha256, hash(payload));
+    const { stdout } = await promisify(execFile)(process.execPath, ["-e", `
+        const {Readable}=require("node:stream");
+        const store=require(${JSON.stringify(path.join(__dirname, "evidence-store.cjs"))})
+            .createFileEvidenceStore(${JSON.stringify(config)});
+        (async()=>{
+            const record=await store${lane === "blob"
+                ? `.writeBlob(Readable.from([Buffer.from(${JSON.stringify(payload.toString())})]),${JSON.stringify(approved())})`
+                : `.writeEvidence(Buffer.from(${JSON.stringify(payload.toString())}),${JSON.stringify(binding)})`};
+            process.stdout.write(JSON.stringify(await store.verifyEvidence(record.url)));
+        })().catch(e=>{console.error(e);process.exit(5)});
+    `]);
+    assert.deepEqual(JSON.parse(stdout), { bytes: payload.length, sha256: hash(payload), sha512: hash(payload, "sha512") });
+    t.diagnostic(JSON.stringify({ lane, fault, result, bytes: payload.length, sha256: hash(payload), realLaunches: 0 }));
+});
 
 for (const target of ["blob", "metadata"])
 test(`HTTP verification deadline cancels a stalled ${target} body`, { timeout: 2000 }, async t => {
