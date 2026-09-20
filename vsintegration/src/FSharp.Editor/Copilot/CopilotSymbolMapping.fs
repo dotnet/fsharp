@@ -9,6 +9,8 @@ open System.Collections.Generic
 open Microsoft.VisualStudio.Copilot
 open Microsoft.VisualStudio.Imaging
 
+open Internal.Utilities.Library
+
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Syntax
 
