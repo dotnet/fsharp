@@ -143,19 +143,40 @@ module internal CopilotSymbolQuery =
         }
 
     /// The documents in the order a query visits them: the ones the user has open, the ones already
-    /// parsed into the cache, and the ones that would have to be parsed to answer.
+    /// parsed into the cache, and the ones that would have to be parsed to answer. Only the open ones
+    /// are resolved up front, by id rather than by walking the solution; the other two tiers are walked
+    /// when they are reached, so a query the open files already answer never looks at the rest.
     let private tiers (cache: FSharpNavigableItemsCache) (openIds: HashSet<DocumentId>) (solution: Solution) =
-        let opened = ResizeArray(openIds.Count)
-        let cached = ResizeArray()
-        let cold = ResizeArray()
+        let opened =
+            openIds
+            |> Seq.chooseV (fun id ->
+                match solution.GetDocument id with
+                | null -> ValueNone
+                | document when document.Project.IsFSharp -> ValueSome document
+                | _ -> ValueNone)
+            |> ResizeArray
 
-        for document in fsharpDocuments solution do
-            if openIds.Contains document.Id then
-                opened.Add document
-            else
-                match cache.TryGetCachedNavigableItems document.Id with
-                | ValueSome items -> cached.Add(struct (document, items))
-                | ValueNone -> cold.Add document
+        let unopened =
+            seq {
+                for document in fsharpDocuments solution do
+                    if not (openIds.Contains document.Id) then
+                        document
+            }
+
+        let cached =
+            seq {
+                for document in unopened do
+                    match cache.TryGetCachedNavigableItems document.Id with
+                    | ValueSome items -> struct (document, items)
+                    | ValueNone -> ()
+            }
+
+        let cold =
+            seq {
+                for document in unopened do
+                    if (cache.TryGetCachedNavigableItems document.Id).IsNone then
+                        document
+            }
 
         struct (opened, cached, cold)
 
