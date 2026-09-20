@@ -1021,6 +1021,7 @@ def validate_candidate(path, profile_path, *, checkpoint_on_cancel=False):
     root = owned_root(path)
     phase = "setup"
     cancelled = False
+    checkpoint_ready = False
     manifest = profile = None
     with owned_lock(root):
         state = m.read_json(root / "candidate.json")
@@ -1030,6 +1031,7 @@ def validate_candidate(path, profile_path, *, checkpoint_on_cancel=False):
             state = verify_candidate(root)
             manifest = c.read_bounded_json(root / "workload.json")
             checkpoint_path = root / "checkpoint.json"
+            require(unredirected(checkpoint_path, missing_ok=True), "Interrupted checkpoint redirected")
             require(resume or not checkpoint_path.exists(), "Interrupted checkpoint is not bound to candidate state")
             if resume:
                 require(unredirected(checkpoint_path) and
@@ -1042,6 +1044,7 @@ def validate_candidate(path, profile_path, *, checkpoint_on_cancel=False):
                 mem.validate_attempt(proposed)
                 reason = mem.resume_reason(previous, proposed, datetime.now(timezone.utc))
                 require(reason is None, reason)
+            checkpoint_ready = True
             state.update(lifecycle="validating", draft_eligible=False)
             m.write_json(root / "candidate.json", state)
             invariants = manifest["invariants"]
@@ -1129,6 +1132,7 @@ def validate_candidate(path, profile_path, *, checkpoint_on_cancel=False):
                 m.write_json(root / "cancelled-command.json", error.result)
             if cancelled and checkpoint_on_cancel:
                 try:
+                    require(checkpoint_ready, "Resume authentication incomplete")
                     verified = verify_candidate(root)
                     frozen_records(manifest)
                     state.update(compiler=verified["compiler"],
@@ -1166,6 +1170,7 @@ def complete_no_finding(path, profile_path):
         try:
             state = verify_candidate(root)
             manifest = c.read_bounded_json(root / "workload.json")
+            require(unredirected(root / "checkpoint.json", missing_ok=True), "Interrupted checkpoint redirected")
             require(not (root / "checkpoint.json").exists(), "Interrupted checkpoint is not bound to candidate state")
             frozen_records(manifest)
             phase = "collection"

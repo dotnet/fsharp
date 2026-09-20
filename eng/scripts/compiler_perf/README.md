@@ -201,6 +201,10 @@ a new disposable attempt. An interruption after checkpoint replacement but befor
 its candidate-state binding also requires a new attempt; the unbound checkpoint is
 preserved, not trusted as fresh state. This also blocks `validate --no-finding`
 with `blocked_setup` (exit code 2), even if no samples were collected.
+Both entry points reject redirected checkpoint entries, including dangling links
+or junctions. Cancellation before resume authentication completes refuses checkpoint
+replacement (`Resume authentication incomplete`), preserves the original checkpoint
+and patch, and discards only the owned candidate tree; cancellation still returns 130.
 
 The source checkout may contain staged, unstaged and untracked user work: the
 controller clones the requested committed base without resetting or cleaning that

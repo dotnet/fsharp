@@ -353,8 +353,8 @@ class ExperimentStateCases:
 
     def test_interruption_between_checkpoint_and_candidate_writes_blocks_resume(self):
         for operation in ("validate", "no-finding"):
-            for truncated in (False, True):
-                with self.subTest(operation=operation, truncated=truncated), \
+            for checkpoint_state in ("intact", "truncated", "redirected", "dangling"):
+                with self.subTest(operation=operation, checkpoint_state=checkpoint_state), \
                         candidate_fixture() as (root, repo, owned, patch):
                     write = e.m.write_json
 
@@ -372,17 +372,34 @@ class ExperimentStateCases:
                     saved = e.m.read_json(owned / "candidate.json")
                     self.assertIsNone(saved["outcome"])
                     self.assertNotIn("checkpoint", saved)
-                    if truncated:
-                        (owned / "checkpoint.json").write_bytes(b'{"schema_version":')
-                    checkpoint = (owned / "checkpoint.json").read_bytes()
-                    with mock.patch.object(e.mem, "publication_intent") as publish:
+                    checkpoint_path = owned / "checkpoint.json"
+                    redirected = checkpoint_state in ("redirected", "dangling")
+                    if checkpoint_state == "truncated":
+                        checkpoint_path.write_bytes(b'{"schema_version":')
+                    if redirected:
+                        checkpoint_path.unlink()
+                        target = root / "checkpoint-target"
+                        target.mkdir()
+                        if os.name == "nt":
+                            import _winapi
+                            _winapi.CreateJunction(str(target), str(checkpoint_path))
+                        else:
+                            checkpoint_path.symlink_to(target, target_is_directory=True)
+                        if checkpoint_state == "dangling":
+                            target.rmdir()
+                        else:
+                            (target / "sentinel").write_bytes(b"unrelated checkpoint target")
+                        checkpoint = os.readlink(checkpoint_path)
+                    else:
+                        checkpoint = checkpoint_path.read_bytes()
+                    with mock.patch.object(e.mem, "publication_intent", wraps=e.mem.publication_intent) as publish:
                         if operation == "no-finding":
                             exit_code = e.main(["validate", "--owned-root", str(owned),
                                                "--profile", str(root / "profile.json"), "--no-finding"])
                             result = e.m.read_json(owned / "candidate.json")
                         else:
                             result = e.validate_candidate(owned, root / "profile.json")
-                        self.assertIn("checkpoint is not bound", result["reason"])
+                        self.assertIn("checkpoint redirected" if redirected else "checkpoint is not bound", result["reason"])
                         self.assertEqual(result["outcome"], "blocked_setup")
                         self.assertFalse(result["draft_eligible"])
                         publish.assert_not_called()
@@ -390,5 +407,52 @@ class ExperimentStateCases:
                             self.assertEqual(exit_code, 2)
                             self.assertFalse((owned / "attempt.json").exists())
                     self.assertFalse((owned / "tree").exists())
-                    self.assertEqual((owned / "checkpoint.json").read_bytes(), checkpoint)
+                    if redirected:
+                        self.assertEqual(os.readlink(checkpoint_path), checkpoint)
+                        if checkpoint_state == "dangling":
+                            self.assertFalse(target.exists())
+                        else:
+                            self.assertEqual((target / "sentinel").read_bytes(), b"unrelated checkpoint target")
+                    else:
+                        self.assertEqual(checkpoint_path.read_bytes(), checkpoint)
                     self.assertEqual((owned / "proposal.patch").read_bytes(), patch)
+
+    def test_cancelled_resume_authentication_preserves_checkpoint(self):
+        for boundary in ("checkpoint_attempt", "resume_reason"):
+            for changed in (False, True):
+                with self.subTest(boundary=boundary, changed=changed), \
+                        candidate_fixture() as (root, repo, owned, patch):
+                    def interrupt(*args):
+                        samples = owned / "runs" / "interrupted" / "partial.json"
+                        samples.parent.mkdir(parents=True)
+                        e.m.write_json(samples, {"samples": [1, 2]})
+                        raise KeyboardInterrupt
+
+                    with mock.patch.object(e, "run_correctness", side_effect=interrupt), self.assertRaises(KeyboardInterrupt):
+                        e.validate_candidate(owned, root / "profile.json", checkpoint_on_cancel=True)
+                    checkpoint_path = owned / "checkpoint.json"
+                    original = checkpoint_path.read_bytes()
+                    binding = e.m.read_json(owned / "candidate.json")["checkpoint"]
+                    if changed:
+                        e.m.write_json(owned / "runs" / "interrupted" / "partial.json", {"samples": [3]})
+                    module = e if boundary == "checkpoint_attempt" else e.mem
+                    # Interrupt only authentication, allowing an erroneous cancellation writer to run.
+                    original_call = getattr(module, boundary)
+                    with mock.patch.object(module, boundary, wraps=original_call,
+                                           side_effect=[KeyboardInterrupt, mock.DEFAULT]), \
+                            self.assertRaises(KeyboardInterrupt):
+                        e.validate_candidate(owned, root / "profile.json", checkpoint_on_cancel=True)
+                    self.assertEqual(checkpoint_path.read_bytes(), original)
+                    result = e.m.read_json(owned / "candidate.json")
+                    self.assertEqual(result["checkpoint"], binding)
+                    self.assertEqual(result["outcome"], "cancelled")
+                    self.assertIn("checkpoint refused: Resume authentication incomplete", result["reason"])
+                    self.assertFalse(result["draft_eligible"])
+                    self.assertFalse((owned / "tree").exists())
+                    self.assertEqual((owned / "proposal.patch").read_bytes(), patch)
+                    with mock.patch.object(e.mem, "publication_intent", wraps=e.mem.publication_intent) as publish:
+                        result = e.validate_candidate(owned, root / "profile.json")
+                        self.assertEqual(result["outcome"], "blocked_setup")
+                        self.assertFalse(result["draft_eligible"])
+                        publish.assert_not_called()
+                    self.assertEqual(checkpoint_path.read_bytes(), original)
