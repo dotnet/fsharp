@@ -71,7 +71,7 @@ type RenameTest() =
         let source =
             """
 type RenameTest() =
-    member __.TestMethod() = "Hello, World!"
+    member this.TestMethod() = "Hello, World!"
     member __.TestMethodDoubleUnderscore() = __.TestMethod()
 """
 
