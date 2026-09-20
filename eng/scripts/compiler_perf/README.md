@@ -199,7 +199,8 @@ block resume, never initialize a fresh attempt or authorize a draft. The origina
 checkpoint and patch remain failure evidence. Older digest-only checkpoints require
 a new disposable attempt. An interruption after checkpoint replacement but before
 its candidate-state binding also requires a new attempt; the unbound checkpoint is
-preserved, not trusted as fresh state.
+preserved, not trusted as fresh state. This also blocks `validate --no-finding`
+with `blocked_setup` (exit code 2), even if no samples were collected.
 
 The source checkout may contain staged, unstaged and untracked user work: the
 controller clones the requested committed base without resetting or cleaning that

@@ -1166,6 +1166,7 @@ def complete_no_finding(path, profile_path):
         try:
             state = verify_candidate(root)
             manifest = c.read_bounded_json(root / "workload.json")
+            require(not (root / "checkpoint.json").exists(), "Interrupted checkpoint is not bound to candidate state")
             frozen_records(manifest)
             phase = "collection"
             profile = c.analyze_profile(profile_path)

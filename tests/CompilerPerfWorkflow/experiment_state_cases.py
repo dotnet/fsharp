@@ -352,24 +352,43 @@ class ExperimentStateCases:
             self.assertFalse((owned / "tree").exists())
 
     def test_interruption_between_checkpoint_and_candidate_writes_blocks_resume(self):
-        with candidate_fixture() as (root, repo, owned, patch):
-            write = e.m.write_json
+        for operation in ("validate", "no-finding"):
+            for truncated in (False, True):
+                with self.subTest(operation=operation, truncated=truncated), \
+                        candidate_fixture() as (root, repo, owned, patch):
+                    write = e.m.write_json
 
-            def interrupt_binding(path, value):
-                if Path(path) == owned / "candidate.json" and value.get("outcome") == "cancelled" and "checkpoint" in value:
-                    raise OSError("interrupted candidate binding")
-                return write(path, value)
+                    def interrupt_binding(path, value):
+                        if Path(path) == owned / "candidate.json" and value.get("outcome") == "cancelled" and "checkpoint" in value:
+                            raise OSError("interrupted candidate binding")
+                        return write(path, value)
 
-            with mock.patch.object(e, "run_correctness", side_effect=KeyboardInterrupt), \
-                    mock.patch.object(e.m, "write_json", side_effect=interrupt_binding), \
-                    self.assertRaisesRegex(OSError, "interrupted candidate binding"):
-                e.validate_candidate(owned, root / "profile.json", checkpoint_on_cancel=True)
-            checkpoint = (owned / "checkpoint.json").read_bytes()
-            self.assertEqual(e.mem.load_state(owned / "checkpoint.json")["status"], "ready")
-            with mock.patch.object(e.mem, "publication_intent") as publish:
-                result = e.validate_candidate(owned, root / "profile.json")
-                self.assertIn("checkpoint is not bound", result["reason"])
-                self.assertFalse(result["draft_eligible"])
-                publish.assert_not_called()
-            self.assertEqual((owned / "checkpoint.json").read_bytes(), checkpoint)
-            self.assertEqual((owned / "proposal.patch").read_bytes(), patch)
+                    with mock.patch.object(e, "run_correctness", side_effect=KeyboardInterrupt), \
+                            mock.patch.object(e.m, "write_json", side_effect=interrupt_binding), \
+                            self.assertRaisesRegex(OSError, "interrupted candidate binding"):
+                        e.validate_candidate(owned, root / "profile.json", checkpoint_on_cancel=True)
+                    self.assertEqual(e.mem.load_state(owned / "checkpoint.json")["status"], "ready")
+                    self.assertFalse((owned / "runs").exists())
+                    saved = e.m.read_json(owned / "candidate.json")
+                    self.assertIsNone(saved["outcome"])
+                    self.assertNotIn("checkpoint", saved)
+                    if truncated:
+                        (owned / "checkpoint.json").write_bytes(b'{"schema_version":')
+                    checkpoint = (owned / "checkpoint.json").read_bytes()
+                    with mock.patch.object(e.mem, "publication_intent") as publish:
+                        if operation == "no-finding":
+                            exit_code = e.main(["validate", "--owned-root", str(owned),
+                                               "--profile", str(root / "profile.json"), "--no-finding"])
+                            result = e.m.read_json(owned / "candidate.json")
+                        else:
+                            result = e.validate_candidate(owned, root / "profile.json")
+                        self.assertIn("checkpoint is not bound", result["reason"])
+                        self.assertEqual(result["outcome"], "blocked_setup")
+                        self.assertFalse(result["draft_eligible"])
+                        publish.assert_not_called()
+                        if operation == "no-finding":
+                            self.assertEqual(exit_code, 2)
+                            self.assertFalse((owned / "attempt.json").exists())
+                    self.assertFalse((owned / "tree").exists())
+                    self.assertEqual((owned / "checkpoint.json").read_bytes(), checkpoint)
+                    self.assertEqual((owned / "proposal.patch").read_bytes(), patch)
