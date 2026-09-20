@@ -83,6 +83,7 @@ type LanguageFeature =
     | TypeArgumentDependencyOrdering
     | ErrorOnBitwiseOpsOnNonIntegralEnums
     | OptimizeClosureIfNotInlined
+    | ReraiseInComputationExpressions
 
 /// LanguageVersion management
 type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array) =
@@ -205,6 +206,7 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
                 LanguageFeature.RuntimeAsync, previewVersion
                 LanguageFeature.RecordConstructorSyntax, previewVersion // Allow constructing a record via its all-fields constructor, e.g. MyRecord(a, b)
                 LanguageFeature.RequireNamedArguments, previewVersion // FS-1095: enforce named arguments at call sites of methods marked with RequireNamedArgumentsAttribute
+                LanguageFeature.ReraiseInComputationExpressions, previewVersion
 
                 // Unfinished features that still need work before they can be assigned a release language version.
                 LanguageFeature.FromEndSlicing, previewVersion // Unfinished features --- needs work
@@ -371,6 +373,7 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
         | LanguageFeature.TypeArgumentDependencyOrdering -> FSComp.SR.featureTypeArgumentDependencyOrdering ()
         | LanguageFeature.ErrorOnBitwiseOpsOnNonIntegralEnums -> FSComp.SR.featureErrorOnBitwiseOpsOnNonIntegralEnums ()
         | LanguageFeature.OptimizeClosureIfNotInlined -> FSComp.SR.featureOptimizeClosureIfNotInlined ()
+        | LanguageFeature.ReraiseInComputationExpressions -> FSComp.SR.featureReraiseInComputationExpressions ()
 
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =
