@@ -1,6 +1,6 @@
 const { createHash } = require("node:crypto");
 const {
-    fingerprintInput: fingerprint, validateObservation, validateConfirmation, validateAssociations, admitBisection,
+    fingerprintInput: fingerprint, validateObservation, validateConfirmation, validateAssociations, validateBoundaryEndpoints,
 } = require("./model.cjs");
 const engine = require("./engine.cjs");
 const state = require("./state.cjs");
@@ -142,16 +142,29 @@ async function confirmBoundary({ intent, now }, deps) {
         context = input.context;
         const loaded = await state.loadCheckpoint(deps.transport, context);
         cp = loaded.checkpoint;
-        requireValue(loaded.executionAllowed && cp.pending === null, loaded.blockers.join("; ") || "pending worker");
-        requireValue(intent?.requiresFreshConfirmation === true && ["confirmation", "blocked"].includes(intent.status) &&
+        requireValue(loaded.executionAllowed, loaded.blockers.join("; "));
+        requireValue(intent?.requiresFreshConfirmation === true && ["confirmation", "blocked", "complete"].includes(intent.status) &&
             intent.generation === cp.generation && cp.state.phase === intent.status &&
             intent.interval && cp.state.interval &&
             equal(cp.state.interval, (({ remaining, ...i }) => i)(intent.interval)), "stale or unauthenticated confirmation intent");
+        if (cp.state.phase === "complete" && cp.state.confirmation)
+            return { status: "confirmed", reason: cp.state.confirmation.reason, confirmation: cp.state.confirmation,
+                generation: cp.generation, budget: cp.state.budget.consumed };
+        if (cp.pending) {
+            requireValue(cp.state.confirmation && cp.pending.request.phase === "confirmation", "pending non-confirmation worker");
+            const run = await deps.transport.getRun(cp.pending.owner.runId, cp.pending.owner.attempt);
+            requireValue(run.status === "completed", "pending confirmation worker has an active or unknown owner");
+            cp = await state.cancelCompletedWork(deps.transport, context, { generation: cp.generation });
+        }
         const candidate = intent.candidate ?? cp.state.interval.badSha;
         requireValue(candidate === cp.state.interval.badSha, "candidate does not match admitted interval");
+        const saved = cp.state.confirmation;
+        requireValue(!saved || saved.epoch === cp.state.epoch && saved.candidate === candidate &&
+            equal(saved.interval?.remaining, intent.interval.remaining), "saved confirmation does not match selected interval");
         confirmation = {
             schemaVersion: 1, epoch: cp.state.epoch, manifestDigest: cp.state.approvalFingerprint,
-            startGeneration: cp.generation, candidate, classification: "unconfirmed-candidate", reason: "confirmation not completed",
+            startGeneration: saved?.startGeneration ?? cp.generation, candidate,
+            classification: "unconfirmed-candidate", reason: "confirmation not completed",
             interval: { goodSha: cp.state.interval.goodSha, badSha: candidate, remaining: null },
             parents: [], candidateObservationDigest: null, searchObservationDigest: null,
             history: { commits: [], monotonicity: "not-contradicted", toolchainCoupled: false },
@@ -178,7 +191,8 @@ async function confirmBoundary({ intent, now }, deps) {
             await history.ancestor(cp.state.interval.goodSha, parent.sourceSha) && await history.ancestor(parent.sourceSha, history.main);
         retain();
         requireValue(confirmation.parents.every(p => p.comparable), "parent outside verified comparable lineage");
-        const observations = Object.entries(cp.observations).filter(([, r]) => r.valid).map(([id]) =>
+        const observations = Object.entries(cp.observations).filter(([, r]) => r.valid &&
+            cp.records.find(work => work.id === r.attemptId).generation <= confirmation.startGeneration).map(([id]) =>
             [id, engine.authenticated(cp, id, deps.environments)]);
         const source = (target, outcome) => observations.find(([, o]) => o.kind === "source" &&
             o.target.sourceSha === target && o.outcome.outcome === outcome);
@@ -188,7 +202,7 @@ async function confirmBoundary({ intent, now }, deps) {
         retain();
         const good = source(cp.state.interval.goodSha, "pass");
         requireValue(good, "interval lacks authenticated passing source");
-        const admission = admitBisection({
+        const admission = validateBoundaryEndpoints({
             manifest: cp.state.manifest, stable: engine.authenticated(cp, cp.state.endpointEvidence.stable, deps.environments),
             main: engine.authenticated(cp, cp.state.endpointEvidence.main, deps.environments), good: good[1],
             ancestry: { goodSha: good[1].target.sourceSha, badSha: history.main, pinnedMainSha: history.main,
@@ -232,28 +246,15 @@ async function confirmBoundary({ intent, now }, deps) {
         } else requireValue(producer.version === "0.0.0" && producer.sha256 === hash(""), "invalid absent producer identity");
         const targets = [candidate, ...candidateInfo.parents];
         fits();
-        requireValue(engine.capacity(cp, targets.length, now, targets), "budget cannot afford independent candidate and all parents");
         const initialBuilds = new Set(observations.map(([, o]) => o.buildInstanceId));
         for (const sourceSha of targets) {
-            const current = await engine.currentInput(clock().toISOString(), deps);
-            requireValue(current.context, current.reason);
-            context = current.context;
-            const fresh = await state.loadCheckpoint(deps.transport, context);
-            requireValue(fresh.executionAllowed && fresh.checkpoint.generation === cp.generation &&
-                fresh.checkpoint.state.epoch === confirmation.epoch, "confirmation checkpoint changed");
-            const reservation = await state.reserveWork(deps.transport, context, {
-                generation: cp.generation, attemptId: fingerprint({ epoch: confirmation.epoch,
-                    startGeneration: confirmation.startGeneration, sourceSha, owner: context.owner }).slice(0, 32),
-                request: { kind: "source", target: { sourceSha }, endpoint: null, phase: "confirmation" },
-            });
-            cp = await engine.executeInvestigationWork({ status: "work", reservation, binding: {
-                issue: context.issue, issueFingerprint: context.issueFingerprint,
-                pinnedMainSha: context.pinnedMainSha, environmentFingerprint: context.environmentFingerprint,
-            } }, deps);
-            requireValue(cp.observations, cp.reason ?? "confirmation worker did not commit");
-            const record = cp.records.find(r => r.id === reservation.id);
+            const record = cp.records.find(r => r.request.phase === "confirmation" &&
+                r.generation > confirmation.startGeneration && r.epoch === confirmation.epoch &&
+                r.request.target.sourceSha === sourceSha && r.status === "committed");
+            if (!record) continue;
             const o = engine.authenticated(cp, record.observationDigest, deps.environments);
-            validateObservation(o, cp.state.manifest, { finalConfirmation: { runId: reservation.owner.runId, buildInstanceId: reservation.id } });
+            validateObservation(o, cp.state.manifest, { finalConfirmation: { runId: record.owner.runId, buildInstanceId: record.id } });
+            requireValue(record.executionGeneration !== undefined, "confirmation execution was not claimed");
             requireValue(!initialBuilds.has(o.buildInstanceId) && o.target.sourceSha === sourceSha, "reused build or wrong source");
             initialBuilds.add(o.buildInstanceId);
             requireValue(o.cells.every(c => c.outcome.outcome === "untestable" || c.buildToolchain) &&
@@ -264,6 +265,28 @@ async function confirmBoundary({ intent, now }, deps) {
             if (sourceSha === candidate) confirmation.candidateObservationDigest = record.observationDigest;
             else confirmation.parents.find(p => p.sourceSha === sourceSha).observationDigest = record.observationDigest;
             retain();
+        }
+        const missing = targets.filter(sourceSha => sourceSha === candidate ? !confirmation.candidateObservationDigest :
+            !confirmation.parents.find(p => p.sourceSha === sourceSha).observationDigest);
+        if (missing.length) {
+            requireValue(engine.capacity(cp, missing.length, clock().toISOString(), missing),
+                "budget cannot afford independent candidate and all parents");
+            cp = await state.recordConfirmation(deps.transport, context, {
+                generation: cp.generation, confirmation, phase: "confirmation",
+            });
+            const current = await engine.currentInput(clock().toISOString(), deps);
+            requireValue(current.context, current.reason);
+            context = current.context;
+            signal.throwIfAborted();
+            const reservation = await state.reserveWork(deps.transport, context, {
+                generation: cp.generation, attemptId: fingerprint({ epoch: confirmation.epoch,
+                    startGeneration: confirmation.startGeneration, sequence: cp.sequence + 1, owner: context.owner }).slice(0, 32),
+                request: { kind: "source", target: { sourceSha: missing[0] }, endpoint: null, phase: "confirmation" },
+            });
+            return { status: "work", reservation, binding: {
+                issue: context.issue, issueFingerprint: context.issueFingerprint,
+                pinnedMainSha: context.pinnedMainSha, environmentFingerprint: context.environmentFingerprint,
+            } };
         }
         const candidateObservation = cp.observations[confirmation.candidateObservationDigest].data;
         requireValue(candidateObservation.outcome.outcome === "product-failure", "candidate no longer deterministically fails");

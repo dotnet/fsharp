@@ -233,6 +233,17 @@ async function advanceInvestigation({ now }, deps) {
             if (run.status !== "completed") return report("blocked", "work already reserved by an active owner",
                 { pending: { id: cp.pending.id, owner, deadline: cp.pending.deadline } });
         }
+        if (cp.state.confirmation && ["confirmation", "complete"].includes(cp.state.phase)) {
+            history = await historyWorkspace(deps.history, deps.execute ?? execute, signal);
+            if (history.main !== cp.state.pinnedMainSha) {
+                context.pinnedMainSha = history.main;
+                cp = await invalidateStaleEvidence(deps.transport, context, { generation: cp.generation });
+            } else return report(cp.state.phase, cp.state.confirmation.reason, {
+                candidate: cp.state.confirmation.candidate, parents: cp.state.confirmation.parents.map(p => p.sourceSha),
+                interval: { ...cp.state.interval, remaining: cp.state.confirmation.interval.remaining },
+                generation: cp.generation, commands: history.commands,
+            });
+        }
         let selected;
         const stableId = cp.state.endpointEvidence.stable;
         if (!stableId) selected = { request: { kind: "released", target: { sdk: context.stableSdk }, endpoint: "stable", phase: "stable" } };
@@ -243,7 +254,7 @@ async function advanceInvestigation({ now }, deps) {
                 stable.outcome.outcome === "pass" ? "stopped" : "blocked",
                 stable.outcome.outcome === "pass" ? "not reproduced on latest stable" : `stable untestable: ${stable.outcome.reason}`);
             else {
-                history = await historyWorkspace(deps.history, deps.execute ?? execute, signal);
+                history ??= await historyWorkspace(deps.history, deps.execute ?? execute, signal);
                 if (history.main !== cp.state.pinnedMainSha) {
                     context.pinnedMainSha = history.main;
                     cp = await invalidateStaleEvidence(deps.transport, context, { generation: cp.generation });

@@ -410,7 +410,7 @@ function fingerprintEpoch(manifest, budget, pinnedMainSha) {
     });
 }
 
-function admitBisection(input) {
+function validateBoundaryEndpoints(input) {
     try {
         object(input, {
             manifest: validateManifest, stable: () => {}, main: () => {}, good: () => {},
@@ -450,12 +450,6 @@ function admitBisection(input) {
         if (stable.outcome.outcome !== "product-failure") return { decision: "stop", reason: "not reproduced on latest stable" };
         if (main.outcome.outcome !== "product-failure") return { decision: "stop", reason: "release-specific or already fixed on main" };
         if (good.outcome.outcome !== "pass") return { decision: "stop", reason: "missing passing source endpoint" };
-        const limits = budget.policy.limits;
-        check(budget.pendingWork !== null ? budget.pendingWork.reserved.sourceBuilds === 1 :
-            budget.consumed.sourceBuilds < limits.sourceBuilds && budget.consumed.workerUnits < limits.workerUnits &&
-            budget.consumed.reservedMinutes + limits.workerTimeoutMinutes <= limits.reservedMinutes &&
-            (budget.attempts.find(a => a.workItemId === budget.nextWorkItemId)?.count ?? 0) < limits.attemptsPerItem,
-        "admission", "insufficient remaining budget");
         return {
             decision: "admit", reason: "verified stable failure, pinned-main failure, and comparable ancestor pass",
             ...(toolchainTransitions.length ? { toolchainTransitions } : {}),
@@ -464,6 +458,17 @@ function admitBisection(input) {
         if (!(error instanceof ContractError)) throw error;
         return { decision: "blocked", reason: error.message };
     }
+}
+
+function admitBisection(input) {
+    const endpoints = validateBoundaryEndpoints(input);
+    if (endpoints.decision !== "admit") return endpoints;
+    const { budget } = input, { limits } = budget.policy;
+    const capacity = budget.pendingWork !== null ? budget.pendingWork.reserved.sourceBuilds === 1 :
+        budget.consumed.sourceBuilds < limits.sourceBuilds && budget.consumed.workerUnits < limits.workerUnits &&
+        budget.consumed.reservedMinutes + limits.workerTimeoutMinutes <= limits.reservedMinutes &&
+        (budget.attempts.find(a => a.workItemId === budget.nextWorkItemId)?.count ?? 0) < limits.attemptsPerItem;
+    return capacity ? endpoints : { decision: "blocked", reason: "admission: insufficient remaining budget" };
 }
 
 function validateAssociations(value) {
@@ -642,6 +647,7 @@ function validateState(state) {
 }
 
 module.exports = {
+    validateBoundaryEndpoints,
     isEligibleIssue, validatePolicy, validateManifest, fingerprintInput, classifyAttempts,
     validateObservation, admitBisection, validateOutcome, validateState, fingerprintEpoch,
     validateAssociations, validateConfirmation, validateConfirmationEvidence,

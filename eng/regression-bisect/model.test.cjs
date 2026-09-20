@@ -2,11 +2,24 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const {
     isEligibleIssue, validatePolicy, validateManifest, fingerprintInput, fingerprintEpoch,
-    classifyAttempts, validateOutcome, validateObservation, validateState, admitBisection, validateConfirmation,
+    classifyAttempts, validateOutcome, validateObservation, validateState, admitBisection, validateBoundaryEndpoints, validateConfirmation,
 } = require("./model.cjs");
 const { policy, manifest, attempt, observation, admission, state, seal, sha, digest, buildToolchain } = require("./fixtures/contracts.cjs");
 
 const rejects = (fn, pattern = /./) => assert.throws(fn, pattern);
+
+test("consuming boundary evidence needs no new unit but every new bisection reservation still does", () => {
+    const input = admission();
+    input.budget.consumed = { sourceBuilds: 5, workerUnits: 6, reservedMinutes: 660 };
+    assert.equal(validateBoundaryEndpoints(input).decision, "admit");
+    assert.deepEqual(admitBisection(input), { decision: "blocked", reason: "admission: insufficient remaining budget" });
+    for (const endpoint of ["stable", "main", "good"]) {
+        const invalid = structuredClone(input);
+        invalid[endpoint].cached = true;
+        assert.equal(validateBoundaryEndpoints(invalid).decision, "blocked");
+        assert.equal(admitBisection(invalid).decision, "blocked");
+    }
+});
 
 function confirmation(paths = ["src/example.fs"]) {
     return {

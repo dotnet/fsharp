@@ -70,6 +70,7 @@ returns `toolchainTransitions` for coupled compiler/toolchain attribution.
 | `fingerprintEpoch(manifest, budget, pinnedMainSha)` | Validates the manifest and trusted budget context, then binds the manifest, pinned main, resolved stable release, and policy/workflow revisions. |
 | `validateState(state)` | Validates the shared persisted-state shape, epoch, authenticated evidence references, cumulative budget, and any charged pending reservation. |
 | `admitBisection({ manifest, stable, main, good, ancestry, budget })` | Fail-closed gate for a verified source interval; no execution side effects. |
+| `validateBoundaryEndpoints(input)` | The same authenticated endpoint/ancestry checks without capacity for a new worker. Used only to consume confirmation evidence; Git selection still requires `admitBisection`. |
 
 ### Frozen reproduction
 
@@ -255,7 +256,8 @@ uses the reservation's remaining time, not a fresh worker timeout. An expired
 claim cannot start a runner even if its checkpoint write completed successfully.
 The state ledger keeps the reservation owner, attempt and execution generation.
 Rejected, expired and cancelled work is not refunded. A cancelled owning run is
-retired only through `reserveWork`/`invalidateStaleEvidence`; retrying costs
+retired only through `reserveWork`, `invalidateStaleEvidence`, or
+`cancelCompletedWork({ generation })`; retrying costs
 another full reservation and never more than two attempts per item.
 
 Worker dependencies include `worker` options for the existing runners,
@@ -368,7 +370,8 @@ interval, an activated workflow, or fresh culprit attribution.
 `attribution.cjs` exports `confirmBoundary({ intent, now }, dependencies)` and
 `resolveCommitAssociations({ repository, sourceSha, pinnedMainSha }, dependencies)`.
 All dependencies are trusted controller services, not worker-authored JSON.
-The controller must hold the existing whole-issue lock throughout confirmation.
+The controller must hold the existing whole-issue lock throughout each confirmation
+transaction and execution claim.
 
 Confirmation uses the engine's dependencies and its returned `confirmation`
 intent, or a `blocked` intent retaining an interval for explicit parent/history
@@ -383,7 +386,8 @@ PR exists.
 The engine exports its existing `currentInput`, `historyWorkspace`,
 `authenticated` and `capacity` helpers for this composition. There is no second
 build or assertion evaluator. Each candidate and relevant parent is separately
-reserved, claimed and run through `executeInvestigationWork`, hence
+reserved by `confirmBoundary`, then claimed and run by the caller through
+`executeInvestigationWork`, hence
 `workspace.testSourceRevision` and `repro.runReproduction`. Whole-parent-set
 capacity is checked before the first run. Every run consumes the existing
 allowance; rejection, cancellation and changed inputs never refund it.
@@ -393,7 +397,27 @@ The reviewed producer's raw bytes are reread through `approval.readSource`
 using the manifest source with its SHA-256. An absent producer must use the
 runner's existing `no-producer`, `0.0.0`, empty-byte digest identity.
 
-Results are `{ status: "confirmed" | "unconfirmed" | "blocked", reason,
+`confirmBoundary` never invokes a build. It persists an unconfirmed plan with
+the original starting generation, then returns at most one ordinary engine
+`{ status: "work", reservation, binding }`. The caller may execute that one unit
+and must end the invocation rather than loop over the plan. On resumption,
+`advanceInvestigation` returns the saved confirmation intent without any
+`git bisect` subprocess; it still rechecks current input, stable identity and main.
+Calling `confirmBoundary` consumes independently claimed, committed confirmation
+observations newer than the plan, checks capacity for **all remaining** targets,
+and reserves only the next missing target. A lost result acknowledgement does
+not require another build. Completing a merge at six units/660 minutes needs
+no seventh reservation.
+
+Cancellation after reservation or claim is charged even if no build started.
+`cancelCompletedWork` requires the exact generation and verifies that the owning
+run completed; it cannot cancel an active or unknown owner or refund any charge.
+Cancelled attempts still count toward each source's two-attempt limit. Completed
+observations and the original plan survive process/owner changes; a cancelled
+attempt that exhausts capacity blocks rather than replaying under a new allowance.
+Confirmed plans return the same result without another write or build.
+
+Terminal results are `{ status: "confirmed" | "unconfirmed" | "blocked", reason,
 confirmation?, generation?, budget? }`. A successful or completed uncertain
 analysis is saved through `state.recordConfirmation`; a rejected worker still
 owns its charged pending reservation and cannot be silently retried.
@@ -403,6 +427,11 @@ observation digests, all parents with comparability/outcome references, remainin
 interval, history, optional associations, and `latentRootCause: "unproven"`.
 Authenticated checkpoint loading checks each fresh observation's charged
 confirmation reservation and execution generation.
+
+This API is not a credential-isolation boundary. The in-process runner callbacks
+are still trusted dependencies; never deploy them with untrusted historical
+execution beside credentials. A disposable production adapter and real
+containment acceptance are required before enabling an unattended controller.
 
 Classifications deliberately differ:
 

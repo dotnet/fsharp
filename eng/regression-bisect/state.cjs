@@ -469,6 +469,17 @@ async function retirePending(transport, context, cp, status) {
     cp.state.budget.pendingWork = null;
 }
 
+async function cancelCompletedWork(transport, context, { generation }) {
+    const loaded = await loadCheckpoint(transport, context);
+    requireState(loaded.executionAllowed, `cancellation blocked: ${loaded.blockers.join("; ")}`);
+    const cp = loaded.checkpoint;
+    checkGeneration(cp, generation);
+    if (!cp.pending) return cp;
+    await retirePending(transport, context, cp, "cancelled");
+    cp.generation++;
+    return saveCheckpoint(transport, context, cp, loaded.bodyDigest);
+}
+
 function validateRequest(request, state) {
     fields(request, "kind target endpoint phase", "work request");
     requireState(["source", "released"].includes(request.kind) &&
@@ -682,23 +693,26 @@ async function recordPublication(transport, context, { generation, status, diges
     return saveCheckpoint(transport, context, cp, loaded.bodyDigest);
 }
 
-async function recordConfirmation(transport, context, { generation, confirmation }) {
+async function recordConfirmation(transport, context, { generation, confirmation,
+    phase = confirmation.classification === "unconfirmed-candidate" ? "blocked" : "complete" }) {
     const loaded = await loadCheckpoint(transport, context);
     requireState(loaded.executionAllowed, `confirmation blocked: ${loaded.blockers.join("; ")}`);
     const cp = loaded.checkpoint;
     requireState(cp.pending === null, "cannot confirm with pending work");
-    if (cp.state.confirmation && equal(cp.state.confirmation, confirmation) &&
+    requireState(phase === "confirmation" && confirmation.classification === "unconfirmed-candidate" ||
+        phase === (confirmation.classification === "unconfirmed-candidate" ? "blocked" : "complete"), "invalid confirmation phase");
+    if (cp.state.phase === phase && cp.state.confirmation && equal(cp.state.confirmation, confirmation) &&
         (generation === cp.generation || generation === cp.generation - 1)) return cp;
     checkGeneration(cp, generation);
     cp.state.confirmation = structuredClone(confirmation);
     validateConfirmationEvidence(cp);
-    cp.state.phase = confirmation.classification === "unconfirmed-candidate" ? "blocked" : "complete";
+    cp.state.phase = phase;
     cp.generation++;
     return saveCheckpoint(transport, context, cp, loaded.bodyDigest);
 }
 
 module.exports = {
     initializeCheckpoint, serializeWorkflowRecord, authenticateWorkflowRecord,
-    loadCheckpoint, reserveWork, beginWork, commitObservation, invalidateStaleEvidence, recordSearchProgress,
+    loadCheckpoint, reserveWork, beginWork, commitObservation, cancelCompletedWork, invalidateStaleEvidence, recordSearchProgress,
     authenticateDecodedRecord, recordPublication, recordConfirmation,
 };

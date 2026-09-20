@@ -7,7 +7,7 @@ const f = require("./fixtures/contracts.cjs");
 const { harness } = require("./fixtures/checkpoint.cjs");
 const model = require("./model.cjs");
 const state = require("./state.cjs");
-const { advanceInvestigation, historyWorkspace } = require("./engine.cjs");
+const { advanceInvestigation, executeInvestigationWork, historyWorkspace } = require("./engine.cjs");
 const { confirmBoundary, resolveCommitAssociations } = require("./attribution.cjs");
 
 const gitExecutable = execFileSync(process.platform === "win32" ? "where.exe" : "which",
@@ -80,6 +80,7 @@ async function fixture(t, kind = "linear", changedPaths) {
     function observation(sourceSha, id, outcome = "product-failure", kind = "source") {
         const o = f.observation(kind, outcome, h.context.manifest, sourceSha);
         o.buildInstanceId = id;
+        o.provenance.runId = h.context.owner.runId;
         for (const c of o.cells) {
             for (const a of Object.values(c.artifacts)) a.buildInstanceId = id;
             if (kind === "source") c.buildToolchain = f.buildToolchain(sourceSha, c.environment.os);
@@ -96,10 +97,11 @@ async function fixture(t, kind = "linear", changedPaths) {
         await state.commitObservation(h.transport, h.context, { generation: r.generation,
             attemptId: r.id, observation: observation(sha, r.id, outcome, kind), evidence: [] });
     }
-    const calls = [];
+    const calls = [], gitCalls = [];
     const deps = {
         transport: h.transport, context: h.context, environments,
         execute: async (exe, args, options) => {
+            gitCalls.push(args);
             const r = spawnSync(exe, args, { ...options, encoding: "utf8", timeout: options.timeoutMs, maxBuffer: options.maxBytes });
             if (r.error) throw r.error;
             return { status: "completed", complete: !r.signal, exitCode: r.status, stdout: r.stdout, stderr: r.stderr };
@@ -137,8 +139,22 @@ async function fixture(t, kind = "linear", changedPaths) {
         intent = { status: "blocked", requiresFreshConfirmation: true, generation: cp.generation,
             interval: { ...cp.state.interval, remaining: [candidate] } };
     }
-    return Object.assign(h, { deps, intent, calls, candidate, good, parents, related, read, git, gitRaw, observation,
-        confirm: () => confirmBoundary({ intent, now: h.context.now }, deps) });
+    return Object.assign(h, { deps, intent, calls, gitCalls, candidate, good, parents, related, read, git, gitRaw, observation,
+        confirm: async () => {
+            let next = intent;
+            for (let i = 0; i < 18; i++) {
+                const result = await confirmBoundary({ intent: next, now: h.context.now }, deps);
+                if (result.status !== "work") return result;
+                try { await executeInvestigationWork(result, deps); }
+                catch (error) {
+                    const cp = await read();
+                    return { status: "unconfirmed", reason: error.message, confirmation: cp.state.confirmation };
+                }
+                const cp = await read();
+                next = { ...next, status: cp.state.phase, generation: cp.generation };
+            }
+            assert.fail("confirmation did not terminate");
+        } });
 }
 
 test("fresh independent candidate and parent, not search evidence, prove a linear boundary", async t => {
@@ -175,6 +191,219 @@ test("fresh independent candidate and parent, not search evidence, prove a linea
         mutate(forged.state.confirmation);
         assert.throws(() => model.validateConfirmationEvidence(forged));
     }
+});
+
+test("durable confirmation selects one fresh unit and resumes without replaying accepted builds", async t => {
+    for (const kind of ["linear", "merge"]) await t.test(kind, async t => {
+        const h = await fixture(t, kind), before = await h.read();
+        let result = await confirmBoundary({ intent: h.intent, now: h.context.now }, h.deps);
+        for (const [index, sourceSha] of [h.candidate, ...h.parents].entries()) {
+            assert.equal(result.status, "work", JSON.stringify(result));
+            assert.equal(result.reservation.request.target.sourceSha, sourceSha);
+            assert.equal(h.calls.length, index);
+            assert.equal((await h.read()).state.budget.consumed.workerUnits, before.sequence + index + 1);
+            assert.equal((await h.read()).state.phase, "confirmation");
+            assert.equal((await h.read()).state.confirmation.classification, "unconfirmed-candidate");
+            await executeInvestigationWork(result, h.deps);
+            h.nextRun();
+            h.gitCalls.length = 0;
+            const next = await advanceInvestigation({ now: h.context.now }, h.deps);
+            assert.equal(next.status, "confirmation", JSON.stringify(next));
+            result = await confirmBoundary({ intent: next, now: h.context.now }, h.deps);
+            assert.equal(h.gitCalls.filter(args => args.includes("bisect")).length, 0);
+        }
+        assert.equal(result.status, "confirmed", JSON.stringify(result));
+        assert.equal(h.calls.length, h.parents.length + 1);
+        const cp = await h.read();
+        assert.equal(cp.state.budget.consumed.reservedMinutes, (before.sequence + h.calls.length) * 110);
+        assert.ok(Buffer.byteLength(h.comment.body) < 48 * 1024);
+        assert.equal(model.validateConfirmationEvidence(cp), true);
+        t.diagnostic(JSON.stringify({ kind, generation: cp.generation, consumed: cp.state.budget.consumed,
+            reservations: cp.records.map(r => ({ id: r.id, source: r.request.target.sourceSha, status: r.status,
+                owner: r.owner, generation: r.generation, executionGeneration: r.executionGeneration })) }));
+    });
+});
+
+test("confirmation transaction cancellation retains charges and committed evidence", async t => {
+    for (const stage of ["plan", "reservation", "claim", "observation"]) await t.test(stage, async t => {
+        const h = await fixture(t), before = await h.read();
+        const update = h.transport.updateComment;
+        let failed = false;
+        h.transport.updateComment = async (id, body) => {
+            const written = await update(id, body);
+            const decoded = await state.authenticateDecodedRecord(h.transport, h.context, written);
+            const cp = decoded.payload;
+            if (!failed && (stage === "plan" ? cp.state.confirmation && !cp.pending :
+                stage === "reservation" ? cp.pending && !cp.pending.executionGeneration :
+                stage === "claim" ? cp.pending?.executionGeneration :
+                cp.records.some(r => r.request.phase === "confirmation" && r.status === "committed"))) {
+                failed = true;
+                throw new Error(`lost ${stage} acknowledgement`);
+            }
+            return written;
+        };
+        const work = await confirmBoundary({ intent: h.intent, now: h.context.now }, h.deps);
+        if (["claim", "observation"].includes(stage))
+            await assert.rejects(executeInvestigationWork(work, h.deps), new RegExp(`lost ${stage}`));
+        else assert.notEqual(work.status, "work");
+        assert.equal(failed, true);
+        h.transport.updateComment = update;
+        const interrupted = await h.read();
+        h.nextRun();
+        const next = await advanceInvestigation({ now: h.context.now }, h.deps);
+        const resumed = await confirmBoundary({ intent: next, now: h.context.now }, h.deps);
+        const cp = await h.read();
+        if (["reservation", "claim"].includes(stage)) {
+            assert.equal(resumed.status, "unconfirmed", JSON.stringify(resumed));
+            assert.match(resumed.reason, /budget/);
+            assert.equal(cp.pending, null);
+            assert.equal(cp.records.at(-1).status, "cancelled");
+            assert.deepEqual(cp.state.budget.consumed, interrupted.state.budget.consumed);
+            assert.equal(h.calls.length, 0);
+        } else {
+            assert.equal(resumed.status, "work", JSON.stringify(resumed));
+            assert.equal(resumed.reservation.request.target.sourceSha, stage === "plan" ? h.candidate : h.good);
+            assert.equal(cp.sequence, before.sequence + (stage === "plan" ? 1 : 2));
+            assert.equal(h.calls.length, stage === "plan" ? 0 : 1);
+            if (stage === "observation") assert.ok(cp.state.confirmation.candidateObservationDigest);
+        }
+        assert.equal(cp.state.budget.consumed.reservedMinutes, cp.sequence * 110);
+        assert.equal(model.validateConfirmationEvidence(cp), true);
+    });
+});
+
+test("concurrent confirmation selection and claims have one durable winner under the issue lock", async t => {
+    const h = await fixture(t);
+    const results = await Promise.all([
+        h.lock(() => confirmBoundary({ intent: h.intent, now: h.context.now }, h.deps)),
+        h.lock(() => confirmBoundary({ intent: h.intent, now: h.context.now }, h.deps)),
+    ]);
+    assert.equal(results.filter(r => r.status === "work").length, 1);
+    const work = results.find(r => r.status === "work");
+    const claims = await Promise.all([1, 2].map(() => h.lock(() => state.beginWork(h.transport, h.context,
+        { generation: work.reservation.generation, attemptId: work.reservation.id }))));
+    assert.equal(claims.filter(r => r.execute).length, 1);
+    assert.equal((await h.read()).sequence, 4);
+    assert.equal(h.calls.length, 0);
+    const active = await advanceInvestigation({ now: h.context.now }, h.deps);
+    assert.equal(active.status, "blocked");
+    assert.match(active.reason, /active owner/);
+});
+
+test("resumed confirmation rechecks moving inputs without refunding accepted work", async t => {
+    for (const change of ["main", "stable", "discussion", "required-evidence"]) await t.test(change, async t => {
+        const h = await fixture(t);
+        const candidate = await confirmBoundary({ intent: h.intent, now: h.context.now }, h.deps);
+        await executeInvestigationWork(candidate, h.deps);
+        const before = await h.read();
+        if (change === "main") h.git("commit", "--quiet", "--allow-empty", "-m", "new main");
+        if (change === "stable") h.deps.toolchains.resolveLatestStableSdk = async () => ({
+            status: "resolved", toolchain: { sdkVersion: "10.0.999", metadata: [] },
+        });
+        if (change === "discussion") h.context.issueFingerprint = f.digest("edited discussion");
+        if (change === "required-evidence") {
+            const cp = await h.read();
+            cp.observations[cp.records.at(-1).observationDigest].evidence = [
+                { required: true, sha256: f.digest("durable evidence"), url: "https://example.invalid/required" },
+            ];
+            h.checkpoint(cp);
+            h.transport.readEvidence = async () => null;
+        }
+        h.gitCalls.length = 0;
+        const next = await advanceInvestigation({ now: h.context.now }, h.deps);
+        assert.equal(h.gitCalls.filter(args => args.includes("bisect")).length, 0);
+        const after = (await state.authenticateDecodedRecord(h.transport, h.context, h.comment)).payload;
+        assert.equal(after.state.budget.allowanceId, before.state.budget.allowanceId);
+        if (change === "main") {
+            assert.equal(next.status, "work", JSON.stringify(next));
+            assert.equal(next.reservation.request.endpoint, "main");
+            assert.equal(after.state.confirmation, undefined);
+            assert.equal(after.sequence, before.sequence + 1);
+        } else {
+            assert.equal(next.status, "blocked", JSON.stringify(next));
+            assert.deepEqual(after.state.budget.consumed, before.state.budget.consumed);
+        }
+        assert.equal(h.calls.length, 1);
+        assert.deepEqual(await fs.readdir(h.deps.history.scratchDirectory), []);
+    });
+});
+
+test("confirmation capacity uses the clock after history inspection, not invocation time", async t => {
+    const h = await fixture(t), before = await h.read();
+    before.deadline = new Date(Date.parse(h.context.now) + 220 * 60000).toISOString();
+    h.checkpoint(before);
+    h.intent.generation = before.generation;
+    h.deps.clock = () => new Date(Date.parse(h.context.now) + 1);
+    const result = await confirmBoundary({ intent: h.intent, now: h.context.now }, h.deps);
+    assert.equal(result.status, "unconfirmed");
+    assert.match(result.reason, /budget/);
+    assert.deepEqual((await h.read()).state.budget.consumed, before.state.budget.consumed);
+    assert.equal(h.calls.length, 0);
+});
+
+test("a fresh process consumes the saved candidate and selects only its unbuilt parent", async t => {
+    const h = await fixture(t);
+    const candidate = await confirmBoundary({ intent: h.intent, now: h.context.now }, h.deps);
+    await executeInvestigationWork(candidate, h.deps);
+    h.nextRun();
+    const child = spawnSync(process.execPath, ["-e", `
+        const fs = require("node:fs");
+        const { harness } = require("./fixtures/checkpoint.cjs");
+        const engine = require("./engine.cjs");
+        const { confirmBoundary } = require("./attribution.cjs");
+        (async () => {
+            const input = JSON.parse(fs.readFileSync(0, "utf8")), h = harness();
+            const keys = h.context.keys;
+            Object.assign(h.context, input.context, { keys });
+            h.comment = input.comment;
+            h.statuses.splice(0, h.statuses.length, ...input.statuses);
+            h.runs.clear();
+            for (const [id, run] of input.runs) h.runs.set(id, run);
+            const deps = {
+                context: h.context, transport: h.transport, history: input.history,
+                environments: input.environments, platform: input.platform,
+                clock: () => new Date(h.context.now),
+                intake: { readIssueSnapshot: async () => ({ status: "complete", snapshot: {
+                    discussionFingerprint: h.context.issueFingerprint,
+                    input: { discussion: { issue: h.context.issue }, reproduction: { manifest: h.context.manifest } },
+                    investigations: { status: "complete", active: [] },
+                } }) },
+                approval: { readSource: async () => Buffer.from("producer"),
+                    authenticateRecord: async () => false, readTrustedCheckpoints: async () => [] },
+                toolchains: { resolveLatestStableSdk: async () => ({ status: "resolved", toolchain: {
+                    sdkVersion: h.context.stableSdk.version, metadata: [{
+                        url: h.context.stableSdk.releaseIndexUrl, sha256: h.context.stableSdk.releaseIndexDigest,
+                    }],
+                } }) },
+            };
+            const intent = await engine.advanceInvestigation({ now: h.context.now }, deps);
+            const result = await confirmBoundary({ intent, now: h.context.now }, deps);
+            process.stdout.write(JSON.stringify({ result, comment: h.comment, statuses: h.statuses,
+                bisectCalls: intent.commands.filter(c => c.args.includes("bisect")).length }));
+        })().catch(error => { console.error(error); process.exitCode = 1; });
+    `], { cwd: __dirname, encoding: "utf8", timeout: 60000, maxBuffer: 1024 * 1024,
+        input: JSON.stringify({ context: { ...h.context, keys: undefined }, comment: h.comment, statuses: h.statuses,
+            runs: [...h.runs], history: h.deps.history, environments: h.deps.environments, platform: h.deps.platform }) });
+    assert.equal(child.status, 0, child.stderr);
+    const restarted = JSON.parse(child.stdout);
+    assert.equal(restarted.result.status, "work", JSON.stringify(restarted.result));
+    assert.equal(restarted.result.reservation.request.target.sourceSha, h.good);
+    assert.equal(restarted.bisectCalls, 0);
+    h.comment = restarted.comment;
+    h.statuses.splice(0, h.statuses.length, ...restarted.statuses);
+    const cp = await h.read();
+    assert.equal(cp.sequence, 5);
+    assert.equal(cp.state.confirmation.candidateObservationDigest, cp.records.find(r => r.id === candidate.reservation.id).observationDigest);
+    await executeInvestigationWork(restarted.result, h.deps);
+    const intent = await advanceInvestigation({ now: h.context.now }, h.deps);
+    const result = await confirmBoundary({ intent, now: h.context.now }, h.deps);
+    assert.equal(result.status, "confirmed", JSON.stringify(result));
+    assert.deepEqual(h.calls.map(c => c.request.sourceSha), [h.candidate, h.good]);
+    const repeated = await confirmBoundary({
+        intent: await advanceInvestigation({ now: h.context.now }, h.deps), now: h.context.now,
+    }, h.deps);
+    assert.deepEqual(repeated, result);
+    assert.equal((await h.read()).sequence, 5);
 });
 
 test("fresh confirmation retains bounded Git display paths without treating them as executable assets", async t => {
@@ -284,7 +513,7 @@ test("post-build confirmation rejection preserves charged independent observatio
             let first = true;
             t.after(() => { state.recordConfirmation = save; });
             state.recordConfirmation = async (transport, context, request) => {
-                if (first) {
+                if (first && request.phase !== "confirmation") {
                     first = false;
                     request.confirmation.history.commits[0].changedPaths = ["invalid\npath"];
                 }
