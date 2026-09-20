@@ -221,8 +221,7 @@ type internal InlineRenameService [<ImportingConstructor>] () =
 
                 match symbolUse with
                 | None -> return Unchecked.defaultof<_>
-                | Some symbolUse when not (declarationWouldBeRenamed checkFileResults symbolUse ct) ->
-                    return Unchecked.defaultof<_>
+                | Some symbolUse when not (declarationWouldBeRenamed checkFileResults symbolUse ct) -> return Unchecked.defaultof<_>
                 | Some symbolUse ->
                     match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse.Range) with
                     | ValueNone -> return Unchecked.defaultof<_>
