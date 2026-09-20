@@ -5,6 +5,8 @@ module internal Microsoft.VisualStudio.FSharp.Editor.CopilotSymbolSnippets
 
 open System
 
+open Internal.Utilities.Library
+
 open FSharp.Compiler.EditorServices
 
 /// A module scope can span a whole file, which is more than a chat prompt can usefully carry.
