@@ -646,8 +646,8 @@ module private CompilerPackage =
     /// The assemblies the project file adds next to fsi.dll for the JSON-RPC server.
     let serverAssemblies () =
         XDocument.Load(Path.Combine(projectDirectory (), "Microsoft.FSharp.Compiler.fsproj")).Descendants()
-        |> Seq.filter (localName "FsiJsonRpcServerAssembly")
-        |> Seq.map (fun element -> element.Attribute(XName.Get "Include").Value)
+        |> Seq.filter (localName "FsiJsonRpcServerAssemblies")
+        |> Seq.collect (fun element -> element.Value.Split([| ';' |], StringSplitOptions.RemoveEmptyEntries))
         |> Seq.toArray
 
     /// The assemblies the manifest puts into the package's lib folder beside fsi.dll — by name, since
