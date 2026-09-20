@@ -186,6 +186,14 @@ type internal InlineRenameService [<ImportingConstructor>] () =
 
     inherit FSharpInlineRenameServiceImplementation()
 
+    // Rewriting the uses without the declaration leaves a file that no longer compiles
+    static let declarationWouldBeRenamed (checkFileResults: FSharpCheckFileResults) (symbolUse: FSharpSymbolUse) ct =
+        match symbolUse.Symbol.DeclarationLocation with
+        | Some declRange when String.Equals(declRange.FileName, symbolUse.Range.FileName, StringComparison.Ordinal) ->
+            checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol, cancellationToken = ct)
+            |> Array.exists (fun su -> Range.equals su.Range declRange)
+        | _ -> true
+
     override _.GetRenameInfoAsync(document: Document, position: int, cancellationToken: CancellationToken) : Task<FSharpInlineRenameInfo> =
         cancellableTask {
             let! ct = CancellableTask.getCancellationToken ()
@@ -213,6 +221,8 @@ type internal InlineRenameService [<ImportingConstructor>] () =
 
                 match symbolUse with
                 | None -> return Unchecked.defaultof<_>
+                | Some symbolUse when not (declarationWouldBeRenamed checkFileResults symbolUse ct) ->
+                    return Unchecked.defaultof<_>
                 | Some symbolUse ->
                     match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse.Range) with
                     | ValueNone -> return Unchecked.defaultof<_>
