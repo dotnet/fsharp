@@ -440,8 +440,9 @@ before enabling an unattended controller.
 
 ## Controller transaction library
 
-`controller.cjs` exports `runController(input, dependencies)` and
-`publishController(input, dependencies)`. Both accept exactly
+`controller.cjs` exports `bootstrapController(input, dependencies)`,
+`runController(input, dependencies)` and `publishController(input, dependencies)`.
+All three accept exactly
 `{ repository: "dotnet/fsharp", issueNumber: <positive integer> }`.
 The issue must match the trusted context. Extra dispatch fields, commands,
 refs, destinations, Markdown and fresh-allowance controls are rejected.
@@ -480,12 +481,108 @@ producer bytes, FSI selection or project identity verification.
 authenticated launch receipt or permission to execute it. The bounded archive
 reader below provides data-only collection, not a production containment adapter
 or an authenticating observation collector. This directory does not supply a
-GitHub transport/approval bootstrap CLI, scheduled workflow or
-`containment.smoke.cjs`. The transaction tests use fake transports and runner
+controller/bootstrap CLI, scheduled workflow or `containment.smoke.cjs`.
+The transaction tests use fake transports and runner
 callbacks and therefore do not prove confinement. Do not implement
 `runIsolated` as an in-process callback, stripped environment or ordinary
 credentialed subprocess in production. No workflow or secret names are
 configured by this library.
+
+### Reviewed first-use transaction and GitHub API
+
+`bootstrapController` takes the same fixed issue input, trusted `context`,
+`transport`, `withLock`, and optional `clock` as the other controller operations.
+Its `approval` dependency supplies `readApproval({ path, revision })` and
+`readSource({ path, sha256 })`, both returning raw `Buffer` bytes. No dispatch
+field can provide an allowance, authorization object, command, ref or slot ID.
+The approval at the registered `policyRevision` has this shape:
+
+```js
+{
+  schemaVersion: 1,
+  manifest, // The existing frozen, reviewed reproduction contract.
+  bootstrap: {
+    allowanceId, deadline,
+    checkpointCommentId, checkpointAnchorSha, checkpointBootstrapDigest,
+    resultCommentId, resultBootstrapDigest
+  }
+}
+```
+
+Provision the two comments in a separate trusted setup operation, retaining their
+actual IDs and the immutable reachable anchor in the controller's trusted
+registration. This library cannot create comments, anchors or registrations.
+The checkpoint slot must be an authenticated `proposal` with exactly:
+
+```js
+{
+  schemaVersion: 1, purpose: "checkpoint-slot",
+  repository: "dotnet/fsharp", issueNumber,
+  checkpointAnchorSha, allowanceId, deadline
+}
+```
+
+The result slot uses the existing `result-slot` proposal below. Sign each at its
+own real comment ID through `serializeWorkflowRecord`. Freeze the complete issue
+discussion with these authenticated slots excluded, review the raw reproduction
+and producer bytes, then commit the approval envelope on the trusted default
+branch. Its two bootstrap digests are `fingerprintInput` of the exact original
+signed comment bodies, not hashes of whatever is present at execution time.
+The controller's registered checkpoint ID, anchor and bootstrap digest must
+already exist independently of the loaded approval. Never replace that
+registration because a lookup failed.
+
+Under the whole-issue lock, bootstrap authenticates both slots and all their
+writer/app/workflow/run bindings. It scans every page of statuses on the
+registered anchor for the entire `regression-bisect/<issue>/` prefix. A different
+comment's prior allowance, missing slot, incomplete history, API error, failed
+signature, or altered registration blocks initialization. Before first use it
+also rereads full discussion, linked investigations and reviewed raw assets.
+Another still-active slot owner blocks takeover. Only then does the existing
+state initializer write generation zero and its independent freshness receipt.
+All future reservations use the unchanged 24-build/40-unit/720-minute allowance.
+
+Bootstrap returns `initialized`, `loaded`, or `blocked`; none is permission to
+run a worker. Concurrent calls retain the same allowance. A charged checkpoint
+is loaded, never reinitialized. An interrupted generation-zero write recovers
+its original signed bytes and appends only the missing receipt, even if current
+eligibility or time changed; ordinary engine checks still gate execution.
+The comment/status mutation ledgers and fresh-Node-process recovery tests are in
+`controller.test.cjs`. `state.initializeCheckpoint` retains its low-level legacy
+raw-placeholder support; production bootstrap requires the signed slot above.
+
+`github.cjs` supplies the concrete HTTP and pinned-file boundary:
+
+* `createGithubApi({ repository, issueNumber, checkpointCommentId,
+  resultCommentId, anchorSha, token }, send = fetch)` returns `request`,
+  `getComment`, `updateComment` and `getRun`. It uses only
+  `https://api.github.com`, fixed REST route templates, typed parameters, a
+  30-second request deadline and a 4 MiB decoded-response limit. Redirects,
+  compressed/truncated bodies and invalid UTF-8 fail closed. Mutations are only
+  PATCH of the two registered comment IDs and POST of the issue/checkpoint
+  freshness context on the registered anchor. Other repositories are readable
+  only for linked issue/PR metadata. There is no contents write, issue close,
+  PR write, workflow dispatch or arbitrary URL operation.
+* `createApprovalReader({ api, revision, issueNumber })` supplies the two raw
+  approval callbacks. `revision` must come from trusted immutable default-branch
+  registration, never dispatch or issue text. The reader walks that commit's
+  nonrecursive Git trees, rejects truncated responses, links and submodules,
+  checks the Git blob object ID and byte count, then checks each reviewed asset's
+  SHA-256. It never checks out or executes repository bytes. Approval bytes are
+  below 48 KiB; each source read is at most 1 MiB, with intake enforcing its
+  existing aggregate bound.
+
+Only the controller holds the API token and HMAC key map. The intended token
+scope remains `issues: write`, `statuses: write`, `contents: read`,
+`actions: read`; key retention/rotation requirements are below. No environment
+variables are read automatically and no production secrets are configured by
+these APIs. `createGithubApi` deliberately does not fetch artifact downloads or
+implement `readEvidence`; the controller must provide its separately restricted,
+durable evidence reader. Test with fake HTTP only:
+
+```powershell
+node --test eng\regression-bisect\github.test.cjs eng\regression-bisect\controller.test.cjs
+```
 
 ### Data-only worker output
 
@@ -1614,8 +1711,9 @@ missed. `initializeCheckpoint(transport, context, { allowanceId, deadline })`
 is only for the initial maintainer-authorized allowance, under the issue lock.
 `context.bootstrapDigest` must come from the trusted creation receipt for the
 exact initial placeholder, not from hashing whichever comment is currently
-present. Initialization refuses an existing envelope except its authenticated,
-interrupted generation-zero checkpoint described below. There is deliberately no
+present. Initialization accepts the exact authenticated `checkpoint-slot`
+proposal described above, or recovers its authenticated interrupted
+generation-zero checkpoint described below. There is deliberately no
 automatic reset/new-allowance operation; ordinary issue edits, label toggles,
 redispatches, and cancellations cannot replenish any counter.
 

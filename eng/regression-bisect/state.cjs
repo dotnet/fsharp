@@ -411,7 +411,8 @@ async function initializeCheckpoint(transport, context, { allowanceId, deadline 
         existing.performed_via_github_app?.id === context.actor.appId &&
         existing.issue_url === `https://api.github.com/repos/${context.repository}/issues/${context.issueNumber}`,
     "bootstrap author authentication failed");
-    if (fingerprint(existing.body) !== context.bootstrapDigest || parseRecord(existing.body) !== null) {
+    const bootstrapRecord = parseRecord(existing.body);
+    if (fingerprint(existing.body) !== context.bootstrapDigest || bootstrapRecord?.kind === "checkpoint") {
         const record = await authenticatedRecord(transport, context, existing);
         requireState(record?.kind === "checkpoint", "interrupted initialization authentication failed");
         const cp = unpack(record.payload);
@@ -427,6 +428,13 @@ async function initializeCheckpoint(transport, context, { allowanceId, deadline 
         // Recover the original bytes; current inputs gate execution when this checkpoint is loaded.
         await writeFreshness(transport, context, 0, hashBytes(existing.body));
         return cp;
+    }
+    if (bootstrapRecord !== null) {
+        const record = await authenticatedRecord(transport, context, existing);
+        requireState(record?.kind === "proposal" && equal(unpack(record.payload), {
+            schemaVersion: 1, purpose: "checkpoint-slot", repository: context.repository, issueNumber: context.issueNumber,
+            checkpointAnchorSha: context.checkpointAnchorSha, allowanceId, deadline,
+        }), "bootstrap slot authentication or allowance association failed");
     }
     requireState(timestamp(deadline) && Date.parse(deadline) > Date.parse(context.now), "invalid allowance deadline");
     const budget = {
