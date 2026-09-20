@@ -231,7 +231,8 @@ class Bridge:
 
     def _request_finish(self, outcome, reason, message_id=None):
         if self.worker is not None:
-            require(not self._finalizing(), "Finalization already owns the session")
+            if self._finalizing():
+                return self._ack()
             self._worker_receipt(self.receipt["state"], pending_finish={
                 "outcome": outcome, "reason": reason, "message_id": message_id})
             if not self._stop():
@@ -530,8 +531,8 @@ def export_source(repository, revision, destination, protected_roots):
         if not _public_path(path):
             continue
         mode, kind, digest, raw_size = header.decode("ascii").split()
-        require(mode == "100644" and kind == "blob" and mem.digest(digest, 40),
-                "Source export requires regular nonexecutable Git blobs")
+        require(mode in ("100644", "100755") and kind == "blob" and mem.digest(digest, 40),
+                "Source export requires regular Git blobs")
         size = int(raw_size)
         total += size
         require(0 <= size <= SOURCE_LIMITS["file_bytes"] and total <= SOURCE_LIMITS["total_bytes"]

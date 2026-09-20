@@ -116,7 +116,11 @@ class AgentTests(unittest.TestCase):
     @staticmethod
     def launch(arguments, controller):
         operation = arguments[-1]
-        getattr(controller, "finish_operation" if operation == "finish" else operation)()
+        if operation == "dump":
+            request = controller.session["dump_request"]
+            controller.profile(request["reason"], request["hypothesis"])
+        else:
+            getattr(controller, "finish_operation" if operation == "finish" else operation)()
         return Worker()
 
     def test_fresh_discovery_has_no_invented_hypothesis(self):
@@ -277,6 +281,145 @@ class AgentTests(unittest.TestCase):
             self.assertEqual(transport.read()[0], w.mem.empty_state())
             self.assertIsNone(controller.session)
 
+    def test_preparation_freezes_inputs_before_agent_readiness(self):
+        for elapsed in (0, w.SETUP_SECONDS):
+            with self.subTest(elapsed=elapsed), self.discovery() as (repo, controller, _, transport):
+                now = [controller.now()]
+                controller.now = lambda: now[0]
+                setup = controller.load("clocks")["setup"]
+
+                def prepare(revision, root, output, metric):
+                    self.assertEqual((revision, root, metric), (repo.sha, controller.root / "frozen", "elapsed_ms"))
+                    now[0] += timedelta(seconds=elapsed)
+                    w.m.write_json(output, {"prepared": True})
+
+                with mock.patch.object(w, "capabilities") as capabilities, \
+                        mock.patch.object(w.m, "prepare_workload", side_effect=prepare) as preparation, \
+                        mock.patch.object(w.e, "frozen_records") as freeze:
+                    result = controller.investigate()
+                capabilities.assert_called_once_with(controller.root, controller.repository)
+                preparation.assert_called_once()
+                freeze.assert_called_once_with({"prepared": True})
+                self.assertEqual(controller.load("clocks")["setup"]["deadline"], setup["deadline"])
+                self.assertNotIn("active", controller.load("clocks"))
+                if elapsed:
+                    self.assertEqual(result["outcome"], "blocked_setup")
+                else:
+                    self.assertEqual(result["phase"], "ready")
+                    w.m.verify_files([controller.session["manifest"]])
+                    self.assertEqual(transport.read()[0]["discoveries"]["run-1.discovery"]["lifecycle"], "ready")
+                self.assertFalse((controller.root / "output").exists())
+
+    def test_backwards_clock_cancellation_preserves_canonical_checkpoints(self):
+        for selected in (False, True):
+            with self.subTest(selected=selected), self.ready(canonical=True) as (repo, controller, api, transport):
+                controller.start_active()
+                controller.profile()
+                if selected:
+                    controller.select_hypothesis(self.selection(repo))
+                before = transport.read()[0]
+                now = controller.now()
+                controller.now = lambda: now - timedelta(seconds=1)
+                client = bridge.Bridge(controller, launch=self.launch, identify=identify)
+                client.tick()
+                client.tick()
+                state = transport.read()[0]
+                discovery = state["discoveries"]["run-1.discovery"]
+                self.assertEqual(discovery["outcome"], "cancelled")
+                self.assertEqual(discovery["checkpoint_at"], before["discoveries"][discovery["id"]]["checkpoint_at"])
+                if selected:
+                    attempt = state["attempts"][controller.session["attempt"]["id"]]
+                    self.assertEqual(attempt["outcome"], "cancelled")
+                    self.assertEqual(attempt["lease"], before["attempts"][attempt["id"]]["lease"])
+                restarted = w.Controller(controller.root, repo.root, transport, api, now=controller.now)
+                self.assertEqual(restarted.status()["outcome"], "cancelled")
+                with self.assertRaises(ValueError):
+                    restarted.validate_output()
+                self.assertFalse((controller.root / "output").exists())
+                self.assertEqual(api.effects, [])
+                self.assertTrue(client.close())
+
+    def test_watchdog_does_not_interrupt_a_worker_entering_finalization(self):
+        with self.ready() as (_, controller, _, _):
+            worker = Worker(None)
+            client = bridge.Bridge(controller, launch=lambda *_: worker, identify=identify)
+            self.assertTrue(client.investigate(message("start_profile"))["ok"])
+            read_deadline = client._read_deadline
+
+            def enter_finalization(record, name, allowance):
+                if name == "active":
+                    controller.remaining("finalization", w.FINALIZATION_SECONDS, create=True)
+                    raise KeyboardInterrupt
+                return read_deadline(record, name, allowance)
+
+            with mock.patch.object(client, "_read_deadline", side_effect=enter_finalization):
+                client.tick()
+                self.assertEqual(worker.signals, [])
+                self.assertFalse(client.blocked)
+                client.tick()
+                self.assertEqual(worker.signals, [])
+            now = controller.now()
+            controller.now = lambda: now + timedelta(seconds=w.FINALIZATION_SECONDS)
+            client.tick()
+            self.assertEqual(len(worker.signals), 1)
+            client.close()
+
+    def test_deadline_at_output_validation_durably_cancels_without_authority(self):
+        for interrupted in (False, True):
+            with self.subTest(interrupted=interrupted), self.ready(canonical=True) as (_, controller, _, transport):
+                controller.clock = lambda: 0
+                controller.start_active()
+                controller.profile()
+                controller.session["phase"] = "accepted"
+                controller.save("session", controller.session)
+                now = controller.now()
+                controller.now = lambda: now + timedelta(seconds=w.ACTIVE_SECONDS - int(interrupted))
+                with mock.patch.object(controller, "current_attempt", side_effect=KeyboardInterrupt) as validation:
+                    with self.assertRaises(KeyboardInterrupt):
+                        controller.validate_output()
+                self.assertEqual(validation.call_count, int(interrupted))
+                self.assertEqual(transport.read()[0]["discoveries"]["run-1.discovery"]["outcome"], "cancelled")
+                for name in ("approval.json", "output"):
+                    self.assertFalse((controller.root / name).exists())
+
+    def test_dump_operation_uses_owned_storage_and_preserves_profile(self):
+        for reason in w.c.REASONS:
+            with self.subTest(reason=reason), self.ready() as (_, controller, _, _):
+                controller.start_active()
+                controller.profile()
+                original = copy.deepcopy(controller.session["profile"])
+                paths = []
+
+                def collect(manifest, compiler, destination, **request):
+                    self.assertEqual(request, {"dump_reason": reason, "hypothesis": "Heap grows across full GCs"})
+                    destination.mkdir()
+                    evidence = artifact_profile(destination)
+                    dump = destination / "private-dump" / "heap.dmp"
+                    dump.parent.mkdir()
+                    dump.write_bytes(b"MDMP" + bytes(5000))
+                    paths.append(dump)
+                    evidence["dump"] = {
+                        "status": "collected", "published": False, "identity": evidence["process"]["start"],
+                        "artifact": dict(w.m.file_record(dump), size_bytes=dump.stat().st_size),
+                        "reason_for_dump": reason, "hypothesis": request["hypothesis"],
+                        "command": {"status": "collected", "exit_status": 0},
+                        "validation": {"status": "collected", "exit_status": 0, "stdout": "Synthetic heap summary"}}
+                    w.m.write_json(destination / "evidence-manifest.json", evidence)
+
+                client = bridge.Bridge(controller, launch=self.launch, identify=identify)
+                with mock.patch.object(w.c, "collect_profile", side_effect=collect):
+                    result = client.investigate(message("request_dump", {
+                        "reason": reason, "hypothesis": "Heap grows across full GCs"}))
+                self.assertTrue(result["ok"], result)
+                status = client.investigate(message("status"))["status"]
+                self.assertEqual(status["dump"]["status"], "analyzed_and_removed")
+                self.assertEqual(status["phase"], "awaiting_decision")
+                self.assertEqual(controller.session["profile"], original)
+                self.assertFalse(paths[0].exists())
+                self.assertTrue(paths[0].is_relative_to(controller.root / "private"))
+                self.assertFalse((controller.root / "output").exists())
+                self.assertTrue(client.close())
+
     def test_canonical_discovery_blocks_other_owner_and_page_two_pr(self):
         from test_memory import pr
         for case in ("owner", "page-two"):
@@ -321,11 +464,24 @@ class AgentTests(unittest.TestCase):
             for path in protected[1:]:
                 path.mkdir()
             (repo.root / "private.key").write_text("must not enter exported source")
+            repo.git("update-index", "--chmod=+x", SOURCE)
+            repo.git("-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid",
+                     "commit", "-qm", "executable source blob")
+            repo.sha = repo.git("rev-parse", "HEAD").decode().strip()
             source = root / "agent-source"
             bridge.export_source(repo.root, repo.sha, source, protected)
             self.assertTrue((source / SOURCE).is_file())
+            self.assertEqual((source / SOURCE).read_bytes(), repo.git("show", f"{repo.sha}:{SOURCE}"))
+            if os.name != "nt":
+                self.assertEqual((source / SOURCE).stat().st_mode & 0o111, 0)
             for excluded in (".git", "global.json", "eng", ".github", "private.key"):
                 self.assertFalse((source / excluded).exists(), excluded)
+            for mode in ("120000", "160000"):
+                digest = repo.git("rev-parse", f"{repo.sha}:{SOURCE}").decode().strip() if mode == "120000" else repo.sha
+                repo.git("update-index", "--cacheinfo", f"{mode},{digest},{SOURCE}")
+                tree = repo.git("write-tree").decode().strip()
+                with self.subTest(mode=mode), self.assertRaisesRegex(ValueError, "regular Git blobs"):
+                    bridge.export_source(repo.root, tree, root / ("unsafe-" + mode), protected)
             mounts = [{"type": "bind", "source": str(source), "target": "/workspace"},
                       {"type": "tmpfs", "target": "/agent-tmp"}]
             bridge.validate_mounts(source, protected, mounts)
@@ -492,6 +648,12 @@ class AgentTests(unittest.TestCase):
                                                      timeout=60) as http:
                             denied = await http.post(url, headers={"Authorization": "Bearer wrong"}, content="{}")
                             self.assertEqual(denied.status_code, 401)
+                            for headers, code in (({"Host": "untrusted.invalid"}, 403),
+                                                  ({"Origin": "https://untrusted.invalid"}, 403),
+                                                  ([("Authorization", "Bearer " + token),
+                                                    ("Authorization", "Bearer " + token)], 400)):
+                                denied = await http.post(url, headers=headers, content="{}")
+                                self.assertEqual(denied.status_code, code)
                             oversized = await http.post(url, content=b"x" * (w.e.MAX_PATCH * 8))
                             self.assertEqual(oversized.status_code, 413)
                             async with streamable_http_client(url, http_client=http) as (read, write, _):

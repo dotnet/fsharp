@@ -690,7 +690,8 @@ class Controller:
                         (m.fingerprint_inputs(previous) == self.session["canonical_discovery_sha256"]
                          or previous == d), "Canonical discovery changed")
                 if d["outcome"] is None:
-                    d["checkpoint_at"] = min(self.now(), mem.timestamp(d["expires_at"])).isoformat()
+                    d["checkpoint_at"] = max(mem.timestamp(previous["checkpoint_at"]),
+                                            min(self.now(), mem.timestamp(d["expires_at"]))).isoformat()
                 candidate = mem.merge_discovery(state, d, previous)
                 a = self.session["attempt"]
                 if a is not None:
@@ -698,8 +699,8 @@ class Controller:
                     require(old is not None and (old == a or
                             m.fingerprint_inputs(old) == self.session["canonical_attempt_sha256"]),
                             "Canonical attempt changed")
-                    a["lease"]["checkpoint_at"] = min(
-                        self.now(), mem.timestamp(a["lease"]["expires_at"])).isoformat()
+                    a["lease"]["checkpoint_at"] = max(mem.timestamp(old["lease"]["checkpoint_at"]),
+                        min(self.now(), mem.timestamp(a["lease"]["expires_at"]))).isoformat()
                     candidate = mem.merge_attempt(candidate, a, old)
                 receipt = (self.session["persistence"] if candidate == state and
                            head == self.session["persistence"]["commit"] else self.persist(state, head, candidate))
@@ -716,7 +717,8 @@ class Controller:
             baseline = self.session["canonical_attempt_sha256"]
             require(baseline == m.fingerprint_inputs(previous) or a == previous,
                     "Canonical attempt changed since the acknowledged checkpoint")
-            a["lease"]["checkpoint_at"] = min(self.now(), mem.timestamp(a["lease"]["expires_at"])).isoformat()
+            a["lease"]["checkpoint_at"] = max(mem.timestamp(previous["lease"]["checkpoint_at"]),
+                min(self.now(), mem.timestamp(a["lease"]["expires_at"]))).isoformat()
             candidate = mem.merge_attempt(state, a, previous)
             receipt = (self.session["persistence"] if candidate == state and
                        head == self.session["persistence"]["commit"] else self.persist(state, head, candidate))
@@ -873,6 +875,14 @@ class Controller:
         return a, state
 
     def validate_output(self, payload=None):
+        try:
+            return self._validate_output(payload)
+        except KeyboardInterrupt:
+            if self.session.get("discovery") and self.session["discovery"]["outcome"] is None:
+                self.finish("cancelled", "Active deadline or cancellation before publisher output")
+            raise
+
+    def _validate_output(self, payload):
         if self.session.get("discovery"):
             require(self.session["phase"] == "accepted" and self.session["discovery"]["outcome"] is None,
                     "Only an active accepted experiment can authorize output")
@@ -913,11 +923,7 @@ class Controller:
         self.session.update(attempt=a, head=head)
         self.checkpoint()  # Intent acknowledgment precedes any publisher-visible output.
         if self.session.get("discovery"):
-            try:
-                self.poll_active()
-            except KeyboardInterrupt:
-                self.finish("cancelled", "Active deadline reached before publisher output")
-                raise
+            self.poll_active()
         output = self.root / "output"
         require(e.unredirected(output, missing_ok=True), "Publication output redirected")
         output.mkdir(exist_ok=True)

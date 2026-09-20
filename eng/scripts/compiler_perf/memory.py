@@ -487,6 +487,13 @@ def same_hypothesis(a, b):
                                       for operation, recorded in zip(operations, paths))
 
 
+def hypothesis_heads(state, attempt):
+    history = [a for a in state["attempts"].values() if same_hypothesis(a, attempt)]
+    superseded = {a["supersedes"] for a in history}
+    # Normalization can join independent legacy branches; retain every branch's policy.
+    return sorted((a for a in history if a["id"] not in superseded), key=lambda a: a["id"])
+
+
 def retry_decision(previous, current):
     validate_retry(previous)
     validate_retry(current, recorded=False)
@@ -523,12 +530,11 @@ def merge_attempt(state, attempt, base_attempt=None):
     if new_approval and (attempt["outcome"] == "measured_improvement" or attempt["publication"] is not None):
         acceptance_ready(attempt)
     if old is None:
-        history = [a for a in state["attempts"].values() if same_hypothesis(a, attempt)]
+        history = hypothesis_heads(state, attempt)
         if history:
-            superseded = {a["supersedes"] for a in history}
-            latest = [a for a in history if a["id"] not in superseded]
-            require(len(latest) == 1 and attempt["supersedes"] == latest[0]["id"]
-                    and retry_decision(latest[0], attempt)["allowed"], "New attempt bypasses recorded retry policy")
+            require(attempt["supersedes"] == history[0]["id"]
+                    and all(retry_decision(a, attempt)["allowed"] for a in history),
+                    "New attempt bypasses recorded retry policy")
     if old is not None:
         if old["outcome"] is not None and old["outcome"] != attempt["outcome"]:
             raise Conflict("Terminal outcome cannot be replaced; create a linked retry")
@@ -748,16 +754,14 @@ def preflight(state, request, fetch_pr_page, fetch_run, now, *, discovery_id=Non
                 interrupted = copy.deepcopy(a)
                 interrupted.update(lifecycle="interrupted", outcome="cancelled", reason="Actions owner completed without final journal")
                 working = merge_attempt(working, interrupted, base_attempt=a)
-        matches = [a for a in working["attempts"].values() if same_hypothesis(a, proposed)]
-        superseded = {a["supersedes"] for a in matches}
-        latest = [a for a in matches if a["id"] not in superseded]
-        require(len(latest) <= 1, "Ambiguous hypothesis history")
-        if latest:
-            retry = retry_decision(latest[0], proposed)
+        history = hypothesis_heads(working, proposed)
+        for previous in history:
+            retry = retry_decision(previous, proposed)
             if not retry["allowed"]:
-                return dict(result, action="skip", outcome=latest[0]["outcome"], reason=retry["reason"], state=working)
+                return dict(result, action="skip", outcome=previous["outcome"], reason=retry["reason"], state=working)
+        if history:
             require(proposed["id"] not in working["attempts"], "Retry requires a new stable attempt ID")
-            proposed["supersedes"] = retry["supersedes"]
+            proposed["supersedes"] = history[0]["id"]
         require(proposed["outcome"] is None and proposed["lifecycle"] == "reserved"
                 and proposed["publication"] is None, "New work requires a reservation")
         for condition in proposed["retry"]["when_any"]:

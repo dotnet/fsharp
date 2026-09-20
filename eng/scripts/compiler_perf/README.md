@@ -73,7 +73,10 @@ agent is blocked rather than receiving a shortened investigation. The authentica
 waits and validation. Monotonic elapsed time bounds a live process; sealed absolute
 deadlines and last-observed wall time bound restart. Reentry cannot renew either
 clock, and backwards time cancels incomplete work. Finalization has a separate
-2,400-second bound. These helper constants do **not** prove a compiled workflow
+2,400-second bound. Cancellation preserves the last acknowledged journal timestamp
+if wall time moves backwards. A worker entering finalization is monitored against
+that existing bound, not interrupted merely because the active clock expires.
+These helper constants do **not** prove a compiled workflow
 budget: the later graph must fit setup <=60 minutes, agent execution <=250 minutes
 and combined cleanup/publication <=40 minutes inside a 360-minute job.
 
@@ -187,6 +190,45 @@ containment proof. No schedule, hosted run, remote write or real PR was created.
 Compiler build/test and live Linux execution were not part of this portable
 validation.
 
+### Agent repair validation (2026-09-20)
+
+Executable source blobs now export as nonexecutable files; symlinks and Git links
+remain rejected. Clock-anomaly cancellation persists through canonical Git, and
+output-validation cancellation cannot leave discovery ownership active. The
+watchdog preserves an already-started finalizer. Normalized legacy histories
+retain every independent branch's latest rejection and require relevant
+invalidation against all of them before selecting a deterministic retry link.
+
+The repair RED run executed **7 tests** with **37 subtest failures and one error**
+in **49.755 seconds**, reproducing the reported defects. An intermediate command
+hit its recorded 125-second cap; only its owned process tree was stopped.
+Another run exposed a test-clock mistake: real elapsed preparation time had
+already consumed the asserted one-second margin. The boundary test now injects
+both clocks rather than assuming fixture setup is instantaneous.
+
+Final focused GREEN: **13 tests, zero failures/errors/skips**, in **142.144 seconds**
+(143.861 seconds including command overhead), using Python 3.13.7 and MCP 1.30.0.
+Coverage includes canonical legacy retries and backwards-clock cancellation,
+immutable deadlines/restart, output-authorization cancellation, finalizer races,
+successful and expired preparation, executable dump operations with deletion,
+regular-file export modes, unsafe mounts, actual HTTP authentication/origin/host
+checks, and early worker exit. The frozen executable/test tree is
+`942a37671b1bb4f45b37bb851b71d399a5d4d58e`; input manifest SHA-256 is
+`529126d0fae8328e64fba28ab97b52231846888153da24b68f11e198f5370a1b`.
+Inputs were unchanged after the run; this README is evidence-only.
+
+**Complete repair validation remains blocked.** The original single Sprint 04
+batch, including verifier invocations, reproductions, failed repair attempts
+and the root build probe, has spent **7150.085 of 7200 seconds**. Its remaining
+49.915 seconds cannot cover complete discovery or the synthetic candidate
+interaction replay; no new allocation was inferred from this repair invocation.
+The earlier 231-test complete run remains historical evidence for its original
+inputs, not a complete-suite pass for these changes. The pinned-SDK
+`dotnet build -c Release` exited 1 with MSB1011 (multiple root solutions), so the
+requested `&& dotnet test -c Release` continuation did not run. Long compiler
+or Linux execution still requires the owner-deployed fixed revision and
+authenticated LaunchFile. No remote writes or Linux containment claims were made.
+
 ## Agent interaction
 
 The protected owner supplies the current default-branch SHA and run ID, not a
@@ -288,6 +330,8 @@ files, and protected roots disjoint from **all actual mounts**. The bridge's sou
 export and command/mount checks are structural building blocks, not permission to
 wrap an unsafe default firewall launch. The gateway is trusted infrastructure;
 its Docker socket must never be reachable by agent code.
+Export accepts regular Git modes `100644` and `100755`, materializing both with
+mode `0644`; it never follows a source symlink or exports a submodule.
 
 Portable tests exercise actual SDK HTTP clients, synthetic diagnostics and real
 local bare-Git CAS. They do not establish the actual Linux mount/network boundary,

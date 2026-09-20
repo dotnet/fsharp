@@ -772,6 +772,71 @@ class MemoryTests(unittest.TestCase):
         published["publication"]["pr"]["state"] = "closed"
         self.assertEqual(preflight(state(published), prs=pages([pr(sha="b" * 40)]))["action"], "blocked")
 
+    def test_normalized_legacy_history_retries_require_every_terminal_head(self):
+        other = "src/Compiler/Optimize/Optimizer.fs"
+        first, second, tip = (attempt(name, outcome="rejected") for name in ("z-first", "a-second", "m-tip"))
+        for record, operation in ((first, PATH + ";" + other), (second, other + ";" + PATH), (tip, PATH + ";" + other)):
+            record["hypothesis"].update(id=record["id"], operation=operation)
+            record["dependencies"]["paths"][other] = H
+        tip["supersedes"] = first["id"]
+        tip["dependencies"]["paths"][PATH] = J
+        tip["retry"]["when_any"][0]["value"] = J
+        for change, allowed in TRANSITIONS["retry"] + [["superseded", True], ["one-head-only", False], ["active", False]]:
+            records = copy.deepcopy([first, second, tip])
+            current = attempt("retry")
+            current["hypothesis"].update(id="renamed", operation=other + ";" + PATH)
+            current["dependencies"]["paths"][other] = H
+            current["run"] = discovery(run_id="101")["run"]
+            current["lease"]["run_id"] = "101"
+            if change == "path":
+                current["dependencies"]["paths"][PATH] = "c" * 64
+            elif change == "workload":
+                current["dependencies"]["workload"] = J
+            elif change == "sdk":
+                current["dependencies"]["sdk"] = "11.0.101"
+            elif change == "permission":
+                current["dependencies"]["collector_permission"] = True
+            elif change == "readme":
+                current["dependencies"]["paths"]["README.md"] = J
+            elif change == "source":
+                current["fingerprints"]["source"] = J
+            elif change == "title":
+                current["hypothesis"]["description"] = "Same idea renamed again"
+            elif change == "superseded":
+                records[1]["dependencies"]["paths"][PATH] = J
+                records[1]["retry"]["when_any"][0]["value"] = J
+            elif change == "one-head-only":
+                current["dependencies"]["paths"][PATH] = J
+            elif change == "active":
+                records[2].update(outcome=None, lifecycle="collecting", reason="")
+                current["dependencies"]["workload"] = J
+            expected = "reserve" if allowed else "blocked" if change == "active" else "skip"
+            successors = []
+            for history in (state(*records), state(*reversed(records)), mem.decoded(mem.encoded(state(*records)))):
+                with self.subTest(change=change, order=list(history["attempts"])):
+                    original = mem.encoded(history)
+                    result = preflight(history, current, run_status="in_progress")
+                    self.assertEqual(result["action"], expected, result["reason"])
+                    self.assertEqual(mem.encoded(history), original)
+                    for record in records:
+                        self.assertEqual(result["state"]["attempts"][record["id"]], record)
+                    if allowed:
+                        selected = result["state"]["attempts"][current["id"]]
+                        self.assertIn(selected["supersedes"], (second["id"], tip["id"]))
+                        successors.append(selected["supersedes"])
+                        self.assertEqual(mem.merge_attempt(history, selected), result["state"])
+                    else:
+                        for previous in (second, tip):
+                            candidate = copy.deepcopy(current)
+                            candidate["supersedes"] = previous["id"]
+                            for condition in candidate["retry"]["when_any"]:
+                                kind = condition["kind"]
+                                condition["value"] = (candidate["dependencies"]["paths"][condition["path"]]
+                                                      if kind == "path" else candidate["dependencies"][kind])
+                            with self.assertRaises(ValueError):
+                                mem.merge_attempt(history, candidate)
+            self.assertLessEqual(len(set(successors)), 1)
+
     def test_restart_exact_inputs_available_evidence_and_orphan_reconciliation(self):
         a = attempt()
         a["evidence"] = [artifact()]
@@ -1093,6 +1158,44 @@ class GitJournalTests(unittest.TestCase):
             with self.subTest(schema=schema), self.assertRaisesRegex(ValueError, "delete canonical discoveries"):
                 self.journal.write_state(stored, tip, erased)
         self.assertEqual(self.journal.write_state(stored, tip, stored)["commit"], tip)
+
+    def test_normalized_legacy_retries_survive_canonical_round_trip(self):
+        other = "src/Compiler/Optimize/Optimizer.fs"
+        for reverse in (False, True):
+            with self.subTest(reverse=reverse):
+                records = [attempt("z-first", outcome="rejected"), attempt("a-second", outcome="rejected")]
+                for record, operation in zip(records, (PATH + ";" + other, other + ";" + PATH)):
+                    record["hypothesis"].update(id=record["id"], operation=operation)
+                    record["dependencies"]["paths"][other] = H
+                if reverse:
+                    records.reverse()
+                original = mem.encoded(state(*records))
+                head = self.journal.commit({"state.json": original}, self.journal.head())
+                self.assertTrue(self.journal.compare_and_swap(self.journal.head(), head))
+                base, head = self.journal.read()
+                current = attempt("retry")
+                current["hypothesis"].update(id="renamed", operation=other + ";" + PATH)
+                current["dependencies"]["paths"].update({other: H, PATH: J})
+                planned = preflight(base, current)
+                self.assertEqual(planned["action"], "reserve", planned["reason"])
+                candidate = mem.decoded(mem.encoded(planned["state"]))
+                receipt = self.journal.write_state(base, head, candidate)
+                stored, tip = self.journal.read()
+                self.assertEqual(stored["attempts"], candidate["attempts"])
+                self.assertEqual(tip, receipt["commit"])
+                self.assertEqual(self.journal.files(head)["state.json"], original)
+                for record in records:
+                    self.assertEqual(stored["attempts"][record["id"]], record)
+                rejected = dict(stored["attempts"][current["id"]], outcome="rejected",
+                                lifecycle="interrupted", reason="Retry was not faster")
+                self.journal.write(stored, tip, rejected)
+                base, head = self.journal.read()
+                current["id"] = "second-retry"
+                current["dependencies"]["paths"][PATH] = "c" * 64
+                planned = preflight(base, current)
+                self.assertEqual(planned["action"], "reserve", planned["reason"])
+                self.journal.write_state(base, head, mem.decoded(mem.encoded(planned["state"])))
+                self.assertEqual(self.journal.read()[0]["attempts"][rejected["id"]], rejected)
 
     def test_discovery_cas_merges_unrelated_completed_history_and_attempts(self):
         base, head = self.journal.read()
