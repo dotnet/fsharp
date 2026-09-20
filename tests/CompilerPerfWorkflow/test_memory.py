@@ -225,12 +225,33 @@ class MemoryTests(unittest.TestCase):
             mem._attest_correctness(current)
             merged = mem.merge_attempt(state(previous), current, previous)
             self.assertEqual(merged["attempts"][current["id"]], current)
-            current["correctness"]["results"][0]["finished_at"] = "2026-09-19T00:00:02Z"
-            current["correctness"]["results"][0]["execution"] = e.execution_signature(
-                current["correctness"]["results"][0])
-            mem._attest_correctness(current)
+            changed = copy.deepcopy(current)
+            result = changed["correctness"]["results"][0]
+            result["finished_at"] = "2026-09-19T00:00:02Z"
+            result["execution"] = e.execution_signature(result)
+            mem._attest_correctness(changed)
             with self.assertRaisesRegex(ValueError, "cannot be erased"):
-                mem.merge_attempt(state(previous), current, previous)
+                mem.merge_attempt(state(previous), changed, previous)
+            for old, renewed in zip(previous["correctness"]["results"], current["correctness"]["results"]):
+                self.assertNotEqual(old["execution"], renewed["execution"])
+                self.assertEqual({k: v for k, v in old.items() if k != "execution"},
+                                 {k: v for k, v in renewed.items() if k != "execution"})
+            index = next(i for i, r in enumerate(current["correctness"]["results"]) if r["category"] == "regression")
+            for key in current["correctness"]["results"][index]:
+                if key == "execution":
+                    continue
+                changed = copy.deepcopy(current)
+                result = changed["correctness"]["results"][index]
+                value = result[key]
+                result[key] = (("2026-09-18T23:59:59Z" if key == "started_at" else "2026-09-19T00:00:02Z")
+                               if key.endswith("_at") else
+                               value + "-changed" if isinstance(value, str) else
+                               value + 1 if type(value) is int else
+                               value + value if isinstance(value, list) else dict(value, changed=True))
+                result["execution"] = e.execution_signature(result)
+                with self.subTest(identity=key), self.assertRaises(ValueError):
+                    mem._attest_correctness(changed)
+                    mem.merge_attempt(state(previous), changed, previous)
 
     def test_fresh_gates_reconcile_even_coherently_resigned_receipts(self):
         import experiment as e

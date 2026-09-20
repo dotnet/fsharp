@@ -81,6 +81,7 @@ class WorkflowTests(unittest.TestCase):
         transport = JournalTransport(local, local_remote=remote)
         api = API()
         controller = w.Controller(root / "controller", repo.root, transport, api, now=lambda: NOW)
+        self.assertEqual(controller.root, controller.root.resolve())
         return repo, controller, api, transport
 
     def test_preflight_denial_pagination_acknowledgment_and_duplicates(self):
@@ -110,6 +111,69 @@ class WorkflowTests(unittest.TestCase):
                     self.assertEqual(again["action"], "blocked")
                     self.assertIn("owner", again["reason"].lower())
                 self.assertEqual(api.effects, [])
+
+    def test_lost_acknowledgment_restart_preserves_owner_and_candidate(self):
+        for crash in ("before-local-commit", "before-push", "before-readback",
+                      "before-session-save", "after-session-save"):
+            with self.subTest(crash=crash), tempfile.TemporaryDirectory() as directory:
+                repo, controller, api, transport = self.fixture(Path(directory))
+                request = repo.request()
+                target, method = ((transport.journal, "commit") if crash == "before-local-commit" else
+                                  (transport, "_push") if crash in ("before-push", "before-readback") else
+                                  (controller, "save"))
+                original = getattr(target, method)
+
+                def interrupt(*args, **kwargs):
+                    if crash in ("before-readback", "after-session-save"):
+                        original(*args, **kwargs)
+                    raise KeyboardInterrupt(crash)
+
+                with mock.patch.object(target, method, side_effect=interrupt), self.assertRaises(KeyboardInterrupt):
+                    controller.preflight(request)
+                checkpoint = (controller.root / "checkpoint.json").read_bytes()
+                proposed = mem.decoded(checkpoint)["attempts"][request["attempt_id"]]
+                refs = transport.journal.git("for-each-ref", "--format=%(refname)",
+                                             "refs/heads/memory/compiler-self-profile-candidates/").stdout
+                self.assertEqual(bool(refs), crash in ("before-push", "before-readback"))
+                transport = type(transport)(transport.journal.repository, local_remote=transport.remote)
+                restarted = w.Controller(controller.root, repo.root, transport, api, now=lambda: NOW)
+                state, head = transport.read()
+                reached_remote = crash not in ("before-local-commit", "before-push")
+                self.assertEqual(state["attempts"], {proposed["id"]: proposed} if reached_remote else {})
+                result = restarted.preflight(request)
+                self.assertEqual(result["action"], "blocked" if reached_remote else "reserve", result)
+                if reached_remote:
+                    self.assertIn("owner", result["reason"].lower())
+                    self.assertEqual(transport.read(), (state, head))
+                    self.assertEqual((controller.root / "checkpoint.json").read_bytes(), checkpoint)
+                if crash in ("before-readback", "before-session-save"):
+                    with self.assertRaisesRegex(ValueError, "No acknowledged reservation"):
+                        restarted.checkpoint()
+                else:
+                    self.assertTrue(restarted.checkpoint()["acknowledged"])
+                saved = transport.read()[0]["attempts"]
+                self.assertEqual(saved, {proposed["id"]: proposed})
+                self.assertEqual(transport.journal.git("for-each-ref", "--format=%(refname)",
+                                 "refs/heads/memory/compiler-self-profile-candidates/").stdout, refs)
+                self.assertEqual(api.effects, [])
+
+    def test_persist_requires_the_direct_transport_receipt(self):
+        with tempfile.TemporaryDirectory() as directory:
+            repo, controller, api, transport = self.fixture(Path(directory))
+            reservation = controller.preflight(repo.request())
+            self.assertEqual(reservation["action"], "reserve", reservation)
+            receipt = reservation["persistence"]
+            state, head = transport.read()
+            for changes in ({"acknowledged": 1}, {"scope": "github"}, {"remote": "other"},
+                            {"branch": "other"}, {"commit": "invalid"},
+                            {"local": dict(receipt["local"], remote_acknowledged=True)},
+                            {"local": dict(receipt["local"], commit="a" * 40)}):
+                with self.subTest(changes=changes), mock.patch.object(
+                        transport, "write_state", return_value=dict(receipt, **changes)):
+                    with self.assertRaisesRegex(ValueError, "not acknowledged"):
+                        controller.persist(state, head, state)
+            with mock.patch.object(transport, "write_state", return_value=receipt):
+                self.assertIs(controller.persist(state, head, state), receipt)
 
     def test_rejected_retry_ignores_unrelated_revision(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -233,29 +297,75 @@ class PublicationTests(unittest.TestCase):
             w.approval(a, {"items": []}, "a" * 40, "b" * 64)
 
     def test_crash_matrix_reconciles_at_most_one_draft(self):
-        for crash in ("after-intent", "after-branch", "after-pr", "before-ack"):
+        for crash in ("before-intent-ack", "after-intent", "after-output", "after-branch", "after-pr", "before-ack"):
             with self.subTest(crash=crash), self.candidate() as (controller, api, transport):
-                controller.validate_output()
-                self.assertEqual(transport.read()[0]["attempts"]["attempt-1"]["lifecycle"], "publication_pending")
-                if crash.startswith("after-") and crash != "after-intent":
+                if crash in ("before-intent-ack", "after-output"):
+                    original = controller.save
+
+                    def interrupt(name, value):
+                        if name == "approval":
+                            raise RuntimeError(crash)
+                        return original(name, value)
+
+                    target, method, failure = ((controller, "checkpoint", RuntimeError(crash))
+                                              if crash == "before-intent-ack" else
+                                              (controller, "save", interrupt))
+                    with mock.patch.object(target, method, side_effect=failure), self.assertRaises(RuntimeError):
+                        controller.validate_output()
+                    output = controller.root / "output"
+                    retained = {p.name: (p.read_bytes(), p.stat().st_mtime_ns) for p in output.iterdir()} if output.exists() else {}
+                    self.assertEqual(bool(retained), crash == "after-output")
+                    self.assertEqual(api.effects, [])
+                else:
+                    controller.validate_output()
+                if crash != "before-intent-ack":
+                    self.assertEqual(transport.read()[0]["attempts"]["attempt-1"]["lifecycle"], "publication_pending")
+                if crash in ("after-branch", "after-pr"):
                     api.failure = crash
                     with self.assertRaises(RuntimeError):
                         controller.finalize(publisher=api)
                     api.failure = None
                 elif crash == "before-ack":
-                    real = controller.checkpoint
                     with mock.patch.object(controller, "checkpoint", side_effect=ValueError("ack unavailable")):
                         with self.assertRaisesRegex(ValueError, "ack unavailable"):
                             controller.finalize(publisher=api)
-                    controller.checkpoint = real
                 controller = w.Controller(controller.root, controller.repository, transport, api, now=lambda: NOW)
-                result = controller.finalize(publisher=api)
+                if crash in ("before-intent-ack", "after-output"):
+                    with mock.patch.object(mem, "_VALIDATOR_KEY", b"restarted-controller"):
+                        controller.validate_output()
+                        for name, record in retained.items():
+                            path = controller.root / "output" / name
+                            self.assertEqual((path.read_bytes(), path.stat().st_mtime_ns), record)
+                        result = controller.finalize(publisher=api)
+                else:
+                    result = controller.finalize(publisher=api)
                 self.assertEqual(result["action"], "acknowledge", result)
                 controller.finalize(publisher=api)
                 self.assertEqual(api.effects, ["branch", "pr"])
                 saved = transport.read()[0]["attempts"]["attempt-1"]
                 self.assertEqual(saved["publication"]["pr"]["number"], 42)
                 self.assertEqual(saved["lifecycle"], "published")
+
+    def test_publication_reconciliation_requires_exact_identity(self):
+        with self.candidate() as (controller, api, transport):
+            payload = controller.validate_output()
+            intent = controller.session["attempt"]["publication"]
+            api.publish(payload, intent["head_sha"], intent)
+            exact = copy.deepcopy(api.items[0])
+            canonical = transport.read()
+            for key, value in (("base_repository", "other/repository"), ("base_ref", "other"),
+                               ("head_repository", "other/repository"), ("head_ref", "compiler-self-profile/other"),
+                               ("head_sha", "f" * 40), ("author", "other"), ("draft", False),
+                               ("intent_id", "a" * 64), ("attempt_id", "other")):
+                api.items[0] = dict(exact, **{key: value})
+                with self.subTest(identity=key), mock.patch.object(api, "publish") as publish:
+                    with self.assertRaises(ValueError):
+                        controller.finalize(publisher=api)
+                    publish.assert_not_called()
+                    self.assertEqual(transport.read(), canonical)
+            api.items[0] = exact
+            self.assertEqual(controller.finalize(publisher=api)["action"], "acknowledge")
+            self.assertEqual(api.effects, ["branch", "pr"])
 
     def test_output_tampering_and_unmerged_branch_are_blocked(self):
         for mutation in ("payload", "patch", "bundle", "branch", "custody", "raw", "runner"):
@@ -284,6 +394,11 @@ class PublicationTests(unittest.TestCase):
                     a = controller.session["attempt"]
                     r = next(r for r in a["correctness"]["results"] if r["category"] == "regression")
                     Path(r["capture"]["path"]).write_text("{}")
+                if mutation in ("payload", "patch", "bundle"):
+                    retained = {p.name: p.read_bytes() for p in output.iterdir()}
+                    with self.assertRaises(ValueError):
+                        controller.validate_output()
+                    self.assertEqual({p.name: p.read_bytes() for p in output.iterdir()}, retained)
                 with self.assertRaises(ValueError):
                     controller.finalize(publisher=api)
                 self.assertEqual(api.effects, [])

@@ -43,10 +43,18 @@ does not. Active owners and incomplete publication intents block duplicate work.
 `memory/compiler-self-profile-state`. It checks exact-ref absence, fetches and
 validates state, performs an ancestry-checked expected-head update, and verifies
 remote readback. Conflicts preserve other decisions and unmerged local candidates.
-The original GitJournal receipt still says `remote_acknowledged: false`;
-`transport_acknowledgment` is separate. A `local_fixture` acknowledgment is only
-local-Git test evidence, never GitHub durability. The native
+The transport returns its acknowledgment directly, with `scope`, `acknowledged`,
+`commit`, `branch`, `remote` and the unchanged GitJournal receipt in `local`.
+That nested receipt still says `remote_acknowledged: false`. The controller checks
+both identities; a `local_fixture` acknowledgment is only local-Git test evidence,
+never GitHub durability. The native
 `memory/compiler-self-profile` branch remains untrusted notes, not authority.
+
+After a lost acknowledgment, read the fixed ref before retrying. A reservation
+that reached the remote keeps its original owner even if the local session was
+not saved. Missing authenticated session custody blocks execution, rather than
+inventing a second owner from the unsealed checkpoint. Retained candidate refs
+are not discarded by reconciliation.
 
 Investigation refuses missing Linux/bubblewrap, pinned SDK or collector
 capabilities before bootstrap or profiling. Bounded setup precedes the fixed
@@ -82,11 +90,30 @@ no alternate transport and no bundle. Its `branch`, `base`, `base_commit` and
 
 `finalize` reconciles exact branch/head/author/base/draft/intent metadata and saves
 the actual PR number and URL. It has no CLI push, merge, ready-for-review, issue
-or comment writer. The publisher transport is exercised only through a fake
+or comment writer. Retrying `validate-output` after interruption freshly validates
+the candidate and reuses only the exact expected patch and payload, without
+rewriting either file. Changed or extra output stays blocked and preserved.
+The publisher transport is exercised only through a fake
 effect sink in portable tests. A future workflow must consume only the sealed,
 rechecked output in a credential-separated publisher job; these helpers do not
 install a schedule or grant permissions. Windows/local-Git fixtures do not prove
 Linux isolation or a real compiler-source improvement.
+
+Portable lifecycle checks (Python 3.11+, Git, and the pinned SDK for the existing
+offline SDK-resolver test):
+
+```powershell
+python -m unittest discover -s tests\CompilerPerfWorkflow -p "test_workflow*.py" -v
+python -m unittest discover -s tests\CompilerPerfWorkflow -p test_memory.py -v
+python -m unittest discover -s tests\CompilerPerfWorkflow -p "test_*.py" -v
+```
+
+These use owned local bare repositories and fake publication effects. Optional
+Linux isolation and live runner tests have separate prerequisites and are not
+certified by portable results.
+The lifecycle repair has targeted portable coverage; the full workflow and
+complete helper suites exceeded the bounded Windows dispatch limit and remain
+unverified as complete suites.
 
 ## Disposable experiment controller
 

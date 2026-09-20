@@ -155,8 +155,9 @@ class ActiveSession:
 class Controller:
     def __init__(self, root, repository, transport, api, *, now=None):
         self.root, self.repository = Path(root).absolute(), Path(repository).resolve(strict=True)
-        require(e.unredirected(self.root, missing_ok=True) and
-                not self.root.is_relative_to(self.repository), "Controller storage must be outside source and unredirected")
+        require(e.unredirected(self.root, missing_ok=True), "Controller storage must be unredirected")
+        self.root = self.root.resolve()
+        require(not self.root.is_relative_to(self.repository), "Controller storage must be outside source")
         self.transport, self.api = transport, api
         self.now = now or (lambda: datetime.now(timezone.utc))
         if not self.root.exists():
@@ -248,10 +249,12 @@ class Controller:
 
     def persist(self, state, head, candidate):
         mem.checkpoint(self.root / "checkpoint.json", candidate)
-        written = self.transport.write_state(state, head, candidate)
-        receipt = dict(written["transport_acknowledgment"],
-                       local={k: v for k, v in written.items() if k != "transport_acknowledgment"})
-        require(receipt["acknowledged"] is True and receipt["branch"] == mem.STATE_BRANCH,
+        receipt = self.transport.write_state(state, head, candidate)
+        require(type(receipt) is dict and receipt.get("acknowledged") is True
+                and receipt.get("branch") == mem.STATE_BRANCH and mem.digest(receipt.get("commit"), 40)
+                and receipt.get("scope") == self.transport.scope in ("github", "local_fixture")
+                and receipt.get("remote") == self.transport.remote
+                and receipt.get("local") == mem.GitJournal.receipt(receipt["commit"]),
                 "Canonical update was not acknowledged")
         return receipt
 
@@ -490,9 +493,15 @@ class Controller:
         output = self.root / "output"
         require(e.unredirected(output, missing_ok=True), "Publication output redirected")
         output.mkdir(exist_ok=True)
-        require(not list(output.iterdir()), "Publication output already exists; reconcile rather than overwrite")
-        (output / "proposal.patch").write_bytes(patch)
-        m.write_json(output / "safe-output.json", payload)
+        if list(output.iterdir()):
+            require({p.name for p in output.iterdir()} == {"proposal.patch", "safe-output.json"}
+                    and e.unredirected(output / "proposal.patch")
+                    and m.file_record(output / "proposal.patch")["sha256"] == patch_hash,
+                    "Publication output differs; preserve rather than overwrite")
+            validate_payload(read_input(output / "safe-output.json"), payload)
+        else:
+            (output / "proposal.patch").write_bytes(patch)
+            m.write_json(output / "safe-output.json", payload)
         binding = approval(a, payload, state["source_tree"], patch_hash)
         self.save("approval", dict(binding, head=head, files=[m.file_record(p) for p in sorted(output.iterdir())]))
         return payload
@@ -517,6 +526,7 @@ class Controller:
             self.report()
             return reconciled
         if publisher is not None:
+            require(not outstanding, "Outstanding PR differs from sealed publication")
             current, state = self.current_attempt()
             sealed = self.load("approval")
             output = self.root / "output"
