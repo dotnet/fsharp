@@ -6,7 +6,6 @@ open System
 open System.ComponentModel.Composition
 open System.Diagnostics
 open System.IO
-open System.Runtime.InteropServices
 open System.Threading
 
 open Microsoft.VisualStudio
@@ -38,25 +37,36 @@ module InteractiveWindowGuids =
 /// Reads the session settings the existing Tools, Options page writes.
 module internal InteractiveHostOptionsFactory =
 
-    let private hostDirectory () =
-        match Path.GetDirectoryName(typeof<InteractiveHostClient>.Assembly.Location) with
-        | null -> Environment.CurrentDirectory
-        | directory -> directory
+    /// The folder `dotnet fsi` is run from: the open solution's, whose `global.json` then picks the
+    /// SDK; the user's profile when nothing is open. Read on the UI thread, where the window's
+    /// evaluator calls in.
+    let private startDirectory () =
+        let solutionDirectory =
+            try
+                match ServiceProvider.GlobalProvider.GetService typeof<SVsSolution> with
+                | :? IVsSolution as solution ->
+                    let hr, directory, _, _ = solution.GetSolutionInfo()
 
-    let currentPlatform () =
-        match SessionsProperties.fsiUseNetCore, RuntimeInformation.ProcessArchitecture with
-        | true, _ -> NetCore
-        | _, Architecture.Arm64 -> NetFrameworkArm64
-        | _ when SessionsProperties.useAnyCpuVersion -> NetFramework64
-        | _ -> NetFramework32
+                    if
+                        ErrorHandler.Succeeded hr
+                        && not (String.IsNullOrEmpty directory)
+                        && Directory.Exists directory
+                    then
+                        ValueSome directory
+                    else
+                        ValueNone
+                | _ -> ValueNone
+            with _ ->
+                ValueNone
 
-    let create platform =
+        match solutionDirectory with
+        | ValueSome directory -> directory
+        | ValueNone -> Environment.GetFolderPath Environment.SpecialFolder.UserProfile
+
+    let create () =
         {
-            Platform = platform
-            HostDirectory = hostDirectory ()
-            InitialWorkingDirectory = Environment.GetFolderPath Environment.SpecialFolder.UserProfile
+            InitialWorkingDirectory = startDirectory ()
             UserArguments = SessionsProperties.fsiArgs
-            ShadowCopyReferences = SessionsProperties.fsiShadowCopy
             DebugMode = SessionsProperties.fsiDebugMode
             LanguageVersionPreview = SessionsProperties.fsiPreview
             UICultureLcid = Thread.CurrentThread.CurrentUICulture.LCID
@@ -72,27 +82,16 @@ type internal FSharpVsInteractiveWindowProvider
     let mutable window: IVsInteractiveWindow | null = null
     let mutable evaluator: FSharpInteractiveEvaluator voption = ValueNone
 
-    let captionFor (platform: InteractiveHostPlatform) =
-        $"{VFSIstrings.SR.fsharpInteractive ()} ({platform.Description})"
-
-    let setCaption platform =
-        match box window with
-        | :? ToolWindowPane as pane -> pane.Caption <- captionFor platform
-        | _ -> ()
-
-    let currentOptions () =
-        InteractiveHostOptionsFactory.create (InteractiveHostOptionsFactory.currentPlatform ())
-
     member this.Create(instanceId: int) =
         let host = new InteractiveHostClient(Process.GetCurrentProcess().Id)
-        let created = new FSharpInteractiveEvaluator(host, currentOptions, setCaption)
+        let created = new FSharpInteractiveEvaluator(host, InteractiveHostOptionsFactory.create)
         evaluator <- ValueSome created
 
         let toolWindow =
             windowFactory.Create(
                 InteractiveWindowGuids.ToolWindowId,
                 instanceId,
-                captionFor (InteractiveHostOptionsFactory.currentPlatform ()),
+                VFSIstrings.SR.fsharpInteractive (),
                 created,
                 __VSCREATETOOLWIN.CTW_fForceCreate
             )
