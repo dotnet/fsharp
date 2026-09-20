@@ -190,9 +190,24 @@ source/binary/patch/validator identities, outcome, reason and next action. An un
 validation discards only its verified owned `tree`; accepted candidates are
 retained. Cancellation returns 130 and normally discards source. Explicit
 `--checkpoint-on-cancel` preserves an interrupted candidate only after verifying
-its fingerprints; another `validate` verifies that checkpoint and uses fresh
-correctness/sample receipts. Altered source, patch, toolchain or outputs revoke
-eligibility. Individual pack/check commands have bounds (60/30 minutes); there
+its fingerprints. An atomic `checkpoint.json` retains the cancelled attempt;
+another `validate` checks its recorded digest and uses `memory.resume_reason`
+before collecting fresh correctness/sample receipts. The checkpoint binds the
+request/run, owned tree, retained patch, compiler/workload/policy identities and
+partial sample inventory. Missing, corrupt, redirected or changed retained inputs
+block resume, never initialize a fresh attempt or authorize a draft. The original
+checkpoint and patch remain failure evidence. Older digest-only checkpoints require
+a new disposable attempt. An interruption after checkpoint replacement but before
+its candidate-state binding also requires a new attempt; the unbound checkpoint is
+preserved, not trusted as fresh state.
+
+The source checkout may contain staged, unstaged and untracked user work: the
+controller clones the requested committed base without resetting or cleaning that
+checkout. Discard verifies the disposable tree's identity, not just its parent's;
+substituted trees and redirected ancestors are refused. It does not clean other
+worktrees, outstanding proposals or canonical memory.
+
+Individual pack/check commands have bounds (60/30 minutes); there
 is no overall experiment or investigation timeout. Full correctness input
 inventories remain in separately hashed JSON evidence beside the receipts; the
 bounded journal contains only their file identities. Fresh validation checks both

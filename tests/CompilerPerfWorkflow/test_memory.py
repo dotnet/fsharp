@@ -856,6 +856,31 @@ class GitJournalTests(unittest.TestCase):
         self.assertFalse(second["remote_acknowledged"])
         self.assertEqual(self.journal.write(stored, tip, two)["commit"], tip)
 
+    def test_invalid_local_checkpoint_preserves_canonical_decisions_and_proposal(self):
+        rejected = attempt(outcome="rejected")
+        self.journal.write(*self.journal.read(), rejected)
+        accepted = improvement()
+        accepted["id"] = accepted["hypothesis"]["id"] = "outstanding"
+        accepted["hypothesis"]["operation"] = "Other.operation"
+        mem._attest_correctness(accepted)
+        accepted["publication"] = mem.publication_intent(accepted, SHA)
+        accepted["lifecycle"] = "publication_pending"
+        self.journal.write(*self.journal.read(), accepted)
+        original, head = self.journal.read()
+        path = self.root / "checkpoint.json"
+        for payload in (None, b"", b'{"schema_version":', b'{"schema_version":999}'):
+            with self.subTest(payload=payload):
+                if payload is None:
+                    path.unlink(missing_ok=True)
+                else:
+                    path.write_bytes(payload)
+                result = mem.load_state(path)
+                self.assertEqual(result["status"], "blocked_setup")
+                self.assertIsNone(result["state"])
+                self.assertTrue(result["reason"])
+                self.assertEqual(self.journal.read(), (original, head))
+                self.assertEqual(path.read_bytes() if path.exists() else None, payload)
+
     def test_same_attempt_conflict_retains_unmerged_candidate(self):
         base, head = self.journal.read()
         first = self.journal.write(base, head, attempt(outcome="rejected"))

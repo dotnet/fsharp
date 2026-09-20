@@ -191,13 +191,14 @@ def validate_patch(tree, request, patch):
 def prepare_candidate(repository, owned_root, request, patch, *, manifest=None):
     validate_request(request)
     proposed_root = Path(owned_root).absolute()
-    require(not proposed_root.exists() and not proposed_root.is_symlink(), "Candidate needs a new owned root")
+    require(not proposed_root.exists() and unredirected(proposed_root, missing_ok=True),
+            "Candidate needs a new unredirected owned root")
     root = proposed_root.resolve()
     require(root != Path(repository).resolve() and not Path(repository).resolve().is_relative_to(root),
             "Candidate cannot contain the source repository")
     c.private_directory(root)
     tree = root / "tree"
-    identity = {"root": str(root), "device": root.stat().st_dev, "inode": root.stat().st_ino}
+    identity = {"root": str(root), "device": root.stat().st_dev, "inode": root.stat().st_ino, "tree": None}
     m.write_json(root / "owner.json", identity)
     state = {"schema_version": 1, "request": request, "patch_sha256": hashlib.sha256(patch).hexdigest(),
              "tree": str(tree),
@@ -220,8 +221,13 @@ def prepare_candidate(repository, owned_root, request, patch, *, manifest=None):
                 m.write_json(root / "packages.json", package_records)
                 m.write_json(root / "workload.json", manifest)
                 state["frozen"] += [m.file_record(root / name) for name in ("workload.json", "packages.json")]
-            git(repository, "clone", "--quiet", "--local", "--no-hardlinks", "--dissociate", "--no-checkout", "--template=",
-                "--", Path(repository).resolve(), tree, receipts=root)
+            try:
+                git(repository, "clone", "--quiet", "--local", "--no-hardlinks", "--dissociate", "--no-checkout", "--template=",
+                    "--", Path(repository).resolve(), tree, receipts=root)
+            finally:
+                if tree.is_dir() and unredirected(tree):
+                    identity["tree"] = [tree.stat().st_dev, tree.stat().st_ino]
+                    m.write_json(root / "owner.json", identity)
             git(tree, "checkout", "--quiet", "--detach", request["base_sha"])
             state["changed_paths"] = validate_patch(tree, request, patch)
             state["source_tree"] = git(tree, "write-tree").decode().strip()
@@ -240,13 +246,17 @@ def prepare_candidate(repository, owned_root, request, patch, *, manifest=None):
 
 
 def owned_root(path):
-    require(not Path(path).is_symlink(), "Candidate root redirected")
+    require(unredirected(Path(path).absolute()), "Candidate root redirected")
     root = Path(path).resolve(strict=True)
+    require(unredirected(root / "owner.json"), "Candidate owner redirected or missing")
     owner = m.read_json(root / "owner.json")
-    require(owner == {"root": str(root), "device": root.stat().st_dev, "inode": root.stat().st_ino},
-            "Unproven candidate ownership")
     tree = root / "tree"
-    require(not tree.is_symlink() and tree.resolve() == tree, "Candidate tree redirected")
+    require(unredirected(tree, missing_ok=True), "Candidate tree redirected")
+    require(owner == {"root": str(root), "device": root.stat().st_dev, "inode": root.stat().st_ino,
+                      "tree": [tree.stat().st_dev, tree.stat().st_ino] if tree.exists() else owner.get("tree")},
+            "Unproven candidate ownership")
+    require(unredirected(root / "candidate.json", missing_ok=True), "Candidate state redirected")
+    require(unredirected(root / "candidate.json.tmp", missing_ok=True), "Candidate state temporary file redirected")
     return root
 
 
@@ -255,6 +265,8 @@ def verify_candidate(path):
     state = m.read_json(root / "candidate.json")
     try:
         validate_request(state["request"])
+        require(state["tree"] == str(root / "tree"), "Candidate tree path redirected")
+        require(unredirected(root / "proposal.patch"), "Proposed patch redirected or missing: proposal.patch")
         require(m.file_record(root / "proposal.patch")["sha256"] == state["patch_sha256"], "Proposed patch changed")
         tree = root / "tree"
         m.verify_files(state["git_files"] + state.get("frozen", []))
@@ -946,6 +958,12 @@ def candidate_attempt(state, manifest, profile=None, correctness=None, documents
                     {key: m.fingerprint_inputs(invariants[key]) for key in ("workload", "bootstrap", "toolchain", "policy")})
     fingerprints.update(source=m.fingerprint_inputs(request["base_sha"]), input=m.fingerprint_inputs(manifest),
                         capture=invariants["toolchain"]["measurement"]["sha256"], reducer=m.file_record(m.__file__)["sha256"])
+    if measurement is None:
+        fingerprints.update(compiler=m.fingerprint_inputs(manifest["baseline_compiler"]),
+                            sdk=m.fingerprint_inputs(invariants["toolchain"]["sdk"]),
+                            runtime=m.fingerprint_inputs(invariants["toolchain"]["runtime"]),
+                            runner=m.fingerprint_inputs(invariants["environment"]),
+                            candidate=m.fingerprint_inputs(state["compiler"]))
     if state["compiler"]:
         fingerprints["candidate"] = m.fingerprint_inputs(state["compiler"])
     if correctness is None:
@@ -988,6 +1006,17 @@ def candidate_attempt(state, manifest, profile=None, correctness=None, documents
     }
 
 
+def checkpoint_attempt(root, state, manifest):
+    require(unredirected(root / "runs", missing_ok=True), "Checkpoint sample path redirected")
+    samples = sorted((root / "runs").rglob("*"))
+    require(all(unredirected(p) for p in samples), "Checkpoint sample path redirected")
+    attempt = candidate_attempt(state, manifest)
+    attempt["fingerprints"]["input"] = m.fingerprint_inputs(
+        [manifest, {k: v for k, v in state.items() if k != "checkpoint"},
+         [m.file_record(p) for p in samples if p.is_file()]])
+    return attempt
+
+
 def validate_candidate(path, profile_path, *, checkpoint_on_cancel=False):
     root = owned_root(path)
     phase = "setup"
@@ -997,14 +1026,24 @@ def validate_candidate(path, profile_path, *, checkpoint_on_cancel=False):
         state = m.read_json(root / "candidate.json")
         resume = state["outcome"] == "cancelled" and "checkpoint" in state
         require(state["outcome"] is None or resume, "Terminal experiments require a new attempt, not replacement")
-        state.update(lifecycle="validating", draft_eligible=False)
-        m.write_json(root / "candidate.json", state)
         try:
             state = verify_candidate(root)
             manifest = c.read_bounded_json(root / "workload.json")
+            checkpoint_path = root / "checkpoint.json"
+            require(resume or not checkpoint_path.exists(), "Interrupted checkpoint is not bound to candidate state")
             if resume:
-                require(state["checkpoint"] == m.fingerprint_inputs(
-                    [state["source_tree"], state["patch_sha256"], manifest]), "Interrupted checkpoint fingerprints differ")
+                require(unredirected(checkpoint_path) and
+                        state["checkpoint"] == m.file_record(checkpoint_path), "Interrupted checkpoint missing or changed")
+                saved = mem.load_state(checkpoint_path)
+                require(saved["status"] == "ready", "Invalid interrupted checkpoint: " + saved["reason"])
+                previous = saved["state"]["attempts"].get(state["request"]["attempt_id"])
+                require(previous is not None, "Interrupted checkpoint attempt differs")
+                proposed = checkpoint_attempt(root, state, manifest)
+                mem.validate_attempt(proposed)
+                reason = mem.resume_reason(previous, proposed, datetime.now(timezone.utc))
+                require(reason is None, reason)
+            state.update(lifecycle="validating", draft_eligible=False)
+            m.write_json(root / "candidate.json", state)
             invariants = manifest["invariants"]
             frozen_records(manifest)
             require(state["request"]["base_sha"] == invariants["workload"]["revision"] and
@@ -1093,8 +1132,10 @@ def validate_candidate(path, profile_path, *, checkpoint_on_cancel=False):
                     verified = verify_candidate(root)
                     frozen_records(manifest)
                     state.update(compiler=verified["compiler"],
-                                 next_action="Resume only with matching checkpoint fingerprints",
-                                 checkpoint=m.fingerprint_inputs([state["source_tree"], state["patch_sha256"], manifest]))
+                                 next_action="Resume only with matching checkpoint fingerprints")
+                    mem.checkpoint(root / "checkpoint.json", mem.merge_attempt(
+                        mem.empty_state(), checkpoint_attempt(root, state, manifest)))
+                    state["checkpoint"] = m.file_record(root / "checkpoint.json")
                 except (ValueError, OSError, KeyError, TypeError) as failure:
                     state["reason"] += "; checkpoint refused: " + c.sanitize(str(failure))
                     checkpoint_on_cancel = False
@@ -1157,7 +1198,7 @@ def discard_candidate(path):
         require(not state["draft_eligible"], "Accepted candidate is retained for human draft review")
         tree = root / "tree"
         if tree.exists():
-            require(((tree / ".git").is_dir() and not (tree / ".git").is_symlink()) or
+            require(((tree / ".git").is_dir() and unredirected(tree / ".git")) or
                     (state["source_tree"] is None and not (tree / ".git").exists()),
                     "Unproven disposable Git tree")
             state["discarded_diff_sha256"] = (hashlib.sha256(

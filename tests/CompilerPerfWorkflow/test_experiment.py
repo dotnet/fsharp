@@ -19,6 +19,7 @@ from test_measurement import measurements, refresh_identities
 from test_collection import artifact_profile
 import memory as mem
 import experiment as e
+from experiment_state_cases import ExperimentStateCases
 
 
 SOURCE = "src/Compiler/CodeGen/Test.fs"
@@ -78,7 +79,7 @@ class Repository:
                 "complexity": "One expression, no new mechanism"}
 
 
-class ExperimentTests(unittest.TestCase):
+class ExperimentTests(ExperimentStateCases, unittest.TestCase):
     def test_runner_capture_bound_is_not_silent_truncation(self):
         from test_memory import captured_command
 
