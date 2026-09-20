@@ -255,16 +255,23 @@ function readers(c, read) {
 
 function createFileEvidenceStore(config) {
     const c = configuration(config);
-    const read = async (info, sink) => {
+    const readFile = async (info, sink, signal) => {
+        signal.throwIfAborted();
         await root(c);
+        signal.throwIfAborted();
         const expectedId = (BigInt(`0x${hash(info.name).slice(0, 15)}`) + 1n).toString();
         requireValue(info.artifactId === expectedId, "file artifact identity mismatch");
         let handle;
         try { handle = await openRegular(info.file); }
-        catch (error) { if (error.code === "ENOENT") return null; throw error; }
-        try { return await measure(handle.createReadStream({ autoClose: false }), info, sink, AbortSignal.timeout(c.timeoutMs)); }
-        finally { await handle.close(); }
+        catch (error) { signal.throwIfAborted(); if (error.code === "ENOENT") return null; throw error; }
+        try {
+            signal.throwIfAborted();
+            return await measure(handle.createReadStream({ autoClose: false }), info, sink, signal);
+        } finally { await handle.close(); signal.throwIfAborted(); }
     };
+    // Bound the entire lifecycle; an outstanding filesystem call may only finish cleanup after expiry.
+    const read = (info, sink, signal = AbortSignal.timeout(c.timeoutMs)) =>
+        boundedWait(readFile(info, sink, signal), signal);
     const write = async (source, binding, blob) => {
         const info = await stage(c, source, binding, blob);
         const provisional = parseReference(reference(c, info, "1").url, c);
@@ -281,20 +288,25 @@ function createFileEvidenceStore(config) {
     };
     return { ...readers(c, read),
         async findEvidence(query) {
-            const prefix = `${discoveryPrefix(query)}e-`;
-            await root(c);
-            const names = await fs.readdir(c.directory);
-            requireValue(names.length <= 10000, "file evidence discovery limit exceeded");
-            const candidates = names.filter(n => n.startsWith(prefix) && n.endsWith(".bin")).sort();
-            requireValue(candidates.length <= 16, "work evidence discovery limit exceeded");
-            const result = [];
-            for (const file of candidates) {
-                const name = file.slice(0, -4);
-                const artifactId = (BigInt(`0x${hash(name).slice(0, 15)}`) + 1n).toString();
-                const record = discoveredRecord(c, query, name, artifactId);
-                if (await read(parseReference(record.url, c)) !== null) result.push(record);
-            }
-            return result;
+            const signal = AbortSignal.timeout(c.timeoutMs);
+            return boundedWait((async () => {
+                const prefix = `${discoveryPrefix(query)}e-`;
+                await root(c);
+                signal.throwIfAborted();
+                const names = await fs.readdir(c.directory);
+                signal.throwIfAborted();
+                requireValue(names.length <= 10000, "file evidence discovery limit exceeded");
+                const candidates = names.filter(n => n.startsWith(prefix) && n.endsWith(".bin")).sort();
+                requireValue(candidates.length <= 16, "work evidence discovery limit exceeded");
+                const result = [];
+                for (const file of candidates) {
+                    const name = file.slice(0, -4);
+                    const artifactId = (BigInt(`0x${hash(name).slice(0, 15)}`) + 1n).toString();
+                    const record = discoveredRecord(c, query, name, artifactId);
+                    if (await read(parseReference(record.url, c), undefined, signal) !== null) result.push(record);
+                }
+                return result;
+            })(), signal);
         },
         writeEvidence: (bytes, binding) => write(bytes, binding),
         writeBlob: (bytes, { binding, request, receipt }) => write(bytes, binding, { request, receipt }) };

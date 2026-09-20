@@ -517,6 +517,67 @@ test("file verification deadline destroys a stalled stream", { timeout: 2000 }, 
     assert.equal(stalled.destroyed, true);
 });
 
+for (const method of ["readEvidence", "verifyEvidence", "readBlob", "findEvidence"])
+for (const operation of ["mkdir", "lstat", "realpath", "open", "stat", "close", "failed-stat-close",
+    ...(method === "findEvidence" ? ["readdir"] : [])])
+test(`file ${method} deadline bounds ${operation} and rejects late verification`, { timeout: 5000 }, async t => {
+    const { config, store } = await fixture(t);
+    const blob = method === "readBlob";
+    const record = blob ? await store.writeBlob(Readable.from([payload]), approved()) : await store.writeEvidence(payload, binding);
+    let release, entered, closed, handle, streams = 0;
+    const stalled = new Promise(resolve => { release = resolve; });
+    const reached = new Promise(resolve => { entered = resolve; });
+    const cleanup = new Promise(resolve => { closed = resolve; });
+    const pause = async () => { entered(); await stalled; };
+    const open = fs.open;
+    t.mock.method(fs, "open", async (...args) => {
+        if (operation === "open") await pause();
+        handle = await open(...args);
+        const stat = handle.stat.bind(handle), close = handle.close.bind(handle);
+        t.mock.method(handle, "stat", async () => {
+            if (operation === "stat") await pause();
+            if (operation === "failed-stat-close") throw new Error("lost stat");
+            return stat();
+        });
+        t.mock.method(handle, "close", async () => {
+            if (["close", "failed-stat-close"].includes(operation)) await pause();
+            await close(); closed();
+        });
+        const stream = handle.createReadStream.bind(handle);
+        t.mock.method(handle, "createReadStream", (...args) => { streams++; return stream(...args); });
+        return handle;
+    });
+    if (["mkdir", "lstat", "realpath", "readdir"].includes(operation)) {
+        const original = fs[operation];
+        t.mock.method(fs, operation, async (...args) => { await pause(); return original(...args); });
+    }
+    const reader = createFileEvidenceStore({ ...config, timeoutMs: 100 });
+    const query = { runId: config.runId, attempt: config.attempt, buildInstanceId: binding.workId };
+    const outcome = reader[method](method === "findEvidence" ? query : record.url, () => {})
+        .then(() => "accepted", error => error.name);
+    let timer, result;
+    try {
+        await reached;
+        result = await Promise.race([outcome,
+            new Promise(resolve => { timer = setTimeout(resolve, 500, "deadline missed"); })]);
+    } finally {
+        clearTimeout(timer);
+        release();
+        await outcome;
+        // Drain the uncancellable filesystem operation, including its eventual handle cleanup.
+        while (handle ? handle.fd !== -1 : !["mkdir", "lstat", "realpath", "readdir"].includes(operation))
+            await new Promise(resolve => setImmediate(resolve));
+        if (handle) await cleanup;
+    }
+    assert.equal(result, "TimeoutError");
+    assert.equal(await outcome, "TimeoutError");
+    assert.equal(streams, operation === "close" ? 1 : 0, "expired opens must not start streaming");
+    t.mock.restoreAll();
+    assert.deepEqual(await store.verifyEvidence(record.url), {
+        bytes: payload.length, sha256: hash(payload), sha512: hash(payload, "sha512"),
+    });
+});
+
 for (const provider of ["file", "Actions"])
 for (const lane of ["evidence", "blob"])
 for (const stalledOperation of ["source", "open", "writeFile", "sync", "close", "failed-write-close"]) {

@@ -130,6 +130,13 @@ function formObservation({ unit, launch, files }, reservation, context) {
                 `missing, ambiguous or fallback ${role} inventory`);
                 return [role, found[0]];
             }));
+        if (!source) {
+            requireValue(equal(product.runtime, acquisition.compilerRuntime), "released product runtime mismatch with acquisition");
+            for (const role of ["compiler", "fsi", "core"])
+                requireValue(["path", "sha256", "assemblyVersion"].every(field =>
+                    roles[role][field] === acquisition.files[role][field]),
+                "released product identity differs from acquisition");
+        }
         requireValue(roles.corePackage.id === "FSharp.Core" && roles.corePackage.version === product.corePackageVersion &&
             product.coreAssets?.some(a => a.sha256 === roles.core.sha256),
         "Core package inventory mismatch");
@@ -191,7 +198,8 @@ function formObservation({ unit, launch, files }, reservation, context) {
                 requireValue(record.productFingerprint === fingerprint(product) && equal(record.producers, identities.producers) &&
                     Array.isArray(record.commands) && record.commands.length > 0, "assertion inventory/producers mismatch");
                 const runtime = manifest.kind === "fsi" ? record.selection?.runtime : record.compilerRuntimeSelection?.runtime;
-                requireValue(runtime && acquisition.runtimes.some(r => equal(r, runtime)) &&
+                requireValue(runtime && runtime.name === product.runtime.name && runtime.version === product.runtime.version &&
+                    acquisition.runtimes.some(r => equal(r, runtime)) &&
                     (!selectedCompilerRuntime || equal(selectedCompilerRuntime, runtime)), "runtime selection mismatch");
                 selectedCompilerRuntime = runtime;
                 const last = record.commands.at(-1);
@@ -315,17 +323,20 @@ function formObservation({ unit, launch, files }, reservation, context) {
                 const projectRow = record.projects?.find(row =>
                     row.project === filePath.join(directory, c.project) && row.targetFramework === c.tfm);
                 requireValue(execution.status !== "completed" || !execution.complete ||
-                    loads.length > 0 && loads.every(load => load.complete && load.assemblyName === "FSharp.Core" &&
-                    (load.sha256 === roles.core.sha256 || load === record.loadedCore && manifest.kind === "project" &&
-                        product.coreAssets.some(a => a.sha256 === load.sha256)) &&
-                    load.assemblyVersion === roles.core.assemblyVersion &&
-                    load.architecture.toLowerCase() === c.architecture &&
-                    acquisition.runtimes.some(r => r.version === load.runtimeVersion &&
-                        filePath.join(r.path, r.version) === load.runtimePath) &&
-                    (manifest.kind === "fsi" ? load.path === roles.core.path :
-                        load === record.loadedCore
-                            ? [projectRow.core.runtime.path, filePath.join(filePath.dirname(projectRow.targetPath), "FSharp.Core.dll")].includes(load.path)
-                            : load.path === filePath.join(filePath.dirname(roles.compiler.path), "FSharp.Core.dll"))),
+                    loads.length > 0 && loads.every(load => {
+                        const expectedRuntime = manifest.kind === "project" && load === record.loadedCore ? selectedSampleRuntime : runtime;
+                        return load.complete && load.assemblyName === "FSharp.Core" &&
+                            (load.sha256 === roles.core.sha256 || load === record.loadedCore && manifest.kind === "project" &&
+                                product.coreAssets.some(a => a.sha256 === load.sha256)) &&
+                            load.assemblyVersion === roles.core.assemblyVersion &&
+                            load.architecture.toLowerCase() === c.architecture &&
+                            expectedRuntime?.version === load.runtimeVersion &&
+                            filePath.join(expectedRuntime.path, expectedRuntime.version) === load.runtimePath &&
+                            (manifest.kind === "fsi" ? load.path === roles.core.path :
+                                load === record.loadedCore
+                                    ? [projectRow.core.runtime.path, filePath.join(filePath.dirname(projectRow.targetPath), "FSharp.Core.dll")].includes(load.path)
+                                    : load.path === filePath.join(filePath.dirname(roles.compiler.path), "FSharp.Core.dll"));
+                    }),
                 "loaded Core/runtime identity mismatch");
                 requireValue(equal(attempt.execution, Object.fromEntries(
                     ["status", "complete", "exitCode", "stdout", "stderr"].map(k => [k, execution[k]]))),

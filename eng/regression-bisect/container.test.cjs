@@ -339,6 +339,7 @@ test("execution export failures block authentication and remove owned resources"
             const contracts = require("./fixtures/contracts.cjs");
             const bytes = Buffer.from("approved archive");
             const archive = contracts.archiveReceipt({
+                name: "dotnet-sdk-10.0.100-linux-x64.tar.gz", rid: "linux-x64", architecture: "x64",
                 url: "https://builds.dotnet.microsoft.com/dotnet/Sdk/10.0.100/dotnet-sdk-10.0.100-linux-x64.tar.gz",
                 provenance: { kind: "publisher-checksum" },
             }, "/scratch/sdk.tar.gz", bytes);
@@ -355,8 +356,10 @@ test("execution export failures block authentication and remove owned resources"
             const bundle = path.join(f.root, "source.bundle");
             await fs.writeFile(bundle, "source");
             const invoke = f.deps.command;
+            let blobReached = false;
             f.deps.command = async (exe, args, settings) => {
                 const operation = args.at(-2) === "blob" ? "blob" : args.at(-1);
+                if (operation === "blob") blobReached = true;
                 if (fault === operation || fault === "cleanup" && args.includes("rm") && args.at(-1).endsWith("-worker"))
                     throw new Error(`injected ${fault} failure`);
                 if (operation === "blob") return { exitCode: 0, stdout: Buffer.alloc(0), stderr: Buffer.alloc(0),
@@ -376,7 +379,13 @@ test("execution export failures block authentication and remove owned resources"
                 evidenceDirectory: f.root, sourceDirectory: source, sourceBundle: bundle,
                 sourceBundleSha256: contracts.digest("source"), receiptKey: key }, f.deps);
             assert.equal(result.status, "blocked");
-            assert.match(result.reason, /injected|binding|archive|digest/);
+            assert.match(result.reason, {
+                collect: /injected collect failure/, binding: /protected export launch binding mismatch/,
+                archive: /injected archive failure/, truncated: /truncated worker archive/,
+                blob: /injected blob failure/, "blob-digest": /archive blob digest or size mismatch/,
+                cleanup: /injected cleanup failure/,
+            }[fault]);
+            assert.equal(blobReached, ["blob", "blob-digest", "cleanup"].includes(fault));
             assert.throws(() => verifyTransportReceipt(result.receipt, unit, key), /termination mismatch/);
             await assert.rejects(loadContainerEvidence(f.root, unit, key), /termination mismatch/);
             assert.equal(f.resources.size, fault === "cleanup" ? 1 : 0);

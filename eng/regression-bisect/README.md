@@ -696,6 +696,9 @@ untestable even when no runtime-load telemetry was produced.
 Compiler and sample runtime selections are checked independently across
 repetitions. A project may use different verified compiler and sample runtimes;
 changing either selection between repetitions is rejected.
+Loaded compiler/FSI Core telemetry must name the selected compiler runtime,
+not merely any acquired runtime. Released compiler, FSI and Core paths, hashes
+and assembly versions, plus the product runtime, must match acquisition evidence.
 
 Transport authentication proves which bytes the pinned harness collected
 under a particular launch. It does **not** prove that historical compiler
@@ -730,6 +733,10 @@ Staging deadlines cover opening, writing, syncing and closing, including error
 cleanup. A timeout rejects promptly and destroys the input; uncancellable
 filesystem operations finish cleanup when they settle, without publishing late
 bytes. File/HTTP reads, metadata requests and downstream sinks are also bounded.
+File reads use one deadline from directory validation through open, stat,
+streaming and final close, including failed-open cleanup. Discovery shares one
+deadline across directory enumeration and all candidate reads. Late filesystem
+completion cannot turn a timeout into successful verification or absence.
 Download-time 404/410 responses require authenticated metadata confirmation
 before becoming absence; a missing signed blob alone is not that confirmation.
 If artifact finalization succeeds but its response is lost, a new store instance

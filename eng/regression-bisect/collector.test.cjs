@@ -465,6 +465,67 @@ test("missing setup identity is untestable, never a worker-authored green observ
     assert.throws(() => formObservation(data, data.reservation, data.context), /missing indispensable/);
 });
 
+test("factory rejects product and runtime contradictions in authenticated exports", async t => {
+    const cases = [
+        ...["compiler", "fsi", "core"].map(role => ({ kind: "released", fault: `${role}-hash`, role })),
+        { kind: "released", fault: "compiler-version", role: "compiler" },
+        { kind: "released", fault: "product-runtime", project: true },
+        ...["source", "released"].flatMap(kind => [
+            { kind, fault: "compiler-load", project: true },
+            { kind, fault: "fsi-load" },
+            { kind, fault: "compiler-selection", project: true },
+        ]),
+    ];
+    for (const workerOs of ["windows", "linux"]) for (const scenario of cases)
+        await t.test(`${workerOs}/${scenario.kind}/${scenario.fault}`, async t => {
+            const data = await retainedFixture(t, { workerOs, ...scenario, sampleRuntime: "9.0.0", tfms: ["net9.0", "net10.0"] });
+            const values = Object.fromEntries(data.files.map(file => [file.path, JSON.parse(file.bytes)]));
+            const identities = values["identities.json"], product = identities.product;
+            const result = values["result.json"].result;
+            const reproduction = scenario.kind === "source" ? result.reproduction : result;
+            if (scenario.role) {
+                const file = product.files.find(file => file.role === scenario.role);
+                if (scenario.fault.endsWith("-hash")) file.sha256 = f.digest("substituted product");
+                else file.assemblyVersion = "99.0.0.0";
+                if (scenario.role === "core") for (const asset of product.coreAssets) asset.sha256 = file.sha256;
+                for (const cell of reproduction.cells) for (const record of cell.evidence) {
+                    if (record.selection[scenario.role]) record.selection[scenario.role].sha256 = file.sha256;
+                    if (scenario.role === "core") record.loadedCore.sha256 = file.sha256;
+                }
+            } else {
+                const runtime = values["acquisition.json"].identity.runtimes.find(r => r.version === "9.0.0");
+                if (scenario.fault === "product-runtime") product.runtime = { name: runtime.name, version: runtime.version };
+                for (const cell of reproduction.cells) for (const record of cell.evidence) {
+                    if (["compiler-selection", "product-runtime"].includes(scenario.fault)) record.compilerRuntimeSelection.runtime = runtime;
+                    for (const load of scenario.project ? record.compilerCoreLoads : [record.loadedCore]) {
+                        load.runtimeVersion = runtime.version;
+                        load.runtimePath = (workerOs === "linux" ? path.posix : path.win32).join(runtime.path, runtime.version);
+                    }
+                }
+            }
+            reproduction.identities.sha256 = jsonFile("identities.json", identities).sha256;
+            reproduction.productFingerprint = fingerprint(product);
+            for (const cell of reproduction.cells) for (const record of cell.evidence)
+                record.productFingerprint = reproduction.productFingerprint;
+            values["product.json"] = product;
+            values["reproduction.json"] = reproduction;
+            if (scenario.kind === "source") values["source.json"] = result;
+            const files = Object.entries(values).map(([name, value]) => jsonFile(name, value));
+            const receipt = JSON.parse(await fs.readFile(path.join(data.directory, "receipt.json")));
+            delete receipt.signature;
+            receipt.files = files.map(({ path, size, sha256 }) => ({ path, size, sha256 }));
+            receipt.signature = createHmac("sha256", data.context.keys.fixture).update(fingerprint(receipt)).digest("hex");
+            for (const file of files) await fs.writeFile(path.join(data.directory, file.path), file.bytes);
+            await fs.writeFile(path.join(data.directory, "receipt.json"), JSON.stringify(receipt));
+            await fs.rm(data.sample.root, { recursive: true });
+            await assert.rejects(data.collector({ ...data.input, result }),
+                scenario.role ? /released product.*acquisition/ : /runtime.*mismatch/);
+            assert.deepEqual(await data.store.findEvidence({
+                runId: data.context.owner.runId, attempt: data.context.owner.attempt, buildInstanceId: data.reservation.id,
+            }), []);
+        });
+});
+
 test("durable collection and acknowledgement loss resume in a new process without worker scratch", async t => {
     for (const [outcome, options] of [
         ["pass", { workerOs: "linux", project: true, sampleRuntime: "9.0.0" }],
