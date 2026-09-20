@@ -283,9 +283,18 @@ async function evidenceWarnings(transport, observations, requiredEvidenceOnly) {
             if (requiredEvidenceOnly && !evidence.required) continue;
             // The transport returns null only for confirmed unavailable/expired content.
             // API/authentication errors propagate, rather than becoming missing evidence.
-            const bytes = await transport.readEvidence(evidence.url);
-            requireState(bytes === null || Buffer.isBuffer(bytes), "evidence transport must return bytes or null");
-            if (bytes === null || hashBytes(bytes) !== evidence.sha256) {
+            let measured;
+            if (typeof transport.verifyEvidence === "function") {
+                const result = await transport.verifyEvidence(evidence.url);
+                requireState(result === null || digest(result.sha256) && Number.isSafeInteger(result.bytes) &&
+                    result.bytes >= 0 && result.bytes <= 1073741824, "invalid streaming evidence verification");
+                measured = result?.sha256 ?? null;
+            } else {
+                const bytes = await transport.readEvidence(evidence.url);
+                requireState(bytes === null || Buffer.isBuffer(bytes), "evidence transport must return bytes or null");
+                measured = bytes === null ? null : hashBytes(bytes);
+            }
+            if (measured !== evidence.sha256) {
                 warnings.push(`${evidence.required ? "required" : "optional"} missing or expired evidence: ${evidence.url}`);
                 if (evidence.required) missingRequired = true;
             }

@@ -1,5 +1,9 @@
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
+const fs = require("node:fs/promises");
+const os = require("node:os");
+const path = require("node:path");
+const { createFileEvidenceStore } = require("./evidence-store.cjs");
 const f = require("./fixtures/contracts.cjs");
 const { harness } = require("./fixtures/checkpoint.cjs");
 const model = require("./model.cjs");
@@ -23,8 +27,11 @@ async function authenticatedDisplay(h, ready) {
 }
 
 async function fixture({ outcome = "product-failure", evidence = [], producerName = "repro", matrixCount = 1,
-    archiveKind = "publisher-checksum" } = {}) {
+    archiveKind = "publisher-checksum", evidenceStore } = {}) {
     const h = harness(), calls = [], comments = [];
+    if (evidenceStore) Object.assign(h.transport, {
+        readEvidence: evidenceStore.readEvidence, verifyEvidence: evidenceStore.verifyEvidence,
+    });
     const issue = { ...h.context.issue, id: 900, title: "Regression", body: "Reviewed reproduction",
         user: { id: 20 }, updated_at: h.context.now };
     const statusRequest = h.transport.request;
@@ -91,6 +98,34 @@ async function fixture({ outcome = "product-failure", evidence = [], producerNam
     return Object.assign(h, { calls, comments, issue, fresh, deps, generation, getReads: () => reads,
         prepare: options => preparePublication({ now: h.context.now, generation, ...options }, deps) });
 }
+
+test("controlled durable artifacts publish with streaming archive verification and bounded signed evidence", async t => {
+    const directory = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "report-evidence-")));
+    t.after(() => fs.rm(directory, { recursive: true, force: true }));
+    const store = createFileEvidenceStore({ directory, repository: "dotnet/fsharp", runId: "12345", attempt: 1 });
+    const binding = { workId: "report-main", launchId: f.digest("launch"),
+        unitDigest: f.digest("unit"), imageDigest: f.digest("runner image") };
+    const small = await store.writeEvidence(Buffer.from("durable evidence"), binding);
+    const build = f.buildToolchain(f.sha("main"), "linux");
+    const blob = await store.writeBlob(Buffer.from("archive"), { binding, request: {
+        policy: f.policy(), kind: "source", sourceSha: build.sourceSha, product: "sdk", version: build.sdk.version,
+        platform: { os: "linux", architecture: "x64", rid: "linux-x64" }, archive: build.archive,
+    }, receipt: build.archive });
+    const h = await fixture({ evidence: [small, blob], evidenceStore: store });
+    h.transport.readEvidence = () => assert.fail("publication must not buffer immutable archive blobs");
+    const result = await h.prepare();
+    assert.equal(result.status, "ready", result.reason);
+    assert.ok(result.report.observations[0].evidence.every(e => e.available));
+    assert.ok(Buffer.byteLength(result.body) < 32768);
+    assert.ok(Buffer.byteLength(resultComment(h, result).body) < 48 * 1024);
+    const name = new URL(blob.url).searchParams.get("name");
+    await fs.rm(path.join(directory, `${name}.bin`));
+    const missing = await h.prepare();
+    assert.equal(missing.status, "blocked");
+    assert.match(missing.reason, /required evidence/);
+    t.diagnostic(JSON.stringify({ realLaunches: 0, displayBytes: Buffer.byteLength(result.body),
+        signedBytes: Buffer.byteLength(resultComment(h, result).body), evidence: [small, blob] }));
+});
 
 test("fresh complete intake produces a bounded deterministic pending intent, never a report write", async () => {
     const h = await fixture();

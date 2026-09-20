@@ -4,6 +4,9 @@ const { runReproduction } = require("./repro.cjs");
 const { testSourceRevision } = require("./workspace.cjs");
 const { execute } = require("./repro-process.cjs");
 const { requireValue, hash } = require("./toolchain-io.cjs");
+const fs = require("node:fs/promises");
+const path = require("node:path");
+const { executionFileNames, validateExecutionFiles } = require("./worker-output.cjs");
 
 function validateExecutionUnit(unit) {
     requireValue(unit && Object.keys(unit).sort().join(" ") ===
@@ -107,4 +110,70 @@ function readExecutionOutput(files, unit, launch) {
     return payload.result;
 }
 
-module.exports = { validateExecutionUnit, runExecutionUnit, readExecutionOutput };
+async function executionEvidence(unit, launch, result, { acquisition = null, commands = [], evidenceDirectory, scratchDirectory }) {
+    validateExecutionUnit(unit);
+    const read = async (file, root, optional = false) => {
+        try {
+            const relative = path.relative(root, file);
+            requireValue(relative && !relative.startsWith("..") && !path.isAbsolute(relative) &&
+                await fs.realpath(file) === path.resolve(file), "raw evidence path escapes worker scratch or contains links");
+            const stat = await fs.lstat(file);
+            requireValue(stat.isFile() && stat.nlink === 1 && stat.size <= 16 * 1024 * 1024, "raw evidence must be bounded regular unlinked data");
+            const bytes = await fs.readFile(file);
+            requireValue(bytes.length === stat.size, "raw evidence changed during export");
+            return bytes;
+        } catch (error) {
+            if (optional && error.code === "ENOENT") return Buffer.from("null");
+            throw error;
+        }
+    };
+    const source = unit.request.kind === "source";
+    const reproduction = source ? result.reproduction ?? null : result;
+    const buildRoot = path.join(evidenceDirectory, unit.buildInstanceId);
+    const declarations = source ? await read(path.join(buildRoot, "declarations.json"), evidenceDirectory, true) : Buffer.from("null");
+    const buildAcquisition = source ? await read(path.join(buildRoot, "acquisition.json"), evidenceDirectory, true) : Buffer.from("null");
+    const identities = reproduction?.identities
+        ? await read(path.join(reproduction.workDirectory, "identities.json"), scratchDirectory) : Buffer.from("null");
+    if (reproduction?.identities) requireValue(hash(identities) === reproduction.identities.sha256 &&
+        reproduction.identities.path === path.join(reproduction.workDirectory, "identities.json"), "raw identity binding mismatch");
+    const sourceCommands = [];
+    for (let i = 0; i < (source ? result.commands?.length ?? 0 : 0); i++)
+        sourceCommands.push(JSON.parse(await read(path.join(buildRoot, `command-${i + 1}.json`), evidenceDirectory)));
+    const product = JSON.parse(identities)?.product ?? result.product ?? null;
+    const rawProduct = {};
+    for (const role of ["fsi", "compiler"]) {
+        const config = product?.files.find(f => f.role === role)?.runtimeConfig;
+        rawProduct[`${role}.runtimeconfig.json`] = config ? await read(config.path, scratchDirectory) : null;
+        if (config) requireValue(hash(rawProduct[`${role}.runtimeconfig.json`]) === config.sha256, "raw runtimeconfig digest mismatch");
+    }
+    const global = source ? JSON.parse(buildAcquisition)?.identity?.requested.globalJson : null;
+    rawProduct["global.json"] = global ? await read(global.path, scratchDirectory) : null;
+    if (global) requireValue(hash(rawProduct["global.json"]) === global.sha256, "raw source declaration digest mismatch");
+    const values = {
+        "result.json": { schemaVersion: 1, ...launch, result }, "unit.json": unit,
+        "request.json": source ? result.requested ?? unit.request : unit.request,
+        "source.json": source ? result : null, "declarations.json": declarations,
+        "acquisition.json": acquisition, "build-acquisition.json": buildAcquisition,
+        "product.json": product, ...rawProduct,
+        "reproduction.json": reproduction, "identities.json": identities,
+        "commands.json": { source: sourceCommands, execution: commands },
+    };
+    const files = executionFileNames.map(name => {
+        const bytes = Buffer.isBuffer(values[name]) ? values[name] : Buffer.from(JSON.stringify(values[name]));
+        return { path: name, bytes, size: bytes.length, sha256: hash(bytes) };
+    });
+    validateExecutionFiles(files.map(({ path, size, sha256 }) => ({ path, size, sha256 })));
+    const blobs = [];
+    for (const [scope, acquired] of [["reproduction", acquisition], ["build", JSON.parse(buildAcquisition)]]) {
+        if (acquired?.status !== "acquired") continue;
+        const identity = acquired.identity;
+        for (const installation of identity.installations) {
+            const { product, version, archive } = installation;
+            blobs.push({ slot: `archive-${blobs.length}`, scope, kind: identity.requested.kind,
+                sourceSha: identity.requested.sourceSha ?? null, product, version, platform: unit.platform, archive });
+        }
+    }
+    return { files, blobs };
+}
+
+module.exports = { validateExecutionUnit, runExecutionUnit, readExecutionOutput, executionEvidence };

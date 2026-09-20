@@ -1,10 +1,13 @@
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("node:fs/promises");
-const os = require("node:os");
 const path = require("node:path");
 const { spawnSync } = require("node:child_process");
-const { validateContainerConfig, inspectRuntime, runContainer, image } = require("./container.cjs");
+const { validateContainerConfig, inspectRuntime, runContainer, image, loadContainerEvidence,
+    verifyTransportReceipt, verifyContainerEvidence, readCollectedExecution } = require("./container.cjs");
+const { Readable } = require("node:stream");
+const { executionEvidence } = require("./worker.cjs");
+const { workerArchive } = require("./worker-output.cjs");
 
 const config = () => ({
     schemaVersion: 1, image, dockerExecutable: "/usr/bin/docker",
@@ -63,7 +66,7 @@ test("runtime inspection fails closed before creating resources on unsupported h
 });
 
 test("unsupported production launches retain an explicit blocked receipt and create no resources", async t => {
-    const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "container-boundary-")));
+    const root = await fs.realpath(await fs.mkdtemp(path.join(__dirname, ".container-boundary-")));
     t.after(() => fs.rm(root, { recursive: true, force: true }));
     const result = await runContainer(config(), {
         operation: "canary", input: { mode: "inspect" }, evidenceDirectory: root,
@@ -78,10 +81,10 @@ test("unsupported production launches retain an explicit blocked receipt and cre
 });
 
 async function dockerFixture(t, failure) {
-    const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "container-ledger-")));
+    const root = await fs.realpath(await fs.mkdtemp(path.join(__dirname, ".container-ledger-")));
     t.after(() => fs.rm(root, { recursive: true, force: true }));
     const resources = new Map(), calls = [];
-    let inputDirectory, failed = false;
+    let inputDirectory, failed = false, execution, exported, acquisition;
     const run = async (executable, original, settings) => {
         assert.deepEqual(Object.keys(settings.env).sort(), original.includes("info")
             ? ["DOCKER_CONFIG", "HOME", "PATH"] : ["HOME", "PATH"]);
@@ -109,7 +112,8 @@ async function dockerFixture(t, failure) {
             else {
                 const network = args[args.indexOf("--network") + 1];
                 assert.equal(args.includes("--privileged"), false);
-                assert.equal(args[args.indexOf("--user") + 1], "1000:1000");
+                const user = args[args.indexOf("--user") + 1];
+                assert.ok(["1000:1000", "0:0"].includes(user));
                 assert.equal(args[args.indexOf("--cap-drop") + 1], "ALL");
                 assert.ok(args.includes("no-new-privileges=true"));
                 assert.ok(args.includes("--read-only"));
@@ -122,10 +126,11 @@ async function dockerFixture(t, failure) {
                     assert.equal(args.includes("RB_OUTER_CANARY"), false);
                 }
                 resources.set(name, {
-                    Id: name, Image: "sha256:" + "c".repeat(64), Config: { User: "1000:1000", Labels: labels },
+                    Id: name, Image: "sha256:" + "c".repeat(64), Config: { User: user, Labels: labels },
                     AppArmorProfile: "docker-default",
                     HostConfig: { ReadonlyRootfs: true, Privileged: false, PidMode: "", NetworkMode: network, CapDrop: ["ALL"],
                         IpcMode: "private", CgroupnsMode: "private", SecurityOpt: ["no-new-privileges=true"],
+                        CapAdd: args.flatMap((v, i) => v === "--cap-add" ? [args[i + 1]] : []),
                         Memory: Number(args[args.indexOf("--memory") + 1].slice(0, -1)) * 1024 * 1024,
                         MemorySwap: Number(args[args.indexOf("--memory-swap") + 1].slice(0, -1)) * 1024 * 1024,
                         PidsLimit: Number(args[args.indexOf("--pids-limit") + 1]),
@@ -160,6 +165,27 @@ async function dockerFixture(t, failure) {
         }
         if (args[1] === "exec") {
             if (failure === "ready") throw new Error("broker not responsive");
+            const operation = args.at(-2) === "blob" ? "blob" : args.at(-1);
+            if (["collect", "archive", "blob"].includes(operation)) {
+                assert.deepEqual(args.slice(2, 4), ["--user", "0:0"]);
+                const worker = resources.get(args[4]);
+                assert.equal(worker.State.Running, true, "STOP would have destroyed tmpfs before export");
+                const job = JSON.parse(await fs.readFile(path.join(inputDirectory, "input.json")));
+                if (operation === "collect") {
+                    exported = await executionEvidence(job.input, job.launch, execution, {
+                        evidenceDirectory: path.join(root, "worker-evidence"), scratchDirectory: root, acquisition,
+                    });
+                    return out({ schemaVersion: 1, ...job.launch, historicalTerminated: true,
+                        files: exported.files.map(({ path, size, sha256 }) => ({ path, size, sha256 })), blobs: exported.blobs });
+                }
+                if (operation === "blob") {
+                    const blob = exported.blobs.find(b => b.slot === args.at(-1));
+                    return { ...out(null), collected: await settings.consume(Readable.from([
+                        await fs.readFile(blob.archive.retained.path),
+                    ])) };
+                }
+                return { ...out(null), collected: await settings.consume(Readable.from(workerArchive(exported.files))) };
+            }
             return out(null);
         }
         if (args[1] === "start") {
@@ -168,7 +194,7 @@ async function dockerFixture(t, failure) {
             assert.deepEqual(Object.keys(job).sort(), ["hostAddresses", "input", "launch", "limits", "operation", "proxy", "schemaVersion"]);
             if (failure === "binding") job.launch.launchId = "f".repeat(64);
             if (failure === "oom") resources.get(args.at(-1)).State.OOMKilled = true;
-            return out({ schemaVersion: 1, ...job.launch, result: { mode: "inspect" } });
+            return out({ schemaVersion: 1, ...job.launch, result: execution ?? { mode: "inspect" } });
         }
         if (args[1] === "rm") {
             resources.delete(args.at(-1));
@@ -176,8 +202,129 @@ async function dockerFixture(t, failure) {
         }
         assert.fail(`unexpected Docker command: ${args}`);
     };
-    return { root, calls, resources, deps: { platform: "linux", command: run } };
+    return { root, calls, resources, setResult: value => { execution = value; },
+        setAcquisition: value => { acquisition = value; }, deps: { platform: "linux", command: run } };
 }
+
+test("physical source evidence survives destroyed worker tmpfs, not merely a result containing paths", async t => {
+    const f = await dockerFixture(t);
+    const contracts = require("./fixtures/contracts.cjs");
+    const { fingerprintInput: fingerprint } = require("./model.cjs");
+    const manifest = contracts.manifest();
+    const unit = {
+        schemaVersion: 1, repository: manifest.repository, issueNumber: manifest.issueNumber,
+        epoch: contracts.digest("epoch"), buildInstanceId: "physical-source", deadline: new Date(Date.now() + 60000).toISOString(),
+        request: { kind: "source", target: { sourceSha: contracts.sha("main") }, endpoint: "main", phase: "main" },
+        manifest, platform: { os: "linux", architecture: "x64", rid: "linux-x64" },
+        stableSdk: contracts.observation("released", "pass").target.sdk, resolved: {}, policyDigest: fingerprint(contracts.policy()),
+        policyRevision: contracts.sha("policy"), workflowRevision: contracts.sha("workflow"),
+        environmentFingerprint: fingerprint(Object.fromEntries(manifest.matrix.map(c =>
+            [c.id, { os: c.os, architecture: c.architecture, imageDigest: image.split(":").at(-1) }]))),
+    };
+    const scratch = path.join(f.root, "worker-tmpfs");
+    await fs.mkdir(scratch);
+    const archiveBytes = Buffer.from("SDK archive linux-x64");
+    const archivePath = path.join(scratch, "sdk.tar.gz");
+    await fs.writeFile(archivePath, archiveBytes);
+    const sdkArchive = contracts.archiveReceipt({
+        name: "dotnet-sdk-10.0.100-linux-x64.tar.gz",
+        url: "https://builds.dotnet.microsoft.com/dotnet/Sdk/10.0.100/dotnet-sdk-10.0.100-linux-x64.tar.gz",
+        rid: "linux-x64", architecture: "x64", provenance: { kind: "publisher-checksum" },
+    }, "/scratch/sdk.tar.gz", archiveBytes);
+    sdkArchive.sha512 = sdkArchive.actualSha512;
+    // The offline worker filesystem is Windows; only its raw transfer stream crosses this seam.
+    f.setAcquisition({ status: "acquired", identity: {
+        requested: { kind: "released", sdkVersion: "10.0.100", platform: unit.platform },
+        installations: [{ product: "sdk", version: "10.0.100", archive: sdkArchive }],
+    } });
+    const invoke = f.deps.command;
+    f.deps.command = async (exe, args, settings) => args.at(-2) === "blob"
+        ? { exitCode: 0, stdout: Buffer.alloc(0), stderr: Buffer.alloc(0),
+            collected: await settings.consume(Readable.from([await fs.readFile(archivePath)])) }
+        : invoke(exe, args, settings);
+    const identities = Buffer.from(JSON.stringify({ product: { kind: "source", sourceSha: unit.request.target.sourceSha,
+        buildInstanceId: unit.buildInstanceId, files: [] }, producers: [] }));
+    const identityPath = path.join(scratch, "identities.json");
+    await fs.writeFile(identityPath, identities);
+    const outcome = { schemaVersion: 1, outcome: "pass", reason: "positive-assertion" };
+    const reproduction = { outcome, cells: [{ id: manifest.matrix[0].id,
+        attempts: [contracts.attempt("pass"), contracts.attempt("pass")], evidence: [] }],
+        workDirectory: scratch, identities: { path: identityPath, sha256: contracts.digest(identities) },
+        manifestDigest: fingerprint(manifest), productFingerprint: fingerprint(JSON.parse(identities).product) };
+    const sourceResult = { status: "tested", outcome, reproduction, actualSourceSha: unit.request.target.sourceSha,
+        buildInstanceId: unit.buildInstanceId, requested: unit.request, product: JSON.parse(identities).product,
+        commands: [], evidence: [], globalJson: { before: contracts.digest("global"), after: contracts.digest("global") } };
+    f.setResult(sourceResult);
+    const exportSettings = { evidenceDirectory: path.join(f.root, "worker-evidence"), scratchDirectory: f.root };
+    const linked = path.join(scratch, "linked.json");
+    await fs.link(identityPath, linked);
+    await assert.rejects(executionEvidence(unit, {}, sourceResult, exportSettings), /unlinked/);
+    await fs.unlink(linked);
+    const alias = path.join(f.root, "scratch-link");
+    await fs.symlink(scratch, alias, "junction");
+    const redirected = structuredClone(sourceResult);
+    redirected.reproduction.workDirectory = alias;
+    redirected.reproduction.identities.path = path.join(alias, "identities.json");
+    await assert.rejects(executionEvidence(unit, {}, redirected, exportSettings), /links/);
+    await fs.unlink(alias);
+    const samples = path.join(f.root, "samples");
+    await fs.mkdir(path.join(samples, "fixtures"), { recursive: true });
+    await fs.writeFile(path.join(samples, manifest.sources[0].path), 'printfn "ok"');
+    const bundle = path.join(f.root, "source.bundle");
+    await fs.writeFile(bundle, "source");
+    const result = await runContainer(config(), {
+        operation: "execution", input: unit, evidenceDirectory: f.root, sourceDirectory: samples,
+        sourceBundle: bundle, sourceBundleSha256: contracts.digest("source"), receiptKey: Buffer.alloc(32, 7),
+    }, f.deps);
+    await fs.rm(scratch, { recursive: true });
+    assert.equal(result.status, "collected", result.reason);
+    assert.deepEqual(result.files?.find(file => file.path === "identities.json")?.bytes, identities,
+        "required raw identities must remain available after tmpfs destruction");
+    assert.equal(verifyTransportReceipt(result.receipt, unit, Buffer.alloc(32, 7)), true);
+    assert.equal(verifyContainerEvidence(result, unit, Buffer.alloc(32, 7)), true);
+    const substituted = { ...result, files: result.files.map(f => ({ ...f })) };
+    substituted.files[0].bytes = Buffer.from(substituted.files[0].bytes.toString().replace('"pass"', '"product-failure"'));
+    substituted.files[0].size = substituted.files[0].bytes.length;
+    substituted.files[0].sha256 = contracts.digest(substituted.files[0].bytes);
+    assert.throws(() => verifyContainerEvidence(substituted, unit, Buffer.alloc(32, 7)), /authenticated transfer/);
+    assert.throws(() => verifyContainerEvidence({ ...result, blobs: result.blobs.map(b => ({ ...b, path: "outside.blob" })) },
+        unit, Buffer.alloc(32, 7)), /authenticated storage/);
+    const reloaded = await loadContainerEvidence(f.root, unit, Buffer.alloc(32, 7));
+    assert.deepEqual(reloaded.result, result.result);
+    assert.deepEqual(reloaded.files, result.files);
+    assert.deepEqual(await fs.readFile(reloaded.blobs[0].path), archiveBytes);
+    const collected = await readCollectedExecution(f.root, { keys: { fixture: Buffer.alloc(32, 7) }, keyId: "fixture" });
+    assert.deepEqual(collected.unit, unit);
+    assert.deepEqual(collected.launch, result.receipt.launch);
+    assert.deepEqual(collected.result, result.result);
+    await assert.rejects(readCollectedExecution(f.root, { keys: { fixture: Buffer.alloc(32, 8) }, keyId: "fixture" }), /authentication/);
+    for (const [name, mutate] of Object.entries({
+        image: r => { r.launch.imageDigest = "a".repeat(64); },
+        unit: r => { r.launch.unitDigest = "a".repeat(64); },
+        helper: r => { r.helperDigest = "a".repeat(64); },
+        hash: r => { r.files[0].sha256 = "a".repeat(64); },
+        termination: r => { r.historicalTerminated = false; },
+    })) {
+        const changed = structuredClone(result.receipt); mutate(changed);
+        assert.throws(() => verifyTransportReceipt(changed, unit, Buffer.alloc(32, 7)), /authentication/, name);
+    }
+    assert.throws(() => verifyTransportReceipt(result.receipt, unit, Buffer.alloc(32, 8)), /authentication/);
+    const child = spawnSync(process.execPath, ["-e", `
+        require(${JSON.stringify(path.join(__dirname, "container.cjs"))}).loadContainerEvidence(
+            ${JSON.stringify(f.root)}, ${JSON.stringify(unit)}, Buffer.alloc(32, 7))
+            .then(x => process.stdout.write(x.files.find(f => f.path === "identities.json").sha256))
+            .catch(e => { console.error(e.message); process.exitCode = 1; });
+    `], { encoding: "utf8", timeout: 10000 });
+    assert.equal(child.status, 0, child.stderr);
+    assert.equal(child.stdout, contracts.digest(identities));
+    assert.equal(f.calls.some(args => args.includes("--attach")), false, "execution control is not sample stdout");
+    assert.equal(f.calls.some(args => args[1] === "cp" || args[1] === "stop"), false);
+    await fs.appendFile(path.join(f.root, "identities.json"), " ");
+    await assert.rejects(loadContainerEvidence(f.root, unit, Buffer.alloc(32, 7)), /digest|size/);
+    t.diagnostic(JSON.stringify({ transferredBytes: result.receipt.transferredBytes,
+        files: result.receipt.files, blobs: result.receipt.blobs.map(({ slot, size, sha256 }) => ({ slot, size, sha256 })) }));
+    t.diagnostic("offline Docker transport fixture; zero real launches");
+});
 
 test("Docker transactions collect only stopped launch-bound output and clean every owned resource", async t => {
     for (const failure of [null, "create-private", "create-public", "create-broker", "create-worker",

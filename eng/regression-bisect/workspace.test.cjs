@@ -228,6 +228,59 @@ async function controlled(t, os = "windows") {
     return Object.assign(f, { options, deps, shas, builds, command });
 }
 
+test("source runner output reaches the collector through physical export without scratch", async t => {
+    const f = await controlled(t);
+    const { harness } = require("./fixtures/checkpoint.cjs");
+    const state = require("./state.cjs");
+    const { executionEvidence } = require("./worker.cjs");
+    const { formObservation } = require("./collector.cjs");
+    const { image } = require("./container.cjs");
+    const h = harness(), context = h.context;
+    context.manifest = f.manifest;
+    context.authorization.manifestDigest = fingerprintInput(f.manifest);
+    context.authorization.inputDigest = f.manifest.approvedInputDigest;
+    context.pinnedMainSha = f.shas[0];
+    context.stableSdk.archives = [{ os: "windows", architecture: "x64", sha256: f.toolchain.archive.sha256 }];
+    const imageDigest = image.split(":").at(-1);
+    context.environmentFingerprint = fingerprintInput(Object.fromEntries(f.manifest.matrix.map(c =>
+        [c.id, { os: c.os, architecture: c.architecture, imageDigest }])));
+    await h.start();
+    const reservation = await state.reserveWork(h.transport, context, {
+        generation: 0, attemptId: "source-export", request: {
+            kind: "source", target: { sourceSha: f.shas[0] }, endpoint: "main", phase: "main",
+        },
+    });
+    const unit = {
+        schemaVersion: 1, repository: context.repository, issueNumber: context.issueNumber,
+        epoch: reservation.epoch, buildInstanceId: reservation.id, deadline: reservation.deadline,
+        request: reservation.request, manifest: f.manifest, platform, stableSdk: context.stableSdk,
+        resolved: f.toolchain.requested, policyDigest: fingerprintInput(context.policy),
+        policyRevision: context.policyRevision, workflowRevision: context.workflowRevision,
+        environmentFingerprint: context.environmentFingerprint,
+    };
+    const commands = [];
+    const capture = (run, lane) => async (executable, args, settings) => {
+        const result = await run(executable, args, settings);
+        commands.push({ lane, executable, args, cwd: settings.cwd, result });
+        return result;
+    };
+    const result = await testSourceRevision({ ...f.options, buildInstanceId: reservation.id,
+        reproductionToolchain: f.toolchain }, { ...f.deps, execute: capture(f.deps.execute, "historical"),
+        toolchains: { ...f.deps.toolchains, run: capture(f.deps.toolchains.run, "trusted") } });
+    assert.equal(result.outcome.outcome, "pass", JSON.stringify(result));
+    const launch = { launchId: hash("source export"), unitDigest: fingerprintInput(unit), imageDigest };
+    const { files } = await executionEvidence(unit, launch, result, {
+        acquisition: { status: "acquired", identity: f.toolchain }, commands,
+        evidenceDirectory: f.options.evidenceDirectory, scratchDirectory: f.root,
+    });
+    await fs.rm(f.root, { recursive: true });
+    const observation = formObservation({ unit, launch, files }, reservation, context);
+    assert.equal(observation.outcome.outcome, "pass");
+    assert.equal(observation.buildInstanceId, reservation.id);
+    assert.notEqual(result.toolchain.requested.installationRoot, f.toolchain.root);
+    t.diagnostic("offline source/process fixtures; zero real worker launches");
+});
+
 test("fresh revisions use their exact SHA, SDK, TFM and independent same-version Core bytes", async t => {
     const f = await controlled(t);
     await f.file("mirror/artifacts/Bootstrap/fsi/fsi.dll", "poison");

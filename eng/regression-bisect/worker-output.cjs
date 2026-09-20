@@ -1,5 +1,7 @@
 const { validateRepositoryPath } = require("./model.cjs");
 const { hash, requireValue } = require("./toolchain-io.cjs");
+const fs = require("node:fs/promises");
+const { createHash } = require("node:crypto");
 
 const MAX_FILE_BYTES = 16 * 1024 * 1024;
 const MAX_TOTAL_BYTES = 64 * 1024 * 1024;
@@ -101,4 +103,93 @@ async function collectWorkerArchive(stream, files, { signal, timeoutMs = 300000 
     return result;
 }
 
-module.exports = { collectWorkerArchive };
+const executionFileNames = Object.freeze([
+    "result.json", "unit.json", "request.json", "source.json", "declarations.json", "acquisition.json",
+    "build-acquisition.json", "product.json", "reproduction.json", "identities.json", "commands.json",
+    "global.json", "fsi.runtimeconfig.json", "compiler.runtimeconfig.json",
+]);
+
+function validateExecutionFiles(files) {
+    requireValue(Array.isArray(files) && files.length === executionFileNames.length &&
+        executionFileNames.every(name => files.filter(f => f.path === name).length === 1),
+    "fixed execution evidence file set required");
+    let total = 0;
+    for (const file of files) {
+        requireValue(Object.keys(file).sort().join(" ") === "path sha256 size" &&
+            /^[a-f0-9]{64}$/.test(file.sha256) && Number.isSafeInteger(file.size) &&
+            file.size >= 0 && file.size <= MAX_FILE_BYTES, "invalid execution evidence descriptor");
+        total += file.size;
+    }
+    requireValue(total <= MAX_TOTAL_BYTES, "execution evidence exceeds total size limit");
+    return total;
+}
+
+// The producer shares the reader's narrow subset: fixed regular files, no tar program or extraction.
+async function* workerArchive(files) {
+    validateExecutionFiles(files.map(({ path, size, sha256 }) => ({ path, size, sha256 })));
+    for (const file of files) {
+        requireValue(Buffer.isBuffer(file.bytes) && file.bytes.length === file.size &&
+            hash(file.bytes) === file.sha256, "worker evidence changed before export");
+        const header = Buffer.alloc(512);
+        header.write(file.path);
+        for (const [offset, length, value] of [[100, 8, 0o444], [108, 8, 0], [116, 8, 0],
+            [124, 12, file.size], [136, 12, 0]])
+            header.write(value.toString(8).padStart(length - 1, "0") + "\0", offset);
+        header.write("0", 156);
+        header.write("ustar\0" + "00", 257);
+        header.fill(32, 148, 156);
+        header.write(header.reduce((sum, byte) => sum + byte, 0).toString(8).padStart(6, "0") + "\0 ", 148);
+        yield header;
+        yield file.bytes;
+        yield Buffer.alloc(padded(file.size) - file.size);
+    }
+    yield Buffer.alloc(1024);
+}
+
+async function collectWorkerBlob(stream, archive, destination, { signal, timeoutMs = 300000 } = {}) {
+    requireValue(Number.isSafeInteger(timeoutMs) && timeoutMs > 0 && timeoutMs <= 300000, "invalid blob timeout");
+    const expected = archive?.retained;
+    requireValue(expected && Number.isSafeInteger(expected.size) && expected.size > 0 && expected.size <= 1073741824 &&
+        /^[a-f0-9]{64}$/.test(expected.sha256) && /^[a-f0-9]{128}$/.test(expected.sha512) &&
+        archive.sha256 === expected.sha256 && archive.actualSha512 === expected.sha512 &&
+        archive.bytesReceived === expected.size, "invalid bounded archive identity");
+    requireValue(stream && typeof stream[Symbol.asyncIterator] === "function" && typeof stream.destroy === "function",
+        "bounded archive blob stream required");
+    signal = AbortSignal.any([AbortSignal.timeout(timeoutMs), ...(signal ? [signal] : [])]);
+    const abort = () => stream.destroy(signal.reason);
+    const partial = destination + ".partial";
+    let file, size = 0, complete = false;
+    let created = false;
+    const sha256 = createHash("sha256"), sha512 = createHash("sha512");
+    try {
+        signal.throwIfAborted();
+        file = await fs.open(partial, "wx", 0o600);
+        created = true;
+        signal.addEventListener("abort", abort, { once: true });
+        signal.throwIfAborted();
+        for await (const chunk of stream) {
+            signal.throwIfAborted();
+            requireValue(Buffer.isBuffer(chunk), "archive blob requires raw bytes");
+            size += chunk.length;
+            requireValue(size <= expected.size, "archive blob exceeds byte limit");
+            sha256.update(chunk); sha512.update(chunk);
+            await file.writeFile(chunk);
+        }
+        signal.throwIfAborted();
+        requireValue(size === expected.size && sha256.digest("hex") === expected.sha256 &&
+            sha512.digest("hex") === expected.sha512, "archive blob digest or size mismatch");
+        await file.sync();
+        await file.close(); file = null;
+        await fs.link(partial, destination);
+        await fs.unlink(partial);
+        complete = true;
+        return { path: destination, size, sha256: expected.sha256, sha512: expected.sha512 };
+    } finally {
+        signal.removeEventListener("abort", abort);
+        stream.destroy();
+        await file?.close();
+        if (created && !complete) await fs.rm(partial, { force: true });
+    }
+}
+
+module.exports = { collectWorkerArchive, executionFileNames, validateExecutionFiles, workerArchive, collectWorkerBlob };

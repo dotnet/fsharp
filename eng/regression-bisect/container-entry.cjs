@@ -3,7 +3,9 @@ const path = require("node:path");
 const net = require("node:net");
 const { spawn } = require("node:child_process");
 const { createEgressBroker } = require("./egress.cjs");
-const { runExecutionUnit, validateExecutionUnit } = require("./worker.cjs");
+const { runExecutionUnit, validateExecutionUnit, executionEvidence } = require("./worker.cjs");
+const { workerArchive } = require("./worker-output.cjs");
+const { once } = require("node:events");
 const { acquireToolchain } = require("./toolchains.cjs");
 const { execute } = require("./repro-process.cjs");
 const { hash, fileIdentity, isolatedEnvironment, requireValue } = require("./toolchain-io.cjs");
@@ -148,17 +150,78 @@ async function canary(job) {
         statusSha256: hash(status), legitimateTransfer: { bytes: bytes.length, sha256: hash(bytes) } };
 }
 
-async function physicalRunner(unit) {
+async function terminateHistoricalProcesses() {
+    const deadline = Date.now() + 5000;
+    for (;;) {
+        const live = [];
+        for (const name of await fs.readdir("/proc")) {
+            if (!/^\d+$/.test(name)) continue;
+            try {
+                const status = await fs.readFile(`/proc/${name}/status`, "utf8");
+                if (/^Uid:\s+1000\s/m.test(status) && !/^State:\s+Z/m.test(status)) live.push(Number(name));
+            } catch (error) { if (error.code !== "ENOENT" && error.code !== "ESRCH") throw error; }
+        }
+        if (!live.length) return;
+        requireValue(Date.now() < deadline, "historical descendants did not terminate");
+        for (const pid of live) {
+            try { process.kill(pid, "SIGKILL"); } catch (error) { if (error.code !== "ESRCH") throw error; }
+        }
+        await new Promise(resolve => setTimeout(resolve, 10));
+    }
+}
+
+async function historicalDirectory(directory) {
+    requireValue(path.resolve(directory) === directory && await fs.realpath(directory) === directory &&
+        directory.startsWith("/scratch/") && !directory.startsWith("/scratch/helper") &&
+        !directory.startsWith("/scratch/control") && !directory.startsWith("/scratch/storage"),
+    "historical writable directory is not owned scratch");
+    for (const name of ["", ...await fs.readdir(directory, { recursive: true })]) {
+        const file = path.join(directory, name), stat = await fs.lstat(file);
+        if (stat.isSymbolicLink()) continue;
+        requireValue(stat.isDirectory() || stat.isFile() && stat.nlink === 1, "historical scratch contains nonregular files");
+        if (stat.uid === 0) await fs.chown(file, 1000, 1000);
+    }
+}
+
+async function historicalAccess(file) {
+    for (let parent = path.dirname(file); parent.startsWith("/scratch/"); parent = path.dirname(parent)) {
+        requireValue(!parent.startsWith("/scratch/control"), "control data must not reach historical processes");
+        const stat = await fs.lstat(parent);
+        requireValue(stat.isDirectory() && !stat.isSymbolicLink(), "historical access parent must be a regular directory");
+        if (stat.uid === 0) await fs.chmod(parent, 0o755);
+    }
+}
+
+async function physicalRunner(unit, launch) {
     validateExecutionUnit(unit);
+    requireValue(process.getuid() === 0, "execution requires the protected supervisor UID");
     const signal = AbortSignal.timeout(Math.max(1, Date.parse(unit.deadline) - Date.now()));
-    const withProxy = (executable, args, settings) => execute(executable, args, {
-        ...settings, signal,
-        env: { ...settings.env, ...Object.fromEntries(["HTTP_PROXY", "HTTPS_PROXY", "http_proxy", "https_proxy"].map(k => [k, process.env[k]])) },
-    });
+    const commands = [];
+    const withProxy = async (executable, args, settings, historical = false) => {
+        const env = { ...settings.env,
+            ...Object.fromEntries(["HTTP_PROXY", "HTTPS_PROXY", "http_proxy", "https_proxy"].map(k => [k, process.env[k]])) };
+        if (historical) {
+            await terminateHistoricalProcesses();
+            await historicalAccess(executable);
+            await historicalAccess(settings.cwd + "/entry");
+            for (const directory of new Set([settings.cwd, env.HOME, env.TEMP, env.NUGET_PACKAGES].filter(Boolean)))
+                await historicalDirectory(directory);
+        }
+        const entry = { executable, args, cwd: settings.cwd, lane: historical ? "historical" : "trusted" };
+        commands.push(entry);
+        try {
+            entry.result = await execute(historical ? "/usr/bin/setpriv" : executable,
+                historical ? ["--reuid=1000", "--regid=1000", "--clear-groups", "--no-new-privs", "--", executable, ...args] : args,
+                { ...settings, signal, env });
+            return entry.result;
+        } finally { if (historical) await terminateHistoricalProcesses(); }
+    };
     const storage = "/scratch/storage";
     for (const name of [storage, "/scratch/work", "/scratch/evidence", "/scratch/executions"]) await fs.mkdir(name);
     const acquired = await acquireToolchain({ policy, toolchain: unit.resolved, storageDirectory: storage, signal }, { run: withProxy });
-    if (acquired.status !== "acquired") return acquired;
+    if (acquired.status !== "acquired") return executionEvidence(unit, launch, acquired, {
+        acquisition: acquired, commands, evidenceDirectory: "/scratch/evidence", scratchDirectory: "/scratch",
+    });
     const toolchain = acquired.identity;
     const helperDirectory = "/scratch/helper";
     await fs.cp("/trusted/eng/regression-bisect/evidence", helperDirectory, { recursive: true });
@@ -199,18 +262,23 @@ async function physicalRunner(unit) {
         }
         return { kind: "released", root, buildInstanceId, files, runtime: identity.compilerRuntime, corePackageVersion: pkg.version };
     };
-    return runExecutionUnit(unit, {
+    const historical = (executable, args, settings) => withProxy(executable, args, settings, !args.includes(helper.dll));
+    const result = await runExecutionUnit(unit, {
         policy, inventoryReleased, acquireToolchain: async () => acquired,
-        workerExecute: withProxy, workspaceDependencies: { execute: withProxy },
+        workerExecute: historical, workspaceDependencies: { execute: historical, toolchains: { run: withProxy } },
         worker: { storageDirectory: storage, scratchDirectory: "/scratch/work", evidenceDirectory: "/scratch/evidence",
             workDirectory: "/scratch/executions", sourceDirectory: "/input/samples", mirrorDirectory: "/input/source.bundle",
             gitExecutable: "/usr/bin/git", reproductionToolchain: toolchain, helper },
     }, { signal });
+    await terminateHistoricalProcesses();
+    return executionEvidence(unit, launch, result, {
+        acquisition: acquired, commands, evidenceDirectory: "/scratch/evidence", scratchDirectory: "/scratch",
+    });
 }
 
 async function main() {
     const [operation] = process.argv.slice(2);
-    requireValue(process.argv.length === 3, "fixed container entry required");
+    requireValue(process.argv.length === (operation === "blob" ? 4 : 3), "fixed container entry required");
     if (operation === "broker") {
         const broker = createEgressBroker();
         broker.server.listen(3128, "0.0.0.0");
@@ -223,10 +291,62 @@ async function main() {
         requireValue(await connect("127.0.0.1", 3128) === "connected", "broker is not responsive");
         return;
     }
+    if (["collect", "archive", "blob"].includes(operation)) {
+        requireValue(process.getuid() === 0, "protected export UID required");
+        const deadline = Date.now() + 110 * 60000;
+        let descriptor;
+        for (;;) {
+            try { descriptor = JSON.parse(await fs.readFile("/scratch/control/ready.json", "utf8")); break; }
+            catch (error) { if (error.code !== "ENOENT") throw error; }
+            requireValue(Date.now() < deadline, "protected execution result unavailable");
+            await new Promise(resolve => setTimeout(resolve, 100));
+        }
+        requireValue(!descriptor.error, descriptor.error);
+        if (operation === "collect") { process.stdout.write(JSON.stringify(descriptor)); return; }
+        const write = async bytes => { if (!process.stdout.write(bytes)) await once(process.stdout, "drain"); };
+        if (operation === "archive") {
+            const files = await Promise.all(descriptor.files.map(async file =>
+                ({ ...file, bytes: await fs.readFile(path.join("/scratch/control", file.path)) })));
+            for await (const bytes of workerArchive(files)) await write(bytes);
+        } else {
+            const slot = process.argv[3];
+            requireValue(/^archive-(0|[1-9]\d*)$/.test(slot), "fixed archive slot required");
+            const blob = descriptor.blobs.find(b => b.slot === slot);
+            requireValue(blob, "unknown archive slot");
+            const retained = blob.archive.retained;
+            const stat = await fs.lstat(retained.path);
+            requireValue(retained.path.startsWith("/scratch/") && await fs.realpath(retained.path) === retained.path &&
+                stat.isFile() && !stat.isSymbolicLink() && stat.nlink === 1 && stat.uid === 0 &&
+                stat.size === retained.size && stat.size <= 1073741824, "archive export requires protected regular unlinked bytes");
+            const file = await fs.open(retained.path, "r");
+            try { for await (const bytes of file.createReadStream({ autoClose: false })) await write(bytes); }
+            finally { await file.close(); }
+        }
+        return;
+    }
     requireValue(operation === "worker" && process.argv.length === 3, "fixed container entry required");
     const job = JSON.parse(await fs.readFile("/input/input.json", "utf8"));
     requireValue(job.schemaVersion === 1 && ["execution", "canary"].includes(job.operation), "invalid public container input");
-    const result = job.operation === "canary" ? await canary(job) : await physicalRunner(job.input);
+    if (job.operation === "execution") {
+        await fs.mkdir("/scratch/control", { mode: 0o700 });
+        let descriptor;
+        try {
+            const evidence = await physicalRunner(job.input, job.launch);
+            for (const file of evidence.files)
+                await fs.writeFile(path.join("/scratch/control", file.path), file.bytes, { flag: "wx", mode: 0o400 });
+            descriptor = { schemaVersion: 1, ...job.launch, historicalTerminated: true,
+                files: evidence.files.map(({ path, size, sha256 }) => ({ path, size, sha256 })), blobs: evidence.blobs };
+        } catch (error) {
+            await terminateHistoricalProcesses();
+            descriptor = { error: error.message };
+        }
+        await fs.writeFile("/scratch/control/ready.new", JSON.stringify(descriptor), { flag: "wx", mode: 0o400 });
+        await fs.rename("/scratch/control/ready.new", "/scratch/control/ready.json");
+        // Docker removes tmpfs on STOP. Only the supervisor remains until the outer transfer/cleanup finishes.
+        setInterval(() => {}, 1000);
+        return;
+    }
+    const result = await canary(job);
     if (job.operation === "canary" && job.input.mode === "malformed") return;
     process.stdout.write(JSON.stringify({ schemaVersion: 1, ...job.launch, result }));
 }

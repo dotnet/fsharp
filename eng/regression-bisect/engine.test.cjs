@@ -10,6 +10,31 @@ const model = require("./model.cjs");
 const state = require("./state.cjs");
 const { advanceInvestigation, executeInvestigationWork } = require("./engine.cjs");
 const { runController } = require("./controller.cjs");
+const { formObservation } = require("./collector.cjs");
+
+test("the concrete collector may conservatively classify missing setup evidence without upgrading it", async t => {
+    const h = await fixture(t);
+    const work = await h.advance();
+    let unit;
+    const result = { outcome: { schemaVersion: 1, outcome: "untestable", reason: "unavailable-sdk" },
+        error: { stage: "sdk", code: "archive-unavailable", message: "Exact SDK unavailable" } };
+    const checkpoint = await executeInvestigationWork(work, {
+        ...h.deps, clock: () => new Date(h.context.now),
+        runIsolated: async input => { unit = input; return result; },
+        collectObservation: async ({ reservation, context }) => {
+            const launch = { launchId: f.digest("fixture launch"), imageDigest: f.digest("runner image"),
+                unitDigest: model.fingerprintInput(unit) };
+            const bytes = Buffer.from(JSON.stringify({ schemaVersion: 1, ...launch, result }));
+            return { observation: formObservation({ unit, launch, files: [{
+                path: "result.json", bytes, size: bytes.length, sha256: f.digest(bytes),
+            }] }, reservation, context), evidence: [] };
+        },
+    });
+    assert.equal(checkpoint.pending, null);
+    assert.deepEqual(checkpoint.state.budget.consumed, { sourceBuilds: 0, workerUnits: 1, reservedMinutes: 110 });
+    assert.deepEqual(Object.values(checkpoint.observations)[0].data.outcome,
+        { schemaVersion: 1, outcome: "untestable", reason: "incomplete-evidence" });
+});
 
 const gitExecutable = process.platform === "win32"
     ? execFileSync("where.exe", ["git.exe"], { encoding: "utf8" }).trim().split(/\r?\n/)[0]

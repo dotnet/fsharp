@@ -346,7 +346,9 @@ async function executeInvestigationWork(work, deps) {
     const collected = await deps.collectObservation({ result, reservation: r, manifest, context });
     checkDeadline();
     validateObservation(collected.observation, manifest);
-    requireValue(equal(collected.observation.outcome, result.outcome), "collector changed worker outcome");
+    requireValue(equal(collected.observation.outcome, result.outcome) ||
+        result.outcome.outcome === "untestable" && collected.observation.outcome.outcome === "untestable",
+    "collector changed worker outcome");
     if (result.outcome.outcome !== "untestable") {
         const reproduction = r.request.kind === "source" ? result.reproduction : result;
         requireValue(r.request.kind !== "source" || result.status === "tested" &&

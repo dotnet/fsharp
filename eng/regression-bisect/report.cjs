@@ -21,7 +21,8 @@ function reproductionDigest(manifest) {
 function safeEvidenceUrl(url) {
     requireValue(typeof url === "string" && (
         /^https:\/\/api\.github\.com\/repos\/dotnet\/fsharp\/actions\/artifacts\/[1-9]\d*\/zip$/.test(url) ||
-        /^https:\/\/github\.com\/dotnet\/fsharp\/actions\/runs\/[1-9]\d*\/artifacts\/[1-9]\d*$/.test(url)),
+        /^https:\/\/github\.com\/dotnet\/fsharp\/actions\/runs\/[1-9]\d*\/artifacts\/[1-9]\d*$/.test(url) ||
+        require("./evidence-store.cjs").isControlledEvidenceUrl(url)),
     "unsafe evidence origin or path");
 }
 function validateReport(report) {
@@ -251,6 +252,14 @@ async function preparePublication(options, deps) {
                 evidenceHashes.set(url, bytes === null ? null : hash(bytes));
                 return bytes;
             } };
+            if (typeof deps.transport.verifyEvidence === "function") transport.verifyEvidence = async url => {
+                safeEvidenceUrl(url);
+                const result = await deps.transport.verifyEvidence(url);
+                requireValue(result === null || digest(result.sha256) && Number.isSafeInteger(result.bytes) &&
+                    result.bytes >= 0 && result.bytes <= 1073741824, "invalid streaming evidence verification");
+                evidenceHashes.set(url, result?.sha256 ?? null);
+                return result;
+            };
             const loaded = await state.loadCheckpoint(transport, context, { requiredEvidenceOnly: true });
             const cp = loaded.checkpoint;
             const originalGeneration = cp.generation - (cp.publicationStatus === "pending" ? 1 : cp.publicationStatus === "published" ? 2 : 0);

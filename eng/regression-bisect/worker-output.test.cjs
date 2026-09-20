@@ -4,9 +4,8 @@ const { Readable } = require("node:stream");
 const { createHash } = require("node:crypto");
 const fs = require("node:fs/promises");
 const path = require("node:path");
-const os = require("node:os");
 const { execFileSync } = require("node:child_process");
-const { collectWorkerArchive } = require("./worker-output.cjs");
+const { collectWorkerArchive, collectWorkerBlob, executionFileNames, validateExecutionFiles, workerArchive } = require("./worker-output.cjs");
 
 const hash = bytes => createHash("sha256").update(bytes).digest("hex");
 const data = Buffer.from('{"outcome":"untestable","verified":true}');
@@ -41,7 +40,7 @@ test("collector reads a bounded regular-file tar as inert bytes and hashes every
 });
 
 test("collector accepts the real platform tar producer without extracting or executing output", async t => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "worker-output-"));
+    const root = await fs.mkdtemp(path.join(__dirname, ".worker-output-"));
     t.after(() => fs.rm(root, { recursive: true, force: true }));
     await fs.writeFile(path.join(root, "result.json"), data);
     await fs.writeFile(path.join(root, "inventory.cjs"), 'throw new Error("MUST NOT EXECUTE");');
@@ -146,4 +145,70 @@ test("collection cancellation and timeout destroy stalled transfers without part
     });
     for (const timeoutMs of [0, -1, 300001, Infinity])
         await assert.rejects(collectWorkerArchive(Readable.from([]), files(), { timeoutMs }), /timeout/);
+});
+
+test("execution export only accepts the controller-selected JSON names and existing caps", async t => {
+    const entries = executionFileNames.map(name => ({ path: name, bytes: data, size: data.length, sha256: hash(data) }));
+    const descriptors = entries.map(({ path, size, sha256 }) => ({ path, size, sha256 }));
+    const result = await collectWorkerArchive(Readable.from(workerArchive(entries)), descriptors);
+    assert.deepEqual(result, entries);
+    for (const [name, change] of Object.entries({
+        missing: f => f.pop(),
+        url: f => { f[0].path = "https://attacker.invalid/evidence"; },
+        path: f => { f[0].path = "../result.json"; },
+        extra: f => f.push({ ...f[0], path: "inventory.cjs" }),
+        hash: f => { f[0].sha256 = "x".repeat(64); },
+        size: f => { f[0].size = 16 * 1024 * 1024 + 1; },
+        aggregate: f => { for (const file of f) file.size = 16 * 1024 * 1024; },
+    })) await t.test(name, () => {
+        const changed = structuredClone(descriptors); change(changed);
+        assert.throws(() => validateExecutionFiles(changed), /file set|descriptor|size limit/);
+    });
+});
+
+test("approved archive lane streams exact receipt bytes without relaxing the JSON archive caps", async t => {
+    const root = await fs.mkdtemp(path.join(__dirname, ".worker-blob-"));
+    t.after(() => fs.rm(root, { recursive: true, force: true }));
+    const { archiveReceipt } = require("./fixtures/contracts.cjs");
+    const bytes = Buffer.from("the exact archive consumed by the installer");
+    const receipt = archiveReceipt({ url: "https://builds.dotnet.microsoft.com/dotnet/sdk.tar.gz" },
+        "/scratch/retained/sdk.tar.gz", bytes);
+    const mutations = {
+        intact: () => {},
+        digest: b => { b[0] ^= 1; },
+        truncated: () => bytes.subarray(1),
+        oversized: () => Buffer.concat([bytes, Buffer.from("x")]),
+    };
+    for (const [name, mutate] of Object.entries(mutations)) await t.test(name, async () => {
+        const data = Buffer.from(bytes), output = path.join(root, name + ".blob");
+        const altered = mutate(data) ?? data;
+        const stream = Readable.from([altered.subarray(0, 3), altered.subarray(3)]);
+        const collected = collectWorkerBlob(stream, receipt, output);
+        if (name === "intact") {
+            assert.deepEqual(await collected, { path: output, size: bytes.length,
+                sha256: receipt.sha256, sha512: receipt.actualSha512 });
+            assert.deepEqual(await fs.readFile(output), bytes);
+            assert.equal((await fs.lstat(output)).nlink, 1);
+        } else {
+            await assert.rejects(collected, /digest|size|limit/);
+            await assert.rejects(fs.access(output), { code: "ENOENT" });
+        }
+        await assert.rejects(fs.access(output + ".partial"), { code: "ENOENT" });
+        assert.equal(stream.destroyed, true);
+    });
+    for (const size of [0, -1, 1073741825]) {
+        const changed = structuredClone(receipt);
+        changed.retained.size = changed.bytesReceived = size;
+        let consumed = false;
+        await assert.rejects(collectWorkerBlob(Readable.from((async function* () { consumed = true; yield bytes; })()),
+            changed, path.join(root, "forbidden.blob")), /bounded archive identity/);
+        assert.equal(consumed, false);
+    }
+    const controller = new AbortController(), stalled = new Readable({ read() {} });
+    const transfer = collectWorkerBlob(stalled, receipt, path.join(root, "cancelled.blob"), { signal: controller.signal });
+    setTimeout(() => controller.abort(new Error("cancelled")), 10);
+    await assert.rejects(transfer, /cancelled/);
+    assert.equal(stalled.destroyed, true);
+    assert.equal((await fs.readdir(root)).some(name => name.endsWith(".partial")), false);
+    t.diagnostic(`zero real launches; streamed ${bytes.length} bytes; SHA256 ${receipt.sha256}`);
 });

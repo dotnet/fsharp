@@ -259,11 +259,11 @@ async function exactArchive(toolchain, product, version, options, deps, attempts
     throw Object.assign(new Error(`exact ${product} ${version} archive unavailable from permitted public feeds`), { code: "archive-unavailable" });
 }
 
-function verifyHostRid(toolchain, identity) {
+function verifyHostRid(toolchain, identity, filePath) {
     requireValue(identity.architecture === toolchain.platform.architecture, "resolved architecture/RID mismatch");
     if (identity.rid === toolchain.platform.rid) return;
     const record = identity.runtimeGraph;
-    requireValue(toolchain.kind === "source" && record?.path === path.join(identity.sdkBasePath, "RuntimeIdentifierGraph.json"),
+    requireValue(toolchain.kind === "source" && record?.path === filePath.join(identity.sdkBasePath, "RuntimeIdentifierGraph.json"),
         "historical RID requires the acquired SDK's runtime graph");
     const bytes = Buffer.from(record.bytesBase64, "base64");
     requireValue(hash(bytes) === record.sha256, "historical RID graph digest mismatch");
@@ -287,20 +287,20 @@ function verifyHostRid(toolchain, identity) {
     requireValue(portable.size === 1 && portable.has(toolchain.platform.rid), "resolved architecture/RID mismatch");
 }
 
-function verifyToolchainIdentity({ policy, toolchain, identity }) {
+function verifyToolchainIdentity({ policy, toolchain, identity }, filePath = path) {
     try {
         validatePolicy(policy);
         validatePlatform(toolchain.platform);
         const root = identity.root;
-        requireValue(path.isAbsolute(root) && root === toolchain.installationRoot &&
-            identity.hostPath === path.join(root, toolchain.platform.os === "windows" ? "dotnet.exe" : "dotnet"),
+        requireValue(filePath.isAbsolute(root) && root === toolchain.installationRoot &&
+            identity.hostPath === filePath.join(root, toolchain.platform.os === "windows" ? "dotnet.exe" : "dotnet"),
             "wrong selected host path");
         requireValue(identity.sdkVersion === toolchain.sdkVersion && toolchain.toolsVersion === toolchain.sdkVersion, "resolved SDK version mismatch");
-        requireValue(identity.sdkBasePath === path.join(root, "sdk", toolchain.sdkVersion), "wrong resolved SDK base path");
-        verifyHostRid(toolchain, identity);
+        requireValue(identity.sdkBasePath === filePath.join(root, "sdk", toolchain.sdkVersion), "wrong resolved SDK base path");
+        verifyHostRid(toolchain, identity, filePath);
         requireValue(identity.sdks.length === 1 && identity.sdks[0].version === toolchain.sdkVersion &&
-            identity.sdks[0].path === path.join(root, "sdk"), "unexpected installed SDK or SDK location");
-        validateArchiveReceipt({ policy, ...toolchain, version: toolchain.sdkVersion, product: "sdk" }, identity.archive);
+            identity.sdks[0].path === filePath.join(root, "sdk"), "unexpected installed SDK or SDK location");
+        validateArchiveReceipt({ policy, ...toolchain, version: toolchain.sdkVersion, product: "sdk" }, identity.archive, filePath);
         requireValue(Array.isArray(identity.installations), "missing installation receipts");
         const sdks = identity.installations.filter(i => i.product === "sdk");
         requireValue(sdks.length === 1 && sdks[0].version === toolchain.sdkVersion &&
@@ -310,7 +310,7 @@ function verifyToolchainIdentity({ policy, toolchain, identity }) {
             requireValue(toolchain.runtimeRequirements.some(r => runtimeProducts[r.name] === installed.product && r.version === installed.version),
                 "unexpected supplemental installation receipt");
             validateArchiveReceipt({ policy, ...toolchain, version: installed.version, product: installed.product,
-                archive: installed.archive }, installed.archive);
+                archive: installed.archive }, installed.archive, filePath);
         }
         for (const required of toolchain.runtimeRequirements)
             requireValue(identity.installations.some(i => i.archive.url === required.archiveUrl &&
@@ -318,13 +318,14 @@ function verifyToolchainIdentity({ policy, toolchain, identity }) {
             "missing required runtime archive receipt");
         for (const [name, assemblyName] of Object.entries({ compiler: "fsc", fsi: "fsi", core: "FSharp.Core" })) {
             const file = identity.files[name];
-            requireValue(file && inside(path.join(root, "sdk", toolchain.sdkVersion, "FSharp"), file.path) &&
-                path.basename(file.path) === `${assemblyName}.dll` && file.assemblyName === assemblyName &&
+            const relative = file && filePath.relative(filePath.join(root, "sdk", toolchain.sdkVersion, "FSharp"), file.path);
+            requireValue(file && relative && !relative.startsWith(`..${filePath.sep}`) && relative !== ".." &&
+                !filePath.isAbsolute(relative) && filePath.basename(file.path) === `${assemblyName}.dll` && file.assemblyName === assemblyName &&
                 /^[a-f0-9]{64}$/.test(file.sha256) && /^\d+\.\d+\.\d+\.\d+$/.test(file.assemblyVersion) &&
                 file.fileVersion, `missing or invalid bundled F# ${name} identity`);
         }
         for (const runtime of identity.runtimes) {
-            requireValue(runtime.path === path.join(root, "shared", runtime.name) &&
+            requireValue(runtime.path === filePath.join(root, "shared", runtime.name) &&
                 /^[a-f0-9]{64}$/.test(runtime.sha256), "wrong runtime installation identity");
         }
         for (const required of [{ name: "Microsoft.NETCore.App", version: toolchain.bundledRuntime.version }, ...toolchain.runtimeRequirements]) {

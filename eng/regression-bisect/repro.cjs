@@ -309,12 +309,12 @@ async function probeFrameworkFsi(selected, flags, directory, command, expected, 
     return { path: location, sha256: expected.sha256, assemblyVersion, runtimeVersion, runtimePath, architecture };
 }
 
-function diagnosticsExecution(result, diagnostics, root) {
+function diagnosticsExecution(result, diagnostics, root, filePath = path) {
     const errors = diagnostics.filter(d => d.severity === "error");
     return {
         ...result, stdout: "", stderr: errors.map(d => {
             const span = d.endLine > 0 && d.endColumn > 0 ? `${d.line},${d.column},${d.endLine},${d.endColumn}` : `${d.line},${d.column}`;
-            return `${path.relative(root, d.file).split(path.sep).join("/")}(${span}): error ${d.code}: ${d.message}\n`;
+            return `${filePath.relative(root, d.file).split(filePath.sep).join("/")}(${span}): error ${d.code}: ${d.message}\n`;
         }).join(""),
     };
 }
@@ -472,6 +472,7 @@ async function runReproduction(options, dependencies = {}) {
                     if (build.status !== "completed") execution = build;
                     else {
                         const structured = await invokeHelper(helper, ["binlog", binlog], launch, run);
+                        record.diagnostics = structured.diagnostics;
                         record.binlog = { path: binlog, sha256: hash(await fs.readFile(binlog)) };
                         if (structured.diagnostics.some(d => d.severity === "error" &&
                             (/^NU\d+$/.test(d.code) || path.basename(d.file ?? "").toLowerCase() === "nuget.targets"))) {
@@ -575,4 +576,4 @@ async function runReproduction(options, dependencies = {}) {
     }
 }
 
-module.exports = { runReproduction, selectFsiCommand, verifyProjectIdentities, evaluateAssertion };
+module.exports = { runReproduction, selectFsiCommand, verifyProjectIdentities, evaluateAssertion, compileAssertion, diagnosticsExecution };

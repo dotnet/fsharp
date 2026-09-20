@@ -477,11 +477,10 @@ come from the worker's separately pinned read-only bundle, not issue text.
 The extraction does not alter historical `global.json`, install policy,
 producer bytes, FSI selection or project identity verification.
 
-**Deployment is blocked.** The execution unit is public data, not an
-authenticated launch receipt or permission to execute it. The bounded archive
-reader below provides data-only collection, not a production containment adapter
-or an authenticating observation collector. This directory does not supply a
-controller/bootstrap CLI, scheduled workflow or `containment.smoke.cjs`.
+**Deployment is blocked pending real containment acceptance.** The execution
+unit is public data, not an authenticated launch receipt or permission to execute
+it. The Docker transport and durable collector below do not activate a
+controller/bootstrap CLI or scheduled workflow.
 The transaction tests use fake transports and runner
 callbacks and therefore do not prove confinement. Do not implement
 `runIsolated` as an in-process callback, stripped environment or ordinary
@@ -551,11 +550,11 @@ if ($LASTEXITCODE -ne 0) { throw 'Egress and transfer tests failed' }
 
 `container.cjs` provides `validateContainerConfig`, `inspectRuntime` and
 `runContainer(config, options)`. This is a concrete, opt-in transport, **not a
-deployed controller or an authenticated observation collector**. Neither unit
+deployed controller**. Neither unit
 tests with fake Docker responses nor an unsupported-host receipt establish
-containment. The controller CLI/workflow, durable indispensable-output
-retention and authenticated collector integration are not delivered; do not
-activate unattended investigation with this transport alone.
+containment. The collector authenticates and retains its output as described
+below; a controller CLI/workflow and real containment acceptance remain
+activation gates.
 
 The supported runtime is an already-provisioned disposable Linux x64 worker:
 Docker Engine 28 or newer, cgroup v2, built-in seccomp, AppArmor, memory/swap/PID
@@ -600,7 +599,11 @@ broker's inspected numeric private address. IPv6 is disabled. Direct public,
 metadata and host traffic must fail even if a build ignores proxy variables.
 The smoke probes this topology; command-line assertions are not acceptance.
 
-Both containers run as UID/GID 1000, with all capabilities dropped,
+The broker and canaries run as UID/GID 1000 with all capabilities dropped.
+Physical execution uses a separate UID0 supervisor with only CHOWN, KILL,
+SETGID and SETUID, and runs historical/sample commands as UID/GID 1000
+without capabilities. The supervisor protects its helpers, reproduction SDK
+and control records from that UID. Both modes retain
 no-new-privileges, default seccomp, Docker AppArmor, private PID/IPC/cgroup
 namespaces, read-only roots, zero swap, bounded tmpfs scratch and temporary
 storage, PID/CPU/memory/descriptor limits, and no Docker log-file accumulation.
@@ -623,6 +626,8 @@ existing workspace runner fetches only the selected SHA into fresh scratch.
 Only manifest-listed raw sample/producer assets are staged, with hashes
 rechecked. Symlinks, hardlinked inputs, unresolved paths and mount delimiters
 are rejected. The unit's environment fingerprint must match the pinned image.
+`receiptKey` is a host-only authentication key of at least 32 bytes; use the
+collector context's selected key. It is never passed to the container.
 `signal` can cancel a launch. No executable, shell command, Docker flag,
 report destination, key or callback is serialized into the job.
 
@@ -636,23 +641,110 @@ The win-x64 measured-archive exception is unchanged and does not authorize
 Linux downloads. Missing comparable runtimes or permitted historical SDKs
 remain untestable.
 
-After `docker start --attach` closes, the parent checks that the worker stopped
-without an OOM kill, bounds stdout to 16 MiB and parses only strict UTF-8 JSON
-bound to the retained launch/image/unit digests. It does not import, execute
-or open any worker-selected filename. Output paths, hardlinks and generated
-programs cannot cause host extraction: **there is no writable output mount
-or host extraction step**. `result.json` is retained verbatim with its hash,
-but remains untrusted runner data, not a signed observation. In particular,
-references to tmpfs files do not constitute durable retention of those files.
-No worker-reported `verified` field authorizes publication.
+Physical execution terminates historical/sample descendants before export.
+The protected supervisor stays alive until collection because stopping the
+container destroys tmpfs. Fixed Docker exec operations transfer fourteen
+controller-selected JSON files through the regular-file USTAR reader, followed
+by separately bounded immutable acquisition blobs. Sample stdout is captured
+as assertion data, never parsed as an envelope or control message. The parent
+hashes incoming bytes and retains them outside worker scratch before cleanup.
+The small lane remains capped at 64 files, 16 MiB/file, 64 MiB aggregate and
+five minutes. Archive blobs are at most 1 GiB each, bounded additionally by the
+launch scratch allocation and the durable store's 3 GiB/launch quota.
+**There is no writable host output mount, path extraction, or host execution
+of worker JS, PowerShell, MSBuild, assemblies or inventory programs.**
 
-`receipt.json` retains helper/config/input/image identities, Docker command
+The host-signed `receipt.json` retains helper/config/input/image identities, Docker command
 exit/digest records, owned resource IDs and cleanup results. Resources are
 registered before create calls so a lost create acknowledgement can still be
 cleaned. Cleanup verifies the launch label, force-removes owned containers
 (including descendants), then removes owned networks and verifies absence.
 Cleanup errors block the result. Cancellation is not a refund or permission
 to adopt unauthenticated output.
+
+### Durable observation collection
+
+`collector.createObservationCollector({ evidenceDirectory, store })` returns
+the engine's `collectObservation({ result, reservation, manifest, context })`.
+Place each `runContainer` output in
+`<evidenceDirectory>/<reservation.id>` and return its raw `result` from the
+trusted `runIsolated` adapter. Collection reloads the controller-selected
+directory, authenticates the outer receipt with `context.keys[context.keyId]`,
+and checks the exact unit, reservation, owner, epoch, manifest, policy,
+workflow, image and acquisition bindings. Worker paths remain provenance,
+not instructions to open host files or fetch URLs.
+
+Observations are rebuilt from raw acquisition, inventory, source declaration,
+source-build, command, producer and repeated reproduction evidence. The
+existing exact assertion comparison and diagnostic normalization are reused.
+Source and repetition commands must match distinct command receipts recorded
+by the protected supervisor, including executable, arguments and raw results.
+Wrong local compiler/tasks/targets/Core paths, host/runtime fallback, incomplete
+matrices, missing repetitions and changed bytes cannot supply passing product
+evidence. Missing setup identity is conservatively recorded as untestable
+incomplete evidence, never promoted to a product result. Essential identities,
+both assertion streams/exits and per-observation provenance stay in the signed
+checkpoint; external bytes are not a replacement for those fields.
+The fixed export includes JSON `null` for unavailable acquisitions. Acquisition
+and early setup failures can therefore be collected without inventing archive
+identities. Measured restore/build failures and interrupted reproductions remain
+untestable even when no runtime-load telemetry was produced.
+
+Transport authentication proves which bytes the pinned harness collected
+under a particular launch. It does **not** prove that historical compiler
+code is benign, or turn runtime-hook/binlog telemetry into an independent
+proof of arbitrary program semantics. The harness records selected commands,
+process outcomes, measured files and helper telemetry separately from sample
+stdout. No worker `verified` flag or ready-made observation is authority.
+
+The concrete store is **GitHub Actions v4 artifacts**.
+`createActionsEvidenceStore({ directory, repository, runId, attempt, token,
+runtimeToken })` uses fixed GitHub/Actions authorities for metadata and upload,
+with credential-free access to the exact service-issued Azure blob object.
+Workers receive neither credential. Reads authenticate repository, workflow
+run/attempt, artifact ID/name, immutable content digest and byte count.
+Redirects beyond the approved service handoff, arbitrary URLs and alternative
+ZIP members/paths are rejected; the single stored data member is streamed,
+not extracted. Uploads request 90 days' retention, subject to repository
+retention settings and deletion. A complete collection is at most 64 MiB;
+SDK/runtime archives use only the explicit receipt-validated streaming lane.
+Publisher checksums and the existing exact win-x64 measured approval remain
+distinct; measured bytes never become a publisher checksum.
+
+`createFileEvidenceStore({ directory, repository, runId, attempt })` implements
+the same references and validation for offline use. Both stores expose
+`writeEvidence`, `readEvidence`, `writeBlob`, `readBlob`, `verifyEvidence` and
+`findEvidence`. `readEvidence(url)` returns bounded small-record bytes or
+confirmed-absence `null`; archive verification uses `verifyEvidence(url)` to
+avoid allocating SDK-sized buffers. Compose both read methods into the state
+transport. Authentication, rate-limit, network and integrity failures throw.
+No artifact URL support is added to the issue API's `createGithubApi`.
+Transfer deadlines cover staging writes and syncs as well as file/HTTP reads,
+metadata requests and downstream sinks.
+
+The collector uploads indispensable bytes and a host-signed collection
+descriptor before `commitObservation` can clear pending work. Discovery uses
+the owning run/attempt and reservation ID, so a lost upload acknowledgement
+does not require its URL or scratch in memory.
+`commitCollectedObservation(input, { collectObservation, transport })`
+replays a retained collection under the existing controller lock and owning
+run; it neither launches a worker nor reserves/refunds work. The state ledger
+keeps observation writes and lost acknowledgements idempotent.
+The caller must hold the whole-issue lock across collection, quota reservation,
+checkpoint commit and acknowledgement, including across processes. The store's
+in-process queue is not a distributed lock; durable quota markers allow recovery
+after a killed writer only under that prerequisite.
+Required collection/archive expiry blocks reuse and publication. Optional logs may
+expire without changing adoption of an already authenticated pending report.
+Signed records remain strictly below 48 KiB and rendered reports below
+32,768 UTF-8 bytes; exceeding either bound blocks publication, not evidence
+validation or budget accounting.
+
+Offline transport/collector tests perform **zero real launches**. Before any
+unattended activation, acceptance must exercise the execution supervisor's UID,
+helper/control protection and descendant termination as well as the canary
+network/mount/resource tests and actual source-product reproduction. Passing
+synthetic Docker or file-store tests is not that acceptance.
 
 Run the real acceptance CLI with absolute resolved paths and a new evidence
 directory; the config is operator-reviewed transport configuration, **not an
@@ -679,7 +771,7 @@ returns exit **2**, records `incomplete`, and is never a mocked pass.
 Run transport tests separately:
 
 ```powershell
-node --test eng\regression-bisect\container.test.cjs eng\regression-bisect\worker.test.cjs eng\regression-bisect\worker-output.test.cjs eng\regression-bisect\egress.test.cjs
+node --test eng\regression-bisect\collector.test.cjs eng\regression-bisect\worker-output.test.cjs eng\regression-bisect\worker.test.cjs eng\regression-bisect\container.test.cjs eng\regression-bisect\evidence-store.test.cjs
 if ($LASTEXITCODE -ne 0) { throw 'Container transport tests failed' }
 ```
 

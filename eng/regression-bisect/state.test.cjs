@@ -231,6 +231,33 @@ test("commit binds exact request, build identity, owner and observation; duplica
     await assert.rejects(reserve(h, 1, "next"), /generation/);
 });
 
+test("streaming evidence verification preserves required-loss and transport-error semantics", async t => {
+    for (const fault of ["absent", "changed", "authentication", "oversized"]) await t.test(fault, async () => {
+        const h = harness(); await h.start();
+        const pending = await reserve(h);
+        const done = completion(h, pending);
+        done.evidence = [{ required: true, sha256: f.digest("durable evidence"),
+            url: "https://github.com/dotnet/fsharp/actions/runs/12345/artifacts/1" }];
+        const measured = { bytes: 16, sha256: done.evidence[0].sha256 };
+        h.transport.readEvidence = () => assert.fail("streaming transport must not buffer blobs");
+        h.transport.verifyEvidence = async () => measured;
+        await commitObservation(h.transport, h.context, done);
+        h.transport.verifyEvidence = async () => {
+            if (fault === "authentication") throw new Error("artifact authentication failed");
+            return fault === "absent" ? null : fault === "changed" ? { ...measured, sha256: f.digest("changed") } :
+                { ...measured, bytes: 1073741825 };
+        };
+        if (fault === "authentication" || fault === "oversized")
+            await assert.rejects(loadCheckpoint(h.transport, h.context), /authentication|streaming/);
+        else {
+            const loaded = await loadCheckpoint(h.transport, h.context);
+            assert.equal(loaded.executionAllowed, false);
+            assert.equal(loaded.publicationAllowed, false);
+            assert.equal(loaded.checkpoint.state.budget.consumed.sourceBuilds, 1);
+        }
+    });
+});
+
 for (const [os, kind] of [
     ["windows", "publisher-checksum"], ["windows", "approved-official-https-measured"],
     ["linux", "publisher-checksum"], ["macos", "publisher-checksum"],

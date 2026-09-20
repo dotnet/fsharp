@@ -397,6 +397,7 @@ for (const [name, options, error] of [
                     ]), expected);
                     assert.ok(record.projects.every(p => p.nullable === options.nullable), "nullable snapshot must survive row projection");
                     assert.equal(record.compilerCoreLoads.length, expected.length);
+                    assert.deepEqual(record.diagnostics, []);
                     assert.equal(record.commands.at(-1).args.at(-1), record.projects[0].targetPath);
                 }
             }
