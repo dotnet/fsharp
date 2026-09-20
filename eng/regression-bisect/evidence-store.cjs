@@ -141,7 +141,17 @@ async function stage(c, source, binding, blob) {
     requireValue(stream && typeof stream[Symbol.asyncIterator] === "function" &&
         typeof stream.destroy === "function", "bounded raw evidence stream required");
     const signal = AbortSignal.timeout(c.timeoutMs);
-    const abort = () => stream.destroy(signal.reason);
+    const abort = () => stream.destroy();
+    signal.addEventListener("abort", abort, { once: true });
+    // Filesystem I/O cannot be cancelled. Reject on time, but let outstanding I/O
+    // settle before closing/removing staging bytes; it must never reach publication.
+    return boundedWait(stageStream(c, stream, binding, blob, signal), signal).finally(() => {
+        signal.removeEventListener("abort", abort);
+        stream.destroy();
+    });
+}
+
+async function stageStream(c, stream, binding, blob, signal) {
     const sha256 = createHash("sha256"), sha512 = createHash("sha512");
     let bytes = 0, crc = 0xffffffff, complete = false, file, handle;
     try {
@@ -149,36 +159,39 @@ async function stage(c, source, binding, blob) {
         binding = { ...binding };
         if (blob) blob = structuredClone(blob);
         await root(c);
+        signal.throwIfAborted();
         if (blob) {
             validateArchiveReceipt(blob.request, blob.receipt,
                 path.win32.parse(blob.receipt.retained?.path ?? "").root.length > 1 ? path.win32 : path.posix);
             await reserveBlob(c, binding, blob.receipt);
+            signal.throwIfAborted();
         }
         file = path.join(c.directory, `.upload-${randomUUID()}`);
         handle = await fs.open(file, "wx", 0o600);
         signal.throwIfAborted();
-        signal.addEventListener("abort", abort, { once: true });
         for await (const chunk of stream) {
             signal.throwIfAborted();
             requireValue(Buffer.isBuffer(chunk), "evidence stream must contain raw bytes");
             bytes += chunk.length;
             requireValue(bytes <= (blob ? blob.receipt.bytesReceived : EVIDENCE_LIMIT), "evidence byte limit exceeded");
             sha256.update(chunk); sha512.update(chunk); crc = crcUpdate(crc, chunk);
-            await boundedWait(handle.writeFile(chunk), signal);
+            await handle.writeFile(chunk);
+            signal.throwIfAborted();
         }
         signal.throwIfAborted();
         const info = { bytes, sha256: sha256.digest("hex"), sha512: sha512.digest("hex"), crc: (crc ^ 0xffffffff) >>> 0,
             work: hash(binding.workId), binding: bound, lane: blob ? "b" : "e", file };
         if (blob) requireValue(info.bytes === blob.receipt.bytesReceived && info.sha256 === blob.receipt.sha256 &&
             info.sha512 === blob.receipt.actualSha512, "retained archive byte count or checksum mismatch");
-        await boundedWait(handle.sync(), signal);
+        await handle.sync();
+        signal.throwIfAborted();
+        await handle.close(); handle = null;
+        signal.throwIfAborted();
         complete = true;
         return info;
     } finally {
-        signal.removeEventListener("abort", abort);
-        stream.destroy();
-        if (handle) await handle.close();
-        if (file && !complete) await fs.rm(file, { force: true });
+        try { if (handle) await handle.close(); }
+        finally { if (file && !complete) await fs.rm(file, { force: true }); }
     }
 }
 

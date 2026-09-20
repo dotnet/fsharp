@@ -239,6 +239,7 @@ async function actionsFixture(t) {
                 workflow_run: { id: 12345, repository_id: 777, head_repository_id: 777 },
                 archive_download_url: `${api}/actions/artifacts/87654/zip` };
             state.artifacts = [metadata];
+            if (state.finalizeFault) await state.finalizeFault();
             return response({ ok: true, artifact_id: "87654" });
         }
         if (url === `${api}/actions/artifacts/87654`) return response(state.artifacts[0]);
@@ -272,6 +273,51 @@ test("Actions discovers an acknowledged-lost artifact using only reservation own
         buildInstanceId: binding.workId }), [record]);
     assert.deepEqual(await replay.findEvidence({ runId: config.runId, attempt: config.attempt,
         buildInstanceId: "not-completed" }), []);
+});
+
+for (const lane of ["evidence", "blob"])
+test(`Actions recovers ${lane} after losing the finalization response without uploading again`, async t => {
+    const { config, state, send, store } = await actionsFixture(t);
+    const write = store => lane === "blob" ? store.writeBlob(Readable.from([payload]), approved())
+        : store.writeEvidence(payload, binding);
+    state.finalizeFault = () => { throw new Error("lost finalization response"); };
+    await assert.rejects(write(store), /lost finalization response/);
+    assert.deepEqual((await fs.readdir(config.directory)).filter(n => n.startsWith(".upload-")), []);
+    const artifactId = state.artifacts[0].id;
+    state.finalizeFault = null;
+    const replay = createActionsEvidenceStore(config, { send });
+    const record = await write(replay);
+    assert.ok(new URL(record.url).pathname.endsWith(`/artifacts/${artifactId}`));
+    assert.equal((await replay.verifyEvidence(record.url)).sha256, hash(payload));
+    if (lane === "evidence") assert.deepEqual(await replay.findEvidence({
+        runId: config.runId, attempt: config.attempt, buildInstanceId: binding.workId,
+    }), [record]);
+    for (const operation of ["CreateArtifact", "FinalizeArtifact"])
+        assert.equal(state.calls.filter(c => c.url.endsWith(`/${operation}`)).length, 1);
+    assert.equal(state.calls.filter(c => c.options.method === "PUT").length, 1);
+});
+
+for (const status of [404, 410])
+for (const target of ["archive", "blob"])
+for (const confirmation of target === "archive" ? ["present", "expired", 404, 410, 401, 403, 429, "network"] : ["present"])
+test(`Actions download ${target} ${status} requires authenticated absence: ${confirmation}`, async t => {
+    const { store, state, response, signed } = await actionsFixture(t);
+    const record = await store.writeEvidence(payload, binding);
+    let missing = false, rechecks = 0;
+    state.hook = url => {
+        if (target === "archive" ? url.endsWith("/zip") : url === signed) {
+            missing = true;
+            return response({}, { status });
+        }
+        if (!missing || !url.endsWith("/artifacts/87654")) return null;
+        rechecks++;
+        if (confirmation === "network") throw new Error("offline network failure");
+        if (typeof confirmation === "number") return response({}, { status: confirmation });
+        return response({ ...state.artifacts[0], expired: confirmation === "expired" });
+    };
+    if (["expired", 404, 410].includes(confirmation)) assert.equal(await store.readEvidence(record.url), null);
+    else await assert.rejects(store.readEvidence(record.url), /confirmed expiry|metadata request failed|offline network|blob request failed/);
+    assert.equal(rechecks, target === "archive" ? 1 : 0);
 });
 
 test("Actions recovery rejects corrupt bytes, incomplete listings and excessive discovery", async t => {
@@ -471,41 +517,75 @@ test("file verification deadline destroys a stalled stream", { timeout: 2000 }, 
     assert.equal(stalled.destroyed, true);
 });
 
-for (const stalledOperation of ["source", "writeFile", "sync"]) {
-    test(`staging deadline bounds stalled ${stalledOperation}`, { timeout: 2000 }, async t => {
-        const { config } = await fixture(t);
-        let release;
+for (const provider of ["file", "Actions"])
+for (const lane of ["evidence", "blob"])
+for (const stalledOperation of ["source", "open", "writeFile", "sync", "close", "failed-write-close"]) {
+    test(`${provider} ${lane} staging deadline bounds stalled ${stalledOperation}`, { timeout: 5000 }, async t => {
+        const { config, send } = await (provider === "file" ? fixture(t) : actionsFixture(t));
+        let release, entered, cleaned;
         const stalled = new Promise(resolve => { release = resolve; });
+        const reached = new Promise(resolve => { entered = resolve; });
+        const cleanup = new Promise(resolve => { cleaned = resolve; });
         const open = fs.open;
         t.mock.method(fs, "open", async (...args) => {
+            if (!path.basename(args[0]).startsWith(".upload-")) return open(...args);
+            if (stalledOperation === "open") { entered(); await stalled; }
             const handle = await open(...args);
-            if (path.basename(args[0]).startsWith(".upload-") && stalledOperation !== "source")
-                t.mock.method(handle, stalledOperation, () => stalled);
+            if (["writeFile", "sync", "close", "failed-write-close"].includes(stalledOperation)) {
+                const operation = stalledOperation === "failed-write-close" ? "close" : stalledOperation;
+                const original = handle[operation].bind(handle);
+                t.mock.method(handle, operation, async (...args) => { entered(); await stalled; return original(...args); });
+                if (stalledOperation === "writeFile") {
+                    const close = handle.close.bind(handle);
+                    t.mock.method(handle, "close", async () => { await stalled; return close(); });
+                }
+                if (stalledOperation === "failed-write-close")
+                    t.mock.method(handle, "writeFile", async () => { throw new Error("lost write"); });
+            }
             return handle;
         });
-        const source = stalledOperation === "source" ? new Readable({ read() {} }) : Readable.from([payload]);
-        const outcome = createFileEvidenceStore({ ...config, timeoutMs: 20 }).writeEvidence(source, binding)
+        const rm = fs.rm;
+        t.mock.method(fs, "rm", async (file, ...args) => {
+            const result = await rm(file, ...args);
+            if (path.basename(file).startsWith(".upload-")) cleaned();
+            return result;
+        });
+        const source = stalledOperation === "source" ? new Readable({ read() { entered(); } }) : Readable.from([payload]);
+        const create = options => provider === "file" ? createFileEvidenceStore(options) : createActionsEvidenceStore(options, { send });
+        const store = create({ ...config, timeoutMs: 250 });
+        const outcome = (lane === "blob" ? store.writeBlob(source, approved()) : store.writeEvidence(source, binding))
             .then(() => "accepted", error => error.name);
         let timer;
         try {
+            await reached;
             const result = await Promise.race([outcome,
-                new Promise(resolve => { timer = setTimeout(resolve, 300, "deadline missed"); })]);
+                new Promise(resolve => { timer = setTimeout(resolve, 1000, "deadline missed"); })]);
             assert.equal(result, "TimeoutError");
             assert.equal(source.destroyed, true);
-            assert.deepEqual(await fs.readdir(config.directory), []);
         } finally {
             clearTimeout(timer);
             release();
             await outcome;
+            await cleanup;
         }
+        t.mock.restoreAll();
+        assert.deepEqual((await fs.readdir(config.directory)).filter(n => !n.startsWith("quota-")), []);
+        const replay = create(config);
+        assert.deepEqual(await replay.findEvidence({
+            runId: config.runId, attempt: config.attempt, buildInstanceId: binding.workId,
+        }), []);
+        const record = lane === "blob" ? await replay.writeBlob(Readable.from([payload]), approved())
+            : await replay.writeEvidence(payload, binding);
+        assert.equal((await replay.verifyEvidence(record.url)).sha256, hash(payload));
     });
 }
 
-test("HTTP verification deadline cancels a stalled response body", { timeout: 2000 }, async t => {
+for (const target of ["blob", "metadata"])
+test(`HTTP verification deadline cancels a stalled ${target} body`, { timeout: 2000 }, async t => {
     const { config, store, state, send, signed } = await actionsFixture(t);
     const record = await store.writeEvidence(payload, binding);
     let cancelled = false;
-    state.hook = url => url === signed ? new Response(new ReadableStream({
+    state.hook = url => (target === "blob" ? url === signed : url.endsWith("/artifacts/87654")) ? new Response(new ReadableStream({
         cancel() { cancelled = true; },
     })) : null;
     await assert.rejects(createActionsEvidenceStore({ ...config, timeoutMs: 20 }, { send }).verifyEvidence(record.url),
@@ -513,16 +593,8 @@ test("HTTP verification deadline cancels a stalled response body", { timeout: 20
     assert.equal(cancelled, true);
 });
 
-test("metadata bodies and blob sinks also obey the transfer deadline", { timeout: 2000 }, async t => {
-    const { config, store, state, send } = await actionsFixture(t);
-    const record = await store.writeEvidence(payload, binding);
-    let cancelled = false;
-    state.hook = url => url.endsWith("/artifacts/87654") ? new Response(new ReadableStream({
-        cancel() { cancelled = true; },
-    })) : null;
-    await assert.rejects(createActionsEvidenceStore({ ...config, timeoutMs: 20 }, { send }).verifyEvidence(record.url),
-        error => error.name === "TimeoutError");
-    assert.equal(cancelled, true);
+test("blob sinks also obey the transfer deadline", { timeout: 2000 }, async t => {
+    const { config } = await fixture(t);
     const fileStore = createFileEvidenceStore(config);
     const blob = await fileStore.writeBlob(Readable.from([payload]), approved());
     await assert.rejects(createFileEvidenceStore({ ...config, timeoutMs: 20 }).readBlob(blob.url, () => new Promise(() => {})),

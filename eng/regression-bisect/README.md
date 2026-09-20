@@ -726,8 +726,14 @@ confirmed-absence `null`; archive verification uses `verifyEvidence(url)` to
 avoid allocating SDK-sized buffers. Compose both read methods into the state
 transport. Authentication, rate-limit, network and integrity failures throw.
 No artifact URL support is added to the issue API's `createGithubApi`.
-Transfer deadlines cover staging writes and syncs as well as file/HTTP reads,
-metadata requests and downstream sinks.
+Staging deadlines cover opening, writing, syncing and closing, including error
+cleanup. A timeout rejects promptly and destroys the input; uncancellable
+filesystem operations finish cleanup when they settle, without publishing late
+bytes. File/HTTP reads, metadata requests and downstream sinks are also bounded.
+Download-time 404/410 responses require authenticated metadata confirmation
+before becoming absence; a missing signed blob alone is not that confirmation.
+If artifact finalization succeeds but its response is lost, a new store instance
+reuses the exact artifact identity without creating or uploading it again.
 
 The collector uploads indispensable bytes and a host-signed collection
 descriptor before `commitObservation` can clear pending work. Discovery uses
