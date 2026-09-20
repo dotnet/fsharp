@@ -58,7 +58,7 @@ let ``initialize reports the session process`` () =
         // actually evaluating code rather than any launcher in front of it.
         Assert.Equal(session.ProcessId, result.processId)
 
-        Assert.StartsWith(".NET", result.frameworkDescription)
+        Assert.StartsWith(".NET", result.frameworkDescription, StringComparison.Ordinal)
         Assert.True result.supportsInterrupt
 
         Assert.True(
@@ -347,7 +347,7 @@ let ``attributes diagnostics to the host's file and line`` () =
         let reported = errors result
         Assert.NotEmpty reported
         Assert.Equal(120, reported[0].startLine)
-        Assert.EndsWith("Library.fs", reported[0].fileName))
+        Assert.EndsWith("Library.fs", reported[0].fileName, StringComparison.Ordinal))
 
 [<Fact>]
 let ``positions every interaction of a selection against the host's lines`` () =
