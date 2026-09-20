@@ -74,15 +74,22 @@ class WorkflowTests(unittest.TestCase):
         repo = Repository(root / "source")
         remote, local = root / "remote.git", root / "journal.git"
         for directory in (remote, local):
-            subprocess.run(["git", "init", "--bare", "-q", str(directory)], check=True)
-            subprocess.run(["git", "--git-dir", str(directory), "config", "user.name", "Fixture"], check=True)
-            subprocess.run(["git", "--git-dir", str(directory), "config", "user.email",
-                            "fixture@example.invalid"], check=True)
+            repo.git("init", "--bare", "-q", str(directory))
+            repo.git("--git-dir", str(directory), "config", "user.name", "Fixture")
+            repo.git("--git-dir", str(directory), "config", "user.email", "fixture@example.invalid")
         transport = JournalTransport(local, local_remote=remote)
         api = API()
         controller = w.Controller(root / "controller", repo.root, transport, api, now=lambda: NOW)
         self.assertEqual(controller.root, controller.root.resolve())
         return repo, controller, api, transport
+
+    def test_fixture_ignores_ambient_git_configuration(self):
+        with tempfile.TemporaryDirectory() as directory, mock.patch.dict(
+                os.environ, {"GIT_CONFIG_COUNT": "invalid", "GIT_DIR": str(Path(directory) / "other")}):
+            repo, controller, api, transport = self.fixture(Path(directory))
+            self.assertEqual(controller.preflight(repo.request())["action"], "reserve")
+            self.assertEqual(transport.scope, "local_fixture")
+            self.assertEqual(api.effects, [])
 
     def test_preflight_denial_pagination_acknowledgment_and_duplicates(self):
         for case in ("first", "denied", "page-two", "malformed", "resume"):
@@ -255,7 +262,7 @@ class PublicationTests(unittest.TestCase):
         with candidate_fixture() as (root, repo, owned, patch):
             local, remote = root / "journal.git", root / "remote.git"
             for directory in (local, remote):
-                subprocess.run(["git", "init", "--bare", "-q", str(directory)], check=True)
+                repo.git("init", "--bare", "-q", str(directory))
             (root / "key").write_bytes(secrets.token_bytes(32))
             transport, api = JournalTransport(local, local_remote=remote), API()
             controller = w.Controller(root, repo.root, transport, api, now=lambda: NOW)
