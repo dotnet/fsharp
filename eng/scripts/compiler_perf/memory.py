@@ -1,6 +1,8 @@
-"""Version-1 experiment journal, not instructions for the investigating agent.
+"""Versioned experiment journal, not instructions for the investigating agent.
 
 state.json contains generation/base_revision and an append-only attempt index.
+Version 1 remains unchanged until the first discovery adds the version-2 index.
+Discovery's "completed" outcome closes the session; it does not attest an experiment.
 An attempt separates immutable identities, lifecycle, terminal outcome, retry
 dependencies, evidence provenance, correctness, and publication intent/receipt.
 Unknown or unreadable state blocks work; only a verified absence initializes it.
@@ -59,8 +61,11 @@ REPOSITORY = "dotnet/fsharp"
 LIMITS = {"files": 256, "file_bytes": 262144, "patch_bytes": 1048576}
 OUTCOMES = {"completed_no_finding", "blocked_setup", "blocked_collection", "inconclusive",
             "rejected", "measured_improvement", "cancelled"}
+DISCOVERY_OUTCOMES = (OUTCOMES - {"measured_improvement"}) | {"completed"}
 LIFECYCLES = ("reserved", "collecting", "experimenting", "validating",
               "publication_pending", "published", "interrupted")
+DISCOVERY_LIFECYCLES = ("reserved", "setup", "ready", "collecting", "awaiting_decision",
+                       "experimenting", "interrupted")
 FINGERPRINTS = ("source", "input", "workload", "compiler", "bootstrap", "sdk", "runtime",
                 "toolchain", "runner", "policy", "candidate", "capture", "reducer")
 _VALIDATOR_KEY = secrets.token_bytes(32)
@@ -389,9 +394,26 @@ def validate_attempt(a, *, prospective=False):
         acceptance_ready(a, current=False)
 
 
+def validate_discovery(record):
+    require(type(record) is dict and set(record) == {
+        "id", "run", "source_revision", "lifecycle", "outcome", "reason", "checkpoint_at", "expires_at"}
+        and identifier(record["id"]) and digest(record["source_revision"], 40), "Invalid discovery schema/source revision")
+    run = record["run"]
+    require(type(run) is dict and set(run) == {"id", "attempt", "url"} and identifier(run["id"])
+            and type(run["attempt"]) is int and run["attempt"] > 0
+            and run["url"] == f"https://github.com/{REPOSITORY}/actions/runs/{run['id']}", "Invalid discovery run owner")
+    require(record["lifecycle"] in DISCOVERY_LIFECYCLES
+            and (record["outcome"] is None or record["outcome"] in DISCOVERY_OUTCOMES)
+            and isinstance(record["reason"], str) and (record["outcome"] is None or text(record["reason"])),
+            "Invalid discovery lifecycle/outcome/reason")
+    require(timestamp(record["checkpoint_at"]) <= timestamp(record["expires_at"]), "Invalid discovery interval")
+
+
 def validate_state(value):
-    require(type(value) is dict and set(value) == {"schema_version", "generation", "base_revision", "attempts"}
-            and type(value["schema_version"]) is int and value["schema_version"] == 1,
+    require(type(value) is dict and type(value.get("schema_version")) is int
+            and value["schema_version"] in (1, 2)
+            and set(value) == {"schema_version", "generation", "base_revision", "attempts"} |
+            ({"discoveries"} if value["schema_version"] == 2 else set()),
             "Unsupported journal schema")
     require(type(value["generation"]) is int and value["generation"] >= 0
             and (value["base_revision"] is None or digest(value["base_revision"], 40))
@@ -411,6 +433,21 @@ def validate_state(value):
             current = value["attempts"][previous]
     active = [a for a in value["attempts"].values() if a["outcome"] is None or a["lifecycle"] == "publication_pending"]
     require(len(active) <= 1, "Another canonical reservation owns active work")
+    discoveries = value.get("discoveries", {})
+    require(type(discoveries) is dict, "Invalid discovery index")
+    owners = set()
+    for key, record in discoveries.items():
+        validate_discovery(record)
+        require(key == record["id"], "Discovery index differs from stable ID")
+        owner = (record["run"]["id"], record["run"]["attempt"])
+        require(owner not in owners, "Discovery run already has a reservation")
+        owners.add(owner)
+    discovering = [d for d in discoveries.values() if d["outcome"] is None]
+    require(len(discovering) <= 1, "Another canonical discovery owns active work")
+    if discovering and active:
+        require(active[0]["run"] == discovering[0]["run"]
+                and active[0]["source_revision"] == discovering[0]["source_revision"],
+                "Active attempt belongs to another discovery owner")
     validate_store({"state.json": encoded(value)}, {})
 
 
@@ -436,8 +473,18 @@ def load_state(path=None, *, response=None):
 
 
 def same_hypothesis(a, b):
-    return (a["hypothesis"]["id"] == b["hypothesis"]["id"]
-            or all(a["hypothesis"][k] == b["hypothesis"][k] for k in ("area", "operation")))
+    """Ignore ordering only for operations encoding the complete compiler-path dependency scope."""
+    if a["hypothesis"]["id"] == b["hypothesis"]["id"]:
+        return True
+    if a["hypothesis"]["area"] != b["hypothesis"]["area"]:
+        return False
+    operations = [record["hypothesis"]["operation"] for record in (a, b)]
+    if operations[0] == operations[1]:
+        return True
+    paths = [sorted(path for path in record["dependencies"]["paths"] if path.startswith("src/Compiler/"))
+             for record in (a, b)]
+    return paths[0] == paths[1] and all(sorted(operation.split(";")) == recorded
+                                      for operation, recorded in zip(operations, paths))
 
 
 def retry_decision(previous, current):
@@ -525,6 +572,31 @@ def merge_attempt(state, attempt, base_attempt=None):
     return result
 
 
+def merge_discovery(state, record, base_record=None):
+    """Three-way discovery merge; completing work never rewrites its identity or deadline."""
+    validate_state(state)
+    validate_discovery(record)
+    if base_record is not None:
+        validate_discovery(base_record)
+    old = state.get("discoveries", {}).get(record["id"])
+    if old == record:
+        return copy.deepcopy(state)
+    if old != base_record:
+        raise Conflict("Same-discovery update conflicts with canonical state")
+    if old is not None:
+        require(old["outcome"] is None, "Completed discovery cannot be rewritten")
+        for key in ("run", "source_revision", "expires_at"):
+            require(old[key] == record[key], f"Discovery {key} is immutable")
+        require(timestamp(record["checkpoint_at"]) >= timestamp(old["checkpoint_at"]),
+                "Discovery checkpoint cannot move backwards")
+    result = copy.deepcopy(state)
+    result["schema_version"] = 2
+    result.setdefault("discoveries", {})[record["id"]] = copy.deepcopy(record)
+    result["generation"] += 1
+    validate_state(result)
+    return result
+
+
 def validate_pr(pr):
     require(type(pr) is dict and type(pr["number"]) is int and pr["number"] > 0
             and pr["state"] in ("open", "closed") and type(pr["draft"]) is bool
@@ -585,7 +657,48 @@ def resume_reason(previous, proposed, now):
     return None
 
 
-def preflight(state, request, fetch_pr_page, fetch_run, now):
+def discovery_preflight(state, proposed, fetch_pr_page, fetch_run, now):
+    """Reserve discovery ownership before setup, without inventing a hypothesis."""
+    validate_state(state)
+    validate_discovery(proposed)
+    result = {"action": "blocked", "outcome": "blocked_setup", "reason": "", "durable": False,
+              "state": copy.deepcopy(state)}
+    try:
+        require(proposed["outcome"] is None and proposed["lifecycle"] == "reserved",
+                "New discovery requires a reservation")
+        if workflow_prs(query_prs(fetch_pr_page), state):
+            return dict(result, reason="Outstanding workflow-owned experiment PR")
+        if any(a["lifecycle"] == "publication_pending" for a in state["attempts"].values()):
+            return dict(result, reason="Publication must be reconciled before new work")
+        discoveries = list(state.get("discoveries", {}).values())
+        attempts = [a for a in state["attempts"].values() if a["outcome"] is None]
+        if any(d["run"] == proposed["run"] for d in discoveries + attempts):
+            return dict(result, reason="Run already owns a discovery or attempt; reentry is not a reservation")
+        active = [d for d in discoveries if d["outcome"] is None]
+        completed = set()
+        for owner in attempts + active:
+            identity = (owner["run"]["id"], owner["run"]["attempt"])
+            if identity in completed:
+                continue
+            run = fetch_run(owner["run"])
+            require(run.get("status") == 200 and run.get("id") == identity[0]
+                    and run.get("attempt") == identity[1], "Actions owner query failed")
+            if run.get("state") != "completed":
+                return dict(result, reason="An Actions run still owns active work")
+            completed.add(identity)
+        working = copy.deepcopy(state)
+        for records, merge in ((attempts, merge_attempt), (active, merge_discovery)):
+            for owner in records:
+                cancelled = dict(owner, lifecycle="interrupted", outcome="cancelled",
+                                 reason="Actions owner completed without final journal")
+                working = merge(working, cancelled, owner)
+        working = merge_discovery(working, proposed)
+        return dict(result, action="reserve", outcome=None, reason="Reservation requires canonical commit", state=working)
+    except (OSError, ValueError, KeyError, TypeError, IndexError, StopIteration, subprocess.SubprocessError) as error:
+        return dict(result, reason=str(error))
+
+
+def preflight(state, request, fetch_pr_page, fetch_run, now, *, discovery_id=None):
     """Pure decision and candidate state. No expensive work until a CAS reservation is acknowledged."""
     validate_state(state)
     require(set(request) == {"attempt", "repository", "default_branch", "source_ref", "source_revision"}
@@ -607,6 +720,14 @@ def preflight(state, request, fetch_pr_page, fetch_run, now):
                     if recovered["action"] == "acknowledge":
                         result["state"] = merge_attempt(state, recovered["attempt"], a)
             return dict(result, reason="Outstanding workflow-owned experiment PR")
+        discoveries = state.get("discoveries", {})
+        if discovery_id is not None:
+            owner = discoveries.get(discovery_id)
+            require(owner is not None and owner["outcome"] is None
+                    and owner["run"] == proposed["run"] and owner["source_revision"] == proposed["source_revision"],
+                    "Selection requires the matching active discovery owner and source")
+        if any(d["outcome"] is None and d["id"] != discovery_id for d in discoveries.values()):
+            return dict(result, reason="A discovery still owns active work")
         same = state["attempts"].get(proposed["id"])
         if same is not None and same["outcome"] is None:
             if same["run"] != proposed["run"]:
@@ -778,6 +899,9 @@ class GitJournal:
         validate_state(base)
         validate_state(candidate)
         require(set(base["attempts"]) <= set(candidate["attempts"]), "Cannot delete canonical attempts")
+        base_discoveries, discoveries = base.get("discoveries", {}), candidate.get("discoveries", {})
+        require(set(base_discoveries) <= set(discoveries)
+                and candidate["schema_version"] >= base["schema_version"], "Cannot delete canonical discoveries")
         if expected_head is not None:
             expected_files = self.files(expected_head)
             require(digest(expected_head, 40) and (expected_files == {"state.json": encoded(base)}
@@ -787,9 +911,20 @@ class GitJournal:
             require(base == empty_state(), "Missing base revision is only valid for first run")
         changes = [a for key, a in candidate["attempts"].items() if base["attempts"].get(key) != a]
         changes.sort(key=lambda a: a["id"] not in base["attempts"])
-        require(changes or base == candidate, "Generation-only update is not a checkpoint")
-        for a in changes:
-            validate_attempt(a)
+        discovery_changes = [d for key, d in discoveries.items() if base_discoveries.get(key) != d]
+        require(changes or discovery_changes or base == candidate, "Generation-only update is not a checkpoint")
+        require(candidate["schema_version"] == base["schema_version"] or discovery_changes,
+                "Schema migration requires a discovery checkpoint")
+        # Release old owners before reserving their successors; the CAS publishes
+        # the entire validated transaction, never these intermediate states.
+        updates = ([(merge_attempt, a, base["attempts"].get(a["id"])) for a in changes
+                    if a["outcome"] is not None and a["lifecycle"] != "publication_pending"] +
+                   [(merge_discovery, d, base_discoveries.get(d["id"])) for d in discovery_changes
+                    if d["outcome"] is not None] +
+                   [(merge_discovery, d, base_discoveries.get(d["id"])) for d in discovery_changes
+                    if d["outcome"] is None] +
+                   [(merge_attempt, a, base["attempts"].get(a["id"])) for a in changes
+                    if a["outcome"] is None or a["lifecycle"] == "publication_pending"])
         branch = "refs/heads/memory/compiler-self-profile-candidates/" + uuid.uuid4().hex
         proposed = copy.deepcopy(candidate)
         proposed["base_revision"] = expected_head
@@ -801,8 +936,22 @@ class GitJournal:
             for _ in range(5):
                 current, head = self.read()
                 merged = current
-                for a in changes:
-                    merged = merge_attempt(merged, a, base["attempts"].get(a["id"]))
+                if any(a["id"] not in base["attempts"] and
+                       (a["outcome"] is None or a["lifecycle"] == "publication_pending") for a in changes):
+                    require(all(d["id"] in discoveries for d in current.get("discoveries", {}).values()
+                                if d["outcome"] is None), "A concurrent discovery owns active work")
+                if any(d["id"] not in base_discoveries and d["outcome"] is None for d in discovery_changes):
+                    require(all(a["id"] in candidate["attempts"] for a in current["attempts"].values()
+                                if a["outcome"] is None or a["lifecycle"] == "publication_pending"),
+                            "A concurrent attempt owns active work")
+                for d in discoveries.values():
+                    if d["outcome"] is None and d not in discovery_changes and any(
+                            a["id"] not in base["attempts"] and a["run"] == d["run"] for a in changes):
+                        owner = current.get("discoveries", {}).get(d["id"])
+                        require(owner is not None and owner["outcome"] is None,
+                                "Selected discovery no longer owns active work")
+                for merge, record, previous in updates:
+                    merged = merge(merged, record, previous)
                 if merged == current:
                     self.git("update-ref", "-d", branch, commit)
                     return self.receipt(head)

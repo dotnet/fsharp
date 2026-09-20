@@ -59,9 +59,21 @@ def attempt(identifier="attempt-1", outcome=None):
     }
 
 
-def state(*records):
-    return {"schema_version": 1, "generation": 0, "base_revision": None,
-            "attempts": {a["id"]: copy.deepcopy(a) for a in records}}
+def discovery(identifier="discovery-1", run_id="100", outcome=None):
+    return {"id": identifier,
+            "run": {"id": run_id, "attempt": 1,
+                    "url": f"https://github.com/dotnet/fsharp/actions/runs/{run_id}"},
+            "source_revision": SHA, "lifecycle": "reserved" if outcome is None else "interrupted",
+            "outcome": outcome, "reason": "" if outcome is None else "Discovery finished",
+            "checkpoint_at": "2026-09-19T00:00:00Z", "expires_at": "2026-09-20T00:00:00Z"}
+
+
+def state(*records, discoveries=None):
+    result = {"schema_version": 1, "generation": 0, "base_revision": None,
+              "attempts": {a["id"]: copy.deepcopy(a) for a in records}}
+    if discoveries is not None:
+        result.update(schema_version=2, discoveries={d["id"]: copy.deepcopy(d) for d in discoveries})
+    return result
 
 
 def artifact():
@@ -213,6 +225,153 @@ def improvement(*, legacy=False, compiler_path=PATH):
 
 
 class MemoryTests(unittest.TestCase):
+    def test_discovery_schema_migrates_only_on_first_reservation(self):
+        old = state(attempt(outcome="rejected"))
+        self.assertEqual(mem.empty_state(), state())
+        self.assertEqual(mem.load_state(response={"status": 200, "body": mem.encoded(old)})["state"], old)
+        owner = discovery(run_id="101")
+        migrated = mem.merge_discovery(old, owner)
+        self.assertEqual(migrated, dict(old, schema_version=2, generation=1, discoveries={owner["id"]: owner}))
+        self.assertEqual(mem.load_state(response={"status": 200, "body": mem.encoded(migrated)})["state"], migrated)
+        self.assertNotIn("discoveries", old)
+        self.assertEqual(mem.merge_attempt(state(), attempt())["schema_version"], 1)
+        for bad in (dict(old, schema_version=2), dict(old, discoveries={}),
+                    dict(migrated, discoveries=[]), dict(migrated, discoveries={"wrong-id": owner})):
+            with self.subTest(state=bad):
+                self.assertEqual(mem.load_state(response={"status": 200, "body": mem.encoded(bad)})["status"],
+                                 "blocked_setup")
+
+    def test_discovery_schema_has_no_experiment_fields_or_approval(self):
+        mutations = [
+            {"hypothesis": None}, {"correctness": None}, {"measurement": None}, {"id": "../escape"},
+            {"source_revision": H}, {"lifecycle": "validating"}, {"outcome": "measured_improvement"},
+            {"outcome": "cancelled"}, {"checkpoint_at": "2026-09-19"},
+            {"expires_at": "2026-09-18T00:00:00Z"}, {"run": None},
+            {"run": dict(discovery()["run"], attempt=True)},
+            {"run": dict(discovery()["run"], url="https://example.invalid")},
+        ]
+        for mutation in mutations:
+            with self.subTest(mutation=mutation), self.assertRaises((ValueError, TypeError)):
+                mem.merge_discovery(state(), dict(discovery(), **mutation))
+        for lifecycle in mem.DISCOVERY_LIFECYCLES:
+            mem.validate_state(state(discoveries=[dict(discovery(), lifecycle=lifecycle)]))
+        for outcome in mem.DISCOVERY_OUTCOMES:
+            mem.validate_state(state(discoveries=[discovery(outcome=outcome)]))
+        with self.assertRaisesRegex(ValueError, "Invalid lifecycle/outcome"):
+            mem.validate_attempt(attempt(outcome="completed"))
+
+    def test_discovery_three_way_merge_immutable_identity_and_completed_history(self):
+        owner = discovery()
+        base = state(discoveries=[owner])
+        collecting = dict(owner, lifecycle="collecting", checkpoint_at="2026-09-19T01:00:00Z")
+        current = mem.merge_discovery(base, collecting, owner)
+        self.assertEqual(mem.merge_discovery(current, collecting), current)
+        with self.assertRaises(mem.Conflict):
+            mem.merge_discovery(current, dict(owner, lifecycle="ready"), owner)
+        for mutation in ({"run": discovery(run_id="101")["run"]}, {"source_revision": "b" * 40},
+                         {"expires_at": "2026-09-21T00:00:00Z"},
+                         {"checkpoint_at": "2026-09-19T00:30:00Z"}):
+            with self.subTest(mutation=mutation), self.assertRaises(ValueError):
+                mem.merge_discovery(current, dict(collecting, **mutation), collecting)
+        finished = dict(collecting, lifecycle="interrupted", outcome="completed",
+                        reason="Accepted experiment publication acknowledged")
+        current = mem.merge_discovery(current, finished, collecting)
+        for mutation in ({"outcome": None}, {"reason": "Changed conclusion"}, {"lifecycle": "ready"},
+                         {"checkpoint_at": "2026-09-19T02:00:00Z"}):
+            with self.subTest(mutation=mutation), self.assertRaises(ValueError):
+                mem.merge_discovery(current, dict(finished, **mutation), finished)
+        successor = discovery("discovery-2", "101")
+        current = mem.merge_discovery(current, successor)
+        self.assertEqual(current["discoveries"][owner["id"]], finished)
+        with self.assertRaises(ValueError):
+            mem.merge_discovery(current, discovery("discovery-3", "102"))
+        with self.assertRaises(ValueError):
+            mem.merge_discovery(state(discoveries=[finished]), discovery("same-run"))
+
+    def test_discovery_preflight_paginates_before_owner_queries_and_blocks_publication(self):
+        proposed = discovery()
+        fetch_run = mock.Mock(side_effect=AssertionError("Must not query an owner"))
+        fetch = mock.Mock(side_effect=[
+            {"status": 200, "items": [], "next": 2, "complete": True},
+            {"status": 200, "items": [pr()], "next": None, "complete": True}])
+        result = mem.discovery_preflight(state(), proposed, fetch, fetch_run, NOW)
+        self.assertEqual((result["action"], result["outcome"]), ("blocked", "blocked_setup"))
+        self.assertEqual(fetch.call_args_list, [mock.call(1), mock.call(2)])
+        self.assertFalse(result["durable"])
+        pending = improvement()
+        pending.update(publication=mem.publication_intent(pending, SHA), lifecycle="publication_pending")
+        result = mem.discovery_preflight(state(pending), proposed, pages(), fetch_run, NOW)
+        self.assertEqual(result["action"], "blocked")
+        for response in ({"status": 403}, {"status": 200, "items": [], "next": None, "complete": False}):
+            with self.subTest(response=response):
+                result = mem.discovery_preflight(state(), proposed, mock.Mock(return_value=response), fetch_run, NOW)
+                self.assertEqual(result["action"], "blocked")
+        fetch_run.assert_not_called()
+        result = mem.discovery_preflight(state(), proposed, pages(), fetch_run, NOW)
+        self.assertEqual((result["action"], result["outcome"]), ("reserve", None))
+        self.assertEqual(result["state"]["attempts"], {})
+
+    def test_discovery_ownership_is_proven_not_inferred_from_deadline(self):
+        old = dict(discovery(), checkpoint_at="2026-09-18T00:00:00Z", expires_at="2026-09-18T04:00:00Z")
+        proposed = discovery("discovery-2", "101")
+        for existing in (state(discoveries=[old]), state(attempt()),
+                         state(attempt(), discoveries=[old])):
+            for response, action in (
+                    ({"status": 200, "id": "100", "attempt": 1, "state": "in_progress"}, "blocked"),
+                    ({"status": 404}, "blocked"),
+                    ({"status": 200, "id": "100", "attempt": 2, "state": "completed"}, "blocked"),
+                    ({"status": 200, "id": "100", "attempt": 1, "state": "completed"}, "reserve")):
+                with self.subTest(existing=existing, response=response):
+                    fetch_run = mock.Mock(return_value=response)
+                    result = mem.discovery_preflight(existing, proposed, pages(), fetch_run, NOW)
+                    self.assertEqual(result["action"], action)
+                    fetch_run.assert_called_once_with(old["run"])
+                    if action == "reserve":
+                        self.assertEqual(result["state"]["discoveries"][proposed["id"]], proposed)
+                        for records in (existing["attempts"], existing.get("discoveries", {})):
+                            for key in records:
+                                index = "attempts" if key in existing["attempts"] else "discoveries"
+                                self.assertEqual(result["state"][index][key]["outcome"], "cancelled")
+                    else:
+                        self.assertEqual(result["state"], existing)
+        for existing in (state(discoveries=[old]), state(discoveries=[discovery(outcome="cancelled")]),
+                         state(attempt())):
+            fetch_run = mock.Mock(side_effect=AssertionError("Same run cannot reenter"))
+            self.assertEqual(mem.discovery_preflight(existing, discovery("same-run"), pages(), fetch_run, NOW)["action"],
+                             "blocked")
+            fetch_run.assert_not_called()
+
+    def test_discovery_selection_preserves_rejections_and_relevant_retry(self):
+        owner = discovery()
+        existing = state(discoveries=[owner])
+        self.assertEqual(preflight(existing)["action"], "blocked")
+        for identifier, proposed in (("missing", attempt()),
+                                     (owner["id"], dict(attempt(), run=discovery(run_id="101")["run"])),
+                                     (owner["id"], dict(attempt(), source_revision="b" * 40))):
+            if proposed["run"]["id"] == "101":
+                proposed["lease"]["run_id"] = "101"
+            with self.subTest(identifier=identifier, proposed=proposed):
+                result = mem.preflight(existing, request(proposed), pages(), mock.Mock(), NOW,
+                                       discovery_id=identifier)
+                self.assertEqual(result["action"], "blocked")
+        selected = mem.preflight(existing, request(), pages(), mock.Mock(), NOW, discovery_id=owner["id"])
+        self.assertEqual(selected["action"], "reserve")
+        previous = selected["state"]["attempts"]["attempt-1"]
+        rejected = dict(previous, outcome="rejected", reason="Not faster", lifecycle="interrupted")
+        existing = mem.merge_attempt(selected["state"], rejected, previous)
+        self.assertEqual(existing["discoveries"][owner["id"]], owner)
+        retry = attempt("attempt-2")
+        for changed, action in ((False, "skip"), (True, "reserve")):
+            if changed:
+                retry["dependencies"]["paths"][PATH] = J
+            result = mem.preflight(existing, request(retry), pages(), mock.Mock(), NOW, discovery_id=owner["id"])
+            self.assertEqual(result["action"], action)
+            self.assertEqual(result["state"]["attempts"][previous["id"]], rejected)
+            self.assertEqual(result["state"]["discoveries"][owner["id"]], owner)
+        self.assertEqual(result["state"]["attempts"][retry["id"]]["supersedes"], previous["id"])
+        with self.assertRaises(ValueError):
+            mem.merge_attempt(state(discoveries=[discovery(run_id="101")]), attempt())
+
     def test_authority_renewal_preserves_captures_and_requires_fresh_validation(self):
         import experiment as e
         previous = improvement()
@@ -556,6 +715,39 @@ class MemoryTests(unittest.TestCase):
         bad["force"] = True
         with self.assertRaises(ValueError):
             mem.preflight(state(), bad, pages(), mock.Mock(), NOW)
+        other = "src/Compiler/Optimize/Optimizer.fs"
+        for case, same in (("paths", True), ("arbitrary", False), ("partial", False),
+                           ("generic-scopes", True), ("area", False), ("duplicate", False)):
+            previous, current = attempt(outcome="rejected"), attempt("attempt-2")
+            current["hypothesis"]["id"] = "renamed"
+            current["run"] = discovery(run_id="101")["run"]
+            current["lease"]["run_id"] = "101"
+            for record in (previous, current):
+                record["dependencies"]["paths"].update({other: H, "README.md": H})
+            previous["hypothesis"]["operation"] = other + ";" + PATH
+            current["hypothesis"]["operation"] = PATH + ";" + other
+            if case == "arbitrary":
+                previous["hypothesis"]["operation"] = "Second.method;First.method"
+                current["hypothesis"]["operation"] = "First.method;Second.method"
+            elif case == "partial":
+                for record in (previous, current):
+                    record["dependencies"]["paths"]["src/Compiler/TypedTree/TypedTree.fs"] = H
+            elif case == "generic-scopes":
+                previous["hypothesis"]["operation"] = current["hypothesis"]["operation"] = "CheckExpressions.check"
+                current["dependencies"]["paths"].pop(other)
+            elif case == "area":
+                current["hypothesis"]["area"] = "CodeGen"
+            elif case == "duplicate":
+                current["hypothesis"]["operation"] += ";" + PATH
+            for changed in (False, True):
+                if changed:
+                    current["dependencies"]["paths"][PATH] = J
+                with self.subTest(case=case, changed=changed):
+                    self.assertEqual(mem.same_hypothesis(previous, current), same)
+                    result = preflight(state(previous), current)
+                    self.assertEqual(result["action"], "skip" if same and not changed else "reserve")
+                    if same and changed:
+                        self.assertEqual(result["state"]["attempts"][current["id"]]["supersedes"], previous["id"])
 
     def test_all_pr_pages_and_stale_metadata(self):
         fetch = mock.Mock(side_effect=[
@@ -875,6 +1067,127 @@ class GitJournalTests(unittest.TestCase):
     def git(self, *arguments):
         return subprocess.run(["git", "--git-dir", str(self.root), *arguments], check=True,
                               capture_output=True, text=True, env=mem.c.tool_environment()).stdout.strip()
+
+    def test_discovery_migration_exact_base_and_non_erasure(self):
+        self.journal.write(*self.journal.read(), attempt(outcome="rejected"))
+        base, head = self.journal.read()
+        self.assertEqual(base["schema_version"], 1)
+        candidate = mem.merge_discovery(base, discovery(run_id="101"))
+        forged_base = dict(base, schema_version=2, discoveries={})
+        with self.assertRaisesRegex(ValueError, "Base state differs"):
+            self.journal.write_state(forged_base, head, candidate)
+        with self.assertRaisesRegex(ValueError, "checkpoint"):
+            self.journal.write_state(base, head, forged_base)
+        receipt = self.journal.write_state(base, head, candidate)
+        stored, tip = self.journal.read()
+        self.assertEqual((stored["schema_version"], tip), (2, receipt["commit"]))
+        self.assertEqual(stored["attempts"], base["attempts"])
+        self.assertEqual(stored["discoveries"], candidate["discoveries"])
+        self.assertEqual(mem.decoded(self.journal.files(head)["state.json"]), base)
+        for schema in (1, 2):
+            erased = dict(stored, schema_version=schema)
+            if schema == 1:
+                erased.pop("discoveries")
+            else:
+                erased["discoveries"] = {}
+            with self.subTest(schema=schema), self.assertRaisesRegex(ValueError, "delete canonical discoveries"):
+                self.journal.write_state(stored, tip, erased)
+        self.assertEqual(self.journal.write_state(stored, tip, stored)["commit"], tip)
+
+    def test_discovery_cas_merges_unrelated_completed_history_and_attempts(self):
+        base, head = self.journal.read()
+        first = discovery(outcome="completed_no_finding")
+        second = discovery("discovery-2", "101", outcome="blocked_setup")
+        candidates = [mem.merge_discovery(base, record) for record in (first, second)]
+        self.journal.write_state(base, head, candidates[0])
+        self.journal.write(base, head, attempt(outcome="rejected"))
+        self.journal.write_state(base, head, candidates[1])
+        stored, tip = self.journal.read()
+        self.assertEqual(stored["discoveries"], {first["id"]: first, second["id"]: second})
+        self.assertEqual(stored["attempts"], {"attempt-1": attempt(outcome="rejected")})
+        self.assertEqual(stored["generation"], 3)
+        self.assertEqual(self.git("rev-list", "--count", tip), "3")
+        with self.assertRaises(mem.Conflict) as caught:
+            self.journal.write_state(base, head, mem.merge_discovery(
+                base, dict(first, outcome="inconclusive", reason="Different conclusion")))
+        self.assertTrue(caught.exception.candidate_ref)
+        self.assertEqual(self.journal.read(), (stored, tip))
+
+    def test_discovery_cas_conflicts_with_discovery_and_legacy_attempt_reservations(self):
+        cases = (("discovery", "discovery", False), ("discovery", "attempt", False),
+                 ("attempt", "discovery", False), ("discovery", "attempt", True), ("attempt", "discovery", True))
+        for winner, loser, same_run in cases:
+            with self.subTest(winner=winner, loser=loser, same_run=same_run):
+                base, head = self.journal.read()
+                index = len(base.get("discoveries", {})) + len(base["attempts"])
+                owner = discovery("owner-" + str(index), str(200 + index))
+                contender = discovery("contender-" + str(index), str(300 + index))
+                a = attempt("attempt-" + str(index))
+                a["hypothesis"].update(id=a["id"], operation=a["id"])
+                if same_run:
+                    record = owner if winner == "discovery" else contender
+                    a["run"] = record["run"]
+                    a["lease"]["run_id"] = record["run"]["id"]
+                winning = mem.merge_discovery(base, owner) if winner == "discovery" else mem.merge_attempt(base, a)
+                losing = mem.merge_discovery(base, contender) if loser == "discovery" else mem.merge_attempt(base, a)
+                original = self.journal.compare_and_swap
+                raced = False
+
+                def race(expected, commit):
+                    nonlocal raced
+                    if not raced:
+                        raced = True
+                        mem.GitJournal(self.root).write_state(base, head, winning)
+                    return original(expected, commit)
+
+                with mock.patch.object(self.journal, "compare_and_swap", side_effect=race):
+                    with self.assertRaises(mem.Conflict) as caught:
+                        self.journal.write_state(base, head, losing)
+                self.assertTrue(caught.exception.candidate_ref)
+                retained = mem.decoded(self.journal.git("show", caught.exception.candidate_ref + ":state.json").stdout)
+                self.assertEqual(retained["attempts"], losing["attempts"])
+                self.assertEqual(retained.get("discoveries", {}), losing.get("discoveries", {}))
+                stored, tip = self.journal.read()
+                self.assertEqual(stored["attempts"], winning["attempts"])
+                self.assertEqual(stored.get("discoveries", {}), winning.get("discoveries", {}))
+                record = owner if winner == "discovery" else a
+                finish = mem.merge_discovery if winner == "discovery" else mem.merge_attempt
+                self.journal.write_state(stored, tip, finish(
+                    stored, dict(record, lifecycle="interrupted", outcome="cancelled", reason="Fixture completed"), record))
+
+    def test_discovery_and_selected_attempt_replace_owners_atomically(self):
+        owner, selected = discovery(), attempt()
+        initial = mem.merge_attempt(mem.merge_discovery(state(), owner), selected)
+        self.journal.write_state(*self.journal.read(), initial)
+        base, head = self.journal.read()
+        proposed = discovery("next-discovery", "101")
+        candidate = mem.discovery_preflight(
+            base, proposed, pages(),
+            lambda run: {"status": 200, "id": run["id"], "attempt": run["attempt"], "state": "completed"}, NOW)["state"]
+        next_attempt = attempt("next-attempt")
+        next_attempt["hypothesis"].update(id="other", operation="Other.operation")
+        next_attempt["run"] = proposed["run"]
+        next_attempt["lease"]["run_id"] = "101"
+        candidate = mem.merge_attempt(candidate, next_attempt)
+        self.journal.write_state(base, head, candidate)
+        stored, tip = self.journal.read()
+        self.assertEqual(stored["generation"], base["generation"] + 4)
+        self.assertEqual(stored["attempts"], candidate["attempts"])
+        self.assertEqual(stored["discoveries"], candidate["discoveries"])
+        self.assertEqual(self.git("rev-parse", tip + "^"), head)
+        self.assertEqual(mem.decoded(self.journal.files(head)["state.json"]), base)
+
+    def test_discovery_completion_conflicts_with_stale_selection(self):
+        owner = discovery()
+        self.journal.write_state(*self.journal.read(), mem.merge_discovery(state(), owner))
+        base, head = self.journal.read()
+        selected = mem.preflight(base, request(), pages(), mock.Mock(), NOW, discovery_id=owner["id"])["state"]
+        completed = mem.merge_discovery(base, dict(owner, outcome="completed_no_finding", reason="No candidate"), owner)
+        self.journal.write_state(base, head, completed)
+        with self.assertRaises(mem.Conflict) as caught:
+            self.journal.write_state(base, head, selected)
+        self.assertTrue(caught.exception.candidate_ref)
+        self.assertEqual(self.journal.read()[0]["attempts"], {})
 
     def test_two_writers_lossless_merge_and_versioned_history(self):
         base, head = self.journal.read()

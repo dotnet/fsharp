@@ -69,15 +69,19 @@ class API:
 
 
 class WorkflowTests(unittest.TestCase):
-    def fixture(self, root):
+    def fixture(self, root, repo=None, transport_factory=None):
         from transport import JournalTransport
-        repo = Repository(root / "source")
-        remote, local = root / "remote.git", root / "journal.git"
-        for directory in (remote, local):
-            repo.git("init", "--bare", "-q", str(directory))
-            repo.git("--git-dir", str(directory), "config", "user.name", "Fixture")
-            repo.git("--git-dir", str(directory), "config", "user.email", "fixture@example.invalid")
-        transport = JournalTransport(local, local_remote=remote)
+        root.mkdir(parents=True, exist_ok=True)
+        repo = repo or Repository(root / "source")
+        if transport_factory:
+            transport = transport_factory(root)
+        else:
+            remote, local = root / "remote.git", root / "journal.git"
+            for directory in (remote, local):
+                repo.git("init", "--bare", "-q", str(directory))
+                repo.git("--git-dir", str(directory), "config", "user.name", "Fixture")
+                repo.git("--git-dir", str(directory), "config", "user.email", "fixture@example.invalid")
+            transport = JournalTransport(local, local_remote=remote)
         api = API()
         controller = w.Controller(root / "controller", repo.root, transport, api, now=lambda: NOW)
         self.assertEqual(controller.root, controller.root.resolve())
@@ -181,6 +185,8 @@ class WorkflowTests(unittest.TestCase):
                         controller.persist(state, head, state)
             with mock.patch.object(transport, "write_state", return_value=receipt):
                 self.assertIs(controller.persist(state, head, state), receipt)
+            with mock.patch.object(transport, "write_state", side_effect=AssertionError("Redundant canonical write")):
+                self.assertEqual(controller.checkpoint(), receipt)
 
     def test_rejected_retry_ignores_unrelated_revision(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -229,6 +235,49 @@ class WorkflowTests(unittest.TestCase):
                 session.poll()
         self.assertIn("checkpoint", events)
         self.assertEqual(w.ACTIVE_SECONDS, 14400)
+
+    def test_clock_reentry_and_backwards_time_never_renew_allowance(self):
+        for elapsed in (14400, 14401, -1):
+            with self.subTest(elapsed=elapsed):
+                clock = [0]
+                session = w.ActiveSession(lambda: None, clock=lambda: clock[0])
+                with session:
+                    clock[0] = 14399
+                    session.poll()
+                clock[0] = elapsed
+                with self.assertRaises(KeyboardInterrupt):
+                    with session:
+                        pass
+
+    def test_protected_deadline_restart_and_tampering(self):
+        for phase in ("setup", "active", "finalization"):
+            with self.subTest(phase=phase), tempfile.TemporaryDirectory() as directory:
+                repo, controller, api, transport = self.fixture(Path(directory))
+                now, clock = [NOW], [100]
+                controller.now, controller.clock = lambda: now[0], lambda: clock[0]
+                allowance = {"setup": w.SETUP_SECONDS, "active": w.ACTIVE_SECONDS,
+                             "finalization": w.FINALIZATION_SECONDS}[phase]
+                controller.remaining(phase, allowance, create=True)
+                record = controller.load("clocks")[phase]
+                clock[0] += allowance - 1
+                # Wall time alone cannot extend an in-process investigation.
+                self.assertEqual(controller.remaining(phase, allowance), 1)
+                restarted = w.Controller(controller.root, repo.root, transport, api,
+                                         now=lambda: now[0], clock=lambda: 0)
+                self.assertEqual(restarted.remaining(phase, allowance), 1)
+                self.assertEqual(restarted.load("clocks")[phase]["deadline"], record["deadline"])
+                now[0] -= timedelta(seconds=1)
+                with self.assertRaises(KeyboardInterrupt):
+                    restarted.remaining(phase, allowance)
+                now[0] += timedelta(seconds=2)
+                with self.assertRaises(KeyboardInterrupt):
+                    restarted.remaining(phase, allowance)
+                sealed = w.read_input(controller.root / "clocks.json")
+                sealed["value"][phase]["deadline"] = (NOW + timedelta(days=1)).isoformat()
+                w.m.write_json(controller.root / "clocks.json", sealed)
+                with self.assertRaisesRegex(ValueError, "custody"):
+                    restarted.remaining(phase, allowance)
+        self.assertLessEqual(w.SETUP_SECONDS, 3600)
 
     def test_data_cannot_supply_commands_transport_or_policy(self):
         with tempfile.TemporaryDirectory() as directory:

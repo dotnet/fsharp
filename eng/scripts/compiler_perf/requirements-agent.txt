@@ -1,0 +1,2 @@
+# Host-only endpoint and HTTP-client tests; other helpers use the standard library.
+mcp==1.30.0

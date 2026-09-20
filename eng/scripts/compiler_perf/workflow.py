@@ -26,7 +26,9 @@ import artifacts
 
 m, c, require = mem.m, mem.c, mem.require
 ACTIVE_SECONDS = 14400
-SETUP_SECONDS = 7200
+SETUP_SECONDS = 3600
+STARTUP_SECONDS = 600
+FINALIZATION_SECONDS = 2400
 HEARTBEAT_SECONDS = 30
 DEFAULT_BRANCH = "main"
 AUTHOR = "github-actions[bot]"
@@ -130,15 +132,20 @@ class ActiveSession:
 
     def __init__(self, checkpoint, *, clock=time.monotonic, allowance=ACTIVE_SECONDS):
         self.checkpoint, self.clock, self.allowance = checkpoint, clock, allowance
-        self.start, self.previous = None, None
+        self.start, self.previous, self.last = None, None, None
 
     def poll(self, *_):
         self.checkpoint()
-        if self.clock() - self.start >= self.allowance:
+        now = self.clock()
+        if now < self.last or now - self.start >= self.allowance:
             raise KeyboardInterrupt("Active investigation deadline reached")
+        self.last = now
 
     def __enter__(self):
-        self.start = self.clock()
+        if self.start is None:
+            self.start = self.clock()
+            self.last = self.start
+        self.poll()
         if sys.platform == "linux":
             require(signal.getitimer(signal.ITIMER_REAL) == (0.0, 0.0), "Another timer owns this process")
             self.previous = signal.signal(signal.SIGALRM, self.poll)
@@ -153,13 +160,14 @@ class ActiveSession:
 
 
 class Controller:
-    def __init__(self, root, repository, transport, api, *, now=None):
+    def __init__(self, root, repository, transport, api, *, now=None, clock=time.monotonic):
         self.root, self.repository = Path(root).absolute(), Path(repository).resolve(strict=True)
         require(e.unredirected(self.root, missing_ok=True), "Controller storage must be unredirected")
         self.root = self.root.resolve()
         require(not self.root.is_relative_to(self.repository), "Controller storage must be outside source")
         self.transport, self.api = transport, api
         self.now = now or (lambda: datetime.now(timezone.utc))
+        self.clock, self.timers, self.budgets, self.saving = clock, {}, set(), False
         if not self.root.exists():
             c.private_directory(self.root)
             (self.root / "key").write_bytes(secrets.token_bytes(32))
@@ -174,12 +182,16 @@ class Controller:
         self.busy = False
 
     def save(self, name, value):
-        require(e.unredirected(self.root / (name + ".json"), missing_ok=True) and
-                e.unredirected(self.root / (name + ".json.tmp"), missing_ok=True), "Redirected controller record")
-        data = {"schema_version": 1, "value": value,
-                "seal": hmac.digest(self.key, name.encode() + mem.encoded(value), "sha256").hex()}
-        require(len(mem.encoded(data)) <= mem.LIMITS["file_bytes"], "Controller record budget exceeded")
-        m.write_json(self.root / (name + ".json"), data)
+        previous, self.saving = self.saving, True
+        try:
+            require(e.unredirected(self.root / (name + ".json"), missing_ok=True) and
+                    e.unredirected(self.root / (name + ".json.tmp"), missing_ok=True), "Redirected controller record")
+            data = {"schema_version": 1, "value": value,
+                    "seal": hmac.digest(self.key, name.encode() + mem.encoded(value), "sha256").hex()}
+            require(len(mem.encoded(data)) <= mem.LIMITS["file_bytes"], "Controller record budget exceeded")
+            m.write_json(self.root / (name + ".json"), data)
+        finally:
+            self.saving = previous
 
     def load(self, name):
         data = read_input(self.root / (name + ".json"))
@@ -213,14 +225,21 @@ class Controller:
                 "project": m.PROJECT.as_posix(), "paths": paths,
                 "architecture": platform.machine(), "platform": sys.platform,
                 "helpers": [m.file_record(p) for p in (m.__file__, c.__file__, e.__file__, mem.__file__, __file__)]}
-        m.write_json(self.root / "planned-inputs.json", plan)
+        planned = self.root / ("planned-inputs-" + request["attempt_id"] + ".json")
+        if planned.exists():
+            require(read_input(planned) == plan, "Recorded planned inputs differ")
+        else:
+            m.write_json(planned, plan)
         checks = e.correctness_plan(request["compiler_paths"] + [r["path"] for r in request["regressions"]] +
                                    [e.RELEASE_NOTE], request["regressions"], "net11.0")
         now = self.now()
+        discovery = self.session.get("discovery") if self.session else None
+        expires = (discovery["expires_at"] if discovery and discovery["run"]["id"] == request["run_id"] else
+                   (now + timedelta(seconds=SETUP_SECONDS + ACTIVE_SECONDS)).isoformat())
         return {"id": request["attempt_id"], "source_revision": base,
                 "hypothesis": {"id": request["attempt_id"], "description": request["hypothesis"],
                                "area": request["compiler_paths"][0].split("/")[2],
-                               "operation": ";".join(request["compiler_paths"])},
+                               "operation": ";".join(sorted(request["compiler_paths"]))},
                 "run": {"id": request["run_id"], "attempt": 1,
                         "url": f"https://github.com/{mem.REPOSITORY}/actions/runs/{request['run_id']}"},
                 "lifecycle": "reserved", "outcome": None, "reason": "",
@@ -231,7 +250,7 @@ class Controller:
                 "retry": {"when_any": [{"kind": "path", "path": p, "value": v} for p, v in paths.items()] +
                           [{"kind": "sdk", "value": plan["sdk"]}],
                           "reason": "Retry only when a recorded relevant compiler path or SDK changes"},
-                "summary": {"evidence": "Reserved before bootstrap; planned-inputs.json binds preparation",
+                "summary": {"evidence": "Reserved before bootstrap; protected planned inputs bind preparation",
                             "change": request["complexity"], "patch_sha256": hashlib.sha256(b"").hexdigest()},
                 "evidence": [], "measurement": None, "collection": {"status": "pending", "reason": ""},
                 "correctness": {"schema_version": 5, "changes": request["compiler_paths"] +
@@ -240,10 +259,10 @@ class Controller:
                                 "plan": checks, "plan_sha256": m.fingerprint_inputs(checks),
                                 "required": [p["id"] for p in checks], "results": [], "nonce": "reserved",
                                 "cwd": str(self.root / "candidate" / "tree"), "tool": {},
-                                "inputs": m.file_record(self.root / "planned-inputs.json"), "validation": None},
+                                "inputs": m.file_record(planned), "validation": None},
                 "publication": None, "supersedes": None, "notes": [],
                 "lease": {"run_id": request["run_id"], "run_attempt": 1, "checkpoint_at": now.isoformat(),
-                          "expires_at": (now + timedelta(seconds=SETUP_SECONDS + ACTIVE_SECONDS)).isoformat()},
+                          "expires_at": expires},
                 "checkpoint": {"next_action": "Prepare frozen Release compiler-source workload",
                                "required_evidence": [], "candidate_ref": ""}}
 
@@ -258,7 +277,376 @@ class Controller:
                 "Canonical update was not acknowledged")
         return receipt
 
+    def remaining(self, name, allowance, *, create=False):
+        """Sealed wall deadline survives restart; a live monotonic clock can only shorten it."""
+        previous, self.saving = self.saving, True
+        try:
+            return self._remaining(name, allowance, create=create)
+        finally:
+            self.saving = previous
+
+    def _remaining(self, name, allowance, *, create):
+        clocks = self.load("clocks") if (self.root / "clocks.json").exists() else {}
+        now, tick = self.now(), self.clock()
+        if name not in clocks:
+            require(create, "Protected investigation clock is missing")
+            clocks[name] = {"start": now.isoformat(), "deadline": (
+                now + timedelta(seconds=allowance)).isoformat(), "last_seen": now.isoformat(),
+                "remaining_seconds": allowance}
+            self.save("clocks", clocks)
+        record = clocks[name]
+        start, deadline, last = (mem.timestamp(record[k]) for k in ("start", "deadline", "last_seen"))
+        require((deadline - start).total_seconds() == allowance, "Protected deadline differs")
+        require(type(record["remaining_seconds"]) in (int, float)
+                and 0 <= record["remaining_seconds"] <= allowance, "Invalid protected remaining time")
+        if now < last or now < start:
+            raise KeyboardInterrupt("Wall clock moved backwards; investigation incomplete")
+        remaining = min((deadline - now).total_seconds(),
+                        record["remaining_seconds"] - (now - last).total_seconds())
+        if name not in self.timers:
+            self.timers[name] = (tick, remaining)
+        origin, initial = self.timers[name]
+        if tick < origin:
+            raise KeyboardInterrupt("Monotonic clock moved backwards")
+        remaining = min(remaining, initial - (tick - origin))
+        record["last_seen"] = now.isoformat()
+        record["remaining_seconds"] = max(0, remaining)
+        self.save("clocks", clocks)
+        if remaining <= 0:
+            raise KeyboardInterrupt(name + " deadline reached")
+        return remaining
+
+    @contextmanager
+    def budget(self, name, allowance):
+        remaining = self.remaining(name, allowance, create=name != "active")
+        if name in self.budgets:
+            yield
+            self.remaining(name, allowance)
+            return
+
+        def pulse():
+            if self.saving:
+                return
+            self.remaining(name, allowance)
+            if self.session is not None:
+                self.checkpoint()
+
+        self.budgets.add(name)
+        try:
+            with ActiveSession(pulse, clock=self.clock, allowance=remaining):
+                yield
+                pulse()
+        finally:
+            self.budgets.remove(name)
+
+    def poll_active(self):
+        return self.remaining("active", ACTIVE_SECONDS)
+
+    def start_active(self):
+        require(self.session is not None and self.session["phase"] == "ready",
+                "Prepared controller and ready agent required")
+        if not (self.root / "clocks.json").exists() or "active" not in self.load("clocks"):
+            ready = mem.timestamp(self.session["ready_at"])
+            if not 0 <= (self.now() - ready).total_seconds() < STARTUP_SECONDS:
+                raise ValueError("Agent readiness exhausted startup allowance")
+        self.remaining("active", ACTIVE_SECONDS, create=True)
+
+    def discover(self, request):
+        try:
+            allowance = self.remaining("setup", SETUP_SECONDS, create=True)
+            with ActiveSession(lambda: self.remaining("setup", SETUP_SECONDS),
+                               clock=self.clock, allowance=allowance):
+                return self._discover(request)
+        except KeyboardInterrupt:
+            reason = "Aggregate setup deadline or cancellation during preflight"
+            if self.session and self.session.get("discovery") and self.session["discovery"]["outcome"] is None:
+                self.finish("blocked_setup", reason)
+            return {"action": "blocked", "outcome": "blocked_setup", "reason": reason, "durable": False}
+
+    def _discover(self, request):
+        require(set(request) == {"schema_version", "run_id", "base_sha", "primary_metric"}
+                and type(request["schema_version"]) is int and request["schema_version"] == 2
+                and mem.identifier(request["run_id"]) and len(request["run_id"]) <= 96
+                and mem.digest(request["base_sha"], 40) and request["primary_metric"] in m.PRIMARY_METRICS,
+                "Invalid discovery request")
+        result = {"action": "blocked", "outcome": "blocked_setup", "reason": "", "durable": False}
+        try:
+            self.remaining("setup", SETUP_SECONDS, create=True)
+            self.api.verify_source({"source_ref": DEFAULT_BRANCH, "source_revision": request["base_sha"]})
+            self.remaining("setup", SETUP_SECONDS)
+            now = self.now()
+            proposed = {"id": request["run_id"] + ".discovery",
+                        "run": {"id": request["run_id"], "attempt": 1,
+                                "url": f"https://github.com/{mem.REPOSITORY}/actions/runs/{request['run_id']}"},
+                        "source_revision": request["base_sha"], "lifecycle": "reserved",
+                        "outcome": None, "reason": "", "checkpoint_at": now.isoformat(),
+                        "expires_at": (now + timedelta(seconds=SETUP_SECONDS + STARTUP_SECONDS +
+                                                      ACTIVE_SECONDS + FINALIZATION_SECONDS)).isoformat()}
+            for _ in range(3):
+                state, head = self.transport.read()
+                decision = mem.discovery_preflight(state, proposed, self.pages, self.api.run, now)
+                self.remaining("setup", SETUP_SECONDS)
+                if decision["state"] != state:
+                    try:
+                        receipt = self.persist(state, head, decision["state"])
+                    except mem.Conflict:
+                        continue
+                    decision.update(persistence=receipt, durable=receipt["scope"] == "github")
+                if decision["action"] == "reserve":
+                    self.session = {"discovery_request": copy.deepcopy(request), "request": None, "attempt": None,
+                                    "discovery": proposed, "persistence": receipt, "phase": "reserved",
+                                    "canonical_discovery_sha256": m.fingerprint_inputs(proposed), "revisions": []}
+                    self.save("session", self.session)
+                self.remaining("setup", SETUP_SECONDS)
+                return {k: v for k, v in decision.items() if k != "state"}
+            raise mem.Conflict("Discovery conflict retry budget exhausted")
+        except (ValueError, OSError, KeyError, TypeError, subprocess.SubprocessError) as error:
+            return dict(result, reason=c.sanitize(str(error)))
+
+    def frozen_manifest(self):
+        m.verify_files([self.session["manifest"]])
+        manifest = c.read_bounded_json(self.session["manifest"]["path"])
+        e.frozen_records(manifest)
+        return manifest
+
+    def public_data(self, value):
+        if isinstance(value, str):
+            text = c.sanitize(value)
+            for path, label in ((self.root, "[controller]"), (self.repository, "[source]")):
+                text = text.replace(str(path), label).replace(path.as_posix(), label)
+            return text
+        if isinstance(value, list):
+            return [self.public_data(v) for v in value]
+        if isinstance(value, dict):
+            return {k: self.public_data(v) for k, v in value.items()}
+        return value
+
+    def diagnostics(self):
+        m.verify_files([self.session["profile"]])
+        profile = c.analyze_profile(self.session["profile"]["path"])
+        require(profile["status"] == "collected", profile.get("reason", "Diagnostic collection incomplete"))
+        evidence = c.read_bounded_json(self.session["profile"]["path"])
+        manifest = self.frozen_manifest()
+        require(evidence["compiler"] == manifest["baseline_compiler"]
+                and evidence["fingerprints"] == {k: m.fingerprint_inputs(v)
+                                               for k, v in manifest["invariants"].items()},
+                "Diagnostic evidence belongs to different frozen inputs")
+        result = {k: profile[k] for k in ("metrics", "allocation_method", "allocation_counter_observed_bytes",
+                                        "unavailable_reasons", "stack_semantics")}
+        result["stacks"] = sorted(profile["stacks"], key=lambda s: s["weight"], reverse=True)[:32]
+        result["stack_count"] = len(profile["stacks"])
+        timings = Path(evidence["timings"]["output"]["path"]).read_text(encoding="utf-8")
+        result["binlog"] = {
+            "projects": evidence["timings"]["projects"],
+            "conclusion": timings[:8192], "truncated": len(timings) > 8192,
+            "acceptance_eligible": False}
+        result["profile_sha256"] = self.session["profile"]["sha256"]
+        # File paths and process/environment records stay in protected custody.
+        result = self.public_data(result)
+        require(len(mem.encoded(result)) <= 65536, "Diagnostic summary budget exceeded")
+        return result
+
+    def status(self):
+        require(self.session is not None, "Preflight reservation required")
+        a, d = self.session["attempt"], self.session.get("discovery")
+        record = d or a
+        result = {"phase": self.session["phase"], "outcome": record["outcome"], "reason": record["reason"],
+                  "diagnostics": self.session.get("diagnostics"),
+                  "result": ({"outcome": a["outcome"], "reason": a["reason"]} if a else None),
+                  "history": self.session.get("history", []), "revisions": self.session.get("revisions", []),
+                  "dump": self.session.get("dump_result"),
+                  "selection_result": self.session.get("selection_result")}
+        if (self.root / "clocks.json").exists():
+            result["clocks"] = self.load("clocks")
+        return self.public_data(result)
+
+    def profile(self, dump_reason=None, hypothesis=None):
+        require(self.session["phase"] in ("ready", "awaiting_decision"), "Profile phase differs")
+        require(dump_reason is None or (dump_reason in c.REASONS and mem.text(hypothesis)
+                                       and len(hypothesis) <= 2048), "Invalid dump justification")
+        phase, dump_workspace = "collecting", None
+        try:
+            with self.budget("active", ACTIVE_SECONDS):
+                manifest = self.frozen_manifest()
+                self.session["phase"] = phase
+                self.session["discovery"]["lifecycle"] = phase
+                self.checkpoint()
+                private = self.root / "private"
+                private.mkdir(mode=0o700, exist_ok=True)
+                profile_root = private / "profile"
+                if dump_reason is not None:
+                    dump_workspace = artifacts.create_dump_workspace(private / "dump-session",
+                                                                     (self.root / "public",))
+                    profile_root = dump_workspace.path / "profile"
+                c.collect_profile(manifest, manifest["baseline_compiler"], profile_root,
+                                  dump_reason=dump_reason, hypothesis=hypothesis)
+                profile_path = profile_root / "evidence-manifest.json"
+                summary = c.analyze_profile(profile_path)
+                require(summary["status"] == "collected", summary.get("reason", "Diagnostic collection failed"))
+                if dump_reason is not None:
+                    # Raw dumps never become agent-readable/public files.
+                    evidence = c.read_bounded_json(profile_path)
+                    dump = evidence["dump"]
+                    conclusion = ("Heap snapshot includes unreachable objects; not retained bytes.\n" +
+                                  c.sanitize(dump["validation"]["stdout"])[-1600:])
+                    removed = artifacts.analyze_owned_dump(dump_workspace, dump["artifact"],
+                                                           lambda _: conclusion, self.now())
+                    self.session["dump_result"] = {"reason": dump_reason, "hypothesis": hypothesis,
+                                                   "artifact": removed, "status": "analyzed_and_removed"}
+                else:
+                    self.session["profile"] = m.file_record(profile_path)
+                    self.session["diagnostics"] = self.diagnostics()
+                self.session["phase"] = "awaiting_decision"
+                self.session["discovery"]["lifecycle"] = "awaiting_decision"
+                state, _ = self.transport.read()
+                self.session["history"] = [{"hypothesis": a["hypothesis"], "outcome": a["outcome"],
+                                            "reason": a["reason"], "retry": a["retry"]}
+                                           for a in state["attempts"].values()][-32:]
+                self.checkpoint()
+            return self.status()
+        except KeyboardInterrupt:
+            return self.finish("cancelled", "Incomplete diagnostics: deadline or cancellation")
+        except (ValueError, OSError, KeyError, TypeError, subprocess.SubprocessError) as error:
+            return self.finish("blocked_collection", "collection: " + c.sanitize(str(error)))
+        finally:
+            if dump_workspace is not None:
+                dump = dump_workspace.path / "profile" / "private-dump" / "heap.dmp"
+                if dump.exists():
+                    artifacts.analyze_owned_dump(dump_workspace, m.file_record(dump),
+                                                 lambda _: "Incomplete dump investigation; no conclusion", self.now())
+
+    def select_hypothesis(self, data):
+        self.poll_active()
+        require(self.session["phase"] == "awaiting_decision" and self.session["discovery"]["outcome"] is None,
+                "Completed diagnostics and an explicit decision are required")
+        require(type(data) is dict and set(data) == {
+            "compiler_paths", "regressions", "hypothesis", "complexity", "hot_operation"}, "Invalid selection")
+        summary = self.diagnostics()
+        operation = data["hot_operation"]
+        require(type(operation) is int and 0 <= operation < len(summary["stacks"]), "Select an observed hot operation")
+        sequence = self.session.get("selection_sequence", 0) + 1
+        require(sequence <= 128, "Selection budget exceeded")
+        self.session["selection_sequence"] = sequence
+        self.save("session", self.session)
+        request = dict(self.session["discovery_request"], **{k: v for k, v in data.items() if k != "hot_operation"})
+        request.update(schema_version=1, attempt_id=request["run_id"] + "." + str(sequence))
+        proposed = self.reservation(request)
+        # Keep the existing path-scoped retry identity, including version-1 history.
+        proposed["summary"]["evidence"] = (
+            summary["profile_sha256"] + ": observed stack " +
+            m.fingerprint_inputs(summary["stacks"][operation]["frames"]))
+        proposed["collection"] = {"status": "collected", "reason": ""}
+        proposed["checkpoint"]["next_action"] = "Submit a bounded compiler patch, then run isolated validation"
+        for _ in range(3):
+            state, head = self.transport.read()
+            query = {"attempt": proposed, "repository": mem.REPOSITORY, "default_branch": DEFAULT_BRANCH,
+                     "source_ref": DEFAULT_BRANCH, "source_revision": request["base_sha"]}
+            self.api.verify_source(query)
+            decision = mem.preflight(state, query, self.pages, self.api.run, self.now(),
+                                     discovery_id=self.session["discovery"]["id"])
+            if decision["action"] != "reserve":
+                return {k: v for k, v in decision.items() if k != "state"}
+            self.poll_active()
+            try:
+                receipt = self.persist(state, head, decision["state"])
+            except mem.Conflict:
+                continue
+            a = decision["state"]["attempts"][proposed["id"]]
+            self.session.update(request=request, attempt=a, phase="selected", persistence=receipt,
+                                canonical_attempt_sha256=m.fingerprint_inputs(a))
+            self.save("session", self.session)
+            self.poll_active()
+            return self.status()
+        raise mem.Conflict("Selection conflict retry budget exhausted")
+
+    def select(self):
+        try:
+            with self.budget("active", ACTIVE_SECONDS):
+                result = self.select_hypothesis(self.session["selection"])
+                self.session["selection_result"] = (
+                    {k: result[k] for k in ("action", "outcome", "reason")} if "action" in result else
+                    {"action": "selected", "outcome": None, "reason": "Observed operation reserved"})
+                self.save("session", self.session)
+            return self.status()
+        except KeyboardInterrupt:
+            return self.finish("cancelled", "Incomplete selection: active deadline or cancellation")
+        except (ValueError, OSError, KeyError, TypeError, subprocess.SubprocessError) as error:
+            self.session["selection_result"] = {"action": "blocked", "outcome": "blocked_setup",
+                                                "reason": c.sanitize(str(error))}
+            self.save("session", self.session)
+            return self.status()
+
+    def submit_patch(self, patch):
+        self.poll_active()
+        require(self.session["phase"] == "selected" and type(patch) is str, "Select before submitting patch")
+        data = patch.encode("utf-8")
+        require(0 < len(data) <= e.MAX_PATCH and b"\0" not in data, "Invalid/bounded patch")
+        inbox = self.root / "inbox"
+        inbox.mkdir(mode=0o700, exist_ok=True)
+        path = inbox / (self.session["attempt"]["id"] + ".patch")
+        require(e.unredirected(path, missing_ok=True) and not path.exists(), "Patch already submitted or redirected")
+        path.write_bytes(data)
+        self.session.update(patch=m.file_record(path), phase="patch_submitted")
+        self.session["attempt"]["summary"]["patch_sha256"] = self.session["patch"]["sha256"]
+        self.poll_active()
+        self.save("session", self.session)
+        return self.status()
+
+    def candidate_root(self):
+        return Path(self.session.get("candidate", self.root / "candidate"))
+
+    def validate(self):
+        require(self.session["phase"] == "patch_submitted", "A sealed submitted patch is required")
+        try:
+            with self.budget("active", ACTIVE_SECONDS):
+                manifest = self.frozen_manifest()
+                m.verify_files([self.session["patch"], self.session["profile"]])
+                candidate = self.root / ("candidate" if not self.session["revisions"] else
+                                         "candidate-" + str(len(self.session["revisions"]) + 1))
+                self.session.update(candidate=str(candidate), phase="experimenting")
+                self.session["attempt"]["lifecycle"] = "experimenting"
+                self.session["attempt"]["summary"]["patch_sha256"] = self.session["patch"]["sha256"]
+                self.checkpoint()
+                prepared = e.prepare_candidate(self.repository, candidate, self.session["request"],
+                                               Path(self.session["patch"]["path"]).read_bytes(), manifest=manifest)
+                require(prepared["outcome"] is None, prepared["reason"])
+                result = e.validate_candidate(candidate, Path(self.session["profile"]["path"]),
+                                              checkpoint_on_cancel=True)
+                require((candidate / "attempt.json").is_file(), result["reason"])
+                self.poll_active()
+                final = self.accept_experiment(candidate)
+                self.session["revisions"].append({"id": final["id"], "outcome": final["outcome"],
+                                                 "reason": final["reason"],
+                                                 "hypothesis": copy.deepcopy(final["hypothesis"]),
+                                                 "patch_sha256": final["summary"]["patch_sha256"]})
+                if final["outcome"] == "measured_improvement":
+                    self.session["phase"] = "accepted"
+                else:
+                    self.session["phase"] = "awaiting_decision"
+                self.checkpoint()
+            return self.status()
+        except KeyboardInterrupt:
+            return self.finish("cancelled", "Incomplete validation: deadline or cancellation; retained evidence")
+        except (ValueError, OSError, KeyError, TypeError, subprocess.SubprocessError) as error:
+            candidate = self.candidate_root()
+            if (candidate / "candidate.json").is_file():
+                result = c.read_bounded_json(candidate / "candidate.json")
+                if result["outcome"] == "rejected" and not result["draft_eligible"]:
+                    e.discard_candidate(candidate)
+                    a = self.session["attempt"]
+                    a.update(outcome="rejected", reason=c.sanitize(str(error)), lifecycle="interrupted")
+                    self.session["revisions"].append({"id": a["id"], "outcome": a["outcome"],
+                                                     "reason": a["reason"],
+                                                     "hypothesis": copy.deepcopy(a["hypothesis"]),
+                                                     "patch_sha256": a["summary"]["patch_sha256"]})
+                    self.session["phase"] = "awaiting_decision"
+                    self.checkpoint()
+                    return self.status()
+            return self.finish("blocked_setup", "experiment: " + c.sanitize(str(error)))
+
     def preflight(self, request):
+        if type(request) is dict and request.get("schema_version") == 2:
+            return self.discover(request)
         proposed = self.reservation(request)
         query = {"attempt": proposed, "repository": mem.REPOSITORY, "default_branch": DEFAULT_BRANCH,
                  "source_ref": DEFAULT_BRANCH, "source_revision": request["base_sha"]}
@@ -294,6 +682,32 @@ class Controller:
             return self.session["persistence"]
         self.busy = True
         try:
+            if self.session.get("discovery") is not None:
+                state, head = self.transport.read()
+                d = self.session["discovery"]
+                previous = state.get("discoveries", {}).get(d["id"])
+                require(previous is not None and
+                        (m.fingerprint_inputs(previous) == self.session["canonical_discovery_sha256"]
+                         or previous == d), "Canonical discovery changed")
+                if d["outcome"] is None:
+                    d["checkpoint_at"] = min(self.now(), mem.timestamp(d["expires_at"])).isoformat()
+                candidate = mem.merge_discovery(state, d, previous)
+                a = self.session["attempt"]
+                if a is not None:
+                    old = state["attempts"].get(a["id"])
+                    require(old is not None and (old == a or
+                            m.fingerprint_inputs(old) == self.session["canonical_attempt_sha256"]),
+                            "Canonical attempt changed")
+                    a["lease"]["checkpoint_at"] = min(
+                        self.now(), mem.timestamp(a["lease"]["expires_at"])).isoformat()
+                    candidate = mem.merge_attempt(candidate, a, old)
+                receipt = (self.session["persistence"] if candidate == state and
+                           head == self.session["persistence"]["commit"] else self.persist(state, head, candidate))
+                self.session.update(persistence=receipt, canonical_discovery_sha256=m.fingerprint_inputs(d))
+                if a is not None:
+                    self.session["canonical_attempt_sha256"] = m.fingerprint_inputs(a)
+                self.save("session", self.session)
+                return receipt
             a = self.session["attempt"]
             mem.validate_attempt(a)
             state, head = self.transport.read()
@@ -302,9 +716,10 @@ class Controller:
             baseline = self.session["canonical_attempt_sha256"]
             require(baseline == m.fingerprint_inputs(previous) or a == previous,
                     "Canonical attempt changed since the acknowledged checkpoint")
-            a["lease"]["checkpoint_at"] = self.now().isoformat()
+            a["lease"]["checkpoint_at"] = min(self.now(), mem.timestamp(a["lease"]["expires_at"])).isoformat()
             candidate = mem.merge_attempt(state, a, previous)
-            receipt = self.persist(state, head, candidate)
+            receipt = (self.session["persistence"] if candidate == state and
+                       head == self.session["persistence"]["commit"] else self.persist(state, head, candidate))
             self.session["persistence"] = receipt
             self.session["canonical_attempt_sha256"] = m.fingerprint_inputs(a)
             self.save("session", self.session)
@@ -314,7 +729,36 @@ class Controller:
 
     def finish(self, outcome, reason):
         require(outcome in mem.OUTCOMES and mem.text(reason), "Invalid lifecycle conclusion")
+        if self.session.get("discovery"):
+            require(self.session["discovery"]["outcome"] is None, "Discovery already finished")
+            if outcome == "completed_no_finding":
+                require(self.session["phase"] == "awaiting_decision" and self.session["attempt"] is None
+                        and not self.session.get("revisions")
+                        and self.session.get("selection_result", {}).get("action") != "blocked",
+                        "No-finding requires untested completed discovery")
+        with self.budget("finalization", FINALIZATION_SECONDS):
+            return self._finish(outcome, reason)
+
+    def finish_operation(self):
+        request = self.session["finish_request"]
+        require(set(request) == {"outcome", "reason"}, "Invalid protected finish request")
+        return self.finish(request["outcome"], request["reason"])
+
+    def _finish(self, outcome, reason):
         a = self.session["attempt"]
+        if self.session.get("discovery") is not None:
+            d = self.session["discovery"]
+            # A rejected/noisy/failed experiment cannot be relabelled as healthy discovery.
+            if outcome == "completed_no_finding":
+                self.diagnostics()
+            if a is not None and a["outcome"] is None:
+                a.update(outcome=outcome, reason=c.sanitize(reason), lifecycle="interrupted")
+            d.update(outcome=outcome, reason=c.sanitize(reason), lifecycle="interrupted")
+            self.session["phase"] = "finished"
+            self.stage_evidence()
+            self.checkpoint()
+            self.report()
+            return self.status()
         a.update(outcome=outcome, reason=c.sanitize(reason), lifecycle="interrupted")
         a["checkpoint"]["next_action"] = "Reconcile owner and retained evidence before retry"
         self.stage_evidence()
@@ -323,7 +767,7 @@ class Controller:
         return copy.deepcopy(a)
 
     def report(self):
-        a = self.session["attempt"]
+        a = self.session["attempt"] or self.session["discovery"]
         text = f"Compiler self-profile: {a['outcome'] or a['lifecycle']}\n\n{c.sanitize(a['reason'])}\n"
         digest = hashlib.sha256(text.encode()).hexdigest()
         if self.session.get("report_sha256") != digest:
@@ -336,6 +780,8 @@ class Controller:
 
     def stage_evidence(self):
         a = self.session["attempt"]
+        if a is None:
+            return
         private = self.root / "private"
         private.mkdir(mode=0o700, exist_ok=True)
         public = self.root / "public"
@@ -379,68 +825,38 @@ class Controller:
         return final
 
     def investigate(self):
+        """Trusted preparation only. The ready adapter owns the subsequent interaction."""
         require(self.session is not None, "Preflight reservation required before investigation")
-        a, request = self.session["attempt"], self.session["request"]
-        require(a["outcome"] is None and a["publication"] is None, "Completed work cannot restart")
-        state, _ = self.transport.read()
-        require(state["attempts"].get(a["id"]) == a and self.session["persistence"]["acknowledged"],
-                "Reservation changed or was not acknowledged")
-        phase = "setup"
         try:
-            capabilities(self.root, self.repository)
-            with ActiveSession(self.checkpoint, allowance=SETUP_SECONDS):
+            with self.budget("setup", SETUP_SECONDS):
+                capabilities(self.root, self.repository)
+                request = self.session.get("discovery_request", self.session["request"])
                 manifest_path = self.root / "workload.json"
+                require(not manifest_path.exists(), "Prepared inputs already exist; resume instead")
                 m.prepare_workload(request["base_sha"], self.root / "frozen", manifest_path,
                                    request["primary_metric"])
-                manifest = c.read_bounded_json(manifest_path)
-                e.frozen_records(manifest)
-            self.session.update(phase="collecting", manifest=m.file_record(manifest_path))
-            a["lifecycle"] = "collecting"
-            self.checkpoint()
-            with ActiveSession(self.checkpoint):
-                phase = "collection"
-                private = self.root / "private"
-                private.mkdir(mode=0o700, exist_ok=True)
-                profile_root = private / "profile"
-                c.collect_profile(manifest, manifest["baseline_compiler"], profile_root)
-                profile_path = profile_root / "evidence-manifest.json"
-                profile = c.analyze_profile(profile_path)
-                require(profile["status"] == "collected", profile.get("reason", "Diagnostic collection failed"))
-                a["collection"] = {"status": "collected", "reason": ""}
-                self.session["profile"] = m.file_record(profile_path)
+                e.frozen_records(c.read_bounded_json(manifest_path))
+                self.session.update(phase="ready", manifest=m.file_record(manifest_path),
+                                    ready_at=self.now().isoformat())
+                if self.session.get("discovery"):
+                    self.session["discovery"]["lifecycle"] = "ready"
                 self.checkpoint()
-                proposal = self.root / "inbox" / "proposal.patch"
-                require(e.unredirected(proposal, missing_ok=True), "Proposal redirected")
-                if not proposal.exists():
-                    return self.finish("completed_no_finding", "Completed diagnostics; no proposed compiler change")
-                phase = "experiment"
-                with proposal.open("rb") as stream:
-                    patch = stream.read(e.MAX_PATCH + 1)
-                candidate = self.root / "candidate"
-                e.prepare_candidate(self.repository, candidate, request, patch, manifest=manifest)
-                a["lifecycle"] = "experimenting"
-                self.session["phase"] = phase
-                self.checkpoint()
-                result = e.validate_candidate(candidate, profile_path, checkpoint_on_cancel=True)
-                require((candidate / "attempt.json").exists(), result["reason"])
-                return self.accept_experiment(candidate)
+            return self.status() if self.session.get("discovery") else self.session["attempt"]
         except KeyboardInterrupt:
-            return self.finish("cancelled", "Incomplete investigation: owned children stopped; retained checkpoint")
+            return self.finish("blocked_setup", "Aggregate preparation deadline or cancellation")
         except (ValueError, OSError, KeyError, TypeError, subprocess.SubprocessError) as error:
-            if phase == "collection":
-                a["collection"] = {"status": "blocked_collection", "reason": c.sanitize(str(error))}
-            return self.finish("blocked_collection" if phase == "collection" else "blocked_setup",
-                               f"{phase}: {c.sanitize(str(error))}")
+            return self.finish("blocked_setup", "setup: " + c.sanitize(str(error)))
 
     def current_attempt(self):
         saved = self.load("session")
         require(saved == self.session, "In-memory session differs from protected custody")
         a = copy.deepcopy(saved["attempt"])
         require(a["outcome"] == "measured_improvement", "No measured candidate")
-        state = e.verify_candidate(self.root / "candidate")
+        candidate_root = self.candidate_root()
+        state = e.verify_candidate(candidate_root)
         require(state["request"] == saved["request"] and state["patch_sha256"] == a["summary"]["patch_sha256"],
                 "Candidate request or proposal differs")
-        e.frozen_records(c.read_bounded_json(self.root / "candidate" / "workload.json"))
+        e.frozen_records(c.read_bounded_json(candidate_root / "workload.json"))
         m.verify_files([saved["manifest"], saved["profile"]])
         require(c.analyze_profile(saved["profile"]["path"])["status"] == "collected",
                 "Diagnostic evidence unavailable")
@@ -457,12 +873,16 @@ class Controller:
         return a, state
 
     def validate_output(self, payload=None):
+        if self.session.get("discovery"):
+            require(self.session["phase"] == "accepted" and self.session["discovery"]["outcome"] is None,
+                    "Only an active accepted experiment can authorize output")
+            self.poll_active()
         a, state = self.current_attempt()
         tree = Path(state["tree"])
         # Reapply the retained bytes in a new owned clone and inspect Git's actual index.
         with tempfile.TemporaryDirectory(prefix="output-", dir=self.root) as directory:
             verified = e.prepare_candidate(self.repository, Path(directory) / "candidate", state["request"],
-                                           (self.root / "candidate" / "proposal.patch").read_bytes())
+                                           (self.candidate_root() / "proposal.patch").read_bytes())
             require(verified["source_tree"] == state["source_tree"], "Applied proposal tree differs")
         head = self.session.get("head")
         if head is None:
@@ -487,9 +907,17 @@ class Controller:
         validate_payload(payload, expected)
         require(not mem.workflow_prs(mem.query_prs(self.pages)), "Outstanding optimization PR")
         self.api.verify_source({"source_ref": DEFAULT_BRANCH, "source_revision": a["source_revision"]})
+        if self.session.get("discovery"):
+            self.poll_active()
         a.update(publication=intent, lifecycle="publication_pending")
         self.session.update(attempt=a, head=head)
         self.checkpoint()  # Intent acknowledgment precedes any publisher-visible output.
+        if self.session.get("discovery"):
+            try:
+                self.poll_active()
+            except KeyboardInterrupt:
+                self.finish("cancelled", "Active deadline reached before publisher output")
+                raise
         output = self.root / "output"
         require(e.unredirected(output, missing_ok=True), "Publication output redirected")
         output.mkdir(exist_ok=True)
@@ -522,6 +950,10 @@ class Controller:
             "status": 200, "items": prs, "complete": True, "next": None}, self.now())
         if reconciled["action"] == "acknowledge":
             self.session["attempt"] = reconciled["attempt"]
+            if self.session.get("discovery") and self.session["discovery"]["outcome"] is None:
+                self.session["discovery"].update(outcome="completed", lifecycle="interrupted",
+                                                 reason="Accepted experiment publication acknowledged")
+                self.session["phase"] = "finished"
             self.checkpoint()
             self.report()
             return reconciled
@@ -549,13 +981,15 @@ class Controller:
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
-    for name in ("preflight", "investigate", "checkpoint", "validate-output", "finalize"):
+    for name in ("preflight", "investigate", "worker", "checkpoint", "validate-output", "finalize"):
         command = sub.add_parser(name)
         command.add_argument("--root", required=True, help="Protected controller-owned directory outside source")
         command.add_argument("--repository", required=True, help="Trusted helper/default-branch checkout")
         command.add_argument("--journal", required=True, help="Owned local Git journal transport cache")
         if name == "preflight":
             command.add_argument("--input", required=True, help="Bounded experiment request JSON")
+        if name == "worker":
+            command.add_argument("--operation", required=True, choices=("profile", "validate", "dump", "select", "finish"))
     args = parser.parse_args(argv)
     try:
         from transport import JournalTransport
@@ -563,6 +997,19 @@ def main(argv=None):
         with e.owned_lock(controller.root):
             if args.command == "preflight":
                 result = controller.preflight(read_input(args.input))
+            elif args.command == "worker":
+                require(sys.platform == "linux", "Task workers require Linux; no host fallback")
+                signal.signal(signal.SIGTERM, lambda *_: (_ for _ in ()).throw(KeyboardInterrupt()))
+                if args.operation == "dump":
+                    request = controller.session["dump_request"]
+                    result = controller.profile(request["reason"], request["hypothesis"])
+                elif args.operation == "finish":
+                    result = controller.finish_operation()
+                else:
+                    result = getattr(controller, args.operation)()
+            elif args.command in ("validate-output", "finalize"):
+                with controller.budget("finalization", FINALIZATION_SECONDS):
+                    result = getattr(controller, args.command.replace("-", "_"))()
             else:
                 result = getattr(controller, args.command.replace("-", "_"))()
         print(mem.encoded(result).decode(), end="")

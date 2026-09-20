@@ -5,7 +5,7 @@ It prepares and replays **FSharp.Compiler.Service compiler sources**, not the
 FSharp.Core benchmark or generated-program runtime benchmarks. A decision is
 measurement evidence, **not permission to publish** an optimization.
 
-Historical validation records below describe earlier local runs. Their ignored
+The restored-checkpoint validation records below describe earlier local runs. Their ignored
 interpreters, compiler binaries, logs and traces were not recovered with the
 Git checkpoint and are **unavailable**, not present-day evidence. Recollect
 missing artifacts; verify any recovered file's existence and hash before reuse.
@@ -25,7 +25,8 @@ XML and outer-runner captures. Passing memory fixtures does not certify producti
 `preflight`, `investigate`, `checkpoint`, `validate-output` and `finalize`
 subcommands require `--repository`, an owned local Git cache `--journal`, and
 an owner-only `--root` **outside the source checkout**. `preflight --input`
-accepts the experiment request below; it does not accept commands, remotes,
+accepts the discovery request below (version 1 experiment requests remain
+readable for retained controllers); it does not accept commands, remotes,
 branches, credentials, policy changes or deadline overrides. All JSON is bounded,
 versioned data. Exit 0 means the operation completed (including a rejected or
 no-finding experiment), 2 means blocked setup/collection/publication, and 130
@@ -57,14 +58,31 @@ inventing a second owner from the unsealed checkpoint. Retained candidate refs
 are not discarded by reconciliation.
 
 Investigation refuses missing Linux/bubblewrap, pinned SDK or collector
-capabilities before bootstrap or profiling. Bounded setup precedes the fixed
-14,400-second active session; periodic checkpoints also run during owned child
-waits. Candidate execution uses the existing empty Linux namespace, never a
-host fallback. The only agent-writable proposal is `inbox/proposal.patch`;
-the controller, frozen inputs, receipts, custody key, journal and output directory
-must not be mounted into an agent. An absent proposal after completed diagnostics
-is a no-finding, not an improvement. A hard runner cancellation may prevent the
-last checkpoint or finalizer; earlier acknowledged state remains authoritative.
+capabilities before bootstrap or profiling. `investigate` prepares the controller;
+it does not consume a seeded proposal or conclude that an empty inbox is a finding.
+The adapter starts profiling when the agent is ready, delivers CPU stacks,
+sampled allocation estimates, GC/heap/RSS distinctions and binlog conclusions,
+then waits for an explicit decision. Discovery ownership uses journal schema 2,
+without manufacturing a hypothesis or a rejected attempt. Version 1 journals
+upgrade on their first discovery reservation.
+
+One aggregate 3,600-second setup deadline includes prerequisite probes and
+preparation. Readiness must fit the separate 600-second startup allowance; a late
+agent is blocked rather than receiving a shortened investigation. The authenticated
+14,400-second active deadline covers profiles, agent think time, revisions, worker
+waits and validation. Monotonic elapsed time bounds a live process; sealed absolute
+deadlines and last-observed wall time bound restart. Reentry cannot renew either
+clock, and backwards time cancels incomplete work. Finalization has a separate
+2,400-second bound. These helper constants do **not** prove a compiled workflow
+budget: the later graph must fit setup <=60 minutes, agent execution <=250 minutes
+and combined cleanup/publication <=40 minutes inside a 360-minute job.
+
+Candidate execution uses the existing empty Linux namespace, never a host fallback.
+Only bounded patch bytes enter the controller inbox through the data endpoint.
+Controller code, frozen inputs, receipts, custody key, journal and output must be
+outside **every** agent mount, including default workspace, home and temporary
+mounts. A hard runner cancellation may prevent the last checkpoint or finalizer;
+earlier acknowledged state remains authoritative, not proof of completion.
 
 `artifacts.py` stages only explicit, checked summary records into public upload
 roots: a 512 MiB run budget, 20 MiB compact-text budget and 14-day retention.
@@ -127,9 +145,154 @@ along with lost-acknowledgment, authority-renewal, CAS and exact-PR-identity che
 The seven skips comprise two Linux/bubblewrap methods, two opt-in outer-runner
 methods, two opt-in trace/dump methods, and one Windows symlink-privilege subtest
 (`change='patch-link'`), not seven skipped methods. The offline SDK resolver ran.
-These results precede the subsequent main merge; complete workflow/helper replay
-on the merged tree remains unverified. No Linux, live, hosted or GitHub-durability
-coverage is implied.
+These historical results precede the subsequent main merge and do not certify
+the newer agent interface. No Linux, live, hosted or GitHub-durability coverage
+is implied.
+
+### Agent integration validation (2026-09-20)
+
+Complete helper discovery passed on Windows with Python **3.13.7**, MCP **1.30.0**
+and SDK **11.0.100-rc.1.26420.103**: **231 tests, zero failures/errors, seven skips**,
+in **3551.924 seconds**. The skips remain six opt-in/Linux methods and the
+Windows symlink-privilege subtest listed above. The actual HTTP SDK client,
+synthetic accepted/rejected agent interactions, local bare-Git CAS, immutable
+deadline/restart tests and offline SDK resolver all ran.
+
+| Validation | Tests | Result | Seconds |
+| --- | --- | --- | --- |
+| Initial agent RED | 11 | Two new tests errored because discovery schema 2 was unsupported | 104.378 |
+| Intermediate agent run | 12 | One HTTP response-shape error and one early-worker-exit failure | 641.678 |
+| Agent matrix GREEN | 14 | Passed, no skips | 319.074 |
+| Final affected memory, setup and checkpoint selectors | 2 + 2 + 4 | Passed, no skips | 0.028 + 3.589 + 8.715 |
+| Frozen complete discovery | 231 | Passed, seven skips | 3551.924 |
+
+The initial RED command also discovered nine imported existing tests; the shared
+fixture import was corrected without removing those tests from their original
+module. The final aggregate-preflight-deadline test was added after the 14-test
+matrix and passed both its focused invocation and complete discovery.
+
+Frozen tested tree: `43bd4bb58f3d4157c390fc19fc51e3032b198c03`.
+Full-run recorded executable/fixture input manifest SHA-256:
+`44ed3fd02bfebc67836c37fee212ca1f9104e5348d01f8c758a3f27d56c0896a`.
+The full command exited zero in 3553.591 seconds including runner overhead,
+below its immutable 3600-second bound. The single portable batch, including
+failed attempts and targeted checks, spent 5020.950 seconds of 7200.
+Executable/test/SDK inputs were compared after completion and were unchanged;
+this evidence-only README addition does not require another full replay.
+Raw PID/start/deadline/exit records and input-file hashes remain private session
+evidence, not repository contents.
+
+These are portable helper results, not a compiler-source speedup or Linux
+containment proof. No schedule, hosted run, remote write or real PR was created.
+Compiler build/test and live Linux execution were not part of this portable
+validation.
+
+## Agent interaction
+
+The protected owner supplies the current default-branch SHA and run ID, not a
+hotspot, hypothesis or regression selector:
+
+```json
+{"schema_version":2,"run_id":"12345","base_sha":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","primary_metric":"elapsed_ms"}
+```
+
+Run `workflow.py preflight --input discovery.json`, then `workflow.py investigate`,
+with the same protected `--repository`, `--root` and `--journal` arguments.
+Preflight checks the default branch, **all** PR pages, live owners and outstanding
+publication before canonical CAS reservation. Setup uses the pinned SDK and local
+Release FSharp.Compiler.Service compiler-source workload. Do not remove `global.json`.
+Dependency preparation belongs before agent execution, not in its active budget.
+
+`agent_bridge.py` exposes one MCP tool, `investigate(message)`. Its argument is
+strict JSON with exactly `schema_version: 1`, a bounded unique `id`, `operation`,
+and `data`. Unknown fields, duplicate keys, nonfinite values, invalid UTF-8 and
+oversized messages are rejected. All messages, diagnostics and source/PR text
+are data, never shell instructions. Reusing an ID with different bytes is rejected;
+retrying an acknowledged mutation returns its saved acknowledgment.
+
+| Operation | `data` | Effect |
+| --- | --- | --- |
+| `status` | `{}` | Current phase, diagnostics, previous hypotheses, revision results and clocks |
+| `start_profile` | `{}` | Starts the owned profiling worker; returns without waiting for collection |
+| `select_hypothesis` | `compiler_paths`, `regressions`, `hypothesis`, `complexity`, `hot_operation` | Queues selection of a displayed stack index and compiler-source scope; `status.selection_result` reports reservation, skip or blocking reason |
+| `submit_patch` | `patch` | Retains bounded UTF-8 Git patch bytes; cannot replace an already submitted revision |
+| `start_validation` | `{}` | Starts real candidate preparation and isolated correctness/unprofiled measurement |
+| `request_dump` | `reason`, `hypothesis` | Reason is `retention`, `heap-growth` or `unexplained-rss`; controller launches and verifies its own diagnostic compiler process and destination |
+| `finish_no_finding` | `reason` | Queues trusted finalization; only untested, completed valid diagnostics can end as healthy no-finding |
+| `finish_rejected` | `reason` | Queues finalization with the retained negative experiment outcome, not a speedup or healthy no-finding |
+| `cancel` | `reason` | Cancels owned work and preserves incomplete evidence |
+
+`regressions` uses the existing `{path, method}` selector schema. Paths select only
+the existing bounded compiler/test scope; no operation accepts arbitrary filesystem
+paths, command lines, URLs, environment, credentials, timeouts, policy, passed-test
+lists or acceptance decisions. Git derives the actual allowed diff after applying
+the patch. Rejected patches and reasons remain retained after rollback. A different
+eligible observed operation may be investigated in the same session, but changing
+an ID or prose cannot bypass the recorded relevant-dependency retry policy.
+The existing path-scoped hypothesis identity is preserved, including version-1
+negative history. Same-scope retries require a recorded compiler-path/toolchain
+change; unrelated README changes or selecting another stack for the same scope
+do not qualify.
+
+Individual start/status calls do not own the four-hour task. The bridge retains
+worker handles and sealed launch/checkpoint records across MCP reconnects. Restart
+must reconcile an existing worker rather than launch a duplicate or trust a reused
+PID. No per-worker one-hour cap is introduced. Missing tools, failed collection,
+failed correctness, noisy measurements and cancellation remain distinct failures.
+An accepted result still requires the protected `validate-output` boundary, fresh
+correctness/measurement reconciliation and one canonical draft intent; the agent
+cannot invoke publication or self-report a speedup.
+
+### HTTP transport and containment
+
+GH AW **v0.76.1**, commit
+[`58d1bedbb7200f59c2d224151339e38fd8687d05`](https://github.com/github/gh-aw/tree/58d1bedbb7200f59c2d224151339e38fd8687d05),
+supports host HTTP MCP through its gateway. Its
+[custom-server validator](https://github.com/github/gh-aw/blob/58d1bedbb7200f59c2d224151339e38fd8687d05/pkg/workflow/mcp_config_custom.go)
+rejects arbitrary non-Docker Python stdio. Use the isolated protocol dependency in
+`requirements-agent.txt`; ordinary helper imports do not require the MCP SDK.
+Install it in a controller-only Python 3.11+ environment:
+
+```powershell
+python -m venv protected-agent-env
+protected-agent-env\Scripts\python -m pip install -r eng\scripts\compiler_perf\requirements-agent.txt
+protected-agent-env\Scripts\python eng\scripts\compiler_perf\agent_bridge.py --root <protected-controller-root> --repository <protected-checkout> --journal <protected-journal-cache>
+```
+
+Start the protected HTTP server before gateway initialization. It creates or
+reuses the owner-only `<root>\endpoint-key`; only the trusted gateway receives
+that scoped bearer capability. The supported
+configuration fragment is `mcp-servers.compiler-perf` with `type: http`,
+`url: http://127.0.0.1:8765/mcp`, `allowed: [investigate]`, and an `Authorization`
+header carrying **only** the endpoint capability. Never use a write-capable Git
+token. HTTP entries cannot specify `command`, `args`, `env` or `mounts`.
+Use `engine.mcp.tool-timeout: 5m` (below the supported 600-second maximum) and
+`engine.mcp.session-timeout: 5h`; a session timeout is not an active-deadline
+override. The server uses supported Streamable HTTP request/response, not
+server-initiated notification delivery.
+
+The pinned gateway uses Linux host networking and rewrites loopback backend URLs
+to `host.docker.internal`, mapped to `127.0.0.1`. The endpoint explicitly permits
+that Host header without disabling DNS-rebinding checks. Only the trusted gateway
+may reach the backend; the agent gets the gateway route, not direct host access to
+8765. Authentication, body bounds and strict operation validation also apply to
+direct backend requests.
+
+**Explicit mounts are not an allowlist in stock GH AW.** Its
+[mount generation](https://github.com/github/gh-aw/blob/58d1bedbb7200f59c2d224151339e38fd8687d05/pkg/workflow/awf_helpers.go)
+adds mounts to defaults; home/workspace/temp may be writable, and `/opt` readable.
+A controller placed under mounted temp is not protected; chmod on same-user files
+does not fix this. Launch with a disposable, tracked public-source export, no Git
+metadata, a private agent temp filesystem, no host/Docker socket or credential
+files, and protected roots disjoint from **all actual mounts**. The bridge's source
+export and command/mount checks are structural building blocks, not permission to
+wrap an unsafe default firewall launch. The gateway is trusted infrastructure;
+its Docker socket must never be reachable by agent code.
+
+Portable tests exercise actual SDK HTTP clients, synthetic diagnostics and real
+local bare-Git CAS. They do not establish the actual Linux mount/network boundary,
+a compiled 360-minute graph, hosted execution, or a compiler-source speedup. Those
+require their separately authorized fixed-revision Linux execution.
 
 ## Disposable experiment controller
 
