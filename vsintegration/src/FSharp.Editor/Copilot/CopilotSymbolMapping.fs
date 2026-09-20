@@ -111,10 +111,8 @@ let private lengthBefore (candidate: ReadOnlySpan<char>) (segment: string) quote
         let tail = candidate.Slice(candidate.Length - length)
 
         if
-            tail.Slice(quotes, segment.Length).Equals(segment.AsSpan(), StringComparison.Ordinal)
-            && (not quoted
-                || tail.StartsWith("``".AsSpan(), StringComparison.Ordinal)
-                   && tail.EndsWith("``".AsSpan(), StringComparison.Ordinal))
+            tail.Slice(quotes, segment.Length).EqualsOrdinal segment
+            && (not quoted || tail.StartsWithOrdinal "``" && tail.EndsWithOrdinal "``")
         then
             candidate.Length - length
         else
@@ -139,7 +137,7 @@ let hasFullyQualifiedName (candidate: string) (item: NavigableItem) =
         let enclosing = path.Length - container.Name.Length
 
         lengthBefore spelledPath container.Name (isContainerQuoted container) = enclosing
-        && spelledPath.Slice(0, enclosing).Equals(path.AsSpan(0, enclosing), StringComparison.Ordinal)
+        && spelledPath.Slice(0, enclosing).EqualsOrdinal(path.AsSpan(0, enclosing))
 
 /// The text a picker query searches for. The inputs are positional: the member name first once the
 /// mention has been committed, as in "#fsharpSymbol:Namespace.Type", then the search text, then
