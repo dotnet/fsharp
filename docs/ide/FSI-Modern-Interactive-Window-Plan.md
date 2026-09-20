@@ -135,7 +135,7 @@ are client→server only; the server registers no callbacks, as Roslyn's does no
 
 | Method | Parameters | Result |
 |---|---|---|
-| `fsi/initialize` | `clientProcessId` | `processId`, `frameworkDescription`, `processArchitecture`, `fsiVersion`, `workingDirectory`, `supportsInterrupt` |
+| `fsi/initialize` | — (the host names itself with `--fsi-server-client-pid`) | `processId`, `frameworkDescription`, `processArchitecture`, `fsiVersion`, `workingDirectory`, `supportsInterrupt` |
 | `fsi/execute` | `code`, optional `sourcePath` and `startLine` | execution result |
 | `fsi/executeFile` | `path` | execution result |
 | `fsi/setPaths` | `includePaths`, `workingDirectory` | execution result |
