@@ -213,6 +213,25 @@ def improvement(*, legacy=False, compiler_path=PATH):
 
 
 class MemoryTests(unittest.TestCase):
+    def test_authority_renewal_preserves_captures_and_requires_fresh_validation(self):
+        import experiment as e
+        previous = improvement()
+        current = copy.deepcopy(previous)
+        with mock.patch.object(mem, "_VALIDATOR_KEY", b"renewed-controller-key"):
+            for result in current["correctness"]["results"]:
+                result["execution"] = e.execution_signature(result)
+            with self.assertRaisesRegex(ValueError, "fresh trusted"):
+                mem.merge_attempt(state(previous), current, previous)
+            mem._attest_correctness(current)
+            merged = mem.merge_attempt(state(previous), current, previous)
+            self.assertEqual(merged["attempts"][current["id"]], current)
+            current["correctness"]["results"][0]["finished_at"] = "2026-09-19T00:00:02Z"
+            current["correctness"]["results"][0]["execution"] = e.execution_signature(
+                current["correctness"]["results"][0])
+            mem._attest_correctness(current)
+            with self.assertRaisesRegex(ValueError, "cannot be erased"):
+                mem.merge_attempt(state(previous), current, previous)
+
     def test_fresh_gates_reconcile_even_coherently_resigned_receipts(self):
         import experiment as e
         for mutation in ("decoy", "class", "module", "missing", "duplicate", "new-skip",

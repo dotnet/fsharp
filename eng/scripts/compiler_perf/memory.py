@@ -502,8 +502,15 @@ def merge_attempt(state, attempt, base_attempt=None):
         require(all(n in attempt["notes"] for n in old["notes"]), "Historical notes cannot be erased")
         require(attempt["correctness"]["required"] == old["correctness"]["required"],
                 "Correctness requirements cannot be weakened")
-        require(all(r in attempt["correctness"]["results"] for r in old["correctness"]["results"]),
-                "Correctness results cannot be erased")
+        results = attempt["correctness"]["results"]
+        if not all(r in results for r in old["correctness"]["results"]):
+            # A protected controller may renew process-local authority after restart,
+            # but not change any captured command, identity, outcome or evidence.
+            def captured(result):
+                return {k: v for k, v in result.items() if k != "execution"}
+            require(all(any(captured(r) == captured(new) for new in results)
+                        for r in old["correctness"]["results"]), "Correctness results cannot be erased")
+            acceptance_ready(attempt)
         if old["outcome"] is not None:
             require(all(old[k] == attempt[k] for k in ("reason", "summary", "measurement", "collection")),
                     "Terminal conclusion cannot be rewritten")

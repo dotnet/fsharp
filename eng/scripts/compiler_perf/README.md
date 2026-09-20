@@ -19,6 +19,75 @@ but cannot authorize new publication. Correctness schema 5 binds explicit plans,
 candidate identities and runner-reported results to retained invocation, discovery,
 XML and outer-runner captures. Passing memory fixtures does not certify production acceptance.
 
+## Trusted lifecycle
+
+`workflow.py` connects the helpers from a protected controller checkout. Its
+`preflight`, `investigate`, `checkpoint`, `validate-output` and `finalize`
+subcommands require `--repository`, an owned local Git cache `--journal`, and
+an owner-only `--root` **outside the source checkout**. `preflight --input`
+accepts the experiment request below; it does not accept commands, remotes,
+branches, credentials, policy changes or deadline overrides. All JSON is bounded,
+versioned data. Exit 0 means the operation completed (including a rejected or
+no-finding experiment), 2 means blocked setup/collection/publication, and 130
+means a gracefully cancelled investigation.
+
+Preflight verifies the default-branch revision and every page of structured PR
+metadata, including author and publication identity. API denial is not an empty
+list. Planned Release compiler-source, helper, SDK, architecture and policy
+identities are frozen before a reservation; actual bootstrap/workload/compiler
+identities are added by preparation and measurement. Only recorded relevant
+compiler paths or SDK changes invalidate a rejected hypothesis; a README commit
+does not. Active owners and incomplete publication intents block duplicate work.
+
+`transport.py` binds production to `https://github.com/dotnet/fsharp.git` and
+`memory/compiler-self-profile-state`. It checks exact-ref absence, fetches and
+validates state, performs an ancestry-checked expected-head update, and verifies
+remote readback. Conflicts preserve other decisions and unmerged local candidates.
+The original GitJournal receipt still says `remote_acknowledged: false`;
+`transport_acknowledgment` is separate. A `local_fixture` acknowledgment is only
+local-Git test evidence, never GitHub durability. The native
+`memory/compiler-self-profile` branch remains untrusted notes, not authority.
+
+Investigation refuses missing Linux/bubblewrap, pinned SDK or collector
+capabilities before bootstrap or profiling. Bounded setup precedes the fixed
+14,400-second active session; periodic checkpoints also run during owned child
+waits. Candidate execution uses the existing empty Linux namespace, never a
+host fallback. The only agent-writable proposal is `inbox/proposal.patch`;
+the controller, frozen inputs, receipts, custody key, journal and output directory
+must not be mounted into an agent. An absent proposal after completed diagnostics
+is a no-finding, not an improvement. A hard runner cancellation may prevent the
+last checkpoint or finalizer; earlier acknowledged state remains authoritative.
+
+`artifacts.py` stages only explicit, checked summary records into public upload
+roots: a 512 MiB run budget, 20 MiB compact-text budget and 14-day retention.
+Binary traces cannot be safely redacted and remain private, unavailable public
+references with hashes and bounded conclusions; no truncated trace is valid.
+Restart checks actual files and expiry, not historical paths. Public Actions
+artifacts are not private storage. The owned dump workspace/analysis APIs support
+ephemeral dump analysis and verified file-only deletion; plaintext dumps never
+enter upload roots or Git. Persisted dumps are unsupported without verified
+maintainer-key encryption and private storage: there is no plaintext fallback.
+
+`validate-output` freshly reconciles sealed controller captures with the pinned
+runner selection, discovery and XML, recomputes measurements using immutable
+policy, and reapplies the proposal in an independent disposable Git tree. Custody
+authenticates retained invocation evidence, **not arbitrary test-body honesty**.
+Unsigned, copied or altered receipt booleans are not approval. The controller
+reserves one deterministic intent before emitting `output/safe-output.json` and
+`output/proposal.patch`. The approval binds the entire `items` payload, repository,
+base, run, attempt, candidate tree, exact am patch bytes and evidence. GH AW
+v0.76.1 must be configured with `patch-format: am`, one draft, no fallback issue,
+no alternate transport and no bundle. Its `branch`, `base`, `base_commit` and
+`patch_path` fields are fixed by the controller, not agent output.
+
+`finalize` reconciles exact branch/head/author/base/draft/intent metadata and saves
+the actual PR number and URL. It has no CLI push, merge, ready-for-review, issue
+or comment writer. The publisher transport is exercised only through a fake
+effect sink in portable tests. A future workflow must consume only the sealed,
+rechecked output in a credential-separated publisher job; these helpers do not
+install a schedule or grant permissions. Windows/local-Git fixtures do not prove
+Linux isolation or a real compiler-source improvement.
+
 ## Disposable experiment controller
 
 Run `experiment.py` from the **trusted checkout**, never the proposed candidate.
