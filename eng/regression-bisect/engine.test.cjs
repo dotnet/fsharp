@@ -9,6 +9,7 @@ const { harness } = require("./fixtures/checkpoint.cjs");
 const model = require("./model.cjs");
 const state = require("./state.cjs");
 const { advanceInvestigation, executeInvestigationWork } = require("./engine.cjs");
+const { runController } = require("./controller.cjs");
 
 const gitExecutable = process.platform === "win32"
     ? execFileSync("where.exe", ["git.exe"], { encoding: "utf8" }).trim().split(/\r?\n/)[0]
@@ -56,7 +57,7 @@ async function fixture(t, outcomes = ["product-failure", "product-failure", "pas
     const deps = {
         transport: h.transport, context: h.context, environments,
         intake: { readIssueSnapshot: async () => { trace.push("snapshot"); return snapshot; } },
-        approval: { readSource: async () => Buffer.from('printfn "ok"'),
+        approval: { readSource: async source => Buffer.from(source.path.endsWith(".dll") ? "producer" : 'printfn "ok"'),
             authenticateRecord: async () => false, readTrustedCheckpoints: async () => [] },
         platform: { os: "linux", architecture: "x64", rid: "linux-x64" },
         history: { gitExecutable, mirrorDirectory: mirror, scratchDirectory: scratch, mainRef: "refs/heads/main" },
@@ -714,6 +715,88 @@ test("worker-result integrity mismatches cannot commit collector-shaped success"
                 assert.equal(h.calls.length, 0);
             });
         }
+});
+
+test("isolated source and released runners cannot receive controller capabilities or alter the claimed inputs", async t => {
+    for (const kind of ["released", "source"]) await t.test(kind, async t => {
+        const h = await fixture(t);
+        if (kind === "source") await h.finish(await h.advance());
+        const work = await h.advance();
+        const observation = h.observationFor(work, "product-failure");
+        const before = structuredClone(work);
+        let launches = 0;
+        const cp = await executeInvestigationWork(work, {
+            ...h.deps, clock: () => new Date(h.context.now),
+            acquireToolchain: async () => assert.fail("credentialed acquisition"),
+            testSourceRevision: async () => assert.fail("credentialed source build"),
+            runIsolated: async (unit, settings) => {
+                launches++;
+                assert.equal(Object.keys(settings).join(" "), "signal");
+                assert.deepEqual(unit.request, work.reservation.request);
+                assert.equal(unit.buildInstanceId, work.reservation.id);
+                assert.equal(unit.epoch, work.reservation.epoch);
+                const text = JSON.stringify(unit);
+                for (const field of ["keys", "owner", "authorization", "transport", "collectObservation", "commentId"])
+                    assert.equal(Object.hasOwn(unit, field), false, field);
+                assert.equal(text.includes(h.context.keys.fixture.toString()), false);
+                const loaded = await state.loadCheckpoint(h.transport, h.context);
+                assert.ok(loaded.checkpoint.pending.executionGeneration);
+                unit.manifest.assertions.failure.stderr = "worker tries to authorize a different assertion";
+                unit.request.phase = "confirmation";
+                return kind === "released" ? { outcome: observation.outcome, cells: observation.cells } :
+                    { status: "tested", actualSourceSha: observation.target.sourceSha, buildInstanceId: observation.buildInstanceId,
+                        outcome: observation.outcome, reproduction: { cells: observation.cells } };
+            },
+            collectObservation: async ({ context, manifest }) => {
+                assert.equal(context.keys, h.context.keys);
+                assert.deepEqual(manifest, h.context.manifest);
+                return { observation, evidence: [] };
+            },
+        });
+        assert.equal(launches, 1);
+        assert.deepEqual(work, before);
+        assert.equal(cp.pending, null);
+        assert.equal(cp.records.at(-1).status, "committed");
+    });
+});
+
+test("controller advances a real history through five separate units and resumable fresh confirmation", async t => {
+    const h = await fixture(t, undefined, ["base", "main"]);
+    h.context.manifest.sources.push({ path: "fixtures/producer.dll", sha256: f.digest("producer") });
+    f.seal(h.context.manifest);
+    Object.assign(h.context.authorization, { manifestDigest: model.fingerprintInput(h.context.manifest),
+        inputDigest: h.context.manifest.approvedInputDigest });
+    const launches = [];
+    let observation;
+    const deps = { ...h.deps, withLock: action => h.lock(action), clock: () => new Date(h.context.now),
+        runIsolated: async unit => {
+            launches.push({ id: unit.buildInstanceId, request: unit.request });
+            observation = h.observationFor({ reservation: {
+                id: unit.buildInstanceId, owner: h.context.owner, request: unit.request,
+            } }, unit.request.kind === "released" || unit.request.target.sourceSha === h.shas.at(-1) ? "product-failure" : "pass");
+            return unit.request.kind === "released" ? { outcome: observation.outcome, cells: observation.cells } :
+                { status: "tested", actualSourceSha: unit.request.target.sourceSha, buildInstanceId: unit.buildInstanceId,
+                    outcome: observation.outcome, reproduction: { cells: observation.cells } };
+        },
+        collectObservation: async () => ({ observation, evidence: [] }),
+    };
+    const results = [];
+    for (let i = 0; i < 6; i++) {
+        const before = launches.length;
+        results.push(await runController({ repository: "dotnet/fsharp", issueNumber: h.context.issueNumber }, deps));
+        assert.ok(launches.length - before <= 1, JSON.stringify(results.at(-1)));
+        h.nextRun();
+    }
+    assert.deepEqual(results.map(r => r.status), ["observed", "observed", "observed", "observed", "observed", "confirmed"],
+        JSON.stringify(results.map(r => ({ status: r.status, reason: r.reason }))));
+    assert.equal(new Set(launches.map(r => r.id)).size, 5);
+    assert.deepEqual(launches.map(r => r.request.phase), ["stable", "main", "good-search", "confirmation", "confirmation"]);
+    const cp = (await state.loadCheckpoint(h.transport, h.context)).checkpoint;
+    assert.equal(cp.state.budget.consumed.reservedMinutes, 550);
+    assert.equal(cp.state.confirmation.parents.length, 1);
+    assert.equal((await runController({ repository: "dotnet/fsharp", issueNumber: h.context.issueNumber }, deps)).status, "confirmed");
+    assert.equal(launches.length, 5);
+    t.diagnostic(JSON.stringify({ controllerResults: results.map(r => r.status), launches }));
 });
 
 test("reserved workers re-read current input and endpoint identities before execution", async t => {

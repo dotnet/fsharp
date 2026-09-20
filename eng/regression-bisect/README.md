@@ -5,7 +5,8 @@ and admission contracts, complete issue intake, authenticated issue-comment
 checkpoints, and isolated exact toolchain acquisition. The endpoint-first engine composes
 those contracts with the existing reproduction and clean source-build runners.
 Fresh confirmation and deterministic publication guards consume the engine's
-intent; none of these modules activates a workflow or publishes an issue report.
+intent. The controller transaction library can update an authenticated fixed
+result slot through its injected transport; no module activates a workflow.
 GitHub access is injected by the trusted controller; tests use
 synthetic records and an in-memory transport, never live issue mutations.
 Records under `fixtures` are not reproduction approvals.
@@ -260,13 +261,14 @@ retired only through `reserveWork`, `invalidateStaleEvidence`, or
 `cancelCompletedWork({ generation })`; retrying costs
 another full reservation and never more than two attempts per item.
 
-Worker dependencies include `worker` options for the existing runners,
-`inventoryReleased(identity, buildInstanceId)`, and
-`collectObservation({ result, reservation, manifest, context })`. These last two
-are **trusted collector** boundaries: inventory the acquired SDK's compiler,
-Core/package, tasks, targets and runtime bytes; authenticate captured worker
-provenance and required artifacts; return `{ observation, evidence }` in the
-existing state format. A worker setting `verified: true` is not a collector.
+Worker dependencies include `worker` options for the existing runners and
+`inventoryReleased(identity, buildInstanceId)`. Inventory that requires loading
+products belongs inside the isolated worker, along with acquisition, builds and
+reproduction. `collectObservation({ result, reservation, manifest, context })`
+remains a **trusted collector** boundary outside execution: authenticate captured
+worker provenance and required artifacts and return `{ observation, evidence }`
+in the existing state format. It must only hash/parse bounded data, never execute
+child output or run an inventory probe. A worker setting `verified: true` is not a collector.
 The engine checks that successful collected assertions are the original runner's
 matrix repetitions and that source SHA/build IDs match the reserved work. Work
 results carry only public epoch inputs in `binding`, never controller keys.
@@ -428,10 +430,97 @@ interval, history, optional associations, and `latentRootCause: "unproven"`.
 Authenticated checkpoint loading checks each fresh observation's charged
 confirmation reservation and execution generation.
 
-This API is not a credential-isolation boundary. The in-process runner callbacks
-are still trusted dependencies; never deploy them with untrusted historical
-execution beside credentials. A disposable production adapter and real
-containment acceptance are required before enabling an unattended controller.
+This API is not a credential-isolation boundary. Direct engine calls retain
+in-process runner defaults for compatibility; never deploy those defaults with
+untrusted historical execution beside credentials. The controller transaction
+requires a separate `runIsolated` adapter and has no in-process fallback.
+A disposable production adapter and real containment acceptance are required
+before enabling an unattended controller.
+
+## Controller transaction library
+
+`controller.cjs` exports `runController(input, dependencies)` and
+`publishController(input, dependencies)`. Both accept exactly
+`{ repository: "dotnet/fsharp", issueNumber: <positive integer> }`.
+The issue must match the trusted context. Extra dispatch fields, commands,
+refs, destinations, Markdown and fresh-allowance controls are rejected.
+These are library entry points, not a deployable CLI or Actions workflow.
+
+`runController` requires the engine dependencies above, a whole-issue
+`withLock(action)`, `runIsolated(unit, { signal })`, and the trusted
+`collectObservation` callback. It loads an existing authenticated checkpoint;
+it never initializes or replaces a missing allowance. Inside the lock it
+advances the existing engine, consumes/reserves confirmation work if selected,
+and executes at most one unit. It returns `observed` with the exact outcome,
+work ID, generation and consumed budget, or the engine/confirmation stop,
+block or terminal reason. It does not loop into the next worker or publish
+automatically. A lost observation-write acknowledgement is recovered by the
+existing checkpoint/receipt chain, not another execution.
+
+Immediately after the durable claim, the engine constructs a fresh public
+JSON unit with the manifest, request, issue, epoch, build ID, persisted deadline,
+platform, resolved stable toolchain and policy/workflow/environment digests.
+`worker.validateExecutionUnit` rejects unknown fields and malformed bindings.
+Only this data and an abort signal reach `runIsolated`; no state transport,
+HMAC key, authorization context, comment destination, collector or executable
+callback crosses that seam. Changing the supplied unit does not mutate the
+controller's manifest or reservation.
+
+`worker.runExecutionUnit(unit, dependencies, { signal })` is the extracted
+physical runner. Inside a disposable boundary it composes the existing
+toolchain, workspace and reproduction helpers, verifies its trusted policy
+bundle digest and uses the remaining reservation deadline. Local helper paths,
+raw reviewed assets, exact reproduction toolchains and inventory callbacks
+come from the worker's separately pinned read-only bundle, not issue text.
+The extraction does not alter historical `global.json`, install policy,
+producer bytes, FSI selection or project identity verification.
+
+**Deployment is blocked.** The execution unit is public data, not an
+authenticated launch receipt or permission to execute it. This directory does
+not yet supply a production containment adapter, safe result-file collector,
+GitHub transport/approval bootstrap CLI, scheduled workflow or
+`containment.smoke.cjs`. The transaction tests use fake transports and runner
+callbacks and therefore do not prove confinement. Do not implement
+`runIsolated` as an in-process callback, stripped environment or ordinary
+credentialed subprocess in production. No workflow or secret names are
+configured by this library.
+
+### Fixed-slot guarded publication
+
+`publishController` requires `context`, `transport`, `withLock`,
+`readCurrentContext` (the report API's fresh trusted reader), and a trusted
+`resultCommentId`. It never creates a comment, accepts a destination from its
+input, or writes worker/model Markdown. Provision and retain that ID outside
+dispatch alongside the checkpoint/anchor registration. The slot must already
+contain an authenticated `proposal` record, signed at its actual comment ID,
+whose payload is exactly:
+
+```js
+{
+  schemaVersion: 1,
+  purpose: "result-slot",
+  repository: "dotnet/fsharp",
+  issueNumber,
+  checkpointCommentId
+}
+```
+
+This is a publication slot, **not** reproduction approval or first-use allowance
+authorization. Its exact writer/app/workflow/run and checkpoint association
+must authenticate; an empty comment, copied marker or digest alone is rejected.
+The publisher prepares and persists the report digest, authenticates the slot,
+refreshes preparation immediately before writing, signs only `report.cjs`'s
+validated report, updates the fixed ID, then authenticates completion through
+the existing report API. Every mutation remains under the whole-issue lock.
+
+An already-written matching result can be adopted after the original run
+completes. Its owner must match the authenticated pending checkpoint writer;
+after completion, the persisted canonical comment ID authorizes later reads.
+If no result was written, a new run can take over the same pending digest only
+after verifying that the previous owning attempt completed. Adoption and
+ownership transfer neither execute a worker nor replenish the allowance.
+Missing or changed slots, active/unknown owners, stale input, required evidence
+loss and failed API writes remain explicit blocks.
 
 Classifications deliberately differ:
 
@@ -576,11 +665,12 @@ required-only gate, which never authorizes execution; ordinary checkpoint loads
 still check all evidence.
 Adoption records the same comment ID without another result write, worker or
 allowance reset. Missing intent, conflicting results (even with different
-digests), different owners, required-evidence loss and stale inputs fail closed.
+digests), owners that do not match the persisted publication intent,
+required-evidence loss and stale inputs fail closed.
 `state.authenticateDecodedRecord(transport, context, comment)` returns the
 authenticated `{ kind, payload, commentId, owner }` or `null`.
 
-The later trusted controller must re-run preparation as close as possible to
+The trusted publisher must re-run preparation as close as possible to
 the write, hold the whole-issue lock, and publish only the fixed signed payload:
 
 ```js
@@ -595,8 +685,8 @@ Use `state.serializeWorkflowRecord` with the **actual final comment ID** in its
 authentication context. The returned display `body` alone is not an
 authenticated result and must not be published as one. For a lost response,
 recover a matching authenticated result or keep the pending intent blocked;
-do not blindly create another comment. These modules never perform the actual
-result write.
+do not blindly create another comment. `controller.publishController` performs
+this fixed-slot write; `report.cjs` itself never writes the result.
 
 Evidence transport is restricted to exact repository-bound GitHub artifact URLs:
 `https://api.github.com/repos/dotnet/fsharp/actions/artifacts/<id>/zip` or
@@ -1435,6 +1525,10 @@ The trusted controller supplies `context`:
   the current signing key. Production keys belong only to the trusted
   controller's secret store, never this repository, issue input, source builds,
   reproduction processes, worker output, or caches.
+  Rotate by adding a new ID/key and selecting it for new signatures, retaining
+  all old verification keys and trusted workflow revisions needed by the
+  checkpoint, result and append-only anchor history. Removing a required old
+  key blocks recovery; never rotate by creating a new anchor or allowance.
 * `owner: { runId, attempt }`, with a decimal-string run ID; UTC `now`;
   the freshly read `issue` and complete `issueFingerprint`; today's reviewed
   `manifest`, `authorization`, `policy`, `policyRevision`, `pinnedMainSha`, and

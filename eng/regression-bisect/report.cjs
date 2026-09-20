@@ -317,7 +317,8 @@ async function preparePublication(options, deps) {
             if (matches.length) {
                 const existing = matches[0], report = existing.payload.report;
                 requireValue(["pending", "published"].includes(cp.publicationStatus) &&
-                    equal(existing.owner, context.owner), "result has no matching owning publication intent");
+                    (equal(existing.owner, loaded.owner) || cp.publicationStatus === "published" &&
+                        cp.state.publication.commentId === existing.commentId), "result has no matching owning publication intent");
                 const expected = reportFromCheckpoint(cp, fresh.pinnedMainSha, new Map());
                 expected.observations.forEach((o, i) => o.evidence.forEach((e, j) => {
                     e.available = report.observations[i]?.evidence[j]?.available;

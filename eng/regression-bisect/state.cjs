@@ -686,7 +686,17 @@ async function recordPublication(transport, context, { generation, status, diges
         "publication comment identity conflict");
     }
     if (cp.publicationStatus === status && cp.state.publication.digest === resultDigest &&
-        cp.state.publication.commentId === commentId) return cp;
+        cp.state.publication.commentId === commentId) {
+        if (status !== "pending" || ownerEqual(loaded.owner, context.owner)) return cp;
+    }
+    if (status !== "blocked" && !ownerEqual(loaded.owner, context.owner)) {
+        const previousOwner = await verifyRun(transport, context, {
+            runId: loaded.owner.runId, runAttempt: loaded.owner.attempt,
+            workflowRevision: cp.state.budget.workflowRevision,
+        });
+        requireState(previousOwner.status === "completed" && typeof previousOwner.conclusion === "string",
+            "publication has an active or unknown owning run");
+    }
     cp.publicationStatus = status;
     cp.state.publication = { digest: resultDigest, commentId };
     cp.generation++;

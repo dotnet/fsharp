@@ -6,6 +6,7 @@ const model = require("./model.cjs");
 const state = require("./state.cjs");
 const intake = require("./intake.cjs");
 const { preparePublication, renderReport, completePublication } = require("./report.cjs");
+const { publishController } = require("./controller.cjs");
 
 function resultComment(h, ready, id = 789) {
     const body = state.serializeWorkflowRecord({ kind: "result", status: "Regression investigation result",
@@ -112,6 +113,115 @@ test("fresh complete intake produces a bounded deterministic pending intent, nev
     assert.equal(duplicate.status, "pending");
     assert.equal(duplicate.digest, result.digest);
     assert.equal(duplicate.generation, result.generation);
+});
+
+test("guarded publisher writes only its authenticated issue-specific slot and recovers across owning runs", async t => {
+    for (const crash of ["none", "before-write", "after-write"]) await t.test(crash, async () => {
+        const h = await fixture();
+        const slotId = 789;
+        h.comments.push({ ...structuredClone(h.comment), id: slotId,
+            body: state.serializeWorkflowRecord({ kind: "proposal", status: "Regression investigation result slot",
+                payload: { schemaVersion: 1, purpose: "result-slot", repository: h.context.repository,
+                    issueNumber: h.context.issueNumber, checkpointCommentId: h.context.commentId } },
+            { ...h.context, commentId: slotId }) });
+        h.deps.resultCommentId = slotId;
+        h.deps.clock = () => new Date(h.context.now);
+        const get = h.transport.getComment, update = h.transport.updateComment;
+        const writes = [];
+        h.transport.getComment = async id => id === slotId ? structuredClone(h.comments[0]) : get(id);
+        let interrupted = false;
+        h.transport.updateComment = async (id, body) => {
+            if (id !== slotId) return update(id, body);
+            if (!interrupted && crash === "before-write") {
+                interrupted = true;
+                throw new Error("cancelled before report write");
+            }
+            writes.push({ id, body });
+            h.comments[0].body = body;
+            if (!interrupted && crash === "after-write") {
+                interrupted = true;
+                throw new Error("report response lost");
+            }
+            return structuredClone(h.comments[0]);
+        };
+        const input = { repository: "dotnet/fsharp", issueNumber: 123 };
+        const first = await publishController(input, h.deps);
+        assert.equal(first.status, crash === "none" ? "published" : "blocked", first.reason);
+        h.nextRun();
+        const recovered = await publishController(input, h.deps);
+        assert.equal(recovered.status, "published", recovered.reason);
+        assert.equal(recovered.commentId, slotId);
+        assert.equal(writes.length, 1);
+        assert.equal((await publishController(input, h.deps)).status, "published");
+        assert.equal(writes.length, 1);
+        const decoded = await state.authenticateDecodedRecord(h.transport, { ...h.context, commentId: slotId }, h.comments[0]);
+        assert.equal(decoded.kind, "result");
+        assert.equal(decoded.payload.digest, recovered.digest);
+        const cp = (await state.loadCheckpoint(h.transport, h.context)).checkpoint;
+        assert.equal(cp.state.publication.commentId, slotId);
+        assert.equal(cp.state.budget.consumed.reservedMinutes, 110);
+    });
+});
+
+test("publisher rechecks current inputs immediately before write and rejects forged slots", async t => {
+    for (const mutation of ["discussion", "main", "slot", "destination", "markdown", "slot-owner"]) await t.test(mutation, async () => {
+        const h = await fixture();
+        h.deps.resultCommentId = 789;
+        h.deps.clock = () => new Date(h.context.now);
+        const payload = { schemaVersion: 1, purpose: "result-slot", repository: h.context.repository,
+            issueNumber: h.context.issueNumber, checkpointCommentId: mutation === "slot" ? 999 : h.context.commentId };
+        const slot = { ...structuredClone(h.comment), id: 789,
+            body: state.serializeWorkflowRecord({ kind: "proposal", status: "Regression investigation result slot",
+                payload }, { ...h.context, commentId: 789 }) };
+        h.comments.push(slot);
+        const get = h.transport.getComment, update = h.transport.updateComment;
+        let writes = 0;
+        h.transport.getComment = async id => {
+            if (id !== 789) return get(id);
+            if (mutation === "discussion") h.comments.push({ id: 888, body: "new correction", user: { id: 21 } });
+            if (mutation === "main") h.fresh.pinnedMainSha = f.sha("moved main after preparation");
+            const value = structuredClone(slot);
+            if (mutation === "slot-owner") value.user.id++;
+            return value;
+        };
+        h.transport.updateComment = async (id, body) => {
+            if (id === 789) { writes++; throw new Error("forbidden report write"); }
+            return update(id, body);
+        };
+        const input = { repository: "dotnet/fsharp", issueNumber: 123,
+            ...(mutation === "destination" ? { issueNumber: 999 } : {}),
+            ...(mutation === "markdown" ? { markdown: "# fabricated" } : {}) };
+        const result = await publishController(input, h.deps);
+        assert.ok(["blocked", "requeue"].includes(result.status), JSON.stringify(result));
+        assert.equal(writes, 0);
+        assert.equal((await state.loadCheckpoint(h.transport, h.context)).checkpoint.state.budget.consumed.reservedMinutes, 110);
+    });
+});
+
+test("pending publication ownership transfers only from a completed authenticated run", async t => {
+    for (const written of [false, true]) for (const previous of ["in_progress", "completed", "unknown"])
+        await t.test(`${previous}, written=${written}`, async () => {
+        const h = await fixture();
+        const pending = await h.prepare();
+        assert.equal(pending.status, "ready", pending.reason);
+        if (written) h.comments.push(resultComment(h, pending));
+        h.nextRun();
+        if (previous === "unknown") h.runs.delete("12345/1");
+        else {
+            h.runs.get("12345/1").status = previous;
+            h.runs.get("12345/1").conclusion = previous === "completed" ? "cancelled" : null;
+        }
+        const before = h.comment.body;
+        const result = await h.prepare({ generation: pending.generation });
+        assert.equal(result.status, previous === "completed" ? written ? "published" : "pending" : "blocked", result.reason);
+        if (previous === "completed") {
+            assert.equal(result.digest, pending.digest);
+            assert.equal(result.generation, pending.generation + 1);
+            const loaded = await state.loadCheckpoint(h.transport, h.context);
+            assert.deepEqual(loaded.owner, h.context.owner);
+            assert.equal(loaded.checkpoint.state.budget.consumed.reservedMinutes, 110);
+        } else if (previous === "unknown") assert.equal(h.comment.body, before);
+    });
 });
 
 test("reports expose assertions, matrix, identities, provenance, uncertainty and charged resume allowance", async () => {

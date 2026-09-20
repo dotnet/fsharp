@@ -7,8 +7,7 @@ const {
 const intake = require("./intake.cjs");
 const { loadCheckpoint, reserveWork, beginWork, commitObservation, invalidateStaleEvidence, recordSearchProgress } = require("./state.cjs");
 const toolchains = require("./toolchains.cjs");
-const { runReproduction } = require("./repro.cjs");
-const { testSourceRevision } = require("./workspace.cjs");
+const { validateExecutionUnit, runExecutionUnit } = require("./worker.cjs");
 const { execute } = require("./repro-process.cjs");
 const { isolatedEnvironment, requireValue } = require("./toolchain-io.cjs");
 
@@ -310,7 +309,7 @@ async function executeInvestigationWork(work, deps) {
     requireValue(equal(work.binding, { issue: context.issue, issueFingerprint: context.issueFingerprint,
         pinnedMainSha: context.pinnedMainSha, environmentFingerprint: context.environmentFingerprint }), "stale work binding");
     requireValue(typeof deps.collectObservation === "function", "trusted observation collector required");
-    requireValue(r.request.kind !== "source" || deps.worker.reproductionToolchain,
+    requireValue(deps.runIsolated || r.request.kind !== "source" || deps.worker?.reproductionToolchain,
         "frozen reproduction toolchain required separately from revision build SDK");
     const remaining = Date.parse(r.deadline) - clock().getTime();
     requireValue(remaining > 0, "reservation deadline exhausted");
@@ -332,37 +331,17 @@ async function executeInvestigationWork(work, deps) {
     if (!started.execute) return report("blocked", "work execution already claimed");
     const manifest = loaded.checkpoint.state.manifest;
     checkDeadline();
-    let result;
-    if (r.request.kind === "source") {
-        result = await (deps.testSourceRevision ?? testSourceRevision)({
-            ...deps.worker, manifest, signal, buildInstanceId: r.id,
-            request: { schemaVersion: 1, repository: context.repository, sourceSha: r.request.target.sourceSha,
-                phase: r.request.phase === "good-search" ? "older-search" : r.request.phase,
-                manifestDigest: fingerprint(manifest), approvalDigest: manifest.approvedInputDigest,
-                platform: deps.platform, allocation: { buildTimeoutMs: context.policy.limits.buildTimeoutMinutes * 60000,
-                    workerTimeoutMs: context.policy.limits.workerTimeoutMinutes * 60000 } },
-        }, deps.workspaceDependencies);
-    } else {
-        const acquired = await (deps.acquireToolchain ?? toolchains.acquireToolchain)({
-            policy: context.policy, toolchain: resolved, storageDirectory: deps.worker.storageDirectory, signal,
-        }, deps.toolchainDependencies);
-        checkDeadline();
-        if (acquired.status !== "acquired") result = acquired;
-        else {
-            const verified = (deps.verifyToolchainIdentity ?? toolchains.verifyToolchainIdentity)({
-                policy: context.policy, toolchain: acquired.identity.requested, identity: acquired.identity,
-            });
-            requireValue(verified.status === "verified", "stable acquisition identity rejected");
-            requireValue(acquired.identity.archive.sha256 === context.stableSdk.archives.find(a =>
-                a.os === deps.platform.os && a.architecture === deps.platform.architecture)?.sha256, "stable archive identity changed");
-            checkDeadline();
-            const product = await deps.inventoryReleased(acquired.identity, r.id);
-            checkDeadline();
-            result = await (deps.runReproduction ?? runReproduction)({
-                ...deps.worker, manifest, product, toolchain: acquired.identity,
-            }, { execute: (exe, args, settings) => (deps.workerExecute ?? execute)(exe, args, { ...settings, signal }) });
-        }
-    }
+    const unit = structuredClone({
+        schemaVersion: 1, repository: context.repository, issueNumber: context.issueNumber,
+        epoch: r.epoch, buildInstanceId: r.id, deadline: r.deadline, request: r.request,
+        manifest, platform: deps.platform, stableSdk: context.stableSdk, resolved,
+        policyDigest: fingerprint(context.policy), policyRevision: context.policyRevision,
+        workflowRevision: context.workflowRevision, environmentFingerprint: context.environmentFingerprint,
+    });
+    validateExecutionUnit(unit);
+    const result = deps.runIsolated
+        ? await deps.runIsolated(unit, { signal })
+        : await runExecutionUnit(unit, { ...deps, policy: context.policy }, { signal });
     checkDeadline();
     const collected = await deps.collectObservation({ result, reservation: r, manifest, context });
     checkDeadline();
