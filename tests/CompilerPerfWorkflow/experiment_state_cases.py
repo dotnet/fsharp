@@ -121,15 +121,23 @@ class ExperimentStateCases:
                 repo.git("config", "status.showUntrackedFiles", "no")
                 before = snapshot(repo)
                 other = root / "other"
-                e.prepare_candidate(repo.root, other, repo.request(), patch)
+                e.prepare_candidate(repo.root, other, repo.request(), patch,
+                                    manifest=e.m.read_json(owned / "workload.json"))
+                if dirty == "mixed":
+                    result = e.validate_candidate(other, root / "profile.json")
+                    self.assertTrue(result["draft_eligible"], result)
+                    with self.assertRaisesRegex(ValueError, "Accepted candidate is retained"):
+                        e.discard_candidate(other)
                 other_before = {p: (other / p).read_bytes() for p in ("proposal.patch", "candidate.json")}
                 other_repo = copy.copy(repo)
                 other_repo.root = other / "tree"
                 other_tree = snapshot(other_repo)
                 journal = root / "canonical.json"
-                accepted = improvement()
-                accepted["publication"] = e.mem.publication_intent(accepted, repo.sha)
-                accepted["lifecycle"] = "publication_pending"
+                accepted = (e.mem.load_state(other / "attempt.json")["state"]["attempts"]["attempt-1"]
+                            if dirty == "mixed" else improvement())
+                if dirty != "mixed":
+                    accepted["publication"] = e.mem.publication_intent(accepted, repo.sha)
+                    accepted["lifecycle"] = "publication_pending"
                 negative = attempt("negative", "rejected")
                 e.mem.checkpoint(journal, state(accepted, negative))
                 journal_before = journal.read_bytes()
