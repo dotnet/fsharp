@@ -111,9 +111,25 @@ python -m unittest discover -s tests\CompilerPerfWorkflow -p "test_*.py" -v
 These use owned local bare repositories and fake publication effects. Optional
 Linux isolation and live runner tests have separate prerequisites and are not
 certified by portable results.
-The lifecycle repair has targeted portable coverage; the full workflow and
-complete helper suites exceeded the bounded Windows dispatch limit and remain
-unverified as complete suites.
+On 2026-09-20, the prescribed suites completed on Windows with Python 3.13.7:
+
+| Suite pattern | Tested commit | Tests run | Skips | Duration |
+| --- | --- | --- | --- | --- |
+| `test_workflow*.py` | `31c4e4c1ffa` | 59 | 0 | 1984.891 s |
+| `test_memory.py` | `31c4e4c1ffa` | 38 | 0 | 44.533 s |
+| `test_*.py` | `e60d1f04819` | 203 | 7 | 3290.137 s |
+
+All three recorded runs exited zero with no failures or errors. The complete
+helper run required repairing fixture Git initialization to reuse the existing
+allowlisted environment; its earlier 28 setup errors remain failed evidence.
+All six independent publication crash rows and seven tampering rows completed,
+along with lost-acknowledgment, authority-renewal, CAS and exact-PR-identity checks.
+The seven skips comprise two Linux/bubblewrap methods, two opt-in outer-runner
+methods, two opt-in trace/dump methods, and one Windows symlink-privilege subtest
+(`change='patch-link'`), not seven skipped methods. The offline SDK resolver ran.
+These results precede the subsequent main merge; complete workflow/helper replay
+on the merged tree remains unverified. No Linux, live, hosted or GitHub-durability
+coverage is implied.
 
 ## Disposable experiment controller
 
