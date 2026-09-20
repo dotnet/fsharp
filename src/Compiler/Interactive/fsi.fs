@@ -989,6 +989,7 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
     let mutable fsiLCID = None
 
     let mutable fsiServerJsonRpcPipe = ""
+    let mutable fsiServerClientProcessId = None
 
     // internal options
     let mutable probeToSeeIfConsoleWorks = true
@@ -1082,7 +1083,7 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
                     CompilerOption("fsi-server-report-references", "", OptionString(fun s -> writeReferencesAndExit <- Some s), None, None)
                     CompilerOption("fsi-server", "", OptionString(fun s -> fsiServerName <- s), None, None) // "FSI server mode on given named channel");
                     CompilerOption("fsi-server-jsonrpc", "", OptionString(fun s -> fsiServerJsonRpcPipe <- s), None, None) // "FSI server mode speaking JSON-RPC over the given named pipe"
-                    CompilerOption("fsi-server-client-pid", "", OptionString(ignore), None, None) // "Process id of the host for FSI server lifetime management"
+                    CompilerOption("fsi-server-client-pid", "", OptionInt(fun n -> fsiServerClientProcessId <- Some n), None, None) // "Process id of the host; the JSON-RPC server exits when it does"
                     CompilerOption("fsi-server-input-codepage", "", OptionInt(fun n -> fsiServerInputCodePage <- Some(n)), None, None) // " Set the input codepage for the console");
                     CompilerOption("fsi-server-output-codepage", "", OptionInt(fun n -> fsiServerOutputCodePage <- Some(n)), None, None) // " Set the output codepage for the console");
                     CompilerOption(
@@ -1394,9 +1395,15 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
 
     member _.IsInteractiveServer = isInteractiveServer ()
 
-    /// The pipe name is not surfaced: the server lives in the process entry point, which reads it
-    /// from the command line directly.
     member _.IsJsonRpcServer = isJsonRpcServer ()
+
+    member _.JsonRpcServerPipeName =
+        if isJsonRpcServer () then
+            Some fsiServerJsonRpcPipe
+        else
+            None
+
+    member _.JsonRpcClientProcessId = fsiServerClientProcessId
 
     member _.ProbeToSeeIfConsoleWorks = probeToSeeIfConsoleWorks
 
@@ -1535,16 +1542,12 @@ type internal FsiConsoleInput
 
     let consoleOpt =
         // The "console.fs" code does a limited form of "TAB-completion".
-        // Currently, it turns on if it looks like we have a console.
-        if fsiOptions.EnableConsoleKeyProcessing then
+        // Currently, it turns on if it looks like we have a console. A session driven by a host has
+        // no user at a console, whatever the probe would say.
+        if fsiOptions.EnableConsoleKeyProcessing && not fsiOptions.IsInteractiveServer then
             fsi.GetOptionalConsoleReadLine(fsiOptions.ProbeToSeeIfConsoleWorks)
         else
             None
-
-    // When VFSI is running, there should be no "console", and in particular the console.fs readline code should not to run.
-    do
-        if fsiOptions.IsInteractiveServer then
-            assert consoleOpt.IsNone
 
     /// This threading event gets set after the first-line-reader has finished its work
     let consoleReaderStartupDone = new ManualResetEvent(false)
@@ -4428,11 +4431,37 @@ type FsiInteractionProcessor
         let tokenizer =
             fsiStdinLexerProvider.CreateBufferLexer(scriptFileName, lexbuf, diagnosticsLogger)
 
-        currState
-        |> InteractiveCatch diagnosticsLogger (fun istate ->
-            let expr = ParseInteraction tcConfigB.diagnosticsOptions tokenizer
-            ExecuteParsedInteractionOnMainThread(ctok, diagnosticsLogger, expr, istate, cancellationToken))
-        |> commitResult
+        // The text may hold several interactions, as standard input would. Each one that completes
+        // is committed before the next is parsed, so that a failure later in the text keeps what ran
+        // before it; the value reported is that of the last interaction that produced one.
+        let rec run istate lastValue =
+            let errorsBefore = diagnosticsLogger.ErrorCount
+
+            let istate, status =
+                istate
+                |> InteractiveCatch diagnosticsLogger (fun istate ->
+                    match ParseInteraction tcConfigB.diagnosticsOptions tokenizer with
+                    | Some(ParsedScriptInteraction.Definitions([], _)) -> istate, Completed lastValue
+                    | expr -> ExecuteParsedInteractionOnMainThread(ctok, diagnosticsLogger, expr, istate, cancellationToken))
+
+            let status =
+                match status with
+                | Completed value -> Completed(Option.orElse lastValue value)
+                | status -> status
+
+            match status with
+            | Completed value when
+                diagnosticsLogger.ErrorCount = errorsBefore
+                && not tokenizer.LexBuffer.IsPastEndOfStream
+                ->
+                if cancellationToken.IsCancellationRequested then
+                    istate, CtrlC
+                else
+                    setCurrState istate
+                    run istate value
+            | _ -> istate, status
+
+        run currState None |> commitResult
 
     member this.EvalScript(ctok, scriptPath, diagnosticsLogger) =
         // Todo: this runs the script as expected but errors are displayed one line to far in debugger
@@ -4973,6 +5002,10 @@ type FsiEvaluationSession
 
     /// A host calls this to get the active language ID if provided by fsi-server-lcid
     member _.LCID = fsiOptions.FsiLCID
+
+    member _.JsonRpcServerPipeName = fsiOptions.JsonRpcServerPipeName
+
+    member _.JsonRpcClientProcessId = fsiOptions.JsonRpcClientProcessId
 
     /// A host calls this to report an unhandled exception in a standard way, e.g. an exception on the GUI thread gets printed to stderr
     member x.ReportUnhandledException exn = x.ReportUnhandledExceptionSafe true exn
