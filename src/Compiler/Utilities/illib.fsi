@@ -68,21 +68,6 @@ module internal PervasiveAutoOpens =
 
         member inline IndexOfOrdinal: value: string * startIndex: int * count: int -> int
 
-    [<AbstractClass; Sealed; Extension>]
-    type ReadOnlySpanCharExtensions =
-
-        [<Extension>]
-        static member inline EqualsOrdinal: str: ReadOnlySpan<char> * value: ReadOnlySpan<char> -> bool
-
-        [<Extension>]
-        static member inline EqualsOrdinal: str: ReadOnlySpan<char> * value: string -> bool
-
-        [<Extension>]
-        static member inline StartsWithOrdinal: str: ReadOnlySpan<char> * value: string -> bool
-
-        [<Extension>]
-        static member inline EndsWithOrdinal: str: ReadOnlySpan<char> * value: string -> bool
-
     type Async with
 
         /// Runs the computation synchronously, always starting on the current thread.
