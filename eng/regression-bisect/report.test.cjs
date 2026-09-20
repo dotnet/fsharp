@@ -3,6 +3,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs/promises");
 const os = require("node:os");
 const path = require("node:path");
+const { spawnSync } = require("node:child_process");
 const { createFileEvidenceStore } = require("./evidence-store.cjs");
 const f = require("./fixtures/contracts.cjs");
 const { harness } = require("./fixtures/checkpoint.cjs");
@@ -620,10 +621,20 @@ test("pending result recovery checks required evidence without rereading optiona
     });
 });
 
-test("publication crash points preserve a single result and the charged allowance", async t => {
-    for (const crash of ["before-intent", "after-intent", "after-result", "after-acknowledgement"]) await t.test(crash, async () => {
-        const h = await fixture(), update = h.transport.updateComment;
+test("publication crash points recover through the concrete store in fresh processes", async t => {
+    for (const crash of ["before-intent", "after-intent", "after-result", "after-acknowledgement",
+        "optional-expired", "required-expired", "authentication", "network"]) await t.test(crash, async t => {
+        const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "publication-replay-")));
+        t.after(() => fs.rm(root, { recursive: true, force: true }));
+        const storeConfig = { directory: path.join(root, "store"), repository: "dotnet/fsharp", runId: "12345", attempt: 1 };
+        const store = createFileEvidenceStore(storeConfig);
+        const reference = await store.writeEvidence(Buffer.from("durable evidence"), {
+            workId: "report-main", launchId: f.digest("launch"), unitDigest: f.digest("unit"), imageDigest: f.digest("image"),
+        });
+        reference.required = crash !== "optional-expired";
+        const h = await fixture({ evidence: [reference], evidenceStore: store }), update = h.transport.updateComment;
         const before = (await state.loadCheckpoint(h.transport, h.context)).checkpoint.state.budget;
+        let ready;
         if (crash.endsWith("intent")) {
             h.transport.updateComment = async (...args) => {
                 if (crash === "after-intent") await update(...args);
@@ -631,27 +642,99 @@ test("publication crash points preserve a single result and the charged allowanc
             };
             assert.equal((await h.prepare()).status, "blocked");
             h.transport.updateComment = update;
+        } else {
+            ready = await h.prepare();
+            assert.equal(ready.status, "ready", ready.reason);
+            h.comments.push(resultComment(h, ready));
         }
-        const ready = await h.prepare();
-        assert.equal(ready.status, crash === "after-intent" ? "pending" : "ready", ready.reason);
-        if (crash === "after-result") {
-            await assert.rejects(async () => {
-                h.comments.push(resultComment(h, ready));
-                throw new Error("result write response lost");
-            }, /response lost/);
-        } else h.comments.push(resultComment(h, ready));
+        if (!h.comments.length) h.comments.push({ ...structuredClone(h.comment), id: 789,
+            body: state.serializeWorkflowRecord({ kind: "proposal", status: "Regression investigation result slot",
+                payload: { schemaVersion: 1, purpose: "result-slot", repository: h.context.repository,
+                    issueNumber: h.context.issueNumber, checkpointCommentId: h.context.commentId } },
+            { ...h.context, commentId: 789 }) });
         if (crash === "after-acknowledgement") {
             h.transport.updateComment = async (...args) => { await update(...args); throw new Error("ack response lost"); };
             assert.equal((await h.prepare()).status, "blocked");
             h.transport.updateComment = update;
         }
-        const recovered = await h.prepare();
-        assert.equal(recovered.status, "published", recovered.reason);
-        assert.equal(recovered.digest, ready.digest);
-        assert.equal(recovered.commentId, 789);
-        assert.equal(h.comments.length, 1);
-        assert.deepEqual((await state.loadCheckpoint(h.transport, h.context)).checkpoint.state.budget, before);
-        assert.ok(h.calls.every(c => !c.route.startsWith("POST ") || c.route.includes("/statuses/")));
+        const pendingDigest = (await state.loadCheckpoint(h.transport, h.context)).checkpoint.state.publication.digest;
+        if (crash.endsWith("expired")) await fs.rm(path.join(storeConfig.directory,
+            new URL(reference.url).searchParams.get("name") + ".bin"));
+        h.nextRun();
+        const file = path.join(root, "transport.json");
+        await fs.writeFile(file, JSON.stringify({ context: h.context, comment: h.comment, statuses: h.statuses,
+            runs: [...h.runs], comments: h.comments, issue: h.issue, fresh: h.fresh, storeConfig, writes: ready ? 1 : 0 }));
+        const script = `
+            const fs=require("node:fs"), snapshot=JSON.parse(fs.readFileSync(process.argv[1]));
+            const h=require(${JSON.stringify(require.resolve("./fixtures/checkpoint.cjs"))}).harness(snapshot);
+            const state=require(${JSON.stringify(require.resolve("./state.cjs"))});
+            const store=require(${JSON.stringify(require.resolve("./evidence-store.cjs"))}).createFileEvidenceStore(snapshot.storeConfig);
+            const save=()=>fs.writeFileSync(process.argv[1],JSON.stringify({...snapshot,comment:h.comment,statuses:h.statuses}));
+            const transport={...h.transport,...store,
+                verifyEvidence:async url=>{
+                    if(${JSON.stringify(crash)}==="authentication" || ${JSON.stringify(crash)}==="network")
+                        throw Error("injected ${crash} failure");
+                    return store.verifyEvidence(url);
+                },
+                getComment:async id=>id===789?snapshot.comments[0]:h.transport.getComment(id),
+                updateComment:async(id,body)=>{
+                    if(id===789) { snapshot.comments[0].body=body; snapshot.writes++; save(); return snapshot.comments[0]; }
+                    const result=await h.transport.updateComment(id,body); save(); return result;
+                },
+                request:async(route,args)=>{
+                    if(route.includes("/statuses")) {const result=await h.transport.request(route,args);save();return result;}
+                    if(route.endsWith("/issues/{issue_number}")) return {data:snapshot.issue};
+                    if(route.endsWith("/comments")) return {data:[...snapshot.comments,h.comment],headers:{link:""}};
+                    if(route.endsWith("/timeline")) return {data:[],headers:{link:""}};
+                    if(route.includes("/actions/runs/")) return {data:await h.transport.getRun(args.run_id,args.attempt_number)};
+                    throw Error("unexpected replay route "+route);
+                }};
+            const deps={context:h.context,transport,resultCommentId:789,clock:()=>new Date(h.context.now),
+                withLock:async action=>{
+                    const lock=process.argv[1]+".lock", handle=fs.openSync(lock,"wx");
+                    try {return await action();} finally {fs.closeSync(handle);fs.unlinkSync(lock);}
+                },
+                readCurrentContext:async()=>({...snapshot.fresh,readSource:async()=>Buffer.from('printfn "ok"')})};
+            (async()=>{
+                const result=await require(${JSON.stringify(require.resolve("./controller.cjs"))}).publishController(
+                    {repository:"dotnet/fsharp",issueNumber:123},deps);
+                console.log(JSON.stringify(result));
+            })().catch(e=>{console.error(e);process.exitCode=1;});`;
+        const replay = () => {
+            const child = spawnSync(process.execPath, ["-e", script, file], { encoding: "utf8", timeout: 30000 });
+            assert.equal(child.status, 0, child.stderr);
+            return JSON.parse(child.stdout);
+        };
+        // Store recovery is serialized by the controller's cross-process lock, not a store queue.
+        await fs.writeFile(file + ".lock", "");
+        const locked = await fs.readFile(file);
+        assert.equal(replay().status, "blocked");
+        assert.deepEqual(await fs.readFile(file), locked);
+        await fs.unlink(file + ".lock");
+        const blocked = ["required-expired", "authentication", "network"].includes(crash);
+        for (let i = 0; i < 2; i++) {
+            const recovered = replay();
+            assert.equal(recovered.status, blocked ? "blocked" : "published", recovered.reason);
+            if (!blocked) {
+                if (pendingDigest) assert.equal(recovered.digest, pendingDigest);
+                assert.equal(recovered.commentId, 789);
+            } else assert.match(recovered.reason, /required evidence|injected/);
+        }
+        const saved = JSON.parse(await fs.readFile(file)), resumed = harness(saved);
+        Object.assign(resumed.transport, store);
+        const cp = (await state.loadCheckpoint(resumed.transport, resumed.context)).checkpoint;
+        assert.deepEqual(cp.state.budget, before);
+        assert.equal(Object.keys(cp.observations).length, 1);
+        assert.equal(saved.writes, 1);
+        assert.equal(saved.comments.length, 1);
+        assert.ok(Buffer.byteLength(saved.comment.body) < 48 * 1024);
+        assert.ok(Buffer.byteLength(saved.comments[0].body) < 48 * 1024);
+        if (!blocked) {
+            const decoded = await state.authenticateDecodedRecord(resumed.transport,
+                { ...resumed.context, commentId: 789 }, saved.comments[0]);
+            assert.ok(Buffer.byteLength(renderReport(decoded.payload.report)) < 32768);
+        }
+        t.diagnostic(JSON.stringify({ crash, realLaunches: 0, writes: saved.writes, consumed: cp.state.budget.consumed }));
     });
 });
 

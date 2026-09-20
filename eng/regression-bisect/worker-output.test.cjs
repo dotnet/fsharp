@@ -209,6 +209,68 @@ test("approved archive lane streams exact receipt bytes without relaxing the JSO
     setTimeout(() => controller.abort(new Error("cancelled")), 10);
     await assert.rejects(transfer, /cancelled/);
     assert.equal(stalled.destroyed, true);
+    for (let i = 0; i < 100 && (await fs.readdir(root)).some(name => name.endsWith(".partial")); i++)
+        await new Promise(resolve => setTimeout(resolve, 10));
     assert.equal((await fs.readdir(root)).some(name => name.endsWith(".partial")), false);
     t.diagnostic(`zero real launches; streamed ${bytes.length} bytes; SHA256 ${receipt.sha256}`);
+});
+
+test("blob sink cancellation bounds every operation and prevents late publication", async t => {
+    const { archiveReceipt } = require("./fixtures/contracts.cjs");
+    const root = await fs.mkdtemp(path.join(__dirname, ".worker-blob-"));
+    t.after(() => fs.rm(root, { recursive: true, force: true }));
+    const receipt = archiveReceipt({ url: "https://builds.dotnet.microsoft.com/dotnet/sdk.tar.gz" },
+        "/scratch/retained/sdk.tar.gz", data);
+    for (const mode of ["cancel", "deadline"]) for (const operation of ["open", "writeFile", "sync", "close", "link", "unlink"])
+        await t.test(`${mode}/${operation}`, { timeout: 10000 }, async t => {
+            const destination = path.join(root, operation + ".blob");
+            const originalOpen = fs.open, originalLink = fs.link, originalUnlink = fs.unlink, originalRm = fs.rm;
+            let release, entered, cleaned;
+            const waiting = new Promise(resolve => { entered = resolve; });
+            const gate = new Promise(resolve => { release = resolve; });
+            const cleanup = new Promise(resolve => { cleaned = resolve; });
+            let stalled = false;
+            const pause = async (name, action) => {
+                if (name === operation && !stalled) {
+                    stalled = true;
+                    entered();
+                    await gate;
+                }
+                return action();
+            };
+            fs.open = (...args) => pause("open", async () => {
+                const handle = await originalOpen(...args);
+                for (const name of ["writeFile", "sync", "close"]) {
+                    const original = handle[name].bind(handle);
+                    handle[name] = (...args) => pause(name, () => original(...args));
+                }
+                return handle;
+            });
+            fs.link = (...args) => pause("link", () => originalLink(...args));
+            fs.unlink = (...args) => pause("unlink", () => originalUnlink(...args));
+            fs.rm = async (...args) => { await originalRm(...args); if (args[0] === destination + ".partial") cleaned(); };
+            t.after(() => { fs.open = originalOpen; fs.link = originalLink; fs.unlink = originalUnlink; fs.rm = originalRm; });
+            const stream = Readable.from([data]);
+            const controller = new AbortController();
+            const transfer = collectWorkerBlob(stream, receipt, destination, { signal: controller.signal,
+                timeoutMs: mode === "deadline" ? 1000 : 300000 });
+            const outcome = transfer.then(() => "published", error => error.message);
+            await waiting;
+            if (mode === "cancel") controller.abort(new Error("cancelled sink"));
+            let timer;
+            try {
+                assert.match(await Promise.race([outcome, new Promise(resolve => {
+                    timer = setTimeout(() => resolve("deadline ignored"), mode === "deadline" ? 2000 : 100);
+                })]), mode === "deadline" ? /timeout/i : /^cancelled sink$/);
+            } finally {
+                clearTimeout(timer);
+                release();
+                await outcome;
+                // Uncancellable filesystem work may finish after rejection, but must roll back.
+                await cleanup;
+            }
+            assert.equal(stream.destroyed, true);
+            await assert.rejects(fs.access(destination), { code: "ENOENT" });
+            await assert.rejects(fs.access(destination + ".partial"), { code: "ENOENT" });
+        });
 });

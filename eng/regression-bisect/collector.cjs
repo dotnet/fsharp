@@ -185,15 +185,15 @@ function formObservation({ unit, launch, files }, reservation, context) {
             const measured = reproduction.cells.find(row => row.id === c.id);
             requireValue(measured && measured.attempts.length === context.policy.limits.assertionRepetitions &&
                 measured.evidence.length === measured.attempts.length, "missing repeated assertion evidence");
-            let selectedRuntime;
+            let selectedCompilerRuntime, selectedSampleRuntime;
             const attempts = measured.attempts.map((attempt, index) => {
                 const record = measured.evidence[index];
                 requireValue(record.productFingerprint === fingerprint(product) && equal(record.producers, identities.producers) &&
                     Array.isArray(record.commands) && record.commands.length > 0, "assertion inventory/producers mismatch");
                 const runtime = manifest.kind === "fsi" ? record.selection?.runtime : record.compilerRuntimeSelection?.runtime;
                 requireValue(runtime && acquisition.runtimes.some(r => equal(r, runtime)) &&
-                    (!selectedRuntime || equal(selectedRuntime, runtime)), "runtime selection mismatch");
-                selectedRuntime = runtime;
+                    (!selectedCompilerRuntime || equal(selectedCompilerRuntime, runtime)), "runtime selection mismatch");
+                selectedCompilerRuntime = runtime;
                 const last = record.commands.at(-1);
                 const isCompile = compileAssertion(manifest);
                 const directory = filePath.join(reproduction.workDirectory, `cell-${manifest.matrix.indexOf(c)}-${index}`);
@@ -299,11 +299,12 @@ function formObservation({ unit, launch, files }, reservation, context) {
                     } else {
                         requireValue(record.build.exitCode === 0 && last.args.at(-1) === row.targetPath &&
                             within(directory, row.targetPath), "project build/output fallback");
-                        selectedRuntime = acquisition.runtimes.find(r => r.version === last.args[2] &&
+                        const sampleRuntime = acquisition.runtimes.find(r => r.version === last.args[2] &&
                             r.name === "Microsoft.NETCore.App");
-                        requireValue(selectedRuntime && (last.result.status !== "completed" ||
-                            record.loadedCore?.runtimeVersion === selectedRuntime.version),
+                        requireValue(sampleRuntime && (!selectedSampleRuntime || equal(selectedSampleRuntime, sampleRuntime)) &&
+                            (last.result.status !== "completed" || record.loadedCore?.runtimeVersion === sampleRuntime.version),
                             "sample runtime mismatch");
+                        selectedSampleRuntime = sampleRuntime;
                         requireValue((record.runtimeProducers?.length ?? 0) === identities.producers.length &&
                             identities.producers.every(p => record.runtimeProducers.some(r =>
                                 r.path === filePath.join(filePath.dirname(row.targetPath), filePath.basename(p.dll.path)) &&
@@ -333,6 +334,7 @@ function formObservation({ unit, launch, files }, reservation, context) {
                 return structuredClone(attempt);
             });
             const sdk = { version: acquisition.sdkVersion, sha256: acquisition.archive.sha256, verified: true };
+            const selectedRuntime = selectedSampleRuntime ?? selectedCompilerRuntime;
             return { id: c.id, command: c.command, environment: environment[c.id], sdk,
                 runtime: { version: selectedRuntime.version, sha256: selectedRuntime.sha256, verified: true },
                 artifacts: Object.fromEntries(["compiler", "tasks", "targets", "core"].map(role => [role, {

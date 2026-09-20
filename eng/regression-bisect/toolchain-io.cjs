@@ -10,6 +10,18 @@ const inside = (root, file) => {
     return relative !== "" && !relative.startsWith(`..${path.sep}`) && relative !== ".." && !path.isAbsolute(relative);
 };
 
+async function boundedWait(promise, signal) {
+    let abort;
+    try {
+        return await new Promise((resolve, reject) => {
+            abort = () => reject(signal.reason);
+            signal.addEventListener("abort", abort, { once: true });
+            Promise.resolve(promise).then(resolve, reject);
+            if (signal.aborted) abort();
+        });
+    } finally { signal.removeEventListener("abort", abort); }
+}
+
 function publicUrl(url, policy) {
     const parsed = new URL(url);
     requireValue(typeof url === "string" && parsed.href === url && !/[%\\]/.test(url) &&
@@ -313,4 +325,4 @@ async function capture(request, deps) {
     };
 }
 
-module.exports = { hash, requireValue, inside, publicUrl, validateHttpResponse, validateDownloadProvenance, createHttp, run, isolatedEnvironment, fileIdentity, capture };
+module.exports = { hash, requireValue, boundedWait, inside, publicUrl, validateHttpResponse, validateDownloadProvenance, createHttp, run, isolatedEnvironment, fileIdentity, capture };

@@ -3,7 +3,7 @@ const f = require("./contracts.cjs");
 const model = require("../model.cjs");
 const { initializeCheckpoint, serializeWorkflowRecord } = require("../state.cjs");
 
-function harness() {
+function harness(snapshot) {
     const a = f.admission();
     const context = {
         repository: "dotnet/fsharp", issueNumber: 123, commentId: 456,
@@ -19,15 +19,18 @@ function harness() {
         policyRevision: a.budget.policyRevision, workflowRevision: a.budget.workflowRevision,
         pinnedMainSha: a.ancestry.pinnedMainSha, stableSdk: a.budget.stableSdk,
     };
-    const runs = new Map();
+    if (snapshot) Object.assign(context, snapshot.context, {
+        keys: Object.fromEntries(Object.entries(snapshot.context.keys).map(([key, value]) => [key, Buffer.from(value.data)])),
+    });
+    const runs = new Map(snapshot?.runs);
     const run = owner => ({
         id: Number(owner.runId), run_attempt: owner.attempt, path: context.workflowPath,
         head_sha: context.workflowRevision, head_branch: "main",
         repository: { full_name: context.repository }, head_repository: { full_name: context.repository },
         status: "in_progress", conclusion: null,
     });
-    runs.set("12345/1", run(context.owner));
-    let comment = {
+    if (!snapshot) runs.set("12345/1", run(context.owner));
+    let comment = snapshot?.comment ?? {
         id: 456, user: { id: 77, login: "github-actions[bot]", type: "Bot" },
         performed_via_github_app: { id: 88 },
         issue_url: "https://api.github.com/repos/dotnet/fsharp/issues/123",
@@ -35,6 +38,7 @@ function harness() {
     };
     let tail = Promise.resolve();
     const freshness = f.statusTransport(context);
+    if (snapshot) freshness.statuses.push(...snapshot.statuses);
     const transport = {
         request: freshness.request,
         getComment: async id => { assert.equal(id, 456); return structuredClone(comment); },

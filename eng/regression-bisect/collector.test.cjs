@@ -23,8 +23,26 @@ const jsonFile = (name, value) => {
 };
 
 async function fixture(t, { kind = "source", outputs, tfms = ["net10.0"], project = false, compile = false,
-    setup, buildSdk = "10.0.100", producer } = {}) {
+    setup, buildSdk = "10.0.100", producer, sampleRuntime = "10.0.0" } = {}) {
     const sample = await reproductionFixture(t, { kind, tfms });
+    if (sampleRuntime !== "10.0.0") {
+        const runtime = await sample.file(`dotnet/shared/Microsoft.NETCore.App/${sampleRuntime}/System.Private.CoreLib.dll`);
+        sample.toolchain.runtimes.push({ name: "Microsoft.NETCore.App", version: sampleRuntime,
+            path: path.dirname(path.dirname(runtime.path)), sha256: runtime.sha256 });
+        const archive = f.archiveReceipt({ url: `https://builds.dotnet.microsoft.com/dotnet/Runtime/${sampleRuntime}/dotnet-runtime-${sampleRuntime}-win-x64.zip`,
+            name: "runtime.zip", rid: "win-x64", architecture: "x64", provenance: { kind: "publisher-checksum" } },
+        (await sample.file("runtime.zip", "runtime archive")).path, "runtime archive");
+        archive.sha512 = archive.actualSha512;
+        sample.toolchain.installations.push({ product: "dotnet", version: sampleRuntime, archive });
+        const config = Buffer.from(JSON.stringify({ runtimeOptions: {
+            framework: { name: "Microsoft.NETCore.App", version: sampleRuntime },
+        } }));
+        sample.toolchain.requested.runtimeRequirements.push({ name: "Microsoft.NETCore.App", version: sampleRuntime,
+            role: "sample", archiveUrl: archive.url, config: {
+                ...await sample.file("sample.runtimeconfig.json", config), bytesBase64: config.toString("base64"),
+            } });
+    }
+    sample.sampleRuntimes = Object.fromEntries(tfms.map(tfm => [tfm, { name: "Microsoft.NETCore.App", version: sampleRuntime }]));
     sample.product.files.find(f => f.role === "compiler").runtimeConfig =
         sample.product.files.find(f => f.role === "fsi").runtimeConfig;
     if (project) {
@@ -125,8 +143,8 @@ async function fixture(t, { kind = "source", outputs, tfms = ["net10.0"], projec
         }
         const core = sample.product.files.find(p => p.role === "core");
         await fs.writeFile(settings.env.REPRO_CORE_EVIDENCE, JSON.stringify({
-            ...core, ...(project ? projectEvidence.core : {}), complete: true, assemblyName: "FSharp.Core", runtimeVersion: "10.0.0",
-            runtimePath: path.join(sample.toolchain.runtimes[0].path, "10.0.0"), architecture: "x64",
+            ...core, ...(project ? projectEvidence.core : {}), complete: true, assemblyName: "FSharp.Core", runtimeVersion: args[2],
+            runtimePath: path.join(sample.toolchain.runtimes[0].path, args[2]), architecture: "x64",
         }));
         return { ...ok, ...(setup === "timeout" ? { status: "timeout", complete: false, exitCode: null } :
             outputs?.[repetition++] ?? (compile ? sample.manifest.assertions.failure : sample.manifest.assertions.pass)) };
@@ -142,6 +160,8 @@ async function fixture(t, { kind = "source", outputs, tfms = ["net10.0"], projec
         record.productFingerprint = reproduction.productFingerprint;
     const acquisition = structuredClone(sample.toolchain);
     const build = structuredClone(acquisition);
+    build.installations = build.installations.filter(i => i.product === "sdk");
+    build.runtimes = build.runtimes.filter(r => r.version === "10.0.0");
     build.root = build.requested.installationRoot = path.join(sample.root, "build-dotnet");
     build.hostPath = path.join(build.root, "dotnet.exe");
     build.sdkVersion = build.requested.sdkVersion = build.requested.toolsVersion = build.sdks[0].version = buildSdk;
@@ -248,10 +268,54 @@ async function retainedFixture(t, options = {}) {
     data.result = readExecutionOutput(data.files, data.unit, data.launch);
     assert.deepEqual(data.files.map(f => f.path), executionFileNames);
     for (const file of data.files) await fs.writeFile(path.join(directory, file.path), file.bytes);
-    const blobs = [];
+    let blobs = [];
     for (const blob of exported.blobs) {
         await fs.copyFile(blob.archive.retained.path, path.join(directory, `${blob.slot}.blob`));
         blobs.push({ ...blob, size: blob.archive.bytesReceived, sha256: blob.archive.sha256, sha512: blob.archive.actualSha512 });
+    }
+    if (options.workerOs === "linux") {
+        // Project native offline exports onto Linux paths; this does not execute a Linux worker.
+        const converted = JSON.parse(JSON.stringify({
+            values: Object.fromEntries(data.files.map(file => [file.path, JSON.parse(file.bytes)])), blobs,
+        }).replaceAll(JSON.stringify(data.sample.root).slice(1, -1), "/scratch")
+            .replaceAll("\\\\", "/").replaceAll("dotnet.exe", "dotnet")
+            .replaceAll("win-x64", "linux-x64").replaceAll('"windows"', '"linux"'));
+        const v = converted.values, unit = v["unit.json"], manifest = f.seal(unit.manifest);
+        const h = harness(), context = h.context;
+        Object.assign(context, data.context, { manifest, stableSdk: unit.stableSdk,
+            authorization: { ...data.context.authorization, manifestDigest: fingerprint(manifest),
+                inputDigest: manifest.approvedInputDigest },
+            environmentFingerprint: fingerprint(Object.fromEntries(manifest.matrix.map(cell =>
+                [cell.id, { os: cell.os, architecture: cell.architecture, imageDigest: data.launch.imageDigest }]))),
+        });
+        await h.start();
+        const reservation = await state.reserveWork(h.transport, context, {
+            generation: 0, attemptId: data.reservation.id, request: unit.request,
+        });
+        const started = await state.beginWork(h.transport, context, { generation: reservation.generation, attemptId: reservation.id });
+        Object.assign(unit, { epoch: reservation.epoch, environmentFingerprint: context.environmentFingerprint });
+        const launch = { ...data.launch, unitDigest: fingerprint(unit) };
+        const result = v["result.json"].result;
+        const reproduction = unit.request.kind === "source" ? result.reproduction : result;
+        const identities = v["identities.json"];
+        if (identities) {
+            identities.acquisitionDigest = fingerprint(v["acquisition.json"].identity);
+            reproduction.identities.sha256 = jsonFile("identities.json", identities).sha256;
+            reproduction.manifestDigest = fingerprint(manifest);
+            reproduction.productFingerprint = fingerprint(identities.product);
+            for (const cell of reproduction.cells) for (const record of cell.evidence)
+                record.productFingerprint = reproduction.productFingerprint;
+            if (unit.request.kind === "source") result.product = identities.product;
+        }
+        if (result.toolchain && v["build-acquisition.json"]?.identity)
+            result.toolchain.acquisitionDigest = fingerprint(v["build-acquisition.json"].identity);
+        Object.assign(v, { "result.json": { schemaVersion: 1, ...launch, result },
+            "source.json": unit.request.kind === "source" ? result : null, "reproduction.json": reproduction ?? null });
+        Object.assign(data, { h, context, reservation, started, unit, launch,
+            files: Object.entries(v).map(([name, value]) => jsonFile(name, value)) });
+        data.result = readExecutionOutput(data.files, unit, launch);
+        blobs = converted.blobs;
+        for (const file of data.files) await fs.writeFile(path.join(directory, file.path), file.bytes);
     }
     const receipt = { schemaVersion: 1, status: "collected", image, evidenceDirectory: directory,
         launch: data.launch, historicalTerminated: true, cleanup: [{ removed: true }],
@@ -268,11 +332,11 @@ async function retainedFixture(t, options = {}) {
 }
 
 test("factory consumes physical exports for every matrix and setup shape (zero real launches)", async t => {
-    for (const kind of ["released", "source"]) for (const project of [false, true])
+    for (const workerOs of ["windows", "linux"]) for (const kind of ["released", "source"]) for (const project of [false, true])
         for (const setup of [undefined, "acquisition", "missing-acquisitions", "reproduction-setup",
             ...(kind === "source" ? ["build-acquisition"] : []), ...(project ? ["restore"] : ["timeout"])])
-            await t.test(`${kind}/${project ? "project" : "fsi"}/${setup ?? "tested"}`, async t => {
-                const data = await retainedFixture(t, { kind, project, setup, buildSdk: "10.0.101", tfms: ["net9.0", "net10.0"] });
+            await t.test(`${workerOs}/${kind}/${project ? "project" : "fsi"}/${setup ?? "tested"}`, async t => {
+                const data = await retainedFixture(t, { workerOs, kind, project, setup, buildSdk: "10.0.101", tfms: ["net9.0", "net10.0"] });
                 await fs.rm(data.sample.root, { recursive: true });
                 const collected = await data.collector(data.input);
                 assert.equal(collected.observation.outcome.outcome, setup ? "untestable" : "pass");
@@ -347,6 +411,43 @@ test("factory retains frozen legacy and package producer provenance", async t =>
         assert.equal(identities.producers[0].compiler.version, "8.0.100");
         assert.equal(Boolean(identities.producers[0].package), producer === "package");
     });
+
+});
+
+test("factory keeps compiler and sample runtimes independent across repetitions", async t => {
+    for (const workerOs of ["windows", "linux"]) for (const kind of ["released", "source"]) for (const sampleRuntime of ["10.0.0", "9.0.0"])
+        await t.test(`${workerOs}/${kind}/${sampleRuntime}`, async t => {
+            const data = await retainedFixture(t, { workerOs, kind, project: true, sampleRuntime, tfms: ["net9.0", "net10.0"] });
+            await fs.rm(data.sample.root, { recursive: true });
+            const cp = await commitCollectedObservation(data.input, { collectObservation: data.collector, transport: data.h.transport });
+            assert.equal(cp.pending, null);
+            const observation = Object.values(cp.observations)[0].data;
+            assert.equal(observation.outcome.outcome, "pass");
+            for (const cell of observation.cells) {
+                assert.equal(cell.runtime.version, sampleRuntime);
+                assert.equal((cell.buildToolchain ?? cell.releasedToolchain).compilerRuntime.version, "10.0.0");
+                assert.equal(cell.attempts.length, 2);
+            }
+            if (sampleRuntime === "9.0.0") for (const changedRuntime of ["compiler", "sample"]) {
+                const payload = JSON.parse(data.files.find(f => f.path === "result.json").bytes);
+                const reproduction = kind === "source" ? payload.result.reproduction : payload.result;
+                const record = reproduction.cells[0].evidence[1];
+                const runtimes = JSON.parse(data.files.find(f => f.path === "acquisition.json").bytes).identity.runtimes;
+                if (changedRuntime === "compiler") record.compilerRuntimeSelection.runtime = runtimes[1];
+                else {
+                    record.commands.at(-1).args[2] = runtimes[0].version;
+                    record.loadedCore.runtimeVersion = runtimes[0].version;
+                    record.loadedCore.runtimePath = path.posix.join(runtimes[0].path, runtimes[0].version);
+                }
+                const commands = JSON.parse(data.files.find(f => f.path === "commands.json").bytes);
+                commands.execution = [...commands.source, ...reproduction.cells.flatMap(cell =>
+                    cell.evidence.flatMap(record => record.commands))].map(command => ({ ...command, lane: "historical" }));
+                const files = data.files.map(file => file.path === "result.json" ? jsonFile(file.path, payload) :
+                    file.path === "commands.json" ? jsonFile(file.path, commands) : file);
+                assert.throws(() => formObservation({ ...data, files }, data.reservation, data.context),
+                    changedRuntime === "compiler" ? /runtime selection mismatch/ : /sample runtime mismatch/);
+            }
+        });
 });
 
 test("missing setup identity is untestable, never a worker-authored green observation", async t => {
@@ -366,8 +467,9 @@ test("missing setup identity is untestable, never a worker-authored green observ
 
 test("durable collection and acknowledgement loss resume in a new process without worker scratch", async t => {
     for (const [outcome, options] of [
-        ["pass", {}], ["restore-failure", { project: true, setup: "restore" }],
-        ["flaky", { outputs: [f.manifest().assertions.pass, f.manifest().assertions.failure] }],
+        ["pass", { workerOs: "linux", project: true, sampleRuntime: "9.0.0" }],
+        ["restore-failure", { workerOs: "linux", project: true, setup: "restore" }],
+        ["flaky", { workerOs: "linux", outputs: [f.manifest().assertions.pass, f.manifest().assertions.failure] }],
     ]) for (const fault of ["collection", "durable-write", "observation-write", "acknowledgement"])
         await t.test(`${outcome}/${fault}`, async t => {
             const data = await retainedFixture(t, options);
@@ -400,21 +502,16 @@ test("durable collection and acknowledgement loss resume in a new process withou
                 const { createObservationCollector, commitCollectedObservation } = require(${JSON.stringify(require.resolve("./collector.cjs"))});
                 (async () => {
                     const file = process.argv[1], snapshot = JSON.parse(fs.readFileSync(file));
-                    const context = { ...snapshot.context,
-                        keys: Object.fromEntries(Object.entries(snapshot.context.keys).map(([k,v]) => [k,Buffer.from(v.data)])) };
-                    const save = () => fs.writeFileSync(file, JSON.stringify(snapshot));
+                    const h = require(${JSON.stringify(require.resolve("./fixtures/checkpoint.cjs"))}).harness(snapshot);
+                    const context = h.context;
+                    const save = () => fs.writeFileSync(file, JSON.stringify({...snapshot,
+                        comment:h.comment, statuses:h.statuses}));
                     const store = createFileEvidenceStore(snapshot.storeConfig);
                     const transport = {
-                        ...store,
-                        getComment: async () => snapshot.comment,
-                        updateComment: async (id,body) => { snapshot.comment.body=body; save(); return snapshot.comment; },
-                        getRun: async (id,attempt) => new Map(snapshot.runs).get(id+"/"+attempt),
+                        ...h.transport, ...store,
+                        updateComment: async (id,body) => { const value=await h.transport.updateComment(id,body); save(); return value; },
                         request: async (route,args) => {
-                            if(route.startsWith("POST")) {
-                                const value={...args,id:snapshot.statuses.length+1,creator:context.actor};
-                                snapshot.statuses.push(value); save(); return {data:value};
-                            }
-                            return {data:snapshot.statuses.toReversed().slice((args.page-1)*100,args.page*100),headers:{link:""}};
+                            const result=await h.transport.request(route,args); save(); return result;
                         }
                     };
                     const before = await state.loadCheckpoint(transport,context);
@@ -428,7 +525,7 @@ test("durable collection and acknowledgement loss resume in a new process withou
                         observations:Object.keys(second.observations).length, records:second.records.length,
                         buildId:Object.values(second.observations)[0].data.buildInstanceId,
                         outcome:Object.values(second.observations)[0].data.outcome,
-                        signedBytes:Buffer.byteLength(snapshot.comment.body),realLaunches:0}));
+                        signedBytes:Buffer.byteLength(h.comment.body),realLaunches:0}));
                 })().catch(e=>{console.error(e.stack);process.exitCode=1;});`;
             const child = spawnSync(process.execPath, ["-e", script, snapshotFile], { encoding: "utf8", timeout: 30000, maxBuffer: 65536 });
             assert.equal(child.status, 0, child.stderr);

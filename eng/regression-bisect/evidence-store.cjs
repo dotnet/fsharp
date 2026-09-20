@@ -5,7 +5,7 @@ const path = require("node:path");
 const { Readable } = require("node:stream");
 const { validateArchiveReceipt } = require("./archive-provenance.cjs");
 const { fingerprintInput } = require("./model.cjs");
-const { requireValue } = require("./toolchain-io.cjs");
+const { requireValue, boundedWait } = require("./toolchain-io.cjs");
 
 const EVIDENCE_LIMIT = 64 * 1024 * 1024;
 const BLOB_LIMIT = 1024 * 1024 * 1024;
@@ -182,18 +182,6 @@ async function stage(c, source, binding, blob) {
     }
 }
 
-async function boundedWait(promise, signal) {
-    let abort;
-    try {
-        return await new Promise((resolve, reject) => {
-            abort = () => reject(signal.reason);
-            signal.addEventListener("abort", abort, { once: true });
-            Promise.resolve(promise).then(resolve, reject);
-            if (signal.aborted) abort();
-        });
-    } finally { signal.removeEventListener("abort", abort); }
-}
-
 async function consume(stream, maxBytes, sink, signal) {
     const iterator = stream[Symbol.asyncIterator]();
     let finished = false;
@@ -270,9 +258,10 @@ function createFileEvidenceStore(config) {
         const artifactId = (BigInt(`0x${hash(provisional.name).slice(0, 15)}`) + 1n).toString();
         const record = reference(c, info, artifactId);
         try {
-            try { await fs.link(info.file, provisional.file); }
-            catch (error) { if (error.code !== "EEXIST") throw error; }
-            await fs.rm(info.file);
+            // The whole-issue lock protects this check/rename. A crash leaves either
+            // unpublished staging bytes or one complete, discoverable regular file.
+            if (await read(parseReference(record.url, c)) === null)
+                await fs.rename(info.file, provisional.file);
             await read(parseReference(record.url, c));
             return record;
         } finally { await fs.rm(info.file, { force: true }); }

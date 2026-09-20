@@ -1,5 +1,5 @@
 const { validateRepositoryPath } = require("./model.cjs");
-const { hash, requireValue } = require("./toolchain-io.cjs");
+const { hash, requireValue, boundedWait } = require("./toolchain-io.cjs");
 const fs = require("node:fs/promises");
 const { createHash } = require("node:crypto");
 
@@ -156,16 +156,25 @@ async function collectWorkerBlob(stream, archive, destination, { signal, timeout
     requireValue(stream && typeof stream[Symbol.asyncIterator] === "function" && typeof stream.destroy === "function",
         "bounded archive blob stream required");
     signal = AbortSignal.any([AbortSignal.timeout(timeoutMs), ...(signal ? [signal] : [])]);
-    const abort = () => stream.destroy(signal.reason);
+    const abort = () => stream.destroy();
+    signal.addEventListener("abort", abort, { once: true });
+    // Filesystem calls cannot be cancelled. Bound the caller's wait while the transfer
+    // checks cancellation after each call and rolls back any late publication.
+    return boundedWait(writeWorkerBlob(stream, expected, destination, signal), signal).finally(() => {
+        signal.removeEventListener("abort", abort);
+        stream.destroy();
+    });
+}
+
+async function writeWorkerBlob(stream, expected, destination, signal) {
     const partial = destination + ".partial";
-    let file, size = 0, complete = false;
+    let file, size = 0, complete = false, published = false;
     let created = false;
     const sha256 = createHash("sha256"), sha512 = createHash("sha512");
     try {
         signal.throwIfAborted();
         file = await fs.open(partial, "wx", 0o600);
         created = true;
-        signal.addEventListener("abort", abort, { once: true });
         signal.throwIfAborted();
         for await (const chunk of stream) {
             signal.throwIfAborted();
@@ -174,20 +183,25 @@ async function collectWorkerBlob(stream, archive, destination, { signal, timeout
             requireValue(size <= expected.size, "archive blob exceeds byte limit");
             sha256.update(chunk); sha512.update(chunk);
             await file.writeFile(chunk);
+            signal.throwIfAborted();
         }
         signal.throwIfAborted();
         requireValue(size === expected.size && sha256.digest("hex") === expected.sha256 &&
             sha512.digest("hex") === expected.sha512, "archive blob digest or size mismatch");
         await file.sync();
+        signal.throwIfAborted();
         await file.close(); file = null;
+        signal.throwIfAborted();
         await fs.link(partial, destination);
+        published = true;
+        signal.throwIfAborted();
         await fs.unlink(partial);
+        signal.throwIfAborted();
         complete = true;
         return { path: destination, size, sha256: expected.sha256, sha512: expected.sha512 };
     } finally {
-        signal.removeEventListener("abort", abort);
-        stream.destroy();
         await file?.close();
+        if (published && !complete) await fs.unlink(destination);
         if (created && !complete) await fs.rm(partial, { force: true });
     }
 }

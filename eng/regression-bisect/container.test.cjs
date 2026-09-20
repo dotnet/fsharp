@@ -206,12 +206,11 @@ async function dockerFixture(t, failure) {
         setAcquisition: value => { acquisition = value; }, deps: { platform: "linux", command: run } };
 }
 
-test("physical source evidence survives destroyed worker tmpfs, not merely a result containing paths", async t => {
-    const f = await dockerFixture(t);
+function executionUnit() {
     const contracts = require("./fixtures/contracts.cjs");
     const { fingerprintInput: fingerprint } = require("./model.cjs");
     const manifest = contracts.manifest();
-    const unit = {
+    return {
         schemaVersion: 1, repository: manifest.repository, issueNumber: manifest.issueNumber,
         epoch: contracts.digest("epoch"), buildInstanceId: "physical-source", deadline: new Date(Date.now() + 60000).toISOString(),
         request: { kind: "source", target: { sourceSha: contracts.sha("main") }, endpoint: "main", phase: "main" },
@@ -221,6 +220,13 @@ test("physical source evidence survives destroyed worker tmpfs, not merely a res
         environmentFingerprint: fingerprint(Object.fromEntries(manifest.matrix.map(c =>
             [c.id, { os: c.os, architecture: c.architecture, imageDigest: image.split(":").at(-1) }]))),
     };
+}
+
+test("physical source evidence survives destroyed worker tmpfs, not merely a result containing paths", async t => {
+    const f = await dockerFixture(t);
+    const contracts = require("./fixtures/contracts.cjs");
+    const { fingerprintInput: fingerprint } = require("./model.cjs");
+    const unit = executionUnit(), manifest = unit.manifest;
     const scratch = path.join(f.root, "worker-tmpfs");
     await fs.mkdir(scratch);
     const archiveBytes = Buffer.from("SDK archive linux-x64");
@@ -324,6 +330,59 @@ test("physical source evidence survives destroyed worker tmpfs, not merely a res
     t.diagnostic(JSON.stringify({ transferredBytes: result.receipt.transferredBytes,
         files: result.receipt.files, blobs: result.receipt.blobs.map(({ slot, size, sha256 }) => ({ slot, size, sha256 })) }));
     t.diagnostic("offline Docker transport fixture; zero real launches");
+});
+
+test("execution export failures block authentication and remove owned resources", async t => {
+    for (const fault of ["collect", "binding", "archive", "truncated", "blob", "blob-digest", "cleanup"])
+        await t.test(fault, async t => {
+            const f = await dockerFixture(t), unit = executionUnit();
+            const contracts = require("./fixtures/contracts.cjs");
+            const bytes = Buffer.from("approved archive");
+            const archive = contracts.archiveReceipt({
+                url: "https://builds.dotnet.microsoft.com/dotnet/Sdk/10.0.100/dotnet-sdk-10.0.100-linux-x64.tar.gz",
+                provenance: { kind: "publisher-checksum" },
+            }, "/scratch/sdk.tar.gz", bytes);
+            archive.sha512 = archive.actualSha512;
+            unit.stableSdk.archives[0].sha256 = archive.sha256;
+            f.setAcquisition({ status: "acquired", identity: {
+                requested: { kind: "released", sdkVersion: unit.stableSdk.version },
+                installations: [{ product: "sdk", version: unit.stableSdk.version, archive }],
+            } });
+            f.setResult({ outcome: { schemaVersion: 1, outcome: "untestable", reason: "setup-failure" }, error: "setup" });
+            const source = path.join(f.root, "samples");
+            await fs.mkdir(path.join(source, "fixtures"), { recursive: true });
+            await fs.writeFile(path.join(source, unit.manifest.sources[0].path), 'printfn "ok"');
+            const bundle = path.join(f.root, "source.bundle");
+            await fs.writeFile(bundle, "source");
+            const invoke = f.deps.command;
+            f.deps.command = async (exe, args, settings) => {
+                const operation = args.at(-2) === "blob" ? "blob" : args.at(-1);
+                if (fault === operation || fault === "cleanup" && args.includes("rm") && args.at(-1).endsWith("-worker"))
+                    throw new Error(`injected ${fault} failure`);
+                if (operation === "blob") return { exitCode: 0, stdout: Buffer.alloc(0), stderr: Buffer.alloc(0),
+                    collected: await settings.consume(Readable.from([fault === "blob-digest" ? Buffer.alloc(bytes.length) : bytes])) };
+                if (operation === "archive" && fault === "truncated")
+                    return { collected: await settings.consume(Readable.from([Buffer.alloc(512)])) };
+                const result = await invoke(exe, args, settings);
+                if (operation === "collect" && fault === "binding") {
+                    const descriptor = JSON.parse(result.stdout);
+                    descriptor.launchId = "f".repeat(64);
+                    result.stdout = Buffer.from(JSON.stringify(descriptor));
+                }
+                return result;
+            };
+            const key = Buffer.alloc(32, 7);
+            const result = await runContainer(config(), { operation: "execution", input: unit,
+                evidenceDirectory: f.root, sourceDirectory: source, sourceBundle: bundle,
+                sourceBundleSha256: contracts.digest("source"), receiptKey: key }, f.deps);
+            assert.equal(result.status, "blocked");
+            assert.match(result.reason, /injected|binding|archive|digest/);
+            assert.throws(() => verifyTransportReceipt(result.receipt, unit, key), /termination mismatch/);
+            await assert.rejects(loadContainerEvidence(f.root, unit, key), /termination mismatch/);
+            assert.equal(f.resources.size, fault === "cleanup" ? 1 : 0);
+            assert.equal(f.calls.some(args => args.includes("--attach") || args[1] === "stop" || args[1] === "cp"), false);
+            t.diagnostic(JSON.stringify({ fault, realLaunches: 0, reason: result.reason, cleanup: result.receipt.cleanup }));
+        });
 });
 
 test("Docker transactions collect only stopped launch-bound output and clean every owned resource", async t => {

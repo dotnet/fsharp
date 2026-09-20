@@ -138,35 +138,45 @@ test("launch archive reservations are durable and stop before the fourth GiB", a
     assert.equal((await fs.readdir(config.directory)).filter(n => n.startsWith(".upload")).length, 0);
 });
 
-test("killing the quota writer cannot leave a lock that blocks a new-process retry", { timeout: 10000 }, async t => {
+for (const fault of ["quota", "evidence-publication", "blob-publication"])
+test(`killing the ${fault} writer permits a new-process retry under the whole-issue lock`, { timeout: 10000 }, async t => {
     const { config } = await fixture(t);
     const input = approved();
     const modulePath = path.join(__dirname, "evidence-store.cjs");
+    const write = fault === "evidence-publication"
+        ? `.writeEvidence(Buffer.from(${JSON.stringify(payload.toString())}),${JSON.stringify(binding)})`
+        : `.writeBlob(Readable.from([Buffer.from(${JSON.stringify(payload.toString())})]),${JSON.stringify(input)})`;
     const child = spawn(process.execPath, ["-e", `
         const fs=require("node:fs/promises"), path=require("node:path"), {Readable}=require("node:stream");
-        const open=fs.open;
-        fs.open=async function(file,...args) {
-            const handle=await open.call(this,file,...args);
-            if(path.basename(file).startsWith("quota-")) {
-                process.send("reservation-created"); setInterval(()=>{},1000);
-                await new Promise(()=>{});
-            }
-            return handle;
-        };
-        require(${JSON.stringify(modulePath)}).createFileEvidenceStore(${JSON.stringify(config)})
-            .writeBlob(Readable.from([Buffer.from(${JSON.stringify(payload.toString())})]),${JSON.stringify(input)})
+        for (const operation of ${JSON.stringify(fault === "quota" ? ["open"] : ["link", "rename"])}) {
+            const original=fs[operation];
+            fs[operation]=async function(file,...args) {
+                const result=await original.call(this,file,...args);
+                if(operation!=="open" || path.basename(file).startsWith("quota-")) {
+                    process.send("fault-reached"); setInterval(()=>{},1000);
+                    await new Promise(()=>{});
+                }
+                return result;
+            };
+        }
+        require(${JSON.stringify(modulePath)}).createFileEvidenceStore(${JSON.stringify(config)})${write}
             .catch(e=>{console.error(e);process.exit(5)});
     `], { stdio: ["ignore", "ignore", "pipe", "ipc"] });
     t.after(() => { if (child.exitCode === null) child.kill("SIGKILL"); });
     const exited = once(child, "exit");
-    assert.deepEqual(await once(child, "message"), ["reservation-created", undefined]);
+    assert.deepEqual(await once(child, "message"), ["fault-reached", undefined]);
     child.kill("SIGKILL");
     await exited;
     const { stdout } = await promisify(execFile)(process.execPath, ["-e", `
         const {Readable}=require("node:stream");
-        require(${JSON.stringify(modulePath)}).createFileEvidenceStore(${JSON.stringify(config)})
-            .writeBlob(Readable.from([Buffer.from(${JSON.stringify(payload.toString())})]),${JSON.stringify(input)})
-            .then(r=>process.stdout.write(JSON.stringify(r))).catch(e=>{console.error(e);process.exit(5)});
+        const store=require(${JSON.stringify(modulePath)}).createFileEvidenceStore(${JSON.stringify(config)});
+        (async()=>{
+            const record=await store${write};
+            await store.verifyEvidence(record.url);
+            const found=await store.findEvidence(${JSON.stringify({ runId: config.runId, attempt: config.attempt, buildInstanceId: binding.workId })});
+            if(${fault === "evidence-publication"} && found.length!==1) throw Error("lost published evidence");
+            process.stdout.write(JSON.stringify(record));
+        })().catch(e=>{console.error(e);process.exit(5)});
     `]);
     assert.equal(JSON.parse(stdout).sha256, hash(payload));
 });

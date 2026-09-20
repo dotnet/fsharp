@@ -651,6 +651,10 @@ hashes incoming bytes and retains them outside worker scratch before cleanup.
 The small lane remains capped at 64 files, 16 MiB/file, 64 MiB aggregate and
 five minutes. Archive blobs are at most 1 GiB each, bounded additionally by the
 launch scratch allocation and the durable store's 3 GiB/launch quota.
+Blob deadlines cover filesystem opens, writes, syncs, closes and publication,
+not just input reads. Cancellation rejects collection immediately; an already
+issued filesystem operation is allowed to settle only for cleanup, with any
+late destination rolled back. No cancelled transfer supplies a collected receipt.
 **There is no writable host output mount, path extraction, or host execution
 of worker JS, PowerShell, MSBuild, assemblies or inventory programs.**
 
@@ -689,6 +693,9 @@ The fixed export includes JSON `null` for unavailable acquisitions. Acquisition
 and early setup failures can therefore be collected without inventing archive
 identities. Measured restore/build failures and interrupted reproductions remain
 untestable even when no runtime-load telemetry was produced.
+Compiler and sample runtime selections are checked independently across
+repetitions. A project may use different verified compiler and sample runtimes;
+changing either selection between repetitions is rejected.
 
 Transport authentication proves which bytes the pinned harness collected
 under a particular launch. It does **not** prove that historical compiler
@@ -734,6 +741,10 @@ The caller must hold the whole-issue lock across collection, quota reservation,
 checkpoint commit and acknowledgement, including across processes. The store's
 in-process queue is not a distributed lock; durable quota markers allow recovery
 after a killed writer only under that prerequisite.
+The file store checks an existing immutable object before publishing with a
+same-directory atomic rename. Process loss leaves either unpublished staging
+bytes or a complete single-link object that a new process can discover; it
+cannot strand a published object as a hardlink to abandoned staging bytes.
 Required collection/archive expiry blocks reuse and publication. Optional logs may
 expire without changing adoption of an already authenticated pending report.
 Signed records remain strictly below 48 KiB and rendered reports below
