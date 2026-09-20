@@ -488,6 +488,64 @@ callbacks and therefore do not prove confinement. Do not implement
 credentialed subprocess in production. No workflow or secret names are
 configured by this library.
 
+### Bounded public egress transport
+
+`egress.cjs` exports `createEgressBroker({ audit?, limits?, resolve?, connect? })`,
+returning `{ server, snapshot(), close() }`. It is an HTTP CONNECT transport
+component, **not a container adapter or a network-isolation guarantee**.
+It does not listen automatically, install a service, configure a host firewall,
+read credentials, launch historical code or grant work permission.
+`resolve` and `connect` are trusted test seams; production defaults use Node's
+DNS and TCP implementations. `audit` receives bounded-shape connection/denial/
+closure records, without request headers or error text that could contain
+credentials; the default writes JSON lines to stderr.
+
+CONNECT is accepted only for exact, lowercase `host:443` authorities. Hosts
+are the pinned policy's SDK public-feed hosts, plus `api.nuget.org`,
+`globalcdn.nuget.org` and `pkgs.dev.azure.com`. There are no wildcard hosts or
+caller-supplied additions. Plain HTTP, IP authorities, user information,
+alternate ports, credentials/cookies, duplicate headers and unknown headers
+are denied. Each tunnel resolves all IPv4 answers once, rejects the entire
+answer set if any address is non-public, then dials a validated **numeric**
+address without a second lookup. IPv6 and private, loopback, link-local,
+metadata, documentation, benchmarking and multicast/reserved IPv4 ranges
+are unsupported, not alternate routes.
+
+The hard ceilings are 32 simultaneous tunnels (including pending DNS),
+2,048 accepted TCP connections per broker lifetime, 1 MiB uploaded and 1 GiB downloaded
+per tunnel, 8 GiB transferred across all tunnels, ten seconds to receive
+headers and five minutes absolute lifetime per tunnel, including DNS/connect.
+`limits` may only lower those ceilings. Byte limits are checked before
+forwarding; backpressure is preserved. Failures and timeout close both owned
+socket ends, shutdown is idempotent, and a late DNS answer cannot create a
+connection after cancellation. Rejected requests and transferred bytes remain
+charged in the broker's counters. The connection ceiling also counts malformed
+and non-CONNECT traffic; reaching it stops the listener rather than allowing
+unlimited denial logs or resetting counters. These are transport counters, not a new
+investigation allowance; the existing worker/build/time budgets are unchanged.
+
+TLS remains end-to-end: the broker does **not** inspect URL paths, HTTP
+redirects, checksums or decompressed content. Existing toolchain acquisition
+must still enforce exact approved URLs/redirects, publisher checksums or the
+narrow measured-archive exception, and bounded archive consumption. A redirect
+requiring another host needs another permitted tunnel; unlisted NuGet/CDN
+hosts remain blocked rather than expanding the allowlist automatically.
+
+A disposable adapter must make this broker the worker's **only** network
+route and keep the broker and its listener away from controller credentials,
+host control sockets and untrusted modifications. Setting `HTTPS_PROXY`
+alone does not enforce that property. No such adapter is wired here; do not
+enable unattended execution using this module alone. The socket tests use
+owned loopback servers and injected DNS/dialers, never public downloads or
+live GitHub writes. Their denials, transfers, quotas and shutdown ledgers
+exercise the actual TCP/HTTP implementation but do not prove container,
+process, mount, metadata or host-network isolation.
+
+```powershell
+node --test eng\regression-bisect\egress.test.cjs eng\regression-bisect\worker-output.test.cjs
+if ($LASTEXITCODE -ne 0) { throw 'Egress and transfer tests failed' }
+```
+
 ### Reviewed first-use transaction and GitHub API
 
 `bootstrapController` takes the same fixed issue input, trusted `context`,
