@@ -33,7 +33,7 @@ async function historyWorkspace(options, run, signal) {
     await fs.mkdir(env.HOME); await fs.mkdir(env.TEMP);
     await fs.writeFile(env.GIT_CONFIG_GLOBAL, "", { flag: "wx" });
     const commands = [];
-    const git = async (args, allowed = [0]) => {
+    const git = async (args, allowed = [0], { raw = false } = {}) => {
         const result = await run(options.gitExecutable, [
             "-c", `core.hooksPath=${hooks}`, "-c", "credential.helper=", "-c", "core.fsmonitor=false",
             "-c", "protocol.allow=never", "-c", "protocol.file.allow=always", ...args,
@@ -41,7 +41,7 @@ async function historyWorkspace(options, run, signal) {
         commands.push({ args, exitCode: result.exitCode });
         requireValue(result.complete && result.status === "completed" && allowed.includes(result.exitCode),
             `history ${args[0]} failed (${result.exitCode}): ${result.stderr}`);
-        return result.stdout.trim();
+        return raw ? result.stdout : result.stdout.trim();
     };
     const dispose = async () => {
         requireValue(path.dirname(root) === parent && path.basename(root).startsWith("selection-") &&

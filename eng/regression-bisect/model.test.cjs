@@ -2,11 +2,92 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const {
     isEligibleIssue, validatePolicy, validateManifest, fingerprintInput, fingerprintEpoch,
-    classifyAttempts, validateOutcome, validateObservation, validateState, admitBisection,
+    classifyAttempts, validateOutcome, validateObservation, validateState, admitBisection, validateConfirmation,
 } = require("./model.cjs");
 const { policy, manifest, attempt, observation, admission, state, seal, sha, digest, buildToolchain } = require("./fixtures/contracts.cjs");
 
 const rejects = (fn, pattern = /./) => assert.throws(fn, pattern);
+
+function confirmation(paths = ["src/example.fs"]) {
+    return {
+        schemaVersion: 1, epoch: digest("epoch"), manifestDigest: digest("manifest"), startGeneration: 1,
+        candidate: sha("bad"), classification: "unconfirmed-candidate", reason: "boundary not verified",
+        interval: { goodSha: sha("good"), badSha: sha("bad"), remaining: [sha("bad")] },
+        parents: [], candidateObservationDigest: null, searchObservationDigest: null,
+        history: { commits: [{ sha: sha("bad"), parents: [sha("good")], messageDigest: digest("message"),
+            changedPaths: paths, changedPathsSummary: { encoding: "git-quoted", totalCount: paths.length,
+                sha256: fingerprintInput(paths), truncated: false, toolchainCoupled: false },
+            patchId: null, reverts: [], cherryPicks: [] }], monotonicity: "uncertain", toolchainCoupled: false },
+        associations: null, latentRootCause: "unproven",
+    };
+}
+
+for (const name of ["source with space.fs", "λ.fs", '"line\\n\\t\\001.fs"', '"f\\200.fs"', "[link](x)`file.fs"]) {
+    test(`display evidence accepts ${JSON.stringify(name)} but approved assets stay strict`, () => {
+        assert.equal(validateConfirmation(confirmation([name])), true);
+        const m = manifest();
+        m.sources[0].path = name;
+        seal(m);
+        rejects(() => validateManifest(m), /safe repository-relative path/);
+    });
+}
+
+for (const [name, mutate] of [
+    ["count mismatch", c => c.history.commits[0].changedPathsSummary.totalCount++],
+    ["digest mismatch", c => c.history.commits[0].changedPathsSummary.sha256 = digest("other")],
+    ["false truncation", c => c.history.commits[0].changedPathsSummary.truncated = true],
+    ["oversized sample", c => c.history.commits[0].changedPaths = Array(257).fill("x.fs")],
+    ["oversized bytes", c => c.history.commits[0].changedPaths = ["λ".repeat(4096)]],
+    ["raw control", c => c.history.commits[0].changedPaths = ["line\nfile.fs"]],
+    ["129 history entries", c => c.history.commits = Array.from({ length: 129 }, (_, i) =>
+        ({ ...c.history.commits[0], sha: sha(`history-${i}`) }))],
+    ["4097 remaining", c => c.interval.remaining = Array.from({ length: 4097 }, (_, i) => sha(`remaining-${i}`))],
+]) test(`confirmation rejects ${name}`, () => {
+    const c = confirmation(); mutate(c);
+    rejects(() => validateConfirmation(c), /confirmation/);
+});
+
+test("confirmation keeps existing history/interval limits and authenticates bounded summaries", () => {
+    const c = confirmation();
+    c.history.commits = Array.from({ length: 128 }, (_, i) => ({ ...c.history.commits[0], sha: sha(`history-${i}`) }));
+    c.interval.remaining = Array.from({ length: 4096 }, (_, i) => sha(`remaining-${i}`));
+    assert.equal(validateConfirmation(c), true);
+    c.history.commitsSummary = { totalCount: 129, sha256: digest("full history"), truncated: true };
+    c.interval.remainingSummary = { totalCount: 4097, sha256: digest("full interval"), truncated: true };
+    assert.equal(validateConfirmation(c), true);
+    for (const target of [c.history.commitsSummary, c.interval.remainingSummary]) {
+        target.truncated = false;
+        rejects(() => validateConfirmation(c), /truncation/);
+        target.truncated = true;
+    }
+});
+
+test("unknown remaining interval is unconfirmed and cannot claim a count or digest", () => {
+    const c = confirmation();
+    c.interval.remaining = null;
+    assert.equal(validateConfirmation(c), true);
+    c.interval.remainingSummary = { totalCount: 1, sha256: digest("unknown"), truncated: true };
+    rejects(() => validateConfirmation(c), /unknown interval/);
+    delete c.interval.remainingSummary;
+    c.classification = "verified-introducing-source-boundary";
+    rejects(() => validateConfirmation(c), /unknown interval/);
+});
+
+for (const classification of ["verified-introducing-source-boundary", "verified-triggering-change"])
+    for (const limit of ["count", "bytes"]) test(`confirmation rejects ${classification} with ${limit}-truncated paths`, () => {
+        const c = confirmation();
+        c.classification = classification;
+        c.history.monotonicity = "not-contradicted";
+        c.parents = [{ sourceSha: sha("good"), comparable: true, observationDigest: digest("parent") }];
+        c.candidateObservationDigest = digest("candidate");
+        c.searchObservationDigest = digest("search");
+        assert.equal(validateConfirmation(c), true);
+        Object.assign(c.history.commits[0].changedPathsSummary,
+            { totalCount: limit === "count" ? 258 : 24, sha256: digest("full paths"), truncated: true });
+        rejects(() => validateConfirmation(c), /incomplete.*path/i);
+        c.classification = "unconfirmed-candidate";
+        assert.equal(validateConfirmation(c), true);
+    });
 
 for (const [os, kind] of [
     ["windows", "publisher-checksum"], ["windows", "approved-official-https-measured"],

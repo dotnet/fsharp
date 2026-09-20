@@ -485,24 +485,62 @@ function validateAssociations(value) {
 }
 
 function validateConfirmation(value) {
+    const summary = shape({ totalCount: integer, sha256: digest, truncated: bool });
+    const checkSummary = (items, evidence, path) => {
+        if (!evidence) return;
+        check(evidence.totalCount >= items.length && evidence.truncated === (evidence.totalCount > items.length),
+            path, "inconsistent evidence count or truncation");
+        check(evidence.truncated || evidence.sha256 === fingerprintInput(items), path, "evidence digest mismatch");
+    };
     object(value, {
         schemaVersion: literal(1), epoch: digest, manifestDigest: digest, startGeneration: integer,
         candidate: nullable(sourceSha),
         classification: oneOf(["verified-introducing-source-boundary", "verified-triggering-change", "unconfirmed-candidate"]),
         reason: text,
-        interval: nullable(shape({ goodSha: sourceSha, badSha: sourceSha, remaining: list(sourceSha, 0, 4096) })),
+        interval: nullable((v, p) => object(v, {
+            goodSha: sourceSha, badSha: sourceSha, remaining: nullable(list(sourceSha, 0, 4096)),
+            ...(Object.hasOwn(v, "remainingSummary") ? { remainingSummary: summary } : {}),
+        }, p)),
         parents: list(shape({ sourceSha, comparable: bool, observationDigest: nullable(digest) }), 0, 16),
         candidateObservationDigest: nullable(digest), searchObservationDigest: nullable(digest),
-        history: shape({
-            commits: list(shape({ sha: sourceSha, parents: list(sourceSha, 0, 16), messageDigest: digest,
-                changedPaths: list(repositoryPath), patchId: nullable(sourceSha), reverts: list(sourceSha),
-                cherryPicks: list(sourceSha) }), 0, 128),
+        history: (v, p) => object(v, {
+            commits: list((v, p) => object(v, { sha: sourceSha, parents: list(sourceSha, 0, 16), messageDigest: digest,
+                changedPaths: list((v, p) => {
+                    text(v, p);
+                    check(!/[\u0000-\u001f\u007f-\u009f]/.test(v), p, "display paths must escape control bytes");
+                }), patchId: nullable(sourceSha), reverts: list(sourceSha), cherryPicks: list(sourceSha),
+                ...(Object.hasOwn(v, "changedPathsSummary") ? { changedPathsSummary: shape({
+                    encoding: literal("git-quoted"), totalCount: integer, sha256: digest, truncated: bool, toolchainCoupled: bool,
+                }) } : {}),
+            }, p), 0, 128),
             monotonicity: oneOf(["not-contradicted", "uncertain", "contradicted"]), toolchainCoupled: bool,
-        }),
+            ...(Object.hasOwn(v, "commitsSummary") ? { commitsSummary: summary } : {}),
+        }, p),
         associations: nullable(validateAssociations), latentRootCause: literal("unproven"),
     }, "confirmation");
     unique(value.parents.map(p => p.sourceSha), "confirmation.parents");
     unique(value.history.commits.map(c => c.sha), "confirmation.history");
+    checkSummary(value.history.commits, value.history.commitsSummary, "confirmation.history");
+    check(!value.history.commitsSummary?.truncated || value.classification === "unconfirmed-candidate",
+        "confirmation.history", "incomplete history cannot establish a boundary");
+    for (const commit of value.history.commits) {
+        unique(commit.changedPaths, "confirmation.changedPaths");
+        check(Buffer.byteLength(JSON.stringify(commit.changedPaths)) <= 4096, "confirmation.changedPaths", "display byte bound exceeded");
+        checkSummary(commit.changedPaths, commit.changedPathsSummary, "confirmation.changedPaths");
+        check(!commit.changedPathsSummary?.truncated || value.classification === "unconfirmed-candidate",
+            "confirmation.changedPaths", "incomplete changed-path evidence cannot establish a boundary");
+    }
+    if (value.interval) {
+        if (value.interval.remaining === null) {
+            check(value.classification === "unconfirmed-candidate" && value.interval.remainingSummary === undefined,
+                "confirmation.interval", "unknown interval cannot establish a boundary or claim an evidence summary");
+        } else {
+            unique(value.interval.remaining, "confirmation.interval.remaining");
+            checkSummary(value.interval.remaining, value.interval.remainingSummary, "confirmation.interval.remaining");
+        }
+        check(!value.interval.remainingSummary?.truncated || value.classification === "unconfirmed-candidate",
+            "confirmation.interval", "incomplete interval cannot establish a boundary");
+    }
     check(value.associations === null || value.associations.sourceSha === value.candidate,
         "confirmation.associations", "wrong candidate");
     if (value.classification !== "unconfirmed-candidate") {
@@ -513,6 +551,8 @@ function validateConfirmation(value) {
         const candidate = value.history.commits.find(c => c.sha === value.candidate);
         check(candidate && equal(candidate.parents, value.parents.map(p => p.sourceSha)),
             "confirmation.parents", "parent set does not match Git evidence");
+        check(!candidate.changedPathsSummary?.toolchainCoupled || value.history.toolchainCoupled,
+            "confirmation", "toolchain changes cannot be hidden by display truncation");
         check(value.classification !== "verified-introducing-source-boundary" ||
             value.parents.length === 1 && !value.history.toolchainCoupled,
         "confirmation", "merge/toolchain evidence only establishes a trigger");

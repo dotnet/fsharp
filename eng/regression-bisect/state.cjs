@@ -275,11 +275,12 @@ function currentState(cp, context) {
     return { state, reasons, stale };
 }
 
-async function evidenceWarnings(transport, observations) {
+async function evidenceWarnings(transport, observations, requiredEvidenceOnly) {
     const warnings = [];
     let missingRequired = false;
     for (const record of observations) {
         for (const evidence of record.evidence) {
+            if (requiredEvidenceOnly && !evidence.required) continue;
             // The transport returns null only for confirmed unavailable/expired content.
             // API/authentication errors propagate, rather than becoming missing evidence.
             const bytes = await transport.readEvidence(evidence.url);
@@ -353,7 +354,7 @@ async function writeFreshness(transport, context, generation, bodyDigest) {
         Object.entries(status).every(([k, v]) => written[k] === v), "freshness write authentication failed");
 }
 
-async function loadCheckpoint(transport, context) {
+async function loadCheckpoint(transport, context, { requiredEvidenceOnly = false } = {}) {
     const comment = await transport.getComment(context.commentId);
     const record = await authenticatedRecord(transport, context, comment);
     requireState(record?.kind === "checkpoint", "checkpoint authentication failed");
@@ -371,12 +372,13 @@ async function loadCheckpoint(transport, context) {
         await writeFreshness(transport, context, checkpoint.generation, bodyDigest);
     }
     const current = currentState(checkpoint, context);
-    const evidence = await evidenceWarnings(transport, Object.values(checkpoint.observations).filter(o => o.valid));
+    const evidence = await evidenceWarnings(transport, Object.values(checkpoint.observations).filter(o => o.valid),
+        requiredEvidenceOnly);
     const blockers = [...current.reasons, ...(evidence.missingRequired ? ["required evidence unavailable; blocked"] : [])];
     return {
         checkpoint, bodyDigest, commentId: context.commentId,
         owner: { runId: record.binding.runId, attempt: record.binding.runAttempt },
-        executionAllowed: blockers.length === 0,
+        executionAllowed: !requiredEvidenceOnly && blockers.length === 0,
         publicationAllowed: blockers.length === 0 && checkpoint.state.phase !== "stopped",
         blockers, warnings: evidence.warnings,
     };
@@ -658,7 +660,7 @@ async function recordSearchProgress(transport, context, { generation, phase, int
 }
 
 async function recordPublication(transport, context, { generation, status, digest: resultDigest, commentId }) {
-    const loaded = await loadCheckpoint(transport, context);
+    const loaded = await loadCheckpoint(transport, context, { requiredEvidenceOnly: true });
     const cp = loaded.checkpoint;
     checkGeneration(cp, generation);
     requireState(["pending", "published", "blocked"].includes(status) &&

@@ -422,6 +422,16 @@ attribution. Missing related objects remain explicit uncertainty. Toolchain
 changes retain each observation's requested/resolved build SDK and runtime;
 global/build-input changes conservatively couple source and toolchain blame.
 
+Changed paths are Git-quoted display evidence, not executable repository paths.
+Raw history output preserves edge whitespace and Git byte escapes. Count and
+byte limits bound the retained sample; summaries disclose the total count,
+digest and truncation, and the full bounded input is checked for toolchain
+changes even beyond the sample. Truncated or malformed history cannot establish
+a verified boundary. A digest identifies omitted data but is not a retrievable
+copy. Recovery retains authenticated observations, spent allowance and the
+saved search boundaries/decisions, and records explicit uncertainty instead of
+revalidating the rejected history. Reproduction asset-path validation is unchanged.
+
 Association resolution uses an isolated Git history and GET requests to
 `commits/{commit_sha}/pulls`, `pulls/{pull_number}` and
 `pulls/{pull_number}/commits`. It verifies exact repository/URL, merged status,
@@ -495,6 +505,19 @@ resume state. The operation descriptors are the manifest's approved commands,
 expanded by the existing runner, not reporter-authored shell strings.
 Long display data is bounded and escaped; full evidence remains in authenticated
 observation references and the signed structured payload.
+Display tables deduplicate product/provenance identities, not acquisition
+receipts: timestamps, retained paths and receipt-instance digests do not create
+new toolchains. Every original receipt remains in its authenticated observation.
+Different requested/resolved products or provenance retain distinct identities.
+The rendered UTF-8 body must be strictly below 32,768 bytes, and the complete
+signed result must be below 48 KiB. Oversized results block publication while
+preserving complete evidence in the authenticated checkpoint; limits are not
+raised and observations are not discarded to make a result fit.
+Complete remaining-SHA lists and skips are retained in the signed result, not
+only optional artifacts. If confirmation recovery had to drop remaining SHAs
+to fit a checkpoint, publication is blocked: its count/digest is not a complete
+reference. Unknown intervals are labelled as saved boundaries, not exhaustive
+remaining lists.
 
 Observation artifacts may additionally retain `assemblyVersion`. Released
 cells may retain `releasedToolchain: { sdk, compilerRuntime, archive }` using the
@@ -514,6 +537,17 @@ Preparation persists a deterministic pending digest before returning `ready`.
 Repeated dispatch returns `pending`, not renewed write authorization. Complete
 authenticated discussion scanning recovers a matching result after a successful
 write whose response was lost. It never trusts a copied marker or caller Boolean.
+Recovery first rechecks current inputs, eligibility, ownership and required
+evidence, then authenticates the persisted pending digest and existing result.
+Optional artifact expiry does not replace that result's historical availability
+or digest. Recovery does not reread optional artifacts; new reports still check
+their availability and propagate transport errors. Publication uses
+`loadCheckpoint(transport, context, { requiredEvidenceOnly: true })` for this
+required-only gate, which never authorizes execution; ordinary checkpoint loads
+still check all evidence.
+Adoption records the same comment ID without another result write, worker or
+allowance reset. Missing intent, conflicting results (even with different
+digests), different owners, required-evidence loss and stale inputs fail closed.
 `state.authenticateDecodedRecord(transport, context, comment)` returns the
 authenticated `{ kind, payload, commentId, owner }` or `null`.
 
@@ -547,34 +581,30 @@ new URL to fetch.
 
 ### Confirmation/report validation
 
-The targeted attribution/report suite passes 110 tests; the complete scoped
-suite passes 1,154. All changed scripts pass `node --check` and whitespace
-validation. Real Git fixtures cover parent sets, merges, actual reverted and
-cherry-picked patches, toolchain coupling and bounded association lookups.
-Product execution is injected in those tests; their SHA/build-ID/call-count
-checks are not a claim of a real regression's introducing commit.
+Run the focused attribution/report, model and state/engine tests, followed by
+recursive `node --check` and `git diff --check`. Full-suite acceptance separately
+requires all `*.test.cjs` in this directory:
 
-Fresh original-runner acceptance is retained in
-`artifacts\regression-confirmation-trial`. The source worker clean-built
-`5a8b9adb034f420a5c2c1f577670c5eeeb454b7e` in independent build
-`14b25691-b71f-4712-8801-76088a20ed91`, with unchanged `global.json`,
-approved measured archive provenance and two passing FSI assertions.
-`fsharp-workspace-smoke-jNrofZ\result.json` has SHA-256
-`9bb0f436d8df53ab5e12e41bba26b115d032692aea27568ca6ea6a432d502b2b`.
-Official metadata and retained released SDK `10.0.401` identities were rechecked.
-The scoped evidence-helper Release build/test commands exited zero (the helper
-contains no managed test cases).
+```powershell
+node --test eng\regression-bisect\attribution.test.cjs eng\regression-bisect\report.test.cjs
+node --test eng\regression-bisect\model.test.cjs
+node --test eng\regression-bisect\state.test.cjs eng\regression-bisect\engine.test.cjs
+```
 
-The original reproduction smoke then matched all 43 expectations: 23 passes,
-six intended product failures and 14 identity rejections, using the released
-SDK and fresh source products. Its complete evidence is
-`Q:\rb912-confirmation-20260920\smoke-results.json`, SHA-256
-`1e3dec3266eb0e7a3bda888f9724d6ce02008823f664740ddcb33d7cc02d6499`.
-Initial acceptance setup attempts rejected an incorrect startup-hook path and
-inherited repository build imports; those failures remain in the local trial
-evidence. The successful reproduction scratch is outside repository imports.
-These are safe existing product fixtures, not issue authorization, live
-publication, or verified attribution of an actual regression.
+Real Git fixtures cover fresh parent sets, merges, reverts/cherry-picks,
+toolchain coupling and bounded paginated associations. Report tests authenticate the rendered result,
+check both UTF-8 byte limits with distinct receipts, and exercise publication
+crash points and semantic mutations removing classifications, PR links or skips.
+Product execution is injected in these tests: they do not establish an actual
+regression's introducing commit.
+
+Historical runner receipts remain at
+`Q:\rb912-s5-i5-20260919\acceptance-audit.json` (SHA-256
+`c426ad8a5fbeb65aa0750d00088eaba77051a57c4be112ceb94e47112a9ae8ab`)
+and `Q:\rb912-confirmation-20260920\smoke-results.json` (SHA-256
+`1e3dec3266eb0e7a3bda888f9724d6ce02008823f664740ddcb33d7cc02d6499`).
+They are not fresh acceptance of confirmation/report repairs. Runner/toolchain
+identity contract changes require the documented real smoke checks again.
 
 ## Exact toolchain acquisition
 

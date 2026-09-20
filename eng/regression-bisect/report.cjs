@@ -57,6 +57,8 @@ function validateReport(report) {
     requireValue(equal(identities, s.budget.authenticatedObservationDigests), "report evidence authentication mismatch");
     if (s.confirmation) {
         model.validateConfirmation(s.confirmation);
+        requireValue(!s.confirmation.interval.remainingSummary?.truncated,
+            "complete remaining interval unavailable; publication blocked");
         requireValue(s.confirmation.epoch === s.epoch && s.confirmation.manifestDigest === s.approvalFingerprint,
             "stale report confirmation");
         for (const id of [s.confirmation.candidateObservationDigest, s.confirmation.searchObservationDigest,
@@ -88,6 +90,7 @@ function display(value, limit = 320) {
 function renderReport(report) {
     validateReport(report);
     const s = report.state, m = s.manifest, b = s.budget, c = s.confirmation;
+    const completeInterval = Array.isArray(c?.interval.remaining);
     const lines = [
         "## Regression investigation",
         `Repository/issue: ${s.repository}#${s.issueNumber}`,
@@ -120,43 +123,61 @@ function renderReport(report) {
         ...Object.entries(s.endpointEvidence).map(([name, id]) => `- Endpoint ${name}: ${id ?? "not recorded"}.`),
         `Candidate: ${c?.candidate ?? "not confirmed"}.`,
         `Remaining interval: ${display(c?.interval ?? s.interval ?? "not recorded", 1600)}.`,
+        `${completeInterval ? "Complete interval" : "Saved interval boundaries/decisions"} reference: signed state.${c ? "confirmation.interval" : "interval"}; SHA-256 ${fingerprint(c?.interval ?? s.interval)}.`,
         `Parent evidence: ${c?.parents.length ? "" : "not recorded"}`,
         ...(c?.parents ?? []).map(p => `- ${p.sourceSha}: comparable ${p.comparable}; observation ${p.observationDigest ?? "not recorded"}.`),
         ...s.skips.map(skip => `- Skipped ${skip.sourceSha}: ${skip.reason}; observation ${skip.observationDigest}.`),
         `Monotonicity: ${c?.history.monotonicity ?? "uncertain"}; source/toolchain coupled: ${c ? c.history.toolchainCoupled : "not established"}.`,
+        ...(c?.history.commitsSummary ? [
+            `History summary: total commits ${c.history.commitsSummary.totalCount}; SHA-256 ${c.history.commitsSummary.sha256}; truncated ${c.history.commitsSummary.truncated}; ${c.history.commitsSummary.truncated ? "retained sample only; omitted commits are not retained" : "complete list in signed history"}.`,
+        ] : []),
         ...(c?.history.commits ?? []).map(commit =>
-            `- History ${commit.sha}: parents ${commit.parents.join(", ") || "root"}; patch ${commit.patchId ?? "not recorded"}; reverts ${commit.reverts.join(", ") || "none recorded"}; cherry-picks ${commit.cherryPicks.join(", ") || "none recorded"}; changed paths ${display(commit.changedPaths, 512)}; message SHA-256 ${commit.messageDigest}.`),
+            `- History ${commit.sha}: parents ${commit.parents.join(", ") || "root"}; patch ${commit.patchId ?? "not recorded"}; reverts ${commit.reverts.join(", ") || "none recorded"}; cherry-picks ${commit.cherryPicks.join(", ") || "none recorded"}; changed paths ${display(commit.changedPaths, 512)}; message SHA-256 ${commit.messageDigest}.` +
+            (commit.changedPathsSummary ? ` Git-quoted paths: total changed paths ${commit.changedPathsSummary.totalCount}; SHA-256 ${commit.changedPathsSummary.sha256}; truncated ${commit.changedPathsSummary.truncated}; ${commit.changedPathsSummary.truncated ? "retained sample only; omitted paths are not retained" : "complete list in signed history"}.` : "")),
         `PR association: ${c?.associations?.status ?? "not established"}; ${display(c?.associations?.reason ?? "no verified association evidence")}.`,
         ...(c?.associations?.pulls ?? []).map(p =>
             `- ${p.url}: ${p.relation}; merge ${p.mergeSha}; base ${p.baseSha}; head ${p.headSha}; base ref ${display(p.baseRef)}; tested lineage ${p.onLineage}.`),
         "",
         "### Authenticated observations and logs",
     ];
-    const toolchains = new Set(), samples = new Set(), attempts = new Set();
+    const toolchains = new Map(), samples = new Map(), attempts = new Map(), artifacts = new Map();
     for (const record of report.observations) {
         const o = record.data;
         lines.push(`- Observation ${record.digest}: ${o.kind} ${o.kind === "source" ? o.target.sourceSha : o.target.sdk.version}; ${o.outcome.outcome}/${o.outcome.reason}; build ID ${display(o.buildInstanceId)}; cached ${o.cached}; run ${display(o.provenance.runId)}; worker ${display(o.provenance.workerId)}.`);
         for (const cell of o.cells) {
             const sample = fingerprint({ environment: cell.environment, sdk: cell.sdk, runtime: cell.runtime });
             lines.push(samples.has(sample)
-                ? `  - Matrix ${display(cell.id)}: same sample SDK/runtime/environment ${sample}.`
-                : `  - Matrix ${display(cell.id)}: sample ${sample}; ${cell.environment.os}/${cell.environment.architecture}; image ${cell.environment.imageDigest}; SDK ${cell.sdk?.version ?? "not recorded"} (${cell.sdk?.sha256 ?? "unavailable"}); runtime ${cell.runtime?.version ?? "not recorded"} (${cell.runtime?.sha256 ?? "unavailable"}).`);
-            samples.add(sample);
-            lines.push("  - Artifacts below belong to this observation's source/build ID:");
-            for (const [name, artifact] of Object.entries(cell.artifacts)) {
-                lines.push(`  - ${name}: ${artifact ? `${artifact.origin}; SHA-256 ${artifact.sha256}` +
-                    (name === "targets" ? "" : `; assembly version ${artifact.assemblyVersion ?? "not recorded"}`) : "identity unavailable"}.`);
+                ? `  - Matrix ${display(cell.id)}: same sample SDK/runtime/environment S${samples.get(sample)}.`
+                : `  - Matrix ${display(cell.id)}: sample S${samples.size + 1} (${sample}); ${cell.environment.os}/${cell.environment.architecture}; image ${cell.environment.imageDigest}; SDK ${cell.sdk?.version ?? "not recorded"} (${cell.sdk?.sha256 ?? "unavailable"}); runtime ${cell.runtime?.version ?? "not recorded"} (${cell.runtime?.sha256 ?? "unavailable"}).`);
+            if (!samples.has(sample)) samples.set(sample, samples.size + 1);
+            const artifactId = fingerprint(Object.fromEntries(Object.entries(cell.artifacts).map(([name, artifact]) =>
+                [name, artifact && { ...artifact, buildInstanceId: null }])));
+            if (artifacts.has(artifactId)) {
+                lines.push(`  - Artifacts: same product identities P${artifacts.get(artifactId)}; bound to this observation's source/build ID.`);
+            } else {
+                artifacts.set(artifactId, artifacts.size + 1);
+                lines.push(`  - Artifacts P${artifacts.get(artifactId)} (${artifactId}) belong to this observation's source/build ID:`);
+                for (const [name, artifact] of Object.entries(cell.artifacts)) {
+                    lines.push(`  - ${name}: ${artifact ? `${artifact.origin}; SHA-256 ${artifact.sha256}` +
+                        (name === "targets" ? "" : `; assembly version ${artifact.assemblyVersion ?? "not recorded"}`) : "identity unavailable"}.`);
+                }
             }
             const released = o.kind === "released";
             const t = released ? cell.releasedToolchain : cell.buildToolchain;
-            const toolchainId = t && fingerprint({ ...t, sourceSha: null });
+            let toolchainId;
+            if (t) {
+                const { sourceSha, evidenceDigest, archive, ...products } = t;
+                const { receivedAt, retained, bytesReceived, redirects, redirectUrl, finalOrigin, ...archiveIdentity } = archive;
+                toolchainId = fingerprint({ ...products, archive: archiveIdentity });
+                lines.push(`  - Acquisition receipt ${fingerprint(t)} (complete evidence in this observation's signed cell).`);
+            }
             if (t && toolchains.has(toolchainId)) {
-                lines.push(`  - ${released ? "Released" : "Revision"} toolchain: same identity and archive receipt ${toolchainId}, for this observation.`);
+                lines.push(`  - ${released ? "Released" : "Revision"} toolchain: same product/provenance T${toolchains.get(toolchainId)}; receipt above.`);
             } else if (t) {
-                toolchains.add(toolchainId);
+                toolchains.set(toolchainId, toolchains.size + 1);
                 lines.push(released
-                    ? `  - Released toolchain ${toolchainId}: selected SDK ${t.sdk.version}; SHA-256 ${t.sdk.sha256}; Released compiler runtime ${t.compilerRuntime.version}; SHA-256 ${t.compilerRuntime.sha256}.`
-                    : `  - Revision toolchain ${toolchainId}: global.json SHA-256 ${t.globalJsonDigest}; evidence ${t.evidenceDigest}; requested SDK/tools/runtime ${t.requestedSdk}/${t.requestedTools}/${t.requestedCompilerRuntime}; resolved SDK/runtime ${t.sdk.version}/${t.compilerRuntime.version}.`);
+                    ? `  - Released toolchain T${toolchains.get(toolchainId)} (${toolchainId}): selected SDK ${t.sdk.version}; SHA-256 ${t.sdk.sha256}; Released compiler runtime ${t.compilerRuntime.version}; SHA-256 ${t.compilerRuntime.sha256}.`
+                    : `  - Revision toolchain T${toolchains.get(toolchainId)} (${toolchainId}): global.json SHA-256 ${t.globalJsonDigest}; evidence ${t.evidenceDigest}; requested SDK/tools/runtime ${t.requestedSdk}/${t.requestedTools}/${t.requestedCompilerRuntime}; resolved SDK/runtime ${t.sdk.version}/${t.compilerRuntime.version}.`);
                 const a = t.archive;
                 lines.push(`  - ${released ? "Released" : "Source"} archive receipt: ${display(a.url)}; ${a.rid}; SHA-256 ${a.sha256}; actual SHA-512 ${a.actualSha512}; ${a.bytesReceived} bytes; received ${a.receivedAt}; retained SHA-256 ${a.retained.sha256}.`);
                 lines.push(a.provenance.kind === "publisher-checksum"
@@ -168,9 +189,9 @@ function renderReport(report) {
             cell.attempts.forEach((attempt, i) => {
                 const id = fingerprint(attempt);
                 lines.push(attempts.has(id)
-                    ? `  - Assertion repetition ${i + 1}: identical checks and streams to ${id}; ${attempt.execution.status}; exit ${attempt.execution.exitCode}.`
-                    : `  - Assertion repetition ${i + 1}: ${attempt.execution.status}; exit ${attempt.execution.exitCode}; checks ${display(attempt.checks)}; stdout ${display(JSON.stringify(attempt.execution.stdout), 256)}; stderr ${display(JSON.stringify(attempt.execution.stderr), 256)}; full attempt digest ${id}.`);
-                attempts.add(id);
+                    ? `  - Assertion repetition ${i + 1}: identical checks/streams A${attempts.get(id)}; ${attempt.execution.status}; exit ${attempt.execution.exitCode}.`
+                    : `  - Assertion repetition ${i + 1} A${attempts.size + 1}: ${attempt.execution.status}; exit ${attempt.execution.exitCode}; checks ${display(attempt.checks)}; stdout ${display(JSON.stringify(attempt.execution.stdout), 256)}; stderr ${display(JSON.stringify(attempt.execution.stderr), 256)}; full attempt digest ${id}.`);
+                if (!attempts.has(id)) attempts.set(id, attempts.size + 1);
             });
         }
         lines.push(...record.evidence.map(e => `  - ${e.required ? "Required" : "Optional"} log/evidence reference: ${display(e.url)}; SHA-256 ${e.sha256}; ${e.available ? "hash verified" : "unavailable or expired (including hash mismatch)"}.`));
@@ -230,7 +251,7 @@ async function preparePublication(options, deps) {
                 evidenceHashes.set(url, bytes === null ? null : hash(bytes));
                 return bytes;
             } };
-            const loaded = await state.loadCheckpoint(transport, context);
+            const loaded = await state.loadCheckpoint(transport, context, { requiredEvidenceOnly: true });
             const cp = loaded.checkpoint;
             const originalGeneration = cp.generation - (cp.publicationStatus === "pending" ? 1 : cp.publicationStatus === "published" ? 2 : 0);
             requireValue(options.generation === cp.generation || options.generation === originalGeneration ||
@@ -255,7 +276,8 @@ async function preparePublication(options, deps) {
                 if (!decoded) return false;
                 records.set(comment.id, decoded);
                 if (decoded.kind === "checkpoint" && !checkpoints.has(comment.id)) {
-                    checkpoints.set(comment.id, await state.loadCheckpoint(transport, { ...context, commentId: comment.id }));
+                    checkpoints.set(comment.id, await state.loadCheckpoint(transport, { ...context, commentId: comment.id },
+                        { requiredEvidenceOnly: true }));
                 }
                 return true;
             };
@@ -286,24 +308,43 @@ async function preparePublication(options, deps) {
             if (cp.pending || !["complete", "blocked"].includes(cp.state.phase)) {
                 return stop("work is pending or search has not reached a reportable state");
             }
-            const report = reportFromCheckpoint(cp, fresh.pinnedMainSha, evidenceHashes);
-            let body;
-            try { body = renderReport(report); } catch (error) { return stop(error.message); }
-            const resultDigest = fingerprint(report);
-            // Enforce the combined human report + signed envelope limit before issuing an intent.
-            state.serializeWorkflowRecord({ kind: "result", status: "Regression investigation result",
-                payload: { schemaVersion: 1, digest: resultDigest, report } }, context);
-            const matches = [...records.values()].filter(r => r.kind === "result" &&
-                r.payload.digest === resultDigest && equal(r.payload.report, report));
-            if (matches.length > 1) return stop("conflicting duplicate authenticated results");
-            if (cp.state.publication.digest && cp.state.publication.digest !== resultDigest) return stop("pending publication digest changed", "requeue");
+            // Availability is mutable; authenticate the already-written intent before deriving a new report.
+            const pendingDigest = cp.state.publication.digest;
+            const existingResults = [...records.values()].filter(r => r.kind === "result" &&
+                r.payload.report.state.epoch === cp.state.epoch);
+            if (existingResults.length > 1) return stop("conflicting duplicate authenticated results");
+            const matches = existingResults.filter(r => r.payload.digest === pendingDigest);
             if (matches.length) {
-                requireValue(cp.state.publication.digest === resultDigest, "result has no matching publication intent");
+                const existing = matches[0], report = existing.payload.report;
+                requireValue(["pending", "published"].includes(cp.publicationStatus) &&
+                    equal(existing.owner, context.owner), "result has no matching owning publication intent");
+                const expected = reportFromCheckpoint(cp, fresh.pinnedMainSha, new Map());
+                expected.observations.forEach((o, i) => o.evidence.forEach((e, j) => {
+                    e.available = report.observations[i]?.evidence[j]?.available;
+                }));
+                requireValue(equal(report, expected),
+                    "pending result differs from authenticated checkpoint evidence");
                 const saved = await state.recordPublication(transport, context, { generation: cp.generation,
-                    status: "published", digest: resultDigest, commentId: matches[0].commentId });
-                return { status: "published", digest: resultDigest, commentId: matches[0].commentId, generation: saved.generation };
+                    status: "published", digest: pendingDigest, commentId: existing.commentId });
+                return { status: "published", digest: pendingDigest, commentId: existing.commentId, generation: saved.generation };
+            }
+            if (existingResults.length) {
+                return stop("authenticated result has no matching publication intent");
             }
             if (cp.publicationStatus === "published") return stop("authenticated published result is missing");
+            await state.loadCheckpoint(transport, context);
+            const report = reportFromCheckpoint(cp, fresh.pinnedMainSha, evidenceHashes);
+            let body;
+            const resultDigest = fingerprint(report);
+            // Enforce the combined human report + signed envelope limit before issuing an intent.
+            try {
+                body = renderReport(report);
+                state.serializeWorkflowRecord({ kind: "result", status: "Regression investigation result",
+                    payload: { schemaVersion: 1, digest: resultDigest, report } }, context);
+            } catch (error) {
+                return stop(`${error.message}; observations and saved interval retained in authenticated checkpoint ${context.commentId}`);
+            }
+            if (cp.state.publication.digest && cp.state.publication.digest !== resultDigest) return stop("pending publication digest changed", "requeue");
             const duplicate = cp.publicationStatus === "pending";
             const saved = await state.recordPublication(transport, context, { generation: cp.generation,
                 status: "pending", digest: resultDigest, commentId: null });

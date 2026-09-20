@@ -7,6 +7,20 @@ const state = require("./state.cjs");
 const intake = require("./intake.cjs");
 const { preparePublication, renderReport, completePublication } = require("./report.cjs");
 
+function resultComment(h, ready, id = 789) {
+    const body = state.serializeWorkflowRecord({ kind: "result", status: "Regression investigation result",
+        payload: { schemaVersion: 1, digest: ready.digest, report: ready.report } }, { ...h.context, commentId: id });
+    return { ...structuredClone(h.comment), id, body };
+}
+
+async function authenticatedDisplay(h, ready) {
+    const comment = resultComment(h, ready);
+    const decoded = await state.authenticateDecodedRecord(h.transport, { ...h.context, commentId: comment.id }, comment);
+    assert.ok(decoded, "result must authenticate before any rendered-output assertion");
+    assert.deepEqual(decoded.payload.report, ready.report);
+    return comment.body.slice(0, comment.body.indexOf("\n\nRegression investigation result\n\n```json\n"));
+}
+
 async function fixture({ outcome = "product-failure", evidence = [], producerName = "repro", matrixCount = 1,
     archiveKind = "publisher-checksum" } = {}) {
     const h = harness(), calls = [], comments = [];
@@ -22,6 +36,9 @@ async function fixture({ outcome = "product-failure", evidence = [], producerNam
             headers: { link: args.page === 1 ? '<https://api.github.com/next>; rel="next"' : "" },
         };
         if (route.endsWith("/timeline")) return { data: [], headers: { link: "" } };
+        if (route.endsWith("/pulls/{pull_number}") && [1, 2].includes(args.pull_number)) return {
+            data: { number: args.pull_number, state: "closed", merged_at: h.context.now, updated_at: h.context.now },
+        };
         if (route.includes("/actions/runs/")) return { data: await h.transport.getRun(args.run_id, args.attempt_number) };
         throw new Error(`unexpected route ${route}`);
     };
@@ -136,8 +153,10 @@ test("ineligible or stale fresh context blocks publication without refund", asyn
         environment: h => { h.fresh.environmentFingerprint = f.digest("changed image"); },
         missingEnvironment: h => { delete h.fresh.environmentFingerprint; },
     };
-    for (const [name, change] of Object.entries(changes)) await t.test(name, async () => {
-        const h = await fixture(); change(h);
+    for (const [name, change] of Object.entries(changes)) for (const written of [false, true]) await t.test(`${name}, written=${written}`, async () => {
+        const h = await fixture();
+        if (written) h.comments.push(resultComment(h, await h.prepare()));
+        change(h);
         const result = await h.prepare();
         assert.ok(["blocked", "requeue"].includes(result.status), JSON.stringify(result));
         assert.equal(result.body, undefined);
@@ -174,11 +193,16 @@ test("incomplete intake blocks rather than publishing a partial discussion", asy
 });
 
 test("signed lost-response results recover only at exact writer/app/comment/run and body", async t => {
-    for (const mutation of ["none", "id", "writer", "app", "run", "markdown", "digest"]) await t.test(mutation, async () => {
+    for (const mutation of ["none", "id", "writer", "app", "run", "owner", "repository", "issue", "signature",
+        "duplicate", "conflicting-digest", "missing-intent", "markdown", "digest"]) await t.test(mutation, async () => {
         const h = await fixture();
         const ready = await h.prepare();
         assert.equal(ready.status, "ready", ready.reason);
         const context = { ...h.context, commentId: 789 };
+        if (mutation === "owner") {
+            h.runs.set("12346/1", { ...h.runs.get("12345/1"), id: 12346 });
+            context.owner = { runId: "12346", attempt: 1 };
+        }
         const resultPayload = { schemaVersion: 1, digest: ready.digest, report: ready.report };
         if (mutation === "digest") resultPayload.digest = f.digest("another");
         let body;
@@ -193,9 +217,26 @@ test("signed lost-response results recover only at exact writer/app/comment/run 
         if (mutation === "writer") comment.user.id++;
         if (mutation === "app") comment.performed_via_github_app.id++;
         if (mutation === "run") h.runs.get("12345/1").head_sha = f.sha("forged");
+        if (mutation === "repository") comment.issue_url = "https://api.github.com/repos/foreign/repo/issues/123";
+        if (mutation === "issue") comment.issue_url = "https://api.github.com/repos/dotnet/fsharp/issues/124";
+        if (mutation === "signature") comment.body = comment.body.replace(/"signature":"[a-f0-9]{64}"/,
+            `"signature":"${"0".repeat(64)}"`);
         if (mutation === "markdown") comment.body = "# invented blame\n\n" + comment.body;
         h.comments.push(comment);
-        const recovered = await h.prepare();
+        if (mutation === "duplicate") h.comments.push(resultComment(h, ready, 790));
+        if (mutation === "conflicting-digest") {
+            const report = { ...ready.report, deadline: "2026-10-02T00:00:00Z" };
+            h.comments.push(resultComment(h, { report, digest: model.fingerprintInput(report) }, 790));
+        }
+        let generation = h.generation;
+        if (mutation === "missing-intent") {
+            const cp = (await state.loadCheckpoint(h.transport, h.context)).checkpoint;
+            cp.state.publication = { digest: null, commentId: null };
+            cp.publicationStatus = "unpublished";
+            h.checkpoint(cp);
+            generation = cp.generation;
+        }
+        const recovered = await h.prepare({ generation });
         if (mutation === "none") {
             assert.equal(recovered.status, "published", JSON.stringify(recovered));
             assert.equal(recovered.commentId, 789);
@@ -292,8 +333,13 @@ test("publication refuses a concurrent authenticated checkpoint generation chang
     assert.equal((await h.prepare()).status, "blocked");
 });
 
-for (const matrixCount of [1, 2]) test(`six affordable observations and ${matrixCount} matrix cells fit without dropping evidence`, async () => {
-    const h = await fixture({ matrixCount });
+for (const [matrixCount, products] of [[1, "shared"], [2, "shared"], [1, "unequal"], [2, "oversized"], [2, "envelope"]]) test(`six affordable observations and ${matrixCount} matrix cells with distinct receipts: ${products}`, async t => {
+    const h = await fixture({ matrixCount, producerName: "\u03bb".repeat(80),
+        evidence: products === "envelope" ? [12, 13, 14, 15].map(id => ({
+            url: `https://api.github.com/repos/dotnet/fsharp/actions/artifacts/${id}/zip`,
+            sha256: f.digest("durable evidence"), required: false,
+        })) : [],
+    });
     for (let i = 1; i < 6; i++) {
         const cp = (await state.loadCheckpoint(h.transport, h.context)).checkpoint;
         const pending = await state.reserveWork(h.transport, h.context, { generation: cp.generation,
@@ -304,6 +350,13 @@ for (const matrixCount of [1, 2]) test(`six affordable observations and ${matrix
         for (const cell of observation.cells) {
             for (const artifact of Object.values(cell.artifacts)) artifact.buildInstanceId = pending.id;
             cell.buildToolchain = f.buildToolchain(observation.target.sourceSha, cell.environment.os);
+            cell.buildToolchain.evidenceDigest = f.digest(`receipt-${i}-${cell.id}`);
+            cell.buildToolchain.archive.receivedAt = `2026-09-19T17:30:0${i}.000Z`;
+            cell.buildToolchain.archive.retained.path += `-${i}`;
+            if (products === "oversized" || products === "unequal" && i === 5) {
+                cell.buildToolchain.requestedCompilerRuntime = `11.0.${i}`;
+                cell.buildToolchain.compilerRuntime.version = `11.0.${i}`;
+            }
         }
         await state.commitObservation(h.transport, h.context, {
             generation: pending.generation, attemptId: pending.id, observation, evidence: [],
@@ -314,15 +367,151 @@ for (const matrixCount of [1, 2]) test(`six affordable observations and ${matrix
     h.checkpoint(cp);
     const generation = (await state.loadCheckpoint(h.transport, h.context)).checkpoint.generation;
     const result = await h.prepare({ generation });
+    if (products === "oversized" || products === "envelope") {
+        assert.equal(result.status, "blocked", result.reason);
+        assert.match(result.reason, /observations and saved interval retained in authenticated checkpoint 456/);
+        assert.match(result.reason, /48 KiB/);
+        const retained = await state.loadCheckpoint(h.transport, h.context);
+        assert.equal(retained.checkpoint.publicationStatus, "blocked");
+        assert.equal(Object.keys(retained.checkpoint.observations).length, 6);
+        assert.deepEqual(retained.checkpoint.state.budget, cp.state.budget);
+        for (let i = 1; i < 6; i++) {
+            const o = Object.values(retained.checkpoint.observations).find(o => o.data.buildInstanceId === `search-${i}`);
+            assert.ok(o.data.cells.every(c => c.buildToolchain.compilerRuntime.version ===
+                (products === "oversized" ? `11.0.${i}` : "11.0.0")));
+        }
+        t.diagnostic(`${products}: ${result.reason}`);
+        return;
+    }
     assert.equal(result.status, "ready", result.reason);
     assert.equal(result.report.observations.length, 6);
+    assert.ok(Buffer.byteLength(result.body, "utf8") < 32768);
+    if (products === "unequal") {
+        assert.match(result.body, /resolved SDK\/runtime .*\/11\.0\.0/);
+        assert.match(result.body, /resolved SDK\/runtime .*\/11\.0\.5/);
+        assert.equal((result.body.match(/Revision toolchain T\d+ \(/g) ?? []).length, 2);
+    }
     for (let i = 1; i < 6; i++) assert.ok(result.body.includes(`search-${i}`));
     const signed = state.serializeWorkflowRecord({ kind: "result", status: "Regression investigation result",
         payload: { schemaVersion: 1, digest: result.digest, report: result.report } }, { ...h.context, commentId: 789 });
     assert.ok(Buffer.byteLength(signed) < 48 * 1024);
+    assert.ok(Buffer.byteLength(result.body, "utf8") > result.body.length);
+    t.diagnostic(`displayBytes=${Buffer.byteLength(result.body, "utf8")} signedBytes=${Buffer.byteLength(signed, "utf8")}`);
+    const decoded = await state.authenticateDecodedRecord(h.transport, { ...h.context, commentId: 789 },
+        { ...structuredClone(h.comment), id: 789, body: signed });
+    assert.deepEqual(decoded.payload.report, result.report);
+    for (const record of decoded.payload.report.observations) {
+        assert.ok(signed.includes(record.digest));
+        for (const cell of record.data.cells) assert.ok(cell.buildToolchain.archive.retained.path);
+    }
+    for (let i = 1; i < 6; i++) {
+        const observation = decoded.payload.report.observations.find(o => o.data.buildInstanceId === `search-${i}`).data;
+        for (const cell of observation.cells) {
+            assert.equal(cell.buildToolchain.evidenceDigest, f.digest(`receipt-${i}-${cell.id}`));
+            assert.ok(cell.buildToolchain.archive.retained.path.endsWith(`-${i}`));
+            assert.equal(cell.buildToolchain.archive.receivedAt, `2026-09-19T17:30:0${i}.000Z`);
+        }
+    }
 });
 
-async function confirmedFixture({ omitReleased = [] } = {}) {
+test("lost result acknowledgement recovers the pending digest after optional evidence changes", async t => {
+    for (const availability of ["expired", "hash-mismatch"]) for (const required of [false, true]) await t.test(`${availability}, required=${required}`, async () => {
+        const h = await fixture({ evidence: [{
+            url: "https://api.github.com/repos/dotnet/fsharp/actions/artifacts/12/zip",
+            sha256: f.digest("durable evidence"), required,
+        }] });
+        const ready = await h.prepare();
+        assert.equal(ready.status, "ready", ready.reason);
+        const body = state.serializeWorkflowRecord({ kind: "result", status: "Regression investigation result",
+            payload: { schemaVersion: 1, digest: ready.digest, report: ready.report } }, { ...h.context, commentId: 789 });
+        h.comments.push({ ...structuredClone(h.comment), id: 789, body });
+        const before = (await state.loadCheckpoint(h.transport, h.context)).checkpoint.state.budget;
+        h.transport.readEvidence = async () => availability === "expired" ? null : Buffer.from("changed bytes");
+        const recovered = await h.prepare();
+        assert.equal(recovered.status, required ? "blocked" : "published", recovered.reason);
+        if (!required) {
+            assert.equal(recovered.digest, ready.digest);
+            assert.equal(recovered.commentId, 789);
+        } else assert.match(recovered.reason, /required evidence/);
+        assert.equal(h.comments.length, 1);
+        assert.equal(h.comments[0].body, body);
+        assert.deepEqual((await state.loadCheckpoint(h.transport, h.context)).checkpoint.state.budget, before);
+        assert.ok(h.calls.every(c => !c.route.startsWith("POST ") || c.route.includes("/statuses/")));
+        t.diagnostic(JSON.stringify({ availability, required, status: recovered.status, commentId: recovered.commentId,
+            digest: recovered.digest, resultWrites: h.comments.length, consumed: before.consumed }));
+    });
+});
+
+test("pending result recovery checks required evidence without rereading optional availability", async t => {
+    for (const written of [false, true]) await t.test(`written=${written}`, async () => {
+        const h = await fixture({ evidence: [
+            { url: "https://api.github.com/repos/dotnet/fsharp/actions/artifacts/12/zip",
+                sha256: f.digest("durable evidence"), required: false },
+            { url: "https://api.github.com/repos/dotnet/fsharp/actions/artifacts/13/zip",
+                sha256: f.digest("durable evidence"), required: true },
+        ] });
+        const ready = await h.prepare();
+        assert.equal(ready.status, "ready", ready.reason);
+        if (written) h.comments.push(resultComment(h, ready));
+        const reads = [];
+        h.transport.readEvidence = async url => {
+            reads.push(url);
+            if (url.includes("/12/")) throw new Error("optional artifact transport unavailable");
+            return Buffer.from("durable evidence");
+        };
+        const recovered = await h.prepare();
+        assert.equal(recovered.status, written ? "published" : "blocked", recovered.reason);
+        assert.ok(reads.some(url => url.includes("/13/")), "required evidence must be checked before adoption");
+        assert.equal(reads.some(url => url.includes("/12/")), !written);
+        if (written) {
+            assert.equal(recovered.digest, ready.digest);
+            assert.equal(recovered.commentId, 789);
+            const acknowledged = await completePublication({ now: h.context.now, generation: ready.generation,
+                digest: ready.digest, commentId: 789 }, h.deps);
+            assert.equal(acknowledged.status, "published", acknowledged.reason);
+            assert.equal(acknowledged.generation, recovered.generation);
+            assert.equal(reads.some(url => url.includes("/12/")), false);
+        } else assert.match(recovered.reason, /optional artifact transport unavailable/);
+    });
+});
+
+test("publication crash points preserve a single result and the charged allowance", async t => {
+    for (const crash of ["before-intent", "after-intent", "after-result", "after-acknowledgement"]) await t.test(crash, async () => {
+        const h = await fixture(), update = h.transport.updateComment;
+        const before = (await state.loadCheckpoint(h.transport, h.context)).checkpoint.state.budget;
+        if (crash.endsWith("intent")) {
+            h.transport.updateComment = async (...args) => {
+                if (crash === "after-intent") await update(...args);
+                throw new Error("interrupted intent response");
+            };
+            assert.equal((await h.prepare()).status, "blocked");
+            h.transport.updateComment = update;
+        }
+        const ready = await h.prepare();
+        assert.equal(ready.status, crash === "after-intent" ? "pending" : "ready", ready.reason);
+        if (crash === "after-result") {
+            await assert.rejects(async () => {
+                h.comments.push(resultComment(h, ready));
+                throw new Error("result write response lost");
+            }, /response lost/);
+        } else h.comments.push(resultComment(h, ready));
+        if (crash === "after-acknowledgement") {
+            h.transport.updateComment = async (...args) => { await update(...args); throw new Error("ack response lost"); };
+            assert.equal((await h.prepare()).status, "blocked");
+            h.transport.updateComment = update;
+        }
+        const recovered = await h.prepare();
+        assert.equal(recovered.status, "published", recovered.reason);
+        assert.equal(recovered.digest, ready.digest);
+        assert.equal(recovered.commentId, 789);
+        assert.equal(h.comments.length, 1);
+        assert.deepEqual((await state.loadCheckpoint(h.transport, h.context)).checkpoint.state.budget, before);
+        assert.ok(h.calls.every(c => !c.route.startsWith("POST ") || c.route.includes("/statuses/")));
+    });
+});
+
+async function confirmedFixture({ omitReleased = [], classification = "verified-introducing-source-boundary",
+    associationCount = 0, intervalCount = 1, incomplete = null } = {}) {
     const h = await fixture();
     if (!omitReleased.includes("endpoint")) {
         const cp = (await state.loadCheckpoint(h.transport, h.context)).checkpoint;
@@ -373,18 +562,40 @@ async function confirmedFixture({ omitReleased = [] } = {}) {
     const cp = (await state.loadCheckpoint(h.transport, h.context)).checkpoint;
     const confirmation = {
         schemaVersion: 1, epoch: cp.state.epoch, manifestDigest: cp.state.approvalFingerprint, startGeneration: start.generation,
-        candidate, classification: "verified-introducing-source-boundary", reason: "independent exact failure and passing parent",
-        interval: { goodSha: parent, badSha: candidate, remaining: [candidate] },
+        candidate, classification, reason: "independent exact failure and passing parent",
+        interval: { goodSha: parent, badSha: candidate,
+            remaining: [...Array.from({ length: intervalCount - 1 }, (_, i) => f.sha(`remaining-${i}`)), candidate] },
         parents: [{ sourceSha: parent, comparable: true, observationDigest: ids[1] }],
         candidateObservationDigest: ids[0], searchObservationDigest: start.state.endpointEvidence.main,
         history: { commits: [{ sha: candidate, parents: [parent], messageDigest: f.digest("change"),
             changedPaths: ["src/Compiler/Checking/example.fs"], patchId: null, reverts: [], cherryPicks: [] }],
-        monotonicity: "not-contradicted", toolchainCoupled: false },
+        monotonicity: "not-contradicted", toolchainCoupled: classification === "verified-triggering-change" },
         associations: { schemaVersion: 1, repository: "dotnet/fsharp", sourceSha: candidate,
-            status: "none", reason: "no verified associated pull request", pulls: [] }, latentRootCause: "unproven",
+            status: associationCount > 1 ? "ambiguous" : associationCount ? "unique" : "none",
+            reason: associationCount > 1 ? "multiple verified associations; uniqueness is unproven" :
+                associationCount ? "verified commit association" : "no verified associated pull request",
+            pulls: Array.from({ length: associationCount }, (_, i) => ({
+                number: i + 1, url: `https://github.com/dotnet/fsharp/pull/${i + 1}`, relation: "merge-commit",
+                mergeSha: candidate, baseSha: parent, headSha: candidate, baseRef: "main", onLineage: true,
+            })) }, latentRootCause: "unproven",
     };
+    if (incomplete === "paths") {
+        confirmation.history.toolchainCoupled = true;
+        confirmation.history.commits[0].changedPathsSummary = {
+            encoding: "git-quoted", totalCount: 257, sha256: f.digest("complete quoted paths"),
+            truncated: true, toolchainCoupled: true,
+        };
+    } else if (incomplete === "remaining") {
+        confirmation.interval.remainingSummary = {
+            totalCount: 4096, sha256: f.digest("complete remaining SHAs"), truncated: true,
+        };
+    } else if (incomplete === "unknown") {
+        confirmation.interval.remaining = null;
+    } else if (incomplete === "commits") {
+        confirmation.history.commitsSummary = { totalCount: 129, sha256: f.digest("history commits"), truncated: true };
+    }
     const saved = await state.recordConfirmation(h.transport, h.context, { generation: cp.generation, confirmation });
-    assert.equal(saved.state.phase, "complete");
+    assert.equal(saved.state.phase, classification === "unconfirmed-candidate" ? "blocked" : "complete");
     const duplicate = await state.recordConfirmation(h.transport, h.context, { generation: cp.generation, confirmation });
     assert.equal(duplicate.generation, saved.generation);
     await assert.rejects(state.recordConfirmation(h.transport, h.context, {
@@ -407,6 +618,136 @@ test("confirmed boundaries retain distinct parent/candidate evidence and become 
     const blocked = (await state.loadCheckpoint(h.transport, h.context)).checkpoint;
     assert.equal(blocked.publicationStatus, "blocked");
     assert.equal(blocked.state.budget.consumed.workerUnits, 4);
+});
+
+test("authenticated output retains the exact boundary classification and full relevant SHAs", async t => {
+    for (const classification of ["verified-introducing-source-boundary", "verified-triggering-change", "unconfirmed-candidate"]) {
+        await t.test(classification, async () => {
+            const h = await confirmedFixture({ classification });
+            const ready = await h.prepare({ generation: h.generation });
+            assert.equal(ready.status, "ready", ready.reason);
+            const body = await authenticatedDisplay(h, ready);
+            assert.ok(body.includes(`Classification: ${classification.replaceAll("-", " ")}`));
+            assert.ok(body.includes(`Candidate: ${h.context.pinnedMainSha}`));
+            assert.ok(body.includes(`Tested pinned main: ${h.context.pinnedMainSha}`));
+            assert.ok(body.includes(f.sha("parent")));
+            assert.match(body, /latent root cause is unproven/);
+            assert.match(body, /does not establish semantic causation/);
+            assert.match(body, /PR association: none/);
+        });
+
+    }
+});
+
+test("authenticated association output includes every verified URL and explicit ambiguity or absence", async t => {
+    for (const associationCount of [0, 1, 2]) await t.test(`${associationCount} associations`, async () => {
+        const h = await confirmedFixture({ associationCount });
+        const ready = await h.prepare({ generation: h.generation });
+        assert.equal(ready.status, "ready", ready.reason);
+        const body = await authenticatedDisplay(h, ready);
+        for (let i = 1; i <= associationCount; i++) assert.ok(body.includes(`https://github.com/dotnet/fsharp/pull/${i}`));
+        assert.ok(body.includes(`PR association: ${["none", "unique", "ambiguous"][associationCount]}`));
+        if (associationCount > 1) assert.match(body, /uniqueness is unproven/);
+        if (associationCount === 0) assert.match(body, /no verified associated pull request/);
+    });
+});
+
+test("renderer enforces UTF-8 bytes even when Unicode display length fits", async t => {
+    const h = await confirmedFixture({ associationCount: 2 });
+    const ready = await h.prepare({ generation: h.generation });
+    assert.equal(ready.status, "ready", ready.reason);
+    const report = structuredClone(ready.report), associations = report.state.confirmation.associations;
+    const pull = associations.pulls[0];
+    for (let count = 2; count <= 100; count++) {
+        associations.pulls = Array.from({ length: count }, (_, i) => ({
+            ...pull, number: i + 1, url: `https://github.com/dotnet/fsharp/pull/${i + 1}`, baseRef: "x".repeat(64),
+        }));
+        const ascii = renderReport(report), unicodeBytes = Buffer.byteLength(ascii, "utf8") + count * 64;
+        if (unicodeBytes < 32768) continue;
+        assert.ok(ascii.length < 32768, "the same number of display characters fits");
+        for (const p of associations.pulls) p.baseRef = "\u03bb".repeat(64);
+        assert.throws(() => renderReport(report), /rendered report exceeds bounded display size/);
+        t.diagnostic(`characters=${ascii.length} unicodeBytes=${unicodeBytes} associationCount=${count}`);
+        return;
+    }
+    assert.fail("fixture must cross the UTF-8 bound before the character bound");
+});
+
+test("compact intervals and skipped reasons survive in the authenticated result", async () => {
+    const h = await confirmedFixture({ classification: "unconfirmed-candidate", intervalCount: 200 });
+    const ready = await h.prepare({ generation: h.generation });
+    assert.equal(ready.status, "ready", ready.reason);
+    const body = await authenticatedDisplay(h, ready);
+    assert.match(body, /Complete interval reference: signed state\.confirmation\.interval/);
+    assert.ok(body.includes(model.fingerprintInput(ready.report.state.confirmation.interval)));
+    assert.deepEqual(ready.report.state.confirmation.interval.remaining,
+        [...Array.from({ length: 199 }, (_, i) => f.sha(`remaining-${i}`)), h.context.pinnedMainSha]);
+    const skipped = await fixture({ outcome: "untestable" });
+    const result = await skipped.prepare();
+    assert.equal(result.status, "ready", result.reason);
+    const rendered = await authenticatedDisplay(skipped, result);
+    assert.ok(result.report.state.skips.length > 0);
+    for (const skip of result.report.state.skips) assert.ok(rendered.includes(`Skipped ${skip.sourceSha}: ${skip.reason}`));
+});
+
+test("truncated path evidence is disclosed and missing complete remaining evidence blocks publication", async t => {
+    for (const incomplete of ["paths", "commits", "unknown", "remaining"]) await t.test(incomplete, async () => {
+        const h = await confirmedFixture({ classification: "unconfirmed-candidate", incomplete });
+        const before = (await state.loadCheckpoint(h.transport, h.context)).checkpoint;
+        const ready = await h.prepare({ generation: h.generation });
+        if (incomplete !== "remaining") {
+            assert.equal(ready.status, "ready", ready.reason);
+            const body = await authenticatedDisplay(h, ready);
+            if (incomplete === "unknown") {
+                assert.match(body, /Saved interval boundaries\/decisions reference/);
+                assert.ok(!body.includes("Complete interval reference"));
+            } else {
+                assert.match(body, incomplete === "paths" ? /total changed paths 257/ : /total commits 129/);
+                assert.ok(body.includes(f.digest(incomplete === "paths" ? "complete quoted paths" : "history commits")));
+                assert.match(body, /truncated true; retained sample only/);
+            }
+            assert.match(body, /Classification: unconfirmed candidate/);
+        } else {
+            assert.equal(ready.status, "blocked", ready.reason);
+            assert.match(ready.reason, /complete remaining interval unavailable/);
+            assert.equal(ready.body, undefined);
+            const after = (await state.loadCheckpoint(h.transport, h.context)).checkpoint;
+            assert.deepEqual(after.observations, before.observations);
+            assert.deepEqual(after.state.confirmation, before.state.confirmation);
+            assert.deepEqual(after.state.budget, before.state.budget);
+        }
+    });
+});
+
+test("saved escaped rendering mutations are killed by authenticated semantic assertions", async t => {
+    const fs = require("node:fs"), Module = require("node:module"), path = require("node:path");
+    const filename = require.resolve("./report.cjs"), source = fs.readFileSync(filename, "utf8");
+    for (const [name, setup, before, after, check] of [
+        ["trigger", () => confirmedFixture({ classification: "verified-triggering-change" }),
+            'c.classification.replaceAll("-", " ")', '"classification omitted"',
+            body => assert.match(body, /Classification: verified triggering change/)],
+        ["PR links", () => confirmedFixture({ associationCount: 1 }),
+            '...(c?.associations?.pulls ?? []).map', '...[].map',
+            body => assert.ok(body.includes("https://github.com/dotnet/fsharp/pull/1"))],
+        ["skips", () => fixture({ outcome: "untestable" }), '...s.skips.map', '...[].map',
+            body => assert.ok(body.includes(`Skipped ${f.sha("main")}:`))],
+    ]) await t.test(name, async () => {
+        const h = await setup(), ready = await h.prepare({ generation: h.generation });
+        assert.equal(ready.status, "ready", ready.reason);
+        check(await authenticatedDisplay(h, ready));
+        assert.ok(source.includes(before), "mutation must edit its intended semantic seam");
+        const mutant = new Module(filename, module);
+        mutant.filename = filename;
+        mutant.paths = Module._nodeModulePaths(path.dirname(filename));
+        mutant._compile(source.replace(before, after), filename);
+        const original = require.cache[filename].exports;
+        try {
+            require.cache[filename].exports = mutant.exports;
+            const mutatedBody = await authenticatedDisplay(h, ready);
+            assert.throws(() => check(mutatedBody), { code: "ERR_ASSERTION" });
+            t.diagnostic(`${name}: valid output passed; authenticated semantic mutant killed (module loaded)`);
+        } finally { require.cache[filename].exports = original; }
+    });
 });
 
 test("changing evidence or search phase clears confirmation without refunding prior runs", async t => {

@@ -689,6 +689,11 @@ test("mandatory external evidence loss blocks reuse; optional expired logs are d
             assert.equal(loaded.publicationAllowed, !required);
             assert.match(loaded.warnings.join(), /missing.*evidence|expired/i);
             assert.equal(loaded.checkpoint.state.budget.consumed.workerUnits, 1);
+            const publication = await loadCheckpoint(h.transport, h.context, { requiredEvidenceOnly: true });
+            assert.equal(publication.executionAllowed, false, "publication-only evidence checks cannot authorize execution");
+            assert.equal(publication.publicationAllowed, !required);
+            assert.equal(publication.warnings.length, required ? 1 : 0);
+            assert.deepEqual(publication.checkpoint, loaded.checkpoint);
         });
     }
 });
