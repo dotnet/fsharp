@@ -91,7 +91,7 @@ function validatePolicy(policy) {
     return true;
 }
 
-function repositoryPath(value, path) {
+function repositoryPath(value, path = "path") {
     text(value, path);
     check(value.split("/").every(part =>
         /^[A-Za-z0-9_.-]+$/.test(part) && part !== "." && part !== ".." && !part.endsWith(".") &&
@@ -647,6 +647,7 @@ function validateState(state) {
 }
 
 module.exports = {
+    validateRepositoryPath: repositoryPath,
     validateBoundaryEndpoints,
     isEligibleIssue, validatePolicy, validateManifest, fingerprintInput, classifyAttempts,
     validateObservation, admitBisection, validateOutcome, validateState, fingerprintEpoch,

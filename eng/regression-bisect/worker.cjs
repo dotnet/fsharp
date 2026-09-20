@@ -1,9 +1,9 @@
-const { validateManifest, validatePolicy, fingerprintInput: fingerprint } = require("./model.cjs");
+const { validateManifest, validatePolicy, validateOutcome, fingerprintInput: fingerprint } = require("./model.cjs");
 const toolchains = require("./toolchains.cjs");
 const { runReproduction } = require("./repro.cjs");
 const { testSourceRevision } = require("./workspace.cjs");
 const { execute } = require("./repro-process.cjs");
-const { requireValue } = require("./toolchain-io.cjs");
+const { requireValue, hash } = require("./toolchain-io.cjs");
 
 function validateExecutionUnit(unit) {
     requireValue(unit && Object.keys(unit).sort().join(" ") ===
@@ -85,4 +85,26 @@ async function runExecutionUnit(unit, deps, { signal } = {}) {
     return result;
 }
 
-module.exports = { validateExecutionUnit, runExecutionUnit };
+function readExecutionOutput(files, unit, launch) {
+    validateExecutionUnit(unit);
+    requireValue(launch && Object.keys(launch).sort().join(" ") === "imageDigest launchId unitDigest" &&
+        Object.values(launch).every(v => typeof v === "string" && /^[a-f0-9]{64}$/.test(v)) &&
+        launch.unitDigest === fingerprint(unit), "invalid trusted launch binding");
+    requireValue(Array.isArray(files), "collected result files required");
+    const results = files.filter(f => f.path === "result.json");
+    requireValue(results.length === 1, "exactly one collected result file required");
+    const file = results[0];
+    requireValue(Buffer.isBuffer(file.bytes) && file.bytes.length <= 16 * 1024 * 1024 && file.size === file.bytes.length,
+        "invalid result file size");
+    requireValue(hash(file.bytes) === file.sha256, "collected result digest mismatch");
+    const payload = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(file.bytes));
+    requireValue(payload && Object.keys(payload).sort().join(" ") === "imageDigest launchId result schemaVersion unitDigest" &&
+        payload.schemaVersion === 1 && ["imageDigest", "launchId", "unitDigest"].every(k => payload[k] === launch[k]),
+    "worker output launch binding mismatch");
+    requireValue(payload.result && Object.getPrototypeOf(payload.result) === Object.prototype, "invalid worker output schema");
+    fingerprint(payload.result);
+    validateOutcome(payload.result.outcome);
+    return payload.result;
+}
+
+module.exports = { validateExecutionUnit, runExecutionUnit, readExecutionOutput };

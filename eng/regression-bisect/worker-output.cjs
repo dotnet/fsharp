@@ -1,0 +1,104 @@
+const { validateRepositoryPath } = require("./model.cjs");
+const { hash, requireValue } = require("./toolchain-io.cjs");
+
+const MAX_FILE_BYTES = 16 * 1024 * 1024;
+const MAX_TOTAL_BYTES = 64 * 1024 * 1024;
+const padded = size => Math.ceil(size / 512) * 512;
+
+// Only the uncompressed, regular-file USTAR subset is accepted. Nothing is extracted.
+async function collectWorkerArchive(stream, files, { signal, timeoutMs = 300000 } = {}) {
+    requireValue(Number.isSafeInteger(timeoutMs) && timeoutMs > 0 && timeoutMs <= 300000, "invalid archive timeout");
+    signal = AbortSignal.any([AbortSignal.timeout(timeoutMs), ...(signal ? [signal] : [])]);
+    requireValue(Array.isArray(files) && files.length > 0 && files.length <= 64, "expected 1..64 worker files");
+    const expected = new Map();
+    let limit = 10240;
+    let total = 0;
+    for (const file of files) {
+        requireValue(file && Object.keys(file).sort().join(" ") === "path sha256 size", "unexpected worker file fields");
+        validateRepositoryPath(file.path);
+        requireValue(typeof file.sha256 === "string" && /^[a-f0-9]{64}$/.test(file.sha256), "invalid expected file digest");
+        requireValue(Number.isSafeInteger(file.size) && file.size >= 0 && file.size <= MAX_FILE_BYTES, "invalid expected file size");
+        const key = file.path.toLowerCase();
+        requireValue(!expected.has(key), "duplicate expected worker file");
+        expected.set(key, { ...file });
+        total += file.size;
+        limit += 512 + padded(file.size);
+    }
+    requireValue(total <= MAX_TOTAL_BYTES, "expected worker files exceed total size limit");
+    requireValue(stream && typeof stream[Symbol.asyncIterator] === "function" && typeof stream.destroy === "function",
+        "bounded worker archive stream required");
+    const chunks = [];
+    let length = 0;
+    const abort = () => stream.destroy(signal.reason);
+    try {
+        signal.throwIfAborted();
+        signal.addEventListener("abort", abort, { once: true });
+        for await (const chunk of stream) {
+            signal.throwIfAborted();
+            requireValue(Buffer.isBuffer(chunk), "worker archive must contain raw bytes");
+            length += chunk.length;
+            requireValue(length <= limit, "worker archive exceeds byte limit");
+            chunks.push(Buffer.from(chunk));
+        }
+    } finally {
+        signal.removeEventListener("abort", abort);
+        stream.destroy();
+    }
+    signal.throwIfAborted();
+    const archive = Buffer.concat(chunks, length);
+    requireValue(length >= 1024 && length % 512 === 0, "truncated worker archive");
+    const result = [];
+    const seen = new Set();
+    let offset = 0;
+    let terminated = false;
+    const string = bytes => {
+        const end = bytes.indexOf(0);
+        requireValue(bytes.every(b => b < 128) && (end < 0 || bytes.subarray(end).every(b => b === 0)),
+            "invalid archive header name or padding");
+        return bytes.subarray(0, end < 0 ? bytes.length : end).toString("ascii");
+    };
+    const number = bytes => {
+        requireValue(bytes.every(b => b < 128) && /^ *[0-7]+[\0 ]*$/.test(bytes.toString("ascii")), "invalid archive header number");
+        const value = parseInt(bytes.toString("ascii"), 8);
+        requireValue(Number.isSafeInteger(value), "invalid archive header number");
+        return value;
+    };
+    while (offset < length) {
+        const header = archive.subarray(offset, offset + 512);
+        if (header.every(b => b === 0)) {
+            requireValue(length - offset >= 1024 && archive.subarray(offset).every(b => b === 0),
+                "invalid archive terminator or trailing padding");
+            terminated = true;
+            break;
+        }
+        const checksum = number(header.subarray(148, 156));
+        requireValue(header.reduce((sum, b, i) => sum + (i >= 148 && i < 156 ? 32 : b), 0) === checksum,
+            "archive header checksum mismatch");
+        requireValue(header.subarray(257, 265).equals(Buffer.from("ustar\0" + "00")) &&
+            header.subarray(500).every(b => b === 0), "unsupported archive header");
+        requireValue(header[156] === 48 || header[156] === 0, "worker archive entry must be a regular file");
+        requireValue(header.subarray(157, 257).every(b => b === 0), "archive link destination forbidden");
+        const name = string(header.subarray(0, 100));
+        const prefix = string(header.subarray(345, 500));
+        const filePath = prefix ? `${prefix}/${name}` : name;
+        validateRepositoryPath(filePath);
+        const file = expected.get(filePath.toLowerCase());
+        requireValue(file?.path === filePath, "unexpected worker archive entry");
+        requireValue(!seen.has(filePath), "duplicate worker archive entry");
+        seen.add(filePath);
+        const size = number(header.subarray(124, 136));
+        requireValue(size === file.size, "worker archive file size mismatch");
+        offset += 512;
+        requireValue(offset + padded(size) <= length, "truncated worker archive file");
+        const bytes = archive.subarray(offset, offset + size);
+        requireValue(archive.subarray(offset + size, offset + padded(size)).every(b => b === 0), "invalid archive data padding");
+        requireValue(hash(bytes) === file.sha256, "worker archive file digest mismatch");
+        result.push({ ...file, bytes: Buffer.from(bytes) });
+        offset += padded(size);
+    }
+    requireValue(terminated, "missing worker archive terminator");
+    requireValue(result.length === expected.size, "missing worker archive files");
+    return result;
+}
+
+module.exports = { collectWorkerArchive };

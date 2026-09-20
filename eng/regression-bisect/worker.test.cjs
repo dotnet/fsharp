@@ -4,7 +4,7 @@ const f = require("./fixtures/contracts.cjs");
 const state = require("./state.cjs");
 const engine = require("./engine.cjs");
 const { fixture } = require("./fixtures/execution.cjs");
-const { validateExecutionUnit, runExecutionUnit } = require("./worker.cjs");
+const { validateExecutionUnit, runExecutionUnit, readExecutionOutput } = require("./worker.cjs");
 
 test("isolated execution receives only public data after the authenticated durable claim", async () => {
     const { h, deps } = await fixture();
@@ -95,4 +95,55 @@ test("the worker rejects malformed public units and changed helper policy before
         await assert.rejects(runExecutionUnit(changed, { ...deps, policy: h.context.policy,
             worker: { storageDirectory: "unused" } }), /invalid|mismatch|deadline|manifest|unit|command/);
     });
+});
+
+test("data-only collection binds stopped-worker output to the trusted launch and exact execution unit", async t => {
+    const { h, deps } = await fixture();
+    const work = await engine.advanceInvestigation({ now: h.context.now }, deps);
+    let unit;
+    deps.runIsolated = async value => { unit = value; throw new Error("capture"); };
+    deps.collectObservation = async () => assert.fail("no worker result");
+    await assert.rejects(engine.executeInvestigationWork(work, deps), /capture/);
+    const { fingerprintInput } = require("./model.cjs");
+    const { createHash } = require("node:crypto");
+    const launch = { launchId: "a".repeat(64), imageDigest: f.digest("runner image"), unitDigest: fingerprintInput(unit) };
+    const payload = {
+        schemaVersion: 1, ...launch,
+        result: { outcome: { schemaVersion: 1, outcome: "untestable", reason: "setup-failure" }, cells: [] },
+    };
+    const file = value => {
+        const bytes = Buffer.from(JSON.stringify(value));
+        return { path: "result.json", bytes, size: bytes.length, sha256: createHash("sha256").update(bytes).digest("hex") };
+    };
+    assert.deepEqual(readExecutionOutput([file(payload)], unit, launch), payload.result);
+    const changes = {
+        "worker-selected launch": p => { p.launchId = "b".repeat(64); },
+        "forged image": p => { p.imageDigest = "c".repeat(64); },
+        "another work, issue or epoch": p => { p.unitDigest = "d".repeat(64); },
+        "child verified flag": p => { p.verified = true; },
+        "child observation": p => { p.observation = f.observation("released", "pass"); },
+        "report target": p => { p.issueNumber = 999; },
+        "invalid outcome": p => { p.result.outcome.outcome = "green"; },
+        "null result": p => { p.result = null; },
+    };
+    for (const [name, mutate] of Object.entries(changes)) await t.test(name, () => {
+        const changed = structuredClone(payload);
+        mutate(changed);
+        assert.throws(() => readExecutionOutput([file(changed)], unit, launch), /launch|output|outcome|schema/);
+    });
+    for (const key of ["issueNumber", "epoch", "buildInstanceId", "environmentFingerprint"]) await t.test(key, () => {
+        const changed = structuredClone(unit);
+        changed[key] = key === "issueNumber" ? unit.issueNumber + 1 : "e".repeat(64);
+        assert.throws(() => readExecutionOutput([file(payload)], changed, launch), /launch|identity/);
+    });
+    const valid = file(payload);
+    const large = structuredClone(payload);
+    large.result.cells = [{ stdout: "a".repeat(65536) }];
+    assert.deepEqual(readExecutionOutput([file(large)], unit, launch), large.result);
+    assert.throws(() => readExecutionOutput([valid, valid], unit, launch), /result file/);
+    assert.throws(() => readExecutionOutput([], unit, launch), /result file/);
+    assert.throws(() => readExecutionOutput([{ ...valid, sha256: "f".repeat(64) }], unit, launch), /digest/);
+    assert.throws(() => readExecutionOutput([{ ...valid, bytes: Buffer.alloc(16 * 1024 * 1024 + 1) }], unit, launch), /size/);
+    assert.throws(() => readExecutionOutput([file(payload)], unit, { ...launch, verified: true }), /launch/);
+    assert.throws(() => readExecutionOutput([file(payload)], unit, { ...launch, imageDigest: "g".repeat(64) }), /launch/);
 });

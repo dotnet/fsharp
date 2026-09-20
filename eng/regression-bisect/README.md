@@ -49,7 +49,7 @@ to replace that context.
 
 ## JSON contracts and exports
 
-All records use `schemaVersion: 1`. Validators return `true` or throw a
+All records use `schemaVersion: 1`. Record validators return `true` or throw a
 path-qualified error. Unknown or missing fields, unsupported versions, and
 malformed identities are rejected. `classifyAttempts` instead maps incomplete
 attempt evidence to an explicit `untestable` outcome; `admitBisection` returns
@@ -63,6 +63,7 @@ returns `toolchainTransitions` for coupled compiler/toolchain attribution.
 | --- | --- |
 | `isEligibleIssue(issue)` | Boolean selection using the issues API's `state`, `created_at`, `labels`, and absence of `pull_request`. Dates must have an explicit timezone and valid calendar components. |
 | `validatePolicy(policy)` | Exact agreement with the trusted policy, including accounting rules and finite positive integer limits. |
+| `validateRepositoryPath(path)` | The same bounded portable repository-relative path check used by manifests and worker transfers; rejects traversal, absolute/UNC/device paths, alternate streams and encoded paths. |
 | `validateManifest(manifest)` | Frozen repository/issue, discussion fingerprint, reproduction kind, reviewed source hashes, exact positive/failure assertions, matrix, timeout, pinned producer/packages, search hints, and approved-input digest. |
 | `fingerprintInput(json)` | SHA-256 of canonical JSON: sorted object keys, preserved array order and string bytes. Rejects non-JSON values. It never removes comments based on markers, authors, or claimed authentication. |
 | `classifyAttempts(attempts, manifest)` | Checks both required repetitions against the frozen assertions and all setup/identity checks. Returns a versioned outcome with an explicit reason. |
@@ -476,14 +477,65 @@ The extraction does not alter historical `global.json`, install policy,
 producer bytes, FSI selection or project identity verification.
 
 **Deployment is blocked.** The execution unit is public data, not an
-authenticated launch receipt or permission to execute it. This directory does
-not yet supply a production containment adapter, safe result-file collector,
+authenticated launch receipt or permission to execute it. The bounded archive
+reader below provides data-only collection, not a production containment adapter
+or an authenticating observation collector. This directory does not supply a
 GitHub transport/approval bootstrap CLI, scheduled workflow or
 `containment.smoke.cjs`. The transaction tests use fake transports and runner
 callbacks and therefore do not prove confinement. Do not implement
 `runIsolated` as an in-process callback, stripped environment or ordinary
 credentialed subprocess in production. No workflow or secret names are
 configured by this library.
+
+### Data-only worker output
+
+`worker-output.collectWorkerArchive(stream, files, { signal, timeoutMs })`
+reads an **uncompressed regular-file USTAR stream**, without extraction, imports,
+inventory probes or execution. `files` is a fixed list of
+`{ path, sha256, size }` expectations supplied by the trusted adapter, not an
+instruction to read arbitrary worker paths. It returns the same descriptors
+with independently hashed `bytes`. Limits are 64 files, 16 MiB per file,
+64 MiB total content and five minutes for transfer; `timeoutMs` can only lower
+the deadline. The stream byte cap includes headers, block alignment and bounded
+tar record padding. Abort, timeout and transport failures destroy the input and
+return no partial collection.
+
+Every expected file must occur exactly once, with an exact case-sensitive name,
+size and SHA-256. Case aliases, traversal, links, device entries, extended/PAX/GNU
+headers, compressed archives, nonzero padding and truncated streams are rejected.
+USTAR prefix fields support longer safe relative paths. No archive name is ever
+passed to a filesystem API, so a link or reparse point cannot redirect collection
+to the credentialed host. A producer must transfer regular files only, not a
+directory entry or an archive format that needs path overrides.
+
+`worker.readExecutionOutput(files, unit, launch)` then reads only `result.json`
+as bounded, strictly decoded UTF-8 JSON. The trusted adapter retains
+`launch = { launchId, imageDigest, unitDigest }`, each a 64-character lowercase
+hex identity, where `unitDigest = fingerprintInput(unit)`. The JSON must contain
+exactly `{ schemaVersion: 1, ...launch, result }`. The entire public execution
+unit is bound, including repository, issue, work/build ID, epoch, source or
+released target, matrix, deadline and policy/workflow/environment identities.
+Extra envelope fields, including `verified`, observation provenance or a report
+destination, are rejected. `result` remains untrusted runner data; its outcome
+shape is checked, but its identities and assertions still require the existing
+trusted observation collector and engine checks. The 16 MiB raw JSON cap does
+not change the signed checkpoint's separate 48 KiB cap.
+
+The adapter must establish the launch/image from the actual runtime, terminate
+the child and all descendants, and obtain the complete fixed transfer before
+calling these readers. Matching worker-reported hashes or launch IDs is
+**binding, not authentication**. Neither reader signs observations, accepts a
+child's `verified` flag as authority, proves process termination, persists
+required evidence, or grants publication capability. They cannot replace a
+containment adapter or its trusted collection provenance.
+
+The focused data-transfer checks, including the platform's real `tar` producer,
+run with:
+
+```powershell
+node --test eng\regression-bisect\worker-output.test.cjs eng\regression-bisect\worker.test.cjs
+if ($LASTEXITCODE -ne 0) { throw 'Worker transfer tests failed' }
+```
 
 ### Fixed-slot guarded publication
 
