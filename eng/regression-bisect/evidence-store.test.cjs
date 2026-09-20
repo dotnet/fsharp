@@ -273,6 +273,8 @@ async function actionsFixture(t) {
 test("Actions uses the concrete create, signed ZIP upload, finalize, authenticated read protocol", async t => {
     const { store, state, config, send } = await actionsFixture(t);
     const record = await store.writeEvidence(payload, binding);
+    assert.ok(state.calls.every(c => c.options.signal === state.calls[0].options.signal),
+        "every write request must share the original deadline");
     assert.deepEqual(await store.readEvidence(record.url), payload);
     assert.deepEqual(await createActionsEvidenceStore(config, { send }).writeEvidence(payload, binding), record);
     assert.equal(state.calls.filter(c => c.url.endsWith("/CreateArtifact")).length, 1);
@@ -685,7 +687,7 @@ for (const stalledOperation of ["source", "open", "writeFile", "sync", "close", 
 
 for (const lane of ["evidence", "blob"])
 for (const fault of ["rename-before", "rename-after", "verification", "cleanup", "failed-rename-cleanup", "replay-cleanup"])
-test(`file ${lane} post-staging deadline bounds ${fault} without late acceptance`, { timeout: 5000 }, async t => {
+test(`file ${lane} post-staging deadline preserves a fresh-process retry before late ${fault} completion`, { timeout: 10000 }, async t => {
     const { config, store } = await fixture(t);
     const write = store => lane === "blob" ? store.writeBlob(Readable.from([payload]), approved())
         : store.writeEvidence(payload, binding);
@@ -696,7 +698,7 @@ test(`file ${lane} post-staging deadline bounds ${fault} without late acceptance
     const stalled = new Promise(resolve => { release = resolve; });
     const cleanup = new Promise(resolve => { cleaned = resolve; });
     const pause = async () => { entered(); await stalled; };
-    const rename = fs.rename, rm = fs.rm, open = fs.open;
+    const rename = fs.rename, rm = fs.rm, open = fs.open, removals = [];
     t.mock.method(fs, "rename", async (...args) => {
         if (fault === "rename-before") await pause();
         if (fault === "failed-rename-cleanup") throw new Error("lost rename");
@@ -710,17 +712,35 @@ test(`file ${lane} post-staging deadline bounds ${fault} without late acceptance
     });
     t.mock.method(fs, "rm", async (file, ...args) => {
         if (fault.endsWith("cleanup") && path.basename(file).startsWith(".upload-")) await pause();
-        await rm(file, ...args);
-        if (file.endsWith(".bin") || !published) cleaned();
+        const removal = rm(file, ...args);
+        removals.push(removal);
+        await removal;
+        setImmediate(cleaned);
     });
     const outcome = write(createFileEvidenceStore({ ...config, timeoutMs: 100 }))
         .then(() => "accepted", error => error.name);
-    let timer, result;
+    let timer, result, record;
     try {
         await reached;
         expire();
         result = await Promise.race([outcome,
             new Promise(resolve => { timer = setTimeout(resolve, 500, "deadline missed"); })]);
+        assert.equal(result, "TimeoutError");
+        const { stdout } = await promisify(execFile)(process.execPath, ["-e", `
+            const {Readable}=require("node:stream");
+            const store=require(${JSON.stringify(path.join(__dirname, "evidence-store.cjs"))})
+                .createFileEvidenceStore(${JSON.stringify(config)});
+            (async()=>{
+                const record=await store${lane === "blob"
+                    ? `.writeBlob(Readable.from([Buffer.from(${JSON.stringify(payload.toString())})]),${JSON.stringify(approved())})`
+                    : `.writeEvidence(Buffer.from(${JSON.stringify(payload.toString())}),${JSON.stringify(binding)})`};
+                process.stdout.write(JSON.stringify({record, verified: await store.verifyEvidence(record.url)}));
+            })().catch(e=>{console.error(e);process.exit(5)});
+        `], { timeout: 5000 });
+        const replay = JSON.parse(stdout);
+        record = replay.record;
+        assert.deepEqual(replay.verified, { bytes: payload.length, sha256: hash(payload), sha512: hash(payload, "sha512") });
+        if (existing) assert.deepEqual(record, existing);
     } finally {
         clearTimeout(timer);
         release();
@@ -733,23 +753,77 @@ test(`file ${lane} post-staging deadline bounds ${fault} without late acceptance
         assert.equal(await Promise.race([cleanup.then(() => "cleaned"),
             new Promise(resolve => { timer = setTimeout(resolve, 500, "cleanup missed"); })]), "cleaned");
     } finally { clearTimeout(timer); }
+    await Promise.all(removals);
     t.mock.restoreAll();
     const files = (await fs.readdir(config.directory)).filter(n => !n.startsWith("quota-"));
-    assert.equal(files.length, existing ? 1 : 0, "only previously accepted objects may survive rollback");
-    if (existing) assert.equal((await store.verifyEvidence(existing.url)).sha256, hash(payload));
-    const { stdout } = await promisify(execFile)(process.execPath, ["-e", `
-        const {Readable}=require("node:stream");
-        const store=require(${JSON.stringify(path.join(__dirname, "evidence-store.cjs"))})
-            .createFileEvidenceStore(${JSON.stringify(config)});
-        (async()=>{
-            const record=await store${lane === "blob"
-                ? `.writeBlob(Readable.from([Buffer.from(${JSON.stringify(payload.toString())})]),${JSON.stringify(approved())})`
-                : `.writeEvidence(Buffer.from(${JSON.stringify(payload.toString())}),${JSON.stringify(binding)})`};
-            process.stdout.write(JSON.stringify(await store.verifyEvidence(record.url)));
-        })().catch(e=>{console.error(e);process.exit(5)});
-    `]);
-    assert.deepEqual(JSON.parse(stdout), { bytes: payload.length, sha256: hash(payload), sha512: hash(payload, "sha512") });
+    assert.equal(files.length, 1, "late cleanup must preserve the acknowledged retry");
+    assert.deepEqual(await store.verifyEvidence(record.url),
+        { bytes: payload.length, sha256: hash(payload), sha512: hash(payload, "sha512") });
     t.diagnostic(JSON.stringify({ lane, fault, result, bytes: payload.length, sha256: hash(payload), realLaunches: 0 }));
+});
+
+for (const lane of ["evidence", "blob"])
+for (const fault of ["open", "stat", "read", "close", "failed-stat-close", "cleanup", "replay-cleanup"])
+test(`Actions ${lane} post-staging deadline bounds ${fault}`, { timeout: 5000 }, async t => {
+    const { config, store, state, send } = await actionsFixture(t);
+    const write = store => lane === "blob" ? store.writeBlob(Readable.from([payload]), approved())
+        : store.writeEvidence(payload, binding);
+    const existing = fault === "replay-cleanup" ? await write(store) : null;
+    const expire = deadlineAtFault(t);
+    let entered, release, cleaned, stream;
+    const reached = new Promise(resolve => { entered = resolve; });
+    const stalled = new Promise(resolve => { release = resolve; });
+    const cleanup = new Promise(resolve => { cleaned = resolve; });
+    const pause = async () => { entered(); await stalled; };
+    const open = fs.open, rm = fs.rm;
+    t.mock.method(fs, "open", async (...args) => {
+        if (!path.basename(args[0]).startsWith(".upload-") || args[1] === "wx") return open(...args);
+        if (fault === "open") await pause();
+        const handle = await open(...args), stat = handle.stat.bind(handle), close = handle.close.bind(handle);
+        t.mock.method(handle, "stat", async () => {
+            if (fault === "stat") await pause();
+            if (fault === "failed-stat-close") throw new Error("lost ZIP stat");
+            return stat();
+        });
+        t.mock.method(handle, "close", async () => {
+            if (["close", "failed-stat-close"].includes(fault)) await pause();
+            return close();
+        });
+        if (fault === "read") t.mock.method(handle, "createReadStream", () => {
+            stream = Readable.from((async function* () { await pause(); yield payload; })());
+            return stream;
+        });
+        return handle;
+    });
+    t.mock.method(fs, "rm", async (...args) => {
+        if (fault.endsWith("cleanup")) await pause();
+        await rm(...args); cleaned();
+    });
+    const outcome = write(createActionsEvidenceStore({ ...config, timeoutMs: 100 }, { send }))
+        .then(() => "accepted", error => error.name);
+    let timer, result, calls;
+    try {
+        await reached;
+        expire();
+        result = await Promise.race([outcome,
+            new Promise(resolve => { timer = setTimeout(resolve, 500, "deadline missed"); })]);
+        calls = state.calls.length;
+    } finally {
+        clearTimeout(timer);
+        release();
+        await outcome;
+        await cleanup;
+    }
+    assert.equal(result, "TimeoutError");
+    assert.equal(await outcome, "TimeoutError");
+    assert.equal(state.calls.length, calls, "expired hashing must not start artifact publication");
+    if (stream) assert.equal(stream.destroyed, true);
+    t.mock.restoreAll();
+    assert.deepEqual((await fs.readdir(config.directory)).filter(n => !n.startsWith("quota-")), []);
+    const replay = await write(store);
+    if (existing) assert.deepEqual(replay, existing);
+    assert.equal((await store.verifyEvidence(replay.url)).sha256, hash(payload));
+    assert.equal(state.calls.filter(c => c.options.method === "PUT").length, 1);
 });
 
 for (const target of ["blob", "metadata"])

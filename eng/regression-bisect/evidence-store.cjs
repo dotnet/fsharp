@@ -2,7 +2,7 @@ const { createHash, randomUUID } = require("node:crypto");
 const fs = require("node:fs/promises");
 const { constants } = require("node:fs");
 const path = require("node:path");
-const { Readable } = require("node:stream");
+const { Readable, addAbortSignal } = require("node:stream");
 const { validateArchiveReceipt } = require("./archive-provenance.cjs");
 const { fingerprintInput } = require("./model.cjs");
 const { requireValue, boundedWait } = require("./toolchain-io.cjs");
@@ -277,23 +277,18 @@ function createFileEvidenceStore(config) {
         const artifactId = (BigInt(`0x${hash(provisional.name).slice(0, 15)}`) + 1n).toString();
         const record = reference(c, info, artifactId);
         const stored = parseReference(record.url, c);
-        let published = false, complete = false;
+        // Shared content-addressed bytes may already be acknowledged by a retry
+        // after this writer times out. Only its unique staging file is disposable.
         try {
-            try {
-                // The whole-issue lock protects this check/rename. Only this write's
-                // newly published object may be rolled back after late filesystem I/O.
-                if (await readFile(stored, undefined, signal) === null) {
-                    signal.throwIfAborted();
-                    await fs.rename(info.file, stored.file);
-                    published = true;
-                }
+            if (await readFile(stored, undefined, signal) === null) {
                 signal.throwIfAborted();
-                requireValue(await readFile(stored, undefined, signal) !== null, "published evidence disappeared");
-            } finally { await fs.rm(info.file, { force: true }); }
+                await fs.rename(info.file, stored.file);
+            }
             signal.throwIfAborted();
-            complete = true;
-            return record;
-        } finally { if (published && !complete) await fs.rm(stored.file, { force: true }); }
+            requireValue(await readFile(stored, undefined, signal) !== null, "published evidence disappeared");
+        } finally { await fs.rm(info.file, { force: true }); }
+        signal.throwIfAborted();
+        return record;
     };
     const write = (source, binding, blob) => {
         const signal = AbortSignal.timeout(c.timeoutMs);
@@ -342,11 +337,17 @@ function zipParts(size, crc) {
     return { header, tail };
 }
 
-async function* zipStream(info) {
+async function* zipStream(info, signal) {
     const { header, tail } = zipParts(info.bytes, info.crc);
+    signal.throwIfAborted();
     const handle = await openRegular(info.file);
-    try { yield header; yield* handle.createReadStream({ autoClose: false }); yield tail; }
-    finally { await handle.close(); }
+    let stream;
+    try {
+        signal.throwIfAborted();
+        stream = addAbortSignal(signal, handle.createReadStream({ autoClose: false }));
+        yield header; yield* stream; yield tail;
+    } finally { stream?.destroy(); await handle.close(); }
+    signal.throwIfAborted();
 }
 
 async function* unzip(stream, info, zipDigest) {
@@ -391,9 +392,12 @@ function createActionsEvidenceStore(config, { send = fetch } = {}) {
     const auth = { Authorization: `Bearer ${c.token}`, Accept: "application/vnd.github+json",
         "X-GitHub-Api-Version": "2022-11-28" };
     const request = async (url, options = {}) => {
-        const response = await send(url, { redirect: "manual", signal: AbortSignal.timeout(c.timeoutMs),
-            ...options, headers: { "User-Agent": "dotnet-fsharp-regression-controller", "Accept-Encoding": "identity", ...options.headers } });
+        const signal = options.signal ?? AbortSignal.timeout(c.timeoutMs);
+        signal.throwIfAborted();
+        const response = await send(url, { redirect: "manual", ...options, signal,
+            headers: { "User-Agent": "dotnet-fsharp-regression-controller", "Accept-Encoding": "identity", ...options.headers } });
         try {
+            signal.throwIfAborted();
             requireValue(!response.redirected && (!response.url || response.url === url), "unexpected artifact response redirect");
             return response;
         } catch (error) { await close(response); throw error; }
@@ -401,8 +405,9 @@ function createActionsEvidenceStore(config, { send = fetch } = {}) {
     const close = async response => {
         if (response.body && !response.body.locked) await response.body.cancel();
     };
-    const json = async response => {
+    const json = async (response, signal = AbortSignal.timeout(c.timeoutMs)) => {
         try {
+            signal.throwIfAborted();
             requireValue(response.status === 200 && [null, "identity"].includes(response.headers.get("content-encoding")),
                 `artifact metadata request failed (${response.status})`);
             const chunks = [];
@@ -413,25 +418,25 @@ function createActionsEvidenceStore(config, { send = fetch } = {}) {
             const raw = Readable.fromWeb(response.body);
             let length;
             try {
-                length = await consume(raw, 1024 * 1024, chunk => chunks.push(Buffer.from(chunk)), AbortSignal.timeout(c.timeoutMs));
+                length = await consume(raw, 1024 * 1024, chunk => chunks.push(Buffer.from(chunk)), signal);
             } finally { raw.destroy(); }
             requireValue(declared === null || length === Number(declared), "artifact metadata content length mismatch");
             return JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(Buffer.concat(chunks)));
         } finally { await close(response); }
     };
-    const run = async info => {
-        const data = await json(await request(`${apiBase}/actions/runs/${info.runId}/attempts/${info.attempt}`, { headers: auth }));
+    const run = async (info, signal) => {
+        const data = await json(await request(`${apiBase}/actions/runs/${info.runId}/attempts/${info.attempt}`, { headers: auth, signal }), signal);
         requireValue(String(data.id) === info.runId && data.run_attempt === info.attempt &&
             data.repository?.full_name === c.repository && data.head_repository?.full_name === c.repository &&
             Number.isSafeInteger(data.repository.id) && data.repository.id > 0 &&
             data.head_repository.id === data.repository.id, "artifact workflow run identity mismatch");
         return data;
     };
-    const metadata = async info => {
-        const owner = await run(info);
-        const response = await request(`${apiBase}/actions/artifacts/${info.artifactId}`, { headers: auth });
+    const metadata = async (info, signal) => {
+        const owner = await run(info, signal);
+        const response = await request(`${apiBase}/actions/artifacts/${info.artifactId}`, { headers: auth, signal });
         if ([404, 410].includes(response.status)) { await close(response); return null; }
-        const data = await json(response);
+        const data = await json(response, signal);
         requireValue(String(data.id) === info.artifactId && data.name === info.name &&
             String(data.workflow_run?.id) === info.runId && data.workflow_run.repository_id === owner.repository.id &&
             data.workflow_run.head_repository_id === owner.repository.id &&
@@ -467,7 +472,7 @@ function createActionsEvidenceStore(config, { send = fetch } = {}) {
             finally { raw.destroy(); }
         } finally { await close(response); }
     };
-    const write = async (source, binding, blob) => {
+    const writeFile = async (source, binding, blob, signal) => {
         requireValue((c.resultsUrl ?? RESULTS) === RESULTS || c.resultsUrl === `${RESULTS}/`, "forbidden Actions results authority");
         requireValue(typeof c.runtimeToken === "string" && c.runtimeToken.length < 32768 && !/\s/.test(c.runtimeToken),
             "trusted Actions runtime credential required");
@@ -476,26 +481,26 @@ function createActionsEvidenceStore(config, { send = fetch } = {}) {
         requireValue(scopes.length === 1 && /^Actions\.Results:[a-f0-9-]{36}:[a-f0-9-]{36}$/.test(scopes[0]),
             "invalid Actions runtime backend binding");
         const [, workflowRunBackendId, workflowJobRunBackendId] = scopes[0].split(":");
-        await run(c);
-        const info = await stage(c, source, binding, blob);
+        await run(c, signal);
+        const info = await stage(c, source, binding, blob, signal);
         const name = parseReference(reference(c, info, "1").url, c).name;
         const rpc = async (method, fields) => json(await request(`${RESULTS}/twirp/github.actions.results.api.v1.ArtifactService/${method}`,
-            { method: "POST", headers: { Authorization: `Bearer ${c.runtimeToken}`, "Content-Type": "application/json" },
+            { method: "POST", signal, headers: { Authorization: `Bearer ${c.runtimeToken}`, "Content-Type": "application/json" },
                 body: JSON.stringify({ workflow_run_backend_id: workflowRunBackendId,
-                    workflow_job_run_backend_id: workflowJobRunBackendId, name, ...fields }) }));
+                    workflow_job_run_backend_id: workflowJobRunBackendId, name, ...fields }) }), signal);
         try {
             const zipHash = createHash("sha256");
-            for await (const chunk of zipStream(info)) zipHash.update(chunk);
+            for await (const chunk of zipStream(info, signal)) zipHash.update(chunk);
             const zipDigest = zipHash.digest("hex");
             const existing = await json(await request(`${apiBase}/actions/runs/${c.runId}/artifacts?name=${name}&per_page=100`,
-                { headers: auth }));
+                { headers: auth, signal }), signal);
             requireValue(Number.isSafeInteger(existing.total_count) && existing.total_count >= 0 && existing.total_count <= 1 &&
                 Array.isArray(existing.artifacts) && existing.artifacts.length === existing.total_count,
             "ambiguous artifact replay identity");
             if (existing.total_count === 1) {
                 requireValue(id(String(existing.artifacts[0].id)), "invalid replay artifact identity");
                 const record = reference(c, info, String(existing.artifacts[0].id));
-                const stored = await metadata(parseReference(record.url, c));
+                const stored = await metadata(parseReference(record.url, c), signal);
                 requireValue(stored?.digest === `sha256:${zipDigest}`, "replayed artifact expired or digest mismatch");
                 return record;
             }
@@ -503,10 +508,10 @@ function createActionsEvidenceStore(config, { send = fetch } = {}) {
                 expires_at: new Date(Date.now() + 90 * 86400000).toISOString() });
             requireValue(created.ok === true, "artifact creation failed");
             const url = signedBlobUrl(created.signedUploadUrl ?? created.signed_upload_url);
-            const upload = Readable.from(zipStream(info));
+            const upload = Readable.from(zipStream(info, signal));
             let response;
             try {
-                response = await request(url, { method: "PUT", duplex: "half", body: upload, headers: {
+                response = await request(url, { method: "PUT", signal, duplex: "half", body: upload, headers: {
                     "x-ms-blob-type": "BlockBlob", "x-ms-version": "2023-11-03",
                     "Content-Type": "application/zip", "Content-Length": String(info.bytes + 122),
                 } });
@@ -516,10 +521,14 @@ function createActionsEvidenceStore(config, { send = fetch } = {}) {
             const artifactId = finalized.artifactId ?? finalized.artifact_id;
             requireValue(finalized.ok === true && id(artifactId), "artifact finalization identity missing");
             const record = reference(c, info, artifactId);
-            const stored = await metadata(parseReference(record.url, c));
+            const stored = await metadata(parseReference(record.url, c), signal);
             requireValue(stored?.digest === `sha256:${zipDigest}`, "uploaded artifact metadata digest mismatch");
             return record;
-        } finally { await fs.rm(info.file, { force: true }); }
+        } finally { await fs.rm(info.file, { force: true }); signal.throwIfAborted(); }
+    };
+    const write = (source, binding, blob) => {
+        const signal = AbortSignal.timeout(c.timeoutMs);
+        return boundedWait(writeFile(source, binding, blob, signal), signal).finally(() => source?.destroy?.());
     };
     return { ...readers(c, read),
         async findEvidence(query) {
@@ -550,9 +559,8 @@ function createActionsEvidenceStore(config, { send = fetch } = {}) {
             }
             return result;
         },
-        writeEvidence: (bytes, binding) => write(bytes, binding).finally(() => bytes?.destroy?.()),
-        writeBlob: (bytes, { binding, request, receipt }) => write(bytes, binding, { request, receipt })
-            .finally(() => bytes?.destroy?.()) };
+        writeEvidence: (bytes, binding) => write(bytes, binding),
+        writeBlob: (bytes, { binding, request, receipt }) => write(bytes, binding, { request, receipt }) };
 }
 
 module.exports = { createFileEvidenceStore, createActionsEvidenceStore, validateEvidenceUrl, isControlledEvidenceUrl };

@@ -739,8 +739,13 @@ deadline across directory enumeration and all candidate reads. Late filesystem
 completion cannot turn a timeout into successful verification or absence.
 File writes share one deadline across staging, replay checks, atomic publication,
 verification and staging cleanup. Expiry rejects without waiting for stalled
-filesystem calls; once they settle, a newly published object is rolled back.
-An already accepted replay object is never removed by that rollback.
+filesystem calls. Once publication has started, complete content-addressed bytes
+may survive a timeout, just as they survive process loss. Cleanup removes only
+the writer's unique staging file, never a shared object that a retry may already
+have acknowledged. Retries independently verify retained bytes before reuse.
+Actions writes likewise share one deadline through ZIP hashing (including open,
+stat, streaming and close), upload, finalization, verification and staging cleanup.
+Late hashing completion cannot start publication or acknowledge an expired write.
 Download-time 404/410 responses require authenticated metadata confirmation
 before becoming absence; a missing signed blob alone is not that confirmation.
 If artifact finalization succeeds but its response is lost, a new store instance
