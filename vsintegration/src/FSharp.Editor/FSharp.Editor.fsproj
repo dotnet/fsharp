@@ -31,8 +31,6 @@
     <Compile Include="Common\DocumentCache.fs" />
     <Compile Include="$(MSBuildThisFileDirectory)..\..\..\src\LegacyMSBuildResolver\LegacyMSBuildReferenceResolver.fsi" />
     <Compile Include="$(MSBuildThisFileDirectory)..\..\..\src\LegacyMSBuildResolver\LegacyMSBuildReferenceResolver.fs" />
-    <Compile Include="$(MSBuildThisFileDirectory)..\..\..\src\Compiler\Utilities\illib.fsi" />
-    <Compile Include="$(MSBuildThisFileDirectory)..\..\..\src\Compiler\Utilities\illib.fs" />
     <Compile Include="Common\AssemblyInfo.fs" />
     <Compile Include="Common\Logger.fsi" />
     <Compile Include="Common\Logger.fs" />
