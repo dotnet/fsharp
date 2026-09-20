@@ -249,6 +249,9 @@ type internal InteractiveHostClient(clientProcessId: int) =
 
         addSwitch "--nologo"
         addSwitch $"{CommandLine.ServerOption}{pipeName}"
+        // How the host names itself: a session whose host dies, even before the handshake, exits instead of
+        // waiting on the pipe forever.
+        addSwitch $"--fsi-server-client-pid:{clientProcessId}"
         addSwitch $"--fsi-server-output-codepage:{Encoding.UTF8.CodePage}"
         addSwitch $"--fsi-server-input-codepage:{Encoding.UTF8.CodePage}"
         addSwitch $"--fsi-server-lcid:{options.UICultureLcid}"
@@ -322,6 +325,9 @@ type internal InteractiveHostClient(clientProcessId: int) =
             use connectCancellation =
                 CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, exitedDuringConnect.Token)
 
+            // The session admits only its own user to the pipe. The .NET Framework client cannot ask
+            // for the same check of the server's identity (PipeOptions.CurrentUserOnly is .NET Core
+            // 2.1+), so the unguessable pipe name is what stands between the window and a squatter.
             let pipe =
                 new NamedPipeClientStream(".", pipeName, PipeDirection.InOut, PipeOptions.Asynchronous)
 
@@ -332,11 +338,7 @@ type internal InteractiveHostClient(clientProcessId: int) =
                 rpc.StartListening()
 
                 let! handshake =
-                    rpc.InvokeWithParameterObjectAsync<InitializeResult>(
-                        Methods.Initialize,
-                        { clientProcessId = clientProcessId },
-                        cancellationToken
-                    )
+                    rpc.InvokeWithCancellationAsync<InitializeResult>(Methods.Initialize, cancellationToken = cancellationToken)
 
                 let remote = RemoteSession(session, pipe, rpc, handshake)
 
