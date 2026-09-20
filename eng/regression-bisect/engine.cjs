@@ -370,4 +370,7 @@ async function executeInvestigationWork(work, deps) {
     });
 }
 
-module.exports = { advanceInvestigation, executeInvestigationWork };
+module.exports = {
+    advanceInvestigation, executeInvestigationWork,
+    historyWorkspace, currentInput, authenticated, capacity,
+};

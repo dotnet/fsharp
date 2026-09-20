@@ -228,10 +228,11 @@ function stableSdk(value, path) {
 }
 
 const productIdentity = shape({ version: pinnedVersion, sha256: digest, verified: literal(true) });
-const artifact = shape({
+const artifact = (v, p) => object(v, {
     sha256: digest, origin: oneOf(["local-build", "released-sdk"]),
     sourceSha: nullable(sourceSha), buildInstanceId: text,
-});
+    ...(v && Object.hasOwn(v, "assemblyVersion") ? { assemblyVersion: pinnedVersion } : {}),
+}, p);
 const archiveReceipt = (v, p) => object(v, {
     name: text, url: httpsUrl, rid: text, architecture,
     provenance: (v, p) => object(v, v?.kind === "publisher-checksum"
@@ -256,6 +257,9 @@ const observationCell = (v, p) => object(v, {
     artifacts: shape({ compiler: nullable(artifact), tasks: nullable(artifact), targets: nullable(artifact), core: nullable(artifact) }),
     producer: identity, attempts: list(attemptSchema, 1, trustedPolicy.limits.assertionRepetitions), outcome: validateOutcome,
     ...(v && Object.hasOwn(v, "buildToolchain") ? { buildToolchain } : {}),
+    ...(v && Object.hasOwn(v, "releasedToolchain") ? {
+        releasedToolchain: shape({ sdk: productIdentity, compilerRuntime: productIdentity, archive: archiveReceipt }),
+    } : {}),
 }, p);
 
 function validateObservation(observation, manifest, options = { finalConfirmation: null }) {
@@ -322,6 +326,24 @@ function validateObservation(observation, manifest, options = { finalConfirmatio
                 a.os === cell.environment.os && a.architecture === cell.environment.architecture);
             check(cell.sdk.version === observation.target.sdk.version && cell.sdk.sha256 === archive?.sha256,
                 "observation.cells.sdk", "released SDK identity mismatch");
+        }
+        if (cell.releasedToolchain) {
+            const released = cell.releasedToolchain;
+            check(observation.kind === "released" && equal(released.sdk, cell.sdk) &&
+                released.archive.sha256 === cell.sdk.sha256 &&
+                released.archive.architecture === cell.environment.architecture,
+            "observation.cells.releasedToolchain", "released archive identity mismatch");
+            const rid = `${{ windows: "win", linux: "linux", macos: "osx" }[cell.environment.os]}-${cell.environment.architecture}`;
+            check(released.archive.rid === rid || cell.environment.os === "linux" && released.archive.rid === `linux-musl-${cell.environment.architecture}`,
+                "observation.cells.releasedToolchain", "released archive platform mismatch");
+            const { validateArchiveReceipt } = require("./archive-provenance.cjs");
+            try {
+                validateArchiveReceipt({
+                    policy: trustedPolicy, kind: "released", sourceSha: null, product: "sdk",
+                    version: cell.sdk.version, platform: { ...cell.environment, rid: released.archive.rid },
+                    archive: released.archive,
+                }, released.archive, cell.environment.os === "windows" ? filePath.win32 : filePath.posix);
+            } catch (error) { throw new ContractError(`observation.cells.releasedToolchain.archive: ${error.message}`); }
         }
         check(equal(cell.outcome, classifyAttempts(cell.attempts, manifest)), "observation.cells.outcome", "does not match repeated evidence");
     }
@@ -444,6 +466,98 @@ function admitBisection(input) {
     }
 }
 
+function validateAssociations(value) {
+    object(value, {
+        schemaVersion: literal(1), repository: literal(trustedPolicy.repository), sourceSha,
+        status: oneOf(["unique", "none", "ambiguous", "incomplete"]), reason: text,
+        pulls: list(shape({
+            number: positive, url: httpsUrl, mergeSha: sourceSha, baseSha: sourceSha, headSha: sourceSha,
+            baseRef: text, relation: oneOf(["merge-commit", "contained-commit"]), onLineage: bool,
+        }), 0, 100),
+    }, "associations");
+    unique(value.pulls.map(p => p.number), "associations.pulls");
+    for (const p of value.pulls) check(p.url === `https://github.com/${value.repository}/pull/${p.number}`,
+        "associations.url", "unverified repository URL");
+    check(value.status !== "none" || value.pulls.length === 0, "associations", "none cannot contain associations");
+    check(value.status !== "unique" || value.pulls.length === 1 && value.pulls[0].onLineage &&
+        value.pulls[0].baseRef === "main", "associations", "unique mapping requires tested main lineage");
+    return true;
+}
+
+function validateConfirmation(value) {
+    object(value, {
+        schemaVersion: literal(1), epoch: digest, manifestDigest: digest, startGeneration: integer,
+        candidate: nullable(sourceSha),
+        classification: oneOf(["verified-introducing-source-boundary", "verified-triggering-change", "unconfirmed-candidate"]),
+        reason: text,
+        interval: nullable(shape({ goodSha: sourceSha, badSha: sourceSha, remaining: list(sourceSha, 0, 4096) })),
+        parents: list(shape({ sourceSha, comparable: bool, observationDigest: nullable(digest) }), 0, 16),
+        candidateObservationDigest: nullable(digest), searchObservationDigest: nullable(digest),
+        history: shape({
+            commits: list(shape({ sha: sourceSha, parents: list(sourceSha, 0, 16), messageDigest: digest,
+                changedPaths: list(repositoryPath), patchId: nullable(sourceSha), reverts: list(sourceSha),
+                cherryPicks: list(sourceSha) }), 0, 128),
+            monotonicity: oneOf(["not-contradicted", "uncertain", "contradicted"]), toolchainCoupled: bool,
+        }),
+        associations: nullable(validateAssociations), latentRootCause: literal("unproven"),
+    }, "confirmation");
+    unique(value.parents.map(p => p.sourceSha), "confirmation.parents");
+    unique(value.history.commits.map(c => c.sha), "confirmation.history");
+    check(value.associations === null || value.associations.sourceSha === value.candidate,
+        "confirmation.associations", "wrong candidate");
+    if (value.classification !== "unconfirmed-candidate") {
+        check(value.candidate !== null && value.candidateObservationDigest !== null && value.searchObservationDigest !== null &&
+            value.parents.length > 0 && value.parents.every(p => p.comparable && p.observationDigest !== null) &&
+            value.history.monotonicity === "not-contradicted", "confirmation", "missing independent boundary evidence");
+        unique([value.candidateObservationDigest, ...value.parents.map(p => p.observationDigest)], "confirmation.observations");
+        const candidate = value.history.commits.find(c => c.sha === value.candidate);
+        check(candidate && equal(candidate.parents, value.parents.map(p => p.sourceSha)),
+            "confirmation.parents", "parent set does not match Git evidence");
+        check(value.classification !== "verified-introducing-source-boundary" ||
+            value.parents.length === 1 && !value.history.toolchainCoupled,
+        "confirmation", "merge/toolchain evidence only establishes a trigger");
+    }
+    return true;
+}
+
+function validateConfirmationEvidence(cp) {
+    const c = cp.state.confirmation;
+    if (!c) return true;
+    validateConfirmation(c);
+    check(c.epoch === cp.state.epoch && c.manifestDigest === cp.state.approvalFingerprint &&
+        c.startGeneration <= cp.generation, "confirmation", "stale confirmation");
+    if (c.searchObservationDigest !== null) {
+        const search = cp.observations[c.searchObservationDigest];
+        const reservation = cp.records.find(r => r.id === search?.attemptId);
+        check(search?.valid && search.data.kind === "source" && search.data.target.sourceSha === c.candidate &&
+            search.data.outcome.outcome === "product-failure" && reservation?.generation <= c.startGeneration,
+        "confirmation", "unauthenticated search candidate");
+    }
+    const seen = new Set();
+    for (const [sha, id, expected] of [[c.candidate, c.candidateObservationDigest, "product-failure"],
+        ...c.parents.map(p => [p.sourceSha, p.observationDigest, "pass"])]) {
+        if (id === null) continue;
+        const record = cp.observations[id];
+        const reservation = cp.records.find(r => r.id === record?.attemptId);
+        check(record?.valid && reservation?.status === "committed" && reservation.request.phase === "confirmation" &&
+            reservation.generation > c.startGeneration && reservation.executionGeneration !== undefined &&
+            record.data.kind === "source" && record.data.target.sourceSha === sha &&
+            !seen.has(record.data.buildInstanceId), "confirmation", "not an independent charged confirmation");
+        validateObservation(record.data, cp.state.manifest,
+            { finalConfirmation: { runId: reservation.owner.runId, buildInstanceId: reservation.id } });
+        seen.add(record.data.buildInstanceId);
+        if (c.classification !== "unconfirmed-candidate") {
+            const search = cp.observations[c.searchObservationDigest].data;
+            check(record.data.outcome.outcome === expected && record.data.cells.every(cell => {
+                const old = search.cells.find(s => s.id === cell.id);
+                return cell.buildToolchain && equal(cell.environment, old.environment) &&
+                    equal(cell.sdk, old.sdk) && equal(cell.runtime, old.runtime);
+            }), "confirmation", "boundary outcome/toolchain mismatch");
+        }
+    }
+    return true;
+}
+
 function validateState(state) {
     try {
         object(state, {
@@ -462,6 +576,7 @@ function validateState(state) {
                 } : {}),
             }, p)),
             publication: shape({ digest: nullable(digest), commentId: nullable(positive) }),
+            ...(state && Object.hasOwn(state, "confirmation") ? { confirmation: validateConfirmation } : {}),
         }, "state");
         validateBudget(state.budget, state.manifest);
         check(state.repository === state.manifest.repository && state.issueNumber === state.manifest.issueNumber &&
@@ -472,7 +587,9 @@ function validateState(state) {
         const budget = state.budget;
         const evidence = [...Object.values(state.endpointEvidence).filter(x => x !== null),
             ...state.testedRevisions.map(r => r.observationDigest), ...state.skips.map(r => r.observationDigest),
-            ...(state.interval?.decisions ?? []).map(r => r.observationDigest)];
+            ...(state.interval?.decisions ?? []).map(r => r.observationDigest),
+            ...(state.confirmation ? [state.confirmation.candidateObservationDigest, state.confirmation.searchObservationDigest,
+                ...state.confirmation.parents.map(p => p.observationDigest)].filter(Boolean) : [])];
         check(evidence.every(d => budget.authenticatedObservationDigests.includes(d)), "state", "unauthenticated evidence");
         if (state.interval?.decisions) {
             unique(state.interval.decisions.map(d => d.sha), "state.interval.decisions");
@@ -487,4 +604,5 @@ function validateState(state) {
 module.exports = {
     isEligibleIssue, validatePolicy, validateManifest, fingerprintInput, classifyAttempts,
     validateObservation, admitBisection, validateOutcome, validateState, fingerprintEpoch,
+    validateAssociations, validateConfirmation, validateConfirmationEvidence,
 };

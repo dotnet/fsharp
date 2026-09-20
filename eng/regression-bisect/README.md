@@ -4,7 +4,8 @@ This directory defines version 1 of the deterministic input, evidence, state,
 and admission contracts, complete issue intake, authenticated issue-comment
 checkpoints, and isolated exact toolchain acquisition. The endpoint-first engine composes
 those contracts with the existing reproduction and clean source-build runners.
-It does not activate a workflow or attribute a culprit.
+Fresh confirmation and deterministic publication guards consume the engine's
+intent; none of these modules activates a workflow or publishes an issue report.
 GitHub access is injected by the trusted controller; tests use
 synthetic records and an in-memory transport, never live issue mutations.
 Records under `fixtures` are not reproduction approvals.
@@ -361,6 +362,219 @@ pre-admission bisect reset. Repository files were not mutated for those probes.
 `02ef9214a9835070a846ab1cc13678a8ebe0617cdc01e3f717cba60628042528`.
 This validates the original product runners, not a real regression's admitted
 interval, an activated workflow, or fresh culprit attribution.
+
+## Fresh boundary confirmation and association
+
+`attribution.cjs` exports `confirmBoundary({ intent, now }, dependencies)` and
+`resolveCommitAssociations({ repository, sourceSha, pinnedMainSha }, dependencies)`.
+All dependencies are trusted controller services, not worker-authored JSON.
+The controller must hold the existing whole-issue lock throughout confirmation.
+
+Confirmation uses the engine's dependencies and its returned `confirmation`
+intent, or a `blocked` intent retaining an interval for explicit parent/history
+analysis. Generation, phase, interval and authenticated candidate failure must
+match the current checkpoint. Endpoints are read from authenticated observations,
+and admission is rechecked against actual Git ancestry. Caller-supplied parent
+lists are checked against commit objects, never taken as ancestry evidence.
+The optional `associationTransport` is the read-only GitHub `request` transport.
+Without it, association evidence is `null` (not looked up), not a claim that no
+PR exists.
+
+The engine exports its existing `currentInput`, `historyWorkspace`,
+`authenticated` and `capacity` helpers for this composition. There is no second
+build or assertion evaluator. Each candidate and relevant parent is separately
+reserved, claimed and run through `executeInvestigationWork`, hence
+`workspace.testSourceRevision` and `repro.runReproduction`. Whole-parent-set
+capacity is checked before the first run. Every run consumes the existing
+allowance; rejection, cancellation and changed inputs never refund it.
+New build IDs must differ from every search observation and one another.
+`validateObservation` receives the new reservation's `finalConfirmation`.
+The reviewed producer's raw bytes are reread through `approval.readSource`
+using the manifest source with its SHA-256. An absent producer must use the
+runner's existing `no-producer`, `0.0.0`, empty-byte digest identity.
+
+Results are `{ status: "confirmed" | "unconfirmed" | "blocked", reason,
+confirmation?, generation?, budget? }`. A successful or completed uncertain
+analysis is saved through `state.recordConfirmation`; a rejected worker still
+owns its charged pending reservation and cannot be silently retried.
+`state.confirmation` is optional for older checkpoints, but strict when present:
+it binds epoch, manifest digest, starting generation, candidate, candidate/search
+observation digests, all parents with comparability/outcome references, remaining
+interval, history, optional associations, and `latentRootCause: "unproven"`.
+Authenticated checkpoint loading checks each fresh observation's charged
+confirmation reservation and execution generation.
+
+Classifications deliberately differ:
+
+| Classification | Required evidence |
+| --- | --- |
+| `verified-introducing-source-boundary` | Independent deterministic candidate failure and sole comparable parent pass, unchanged sample SDK/runtime/environment and approved assertions. This is not a semantic root-cause claim. |
+| `verified-triggering-change` | All comparable merge parents pass and integration fails, or source/build-input changes are coupled. The commit is a tested boundary; latent responsibility remains unknown. |
+| `unconfirmed-candidate` | Root/missing/outside-lineage parent, insufficient allowance, skip/flake, identity/setup failure, changed result, ambiguous interval, or contradictory history. Remaining interval, parents, observations, skips and spent allowance remain visible. |
+
+History inspection is bounded to 128 evidence commits and 4,096 interval SHAs.
+It retains actual parents, message SHA-256, changed paths, full revert/cherry-pick
+references and a normalized patch-similarity SHA-1 (`patchId`, **not** a Git object
+identity or proof of provenance). Referenced objects are fetched only from the
+trusted local mirror. Reverts/reintroductions, cherry-picks/backports, repeated
+patches and observed failure-then-descendant-pass evidence prevent unique
+attribution. Missing related objects remain explicit uncertainty. Toolchain
+changes retain each observation's requested/resolved build SDK and runtime;
+global/build-input changes conservatively couple source and toolchain blame.
+
+Association resolution uses an isolated Git history and GET requests to
+`commits/{commit_sha}/pulls`, `pulls/{pull_number}` and
+`pulls/{pull_number}/commits`. It verifies exact repository/URL, merged status,
+full merge/base/head SHAs, head/commit membership and tested-main ancestry.
+Pagination is bounded to ten 100-entry pages and 100 associations; truncation,
+rate limiting, duplicate or inconsistent responses return `incomplete`.
+Unmerged/closed-only PRs are not introducing associations. A lone verified
+main-lineage association is `unique`; multiple or servicing/off-lineage
+associations remain `ambiguous`. `none` does not invalidate a verified source
+boundary. Search results, titles and patch similarity never authorize a PR link.
+
+`model.validateConfirmation`, `validateConfirmationEvidence(checkpoint)` and
+`validateAssociations` enforce these additional evidence shapes. They validate
+structure and consistency, not the authenticity of arbitrary supplied data.
+
+## Deterministic reports and publication guards
+
+`report.cjs` exports these controller APIs:
+
+| Export | Contract |
+| --- | --- |
+| `validateReport(report)` | Strict bounded evidence schema; rejects arbitrary Markdown, extra fields, stale fingerprints, unsupported destinations and unsafe evidence references. |
+| `renderReport(report)` | Deterministic escaped Markdown from validated evidence. Does not execute instructions, fetch URLs or publish. |
+| `preparePublication({ now, generation }, dependencies)` | Under the issue lock, rechecks fresh approved inputs, complete discussion, eligibility, active investigations, current heads, authenticated checkpoint and result digest. Returns `ready`, `pending`, `published`, `blocked` or `requeue`. |
+| `completePublication({ now, generation, digest, commentId }, dependencies)` | Repeats freshness checks and authenticates the actual existing result before recording publication completion. Does not create or edit the result comment. |
+
+Dependencies are `{ context, transport, withLock(action),
+readCurrentContext({ now, repository, issueNumber }) }`. `context` is the full
+existing state authentication context; it is not agent-supplied authorization.
+The mandatory fresh trusted reader returns `manifest`, `authorization`, `policy`,
+`policyRevision`, `workflowRevision`, `pinnedMainSha` (fresh main HEAD),
+`stableSdk`, `environmentFingerprint`, and `readSource({ path, sha256 })`.
+It must read approved assets and policy/workflow/main heads from trusted current
+GitHub data, not echo a cached dispatch. The selected issue is fixed by the
+authenticated context and manifest. There is no arbitrary destination parameter.
+
+Preparation uses the real `intake.readIssueSnapshot` and
+`findActiveInvestigations`, including complete comment/timeline pagination and
+raw approved-source checks. Only authenticated checkpoint/result records are
+excluded from the discussion fingerprint. Marker copies, altered signed bodies,
+different IDs, writers, apps or runs remain ordinary changed input. The current
+checkpoint generation and publication digest are checked under the same lock.
+Closed, unlabelled or too-old issues, corrections, approval/policy/workflow
+changes, moving main, missing required evidence, competing investigations and
+stale generations produce no publishable body. Spent allowance is preserved.
+Only terminal `complete` or `blocked` checkpoints are reportable; an old
+confirmation cannot be published while fresh confirmation is underway.
+
+The report schema is:
+
+```js
+{
+  schemaVersion: 1,
+  kind: "regression-investigation",
+  state, // validated state; publication digest/commentId normalized to null
+  observations: [{
+    digest, data, // authenticated observation, including exact repeated assertions
+    evidence: [{ url, sha256, required, available }]
+  }],
+  deadline, inputDigest, reproductionDigest, policyDigest, checkedHead
+}
+```
+
+This binds the issue/epoch/result digest without including mutable publication
+bookkeeping. Rendering includes approval/input identities, checked versus tested
+main, frozen source/producer/package hashes, approved operation descriptors and
+matrix settings, expected assertions, exact observations and build/artifact
+identities, outcomes/repetitions, evidence references, interval/skips/parents,
+verified or ambiguous PR associations, causal uncertainty, allowance use and
+resume state. The operation descriptors are the manifest's approved commands,
+expanded by the existing runner, not reporter-authored shell strings.
+Long display data is bounded and escaped; full evidence remains in authenticated
+observation references and the signed structured payload.
+
+Observation artifacts may additionally retain `assemblyVersion`. Released
+cells may retain `releasedToolchain: { sdk, compilerRuntime, archive }` using the
+existing exact product-identity and archive-receipt schemas. The released receipt
+must match the selected SDK hash, platform and official publisher checksum;
+the source-only measured-preview exception cannot authorize a released archive.
+Reports render both requested/resolved source toolchains and actual released
+receipts. Measured official-HTTPS hashes are explicitly **measured**, never
+publisher-provided checksums. Missing historical details remain visibly absent.
+A verified boundary/trigger report cannot be published without the selected
+stable endpoint's archive/runtime receipt and bundled compiler/Core assembly
+versions; legacy incomplete evidence produces a blocked intent, not success.
+
+`state.recordPublication(transport, context, { generation, status, digest,
+commentId })` updates the existing authenticated pending/published/blocked fields.
+Preparation persists a deterministic pending digest before returning `ready`.
+Repeated dispatch returns `pending`, not renewed write authorization. Complete
+authenticated discussion scanning recovers a matching result after a successful
+write whose response was lost. It never trusts a copied marker or caller Boolean.
+`state.authenticateDecodedRecord(transport, context, comment)` returns the
+authenticated `{ kind, payload, commentId, owner }` or `null`.
+
+The later trusted controller must re-run preparation as close as possible to
+the write, hold the whole-issue lock, and publish only the fixed signed payload:
+
+```js
+{
+  kind: "result",
+  status: "Regression investigation result",
+  payload: { schemaVersion: 1, digest, report }
+}
+```
+
+Use `state.serializeWorkflowRecord` with the **actual final comment ID** in its
+authentication context. The returned display `body` alone is not an
+authenticated result and must not be published as one. For a lost response,
+recover a matching authenticated result or keep the pending intent blocked;
+do not blindly create another comment. These modules never perform the actual
+result write.
+
+Evidence transport is restricted to exact repository-bound GitHub artifact URLs:
+`https://api.github.com/repos/dotnet/fsharp/actions/artifacts/<id>/zip` or
+`https://github.com/dotnet/fsharp/actions/runs/<id>/artifacts/<id>`.
+Encoded segments, traversal, credentials, query strings, other origins and local
+attachment paths are rejected **before** fetching. The injected
+`readEvidence(url, { redirect: "error", maxBytes: 4194304 })` must enforce those
+limits without following redirects. Missing required artifacts block; optional
+expired artifacts are disclosed. Untrusted log text is display data, never a
+new URL to fetch.
+
+### Confirmation/report validation
+
+The targeted attribution/report suite passes 110 tests; the complete scoped
+suite passes 1,154. All changed scripts pass `node --check` and whitespace
+validation. Real Git fixtures cover parent sets, merges, actual reverted and
+cherry-picked patches, toolchain coupling and bounded association lookups.
+Product execution is injected in those tests; their SHA/build-ID/call-count
+checks are not a claim of a real regression's introducing commit.
+
+Fresh original-runner acceptance is retained in
+`artifacts\regression-confirmation-trial`. The source worker clean-built
+`5a8b9adb034f420a5c2c1f577670c5eeeb454b7e` in independent build
+`14b25691-b71f-4712-8801-76088a20ed91`, with unchanged `global.json`,
+approved measured archive provenance and two passing FSI assertions.
+`fsharp-workspace-smoke-jNrofZ\result.json` has SHA-256
+`9bb0f436d8df53ab5e12e41bba26b115d032692aea27568ca6ea6a432d502b2b`.
+Official metadata and retained released SDK `10.0.401` identities were rechecked.
+The scoped evidence-helper Release build/test commands exited zero (the helper
+contains no managed test cases).
+
+The original reproduction smoke then matched all 43 expectations: 23 passes,
+six intended product failures and 14 identity rejections, using the released
+SDK and fresh source products. Its complete evidence is
+`Q:\rb912-confirmation-20260920\smoke-results.json`, SHA-256
+`1e3dec3266eb0e7a3bda888f9724d6ce02008823f664740ddcb33d7cc02d6499`.
+Initial acceptance setup attempts rejected an incorrect startup-hook path and
+inherited repository build imports; those failures remain in the local trial
+evidence. The successful reproduction scratch is outside repository imports.
+These are safe existing product fixtures, not issue authorization, live
+publication, or verified attribution of an actual regression.
 
 ## Exact toolchain acquisition
 

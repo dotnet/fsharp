@@ -1,7 +1,7 @@
 const { createHash, createHmac, timingSafeEqual } = require("node:crypto");
 const {
     isEligibleIssue, validateManifest, validatePolicy, validateState, validateObservation,
-    fingerprintInput: fingerprint, fingerprintEpoch,
+    fingerprintInput: fingerprint, fingerprintEpoch, validateConfirmationEvidence,
 } = require("./model.cjs");
 
 const MAX_BYTES = 48 * 1024;
@@ -22,10 +22,10 @@ function fields(value, names, description) {
 
 // Intern objects, arrays and long strings, including repeated assertion streams.
 // References are tagged arrays; original arrays exist only as table entries.
-function pack(value) {
+function pack(value, stringThreshold = 128) {
     const table = [], seen = new Map();
     function encode(v) {
-        if (v === null || (typeof v !== "object" && !(typeof v === "string" && v.length >= 128))) return v;
+        if (v === null || (typeof v !== "object" && !(typeof v === "string" && v.length >= stringThreshold))) return v;
         const key = fingerprint(v);
         if (seen.has(key)) return ["@", seen.get(key)];
         const index = table.length;
@@ -63,7 +63,17 @@ function unpack(packed) {
 }
 
 function render(envelope) {
-    return `${envelope.status}\n\n\`\`\`json\n${JSON.stringify(envelope)}\n\`\`\``;
+    let prefix = "";
+    if (envelope.kind === "result") {
+        const payload = unpack(envelope.payload);
+        fields(payload, "schemaVersion digest report", "result");
+        requireState(payload.schemaVersion === 1 && payload.digest === fingerprint(payload.report), "result digest mismatch");
+        requireState(envelope.status === "Regression investigation result" &&
+            payload.report.state?.repository === envelope.binding.repository &&
+            payload.report.state?.issueNumber === envelope.binding.issueNumber, "result destination or status mismatch");
+        prefix = require("./report.cjs").renderReport(payload.report) + "\n\n";
+    }
+    return `${prefix}${envelope.status}\n\n\`\`\`json\n${JSON.stringify(envelope)}\n\`\`\``;
 }
 
 function serializeWorkflowRecord({ kind, status, payload }, context) {
@@ -79,7 +89,7 @@ function serializeWorkflowRecord({ kind, status, payload }, context) {
             workflowRevision: context.workflowRevision, runId: context.owner.runId,
             runAttempt: context.owner.attempt, keyId: context.keyId,
         },
-        payload: pack(payload),
+        payload: pack(payload, kind === "result" ? 40 : 128),
     };
     envelope.signature = createHmac("sha256", key).update(fingerprint(envelope)).digest("hex");
     const body = render(envelope);
@@ -89,7 +99,7 @@ function serializeWorkflowRecord({ kind, status, payload }, context) {
 
 function parseRecord(body) {
     if (typeof body !== "string" || Buffer.byteLength(body) >= MAX_BYTES) return null;
-    const match = /^[^\r\n`]*\n\n```json\n([^\r\n]+)\n```$/.exec(body);
+    const match = /(?:^|\n\n)[^\r\n`]*\n\n```json\n([^\r\n]+)\n```$/.exec(body);
     if (!match) return null;
     try { return JSON.parse(match[1]); } catch (error) {
         if (error instanceof SyntaxError) return null;
@@ -136,6 +146,15 @@ async function authenticatedRecord(transport, context, comment) {
 
 async function authenticateWorkflowRecord(transport, context, comment) {
     return (await authenticatedRecord(transport, context, comment)) !== null;
+}
+
+async function authenticateDecodedRecord(transport, context, comment) {
+    const record = await authenticatedRecord(transport, context, comment);
+    if (!record) return null;
+    return {
+        kind: record.kind, payload: unpack(record.payload), commentId: record.binding.commentId,
+        owner: { runId: record.binding.runId, attempt: record.binding.runAttempt },
+    };
 }
 
 function validateEvidence(evidence) {
@@ -217,6 +236,7 @@ function validateCheckpoint(cp) {
         requireState(o?.valid && o.data.kind === "source" && o.data.target.sourceSha === decision.sha &&
             o.data.outcome.outcome === decision.outcome, "search decision does not match authenticated observation");
     }
+    validateConfirmationEvidence(cp);
 }
 
 function reproductionDigest(manifest) {
@@ -499,6 +519,7 @@ async function reserveWork(transport, context, { generation, attemptId, request 
     cp.records.push(pending);
     budget.nextWorkItemId = workItemId;
     budget.pendingWork = { id: attemptId, allowanceId: budget.allowanceId, workItemId, attempt, reserved, status: "reserved" };
+    if (request.phase !== "confirmation") delete cp.state.confirmation;
     cp.state.phase = request.phase;
     await saveCheckpoint(transport, context, cp, loaded.bodyDigest);
     return { ...structuredClone(pending), execute: true };
@@ -607,6 +628,7 @@ async function invalidateStaleEvidence(transport, context, { generation }) {
         cp.policyDigest = fingerprint(cp.state.budget.policy);
         cp.state.publication = { digest: null, commentId: null };
     }
+    delete cp.state.confirmation;
     cp.state.phase = phase;
     cp.publicationStatus = !eligible || current.state === null ? "blocked" :
         cp.state.publication.commentId !== null ? "published" : "unpublished";
@@ -628,8 +650,47 @@ async function recordSearchProgress(transport, context, { generation, phase, int
         cp.state.endpointEvidence.good = goodDigest;
     }
     if (cp.state.phase === phase && equal(cp.state.interval, interval) && goodDigest === undefined) return cp;
+    if (phase !== "confirmation") delete cp.state.confirmation;
     cp.state.phase = phase;
     cp.state.interval = structuredClone(interval);
+    cp.generation++;
+    return saveCheckpoint(transport, context, cp, loaded.bodyDigest);
+}
+
+async function recordPublication(transport, context, { generation, status, digest: resultDigest, commentId }) {
+    const loaded = await loadCheckpoint(transport, context);
+    const cp = loaded.checkpoint;
+    checkGeneration(cp, generation);
+    requireState(["pending", "published", "blocked"].includes(status) &&
+        (status === "blocked" ? resultDigest === null || digest(resultDigest) : digest(resultDigest)) &&
+        (commentId === null || positive(commentId)), "invalid publication record");
+    if (status !== "blocked") {
+        requireState(loaded.publicationAllowed && cp.pending === null, "publication blocked by current state");
+        requireState(cp.state.publication.digest === null || cp.state.publication.digest === resultDigest,
+            "publication digest conflict");
+        requireState(status === "pending" ? commentId === null : cp.state.publication.digest === resultDigest &&
+            (cp.state.publication.commentId === null || cp.state.publication.commentId === commentId) && positive(commentId),
+        "publication comment identity conflict");
+    }
+    if (cp.publicationStatus === status && cp.state.publication.digest === resultDigest &&
+        cp.state.publication.commentId === commentId) return cp;
+    cp.publicationStatus = status;
+    cp.state.publication = { digest: resultDigest, commentId };
+    cp.generation++;
+    return saveCheckpoint(transport, context, cp, loaded.bodyDigest);
+}
+
+async function recordConfirmation(transport, context, { generation, confirmation }) {
+    const loaded = await loadCheckpoint(transport, context);
+    requireState(loaded.executionAllowed, `confirmation blocked: ${loaded.blockers.join("; ")}`);
+    const cp = loaded.checkpoint;
+    requireState(cp.pending === null, "cannot confirm with pending work");
+    if (cp.state.confirmation && equal(cp.state.confirmation, confirmation) &&
+        (generation === cp.generation || generation === cp.generation - 1)) return cp;
+    checkGeneration(cp, generation);
+    cp.state.confirmation = structuredClone(confirmation);
+    validateConfirmationEvidence(cp);
+    cp.state.phase = confirmation.classification === "unconfirmed-candidate" ? "blocked" : "complete";
     cp.generation++;
     return saveCheckpoint(transport, context, cp, loaded.bodyDigest);
 }
@@ -637,4 +698,5 @@ async function recordSearchProgress(transport, context, { generation, phase, int
 module.exports = {
     initializeCheckpoint, serializeWorkflowRecord, authenticateWorkflowRecord,
     loadCheckpoint, reserveWork, beginWork, commitObservation, invalidateStaleEvidence, recordSearchProgress,
+    authenticateDecodedRecord, recordPublication, recordConfirmation,
 };
