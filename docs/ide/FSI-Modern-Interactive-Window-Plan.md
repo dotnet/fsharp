@@ -28,9 +28,10 @@ and contains:
 - `SubmissionAnalysis.fs` — the rule deciding when Enter submits, tested;
 - `FSharpVsInteractiveWindowProvider.fs` — the MEF component that creates the tool window through
   `IVsInteractiveWindowFactory.Create`, calls `SetLanguage` with the F# content type and language
-  service so the input buffer is an F# editor buffer, sets the caption from the platform, and reads
-  its options from the `SessionsProperties` the existing Tools, Options page already writes. No new
-  options page is needed.
+  service so the input buffer is an F# editor buffer, and reads its options from the
+  `SessionsProperties` the existing Tools, Options page already writes. No new options page is
+  needed. The session starts in the open solution's folder, so `dotnet fsi` runs the SDK that
+  folder's `global.json` resolves to.
 
 Still to do before the window can be opened in Visual Studio:
 
@@ -40,7 +41,7 @@ Still to do before the window can be opened in Visual Studio:
   calls the provider, rather than a new package with its own GUID and pkgdef;
 - the `Microsoft.VisualStudio.InteractiveWindow` prerequisite entry in the VSIX manifest, and the
   project's place in the VSIX itself. It is already in `VisualFSharp.slnx`, so it builds;
-- commands: open the window, `#reset <platform>`, and retargeting Alt+Enter at the new window;
+- commands: open the window, and retargeting Alt+Enter at the new window;
 - the debugger attach/detach commands ported from the existing window. The session reports its own
   process id in the handshake, so the attach no longer has to guess which process to target.
 
@@ -76,7 +77,7 @@ What the old window does have that C# Interactive does **not** (must be preserve
 
 - **Debugging**: attach/detach the VS debugger to the FSI process, "Debug in Interactive" (`#dbgbreak`), debuggability check (`--debug+ --optimize-`) with a suppressible warning dialog. Roslyn's window has no debugging at all — this is an F# advantage to keep.
 - Real script semantics: FSI executes actual `.fsx` interactions with `#load`/`#r`/`#i`, and `fsi` object, not a C#-script dialect.
-- Platform choice already includes Arm64 (`fsiArm64.exe`).
+- The .NET Framework hosts (`fsiAnyCpu.exe`, `fsi.exe`, `fsiArm64.exe`) stay with the old window; the new one is .NET-only, because the server mode exists only in the .NET fsi.
 
 ---
 
@@ -113,8 +114,7 @@ Five layers, copied from Roslyn's proven separation. Execution state lives **onl
                                │ + redirected stdout/stderr (user output)
 ┌──────────────────────────────▼────────────────────────────────────────┐
 │ EXECUTION HOST = fsi itself, in a new server mode                     │
-│ dotnet fsi --fsi-server-jsonrpc:<pipe>           (.NET / SDK)         │
-│ fsiAnyCpu.exe / fsiArm64.exe --fsi-server-jsonrpc:…  (.NET Framework) │
+│ dotnet fsi --fsi-server-jsonrpc:<pipe>  (the SDK global.json resolves) │
 │ FsiEvaluationSession driven by RPC instead of the stdin ReadLine loop │
 └───────────────────────────────────────────────────────────────────────┘
 ```
@@ -125,7 +125,7 @@ Roslyn ships dedicated `InteractiveHost64/32.exe` binaries because C# scripting 
 
 - kills the `SERVER-PROMPT>` scraping, the PID-file hack, and the `# 1 "stdin"` directive juggling in one move;
 - benefits every other fsi client (Ionide, VS Code, custom tooling) — the server mode is a compiler feature, not a VS-only one;
-- keeps `dotnet fsi` as the .NET Core host (nothing new to deploy; the VSIX only carries the desktop `fsiAnyCpu`/`fsiArm64` it already ships).
+- keeps `dotnet fsi` as the host, resolved from the solution folder's `global.json`, so the window runs the same compiler bits as `dotnet build` there and Visual Studio and SDK versions are decoupled (nothing new to deploy; the desktop `fsiAnyCpu`/`fsiArm64` the VSIX ships stay with the old window).
 
 ### 2.2 The RPC protocol (as implemented)
 
@@ -195,18 +195,11 @@ The single most valuable user-facing change. Mechanism (Roslyn's, adapted):
 - Otherwise → submit iff the text is a syntactically complete interaction (FCS parse with `ScriptParseInfo`; incomplete constructs — open `let`, unclosed paren/string — return false). This matches `dotnet fsi`'s modern multiline behavior and C#'s `SyntaxFactory.IsCompleteSubmission`.
 - The evaluator appends `;;` before sending to the host if absent; prompts: `> ` primary, `. ` (or `- `) continuation via `GetPrompt()`.
 
-### 2.5 Platform selection
+### 2.5 Host selection
 
-Keep today's matrix, expressed the Roslyn way (`#reset` arguments + caption suffix + options page default):
+The window is .NET-only. The server mode exists in the .NET fsi alone, and the desktop matrix (`fsiAnyCpu.exe`, `fsi.exe`, `fsiArm64.exe`, `#reset` platform arguments, the shadow-copy switch) stays with the old window until that is retired.
 
-| Platform | Host | Notes |
-|---|---|---|
-| .NET (default) | `dotnet fsi` | SDK-resolved; caption "F# Interactive (.NET)" |
-| .NET Framework x64 | `fsiAnyCpu.exe --fsi-server-jsonrpc:…` | shipped in VSIX |
-| .NET Framework x86 | `fsi.exe` | shipped in VSIX |
-| Arm64 | `fsiArm64.exe` | shipped in VSIX |
-
-`#reset core` / `#reset net472` / etc. exported as a specialized-content-type command that displaces the package's generic `#reset` (Roslyn's `GetApplicableCommands` name-replacement mechanism).
+The session is started in the open solution's folder, with the `dotnet` a shell there would run (`DOTNET_HOST_PATH`, then `PATH`, then the machine-wide install). The host resolves the SDK from that folder's `global.json` exactly as `dotnet fsi` typed in a shell would, so the window runs the same compiler bits as `dotnet build`, and Visual Studio and SDK versions are decoupled. Nothing in the window re-implements SDK resolution. `FSHARP_INTERACTIVE_PATH` names another fsi for development, until an SDK ships the protocol; the window prints which fsi answered, on what runtime and in which directory, when a session comes up.
 
 ### 2.6 Debugging (parity + improvement over C#)
 
@@ -243,7 +236,7 @@ Goal: de-risk the InteractiveWindow dependency before touching the compiler.
 ### Phase 2 — Evaluator + session on the new protocol — partly done
 
 - `FSharpInteractiveSession`: single `AsyncBatchingWorkQueue`-style queue serializing init/execute/set-paths (reset preempts); `LazyRemoteService` lifecycle port; auto-restart; pending-buffer queue.
-- Full `IInteractiveEvaluator`: `CanExecuteCode` (§2.4), `GetPrompt`, `ResetAsync` with platform args, `InitializeAsync`, `AbortExecution` → RPC `Interrupt` (note: this makes F# *better* than C# Interactive, whose `AbortExecution` is an unimplemented TODO).
+- Full `IInteractiveEvaluator`: `CanExecuteCode` (§2.4), `GetPrompt`, `ResetAsync`, `InitializeAsync`, `AbortExecution` → RPC `Interrupt` (note: this makes F# *better* than C# Interactive, whose `AbortExecution` is an unimplemented TODO).
 - Structured diagnostics from `ExecutionResult` rendered as error-classified output.
 - Delete the stdin/stdout path from the new window (old window untouched).
 
@@ -260,9 +253,9 @@ Goal: de-risk the InteractiveWindow dependency before touching the compiler.
 
 - Rewire `MenusAndCommands.vsct` targets: Alt+Enter Send Selection/Line, "Execute in Interactive", "Debug in Interactive" → new window (`window.SubmitAsync`, preserving the no-selection→current-line + caret-advance behavior; consider Roslyn's syntax-aware selection expansion from `SendToInteractiveSubmissionProvider`).
 - `AddReferences` (Solution Explorer "Send project references to F# Interactive") → `#r` submissions.
-- Optional: "Initialize Interactive with Project" parity — build project, reset with platform inferred from TFM, `SetPaths`, `#r` output assembly + references, `open` default namespaces (Roslyn's `ResetInteractive` flow).
-- Port `FsiPropertyPage` (Tools → Options → F# Tools → F# Interactive): args, platform default, shadow copy (`--shadowcopyreferences` still honored via args), langversion preview, debug mode.
-- Window caption platform suffix; `#reset` platform args; F1 help keyword.
+- Optional: "Initialize Interactive with Project" parity — build project, reset, `SetPaths`, `#r` output assembly + references, `open` default namespaces (Roslyn's `ResetInteractive` flow).
+- Port `FsiPropertyPage` (Tools → Options → F# Tools → F# Interactive): args, langversion preview, debug mode. The platform default and shadow copy belong to the desktop fsi and stay with the old window.
+- F1 help keyword.
 
 ### Phase 5 — Debugging parity (1–2 weeks)
 

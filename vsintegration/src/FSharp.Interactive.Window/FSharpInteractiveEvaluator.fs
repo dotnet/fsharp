@@ -34,21 +34,20 @@ module internal ResultRendering =
     let formatDiagnostic (diagnostic: FSharp.Compiler.Interactive.Protocol.DiagnosticInfo) =
         $"{diagnostic.fileName}({diagnostic.startLine},{diagnostic.startColumn + 1}): {diagnostic.severity} FS%04d{diagnostic.errorNumber}: {diagnostic.message}"
 
+    /// The line the window shows when a session comes up: which fsi answered, on what, and where.
+    let formatSessionStart (session: FSharp.Compiler.Interactive.Protocol.InitializeResult) =
+        $"F# Interactive {session.fsiVersion} on {session.frameworkDescription}, in {session.workingDirectory}"
+
 /// Connects the interactive window to an F# Interactive session.
 [<Sealed>]
-type internal FSharpInteractiveEvaluator
-    (
-        host: InteractiveHostClient,
-        getOptions: unit -> InteractiveHostOptions,
-        onPlatformChanged: InteractiveHostPlatform -> unit
-    ) =
+type internal FSharpInteractiveEvaluator(host: InteractiveHostClient, getOptions: unit -> InteractiveHostOptions) =
 
     let mutable currentWindow: IInteractiveWindow | null = null
     let mutable outputSubscription: IDisposable | null = null
     let mutable errorSubscription: IDisposable | null = null
     let mutable exitedSubscription: IDisposable | null = null
+    let mutable startedSubscription: IDisposable | null = null
     let mutable disposed = false
-    let mutable requestedPlatform: InteractiveHostPlatform voption = ValueNone
 
     // The window submits text without saying where it came from, so an editor command records the
     // origin here for the submission it is about to make. Both run on the UI thread.
@@ -61,6 +60,11 @@ type internal FSharpInteractiveEvaluator
         | null -> ()
         | window -> window.OutputWriter.Write text
 
+    let writeLine (text: string) =
+        match currentWindow with
+        | null -> ()
+        | window -> window.OutputWriter.WriteLine text
+
     let writeError (text: string) =
         match currentWindow with
         | null -> ()
@@ -70,13 +74,6 @@ type internal FSharpInteractiveEvaluator
         match currentWindow with
         | null -> ()
         | window -> window.ErrorOutputWriter.WriteLine text
-
-    let optionsForNextSession () =
-        let options = getOptions ()
-
-        match requestedPlatform with
-        | ValueSome platform -> { options with Platform = platform }
-        | ValueNone -> options
 
     let reportDiagnostics (result: FSharp.Compiler.Interactive.Protocol.ExecutionResult) =
         match result.diagnostics with
@@ -95,7 +92,7 @@ type internal FSharpInteractiveEvaluator
 
     let ensureSessionAsync () =
         task {
-            match! host.EnsureStartedAsync(optionsForNextSession ()) with
+            match! host.EnsureStartedAsync(getOptions ()) with
             | Result.Ok _ -> return true
             | Result.Error message ->
                 writeErrorLine message
@@ -110,12 +107,8 @@ type internal FSharpInteractiveEvaluator
     let reportSessionExit exitCode =
         writeErrorLine $"{VFSIstrings.SR.sessionTerminationDetected()} (exit code {exitCode})"
 
-    member _.CurrentPlatform =
-        match requestedPlatform with
-        | ValueSome platform -> platform
-        | ValueNone -> (getOptions ()).Platform
-
-    member _.RequestPlatform platform = requestedPlatform <- ValueSome platform
+    let reportSessionStart session =
+        writeLine (ResultRendering.formatSessionStart session)
 
     /// Attribute the next submission to a file and line, so that its diagnostics land on the user's
     /// own source rather than on the submission.
@@ -140,6 +133,7 @@ type internal FSharpInteractiveEvaluator
                 unsubscribe outputSubscription
                 unsubscribe errorSubscription
                 unsubscribe exitedSubscription
+                unsubscribe startedSubscription
 
                 match window with
                 | null -> ()
@@ -148,6 +142,7 @@ type internal FSharpInteractiveEvaluator
                     outputSubscription <- host.OutputReceived.Subscribe write
                     errorSubscription <- host.ErrorOutputReceived.Subscribe writeError
                     exitedSubscription <- host.ProcessExited.Subscribe reportSessionExit
+                    startedSubscription <- host.SessionStarted.Subscribe reportSessionStart
 
         member _.InitializeAsync() =
             task {
@@ -159,10 +154,7 @@ type internal FSharpInteractiveEvaluator
         // session has none to vary, and the flag never means "do not start a replacement".
         member _.ResetAsync(_initialize) =
             task {
-                let options = optionsForNextSession ()
-                onPlatformChanged options.Platform
-
-                match! host.ResetAsync options with
+                match! host.ResetAsync(getOptions ()) with
                 | Result.Ok _ -> return ExecutionResult true
                 | Result.Error message ->
                     writeErrorLine message
@@ -221,4 +213,5 @@ type internal FSharpInteractiveEvaluator
                 unsubscribe outputSubscription
                 unsubscribe errorSubscription
                 unsubscribe exitedSubscription
+                unsubscribe startedSubscription
                 (host :> IDisposable).Dispose()

@@ -14,49 +14,15 @@ open StreamJsonRpc
 
 open FSharp.Compiler.Interactive.Protocol
 
-type InteractiveHostPlatform =
-    | NetCore
-    | NetFramework64
-    | NetFramework32
-    | NetFrameworkArm64
-
-    member this.Description =
-        match this with
-        | NetCore -> ".NET"
-        | NetFramework64 -> ".NET Framework (64-bit)"
-        | NetFramework32 -> ".NET Framework (32-bit)"
-        | NetFrameworkArm64 -> ".NET Framework (Arm64)"
-
-    member this.CommandLineName =
-        match this with
-        | NetCore -> "core"
-        | NetFramework64 -> "64"
-        | NetFramework32 -> "32"
-        | NetFrameworkArm64 -> "arm64"
-
-    static member TryParse(name: string) =
-        let name = name.Trim()
-        let is candidate = String.Equals(name, candidate, StringComparison.OrdinalIgnoreCase)
-
-        if is "core" || is "net" then ValueSome NetCore
-        elif is "64" || is "framework64" then ValueSome NetFramework64
-        elif is "32" || is "framework32" then ValueSome NetFramework32
-        elif is "arm64" then ValueSome NetFrameworkArm64
-        else ValueNone
-
 type InteractiveHostOptions =
     {
-        Platform: InteractiveHostPlatform
-
-        /// Directory holding the desktop fsi executables shipped in the extension.
-        HostDirectory: string
-
+        /// Where the session starts, and so which `global.json` names its SDK: the solution folder
+        /// while a solution is open.
         InitialWorkingDirectory: string
 
         /// The user's own arguments, from Tools, Options.
         UserArguments: string
 
-        ShadowCopyReferences: bool
         DebugMode: bool
         LanguageVersionPreview: bool
         UICultureLcid: int
@@ -64,40 +30,55 @@ type InteractiveHostOptions =
 
 module internal FsiLocator =
 
-    let private desktopExecutableName platform =
-        match platform with
-        | NetFramework32 -> "fsi.exe"
-        | NetFrameworkArm64 -> "fsiArm64.exe"
-        | _ -> "fsiAnyCpu.exe"
+    let private hostExecutable =
+        if Environment.OSVersion.Platform = PlatformID.Win32NT then
+            "dotnet.exe"
+        else
+            "dotnet"
 
+    /// The `dotnet` a shell would run: the one Visual Studio was told about, else the first on
+    /// `PATH`, else the machine-wide install.
     let findDotnetHost () =
         match Environment.GetEnvironmentVariable "DOTNET_HOST_PATH" with
         | path when not (String.IsNullOrEmpty path) && File.Exists path -> path
         | _ ->
+
+        let onPath =
+            match Environment.GetEnvironmentVariable "PATH" with
+            | null -> None
+            | searchPath ->
+                searchPath.Split([| Path.PathSeparator |], StringSplitOptions.RemoveEmptyEntries)
+                |> Array.choose (fun directory ->
+                    // An entry with characters a path cannot hold is somebody else's problem.
+                    try
+                        Some(Path.Combine(directory.Trim(' ', '"'), hostExecutable))
+                    with _ ->
+                        None)
+                |> Array.tryFind File.Exists
+
+        match onPath with
+        | Some host -> host
+        | None ->
 
         let programFiles =
             match Environment.GetEnvironmentVariable "ProgramW6432" with
             | path when not (String.IsNullOrEmpty path) -> path
             | _ -> Environment.GetFolderPath Environment.SpecialFolder.ProgramFiles
 
-        Path.Combine(programFiles, "dotnet", "dotnet.exe")
+        Path.Combine(programFiles, "dotnet", hostExecutable)
 
-    /// Names an F# Interactive to run instead of the one the platform would resolve to.
+    /// Names an F# Interactive to run instead of the SDK's.
     ///
-    /// The protocol needs an fsi that understands `--fsi-server-jsonrpc`. The extension does not
-    /// carry one, and the fsi resolved from an installed SDK is only as new as that SDK, so a build
-    /// of fsi from this repository has to be named explicitly until the option ships.
+    /// The protocol needs an fsi that understands `--fsi-server-jsonrpc`, and the fsi an installed
+    /// SDK resolves to is only as new as that SDK, so a build from this repository has to be named
+    /// explicitly until the option ships.
     [<Literal>]
     let OverrideVariable = "FSHARP_INTERACTIVE_PATH"
 
     /// A build of fsi from a repository runs on the .NET that repository provisions, which is often
     /// newer than any machine-wide install, so look for that host beside it before falling back.
     let private hostFor (fsiPath: string) =
-        let executable =
-            if Environment.OSVersion.Platform = PlatformID.Win32NT then
-                "dotnet.exe"
-            else
-                "dotnet"
+        let executable = hostExecutable
 
         let rec search (directory: DirectoryInfo | null) =
             match directory with
@@ -126,27 +107,21 @@ module internal FsiLocator =
                 ValueSome(Result.Ok(path, []))
         | _ -> ValueNone
 
-    let locate (options: InteractiveHostOptions) =
+    /// What to start. Apart from the override this is `dotnet fsi`: the host resolves the SDK from
+    /// the `global.json` nearest the directory the session starts in, so a session started in the
+    /// solution folder runs the same compiler bits as `dotnet build` there. Nothing here
+    /// re-implements that resolution.
+    let locate () =
         match tryOverride () with
         | ValueSome result -> result
         | ValueNone ->
 
-        match options.Platform with
-        | NetCore ->
-            let host = findDotnetHost ()
+        let host = findDotnetHost ()
 
-            if File.Exists host then
-                Result.Ok(host, [ "fsi" ])
-            else
-                Result.Error(VFSIstrings.SR.couldNotFindFsiExe host)
-
-        | platform ->
-            let candidate = Path.Combine(options.HostDirectory, desktopExecutableName platform)
-
-            if File.Exists candidate then
-                Result.Ok(candidate, [])
-            else
-                Result.Error(VFSIstrings.SR.couldNotFindFsiExe candidate)
+        if File.Exists host then
+            Result.Ok(host, [ "fsi" ])
+        else
+            Result.Error(VFSIstrings.SR.couldNotFindFsiExe host)
 
 /// One live F# Interactive process together with the control channel to it.
 [<Sealed>]
@@ -201,6 +176,7 @@ type internal InteractiveHostClient(clientProcessId: int) =
     let outputReceived = Event<string>()
     let errorOutputReceived = Event<string>()
     let processExited = Event<int>()
+    let sessionStarted = Event<InitializeResult>()
 
     // Read as characters rather than lines: a script prompting with `printf "name? "` writes no
     // newline, and waiting for one would hide the prompt.
@@ -237,7 +213,7 @@ type internal InteractiveHostClient(clientProcessId: int) =
             argument
 
     let createStartInfo (options: InteractiveHostOptions) (pipeName: string) =
-        match FsiLocator.locate options with
+        match FsiLocator.locate () with
         | Result.Error message -> Result.Error message
         | Result.Ok(executable, leadingArguments) ->
 
@@ -260,14 +236,6 @@ type internal InteractiveHostClient(clientProcessId: int) =
         // the switches the window insists on for debugging.
         if not (String.IsNullOrWhiteSpace options.UserArguments) then
             arguments.Add(options.UserArguments.Trim())
-
-        if options.Platform <> NetCore then
-            addSwitch (
-                if options.ShadowCopyReferences then
-                    "--shadowcopyreferences+"
-                else
-                    "--shadowcopyreferences-"
-            )
 
         if options.DebugMode then
             addSwitch "--optimize-"
@@ -359,6 +327,7 @@ type internal InteractiveHostClient(clientProcessId: int) =
                                 0
                         ))
 
+                sessionStarted.Trigger handshake
                 return Result.Ok remote
             with e ->
                 pipe.Dispose()
@@ -386,6 +355,10 @@ type internal InteractiveHostClient(clientProcessId: int) =
 
     /// Raised when the session goes away without being asked to.
     member _.ProcessExited = processExited.Publish
+
+    /// Raised with the handshake of every session that comes up, so the window can say what it is
+    /// talking to.
+    member _.SessionStarted = sessionStarted.Publish
 
     member _.IsRunning =
         lock stateLock (fun () -> current |> ValueOption.exists (fun session -> session.IsAlive))
