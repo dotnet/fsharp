@@ -2,7 +2,7 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("node:fs/promises");
 const path = require("node:path");
-const { fixture } = require("./fixtures/reproduction.cjs");
+const { fixture, projectBuild } = require("./fixtures/reproduction.cjs");
 const { seal, archiveReceipt } = require("./fixtures/contracts.cjs");
 const { createHash } = require("node:crypto");
 const { fingerprintInput } = require("./model.cjs");
@@ -130,8 +130,24 @@ async function controlled(t, os = "windows") {
                         { path: "lib/netstandard2.0/FSharp.Core.dll", sha256: hash(`core-${builds.at(-1).sha}`) },
                     ], ...f.packageIdentity } : {}) });
             }
+            if (result.some(r => path.basename(r.path) === "fsc.dll")) {
+                const compiler = result.find(r => path.basename(r.path) === "fsc.dll");
+                const root = path.dirname(compiler.path);
+                f.builtProduct = {
+                    runtime: { name: "Microsoft.NETCore.App", version: `${activeSdk.split(".")[0]}.0.0` },
+                    corePackageVersion: "1.0.0", files: [
+                        ...result.map(r => ({ ...r, role: r.path === compiler.path ? "compiler" :
+                            r.path.endsWith(".nupkg") ? "corePackage" : r.assemblyName === "FSharp.Core" ? "core" :
+                                r.assemblyName === "FSharp.Build" ? "tasks" : "fsi" })),
+                        ...Object.entries({ props: "Microsoft.FSharp.NetSdk.props", targets: "Microsoft.FSharp.Targets",
+                            sdkTargets: "Microsoft.FSharp.NetSdk.targets", overrides: "Microsoft.FSharp.Overrides.NetSdk.targets" })
+                            .map(([role, name]) => ({ role, path: path.join(root, name) })),
+                    ],
+                };
+            }
             return ok(JSON.stringify(result));
         }
+        if (args.includes("binlog")) return ok(JSON.stringify(f.projectEvidence.structured));
         if (args[0] === "msbuild") return ok(JSON.stringify({ Properties: await properties(settings.cwd, args[1]) }));
         if (args[0] === "build" && path.basename(args[1]) === "Evidence.csproj") {
             f.helperArgs = args;
@@ -147,6 +163,23 @@ async function controlled(t, os = "windows") {
             if (!f.missingPackage) await fs.writeFile(path.join(directory, "FSharp.Core.1.0.0.nupkg"), `package-${builds.at(-1).sha}`);
             f.packs = (f.packs ?? 0) + 1;
             return ok("");
+        }
+        if (args[0] === "build" && args.includes("--no-incremental")) {
+            assert.equal(exe, f.toolchain.hostPath);
+            f.projectEvidence = await projectBuild({ product: f.builtProduct, toolchain: f.toolchain,
+                cells: f.manifest.matrix, settings });
+            await fs.writeFile(args.find(a => a.startsWith("-bl:")).slice(4), "fixture binlog");
+            return ok("");
+        }
+        if (args[0] === "exec" && args.at(-1).endsWith("App.dll")) {
+            f.reproductions = (f.reproductions ?? 0) + 1;
+            const core = f.projectEvidence.core, runtime = args[2];
+            await fs.writeFile(settings.env.REPRO_CORE_EVIDENCE, JSON.stringify({
+                ...core, assemblyName: "FSharp.Core", assemblyVersion: "1.0.0.0", complete: true,
+                architecture: "x64", runtimeVersion: runtime,
+                runtimePath: path.join(f.toolchain.root, "shared", "Microsoft.NETCore.App", runtime),
+            }));
+            return { ...ok(""), ...f.manifest.assertions.pass };
         }
         if (args.includes("--exec")) {
             f.reproductions = (f.reproductions ?? 0) + 1;
@@ -257,6 +290,51 @@ test("reserved source identity and a separate sample toolchain never retarget hi
     const duplicate = await prepareRevisionWorkspace({ ...f.options, buildInstanceId }, f.deps);
     assert.equal(duplicate.status, "untestable");
     assert.match(duplicate.error.message, /EEXIST/);
+});
+
+test("compatible historical projects preserve the frozen sample runtime and independent SDK provenance", async t => {
+    for (const acquisition of ["released", "other-source"]) await t.test(acquisition, async t => {
+        const f = await controlled(t);
+        const project = await f.file("source/App.fsproj", "<Project />");
+        f.manifest.kind = "project";
+        f.manifest.sources = [{ path: "App.fsproj", sha256: project.sha256 }];
+        Object.assign(f.manifest.matrix[0], { project: "App.fsproj", command: ["run-project", "App.fsproj"] });
+        seal(f.manifest);
+        const runtime = await f.file("dotnet/shared/Microsoft.NETCore.App/9.0.0/System.Private.CoreLib.dll", "historical runtime");
+        const receipt = archiveReceipt({
+            name: "runtime.zip", url: "https://builds.dotnet.microsoft.com/dotnet/Runtime/9.0.0/dotnet-runtime-9.0.0-win-x64.zip",
+            rid: "win-x64", architecture: "x64", provenance: { kind: "publisher-checksum" },
+        }, (await f.file("runtime.zip", "runtime archive")).path, "runtime archive");
+        receipt.sha512 = receipt.actualSha512;
+        f.toolchain.installations.push({ product: "dotnet", version: "9.0.0", archive: receipt });
+        f.toolchain.requested.runtimeRequirements.push({ name: "Microsoft.NETCore.App", version: "9.0.0",
+            role: "sample", archiveUrl: receipt.url });
+        f.toolchain.runtimes.push({ name: "Microsoft.NETCore.App", version: "9.0.0",
+            path: path.dirname(path.dirname(runtime.path)), sha256: runtime.sha256 });
+        if (acquisition === "other-source") Object.assign(f.toolchain.requested, { kind: "source", sourceSha: f.shas[0] });
+        const frozen = fingerprintInput(f.toolchain);
+        const result = await testSourceRevision({
+            ...f.options, reproductionToolchain: f.toolchain,
+            sampleRuntimes: { "net10.0": { name: "Microsoft.NETCore.App", version: "10.0.0" } },
+            request: { ...f.options.request, sourceSha: f.shas[1], manifestDigest: fingerprintInput(f.manifest),
+                approvalDigest: f.manifest.approvedInputDigest },
+        }, f.deps);
+        assert.equal(result.outcome.outcome, "pass", JSON.stringify(result));
+        assert.equal(result.actualSourceSha, f.shas[1]);
+        assert.equal(result.toolchain.sdkVersion, "9.0.100");
+        assert.equal(result.product.targetFramework, "net9.0");
+        assert.equal(result.globalJson.before, result.globalJson.after);
+        assert.equal(result.reproduction.cells[0].attempts.length, 2);
+        for (const record of result.reproduction.cells[0].evidence) {
+            assert.equal(record.projects[0].sdkVersion, "10.0.100");
+            assert.equal(record.projects[0].targetFramework, "net10.0");
+            assert.equal(record.compilerRuntimeSelection.runtime.version, "9.0.0");
+            assert.equal(record.compilerCoreLoads[0].runtimeVersion, "9.0.0");
+            assert.equal(record.loadedCore.runtimeVersion, "10.0.0");
+            assert.equal(record.loadedCore.sha256, record.compilerCoreLoads[0].sha256);
+        }
+        assert.equal(fingerprintInput(f.toolchain), frozen);
+    });
 });
 
 test("large product inventories hash every dependency without unbounded inspection arguments", async t => {

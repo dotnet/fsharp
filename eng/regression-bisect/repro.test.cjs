@@ -2,7 +2,7 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("node:fs/promises");
 const path = require("node:path");
-const { fixture } = require("./fixtures/reproduction.cjs");
+const { fixture, projectBuild } = require("./fixtures/reproduction.cjs");
 const { seal, archiveReceipt, policy } = require("./fixtures/contracts.cjs");
 const { verifyToolchainIdentity } = require("./toolchains.cjs");
 const { selectFsiCommand, verifyProjectIdentities, evaluateAssertion, runReproduction } = require("./repro.cjs");
@@ -264,6 +264,25 @@ async function runnerFixture(t, options = {}) {
     return f;
 }
 
+test("source-derived sample SDK provenance does not replace product, host, runtime or Core checks", async t => {
+    for (const [name, mutate] of Object.entries({
+        compatible: () => {},
+        product: f => { f.product.sourceSha = "HEAD"; },
+        host: f => { f.toolchain.hostSha256 = hash("different host"); },
+        runtime: f => { f.toolchain.runtimes[0].sha256 = hash("different runtime"); },
+        core: f => { f.loadedCore = { sha256: hash("different Core") }; },
+        archive: f => fs.writeFile(f.toolchain.archive.retained.path, "different archive"),
+    })) await t.test(name, async t => {
+        const f = await runnerFixture(t);
+        Object.assign(f.toolchain.requested, { kind: "source", sourceSha: "b".repeat(40) });
+        await mutate(f);
+        const result = await runReproduction(f, { execute: f.execute });
+        assert.equal(result.outcome.outcome, name === "compatible" ? "pass" : "untestable", result.error);
+        if (name === "compatible") assert.equal(result.cells[0].attempts.length, 2);
+        else assert.equal(result.outcome.reason, "wrong-identity");
+    });
+});
+
 async function projectRunnerFixture(t, { declaredTfms = [], libraryTfm = "net10.0", mutate, buildExitCode = 0,
     undeclared = false, nullable, defines = nullable ? ["NULLABLE"] : [] } = {}) {
     const f = await runnerFixture(t, { project: true });
@@ -297,47 +316,14 @@ async function projectRunnerFixture(t, { declaredTfms = [], libraryTfm = "net10.
             args.includes(`-p:TargetFramework=${c.tfm}`));
         assert.ok(cell, "build must select a declared root cell");
         const write = (location, contents) => f.file(path.relative(f.root, location), contents);
-        const packageDirectory = path.join(settings.env.NUGET_PACKAGES, "fsharp.core", f.product.corePackageVersion);
-        const core = await write(path.join(packageDirectory, "lib", "netstandard2.0", "FSharp.Core.dll"),
-            await fs.readFile(roles.core.path));
-        await write(path.join(packageDirectory, "fsharp.core.10.0.100.nupkg"), await fs.readFile(roles.corePackage.path));
-        f.inspectFiles = [{ ...roles.core, ...core }];
-        f.loadedCore = core;
         const builds = [cell];
         if (cell.project === app.project) builds.push(f.manifest.matrix.find(c =>
             c.project === "Library.fsproj" && c.tfm === libraryTfm) ?? { ...cell, project: "Library.fsproj", tfm: libraryTfm });
-        const rows = [];
-        for (const [index, current] of builds.entries()) {
-            const row = structuredClone(f.evidence[0]);
-            Object.assign(row, {
-                project: path.join(settings.cwd, current.project), targetFramework: current.tfm,
-                configuration: current.configuration, expectedLanguageVersion: current.languageVersion,
-                expectedOptimize: current.configuration === "Release", expectedDefines: defines, expectedNullable: nullable,
-                projectReferences: current.project === app.project ? ["Library.fsproj"] : [],
-                assetsFile: path.join(settings.cwd, ".runner", `${index}.assets.json`),
-                targetPath: path.join(settings.cwd, "bin", current.tfm, `${path.parse(current.project).name}.dll`),
-                fscTasks: row.fsc.map(task => ({
-                    ...task, references: [core.path], languageVersion: current.languageVersion, defines, nullable,
-                })),
-            });
-            delete row.fsc;
-            delete row.core;
-            const identity = `FSharp.Core/${f.product.corePackageVersion}`;
-            await write(row.assetsFile, JSON.stringify({
-                targets: { [current.tfm]: { [identity]: {
-                    compile: { "lib/netstandard2.0/FSharp.Core.dll": {} }, runtime: { "lib/netstandard2.0/FSharp.Core.dll": {} },
-                } } },
-                libraries: { [identity]: { type: "package", path: `fsharp.core/${f.product.corePackageVersion}` } },
-                packageFolders: { [settings.env.NUGET_PACKAGES]: {} },
-            }));
-            await write(row.targetPath, "synthetic output");
-            await write(path.join(settings.cwd, ".runner", `compiler-core-${index}.jsonl`), JSON.stringify({
-                ...roles.core, assemblyName: "FSharp.Core", complete: true, entryAssembly: roles.compiler.path,
-                runtimeVersion: "10.0.0", runtimePath: path.join(f.toolchain.runtimes[0].path, "10.0.0"), architecture: "x64",
-            }));
-            rows.push(row);
-        }
-        structured = { cells: rows, diagnostics: [] };
+        const result = await projectBuild({ product: f.product, toolchain: f.toolchain, settings, defines, nullable,
+            cells: builds.map(c => ({ ...c, projectReferences: c.project === app.project ? ["Library.fsproj"] : [] })) });
+        f.inspectFiles = [{ ...roles.core, ...result.core }];
+        f.loadedCore = result.core;
+        structured = result.structured;
         if (mutate) await mutate(structured, f);
         await write(args.find(arg => arg.startsWith("-bl:")).slice(4), "synthetic binlog");
         return { ...success, exitCode: buildExitCode };

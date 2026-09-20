@@ -361,8 +361,8 @@ async function runReproduction(options, dependencies = {}) {
             if (installation.product !== "sdk") await verifyRetainedArchive(installation.archive);
         await checkedFile({ path: toolchain.hostPath, sha256: toolchain.hostSha256 }, toolchain.root);
         requireValue(["source", "released"].includes(options.product.kind) && options.product.buildInstanceId, "unidentified product build");
-        if (options.product.kind === "source") requireValue(/^[0-9a-f]{40}$/.test(options.product.sourceSha) &&
-            (!toolchain.requested.sourceSha || options.product.sourceSha === toolchain.requested.sourceSha), "source build revision mismatch");
+        if (options.product.kind === "source") requireValue(/^[0-9a-f]{40}$/.test(options.product.sourceSha),
+            "source build revision missing");
         const platform = toolchain.requested.platform;
         requireValue(manifest.matrix.every(c => c.architecture === toolchain.architecture &&
             c.os === platform.os), "matrix requires a different worker platform");

@@ -238,12 +238,24 @@ and exact assertions, but not equal revision **build** SDKs. Source observations
 used by the engine must retain `buildToolchain`. Different build toolchains are
 returned as transition evidence, never erased to make endpoints comparable.
 
-`executeInvestigationWork(work, dependencies)` executes the returned permission.
-It calls `beginWork` before invoking any runner, making a lost acknowledgement
-or duplicate worker invocation non-executable. The state ledger keeps the
-reservation owner, attempt and execution generation. A cancelled owning run is
-retired only through `reserveWork`/`invalidateStaleEvidence`; retrying costs another
-full reservation and never more than two attempts per item.
+`executeInvestigationWork(work, dependencies)` revalidates the returned permission.
+It needs the same current trusted context, intake/approval readers, official
+metadata resolver and (for source work) history mirror as selection. It re-reads
+complete discussion, immutable assets, eligibility and active investigations,
+checks the authenticated epoch and binding, re-resolves latest stable, and
+checks current main against the saved pin before claiming execution. The saved
+`binding` cannot override current issue data; the returned `resolved` record is
+not used instead of execution-time release metadata.
+
+It then calls `beginWork` before invoking any runner, making a lost acknowledgement
+or duplicate worker invocation non-executable. Deadline checks surround
+asynchronous claiming, acquisition, inventory and collection; the abort signal
+uses the reservation's remaining time, not a fresh worker timeout. An expired
+claim cannot start a runner even if its checkpoint write completed successfully.
+The state ledger keeps the reservation owner, attempt and execution generation.
+Rejected, expired and cancelled work is not refunded. A cancelled owning run is
+retired only through `reserveWork`/`invalidateStaleEvidence`; retrying costs
+another full reservation and never more than two attempts per item.
 
 Worker dependencies include `worker` options for the existing runners,
 `inventoryReleased(identity, buildInstanceId)`, and
@@ -263,8 +275,14 @@ Released execution uses `acquireToolchain`, `verifyToolchainIdentity` and
 revision's declarations, acquires its own build toolchain, and creates fresh
 Bootstrap/Proto, bin/obj and package state. `worker.reproductionToolchain` is
 required separately for engine source work; optional `sampleRuntimes` freezes
-explicit sample runtimes. The workspace runner now accepts a reserved
-`buildInstanceId`; reusing its directory fails rather than reusing outputs.
+explicit sample runtimes. A source-derived sample SDK retains its acquisition
+`requested.sourceSha` as provenance, independently of the tested product SHA.
+The workspace/engine bind the product to the reserved source; the reproduction
+runner still verifies its local artifacts, host, archive and actual compiler,
+sample-runtime and Core loads. Compatible historical projects may therefore
+run a net9 compiler with the frozen SDK 10/net10 sample without retargeting.
+The workspace runner accepts a reserved `buildInstanceId`; reusing its directory
+fails rather than reusing outputs.
 Unsupported historical runtime/sample combinations remain untestable. There is
 no engine-specific FSI command, compiler runner, SDK installer, retargeting or
 `global.json` rewrite.
@@ -307,32 +325,40 @@ attribution.
 
 `engine.test.cjs` uses real temporary Git histories and inexpensive injected
 revision evaluators, not product acceptance. It records every actual bisect
-subprocess and exit code, including zero counts for all denied endpoint tuples
-and malformed/stale evidence. Process/GitHub/clock dependencies are injectable
-at the existing runner boundaries; production defaults call the original modules.
+subprocess and exit code before checking saved endpoint evidence, so an engine
+catch cannot hide a forbidden invocation. This includes zero counts for all
+denied endpoint tuples and malformed/stale evidence. Process/GitHub/clock
+dependencies are injectable at the existing runner boundaries; production
+defaults call the original modules.
 The scoped suite covers execution claims, cumulative cancellation/retry budgets,
 environment/input/main/stable epochs, lost worktrees, skips, toolchain transitions
 and uncertain histories. Real 1,000- and 4,096-commit intervals exercise compact
 checkpoint round-trips. Boundary cases check concrete confirmation attempts,
 the last two worker units, exact deadline capacity, and rejection of worker
 outcome/source/build/matrix/repetition mismatches without committing evidence.
+Reservation-to-execution edits and clock advances during asynchronous setup
+must start no stale or expired worker. Shared project evidence fixtures exercise
+the real workspace/reproduction seam with distinct historical compiler and
+frozen sample runtimes, for both released and source-derived sample acquisitions.
 
 Fresh Windows x64 product acceptance is retained at
-`Q:\rb912-engine-repair-20260920`. The original workspace runner clean-built
+`Q:\rb912-engine-hardening-20260920`. The original workspace runner clean-built
 `5a8b9adb034f420a5c2c1f577670c5eeeb454b7e` in build instance
-`cda0551b-12a9-47bf-a4e7-372ba380a371` using its approved measured
+`fbe0059e-2dfd-4ce2-b160-58a65f6092b9` using its approved measured
 `11.0.100-rc.1.26420.103` archive, with unchanged `global.json` and two passing
 FSI assertions. Released SDK `10.0.401` was reverified against current official
 metadata and its retained archive. It and the fresh source products then matched
 all 43 existing reproduction-smoke expectations (23 passes, six intended
 product failures, 14 identity rejections). The scoped evidence-helper Release build/test
 commands exited 0; that helper project contains no managed test cases.
-The targeted engine/model/state suite passed 498 tests and the full scoped suite
-passed 1,007, including 75 zero-bisect cases and 37 actual bisect subprocesses.
-Negative tests detected all eight in-memory removals of confirmation and
-worker-result integrity guards; repository files were not mutated for those probes.
+The targeted engine/model/state suite passed 525 tests and the full scoped suite
+passed 1,044, including 100 zero-bisect cases and 37 actual bisect subprocesses.
+Seven in-memory mutations were detected: bypassed current intake, released SDK
+and main freshness, removed asynchronous deadline checks, omitted sample-runtime
+forwarding, recoupled acquisition/product source provenance, and a forbidden
+pre-admission bisect reset. Repository files were not mutated for those probes.
 `final-acceptance-report.json` has SHA-256
-`f4acb60b0a90bef48fc7df9f119be8cccbc76e664e54f057ec42798c179ef189`.
+`02ef9214a9835070a846ab1cc13678a8ebe0617cdc01e3f717cba60628042528`.
 This validates the original product runners, not a real regression's admitted
 interval, an activated workflow, or fresh culprit attribution.
 

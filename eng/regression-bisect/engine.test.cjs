@@ -43,8 +43,11 @@ async function fixture(t, outcomes = ["product-failure", "product-failure", "pas
     h.context.environmentFingerprint = model.fingerprintInput(environments);
     await h.start();
     const trace = [], calls = [];
-    t.after(() => t.diagnostic(JSON.stringify({ bisectCount: calls.length,
-        calls: calls.map(args => ({ args: [...args], exitCode: args.exitCode })) })));
+    t.after(() => {
+        t.diagnostic(JSON.stringify({ bisectCount: calls.length,
+            calls: calls.map(args => ({ args: [...args], exitCode: args.exitCode })) }));
+        assert.ok(calls.every(c => c.endpointsSaved), "bisect preceded durable endpoints");
+    });
     const snapshot = { status: "complete", snapshot: {
         discussionFingerprint: h.context.issueFingerprint,
         input: { discussion: { issue: h.context.issue }, reproduction: { manifest: h.context.manifest } },
@@ -65,14 +68,16 @@ async function fixture(t, outcomes = ["product-failure", "product-failure", "pas
         execute: async (exe, args, settings) => {
             let call;
             if (args.includes("bisect")) {
-                const cp = (await state.loadCheckpoint(h.transport, h.context)).checkpoint;
-                assert.ok(Object.values(cp.state.endpointEvidence).every(Boolean), "bisect preceded durable endpoints");
                 call = args.slice(args.indexOf("bisect"));
                 calls.push(call);
             }
             const result = spawnSync(exe, args, { ...settings, encoding: "utf8", timeout: settings.timeoutMs, maxBuffer: settings.maxBytes });
-            if (result.error) throw result.error;
             if (call) call.exitCode = result.status;
+            if (result.error) throw result.error;
+            if (call) {
+                const cp = (await state.loadCheckpoint(h.transport, h.context)).checkpoint;
+                call.endpointsSaved = Object.values(cp.state.endpointEvidence).every(Boolean);
+            }
             return { status: "completed", complete: !result.signal, exitCode: result.status, stdout: result.stdout, stderr: result.stderr };
         },
     };
@@ -583,6 +588,18 @@ test("default intake freezes complete corrected discussion and immutable bytes b
     assert.equal(work.reservation.request.phase, "stable");
     assert.equal(reads, 1);
     assert.equal(h.calls.length, 0);
+    const worker = async () => assert.fail("changed approved bytes or discussion must not execute");
+    const dependencies = { ...h.deps, clock: () => new Date(h.context.now), worker: {},
+        acquireToolchain: worker, collectObservation: worker };
+    h.deps.approval.readSource = async () => { reads++; return Buffer.from("changed immutable source"); };
+    await assert.rejects(executeInvestigationWork(work, dependencies), /hash mismatch/);
+    assert.equal(reads, 2);
+    comment.body = "later correction";
+    await assert.rejects(executeInvestigationWork(work, dependencies), /discussion.*stale/);
+    assert.equal(reads, 2, "stale discussion must be rejected before reading reproduction assets");
+    const cp = (await state.loadCheckpoint(h.transport, h.context)).checkpoint;
+    assert.equal(cp.state.budget.consumed.reservedMinutes, 110);
+    assert.equal(cp.pending.executionGeneration, undefined);
 });
 
 test("worker seam preserves original FSI/project inputs and charges before invoking existing runners", async t => {
@@ -695,6 +712,87 @@ test("worker-result integrity mismatches cannot commit collector-shaped success"
                 assert.deepEqual(after.state.budget.consumed, before.state.budget.consumed);
                 assert.equal(after.state.budget.pendingWork.status, "running");
                 assert.equal(h.calls.length, 0);
+            });
+        }
+});
+
+test("reserved workers re-read current input and endpoint identities before execution", async t => {
+    const variants = {
+        closed: h => { h.snapshot.snapshot.input.discussion.issue = { ...h.context.issue, state: "closed" }; },
+        label: h => { h.snapshot.snapshot.input.discussion.issue = { ...h.context.issue, labels: ["regression"] }; },
+        discussion: h => { h.snapshot.snapshot.discussionFingerprint = f.digest("new correction"); },
+        incomplete: h => { h.snapshot.status = "blocked"; h.snapshot.reason = "incomplete current discussion"; },
+        active: h => { h.snapshot.snapshot.investigations.active.push({ basis: "timeline-cross-reference" }); },
+        approval: h => { h.context.authorization.approvalRevision = f.sha("changed approval"); },
+        reproduction: h => { h.context.manifest.assertions.pass.stdout = "changed"; f.seal(h.context.manifest); },
+        environment: h => { h.deps.environments["linux-x64"].imageDigest = f.digest("new runner"); },
+        stable: h => { h.deps.toolchains.resolveLatestStableSdk = async () => ({
+            status: "resolved", toolchain: { sdkVersion: "10.0.999", metadata: [] },
+        }); },
+        main: h => { h.git("commit", "--quiet", "--allow-empty", "-m", "new main"); },
+    };
+    for (const kind of ["released", "source"])
+        for (const [name, mutate] of Object.entries(variants)) {
+            if (kind === "released" && name === "main") continue;
+            await t.test(`${kind}/${name}`, async t => {
+                const h = await fixture(t);
+                if (kind === "source") await h.finish(await h.advance());
+                const work = await h.advance();
+                const before = (await state.loadCheckpoint(h.transport, h.context)).checkpoint;
+                mutate(h);
+                let executions = 0;
+                const worker = async () => { executions++; throw new Error("stale worker started"); };
+                await assert.rejects(executeInvestigationWork(work, {
+                    ...h.deps, clock: () => new Date(h.context.now), worker: { reproductionToolchain: {} },
+                    acquireToolchain: worker, testSourceRevision: worker, collectObservation: worker,
+                }), /eligible|stale|current|incomplete|active|approval|identity|epoch/);
+                assert.equal(executions, 0);
+                assert.equal(h.calls.length, 0);
+                const after = (await state.loadCheckpoint(h.transport, h.context)).checkpoint;
+                assert.deepEqual(after.observations, before.observations);
+                assert.deepEqual(after.state.budget.consumed, before.state.budget.consumed);
+                assert.equal(after.pending.executionGeneration, undefined);
+            });
+        }
+});
+
+test("elapsed reservation deadlines prevent later worker stages without refunding claims", async t => {
+    for (const stage of ["before", "claim", "acquisition", "inventory"])
+        for (const kind of ["released", "source"]) {
+            if (kind === "source" && ["acquisition", "inventory"].includes(stage)) continue;
+            await t.test(`${kind}/${stage}`, async t => {
+                const h = await fixture(t);
+                if (kind === "source") await h.finish(await h.advance());
+                const work = await h.advance();
+                let now = h.context.now;
+                const expire = () => { now = work.reservation.deadline; };
+                if (stage === "before") expire();
+                if (stage === "claim") {
+                    const update = h.transport.updateComment;
+                    h.transport.updateComment = async (...args) => { const value = await update(...args); expire(); return value; };
+                }
+                const calls = [];
+                const before = (await state.loadCheckpoint(h.transport, h.context)).checkpoint;
+                await assert.rejects(executeInvestigationWork(work, {
+                    ...h.deps, clock: () => new Date(now), worker: { reproductionToolchain: {} },
+                    acquireToolchain: async () => {
+                        calls.push("acquisition");
+                        if (stage === "acquisition") expire();
+                        return { status: "acquired", identity: { requested: {},
+                            archive: { sha256: h.context.stableSdk.archives[0].sha256 } } };
+                    },
+                    verifyToolchainIdentity: () => ({ status: "verified" }),
+                    inventoryReleased: async () => { calls.push("inventory"); if (stage === "inventory") expire(); return {}; },
+                    runReproduction: async () => { calls.push("reproduction"); throw new Error("expired reproduction started"); },
+                    testSourceRevision: async () => { calls.push("source"); throw new Error("expired source started"); },
+                    collectObservation: async () => assert.fail("expired work cannot collect"),
+                }), /deadline|timeout/i);
+                assert.deepEqual(calls, stage === "acquisition" ? ["acquisition"] :
+                    stage === "inventory" ? ["acquisition", "inventory"] : []);
+                const after = (await state.loadCheckpoint(h.transport, h.context)).checkpoint;
+                assert.deepEqual(after.state.budget.consumed, before.state.budget.consumed);
+                assert.deepEqual(after.observations, before.observations);
+                assert.equal(after.pending.id, work.reservation.id);
             });
         }
 });

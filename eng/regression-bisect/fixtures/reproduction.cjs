@@ -75,4 +75,52 @@ async function fixture(t, { kind = "source", executable = false, tfms = ["net10.
     return { root, file, product, toolchain, manifest: m, sourceDirectory: path.join(root, "source") };
 }
 
-module.exports = { fixture };
+async function projectBuild({ product, toolchain, cells, settings, defines = [], nullable }) {
+    const write = async (location, contents) => {
+        await fs.mkdir(path.dirname(location), { recursive: true });
+        await fs.writeFile(location, contents);
+        return { path: location, sha256: hash(contents) };
+    };
+    const roles = Object.fromEntries(product.files.map(p => [p.role, p]));
+    const packageDirectory = path.join(settings.env.NUGET_PACKAGES, "fsharp.core", product.corePackageVersion);
+    const core = await write(path.join(packageDirectory, "lib", "netstandard2.0", "FSharp.Core.dll"), await fs.readFile(roles.core.path));
+    await write(path.join(packageDirectory, `fsharp.core.${product.corePackageVersion}.nupkg`), await fs.readFile(roles.corePackage.path));
+    const sdkImports = [];
+    for (const name of ["Sdk.props", "Sdk.targets"])
+        sdkImports.push((await write(path.join(toolchain.sdkBasePath, "Sdks", "Microsoft.NET.Sdk", "Sdk", name), name)).path);
+    const rows = [];
+    for (const [index, cell] of cells.entries()) {
+        const row = {
+            project: path.join(settings.cwd, cell.project), targetFramework: cell.tfm, configuration: cell.configuration,
+            expectedLanguageVersion: cell.languageVersion, expectedOptimize: cell.configuration === "Release",
+            expectedDefines: defines, expectedNullable: nullable, projectReferences: cell.projectReferences ?? [],
+            assetsFile: path.join(settings.cwd, ".runner", `${index}.assets.json`),
+            targetPath: path.join(settings.cwd, "bin", cell.tfm, `${path.parse(cell.project).name}.dll`),
+            sdkVersion: toolchain.sdkVersion, hostPath: toolchain.hostPath, complete: true,
+            imports: [...["props", "targets", "sdkTargets", "overrides"].map(r => roles[r].path), ...sdkImports],
+            fscTasks: [{ compilerPath: roles.compiler.path, taskAssembly: roles.tasks.path, targetsPath: roles.targets.path,
+                hostPath: toolchain.hostPath, references: [core.path], languageVersion: cell.languageVersion,
+                optimize: cell.configuration === "Release", defines, nullable,
+                commandLine: `"${toolchain.hostPath}" "${roles.compiler.path}" --langversion:${cell.languageVersion}` }],
+        };
+        const identity = `FSharp.Core/${product.corePackageVersion}`;
+        await write(row.assetsFile, JSON.stringify({
+            targets: { [cell.tfm]: { [identity]: {
+                compile: { "lib/netstandard2.0/FSharp.Core.dll": {} }, runtime: { "lib/netstandard2.0/FSharp.Core.dll": {} },
+            } } },
+            libraries: { [identity]: { type: "package", path: `fsharp.core/${product.corePackageVersion}` } },
+            packageFolders: { [settings.env.NUGET_PACKAGES]: {} },
+        }));
+        await write(row.targetPath, "synthetic output");
+        const runtime = toolchain.runtimes.find(r => r.name === product.runtime.name && r.version === product.runtime.version);
+        await write(path.join(settings.cwd, ".runner", `compiler-core-${index}.jsonl`), JSON.stringify({
+            ...roles.core, path: path.join(path.dirname(roles.compiler.path), "FSharp.Core.dll"),
+            assemblyName: "FSharp.Core", complete: true, entryAssembly: roles.compiler.path,
+            runtimeVersion: runtime.version, runtimePath: path.join(runtime.path, runtime.version), architecture: toolchain.architecture,
+        }));
+        rows.push(row);
+    }
+    return { core, structured: { cells: rows, diagnostics: [] } };
+}
+
+module.exports = { fixture, projectBuild };

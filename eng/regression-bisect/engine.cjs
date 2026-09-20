@@ -172,29 +172,46 @@ async function selectSource(cp, context, deps, history) {
         request: { kind: "source", target: { sourceSha: sha }, endpoint: null, phase: "bisect" } };
 }
 
+async function currentInput(now, deps) {
+    const context = { ...deps.context, now, environmentFingerprint: fingerprint(deps.environments) };
+    validateManifest(context.manifest);
+    requireValue(["readSource", "authenticateRecord", "readTrustedCheckpoints"].every(k => typeof deps.approval?.[k] === "function"),
+        "pinned approval assets and authenticated intake readers required");
+    const snapshot = await (deps.intake?.readIssueSnapshot ?? intake.readIssueSnapshot)({
+        ...deps.approval, transport: deps.intakeTransport ?? deps.transport, repository: context.repository,
+        issueNumber: context.issueNumber, reviewedManifest: context.manifest, now,
+    });
+    if (snapshot.status !== "complete") return report(snapshot.status === "ineligible" ? "stopped" : "blocked", snapshot.reason);
+    const current = snapshot.snapshot;
+    requireValue(current.investigations?.status === "complete" && current.input.reproduction &&
+        equal(current.input.reproduction.manifest, context.manifest) &&
+        current.discussionFingerprint === context.manifest.discussionFingerprint, "incomplete or stale approved input");
+    context.issue = current.input.discussion.issue;
+    context.issueFingerprint = current.discussionFingerprint;
+    requireValue(isEligibleIssue(context.issue), "issue is no longer eligible");
+    const active = current.investigations.active.filter(a => !(a.basis === "trusted-checkpoint-active-run" &&
+        a.commentId === context.commentId && a.owner.runId === context.owner.runId && a.owner.attempt === context.owner.attempt));
+    return active.length ? report("blocked", "active linked investigation", { active }) : { context };
+}
+
+async function latestStable(context, deps, signal) {
+    const resolved = await (deps.toolchains?.resolveLatestStableSdk ?? toolchains.resolveLatestStableSdk)(
+        { policy: context.policy, platform: deps.platform, signal },
+        { clock: () => new Date(context.now), ...deps.toolchainDependencies });
+    requireValue(resolved.status === "resolved", `latest stable resolution blocked: ${resolved.error?.message}`);
+    requireValue(resolved.toolchain.sdkVersion === context.stableSdk.version &&
+        resolved.toolchain.metadata.some(m => m.url === context.stableSdk.releaseIndexUrl && m.sha256 === context.stableSdk.releaseIndexDigest),
+    "latest stable identity changed; authenticated endpoint context must be refreshed");
+    return resolved.toolchain;
+}
+
 async function advanceInvestigation({ now }, deps) {
     let history, cp, context;
     const signal = AbortSignal.any([AbortSignal.timeout(300000), ...(deps.signal ? [deps.signal] : [])]);
     try {
-        context = { ...deps.context, now, environmentFingerprint: fingerprint(deps.environments) };
-        validateManifest(context.manifest);
-        requireValue(["readSource", "authenticateRecord", "readTrustedCheckpoints"].every(k => typeof deps.approval?.[k] === "function"),
-            "pinned approval assets and authenticated intake readers required");
-        const snapshot = await (deps.intake?.readIssueSnapshot ?? intake.readIssueSnapshot)({
-            ...deps.approval, transport: deps.intakeTransport ?? deps.transport, repository: context.repository,
-            issueNumber: context.issueNumber, reviewedManifest: context.manifest, now,
-        });
-        if (snapshot.status !== "complete") return report(snapshot.status === "ineligible" ? "stopped" : "blocked", snapshot.reason);
-        const current = snapshot.snapshot;
-        requireValue(current.investigations?.status === "complete" && current.input.reproduction &&
-            equal(current.input.reproduction.manifest, context.manifest) &&
-            current.discussionFingerprint === context.manifest.discussionFingerprint, "incomplete or stale approved input");
-        context.issue = current.input.discussion.issue;
-        context.issueFingerprint = current.discussionFingerprint;
-        requireValue(isEligibleIssue(context.issue), "issue is no longer eligible");
-        const active = current.investigations.active.filter(a => !(a.basis === "trusted-checkpoint-active-run" &&
-            a.commentId === context.commentId && a.owner.runId === context.owner.runId && a.owner.attempt === context.owner.attempt));
-        if (active.length) return report("blocked", "active linked investigation", { active });
+        const input = await currentInput(now, deps);
+        if (!input.context) return input;
+        context = input.context;
         let loaded = await loadCheckpoint(deps.transport, context);
         cp = loaded.checkpoint;
         if (context.pinnedMainSha !== cp.state.pinnedMainSha) {
@@ -209,12 +226,7 @@ async function advanceInvestigation({ now }, deps) {
         }
         validateState(cp.state);
         requireValue(cp.state.epoch === fingerprintEpoch(context.manifest, cp.state.budget, context.pinnedMainSha), "stale epoch");
-        const resolved = await (deps.toolchains?.resolveLatestStableSdk ?? toolchains.resolveLatestStableSdk)(
-            { policy: context.policy, platform: deps.platform, signal }, { clock: () => new Date(now), ...deps.toolchainDependencies });
-        requireValue(resolved.status === "resolved", `latest stable resolution blocked: ${resolved.error?.message}`);
-        requireValue(resolved.toolchain.sdkVersion === context.stableSdk.version &&
-            resolved.toolchain.metadata.some(m => m.url === context.stableSdk.releaseIndexUrl && m.sha256 === context.stableSdk.releaseIndexDigest),
-        "latest stable identity changed; authenticated endpoint context must be refreshed");
+        const resolved = await latestStable(context, deps, signal);
         if (cp.pending) {
             const owner = cp.pending.owner;
             const run = await deps.transport.getRun(owner.runId, owner.attempt);
@@ -263,7 +275,7 @@ async function advanceInvestigation({ now }, deps) {
         return { status: "work", reservation, binding: {
             issue: context.issue, issueFingerprint: context.issueFingerprint, pinnedMainSha: context.pinnedMainSha,
             environmentFingerprint: context.environmentFingerprint,
-        }, resolved: resolved.toolchain, commands: history?.commands ?? [] };
+        }, resolved, commands: history?.commands ?? [] };
     } catch (error) {
         return report("blocked", error.message, { ...(cp ? { budget: cp.state.budget.consumed } : {}), commands: history?.commands ?? [] });
     } finally { if (history) await history.dispose(); }
@@ -271,22 +283,44 @@ async function advanceInvestigation({ now }, deps) {
 
 async function executeInvestigationWork(work, deps) {
     requireValue(work.status === "work" && work.reservation.execute, "work has no new execution permission");
-    const context = { ...deps.context, now: (deps.clock ?? (() => new Date()))().toISOString(),
-        issue: work.binding.issue, issueFingerprint: work.binding.issueFingerprint,
-        pinnedMainSha: work.binding.pinnedMainSha, environmentFingerprint: fingerprint(deps.environments) };
-    const loaded = await loadCheckpoint(deps.transport, context);
+    const clock = deps.clock ?? (() => new Date());
+    const input = await currentInput(clock().toISOString(), deps);
+    requireValue(input.context, input.reason);
+    const context = input.context;
+    let loaded = await loadCheckpoint(deps.transport, context);
+    if (context.pinnedMainSha !== loaded.checkpoint.state.pinnedMainSha) {
+        context.pinnedMainSha = loaded.checkpoint.state.pinnedMainSha;
+        loaded = await loadCheckpoint(deps.transport, context);
+    }
     const r = loaded.checkpoint.pending;
     requireValue(loaded.executionAllowed && r?.id === work.reservation.id &&
         r.generation === work.reservation.generation && equal(r.request, work.reservation.request),
     "work reservation no longer current");
+    requireValue(equal(work.binding, { issue: context.issue, issueFingerprint: context.issueFingerprint,
+        pinnedMainSha: context.pinnedMainSha, environmentFingerprint: context.environmentFingerprint }), "stale work binding");
     requireValue(typeof deps.collectObservation === "function", "trusted observation collector required");
     requireValue(r.request.kind !== "source" || deps.worker.reproductionToolchain,
         "frozen reproduction toolchain required separately from revision build SDK");
-    const started = await beginWork(deps.transport, context, { generation: r.generation, attemptId: r.id });
+    const remaining = Date.parse(r.deadline) - clock().getTime();
+    requireValue(remaining > 0, "reservation deadline exhausted");
+    const signal = AbortSignal.any([AbortSignal.timeout(remaining), ...(deps.signal ? [deps.signal] : [])]);
+    const checkDeadline = () => {
+        signal.throwIfAborted();
+        requireValue(clock().getTime() < Date.parse(r.deadline), "reservation deadline exhausted");
+    };
+    checkDeadline();
+    const resolved = await latestStable({ ...context, now: clock().toISOString() }, deps, signal);
+    if (r.request.kind === "source") {
+        const history = await historyWorkspace(deps.history, deps.execute ?? execute, signal);
+        try { requireValue(history.main === context.pinnedMainSha, "current main changed; source work must be reselected"); }
+        finally { await history.dispose(); }
+    }
+    checkDeadline();
+    const started = await beginWork(deps.transport, { ...context, now: clock().toISOString() },
+        { generation: r.generation, attemptId: r.id });
     if (!started.execute) return report("blocked", "work execution already claimed");
     const manifest = loaded.checkpoint.state.manifest;
-    const signal = AbortSignal.any([AbortSignal.timeout(Math.max(1, Date.parse(r.deadline) - Date.parse(context.now))),
-        ...(deps.signal ? [deps.signal] : [])]);
+    checkDeadline();
     let result;
     if (r.request.kind === "source") {
         result = await (deps.testSourceRevision ?? testSourceRevision)({
@@ -299,8 +333,9 @@ async function executeInvestigationWork(work, deps) {
         }, deps.workspaceDependencies);
     } else {
         const acquired = await (deps.acquireToolchain ?? toolchains.acquireToolchain)({
-            policy: context.policy, toolchain: work.resolved, storageDirectory: deps.worker.storageDirectory, signal,
+            policy: context.policy, toolchain: resolved, storageDirectory: deps.worker.storageDirectory, signal,
         }, deps.toolchainDependencies);
+        checkDeadline();
         if (acquired.status !== "acquired") result = acquired;
         else {
             const verified = (deps.verifyToolchainIdentity ?? toolchains.verifyToolchainIdentity)({
@@ -309,14 +344,17 @@ async function executeInvestigationWork(work, deps) {
             requireValue(verified.status === "verified", "stable acquisition identity rejected");
             requireValue(acquired.identity.archive.sha256 === context.stableSdk.archives.find(a =>
                 a.os === deps.platform.os && a.architecture === deps.platform.architecture)?.sha256, "stable archive identity changed");
+            checkDeadline();
             const product = await deps.inventoryReleased(acquired.identity, r.id);
+            checkDeadline();
             result = await (deps.runReproduction ?? runReproduction)({
                 ...deps.worker, manifest, product, toolchain: acquired.identity,
             }, { execute: (exe, args, settings) => (deps.workerExecute ?? execute)(exe, args, { ...settings, signal }) });
         }
     }
-    signal.throwIfAborted();
+    checkDeadline();
     const collected = await deps.collectObservation({ result, reservation: r, manifest, context });
+    checkDeadline();
     validateObservation(collected.observation, manifest);
     requireValue(equal(collected.observation.outcome, result.outcome), "collector changed worker outcome");
     if (result.outcome.outcome !== "untestable") {
@@ -327,7 +365,7 @@ async function executeInvestigationWork(work, deps) {
             collected.observation.cells.every(c => equal(c.attempts, reproduction.cells.find(r => r.id === c.id)?.attempts)),
         "collector omitted original repeated assertions");
     }
-    return commitObservation(deps.transport, { ...context, now: (deps.clock ?? (() => new Date()))().toISOString() }, {
+    return commitObservation(deps.transport, { ...context, now: clock().toISOString() }, {
         generation: started.generation, attemptId: r.id, observation: collected.observation, evidence: collected.evidence,
     });
 }
