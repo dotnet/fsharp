@@ -67,8 +67,10 @@ type internal InlineRenameLocationSet
                 | LexerSymbolKind.Operator -> replacementText
                 | _ -> FSharpKeywords.NormalizeIdentifierBackticks replacementText
 
+            // `_` names a binding nothing refers to: in expression position `_.M()` is the shorthand lambda
             let replacementTextValid =
                 Tokenizer.isValidNameForSymbol (symbolKind, symbol, replacementText)
+                && not (replacementText = "_" && locations.Length > 1)
 
             let documentIds = locations |> Seq.map (fun doc -> doc.Document.Id) |> Seq.distinct
             return new InlineRenameReplacementInfo(newSolution, replacementTextValid, documentIds) :> FSharpInlineRenameReplacementInfo
