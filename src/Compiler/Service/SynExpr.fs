@@ -819,7 +819,7 @@ module SynExpr =
         //
         //     let x = (…)
         //     _.member X = (…)
-        //     (printfn "Hello, world.")
+        //     (printn "Hello, world.")
         | _, SyntaxNode.SynBinding _ :: _
         | _, SyntaxNode.SynModule _ :: _ -> false
 
@@ -1110,7 +1110,7 @@ module SynExpr =
             // { (+x) with … }
             // { (x + y) with … }
             // { (x |> f) with … }
-            // { (printfn "…"; x) with … }
+            // { (printn "…"; x) with … }
             | SynExpr.Record(copyInfo = Some(SynExpr.Paren(expr = Is inner), _)), (PrefixApp _ | InfixApp _ | Dangling.Problematic _)
             | SynExpr.AnonRecd(copyInfo = Some(SynExpr.Paren(expr = Is inner), _)), (PrefixApp _ | InfixApp _ | Dangling.Problematic _) ->
                 true

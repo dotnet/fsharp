@@ -1596,7 +1596,7 @@ let AbstractAndRemapModulInfo g (cenv: cenv) (repackage, hidden) info =
 //-------------------------------------------------------------------------
 
 /// Type applications of F# "type functions" may cause side effects, e.g.
-/// let x<'a> = printfn "hello"; typeof<'a>
+/// let x<'a> = printn "hello"; typeof<'a>
 /// In this case do not treat them as constants.
 let IsTyFuncValRefExpr = function
     | Expr.Val (fv, _, _) -> fv.IsTypeFunction
