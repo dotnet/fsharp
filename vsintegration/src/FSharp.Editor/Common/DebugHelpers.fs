@@ -136,10 +136,26 @@ module FSharpServiceTelemetry =
     open OpenTelemetry.Trace
     open OpenTelemetry.Metrics
 
-    let otelExport () =
-        // On Windows forwarding localhost to wsl2 docker container sometimes does not work. Use IP address instead.
-        let otlpEndpoint = Uri("http://127.0.0.1:4317")
+    // Nothing listening on the endpoint means an exporter retrying in the background and a 5s flush
+    // on shutdown, so exporting is opt-in: FSHARP_OTEL_EXPORT enables it and can carry the endpoint.
+    let private otelEndpoint =
+        match Environment.GetEnvironmentVariable "FSHARP_OTEL_EXPORT" with
+        | null
+        | "" -> ValueNone
+        | value ->
+            match Uri.TryCreate(value, UriKind.Absolute) with
+            | true, uri when
+                (uri.Scheme = Uri.UriSchemeHttp || uri.Scheme = Uri.UriSchemeHttps)
+                && not (String.IsNullOrEmpty uri.Host)
+                ->
+                ValueSome uri
+            // "localhost:4317" parses as an absolute URI too - scheme "localhost", no host - so an
+            // http(s) scheme and a host are required; anything else falls back to the default, same as
+            // an unparseable value. On Windows forwarding localhost to wsl2 docker sometimes does not
+            // work, so that default is an IP address rather than the name.
+            | _ -> ValueSome(Uri "http://127.0.0.1:4317")
 
+    let private startOtelExport (otlpEndpoint: Uri) =
         let meterProvider =
             // Configure OpenTelemetry metrics. Metrics can be viewed in Prometheus or other compatible tools.
             OpenTelemetry.Sdk
@@ -169,6 +185,11 @@ module FSharpServiceTelemetry =
             tracerProvider.ForceFlush(5000) |> ignore
             tracerProvider.Dispose()
             meterProvider.Dispose()
+
+    let otelExport () =
+        match otelEndpoint with
+        | ValueNone -> ignore
+        | ValueSome endpoint -> startOtelExport endpoint
 
     let listenToAll () = listen ""
 #endif

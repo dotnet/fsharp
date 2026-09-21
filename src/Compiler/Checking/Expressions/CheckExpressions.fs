@@ -2484,6 +2484,15 @@ type IsObjExprBinding =
     | ObjExprBinding
     | ValOrMemberBinding
 
+let private IsIndexerSetterBinding (SynValData(memberFlagsOpt, SynValInfo(argInfos, _), _)) =
+    match memberFlagsOpt with
+    | Some flags when flags.MemberKind = SynMemberKind.PropertySet ->
+        match flags.IsInstance, argInfos with
+        | true, [_; _ :: _ :: _]
+        | false, [_ :: _ :: _] -> true
+        | _ -> false
+    | _ -> false
+
 module BindingNormalization =
     /// Push a bunch of pats at once. They may contain patterns, e.g. let f (A x) (B y) = ...
     /// In this case the semantics is let f a b = let A x = a in let B y = b
@@ -6716,8 +6725,14 @@ and TcIteratedLambdas (cenv: cenv) isFirst (env: TcEnv) overallTy takenNames tpe
             |> Option.map fst
             |> Option.defaultValue []
 
+        let envForArgs =
+            match env.eLambdaArgInfos with
+            | [_] -> env
+            | _ when env.eIsIndexerSetter -> { env with eIsIndexerSetter = false }
+            | _ -> env
+
         let vs, TcPatLinearEnv (tpenv, names, takenNames, _) =
-            cenv.TcSimplePats cenv isMember CheckCxs domainTy env (TcPatLinearEnv (tpenv, Map.empty, takenNames, false)) synSimplePats (parsedPatterns, isFirst)
+            cenv.TcSimplePats cenv isMember CheckCxs domainTy envForArgs (TcPatLinearEnv (tpenv, Map.empty, takenNames, false)) synSimplePats (parsedPatterns, isFirst)
 
         let envinner, _, vspecMap = MakeAndPublishSimpleValsForMergedScope cenv env m names
         let byrefs = vspecMap |> Map.map (fun _ v -> isByrefTy g v.Type, v)
@@ -6744,7 +6759,8 @@ and TcIteratedLambdas (cenv: cenv) isFirst (env: TcEnv) overallTy takenNames tpe
                         let optimizeClosureIfNotInlined = ArgReprInfoHasWellKnownAttribute g WellKnownValAttributes.OptimizeClosureIfNotInlinedAttribute argInfo
                         if optimizeClosureIfNotInlined then
                             v.SetOptimizeClosureIfNotInlined())
-                 { envinner with eLambdaArgInfos = rest }
+                 { envinner with eLambdaArgInfos = rest; eIsIndexerSetter = envinner.eIsIndexerSetter && not rest.IsEmpty }
+            | [] when envinner.eIsIndexerSetter -> { envinner with eIsIndexerSetter = false }
             | [] -> envinner
 
         let bodyExpr, tpenv = TcIteratedLambdas cenv false envinner (MustConvertTo (false, resultTy)) takenNames tpenv bodyExpr
@@ -6757,7 +6773,7 @@ and TcIteratedLambdas (cenv: cenv) isFirst (env: TcEnv) overallTy takenNames tpe
         mkMultiLambda m vspecs (bodyExpr, resultTy), tpenv
 
     | e ->
-        let env = { env with eIsControlFlow = true }
+        let env = { env with eIsControlFlow = true; eIsIndexerSetter = false }
         TcExpr cenv overallTy env tpenv e
 
 and TcTyparExprThen (cenv: cenv) overallTy env tpenv synTypar m delayed =
@@ -11726,7 +11742,11 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
                 | DebugPointAtBinding.Yes _ -> false
                 | _ -> true
 
-            let envinner = { envinner with eLambdaArgInfos = argInfos; eIsControlFlow = rhsIsControlFlow }
+            let envinner =
+                { envinner with
+                    eLambdaArgInfos = argInfos
+                    eIsIndexerSetter = IsIndexerSetterBinding valSynData
+                    eIsControlFlow = rhsIsControlFlow }
 
             if isCtor then TcExprThatIsCtorBody (safeThisValOpt, safeInitInfo) cenv (MustEqual overallExprTy) envinner tpenv rhsExpr
             else TcExprThatCantBeCtorBody cenv (MustConvertTo (false, overallExprTy)) envinner tpenv rhsExpr
@@ -12156,7 +12176,7 @@ and TcAttributesMaybeFail canFail cenv env attrTgt synAttribs =
 
 and TcAttributesCanFail cenv env attrTgt synAttribs =
     let attrs, didFail = TcAttributesMaybeFail TcCanFail.IgnoreAllErrors cenv env attrTgt synAttribs
-    attrs, (fun () -> if didFail then TcAttributes cenv env attrTgt synAttribs else attrs)
+    attrs, (fun () -> if didFail then TcAttributes cenv env attrTgt synAttribs else attrs), didFail
 
 and TcAttributes cenv env attrTgt synAttribs =
     TcAttributesMaybeFail TcCanFail.ReportAllErrors cenv env attrTgt synAttribs |> fst
@@ -12406,7 +12426,7 @@ and CheckMemberFlags intfSlotTyOpt newslotsOK overridesOK memberFlags m =
 /// the _body_ of the binding. For example, in a letrec we may assume this knowledge
 /// for each binding in the letrec prior to any type inference. This might, for example,
 /// tell us the type of the arguments to a recursive function.
-and ApplyTypesFromArgumentPatterns (cenv: cenv, env, optionalArgsOK, ty, m, tpenv, NormalizedBindingRhs (pushedPats, retInfoOpt, e), memberFlagsOpt: SynMemberFlags option) =
+and ApplyTypesFromArgumentPatterns (cenv: cenv, env, optionalArgsOK, ty, m, tpenv, NormalizedBindingRhs (pushedPats, retInfoOpt, e), (SynValData(memberFlags = memberFlagsOpt) as valSynData)) =
 
     let g = cenv.g
 
@@ -12427,8 +12447,13 @@ and ApplyTypesFromArgumentPatterns (cenv: cenv, env, optionalArgsOK, ty, m, tpen
         let domainTy, resultTy = UnifyFunctionType None cenv env.DisplayEnv m ty
         // We apply the type information from the patterns by type checking the
         // "simple" patterns against 'domainTyR'. They get re-typechecked later.
-        ignore (cenv.TcSimplePats cenv optionalArgsOK CheckCxs domainTy env (TcPatLinearEnv (tpenv, Map.empty, Set.empty, false)) pushedPat ([], false))
-        ApplyTypesFromArgumentPatterns (cenv, env, optionalArgsOK, resultTy, m, tpenv, NormalizedBindingRhs (morePushedPats, retInfoOpt, e), memberFlagsOpt)
+        let envForArgs =
+            if morePushedPats.IsEmpty && IsIndexerSetterBinding valSynData then
+                { env with eIsIndexerSetter = true }
+            else
+                env
+        ignore (cenv.TcSimplePats cenv optionalArgsOK CheckCxs domainTy envForArgs (TcPatLinearEnv (tpenv, Map.empty, Set.empty, false)) pushedPat ([], false))
+        ApplyTypesFromArgumentPatterns (cenv, env, optionalArgsOK, resultTy, m, tpenv, NormalizedBindingRhs (morePushedPats, retInfoOpt, e), valSynData)
 
 /// Check if the type annotations and inferred type information in a value give a
 /// full and complete generic type for a value. If so, enable generic recursion.
@@ -12954,7 +12979,7 @@ and AnalyzeAndMakeAndPublishRecursiveValue
     let optionalArgsOK = Option.isSome memberFlagsOpt
 
     // Assert the types given in the argument patterns
-    ApplyTypesFromArgumentPatterns(cenv, envinner, optionalArgsOK, ty, mBinding, tpenv, bindingRhs, memberFlagsOpt)
+    ApplyTypesFromArgumentPatterns(cenv, envinner, optionalArgsOK, ty, mBinding, tpenv, bindingRhs, valSynData)
 
     // Do the type annotations give the full and complete generic type?
     // If so, generic recursion can be used when using this type.

@@ -239,6 +239,12 @@ type ConstraintSolverState =
         /// Checks to run after all inference is complete.
         PostInferenceChecksFinal: ResizeArray<unit -> unit>
 
+        /// Union attributes awaiting a retry after the recursive group is established.
+        mutable UnionsWithDeferredAttributes: Set<Stamp>
+
+        /// Deferred union constraints not yet checked after their attributes resolved.
+        mutable DeferredUnionNullnessChecks: (TType * range) list
+
         WarnWhenUsingWithoutNullOnAWithNullTarget: string option
 
         /// RFC FS-1043: the CCU currently being compiled, used to scope the optimizer-replay cache of
