@@ -294,6 +294,8 @@ type ConstraintSolverState =
 
       mutable UnionsWithDeferredAttributes: Set<Stamp>
 
+      mutable DeferredUnionNullnessChecks: (TType * range) list
+
       WarnWhenUsingWithoutNullOnAWithNullTarget: string option
 
       /// RFC FS-1043: the CCU currently being compiled, used to scope the optimizer-replay cache of
@@ -311,6 +313,7 @@ type ConstraintSolverState =
           PostInferenceChecksPreDefaults = ResizeArray()
           PostInferenceChecksFinal = ResizeArray()
           UnionsWithDeferredAttributes = Set.empty
+          DeferredUnionNullnessChecks = []
           WarnWhenUsingWithoutNullOnAWithNullTarget = None
           CompilingCcu = compilingCcu }
 
@@ -2946,7 +2949,21 @@ and SolveTypeUseNotSupportsNull (csenv: ConstraintSolverEnv) ndeep m2 (trace: Op
         let m = csenv.m
         let denv = csenv.DisplayEnv
 
-        if TypeNullIsTrueValue g ty then
+        let isUnresolvedUnionInOverload =
+            csenv.IsSpeculativeForMethodOverloading &&
+            match tryTcrefOfAppTy g ty with
+            | ValueSome tcref -> tcref.IsUnionTycon && tcref.UnionCasesArray.Length = 0
+            | ValueNone -> false
+
+        if TypeNullIsTrueValue g ty || isUnresolvedUnionInOverload then
+            let pending = csenv.SolverState.DeferredUnionNullnessChecks
+            if not pending.IsEmpty then
+                let remaining =
+                    pending |> List.filter (fun (pendingTy, pendingRange) ->
+                        pendingRange <> getNullnessWarningRange csenv || not (typeEquiv g pendingTy ty))
+                trace.Exec
+                    (fun () -> csenv.SolverState.DeferredUnionNullnessChecks <- remaining)
+                    (fun () -> csenv.SolverState.DeferredUnionNullnessChecks <- pending)
             // We can only give warnings here as F# 5.0 introduces these constraints into existing
             // code via Option.ofObj and Option.toObj
             do! WarnD (ConstraintSolverNullnessWarning(FSComp.SR.csTypeHasNullAsTrueValue(NicePrint.minimalRichTextOfType denv ty), getNullnessWarningRange csenv, m2))
@@ -2967,12 +2984,20 @@ and SolveTypeUseNotSupportsNull (csenv: ConstraintSolverEnv) ndeep m2 (trace: Op
                 match tryTcrefOfAppTy g ty with
                 | ValueSome tcref when csenv.SolverState.UnionsWithDeferredAttributes.Contains tcref.Stamp ->
                     // Representation attributes can remain unresolved after union cases are populated.
+                    let pending = csenv.SolverState.DeferredUnionNullnessChecks
+                    let warningRange = getNullnessWarningRange csenv
                     trace.Exec
                         (fun () ->
+                            csenv.SolverState.DeferredUnionNullnessChecks <- (ty, warningRange) :: pending
                             csenv.SolverState.PushPostInferenceCheck (preDefaults=true, check = fun () ->
-                                if TypeNullIsTrueValue g ty then
+                                if TypeNullIsTrueValue g ty &&
+                                   csenv.SolverState.DeferredUnionNullnessChecks
+                                   |> List.exists (fun (pendingTy, pendingRange) ->
+                                       pendingRange = warningRange && typeEquiv g pendingTy ty) then
                                     SolveTypeUseNotSupportsNull csenv ndeep m2 NoTrace ty |> RaiseOperationResult))
-                        (fun () -> csenv.SolverState.PopPostInferenceCheck (preDefaults=true))
+                        (fun () ->
+                            csenv.SolverState.DeferredUnionNullnessChecks <- pending
+                            csenv.SolverState.PopPostInferenceCheck (preDefaults=true))
                 | _ -> ()
 
                 let nullness = nullnessOfTy g ty
@@ -4415,6 +4440,7 @@ let CreateCodegenState tcVal g amap =
       PostInferenceChecksPreDefaults = ResizeArray()
       PostInferenceChecksFinal = ResizeArray()
       UnionsWithDeferredAttributes = Set.empty
+      DeferredUnionNullnessChecks = []
       WarnWhenUsingWithoutNullOnAWithNullTarget = None
       CompilingCcu = None }
 
@@ -4679,6 +4705,7 @@ let IsApplicableMethApprox g amap m (minfo: MethInfo) availObjTy =
               PostInferenceChecksPreDefaults = ResizeArray()
               PostInferenceChecksFinal = ResizeArray()
               UnionsWithDeferredAttributes = Set.empty
+              DeferredUnionNullnessChecks = []
               WarnWhenUsingWithoutNullOnAWithNullTarget = None
               CompilingCcu = None }
         let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m (DisplayEnv.Empty g)

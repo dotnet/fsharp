@@ -11,6 +11,62 @@ let withVersionAndCheckNulls (version,checknulls) cu =
     |> withOptions ["--warnaserror+"]
     |> if checknulls then withCheckNulls else id
 
+[<Theory>]
+[<InlineData(false)>]
+[<InlineData(true)>]
+let ``Issue 20211 - deferred union attributes preserve overload selection`` checknulls =
+    FSharp """
+module Probe
+
+type Methods =
+    static member Choose<'T when 'T : not null>(_: 'T, _: System.IComparable) = 1
+    static member Choose<'T>(_: 'T, _: System.IFormattable) = 2
+
+[<Rep(CompilationRepresentationFlags.UseNullAsTrueValue)>]
+type U = Nil | Node of int
+and [<System.ComponentModel.Description(nameof (Methods.Choose : U * int -> int))>]
+    Consumer = class end
+and RepAttribute = CompilationRepresentationAttribute
+"""
+    |> asLibrary
+    |> withVersionAndCheckNulls ("preview", checknulls)
+    |> withOptions [if checknulls then "--checknulls+" else "--checknulls-"; "--warnaserror-"]
+    |> typecheck
+    |> shouldSucceed
+    |> withDiagnostics []
+
+[<Theory>]
+[<InlineData(false, false)>]
+[<InlineData(false, true)>]
+[<InlineData(true, false)>]
+[<InlineData(true, true)>]
+let ``Issue 20211 - union annotation warns once after attributes resolve`` compileSource multipleAnnotations =
+    let extraAnnotation = if multipleAnnotations then "let other : NN<U> = Unchecked.defaultof<_>" else ""
+    let message = "Nullness warning: The type 'U' uses 'null' as a representation value but a non-null type is expected."
+    FSharp $"""
+module rec Duplicate
+
+type NN<'T when 'T : not null> = {{ Value: 'T }}
+
+[<Repr(CompilationRepresentationFlags.UseNullAsTrueValue)>]
+type U = Nil | Node of int
+
+type Repr = CompilationRepresentationAttribute
+let value : NN<U> = Unchecked.defaultof<_>
+{extraAnnotation}
+"""
+    |> asLibrary
+    |> withLangVersionPreview
+    |> withCheckNulls
+    |> (if compileSource then compile else typecheck)
+    |> shouldFail
+    |> withDiagnostics [
+        Warning 3261, Line 10, Col 13, Line 10, Col 18, message
+        if multipleAnnotations then
+            Warning 3261, Line 11, Col 13, Line 11, Col 18, message
+    ]
+    |> fun result -> Assert.Equal((if multipleAnnotations then 2 else 1), result.Output.Diagnostics.Length)
+
 
 [<Theory>]
 [<InlineData("""
