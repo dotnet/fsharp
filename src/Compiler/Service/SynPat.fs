@@ -130,8 +130,8 @@ module SynPat =
         //
         // or
         //
-        //     let (x) = printfn "…"
-        //               printfn "…"
+        //     let (x) = printn "…"
+        //               printn "…"
         | _ when
             // This is arbitrary and will result in some false positives.
             let maxBacktracking = 10

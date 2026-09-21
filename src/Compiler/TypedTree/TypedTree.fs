@@ -236,6 +236,10 @@ type ValFlags(flags: int64) =
 
     member x.WithIsFixed                               =  ValFlags(flags ||| 0b01000000000000000000L)
 
+    member x.IsPinning                              =             (flags &&& 0b1000000000000000000000000L) <> 0L
+
+    member x.WithIsPinning                             =  ValFlags(flags ||| 0b1000000000000000000000000L)
+
     member x.IgnoresByrefScope                         =          (flags &&& 0b10000000000000000000L) <> 0L
 
     member x.WithIgnoresByrefScope                     =  ValFlags(flags ||| 0b10000000000000000000L)
@@ -263,7 +267,8 @@ type ValFlags(flags: int64) =
         // Clear the HasBeenReferenced, only used to report "unreferenced variable" warnings and to help collect 'it' values in FSI.EXE
         // Clear the IsGeneratedEventVal, since there's no use in propagating specialname information for generated add/remove event vals
         // Clear the IsParameter, only used during type checking of the current compilation to specialize diagnostics
-        let bits =                                    (flags       &&&   ~~~0b10010011001100000000000L)
+        // Clear the IsPinning, only used during compilation to track bindings that keep a fixed value pinned
+        let bits =                                    (flags       &&&   ~~~(0b10010011001100000000000L ||| 0b1000000000000000000000000L))
         // Pickle ValInline.InlinedDefinition as ValInline.Always.
         if bits &&& 0b00000000000000110000L = 0L then
             bits ||| 0b00000000000000010000L
@@ -3152,6 +3157,9 @@ type Val =
     /// Indicates if the value is pinned/fixed
     member x.IsFixed = x.val_flags.IsFixed
 
+    /// Indicates if the value names a binding whose lifetime keeps a fixed value pinned
+    member x.IsPinning = x.val_flags.IsPinning
+
     /// Indicates if the value will ignore byref scoping rules
     member x.IgnoresByrefScope = x.val_flags.IgnoresByrefScope
 
@@ -3443,6 +3451,8 @@ type Val =
 
     member x.SetIsFixed() = x.val_flags <- x.val_flags.WithIsFixed
 
+    member x.SetIsPinning() = x.val_flags <- x.val_flags.WithIsPinning
+
     member x.SetIgnoresByrefScope() = x.val_flags <- x.val_flags.WithIgnoresByrefScope
 
     member x.SetInlineIfLambda() = x.val_flags <- x.val_flags.WithInlineIfLambda
@@ -3612,7 +3622,7 @@ type ValPublicPath =
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
 
-    override _.ToString() = sprintf "ValPubPath(...)"
+    override _.ToString() = "ValPubPath(...)"
 
 /// Represents an index into the namespace/module structure of an assembly
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
@@ -4906,7 +4916,7 @@ type AttribExpr =
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
 
-    override x.ToString() = sprintf "AttribExpr(...)"
+    override x.ToString() = "AttribExpr(...)"
 
 /// AttribNamedArg(name, type, isField, value)
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
@@ -4916,7 +4926,7 @@ type AttribNamedArg =
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
 
-    override x.ToString() = sprintf "AttribNamedArg(...)"
+    override x.ToString() = "AttribNamedArg(...)"
 
 /// Constants in expressions
 [<RequireQualifiedAccess; StructuredFormatDisplay("{DebugText}")>]
