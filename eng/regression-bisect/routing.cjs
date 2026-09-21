@@ -165,14 +165,14 @@ async function issueIntent(issueNumber, deps) {
     }
     const transport = deps.apiFor(issueNumber, registration);
     const context = { ...deps.context, issueNumber, workflowPath: controllerWorkflow,
-        commentId: registration?.checkpointCommentId };
+        commentId: registration?.checkpointCommentId, bootstrapDigest: registration?.checkpointBootstrapDigest };
     let checkpoint = null;
     if (registration) {
         const comment = await transport.getComment(registration.checkpointCommentId);
         const record = await state.authenticateDecodedRecord(transport, context, comment);
         requireValue(record, "registered issue checkpoint authentication failed");
         if (record.kind === "checkpoint") {
-            checkpoint = await state.readAuthenticatedCheckpoint(transport, context);
+            checkpoint = await state.readAuthenticatedCheckpoint(transport, context, { recoveryRegistration: registration });
             requireValue(checkpoint.checkpoint.state.budget.allowanceId === registration.allowanceId &&
                 checkpoint.checkpoint.deadline === registration.deadline, "allowance registration changed");
         } else requireValue(record.kind === "proposal" && fingerprint(comment.body) === registration.checkpointBootstrapDigest &&
@@ -220,10 +220,10 @@ async function issueIntent(issueNumber, deps) {
         approved.snapshot.investigations.active.length === 0, "approved discussion or immutable samples changed");
     if (Date.parse(registration.deadline) <= deps.now()) return intent("blocked", "allowance-expired");
     const cp = checkpoint?.checkpoint;
-    if (cp?.publicationStatus === "published") return intent("complete", "controller-published");
-    const mode = !cp ? "bootstrap" : cp.publicationStatus === "pending" ||
+    const generation = checkpoint?.freshnessGeneration ?? -1;
+    if (cp?.publicationStatus === "published" && cp.generation === generation) return intent("complete", "controller-published");
+    const mode = generation === -1 ? "bootstrap" : ["pending", "published"].includes(cp.publicationStatus) ||
         ["complete", "blocked", "stopped"].includes(cp.state.phase) ? "publish" : "advance";
-    const generation = cp?.generation ?? -1;
     const key = dispatchKey({ issueNumber, allowanceId: registration.allowanceId, generation, mode,
         discussionFingerprint, policyRevision: deps.context.policyRevision });
     return { ...intent("pending", "controller-required"), key,
@@ -234,16 +234,10 @@ async function route(deps, issueNumber) {
     validatePolicy(policy);
     let loaded = await loadCursor(deps, { repair: true });
     const cp = structuredClone(loaded.cursor);
-    const pending = cp.selected.filter(item => item.status === "pending" && !item.acknowledged);
-    let candidates, nextCursor = cp.cursor;
-    if (issueNumber === undefined && pending.length) candidates = pending.map(item => ({ number: item.issueNumber }));
-    else {
-        const found = await discoverEligibleIssues({ transport: deps.transport, repository, cursor: cp.cursor,
-            ...(issueNumber === undefined ? {} : { issueNumber }) });
-        requireValue(found.status === "complete", `discovery blocked: ${found.reason}`);
-        candidates = found.issues;
-        nextCursor = found.nextCursor ?? cp.cursor;
-    }
+    const found = await discoverEligibleIssues({ transport: deps.transport, repository, cursor: cp.cursor,
+        ...(issueNumber === undefined ? {} : { issueNumber }) });
+    requireValue(found.status === "complete", `discovery blocked: ${found.reason}`);
+    const candidates = found.issues, nextCursor = found.nextCursor ?? cp.cursor;
     const selected = [];
     for (const candidate of candidates) {
         deps.signal.throwIfAborted();
@@ -269,7 +263,7 @@ async function route(deps, issueNumber) {
         cp.cursor = nextCursor; cp.selected = selected; cp.generation++;
         loaded = await saveCursor(deps, cp, loaded.bodyDigest);
     }
-    const dispatched = [];
+    const dispatched = [], failures = [];
     let invalidated = false;
     for (const item of toDispatch) {
         deps.signal.throwIfAborted();
@@ -279,7 +273,8 @@ async function route(deps, issueNumber) {
             invalidated = true;
             continue;
         }
-        await deps.dispatch(item.dispatch);
+        try { await deps.dispatch(item.dispatch); }
+        catch (error) { failures.push(`issue ${item.issueNumber}: ${error.message}`); continue; }
         item.acknowledged = true;
         dispatched.push(item.issueNumber);
     }
@@ -287,6 +282,7 @@ async function route(deps, issueNumber) {
         cp.selected = selected; cp.generation++;
         await saveCursor(deps, cp, loaded.bodyDigest);
     }
+    requireValue(failures.length === 0, failures.join("; "));
     return { status: "routed", selected: selected.filter(s => s.status !== "ineligible").map(s => s.issueNumber),
         dispatched, generation: cp.generation, nextCursor: cp.cursor,
         intents: selected.map(({ issueNumber, status, reason, key, discussionFingerprint }) =>

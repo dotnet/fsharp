@@ -375,7 +375,18 @@ async function writeFreshness(transport, context, generation, bodyDigest) {
         Object.entries(status).every(([k, v]) => written[k] === v), "freshness write authentication failed");
 }
 
-async function readAuthenticatedCheckpoint(transport, context, { repair = false } = {}) {
+function validateInterruptedInitialization(cp, record, context, { allowanceId, deadline }) {
+    requireState(cp.state.repository === context.repository && cp.state.issueNumber === context.issueNumber &&
+        cp.state.budget.workflowRevision === record.binding.workflowRevision &&
+        cp.generation === 0 && cp.previousDigest === context.bootstrapDigest && cp.sequence === 0 &&
+        cp.history.length === 0 && cp.state.phase === "discovery" && cp.state.interval === null &&
+        cp.state.budget.nextWorkItemId === "none" && cp.publicationStatus === "unpublished" &&
+        equal(cp.state.publication, { digest: null, commentId: null }) &&
+        cp.state.budget.allowanceId === allowanceId && cp.deadline === deadline,
+    "initialization requires the original interrupted checkpoint and allowance");
+}
+
+async function readAuthenticatedCheckpoint(transport, context, { repair = false, recoveryRegistration } = {}) {
     const comment = await transport.getComment(context.commentId);
     const record = await authenticatedRecord(transport, context, comment);
     requireState(record?.kind === "checkpoint", "checkpoint authentication failed");
@@ -385,14 +396,16 @@ async function readAuthenticatedCheckpoint(transport, context, { repair = false 
         "checkpoint issue authentication failed");
     const head = await readFreshness(transport, context);
     const bodyDigest = hashBytes(comment.body);
-    requireState(head !== null, "checkpoint freshness receipt missing; initialization or repair required");
-    if (checkpoint.generation !== head.generation || bodyDigest !== head.bodyDigest) {
-        requireState(repair && checkpoint.generation === head.generation + 1 && checkpoint.previousDigest === head.bodyDigest,
+    if (head === null) {
+        requireState(recoveryRegistration && !repair, "checkpoint freshness receipt missing; initialization or repair required");
+        validateInterruptedInitialization(checkpoint, record, context, recoveryRegistration);
+    } else if (checkpoint.generation !== head.generation || bodyDigest !== head.bodyDigest) {
+        requireState((repair || recoveryRegistration) && checkpoint.generation === head.generation + 1 && checkpoint.previousDigest === head.bodyDigest,
             "checkpoint freshness rollback or predecessor mismatch");
-        // Complete an interrupted comment -> receipt write, under the controller lock.
-        await writeFreshness(transport, context, checkpoint.generation, bodyDigest);
+        // Discovery can inspect the predecessor, but only the controller repairs it.
+        if (repair) await writeFreshness(transport, context, checkpoint.generation, bodyDigest);
     }
-    return { checkpoint, bodyDigest, commentId: context.commentId,
+    return { checkpoint, bodyDigest, commentId: context.commentId, freshnessGeneration: head?.generation ?? -1,
         owner: { runId: record.binding.runId, attempt: record.binding.runAttempt } };
 }
 
@@ -444,14 +457,7 @@ async function initializeCheckpoint(transport, context, { allowanceId, deadline 
         requireState(record?.kind === "checkpoint", "interrupted initialization authentication failed");
         const cp = unpack(record.payload);
         validateCheckpoint(cp);
-        requireState(cp.state.repository === context.repository && cp.state.issueNumber === context.issueNumber &&
-            cp.state.budget.workflowRevision === record.binding.workflowRevision &&
-            cp.generation === 0 && cp.previousDigest === context.bootstrapDigest && cp.sequence === 0 &&
-            cp.history.length === 0 && cp.state.phase === "discovery" && cp.state.interval === null &&
-            cp.state.budget.nextWorkItemId === "none" && cp.publicationStatus === "unpublished" &&
-            equal(cp.state.publication, { digest: null, commentId: null }) &&
-            cp.state.budget.allowanceId === allowanceId && cp.deadline === deadline,
-        "initialization requires the original interrupted checkpoint and allowance");
+        validateInterruptedInitialization(cp, record, context, { allowanceId, deadline });
         // Recover the original bytes; current inputs gate execution when this checkpoint is loaded.
         await writeFreshness(transport, context, 0, hashBytes(existing.body));
         return cp;

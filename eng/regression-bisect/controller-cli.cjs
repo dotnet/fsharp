@@ -499,10 +499,34 @@ async function main(args = process.argv.slice(2), env = process.env) {
         };
         try {
             await refresh();
-            if (routedGeneration !== undefined && input.routingGeneration < routedGeneration) {
+            const bootstrapJournal = path.join(directory, "bootstrap.json");
+            if (input.mode === "bootstrap") {
+                const existing = await transport.getComment(context.commentId);
+                let body;
+                try { body = decode(await bytes(bootstrapJournal, 64 * 1024)); }
+                catch (error) { if (error.code !== "ENOENT") throw error; }
+                if (body === undefined) {
+                    requireValue(fingerprint(existing.body) === registration.checkpointBootstrapDigest &&
+                        await state.readFreshness(transport, context) === null,
+                    "required bootstrap journal missing; cannot replace existing history");
+                    body = existing.body;
+                    await writeJson(bootstrapJournal, body);
+                }
+                const journal = await state.authenticateDecodedRecord(transport, context, { ...existing, body });
+                requireValue(journal && (journal.kind === "proposal" && fingerprint(body) === registration.checkpointBootstrapDigest ||
+                    journal.kind === "checkpoint" && journal.payload.state.budget.allowanceId === registration.allowanceId &&
+                    journal.payload.deadline === registration.deadline), "bootstrap journal authentication failed");
+                if (journal.kind === "checkpoint")
+                    requireValue(await state.readFreshness(transport, context) !== null,
+                        "committed bootstrap freshness missing; operator recovery required");
+            }
+            const interruptedBootstrap = input.mode === "bootstrap" && routedGeneration === 0 &&
+                await state.readFreshness(transport, context) === null;
+            if (routedGeneration !== undefined && input.routingGeneration < routedGeneration && !interruptedBootstrap) {
                 // A duplicate still requires current intake and authenticated evidence.
                 const current = await state.loadCheckpoint(transport, context, { requiredEvidenceOnly: input.mode === "publish" });
                 requireValue(current.blockers.length === 0, `routing duplicate blocked: ${current.blockers.join("; ")}`);
+                if (input.mode === "bootstrap") await writeJson(bootstrapJournal, (await transport.getComment(context.commentId)).body);
                 return { status: "duplicate", generation: current.checkpoint.generation, routingKey: input.routingKey };
             }
             const deps = { context, transport, approval: approvalReader, environments, platform: config.platform, history,
@@ -544,7 +568,12 @@ async function main(args = process.argv.slice(2), env = process.env) {
                 },
             };
             const entry = { repository, issueNumber: input.issueNumber };
-            if (input.mode === "bootstrap") return await bootstrapController(entry, deps);
+            if (input.mode === "bootstrap") {
+                const result = await bootstrapController(entry, deps);
+                if (["initialized", "loaded"].includes(result.status))
+                    await writeJson(bootstrapJournal, (await transport.getComment(context.commentId)).body);
+                return result;
+            }
             let loaded = await state.loadCheckpoint(transport, context, { requiredEvidenceOnly: input.mode === "publish" });
             requireValue(loaded.checkpoint.state.budget.allowanceId === registration.allowanceId &&
                 loaded.checkpoint.deadline === registration.deadline, "existing allowance differs from reviewed registration");

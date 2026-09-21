@@ -281,7 +281,9 @@ async function connect(file) {
                 return respond(comment, 201);
             }
             if (route.startsWith("issues/comments/")) {
-                const comment = db.comments.find(c => c.id === Number(route.split("/").at(-1)));
+                const id = Number(route.split("/").at(-1));
+                const comment = db.comments.find(c => c.id === id) ??
+                    Object.values(db.discussions ?? {}).flatMap(d => d.comments).find(c => c.id === id);
                 if (!comment) return respond({}, 404);
                 if (options.method === "PATCH") {
                     if (comment.id === 458 && fault(db, "cursorWrite")) throw new Error("cursor write interrupted");
@@ -295,6 +297,8 @@ async function connect(file) {
                     }
                     if (comment.id === 458 && fault(db, "cursorAck")) throw new Error("cursor acknowledgement lost");
                     if (comment.id === 457 && fault(db, "resultAck")) throw new Error("result acknowledgement lost");
+                    if (comment.id === 456 && body.body.includes('"publicationStatus":"published"') && fault(db, "publishedAck"))
+                        throw new Error("published checkpoint acknowledgement lost");
                     if (fault(db, "commentAck")) throw new Error("comment acknowledgement lost");
                 }
                 return respond(comment);

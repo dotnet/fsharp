@@ -428,6 +428,25 @@ test("generation-zero write acknowledgement loss loads the same allowance", asyn
     noExecution(f);
 });
 
+test("bootstrap recovery requires its original authenticated local journal", async t => {
+    for (const interrupted of [false, true]) for (const fault of ["missing", "forged"])
+        await t.test(`${interrupted}/${fault}`, async t => {
+            const f = await fixture(t);
+            if (interrupted) f.update(db => { db.faults.commentAck = true; });
+            assert.equal(outcome(await run(f, "bootstrap")).status, interrupted ? "blocked" : "initialized");
+            const file = path.join(f.env.RB_STATE_DIRECTORY, "dotnet-fsharp-123", "bootstrap.json");
+            if (fault === "missing") await fs.unlink(file);
+            else await fs.writeFile(file, JSON.stringify("forged bootstrap"));
+            const writes = mutations(f), before = (await checkpoint(f)).cp;
+            const result = outcome(await routed(f, "bootstrap", -1));
+            assert.equal(result.status, "blocked");
+            assert.match(result.reason, /bootstrap journal/);
+            assert.deepEqual(mutations(f), writes);
+            assert.deepEqual((await checkpoint(f)).cp, before);
+            noExecution(f);
+        });
+});
+
 test("claimed execution loss resumes authenticated collection without a second launch or charge", async t => {
     const f = await fixture(t);
     assert.equal(outcome(await run(f, "bootstrap")).status, "initialized");

@@ -58,10 +58,13 @@ slot/receipts to recover a sweep.
 
 Each sweep reads at most two REST pages of 100 records and selects at most three
 issues. The authenticated page/offset cursor preserves dense-page overflow and
-wraps to revisit old eligible issues and later labels. Acknowledged controller
-deliveries do not hold the scan at one issue; one blocked intake is explicitly
-reported without preventing unrelated selection. Interrupted unacknowledged
-delivery is retried after five minutes with the same issue/generation key.
+wraps to revisit old eligible issues and later labels. Neither acknowledged nor
+unacknowledged deliveries hold the scan at one issue. A failed dispatch does not
+suppress the other selected dispatches; its error is returned after their
+acknowledgements are saved. Retry selection follows the same rotating cursor
+(or explicit event/manual selection), not a second pending queue. On revisiting
+an unchanged controller generation, routing reconstructs the same dispatch key;
+consecutive selections retain the five-minute retry delay.
 Selection and exact dispatch intent are signed and persisted locally, then in
 the fixed remote discovery slot and freshness receipt, **before** dispatch.
 Authenticated predecessor-only recovery completes torn writes; missing, forged
@@ -81,7 +84,17 @@ credentials never enter workers.
 Delivery can repeat after a lost response. Consumers authenticate current
 registration, discussion, samples, owning run, checkpoint generation,
 freshness and required evidence under the existing issue lock. Old deliveries
-are inert duplicates; future or mismatched generations block. Normal progression
+are inert duplicates; future or mismatched generations block. Read-only discovery
+recognizes an authenticated single-predecessor interrupted write and dispatches
+its receipted generation back to the controller. Only the issue-locked controller
+repairs freshness. Original interrupted generation-zero initialization instead
+returns through the bootstrap validator, preserving its allowance and slots;
+nonzero missing receipts, rollback and malformed predecessors still block.
+Keep the controller's signed `dotnet-fsharp-<issue>/bootstrap.json` journal:
+the original slot records initialization intent, and a checkpoint records
+completion. A missing or forged journal blocks recovery; a completed bootstrap
+with a missing receipt requires operator recovery, not reinitialization.
+Normal progression
 is bootstrap, at most one worker per advance, terminal transition, then guarded
 fixed-slot publication. Eligible stopped/blocked outcomes (including stable
 passes, main passes, no-green/skip, setup/flake and budget stops) can be reported
