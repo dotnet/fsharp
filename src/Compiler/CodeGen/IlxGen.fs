@@ -6639,6 +6639,12 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
                 let sequel = if retTy.IsNone then discardAndReturnVoid else Return
 
                 let ilCode =
+                    let eenvinner =
+                        { eenvinner with
+                            inRuntimeAsyncMethod = false
+                            inInlineMethod = false
+                        }
+
                     CodeGenMethodForExpr cenv cgbuf.mgbuf ([], imethName, eenvinner, 1 + argVals.Length, None, bodyR, sequel)
 
                 let ilParams =
