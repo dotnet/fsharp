@@ -224,10 +224,6 @@ type internal InteractiveHostClient(clientProcessId: int) =
             addSwitch argument
 
         addSwitch "--nologo"
-        addSwitch $"{CommandLine.ServerOption}{pipeName}"
-        // How the host names itself: a session whose host dies, even before the handshake, exits instead of
-        // waiting on the pipe forever.
-        addSwitch $"--fsi-server-client-pid:{clientProcessId}"
         addSwitch $"--fsi-server-output-codepage:{Encoding.UTF8.CodePage}"
         addSwitch $"--fsi-server-input-codepage:{Encoding.UTF8.CodePage}"
         addSwitch $"--fsi-server-lcid:{options.UICultureLcid}"
@@ -243,6 +239,13 @@ type internal InteractiveHostClient(clientProcessId: int) =
 
         if options.LanguageVersionPreview then
             addSwitch "--langversion:preview"
+
+        // Last, because for each of these the last occurrence wins: the user's own arguments must not
+        // be able to move the pipe or name another process as the owner, which would leave the session
+        // running after this one closes. The owner is named on the command line, so that a session
+        // whose host dies before the handshake exits instead of waiting on the pipe forever.
+        addSwitch $"{CommandLine.ServerOption}{pipeName}"
+        addSwitch $"--fsi-server-client-pid:{clientProcessId}"
 
         let startInfo =
             ProcessStartInfo(
