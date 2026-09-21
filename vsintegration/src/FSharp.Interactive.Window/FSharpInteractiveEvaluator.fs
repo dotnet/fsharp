@@ -40,7 +40,12 @@ module internal ResultRendering =
 
 /// Connects the interactive window to an F# Interactive session.
 [<Sealed>]
-type internal FSharpInteractiveEvaluator(host: InteractiveHostClient, getOptions: unit -> InteractiveHostOptions) =
+type internal FSharpInteractiveEvaluator
+    (
+        host: InteractiveHostClient,
+        getOptions: unit -> InteractiveHostOptions,
+        scanners: ILexicalScannerFactory
+    ) =
 
     let mutable currentWindow: IInteractiveWindow | null = null
     let mutable outputSubscription: IDisposable | null = null
@@ -161,7 +166,7 @@ type internal FSharpInteractiveEvaluator(host: InteractiveHostClient, getOptions
                     return ExecutionResult false
             }
 
-        member _.CanExecuteCode(text) = SubmissionAnalysis.isComplete text
+        member _.CanExecuteCode(text) = SubmissionAnalysis.isComplete scanners text
 
         member _.ExecuteCodeAsync(text) =
             task {
@@ -179,7 +184,7 @@ type internal FSharpInteractiveEvaluator(host: InteractiveHostClient, getOptions
                         | ValueSome(struct (sourcePath, startLine)) -> host.ExecuteAsync(code, sourcePath, startLine)
                         | ValueNone -> host.ExecuteAsync code
 
-                    match! submit (SubmissionAnalysis.withTerminator text) with
+                    match! submit (SubmissionAnalysis.withTerminator scanners text) with
                     | Result.Error message ->
                         writeErrorLine message
                         return ExecutionResult false

@@ -77,14 +77,18 @@ module internal InteractiveHostOptionsFactory =
 [<Sealed>]
 type internal FSharpVsInteractiveWindowProvider
     [<ImportingConstructor>]
-    (windowFactory: IVsInteractiveWindowFactory, contentTypeRegistry: IContentTypeRegistryService) =
+    (
+        windowFactory: IVsInteractiveWindowFactory,
+        contentTypeRegistry: IContentTypeRegistryService,
+        scanners: ILexicalScannerFactory
+    ) =
 
     let mutable window: IVsInteractiveWindow | null = null
     let mutable evaluator: FSharpInteractiveEvaluator voption = ValueNone
 
     member this.Create(instanceId: int) =
         let host = new InteractiveHostClient(Process.GetCurrentProcess().Id)
-        let created = new FSharpInteractiveEvaluator(host, InteractiveHostOptionsFactory.create)
+        let created = new FSharpInteractiveEvaluator(host, InteractiveHostOptionsFactory.create, scanners)
         evaluator <- ValueSome created
 
         let toolWindow =
