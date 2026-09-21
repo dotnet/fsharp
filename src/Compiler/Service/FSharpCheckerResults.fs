@@ -1181,10 +1181,10 @@ type internal TypeCheckInfo
             // Do not check a method with same name twice
             //type AA() =
             //    abstract a: unit -> unit
-            //    default _.a() = printfn "A"
+            //    default _.a() = printn "A"
             //type BB() =
             //    inherit AA()
-            //    member _.a() = printfn "B" (* This method covered the `AA.a` *)
+            //    member _.a() = printn "B" (* This method covered the `AA.a` *)
             //type CC() =
             //    inherit BB()
             //    override | (* Here should not suggest to override `AA.a` *)

@@ -84,6 +84,7 @@
     <Compile Include="Conformance\BasicGrammarElements\UseBindings\UseBangBindings.fs" />
 	<Compile Include="Conformance\BasicGrammarElements\UseBindings\UseBindingsAndExtensionMembers.fs" />
     <Compile Include="Conformance\Constraints\Unmanaged.fs" />
+    <Compile Include="Conformance\Constraints\ConstraintSyntax.fs" />
     <Compile Include="Conformance\GeneratedEqualityHashingComparison\Attributes\Diags\Attributes_Diags.fs" />
     <Compile Include="Conformance\GeneratedEqualityHashingComparison\Attributes\Legacy\Attributes_Legacy.fs" />
     <Compile Include="Conformance\GeneratedEqualityHashingComparison\Basic\Basic.fs" />
@@ -373,6 +374,7 @@
     <Compile Include="ErrorMessages\NameIsBoundMultipleTimesTests.fs" />
     <Compile Include="ErrorMessages\FSharpDiagnosticTests.fs" />
     <Compile Include="Language\IndexerSetterParamArray.fs" />
+    <Compile Include="Language\IndexerSetterOptionalArguments.fs" />
     <Compile Include="Language\MultiDimensionalArrayTests.fs" />
     <Compile Include="Language\RegressionTests.fs" />
     <Compile Include="Language\AttributeCheckingTests.fs" />
@@ -413,6 +415,8 @@
     <Compile Include="Language\IndexedSetTests.fs" />
     <Compile Include="Language\UseBindingDisposalTests.fs" />
     <Compile Include="Language\RecordSpreadsTests.fs" />
+    <Compile Include="Language\RequireNamedArgumentsTests.fs" />
+    <Compile Include="Language\ReraiseInComputationExpressionsTests.fs" />
     <Compile Include="Import\ImportTests.fs" />
     <Compile Include="ConstraintSolver\PrimitiveConstraints.fs" />
     <Compile Include="ConstraintSolver\MemberConstraints.fs" />
