@@ -27,7 +27,20 @@ const usage = "Usage: node controller-cli.cjs <bootstrap|advance|publish|provisi
 const own = { owner: "dotnet", repo: "fsharp" };
 const decode = bytes => JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes));
 
-function argumentsFor(args) {
+function argumentsFor(args, env = process.env) {
+    if (!args.length && env.GITHUB_ACTIONS === "true" && env.RB_ACTION_INPUTS) {
+        let selected;
+        try { selected = JSON.parse(env.RB_ACTION_INPUTS); }
+        catch (error) {
+            if (!(error instanceof SyntaxError)) throw error;
+            throw new Error("invalid typed Actions input");
+        }
+        requireValue(selected && Object.getPrototypeOf(selected) === Object.prototype &&
+            Object.keys(selected).sort().join(" ") === "issue mode" &&
+            positive(selected.issue) && ["bootstrap", "advance", "publish"].includes(selected.mode), "invalid typed Actions input");
+        args = [selected.mode, "--issue", String(selected.issue), "--config",
+            path.join(root, ".github", "regression-bisect", "deployment.json")];
+    }
     requireValue(args.length === 5 && ["bootstrap", "advance", "publish", "provision"].includes(args[0]) &&
         args[1] === "--issue" && args[3] === "--config" && /^[1-9]\d*$/.test(args[2]) &&
         positive(Number(args[2])) && args[4].length > 0 && !args[4].startsWith("--"), usage);
@@ -281,14 +294,7 @@ async function provision({ context, config, reader, apiFor, directory, now }) {
 
 async function main(args = process.argv.slice(2), env = process.env) {
     if (args.length === 1 && args[0] === "--help") return { help: usage };
-    if (!args.length && env.GITHUB_ACTIONS === "true" && env.RB_ACTION_INPUTS) {
-        const selected = JSON.parse(env.RB_ACTION_INPUTS);
-        requireValue(Object.keys(selected).sort().join(" ") === "issue mode" &&
-            positive(selected.issue) && ["bootstrap", "advance", "publish"].includes(selected.mode), "invalid typed Actions input");
-        args = [selected.mode, "--issue", String(selected.issue), "--config",
-            path.join(root, ".github", "regression-bisect", "deployment.json")];
-    }
-    const input = argumentsFor(args);
+    const input = argumentsFor(args, env);
     requireValue(!env.RB_LOCAL_TEST_FILE || !env.GITHUB_ACTIONS && env.RB_LOCAL_TEST === "explicit-offline-fixture",
         "local test injection forbidden in Actions or without explicit local opt-in");
     const local = env.RB_LOCAL_TEST_FILE

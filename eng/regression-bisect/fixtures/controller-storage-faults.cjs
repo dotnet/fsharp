@@ -5,6 +5,7 @@ const { setTimeout: delay } = require("node:timers/promises");
 const contracts = require("./contracts.cjs");
 const { fingerprintInput: fingerprint } = require("../model.cjs");
 const stores = require("../evidence-store.cjs");
+const { writeDatabase } = require("./controller-service.cjs");
 
 if (process.env.RB_LOCAL_TEST === "explicit-offline-fixture" && !process.env.GITHUB_ACTIONS) {
     const file = process.env.RB_LOCAL_TEST_FILE;
@@ -15,7 +16,7 @@ if (process.env.RB_LOCAL_TEST === "explicit-offline-fixture" && !process.env.GIT
         if (db.faults.clockAt !== point) return;
         db.now = db.faults.clockAfter;
         delete db.faults.clockAt;
-        fs.writeFileSync(file, JSON.stringify(db));
+        writeDatabase(file, db);
         record({ kind: "clock", point, now: db.now });
     };
     const open = fsp.open;

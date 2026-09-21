@@ -11,6 +11,9 @@ concrete deployment; its conventional workflow is disabled until explicitly
 configured by maintainers. Tests use synthetic records and in-memory or
 file-backed GitHub services, never live issue mutations.
 Records under `fixtures` are not reproduction approvals.
+The file-backed controller fixture publishes database updates by atomic
+replacement, including operator fault changes and injected clock changes;
+concurrent CLI readers see complete snapshots rather than truncated JSON.
 
 Install the narrowly scoped, lockfile-pinned YAML test parser, then run from the
 repository root (the production CLI has no npm dependency):
@@ -134,8 +137,13 @@ after the independent physical and known-history gates pass. Checkout is
 SHA-pinned with `persist-credentials: false`. The pinned local Node action
 executes `controller-cli.cjs`, preserving the artifact runtime credentials
 without exposing them in shell interpolation or outputs. It passes typed
-`toJSON(inputs)` through `RB_ACTION_INPUTS`; only a positive integer issue and
-the three transaction modes are accepted. There are no PR/contents writes,
+`toJSON(inputs)` through `RB_ACTION_INPUTS`; only an object containing a positive
+safe-integer issue (not a string) and one of the three transaction modes is
+accepted. Extra fields, provisioning and malformed JSON block before
+configuration/API access; payload bytes are not echoed in diagnostics.
+The no-argument Actions entry always selects the pinned checkout's
+`.github/regression-bisect/deployment.json`, never a dispatch-provided path.
+There are no PR/contents writes,
 push, merge, revert, close or arbitrary dispatch operations.
 
 For explicit operator invocations, set `RB_TRUSTED_REVISION`,

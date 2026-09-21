@@ -10,6 +10,7 @@ const contracts = require("./fixtures/contracts.cjs");
 const state = require("./state.cjs");
 const { createGithubApi } = require("./github.cjs");
 const { image } = require("./container.cjs");
+const { argumentsFor } = require("./controller-cli.cjs");
 const YAML = require("yaml");
 
 const cli = path.join(__dirname, "controller-cli.cjs");
@@ -67,6 +68,74 @@ function noExecution(f) {
     assert.equal(ledger.filter(r => r.kind === "worker").length, 0);
     assert.equal(ledger.filter(r => r.kind === "git" && r.args.includes("bisect")).length, 0);
 }
+
+test("typed Actions inputs normalize only to fixed deployment arguments", async t => {
+    const f = await fixture(t);
+    for (const mode of ["bootstrap", "advance", "publish"]) await t.test(mode, async () => {
+        const env = { ...f.env, GITHUB_ACTIONS: "true", RB_ACTION_INPUTS: JSON.stringify({ issue: 123, mode }) };
+        assert.deepEqual(argumentsFor([], env), { mode, issueNumber: 123,
+            configPath: path.resolve(__dirname, "..", "..", ".github", "regression-bisect", "deployment.json") });
+        const result = await invoke([], env);
+        assert.equal(result.code, 1);
+        assert.match(outcome(result).reason, /local test injection forbidden/);
+    });
+    assert.deepEqual(f.ledger().filter(e => e.kind !== "cli-exit"), []);
+});
+
+test("invalid Actions payloads block before configuration or service access", async t => {
+    const f = await fixture(t);
+    const valid = { issue: 123, mode: "advance" };
+    const cases = [
+        ...[null, [], true, 123, "advance", {}, { issue: 123 }, { mode: "advance" },
+            ...["123", 0, -1, 1.5, Number.MAX_SAFE_INTEGER + 1, "123;echo unsafe"].map(issue => ({ ...valid, issue })),
+            ...["provision", "ADVANCE", "advance;echo unsafe", null].map(mode => ({ ...valid, mode })),
+            ...["repository", "ref", "config", "worker", "url", "allowance", "slot"].map(key => ({ ...valid, [key]: "unsafe" })),
+        ].map(value => JSON.stringify(value)),
+        '{"issue":123,"mode":"advance"', "SECRET-CANARY-NOT-JSON",
+    ];
+    for (const payload of cases) await t.test(payload, async () => {
+        const result = await invoke([], { ...f.env, GITHUB_ACTIONS: "true", RB_ACTION_INPUTS: payload });
+        assert.equal(result.code, 1);
+        assert.deepEqual(outcome(result), { status: "blocked", reason: "invalid typed Actions input" });
+    });
+    for (const [actions, payload] of [["true", ""], ["", JSON.stringify(valid)], ["false", JSON.stringify(valid)]]) {
+        const result = await invoke([], { ...f.env, GITHUB_ACTIONS: actions, RB_ACTION_INPUTS: payload });
+        assert.equal(result.code, 1);
+        assert.match(outcome(result).reason, /Usage:/);
+    }
+    assert.deepEqual(f.ledger().filter(e => e.kind !== "cli-exit"), []);
+});
+
+test("fixture writers publish complete snapshots without modifying previous file identities", async t => {
+    for (const writer of ["operator", "api"]) await t.test(writer, async t => {
+        const f = await fixture(t);
+        const before = await fs.readFile(f.serviceFile, "utf8");
+        const snapshot = path.join(f.directory, "previous.json");
+        await fs.link(f.serviceFile, snapshot);
+        if (writer === "operator") f.update(db => { db.faults.pauseRuntime = true; });
+        else assert.equal(outcome(await run(f, "bootstrap")).status, "initialized");
+        assert.notEqual(await fs.readFile(f.serviceFile, "utf8"), before);
+        assert.equal(contracts.digest(await fs.readFile(snapshot)), contracts.digest(before),
+            "readers of the previous file identity must retain the complete snapshot");
+        assert.deepEqual((await fs.readdir(f.directory)).filter(name => name.endsWith(".tmp")), []);
+        noExecution(f);
+    });
+});
+
+test("a transient Windows fixture reader does not fail an actual CLI write", { skip: process.platform !== "win32" }, async t => {
+    const f = await fixture(t);
+    const reader = await fs.open(f.serviceFile, "r");
+    const first = run(f, "bootstrap");
+    try {
+        for (let i = 0; i < 400 && !f.ledger().some(e => e.kind === "api" && e.method === "PATCH"); i++) await delay(25);
+        assert.ok(f.ledger().some(e => e.kind === "api" && e.method === "PATCH"));
+        await delay(50);
+        assert.equal(JSON.parse(await reader.readFile("utf8")).comments.length, 2);
+    } finally { await reader.close(); }
+    const result = outcome(await first);
+    assert.equal(result.status, "initialized", result.reason);
+    noExecution(f);
+});
 
 async function checkpoint(f) {
     const service = await connect(f.serviceFile);

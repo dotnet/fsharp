@@ -2,7 +2,7 @@ const fs = require("node:fs");
 const fsp = require("node:fs/promises");
 const os = require("node:os");
 const path = require("node:path");
-const { createHash, createHmac } = require("node:crypto");
+const { createHash, createHmac, randomUUID } = require("node:crypto");
 const { execFileSync, spawnSync } = require("node:child_process");
 const { setTimeout: delay } = require("node:timers/promises");
 const { bootstrapFixture } = require("./execution.cjs");
@@ -27,6 +27,21 @@ const metadata = {
             { rid: "linux-x64", name: "dotnet-sdk-linux-x64.tar.gz", url: archiveUrl, hash: archiveHash },
         ] } }] },
 };
+
+function writeDatabase(file, value) {
+    const temporary = `${file}.${randomUUID()}.tmp`;
+    try {
+        fs.writeFileSync(temporary, json(value), { flag: "wx" });
+        for (let attempt = 0; ; attempt++) {
+            try { fs.renameSync(temporary, file); break; }
+            catch (error) {
+                // Windows readers can briefly deny delete sharing, as with container receipts.
+                if (process.platform !== "win32" || error.code !== "EPERM" || attempt === 100) throw error;
+                Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 10);
+            }
+        }
+    } finally { fs.rmSync(temporary, { force: true }); }
+}
 
 async function fixture(t) {
     const directory = await fsp.realpath(await fsp.mkdtemp(path.join(os.tmpdir(), "rb-controller-")));
@@ -109,7 +124,7 @@ async function fixture(t) {
         runs: { "12345/1": run }, revision: context.workflowRevision, anchorSha: config.anchorSha,
         mirrorDirectory, olderSha, now: context.now, actor: context.actor, nextId: 1000, faults: {} };
     await fsp.writeFile(configPath, json(config));
-    await fsp.writeFile(serviceFile, json(db));
+    writeDatabase(serviceFile, db);
     const env = { GITHUB_ACTIONS: "", RB_LOCAL_TEST: "explicit-offline-fixture", RB_LOCAL_TEST_FILE: serviceFile,
         RB_TRUSTED_REVISION: context.policyRevision, GITHUB_WORKFLOW_SHA: context.workflowRevision,
         GITHUB_REPOSITORY: "dotnet/fsharp", GITHUB_REF: "refs/heads/main", GITHUB_RUN_ID: "12345", GITHUB_RUN_ATTEMPT: "1",
@@ -117,7 +132,7 @@ async function fixture(t) {
         RB_GITHUB_TOKEN: "offline-controller-token", RB_PROVISION_TOKEN: "offline-separate-maintainer-token",
         RB_STATE_DIRECTORY: path.join(directory, "state") };
     const read = () => JSON.parse(fs.readFileSync(serviceFile));
-    const update = action => { const value = read(); action(value); fs.writeFileSync(serviceFile, json(value)); };
+    const update = action => { const value = read(); action(value); writeDatabase(serviceFile, value); };
     return { directory, config, configPath, serviceFile, env, context, approval, read, update,
         ledger: () => fs.existsSync(`${serviceFile}.ledger`) ? fs.readFileSync(`${serviceFile}.ledger`, "utf8").trim().split("\n").filter(Boolean).map(JSON.parse) : [],
         moveMain() {
@@ -136,7 +151,7 @@ function assertValue(value, message) { if (!value) throw new Error(message); }
 
 async function connect(file) {
     const read = () => JSON.parse(fs.readFileSync(file));
-    const write = db => fs.writeFileSync(file, json(db));
+    const write = db => writeDatabase(file, db);
     const record = entry => fs.appendFileSync(`${file}.ledger`, JSON.stringify({ pid: process.pid, ...entry }) + "\n");
     const respond = (data, status = 200, headers = {}) => new Response(json(data), { status, headers });
     const fault = (db, name) => {
@@ -293,4 +308,4 @@ async function syntheticWorker() {
 
 if (require.main === module) syntheticWorker().catch(error => { console.error(error.message); process.exitCode = 1; });
 
-module.exports = { fixture, connect };
+module.exports = { fixture, connect, writeDatabase };
