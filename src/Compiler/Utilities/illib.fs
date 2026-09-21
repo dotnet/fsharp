@@ -92,26 +92,6 @@ module internal PervasiveAutoOpens =
     /// We set the limit to be 80k to account for larger pointer sizes for when F# is running 64-bit.
     let LOH_SIZE_THRESHOLD_BYTES = 80_000
 
-    type String with
-
-        member inline x.StartsWithOrdinal(value: string) =
-            x.StartsWith(value, StringComparison.Ordinal)
-
-        member inline x.EndsWithOrdinal(value: string) =
-            x.EndsWith(value, StringComparison.Ordinal)
-
-        member inline x.EndsWithOrdinalIgnoreCase(value: string) =
-            x.EndsWith(value, StringComparison.OrdinalIgnoreCase)
-
-        member inline x.IndexOfOrdinal(value: string) =
-            x.IndexOf(value, StringComparison.Ordinal)
-
-        member inline x.IndexOfOrdinal(value: string, startIndex) =
-            x.IndexOf(value, startIndex, StringComparison.Ordinal)
-
-        member inline x.IndexOfOrdinal(value: string, startIndex, count) =
-            x.IndexOf(value, startIndex, count, StringComparison.Ordinal)
-
     /// Get an initialization hole
     let getHole (r: _ ref) =
         match r.Value with
