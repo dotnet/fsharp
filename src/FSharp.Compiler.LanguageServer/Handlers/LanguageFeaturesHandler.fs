@@ -7,7 +7,6 @@ open FSharp.Compiler.LanguageServer.Common
 open FSharp.Compiler.LanguageServer
 open System.Threading.Tasks
 open System.Threading
-open System.Collections.Generic
 open Microsoft.VisualStudio.FSharp.Editor
 
 #nowarn "57"
@@ -18,7 +17,7 @@ type LanguageFeaturesHandler() =
 
     interface IRequestHandler<
         DocumentDiagnosticParams,
-        SumType<RelatedFullDocumentDiagnosticReport, RelatedUnchangedDocumentDiagnosticReport>,
+        SumType<FullDocumentDiagnosticReport, UnchangedDocumentDiagnosticReport>,
         FSharpRequestContext
      > with
         [<LanguageServerEndpoint(Methods.TextDocumentDiagnosticName, LanguageServerConstants.DefaultLanguageName)>]
@@ -29,23 +28,19 @@ type LanguageFeaturesHandler() =
 
                 let! fsharpDiagnosticReport = context.Workspace.Query.GetDiagnosticsForFile request.TextDocument.Uri
 
-                let report =
-                    FullDocumentDiagnosticReport(
-                        Items = (fsharpDiagnosticReport.Diagnostics |> Array.map (_.ToLspDiagnostic())),
-                        ResultId = fsharpDiagnosticReport.ResultId
-                    )
-
-                let relatedDocuments = Dictionary()
-
-                relatedDocuments.Add(
-                    request.TextDocument.Uri,
-                    SumType<FullDocumentDiagnosticReport, UnchangedDocumentDiagnosticReport> report
-                )
-
-                return
-                    SumType<RelatedFullDocumentDiagnosticReport, RelatedUnchangedDocumentDiagnosticReport>(
-                        RelatedFullDocumentDiagnosticReport(RelatedDocuments = relatedDocuments)
-                    )
+                if request.PreviousResultId = fsharpDiagnosticReport.ResultId then
+                    return
+                        SumType<FullDocumentDiagnosticReport, UnchangedDocumentDiagnosticReport>(
+                            UnchangedDocumentDiagnosticReport(ResultId = fsharpDiagnosticReport.ResultId)
+                        )
+                else
+                    return
+                        SumType<FullDocumentDiagnosticReport, UnchangedDocumentDiagnosticReport>(
+                            FullDocumentDiagnosticReport(
+                                Items = (fsharpDiagnosticReport.Diagnostics |> Array.map (_.ToLspDiagnostic())),
+                                ResultId = fsharpDiagnosticReport.ResultId
+                            )
+                        )
             }
             |> CancellableTask.start cancellationToken
 
