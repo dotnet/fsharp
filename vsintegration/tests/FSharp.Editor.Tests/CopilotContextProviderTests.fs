@@ -97,12 +97,12 @@ let twice x = x * 2
 
     let private itemNamed (fullyQualifiedName: string) =
         hitsIn cache Seq.empty ValueNone solution fullyQualifiedName
-        |> Array.tryPickV (fun (struct (item, _, _)) ->
+        |> Array.tryPick (fun (struct (item, _, _)) ->
             if CopilotSymbolMapping.fullyQualifiedName item = fullyQualifiedName then
-                ValueSome item
+                Some item
             else
-                ValueNone)
-        |> ValueOption.defaultWith (fun () -> failwith $"no declaration named {fullyQualifiedName}")
+                None)
+        |> Option.defaultWith (fun () -> failwith $"no declaration named {fullyQualifiedName}")
 
     let private contextIn cache solution (name: string) =
         CopilotSymbolQuery.symbolContext cache Seq.empty solution name
