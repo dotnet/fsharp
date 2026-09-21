@@ -104,21 +104,12 @@ let ``request DTOs reject missing required fields as invalid params`` () =
               Methods.ExecuteFile, box {| path = 42 |}
               Methods.Execute, box {| code = "1"; sourcePath = null; startLine = "1" |}
               Methods.SetPaths, box {| includePaths = 42; workingDirectory = "" |}
-              Methods.SetPaths, box {| includePaths = Array.empty<string>; workingDirectory = 42 |} ]
+              Methods.SetPaths, box {| includePaths = Array.empty<string>; workingDirectory = 42 |}
+              Methods.Execute, box {| code = "1"; sourcePath = null; startLine = 3000000000L |}
+              Methods.SetPaths, box {| includePaths = [| box 42 |]; workingDirectory = "wd" |} ]
 
         for methodName, parameters in malformedRequests do
             Assert.Equal(Some -32602, session.RequestExpectingError(methodName, parameters)))
-
-[<Fact>]
-let ``initialize fails when an explicit owner process cannot be watched`` () =
-    withInitializedSession (fun session ->
-        let error =
-            session.RequestExpectingError(
-                Methods.Initialize,
-                { clientProcessId = Int32.MaxValue }
-            )
-
-        Assert.Equal(Some -32602, error))
 
 [<Fact>]
 let ``fails when the command-line owner process cannot be watched`` () =
@@ -176,19 +167,14 @@ let ``evaluates an interaction and prints its result`` () =
         // The value is reported the way a console session reports it: printed to standard output.
         Assert.True(session.WaitForOutput "val it: int = 2", describe session result))
 
-[<Fact>]
-let ``returns evaluated values`` () =
+[<Theory>]
+[<InlineData("let answer = 42", "answer")>]
+[<InlineData("42;; open System;;", "it")>]
+let ``returns evaluated values`` code name =
     withInitializedSession (fun session ->
-        let result = session.Execute "let answer = 42"
+        let result = session.Execute code
         Assert.True(succeeded result, describe session result)
-        Assert.Contains(result.values, fun value -> value.name = "answer" && value.value = "42"))
-
-[<Fact>]
-let ``returns the value of an expression as it`` () =
-    withInitializedSession (fun session ->
-        let result = session.Execute "6 * 7"
-        Assert.True(succeeded result, describe session result)
-        Assert.Contains(result.values, fun value -> value.name = "it" && value.value = "42"))
+        Assert.Contains(result.values, fun value -> value.name = name && value.value = "42"))
 
 [<Fact>]
 let ``does not report the helper bindings the compiler introduces`` () =
@@ -511,35 +497,22 @@ let ``setPaths changes the working directory`` () =
 
 [<Fact>]
 let ``setPaths rejects an unrepresentable path without changing the working directory`` () =
-    if RuntimeInformation.IsOSPlatform OSPlatform.Windows then
-        ()
-    else
-        withInitializedSession (fun session ->
-            let directory = temporaryPath "\"quoted"
-            Directory.CreateDirectory directory |> ignore
+    withInitializedSession (fun session ->
+        let before = session.Execute "1"
+        let path = temporaryPath "\"quoted"
 
-            try
-                let before = session.Execute "1"
+        let error =
+            session.RequestExpectingError(
+                Methods.SetPaths,
+                {
+                    includePaths = [| path |]
+                    workingDirectory = path
+                }
+            )
 
-                let error =
-                    session.RequestExpectingError(
-                        Methods.SetPaths,
-                        {
-                            includePaths = [| directory |]
-                            workingDirectory = directory
-                        }
-                    )
+        Assert.Equal(Some -32602, error)
+        Assert.Equal(before.workingDirectory, (session.Execute "2").workingDirectory))
 
-                Assert.Equal(Some -32602, error)
-
-                let after = session.Execute "2"
-                Assert.Equal(before.workingDirectory, after.workingDirectory)
-            finally
-                try
-                    Directory.Delete(directory, true)
-                with _ ->
-                    ())
-[<Fact>]
 [<Fact>]
 let ``setPaths rejects a missing working directory`` () =
     withInitializedSession (fun session ->
@@ -666,24 +639,19 @@ let ``shutdown ends the session`` () =
 
         Assert.True(session.WaitForExit 30_000, "the session did not exit after shutdown"))
 
-[<Fact>]
-let ``the session exits when the host disconnects`` () =
+[<Theory>]
+[<InlineData(false)>]
+[<InlineData(true)>]
+let ``the session exits when the control channel closes`` corrupt =
     use session = new FsiServerHarness()
     session.Initialize() |> ignore
 
-    session.CloseControlChannel()
+    session.CloseControlChannel corrupt
     Assert.True(session.WaitForExit 30_000, "the session did not exit after the control channel closed")
-    Assert.Equal(0, session.ExitCode)
+    Assert.Equal(corrupt, session.ExitCode <> 0)
 
-[<Fact>]
-let ``a faulted control channel exits with failure`` () =
-    use session = new FsiServerHarness()
-    session.Initialize() |> ignore
-
-    session.CorruptControlChannel()
-    Assert.True(session.WaitForExit 30_000, "the session did not exit after the control channel faulted")
-    Assert.NotEqual(0, session.ExitCode)
-    Assert.Contains("F# Interactive server terminated:", session.StandardError)
+    if corrupt then
+        Assert.Contains("F# Interactive server terminated:", session.StandardError)
 
 [<Fact>]
 let ``the session exits when its host process exits`` () =

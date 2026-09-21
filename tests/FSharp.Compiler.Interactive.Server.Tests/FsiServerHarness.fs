@@ -206,16 +206,14 @@ type FsiServerHarness
 
     member _.WaitForExit(milliseconds: int) = session.WaitForExit milliseconds
 
-    /// Close only the JSON-RPC connection, leaving the child process to observe EOF and exit.
-    member _.CloseControlChannel() =
-        rpc.Dispose()
-        pipe.Dispose()
+    member _.CloseControlChannel(corrupt: bool) =
+        if corrupt then
+            let bytes = Encoding.ASCII.GetBytes "Content-Length: invalid\r\n\r\n"
+            pipe.Write(bytes, 0, bytes.Length)
+            pipe.Flush()
+        else
+            rpc.Dispose()
 
-    /// Send an invalid header and close the channel, forcing an unrecoverable transport fault.
-    member _.CorruptControlChannel() =
-        let bytes = Encoding.ASCII.GetBytes "Content-Length: invalid\r\n\r\n"
-        pipe.Write(bytes, 0, bytes.Length)
-        pipe.Flush()
         pipe.Dispose()
 
     /// Wait until the session's own output contains the given text, which is how a test observes

@@ -38,7 +38,6 @@ open System.Threading
 open System.Threading.Tasks
 
 open Newtonsoft.Json
-open Newtonsoft.Json.Linq
 open StreamJsonRpc
 
 open FSharp.Compiler.Diagnostics
@@ -93,77 +92,41 @@ let private invalidParams message =
     LocalRpcException(message, ErrorCode = -32602)
 
 [<Sealed>]
-type private StrictStringJsonConverter() =
+type private StrictRequestJsonConverter() =
     inherit JsonConverter()
 
-    override _.CanConvert(objectType) = objectType = typeof<string>
-    override _.CanWrite = false
+    override _.CanConvert(objectType) =
+        objectType = typeof<string>
+        || objectType = typeof<string[]>
+        || objectType = typeof<Nullable<int>>
 
-    override _.ReadJson(reader, _, _, _) =
-        match reader.TokenType with
-        | JsonToken.String -> reader.Value
-        | JsonToken.Null -> null
-        | token -> raise (invalidParams $"Expected a string or null, but found {token}.")
+    override _.CanWrite = false
 
     override _.WriteJson(_, _, _) = raise (NotSupportedException())
 
-[<Sealed>]
-type private StrictStringArrayJsonConverter() =
-    inherit JsonConverter()
-
-    override _.CanConvert(objectType) = objectType = typeof<string[]>
-    override _.CanWrite = false
-
-    override _.ReadJson(reader, _, _, _) =
-        let token = JToken.ReadFrom reader
-
-        match token.Type with
-        | JTokenType.Null -> null
-        | JTokenType.Array ->
-            token.Children()
-            |> Seq.map (fun item ->
-                match item.Type with
-                | JTokenType.String -> item.Value<string>()
-                | JTokenType.Null -> null
-                | itemType -> raise (invalidParams $"Expected a string or null, but found {itemType}."))
-            |> Seq.toArray
-            |> box
-        | tokenType -> raise (invalidParams $"Expected an array or null, but found {tokenType}.")
-
-    override _.WriteJson(_, _, _) = raise (NotSupportedException())
-
-[<Sealed>]
-type private StrictNullableInt32JsonConverter() =
-    inherit JsonConverter()
-
-    override _.CanConvert(objectType) = objectType = typeof<Nullable<int>>
-    override _.CanWrite = false
-
-    override _.ReadJson(reader, _, _, _) =
+    override this.ReadJson(reader, objectType, _, _) =
         match reader.TokenType with
         | JsonToken.Null -> null
-        | JsonToken.Integer ->
-            try
-                box (Nullable(Convert.ToInt32 reader.Value))
-            with :? OverflowException ->
-                raise (invalidParams "The integer is outside the supported range.")
-        | token -> raise (invalidParams $"Expected an integer or null, but found {token}.")
+        | JsonToken.String when objectType = typeof<string> -> reader.Value
+        | JsonToken.Integer when objectType = typeof<Nullable<int>> ->
+            match reader.Value with
+            | :? int64 as value when value >= int64 Int32.MinValue && value <= int64 Int32.MaxValue -> box (Nullable(int value))
+            | _ -> raise (invalidParams "The integer is outside the supported range.")
+        | JsonToken.StartArray when objectType = typeof<string[]> ->
+            let items = ResizeArray()
 
-    override _.WriteJson(_, _, _) = raise (NotSupportedException())
+            while reader.Read() && reader.TokenType <> JsonToken.EndArray do
+                items.Add(this.ReadJson(reader, typeof<string>, null, null) :?> string)
 
-let private requireRequest methodName request =
-    if obj.ReferenceEquals(request, null) then
-        raise (invalidParams $"'{methodName}' requires a request object.")
+            box (items.ToArray())
+        | token -> raise (invalidParams $"A JSON {token} cannot be read as {objectType.Name}.")
 
-let private requireText fieldName (value: string) =
-    if isNull value then
-        raise (invalidParams $"'{fieldName}' is required.")
+let inline private require condition message =
+    if not condition then
+        raise (invalidParams message)
 
-let private requireDirectivePath fieldName (value: string) =
-    requireText fieldName value
-
-    if value.IndexOf('"') >= 0 || value.IndexOf('\r') >= 0 || value.IndexOf('\n') >= 0 then
-        raise (invalidParams $"'{fieldName}' contains characters that F# Interactive directives cannot represent.")
+let private isDirectivePath (value: string) =
+    not (isNull value) && value.IndexOfAny [| '"'; '\r'; '\n' |] < 0
 
 let private toExecutionResult
     (outcome: Choice<FsiValue option, exn>)
@@ -278,10 +241,10 @@ type internal FsiRpcTarget
         executionQueue: ExecutionQueue
     ) =
 
-    let interactionLock = obj ()
-    let mutable currentInteraction = ValueNone
+    let interruptLock = obj ()
+    let mutable currentCancellation: CancellationTokenSource = null
     let mutable initialized = false
-    let mutable currentValues: ResizeArray<ValueInfo> = null
+    let values = ResizeArray<ValueInfo>()
 
     /// Formatted by the session's own printer, so that the text matches the console's and obeys the
     /// session's print settings. Formatting runs user code — a <c>ToString</c> override, a lazy
@@ -338,12 +301,11 @@ type internal FsiRpcTarget
 
     let runInteraction (code: string) (scriptPath: string) =
         let cancellation = new CancellationTokenSource()
-        let values = ResizeArray<ValueInfo>()
 
-        lock interactionLock (fun () -> currentInteraction <- ValueSome(cancellation, false))
+        lock interruptLock (fun () -> currentCancellation <- cancellation)
 
         try
-            lock interactionLock (fun () -> currentValues <- values)
+            values.Clear()
 
             let outcome, diagnostics =
                 evaluateOnEventLoop (fun () -> fsiSession.EvalInteractionNonThrowing(code, scriptPath, cancellation.Token))
@@ -351,10 +313,7 @@ type internal FsiRpcTarget
             flushConsole ()
             toExecutionResult outcome diagnostics (values.ToArray()) cancellation.IsCancellationRequested
         finally
-            lock interactionLock (fun () ->
-                currentValues <- null
-                currentInteraction <- ValueNone)
-
+            lock interruptLock (fun () -> currentCancellation <- null)
             cancellation.Dispose()
 
     /// <summary>
@@ -410,11 +369,8 @@ type internal FsiRpcTarget
 
     member _.Execute(request: ExecuteRequest) : Task<ExecutionResult> =
         requireInitialized ()
-        requireRequest Methods.Execute request
-        requireText "code" request.code
-
-        if request.startLine.HasValue && request.startLine.Value < 1 then
-            raise (invalidParams "'startLine' must be at least one.")
+        require (not (isNull request.code)) "'code' is required."
+        require (not request.startLine.HasValue || request.startLine.Value >= 1) "'startLine' must be at least one."
 
         let text = positionInteraction request.code request.sourcePath request.startLine
 
@@ -428,11 +384,7 @@ type internal FsiRpcTarget
 
     member _.ExecuteFile(request: ExecuteFileRequest) : Task<ExecutionResult> =
         requireInitialized ()
-        requireRequest Methods.ExecuteFile request
-        requireText "path" request.path
-
-        if String.IsNullOrWhiteSpace request.path then
-            raise (invalidParams "'path' must not be empty.")
+        require (not (String.IsNullOrWhiteSpace request.path)) "'path' must not be empty."
 
         // Routed through #load so that the file joins the session the same way it would from a
         // script, rather than being replayed as anonymous text.
@@ -442,17 +394,12 @@ type internal FsiRpcTarget
     /// directives a script would use.
     member _.SetPaths(request: SetPathsRequest) : Task<ExecutionResult> =
         requireInitialized ()
-        requireRequest Methods.SetPaths request
-        requireText "workingDirectory" request.workingDirectory
+        require (isDirectivePath request.workingDirectory) "'workingDirectory' must be a path without quotes or newlines."
+        require (not (isNull request.includePaths)) "'includePaths' is required."
 
-        match request.includePaths with
-        | null -> raise (invalidParams "'includePaths' is required.")
-        | paths ->
-            paths
-            |> Array.iteri (fun index path -> requireDirectivePath $"includePaths[{index}]" path)
-
-        if not (String.IsNullOrWhiteSpace request.workingDirectory) then
-            requireDirectivePath "workingDirectory" request.workingDirectory
+        request.includePaths
+        |> Array.iteri (fun index path ->
+            require (isDirectivePath path) $"'includePaths[{index}]' must be a path without quotes or newlines.")
 
         if
             not (String.IsNullOrWhiteSpace request.workingDirectory)
@@ -499,12 +446,11 @@ type internal FsiRpcTarget
     member _.Interrupt() : InterruptResult =
         requireInitialized ()
 
-        lock interactionLock (fun () ->
-            match currentInteraction with
-            | ValueNone
-            | ValueSome(_, true) -> { interrupted = false }
-            | ValueSome(cancellation, false) ->
-                currentInteraction <- ValueSome(cancellation, true)
+        lock interruptLock (fun () ->
+            match currentCancellation with
+            | null -> { interrupted = false }
+            | cancellation ->
+                currentCancellation <- null
 
                 try
                     cancellation.Cancel()
@@ -559,9 +505,7 @@ let private runServer
         FsiRpcTarget(fsiSession, fsiConfig, outWriter, errorWriter, shutdownRequested, executionQueue)
 
     let formatter = new JsonMessageFormatter()
-    formatter.JsonSerializer.Converters.Add(new StrictStringJsonConverter())
-    formatter.JsonSerializer.Converters.Add(new StrictStringArrayJsonConverter())
-    formatter.JsonSerializer.Converters.Add(new StrictNullableInt32JsonConverter())
+    formatter.JsonSerializer.Converters.Add(new StrictRequestJsonConverter())
 
     use rpc = new JsonRpc(new HeaderDelimitedMessageHandler(pipe, formatter))
 
