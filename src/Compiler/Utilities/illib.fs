@@ -778,16 +778,25 @@ module List =
 
         go state list []
 
-    let stableTopologicalSort (mustPrecede: 'T -> 'T -> bool) (xs: 'T list) =
+    let stableTopologicalSortBy (priority: 'T -> int) (mustPrecede: 'T -> 'T -> bool) (xs: 'T list) =
         let rec emit remaining =
-            let rec emitFirstReady skipped candidates =
-                match candidates with
-                | [] -> remaining
-                | x :: rest when remaining |> List.forall (fun y -> not (mustPrecede y x)) ->
-                    x :: emit (List.fold (fun acc y -> y :: acc) rest skipped)
-                | x :: rest -> emitFirstReady (x :: skipped) rest
+            let ready =
+                remaining
+                |> List.mapi (fun index x -> index, x)
+                |> List.filter (fun (_, x) -> remaining |> List.forall (fun y -> not (mustPrecede y x)))
 
-            emitFirstReady [] remaining
+            match ready with
+            | [] -> remaining
+            | _ ->
+                let selectedIndex, selected =
+                    ready |> List.minBy (fun (index, x) -> priority x, index)
+
+                let rest =
+                    remaining
+                    |> List.mapi (fun index x -> index, x)
+                    |> List.choose (fun (index, x) -> if index = selectedIndex then None else Some x)
+
+                selected :: emit rest
 
         emit xs
 

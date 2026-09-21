@@ -747,7 +747,7 @@ let test (outer: Outer<'u>) =
         |> checkIntInference langVersion
 
     [<Fact>]
-    let ``Independent constraint determines shared caller parameter before ambiguous interface`` () =
+    let ``Less ambiguous ready constraint determines shared caller parameter`` () =
         """
 module Repro
 

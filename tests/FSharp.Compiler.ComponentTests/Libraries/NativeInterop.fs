@@ -235,29 +235,6 @@ let main _ = 0
         |> ignore
 
     [<Theory>]
-    [<InlineData(false)>]
-    [<InlineData(true)>]
-    let ``optional inlining preserves a stackalloc lambda behind leading bindings`` optimize =
-        FSharp """
-module Test
-#nowarn "9"
-open Microsoft.FSharp.NativeInterop
-let run () =
-    try failwith "enter"
-    with _ ->
-        let allocate =
-            let n = 1 + (System.Environment.TickCount &&& 1)
-            fun () -> NativePtr.stackalloc<int> n |> ignore
-        allocate ()
-run ()
-[<EntryPoint>]
-let main _ = 0
-"""
-        |> withOptimization optimize
-        |> compileExeAndRun
-        |> shouldSucceed
-
-    [<Theory>]
     [<InlineData("try failwith \"enter\" with _ -> local ()")>]
     [<InlineData("try failwith \"enter\" with _ -> local (); System.GC.KeepAlive 1")>]
     [<InlineData("try failwith \"enter\" with _ when (local (); true) -> ()")>]
@@ -284,6 +261,31 @@ let main _ =
                 |> shouldSucceed
                 |> verifyILContains [ "localloc" ]
                 |> ignore
+
+    [<Theory>]
+    [<InlineData(false)>]
+    [<InlineData(true)>]
+    let ``let before a handler-local stackalloc lambda preserves its method boundary`` optimize =
+        FSharp """
+module Test
+open Microsoft.FSharp.NativeInterop
+let run () =
+    try failwith "enter"
+    with _ ->
+        let allocate =
+            let n = 1 + (System.Environment.TickCount &&& 1)
+            fun () -> NativePtr.stackalloc<int> n |> ignore
+        allocate ()
+[<EntryPoint>]
+let main _ =
+    run ()
+    0
+"""
+        |> withNoWarn 9
+        |> withOptimization optimize
+        |> compileExeAndRun
+        |> shouldSucceed
+        |> ignore
 
     [<Theory>]
     [<InlineData("try NativePtr.stackalloc<int> n |> ignore with _ -> ()")>]

@@ -76,9 +76,6 @@ val IteratedAdjustLambdaToMatchValReprInfo:
     lambdaExpr: Expr ->
         Typars * Val option * Val option * Val list list * Expr * TType
 
-/// Count the supertypes of ty2 for which ty2 :> ty1 might feasibly hold.
-val CountFeasibleSupertypes: g: TcGlobals -> amap: ImportMap -> m: range -> ty1: TType -> ty2: TType -> int
-
 /// "Single Feasible Type" inference
 /// Look for the unique supertype of ty2 for which ty2 :> ty1 might feasibly hold
 val FindUniqueFeasibleSupertype: g: TcGlobals -> amap: ImportMap -> m: range -> ty1: TType -> ty2: TType -> TType option

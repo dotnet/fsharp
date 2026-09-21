@@ -1859,15 +1859,15 @@ let ExprMayHaveFrameLocalAllocation expr =
 
     FoldExpr folder false expr
 
-let rec ExprMayHaveFrameLocalAllocationInCallableBody expr =
-    if ExprMayHaveFrameLocalAllocation expr then
-        true
-    else
-        match stripDebugPoints expr with
-        | Expr.Let (_, body, _, _)
-        | Expr.TyLambda (_, _, body, _, _)
-        | Expr.Lambda (_, _, _, _, body, _, _) -> ExprMayHaveFrameLocalAllocationInCallableBody body
-        | _ -> false
+let rec CallableExprMayHaveFrameLocalAllocation expr exprTy =
+    match stripDebugPoints expr with
+    | Expr.Let(_, body, _, _)
+    | Expr.LetRec(_, body, _, _)
+    | Expr.Sequential(_, body, NormalSeq, _) ->
+        CallableExprMayHaveFrameLocalAllocation body exprTy
+    | expr ->
+        let _, _, body, _ = stripTopLambda (expr, exprTy)
+        ExprMayHaveFrameLocalAllocation body
 
 let TryEliminateBinding cenv env bind e2 _m =
     let g = cenv.g
@@ -1881,7 +1881,8 @@ let TryEliminateBinding cenv env bind e2 _m =
     elif vspec1.InlineInfo = ValInline.InlinedDefinition then None
     elif vspec1.LogicalName.StartsWithOrdinal stackVarPrefix ||
          vspec1.LogicalName.Contains suffixForVariablesThatMayNotBeEliminated then None
-    elif env.withinExnHandler && ExprMayHaveFrameLocalAllocationInCallableBody e1 then None
+    elif env.withinExnHandler &&
+         CallableExprMayHaveFrameLocalAllocation e1 vspec1.Type then None
     else
 
         // Peephole on immediate consumption of single bindings, e.g. "let x = e in x" --> "e"
@@ -4365,10 +4366,7 @@ and OptimizeApplication cenv env (f0, f0ty, tyargs, args, m) =
     | None ->
     let optf0, finfo = OptimizeFuncInApplication cenv env f0 m
 
-    match
-        StripPreComputationsFromComputedFunction g optf0 args (fun f argsR ->
-            MakeApplicationAndBetaReduce g (f, tyOfExpr g f, [ tyargs ], argsR, f.Range))
-    with
+    match StripPreComputationsFromComputedFunction g optf0 args (fun f argsR -> MakeApplicationAndBetaReduce g (f, tyOfExpr g f, [tyargs], argsR, f.Range)) with
     | Choice1Of2 remade ->
         OptimizeExpr cenv env remade
     | Choice2Of2 (newf0, remake) ->
