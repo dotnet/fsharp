@@ -162,8 +162,11 @@ async function connect(file) {
         clock: () => new Date(read().now),
         mirrorDirectory: read().mirrorDirectory,
         recordGit: args => record({ kind: "git", args }),
-        recordGitResult: (args, result, durationMs) => record({ kind: "git-result", args,
-            exitCode: result.exitCode, durationMs }),
+        recordGitResult: (args, result, durationMs) => {
+            record({ kind: "git-result", args, exitCode: result.exitCode, durationMs });
+            if (read().faults.oversizeBundle && args.includes("bundle") && args.includes("create") && result.exitCode === 0)
+                fs.truncateSync(args[args.indexOf("create") + 1], 1024 ** 3 + 1);
+        },
         checkAnchor: async anchor => assertValue(anchor === read().anchorSha, "freshness anchor mismatch"),
         inspectRuntime: async () => {
             record({ kind: "runtime" });
@@ -264,6 +267,37 @@ async function connect(file) {
         },
         runContainer: async (config, options) => {
             const db = read(), unit = options.input;
+            if (unit.request.kind === "source") {
+                assertValue(typeof options.sourceBundle === "string" && path.isAbsolute(options.sourceBundle) &&
+                    /^[a-f0-9]{64}$/.test(options.sourceBundleSha256), "source bundle path and digest required");
+                const digest = createHash("sha256");
+                for await (const chunk of fs.createReadStream(options.sourceBundle)) digest.update(chunk);
+                assertValue(digest.digest("hex") === options.sourceBundleSha256, "source bundle digest mismatch");
+                const directory = path.join(options.evidenceDirectory, "bundle-check");
+                await fsp.mkdir(directory);
+                const gitExecutable = JSON.parse(Buffer.from(db.files[".github/regression-bisect/deployment.json"], "base64")).gitExecutable;
+                const git = args => {
+                    record({ kind: "git", args });
+                    const start = Date.now();
+                    const result = spawnSync(gitExecutable, ["-c", "credential.helper=", "-c", "core.hooksPath=",
+                        ...args], { cwd: directory, encoding: "utf8", shell: false, timeout: 60000,
+                        env: { ...(process.platform === "win32" ? { SystemRoot: process.env.SystemRoot } : {}),
+                            GIT_CONFIG_NOSYSTEM: "1", GIT_CONFIG_GLOBAL: path.join(directory, "no-config"),
+                            GIT_ALLOW_PROTOCOL: "file", GIT_TERMINAL_PROMPT: "0" } });
+                    record({ kind: "git-result", args, exitCode: result.status, durationMs: Date.now() - start });
+                    assertValue(result.status === 0, `bundle verification failed: ${result.stderr}`);
+                    return result.stdout.trim();
+                };
+                git(["init", "--bare", "--quiet", "--template="]);
+                git(["bundle", "verify", options.sourceBundle]);
+                const heads = git(["bundle", "list-heads", options.sourceBundle]);
+                assertValue(heads === `${unit.request.target.sourceSha} refs/heads/selected`, "source bundle selected ref mismatch");
+                git(["fetch", "--quiet", "--no-tags", options.sourceBundle, "refs/heads/selected"]);
+                assertValue(git(["rev-parse", "FETCH_HEAD"]) === unit.request.target.sourceSha, "source bundle target mismatch");
+                record({ kind: "source-bundle", size: (await fsp.stat(options.sourceBundle)).size,
+                    sha256: options.sourceBundleSha256, heads, sourceSha: unit.request.target.sourceSha });
+            } else assertValue(options.sourceBundle === undefined && options.sourceBundleSha256 === undefined,
+                "released unit must not receive source history");
             const launch = { launchId: f.digest(unit.buildInstanceId), unitDigest: fingerprint(unit),
                 imageDigest: image.split(":").at(-1) };
             await fsp.writeFile(path.join(options.evidenceDirectory, "fixture-input.json"), json({ unit, launch }));

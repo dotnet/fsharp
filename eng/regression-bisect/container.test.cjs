@@ -4,6 +4,7 @@ const fs = require("node:fs/promises");
 const path = require("node:path");
 const { spawn, spawnSync } = require("node:child_process");
 const { once } = require("node:events");
+const { createHash } = require("node:crypto");
 const { validateContainerConfig, inspectRuntime, runContainer, image, loadContainerEvidence,
     verifyTransportReceipt, verifyContainerEvidence, readCollectedExecution } = require("./container.cjs");
 const { Readable } = require("node:stream");
@@ -222,6 +223,85 @@ function executionUnit() {
             [c.id, { os: c.os, architecture: c.architecture, imageDigest: image.split(":").at(-1) }]))),
     };
 }
+
+test("source bundle handoff is bounded, digest-bound and staged before worker creation", async t => {
+    for (const scenario of ["representative", "ceiling", "oversize", "empty", "missing-path", "missing-digest",
+        "missing-both", "wrong-digest", "hardlink", "symlink", "copy-change", "copy-oversize", "aborted"]) await t.test(scenario, async t => {
+        const f = await dockerFixture(t);
+        const sourceDirectory = path.join(f.root, "samples");
+        const sourceBundle = path.join(f.root, "source.bundle");
+        const size = scenario === "representative" ? 401775766 : scenario === "ceiling" ? 1024 ** 3
+            : scenario === "oversize" ? 1024 ** 3 + 1 : scenario === "empty" ? 0 : 16;
+        const file = await fs.open(sourceBundle, "wx");
+        try { await file.truncate(size); } finally { await file.close(); }
+        const measure = async name => {
+            const file = await fs.open(name, "r"), digest = createHash("sha256");
+            try {
+                for await (const chunk of file.createReadStream({ autoClose: false, highWaterMark: 1024 * 1024 })) digest.update(chunk);
+                return digest.digest("hex");
+            } finally { await file.close(); }
+        };
+        const sourceBundleSha256 = scenario === "oversize" ? "a".repeat(64) : await measure(sourceBundle);
+        const unit = executionUnit();
+        await fs.mkdir(path.join(sourceDirectory, "fixtures"), { recursive: true });
+        await fs.writeFile(path.join(sourceDirectory, unit.manifest.sources[0].path), 'printfn "ok"');
+        const options = { operation: "execution", input: unit, evidenceDirectory: f.root, sourceDirectory,
+            sourceBundle, sourceBundleSha256, receiptKey: Buffer.alloc(32, 7) };
+        if (scenario === "missing-path" || scenario === "missing-both") delete options.sourceBundle;
+        if (scenario === "missing-digest" || scenario === "missing-both") delete options.sourceBundleSha256;
+        if (scenario === "wrong-digest") options.sourceBundleSha256 = "b".repeat(64);
+        if (scenario === "aborted") options.signal = AbortSignal.abort(new Error("cancelled handoff"));
+        if (scenario === "hardlink") await fs.link(sourceBundle, path.join(f.root, "alias.bundle"));
+        if (scenario === "symlink") {
+            const alias = path.join(f.root, "alias");
+            await fs.symlink(f.root, alias, "junction");
+            options.sourceBundle = path.join(alias, "source.bundle");
+        }
+        f.setResult({ status: "untestable", outcome: { schemaVersion: 1, outcome: "untestable", reason: "setup-failure" },
+            error: { message: "synthetic bundle handoff only" } });
+        const readFile = fs.readFile, copyFile = fs.copyFile;
+        let copies = 0;
+        t.mock.method(fs, "readFile", (file, ...args) => {
+            assert.equal(String(file).endsWith(".bundle"), false, "bundles must not be buffered in controller memory");
+            return readFile(file, ...args);
+        });
+        t.mock.method(fs, "copyFile", async (...args) => {
+            copies++;
+            await copyFile(...args);
+            if (scenario === "copy-change") await fs.writeFile(args[1], Buffer.alloc(size, 1));
+            if (scenario === "copy-oversize") await fs.truncate(args[1], 1024 ** 3 + 1);
+        });
+        const command = f.deps.command;
+        let staged = false;
+        f.deps.command = async (exe, args, settings) => {
+            if (args.includes("image")) {
+                const directory = (await fs.readdir(f.root)).find(n => n.startsWith("staging-"));
+                const copy = path.join(f.root, directory, "input", "source.bundle");
+                assert.equal((await fs.stat(copy)).size, size);
+                assert.equal(await measure(copy), options.sourceBundleSha256);
+                staged = true;
+            }
+            return command(exe, args, settings);
+        };
+        const result = await runContainer(config(), options, f.deps);
+        const accepted = ["representative", "ceiling"].includes(scenario);
+        assert.equal(result.status, accepted ? "collected" : "blocked", result.reason);
+        assert.equal(staged, accepted);
+        assert.equal(result.receipt.workerStarted, accepted);
+        if (scenario === "oversize") {
+            assert.match(result.reason, /bounded|byte limit/);
+            assert.equal(copies, 0, "oversized input must be rejected before copying bytes");
+        }
+        if (accepted) assert.equal(result.receipt.sourceBundleSha256, options.sourceBundleSha256);
+        else {
+            assert.ok(result.reason);
+            assert.deepEqual(result.receipt.resources, []);
+            assert.equal(f.calls.some(args => args[1] === "create" || args[1] === "start"), false);
+        }
+        t.diagnostic(JSON.stringify({ scenario, size, status: result.status, workerStarted: result.receipt.workerStarted,
+            commands: f.calls.map(args => args.slice(0, 2)) }));
+    });
+});
 
 test("physical source evidence survives destroyed worker tmpfs, not merely a result containing paths", async t => {
     const f = await dockerFixture(t);

@@ -8,9 +8,11 @@ const { validateExecutionUnit, readExecutionOutput } = require("./worker.cjs");
 const { hash, requireValue, boundedWait } = require("./toolchain-io.cjs");
 const { collectWorkerArchive, collectWorkerBlob, validateExecutionFiles } = require("./worker-output.cjs");
 const { validateArchiveReceipt } = require("./archive-provenance.cjs");
+const { hashFile } = require("./toolchain-installer.cjs");
 const policy = require("../../.github/policies/regression-bisect.json");
 
 const image = "docker.io/library/node@sha256:5a750d3be5e5c80275f8c9a5367c3aed99c2875656590c8d0701c7ee687f5f0a";
+const sourceBundleBytes = 1024 * 1024 * 1024;
 const ceilings = { cpus: 8, memoryMiB: 32768, pids: 1024, scratchMiB: 16384, timeoutMs: 110 * 60000 };
 const trustedRoot = path.resolve(__dirname, "..", "..");
 
@@ -70,13 +72,26 @@ async function inspectRuntime(config, deps = {}) {
     return info;
 }
 
-async function regularBytes(file, maxBytes) {
+async function regularFile(file, maxBytes) {
+    requireValue(typeof file === "string" && path.isAbsolute(file), "absolute input file required");
     const stat = await fs.lstat(file);
     requireValue(stat.isFile() && !stat.isSymbolicLink() && stat.nlink === 1 && stat.size <= maxBytes &&
         await fs.realpath(file) === file, "input is not a bounded, unlinked regular file");
+    return stat;
+}
+
+async function regularBytes(file, maxBytes) {
+    const stat = await regularFile(file, maxBytes);
     const bytes = await fs.readFile(file);
     requireValue(bytes.length === stat.size, "input file changed during read");
     return bytes;
+}
+
+async function sourceBundleIdentity(file, signal) {
+    await regularFile(file, sourceBundleBytes);
+    const identity = await hashFile(fs, file, sourceBundleBytes, signal);
+    requireValue(identity.size > 0, "source bundle is empty");
+    return identity;
 }
 
 async function stageHelpers(root) {
@@ -261,10 +276,12 @@ async function runContainer(config, options, deps = {}) {
                 await fs.writeFile(target, bytes, { flag: "wx", mode: 0o444 });
             }
             if (options.input.request.kind === "source") {
-                const bytes = await regularBytes(path.resolve(options.sourceBundle), 256 * 1024 * 1024);
-                requireValue(hash(bytes) === options.sourceBundleSha256, "source bundle digest mismatch");
-                await fs.writeFile(path.join(input, "source.bundle"), bytes, { flag: "wx", mode: 0o444 });
-                receipt.sourceBundleSha256 = hash(bytes);
+                await regularFile(options.sourceBundle, sourceBundleBytes);
+                const target = path.join(input, "source.bundle");
+                await fs.copyFile(options.sourceBundle, target, fs.constants.COPYFILE_EXCL);
+                const identity = await sourceBundleIdentity(target, options.signal);
+                requireValue(identity.sha256 === options.sourceBundleSha256, "source bundle digest mismatch");
+                receipt.sourceBundleSha256 = identity.sha256;
             }
         }
         const actualImage = await inspect("image", image);
@@ -497,5 +514,5 @@ async function runContainer(config, options, deps = {}) {
         { status: "collected", result: answer, receipt, ...(options.operation === "execution" ? { files, blobs } : {}) };
 }
 
-module.exports = { image, validateContainerConfig, inspectRuntime, runContainer,
+module.exports = { image, validateContainerConfig, inspectRuntime, runContainer, sourceBundleIdentity,
     verifyTransportReceipt, verifyContainerEvidence, loadContainerEvidence, readCollectedExecution };

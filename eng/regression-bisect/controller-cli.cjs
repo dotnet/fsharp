@@ -11,7 +11,7 @@ const { bootstrapController, runController, publishController } = require("./con
 const { currentInput, historyWorkspace } = require("./engine.cjs");
 const { createObservationCollector, commitCollectedObservation } = require("./collector.cjs");
 const { createActionsEvidenceStore, createFileEvidenceStore } = require("./evidence-store.cjs");
-const { image, validateContainerConfig, inspectRuntime, runContainer } = require("./container.cjs");
+const { image, validateContainerConfig, inspectRuntime, runContainer, sourceBundleIdentity } = require("./container.cjs");
 const { resolveLatestStableSdk } = require("./toolchains.cjs");
 const { readIssueSnapshot } = require("./intake.cjs");
 
@@ -480,7 +480,7 @@ async function main(args = process.argv.slice(2), env = process.env) {
                             await selected.git(["update-ref", "refs/heads/selected", unit.request.target.sourceSha]);
                             sourceBundle = path.join(launchDirectory, "source.bundle");
                             await selected.git(["bundle", "create", sourceBundle, "refs/heads/selected"]);
-                            sourceBundleSha256 = hash(await bytes(sourceBundle, 256 * 1024 * 1024));
+                            sourceBundleSha256 = (await sourceBundleIdentity(sourceBundle, signal)).sha256;
                         } finally { await selected.dispose(); }
                     }
                     const output = await (local?.runContainer ?? runContainer)(config.container, {

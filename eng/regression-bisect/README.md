@@ -14,6 +14,8 @@ Records under `fixtures` are not reproduction approvals.
 The file-backed controller fixture publishes database updates by atomic
 replacement, including operator fault changes and injected clock changes;
 concurrent CLI readers see complete snapshots rather than truncated JSON.
+The CLI suite runs two independent file-backed cases concurrently so the
+unchanged real-time quota-timeout test does not serialize the entire suite.
 
 Install the narrowly scoped, lockfile-pinned YAML test parser, then run from the
 repository root (the production CLI has no npm dependency):
@@ -188,6 +190,14 @@ SHA-512 and measure SHA-256, **without extracting or executing it on the host**.
 An installed/preview SDK cannot substitute. Source selection uses a clean
 credential-free Git graph; only the approved public unit, read-only pinned
 helpers, approved bytes and a selected-source bundle enter `runContainer`.
+The bundle contains only the selected ref and its reachable history, not host
+Git configuration or credentials. CLI and adapter share a **1 GiB** bundle
+ceiling (inclusive), covering the measured 401,775,766-byte main history.
+Both hash it as a stream; the adapter verifies the staged copy again before
+creating worker resources and mounts it read-only. Allow up to **2 GiB of host
+disk per source launch** for original and staged bundles, in addition to the
+history workspace and evidence. Oversized, missing, linked or digest-mismatched
+bundles block; a claimed reservation is never refunded or silently relaunched.
 Acquisition, existing `eng/build.sh`/`eng/Build.ps1`, local-compiler/Core injection
 and reproduction runners execute only inside that adapter. SDK-update CI and
 `BuildWithLocalFSharp.fsx` shell input are not bisection execution mechanisms.

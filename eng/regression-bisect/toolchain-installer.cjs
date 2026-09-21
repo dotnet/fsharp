@@ -45,7 +45,8 @@ printf 'INSTALLER_HELPER_RESULT=%s\\n' "$_GetDotNetInstallScript"
 
 const hash = (bytes, algorithm) => crypto.createHash(algorithm).update(bytes).digest('hex');
 
-async function hashFile(fs, filename, maxBytes = 1073741824) {
+async function hashFile(fs, filename, maxBytes = 1073741824, signal) {
+  signal?.throwIfAborted();
   const before = await fs.lstat(filename);
   if (!before.isFile() || before.isSymbolicLink() || before.size > maxBytes)
     throw new Error('Archive must be a bounded regular nonlink file');
@@ -54,7 +55,8 @@ async function hashFile(fs, filename, maxBytes = 1073741824) {
   let size = 0;
   const file = await fs.open(filename, 'r');
   try {
-    for await (const chunk of file.createReadStream({ autoClose: false })) {
+    for await (const chunk of file.createReadStream({ autoClose: false, signal, highWaterMark: 1024 * 1024 })) {
+      signal?.throwIfAborted();
       size += chunk.length;
       if (size > maxBytes) throw new Error('Archive exceeds byte limit');
       sha256.update(chunk);
@@ -378,4 +380,4 @@ async function installArchive(options, deps) {
   }
 }
 
-module.exports = { installArchive, verifyRetainedArchive };
+module.exports = { installArchive, verifyRetainedArchive, hashFile };

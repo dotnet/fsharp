@@ -1,4 +1,4 @@
-const { test } = require("node:test");
+const { test, describe } = require("node:test");
 const assert = require("node:assert/strict");
 const { spawn } = require("node:child_process");
 const path = require("node:path");
@@ -37,6 +37,7 @@ function invoke(args, env = {}, started = () => {}) {
     });
 }
 
+describe("file-backed controller CLI", { concurrency: 2 }, () => {
 test("the executable advertises only the four deterministic modes", async () => {
     const result = await invoke(["--help"]);
     assert.equal(result.code, 0, result.stderr);
@@ -192,6 +193,22 @@ test("actual CLI bootstraps once and advances one charged contained unit with du
     assert.equal(f.ledger().filter(r => r.kind === "api" && r.method === "PATCH" && r.route === "issues/comments/457").length, 1);
     t.diagnostic(JSON.stringify({ observed, requests: f.ledger().filter(r => r.kind === "api").length,
         workers: 1, bisect: 0 }));
+});
+
+test("actual CLI rejects oversized source bundles without refunds or relaunches", async t => {
+    const f = await fixture(t);
+    assert.equal(outcome(await run(f, "bootstrap")).status, "initialized");
+    await seed(f, "stable", "product-failure");
+    f.update(db => { db.faults.oversizeBundle = true; });
+    const result = outcome(await run(f, "advance"));
+    assert.equal(result.status, "blocked", result.reason);
+    assert.match(result.reason, /bounded|byte limit/);
+    const { cp } = await checkpoint(f);
+    assert.deepEqual(cp.state.budget.consumed, { sourceBuilds: 1, workerUnits: 2, reservedMinutes: 220 });
+    assert.notEqual(cp.pending.executionGeneration, undefined);
+    assert.equal(outcome(await run(f, "advance")).status, "blocked");
+    assert.deepEqual((await checkpoint(f)).cp.state.budget.consumed, cp.state.budget.consumed);
+    noExecution(f);
 });
 
 test("provisioning binds returned real IDs, survives lost creation acknowledgements, and never executes code", async t => {
@@ -545,11 +562,18 @@ test("fresh candidate confirmation consumes just one unit and keeps the existing
     assert.ok(cp.state.confirmation);
     const plan = fingerprint(cp.state.confirmation);
     assert.equal(f.ledger().filter(r => r.kind === "worker").length, 1);
+    const bundles = f.ledger().filter(r => r.kind === "source-bundle");
+    assert.equal(bundles.length, 1);
+    const worker = f.ledger().find(r => r.kind === "worker");
+    assert.equal(bundles[0].sourceSha, worker.unit.request.target.sourceSha);
+    assert.equal(bundles[0].heads, `${bundles[0].sourceSha} refs/heads/selected`);
+    assert.equal(cp.pending, null);
+    assert.deepEqual(worker.credentialNames, []);
     const next = outcome(await run(f, "advance"));
     assert.ok(["blocked", "confirmation"].includes(next.status), JSON.stringify(next));
     assert.equal(f.ledger().filter(r => r.kind === "worker").length, 1);
     assert.equal((await checkpoint(f)).cp.state.budget.consumed.workerUnits, 4);
-    t.diagnostic(JSON.stringify({ plan, result, next, workers: 1 }));
+    t.diagnostic(JSON.stringify({ plan, result, next, bundles, workers: 1 }));
 });
 
 test("production cannot substitute missing, forged or stale containment receipts", async t => {
@@ -765,4 +789,5 @@ test("workflow structure preserves trust, permissions, issue lock, bounds and th
     assert.ok(job.steps.every(step => step.run === undefined), "no dispatch interpolation into a shell");
     const action = YAML.parse(await fs.readFile(path.join(__dirname, "action.yml"), "utf8"));
     assert.deepEqual(action.runs, { using: "node24", main: "controller-cli.cjs" });
+});
 });
