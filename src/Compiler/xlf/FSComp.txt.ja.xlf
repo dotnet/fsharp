@@ -527,6 +527,11 @@
         <target state="translated">参照セルに関連する情報メッセージ</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureReraiseInComputationExpressions">
+        <source>calls to 'reraise' in a computation expression handler</source>
+        <target state="new">calls to 'reraise' in a computation expression handler</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureResumableStateMachines">
         <source>resumable state machines</source>
         <target state="translated">再開可能なステート マシン</target>
