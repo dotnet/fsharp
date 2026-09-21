@@ -282,7 +282,7 @@ async function preparePublication(options, deps) {
                 "stale checkpoint generation");
             const stop = async (reason, status = "blocked") => {
                 await state.recordPublication(transport, context, { generation: cp.generation,
-                    status: "blocked", digest: cp.state.publication.digest, commentId: cp.state.publication.commentId });
+                    status, digest: cp.state.publication.digest, commentId: cp.state.publication.commentId });
                 return { status, reason, budget: structuredClone(cp.state.budget.consumed) };
             };
             let fresh;
@@ -372,7 +372,7 @@ async function preparePublication(options, deps) {
             } catch (error) {
                 return stop(`${error.message}; observations and saved interval retained in authenticated checkpoint ${context.commentId}`);
             }
-            if (cp.state.publication.digest && cp.state.publication.digest !== resultDigest) return stop("pending publication digest changed", "requeue");
+            if (cp.state.publication.digest && cp.state.publication.digest !== resultDigest) return stop("pending publication digest changed");
             const duplicate = cp.publicationStatus === "pending";
             const saved = await state.recordPublication(transport, context, { generation: cp.generation,
                 status: "pending", digest: resultDigest, commentId: null });

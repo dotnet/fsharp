@@ -181,7 +181,7 @@ function validateCheckpoint(cp) {
         cp.policyDigest === fingerprint(cp.state.budget.policy), "checkpoint digest or generation mismatch");
     requireState(Array.isArray(cp.records) && cp.records.length <= cp.state.budget.policy.limits.workerUnits &&
         cp.sequence === cp.records.length && Array.isArray(cp.history) &&
-        ["unpublished", "pending", "published", "blocked"].includes(cp.publicationStatus), "invalid checkpoint ledger");
+        ["unpublished", "pending", "published", "blocked", "requeue"].includes(cp.publicationStatus), "invalid checkpoint ledger");
     const totals = { sourceBuilds: 0, workerUnits: 0, reservedMinutes: 0 };
     const ids = new Set();
     for (const [index, r] of cp.records.entries()) {
@@ -679,6 +679,12 @@ async function invalidateStaleEvidence(transport, context, { generation }) {
     checkGeneration(cp, generation);
     const current = currentState(cp, context);
     const eligible = isEligibleIssue(context.issue) && context.issue.number === context.issueNumber;
+    if (!current.stale && current.state !== null && eligible && cp.publicationStatus === "requeue") {
+        cp.publicationStatus = cp.state.publication.commentId !== null ? "published" :
+            cp.state.publication.digest !== null ? "pending" : "unpublished";
+        cp.generation++;
+        return saveCheckpoint(transport, context, cp, loaded.bodyDigest);
+    }
     if (!current.stale && current.state !== null && eligible && cp.state.phase !== "stopped") return cp;
     const phase = !eligible ? "stopped" : current.state === null ? "blocked" : "discovery";
     if (!current.stale && cp.pending === null && cp.state.phase === phase &&
@@ -747,10 +753,11 @@ async function recordPublication(transport, context, { generation, status, diges
     const loaded = await loadCheckpoint(transport, context, { requiredEvidenceOnly: true });
     const cp = loaded.checkpoint;
     checkGeneration(cp, generation);
-    requireState(["pending", "published", "blocked"].includes(status) &&
-        (status === "blocked" ? resultDigest === null || digest(resultDigest) : digest(resultDigest)) &&
+    const stopped = ["blocked", "requeue"].includes(status);
+    requireState(["pending", "published", "blocked", "requeue"].includes(status) &&
+        (stopped ? resultDigest === null || digest(resultDigest) : digest(resultDigest)) &&
         (commentId === null || positive(commentId)), "invalid publication record");
-    if (status !== "blocked") {
+    if (!stopped) {
         requireState(loaded.publicationAllowed && cp.pending === null, "publication blocked by current state");
         requireState(cp.state.publication.digest === null || cp.state.publication.digest === resultDigest,
             "publication digest conflict");
@@ -762,7 +769,7 @@ async function recordPublication(transport, context, { generation, status, diges
         cp.state.publication.commentId === commentId) {
         if (status !== "pending" || ownerEqual(loaded.owner, context.owner)) return cp;
     }
-    if (status !== "blocked" && !ownerEqual(loaded.owner, context.owner)) {
+    if (!stopped && !ownerEqual(loaded.owner, context.owner)) {
         const previousOwner = await verifyRun(transport, context, {
             runId: loaded.owner.runId, runAttempt: loaded.owner.attempt,
             workflowRevision: cp.state.budget.workflowRevision,

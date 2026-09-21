@@ -58,9 +58,18 @@ function validateCursor(cp, registration) {
     }
 }
 
-async function loadCursor({ transport, context, registration, journal }, { repair = false } = {}) {
+async function loadCursor(deps, { repair = false } = {}) {
+    const { transport, context, registration, journal } = deps;
     let committedGeneration;
     let comment = await transport.getComment(context.commentId);
+    if (journal && repair) {
+        const marker = await state.authenticateDecodedRecord(transport, context,
+            { ...comment, body: await journal.read("committed") });
+        if (marker?.kind === "proposal" && marker.payload.purpose === "discovery-provisioning") {
+            await provisionDiscovery(deps);
+            comment = await transport.getComment(context.commentId);
+        }
+    }
     let record = await state.authenticateDecodedRecord(transport, context, comment);
     requireValue(record?.kind === "proposal", "discovery cursor authentication failed");
     validateCursor(record.payload, registration);
@@ -119,33 +128,51 @@ async function saveCursor(deps, cp, previousDigest) {
 }
 
 async function provisionDiscovery(deps) {
-    const { transport, context, registration, now } = deps;
+    const { transport, context, registration, now, journal } = deps;
     requireValue(Date.parse(registration.provisionDeadline) > now(), "discovery provisioning authorization expired");
-    requireValue(!deps.journal || await deps.journal.read("committed") === null,
-        "discovery already committed; missing required history cannot be replaced");
-    requireValue(await state.readFreshness(transport, context) === null, "discovery already provisioned; never reset history");
+    requireValue(journal, "durable discovery provisioning journal required");
+    const committed = await journal.read("committed"), head = await state.readFreshness(transport, context);
     const comment = await transport.getComment(context.commentId);
     requireValue(comment.id === context.commentId && comment.user?.id === context.actor.id &&
         comment.user?.login === context.actor.login && comment.user?.type === context.actor.type &&
         comment.performed_via_github_app?.id === context.actor.appId &&
         comment.issue_url === `https://api.github.com/repos/${repository}/issues/${context.issueNumber}`,
     "discovery provisioning writer or issue mismatch");
-    if (hash(comment.body) !== registration.bootstrapDigest) {
-        const record = await state.authenticateDecodedRecord(transport, context, comment);
-        requireValue(record?.kind === "proposal", "discovery bootstrap digest mismatch");
-        validateCursor(record.payload, registration);
-        requireValue(record.payload.generation === 0 && record.payload.previousDigest === registration.bootstrapDigest &&
-            same(record.payload.cursor, { version: 1, page: 1, offset: 0 }) && record.payload.selected.length === 0,
-        "not the original interrupted discovery provisioning");
-        requireValue(!deps.journal || await deps.journal.read("intent") === comment.body,
-            "required discovery provisioning intent missing or changed");
-        await state.writeFreshness(transport, context, 0, hash(comment.body));
-        if (deps.journal) await deps.journal.write("committed", comment.body);
-    } else await saveCursor(deps, {
+    const original = hash(comment.body) === registration.bootstrapDigest;
+    const marker = { schemaVersion: 1, purpose: "discovery-provisioning", registration };
+    if (committed === null) requireValue(original && head === null,
+        "required discovery provisioning history missing; cannot replace existing history");
+    else {
+        const record = await state.authenticateDecodedRecord(transport, context, { ...comment, body: committed });
+        requireValue(record?.kind === "proposal" && same(record.payload, marker),
+            "discovery already committed or provisioning history authentication failed");
+    }
+    const initial = {
         schemaVersion: 1, purpose: "discovery-routing", query, policyDigest: fingerprint(policy),
         workflowGeneration: registration.workflowGeneration, generation: 0, previousDigest: registration.bootstrapDigest,
         cursor: { version: 1, page: 1, offset: 0 }, selected: [],
-    }, registration.bootstrapDigest);
+    };
+    let body = await journal.read("intent");
+    if (body === null) {
+        requireValue(committed === null, "required discovery provisioning intent missing");
+        body = state.serializeWorkflowRecord({ kind: "proposal", status: "Regression discovery routing", payload: initial }, context);
+        await journal.write("intent", body);
+    }
+    const record = await state.authenticateDecodedRecord(transport, context, { ...comment, body });
+    requireValue(record?.kind === "proposal" && same(record.payload, initial),
+        "required discovery provisioning intent changed or unauthenticated");
+    requireValue((original || comment.body === body) && (head === null ||
+        !original && head.generation === 0 && head.bodyDigest === hash(body)), "discovery provisioning predecessor mismatch");
+    if (committed === null) await journal.write("committed", state.serializeWorkflowRecord({
+        kind: "proposal", status: "Regression discovery provisioning", payload: marker,
+    }, context));
+    if (original) {
+        const written = await transport.updateComment(context.commentId, body);
+        requireValue(written.body === body && await state.authenticateWorkflowRecord(transport, context, written),
+            "discovery provisioning write acknowledgement authentication failed");
+    }
+    if (head === null) await state.writeFreshness(transport, context, 0, hash(body));
+    await journal.write("committed", body);
     return { status: "provisioned", generation: 0 };
 }
 
@@ -222,7 +249,8 @@ async function issueIntent(issueNumber, deps) {
     const cp = checkpoint?.checkpoint;
     const generation = checkpoint?.freshnessGeneration ?? -1;
     if (cp?.publicationStatus === "published" && cp.generation === generation) return intent("complete", "controller-published");
-    const mode = generation === -1 ? "bootstrap" : ["pending", "published"].includes(cp.publicationStatus) ||
+    const mode = generation === -1 ? "bootstrap" : cp.publicationStatus === "requeue" ? "advance" :
+        ["pending", "published"].includes(cp.publicationStatus) ||
         ["complete", "blocked", "stopped"].includes(cp.state.phase) ? "publish" : "advance";
     const key = dispatchKey({ issueNumber, allowanceId: registration.allowanceId, generation, mode,
         discussionFingerprint, policyRevision: deps.context.policyRevision });

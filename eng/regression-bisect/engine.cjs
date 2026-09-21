@@ -5,7 +5,7 @@ const {
     fingerprintInput: fingerprint, fingerprintEpoch, validateState,
 } = require("./model.cjs");
 const intake = require("./intake.cjs");
-const { loadCheckpoint, reserveWork, beginWork, commitObservation, invalidateStaleEvidence, recordSearchProgress } = require("./state.cjs");
+const { loadCheckpoint, reserveWork, beginWork, commitObservation, cancelCompletedWork, invalidateStaleEvidence, recordSearchProgress } = require("./state.cjs");
 const toolchains = require("./toolchains.cjs");
 const { validateExecutionUnit, runExecutionUnit } = require("./worker.cjs");
 const { execute } = require("./repro-process.cjs");
@@ -273,6 +273,13 @@ async function advanceInvestigation({ now }, deps) {
         if (selected.request && !capacity(cp, 1, context.now,
             selected.request.kind === "source" ? [selected.request.target.sourceSha] : []))
             selected = report("blocked", "cumulative budget exhausted or allowance deadline insufficient", { budget: cp.state.budget.consumed });
+        if (selected.request && cp.state.budget.attempts.some(a => a.count >= cp.state.budget.policy.limits.attemptsPerItem &&
+            a.workItemId === fingerprint({ kind: selected.request.kind, target: selected.request.target, inputDigest: cp.inputDigest })))
+            selected = report("blocked", "work item attempt budget exhausted", { budget: cp.state.budget.consumed });
+        if (selected.status && cp.pending) {
+            requireValue(cp.pending.executionGeneration === undefined, "claimed work requires collection before terminal reporting");
+            cp = await cancelCompletedWork(deps.transport, context, { generation: cp.generation });
+        }
         if ((selected.interval || selected.status) && cp.pending === null) {
             const { remaining, ...interval } = selected.interval ?? cp.state.interval ?? {};
             cp = await recordSearchProgress(deps.transport, context, {

@@ -55,6 +55,13 @@ the same issue. Keep the controller-only
 routing entry points. The discovery lock serializes schedule/event/manual
 writers without cancelling another run. Never reset these files or the remote
 slot/receipts to recover a sweep.
+During first provisioning, `committed.json` holds a signed provisioning marker
+bound to the reviewed registration until the exact generation-zero intent and
+its freshness receipt are acknowledged. A restarted provision or schedule can
+finish that transaction, including a lost first freshness acknowledgement,
+without replacing the intent. Once complete, the marker becomes the committed
+cursor. Missing or forged history is not initialization authority; older
+interrupted provisioning without this marker requires operator recovery.
 
 Each sweep reads at most two REST pages of 100 records and selects at most three
 issues. The authenticated page/offset cursor preserves dense-page overflow and
@@ -100,7 +107,15 @@ fixed-slot publication. Eligible stopped/blocked outcomes (including stable
 passes, main passes, no-green/skip, setup/flake and budget stops) can be reported
 without starting another worker. They do not establish a verified culprit.
 Edits, stale main, live linked investigations and lost required evidence still
-block publication. Counters remain 24 source builds, 40 units, 720 reserved
+block publication. A freshness rejection persists `requeue`, distinct from
+other publication blocks, so the next routed advance reconciles current inputs
+under the issue lock before publication can be retried. If the inputs return to
+their previous identity, that advance clears the requeue without discarding
+valid evidence. Interrupted requeue writes use the same predecessor recovery.
+An authenticated completed owner's unclaimed reservation is retired before a
+terminal capacity/attempt stop is saved, without refunding its charge. Claimed
+work still requires collection; an active or unknown owner cannot be retired.
+Counters remain 24 source builds, 40 units, 720 reserved
 minutes and two attempts; retries, cancellation and edits do not refund them.
 
 **Integration prerequisite for sprint 19:** the recovered discovery identity is

@@ -268,6 +268,8 @@ test("cancelled reservations are charged, bounded and resumed through the state 
     const cp = (await state.loadCheckpoint(h.transport, h.context)).checkpoint;
     assert.equal(cp.state.budget.consumed.reservedMinutes, 220);
     assert.equal(cp.records[0].status, "cancelled");
+    assert.equal(cp.pending, null);
+    assert.equal(cp.state.phase, "blocked");
     assert.equal(h.calls.length, 0);
 });
 

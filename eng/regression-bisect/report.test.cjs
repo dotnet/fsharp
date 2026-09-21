@@ -307,7 +307,7 @@ test("ineligible or stale fresh context blocks publication without refund", asyn
         assert.ok(["blocked", "requeue"].includes(result.status), JSON.stringify(result));
         assert.equal(result.body, undefined);
         const cp = (await state.loadCheckpoint(h.transport, h.context)).checkpoint;
-        assert.equal(cp.publicationStatus, "blocked");
+        assert.equal(cp.publicationStatus, result.status);
         assert.equal(cp.state.budget.consumed.workerUnits, 1);
         assert.equal(cp.state.budget.consumed.reservedMinutes, 110);
     });
@@ -844,7 +844,7 @@ test("confirmed boundaries retain distinct parent/candidate evidence and become 
     assert.equal(stale.status, "requeue");
     assert.equal(stale.body, undefined);
     const blocked = (await state.loadCheckpoint(h.transport, h.context)).checkpoint;
-    assert.equal(blocked.publicationStatus, "blocked");
+    assert.equal(blocked.publicationStatus, "requeue");
     assert.equal(blocked.state.budget.consumed.workerUnits, 4);
 });
 

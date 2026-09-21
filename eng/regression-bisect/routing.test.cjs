@@ -75,6 +75,16 @@ async function provision(f) { return success(await invoke(f, "provision")); }
 const dispatches = f => f.ledger().filter(e => e.kind === "api" && e.route.endsWith("/dispatches"));
 const mutations = f => f.ledger().filter(e => e.kind === "api" && e.method !== "GET");
 
+async function deliver(f, mode, runId = "12345") {
+    f.update(db => { db.runs[`${runId}/1`].status = "completed"; db.runs[`${runId}/1`].conclusion = "success"; });
+    const routed = success(await invoke(f, "manual", 123));
+    assert.deepEqual(routed.dispatched, [123], JSON.stringify(routed));
+    const inputs = dispatches(f).at(-1).body.inputs;
+    assert.equal(inputs.mode, mode);
+    f.update(db => { db.runs[`${runId}/1`].status = "in_progress"; db.runs[`${runId}/1`].conclusion = null; });
+    return consume(f, inputs, runId);
+}
+
 async function consume(f, inputs, runId = "12345") {
     const args = [inputs.mode, "--issue", String(inputs.issue), "--config", f.configPath,
         "--routing-key", inputs.routingKey, "--routing-generation", inputs.routingGeneration];
@@ -476,6 +486,124 @@ test("every durable routing boundary recovers exact intent in a new process", as
         assert.equal(mutations(f).length, before);
         assert.equal(f.ledger().some(e => e.kind === "worker"), false);
     });
+});
+
+test("initial discovery provisioning recovers every remote write boundary without replacing history", async t => {
+    for (const fault of ["cursorWrite", "cursorAck", "freshnessWrite", "statusAck"])
+        for (const mode of ["provision", "schedule"]) await t.test(`${fault}/${mode}`, async t => {
+            const f = await setup(t);
+            f.update(db => { db.faults[fault] = true; });
+            assert.equal((await invoke(f, "provision")).code, 1);
+            const intent = JSON.parse(await fs.readFile(path.join(f.env.RB_STATE_DIRECTORY,
+                "dotnet-fsharp-discovery", "intent.json"), "utf8"));
+            f.nextRun();
+            success(await invoke(f, mode));
+            if (mode === "provision") {
+                assert.equal(f.read().comments.find(c => c.id === 458).body, intent);
+                success(await invoke(f, "schedule"));
+            }
+            assert.deepEqual(dispatches(f).map(e => e.body.inputs.mode), ["bootstrap"]);
+            assert.equal((await cursor(f)).generation, 2);
+            assert.equal(success(await consume(f, dispatches(f)[0].body.inputs)).status, "initialized");
+            const saved = (await checkpoint(f)).cp;
+            assert.equal(saved.state.budget.allowanceId, f.approval.bootstrap.allowanceId);
+            assert.deepEqual(saved.state.budget.consumed, { sourceBuilds: 0, workerUnits: 0, reservedMinutes: 0 });
+            assert.equal(f.ledger().some(e => e.kind === "worker"), false);
+            assert.equal((await invoke(f, "provision")).code, 1);
+        });
+});
+
+test("initial discovery recovery requires authenticated intent and provisioning history", async t => {
+    for (const name of ["intent", "committed"]) for (const fault of ["missing", "forged"])
+        await t.test(`${name}/${fault}`, async t => {
+            const f = await setup(t);
+            f.update(db => { db.faults.statusAck = true; });
+            assert.equal((await invoke(f, "provision")).code, 1);
+            const file = path.join(f.env.RB_STATE_DIRECTORY, "dotnet-fsharp-discovery", `${name}.json`);
+            if (fault === "missing") await fs.rm(file, { force: true });
+            else await fs.writeFile(file, JSON.stringify("forged"));
+            const before = mutations(f).length;
+            for (const mode of ["provision", "schedule"]) assert.equal((await invoke(f, mode)).code, 1);
+            assert.equal(mutations(f).length, before);
+        });
+});
+
+test("abandoned unclaimed reservations reach a durable budget stop and guarded report without refund", async t => {
+    for (const fault of ["commentAck", "statusAck"]) await t.test(fault, async t => {
+        const f = await setup(t);
+        await provision(f);
+        f.update(db => { db.now = new Date(Date.parse(f.approval.bootstrap.deadline) - 111 * 60000).toISOString(); });
+        assert.equal(success(await deliver(f, "bootstrap")).status, "initialized");
+        f.update(db => { db.runs["12345/1"].status = "completed"; });
+        success(await invoke(f, "manual", 123));
+        const first = dispatches(f).at(-1).body.inputs;
+        f.update(db => { db.runs["12345/1"].status = "in_progress"; db.faults[fault] = true; });
+        assert.equal((await consume(f, first)).code, 1);
+        const before = (await checkpoint(f)).cp;
+        assert.equal(before.pending.executionGeneration, undefined);
+        f.update(db => {
+            db.runs["12345/1"].status = "completed"; db.runs["12345/1"].conclusion = "cancelled";
+            db.runs["12346/1"] = { ...db.runs["12345/1"], id: 12346, status: "in_progress", conclusion: null };
+            db.now = new Date(Date.parse(f.approval.bootstrap.deadline) - 109 * 60000).toISOString();
+        });
+        assert.equal(success(await consume(f, first, "12346")).status, "duplicate");
+        const stopped = await deliver(f, "advance", "12346");
+        assert.equal(stopped.result.status, "blocked", stopped.stdout);
+        assert.match(stopped.result.reason, /budget exhausted|deadline insufficient/);
+        const terminal = (await checkpoint(f)).cp;
+        assert.equal(terminal.pending, null);
+        assert.equal(terminal.records[0].status, "cancelled");
+        assert.equal(terminal.state.phase, "blocked");
+        assert.deepEqual(terminal.state.budget, { ...before.state.budget, pendingWork: null });
+        assert.equal(success(await deliver(f, "publish", "12346")).status, "published");
+        assert.equal(success(await consume(f, first, "12346")).status, "duplicate");
+        assert.equal(f.ledger().some(e => e.kind === "worker"), false);
+        assert.equal(mutations(f).filter(e => e.route === "issues/comments/457").length, 1);
+    });
+});
+
+test("terminal publication freshness requeues through routing and controller-owned reconciliation", async t => {
+    for (const phase of ["stopped", "blocked"])
+        for (const [change, fault] of [["main", null], ["main", "commentAck"], ["main", "statusAck"], ["restored-metadata", null]])
+        await t.test(`${phase}/${change}/${fault}`, async t => {
+            const f = await setup(t), controller = { ...f, env: { ...f.env, GITHUB_RUN_ID: "12345" } };
+            await provision(f);
+            assert.equal(success(await deliver(f, "bootstrap")).status, "initialized");
+            if (phase === "stopped") await seed(controller, "stable", "pass");
+            else assert.equal(success(await deliver(f, "advance")).status, "observed");
+            assert.equal((await deliver(f, "advance")).result.status, phase);
+            const before = (await checkpoint(f)).cp;
+            const main = change === "main" ? f.moveMain() : before.state.pinnedMainSha;
+            if (change === "restored-metadata") f.update(db => { db.faults.newMetadata = true; });
+            f.update(db => { db.runs["12345/1"].status = "completed"; });
+            success(await invoke(f, "manual", 123));
+            const publish = dispatches(f).at(-1).body.inputs;
+            assert.equal(publish.mode, "publish");
+            f.update(db => { db.runs["12345/1"].status = "in_progress"; if (fault) db.faults[fault] = true; });
+            const rejected = await consume(f, publish);
+            assert.equal(rejected.code, 1);
+            if (!fault) assert.equal(rejected.result.status, "requeue");
+            assert.equal(mutations(f).filter(e => e.route === "issues/comments/457").length, 0);
+            f.update(db => {
+                db.runs["12345/1"].status = "completed"; db.runs["12345/1"].conclusion = "cancelled";
+                db.runs["12346/1"] = { ...db.runs["12345/1"], id: 12346, status: "in_progress", conclusion: null };
+                if (change === "restored-metadata") delete db.faults.newMetadata;
+            });
+            assert.equal((await checkpoint(f)).cp.publicationStatus, "requeue");
+            if (fault === "commentAck") assert.equal((await deliver(f, "advance", "12346")).code, 1);
+            assert.equal((await deliver(f, "advance", "12346")).result.status, phase);
+            const current = (await checkpoint(f)).cp;
+            assert.equal(current.state.pinnedMainSha, main);
+            assert.equal(current.state.epoch === before.state.epoch, change === "restored-metadata");
+            assert.deepEqual(current.state.budget.consumed, before.state.budget.consumed);
+            assert.equal(current.state.budget.allowanceId, before.state.budget.allowanceId);
+            assert.equal(current.deadline, before.deadline);
+            assert.equal(success(await deliver(f, "publish", "12346")).status, "published");
+            f.update(db => { db.runs["12346/1"].status = "completed"; });
+            assert.deepEqual(success(await invoke(f, "schedule")).dispatched, []);
+            assert.equal(f.ledger().filter(e => e.kind === "worker").length, phase === "blocked" ? 1 : 0);
+            assert.equal(mutations(f).filter(e => e.route === "issues/comments/457").length, 1);
+        });
 });
 
 test("cursor identity, required local state and remote freshness fail closed", async t => {

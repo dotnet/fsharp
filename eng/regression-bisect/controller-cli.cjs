@@ -579,7 +579,7 @@ async function main(args = process.argv.slice(2), env = process.env) {
                 loaded.checkpoint.deadline === registration.deadline, "existing allowance differs from reviewed registration");
             if (input.mode === "publish") return await publishController(entry, deps);
             // Stable endpoint stops can return before the engine selects source history.
-            if (loaded.checkpoint.state.pinnedMainSha !== context.pinnedMainSha) {
+            if (loaded.checkpoint.state.pinnedMainSha !== context.pinnedMainSha || loaded.checkpoint.publicationStatus === "requeue") {
                 await state.invalidateStaleEvidence(transport, context, { generation: loaded.checkpoint.generation });
                 loaded = await state.loadCheckpoint(transport, context);
             }
