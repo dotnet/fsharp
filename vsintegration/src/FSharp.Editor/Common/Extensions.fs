@@ -7,7 +7,6 @@ open System
 open System.IO
 open System.Collections.Immutable
 open System.Collections.Generic
-open System.Runtime.CompilerServices
 open System.Runtime.InteropServices
 open System.Threading
 open System.Threading.Tasks
@@ -650,30 +649,9 @@ type Async with
         | null -> Async.RunSynchronouslyImmediate(computation, ?cancellationToken = cancellationToken)
         | _ -> Async.RunSynchronously(computation, ?cancellationToken = cancellationToken)
 
-/// Ordinal comparisons of a span, which the BCL spells only through a StringComparison argument.
-/// A copy of Internal.Utilities.Library's rather than a use of them: those are inline members of an
-/// internal module, and optimization info for anything non-public is dropped at the assembly boundary,
-/// so an --optimize+ build here fails on them with FS1116/FS1118.
-[<Sealed; AbstractClass; Extension>]
-type ReadOnlySpanCharExtensions =
-
-    [<Extension>]
-    static member inline EqualsOrdinal(str: ReadOnlySpan<char>, value: ReadOnlySpan<char>) =
-        str.Equals(value, StringComparison.Ordinal)
-
-    [<Extension>]
-    static member inline EqualsOrdinal(str: ReadOnlySpan<char>, value: string) =
-        str.Equals(value.AsSpan(), StringComparison.Ordinal)
-
-    [<Extension>]
-    static member inline StartsWithOrdinal(str: ReadOnlySpan<char>, value: string) =
-        str.StartsWith(value.AsSpan(), StringComparison.Ordinal)
-
-    [<Extension>]
-    static member inline EndsWithOrdinal(str: ReadOnlySpan<char>, value: string) =
-        str.EndsWith(value.AsSpan(), StringComparison.Ordinal)
-
 #if !NET7_0_OR_GREATER
+open System.Runtime.CompilerServices
+
 [<Sealed; AbstractClass; Extension>]
 type ReadOnlySpanExtensions =
     [<Extension>]
