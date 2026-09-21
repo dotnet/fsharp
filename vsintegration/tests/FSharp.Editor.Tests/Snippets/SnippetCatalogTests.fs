@@ -132,7 +132,7 @@ type SnippetCatalogTests() =
 
     [<Fact>]
     member _.``The catalog ships the snippets the registration promises``() =
-        Assert.Equal(40, SnippetCatalog.files.Length)
+        Assert.Equal(41, SnippetCatalog.files.Length)
         Assert.True(File.Exists SnippetCatalog.indexPath, $"missing {SnippetCatalog.indexPath}")
 
     [<Fact>]
