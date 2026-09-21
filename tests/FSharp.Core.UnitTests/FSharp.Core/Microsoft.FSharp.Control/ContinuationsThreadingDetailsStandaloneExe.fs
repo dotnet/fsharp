@@ -49,7 +49,7 @@ let Main(args) =
         SWCandContThrowsTimeout(a, 500)
 
     let EmptyParallel() =
-        printf "EmptyParallel "
+        print "EmptyParallel "
         let r = SWCandContThrows(Async.Parallel [])
         printfn "%A" r
 
@@ -168,7 +168,7 @@ let Main(args) =
         printfn "%A" r
 
     let Tests() =
-        printfn ""
+        printn ""
 #if SYNC_CTXT
         assert(SynchronizationContext.Current <> null)
 #endif

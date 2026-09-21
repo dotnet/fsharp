@@ -24,10 +24,10 @@ let eqf (env: int) (a: string) (b: string) = a.Length = b.Length + env
 let rec forall2NonInline (p: string -> string -> bool) l1 l2 =
     match l1, l2 with
     | [], [] -> true
-    | h1 :: t1, h2 :: t2 -> p h1 h2 && forall2NonInline p t1 t2
+    | x :: xs, y :: ys -> p x y && forall2NonInline p xs ys
     | _ -> false
 
-// Keep the forwarding probe independent of FSharp.Core's inlining policy.
+// A local non-inline callee keeps this probe independent of FSharp.Core inlining.
 let inline forall2Forward ([<InlineIfLambda>] p: string -> string -> bool) l1 l2 =
     List.length l1 = List.length l2 && forall2NonInline p l1 l2
 
@@ -59,6 +59,10 @@ let inline applyDirect ([<InlineIfLambda>] f: unit -> int) = f ()
 
     let private allocatesNoClosure body =
         Assert.DoesNotContain("newobj", testMethodIL body)
+
+    [<Fact>]
+    let ``shared prelude does not allocate`` () =
+        FSharp prelude |> withOptimize |> compile |> shouldSucceed |> verifyILNotPresent [ "newobj" ]
 
     module DoesNotAllocate =
 
@@ -168,7 +172,7 @@ let test (env: int) (xs: string list) =
     List.map (g env) xs
 """
 
-        // Forwarding to a non-inline HOF still allocates the predicate closure,
+        // Forwarding to a non-inline callee still allocates the function argument,
         // and eta-expanding the call site does not change that.
 
         [<Fact>]

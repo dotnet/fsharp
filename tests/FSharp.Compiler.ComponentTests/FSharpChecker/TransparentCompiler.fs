@@ -2,7 +2,6 @@
 module FSharpChecker.TransparentCompiler
 
 open System.Collections.Concurrent
-open System.Diagnostics
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.IO
 open FSharp.Compiler.Text
@@ -18,17 +17,13 @@ open FSharp.Test
 open FSharp.Test.ProjectGeneration
 open FSharp.Test.ProjectGeneration.Helpers
 open System.IO
-open Microsoft.CodeAnalysis
 open System
 open System.Threading.Tasks
 open System.Threading
-open TypeChecks
 
-open OpenTelemetry
-open OpenTelemetry.Resources
-open OpenTelemetry.Trace
 
 let fileName fileId = $"File%s{fileId}.fs"
+let fileNames fileIds = fileIds |> List.map fileName
 
 let internal recordAllEvents groupBy =
     let mutable cache : AsyncMemoize<_,_,_> option = None
@@ -60,6 +55,13 @@ let internal recordEvents groupBy =
         Assert.Equal<JobEvent>(expected, actual)
 
     observe, check
+
+/// Names of the files that were actually type checked, i.e. not served from the cache.
+let internal typeCheckedFiles getEvents =
+    getEvents ()
+    |> List.filter (fun (_, e) -> e = Started)
+    |> List.map fst
+    |> List.sort
 
 #nowarn "57"
 
@@ -232,6 +234,163 @@ let ``Removing a file`` () =
         removeFile "Second"
         checkFile "Last" expectErrors
     }
+
+// When the project has no explicit output file, the assembly name is derived from the last file in it (see `TcConfigBuilder.DecideNames`).
+// Adding a file at the end therefore changes the assembly name
+//    -> which misses the `BootstrapInfoStatic` cache
+//    -> which produces a new `BootstrapInfo.Id`
+//    -> which is part of every `TcIntermediate` cache key.
+// So the whole project has to be rechecked."
+[<Fact>] //TODO
+let ``Adding a file at the end of the project checks everything when the assembly name is implicit`` () =
+    let observe, getEvents = recordAllEvents getFileNameKey
+
+    let project = SyntheticProject.Create(
+        sourceFile "1" [],
+        sourceFile "2" ["1"],
+        sourceFile "3" ["1"],
+        sourceFile "Program" ["2"; "3"]
+    )
+
+    ProjectWorkflowBuilder(project, useTransparentCompiler = true) {
+        withChecker (observe _.TcIntermediate)
+        addFileBelow "Program" (sourceFile "New" ["1"])
+        checkFile "New" expectOk
+    } |> ignore
+
+    Assert.Equal<string list>(fileNames ["1"; "2"; "3"; "New"; "Program"], typeCheckedFiles getEvents)
+
+[<Fact>]
+let ``Adding a file at the end of a project with an explicit assembly name only checks the new file`` () =
+    let observe, getEvents = recordAllEvents getFileNameKey
+
+    let project =
+        { SyntheticProject.Create(
+            sourceFile "1" [],
+            sourceFile "2" ["1"],
+            sourceFile "Program" ["2"]
+          ) with OtherOptions = [ "--out:FileOrderTest.dll" ] }
+
+    ProjectWorkflowBuilder(project, useTransparentCompiler = true) {
+        withChecker (observe _.TcIntermediate)
+        addFileBelow "Program" (sourceFile "New" ["Program"])
+        checkFile "New" expectOk
+    } |> ignore
+
+    Assert.Equal<string list>([fileName "New"], typeCheckedFiles getEvents)
+
+[<Fact>]
+let ``Adding a file at the beginning of the project checks everything`` () =
+    let observe, getEvents = recordAllEvents getFileNameKey
+
+    let project = SyntheticProject.Create(
+        sourceFile "1" [],
+        sourceFile "2" ["1"],
+        sourceFile "Program" ["1"]
+    )
+
+    ProjectWorkflowBuilder(project, useTransparentCompiler = true) {
+        withChecker (observe _.TcIntermediate)
+        addFileAbove "1" (sourceFile "New" [])
+        checkFile "Program" expectOk
+    } |> ignore
+
+    Assert.Equal<string list>(fileNames ["1"; "2"; "New"; "Program"], typeCheckedFiles getEvents)
+
+[<Fact>]
+let ``Adding a file at the middle of the project checks only the new file and files below it`` ()  =
+    let observe, getEvents = recordAllEvents getFileNameKey
+
+    let project = SyntheticProject.Create(
+        sourceFile "1" [],
+        sourceFile "Program" []
+    )
+
+    ProjectWorkflowBuilder(project, useTransparentCompiler = true) {
+        withChecker (observe _.TcIntermediate)
+        addFileAbove "Program" (sourceFile "New" [])
+        checkFile "Program" expectOk
+    } |> ignore
+
+    Assert.Equal<string list>(fileNames ["New"; "Program"], typeCheckedFiles getEvents)
+
+[<Fact>]
+let ``Swapping two files only checks them and files below them`` () =
+    let observe, getEvents = recordAllEvents getFileNameKey
+
+    let project = SyntheticProject.Create(
+        sourceFile "1" [],
+        sourceFile "2" ["1"],
+        sourceFile "3" ["1"],
+        sourceFile "Program" []
+    )
+
+    ProjectWorkflowBuilder(project, useTransparentCompiler = true) {
+        withChecker (observe _.TcIntermediate)
+        moveFile "3" 1 Up
+        checkFile "Program" expectOk
+    } |> ignore
+
+    Assert.Equal<string list>(fileNames ["2"; "3"; "Program"], typeCheckedFiles getEvents)
+
+[<Fact>]
+let ``Moving the first file to the end checks everything`` () =
+    let observe, getEvents = recordAllEvents getFileNameKey
+
+    let project =
+        { SyntheticProject.Create(
+            sourceFile "1" [],
+            sourceFile "2" [],
+            sourceFile "3" ["2"],
+            sourceFile "Program" ["3"]
+          ) with OtherOptions = ["--out:FileOrderTest.dll"] }
+
+    ProjectWorkflowBuilder(project, useTransparentCompiler = true) {
+        withChecker (observe _.TcIntermediate)
+        moveFile "1" 3 Down
+        checkFile "1" expectOk
+    } |> ignore
+
+    Assert.Equal<string list>(fileNames ["1"; "2"; "3"; "Program"], typeCheckedFiles getEvents)
+
+[<Fact>]
+let ``Moving the last file to the beginning checks everything`` () =
+    let observe, getEvents = recordAllEvents getFileNameKey
+
+    let project =
+        { SyntheticProject.Create(
+            sourceFile "1" [],
+            sourceFile "2" ["1"],
+            sourceFile "3" ["2"],
+            sourceFile "Program" []
+          ) with OtherOptions = ["--out:FileOrderTest.dll"] }
+
+    ProjectWorkflowBuilder(project, useTransparentCompiler = true) {
+        withChecker (observe _.TcIntermediate)
+        moveFile "Program" 3 Up
+        checkFile "3" expectOk
+    } |> ignore
+
+    Assert.Equal<string list>(fileNames ["1"; "2"; "3"; "Program"], typeCheckedFiles getEvents)
+
+[<Fact>]
+let ``Moving a file below its dependents breaks them`` () =
+    let observe, getEvents = recordAllEvents getFileNameKey
+
+    let project = SyntheticProject.Create(
+        sourceFile "1" [],
+        sourceFile "2" ["1"],
+        sourceFile "Program" ["2"]
+    )
+
+    ProjectWorkflowBuilder(project, useTransparentCompiler = true) {
+        withChecker (observe _.TcIntermediate)
+        // "2" and "3" now reference a module that is defined below them.
+        moveFile "1" 1 Down
+        checkFile "2" expectErrors
+    } |> ignore
+
+    Assert.Equal<string list>(fileNames ["2"], typeCheckedFiles getEvents)
 
 [<Fact>]
 let ``Changes in a referenced project`` () =

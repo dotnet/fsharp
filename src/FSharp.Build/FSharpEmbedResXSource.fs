@@ -10,12 +10,17 @@ open System.Xml.Linq
 open Microsoft.Build.Framework
 open Microsoft.Build.Utilities
 
+[<MSBuildMultiThreadableTask>]
 type FSharpEmbedResXSource() as this =
     inherit Task()
     let mutable _embeddedText: ITaskItem[] = [||]
     let mutable _generatedSource: ITaskItem[] = [||]
     let mutable _outputPath: string = ""
     let mutable _targetFramework: string = ""
+
+    // Bound against `this` once; each call reads the injected TaskEnvironment late.
+    let rootedPath = TaskEnvironmentPaths.rootedPath this
+    let restorePaths = TaskEnvironmentPaths.restoreTaskPaths this
 
     let failTask fmt =
         Printf.ksprintf
@@ -41,16 +46,24 @@ module internal {1} =
         "    let GetObject(name:System.String) : System.Object = ResourceManager.GetObject(name, CultureInfo.CurrentUICulture)"
 
     let generateSource (resx: string) (fullModuleName: string) (generateLegacy: bool) (generateLiteral: bool) =
+        // Record paths inside the try so failures during derivation still reach the shared handler below.
+        let mutable originalPaths = [ resx ]
+
         try
-            let printMessage fmt = Printf.ksprintf this.Log.LogMessage fmt
             let justFileName = Path.GetFileNameWithoutExtension(resx)
             let sourcePath = Path.Combine(_outputPath, justFileName + ".fs")
+            originalPaths <- [ resx; sourcePath ]
+
+            let rootedResx = rootedPath resx
+            let rootedSource = rootedPath sourcePath
+
+            let printMessage fmt = Printf.ksprintf this.Log.LogMessage fmt
 
             // simple up-to-date check
             if
-                File.Exists(resx)
-                && File.Exists(sourcePath)
-                && File.GetLastWriteTimeUtc(resx) <= File.GetLastWriteTimeUtc(sourcePath)
+                File.Exists rootedResx
+                && File.Exists rootedSource
+                && File.GetLastWriteTimeUtc rootedResx <= File.GetLastWriteTimeUtc rootedSource
             then
                 printMessage "Skipping generation: '%s' since it is up-to-date." sourcePath
                 Some(sourcePath)
@@ -82,7 +95,7 @@ module internal {1} =
                 let body =
                     let xname = XName.op_Implicit
 
-                    XDocument.Load(resx).Descendants(xname "data")
+                    XDocument.Load(rootedResx).Descendants(xname "data")
                     |> Seq.fold
                         (fun (sb: StringBuilder) (node: XElement) ->
                             let name =
@@ -120,12 +133,20 @@ module internal {1} =
                             sb.AppendLine().Append(commentBody).AppendLine(accessorBody))
                         sb
 
-                File.WriteAllText(sourcePath, body.ToString())
+                File.WriteAllText(rootedSource, body.ToString())
                 printMessage "Done: %s" sourcePath
                 Some(sourcePath)
-        with e ->
-            printf "An exception occurred when processing '%s'\n%s" resx (e.ToString())
+        with
+        | TaskFailed ->
+            // failTask already logged the error; re-logging would duplicate the diagnostic.
             None
+        | e ->
+            this.Log.LogError(sprintf "An exception occurred when processing '%s': %s" resx (restorePaths (e.ToString()) originalPaths))
+
+            None
+
+    interface IMultiThreadableTask with
+        member val TaskEnvironment = TaskEnvironment.Fallback with get, set
 
     [<Required>]
     member _.EmbeddedResource
@@ -155,9 +176,7 @@ module internal {1} =
                     | "false" -> false
                     | _ -> failTask "Expected boolean value for '%s' found '%s'" metadataName value
 
-            let mutable success = true
-
-            let generatedSource =
+            let generationResults =
                 [|
                     for item in this.EmbeddedResource do
                         if getBooleanMetadata "GenerateSource" false item then
@@ -170,12 +189,12 @@ module internal {1} =
                             let generateLegacy = getBooleanMetadata "GenerateLegacyCode" false item
                             let generateLiteral = getBooleanMetadata "GenerateLiterals" true item
 
-                            match generateSource item.ItemSpec moduleName generateLegacy generateLiteral with
-                            | Some(source) -> yield TaskItem(source) :> ITaskItem
-                            | None -> success <- false
+                            yield
+                                generateSource item.ItemSpec moduleName generateLegacy generateLiteral
+                                |> Option.map (fun source -> TaskItem(source) :> ITaskItem)
                 |]
 
-            _generatedSource <- generatedSource
-            success && not this.Log.HasLoggedErrors
+            _generatedSource <- generationResults |> Array.choose id
+            Array.forall Option.isSome generationResults && not this.Log.HasLoggedErrors
         with TaskFailed ->
             false

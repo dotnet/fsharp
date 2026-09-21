@@ -527,6 +527,11 @@
         <target state="translated">messages d’information liés aux cellules de référence</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureReraiseInComputationExpressions">
+        <source>calls to 'reraise' in a computation expression handler</source>
+        <target state="new">calls to 'reraise' in a computation expression handler</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureResumableStateMachines">
         <source>resumable state machines</source>
         <target state="translated">ordinateurs d’état pouvant être repris</target>
