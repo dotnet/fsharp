@@ -21,6 +21,7 @@ const routes = new Map([
     ["GET git/commits/{commit_sha}", ""],
     ["GET git/trees/{tree_sha}", ""],
     ["GET git/blobs/{file_sha}", ""],
+    ["GET commits/{ref}", ""],
 ]);
 
 function createGithubApi(config, send = fetch) {
@@ -111,6 +112,39 @@ function createGithubApi(config, send = fetch) {
     };
 }
 
+// This authority is deliberately unavailable to the execution/publishing transport.
+function createProvisioningApi(config, send = fetch) {
+    const api = createGithubApi(config, send);
+    const write = async (suffix, body) => {
+        requireValue(Buffer.byteLength(JSON.stringify(body)) < 48 * 1024, "provisioning body exceeds limit");
+        const response = await send(`https://api.github.com/repos/dotnet/fsharp/${suffix}`, {
+            method: "POST", redirect: "error", signal: AbortSignal.timeout(30000),
+            headers: { Authorization: `Bearer ${config.token}`, Accept: "application/vnd.github+json",
+                "X-GitHub-Api-Version": "2022-11-28", "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+        });
+        requireValue(response.status === 201 && response.body, `provisioning write failed (${response.status})`);
+        const chunks = [];
+        let size = 0;
+        for await (const chunk of response.body) {
+            size += chunk.length;
+            requireValue(size < 48 * 1024, "provisioning response exceeds limit");
+            chunks.push(Buffer.from(chunk));
+        }
+        return JSON.parse(Buffer.concat(chunks));
+    };
+    return { ...api,
+        createSlot: body => write(`issues/${config.issueNumber}/comments`, { body }),
+        markProvisioning: (description, target_url) => {
+            requireValue(/^provision:[a-f0-9]{64}$/.test(description) &&
+                new RegExp(`^https://github\\.com/dotnet/fsharp/issues/${config.issueNumber}#provision-[\\w-]+:[a-f0-9]{64}$`).test(target_url),
+            "invalid provisioning receipt");
+            return write(`statuses/${config.anchorSha}`, { state: "success",
+                context: `regression-provision/${config.issueNumber}`, description, target_url });
+        },
+    };
+}
+
 function createApprovalReader({ api, revision, issueNumber }) {
     requireValue(typeof api?.request === "function" && sha(revision) && positive(issueNumber), "invalid trusted approval reader configuration");
     const get = async (route, params) => {
@@ -149,6 +183,7 @@ function createApprovalReader({ api, revision, issueNumber }) {
         }
     };
     return {
+        readTrustedFile: read,
         readApproval: async reference => {
             requireValue(reference && Object.keys(reference).sort().join(" ") === "path revision" &&
                 reference.revision === revision && reference.path === `.github/regression-bisect/approved/${issueNumber}.json`,
@@ -164,4 +199,4 @@ function createApprovalReader({ api, revision, issueNumber }) {
     };
 }
 
-module.exports = { createGithubApi, createApprovalReader };
+module.exports = { createGithubApi, createProvisioningApi, createApprovalReader };

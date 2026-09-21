@@ -321,6 +321,8 @@ async function preparePublication(options, deps) {
             const pendingDigest = cp.state.publication.digest;
             const existingResults = [...records.values()].filter(r => r.kind === "result" &&
                 r.payload.report.state.epoch === cp.state.epoch);
+            if (deps.resultCommentId !== undefined && existingResults.some(r => r.commentId !== deps.resultCommentId))
+                return stop("authenticated result is outside the registered result slot");
             if (existingResults.length > 1) return stop("conflicting duplicate authenticated results");
             const matches = existingResults.filter(r => r.payload.digest === pendingDigest);
             if (matches.length) {

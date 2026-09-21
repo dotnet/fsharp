@@ -1,0 +1,5 @@
+name: Deterministic regression controller
+description: Invoke the pinned controller CLI with the job's artifact runtime identity.
+runs:
+  using: node24
+  main: controller-cli.cjs

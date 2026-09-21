@@ -555,11 +555,19 @@ async function reserveWork(transport, context, { generation, attemptId, request 
     return { ...structuredClone(pending), execute: true };
 }
 
-async function commitObservation(transport, context, { generation, attemptId, observation, evidence }) {
+async function commitObservation(transport, context, { generation, attemptId, observation, evidence, recoveryOwner }) {
     const loaded = await loadCheckpoint(transport, context);
     const cp = loaded.checkpoint;
     const record = cp.records.find(r => r.id === attemptId);
-    requireState(record && ownerEqual(record.owner, context.owner), "observation owner mismatch");
+    requireState(record, "observation owner mismatch");
+    if (!ownerEqual(record.owner, context.owner)) {
+        requireState(ownerEqual(record.owner, recoveryOwner) && record.executionGeneration !== undefined,
+            "observation owner mismatch");
+        const previous = await verifyRun(transport, context, { runId: record.owner.runId,
+            runAttempt: record.owner.attempt, workflowRevision: cp.state.budget.workflowRevision });
+        requireState(previous.status === "completed" && typeof previous.conclusion === "string",
+            "collection recovery owner is still active or unknown");
+    }
     const observationDigest = fingerprint(observation);
     validateEvidence(evidence);
     if (record.status === "committed") {

@@ -1,0 +1,44 @@
+name: Regression bisect controller
+on:
+  workflow_dispatch:
+    inputs:
+      issue:
+        description: Approved issue number
+        type: number
+        required: true
+      mode:
+        description: One deterministic transaction
+        type: choice
+        options: [bootstrap, advance, publish]
+        required: true
+permissions:
+  contents: read
+  actions: read
+  issues: write
+  statuses: write
+concurrency:
+  group: regression-bisect-dotnet-fsharp-${{ inputs.issue }}
+  cancel-in-progress: false
+jobs:
+  controller:
+    if: github.repository == 'dotnet/fsharp' && github.ref == 'refs/heads/main' && vars.REGRESSION_CONTROLLER_ENABLED == 'true'
+    environment: regression-controller
+    runs-on: [self-hosted, linux, x64, regression-container-v1]
+    timeout-minutes: 135
+    steps:
+      - name: Immutable trusted helpers, never the historical source
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          repository: dotnet/fsharp
+          ref: ${{ vars.REGRESSION_CONTROLLER_REVISION }}
+          persist-credentials: false
+          fetch-depth: 1
+      - name: One controller transaction
+        uses: ./eng/regression-bisect
+        env:
+          RB_ACTION_INPUTS: ${{ toJSON(inputs) }}
+          RB_TRUSTED_REVISION: ${{ vars.REGRESSION_CONTROLLER_REVISION }}
+          RB_STATE_DIRECTORY: /var/lib/fsharp-regression-controller
+          RB_CONTAINMENT_DIRECTORY: /var/lib/fsharp-regression-containment
+          RB_GITHUB_TOKEN: ${{ secrets.REGRESSION_CONTROLLER_TOKEN }}
+          RB_SIGNING_KEYS: ${{ secrets.REGRESSION_CONTROLLER_SIGNING_KEYS }}

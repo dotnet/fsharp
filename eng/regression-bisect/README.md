@@ -6,17 +6,227 @@ checkpoints, and isolated exact toolchain acquisition. The endpoint-first engine
 those contracts with the existing reproduction and clean source-build runners.
 Fresh confirmation and deterministic publication guards consume the engine's
 intent. The controller transaction library can update an authenticated fixed
-result slot through its injected transport; no module activates a workflow.
-GitHub access is injected by the trusted controller; tests use
-synthetic records and an in-memory transport, never live issue mutations.
+result slot through its injected transport. `controller-cli.cjs` supplies the
+concrete deployment; its conventional workflow is disabled until explicitly
+configured by maintainers. Tests use synthetic records and in-memory or
+file-backed GitHub services, never live issue mutations.
 Records under `fixtures` are not reproduction approvals.
 
-Run the dependency-free suite from the repository root:
+Install the narrowly scoped, lockfile-pinned YAML test parser, then run from the
+repository root (the production CLI has no npm dependency):
 
 ```powershell
+npm ci --prefix eng\regression-bisect --ignore-scripts --no-audit --no-fund
 $tests = @(Get-ChildItem 'eng\regression-bisect' -Filter '*.test.cjs' | ForEach-Object FullName)
 node --test @tests
 ```
+
+## Executable deployment and operator setup
+
+**This checkout does not activate production, approve a reproduction, prove
+physical containment, or perform the separate known-history acceptance trial.**
+The workflow only supports explicit `workflow_dispatch` of `bootstrap`,
+`advance`, or `publish`. There is no automatic issue-label execution, model
+authority, arbitrary ref/URL/command, or provisioning dispatch input.
+
+```powershell
+node eng\regression-bisect\controller-cli.cjs --help
+node eng\regression-bisect\controller-cli.cjs provision --issue 123 --config $TrustedConfig
+node eng\regression-bisect\controller-cli.cjs bootstrap --issue 123 --config $TrustedConfig
+node eng\regression-bisect\controller-cli.cjs advance --issue 123 --config $TrustedConfig
+node eng\regression-bisect\controller-cli.cjs publish --issue 123 --config $TrustedConfig
+```
+
+`$TrustedConfig` is an absolute path to the reviewed
+`.github/regression-bisect/deployment.json`, **not issue input**. Its raw bytes
+must equal that path's Git blob at `RB_TRUSTED_REVISION`. The CLI accepts no
+other arguments. Repository and workflow destinations are fixed to
+`dotnet/fsharp` and `.github/workflows/regression-bisect-controller.yml`.
+Exit 0 means the printed JSON is a successful transaction or explicit stopped
+intent; exit 1 prints a blocked/requeue reason. An `observed` result means one
+unit, not an attributed regression or permission to execute another unit.
+
+### Reviewed files and first use
+
+Use one immutable, reachable main-branch commit as `anchorSha` for all
+registrations. **Never change the anchor to bypass missing history.** Review
+these deployment fields; unknown fields are rejected:
+
+| Field | Required value |
+| --- | --- |
+| `schemaVersion` | `1` |
+| `workflowPath` | `.github/workflows/regression-bisect-controller.yml` |
+| `actor` | `{ id, login, type: "Bot", appId }`: exact publishing GitHub App bot account and app IDs |
+| `anchorSha` | Full immutable 40-hex main ancestor; retain permanently |
+| `retainedWorkflowRevisions` | Full SHAs of earlier trusted workflow/helper revisions whose records remain live |
+| `keyId`, `keyHashes` | Active key ID and map of all retained key IDs to SHA-256 of their raw secret bytes |
+| `platform` | `{ "os": "linux", "architecture": "x64", "rid": "linux-x64" }` |
+| `gitExecutable` | Absolute trusted host Git executable, normally `/usr/bin/git` |
+| `container` | Exact adapter configuration shown in the physical-container section below |
+| `containment` | `{ reportSha256, configSha256, receiptSha256 }`: raw report/config hashes and a map from all seven smoke modes to their raw `receipt.json` SHA-256 hashes |
+
+Provisioning is a two-review transaction, not self-approval:
+
+1. Review deployment configuration and
+   `.github/regression-bisect/provision/123.json`, exactly
+   `{ "schemaVersion": 1, "allowanceId": "<maintainer-selected-unique-id>", "deadline": "<absolute-UTC-deadline>" }`.
+   The deadline must leave time for the full reserved worker units; it never
+   slides on retries. Use the pinned checkout and a real run/attempt of this
+   trusted workflow as provenance. Provisioning alone can use an already
+   completed run; executing/writing checkpoints requires the current run to
+   be `in_progress`. Supply the separate maintainer credential below.
+2. Run `provision`. The CLI positively reads every status page at the fixed
+   anchor and every selected-issue comment page before creating anything.
+   It persists a signed local journal and remote signed provisioning receipt
+   before creation, then records creation intent before each POST. Returned
+   real comment IDs are bound into the signed checkpoint/result proposals.
+   A lost create acknowledgement is recovered by the exact authenticated
+   creation marker; zero or multiple matches block rather than POST again.
+   Missing journals, slots, receipts, inaccessible history, forged records or
+   another allowance block replacement. Keep the private journal permanently;
+   do not manually recreate its contents or remove its creation intent.
+3. Review the emitted `registration` object and copy the generated
+   `<RB_STATE_DIRECTORY>/dotnet-fsharp-123/registration.json` to
+   `.github/regression-bisect/registrations/123.json`. Its contract is
+   `registration.schema.json`; the two IDs must differ. Freeze and review the
+   complete discussion, corrections, linked investigations, manifest and raw
+   source/producer hashes using the existing intake contract. Review
+   `.github/regression-bisect/approved/123.json` with exactly
+   `{ "schemaVersion": 1, "manifest": <reviewed-manifest>, "bootstrap": <registration> }`.
+   The CLI requires identical registration and approval bootstrap objects.
+   Fixtures, labels and provisioning output are **not** reproduction approval.
+4. Retain the provisioning workflow revision and keys in deployment config,
+   pin the reviewed approval revision, and run `bootstrap`. It consumes the
+   existing signed slots without creating comments, initializes generation
+   zero once, and recovers a lost generation-zero acknowledgement without
+   changing allowance, deadline or original slot digests.
+
+Creation intent with no recoverable comment is deliberately blocked: GitHub
+comment POST has no cross-process idempotency key. Absence cannot distinguish a
+request that never reached GitHub from a deleted just-created comment. An
+operator must repair the original records with independent evidence; rerunning
+does not create another allowance. Provisioning also refuses surviving signed
+slots if both its local registration and remote provisioning receipt are lost.
+
+### Trusted inputs, secrets and workflow
+
+Provision one dedicated Linux x64 controller host/runner label
+`regression-container-v1`, with persistent, controller-only state at
+`/var/lib/fsharp-regression-controller`. Do not run independent controllers
+on different hosts against separate state directories. All workflow modes
+share `regression-bisect-dotnet-fsharp-<issue>` Actions concurrency with
+`cancel-in-progress: false`; local processes additionally share the directory
+lock for that same repository/issue. No job split transfers ownership.
+
+Set the protected environment `regression-controller`, require maintainer
+approval, and restrict it to main. Its exact secret names are:
+
+| Secret / explicit input | Purpose |
+| --- | --- |
+| `REGRESSION_CONTROLLER_TOKEN` / `RB_GITHUB_TOKEN` | Trusted publisher App token: only contents read, actions read, issues write and statuses write |
+| `REGRESSION_CONTROLLER_SIGNING_KEYS` / `RB_SIGNING_KEYS` | JSON object mapping reviewed key IDs to base64 secrets of at least 32 random bytes; never put values in tracked files |
+| `RB_PROVISION_TOKEN` | Separately authorized operator-only token for the **same reviewed App identity**; never provided by the execution workflow |
+| `ACTIONS_RUNTIME_TOKEN`, `ACTIONS_RESULTS_URL` | Runner-supplied artifact identity, available inside the local Node action; never supplied by dispatch or copied to workers |
+
+Set repository/environment variables `REGRESSION_CONTROLLER_REVISION` to a full
+reviewed immutable main SHA and `REGRESSION_CONTROLLER_ENABLED` to `true` only
+after the independent physical and known-history gates pass. Checkout is
+SHA-pinned with `persist-credentials: false`. The pinned local Node action
+executes `controller-cli.cjs`, preserving the artifact runtime credentials
+without exposing them in shell interpolation or outputs. It passes typed
+`toJSON(inputs)` through `RB_ACTION_INPUTS`; only a positive integer issue and
+the three transaction modes are accepted. There are no PR/contents writes,
+push, merge, revert, close or arbitrary dispatch operations.
+
+For explicit operator invocations, set `RB_TRUSTED_REVISION`,
+`GITHUB_WORKFLOW_SHA` to the reviewed revision, `GITHUB_REPOSITORY=dotnet/fsharp`,
+`GITHUB_REF=refs/heads/main`, and `GITHUB_RUN_ID`/`GITHUB_RUN_ATTEMPT` to the
+authenticated workflow run/attempt. Set absolute `RB_STATE_DIRECTORY` and
+`RB_CONTAINMENT_DIRECTORY`. Do not invent a run ID. The CLI checks the run's
+actual repository, attempt, workflow path, branch, SHA and status. A moved main
+workflow SHA requires repinning reviewed helpers/configuration; an issue cannot
+select an older workflow. The checked-out helper tree must be clean and both
+the revision and anchor must remain reachable from fetched main.
+
+Keep the complete native containment smoke evidence at
+`/var/lib/fsharp-regression-containment`; copy the exact original smoke
+configuration there as `container.json`. Review the raw report/config and all
+seven receipt hashes. The configuration bytes must match the deployment's
+container settings.
+The CLI requires all seven passed cases, matching current smoke/helper bytes,
+four terminated/removed resources per case, and the same daemon ID, version,
+kernel, OS, cgroups and security options as current runtime inspection.
+Native Linux x64 Docker >=28, cgroup v2, AppArmor, builtin seccomp, resource
+controllers and the pinned image remain mandatory. Missing attestation,
+different helper bytes/daemon, Windows, rootless Docker, image mismatch or
+missing artifact authority blocks before any historical execution.
+
+Rotate keys by adding the new key ID/hash and secret, retaining the old IDs,
+then selecting the new `keyId`. Complete provisioning before rotating its
+journal key. Retain verification keys and workflow revisions for **at least**
+the entire allowance and all evidence/report retention, including recovery.
+Removing/swapping a required key blocks; it never initializes replacement state.
+Do not print the secret JSON or store it in a manifest, sample or journal.
+`RB_LOCAL_TEST_FILE` requires explicit `RB_LOCAL_TEST=explicit-offline-fixture`
+and is rejected whenever `GITHUB_ACTIONS` is set. It is a local test facility,
+not a production API endpoint or runner override.
+
+### Units, durability, memory and timeouts
+
+`bootstrap`/`advance` reread complete issue/discussion/assets/investigations.
+The controller resolves current official released stable metadata and downloads
+the exact archive through the existing bounded acquisition HTTP path to verify
+SHA-512 and measure SHA-256, **without extracting or executing it on the host**.
+An installed/preview SDK cannot substitute. Source selection uses a clean
+credential-free Git graph; only the approved public unit, read-only pinned
+helpers, approved bytes and a selected-source bundle enter `runContainer`.
+Acquisition, existing `eng/build.sh`/`eng/Build.ps1`, local-compiler/Core injection
+and reproduction runners execute only inside that adapter. SDK-update CI and
+`BuildWithLocalFSharp.fsx` shell input are not bisection execution mechanisms.
+
+`advance` reserves/claims at most one unit, including a fresh confirmation
+candidate or parent. Stable pass, main pass, setup failures, flakes and no
+source-green interval stop/block before **any** Git bisect operation. Current
+input/main/stable/image changes invalidate evidence, never cumulative counters.
+The 24 builds/40 units/720 minutes/two attempts and repetitions/90-minute build/
+110-minute worker/300-second reproduction limits are unchanged. Six
+reservations cost 660 minutes even if they finish immediately.
+
+Host collection reads bounded inert JSON/archive bytes, verifies raw launch,
+identity, acquisition/build/assertion bindings and signs only after verification.
+Required bytes must be durably stored before clearing pending work.
+The Actions store uses authenticated repository/run/attempt/artifact ownership
+and a fixed results authority, with 90-day retention. Keep the allowance
+deadline within available retention and retain the host's original launch
+receipts and provisioning journal. Required retention loss blocks publication
+and recovery, even if an acknowledgement was lost; optional availability is
+not recomputed before adopting an authenticated saved result digest.
+
+Controller metadata/evidence streams are bounded (1 GiB per archive; 3 GiB
+per launch; 64 MiB small evidence lane). Base64 collection and JSON parsing can
+temporarily hold several copies of that lane; provision at least 1 GiB of
+host-controller memory **in addition to** configured worker memory/scratch.
+Do not load acquired SDK archives into a Node Buffer; storage streams them.
+Comment envelopes stay below 48 KiB and human reports below 32,768 UTF-8 bytes.
+
+The finite Actions job timeout is 135 minutes; internal workers retain their
+original absolute reservation deadlines. API calls and metadata/transfer
+operations have their own bounded deadlines. A timeout is not a lock release:
+the CLI awaits the repaired store's outstanding quota-mutation barrier before
+handoff. A killed local owner can be reclaimed only after its PID is absent
+and its exact old run/attempt has completed. A live PID, different host, unknown
+run or interrupted handoff guard blocks for operator investigation; never
+delete an ownership marker merely because a timer elapsed.
+
+An unclaimed cancelled reservation can incur a charged retry, without a refund.
+A claimed reservation first resumes authenticated retained/remote collection,
+not another worker. A completed old owner can be committed by the new active
+run only after authenticating the old owner and the original execution claim;
+the original deadline, build ID and evidence epoch still apply. Missing or
+forged collection blocks. `publish` only uses the fixed registered result slot,
+rereads current inputs/main/stable and required evidence immediately before
+writing, and adopts an authenticated lost acknowledgement without a second
+result write.
 
 ## Trust boundary
 

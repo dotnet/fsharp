@@ -1,0 +1,7 @@
+{
+  "name": "fsharp-regression-controller-validation",
+  "private": true,
+  "devDependencies": {
+    "yaml": "2.8.1"
+  }
+}

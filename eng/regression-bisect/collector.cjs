@@ -492,10 +492,10 @@ async function commitCollectedObservation(input, { collectObservation, transport
         equal(record.owner, input.reservation.owner) && record.requestDigest === input.reservation.requestDigest &&
         record.epoch === input.reservation.epoch, "missing or changed durable execution claim");
     let collected;
-    try { collected = await collectObservation(input); }
+    try { collected = await collectObservation({ ...input, context: { ...input.context, owner: record.owner } }); }
     finally { await collectObservation.settleQuota?.(); }
     return commitObservation(transport, input.context, { generation: record.executionGeneration,
-        attemptId: record.id, observation: collected.observation, evidence: collected.evidence });
+        attemptId: record.id, observation: collected.observation, evidence: collected.evidence, recoveryOwner: record.owner });
 }
 
 module.exports = { formObservation, createObservationCollector, commitCollectedObservation };

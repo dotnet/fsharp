@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Reviewed regression allowance registration (not an execution approval)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["allowanceId", "deadline", "checkpointAnchorSha", "checkpointCommentId", "checkpointBootstrapDigest", "resultCommentId", "resultBootstrapDigest"],
+  "properties": {
+    "allowanceId": { "type": "string", "pattern": "^[a-zA-Z0-9_-]{1,128}$" },
+    "deadline": { "type": "string", "format": "date-time" },
+    "checkpointAnchorSha": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+    "checkpointCommentId": { "type": "integer", "minimum": 1 },
+    "checkpointBootstrapDigest": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "resultCommentId": { "type": "integer", "minimum": 1 },
+    "resultBootstrapDigest": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+  }
+}
