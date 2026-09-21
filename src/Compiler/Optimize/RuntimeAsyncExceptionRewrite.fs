@@ -19,16 +19,17 @@ let private RuntimeAsyncChoiceCase g m ty caseIndex expr =
 
 let private RuntimeAsyncReraise m resultTy exnExpr = mkThrow m resultTy exnExpr
 
-let private RewriteRuntimeAsyncReraise g resultTy handlerVal handler =
+let private RewriteRuntimeAsyncReraise g handlerVal handler =
     RewriteExpr
         {
             PreIntercept =
-                Some(fun _ expr ->
+                Some(fun recurse expr ->
                     match stripExpr expr with
-                    | TryWithExpr _ -> Some expr
-                    | Expr.Op(TOp.Reraise, _, _, m) -> Some(mkThrow m resultTy (exprForVal m handlerVal))
+                    | TryWithExpr(spTry, spWith, nestedTy, body, filterVal, filter, innerHandlerVal, innerHandler, m) ->
+                        Some(mkTryWith g (recurse body, filterVal, filter, innerHandlerVal, innerHandler, m, nestedTy, spTry, spWith))
+                    | Expr.Op(TOp.Reraise, _, _, m) -> Some(mkThrow m (tyOfExpr g expr) (exprForVal m handlerVal))
                     | Expr.App(Expr.Val(vref, _, m), _, _, _, _) when valRefEq g vref g.reraise_vref ->
-                        Some(mkThrow m resultTy (exprForVal m handlerVal))
+                        Some(mkThrow m (tyOfExpr g expr) (exprForVal m handlerVal))
                     | _ -> None)
             PreInterceptBinding = None
             PostTransform = (fun _ -> None)
@@ -101,7 +102,7 @@ let RewriteRuntimeAsyncExceptionHandlers (g: TcGlobals) expr =
         | TryWithExpr(_, _, resultTy, body, _, _, handlerVal, handler, m) when IsRuntimeAsyncExceptionHandler analyzer expr ->
             Some(
                 rewriteCapturedException m resultTy body (fun bodySucceeded bodyValue exceptionExpr ->
-                    let handler = RewriteRuntimeAsyncReraise g resultTy handlerVal handler
+                    let handler = RewriteRuntimeAsyncReraise g handlerVal handler
 
                     let handler = mkCompGenLet m handlerVal exceptionExpr handler
 

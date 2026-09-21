@@ -1599,7 +1599,7 @@ let AbstractAndRemapModulInfo g (cenv: cenv) (repackage, hidden) info =
 //-------------------------------------------------------------------------
 
 /// Type applications of F# "type functions" may cause side effects, e.g.
-/// let x<'a> = printfn "hello"; typeof<'a>
+/// let x<'a> = printn "hello"; typeof<'a>
 /// In this case do not treat them as constants.
 let IsTyFuncValRefExpr = function
     | Expr.Val (fv, _, _) -> fv.IsTypeFunction
@@ -1824,6 +1824,51 @@ let AddDirectDelegateTargetToDontInlineSet cenv env (slotsig: SlotSig) tmvs body
     else
         env
 
+/// 'localloc' storage is released when the method executing it returns, so anything derived from
+/// it dangles at that method's callsite.
+let instrIsFrameLocal instr =
+    match instr with
+    | I_localloc -> true
+    | _ -> false
+
+/// Detect frame-local allocations, treating untranslated quotations conservatively.
+let ExprMayHaveFrameLocalAllocation expr =
+    let folder =
+        { ExprFolder0 with
+            exprIntercept =
+                fun recurseF noInterceptF found expr ->
+                    if found then true else
+                    match expr with
+                    | Expr.Op (TOp.ILAsm (instrs, _), _, _, _) when List.exists instrIsFrameLocal instrs -> true
+                    | Expr.Lambda _
+                    | Expr.TyLambda _ -> false
+                    | Expr.Quote (_, dataCell, _, _, _) ->
+                        match dataCell.Value with
+                        | Some ((_, _, args1, _), (_, _, args2, _)) ->
+                            List.fold recurseF (List.fold recurseF false args1) args2
+                        // Imported optimization data omits quotation conversion data; codegen recovers its runtime splices.
+                        | None -> true
+                    // These lambdas represent control-flow bodies, not separate methods.
+                    | Expr.Op ((TOp.TryWith _ | TOp.TryFinally _ | TOp.While _ | TOp.IntegerForLoop _), _, args, _) ->
+                        (false, args) ||> List.fold (fun found arg ->
+                            match arg with
+                            | Expr.Lambda (_, _, _, _, body, _, _) -> recurseF found body
+                            | _ -> recurseF found arg)
+                    | _ -> noInterceptF false expr
+            tmethodIntercept = fun _ found _ -> Some found }
+
+    FoldExpr folder false expr
+
+let rec ExprMayHaveFrameLocalAllocationInCallableBody expr =
+    if ExprMayHaveFrameLocalAllocation expr then
+        true
+    else
+        match stripDebugPoints expr with
+        | Expr.Let (_, body, _, _)
+        | Expr.TyLambda (_, _, body, _, _)
+        | Expr.Lambda (_, _, _, _, body, _, _) -> ExprMayHaveFrameLocalAllocationInCallableBody body
+        | _ -> false
+
 let TryEliminateBinding cenv env bind e2 _m =
     let g = cenv.g
 
@@ -1836,6 +1881,7 @@ let TryEliminateBinding cenv env bind e2 _m =
     elif vspec1.InlineInfo = ValInline.InlinedDefinition then None
     elif vspec1.LogicalName.StartsWithOrdinal stackVarPrefix ||
          vspec1.LogicalName.Contains suffixForVariablesThatMayNotBeEliminated then None
+    elif env.withinExnHandler && ExprMayHaveFrameLocalAllocationInCallableBody e1 then None
     else
 
         // Peephole on immediate consumption of single bindings, e.g. "let x = e in x" --> "e"
@@ -2598,51 +2644,6 @@ let shouldForceInlineMembersInDebug (g: TcGlobals) (tcref: EntityRef) =
     | true, modRef -> tyconRefEq g tcref modRef
     | _ -> false
 
-/// 'localloc' storage is released when the method executing it returns, so anything derived from
-/// it dangles at that method's callsite.
-let instrIsFrameLocal instr =
-    match instr with
-    | I_localloc -> true
-    | _ -> false
-
-/// Detect frame-local allocations, treating untranslated quotations conservatively.
-let ExprMayHaveFrameLocalAllocation expr =
-    let folder =
-        { ExprFolder0 with
-            exprIntercept =
-                fun recurseF noInterceptF found expr ->
-                    if found then true else
-                    match expr with
-                    | Expr.Op (TOp.ILAsm (instrs, _), _, _, _) when List.exists instrIsFrameLocal instrs -> true
-                    | Expr.Lambda _
-                    | Expr.TyLambda _ -> false
-                    | Expr.Quote (_, dataCell, _, _, _) ->
-                        match dataCell.Value with
-                        | Some ((_, _, args1, _), (_, _, args2, _)) ->
-                            List.fold recurseF (List.fold recurseF false args1) args2
-                        // Imported optimization data omits quotation conversion data; codegen recovers its runtime splices.
-                        | None -> true
-                    // These lambdas represent control-flow bodies, not separate methods.
-                    | Expr.Op ((TOp.TryWith _ | TOp.TryFinally _ | TOp.While _ | TOp.IntegerForLoop _), _, args, _) ->
-                        (false, args) ||> List.fold (fun found arg ->
-                            match arg with
-                            | Expr.Lambda (_, _, _, _, body, _, _) -> recurseF found body
-                            | _ -> recurseF found arg)
-                    | _ -> noInterceptF false expr
-            tmethodIntercept = fun _ found _ -> Some found }
-
-    FoldExpr folder false expr
-
-let rec ExprMayHaveFrameLocalAllocationInCallableBody expr =
-    if ExprMayHaveFrameLocalAllocation expr then
-        true
-    else
-        match stripDebugPoints expr with
-        | Expr.Let (_, body, _, _)
-        | Expr.TyLambda (_, _, body, _, _)
-        | Expr.Lambda (_, _, _, _, body, _, _) -> ExprMayHaveFrameLocalAllocationInCallableBody body
-        | _ -> false
-
 /// Frame-local IL and resumable templates must remain in the caller's method.
 /// Inline wrappers inherit this requirement even when they do not inherit the callee's attributes.
 let rec HasForcedInlineBody cenv env (vref: ValRef) =
@@ -3323,12 +3324,7 @@ and OptimizeLinearExpr cenv env expr contf =
         // Is it quadratic or quasi-quadratic?
         if ValueIsUsedOrHasEffect cenv (fun () -> (freeInExpr (CollectLocalsWithStackGuard()) bodyR).FreeLocals) (bindR, bindingInfo) then
             // Eliminate let bindings on the way back up
-            let exprR, adjust =
-                if env.withinExnHandler && ExprMayHaveFrameLocalAllocationInCallableBody bindR.Expr then
-                    mkLetBind m bindR bodyR, 0
-                else
-                    TryEliminateLet cenv env bindR bodyR m
-
+            let exprR, adjust = TryEliminateLet cenv env bindR bodyR m
             exprR,
             { TotalSize = bindingInfo.TotalSize + bodyInfo.TotalSize + adjust
               FunctionSize = bindingInfo.FunctionSize + bodyInfo.FunctionSize + adjust
@@ -4254,13 +4250,7 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
             | _ ->
                 let f2R = CopyExprForInlining cenv false f2 m
                 MakeApplicationAndBetaReduce g (f2R, f2ty, [tyargs], argsR, m)
-        if
-            env.withinExnHandler
-            && (ExprMayHaveFrameLocalAllocation exprR
-                || ExprMayHaveFrameLocalAllocationInCallableBody f2)
-        then
-            None
-        else
+        if env.withinExnHandler && ExprMayHaveFrameLocalAllocation exprR then None else
         // Inlining: reoptimizing
         Some(OptimizeExpr cenv {env with dontInline = Map.add lambdaId [] env.dontInline} exprR)
 
