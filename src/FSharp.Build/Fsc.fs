@@ -257,14 +257,16 @@ type public Fsc() as this =
 
         // Resources
         for item in resources do
+            let fileName =
+                if item.ItemSpec.IndexOf(',') >= 0 then
+                    $"\"{item.ItemSpec}\""
+                else
+                    item.ItemSpec
+
             match useStandardResourceNames with
             | true ->
-                builder.AppendSwitchIfNotNull(
-                    "--resource:",
-                    item.ItemSpec,
-                    [| item.GetMetadata("LogicalName"); item.GetMetadata("Access") |]
-                )
-            | false -> builder.AppendSwitchIfNotNull("--resource:", item.ItemSpec)
+                builder.AppendSwitchIfNotNull("--resource:", fileName, [| item.GetMetadata("LogicalName"); item.GetMetadata("Access") |])
+            | false -> builder.AppendSwitchIfNotNull("--resource:", fileName)
 
         // VersionFile
         builder.AppendSwitchIfNotNull("--versionfile:", versionFile)
