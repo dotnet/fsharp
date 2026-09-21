@@ -55,7 +55,14 @@ The trusted publisher receives the manifest separately from agent output. Its
 policy and actual collector checkout revision with trusted runtime values, retaining
 the collector's original memory head. Transport the manifest in a separately named,
 immutable, same-run artifact uploaded by the collector. Neither the artifact name
-nor its contents may come from the model or an agent-writable file.
+nor its contents may come from the model or an agent-writable file. On
+downstream-only reruns, the adapter queries all run jobs (bounded to 100) and
+requires the latest unique `pre_activation` execution to have succeeded in this
+run at this revision. Its original attempt selects both input and manifest
+artifacts by ID and supplies the verifier/publisher binding; the current
+execution attempt does not replace it. Incomplete or ambiguous job/artifact
+listings and failed newer collectors reject publication rather than falling
+back to an arbitrary older artifact.
 
 ## One model-visible proposal route
 

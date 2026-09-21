@@ -295,7 +295,8 @@ test("batch byte limits refill from complete snapshots and retry deferred eviden
   assert.deepEqual(s.mutations, []);
 });
 
-test("the Actions entry points bind immutable artifact metadata, dispatch staging and the event file", async () => {
+for (const [collectorAttempt, runAttempt] of [["1", "1"], ["1", "2"], ["2", "2"], ["2", "3"]]) test(
+  `Actions entry points preserve collector attempt ${collectorAttempt} during run attempt ${runAttempt}`, async () => {
   const temp = fs.mkdtempSync(path.join(os.tmpdir(), "regression-triage-"));
   const prior = { ...process.env };
   const outputs = {};
@@ -309,7 +310,7 @@ test("the Actions entry points bind immutable artifact metadata, dispatch stagin
       addCodeBlock(text) { summaries.push(text); return this; }, async write() {} },
   };
   try {
-    Object.assign(process.env, env, { RUNNER_TEMP: temp,
+    Object.assign(process.env, env, { RUNNER_TEMP: temp, GITHUB_RUN_ATTEMPT: collectorAttempt,
       GITHUB_EVENT_NAME: "workflow_dispatch", GITHUB_EVENT_PATH: path.join(temp, "event.json"),
       GH_AW_AGENT_OUTPUT: path.join(temp, "output.json") });
     delete process.env.GH_AW_SAFE_OUTPUTS_STAGED;
@@ -327,37 +328,76 @@ test("the Actions entry points bind immutable artifact metadata, dispatch stagin
     assert.equal(view.binding, undefined);
     const artifact = { id: 123, name: outputs["manifest-name"], expired: false,
       workflow_run: { id: 123, head_sha: env.GITHUB_WORKFLOW_SHA } };
-    s.api.github.rest.actions = { listWorkflowRunArtifacts: async (args) => {
+    const inputArtifact = { ...clone(artifact), id: 124, name: outputs["view-name"] };
+    const job = { id: 456, name: "pre_activation", run_id: 123, run_attempt: Number(collectorAttempt),
+      head_sha: env.GITHUB_WORKFLOW_SHA, status: "completed", conclusion: "success" };
+    process.env.GITHUB_RUN_ATTEMPT = runAttempt;
+    const listArtifacts = async (args) => {
       assert.equal(args.run_id, env.GITHUB_RUN_ID);
-      return { data: { total_count: 1, artifacts: [artifact] } };
-    } };
+      const artifacts = [artifact, inputArtifact];
+      if (collectorAttempt === "2") artifacts.push(
+        { ...clone(artifact), id: 125, name: artifact.name.replace("-123-2-", "-123-1-") },
+        { ...clone(inputArtifact), id: 126, name: inputArtifact.name.replace("-123-2-", "-123-1-") });
+      return { data: { total_count: artifacts.length, artifacts } };
+    };
+    s.api.github.rest.actions = {
+      listWorkflowRunArtifacts: listArtifacts,
+      listJobsForWorkflowRun: async (args) => {
+        assert.deepEqual(args, { owner: "dotnet", repo: "fsharp", run_id: "123", filter: "all", per_page: 100 });
+        const jobs = collectorAttempt === "1" ? [job] : [job, { ...job, id: 455, run_attempt: 1 }];
+        return { data: { total_count: jobs.length, jobs } };
+      },
+    };
+    await resolveArtifact({ github: s.api.github, core, input: true });
+    assert.equal(outputs["artifact-id"], "124");
+    assert.equal(outputs["artifact-name"], inputArtifact.name);
+    assert.equal(outputs["collector-attempt"], collectorAttempt);
     await resolveArtifact({ github: s.api.github, core });
     assert.equal(outputs["artifact-id"], "123");
-    for (const mutate of [
-      (a) => { a.expired = true; }, (a) => { a.workflow_run.id = 456; },
-      (a) => { a.workflow_run.head_sha = "d".repeat(40); }, (a) => { a.name = "agent"; },
-    ]) {
-      const changed = clone(artifact);
-      mutate(changed);
-      s.api.github.rest.actions.listWorkflowRunArtifacts = async () => ({
-        data: { total_count: 1, artifacts: [changed] },
-      });
+    assert.equal(outputs["collector-attempt"], collectorAttempt);
+    const listJobs = s.api.github.rest.actions.listJobsForWorkflowRun;
+    for (const jobs of [[], [job, job], ...[
+      { run_id: 999 }, { head_sha: "d".repeat(40) }, { run_attempt: 0 },
+      { run_attempt: Number(runAttempt) + 1 }, { run_attempt: "1" },
+      { status: "in_progress" }, { conclusion: "failure" }, { name: "agent" },
+    ].map((fields) => [{ ...job, ...fields }]),
+      [job, { ...job, run_attempt: Number(runAttempt), conclusion: "failure" }]]) {
+      s.api.github.rest.actions.listJobsForWorkflowRun = async () => ({ data: { total_count: jobs.length, jobs } });
+      for (const input of [false, true]) await assert.rejects(resolveArtifact({ github: s.api.github, core, input }));
+    }
+    for (const total_count of [2, 101]) {
+      s.api.github.rest.actions.listJobsForWorkflowRun = async () => ({ data: { total_count, jobs: [job] } });
       await assert.rejects(resolveArtifact({ github: s.api.github, core }));
     }
-    for (const artifacts of [[], [artifact, { ...artifact, id: 124 }]]) {
-      s.api.github.rest.actions.listWorkflowRunArtifacts = async () => ({ data: { total_count: artifacts.length, artifacts } });
-      await assert.rejects(resolveArtifact({ github: s.api.github, core }));
+    s.api.github.rest.actions.listJobsForWorkflowRun = listJobs;
+    for (const input of [false, true]) {
+      const target = input ? inputArtifact : artifact;
+      for (const artifacts of [[], [target, { ...target, id: 127 }], ...[
+        { expired: true }, { name: "agent" }, { id: 0 },
+        { workflow_run: { ...target.workflow_run, id: 456 } },
+        { workflow_run: { ...target.workflow_run, head_sha: "d".repeat(40) } },
+        { name: target.name.replace(`-123-${collectorAttempt}-`, collectorAttempt === "2" ? "-123-1-" : "-123-99-") },
+      ].map((fields) => [{ ...target, ...fields }])]) {
+        s.api.github.rest.actions.listWorkflowRunArtifacts = async () => ({ data: { total_count: artifacts.length, artifacts } });
+        await assert.rejects(resolveArtifact({ github: s.api.github, core, input }));
+      }
+      for (const total_count of [2, 101]) {
+        s.api.github.rest.actions.listWorkflowRunArtifacts = async () => ({ data: { total_count, artifacts: [target] } });
+        await assert.rejects(resolveArtifact({ github: s.api.github, core, input }));
+      }
     }
     fs.mkdirSync(path.join(temp, "regression-triage-trusted"));
     fs.writeFileSync(path.join(temp, "regression-triage-trusted", "manifest.json"), manifestText);
     fs.writeFileSync(process.env.GH_AW_AGENT_OUTPUT, JSON.stringify({ ...envelope(manifest), errors: [] }));
     process.env.TRIAGE_ARTIFACT_NAME = artifact.name;
+    process.env.TRIAGE_COLLECTOR_ATTEMPT = outputs["collector-attempt"];
     await publishAction({ github: s.api.github, core });
     assert.deepEqual(s.mutations, []);
     assert.deepEqual(failures, []);
     assert.match(summaries.join("\n"), /would-add-label/);
     assert.match(summaries.join("\n"), /would-save-memory/);
     s.api.github.rest.issues.listForRepo = async () => { throw new Error("Unavailable"); };
+    process.env.GITHUB_RUN_ATTEMPT = collectorAttempt;
     await collectAction({ github: s.api.github, core });
     const partial = fs.readFileSync(path.join(temp, "regression-triage-manifest", "manifest.json"), "utf8");
     fs.writeFileSync(path.join(temp, "regression-triage-trusted", "manifest.json"), partial);
@@ -374,6 +414,26 @@ test("the Actions entry points bind immutable artifact metadata, dispatch stagin
     Object.assign(process.env, prior);
     fs.rmSync(temp, { recursive: true });
   }
+});
+
+test("downstream rerun verification preserves the proven collector binding, not the publisher attempt", async () => {
+  const s = setup();
+  const run = await s.collect();
+  const rerun = { ...env, GITHUB_RUN_ATTEMPT: "2", GH_AW_SAFE_OUTPUTS_STAGED: "true" };
+  assert.deepEqual(verifyArtifact(run.manifestText, run.artifactName, rerun, "1"), run.manifest);
+  for (const collectorAttempt of ["", "0", "3", "01", "9007199254740992"]) {
+    assert.throws(() => verifyArtifact(run.manifestText, run.artifactName, rerun, collectorAttempt));
+  }
+  for (const fields of [{ GITHUB_RUN_ID: "999" }, { GITHUB_WORKFLOW_SHA: "d".repeat(40) },
+    { GITHUB_REPOSITORY: "other/repo" }]) {
+    assert.throws(() => verifyArtifact(run.manifestText, run.artifactName, { ...rerun, ...fields }, "1"));
+  }
+  const tampered = run.manifestText.replace('"runAttempt":1', '"runAttempt":2');
+  const renamed = artifactPrefix(env) + require("node:crypto").createHash("sha256").update(tampered).digest("hex");
+  assert.throws(() => verifyArtifact(tampered, renamed, rerun, "1"), /run\/revision mismatch/);
+  const result = await s.publish(run, { env: rerun, collectorAttempt: "1" });
+  assert.ok(result.receipts.some((receipt) => receipt.type === "would-save-memory"));
+  assert.deepEqual(s.mutations, []);
 });
 
 test("artifact absence, wrong binding, substitution and content tampering fail closed", async () => {
@@ -534,11 +594,12 @@ test("source and pinned generated workflow enforce independent triggers and one 
   assert.match(lock, /GH_AW_SAFE_OUTPUTS_STAGED/);
   assert.match(lock, /needs\.detection\.outputs/);
   assert.match(lock, /GH_AW_DETECTION_CONTINUE_ON_ERROR: "false"/);
-  const viewName = source.match(/name: (regression-triage-dotnet-fsharp-[^\r\n]+-input)/)[1]
-    .replace("${{ github.run_id }}", env.GITHUB_RUN_ID)
-    .replace("${{ github.run_attempt }}", env.GITHUB_RUN_ATTEMPT)
-    .replace("${{ github.workflow_sha }}", env.GITHUB_WORKFLOW_SHA);
-  assert.equal(viewName, artifactPrefix(env) + "input");
+  for (const text of [source, lock]) {
+    assert.match(text, /resolveArtifact\(\{ github, core, input: true \}\)/);
+    assert.match(text, /artifact-ids: \$\{\{ steps\.collector_input\.outputs\.artifact-id \}\}/);
+    assert.match(text, /TRIAGE_COLLECTOR_ATTEMPT: \$\{\{ steps\.manifest\.outputs\.collector-attempt \}\}/);
+    assert.doesNotMatch(text, /github\.run_attempt/);
+  }
   const collector = lock.slice(lock.indexOf("\n  pre_activation:"), lock.indexOf("\n  publish_regression_triage:"));
   assert.doesNotMatch(collector, /: write/);
   assert.match(collector, /ref: \$\{\{ github\.workflow_sha \}\}/);
@@ -549,6 +610,8 @@ test("source and pinned generated workflow enforce independent triggers and one 
     assert.match(text, /GH_AW_VALIDATION_CONFIG_PATH: \$\{\{ github\.workspace \}\}\/\.github\/scripts\/regression-triage\/output-validation\.json/);
   }
   assert.match(agent, /name: Load immutable proposal validation/);
+  assert.match(agent, /actions: read/);
+  assert.match(agent, /needs: activation/);
   assert.match(agent, /ref: \$\{\{ github\.workflow_sha \}\}/);
   assert.doesNotMatch(agent, /--allow-all-tools|--allow-tool shell|needs\.pre_activation|shell\(gh/);
   assert.match(agent, /exec \/tmp\/gh-aw\/copilot-original --deny-tool=write --deny-tool=shell --deny-tool=url --excluded-tools=task/);

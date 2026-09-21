@@ -14,11 +14,13 @@ const positive = (number) => Number.isSafeInteger(number) && number > 0;
 const isBot = (user) => user?.type === "Bot" || /\[bot\]$/i.test(user?.login ?? "");
 const requireThat = (condition, message) => { if (!condition) throw new Error(message); };
 
-function artifactPrefix(env) {
+function artifactPrefix(env, collectorAttempt = env.GITHUB_RUN_ATTEMPT) {
   requireThat(env.GITHUB_REPOSITORY === "dotnet/fsharp" && /^[1-9]\d{0,19}$/.test(env.GITHUB_RUN_ID)
     && /^[1-9]\d*$/.test(env.GITHUB_RUN_ATTEMPT) && positive(Number(env.GITHUB_RUN_ATTEMPT))
+    && /^[1-9]\d*$/.test(collectorAttempt) && positive(Number(collectorAttempt))
+    && Number(collectorAttempt) <= Number(env.GITHUB_RUN_ATTEMPT)
     && /^[a-f0-9]{40}$/.test(env.GITHUB_WORKFLOW_SHA), "Invalid trusted run identity");
-  return `regression-triage-${env.GITHUB_REPOSITORY.replace("/", "-")}-${env.GITHUB_RUN_ID}-${env.GITHUB_RUN_ATTEMPT}-${POLICY_VERSION}-${env.GITHUB_WORKFLOW_SHA}-`;
+  return `regression-triage-${env.GITHUB_REPOSITORY.replace("/", "-")}-${env.GITHUB_RUN_ID}-${collectorAttempt}-${POLICY_VERSION}-${env.GITHUB_WORKFLOW_SHA}-`;
 }
 
 function eventOptions(env, event) {
@@ -55,10 +57,10 @@ function eventOptions(env, event) {
   return { active: true, hint, staged };
 }
 
-function binding(env, memoryHead) {
-  artifactPrefix(env);
+function binding(env, memoryHead, collectorAttempt = env.GITHUB_RUN_ATTEMPT) {
+  artifactPrefix(env, collectorAttempt);
   return { repository: env.GITHUB_REPOSITORY, runId: env.GITHUB_RUN_ID,
-    runAttempt: Number(env.GITHUB_RUN_ATTEMPT), policyVersion: POLICY_VERSION,
+    runAttempt: Number(collectorAttempt), policyVersion: POLICY_VERSION,
     collectorRevision: env.GITHUB_WORKFLOW_SHA, memoryHead };
 }
 
@@ -94,27 +96,27 @@ async function collectWorkflow({ github, store = createGitHubStore(github, repo)
     summary: status(manifest) };
 }
 
-function verifyArtifact(manifestText, artifactName, env) {
-  const prefix = artifactPrefix(env);
+function verifyArtifact(manifestText, artifactName, env, collectorAttempt = env.GITHUB_RUN_ATTEMPT) {
+  const prefix = artifactPrefix(env, collectorAttempt);
   requireThat(typeof manifestText === "string" && Buffer.byteLength(manifestText) <= 4194304
     && artifactName === prefix + digest(manifestText), "Absent or tampered collector artifact");
   const manifest = JSON.parse(manifestText);
-  const expected = binding(env, manifest.binding?.memoryHead);
+  const expected = binding(env, manifest.binding?.memoryHead, collectorAttempt);
   requireThat(JSON.stringify(manifest.binding) === JSON.stringify(expected), "Collector artifact run/revision mismatch");
   return manifest;
 }
 
 async function publishWorkflow({ github, store = createGitHubStore(github, repo), env, event, now,
-  manifestText, artifactName, output }) {
+  manifestText, artifactName, output, collectorAttempt = env.GITHUB_RUN_ATTEMPT }) {
   const options = eventOptions(env, event);
   requireThat(options.active, "Inactive event cannot publish");
-  const manifest = verifyArtifact(manifestText, artifactName, env);
+  const manifest = verifyArtifact(manifestText, artifactName, env, collectorAttempt);
   const results = validateProposals(output, manifest);
   requireThat(results.length === manifest.selected.length, "Incomplete proposal batch");
   requireThat(results.every((result) => result.evidence.some((citation) =>
     citation.sourceId.startsWith(`${env.GITHUB_REPOSITORY}#${result.number}:`))), "Missing selected-report citation");
   const result = await publishBatch({ github, store, repo, manifest, output,
-    context: binding(env, manifest.binding.memoryHead), bot, now, staged: options.staged, env });
+    context: binding(env, manifest.binding.memoryHead, collectorAttempt), bot, now, staged: options.staged, env });
   return { ...result, incomplete: manifest.errors.length > 0 || manifest.incomplete.length > 0
     || !manifest.scan.incremental.complete || !manifest.scan.sweep.complete
     || result.outcomes.some((outcome) => !["published", "noop"].includes(outcome.status)),
@@ -141,17 +143,35 @@ async function collectAction({ github, core }) {
   if (result.manifest.errors.length) core.warning(result.summary);
 }
 
-async function resolveArtifact({ github, core }) {
+async function resolveArtifact({ github, core, input = false }) {
   eventOptions(process.env, readEvent());
-  const prefix = artifactPrefix(process.env);
+  // Failed-job reruns reuse successful pre_activation jobs from older attempts.
+  // Trust the jobs API, never an artifact's claimed attempt or an older success
+  // when a newer collector job exists.
+  const jobs = (await github.rest.actions.listJobsForWorkflowRun({
+    ...repo, run_id: process.env.GITHUB_RUN_ID, filter: "all", per_page: 100,
+  })).data;
+  requireThat(Number.isSafeInteger(jobs.total_count) && jobs.total_count <= 100
+    && jobs.total_count === jobs.jobs.length, "Incomplete collector job history");
+  const collectors = jobs.jobs.filter((job) => job.name === "pre_activation");
+  requireThat(collectors.length > 0 && collectors.every((job) => positive(job.id)
+    && String(job.run_id) === process.env.GITHUB_RUN_ID && job.head_sha === process.env.GITHUB_WORKFLOW_SHA
+    && positive(job.run_attempt) && job.run_attempt <= Number(process.env.GITHUB_RUN_ATTEMPT)),
+  "Collector job metadata mismatch");
+  const collectorAttempt = Math.max(...collectors.map((job) => job.run_attempt));
+  const latest = collectors.filter((job) => job.run_attempt === collectorAttempt);
+  requireThat(latest.length === 1 && latest[0].status === "completed" && latest[0].conclusion === "success",
+    "Exactly one successful latest collector job is required");
+  const prefix = artifactPrefix(process.env, collectorAttempt);
   // A run has a small fixed number of framework artifacts. Fail closed rather
   // than search unbounded history or fall back to an agent-uploaded file.
   const response = await github.rest.actions.listWorkflowRunArtifacts({
     ...repo, run_id: process.env.GITHUB_RUN_ID, per_page: 100,
   });
-  requireThat(response.data.total_count <= 100, "Too many run artifacts");
+  requireThat(Number.isSafeInteger(response.data.total_count) && response.data.total_count <= 100
+    && response.data.total_count === response.data.artifacts.length, "Incomplete run artifact listing");
   const matches = response.data.artifacts.filter((item) => item.name.startsWith(prefix)
-    && /^[a-f0-9]{64}$/.test(item.name.slice(prefix.length)));
+    && (input ? item.name === prefix + "input" : /^[a-f0-9]{64}$/.test(item.name.slice(prefix.length))));
   requireThat(matches.length === 1, "Exactly one immutable collector artifact is required");
   const [artifact] = matches;
   requireThat(positive(artifact.id) && !artifact.expired
@@ -160,12 +180,15 @@ async function resolveArtifact({ github, core }) {
   "Collector artifact metadata mismatch");
   core.setOutput("artifact-id", String(artifact.id));
   core.setOutput("artifact-name", artifact.name);
+  core.setOutput("collector-attempt", String(collectorAttempt));
 }
 
 async function publishAction({ github, core }) {
+  requireThat(process.env.TRIAGE_COLLECTOR_ATTEMPT, "Missing trusted collector attempt");
   const result = await publishWorkflow({ github, env: process.env, event: readEvent(), now: new Date().toISOString(),
     manifestText: fs.readFileSync(path.join(directory("regression-triage-trusted"), "manifest.json"), "utf8"),
     artifactName: process.env.TRIAGE_ARTIFACT_NAME,
+    collectorAttempt: process.env.TRIAGE_COLLECTOR_ATTEMPT,
     output: fs.readFileSync(process.env.GH_AW_AGENT_OUTPUT, "utf8") });
   await core.summary.addRaw(result.summary).addCodeBlock(JSON.stringify({
     outcomes: result.outcomes, receipts: result.receipts,

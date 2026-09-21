@@ -56,11 +56,16 @@ still enforces all schema/size/source bounds and emits only fixed labels/questio
 Threat detection receives the unchanged proposals and remains mandatory.
 
 The publisher runs only after successful agent/threat detection. Its read/write
-token is confined to that trusted job. It resolves the immutable collector artifact
-by this repository/run/attempt/policy/code-SHA prefix, rejects missing or ambiguous
-artifacts, checks service run metadata, downloads by ID, and verifies the content
-hash in its name. The model cannot upload/delete/replace this artifact. No
-agent-workspace file supplies publication authority or memory deltas.
+token is confined to that trusted job. Both the model-input download and publisher
+resolve artifacts using the Actions jobs API's latest unique successful
+`pre_activation` job. Its original attempt remains authoritative on downstream-only
+reruns; a newer failed collector cannot fall back to an older success.
+The repository/run/collector-attempt/policy/code-SHA prefix, service run metadata
+and ID-based downloads bind both artifacts to that collector. Publication also
+verifies the manifest content hash and original binding. Missing, ambiguous or
+incomplete job/artifact listings fail closed. The model cannot
+upload/delete/replace these artifacts. No agent-workspace file supplies publication
+authority or memory deltas.
 
 ## Bounds, memory and recovery
 

@@ -88,6 +88,7 @@ concurrency:
 timeout-minutes: 15
 
 permissions:
+  actions: read
   contents: read
   issues: read
   pull-requests: read
@@ -118,11 +119,20 @@ steps:
       ref: ${{ github.workflow_sha }}
       persist-credentials: false
       sparse-checkout: .github/scripts/regression-triage
+  # v0.76.1 gives agent no direct pre_activation dependency. The jobs API proves
+  # which collector attempt succeeded, including reused jobs on failed-job reruns.
+  - name: Resolve the successful collector's input artifact
+    id: collector_input
+    uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+    with:
+      script: |
+        await require('./.github/scripts/regression-triage/workflow.cjs').resolveArtifact({ github, core, input: true });
   - name: Download collector view, not publication authority
     uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
     with:
-      name: regression-triage-dotnet-fsharp-${{ github.run_id }}-${{ github.run_attempt }}-reported-regression-v1-${{ github.workflow_sha }}-input
+      artifact-ids: ${{ steps.collector_input.outputs.artifact-id }}
       path: /tmp/gh-aw/regression-triage-input
+      merge-multiple: true
 
 pre-agent-steps:
   # v0.76.1 emits --allow-tool write even for edit:false. Explicit CLI denials
@@ -191,6 +201,7 @@ safe-outputs:
           uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
           env:
             TRIAGE_ARTIFACT_NAME: ${{ steps.manifest.outputs.artifact-name }}
+            TRIAGE_COLLECTOR_ATTEMPT: ${{ steps.manifest.outputs.collector-attempt }}
           with:
             script: |
               await require('./.github/scripts/regression-triage/workflow.cjs').publishAction({ github, core });
