@@ -499,7 +499,7 @@ async function main(args = process.argv.slice(2), env = process.env) {
                 const current = await currentInput(context.now, deps);
                 requireValue(current.context, current.reason);
                 const cp = await commitCollectedObservation({ reservation: pending, manifest: context.manifest, context },
-                    { collectObservation, transport });
+                    { collectObservation, transport, clock });
                 return { status: "observed", workId: pending.id, generation: cp.generation,
                     outcome: cp.observations[cp.records.find(r => r.id === pending.id).observationDigest].data.outcome,
                     budget: cp.state.budget.consumed, recovered: true };

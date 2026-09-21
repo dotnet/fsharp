@@ -358,7 +358,7 @@ async function executeInvestigationWork(work, deps) {
         "collector omitted original repeated assertions");
     }
     return commitObservation(deps.transport, { ...context, now: clock().toISOString() }, {
-        generation: started.generation, attemptId: r.id, observation: collected.observation, evidence: collected.evidence,
+        generation: started.generation, attemptId: r.id, observation: collected.observation, evidence: collected.evidence, clock,
     });
 }
 

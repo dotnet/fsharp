@@ -6,7 +6,7 @@ const f = require("./fixtures/contracts.cjs");
 const model = require("./model.cjs");
 const {
     initializeCheckpoint, serializeWorkflowRecord, authenticateWorkflowRecord,
-    loadCheckpoint, reserveWork, beginWork, commitObservation, invalidateStaleEvidence,
+    loadCheckpoint, reserveWork, beginWork, beginCollection, commitObservation, invalidateStaleEvidence,
 } = require("./state.cjs");
 
 const clone = structuredClone;
@@ -30,6 +30,56 @@ test("execution claims survive lost acknowledgements and cannot execute a reserv
     const cp = (await loadCheckpoint(h.transport, h.context)).checkpoint;
     assert.equal(cp.state.budget.consumed.workerUnits, 1);
     assert.equal(cp.records[0].executionGeneration, first.generation);
+});
+
+test("collection handoff authenticates owners and preserves the execution claim and charge", async t => {
+    for (const fault of ["none", "active-worker", "active-collector", "expired", "duplicate-owner", "wrong-attempt"])
+        await t.test(fault, async () => {
+            const h = harness(); await h.start();
+            const pending = await reserve(h);
+            const started = await beginWork(h.transport, h.context, { generation: pending.generation, attemptId: pending.id });
+            h.nextRun();
+            if (fault === "active-worker") {
+                h.runs.get("12345/1").status = "in_progress";
+                await assert.rejects(beginCollection(h.transport, h.context, {
+                    generation: started.generation, attemptId: pending.id }), /active or unknown/);
+                return;
+            }
+            if (fault === "expired") {
+                h.context.now = new Date(Date.parse(pending.deadline) + 1).toISOString();
+                await assert.rejects(beginCollection(h.transport, h.context, {
+                    generation: started.generation, attemptId: pending.id }), /deadline/);
+                return;
+            }
+            const cp = await beginCollection(h.transport, h.context, { generation: started.generation, attemptId: pending.id });
+            assert.deepEqual(cp.pending.collectionOwners, [h.context.owner]);
+            assert.equal(cp.pending.executionGeneration, started.generation);
+            assert.equal(cp.pending.deadline, pending.deadline);
+            assert.equal(cp.state.budget.consumed.reservedMinutes, 110);
+            assert.deepEqual(await beginCollection(h.transport, h.context, {
+                generation: cp.generation, attemptId: pending.id }), cp);
+            if (fault === "duplicate-owner") {
+                cp.records[0].collectionOwners.push(clone(h.context.owner));
+                cp.pending = clone(cp.records[0]); h.checkpoint(cp);
+                await assert.rejects(loadCheckpoint(h.transport, h.context), /invalid collection/);
+                return;
+            }
+            h.nextRun();
+            if (fault === "active-collector") h.runs.get("12346/1").status = "in_progress";
+            if (fault === "wrong-attempt") h.runs.get("12346/1").run_attempt = 2;
+            if (fault !== "none") {
+                await assert.rejects(beginCollection(h.transport, h.context, {
+                    generation: cp.generation, attemptId: pending.id }), /active or unknown|authentication/);
+                return;
+            }
+            const next = await beginCollection(h.transport, h.context, { generation: cp.generation, attemptId: pending.id });
+            assert.equal(next.pending.collectionOwners.length, 2);
+            const result = { ...completion(h, pending), generation: next.pending.collectionGeneration, recoveryOwner: pending.owner };
+            const done = await commitObservation(h.transport, h.context, result);
+            assert.equal(done.pending, null);
+            assert.deepEqual(done.state.budget.consumed, cp.state.budget.consumed);
+            assert.deepEqual(await commitObservation(h.transport, h.context, result), done);
+        });
 });
 
 const request = (sourceSha = f.sha("main"), endpoint = "main") => ({

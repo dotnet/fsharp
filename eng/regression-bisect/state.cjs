@@ -186,7 +186,8 @@ function validateCheckpoint(cp) {
     const ids = new Set();
     for (const [index, r] of cp.records.entries()) {
         fields(r, "id workItemId request requestDigest owner sequence attempt generation deadline inputDigest epoch reserved status observationDigest" +
-            (Object.hasOwn(r, "executionGeneration") ? " executionGeneration" : ""), "work record");
+            (Object.hasOwn(r, "executionGeneration") ? " executionGeneration" : "") +
+            (Object.hasOwn(r, "collectionOwners") ? " collectionOwners collectionGeneration" : ""), "work record");
         requireState(typeof r.id === "string" && r.id.length > 0 && r.id.length <= 128 && !ids.has(r.id) &&
             r.sequence === index + 1 && positive(r.attempt) && positive(r.generation) &&
             timestamp(r.deadline) && digest(r.inputDigest) && digest(r.epoch) &&
@@ -202,6 +203,17 @@ function validateCheckpoint(cp) {
         requireState(r.status === "committed" ? digest(r.observationDigest) : r.observationDigest === null, "invalid observation identity");
         if (Object.hasOwn(r, "executionGeneration")) requireState(positive(r.executionGeneration) &&
             r.executionGeneration > r.generation && r.executionGeneration <= cp.generation, "invalid execution generation");
+        if (Object.hasOwn(r, "collectionOwners")) {
+            requireState(Array.isArray(r.collectionOwners) && r.collectionOwners.length > 0 &&
+                new Set(r.collectionOwners.map(fingerprint)).size === r.collectionOwners.length &&
+                positive(r.collectionGeneration) && r.collectionGeneration > r.executionGeneration &&
+                r.collectionGeneration <= cp.generation, "invalid collection generation or owners");
+            for (const owner of r.collectionOwners) {
+                fields(owner, "runId attempt", "collection owner");
+                requireState(/^[1-9]\d{0,19}$/.test(owner.runId) && positive(owner.attempt) &&
+                    !ownerEqual(owner, r.owner), "invalid collection owner");
+            }
+        }
     }
     requireState(equal(totals, cp.state.budget.consumed), "consumed budgets must equal the durable reservation ledger");
     const counts = new Map();
@@ -555,7 +567,9 @@ async function reserveWork(transport, context, { generation, attemptId, request 
     return { ...structuredClone(pending), execute: true };
 }
 
-async function commitObservation(transport, context, { generation, attemptId, observation, evidence, recoveryOwner }) {
+async function commitObservation(transport, context, { generation, attemptId, observation, evidence, recoveryOwner,
+    clock = () => new Date(context.now) }) {
+    context = { ...context, now: clock().toISOString() };
     const loaded = await loadCheckpoint(transport, context);
     const cp = loaded.checkpoint;
     const record = cp.records.find(r => r.id === attemptId);
@@ -571,7 +585,7 @@ async function commitObservation(transport, context, { generation, attemptId, ob
     const observationDigest = fingerprint(observation);
     validateEvidence(evidence);
     if (record.status === "committed") {
-        requireState(generation === (record.executionGeneration ?? record.generation), "stale completion generation");
+        requireState(generation === (record.collectionGeneration ?? record.executionGeneration ?? record.generation), "stale completion generation");
         requireState(record.observationDigest === observationDigest &&
             equal(cp.observations[observationDigest].evidence, evidence), "observation identity conflict");
         return cp;
@@ -588,6 +602,8 @@ async function commitObservation(transport, context, { generation, attemptId, ob
         observation.provenance.policyRevision === cp.state.budget.policyRevision, "observation request or build identity mismatch");
     const availability = await evidenceWarnings(transport, [{ evidence }]);
     requireState(!availability.missingRequired, "required evidence missing or digest mismatch");
+    context = { ...context, now: clock().toISOString() };
+    requireState(Date.parse(context.now) <= Date.parse(record.deadline), "observation arrived after reservation deadline");
     cp.observations[observationDigest] = {
         data: structuredClone(observation), manifest: structuredClone(cp.state.manifest),
         attemptId, evidence: structuredClone(evidence), valid: true,
@@ -623,6 +639,26 @@ async function beginWork(transport, context, { generation, attemptId }) {
     cp.state.budget.pendingWork.status = "running";
     await saveCheckpoint(transport, context, cp, loaded.bodyDigest);
     return { execute: true, generation: cp.generation };
+}
+
+async function beginCollection(transport, context, { generation, attemptId }) {
+    const loaded = await loadCheckpoint(transport, context);
+    const cp = loaded.checkpoint, record = cp.records.find(r => r.id === attemptId);
+    checkGeneration(cp, generation);
+    requireState(loaded.executionAllowed && cp.pending?.id === attemptId &&
+        record?.executionGeneration !== undefined, "collection requires a current execution claim");
+    requireState(Date.parse(context.now) <= Date.parse(record.deadline), "reservation deadline exhausted");
+    for (const owner of [record.owner, loaded.owner]) if (!ownerEqual(owner, context.owner)) {
+        const previous = await verifyRun(transport, context, { runId: owner.runId, runAttempt: owner.attempt,
+            workflowRevision: cp.state.budget.workflowRevision });
+        requireState(previous.status === "completed" && typeof previous.conclusion === "string",
+            "collection owner is still active or unknown");
+    }
+    if (ownerEqual(record.owner, context.owner) || record.collectionOwners?.some(o => ownerEqual(o, context.owner))) return cp;
+    record.collectionOwners = [...(record.collectionOwners ?? []), structuredClone(context.owner)];
+    record.collectionGeneration = ++cp.generation;
+    cp.pending = structuredClone(record);
+    return saveCheckpoint(transport, context, cp, loaded.bodyDigest);
 }
 
 async function invalidateStaleEvidence(transport, context, { generation }) {
@@ -748,6 +784,6 @@ async function recordConfirmation(transport, context, { generation, confirmation
 
 module.exports = {
     initializeCheckpoint, serializeWorkflowRecord, authenticateWorkflowRecord,
-    loadCheckpoint, reserveWork, beginWork, commitObservation, cancelCompletedWork, invalidateStaleEvidence, recordSearchProgress,
+    loadCheckpoint, reserveWork, beginWork, beginCollection, commitObservation, cancelCompletedWork, invalidateStaleEvidence, recordSearchProgress,
     authenticateDecodedRecord, recordPublication, recordConfirmation,
 };

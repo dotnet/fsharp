@@ -222,11 +222,19 @@ An unclaimed cancelled reservation can incur a charged retry, without a refund.
 A claimed reservation first resumes authenticated retained/remote collection,
 not another worker. A completed old owner can be committed by the new active
 run only after authenticating the old owner and the original execution claim;
-the original deadline, build ID and evidence epoch still apply. Missing or
-forged collection blocks. `publish` only uses the fixed registered result slot,
+the original deadline, build ID and evidence epoch still apply. Recovery checks
+the clock after collection and after required evidence verification, not just
+at intake. Before a recovery run uploads, its run/attempt is saved in the
+authenticated checkpoint. Subsequent recovery searches every recorded uploader
+and rejects conflicting collections; losing per-launch scratch after a durable
+upload does not require another worker or charge. Keep the checkpoint's
+uploader records and each uploader's artifacts for the same 90-day retention.
+Missing or forged collection blocks. `publish` only uses the fixed registered result slot,
 rereads current inputs/main/stable and required evidence immediately before
 writing, and adopts an authenticated lost acknowledgement without a second
-result write.
+result write. After an evidence epoch refresh it may replace that slot's prior
+authenticated result only if the saved allowance history binds its exact
+epoch and report digest to the registered slot.
 
 ## Trust boundary
 

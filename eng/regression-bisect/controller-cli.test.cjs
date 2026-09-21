@@ -16,7 +16,8 @@ const cli = path.join(__dirname, "controller-cli.cjs");
 function invoke(args, env = {}, started = () => {}) {
     return new Promise((resolve, reject) => {
         const start = performance.now();
-        const child = spawn(process.execPath, [cli, ...args], {
+        const preload = env.RB_LOCAL_TEST_FILE ? ["--require", path.join(__dirname, "fixtures", "controller-storage-faults.cjs")] : [];
+        const child = spawn(process.execPath, [...preload, cli, ...args], {
             env: { ...process.env, ...env }, shell: false, windowsHide: true,
         });
         let stdout = "", stderr = "";
@@ -279,6 +280,90 @@ test("claimed recovery preserves the absolute deadline and refuses another activ
     });
 });
 
+test("claimed recovery samples its deadline after collection and evidence verification", async t => {
+    for (const point of ["unit", "verify"]) await t.test(point, async t => {
+        const f = await fixture(t);
+        assert.equal(outcome(await run(f, "bootstrap")).status, "initialized");
+        f.update(db => { db.faults.workerAck = true; });
+        assert.equal(outcome(await run(f, "advance")).status, "blocked");
+        f.nextRun();
+        const before = (await checkpoint(f)).cp;
+        f.update(db => {
+            db.now = new Date(Date.parse(before.pending.deadline) - 1000).toISOString();
+            db.faults.clockAt = point;
+            db.faults.clockAfter = new Date(Date.parse(before.pending.deadline) + 1000).toISOString();
+        });
+        const result = outcome(await run(f, "advance"));
+        assert.equal(f.ledger().filter(r => r.kind === "clock").length, 1);
+        assert.equal(result.status, "blocked", JSON.stringify(result));
+        assert.match(result.reason, /deadline/);
+        const after = (await checkpoint(f)).cp;
+        assert.equal(after.pending.id, before.pending.id);
+        assert.equal(after.pending.deadline, before.pending.deadline);
+        assert.deepEqual(after.state.budget.consumed, before.state.budget.consumed);
+        assert.deepEqual(after.observations, {});
+        assert.equal(f.ledger().filter(r => r.kind === "worker").length, 1);
+        assert.equal(f.ledger().filter(r => r.kind === "git" && r.args.includes("bisect")).length, 0);
+    });
+});
+
+test("a third CLI recovers the recovery uploader's durable bytes without launch scratch", async t => {
+    const f = await fixture(t);
+    assert.equal(outcome(await run(f, "bootstrap")).status, "initialized");
+    f.update(db => { db.faults.workerAck = true; });
+    assert.equal(outcome(await run(f, "advance")).status, "blocked");
+    f.nextRun();
+    f.update(db => { db.faults.durableWriteAck = true; });
+    assert.match(outcome(await run(f, "advance")).reason, /durable upload acknowledgement lost/);
+    assert.equal(f.ledger().filter(r => r.kind === "durable-write").length, 1);
+    const before = (await checkpoint(f)).cp;
+    const launch = path.join(f.env.RB_STATE_DIRECTORY, "dotnet-fsharp-123", "launches", before.pending.id);
+    await fs.rm(launch, { recursive: true });
+    f.update(db => { delete db.faults.durableWriteAck; });
+    f.nextRun();
+    const result = outcome(await run(f, "advance"));
+    assert.equal(result.status, "observed", result.reason);
+    assert.equal(result.recovered, true);
+    const after = (await checkpoint(f)).cp;
+    assert.equal(after.pending, null);
+    assert.deepEqual(after.state.budget.consumed, before.state.budget.consumed);
+    assert.match(Object.values(after.observations)[0].evidence[0].url, /runs\/12346\/attempts\/1/);
+    assert.equal(f.ledger().filter(r => r.kind === "worker").length, 1);
+    assert.equal(f.ledger().filter(r => r.kind === "git" && r.args.includes("bisect")).length, 0);
+});
+
+test("actual CLI retains issue ownership past a quota timeout until outstanding I/O settles", { timeout: 380000 }, async t => {
+    const f = await fixture(t);
+    assert.equal(outcome(await run(f, "bootstrap")).status, "initialized");
+    f.update(db => { db.faults.pauseQuota = true; });
+    let exited = false;
+    const first = run(f, "advance").then(result => { exited = true; return result; });
+    try {
+        for (let i = 0; i < 1400 && !f.ledger().some(e => e.kind === "quota-timeout"); i++) await delay(250);
+        assert.ok(f.ledger().some(e => e.kind === "quota-entered"));
+        assert.ok(f.ledger().some(e => e.kind === "quota-timeout" && e.error === "TimeoutError"));
+        // Let the controller's real five-second cleanup deadline elapse as well.
+        await delay(5500);
+        assert.equal(exited, false, "CLI must not exit and release its lock");
+        const denied = outcome(await run(f, "advance"));
+        assert.equal(denied.status, "blocked");
+        assert.match(denied.reason, /lock.*live process/);
+        const cp = (await checkpoint(f)).cp;
+        assert.ok(cp.pending);
+        assert.equal(cp.state.budget.consumed.reservedMinutes, 110);
+    } finally {
+        f.update(db => { delete db.faults.pauseQuota; });
+        assert.equal(outcome(await first).status, "blocked");
+    }
+    assert.ok(f.ledger().some(e => e.kind === "quota-released"));
+    f.nextRun();
+    const result = outcome(await run(f, "advance"));
+    assert.equal(result.status, "observed", result.reason);
+    assert.equal(result.budget.workerUnits, 1);
+    assert.equal(f.ledger().filter(r => r.kind === "worker").length, 1);
+    assert.equal(f.ledger().filter(r => r.kind === "git" && r.args.includes("bisect")).length, 0);
+});
+
 test("official metadata changes invalidate the evidence epoch, never its spent allowance", async t => {
     for (const interrupted of [false, true]) await t.test(String(interrupted), async t => {
         const f = await fixture(t);
@@ -389,6 +474,60 @@ test("publication adopts a lost fixed-slot acknowledgement and required retentio
         assert.equal(f.ledger().filter(r => r.kind === "api" && r.method === "PATCH" && r.route === "issues/comments/457").length, 1);
         assert.equal((await checkpoint(f)).cp.state.budget.consumed.workerUnits, 1);
     });
+});
+
+test("publication replaces only an authenticated prior epoch in its registered slot", async t => {
+    for (const wrongHistory of [false, true]) await t.test(String(wrongHistory), async t => {
+        const f = await fixture(t);
+        assert.equal(outcome(await run(f, "bootstrap")).status, "initialized");
+        assert.equal(outcome(await run(f, "advance")).status, "observed");
+        assert.equal(outcome(await run(f, "advance")).status, "blocked");
+        assert.equal(outcome(await run(f, "publish")).status, "published");
+        f.update(db => { db.faults.newMetadata = true; });
+        assert.equal(outcome(await run(f, "advance")).status, "observed");
+        assert.equal(outcome(await run(f, "advance")).status, "blocked");
+        const { context, transport } = await checkpoint(f);
+        if (wrongHistory) {
+            const old = await state.authenticateDecodedRecord(transport, { ...context, commentId: 457 },
+                f.read().comments.find(c => c.id === 457));
+            old.payload.report.deadline = "2026-12-01T00:00:00Z";
+            old.payload.digest = fingerprint(old.payload.report);
+            f.update(db => {
+                db.comments.find(c => c.id === 457).body = state.serializeWorkflowRecord({
+                    kind: "result", status: "Regression investigation result", payload: old.payload }, { ...context, commentId: 457 });
+            });
+        }
+        const before = f.read().comments.find(c => c.id === 457).body;
+        const result = outcome(await run(f, "publish"));
+        assert.equal(result.status, wrongHistory ? "blocked" : "published", result.reason);
+        assert.equal(f.ledger().filter(r => r.kind === "api" && r.method === "PATCH" && r.route === "issues/comments/457").length,
+            wrongHistory ? 1 : 2);
+        assert.equal(f.read().comments.find(c => c.id === 457).body === before, wrongHistory);
+        if (!wrongHistory) assert.notEqual(before, f.read().comments.find(c => c.id === 457).body);
+        assert.equal((await checkpoint(f)).cp.state.budget.consumed.reservedMinutes, 220);
+        assert.equal(f.ledger().filter(r => r.kind === "git" && r.args.includes("bisect")).length, 0);
+    });
+});
+
+test("publication rejects an authenticated current result in an alternate slot", async t => {
+    const f = await fixture(t);
+    assert.equal(outcome(await run(f, "bootstrap")).status, "initialized");
+    assert.equal(outcome(await run(f, "advance")).status, "observed");
+    assert.equal(outcome(await run(f, "advance")).status, "blocked");
+    f.update(db => { db.faults.resultAck = true; });
+    assert.equal(outcome(await run(f, "publish")).status, "blocked");
+    const { context, transport } = await checkpoint(f);
+    const original = f.read().comments.find(c => c.id === 457);
+    const result = await state.authenticateDecodedRecord(transport, { ...context, commentId: 457 }, original);
+    f.update(db => { db.comments.push({ ...original, id: 458, body: state.serializeWorkflowRecord({
+        kind: "result", status: "Regression investigation result", payload: result.payload,
+    }, { ...context, commentId: 458 }) }); });
+    const blocked = outcome(await run(f, "publish"));
+    assert.equal(blocked.status, "blocked");
+    assert.match(blocked.reason, /outside the registered result slot/);
+    assert.equal(f.ledger().filter(r => r.kind === "api" && r.method === "PATCH" && r.route !== "issues/comments/456").length, 1);
+    assert.equal((await checkpoint(f)).cp.state.budget.consumed.reservedMinutes, 110);
+    assert.equal(f.ledger().filter(r => r.kind === "git" && r.args.includes("bisect")).length, 0);
 });
 
 test("pending active owners block; completed unclaimed owners retry with a second charge", async t => {

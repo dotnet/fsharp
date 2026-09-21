@@ -386,8 +386,9 @@ function createObservationCollector({ evidenceDirectory, store }) {
     async function collectObservation({ result, reservation, manifest, context }) {
         requireValue(equal(manifest, context.manifest) && /^[\w-]{1,128}$/.test(reservation.id),
             "collector manifest or work identity mismatch");
-        const references = await store.findEvidence({ runId: reservation.owner.runId,
-            attempt: reservation.owner.attempt, buildInstanceId: reservation.id });
+        const references = [];
+        for (const owner of [reservation.owner, ...(reservation.collectionOwners ?? [])])
+            references.push(...await store.findEvidence({ ...owner, buildInstanceId: reservation.id }));
         requireValue(references.length <= 1, "conflicting durable collections for reservation");
         let collection, reference;
         if (references.length) {
@@ -484,18 +485,24 @@ function createObservationCollector({ evidenceDirectory, store }) {
     return Object.assign(collectObservation, { settleQuota: () => store.settleQuota() });
 }
 
-async function commitCollectedObservation(input, { collectObservation, transport }) {
-    const { loadCheckpoint, commitObservation } = require("./state.cjs");
-    const loaded = await loadCheckpoint(transport, input.context);
-    const record = loaded.checkpoint.records.find(r => r.id === input.reservation.id);
+async function commitCollectedObservation(input, { collectObservation, transport, clock = () => new Date(input.context.now) }) {
+    const { loadCheckpoint, beginCollection, commitObservation } = require("./state.cjs");
+    const context = () => ({ ...input.context, now: clock().toISOString() });
+    const loaded = await loadCheckpoint(transport, context());
+    let record = loaded.checkpoint.records.find(r => r.id === input.reservation.id);
     requireValue(record && record.executionGeneration !== undefined &&
         equal(record.owner, input.reservation.owner) && record.requestDigest === input.reservation.requestDigest &&
         record.epoch === input.reservation.epoch, "missing or changed durable execution claim");
+    if (record.status !== "committed") {
+        const cp = await beginCollection(transport, context(), {
+            generation: loaded.checkpoint.generation, attemptId: record.id });
+        record = cp.records.find(r => r.id === record.id);
+    }
     let collected;
-    try { collected = await collectObservation({ ...input, context: { ...input.context, owner: record.owner } }); }
+    try { collected = await collectObservation({ ...input, reservation: record, context: { ...context(), owner: record.owner } }); }
     finally { await collectObservation.settleQuota?.(); }
-    return commitObservation(transport, input.context, { generation: record.executionGeneration,
-        attemptId: record.id, observation: collected.observation, evidence: collected.evidence, recoveryOwner: record.owner });
+    return commitObservation(transport, context(), { generation: record.collectionGeneration ?? record.executionGeneration,
+        attemptId: record.id, observation: collected.observation, evidence: collected.evidence, recoveryOwner: record.owner, clock });
 }
 
 module.exports = { formObservation, createObservationCollector, commitCollectedObservation };

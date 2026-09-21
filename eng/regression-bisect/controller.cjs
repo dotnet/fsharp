@@ -168,10 +168,16 @@ async function publishController(input, deps) {
             const slotContext = { ...context, commentId: deps.resultCommentId };
             const slot = await authenticateDecodedRecord(deps.transport, slotContext,
                 await deps.transport.getComment(deps.resultCommentId));
-            requireValue(slot?.kind === "proposal" && fingerprint(slot.payload) === fingerprint({
+            const proposal = slot?.kind === "proposal" && fingerprint(slot.payload) === fingerprint({
                 schemaVersion: 1, purpose: "result-slot", repository: context.repository,
                 issueNumber: context.issueNumber, checkpointCommentId: context.commentId,
-            }), "result slot authentication or checkpoint association failed");
+            });
+            const previousResult = slot?.kind === "result" &&
+                slot.payload.report.state.budget.allowanceId === checkpoint.state.budget.allowanceId &&
+                checkpoint.history.some(h => h.epoch === slot.payload.report.state.epoch &&
+                    h.publication.digest === slot.payload.digest &&
+                    [null, deps.resultCommentId].includes(h.publication.commentId));
+            requireValue(proposal || previousResult, "result slot authentication or checkpoint association failed");
             const expectedDigest = ready.digest;
             ready = await preparePublication({ now: now(), generation: ready.generation }, locked);
             if (!["ready", "pending"].includes(ready.status)) return ready;
