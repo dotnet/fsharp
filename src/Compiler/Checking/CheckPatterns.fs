@@ -127,7 +127,7 @@ and TcSimplePat optionalArgsOK checkConstraints (cenv: cenv) ty env patEnv p (at
         TcSimplePat optionalArgsOK checkConstraints cenv ty env patEnv p pattribs
 
 // raise an error if any optional args precede any non-optional args
-and ValidateOptArgOrder (synSimplePats: SynSimplePats) =
+and ValidateOptArgOrder isIndexerSetter (synSimplePats: SynSimplePats) =
 
     let rec getPats synSimplePats =
         match synSimplePats with
@@ -141,13 +141,24 @@ and ValidateOptArgOrder (synSimplePats: SynSimplePats) =
 
     let pats, m = getPats synSimplePats
 
-    let mutable hitOptArg = false
+    let rec check hitOptArg pats =
+        match pats with
+        | [] -> ()
+        | [_] when isIndexerSetter -> ()
+        | pat :: rest ->
+            let isOpt = isOptArg pat
+            if hitOptArg && not isOpt then
+                error(Error(FSComp.SR.tcOptionalArgsMustComeAfterNonOptionalArgs(), m))
+            check (hitOptArg || isOpt) rest
 
-    List.iter (fun pat -> if isOptArg pat then hitOptArg <- true elif hitOptArg then error(Error(FSComp.SR.tcOptionalArgsMustComeAfterNonOptionalArgs(), m))) pats
+    check false pats
 
 
 /// Bind the patterns used in the argument position for a function, method or lambda.
 and TcSimplePats (cenv: cenv) optionalArgsOK checkConstraints ty env patEnv synSimplePats (parsedPatterns: SynPat list * bool) =
+
+    let isIndexerSetter = optionalArgsOK && env.eIsIndexerSetter
+    let env = if env.eIsIndexerSetter then { env with eIsIndexerSetter = false } else env
 
     let rec collectBoundIdTextsFromPat (acc: string list) (p: SynPat) : string list =
         match p with
@@ -208,7 +219,7 @@ and TcSimplePats (cenv: cenv) optionalArgsOK checkConstraints ty env patEnv synS
             namesOut, patEnvR
 
     // 1) validate optional-arg ordering
-    ValidateOptArgOrder synSimplePats
+    ValidateOptArgOrder isIndexerSetter synSimplePats
 
     // 2) bind the current curried group
     let namesOut, patEnvOut = bindCurriedGroup synSimplePats

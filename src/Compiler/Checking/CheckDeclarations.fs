@@ -6094,6 +6094,7 @@ let emptyTcEnv g =
       eCtorInfo = None
       eCallerMemberName = None
       eLambdaArgInfos = []
+      eIsIndexerSetter = false
       eIsControlFlow = false
       eInNameOf = false
       eInObjectExpr = false
