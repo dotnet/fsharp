@@ -8,6 +8,11 @@
     <OtherFlags>$(OtherFlags) --subsystemversion:6.00</OtherFlags>
     <TolerateUnusedBindings>true</TolerateUnusedBindings>
     <Nullable>enable</Nullable>
+    <!-- The window does not compile against the F# compiler: the session's compiler is the SDK's,
+         run as a separate process, and the lexer the window colours with is the host's (see
+         LexicalScanning.fs). FSharp.VS.FSI below references the compiler for the old window, and
+         must not hand it on. -->
+    <DisableTransitiveProjectReferences>true</DisableTransitiveProjectReferences>
   </PropertyGroup>
 
   <ItemGroup>
@@ -22,6 +27,7 @@
       <Link>interactiveProtocol.fs</Link>
     </Compile>
     <Compile Include="InteractiveHost.fs" />
+    <Compile Include="LexicalScanning.fs" />
     <Compile Include="SubmissionAnalysis.fs" />
     <Compile Include="FSharpInteractiveEvaluator.fs" />
     <Compile Include="FSharpVsInteractiveWindowProvider.fs" />
@@ -32,7 +38,6 @@
 
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.Core\FSharp.Core.fsproj" />
-    <ProjectReference Include="$(FSharpSourcesRoot)\Compiler\FSharp.Compiler.Service.fsproj" />
     <!-- For the resource strings the existing F# Interactive window already localises. They move
          here when that window is retired. -->
     <ProjectReference Include="..\FSharp.VS.FSI\FSharp.VS.FSI.fsproj" />

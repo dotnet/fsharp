@@ -24,8 +24,15 @@
     <Compile Include="$(FSharpSourcesRoot)\fsi\interactiveProtocol.fs">
       <Link>interactiveProtocol.fs</Link>
     </Compile>
-    <!-- The submission rule belongs to the Visual Studio window, but depends only on the compiler's
-         tokenizer, so it is exercised here rather than needing a Windows-only test host. -->
+    <!-- The submission rule belongs to the Visual Studio window, but depends only on a lexer, which
+         the window is handed by the editor: the two are exercised together here rather than needing
+         a Windows-only test host. -->
+    <Compile Include="$(MSBuildThisFileDirectory)..\..\vsintegration\src\FSharp.Interactive.Window\LexicalScanning.fs">
+      <Link>LexicalScanning.fs</Link>
+    </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)..\..\vsintegration\src\FSharp.Editor\Commands\InteractiveLexicalScanner.fs">
+      <Link>InteractiveLexicalScanner.fs</Link>
+    </Compile>
     <Compile Include="$(MSBuildThisFileDirectory)..\..\vsintegration\src\FSharp.Interactive.Window\SubmissionAnalysis.fs">
       <Link>SubmissionAnalysis.fs</Link>
     </Compile>
