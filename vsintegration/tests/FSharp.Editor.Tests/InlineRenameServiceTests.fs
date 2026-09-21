@@ -47,12 +47,13 @@ type RenameTest() =
 """
 
     [<Theory>]
-    [<InlineData "_">]
-    [<InlineData "``_``">]
-    let ``Renaming a self identifier that is used to _ is rejected`` (newName: string) =
+    [<InlineData("_", false)>]
+    [<InlineData("``_``", true)>]
+    [<InlineData("self", true)>]
+    let ``A self identifier that is used is renamed only to a referenceable name`` (newName: string, isAccepted: bool) =
         let locations, isValid = rename selfIdentifierWithUse "this.TestMethodThis" newName
         Assert.Equal(2, locations)
-        Assert.False isValid
+        Assert.Equal(isAccepted, isValid)
 
     [<Fact>]
     let ``Renaming a self identifier that is not used to _ is accepted`` () =
@@ -60,10 +61,24 @@ type RenameTest() =
         Assert.Equal(1, locations)
         Assert.True isValid
 
-    [<Fact>]
-    let ``Renaming a self identifier that is used to an ordinary name is accepted`` () =
-        let locations, isValid = rename selfIdentifierWithUse "this.TestMethodThis" "self"
-        Assert.Equal(2, locations)
+    [<Theory>]
+    [<InlineData "Even|Odd">]
+    [<InlineData "Even ->">]
+    let ``An active pattern case is renamed from its declaration and from its uses`` (caretAt: string) =
+        let source =
+            """
+module M
+
+let (|Even|Odd|) n = if n % 2 = 0 then Even else Odd
+
+let f n =
+    match n with
+    | Even -> true
+    | Odd -> false
+"""
+
+        let locations, isValid = rename source caretAt "DivisibleByTwo"
+        Assert.True(locations >= 3, $"Expected the declaration and both uses, got {locations} locations")
         Assert.True isValid
 
     [<Fact>]
