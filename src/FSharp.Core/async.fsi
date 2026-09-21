@@ -71,16 +71,16 @@ namespace Microsoft.FSharp.Control
         /// <category index="0">Starting Async Computations</category>
         /// <example id="run-synchronously-1">
         /// <code lang="fsharp">
-        /// printfn "A" // runs on caller thread
+        /// printn "A" // runs on caller thread
         ///
         /// let result = async {
-        ///     printfn "B" // runs on a background/threadpool thread
+        ///     printn "B" // runs on a background/threadpool thread
         ///     do! Async.Sleep(1000)
-        ///     printfn "C" // continuation runs on a background/threadpool thread
+        ///     printn "C" // continuation runs on a background/threadpool thread
         ///     return 17
         /// } |> Async.RunSynchronously
         ///
-        /// printfn "D" // runs on caller thread
+        /// printn "D" // runs on caller thread
         /// </code>
         /// <p>Prints "A", "B" immediately, then "C", "D" after 1 second.</p>
         /// <p>Yields <c>result = 17</c>.</p>
@@ -113,16 +113,16 @@ namespace Microsoft.FSharp.Control
         /// <category index="0">Starting Async Computations</category>
         /// <example id="run-synchronously-immediate-1">
         /// <code lang="fsharp">
-        /// printfn "A" // runs on calling thread
+        /// printn "A" // runs on calling thread
         ///
         /// let result = async {
-        ///     printfn "B" // ALSO runs on calling thread (hence immediately)
+        ///     printn "B" // ALSO runs on calling thread (hence immediately)
         ///     do! Async.Sleep(1000)
-        ///     printfn "C" // runs in continuation context (depends on SynchronizationContext etc)
+        ///     printn "C" // runs in continuation context (depends on SynchronizationContext etc)
         ///     return 17
         /// } |> Async.RunSynchronouslyImmediate
         ///
-        /// printfn "D" // runs on calling thread
+        /// printn "D" // runs on calling thread
         /// </code>
         /// <p>Prints "A", "B" immediately, then "C", "D" after 1 second.</p>
         /// <p>Yields <c>result = 17</c>.</p>
@@ -141,15 +141,15 @@ namespace Microsoft.FSharp.Control
         ///
         /// <example id="start-1">
         /// <code lang="fsharp">
-        /// printfn "A"
+        /// printn "A"
         ///
         /// async {
-        ///     printfn "B"
+        ///     printn "B"
         ///     do! Async.Sleep(1000)
-        ///     printfn "C"
+        ///     printn "C"
         /// } |> Async.Start
         ///
-        /// printfn "D"
+        /// printn "D"
         /// </code>
         /// Prints "A", then "D", "B" quickly in any order, and then "C" in 1 second.
         /// </example>
@@ -167,18 +167,18 @@ namespace Microsoft.FSharp.Control
         ///
         /// <example id="start-as-task-1">
         /// <code lang="fsharp">
-        /// printfn "A"
+        /// printn "A"
         ///
         /// let t =
         ///     async {
-        ///         printfn "B"
+        ///         printn "B"
         ///         do! Async.Sleep(1000)
-        ///         printfn "C"
+        ///         printn "C"
         ///     } |> Async.StartAsTask
         ///
-        /// printfn "D"
+        /// printn "D"
         /// t.Wait()
-        /// printfn "E"
+        /// printn "E"
         /// </code>
         /// Prints "A", then "D", "B" quickly in any order, then "C", "E" in 1 second.
         /// </example>
@@ -597,7 +597,7 @@ namespace Microsoft.FSharp.Control
         /// |> Async.RunSynchronously
         /// |> function
         ///     | Some (i) -> printfn $"{i}"
-        ///     | None -> printfn "No Result"
+        ///     | None -> printn "No Result"
         /// </code>
         /// Prints one randomly selected odd number in 1-2 seconds. If the list is changed to all even numbers, it will
         /// instead print "No Result".
@@ -624,7 +624,7 @@ namespace Microsoft.FSharp.Control
         /// |> Async.RunSynchronously
         /// |> function
         ///     | Some (i) -> printfn $"{i}"
-        ///     | None -> printfn "No Result"
+        ///     | None -> printn "No Result"
         /// </code>
         /// Will sometimes print one randomly selected odd number, sometimes throw System.Exception("Even numbers not supported: 2").
         /// </example>
@@ -1092,12 +1092,12 @@ namespace Microsoft.FSharp.Control
         /// <example id="sleep-1">
         /// <code lang="fsharp">
         /// async {
-        ///     printfn "A"
+        ///     printn "A"
         ///     do! Async.Sleep(1000)
-        ///     printfn "B"
+        ///     printn "B"
         /// } |> Async.Start
         ///
-        /// printfn "C"
+        /// printn "C"
         /// </code>
         /// Prints "C" and "A" quickly in any order, and then "B" 1 second later
         /// </example>
@@ -1120,11 +1120,11 @@ namespace Microsoft.FSharp.Control
         /// <example id="sleep-2">
         /// <code lang="fsharp">
         /// async {
-        ///     printfn "A"
+        ///     printn "A"
         ///     do! Async.Sleep(TimeSpan(0, 0, 1))
-        ///     printfn "B"
+        ///     printn "B"
         /// } |> Async.Start
-        /// printfn "C"
+        /// printn "C"
         /// </code>
         /// Prints "C", then "A" quickly, and then "B" 1 second later.
         /// </example>
@@ -1312,15 +1312,15 @@ namespace Microsoft.FSharp.Control
         ///
         /// <example id="start-immediate-1">
         /// <code lang="fsharp">
-        /// printfn "A"
+        /// printn "A"
         ///
         /// async {
-        ///     printfn "B"
+        ///     printn "B"
         ///     do! Async.Sleep(1000)
-        ///     printfn "C"
+        ///     printn "C"
         /// } |> Async.StartImmediate
         ///
-        /// printfn "D"
+        /// printn "D"
         /// </code>
         /// Prints "A", "B", "D" immediately, then "C" in 1 second
         /// </example>
@@ -1347,18 +1347,18 @@ namespace Microsoft.FSharp.Control
         ///
         /// <example id="start-immediate-as-task-1">
         /// <code lang="fsharp">
-        /// printfn "A"
+        /// printn "A"
         ///
         /// let t =
         ///     async {
-        ///         printfn "B"
+        ///         printn "B"
         ///         do! Async.Sleep(1000)
-        ///         printfn "C"
+        ///         printn "C"
         ///     } |> Async.StartImmediateAsTask
         ///
-        /// printfn "D"
+        /// printn "D"
         /// t.Wait()
-        /// printfn "E"
+        /// printn "E"
         /// </code>
         /// Prints "A", "B", "D" immediately, then "C", "E" in 1 second.
         /// </example>

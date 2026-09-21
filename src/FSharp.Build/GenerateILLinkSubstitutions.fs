@@ -10,8 +10,12 @@ open Microsoft.Build.Utilities
 /// <summary>
 /// MSBuild task that generates ILLink.Substitutions.xml file to remove F# metadata resources during IL linking.
 /// </summary>
+[<MSBuildMultiThreadableTask>]
 type GenerateILLinkSubstitutions() =
     inherit Task()
+
+    interface IMultiThreadableTask with
+        member val TaskEnvironment = TaskEnvironment.Fallback with get, set
 
     /// <summary>
     /// Assembly name to use when generating resource names to be removed.
@@ -32,6 +36,8 @@ type GenerateILLinkSubstitutions() =
     member val GeneratedItems = [||]: ITaskItem[] with get, set
 
     override this.Execute() =
+        let rootedPath = TaskEnvironmentPaths.rootedPath this
+
         try
             let xmlContent =
                 ILLinkSubstitutions.document this.AssemblyName (ILLinkSubstitutions.names this.AssemblyName)
@@ -40,10 +46,12 @@ type GenerateILLinkSubstitutions() =
             let outputFileName =
                 Path.Combine(this.IntermediateOutputPath, "ILLink.Substitutions.xml")
 
-            Directory.CreateDirectory(this.IntermediateOutputPath) |> ignore
+            Directory.CreateDirectory(rootedPath this.IntermediateOutputPath) |> ignore
 
-            if not (File.Exists outputFileName && File.ReadAllText(outputFileName) = xmlContent) then
-                File.WriteAllText(outputFileName, xmlContent)
+            let outputPath = rootedPath outputFileName
+
+            if not (File.Exists outputPath) || File.ReadAllText(outputPath) <> xmlContent then
+                File.WriteAllText(outputPath, xmlContent)
 
             let item = TaskItem(outputFileName.Replace("%", "%25")) :> ITaskItem
             item.SetMetadata("LogicalName", "ILLink.Substitutions.xml")
