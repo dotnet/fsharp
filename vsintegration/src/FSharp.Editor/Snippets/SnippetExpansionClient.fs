@@ -36,19 +36,34 @@ module internal SnippetExpansionHelpers =
 
         width
 
+    let tabSizeOf (options: IEditorOptions) =
+        options.GetOptionValue DefaultOptions.TabSizeOptionId
+
+    /// The column `length` characters into `line`, with tabs counted at the width they render at.
+    let visualColumnAt tabSize (line: ITextSnapshotLine) length =
+        let snapshot = line.Snapshot
+        let start = line.Start.Position
+        let mutable column = 0
+
+        for offset in 0 .. length - 1 do
+            column <- SnippetIndentation.advanceColumn tabSize column snapshot[start + offset]
+
+        column
+
     /// Indentation spelled the way the document is configured to spell it, rather than the way this
     /// file happens to. F# registers `DefaultToInsertSpaces`, but the setting is the user's.
     let indentTextOf (options: IEditorOptions) width =
         if options.GetOptionValue DefaultOptions.ConvertTabsToSpacesOptionId then
             String(' ', width)
         else
-            let tabSize = options.GetOptionValue DefaultOptions.TabSizeOptionId
+            let tabSize = tabSizeOf options
             String('\t', width / tabSize) + String(' ', width % tabSize)
 
     /// Whether the line starts a directive wrapper, asking the snapshot for the one character that
     /// settles it before falling back to comparing the already-fetched text against known prefixes.
-    let startsRootLevelDirective (line: ITextSnapshotLine) indent (text: string) =
-        line.Snapshot[line.Start.Position + indent] = '#'
+    /// `leadingWhitespace` is the number of characters before the first non-blank one.
+    let startsRootLevelDirective (line: ITextSnapshotLine) leadingWhitespace (text: string) =
+        line.Snapshot[line.Start.Position + leadingWhitespace] = '#'
         && SnippetIndentation.isRootLevelDirective text
 
     /// Scans one line's text from `lexState`, threading the state a later line needs to know whether
@@ -61,7 +76,7 @@ module internal SnippetExpansionHelpers =
     /// The kind and indentation of every line `FormatSpan` was given, threading the lexer state
     /// across them so a `SelectedRest` line that opens inside a string - continuing one that started
     /// on an earlier selected line - is left alone rather than reindented into the string's value.
-    let classifyLines (snapshot: ITextSnapshot) (span: VsTextSpan) selectedLines =
+    let classifyLines tabSize (snapshot: ITextSnapshot) (span: VsTextSpan) selectedLines =
         let sourceTokenizer = FSharpSourceTokenizer([], None, None)
         let lastLine = min span.iEndLine (snapshot.LineCount - 1)
         let mutable lexState = FSharpTokenizerLexState.Initial
@@ -69,18 +84,19 @@ module internal SnippetExpansionHelpers =
         [
             for lineNumber in span.iStartLine .. lastLine ->
                 let line = snapshot.GetLineFromLineNumber lineNumber
-                let indent = leadingWhitespaceOf line
+                let leadingWhitespace = leadingWhitespaceOf line
+                let indent = visualColumnAt tabSize line leadingWhitespace
                 let text = line.GetText()
                 let enteringLexState = lexState
 
                 lexState <- lexStateAfter (sourceTokenizer.CreateLineTokenizer text) lexState
 
                 let kind =
-                    if indent = line.Length then
+                    if leadingWhitespace = line.Length then
                         SnippetIndentation.Blank
                     elif SnippetIndentation.isInsideString (FSharpLineTokenizer.ColorStateOfLexState enteringLexState) then
                         SnippetIndentation.InsideString
-                    elif startsRootLevelDirective line indent text then
+                    elif startsRootLevelDirective line leadingWhitespace text then
                         SnippetIndentation.RootLevelDirective
                     else
                         match selectedLines with
@@ -225,6 +241,10 @@ type internal FSharpSnippetExpansionClient
         | null, _
         | _, null -> false
         | expansionManager, viewAdapter ->
+            // A cancelled Surround With never reports back, so its selection is still pending here.
+            pendingSurround <- ValueNone
+            surround <- ValueNone
+
             let spans = [| shortcutSpan |]
             let mutable path = null
             let mutable title = null
@@ -371,12 +391,16 @@ type internal FSharpSnippetExpansionClient
                     | ValueSome s -> ValueSome(span.iStartLine + s.FieldLine, span.iStartLine + s.FieldLine + s.LineCount - 1)
                     | ValueNone -> ValueNone
 
+                let tabSize = tabSizeOf textView.Options
+
                 let placement =
                     match surround with
                     | ValueSome s -> SnippetIndentation.AroundSelection(s.Column, s.FieldIndent)
-                    | ValueNone -> SnippetIndentation.AtCaret span.iStartIndex
+                    | ValueNone ->
+                        let startLine = snapshot.GetLineFromLineNumber span.iStartLine
+                        SnippetIndentation.AtCaret(visualColumnAt tabSize startLine span.iStartIndex)
 
-                let lines = classifyLines snapshot span selectedLines
+                let lines = classifyLines tabSize snapshot span selectedLines
 
                 use edit = subjectBuffer.CreateEdit()
 
@@ -387,7 +411,9 @@ type internal FSharpSnippetExpansionClient
                     if delta > 0 then
                         edit.Insert(line.Start.Position, indentTextOf textView.Options delta) |> ignore
                     elif delta < 0 then
-                        edit.Delete(line.Start.Position, -delta) |> ignore)
+                        // A negative delta unindents the line entirely, and the indent is measured
+                        // in columns while the edit removes characters.
+                        edit.Delete(line.Start.Position, leadingWhitespaceOf line) |> ignore)
 
                 edit.Apply() |> ignore
 

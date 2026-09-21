@@ -86,6 +86,23 @@ module SnippetIndentationTests =
 
         Assert.Equal<int list>([ 8; 12; 8 ], columnsAfter (AtCaret 8) lines)
 
+    [<Theory>]
+    [<InlineData(4, 0, '\t', 4)>]
+    [<InlineData(4, 1, '\t', 4)>]
+    [<InlineData(4, 4, '\t', 8)>]
+    [<InlineData(4, 0, 'a', 1)>]
+    let ``A tab runs on to the next tab stop and any other character takes one column``
+        (tabSize: int, column: int, character: char, expected: int)
+        =
+        Assert.Equal(expected, advanceColumn tabSize column character)
+
+    [<Fact>]
+    let ``Insert Snippet after a tab nests the body by the tab's width`` () =
+        // <TAB>if| + Tab: the body sits one level in from the `if`, which itself starts at column 4.
+        let column = "\t" |> Seq.fold (advanceColumn 4) 0
+
+        Assert.Equal<int list>([ 4; 8; 4 ], columnsAfter (AtCaret column) [ template 4; template 4; template 0 ])
+
     [<Fact>]
     let ``Insert Snippet still pins a directive to column zero`` () =
         let lines = [ directive 8; template 4; directive 0 ]
