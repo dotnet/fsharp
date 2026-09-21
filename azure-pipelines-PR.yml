@@ -471,8 +471,14 @@ stages:
           - pwsh: .\eng\MockBuild.ps1
             displayName: Build with OfficialBuildId
 
-        # Linux
+        # Linux (split into 2 batches to limit test-process memory; batch 3 is desktop-only)
         - job: Linux
+          strategy:
+            matrix:
+              Batch1:
+                batchNumber: 1
+              Batch2:
+                batchNumber: 2
           pool:
             name: $(DncEngPublicBuildPool)
             demands: ImageOverride -equals $(LinuxMachineQueueName)
@@ -483,13 +489,13 @@ stages:
           steps:
           - checkout: self
             clean: true
-          - script: ./eng/cibuild.sh --configuration $(_BuildConfig) --testcoreclr
+          - script: ./eng/cibuild.sh --configuration $(_BuildConfig) --testcoreclrbatch $(batchNumber)
             displayName: Build / Test
           - task: PublishTestResults@2
             displayName: Publish Test Results
             inputs:
               testResultsFormat: 'XUnit'
-              testRunTitle: Linux
+              testRunTitle: Linux Batch$(batchNumber)
               testResultsFiles: '*.xml'
               # See eng/templates/batched-test-steps.yml: publish each assembly file as its own
               # run to avoid the merge-time "No matching test case result" warning flood and the
@@ -502,7 +508,7 @@ stages:
             displayName: Publish Test Logs
             inputs:
               PathtoPublish: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
-              ArtifactName: 'Linux $(_BuildConfig) test logs'
+              ArtifactName: 'Linux $(_BuildConfig) Batch$(batchNumber) test logs'
               publishLocation: Container
             continueOnError: true
             condition: failed()
@@ -513,7 +519,7 @@ stages:
             displayName: Publish NuGet cache contents
             inputs:
               PathtoPublish: '$(Build.SourcesDirectory)/artifacts/NugetPackageRootContents'
-              ArtifactName: 'NuGetPackageContents Linux'
+              ArtifactName: 'NuGetPackageContents Linux Batch$(batchNumber)'
               publishLocation: Container
             continueOnError: true
             condition: failed()
