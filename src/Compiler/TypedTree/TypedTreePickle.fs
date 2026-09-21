@@ -2723,7 +2723,7 @@ let rec p_tycon_repr x st =
 
             let allFieldsText =
                 fields
-                |> Array.map (fun f -> f.LogicalName)
+                |> Array.map _.LogicalName
                 |> String.concat System.Environment.NewLine
 
             raise (Error(FSComp.SR.pickleFsharpCoreBackwardsCompatible ("fields in union", allFieldsText), firstFieldRange))
@@ -2826,6 +2826,9 @@ and p_rfield_table x st =
     p_array p_recdfield_spec x.FieldsByIndex st
 
 and p_entity_spec_data (x: Entity) st =
+    if not x.IsLinked then
+        pfailwith st "p_entity_spec_data: entity was never linked during unpickling"
+
     p_tyar_specs x.Typars st
     p_string x.entity_logical_name st
     p_option p_string x.EntityCompiledName st
