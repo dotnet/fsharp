@@ -1,8 +1,10 @@
 module Language.RuntimeAsyncTests
 
 open Xunit
+open FSharp.Test
 open FSharp.Test.Compiler
 open System.IO
+open System.Text.RegularExpressions
 
 let private runtimeAsyncSource = """
 module RuntimeAsyncTest
@@ -79,6 +81,168 @@ type Calculator() =
 """
 
 #if NETCOREAPP
+let private nestedTaskSource = """module NestedTask
+
+open System.Threading.Tasks
+open System.Runtime.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers
+
+let run (ready: Task<int>) : Task<int> =
+    __runtimeAsyncReturn (
+        let child = task {
+            let value = AsyncHelpers.Await ready
+            return value + 1
+        }
+        AsyncHelpers.Await child)
+"""
+
+[<Theory>]
+[<InlineData(false, "direct")>]
+[<InlineData(true, "direct")>]
+[<InlineData(false, "local")>]
+[<InlineData(true, "local")>]
+[<InlineData(false, "imported")>]
+[<InlineData(true, "imported")>]
+[<InlineData(false, "unit")>]
+[<InlineData(true, "unit")>]
+let ``Issue 20576 rejects runtime Await in ordinary task methods`` (optimize: bool, shape: string) =
+    let configure = withLangVersionPreview >> withFSharpCoreShippedNet >> withOptimization optimize
+    let helper = "let inline awaitValue (ready: Task<int>) = System.Runtime.CompilerServices.AsyncHelpers.Await ready"
+    let source, references =
+        match shape with
+        | "direct" -> nestedTaskSource, []
+        | "local" ->
+            nestedTaskSource
+                .Replace("let child = task {", $"{helper}\n        let child = task {{")
+                .Replace("let value = AsyncHelpers.Await ready", "let value = awaitValue ready"), []
+        | "imported" ->
+            let library = FSharp($"module AwaitLibrary\nopen System.Threading.Tasks\n{helper}") |> asLibrary |> withName "AwaitLibrary" |> configure
+            library |> compile |> shouldSucceed |> ignore
+            nestedTaskSource.Replace("let value = AsyncHelpers.Await ready", "let value = AwaitLibrary.awaitValue ready"), [ library ]
+        | "unit" ->
+            nestedTaskSource.Replace("Task<int>", "Task<unit>").Replace("let value = AsyncHelpers.Await ready", "AsyncHelpers.Await ready").Replace("return value + 1", "return ()"), []
+        | _ -> failwith $"Unexpected shape: {shape}"
+    let result =
+        FSharp source
+        |> asLibrary
+        |> configure
+        |> withReferences references
+        |> compile
+    result |> shouldFail |> withErrorCode 3918 |> ignore
+    let ranges =
+        match optimize, shape with
+        // Optimized task-template inlining attributes the call to the inner task keyword.
+        | true, "local" -> [10, 21, 25]
+        | true, _ -> [9, 21, 25]
+        | false, "direct" -> [10, 25, 49]
+        | false, "local" -> [9, 52, 108; 11, 25, 41]
+        | false, "imported" -> [10, 25, 54]
+        | false, "unit" -> [10, 13, 37]
+        | _ -> failwith $"Unexpected shape: {shape}"
+    Assert.Equal(ranges.Length, result.Output.Diagnostics.Length)
+    Assert.Equal(ranges.Length, result.Output.PerFileErrors.Length)
+    result
+    |> withDiagnostics [
+        for line, startCol, endCol in ranges ->
+            Error 3918, Line line, Col startCol, Line line, Col endCol,
+            "Runtime async suspension method 'Await' may only be called from a runtime async method."
+    ]
+    |> ignore
+
+[<Theory>]
+[<InlineData(false)>]
+[<InlineData(true)>]
+let ``Issue 20576 preserves ordinary task composition`` (optimize: bool) =
+    let result =
+        FSharp """
+module TaskComposition
+open System
+open System.Threading.Tasks
+open System.Runtime.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers
+
+let child (ready: Task<'T>) : Task<'T> = __runtimeAsyncReturn (AsyncHelpers.Await ready)
+
+let run (before: Task<unit>) (ready: Task<'T>) (after: Task<unit>)
+        (enteredReady: TaskCompletionSource<unit>) (enteredAfter: TaskCompletionSource<unit>) marked transform : Task<'U> =
+    __runtimeAsyncReturn (
+        AsyncHelpers.Await before
+        let nested = task {
+            enteredReady.SetResult ()
+            let! value = if marked then child ready else ready
+            return transform value
+        }
+        let result = AsyncHelpers.Await nested
+        enteredAfter.SetResult ()
+        AsyncHelpers.Await after
+        result)
+
+let gate<'T> () = TaskCompletionSource<'T>(TaskCreationOptions.RunContinuationsAsynchronously)
+let wait (work: Task<'T>) = work.WaitAsync(TimeSpan.FromSeconds 30.).GetAwaiter().GetResult()
+let pending (work: Task) = if work.IsCompleted then failwith "Expected pending operation"
+
+let check marked input transform expected =
+    let before, ready, after = gate<unit>(), gate<_>(), gate<unit>()
+    let enteredReady, enteredAfter = gate<unit>(), gate<unit>()
+    let work = run before.Task ready.Task after.Task enteredReady enteredAfter marked transform
+    pending work
+    before.SetResult ()
+    wait enteredReady.Task
+    pending work
+    ready.SetResult input
+    wait enteredAfter.Task
+    pending work
+    after.SetResult ()
+    if wait work <> expected then failwith "Unexpected result"
+
+[<EntryPoint>]
+let main _ =
+    for marked in [false; true] do
+        check marked 41 ((+) 1) 42
+        check marked "forty" (fun value -> value + "-two") "forty-two"
+        let mutable observed = false
+        check marked () (fun () -> observed <- true) ()
+        if not observed then failwith "Missing unit side effect"
+    0
+"""
+        |> withLangVersionPreview
+        |> withFSharpCoreShippedNet
+        |> withOptimization optimize
+        |> compileExeAndRun
+        |> shouldSucceed
+    result |> withMetadataReader (fun md ->
+        let methods = [ for handle in md.MethodDefinitions -> md.GetMethodDefinition handle ]
+        let generatedNames = ["MoveNext"; "SetStateMachine"; "get_ResumptionPoint"; "get_Data"; "set_Data"]
+        for name in generatedNames do
+            let method = methods |> List.filter (fun method -> md.GetString method.Name = name) |> Assert.Single
+            Assert.Equal(0, int method.ImplAttributes &&& 0x2000)
+            if name = "MoveNext" then
+                let mutable signature = md.GetBlobReader method.Signature
+                Assert.False(signature.ReadSignatureHeader().IsGeneric)
+                Assert.Equal(0, signature.ReadCompressedInteger())
+                Assert.Equal(System.Reflection.Metadata.SignatureTypeCode.Void, signature.ReadSignatureTypeCode())
+        for name in ["child"; "run"] do
+            let method = methods |> List.filter (fun method -> md.GetString method.Name = name) |> Assert.Single
+            Assert.Equal(0x2000, int method.ImplAttributes &&& 0x2000)
+        if optimize then
+            let liftedChild =
+                methods |> List.filter (fun method -> md.GetString method.Name = "Invoke" && int method.ImplAttributes &&& 0x2000 <> 0)
+            Assert.Single(liftedChild) |> ignore)
+    let _, _, il = ILChecker.verifyILAndReturnActual [] result.OutputPath.Value []
+    let methodBody name =
+        Regex.Match(il, @"(?ms)^(?<indent>[ \t]*)\.method[^{}]*\b" + name + @"(?:<[^>]+>)?\([^{}]*\{.*?^\k<indent>\}").Value
+    let moveNext = methodBody "MoveNext"
+    Assert.NotEmpty(moveNext)
+    Assert.Contains("void", moveNext)
+    Assert.DoesNotContain("AsyncHelpers::Await", moveNext)
+    if optimize then
+        Assert.Contains("AsyncHelpers::Await", methodBody "Invoke")
+        Assert.Contains("FSharpFunc`2", moveNext)
+    else
+        Assert.Contains("TaskComposition::child", moveNext)
+    for name in ["child"; "run"] do
+        Assert.Contains("AsyncHelpers::Await", methodBody name)
+
 let private runtimeAsyncCrossAssemblyLibrary = """
 module RuntimeAsyncCrossAssemblyLibrary
 
