@@ -4,7 +4,6 @@ open Xunit
 open FSharp.Test
 open FSharp.Test.Compiler
 open System.IO
-open System.Runtime.InteropServices
 
 module TryCatch =
 
@@ -96,7 +95,7 @@ module TryCatch =
            let result = CompilerAssert.ExecuteAndReturnResult (dllFile, isFsx=false, deps = s.Dependencies, newProcess=true)
            printfn "%A" result
 
-           Assert.True(isExpectedStackOverflow (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) result, sprintf "%A" result)
+           Assert.True(isExpectedStackOverflow (TestFramework.getOperatingSystem () = "osx") result, sprintf "%A" result)
 
         | _ -> failwith (sprintf "%A" compilationResult)
 
