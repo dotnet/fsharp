@@ -235,6 +235,34 @@ let main _ = 0
         |> ignore
 
     [<Theory>]
+    [<InlineData("try failwith \"enter\" with _ -> local ()")>]
+    [<InlineData("try failwith \"enter\" with _ -> local (); System.GC.KeepAlive 1")>]
+    [<InlineData("try failwith \"enter\" with _ when (local (); true) -> ()")>]
+    [<InlineData("try (try failwith \"enter\" finally local ()) with _ -> ()")>]
+    [<InlineData("try failwith \"enter\" with _ -> try local () finally System.GC.KeepAlive 1")>]
+    let ``let elimination preserves a handler-local stackalloc helper`` (body: string) =
+        for allocation in [
+            "let allocate = System.Func<unit, unit>(fun () -> NativePtr.stackalloc<int> 1 |> ignore) in allocate.Invoke ()"
+            "let allocate () = NativePtr.stackalloc<int> 1 |> ignore in allocate ()"
+        ] do
+            for optimize in [ false; true ] do
+                FSharp $"""
+module Test
+open Microsoft.FSharp.NativeInterop
+let run () = {body.Replace("local ()", allocation)}
+[<EntryPoint>]
+let main _ =
+    run ()
+    0
+"""
+                |> withNoWarn 9
+                |> withOptimization optimize
+                |> compileExeAndRun
+                |> shouldSucceed
+                |> verifyILContains [ "localloc" ]
+                |> ignore
+
+    [<Theory>]
     [<InlineData("try NativePtr.stackalloc<int> n |> ignore with _ -> ()")>]
     [<InlineData("try NativePtr.stackalloc<int> n |> ignore finally System.GC.KeepAlive n")>]
     [<InlineData("for _ in 1..n do NativePtr.stackalloc<int> 1 |> ignore")>]
