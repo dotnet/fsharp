@@ -54,7 +54,7 @@ build.VisitAllChildren<Task>(fun task ->
             printfn "=== %s ===" projectName
             for msg in timingMessages do
                 printfn "  %s" msg
-            printfn ""
+            printn ""
 )
 
 if not foundFscTasks then

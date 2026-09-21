@@ -9,7 +9,7 @@ type LanguageFeature =
     | PackageManagement
     | FromEndSlicing
     | ResumableStateMachines
-    | DefaultInterfaceMemberConsumption
+    | RuntimeAsync
     | WitnessPassing
     | AdditionalTypeDirectedConversions
     | StringInterpolation
@@ -20,17 +20,14 @@ type LanguageFeature =
     | AttributesToRightOfModuleKeyword
     | ReallyLongLists
     | ErrorOnDeprecatedRequireQualifiedAccess
-    | RequiredPropertiesSupport
     | SelfTypeConstraints
     | MatchNotAllowedForUnionCaseWithNoData
     | CSharpExtensionAttributeNotRequired
     | ErrorForNonVirtualMembersOverrides
-    | ErrorReportingOnStaticClasses
     | WarningWhenCopyAndUpdateRecordChangesAllFields
     | NonInlineLiteralsAsPrintfFormat
     | WarningWhenMultipleRecdTypeChoice
     | ConstraintIntersectionOnFlexibleTypes
-    | StaticLetInRecordsDusEmptyTypes
     | WarningWhenTailRecAttributeButNonTailRecUsage
     | UnmanagedConstraintCsharpInterop
     | ReuseSameFieldsInStructUnions
@@ -73,7 +70,11 @@ type LanguageFeature =
     | AccessProtectedBaseFieldFromClosure
     | ImprovedImpliedArgumentNamesPartTwo
     | RecordSpreads
+    | RequireNamedArguments
+    | TypeArgumentDependencyOrdering
     | ErrorOnBitwiseOpsOnNonIntegralEnums
+    | OptimizeClosureIfNotInlined
+    | ReraiseInComputationExpressions
 
 /// LanguageVersion management
 type LanguageVersion =
