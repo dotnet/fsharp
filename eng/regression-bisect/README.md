@@ -188,6 +188,13 @@ and reproduction runners execute only inside that adapter. SDK-update CI and
 candidate or parent. Stable pass, main pass, setup failures, flakes and no
 source-green interval stop/block before **any** Git bisect operation. Current
 input/main/stable/image changes invalidate evidence, never cumulative counters.
+On `advance`, the CLI reconciles fetched main with the saved
+epoch under the issue lock, including when stable evidence will immediately
+stop or block. Unchanged stable evidence is retained; main changes alone do not
+charge another stable worker. `publish` still requeues stale main without
+rewriting a result: run `advance`, then `publish` for a reportable blocked
+investigation. Passing endpoints retain the existing stopped/no-publication
+behavior. Neither path resets the allowance or extends its deadline.
 The 24 builds/40 units/720 minutes/two attempts and repetitions/90-minute build/
 110-minute worker/300-second reproduction limits are unchanged. Six
 reservations cost 660 minutes even if they finish immediately.

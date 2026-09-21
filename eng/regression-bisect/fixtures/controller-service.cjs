@@ -120,6 +120,10 @@ async function fixture(t) {
     const update = action => { const value = read(); action(value); fs.writeFileSync(serviceFile, json(value)); };
     return { directory, config, configPath, serviceFile, env, context, approval, read, update,
         ledger: () => fs.existsSync(`${serviceFile}.ledger`) ? fs.readFileSync(`${serviceFile}.ledger`, "utf8").trim().split("\n").filter(Boolean).map(JSON.parse) : [],
+        moveMain() {
+            git(["commit", "--quiet", "--allow-empty", "-m", "next fixture main"]);
+            return git(["rev-parse", "HEAD"]);
+        },
         nextRun() {
             update(db => { const old = db.runs[`${env.GITHUB_RUN_ID}/1`]; old.status = "completed"; old.conclusion = "cancelled";
                 env.GITHUB_RUN_ID = String(Number(env.GITHUB_RUN_ID) + 1);

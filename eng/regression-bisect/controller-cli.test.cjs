@@ -364,24 +364,64 @@ test("actual CLI retains issue ownership past a quota timeout until outstanding 
     assert.equal(f.ledger().filter(r => r.kind === "git" && r.args.includes("bisect")).length, 0);
 });
 
-test("official metadata changes invalidate the evidence epoch, never its spent allowance", async t => {
-    for (const interrupted of [false, true]) await t.test(String(interrupted), async t => {
+test("current endpoint changes invalidate the evidence epoch, never its spent allowance", async t => {
+    for (const changed of ["metadata", "main"]) for (const interrupted of [false, true]) await t.test(`${changed}/${interrupted}`, async t => {
         const f = await fixture(t);
         assert.equal(outcome(await run(f, "bootstrap")).status, "initialized");
         if (interrupted) f.update(db => { db.faults.workerAck = true; });
         assert.equal(outcome(await run(f, "advance")).status, interrupted ? "blocked" : "observed");
         const before = (await checkpoint(f)).cp;
         if (interrupted) f.nextRun();
-        f.update(db => { db.faults.newMetadata = true; });
+        if (changed === "main") f.moveMain();
+        else f.update(db => { db.faults.newMetadata = true; });
+        const launches = changed === "metadata" || interrupted ? 2 : 1;
         const result = outcome(await run(f, "advance"));
-        assert.equal(result.status, "observed", result.reason);
+        assert.equal(result.status, launches === 2 ? "observed" : "blocked", result.reason);
         const after = (await checkpoint(f)).cp;
         assert.notEqual(after.state.epoch, before.state.epoch);
         assert.equal(after.state.budget.allowanceId, before.state.budget.allowanceId);
-        assert.equal(after.state.budget.consumed.workerUnits, 2);
-        assert.equal(after.state.budget.consumed.reservedMinutes, 220);
+        assert.equal(after.state.budget.consumed.workerUnits, launches);
+        assert.equal(after.state.budget.consumed.reservedMinutes, launches * 110);
         assert.equal(after.deadline, before.deadline);
         assert.equal(after.records[0].status, interrupted ? "invalidated" : "committed");
+        assert.equal(f.ledger().filter(r => r.kind === "worker").length, launches);
+        assert.equal(f.ledger().filter(r => r.kind === "git" && r.args.includes("bisect")).length, 0);
+    });
+});
+
+test("main refresh reconciles terminal endpoints before returning without another worker", async t => {
+    for (const scenario of ["blocked", "published", "stopped"]) await t.test(scenario, async t => {
+        const f = await fixture(t);
+        assert.equal(outcome(await run(f, "bootstrap")).status, "initialized");
+        if (scenario === "stopped") await seed(f, "stable", "pass");
+        else assert.equal(outcome(await run(f, "advance")).status, "observed");
+        const status = scenario === "stopped" ? "stopped" : "blocked";
+        assert.equal(outcome(await run(f, "advance")).status, status);
+        if (scenario === "published") assert.equal(outcome(await run(f, "publish")).status, "published");
+        const before = (await checkpoint(f)).cp;
+        const main = f.moveMain();
+        const stale = outcome(await run(f, "publish"));
+        assert.equal(stale.status, "requeue");
+        assert.match(stale.reason, /stale main head/);
+        for (let i = 0; i < 2; i++) {
+            const result = outcome(await run(f, "advance"));
+            assert.equal(result.status, status, result.reason);
+            const after = (await checkpoint(f)).cp;
+            assert.equal(after.state.pinnedMainSha, main);
+            assert.notEqual(after.state.epoch, before.state.epoch);
+            assert.equal(after.state.endpointEvidence.stable, before.state.endpointEvidence.stable);
+            assert.deepEqual(after.state.budget.consumed, before.state.budget.consumed);
+            assert.equal(after.state.budget.allowanceId, before.state.budget.allowanceId);
+            assert.equal(after.deadline, before.deadline);
+            assert.equal(after.history.length, before.history.length + 1);
+            const published = outcome(await run(f, "publish"));
+            assert.equal(published.status, scenario === "stopped" ? "blocked" : "published", published.reason);
+            if (scenario === "stopped") assert.match(published.reason, /publication is stopped/);
+        }
+        assert.equal(f.ledger().filter(r => r.kind === "worker").length, scenario === "stopped" ? 0 : 1);
+        assert.equal(f.ledger().filter(r => r.kind === "git" && r.args.includes("bisect")).length, 0);
+        assert.equal(f.ledger().filter(r => r.kind === "api" && r.method === "PATCH" && r.route === "issues/comments/457").length,
+            scenario === "published" ? 2 : scenario === "blocked" ? 1 : 0);
     });
 });
 
@@ -452,6 +492,86 @@ test("production cannot substitute missing, forged or stale containment receipts
     await assert.rejects(containment(f.config, f.directory, {}), /digest mismatch/);
     f.config.containment.reportSha256 = contracts.digest('{"status":"passed"}');
     await assert.rejects(containment(f.config, f.directory, {}), /incomplete or stale/);
+    noExecution(f);
+});
+
+test("synthetic file-backed containment attestation checks every receipt and current binding", async t => {
+    const f = await fixture(t);
+    const { containment } = require("./controller-cli.cjs");
+    const modes = ["inspect", "disk", "pids", "cpu", "memory", "malformed", "timeout"];
+    const runtime = { ID: "synthetic-daemon", ServerVersion: "28.0.1", KernelVersion: "synthetic-kernel",
+        OperatingSystem: "synthetic-linux", CgroupVersion: "2",
+        SecurityOptions: ["name=seccomp,profile=builtin", "name=apparmor"] };
+    const helperPath = "eng/regression-bisect/container-entry.cjs";
+    const helper = { path: helperPath, sha256: contracts.digest(await fs.readFile(path.join(__dirname, "container-entry.cjs"))) };
+    const stale = /incomplete or stale/, receiptMismatch = /runtime or cleanup attestation mismatch/;
+    const cases = [
+        ["accepted", () => {}, null],
+        ["report status", s => { s.report.status = "incomplete"; }, stale],
+        ["report image", s => { s.report.image = "untrusted"; }, stale],
+        ["report source", s => { s.report.sourceSha256 = contracts.digest("old smoke"); }, stale],
+        ["report config", s => { s.report.configSha256 = contracts.digest("old config"); }, stale],
+        ["missing case", s => { s.report.cases.pop(); }, stale],
+        ["duplicate case", s => { s.report.cases[1] = s.report.cases[0]; }, stale],
+        ["reordered cases", s => { s.report.cases.reverse(); }, stale],
+        ["failed case", s => { s.report.cases[0].passed = false; }, stale],
+        ["changed configuration", s => { s.container.limits.cpus++; }, /configuration has changed/],
+        ["worker not started", s => { s.receipt.workerStarted = false; }, receiptMismatch],
+        ["receipt image", s => { s.receipt.image = "untrusted"; }, receiptMismatch],
+        ["missing resource", s => { s.receipt.resources.pop(); }, receiptMismatch],
+        ["missing cleanup", s => { s.receipt.cleanup.pop(); }, receiptMismatch],
+        ["incomplete cleanup", s => { s.receipt.cleanup[0].removed = false; }, receiptMismatch],
+        ["helper inventory digest", s => { s.receipt.helperDigest = contracts.digest("wrong"); }, receiptMismatch],
+        ["changed helper bytes", s => { s.receipt.helpers[0].sha256 = contracts.digest("old helper");
+            s.receipt.helperDigest = fingerprint(s.receipt.helpers); }, /helper bytes have changed/],
+        ["unsafe helper path", s => { s.receipt.helpers[0].path = "../outside";
+            s.receipt.helperDigest = fingerprint(s.receipt.helpers); }, /path/],
+        ...Object.keys(runtime).flatMap(key => [
+            [`changed runtime ${key}`, s => { s.receipt.runtime[key] = "changed"; }, receiptMismatch],
+            [`missing current runtime ${key}`, s => { delete s.runtime[key]; }, receiptMismatch],
+        ]),
+        ...modes.map(mode => [`invalid ${mode} receipt`, s => { s.mode = mode; s.receipt.workerStarted = false; }, receiptMismatch]),
+    ];
+    for (const [name, change, expected] of cases) await t.test(name, async () => {
+        const config = structuredClone(f.config);
+        const container = structuredClone(config.container);
+        const report = { status: "passed", image, configSha256: contracts.digest(JSON.stringify(container)),
+            sourceSha256: contracts.digest(await fs.readFile(path.join(__dirname, "containment.smoke.cjs"))),
+            cases: modes.map(mode => ({ mode, passed: true })) };
+        const receipt = { workerStarted: true, image, runtime, helpers: [helper], helperDigest: fingerprint([helper]),
+            resources: modes.slice(0, 4).map(name => ({ name })), cleanup: modes.slice(0, 4).map(name => ({ name, removed: true })) };
+        const s = structuredClone({ report, container, receipt, runtime, mode: "inspect" });
+        change(s);
+        const directory = path.join(f.directory, "containment");
+        await fs.mkdir(directory, { recursive: true });
+        const write = async (file, value) => {
+            const raw = JSON.stringify(value);
+            await fs.writeFile(path.join(directory, file), raw);
+            return contracts.digest(raw);
+        };
+        config.containment.reportSha256 = await write("containment.json", s.report);
+        config.containment.configSha256 = await write("container.json", s.container);
+        for (const mode of modes) {
+            await fs.mkdir(path.join(directory, mode), { recursive: true });
+            config.containment.receiptSha256[mode] = await write(path.join(mode, "receipt.json"), mode === s.mode ? s.receipt : receipt);
+        }
+        // Keep the report's config binding current so changed settings reach the config comparison.
+        if (name === "changed configuration") {
+            s.report.configSha256 = config.containment.configSha256;
+            config.containment.reportSha256 = await write("containment.json", s.report);
+        }
+        if (expected) await assert.rejects(containment(config, directory, s.runtime), expected);
+        else {
+            await containment(config, directory, s.runtime);
+            await fs.appendFile(path.join(directory, "container.json"), " ");
+            await assert.rejects(containment(config, directory, s.runtime), /configuration has changed/);
+            await write("container.json", s.container);
+            await fs.appendFile(path.join(directory, "timeout", "receipt.json"), " ");
+            await assert.rejects(containment(config, directory, s.runtime), /receipt digest mismatch/);
+            await fs.unlink(path.join(directory, "timeout", "receipt.json"));
+            await assert.rejects(containment(config, directory, s.runtime), /ENOENT/);
+        }
+    });
     noExecution(f);
 });
 

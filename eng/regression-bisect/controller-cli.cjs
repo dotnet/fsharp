@@ -487,10 +487,15 @@ async function main(args = process.argv.slice(2), env = process.env) {
             };
             const entry = { repository, issueNumber: input.issueNumber };
             if (input.mode === "bootstrap") return await bootstrapController(entry, deps);
-            const loaded = await state.loadCheckpoint(transport, context, { requiredEvidenceOnly: input.mode === "publish" });
+            let loaded = await state.loadCheckpoint(transport, context, { requiredEvidenceOnly: input.mode === "publish" });
             requireValue(loaded.checkpoint.state.budget.allowanceId === registration.allowanceId &&
                 loaded.checkpoint.deadline === registration.deadline, "existing allowance differs from reviewed registration");
             if (input.mode === "publish") return await publishController(entry, deps);
+            // Stable endpoint stops can return before the engine selects source history.
+            if (loaded.checkpoint.state.pinnedMainSha !== context.pinnedMainSha) {
+                await state.invalidateStaleEvidence(transport, context, { generation: loaded.checkpoint.generation });
+                loaded = await state.loadCheckpoint(transport, context);
+            }
             const pending = loaded.checkpoint.pending;
             if (pending?.executionGeneration !== undefined && loaded.executionAllowed) {
                 const previous = await transport.getRun(pending.owner.runId, pending.owner.attempt);
