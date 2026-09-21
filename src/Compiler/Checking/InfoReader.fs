@@ -860,6 +860,15 @@ type InfoReader(g: TcGlobals, amap: ImportMap) as this =
     let isRuntimeFeatureVirtualStaticsInInterfacesSupported =
         lazy isRuntimeFeatureSupported "VirtualStaticsInInterfaces"
 
+    let isRuntimeAsyncSupported =
+        lazy (
+            match g.System_Runtime_CompilerServices_MethodImplOptions_ty with
+            | Some methodImplOptionsTy ->
+                GetIntrinsicILFieldInfosUncached ((None, AccessorDomain.AccessibleFromEverywhere), range0, methodImplOptionsTy)
+                |> List.exists (fun (ilFieldInfo: ILFieldInfo) -> ilFieldInfo.FieldName = "Async")
+            | _ ->
+                false)
+
     member _.g = g
     member _.amap = amap
 
@@ -917,6 +926,12 @@ type InfoReader(g: TcGlobals, amap: ImportMap) as this =
     /// Get the super-types of a type, excluding interface types.
     member _.GetPrimaryTypeHierarchy (allowMultiIntfInst, m, ty) =
         primaryTypeHierarchyCache.Apply((allowMultiIntfInst, m, ty))
+
+    /// Check if the given language feature is supported by the runtime.
+    member _.IsLanguageFeatureRuntimeSupported langFeature =
+        match langFeature with
+        | LanguageFeature.RuntimeAsync -> isRuntimeAsyncSupported.Value
+        | _ -> true
 
     /// Check if the target runtime supports default implementations of interfaces (DefaultImplementationsOfInterfaces).
     member _.IsRuntimeSupportForDefaultImplementationsOfInterfaces = isRuntimeFeatureDefaultImplementationsOfInterfacesSupported.Value
@@ -1030,6 +1045,11 @@ type InfoReader(g: TcGlobals, amap: ImportMap) as this =
             None
         else
             unimplementedStaticAbstractMemberCache.Apply(((None, AccessibleFromSomewhere, AllowMultiIntfInstantiations.Yes), m, interfaceTy))
+
+let checkLanguageFeatureRuntimeAndRecover (infoReader: InfoReader) langFeature m =
+    if not (infoReader.IsLanguageFeatureRuntimeSupported langFeature) then
+        let featureStr = LanguageVersion.GetFeatureString langFeature
+        errorR (Error(FSComp.SR.chkFeatureNotRuntimeSupported (RichText.mkText featureStr), m))
 
 let checkRuntimeSupportForDefaultInterfaceMembersAndRecover (infoReader: InfoReader) m =
     if not infoReader.IsRuntimeSupportForDefaultImplementationsOfInterfaces then

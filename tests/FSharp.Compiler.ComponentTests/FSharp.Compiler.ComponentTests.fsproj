@@ -400,6 +400,9 @@
     <Compile Include="Language\InterfaceTests.fs" />
     <Compile Include="Language\CopyAndUpdateTests.fs" />
     <Compile Include="Language\ConstraintIntersectionTests.fs" />
+    <Compile Include="Language\RuntimeAsyncTests.fs" />
+    <Compile Include="Language\RuntimeAsyncEdgeCaseTests.fs" />
+    <Compile Include="Language\RuntimeAsyncSequenceTests.fs" />
     <Compile Include="Language\BooleanReturningAndReturnTypeDirectedPartialActivePatternTests.fs" />
     <Compile Include="Language\Nullness\NullableLibraryConstructsTests.fs" />
     <Compile Include="Language\Nullness\NullableCsharpImportTests.fs" />
@@ -410,6 +413,7 @@
     <Compile Include="Language\IndexedSetTests.fs" />
     <Compile Include="Language\UseBindingDisposalTests.fs" />
     <Compile Include="Language\RecordSpreadsTests.fs" />
+    <Compile Include="Language\RequireNamedArgumentsTests.fs" />
     <Compile Include="Import\ImportTests.fs" />
     <Compile Include="ConstraintSolver\PrimitiveConstraints.fs" />
     <Compile Include="ConstraintSolver\MemberConstraints.fs" />
