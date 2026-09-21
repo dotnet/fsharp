@@ -186,6 +186,7 @@ module internal ILExtensions =
                 | "System.ObsoleteAttribute" -> WellKnownILAttributes.ObsoleteAttribute
                 | "System.Diagnostics.CodeAnalysis.ExperimentalAttribute" -> WellKnownILAttributes.ExperimentalAttribute
                 | "System.Diagnostics.CodeAnalysis.NotNullIfNotNullAttribute" -> WellKnownILAttributes.NotNullIfNotNullAttribute
+                | "System.Diagnostics.CodeAnalysis.RequireNamedArgumentsAttribute" -> WellKnownILAttributes.RequireNamedArgumentsAttribute
                 | "System.AttributeUsageAttribute" -> WellKnownILAttributes.AttributeUsageAttribute
                 | _ -> WellKnownILAttributes.None
 
@@ -258,7 +259,13 @@ module internal AttributeHelpers =
             | ValueSome pubpath -> struct (ValueNone, ValueSome pubpath.FullPath)
             | ValueNone -> struct (ValueNone, ValueNone)
         else
-            struct (ValueNone, ValueNone)
+            match tcref.Deref.PublicPath with
+            | ValueSome pubpath ->
+                match pubpath.FullPath with
+                | [| "System"; "Diagnostics"; "CodeAnalysis"; "RequireNamedArgumentsAttribute" |] as path ->
+                    struct (ValueSome path, ValueNone)
+                | _ -> struct (ValueNone, ValueNone)
+            | ValueNone -> struct (ValueNone, ValueNone)
 
     /// Decode a bool-arg attribute and set the appropriate true/false flag.
     let inline decodeBoolAttribFlag (attrib: Attrib) trueFlag falseFlag defaultFlag =
@@ -613,6 +620,7 @@ module internal AttributeHelpers =
             | [| "System"; "Diagnostics"; "CodeAnalysis"; name |] ->
                 match name with
                 | "NotNullIfNotNullAttribute" -> WellKnownValAttributes.NotNullIfNotNullAttribute
+                | "RequireNamedArgumentsAttribute" -> WellKnownValAttributes.RequireNamedArgumentsAttribute
                 | _ -> WellKnownValAttributes.None
 
             | [| "System"; name |] ->

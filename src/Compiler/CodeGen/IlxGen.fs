@@ -28,9 +28,11 @@ open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.DelegateForwarding
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Features
+open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Infos
 open FSharp.Compiler.Import
 open FSharp.Compiler.LowerStateMachines
+open FSharp.Compiler.RuntimeAsync
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.SyntaxTreeOps
@@ -1273,6 +1275,12 @@ and IlxGenEnv =
 
         /// Are we under the scope of a try, catch or finally? If so we can't tailcall. SEH = structured exception handling
         withinSEH: bool
+
+        /// We are generating a runtime-async method/closure body, which forbids tail prefixes.
+        inRuntimeAsyncMethod: bool
+
+        /// Inline method bodies are templates whose suspension calls are checked at their eventual use site.
+        inInlineMethod: bool
 
         /// Suppresses filter block emission inside finally/fault handlers (workaround for dotnet/runtime#112406).
         insideFinallyOrFaultHandler: bool
@@ -3218,6 +3226,8 @@ and GenExprPreSteps (cenv: cenv) (cgbuf: CodeGenBuffer) eenv expr sequel =
         GenExpr cenv cgbuf eenv codeExpr sequel
         true
 
+    | _ when TryGetRuntimeAsyncSequence g expr |> Option.isSome -> GenRuntimeAsyncSequenceExpr cenv cgbuf eenv expr sequel
+
     | _ ->
 
         //ProcessDebugPointForExpr cenv cgbuf expr
@@ -3237,13 +3247,13 @@ and GenExprPreSteps (cenv: cenv) (cgbuf: CodeGenBuffer) eenv expr sequel =
 
             let lowering =
                 if compileSequenceExpressions then
-                    LowerSequenceExpressions.ConvertSequenceExprToObject g cenv.amap expr
+                    LowerSequenceExpressions.ConvertSequenceExprToObject g cenv.amap false expr
                 else
                     None
 
             match lowering with
             | Some info ->
-                GenSequenceExpr cenv cgbuf eenv info sequel
+                GenSequenceExpr cenv cgbuf eenv false info None sequel
                 true
             | None ->
 
@@ -3320,6 +3330,8 @@ and GenExprAux (cenv: cenv) (cgbuf: CodeGenBuffer) eenv expr (sequel: sequel) =
             ->
             // application of local type functions with type parameters = measure types and body = local value - inline the body
             GenExpr cenv cgbuf eenv v sequel
+
+        | Expr.App _ when TryGetRuntimeAsyncReturn g expr |> Option.isSome -> GenRuntimeAsyncReturnAsStartedTask cenv cgbuf eenv expr sequel
 
         | Expr.App(f, fty, tyargs, curriedArgs, m) -> GenApp cenv cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel
 
@@ -3421,6 +3433,49 @@ and GenExprAux (cenv: cenv) (cgbuf: CodeGenBuffer) eenv expr (sequel: sequel) =
         | Expr.Link _ -> failwith "Unexpected reclink"
 
         | Expr.TyChoose(_, _, m) -> error (InternalError("Unexpected Expr.TyChoose", m))
+
+and GenRuntimeAsyncSequenceExpr cenv cgbuf eenv expr sequel =
+    let g = cenv.g
+    let m = expr.Range
+    checkLanguageFeatureAndRecover g.langVersion LanguageFeature.RuntimeAsync m
+    checkLanguageFeatureRuntimeAndRecover (InfoReader(g, cenv.amap)) LanguageFeature.RuntimeAsync m
+
+    match LowerAsyncSeq.TryConvert g cenv.amap expr with
+    | Some(LowerAsyncSeq.Evaluate expr) ->
+        GenExpr cenv cgbuf eenv expr sequel
+        true
+    | Some(LowerAsyncSeq.Sequence(info, cancellationTokenValRef)) ->
+        GenSequenceExpr cenv cgbuf eenv true info cancellationTokenValRef sequel
+        true
+    | None when eenv.inInlineMethod -> false
+    | None -> error (Error(FSComp.SR.ilRuntimeAsyncSequenceNotStaticallyKnown (), m))
+
+// A __runtimeAsyncReturn marker that is not at the top of a method or closure body is lowered
+// as a "started task": the marked expression becomes the body of a fresh closure whose
+// Invoke method is the runtime-async method, and the closure is invoked immediately.
+// This relies on GenApp never beta-reducing a lambda application - it always emits a
+// closure value followed by an indirect call (the "worst case" path), which routes the
+// lambda through the closure generation that consumes the marker. If that invariant ever
+// changes, the marker expression would reach GenExprAux again and recurse without bound.
+and GenRuntimeAsyncReturnAsStartedTask cenv cgbuf eenv expr sequel =
+    let m = expr.Range
+
+    checkLanguageFeatureError cenv.g.langVersion LanguageFeature.RuntimeAsync m
+
+    let nonPreservableFreeVal =
+        (freeInExpr CollectLocals expr).FreeLocals
+        |> Zset.elements
+        |> List.tryFind (fun v -> v.IsPinning || isByrefTy cenv.g v.Type || isByrefLikeTy cenv.g m v.Type)
+
+    match nonPreservableFreeVal with
+    | Some v -> errorR (Error(FSComp.SR.chkByrefUsedInInvalidWay (richTextOfValName cenv.g v), v.Range))
+    | None -> ()
+
+    let unitVal, _ = mkLocal m "unit" cenv.g.unit_ty
+    let lambdaExpr = mkLambda m unitVal (expr, tyOfExpr cenv.g expr)
+    let lambdaTy = tyOfExpr cenv.g lambdaExpr
+    let application = mkApps cenv.g ((lambdaExpr, lambdaTy), [], [ mkUnit cenv.g m ], m)
+    GenExpr cenv cgbuf eenv application sequel
 
 and GenExprs cenv cgbuf eenv es =
     List.iter (fun e -> GenExpr cenv cgbuf eenv e Continue) es
@@ -4699,6 +4754,7 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
                         isDllImport,
                         isSelfInit,
                         makesNoCriticalTailcalls,
+                        eenv.inRuntimeAsyncMethod,
                         cgbuf,
                         sequel
                     )
@@ -4829,6 +4885,7 @@ and CanTailcall
         isDllImport,
         isSelfInit,
         makesNoCriticalTailcalls,
+        inRuntimeAsyncMethod,
         cgbuf: CodeGenBuffer,
         sequel
     ) =
@@ -4836,6 +4893,7 @@ and CanTailcall
     // Can't tailcall with a struct object arg since it involves a byref
     // Can't tailcall with a .NET 2.0 generic constrained call since it involves a byref
     // Can't tailcall when there are pinned locals since the stack frame must remain alive
+    // Runtime-async methods forbid .tail according to the CLI spec.
     let hasPinnedLocals = cgbuf.HasPinnedLocals()
     let hasStackAllocatedLocals = cgbuf.HasStackAllocatedLocals()
 
@@ -4843,6 +4901,7 @@ and CanTailcall
         not hasStructObjArg
         && Option.isNone ccallInfo
         && not withinSEH
+        && not inRuntimeAsyncMethod
         && not hasByrefArg
         && not isDllImport
         && not isSelfInit
@@ -5047,7 +5106,7 @@ and GenIndirectCall cenv cgbuf eenv (funcTy, tyargs, curriedArgs, m) sequel =
         check ilxClosureApps
 
     let isTailCall =
-        CanTailcall(false, None, eenv.withinSEH, hasByrefArg, false, false, false, false, cgbuf, sequel)
+        CanTailcall(false, None, eenv.withinSEH, hasByrefArg, false, false, false, false, eenv.inRuntimeAsyncMethod, cgbuf, sequel)
 
     CountCallFuncInstructions()
 
@@ -5506,6 +5565,14 @@ and GenWhileLoop cenv cgbuf eenv (spWhile, condExpr, bodyExpr, m) sequel =
 
 and GenAsmCode cenv cgbuf eenv (il, tyargs, args, returnTys, m) sequel =
     let g = cenv.g
+
+    if
+        eenv.inRuntimeAsyncMethod
+        && not eenv.inInlineMethod
+        && List.contains I_localloc il
+    then
+        errorR (Error(FSComp.SR.ilRuntimeAsyncStackAllocation (), m))
+
     let ilTyArgs = GenTypesPermitVoid cenv m eenv.tyenv tyargs
     let ilReturnTys = GenTypesPermitVoid cenv m eenv.tyenv returnTys
 
@@ -5793,6 +5860,13 @@ and GenILCall
     let makesNoCriticalTailcalls = (newobj || not virt) // Don't tailcall for 'newobj', or 'call' to IL code
     let hasStructObjArg = valu && ilMethRef.CallingConv.IsInstance
 
+    if
+        not eenv.inRuntimeAsyncMethod
+        && not eenv.inInlineMethod
+        && IsRuntimeAsyncSuspensionMethod cenv.g ilMethRef
+    then
+        errorR (Error(FSComp.SR.ilRuntimeAsyncSuspensionOutsideRuntimeAsync (RichText.mkText ilMethRef.Name), m))
+
     let tail =
         CanTailcall(
             hasStructObjArg,
@@ -5803,6 +5877,7 @@ and GenILCall
             isDllImport,
             false,
             makesNoCriticalTailcalls,
+            eenv.inRuntimeAsyncMethod,
             cgbuf,
             sequel
         )
@@ -6370,6 +6445,12 @@ and GenObjectExprMethod cenv eenvinner (cgbuf: CodeGenBuffer) useMethodImpl tmet
                  Return)
 
         let ilMethodBody =
+            let eenvForMeth =
+                { eenvForMeth with
+                    inRuntimeAsyncMethod = false
+                    inInlineMethod = false
+                }
+
             CodeGenMethodForExpr cenv cgbuf.mgbuf ([], nameOfOverridenMethod, eenvForMeth, 0, selfArgOpt, methBodyExpr, sequel)
 
         let nameOfOverridingMethod, methodImplGenerator =
@@ -6558,6 +6639,12 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
                 let sequel = if retTy.IsNone then discardAndReturnVoid else Return
 
                 let ilCode =
+                    let eenvinner =
+                        { eenvinner with
+                            inRuntimeAsyncMethod = false
+                            inInlineMethod = false
+                        }
+
                     CodeGenMethodForExpr cenv cgbuf.mgbuf ([], imethName, eenvinner, 1 + argVals.Length, None, bodyR, sequel)
 
                 let ilParams =
@@ -6848,21 +6935,24 @@ and GenSequenceExpr
     cenv
     (cgbuf: CodeGenBuffer)
     eenvouter
+    directRuntimeSequence
     (
         nextEnumeratorValRef: ValRef,
         pcvref: ValRef,
         currvref: ValRef,
-        stateVars,
+        stateVars: ValRef list,
         generateNextExpr,
         closeExpr,
         checkCloseExpr: Expr,
         seqElemTy,
         m
     )
+    cancellationTokenValRef
     sequel
     =
 
     let g = cenv.g
+
     let stateVars = [ pcvref; currvref ] @ stateVars
 
     let stateVarsSet =
@@ -6882,17 +6972,36 @@ and GenSequenceExpr
             ILBoxity.AsObject
             eenvouter
             []
-            (mkLambda m nextEnumeratorValRef.Deref (generateNextExpr, g.int32_ty))
+            (mkLambda m nextEnumeratorValRef.Deref (generateNextExpr, tyOfExpr g generateNextExpr))
 
     let ilCloSeqElemTy = GenType cenv m eenvinner.tyenv seqElemTy
-    let cloRetTy = mkSeqTy g seqElemTy
+
+    let cloRetTy =
+        if directRuntimeSequence then
+            g.mk_IAsyncEnumerable_ty seqElemTy
+        else
+            mkSeqTy g seqElemTy
+
     let ilCloRetTyInner = GenType cenv m eenvinner.tyenv cloRetTy
     let ilCloRetTyOuter = GenType cenv m eenvouter.tyenv cloRetTy
-    let ilCloEnumeratorTy = GenType cenv m eenvinner.tyenv (mkIEnumeratorTy g seqElemTy)
+
+    let ilCloEnumeratorTy =
+        GenType
+            cenv
+            m
+            eenvinner.tyenv
+            (if directRuntimeSequence then
+                 g.mk_IAsyncEnumerator_ty seqElemTy
+             else
+                 mkIEnumeratorTy g seqElemTy)
+
     let ilCloEnumerableTy = GenType cenv m eenvinner.tyenv (mkSeqTy g seqElemTy)
 
     let ilCloBaseTy =
-        GenType cenv m eenvinner.tyenv (g.mk_GeneratedSequenceBase_ty seqElemTy)
+        if directRuntimeSequence then
+            GenType cenv m eenvinner.tyenv (g.mk_GeneratedRuntimeAsyncSequenceBase_ty seqElemTy)
+        else
+            GenType cenv m eenvinner.tyenv (g.mk_GeneratedSequenceBase_ty seqElemTy)
 
     let ilCloGenericParams = GenGenericParams cenv eenvinner cloFreeTyvars
 
@@ -6927,11 +7036,7 @@ and GenSequenceExpr
                          else
                              GenGetFreeVarForClosure cenv cgbuf eenv m fv
 
-                     CG.EmitInstr
-                         cgbuf
-                         (pop ilCloAllFreeVars.Length)
-                         (Push [ ilCloRetTyInner ])
-                         (I_newobj(formalClospec.Constructor, None))
+                     CG.EmitInstr cgbuf (pop ilCloAllFreeVars.Length) (Push [ ilCloTyInner ]) (I_newobj(formalClospec.Constructor, None))
 
                      GenSequel cenv eenv.cloc cgbuf Return),
                  m)
@@ -6940,22 +7045,79 @@ and GenSequenceExpr
             "GetFreshEnumerator",
             ILMemberAccess.Public,
             [],
-            mkILReturn ilCloEnumeratorTy,
+            mkILReturn (
+                if directRuntimeSequence then
+                    ilCloBaseTy
+                else
+                    ilCloEnumeratorTy
+            ),
             MethodBody.IL(InterruptibleLazy.FromValue mbody)
         )
         |> AddNonUserCompilerGeneratedAttribs g
 
+    let setCancellationTokenMethod =
+        match cancellationTokenValRef with
+        | None -> None
+        | Some cancellationTokenValRef ->
+            let cancellationTokenArg, cancellationTokenArgExpr =
+                mkLocal m "cancellationToken" cancellationTokenValRef.Type
+
+            let methodEnv =
+                eenvinner |> AddStorageForLocalVals g [ (cancellationTokenArg, Arg 1) ]
+
+            let body = mkValSet m cancellationTokenValRef cancellationTokenArgExpr
+
+            let ilCode =
+                CodeGenMethodForExpr cenv cgbuf.mgbuf ([], "SetCancellationToken", methodEnv, 2, None, body, discardAndReturnVoid)
+
+            Some(
+                mkILNonGenericVirtualInstanceMethod (
+                    "SetCancellationToken",
+                    ILMemberAccess.Public,
+                    [
+                        mkILParamNamed (cancellationTokenArg.LogicalName, GenType cenv m eenvinner.tyenv cancellationTokenArg.Type)
+                    ],
+                    mkILReturn ILType.Void,
+                    MethodBody.IL(InterruptibleLazy.FromValue ilCode)
+                )
+                |> AddNonUserCompilerGeneratedAttribs g
+            )
+
     let closeMethod =
+        let marker = TryGetRuntimeAsyncReturn g closeExpr
+
+        let body =
+            marker |> Option.map (fun info -> info.Body) |> Option.defaultValue closeExpr
+
+        let name = if marker.IsSome then "DisposeAsync" else "Close"
+
+        let methodEnv =
+            { eenvinner with
+                inRuntimeAsyncMethod = marker.IsSome
+                inInlineMethod = false
+            }
+
         let ilCode =
-            CodeGenMethodForExpr cenv cgbuf.mgbuf ([], "Close", eenvinner, 1, None, closeExpr, discardAndReturnVoid)
+            CodeGenMethodForExpr cenv cgbuf.mgbuf ([], name, methodEnv, 1, None, body, discardAndReturnVoid)
+            |> fun code ->
+                { code with
+                    IsRuntimeAsync = marker.IsSome
+                }
+
+        let resultTy =
+            if marker.IsSome then
+                GenType cenv m eenvinner.tyenv (tyOfExpr g closeExpr)
+            else
+                ILType.Void
 
         mkILNonGenericVirtualInstanceMethod (
-            "Close",
+            name,
             ILMemberAccess.Public,
             [],
-            mkILReturn ILType.Void,
+            mkILReturn resultTy,
             MethodBody.IL(InterruptibleLazy.FromValue ilCode)
         )
+        |> fun methodDef -> methodDef.WithAsync(marker.IsSome)
 
     let checkCloseMethod =
         let ilCode =
@@ -6974,23 +7136,61 @@ and GenSequenceExpr
         let eenvinner =
             eenvinner |> AddStorageForLocalVals g [ (nextEnumeratorValRef.Deref, Arg 1) ]
 
-        let ilParams = [ mkILParamNamed ("next", ILType.Byref ilCloEnumerableTy) ]
-        let ilReturn = mkILReturn g.ilg.typ_Int32
+        let marker = TryGetRuntimeAsyncReturn g generateNextExpr
+
+        let body =
+            marker
+            |> Option.map (fun info -> info.Body)
+            |> Option.defaultValue generateNextExpr
+
+        let name = if marker.IsSome then "MoveNextAsync" else "GenerateNext"
+
+        let methodEnv =
+            { eenvinner with
+                inRuntimeAsyncMethod = marker.IsSome
+                inInlineMethod = false
+            }
+
+        let ilParams =
+            if marker.IsSome then
+                []
+            else
+                [ mkILParamNamed ("next", ILType.Byref ilCloEnumerableTy) ]
+
+        let resultTy =
+            if marker.IsSome then
+                GenType cenv m eenvinner.tyenv (tyOfExpr g generateNextExpr)
+            else
+                g.ilg.typ_Int32
+
+        let ilReturn = mkILReturn resultTy
+        let usedArgs = if marker.IsSome then 1 else 2
 
         let ilCode =
             MethodBody.IL(
                 InterruptibleLazy(fun _ ->
-                    CodeGenMethodForExpr cenv cgbuf.mgbuf ([], "GenerateNext", eenvinner, 2, None, generateNextExpr, Return))
+                    CodeGenMethodForExpr cenv cgbuf.mgbuf ([], name, methodEnv, usedArgs, None, body, Return)
+                    |> fun code ->
+                        { code with
+                            IsRuntimeAsync = marker.IsSome
+                        })
             )
 
-        mkILNonGenericVirtualInstanceMethod ("GenerateNext", ILMemberAccess.Public, ilParams, ilReturn, ilCode)
+        mkILNonGenericVirtualInstanceMethod (name, ILMemberAccess.Public, ilParams, ilReturn, ilCode)
+        |> fun methodDef -> methodDef.WithAsync(marker.IsSome)
 
     let lastGeneratedMethod =
+        let name =
+            if directRuntimeSequence then
+                "get_Current"
+            else
+                "get_LastGenerated"
+
         let ilCode =
-            CodeGenMethodForExpr cenv cgbuf.mgbuf ([], "get_LastGenerated", eenvinner, 1, None, exprForValRef m currvref, Return)
+            CodeGenMethodForExpr cenv cgbuf.mgbuf ([], name, eenvinner, 1, None, exprForValRef m currvref, Return)
 
         mkILNonGenericVirtualInstanceMethod (
-            "get_LastGenerated",
+            name,
             ILMemberAccess.Public,
             [],
             mkILReturn ilCloSeqElemTy,
@@ -7005,10 +7205,19 @@ and GenSequenceExpr
         [
             generateNextMethod
             closeMethod
-            checkCloseMethod
+            yield! Option.toList setCancellationTokenMethod
+            if not directRuntimeSequence then
+                checkCloseMethod
             lastGeneratedMethod
             getFreshMethod
         ]
+
+    let ilInterfaceTys =
+        if directRuntimeSequence then
+            AllInterfacesOfType g cenv.amap m AllowMultiIntfInstantiations.Yes (g.mk_IAsyncEnumerator_ty seqElemTy)
+            |> List.map (GenType cenv m eenvinner.tyenv >> InterfaceImpl.Create)
+        else
+            []
 
     let cloTypeDefs =
         GenClosureTypeDefs
@@ -7022,7 +7231,7 @@ and GenSequenceExpr
              cloMethods,
              [],
              ilCloBaseTy,
-             [],
+             ilInterfaceTys,
              Some ilxCloSpec)
 
     for cloTypeDef in cloTypeDefs do
@@ -7149,6 +7358,11 @@ and GenGenericArgs cenv m (tyenv: TypeReprEnv) tps =
     |> DropErasedTypars
     |> List.map (fun tp -> GenType cenv m tyenv (mkTyparTy tp))
 
+and CheckRuntimeAsyncFreeVars g m (cloinfo: IlxClosureInfo) =
+    for fv in cloinfo.cloFreeVars do
+        if fv.IsPinning || isByrefTy g fv.Type || isByrefLikeTy g m fv.Type then
+            errorR (Error(FSComp.SR.chkByrefUsedInInvalidWay (richTextOfValName g fv), fv.Range))
+
 /// Generate a local type function contract class and implementation
 and GenClosureAsLocalTypeFunction cenv (cgbuf: CodeGenBuffer) eenv thisVars expr m =
     let g = cenv.g
@@ -7176,8 +7390,28 @@ and GenClosureAsLocalTypeFunction cenv (cgbuf: CodeGenBuffer) eenv thisVars expr
 
         strip cloinfo.ilCloLambdas
 
+    let isRuntimeAsync, isRuntimeAsyncUnit, body =
+        match TryGetRuntimeAsyncReturn g body with
+        | Some info -> true, List.isEmpty info.TypeArgs, info.Body
+        | None -> false, false, body
+
+    if isRuntimeAsync then
+        CheckRuntimeAsyncFreeVars g m cloinfo
+
+    let eenvinner =
+        { eenvinner with
+            inRuntimeAsyncMethod = isRuntimeAsync
+        }
+
     let ilCloBody =
-        CodeGenMethodForExpr cenv cgbuf.mgbuf (entryPointInfo, cloinfo.cloName, eenvinner, 1, None, body, Return)
+        let sequel = if isRuntimeAsyncUnit then discardAndReturnVoid else Return
+        CodeGenMethodForExpr cenv cgbuf.mgbuf (entryPointInfo, cloinfo.cloName, eenvinner, 1, None, body, sequel)
+
+    let ilCloBody =
+        if isRuntimeAsync then
+            { ilCloBody with IsRuntimeAsync = true }
+        else
+            ilCloBody
 
     let ilCtorBody =
         mkILMethodBody (true, [], 8, nonBranchingInstrsToCode (mkCallBaseConstructor (g.ilg.typ_Object, [])), None, eenv.imports)
@@ -7193,6 +7427,7 @@ and GenClosureAsLocalTypeFunction cenv (cgbuf: CodeGenBuffer) eenv thisVars expr
                 mkILReturn ilCloFormalReturnTy,
                 MethodBody.IL(InterruptibleLazy.FromValue ilCloBody)
             )
+            |> fun mdef -> mdef.WithAsync(isRuntimeAsync)
         ]
 
     let cloTypeDefs =
@@ -7223,8 +7458,28 @@ and GenClosureAsFirstClassFunction cenv (cgbuf: CodeGenBuffer) eenv thisVars m e
 
     let ilCloTypeRef = cloinfo.cloSpec.TypeRef
 
+    let isRuntimeAsync, isRuntimeAsyncUnit, body =
+        match TryGetRuntimeAsyncReturn g body with
+        | Some info -> true, List.isEmpty info.TypeArgs, info.Body
+        | None -> false, false, body
+
+    if isRuntimeAsync then
+        CheckRuntimeAsyncFreeVars g m cloinfo
+
+    let eenvinner =
+        { eenvinner with
+            inRuntimeAsyncMethod = isRuntimeAsync
+        }
+
     let ilCloBody =
-        CodeGenMethodForExpr cenv cgbuf.mgbuf (entryPointInfo, cloinfo.cloName, eenvinner, 1, None, body, Return)
+        let sequel = if isRuntimeAsyncUnit then discardAndReturnVoid else Return
+        CodeGenMethodForExpr cenv cgbuf.mgbuf (entryPointInfo, cloinfo.cloName, eenvinner, 1, None, body, sequel)
+
+    let ilCloBody =
+        if isRuntimeAsync then
+            { ilCloBody with IsRuntimeAsync = true }
+        else
+            ilCloBody
 
     let cloTypeDefs =
         GenClosureTypeDefs
@@ -9878,6 +10133,14 @@ and GenMethodForBinding
             | h :: t -> [ h ], t, true
         | _ -> [], methLambdaVars, false
 
+    let isRuntimeAsync, isRuntimeAsyncUnit, methLambdaBody =
+        match TryGetRuntimeAsyncReturn g methLambdaBody with
+        | Some info -> true, List.isEmpty info.TypeArgs, info.Body
+        | None -> false, false, methLambdaBody
+
+    if isRuntimeAsync then
+        checkLanguageFeatureError g.langVersion LanguageFeature.RuntimeAsync m
+
     let nonUnitNonSelfMethodVars, body =
         BindUnitVars cenv.g (nonSelfMethodVars, paramInfos, methLambdaBody)
 
@@ -9933,7 +10196,10 @@ and GenMethodForBinding
             else
                 eenvForMeth
 
-        eenvForMeth
+        { eenvForMeth with
+            inRuntimeAsyncMethod = isRuntimeAsync
+            inInlineMethod = v.InlineInfo = ValInline.Always
+        }
 
     let tailCallInfo =
         [
@@ -9950,7 +10216,8 @@ and GenMethodForBinding
 
     // Discard the result on a 'void' return type. For a constructor just return 'void'
     let sequel =
-        if isUnitTy g returnTy then discardAndReturnVoid
+        if isRuntimeAsyncUnit then discardAndReturnVoid
+        elif isUnitTy g returnTy then discardAndReturnVoid
         elif isCtor then ReturnVoid
         else Return
 
@@ -10011,9 +10278,6 @@ and GenMethodForBinding
             (WellKnownValAttributes.DllImportAttribute
              ||| WellKnownValAttributes.CompiledNameAttribute)
 
-    let attrsAppliedToGetterOrSetter, attrs =
-        List.partition (fun (Attrib(_, _, _, _, isAppliedToGetterOrSetter, _, _)) -> isAppliedToGetterOrSetter) attrs
-
     let sourceNameAttribs, compiledName =
         match tryFindValAttribByFlag g WellKnownValAttributes.CompiledNameAttribute v.Attribs with
         | Some(Attrib(_, _, [ AttribStringArg b ], _, _, _, _)) -> [ mkCompilationSourceNameAttr g v.LogicalName ], Some b
@@ -10022,6 +10286,12 @@ and GenMethodForBinding
     // check if the hasPreserveSigNamedArg and hasSynchronizedImplFlag implementation flags have been specified
     let hasPreserveSigImplFlag, hasSynchronizedImplFlag, hasNoInliningFlag, hasAggressiveInliningImplFlag, attrs =
         ComputeMethodImplAttribs cenv v attrs
+
+    if isRuntimeAsync && hasSynchronizedImplFlag then
+        error (Error(FSComp.SR.ilRuntimeAsyncSynchronizedMethod (), m))
+
+    let attrsAppliedToGetterOrSetter, attrs =
+        List.partition (fun (Attrib(_, _, _, _, isAppliedToGetterOrSetter, _, _)) -> isAppliedToGetterOrSetter) attrs
 
     let securityAttributes, attrs =
         attrs
@@ -10310,8 +10580,9 @@ and GenMethodForBinding
                 .WithPInvoke(hasDllImport)
                 .WithPreserveSig(hasPreserveSigImplFlag || hasPreserveSigNamedArg)
                 .WithSynchronized(hasSynchronizedImplFlag)
-                .WithNoInlining(hasNoInliningFlag)
                 .WithAggressiveInlining(hasAggressiveInliningImplFlag)
+                .WithAsync(isRuntimeAsync)
+                .WithNoInlining(hasNoInliningFlag)
                 .With(isEntryPoint = isExplicitEntryPoint, securityDecls = secDecls)
 
         let mdef =
@@ -13096,6 +13367,8 @@ let GetEmptyIlxGenEnv (g: TcGlobals) ccu =
         innerVals = []
         sigToImplRemapInfo = [] (* "module remap info" *)
         withinSEH = false
+        inRuntimeAsyncMethod = false
+        inInlineMethod = false
         insideFinallyOrFaultHandler = false
         isInLoop = false
         initLocals = true
