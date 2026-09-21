@@ -377,13 +377,13 @@ function formObservation({ unit, launch, files }, reservation, context) {
 
 function createObservationCollector({ evidenceDirectory, store }) {
     requireValue(path.isAbsolute(evidenceDirectory) &&
-        ["writeEvidence", "readEvidence", "writeBlob", "verifyEvidence", "findEvidence"].every(k => typeof store?.[k] === "function"),
+        ["writeEvidence", "readEvidence", "writeBlob", "verifyEvidence", "findEvidence", "settleQuota"].every(k => typeof store?.[k] === "function"),
     "owned launch directory and controlled durable evidence store required");
     const signature = (body, key) => {
         requireValue(Buffer.isBuffer(key) && key.length >= 32, "collector authentication key required");
         return createHmac("sha256", key).update("regression-collection-v1\0").update(fingerprint(body)).digest();
     };
-    return async function collectObservation({ result, reservation, manifest, context }) {
+    async function collectObservation({ result, reservation, manifest, context }) {
         requireValue(equal(manifest, context.manifest) && /^[\w-]{1,128}$/.test(reservation.id),
             "collector manifest or work identity mismatch");
         const references = await store.findEvidence({ runId: reservation.owner.runId,
@@ -480,7 +480,8 @@ function createObservationCollector({ evidenceDirectory, store }) {
         const evidence = [reference, ...new Map(blobs.map(b => [b.reference.url, b.reference])).values()];
         requireValue(evidence.length <= 16, "required durable evidence exceeds checkpoint limit");
         return { observation: formObservation({ unit, launch: receipt.launch, files }, reservation, context), evidence };
-    };
+    }
+    return Object.assign(collectObservation, { settleQuota: () => store.settleQuota() });
 }
 
 async function commitCollectedObservation(input, { collectObservation, transport }) {
@@ -490,7 +491,9 @@ async function commitCollectedObservation(input, { collectObservation, transport
     requireValue(record && record.executionGeneration !== undefined &&
         equal(record.owner, input.reservation.owner) && record.requestDigest === input.reservation.requestDigest &&
         record.epoch === input.reservation.epoch, "missing or changed durable execution claim");
-    const collected = await collectObservation(input);
+    let collected;
+    try { collected = await collectObservation(input); }
+    finally { await collectObservation.settleQuota?.(); }
     return commitObservation(transport, input.context, { generation: record.executionGeneration,
         attemptId: record.id, observation: collected.observation, evidence: collected.evidence });
 }

@@ -4,7 +4,7 @@ const { initializeCheckpoint, loadCheckpoint, authenticateDecodedRecord, seriali
 const { readIssueSnapshot } = require("./intake.cjs");
 const { preparePublication, completePublication } = require("./report.cjs");
 const { fingerprintInput: fingerprint } = require("./model.cjs");
-const { requireValue } = require("./toolchain-io.cjs");
+const { requireValue, boundedWait } = require("./toolchain-io.cjs");
 
 function validateEntry(input, context) {
     requireValue(input && Object.keys(input).sort().join(" ") === "issueNumber repository" &&
@@ -116,20 +116,35 @@ async function runController(input, deps) {
         validateEntry(input, deps.context);
         requireValue(["withLock", "runIsolated", "collectObservation"].every(k => typeof deps[k] === "function"),
             "controller requires whole-issue lock, isolated runner and trusted collector");
-        return await deps.withLock(async () => {
-            const now = () => (deps.clock ?? (() => new Date()))().toISOString();
-            // A missing checkpoint is never a first-use authorization.
-            await loadCheckpoint(deps.transport, { ...deps.context, now: now() });
-            let intent = await engine.advanceInvestigation({ now: now() }, deps);
-            if (["confirmation", "complete"].includes(intent.status) || intent.status === "blocked" && intent.interval)
-                intent = await confirmBoundary({ intent, now: now() }, deps);
-            if (intent.status !== "work") return intent;
-            const cp = await engine.executeInvestigationWork(intent, deps);
-            if (cp.status === "blocked") return cp;
-            const record = cp.records.find(r => r.id === intent.reservation.id);
-            return { status: "observed", workId: record.id, generation: cp.generation,
-                outcome: cp.observations[record.observationDigest].data.outcome, budget: cp.state.budget.consumed };
+        let cleanupPending;
+        const pending = new Promise(resolve => { cleanupPending = resolve; });
+        const locked = deps.withLock(async () => {
+            try {
+                const now = () => (deps.clock ?? (() => new Date()))().toISOString();
+                // A missing checkpoint is never a first-use authorization.
+                await loadCheckpoint(deps.transport, { ...deps.context, now: now() });
+                let intent = await engine.advanceInvestigation({ now: now() }, deps);
+                if (["confirmation", "complete"].includes(intent.status) || intent.status === "blocked" && intent.interval)
+                    intent = await confirmBoundary({ intent, now: now() }, deps);
+                if (intent.status !== "work") return intent;
+                const cp = await engine.executeInvestigationWork(intent, deps);
+                if (cp.status === "blocked") return cp;
+                const record = cp.records.find(r => r.id === intent.reservation.id);
+                return { status: "observed", workId: record.id, generation: cp.generation,
+                    outcome: cp.observations[record.observationDigest].data.outcome, budget: cp.state.budget.consumed };
+            } finally {
+                if (deps.collectObservation.settleQuota) {
+                    const settled = deps.collectObservation.settleQuota();
+                    try { await boundedWait(settled, AbortSignal.timeout(5000)); }
+                    catch (error) {
+                        cleanupPending({ status: "blocked", reason: `evidence ownership cleanup pending: ${error.message}` });
+                        // A bounded response is not permission to release the issue lock.
+                        await settled;
+                    }
+                }
+            }
         });
+        return await Promise.race([locked, pending]);
     } catch (error) { return { status: "blocked", reason: error.message }; }
 }
 

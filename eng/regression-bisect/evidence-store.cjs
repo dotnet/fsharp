@@ -109,15 +109,17 @@ async function openRegular(file) {
     } catch (error) { await handle.close(); throw error; }
 }
 
-// The controller's whole-issue lock serializes processes; this queue serializes local callers.
+// Whole-issue ownership must outlive settleQuota(), not just the bounded write.
 // Durable reservations survive process loss and failed transfers never refund the quota.
-async function reserveBlob(c, binding, receipt) {
+async function reserveBlob(c, binding, receipt, signal) {
     const launch = hash(`${c.runId}:${c.attempt}:${binding.launchId}`);
     const prefix = `quota-${launch}-`;
     const marker = `${prefix}${receipt.sha256}-${receipt.bytesReceived}`;
     const key = path.join(c.directory, prefix).toLowerCase();
     const pending = (quotaQueues.get(key) ?? Promise.resolve()).then(async () => {
+        signal.throwIfAborted();
         const names = (await fs.readdir(c.directory)).filter(n => n.startsWith(prefix) && n !== `${prefix}lock`);
+        signal.throwIfAborted();
         let total = 0;
         for (const name of names) {
             const parts = /^([a-f0-9]{64})-([1-9]\d*)$/.exec(name.slice(prefix.length));
@@ -127,13 +129,23 @@ async function reserveBlob(c, binding, receipt) {
         requireValue(total + (names.includes(marker) ? 0 : receipt.bytesReceived) <= LAUNCH_LIMIT, "launch blob byte limit exceeded");
         if (!names.includes(marker)) {
             const handle = await fs.open(path.join(c.directory, marker), "wx", 0o600);
-            try { await handle.sync(); } finally { await handle.close(); }
+            try {
+                signal.throwIfAborted();
+                await handle.sync();
+                signal.throwIfAborted();
+            } finally { await handle.close(); }
+            signal.throwIfAborted();
         }
     });
     const settled = pending.catch(() => {});
     quotaQueues.set(key, settled);
     try { await pending; }
     finally { if (quotaQueues.get(key) === settled) quotaQueues.delete(key); }
+}
+
+async function settleQuota(c) {
+    const prefix = (c.directory + path.sep).toLowerCase();
+    await Promise.all([...quotaQueues].filter(([key]) => key.startsWith(prefix)).map(([, pending]) => pending));
 }
 
 async function stage(c, source, binding, blob, signal = AbortSignal.timeout(c.timeoutMs)) {
@@ -162,7 +174,7 @@ async function stageStream(c, stream, binding, blob, signal) {
         if (blob) {
             validateArchiveReceipt(blob.request, blob.receipt,
                 path.win32.parse(blob.receipt.retained?.path ?? "").root.length > 1 ? path.win32 : path.posix);
-            await reserveBlob(c, binding, blob.receipt);
+            await reserveBlob(c, binding, blob.receipt, signal);
             signal.throwIfAborted();
         }
         file = path.join(c.directory, `.upload-${randomUUID()}`);
@@ -294,7 +306,7 @@ function createFileEvidenceStore(config) {
         const signal = AbortSignal.timeout(c.timeoutMs);
         return boundedWait(writeFile(source, binding, blob, signal), signal);
     };
-    return { ...readers(c, read),
+    return { ...readers(c, read), settleQuota: () => settleQuota(c),
         async findEvidence(query) {
             const signal = AbortSignal.timeout(c.timeoutMs);
             return boundedWait((async () => {
@@ -446,21 +458,20 @@ function createActionsEvidenceStore(config, { send = fetch } = {}) {
         "artifact metadata ownership, identity or size mismatch");
         return data.expired ? null : data;
     };
-    const read = async (info, sink) => {
-        const meta = await metadata(info);
+    const read = async (info, sink, signal) => {
+        const meta = await metadata(info, signal);
         if (!meta) return null;
-        const redirect = await request(meta.archive_download_url, { headers: auth });
+        const redirect = await request(meta.archive_download_url, { headers: auth, signal });
         let url;
         try {
             if ([404, 410].includes(redirect.status)) {
-                requireValue(await metadata(info) === null, "artifact download missing without confirmed expiry");
+                requireValue(await metadata(info, signal) === null, "artifact download missing without confirmed expiry");
                 return null;
             }
             requireValue(redirect.status === 302, `artifact download request failed (${redirect.status})`);
             url = signedBlobUrl(redirect.headers.get("location"));
         } finally { await close(redirect); }
         // The GitHub-authenticated response selects this exact blob, not a worker or caller.
-        const signal = AbortSignal.timeout(c.timeoutMs);
         const response = await request(url, { signal });
         try {
             requireValue(response.status === 200 && [null, "identity"].includes(response.headers.get("content-encoding")) &&
@@ -530,15 +541,24 @@ function createActionsEvidenceStore(config, { send = fetch } = {}) {
         const signal = AbortSignal.timeout(c.timeoutMs);
         return boundedWait(writeFile(source, binding, blob, signal), signal).finally(() => source?.destroy?.());
     };
-    return { ...readers(c, read),
-        async findEvidence(query) {
+    const operation = action => {
+        const signal = AbortSignal.timeout(c.timeoutMs);
+        return boundedWait((async () => {
+            const result = await action(signal);
+            signal.throwIfAborted();
+            return result;
+        })(), signal);
+    };
+    return { ...readers(c, (info, sink) => operation(signal => read(info, sink, signal))),
+        settleQuota: () => settleQuota(c),
+        findEvidence: query => operation(async signal => {
             const prefix = `${discoveryPrefix(query)}e-`;
-            await run(query);
+            await run(query, signal);
             const candidates = [], seen = new Set();
             let total;
             for (let page = 1; page <= 5; page++) {
                 const list = await json(await request(`${apiBase}/actions/runs/${query.runId}/artifacts?per_page=100&page=${page}`,
-                    { headers: auth }));
+                    { headers: auth, signal }), signal);
                 total ??= list.total_count;
                 requireValue(Number.isSafeInteger(total) && total >= 0 && total <= 500 && list.total_count === total &&
                     Array.isArray(list.artifacts) && list.artifacts.length === Math.min(100, total - seen.size),
@@ -555,10 +575,10 @@ function createActionsEvidenceStore(config, { send = fetch } = {}) {
             const result = [];
             for (const artifact of candidates.sort((a, b) => a.name.localeCompare(b.name))) {
                 const record = discoveredRecord(c, query, artifact.name, String(artifact.id));
-                if (await read(parseReference(record.url, c)) !== null) result.push(record);
+                if (await read(parseReference(record.url, c), undefined, signal) !== null) result.push(record);
             }
             return result;
-        },
+        }),
         writeEvidence: (bytes, binding) => write(bytes, binding),
         writeBlob: (bytes, { binding, request, receipt }) => write(bytes, binding, { request, receipt }) };
 }

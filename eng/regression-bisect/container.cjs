@@ -1,10 +1,11 @@
 const fs = require("node:fs/promises");
 const path = require("node:path");
 const { spawn } = require("node:child_process");
+const { setTimeout: delay } = require("node:timers/promises");
 const { randomBytes, createHmac, timingSafeEqual } = require("node:crypto");
 const { validateRepositoryPath, fingerprintInput: fingerprint } = require("./model.cjs");
 const { validateExecutionUnit, readExecutionOutput } = require("./worker.cjs");
-const { hash, requireValue } = require("./toolchain-io.cjs");
+const { hash, requireValue, boundedWait } = require("./toolchain-io.cjs");
 const { collectWorkerArchive, collectWorkerBlob, validateExecutionFiles } = require("./worker-output.cjs");
 const { validateArchiveReceipt } = require("./archive-provenance.cjs");
 const policy = require("../../.github/policies/regression-bisect.json");
@@ -473,7 +474,24 @@ async function runContainer(config, options, deps = {}) {
         const replacement = path.join(root, "receipt.new");
         const handle = await fs.open(replacement, "wx", 0o600);
         try { await handle.writeFile(JSON.stringify(receipt, null, 2)); await handle.sync(); } finally { await handle.close(); }
-        await fs.rename(replacement, receiptFile);
+        const signal = AbortSignal.timeout(5000);
+        try {
+            await boundedWait((async () => {
+                while (true) {
+                    signal.throwIfAborted();
+                    try { await fs.rename(replacement, receiptFile); break; }
+                    catch (error) {
+                        // Windows readers without delete sharing temporarily block atomic replacement.
+                        if (process.platform !== "win32" || error.code !== "EPERM") throw error;
+                        await delay(10, undefined, { signal });
+                    }
+                }
+                signal.throwIfAborted();
+            })(), signal);
+        } catch (error) {
+            throw new Error(`receipt publication failed: ${signal.aborted ? signal.reason.message : error.message}` +
+                (failure ? `; ${receipt.reason}` : ""), { cause: error });
+        }
     }
     return failure ? { status: "blocked", reason: receipt.reason, receipt } :
         { status: "collected", result: answer, receipt, ...(options.operation === "execution" ? { files, blobs } : {}) };

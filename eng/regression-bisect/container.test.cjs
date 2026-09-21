@@ -2,7 +2,8 @@ const { test } = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("node:fs/promises");
 const path = require("node:path");
-const { spawnSync } = require("node:child_process");
+const { spawn, spawnSync } = require("node:child_process");
+const { once } = require("node:events");
 const { validateContainerConfig, inspectRuntime, runContainer, image, loadContainerEvidence,
     verifyTransportReceipt, verifyContainerEvidence, readCollectedExecution } = require("./container.cjs");
 const { Readable } = require("node:stream");
@@ -333,9 +334,59 @@ test("physical source evidence survives destroyed worker tmpfs, not merely a res
 });
 
 test("execution export failures block authentication and remove owned resources", async t => {
-    for (const fault of ["collect", "binding", "archive", "truncated", "blob", "blob-digest", "cleanup"])
+    const roots = new Set();
+    for (const fault of ["collect", "binding", "archive", "truncated", "blob", "blob-digest", "cleanup",
+        ...(process.platform === "win32" ? ["receipt-sharing", "receipt-sharing-exhausted"] : []), "receipt-error"])
         await t.test(fault, async t => {
             const f = await dockerFixture(t), unit = executionUnit();
+            assert.equal(roots.has(f.root), false, "receipt fixtures must not share paths");
+            roots.add(f.root);
+            const handles = new Set(), open = fs.open, rename = fs.rename;
+            let renameAttempts = 0, holder, holderExit, expiry;
+            t.mock.method(fs, "open", async (...args) => {
+                const handle = await open(...args), close = handle.close.bind(handle);
+                handles.add(handle);
+                t.mock.method(handle, "close", async () => { await close(); handles.delete(handle); });
+                return handle;
+            });
+            if (fault === "receipt-sharing-exhausted") {
+                const timeout = AbortSignal.timeout;
+                t.mock.method(AbortSignal, "timeout", ms => {
+                    if (ms !== 5000) return timeout(ms);
+                    expiry = new AbortController();
+                    return expiry.signal;
+                });
+            }
+            t.mock.method(fs, "rename", async (from, to) => {
+                assert.equal(from, path.join(f.root, "receipt.new"));
+                assert.equal(to, path.join(f.root, "receipt.json"));
+                assert.equal(handles.size, 0, "all owned handles must close before receipt replacement");
+                renameAttempts++;
+                if (fault.startsWith("receipt-sharing") && !holder) {
+                    holder = spawn("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command",
+                        "$h=[IO.File]::Open($env:RECEIPT_PATH,[IO.FileMode]::Open,[IO.FileAccess]::Read,[IO.FileShare]::ReadWrite); " +
+                        "[Console]::WriteLine('locked'); [Console]::In.ReadLine() > $null; $h.Dispose()"],
+                    { env: { ...process.env, RECEIPT_PATH: to }, stdio: ["pipe", "pipe", "pipe"] });
+                    holderExit = once(holder, "exit");
+                    assert.match((await once(holder.stdout, "data"))[0].toString(), /locked/);
+                }
+                if (fault === "receipt-error") throw Object.assign(new Error("injected receipt EIO"), { code: "EIO" });
+                try { return await rename(from, to); }
+                catch (error) {
+                    t.diagnostic(JSON.stringify({ fault, renameAttempts, code: error.code, ownedHandles: handles.size, from, to }));
+                    assert.equal(error.code, "EPERM", "controlled Windows delete-sharing violation");
+                    const initial = JSON.parse(await fs.readFile(to));
+                    assert.equal(initial.status, "blocked", "initial receipt remains authoritative");
+                    assert.equal(initial.signature, undefined);
+                    if (fault === "receipt-sharing") {
+                        holder.stdin.end("\n");
+                        await holderExit;
+                    } else if (fault === "receipt-sharing-exhausted") {
+                        expiry?.abort(new DOMException("receipt deadline", "TimeoutError"));
+                    }
+                    throw error;
+                }
+            });
             const contracts = require("./fixtures/contracts.cjs");
             const bytes = Buffer.from("approved archive");
             const archive = contracts.archiveReceipt({
@@ -363,7 +414,8 @@ test("execution export failures block authentication and remove owned resources"
                 if (fault === operation || fault === "cleanup" && args.includes("rm") && args.at(-1).endsWith("-worker"))
                     throw new Error(`injected ${fault} failure`);
                 if (operation === "blob") return { exitCode: 0, stdout: Buffer.alloc(0), stderr: Buffer.alloc(0),
-                    collected: await settings.consume(Readable.from([fault === "blob-digest" ? Buffer.alloc(bytes.length) : bytes])) };
+                    collected: await settings.consume(Readable.from([
+                        fault === "blob-digest" || fault.startsWith("receipt-") ? Buffer.alloc(bytes.length) : bytes])) };
                 if (operation === "archive" && fault === "truncated")
                     return { collected: await settings.consume(Readable.from([Buffer.alloc(512)])) };
                 const result = await invoke(exe, args, settings);
@@ -375,17 +427,34 @@ test("execution export failures block authentication and remove owned resources"
                 return result;
             };
             const key = Buffer.alloc(32, 7);
-            const result = await runContainer(config(), { operation: "execution", input: unit,
+            let result, publicationError;
+            try { result = await runContainer(config(), { operation: "execution", input: unit,
                 evidenceDirectory: f.root, sourceDirectory: source, sourceBundle: bundle,
-                sourceBundleSha256: contracts.digest("source"), receiptKey: key }, f.deps);
+                sourceBundleSha256: contracts.digest("source"), receiptKey: key }, f.deps); }
+            catch (error) { publicationError = error; }
+            finally {
+                if (holder) { holder.stdin.end("\n"); await holderExit; }
+            }
+            if (["receipt-sharing-exhausted", "receipt-error"].includes(fault)) {
+                assert.match(publicationError?.message ?? "", /receipt.*(deadline|EIO)/);
+                assert.match(publicationError.message, /archive blob digest or size mismatch/, "publication must not mask the export failure");
+                assert.equal(result, undefined);
+                assert.equal(f.resources.size, 0);
+                await assert.rejects(loadContainerEvidence(f.root, unit, key), /authentication|termination/);
+                assert.equal(renameAttempts, 1, "no retries after expiry or for non-sharing errors");
+                return;
+            }
+            assert.equal(publicationError, undefined, publicationError?.stack);
             assert.equal(result.status, "blocked");
             assert.match(result.reason, {
                 collect: /injected collect failure/, binding: /protected export launch binding mismatch/,
                 archive: /injected archive failure/, truncated: /truncated worker archive/,
                 blob: /injected blob failure/, "blob-digest": /archive blob digest or size mismatch/,
+                "receipt-sharing": /archive blob digest or size mismatch/,
                 cleanup: /injected cleanup failure/,
             }[fault]);
-            assert.equal(blobReached, ["blob", "blob-digest", "cleanup"].includes(fault));
+            assert.equal(blobReached, ["blob", "blob-digest", "cleanup", "receipt-sharing"].includes(fault));
+            assert.ok(renameAttempts >= (fault === "receipt-sharing" ? 2 : 1));
             assert.throws(() => verifyTransportReceipt(result.receipt, unit, key), /termination mismatch/);
             await assert.rejects(loadContainerEvidence(f.root, unit, key), /termination mismatch/);
             assert.equal(f.resources.size, fault === "cleanup" ? 1 : 0);

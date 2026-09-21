@@ -631,6 +631,13 @@ collector context's selected key. It is never passed to the container.
 `signal` can cancel a launch. No executable, shell command, Docker flag,
 report destination, key or callback is serialized into the job.
 
+Final receipt publication closes and syncs the replacement before atomically
+renaming it over the initial blocked receipt. On Windows only, `EPERM` from a
+reader denying delete sharing is retried within one five-second publication
+deadline. The authoritative receipt is never deleted first. Exhaustion and
+other errors throw, retaining any earlier export/cleanup failure in the error;
+collected output is not returned without a published final receipt.
+
 The fixed `container-entry.cjs` constructs physical dependencies **inside**
 the worker and invokes `runExecutionUnit`. Exact acquisition, historical
 declarations, unmodified `global.json`, source build scripts and reproduction
@@ -734,9 +741,13 @@ cleanup. A timeout rejects promptly and destroys the input; uncancellable
 filesystem operations finish cleanup when they settle, without publishing late
 bytes. File/HTTP reads, metadata requests and downstream sinks are also bounded.
 File reads use one deadline from directory validation through open, stat,
-streaming and final close, including failed-open cleanup. Discovery shares one
-deadline across directory enumeration and all candidate reads. Late filesystem
-completion cannot turn a timeout into successful verification or absence.
+streaming and final close, including failed-open cleanup. Actions reads also
+use one deadline for run/metadata requests and bodies, redirect validation,
+404/410 revalidation, ZIP/hash streaming, sinks and response cleanup.
+Each discovery shares its original deadline across every page and candidate
+read. An HTTP callback ignoring abort cannot extend the outer wait; a late
+response is closed without further requests. Expiry is an error, never verified
+absence, a partial discovery result or successful verification.
 File writes share one deadline across staging, replay checks, atomic publication,
 verification and staging cleanup. Expiry rejects without waiting for stalled
 filesystem calls. Once publication has started, complete content-addressed bytes
@@ -760,9 +771,25 @@ replays a retained collection under the existing controller lock and owning
 run; it neither launches a worker nor reserves/refunds work. The state ledger
 keeps observation writes and lost acknowledgements idempotent.
 The caller must hold the whole-issue lock across collection, quota reservation,
-checkpoint commit and acknowledgement, including across processes. The store's
-in-process queue is not a distributed lock; durable quota markers allow recovery
-after a killed writer only under that prerequisite.
+checkpoint commit and acknowledgement, including across processes. A timed-out
+write is **not** permission to hand off ownership: await `store.settleQuota()`
+before releasing the lock, or confirm the old writer process has terminated.
+Quota cancellation is checked after enumeration and while draining queued work;
+an already-issued marker creation/sync/close must settle before handoff.
+Created markers remain charged even when acknowledgement, sync, close or transfer
+fails. Neither cleanup nor retry removes a charged marker.
+
+The collector factory exposes `collectObservation.settleQuota()`. `runController`
+drains it inside the actual `withLock` callback. After five seconds of pending
+cleanup it reports `blocked` with `evidence ownership cleanup pending`, but the
+callback remains outstanding and retains the lock until settlement. The lock
+provider must honor callback lifetime, not the bounded controller response or an
+expired lease. A host abandoning cleanup must terminate and confirm the writer's
+exit before granting a successor ownership. `commitCollectedObservation` also
+drains quota work before returning; direct collector/store callers must do the
+same inside their lock. The in-process queue is not a distributed lock. These
+handoff requirements must be exercised by the later controller deployment gate;
+offline tests do not establish a deployed lock provider's behavior.
 The file store checks an existing immutable object before publishing with a
 same-directory atomic rename. Process loss leaves either unpublished staging
 bytes or a complete single-link object that a new process can discover; it

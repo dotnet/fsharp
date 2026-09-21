@@ -205,6 +205,180 @@ test("concurrent local reservations cannot overspend the durable launch quota", 
     assert.equal((await fs.readdir(config.directory)).filter(name => name.startsWith("quota-")).length, 3);
 });
 
+for (const fault of ["enumeration", "open-before", "open-after", "sync", "close"])
+test(`expired quota ${fault} retains ownership until a fresh-process successor is safe`, { timeout: 10000 }, async t => {
+    const { config } = await fixture(t);
+    const input = approved(Buffer.from("expired-owner"));
+    input.receipt.bytesReceived = input.receipt.retained.size = 1024 ** 3;
+    const expire = deadlineAtFault(t);
+    let entered, release, settled = false;
+    const reached = new Promise(resolve => { entered = resolve; });
+    const barrier = new Promise(resolve => { release = resolve; });
+    const pause = async () => { entered(); await barrier; };
+    const readdir = fs.readdir, open = fs.open;
+    t.mock.method(fs, "readdir", async (...args) => {
+        const names = await readdir(...args);
+        if (fault === "enumeration") await pause();
+        return names;
+    });
+    t.mock.method(fs, "open", async (...args) => {
+        if (!path.basename(args[0]).startsWith("quota-")) return open(...args);
+        if (fault === "open-before") await pause();
+        const handle = await open(...args);
+        if (fault === "open-after") await pause();
+        if (["sync", "close"].includes(fault)) {
+            const original = handle[fault].bind(handle);
+            t.mock.method(handle, fault, async () => { await pause(); return original(); });
+        }
+        return handle;
+    });
+    const writer = createFileEvidenceStore(config);
+    const outcome = writer.writeBlob(Readable.from([]), input).catch(error => error.name);
+    let handoff, early, successor;
+    try {
+        await reached;
+        expire();
+        assert.equal(await outcome, "TimeoutError");
+        handoff = (writer.settleQuota?.() ?? Promise.resolve()).then(() => { settled = true; });
+        await new Promise(resolve => setImmediate(resolve));
+        early = settled;
+        if (!early) { release(); await handoff; }
+        const { stdout } = await promisify(execFile)(process.execPath, ["-e", `
+            const {Readable}=require("node:stream"), crypto=require("node:crypto");
+            const store=require(${JSON.stringify(path.join(__dirname, "evidence-store.cjs"))})
+                .createFileEvidenceStore(${JSON.stringify(config)});
+            (async()=>{
+                const results=[];
+                for(let i=0;i<3;i++){
+                    const input=${JSON.stringify(input)};
+                    input.receipt.sha256=input.receipt.retained.sha256=crypto.createHash("sha256").update("successor-"+i).digest("hex");
+                    try { await store.writeBlob(Readable.from([]), input); results.push("accepted"); }
+                    catch(e) { results.push(e.message); }
+                }
+                process.stdout.write(JSON.stringify(results));
+            })().catch(e=>{console.error(e);process.exit(5)});
+        `], { timeout: 5000 });
+        successor = JSON.parse(stdout);
+    } finally {
+        release();
+        await outcome;
+        await handoff;
+        // Drain the original queue even on the unfixed baseline.
+        t.mock.restoreAll();
+        await writer.writeBlob(Readable.from([]), input).catch(() => {});
+    }
+    const markers = (await fs.readdir(config.directory)).filter(n => n.startsWith("quota-"));
+    const total = markers.reduce((sum, n) => sum + Number(n.split("-").at(-1)), 0);
+    t.diagnostic(JSON.stringify({ fault, earlyHandoff: early, markers, total, successor, realLaunches: 0 }));
+    assert.ok(total <= 3 * 1024 ** 3, "expired owner must not overspend durable accounting");
+    assert.equal(early, false, "whole-issue ownership cannot pass an outstanding quota operation");
+    assert.equal(markers.length, 3);
+    await assert.rejects(writer.writeBlob(Readable.from([]), input),
+        fault === "enumeration" ? /launch blob byte limit/ : /checksum/,
+        "a charged same-blob retry must remain admissible at the cap");
+});
+
+test("expired quota queue wait cancels before enumeration or mutation", { timeout: 5000 }, async t => {
+    const { config, store } = await fixture(t);
+    const expire = deadlineAtFault(t);
+    let entered, release, enumerations = 0;
+    const reached = new Promise(resolve => { entered = resolve; });
+    const barrier = new Promise(resolve => { release = resolve; });
+    const readdir = fs.readdir;
+    t.mock.method(fs, "readdir", async (...args) => {
+        enumerations++;
+        const names = await readdir(...args);
+        entered(); await barrier;
+        return names;
+    });
+    const first = store.writeBlob(Readable.from([payload]), approved()).catch(error => error.name);
+    await reached;
+    const second = createFileEvidenceStore(config).writeBlob(Readable.from([payload]), approved(Buffer.from("queued")))
+        .catch(error => error.name);
+    expire();
+    try { assert.deepEqual(await Promise.all([first, second]), ["TimeoutError", "TimeoutError"]); }
+    finally { release(); await store.settleQuota(); }
+    t.mock.restoreAll();
+    assert.equal(enumerations, 1, "expired queued work cannot begin a quota transaction");
+    assert.deepEqual(await fs.readdir(config.directory), []);
+});
+
+for (const fault of ["lost-open-acknowledgement", "sync", "close"])
+test(`expired quota accounting retains charges and acknowledged retry after ${fault}`, async t => {
+    const { config, store } = await fixture(t);
+    const open = fs.open;
+    let injected = false;
+    t.mock.method(fs, "open", async (...args) => {
+        const handle = await open(...args);
+        if (injected || !path.basename(args[0]).startsWith("quota-")) return handle;
+        injected = true;
+        if (fault === "lost-open-acknowledgement") { await handle.close(); throw new Error(fault); }
+        const original = handle[fault].bind(handle);
+        t.mock.method(handle, fault, async () => { await original(); throw new Error(fault); });
+        return handle;
+    });
+    await assert.rejects(store.writeBlob(Readable.from([payload]), approved()), new RegExp(fault));
+    await store.settleQuota();
+    t.mock.restoreAll();
+    const before = await fs.readdir(config.directory);
+    assert.equal(before.length, 1);
+    assert.ok(before[0].endsWith(`-${payload.length}`));
+    const retry = createFileEvidenceStore(config);
+    const record = await retry.writeBlob(Readable.from([payload]), approved());
+    await store.settleQuota();
+    assert.equal((await fs.readdir(config.directory)).filter(n => n.startsWith("quota-")).length, 1);
+    assert.equal((await retry.verifyEvidence(record.url)).sha256, hash(payload));
+});
+
+test("expired quota controller reports bounded cleanup without releasing whole-issue ownership", { timeout: 10000 }, async t => {
+    const { store, config } = await fixture(t);
+    const { h, deps } = await require("./fixtures/execution.cjs").fixture();
+    const { createObservationCollector } = require("./collector.cjs");
+    const { runController } = require("./controller.cjs");
+    const expire = deadlineAtFault(t);
+    let entered, release, unlocked, depth = 0;
+    const reached = new Promise(resolve => { entered = resolve; });
+    const barrier = new Promise(resolve => { release = resolve; });
+    const released = new Promise(resolve => { unlocked = resolve; });
+    const open = fs.open;
+    t.mock.method(fs, "open", async (...args) => {
+        if (path.basename(args[0]).startsWith("quota-")) { entered(); await barrier; }
+        return open(...args);
+    });
+    deps.withLock = action => h.lock(async () => {
+        depth++;
+        try { return await action(); } finally { depth--; unlocked(); }
+    });
+    deps.runIsolated = async () => ({ outcome: { outcome: "untestable" } });
+    const collector = createObservationCollector({ evidenceDirectory: config.directory, store });
+    deps.collectObservation = Object.assign(async () => store.writeBlob(Readable.from([payload]), approved()),
+        { settleQuota: collector.settleQuota });
+    const running = runController({ repository: "dotnet/fsharp", issueNumber: 123 }, deps);
+    let successor = false, next;
+    try {
+        await reached;
+        expire();
+        const result = await running;
+        assert.equal(result.status, "blocked");
+        assert.match(result.reason, /ownership cleanup pending/);
+        assert.equal(depth, 1, "bounded cleanup reporting must retain the actual lock callback");
+        next = h.lock(() => { successor = true; });
+        await new Promise(resolve => setImmediate(resolve));
+        assert.equal(successor, false);
+    } finally {
+        release();
+        await running;
+        await released;
+        await next;
+    }
+    t.mock.restoreAll();
+    assert.equal(depth, 0);
+    assert.equal(successor, true);
+    assert.equal((await fs.readdir(config.directory)).filter(n => n.startsWith("quota-")).length, 1);
+    const record = await store.writeBlob(Readable.from([payload]), approved());
+    assert.equal((await store.verifyEvidence(record.url)).sha256, hash(payload));
+});
+
 async function actionsFixture(t) {
     const { config } = await fixture(t);
     const claims = { scp: `Actions.Results:${"1".repeat(8)}-1111-1111-1111-${"1".repeat(12)}:${"2".repeat(8)}-2222-2222-2222-${"2".repeat(12)}` };
@@ -313,6 +487,140 @@ test("Actions recovers and verifies owned evidence on the second discovery page"
     assert.deepEqual(pages, [1, 2]);
     assert.deepEqual(await replay.readEvidence(record.url), payload);
     assert.equal(state.calls.filter(c => c.options.method === "PUT").length, 1);
+});
+
+for (const method of ["readEvidence", "verifyEvidence", "readBlob", "findEvidence"])
+for (const fault of ["present", "absent", "expired", "revalidation-404", "revalidation-410",
+    ...(method === "findEvidence" ? ["pages", "candidates"] : [])])
+test(`Actions operation deadline covers cumulative ${method} ${fault}`, { timeout: 5000 }, async t => {
+    const { config, store, state, send, response, signed } = await actionsFixture(t);
+    const record = method === "readBlob" ? await store.writeBlob(Readable.from([payload]), approved())
+        : await store.writeEvidence(payload, binding);
+    const query = { runId: config.runId, attempt: config.attempt, buildInstanceId: binding.workId };
+    const timeline = [];
+    let missing = false, cancelled = false, listed = false, downloaded = false;
+    // Advance only injected service latency, never unrelated host scheduling.
+    t.mock.timers.enable({ apis: ["setTimeout", "Date"], now: Date.now() });
+    t.mock.method(AbortSignal, "timeout", ms => {
+        const controller = new AbortController();
+        setTimeout(() => controller.abort(new DOMException("operation deadline", "TimeoutError")), ms);
+        return controller.signal;
+    });
+    const delay = async signal => {
+        const waiting = require("node:timers/promises").setTimeout(45, undefined, { signal });
+        t.mock.timers.tick(45);
+        await waiting;
+    };
+    state.hook = async (url, options) => {
+        timeline.push({ url, at: Date.now() });
+        const run = url.includes("/attempts/"), listing = url.includes("/artifacts?");
+        const candidate = method !== "findEvidence" || listed;
+        const absence = ["absent", "expired"].includes(fault) && candidate;
+        const delayed = absence || fault === "present" && !run && !listing ||
+            fault.startsWith("revalidation") && (missing || url.endsWith("/zip")) ||
+            fault === "pages" && (run || listing) ||
+            fault === "candidates" && (url.endsWith("/zip") || url === signed || downloaded && run);
+        if (delayed) await delay(options.signal);
+        if (listing) listed = true;
+        if (url === signed) downloaded = true;
+        if (url.includes("/attempts/")) {
+            const bytes = Buffer.from(JSON.stringify({ id: 12345, run_attempt: 2,
+                repository: { full_name: "dotnet/fsharp", id: 777 }, head_repository: { full_name: "dotnet/fsharp", id: 777 } }));
+            return new Response(new ReadableStream({
+                async start(controller) {
+                    try { if (absence) await delay(options.signal); controller.enqueue(bytes); controller.close(); }
+                    catch (error) { controller.error(error); }
+                },
+                cancel() { cancelled = true; },
+            }));
+        }
+        if (url.endsWith("/zip") && fault.startsWith("revalidation")) {
+            missing = true;
+            return new Response(null, { status: Number(fault.split("-")[1]) });
+        }
+        if (url.endsWith("/artifacts/87654")) {
+            if (fault === "absent" || missing) return response({}, { status: 404 });
+            if (fault === "expired") return response({ ...state.artifacts[0], expired: true });
+        }
+        if (url.includes("/artifacts?") && fault === "pages")
+            return response({ total_count: 101, artifacts: url.endsWith("page=1")
+                ? Array.from({ length: 100 }, (_, i) => ({ id: i + 1, name: `unrelated-${i}` })) : state.artifacts });
+        if (url.includes("/artifacts?") && fault === "candidates")
+            return response({ total_count: 2, artifacts: [state.artifacts[0], { ...state.artifacts[0], id: 87655 }] });
+        if (url.endsWith("/artifacts/87655")) return response({}, { status: 404 });
+        return null;
+    };
+    const start = Date.now(), first = state.calls.length;
+    const reader = createActionsEvidenceStore({ ...config, timeoutMs: 120 }, { send });
+    const result = await reader[method](method === "findEvidence" ? query : record.url, () => {})
+        .then(() => "accepted", error => error.name);
+    t.diagnostic(JSON.stringify({ method, fault, result, elapsed: Date.now() - start, timeline, cancelled, realLaunches: 0 }));
+    assert.ok(["TimeoutError", "AbortError"].includes(result), "expiry must not return success, absence or partial discovery");
+    const signals = state.calls.slice(first).map(c => c.options.signal);
+    assert.ok(signals.length >= 2, "must cross individually affordable request stages");
+    assert.ok(signals.every(signal => signal === signals[0]), "all requests share the public operation deadline");
+    assert.equal(signals[0].aborted, true);
+    assert.equal(Date.now() - start, 135, "three affordable 45 ms stages must exceed one 120 ms operation");
+    if (fault.startsWith("revalidation")) assert.equal(missing, true, "must reach authenticated download revalidation");
+    if (fault === "pages") assert.ok(timeline.some(call => call.url.endsWith("page=2")));
+    if (fault === "candidates") {
+        assert.equal(downloaded, true, "first candidate must finish before expiry in the next candidate");
+        assert.equal(timeline.filter(call => call.url.includes("/attempts/")).length, 3);
+    }
+});
+
+for (const method of ["readEvidence", "verifyEvidence", "readBlob", "findEvidence"])
+for (const fault of ["ignored-abort", "response-close", "metadata-body", "blob-body", ...(method === "readBlob" ? ["sink"] : [])])
+test(`Actions operation deadline bounds ${method} ${fault} and cleans late responses`, { timeout: 5000 }, async t => {
+    const { config, store, state, send, signed } = await actionsFixture(t);
+    const record = method === "readBlob" ? await store.writeBlob(Readable.from([payload]), approved())
+        : await store.writeEvidence(payload, binding);
+    const expire = deadlineAtFault(t);
+    let entered, release, closed, cancellations = 0;
+    const reached = new Promise(resolve => { entered = resolve; });
+    const barrier = new Promise(resolve => { release = resolve; });
+    const cleanup = new Promise(resolve => { closed = resolve; });
+    state.hook = async url => {
+        if (fault === "sink") return null;
+        if (fault.endsWith("-body")) {
+            if (!(fault === "blob-body" ? url === signed : url.endsWith("/artifacts/87654"))) return null;
+            return new Response(new ReadableStream({
+                start() { entered(); },
+                cancel() { cancellations++; closed(); },
+            }));
+        }
+        if (url !== signed && fault !== "ignored-abort" && !url.endsWith("/zip")) return null;
+        if (fault === "ignored-abort") { entered(); await barrier; }
+        if (fault === "response-close" && !url.endsWith("/zip")) return null;
+        return new Response(new ReadableStream({
+            async cancel() {
+                cancellations++;
+                if (fault === "response-close") { entered(); await barrier; }
+                closed();
+            },
+        }), { status: 302, headers: { location: signed } });
+    };
+    const reader = createActionsEvidenceStore(config, { send });
+    const query = { runId: config.runId, attempt: config.attempt, buildInstanceId: binding.workId };
+    const outcome = reader[method](method === "findEvidence" ? query : record.url, async () => {
+        entered(); await barrier; closed();
+    }).then(() => "accepted", error => error.name);
+    let result, timer, calls;
+    try {
+        await reached;
+        expire();
+        result = await Promise.race([outcome, new Promise(resolve => { timer = setTimeout(resolve, 500, "deadline missed"); })]);
+        calls = state.calls.length;
+    } finally {
+        clearTimeout(timer);
+        release();
+        await outcome;
+        await cleanup;
+    }
+    assert.equal(result, "TimeoutError");
+    assert.equal(await outcome, "TimeoutError");
+    assert.equal(state.calls.length, calls, "late completion cannot start another request");
+    assert.equal(cancellations, fault === "sink" ? 0 : 1);
 });
 
 for (const lane of ["evidence", "blob"])
@@ -543,17 +851,22 @@ test("file verification deadline destroys a stalled stream", { timeout: 2000 }, 
     const { config, store } = await fixture(t);
     const record = await store.writeEvidence(payload, binding);
     const open = fs.open;
-    let stalled;
+    const expire = deadlineAtFault(t);
+    let stalled, entered;
+    const reached = new Promise(resolve => { entered = resolve; });
     t.mock.method(fs, "open", async (...args) => {
         const handle = await open(...args);
         if (args[0].endsWith(".bin")) {
-            stalled = new Readable({ read() {} });
+            stalled = new Readable({ read() { entered(); } });
             t.mock.method(handle, "createReadStream", () => stalled);
         }
         return handle;
     });
-    await assert.rejects(createFileEvidenceStore({ ...config, timeoutMs: 20 }).verifyEvidence(record.url),
-        error => error.name === "TimeoutError");
+    const outcome = createFileEvidenceStore(config).verifyEvidence(record.url);
+    const rejected = assert.rejects(outcome, error => error.name === "TimeoutError");
+    await reached;
+    expire();
+    await rejected;
     assert.equal(stalled.destroyed, true);
 });
 
