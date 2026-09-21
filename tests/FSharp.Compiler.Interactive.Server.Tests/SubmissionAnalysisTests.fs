@@ -9,13 +9,17 @@ module FSharp.Compiler.Interactive.Server.Tests.SubmissionAnalysisTests
 
 open Xunit
 
+open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.VisualStudio.FSharp.Interactive
 
+// The lexer the Visual Studio tooling runs on, which the window is handed rather than compiling against.
+let private scanners = FSharpLexicalScannerFactory() :> ILexicalScannerFactory
+
 let private assertComplete text =
-    Assert.True(SubmissionAnalysis.isComplete text, $"expected a complete submission: <<{text}>>")
+    Assert.True(SubmissionAnalysis.isComplete scanners text, $"expected a complete submission: <<{text}>>")
 
 let private assertIncomplete text =
-    Assert.False(SubmissionAnalysis.isComplete text, $"expected an incomplete submission: <<{text}>>")
+    Assert.False(SubmissionAnalysis.isComplete scanners text, $"expected an incomplete submission: <<{text}>>")
 
 [<Fact>]
 let ``an explicit terminator always submits`` () =
@@ -86,7 +90,7 @@ let ``an empty submission is allowed through`` () =
 
 [<Fact>]
 let ``the terminator is added only when it is missing`` () =
-    Assert.Equal("1 + 1;;", SubmissionAnalysis.withTerminator "1 + 1;;")
-    Assert.Equal("1 + 1\n;;", SubmissionAnalysis.withTerminator "1 + 1")
+    Assert.Equal("1 + 1;;", SubmissionAnalysis.withTerminator scanners "1 + 1;;")
+    Assert.Equal("1 + 1\n;;", SubmissionAnalysis.withTerminator scanners "1 + 1")
     // A ';;' that is only part of a string does not count as one.
-    Assert.Equal("let s = \"a;;b\"\n;;", SubmissionAnalysis.withTerminator "let s = \"a;;b\"")
+    Assert.Equal("let s = \"a;;b\"\n;;", SubmissionAnalysis.withTerminator scanners "let s = \"a;;b\"")

@@ -11,8 +11,6 @@ open Microsoft.VisualStudio.Text
 open Microsoft.VisualStudio.Text.Classification
 open Microsoft.VisualStudio.Utilities
 
-open FSharp.Compiler.Tokenization
-
 [<AutoOpen>]
 module private InteractiveContentTypes =
 
@@ -26,9 +24,13 @@ module private InteractiveContentTypes =
 /// Input carries lexer state across lines, because a submission is one fragment of code and small.
 /// Output is neither: it grows for the life of the session and interleaves printed values with
 /// whatever the code wrote to the console, so each line is coloured on its own.
-type internal FSharpInteractiveClassifier(buffer: ITextBuffer, registry: IClassificationTypeRegistryService, carriesStateAcrossLines: bool) =
-
-    let tokenizer = FSharpSourceTokenizer([], Some "stdin.fsx", None)
+type internal FSharpInteractiveClassifier
+    (
+        buffer: ITextBuffer,
+        registry: IClassificationTypeRegistryService,
+        scanners: ILexicalScannerFactory,
+        carriesStateAcrossLines: bool
+    ) =
 
     let keyword = registry.GetClassificationType "keyword"
     let comment = registry.GetClassificationType "comment"
@@ -41,16 +43,15 @@ type internal FSharpInteractiveClassifier(buffer: ITextBuffer, registry: IClassi
 
     let classificationFor kind =
         match kind with
-        | FSharpTokenColorKind.Keyword -> ValueSome keyword
-        | FSharpTokenColorKind.Comment -> ValueSome comment
-        | FSharpTokenColorKind.String -> ValueSome string'
-        | FSharpTokenColorKind.Number -> ValueSome number
-        | FSharpTokenColorKind.Operator -> ValueSome operator
-        | FSharpTokenColorKind.Identifier
-        | FSharpTokenColorKind.UpperIdentifier -> ValueSome identifier
-        | FSharpTokenColorKind.PreprocessorKeyword -> ValueSome preprocessor
-        | FSharpTokenColorKind.InactiveCode -> ValueSome excluded
-        | _ -> ValueNone
+        | LexicalKind.Keyword -> ValueSome keyword
+        | LexicalKind.Comment -> ValueSome comment
+        | LexicalKind.String -> ValueSome string'
+        | LexicalKind.Number -> ValueSome number
+        | LexicalKind.Operator -> ValueSome operator
+        | LexicalKind.Identifier -> ValueSome identifier
+        | LexicalKind.PreprocessorKeyword -> ValueSome preprocessor
+        | LexicalKind.InactiveCode -> ValueSome excluded
+        | LexicalKind.Other -> ValueNone
 
     // Both interactive content types are shared with every language the window package hosts, and
     // ownership cannot be settled when the classifier is built: the buffer is handed to us before
@@ -107,47 +108,45 @@ type internal FSharpInteractiveClassifier(buffer: ITextBuffer, registry: IClassi
                     snapshot.GetLineNumberFromPosition span.Start.Position
 
             let lastLine = snapshot.GetLineNumberFromPosition span.End.Position
-            let mutable state = FSharpTokenizerLexState.Initial
+            let tokens = ResizeArray<LexicalToken>()
+            let mutable scanner = scanners.CreateScanner()
 
             for lineNumber in firstLine..lastLine do
                 if not carriesStateAcrossLines then
-                    state <- FSharpTokenizerLexState.Initial
+                    scanner <- scanners.CreateScanner()
 
                 let line = snapshot.GetLineFromLineNumber lineNumber
                 let text = line.GetText()
-                let lineTokenizer = tokenizer.CreateLineTokenizer text
-                let mutable scanning = true
+                tokens.Clear()
+                scanner.ScanLine(text, tokens)
 
-                while scanning do
-                    match lineTokenizer.ScanToken state with
-                    | Some token, nextState ->
-                        state <- nextState
+                for token in tokens do
+                    if token.Start >= 0 && token.Start + token.Length <= text.Length then
+                        let tokenSpan = SnapshotSpan(snapshot, line.Start.Position + token.Start, token.Length)
 
-                        if token.LeftColumn >= 0 && token.LeftColumn + token.FullMatchedLength <= text.Length then
-                            let tokenSpan = SnapshotSpan(snapshot, line.Start.Position + token.LeftColumn, token.FullMatchedLength)
-
-                            if tokenSpan.IntersectsWith span then
-                                match classificationFor token.ColorClass with
-                                | ValueSome classification -> result.Add(ClassificationSpan(tokenSpan, classification))
-                                | ValueNone -> ()
-                    | None, nextState ->
-                        state <- nextState
-                        scanning <- false
+                        if tokenSpan.IntersectsWith span then
+                            match classificationFor token.Kind with
+                            | ValueSome classification -> result.Add(ClassificationSpan(tokenSpan, classification))
+                            | ValueNone -> ()
 
             result :> IList<_>
 
 [<Export(typeof<IClassifierProvider>)>]
 [<ContentType(InteractiveWindowGuids.FSharpContentTypeName)>]
-type internal FSharpInteractiveInputClassifierProvider [<ImportingConstructor>] (registry: IClassificationTypeRegistryService) =
+type internal FSharpInteractiveInputClassifierProvider
+    [<ImportingConstructor>]
+    (registry: IClassificationTypeRegistryService, scanners: ILexicalScannerFactory) =
 
     interface IClassifierProvider with
         member _.GetClassifier buffer =
-            buffer.Properties.GetOrCreateSingletonProperty(fun () -> FSharpInteractiveClassifier(buffer, registry, true))
+            buffer.Properties.GetOrCreateSingletonProperty(fun () -> FSharpInteractiveClassifier(buffer, registry, scanners, true))
 
 [<Export(typeof<IClassifierProvider>)>]
 [<ContentType(OutputContentTypeName)>]
-type internal FSharpInteractiveOutputClassifierProvider [<ImportingConstructor>] (registry: IClassificationTypeRegistryService) =
+type internal FSharpInteractiveOutputClassifierProvider
+    [<ImportingConstructor>]
+    (registry: IClassificationTypeRegistryService, scanners: ILexicalScannerFactory) =
 
     interface IClassifierProvider with
         member _.GetClassifier buffer =
-            buffer.Properties.GetOrCreateSingletonProperty(fun () -> FSharpInteractiveClassifier(buffer, registry, false))
+            buffer.Properties.GetOrCreateSingletonProperty(fun () -> FSharpInteractiveClassifier(buffer, registry, scanners, false))
