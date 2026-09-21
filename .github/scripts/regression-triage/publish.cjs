@@ -231,7 +231,8 @@ function observedReceipt(snapshot, repo, bot, state) {
 
 function humanState(record, snapshot, proposal) {
   const current = snapshot.humanDecisions.filter((item) => item.label === "Regression").at(-1);
-  if (current) record.humanLabelDecision = current;
+  if (current && (!record.humanLabelDecision
+    || Date.parse(current.createdAt) >= Date.parse(record.humanLabelDecision.createdAt))) record.humanLabelDecision = current;
   if (proposal.correction) {
     const source = sources(snapshot).get(proposal.correction.sourceId);
     record.humanCorrection = { ...proposal.correction, createdAt: source.createdAt ?? null };
@@ -284,15 +285,20 @@ async function publishBatch({ github, store, repo, manifest, output, context, bo
       const prior = { ...state.issues[result.number] };
       if (isFinishedRecord(prior) && prior.fingerprint === result.fingerprint) continue;
       const snapshot = manifest.selected.find((item) => item.number === result.number).snapshot;
-      const history = positive(snapshot.issueId) && Object.values(state.issues).find((record) =>
-        record.issueId === snapshot.issueId && (record.clarification || record.pendingPublication?.effect === "comment"));
-      if (!prior.clarification && history) {
-        prior.clarification = { ...history.clarification };
-        if (history.pendingPublication?.effect === "comment") {
-          prior.clarification.pendingPublication = history.pendingPublication;
+      for (const history of Object.values(state.issues)) {
+        if (!positive(snapshot.issueId) || history.issueId !== snapshot.issueId) continue;
+        for (const field of ["humanCorrection", "humanLabelDecision"]) {
+          if (history[field] && (!prior[field]
+            || Date.parse(history[field].createdAt) > Date.parse(prior[field].createdAt))) prior[field] = history[field];
         }
-        if (prior.clarification.url) {
-          prior.clarification.url = `${snapshot.url}#issuecomment-${prior.clarification.commentId}`;
+        if (!prior.clarification && (history.clarification || history.pendingPublication?.effect === "comment")) {
+          prior.clarification = { ...history.clarification };
+          if (history.pendingPublication?.effect === "comment") {
+            prior.clarification.pendingPublication = history.pendingPublication;
+          }
+          if (prior.clarification.url) {
+            prior.clarification.url = `${snapshot.url}#issuecomment-${prior.clarification.commentId}`;
+          }
         }
       }
       const operationId = hash([context.repository, result.number, POLICY_VERSION, result.fingerprint]);
@@ -393,7 +399,7 @@ async function publishBatch({ github, store, repo, manifest, output, context, bo
     const alreadyObserved = intent.effect === "label" && snapshot.labels.includes("Regression")
       || intent.effect === "comment" && record.clarification?.status === "published";
     if (alreadyObserved) { await finish("published", { code: "effect-observed" }); continue; }
-    if (intent.phase !== "prepared") {
+    if (!["prepared", "rejected"].includes(intent.phase)) {
       await finish("unknown", { code: "prior-attempt-unresolved" });
       continue;
     }
@@ -405,8 +411,14 @@ async function publishBatch({ github, store, repo, manifest, output, context, bo
       await finish("noop", { code: veto ? "human-veto" : "no-mutation-needed" });
       continue;
     }
+    if (intent.phase === "rejected" && (intent.rejections >= LIMITS.labelRejections || Date.parse(now) < Date.parse(intent.retryAt))) {
+      await finish("retryable", { code: intent.rejections >= LIMITS.labelRejections ? "label-retry-exhausted" : "label-retry-backoff",
+        retryAt: intent.retryAt });
+      continue;
+    }
     intent.phase = "sending";
     intent.effect = effect;
+    delete intent.retryAt;
     if (effect === "comment") record.clarification = { status: "pending", selector: result.clarification };
     await save();
     claimedHere = true;
@@ -436,15 +448,31 @@ async function publishBatch({ github, store, repo, manifest, output, context, bo
       if (effect === "label") await github.rest.issues.addLabels({ ...repo, issue_number: result.number, labels: ["Regression"] });
       else await github.rest.issues.createComment({ ...repo, issue_number: result.number, body });
     } catch (error) {
-      // Request errors are unknown outcomes, never a license to repeat a comment.
       requestError = { status: error.status ?? null, code: text(error.code, 80) ? error.code : "request-failed" };
+      const headers = error.response?.headers ?? {};
+      if (effect === "label" && (error.status === 429
+        || error.status === 403 && (headers["retry-after"] !== undefined || headers["x-ratelimit-remaining"] === "0"))) {
+        intent.phase = "rejected";
+        intent.rejections = (intent.rejections ?? 0) + 1;
+        const retryAfter = headers["retry-after"];
+        const deadline = /^\d+$/.test(retryAfter) ? Date.parse(now) + Number(retryAfter) * 1000 : Date.parse(retryAfter);
+        const reset = Number(headers["x-ratelimit-reset"]) * 1000;
+        const fallback = Date.parse(now) + 60000 * 2 ** (intent.rejections - 1);
+        intent.retryAt = new Date(Math.max(fallback,
+          Number.isFinite(deadline) && deadline <= 8640000000000000 ? deadline : 0,
+          Number.isFinite(reset) && reset <= 8640000000000000 ? reset : 0)).toISOString();
+      }
     }
+    // Persist definite rejection before a read failure can hide retry eligibility.
+    // All comment failures and ambiguous label outcomes retain their sending claim.
+    if (intent.phase === "rejected") await save();
     snapshot = await recheck();
     if (!snapshot) continue;
     const observed = effect === "label" ? snapshot.labels.includes("Regression") : record.clarification?.status === "published";
     if (!observed && effect === "comment") record.clarification.status = "unknown";
-    await finish(observed ? "published" : "unknown", {
-      code: observed ? "effect-observed" : requestError ? "request-outcome-unknown" : "effect-not-observed",
+    await finish(observed ? "published" : intent.phase === "rejected" ? "retryable" : "unknown", {
+      code: observed ? "effect-observed" : intent.phase === "rejected" ? "label-request-rejected"
+        : requestError ? "request-outcome-unknown" : "effect-not-observed",
       ...(requestError ? { requestError } : {}),
     });
   }

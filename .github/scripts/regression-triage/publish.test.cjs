@@ -522,6 +522,84 @@ for (const kind of ["label", "clarification"]) {
   }
 }
 
+for (const [status, headers, delay] of [
+  [429, { "retry-after": "60" }, 60000],
+  [403, { "retry-after": new Date(Date.parse(now) + 120000).toUTCString() }, 120000],
+  [403, { "x-ratelimit-remaining": "0", "x-ratelimit-reset": String(Date.parse(now) / 1000 + 180) }, 180000],
+  [429, {}, 60000],
+]) test(`rejected label retries after persisted backoff (${status}, ${JSON.stringify(headers)})`, async () => {
+  const { api, store, args } = await setup();
+  args.output = envelope([proposal(args.manifest.selected[0], uncertain)]);
+  await publishBatch(args);
+  api.comments[42] = [];
+  api.issues[0].body += " An earlier working version is now known.";
+  const binding = context(store.value.headOid, "132");
+  args.context = binding;
+  args.manifest = { ...await collect(api, store.value.state), binding };
+  args.output = envelope([proposal(args.manifest.selected[0])]);
+  const add = api.github.rest.issues.addLabels;
+  let attempts = 0;
+  api.github.rest.issues.addLabels = async (request) => {
+    if (++attempts === 1) throw Object.assign(failure(status), { response: { headers } });
+    return add(request);
+  };
+  for (const elapsed of [0, delay - 1, delay]) {
+    store.value.state = normalizeMemory(JSON.stringify(store.value.state));
+    const result = await publishBatch({ ...args, now: new Date(Date.parse(now) + elapsed).toISOString() });
+    assert.equal(result.outcomes[0].status, elapsed < delay ? "retryable" : "published");
+    assert.equal(attempts, elapsed < delay ? 1 : 2);
+    if (elapsed < delay) {
+      assert.equal(result.state.issues[42].pendingPublication.phase, "rejected");
+      assert.equal(Date.parse(result.state.issues[42].pendingPublication.retryAt), Date.parse(now) + delay);
+      assert.deepEqual(result.state.pending.map((entry) => entry.number), [42]);
+    }
+  }
+  assert.ok(api.issues[0].labels.includes("Regression"));
+  assert.equal(writes(api, "createComment").length, 1);
+});
+
+test("rejected label retry budget survives recollection; ambiguous outcomes never retry", async () => {
+  for (const kind of ["label", "comment"]) for (const status of [429, 403, 503, undefined]) {
+    const { api, store, args } = await setup();
+    let attempts = 0;
+    api.github.rest.issues[kind === "label" ? "addLabels" : "createComment"] = async () => { attempts++; throw failure(status); };
+    for (let run = 0; run < 5; run++) {
+      const binding = context(store.value.headOid, String(140 + run));
+      const time = new Date(Date.parse(now) + run * 3600000).toISOString();
+      store.value.state = normalizeMemory(JSON.stringify(store.value.state));
+      const manifest = { ...await collect(api, store.value.state, { now: time }), binding };
+      const result = await publishBatch({ ...args, context: binding, manifest, now: time,
+        output: envelope([proposal(manifest.selected[0], kind === "comment" ? uncertain : {})]) });
+      assert.equal(result.outcomes[0].status, kind === "label" && status === 429 ? "retryable" : "unknown");
+      assert.ok(result.state.pending.some((entry) => entry.number === 42));
+    }
+    assert.equal(attempts, kind === "label" && status === 429 ? 3 : 1);
+    assert.equal(writes(api, "createComment").length, 0);
+  }
+});
+
+for (const change of ["read failure", "human removal", "changed evidence"]) {
+  test(`rejected label remains guarded after ${change}`, async () => {
+    const { api, store, args } = await setup();
+    const get = api.github.rest.issues.get;
+    const add = api.github.rest.issues.addLabels;
+    api.github.rest.issues.addLabels = async () => {
+      if (change === "read failure") api.github.rest.issues.get = async () => { throw failure(503); };
+      throw Object.assign(failure(429), { response: { headers: { "retry-after": "60" } } });
+    };
+    await publishBatch(args);
+    assert.equal(store.value.state.issues[42].pendingPublication.phase, "rejected");
+    api.github.rest.issues.get = get;
+    api.github.rest.issues.addLabels = add;
+    if (change === "human removal") api.timeline[42] = [{ id: 1, event: "unlabeled",
+      label: { name: "Regression" }, actor: { id: 20, type: "User" }, created_at: now }];
+    if (change === "changed evidence") api.issues[0].body += " Correction: this also failed earlier.";
+    const result = await publishBatch({ ...args, now: new Date(Date.parse(now) + 60000).toISOString() });
+    assert.equal(result.outcomes[0].status, change === "read failure" ? "published" : "stale");
+    assert.equal(writes(api, "addLabels").length, change === "read failure" ? 1 : 0);
+  });
+}
+
 for (const observed of [false, true]) {
   for (const next of ["regression", "uncertain", "not-regression"]) {
     test(`old clarification (${observed ? "observed" : "unknown"}) cannot complete or block newer ${next}`, async () => {
@@ -814,6 +892,47 @@ test("human rejecting correction and fair-read metadata survive migration and a 
   assert.equal(store.value.state.issues[42].lastResult.detail.code, "human-veto");
 });
 
+for (const history of ["correction", "label removal", "unrelated identity"]) {
+  test(`stable identity preserves human ${history} across transfers and later reapplication`, async () => {
+    const { api, store, args } = await setup({ issues: [report(42, { id: 123456 })],
+      comments: { 42: [comment(1, { body: "Correction: the earlier compiler also failed." })] },
+      timeline: history === "label removal" ? { 42: [{ id: 1, event: "unlabeled",
+        label: { name: "Regression" }, actor: { id: 20, type: "User" }, created_at: before }] } : {},
+    });
+    const source = args.manifest.selected[0].snapshot.humanComments[0];
+    args.output = envelope([proposal(args.manifest.selected[0], { classification: "not-regression",
+      ...(history !== "label removal" ? { correction: { sourceId: source.sourceId, url: source.url, quote: source.body } } : {}),
+    })]);
+    await publishBatch(args);
+    const original = clone(store.value.state.issues[42]);
+    api.issues.length = 0;
+    api.comments[42] = [];
+    for (const [number, reapplied] of [[87, false], [88, true], [89, false]]) {
+      api.issues.splice(0, api.issues.length, report(number, {
+        id: history === "unrelated identity" ? 654321 : 123456,
+      }));
+      if (reapplied) api.timeline[number] = [{ id: 2, event: "labeled", label: { name: "Regression" },
+        actor: { id: 20, type: "User" }, created_at: now }];
+      store.value.state = normalizeMemory(JSON.stringify(store.value.state));
+      const binding = context(store.value.headOid, String(number));
+      const manifest = { ...await collect(api, store.value.state), binding };
+      const item = manifest.selected.find((entry) => entry.number === number);
+      const result = await publishBatch({ ...args, context: binding, manifest,
+        output: envelope([proposal(item)]) });
+      assert.equal(result.state.issues[number].lastResult.status,
+        number === 87 && history !== "unrelated identity" ? "noop" : "published");
+      assert.equal(api.issues[0].labels.includes("Regression"), number !== 87 || history === "unrelated identity");
+      if (history !== "unrelated identity") {
+        assert.deepEqual(result.state.issues[number].humanCorrection, original.humanCorrection);
+        assert.equal(result.state.issues[number].humanLabelDecision?.event,
+          number !== 87 ? "labeled" : history === "label removal" ? "unlabeled" : undefined);
+      }
+      assert.deepEqual(result.state.issues[42].humanCorrection, original.humanCorrection);
+    }
+    assert.equal(writes(api, "createComment").length, 0);
+  });
+}
+
 for (const origin of ["title", "body", "linked title", "linked body"]) {
   for (const [author, human] of [
     [{ id: 10, login: "reporter", type: "User" }, true],
@@ -1095,6 +1214,11 @@ for (const [key, value] of [
   ["pendingPublication", { operationId: "a".repeat(64), phase: "finished" }],
   ["pendingPublication", { operationId: "a".repeat(64), phase: "sending" }],
   ["pendingPublication", { operationId: "a".repeat(64), phase: "sending", effect: "close" }],
+  ...[
+    { rejections: 0 }, { rejections: 4 }, { rejections: "1" }, { retryAt: "invalid" },
+    { phase: "sending" }, { effect: "comment" },
+  ].map((fields) => ["pendingPublication", { operationId: "a".repeat(64), phase: "rejected",
+    effect: "label", rejections: 1, retryAt: now, ...fields }]),
   ["pendingLabelPublication", {}],
   ["pendingLabelPublication", { operationId: "a".repeat(64), phase: "prepared" }],
   ["pendingLabelPublication", { operationId: "a".repeat(64), phase: "sending", effect: "comment" }],

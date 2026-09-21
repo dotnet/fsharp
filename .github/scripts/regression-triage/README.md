@@ -181,18 +181,29 @@ full; it never silently evicts human history or receipts.
 `published` means the effect was observed after the request; `noop` means no issue
 mutation was needed. `stale`, `retryable` and `unknown` keep work pending and must be
 surfaced by the caller, as must thrown errors. A post-write correction/closure
-records a partial stale outcome without undoing the effect. Request errors are
-unknown outcomes until a real label/receipt is observed, not success-shaped
-fallbacks. Prepared intents can resume; claimed attempts without an observable
-result are retained without blind retransmission. A known-unsent failed recheck
-returns its claim to prepared state.
+records a partial stale outcome without undoing the effect. A label request
+rejected with HTTP 429, or HTTP 403 with rate-limit headers, persists a `rejected`
+intent with `rejections` and `retryAt` before reading the issue again. At most
+three such requests are attempted per operation, across restarts and recollection.
+Retries wait for both exponential backoff (starting at one minute) and any
+`Retry-After` (seconds or HTTP date) or `X-RateLimit-Reset` deadline. Exhaustion
+remains visibly pending, not a successful no-op. Every retry still requires the
+complete adjacent eligibility, fingerprint and human-decision checks.
+Other request errors remain unknown until a real label/receipt is observed.
+Comment errors never authorize retransmission. Prepared intents can resume;
+ambiguous claimed attempts are retained without blind retransmission.
+A known-unsent failed recheck returns its claim to prepared state.
 
 Clarifications are fixed, short, AI-disclosed questions with an issue-level marker
 independent of policy/fingerprint. Recovery accepts a live marker only from the
 configured **ID + login + API Bot type**, never a human copying it. Durable receipts
 also prevent repeats after comment deletion. On transfer back under a new number,
-the stable API issue ID carries clarification receipts and unresolved attempts
-forward without changing the old record. Legacy receipts can migrate only when an
+the stable API issue ID carries clarification receipts, unresolved comment
+attempts, durable human corrections and human label decisions forward without
+changing the old record. The newest saved human decision wins across repeated
+transfers; a later human label application still overrides an earlier rejection.
+Deleted correction text or timeline entries cannot erase saved decisions.
+Legacy receipts can migrate only when an
 authenticated comment at the current canonical URL matches both the old ledger's
 comment ID and issue-number marker. The new record then survives receipt deletion.
 If the ledger is confirmed missing,

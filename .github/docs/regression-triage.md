@@ -124,11 +124,20 @@ When changing classification semantics, bump `POLICY_VERSION` and the workflow's
 example/artifact-name version together, freeze expectations and rerun evaluation.
 At most one fixed-template question is asked; unresolved/missing historical
 receipts suppress potentially duplicate questions. Never delete memory to retry.
-Stable API issue identity preserves clarification history when an issue transfers
-out and back under a new number, even if its receipt was deleted. Older records
+Stable API issue identity preserves clarification history, human corrections and
+human label decisions when an issue transfers out and back under a new number,
+even if the receipt or correction was deleted. Later human reapplication still
+overrides an earlier rejection, including across repeated transfers. Older records
 without that identity migrate only through an authenticated matching live receipt.
 Durable rejecting corrections require human author provenance, not merely a
 matching quote from a bot-authored report.
+
+Definitively rate-limited label writes (429, or 403 with rate-limit headers)
+retain a bounded retry count and deadline in memory. Retries honor `Retry-After`
+and rate-limit reset headers, with exponential backoff and at most three rejected
+requests per operation. Exhaustion stays visibly pending. Ambiguous transport
+outcomes and all comment failures remain non-retransmittable until observed;
+label recovery never permits another clarification.
 
 `staged: true` **or** `GH_AW_SAFE_OUTPUTS_STAGED=true` suppresses all issue writes,
 branch creation and remote memory commits; model fields cannot disable either.

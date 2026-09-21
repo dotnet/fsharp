@@ -8,7 +8,7 @@ const OVERLAP_MS = 15 * 60 * 1000;
 const LIMITS = Object.freeze({
   candidates: 5, issuePages: 10, snapshotReads: 10,
   commentPages: 10, timelinePages: 10, linkedItems: 5, reviewPages: 5,
-  modelEntryBytes: 49152, modelInputBytes: 196608,
+  modelEntryBytes: 49152, modelInputBytes: 196608, labelRejections: 3,
 });
 const QUESTIONS = Object.freeze({
   "known-good": "Which earlier version worked with the same source and comparable settings?",
@@ -25,10 +25,13 @@ const compareText = (a, b) => a < b ? -1 : a > b ? 1 : 0;
 function validPublication(value) {
   return value == null || object(value)
     && typeof value.operationId === "string" && value.operationId.trim().length > 0 && value.operationId.length <= 64
-    && (value.phase === undefined || ["prepared", "sending"].includes(value.phase))
+    && (value.phase === undefined || ["prepared", "sending", "rejected"].includes(value.phase))
     && (value.effect === undefined || ["label", "comment"].includes(value.effect))
     && (value.phase !== "sending" || value.effect !== undefined)
-    && (value.phase !== "prepared" || value.effect === undefined);
+    && (value.phase !== "prepared" || value.effect === undefined)
+    && (value.rejections === undefined || issueNumber(value.rejections) && value.rejections <= LIMITS.labelRejections)
+    && (value.retryAt === undefined || value.phase === "rejected" && timestamp(value.retryAt))
+    && (value.phase !== "rejected" || value.effect === "label" && issueNumber(value.rejections) && timestamp(value.retryAt));
 }
 
 function isEligibleIssue(issue) {
