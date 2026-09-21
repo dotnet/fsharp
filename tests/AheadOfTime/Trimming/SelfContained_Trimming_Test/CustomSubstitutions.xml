@@ -1,0 +1,3 @@
+<linker>
+  <resource name="custom.marker" action="remove" />
+</linker>
