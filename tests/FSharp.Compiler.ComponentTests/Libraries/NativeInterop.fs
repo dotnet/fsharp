@@ -244,11 +244,16 @@ let main _ = 0
         for allocation in [
             "let allocate = System.Func<unit, unit>(fun () -> NativePtr.stackalloc<int> 1 |> ignore) in allocate.Invoke ()"
             "let allocate () = NativePtr.stackalloc<int> 1 |> ignore in allocate ()"
+            "let allocate = (let n = 1 + (System.Environment.TickCount &&& 1) in fun () -> NativePtr.stackalloc<int> n |> ignore) in allocate ()"
+            "let allocate = (if System.Environment.TickCount >= 0 then (fun () -> NativePtr.stackalloc<int> 1 |> ignore) else (fun () -> NativePtr.stackalloc<int> 2 |> ignore)) in allocate ()"
+            "let allocate = D(fun () -> NativePtr.stackalloc<int> 1 |> ignore) in allocate.Invoke()"
+            "let allocate = (if System.Environment.TickCount >= 0 then D(fun () -> NativePtr.stackalloc<int> 1 |> ignore) else D(fun () -> NativePtr.stackalloc<int> 2 |> ignore)) in allocate.Invoke()"
         ] do
             for optimize in [ false; true ] do
                 FSharp $"""
 module Test
 open Microsoft.FSharp.NativeInterop
+type D = delegate of unit -> unit
 let run () = {body.Replace("local ()", allocation)}
 [<EntryPoint>]
 let main _ =
@@ -261,41 +266,6 @@ let main _ =
                 |> shouldSucceed
                 |> verifyILContains [ "localloc" ]
                 |> ignore
-
-    [<Theory>]
-    [<InlineData(false)>]
-    [<InlineData(true)>]
-    let ``computed handler-local stackalloc lambda preserves its method boundary`` optimize =
-        for allocation in [
-            """
-            let n = 1 + (System.Environment.TickCount &&& 1)
-            fun () -> NativePtr.stackalloc<int> n |> ignore
-"""
-            """
-            if System.Environment.TickCount >= 0 then
-                fun () -> NativePtr.stackalloc<int> 1 |> ignore
-            else
-                fun () -> NativePtr.stackalloc<int> 2 |> ignore
-"""
-        ] do
-            FSharp $"""
-module Test
-open Microsoft.FSharp.NativeInterop
-let run () =
-    try failwith "enter"
-    with _ ->
-        let allocate = {allocation}
-        allocate ()
-[<EntryPoint>]
-let main _ =
-    run ()
-    0
-"""
-            |> withNoWarn 9
-            |> withOptimization optimize
-            |> compileExeAndRun
-            |> shouldSucceed
-            |> ignore
 
     [<Theory>]
     [<InlineData("try NativePtr.stackalloc<int> n |> ignore with _ -> ()")>]

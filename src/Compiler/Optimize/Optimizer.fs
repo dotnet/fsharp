@@ -1859,16 +1859,18 @@ let ExprMayHaveFrameLocalAllocation expr =
 
     FoldExpr folder false expr
 
-let rec CallableExprMayHaveFrameLocalAllocation expr exprTy =
+let rec CallableExprMayHaveFrameLocalAllocation g expr exprTy =
     match stripDebugPoints expr with
     | Expr.Let(_, body, _, _)
     | Expr.LetRec(_, body, _, _)
     | Expr.Sequential(_, body, NormalSeq, _) ->
-        CallableExprMayHaveFrameLocalAllocation body exprTy
+        CallableExprMayHaveFrameLocalAllocation g body exprTy
     | Expr.Match(_, _, _, targets, _, _) when targets.Length <= 2 ->
         targets
         |> Array.exists (fun (TTarget(_, body, _)) ->
-            CallableExprMayHaveFrameLocalAllocation body exprTy)
+            CallableExprMayHaveFrameLocalAllocation g body exprTy)
+    | NewDelegateExpr g (_, _, body, _, _) ->
+        ExprMayHaveFrameLocalAllocation body
     | expr ->
         let _, _, body, _ = stripTopLambda (expr, exprTy)
         ExprMayHaveFrameLocalAllocation body
@@ -1886,7 +1888,7 @@ let TryEliminateBinding cenv env bind e2 _m =
     elif vspec1.LogicalName.StartsWithOrdinal stackVarPrefix ||
          vspec1.LogicalName.Contains suffixForVariablesThatMayNotBeEliminated then None
     elif env.withinExnHandler &&
-         CallableExprMayHaveFrameLocalAllocation e1 vspec1.Type then None
+         CallableExprMayHaveFrameLocalAllocation g e1 vspec1.Type then None
     else
 
         // Peephole on immediate consumption of single bindings, e.g. "let x = e in x" --> "e"
