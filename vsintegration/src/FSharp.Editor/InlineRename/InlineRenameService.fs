@@ -60,6 +60,10 @@ type internal InlineRenameLocationSet
             let! newSolution =
                 applyChanges replacementText originalSolution (locations |> Array.toList |> List.groupBy (fun x -> x.Document))
 
+            // Bare `_` names a binding nothing refers to: in expression position `_.M()` is the shorthand lambda.
+            // Read before normalization strips the backticks of ``_``, which is a referenceable name.
+            let isBareUnderscore = replacementText = "_"
+
             let replacementText =
                 match symbolKind with
                 | LexerSymbolKind.GenericTypeParameter
@@ -67,10 +71,9 @@ type internal InlineRenameLocationSet
                 | LexerSymbolKind.Operator -> replacementText
                 | _ -> FSharpKeywords.NormalizeIdentifierBackticks replacementText
 
-            // `_` names a binding nothing refers to: in expression position `_.M()` is the shorthand lambda
             let replacementTextValid =
                 Tokenizer.isValidNameForSymbol (symbolKind, symbol, replacementText)
-                && not (replacementText = "_" && locations.Length > 1)
+                && not (isBareUnderscore && locations.Length > 1)
 
             let documentIds = locations |> Seq.map (fun doc -> doc.Document.Id) |> Seq.distinct
             return new InlineRenameReplacementInfo(newSolution, replacementTextValid, documentIds) :> FSharpInlineRenameReplacementInfo
@@ -186,12 +189,13 @@ type internal InlineRenameService [<ImportingConstructor>] () =
 
     inherit FSharpInlineRenameServiceImplementation()
 
-    // Rewriting the uses without the declaration leaves a file that no longer compiles
+    // Rewriting the uses without the declaration leaves a file that no longer compiles.
+    // The declaration of an active pattern case seen from a use is the whole `(|A|B|)`, so it must contain the use, not equal it.
     static let declarationWouldBeRenamed (checkFileResults: FSharpCheckFileResults) (symbolUse: FSharpSymbolUse) ct =
         match symbolUse.Symbol.DeclarationLocation with
         | Some declRange when String.Equals(declRange.FileName, symbolUse.Range.FileName, StringComparison.Ordinal) ->
             checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol, cancellationToken = ct)
-            |> Array.exists (fun su -> Range.equals su.Range declRange)
+            |> Array.exists (fun su -> Range.rangeContainsRange declRange su.Range)
         | _ -> true
 
     override _.GetRenameInfoAsync(document: Document, position: int, cancellationToken: CancellationToken) : Task<FSharpInlineRenameInfo> =
