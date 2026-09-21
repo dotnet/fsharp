@@ -38,6 +38,15 @@ function CheckTrim($root, $tfm, $outputfile, $expected_len, $callerLineNumber) {
 
     # Checking that the trimmed outputfile binary is of expected size (needs adjustments if test is updated).
     $file = Get-Item (Join-Path $PSScriptRoot "${root}\bin\release\${tfm}\win-x64\publish\${outputfile}")
+    $metadata = [System.Reflection.Assembly]::LoadFile($file.FullName).GetManifestResourceNames() |
+        Where-Object { $_ -match '^FSharp(Signature|Optimization)' }
+    if ($metadata) {
+        $errors += "Metadata remains in ${outputfile}: $($metadata -join ', ')"
+    }
+    $app = [System.Reflection.Assembly]::LoadFile((Join-Path $file.DirectoryName "${root}.dll"))
+    if ($app.GetManifestResourceNames() -contains "custom.marker") {
+        $errors += "Custom resource-removal rule was not applied in ${root}"
+    }
     $file_len = $file.Length
     if ($expected_len -eq -1)
     {
@@ -71,7 +80,7 @@ $allErrors += CheckTrim -root "SelfContained_Trimming_Test" -tfm "net9.0" -outpu
 $allErrors += CheckTrim -root "StaticLinkedFSharpCore_Trimming_Test" -tfm "net9.0" -outputfile "StaticLinkedFSharpCore_Trimming_Test.dll" -expected_len 9174016 -callerLineNumber 71
 
 # Check net9.0 trimmed assemblies with F# metadata resources removed
-$allErrors += CheckTrim -root "FSharpMetadataResource_Trimming_Test" -tfm "net9.0" -outputfile "FSharpMetadataResource_Trimming_Test.dll" -expected_len 7613440 -callerLineNumber 74
+$allErrors += CheckTrim -root "FSharpMetadataResource_Trimming_Test" -tfm "net9.0" -outputfile "FSharpMetadataResource_Trimming_Test.dll" -expected_len 7607296 -callerLineNumber 74
 
 # Report all errors and exit with failure if any occurred
 if ($allErrors.Count -gt 0) {
