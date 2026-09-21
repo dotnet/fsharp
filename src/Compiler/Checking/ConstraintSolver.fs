@@ -306,6 +306,10 @@ type ConstraintSolverState =
       /// Checks to run after all inference is complete.
       PostInferenceChecksFinal: ResizeArray<unit -> unit>
 
+      mutable UnionsWithDeferredAttributes: Set<Stamp>
+
+      mutable DeferredUnionNullnessChecks: (TType * range) list
+
       WarnWhenUsingWithoutNullOnAWithNullTarget: string option
 
       /// RFC FS-1043: the CCU currently being compiled, used to scope the optimizer-replay cache of
@@ -322,6 +326,8 @@ type ConstraintSolverState =
           TcVal = tcVal
           PostInferenceChecksPreDefaults = ResizeArray()
           PostInferenceChecksFinal = ResizeArray()
+          UnionsWithDeferredAttributes = Set.empty
+          DeferredUnionNullnessChecks = []
           WarnWhenUsingWithoutNullOnAWithNullTarget = None
           CompilingCcu = compilingCcu }
 
@@ -2951,13 +2957,27 @@ and SolveNullnessSupportsNull (csenv: ConstraintSolverEnv) ndeep m2 (trace: Opti
         | Nullness.KnownFromConstructor -> () // Unreachable after Normalize()
     }
 
-and SolveTypeUseNotSupportsNull (csenv: ConstraintSolverEnv) ndeep m2 trace ty =
+and SolveTypeUseNotSupportsNull (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTrace) ty =
     trackErrors {
         let g = csenv.g
         let m = csenv.m
         let denv = csenv.DisplayEnv
 
-        if TypeNullIsTrueValue g ty then
+        let isUnresolvedUnionInOverload =
+            csenv.IsSpeculativeForMethodOverloading &&
+            match tryTcrefOfAppTy g ty with
+            | ValueSome tcref -> tcref.IsUnionTycon && tcref.UnionCasesArray.Length = 0
+            | ValueNone -> false
+
+        if TypeNullIsTrueValue g ty || isUnresolvedUnionInOverload then
+            let pending = csenv.SolverState.DeferredUnionNullnessChecks
+            if not pending.IsEmpty then
+                let remaining =
+                    pending |> List.filter (fun (pendingTy, pendingRange) ->
+                        pendingRange <> getNullnessWarningRange csenv || not (typeEquiv g pendingTy ty))
+                trace.Exec
+                    (fun () -> csenv.SolverState.DeferredUnionNullnessChecks <- remaining)
+                    (fun () -> csenv.SolverState.DeferredUnionNullnessChecks <- pending)
             // We can only give warnings here as F# 5.0 introduces these constraints into existing
             // code via Option.ofObj and Option.toObj
             do! WarnD (ConstraintSolverNullnessWarning(FSComp.SR.csTypeHasNullAsTrueValue(NicePrint.minimalRichTextOfType denv ty), getNullnessWarningRange csenv, m2))
@@ -2975,6 +2995,25 @@ and SolveTypeUseNotSupportsNull (csenv: ConstraintSolverEnv) ndeep m2 trace ty =
             | ValueSome tp ->
                 do! AddConstraint csenv ndeep m2 trace tp (TyparConstraint.NotSupportsNull m)
             | ValueNone ->
+                match tryTcrefOfAppTy g ty with
+                | ValueSome tcref when csenv.SolverState.UnionsWithDeferredAttributes.Contains tcref.Stamp ->
+                    // Representation attributes can remain unresolved after union cases are populated.
+                    let pending = csenv.SolverState.DeferredUnionNullnessChecks
+                    let warningRange = getNullnessWarningRange csenv
+                    trace.Exec
+                        (fun () ->
+                            csenv.SolverState.DeferredUnionNullnessChecks <- (ty, warningRange) :: pending
+                            csenv.SolverState.PushPostInferenceCheck (preDefaults=true, check = fun () ->
+                                if TypeNullIsTrueValue g ty &&
+                                   csenv.SolverState.DeferredUnionNullnessChecks
+                                   |> List.exists (fun (pendingTy, pendingRange) ->
+                                       pendingRange = warningRange && typeEquiv g pendingTy ty) then
+                                    SolveTypeUseNotSupportsNull csenv ndeep m2 NoTrace ty |> RaiseOperationResult))
+                        (fun () ->
+                            csenv.SolverState.DeferredUnionNullnessChecks <- pending
+                            csenv.SolverState.PopPostInferenceCheck (preDefaults=true))
+                | _ -> ()
+
                 let nullness = nullnessOfTy g ty
                 do! SolveNullnessNotSupportsNull csenv ndeep m2 trace ty nullness
     }
@@ -3105,7 +3144,22 @@ and SolveTypeIsEnum (csenv: ConstraintSolverEnv) ndeep m2 trace ty underlying =
         AddConstraint csenv ndeep m2 trace destTypar (TyparConstraint.IsEnum(underlying, m))
     | _ ->
         if isEnumTy g ty then
-            SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace underlying (underlyingTypeOfEnumTy g ty)
+            match tryUnderlyingTypeOfEnumTy g ty with
+            | ValueSome underlyingTyOfEnum ->
+                SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace underlying underlyingTyOfEnum
+            // The underlying type is unknown until the representations of the recursive group are established
+            | ValueNone ->
+                csenv.SolverState.PushPostInferenceCheck(
+                    false,
+                    fun () ->
+                        PostponeOnFailedMemberConstraintResolution
+                            csenv
+                            NoTrace
+                            (fun csenv -> SolveTypeIsEnum csenv ndeep m2 NoTrace ty underlying)
+                            (fun res -> ErrorD(ErrorFromAddingConstraint(denv, res, m)))
+                        |> RaiseOperationResult)
+
+                CompleteD
         else
             ErrorD (ConstraintSolverError(FSComp.SR.csTypeIsNotEnumType(NicePrint.minimalRichTextOfType denv ty), m, m2))
 
@@ -4414,6 +4468,8 @@ let CreateCodegenState tcVal g amap =
       InfoReader = InfoReader(g, amap)
       PostInferenceChecksPreDefaults = ResizeArray()
       PostInferenceChecksFinal = ResizeArray()
+      UnionsWithDeferredAttributes = Set.empty
+      DeferredUnionNullnessChecks = []
       WarnWhenUsingWithoutNullOnAWithNullTarget = None
       CompilingCcu = None }
 
@@ -4677,6 +4733,8 @@ let IsApplicableMethApprox g amap m (minfo: MethInfo) availObjTy =
               InfoReader = InfoReader(g, amap)
               PostInferenceChecksPreDefaults = ResizeArray()
               PostInferenceChecksFinal = ResizeArray()
+              UnionsWithDeferredAttributes = Set.empty
+              DeferredUnionNullnessChecks = []
               WarnWhenUsingWithoutNullOnAWithNullTarget = None
               CompilingCcu = None }
         let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m (DisplayEnv.Empty g)
