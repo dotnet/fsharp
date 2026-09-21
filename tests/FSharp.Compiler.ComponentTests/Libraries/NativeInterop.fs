@@ -265,27 +265,37 @@ let main _ =
     [<Theory>]
     [<InlineData(false)>]
     [<InlineData(true)>]
-    let ``let before a handler-local stackalloc lambda preserves its method boundary`` optimize =
-        FSharp """
+    let ``computed handler-local stackalloc lambda preserves its method boundary`` optimize =
+        for allocation in [
+            """
+            let n = 1 + (System.Environment.TickCount &&& 1)
+            fun () -> NativePtr.stackalloc<int> n |> ignore
+"""
+            """
+            if System.Environment.TickCount >= 0 then
+                fun () -> NativePtr.stackalloc<int> 1 |> ignore
+            else
+                fun () -> NativePtr.stackalloc<int> 2 |> ignore
+"""
+        ] do
+            FSharp $"""
 module Test
 open Microsoft.FSharp.NativeInterop
 let run () =
     try failwith "enter"
     with _ ->
-        let allocate =
-            let n = 1 + (System.Environment.TickCount &&& 1)
-            fun () -> NativePtr.stackalloc<int> n |> ignore
+        let allocate = {allocation}
         allocate ()
 [<EntryPoint>]
 let main _ =
     run ()
     0
 """
-        |> withNoWarn 9
-        |> withOptimization optimize
-        |> compileExeAndRun
-        |> shouldSucceed
-        |> ignore
+            |> withNoWarn 9
+            |> withOptimization optimize
+            |> compileExeAndRun
+            |> shouldSucceed
+            |> ignore
 
     [<Theory>]
     [<InlineData("try NativePtr.stackalloc<int> n |> ignore with _ -> ()")>]

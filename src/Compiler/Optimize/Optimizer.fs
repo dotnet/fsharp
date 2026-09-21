@@ -1865,6 +1865,10 @@ let rec CallableExprMayHaveFrameLocalAllocation expr exprTy =
     | Expr.LetRec(_, body, _, _)
     | Expr.Sequential(_, body, NormalSeq, _) ->
         CallableExprMayHaveFrameLocalAllocation body exprTy
+    | Expr.Match(_, _, _, targets, _, _) when targets.Length <= 2 ->
+        targets
+        |> Array.exists (fun (TTarget(_, body, _)) ->
+            CallableExprMayHaveFrameLocalAllocation body exprTy)
     | expr ->
         let _, _, body, _ = stripTopLambda (expr, exprTy)
         ExprMayHaveFrameLocalAllocation body
