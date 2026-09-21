@@ -33,6 +33,7 @@ module internal SnippetIndentation =
         /// Whitespace only; left alone so the snippet does not leave trailing spaces behind.
         | Blank
 
+    /// `Indent` is a visual column, so a tab counts as the width it renders at.
     type Line = { Kind: LineKind; Indent: int }
 
     /// How the snippet got there, which is what supplies the column to align to.
@@ -55,6 +56,13 @@ module internal SnippetIndentation =
 
         rootLevelDirectives
         |> Array.exists (fun directive -> text.StartsWith(directive, StringComparison.Ordinal))
+
+    /// The column after `character` is written at `column`: a tab runs on to the next tab stop.
+    let advanceColumn tabSize column character =
+        if character = '\t' then
+            column + tabSize - column % tabSize
+        else
+            column + 1
 
     /// Whether a line beginning in this lexer color state is a continuation of a string literal.
     let isInsideString (colorState: FSharpTokenizerColorState) =

@@ -120,36 +120,57 @@ module internal SnippetFunctionHelpers =
                     name.Substring(name.LastIndexOf('.') + 1))
         }
 
-    /// The type an expression evaluates to: for a call, what is left once its arguments are applied.
-    let rec private resultTypeOf (fsharpType: FSharpType) =
-        if fsharpType.IsFunctionType then
-            resultTypeOf fsharpType.GenericArguments[1]
-        else
-            fsharpType.StripAbbreviations()
+    /// The qualifier `symbol`, one of `entity`'s cases, needs at `position`: none when the case is in
+    /// scope, otherwise the shortest path of enclosing names that reaches it.
+    let private necessaryQualifier (checkResults: FSharpCheckFileResults) position (entity: FSharpEntity) (symbol: FSharpSymbol) =
+        let path =
+            match entity.TryGetFullDisplayName() with
+            | Some fullName -> List.ofArray (fullName.Split '.')
+            | None -> [ entity.DisplayName ]
+
+        let rec widen remaining qualifier =
+            if checkResults.IsRelativeNameResolvableFromSymbol(position, qualifier, symbol) then
+                qualifier
+            else
+                match remaining with
+                | [] -> qualifier
+                | next :: rest -> widen rest (next :: qualifier)
+
+        widen (List.rev path) []
+
+    /// `symbol`'s qualifier spelled as a prefix of a pattern.
+    let private qualifierPrefix checkResults position entity symbol =
+        match necessaryQualifier checkResults position entity symbol with
+        | [] -> ""
+        | qualifier -> String.Join(".", qualifier) + "."
 
     /// Lazy on purpose: `String.Join` is the one consumer and it materializes the text directly,
     /// so no intermediate collection of rules is ever built.
-    let private matchRulesFor (entity: FSharpEntity) =
+    let private matchRulesFor checkResults position (entity: FSharpEntity) =
         if entity.IsFSharpUnion then
-            // A `[<RequireQualifiedAccess>]` union rejects a bare case pattern (`A`, not `U.A`) -
-            // that reads as binding a fresh variable named `A`, not testing the case.
-            let qualifier =
-                if entity.HasAttribute<RequireQualifiedAccessAttribute>() then
-                    $"%s{entity.DisplayName}."
-                else
-                    ""
+            let prefix =
+                match Seq.tryHeadV entity.UnionCases with
+                | ValueSome first -> qualifierPrefix checkResults position entity first
+                | ValueNone -> ""
 
             entity.UnionCases
             |> Seq.map (fun case ->
                 if case.HasFields then
-                    $"| %s{qualifier}%s{case.Name} _ -> ()"
+                    $"| %s{prefix}%s{case.Name} _ -> ()"
                 else
-                    $"| %s{qualifier}%s{case.Name} -> ()")
+                    $"| %s{prefix}%s{case.Name} -> ()")
         elif entity.IsEnum then
+            let literals =
+                entity.FSharpFields |> Seq.filter (fun field -> field.LiteralValue.IsSome)
+
+            let prefix =
+                match Seq.tryHeadV literals with
+                | ValueSome first -> qualifierPrefix checkResults position entity first
+                | ValueNone -> ""
+
             seq {
-                for field in entity.FSharpFields do
-                    if field.LiteralValue.IsSome then
-                        $"| %s{entity.DisplayName}.%s{field.Name} -> ()"
+                for field in literals do
+                    $"| %s{prefix}%s{field.Name} -> ()"
 
                 // An enum value need not be one of the declared literals, so the wildcard is not optional.
                 "| _ -> ()"
@@ -157,10 +178,8 @@ module internal SnippetFunctionHelpers =
         else
             Seq.empty
 
-    /// The match rules covering the union or enum `$expression$` evaluates to, or ValueNone for
-    /// anything else. Reads the type the checker captured for the field's own span rather than the
-    /// symbol nearest the caret: that resolves to whatever token sits there, which is the wrong type
-    /// the moment `$expression$` is itself a call - `f x` would resolve the type of `x`, not of `f x`.
+    /// The match rules covering the union or enum `$expression$` evaluates to, or ValueNone for any
+    /// other type.
     let tryGetMatchRules (document: Document) (span: VsTextSpan) =
         cancellableTask {
             let! _, checkResults = document.GetFSharpParseAndCheckResultsAsync userOpName
@@ -176,14 +195,15 @@ module internal SnippetFunctionHelpers =
             let position = sourceText.Lines[span.iEndLine].Start + span.iEndIndex
 
             let rules =
-                checkResults.TryGetCapturedType range
-                |> Option.map resultTypeOf
-                |> Option.bind (fun resultType ->
-                    if resultType.HasTypeDefinition then
-                        Some(matchRulesFor resultType.TypeDefinition)
+                match checkResults.TryGetCapturedType range with
+                | Some fsharpType ->
+                    let fsharpType = fsharpType.StripAbbreviations()
+
+                    if fsharpType.HasTypeDefinition then
+                        matchRulesFor checkResults range.Start fsharpType.TypeDefinition
                     else
-                        None)
-                |> Option.defaultValue Seq.empty
+                        Seq.empty
+                | None -> Seq.empty
 
             return
                 match String.Join(sourceText.LineBreakAt position, rules) with
