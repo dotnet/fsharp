@@ -67,6 +67,7 @@ module internal SnippetCommandHelpers =
         let snapshot = span.Snapshot
         let firstLine = snapshot.GetLineFromPosition span.Start.Position
         let lastLine = snapshot.GetLineFromPosition span.End.Position
+        let tabSize = tabSizeOf textView.Options
 
         let column =
             seq { firstLine.LineNumber .. lastLine.LineNumber }
@@ -75,8 +76,8 @@ module internal SnippetCommandHelpers =
                     let line = snapshot.GetLineFromLineNumber lineNumber
 
                     match leadingWhitespaceOf line with
-                    | indent when indent = line.Length -> narrowest
-                    | indent -> min narrowest indent)
+                    | leadingWhitespace when leadingWhitespace = line.Length -> narrowest
+                    | leadingWhitespace -> min narrowest (visualColumnAt tabSize line leadingWhitespace))
                 Int32.MaxValue
 
         let column = if column = Int32.MaxValue then 0 else column
