@@ -37,6 +37,8 @@ open System.Runtime.InteropServices
 open System.Threading
 open System.Threading.Tasks
 
+open Newtonsoft.Json
+open Newtonsoft.Json.Linq
 open StreamJsonRpc
 
 open FSharp.Compiler.Diagnostics
@@ -79,17 +81,89 @@ let private verbatimString (text: string) =
 /// Watch the process that owns this session, so that an F# Interactive left behind by a crashed
 /// host does not survive as an orphan.
 let private watchClientProcess (clientProcessId: int) =
-    try
-        let client = Process.GetProcessById clientProcessId
-        client.EnableRaisingEvents <- true
-        client.Exited.Add(fun _ -> exit 0)
+    let client = Process.GetProcessById clientProcessId
+    client.EnableRaisingEvents <- true
+    client.Exited.Add(fun _ -> exit 0)
 
-        // The host may already have gone by the time the handler was attached.
-        if client.HasExited then
-            exit 0
-    with _ ->
-        // An unknown process id is not fatal: the session simply loses orphan protection.
-        ()
+    // The host may already have gone by the time the handler was attached.
+    if client.HasExited then
+        exit 0
+
+let private invalidParams message =
+    LocalRpcException(message, ErrorCode = -32602)
+
+[<Sealed>]
+type private StrictStringJsonConverter() =
+    inherit JsonConverter()
+
+    override _.CanConvert(objectType) = objectType = typeof<string>
+    override _.CanWrite = false
+
+    override _.ReadJson(reader, _, _, _) =
+        match reader.TokenType with
+        | JsonToken.String -> reader.Value
+        | JsonToken.Null -> null
+        | token -> raise (invalidParams $"Expected a string or null, but found {token}.")
+
+    override _.WriteJson(_, _, _) = raise (NotSupportedException())
+
+[<Sealed>]
+type private StrictStringArrayJsonConverter() =
+    inherit JsonConverter()
+
+    override _.CanConvert(objectType) = objectType = typeof<string[]>
+    override _.CanWrite = false
+
+    override _.ReadJson(reader, _, _, _) =
+        let token = JToken.ReadFrom reader
+
+        match token.Type with
+        | JTokenType.Null -> null
+        | JTokenType.Array ->
+            token.Children()
+            |> Seq.map (fun item ->
+                match item.Type with
+                | JTokenType.String -> item.Value<string>()
+                | JTokenType.Null -> null
+                | itemType -> raise (invalidParams $"Expected a string or null, but found {itemType}."))
+            |> Seq.toArray
+            |> box
+        | tokenType -> raise (invalidParams $"Expected an array or null, but found {tokenType}.")
+
+    override _.WriteJson(_, _, _) = raise (NotSupportedException())
+
+[<Sealed>]
+type private StrictNullableInt32JsonConverter() =
+    inherit JsonConverter()
+
+    override _.CanConvert(objectType) = objectType = typeof<Nullable<int>>
+    override _.CanWrite = false
+
+    override _.ReadJson(reader, _, _, _) =
+        match reader.TokenType with
+        | JsonToken.Null -> null
+        | JsonToken.Integer ->
+            try
+                box (Nullable(Convert.ToInt32 reader.Value))
+            with :? OverflowException ->
+                raise (invalidParams "The integer is outside the supported range.")
+        | token -> raise (invalidParams $"Expected an integer or null, but found {token}.")
+
+    override _.WriteJson(_, _, _) = raise (NotSupportedException())
+
+let private requireRequest methodName request =
+    if obj.ReferenceEquals(request, null) then
+        raise (invalidParams $"'{methodName}' requires a request object.")
+
+let private requireText fieldName (value: string) =
+    if isNull value then
+        raise (invalidParams $"'{fieldName}' is required.")
+
+let private requireDirectivePath fieldName (value: string) =
+    requireText fieldName value
+
+    if value.IndexOf('"') >= 0 || value.IndexOf('\r') >= 0 || value.IndexOf('\n') >= 0 then
+        raise (invalidParams $"'{fieldName}' contains characters that F# Interactive directives cannot represent.")
 
 let private toExecutionResult
     (outcome: Choice<FsiValue option, exn>)
@@ -204,10 +278,10 @@ type internal FsiRpcTarget
         executionQueue: ExecutionQueue
     ) =
 
-    let interruptLock = obj ()
-    let mutable currentCancellation: CancellationTokenSource = null
+    let interactionLock = obj ()
+    let mutable currentInteraction = ValueNone
     let mutable initialized = false
-    let values = ResizeArray<ValueInfo>()
+    let mutable currentValues: ResizeArray<ValueInfo> = null
 
     /// Formatted by the session's own printer, so that the text matches the console's and obeys the
     /// session's print settings. Formatting runs user code — a <c>ToString</c> override, a lazy
@@ -253,8 +327,8 @@ type internal FsiRpcTarget
         with e ->
             Choice2Of2 e, [||]
 
-    /// Flush everything the interaction printed before answering, so that a host which shows
-    /// standard output and RPC results side by side sees them in the order they were produced.
+    /// Flush buffered console writers before answering. The output and RPC streams are independent,
+    /// so their reader-visible ordering is deliberately unspecified.
     let flushConsole () =
         try
             outWriter.Flush()
@@ -264,11 +338,12 @@ type internal FsiRpcTarget
 
     let runInteraction (code: string) (scriptPath: string) =
         let cancellation = new CancellationTokenSource()
+        let values = ResizeArray<ValueInfo>()
 
-        lock interruptLock (fun () -> currentCancellation <- cancellation)
+        lock interactionLock (fun () -> currentInteraction <- ValueSome(cancellation, false))
 
         try
-            values.Clear()
+            lock interactionLock (fun () -> currentValues <- values)
 
             let outcome, diagnostics =
                 evaluateOnEventLoop (fun () -> fsiSession.EvalInteractionNonThrowing(code, scriptPath, cancellation.Token))
@@ -276,7 +351,10 @@ type internal FsiRpcTarget
             flushConsole ()
             toExecutionResult outcome diagnostics (values.ToArray()) cancellation.IsCancellationRequested
         finally
-            lock interruptLock (fun () -> currentCancellation <- null)
+            lock interactionLock (fun () ->
+                currentValues <- null
+                currentInteraction <- ValueNone)
+
             cancellation.Dispose()
 
     /// <summary>
@@ -332,6 +410,11 @@ type internal FsiRpcTarget
 
     member _.Execute(request: ExecuteRequest) : Task<ExecutionResult> =
         requireInitialized ()
+        requireRequest Methods.Execute request
+        requireText "code" request.code
+
+        if request.startLine.HasValue && request.startLine.Value < 1 then
+            raise (invalidParams "'startLine' must be at least one.")
 
         let text = positionInteraction request.code request.sourcePath request.startLine
 
@@ -345,6 +428,11 @@ type internal FsiRpcTarget
 
     member _.ExecuteFile(request: ExecuteFileRequest) : Task<ExecutionResult> =
         requireInitialized ()
+        requireRequest Methods.ExecuteFile request
+        requireText "path" request.path
+
+        if String.IsNullOrWhiteSpace request.path then
+            raise (invalidParams "'path' must not be empty.")
 
         // Routed through #load so that the file joins the session the same way it would from a
         // script, rather than being replayed as anonymous text.
@@ -354,6 +442,17 @@ type internal FsiRpcTarget
     /// directives a script would use.
     member _.SetPaths(request: SetPathsRequest) : Task<ExecutionResult> =
         requireInitialized ()
+        requireRequest Methods.SetPaths request
+        requireText "workingDirectory" request.workingDirectory
+
+        match request.includePaths with
+        | null -> raise (invalidParams "'includePaths' is required.")
+        | paths ->
+            paths
+            |> Array.iteri (fun index path -> requireDirectivePath $"includePaths[{index}]" path)
+
+        if not (String.IsNullOrWhiteSpace request.workingDirectory) then
+            requireDirectivePath "workingDirectory" request.workingDirectory
 
         if
             not (String.IsNullOrWhiteSpace request.workingDirectory)
@@ -361,34 +460,36 @@ type internal FsiRpcTarget
         then
             raise (LocalRpcException($"The working directory '{request.workingDirectory}' does not exist.", ErrorCode = -32002))
 
-        // The process directory moves on the queue, alongside the directive that moves the
-        // compiler's: doing it as the request arrives would move it under an earlier interaction
-        // that is still running.
         queueInteraction (fun () ->
             let directives = ResizeArray()
 
             if not (String.IsNullOrWhiteSpace request.workingDirectory) then
-                // Two different notions of "current directory" have to agree here. The directive
-                // moves the compiler's, which is what relative #load and #r resolve against; the
-                // process one is what the running script sees when it opens a file by relative path.
-                try
-                    Directory.SetCurrentDirectory request.workingDirectory
-                with _ ->
-                    ()
-
                 directives.Add $"#silentCd {verbatimString request.workingDirectory}"
 
-            match request.includePaths with
-            | null -> ()
-            | paths ->
-                for path in paths do
-                    if not (String.IsNullOrWhiteSpace path) then
-                        directives.Add $"#I {verbatimString path}"
+            for path in request.includePaths do
+                if not (String.IsNullOrWhiteSpace path) then
+                    directives.Add $"#I {verbatimString path}"
 
             if directives.Count = 0 then
                 toExecutionResult (Choice1Of2 None) [||] [||] false
             else
-                runInteraction (String.Join("\n", directives)) DefaultInteractionName)
+                let previousDirectory = Directory.GetCurrentDirectory()
+                let result = runInteraction (String.Join("\n", directives)) DefaultInteractionName
+
+                if result.success && not (String.IsNullOrWhiteSpace request.workingDirectory) then
+                    try
+                        Directory.SetCurrentDirectory request.workingDirectory
+
+                        { result with
+                            workingDirectory = Directory.GetCurrentDirectory()
+                        }
+                    with e ->
+                        runInteraction $"#silentCd {verbatimString previousDirectory}" DefaultInteractionName
+                        |> ignore
+
+                        toExecutionResult (Choice2Of2 e) [||] [||] false
+                else
+                    result)
 
     /// <summary>Interrupt the interaction in flight.</summary>
     /// <remarks>
@@ -398,24 +499,24 @@ type internal FsiRpcTarget
     member _.Interrupt() : InterruptResult =
         requireInitialized ()
 
-        let cancellation = lock interruptLock (fun () -> currentCancellation)
+        lock interactionLock (fun () ->
+            match currentInteraction with
+            | ValueNone
+            | ValueSome(_, true) -> { interrupted = false }
+            | ValueSome(cancellation, false) ->
+                currentInteraction <- ValueSome(cancellation, true)
 
-        match cancellation with
-        | null -> { interrupted = false }
-        | cts ->
-            // Cancel the token the interaction is running under, then ask the session to interrupt
-            // the evaluation thread, which is what stops code already inside a long-running call.
-            try
-                cts.Cancel()
-            with _ ->
-                ()
+                try
+                    cancellation.Cancel()
+                with _ ->
+                    ()
 
-            try
-                fsiSession.Interrupt()
-            with _ ->
-                ()
+                try
+                    fsiSession.Interrupt()
+                with _ ->
+                    ()
 
-            { interrupted = true }
+                { interrupted = true })
 
     member _.Shutdown() : unit =
         requireInitialized ()
@@ -457,8 +558,12 @@ let private runServer
     let target =
         FsiRpcTarget(fsiSession, fsiConfig, outWriter, errorWriter, shutdownRequested, executionQueue)
 
-    use rpc =
-        new JsonRpc(new HeaderDelimitedMessageHandler(pipe, new JsonMessageFormatter()))
+    let formatter = new JsonMessageFormatter()
+    formatter.JsonSerializer.Converters.Add(new StrictStringJsonConverter())
+    formatter.JsonSerializer.Converters.Add(new StrictStringArrayJsonConverter())
+    formatter.JsonSerializer.Converters.Add(new StrictNullableInt32JsonConverter())
+
+    use rpc = new JsonRpc(new HeaderDelimitedMessageHandler(pipe, formatter))
 
     // Registered one by one rather than by reflecting over the target, so that exactly the
     // protocol's methods are callable. A request carrying its parameters as one object — the shape
@@ -482,8 +587,12 @@ let private runServer
 
     rpc.StartListening()
 
-    // Either the host goes away or it asks to stop. Both end the session.
-    Task.WaitAny(rpc.Completion, shutdownRequested.Task) |> ignore
+    // Either the host goes away or it asks to stop. A faulted transport is not an orderly
+    // disconnect: observe it so the process reports failure instead of a successful shutdown.
+    let completed = Task.WaitAny(rpc.Completion, shutdownRequested.Task)
+
+    if completed = 0 then
+        rpc.Completion.GetAwaiter().GetResult()
 
     if shutdownRequested.Task.IsCompleted then
         // Give the reply to the shutdown request its moment to reach the host before the process
@@ -508,13 +617,11 @@ let internal startOnBackgroundThread
             (fun () ->
                 try
                     runServer fsiSession fsiConfig pipeName clientProcessId eventLoopStarted outWriter errorWriter
+                    exit 0
                 with e ->
                     errorWriter.WriteLine $"F# Interactive server terminated: {e}"
                     errorWriter.Flush()
-
-                // The session exists only to serve this host. Once the connection is gone there is
-                // nothing left to do, and lingering would leak a process.
-                exit 0),
+                    exit 1),
             Name = "FSI-JsonRpc-Dispatch",
             IsBackground = true
         )

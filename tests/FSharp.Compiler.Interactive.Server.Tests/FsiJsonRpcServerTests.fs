@@ -93,6 +93,41 @@ let ``only the protocol's own methods are reachable`` () =
         let result = session.Execute "1 + 1"
         Assert.True(succeeded result, describe session result))
 
+[<Fact>]
+let ``request DTOs reject missing required fields as invalid params`` () =
+    withInitializedSession (fun session ->
+        let malformedRequests =
+            [ Methods.Execute, box {| sourcePath = null; startLine = Nullable<int>() |}
+              Methods.ExecuteFile, obj ()
+              Methods.SetPaths, box {| workingDirectory = "" |}
+              Methods.Execute, box {| code = 42; sourcePath = null; startLine = Nullable<int>() |}
+              Methods.ExecuteFile, box {| path = 42 |}
+              Methods.Execute, box {| code = "1"; sourcePath = null; startLine = "1" |}
+              Methods.SetPaths, box {| includePaths = 42; workingDirectory = "" |}
+              Methods.SetPaths, box {| includePaths = Array.empty<string>; workingDirectory = 42 |} ]
+
+        for methodName, parameters in malformedRequests do
+            Assert.Equal(Some -32602, session.RequestExpectingError(methodName, parameters)))
+
+[<Fact>]
+let ``initialize fails when an explicit owner process cannot be watched`` () =
+    withInitializedSession (fun session ->
+        let error =
+            session.RequestExpectingError(
+                Methods.Initialize,
+                { clientProcessId = Int32.MaxValue }
+            )
+
+        Assert.Equal(Some -32602, error))
+
+[<Fact>]
+let ``fails when the command-line owner process cannot be watched`` () =
+    let error =
+        Assert.ThrowsAny<Exception>(fun () ->
+            new FsiServerHarness(clientProcessId = Int32.MaxValue) |> ignore)
+
+    Assert.Contains("exited with code 1", error.Message)
+
 //-------------------------------------------------------------------------
 // The command line
 //-------------------------------------------------------------------------
@@ -475,6 +510,37 @@ let ``setPaths changes the working directory`` () =
                 ())
 
 [<Fact>]
+let ``setPaths rejects an unrepresentable path without changing the working directory`` () =
+    if RuntimeInformation.IsOSPlatform OSPlatform.Windows then
+        ()
+    else
+        withInitializedSession (fun session ->
+            let directory = temporaryPath "\"quoted"
+            Directory.CreateDirectory directory |> ignore
+
+            try
+                let before = session.Execute "1"
+
+                let error =
+                    session.RequestExpectingError(
+                        Methods.SetPaths,
+                        {
+                            includePaths = [| directory |]
+                            workingDirectory = directory
+                        }
+                    )
+
+                Assert.Equal(Some -32602, error)
+
+                let after = session.Execute "2"
+                Assert.Equal(before.workingDirectory, after.workingDirectory)
+            finally
+                try
+                    Directory.Delete(directory, true)
+                with _ ->
+                    ())
+[<Fact>]
+[<Fact>]
 let ``setPaths rejects a missing working directory`` () =
     withInitializedSession (fun session ->
         let error =
@@ -551,32 +617,37 @@ let ``reports the working directory after every interaction`` () =
 [<Fact>]
 let ``interrupts a running interaction`` () =
     withInitializedSession (fun session ->
-        // Warm the session up first, so that the interrupt below meets a session that is genuinely
-        // executing the loop rather than still starting up.
-        Assert.True(succeeded (session.Execute "1"))
-
         let running =
             session.BeginRequest<ExecutionResult>(
                 Methods.Execute,
-                FsiServerHarness.ExecuteParams "while true do System.Threading.Thread.Sleep 10"
+                FsiServerHarness.ExecuteParams
+                    """
+printfn "interrupt target started"
+while true do System.Threading.Thread.Sleep 10
+"""
             )
 
-        Thread.Sleep 3000
+        Assert.True(session.WaitForOutput "interrupt target started")
 
-        // Interactions queue behind one another, but an interrupt is served as it arrives — which
-        // is the whole point, since one that waited its turn would never stop anything.
-        let interrupted =
-            session.Request<InterruptResult>(Methods.Interrupt, TimeSpan.FromSeconds 30.0)
+        let next =
+            session.BeginRequest<ExecutionResult>(Methods.Execute, FsiServerHarness.ExecuteParams "40 + 2")
 
-        Assert.True interrupted.interrupted
+        let interrupts =
+            Array.init 8 (fun _ -> session.BeginRequest<InterruptResult> Methods.Interrupt)
 
-        // The interrupted interaction must come back rather than hang forever.
-        try
-            let result = session.EndRequest(running, TimeSpan.FromSeconds 60.0)
-            Assert.False(succeeded result, describe session result)
-        with _ ->
-            // Reported as a failed call rather than a failed interaction; either is acceptable.
-            ())
+        let interruptResults =
+            interrupts
+            |> Array.map (fun request -> session.EndRequest(request, TimeSpan.FromSeconds 30.0))
+
+        Assert.Equal(1, interruptResults |> Array.filter _.interrupted |> Array.length)
+
+        let interrupted = session.EndRequest(running, TimeSpan.FromSeconds 60.0)
+        Assert.True(interrupted.cancelled, describe session interrupted)
+        Assert.False(interrupted.success, describe session interrupted)
+
+        let subsequent = session.EndRequest(next, TimeSpan.FromSeconds 60.0)
+        Assert.True(subsequent.success, describe session subsequent)
+        Assert.True(session.WaitForOutput "val it: int = 42", describe session subsequent))
 
 [<Fact>]
 let ``interrupt is harmless when nothing is running`` () =
@@ -597,12 +668,22 @@ let ``shutdown ends the session`` () =
 
 [<Fact>]
 let ``the session exits when the host disconnects`` () =
-    let session = new FsiServerHarness()
+    use session = new FsiServerHarness()
     session.Initialize() |> ignore
 
-    // Closing the control channel is what happens when the editor process dies. A session that
-    // survived it would leak a process for every crash.
-    (session :> IDisposable).Dispose()
+    session.CloseControlChannel()
+    Assert.True(session.WaitForExit 30_000, "the session did not exit after the control channel closed")
+    Assert.Equal(0, session.ExitCode)
+
+[<Fact>]
+let ``a faulted control channel exits with failure`` () =
+    use session = new FsiServerHarness()
+    session.Initialize() |> ignore
+
+    session.CorruptControlChannel()
+    Assert.True(session.WaitForExit 30_000, "the session did not exit after the control channel faulted")
+    Assert.NotEqual(0, session.ExitCode)
+    Assert.Contains("F# Interactive server terminated:", session.StandardError)
 
 [<Fact>]
 let ``the session exits when its host process exits`` () =

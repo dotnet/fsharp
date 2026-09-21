@@ -200,9 +200,23 @@ type FsiServerHarness
 
     member _.HasExited = session.HasExited
 
+    member _.ExitCode = session.ExitCode
+
     member _.ProcessId = session.Id
 
     member _.WaitForExit(milliseconds: int) = session.WaitForExit milliseconds
+
+    /// Close only the JSON-RPC connection, leaving the child process to observe EOF and exit.
+    member _.CloseControlChannel() =
+        rpc.Dispose()
+        pipe.Dispose()
+
+    /// Send an invalid header and close the channel, forcing an unrecoverable transport fault.
+    member _.CorruptControlChannel() =
+        let bytes = Encoding.ASCII.GetBytes "Content-Length: invalid\r\n\r\n"
+        pipe.Write(bytes, 0, bytes.Length)
+        pipe.Flush()
+        pipe.Dispose()
 
     /// Wait until the session's own output contains the given text, which is how a test observes
     /// what a script printed rather than what the protocol returned.
@@ -243,8 +257,8 @@ type FsiServerHarness
         // the type this classifies on is found by descending through causes, not just one level.
         let rec classify (e: exn) =
             match e with
-            | :? RemoteMethodNotFoundException -> Some -32601
             | :? RemoteInvocationException as remote -> Some remote.ErrorCode
+            | :? RemoteMethodNotFoundException as remote -> Some(int remote.ErrorCode)
             | _ ->
                 match e.InnerException with
                 | null -> None

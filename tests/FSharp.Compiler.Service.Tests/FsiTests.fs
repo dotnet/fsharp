@@ -29,6 +29,19 @@ module FsiTests =
         let values = fsiSession.GetBoundValues()
         Assert.shouldBeEmpty values
 
+    [<Theory>]
+    [<InlineData("41;; 42;;")>]
+    [<InlineData("42;; open System;;")>]
+    let ``EvalInteractionNonThrowing keeps the last produced value`` source =
+        use fsiSession = createFsiSession false
+        let result, diagnostics = fsiSession.EvalInteractionNonThrowing source
+
+        Assert.shouldBeEmpty diagnostics
+
+        match result with
+        | Choice1Of2(Some value) -> Assert.shouldBe (box 42) value.ReflectionValue
+        | _ -> failwith $"Expected the value 42, got {result}"
+
     [<Fact>]
     let ``Bound value has correct name`` () =
         use fsiSession = createFsiSession false
