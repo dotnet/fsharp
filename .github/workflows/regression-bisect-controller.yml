@@ -11,6 +11,14 @@ on:
         type: choice
         options: [bootstrap, advance, publish]
         required: true
+      routingKey:
+        description: Durable trusted routing identity (empty for an operator transaction)
+        type: string
+        default: ""
+      routingGeneration:
+        description: Exact checkpoint generation selected by trusted routing
+        type: string
+        default: ""
 permissions:
   contents: read
   actions: read

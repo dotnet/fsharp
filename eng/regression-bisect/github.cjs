@@ -27,7 +27,7 @@ const routes = new Map([
 function createGithubApi(config, send = fetch) {
     const { repository, issueNumber, checkpointCommentId, resultCommentId, anchorSha, token } = { ...config };
     requireValue(repository === "dotnet/fsharp" && positive(issueNumber) && positive(checkpointCommentId) &&
-        positive(resultCommentId) && checkpointCommentId !== resultCommentId && sha(anchorSha) &&
+        positive(resultCommentId) && (checkpointCommentId !== resultCommentId || config.singleSlot === true) && sha(anchorSha) &&
         typeof token === "string" && token.length > 0 && !/\s/.test(token), "invalid trusted GitHub API configuration");
     async function request(route, params) {
         requireValue(typeof route === "string" && params && Object.getPrototypeOf(params) === Object.prototype, "invalid API request");
@@ -71,7 +71,8 @@ function createGithubApi(config, send = fetch) {
                 url.searchParams.set(key, String(value));
             }
         }
-        const signal = AbortSignal.timeout(30000);
+        const signal = AbortSignal.any([AbortSignal.timeout(30000), ...(config.signal ? [config.signal] : [])]);
+        signal.throwIfAborted();
         const response = await send(url.href, {
             method, redirect: "error", signal, headers: {
                 Authorization: `Bearer ${token}`, Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28",
@@ -145,6 +146,31 @@ function createProvisioningApi(config, send = fetch) {
     };
 }
 
+// Only the trusted routing process receives this separate actions-write credential.
+function createDispatcher({ token, signal }, send = fetch) {
+    requireValue(typeof token === "string" && token.length > 0 && !/\s/.test(token), "invalid dispatcher credential");
+    return async input => {
+        requireValue(input && Object.keys(input).sort().join(" ") === "issue mode routingGeneration routingKey" &&
+            positive(input.issue) && ["bootstrap", "advance", "publish"].includes(input.mode) &&
+            typeof input.routingKey === "string" && /^[a-f0-9]{64}$/.test(input.routingKey) &&
+            typeof input.routingGeneration === "string" && /^(?:-1|0|[1-9]\d*)$/.test(input.routingGeneration) &&
+            Number.isSafeInteger(Number(input.routingGeneration)) &&
+            (input.mode === "bootstrap") === (input.routingGeneration === "-1"), "invalid fixed dispatch input");
+        const deadline = AbortSignal.any([AbortSignal.timeout(30000), ...(signal ? [signal] : [])]);
+        deadline.throwIfAborted();
+        const response = await send("https://api.github.com/repos/dotnet/fsharp/actions/workflows/regression-bisect-controller.yml/dispatches", {
+            method: "POST", redirect: "error", signal: deadline,
+            headers: { Authorization: `Bearer ${token}`, Accept: "application/vnd.github+json",
+                "X-GitHub-Api-Version": "2022-11-28", "Content-Type": "application/json" },
+            body: JSON.stringify({ ref: "main", inputs: input }),
+        });
+        try {
+            deadline.throwIfAborted();
+            requireValue(response.status === 204, `fixed controller dispatch failed (${response.status})`);
+        } finally { if (response.body && !response.body.locked) await response.body.cancel(); }
+    };
+}
+
 function createApprovalReader({ api, revision, issueNumber }) {
     requireValue(typeof api?.request === "function" && sha(revision) && positive(issueNumber), "invalid trusted approval reader configuration");
     const get = async (route, params) => {
@@ -152,7 +178,7 @@ function createApprovalReader({ api, revision, issueNumber }) {
         requireValue(response && (!response.status || response.status === 200) && response.data, "incomplete pinned Git object response");
         return response.data;
     };
-    const read = async (file, maxBytes) => {
+    const read = async (file, maxBytes, optional = false) => {
         validateRepositoryPath(file);
         const commit = await get("commits/{commit_sha}", { commit_sha: revision });
         requireValue(commit.sha === revision && sha(commit.tree?.sha), "pinned approval commit identity mismatch");
@@ -162,6 +188,7 @@ function createApprovalReader({ api, revision, issueNumber }) {
             const tree = await get("trees/{tree_sha}", { tree_sha: id });
             requireValue(tree.sha === id && tree.truncated === false && Array.isArray(tree.tree), "truncated or substituted approval tree");
             const entries = tree.tree.filter(e => e.path === part);
+            if (optional && entries.length === 0) return null;
             requireValue(entries.length === 1 && sha(entries[0].sha), "missing or ambiguous reviewed Git asset");
             const entry = entries[0];
             if (index < parts.length - 1) {
@@ -184,6 +211,7 @@ function createApprovalReader({ api, revision, issueNumber }) {
     };
     return {
         readTrustedFile: read,
+        readOptionalTrustedFile: (file, maxBytes) => read(file, maxBytes, true),
         readApproval: async reference => {
             requireValue(reference && Object.keys(reference).sort().join(" ") === "path revision" &&
                 reference.revision === revision && reference.path === `.github/regression-bisect/approved/${issueNumber}.json`,
@@ -199,4 +227,4 @@ function createApprovalReader({ api, revision, issueNumber }) {
     };
 }
 
-module.exports = { createGithubApi, createProvisioningApi, createApprovalReader };
+module.exports = { createGithubApi, createProvisioningApi, createApprovalReader, createDispatcher };

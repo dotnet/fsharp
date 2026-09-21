@@ -36,15 +36,28 @@ function argumentsFor(args, env = process.env) {
             throw new Error("invalid typed Actions input");
         }
         requireValue(selected && Object.getPrototypeOf(selected) === Object.prototype &&
-            Object.keys(selected).sort().join(" ") === "issue mode" &&
+            ["issue mode", "issue mode routingGeneration routingKey"].includes(Object.keys(selected).sort().join(" ")) &&
             positive(selected.issue) && ["bootstrap", "advance", "publish"].includes(selected.mode), "invalid typed Actions input");
         args = [selected.mode, "--issue", String(selected.issue), "--config",
             path.join(root, ".github", "regression-bisect", "deployment.json")];
+        if (Object.hasOwn(selected, "routingKey")) {
+            requireValue(typeof selected.routingKey === "string" && typeof selected.routingGeneration === "string",
+                "invalid typed Actions routing input");
+            if (selected.routingKey !== "" || selected.routingGeneration !== "")
+                args.push("--routing-key", selected.routingKey, "--routing-generation", selected.routingGeneration);
+        }
     }
-    requireValue(args.length === 5 && ["bootstrap", "advance", "publish", "provision"].includes(args[0]) &&
+    requireValue([5, 9].includes(args.length) && ["bootstrap", "advance", "publish", "provision"].includes(args[0]) &&
         args[1] === "--issue" && args[3] === "--config" && /^[1-9]\d*$/.test(args[2]) &&
         positive(Number(args[2])) && args[4].length > 0 && !args[4].startsWith("--"), usage);
-    return { mode: args[0], issueNumber: Number(args[2]), configPath: path.resolve(args[4]) };
+    let routing = {};
+    if (args.length === 9) {
+        requireValue(args[0] !== "provision" && args[5] === "--routing-key" && digest(args[6]) &&
+            args[7] === "--routing-generation" && /^(?:-1|0|[1-9]\d*)$/.test(args[8]) &&
+            Number.isSafeInteger(Number(args[8])) && (args[0] === "bootstrap") === (args[8] === "-1"), "invalid typed routing dispatch");
+        routing = { routingKey: args[6], routingGeneration: Number(args[8]) };
+    }
+    return { mode: args[0], issueNumber: Number(args[2]), configPath: path.resolve(args[4]), ...routing };
 }
 
 async function bytes(file, limit = 48 * 1024 - 1) {
@@ -164,7 +177,7 @@ async function withIssueLock(directory, context, api, action) {
             const run = await api.getRun(previous.owner.runId, previous.owner.attempt);
             requireValue(String(run.id) === previous.owner.runId && run.run_attempt === previous.owner.attempt &&
                 run.repository?.full_name === repository && run.head_repository?.full_name === repository &&
-                run.path === workflowPath && context.trustedWorkflowRevisions.includes(run.head_sha) &&
+                run.path === context.workflowPath && context.trustedWorkflowRevisions.includes(run.head_sha) &&
                 run.status === "completed" && typeof run.conclusion === "string", "abandoned issue owner is not safely completed");
         }
         await writeJson(lock, ticket);
@@ -390,6 +403,23 @@ async function main(args = process.argv.slice(2), env = process.env) {
             "unsupported worker matrix; no platform fallback");
         context.environmentFingerprint = fingerprint(environments);
         const transport = apiFor(registration.checkpointCommentId, registration.resultCommentId);
+        if (input.routingKey) {
+            const { dispatchKey } = require("./routing.cjs");
+            requireValue(input.routingKey === dispatchKey({ issueNumber: input.issueNumber, allowanceId: registration.allowanceId,
+                generation: input.routingGeneration, mode: input.mode, discussionFingerprint: context.manifest.discussionFingerprint,
+                policyRevision: context.policyRevision }), "routing dispatch identity mismatch");
+            const existing = await transport.getComment(context.commentId);
+            const record = await state.authenticateDecodedRecord(transport, context, existing);
+            requireValue(record, "routing checkpoint authentication failed");
+            if (record.kind === "checkpoint") {
+                const current = await state.readAuthenticatedCheckpoint(transport, context, { repair: true });
+                if (current.checkpoint.generation !== input.routingGeneration)
+                    return { status: "duplicate", generation: current.checkpoint.generation, routingKey: input.routingKey };
+            } else requireValue(input.routingGeneration === -1 && fingerprint(existing.body) === registration.checkpointBootstrapDigest,
+                "routing requires the registered bootstrap");
+        }
+        const discoveryBytes = await reader.readOptionalTrustedFile(".github/regression-bisect/discovery.json", 4096);
+        const discovery = discoveryBytes === null ? null : require("./routing.cjs").validateRegistration(decode(discoveryBytes));
         const storeConfig = { repository, runId: context.owner.runId, attempt: context.owner.attempt,
             directory: path.join(directory, "store"), token, runtimeToken: env.ACTIONS_RUNTIME_TOKEN,
             resultsUrl: env.ACTIONS_RESULTS_URL, retentionDays: 90 };
@@ -405,6 +435,12 @@ async function main(args = process.argv.slice(2), env = process.env) {
         const checkpoints = new Map();
         const approvalReader = { ...reader,
             authenticateRecord: async comment => {
+                if (discovery?.issueNumber === input.issueNumber && comment.id === discovery.commentId) {
+                    requireValue(await state.authenticateWorkflowRecord(transport, {
+                        ...context, commentId: discovery.commentId, workflowPath: discovery.workflowPath,
+                    }, comment), "registered discovery record authentication failed");
+                    return true;
+                }
                 const record = await state.authenticateDecodedRecord(transport, { ...context, commentId: comment.id }, comment);
                 if (!record) return false;
                 if (record.kind === "checkpoint") {
@@ -534,4 +570,4 @@ if (require.main === module) main().then(result => {
     process.exitCode = 1;
 });
 
-module.exports = { main, argumentsFor, configuration, withIssueLock, containment };
+module.exports = { main, argumentsFor, configuration, withIssueLock, containment, bytes };

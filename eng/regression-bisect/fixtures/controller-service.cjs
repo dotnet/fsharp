@@ -199,10 +199,31 @@ async function connect(file) {
             assertValue(location.origin === "https://api.github.com", "unexpected API authority");
             const route = location.pathname.replace("/repos/dotnet/fsharp/", "");
             const body = options.body ? JSON.parse(options.body) : null;
-            record({ kind: "api", method: options.method, route, body });
+            record({ kind: "api", method: options.method, route, body, url, query: Object.fromEntries(location.searchParams) });
             const db = read();
             const page = rows => rows.slice((Number(location.searchParams.get("page") ?? 1) - 1) * 100,
                 Number(location.searchParams.get("page") ?? 1) * 100);
+            if (db.faults.routingRateLimit) return respond({}, 429);
+            if (route === "actions/workflows/regression-bisect-controller.yml/dispatches") {
+                assertValue(options.method === "POST" && options.headers.Authorization === "Bearer offline-separate-dispatch-token",
+                    "dispatch requires separate routing credential");
+                db.dispatches ??= [];
+                db.dispatches.push(body); write(db);
+                if (fault(db, "dispatchAck")) throw new Error("dispatch acknowledgement lost");
+                return new Response(null, { status: 204 });
+            }
+            if (route === "issues") {
+                if (db.faults.pauseDiscovery) {
+                    record({ kind: "discovery-barrier" });
+                    for (let i = 0; i < 400 && read().faults.pauseDiscovery; i++) await delay(25);
+                    assertValue(!read().faults.pauseDiscovery, "fixture discovery barrier timeout");
+                }
+                const list = (db.issues ?? [db.issue]).filter(issue => issue.state === "open" &&
+                    issue.labels.some(label => (typeof label === "string" ? label : label.name).toLowerCase() === "regression"))
+                    .sort((a, b) => Date.parse(a.created_at) - Date.parse(b.created_at) || a.number - b.number);
+                return respond(page(list), db.faults.discoveryPage === Number(location.searchParams.get("page")) ? 503 : 200,
+                    { link: Number(location.searchParams.get("page")) * 100 < list.length ? '<https://api.github.com/next>; rel="next"' : "" });
+            }
             if (route.startsWith("actions/runs/")) {
                 const [, , id, , attempt] = route.split("/");
                 return respond(db.runs[`${id}/${attempt}`] ?? {}, db.runs[`${id}/${attempt}`] ? 200 : 404);
@@ -210,7 +231,8 @@ async function connect(file) {
             if (route === "issues/123") return respond(db.issue);
             if (route === "issues/123/timeline") return respond(page(db.timeline), 200, { link: "" });
             if (route === "issues/123/comments") {
-                if (options.method === "GET") return respond(page(db.comments), 200, { link: "" });
+                if (options.method === "GET") return respond(page(db.comments), 200,
+                    { link: db.faults.discussionPages ? '<https://api.github.com/next>; rel="next"' : "" });
                 const comment = { id: db.nextId++, user: { id: db.actor.id, login: db.actor.login, type: db.actor.type },
                     performed_via_github_app: { id: db.actor.appId },
                     issue_url: "https://api.github.com/repos/dotnet/fsharp/issues/123", body: body.body };
@@ -222,11 +244,19 @@ async function connect(file) {
                 const comment = db.comments.find(c => c.id === Number(route.split("/").at(-1)));
                 if (!comment) return respond({}, 404);
                 if (options.method === "PATCH") {
+                    if (comment.id === 458 && fault(db, "cursorWrite")) throw new Error("cursor write interrupted");
                     comment.body = body.body; write(db);
+                    if (comment.id === 458 && fault(db, "cursorAck")) throw new Error("cursor acknowledgement lost");
                     if (comment.id === 457 && fault(db, "resultAck")) throw new Error("result acknowledgement lost");
                     if (fault(db, "commentAck")) throw new Error("comment acknowledgement lost");
                 }
                 return respond(comment);
+            }
+            const issueRoute = /^issues\/(\d+)(?:\/(comments|timeline))?$/.exec(route);
+            if (issueRoute) {
+                const issue = db.issues?.find(i => i.number === Number(issueRoute[1]));
+                if (!issue) return respond({}, 404);
+                return respond(issueRoute[2] ? [] : issue, 200, { link: "" });
             }
             if (route.endsWith("/statuses") && options.method === "GET")
                 return respond(page(db.statuses), db.faults.history ? 503 : 200, { link: db.faults.pagination ? '<https://api.github.com/next>; rel="next"' : "" });

@@ -375,7 +375,7 @@ async function writeFreshness(transport, context, generation, bodyDigest) {
         Object.entries(status).every(([k, v]) => written[k] === v), "freshness write authentication failed");
 }
 
-async function loadCheckpoint(transport, context, { requiredEvidenceOnly = false } = {}) {
+async function readAuthenticatedCheckpoint(transport, context, { repair = false } = {}) {
     const comment = await transport.getComment(context.commentId);
     const record = await authenticatedRecord(transport, context, comment);
     requireState(record?.kind === "checkpoint", "checkpoint authentication failed");
@@ -387,18 +387,24 @@ async function loadCheckpoint(transport, context, { requiredEvidenceOnly = false
     const bodyDigest = hashBytes(comment.body);
     requireState(head !== null, "checkpoint freshness receipt missing; initialization or repair required");
     if (checkpoint.generation !== head.generation || bodyDigest !== head.bodyDigest) {
-        requireState(checkpoint.generation === head.generation + 1 && checkpoint.previousDigest === head.bodyDigest,
+        requireState(repair && checkpoint.generation === head.generation + 1 && checkpoint.previousDigest === head.bodyDigest,
             "checkpoint freshness rollback or predecessor mismatch");
         // Complete an interrupted comment -> receipt write, under the controller lock.
         await writeFreshness(transport, context, checkpoint.generation, bodyDigest);
     }
+    return { checkpoint, bodyDigest, commentId: context.commentId,
+        owner: { runId: record.binding.runId, attempt: record.binding.runAttempt } };
+}
+
+async function loadCheckpoint(transport, context, { requiredEvidenceOnly = false } = {}) {
+    const loaded = await readAuthenticatedCheckpoint(transport, context, { repair: true });
+    const { checkpoint } = loaded;
     const current = currentState(checkpoint, context);
     const evidence = await evidenceWarnings(transport, Object.values(checkpoint.observations).filter(o => o.valid),
         requiredEvidenceOnly);
     const blockers = [...current.reasons, ...(evidence.missingRequired ? ["required evidence unavailable; blocked"] : [])];
     return {
-        checkpoint, bodyDigest, commentId: context.commentId,
-        owner: { runId: record.binding.runId, attempt: record.binding.runAttempt },
+        ...loaded,
         executionAllowed: !requiredEvidenceOnly && blockers.length === 0,
         publicationAllowed: blockers.length === 0 && checkpoint.state.phase !== "stopped",
         blockers, warnings: evidence.warnings,
@@ -786,4 +792,5 @@ module.exports = {
     initializeCheckpoint, serializeWorkflowRecord, authenticateWorkflowRecord,
     loadCheckpoint, reserveWork, beginWork, beginCollection, commitObservation, cancelCompletedWork, invalidateStaleEvidence, recordSearchProgress,
     authenticateDecodedRecord, recordPublication, recordConfirmation,
+    readFreshness, writeFreshness, readAuthenticatedCheckpoint,
 };
