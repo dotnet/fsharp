@@ -79,6 +79,20 @@ open FSharp.Compiler.TypeProviders
 /// Concrete ITraitContext used throughout the compiler.
 type TraitContext = ITraitContext<AccessorDomain, MethInfo, InfoReader>
 
+let constraintResolutionPriority g amap m (formalTy, actualTy) =
+    match stripTyEqns g formalTy with
+    | TType_var(tp, _) ->
+        let actualInterfaces =
+            AllInterfacesOfType g amap m AllowMultiIntfInstantiations.Yes actualTy
+
+        tp.Constraints
+        |> List.sumBy (function
+            | TyparConstraint.CoercesTo(constraintTy, _) ->
+                actualInterfaces
+                |> List.sumBy (fun interfaceTy -> if HaveSameHeadType g constraintTy interfaceTy then 1 else 0)
+            | _ -> 0)
+    | _ -> 0
+
 //-------------------------------------------------------------------------
 // Generate type variables and record them in within the scope of the
 // compilation environment, which currently corresponds to the scope
@@ -3290,7 +3304,7 @@ and CanMemberSigsMatchUpToCheck
                     let tyargPairs =
                         let pairs = List.zip minst uminst
                         if g.langVersion.SupportsFeature LanguageFeature.TypeArgumentDependencyOrdering then
-                            reorderTyArgsByConstraintDependencies g pairs
+                            reorderTyArgsByConstraintDependencies (constraintResolutionPriority g amap m) g pairs
                         else pairs
                     tyargPairs |> MapCombineTDCD (fun (formalTy, callerTy) -> unifyTypes formalTy callerTy)
                 let! usesTDC2 =

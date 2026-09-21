@@ -2885,7 +2885,7 @@ let TcVal (cenv: cenv) env (tpenv: UnscopedTyparEnv) (vref: ValRef) instantiatio
                                 let tyargPairs =
                                     let pairs = List.zip tpTys tinst
                                     if g.langVersion.SupportsFeature LanguageFeature.TypeArgumentDependencyOrdering then
-                                        reorderTyArgsByConstraintDependencies g pairs
+                                        reorderTyArgsByConstraintDependencies (constraintResolutionPriority g cenv.amap m) g pairs
                                     else pairs
                                 tyargPairs |> List.iter (fun (formalTy, actualTy) -> UnifyTypes cenv env m formalTy actualTy)
 

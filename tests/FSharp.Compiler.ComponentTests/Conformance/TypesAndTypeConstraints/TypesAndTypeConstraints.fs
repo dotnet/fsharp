@@ -746,6 +746,26 @@ let test (outer: Outer<'u>) =
 """
         |> checkIntInference langVersion
 
+    [<Fact>]
+    let ``Less ambiguous ready constraint determines shared caller parameter`` () =
+        """
+module Repro
+
+type I<'t> = interface end
+type J<'t> = interface end
+type Many() =
+    interface I<int>
+    interface I<string>
+type One() =
+    interface J<int>
+type Outer<'t>() =
+    member _.M<'a, 'b, 'c
+        when 'a :> I<'b> and 'c :> J<'t>>() = ()
+let test (outer: Outer<'u>) =
+    outer.M<Many, 'u, One>()
+"""
+        |> checkIntInference "11.0"
+
     [<Theory>]
     [<InlineData("'a :> I<'c> and 'b :> J<'c> and 'd :> J<'t>", "One, Many, 'u, Many")>]
     [<InlineData("'a :> seq<'b> and 'b :> I<'c> and 'd :> J<'t>", "One list, One, 'u, Many")>]
