@@ -45,6 +45,8 @@ val IsOptimizationDataResource: ILResource -> bool
 /// Determine if an IL resource attached to an F# assembly is an F# optimization data resource (data stream B)
 val IsOptimizationDataResourceB: ILResource -> bool
 
+val GetNameOfILModule: ILModuleDef -> string
+
 /// Determine if an IL resource attached to an F# assembly is an F# quotation data resource for reflected definitions
 val IsReflectedDefinitionsResource: ILResource -> bool
 

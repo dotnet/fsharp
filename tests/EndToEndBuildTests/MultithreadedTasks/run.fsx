@@ -284,7 +284,7 @@ for disabled in [ true; false ] do
         succeed (label + "-run") [ dll ] |> ignore
         let names = resourceNames dll
         write (Path.Combine(root, label + "-resources.txt")) (String.concat "\n" names)
-        let expected = originalMetadata
+        let expected = if disabled then originalMetadata else Set.empty
         let actual = metadata names
         if actual <> expected then trimFailures.Add(sprintf "%s: expected F# metadata %A, found %A" label expected actual)
         if mt && hash dll <> trimmedHash then failwith "MP/MT trimmed assemblies differ"
