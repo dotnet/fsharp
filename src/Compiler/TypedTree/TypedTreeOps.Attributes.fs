@@ -1328,11 +1328,11 @@ module internal AttributeHelpers =
     // WARNING: this must match optimizeAlternativeToNull in ilx/cu_erase.fs
     let IsUnionTypeWithNullAsTrueValue (g: TcGlobals) (tycon: Tycon) =
         (tycon.IsUnionTycon
+         && TyconHasUseNullAsTrueValueAttribute g tycon
          && let ucs = tycon.UnionCasesArray in
 
             (ucs.Length = 0
-             || (TyconHasUseNullAsTrueValueAttribute g tycon
-                 && ucs |> Array.existsOne (fun uc -> uc.IsNullary)
+             || (ucs |> Array.existsOne (fun uc -> uc.IsNullary)
                  && ucs |> Array.exists (fun uc -> not uc.IsNullary))))
 
     let TyconCompilesInstanceMembersAsStatic g tycon = IsUnionTypeWithNullAsTrueValue g tycon

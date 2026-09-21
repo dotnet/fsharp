@@ -636,6 +636,10 @@ module internal TypeTesters =
     // Return all components of this type expression that cannot be tested at runtime
     val getErasedTypes: TcGlobals -> TType -> checkForNullness: bool -> TType list
 
+    /// Determine the underlying type of an enum type (normally int32).
+    /// ValueNone while the representation of an F# enum is still being established.
+    val tryUnderlyingTypeOfEnumTy: TcGlobals -> TType -> TType voption
+
     /// Determine the underlying type of an enum type (normally int32)
     val underlyingTypeOfEnumTy: TcGlobals -> TType -> TType
 
