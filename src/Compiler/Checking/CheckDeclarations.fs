@@ -6094,6 +6094,7 @@ let emptyTcEnv g =
       eCtorInfo = None
       eCallerMemberName = None
       eLambdaArgInfos = []
+      eIsIndexerSetter = false
       eIsControlFlow = false
       eInNameOf = false
       eInObjectExpr = false
@@ -6438,6 +6439,14 @@ let CheckOneSigFile (g, amap, thisCcu, checkForErrors, conditionalDefines, tcSin
             sigFileType |> IterTyconsOfModuleOrNamespaceType (fun tycon ->
                 FinalTypeDefinitionChecksAtEndOfInferenceScope(cenv.infoReader, tcEnv.NameEnv, cenv.tcSink, false, tcEnv.DisplayEnv, tycon))
         with RecoverableException exn -> errorRecovery exn sigFile.QualifiedName.Range
+
+    // Run any additional checks registered to be run at the end of inference
+    conditionallySuppressErrorReporting (checkForErrors()) (fun () ->
+        for check in cenv.css.GetPostInferenceChecksFinal() do
+            try
+                check()
+            with RecoverableException exn ->
+                errorRecovery exn m)
 
     UpdatePrettyTyparNames.updateModuleOrNamespaceType sigFileType
 
