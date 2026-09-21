@@ -503,34 +503,46 @@ module internal FreeTypeVars =
         |> List.choose (fun ftp -> if ftp.Stamp = tp.Stamp then None else Some ftp.Stamp)
         |> Set.ofList
 
-    /// Stable-sort the (formalTypar, actualType) unification pairs of an explicit generic
-    /// instantiation so a type parameter used in another's subtype constraint (the 'b in 'a :> I<'b>)
-    /// is unified first. Returns the pairs unchanged when no such cross-reference exists.
+    /// Sort the (formalTypar, actualType) unification pairs of an explicit generic instantiation so a
+    /// type parameter used in another's subtype constraint (the 'b in 'a :> I<'b>) is unified first.
+    /// Among ready constraints, prefer the actual type with fewer feasible supertypes.
     /// See https://github.com/dotnet/fsharp/issues/20103
-    let reorderTyArgsByConstraintDependencies (g: TcGlobals) (pairs: (TType * TType) list) =
+    let reorderTyArgsByConstraintDependencies
+        (g: TcGlobals)
+        (countFeasibleSupertypes: TType -> TType -> int)
+        (pairs: (TType * TType) list)
+        =
         match pairs with
         | []
         | [ _ ] -> pairs
         | _ ->
-            let node pair =
+            let node index pair =
                 match stripTyEqns g (fst pair) with
-                | TType_var(tp, _) -> pair, ValueSome tp.Stamp, constraintDependencyStamps g tp
-                | _ -> pair, ValueNone, Set.empty
+                | TType_var(tp, _) ->
+                    let ambiguity =
+                        tp.Constraints
+                        |> List.sumBy (function
+                            | TyparConstraint.CoercesTo(targetTy, _) -> max 1 (countFeasibleSupertypes targetTy (snd pair))
+                            | _ -> 0)
 
-            let nodes = pairs |> List.map node
+                    pair, ValueSome tp.Stamp, constraintDependencyStamps g tp, ambiguity, index
+                | _ -> pair, ValueNone, Set.empty, 0, index
 
-            if nodes |> List.forall (fun (_, _, deps) -> Set.isEmpty deps) then
+            let nodes = pairs |> List.mapi node
+
+            if nodes |> List.forall (fun (_, _, deps, _, _) -> Set.isEmpty deps) then
                 pairs
             else
                 // 'a' must precede 'b' when b's subtype constraint references a's parameter.
-                let mustPrecede (_, stamp, _) (_, _, deps) =
+                let mustPrecede (_, stamp, _, _, _) (_, _, deps, _, _) =
                     match stamp with
                     | ValueSome s -> Set.contains s deps
                     | ValueNone -> false
 
                 nodes
+                |> List.sortBy (fun (_, _, _, ambiguity, index) -> ambiguity, index)
                 |> List.stableTopologicalSort mustPrecede
-                |> List.map (fun (pair, _, _) -> pair)
+                |> List.map (fun (pair, _, _, _, _) -> pair)
 
 [<AutoOpen>]
 module internal MemberRepresentation =

@@ -235,6 +235,29 @@ let main _ = 0
         |> ignore
 
     [<Theory>]
+    [<InlineData(false)>]
+    [<InlineData(true)>]
+    let ``optional inlining preserves a stackalloc lambda behind leading bindings`` optimize =
+        FSharp """
+module Test
+#nowarn "9"
+open Microsoft.FSharp.NativeInterop
+let run () =
+    try failwith "enter"
+    with _ ->
+        let allocate =
+            let n = 1 + (System.Environment.TickCount &&& 1)
+            fun () -> NativePtr.stackalloc<int> n |> ignore
+        allocate ()
+run ()
+[<EntryPoint>]
+let main _ = 0
+"""
+        |> withOptimization optimize
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<Theory>]
     [<InlineData("try NativePtr.stackalloc<int> n |> ignore with _ -> ()")>]
     [<InlineData("try NativePtr.stackalloc<int> n |> ignore finally System.GC.KeepAlive n")>]
     [<InlineData("for _ in 1..n do NativePtr.stackalloc<int> 1 |> ignore")>]

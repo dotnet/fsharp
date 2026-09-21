@@ -3290,7 +3290,7 @@ and CanMemberSigsMatchUpToCheck
                     let tyargPairs =
                         let pairs = List.zip minst uminst
                         if g.langVersion.SupportsFeature LanguageFeature.TypeArgumentDependencyOrdering then
-                            reorderTyArgsByConstraintDependencies g pairs
+                            reorderTyArgsByConstraintDependencies g (CountFeasibleSupertypes g amap m) pairs
                         else pairs
                     tyargPairs |> MapCombineTDCD (fun (formalTy, callerTy) -> unifyTypes formalTy callerTy)
                 let! usesTDC2 =

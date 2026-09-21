@@ -348,16 +348,21 @@ let IteratedAdjustLambdaToMatchValReprInfo g amap valReprInfo lambdaExpr =
 
     tps, ctorThisValOpt, baseValOpt, vsl, body, bodyTy
 
-/// "Single Feasible Type" inference
-/// Look for the unique supertype of ty2 for which ty2 :> ty1 might feasibly hold
-let FindUniqueFeasibleSupertype g amap m ty1 ty2 =
+let private feasibleSupertypes g amap m ty1 ty2 =
     let n2 = nullnessOfTy g ty2
     let nullify t = addNullnessToTy n2 t
 
-    let supertypes =
-        Option.toList (GetSuperTypeOfType g amap m ty2) @
-        (GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g amap m ty2)
+    [
+        yield! Option.toList (GetSuperTypeOfType g amap m ty2)
+        yield! GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g amap m ty2
+    ]
+    |> List.filter (TypeFeasiblySubsumesType 0 g amap m ty1 NoCoerce)
+    |> List.map nullify
 
-    supertypes
-    |> List.tryFind (TypeFeasiblySubsumesType 0 g amap m ty1 NoCoerce)
-    |> Option.map nullify
+let CountFeasibleSupertypes g amap m ty1 ty2 =
+    feasibleSupertypes g amap m ty1 ty2 |> List.length
+
+/// "Single Feasible Type" inference
+/// Look for the unique supertype of ty2 for which ty2 :> ty1 might feasibly hold
+let FindUniqueFeasibleSupertype g amap m ty1 ty2 =
+    feasibleSupertypes g amap m ty1 ty2 |> List.tryHead

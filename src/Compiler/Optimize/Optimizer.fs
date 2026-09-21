@@ -2633,6 +2633,16 @@ let ExprMayHaveFrameLocalAllocation expr =
 
     FoldExpr folder false expr
 
+let rec ExprMayHaveFrameLocalAllocationInCallableBody expr =
+    if ExprMayHaveFrameLocalAllocation expr then
+        true
+    else
+        match stripDebugPoints expr with
+        | Expr.Let (_, body, _, _)
+        | Expr.TyLambda (_, _, body, _, _)
+        | Expr.Lambda (_, _, _, _, body, _, _) -> ExprMayHaveFrameLocalAllocationInCallableBody body
+        | _ -> false
+
 /// Frame-local IL and resumable templates must remain in the caller's method.
 /// Inline wrappers inherit this requirement even when they do not inherit the callee's attributes.
 let rec HasForcedInlineBody cenv env (vref: ValRef) =
@@ -3313,7 +3323,12 @@ and OptimizeLinearExpr cenv env expr contf =
         // Is it quadratic or quasi-quadratic?
         if ValueIsUsedOrHasEffect cenv (fun () -> (freeInExpr (CollectLocalsWithStackGuard()) bodyR).FreeLocals) (bindR, bindingInfo) then
             // Eliminate let bindings on the way back up
-            let exprR, adjust = TryEliminateLet cenv env bindR bodyR m
+            let exprR, adjust =
+                if env.withinExnHandler && ExprMayHaveFrameLocalAllocationInCallableBody bindR.Expr then
+                    mkLetBind m bindR bodyR, 0
+                else
+                    TryEliminateLet cenv env bindR bodyR m
+
             exprR,
             { TotalSize = bindingInfo.TotalSize + bodyInfo.TotalSize + adjust
               FunctionSize = bindingInfo.FunctionSize + bodyInfo.FunctionSize + adjust
@@ -4239,7 +4254,13 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
             | _ ->
                 let f2R = CopyExprForInlining cenv false f2 m
                 MakeApplicationAndBetaReduce g (f2R, f2ty, [tyargs], argsR, m)
-        if env.withinExnHandler && ExprMayHaveFrameLocalAllocation exprR then None else
+        if
+            env.withinExnHandler
+            && (ExprMayHaveFrameLocalAllocation exprR
+                || ExprMayHaveFrameLocalAllocationInCallableBody f2)
+        then
+            None
+        else
         // Inlining: reoptimizing
         Some(OptimizeExpr cenv {env with dontInline = Map.add lambdaId [] env.dontInline} exprR)
 
@@ -4354,7 +4375,10 @@ and OptimizeApplication cenv env (f0, f0ty, tyargs, args, m) =
     | None ->
     let optf0, finfo = OptimizeFuncInApplication cenv env f0 m
 
-    match StripPreComputationsFromComputedFunction g optf0 args (fun f argsR -> MakeApplicationAndBetaReduce g (f, tyOfExpr g f, [tyargs], argsR, f.Range)) with
+    match
+        StripPreComputationsFromComputedFunction g optf0 args (fun f argsR ->
+            MakeApplicationAndBetaReduce g (f, tyOfExpr g f, [ tyargs ], argsR, f.Range))
+    with
     | Choice1Of2 remade ->
         OptimizeExpr cenv env remade
     | Choice2Of2 (newf0, remake) ->
