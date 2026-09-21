@@ -270,6 +270,9 @@ async function advanceInvestigation({ now }, deps) {
                 }
             }
         }
+        if (selected.request && !capacity(cp, 1, context.now,
+            selected.request.kind === "source" ? [selected.request.target.sourceSha] : []))
+            selected = report("blocked", "cumulative budget exhausted or allowance deadline insufficient", { budget: cp.state.budget.consumed });
         if ((selected.interval || selected.status) && cp.pending === null) {
             const { remaining, ...interval } = selected.interval ?? cp.state.interval ?? {};
             cp = await recordSearchProgress(deps.transport, context, {

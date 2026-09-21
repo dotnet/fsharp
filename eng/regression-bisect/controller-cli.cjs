@@ -403,6 +403,7 @@ async function main(args = process.argv.slice(2), env = process.env) {
             "unsupported worker matrix; no platform fallback");
         context.environmentFingerprint = fingerprint(environments);
         const transport = apiFor(registration.checkpointCommentId, registration.resultCommentId);
+        let routedGeneration;
         if (input.routingKey) {
             const { dispatchKey } = require("./routing.cjs");
             requireValue(input.routingKey === dispatchKey({ issueNumber: input.issueNumber, allowanceId: registration.allowanceId,
@@ -412,14 +413,22 @@ async function main(args = process.argv.slice(2), env = process.env) {
             const record = await state.authenticateDecodedRecord(transport, context, existing);
             requireValue(record, "routing checkpoint authentication failed");
             if (record.kind === "checkpoint") {
-                const current = await state.readAuthenticatedCheckpoint(transport, context, { repair: true });
-                if (current.checkpoint.generation !== input.routingGeneration)
-                    return { status: "duplicate", generation: current.checkpoint.generation, routingKey: input.routingKey };
-            } else requireValue(input.routingGeneration === -1 && fingerprint(existing.body) === registration.checkpointBootstrapDigest,
+                requireValue(input.routingGeneration <= record.payload.generation, "routing generation is ahead of the checkpoint");
+                requireValue(record.payload.state.budget.allowanceId === registration.allowanceId &&
+                    record.payload.deadline === registration.deadline, "existing allowance differs from reviewed registration");
+                routedGeneration = record.payload.generation;
+            } else requireValue(record.kind === "proposal" && input.routingGeneration === -1 &&
+                fingerprint(existing.body) === registration.checkpointBootstrapDigest,
                 "routing requires the registered bootstrap");
         }
         const discoveryBytes = await reader.readOptionalTrustedFile(".github/regression-bisect/discovery.json", 4096);
         const discovery = discoveryBytes === null ? null : require("./routing.cjs").validateRegistration(decode(discoveryBytes));
+        if (discovery?.issueNumber === input.issueNumber) {
+            requireValue(![registration.checkpointCommentId, registration.resultCommentId].includes(discovery.commentId) &&
+                discovery.checkpointAnchorSha === config.anchorSha, "discovery slot conflicts with issue registration");
+            await require("./routing.cjs").loadCursor({ transport: apiFor(discovery.commentId, registration.resultCommentId), registration: discovery,
+                context: { ...context, commentId: discovery.commentId, workflowPath: discovery.workflowPath } });
+        }
         const storeConfig = { repository, runId: context.owner.runId, attempt: context.owner.attempt,
             directory: path.join(directory, "store"), token, runtimeToken: env.ACTIONS_RUNTIME_TOKEN,
             resultsUrl: env.ACTIONS_RESULTS_URL, retentionDays: 90 };
@@ -490,8 +499,15 @@ async function main(args = process.argv.slice(2), env = process.env) {
         };
         try {
             await refresh();
+            if (routedGeneration !== undefined && input.routingGeneration < routedGeneration) {
+                // A duplicate still requires current intake and authenticated evidence.
+                const current = await state.loadCheckpoint(transport, context, { requiredEvidenceOnly: input.mode === "publish" });
+                requireValue(current.blockers.length === 0, `routing duplicate blocked: ${current.blockers.join("; ")}`);
+                return { status: "duplicate", generation: current.checkpoint.generation, routingKey: input.routingKey };
+            }
             const deps = { context, transport, approval: approvalReader, environments, platform: config.platform, history,
                 clock, withLock: action => action(), collectObservation, resultCommentId: registration.resultCommentId,
+                discoveryCommentId: discovery?.issueNumber === input.issueNumber ? discovery.commentId : undefined,
                 toolchainDependencies: local?.toolchainDependencies, readCurrentContext: refresh,
                 execute: async (...args) => {
                     local?.recordGit(args[1]);
@@ -570,4 +586,4 @@ if (require.main === module) main().then(result => {
     process.exitCode = 1;
 });
 
-module.exports = { main, argumentsFor, configuration, withIssueLock, containment, bytes };
+module.exports = { main, argumentsFor, configuration, withIssueLock, containment, bytes, writeJson };

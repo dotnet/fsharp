@@ -10,6 +10,27 @@ const config = {
 const options = { owner: "dotnet", repo: "fsharp" };
 const response = (value, init = {}) => new Response(JSON.stringify(value), { status: 200, ...init });
 
+test("routing dispatcher admits only typed fixed-main controller delivery", async t => {
+    const { createDispatcher } = require("./github.cjs");
+    const calls = [];
+    const dispatch = createDispatcher({ token: "offline-dispatch" }, async (url, options) => {
+        calls.push({ url, ...options });
+        return new Response(null, { status: 204 });
+    });
+    const valid = { issue: 123, mode: "advance", routingKey: "a".repeat(64), routingGeneration: "0" };
+    for (const change of [{ issue: "123" }, { issue: 0 }, { mode: "provision" }, { routingGeneration: 0 },
+        { routingGeneration: "-1" }, { routingGeneration: "01" }, { routingKey: "invalid" },
+        ...["ref", "command", "url", "workflow", "repository", "allowanceId"].map(key => ({ [key]: "override" }))])
+        await t.test(JSON.stringify(change), async () => { await assert.rejects(dispatch({ ...valid, ...change })); });
+    assert.equal(calls.length, 0);
+    await dispatch(valid);
+    assert.equal(calls[0].url, "https://api.github.com/repos/dotnet/fsharp/actions/workflows/regression-bisect-controller.yml/dispatches");
+    assert.equal(calls[0].redirect, "error");
+    assert.deepEqual(JSON.parse(calls[0].body), { ref: "main", inputs: valid });
+    for (const status of [200, 302, 429, 503]) await assert.rejects(createDispatcher({ token: "offline" },
+        async () => new Response(null, { status }))(valid), /dispatch failed/);
+});
+
 test("GitHub API uses fixed authority and bounded manual-redirect requests without shell interpretation", async () => {
     const calls = [];
     const api = require("./github.cjs").createGithubApi(config, async (url, settings) => {

@@ -58,18 +58,48 @@ function validateCursor(cp, registration) {
     }
 }
 
-async function loadCursor({ transport, context, registration }) {
-    const comment = await transport.getComment(context.commentId);
-    const record = await state.authenticateDecodedRecord(transport, context, comment);
+async function loadCursor({ transport, context, registration, journal }, { repair = false } = {}) {
+    let committedGeneration;
+    let comment = await transport.getComment(context.commentId);
+    let record = await state.authenticateDecodedRecord(transport, context, comment);
     requireValue(record?.kind === "proposal", "discovery cursor authentication failed");
     validateCursor(record.payload, registration);
+    if (journal) {
+        const saved = {};
+        for (const name of ["intent", "committed"]) {
+            const body = await journal.read(name);
+            const decoded = await state.authenticateDecodedRecord(transport, context, { ...comment, body });
+            requireValue(decoded?.kind === "proposal", `required discovery ${name} authentication failed`);
+            validateCursor(decoded.payload, registration);
+            saved[name] = { body, cp: decoded.payload };
+        }
+        committedGeneration = saved.committed.cp.generation;
+        requireValue(record.payload.generation >= saved.committed.cp.generation &&
+            (record.payload.generation !== saved.committed.cp.generation || comment.body === saved.committed.body),
+        "discovery cursor rolled back behind durable history");
+        if (comment.body !== saved.intent.body) {
+            requireValue(repair && comment.body === saved.committed.body &&
+                saved.intent.cp.generation === record.payload.generation + 1 &&
+                saved.intent.cp.previousDigest === hash(comment.body), "discovery intent predecessor mismatch");
+            const head = await state.readFreshness(transport, context);
+            requireValue(head?.generation === record.payload.generation && head.bodyDigest === hash(comment.body),
+                "required discovery freshness missing or rolled back");
+            comment = await transport.updateComment(context.commentId, saved.intent.body);
+            requireValue(comment.body === saved.intent.body, "discovery recovery write mismatch");
+            record = await state.authenticateDecodedRecord(transport, context, comment);
+            requireValue(record?.kind === "proposal", "discovery recovery authentication failed");
+        }
+    }
     const head = await state.readFreshness(transport, context), bodyDigest = hash(comment.body);
     requireValue(head !== null, "discovery freshness receipt missing; operator recovery required");
+    requireValue(committedGeneration === undefined || head.generation >= committedGeneration,
+        "discovery freshness rolled back behind durable history");
     if (record.payload.generation !== head.generation || bodyDigest !== head.bodyDigest) {
-        requireValue(record.payload.generation === head.generation + 1 && record.payload.previousDigest === head.bodyDigest,
+        requireValue(repair && record.payload.generation === head.generation + 1 && record.payload.previousDigest === head.bodyDigest,
             "discovery cursor rollback or torn predecessor");
         await state.writeFreshness(transport, context, record.payload.generation, bodyDigest);
     }
+    if (journal && repair) await journal.write("committed", comment.body);
     return { cursor: record.payload, bodyDigest };
 }
 
@@ -79,16 +109,20 @@ async function saveCursor(deps, cp, previousDigest) {
     const body = state.serializeWorkflowRecord({
         kind: "proposal", status: "Regression discovery routing", payload: cp,
     }, deps.context);
+    if (deps.journal) await deps.journal.write("intent", body);
     const written = await deps.transport.updateComment(deps.context.commentId, body);
     requireValue(written.body === body && await state.authenticateWorkflowRecord(deps.transport, deps.context, written),
         "discovery write acknowledgement authentication failed");
     await state.writeFreshness(deps.transport, deps.context, cp.generation, hash(body));
+    if (deps.journal) await deps.journal.write("committed", body);
     return { cursor: cp, bodyDigest: hash(body) };
 }
 
 async function provisionDiscovery(deps) {
     const { transport, context, registration, now } = deps;
     requireValue(Date.parse(registration.provisionDeadline) > now(), "discovery provisioning authorization expired");
+    requireValue(!deps.journal || await deps.journal.read("committed") === null,
+        "discovery already committed; missing required history cannot be replaced");
     requireValue(await state.readFreshness(transport, context) === null, "discovery already provisioned; never reset history");
     const comment = await transport.getComment(context.commentId);
     requireValue(comment.id === context.commentId && comment.user?.id === context.actor.id &&
@@ -103,7 +137,10 @@ async function provisionDiscovery(deps) {
         requireValue(record.payload.generation === 0 && record.payload.previousDigest === registration.bootstrapDigest &&
             same(record.payload.cursor, { version: 1, page: 1, offset: 0 }) && record.payload.selected.length === 0,
         "not the original interrupted discovery provisioning");
+        requireValue(!deps.journal || await deps.journal.read("intent") === comment.body,
+            "required discovery provisioning intent missing or changed");
         await state.writeFreshness(transport, context, 0, hash(comment.body));
+        if (deps.journal) await deps.journal.write("committed", comment.body);
     } else await saveCursor(deps, {
         schemaVersion: 1, purpose: "discovery-routing", query, policyDigest: fingerprint(policy),
         workflowGeneration: registration.workflowGeneration, generation: 0, previousDigest: registration.bootstrapDigest,
@@ -183,13 +220,9 @@ async function issueIntent(issueNumber, deps) {
         approved.snapshot.investigations.active.length === 0, "approved discussion or immutable samples changed");
     if (Date.parse(registration.deadline) <= deps.now()) return intent("blocked", "allowance-expired");
     const cp = checkpoint?.checkpoint;
-    if (cp && ["stopped", "blocked"].includes(cp.state.phase)) return intent("blocked", "controller-stopped");
     if (cp?.publicationStatus === "published") return intent("complete", "controller-published");
-    const mode = !cp ? "bootstrap" : cp.publicationStatus === "pending" || cp.state.phase === "complete" ? "publish" : "advance";
-    if (mode === "advance" && (cp.state.budget.consumed.sourceBuilds >= policy.limits.sourceBuilds ||
-        cp.state.budget.consumed.workerUnits >= policy.limits.workerUnits ||
-        cp.state.budget.consumed.reservedMinutes + policy.limits.workerTimeoutMinutes > policy.limits.reservedMinutes))
-        return intent("blocked", "allowance-exhausted");
+    const mode = !cp ? "bootstrap" : cp.publicationStatus === "pending" ||
+        ["complete", "blocked", "stopped"].includes(cp.state.phase) ? "publish" : "advance";
     const generation = cp?.generation ?? -1;
     const key = dispatchKey({ issueNumber, allowanceId: registration.allowanceId, generation, mode,
         discussionFingerprint, policyRevision: deps.context.policyRevision });
@@ -199,11 +232,11 @@ async function issueIntent(issueNumber, deps) {
 
 async function route(deps, issueNumber) {
     validatePolicy(policy);
-    let loaded = await loadCursor(deps);
+    let loaded = await loadCursor(deps, { repair: true });
     const cp = structuredClone(loaded.cursor);
-    const pending = cp.selected.filter(item => item.status === "pending");
+    const pending = cp.selected.filter(item => item.status === "pending" && !item.acknowledged);
     let candidates, nextCursor = cp.cursor;
-    if (pending.length) candidates = pending.map(item => ({ number: item.issueNumber }));
+    if (issueNumber === undefined && pending.length) candidates = pending.map(item => ({ number: item.issueNumber }));
     else {
         const found = await discoverEligibleIssues({ transport: deps.transport, repository, cursor: cp.cursor,
             ...(issueNumber === undefined ? {} : { issueNumber }) });
@@ -214,17 +247,20 @@ async function route(deps, issueNumber) {
     const selected = [];
     for (const candidate of candidates) {
         deps.signal.throwIfAborted();
-        const current = await issueIntent(candidate.number, deps);
+        let current;
+        try { current = await issueIntent(candidate.number, deps); }
+        catch (error) {
+            // An unreadable issue blocks only its own dispatch, not the bounded scan.
+            current = { issueNumber: candidate.number, status: "blocked", reason: error.message.slice(0, 256),
+                discussionFingerprint: null, key: fingerprint({ issueNumber: candidate.number, error: error.message }),
+                dispatch: null, retryAfter: 0, acknowledged: false };
+        }
         const previous = cp.selected.find(item => item.issueNumber === candidate.number && item.key === current.key);
         if (previous && current.status === "pending") {
             current.retryAfter = previous.retryAfter;
             current.acknowledged = previous.acknowledged;
         }
-        // A changed generation acknowledges this delivery. The next sweep, not
-        // recursive dispatch, may select the next deterministic controller unit.
-        if (pending.some(item => item.issueNumber === current.issueNumber && item.key !== current.key) && current.status === "pending")
-            selected.push({ ...current, status: "complete", reason: "controller-progressed", dispatch: null });
-        else selected.push(current);
+        selected.push(current);
     }
     const toDispatch = selected.filter(item => item.status === "pending" && item.retryAfter <= deps.now());
     for (const item of toDispatch) { item.retryAfter = deps.now() + 300000; item.acknowledged = false; }
@@ -234,13 +270,20 @@ async function route(deps, issueNumber) {
         loaded = await saveCursor(deps, cp, loaded.bodyDigest);
     }
     const dispatched = [];
+    let invalidated = false;
     for (const item of toDispatch) {
         deps.signal.throwIfAborted();
+        const fresh = await issueIntent(item.issueNumber, deps);
+        if (fresh.status !== "pending" || fresh.key !== item.key) {
+            Object.assign(item, fresh);
+            invalidated = true;
+            continue;
+        }
         await deps.dispatch(item.dispatch);
         item.acknowledged = true;
         dispatched.push(item.issueNumber);
     }
-    if (dispatched.length) {
+    if (dispatched.length || invalidated) {
         cp.selected = selected; cp.generation++;
         await saveCursor(deps, cp, loaded.bodyDigest);
     }
@@ -250,4 +293,4 @@ async function route(deps, issueNumber) {
             ({ issueNumber, status, reason, key, discussionFingerprint })) };
 }
 
-module.exports = { route, provisionDiscovery, validateRegistration, dispatchKey, workflowPath };
+module.exports = { route, provisionDiscovery, validateRegistration, dispatchKey, loadCursor, workflowPath };

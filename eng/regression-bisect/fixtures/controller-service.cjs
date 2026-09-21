@@ -149,6 +149,44 @@ async function fixture(t) {
 
 function assertValue(value, message) { if (!value) throw new Error(message); }
 
+async function checkpoint(fixture) {
+    const service = await connect(fixture.serviceFile);
+    const transport = require("../github.cjs").createGithubApi({ repository: "dotnet/fsharp", issueNumber: 123,
+        checkpointCommentId: 456, resultCommentId: 457, anchorSha: fixture.config.anchorSha,
+        token: "offline-controller-token" }, service.send);
+    const context = { ...fixture.context, owner: { runId: fixture.env.GITHUB_RUN_ID, attempt: 1 } };
+    const cp = (await state.authenticateDecodedRecord(transport, context, await transport.getComment(456))).payload;
+    Object.assign(context, { stableSdk: cp.state.budget.stableSdk, pinnedMainSha: cp.state.pinnedMainSha,
+        environmentFingerprint: cp.state.budget.environmentFingerprint });
+    return { context, cp, transport };
+}
+
+async function seed(fixture, endpoint, outcome, target, attempts) {
+    const { context, cp, transport } = await checkpoint(fixture);
+    const kind = endpoint === "stable" ? "released" : "source";
+    const sourceSha = target ?? (endpoint === "good" ? fixture.read().olderSha : context.pinnedMainSha);
+    const reservation = await state.reserveWork(transport, context, { generation: cp.generation,
+        attemptId: `seed-${cp.sequence}`, request: { kind, endpoint, phase: endpoint === "good" ? "good-search" : endpoint ?? "bisect",
+            target: kind === "released" ? { sdk: context.stableSdk } : { sourceSha } } });
+    const observation = f.observation(kind, outcome, context.manifest, sourceSha);
+    observation.buildInstanceId = reservation.id;
+    observation.provenance = { workerId: "synthetic-seed", runId: context.owner.runId,
+        workflowRevision: context.workflowRevision, policyRevision: context.policyRevision };
+    if (kind === "released") observation.target.sdk = context.stableSdk;
+    for (const cell of observation.cells) {
+        cell.environment.imageDigest = image.split(":").at(-1);
+        cell.sdk.sha256 = context.stableSdk.archives[0].sha256;
+        for (const artifact of Object.values(cell.artifacts)) artifact.buildInstanceId = reservation.id;
+        if (kind === "source") cell.buildToolchain = f.buildToolchain(sourceSha, cell.environment.os);
+        if (attempts) {
+            cell.attempts = structuredClone(attempts);
+            cell.outcome = observation.outcome = require("../model.cjs").classifyAttempts(attempts, context.manifest);
+        }
+    }
+    return state.commitObservation(transport, context, { generation: reservation.generation,
+        attemptId: reservation.id, observation, evidence: [] });
+}
+
 async function connect(file) {
     const read = () => JSON.parse(fs.readFileSync(file));
     const write = db => writeDatabase(file, db);
@@ -218,7 +256,7 @@ async function connect(file) {
                     for (let i = 0; i < 400 && read().faults.pauseDiscovery; i++) await delay(25);
                     assertValue(!read().faults.pauseDiscovery, "fixture discovery barrier timeout");
                 }
-                const list = (db.issues ?? [db.issue]).filter(issue => issue.state === "open" &&
+                const list = [db.issue, ...(db.issues ?? []).filter(i => i.number !== db.issue.number)].filter(issue => issue.state === "open" &&
                     issue.labels.some(label => (typeof label === "string" ? label : label.name).toLowerCase() === "regression"))
                     .sort((a, b) => Date.parse(a.created_at) - Date.parse(b.created_at) || a.number - b.number);
                 return respond(page(list), db.faults.discoveryPage === Number(location.searchParams.get("page")) ? 503 : 200,
@@ -229,10 +267,12 @@ async function connect(file) {
                 return respond(db.runs[`${id}/${attempt}`] ?? {}, db.runs[`${id}/${attempt}`] ? 200 : 404);
             }
             if (route === "issues/123") return respond(db.issue);
-            if (route === "issues/123/timeline") return respond(page(db.timeline), 200, { link: "" });
+            const links = rows => ({ link: Number(location.searchParams.get("page")) * 100 < rows.length
+                ? '<https://api.github.com/next>; rel="next"' : "" });
+            if (route === "issues/123/timeline") return respond(page(db.timeline), 200, links(db.timeline));
             if (route === "issues/123/comments") {
                 if (options.method === "GET") return respond(page(db.comments), 200,
-                    { link: db.faults.discussionPages ? '<https://api.github.com/next>; rel="next"' : "" });
+                    db.faults.discussionPages ? { link: '<https://api.github.com/next>; rel="next"' } : links(db.comments));
                 const comment = { id: db.nextId++, user: { id: db.actor.id, login: db.actor.login, type: db.actor.type },
                     performed_via_github_app: { id: db.actor.appId },
                     issue_url: "https://api.github.com/repos/dotnet/fsharp/issues/123", body: body.body };
@@ -245,7 +285,14 @@ async function connect(file) {
                 if (!comment) return respond({}, 404);
                 if (options.method === "PATCH") {
                     if (comment.id === 458 && fault(db, "cursorWrite")) throw new Error("cursor write interrupted");
+                    if (comment.id === 458 && db.dispatches?.length && fault(db, "acknowledgementWrite"))
+                        throw new Error("dispatch acknowledgement write interrupted");
                     comment.body = body.body; write(db);
+                    if (comment.id === 458 && db.faults.editAfterSelection) {
+                        db.issue.body += "\nChanged after selection";
+                        delete db.faults.editAfterSelection;
+                        write(db);
+                    }
                     if (comment.id === 458 && fault(db, "cursorAck")) throw new Error("cursor acknowledgement lost");
                     if (comment.id === 457 && fault(db, "resultAck")) throw new Error("result acknowledgement lost");
                     if (fault(db, "commentAck")) throw new Error("comment acknowledgement lost");
@@ -256,11 +303,15 @@ async function connect(file) {
             if (issueRoute) {
                 const issue = db.issues?.find(i => i.number === Number(issueRoute[1]));
                 if (!issue) return respond({}, 404);
-                return respond(issueRoute[2] ? [] : issue, 200, { link: "" });
+                const rows = db.discussions?.[issue.number]?.[issueRoute[2]];
+                assertValue(!issueRoute[2] || Array.isArray(rows), "missing per-issue discussion fixture");
+                return respond(issueRoute[2] ? page(rows) : issue, 200, rows ? links(rows) : {});
             }
             if (route.endsWith("/statuses") && options.method === "GET")
-                return respond(page(db.statuses), db.faults.history ? 503 : 200, { link: db.faults.pagination ? '<https://api.github.com/next>; rel="next"' : "" });
+                return respond(page(db.statuses), db.faults.history ? 503 : 200,
+                    db.faults.pagination ? { link: '<https://api.github.com/next>; rel="next"' } : links(db.statuses));
             if (route.startsWith("statuses/")) {
+                if (body.context.endsWith("/458") && fault(db, "freshnessWrite")) throw new Error("freshness write interrupted");
                 const receipt = { id: db.nextId++, creator: { id: db.actor.id, login: db.actor.login, type: db.actor.type }, ...body };
                 db.statuses.unshift(receipt); write(db);
                 if (fault(db, "statusAck")) throw new Error("status acknowledgement lost");
@@ -372,4 +423,4 @@ async function syntheticWorker() {
 
 if (require.main === module) syntheticWorker().catch(error => { console.error(error.message); process.exitCode = 1; });
 
-module.exports = { fixture, connect, writeDatabase };
+module.exports = { fixture, connect, checkpoint, seed, writeDatabase };

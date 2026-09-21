@@ -59,6 +59,7 @@ async function bootstrapController(input, deps) {
                 for (const status of response.data) {
                     requireValue(status && typeof status.context === "string", "malformed bootstrap history");
                     if (!status.context.startsWith(prefix)) continue;
+                    if (deps.discoveryCommentId && status.context === `${prefix}${deps.discoveryCommentId}`) continue;
                     requireValue(status.context === `${prefix}${context.commentId}`, "prior issue allowance registration exists");
                     hasReceipt = true;
                 }
@@ -95,8 +96,9 @@ async function bootstrapController(input, deps) {
                 const snapshot = await readIssueSnapshot({
                     transport: deps.intakeTransport ?? deps.transport, repository: context.repository, issueNumber: context.issueNumber,
                     now: context.now, reviewedManifest: approval.manifest, readSource: deps.approval.readSource,
-                    authenticateRecord: async comment => [context.commentId, b.resultCommentId].includes(comment.id) &&
-                        (await authenticateDecodedRecord(deps.transport, { ...context, commentId: comment.id }, comment)) !== null,
+                    authenticateRecord: deps.approval.authenticateRecord ?? (async comment =>
+                        [context.commentId, b.resultCommentId].includes(comment.id) &&
+                        (await authenticateDecodedRecord(deps.transport, { ...context, commentId: comment.id }, comment)) !== null),
                     readTrustedCheckpoints: async () => [],
                 });
                 requireValue(snapshot.status === "complete", `bootstrap intake blocked: ${snapshot.reason}`);

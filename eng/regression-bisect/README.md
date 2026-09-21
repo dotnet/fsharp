@@ -17,14 +17,105 @@ concurrent CLI readers see complete snapshots rather than truncated JSON.
 The CLI suite runs two independent file-backed cases concurrently so the
 unchanged real-time quota-timeout test does not serialize the entire suite.
 
-Install the narrowly scoped, lockfile-pinned YAML test parser, then run from the
-repository root (the production CLI has no npm dependency):
+Run from the repository root (the production CLI has no npm dependency).
+Install the lockfile-pinned YAML test parser only if it is missing:
 
 ```powershell
 npm ci --prefix eng\regression-bisect --ignore-scripts --no-audit --no-fund
 $tests = @(Get-ChildItem 'eng\regression-bisect' -Filter '*.test.cjs' | ForEach-Object FullName)
 node --test @tests
 ```
+
+## Durable intake routing (not activated)
+
+`routing-cli.cjs` composes the existing intake, signed state and fixed controller
+dispatcher; it does not execute reproductions or grant allowances. Selection
+requires an open non-PR issue, the exact case-sensitive `Regression` label and
+**creation at or after `2026-09-01T00:00:00Z`, inclusive**. Update time is not a
+substitute. Events (including bot labels), manual selection and schedules reread
+the current issue, every bounded discussion/timeline page, linked investigations
+and reviewed immutable sample bytes. An unapproved issue produces only an inert
+`approval-required` proposal. Issue prose cannot choose a command, URL, ref,
+workflow, allowance or destination.
+
+```powershell
+node eng\regression-bisect\routing-cli.cjs provision --config $TrustedConfig
+node eng\regression-bisect\routing-cli.cjs schedule --config $TrustedConfig
+node eng\regression-bisect\routing-cli.cjs manual --issue 123 --config $TrustedConfig
+node eng\regression-bisect\routing-cli.cjs event --issue 123 --config $TrustedConfig
+```
+
+Provisioning requires reviewed `.github/regression-bisect/discovery.json`
+(see `discovery.schema.json`), an existing App-owned comment with the exact
+bootstrap digest, a fixed anchor, workflow generation and unexpired provisioning
+deadline. Provision issue allowances separately, before discovery if they share
+the same issue. Keep the controller-only
+`<RB_STATE_DIRECTORY>/dotnet-fsharp-discovery` directory, including signed
+`intent.json` and `committed.json`, on the same persistent host used for all
+routing entry points. The discovery lock serializes schedule/event/manual
+writers without cancelling another run. Never reset these files or the remote
+slot/receipts to recover a sweep.
+
+Each sweep reads at most two REST pages of 100 records and selects at most three
+issues. The authenticated page/offset cursor preserves dense-page overflow and
+wraps to revisit old eligible issues and later labels. Acknowledged controller
+deliveries do not hold the scan at one issue; one blocked intake is explicitly
+reported without preventing unrelated selection. Interrupted unacknowledged
+delivery is retried after five minutes with the same issue/generation key.
+Selection and exact dispatch intent are signed and persisted locally, then in
+the fixed remote discovery slot and freshness receipt, **before** dispatch.
+Authenticated predecessor-only recovery completes torn writes; missing, forged
+or rolled-back required state blocks instead of starting a replacement.
+Bounded listing failures preserve the cursor and never reset issue budgets.
+
+The separate `RB_DISPATCH_TOKEN` has only the required Actions dispatch
+authority. Its only destination is the controller workflow on `main`, with
+typed issue, mode, `routingKey` and `routingGeneration`. The no-argument Actions
+parser uses the runner event file; manual selection additionally requires typed
+`RB_ACTION_INPUTS={"issue":123}` from `toJSON(inputs)`, not the event's untyped
+string as authority. Malformed payloads and override fields fail before
+configuration or API access. Offline fixture injection remains forbidden in
+Actions. Discovery never receives worker execution authority, and publication
+credentials never enter workers.
+
+Delivery can repeat after a lost response. Consumers authenticate current
+registration, discussion, samples, owning run, checkpoint generation,
+freshness and required evidence under the existing issue lock. Old deliveries
+are inert duplicates; future or mismatched generations block. Normal progression
+is bootstrap, at most one worker per advance, terminal transition, then guarded
+fixed-slot publication. Eligible stopped/blocked outcomes (including stable
+passes, main passes, no-green/skip, setup/flake and budget stops) can be reported
+without starting another worker. They do not establish a verified culprit.
+Edits, stale main, live linked investigations and lost required evidence still
+block publication. Counters remain 24 source builds, 40 units, 720 reserved
+minutes and two attempts; retries, cancellation and edits do not refund them.
+
+**Integration prerequisite for sprint 19:** the recovered discovery identity is
+currently `.github/workflows/regression-bisect-discovery.yml`, which does not
+exist as a deployable workflow. Bind the actual compiled workflow identity
+consistently across registration schema, configuration, run authentication and
+tests before activation. No placeholder workflow is supplied here.
+**Physical prerequisite for sprint 21:** the read-only inventory on 2026-09-21
+found a Windows x64 host with Docker/WSL/SSH clients, but no enrolled native
+disposable Linux worker route or owner receipt. No daemon/WSL was started, no
+account provisioned and no historical product code executed. Native Linux x64,
+Docker >=28, cgroup v2, AppArmor/seccomp, containment and the known-history trial
+remain separate, unaccepted gates.
+
+Focused acceptance commands (in order, then the full scoped command above):
+
+```powershell
+node --test eng\regression-bisect\routing.test.cjs eng\regression-bisect\intake.test.cjs eng\regression-bisect\github.test.cjs
+if ($LASTEXITCODE -ne 0) { throw 'Routing acceptance failed' }
+node --test eng\regression-bisect\controller-cli.test.cjs
+if ($LASTEXITCODE -ne 0) { throw 'Dispatch consumer integration failed' }
+```
+
+Tests use real producer/consumer subprocesses and the file-backed service's
+ordered API/worker/Git ledger, including lost acknowledgements and process
+cancellation. Set an absolute `RB_TEST_EVIDENCE_DIRECTORY` to retain these
+ledgers. Capture each process's stdout, stderr, exit and hashes of the tested
+source bytes; historical test totals are not evidence for a changed checkout.
 
 ## Executable deployment and operator setup
 
@@ -141,7 +232,9 @@ executes `controller-cli.cjs`, preserving the artifact runtime credentials
 without exposing them in shell interpolation or outputs. It passes typed
 `toJSON(inputs)` through `RB_ACTION_INPUTS`; only an object containing a positive
 safe-integer issue (not a string) and one of the three transaction modes is
-accepted. Extra fields, provisioning and malformed JSON block before
+accepted. The optional `routingKey`/`routingGeneration` string pair must either
+both be empty (an operator transaction) or bind the exact routed transaction.
+Extra fields, provisioning and malformed JSON block before
 configuration/API access; payload bytes are not echoed in diagnostics.
 The no-argument Actions entry always selects the pinned checkout's
 `.github/regression-bisect/deployment.json`, never a dispatch-provided path.
@@ -211,8 +304,8 @@ epoch under the issue lock, including when stable evidence will immediately
 stop or block. Unchanged stable evidence is retained; main changes alone do not
 charge another stable worker. `publish` still requeues stale main without
 rewriting a result: run `advance`, then `publish` for a reportable blocked
-investigation. Passing endpoints retain the existing stopped/no-publication
-behavior. Neither path resets the allowance or extends its deadline.
+investigation. Passing endpoints stop execution but can now publish a guarded
+unconfirmed report. Neither path resets the allowance or extends its deadline.
 The 24 builds/40 units/720 minutes/two attempts and repetitions/90-minute build/
 110-minute worker/300-second reproduction limits are unchanged. Six
 reservations cost 660 minutes even if they finish immediately.

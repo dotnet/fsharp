@@ -1,7 +1,7 @@
 const fs = require("node:fs/promises");
 const path = require("node:path");
 const { createGithubApi, createApprovalReader, createDispatcher } = require("./github.cjs");
-const { configuration, withIssueLock, bytes } = require("./controller-cli.cjs");
+const { configuration, withIssueLock, bytes, writeJson } = require("./controller-cli.cjs");
 const { requireValue, hash } = require("./toolchain-io.cjs");
 const { validatePolicy } = require("./model.cjs");
 const { route, provisionDiscovery, validateRegistration, workflowPath } = require("./routing.cjs");
@@ -17,7 +17,7 @@ function argumentsFor(args) {
     return { mode: args[0], issueNumber: args.length === 5 ? Number(args[2]) : undefined, configPath: path.resolve(args.at(-1)) };
 }
 
-function eventArguments(name, event) {
+function eventArguments(name, event, typedInputs) {
     requireValue(event?.repository?.full_name === "dotnet/fsharp" && event.repository.default_branch === "main",
         "untrusted routing event repository/default branch");
     const fixed = ["--config", path.join(root, ".github", "regression-bisect", "deployment.json")];
@@ -27,9 +27,12 @@ function eventArguments(name, event) {
             Number.isSafeInteger(event.issue?.number) && event.issue.number > 0, "invalid typed issue event");
         return ["event", "--issue", String(event.issue.number), ...fixed];
     }
-    requireValue(name === "workflow_dispatch" && event.inputs && Object.keys(event.inputs).join() === "issue" &&
-        /^[1-9]\d*$/.test(String(event.inputs.issue)) && Number.isSafeInteger(Number(event.inputs.issue)), "invalid typed manual routing input");
-    return ["manual", "--issue", String(event.inputs.issue), ...fixed];
+    requireValue(name === "workflow_dispatch" && [undefined, "main", "refs/heads/main"].includes(event.ref) &&
+        event.inputs && Object.keys(event.inputs).join() === "issue" &&
+        typedInputs && Object.getPrototypeOf(typedInputs) === Object.prototype &&
+        Object.keys(typedInputs).join() === "issue" && Number.isSafeInteger(typedInputs.issue) &&
+        typedInputs.issue > 0 && String(event.inputs.issue) === String(typedInputs.issue), "invalid typed manual routing input");
+    return ["manual", "--issue", String(typedInputs.issue), ...fixed];
 }
 
 async function main(args = process.argv.slice(2), env = process.env) {
@@ -37,7 +40,15 @@ async function main(args = process.argv.slice(2), env = process.env) {
     const signal = AbortSignal.timeout(300000);
     if (!args.length) {
         requireValue(env.GITHUB_ACTIONS === "true" && path.isAbsolute(env.GITHUB_EVENT_PATH ?? ""), usage);
-        args = eventArguments(env.GITHUB_EVENT_NAME, decode(await bytes(env.GITHUB_EVENT_PATH, 4 * 1024 * 1024)));
+        let event, typedInputs;
+        try {
+            event = decode(await bytes(env.GITHUB_EVENT_PATH, 4 * 1024 * 1024));
+            if (env.GITHUB_EVENT_NAME === "workflow_dispatch") typedInputs = JSON.parse(env.RB_ACTION_INPUTS);
+        } catch (error) {
+            if (!(error instanceof SyntaxError)) throw error;
+            throw new Error("invalid routing event JSON");
+        }
+        args = eventArguments(env.GITHUB_EVENT_NAME, event, typedInputs);
     }
     const input = argumentsFor(args);
     requireValue(!env.RB_LOCAL_TEST_FILE || !env.GITHUB_ACTIONS && env.RB_LOCAL_TEST === "explicit-offline-fixture",
@@ -84,6 +95,13 @@ async function main(args = process.argv.slice(2), env = process.env) {
     const directory = path.join(env.RB_STATE_DIRECTORY, "dotnet-fsharp-discovery");
     return withIssueLock(directory, context, transport, async () => {
         const deps = { context, registration, transport, readerFor, apiFor, signal,
+            journal: {
+                read: async name => {
+                    try { return decode(await bytes(path.join(directory, `${name}.json`), 64 * 1024)); }
+                    catch (error) { if (error.code === "ENOENT") return null; throw error; }
+                },
+                write: (name, body) => writeJson(path.join(directory, `${name}.json`), body),
+            },
             now: () => (local?.clock() ?? new Date()).getTime(),
             dispatch: createDispatcher({ token: env.RB_DISPATCH_TOKEN, signal }, local?.send) };
         return input.mode === "provision" ? provisionDiscovery(deps) : route(deps, input.issueNumber);

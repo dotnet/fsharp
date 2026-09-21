@@ -406,7 +406,7 @@ async function loadCheckpoint(transport, context, { requiredEvidenceOnly = false
     return {
         ...loaded,
         executionAllowed: !requiredEvidenceOnly && blockers.length === 0,
-        publicationAllowed: blockers.length === 0 && checkpoint.state.phase !== "stopped",
+        publicationAllowed: blockers.length === 0,
         blockers, warnings: evidence.warnings,
     };
 }

@@ -92,11 +92,25 @@ function renderReport(report) {
     validateReport(report);
     const s = report.state, m = s.manifest, b = s.budget, c = s.confirmation;
     const completeInterval = Array.isArray(c?.interval.remaining);
+    const endpoint = name => report.observations.find(o => o.digest === s.endpointEvidence[name])?.data.outcome;
+    const stable = endpoint("stable"), main = endpoint("main");
+    const stopReason = c?.reason ??
+        (stable?.outcome === "pass" ? "not reproduced on latest stable; a main-only regression is not established" :
+            stable?.outcome === "untestable" ? `stable untestable: ${stable.reason}` :
+            main?.outcome === "pass" ? "release-specific or fixed on main" :
+            main?.outcome === "untestable" ? `main untestable: ${main.reason}` :
+            s.phase === "blocked" && (b.consumed.sourceBuilds >= b.policy.limits.sourceBuilds ||
+                b.consumed.workerUnits >= b.policy.limits.workerUnits ||
+                b.consumed.reservedMinutes + b.policy.limits.workerTimeoutMinutes > b.policy.limits.reservedMinutes)
+                ? "cumulative budget exhausted; no further worker is authorized" :
+            s.phase === "stopped" && stable?.outcome === "product-failure" && main?.outcome === "product-failure" &&
+                endpoint("good")?.outcome !== "pass" ? "no verified starting interval; no older source pass" :
+            `checkpoint phase ${s.phase}; no verified source confirmation recorded`);
     const lines = [
         "## Regression investigation",
         `Repository/issue: ${s.repository}#${s.issueNumber}`,
         `Classification: ${c ? c.classification.replaceAll("-", " ") : "unconfirmed candidate"}.`,
-        `Stop reason: ${display(c?.reason ?? `checkpoint phase ${s.phase}; no verified source confirmation recorded`)}.`,
+        `Stop reason: ${display(stopReason)}.`,
         "The latent root cause is unproven. Bisection does not establish semantic causation.",
         `Input: ${report.inputDigest}; discussion: ${s.issueFingerprint}; epoch: ${s.epoch}.`,
         `Approval manifest: ${s.approvalFingerprint}; approval revision: ${b.authorization.approvalRevision}; path: ${display(b.authorization.approvalPath)}.`,
@@ -281,6 +295,8 @@ async function preparePublication(options, deps) {
             } catch (error) { return stop(error.message); }
             const records = new Map(), checkpoints = new Map([[context.commentId, loaded]]);
             const authenticateRecord = async comment => {
+                if (comment.id === deps.discoveryCommentId)
+                    return await deps.approval.authenticateRecord(comment);
                 const decoded = await state.authenticateDecodedRecord(transport, { ...context, commentId: comment.id }, comment);
                 if (!decoded) return false;
                 records.set(comment.id, decoded);
@@ -314,7 +330,7 @@ async function preparePublication(options, deps) {
                 active.owner?.runId !== context.owner.runId || active.owner?.attempt !== context.owner.attempt)) {
                 return stop("another active investigation owns this issue");
             }
-            if (cp.pending || !["complete", "blocked"].includes(cp.state.phase)) {
+            if (cp.pending || !["complete", "blocked", "stopped"].includes(cp.state.phase)) {
                 return stop("work is pending or search has not reached a reportable state");
             }
             // Availability is mutable; authenticate the already-written intent before deriving a new report.

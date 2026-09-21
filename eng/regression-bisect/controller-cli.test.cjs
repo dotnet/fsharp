@@ -4,13 +4,14 @@ const { spawn } = require("node:child_process");
 const path = require("node:path");
 const fs = require("node:fs/promises");
 const { setTimeout: delay } = require("node:timers/promises");
-const { fixture, connect } = require("./fixtures/controller-service.cjs");
+const { fixture, connect, checkpoint, seed } = require("./fixtures/controller-service.cjs");
 const { fingerprintInput: fingerprint } = require("./model.cjs");
 const contracts = require("./fixtures/contracts.cjs");
 const state = require("./state.cjs");
 const { createGithubApi } = require("./github.cjs");
 const { image } = require("./container.cjs");
 const { argumentsFor } = require("./controller-cli.cjs");
+const { dispatchKey } = require("./routing.cjs");
 const YAML = require("yaml");
 
 const cli = path.join(__dirname, "controller-cli.cjs");
@@ -72,14 +73,42 @@ function noExecution(f) {
 
 test("typed Actions inputs normalize only to fixed deployment arguments", async t => {
     const f = await fixture(t);
-    for (const mode of ["bootstrap", "advance", "publish"]) await t.test(mode, async () => {
-        const env = { ...f.env, GITHUB_ACTIONS: "true", RB_ACTION_INPUTS: JSON.stringify({ issue: 123, mode }) };
+    for (const mode of ["bootstrap", "advance", "publish"]) for (const routing of [
+        {}, { routingKey: "", routingGeneration: "" },
+    ]) await t.test(`${mode} ${JSON.stringify(routing)}`, async () => {
+        const env = { ...f.env, GITHUB_ACTIONS: "true", RB_ACTION_INPUTS: JSON.stringify({ issue: 123, mode, ...routing }) };
         assert.deepEqual(argumentsFor([], env), { mode, issueNumber: 123,
             configPath: path.resolve(__dirname, "..", "..", ".github", "regression-bisect", "deployment.json") });
         const result = await invoke([], env);
         assert.equal(result.code, 1);
         assert.match(outcome(result).reason, /local test injection forbidden/);
     });
+    assert.deepEqual(f.ledger().filter(e => e.kind !== "cli-exit"), []);
+});
+
+test("routing Actions inputs reject partial, malformed and mode-inconsistent identities before service access", async t => {
+    const f = await fixture(t);
+    const routingKey = contracts.digest("dispatch");
+    for (const fields of [
+        { routingKey }, { routingGeneration: "0" }, { routingKey: "", routingGeneration: "0" },
+        ...[null, 0, "", "-1", "-0", "01", "1.5", "1e2", "9007199254740992", "0;unsafe"].map(
+            routingGeneration => ({ routingKey, routingGeneration })),
+        { routingKey: routingKey.toUpperCase(), routingGeneration: "0" },
+        { routingKey: `${routingKey}0`, routingGeneration: "0" },
+        { routingKey, routingGeneration: "0", ref: "attacker" },
+    ]) await t.test(JSON.stringify(fields), async () => {
+        const result = await invoke([], { ...f.env, GITHUB_ACTIONS: "true",
+            RB_ACTION_INPUTS: JSON.stringify({ issue: 123, mode: "advance", ...fields }) });
+        assert.equal(result.code, 1);
+        assert.match(outcome(result).reason, /invalid typed/);
+    });
+    for (const mode of ["bootstrap", "advance", "publish"]) {
+        const routingGeneration = mode === "bootstrap" ? "-1" : "0";
+        const parsed = argumentsFor([], { GITHUB_ACTIONS: "true",
+            RB_ACTION_INPUTS: JSON.stringify({ issue: 123, mode, routingKey, routingGeneration }) });
+        assert.equal(parsed.routingKey, routingKey);
+        assert.equal(parsed.routingGeneration, Number(routingGeneration));
+    }
     assert.deepEqual(f.ledger().filter(e => e.kind !== "cli-exit"), []);
 });
 
@@ -138,38 +167,103 @@ test("a transient Windows fixture reader does not fail an actual CLI write", { s
     noExecution(f);
 });
 
-async function checkpoint(f) {
-    const service = await connect(f.serviceFile);
-    const transport = createGithubApi({ repository: "dotnet/fsharp", issueNumber: 123, checkpointCommentId: 456,
-        resultCommentId: 457, anchorSha: f.config.anchorSha, token: "offline-controller-token" }, service.send);
-    const context = { ...f.context, owner: { runId: f.env.GITHUB_RUN_ID, attempt: 1 } };
-    const cp = (await state.authenticateDecodedRecord(transport, context, await transport.getComment(456))).payload;
-    Object.assign(context, { stableSdk: cp.state.budget.stableSdk, pinnedMainSha: cp.state.pinnedMainSha,
-        environmentFingerprint: cp.state.budget.environmentFingerprint });
-    return { context, cp, transport };
+function routed(f, mode, generation, identity = {}) {
+    const key = dispatchKey({ issueNumber: 123, allowanceId: f.approval.bootstrap.allowanceId,
+        generation, mode, discussionFingerprint: f.context.manifest.discussionFingerprint,
+        policyRevision: f.context.policyRevision, ...identity });
+    return invoke([mode, "--issue", "123", "--config", f.configPath,
+        "--routing-key", key, "--routing-generation", String(generation)], f.env);
 }
 
-async function seed(f, endpoint, outcome, target) {
-    const { context, cp, transport } = await checkpoint(f);
-    const kind = endpoint === "stable" ? "released" : "source";
-    const sourceSha = target ?? (endpoint === "good" ? f.read().olderSha : context.pinnedMainSha);
-    const reservation = await state.reserveWork(transport, context, { generation: cp.generation,
-        attemptId: `seed-${cp.sequence}`, request: { kind, endpoint, phase: endpoint === "good" ? "good-search" : endpoint ?? "bisect",
-            target: kind === "released" ? { sdk: context.stableSdk } : { sourceSha } } });
-    const observation = contracts.observation(kind, outcome, context.manifest, sourceSha);
-    observation.buildInstanceId = reservation.id;
-    observation.provenance = { workerId: "synthetic-seed", runId: context.owner.runId,
-        workflowRevision: context.workflowRevision, policyRevision: context.policyRevision };
-    if (kind === "released") observation.target.sdk = context.stableSdk;
-    for (const cell of observation.cells) {
-        cell.environment.imageDigest = image.split(":").at(-1);
-        cell.sdk.sha256 = context.stableSdk.archives[0].sha256;
-        for (const artifact of Object.values(cell.artifacts)) artifact.buildInstanceId = reservation.id;
-        if (kind === "source") cell.buildToolchain = contracts.buildToolchain(sourceSha, cell.environment.os);
-    }
-    return state.commitObservation(transport, context, { generation: reservation.generation,
-        attemptId: reservation.id, observation, evidence: [] });
-}
+const mutations = f => f.ledger().filter(r => r.kind === "worker" ||
+    r.kind === "api" && r.method !== "GET" || r.kind === "git" && r.args.includes("bisect"));
+
+test("routing duplicate subprocess deliveries preserve bootstrap, advance and publish mutations and budgets", async t => {
+    const f = await fixture(t);
+    for (const [mode, status] of [["bootstrap", "initialized"], ["advance", "observed"], ["publish", "published"]])
+        await t.test(mode, async () => {
+            if (mode === "publish") assert.equal(outcome(await run(f, "advance")).status, "blocked");
+            const generation = mode === "bootstrap" ? -1 : (await checkpoint(f)).cp.generation;
+            const first = outcome(await routed(f, mode, generation));
+            assert.equal(first.status, status, first.reason);
+            const before = (await checkpoint(f)).cp, writes = mutations(f);
+            f.nextRun();
+            const repeated = outcome(await routed(f, mode, generation));
+            assert.equal(repeated.status, "duplicate", repeated.reason);
+            assert.deepEqual((await checkpoint(f)).cp, before);
+            assert.deepEqual(mutations(f), writes, "duplicate must not write a slot, charge or launch");
+        });
+    assert.equal(f.ledger().filter(r => r.kind === "worker").length, 1);
+    assert.equal((await checkpoint(f)).cp.state.budget.consumed.workerUnits, 1);
+    assert.equal(mutations(f).filter(r => r.route === "issues/comments/457").length, 1);
+});
+
+test("routing future generations fail before freshness repair; old generations can repair only the receipt", async t => {
+    for (const mode of ["advance", "publish"]) for (const interrupted of [false, true])
+        await t.test(`${mode} interrupted=${interrupted}`, async t => {
+            const f = await fixture(t);
+            assert.equal(outcome(await run(f, "bootstrap")).status, "initialized");
+            if (interrupted) {
+                const { context, cp, transport } = await checkpoint(f);
+                f.update(db => { db.faults.commentAck = true; });
+                await assert.rejects(state.reserveWork(transport, context, { generation: cp.generation,
+                    attemptId: "torn-routing", request: { kind: "released", endpoint: "stable", phase: "stable",
+                        target: { sdk: context.stableSdk } } }), /acknowledgement lost/);
+            }
+            const before = (await checkpoint(f)).cp, writes = mutations(f), statuses = f.read().statuses;
+            const future = await routed(f, mode, before.generation + 1);
+            assert.equal(outcome(future).status, "blocked");
+            assert.match(outcome(future).reason, /routing.*generation/);
+            assert.deepEqual(mutations(f), writes);
+            assert.deepEqual(f.read().statuses, statuses);
+            if (interrupted) {
+                f.nextRun();
+                assert.equal(outcome(await routed(f, mode, before.generation - 1)).status, "duplicate");
+                assert.deepEqual((await checkpoint(f)).cp, before);
+                assert.deepEqual(mutations(f).slice(writes.length).map(r => [r.method, r.route]),
+                    [["POST", `statuses/${f.config.anchorSha}`]]);
+            }
+            noExecution(f);
+        });
+});
+
+test("routing tampered bindings and stale duplicates cannot mutate durable state", async t => {
+    for (const mode of ["bootstrap", "advance", "publish"]) for (const change of [
+        "allowance", "discussion", "policy", "issue", "mode", "closed", "current-discussion", "sample", "freshness", "owner", "evidence",
+    ]) await t.test(`${mode} ${change}`, async t => {
+        const f = await fixture(t);
+        const identity = change === "allowance" ? { allowanceId: "replacement" } :
+            change === "discussion" ? { discussionFingerprint: contracts.digest("stale") } :
+            change === "policy" ? { policyRevision: contracts.sha("stale") } :
+            change === "issue" ? { issueNumber: 124 } :
+            change === "mode" ? { mode: mode === "advance" ? "publish" : "advance" } : {};
+        const tampered = Object.keys(identity).length > 0;
+        if (mode !== "bootstrap" || !tampered) assert.equal(outcome(await run(f, "bootstrap")).status, "initialized");
+        const generation = mode === "bootstrap" ? -1 : (await checkpoint(f)).cp.generation;
+        if (!tampered && (mode !== "bootstrap" || change === "evidence"))
+            assert.equal(outcome(await run(f, "advance")).status, "observed");
+        if (change === "owner") f.nextRun();
+        f.update(db => {
+            if (change === "closed") db.issue.state = "closed";
+            if (change === "current-discussion") db.issue.body += " correction";
+            if (change === "sample") db.files[f.context.manifest.sources[0].path] = Buffer.from("changed").toString("base64");
+            if (change === "freshness") db.statuses = [];
+            if (change === "owner") { db.runs["12345/1"].status = "in_progress"; db.runs["12345/1"].conclusion = null; }
+        });
+        if (change === "evidence") {
+            const store = path.join(f.env.RB_STATE_DIRECTORY, "dotnet-fsharp-123", "store");
+            const files = (await fs.readdir(store)).filter(name => name.endsWith(".bin"));
+            assert.ok(files.length > 0);
+            await Promise.all(files.map(file => fs.unlink(path.join(store, file))));
+        }
+        const writes = mutations(f), before = f.read();
+        const result = outcome(await routed(f, mode, generation, identity));
+        assert.equal(result.status, "blocked", JSON.stringify(result));
+        assert.deepEqual(mutations(f), writes);
+        assert.deepEqual(f.read().comments, before.comments);
+        assert.deepEqual(f.read().statuses, before.statuses);
+    });
+});
 
 test("actual CLI bootstraps once and advances one charged contained unit with durable collection", async t => {
     const f = await fixture(t);
@@ -501,13 +595,12 @@ test("main refresh reconciles terminal endpoints before returning without anothe
             assert.equal(after.deadline, before.deadline);
             assert.equal(after.history.length, before.history.length + 1);
             const published = outcome(await run(f, "publish"));
-            assert.equal(published.status, scenario === "stopped" ? "blocked" : "published", published.reason);
-            if (scenario === "stopped") assert.match(published.reason, /publication is stopped/);
+            assert.equal(published.status, "published", published.reason);
         }
         assert.equal(f.ledger().filter(r => r.kind === "worker").length, scenario === "stopped" ? 0 : 1);
         assert.equal(f.ledger().filter(r => r.kind === "git" && r.args.includes("bisect")).length, 0);
         assert.equal(f.ledger().filter(r => r.kind === "api" && r.method === "PATCH" && r.route === "issues/comments/457").length,
-            scenario === "published" ? 2 : scenario === "blocked" ? 1 : 0);
+            scenario === "published" ? 2 : 1);
     });
 });
 

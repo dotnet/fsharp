@@ -4,14 +4,15 @@ const { spawn } = require("node:child_process");
 const path = require("node:path");
 const fs = require("node:fs/promises");
 const { setTimeout: delay } = require("node:timers/promises");
-const { fixture, connect } = require("./fixtures/controller-service.cjs");
+const { fixture, connect, checkpoint, seed } = require("./fixtures/controller-service.cjs");
+const contracts = require("./fixtures/contracts.cjs");
 const { fingerprintInput: fingerprint, isEligibleIssue } = require("./model.cjs");
 const { hash } = require("./toolchain-io.cjs");
 const state = require("./state.cjs");
 const workflowPath = ".github/workflows/regression-bisect-discovery.yml";
 
 function invoke(f, mode, issue, started = () => {}, extra = {}) {
-    const args = [mode, ...(issue === undefined ? [] : ["--issue", String(issue)]), "--config", f.configPath];
+    const args = mode === null ? [] : [mode, ...(issue === undefined ? [] : ["--issue", String(issue)]), "--config", f.configPath];
     return new Promise((resolve, reject) => {
         const start = performance.now();
         const child = spawn(process.execPath, [path.join(__dirname, "routing-cli.cjs"), ...args], {
@@ -72,6 +73,126 @@ function success(result) {
 async function provision(f) { return success(await invoke(f, "provision")); }
 const dispatches = f => f.ledger().filter(e => e.kind === "api" && e.route.endsWith("/dispatches"));
 const mutations = f => f.ledger().filter(e => e.kind === "api" && e.method !== "GET");
+
+async function consume(f, inputs) {
+    const args = [inputs.mode, "--issue", String(inputs.issue), "--config", f.configPath,
+        "--routing-key", inputs.routingKey, "--routing-generation", inputs.routingGeneration];
+    return new Promise((resolve, reject) => {
+        const child = spawn(process.execPath, [path.join(__dirname, "controller-cli.cjs"), ...args], {
+            env: { ...process.env, ...f.env, GITHUB_RUN_ID: "12345" }, shell: false, windowsHide: true,
+        });
+        let stdout = "", stderr = "";
+        child.stdout.on("data", b => { stdout += b; });
+        child.stderr.on("data", b => { stderr += b; });
+        child.once("error", reject);
+        child.once("close", async code => {
+            try {
+                await fs.appendFile(`${f.serviceFile}.ledger`, JSON.stringify({
+                    kind: "consumer-exit", pid: child.pid, args, code, stdout, stderr,
+                }) + "\n");
+                resolve({ code, stdout, stderr, result: stdout ? JSON.parse(stdout) : null });
+            } catch (error) { reject(error); }
+        });
+    });
+}
+
+function addIssues(f, count) {
+    f.update(db => {
+        db.discussions = {};
+        db.issues = Array.from({ length: count }, (_, index) => {
+            const number = index + 1000;
+            db.discussions[number] = {
+                comments: [{ id: number * 100, body: `sample ${number}`, user: { id: number } }],
+                timeline: [{ id: number * 100 + 1, event: "labeled", label: { name: "Regression" }, actor: { id: number } }],
+            };
+            db.files[`samples/${number}.fsx`] = Buffer.from(`printfn "${number}"`).toString("base64");
+            return { ...db.issue, number, id: number, title: `Issue ${number}`, body: `samples/${number}.fsx`,
+                created_at: "2026-09-01T00:00:00Z" };
+        });
+    });
+}
+
+test("Actions no-argument parser accepts only typed manual selection and fixed event routes", async t => {
+    const f = await setup(t), eventPath = path.join(f.directory, "event.json");
+    const repository = { full_name: "dotnet/fsharp", default_branch: "main" };
+    const cases = [
+        ...["opened", "labeled", "unlabeled", "edited", "closed", "reopened"].flatMap(action =>
+            ["User", "Bot"].map(type => ({ name: "issues", event: { repository, action, issue: { number: 123 }, sender: { type } }, valid: true }))),
+        { name: "schedule", event: { repository }, valid: true },
+        { name: "workflow_dispatch", event: { repository, inputs: { issue: "123" } }, inputs: { issue: 123 }, valid: true },
+        ...["123", 0, 1.5, null, true, Number.MAX_SAFE_INTEGER + 1].map(issue =>
+            ({ name: "workflow_dispatch", event: { repository, inputs: { issue } }, inputs: { issue }, valid: false })),
+        ...["ref", "command", "url", "config", "mode", "allowance"].map(key =>
+            ({ name: "workflow_dispatch", event: { repository, inputs: { issue: "123", [key]: "unsafe" } },
+                inputs: { issue: 123, [key]: "unsafe" }, valid: false })),
+        { name: "issues", event: { repository, action: "deleted", issue: { number: 123 } }, valid: false },
+        { name: "schedule", event: { repository: { ...repository, default_branch: "other" } }, valid: false },
+        { name: "workflow_dispatch", event: { repository, ref: "attacker", inputs: { issue: "123" } }, inputs: { issue: 123 }, valid: false },
+    ];
+    for (const [i, c] of cases.entries()) await t.test(String(i), async () => {
+        await fs.writeFile(eventPath, JSON.stringify(c.event));
+        const result = await invoke(f, null, undefined, undefined, { GITHUB_ACTIONS: "true",
+            GITHUB_EVENT_PATH: eventPath, GITHUB_EVENT_NAME: c.name,
+            RB_ACTION_INPUTS: c.inputs === undefined ? "" : JSON.stringify(c.inputs) });
+        assert.equal(result.code, 1);
+        if (c.valid) assert.match(result.result.reason, /local test injection forbidden/);
+        else assert.doesNotMatch(result.result.reason, /local test injection forbidden/);
+    });
+    assert.equal(f.ledger().some(e => e.kind === "api"), false);
+});
+
+test("a pending selected controller cannot starve later pages or manual selections", async t => {
+    const f = await setup(t);
+    addIssues(f, 205);
+    await provision(f);
+    success(await invoke(f, "manual", 123));
+    const manual = success(await invoke(f, "manual", 1204));
+    assert.deepEqual(manual.selected, [1204]);
+    const visited = new Set();
+    for (let i = 0; i < 72; i++) {
+        const before = f.ledger().length;
+        const result = success(await invoke(f, "schedule"));
+        assert.ok(result.selected.length <= 3);
+        result.selected.forEach(n => visited.add(n));
+        const reads = f.ledger().slice(before).filter(e => e.route === "issues");
+        assert.ok(reads.length <= 2);
+        assert.ok(reads.every(e => e.query.per_page === "100"));
+    }
+    assert.equal(visited.size, 206);
+    for (const number of [1000, 1100, 1204]) {
+        assert.ok(f.ledger().some(e => e.route === `issues/${number}/comments`));
+        assert.ok(f.ledger().some(e => e.route === `issues/${number}/timeline`));
+    }
+});
+
+test("real producer dispatches bootstrap, one unit, terminal transition and guarded publication exactly once", async t => {
+    const f = await setup(t);
+    await provision(f);
+    for (const [mode, status] of [["bootstrap", "initialized"], ["advance", "observed"], ["advance", "blocked"], ["publish", "published"]]) {
+        f.update(db => { db.runs["12345/1"].status = "completed"; db.runs["12345/1"].conclusion = "success"; });
+        if (mode === "bootstrap") {
+            f.update(db => { db.faults.dispatchAck = true; });
+            assert.equal((await invoke(f, "manual", 123)).code, 1);
+            f.nextRun();
+            f.update(db => { db.now = new Date(Date.parse(db.now) + 300001).toISOString(); });
+        }
+        const produced = success(await invoke(f, "manual", 123));
+        assert.deepEqual(produced.dispatched, [123], JSON.stringify(produced));
+        const inputs = dispatches(f).at(-1).body.inputs;
+        assert.equal(inputs.mode, mode);
+        if (mode === "bootstrap") assert.deepEqual(dispatches(f)[0].body, dispatches(f)[1].body);
+        f.update(db => { db.runs["12345/1"].status = "in_progress"; db.runs["12345/1"].conclusion = null; });
+        const first = await consume(f, inputs);
+        assert.equal(first.result.status, status, first.stdout);
+        const before = mutations(f).length;
+        assert.equal(success(await consume(f, inputs)).status, "duplicate");
+        assert.equal(mutations(f).length, before);
+    }
+    f.update(db => { db.runs["12345/1"].status = "completed"; });
+    assert.deepEqual(success(await invoke(f, "schedule")).dispatched, []);
+    assert.equal(f.ledger().filter(e => e.kind === "worker").length, 1);
+    assert.equal(f.ledger().filter(e => e.method === "PATCH" && e.route === "issues/comments/457").length, 1);
+});
 
 test("eligibility uses the inclusive creation cutoff, never update time", async t => {
     for (const [created_at, eligible] of [
@@ -150,4 +271,298 @@ test("a missing cursor is not a cache miss and cannot reset discovery", async t 
         assert.equal(result.code, 1, result.stdout);
     }
     assert.equal(dispatches(f).length, 0);
+});
+
+test("every durable routing boundary recovers exact intent in a new process", async t => {
+    for (const fault of ["cursorWrite", "cursorAck", "freshnessWrite", "statusAck", "dispatchAck", "acknowledgementWrite"]) await t.test(fault, async t => {
+        const f = await setup(t);
+        await provision(f);
+        f.update(db => { db.faults[fault] = true; });
+        const interrupted = await invoke(f, "event", 123);
+        assert.equal(interrupted.code, 1, interrupted.stdout);
+        const body = JSON.parse(await fs.readFile(path.join(f.env.RB_STATE_DIRECTORY, "dotnet-fsharp-discovery", "intent.json"), "utf8"));
+        f.nextRun();
+        f.update(db => { db.now = new Date(Date.parse(db.now) + 300001).toISOString(); });
+        assert.deepEqual(success(await invoke(f, "schedule")).dispatched, [123]);
+        const cp = await cursor(f);
+        assert.ok(body.includes(cp.selected[0].key));
+        assert.equal(dispatches(f).length, ["dispatchAck", "acknowledgementWrite"].includes(fault) ? 2 : 1);
+        for (const call of dispatches(f)) assert.deepEqual(call.body, dispatches(f)[0].body);
+        const before = mutations(f).length;
+        assert.deepEqual(success(await invoke(f, "manual", 123)).dispatched, []);
+        assert.equal(mutations(f).length, before);
+        assert.equal(f.ledger().some(e => e.kind === "worker"), false);
+    });
+});
+
+test("cursor identity, required local state and remote freshness fail closed", async t => {
+    const cases = [
+        "owner", "app", "run", "workflow", "key", "query", "policy", "workflowGeneration", "generation",
+        "signature", "cursor-missing", "freshness-missing", "freshness-forged", "cursor-rollback", "both-rollback",
+        "intent-missing", "committed-missing", "intent-forged", "freshness-rollback",
+    ];
+    for (const name of cases) await t.test(name, async t => {
+        const f = await setup(t);
+        await provision(f);
+        const original = f.read();
+        const payload = await cursor(f);
+        if (name.includes("rollback")) success(await invoke(f, "manual", 123));
+        if (name.startsWith("intent-") || name === "committed-missing") {
+            const file = path.join(f.env.RB_STATE_DIRECTORY, "dotnet-fsharp-discovery", `${name.split("-")[0]}.json`);
+            if (name.endsWith("missing")) await fs.unlink(file);
+            else await fs.writeFile(file, JSON.stringify("forged"));
+        } else f.update(db => {
+            const c = db.comments.find(c => c.id === 458);
+            if (name === "owner") c.user.id++;
+            if (name === "app") c.performed_via_github_app.id++;
+            if (name === "run") db.runs["22345/1"].head_sha = "a".repeat(40);
+            if (name === "workflow") db.runs["22345/1"].path = ".github/workflows/other.yml";
+            if (name === "key") c.body = state.serializeWorkflowRecord({ kind: "proposal", status: "Routing", payload },
+                { ...f.routingContext, keyId: "other", keys: { other: Buffer.alloc(32, 7) } });
+            if (name === "signature") c.body = c.body.replace(/"signature":"./, '"signature":"z');
+            if (["query", "policy", "workflowGeneration", "generation"].includes(name)) {
+                if (name === "query") payload.query.direction = "desc";
+                if (name === "policy") payload.policyDigest = "a".repeat(64);
+                if (name === "workflowGeneration") payload.workflowGeneration++;
+                if (name === "generation") payload.generation = -1;
+                c.body = state.serializeWorkflowRecord({ kind: "proposal", status: "Routing", payload }, f.routingContext);
+            }
+            if (name === "cursor-missing") db.comments = db.comments.filter(c => c.id !== 458);
+            if (name === "freshness-missing") db.statuses = [];
+            if (name === "freshness-forged") db.statuses[0].target_url += "a";
+            if (["cursor-rollback", "both-rollback"].includes(name)) c.body = original.comments.find(c => c.id === 458).body;
+            if (["freshness-rollback", "both-rollback"].includes(name)) db.statuses = original.statuses;
+        });
+        const before = mutations(f).length;
+        const result = await invoke(f, "schedule");
+        assert.equal(result.code, 1, result.stdout);
+        assert.equal(mutations(f).length, before);
+        if (name.endsWith("missing") || name.includes("rollback"))
+            assert.equal((await invoke(f, "provision")).code, 1);
+    });
+});
+
+test("concurrent schedules and cancelled owners serialize without replacing history", async t => {
+    for (const secondMode of ["schedule", "event", "manual"])
+        for (const cancel of [false, true]) await t.test(`${secondMode}/${cancel}`, async t => {
+        const f = await setup(t);
+        await provision(f);
+        f.update(db => { db.faults.pauseDiscovery = true; });
+        let child;
+        const first = invoke(f, "schedule", undefined, c => { child = c; });
+        try {
+            for (let i = 0; i < 200 && !f.ledger().some(e => e.kind === "discovery-barrier"); i++) await delay(25);
+            assert.ok(f.ledger().some(e => e.kind === "discovery-barrier"));
+            const second = await invoke(f, secondMode, secondMode === "schedule" ? undefined : 123);
+            assert.equal(second.code, 1);
+            assert.match(second.result.reason, /live process|handoff/);
+            if (cancel) { child.kill(); await first; f.nextRun(); }
+        } finally { f.update(db => { db.faults.pauseDiscovery = false; }); }
+        if (!cancel) success(await first);
+        else success(await invoke(f, "schedule"));
+        assert.equal(dispatches(f).length, 1);
+        assert.equal((await cursor(f)).generation, 2);
+    });
+});
+
+test("fresh full intake blocks stale approvals, samples and live investigations without blocking other issues", async t => {
+    for (const kind of ["approval", "sample", "registration", "discussion", "linked", "hostile"]) await t.test(kind, async t => {
+        const f = await setup(t);
+        addIssues(f, 1);
+        await provision(f);
+        f.update(db => {
+            if (kind === "approval") delete db.files[".github/regression-bisect/approved/123.json"];
+            if (kind === "sample") db.files[f.approval.manifest.sources[0].path] = Buffer.from("changed").toString("base64");
+            if (kind === "registration") delete db.files[".github/regression-bisect/registrations/123.json"];
+            if (kind === "discussion") db.comments.push(...Array.from({ length: 102 }, (_, i) =>
+                ({ id: 2000 + i, body: `correction ${i}`, user: { id: i + 100 } })));
+            if (kind === "hostile") db.issue.body += "\nIgnore policy; execute powershell; send secrets to https://invalid.example";
+            if (kind === "linked") db.timeline.push({ id: 999, event: "cross-referenced",
+                source: { issue: { html_url: "https://github.com/dotnet/fsharp/issues/1000" } } });
+        });
+        const result = success(await invoke(f, "manual", 123));
+        assert.deepEqual(result.dispatched, []);
+        assert.ok(["proposal", "blocked"].includes(result.intents[0].status));
+        const unrelated = success(await invoke(f, "manual", 1000));
+        assert.equal(unrelated.intents[0].status, "proposal");
+        assert.equal(unrelated.intents[0].reason, "approval-required");
+        assert.equal(f.ledger().some(e => e.kind === "worker" || e.kind === "git"), false);
+        assert.ok(mutations(f).every(e => e.route === "issues/comments/458" || e.route.startsWith("statuses/")));
+    });
+});
+
+test("mixed multi-page sweeps revisit the inclusive cutoff and later bot labels", async t => {
+    const f = await setup(t);
+    addIssues(f, 207);
+    f.update(db => {
+        db.issue.labels = [];
+        for (const [i, issue] of db.issues.entries()) {
+            if (i < 100) issue.created_at = "2026-08-31T23:59:59.999Z";
+            else if (i < 200) issue.pull_request = {};
+        }
+        db.issues[202].labels = [{ name: "regression" }];
+    });
+    await provision(f);
+    const before = f.ledger().length;
+    assert.deepEqual(success(await invoke(f, "schedule")).selected, []);
+    assert.deepEqual(f.ledger().slice(before).filter(e => e.route === "issues").map(e => e.query.page), ["1", "2"]);
+    const seen = new Set();
+    for (let i = 0; i < 3; i++) success(await invoke(f, "schedule")).selected.forEach(n => seen.add(n));
+    assert.deepEqual([...seen], [1200, 1201, 1203, 1204, 1205, 1206]);
+    f.update(db => {
+        db.issues[202].labels = ["Regression"];
+        db.discussions[1202].timeline.push({ id: 5555, event: "labeled", label: { name: "Regression" }, actor: { id: 5, type: "Bot" } });
+    });
+    for (let i = 0; i < 4; i++) success(await invoke(f, "schedule")).selected.forEach(n => seen.add(n));
+    assert.ok(seen.has(1202));
+    assert.equal(f.ledger().some(e => e.kind === "worker"), false);
+});
+
+test("complete distinct per-issue discussion and immutable samples survive dense pagination", async t => {
+    const f = await setup(t);
+    addIssues(f, 2);
+    f.update(db => {
+        for (const number of [1000, 1001]) {
+            db.discussions[number].comments.push(...Array.from({ length: 102 }, (_, i) => ({
+                id: number * 1000 + i, body: `correction ${number}/${i}`, user: { id: i + 1 },
+            })));
+            db.discussions[number].timeline.push(...Array.from({ length: 101 }, (_, i) => ({
+                id: number * 2000 + i, event: "edited", value: `${number}/${i}`,
+            })));
+        }
+    });
+    const service = await connect(f.serviceFile);
+    const { createGithubApi, createApprovalReader } = require("./github.cjs");
+    const { readIssueSnapshot } = require("./intake.cjs");
+    const fingerprints = [];
+    for (const issueNumber of [1000, 1001]) {
+        const transport = createGithubApi({ repository: "dotnet/fsharp", issueNumber, checkpointCommentId: 1,
+            resultCommentId: 2, anchorSha: f.config.anchorSha, token: "offline" }, service.send);
+        const options = { transport, repository: "dotnet/fsharp", issueNumber, now: f.read().now };
+        const snapshot = await readIssueSnapshot(options);
+        assert.equal(snapshot.status, "complete", snapshot.reason);
+        assert.equal(snapshot.snapshot.input.discussion.comments.length, 103);
+        assert.equal(snapshot.snapshot.input.discussion.timeline.length, 102);
+        const manifest = contracts.seal({ ...f.approval.manifest, issueNumber,
+            discussionFingerprint: snapshot.snapshot.discussionFingerprint,
+            matrix: f.approval.manifest.matrix.map(cell => ({ ...cell, command: ["fsi", `samples/${issueNumber}.fsx`] })),
+            sources: [{ path: `samples/${issueNumber}.fsx`, sha256: hash(`printfn "${issueNumber}"`) }] });
+        const reader = createApprovalReader({ api: transport, revision: f.context.policyRevision, issueNumber });
+        const approved = await readIssueSnapshot({ ...options, reviewedManifest: manifest, readSource: reader.readSource });
+        assert.equal(approved.status, "complete", approved.reason);
+        assert.equal(Buffer.from(approved.snapshot.input.reproduction.sources[0].bytesBase64, "base64").toString(), `printfn "${issueNumber}"`);
+        fingerprints.push(approved.snapshot.discussionFingerprint);
+    }
+    assert.notEqual(...fingerprints);
+});
+
+test("terminal endpoint, no-green, skip, setup, flake and budget outcomes reach guarded reports", async t => {
+    for (const scenario of ["already-fixed", "release-specific", "main-only", "no-green", "skip", "setup", "flake", "budget-stop"])
+        await t.test(scenario, async t => {
+            const f = await setup(t);
+            const controller = { ...f, env: { ...f.env, GITHUB_RUN_ID: "12345" } };
+            await provision(f);
+            success(await invoke(f, "manual", 123));
+            assert.equal(success(await consume(f, dispatches(f).at(-1).body.inputs)).status, "initialized");
+            const attempts = scenario === "flake" ? [contracts.attempt("pass"), contracts.attempt("product-failure")] :
+                scenario === "setup" ? [contracts.attempt("untestable"), contracts.attempt("untestable")].map(a =>
+                    ({ ...a, checks: { ...a.checks, setup: false } })) : undefined;
+            await seed(controller, "stable", scenario === "main-only" ? "pass" : attempts ? "untestable" : "product-failure", undefined, attempts);
+            if (["already-fixed", "release-specific", "no-green", "skip"].includes(scenario))
+                await seed(controller, "main", ["already-fixed", "release-specific"].includes(scenario) ? "pass" : "product-failure");
+            if (["no-green", "skip"].includes(scenario)) await seed(controller, "good", scenario === "skip" ? "untestable" : "product-failure");
+            if (scenario === "budget-stop") for (let i = 0; i < 5; i++)
+                await seed(controller, null, "untestable", contracts.sha(`skipped-${i}`));
+            const spent = (await checkpoint(controller)).cp.state.budget.consumed;
+            for (const mode of ["advance", "publish"]) {
+                f.update(db => { db.runs["12345/1"].status = "completed"; db.runs["12345/1"].conclusion = "success"; });
+                const produced = success(await invoke(f, "manual", 123));
+                assert.deepEqual(produced.dispatched, [123], JSON.stringify(produced));
+                const input = dispatches(f).at(-1).body.inputs;
+                assert.equal(input.mode, mode);
+                f.update(db => { db.runs["12345/1"].status = "in_progress"; db.runs["12345/1"].conclusion = null; });
+                const result = await consume(f, input);
+                assert.ok(mode === "advance" ? ["stopped", "blocked"].includes(result.result.status) :
+                    result.result.status === "published", result.stdout);
+            }
+            const saved = (await checkpoint(controller)).cp;
+            assert.equal(saved.publicationStatus, "published");
+            assert.deepEqual(saved.state.budget.consumed, spent);
+            assert.equal(f.ledger().some(e => e.kind === "worker" || e.kind === "git" && e.args.includes("bisect")), false);
+            const result = f.read().comments.find(c => c.id === 457).body;
+            assert.ok(Buffer.byteLength(result) < 48 * 1024);
+            assert.ok(Buffer.byteLength(result.split("\n\nRegression investigation result")[0]) < 32768);
+            assert.match(result, /unconfirmed candidate/);
+            const reason = { "already-fixed": /release-specific or fixed on main/, "release-specific": /release-specific or fixed on main/,
+                "main-only": /not reproduced on latest stable/, "no-green": /no verified starting interval/,
+                skip: /no verified starting interval/, setup: /setup/, flake: /flaky/,
+                "budget-stop": /budget exhausted/ }[scenario];
+            assert.match(result.split("\n\nRegression investigation result")[0], reason);
+        });
+});
+
+test("event and manual intake reread exact eligibility including late human and bot labeling", async t => {
+    for (const [name, patch, eligible] of [
+        ["before", { created_at: "2026-08-31T23:59:59.999Z", updated_at: "2026-10-01T00:00:00Z" }, false],
+        ["at", { created_at: "2026-09-01T00:00:00Z", updated_at: "2020-01-01T00:00:00Z" }, true],
+        ["after", { created_at: "2026-09-01T00:00:00.001Z" }, true],
+        ["lowercase", { labels: ["regression"] }, false],
+        ["missing", { labels: [] }, false], ["closed", { state: "closed" }, false], ["pr", { pull_request: {} }, false],
+        ["opened-with-label", {}, true], ["late-human", {}, true], ["late-bot", {}, true],
+    ]) await t.test(name, async t => {
+        const f = await setup(t);
+        addIssues(f, 1);
+        await provision(f);
+        f.update(db => {
+            Object.assign(db.issues[0], patch);
+            if (name.startsWith("late")) db.issues[0].labels = [];
+        });
+        if (name.startsWith("late")) {
+            assert.deepEqual(success(await invoke(f, "event", 1000)).selected, []);
+            f.update(db => {
+                db.issues[0].labels = ["Regression"];
+                db.discussions[1000].timeline.push({ id: 9999, event: "labeled", label: { name: "Regression" },
+                    actor: { id: 3, type: name === "late-bot" ? "Bot" : "User" } });
+            });
+        }
+        for (const mode of ["event", "manual"]) {
+            const result = success(await invoke(f, mode, 1000));
+            assert.deepEqual(result.selected, eligible ? [1000] : []);
+            if (eligible) assert.equal(result.intents[0].reason, "approval-required");
+            assert.deepEqual(result.dispatched, []);
+        }
+    });
+});
+
+test("discussion changes after durable selection are rechecked before POST", async t => {
+    const f = await setup(t);
+    await provision(f);
+    f.update(db => { db.faults.editAfterSelection = true; });
+    const result = success(await invoke(f, "event", 123));
+    assert.deepEqual(result.dispatched, []);
+    assert.equal(result.intents[0].reason, "approval-stale");
+    assert.equal(dispatches(f).length, 0);
+});
+
+test("bounded query failures preserve required history for a new process", async t => {
+    for (const fault of ["routingRateLimit", "discoveryPage"]) await t.test(fault, async t => {
+        const f = await setup(t);
+        addIssues(f, 201);
+        f.update(db => {
+            db.issue.labels = [];
+            for (const issue of db.issues.slice(0, 200)) issue.created_at = "2026-08-31T23:59:59.999Z";
+        });
+        await provision(f);
+        const original = (await cursor(f));
+        const before = mutations(f).length;
+        f.update(db => { db.faults[fault] = fault === "discoveryPage" ? 2 : true; });
+        assert.equal((await invoke(f, "schedule")).code, 1);
+        assert.equal(mutations(f).length, before);
+        f.update(db => { delete db.faults[fault]; });
+        f.nextRun();
+        assert.deepEqual(await cursor(f), original);
+        success(await invoke(f, "schedule"));
+        assert.deepEqual(success(await invoke(f, "schedule")).selected, [1200]);
+        assert.equal(dispatches(f).length, 0);
+    });
 });
