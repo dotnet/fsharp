@@ -16,8 +16,7 @@ open System.Threading.Tasks
 open Microsoft.FSharp.Control
 open Microsoft.FSharp.Core.CompilerServices
 
-open RuntimeTaskBuilder.RuntimeTask
-open RuntimeTaskBuilder.Extensions
+open RuntimeTaskBuilder
 
 exception TestException of string
 
