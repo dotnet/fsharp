@@ -209,8 +209,15 @@ type FsiServerHarness
     member _.CloseControlChannel(corrupt: bool) =
         if corrupt then
             let bytes = Encoding.ASCII.GetBytes "Content-Length: invalid\r\n\r\n"
-            pipe.Write(bytes, 0, bytes.Length)
-            pipe.Flush()
+
+            // The session hangs up on the malformed header, and the client's own JsonRpc, listening on
+            // the same pipe, disposes it in turn, possibly before this write or flush is done.
+            try
+                pipe.Write(bytes, 0, bytes.Length)
+                pipe.Flush()
+            with
+            | :? ObjectDisposedException
+            | :? IOException -> ()
         else
             rpc.Dispose()
 

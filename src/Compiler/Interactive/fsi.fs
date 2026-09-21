@@ -4458,7 +4458,7 @@ type FsiInteractionProcessor
                     istate, CtrlC
                 else
                     setCurrState istate
-                    run istate (Option.orElse value lastValue)
+                    run istate value
             | _ -> istate, status
 
         run currState None |> commitResult
