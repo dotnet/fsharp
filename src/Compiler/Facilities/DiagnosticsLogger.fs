@@ -409,9 +409,9 @@ type CapturingDiagnosticsLogger(nm, ?eagerFormat) =
     member _.Diagnostics = diagnostics |> Seq.toList
 
     member _.CommitDelayedDiagnostics(diagnosticsLogger: DiagnosticsLogger) =
-        // Eagerly grab all the errors and warnings from the mutable collection
-        let errors = diagnostics.ToArray()
-        errors |> Array.iter diagnosticsLogger.DiagnosticSink
+        // A sink can report back into this logger while replaying, so iterate a snapshot.
+        let snapshot = diagnostics.ToArray()
+        snapshot |> Array.iter diagnosticsLogger.DiagnosticSink
 
 let buildPhase = AsyncLocal<BuildPhase voption>()
 let diagnosticsLogger = AsyncLocal<DiagnosticsLogger voption>()

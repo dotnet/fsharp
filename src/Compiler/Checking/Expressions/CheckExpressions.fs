@@ -2484,6 +2484,15 @@ type IsObjExprBinding =
     | ObjExprBinding
     | ValOrMemberBinding
 
+let private IsIndexerSetterBinding (SynValData(memberFlagsOpt, SynValInfo(argInfos, _), _)) =
+    match memberFlagsOpt with
+    | Some flags when flags.MemberKind = SynMemberKind.PropertySet ->
+        match flags.IsInstance, argInfos with
+        | true, [_; _ :: _ :: _]
+        | false, [_ :: _ :: _] -> true
+        | _ -> false
+    | _ -> false
+
 module BindingNormalization =
     /// Push a bunch of pats at once. They may contain patterns, e.g. let f (A x) (B y) = ...
     /// In this case the semantics is let f a b = let A x = a in let B y = b
@@ -3871,7 +3880,7 @@ let CheckAndRewriteObjectCtor g env (ctorLambdaExpr: Expr) =
 
 /// Post-typechecking normalizations to enforce semantic constraints
 /// lazy and, lazy or, rethrow, address-of
-let buildApp (cenv: cenv) expr resultTy arg m =
+let buildApp (cenv: cenv) env expr resultTy arg m =
     let g = cenv.g
     match expr, arg with
 
@@ -3890,7 +3899,24 @@ let buildApp (cenv: cenv) expr resultTy arg m =
          when valRefEq g vref g.reraise_vref ->
 
         // exprTy is of type: "unit -> 'a". Break it and store the 'a type here, used later as return type.
-        MakeApplicableExprNoFlex cenv (mkCompGenSequential m arg (mkReraise m resultTy)), resultTy
+        let rethrowExpr =
+            match env.eCaughtExceptionVal with
+            | ValueSome exnVal ->
+                // A builder can leave what its handler catches to inference, so neither diagnostic can be decided
+                // here: the handler qualifies only once that type is solved to exactly 'exn'.
+                cenv.css.PushPostInferenceCheck(preDefaults = false, check = fun () ->
+                    if typeEquiv g exnVal.Type g.exn_ty then
+                        checkLanguageFeatureError g.langVersion LanguageFeature.ReraiseInComputationExpressions m
+                    else
+                        errorR (Error(FSComp.SR.chkErrorContainsCallToRethrow (), m)))
+
+                let tcVal = LightweightTcValForUsingInBuildMethodCall g env.TraitContext
+                let exnExpr = mkCoerceIfNeeded g g.exn_ty exnVal.Type (exprForVal m exnVal)
+                mkThrowUsingEDICapture cenv.infoReader tcVal m resultTy exnExpr
+            | ValueNone ->
+                mkReraise m resultTy
+
+        MakeApplicableExprNoFlex cenv (mkCompGenSequential m arg rethrowExpr), resultTy
 
     // Special rules for NativePtr.ofByRef to generalize result.
     // See RFC FS-1053.md
@@ -6296,6 +6322,15 @@ and TcExprMatchLambda (cenv: cenv) overallTy env tpenv (isExnMatch, mFunction, c
     CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy.Commit, env.AccessRights)
     let envinner = KeepFamilyRegionForClosure cenv.g env
     let envinner = { envinner with eIsControlFlow = true }
+
+    // A 'function' with an exception match is how a computation expression 'try ... with' hands its handler to the
+    // builder. 'reraise()' in the clause bodies rethrows this lambda's argument, since IL 'rethrow' is not valid there.
+    let envinner =
+        if isExnMatch then
+            { envinner with eCaughtExceptionVal = ValueSome idv1 }
+        else
+            envinner
+
     let idv2, matchExpr, tpenv = TcAndPatternCompileMatchClauses m mFunction (if isExnMatch then Throw else ThrowIncompleteMatchException) cenv None domainTy (MustConvertTo (false, resultTy)) envinner tpenv clauses
     let overallExpr = mkMultiLambda m [idv1] ((mkLet spMatch m idv2 idve1 matchExpr), resultTy)
     overallExpr, tpenv
@@ -6529,8 +6564,11 @@ and TcExprTryWith (cenv: cenv) overallTy env tpenv (synBodyExpr, synWithClauses,
             let oneExpr =  SynExpr.Const (SynConst.Int32 1, m)
             SynMatchClause(pat, synWhenExprOpt, oneExpr, m, DebugPointAtTarget.No, trivia))
 
-    let checkedFilterClauses, tpenv = TcMatchClauses cenv g.exn_ty (MustEqual g.int_ty) env tpenv filterClauses
-    let checkedHandlerClauses, tpenv = TcMatchClauses cenv g.exn_ty overallTy env tpenv synWithClauses
+    // A real handler rethrows through IL 'rethrow', not through the exception of any enclosing computation expression handler.
+    let envHandler = { env with eCaughtExceptionVal = ValueNone }
+
+    let checkedFilterClauses, tpenv = TcMatchClauses cenv g.exn_ty (MustEqual g.int_ty) envHandler tpenv filterClauses
+    let checkedHandlerClauses, tpenv = TcMatchClauses cenv g.exn_ty overallTy envHandler tpenv synWithClauses
     let v1, filterExpr = CompilePatternForMatchClauses cenv env mWithToLast mWithToLast true FailFilter None g.exn_ty g.int_ty checkedFilterClauses
     let v2, handlerExpr = CompilePatternForMatchClauses cenv env mWithToLast mWithToLast true Rethrow None g.exn_ty overallTy.Commit checkedHandlerClauses
     mkTryWith g (bodyExpr, v1, filterExpr, v2, handlerExpr, mTryToLast, overallTy.Commit, spTry, spWith), tpenv
@@ -6687,8 +6725,14 @@ and TcIteratedLambdas (cenv: cenv) isFirst (env: TcEnv) overallTy takenNames tpe
             |> Option.map fst
             |> Option.defaultValue []
 
+        let envForArgs =
+            match env.eLambdaArgInfos with
+            | [_] -> env
+            | _ when env.eIsIndexerSetter -> { env with eIsIndexerSetter = false }
+            | _ -> env
+
         let vs, TcPatLinearEnv (tpenv, names, takenNames, _) =
-            cenv.TcSimplePats cenv isMember CheckCxs domainTy env (TcPatLinearEnv (tpenv, Map.empty, takenNames, false)) synSimplePats (parsedPatterns, isFirst)
+            cenv.TcSimplePats cenv isMember CheckCxs domainTy envForArgs (TcPatLinearEnv (tpenv, Map.empty, takenNames, false)) synSimplePats (parsedPatterns, isFirst)
 
         let envinner, _, vspecMap = MakeAndPublishSimpleValsForMergedScope cenv env m names
         let byrefs = vspecMap |> Map.map (fun _ v -> isByrefTy g v.Type, v)
@@ -6715,7 +6759,8 @@ and TcIteratedLambdas (cenv: cenv) isFirst (env: TcEnv) overallTy takenNames tpe
                         let optimizeClosureIfNotInlined = ArgReprInfoHasWellKnownAttribute g WellKnownValAttributes.OptimizeClosureIfNotInlinedAttribute argInfo
                         if optimizeClosureIfNotInlined then
                             v.SetOptimizeClosureIfNotInlined())
-                 { envinner with eLambdaArgInfos = rest }
+                 { envinner with eLambdaArgInfos = rest; eIsIndexerSetter = envinner.eIsIndexerSetter && not rest.IsEmpty }
+            | [] when envinner.eIsIndexerSetter -> { envinner with eIsIndexerSetter = false }
             | [] -> envinner
 
         let bodyExpr, tpenv = TcIteratedLambdas cenv false envinner (MustConvertTo (false, resultTy)) takenNames tpenv bodyExpr
@@ -6728,7 +6773,7 @@ and TcIteratedLambdas (cenv: cenv) isFirst (env: TcEnv) overallTy takenNames tpe
         mkMultiLambda m vspecs (bodyExpr, resultTy), tpenv
 
     | e ->
-        let env = { env with eIsControlFlow = true }
+        let env = { env with eIsControlFlow = true; eIsIndexerSetter = false }
         TcExpr cenv overallTy env tpenv e
 
 and TcTyparExprThen (cenv: cenv) overallTy env tpenv synTypar m delayed =
@@ -6972,7 +7017,7 @@ and TcIndexingThen cenv env overallTy mWholeExpr mDot tpenv setInfo synLeftExprO
             let f, fty, tpenv = TcExprOfUnknownType cenv env tpenv operPath
             let domainTy, resultTy = UnifyFunctionType (Some mWholeExpr) cenv env.DisplayEnv mWholeExpr fty
             UnifyTypes cenv env mWholeExpr domainTy exprTy
-            let f', resultTy = buildApp cenv (MakeApplicableExprNoFlex cenv f) resultTy expr mWholeExpr
+            let f', resultTy = buildApp cenv env (MakeApplicableExprNoFlex cenv f) resultTy expr mWholeExpr
             let delayed = List.foldBack (fun idx acc -> DelayedApp(ExprAtomicFlag.Atomic, true, None, idx, mWholeExpr) :: acc) indexArgs delayed // atomic, otherwise no ar.[1] <- xyz
             Some (PropagateThenTcDelayed cenv overallTy env tpenv mWholeExpr f' resultTy ExprAtomicFlag.Atomic delayed )
 
@@ -9111,7 +9156,7 @@ and TcApplicationThen (cenv: cenv) (overallTy: OverallTy) env tpenv mExprAndArg 
 
                 TcExprFlex2 cenv domainTy env false tpenv synArg
 
-            let exprAndArg, resultTy = buildApp cenv leftExpr resultTy arg mExprAndArg
+            let exprAndArg, resultTy = buildApp cenv env leftExpr resultTy arg mExprAndArg
             TcDelayed cenv overallTy env tpenv mExprAndArg exprAndArg resultTy atomicFlag delayed
 
     | ValueNone ->
@@ -11697,7 +11742,11 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
                 | DebugPointAtBinding.Yes _ -> false
                 | _ -> true
 
-            let envinner = { envinner with eLambdaArgInfos = argInfos; eIsControlFlow = rhsIsControlFlow }
+            let envinner =
+                { envinner with
+                    eLambdaArgInfos = argInfos
+                    eIsIndexerSetter = IsIndexerSetterBinding valSynData
+                    eIsControlFlow = rhsIsControlFlow }
 
             if isCtor then TcExprThatIsCtorBody (safeThisValOpt, safeInitInfo) cenv (MustEqual overallExprTy) envinner tpenv rhsExpr
             else TcExprThatCantBeCtorBody cenv (MustConvertTo (false, overallExprTy)) envinner tpenv rhsExpr
@@ -12127,7 +12176,7 @@ and TcAttributesMaybeFail canFail cenv env attrTgt synAttribs =
 
 and TcAttributesCanFail cenv env attrTgt synAttribs =
     let attrs, didFail = TcAttributesMaybeFail TcCanFail.IgnoreAllErrors cenv env attrTgt synAttribs
-    attrs, (fun () -> if didFail then TcAttributes cenv env attrTgt synAttribs else attrs)
+    attrs, (fun () -> if didFail then TcAttributes cenv env attrTgt synAttribs else attrs), didFail
 
 and TcAttributes cenv env attrTgt synAttribs =
     TcAttributesMaybeFail TcCanFail.ReportAllErrors cenv env attrTgt synAttribs |> fst
@@ -12377,7 +12426,7 @@ and CheckMemberFlags intfSlotTyOpt newslotsOK overridesOK memberFlags m =
 /// the _body_ of the binding. For example, in a letrec we may assume this knowledge
 /// for each binding in the letrec prior to any type inference. This might, for example,
 /// tell us the type of the arguments to a recursive function.
-and ApplyTypesFromArgumentPatterns (cenv: cenv, env, optionalArgsOK, ty, m, tpenv, NormalizedBindingRhs (pushedPats, retInfoOpt, e), memberFlagsOpt: SynMemberFlags option) =
+and ApplyTypesFromArgumentPatterns (cenv: cenv, env, optionalArgsOK, ty, m, tpenv, NormalizedBindingRhs (pushedPats, retInfoOpt, e), (SynValData(memberFlags = memberFlagsOpt) as valSynData)) =
 
     let g = cenv.g
 
@@ -12398,8 +12447,13 @@ and ApplyTypesFromArgumentPatterns (cenv: cenv, env, optionalArgsOK, ty, m, tpen
         let domainTy, resultTy = UnifyFunctionType None cenv env.DisplayEnv m ty
         // We apply the type information from the patterns by type checking the
         // "simple" patterns against 'domainTyR'. They get re-typechecked later.
-        ignore (cenv.TcSimplePats cenv optionalArgsOK CheckCxs domainTy env (TcPatLinearEnv (tpenv, Map.empty, Set.empty, false)) pushedPat ([], false))
-        ApplyTypesFromArgumentPatterns (cenv, env, optionalArgsOK, resultTy, m, tpenv, NormalizedBindingRhs (morePushedPats, retInfoOpt, e), memberFlagsOpt)
+        let envForArgs =
+            if morePushedPats.IsEmpty && IsIndexerSetterBinding valSynData then
+                { env with eIsIndexerSetter = true }
+            else
+                env
+        ignore (cenv.TcSimplePats cenv optionalArgsOK CheckCxs domainTy envForArgs (TcPatLinearEnv (tpenv, Map.empty, Set.empty, false)) pushedPat ([], false))
+        ApplyTypesFromArgumentPatterns (cenv, env, optionalArgsOK, resultTy, m, tpenv, NormalizedBindingRhs (morePushedPats, retInfoOpt, e), valSynData)
 
 /// Check if the type annotations and inferred type information in a value give a
 /// full and complete generic type for a value. If so, enable generic recursion.
@@ -12925,7 +12979,7 @@ and AnalyzeAndMakeAndPublishRecursiveValue
     let optionalArgsOK = Option.isSome memberFlagsOpt
 
     // Assert the types given in the argument patterns
-    ApplyTypesFromArgumentPatterns(cenv, envinner, optionalArgsOK, ty, mBinding, tpenv, bindingRhs, memberFlagsOpt)
+    ApplyTypesFromArgumentPatterns(cenv, envinner, optionalArgsOK, ty, mBinding, tpenv, bindingRhs, valSynData)
 
     // Do the type annotations give the full and complete generic type?
     // If so, generic recursion can be used when using this type.
