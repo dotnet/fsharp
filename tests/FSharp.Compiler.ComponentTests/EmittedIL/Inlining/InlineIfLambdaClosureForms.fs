@@ -20,9 +20,15 @@ module Test
 
 let eqf (env: int) (a: string) (b: string) = a.Length = b.Length + env
 
-// Forwards the function to List.forall2's recursive loop.
+let rec forall2NonInline (p: string -> string -> bool) l1 l2 =
+    match l1, l2 with
+    | [], [] -> true
+    | x :: xs, y :: ys -> p x y && forall2NonInline p xs ys
+    | _ -> false
+
+// A local non-inline callee keeps this probe independent of FSharp.Core inlining.
 let inline forall2Forward ([<InlineIfLambda>] p: string -> string -> bool) l1 l2 =
-    List.length l1 = List.length l2 && List.forall2 p l1 l2
+    List.length l1 = List.length l2 && forall2NonInline p l1 l2
 
 // Applies the function directly in a loop (the NEW shape).
 let inline forall2Direct ([<InlineIfLambda>] p: string -> string -> bool) l1 l2 =
@@ -52,6 +58,10 @@ let inline applyDirect ([<InlineIfLambda>] f: unit -> int) = f ()
 
     let private allocatesNoClosure body =
         Assert.DoesNotContain("newobj", testMethodIL body)
+
+    [<Fact>]
+    let ``shared prelude does not allocate`` () =
+        FSharp prelude |> withOptimize |> compile |> shouldSucceed |> verifyILNotPresent [ "newobj" ]
 
     module DoesNotAllocate =
 
@@ -161,7 +171,7 @@ let test (env: int) (xs: string list) =
     List.map (g env) xs
 """
 
-        // Forwarding to List.forall2 still allocates its recursive loop closure,
+        // Forwarding to a non-inline callee still allocates the function argument,
         // and eta-expanding the call site does not change that.
 
         [<Fact>]
