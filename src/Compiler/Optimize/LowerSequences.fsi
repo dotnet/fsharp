@@ -23,6 +23,7 @@ val callNonOverloadedILMethod:
 val ConvertSequenceExprToObject:
     g: TcGlobals ->
     amap: ImportMap ->
+    isRuntimeAsync: bool ->
     overallExpr: Expr ->
         (ValRef * ValRef * ValRef * ValRef list * Expr * Expr * Expr * TType * range) option
 

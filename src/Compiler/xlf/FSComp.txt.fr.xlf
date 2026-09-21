@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="fr" original="../FSComp.resx">
     <body>
@@ -522,6 +522,11 @@
         <target state="new">record type and expression spreads</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureReraiseInComputationExpressions">
+        <source>calls to 'reraise' in a computation expression handler</source>
+        <target state="new">calls to 'reraise' in a computation expression handler</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureResumableStateMachines">
         <source>resumable state machines</source>
         <target state="translated">ordinateurs d’état pouvant être repris</target>
@@ -540,6 +545,11 @@
       <trans-unit id="featureReuseSameFieldsInStructUnions">
         <source>Share underlying fields in a [&lt;Struct&gt;] discriminated union as long as they have same name and type</source>
         <target state="translated">Partager les champs sous-jacents dans une union discriminée [&lt;Struct&gt;] tant qu’ils ont le même nom et le même type</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureRuntimeAsync">
+        <source>runtime async</source>
+        <target state="new">runtime async</target>
         <note />
       </trans-unit>
       <trans-unit id="featureScopedNowarn">
@@ -665,6 +675,31 @@
       <trans-unit id="ilCustomAttrInvalidArrayElemType">
         <source>The type '{0}' is not a valid custom attribute argument type. Custom attribute arrays must have elements of primitive types, enums, string, System.Type, or System.Object.</source>
         <target state="new">The type '{0}' is not a valid custom attribute argument type. Custom attribute arrays must have elements of primitive types, enums, string, System.Type, or System.Object.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ilRuntimeAsyncLocalUsedAfterSuspension">
+        <source>A byref, byref-like, or pinned local '{0}' cannot be used after a runtime async suspension.</source>
+        <target state="new">A byref, byref-like, or pinned local '{0}' cannot be used after a runtime async suspension.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ilRuntimeAsyncSequenceNotStaticallyKnown">
+        <source>The runtime-async sequence recipe could not be statically lowered. Supply a statically known delayed sequence recipe through an inline builder.</source>
+        <target state="new">The runtime-async sequence recipe could not be statically lowered. Supply a statically known delayed sequence recipe through an inline builder.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ilRuntimeAsyncStackAllocation">
+        <source>Stack allocation is not permitted in a runtime async method.</source>
+        <target state="new">Stack allocation is not permitted in a runtime async method.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ilRuntimeAsyncSuspensionOutsideRuntimeAsync">
+        <source>Runtime async suspension method '{0}' may only be called from a runtime async method.</source>
+        <target state="new">Runtime async suspension method '{0}' may only be called from a runtime async method.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ilRuntimeAsyncSynchronizedMethod">
+        <source>A runtime async method cannot use MethodImplOptions.Synchronized.</source>
+        <target state="new">A runtime async method cannot use MethodImplOptions.Synchronized.</target>
         <note />
       </trans-unit>
       <trans-unit id="ilxGenUnknownDebugPoint">
@@ -8965,6 +9000,16 @@
       <trans-unit id="tcTupleTypeExtensionTooManyElements">
         <source>Tuple type extensions are supported only for tuples of up to 7 elements, but this tuple type has {0} elements. Extensions of larger tuples are not supported.</source>
         <target state="new">Tuple type extensions are supported only for tuples of up to 7 elements, but this tuple type has {0} elements. Extensions of larger tuples are not supported.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureRequireNamedArguments">
+        <source>enforce named arguments at call sites of methods annotated with RequireNamedArgumentsAttribute</source>
+        <target state="new">enforce named arguments at call sites of methods annotated with RequireNamedArgumentsAttribute</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcMethodRequiresNamedArguments">
+        <source>The method '{0}' requires named arguments. Use named-argument syntax, e.g. 'MethodName(argumentName = value)'.</source>
+        <target state="new">The method '{0}' requires named arguments. Use named-argument syntax, e.g. 'MethodName(argumentName = value)'.</target>
         <note />
       </trans-unit>
     </body>
