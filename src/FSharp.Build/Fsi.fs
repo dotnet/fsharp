@@ -17,6 +17,7 @@ open Internal.Utilities
 //The goal is to have the most common/important flags available via the Fsi class, and the
 //rest can be "backdoored" through the .OtherFlags property.
 
+[<MSBuildMultiThreadableTask>]
 type public Fsi() as this =
 
     inherit ToolTask()
@@ -44,16 +45,10 @@ type public Fsi() as this =
     let mutable tailcalls: bool = true
     let mutable targetProfile: string | null = null
 
-    let mutable toolPath: string =
-        let locationOfThisDll =
-            try
-                Some(Path.GetDirectoryName(typeof<Fsi>.Assembly.Location))
-            with _ ->
-                None
+    let defaultToolPath =
+        lazy (TaskEnvironmentPaths.defaultCompilerToolPath this.TaskEnvironment typeof<Fsi>)
 
-        match FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(locationOfThisDll) with
-        | Some s -> s
-        | None -> ""
+    let mutable toolPath: string option = None
 
     let mutable treatWarningsAsErrors: bool = false
     let mutable warningsAsErrors: string | null = null
@@ -276,8 +271,8 @@ type public Fsi() as this =
 
     // For targeting other folders for "fsi.exe" (or ToolExe if different)
     member _.ToolPath
-        with get () = toolPath
-        and set value = toolPath <- value
+        with get () = Option.defaultWith (fun () -> defaultToolPath.Value) toolPath
+        and set value = toolPath <- Some value
 
     // --use:<string>: execute an F# source file on startup
     member _.UseSources
@@ -322,10 +317,12 @@ type public Fsi() as this =
             base.StandardOutputEncoding
 
     override fsi.GenerateFullPathToTool() =
+        let toolPath = fsi.ToolPath
+
         if toolPath = "" then
             raise (new System.InvalidOperationException(FSBuild.SR.toolpathUnknown ()))
 
-        System.IO.Path.Combine(toolPath, fsi.ToolExe)
+        TaskEnvironmentPaths.normalizePathToTool fsi.TaskEnvironment (System.IO.Path.Combine(toolPath, fsi.ToolExe))
 
     override fsi.LogToolCommand(message: string) =
         fsi.Log.LogMessageFromText(message, MessageImportance.Normal) |> ignore
@@ -346,6 +343,10 @@ type public Fsi() as this =
         if skipCompilerExecution then
             0
         else
+            // Root once so both the base call and the HostObject delegate use the same rooted path.
+            let pathToTool =
+                TaskEnvironmentPaths.normalizePathToTool fsi.TaskEnvironment pathToTool
+
             let host = box fsi.HostObject
 
             match host with
