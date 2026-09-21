@@ -489,8 +489,15 @@ stages:
           steps:
           - checkout: self
             clean: true
-          - script: ./eng/cibuild.sh --configuration $(_BuildConfig) --testcoreclrbatch $(batchNumber)
+          - script: ./eng/cibuild.sh --configuration $(_BuildConfig) --testcoreclrbatch $(batchNumber) --mt true
             displayName: Build / Test
+          - script: ./eng/common/dotnet.sh fsi tests/EndToEndBuildTests/MultithreadedTasks/run.fsx -- --configuration $(_BuildConfig) --repetitions 3
+            displayName: Real SDK MP / MT integration
+          - task: PublishPipelineArtifact@1
+            condition: always()
+            inputs:
+              targetPath: '$(Build.SourcesDirectory)/artifacts/MultithreadedTasks'
+              artifact: Linux Batch$(batchNumber) SDK MT evidence
           - task: PublishTestResults@2
             displayName: Publish Test Results
             inputs:
@@ -541,7 +548,7 @@ stages:
           steps:
           - template: /eng/templates/batched-test-steps.yml
             parameters:
-              buildCommand: ./eng/cibuild.sh --configuration $(_BuildConfig) --testcoreclrbatch $(batchNumber)
+              buildCommand: ./eng/cibuild.sh --configuration $(_BuildConfig) --testcoreclrbatch $(batchNumber) --mt true
               buildEnv:
                 COMPlus_DefaultStackSize: 1000000
               testRunTitlePrefix: 'MacOS'
@@ -564,6 +571,13 @@ stages:
             displayName: Verify FSharp.Core package assets
           - script: .\tests\EndToEndBuildTests\EndToEndBuildTests.cmd -c Release
             displayName: End to end build tests
+          - script: .\eng\common\dotnet.cmd fsi tests\EndToEndBuildTests\MultithreadedTasks\run.fsx -- --configuration Release --repetitions 3
+            displayName: Real SDK MP / MT integration
+          - task: PublishPipelineArtifact@1
+            condition: always()
+            inputs:
+              targetPath: '$(Build.SourcesDirectory)/artifacts/MultithreadedTasks'
+              artifact: Windows SDK MT evidence
           
           # Publish artifacts for regression testing
           - task: PublishPipelineArtifact@1
@@ -635,7 +649,7 @@ stages:
             clean: true
           - script: dotnet --list-sdks
             displayName: Report dotnet SDK versions
-          - script: .\eng\common\dotnet.cmd build .\FSharp.Compiler.Service.slnx /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
+          - script: .\eng\common\dotnet.cmd build .\FSharp.Compiler.Service.slnx -mt /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
             workingDirectory: $(Build.SourcesDirectory)
             displayName: Regular rebuild of FSharp.Compiler.Service.slnx
             continueOnError: false
@@ -654,7 +668,7 @@ stages:
             clean: true
           - script: dotnet --list-sdks
             displayName: Report dotnet SDK versions
-          - script: ./eng/common/dotnet.sh build ./FSharp.Compiler.Service.slnx /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
+          - script: ./eng/common/dotnet.sh build ./FSharp.Compiler.Service.slnx -mt /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
             workingDirectory: $(Build.SourcesDirectory)
             displayName: Regular rebuild of FSharp.Compiler.Service.slnx
             continueOnError: false
@@ -672,7 +686,7 @@ stages:
             clean: true
           - script: dotnet --list-sdks
             displayName: Report dotnet SDK versions
-          - script: ./eng/common/dotnet.sh build ./FSharp.Compiler.Service.slnx /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
+          - script: ./eng/common/dotnet.sh build ./FSharp.Compiler.Service.slnx -mt /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
             workingDirectory: $(Build.SourcesDirectory)
             displayName: Regular rebuild of FSharp.Compiler.Service.slnx
             continueOnError: false

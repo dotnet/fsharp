@@ -1005,3 +1005,28 @@ type D() =
         ".method public hidebysig instance int32 M(class [FSharp.Core]Microsoft.FSharp.Core.Unit _arg1) cil managed"
         ".method public hidebysig instance int32 M(int32 y) cil managed"
     ]
+
+// Regression for #20397: a destructured or pattern-annotated tuple parameter next to a named
+// sibling argument must keep its parentheses, otherwise `(int * float) * string` prints as the
+// flat 3-tuple `int * float * string`.
+[<Theory>]
+[<InlineData("let a ((x: int, y: float), z: string) = 1uy", "val a: (int * float) * z: string -> byte")>]
+[<InlineData("let d ((x, y): int * float, z: string) = 1uy", "val d: (int * float) * z: string -> byte")>]
+[<InlineData("let e ((p: int * float), z: string) = 1uy", "val e: p: (int * float) * z: string -> byte")>]
+[<InlineData("let b (p: (int * float) * string) = 1uy", "val b: (int * float) * string -> byte")>]
+[<InlineData("let c (z: string, (x: int, y: float)) = 1uy", "val c: z: string * (int * float) -> byte")>]
+[<InlineData("let f ((x: int, y: float), (z: string, w: char)) = 1uy", "val f: (int * float) * (string * char) -> byte")>]
+let ``Nested tuple argument next to a named argument keeps its parentheses`` implementation expectedSignature =
+    assertSingleSignatureBinding implementation expectedSignature
+
+[<Fact>]
+let ``Signature with nested tuple argument next to a named argument round trips`` () =
+    assertSignatureRoundtrip
+        """
+module X
+
+let a ((x: int, y: float), z: string) = 1uy
+let d ((x, y): int * float, z: string) = 1uy
+let e ((p: int * float), z: string) = 1uy
+let b (p: (int * float) * string) = 1uy
+"""
