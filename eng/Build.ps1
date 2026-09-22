@@ -289,6 +289,9 @@ function BuildSolution([string] $solutionName, $packSolution) {
     $bl = if ($binaryLog) { "/bl:" + (Join-Path $LogDir "Build.$solutionName.binlog") } else { "" }
 
     $projects = Join-Path $RepoRoot  $solutionName
+    if ($solutionName -eq "FSharp.slnx") {
+        $projects += ";" + (Join-Path $RepoRoot "tests\FSharp.Compiler.Interactive.Server.Tests\FSharp.Compiler.Interactive.Server.Tests.fsproj")
+    }
     $officialBuildId = if ($official) { $env:BUILD_BUILDNUMBER } else { "" }
     $toolsetBuildProj = InitializeToolset
     $quietRestore = !$ci
@@ -601,6 +604,7 @@ try {
 
     if ($testCoreClr) {
         TestUsingMSBuild -testProject "$RepoRoot\FSharp.slnx" -targetFramework $script:coreclrTargetFramework
+        TestUsingMSBuild -testProject "$RepoRoot\tests\FSharp.Compiler.Interactive.Server.Tests\FSharp.Compiler.Interactive.Server.Tests.fsproj" -targetFramework $script:coreclrTargetFramework
     }
 
     if ($testDesktop) {
