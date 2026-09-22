@@ -1,10 +1,13 @@
 ---
-title: Pending breaking changes
+title: Query compatibility changes in SDK 10.0.300
 category: Release Notes
 categoryindex: 600
 index: 5
 ---
-# Breaking Changes in Query Expression Fixes
+# Query compatibility changes in SDK 10.0.300
+
+These changes are not pending. They shipped in SDK 10.0.300 through [PR #19243](https://github.com/dotnet/fsharp/pull/19243).
+The [VMR v10.0.300 source manifest](https://github.com/dotnet/dotnet/blob/v10.0.300/src/source-manifest.json) pins F# to `a5df95f9fdc611690273c3495b613ba302bd4108`, which contains that PR.
 
 ## AnonymousObject Structural Equality 🔴
 
