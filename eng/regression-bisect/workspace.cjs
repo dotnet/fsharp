@@ -154,7 +154,7 @@ async function prepareRevisionWorkspace(options, dependencies = {}) {
     }
 }
 
-async function layout(w) {
+async function inspectRevisionLayout(w) {
     const files = ["build.sh", "Build.cmd", "eng/build.sh", "eng/Build.ps1", "eng/build-utils.ps1", "proto.proj", "NuGet.config",
         "src/fsi/fsiProject/fsi.fsproj", "src/fsc/fscProject/fsc.fsproj", "src/FSharp.Core/FSharp.Core.fsproj",
         "src/Microsoft.FSharp.Compiler/Microsoft.FSharp.Compiler.fsproj"];
@@ -301,7 +301,7 @@ async function buildRevision(w, dependencies = {}) {
             await git(w, ["ls-files", "--others", "--ignored", "--exclude-standard"]) === "",
         "unexpected state in fresh revision checkout");
         stage = "layout";
-        await layout(w);
+        await inspectRevisionLayout(w);
         stage = "sdk";
         const declaration = await readRevisionToolchain({
             policy, sourceDirectory: w.sourceDirectory, sourceSha: w.actualSourceSha, platform: w.options.request.platform,
@@ -465,4 +465,4 @@ async function testSourceRevision(options, dependencies = {}) {
     } catch (error) { return finish(w, failure(w, "reproduction", error)); }
 }
 
-module.exports = { prepareRevisionWorkspace, buildRevision, testSourceRevision };
+module.exports = { prepareRevisionWorkspace, inspectRevisionLayout, buildRevision, testSourceRevision };
