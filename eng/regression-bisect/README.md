@@ -70,6 +70,13 @@ The routing job is independent of activation, model credentials, model success,
 artifacts and safe outputs. Workflow-level concurrency is run-specific so a
 pending/failed model cannot hold later schedules; the separate routing-job
 concurrency group and persistent directory lock serialize cursor writers.
+Before invoking the routing CLI, the self-hosted job provisions Node 24 through
+SHA-pinned `actions/setup-node`, with package-manager caching disabled and no
+routing secrets on the setup step. Setup failure stops routing. The runner must
+be version 2.327.1 or later for Node 24 actions and have the runtime in its tool
+cache or allow the setup action's Node download; neither checkout nor the
+controller's separate `node24` JavaScript action puts Node on this job's shell
+`PATH`.
 An empty sweep or an approved-only sweep skips the model. Schedules reread
 bot-added labels missed by GitHub's event-chaining suppression and rotate back
 to approved in-progress issues for one more charged unit, without a human gate
@@ -300,7 +307,9 @@ changing the fleet's permissions. Inert
 local proposal editing is not historical code execution authority.
 
 `workflow.test.cjs` parses source and lock and rejects removal of routing,
-model-dependent routing and leaked worker/model write secrets.
+model-dependent routing and leaked worker/model write secrets. It also requires
+the pinned Node 24 setup before the routing CLI and rejects missing, reordered,
+unpinned, wrong-version, conditional or fail-open runtime setup.
 `regression-bisect-validation.yml` runs only path-scoped offline validation, not
 intake, publication, a production dispatch or physical containment.
 

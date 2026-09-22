@@ -25,6 +25,19 @@ function immutableCheckout(job) {
     assert.equal(checkout.with["persist-credentials"], false);
 }
 
+function routingRuntime(job) {
+    const setup = job.steps.find(s => s.uses?.startsWith("actions/setup-node@"));
+    assert.ok(setup, "routing must provision Node explicitly on the self-hosted runner");
+    assert.equal(setup.uses, "actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e",
+        "routing runtime setup must use the reviewed action SHA");
+    assert.deepEqual(setup.with, { "node-version": "24", "package-manager-cache": false },
+        "routing requires Node 24 without package-manager caching");
+    assert.equal(setup.if, undefined, "routing runtime setup cannot be conditional");
+    assert.equal(setup["continue-on-error"] ?? false, false, "routing runtime setup must fail closed");
+    assert.ok(job.steps.indexOf(setup) < job.steps.findIndex(s => s.id === "route"),
+        "routing must provision Node before invoking the CLI");
+}
+
 function graph(lock) {
     const router = lock.jobs.route;
     assert.ok(router, "trusted routing job is required");
@@ -45,6 +58,7 @@ function graph(lock) {
     assert.equal(checkout.with.ref, "${{ vars.REGRESSION_CONTROLLER_REVISION }}");
     assert.equal(checkout.with["persist-credentials"], false);
     immutableCheckout(router);
+    routingRuntime(router);
     const route = router.steps.find(s => s.id === "route");
     assert.equal(route.run, "node eng/regression-bisect/routing-cli.cjs");
     assert.equal(route.env.RB_ACTION_INPUTS, "${{ toJSON(inputs) }}");
@@ -142,6 +156,7 @@ test("dedicated source and genuine matching-version lock enforce the routing DAG
     assert.ok(Object.keys(source["safe-outputs"]).every(k =>
         ["activation-comments", "report-failure-as-issue", "noop", "github-token", "missing-tool",
             "missing-data", "report-incomplete", "upload-artifact"].includes(k)));
+    routingRuntime(source.jobs.route);
     graph(lock);
     assert.equal(require("./routing.cjs").workflowPath, ".github/workflows/regression-bisect.lock.yml");
     const schema = JSON.parse(read(".github/regression-bisect/discovery.schema.json"));
@@ -156,6 +171,19 @@ test("unsafe DAG mutations fail specific structural assertions", () => {
     for (const [mutate, reason] of [
         [w => { delete w.jobs.route; }, /trusted routing job is required/],
         [w => { w.jobs.route.needs = ["agent"]; }, /routing cannot depend on any model job/],
+        [w => { w.jobs.route.steps = w.jobs.route.steps.filter(s => !s.uses?.startsWith("actions/setup-node@")); },
+            /routing must provision Node explicitly/],
+        [w => { const steps = w.jobs.route.steps;
+            steps.push(...steps.splice(steps.findIndex(s => s.uses?.startsWith("actions/setup-node@")), 1)); },
+            /routing must provision Node before invoking the CLI/],
+        [w => { w.jobs.route.steps.find(s => s.uses?.startsWith("actions/setup-node@")).uses = "actions/setup-node@v6"; },
+            /routing runtime setup must use the reviewed action SHA/],
+        [w => { w.jobs.route.steps.find(s => s.uses?.startsWith("actions/setup-node@")).with["node-version"] = "22"; },
+            /routing requires Node 24 without package-manager caching/],
+        [w => { w.jobs.route.steps.find(s => s.uses?.startsWith("actions/setup-node@")).if = "false"; },
+            /routing runtime setup cannot be conditional/],
+        [w => { w.jobs.route.steps.find(s => s.uses?.startsWith("actions/setup-node@"))["continue-on-error"] = true; },
+            /routing runtime setup must fail closed/],
         [w => { w.jobs.agent.env = { TOKEN: "${{ secrets.REGRESSION_DISPATCH_TOKEN }}" }; }, /agent must not receive write or signing secrets/],
         [w => { w.jobs.agent.env = { TOKEN: "${{ secrets['REGRESSION_ROUTING_TOKEN'] }}" }; }, /agent must not receive write or signing secrets/],
         [w => { w.jobs.worker = { "timeout-minutes": 10, permissions: {}, env: {
