@@ -14,8 +14,7 @@ async function main() {
     const controller = require("../controller-cli.cjs"), bytes = controller.bytes;
     controller.bytes = async (file, limit) => {
         const relative = path.relative(root, file).split(path.sep).join("/");
-        if (relative === ".github/regression-bisect/deployment.json" ||
-            relative === ".github/workflows/regression-bisect-discovery.yml")
+        if (relative === ".github/regression-bisect/deployment.json")
             return Buffer.from(db.files[relative], "base64");
         return bytes(file, limit);
     };
@@ -27,6 +26,7 @@ async function main() {
     global.fetch = service.send;
     mock.timers.enable({ apis: ["Date"], now: Date.parse(db.now) });
     return require("../routing-cli.cjs").main([], { ...process.env, GITHUB_ACTIONS: "true",
+        GITHUB_OUTPUT: process.env.GITHUB_OUTPUT || path.join(path.dirname(file), "outputs.txt"),
         RB_LOCAL_TEST: "", RB_LOCAL_TEST_FILE: "" });
 }
 

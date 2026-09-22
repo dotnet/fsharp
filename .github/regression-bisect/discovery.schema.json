@@ -14,7 +14,7 @@
     "bootstrapDigest": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
     "freshnessBootstrapDigest": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
     "provisionDeadline": { "type": "string", "format": "date-time" },
-    "workflowPath": { "const": ".github/workflows/regression-bisect-discovery.yml" },
+    "workflowPath": { "const": ".github/workflows/regression-bisect.lock.yml" },
     "workflowGeneration": { "type": "integer", "minimum": 1 }
   }
 }

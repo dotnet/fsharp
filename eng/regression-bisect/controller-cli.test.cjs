@@ -256,8 +256,25 @@ test("routing tampered bindings and stale duplicates cannot mutate durable state
     });
 });
 
+test("offline trusted Git adapter executes real Git without accepting worker commands or credentials", async t => {
+    const f = await fixture(t), service = await connect(f.serviceFile);
+    const settings = { cwd: f.read().mirrorDirectory, env: {
+        ...(process.platform === "win32" ? { SystemRoot: process.env.SystemRoot } : {}),
+        GIT_CONFIG_NOSYSTEM: "1", GIT_CONFIG_GLOBAL: path.join(f.directory, "no-config"), GIT_ALLOW_PROTOCOL: "file",
+    }, timeoutMs: 30000 };
+    const result = await service.executeGit(f.config.gitExecutable, ["rev-parse", "refs/heads/main"], settings);
+    assert.equal(result.complete, true);
+    assert.equal(result.exitCode, 0);
+    assert.equal(result.stdout.trim(), f.context.pinnedMainSha);
+    await assert.rejects(service.executeGit(process.execPath, ["--version"], settings), /trusted fixture Git/);
+    await assert.rejects(service.executeGit(f.config.gitExecutable, ["--version"],
+        { ...settings, env: { ...settings.env, ACTIONS_RUNTIME_TOKEN: "canary" } }), /trusted fixture Git/);
+});
+
 test("actual CLI bootstraps once and advances one charged contained unit with durable collection", async t => {
     const f = await fixture(t);
+    Object.assign(f.env, { ACTIONS_RUNTIME_TOKEN: "offline-runtime-canary",
+        REGRESSION_DISPATCH_TOKEN: "offline-dispatch-canary", COPILOT_GITHUB_TOKEN: "offline-model-canary" });
     assert.equal(outcome(await run(f, "bootstrap")).status, "initialized");
     assert.equal(outcome(await run(f, "bootstrap")).status, "loaded");
     const observed = outcome(await run(f, "advance"));
@@ -882,14 +899,19 @@ test("workflow structure preserves trust, permissions, issue lock, bounds and th
     assert.equal(job.environment, "regression-controller");
     assert.equal(job["timeout-minutes"], 135);
     assert.deepEqual(job["runs-on"], ["self-hosted", "linux", "x64", "regression-container-v1"]);
-    const [checkout, controller] = job.steps;
+    const [guard, checkout, controller] = job.steps;
+    assert.equal(guard.name, "Require the reviewed immutable workflow revision");
+    assert.equal(guard.env.RB_TRUSTED_REVISION, "${{ vars.REGRESSION_CONTROLLER_REVISION }}");
+    assert.match(guard.run, /\^\[0-9a-f\]\{40\}\$/);
+    assert.match(guard.run, /== "\$GITHUB_WORKFLOW_SHA"/);
+    assert.doesNotMatch(guard.run, /\$\{\{/);
     assert.match(checkout.uses, /^actions\/checkout@[a-f0-9]{40}$/);
     assert.equal(checkout.with.repository, "dotnet/fsharp");
     assert.equal(checkout.with.ref, "${{ vars.REGRESSION_CONTROLLER_REVISION }}");
     assert.equal(checkout.with["persist-credentials"], false);
     assert.equal(controller.uses, "./eng/regression-bisect");
     assert.equal(controller.env.RB_ACTION_INPUTS, "${{ toJSON(inputs) }}");
-    assert.ok(job.steps.every(step => step.run === undefined), "no dispatch interpolation into a shell");
+    assert.ok(job.steps.slice(1).every(step => step.run === undefined), "no dispatch interpolation into a shell");
     const action = YAML.parse(await fs.readFile(path.join(__dirname, "action.yml"), "utf8"));
     assert.deepEqual(action.runs, { using: "node24", main: "controller-cli.cjs" });
 });

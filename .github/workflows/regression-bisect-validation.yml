@@ -1,0 +1,64 @@
+name: Regression investigation validation
+on:
+  pull_request:
+    paths:
+      - '.gitattributes'
+      - 'eng/regression-bisect/**'
+      - '.github/regression-bisect/**'
+      - '.github/policies/regression-bisect.json'
+      - '.github/workflows/regression-bisect*'
+      - '.github/workflows/shared/model-defaults.md'
+      - '.github/aw/actions-lock.json'
+permissions:
+  contents: read
+concurrency:
+  group: regression-bisect-validation-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  validate:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        env:
+          GIT_CONFIG_COUNT: '1'
+          GIT_CONFIG_KEY_0: core.autocrlf
+          GIT_CONFIG_VALUE_0: 'false'
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: '24'
+      - name: Compile twice with the isolated fleet compiler
+        timeout-minutes: 15
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $compiler = Join-Path $env:RUNNER_TEMP 'gh-aw-v0.76.1.exe'
+          Invoke-WebRequest 'https://github.com/github/gh-aw/releases/download/v0.76.1/windows-amd64.exe' -OutFile $compiler
+          if ((Get-FileHash $compiler -Algorithm SHA256).Hash.ToLower() -ne
+              'fb8789c9ed8fc3c7d36c50659e6171268bb8cc13e95206aed20600fe82942e57') { throw 'Compiler digest mismatch' }
+          $expected = (Get-FileHash '.github\workflows\regression-bisect.lock.yml').Hash
+          foreach ($pass in 1, 2) {
+            $p = Start-Process $compiler -ArgumentList 'compile','regression-bisect','--strict','--no-check-update' `
+              -NoNewWindow -PassThru -RedirectStandardOutput "$env:RUNNER_TEMP\compile-$pass.stdout" `
+              -RedirectStandardError "$env:RUNNER_TEMP\compile-$pass.stderr"
+            if (-not $p.WaitForExit(420000)) { Stop-Process -Id $p.Id; throw 'Compile timeout' }
+            Get-Content "$env:RUNNER_TEMP\compile-$pass.stdout", "$env:RUNNER_TEMP\compile-$pass.stderr"
+            if ($p.ExitCode -ne 0) { throw 'Compile failed' }
+            if ((Get-FileHash '.github\workflows\regression-bisect.lock.yml').Hash -ne $expected) { throw 'Compiled lock differs' }
+          }
+      - name: Offline scoped suite
+        timeout-minutes: 30
+        shell: pwsh
+        run: |
+          npm ci --prefix eng\regression-bisect --ignore-scripts --no-audit --no-fund
+          if ($LASTEXITCODE -ne 0) { throw 'Parser restore failed' }
+          $tests = @(Get-ChildItem 'eng\regression-bisect' -Filter '*.test.cjs' | ForEach-Object FullName)
+          node --test --test-concurrency=4 @tests
+          if ($LASTEXITCODE -ne 0) { throw 'Scoped suite failed' }
+          git diff --exit-code
+          if ($LASTEXITCODE -ne 0) { throw 'Generated files changed' }
+          git diff --check
+          if ($LASTEXITCODE -ne 0) { throw 'Diff check failed' }

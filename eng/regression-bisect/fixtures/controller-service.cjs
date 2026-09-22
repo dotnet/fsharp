@@ -232,6 +232,17 @@ async function connect(file) {
     return {
         clock: () => new Date(read().now),
         mirrorDirectory: read().mirrorDirectory,
+        executeGit: async (executable, args, settings) => {
+            const config = JSON.parse(Buffer.from(read().files[".github/regression-bisect/deployment.json"], "base64"));
+            assertValue(executable === config.gitExecutable && settings.env?.GIT_ALLOW_PROTOCOL === "file" &&
+                !Object.keys(settings.env).some(k => /^(?:RB_|GITHUB_|ACTIONS_|COPILOT_|REGRESSION_)/i.test(k)),
+            "only credential-free trusted fixture Git may use the offline adapter");
+            // This is trusted Git over synthetic local history, not a historical worker.
+            const result = await require("../toolchain-io.cjs").run(executable, args, settings);
+            assertValue(Buffer.byteLength(result.stdout) <= (settings.maxBytes ?? 4 * 1024 * 1024) &&
+                Buffer.byteLength(result.stderr) <= (settings.maxBytes ?? 4 * 1024 * 1024), "fixture Git output exceeded limit");
+            return { ...result, status: "completed", complete: true };
+        },
         recordGit: args => record({ kind: "git", args }),
         recordGitResult: (args, result, durationMs) => {
             record({ kind: "git-result", args, exitCode: result.exitCode, durationMs });
@@ -360,12 +371,14 @@ async function connect(file) {
             if (route.startsWith("commits/")) return respond({ sha: db.revision });
             const nodes = new Map(), blobs = new Map();
             for (const [name, content] of Object.entries(db.files)) {
+                // Serve the real lock without copying its large bytes into every mutable API snapshot.
+                const value = content === null && name === ".github/workflows/regression-bisect.lock.yml"
+                    ? fs.readFileSync(path.resolve(__dirname, "..", "..", "..", name)) : Buffer.from(content, "base64");
                 const parts = name.split("/");
                 for (let i = 0; i < parts.length; i++) {
                     const prefix = parts.slice(0, i).join("/");
                     const entries = nodes.get(prefix) ?? new Map();
                     const leaf = i === parts.length - 1;
-                    const value = Buffer.from(content, "base64");
                     const id = leaf ? blob(value) : f.sha(parts.slice(0, i + 1).join("/"));
                     entries.set(parts[i], { path: parts[i], type: leaf ? "blob" : "tree",
                         mode: leaf ? "100644" : "040000", sha: id, ...(leaf ? { size: value.length } : {}) });

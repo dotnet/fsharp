@@ -7,8 +7,9 @@ those contracts with the existing reproduction and clean source-build runners.
 Fresh confirmation and deterministic publication guards consume the engine's
 intent. The controller transaction library can update an authenticated fixed
 result slot through its injected transport. `controller-cli.cjs` supplies the
-concrete deployment; its conventional workflow is disabled until explicitly
-configured by maintainers. Tests use synthetic records and in-memory or
+concrete deployment. The dedicated `regression-bisect.md` agentic workflow and
+its compiled lock route intake to that controller; both remain disabled until
+explicitly configured by maintainers. Tests use synthetic records and in-memory or
 file-backed GitHub services, never live issue mutations.
 Records under `fixtures` are not reproduction approvals.
 The file-backed controller fixture publishes database updates by atomic
@@ -16,8 +17,22 @@ replacement, including operator fault changes and injected clock changes;
 concurrent CLI readers see complete snapshots rather than truncated JSON.
 Readers reuse snapshot bytes only while file identity, size and timestamps match;
 each read still checks the current file and parses an independent value.
-The CLI suite runs two independent file-backed cases concurrently so the
-unchanged real-time quota-timeout test does not serialize the entire suite.
+The routing fixture serves the real compiled lock as a Git blob directly from
+the tested checkout, instead of duplicating it in every mutable API snapshot.
+The controller and routing suites each run two independent file-backed cases
+concurrently. Each case owns its database, lock directory and subprocesses;
+the real-time quota test and the 1,100-sweep stress case do not serialize their
+entire suite. The stress case is bounded by the fifteen-minute focused-test
+ceiling and gives each sweep
+its own production deadline, rather than sharing a deadline across invocations.
+Offline CLI fixtures run real, credential-free Git against their synthetic local
+history using the existing bounded command runner. This avoids starting a
+Windows historical-process supervisor for each trusted Git query; it neither
+executes historical code nor substitutes Git results. The adapter is available
+only behind the existing explicit offline-fixture gate, forbidden in Actions.
+Production execution and its process-tree containment remain unchanged.
+The full runner caps file concurrency at four; the host CPU count is not a
+safe default for simultaneous durable-file and subprocess stress suites.
 
 Run from the repository root (the production CLI has no npm dependency).
 Install the lockfile-pinned YAML test parser only if it is missing:
@@ -25,10 +40,40 @@ Install the lockfile-pinned YAML test parser only if it is missing:
 ```powershell
 npm ci --prefix eng\regression-bisect --ignore-scripts --no-audit --no-fund
 $tests = @(Get-ChildItem 'eng\regression-bisect' -Filter '*.test.cjs' | ForEach-Object FullName)
-node --test @tests
+node --test --test-concurrency=4 @tests
 ```
 
 ## Durable intake routing (not activated)
+
+The deployed graph is:
+
+```text
+issues(opened/labeled/unlabeled/edited/closed/reopened)
+  | workflow_dispatch(issue: number) | hourly schedule (17 * * * *)
+  v
+regression-bisect.lock.yml / route (trusted, five minutes, discovery lock)
+  |-- signed cursor + exact dispatch intent --> controller.yml on main
+  |                                              |
+  |                                              v
+  |                                  per-issue lock + reviewed approval
+  |                                  bootstrap / advance / publish
+  |                                  at most one charged isolated worker
+  |                                  or guarded fixed-slot terminal report
+  |
+  `-- fresh inert proposal identifiers --> activation --> agent
+                                         --> detection --> artifact/noop
+```
+
+The fixed controller filename is `regression-bisect-controller.yml`.
+There is one production scheduler, in the compiled AW, not in the controller.
+The routing job is independent of activation, model credentials, model success,
+artifacts and safe outputs. Workflow-level concurrency is run-specific so a
+pending/failed model cannot hold later schedules; the separate routing-job
+concurrency group and persistent directory lock serialize cursor writers.
+An empty sweep or an approved-only sweep skips the model. Schedules reread
+bot-added labels missed by GitHub's event-chaining suppression and rotate back
+to approved in-progress issues for one more charged unit, without a human gate
+before each unit. Removing a label never authorizes work.
 
 `routing-cli.cjs` composes the existing intake, signed state and fixed controller
 dispatcher; it does not execute reproductions or grant allowances. Selection
@@ -94,7 +139,9 @@ typed issue, mode, `routingKey` and `routingGeneration`. The no-argument Actions
 parser uses the runner event file; manual selection additionally requires typed
 `RB_ACTION_INPUTS={"issue":123}` from `toJSON(inputs)`, not the event's untyped
 string as authority. Malformed payloads and override fields fail before
-configuration or API access. Offline fixture injection remains forbidden in
+configuration or API access. The compiler adds optional `aw_context`; intake
+accepts it only absent or empty, never as a target or instruction.
+Offline fixture injection remains forbidden in
 Actions. Discovery never receives worker execution authority, and publication
 credentials never enter workers.
 
@@ -131,15 +178,31 @@ charges. A resumed search or changed input clears the prior reason.
 Counters remain 24 source builds, 40 units, 720 reserved
 minutes and two attempts; retries, cancellation and edits do not refund them.
 
-**Integration prerequisite for sprint 19:** the recovered discovery identity is
-currently `.github/workflows/regression-bisect-discovery.yml`, which does not
-exist as a deployable workflow. Bind the actual compiled workflow identity
-consistently across registration schema, configuration, run authentication and
-tests before activation. Register the version-2 cursor/freshness slots and their
-bootstrap hashes together. The undeployed version-1 append-only discovery
-registration is rejected, not silently migrated or treated as permission to reset
-history; any already-provisioned legacy records require reviewed owner migration.
-No placeholder workflow is supplied here.
+The discovery schema, registration validator, current/retained run authentication
+and fixtures all bind `.github/workflows/regression-bisect.lock.yml`.
+Deployment `workflowPath` remains the controller path; routing replaces it only
+in its discovery record context. Retain both workflows' trusted helper revisions
+and signing keys in the reviewed `retainedWorkflowRevisions`/`keyHashes` lists.
+Register version-2 cursor/freshness slots and bootstrap hashes together.
+The archived nonexistent discovery path and version-1 append-only registration
+are rejected, not aliases or permission to reset history. Already-provisioned
+records with another identity require reviewed owner migration, not automatic
+adoption. No registration, approval or activation configuration is shipped.
+
+Unapproved, stale-approved and unregistered issues produce explicit proposal
+intents, not endpoint evidence. Routing records a signed `analysis-attempt` in
+`dotnet-fsharp-discovery/proposal-<issue>.json` before exposing identifiers to the
+model. This record is bound to the registered discovery issue/comment, trusted
+run, selected issue and proposal/discussion key. Unchanged attempts are suppressed
+for seven days across rotating pages and restarts; corrections permit a new
+attempt. It records **attempted analysis**, not completion. Retain these files
+with the cursor journals; malformed records block analysis rather than granting
+authority. They own no allowance or budget, and dispatch is committed before
+proposal processing. No model output is consumed by routing or the controller.
+The model can read issue/repository/linked-PR context and write a local
+`proposal.md` artifact (16 KiB maximum, seven-day retention), but cannot post it.
+Review that untrusted artifact before manually preparing any approval.
+
 **Physical prerequisite for sprint 21:** the read-only inventory on 2026-09-22
 found a Windows x64 host with Docker/WSL/SSH clients, but no enrolled native
 disposable Linux worker route or owner receipt. No daemon/WSL was started, no
@@ -150,10 +213,8 @@ remain separate, unaccepted gates.
 Focused acceptance commands (in order, then the full scoped command above):
 
 ```powershell
-node --test eng\regression-bisect\routing.test.cjs eng\regression-bisect\intake.test.cjs eng\regression-bisect\github.test.cjs
-if ($LASTEXITCODE -ne 0) { throw 'Routing acceptance failed' }
-node --test eng\regression-bisect\controller-cli.test.cjs
-if ($LASTEXITCODE -ne 0) { throw 'Dispatch consumer integration failed' }
+node --test eng\regression-bisect\workflow.test.cjs eng\regression-bisect\routing.test.cjs eng\regression-bisect\controller-cli.test.cjs
+if ($LASTEXITCODE -ne 0) { throw 'Compiled workflow integration failed' }
 ```
 
 Tests use real producer/consumer subprocesses and the file-backed service's
@@ -165,12 +226,91 @@ stderr alongside the mutations. Set an absolute `RB_TEST_EVIDENCE_DIRECTORY` to
 retain these ledgers. Capture each process's stdout, stderr, exit and hashes of the tested
 source bytes; historical test totals are not evidence for a changed checkout.
 
+### Source-bound workflow compilation
+
+The fleet compiler is official `github/gh-aw` **v0.76.1**, tag commit
+`58d1bedbb7200f59c2d224151339e38fd8687d05`, not the installed shared v0.88.2
+extension. Use the isolated release asset `windows-amd64.exe` from
+`https://github.com/github/gh-aw/releases/tag/v0.76.1`, verified against release
+SHA-256 `fb8789c9ed8fc3c7d36c50659e6171268bb8cc13e95206aed20600fe82942e57`.
+Do not replace the shared extension or compile the fleet.
+The exact arguments verified with this binary's `compile --help` are
+`compile regression-bisect --strict --no-check-update`.
+The version-bound official [trigger reference](https://github.com/github/gh-aw/blob/v0.76.1/docs/src/content/docs/reference/triggers.md),
+[job compiler](https://github.com/github/gh-aw/blob/v0.76.1/pkg/workflow/compiler_jobs.go),
+[pre-activation tests](https://github.com/github/gh-aw/blob/v0.76.1/pkg/workflow/pre_activation_custom_fields_test.go)
+and [permission reference](https://github.com/github/gh-aw/blob/v0.76.1/docs/src/content/docs/reference/permissions.md)
+define the supported custom-job/output graph and authority split used here.
+The inputs are the AW Markdown and `.github/aw/actions-lock.json`.
+Structural tests also bind its model settings to `shared/model-defaults.md`.
+The lock is compiler output, never hand-edited.
+Its scoped Git attributes preserve LF bytes and the compiler's generated
+trailing whitespace/blank EOF; handwritten files keep normal whitespace checks.
+
+```powershell
+# $Compiler is the absolute path to the verified v0.76.1 executable.
+# $Receipts is a private existing directory, outside the helper checkout.
+if ((Get-FileHash $Compiler -Algorithm SHA256).Hash.ToLower() -ne
+    'fb8789c9ed8fc3c7d36c50659e6171268bb8cc13e95206aed20600fe82942e57') { throw 'Compiler digest mismatch' }
+$hashes = foreach ($pass in 1, 2) {
+    $p = Start-Process $Compiler -ArgumentList 'compile','regression-bisect','--strict','--no-check-update' `
+        -NoNewWindow -PassThru -RedirectStandardOutput "$Receipts\compile-$pass.stdout" `
+        -RedirectStandardError "$Receipts\compile-$pass.stderr"
+    if (-not $p.WaitForExit(420000)) { Stop-Process -Id $p.Id; throw 'Compile timeout' }
+    if ($p.ExitCode -ne 0) { throw 'Compile failed' }
+    (Get-FileHash '.github\workflows\regression-bisect.lock.yml' -Algorithm SHA256).Hash
+}
+if ($hashes[0] -ne $hashes[1]) { throw 'Nondeterministic lock output' }
+node --test eng\regression-bisect\workflow.test.cjs
+if ($LASTEXITCODE -ne 0) { throw 'Generated DAG failed' }
+```
+
+File-bound standard streams avoid an observed Windows compiler startup hang
+with piped PowerShell invocation. No strict checks are disabled. v0.76.1 only
+allows steps/outputs in its special pre-activation override, not the persistent
+runner selection needed here; the supported custom `route` job is therefore
+referenced by both the activation condition and prompt. The compiler's built-in
+jobs do not support timeout overrides: they retain Actions' finite 360-minute
+job default, with explicit 15-minute agent and 20-minute detection step limits.
+Routing itself has a five-minute job and CLI deadline; safe outputs have a
+15-minute job limit.
+
+Generated authority is checked, not inferred from the Markdown. In particular,
+noop-only safe outputs would implicitly enable issue creation in this version.
+The explicit inert artifact output plus disabled issue reporting for noop,
+missing data/tools, incomplete runs and failures prevents that fallback.
+All AW jobs have only read permissions; only `route` receives
+`REGRESSION_ROUTING_TOKEN`, `REGRESSION_ROUTING_SIGNING_KEYS` and
+`REGRESSION_DISPATCH_TOKEN`. These reviewed additions are for fixed state/dispatch,
+not network/tool/model access. Model and detector receive only the Copilot engine
+credential and/or read-only job `GITHUB_TOKEN`; explicit tokens avoid the fleet's
+potentially wider magic-token fallbacks. Framework checkouts use the triggering
+main commit with `persist-credentials: false`; the router checks its immutable
+helper SHA, clean tree and exact trusted compiled-lock bytes (bounded at 256 KiB).
+Both router and controller reject a missing, non-SHA or mismatched reviewed
+revision **before checkout**, not after executing helpers from that revision.
+The model never shares the persistent self-hosted runner.
+An explicit empty Bash allowlist and disabled MCP CLI mounting prevent the
+compiler's default unrestricted shell tools in the analysis job. Both model
+invocations explicitly deny shell/delegation tools and disable inherited
+custom instructions; they retain the shared model/reasoning defaults. v0.76.1
+rejects a local engine override alongside an imported engine, so this workflow
+spells out those defaults and tests them against the shared file instead of
+changing the fleet's permissions. Inert
+local proposal editing is not historical code execution authority.
+
+`workflow.test.cjs` parses source and lock and rejects removal of routing,
+model-dependent routing and leaked worker/model write secrets.
+`regression-bisect-validation.yml` runs only path-scoped offline validation, not
+intake, publication, a production dispatch or physical containment.
+
 ## Executable deployment and operator setup
 
 **This checkout does not activate production, approve a reproduction, prove
 physical containment, or perform the separate known-history acceptance trial.**
-The workflow only supports explicit `workflow_dispatch` of `bootstrap`,
-`advance`, or `publish`. There is no automatic issue-label execution, model
+The controller only supports `workflow_dispatch` of `bootstrap`, `advance`,
+or `publish`, from the trusted router or an operator. Automatic intake remains
+disabled by default and cannot execute an unapproved issue. There is no model
 authority, arbitrary ref/URL/command, or provisioning dispatch input.
 
 ```powershell
@@ -262,8 +402,12 @@ share `regression-bisect-dotnet-fsharp-<issue>` Actions concurrency with
 `cancel-in-progress: false`; local processes additionally share the directory
 lock for that same repository/issue. No job split transfers ownership.
 
-Set the protected environment `regression-controller`, require maintainer
-approval, and restrict it to main. Its exact secret names are:
+Set protected environments `regression-controller` and `regression-routing`,
+restrict them to main, and review deployment/approval policy before activation.
+For reviewed unattended continuation, do not configure a per-job required-reviewer
+gate: the pinned approvals and immutable allowance govern each unit. Initial
+provisioning and reproduction approval remain explicit owner actions.
+The controller environment's exact secret names are:
 
 | Secret / explicit input | Purpose |
 | --- | --- |
@@ -272,9 +416,26 @@ approval, and restrict it to main. Its exact secret names are:
 | `RB_PROVISION_TOKEN` | Separately authorized operator-only token for the **same reviewed App identity**; never provided by the execution workflow |
 | `ACTIONS_RUNTIME_TOKEN`, `ACTIONS_RESULTS_URL` | Runner-supplied artifact identity, available inside the local Node action; never supplied by dispatch or copied to workers |
 
-Set repository/environment variables `REGRESSION_CONTROLLER_REVISION` to a full
-reviewed immutable main SHA and `REGRESSION_CONTROLLER_ENABLED` to `true` only
-after the independent physical and known-history gates pass. Checkout is
+The routing environment has separate `REGRESSION_ROUTING_TOKEN` (the same
+reviewed App identity, contents/actions read and issues write for its two fixed
+state slots, **no statuses write**), `REGRESSION_ROUTING_SIGNING_KEYS` (the
+reviewed retained key set for state authentication), and
+`REGRESSION_DISPATCH_TOKEN` (Actions dispatch only). GitHub token scopes are
+repository-wide, so fixed comment IDs and workflow destinations are also
+enforced in deterministic code; neither token is exposed to the model.
+Signing keys are trusted controller infrastructure, never model inputs.
+Only the controller receives selected-issue publication/status authority.
+Historical workers receive none of these secrets, the job GitHub token, or
+the artifact runtime token; the Docker boundary uses an explicit clean
+environment and no credential mounts.
+
+Set `REGRESSION_CONTROLLER_REVISION` to a full reviewed immutable main SHA.
+Set the repository-level `REGRESSION_CONTROLLER_ENABLED` variable to `true` only
+after the independent physical and known-history gates pass. Set
+the repository-level `REGRESSION_ROUTING_ENABLED=true` only after the same gates, reviewed discovery
+registration and explicit provisioning. Unset variables disable both paths.
+The actual seven-case supported-container attestation remains mandatory in the
+controller before any worker, not a label or model assertion. Checkout is
 SHA-pinned with `persist-credentials: false`. The pinned local Node action
 executes `controller-cli.cjs`, preserving the artifact runtime credentials
 without exposing them in shell interpolation or outputs. It passes typed

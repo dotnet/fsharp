@@ -38,3 +38,5 @@ eng/regression-bisect/fixtures/checkpoint.txt text eol=lf
 *.png binary
 
 .github/workflows/*.lock.yml linguist-generated=true merge=ours
+# Preserve this pinned compiler's verbatim output, including generated whitespace.
+.github/workflows/regression-bisect.lock.yml eol=lf whitespace=-blank-at-eol,-blank-at-eof

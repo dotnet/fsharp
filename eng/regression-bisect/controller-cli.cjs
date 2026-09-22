@@ -314,6 +314,7 @@ async function main(args = process.argv.slice(2), env = process.env) {
         ? await require("./fixtures/controller-service.cjs").connect(path.resolve(env.RB_LOCAL_TEST_FILE)) : null;
     const configBytes = await bytes(input.configPath);
     const config = decode(configBytes);
+    const executeGit = local?.executeGit ?? execute;
     const context = { ...configuration(config, env), issueNumber: input.issueNumber };
     const token = input.mode === "provision" ? env.RB_PROVISION_TOKEN : env.RB_GITHUB_TOKEN;
     requireValue(typeof token === "string" && token.length > 0, "missing explicit controller/provisioning credential");
@@ -339,7 +340,7 @@ async function main(args = process.argv.slice(2), env = process.env) {
         const git = async (args, cwd = root) => {
             local?.recordGit(args);
             const started = Date.now();
-            const result = await execute(config.gitExecutable, ["-c", "credential.helper=", "-c", "core.hooksPath=",
+            const result = await executeGit(config.gitExecutable, ["-c", "credential.helper=", "-c", "core.hooksPath=",
                 "-c", "core.fsmonitor=false", ...args], { cwd,
                 env: { ...isolatedEnvironment(directory, { os: process.platform === "win32" ? "windows" : "linux",
                     architecture: process.arch }), GIT_CONFIG_NOSYSTEM: "1", GIT_CONFIG_GLOBAL: path.join(directory, "empty.gitconfig"),
@@ -538,7 +539,7 @@ async function main(args = process.argv.slice(2), env = process.env) {
                 toolchainDependencies: local?.toolchainDependencies, readCurrentContext: refresh,
                 execute: async (...args) => {
                     local?.recordGit(args[1]);
-                    const started = Date.now(), result = await execute(...args);
+                    const started = Date.now(), result = await executeGit(...args);
                     local?.recordGitResult(args[1], result, Date.now() - started);
                     return result;
                 },

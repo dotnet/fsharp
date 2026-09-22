@@ -27,10 +27,12 @@ function eventArguments(name, event, typedInputs) {
             Number.isSafeInteger(event.issue?.number) && event.issue.number > 0, "invalid typed issue event");
         return ["event", "--issue", String(event.issue.number), ...fixed];
     }
+    const issueOnly = value => value && ["issue", "aw_context issue"].includes(Object.keys(value).sort().join(" ")) &&
+        (!Object.hasOwn(value, "aw_context") || value.aw_context === "");
     requireValue(name === "workflow_dispatch" && [undefined, "main", "refs/heads/main"].includes(event.ref) &&
-        event.inputs && Object.keys(event.inputs).join() === "issue" &&
+        issueOnly(event.inputs) &&
         typedInputs && Object.getPrototypeOf(typedInputs) === Object.prototype &&
-        Object.keys(typedInputs).join() === "issue" && Number.isSafeInteger(typedInputs.issue) &&
+        issueOnly(typedInputs) && Number.isSafeInteger(typedInputs.issue) &&
         typedInputs.issue > 0 && String(event.inputs.issue) === String(typedInputs.issue), "invalid typed manual routing input");
     return ["manual", "--issue", String(typedInputs.issue), ...fixed];
 }
@@ -82,9 +84,9 @@ async function main(args = process.argv.slice(2), env = process.env) {
     validatePolicy(decode(policyBytes));
     requireValue(hash(policyBytes) === hash(await fs.readFile(path.join(root, ".github", "policies", "regression-bisect.json"))),
         "stale discovery policy checkout");
-    const workflow = await reader.readTrustedFile(workflowPath, 48 * 1024 - 1);
+    const workflow = await reader.readTrustedFile(workflowPath, 256 * 1024);
     if (!local) {
-        requireValue(hash(workflow) === hash(await bytes(path.join(root, workflowPath))), "stale discovery workflow checkout");
+        requireValue(hash(workflow) === hash(await bytes(path.join(root, workflowPath), 256 * 1024)), "stale discovery workflow checkout");
         const { execFileSync } = require("node:child_process");
         const git = args => execFileSync(config.gitExecutable, args, { cwd: root, encoding: "utf8", timeout: 30000 }).trim();
         requireValue(git(["rev-parse", "HEAD"]) === base.workflowRevision &&
@@ -101,7 +103,7 @@ async function main(args = process.argv.slice(2), env = process.env) {
         run.status === "in_progress", "current discovery workflow authentication failed");
     requireValue(path.isAbsolute(env.RB_STATE_DIRECTORY ?? ""), "absolute trusted RB_STATE_DIRECTORY required");
     const directory = path.join(env.RB_STATE_DIRECTORY, "dotnet-fsharp-discovery");
-    return withIssueLock(directory, context, transport, async () => {
+    const result = await withIssueLock(directory, context, transport, async () => {
         const deps = { context, registration, transport, readerFor, apiFor, signal,
             journal: {
                 read: async name => {
@@ -114,6 +116,11 @@ async function main(args = process.argv.slice(2), env = process.env) {
             dispatch: createDispatcher({ token: env.RB_DISPATCH_TOKEN, signal }, local?.send) };
         return input.mode === "provision" ? provisionDiscovery(deps) : route(deps, input.issueNumber);
     });
+    if (env.GITHUB_ACTIONS === "true" && input.mode !== "provision") {
+        requireValue(path.isAbsolute(env.GITHUB_OUTPUT ?? ""), "trusted Actions output file required");
+        await fs.appendFile(env.GITHUB_OUTPUT, `proposals=${JSON.stringify(result.proposals)}\n`);
+    }
+    return result;
 }
 
 if (require.main === module) main().then(result => {

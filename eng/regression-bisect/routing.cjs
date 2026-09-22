@@ -4,7 +4,7 @@ const { requireValue, hash } = require("./toolchain-io.cjs");
 const state = require("./state.cjs");
 
 const repository = "dotnet/fsharp";
-const workflowPath = ".github/workflows/regression-bisect-discovery.yml";
+const workflowPath = ".github/workflows/regression-bisect.lock.yml";
 const controllerWorkflow = ".github/workflows/regression-bisect-controller.yml";
 const policy = require("../../.github/policies/regression-bisect.json");
 const positive = n => Number.isSafeInteger(n) && n > 0;
@@ -349,10 +349,33 @@ async function route(deps, issueNumber) {
         await saveCursor(deps, cp, loaded.bodyDigest);
     }
     requireValue(failures.length === 0, failures.join("; "));
+    const intents = selected.map(({ issueNumber, status, reason, key, discussionFingerprint }) =>
+        ({ issueNumber, status, reason, key, discussionFingerprint }));
+    const proposals = [];
+    for (const item of intents.filter(item => item.status === "proposal")) {
+        deps.signal.throwIfAborted();
+        const name = `proposal-${item.issueNumber}`;
+        const body = await deps.journal.read(name);
+        if (body !== null) {
+            const comment = await deps.transport.getComment(deps.context.commentId);
+            const record = await state.authenticateDecodedRecord(deps.transport, deps.context, { ...comment, body });
+            requireValue(record?.kind === "proposal", "proposal attempt authentication failed");
+            fields(record.payload, "purpose issueNumber key attemptedAt");
+            const p = record.payload;
+            requireValue(p.purpose === "analysis-attempt" && p.issueNumber === item.issueNumber && digest(p.key) &&
+                Number.isSafeInteger(p.attemptedAt) && p.attemptedAt >= 0 && p.attemptedAt <= deps.now(),
+            "invalid proposal attempt receipt");
+            if (p.key === item.key && deps.now() - p.attemptedAt < 7 * 86400000) continue;
+        }
+        // Record an attempt, not model success or execution approval, before exposing the output.
+        await deps.journal.write(name, state.serializeWorkflowRecord({
+            kind: "proposal", status: "Regression analysis attempt",
+            payload: { purpose: "analysis-attempt", issueNumber: item.issueNumber, key: item.key, attemptedAt: deps.now() },
+        }, deps.context));
+        proposals.push(item);
+    }
     return { status: "routed", selected: selected.filter(s => s.status !== "ineligible").map(s => s.issueNumber),
-        dispatched, generation: cp.generation, nextCursor: cp.cursor,
-        intents: selected.map(({ issueNumber, status, reason, key, discussionFingerprint }) =>
-            ({ issueNumber, status, reason, key, discussionFingerprint })) };
+        dispatched, generation: cp.generation, nextCursor: cp.cursor, intents, proposals };
 }
 
 module.exports = { route, provisionDiscovery, validateRegistration, dispatchKey, loadCursor, workflowPath };

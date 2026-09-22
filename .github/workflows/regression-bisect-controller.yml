@@ -34,6 +34,15 @@ jobs:
     runs-on: [self-hosted, linux, x64, regression-container-v1]
     timeout-minutes: 135
     steps:
+      - name: Require the reviewed immutable workflow revision
+        shell: bash
+        env:
+          RB_TRUSTED_REVISION: ${{ vars.REGRESSION_CONTROLLER_REVISION }}
+        run: |
+          if ! [[ "$RB_TRUSTED_REVISION" =~ ^[0-9a-f]{40}$ && "$RB_TRUSTED_REVISION" == "$GITHUB_WORKFLOW_SHA" ]]; then
+            echo "::error::The reviewed helper revision must be the immutable workflow SHA"
+            exit 1
+          fi
       - name: Immutable trusted helpers, never the historical source
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:

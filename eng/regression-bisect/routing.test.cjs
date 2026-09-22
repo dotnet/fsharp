@@ -1,4 +1,4 @@
-const { test } = require("node:test");
+const { test, describe } = require("node:test");
 const assert = require("node:assert/strict");
 const path = require("node:path");
 const fs = require("node:fs/promises");
@@ -8,7 +8,7 @@ const contracts = require("./fixtures/contracts.cjs");
 const { fingerprintInput: fingerprint, isEligibleIssue } = require("./model.cjs");
 const { hash } = require("./toolchain-io.cjs");
 const state = require("./state.cjs");
-const workflowPath = ".github/workflows/regression-bisect-discovery.yml";
+const workflowPath = ".github/workflows/regression-bisect.lock.yml";
 
 async function invoke(f, mode, issue, started = () => {}, extra = {}) {
     const args = mode === null ? [] : [mode, ...(issue === undefined ? [] : ["--issue", String(issue)]), "--config", f.configPath];
@@ -34,7 +34,7 @@ async function setup(t) {
         db.comments.push({ ...db.comments[0], id: 458, body: "Reviewed discovery slot" });
         db.comments.push({ ...db.comments[0], id: 459, body: "Reviewed discovery freshness slot" });
         db.files[".github/regression-bisect/discovery.json"] = Buffer.from(JSON.stringify(registration)).toString("base64");
-        db.files[workflowPath] = Buffer.from("fixture discovery workflow").toString("base64");
+        db.files[workflowPath] = null;
     });
     f.env.GITHUB_RUN_ID = "22345";
     f.registration = registration;
@@ -61,8 +61,10 @@ async function provision(f) { return success(await invoke(f, "provision")); }
 const dispatches = f => f.ledger().filter(e => e.kind === "api" && e.route.endsWith("/dispatches"));
 const mutations = f => f.ledger().filter(e => e.kind === "api" && e.method !== "GET");
 
+describe("file-backed intake routing", { concurrency: 2 }, () => {
 test("discovery registration cannot alias controller slots or silently adopt legacy history", async t => {
     for (const change of [{ schemaVersion: 1 }, { freshnessCommentId: 458 },
+        { workflowPath: ".github/workflows/regression-bisect-discovery.yml" },
         ...[456, 457].flatMap(id => [{ commentId: id }, { freshnessCommentId: id }])])
         await t.test(JSON.stringify(change), async t => {
             const f = await setup(t);
@@ -285,19 +287,90 @@ test("no-argument Actions events complete fresh intake and fixed dispatch", asyn
         const f = await setup(t);
         await provision(f);
         const eventPath = path.join(f.directory, "event.json");
-        const event = name === "manual" ? { repository, ref: "refs/heads/main", inputs: { issue: "123" } } :
+        const event = name === "manual" ? { repository, ref: "refs/heads/main", inputs: { issue: "123", aw_context: "" } } :
             name === "schedule" ? { repository } : { repository, action: name === "opened" ? "opened" : "labeled",
                 issue: { number: 123, labels: [] }, sender: { type: name === "bot-label" ? "Bot" : "User" } };
         await fs.writeFile(eventPath, JSON.stringify(event));
         const result = success(await invoke(f, null, undefined, undefined, { RB_ACTIONS_FIXTURE: "true",
             GITHUB_EVENT_PATH: eventPath, GITHUB_EVENT_NAME: name === "manual" ? "workflow_dispatch" : name === "schedule" ? name : "issues",
-            RB_ACTION_INPUTS: JSON.stringify({ issue: 123 }) }));
+            RB_ACTION_INPUTS: JSON.stringify({ issue: 123, aw_context: "" }) }));
         assert.deepEqual(result.dispatched, [123]);
         assert.equal(dispatches(f)[0].body.inputs.mode, "bootstrap");
         assert.ok(f.ledger().some(e => e.route === "issues/123/comments"));
         assert.ok(f.ledger().some(e => e.route === "issues/123/timeline"));
         assert.equal(f.ledger().some(e => e.kind === "worker"), false);
     });
+});
+
+test("compiled manual context is inert and cannot override typed intake", async t => {
+    const f = await setup(t), eventPath = path.join(f.directory, "event.json");
+    const repository = { full_name: "dotnet/fsharp", default_branch: "main" };
+    for (const aw_context of ["execute issue 999", null, {}, 123]) {
+        await fs.writeFile(eventPath, JSON.stringify({ repository, inputs: { issue: "123", aw_context } }));
+        const result = await invoke(f, null, undefined, undefined, { RB_ACTIONS_FIXTURE: "true",
+            GITHUB_EVENT_PATH: eventPath, GITHUB_EVENT_NAME: "workflow_dispatch",
+            RB_ACTION_INPUTS: JSON.stringify({ issue: 123, aw_context }) });
+        assert.equal(result.code, 1);
+        assert.match(result.result.reason, /invalid typed manual/);
+    }
+    assert.equal(f.ledger().some(e => e.kind === "api" || e.kind === "worker"), false);
+});
+
+test("Actions authenticates the real compiled lock bytes, not just a workflow filename", async t => {
+    const f = await setup(t), eventPath = path.join(f.directory, "event.json");
+    await fs.writeFile(eventPath, JSON.stringify({ repository: { full_name: "dotnet/fsharp", default_branch: "main" } }));
+    f.update(db => { db.files[workflowPath] = Buffer.from("substituted workflow").toString("base64"); });
+    const result = await invoke(f, null, undefined, undefined, { RB_ACTIONS_FIXTURE: "true",
+        GITHUB_EVENT_PATH: eventPath, GITHUB_EVENT_NAME: "schedule" });
+    assert.equal(result.code, 1);
+    assert.match(result.result.reason, /stale discovery workflow checkout/);
+    assert.deepEqual(mutations(f), []);
+    assert.equal(f.ledger().some(e => e.kind === "worker"), false);
+});
+
+test("proposal attempts are signed, issue-specific and fresh across rotating sweeps, never execution authority", async t => {
+    const f = await setup(t);
+    addIssues(f, 4);
+    await provision(f);
+    const first = success(await invoke(f, "manual", 1000));
+    assert.deepEqual(first.proposals, [first.intents[0]]);
+    assert.equal(first.proposals[0].reason, "approval-required");
+    success(await invoke(f, "manual", 1001));
+    assert.deepEqual(success(await invoke(f, "manual", 1000)).proposals, []);
+    f.nextRun();
+    assert.deepEqual(success(await invoke(f, "manual", 1000)).proposals, []);
+    f.update(db => { db.discussions[1000].comments[0].body += "\nCorrection"; });
+    const changed = success(await invoke(f, "manual", 1000));
+    assert.equal(changed.proposals.length, 1);
+    assert.notEqual(changed.proposals[0].key, first.proposals[0].key);
+    f.update(db => { db.now = new Date(Date.parse(db.now) + 7 * 86400000).toISOString(); });
+    assert.equal(success(await invoke(f, "manual", 1000)).proposals.length, 1);
+    assert.equal(dispatches(f).length, 0);
+    assert.equal(f.ledger().some(e => e.kind === "worker" || e.kind === "git"), false);
+    const receipt = path.join(f.env.RB_STATE_DIRECTORY, "dotnet-fsharp-discovery", "proposal-1000.json");
+    await fs.writeFile(receipt, JSON.stringify("forged model approval"));
+    const blocked = await invoke(f, "manual", 1000);
+    assert.equal(blocked.code, 1);
+    assert.match(blocked.result.reason, /proposal attempt authentication/);
+    assert.deepEqual(success(await invoke(f, "manual", 123)).dispatched, [123],
+        "a failed model/proposal attempt cannot prevent approved continuation");
+});
+
+test("Actions writes only bounded inert proposal outputs; an empty sweep is a quiet success", async t => {
+    const f = await setup(t), eventPath = path.join(f.directory, "event.json"), output = path.join(f.directory, "output.txt");
+    addIssues(f, 1);
+    await provision(f);
+    await fs.writeFile(eventPath, JSON.stringify({ repository: { full_name: "dotnet/fsharp", default_branch: "main" } }));
+    const env = { RB_ACTIONS_FIXTURE: "true", GITHUB_EVENT_PATH: eventPath, GITHUB_EVENT_NAME: "schedule", GITHUB_OUTPUT: output };
+    const result = success(await invoke(f, null, undefined, undefined, env));
+    assert.equal(result.proposals.length, 1);
+    assert.deepEqual(JSON.parse((await fs.readFile(output, "utf8")).trim().slice("proposals=".length)), result.proposals);
+    f.update(db => { db.issue.labels = []; db.issues.forEach(i => { i.labels = []; }); });
+    await fs.writeFile(output, "");
+    const quiet = success(await invoke(f, null, undefined, undefined, env));
+    assert.deepEqual(quiet.selected, []);
+    assert.deepEqual(quiet.dispatched, []);
+    assert.equal(await fs.readFile(output, "utf8"), "proposals=[]\n");
 });
 
 test("recovery handoffs reject stale authority and unauthenticated predecessors", async t => {
@@ -546,7 +619,7 @@ test("abandoned unclaimed reservations reach a durable budget stop and guarded r
     });
 });
 
-test("long-running mixed-context discovery keeps bounded freshness and preserves controller allowance", async t => {
+test("long-running mixed-context discovery keeps bounded freshness and preserves controller allowance", { timeout: 900000 }, async t => {
     const f = await setup(t);
     addIssues(f, 3);
     await provision(f);
@@ -577,17 +650,21 @@ test("long-running mixed-context discovery keeps bounded freshness and preserves
         apiFor, readerFor: issueNumber => createApprovalReader({ api: apiFor(issueNumber),
             revision: f.context.policyRevision, issueNumber }),
         journal: {
-            read: async name => JSON.parse(await fs.readFile(path.join(directory, `${name}.json`), "utf8")),
+            read: async name => {
+                try { return JSON.parse(await fs.readFile(path.join(directory, `${name}.json`), "utf8")); }
+                catch (error) { if (error.code === "ENOENT") return null; throw error; }
+            },
             write: (name, body) => require("./controller-cli.cjs").writeJson(path.join(directory, `${name}.json`), body),
         },
-        signal: AbortSignal.timeout(120000), now: () => Date.parse(f.read().now),
+        now: () => Date.parse(f.read().now),
         dispatch: createDispatcher({ token: f.env.RB_DISPATCH_TOKEN }, send),
     };
     const { route } = require("./routing.cjs");
     const statusCount = f.read().statuses.length;
     for (let i = 0; i < 1100; i++) {
         requests.length = 0;
-        const result = await route(deps, i % 100 === 99 ? 123 : 1000 + i % 2);
+        // Each sweep gets its own production deadline, not one deadline for 1,100 invocations.
+        const result = await route({ ...deps, signal: AbortSignal.timeout(300000) }, i % 100 === 99 ? 123 : 1000 + i % 2);
         assert.equal(result.status, "routed");
         assert.equal(requests.filter(r => r.method === "GET" && r.path.endsWith("/comments/459")).length, 1);
         if (i % 100 === 99) assert.deepEqual(result.dispatched, [123]);
@@ -889,7 +966,8 @@ test("event and manual intake reread exact eligibility including late human and 
         ["at", { created_at: "2026-09-01T00:00:00Z", updated_at: "2020-01-01T00:00:00Z" }, true],
         ["after", { created_at: "2026-09-01T00:00:00.001Z" }, true],
         ["lowercase", { labels: ["regression"] }, false],
-        ["missing", { labels: [] }, false], ["closed", { state: "closed" }, false], ["pr", { pull_request: {} }, false],
+        ["unlabeled", { labels: [] }, false], ["closed", { state: "closed" }, false], ["pr", { pull_request: {} }, false],
+        ["reopened", { state: "open" }, true], ["edited", {}, true],
         ["opened-with-label", {}, true], ["late-human", {}, true], ["late-bot", {}, true],
     ]) await t.test(name, async t => {
         const f = await setup(t);
@@ -897,7 +975,8 @@ test("event and manual intake reread exact eligibility including late human and 
         await provision(f);
         const eventPath = path.join(f.directory, "event.json");
         await fs.writeFile(eventPath, JSON.stringify({ repository: { full_name: "dotnet/fsharp", default_branch: "main" },
-            action: name === "opened-with-label" ? "opened" : "labeled", issue: { number: 1000 },
+            action: name === "opened-with-label" ? "opened" :
+                ["unlabeled", "closed", "reopened", "edited"].includes(name) ? name : "labeled", issue: { number: 1000 },
             sender: { type: name === "late-bot" ? "Bot" : "User" }, ref: "refs/heads/main", inputs: { issue: "1000" } }));
         const actions = mode => invoke(f, null, undefined, undefined, { RB_ACTIONS_FIXTURE: "true",
             GITHUB_EVENT_PATH: eventPath, GITHUB_EVENT_NAME: mode === "event" ? "issues" : "workflow_dispatch",
@@ -920,6 +999,7 @@ test("event and manual intake reread exact eligibility including late human and 
             if (eligible) assert.equal(result.intents[0].reason, "approval-required");
             assert.deepEqual(result.dispatched, []);
         }
+        assert.equal(f.ledger().some(e => e.kind === "worker" || e.kind === "git"), false);
     });
 });
 
@@ -954,4 +1034,5 @@ test("bounded query failures preserve required history for a new process", async
         assert.deepEqual(success(await invoke(f, "schedule")).selected, [1200]);
         assert.equal(dispatches(f).length, 0);
     });
+});
 });
