@@ -244,18 +244,31 @@ type internal FSharpNavigateToSearchService
 
     interface IFSharpNavigateToSearchService with
         member _.SearchProjectAsync
-            (project, _priorityDocuments, searchPattern, kinds, cancellationToken)
+            (project, priorityDocuments, searchPattern, kinds, cancellationToken)
             : Task<ImmutableArray<FSharpNavigateToSearchResult>> =
             cancellableTask {
                 let tryMatch = createMatcherFor searchPattern
+                let priorityIds = ImmutableHashSet.CreateRange(priorityDocuments |> Seq.map _.Id)
 
-                let! results =
+                let priority, rest =
                     project.Documents
+                    |> Seq.toArray
+                    |> Array.partition (fun document -> priorityIds.Contains document.Id)
+
+                let search documents =
+                    documents
                     |> Seq.map (processDocument tryMatch kinds)
                     // Throttle to avoid launching a parse per document in the project all at once.
                     |> CancellableTask.whenAllThrottled (max 1 Environment.ProcessorCount)
 
-                return results |> Array.concat |> Array.toImmutableArray
+                // The documents the user has open go first, so they are parsed and cached before the rest of the project.
+                let! priorityResults = search priority
+                let! restResults = search rest
+
+                return
+                    Array.append priorityResults restResults
+                    |> Array.concat
+                    |> Array.toImmutableArray
             }
             |> CancellableTask.start cancellationToken
 
