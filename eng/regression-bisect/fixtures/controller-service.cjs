@@ -3,7 +3,7 @@ const fsp = require("node:fs/promises");
 const os = require("node:os");
 const path = require("node:path");
 const { createHash, createHmac, randomUUID } = require("node:crypto");
-const { execFileSync, spawnSync } = require("node:child_process");
+const { execFileSync, spawn, spawnSync } = require("node:child_process");
 const { setTimeout: delay } = require("node:timers/promises");
 const { bootstrapFixture } = require("./execution.cjs");
 const f = require("./contracts.cjs");
@@ -41,6 +41,32 @@ function writeDatabase(file, value) {
             }
         }
     } finally { fs.rmSync(temporary, { force: true }); }
+}
+
+function invokeCli(args, env = {}, started = () => {}, {
+    entry = "controller-cli.cjs", kind = "cli-exit", storageFaults = true,
+} = {}) {
+    return new Promise((resolve, reject) => {
+        const start = performance.now();
+        const preload = storageFaults && env.RB_LOCAL_TEST_FILE
+            ? ["--require", path.join(__dirname, "controller-storage-faults.cjs")] : [];
+        const child = spawn(process.execPath, [...preload, path.join(__dirname, "..", entry), ...args], {
+            env: { ...process.env, ...env }, shell: false, windowsHide: true,
+        });
+        let stdout = "", stderr = "";
+        child.stdout.on("data", bytes => { stdout += bytes; });
+        child.stderr.on("data", bytes => { stderr += bytes; });
+        child.once("error", reject);
+        child.once("close", async code => {
+            try {
+                if (env.RB_LOCAL_TEST_FILE) await fsp.appendFile(`${env.RB_LOCAL_TEST_FILE}.ledger`, JSON.stringify({
+                    kind, pid: child.pid, args, code, durationMs: performance.now() - start, stdout, stderr,
+                }) + "\n");
+                resolve({ code, stdout, stderr });
+            } catch (error) { reject(error); }
+        });
+        started(child);
+    });
 }
 
 async function fixture(t) {
@@ -188,7 +214,14 @@ async function seed(fixture, endpoint, outcome, target, attempts) {
 }
 
 async function connect(file) {
-    const read = () => JSON.parse(fs.readFileSync(file));
+    let snapshot;
+    const read = () => {
+        const stat = fs.statSync(file, { bigint: true });
+        const identity = `${stat.dev}:${stat.ino}:${stat.size}:${stat.mtimeNs}:${stat.ctimeNs}`;
+        // Writers replace immutable snapshots; every request still checks the current file.
+        if (snapshot?.identity !== identity) snapshot = { identity, bytes: fs.readFileSync(file) };
+        return JSON.parse(snapshot.bytes);
+    };
     const write = db => writeDatabase(file, db);
     const record = entry => fs.appendFileSync(`${file}.ledger`, JSON.stringify({ pid: process.pid, ...entry }) + "\n");
     const respond = (data, status = 200, headers = {}) => new Response(json(data), { status, headers });
@@ -430,4 +463,4 @@ async function syntheticWorker() {
 
 if (require.main === module) syntheticWorker().catch(error => { console.error(error.message); process.exitCode = 1; });
 
-module.exports = { fixture, connect, checkpoint, seed, writeDatabase };
+module.exports = { fixture, connect, checkpoint, seed, writeDatabase, invokeCli };

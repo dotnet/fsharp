@@ -14,6 +14,8 @@ Records under `fixtures` are not reproduction approvals.
 The file-backed controller fixture publishes database updates by atomic
 replacement, including operator fault changes and injected clock changes;
 concurrent CLI readers see complete snapshots rather than truncated JSON.
+Readers reuse snapshot bytes only while file identity, size and timestamps match;
+each read still checks the current file and parses an independent value.
 The CLI suite runs two independent file-backed cases concurrently so the
 unchanged real-time quota-timeout test does not serialize the entire suite.
 
@@ -156,8 +158,11 @@ if ($LASTEXITCODE -ne 0) { throw 'Dispatch consumer integration failed' }
 
 Tests use real producer/consumer subprocesses and the file-backed service's
 ordered API/worker/Git ledger, including lost acknowledgements and process
-cancellation. Set an absolute `RB_TEST_EVIDENCE_DIRECTORY` to retain these
-ledgers. Capture each process's stdout, stderr, exit and hashes of the tested
+cancellation. Routing and controller suites share `invokeCli` in
+`fixtures/controller-service.cjs` for process capture; fixture producer, consumer
+and controller exits record PID, arguments, duration, exit code, stdout and
+stderr alongside the mutations. Set an absolute `RB_TEST_EVIDENCE_DIRECTORY` to
+retain these ledgers. Capture each process's stdout, stderr, exit and hashes of the tested
 source bytes; historical test totals are not evidence for a changed checkout.
 
 ## Executable deployment and operator setup

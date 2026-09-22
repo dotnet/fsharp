@@ -1,38 +1,22 @@
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const { spawn } = require("node:child_process");
 const path = require("node:path");
 const fs = require("node:fs/promises");
 const { setTimeout: delay } = require("node:timers/promises");
-const { fixture, connect, checkpoint, seed } = require("./fixtures/controller-service.cjs");
+const { fixture, connect, checkpoint, seed, invokeCli } = require("./fixtures/controller-service.cjs");
 const contracts = require("./fixtures/contracts.cjs");
 const { fingerprintInput: fingerprint, isEligibleIssue } = require("./model.cjs");
 const { hash } = require("./toolchain-io.cjs");
 const state = require("./state.cjs");
 const workflowPath = ".github/workflows/regression-bisect-discovery.yml";
 
-function invoke(f, mode, issue, started = () => {}, extra = {}) {
+async function invoke(f, mode, issue, started = () => {}, extra = {}) {
     const args = mode === null ? [] : [mode, ...(issue === undefined ? [] : ["--issue", String(issue)]), "--config", f.configPath];
-    return new Promise((resolve, reject) => {
-        const start = performance.now();
-        const entry = extra.RB_ACTIONS_FIXTURE ? path.join(__dirname, "fixtures", "routing-actions.cjs") : path.join(__dirname, "routing-cli.cjs");
-        const child = spawn(process.execPath, [entry, ...args], {
-            env: { ...process.env, ...f.env, ...extra }, shell: false, windowsHide: true,
-        });
-        let stdout = "", stderr = "";
-        child.stdout.on("data", b => { stdout += b; });
-        child.stderr.on("data", b => { stderr += b; });
-        child.once("error", reject);
-        child.once("close", async code => {
-            try {
-                await fs.appendFile(`${f.serviceFile}.ledger`, JSON.stringify({
-                    kind: "routing-exit", pid: child.pid, args, code, durationMs: performance.now() - start, stdout, stderr,
-                }) + "\n");
-                resolve({ code, stdout, stderr, result: stdout ? JSON.parse(stdout) : null });
-            } catch (error) { reject(error); }
-        });
-        started(child);
+    const result = await invokeCli(args, { ...f.env, ...extra }, started, {
+        entry: extra.RB_ACTIONS_FIXTURE ? path.join("fixtures", "routing-actions.cjs") : "routing-cli.cjs",
+        kind: "routing-exit", storageFaults: false,
     });
+    return { ...result, result: result.stdout ? JSON.parse(result.stdout) : null };
 }
 
 async function setup(t) {
@@ -106,23 +90,10 @@ async function deliver(f, mode, runId = "12345") {
 async function consume(f, inputs, runId = "12345") {
     const args = [inputs.mode, "--issue", String(inputs.issue), "--config", f.configPath,
         "--routing-key", inputs.routingKey, "--routing-generation", inputs.routingGeneration];
-    return new Promise((resolve, reject) => {
-        const child = spawn(process.execPath, [path.join(__dirname, "controller-cli.cjs"), ...args], {
-            env: { ...process.env, ...f.env, GITHUB_RUN_ID: runId }, shell: false, windowsHide: true,
-        });
-        let stdout = "", stderr = "";
-        child.stdout.on("data", b => { stdout += b; });
-        child.stderr.on("data", b => { stderr += b; });
-        child.once("error", reject);
-        child.once("close", async code => {
-            try {
-                await fs.appendFile(`${f.serviceFile}.ledger`, JSON.stringify({
-                    kind: "consumer-exit", pid: child.pid, args, code, stdout, stderr,
-                }) + "\n");
-                resolve({ code, stdout, stderr, result: stdout ? JSON.parse(stdout) : null });
-            } catch (error) { reject(error); }
-        });
+    const result = await invokeCli(args, { ...f.env, GITHUB_RUN_ID: runId }, undefined, {
+        kind: "consumer-exit", storageFaults: false,
     });
+    return { ...result, result: result.stdout ? JSON.parse(result.stdout) : null };
 }
 
 function addIssues(f, count) {
@@ -385,6 +356,10 @@ test("real producer dispatches bootstrap, one unit, terminal transition and guar
         f.update(db => { db.runs["12345/1"].status = "in_progress"; db.runs["12345/1"].conclusion = null; });
         if (mode === "publish") f.update(db => { db.faults.publishedAck = true; });
         const first = await consume(f, inputs);
+        const exit = f.ledger().filter(e => e.kind === "consumer-exit").at(-1);
+        assert.deepEqual({ code: exit.code, stdout: exit.stdout, stderr: exit.stderr },
+            { code: first.code, stdout: first.stdout, stderr: first.stderr });
+        assert.ok(exit.pid > 0 && Number.isFinite(exit.durationMs) && exit.durationMs > 0);
         if (mode === "publish") {
             assert.equal(first.code, 1);
             assert.match(first.result.reason, /published checkpoint acknowledgement lost/);

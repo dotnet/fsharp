@@ -1,10 +1,9 @@
 const { test, describe } = require("node:test");
 const assert = require("node:assert/strict");
-const { spawn } = require("node:child_process");
 const path = require("node:path");
 const fs = require("node:fs/promises");
 const { setTimeout: delay } = require("node:timers/promises");
-const { fixture, connect, checkpoint, seed } = require("./fixtures/controller-service.cjs");
+const { fixture, connect, checkpoint, seed, invokeCli: invoke } = require("./fixtures/controller-service.cjs");
 const { fingerprintInput: fingerprint } = require("./model.cjs");
 const contracts = require("./fixtures/contracts.cjs");
 const state = require("./state.cjs");
@@ -13,30 +12,6 @@ const { image } = require("./container.cjs");
 const { argumentsFor } = require("./controller-cli.cjs");
 const { dispatchKey } = require("./routing.cjs");
 const YAML = require("yaml");
-
-const cli = path.join(__dirname, "controller-cli.cjs");
-function invoke(args, env = {}, started = () => {}) {
-    return new Promise((resolve, reject) => {
-        const start = performance.now();
-        const preload = env.RB_LOCAL_TEST_FILE ? ["--require", path.join(__dirname, "fixtures", "controller-storage-faults.cjs")] : [];
-        const child = spawn(process.execPath, [...preload, cli, ...args], {
-            env: { ...process.env, ...env }, shell: false, windowsHide: true,
-        });
-        let stdout = "", stderr = "";
-        child.stdout.on("data", bytes => { stdout += bytes; });
-        child.stderr.on("data", bytes => { stderr += bytes; });
-        child.once("error", reject);
-        child.once("close", async code => {
-            try {
-                if (env.RB_LOCAL_TEST_FILE) await fs.appendFile(`${env.RB_LOCAL_TEST_FILE}.ledger`, JSON.stringify({
-                    kind: "cli-exit", pid: child.pid, args, code, durationMs: performance.now() - start, stdout, stderr,
-                }) + "\n");
-                resolve({ code, stdout, stderr });
-            } catch (error) { reject(error); }
-        });
-        started(child);
-    });
-}
 
 describe("file-backed controller CLI", { concurrency: 2 }, () => {
 test("the executable advertises only the four deterministic modes", async () => {
@@ -150,6 +125,22 @@ test("fixture writers publish complete snapshots without modifying previous file
         assert.deepEqual((await fs.readdir(f.directory)).filter(name => name.endsWith(".tmp")), []);
         noExecution(f);
     });
+});
+
+test("fixture readers observe same-size replacements and reject missing snapshots", async t => {
+    const f = await fixture(t);
+    f.update(db => { db.now = new Date(db.now).toISOString(); });
+    const service = await connect(f.serviceFile);
+    const original = await fs.stat(f.serviceFile);
+    for (let i = 0; i < 3; i++) {
+        assert.equal(service.clock().toISOString(), f.read().now);
+        f.update(db => { db.now = new Date(Date.parse(db.now) + 1000).toISOString(); });
+        await fs.utimes(f.serviceFile, original.atime, original.mtime);
+        assert.equal((await fs.stat(f.serviceFile)).size, original.size);
+        assert.equal(service.clock().toISOString(), f.read().now);
+    }
+    await fs.unlink(f.serviceFile);
+    assert.throws(() => service.clock(), { code: "ENOENT" });
 });
 
 test("a transient Windows fixture reader does not fail an actual CLI write", { skip: process.platform !== "win32" }, async t => {
