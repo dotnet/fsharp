@@ -87,15 +87,51 @@ outside **every** agent mount, including default workspace, home and temporary
 mounts. A hard runner cancellation may prevent the last checkpoint or finalizer;
 earlier acknowledged state remains authoritative, not proof of completion.
 
-`artifacts.py` stages only explicit, checked summary records into public upload
-roots: a 512 MiB run budget, 20 MiB compact-text budget and 14-day retention.
-Binary traces cannot be safely redacted and remain private, unavailable public
-references with hashes and bounded conclusions; no truncated trace is valid.
-Restart checks actual files and expiry, not historical paths. Public Actions
-artifacts are not private storage. The owned dump workspace/analysis APIs support
-ephemeral dump analysis and verified file-only deletion; plaintext dumps never
-enter upload roots or Git. Persisted dumps are unsupported without verified
-maintainer-key encryption and private storage: there is no plaintext fallback.
+`artifacts.py` retains checked summaries and encrypted diagnostics, with a
+512 MiB run budget (including ciphertext overhead and manifests), 20 MiB compact
+budget and 14-day retention. Public Actions artifacts are not private storage:
+raw traces/dumps must never enter upload roots or Git. No trace is truncated to fit.
+
+Encryption requires the official **age v1.2.1** executable
+([pinned release](https://github.com/FiloSottile/age/releases/tag/v1.2.1)).
+The owner provisions and verifies the release before configuring the protected
+controller's `retention-config.json` with exactly `recipient` (one native
+`age1...` X25519 public recipient) and `tool` (`path`, `sha256` of that executable).
+No private key, passphrase, SSH recipient or plugin is accepted. Recipient
+configuration is never taken from agent messages, issues or PRs. Encryption uses
+the pinned `--encrypt --recipient ... --output ...` contract, credential-free
+tool environments, checked input handles and complete binary output; the
+executable identity/version and output framing/length are verified.
+
+Missing/malformed configuration, tool/version/exit failures, incomplete output,
+read/write denial and budget overflow block retention explicitly, without a
+plaintext fallback. Compact conclusions remain eligible even when a binary
+cannot be retained. Evidence records keep the original kind, plaintext hash and
+byte count separately from ciphertext hash/count, recipient identity, tool hash,
+run/workload fingerprint and expiry. Ciphertext plus summaries and manifests
+share the per-run budget; repeated staging cannot renew retention or reset it.
+
+`Controller.stage_evidence()` returns the exact allowlisted upload files and
+hashes, bounds, expiry and pending/expired/blocked status. Never upload a
+directory recursively. Staging is atomic, and a sealed write-ahead job permits
+restart after the file move but before acknowledgment. Journal schema 3 adds
+discovery evidence without inventing an experiment or rewriting old decisions;
+artifact schema 2 distinguishes local pending transport from remote availability.
+Version 1/2 journals remain readable. Old local-summary records are not treated
+as remote receipts. Expiry removes availability, not conclusions or hashes.
+
+Only `Controller.acknowledge_evidence(sink)`, called by the protected runtime,
+can advance pending records. The sink receives the checked inventory,
+`manifest_sha256`, `retention_days: 14` and the evidence deadline `expires_at`.
+Its successful receipt must bind the manifest hash and 14-day policy,
+`scope: actions`, `artifact_id` and the matching run's Actions artifact `location`,
+plus the actual transport `created_at`/`expires_at`. Those timestamps must prove
+14-day retention at the upload step. A delayed upload records its real storage
+expiry but never extends the original evidence-availability deadline. Uploads
+finishing after that deadline cannot be acknowledged. A `local_fixture` receipt never establishes
+remote availability. Lost/failed acknowledgments remain pending and require
+trusted sink reconciliation; agent-supplied receipts cannot mint approval.
+No production uploader or additional storage service is installed here.
 
 `validate-output` freshly reconciles sealed controller captures with the pinned
 runner selection, discovery and XML, recomputes measurements using immutable
@@ -124,7 +160,11 @@ Portable lifecycle checks (Python 3.11+, Git, and the pinned SDK for the existin
 offline SDK-resolver test): install `requirements-agent.txt` in an owned Python
 environment for HTTP MCP coverage, and use that interpreter below. Put the exact
 SDK on `PATH` and verify `dotnet --version` matches `global.json`; roll-forward
-or a skipped SDK test is not pinned-SDK validation.
+or a skipped SDK test is not pinned-SDK validation. Set
+`COMPILER_PERF_TEST_AGE` to the absolute pinned executable path, with its
+`age-keygen` sibling. Encryption tests generate disposable recipients outside
+Git, decrypt actual ciphertext and remove their private keys afterward. Never
+point a fixture at production key material.
 
 ```powershell
 python -m unittest discover -s tests\CompilerPerfWorkflow -p "test_workflow*.py" -v
@@ -252,8 +292,9 @@ rejection of changed bytes. The historical results above precede that additional
 change-detection repair; its exact-input validation is recorded in private evidence.
 
 No task-owned Linux executor was available: the only WSL distribution was stopped
-and both Docker engine probes failed. Live namespace, attach/dump, network/model
-proxy and maintainer-key encryption acceptance remain unverified. The owner
+and both Docker engine probes failed. Live namespace, attach/dump and network/model
+proxy acceptance remain unverified. Temporary-recipient encryption coverage is
+local-only, not production-recipient validation or live artifact durability. The owner
 handoff requests separate fixed-revision deployment and Linux enrollment
 (`owner-launch-enrolled`), not ancestor hot-reload or a portable-validation gate.
 Retained launch pins are GH AW **v0.76.1**, Copilot **1.0.52** and AWF **v0.25.55**;
@@ -753,9 +794,12 @@ evidence and block the requested collection.
 **Raw dumps are private local evidence, never standard public-repository Actions
 artifacts.** Output directories are owner-only (POSIX mode or a protected
 Windows DACL granting only the current user access).
-Manifests record `published: false`; no encryption/publishing infrastructure is
-implied. Public summaries still require human review for paths or sensitive
-content.
+Collection manifests record `published: false`. The controller analyzes the
+exact owned dump, encrypts it for the configured recipient, then unlinks only
+the identity-checked plaintext file. The ciphertext is pending until a trusted
+sink acknowledges it. Failed retention/deletion is explicit; nothing falls back
+to uploading plaintext. Removal is a filesystem unlink, not a claim of forensic
+erasure. Public summaries still require human review for sensitive content.
 
 Limits are fixed: one replay per invocation, 180 seconds for the target,
 512 MiB per trace, 1 GiB per other artifact, 2 GiB total, 1 MiB per tool stream,

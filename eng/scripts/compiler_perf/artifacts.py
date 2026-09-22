@@ -1,9 +1,4 @@
-"""Deterministic, allowlisted public summaries and private evidence identities.
-
-Only controller-constructed workflow-summary JSON is publishable. Raw EventPipe
-traces can contain private paths, inputs and runtime strings: retain their hash
-and conclusion, not an unsanitizable binary. This module never uploads files.
-"""
+"""Allowlisted summaries and bounded, recipient-encrypted diagnostic transport."""
 
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
@@ -12,6 +7,8 @@ import os
 from pathlib import Path
 import re
 import stat
+import subprocess
+import tempfile
 import weakref
 
 import memory as mem
@@ -23,6 +20,7 @@ COMPACT_BYTES = 20 * 1024**2
 RETENTION_DAYS = 14
 CONCLUSION_BYTES = 2048
 MAX_ENTRIES = 64
+AGE_VERSION = "v1.2.1"
 SUMMARY_FIELDS = {"schema_version", "kind", "status", "conclusion", "attempt_id",
                   "outcome", "profile_status", "measurement_status", "reason"}
 
@@ -42,14 +40,14 @@ def _path(value, *, exists=True):
         require(not stat.S_ISLNK(info.st_mode)
                 and not getattr(info, "st_file_attributes", 0) & stat.FILE_ATTRIBUTE_REPARSE_POINT,
                 "Symlink or junction artifact paths are forbidden")
-    return path
+    return path.resolve(strict=exists)
 
 
 def _identity(info):
     return info.st_dev, info.st_ino
 
 
-def _read_file(path, *, limit=None):
+def _read_file(path, *, limit=None, use=None):
     """Check the open object as well as every ancestor; never hash a recorded path alone."""
     path = _path(path)
     before = path.stat()
@@ -62,6 +60,9 @@ def _read_file(path, *, limit=None):
     with os.fdopen(descriptor, "rb") as stream:
         opened = os.fstat(stream.fileno())
         require(_identity(opened) == _identity(before), "Artifact identity changed")
+        if use is not None:
+            use(stream)
+            stream.seek(0)
         size = 0
         while block := stream.read(1024 * 1024):
             size += len(block)
@@ -107,7 +108,7 @@ def _time(now):
     return now.astimezone(timezone.utc)
 
 
-def _record(kind, sha256, size, conclusion, now, *, source_sha256=None):
+def _record(kind, sha256, size, conclusion, now, *, source_sha256=None, provenance=None):
     created = _time(now)
     record = {
         "sha256": sha256, "size_bytes": size, "type": kind, "kind": kind,
@@ -117,19 +118,66 @@ def _record(kind, sha256, size, conclusion, now, *, source_sha256=None):
         "capture_sha256": c.m.file_record(c.__file__)["sha256"],
         "reducer_sha256": c.m.file_record(__file__)["sha256"], "reanalyzes": None, "metrics": [],
         "source_sha256": source_sha256 or sha256, "conclusion": conclusion, "reason": "private_binary",
+        "schema_version": 2, "transport_sha256": None, "transport_size_bytes": 0,
+        "encryption": None, "acknowledgment": None,
+        "provenance": provenance or {"run_id": "offline", "fingerprint": source_sha256 or sha256},
     }
     mem.validate_artifact(record)
     return record
 
 
-def stage_artifacts(private_root, public_root, entries, now):
+def _encrypt(path, record, config, root, budget):
+    require(type(config) is dict and set(config) == {"recipient", "tool"},
+            "Missing owner encryption configuration")
+    recipient = config["recipient"]
+    require(isinstance(recipient, str) and re.fullmatch(r"age1[023456789acdefghjklmnpqrstuvwxyz]{58}", recipient),
+            "Only one native age X25519 recipient is supported")
+    c.m.validate_file_record(config["tool"])
+    tool = _path(config["tool"]["path"])
+    require(_read_file(tool)[0] == config["tool"]["sha256"], "Encryption executable identity differs")
+    # Single native recipient: 168-byte header, 16-byte nonce, 16-byte tag per 64 KiB chunk.
+    expected = record["size_bytes"] + 184 + 16 * max(1, (record["size_bytes"] + 65535) // 65536)
+    require(expected <= budget, "Ciphertext exceeds artifact budget")
+    environment = c.tool_environment()
+    probe = c.run_tool([str(tool), "--version"], root, environment, root, "age-version", timeout=30)
+    require(probe["status"] == "collected" and probe["stdout"].strip() == AGE_VERSION,
+            "Pinned age executable unavailable or incompatible")
+    output = root / "encrypted.age"
+    require(not output.exists() and path != output, "Encryption input/output collision")
+
+    def encrypt(stream):
+        def monitor():
+            if output.exists():
+                require(_path(output).stat().st_size <= expected, "Ciphertext size overflow")
+        result = c.run_tool([str(tool), "--encrypt", "--recipient", recipient, "--output", str(output)],
+                            root, environment, root, "age-encrypt", input_file=stream, monitor=monitor)
+        require(result["status"] == "collected" and result["exit_status"] == 0, "Encryption tool failed")
+
+    sha256, size, _, _ = _read_file(path, use=encrypt)
+    require((sha256, size) == (record["sha256"], record["size_bytes"]), "Encryption input changed")
+    transport_sha256, transport_size, _, _ = _read_file(output)
+    with output.open("rb") as stream:
+        header = stream.read(168)
+    require(transport_size == expected and re.fullmatch(
+        rb"age-encryption.org/v1\n-> X25519 [A-Za-z0-9+/]{43}\n[A-Za-z0-9+/]{43}\n--- [A-Za-z0-9+/]{43}\n",
+        header), "Truncated or unsupported encrypted output")
+    require(_read_file(tool)[0] == config["tool"]["sha256"], "Encryption executable changed")
+    record["artifact_id"] = f"{record['type']}-{transport_sha256}"
+    record.update(transport_sha256=transport_sha256, transport_size_bytes=transport_size,
+                  encryption={"method": "age-X25519", "version": AGE_VERSION,
+                              "recipient_sha256": hashlib.sha256(recipient.encode("ascii")).hexdigest(),
+                              "tool_sha256": config["tool"]["sha256"]},
+                  access="restricted", availability="pending", reason="encrypted_pending",
+                  location=record["artifact_id"] + ".age")
+    return output
+
+
+def stage_artifacts(private_root, public_root, entries, now, *, encryption=None, provenance=None,
+                    dump_workspace=None, used_bytes=0, used_compact_bytes=0):
     """Stage explicit entries, never a directory tree.
 
-    Entries have exactly file (measurement file record, optional size_bytes),
-    kind (summary or profile-trace), and conclusion. Summaries require
-    schema_version=1, kind=workflow-summary, status and conclusion; the optional
-    scalar fields are listed in SUMMARY_FIELDS. No dispatch policy knobs exist.
-    Returned artifact records can be stored directly in memory's evidence list.
+    Only the protected controller supplies entries, recipient and provenance.
+    Publication is atomic; a manifest is a pending transport, never a sink receipt.
     """
     private, public = _path(private_root), _path(public_root, exists=False)
     require(private.is_dir() and not public.is_relative_to(private) and not private.is_relative_to(public),
@@ -137,23 +185,30 @@ def stage_artifacts(private_root, public_root, entries, now):
     require(not public.exists() or public.is_dir() and not any(public.iterdir()),
             "Public staging requires a new or empty directory")
     require(type(entries) is list and len(entries) <= MAX_ENTRIES, "Artifact entry inventory exceeded")
-    records, files, identities = [], {}, set()
+    require(type(used_bytes) is int and 0 <= used_bytes <= PUBLIC_BYTES
+            and type(used_compact_bytes) is int and 0 <= used_compact_bytes <= COMPACT_BYTES,
+            "Invalid previously staged byte counts")
+    records, files, binaries, identities = [], {}, [], set()
     source_total = 0
     text_limit = min(COMPACT_BYTES, c.LIMITS["json_bytes"], mem.LIMITS["file_bytes"])
     for entry in entries:
         require(type(entry) is dict and set(entry) == {"file", "kind", "conclusion"}
-                and entry["kind"] in ("summary", "profile-trace"), "Unsupported artifact entry or kind")
+                and entry["kind"] in ("summary", "profile-trace", "dump"), "Unsupported artifact entry or kind")
         source, kind = entry["file"], entry["kind"]
         c.m.validate_file_record(source)
         require(set(source) <= {"path", "sha256", "size_bytes"}, "Unsupported file identity fields")
         path = _path(source["path"])
         require(path.is_relative_to(private) and path != private, "Artifact source is outside private root")
         relative = path.relative_to(private)
-        require(not any(re.search(r"(?i)(?:^|[_.-])(?:private|inputs?|env|environment|credentials?|secrets?|dump)"
+        require(kind != "summary" or not any(re.search(r"(?i)(?:^|[_.-])(?:private|dump)(?:$|[_.-])", p)
+                                             for p in relative.parts), "Private summary path is forbidden")
+        require(kind == "dump" or not any(re.search(r"(?i)(?:^|[_.-])(?:inputs?|env|environment|credentials?|secrets?)"
                                   r"(?:$|[_.-])", p) for p in relative.parts),
                 "Private inputs, environments and dumps cannot be staged")
-        require(path.suffix.lower() == (".json" if kind == "summary" else ".nettrace"),
+        require(path.suffix.lower() == {"summary": ".json", "profile-trace": ".nettrace", "dump": ".dmp"}[kind],
                 "Artifact extension does not match allowlisted kind")
+        if kind == "dump":
+            claim_dump(dump_workspace, source)
         source_total += path.stat().st_size
         require(source_total <= c.LIMITS["total_bytes"], "Source inventory exceeds collector budget")
         conclusion = _conclusion(entry["conclusion"], private)
@@ -178,45 +233,75 @@ def stage_artifacts(private_root, public_root, entries, now):
             data = mem.encoded(summary)
             require(len(data) <= text_limit, "Sanitized summary exceeds size budget")
             record = _record(kind, hashlib.sha256(data).hexdigest(), len(data), conclusion, now,
-                             source_sha256=sha256)
-            record.update(access="public", availability="available", reason="sanitized_summary",
-                          location=record["artifact_id"] + ".json")
+                             source_sha256=sha256, provenance=provenance)
+            record.update(access="public", availability="pending", reason="sanitized_summary",
+                          location=record["artifact_id"] + ".json", transport_sha256=record["sha256"],
+                          transport_size_bytes=len(data))
             require(record["location"] not in files, "Duplicate sanitized artifact")
             files[record["location"]] = data
         else:
-            record = _record(kind, sha256, size, conclusion, now)
-            if size > min(PUBLIC_BYTES, c.LIMITS["trace_bytes"]):
-                record["reason"] = "essential_binary_exceeds_budget"
+            record = _record(kind, sha256, size, conclusion, now, provenance=provenance)
+            binaries.append((path, record))
         require(len(mem.encoded(record)) <= mem.LIMITS["file_bytes"], "Oversized artifact record")
         records.append(record)
     created = _time(now)
-    manifest = {"schema_version": 1, "kind": "artifact-manifest", "created_at": created.isoformat(),
+    manifest = {"schema_version": 2, "kind": "artifact-manifest", "created_at": created.isoformat(),
                 "expires_at": (created + timedelta(days=RETENTION_DAYS)).isoformat(),
                 "retention_days": RETENTION_DAYS, "artifacts": sorted(records, key=lambda r: r["artifact_id"]),
-                "total_bytes": 0}
-    content_size = sum(map(len, files.values()))
-    while True:
-        total = content_size + len(mem.encoded(manifest))
-        if total == manifest["total_bytes"]:
-            break
-        manifest["total_bytes"] = total
-    require(total <= min(PUBLIC_BYTES, COMPACT_BYTES, c.LIMITS["total_bytes"])
-            and len(mem.encoded(manifest)) <= min(c.LIMITS["json_bytes"], mem.LIMITS["file_bytes"]),
-            "Public/compact artifact aggregate budget exceeded")
-    # Validate everything before creating output; the manifest is the last file.
-    if not public.exists():
-        public.mkdir(mode=0o700)
-    for name, data in [*sorted(files.items()), ("manifest.json", mem.encoded(manifest))]:
-        _path(public)
-        with (public / name).open("xb") as stream:
-            stream.write(data)
+                "total_bytes": 0, "compact_bytes": 0, "status": "pending",
+                "limits": {"total_bytes": PUBLIC_BYTES, "compact_bytes": COMPACT_BYTES}}
+
+    def totals():
+        while True:
+            compact = sum(map(len, files.values())) + len(mem.encoded(manifest))
+            total = compact + sum(r["transport_size_bytes"] for _, r in binaries)
+            if (total, compact) == (manifest["total_bytes"], manifest["compact_bytes"]):
+                return total, compact
+            manifest.update(total_bytes=total, compact_bytes=compact)
+
+    with tempfile.TemporaryDirectory(prefix="retention-", dir=private) as temporary:
+        scratch = Path(temporary)
+        payload = scratch / "payload"
+        payload.mkdir(mode=0o700)
+        for path, record in binaries:
+            try:
+                require(record["size_bytes"] <= min(c.LIMITS["trace_bytes"], PUBLIC_BYTES - used_bytes),
+                        "Essential binary exceeds budget")
+                encrypted = _encrypt(path, record, encryption, scratch, PUBLIC_BYTES - used_bytes - totals()[0])
+                require(totals()[0] + used_bytes <= PUBLIC_BYTES, "Ciphertext aggregate budget exceeded")
+                encrypted.rename(payload / record["location"])
+            except (ValueError, OSError, subprocess.SubprocessError) as error:
+                record["artifact_id"] = f"{record['type']}-{record['sha256']}"
+                record.update(availability="unavailable", access="private", encryption=None,
+                              transport_sha256=None, transport_size_bytes=0,
+                              location="unavailable:" + record["artifact_id"],
+                              reason="blocked_retention: " + _conclusion(str(error), private)[:512])
+                manifest["status"] = "blocked_retention"
+            finally:
+                if (scratch / "encrypted.age").exists():
+                    _path(scratch / "encrypted.age").unlink()
+        manifest["artifacts"].sort(key=lambda r: r["artifact_id"])
+        total, compact = totals()
+        require(total + used_bytes <= min(PUBLIC_BYTES, c.LIMITS["total_bytes"])
+                and compact + used_compact_bytes <= COMPACT_BYTES
+                and len(mem.encoded(manifest)) <= min(c.LIMITS["json_bytes"], mem.LIMITS["file_bytes"]),
+                "Public/compact artifact aggregate budget exceeded")
+        for name, data in [*sorted(files.items()), ("manifest.json", mem.encoded(manifest))]:
+            with (payload / name).open("xb") as stream:
+                stream.write(data)
+                stream.flush()
+                os.fsync(stream.fileno())
+        _path(public, exists=False)
+        if public.exists():
+            public.rmdir()
+        payload.rename(public)
     return manifest
 
 
 def verify_artifacts(public_root, manifest, now):
     """Offline restart checks: expiry, regular-file identity, actual size and SHA256."""
     now = _time(now)
-    require(type(manifest) is dict and manifest.get("schema_version") == 1
+    require(type(manifest) is dict and manifest.get("schema_version") in (1, 2)
             and manifest.get("kind") == "artifact-manifest"
             and type(manifest.get("artifacts")) is list and len(manifest["artifacts"]) <= MAX_ENTRIES,
             "Invalid artifact manifest")
@@ -231,36 +316,107 @@ def verify_artifacts(public_root, manifest, now):
         _, _, persisted, _ = _read_file(root / "manifest.json", limit=mem.LIMITS["file_bytes"])
         require(persisted == mem.encoded(manifest), "Persisted artifact manifest differs")
         expected = {"manifest.json"} | {r["location"] for r in manifest["artifacts"]
-                                       if r["availability"] == "available"}
+                                       if r["availability"] in ("pending", "available")}
         require({p.name for p in root.iterdir()} == expected, "Unlisted files in public staging")
+        total = sum(_path(p).stat().st_size for p in root.iterdir())
+        compact = sum(_path(p).stat().st_size for p in root.iterdir() if p.suffix == ".json")
+        require(total == manifest["total_bytes"] and total <= PUBLIC_BYTES and compact <= COMPACT_BYTES,
+                "Staged aggregate size differs or exceeds budget")
+        if manifest["schema_version"] == 2:
+            require(compact == manifest["compact_bytes"]
+                    and manifest["limits"] == {"total_bytes": PUBLIC_BYTES, "compact_bytes": COMPACT_BYTES},
+                    "Staged limits differ")
         inventory_ok = True
     except (ValueError, OSError):
         inventory_ok = False
     result = []
     for record in manifest["artifacts"]:
         status = mem.artifact_availability(record, now)
-        if status["available"]:
+        uploadable = False
+        if status["reason"] != "expired" and record["availability"] in ("pending", "available"):
             try:
                 require(inventory_ok, "Staged manifest is missing or changed")
-                require(record["location"] == record["artifact_id"] + ".json"
-                        and re.fullmatch(r"summary-[0-9a-f]{64}\.json", record["location"])
-                        and record["type"] == "summary" and record["access"] == "public",
+                require(record.get("schema_version", 1) == manifest["schema_version"]
+                        and (manifest["schema_version"] == 2 or
+                             record["type"] == "summary" and record["access"] == "public"),
+                        "Legacy binary transport is forbidden")
+                suffix = ".json" if record["type"] == "summary" else ".age"
+                require(record["location"] == record["artifact_id"] + suffix
+                        and re.fullmatch(r"(?:summary|profile-trace|dump)-[0-9a-f]{64}" + re.escape(suffix),
+                                         record["location"]),
                         "Untrusted artifact location")
                 sha256, size, _, _ = _read_file(root / record["location"],
-                                               limit=min(COMPACT_BYTES, c.LIMITS["json_bytes"],
-                                                         mem.LIMITS["file_bytes"]))
-                require(sha256 == record["sha256"] and size == record["size_bytes"],
+                                               limit=mem.LIMITS["file_bytes"] if suffix == ".json" else None)
+                require(sha256 == record.get("transport_sha256", record["sha256"])
+                        and size == record.get("transport_size_bytes", record["size_bytes"]),
                         "Staged artifact hash or size differs")
-                status = {"available": True, "reason": "verified_local"}
+                uploadable = True
+                if manifest["schema_version"] == 1:
+                    status = {"available": False, "reason": "legacy_local_only"}
             except (ValueError, OSError):
                 status = {"available": False, "reason": "missing_or_changed"}
-        result.append(dict(status, artifact_id=record["artifact_id"], sha256=record["sha256"]))
+        result.append(dict(status, artifact_id=record["artifact_id"], sha256=record["sha256"],
+                           uploadable=uploadable, inventory_verified=inventory_ok))
     return result
 
 
+def retention_result(public_root, manifest, now):
+    """Exact upload inventory for a trusted sink; local existence is not remote durability."""
+    checked = verify_artifacts(public_root, manifest, now)
+    files = [{"path": str(Path(public_root) / record["location"]), "kind": record["type"],
+              "sha256": record.get("transport_sha256", record["sha256"]),
+              "size_bytes": record.get("transport_size_bytes", record["size_bytes"])}
+             for record, status in zip(manifest["artifacts"], checked) if status["uploadable"]]
+    healthy = all(s["inventory_verified"] for s in checked) and all(
+                  s["uploadable"] for r, s in zip(manifest["artifacts"], checked)
+                  if r["availability"] in ("pending", "available"))
+    if healthy and any(s["reason"] != "expired" for s in checked):
+        sha256, size, _, _ = _read_file(Path(public_root) / "manifest.json", limit=mem.LIMITS["file_bytes"])
+        files.append({"path": str(Path(public_root) / "manifest.json"), "kind": "manifest",
+                      "sha256": sha256, "size_bytes": size})
+    return {"status": manifest.get("status", "pending") if healthy else "blocked_retention",
+            "files": files if healthy else [], "artifacts": checked,
+            "manifest_sha256": hashlib.sha256(mem.encoded(manifest)).hexdigest(),
+            "retention_days": RETENTION_DAYS, "created_at": manifest["created_at"], "expires_at": manifest["expires_at"],
+            "limits": {"total_bytes": PUBLIC_BYTES, "compact_bytes": COMPACT_BYTES},
+            "total_bytes": manifest["total_bytes"], "compact_bytes": manifest.get("compact_bytes", manifest["total_bytes"])}
+
+
+def acknowledge_artifacts(public_root, manifest, now, sink):
+    """Call only a protected uploader, never an agent-supplied callback or receipt."""
+    plan = retention_result(public_root, manifest, now() if callable(now) else now)
+    require(plan["files"] and sum(f["size_bytes"] for f in plan["files"]) == plan["total_bytes"],
+            "No complete verified upload inventory")
+    receipt = sink(plan)
+    completed = _time(now() if callable(now) else now)
+    require(type(receipt) is dict and set(receipt) == {
+        "scope", "acknowledged", "manifest_sha256", "artifact_id", "location", "retention_days", "created_at", "expires_at"}
+        and receipt["scope"] in ("actions", "local_fixture") and receipt["acknowledged"] is True
+        and receipt["manifest_sha256"] == plan["manifest_sha256"]
+        and receipt["retention_days"] == RETENTION_DAYS
+        and mem.timestamp(plan["created_at"]) <= mem.timestamp(receipt["created_at"]) <= completed
+        and mem.timestamp(receipt["expires_at"]) - mem.timestamp(receipt["created_at"]) == timedelta(days=RETENTION_DAYS)
+        and mem.identifier(receipt["artifact_id"]) and mem.text(receipt["location"]), "Invalid sink acknowledgment")
+    if receipt["scope"] == "actions":
+        require(re.fullmatch(r"https://github\.com/dotnet/fsharp/actions/runs/[0-9]+/artifacts/[0-9]+",
+                             receipt["location"]) and all(receipt["location"] ==
+                    f"https://github.com/dotnet/fsharp/actions/runs/{r['provenance']['run_id']}/artifacts/{receipt['artifact_id']}"
+                    for r in manifest["artifacts"]), "Invalid Actions artifact owner/location")
+    require(retention_result(public_root, manifest, completed) == plan,
+            "Staging changed or expired during upload")
+    records = []
+    for record in manifest["artifacts"]:
+        updated = dict(record)
+        if receipt["scope"] == "actions" and record["availability"] == "pending":
+            updated.update(availability="available", acknowledgment=dict(receipt))
+            updated["acknowledgment"]["validation"] = mem.artifact_validation(updated)
+        records.append(updated)
+    return records
+
+
 def dump_retention_policy():
-    return {"default": "ephemeral", "status": "unsupported", "persistent": False,
-            "plaintext_fallback": False, "reason": "No approved encryption or restricted storage is configured"}
+    return {"default": "encrypted", "status": "owner_configuration_required", "persistent": False,
+            "plaintext_fallback": False, "reason": "Encrypted pending transport requires a trusted sink acknowledgment"}
 
 
 def _outside_git(path):
@@ -318,12 +474,24 @@ def remove_owned_dump(owned, receipt, conclusion, now):
     return record
 
 
-def analyze_owned_dump(owned, record, analyze, now):
-    """Analyze ephemeral bytes; failures/cancellation retain evidence, never a plaintext fallback."""
+def analyze_owned_dump(owned, record, analyze, now, retain=None):
+    """Analyze before optional encryption, then remove only the same owned plaintext object."""
     receipt = claim_dump(owned, record)
+    failure = None
     try:
         conclusion = analyze(receipt["path"])
     except BaseException as error:
-        error.artifact = remove_owned_dump(owned, receipt, "Dump analysis failed or was cancelled", now)
+        conclusion = "Dump analysis failed or was cancelled"
+        failure = error
+    try:
+        retained = retain(receipt, conclusion) if retain is not None else None
+    except BaseException as error:
+        error.artifact = remove_owned_dump(owned, receipt, conclusion, now)
+        error.artifact["reason"] = "retention_failed_plaintext_removed"
         raise
-    return remove_owned_dump(owned, receipt, conclusion, now)
+    removed = remove_owned_dump(owned, receipt, conclusion, now)
+    result = retained if retained is not None else removed
+    if failure is not None:
+        failure.artifact = result
+        raise failure
+    return result

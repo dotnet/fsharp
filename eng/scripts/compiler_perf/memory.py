@@ -30,7 +30,7 @@ Conflicts retain candidate refs; never force-push or use native ours-win merges.
 
 import argparse
 import copy
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 import difflib
 import hmac
 import importlib.util
@@ -160,7 +160,7 @@ def validate_artifact(e):
             and e["size_bytes"] >= 0 and text(e["type"]) and text(e["artifact_id"])
             and text(e["location"]), "Invalid evidence identity")
     require(e["access"] in ("public", "private", "restricted")
-            and e["availability"] in ("available", "unavailable", "unknown", "removed_incomplete")
+            and e["availability"] in ("available", "pending", "unavailable", "unknown", "removed_incomplete")
             and e["role"] in ("diagnostic", "acceptance", "checkpoint"), "Invalid evidence classification")
     timestamp(e["collected_at"])
     if e["expires_at"] is not None:
@@ -172,6 +172,66 @@ def validate_artifact(e):
         require(set(metric) == {"name", "unit", "aggregation", "value"}
                 and all(text(metric[k]) for k in ("name", "unit", "aggregation")), "Missing metric semantics")
         c.number(metric["value"], "evidence metric")
+    require(e.get("schema_version", 1) in (1, 2), "Unsupported evidence schema")
+    if e.get("schema_version") == 2:
+        require(e["type"] in ("summary", "profile-trace", "dump") and digest(e["source_sha256"])
+                and timestamp(e["expires_at"]) - timestamp(e["collected_at"]) == timedelta(days=14),
+                "Invalid retained evidence kind or expiry")
+        provenance = e["provenance"]
+        require(set(provenance) == {"run_id", "fingerprint"} and identifier(provenance["run_id"])
+                and digest(provenance["fingerprint"]), "Missing retained evidence provenance")
+        require(type(e["transport_size_bytes"]) is int and e["transport_size_bytes"] >= 0,
+                "Invalid transport size")
+        if e["availability"] in ("pending", "available"):
+            require(digest(e["transport_sha256"]) and e["transport_size_bytes"] > 0,
+                    "Missing ciphertext/summary transport identity")
+            if e["type"] == "summary":
+                require(e["encryption"] is None and e["sha256"] == e["transport_sha256"]
+                        and e["size_bytes"] == e["transport_size_bytes"] and e["access"] == "public",
+                        "Invalid compact transport")
+            else:
+                enc = e["encryption"]
+                require(type(enc) is dict and set(enc) == {"method", "version", "recipient_sha256", "tool_sha256"}
+                        and enc["method"] == "age-X25519" and enc["version"] == "v1.2.1"
+                        and digest(enc["recipient_sha256"]) and digest(enc["tool_sha256"])
+                        and e["access"] == "restricted" and e["transport_size_bytes"] > e["size_bytes"],
+                        "Plaintext binary transport is forbidden")
+        else:
+            require(e["transport_sha256"] is None and e["transport_size_bytes"] == 0
+                    and e["encryption"] is None, "Unavailable evidence has a transport")
+        receipt = e["acknowledgment"]
+        if e["availability"] == "available":
+            require(type(receipt) is dict and receipt.get("scope") == "actions"
+                    and receipt.get("acknowledged") is True and digest(receipt.get("manifest_sha256"))
+                    and identifier(receipt.get("artifact_id")) and text(receipt.get("location"))
+                    and receipt.get("retention_days") == 14
+                    and timestamp(e["collected_at"]) <= timestamp(receipt.get("created_at")) < timestamp(e["expires_at"])
+                    and timestamp(receipt.get("expires_at")) - timestamp(receipt["created_at"]) == timedelta(days=14)
+                    and digest(receipt.get("validation")),
+                    "Remote evidence requires a matching trusted sink acknowledgment")
+        else:
+            require(receipt is None, "Pending evidence cannot claim acknowledgment")
+
+
+def artifact_validation(record):
+    payload = dict(record, acknowledgment={k: v for k, v in record["acknowledgment"].items() if k != "validation"})
+    return hmac.digest(_VALIDATOR_KEY, encoded(payload), "sha256").hex()
+
+
+def evidence_extends(previous, current):
+    """Availability may advance after acknowledgment; identity and conclusions cannot change."""
+    for new in current:
+        if new not in previous and new.get("schema_version") == 2 and new["availability"] == "available":
+            require(hmac.compare_digest(new["acknowledgment"]["validation"], artifact_validation(new)),
+                    "Fresh trusted artifact acknowledgment required")
+    for old in previous:
+        if old in current:
+            continue
+        require(old.get("schema_version") == 2 and old["availability"] == "pending" and any(
+            new["availability"] == "available"
+            and {k: v for k, v in new.items() if k not in ("availability", "acknowledgment")} ==
+                {k: v for k, v in old.items() if k not in ("availability", "acknowledgment")}
+            for new in current), "Historical evidence cannot be erased")
 
 
 def artifact_availability(evidence, now):
@@ -179,6 +239,8 @@ def artifact_availability(evidence, now):
     validate_artifact(evidence)
     if evidence["expires_at"] is not None and timestamp(evidence["expires_at"]) <= now:
         return {"available": False, "reason": "expired"}
+    if evidence.get("schema_version", 1) == 1 and evidence.get("reason") == "sanitized_summary":
+        return {"available": False, "reason": "legacy_local_only"}
     available = evidence["availability"] == "available"
     return {"available": available, "reason": "recorded_available" if available else evidence["availability"]}
 
@@ -396,7 +458,8 @@ def validate_attempt(a, *, prospective=False):
 
 def validate_discovery(record):
     require(type(record) is dict and set(record) == {
-        "id", "run", "source_revision", "lifecycle", "outcome", "reason", "checkpoint_at", "expires_at"}
+        "id", "run", "source_revision", "lifecycle", "outcome", "reason", "checkpoint_at", "expires_at"} |
+        ({"evidence"} if "evidence" in record else set())
         and identifier(record["id"]) and digest(record["source_revision"], 40), "Invalid discovery schema/source revision")
     run = record["run"]
     require(type(run) is dict and set(run) == {"id", "attempt", "url"} and identifier(run["id"])
@@ -407,13 +470,19 @@ def validate_discovery(record):
             and isinstance(record["reason"], str) and (record["outcome"] is None or text(record["reason"])),
             "Invalid discovery lifecycle/outcome/reason")
     require(timestamp(record["checkpoint_at"]) <= timestamp(record["expires_at"]), "Invalid discovery interval")
+    if "evidence" in record:
+        require(type(record["evidence"]) is list, "Invalid discovery evidence")
+        for artifact in record["evidence"]:
+            validate_artifact(artifact)
+            require(artifact.get("schema_version") == 2
+                    and artifact["provenance"]["run_id"] == record["run"]["id"], "Discovery evidence owner differs")
 
 
 def validate_state(value):
     require(type(value) is dict and type(value.get("schema_version")) is int
-            and value["schema_version"] in (1, 2)
+            and value["schema_version"] in (1, 2, 3)
             and set(value) == {"schema_version", "generation", "base_revision", "attempts"} |
-            ({"discoveries"} if value["schema_version"] == 2 else set()),
+            ({"discoveries"} if value["schema_version"] >= 2 else set()),
             "Unsupported journal schema")
     require(type(value["generation"]) is int and value["generation"] >= 0
             and (value["base_revision"] is None or digest(value["base_revision"], 40))
@@ -438,6 +507,7 @@ def validate_state(value):
     owners = set()
     for key, record in discoveries.items():
         validate_discovery(record)
+        require("evidence" not in record or value["schema_version"] >= 3, "Discovery evidence requires schema 3")
         require(key == record["id"], "Discovery index differs from stable ID")
         owner = (record["run"]["id"], record["run"]["attempt"])
         require(owner not in owners, "Discovery run already has a reservation")
@@ -523,6 +593,7 @@ def merge_attempt(state, attempt, base_attempt=None):
     old = state["attempts"].get(attempt["id"])
     if old == attempt:
         return copy.deepcopy(state)
+    evidence_extends(old["evidence"] if old else [], attempt["evidence"])
     if old != base_attempt:
         raise Conflict("Same-attempt update conflicts with canonical state")
     new_approval = (old is None or old["outcome"] != attempt["outcome"]
@@ -551,7 +622,6 @@ def merge_attempt(state, attempt, base_attempt=None):
                 "Lifecycle cannot move backwards")
         require(all(attempt["fingerprints"].get(k) == v for k, v in old["fingerprints"].items()),
                 "Frozen identities cannot be replaced")
-        require(all(e in attempt["evidence"] for e in old["evidence"]), "Historical evidence cannot be erased")
         require(all(n in attempt["notes"] for n in old["notes"]), "Historical notes cannot be erased")
         require(attempt["correctness"]["required"] == old["correctness"]["required"],
                 "Correctness requirements cannot be weakened")
@@ -587,16 +657,18 @@ def merge_discovery(state, record, base_record=None):
     old = state.get("discoveries", {}).get(record["id"])
     if old == record:
         return copy.deepcopy(state)
+    evidence_extends(old.get("evidence", []) if old else [], record.get("evidence", []))
     if old != base_record:
         raise Conflict("Same-discovery update conflicts with canonical state")
     if old is not None:
-        require(old["outcome"] is None, "Completed discovery cannot be rewritten")
+        require(old["outcome"] is None or all(old[k] == record[k] for k in old if k != "evidence"),
+                "Completed discovery cannot be rewritten")
         for key in ("run", "source_revision", "expires_at"):
             require(old[key] == record[key], f"Discovery {key} is immutable")
         require(timestamp(record["checkpoint_at"]) >= timestamp(old["checkpoint_at"]),
                 "Discovery checkpoint cannot move backwards")
     result = copy.deepcopy(state)
-    result["schema_version"] = 2
+    result["schema_version"] = max(state["schema_version"], 3 if "evidence" in record else 2)
     result.setdefault("discoveries", {})[record["id"]] = copy.deepcopy(record)
     result["generation"] += 1
     validate_state(result)
@@ -1054,6 +1126,9 @@ def summarize(state, now):
         outcomes[outcome] = outcomes.get(outcome, 0) + 1
         evidence.extend(dict(artifact_availability(e, now), sha256=e["sha256"], attempt_id=a["id"])
                         for e in a["evidence"])
+    for d in state.get("discoveries", {}).values():
+        evidence.extend(dict(artifact_availability(e, now), sha256=e["sha256"], discovery_id=d["id"])
+                        for e in d.get("evidence", []))
     return {"schema_version": 1, "generation": state["generation"], "outcomes": outcomes, "artifacts": evidence}
 
 

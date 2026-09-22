@@ -2,7 +2,7 @@
 
 import atexit
 import copy
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 import json
 from pathlib import Path, PurePosixPath, PureWindowsPath
 import runpy
@@ -225,6 +225,39 @@ def improvement(*, legacy=False, compiler_path=PATH):
 
 
 class MemoryTests(unittest.TestCase):
+    def test_retained_discovery_migration_preserves_decisions_pending_and_expired_evidence(self):
+        import artifacts
+        rejected = attempt(outcome="rejected")
+        rejected["evidence"] = [artifact()]
+        owner = discovery(run_id="101", outcome="cancelled")
+        previous = state(rejected, discoveries=[owner])
+        record = artifacts._record("summary", H, 42, "Cancelled after useful diagnostics", NOW,
+                                   provenance={"run_id": "101", "fingerprint": J})
+        record.update(availability="pending", transport_sha256=H, transport_size_bytes=42, access="public",
+                      location="summary-" + H + ".json")
+        retained = dict(owner, evidence=[record])
+        migrated = mem.merge_discovery(previous, retained, owner)
+        self.assertEqual(migrated["schema_version"], 3)
+        self.assertEqual(migrated["attempts"], previous["attempts"])
+        self.assertEqual(mem.load_state(response={"status": 200, "body": mem.encoded(migrated)})["state"], migrated)
+        result = mem.summarize(migrated, NOW + timedelta(days=15))
+        self.assertEqual({r["reason"] for r in result["artifacts"]}, {"expired"})
+        self.assertEqual(migrated["discoveries"][owner["id"]]["evidence"][0]["conclusion"], record["conclusion"])
+        self.assertEqual(migrated["discoveries"][owner["id"]]["outcome"], "cancelled")
+        for mutation in (dict(retained, evidence=[]), dict(retained, outcome="completed_no_finding"),
+                         dict(retained, evidence=[dict(record, provenance={"run_id": "other", "fingerprint": J})]),
+                         dict(retained, evidence=[dict(record, availability="available")])):
+            with self.subTest(mutation=mutation), self.assertRaises(ValueError):
+                mem.merge_discovery(migrated, mutation, retained)
+        receipt = {"scope": "actions", "acknowledged": True, "manifest_sha256": J, "artifact_id": "123",
+                   "location": "https://github.com/dotnet/fsharp/actions/runs/101/artifacts/123",
+                   "retention_days": 14, "created_at": record["collected_at"], "expires_at": record["expires_at"]}
+        acknowledged = dict(retained, evidence=[dict(record, availability="available", acknowledgment=receipt)])
+        receipt["validation"] = mem.artifact_validation(acknowledged["evidence"][0])
+        available = mem.merge_discovery(migrated, acknowledged, retained)
+        self.assertTrue(mem.artifact_availability(available["discoveries"][owner["id"]]["evidence"][0], NOW)["available"])
+        self.assertEqual(available["attempts"], previous["attempts"])
+
     def test_discovery_schema_migrates_only_on_first_reservation(self):
         old = state(attempt(outcome="rejected"))
         self.assertEqual(mem.empty_state(), state())

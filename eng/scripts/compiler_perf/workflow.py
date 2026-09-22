@@ -464,7 +464,7 @@ class Controller:
         require(self.session["phase"] in ("ready", "awaiting_decision"), "Profile phase differs")
         require(dump_reason is None or (dump_reason in c.REASONS and mem.text(hypothesis)
                                        and len(hypothesis) <= 2048), "Invalid dump justification")
-        phase, dump_workspace = "collecting", None
+        phase, dump_workspace, retain = "collecting", None, None
         try:
             with self.budget("active", ACTIVE_SECONDS):
                 manifest = self.frozen_manifest()
@@ -478,6 +478,23 @@ class Controller:
                     dump_workspace = artifacts.create_dump_workspace(private / "dump-session",
                                                                      (self.root / "public",))
                     profile_root = dump_workspace.path / "profile"
+
+                    def retain(receipt, text):
+                        file = {"path": str(receipt["path"]), "sha256": receipt["sha256"],
+                                "size_bytes": receipt["size_bytes"]}
+                        result = self.stage_evidence([{"file": file, "kind": "dump", "conclusion": text}],
+                                                     dump_workspace=dump_workspace)
+                        owner = self.session.get("discovery") or self.session["attempt"]
+                        record = next((r for r in reversed(owner.get("evidence", []))
+                                       if r["type"] == "dump" and r["sha256"] == receipt["sha256"]), None)
+                        if record is None:
+                            record = artifacts._record("dump", receipt["sha256"], receipt["size_bytes"], text, self.now(),
+                                provenance={"run_id": owner["run"]["id"],
+                                            "fingerprint": m.fingerprint_inputs(owner["source_revision"])})
+                            record["reason"] = "blocked_retention: " + result["status"]
+                            owner.setdefault("evidence", []).append(record)
+                        return record
+
                 c.collect_profile(manifest, manifest["baseline_compiler"], profile_root,
                                   dump_reason=dump_reason, hypothesis=hypothesis)
                 profile_path = profile_root / "evidence-manifest.json"
@@ -489,10 +506,14 @@ class Controller:
                     dump = evidence["dump"]
                     conclusion = ("Heap snapshot includes unreachable objects; not retained bytes.\n" +
                                   c.sanitize(dump["validation"]["stdout"])[-1600:])
+
                     removed = artifacts.analyze_owned_dump(dump_workspace, dump["artifact"],
-                                                           lambda _: conclusion, self.now())
+                                                           lambda _: conclusion, self.now(), retain=retain)
                     self.session["dump_result"] = {"reason": dump_reason, "hypothesis": hypothesis,
-                                                   "artifact": removed, "status": "analyzed_and_removed"}
+                                                   "artifact": removed,
+                                                   "status": "encrypted_and_removed" if removed["availability"] == "pending"
+                                                   else "blocked_retention"}
+                    require(removed["availability"] == "pending", removed["reason"])
                 else:
                     self.session["profile"] = m.file_record(profile_path)
                     self.session["diagnostics"] = self.diagnostics()
@@ -504,16 +525,29 @@ class Controller:
                                            for a in state["attempts"].values()][-32:]
                 self.checkpoint()
             return self.status()
-        except KeyboardInterrupt:
-            return self.finish("cancelled", "Incomplete diagnostics: deadline or cancellation")
-        except (ValueError, OSError, KeyError, TypeError, subprocess.SubprocessError) as error:
-            return self.finish("blocked_collection", "collection: " + c.sanitize(str(error)))
+        except (KeyboardInterrupt, ValueError, OSError, KeyError, TypeError, subprocess.SubprocessError) as error:
+            if getattr(error, "artifact", None) is not None:
+                owner = self.session.get("discovery") or self.session["attempt"]
+                error.artifact["provenance"] = {"run_id": owner["run"]["id"],
+                                                "fingerprint": m.fingerprint_inputs(owner["source_revision"])}
+                owner.setdefault("evidence", []).append(error.artifact)
+                self.session["dump_result"] = {"artifact": error.artifact, "status": "blocked_retention"}
+            cancelled = isinstance(error, KeyboardInterrupt)
+            return self.finish("cancelled" if cancelled else "blocked_collection",
+                               "Incomplete diagnostics: deadline or cancellation" if cancelled else
+                               "collection: " + c.sanitize(str(error)))
         finally:
             if dump_workspace is not None:
                 dump = dump_workspace.path / "profile" / "private-dump" / "heap.dmp"
                 if dump.exists():
-                    artifacts.analyze_owned_dump(dump_workspace, m.file_record(dump),
-                                                 lambda _: "Incomplete dump investigation; no conclusion", self.now())
+                    removed = artifacts.analyze_owned_dump(dump_workspace, m.file_record(dump),
+                        lambda _: "Incomplete dump investigation; no measured conclusion", self.now(), retain=retain)
+                    owner = self.session.get("discovery") or self.session["attempt"]
+                    if removed not in owner.setdefault("evidence", []):
+                        owner["evidence"].append(removed)
+                    self.session["dump_result"] = {"artifact": removed, "status": "incomplete_encrypted"
+                                                   if removed["availability"] == "pending" else "blocked_retention"}
+                    self.checkpoint()
 
     def select_hypothesis(self, data):
         self.poll_active()
@@ -780,33 +814,160 @@ class Controller:
             self.session["report_sha256"] = digest
             self.save("session", self.session)
 
-    def stage_evidence(self):
-        a = self.session["attempt"]
-        if a is None:
-            return
+    def stage_evidence(self, extra_entries=(), *, dump_workspace=None):
+        owner = self.session["attempt"] or self.session["discovery"]
         private = self.root / "private"
         private.mkdir(mode=0o700, exist_ok=True)
         public = self.root / "public"
         public.mkdir(mode=0o700, exist_ok=True)
-        summary = {"schema_version": 1, "kind": "workflow-summary", "status": a["outcome"] or a["lifecycle"],
-                   "attempt_id": a["id"], "conclusion": c.sanitize(a["reason"] or "Incomplete investigation")[:2048],
-                   "profile_status": a["collection"]["status"]}
-        summary_path = private / "summary.json"
+        summary = {"schema_version": 1, "kind": "workflow-summary", "status": owner["outcome"] or owner["lifecycle"],
+                   "attempt_id": owner["id"],
+                   "conclusion": artifacts._conclusion(owner["reason"] or "Incomplete investigation", private)[:2048],
+                   "profile_status": self.session["attempt"]["collection"]["status"] if self.session["attempt"]
+                   else "collected" if self.session.get("profile") else "pending"}
+        if owner["outcome"] == "measured_improvement":
+            summary.update(status="validating", conclusion="Candidate measurements require evidence retention and publication validation")
+        entries, inventory_errors = list(extra_entries), []
+        existing = [r for record in (self.session["attempt"], self.session.get("discovery")) if record
+                    for r in record.get("evidence", [])]
+        for trace in (private / "profile" / "compiler.nettrace",
+                      private / "dump-session" / "profile" / "compiler.nettrace"):
+            try:
+                if not trace.exists():
+                    continue
+                checked = artifacts._path(trace)
+                sha256, size, _, _ = artifacts._read_file(checked)
+                identity = {"path": str(checked), "sha256": sha256, "size_bytes": size}
+                if not any(r["sha256"] == identity["sha256"] and r["availability"] in ("pending", "available")
+                           for r in existing) and not any(entry["kind"] == "profile-trace"
+                                                          and entry["file"]["sha256"] == identity["sha256"]
+                                                          for entry in entries):
+                    entries.append({"file": identity, "kind": "profile-trace",
+                                    "conclusion": "Diagnostic trace; not an unprofiled acceptance measurement"})
+            except (ValueError, OSError) as error:
+                inventory_errors.append("Trace inventory: " + artifacts._conclusion(str(error), private)[:512])
+        config_path = self.root / "retention-config.json"
+        config_error = None
+        try:
+            encryption = read_input(config_path) if config_path.exists() else None
+        except (ValueError, OSError) as error:
+            encryption, config_error = None, "Owner encryption configuration: " + artifacts._conclusion(str(error), private)[:512]
+        if inventory_errors or config_error:
+            summary["reason"] = "; ".join(inventory_errors + ([config_error] if config_error else []))[:512]
+        summary_path = private / ("summary-" + m.fingerprint_inputs(summary) + ".json")
         m.write_json(summary_path, summary)
-        entries = [{"file": m.file_record(summary_path), "kind": "summary", "conclusion": summary["conclusion"]}]
-        trace = private / "profile" / "compiler.nettrace"
-        if trace.is_file():
-            entries.append({"file": m.file_record(trace), "kind": "profile-trace",
-                            "conclusion": "Diagnostic trace; not an unprofiled acceptance measurement"})
-        destination = public / hashlib.sha256(mem.encoded(summary)).hexdigest()
-        if not destination.exists():
-            manifest = artifacts.stage_artifacts(private, destination, entries, self.now())
-            a["evidence"].extend(manifest["artifacts"])
-            self.session.setdefault("artifacts", []).append(
-                {"root": str(destination), "manifest": m.file_record(destination / "manifest.json")})
+        entries.insert(0, {"file": m.file_record(summary_path), "kind": "summary", "conclusion": summary["conclusion"]})
+        provenance = {"run_id": owner["run"]["id"], "fingerprint": m.fingerprint_inputs(
+            [owner["source_revision"], owner["run"], self.session.get("manifest")])}
+        job_id = m.fingerprint_inputs([summary, list(extra_entries), encryption, provenance])
+        jobs = self.session.setdefault("retention_jobs", {})
+        if job_id not in jobs:
+            require(len(jobs) < artifacts.MAX_ENTRIES, "Retention job inventory exceeded")
+            jobs[job_id] = {"entries": entries, "encryption": encryption, "provenance": provenance,
+                            "created_at": self.now().isoformat(),
+                            "owner": (self.session.get("discovery") or owner)["id"], "dump": None}
+            if dump_workspace is not None:
+                jobs[job_id]["dump"] = {"path": str(dump_workspace.path),
+                                         "identity": list(dump_workspace.identity),
+                                         "receipt": artifacts.claim_dump(dump_workspace, extra_entries[0]["file"])}
+                receipt = jobs[job_id]["dump"]["receipt"]
+                receipt.update(path=str(receipt["path"]), identity=list(receipt["identity"]))
+            self.save("session", self.session)
+        results = []
+        for identity, job in jobs.items():
+            try:
+                results.append(self._stage_evidence_job(identity, job, dump_workspace))
+            except (ValueError, OSError, KeyError, TypeError, subprocess.SubprocessError) as error:
+                results.append({"status": "blocked_retention", "files": [],
+                                "reason": artifacts._conclusion(str(error), private)[:512]})
+        states = {r["status"] for r in results}
+        status = "blocked_retention" if "blocked_retention" in states or config_error or inventory_errors else (
+            next(iter(states)) if len(states) == 1 else "pending")
+        result = {"status": status, "staged": results, "files": [f for r in results for f in r["files"]],
+                  "limits": {"total_bytes": artifacts.PUBLIC_BYTES, "compact_bytes": artifacts.COMPACT_BYTES},
+                  "retention_days": artifacts.RETENTION_DAYS}
+        if "reason" in summary:
+            result["reason"] = summary["reason"]
+        self.session["retention"] = result
+        self.save("session", self.session)
+        return result
+
+    def _stage_evidence_job(self, identity, job, active_dump):
+        destination = self.root / "public" / identity
+        require(mem.digest(identity) and job["provenance"]["run_id"] ==
+                (self.session["attempt"] or self.session["discovery"])["run"]["id"], "Retention owner differs")
+        owner = next(record for record in (self.session["attempt"], self.session.get("discovery"))
+                     if record is not None and record["id"] == job["owner"])
+        if mem.timestamp(job["created_at"]) + timedelta(days=artifacts.RETENTION_DAYS) <= self.now():
+            return {"status": "expired", "files": [], "artifacts": [
+                dict(mem.artifact_availability(r, self.now()), artifact_id=r["artifact_id"], sha256=r["sha256"])
+                for r in owner.get("evidence", []) if r["collected_at"] == job["created_at"]]}
+        owned = active_dump
+        if job["dump"] is not None:
+            custody = job["dump"]
+            path = artifacts._path(custody["path"])
+            require(path == self.root / "private" / "dump-session"
+                    and list(artifacts._identity(path.stat())) == custody["identity"], "Dump owner changed")
+            if owned is None:
+                owned = artifacts.DumpWorkspace(path, tuple(custody["identity"]))
+                artifacts._DUMP_WORKSPACES.add(owned)  # Restored only from authenticated controller custody.
+        if destination.exists():
+            manifest = read_input(destination / "manifest.json")
+            require(manifest["created_at"] == job["created_at"] and all(
+                r["provenance"] == job["provenance"] for r in manifest["artifacts"])
+                and {(r["type"], r["source_sha256"]) for r in manifest["artifacts"]} ==
+                    {(entry["kind"], entry["file"]["sha256"]) for entry in job["entries"]},
+                    "Retained manifest owner or source differs")
+            saved = next((s for s in self.session.get("artifacts", []) if s["root"] == str(destination)), None)
+            if saved is not None:
+                m.verify_files([saved["manifest"]])
+        else:
+            used = compact = 0
+            for staged in self.session.get("artifacts", []):
+                prior = read_input(staged["manifest"]["path"])
+                used += prior["total_bytes"]
+                compact += prior.get("compact_bytes", prior["total_bytes"])
+            manifest = artifacts.stage_artifacts(self.root / "private", destination, job["entries"],
+                job["created_at"], encryption=job["encryption"], provenance=job["provenance"],
+                dump_workspace=owned, used_bytes=used, used_compact_bytes=compact)
+        result = artifacts.retention_result(destination, manifest, self.now())
+        for record in manifest["artifacts"]:
+            if not any(r["artifact_id"] == record["artifact_id"] and r["collected_at"] == record["collected_at"]
+                       for r in owner.setdefault("evidence", [])):
+                owner["evidence"].append(record)
+        staged = {"root": str(destination), "manifest": m.file_record(destination / "manifest.json")}
+        if staged not in self.session.setdefault("artifacts", []):
+            self.session["artifacts"].append(staged)
+        self.save("session", self.session)
+        for status in result["artifacts"]:
+            acknowledged = next((r for r in owner["evidence"] if r["artifact_id"] == status["artifact_id"]
+                                 and r["availability"] == "available"), None)
+            if acknowledged is not None:
+                status.update(mem.artifact_availability(acknowledged, self.now()))
+        if result["artifacts"] and all(s["available"] for s in result["artifacts"]):
+            result["status"] = "available"
+        if job["dump"] is not None and active_dump is None:
+            receipt = dict(job["dump"]["receipt"])
+            receipt.update(path=Path(receipt["path"]), identity=tuple(receipt["identity"]))
+            if receipt["path"].exists():
+                artifacts.remove_owned_dump(owned, receipt, "Recovered analyzed dump cleanup", self.now())
+        return result
+
+    def acknowledge_evidence(self, sink):
+        """Protected runtime API only; agent messages cannot submit sink receipts."""
         for staged in self.session.get("artifacts", []):
             m.verify_files([staged["manifest"]])
-            artifacts.verify_artifacts(Path(staged["root"]), read_input(staged["manifest"]["path"]), self.now())
+            manifest = read_input(staged["manifest"]["path"])
+            records = artifacts.acknowledge_artifacts(staged["root"], manifest, self.now, sink)
+            for owner in (self.session["attempt"], self.session.get("discovery")):
+                if owner is not None:
+                    replacements = {(r["artifact_id"], r["collected_at"]): r for r in records
+                                    if r["availability"] == "available"}
+                    owner["evidence"] = [replacements.get((r["artifact_id"], r["collected_at"]), r)
+                                         for r in owner.get("evidence", [])]
+            self.save("session", self.session)
+            self.checkpoint()
+        return self.stage_evidence()
 
     def accept_experiment(self, candidate):
         a = self.session["attempt"]
@@ -821,7 +982,10 @@ class Controller:
         if final["outcome"] == "measured_improvement":
             mem._attest_correctness(final)
         self.session.update(attempt=final, phase="validated")
-        self.stage_evidence()
+        retention = self.stage_evidence()
+        if final["outcome"] == "measured_improvement" and retention["status"] == "blocked_retention":
+            final.update(outcome="blocked_collection", reason="Required evidence retention is blocked",
+                         lifecycle="interrupted")
         self.checkpoint()
         self.report()
         return final

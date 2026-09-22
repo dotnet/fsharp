@@ -17,6 +17,7 @@ import unittest
 from unittest import mock
 
 from test_collection import artifact_profile
+from test_workflow_artifacts import TemporaryRecipient
 import test_workflow as fixtures
 from test_experiment import Repository, SOURCE
 from experiment_state_cases import candidate_fixture
@@ -103,8 +104,9 @@ class AgentTests(unittest.TestCase):
 
             controller.session.update(phase="ready", ready_at=controller.now().isoformat())
             controller.checkpoint()
-            with mock.patch.object(w.Controller, "frozen_manifest", return_value=manifest), \
+            with TemporaryRecipient() as key, mock.patch.object(w.Controller, "frozen_manifest", return_value=manifest), \
                     mock.patch.object(w.c, "collect_profile", side_effect=collect):
+                w.m.write_json(controller.root / "retention-config.json", key.config)
                 yield fixture
 
     @staticmethod
@@ -383,8 +385,8 @@ class AgentTests(unittest.TestCase):
                     self.assertFalse((controller.root / name).exists())
 
     def test_dump_operation_uses_owned_storage_and_preserves_profile(self):
-        for reason in w.c.REASONS:
-            with self.subTest(reason=reason), self.ready() as (_, controller, _, _):
+        for reason, cancelled in [(r, False) for r in w.c.REASONS] + [("retention", True)]:
+            with self.subTest(reason=reason, cancelled=cancelled), self.ready() as (_, controller, _, transport):
                 controller.start_active()
                 controller.profile()
                 original = copy.deepcopy(controller.session["profile"])
@@ -407,19 +409,112 @@ class AgentTests(unittest.TestCase):
                     w.m.write_json(destination / "evidence-manifest.json", evidence)
 
                 client = bridge.Bridge(controller, launch=self.launch, identify=identify)
-                with mock.patch.object(w.c, "collect_profile", side_effect=collect):
+                encrypt = w.artifacts._encrypt
+
+                def retain(path, record, *args):
+                    if cancelled and record["type"] == "dump":
+                        raise KeyboardInterrupt("Interrupted encryption")
+                    return encrypt(path, record, *args)
+
+                with mock.patch.object(w.c, "collect_profile", side_effect=collect), \
+                        mock.patch.object(w.artifacts, "_encrypt", side_effect=retain):
                     result = client.investigate(message("request_dump", {
                         "reason": reason, "hypothesis": "Heap grows across full GCs"}))
                 self.assertTrue(result["ok"], result)
                 status = client.investigate(message("status"))["status"]
                 self.assertIsNotNone(status["dump"], status)
-                self.assertEqual(status["dump"]["status"], "analyzed_and_removed")
-                self.assertEqual(status["phase"], "awaiting_decision")
+                self.assertEqual(status["dump"]["status"], "blocked_retention" if cancelled else "encrypted_and_removed", status)
+                self.assertEqual(status["dump"]["artifact"]["availability"], "unavailable" if cancelled else "pending")
+                self.assertEqual(status["phase"], "finished" if cancelled else "awaiting_decision")
+                self.assertIn(status["dump"]["artifact"],
+                              transport.read()[0]["discoveries"]["run-1.discovery"]["evidence"])
                 self.assertEqual(controller.session["profile"], original)
                 self.assertFalse(paths[0].exists())
                 self.assertTrue(paths[0].is_relative_to(controller.root / "private"))
                 self.assertFalse((controller.root / "output").exists())
                 self.assertTrue(client.close())
+
+    def test_retention_restarts_preserve_discovery_and_require_trusted_acknowledgment(self):
+        for interruption in ("stage", "save", "upload", "acknowledgment"):
+            with self.subTest(interruption=interruption), self.ready() as (repo, controller, api, transport):
+                controller.start_active()
+                controller.profile()
+                if interruption in ("stage", "save"):
+                    real = controller.save
+
+                    def save(name, value):
+                        if name == "session" and value.get("artifacts"):
+                            raise KeyboardInterrupt("lost staging acknowledgment")
+                        return real(name, value)
+
+                    target = mock.patch.object(w.artifacts, "stage_artifacts", side_effect=KeyboardInterrupt)
+                    if interruption == "save":
+                        target = mock.patch.object(controller, "save", side_effect=save)
+                    with target, self.assertRaises(KeyboardInterrupt):
+                        controller.stage_evidence()
+                else:
+                    controller.stage_evidence()
+                    controller.checkpoint()
+                    with self.assertRaises(KeyboardInterrupt):
+                        controller.acknowledge_evidence(mock.Mock(side_effect=KeyboardInterrupt(interruption)))
+                restarted = w.Controller(controller.root, repo.root, transport, api, now=controller.now)
+                result = restarted.stage_evidence()
+                self.assertEqual(result["status"], "pending", result)
+                self.assertTrue(any(f["path"].endswith(".age") for f in result["files"]))
+                restarted.checkpoint()
+                state = transport.read()[0]
+                self.assertEqual(state["schema_version"], 3)
+                self.assertFalse(state["attempts"])
+                evidence = state["discoveries"]["run-1.discovery"]["evidence"]
+                self.assertTrue(evidence)
+                self.assertEqual({r["availability"] for r in evidence}, {"pending"})
+                before = copy.deepcopy(evidence)
+
+                def sink(plan):
+                    self.assertEqual(plan["retention_days"], 14)
+                    return {"scope": "local_fixture", "acknowledged": True,
+                            "manifest_sha256": plan["manifest_sha256"], "artifact_id": "local-only",
+                            "location": "local-fixture", "retention_days": 14,
+                            "created_at": plan["created_at"], "expires_at": plan["expires_at"]}
+
+                restarted.acknowledge_evidence(sink)
+                self.assertEqual(transport.read()[0]["discoveries"]["run-1.discovery"]["evidence"], before)
+                for file in result["files"]:
+                    if file["path"].endswith(".age"):
+                        Path(file["path"]).unlink()
+                restarted.now = lambda: fixtures.NOW + timedelta(days=15)
+                expired = restarted.stage_evidence()
+                self.assertEqual(expired["status"], "expired")
+                self.assertFalse(expired["files"])
+                self.assertTrue(all(s["reason"] == "expired" for r in expired["staged"]
+                                    for s in r.get("artifacts", [])))
+                self.assertEqual(transport.read()[0]["discoveries"]["run-1.discovery"]["evidence"], before)
+                self.assertEqual(api.effects, [])
+
+    def test_cancelled_discovery_preserves_compact_evidence_when_retention_is_blocked(self):
+        for failure in ("missing-recipient", "denied-read"):
+            with self.subTest(failure=failure), self.ready() as (_, controller, _, transport):
+                controller.start_active()
+                controller.profile()
+                if failure == "missing-recipient":
+                    (controller.root / "retention-config.json").unlink()
+                read = w.artifacts._read_file
+
+                def checked(path, **kwargs):
+                    if failure == "denied-read" and Path(path).suffix == ".nettrace":
+                        raise PermissionError("trace read denied")
+                    return read(path, **kwargs)
+
+                with mock.patch.object(w.artifacts, "_read_file", side_effect=checked):
+                    result = controller.finish("cancelled", "Preserve failed investigation")
+                self.assertEqual(result["outcome"], "cancelled")
+                retained = transport.read()[0]["discoveries"]["run-1.discovery"]
+                self.assertTrue(any(r["type"] == "summary" for r in retained["evidence"]))
+                self.assertEqual(controller.session["retention"]["status"], "blocked_retention")
+                files = controller.session["retention"]["files"]
+                self.assertTrue(files)
+                self.assertTrue(all(Path(f["path"]).suffix == ".json" for f in files))
+                self.assertFalse(any(r["availability"] == "available" for r in retained["evidence"]))
 
     def test_canonical_discovery_blocks_other_owner_and_page_two_pr(self):
         from test_memory import pr

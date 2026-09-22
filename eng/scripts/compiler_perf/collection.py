@@ -398,7 +398,7 @@ def unlink_closed(path):
 class Command:
     """Own a child tree and bounded private streams; persist only sanitized text."""
 
-    def __init__(self, arguments, cwd, environment, root, phase):
+    def __init__(self, arguments, cwd, environment, root, phase, input_file=None):
         self.root, self.phase, self.arguments = Path(root), phase, arguments
         stem = f"{phase}-{uuid.uuid4().hex[:8]}"
         self.paths = [self.root / f"{stem}.{part}.raw" for part in ("stdout", "stderr")]
@@ -411,7 +411,8 @@ class Command:
         try:
             if os.name == "nt":
                 self.job = WindowsJob()
-            self.process = subprocess.Popen(arguments, cwd=cwd, env=environment, stdin=subprocess.PIPE,
+            self.process = subprocess.Popen(arguments, cwd=cwd, env=environment,
+                                            stdin=input_file if input_file is not None else subprocess.PIPE,
                                             stdout=self.streams[0], stderr=self.streams[1], **isolation)
             if self.job is not None:
                 self.job.assign_and_resume(self.process)
@@ -419,7 +420,8 @@ class Command:
             if self.process is not None:
                 self.process.kill()
                 self.process.wait()
-                self.process.stdin.close()
+                if self.process.stdin is not None:
+                    self.process.stdin.close()
             if self.job is not None:
                 self.job.close()
             for stream in self.streams:
@@ -451,7 +453,8 @@ class Command:
 
     def finish(self, issue=None):
         self.stop()
-        self.process.stdin.close()
+        if self.process.stdin is not None:
+            self.process.stdin.close()
         for stream in self.streams:
             stream.close()
         texts = []
@@ -474,10 +477,12 @@ class Command:
         return result
 
 
-def run_tool(arguments, cwd, environment, root, phase, timeout=180, monitor=None, input_bytes=None):
+def run_tool(arguments, cwd, environment, root, phase, timeout=180, monitor=None, input_bytes=None, input_file=None):
     command = None
     try:
-        command = Command(arguments, cwd, environment, root, phase)
+        m.require(input_bytes is None or input_file is None, "Only one tool input is allowed")
+        command = Command(arguments, cwd, environment, root, phase,
+                          *((input_file,) if input_file is not None else ()))
         if input_bytes is not None:
             remaining = memoryview(input_bytes)
             while remaining:
@@ -662,7 +667,7 @@ def verify_tools(dotnet, root, names=("dotnet-trace", "dotnet-counters", "dotnet
 def collect_dump(document, reason, output_dir, monitor=None):
     root, command, dump = None, None, None
     cancelled = None
-    result = {"published": False, "publication_reason": "Private local raw dump; no maintainer encryption configured"}
+    result = {"published": False, "publication_reason": "Private local dump; controller encryption and sink acknowledgment required"}
     phase = "hypothesis"
     try:
         m.require(reason in REASONS and isinstance(document.get("hypothesis"), str)
