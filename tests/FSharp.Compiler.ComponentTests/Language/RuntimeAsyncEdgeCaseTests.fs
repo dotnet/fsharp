@@ -62,7 +62,7 @@ let private refStructAcrossAwaitCE = """
 module M
 open System
 open System.Threading.Tasks
-open RuntimeTaskBuilder.RuntimeTask
+open RuntimeTaskBuilder
 let f () : Task<int> =
     runtimeTask {
         let data = [| 10; 20; 30 |]
@@ -75,7 +75,7 @@ let f () : Task<int> =
 let private ceStateMachineSource = """
 module CeUser
 open System.Threading.Tasks
-open RuntimeTaskBuilder.RuntimeTask
+open RuntimeTaskBuilder
 let f () : Task<int> =
     runtimeTask {
         let! x = Task.FromResult 41
@@ -224,7 +224,7 @@ let private composedLayoutProgram = """
 module M
 open System
 open System.Threading.Tasks
-open RuntimeTaskBuilder.RuntimeTask
+open RuntimeTaskBuilder
 
 let helper x = x * 2
 

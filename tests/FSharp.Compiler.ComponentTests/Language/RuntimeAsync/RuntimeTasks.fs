@@ -13,8 +13,6 @@ open System.Collections.Generic
 open System.Diagnostics
 open System.Threading
 open System.Threading.Tasks
-open Microsoft.FSharp.Control
-open Microsoft.FSharp.Core.CompilerServices
 
 open RuntimeTaskBuilder
 

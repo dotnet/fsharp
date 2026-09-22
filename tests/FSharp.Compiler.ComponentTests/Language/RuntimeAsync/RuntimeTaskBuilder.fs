@@ -1,14 +1,12 @@
 module RuntimeTaskBuilder
 
 open System
+open System.Collections.Generic
 open System.Runtime.CompilerServices
 open System.Threading
 open System.Threading.Tasks
-open System.Collections.Generic
-open Microsoft.FSharp.Core
+
 open Microsoft.FSharp.Core.CompilerServices
-open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
-open Microsoft.FSharp.Collections
 
 module TasklikeHelpers =
 
@@ -38,7 +36,6 @@ module RuntimeAsyncBuilderHelpers =
     // The delegate's invocation is inlined, so this is zero cost.
     type Started<'T> = delegate of unit -> 'T
 
-    [<NoEagerConstraintApplication>]
     let inline startAwaitable awaitable =
         // Make sure the delegate captures only started awaitables to make MergeSources concurrent.
         let awaiter = Awaitable.getAwaiter awaitable
@@ -66,10 +63,13 @@ type RuntimeAsyncBuilder() =
     member inline _.Combine(first, [<InlineIfLambda>] second) =
         first()
         second()
-    member inline _.TryWith([<InlineIfLambda>] body: unit -> 'T, [<InlineIfLambda>] handler: exn -> 'T) =
+
+    member inline _.TryWith([<InlineIfLambda>] body, [<InlineIfLambda>] handler) =
         try body() with error -> handler error
-    member inline _.TryFinally([<InlineIfLambda>] body: unit -> 'T, [<InlineIfLambda>] compensation: unit -> unit) =
+
+    member inline _.TryFinally([<InlineIfLambda>] body, [<InlineIfLambda>] compensation) =
         try body() finally compensation()
+
     member inline _.Using(resource, [<InlineIfLambda>] body) =
         try
             body resource
@@ -79,21 +79,22 @@ type RuntimeAsyncBuilder() =
             | :? IDisposable as disposable -> disposable.Dispose()
             | _ -> ()
 
-    member inline _.While(guard: unit -> bool, [<InlineIfLambda>] body: unit -> unit) =
+    member inline _.While(guard, [<InlineIfLambda>] body) =
         while guard() do body()
 
-    member inline _.For(sequence: seq<'T>, [<InlineIfLambda>] body: 'T -> unit) =
+    member inline _.For(sequence, [<InlineIfLambda>] body) =
         for item in sequence do body item
 
-    member inline this.For(sequence: IAsyncEnumerable<'T>, [<InlineIfLambda>] body: 'T -> unit) =
+    member inline this.For(sequence: IAsyncEnumerable<'T>, [<InlineIfLambda>] body) =
         this.Using(sequence.GetAsyncEnumerator(), fun enumerator ->
             while enumerator.MoveNextAsync() |> AsyncHelpers.Await do
                 body enumerator.Current)
 
-    member inline _.Bind([<InlineIfLambda>] awaited: Started<'T>, [<InlineIfLambda>] continuation) =
-        awaited.Invoke() |> continuation
+    member inline _.Bind([<InlineIfLambda>] await: Started<'T>, [<InlineIfLambda>] continuation) =
+        await.Invoke() |> continuation
 
-    member inline _.ReturnFrom([<InlineIfLambda>]  awaited: Started<'T>) = awaited.Invoke()
+    member inline _.ReturnFrom([<InlineIfLambda>]  await: Started<'T>) =
+        await.Invoke()
 
     member inline _.MergeSources([<InlineIfLambda>] left: Started<'A>, [<InlineIfLambda>] right: Started<'B>) =
         Started(fun () ->
@@ -101,20 +102,31 @@ type RuntimeAsyncBuilder() =
             let right = right.Invoke()
             struct (left, right))
 
-    // sources consumed by For method
-    member inline _.Source(sequence: 'T seq) = sequence
-    member inline _.Source(sequence: IAsyncEnumerable<'T>) = sequence
+[<AutoOpen>]
+module SourceExtensionsLowPriority =
+    type RuntimeAsyncBuilder with
+        // sources consumed by For method
+        member inline _.Source(sequence: 'T seq) = sequence
+        member inline _.Source(sequence: IAsyncEnumerable<'T>) = sequence
 
-    // Cannonical runtime async sources 
-    member inline _.Source(task: Task<'T>) = Started(fun () -> task |> AsyncHelpers.Await)
-    member inline _.Source(task: Task) = Started(fun () -> task |> AsyncHelpers.Await)
-    member inline _.Source(task: ValueTask<'T>) = Started(fun () -> task |> AsyncHelpers.Await)
-    member inline _.Source(task: ValueTask) = Started(fun () -> task |> AsyncHelpers.Await)
+[<AutoOpen>]
+module SourceExtensionsMediumPriority =
+    type RuntimeAsyncBuilder with
+        // Bind tasklike awaitables not matching any of the above source types, with lower priority. 
+        member inline _.Source(awaitable) = startAwaitable awaitable
 
-    // Bind also cold-start async computations
-    member inline _.Source(computation: Async<'T>) =
-        let task = Async.StartImmediateAsTask computation
-        Started(fun () -> task |> AsyncHelpers.Await)
+[<AutoOpen>]
+module SourceExtensionsHighPriority =
+    type RuntimeAsyncBuilder with
+        // Cannonical runtime async sources 
+        member inline _.Source(task: Task<'T>) = Started(fun () -> task |> AsyncHelpers.Await)
+        member inline _.Source(task: Task) = Started(fun () -> task |> AsyncHelpers.Await)
+        member inline _.Source(task: ValueTask<'T>) = Started(fun () -> task |> AsyncHelpers.Await)
+        member inline _.Source(task: ValueTask) = Started(fun () -> task |> AsyncHelpers.Await)
+        // Bind also cold-start async computations
+        member inline _.Source(computation: Async<'T>) =
+            let task = Async.StartImmediateAsTask computation
+            Started(fun () -> task |> AsyncHelpers.Await)
 
 [<AutoOpen>]
 module RuntimeTask =
@@ -137,8 +149,3 @@ module RuntimeTask =
             Task.Run<'T>(fun () -> __runtimeAsyncReturn (code()))
 
     let backgroundRuntimeTask = BackgroundRuntimeTaskBuilder()
-
-[<AutoOpen>]
-module RuntimeAsyncBuilderAwaitableExtensions =
-    type RuntimeAsyncBuilder with
-        member inline _.Source(awaitable) = startAwaitable awaitable
