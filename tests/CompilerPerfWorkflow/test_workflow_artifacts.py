@@ -74,11 +74,14 @@ class ArtifactTests(unittest.TestCase):
                   ("st_dev", "st_ino", "st_size", "st_nlink", "st_mtime_ns", "st_ctime_ns")}
         fields["st_birthtime_ns"] = getattr(info, "st_birthtime_ns", info.st_ctime_ns)
         for platform, changed, accepted in (
-                ("nt", None, True), ("nt", "st_ctime_ns", True),
+                ("nt", None, True), ("nt", "st_ctime_ns", False),
                 ("nt", "st_birthtime_ns", False), ("nt", "st_mtime_ns", False),
                 ("nt", "st_ino", False), ("posix", None, True), ("posix", "st_ctime_ns", False)):
             with self.subTest(platform=platform, changed=changed):
                 opened, after = SimpleNamespace(**fields), SimpleNamespace(**fields)
+                if platform == "nt":
+                    opened.st_ctime_ns += 1000
+                    after.st_ctime_ns += 1000
                 if changed:
                     setattr(after, changed, getattr(after, changed) + 100)
                 system = SimpleNamespace(**dict(vars(os), name=platform))
@@ -91,6 +94,37 @@ class ArtifactTests(unittest.TestCase):
                     else:
                         with self.assertRaisesRegex(ValueError, "Artifact changed while reading"):
                             a._read_file(path)
+
+    def test_timestamp_preserving_rewrite_cannot_return_stale_hash_or_delete_dump(self):
+        with mock.patch.object(a, "_outside_git"):
+            owned = a.create_dump_workspace(self.root / "dump", [self.public])
+        path = owned.path / "heap.dmp"
+        fstat = os.fstat
+        for operation in ("read", "remove"):
+            with self.subTest(operation=operation):
+                path.write_bytes(b"MDMPoriginal")
+                receipt = a.claim_dump(owned, a.c.m.file_record(path))
+                before = path.stat()
+                calls = 0
+
+                def rewrite_after_read(descriptor):
+                    nonlocal calls
+                    calls += 1
+                    if calls == 2:
+                        path.write_bytes(b"MDMPmodified")
+                        os.utime(path, ns=(before.st_atime_ns, before.st_mtime_ns))
+                    return fstat(descriptor)
+
+                with mock.patch.object(a.os, "fstat", side_effect=rewrite_after_read):
+                    with self.assertRaisesRegex(ValueError, "Artifact changed while reading"):
+                        if operation == "read":
+                            a._read_file(path)
+                        else:
+                            a.remove_owned_dump(owned, receipt, "Conclusion", NOW)
+                self.assertEqual(calls, 2)
+                self.assertEqual(path.read_bytes(), b"MDMPmodified")
+                self.assertEqual(path.stat().st_mtime_ns, before.st_mtime_ns)
+                self.assertEqual(a._identity(path.stat()), a._identity(before))
 
     def test_output_is_deterministic_and_only_explicit_files_are_staged(self):
         first = self.entry("first.json", conclusion="First")

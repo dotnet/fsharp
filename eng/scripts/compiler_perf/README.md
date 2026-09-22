@@ -244,9 +244,12 @@ documentation-only. Per-command bounds, process identities, hashes, RED/GREEN
 results and logs remain private evidence.
 
 Revalidation exposed differing Windows `stat`/`fstat` ctime semantics in Python
-3.12. Artifact reads now compare birth time there (legacy ctime on Python 3.11)
-and change time on POSIX, retaining hash, identity, size, link and modification
-time checks. The deterministic regression and repeated dump interactions pass.
+3.12. Artifact reads compare birth time across those APIs and ctime within each
+API, retaining hash, identity, size, link and modification-time checks. POSIX
+retains cross-API change-time checks. Birth time alone cannot detect a same-size
+rewrite with restored mtime; the read and dump-removal regressions enforce
+rejection of changed bytes. The historical results above precede that additional
+change-detection repair; its exact-input validation is recorded in private evidence.
 
 No task-owned Linux executor was available: the only WSL distribution was stopped
 and both Docker engine probes failed. Live namespace, attach/dump, network/model
