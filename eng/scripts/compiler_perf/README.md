@@ -121,7 +121,10 @@ install a schedule or grant permissions. Windows/local-Git fixtures do not prove
 Linux isolation or a real compiler-source improvement.
 
 Portable lifecycle checks (Python 3.11+, Git, and the pinned SDK for the existing
-offline SDK-resolver test):
+offline SDK-resolver test): install `requirements-agent.txt` in an owned Python
+environment for HTTP MCP coverage, and use that interpreter below. Put the exact
+SDK on `PATH` and verify `dotnet --version` matches `global.json`; roll-forward
+or a skipped SDK test is not pinned-SDK validation.
 
 ```powershell
 python -m unittest discover -s tests\CompilerPerfWorkflow -p "test_workflow*.py" -v
@@ -217,17 +220,42 @@ checks, and early worker exit. The frozen executable/test tree is
 `529126d0fae8328e64fba28ab97b52231846888153da24b68f11e198f5370a1b`.
 Inputs were unchanged after the run; this README is evidence-only.
 
-**Complete repair validation remains blocked.** The original single Sprint 04
-batch, including verifier invocations, reproductions, failed repair attempts
-and the root build probe, has spent **7150.085 of 7200 seconds**. Its remaining
-49.915 seconds cannot cover complete discovery or the synthetic candidate
-interaction replay; no new allocation was inferred from this repair invocation.
-The earlier 231-test complete run remains historical evidence for its original
-inputs, not a complete-suite pass for these changes. The pinned-SDK
-`dotnet build -c Release` exited 1 with MSB1011 (multiple root solutions), so the
-requested `&& dotnet test -c Release` continuation did not run. Long compiler
-or Linux execution still requires the owner-deployed fixed revision and
-authenticated LaunchFile. No remote writes or Linux containment claims were made.
+### Retained-input revalidation (2026-09-22)
+
+The retained `b915376d635` helpers, with the Windows artifact timestamp repair,
+passed the prescribed serial suites on Python **3.12.10**, MCP **1.30.0** and
+the exact SDK **11.0.100-rc.1.26420.103**:
+
+| Suite pattern | Tests run | Skips | Duration |
+| --- | --- | --- | --- |
+| `test_workflow*.py` | 83 | 0 | 2335.652 s |
+| `test_memory.py` | 51 | 0 | 87.132 s |
+| `test_*.py` | 239 | 7 | 3322.574 s |
+
+All exited zero. Complete discovery includes the scripted rejection/synthetic
+improvement interaction, actual HTTP SDK client, offline SDK resolver, repaired
+clocks/export/retries, direct receipt contract and publication/restart fixtures.
+The seven skips remain the two Linux methods, two opt-in runner methods, two
+opt-in trace/dump methods and Windows symlink-privilege subtest described above.
+Tested input manifest SHA-256:
+`755c097e548a22d77a4298b94b57438e894d626b91a89568008797107940e72a`.
+Source and tool inputs were unchanged throughout; this README update is
+documentation-only. Per-command bounds, process identities, hashes, RED/GREEN
+results and logs remain private evidence.
+
+Revalidation exposed differing Windows `stat`/`fstat` ctime semantics in Python
+3.12. Artifact reads now compare birth time there (legacy ctime on Python 3.11)
+and change time on POSIX, retaining hash, identity, size, link and modification
+time checks. The deterministic regression and repeated dump interactions pass.
+
+No task-owned Linux executor was available: the only WSL distribution was stopped
+and both Docker engine probes failed. Live namespace, attach/dump, network/model
+proxy and maintainer-key encryption acceptance remain unverified. The owner
+handoff requests separate fixed-revision deployment and Linux enrollment
+(`owner-launch-enrolled`), not ancestor hot-reload or a portable-validation gate.
+Retained launch pins are GH AW **v0.76.1**, Copilot **1.0.52** and AWF **v0.25.55**;
+installed GH AW **v0.88.2** and Copilot **1.0.87** are not substitutes. Diagnostic
+tools **8.0.547301** were verified. No hosted or remote-write effects occurred.
 
 ## Agent interaction
 

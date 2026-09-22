@@ -71,9 +71,12 @@ def _read_file(path, *, limit=None):
                 data.append(block)
         after = os.fstat(stream.fileno())
     current = _path(path).stat()
+    # Windows stat/fstat disagree on ctime in Python 3.12; birth time is the creation identity.
+    timestamp = "st_birthtime_ns" if os.name == "nt" else "st_ctime_ns"
     require(size == before.st_size and _identity(before) == _identity(after) == _identity(current)
-            and before.st_mtime_ns == after.st_mtime_ns == current.st_mtime_ns
-            and before.st_ctime_ns == current.st_ctime_ns and opened.st_ctime_ns == after.st_ctime_ns
+            and before.st_mtime_ns == opened.st_mtime_ns == after.st_mtime_ns == current.st_mtime_ns
+            and all(getattr(info, timestamp, info.st_ctime_ns) == getattr(before, timestamp, before.st_ctime_ns)
+                    for info in (opened, after, current))
             and current.st_size == size and current.st_nlink == 1, "Artifact changed while reading")
     return digest.hexdigest(), size, b"".join(data), _identity(before)
 

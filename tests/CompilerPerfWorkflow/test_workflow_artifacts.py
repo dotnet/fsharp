@@ -10,6 +10,7 @@ from pathlib import Path
 import shutil
 import stat
 import sys
+from types import SimpleNamespace
 import unittest
 from unittest import mock
 import uuid
@@ -64,6 +65,32 @@ class ArtifactTests(unittest.TestCase):
         self.assertEqual(record["collected_at"], result["created_at"])
         self.assertEqual(json.loads((self.public / "manifest.json").read_text()), result)
         self.assertEqual(result["total_bytes"], sum(p.stat().st_size for p in self.public.iterdir()))
+
+    def test_read_file_uses_platform_timestamp_semantics(self):
+        entry = self.entry("heap.dmp", "dump", b"MDMPunchanged")
+        path = Path(entry["file"]["path"])
+        info = path.stat()
+        fields = {key: getattr(info, key) for key in
+                  ("st_dev", "st_ino", "st_size", "st_nlink", "st_mtime_ns", "st_ctime_ns")}
+        fields["st_birthtime_ns"] = getattr(info, "st_birthtime_ns", info.st_ctime_ns)
+        for platform, changed, accepted in (
+                ("nt", None, True), ("nt", "st_ctime_ns", True),
+                ("nt", "st_birthtime_ns", False), ("nt", "st_mtime_ns", False),
+                ("nt", "st_ino", False), ("posix", None, True), ("posix", "st_ctime_ns", False)):
+            with self.subTest(platform=platform, changed=changed):
+                opened, after = SimpleNamespace(**fields), SimpleNamespace(**fields)
+                if changed:
+                    setattr(after, changed, getattr(after, changed) + 100)
+                system = SimpleNamespace(**dict(vars(os), name=platform))
+                with mock.patch.object(a, "os", system), mock.patch.object(
+                        system, "fstat", side_effect=[opened, after]):
+                    if accepted:
+                        digest, size, _, identity = a._read_file(path)
+                        self.assertEqual((digest, size), (entry["file"]["sha256"], entry["file"]["size_bytes"]))
+                        self.assertEqual(identity, a._identity(info))
+                    else:
+                        with self.assertRaisesRegex(ValueError, "Artifact changed while reading"):
+                            a._read_file(path)
 
     def test_output_is_deterministic_and_only_explicit_files_are_staged(self):
         first = self.entry("first.json", conclusion="First")

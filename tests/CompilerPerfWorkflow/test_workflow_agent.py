@@ -412,6 +412,7 @@ class AgentTests(unittest.TestCase):
                         "reason": reason, "hypothesis": "Heap grows across full GCs"}))
                 self.assertTrue(result["ok"], result)
                 status = client.investigate(message("status"))["status"]
+                self.assertIsNotNone(status["dump"], status)
                 self.assertEqual(status["dump"]["status"], "analyzed_and_removed")
                 self.assertEqual(status["phase"], "awaiting_decision")
                 self.assertEqual(controller.session["profile"], original)
