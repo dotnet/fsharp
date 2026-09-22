@@ -1360,7 +1360,7 @@ let result = t.Invoke(42)
 
     [<TheoryForNETCOREAPP>]
     [<MemberData(nameof orpIgnoredTestCases)>]
-    let ``LangVersion Latest - ORP attribute ignored`` (_description: string) (callExpr: string) (expected: string) =
+    let ``LangVersion 11.0 - ORP attribute ignored`` (_description: string) (callExpr: string) (expected: string) =
         FSharp $"""
 module Test
 open PriorityTests
@@ -1370,7 +1370,7 @@ if result <> "{expected}" then
     failwithf "Expected '{expected}' but got '%%s' - ORP should be ignored" result
         """
         |> withReferences [csharpPriorityLib]
-        |> withLangVersion "latest"
+        |> withLangVersion11
         |> asExe
         |> compileAndRun
         |> shouldSucceed
@@ -1534,9 +1534,12 @@ module WithTieBreakerFeature =
         |> shouldSucceed
         |> ignore
 
-    [<Fact>]
-    let ``Task<T> vs T factory resolves to the concrete Task overload`` () =
-        FSharp example7Source |> withLangVersionPreview |> asExe |> compileAndRun |> shouldSucceed |> ignore
+    [<Theory>]
+    [<InlineData("default")>]
+    [<InlineData("11.2")>]
+    [<InlineData("preview")>]
+    let ``Task<T> vs T factory resolves to the concrete Task overload`` langVersion =
+        FSharp example7Source |> withLangVersion langVersion |> asExe |> compileAndRun |> shouldSucceed |> ignore
 
     [<Fact>]
     let ``CE Source overloads resolve (FsToolkit AsyncResult pattern)`` () =
