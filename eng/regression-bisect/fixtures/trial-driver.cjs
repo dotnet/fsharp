@@ -22,8 +22,19 @@ for (const [method, point] of [["reserveWork", "reservation"], ["beginWork", "cl
 const service = require("./controller-service.cjs");
 const controller = require("../controller-cli.cjs");
 const connect = service.connect;
+let validateStable;
 service.connect = async (file, options) => {
     const api = await connect(file, { ...options, synthetic: { stable: "product-failure" } });
+    api.validateStable = value => validateStable(value);
+    if (fault === "stable-metadata") {
+        const http = api.toolchainDependencies.http;
+        api.toolchainDependencies.http = async url => {
+            const response = await http(url);
+            if (url.endsWith("/releases-index.json"))
+                response.bytes = Buffer.from(JSON.stringify({ ...JSON.parse(response.bytes), updated: true }));
+            return response;
+        };
+    }
     const send = api.send;
     api.send = async (url, options) => {
         const result = await send(url, options);
@@ -55,6 +66,7 @@ controller.writeJson = async (file, value) => {
 };
 const main = controller.main;
 controller.main = async (args, env) => {
+    validateStable = (await require("../trial.cjs").adapter(env)).validateStable;
     const fixtureEnv = { RB_LOCAL_TEST: "explicit-offline-fixture", RB_TRIAL_DIRECTORY: "",
         RB_LOCAL_TEST_FILE: path.join(directory, "api.json"), RB_STATE_DIRECTORY: env.RB_STATE_DIRECTORY };
     const previous = Object.fromEntries(Object.keys(fixtureEnv).map(k => [k, process.env[k]]));

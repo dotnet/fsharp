@@ -305,6 +305,33 @@ test("SYNTHETIC preparation freezes a signed plan without worker execution; veri
     }
 });
 
+test("SYNTHETIC trial stable guard accepts only the frozen official identity", async t => {
+    const r = await reviewed(t);
+    assert.equal((await invoke(["--prepare", r.file, r.evidence], r.env)).code, 0);
+    const service = await adapter({ ...r.env, RB_TRIAL_DIRECTORY: r.evidence });
+    for (const [name, change] of [
+        ["unchanged", () => {}],
+        ["resolver details", value => {
+            value.resolvedAt = new Date().toISOString();
+            value.metadata.forEach(record => { record.bytesBase64 = "ignored resolved bytes"; });
+        }],
+        ["sdk version", value => { value.sdkVersion = "10.0.200"; }],
+        ["archive URL", value => { value.archive.url += "?changed"; }],
+        ["archive checksum", value => { value.archive.sha512 = "0".repeat(128); }],
+        ["archive provenance", value => { value.archive.provenance.kind = "changed"; }],
+        ["metadata URL", value => { value.metadata[0].url += "?changed"; }],
+        ["metadata digest", value => { value.metadata[0].sha256 = "0".repeat(64); }],
+        ["metadata order", value => { value.metadata.reverse(); }],
+        ["missing metadata", value => { value.metadata.pop(); }],
+        ["extra metadata", value => { value.metadata.push(value.metadata[0]); }],
+    ]) await t.test(name, () => {
+        const value = structuredClone(r.config.stable);
+        change(value);
+        if (["unchanged", "resolver details"].includes(name)) assert.doesNotThrow(() => service.validateStable(value));
+        else assert.throws(() => service.validateStable(value), /frozen official stable metadata changed/);
+    });
+});
+
 test("SYNTHETIC reviewed config conflicts, changed immutable inputs and authority widening fail closed", async t => {
     for (const change of ["unknown", "signature", "source", "file", "api", "synthetic", "actions", "target"]) await t.test(change, async t => {
         const r = await reviewed(t);
@@ -437,6 +464,31 @@ async function preparedDriver(t) {
     return { ...r, api, read, update, step, ledger, cp, receipt, stop };
 }
 
+test("SYNTHETIC trial controller blocks changed stable metadata before download or charge", async t => {
+    for (const [mode, transitions] of [["bootstrap", 2], ["advance", 4]]) await t.test(mode, async t => {
+        const r = await preparedDriver(t);
+        for (let i = 0; i < transitions; i++) assert.equal((await r.step()).code, 0);
+        const before = await r.read(), start = (await r.ledger()).length;
+        assert.equal(before.dispatches.at(-1).inputs.mode, mode);
+        const denied = await r.step("stable-metadata");
+        assert.equal(denied.code, 1, denied.stdout);
+        assert.match(JSON.parse(denied.stdout).reason, /frozen official stable metadata changed/);
+        const trace = (await r.ledger()).slice(start), after = await r.read();
+        assert.ok(trace.some(e => e.kind === "metadata"), "controller must resolve current official metadata");
+        assert.equal(trace.filter(e => ["download", "worker"].includes(e.kind) ||
+            e.kind === "git" && e.args.includes("bisect") || e.kind === "api" && e.method !== "GET").length, 0);
+        assert.deepEqual(after.comments, before.comments);
+        assert.deepEqual(after.statuses, before.statuses);
+        const resumed = await r.step();
+        assert.equal(resumed.code, 0, resumed.stdout);
+        assert.equal(JSON.parse(resumed.stdout).status, mode === "bootstrap" ? "initialized" : "observed");
+        const { cp } = await r.cp();
+        assert.equal(cp.state.budget.consumed.workerUnits, mode === "bootstrap" ? 0 : 1);
+        assert.equal(cp.deadline, r.f.approval.bootstrap.deadline);
+        assert.equal(cp.state.budget.allowanceId, r.f.approval.bootstrap.allowanceId);
+    });
+});
+
 test("SYNTHETIC trial driver recovers delivery ownership and verifies a complete six-unit result read-only", async t => {
     const r = await preparedDriver(t);
     for (const expected of ["provisioned", "routed"]) {
@@ -541,6 +593,9 @@ test("SYNTHETIC trial driver recovers delivery ownership and verifies a complete
         ["checkpoint", /checkpoint authentication/], ["result", /authenticated persisted publication/],
         ["run", /workflow run provenance authentication/], ["required-evidence", /required evidence/],
         ["plan", /six-unit allowance identity/], ["helper", /helper drift/],
+        ["discussion", /reviewed discussion fingerprint is stale/],
+        ["spoofed workflow comment", /reviewed discussion fingerprint is stale/],
+        ["discovery comment", /discovery record authentication/],
     ]) await t.test(target, async () => {
         const saved = path.join(r.evidence, "trial.json"), bytes = await fs.readFile(saved);
         let lost;
@@ -549,6 +604,15 @@ test("SYNTHETIC trial driver recovers delivery ownership and verifies a complete
         });
         if (target === "run") await r.update(db => {
             for (const run of Object.values(db.runs)) run.head_sha = "0".repeat(40);
+        });
+        if (target === "discussion") await r.update(db => {
+            db.comments.push({ id: 9000, body: "Correction: the approved reproduction is no longer valid", user: { id: 42 } });
+        });
+        if (target === "spoofed workflow comment") await r.update(db => {
+            db.comments.push({ ...db.comments.find(c => c.id === 457), id: 9000 });
+        });
+        if (target === "discovery comment") await r.update(db => {
+            db.comments.find(c => c.id === 458).body += "forged";
         });
         if (target === "required-evidence") {
             const e = Object.values(complete.observations)[0].evidence.find(e => e.required);

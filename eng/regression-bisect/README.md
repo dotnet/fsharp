@@ -381,6 +381,11 @@ Missing claimed execution evidence blocks rather than launching a replacement.
 authenticated published digest and fixed comment ID, matching complete expected
 boundary, six distinct claimed/committed reservations, the exact phase order,
 five builds/660 minutes, and hash-verified required physical collector evidence.
+It re-reads the complete paginated issue discussion through production intake,
+authenticating controller and discovery records before excluding them from the
+approved discussion fingerprint. New corrections, spoofed workflow comments,
+changed discovery records or active linked investigations block verification
+without changing evidence or the persisted report identity.
 It fails an incomplete or stopped trial. Optional artifact expiry cannot change
 the already authenticated publication identity. JSON always carries the synthetic
 acceptance purpose and `physicalAcceptance: false`: a verified local evidence
@@ -452,7 +457,10 @@ worker fixture, exercising signed delivery receipts, live-owner exclusion,
 process death at reservation/claim/retained observation/delivery/result write,
 six-unit completion, and optional-expiry adoption of the same persisted result.
 The normal, unmodified CLI then verifies that synthetic signed evidence bundle
-read-only and rejects damaged checkpoint/result/run/evidence/plan/helper inputs.
+read-only and rejects damaged checkpoint/result/run/evidence/plan/helper inputs
+and stale or unauthenticated discussion records. Parameterized stable-identity
+tests cover SDK, archive and metadata changes; subprocess bootstrap/advance tests
+reject changed official metadata before download, reservation or bisect.
 The preload is not a trial option and is never loaded by the acceptance adapter.
 Offline source-freezing tests reproduce the exact graph and assertion while
 rejecting apphost-only or ambiguous runtime metadata and unavailable archives. Existing
@@ -463,13 +471,12 @@ runtime/diagnostic distinctions, identity fallback negatives, matrix coverage
 and immutable old producer metadata. These cheap tests do not establish either
 physical acceptance gate.
 
-Harness validation on 2026-09-22: 46 focused tests passed in 402 seconds.
-The full suite exposed helper snapshots traversing concurrently deleted fixture
-directories; snapshots now prune disposable directories before enumeration, and
-11 targeted identity/recovery tests passed. The final scoped run passed all
-2,519 tests in 626 seconds. All three independent on-disk report mutations failed
-their authenticated semantic assertions in under two seconds each, with
-unchanged production helper hashes. Seven changed CJS files passed syntax checks;
+Harness validation on 2026-09-22: the stale-discussion CLI regressions first
+returned `verified` incorrectly, then passed with read-only production intake.
+All 65 focused tests passed in 446 seconds; the full scoped run passed all
+2,537 tests in 660 seconds. All three independent on-disk report mutations failed
+their authenticated classification, PR-link and skip assertions in under four
+seconds each, with unchanged production hashes. Three changed CJS files passed syntax checks;
 help and diff checks passed. Scoped evidence-helper Release build/test commands
 exited 0 using installed SDK 10.0.112 (the helper has no managed test cases).
 The source graph and patch hashes are unchanged; refreshed publisher metadata

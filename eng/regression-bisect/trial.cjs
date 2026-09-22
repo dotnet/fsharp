@@ -270,7 +270,7 @@ async function verify(t) {
         checkpointCommentId: b.checkpointCommentId, resultCommentId: b.resultCommentId,
         anchorSha: t.config.deployment.anchorSha, token: "offline" }, t.service.send);
     const context = { ...t.context, issueNumber: 123, commentId: b.checkpointCommentId };
-    const { checkpoint: cp } = await state.readAuthenticatedCheckpoint(transport, context);
+    const loaded = await state.readAuthenticatedCheckpoint(transport, context), cp = loaded.checkpoint;
     requireValue(cp.publicationStatus === "published" && cp.state.phase === "complete" && cp.pending === null &&
         cp.deadline === t.saved.deadline && cp.state.budget.allowanceId === t.saved.allowanceId &&
         equal(cp.state.manifest, m) && cp.state.pinnedMainSha === t.config.source.main &&
@@ -281,6 +281,29 @@ async function verify(t) {
     requireValue(result?.kind === "result" && result.payload.digest === cp.state.publication.digest &&
         cp.state.publication.commentId === b.resultCommentId && equal(result.payload.report.state,
             { ...cp.state, publication: { digest: null, commentId: null } }), "authenticated persisted publication required");
+    const discovery = require("./routing.cjs").validateRegistration(
+        decode(Buffer.from(t.db.files[".github/regression-bisect/discovery.json"], "base64")));
+    const snapshot = await require("./intake.cjs").readIssueSnapshot({
+        repository: context.repository, issueNumber: context.issueNumber, transport, now: new Date().toISOString(),
+        reviewedManifest: m, readSource: async source => Buffer.from(t.db.files[source.path], "base64"),
+        authenticateRecord: async comment => {
+            if ([discovery.commentId, discovery.freshnessCommentId].includes(comment.id)) {
+                requireValue(await state.authenticateWorkflowRecord(transport, {
+                    ...context, commentId: comment.id, workflowPath: discovery.workflowPath,
+                }, comment), "registered discovery record authentication failed");
+                return true;
+            }
+            const record = await state.authenticateDecodedRecord(transport, { ...context, commentId: comment.id }, comment);
+            if (!record) return false;
+            requireValue([b.checkpointCommentId, b.resultCommentId].includes(comment.id), "unregistered authenticated issue state");
+            return true;
+        },
+        readTrustedCheckpoints: async () => [{
+            status: "loaded", state: cp.state, commentId: loaded.commentId, owner: loaded.owner, pending: cp.pending,
+        }],
+    });
+    requireValue(snapshot.status === "complete", `current intake ${snapshot.status}: ${snapshot.reason}`);
+    requireValue(snapshot.snapshot.investigations.active.length === 0, "active linked investigation");
     const c = cp.state.confirmation;
     requireValue(c?.classification === "verified-introducing-source-boundary" && c.candidate === t.config.source.candidate &&
         c.parents.length === 1 && c.parents[0].sourceSha === t.config.source.good &&
