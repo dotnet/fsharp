@@ -70,25 +70,18 @@ type RuntimeAsyncBuilder() =
     member inline _.TryFinally([<InlineIfLambda>] body, [<InlineIfLambda>] compensation) =
         try body() finally compensation()
 
-    member inline _.Using(resource, [<InlineIfLambda>] body) =
+    member inline _.Using(resource: #IDisposable | null, [<InlineIfLambda>] body) =
         try
             body resource
         finally
-            match box resource with
-            | :? IAsyncDisposable as disposable -> AsyncHelpers.Await(disposable.DisposeAsync())
-            | :? IDisposable as disposable -> disposable.Dispose()
-            | _ -> ()
+            if not (isNull (box resource)) then 
+                resource.Dispose()
 
     member inline _.While(guard, [<InlineIfLambda>] body) =
         while guard() do body()
 
     member inline _.For(sequence, [<InlineIfLambda>] body) =
         for item in sequence do body item
-
-    member inline this.For(sequence: IAsyncEnumerable<'T>, [<InlineIfLambda>] body) =
-        this.Using(sequence.GetAsyncEnumerator(), fun enumerator ->
-            while enumerator.MoveNextAsync() |> AsyncHelpers.Await do
-                body enumerator.Current)
 
     member inline _.Bind([<InlineIfLambda>] await: Started<'T>, [<InlineIfLambda>] continuation) =
         await.Invoke() |> continuation
@@ -101,6 +94,25 @@ type RuntimeAsyncBuilder() =
             let left = left.Invoke()
             let right = right.Invoke()
             struct (left, right))
+
+[<AutoOpen>]
+module AsyncDisposableExtensions =
+    type RuntimeAsyncBuilder with
+        member inline _.Using(resource: #IAsyncDisposable | null, [<InlineIfLambda>] body) =
+            try
+                body resource
+            finally
+                if not (isNull (box resource)) then 
+                    resource.DisposeAsync() |> AsyncHelpers.Await
+
+        member inline this.For(sequence: IAsyncEnumerable<'T>, [<InlineIfLambda>] body: 'T -> unit) =
+            this.Using(
+                sequence.GetAsyncEnumerator(),
+                fun enumerator ->
+                    while enumerator.MoveNextAsync()
+                          |> AsyncHelpers.Await do
+                        body enumerator.Current
+            )
 
 [<AutoOpen>]
 module SourceExtensionsLowPriority =
