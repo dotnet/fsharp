@@ -27,7 +27,7 @@ const routes = new Map([
 function createGithubApi(config, send = fetch) {
     const { repository, issueNumber, checkpointCommentId, resultCommentId, anchorSha, token } = { ...config };
     requireValue(repository === "dotnet/fsharp" && positive(issueNumber) && positive(checkpointCommentId) &&
-        positive(resultCommentId) && (checkpointCommentId !== resultCommentId || config.singleSlot === true) && sha(anchorSha) &&
+        positive(resultCommentId) && checkpointCommentId !== resultCommentId && sha(anchorSha) &&
         typeof token === "string" && token.length > 0 && !/\s/.test(token), "invalid trusted GitHub API configuration");
     async function request(route, params) {
         requireValue(typeof route === "string" && params && Object.getPrototypeOf(params) === Object.prototype, "invalid API request");

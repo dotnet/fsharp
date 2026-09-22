@@ -287,6 +287,7 @@ async function connect(file) {
                 if (!comment) return respond({}, 404);
                 if (options.method === "PATCH") {
                     if (comment.id === 458 && fault(db, "cursorWrite")) throw new Error("cursor write interrupted");
+                    if (comment.id === 459 && fault(db, "freshnessWrite")) throw new Error("freshness write interrupted");
                     if (comment.id === 458 && db.dispatches?.length && fault(db, "acknowledgementWrite"))
                         throw new Error("dispatch acknowledgement write interrupted");
                     comment.body = body.body; write(db);
@@ -296,6 +297,7 @@ async function connect(file) {
                         write(db);
                     }
                     if (comment.id === 458 && fault(db, "cursorAck")) throw new Error("cursor acknowledgement lost");
+                    if (comment.id === 459 && fault(db, "statusAck")) throw new Error("freshness acknowledgement lost");
                     if (comment.id === 457 && fault(db, "resultAck")) throw new Error("result acknowledgement lost");
                     if (comment.id === 456 && body.body.includes('"publicationStatus":"published"') && fault(db, "publishedAck"))
                         throw new Error("published checkpoint acknowledgement lost");
@@ -315,7 +317,8 @@ async function connect(file) {
                 return respond(page(db.statuses), db.faults.history ? 503 : 200,
                     db.faults.pagination ? { link: '<https://api.github.com/next>; rel="next"' } : links(db.statuses));
             if (route.startsWith("statuses/")) {
-                if (body.context.endsWith("/458") && fault(db, "freshnessWrite")) throw new Error("freshness write interrupted");
+                if (db.statuses.filter(s => s.context === body.context).length >= 1000)
+                    return respond({ message: "status context limit exceeded" }, 422);
                 const receipt = { id: db.nextId++, creator: { id: db.actor.id, login: db.actor.login, type: db.actor.type }, ...body };
                 db.statuses.unshift(receipt); write(db);
                 if (fault(db, "statusAck")) throw new Error("status acknowledgement lost");

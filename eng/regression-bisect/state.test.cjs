@@ -6,11 +6,38 @@ const f = require("./fixtures/contracts.cjs");
 const model = require("./model.cjs");
 const {
     initializeCheckpoint, serializeWorkflowRecord, authenticateWorkflowRecord,
-    loadCheckpoint, reserveWork, beginWork, beginCollection, commitObservation, invalidateStaleEvidence,
+    loadCheckpoint, reserveWork, beginWork, beginCollection, commitObservation, invalidateStaleEvidence, recordSearchProgress,
 } = require("./state.cjs");
 
 const clone = structuredClone;
 const { harness } = require("./fixtures/checkpoint.cjs");
+
+test("terminal reasons roundtrip, remain bounded and clear when inputs or search change", async t => {
+    for (const transition of ["main", "approval", "search", "reserve"]) await t.test(transition, async () => {
+        const h = harness(); await h.start();
+        const reason = "cumulative budget exhausted or allowance deadline insufficient";
+        let cp = await recordSearchProgress(h.transport, h.context, {
+            generation: 0, phase: "blocked", interval: null, stopReason: reason,
+        });
+        assert.equal((await loadCheckpoint(h.transport, h.context)).checkpoint.state.stopReason, reason);
+        for (const stopReason of ["", "x".repeat(1025), 42]) await assert.rejects(recordSearchProgress(h.transport, h.context,
+            { generation: cp.generation, phase: "blocked", interval: null, stopReason }), /stop reason/);
+        assert.equal((await recordSearchProgress(h.transport, h.context,
+            { generation: cp.generation, phase: "blocked", interval: null, stopReason: reason })).generation, cp.generation);
+        if (transition === "main" || transition === "approval") {
+            if (transition === "main") h.context.pinnedMainSha = f.sha("changed main");
+            else h.context.authorization = null;
+            cp = await invalidateStaleEvidence(h.transport, h.context, { generation: cp.generation });
+        } else if (transition === "search") {
+            cp = await recordSearchProgress(h.transport, h.context, { generation: cp.generation, phase: "bisect", interval: null });
+        } else {
+            await reserve(h, cp.generation);
+            cp = (await loadCheckpoint(h.transport, h.context)).checkpoint;
+        }
+        assert.equal(cp.state.stopReason, undefined);
+        assert.equal(cp.state.budget.consumed.workerUnits, transition === "reserve" ? 1 : 0);
+    });
+});
 
 test("execution claims survive lost acknowledgements and cannot execute a reservation twice", async () => {
     const h = harness(); await h.start();

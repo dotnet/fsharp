@@ -424,9 +424,10 @@ async function main(args = process.argv.slice(2), env = process.env) {
         const discoveryBytes = await reader.readOptionalTrustedFile(".github/regression-bisect/discovery.json", 4096);
         const discovery = discoveryBytes === null ? null : require("./routing.cjs").validateRegistration(decode(discoveryBytes));
         if (discovery?.issueNumber === input.issueNumber) {
-            requireValue(![registration.checkpointCommentId, registration.resultCommentId].includes(discovery.commentId) &&
+            requireValue([discovery.commentId, discovery.freshnessCommentId].every(id =>
+                ![registration.checkpointCommentId, registration.resultCommentId].includes(id)) &&
                 discovery.checkpointAnchorSha === config.anchorSha, "discovery slot conflicts with issue registration");
-            await require("./routing.cjs").loadCursor({ transport: apiFor(discovery.commentId, registration.resultCommentId), registration: discovery,
+            await require("./routing.cjs").loadCursor({ transport: apiFor(discovery.commentId, discovery.freshnessCommentId), registration: discovery,
                 context: { ...context, commentId: discovery.commentId, workflowPath: discovery.workflowPath } });
         }
         const storeConfig = { repository, runId: context.owner.runId, attempt: context.owner.attempt,
@@ -444,9 +445,10 @@ async function main(args = process.argv.slice(2), env = process.env) {
         const checkpoints = new Map();
         const approvalReader = { ...reader,
             authenticateRecord: async comment => {
-                if (discovery?.issueNumber === input.issueNumber && comment.id === discovery.commentId) {
+                if (discovery?.issueNumber === input.issueNumber &&
+                    [discovery.commentId, discovery.freshnessCommentId].includes(comment.id)) {
                     requireValue(await state.authenticateWorkflowRecord(transport, {
-                        ...context, commentId: discovery.commentId, workflowPath: discovery.workflowPath,
+                        ...context, commentId: comment.id, workflowPath: discovery.workflowPath,
                     }, comment), "registered discovery record authentication failed");
                     return true;
                 }
@@ -532,6 +534,7 @@ async function main(args = process.argv.slice(2), env = process.env) {
             const deps = { context, transport, approval: approvalReader, environments, platform: config.platform, history,
                 clock, withLock: action => action(), collectObservation, resultCommentId: registration.resultCommentId,
                 discoveryCommentId: discovery?.issueNumber === input.issueNumber ? discovery.commentId : undefined,
+                discoveryFreshnessCommentId: discovery?.issueNumber === input.issueNumber ? discovery.freshnessCommentId : undefined,
                 toolchainDependencies: local?.toolchainDependencies, readCurrentContext: refresh,
                 execute: async (...args) => {
                     local?.recordGit(args[1]);

@@ -285,6 +285,7 @@ async function advanceInvestigation({ now }, deps) {
             cp = await recordSearchProgress(deps.transport, context, {
                 generation: cp.generation, phase: selected.status ?? "bisect",
                 interval: selected.interval || cp.state.interval ? interval : null,
+                ...(["blocked", "stopped"].includes(selected.status) ? { stopReason: selected.reason } : {}),
                 ...(selected.goodDigest ? { goodDigest: selected.goodDigest } : {}),
             });
         }

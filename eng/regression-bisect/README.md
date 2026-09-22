@@ -45,16 +45,18 @@ node eng\regression-bisect\routing-cli.cjs manual --issue 123 --config $TrustedC
 node eng\regression-bisect\routing-cli.cjs event --issue 123 --config $TrustedConfig
 ```
 
-Provisioning requires reviewed `.github/regression-bisect/discovery.json`
-(see `discovery.schema.json`), an existing App-owned comment with the exact
-bootstrap digest, a fixed anchor, workflow generation and unexpired provisioning
-deadline. Provision issue allowances separately, before discovery if they share
+Provisioning requires reviewed version-2 `.github/regression-bisect/discovery.json`
+(see `discovery.schema.json`), two distinct existing App-owned comments with exact
+bootstrap digests, a fixed anchor, workflow generation and unexpired provisioning
+deadline. `commentId` stores the cursor; `freshnessCommentId` stores its signed
+generation/body digest and registration digest. Both IDs must differ from the
+issue's checkpoint/result slots. Provision issue allowances separately, before discovery if they share
 the same issue. Keep the controller-only
 `<RB_STATE_DIRECTORY>/dotnet-fsharp-discovery` directory, including signed
 `intent.json` and `committed.json`, on the same persistent host used for all
 routing entry points. The discovery lock serializes schedule/event/manual
 writers without cancelling another run. Never reset these files or the remote
-slot/receipts to recover a sweep.
+slots/receipts to recover a sweep.
 During first provisioning, `committed.json` holds a signed provisioning marker
 bound to the reviewed registration until the exact generation-zero intent and
 its freshness receipt are acknowledged. A restarted provision or schedule can
@@ -74,6 +76,12 @@ an unchanged controller generation, routing reconstructs the same dispatch key;
 consecutive selections retain the five-minute retry delay.
 Selection and exact dispatch intent are signed and persisted locally, then in
 the fixed remote discovery slot and freshness receipt, **before** dispatch.
+The receipt overwrites only its registered fixed comment, using the same
+App/run/workflow/key authentication as the cursor. It does not append commit
+statuses or scan shared-anchor status history on each discovery transition:
+storage and freshness reads remain constant as sweeps accumulate. Required
+local intent/committed records and the two remote slots cross-check generations;
+the receipt cannot be replaced by its bootstrap placeholder after provisioning.
 Authenticated predecessor-only recovery completes torn writes; missing, forged
 or rolled-back required state blocks instead of starting a replacement.
 Bounded listing failures preserve the cursor and never reset issue budgets.
@@ -115,6 +123,9 @@ valid evidence. Interrupted requeue writes use the same predecessor recovery.
 An authenticated completed owner's unclaimed reservation is retired before a
 terminal capacity/attempt stop is saved, without refunding its charge. Claimed
 work still requires collection; an active or unknown owner cannot be retired.
+Terminal reasons are retained in signed state and rendered in the result, including
+deadline-capacity and attempt-limit stops that cannot be inferred from aggregate
+charges. A resumed search or changed input clears the prior reason.
 Counters remain 24 source builds, 40 units, 720 reserved
 minutes and two attempts; retries, cancellation and edits do not refund them.
 
@@ -122,8 +133,12 @@ minutes and two attempts; retries, cancellation and edits do not refund them.
 currently `.github/workflows/regression-bisect-discovery.yml`, which does not
 exist as a deployable workflow. Bind the actual compiled workflow identity
 consistently across registration schema, configuration, run authentication and
-tests before activation. No placeholder workflow is supplied here.
-**Physical prerequisite for sprint 21:** the read-only inventory on 2026-09-21
+tests before activation. Register the version-2 cursor/freshness slots and their
+bootstrap hashes together. The undeployed version-1 append-only discovery
+registration is rejected, not silently migrated or treated as permission to reset
+history; any already-provisioned legacy records require reviewed owner migration.
+No placeholder workflow is supplied here.
+**Physical prerequisite for sprint 21:** the read-only inventory on 2026-09-22
 found a Windows x64 host with Docker/WSL/SSH clients, but no enrolled native
 disposable Linux worker route or owner receipt. No daemon/WSL was started, no
 account provisioned and no historical product code executed. Native Linux x64,

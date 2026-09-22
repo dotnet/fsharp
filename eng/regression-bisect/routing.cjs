@@ -16,13 +16,46 @@ const same = (a, b) => fingerprint(a) === fingerprint(b);
 const query = { repository, ...policy.selection, sort: "created", direction: "asc", perPage: 100 };
 
 function validateRegistration(r) {
-    fields(r, "schemaVersion repository issueNumber commentId checkpointAnchorSha bootstrapDigest provisionDeadline workflowPath workflowGeneration");
-    requireValue(r.schemaVersion === 1 && r.repository === repository && positive(r.issueNumber) && positive(r.commentId) &&
-        /^[a-f0-9]{40}$/.test(r.checkpointAnchorSha) && digest(r.bootstrapDigest) &&
+    fields(r, "schemaVersion repository issueNumber commentId freshnessCommentId checkpointAnchorSha bootstrapDigest freshnessBootstrapDigest provisionDeadline workflowPath workflowGeneration");
+    requireValue(r.schemaVersion === 2 && r.repository === repository && positive(r.issueNumber) && positive(r.commentId) &&
+        positive(r.freshnessCommentId) && r.commentId !== r.freshnessCommentId &&
+        /^[a-f0-9]{40}$/.test(r.checkpointAnchorSha) && digest(r.bootstrapDigest) && digest(r.freshnessBootstrapDigest) &&
         typeof r.provisionDeadline === "string" && /^\d{4}-\d\d-\d\dT.*Z$/.test(r.provisionDeadline) &&
         Number.isFinite(Date.parse(r.provisionDeadline)) && r.workflowPath === workflowPath && positive(r.workflowGeneration),
     "invalid reviewed discovery registration");
     return r;
+}
+
+async function readDiscoveryFreshness({ transport, context, registration }) {
+    const receiptContext = { ...context, commentId: registration.freshnessCommentId };
+    const comment = await transport.getComment(receiptContext.commentId);
+    requireValue(comment.id === receiptContext.commentId && comment.user?.id === context.actor.id &&
+        comment.user?.login === context.actor.login && comment.user?.type === context.actor.type &&
+        comment.performed_via_github_app?.id === context.actor.appId &&
+        comment.issue_url === `https://api.github.com/repos/${repository}/issues/${context.issueNumber}`,
+    "discovery freshness writer or issue mismatch");
+    if (hash(comment.body) === registration.freshnessBootstrapDigest) return null;
+    const record = await state.authenticateDecodedRecord(transport, receiptContext, comment);
+    requireValue(record?.kind === "proposal", "discovery freshness authentication failed");
+    const receipt = record.payload;
+    fields(receipt, "purpose registrationDigest generation bodyDigest");
+    requireValue(receipt.purpose === "discovery-freshness" && receipt.registrationDigest === fingerprint(registration) &&
+        Number.isSafeInteger(receipt.generation) && receipt.generation >= 0 && digest(receipt.bodyDigest),
+    "discovery freshness identity mismatch");
+    return receipt;
+}
+
+async function writeDiscoveryFreshness(deps, generation, bodyDigest) {
+    const { transport, context, registration } = deps;
+    const receiptContext = { ...context, commentId: registration.freshnessCommentId };
+    const body = state.serializeWorkflowRecord({ kind: "proposal", status: "Regression discovery freshness",
+        payload: { purpose: "discovery-freshness", registrationDigest: fingerprint(registration), generation, bodyDigest },
+    }, receiptContext);
+    const run = await transport.getRun(context.owner.runId, context.owner.attempt);
+    requireValue(run.status === "in_progress", "discovery freshness writer must be active");
+    const written = await transport.updateComment(receiptContext.commentId, body);
+    requireValue(written.body === body && await state.authenticateWorkflowRecord(transport, receiptContext, written),
+        "discovery freshness write acknowledgement authentication failed");
 }
 
 function dispatchKey({ issueNumber, allowanceId, generation, mode, discussionFingerprint, policyRevision }) {
@@ -90,7 +123,7 @@ async function loadCursor(deps, { repair = false } = {}) {
             requireValue(repair && comment.body === saved.committed.body &&
                 saved.intent.cp.generation === record.payload.generation + 1 &&
                 saved.intent.cp.previousDigest === hash(comment.body), "discovery intent predecessor mismatch");
-            const head = await state.readFreshness(transport, context);
+            const head = await readDiscoveryFreshness(deps);
             requireValue(head?.generation === record.payload.generation && head.bodyDigest === hash(comment.body),
                 "required discovery freshness missing or rolled back");
             comment = await transport.updateComment(context.commentId, saved.intent.body);
@@ -99,14 +132,14 @@ async function loadCursor(deps, { repair = false } = {}) {
             requireValue(record?.kind === "proposal", "discovery recovery authentication failed");
         }
     }
-    const head = await state.readFreshness(transport, context), bodyDigest = hash(comment.body);
+    const head = await readDiscoveryFreshness(deps), bodyDigest = hash(comment.body);
     requireValue(head !== null, "discovery freshness receipt missing; operator recovery required");
     requireValue(committedGeneration === undefined || head.generation >= committedGeneration,
         "discovery freshness rolled back behind durable history");
     if (record.payload.generation !== head.generation || bodyDigest !== head.bodyDigest) {
         requireValue(repair && record.payload.generation === head.generation + 1 && record.payload.previousDigest === head.bodyDigest,
             "discovery cursor rollback or torn predecessor");
-        await state.writeFreshness(transport, context, record.payload.generation, bodyDigest);
+        await writeDiscoveryFreshness(deps, record.payload.generation, bodyDigest);
     }
     if (journal && repair) await journal.write("committed", comment.body);
     return { cursor: record.payload, bodyDigest };
@@ -122,7 +155,7 @@ async function saveCursor(deps, cp, previousDigest) {
     const written = await deps.transport.updateComment(deps.context.commentId, body);
     requireValue(written.body === body && await state.authenticateWorkflowRecord(deps.transport, deps.context, written),
         "discovery write acknowledgement authentication failed");
-    await state.writeFreshness(deps.transport, deps.context, cp.generation, hash(body));
+    await writeDiscoveryFreshness(deps, cp.generation, hash(body));
     if (deps.journal) await deps.journal.write("committed", body);
     return { cursor: cp, bodyDigest: hash(body) };
 }
@@ -131,7 +164,7 @@ async function provisionDiscovery(deps) {
     const { transport, context, registration, now, journal } = deps;
     requireValue(Date.parse(registration.provisionDeadline) > now(), "discovery provisioning authorization expired");
     requireValue(journal, "durable discovery provisioning journal required");
-    const committed = await journal.read("committed"), head = await state.readFreshness(transport, context);
+    const committed = await journal.read("committed"), head = await readDiscoveryFreshness(deps);
     const comment = await transport.getComment(context.commentId);
     requireValue(comment.id === context.commentId && comment.user?.id === context.actor.id &&
         comment.user?.login === context.actor.login && comment.user?.type === context.actor.type &&
@@ -171,7 +204,7 @@ async function provisionDiscovery(deps) {
         requireValue(written.body === body && await state.authenticateWorkflowRecord(transport, context, written),
             "discovery provisioning write acknowledgement authentication failed");
     }
-    if (head === null) await state.writeFreshness(transport, context, 0, hash(body));
+    if (head === null) await writeDiscoveryFreshness(deps, 0, hash(body));
     await journal.write("committed", body);
     return { status: "provisioned", generation: 0 };
 }
@@ -189,6 +222,10 @@ async function issueIntent(issueNumber, deps) {
             [registration.checkpointBootstrapDigest, registration.resultBootstrapDigest].every(digest) &&
             registration.checkpointAnchorSha === deps.context.checkpointAnchorSha &&
             Number.isFinite(Date.parse(registration.deadline)), "invalid allowance registration");
+        if (issueNumber === deps.context.issueNumber) requireValue(
+            [deps.registration.commentId, deps.registration.freshnessCommentId].every(id =>
+                ![registration.checkpointCommentId, registration.resultCommentId].includes(id)),
+            "discovery slot conflicts with issue registration");
     }
     const transport = deps.apiFor(issueNumber, registration);
     const context = { ...deps.context, issueNumber, workflowPath: controllerWorkflow,
@@ -207,8 +244,9 @@ async function issueIntent(issueNumber, deps) {
     }
     const callbacks = {
         authenticateRecord: async comment => {
-            if (issueNumber === deps.context.issueNumber && comment.id === deps.context.commentId) {
-                requireValue(await state.authenticateWorkflowRecord(deps.transport, deps.context, comment),
+            if (issueNumber === deps.context.issueNumber &&
+                [deps.context.commentId, deps.registration.freshnessCommentId].includes(comment.id)) {
+                requireValue(await state.authenticateWorkflowRecord(deps.transport, { ...deps.context, commentId: comment.id }, comment),
                     "discovery record changed during intake");
                 return true;
             }

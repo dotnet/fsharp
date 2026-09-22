@@ -574,6 +574,7 @@ async function reserveWork(transport, context, { generation, attemptId, request 
     budget.nextWorkItemId = workItemId;
     budget.pendingWork = { id: attemptId, allowanceId: budget.allowanceId, workItemId, attempt, reserved, status: "reserved" };
     if (request.phase !== "confirmation") delete cp.state.confirmation;
+    delete cp.state.stopReason;
     cp.state.phase = request.phase;
     await saveCheckpoint(transport, context, cp, loaded.bodyDigest);
     return { ...structuredClone(pending), execute: true };
@@ -687,7 +688,7 @@ async function invalidateStaleEvidence(transport, context, { generation }) {
     }
     if (!current.stale && current.state !== null && eligible && cp.state.phase !== "stopped") return cp;
     const phase = !eligible ? "stopped" : current.state === null ? "blocked" : "discovery";
-    if (!current.stale && cp.pending === null && cp.state.phase === phase &&
+    if (!current.stale && cp.pending === null && cp.state.phase === phase && cp.state.stopReason === undefined &&
         (current.state !== null || Object.values(cp.observations).every(o => !o.valid))) return cp;
     await retirePending(transport, context, cp, "invalidated");
     const old = cp.state;
@@ -721,6 +722,7 @@ async function invalidateStaleEvidence(transport, context, { generation }) {
         cp.state.publication = { digest: null, commentId: null };
     }
     delete cp.state.confirmation;
+    delete cp.state.stopReason;
     cp.state.phase = phase;
     cp.publicationStatus = !eligible || current.state === null ? "blocked" :
         cp.state.publication.commentId !== null ? "published" : "unpublished";
@@ -728,21 +730,26 @@ async function invalidateStaleEvidence(transport, context, { generation }) {
     return saveCheckpoint(transport, context, cp, loaded.bodyDigest);
 }
 
-async function recordSearchProgress(transport, context, { generation, phase, interval, goodDigest }) {
+async function recordSearchProgress(transport, context, { generation, phase, interval, goodDigest, stopReason }) {
     const loaded = await loadCheckpoint(transport, context);
     requireState(loaded.executionAllowed, `search blocked: ${loaded.blockers.join("; ")}`);
     const cp = loaded.checkpoint;
     checkGeneration(cp, generation);
     requireState(cp.pending === null, "cannot change search with pending work");
     requireState(["admission", "bisect", "confirmation", "blocked", "stopped"].includes(phase), "invalid search phase");
+    requireState(stopReason === undefined || ["blocked", "stopped"].includes(phase) &&
+        typeof stopReason === "string" && stopReason.length > 0 && stopReason.length <= 1024, "invalid terminal stop reason");
     if (goodDigest !== undefined) {
         const good = cp.observations[goodDigest];
         requireState(good?.valid && good.data.kind === "source" && good.data.outcome.outcome === "pass",
             "search requires authenticated passing source");
         cp.state.endpointEvidence.good = goodDigest;
     }
-    if (cp.state.phase === phase && equal(cp.state.interval, interval) && goodDigest === undefined) return cp;
+    if (cp.state.phase === phase && equal(cp.state.interval, interval) && goodDigest === undefined &&
+        cp.state.stopReason === stopReason) return cp;
     if (phase !== "confirmation") delete cp.state.confirmation;
+    if (stopReason === undefined) delete cp.state.stopReason;
+    else cp.state.stopReason = stopReason;
     cp.state.phase = phase;
     cp.state.interval = structuredClone(interval);
     cp.generation++;
@@ -795,6 +802,7 @@ async function recordConfirmation(transport, context, { generation, confirmation
         (generation === cp.generation || generation === cp.generation - 1)) return cp;
     checkGeneration(cp, generation);
     cp.state.confirmation = structuredClone(confirmation);
+    delete cp.state.stopReason;
     validateConfirmationEvidence(cp);
     cp.state.phase = phase;
     cp.generation++;

@@ -70,6 +70,14 @@ async function main(args = process.argv.slice(2), env = process.env) {
         "configuration differs from pinned trusted bytes");
     const registration = validateRegistration(decode(await reader.readTrustedFile(".github/regression-bisect/discovery.json", 4096)));
     requireValue(registration.checkpointAnchorSha === config.anchorSha, "discovery anchor changed");
+    const issueRegistration = await reader.readOptionalTrustedFile(
+        `.github/regression-bisect/registrations/${registration.issueNumber}.json`, 4096);
+    if (issueRegistration !== null) {
+        const { checkpointCommentId, resultCommentId } = decode(issueRegistration);
+        requireValue([checkpointCommentId, resultCommentId].every(id => Number.isSafeInteger(id) && id > 0 &&
+            ![registration.commentId, registration.freshnessCommentId].includes(id)),
+        "discovery slot conflicts with issue registration");
+    }
     const policyBytes = await reader.readTrustedFile(".github/policies/regression-bisect.json", 48 * 1024 - 1);
     validatePolicy(decode(policyBytes));
     requireValue(hash(policyBytes) === hash(await fs.readFile(path.join(root, ".github", "policies", "regression-bisect.json"))),
@@ -84,7 +92,7 @@ async function main(args = process.argv.slice(2), env = process.env) {
     }
     const context = { ...base, issueNumber: registration.issueNumber, commentId: registration.commentId, workflowPath };
     const transport = createGithubApi({ repository: base.repository, issueNumber: context.issueNumber,
-        checkpointCommentId: context.commentId, resultCommentId: context.commentId, singleSlot: true,
+        checkpointCommentId: context.commentId, resultCommentId: registration.freshnessCommentId,
         anchorSha: config.anchorSha, token: env.RB_GITHUB_TOKEN, signal }, local?.send);
     const run = await transport.getRun(context.owner.runId, context.owner.attempt);
     requireValue(String(run.id) === context.owner.runId && run.run_attempt === context.owner.attempt &&

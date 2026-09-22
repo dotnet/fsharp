@@ -94,7 +94,7 @@ function renderReport(report) {
     const completeInterval = Array.isArray(c?.interval.remaining);
     const endpoint = name => report.observations.find(o => o.digest === s.endpointEvidence[name])?.data.outcome;
     const stable = endpoint("stable"), main = endpoint("main");
-    const stopReason = c?.reason ??
+    const stopReason = s.stopReason ?? c?.reason ??
         (stable?.outcome === "pass" ? "not reproduced on latest stable; a main-only regression is not established" :
             stable?.outcome === "untestable" ? `stable untestable: ${stable.reason}` :
             main?.outcome === "pass" ? "release-specific or fixed on main" :
@@ -295,7 +295,7 @@ async function preparePublication(options, deps) {
             } catch (error) { return stop(error.message); }
             const records = new Map(), checkpoints = new Map([[context.commentId, loaded]]);
             const authenticateRecord = async comment => {
-                if (comment.id === deps.discoveryCommentId)
+                if ([deps.discoveryCommentId, deps.discoveryFreshnessCommentId].includes(comment.id))
                     return await deps.approval.authenticateRecord(comment);
                 const decoded = await state.authenticateDecodedRecord(transport, { ...context, commentId: comment.id }, comment);
                 if (!decoded) return false;

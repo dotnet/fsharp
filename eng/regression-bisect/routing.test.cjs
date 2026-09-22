@@ -38,8 +38,9 @@ function invoke(f, mode, issue, started = () => {}, extra = {}) {
 async function setup(t) {
     const f = await fixture(t);
     const registration = {
-        schemaVersion: 1, repository: "dotnet/fsharp", issueNumber: 123, commentId: 458,
+        schemaVersion: 2, repository: "dotnet/fsharp", issueNumber: 123, commentId: 458, freshnessCommentId: 459,
         checkpointAnchorSha: f.config.anchorSha, bootstrapDigest: hash("Reviewed discovery slot"),
+        freshnessBootstrapDigest: hash("Reviewed discovery freshness slot"),
         provisionDeadline: "2026-10-01T00:00:00Z", workflowPath, workflowGeneration: 1,
     };
     f.env.RB_DISPATCH_TOKEN = "offline-separate-dispatch-token";
@@ -47,6 +48,7 @@ async function setup(t) {
         db.runs["22345/1"] = { ...db.runs["12345/1"], id: 22345, path: workflowPath };
         db.issues = [db.issue];
         db.comments.push({ ...db.comments[0], id: 458, body: "Reviewed discovery slot" });
+        db.comments.push({ ...db.comments[0], id: 459, body: "Reviewed discovery freshness slot" });
         db.files[".github/regression-bisect/discovery.json"] = Buffer.from(JSON.stringify(registration)).toString("base64");
         db.files[workflowPath] = Buffer.from("fixture discovery workflow").toString("base64");
     });
@@ -74,6 +76,22 @@ function success(result) {
 async function provision(f) { return success(await invoke(f, "provision")); }
 const dispatches = f => f.ledger().filter(e => e.kind === "api" && e.route.endsWith("/dispatches"));
 const mutations = f => f.ledger().filter(e => e.kind === "api" && e.method !== "GET");
+
+test("discovery registration cannot alias controller slots or silently adopt legacy history", async t => {
+    for (const change of [{ schemaVersion: 1 }, { freshnessCommentId: 458 },
+        ...[456, 457].flatMap(id => [{ commentId: id }, { freshnessCommentId: id }])])
+        await t.test(JSON.stringify(change), async t => {
+            const f = await setup(t);
+            f.update(db => {
+                db.files[".github/regression-bisect/discovery.json"] =
+                    Buffer.from(JSON.stringify({ ...f.registration, ...change })).toString("base64");
+            });
+            const result = await invoke(f, "provision");
+            assert.equal(result.code, 1);
+            assert.match(result.result.reason, /registration|schema/);
+            assert.equal(mutations(f).length, 0);
+        });
+});
 
 async function deliver(f, mode, runId = "12345") {
     f.update(db => { db.runs[`${runId}/1`].status = "completed"; db.runs[`${runId}/1`].conclusion = "success"; });
@@ -230,8 +248,8 @@ test("routing hands interrupted controller checkpoints back to the owning recove
                 const before = mutations(f).length;
                 const result = success(await invoke(f, "schedule"));
                 assert.deepEqual(result.dispatched, [123], JSON.stringify(result));
-                assert.ok(mutations(f).slice(before).every(e => e.route === "issues/comments/458" ||
-                    e.route.endsWith("/dispatches") || e.body?.context === "regression-bisect/123/458"));
+                assert.ok(mutations(f).slice(before).every(e => ["issues/comments/458", "issues/comments/459"].includes(e.route) ||
+                    e.route.endsWith("/dispatches")));
                 input = dispatches(f).at(-1).body.inputs;
                 assert.equal(input.mode, mode);
             }
@@ -341,8 +359,8 @@ test("recovery handoffs reject stale authority and unauthenticated predecessors"
             const mutationsBefore = mutations(f).length;
             assert.deepEqual(success(await invoke(f, "manual", 123)).dispatched, []);
             assert.equal((await consume(f, input, "12346")).code, 1);
-            assert.ok(mutations(f).slice(mutationsBefore).every(e => e.route === "issues/comments/458" ||
-                e.body?.context === "regression-bisect/123/458"));
+            assert.ok(mutations(f).slice(mutationsBefore).every(e =>
+                ["issues/comments/458", "issues/comments/459"].includes(e.route)));
             assert.deepEqual((await checkpoint(f)).cp.state.budget.consumed, before.state.budget.consumed);
             assert.equal(f.ledger().some(e => e.kind === "worker"), false);
         });
@@ -420,7 +438,7 @@ test("fresh-process provisioning and all routes commit the same fixed bootstrap 
             issue: 123, mode: "bootstrap", routingKey: cp.selected[0].key, routingGeneration: "-1",
         } });
         const writes = mutations(f);
-        assert.deepEqual(writes.map(e => e.method), ["PATCH", "POST", "PATCH", "POST", "POST", "PATCH", "POST"]);
+        assert.deepEqual(writes.map(e => e.method), ["PATCH", "PATCH", "PATCH", "PATCH", "POST", "PATCH", "PATCH"]);
         assert.equal(f.ledger().some(e => e.kind === "worker"), false);
     });
 });
@@ -436,23 +454,6 @@ test("unlabeled, closed and PR fresh reads cannot dispatch or publish", async t 
         assert.equal(dispatches(f).length, 0);
         assert.equal(mutations(f).length, before);
     });
-});
-
-test("lost dispatch response retains committed selection across new processes and retries the identical key", async t => {
-    const f = await setup(t);
-    await provision(f);
-    f.update(db => { db.faults.dispatchAck = true; });
-    const failed = await invoke(f, "event", 123);
-    assert.equal(failed.code, 1, failed.stdout);
-    const first = await cursor(f);
-    assert.equal(first.generation, 1);
-    assert.equal(first.selected[0].status, "pending");
-    f.nextRun();
-    f.update(db => { db.now = new Date(Date.parse(db.now) + 300001).toISOString(); });
-    success(await invoke(f, "schedule"));
-    assert.equal(dispatches(f).length, 2);
-    assert.deepEqual(dispatches(f)[0].body, dispatches(f)[1].body);
-    assert.equal((await cursor(f)).selected[0].key, first.selected[0].key);
 });
 
 test("a missing cursor is not a cache miss and cannot reset discovery", async t => {
@@ -474,6 +475,12 @@ test("every durable routing boundary recovers exact intent in a new process", as
         const interrupted = await invoke(f, "event", 123);
         assert.equal(interrupted.code, 1, interrupted.stdout);
         const body = JSON.parse(await fs.readFile(path.join(f.env.RB_STATE_DIRECTORY, "dotnet-fsharp-discovery", "intent.json"), "utf8"));
+        if (fault === "dispatchAck") {
+            const first = await cursor(f);
+            assert.equal(first.generation, 1);
+            assert.equal(first.selected[0].status, "pending");
+            assert.equal(first.selected[0].key, dispatches(f)[0].body.inputs.routingKey);
+        }
         f.nextRun();
         f.update(db => { db.now = new Date(Date.parse(db.now) + 300001).toISOString(); });
         assert.deepEqual(success(await invoke(f, "schedule")).dispatched, [123]);
@@ -556,10 +563,77 @@ test("abandoned unclaimed reservations reach a durable budget stop and guarded r
         assert.equal(terminal.state.phase, "blocked");
         assert.deepEqual(terminal.state.budget, { ...before.state.budget, pendingWork: null });
         assert.equal(success(await deliver(f, "publish", "12346")).status, "published");
+        assert.match(f.read().comments.find(c => c.id === 457).body,
+            /Stop reason: cumulative budget exhausted or allowance deadline insufficient/);
         assert.equal(success(await consume(f, first, "12346")).status, "duplicate");
         assert.equal(f.ledger().some(e => e.kind === "worker"), false);
         assert.equal(mutations(f).filter(e => e.route === "issues/comments/457").length, 1);
     });
+});
+
+test("long-running mixed-context discovery keeps bounded freshness and preserves controller allowance", async t => {
+    const f = await setup(t);
+    addIssues(f, 3);
+    await provision(f);
+    assert.equal(success(await deliver(f, "bootstrap")).status, "initialized");
+    assert.equal(success(await deliver(f, "advance")).status, "observed");
+    f.update(db => {
+        db.runs["12345/1"].status = "completed";
+        db.statuses.unshift(...Array.from({ length: 125 }, (_, i) => ({
+            ...db.statuses[0], id: db.nextId++, context: `other-check/${i % 5}`,
+        })));
+    });
+    const before = (await checkpoint(f)).cp;
+    const api = await connect(f.serviceFile);
+    const requests = [];
+    const send = (url, options) => {
+        requests.push({ path: new URL(url).pathname, method: options.method });
+        return api.send(url, options);
+    };
+    const { createGithubApi, createApprovalReader, createDispatcher } = require("./github.cjs");
+    const apiFor = (issueNumber, registration) => createGithubApi({
+        repository: "dotnet/fsharp", issueNumber, checkpointCommentId: registration?.checkpointCommentId ?? 1,
+        resultCommentId: registration?.resultCommentId ?? 2, anchorSha: f.config.anchorSha, token: "offline",
+    }, send);
+    const directory = path.join(f.env.RB_STATE_DIRECTORY, "dotnet-fsharp-discovery");
+    const deps = {
+        context: f.routingContext, registration: f.registration,
+        transport: apiFor(123, { checkpointCommentId: 458, resultCommentId: 459 }),
+        apiFor, readerFor: issueNumber => createApprovalReader({ api: apiFor(issueNumber),
+            revision: f.context.policyRevision, issueNumber }),
+        journal: {
+            read: async name => JSON.parse(await fs.readFile(path.join(directory, `${name}.json`), "utf8")),
+            write: (name, body) => require("./controller-cli.cjs").writeJson(path.join(directory, `${name}.json`), body),
+        },
+        signal: AbortSignal.timeout(120000), now: () => Date.parse(f.read().now),
+        dispatch: createDispatcher({ token: f.env.RB_DISPATCH_TOKEN }, send),
+    };
+    const { route } = require("./routing.cjs");
+    const statusCount = f.read().statuses.length;
+    for (let i = 0; i < 1100; i++) {
+        requests.length = 0;
+        const result = await route(deps, i % 100 === 99 ? 123 : 1000 + i % 2);
+        assert.equal(result.status, "routed");
+        assert.equal(requests.filter(r => r.method === "GET" && r.path.endsWith("/comments/459")).length, 1);
+        if (i % 100 === 99) assert.deepEqual(result.dispatched, [123]);
+        else assert.equal(requests.some(r => r.path.endsWith("/statuses")), false);
+    }
+    assert.equal(f.read().statuses.length, statusCount, "discovery must not append commit-status history");
+    assert.ok((await cursor(f)).generation > 1000);
+    for (const id of [458, 459]) assert.ok(Buffer.byteLength(f.read().comments.find(c => c.id === id).body) < 48 * 1024);
+    assert.deepEqual((await checkpoint(f)).cp.state.budget, before.state.budget);
+    assert.equal((await checkpoint(f)).cp.deadline, before.deadline);
+    f.nextRun();
+    const result = success(await invoke(f, "schedule"));
+    assert.ok(result.selected.length <= 3);
+    const posts = dispatches(f).filter(e => e.body.inputs.mode === "advance").slice(1);
+    for (const post of posts) assert.deepEqual(post.body, posts[0].body);
+    f.update(db => { db.runs["12345/1"].status = "in_progress"; });
+    assert.equal((await consume(f, posts[0].body.inputs)).result.status, "blocked");
+    assert.equal(success(await consume(f, posts.at(-1).body.inputs)).status, "duplicate");
+    assert.equal(success(await deliver(f, "publish")).status, "published");
+    assert.equal(f.ledger().filter(e => e.kind === "worker").length, 1);
+    assert.equal(mutations(f).filter(e => e.route === "issues/comments/457").length, 1);
 });
 
 test("terminal publication freshness requeues through routing and controller-owned reconciliation", async t => {
@@ -610,6 +684,8 @@ test("cursor identity, required local state and remote freshness fail closed", a
     const cases = [
         "owner", "app", "run", "workflow", "key", "query", "policy", "workflowGeneration", "generation",
         "signature", "cursor-missing", "freshness-missing", "freshness-forged", "cursor-rollback", "both-rollback",
+        "freshness-owner", "freshness-app", "freshness-issue", "freshness-slot", "freshness-workflow", "freshness-run",
+        "freshness-key", "freshness-registration", "freshness-generation", "freshness-bootstrap",
         "intent-missing", "committed-missing", "intent-forged", "freshness-rollback",
     ];
     for (const name of cases) await t.test(name, async t => {
@@ -624,6 +700,7 @@ test("cursor identity, required local state and remote freshness fail closed", a
             else await fs.writeFile(file, JSON.stringify("forged"));
         } else f.update(db => {
             const c = db.comments.find(c => c.id === 458);
+            const receipt = db.comments.find(c => c.id === 459);
             if (name === "owner") c.user.id++;
             if (name === "app") c.performed_via_github_app.id++;
             if (name === "run") db.runs["22345/1"].head_sha = "a".repeat(40);
@@ -639,10 +716,29 @@ test("cursor identity, required local state and remote freshness fail closed", a
                 c.body = state.serializeWorkflowRecord({ kind: "proposal", status: "Routing", payload }, f.routingContext);
             }
             if (name === "cursor-missing") db.comments = db.comments.filter(c => c.id !== 458);
-            if (name === "freshness-missing") db.statuses = [];
-            if (name === "freshness-forged") db.statuses[0].target_url += "a";
+            if (name === "freshness-missing") db.comments = db.comments.filter(c => c.id !== 459);
+            if (name === "freshness-forged") receipt.body = receipt.body.replace(/"signature":"./, '"signature":"z');
+            if (name === "freshness-owner") receipt.user.id++;
+            if (name === "freshness-app") receipt.performed_via_github_app.id++;
+            if (name === "freshness-issue") receipt.issue_url = receipt.issue_url.replace("/123", "/124");
+            if (name === "freshness-bootstrap") receipt.body = "Reviewed discovery freshness slot";
+            if (["freshness-slot", "freshness-workflow", "freshness-run", "freshness-key",
+                "freshness-registration", "freshness-generation"].includes(name)) {
+                const context = { ...f.routingContext, commentId: 459 };
+                const payload = { purpose: "discovery-freshness", registrationDigest: fingerprint(f.registration),
+                    generation: 0, bodyDigest: hash(c.body) };
+                if (name === "freshness-slot") context.commentId = 460;
+                if (name === "freshness-workflow") context.workflowPath = ".github/workflows/other.yml";
+                if (name === "freshness-run") context.owner = { runId: "12345", attempt: 1 };
+                if (name === "freshness-key") context.keys = { fixture: Buffer.alloc(32, 7) };
+                if (name === "freshness-registration") payload.registrationDigest = hash("other registration");
+                if (name === "freshness-generation") payload.generation = 2;
+                receipt.body = state.serializeWorkflowRecord({ kind: "proposal",
+                    status: "Regression discovery freshness", payload }, context);
+            }
             if (["cursor-rollback", "both-rollback"].includes(name)) c.body = original.comments.find(c => c.id === 458).body;
-            if (["freshness-rollback", "both-rollback"].includes(name)) db.statuses = original.statuses;
+            if (["freshness-rollback", "both-rollback"].includes(name))
+                receipt.body = original.comments.find(c => c.id === 459).body;
         });
         const before = mutations(f).length;
         const result = await invoke(f, "schedule");
@@ -698,7 +794,7 @@ test("fresh full intake blocks stale approvals, samples and live investigations 
         assert.equal(unrelated.intents[0].status, "proposal");
         assert.equal(unrelated.intents[0].reason, "approval-required");
         assert.equal(f.ledger().some(e => e.kind === "worker" || e.kind === "git"), false);
-        assert.ok(mutations(f).every(e => e.route === "issues/comments/458" || e.route.startsWith("statuses/")));
+        assert.ok(mutations(f).every(e => ["issues/comments/458", "issues/comments/459"].includes(e.route)));
     });
 });
 

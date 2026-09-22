@@ -270,6 +270,7 @@ test("cancelled reservations are charged, bounded and resumed through the state 
     assert.equal(cp.records[0].status, "cancelled");
     assert.equal(cp.pending, null);
     assert.equal(cp.state.phase, "blocked");
+    assert.equal(cp.state.stopReason, result.reason);
     assert.equal(h.calls.length, 0);
 });
 

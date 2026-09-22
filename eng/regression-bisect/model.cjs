@@ -622,7 +622,10 @@ function validateState(state) {
             }, p)),
             publication: shape({ digest: nullable(digest), commentId: nullable(positive) }),
             ...(state && Object.hasOwn(state, "confirmation") ? { confirmation: validateConfirmation } : {}),
+            ...(state && Object.hasOwn(state, "stopReason") ? { stopReason: text } : {}),
         }, "state");
+        check(!Object.hasOwn(state, "stopReason") || ["blocked", "stopped"].includes(state.phase),
+            "state.stopReason", "terminal reason requires a terminal phase");
         validateBudget(state.budget, state.manifest);
         check(state.repository === state.manifest.repository && state.issueNumber === state.manifest.issueNumber &&
             state.issueFingerprint === state.manifest.discussionFingerprint &&
