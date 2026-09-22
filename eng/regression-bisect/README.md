@@ -372,6 +372,10 @@ owners block. A dead owner may resume on the same host; an interrupted handoff
 guard or absent required evidence needs investigation, not deletion. Only owned
 disposable acquisition/selection scratch is a cache. Never delete `store`,
 `launches`, signed journals, `trial.json`, `delivery.json` or API state to recover.
+A lost delivery receipt can first return `duplicate`, then route recovery on the
+next advance. A claimed observation is recovered without executing again; an
+unclaimed lost reservation stays charged even when a later attempt is allowed.
+Missing claimed execution evidence blocks rather than launching a replacement.
 
 `--verify` performs no API mutations or network requests. It requires the
 authenticated published digest and fixed comment ID, matching complete expected
@@ -390,14 +394,20 @@ or extends a deadline.
 constructs the isolated full-source Git graph without changing this branch. It
 reuses the actual workspace layout validator and revision declarations, freezes
 raw official metadata, and checks Linux SDK/runtime archive availability with
-bounded HEAD requests. The shared clone depends on the original source object
+bounded HEAD requests. Archive selection is shared with production acquisition
+and matches the product, exact version, RID and archive extension; apphost packs
+cannot stand in for the runtime. Missing or duplicate runtime entries block.
+The shared clone depends on the original source object
 store; retain those objects until the trial is exported or completed.
 
 The reviewed base is `8c0e444de18218ecec91475a6022872e93299e10`: the existing
 Linux Arcade product/bootstrap entrypoints and nested FSI/FSC projects pass
 `inspectRevisionLayout`. Its own `global.json` specifies SDK/tools **10.0.301**,
 and the product TFM is `net10.0`. Official Linux x64 SDK 10.0.301 and runtime
-10.0.0 have publisher SHA-512 metadata and returned HTTP 200 on 2026-09-22;
+10.0.0 have publisher SHA-512 metadata and returned HTTP 200 on 2026-09-22
+for `dotnet-sdk-10.0.301-linux-x64.tar.gz` and
+`dotnet-runtime-10.0.0-linux-x64.tar.gz`. These refreshed receipts replace the
+earlier apphost-pack HEAD check, which did **not** establish runtime availability;
 no measured-provenance exception or Windows approval is reused. Latest stable
 metadata at fixture freeze selected **10.0.401**; advancing rejects changed
 metadata rather than silently replacing that endpoint.
@@ -436,7 +446,16 @@ replaced to manufacture a green trial.
 CLI processes, Git selection, durable routing and signed reporting. It covers
 endpoint stops, skipped/ambiguous/toolchain/revert/merge/backport histories,
 six-unit/fresh-build accounting, full rendered SHAs and verified PR URLs, paginated
-association membership, preparation and authority boundaries. Existing
+association membership, preparation and authority boundaries. A test-launcher-only
+preload runs the actual `trial.cjs` entrypoint against the existing synthetic
+worker fixture, exercising signed delivery receipts, live-owner exclusion,
+process death at reservation/claim/retained observation/delivery/result write,
+six-unit completion, and optional-expiry adoption of the same persisted result.
+The normal, unmodified CLI then verifies that synthetic signed evidence bundle
+read-only and rejects damaged checkpoint/result/run/evidence/plan/helper inputs.
+The preload is not a trial option and is never loaded by the acceptance adapter.
+Offline source-freezing tests reproduce the exact graph and assertion while
+rejecting apphost-only or ambiguous runtime metadata and unavailable archives. Existing
 controller, collector, engine, attribution, report, acquisition and reproduction
 suites retain cancellation/claim/retained-observation recovery, optional-expiry
 lost-ack adoption, required-loss and stale-input rejection, hostile inputs,
@@ -444,18 +463,20 @@ runtime/diagnostic distinctions, identity fallback negatives, matrix coverage
 and immutable old producer metadata. These cheap tests do not establish either
 physical acceptance gate.
 
-Harness validation on 2026-09-22: 30 focused tests passed in 224 seconds and
-2,501 scoped tests passed in 613 seconds. Subsequent read-only-store hardening
-passed 209 store/trial tests; linked-parent rejection passed all 11 selected
-preparation checks. All three independent on-disk report mutations failed their
-authenticated semantic assertions in under two seconds each; production helper
-hashes were unchanged by the probes. The scoped evidence helper Release build
-and test commands exited 0 using installed SDK 10.0.112 (the helper has no
-managed test cases). A portable source bundle was checked at 408,166,604 bytes,
-below the existing 1 GiB limit. Logs, raw ledgers, source manifests, graph,
-patches, official metadata and receipts are retained privately. No historical
-product build, worker containment acceptance or physical known-history trial
-was performed.
+Harness validation on 2026-09-22: 46 focused tests passed in 402 seconds.
+The full suite exposed helper snapshots traversing concurrently deleted fixture
+directories; snapshots now prune disposable directories before enumeration, and
+11 targeted identity/recovery tests passed. The final scoped run passed all
+2,519 tests in 626 seconds. All three independent on-disk report mutations failed
+their authenticated semantic assertions in under two seconds each, with
+unchanged production helper hashes. Seven changed CJS files passed syntax checks;
+help and diff checks passed. Scoped evidence-helper Release build/test commands
+exited 0 using installed SDK 10.0.112 (the helper has no managed test cases).
+The source graph and patch hashes are unchanged; refreshed publisher metadata
+and HEAD receipts identify the actual Linux SDK/runtime archives. RED/GREEN logs,
+source-bound receipts, raw ledgers, graph/patches and fresh-process read-only
+verification proof are retained privately. No historical product build, worker
+containment acceptance or physical known-history trial was performed.
 
 **This checkout does not activate production, approve a reproduction, prove
 physical containment, or perform the separate known-history acceptance trial.**

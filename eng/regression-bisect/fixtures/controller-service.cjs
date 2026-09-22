@@ -44,13 +44,14 @@ function writeDatabase(file, value) {
 }
 
 function invokeCli(args, env = {}, started = () => {}, {
-    entry = "controller-cli.cjs", kind = "cli-exit", storageFaults = true,
+    entry = "controller-cli.cjs", kind = "cli-exit", storageFaults = true, preload = [],
 } = {}) {
     return new Promise((resolve, reject) => {
         const start = performance.now();
-        const preload = storageFaults && env.RB_LOCAL_TEST_FILE
+        const storagePreload = storageFaults && env.RB_LOCAL_TEST_FILE
             ? ["--require", path.join(__dirname, "controller-storage-faults.cjs")] : [];
-        const child = spawn(process.execPath, [...preload, path.join(__dirname, "..", entry), ...args], {
+        const child = spawn(process.execPath, [...storagePreload, ...preload.flatMap(file => ["--require", file]),
+            path.join(__dirname, "..", entry), ...args], {
             env: { ...process.env, ...env }, shell: false, windowsHide: true,
         });
         let stdout = "", stderr = "";
@@ -243,7 +244,7 @@ function syntheticObservation(reservation, context, outcome, attempts) {
     return observation;
 }
 
-async function connect(file, { readOnly = false } = {}) {
+async function connect(file, { readOnly = false, synthetic } = {}) {
     let snapshot;
     const read = () => {
         const stat = fs.statSync(file, { bigint: true });
@@ -261,8 +262,9 @@ async function connect(file, { readOnly = false } = {}) {
         if (!db.faults[name]) return false;
         delete db.faults[name]; write(db); return true;
     };
+    synthetic ??= read().SYNTHETIC;
     return {
-        ...(read().SYNTHETIC ? { collectObservation: async ({ reservation, context }) => {
+        ...(synthetic ? { collectObservation: async ({ reservation, context }) => {
             assertValue(process.env.RB_LOCAL_TEST === "explicit-offline-fixture" && !process.env.GITHUB_ACTIONS &&
                 !process.env.RB_TRIAL_DIRECTORY, "SYNTHETIC observations are unit fixtures only");
             const launch = path.join(process.env.RB_STATE_DIRECTORY, "dotnet-fsharp-123", "launches", reservation.id);
@@ -498,10 +500,10 @@ async function connect(file, { readOnly = false } = {}) {
             const launch = { launchId: f.digest(unit.buildInstanceId), unitDigest: fingerprint(unit),
                 imageDigest: image.split(":").at(-1) };
             let SYNTHETIC;
-            if (db.SYNTHETIC) {
+            if (synthetic) {
                 assertValue(process.env.RB_LOCAL_TEST === "explicit-offline-fixture" && !process.env.RB_TRIAL_DIRECTORY &&
                     !process.env.GITHUB_ACTIONS, "SYNTHETIC worker is a unit fixture only");
-                SYNTHETIC = db.SYNTHETIC.stable;
+                SYNTHETIC = synthetic.stable;
                 if (unit.request.kind === "source") {
                     const args = ["show", `${unit.request.target.sourceSha}:source.txt`];
                     record({ kind: "git", args });

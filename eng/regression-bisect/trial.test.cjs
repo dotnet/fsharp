@@ -2,13 +2,15 @@ const { test } = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("node:fs/promises");
 const path = require("node:path");
-const { routingFixture, checkpoint, connect, invokeCli } = require("./fixtures/controller-service.cjs");
+const { routingFixture, checkpoint, connect, invokeCli, writeDatabase } = require("./fixtures/controller-service.cjs");
 const contracts = require("./fixtures/contracts.cjs");
 const state = require("./state.cjs");
-const { sign, adapter } = require("./trial.cjs");
+const { sign, adapter, helpers } = require("./trial.cjs");
+const { freeze, base, sourcePath, samplePath, sample, sentinel } = require("./fixtures/trial-source.cjs");
 
-const invoke = (args, env = {}) => invokeCli(args, env, undefined, {
+const invoke = (args, env = {}, started, synthetic = false) => invokeCli(args, env, started, {
     entry: "trial.cjs", kind: "trial-exit", storageFaults: false,
+    preload: synthetic ? [path.join(__dirname, "fixtures", "trial-driver.cjs")] : [],
 });
 
 async function history(t, scenario = "linear", endpoints = {}) {
@@ -220,6 +222,19 @@ test("trial CLI exposes only prepare, one-step advance, read-only verify and hel
     }
 });
 
+test("trial helper identity prunes disposable directories before reading them", async t => {
+    const expected = await helpers(), readdir = fs.readdir;
+    t.mock.method(fs, "readdir", async (directory, options) => {
+        assert.equal(options.recursive, undefined, "recursive enumeration enters transient Git and build directories");
+        const entries = await readdir(directory, options);
+        return directory === __dirname ? [...entries, ...[".attribution-test-gone", "obj", "bin", "node_modules"]
+            .map(name => ({ name, isDirectory: () => true }))] : entries;
+    });
+    assert.deepEqual(await helpers(), expected);
+    assert.ok(expected.some(e => e.path.endsWith("fixtures/trial-driver.cjs")));
+    assert.ok(expected.some(e => e.path.endsWith("trial.cjs")));
+});
+
 async function reviewed(t) {
     const f = await history(t);
     const files = [];
@@ -326,4 +341,274 @@ test("SYNTHETIC prepare rejects a linked evidence parent before creating any des
     assert.match(JSON.parse(denied.stdout).reason, /parent.*links/);
     await assert.rejects(fs.stat(r.evidence), { code: "ENOENT" });
     await fs.unlink(link);
+});
+
+test("SYNTHETIC source freeze selects publisher runtime, never apphost, and preserves the reviewed graph", async t => {
+    const f = await history(t), feed = "https://builds.dotnet.microsoft.com/dotnet";
+    const archive = (product, version, rid = "linux-x64") => ({ name: `${product}-${rid}.tar.gz`, rid,
+        url: `${feed}/${product === "dotnet-sdk" ? "Sdk" : "Runtime"}/${version}/${product}-${version}-${rid}.tar.gz`,
+        hash: "a".repeat(128) });
+    const sdk = { version: "10.0.301", files: [archive("dotnet-sdk", "10.0.301")] };
+    const runtime = { version: "10.0.0", files: [archive("dotnet-apphost-pack", "10.0.0"),
+        archive("dotnet-runtime", "10.0.0", "linux-arm64"), archive("dotnet-runtime", "10.0.0")] };
+    const indexUrl = `${feed}/release-metadata/releases-index.json`, channelUrl = `${feed}/release-metadata/10.0/releases.json`;
+    for (const mode of ["valid", "apphost-only", "duplicate-runtime", "unavailable"]) await t.test(mode, async () => {
+        const calls = [], directory = path.join(f.directory, mode);
+        const record = structuredClone(runtime);
+        if (mode === "apphost-only") record.files = record.files.slice(0, 1);
+        if (mode === "duplicate-runtime") record.files.push(record.files.at(-1));
+        const http = async (url, options = {}) => {
+            calls.push({ url, method: options.method ?? "GET" });
+            assert.ok([indexUrl, channelUrl, sdk.files[0].url, ...record.files.map(f => f.url)].includes(url), url);
+            return { status: mode === "unavailable" && options.method === "HEAD" ? 404 : 200, url, redirects: [],
+                bytes: Buffer.from(JSON.stringify(url === indexUrl
+                    ? { "releases-index": [{ "channel-version": "10.0", "releases.json": channelUrl }] }
+                    : { "channel-version": "10.0", releases: [{ "release-date": "2026-06-01", sdk, runtime: record }] })) };
+        };
+        const pending = freeze(directory, f.config.gitExecutable, { http, clock: () => new Date("2026-09-22") });
+        if (mode !== "valid") {
+            await assert.rejects(pending, mode === "unavailable" ? /unavailable/ : /missing or ambiguous/);
+            await assert.rejects(fs.stat(path.join(directory, "source-graph.json")), { code: "ENOENT" });
+        } else {
+            const result = await pending;
+            const frozen = JSON.parse(await fs.readFile(path.join(directory, "source-toolchain.json")));
+            assert.deepEqual(frozen.archives.map(a => a.archive.url), [sdk.files[0].url, runtime.files.at(-1).url]);
+            assert.deepEqual(calls.filter(c => c.method === "HEAD").map(c => c.url), frozen.archives.map(a => a.archive.url));
+            assert.equal(result.source.base, base);
+            assert.deepEqual([result.source.good, result.source.candidate, result.source.main], [
+                "05e2f222e08785994d8909707054b411ea677fc4", "a23fa5514d49566559bdcc7479fbe00ceb01b577",
+                "e648b05ced2bc8f071685a7dbfacbbc15964e2f9"]);
+            const git = args => f.git(["--git-dir", result.source.directory, ...args]);
+            assert.equal(git(["rev-list", "--parents", "-n", "1", result.source.candidate]),
+                `${result.source.candidate} ${result.source.good}`);
+            assert.equal(git(["show", `${result.source.candidate}:${sourcePath}`]), git(["show", `${base}:${sourcePath}`]));
+            assert.ok(git(["show", `${result.source.good}:${sourcePath}`]).includes(sentinel.trim()));
+            assert.equal(git(["show", `${result.source.main}:${samplePath}`]), sample.trim());
+            for (const file of result.files) assert.equal(contracts.digest(await fs.readFile(file.path)), file.sha256);
+            const manifest = JSON.parse(await fs.readFile(path.join(directory, "frozen-manifest.json")));
+            assert.deepEqual(manifest.assertions, {
+                pass: { exitCode: 0, stdout: "SYNTHETIC_ACCEPTANCE_SENTINEL\nTRIAL_SAMPLE\n", stderr: "" },
+                failure: { exitCode: 0, stdout: "TRIAL_SAMPLE\n", stderr: "" } });
+            assert.deepEqual(result.plan, { sourceBuilds: 5, workerUnits: 6, reservedMinutes: 660, totalMinutes: 720,
+                attempts: { [result.source.good]: 2, [result.source.candidate]: 2, [result.source.main]: 1 }, actualProductRuns: 0 });
+            await assert.rejects(freeze(directory, f.config.gitExecutable, { http }), { code: "EEXIST" });
+        }
+        assert.equal(calls.filter(c => c.method === "HEAD" && c.url.includes("apphost")).length, 0);
+    });
+});
+
+async function preparedDriver(t) {
+    const r = await reviewed(t);
+    assert.equal((await invoke(["--prepare", r.file, r.evidence], r.env)).code, 0);
+    const api = path.join(r.evidence, "api.json");
+    const read = async () => JSON.parse(await fs.readFile(api));
+    const update = async action => { const db = await read(); action(db); writeDatabase(api, db); };
+    const step = async (fault, started) => invoke(["--advance", r.evidence],
+        { ...r.env, RB_SYNTHETIC_TRIAL_FAULT: fault ?? "" }, started, true);
+    const ledger = async () => (await fs.readFile(`${api}.ledger`, "utf8")).trim().split("\n").map(JSON.parse);
+    const cp = () => checkpoint({ ...r.f, serviceFile: api });
+    const receipt = async () => {
+        const { signature, ...body } = JSON.parse(await fs.readFile(path.join(r.evidence, "delivery.json")));
+        assert.equal(signature, sign(body, r.f.context.keys.fixture));
+        assert.equal(body.trialId, (await read()).trialId);
+        return body;
+    };
+    const stop = async fault => {
+        let child;
+        const barrier = path.join(r.evidence, "synthetic-barrier.json");
+        await fs.rm(barrier, { force: true });
+        const running = step(fault, value => { child = value; });
+        t.after(() => { if (child.exitCode === null) child.kill("SIGKILL"); });
+        let marker;
+        for (let i = 0; i < 400; i++) {
+            try { marker = JSON.parse(await fs.readFile(barrier)); break; }
+            catch (error) { if (error.code !== "ENOENT") throw error; }
+            await new Promise(resolve => setTimeout(resolve, 25));
+        }
+        assert.equal(marker?.point, fault, `barrier not reached; child exit ${child.exitCode}`);
+        assert.equal(marker.pid, child.pid);
+        const concurrent = await step();
+        assert.equal(concurrent.code, 1, concurrent.stdout);
+        assert.match(JSON.parse(concurrent.stdout).reason, /live process/);
+        child.kill("SIGKILL");
+        await running;
+        return child.pid;
+    };
+    return { ...r, api, read, update, step, ledger, cp, receipt, stop };
+}
+
+test("SYNTHETIC trial driver recovers delivery ownership and verifies a complete six-unit result read-only", async t => {
+    const r = await preparedDriver(t);
+    for (const expected of ["provisioned", "routed"]) {
+        const result = await r.step();
+        assert.equal(JSON.parse(result.stdout).status, expected, result.stdout);
+    }
+    await r.stop("delivery-before");
+    const bootstrap = (await r.cp()).cp;
+    const duplicate = await r.step();
+    assert.equal(JSON.parse(duplicate.stdout).status, "duplicate", duplicate.stdout);
+    const bootstrapReceipt = await r.receipt();
+    assert.equal(bootstrapReceipt.routingKey, (await r.read()).dispatches.at(-1).inputs.routingKey);
+    assert.deepEqual((await r.cp()).cp.state.budget, bootstrap.state.budget);
+    assert.equal((await r.ledger()).filter(e => e.kind === "worker").length, 0);
+    const deliveryFile = path.join(r.evidence, "delivery.json"), deliveryBytes = await fs.readFile(deliveryFile);
+    for (const foreign of [false, true]) {
+        const receipt = { ...bootstrapReceipt, ...(foreign ? { trialId: "another-trial" } : {}) };
+        await fs.writeFile(deliveryFile, JSON.stringify({ ...receipt,
+            signature: foreign ? sign(receipt, r.f.context.keys.fixture) : "0".repeat(64) }));
+        const api = await fs.readFile(r.api);
+        const denied = await r.step();
+        assert.equal(denied.code, 1, denied.stdout);
+        assert.match(JSON.parse(denied.stdout).reason, /delivery receipt authentication/);
+        assert.deepEqual(await fs.readFile(r.api), api, "invalid delivery cannot allocate a run");
+    }
+    await fs.writeFile(deliveryFile, deliveryBytes);
+    for (let unit = 0; unit < 6; unit++) {
+        assert.equal((await r.step()).code, 0);
+        const before = (await r.cp()).cp;
+        if (unit === 0) {
+            await r.stop("retained-observation");
+            const claimed = (await r.cp()).cp;
+            assert.ok(claimed.pending.executionGeneration !== undefined);
+            const duplicate = await r.step();
+            assert.equal(JSON.parse(duplicate.stdout).status, "duplicate", duplicate.stdout);
+            assert.equal((await r.cp()).cp.pending.id, claimed.pending.id);
+            assert.equal((await r.step()).code, 0);
+            const result = await r.step();
+            assert.equal(JSON.parse(result.stdout).recovered, true, result.stdout);
+        } else if (unit === 1) {
+            await r.stop("delivery-before");
+            const work = (await r.cp()).cp.records.at(-1);
+            const cache = path.join(r.evidence, "state", "dotnet-fsharp-123", "launches", work.id, "bundle-check");
+            assert.equal(await fs.realpath(cache), cache);
+            await fs.rm(cache, { recursive: true });
+            const result = await r.step();
+            assert.equal(JSON.parse(result.stdout).status, "duplicate", result.stdout);
+        } else if (unit === 2) {
+            await r.stop("delivery-after");
+            assert.equal((await r.receipt()).routingKey, (await r.read()).dispatches.at(-1).inputs.routingKey);
+        } else {
+            const result = await r.step();
+            assert.equal(result.code, 0, result.stdout);
+        }
+        const after = (await r.cp()).cp;
+        assert.equal(after.state.budget.consumed.workerUnits, unit + 1);
+        assert.equal(after.deadline, bootstrap.deadline);
+        assert.equal(after.state.budget.allowanceId, bootstrap.state.budget.allowanceId);
+        assert.equal(after.state.budget.consumed.reservedMinutes - before.state.budget.consumed.reservedMinutes, 110);
+    }
+    let result;
+    for (let i = 0; i < 6; i++) {
+        result = await r.step();
+        assert.equal(result.code, 0, result.stdout);
+        if ((await r.read()).dispatches.at(-1).inputs.mode === "publish") break;
+    }
+    await r.stop("result-write");
+    const pending = (await r.cp()).cp;
+    const persisted = (await r.read()).comments.find(c => c.id === 457).body;
+    for (const e of Object.values(pending.observations).flatMap(o => o.evidence).filter(e => !e.required)) {
+        await fs.unlink(path.join(r.evidence, "state", "dotnet-fsharp-123", "store",
+            `${new URL(e.url).searchParams.get("name")}.bin`));
+    }
+    for (let i = 0; i < 4; i++) {
+        result = await r.step();
+        assert.equal(result.code, 0, result.stdout);
+        if (JSON.parse(result.stdout).status === "published") break;
+    }
+    assert.equal(JSON.parse(result.stdout).status, "published", result.stdout);
+    assert.equal((await r.read()).comments.find(c => c.id === 457).body, persisted);
+    assert.equal((await r.ledger()).filter(e => e.kind === "api" && e.method === "PATCH" && e.route === "issues/comments/457").length, 1);
+    const complete = (await r.cp()).cp;
+    assert.deepEqual(complete.state.budget.consumed, { sourceBuilds: 5, workerUnits: 6, reservedMinutes: 660 });
+    assert.equal((await r.ledger()).filter(e => e.kind === "worker").length, 6);
+    const snapshot = async () => {
+        const names = (await fs.readdir(r.evidence, { recursive: true })).sort(), entries = [];
+        for (const name of names) {
+            const file = path.join(r.evidence, name), stat = await fs.stat(file);
+            entries.push([name, stat.mtimeMs, stat.isFile() ? contracts.digest(await fs.readFile(file)) : null]);
+        }
+        return entries;
+    };
+    const frozen = await snapshot();
+    const verified = await invoke(["--verify", r.evidence], r.env);
+    assert.equal(verified.code, 0, verified.stdout);
+    assert.deepEqual(JSON.parse(verified.stdout), { status: "verified", purpose: "SYNTHETIC ACCEPTANCE ONLY",
+        trialId: (await r.read()).trialId, digest: complete.state.publication.digest, commentId: 457,
+        budget: complete.state.budget.consumed, physicalAcceptance: false });
+    assert.deepEqual(await snapshot(), frozen, "verify cannot write a ledger, touch evidence or create ownership files");
+    const originalApi = await fs.readFile(r.api);
+    for (const [target, reason] of [
+        ["checkpoint", /checkpoint authentication/], ["result", /authenticated persisted publication/],
+        ["run", /workflow run provenance authentication/], ["required-evidence", /required evidence/],
+        ["plan", /six-unit allowance identity/], ["helper", /helper drift/],
+    ]) await t.test(target, async () => {
+        const saved = path.join(r.evidence, "trial.json"), bytes = await fs.readFile(saved);
+        let lost;
+        if (["checkpoint", "result"].includes(target)) await r.update(db => {
+            db.comments.find(c => c.id === (target === "checkpoint" ? 456 : 457)).body += "forged";
+        });
+        if (target === "run") await r.update(db => {
+            for (const run of Object.values(db.runs)) run.head_sha = "0".repeat(40);
+        });
+        if (target === "required-evidence") {
+            const e = Object.values(complete.observations)[0].evidence.find(e => e.required);
+            const file = path.join(r.evidence, "state", "dotnet-fsharp-123", "store", `${new URL(e.url).searchParams.get("name")}.bin`);
+            lost = { file, bytes: await fs.readFile(file) };
+            await fs.unlink(file);
+        }
+        if (["plan", "helper"].includes(target)) {
+            const { signature, ...savedPlan } = JSON.parse(bytes);
+            if (target === "plan") savedPlan.deadline = "2026-10-02T00:00:00Z";
+            else savedPlan.helpers[0].sha256 = "0".repeat(64);
+            await fs.writeFile(saved, JSON.stringify({ ...savedPlan, signature: sign(savedPlan, r.f.context.keys.fixture) }));
+        }
+        try {
+            const before = await snapshot();
+            const denied = await invoke(["--verify", r.evidence], r.env);
+            assert.equal(denied.code, 1, denied.stdout);
+            assert.match(JSON.parse(denied.stdout).reason, reason);
+            assert.deepEqual(await snapshot(), before);
+        } finally {
+            await fs.writeFile(saved, bytes);
+            await fs.writeFile(r.api, originalApi);
+            if (lost) await fs.writeFile(lost.file, lost.bytes);
+        }
+    });
+    const artifacts = process.env.RB_TEST_EVIDENCE_DIRECTORY;
+    if (artifacts) {
+        const target = path.join(artifacts, path.basename(r.f.directory) + "-SYNTHETIC-trial");
+        await fs.cp(r.evidence, target, { recursive: true });
+        await fs.writeFile(path.join(target, "verify-receipt.json"), JSON.stringify({ ...verified, snapshot: frozen }));
+    }
+});
+
+test("SYNTHETIC trial driver preserves charges after reservation or claim cancellation", async t => {
+    for (const fault of ["reservation", "claim"]) await t.test(fault, async t => {
+        const r = await preparedDriver(t);
+        for (let i = 0; i < 4; i++) {
+            const result = await r.step();
+            assert.equal(result.code, 0, result.stdout);
+        }
+        await r.stop(fault);
+        const before = (await r.cp()).cp;
+        assert.equal(before.state.budget.consumed.workerUnits, 1);
+        assert.equal((await r.ledger()).filter(e => e.kind === "worker").length, 0);
+        assert.equal(JSON.parse((await r.step()).stdout).status, "duplicate");
+        assert.equal((await r.step()).code, 0);
+        const resumed = await r.step(), after = (await r.cp()).cp;
+        assert.equal(after.deadline, before.deadline);
+        assert.equal(after.state.budget.allowanceId, before.state.budget.allowanceId);
+        if (fault === "claim") {
+            assert.equal(resumed.code, 1, resumed.stdout);
+            assert.match(JSON.parse(resumed.stdout).reason, /ENOENT|missing/);
+            assert.deepEqual(after.state.budget.consumed, before.state.budget.consumed);
+            assert.equal(after.pending.id, before.pending.id);
+            assert.equal((await r.ledger()).filter(e => e.kind === "worker").length, 0);
+        } else {
+            assert.equal(resumed.code, 0, resumed.stdout);
+            assert.equal(after.state.budget.consumed.workerUnits, 2, "unclaimed lost unit stays charged");
+            assert.equal(after.state.budget.consumed.reservedMinutes, 220);
+            assert.equal((await r.ledger()).filter(e => e.kind === "worker").length, 1);
+        }
+    });
 });

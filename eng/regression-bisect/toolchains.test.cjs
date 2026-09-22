@@ -576,7 +576,9 @@ for (const [available, bundled] of [[true, false], [false, false], [true, true]]
         const deps = metadata();
         const runtimeRelease = deps.docs.get(`${feed}/release-metadata/9.0/releases.json`).releases[0];
         runtimeRelease.runtime = {
-            version: "9.0.8", files: [{ ...archive("9.0.8"), name: "dotnet-runtime-win-x64.zip",
+            version: "9.0.8", files: [{ ...archive("9.0.8"), name: "dotnet-apphost-pack-win-x64.zip",
+                url: `${feed}/Runtime/9.0.8/dotnet-apphost-pack-9.0.8-win-x64.zip` },
+            { ...archive("9.0.8"), name: "dotnet-runtime-win-x64.zip",
                 url: `${feed}/Runtime/9.0.8/dotnet-runtime-9.0.8-win-x64.zip` }],
         };
         const products = [];
@@ -584,6 +586,7 @@ for (const [available, bundled] of [[true, false], [false, false], [true, true]]
             ...deps,
             installer: async request => {
                 products.push(request.product);
+                if (request.product === "dotnet") assert.match(request.archive.url, /\/dotnet-runtime-9\.0\.8-win-x64\.zip$/);
                 if (request.product === "dotnet" && !available) throw new Error("runtime archive HTTP 404");
                 if (bundled) await fs.mkdir(path.join(request.root, "shared", "Microsoft.NETCore.App", "9.0.8"), { recursive: true });
                 return {

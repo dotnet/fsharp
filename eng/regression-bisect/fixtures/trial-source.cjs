@@ -2,7 +2,7 @@ const fs = require("node:fs/promises");
 const path = require("node:path");
 const { execFileSync } = require("node:child_process");
 const { createHttp, hash, requireValue, validateHttpResponse } = require("../toolchain-io.cjs");
-const { resolveLatestStableSdk, readRevisionToolchain } = require("../toolchains.cjs");
+const { resolveLatestStableSdk, readRevisionToolchain, selectArchive } = require("../toolchains.cjs");
 const { inspectRevisionLayout } = require("../workspace.cjs");
 const { createFixture } = require("./smoke.cjs");
 const { seal } = require("./contracts.cjs");
@@ -16,7 +16,7 @@ const platform = { os: "linux", architecture: "x64", rid: "linux-x64" };
 const policy = require("../../../.github/policies/regression-bisect.json");
 const repository = path.resolve(__dirname, "..", "..", "..");
 
-async function freeze(directory, executable) {
+async function freeze(directory, executable, injected = {}) {
     const signal = AbortSignal.timeout(300000);
     requireValue(path.isAbsolute(directory) && path.isAbsolute(executable), "absolute new directory and Git executable required");
     await fs.mkdir(directory);
@@ -78,7 +78,7 @@ async function freeze(directory, executable) {
     const declared = await readRevisionToolchain({ policy, sourceDirectory: declarations, sourceSha: base, platform });
     requireValue(declared.status === "resolved" && declared.toolchain.sdkVersion === "10.0.301",
         "exact reviewed source SDK declaration required");
-    const latest = await resolveLatestStableSdk({ policy, platform, signal });
+    const latest = await resolveLatestStableSdk({ policy, platform, signal }, injected);
     requireValue(latest.status === "resolved", latest.error?.message);
     for (const [i, record] of latest.toolchain.metadata.entries())
         await save(`metadata-${i}`, `metadata-${i}.json`, Buffer.from(record.bytesBase64, "base64").toString("utf8"));
@@ -88,13 +88,11 @@ async function freeze(directory, executable) {
     const runtime = channel.releases.find(r => r.runtime?.version === "10.0.0")?.runtime;
     const archives = [];
     for (const [product, record] of [["sdk", sdk], ["dotnet", runtime]]) {
-        const file = record?.files.find(f => f.rid === "linux-x64" && f.name.endsWith(".tar.gz"));
-        requireValue(file && /^[a-f0-9]{128}$/i.test(file.hash), "publisher-checksummed Linux source SDK/runtime required");
-        const response = await createHttp(policy, fs, signal)(file.url, { method: "HEAD" });
-        validateHttpResponse(file.url, response, policy);
+        const archive = selectArchive(record, platform, policy, product);
+        const response = await (injected.http ?? createHttp(policy, fs, signal))(archive.url, { method: "HEAD" });
+        validateHttpResponse(archive.url, response, policy);
         requireValue(response.status === 200, "reviewed Linux archive unavailable");
-        archives.push({ product, version: record.version, archive: { ...file, sha512: file.hash.toLowerCase(),
-            provenance: { kind: "publisher-checksum" } }, availability: { status: response.status,
+        archives.push({ product, version: record.version, archive, availability: { status: response.status,
             url: response.url, redirects: response.redirects, checkedAt: new Date().toISOString() } });
     }
     await save("source-toolchain", "source-toolchain.json", { declaration: declared.toolchain, archives, adapter: layout.adapter });

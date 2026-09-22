@@ -70,11 +70,14 @@ async function releases(options, deps, records, attempts, channel) {
     }
     return result;
 }
-function selectArchive(product, platform, policy) {
+function selectArchive(product, platform, policy, kind = "sdk") {
     const extension = platform.os === "windows" ? ".zip" : ".tar.gz";
-    const files = product.files?.filter(file => file.rid === platform.rid && file.name?.endsWith(extension) &&
-        file.url?.endsWith(extension));
-    requireValue(files?.length === 1, `missing or ambiguous ${platform.rid} ${extension} archive for ${product.version}`);
+    const prefix = { sdk: "dotnet-sdk", dotnet: "dotnet-runtime", aspnetcore: "aspnetcore-runtime",
+        windowsdesktop: "windowsdesktop-runtime" }[kind];
+    requireValue(prefix, "unknown archive product");
+    const files = product?.files?.filter(file => file.rid === platform.rid && file.name?.startsWith(`${prefix}-`) &&
+        file.name.endsWith(extension) && file.url?.endsWith(`/${prefix}-${product.version}-${platform.rid}${extension}`));
+    requireValue(files?.length === 1, `missing or ambiguous ${kind} ${platform.rid} ${extension} archive for ${product?.version}`);
     const file = files[0];
     publicUrl(file.url, policy);
     if (!/^[0-9a-f]{128}$/i.test(file.hash)) throw Object.assign(new Error(`malformed SHA-512 for ${file.name}`),
@@ -209,7 +212,7 @@ async function exactArchive(toolchain, product, version, options, deps, attempts
             : [row.release[{ dotnet: "runtime", aspnetcore: "aspnetcore-runtime", windowsdesktop: "windowsdesktop" }[product]]].filter(Boolean);
         const found = entries.find(entry => entry.version === version);
         if (found) return {
-            archive: selectArchive(found, toolchain.platform, options.policy), metadata,
+            archive: selectArchive(found, toolchain.platform, options.policy, product), metadata,
             bundledRuntime: { version: found["runtime-version"] ?? row.release.runtime?.version },
         };
     }
@@ -464,4 +467,4 @@ async function acquireToolchain(options, injected = {}) {
     } catch (error) { return failure(stage, error, [...attempts, ...(error.attempts ?? [])]); }
 }
 
-module.exports = { resolveLatestStableSdk, readRevisionToolchain, acquireToolchain, verifyToolchainIdentity };
+module.exports = { resolveLatestStableSdk, readRevisionToolchain, acquireToolchain, verifyToolchainIdentity, selectArchive };

@@ -50,9 +50,16 @@ function git(config, args, raw = false) {
 }
 
 async function helpers() {
-    const names = (await fs.readdir(__dirname, { recursive: true })).filter(n =>
-        !n.split(/[\\/]/).some(p => ["node_modules", "bin", "obj"].includes(p)) && /\.(cjs|cs|csproj|targets)$/.test(n))
-        .map(n => path.join("eng", "regression-bisect", n));
+    const names = [];
+    async function visit(directory) {
+        for (const entry of await fs.readdir(directory, { withFileTypes: true })) {
+            if (entry.name.startsWith(".") || ["node_modules", "bin", "obj"].includes(entry.name)) continue;
+            const file = path.join(directory, entry.name);
+            if (entry.isDirectory()) await visit(file);
+            else if (/\.(cjs|cs|csproj|targets)$/.test(entry.name)) names.push(path.relative(root, file));
+        }
+    }
+    await visit(__dirname);
     names.push(".github\\policies\\regression-bisect.json", ".github\\workflows\\regression-bisect-controller.yml",
         ".github\\workflows\\regression-bisect.lock.yml", "UseLocalCompiler.Directory.Build.props",
         "UseLocalCompiler.Directory.Build.targets", "global.json", "eng\\TargetFrameworks.props",
