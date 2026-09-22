@@ -17,7 +17,8 @@ ImplFile
                       ([], SynIdent (, None), Fields [], PreXmlDocEmpty, None,
                        (3,0--3,15), { BarRange = None }), None,
                     PreXmlDoc ((3,0), FSharp.Compiler.Xml.XmlDocCollector), None,
-                    (3,0--3,15)), None, [], (3,0--3,15)), (3,0--3,15));
+                    (3,0--3,15), { ExceptionKeyword = (3,0--3,9) }), None, [],
+                 (3,0--3,15)), (3,0--3,15));
            Exception
              (SynExceptionDefn
                 (SynExceptionDefnRepr
@@ -26,7 +27,8 @@ ImplFile
                       ([], SynIdent (B, None), Fields [], PreXmlDocEmpty, None,
                        (5,10--5,11), { BarRange = None }), None,
                     PreXmlDoc ((5,0), FSharp.Compiler.Xml.XmlDocCollector), None,
-                    (5,0--5,11)), None, [], (5,0--5,11)), (5,0--5,11))],
+                    (5,0--5,11), { ExceptionKeyword = (5,0--5,9) }), None, [],
+                 (5,0--5,11)), (5,0--5,11))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (1,0--5,11), { LeadingKeyword = Module (1,0--1,6) })], (true, true),
       { ConditionalDirectives = []
