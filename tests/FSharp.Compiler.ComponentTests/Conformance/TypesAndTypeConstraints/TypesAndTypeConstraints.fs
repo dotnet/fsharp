@@ -713,6 +713,82 @@ let register (services: IServices) =
         if succeeds then result |> shouldSucceed |> ignore
         else result |> shouldFail |> withErrorCode 1 |> ignore
 
+    let private checkIntInference langVersion source =
+        let compilation = FSharp source |> asLibrary |> withLangVersion langVersion
+        compilation
+        |> typecheck
+        |> withErrors []
+        |> withWarningCode 64
+        |> withWarningMessage "This construct causes code to be less generic than indicated by the type annotations. The type variable 'u has been constrained to be type 'int'."
+        |> ignore
+        compilation |> signaturesShouldContain "val test: outer: Outer<int> -> unit"
+
+    [<Theory>]
+    [<InlineData("10.0")>]
+    [<InlineData("11.0")>]
+    [<InlineData("preview")>]
+    let ``Newly ready constraint determines shared caller parameter before ambiguous interface`` (langVersion: string) =
+        """
+module Repro
+
+type I<'t> = interface end
+type J<'t> = interface end
+type One() =
+    interface I<int>
+type Many() =
+    interface J<int>
+    interface J<string>
+type Outer<'t>() =
+    member _.M<'a, 'b, 'c
+        when 'a :> I<'b> and 'c :> J<'t>>() = ()
+let test (outer: Outer<'u>) =
+    outer.M<One, 'u, Many>()
+"""
+        |> checkIntInference langVersion
+
+    [<Fact>]
+    let ``Less ambiguous ready constraint determines shared caller parameter`` () =
+        """
+module Repro
+
+type I<'t> = interface end
+type J<'t> = interface end
+type Many() =
+    interface I<int>
+    interface I<string>
+type One() =
+    interface J<int>
+type Outer<'t>() =
+    member _.M<'a, 'b, 'c
+        when 'a :> I<'b> and 'c :> J<'t>>() = ()
+let test (outer: Outer<'u>) =
+    outer.M<Many, 'u, One>()
+"""
+        |> checkIntInference "11.0"
+
+    [<Theory>]
+    [<InlineData("'a :> I<'c> and 'b :> J<'c> and 'd :> J<'t>", "One, Many, 'u, Many")>]
+    [<InlineData("'a :> seq<'b> and 'b :> I<'c> and 'd :> J<'t>", "One list, One, 'u, Many")>]
+    [<InlineData("'a :> I<'t> and 'b :> I<'d> and 'c :> J<'t>", "One, One, Many, 'u")>]
+    let ``Constraint ordering preserves newly ready chains and independent node order`` (constraints: string) (typeArguments: string) =
+        $"""
+module Repro
+
+type I<'t> = interface end
+type J<'t> = interface end
+type One() =
+    interface I<int>
+type Many() =
+    interface J<int>
+    interface J<string>
+type Outer<'t>() =
+    member _.M<'a, 'b, 'c, 'd
+        when {constraints}>() = ()
+let test (outer: Outer<'u>) =
+    outer.M<{typeArguments}>()
+"""
+        |> checkIntInference "11.0"
+
     // Overloaded generic method: reordering must not disturb overload resolution (CanMemberSigsMatchUpToCheck).
     [<Fact>]
     let ``Overloaded generic method with a dependent constraint resolves under langversion 11`` () =

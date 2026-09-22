@@ -4,5 +4,3 @@
 //<Expects status="success">val it: nativeint = 2n</Expects>
 
 nativeint 2;;
-#q;;
-
