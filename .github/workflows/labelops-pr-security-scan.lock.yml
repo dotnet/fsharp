@@ -1,4 +1,4 @@
-# gh-aw-metadata: {"schema_version":"v3","frontmatter_hash":"eb59323bfee96785ad77276dc9e40fdc466628ba771f7b71298e1e008076f776","compiler_version":"v0.76.1","strict":true,"agent_id":"copilot","agent_model":"${{ (github.job == 'detection' \u0026\u0026 vars.GH_AW_MODEL_DETECTION_COPILOT) || vars.GH_AW_MODEL_AGENT_COPILOT || 'gpt-5.6-sol' }}"}
+# gh-aw-metadata: {"schema_version":"v3","frontmatter_hash":"59eec3f71d8d6c0fa79756f9eef0e7b58165deb5a8cdf8eabb4be85bf894e27d","compiler_version":"v0.76.1","strict":true,"agent_id":"copilot","agent_model":"${{ (github.job == 'detection' \u0026\u0026 vars.GH_AW_MODEL_DETECTION_COPILOT) || vars.GH_AW_MODEL_AGENT_COPILOT || 'gpt-5.6-sol' }}"}
 # gh-aw-manifest: {"version":1,"secrets":["COPILOT_GITHUB_TOKEN","GH_AW_GITHUB_MCP_SERVER_TOKEN","GH_AW_GITHUB_TOKEN","GITHUB_TOKEN"],"actions":[{"repo":"actions/checkout","sha":"de0fac2e4500dabe0009e67214ff5f5447ce83dd","version":"v6.0.2"},{"repo":"actions/download-artifact","sha":"3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c","version":"v8.0.1"},{"repo":"actions/github-script","sha":"3a2844b7e9c422d3c10d287c895573f7108da1b3","version":"v9.0.0"},{"repo":"actions/setup-node","sha":"48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e","version":"v6.4.0"},{"repo":"actions/upload-artifact","sha":"043fb46d1a93c77aae656e7c1c64a875d1fc6a0a","version":"v7.0.1"},{"repo":"github/gh-aw-actions/setup","sha":"46d564922b082d0db93244972e8005ea6904ee5f","version":"v0.76.1"}],"containers":[{"image":"ghcr.io/github/gh-aw-firewall/agent:0.25.55"},{"image":"ghcr.io/github/gh-aw-firewall/api-proxy:0.25.55"},{"image":"ghcr.io/github/gh-aw-firewall/squid:0.25.55"},{"image":"ghcr.io/github/gh-aw-mcpg:v0.3.19"},{"image":"ghcr.io/github/github-mcp-server:v1.0.4","digest":"sha256:e3816a476a977cfb836e7d221510011436c654d11861db66ecfd826601aba6a4","pinned_image":"ghcr.io/github/github-mcp-server:v1.0.4@sha256:e3816a476a977cfb836e7d221510011436c654d11861db66ecfd826601aba6a4"},{"image":"node:lts-alpine","digest":"sha256:2bdb65ed1dab192432bc31c95f94155ca5ad7fc1392fb7eb7526ab682fa5bf14","pinned_image":"node:lts-alpine@sha256:2bdb65ed1dab192432bc31c95f94155ca5ad7fc1392fb7eb7526ab682fa5bf14"}]}
 #    ___                   _   _      
 #   / _ \                 | | (_)     
@@ -57,9 +57,24 @@
 
 name: "PR Tooling Safety Check"
 on:
+  # permissions: # Permissions applied to pre-activation job
+    # contents: read
+    # pull-requests: read
   schedule:
   - cron: "20 */1 * * *"
     # Friendly format: every 1h (scattered)
+  # steps: # Steps injected into pre-activation job
+  # - id: select
+    # if: github.event_name != 'schedule' || github.repository == 'dotnet/fsharp'
+    # uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3
+    # with:
+      # script: |-
+        # const { data } = await github.rest.repos.getContent({ ...context.repo, path: 'state.json', ref: 'safety/scanned-PRs' });
+        # const { prs } = JSON.parse(Buffer.from(data.content, 'base64').toString('utf8'));
+        # const open = await github.paginate(github.rest.pulls.list, { ...context.repo, state: 'open', per_page: 100 });
+        # const pending = open.filter(pr => !pr.draft && pr.created_at >= '2026-05-12T00:00:00Z')
+          # .filter(pr => !prs[pr.number] || !pr.head.sha.startsWith(prs[pr.number].sha));
+        # core.setOutput('prs', JSON.stringify(pending.map(pr => ({ number: pr.number, sha: pr.head.sha, cats: prs[pr.number]?.cats ?? [] }))));
   workflow_dispatch:
     inputs:
       aw_context:
@@ -78,6 +93,10 @@ run-name: "PR Tooling Safety Check"
 
 jobs:
   activation:
+    needs: pre_activation
+    if: >
+      needs.pre_activation.outputs.activated == 'true' && ((github.event_name != 'schedule' || github.repository == 'dotnet/fsharp') &&
+      needs.pre_activation.outputs.prs != '[]')
     runs-on: ubuntu-slim
     permissions:
       actions: read
@@ -100,6 +119,8 @@ jobs:
         with:
           destination: ${{ runner.temp }}/gh-aw/actions
           job-name: ${{ github.job }}
+          trace-id: ${{ needs.pre_activation.outputs.setup-trace-id }}
+          parent-span-id: ${{ needs.pre_activation.outputs.setup-parent-span-id || needs.pre_activation.outputs.setup-span-id }}
         env:
           GH_AW_SETUP_WORKFLOW_NAME: "PR Tooling Safety Check"
           GH_AW_CURRENT_WORKFLOW_REF: ${{ github.repository }}/.github/workflows/labelops-pr-security-scan.lock.yml@${{ github.ref }}
@@ -193,26 +214,27 @@ jobs:
           GH_AW_GITHUB_REPOSITORY: ${{ github.repository }}
           GH_AW_GITHUB_RUN_ID: ${{ github.run_id }}
           GH_AW_GITHUB_WORKSPACE: ${{ github.workspace }}
+          GH_AW_NEEDS_PRE_ACTIVATION_OUTPUTS_PRS: ${{ needs.pre_activation.outputs.prs }}
           GH_AW_WIKI_NOTE: ${{ '' }}
         # poutine:ignore untrusted_checkout_exec
         run: |
           bash "${RUNNER_TEMP}/gh-aw/actions/create_prompt_first.sh"
           {
-          cat << 'GH_AW_PROMPT_6957cf8bf793528f_EOF'
+          cat << 'GH_AW_PROMPT_162ed25256965469_EOF'
           <system>
-          GH_AW_PROMPT_6957cf8bf793528f_EOF
+          GH_AW_PROMPT_162ed25256965469_EOF
           cat "${RUNNER_TEMP}/gh-aw/prompts/xpia.md"
           cat "${RUNNER_TEMP}/gh-aw/prompts/temp_folder_prompt.md"
           cat "${RUNNER_TEMP}/gh-aw/prompts/markdown.md"
           cat "${RUNNER_TEMP}/gh-aw/prompts/repo_memory_prompt.md"
           cat "${RUNNER_TEMP}/gh-aw/prompts/safe_outputs_prompt.md"
-          cat << 'GH_AW_PROMPT_6957cf8bf793528f_EOF'
+          cat << 'GH_AW_PROMPT_162ed25256965469_EOF'
           <safe-output-tools>
           Tools: add_comment(max:25), add_labels(max:50), missing_tool, missing_data, noop
           </safe-output-tools>
-          GH_AW_PROMPT_6957cf8bf793528f_EOF
+          GH_AW_PROMPT_162ed25256965469_EOF
           cat "${RUNNER_TEMP}/gh-aw/prompts/mcp_cli_tools_prompt.md"
-          cat << 'GH_AW_PROMPT_6957cf8bf793528f_EOF'
+          cat << 'GH_AW_PROMPT_162ed25256965469_EOF'
           <github-context>
           The following GitHub context information is available for this workflow:
           {{#if github.actor}}
@@ -241,19 +263,20 @@ jobs:
           {{/if}}
           </github-context>
           
-          GH_AW_PROMPT_6957cf8bf793528f_EOF
+          GH_AW_PROMPT_162ed25256965469_EOF
           cat "${RUNNER_TEMP}/gh-aw/prompts/github_mcp_tools_with_safeoutputs_prompt.md"
-          cat << 'GH_AW_PROMPT_6957cf8bf793528f_EOF'
+          cat << 'GH_AW_PROMPT_162ed25256965469_EOF'
           </system>
           {{#runtime-import .github/workflows/shared/model-defaults.md}}
           {{#runtime-import .github/workflows/labelops-pr-security-scan.md}}
-          GH_AW_PROMPT_6957cf8bf793528f_EOF
+          GH_AW_PROMPT_162ed25256965469_EOF
           } > "$GH_AW_PROMPT"
       - name: Interpolate variables and render templates
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
           GH_AW_PROMPT: /tmp/gh-aw/aw-prompts/prompt.txt
           GH_AW_ENGINE_ID: "copilot"
+          GH_AW_NEEDS_PRE_ACTIVATION_OUTPUTS_PRS: ${{ needs.pre_activation.outputs.prs }}
         with:
           script: |
             const { setupGlobals } = require('${{ runner.temp }}/gh-aw/actions/setup_globals.cjs');
@@ -278,6 +301,8 @@ jobs:
           GH_AW_MEMORY_DESCRIPTION: ''
           GH_AW_MEMORY_DIR: '/tmp/gh-aw/repo-memory/default/'
           GH_AW_MEMORY_TARGET_REPO: ' of the current repository'
+          GH_AW_NEEDS_PRE_ACTIVATION_OUTPUTS_ACTIVATED: ${{ needs.pre_activation.outputs.activated }}
+          GH_AW_NEEDS_PRE_ACTIVATION_OUTPUTS_PRS: ${{ needs.pre_activation.outputs.prs }}
           GH_AW_WIKI_NOTE: ''
         with:
           script: |
@@ -304,6 +329,8 @@ jobs:
                 GH_AW_MEMORY_DESCRIPTION: process.env.GH_AW_MEMORY_DESCRIPTION,
                 GH_AW_MEMORY_DIR: process.env.GH_AW_MEMORY_DIR,
                 GH_AW_MEMORY_TARGET_REPO: process.env.GH_AW_MEMORY_TARGET_REPO,
+                GH_AW_NEEDS_PRE_ACTIVATION_OUTPUTS_ACTIVATED: process.env.GH_AW_NEEDS_PRE_ACTIVATION_OUTPUTS_ACTIVATED,
+                GH_AW_NEEDS_PRE_ACTIVATION_OUTPUTS_PRS: process.env.GH_AW_NEEDS_PRE_ACTIVATION_OUTPUTS_PRS,
                 GH_AW_WIKI_NOTE: process.env.GH_AW_WIKI_NOTE
               }
             });
@@ -473,9 +500,9 @@ jobs:
           mkdir -p "${RUNNER_TEMP}/gh-aw/safeoutputs"
           mkdir -p /tmp/gh-aw/safeoutputs
           mkdir -p /tmp/gh-aw/mcp-logs/safeoutputs
-          cat > "${RUNNER_TEMP}/gh-aw/safeoutputs/config.json" << 'GH_AW_SAFE_OUTPUTS_CONFIG_85aec8cf3bf9508f_EOF'
+          cat > "${RUNNER_TEMP}/gh-aw/safeoutputs/config.json" << 'GH_AW_SAFE_OUTPUTS_CONFIG_69d47d69a7fbefd1_EOF'
           {"add_comment":{"hide_older_comments":true,"max":25,"target":"*"},"add_labels":{"allowed":["AI-Tooling-Check-Scanned-Clean","AI-Tooling-Check-Bypassed","⚠️ Affects-Build-Infra","⚠️ Affects-Compiler-Output","⚠️ Affects-Bootstrap","⚠️ Affects-Restore","⚠️ Affects-Design-Time","⚠️ Affects-Test-Tooling","⚠️ Affects-Agent-Config","⚠️ Suspicious-Prompting","⚠️ Scope-Review-Needed"],"max":50,"target":"*"},"create_report_incomplete_issue":{},"missing_data":{},"missing_tool":{},"noop":{"max":1,"report-as-issue":"false"},"push_repo_memory":{"memories":[{"dir":"/tmp/gh-aw/repo-memory/default","id":"default","max_file_count":100,"max_file_size":102400,"max_patch_size":10240}]},"report_incomplete":{}}
-          GH_AW_SAFE_OUTPUTS_CONFIG_85aec8cf3bf9508f_EOF
+          GH_AW_SAFE_OUTPUTS_CONFIG_69d47d69a7fbefd1_EOF
       - name: Generate Safe Outputs Tools
         env:
           GH_AW_TOOLS_META_JSON: |
@@ -687,7 +714,7 @@ jobs:
           
           mkdir -p /home/runner/.copilot
           GH_AW_NODE=$(which node 2>/dev/null || command -v node 2>/dev/null || echo node)
-          cat << GH_AW_MCP_CONFIG_437b7b0080e9faea_EOF | "$GH_AW_NODE" "${RUNNER_TEMP}/gh-aw/actions/start_mcp_gateway.cjs"
+          cat << GH_AW_MCP_CONFIG_47a0dcb5f7dc74ef_EOF | "$GH_AW_NODE" "${RUNNER_TEMP}/gh-aw/actions/start_mcp_gateway.cjs"
           {
             "mcpServers": {
               "github": {
@@ -731,7 +758,7 @@ jobs:
               "payloadDir": "${MCP_GATEWAY_PAYLOAD_DIR}"
             }
           }
-          GH_AW_MCP_CONFIG_437b7b0080e9faea_EOF
+          GH_AW_MCP_CONFIG_47a0dcb5f7dc74ef_EOF
       - name: Mount MCP servers as CLIs
         id: mount-mcp-clis
         continue-on-error: true
@@ -1341,6 +1368,56 @@ jobs:
               }
             }
 
+  pre_activation:
+    runs-on: ubuntu-slim
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      activated: ${{ steps.check_membership.outputs.is_team_member == 'true' }}
+      matched_command: ''
+      prs: ${{ steps.select.outputs.prs }}
+      select_result: ${{ steps.select.outcome }}
+      setup-parent-span-id: ${{ steps.setup.outputs.parent-span-id || steps.setup.outputs.span-id }}
+      setup-span-id: ${{ steps.setup.outputs.span-id }}
+      setup-trace-id: ${{ steps.setup.outputs.trace-id }}
+    steps:
+      - name: Setup Scripts
+        id: setup
+        uses: github/gh-aw-actions/setup@46d564922b082d0db93244972e8005ea6904ee5f # v0.76.1
+        with:
+          destination: ${{ runner.temp }}/gh-aw/actions
+          job-name: ${{ github.job }}
+        env:
+          GH_AW_SETUP_WORKFLOW_NAME: "PR Tooling Safety Check"
+          GH_AW_CURRENT_WORKFLOW_REF: ${{ github.repository }}/.github/workflows/labelops-pr-security-scan.lock.yml@${{ github.ref }}
+          GH_AW_INFO_VERSION: "1.0.52"
+          GH_AW_INFO_AWF_VERSION: "v0.25.55"
+          GH_AW_INFO_ENGINE_ID: "copilot"
+      - name: Check team membership for workflow
+        id: check_membership
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          GH_AW_REQUIRED_ROLES: "admin,maintainer,write"
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { setupGlobals } = require('${{ runner.temp }}/gh-aw/actions/setup_globals.cjs');
+            setupGlobals(core, github, context, exec, io, getOctokit);
+            const { main } = require('${{ runner.temp }}/gh-aw/actions/check_membership.cjs');
+            await main();
+      - id: select
+        if: github.event_name != 'schedule' || github.repository == 'dotnet/fsharp'
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |-
+            const { data } = await github.rest.repos.getContent({ ...context.repo, path: 'state.json', ref: 'safety/scanned-PRs' });
+            const { prs } = JSON.parse(Buffer.from(data.content, 'base64').toString('utf8'));
+            const open = await github.paginate(github.rest.pulls.list, { ...context.repo, state: 'open', per_page: 100 });
+            const pending = open.filter(pr => !pr.draft && pr.created_at >= '2026-05-12T00:00:00Z')
+              .filter(pr => !prs[pr.number] || !pr.head.sha.startsWith(prs[pr.number].sha));
+            core.setOutput('prs', JSON.stringify(pending.map(pr => ({ number: pr.number, sha: pr.head.sha, cats: prs[pr.number]?.cats ?? [] }))));
+
   push_repo_memory:
     needs:
       - activation
@@ -1519,4 +1596,3 @@ jobs:
             /tmp/gh-aw/safe-output-items.jsonl
             /tmp/gh-aw/temporary-id-map.json
           if-no-files-found: ignore
-

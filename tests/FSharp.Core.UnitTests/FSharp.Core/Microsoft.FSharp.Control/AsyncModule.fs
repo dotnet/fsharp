@@ -705,8 +705,8 @@ type AsyncModule() =
                 try 
                     Async.StartWithContinuations( 
                         Async.Sleep(1000), 
-                        (fun _ -> printfn "ok"; incr okCount), 
-                        (fun _ -> printfn "error"; incr errCount), 
+                        (fun _ -> printn "ok"; incr okCount), 
+                        (fun _ -> printn "error"; incr errCount), 
                         (fun _ -> printfn "cancel"; failwith "BOOM!"), 
                         cancellationToken = cts.Token 
                     ) 
@@ -715,7 +715,7 @@ type AsyncModule() =
             System.Threading.Thread.Sleep 50 
             try cts.Cancel() with _ -> () 
             System.Threading.Thread.Sleep 1500 
-            printfn "====" 
+            printn "====" 
         for i = 1 to 3 do test()
         Assert.AreEqual(0, !okCount)
         Assert.AreEqual(0, !errCount)

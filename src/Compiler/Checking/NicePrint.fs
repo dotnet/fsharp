@@ -1117,8 +1117,10 @@ module PrintTypes =
         // Layout an unnamed argument
         // Cannot have any attributes
         | None, _, _ ->
+            // The argument type of a destructured or pattern-annotated tuple parameter is an
+            // inference variable solved to a tuple, so strip it before deciding on brackets.
             let prec =
-                match ty with
+                match stripTyparEqns ty with
                 | TType_tuple _ -> 2
                 | _ -> 4
 

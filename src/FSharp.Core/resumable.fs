@@ -11,6 +11,8 @@ namespace Microsoft.FSharp.Core.CompilerServices
 
 open System
 open System.Runtime.CompilerServices
+open System.Threading
+open System.Threading.Tasks
 open Microsoft.FSharp.Core
 open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 open Microsoft.FSharp.Collections
@@ -109,6 +111,41 @@ module StateMachineHelpers =
 
         failwith
             "__stateMachine should always be guarded by __useResumableCode and only used in valid state machine implementations"
+
+#if NET
+    [<MethodImpl(MethodImplOptions.NoInlining)>]
+    let __runtimeAsyncReturn (value: 'T) : Task<'T> =
+        ignore value
+
+        failwith "__runtimeAsyncReturn is a compiler intrinsic and should only be used in runtime-async method bodies"
+
+    [<MethodImpl(MethodImplOptions.NoInlining)>]
+    let __runtimeAsyncReturnValueTask (value: 'T) : ValueTask<'T> =
+        ignore value
+
+        failwith
+            "__runtimeAsyncReturnValueTask is a compiler intrinsic and should only be used in runtime-async method bodies"
+
+    [<MethodImpl(MethodImplOptions.NoInlining)>]
+    let __runtimeAsyncReturnUnit () : Task =
+        failwith
+            "__runtimeAsyncReturnUnit is a compiler intrinsic and should only be used in runtime-async method bodies"
+
+    [<MethodImpl(MethodImplOptions.NoInlining)>]
+    let __runtimeAsyncReturnValueTaskUnit () : ValueTask =
+        failwith
+            "__runtimeAsyncReturnValueTaskUnit is a compiler intrinsic and should only be used in runtime-async method bodies"
+
+    [<MethodImpl(MethodImplOptions.NoInlining)>]
+    let __runtimeAsyncSequence (recipe: unit -> seq<'T>) : System.Collections.Generic.IAsyncEnumerable<'T> =
+        ignore recipe
+        failwith "__runtimeAsyncSequence is a compiler intrinsic and requires a statically known sequence recipe"
+
+    [<MethodImpl(MethodImplOptions.NoInlining)>]
+    let __runtimeAsyncSequenceCancellationToken () : CancellationToken =
+        failwith
+            "__runtimeAsyncSequenceCancellationToken is a compiler intrinsic and requires a statically known sequence recipe"
+#endif
 
 module ResumableCode =
     open System.Runtime.ExceptionServices

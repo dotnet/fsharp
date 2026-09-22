@@ -464,14 +464,17 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                                    warning(ArgumentsInSigAndImplMismatch(sname, iname))
                               | _ -> ()
 
-                              let sigHasInlineIfLambda = ArgReprInfoHasWellKnownAttribute g WellKnownValAttributes.InlineIfLambdaAttribute sigArgInfo
-                              let implHasInlineIfLambda = ArgReprInfoHasWellKnownAttribute g WellKnownValAttributes.InlineIfLambdaAttribute implArgInfo
-                              let m =
-                                  match implArgInfo.Name with
+                              let m = 
+                                  match implArgInfo.Name with 
                                   | Some iname-> iname.idRange
                                   | None -> implVal.Range
-                              if sigHasInlineIfLambda && not implHasInlineIfLambda then
-                                  errorR(Error (FSComp.SR.implMissingInlineIfLambda(), m))
+
+                              let requireImplAttribute flag diagnostic =
+                                  if ArgReprInfoHasWellKnownAttribute g flag sigArgInfo && not (ArgReprInfoHasWellKnownAttribute g flag implArgInfo) then 
+                                      errorR(Error (diagnostic (), m))
+
+                              requireImplAttribute WellKnownValAttributes.InlineIfLambdaAttribute FSComp.SR.implMissingInlineIfLambda
+                              requireImplAttribute WellKnownValAttributes.OptimizeClosureIfNotInlinedAttribute FSComp.SR.implMissingOptimizeClosureIfNotInlined
 
                               implArgInfo.OtherRange <- sigArgInfo.Name |> Option.map (fun ident -> ident.idRange)
                               sigArgInfo.OtherRange <- implArgInfo.Name |> Option.map (fun ident -> ident.idRange)
@@ -637,7 +640,9 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
 
             // This check is required because constructors etc. are externally visible
             // and thus compiled representations do pick up dependencies on the field order
-            (if List.forall2 (checkField aenv infoReader implTycon sigTycon)  implFields sigFields
+            (if List.forall2 (fun (implField: RecdField) (sigField: RecdField) ->
+                    implField.LogicalName = sigField.LogicalName &&
+                    checkField aenv infoReader implTycon sigTycon implField sigField) implFields sigFields
              then true
              else (errorR(Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleFieldOrderDiffer(kindText, implTyconName), m)); false))
 
