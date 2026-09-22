@@ -47,6 +47,20 @@ test("durable required bytes survive a fresh process without worker scratch or m
     assert.equal(stdout, payload.toString("hex"));
 });
 
+test("read-only evidence verification never creates storage, including after required directory loss", async t => {
+    const { config, store } = await fixture(t);
+    const record = await store.writeEvidence(payload, binding);
+    const readOnly = createFileEvidenceStore(config, { readOnly: true });
+    for (const name of ["writeEvidence", "writeBlob", "findEvidence", "settleQuota"]) assert.equal(readOnly[name], undefined);
+    const mkdir = t.mock.method(fs, "mkdir", async () => assert.fail("read-only verification attempted a write"));
+    assert.deepEqual(await readOnly.readEvidence(record.url), payload);
+    assert.equal((await readOnly.verifyEvidence(record.url)).sha256, record.sha256);
+    await fs.rm(config.directory, { recursive: true });
+    await assert.rejects(readOnly.verifyEvidence(record.url), { code: "ENOENT" });
+    await assert.rejects(fs.stat(config.directory), { code: "ENOENT" });
+    assert.equal(mkdir.mock.callCount(), 0);
+});
+
 test("lost evidence acknowledgement is discoverable in a fresh process by reserved work identity", async t => {
     const { config, store } = await fixture(t);
     const record = await store.writeEvidence(payload, binding);

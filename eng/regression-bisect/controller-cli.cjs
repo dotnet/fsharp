@@ -310,7 +310,8 @@ async function main(args = process.argv.slice(2), env = process.env) {
     const input = argumentsFor(args, env);
     requireValue(!env.RB_LOCAL_TEST_FILE || !env.GITHUB_ACTIONS && env.RB_LOCAL_TEST === "explicit-offline-fixture",
         "local test injection forbidden in Actions or without explicit local opt-in");
-    const local = env.RB_LOCAL_TEST_FILE
+    const synthetic = Boolean(env.RB_LOCAL_TEST_FILE);
+    const local = env.RB_TRIAL_DIRECTORY ? await require("./trial.cjs").adapter(env) : env.RB_LOCAL_TEST_FILE
         ? await require("./fixtures/controller-service.cjs").connect(path.resolve(env.RB_LOCAL_TEST_FILE)) : null;
     const configBytes = await bytes(input.configPath);
     const config = decode(configBytes);
@@ -370,9 +371,9 @@ async function main(args = process.argv.slice(2), env = process.env) {
                 "freshness anchor is not reachable from default branch");
         } else await local.checkAnchor(config.anchorSha);
         if (input.mode === "provision") return provision({ context, config, reader, apiFor, directory, now: clock().toISOString() });
-        if (!local) requireValue(process.platform === "linux" && process.arch === "x64", "native Linux x64 controller required");
+        if (!synthetic) requireValue(process.platform === "linux" && process.arch === "x64", "native Linux x64 controller required");
         const runtime = await (local?.inspectRuntime ?? inspectRuntime)(config.container);
-        if (!local) await containment(config, env.RB_CONTAINMENT_DIRECTORY, runtime);
+        if (!synthetic) await containment(config, env.RB_CONTAINMENT_DIRECTORY, runtime);
         const policyBytes = await reader.readTrustedFile(".github/policies/regression-bisect.json", 48 * 1024 - 1);
         context.policy = decode(policyBytes);
         model.validatePolicy(context.policy);
@@ -442,7 +443,7 @@ async function main(args = process.argv.slice(2), env = process.env) {
                     .includes(env.ACTIONS_RESULTS_URL), "trusted Actions artifact runtime unavailable");
         const evidenceDirectory = path.join(directory, "launches");
         await fs.mkdir(evidenceDirectory, { recursive: true });
-        const collectObservation = createObservationCollector({ evidenceDirectory, store });
+        const collectObservation = local?.collectObservation ?? createObservationCollector({ evidenceDirectory, store });
         const checkpoints = new Map();
         const approvalReader = { ...reader,
             authenticateRecord: async comment => {
@@ -471,7 +472,7 @@ async function main(args = process.argv.slice(2), env = process.env) {
                 hash(await reader.readTrustedFile(workflowPath, 48 * 1024 - 1)) === hash(workflow),
             "current pinned deployment/policy/workflow bytes changed");
             const currentRuntime = await (local?.inspectRuntime ?? inspectRuntime)(config.container);
-            if (!local) await containment(config, env.RB_CONTAINMENT_DIRECTORY, currentRuntime);
+            if (!synthetic) await containment(config, env.RB_CONTAINMENT_DIRECTORY, currentRuntime);
             const snapshot = await readIssueSnapshot({ ...approvalReader, transport, repository,
                 issueNumber: input.issueNumber, now: clock().toISOString(), reviewedManifest: context.manifest });
             requireValue(snapshot.status === "complete", `current intake ${snapshot.status}: ${snapshot.reason}`);
@@ -483,6 +484,7 @@ async function main(args = process.argv.slice(2), env = process.env) {
                 signal: AbortSignal.timeout(300000) }, local?.toolchainDependencies);
             requireValue(resolved.status === "resolved", `stable metadata unavailable: ${resolved.error?.message}`);
             const toolchain = resolved.toolchain;
+            local?.validateStable?.(toolchain);
             const archive = path.join(directory, `stable-${randomUUID()}.archive`);
             try {
                 const downloaded = await (local?.download ?? createHttp(context.policy))(toolchain.archive.url, { destination: archive });
@@ -532,7 +534,7 @@ async function main(args = process.argv.slice(2), env = process.env) {
                 if (input.mode === "bootstrap") await writeJson(bootstrapJournal, (await transport.getComment(context.commentId)).body);
                 return { status: "duplicate", generation: current.checkpoint.generation, routingKey: input.routingKey };
             }
-            const deps = { context, transport, approval: approvalReader, environments, platform: config.platform, history,
+            const deps = { context, transport, associationTransport: transport, approval: approvalReader, environments, platform: config.platform, history,
                 clock, withLock: action => action(), collectObservation, resultCommentId: registration.resultCommentId,
                 discoveryCommentId: discovery?.issueNumber === input.issueNumber ? discovery.commentId : undefined,
                 discoveryFreshnessCommentId: discovery?.issueNumber === input.issueNumber ? discovery.freshnessCommentId : undefined,

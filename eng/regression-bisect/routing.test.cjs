@@ -3,7 +3,7 @@ const assert = require("node:assert/strict");
 const path = require("node:path");
 const fs = require("node:fs/promises");
 const { setTimeout: delay } = require("node:timers/promises");
-const { fixture, connect, checkpoint, seed, invokeCli } = require("./fixtures/controller-service.cjs");
+const { routingFixture: setup, connect, checkpoint, seed, invokeCli } = require("./fixtures/controller-service.cjs");
 const contracts = require("./fixtures/contracts.cjs");
 const { fingerprintInput: fingerprint, isEligibleIssue } = require("./model.cjs");
 const { hash } = require("./toolchain-io.cjs");
@@ -17,29 +17,6 @@ async function invoke(f, mode, issue, started = () => {}, extra = {}) {
         kind: "routing-exit", storageFaults: false,
     });
     return { ...result, result: result.stdout ? JSON.parse(result.stdout) : null };
-}
-
-async function setup(t) {
-    const f = await fixture(t);
-    const registration = {
-        schemaVersion: 2, repository: "dotnet/fsharp", issueNumber: 123, commentId: 458, freshnessCommentId: 459,
-        checkpointAnchorSha: f.config.anchorSha, bootstrapDigest: hash("Reviewed discovery slot"),
-        freshnessBootstrapDigest: hash("Reviewed discovery freshness slot"),
-        provisionDeadline: "2026-10-01T00:00:00Z", workflowPath, workflowGeneration: 1,
-    };
-    f.env.RB_DISPATCH_TOKEN = "offline-separate-dispatch-token";
-    f.update(db => {
-        db.runs["22345/1"] = { ...db.runs["12345/1"], id: 22345, path: workflowPath };
-        db.issues = [db.issue];
-        db.comments.push({ ...db.comments[0], id: 458, body: "Reviewed discovery slot" });
-        db.comments.push({ ...db.comments[0], id: 459, body: "Reviewed discovery freshness slot" });
-        db.files[".github/regression-bisect/discovery.json"] = Buffer.from(JSON.stringify(registration)).toString("base64");
-        db.files[workflowPath] = null;
-    });
-    f.env.GITHUB_RUN_ID = "22345";
-    f.registration = registration;
-    f.routingContext = { ...f.context, workflowPath, commentId: 458, owner: { runId: "22345", attempt: 1 } };
-    return f;
 }
 
 async function cursor(f) {

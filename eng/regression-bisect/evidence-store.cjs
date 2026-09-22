@@ -90,8 +90,8 @@ function discoveredRecord(c, query, name, artifactId) {
     return { url, sha256, required: true };
 }
 
-async function root(c) {
-    await fs.mkdir(c.directory, { recursive: true, mode: 0o700 });
+async function root(c, create = true) {
+    if (create) await fs.mkdir(c.directory, { recursive: true, mode: 0o700 });
     const stat = await fs.lstat(c.directory);
     requireValue(stat.isDirectory() && !stat.isSymbolicLink() &&
         path.relative(await fs.realpath(c.directory), c.directory) === "", "evidence directory must not be a link");
@@ -264,11 +264,11 @@ function readers(c, read) {
     };
 }
 
-function createFileEvidenceStore(config) {
+function createFileEvidenceStore(config, { readOnly = false } = {}) {
     const c = configuration(config);
     const readFile = async (info, sink, signal) => {
         signal.throwIfAborted();
-        await root(c);
+        await root(c, !readOnly);
         signal.throwIfAborted();
         const expectedId = (BigInt(`0x${hash(info.name).slice(0, 15)}`) + 1n).toString();
         requireValue(info.artifactId === expectedId, "file artifact identity mismatch");
@@ -306,6 +306,7 @@ function createFileEvidenceStore(config) {
         const signal = AbortSignal.timeout(c.timeoutMs);
         return boundedWait(writeFile(source, binding, blob, signal), signal);
     };
+    if (readOnly) return readers(c, read);
     return { ...readers(c, read), settleQuota: () => settleQuota(c),
         async findEvidence(query) {
             const signal = AbortSignal.timeout(c.timeoutMs);

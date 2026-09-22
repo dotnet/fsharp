@@ -315,6 +315,148 @@ intake, publication, a production dispatch or physical containment.
 
 ## Executable deployment and operator setup
 
+### Opt-in resumable controlled-history trial
+
+`trial.cjs` composes the existing routing and controller transactions. Its API is
+always an owned file-backed service for **SYNTHETIC ACCEPTANCE ONLY**, never live
+GitHub. Its worker is always the real container/runner/collector. The offline
+unit-test worker, injected metadata, clock and runtime callbacks are deliberately
+absent from the trial adapter. Actions, `NODE_OPTIONS`, and `RB_LOCAL_TEST*`
+injection are rejected. There is no whole-run, reset, refund or target override.
+
+```powershell
+node eng\regression-bisect\trial.cjs --help
+node eng\regression-bisect\trial.cjs --prepare $ReviewedConfig $NewEvidenceDirectory
+node eng\regression-bisect\trial.cjs --advance $ExistingEvidenceDirectory
+node eng\regression-bisect\trial.cjs --verify $ExistingEvidenceDirectory
+```
+
+These variables must be resolved absolute canonical paths, not literal acceptance
+commands. Evidence and the isolated source repository must be outside this
+checkout and separate from each other. `--prepare` rejects an existing directory;
+it freezes a signed plan, reviewed bytes, helper hashes and a new fake-service
+identity without executing historical code. Keep the original reviewed inputs,
+source objects, containment receipts and signing keys as well as the evidence
+directory: missing or changed required inputs are not cache misses.
+
+The reviewed JSON has exactly these fields:
+
+| Field | Meaning |
+| --- | --- |
+| `schemaVersion`, `purpose` | `1`, `SYNTHETIC ACCEPTANCE ONLY` |
+| `helperRevision`, `deployment` | Full trusted helper revision and the existing exact deployment configuration, including image, App/key and containment identities |
+| `api` | `{ path, sha256 }` of a fresh `fixtures/controller-service.cjs` database for fake issue 123; reviewed approval, registration, sample/producer bytes, discovery slots and workflow records, no faults, previous charges or synthetic outcomes |
+| `source` | Absolute isolated Git `directory` and full `base`, `good`, `candidate`, `main` SHAs; a single-parent good/introduction/no-op-main graph |
+| `stable` | Official `sdkVersion`, publisher-checksummed `archive`, and `{ url, sha256 }` metadata identities |
+| `files` | `{ role, path, sha256 }` raw inputs; includes `good-patch`, `introducing-patch`, `source-toolchain`, `stable-toolchain` and `metadata-*`; patches must exactly match Git and every sample/producer blob must remain identical across source revisions |
+| `containmentDirectory` | Existing real Linux containment evidence matching `deployment.containment` |
+| `runs` | Distinct decimal-string `controller`, `routing`, `supervisor` fake run IDs present in the reviewed database; each advance creates a fresh run from its corresponding template |
+| `signature` | HMAC from exported `trial.sign(unsignedConfig, key)` using the independently held reviewed deployment key; supply matching keys through `RB_SIGNING_KEYS`, never the JSON or a worker |
+
+The initial approval must contain one good-source hint and a fixed deadline with
+at least 660 minutes remaining. Preparation does not self-approve a proposal.
+The source fixture's placeholder discussion fingerprint must be replaced by a
+review of the complete selected fake issue/discussion and resealed before signing
+the configuration. The deployment JSON embedded in the API must serialize to the
+same bytes as the reviewed deployment. No production registration is shipped.
+
+Each advance holds a supervisor ownership lock and invokes **one** existing
+transaction: discovery provisioning, an event-to-durable-route transition, or
+delivery of the fixed dispatched controller operation. A controller advance can
+charge at most one real worker. Routing never depends on model output. The
+signed delivery receipt, API database/ledger, controller/routing journals,
+reservations, launches, evidence store and process receipts persist between
+commands. A lost response is retried through authenticated controller recovery;
+it does not authorize replacement evidence or another allowance. Concurrent/live
+owners block. A dead owner may resume on the same host; an interrupted handoff
+guard or absent required evidence needs investigation, not deletion. Only owned
+disposable acquisition/selection scratch is a cache. Never delete `store`,
+`launches`, signed journals, `trial.json`, `delivery.json` or API state to recover.
+
+`--verify` performs no API mutations or network requests. It requires the
+authenticated published digest and fixed comment ID, matching complete expected
+boundary, six distinct claimed/committed reservations, the exact phase order,
+five builds/660 minutes, and hash-verified required physical collector evidence.
+It fails an incomplete or stopped trial. Optional artifact expiry cannot change
+the already authenticated publication identity. JSON always carries the synthetic
+acceptance purpose and `physicalAcceptance: false`: a verified local evidence
+bundle does not itself sign off the separate product/containment or physical
+known-history gates. Exit 1 prints the blocking reason; no failure refunds charges
+or extends a deadline.
+
+#### Frozen source design (no historical product execution)
+
+`fixtures\trial-source.cjs <absolute-new-directory> <absolute-git-executable>`
+constructs the isolated full-source Git graph without changing this branch. It
+reuses the actual workspace layout validator and revision declarations, freezes
+raw official metadata, and checks Linux SDK/runtime archive availability with
+bounded HEAD requests. The shared clone depends on the original source object
+store; retain those objects until the trial is exported or completed.
+
+The reviewed base is `8c0e444de18218ecec91475a6022872e93299e10`: the existing
+Linux Arcade product/bootstrap entrypoints and nested FSI/FSC projects pass
+`inspectRevisionLayout`. Its own `global.json` specifies SDK/tools **10.0.301**,
+and the product TFM is `net10.0`. Official Linux x64 SDK 10.0.301 and runtime
+10.0.0 have publisher SHA-512 metadata and returned HTTP 200 on 2026-09-22;
+no measured-provenance exception or Windows approval is reused. Latest stable
+metadata at fixture freeze selected **10.0.401**; advancing rejects changed
+metadata rather than silently replacing that endpoint.
+
+| Revision | Full SHA |
+| --- | --- |
+| Good | `05e2f222e08785994d8909707054b411ea677fc4` |
+| Introducing fixture change | `a23fa5514d49566559bdcc7479fbe00ceb01b577` |
+| No-op bad main | `e648b05ced2bc8f071685a7dbfacbbc15964e2f9` |
+
+Good adds exactly
+`fsiConsoleOutput.Out.WriteLine("SYNTHETIC_ACCEPTANCE_SENTINEL")` at entry to
+`FsiEvaluationSession.Run` in `src/Compiler/Interactive/fsi.fs`, plus the frozen
+`regression-trial/repro.fsx` containing `printfn "TRIAL_SAMPLE"`. The introducing
+commit restores the stock FSI blob using a normal source commit, not a Git revert.
+The sample is unchanged. Good patch SHA-256:
+`156935262500c7cc9f11dae8e3639af4495227f20f49a1e10077a5fe63722aa1`;
+introducing patch SHA-256:
+`3ca7bc75f1927bb378b3f9f76dcc2805795837659eb13d973c29d9b2f9e93768`.
+
+The **same runtime assertion** expects exit 0, empty stderr, and stdout
+`SYNTHETIC_ACCEPTANCE_SENTINEL\nTRIAL_SAMPLE\n` for pass; the expected failure
+is exit 0, empty stderr, stdout `TRIAL_SAMPLE\n`. Stock released/main product
+bytes are never modified. These are frozen expectations, **not measured product
+outcomes**. The real runner must establish stable failure, clean main failure and
+good SOURCE pass before starting any bisect command.
+
+The six planned 110-minute units are stable, main, good, Git-selected candidate,
+fresh candidate, fresh parent: **660/720 minutes**, five source builds, two source
+attempts each for candidate and good. The existing 24-build/40-unit/two-attempt,
+two-repetition, 90-minute-build and 300-second-repro limits are unchanged.
+Any failed physical experiment remains charged; the fixture cannot be silently
+replaced to manufacture a green trial.
+
+`trial.test.cjs` uses explicitly named **SYNTHETIC** product outcomes with real
+CLI processes, Git selection, durable routing and signed reporting. It covers
+endpoint stops, skipped/ambiguous/toolchain/revert/merge/backport histories,
+six-unit/fresh-build accounting, full rendered SHAs and verified PR URLs, paginated
+association membership, preparation and authority boundaries. Existing
+controller, collector, engine, attribution, report, acquisition and reproduction
+suites retain cancellation/claim/retained-observation recovery, optional-expiry
+lost-ack adoption, required-loss and stale-input rejection, hostile inputs,
+runtime/diagnostic distinctions, identity fallback negatives, matrix coverage
+and immutable old producer metadata. These cheap tests do not establish either
+physical acceptance gate.
+
+Harness validation on 2026-09-22: 30 focused tests passed in 224 seconds and
+2,501 scoped tests passed in 613 seconds. Subsequent read-only-store hardening
+passed 209 store/trial tests; linked-parent rejection passed all 11 selected
+preparation checks. All three independent on-disk report mutations failed their
+authenticated semantic assertions in under two seconds each; production helper
+hashes were unchanged by the probes. The scoped evidence helper Release build
+and test commands exited 0 using installed SDK 10.0.112 (the helper has no
+managed test cases). A portable source bundle was checked at 408,166,604 bytes,
+below the existing 1 GiB limit. Logs, raw ledgers, source manifests, graph,
+patches, official metadata and receipts are retained privately. No historical
+product build, worker containment acceptance or physical known-history trial
+was performed.
+
 **This checkout does not activate production, approve a reproduction, prove
 physical containment, or perform the separate known-history acceptance trial.**
 The controller only supports `workflow_dispatch` of `bootstrap`, `advance`,

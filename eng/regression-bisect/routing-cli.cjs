@@ -55,7 +55,7 @@ async function main(args = process.argv.slice(2), env = process.env) {
     const input = argumentsFor(args);
     requireValue(!env.RB_LOCAL_TEST_FILE || !env.GITHUB_ACTIONS && env.RB_LOCAL_TEST === "explicit-offline-fixture",
         "local test injection forbidden in Actions or without explicit local opt-in");
-    const local = env.RB_LOCAL_TEST_FILE
+    const local = env.RB_TRIAL_DIRECTORY ? await require("./trial.cjs").adapter(env) : env.RB_LOCAL_TEST_FILE
         ? await require("./fixtures/controller-service.cjs").connect(path.resolve(env.RB_LOCAL_TEST_FILE)) : null;
     const configBytes = await bytes(input.configPath), config = decode(configBytes);
     const base = configuration(config, env);

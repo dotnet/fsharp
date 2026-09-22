@@ -159,7 +159,7 @@ async function fixture(t) {
         RB_STATE_DIRECTORY: path.join(directory, "state") };
     const read = () => JSON.parse(fs.readFileSync(serviceFile));
     const update = action => { const value = read(); action(value); writeDatabase(serviceFile, value); };
-    return { directory, config, configPath, serviceFile, env, context, approval, read, update,
+    return { directory, config, configPath, serviceFile, env, context, approval, read, update, git,
         ledger: () => fs.existsSync(`${serviceFile}.ledger`) ? fs.readFileSync(`${serviceFile}.ledger`, "utf8").trim().split("\n").filter(Boolean).map(JSON.parse) : [],
         moveMain() {
             git(["commit", "--quiet", "--allow-empty", "-m", "next fixture main"]);
@@ -174,6 +174,30 @@ async function fixture(t) {
 }
 
 function assertValue(value, message) { if (!value) throw new Error(message); }
+
+async function routingFixture(t) {
+    const value = await fixture(t);
+    const workflowPath = ".github/workflows/regression-bisect.lock.yml";
+    const registration = {
+        schemaVersion: 2, repository: "dotnet/fsharp", issueNumber: 123, commentId: 458, freshnessCommentId: 459,
+        checkpointAnchorSha: value.config.anchorSha, bootstrapDigest: f.digest("Reviewed discovery slot"),
+        freshnessBootstrapDigest: f.digest("Reviewed discovery freshness slot"),
+        provisionDeadline: "2026-10-01T00:00:00Z", workflowPath, workflowGeneration: 1,
+    };
+    value.env.RB_DISPATCH_TOKEN = "offline-separate-dispatch-token";
+    value.update(db => {
+        db.runs["22345/1"] = { ...db.runs["12345/1"], id: 22345, path: workflowPath };
+        db.issues = [db.issue];
+        db.comments.push({ ...db.comments[0], id: 458, body: "Reviewed discovery slot" });
+        db.comments.push({ ...db.comments[0], id: 459, body: "Reviewed discovery freshness slot" });
+        db.files[".github/regression-bisect/discovery.json"] = json(registration).toString("base64");
+        db.files[workflowPath] = null;
+    });
+    value.env.GITHUB_RUN_ID = "22345";
+    value.registration = registration;
+    value.routingContext = { ...value.context, workflowPath, commentId: 458, owner: { runId: "22345", attempt: 1 } };
+    return value;
+}
 
 async function checkpoint(fixture) {
     const service = await connect(fixture.serviceFile);
@@ -194,6 +218,13 @@ async function seed(fixture, endpoint, outcome, target, attempts) {
     const reservation = await state.reserveWork(transport, context, { generation: cp.generation,
         attemptId: `seed-${cp.sequence}`, request: { kind, endpoint, phase: endpoint === "good" ? "good-search" : endpoint ?? "bisect",
             target: kind === "released" ? { sdk: context.stableSdk } : { sourceSha } } });
+    const observation = syntheticObservation(reservation, context, outcome, attempts);
+    return state.commitObservation(transport, context, { generation: reservation.generation,
+        attemptId: reservation.id, observation, evidence: [] });
+}
+
+function syntheticObservation(reservation, context, outcome, attempts) {
+    const kind = reservation.request.kind, sourceSha = reservation.request.target.sourceSha;
     const observation = f.observation(kind, outcome, context.manifest, sourceSha);
     observation.buildInstanceId = reservation.id;
     observation.provenance = { workerId: "synthetic-seed", runId: context.owner.runId,
@@ -209,11 +240,10 @@ async function seed(fixture, endpoint, outcome, target, attempts) {
             cell.outcome = observation.outcome = require("../model.cjs").classifyAttempts(attempts, context.manifest);
         }
     }
-    return state.commitObservation(transport, context, { generation: reservation.generation,
-        attemptId: reservation.id, observation, evidence: [] });
+    return observation;
 }
 
-async function connect(file) {
+async function connect(file, { readOnly = false } = {}) {
     let snapshot;
     const read = () => {
         const stat = fs.statSync(file, { bigint: true });
@@ -223,13 +253,33 @@ async function connect(file) {
         return JSON.parse(snapshot.bytes);
     };
     const write = db => writeDatabase(file, db);
-    const record = entry => fs.appendFileSync(`${file}.ledger`, JSON.stringify({ pid: process.pid, ...entry }) + "\n");
+    const record = entry => {
+        if (!readOnly) fs.appendFileSync(`${file}.ledger`, JSON.stringify({ pid: process.pid, ...entry }) + "\n");
+    };
     const respond = (data, status = 200, headers = {}) => new Response(json(data), { status, headers });
     const fault = (db, name) => {
         if (!db.faults[name]) return false;
         delete db.faults[name]; write(db); return true;
     };
     return {
+        ...(read().SYNTHETIC ? { collectObservation: async ({ reservation, context }) => {
+            assertValue(process.env.RB_LOCAL_TEST === "explicit-offline-fixture" && !process.env.GITHUB_ACTIONS &&
+                !process.env.RB_TRIAL_DIRECTORY, "SYNTHETIC observations are unit fixtures only");
+            const launch = path.join(process.env.RB_STATE_DIRECTORY, "dotnet-fsharp-123", "launches", reservation.id);
+            const { SYNTHETIC: outcome } = JSON.parse(await fsp.readFile(path.join(launch, "fixture-input.json")));
+            assertValue(["pass", "product-failure", "untestable"].includes(outcome), "unknown SYNTHETIC outcome");
+            record({ kind: "SYNTHETIC-observation", reservation: reservation.id, outcome });
+            const observation = syntheticObservation(reservation, context, outcome);
+            if (reservation.request.kind === "released") for (const cell of observation.cells) {
+                cell.releasedToolchain = { sdk: cell.sdk, compilerRuntime: cell.runtime,
+                    archive: f.archiveReceipt({ name: "dotnet-sdk-linux-x64.tar.gz", url: archiveUrl,
+                        sha512: archiveHash, rid: "linux-x64", architecture: "x64", provenance: { kind: "publisher-checksum" } },
+                    "/SYNTHETIC/sdk.tar.gz", archive) };
+                cell.artifacts.compiler.assemblyVersion = "14.0.100.0";
+                cell.artifacts.core.assemblyVersion = "10.0.0.0";
+            }
+            return { observation, evidence: [] };
+        } } : {}),
         clock: () => new Date(read().now),
         mirrorDirectory: read().mirrorDirectory,
         executeGit: async (executable, args, settings) => {
@@ -277,14 +327,15 @@ async function connect(file) {
             return { status: 200, url, redirects: [], sha512: archiveHash, sha256: f.digest(archive), size: archive.length };
         },
         send: async (url, options) => {
+            assertValue(!readOnly || options.method === "GET", "read-only service cannot mutate");
             const location = new URL(url);
             assertValue(location.origin === "https://api.github.com", "unexpected API authority");
             const route = location.pathname.replace("/repos/dotnet/fsharp/", "");
             const body = options.body ? JSON.parse(options.body) : null;
             record({ kind: "api", method: options.method, route, body, url, query: Object.fromEntries(location.searchParams) });
             const db = read();
-            const page = rows => rows.slice((Number(location.searchParams.get("page") ?? 1) - 1) * 100,
-                Number(location.searchParams.get("page") ?? 1) * 100);
+            const page = (rows, size = 100) => rows.slice((Number(location.searchParams.get("page") ?? 1) - 1) * size,
+                Number(location.searchParams.get("page") ?? 1) * size);
             if (db.faults.routingRateLimit) return respond({}, 429);
             if (route === "actions/workflows/regression-bisect-controller.yml/dispatches") {
                 assertValue(options.method === "POST" && options.headers.Authorization === "Bearer offline-separate-dispatch-token",
@@ -311,7 +362,7 @@ async function connect(file) {
                 return respond(db.runs[`${id}/${attempt}`] ?? {}, db.runs[`${id}/${attempt}`] ? 200 : 404);
             }
             if (route === "issues/123") return respond(db.issue);
-            const links = rows => ({ link: Number(location.searchParams.get("page")) * 100 < rows.length
+            const links = (rows, size = 100) => ({ link: Number(location.searchParams.get("page")) * size < rows.length
                 ? '<https://api.github.com/next>; rel="next"' : "" });
             if (route === "issues/123/timeline") return respond(page(db.timeline), 200, links(db.timeline));
             if (route === "issues/123/comments") {
@@ -367,6 +418,18 @@ async function connect(file) {
                 db.statuses.unshift(receipt); write(db);
                 if (fault(db, "statusAck")) throw new Error("status acknowledgement lost");
                 return respond(receipt, 201);
+            }
+            const associated = /^commits\/([a-f0-9]{40})\/pulls$/.exec(route);
+            if (associated) {
+                const rows = db.associations?.[associated[1]] ?? [];
+                const size = db.associationPageSize ?? 100;
+                return respond(page(rows, size), 200, links(rows, size));
+            }
+            const pull = /^pulls\/(\d+)(\/commits)?$/.exec(route);
+            if (pull) {
+                const record = db.pulls?.[pull[1]];
+                if (!record) return respond({}, 404);
+                return pull[2] ? respond(page(record.commits), 200, links(record.commits)) : respond(record.details);
             }
             if (route.startsWith("commits/")) return respond({ sha: db.revision });
             const nodes = new Map(), blobs = new Map();
@@ -434,7 +497,23 @@ async function connect(file) {
                 "released unit must not receive source history");
             const launch = { launchId: f.digest(unit.buildInstanceId), unitDigest: fingerprint(unit),
                 imageDigest: image.split(":").at(-1) };
-            await fsp.writeFile(path.join(options.evidenceDirectory, "fixture-input.json"), json({ unit, launch }));
+            let SYNTHETIC;
+            if (db.SYNTHETIC) {
+                assertValue(process.env.RB_LOCAL_TEST === "explicit-offline-fixture" && !process.env.RB_TRIAL_DIRECTORY &&
+                    !process.env.GITHUB_ACTIONS, "SYNTHETIC worker is a unit fixture only");
+                SYNTHETIC = db.SYNTHETIC.stable;
+                if (unit.request.kind === "source") {
+                    const args = ["show", `${unit.request.target.sourceSha}:source.txt`];
+                    record({ kind: "git", args });
+                    const executable = JSON.parse(Buffer.from(db.files[".github/regression-bisect/deployment.json"], "base64")).gitExecutable;
+                    SYNTHETIC = execFileSync(executable, args, { cwd: db.mirrorDirectory, encoding: "utf8", timeout: 30000,
+                        env: { ...process.env, GIT_CONFIG_NOSYSTEM: "1",
+                            GIT_CONFIG_GLOBAL: path.join(db.mirrorDirectory, "no-config") } }).trim();
+                    if (["synthetic inert source", "synthetic inert source\nnewer inert source"].includes(SYNTHETIC))
+                        SYNTHETIC = "untestable";
+                }
+            }
+            await fsp.writeFile(path.join(options.evidenceDirectory, "fixture-input.json"), json({ unit, launch, SYNTHETIC }));
             const env = process.platform === "win32" ? { SystemRoot: process.env.SystemRoot } : {};
             const started = Date.now();
             const executed = spawnSync(process.execPath, [__filename, "--worker", options.evidenceDirectory], {
@@ -465,9 +544,18 @@ async function syntheticWorker() {
     assertValue(mode === "--worker" && path.isAbsolute(directory) && !extra, "invalid synthetic worker input");
     assertValue(!Object.keys(process.env).some(k => /token|secret|key|github|actions|cloud/i.test(k)),
         "credentials entered the synthetic worker");
-    const { unit, launch } = JSON.parse(await fsp.readFile(path.join(directory, "fixture-input.json")));
-    const result = { status: "untestable", outcome: { schemaVersion: 1, outcome: "untestable", reason: "setup-failure" },
+    const { unit, launch, SYNTHETIC } = JSON.parse(await fsp.readFile(path.join(directory, "fixture-input.json")));
+    let result = { status: "untestable", outcome: { schemaVersion: 1, outcome: "untestable", reason: "setup-failure" },
         error: { message: "offline synthetic setup failure" } };
+    if (SYNTHETIC) {
+        const attempts = [f.attempt(SYNTHETIC), f.attempt(SYNTHETIC)];
+        const reproduction = { outcome: require("../model.cjs").classifyAttempts(attempts, unit.manifest),
+            cells: unit.manifest.matrix.map(c => ({ id: c.id, attempts })) };
+        result = unit.request.kind === "released" ? reproduction : {
+            status: "tested", actualSourceSha: unit.request.target.sourceSha,
+            buildInstanceId: unit.buildInstanceId, reproduction, outcome: reproduction.outcome,
+        };
+    }
     const { files } = await executionEvidence(unit, launch, result, {
         evidenceDirectory: directory, scratchDirectory: directory,
     });
@@ -476,4 +564,4 @@ async function syntheticWorker() {
 
 if (require.main === module) syntheticWorker().catch(error => { console.error(error.message); process.exitCode = 1; });
 
-module.exports = { fixture, connect, checkpoint, seed, writeDatabase, invokeCli };
+module.exports = { fixture, routingFixture, connect, checkpoint, seed, writeDatabase, invokeCli };
