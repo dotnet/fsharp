@@ -237,7 +237,7 @@ let outer (n: int) : Task<int> =
             for i in 1 .. n do
                 let! d = Task.FromResult i
                 total <- total + d
-            use _ = { new IDisposable with member _.Dispose() = () }
+            use _ = { new IAsyncDisposable with member _.DisposeAsync() = ValueTask() }
             try
                 do! Task.Delay 1
                 total <- total + 1
@@ -281,18 +281,30 @@ let private ceAwaitInsideTry = """
 """
 
 // (2) `use` disposal emitted AFTER the protected region: the compiler rewrite hoists the awaited
-// DisposeAsync out of the finally — isinst IAsyncDisposable -> DisposeAsync() -> Await(ValueTask).
+// DisposeAsync out of the finally.
 let private ceDisposalHoist = """
-      IL_0070:  isinst     [runtime]System.IAsyncDisposable
-      IL_0075:  stloc.s    V_8
-      IL_0077:  ldloc.s    V_8
-      IL_0079:  brfalse.s  IL_008d
+      IL_0066:  ldloc.3
+      IL_0067:  box        [runtime]System.IAsyncDisposable
+      IL_006c:  stloc.s    V_7
+      IL_006e:  ldloc.s    V_7
+      IL_0070:  box        [runtime]System.Object
+      IL_0075:  brtrue.s   IL_007a
 
-      IL_007b:  ldloc.s    V_8
-      IL_007d:  stloc.s    V_9
-      IL_007f:  ldloc.s    V_9
-      IL_0081:  callvirt   instance valuetype [runtime]System.Threading.Tasks.ValueTask [runtime]System.IAsyncDisposable::DisposeAsync()
-      IL_0086:  call       void [runtime]System.Runtime.CompilerServices.AsyncHelpers::Await(valuetype [runtime]System.Threading.Tasks.ValueTask)
+      IL_0077:  ldc.i4.1
+      IL_0078:  br.s       IL_007b
+
+      IL_007a:  ldc.i4.0
+      IL_007b:  brfalse.s  IL_007f
+
+      IL_007d:  br.s       IL_0096
+
+      IL_007f:  ldloc.3
+      IL_0080:  stloc.s    V_8
+      IL_0082:  ldloca.s   V_8
+      IL_0084:  constrained. [runtime]System.IAsyncDisposable
+      IL_008a:  callvirt   instance valuetype [runtime]System.Threading.Tasks.ValueTask [runtime]System.IAsyncDisposable::DisposeAsync()
+      IL_008f:  call       void [runtime]System.Runtime.CompilerServices.AsyncHelpers::Await(valuetype [runtime]System.Threading.Tasks.ValueTask)
+      IL_0094:  br.s       IL_0096
 """
 
 // MethodImplOptions.Async (0x2000) is a *method header* flag, not an IL instruction — neither the
