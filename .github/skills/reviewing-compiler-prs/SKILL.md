@@ -15,6 +15,10 @@ Full dimension definitions and CHECK rules live in the `expert-reviewer` agent.
 - PR touches `tests/` only — quick check: baselines explained? Cross-TFM coverage? Tests actually assert?
 - PR touches `eng/` or build scripts — focus on Build Infrastructure, Cross-Platform
 
+## Performance claims
+
+For claimed compiler/FCS or generated-program performance improvements, use the [performance-improvement-review agent](../../agents/performance-improvement-review.md) and its [verified evidence resources](../../../docs/performance-improvement-review/evidence.md). It supplements normal correctness review; it is not an automatic dispatch for every compiler PR or a reason to launch all dimensions for artifact-only changes.
+
 ## Dimension Selection
 
 | Files Changed | Focus Dimensions |
