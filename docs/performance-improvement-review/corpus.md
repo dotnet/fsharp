@@ -4,6 +4,8 @@
 
 This is an acquisition record, not a reviewer, evidence-derived rules, or a review checklist. It preserves candidate selection, source provenance, historical revisions and an untouched family-level evaluation reserve.
 
+The original inventory/split tables below are the **pre-drafting snapshot**. Current reconciled status is in [final source-coverage accounting](#final-source-coverage-accounting) and [effective applicability coverage](#effective-applicability-coverage); acquisition history remains in [the reserved-source study](#reserved-source-acquisition-and-holdout-study). Historical "untouched" and "not evaluated" statements describe that earlier freeze, not the later execution status. Source-attribution corrections are in [the named conversation audit](evidence.md#named-conversation-audit); no original-user authorship attestation is claimed.
+
 | Field | Frozen value |
 | --- | --- |
 | Repository | [dotnet/fsharp](https://github.com/dotnet/fsharp) |
@@ -651,7 +653,7 @@ Dates are UTC. `C/U` means created/updated; `close/merge` preserves both timesta
 
 ## Family splits and untouched reservations
 
-**2026-09-22 RED-stage correction:** the request itself exposed PR-20348's review exchange. Before mining it, all six members of `FAMILY-self-profile` (20348/20349/20350/20351/20353/20354) were moved from holdout to development. Their acquisition supplement appears below. The original acquisition counts elsewhere remain historical, not current split totals: there are now **40 included development and 82 included holdout PRs**, plus unchanged context/control rows; the reservation table has **94 rows**. `FAMILY-compiler-parallel`, including PR-18998, remains an untouched evaluation reserve; no replacement family was mined. All other reservations are unchanged. Neither this exposed family nor any paired historical/final versions may be used as holdouts.
+**2026-09-22 RED-stage correction:** an architect seed exposed PR-20348's review exchange; this was not an original-user authorship attestation. Before mining it, all six members of `FAMILY-self-profile` (20348/20349/20350/20351/20353/20354) were moved from holdout to development. Their acquisition supplement appears below. The original acquisition counts elsewhere remain historical, not current split totals: there were then **40 included development and 82 included holdout PRs**, plus unchanged context/control rows; the reservation table has **94 rows**. At that freeze `FAMILY-compiler-parallel`, including PR-18998, remained an untouched evaluation reserve; no replacement family was mined. Neither this exposed family nor any paired historical/final versions may be used as holdouts.
 
 The first split used only descriptions, changed-file metadata and explicit stack/supersession links. It reserved the interconnected closure/inlining, editor-work-reuse, hot-reload and generated-program families, plus non-performance boundary controls. Development contains separately selected cache, pattern-memo, fusion and build-latency families. This is deliberately not a random sample or an estimate of review-outcome prevalence.
 
@@ -1342,7 +1344,7 @@ Changes the string-heap cache to grow from zero and removes the computed type-na
 
 | Source / stable ID | Account / association / provenance | Created / updated UTC | Revision | Decision / location | Faithful source note |
 | --- | --- | --- | --- | --- | --- |
-| [reviews:4949741702](https://github.com/dotnet/fsharp/pull/20261#pullrequestreview-4949741702) | T-Gro; MEMBER; reviewer; text origin uncertain-model-associated; User | 2026-08-17T08:28:19Z / 2026-08-17T08:28:19Z | [`d3fdcde52a`](https://github.com/dotnet/fsharp/commit/d3fdcde52aeaf153a0cc28c99bb1bfbaac772691) | COMMENTED; submitted 2026-08-17T08:28:19Z | Review says removing computed-name interning preserves value equality and cached/one-shot callers, validates zero initial capacity and retained-memory tradeoff, and asks only for release-note link. |
+| [reviews:4949741702](https://github.com/dotnet/fsharp/pull/20261#pullrequestreview-4949741702) | T-Gro; MEMBER; reviewer; text origin uncertain; User | 2026-08-17T08:28:19Z / 2026-08-17T08:28:19Z | [`d3fdcde52a`](https://github.com/dotnet/fsharp/commit/d3fdcde52aeaf153a0cc28c99bb1bfbaac772691) | COMMENTED; submitted 2026-08-17T08:28:19Z | Review says removing computed-name interning preserves value equality and cached/one-shot callers, validates zero initial capacity and retained-memory tradeoff, and asks only for release-note link. Sprint-10 envelope audit found no explicit automation disclosure for this review; the earlier model-associated classification is unsupported, not inferred from prose style. Separate tooling bots below do not establish this review's composition. |
 | [reviews:4970705961](https://github.com/dotnet/fsharp/pull/20261#pullrequestreview-4970705961) | T-Gro; MEMBER; reviewer; text origin uncertain; User | 2026-08-19T09:39:18Z / 2026-08-19T09:39:18Z | [`1def7e689f`](https://github.com/dotnet/fsharp/commit/1def7e689f9a7ee2b16c879cceb178b69ea17d80) | APPROVED; submitted 2026-08-19T09:39:18Z | Empty APPROVED review retained as a review event; no prose rationale. |
 | [reviews:4984197106](https://github.com/dotnet/fsharp/pull/20261#pullrequestreview-4984197106) | T-Gro; MEMBER; reviewer; text origin uncertain; User | 2026-08-20T15:02:37Z / 2026-08-20T17:09:55Z | [`baf8d89e9c`](https://github.com/dotnet/fsharp/commit/baf8d89e9cdc412a73b04d34b0981eaafd340020) | APPROVED; submitted 2026-08-20T15:02:37Z | Empty APPROVED review retained as a review event; no prose rationale. |
 | [reviews:5007931749](https://github.com/dotnet/fsharp/pull/20261#pullrequestreview-5007931749) | T-Gro; MEMBER; reviewer; text origin uncertain; User | 2026-08-24T12:47:22Z / 2026-08-24T12:47:22Z | [`5b1a724e08`](https://github.com/dotnet/fsharp/commit/5b1a724e089cee38e71ca61f2a8a5093a1b1014d) | APPROVED; submitted 2026-08-24T12:47:22Z | Empty APPROVED review retained as a review event; no prose rationale. |
@@ -2170,7 +2172,7 @@ GraphQL independently matched all six saved description bodies. `lastEditedAt` i
 
 | Source and role | Reviewed revision / time UTC | Context and resolution |
 | --- | --- | --- |
-| [PR-20348 suggestion](https://github.com/dotnet/fsharp/pull/20348#discussion_r3854812488), brianrourkeboll, reviewer; [acceptance](https://github.com/dotnet/fsharp/pull/20348#discussion_r3860828838), T-Gro, author | `2a9e33aef0bf3df3bab894b332e8f0b55d7d9e08`; 2026-08-25T15:57:47Z / 2026-08-26T08:11:21Z | Manual array filling in `SortTableRows`; reviewer tentatively expects similar speed from comprehensions; author accepts nicer form. Final head uses the suggested form; resolved/outdated. This exchange is identified as human feedback by the request and corroborated by the code, not classified from prose style. It is not proof comprehensions are always faster. |
+| [PR-20348 suggestion](https://github.com/dotnet/fsharp/pull/20348#discussion_r3854812488), brianrourkeboll, reviewer; [acceptance](https://github.com/dotnet/fsharp/pull/20348#discussion_r3860828838), T-Gro, author | `2a9e33aef0bf3df3bab894b332e8f0b55d7d9e08`; 2026-08-25T15:57:47Z / 2026-08-26T08:11:21Z | Manual array filling in `SortTableRows`; reviewer tentatively expects similar speed from comprehensions; author accepts nicer form. Final head uses the suggested form; resolved/outdated. Original comment/review/reply envelopes establish participant attribution, not unaided human composition; the code corroborates adoption, not authorship. It is not proof comprehensions are always faster. |
 | [PR-20349 invariant request](https://github.com/dotnet/fsharp/pull/20349#discussion_r3881120590), abonie, reviewer; [reply](https://github.com/dotnet/fsharp/pull/20349#discussion_r3914836899), T-Gro, author | original `b0770fe05ee57d56bbb292277cc35f20b3ec81f7`; 2026-08-28T13:51:52Z / 2026-09-02T13:53:55Z | Asked for a comment **or** debug assertion at `RecordReqdBrFixups`, because reversal now relies on ordering. `d33b15c5ef845d987bc5ad18f728f586892323d8` adds both; final retains them; resolved, not outdated. Authorship not independently established; use as source context/request-required oracle, not a human-derived vote. |
 | [PR-20350 question](https://github.com/dotnet/fsharp/pull/20350#issuecomment-5414964345), baronfel, reviewer; [reply](https://github.com/dotnet/fsharp/pull/20350#issuecomment-5422498631) and [qualification](https://github.com/dotnet/fsharp/pull/20350#issuecomment-5422593322), T-Gro, author | Issue comments unbound; 2026-08-25/26; final `480904770cb5b095e5a3c86d50ff35fe919302f8` | Question about value-choice active patterns; author uses ValueOption, notes lost exhaustiveness and large-struct costs. Not a request to add ValueChoice or proof of speed. Text origin unverified; no human-derived vote. |
 | [PR-20353 timing question](https://github.com/dotnet/fsharp/pull/20353#issuecomment-5454977613), auduchinok, reviewer; [answer](https://github.com/dotnet/fsharp/pull/20353#issuecomment-5510436436), T-Gro, author | Issue comments unbound; 2026-08-28 / 2026-09-02; final `604669d1a6fd688f6ee0cd1daff3e7020192a080` | Reviewer wonders whether time improves. Author explicitly bounds reliable result to allocations and says elapsed time is noisy. No quantified timing answer or rejection. Text origin unverified; request-required metric guidance only. |
@@ -2182,3 +2184,197 @@ Full diffs plus surrounding `SortTableRows`/`RecordReqdBrFixups` emit paths, `In
 ### Limits of the freeze
 
 Deleted comments, inaccessible private material, unposted profiling traces and historical versions of edited descriptions cannot be certified absent or reconstructed from successful API requests. Current resolved/outdated flags are not timestamps of resolution. Search indexes and labels are mutable. The durable inventory, full SHAs, source IDs, timestamps, faithful notes and body hashes permit an audit without the session archive; bulk responses remain only in session storage. Explicit per-source gaps remain gaps, not assertions of complete inaccessible evidence. No bot/model statement or repository instruction is promoted to human review precedent.
+
+## Reserved-source acquisition and holdout study
+
+This supplement supersedes the historical statement that reserved feedback has not been acquired. It does **not** turn acquisition into completed inspection or a passing reviewer test. Candidate C3 was frozen before feedback access at `2026-09-22T13:22:53Z`, repository `ac7bd61c998f0bade4aeaa00e676b87bedb6397e`; candidate SHA-256 `4c5d4bd0000fac52c0e1e5de9825e95891dd364c8e301200cd7952406c667954`. The evidence-file SHA-256 was `b8e0a424f05c3fdc91f3d9aef900be56142537daaa469811122618ca0bb01ec3`. The cutoff remains **2026-09-22T09:28:34Z**, not retrieval time.
+
+The acquisition report was frozen at `2026-09-22T14:12:24Z` in session `36233952-cdbf-4056-984e-1fe93e32d7a3`, `files\holdout-study`. It captured all **94 reserved rows**: 82 performance candidates, five earlier/context rows and seven applicability controls. Exact frozen base/head pointers remain in the reservation table above. `per-pr-ledger.json`, each `raw\<PR>\ledger.json`, and `source-comment-index.json` retain raw hashes, URLs, author/role, dates, reviewed/original revisions, resolution snapshots, endpoint totals and final cursors.
+
+| Acquisition check | Actual result and limitation |
+| --- | --- |
+| Frozen Git material | 94 canonical frozen-head diffs, totaling 354,429 lines; 2,228 revision diffs captured, 2,189 at/before cutoff and 39 quarantined future revisions; 3,755 before/after changed-file/signature snapshots. Git fetches used an artifact-local object store, never a branch switch. |
+| Discussion channels | 807 reviews, 568 issue comments, 830 inline comments and 438 threads captured, including earlier context and automation. These totals are not human votes. REST `--paginate --slurp`, GraphQL review/thread pages and every nested thread-comment connection were exhausted. |
+| Count reconciliation | No unresolved file/review/comment/commit reconciliation rows and no Git/source acquisition errors. #19941 advertises 407 commits but both APIs stop at 250; pinned Git ancestry recovered exactly 407. This is API-cap recovery, not ordinary complete API pagination. |
+| Timeline limitations | Unfiltered terminal timeline nodes disagree with API `totalCount` on 76 PRs. Exact reported/delivered counts remain in `timeline-total-anomalies.json`; terminal cursors do not justify claiming the totals agree. Filtered counts were reconciled against typed unfiltered nodes, not the API's unfiltered total. |
+| Historical boundary | 39 future revisions, 49 future timeline nodes and five future-edited/comment exclusions were quarantined. Current heads differ from frozen heads for #20462/#20465/#20483/#20492/#20529; current file lists are not projected backward. None is a selected case. |
+| Unavailable evidence | Fourteen deleted-comment events have no recoverable bodies in the captured channels. Immutable historical description edits and resolution transitions, private and unposted measurements remain unavailable, not inspected or inferred absent. |
+| Attachments | Nineteen attachment URLs downloaded without retrieval errors. Download success alone is not semantic image/table inspection; case-specific inspection must be recorded separately. |
+| Initial inspection boundary | Nine selected PRs had complete final diff, relevant context and all available feedback inspected; #20388 also had its tested historical diff inspected. The remaining 85 rows initially had partial triage only. Later family inspection must not be credited merely from these acquisition counts. |
+| Reviewer execution | Ten actual C3 runs are recorded in [validation.md](validation.md#c3-blind-execution-and-retained-failure), including the retained HOLD-09 miss. No candidate pass is inferred from source reading. |
+
+The following compact ledger reconciles **every reserved PR** to the capture totals without duplicating the full base/head inventory. Counts are reviews / issue comments / inline comments / threads, including earlier and automated material. Each PR's REST totals, GraphQL totals and terminal cursors, nested-comment counts, frozen description SHA-256 and original/edit/review coordinates are in `per-pr-ledger.json`, SHA-256 `00440dbb213b81991539eefddac902d72842f444c0a1186824b137632033b328`. All 94 review/thread/nested-comment connections were checked terminal; the separate timeline-total anomalies above are not hidden by that check.
+
+| Metadata family | Reserved PRs | Captured R/I/C/T |
+| --- | --- | --- |
+| compiler-parallel | #14372, #14390, #14494, #18998 | 186/126/238/156 |
+| vs-work-reuse | #15954, #20113, #20115, #20116, #20117, #20119, #20121, #20126, #20128, #20273, #20409, #20413, #20443, #20450, #20452, #20455, #20456, #20457, #20458, #20459, #20460, #20462, #20465, #20483, #20492, #20499, #20529, #20573 | 237/107/243/115 |
+| measure-conversion | #17518 | 0/9/0/0 |
+| hot-reload-cache | #18354, #19267, #19941, #20017, #20018, #20019, #20024, #20025, #20026, #20027, #20030, #20031 | 118/111/130/70 |
+| vector-sum | #18509 | 20/30/20/6 |
+| runtime-async | #18873, #19065, #19449, #20235 | 34/64/45/22 |
+| cache-type-relations | #19107 | 0/2/0/0 |
+| empty-string | #19189, #19532, #19923 | 18/19/9/5 |
+| dependency-perf | #19669, #19695 | 2/3/0/0 |
+| emitted-il-baselines | #19676 | 1/2/0/0 |
+| dead-binding | #19758, #19885 | 10/8/2/1 |
+| sync-immediate | #19804 | 51/14/64/27 |
+| inline-closures | #19869, #20367, #20368, #20372, #20373, #20374, #20384, #20385, #20415, #20421, #20422, #20423, #20424, #20425, #20426, #20437, #20439, #20447, #20487, #20571 | 51/27/20/12 |
+| realsig-tlr | #19882 | 1/3/0/0 |
+| string-concat | #19971, #20542, #20544 | 34/15/28/10 |
+| rich-text-api | #20097, #20507, #20552, #20556 | 19/13/13/7 |
+| md5-reuse | #20275 | 16/3/14/5 |
+| string-spans | #20358 | 0/3/0/0 |
+| core-empty-array | #20388 | 5/7/4/2 |
+| prompt-docs | #20436 | 1/1/0/0 |
+| tc-reuse-tests | #20444 | 3/1/0/0 |
+| ci-turnaround | #20587 | 0/0/0/0 |
+| **Total: 94 unique PRs** | **22 metadata families before the explicit connected-family overrides** | **807/568/830/438** |
+
+### Effective family-isolation corrections
+
+The original inventory/reservation tables remain the **pre-drafting snapshot**, not a silently rewritten split. The following correction applies to their effective evaluation roles:
+
+| Family | Original included role | Effective role and reason |
+| --- | --- | --- |
+| FAMILY-core-empty-array (#20388) | One holdout candidate | Development: the required complement document `expert-reviewer.md` already contained the exact covariance failure/repro before candidate drafting, introduced by `fce51f6d26358cb5c2431f84c9884aceba7bb154` (#20511). Existing-agent text is not human evidence, but the example was exposed. |
+| FAMILY-inline-closures (20 reserved PRs) | Twenty holdout candidates | Development, conservatively connected to core-empty-array by #20388's ancillary closure-characterization test edit. HOLD-03 (#20367) cannot restore independence by using a different PR number. |
+
+At the first C3 blind execution this yields **61 included development / 61 included holdout candidates**, with the original five reserved context rows and seven controls unchanged. The 321 original metadata families remain an inventory count; merging the two connected families gives 320 grouping units, not proof of 321 independent mechanisms. The selected ten inputs are nine PRs: three development inputs in the connected family and seven initially blind inputs in seven other families. Both primary authors and charlesroddie, DedSec256, xperiandri and Thorium are represented. #20444's author is DedSec256; #20507 was added from the already reserved rich-text family before execution to represent auduchinok accurately.
+
+Newly read comments did not establish additional verified human composition. Explicit AI-review disclosures apply to attached inline findings; unmarked account prose remains uncertain rather than presumed human. #18509's 2025 measurements/requests are earlier context of an older-active PR, not newly in-window review evidence. [The frozen oracles and actual outputs](validation.md#frozen-source-expectations) retain these provenance limits. The source collector's initial claim of eight independent connected holdout families is superseded by the exposure correction above.
+
+**C4 tuning correction:** the retained HOLD-09 miss promoted #18509 / `FAMILY-vector-sum` to development before scoring the repaired candidate. Effective included totals are therefore **62 development / 60 holdout candidates**, plus unchanged context/control rows. The original inventory remains the auditable historical split; these explicit family overrides determine current eligibility. #20358 / `FAMILY-string-spans` was selected from the untouched metadata reserve as a replacement for conditional fast/fallback generated-program measurement. It is not a second SIMD case. Its complete pinned diff, implementation/signature, NativePtr, test/build-asset context and all three comments were inspected before the reviewer ran; [validation.md](validation.md#repl-01-independent-source-oracle-and-actual-result) records the pre-execution oracle/input hashes and actual output.
+
+**Additional source-family correction:** #19882 / `FAMILY-realsig-tlr` introduces the `effectiveCloc` namespace-root lifted-function placement at `5bc65018fca5e5db53476065e591b366b3305982`, `IlxGen.fs:10342-10357`. Already-development #20422 changes that same mechanism to separate lifted methods from values at `5c4d6c7bd165747a5db2d792c89380f692230304`, `IlxGen.fs:10685-10703`. This is mechanism continuity, not filename overlap. Conservatively join the entire realsig-TLR family to the connected core-empty-array/inline-closure development group. Final effective included counts are **63 development / 59 holdout candidates**, with five reserved context and seven control rows unchanged; the original 321 metadata groups reduce to 319 connected grouping units. No selected independent case relies on #19882. C5's later repair uses the already-exposed HOLD-01 development failure, not a replacement holdout, so it does not consume another family.
+
+### Benchmark-only applicability search
+
+The supplemental search exhausted **724 created-in-window PRs plus 80 older-active PRs**, 804 distinct PRs, and screened every complete changed-file list for benchmark/MicroPerf paths. The largest file list had 2,930 entries, below REST's 3,000-file cap; there were no acquisition errors. All searches used `gh api --method GET search/issues -f "q=$query" -f per_page=100 --paginate --slurp`, with `incomplete_results=false`. Each total below equals its collected count.
+
+| Exact query after `repo:dotnet/fsharp is:pr` | Total | Pages |
+| --- | --- | --- |
+| `benchmark in:title,body created:<=2026-09-22T09:28:34Z updated:2026-04-22T00:00:00Z..2026-09-22T09:28:34Z` | 49 | 1 |
+| `benchmarks in:title,body created:<=2026-09-22T09:28:34Z updated:2026-04-22T00:00:00Z..2026-09-22T09:28:34Z` | 60 | 1 |
+| `BenchmarkDotNet in:title,body created:<=2026-09-22T09:28:34Z updated:2026-04-22T00:00:00Z..2026-09-22T09:28:34Z` | 1 | 1 |
+| `MicroPerf in:title,body created:<=2026-09-22T09:28:34Z updated:2026-04-22T00:00:00Z..2026-09-22T09:28:34Z` | 23 | 1 |
+| `FCSBenchmarks in:title,body created:<=2026-09-22T09:28:34Z updated:2026-04-22T00:00:00Z..2026-09-22T09:28:34Z` | 0 | 1 |
+| `CompiledCodeBenchmarks in:title,body created:<=2026-09-22T09:28:34Z updated:2026-04-22T00:00:00Z..2026-09-22T09:28:34Z` | 0 | 1 |
+| `created:2026-04-22T00:00:00Z..2026-04-30T23:59:59Z` | 34 | 1 |
+| `created:2026-05-01T00:00:00Z..2026-05-31T23:59:59Z` | 147 | 2 |
+| `created:2026-06-01T00:00:00Z..2026-06-30T23:59:59Z` | 102 | 2 |
+| `created:2026-07-01T00:00:00Z..2026-07-31T23:59:59Z` | 73 | 1 |
+| `created:2026-08-01T00:00:00Z..2026-08-31T23:59:59Z` | 196 | 2 |
+| `created:2026-09-01T00:00:00Z..2026-09-22T09:28:34Z` | 172 | 2 |
+| `created:<2026-04-22T00:00:00Z updated:2026-04-22T00:00:00Z..2026-09-22T09:28:34Z` | 80 | 1 |
+| `created:<2026-04-22T00:00:00Z updated:>=2026-04-22T00:00:00Z` (later-edit sensitivity only; historical cutoff unchanged) | 80 | 1 |
+
+Eleven PRs touch those benchmark paths: #17370, #18509, #19854, #20083, #20084, #20092, #20106, #20134, #20245, #20307 and #20355. Each also changes product/API, dependencies or broader formatting. None is a real benchmark-only applicability control; in particular #18509's product-plus-benchmark diff does not fill that category. Exact path sets are retained in `supplement\path-screen.json`; GitHub PR search has no historical changed-path qualifier. A separate later-edit sensitivity query added no older rows. **Benchmark-only remains unavailable, not verified**, and synthetic mutations cannot supply real-PR credit.
+
+A second path screen over the same 804 complete lists also matched case-insensitive `perf|timing` outside the original benchmark/MicroPerf matches. Its ten additional results were #12345/#20508 (documentation), #18873 (a `Superfluous` name match), #19267/#19804 (PerfTests within larger product/API changes), #19815/#19957/#20240/#20436 (agent documentation amid broader changes), and #20544 (the timing-extraction script within 30-file cleanup). No standalone benchmark change or overlooked `tests/scripts/array-perf` edit was found. This broadening does not move the window or reclassify documentation as benchmark-only.
+
+### Completed hot-reload-family inspection
+
+All twelve frozen final diffs in `FAMILY-hot-reload-cache`, relevant callers/signatures/tests and the historical revisions needed to interpret tested objections/resolutions were inspected. This completion supersedes the initial partial-triage status for this family only. The study did **not** require rereading every incidental commit or claim execution of historical tests.
+
+Seven smaller finals (#18354/#19267/#20017/#20018/#20024/#20025/#20026) supplied 13,716 fully read diff lines. #20019's complete 10,140-line writer and #20027's complete unique emitter/matcher/composite material were then read, including all new tests and the differing baseline-reader/differ variants. Downstream duplicate material received credit only after its provider had completed inspection and Git identity matched:
+
+| Frozen composite | Complete file-block accounting | Full diff SHA-256 |
+| --- | --- | --- |
+| #20027 | 60 blocks; exact inspected lower-layer blobs reused, every differing block read | `a378a273f324cc43e6aaf2d2645fedd8573f8f3bfa367b5b04b42c7e48bb2791` |
+| #20030 | 31 exact blocks from #20027 + 93 fully read owned blocks = 124 | `6a39c0f851bc3d8bd89e6fc90785bf781b5ec3c672110e2a482f26f1fde0b8d2` |
+| #20031 | 28 exact blocks from #20027 + 65 from #20030 + 38 owned = 131 | `4ecb3fd53659b926dcfbe809cdcd09d3c66ca3d6bd690ae97a61030ca8a310d0` |
+| #19941 | 23 exact blocks from #20027 + 60 from #20030 + 28 from #20031 + 50 owned = 161 | `a2294225f3537c54fbd777087a0bf5683c7df1f4e7c7e25a207dfd0bc263141a` |
+
+Matching complete per-path diff blocks removes only Git's blob-index line; it does not equate variants by filename, ancestry or similar prose. Shared-source credits are acyclic. Owned new files, deltas, deletions, signatures, test assertions, docs/scripts and call-path context were read; exact repeated localization payloads were read once with verified culture mappings. #20026's two 24-block historical objection versions were separately reconciled, including all distinct blocks and the actual deterministic source/test correction `9f6a761cba745ed3a6adede44efc77c483bc82af`.
+
+Material source distinctions retained rather than collapsed into approvals:
+
+- #18354 remains an incomplete cache prototype; unconditional stamp reset and suppressed unpickler warnings extend beyond the optional reuse path. #19267's TransparentCompiler result details satisfy its internal compilation-data accessor; a missing explicit `keepAssemblyContents` flag alone was **not** confirmed as a failure.
+- #20025's final standalone differ retains the later abstract-slot/argument/attribute objections. #20027's [abstract-slot](https://github.com/dotnet/fsharp/pull/20027#discussion_r3749325577) and [property-attribute](https://github.com/dotnet/fsharp/pull/20027#discussion_r3749326826) objections also remain in its final composite blob; fixing a different slice is not evidence of repair. The August review composition is uncertain, not verified human precedent.
+- #20027's initial [reader correction](https://github.com/dotnet/fsharp/commit/2a827b06dac05dc59b6cfc168987a1e2458b7107) touched the uncompiled copy. The actual [compiled-reader correction](https://github.com/dotnet/fsharp/commit/6c7a61b558efad65d1959ba7e702cc559bc69792) and regressions were inspected, including unsigned masks and valid zero-row tables. Resolved flags alone would have hidden that chronology.
+- #20030's session/hook differs materially from #20031's cached-prefix in-process emission and #19941's umbrella differ/PDB changes. Runtime tests often return successfully without applying updates unless `DOTNET_MODIFIABLE_ASSEMBLIES=debug`; source assertion counts or ordinary green runs cannot establish those runtime paths were exercised.
+
+Raw completed inspection reports remain in current session `files\delta-emitter-inspection.md` and `files\composite-inspection.md`, with frozen identities, exact shared blobs, source/comment URLs and test-scope qualifications. Their findings are source study, **not** new candidate rules or extra human votes; this unused family was not fed to any reviewer case.
+
+### Completed other-family inspection
+
+The 46 reserved PRs outside the hot-reload/editor/runtime/parallel groups have complete frozen-final changed-material and available-feedback inspection, with named relevant historical objections, signatures, tests and direct consumer contexts reconciled. Original inspection covered 44 finals; the two remaining broad changes were completed separately rather than treating acquisition or a first-page preview as reading:
+
+| Scope | Exact completion and important qualification |
+| --- | --- |
+| #19676 test-only control | All 103 baseline entries accounted for: 50 verified identical mappings, nine prior complete reads, 36 remaining complete distinct deltas, seven full head baselines and one full deleted baseline. All 28 associated fixtures were read. Internal blank lines remain significant to ILChecker; inspection normalization is not represented as the harness comparison policy. Diff SHA-256 `c1b0df55a1ca2bed4ed370edbd70ac77c73789585d7aae1ef1adebac3735c0a9`. |
+| #20097 rich-text precursor | All 116 final changed files and reviewed `4bb108688a798e0a6996d199e68846fb25370895` reconciled; source pipeline, public surface, diagnostic producers and IDE consumers read. Final makers are internal, but public tooltip/formatting types really change. Both FSComp and FSIstrings opt into rich accessors; an attributed response saying only FSComp does is not a final-source fact. Diff SHA-256 `276eaf8f2fb9f3bfd1d828f17d8bf6944041e4e323bb1f90e5ead13a64ae0f9e`. |
+| #19804 immediate-async histories | Remaining five relevant revisions read with exact final-block reuse and every distinct residual; final SetException/GetResult preserves cancellation exception/token. Legacy/editor/benchmark copies still using old helpers bound the "completely standardises" claim. Four archived screenshots were visually read after fixing their filename extension; they show docs/stacks, not new measurements. |
+| #19971 interpolation history | Nine relevant versions and parser/typechecker/quotation/IDE consumers reconciled. Final nullable/alignment repairs are present, but the [quotation-consumer objection](https://github.com/dotnet/fsharp/pull/19971#discussion_r3452113009) remains unresolved; CLR-equivalent execution does not prove representation-dependent consumer compatibility. AOT's expected-output/success-sentinel check meets its purpose without requiring a `.bsl` file. |
+| #17518 units API | Old 194-method retained source, formatting and later 26-overload redesign inspected. The [2,250->2,281 KB author reply](https://github.com/dotnet/fsharp/pull/17518#issuecomment-2282788121) concerns the old API, not final size evidence. Final does not add the proposed compiler intrinsic; bulk closure is not a performance verdict. |
+| #19882 TLR/source-test context | All compiler and remaining fixture/baseline/registration changes read; mechanism links it to development as recorded above. At that historical harness, `compileExeAndRun |> shouldSucceed` does not check a returned nonzero integer without `withExitCode`; exception detection is not full return-value assertion coverage. The old linked runtime-regression timings are motivation, not final-PR measurements. |
+| Remaining small/context cases | Complete final/source feedback coverage includes exact related #20385/#20439 context identity, #19107 weak per-TcGlobals cache ownership, #20447 byref/diagnostic fixtures, and #20358 target-asset/threshold tests. #19869's decoded SharpLab payload is a forwarding example, not an Array.init benchmark. |
+
+Reports `files\baseline-inspection.md` and `files\richtext-history-inspection.md` preserve per-file/variant accounting and pinned source/feedback citations. The two identical #19532 XML attachments were read once with verified byte identity (`6873a7c9d00f5e2a35286ce9920152ee4d9aa64040f2addf3280167bdaa293a5`); they are VirtualBox/BlueStacks configuration, **not compiler benchmarks or test results**.
+
+These source conclusions add **zero verified-human-composition precedents**. Explicit bot/model disclosures remain quarantined; unmarked account prose and the separately marked "Non-AI" sentence in #20097 remain self-attributions, not independently established authorship. Specific unavailable evidence includes thirteen deleted #19189 bodies, immutable historical edit/resolution timing, #17518's exact old build/size artifact, and private/external consumer implementation not supplied by its report. No missing available diff is disguised as an access failure, and no source assertion is presented as an executed test.
+
+### Additional mixed-scope evaluation selection
+
+#20455's record-only revision `d2f626361e09d3a1410e0115f94fcea87912202a`, subsequent voption change, all seven captured variants and direct helper consumers were inspected. Its [complete author benchmark](https://github.com/dotnet/fsharp/pull/20455#issuecomment-5696275398) separates the allocation-neutral named-reference-record cleanup from the reported 8 B/write saving. It became [MIX-01](validation.md#mix-01-full-evidence-mixed-scope-extension), first executed on unchanged C5 after the full measurement artifact and oracle were frozen. This is an extra real case in the already selected VS-work-reuse family, not another independent family, a benchmark-only PR, or human-derived training evidence.
+
+### Completed editor/runtime/parallel history and media
+
+All 36 frozen finals and available eligible feedback in these three families were read, totaling 788 changed-file entries and 71,648 per-PR diff lines, including shared material. Their 457 reviews, 297 issue comments and 526 inline comments reconcile with the acquisition ledger; five future-created/edited issue bodies are excluded. The 526 inline comments belong to 293 threads, not an additional population.
+
+The initially unfinished historical/context work was closed separately, without crediting mere acquisition:
+
+| Remaining source package | Completed accounting | Report SHA-256 |
+| --- | --- | --- |
+| #15954/#20113/#20409/#20457 | All 28 selected cumulative review/reference patches; every distinct old/new/context fragment read, with exact earlier-read spans reused. Nine directly referenced resolution commits additionally inspected. Relevant scheduling, tokenization, navigation, watcher activation and timestamp-consumer contexts traced; all three editor images visually read. | `6d48371bed2e721b9b4564899c02cf7a88089e65191581d5a7a05ebc6f75f37f` |
+| #18873/#20235 | Ten selected cumulative histories: 111,226 raw diff lines, with 108,355 normalized lines exactly mapped to earlier reads and 2,281 newly read residuals. Async2 adapters/ownership and native-async recognition/optimization/EH/codegen context traced; both images visually read. Review anchors, tested pins, fix attribution and explicitly untested later source are distinguished. | `8e3a0438a3bec0bf829f1e667ea975da48a499f744e8dbbe27bb41716f11982e` |
+| #14390/#14494 plus parallel-family media | All 29 selected non-final patches; 13,042 distinct old/new source lines plus eight rename-only bodies read with exact earlier-read mapping. Optimizer phase/state dependencies and graph continuation/state/diagnostic composition traced. All eight family images and the public test log read. | `c0f76b7f080f434c16c30c1c6bae62f06211076199f550d06b083dfc751d1551` |
+
+Reports are current-session `files\editor-history-inspection.md`, `runtime-history-inspection.md`, and `parallel-history-inspection.md`. Their immutable pin/base/source-span mappings include all patch sides and distinguish line-identity credit from behavioral equivalence. There is no blanket claim about every incidental commit or every unchanged transitive framework callee; the required final changes, relevant reviewed/tested variants, direct implementation/caller/test/signature context and available feedback are accounted for.
+
+Source distinctions preserved for audit:
+
+- #20113's final retains the old public `ScanToken` and adds `ScanTokenValue`; earlier replies at old anchors must not be projected backward as compatibility repairs. The [dictionary-versus-locking measurement question](https://github.com/dotnet/fsharp/pull/20113#discussion_r4024878907) remains unanswered.
+- #20409 removes the copied outlining/API changes before its final, and improves cold-tier deferral; #20492 carries older copies, not the final repaired implementations. #20457's chronology includes removal and restoration of the reactor consumer as well as activation/failure fallback; queued subscription is not active ownership.
+- #18873 is resumable Async2, not native runtime async. #20235's [last-tested report](https://github.com/dotnet/fsharp/pull/20235#issuecomment-5727202562) distinguishes IL inspection from execution and explicitly excludes later sequence changes. Final tests still skip conditional callback construction; an approval does not make those paths executed or fixed.
+- #14390 replaces its early lock scheduler and retains deterministic-mode restrictions. Its March missing-file incident and later negative-parser baseline mismatch are different incidents, not interchangeable evidence of optimizer races. #14494 restores final ordering without establishing globally file-ordered intermediate graph-state composition. Earlier benchmark-success and graph-soundness objections remain bound to their actual source revisions.
+
+**Media closure:** all 19 captured attachment URLs are accounted for: seventeen PNGs visually inspected using hash-identical extension-corrected copies, and two byte-identical #19532 XML configurations read as non-benchmark material. The [public #14390 error log](https://github.com/dotnet/fsharp/files/11055524/test-net40-fsharpqa-errors.-.Copy.log) returned HTTP 200 and was fully read (4,133 bytes, SHA-256 `d84a04f021876c3d6e133820d69fd2ddad74d652003857d3bf9f455e204d6d7c`); it lacks an immutable executable/source identity. In contrast, Azure Build API records [193971](https://dev.azure.com/dnceng-public/public/_apis/build/builds/193971?api-version=7.1) and [212833](https://dev.azure.com/dnceng-public/public/_apis/build/builds/212833?api-version=7.1) each returned HTTP 404 / `BuildNotFoundException`. Their full CI payloads are genuinely unavailable, not inspected or inferred from screenshots.
+
+### Final source-coverage accounting
+
+**Sprint-10 reconciliation:** the saved completion reports account for available inspection of **94/94 reserved PRs: 12 hot-reload, 46 other, 36 editor/runtime/parallel**. Their totals, pins and hashes reconcile with the actual archives; this is reuse of documented inspection, not an independent rereading of every diff or a fresh semantic review. The original inventory remains 485 unique PRs. Effective included counts remain **63 development / 59 holdout candidates**, plus five reserved context rows and seven controls. The connected core-empty-array + inline-closures + realsig-TLR development group and the vector-sum development promotion remain in force; 319 connected grouping units are inventory accounting, not executed tests.
+
+Archive root is `C:\Users\tomasgrosup\.config\daily-monitor\copilot-microsoft\session-state`. Acquisition/input archive **A** is `36233952-cdbf-4056-984e-1fe93e32d7a3\files\holdout-study`; completion/output archive **B** is `c8f07943-58a7-4cdd-9a76-ce0b8d398079\files`. References above to completion reports in the "current session" mean B, not the reconciliation session. All 94 final diff hashes and base/head identities, saved channel hashes and the 804-entry path screen were checked locally. No collector or search was rerun and the historical cutoff is unchanged.
+
+| Completion scope | PRs; reviews / issue / inline / threads | Reconciled report basis |
+| --- | --- | --- |
+| Hot-reload | 12; 118 / 111 / 130 / 70 | Initial seven-final inspection plus B's `delta-emitter-inspection.md` (`798e85a4733c...`) and `composite-inspection.md` (`e55390d936ab...`); composite block totals/pins agree with A. |
+| Other | 46; 232 / 160 / 174 / 75 | Initial 44 finals plus `baseline-inspection.md` (`c8015fd3f307...`), 103 baseline entries/28 fixtures, and `richtext-history-inspection.md` (`b83ef2c1a092...`), 116-file #20097 final and named histories. |
+| Editor/runtime/parallel | 36; 457 / 297 / 526 / 293 | 788 final changed-file entries/71,648 diff lines; three report hashes above match. Their 28/10/29 selected historical-patch denominators are separate from additionally cited resolution/context pins; cited archived revision hashes also check. |
+| Total | **94; 807 / 568 / 830 / 438** | A's `reserve.json`, `per-pr-ledger.json` and per-PR ledgers agree; REST/GraphQL duplicates are not extra feedback. Inspection credit comes from reports, not hashes alone. |
+
+Unavailable/deleted/private evidence, mutable historical edits/resolution timing and the 76 timeline-total anomalies remain explicit limitations. Fourteen deleted-comment bodies are not reconstructed (thirteen on #19189 and one on #20235); the two unavailable Azure build payloads remain unavailable. No historical benchmark, compiler build or product test was executed to certify an author's report. **Real benchmark-only coverage is zero** after the recorded 804-PR search; the original task permits fixtures and does not require a real PR for every applicability category. BENCH-01 supplies synthetic contract coverage only, neither a real holdout nor an automatic overall failure.
+
+### Effective applicability coverage
+
+Results below are the **actual selected C6-S evaluator results**; [validation](validation.md#input-isolation-repair-and-sanitized-replay) preserves C5, the C5-P instrumentation miss, C6's leaking extract and excluded runtime-skill contexts rather than substituting old outputs. C6-S keeps C6's decision rules but removes case history from the shared extract; its full replay contributes no new first-seen credit. The original 33 cases remain 25 real historical inputs from 21 PRs plus eight synthetic controls. SRC-01 (#20287) and SRC-02/03 (#19995 original/final) add three exposed development inputs: **36 cases, 28 real inputs from 23 PRs, eight synthetic controls**. Their source-backed oracles were frozen before outputs; neither family is new or independent. The eight evaluation cases remain HOLD-04/05/06/07/08/10, REPL-01 and MIX-01 in seven families (HOLD-07/MIX-01 share VS-work-reuse), **not 59 tests**. None becomes fresh by replaying or renaming it. No product measurement was reproduced.
+
+| Required category | Real PR coverage | Synthetic coverage | Source provenance | Actual C6-S result |
+| --- | --- | --- | --- | --- |
+| Mixed scope / causal attribution | #20348 DEV-03/04; #20416 DEV-11; #20544 HOLD-04; #20455 MIX-01 | None needed | Pinned code; #20544 explicitly model-generated description; #20455 author ablation with composition unverified, not independent measurements | Match; MIX-01 credits the 8 B/write mechanism separately from allocation-neutral cleanup; HOLD-04 makes no speed claim. |
+| Test-only | #20444 HOLD-05 | None | Pinned event-assertion source | Match; recognizes characterization and requests actual targeted results, not a product benchmark. |
+| Benchmark-only | **0**; #18509 is product-plus-benchmark, not benchmark-only | **BENCH-01** | Request-origin stipulated fixture/Dry smoke, not an observed run | Match; six pass rows and two not applicable; no shipped-speedup inference. |
+| Docs-only | #20436 HOLD-06 | DEV-17 | Real policy diff versus stipulated spelling edit | Match; metric gates not applicable; editorial/product-compatibility scope passes without certifying identical model behavior. |
+| Generated code / program runtime | #20244 DEV-12; #20367 HOLD-03; #18509 HOLD-09; #20358 REPL-01 | DEV-15/20 | Author tables and source/asset paths; synthetic count/runtime stipulations | Match; runtime and compiler costs stay separate; modern-runtime fallback request retained; changed IL is not automatically wrong. |
+| API-neutral but behavior-sensitive; API boundary | #20119 HOLD-07; #20388 HOLD-01/02; #20507 HOLD-10 (API addition, **not** neutral) | DEV-20 | Source-derived lifetime/caller scenarios and API diff, not observed failures | Match; original covariance failure is risk, repaired covariance/disclosed sharing pass; no universal freshness policy, and scoped immutable API wiring passes. |
+| Compiler/FCS/IDE, build and repeated work | #20261 DEV-05; #20296 DEV-13; #20119 HOLD-07; #20587 HOLD-08; #20455 MIX-01 | None needed | Author workload data plus source; no new compiler/job execution | Match; distinguishes retention, warm time, local allocation and CI critical path; asks only relevant missing proof. |
+| Strong tables versus weak prose | #20261 DEV-05; #20296 DEV-13; #18509 HOLD-09 versus #19689 DEV-10/#20587 HOLD-08 | DEV-14 | Author-reported real evidence versus deliberately incomplete fixture | Match; credits supplied tables/repetitions and names remaining gaps without inventing defects. |
+| Meaningful/noise-level gains; allocation without speed | #20296 DEV-13; #18509 HOLD-09; #20455 MIX-01 | DEV-18/19 | Author flat/worse/noisy cells versus stipulated uncertainty/allocation saving | Match; no fixed threshold, false equality or requirement that allocation savings improve time. |
+| Hidden resource/lifetime trade-offs | #20244 DEV-12; #20296 DEV-13; #20119 HOLD-07 | DEV-16/19 | Source-supported scenarios and author data versus stipulated rooted growth | Match; material retention risk stays distinct from missing measurements; no measured OOM invented. |
+| Surgical scope, withdrawal and repaired concerns | #20352 DEV-01; #20363 DEV-02; #20348 DEV-03/04; #20353 DEV-06/07; #20349 DEV-08/09 | None needed | Attributed author/reviewer conversations plus pinned revisions; composition limits apply | Match; no rejection-by-closure, syntax-speed prerequisite or stale resolved finding. |
+
+SRC-01 additionally tests the #20287 shared-reader qualification against actual ownership; SRC-02/03 test #19995's remaining instrumentation cost and accepted aggregation repair. C6-S catches all three without mandating reader clearing, a specific DEBUG directive or per-instance Stats; any added lifetime/API risk has a separately checked caller/consequence. The other four named conversations have actual DEV-01/02/03/04/07/13 results. Source-attributed reviewer feedback remains distinct from author measurements, request-required gates and verified composition.
+
+Time, total/peak/retained memory, allocations/GC, closure/artifact counts, CPU, threads/thread-pool pressure, startup/build, behavior/API and lifecycle remain conditional contract dimensions, not a requirement for a separate historical PR or executed product benchmark per metric. Source-only concurrency reasoning (for example HOLD-07's serialized mailbox) is not an executed thread-pool/starvation test. Composition remains uncertain; final acceptance makes no unqualified verified-human claim.
