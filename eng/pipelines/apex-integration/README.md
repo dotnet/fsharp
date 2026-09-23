@@ -1,117 +1,110 @@
-# F# Apex VS integration tests — DartLab pipeline (scaffold)
+# F# Apex integration tests on DartLab
 
-This directory contains an **internal DevDiv DartLab** pipeline that runs the F# Apex VS
-integration tests (`vsintegration/tests/FSharp.Editor.Apex.IntegrationTests`) against a
-Visual Studio build that **matches** what this repo targets, by *installing* that VS on a
-fresh test machine via the VS bootstrapper.
+This pipeline installs Visual Studio from `DD-CB-ReleaseVS` on a disposable DartLab
+machine, builds and deploys the PR's F# VSIX, then runs the Apex tests in Release.
+It avoids the dependency skew of older preinstalled CI images. The chosen VS drop
+must still support the PR's package pins; a recent drop is not a compatibility guarantee.
 
-It is modeled directly on dotnet/roslyn's
-[`azure-pipelines-integration-dartlab.yml`](https://github.com/dotnet/roslyn/blob/main/azure-pipelines-integration-dartlab.yml)
-and its `eng/pipelines/test-gates/*` stage templates.
+## Requesting a run
 
-## Why this exists
+Post **`/dart`** or **`/pr-val`** as the entire comment on an open `dotnet/fsharp`
+PR targeting `main`. Both commands run the same pipeline. Fork PRs are supported.
+The commenter must have repository write, maintain or admin access **and** be a
+member of the `microsoft` GitHub organization. No SHA argument is required or accepted.
 
-The F# editor VSIX is pinned (Roslyn, and the dotnet/runtime `System.*` family) to the VS it
-inserts into (F# `main` → VS `main`, ~18.10). Visual Studio has **no binding redirects for our
-assemblies**, so a VSIX built against those pins only loads in a matching (or newer) VS. The
-public PR CI scout image trails that VS (e.g. 18.7), and the mismatch cannot be worked around
-by downgrading dependencies (the VS-SDK imposes a floor — e.g. `Microsoft.VisualStudio.RpcContracts`
-requires `System.Composition >= 10.0.8`, so a downgrade fails restore with NU1605).
+The [GitHub workflow](../../../.github/workflows/pr-validation.yml) captures the PR
+head and base SHAs and queues Azure DevOps over OIDC. It posts a run link and those
+revisions to the PR. New pushes, PR events and VS builds do **not** request runs.
+Administrators can still queue runs manually, subject to pipeline permissions.
 
-The industry-standard fix (used by both NuGet/NuGet.Client and dotnet/roslyn) is to **install a
-matching VS via the bootstrapper on internal DartLab test machines**, not to use a pre-baked older
-public image.
+The [pipeline](../../../azure-pipelines-integration-dartlab.yml) is registered
+directly against GitHub `dotnet/fsharp`; its `self` is **not** the dnceng mirror.
+The workflow pins pipeline YAML and local templates to the captured `main` base
+commit, not to contributor-supplied YAML. On the test machine,
+[`setup-pr-validation.ps1`](../../setup-pr-validation.ps1) fetches the public PR
+merge ref, verifies both parents against the captured SHAs, checks the PR is still
+open and observes current head/base refs before checking out that exact merge.
 
-## How it is triggered
+A conflict, missing/stale merge, changed head/base, or API/Git failure stops the run
+before building PR code. Post a new command after resolving the problem. A push
+after verification does not alter the detached commit being tested. The setup log
+records the actual merge SHA (`FSharp.PrMergeSha`); Azure DevOps `Build.SourceVersion`
+identifies the trusted YAML revision, **not** the tested PR merge. Results apply only
+to the recorded snapshot, not automatically to later PR revisions.
 
-The pipeline does **not** run automatically — neither on F# GitHub pushes/PRs (`trigger: none`,
-`pr: none`) nor on VS builds (the `VisualStudioBuildUnderTest` pipeline resource is `trigger: none`,
-so it only *supplies* the matching VS drop, it does not start the pipeline).
+## Registration and authorization
 
-Instead it is started **on demand from a PR comment**, mirroring dotnet/roslyn's `/dart` / `/pr-val`
-flow, via [`.github/workflows/pr-validation.yml`](../../.github/workflows/pr-validation.yml):
+Provision these before enabling requests:
 
-- An F# team member comments **`/pr-val`** (or **`/dart`**) on a PR.
-- The workflow authorizes the commenter (repo **write** access **and** `microsoft` org membership),
-  then triggers the DevDiv pipeline over an OIDC-authenticated Azure DevOps REST call, passing
-  `prNumber` / `sha` / `EnforceLatestCommit`.
-- External-authored PRs must pass an explicit reviewed commit: `/pr-val <commit-hash>`.
-- The stage checks out the internal mirror, runs `eng/setup-pr-validation.ps1` to fetch the PR's
-  merge commit, then builds + deploys the VSIX + runs Apex against the installed VS.
-- A comment with the pipeline-run link is posted back to the PR.
+1. In **devdiv/DevDiv -> Pipelines -> New pipeline -> GitHub**, select `dotnet/fsharp`
+   and the existing `azure-pipelines-integration-dartlab.yml`, default branch `main`.
+   Use an approved Azure Pipelines GitHub App connection restricted to the necessary
+   repository; authorize this pipeline specifically. No `dnceng-internal-code-access`
+   connection is needed. Leave the existing mirror and dnceng pipelines unchanged.
+2. Authorize `DevDiv/DartLab`, `DevDiv/DartLab.Templates`, `DevDiv/VS.Templates`,
+   the `DD-CB-ReleaseVS` pipeline/artifacts, required feeds, and the `VS-Platform`
+   test pool. Complete 1ES onboarding and confirm the F# owner/areaPath in
+   [stage.yml](stage.yml). Confirm the VS drop and installed components support F#.
+3. Create the GitHub **`fsharp_pr_validation`** environment. Set its variable
+   **`FSHARP_APEX_PIPELINE_ID`** to the new DevDiv pipeline's numeric ID.
+   Set **`AZURE_CLIENT_ID`** and **`AZURE_TENANT_ID`** secrets for an Entra identity
+   federated to `repo:dotnet/fsharp:environment:fsharp_pr_validation`.
+   Grant it permission to queue this pipeline, not edit pipeline definitions.
+   This flow does not require an Azure subscription.
+4. Provide **`MICROSOFT_MEMBERS_APP_ID`** and **`MICROSOFT_MEMBERS_APP_PRIVATE_KEY`**
+   environment secrets for an approved GitHub App installed in `microsoft`, with
+   organization **Members: read** permission. The workflow requests a short-lived
+   membership-only token. The dotnet/fsharp `GITHUB_TOKEN` alone cannot be assumed
+   to see private memberships in another organization. Verify lookup with a private
+   member before rollout. Lookup errors fail closed; they do not prove nonmembership.
+5. Have the lab owners approve execution of fork PR code and verify effective
+   credential/network isolation. This is a manually queued trusted-main build which
+   later fetches PR source: **do not assume automatic fork-build secret restrictions
+   apply**. Review job tokens, feed credentials, service connections and internal
+   network access. Checkout credentials are not persisted, and the Actions OIDC and
+   membership tokens are not sent to the test machine, but these measures alone do
+   not sandbox a build. Do not enable this pipeline if lab policy cannot support it.
 
-## Prerequisites that must be provisioned before this can run (P0 — external)
+These are three separate identities: the Azure Pipelines GitHub source connection,
+the Entra queue identity, and the Microsoft-org membership lookup App. None replaces
+the others. Protect `main`, restrict who can edit/queue this privileged pipeline,
+keep machine deletion as the default, and authorize no signing/publishing credentials.
 
-These are **not** contained in this repo and require coordination with the DevDiv / DartLab / VS
-team (as Roslyn did). The YAML here uses `# TODO(P0):` markers wherever a real value is required.
+Microsoft supports [GitHub pipelines in multiple Azure DevOps organizations][github].
+Only the first organization receives automatic GitHub push/PR triggers; manual queueing
+remains supported in secondary organizations. This workflow uses the [Runs REST API][runs],
+so the restriction does not require moving existing dnceng CI or enabling PR triggers.
 
-1. **DartLab + VS pipeline templates access** — the pipeline `extends`/references `DevDiv/DartLab`,
-   `DevDiv/DartLab.Templates` and `DevDiv/VS.Templates` (internal AzDO repos).
-2. **Internal source mirror** — the `dotnet/fsharp` mirror already exists at
-   [`dnceng/internal/dotnet-fsharp`](https://dev.azure.com/dnceng/internal/_git/dotnet-fsharp)
-   (referenced as `internal/dotnet-fsharp` via the `dnceng-internal-code-access` service
-   connection, the same endpoint Roslyn uses). Remaining: confirm that service connection is
-   authorized for this pipeline once it is registered.
-3. **VS-Platform test lab pool** + **1ES** onboarding for a new internal pipeline definition.
-4. **F# DevDiv area path / owner** for `templateContext` (Roslyn uses
-   `mlinfraswat` / `DevDiv\NET Developer Experience\CSharp and VB IDE`).
-5. **VS-build-under-test source** — a `VisualStudioBuildUnderTest` pipeline resource
-   (`source: DD-CB-ReleaseVS`, `trigger: none`) supplies the bootstrapper; `stage.yml` downloads its
-   artifacts and computes the drop name with DartLab's `Get-VisualStudioDropName.ps1`, which the
-   `(default)` `visualStudioBootstrapperURI` expands to. When the pipeline is started via `/pr-val`,
-   the resource resolves to the latest such VS build. **Confirm with the DartLab/VS team whether
-   `DD-CB-ReleaseVS` is the correct VS build for F#** (the VS that consumes the F# insertion), or
-   substitute the right one. *(Interim alternative: drop the resource + the two
-   `preTestMachineConfigurationStepList` steps and hard-code `visualStudioBootstrapperURI` to a
-   pinned `int.main` Products drop.)*
-6. **Comment-trigger wiring** — register `azure-pipelines-integration-dartlab.yml` as a DevDiv
-   pipeline and set its ID in `.github/workflows/pr-validation.yml` (`FSHARP_APEX_PIPELINE_ID`);
-   configure the `AZURE_CLIENT_ID` / `AZURE_TENANT_ID` / `AZURE_SUBSCRIPTION_ID` OIDC secrets and the
-   `fsharp_pr_validation` GitHub environment (the OIDC identity must be allowed to queue the pipeline).
+## Validation and activation
 
-## Files
+Local regression commands (no product build or DartLab access required):
 
-- `../../.github/workflows/pr-validation.yml` — GitHub Actions workflow: authorizes a `/pr-val`
-  (or `/dart`) PR comment and triggers the DevDiv pipeline over OIDC.
-- `../../azure-pipelines-integration-dartlab.yml` — pipeline entry (`trigger: none`), extends the VS
-  `build.yml` DartLab template and wires the DartLab/VS template repos, the internal F# mirror, and
-  the `VisualStudioBuildUnderTest` pipeline resource.
-- `stage.yml` — the DartLab VS test stage: provisions a `VS-Platform` machine, installs VS via the
-  bootstrapper with an F#-minimal component set, then deploys + runs.
-- `integration-job.yml` — deploy the F# VSIX + run the Apex tests via `eng/Build.ps1 -testApex`
-  against the freshly installed VS; publish the TRX.
-- `../../eng/setup-pr-validation.ps1` — on the test machine, fetch + check out the PR's merge commit.
+```powershell
+node --test .github\scripts\pr-validation.test.cjs
+powershell -NoProfile -ExecutionPolicy Bypass -File eng\tests\SetupPrValidation.Tests.ps1
+```
 
-## Interim public-CI workarounds (removed)
+The script tests use temporary local Git repositories and a mocked GitHub PR response.
+They cover merge identity, ref races, closed/changed PRs and failure before checkout.
+The JavaScript tests cover command syntax, authorization and the queued snapshot.
 
-The old public-scout Apex leg (`WindowsApexIntegration` in `azure-pipelines-PR.yml`),
-`eng/SetApexRoslynVersion.ps1`, and the `FSHARP_APEX_ROSLYN_VERSION` override group in
-`eng/Versions.props` have been removed: DartLab installs a matching VS via bootstrapper, so the
-VSIX pins and the VS-under-test align by construction and no Roslyn version override is needed.
-`eng/SetupVSHive.ps1` (first-launch/registry prep) and the `/NoSigninPrompt` launch argument are kept.
+After provisioning, use the Runs API's `previewRun` with the same repository
+ref/version and snapshot parameters to verify actual private-template expansion.
+Verify GitHub `self.version` pinning and test-machine working-directory behavior;
+local YAML parsing cannot establish either. Land trusted YAML/scripts on main before
+activation, and configure the environment and real pipeline ID together.
 
-## Concrete request to send to the DartLab / VS test team
+Explicitly request same-repository and fork PR smoke runs. Confirm the exact merge
+SHA, installed VS, VSIX load, Apex results and TRX/log artifacts. Exercise changed
+head/base rejection and an unauthorized request that queues no run. Verify PR edits
+to pipeline YAML do not change the compiled trusted pipeline, and no UI overrides,
+schedules or resource triggers introduce automatic runs. Completion is not reported
+back as a new required GitHub check; the PR comment links to DevDiv results.
 
-Onboarding is the same shape Roslyn used. Ask for / decide:
+Source-connection precedent: [NuGet/NuGet.Client#5936][nuget] introduced a self-contained
+VS-test pipeline for manual PR-branch queueing. F# retains its existing DartLab templates,
+VS-drop selection and Apex build path rather than copying NuGet's bootstrapper staging.
 
-1. Read access for the F# pipeline's service identity to the internal AzDO repos
-   `DevDiv/DartLab`, `DevDiv/DartLab.Templates`, and `DevDiv/VS.Templates`.
-2. Confirm the `dnceng-internal-code-access` service connection (to the existing
-   `dnceng/internal/dotnet-fsharp` mirror) is authorized for this pipeline. The mirror itself
-   already exists — no new mirror needs to be created.
-3. Use of the `VS-Platform` test-lab pool for the new pipeline, and 1ES registration of
-   `azure-pipelines-integration-dartlab.yml` as an internal pipeline.
-4. The F# `templateContext.owner` and `areaPath` to record against test results
-   (fill into `eng/pipelines/apex-integration/stage.yml`).
-5. Confirm the VS build that supplies the matching VS: the scaffold uses Roslyn's `DD-CB-ReleaseVS`
-   as the `VisualStudioBuildUnderTest` pipeline resource (`trigger: none` — it does not gate on VS
-   builds). Verify that is the correct VS build for F# (the one that consumes the F# insertion) or
-   provide the right pipeline name.
-6. For the `/pr-val` comment trigger: the DevDiv pipeline ID (to put in
-   `.github/workflows/pr-validation.yml`), and an Entra (AAD) identity whose OIDC federation is
-   trusted by the `fsharp_pr_validation` GitHub environment and permitted to queue that pipeline
-   (populates the `AZURE_CLIENT_ID` / `AZURE_TENANT_ID` / `AZURE_SUBSCRIPTION_ID` secrets).
-
-After that: fill in every `# TODO(P0):` marker, register the pipeline, and iterate to green.
-(The old public `WindowsApexIntegration` leg and its Roslyn-version overrides have already been removed.)
-
+[github]: https://learn.microsoft.com/en-us/azure/devops/pipelines/repos/github?view=azure-devops
+[runs]: https://learn.microsoft.com/en-us/rest/api/azure/devops/pipelines/runs/run-pipeline?view=azure-devops-rest-7.1
+[nuget]: https://github.com/NuGet/NuGet.Client/pull/5936

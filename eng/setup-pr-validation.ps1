@@ -1,70 +1,57 @@
-# Sets up the working tree on a DartLab test machine to validate a specific GitHub PR: fetches the
-# PR merge commit, optionally enforces that the PR head still matches the reviewed SHA, and checks
-# it out. Referenced by eng/pipelines/apex-integration/stage.yml (only when a PR number is supplied).
-# Adapted from dotnet/roslyn's eng/setup-pr-validation.ps1.
 [CmdletBinding(PositionalBinding=$false)]
 param (
-  [string]$sourceBranchName,
-  [string]$prNumber,
-  [string]$commitSHA,
-  [boolean]$enforceLatestCommit)
+    [Parameter(Mandatory=$true)]
+    [ValidatePattern('^[1-9][0-9]*$')]
+    [string]$prNumber,
+    [Parameter(Mandatory=$true)]
+    [ValidatePattern('^[0-9a-f]{40}$')]
+    [string]$headSha,
+    [Parameter(Mandatory=$true)]
+    [ValidatePattern('^[0-9a-f]{40}$')]
+    [string]$baseSha
+)
 
-try {
-    # name and email are only used for the merge commit; the values do not matter.
-    git config user.name "FSharpValidation"
-    git config user.email "validation@fsharp.net"
+Set-StrictMode -Version Latest
+$ErrorActionPreference = 'Stop'
 
-    if ($commitSHA.Length -lt 7) {
-      Write-Host "##vso[task.LogIssue type=error;]The PR Commit SHA must be at least 7 characters long."
-      exit 1
+function Invoke-Git {
+    # Windows PowerShell treats native stderr (including successful fetch progress) as errors.
+    $ErrorActionPreference = 'Continue'
+    $output = & git @args 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        throw "git $args failed: $output"
     }
+    $output | ForEach-Object { "$_" }
+}
 
-    git remote add gh https://github.com/dotnet/fsharp.git
+if ((Invoke-Git rev-parse HEAD) -ne $baseSha) {
+    throw 'Expected the trusted main checkout at the captured base SHA.'
+}
 
-    Write-Host "Getting the hash of refs/pull/$prNumber/head..."
-    $remoteRef = git ls-remote gh refs/pull/$prNumber/head
-    Write-Host ($remoteRef | Out-String)
+$repository = 'https://github.com/dotnet/fsharp.git'
+Invoke-Git fetch --no-tags --depth=2 $repository "refs/pull/$prNumber/merge" | Out-Null
+$mergeSha = Invoke-Git rev-parse FETCH_HEAD
+$parents = (Invoke-Git show -s --format=%P $mergeSha) -split ' '
+if ($parents.Count -ne 2 -or $parents[0] -ne $baseSha -or $parents[1] -ne $headSha) {
+    throw 'The fetched PR merge does not match the captured base/head. Request a new /dart or /pr-val run.'
+}
 
-    $prHeadSHA = $remoteRef.Split()[0]
-
-    if ($enforceLatestCommit) {
-      Write-Host "Validating the PR head matches the specified commit SHA ($commitSHA)..."
-      if (!$prHeadSHA.StartsWith($commitSHA)) {
-        Write-Host "##vso[task.LogIssue type=error;]The PR's Head SHA ($prHeadSHA) does not begin with the specified commit SHA ($commitSHA). Unreviewed changes may have been pushed to the PR."
-        exit 1
-      }
-    }
-
-    Write-Host "Setting up the build for PR validation by fetching refs/pull/$prNumber/merge..."
-    git fetch gh refs/pull/$prNumber/merge
-    if (!$?) {
-      Write-Host "##vso[task.LogIssue type=error;]Fetching ref refs/pull/$prNumber/merge failed."
-      exit 1
-    }
-
-    git checkout FETCH_HEAD
-    if (!$?) {
-      Write-Host "##vso[task.LogIssue type=error;]Checking out FETCH_HEAD for refs/pull/$prNumber/merge failed."
-      exit 1
-    }
-
-    if (!$enforceLatestCommit) {
-      if ($prHeadSHA.StartsWith($commitSHA)) {
-        Write-Host "PR head SHA ($prHeadSHA) already matches the specified commit SHA ($commitSHA), skipping checkout."
-      }
-      else {
-        Write-Host "Checking out the specified commit SHA ($commitSHA)..."
-        git checkout $commitSHA
-        if (!$?) {
-          Write-Host "##vso[task.LogIssue type=error;]Checking out commit SHA $commitSHA failed."
-          exit 1
-        }
-      }
+$pr = Invoke-RestMethod -Uri "https://api.github.com/repos/dotnet/fsharp/pulls/$prNumber" -Headers @{
+    Accept = 'application/vnd.github+json'
+    'User-Agent' = 'FSharp-Apex-Validation'
+    'X-GitHub-Api-Version' = '2022-11-28'
+}
+if ($pr.state -ne 'open' -or $pr.base.repo.full_name -ne 'dotnet/fsharp' -or
+    $pr.base.ref -ne 'main' -or $pr.head.sha -ne $headSha -or $pr.base.sha -ne $baseSha) {
+    throw 'The PR is closed or its head/base changed. Request a new /dart or /pr-val run.'
+}
+$refs = Invoke-Git ls-remote $repository refs/heads/main "refs/pull/$prNumber/head"
+foreach ($expected in @("$baseSha`trefs/heads/main", "$headSha`trefs/pull/$prNumber/head")) {
+    if ($refs -cnotcontains $expected) {
+        throw 'The current head/base refs do not match the snapshot. Request a new /dart or /pr-val run.'
     }
 }
-catch {
-  Write-Host $_
-  Write-Host $_.Exception
-  Write-Host $_.ScriptStackTrace
-  exit 1
-}
+
+Invoke-Git checkout --detach $mergeSha | Out-Null
+Write-Host "PR #$prNumber`: head=$headSha base=$baseSha merge=$mergeSha"
+Write-Host "##vso[task.setvariable variable=FSharp.PrMergeSha]$mergeSha"
