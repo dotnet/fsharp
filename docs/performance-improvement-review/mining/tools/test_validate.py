@@ -159,6 +159,157 @@ class InventoryTests(unittest.TestCase):
                 validate.load_index(Path(temp) / "missing.json")
 
 
+class ScopeTests(unittest.TestCase):
+    def setUp(self):
+        self.discovery = validate.load_discovery(validate.ROOT / "discovery.json")
+        self.rows = validate.load_index(validate.ROOT / "work-index.jsonl")
+        self.protocol = validate.parse_json(validate.read_text(
+            validate.ROOT / "evaluation" / "protocol.json"), "protocol")
+        self.exposure = validate.parse_json(validate.read_text(
+            validate.ROOT / "evaluation" / "exposure.json"), "exposure")
+
+    def test_scope_and_exposure_freeze(self):
+        validate.validate_scope(self.discovery, self.rows, self.protocol)
+        validate.validate_exposure(self.discovery, self.rows, self.exposure, self.protocol)
+        shards = [{r["pr"] for r in self.rows if r["shard"] == s} for s in range(6)]
+        self.assertEqual([81, 81, 81, 81, 81, 80], list(map(len, shards)))
+        self.assertEqual({m["pr"] for m in self.discovery["members"]}, set.union(*shards))
+        for i, shard in enumerate(shards):
+            self.assertTrue(all(not shard & other for other in shards[i + 1:]))
+
+    def test_scope_mutations_fail_closed(self):
+        mutations = {
+            "undecided": lambda r: r["scope"].update(decision="pending"),
+            "blank": lambda r: r["scope"].update(reason=" "),
+            "boilerplate": lambda r: r["scope"].update(reason="Performance benchmarks added"),
+            "long boilerplate": lambda r: r["scope"].update(
+                reason=f"PR {r['pr']}: " + "Performance benchmarks added. " * 4),
+            "source lost": lambda r: r["scope"].update(source_ids=[]),
+            "source copied": lambda r: r["scope"].update(source_ids=["pr-20524#pr=20524"]),
+            "identity exclusion": lambda r: r["scope"].update(
+                decision="out", basis="author", reason="Excluded solely because author is a bot."),
+            "identity-only reason": lambda r: r["scope"].update(
+                reason=f"PR {r['pr']}: Excluded solely because the author is a bot account.",
+                decision="out", basis="no-performance-claim"),
+            "updatedAt only": lambda r: r["scope"].update(
+                decision="in", basis="mechanism",
+                event={"kind": "updatedAt", "at": validate.CUTOFF,
+                       "source_id": f"pr-{r['pr']}#pr={r['pr']}", "event_id": "updated_at"}),
+            "updatedAt disguised": lambda r: r["scope"].update(
+                decision="in", basis="mechanism",
+                event={"kind": "other", "at": validate.CUTOFF,
+                       "source_id": f"activity-{r['pr']}#pr={r['pr']}", "event_id": "updatedAt"}),
+            "malformed hash": lambda r: r["scope"].update(description_sha256=12),
+            "malformed reconciliation": lambda r: r["scope"].update(reconciliation=[]),
+            "lost original decision": lambda r: r.update(historical={}),
+            "shifted ordinal": lambda r: r.update(ordinal=1),
+            "shifted shard": lambda r: r.update(shard=1),
+            "copied identity": lambda r: r["scope"]["historical_identity"].update(node_id="PR_copied"),
+        }
+        for name, mutate in mutations.items():
+            with self.subTest(name=name):
+                rows = copy.deepcopy(self.rows)
+                mutate(rows[0])
+                discovery = copy.deepcopy(self.discovery)
+                discovery["scope_freeze"]["index_sha256"] = validate.digest(validate.scope_projection(rows))
+                with self.assertRaises(validate.ValidationError):
+                    validate.validate_scope(discovery, rows, self.protocol)
+
+    def test_protocol_is_immutable_before_outputs(self):
+        for section, key, value in (
+            ("recurrence", "minimum_distinct_prs", 1),
+            ("recurrence", "minimum_independent_families_for_generalization", 1),
+            ("evaluation", "required_real_strata", []),
+            ("authorship", "default", "verified-human"),
+        ):
+            with self.subTest(key=key):
+                protocol = copy.deepcopy(self.protocol)
+                protocol[section][key] = value
+                with self.assertRaisesRegex(validate.ValidationError, "protocol"):
+                    validate.validate_scope(self.discovery, self.rows, protocol)
+
+    def test_family_renaming_does_not_erase_exposure(self):
+        rows = copy.deepcopy(self.rows)
+        rows[0].update(family="FAMILY-fresh-name", split="holdout")
+        with self.assertRaises(validate.ValidationError):
+            validate.validate_exposure(self.discovery, rows, self.exposure, self.protocol)
+
+    def test_unknown_exposure_cannot_be_fresh(self):
+        exposure = copy.deepcopy(self.exposure)
+        exposure["prs"][0]["fresh"] = True
+        exposure["prs"][0]["events"].append({
+            "kind": "unknown", "at": exposure["frozen_at"],
+            "source_ids": ["decisions"], "detail": "Access history is incomplete.",
+        })
+        with self.assertRaises(validate.ValidationError):
+            validate.validate_exposure(self.discovery, self.rows, exposure, self.protocol)
+
+    def test_metadata_acquisition_is_not_semantic_exposure(self):
+        rows, exposure = copy.deepcopy(self.rows), copy.deepcopy(self.exposure)
+        family = next(f for f in exposure["families"] if len(f["prs"]) == 1)
+        n = family["prs"][0]
+        record = next(r for r in exposure["prs"] if r["pr"] == n)
+        record["events"] = [e for e in record["events"] if e["kind"] in
+                            ("acquisition-only", "metadata-only-screening")]
+        record.update(fresh=True, access_audit_complete=True, connection_audit_complete=True)
+        family.update(fresh=True, split="holdout",
+                      exposure_kinds=sorted({e["kind"] for e in record["events"]}))
+        next(r for r in rows if r["pr"] == n)["split"] = "holdout"
+        discovery = copy.deepcopy(self.discovery)
+        discovery["scope_freeze"]["exposure_sha256"] = validate.digest(exposure)
+        validate.validate_exposure(discovery, rows, exposure, self.protocol)
+
+    def test_connected_family_cannot_straddle_splits(self):
+        rows = copy.deepcopy(self.rows)
+        family = next(f for f in self.exposure["families"] if len(f["prs"]) > 1)
+        next(r for r in rows if r["pr"] == family["prs"][0])["split"] = "holdout"
+        with self.assertRaises(validate.ValidationError):
+            validate.validate_exposure(self.discovery, rows, self.exposure, self.protocol)
+
+    def test_coordinated_family_rename_cannot_clear_history(self):
+        rows, exposure = copy.deepcopy(self.rows), copy.deepcopy(self.exposure)
+        family = next(f for f in exposure["families"] if len(f["prs"]) > 1)
+        n = family["prs"].pop()
+        row = next(r for r in rows if r["pr"] == n)
+        record = next(r for r in exposure["prs"] if r["pr"] == n)
+        row["family"] = record["family"] = "RENAMED-FRESH"
+        exposure["families"].append({
+            "id": "RENAMED-FRESH", "prs": [n], "split": row["split"],
+            "historical_aliases": [row["historical"]["decision"]["family"]],
+            "fresh": False, "exposure_kinds": sorted({e["kind"] for e in record["events"]}),
+        })
+        with self.assertRaises(validate.ValidationError):
+            validate.validate_exposure(self.discovery, rows, exposure, self.protocol)
+
+    def test_copied_authorship_attestation_fails(self):
+        exposure = copy.deepcopy(self.exposure)
+        first, second = exposure["prs"][:2]
+        first["authorship"].update(
+            classification="verified-human",
+            positive_attestation={
+                "subject": f"pr-{second['pr']}:description",
+                "source_id": f"pr-{second['pr']}#pr={second['pr']}",
+                "enclosing_scope": f"pr-{second['pr']}:description",
+                "rationale": "Explicit attestation for a different source.",
+            })
+        with self.assertRaises(validate.ValidationError):
+            validate.validate_exposure(self.discovery, self.rows, exposure, self.protocol)
+
+    def test_account_identity_is_not_human_attestation(self):
+        exposure = copy.deepcopy(self.exposure)
+        record = exposure["prs"][0]
+        subject = f"pr-{record['pr']}:description"
+        record["authorship"].update(
+            classification="verified-human",
+            positive_attestation={
+                "subject": subject, "enclosing_scope": subject,
+                "source_id": f"pr-{record['pr']}#pr={record['pr']}",
+                "rationale": "The account is a GitHub User and replied to a review.",
+            })
+        with self.assertRaisesRegex(validate.ValidationError, "composition attestation"):
+            validate.validate_exposure(self.discovery, self.rows, exposure, self.protocol)
+
+
 class ProductionTests(unittest.TestCase):
     root = Path(__file__).resolve().parents[1]
 
@@ -177,7 +328,10 @@ class ProductionTests(unittest.TestCase):
         result = self.cli("--stage", "inventory")
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertIs(False, json.loads(result.stdout)["final_corpus_complete"])
-        for stage in ("scope", "red", "acquisition", "batch", "training",
+        result = self.cli("--stage", "scope")
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertEqual("blocked", json.loads(result.stdout)["evaluation_acceptance"])
+        for stage in ("red", "acquisition", "batch", "training",
                       "rules", "audit", "sealed", "complete"):
             with self.subTest(stage=stage):
                 args = ["--stage", stage]
@@ -229,6 +383,16 @@ class ProductionTests(unittest.TestCase):
             with self.subTest(args=args):
                 self.assertNotEqual(0, self.cli(*args).returncode)
 
+    def test_scope_freeze_cannot_reseal_substituted_data(self):
+        discovery = validate.load_discovery(self.root / "discovery.json")
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / "discovery.json"
+            discovery["scope_freeze"]["protocol_sha256"] = "a" * 64
+            write_json(path, discovery)
+            result = self.cli("--discovery", str(path), "--stage", "scope")
+            self.assertNotEqual(0, result.returncode)
+            self.assertIn("scope freeze seal", result.stderr)
+
     def test_frozen_reviewer_and_evidence_unchanged(self):
         discovery = validate.load_discovery(self.root / "discovery.json")
         repository = self.root.parents[2]
@@ -236,9 +400,16 @@ class ProductionTests(unittest.TestCase):
             with self.subTest(path=entry["path"]):
                 self.assertEqual(
                     entry["sha256"],
-                    hashlib.sha256(validate.cache_path(repository, entry["path"]).read_bytes()
-                                   .replace(b"\r\n", b"\n")).hexdigest(),
+                    hashlib.sha256(validate.frozen_file_bytes(
+                        validate.cache_path(repository, entry["path"]))).hexdigest(),
                 )
+        for source in discovery["scope_freeze"]["sources"].values():
+            if "repository_path" in source:
+                with self.subTest(path=source["repository_path"]):
+                    self.assertEqual("CRLF-to-LF", source["hash_normalization"])
+                    raw = validate.cache_path(repository, source["repository_path"]).read_bytes()
+                    self.assertEqual(source["sha256"],
+                                     hashlib.sha256(raw.replace(b"\r\n", b"\n")).hexdigest())
 
 
 if __name__ == "__main__":

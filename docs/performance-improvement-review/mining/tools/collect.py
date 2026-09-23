@@ -9,7 +9,7 @@ import sys
 from urllib.parse import urlencode
 
 from validate import (CUTOFF, REPOSITORY, ROOT, SEALED_SHA256, START, STARTING_HEAD,
-                      ValidationError, cache_path, digest, parse_json, read_text,
+                      ValidationError, cache_path, digest, frozen_file_bytes, parse_json, read_text,
                       require, unique_by, validate_inventory)
 
 ORIGINAL = "c8f75c7a-5c38-4380-a60f-80b1f04b4d69\\files"
@@ -170,7 +170,7 @@ def recover(source_root, repository):
     for name in FROZEN_FILES:
         path = repository.joinpath(*name.split("\\"))
         frozen.append({
-            "path": name, "sha256": hashlib.sha256(path.read_bytes().replace(b"\r\n", b"\n")).hexdigest(),
+            "path": name, "sha256": hashlib.sha256(frozen_file_bytes(path)).hexdigest(),
             "url": f"https://github.com/{REPOSITORY}/blob/{STARTING_HEAD}/" + name.replace("\\", "/"),
         })
     discovery = {

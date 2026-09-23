@@ -1,9 +1,10 @@
-# Frozen corpus inventory
+# Frozen corpus inventory and scope
 
-This is an inventory gate for the existing performance-improvement reviewer, not
+These are inventory and scope gates for the existing performance-improvement reviewer, not
 a new reviewer or a claim that the corpus has been inspected. The historical
 [corpus](../corpus.md), [evidence](../evidence.md), [validation](../validation.md),
-reviewer, integration skill and release-note entry are preserved unchanged.
+reviewer, integration skill and release-note entry are preserved. The corpus has
+only an additive current-status link; its historical text is unchanged.
 
 `discovery.json` seals the original 485 PR identities: Q01-Q29 contributed 1,205
 occurrences and 475 unique PRs; saved linked expansion contributed ten more.
@@ -19,13 +20,17 @@ archive hashes cover the original bytes without normalization.
 Query URLs describe historical requests, not immutable responses: the saved
 response hashes are authoritative.
 
-The validator pins a canonical SHA-256 of the entire discovery object (sorted
-JSON keys, ASCII escapes, compact separators, UTF-8). Editing discovery and the
-index together cannot silently substitute a same-sized universe. The production
-CLI has no alternate-seal option and requires the real 485-member manifest.
+The validator retains the original canonical SHA-256 of discovery (sorted JSON
+keys, ASCII escapes, compact separators, UTF-8). The sole additive field,
+`scope_freeze`, is sealed separately and pins the scope projection, source
+receipts, exposure and protocol. Original identities, memberships, historical
+partition receipts and bounds remain byte-for-byte equivalent JSON values.
+Editing discovery and the index together cannot silently substitute a
+same-sized universe. The production CLI has no alternate-seal option and
+requires the real 485-member manifest.
 Small injected seals are available only to Python unit tests.
 
-## Index contract (schema version 1)
+## Index contract (schema version 2)
 
 `work-index.jsonl` has one object per PR, sorted by PR number. Required fields:
 
@@ -33,28 +38,69 @@ Small injected seals are available only to Python unit tests.
 | --- | --- |
 | `schema_version`, `repository`, `pr`, `node_id`, `url`, `author` | Stable identity and actual captured author; must match discovery exactly. |
 | `discovery_ids` | Exact original query memberships, or `linked`. |
-| `ordinal`, `shard` | Frozen one-based position and groups of 25 in numeric PR order; these are work partitions, not independent evidence units. |
-| `scope` | `decision` (`pending`, `included`, `excluded`), nonempty `reason`, and `source_ids` into discovery sources. All imported decisions remain pending; reasons are historical, not newly adjudicated. |
-| `family`, `split` | Provisional historical family and development/control/holdout assignment, not a new scope decision or inspection result. |
+| `ordinal`, `shard` | Sorted numeric position over **all** 485 PRs, zero-based `0..484`; `shard = ordinal % 6`. Six pairwise-disjoint shards have sizes `81,81,81,81,81,80` and union exactly to discovery. A connected family may span mining shards. |
+| `scope` | Explicit `in`/`out`, PR-specific content-based reason and exact excerpt, immutable description/path/event sources, historical identity, policy version and reconciliation against the preserved old decision. No workload or author-identity exclusions. |
+| `family`, `split` | Transitive connected-family identity and prospective development/control assignment. Historical aliases remain in the exposure ledger; all members share a split. None is certified as a fresh holdout. This does not grant training or inspection credit. |
 | `source_status` | `pending`, `failed`, `stale`, or `acquired`. All start pending: receipt availability alone is not a new acquisition audit. |
 | `inspection_status` | `pending`, `failed`, `stale`, or `inspected`. All 485 start pending. `acquired` is never an inspection status. |
 | `receipt`, `rule_links` | Null and empty initially. A future inspection receipt is a cache-relative identifier, not arbitrary prose. Schema checks alone cannot substantiate it. |
 | `historical` | Original decision, available development counts, reserve metadata, holdout counts/statuses and source references. None grants inspection credit. |
 
-Source references use manifest IDs and optional `#pr=N` selectors (select
+Source references use manifest IDs and `#pr=N` selectors for PR scope receipts (select
 `number` or `pr` in the referenced array, not an array offset). All original
 decisions are preserved, including exclusions and controls. Earlier focused
 inspection/triage labels and channel counts remain historical. Raw discussions,
 patches and large archives are not committed.
 
-Only `inventory` is implemented. It validates the frozen set, uniqueness,
-repository, bounds, schema, memberships and index structure. Success explicitly
-reports `final_corpus_complete: false`. The recognized stages `scope`, `red`,
+The collector still reconstructs the original schema-1 pending index and
+one-based/groups-of-25 partition receipts; it never overwrites this schema-2
+freeze. Both schemas are validated against their respective frozen provenance.
+
+`inventory` validates the frozen set, uniqueness, repository, bounds, schema,
+memberships and index structure. `scope` additionally validates all adjudications,
+the modulo-six partition, immutable policies and connected-family exposure.
+Both explicitly report `final_corpus_complete: false`. The stages `red`,
 `acquisition`, `batch --batch N`, `training`, `rules`, `audit`, `sealed` and
 `complete` fail explicitly as not implemented, after checking inventory. They
 never fall back to an easier stage. Even fabricated status/receipt fields cannot
-make `complete` succeed. Do not use an inventory pass as a scope, acquisition,
-inspection or reviewer-quality certificate.
+make `complete` succeed. Neither implemented gate is an acquisition,
+inspection-completion or reviewer-quality certificate.
+
+## Scope and exposure freeze
+
+All **485** PRs have evidence-backed decisions: **141 in, 344 out**. The
+freeze reconciles 35 changed decisions against the historical 122-in snapshot;
+27 enter scope and eight become explicit out-of-scope/context rows. Complete
+preserved description hashes, exact excerpts, labels, changed-path receipts and
+older-created activity events were checked against the original caches.
+The exposure boundary contains 278 connected original families and five
+unverified supplemental benchmark-path leads, outside the unchanged inventory.
+
+[Protocol](evaluation/protocol.json) freezes the original eligibility rule,
+positive source-specific human-composition provenance, two-PR/two-independent-
+family recurrence, contrary-feedback accounting, required real-source strata,
+claim-scoped scoring fields and acceptance before any new rule changes or runs.
+All description-level authorship remains **uncertain**, not certified human;
+identity, original/quoted text, author rationale/independent review and
+missing/no-feedback are separate concepts.
+
+[Exposure](evaluation/exposure.json) records all original PRs and connected
+families, immutable prior report/run references, historical/final variants and
+the 36 C6-S **replays**. It distinguishes acquisition, metadata screening,
+semantic inspection, shared oracles, execution, scores, derivation and unknown
+access. Earlier reserve triage counts as exposure even when inspection was
+incomplete. Dates explicitly distinguish original run timestamps from audit
+timestamps where the original access time is unknown. Renaming families cannot
+erase their history.
+
+No original family has a positive untouched-access certificate. Supplemental
+benchmark-path leads remain separately labeled **validation-only, unverified,
+not fresh**; the 804-PR metadata screen neither qualifies them nor changes the
+485 denominator. Required real-source availability gaps are recorded by stratum
+and **block evaluation acceptance**. In particular, the old search found no
+real benchmark-only PR; synthetic BENCH-01 cannot fill that gap. No new review,
+oracle or output bodies were opened for potentially untouched candidates, and
+no reviewer rule or execution is part of this freeze.
 
 ## Commands
 
@@ -64,18 +110,20 @@ From the repository root, using only the Python standard library:
 python -m unittest discover -s docs\performance-improvement-review\mining\tools -p "test_*.py"
 python -O -m unittest discover -s docs\performance-improvement-review\mining\tools -p "test_*.py"
 python docs\performance-improvement-review\mining\tools\validate.py --stage inventory
+python docs\performance-improvement-review\mining\tools\validate.py --stage scope
 python docs\performance-improvement-review\mining\tools\validate.py --stage complete
 ```
 
 The last command **must exit nonzero** while the corpus is unfinished.
-`--discovery` and `--index` accept alternate file locations, not alternate
-production identities. Validation does not need the original machine's cache.
+`--discovery`, `--index`, `--protocol` and `--exposure` accept alternate file
+locations, not alternate production seals. Validation does not need the original
+machine's cache.
 
 To reproduce the import, set `$archiveRoot` to the directory containing the
 original session directories identified by `sources[*].cache_path`:
 
 ```powershell
-python docs\performance-improvement-review\mining\tools\collect.py --source-root $archiveRoot
+python docs\performance-improvement-review\mining\tools\collect.py --source-root $archiveRoot --output <empty-directory>
 ```
 
 The collector is offline and read-only toward source caches. It requires all
@@ -102,10 +150,11 @@ Parameterized failures cover missing, malformed, ambiguous and inconsistent
 receipts. A byte-only source change must fail the frozen seal before creating
 outputs or modifying existing ones. These tests need no workstation archive.
 
-Recovery results: 16 tests pass normally and under `python -O`; inventory passes
+Initial recovery results: 16 tests passed normally and under `python -O`; inventory passed
 with exactly 485 rows; `complete` exits 1 with 485 pending inspections. Offline
 reproduction reuses identical outputs with zero network requests. Frozen-file
-hashes match the starting Git blobs, and `git diff --check` passes.
-Compiler builds, benchmarks and
-whole-repository formatting do not apply to this Python/data/documentation
-change.
+hashes match the starting Git blobs after removing only the exact current-status
+addition in `corpus.md`. Scope mutation tests additionally reject undecided or
+source-less rows, identity-only exclusion, mutable temporal evidence, shifted
+ordinals, coordinated family renaming, unknown exposure presented as fresh,
+copied human provenance and changes to the predeclared protocol.
