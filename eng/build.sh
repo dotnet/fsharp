@@ -290,14 +290,12 @@ function BuildSolution {
     bl="/bl:\"$log_dir/Build.binlog\""
   fi
 
-  local projects="$repo_root/FSharp.slnx"
+  local projects=("$repo_root/FSharp.slnx")
   if [[ "$product_build" = true ]]; then
-    projects="$repo_root/src/Microsoft.FSharp.Compiler/Microsoft.FSharp.Compiler.fsproj"
+    projects=("$repo_root/src/Microsoft.FSharp.Compiler/Microsoft.FSharp.Compiler.fsproj")
   else
-    projects="$projects%3B$repo_root/tests/FSharp.Compiler.Interactive.Server.Tests/FSharp.Compiler.Interactive.Server.Tests.fsproj"
+    projects+=("$repo_root/tests/FSharp.Compiler.Interactive.Server.Tests/FSharp.Compiler.Interactive.Server.Tests.fsproj")
   fi
-
-  echo "$projects:"
 
   # https://github.com/dotnet/roslyn/issues/23736
   local enable_analyzers=!$skip_analyzers
@@ -349,27 +347,35 @@ function BuildSolution {
       msbuild_warn_not_as_error="/warnNotAsError:$warn_not_as_error"
     fi
 
-    MSBuild $toolset_build_proj \
-      $bl \
-      /p:Configuration=$configuration \
-      /p:Projects="$projects" \
-      /p:RepoRoot="$repo_root" \
-      /p:Restore=$restore \
-      /p:Build=$build \
-      /p:Rebuild=$rebuild \
-      /p:Pack=$pack \
-      /p:Publish=$publish \
-      /p:Sign=$sign \
-      /p:UseRoslynAnalyzers=$enable_analyzers \
-      /p:ContinuousIntegrationBuild=$ci \
-      /p:QuietRestore=$quiet_restore \
-      /p:QuietRestoreBinaryLog="$binary_log" \
-      /p:BuildNoRealsig=$buildnorealsig \
-      /p:DotNetBuild=$product_build \
-      /p:DotNetBuildSourceOnly=$source_build \
-      /p:DotNetBuildFromVMR=$from_vmr \
-      ${properties[@]+"${properties[@]}"} \
-      $msbuild_warn_not_as_error
+    local project
+    for project in "${projects[@]}"; do
+      echo "$project:"
+      if [[ "$binary_log" = true && "$project" != "${projects[0]}" ]]; then
+        bl="/bl:\"$log_dir/Build.${project##*/}.binlog\""
+      fi
+
+      MSBuild $toolset_build_proj \
+        $bl \
+        /p:Configuration=$configuration \
+        /p:Projects="$project" \
+        /p:RepoRoot="$repo_root" \
+        /p:Restore=$restore \
+        /p:Build=$build \
+        /p:Rebuild=$rebuild \
+        /p:Pack=$pack \
+        /p:Publish=$publish \
+        /p:Sign=$sign \
+        /p:UseRoslynAnalyzers=$enable_analyzers \
+        /p:ContinuousIntegrationBuild=$ci \
+        /p:QuietRestore=$quiet_restore \
+        /p:QuietRestoreBinaryLog="$binary_log" \
+        /p:BuildNoRealsig=$buildnorealsig \
+        /p:DotNetBuild=$product_build \
+        /p:DotNetBuildSourceOnly=$source_build \
+        /p:DotNetBuildFromVMR=$from_vmr \
+        ${properties[@]+"${properties[@]}"} \
+        $msbuild_warn_not_as_error
+    done
   fi
 }
 

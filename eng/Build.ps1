@@ -284,13 +284,9 @@ function Update-Arguments() {
 
 
 function BuildSolution([string] $solutionName, $packSolution) {
-        Write-Host "${solutionName}:"
-
-    $bl = if ($binaryLog) { "/bl:" + (Join-Path $LogDir "Build.$solutionName.binlog") } else { "" }
-
-    $projects = Join-Path $RepoRoot  $solutionName
+    $projects = @(Join-Path $RepoRoot $solutionName)
     if ($solutionName -eq "FSharp.slnx") {
-        $projects += "%3B" + (Join-Path $RepoRoot "tests\FSharp.Compiler.Interactive.Server.Tests\FSharp.Compiler.Interactive.Server.Tests.fsproj")
+        $projects += Join-Path $RepoRoot "tests\FSharp.Compiler.Interactive.Server.Tests\FSharp.Compiler.Interactive.Server.Tests.fsproj"
     }
     $officialBuildId = if ($official) { $env:BUILD_BUILDNUMBER } else { "" }
     $toolsetBuildProj = InitializeToolset
@@ -308,30 +304,36 @@ function BuildSolution([string] $solutionName, $packSolution) {
 
     $msbuildWarnNotAsError = if ($warnAsError -and $warnNotAsError -ne "") { "/warnNotAsError:$warnNotAsError" } else { "" }
 
-    MSBuild $toolsetBuildProj `
-        $bl `
-        /p:Configuration=$configuration `
-        /p:Projects=$projects `
-        /p:RepoRoot=$RepoRoot `
-        /p:Restore=$restore `
-        /p:Build=$build `
-        /p:DotNetBuild=$productBuild `
-        /p:DotNetBuildFromVMR=$fromVMR `
-        /p:Rebuild=$rebuild `
-        /p:Pack=$pack `
-        /p:Sign=$sign `
-        /p:Publish=$publish `
-        /p:ContinuousIntegrationBuild=$ci `
-        /p:OfficialBuildId=$officialBuildId `
-        /p:QuietRestore=$quietRestore `
-        /p:QuietRestoreBinaryLog=$binaryLog `
-        /p:TestTargetFrameworks=$testTargetFrameworks `
-        /p:CompressAllMetadata=$CompressAllMetadata `
-        /p:BuildNoRealsig=$buildnorealsig `
-        /v:$verbosity `
-        $suppressExtensionDeployment `
-        @properties `
-        $msbuildWarnNotAsError
+    foreach ($project in $projects) {
+        $projectName = Split-Path $project -Leaf
+        Write-Host "${projectName}:"
+        $bl = if ($binaryLog) { "/bl:" + (Join-Path $LogDir "Build.$projectName.binlog") } else { "" }
+
+        MSBuild $toolsetBuildProj `
+            $bl `
+            /p:Configuration=$configuration `
+            /p:Projects=$project `
+            /p:RepoRoot=$RepoRoot `
+            /p:Restore=$restore `
+            /p:Build=$build `
+            /p:DotNetBuild=$productBuild `
+            /p:DotNetBuildFromVMR=$fromVMR `
+            /p:Rebuild=$rebuild `
+            /p:Pack=$pack `
+            /p:Sign=$sign `
+            /p:Publish=$publish `
+            /p:ContinuousIntegrationBuild=$ci `
+            /p:OfficialBuildId=$officialBuildId `
+            /p:QuietRestore=$quietRestore `
+            /p:QuietRestoreBinaryLog=$binaryLog `
+            /p:TestTargetFrameworks=$testTargetFrameworks `
+            /p:CompressAllMetadata=$CompressAllMetadata `
+            /p:BuildNoRealsig=$buildnorealsig `
+            /v:$verbosity `
+            $suppressExtensionDeployment `
+            @properties `
+            $msbuildWarnNotAsError
+    }
 
     $env:BUILDING_USING_DOTNET=$BUILDING_USING_DOTNET_ORIG
 }
