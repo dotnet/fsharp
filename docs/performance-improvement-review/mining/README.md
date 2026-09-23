@@ -167,3 +167,5 @@ each of the six disqualifying exposure categories or invalidate one audit at a
 time. A connected-variant regression also rejects separating #20083 and #20084
 even with consistent aliases. Family summaries and test-only seals stay
 consistent, so unrelated validation failures cannot satisfy these assertions.
+Authorship cases share one parameterized setup and assert distinct diagnostics
+for copied provenance and account identity, with consistent test-only seals.

@@ -328,33 +328,29 @@ class ScopeTests(unittest.TestCase):
         with self.assertRaises(validate.ValidationError):
             validate.validate_exposure(self.discovery, rows, exposure, self.protocol)
 
-    def test_copied_authorship_attestation_fails(self):
-        exposure = copy.deepcopy(self.exposure)
-        first, second = exposure["prs"][:2]
-        first["authorship"].update(
-            classification="verified-human",
-            positive_attestation={
-                "subject": f"pr-{second['pr']}:description",
-                "source_id": f"pr-{second['pr']}#pr={second['pr']}",
-                "enclosing_scope": f"pr-{second['pr']}:description",
-                "rationale": "Explicit attestation for a different source.",
-            })
-        with self.assertRaises(validate.ValidationError):
-            validate.validate_exposure(self.discovery, self.rows, exposure, self.protocol)
-
-    def test_account_identity_is_not_human_attestation(self):
-        exposure = copy.deepcopy(self.exposure)
-        record = exposure["prs"][0]
-        subject = f"pr-{record['pr']}:description"
-        record["authorship"].update(
-            classification="verified-human",
-            positive_attestation={
-                "subject": subject, "enclosing_scope": subject,
-                "source_id": f"pr-{record['pr']}#pr={record['pr']}",
-                "rationale": "The account is a GitHub User and replied to a review.",
-            })
-        with self.assertRaisesRegex(validate.ValidationError, "composition attestation"):
-            validate.validate_exposure(self.discovery, self.rows, exposure, self.protocol)
+    def test_invalid_human_authorship_attestations(self):
+        for name, source_index, rationale, error in (
+            ("copied source", 1, "Explicit attestation for a different source.",
+             "missing/copied human composition attestation"),
+            ("account identity", 0, "The account is a GitHub User and replied to a review.",
+             "account identity is not a composition attestation"),
+        ):
+            with self.subTest(name=name):
+                discovery, exposure = copy.deepcopy(self.discovery), copy.deepcopy(self.exposure)
+                record = exposure["prs"][0]
+                source_pr = exposure["prs"][source_index]["pr"]
+                subject = f"pr-{source_pr}:description"
+                record["authorship"].update(
+                    classification="verified-human",
+                    positive_attestation={
+                        "subject": subject, "enclosing_scope": subject,
+                        "source_id": f"pr-{source_pr}#pr={source_pr}",
+                        "rationale": rationale,
+                    })
+                discovery["scope_freeze"]["exposure_sha256"] = validate.digest(exposure)
+                with self.assertRaisesRegex(validate.ValidationError,
+                                            f"^PR {record['pr']}/exposure: {error}$"):
+                    validate.validate_exposure(discovery, self.rows, exposure, self.protocol)
 
 
 class ProductionTests(unittest.TestCase):
