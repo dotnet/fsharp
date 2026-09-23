@@ -619,6 +619,8 @@ module RecordTypes =
 
     // Feature: allow constructing an F# record by calling its (synthesized) all-fields
     // constructor positionally, e.g. MyRecord(1, "a"), as is already possible from C#.
+    // These tests describe the target behaviour and currently FAIL (records expose no
+    // F#-callable constructor; only { Field = ... } record syntax is permitted).
 
     [<Theory>]
     [<InlineData("default")>]

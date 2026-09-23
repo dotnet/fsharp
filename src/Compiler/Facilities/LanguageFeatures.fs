@@ -200,13 +200,14 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
                 LanguageFeature.MoreConcreteTiebreaker, languageVersion112
                 LanguageFeature.OverloadResolutionPriority, languageVersion112
                 LanguageFeature.RuntimeAsync, languageVersion112
-                LanguageFeature.RecordConstructorSyntax, languageVersion112
-                LanguageFeature.RequireNamedArguments, languageVersion112
+                LanguageFeature.RecordConstructorSyntax, languageVersion112 // Allow constructing a record via its all-fields constructor, e.g. MyRecord(a, b)
+                LanguageFeature.RequireNamedArguments, languageVersion112 // FS-1095: enforce named arguments at call sites of methods marked with RequireNamedArgumentsAttribute
                 LanguageFeature.ReraiseInComputationExpressions, languageVersion112
                 LanguageFeature.ExtensionConstraintSolutions, languageVersion112
 
                 // F# preview
-                LanguageFeature.FromEndSlicing, previewVersion
+                // Unfinished features that still need work before they can be assigned a release language version.
+                LanguageFeature.FromEndSlicing, previewVersion // Unfinished features --- needs work
             ]
 
     static let defaultLanguageVersion = LanguageVersion("default")

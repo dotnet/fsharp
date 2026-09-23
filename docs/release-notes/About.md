@@ -55,16 +55,8 @@ Example:
 
 ### General
 
-Package notes use SDK feature-band names, such as `11.0.100` and `11.0.200`. Language notes use language versions, such as `11.0` and `11.2`.
+How does it work? Different stages/phases?
 
-New FSharp.Core and FSharp.Compiler.Service entries go to the version selected by the repository variable `VNEXT`, currently `11.0.200`. New, unassigned language features go to `.Language/preview.md`. Move a language entry to its versioned file when `LanguageFeatures.fs` assigns that version.
+#### FSharp.Compiler.Service
 
-Visual Studio entries remain in `.VisualStudio/18.vNext.md` until a Visual Studio release is identified. Inclusion in the VMR does not establish a Visual Studio release.
-
-### .NET 11 RC2 boundary
-
-The RC2 boundary is `dotnet/dotnet` branch `release/11.0.1xx-rc2` at [`f09fa1cea879`](https://github.com/dotnet/dotnet/commit/f09fa1cea87901a5794dc02642677479202316d8). Its [`src/source-manifest.json`](https://github.com/dotnet/dotnet/blob/f09fa1cea87901a5794dc02642677479202316d8/src/source-manifest.json) pins F# to [`9cd6167a7265`](https://github.com/dotnet/fsharp/commit/9cd6167a7265ce7264b22719503b7dfa9eb8f83c).
-
-The `.FSharp.Core/11.0.100.md` and `.FSharp.Compiler.Service/11.0.100.md` files describe that snapshot. Changes merged after that F# commit belong in `11.0.200`, unless a later release backport is verified.
-
-Features shipped as preview in RC2 graduate to F# 11.2 in SDK 11.0.200. `FromEndSlicing` remains preview-only. On `main`, `default`, `latest`, and `latestmajor` select F# 11.2. Explicit `11` and `11.0` retain F# 11.0 behavior.
+Perhaps add some specific info if available?
