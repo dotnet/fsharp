@@ -20,7 +20,6 @@ module Test
 
 let eqf (env: int) (a: string) (b: string) = a.Length = b.Length + env
 
-[<System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)>]
 let rec forall2NonInline (p: string -> string -> bool) l1 l2 =
     match l1, l2 with
     | [], [] -> true

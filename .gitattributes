@@ -37,4 +37,3 @@ targets.make text eol=lf
 *.png binary
 
 .github/workflows/*.lock.yml linguist-generated=true merge=ours
-.github/workflows/regression-triage.lock.yml eol=lf whitespace=-blank-at-eol,-blank-at-eof
