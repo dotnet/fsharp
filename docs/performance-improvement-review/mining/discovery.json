@@ -14027,8 +14027,8 @@
       }
     },
     "protocol_sha256": "a97365209493b3a1770fc7adb616ecfc442086d536669cf809b8ace9667de068",
-    "exposure_sha256": "9280a029f60362e99f263b4168429b0dc753e57f19ff2d9a58af202858f90429",
-    "index_sha256": "30d52af3830ac7fb692bf015719498b72aeec18424fb78561be69c715abfa1f5",
+    "exposure_sha256": "acc6c30888a878e9b96758b2286b397e362c9b86f2f2f93cf45653342082c472",
+    "index_sha256": "c9bb7e23674391d07d12b0d2fddfa276ae8ae43b0b67ee7132470e9b73fe2347",
     "reconciliation": {
       "previous_in": 122,
       "in": 141,
@@ -14078,6 +14078,25 @@
       81,
       81,
       80
+    ],
+    "corrections": [
+      {
+        "at": "2026-09-23T14:07:20.175268Z",
+        "prs": [
+          20083,
+          20084
+        ],
+        "reason": "PRs 20083 and 20084 have identical preserved titles and complete author descriptions for central package management with transitive security pinning. Their path receipts share all 48 paths of 20083; 20084 additionally changes the fsc/fsi project files. These are variants of the same mechanism, not independent control families.",
+        "source_ids": [
+          "pr-20083#pr=20083",
+          "pr-20084#pr=20084",
+          "paths-20083#pr=20083",
+          "paths-20084#pr=20084"
+        ],
+        "previous_scope_sha256": "9384db1a8cfa4b10b3f87a0797e0fb8c29df527fda3d44162bb3d362498316f4",
+        "previous_index_sha256": "30d52af3830ac7fb692bf015719498b72aeec18424fb78561be69c715abfa1f5",
+        "previous_exposure_sha256": "9280a029f60362e99f263b4168429b0dc753e57f19ff2d9a58af202858f90429"
+      }
     ]
   }
 }

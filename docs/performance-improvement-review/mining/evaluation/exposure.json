@@ -13375,6 +13375,17 @@
             "decisions"
           ],
           "detail": "Earlier source-access history is not exhaustive; absent access records do not prove untouched status. Timestamp is audit time, not an inferred prior read."
+        },
+        {
+          "kind": "metadata-only-screening",
+          "at": "2026-09-23T14:07:20.175268Z",
+          "source_ids": [
+            "pr-20083#pr=20083",
+            "pr-20084#pr=20084",
+            "paths-20083#pr=20083",
+            "paths-20084#pr=20084"
+          ],
+          "detail": "Connected-family correction from preserved author descriptions and path metadata only; no review, oracle, output or feedback bodies opened."
         }
       ],
       "authorship": {
@@ -13398,7 +13409,7 @@
     {
       "pr": 20084,
       "node_id": "PR_kwDOAbtAO871yAOh",
-      "family": "FAMILY-pr-20084",
+      "family": "FAMILY-pr-20083",
       "fresh": false,
       "access_audit_complete": false,
       "connection_audit_complete": false,
@@ -13428,6 +13439,17 @@
             "decisions"
           ],
           "detail": "Earlier source-access history is not exhaustive; absent access records do not prove untouched status. Timestamp is audit time, not an inferred prior read."
+        },
+        {
+          "kind": "metadata-only-screening",
+          "at": "2026-09-23T14:07:20.175268Z",
+          "source_ids": [
+            "pr-20083#pr=20083",
+            "pr-20084#pr=20084",
+            "paths-20083#pr=20083",
+            "paths-20084#pr=20084"
+          ],
+          "detail": "Connected-family correction from preserved author descriptions and path metadata only; no review, oracle, output or feedback bodies opened."
         }
       ],
       "authorship": {
@@ -31434,28 +31456,13 @@
     {
       "id": "FAMILY-pr-20083",
       "prs": [
-        20083
-      ],
-      "split": "control",
-      "fresh": false,
-      "historical_aliases": [
-        "FAMILY-pr-20083"
-      ],
-      "exposure_kinds": [
-        "acquisition-only",
-        "metadata-only-screening",
-        "unknown"
-      ],
-      "variants": "Historical, original-review and final revisions share this boundary."
-    },
-    {
-      "id": "FAMILY-pr-20084",
-      "prs": [
+        20083,
         20084
       ],
       "split": "control",
       "fresh": false,
       "historical_aliases": [
+        "FAMILY-pr-20083",
         "FAMILY-pr-20084"
       ],
       "exposure_kinds": [
@@ -34416,6 +34423,20 @@
       "reason": "Explicit continuation filtering empty rich-text parts from the tooling representation.",
       "source_ids": [
         "pr-20552#pr=20552"
+      ]
+    },
+    {
+      "prs": [
+        20083,
+        20084
+      ],
+      "at": "2026-09-23T14:07:20.175268Z",
+      "reason": "PRs 20083 and 20084 have identical preserved titles and complete author descriptions for central package management with transitive security pinning. Their path receipts share all 48 paths of 20083; 20084 additionally changes the fsc/fsi project files. These are variants of the same mechanism, not independent control families.",
+      "source_ids": [
+        "pr-20083#pr=20083",
+        "pr-20084#pr=20084",
+        "paths-20083#pr=20083",
+        "paths-20084#pr=20084"
       ]
     }
   ],

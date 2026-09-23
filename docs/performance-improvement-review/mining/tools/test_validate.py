@@ -234,18 +234,49 @@ class ScopeTests(unittest.TestCase):
         with self.assertRaises(validate.ValidationError):
             validate.validate_exposure(self.discovery, rows, self.exposure, self.protocol)
 
-    def test_unknown_exposure_cannot_be_fresh(self):
-        discovery, rows, exposure, family, record = self.metadata_only_holdout()
+    def test_unknown_or_semantic_exposure_cannot_be_fresh(self):
+        for kind in ("unknown", "substantive-inspection", "shared-oracle-access",
+                     "reviewer-execution", "score-access", "rule-derivation"):
+            with self.subTest(kind=kind):
+                discovery, rows, exposure, family, record = self.metadata_only_holdout()
+                validate.validate_exposure(discovery, rows, exposure, self.protocol)
+                record["events"].append({
+                    "kind": kind, "at": exposure["frozen_at"],
+                    "source_ids": ["decisions"], "detail": f"Test access receipt: {kind}.",
+                })
+                family["exposure_kinds"] = sorted({e["kind"] for e in record["events"]})
+                discovery["scope_freeze"]["exposure_sha256"] = validate.digest(exposure)
+                with self.assertRaisesRegex(
+                        validate.ValidationError,
+                        f"^PR {record['pr']}/exposure: unknown or semantic exposure cannot be fresh$"):
+                    validate.validate_exposure(discovery, rows, exposure, self.protocol)
+
+    def test_central_package_management_variants_share_exposure_boundary(self):
+        discovery = copy.deepcopy(self.discovery)
+        rows, exposure = copy.deepcopy(self.rows), copy.deepcopy(self.exposure)
+        family = next(f for f in exposure["families"] if 20083 in f["prs"])
+        self.assertEqual([20083, 20084], family["prs"])
+        self.assertEqual(["FAMILY-pr-20083", "FAMILY-pr-20084"], family["historical_aliases"])
+        connection = next(e for e in exposure["connections"] if e["prs"] == [20083, 20084])
+        self.assertTrue({"pr-20083#pr=20083", "pr-20084#pr=20084"} <= set(connection["source_ids"]))
         validate.validate_exposure(discovery, rows, exposure, self.protocol)
-        record["events"].append({
-            "kind": "unknown", "at": exposure["frozen_at"],
-            "source_ids": ["decisions"], "detail": "Access history is incomplete.",
-        })
-        family["exposure_kinds"] = sorted({e["kind"] for e in record["events"]})
+
+        family["prs"] = [20083]
+        family["historical_aliases"] = ["FAMILY-pr-20083"]
+        split_family = copy.deepcopy(family)
+        split_family.update(id="FAMILY-pr-20084", prs=[20084],
+                            historical_aliases=["FAMILY-pr-20084"])
+        exposure["families"].append(split_family)
+        next(r for r in rows if r["pr"] == 20084)["family"] = split_family["id"]
+        next(r for r in exposure["prs"] if r["pr"] == 20084)["family"] = split_family["id"]
+        for f in (family, split_family):
+            f["exposure_kinds"] = sorted({e["kind"] for r in exposure["prs"]
+                                         if r["pr"] in f["prs"] for e in r["events"]})
+        discovery["scope_freeze"]["index_sha256"] = validate.digest(validate.scope_projection(rows))
         discovery["scope_freeze"]["exposure_sha256"] = validate.digest(exposure)
-        with self.assertRaisesRegex(
-                validate.ValidationError,
-                f"^PR {record['pr']}/exposure: unknown or semantic exposure cannot be fresh$"):
+        validate.validate_scope(discovery, rows, self.protocol)
+        with self.assertRaisesRegex(validate.ValidationError,
+                                    "^exposure: connected/superseding variants split$"):
             validate.validate_exposure(discovery, rows, exposure, self.protocol)
 
     def test_freshness_requires_complete_audits(self):

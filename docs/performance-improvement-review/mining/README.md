@@ -73,8 +73,12 @@ freeze reconciles 35 changed decisions against the historical 122-in snapshot;
 27 enter scope and eight become explicit out-of-scope/context rows. Complete
 preserved description hashes, exact excerpts, labels, changed-path receipts and
 older-created activity events were checked against the original caches.
-The exposure boundary contains 278 connected original families and five
+The exposure boundary contains 277 connected original families and five
 unverified supplemental benchmark-path leads, outside the unchanged inventory.
+The additive correction receipt joins #20083 and #20084 as variants of the same
+central-package-management change, retaining both historical aliases and all
+access events. Prior freeze hashes remain recorded; scope decisions, partitions
+and the predeclared protocol are unchanged.
 
 [Protocol](evaluation/protocol.json) freezes the original eligibility rule,
 positive source-specific human-composition provenance, two-PR/two-independent-
@@ -156,9 +160,10 @@ reproduction reuses identical outputs with zero network requests. Frozen-file
 hashes match the starting Git blobs after removing only the exact current-status
 addition in `corpus.md`. Scope mutation tests additionally reject undecided or
 source-less rows, identity-only exclusion, mutable temporal evidence, shifted
-ordinals, coordinated family renaming, unknown exposure presented as fresh,
+ordinals, coordinated family renaming, unknown or semantic exposure presented as fresh,
 copied human provenance and changes to the predeclared protocol.
 Freshness tests first validate an isolated metadata-only holdout, then add
-unknown exposure or invalidate one audit at a time. Family summaries and
-test-only seals stay consistent, so unrelated validation failures cannot
-satisfy these assertions; production exposure records remain unchanged.
+each of the six disqualifying exposure categories or invalidate one audit at a
+time. A connected-variant regression also rejects separating #20083 and #20084
+even with consistent aliases. Family summaries and test-only seals stay
+consistent, so unrelated validation failures cannot satisfy these assertions.
