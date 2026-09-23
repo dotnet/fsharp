@@ -17,6 +17,9 @@ jobs:
       (contains(github.event.comment.body, '/pr-val') || contains(github.event.comment.body, '/dart'))
     runs-on: ubuntu-latest
     environment: fsharp_pr_validation
+    defaults:
+      run:
+        shell: pwsh
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -26,14 +29,9 @@ jobs:
 
       - name: Validate request and capture PR revision
         id: request
-        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
-        with:
-          script: |
-            const { prepare } = require('./.github/scripts/pr-validation.cjs');
-            const request = await prepare({ github, context });
-            core.setOutput('body', JSON.stringify(request));
-            core.setOutput('head', request.templateParameters.headSha);
-            core.setOutput('base', request.templateParameters.baseSha);
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: .\.github\scripts\pr-validation.ps1 -Mode Prepare
 
       - name: Get Microsoft membership lookup token
         id: membership-token
@@ -45,12 +43,9 @@ jobs:
           permission-members: read
 
       - name: Verify Microsoft organization membership
-        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
-        with:
-          github-token: ${{ steps.membership-token.outputs.token }}
-          script: |
-            const { verifyMembership } = require('./.github/scripts/pr-validation.cjs');
-            await verifyMembership({ github, context });
+        env:
+          GITHUB_TOKEN: ${{ steps.membership-token.outputs.token }}
+        run: .\.github\scripts\pr-validation.ps1 -Mode Membership
 
       - name: Azure Login with OpenID Connect
         uses: azure/login@8216e11d8cd9b42fe925c852af8e76311ff067ac # v2
@@ -59,44 +54,23 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           allow-no-subscriptions: true
 
-      - name: Get Azure DevOps queue token
-        id: azure-token
-        shell: bash
-        run: |
-          set -euo pipefail
-          TOKEN=$(az account get-access-token --resource 499b84ac-1321-427f-aa17-267ca6975798 --query accessToken -o tsv)
-          echo "::add-mask::$TOKEN"
-          echo "token=$TOKEN" >> "$GITHUB_OUTPUT"
-
       - name: Queue DartLab pipeline
         id: queue
-        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
         env:
           PIPELINE_ID: ${{ vars.FSHARP_APEX_PIPELINE_ID }}
           REQUEST_BODY: ${{ steps.request.outputs.body }}
-          AZDO_TOKEN: ${{ steps.azure-token.outputs.token }}
-        with:
-          script: |
-            const { queue } = require('./.github/scripts/pr-validation.cjs');
-            const url = await queue({
-              pipelineId: process.env.PIPELINE_ID,
-              token: process.env.AZDO_TOKEN,
-              request: JSON.parse(process.env.REQUEST_BODY)
-            });
-            core.setOutput('url', url);
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $env:AZDO_TOKEN = az account get-access-token --resource 499b84ac-1321-427f-aa17-267ca6975798 --query accessToken -o tsv
+          if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($env:AZDO_TOKEN)) { throw 'Azure did not return an access token.' }
+          Write-Output "::add-mask::$env:AZDO_TOKEN"
+          .\.github\scripts\pr-validation.ps1 -Mode Queue
 
       - name: Report request result
         if: success() || failure()
-        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
         env:
+          GITHUB_TOKEN: ${{ github.token }}
           RUN_URL: ${{ steps.queue.outputs.url }}
           HEAD_SHA: ${{ steps.request.outputs.head }}
           BASE_SHA: ${{ steps.request.outputs.base }}
-        with:
-          script: |
-            const { RUN_URL, HEAD_SHA, BASE_SHA } = process.env;
-            const workflowUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
-            const body = RUN_URL
-              ? `[F# Apex run](${RUN_URL}) requested by @${context.payload.comment.user.login}.\n\nPR head: \`${HEAD_SHA}\`\nBase: \`${BASE_SHA}\`\n\nThe run will fail before building if the PR merge does not match this snapshot. Changes require a new \`/dart\` or \`/pr-val\` comment.`
-              : `F# Apex request failed. [Workflow details](${workflowUrl}). Use a standalone \`/dart\` or \`/pr-val\` on an open PR targeting \`main\`; the requester needs repository write access and Microsoft-org membership.`;
-            await github.rest.issues.createComment({ ...context.repo, issue_number: context.issue.number, body });
+        run: .\.github\scripts\pr-validation.ps1 -Mode Report

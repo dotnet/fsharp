@@ -80,13 +80,15 @@ so the restriction does not require moving existing dnceng CI or enabling PR tri
 Local regression commands (no product build or DartLab access required):
 
 ```powershell
-node --test .github\scripts\pr-validation.test.cjs
+pwsh -NoProfile -File .github\scripts\pr-validation.Tests.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File eng\tests\SetupPrValidation.Tests.ps1
 ```
 
 The script tests use temporary local Git repositories and a mocked GitHub PR response.
 They cover merge identity, ref races, closed/changed PRs and failure before checkout.
-The JavaScript tests cover command syntax, authorization and the queued snapshot.
+The PowerShell 7 tests run the Actions helper offline with a fake HTTP boundary.
+They cover command syntax, authorization of the original commenter (also on reruns),
+private membership lookup with the separate App token, the queued snapshot and PR feedback.
 
 After provisioning, use the Runs API's `previewRun` with the same repository
 ref/version and snapshot parameters to verify actual private-template expansion.
