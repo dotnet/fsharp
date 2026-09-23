@@ -126,7 +126,7 @@ function Print-Usage() {
     Write-Host "  -testCompilerComponentTests   Run FSharpCompilerService component tests"
     Write-Host "  -testDesktop                  Run tests against full .NET Framework"
     Write-Host "  -testDesktopBatch <1|2|3>       Run a specific batch of the desktop test split (implies -testDesktop)"
-    Write-Host "  -testCoreClr                  Run aggregate CoreCLR tests (Cambridge runs on desktop; use -testCambridge for both)"
+    Write-Host "  -testCoreClr                  Run tests against CoreCLR"
     Write-Host "  -testFSharpCore               Run FSharpCore unit tests"
     Write-Host "  -testIntegration              Run F# integration tests"
     Write-Host "  -testScripting                Run Scripting tests"

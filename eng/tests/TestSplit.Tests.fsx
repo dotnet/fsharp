@@ -31,9 +31,12 @@ let scripting = project "FSharp.Compiler.Private.Scripting.UnitTests"
 let server = project "FSharp.Compiler.Interactive.Server.Tests"
 let legacy = "tests/fsharp/FSharpSuite.Tests.fsproj"
 
-for platform, exclusive in [ "coreclr", server; "desktop", legacy ] do
+for platform in [ "coreclr"; "desktop" ] do
     let aggregate = commands [ "--all"; platform ]
-    let expected = [ componentTests; build; core; service; scripting; exclusive ]
+    let expected =
+        [ componentTests; build; core; service; scripting ]
+        @ (if platform = "coreclr" then [ server ] else [])
+        @ [ legacy ]
     if aggregate <> (expected |> List.map (fun p -> p, "")) then
         failwith $"Incorrect unbatched selection for {platform}: {aggregate}"
 
@@ -54,8 +57,9 @@ for platform, exclusive in [ "coreclr", server; "desktop", legacy ] do
     for batch in batches do
         for p, filter in batch do
             if p <> componentTests && filter <> "" then failwith $"Unexpected filter on {p}: {filter}"
-    if (batches |> List.collect (List.map fst) |> Set.ofList) <> Set.ofList expected then
-        failwith $"Batched and aggregate coverage differ for {platform}"
+    let unbatchedOnly = Set.difference (Set.ofList expected) (batches |> List.collect (List.map fst) |> Set.ofList)
+    if unbatchedOnly <> (if platform = "coreclr" then Set.singleton legacy else Set.empty) then
+        failwith $"Unexpected unbatched-only coverage for {platform}: {unbatchedOnly}"
 
 for batch in 1..3 do
     let legacyCommands = commands [ string batch ]

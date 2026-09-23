@@ -42,15 +42,16 @@ let componentTestsAtoms =
         // Batch 3 is reserved for FSharpSuite.Tests (desktop-only); no component atoms.
     ]
 
-// Aggregate platforms: "all" = both, "desktop" = net472, "coreclr" = .NET only.
+// Platforms: "all" = both, "desktop" = net472, "coreclr" = .NET only.
+// FSharpSuite runs on both runtimes unbatched, but only on desktop in batched CI.
 let otherProjects =
-    [// project path                                                                         batch  platform
-        "tests/FSharp.Build.UnitTests/FSharp.Build.UnitTests.fsproj",                        1,     "all"
-        "tests/FSharp.Core.UnitTests/FSharp.Core.UnitTests.fsproj",                          2,     "all"
-        "tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj",          2,     "all"
-        "tests/FSharp.Compiler.Private.Scripting.UnitTests/FSharp.Compiler.Private.Scripting.UnitTests.fsproj", 2, "all"
-        "tests/FSharp.Compiler.Interactive.Server.Tests/FSharp.Compiler.Interactive.Server.Tests.fsproj",   2,     "coreclr"
-        "tests/fsharp/FSharpSuite.Tests.fsproj",                                             3,     "desktop"
+    [// project path                                                                         batch  batched platform, unbatched platform
+        "tests/FSharp.Build.UnitTests/FSharp.Build.UnitTests.fsproj",                        1,     "all",     "all"
+        "tests/FSharp.Core.UnitTests/FSharp.Core.UnitTests.fsproj",                          2,     "all",     "all"
+        "tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj",          2,     "all",     "all"
+        "tests/FSharp.Compiler.Private.Scripting.UnitTests/FSharp.Compiler.Private.Scripting.UnitTests.fsproj", 2, "all", "all"
+        "tests/FSharp.Compiler.Interactive.Server.Tests/FSharp.Compiler.Interactive.Server.Tests.fsproj",   2,     "coreclr", "coreclr"
+        "tests/fsharp/FSharpSuite.Tests.fsproj",                                             3,     "desktop", "all"
     ]
 
 // ── excluded projects ──
@@ -96,7 +97,7 @@ if isValidateMode then
     let knownProjects =
         set [
             yield componentTests
-            for (proj, _, _) in otherProjects do yield proj
+            for (proj, _, _, _) in otherProjects do yield proj
             yield! excludedProjects
         ]
 
@@ -174,5 +175,10 @@ let filterArgs =
 if batch.IsNone || batchHasComponentAtoms || batch = Some residualBatch then
     printfn "%s" ($"dotnet test {componentTests} --no-build -c Release {filterArgs}".TrimEnd())
 
-for (proj, _, _) in otherProjects |> List.filter (fun (_, b, tag) -> (batch.IsNone || Some b = batch) && matchesPlatform tag) do
+for (proj, _, _, _) in
+    otherProjects
+    |> List.filter (fun (_, b, batchedPlatform, unbatchedPlatform) ->
+        match batch with
+        | None -> matchesPlatform unbatchedPlatform
+        | Some selectedBatch -> b = selectedBatch && matchesPlatform batchedPlatform) do
     printfn $"dotnet test {proj} --no-build -c Release"
