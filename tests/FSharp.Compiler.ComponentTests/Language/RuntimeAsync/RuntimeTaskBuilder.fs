@@ -36,13 +36,6 @@ module RuntimeAsyncBuilderHelpers =
     // The delegate's invocation is inlined, so this is zero cost.
     type Started<'T> = delegate of unit -> 'T
 
-    let inline startAwaitable awaitable =
-        // Make sure the delegate captures only started awaitables to make MergeSources concurrent.
-        let awaiter = Awaitable.getAwaiter awaitable
-        Started(fun () ->
-            AsyncHelpers.UnsafeAwaitAwaiter awaiter
-            Awaiter.getResult awaiter)
-
 open RuntimeAsyncBuilderHelpers
 
 module RuntimeAsyncBuilder =
@@ -125,7 +118,13 @@ module SourceExtensionsLowPriority =
 module SourceExtensionsMediumPriority =
     type RuntimeAsyncBuilder with
         // Bind tasklike awaitables not matching any of the above source types, with lower priority. 
-        member inline _.Source(awaitable) = startAwaitable awaitable
+        member inline _.Source(awaitable) =
+            // Make sure to start outside of the delegate.
+            // MergeSources expect started sources to keep execution concurrent.
+            let awaiter = Awaitable.getAwaiter awaitable
+            Started(fun () ->
+                AsyncHelpers.UnsafeAwaitAwaiter awaiter
+                Awaiter.getResult awaiter)
 
 [<AutoOpen>]
 module SourceExtensionsHighPriority =
