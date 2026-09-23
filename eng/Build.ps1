@@ -290,7 +290,7 @@ function BuildSolution([string] $solutionName, $packSolution) {
 
     $projects = Join-Path $RepoRoot  $solutionName
     if ($solutionName -eq "FSharp.slnx") {
-        $projects += ";" + (Join-Path $RepoRoot "tests\FSharp.Compiler.Interactive.Server.Tests\FSharp.Compiler.Interactive.Server.Tests.fsproj")
+        $projects += "%3B" + (Join-Path $RepoRoot "tests\FSharp.Compiler.Interactive.Server.Tests\FSharp.Compiler.Interactive.Server.Tests.fsproj")
     }
     $officialBuildId = if ($official) { $env:BUILD_BUILDNUMBER } else { "" }
     $toolsetBuildProj = InitializeToolset

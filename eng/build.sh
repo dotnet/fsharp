@@ -294,7 +294,7 @@ function BuildSolution {
   if [[ "$product_build" = true ]]; then
     projects="$repo_root/src/Microsoft.FSharp.Compiler/Microsoft.FSharp.Compiler.fsproj"
   else
-    projects="$projects;$repo_root/tests/FSharp.Compiler.Interactive.Server.Tests/FSharp.Compiler.Interactive.Server.Tests.fsproj"
+    projects="$projects%3B$repo_root/tests/FSharp.Compiler.Interactive.Server.Tests/FSharp.Compiler.Interactive.Server.Tests.fsproj"
   fi
 
   echo "$projects:"
