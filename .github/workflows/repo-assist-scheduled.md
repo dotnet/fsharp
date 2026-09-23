@@ -22,6 +22,8 @@ on:
     - cron: "30 */12 * * *"
   workflow_dispatch:
 
+if: github.event_name != 'schedule' || github.repository == 'dotnet/fsharp'
+
 timeout-minutes: 60
 
 permissions: read-all
