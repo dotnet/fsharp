@@ -492,6 +492,46 @@ module internal FreeTypeVars =
     let freeInTypesLeftToRightSkippingConstraints g ty =
         accFreeInTypesLeftToRight g false true emptyFreeTyparsLeftToRight ty |> List.rev
 
+    /// The stamps of the sibling type parameters referenced by a type parameter's subtype (:>)
+    /// constraints — i.e. the parameters it must be unified after (the #20103 dependency).
+    let constraintDependencyStamps (g: TcGlobals) (tp: Typar) =
+        tp.Constraints
+        |> List.choose (function
+            | TyparConstraint.CoercesTo(ty, _) -> Some ty
+            | _ -> None)
+        |> freeInTypesLeftToRight g true
+        |> List.choose (fun ftp -> if ftp.Stamp = tp.Stamp then None else Some ftp.Stamp)
+        |> Set.ofList
+
+    /// Stable-sort the (formalTypar, actualType) unification pairs of an explicit generic
+    /// instantiation so a type parameter used in another's subtype constraint (the 'b in 'a :> I<'b>)
+    /// is unified first. Returns the pairs unchanged when no such cross-reference exists.
+    /// See https://github.com/dotnet/fsharp/issues/20103
+    let reorderTyArgsByConstraintDependencies priority (g: TcGlobals) (pairs: (TType * TType) list) =
+        match pairs with
+        | []
+        | [ _ ] -> pairs
+        | _ ->
+            let node pair =
+                match stripTyEqns g (fst pair) with
+                | TType_var(tp, _) -> pair, ValueSome tp.Stamp, constraintDependencyStamps g tp
+                | _ -> pair, ValueNone, Set.empty
+
+            let nodes = pairs |> List.map node
+
+            if nodes |> List.forall (fun (_, _, deps) -> Set.isEmpty deps) then
+                pairs
+            else
+                // 'a' must precede 'b' when b's subtype constraint references a's parameter.
+                let mustPrecede (_, stamp, _) (_, _, deps) =
+                    match stamp with
+                    | ValueSome s -> Set.contains s deps
+                    | ValueNone -> false
+
+                nodes
+                |> List.stableTopologicalSortBy (fun (pair, _, _) -> priority pair) mustPrecede
+                |> List.map (fun (pair, _, _) -> pair)
+
 [<AutoOpen>]
 module internal MemberRepresentation =
 
@@ -1082,19 +1122,20 @@ module internal MemberRepresentation =
     module SimplifyTypes =
 
         // CAREFUL! This function does NOT walk constraints
-        let rec foldTypeButNotConstraints f z ty =
-            let ty = stripTyparEqns ty
+        let rec foldTypeButNotConstraints normalizeType f z ty =
+            let ty = normalizeType ty
             let z = f z ty
 
             match ty with
-            | TType_forall(_, bodyTy) -> foldTypeButNotConstraints f z bodyTy
+            | TType_forall(_, bodyTy) -> foldTypeButNotConstraints normalizeType f z bodyTy
 
             | TType_app(_, tys, _)
             | TType_ucase(_, tys)
             | TType_anon(_, tys)
-            | TType_tuple(_, tys) -> List.fold (foldTypeButNotConstraints f) z tys
+            | TType_tuple(_, tys) -> List.fold (foldTypeButNotConstraints normalizeType f) z tys
 
-            | TType_fun(domainTy, rangeTy, _) -> foldTypeButNotConstraints f (foldTypeButNotConstraints f z domainTy) rangeTy
+            | TType_fun(domainTy, rangeTy, _) ->
+                foldTypeButNotConstraints normalizeType f (foldTypeButNotConstraints normalizeType f z domainTy) rangeTy
 
             | TType_var _ -> z
 
@@ -1109,7 +1150,7 @@ module internal MemberRepresentation =
         let accTyparCounts z ty =
             // Walk type to determine typars and their counts (for pprinting decisions)
             (z, ty)
-            ||> foldTypeButNotConstraints (fun z ty ->
+            ||> foldTypeButNotConstraints stripTyparEqns (fun z ty ->
                 match ty with
                 | TType_var(tp, _) when tp.Rigidity = TyparRigidity.Rigid -> incM tp z
                 | _ -> z)

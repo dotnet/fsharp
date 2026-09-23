@@ -19,6 +19,8 @@ open FSharp.Compiler.TypedTreeOps
 /// Concrete ITraitContext used throughout the compiler.
 type TraitContext = ITraitContext<AccessorDomain, MethInfo, InfoReader>
 
+val constraintResolutionPriority: TcGlobals -> ImportMap -> range -> formalTy: TType * actualTy: TType -> int
+
 /// Information about the context of a type equation.
 [<RequireQualifiedAccess>]
 type ContextInfo =
@@ -238,6 +240,12 @@ type ConstraintSolverState =
 
         /// Checks to run after all inference is complete.
         PostInferenceChecksFinal: ResizeArray<unit -> unit>
+
+        /// Union attributes awaiting a retry after the recursive group is established.
+        mutable UnionsWithDeferredAttributes: Set<Stamp>
+
+        /// Deferred union constraints not yet checked after their attributes resolved.
+        mutable DeferredUnionNullnessChecks: (TType * range) list
 
         WarnWhenUsingWithoutNullOnAWithNullTarget: string option
 

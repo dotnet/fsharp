@@ -174,17 +174,17 @@ let ListExpressionSteppingTest6 () =
 
 let ListExpressionSteppingTest7 () = 
     [ for x in 1..4 do
-            printfn "hello"
+            printn "hello"
             yield x ]
 
 let ListExpressionSteppingTest8 () = 
     [ for x in 1..4 do
         match x with 
         | 1 -> 
-            printfn "hello"
+            printn "hello"
             yield x 
         | 2 -> 
-            printfn "hello"
+            printn "hello"
             yield x 
         | _ -> 
             yield x 
@@ -1285,13 +1285,13 @@ module ForLoopInGeneratedList =
     testSimpleListEachArrayLoopWithTwoStatements [|1;2;3|]
     testSimpleListEachListLoopWithOneStatement [1;2;3]
     testSimpleListEachListLoopWithInitialLetBindings (fun () -> 7) (fun () -> 8) [1;2;3]
-    testSimpleListEachListLoopWithInitialSequentialExpression (fun () -> printfn "7") (fun () -> printfn "8") [1;2;3]
+    testSimpleListEachListLoopWithInitialSequentialExpression (fun () -> printn "7") (fun () -> printn "8") [1;2;3]
     testSimpleListEachListLoopWithTwoStatements [1;2;3]
     testSimpleListEachStringLoopWithOneStatement "123"
     testSimpleListEachStringLoopWithTwoStatements "123"
     testSimpleListEachIntRangeLoopWithOneStatement (1, 3)
     testSimpleListEachIntRangeLoopWithInitialLetBindings (fun () -> 7) (fun () -> 8) (1, 3)
-    testSimpleListEachIntRangeLoopWithInitialSequentialExpression (fun () -> printfn "7") (fun () -> printfn "8") (1, 3)
+    testSimpleListEachIntRangeLoopWithInitialSequentialExpression (fun () -> printn "7") (fun () -> printn "8") (1, 3)
     testSimpleListEachIntRangeLoopWithTwoStatements (1, 3)
     testSimpleListEachIntRangeLoopDownWithOneStatement (1, 3)
     testSimpleListEachIntRangeLoopDownWithTwoStatements (1, 3)
@@ -1406,13 +1406,13 @@ module ForLoopInGeneratedArray =
     testSimpleArrayEachArrayLoopWithTwoStatements [|1;2;3|]
     testSimpleArrayEachListLoopWithOneStatement [1;2;3]
     testSimpleArrayEachListLoopWithInitialLetBindings (fun () -> 7) (fun () -> 8) [|1;2;3|]
-    testSimpleArrayEachListLoopWithInitialSequentialExpression (fun () -> printfn "7") (fun () -> printfn "8") [|1;2;3|]
+    testSimpleArrayEachListLoopWithInitialSequentialExpression (fun () -> printn "7") (fun () -> printn "8") [|1;2;3|]
     testSimpleArrayEachListLoopWithTwoStatements [1;2;3]
     testSimpleArrayEachStringLoopWithOneStatement "123"
     testSimpleArrayEachStringLoopWithTwoStatements "123"
     testSimpleArrayEachIntRangeLoopWithOneStatement (1, 3)
     testSimpleArrayEachIntRangeLoopWithInitialLetBindings (fun () -> 7) (fun () -> 8) (1, 3)
-    testSimpleArrayEachIntRangeLoopWithInitialSequentialExpression (fun () -> printfn "7") (fun () -> printfn "8") (1, 3)
+    testSimpleArrayEachIntRangeLoopWithInitialSequentialExpression (fun () -> printn "7") (fun () -> printn "8") (1, 3)
     testSimpleArrayEachIntRangeLoopWithTwoStatements (1, 3)
     testSimpleArrayEachIntRangeLoopDownWithOneStatement (1, 3)
     testSimpleArrayEachIntRangeLoopDownWithTwoStatements (1, 3)
@@ -2081,7 +2081,7 @@ module CancellableBasicTests =
 
     let test2() = 
         cancellable {
-             printfn "hello"
+             printn "hello"
              return 12345
         }
 

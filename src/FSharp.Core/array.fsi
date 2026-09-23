@@ -15,6 +15,18 @@ open Microsoft.FSharp.Collections
 [<RequireQualifiedAccess>]
 module Array =
 
+    /// <summary>This function is for use by compiled F# code and should not be used directly.</summary>
+    [<CompilerMessage("This function is for use by compiled F# code and should not be used directly",
+                      1204,
+                      IsHidden = true)>]
+    val indexNotFound: unit -> 'T
+
+    /// <summary>This function is for use by compiled F# code and should not be used directly.</summary>
+    [<CompilerMessage("This function is for use by compiled F# code and should not be used directly",
+                      1204,
+                      IsHidden = true)>]
+    val differentLengthArrays: arg1: string -> len1: int -> arg2: string -> len2: int -> 'T
+
     /// <summary>Returns a new array that contains all pairings of elements from the first and second arrays.</summary>
     ///
     /// <param name="array1">The first input array.</param>
@@ -322,11 +334,12 @@ module Array =
     [<CompiledName("Contains")>]
     val inline contains: value: 'T -> array: 'T array -> bool when 'T: equality
 
-    /// <summary>Builds a new array that contains the elements of the given array.</summary>
+    /// <summary>Returns an array that contains the elements of the given array.</summary>
     ///
     /// <param name="array">The input array.</param>
     ///
-    /// <returns>A copy of the input array.</returns>
+    /// <returns>A copy of the input array. Nonempty results are new arrays.
+    /// Empty results can share an empty array, including the input array itself.</returns>
     ///
     /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
     ///
@@ -464,7 +477,7 @@ module Array =
     ///
     /// <remarks>This is an O(n) operation in the worst case, where n is the length of the array.</remarks>
     [<CompiledName("TryPick")>]
-    val tryPick: chooser: ('T -> 'U option) -> array: 'T array -> 'U option
+    val inline tryPick: chooser: ('T -> 'U option) -> array: 'T array -> 'U option
 
     /// <summary>Fills a range of elements of the array with the given value.</summary>
     ///
@@ -523,7 +536,7 @@ module Array =
     ///
     /// <remarks>This is an O(n) operation in the worst case, where n is the length of the array.</remarks>
     [<CompiledName("Pick")>]
-    val pick: chooser: ('T -> 'U option) -> array: 'T array -> 'U
+    val inline pick: chooser: ('T -> 'U option) -> array: 'T array -> 'U
 
     /// <summary>Applies the given function to each element of the array. Returns
     /// the array comprised of the results <c>x</c> for each element where
@@ -857,7 +870,7 @@ module Array =
     /// Evaluates to <c>true</c>
     /// </example>
     [<CompiledName("Exists2")>]
-    val exists2: predicate: ('T1 -> 'T2 -> bool) -> array1: 'T1 array -> array2: 'T2 array -> bool
+    val inline exists2: predicate: ('T1 -> 'T2 -> bool) -> array1: 'T1 array -> array2: 'T2 array -> bool
 
     /// <summary>Returns a new collection containing only the elements of the collection
     /// for which the given predicate returns "true".</summary>
@@ -914,7 +927,7 @@ module Array =
     ///
     /// <remarks>This is an O(n) operation in the worst case, where n is the length of the array.</remarks>
     [<CompiledName("Find")>]
-    val find: predicate: ('T -> bool) -> array: 'T array -> 'T
+    val inline find: predicate: ('T -> bool) -> array: 'T array -> 'T
 
     /// <summary>Returns the last element for which the given function returns 'true'.
     /// Raise <see cref="T:System.Collections.Generic.KeyNotFoundException"/> if no such element exists.</summary>
@@ -948,7 +961,7 @@ module Array =
     ///
     /// <remarks>This is an O(n) operation in the worst case, where n is the length of the array.</remarks>
     [<CompiledName("FindBack")>]
-    val findBack: predicate: ('T -> bool) -> array: 'T array -> 'T
+    val inline findBack: predicate: ('T -> bool) -> array: 'T array -> 'T
 
     /// <summary>Returns the index of the first element in the array
     /// that satisfies the given predicate. Raise <see cref="T:System.Collections.Generic.KeyNotFoundException"/> if
@@ -982,7 +995,7 @@ module Array =
     ///
     /// <remarks>This is an O(n) operation in the worst case, where n is the length of the array.</remarks>
     [<CompiledName("FindIndex")>]
-    val findIndex: predicate: ('T -> bool) -> array: 'T array -> int
+    val inline findIndex: predicate: ('T -> bool) -> array: 'T array -> int
 
     /// <summary>Returns the index of the last element in the array
     /// that satisfies the given predicate. Raise <see cref="T:System.Collections.Generic.KeyNotFoundException"/> if
@@ -1017,7 +1030,7 @@ module Array =
     ///
     /// <remarks>This is an O(n) operation in the worst case, where n is the length of the array.</remarks>
     [<CompiledName("FindIndexBack")>]
-    val findIndexBack: predicate: ('T -> bool) -> array: 'T array -> int
+    val inline findIndexBack: predicate: ('T -> bool) -> array: 'T array -> int
 
     /// <summary>Tests if all elements of the array satisfy the given predicate.</summary>
     ///
@@ -1042,7 +1055,7 @@ module Array =
     /// </code>
     /// </example>
     [<CompiledName("ForAll")>]
-    val forall: predicate: ('T -> bool) -> array: 'T array -> bool
+    val inline forall: predicate: ('T -> bool) -> array: 'T array -> bool
 
     /// <summary>Tests if all corresponding elements of the array satisfy the given predicate pairwise.</summary>
     ///
@@ -1091,7 +1104,7 @@ module Array =
     /// Throws <c>ArgumentException</c>.
     /// </example>
     [<CompiledName("ForAll2")>]
-    val forall2: predicate: ('T1 -> 'T2 -> bool) -> array1: 'T1 array -> array2: 'T2 array -> bool
+    val inline forall2: predicate: ('T1 -> 'T2 -> bool) -> array1: 'T1 array -> array2: 'T2 array -> bool
 
     /// <summary>Applies a function to each element of the collection, threading an accumulator argument
     /// through the computation. If the input function is <c>f</c> and the elements are <c>i0...iN</c> then computes
@@ -1123,7 +1136,7 @@ module Array =
     ///
     /// <remarks>This is an O(n) operation, where n is the length of the array.</remarks>
     [<CompiledName("Fold")>]
-    val fold<'T, 'State> : folder: ('State -> 'T -> 'State) -> state: 'State -> array: 'T array -> 'State
+    val inline fold<'T, 'State> : folder: ('State -> 'T -> 'State) -> state: 'State -> array: 'T array -> 'State
 
     /// <summary>Applies a function to each element of the array, starting from the end, threading an accumulator argument
     /// through the computation. If the input function is <c>f</c> and the elements are <c>i0...iN</c> then computes
@@ -1168,7 +1181,7 @@ module Array =
     ///
     /// <remarks>This is an O(n) operation, where n is the length of the array.</remarks>
     [<CompiledName("FoldBack")>]
-    val foldBack<'T, 'State> : folder: ('T -> 'State -> 'State) -> array: 'T array -> state: 'State -> 'State
+    val inline foldBack<'T, 'State> : folder: ('T -> 'State -> 'State) -> array: 'T array -> state: 'State -> 'State
 
     /// <summary>Applies a function to pairs of elements drawn from the two collections,
     /// left-to-right, threading an accumulator argument
@@ -1204,7 +1217,7 @@ module Array =
     ///
     /// <remarks>This is an O(n) operation, where n is the length of the arrays.</remarks>
     [<CompiledName("Fold2")>]
-    val fold2<'T1, 'T2, 'State> :
+    val inline fold2<'T1, 'T2, 'State> :
         folder: ('State -> 'T1 -> 'T2 -> 'State) -> state: 'State -> array1: 'T1 array -> array2: 'T2 array -> 'State
 
     /// <summary>Apply a function to pairs of elements drawn from the two collections, right-to-left,
@@ -1255,7 +1268,7 @@ module Array =
     ///
     /// <remarks>This is an O(n) operation, where n is the length of the arrays.</remarks>
     [<CompiledName("FoldBack2")>]
-    val foldBack2<'T1, 'T2, 'State> :
+    val inline foldBack2<'T1, 'T2, 'State> :
         folder: ('T1 -> 'T2 -> 'State -> 'State) -> array1: 'T1 array -> array2: 'T2 array -> state: 'State -> 'State
 
     /// <summary>Gets an element from an array.</summary>
@@ -1492,7 +1505,7 @@ module Array =
     ///
     /// <remarks>This is an O(n) operation, where n is the length of the arrays.</remarks>
     [<CompiledName("Iterate2")>]
-    val iter2: action: ('T1 -> 'T2 -> unit) -> array1: 'T1 array -> array2: 'T2 array -> unit
+    val inline iter2: action: ('T1 -> 'T2 -> unit) -> array1: 'T1 array -> array2: 'T2 array -> unit
 
     /// <summary>Applies the given function to each element of the array. The integer passed to the
     /// function indicates the index of element.</summary>
@@ -1506,7 +1519,7 @@ module Array =
     /// <code lang="fsharp">
     /// let inputs = [| "a"; "b"; "c" |]
     ///
-    /// inputs |> Array.iteri (fun i v -> printfn "{i}: {v}")
+    /// inputs |> Array.iteri (fun i v -> printn $"{i}: {v}")
     /// </code>
     /// Evaluates to <c>unit</c> and prints
     /// <code>
@@ -1519,7 +1532,7 @@ module Array =
     ///
     /// <remarks>This is an O(n) operation, where n is the length of the array.</remarks>
     [<CompiledName("IterateIndexed")>]
-    val iteri: action: (int -> 'T -> unit) -> array: 'T array -> unit
+    val inline iteri: action: (int -> 'T -> unit) -> array: 'T array -> unit
 
     /// <summary>Applies the given function to pair of elements drawn from matching indices in two arrays,
     /// also passing the index of the elements. The two arrays must have the same lengths,
@@ -1550,7 +1563,7 @@ module Array =
     ///
     /// <remarks>This is an O(n) operation, where n is the length of the arrays.</remarks>
     [<CompiledName("IterateIndexed2")>]
-    val iteri2: action: (int -> 'T1 -> 'T2 -> unit) -> array1: 'T1 array -> array2: 'T2 array -> unit
+    val inline iteri2: action: (int -> 'T1 -> 'T2 -> unit) -> array1: 'T1 array -> array2: 'T2 array -> unit
 
     /// <summary>Returns the last element of the array.</summary>
     ///
@@ -2154,7 +2167,7 @@ module Array =
     ///
     /// <remarks>This is an O(n) operation, where n is the length of the array.</remarks>
     [<CompiledName("Reduce")>]
-    val reduce: reduction: ('T -> 'T -> 'T) -> array: 'T array -> 'T
+    val inline reduce: reduction: ('T -> 'T -> 'T) -> array: 'T array -> 'T
 
     /// <summary>Applies a function to each element of the array, starting from the end, threading an accumulator argument
     /// through the computation. If the input function is <c>f</c> and the elements are <c>i0...iN</c>
@@ -2180,7 +2193,7 @@ module Array =
     ///
     /// <remarks>This is an O(n) operation, where n is the length of the array.</remarks>
     [<CompiledName("ReduceBack")>]
-    val reduceBack: reduction: ('T -> 'T -> 'T) -> array: 'T array -> 'T
+    val inline reduceBack: reduction: ('T -> 'T -> 'T) -> array: 'T array -> 'T
 
     /// <summary>Creates an array by replicating the given initial value.</summary>
     ///
@@ -3286,13 +3299,14 @@ module Array =
     [<CompiledName("InsertAt")>]
     val insertAt: index: int -> value: 'T -> source: 'T array -> 'T array
 
-    /// <summary>Return a new array with new items inserted before the given index.</summary>
+    /// <summary>Returns an array with new items inserted before the given index.</summary>
     ///
     /// <param name="index">The index where the items should be inserted.</param>
     /// <param name="values">The values to insert.</param>
     /// <param name="source">The input array.</param>
     ///
-    /// <returns>A new array (even if values is empty).</returns>
+    /// <returns>A new array, even if <c>values</c> is empty, unless both <c>source</c> and <c>values</c> are empty.
+    /// In that case, the result can be a shared empty array, including <c>source</c> itself.</returns>
     ///
     /// <exception cref="T:System.ArgumentException">Thrown when index is below 0 or greater than source.Length.</exception>
     ///
@@ -4292,7 +4306,7 @@ module Array =
         /// <code lang="fsharp">
         /// let inputs = [| "a"; "b"; "c" |]
         ///
-        /// inputs |> Array.Parallel.iteri (fun i v -> printfn "{i}: {v}")
+        /// inputs |> Array.Parallel.iteri (fun i v -> printn $"{i}: {v}")
         /// </code>
         /// Evaluates to <c>unit</c> and prints the following to the console in an unspecified order:
         /// <code>

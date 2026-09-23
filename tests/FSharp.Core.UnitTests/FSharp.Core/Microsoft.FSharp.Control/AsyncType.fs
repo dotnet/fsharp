@@ -978,9 +978,9 @@ module AsyncAwaitStackTraceTests =
     let checkTrace totalCount (e: exn) =
         let trace = e.StackTrace
         // stacktrace should be relatively compact and not bloat the logs, so unconditionally print it to save time analyzing regressions
-        printfn "EDI trace ===="
+        printn "EDI trace ===="
         printfn "%s" trace
-        printfn "==== EDI trace"
+        printn "==== EDI trace"
         Assert.NotNull(trace)
         Assert.Contains("throwAtLevel1", trace)
         Assert.Contains("level1Task", trace)

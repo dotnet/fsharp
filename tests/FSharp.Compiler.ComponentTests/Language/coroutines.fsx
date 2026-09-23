@@ -8,7 +8,7 @@
 //    coroutine {
 //       printfn "in t1"
 //       yield ()
-//       printfn "hey"
+//       printn "hey"
 //    }
 //
 
@@ -222,7 +222,7 @@ let dumpCoroutine (t: Coroutine) =
     while ( //if verbose then printn $"[{t.Id}] calling t.MoveNext, will resume at {t.ResumptionPoint}"; 
             t.MoveNext()
             not t.IsCompleted) do 
-        () // printfn "yield"
+        () // printn "yield"
     printfn $"YieldFromFinal called {yieldFromFinalCallCount} times, YieldFrom called {yieldFromCount} times"
 
 let expect final standard t =

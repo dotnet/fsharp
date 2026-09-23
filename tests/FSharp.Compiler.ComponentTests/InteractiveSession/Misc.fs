@@ -1212,13 +1212,13 @@ System.Threading.Thread.Sleep(50);;
         |> ignore
 
     // Span type in FSI
-    [<Fact>]
+    [<FactForNETCOREAPP>]
     let ``SpanType - System.Span usage``() =
         Fsx """
 open System;;
 let arr = [|1;2;3;4;5|];;
-let span = arr.AsSpan();;
-if span.Length <> 5 then failwith "test assertion failed";;
+let spanLength () = arr.AsSpan().Length;;
+if spanLength () <> 5 then failwith "test assertion failed";;
 ()
 """
         |> withOptions ["--nologo"]
@@ -1552,13 +1552,13 @@ type IOps<'T> =
     abstract Zero : 'T;;
 
 /// Create an instance of an F77Array and capture its operation set
-type Matrix<'T> internal (ops: IOps<'T>, arr: 'T[,]) =
-    member internal x.Ops = ops
-    member internal x.Data = arr;;
+type Matrix<'T> (ops: IOps<'T>, arr: 'T[,]) =
+    member x.Ops = ops
+    member x.Data = arr;;
 
 type Matrix =
-    /// A function to capture operations 
-    static member inline private captureOps() = 
+    /// A function to capture operations
+    static member inline captureOps() =
         { new IOps<_> with 
             member x.Add(a,b) = a + b
             member x.Zero = LanguagePrimitives.GenericZero<_> }
