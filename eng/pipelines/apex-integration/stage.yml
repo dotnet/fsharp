@@ -1,0 +1,105 @@
+parameters:
+- name: prNumber
+  type: string
+- name: headSha
+  type: string
+- name: baseSha
+  type: string
+- name: visualStudioBootstrapperURI
+  type: string
+  default: '(default)'
+- name: testCaseFilter
+  type: string
+  default: ''
+- name: testMachineCleanUpStrategy
+  type: string
+  default: delete
+- name: testMachineRetention
+  type: string
+  default: 1:0:0:0
+- name: dartLabTemplatesRepositoryAlias
+  type: string
+  default: DartLabTemplates
+- name: fsharpRepositoryAlias
+  type: string
+  default: self
+
+stages:
+- template: /stages/visual-studio/agent.yml@${{ parameters.dartLabTemplatesRepositoryAlias }}
+  parameters:
+    name: FSharpVSIntegration
+    displayName: F# VS Integration (Apex)
+    testLabPoolName: VS-Platform
+    testMachineCleanUpStrategy: ${{ parameters.testMachineCleanUpStrategy }}
+    testMachineRetention: ${{ parameters.testMachineRetention }}
+    templateContext:
+      # Confirm these values with the DartLab owners before enabling the pipeline.
+      owner: fsharp
+      areaPath: DevDiv\NET Developer Experience\FSharp
+    visualStudioBootstrapperURI: ${{ iif(eq(parameters.visualStudioBootstrapperURI, '(default)'), 'https://vsdrop.corp.microsoft.com/file/v1/$(VisualStudio.BuildUnderTest.ProductsDropName);bootstrappers/Enterprise/vs_enterprise.exe', parameters.visualStudioBootstrapperURI) }}
+    visualStudioInstallationParameters: >-
+      --add Microsoft.VisualStudio.Component.CoreEditor
+      --add Microsoft.VisualStudio.Workload.CoreEditor
+      --add Microsoft.Component.MSBuild
+      --add Microsoft.NetCore.Component.SDK
+      --add Microsoft.NetCore.Component.Runtime.8.0
+      --add Microsoft.NetCore.Component.DevelopmentTools
+      --add Microsoft.Net.Component.4.7.2.TargetingPack
+      --add Microsoft.Net.Component.4.8.SDK
+      --add Microsoft.VisualStudio.Component.Roslyn.Compiler
+      --add Microsoft.VisualStudio.Component.Roslyn.LanguageServices
+      --add Microsoft.VisualStudio.Component.FSharp
+      --add Microsoft.VisualStudio.Component.FSharp.Desktop
+      --add Microsoft.VisualStudio.Component.ManagedDesktop.Core
+      --add Microsoft.VisualStudio.Component.ManagedDesktop.Prerequisites
+      --add Microsoft.VisualStudio.Workload.ManagedDesktop
+      --add Microsoft.Component.CodeAnalysis.SDK
+      --add Microsoft.VisualStudio.Component.VSSDK
+      --add Microsoft.VisualStudio.ComponentGroup.VisualStudioExtension.Prerequisites
+      --add Microsoft.VisualStudio.Workload.VisualStudioExtension
+      --installPath "C:\Test\VisualStudio" --quiet --norestart --wait
+    testExecutionJobStrategy:
+      matrix:
+        release:
+          _configuration: Release
+    testMachineTotalCount: 1
+    testAgentElevated: true
+    preTestMachineConfigurationStepList:
+    - checkout: none
+    - task: DownloadBuildArtifacts@1
+      displayName: Download Visual Studio build artifacts
+      inputs:
+        buildType: specific
+        project: $(resources.pipeline.VisualStudioBuildUnderTest.projectID)
+        definition: $(resources.pipeline.VisualStudioBuildUnderTest.pipelineID)
+        buildVersionToDownload: specific
+        buildId: $(resources.pipeline.VisualStudioBuildUnderTest.runID)
+        downloadType: specific
+        artifactName: BuildArtifacts
+        downloadPath: $(Pipeline.Workspace)\VisualStudioBuildUnderTest
+    - task: PowerShell@2
+      name: SetProductsDropName
+      displayName: Set 'VisualStudio.BuildUnderTest.ProductsDropName'
+      inputs:
+        filePath: $(DartLab.Path)\Scripts\VisualStudio\Build\Get-VisualStudioDropName.ps1
+        arguments: -DropNamePrefix 'Products' -VstsDropUrlsJson '$(Pipeline.Workspace)\VisualStudioBuildUnderTest\BuildArtifacts\VstsDropUrls.json' -OutVariableName 'VisualStudio.BuildUnderTest.ProductsDropName'
+    deployAndRunTestsStepList:
+    - checkout: self
+      clean: true
+      fetchDepth: 1
+      fetchTags: false
+      persistCredentials: false
+    - task: PowerShell@2
+      displayName: Verify and check out PR snapshot
+      inputs:
+        targetType: inline
+        script: |
+          & .\eng\setup-pr-validation.ps1 -prNumber $env:PR_NUMBER -headSha $env:HEAD_SHA -baseSha $env:BASE_SHA
+      env:
+        PR_NUMBER: ${{ parameters.prNumber }}
+        HEAD_SHA: ${{ parameters.headSha }}
+        BASE_SHA: ${{ parameters.baseSha }}
+    - template: /eng/pipelines/apex-integration/integration-job.yml@${{ parameters.fsharpRepositoryAlias }}
+      parameters:
+        configuration: $(_configuration)
+        testCaseFilter: ${{ parameters.testCaseFilter }}

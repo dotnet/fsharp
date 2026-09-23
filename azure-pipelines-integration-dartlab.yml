@@ -1,0 +1,62 @@
+# Register in DevDiv with GitHub dotnet/fsharp as self. See eng/pipelines/apex-integration/README.md.
+trigger: none
+pr: none
+
+resources:
+  pipelines:
+  - pipeline: VisualStudioBuildUnderTest
+    source: DD-CB-ReleaseVS
+    trigger: none
+  repositories:
+  - repository: DartLab
+    type: git
+    name: DevDiv/DartLab
+    ref: refs/tags/Production
+  - repository: DartLabTemplates
+    type: git
+    name: DevDiv/DartLab.Templates
+    ref: refs/heads/main
+  - repository: VSTemplates
+    type: git
+    name: DevDiv/VS.Templates
+    ref: refs/heads/main
+
+parameters:
+- name: prNumber
+  type: string
+- name: headSha
+  type: string
+- name: baseSha
+  type: string
+- name: visualStudioBootstrapperURI
+  type: string
+  default: '(default)'
+- name: testCaseFilter
+  type: string
+  default: '(all)'
+- name: testMachineCleanUpStrategy
+  displayName: Test Machine Clean Up Strategy
+  type: string
+  default: delete
+  values:
+  - delete
+  - stop
+- name: testMachineRetention
+  displayName: Test Machine Retention (format "D:H:M:S")
+  type: string
+  default: 1:0:0:0
+
+extends:
+  template: /DartLab/1ES/pipelines/ci/build.yml@VSTemplates
+  parameters:
+    dartLabTemplatesRepositoryAlias: DartLab
+    testStages:
+    - template: /eng/pipelines/apex-integration/stage.yml@self
+      parameters:
+        prNumber: ${{ parameters.prNumber }}
+        headSha: ${{ parameters.headSha }}
+        baseSha: ${{ parameters.baseSha }}
+        visualStudioBootstrapperURI: ${{ parameters.visualStudioBootstrapperURI }}
+        testCaseFilter: ${{ parameters.testCaseFilter }}
+        testMachineCleanUpStrategy: ${{ parameters.testMachineCleanUpStrategy }}
+        testMachineRetention: ${{ parameters.testMachineRetention }}
