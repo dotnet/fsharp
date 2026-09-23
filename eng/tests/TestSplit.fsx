@@ -1,8 +1,9 @@
-/// Test split table for parallel CI.
+/// Test selection for aggregate runs and parallel CI.
 /// Edit the batch assignments below, then run:
 ///   dotnet fsi eng/tests/TestSplit.fsx <batchNumber> [desktop|coreclr]
 /// to get the dotnet test commands for that batch.
 /// The platform argument controls which projects are included (default: all).
+/// For an unbatched run: dotnet fsi eng/tests/TestSplit.fsx --all <desktop|coreclr>
 ///
 /// Validation mode (used in CI to catch unregistered test projects):
 ///   dotnet fsi eng/tests/TestSplit.fsx --validate
@@ -41,7 +42,7 @@ let componentTestsAtoms =
         // Batch 3 is reserved for FSharpSuite.Tests (desktop-only); no component atoms.
     ]
 
-// Platform tags: "all" = both desktop and coreclr, "desktop" = net472 only
+// Aggregate platforms: "all" = both, "desktop" = net472, "coreclr" = .NET only.
 let otherProjects =
     [// project path                                                                         batch  platform
         "tests/FSharp.Build.UnitTests/FSharp.Build.UnitTests.fsproj",                        1,     "all"
@@ -53,7 +54,7 @@ let otherProjects =
     ]
 
 // ── excluded projects ──
-// Projects under tests/ that are intentionally not run in batched CI.
+// Projects under tests/ that are intentionally not run in aggregate tests.
 // If you add a new test project under tests/, either add it to otherProjects above
 // or to one of these exclusion lists. Run --validate to check.
 
@@ -108,7 +109,7 @@ if isValidateMode then
 
     if unaccounted.Length > 0 then
         eprintfn "ERROR: The following test projects are not registered in TestSplit.fsx."
-        eprintfn "Add them to otherProjects (to run in batched CI), excludedProjects, or excludedPrefixes."
+        eprintfn "Add them to otherProjects (to run in aggregate tests), excludedProjects, or excludedPrefixes."
         for p in unaccounted do
             eprintfn "  %s" p
         exit 1
@@ -119,16 +120,19 @@ if isValidateMode then
 // ── filter generation ──
 
 let batch, platform =
-    match fsi.CommandLineArgs with
-    | [| _; n |] ->
-        let v = int n
-        if v < 1 || v > totalBatches then failwith $"Batch number must be between 1 and {totalBatches}, got {v}"
-        v, "all"
-    | [| _; n; p |] ->
-        let v = int n
-        if v < 1 || v > totalBatches then failwith $"Batch number must be between 1 and {totalBatches}, got {v}"
-        v, p
-    | _ -> failwith "Usage: dotnet fsi eng/tests/TestSplit.fsx <batchNumber> [desktop|coreclr] | --validate"
+    let selection, platform =
+        match fsi.CommandLineArgs with
+        | [| _; n |] when n <> "--all" -> n, "all"
+        | [| _; n; ("desktop" | "coreclr" as p) |] -> n, p
+        | [| _; n; "all" |] when n <> "--all" -> n, "all"
+        | _ -> failwith "Usage: dotnet fsi eng/tests/TestSplit.fsx <batchNumber> [desktop|coreclr] | --all <desktop|coreclr> | --validate"
+
+    if selection = "--all" then
+        None, platform
+    else
+        match System.Int32.TryParse selection with
+        | true, v when v >= 1 && v <= totalBatches -> Some v, platform
+        | _ -> failwith $"Batch number must be between 1 and {totalBatches}, got '{selection}'"
 
 let matchesPlatform tag =
     tag = "all" || tag = platform || platform = "all"
@@ -147,26 +151,28 @@ let atomsForBatch b =
 
 let otherBatchesAtoms =
     componentTestsAtoms
-    |> List.filter (fun (_, b) -> b <> batch)
+    |> List.filter (fun (_, b) -> Some b <> batch)
     |> List.collect (fst >> expandAtom)
     |> List.distinct
     |> List.sort
 
 let batchHasComponentAtoms =
-    componentTestsAtoms |> List.exists (fun (_, b) -> b = batch)
+    componentTestsAtoms |> List.exists (fun (_, b) -> Some b = batch)
 
 let filterArgs =
-    if batch = residualBatch then
+    match batch with
+    | None -> ""
+    | Some b when b = residualBatch ->
         let atoms = otherBatchesAtoms |> String.concat " "
         $"--filter-not-namespace {atoms}"
-    else
-        let atoms = atomsForBatch batch |> String.concat " "
+    | Some b ->
+        let atoms = atomsForBatch b |> String.concat " "
         $"--filter-namespace {atoms}"
 
 // Output format contract: each line must be "dotnet test <project> --no-build -c Release [filterargs]".
-// Consumers: Build.ps1 parses via regex, build.sh parses via sed. Keep in sync if changing format.
-if batchHasComponentAtoms || batch = residualBatch then
-    printfn $"dotnet test {componentTests} --no-build -c Release {filterArgs}"
+// Consumers: Build.ps1 and build.sh parse via regex. Keep in sync if changing format.
+if batch.IsNone || batchHasComponentAtoms || batch = Some residualBatch then
+    printfn "%s" ($"dotnet test {componentTests} --no-build -c Release {filterArgs}".TrimEnd())
 
-for (proj, _, tag) in otherProjects |> List.filter (fun (_, b, tag) -> b = batch && matchesPlatform tag) do
+for (proj, _, _) in otherProjects |> List.filter (fun (_, b, tag) -> (batch.IsNone || Some b = batch) && matchesPlatform tag) do
     printfn $"dotnet test {proj} --no-build -c Release"
