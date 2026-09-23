@@ -158,3 +158,7 @@ addition in `corpus.md`. Scope mutation tests additionally reject undecided or
 source-less rows, identity-only exclusion, mutable temporal evidence, shifted
 ordinals, coordinated family renaming, unknown exposure presented as fresh,
 copied human provenance and changes to the predeclared protocol.
+Freshness tests first validate an isolated metadata-only holdout, then add
+unknown exposure or invalidate one audit at a time. Family summaries and
+test-only seals stay consistent, so unrelated validation failures cannot
+satisfy these assertions; production exposure records remain unchanged.

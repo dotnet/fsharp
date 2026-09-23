@@ -420,10 +420,11 @@ def validate_exposure(discovery, rows, exposure, protocol):
                     f"{channel}: missing access rationale")
         require(type(record.get("fresh")) is bool, f"{channel}: missing freshness decision")
         if record["fresh"]:
-            require(not any(e["kind"] in semantic for e in events)
-                    and record.get("access_audit_complete") is True
-                    and record.get("connection_audit_complete") is True,
+            require(not any(e["kind"] in semantic for e in events),
                     f"{channel}: unknown or semantic exposure cannot be fresh")
+            require(record.get("access_audit_complete") is True
+                    and record.get("connection_audit_complete") is True,
+                    f"{channel}: freshness requires complete access and connection audits")
         authorship = record.get("authorship", {})
         subject = f"pr-{n}:description"
         require(isinstance(authorship, dict) and authorship.get("subject") == subject

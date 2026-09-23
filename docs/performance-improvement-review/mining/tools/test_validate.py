@@ -235,16 +235,32 @@ class ScopeTests(unittest.TestCase):
             validate.validate_exposure(self.discovery, rows, self.exposure, self.protocol)
 
     def test_unknown_exposure_cannot_be_fresh(self):
-        exposure = copy.deepcopy(self.exposure)
-        exposure["prs"][0]["fresh"] = True
-        exposure["prs"][0]["events"].append({
+        discovery, rows, exposure, family, record = self.metadata_only_holdout()
+        validate.validate_exposure(discovery, rows, exposure, self.protocol)
+        record["events"].append({
             "kind": "unknown", "at": exposure["frozen_at"],
             "source_ids": ["decisions"], "detail": "Access history is incomplete.",
         })
-        with self.assertRaises(validate.ValidationError):
-            validate.validate_exposure(self.discovery, self.rows, exposure, self.protocol)
+        family["exposure_kinds"] = sorted({e["kind"] for e in record["events"]})
+        discovery["scope_freeze"]["exposure_sha256"] = validate.digest(exposure)
+        with self.assertRaisesRegex(
+                validate.ValidationError,
+                f"^PR {record['pr']}/exposure: unknown or semantic exposure cannot be fresh$"):
+            validate.validate_exposure(discovery, rows, exposure, self.protocol)
 
-    def test_metadata_acquisition_is_not_semantic_exposure(self):
+    def test_freshness_requires_complete_audits(self):
+        for audit in ("access_audit_complete", "connection_audit_complete"):
+            with self.subTest(audit=audit):
+                discovery, rows, exposure, _, record = self.metadata_only_holdout()
+                validate.validate_exposure(discovery, rows, exposure, self.protocol)
+                record[audit] = False
+                discovery["scope_freeze"]["exposure_sha256"] = validate.digest(exposure)
+                with self.assertRaisesRegex(
+                        validate.ValidationError,
+                        f"^PR {record['pr']}/exposure: freshness requires complete access and connection audits$"):
+                    validate.validate_exposure(discovery, rows, exposure, self.protocol)
+
+    def metadata_only_holdout(self):
         rows, exposure = copy.deepcopy(self.rows), copy.deepcopy(self.exposure)
         family = next(f for f in exposure["families"] if len(f["prs"]) == 1)
         n = family["prs"][0]
@@ -257,7 +273,7 @@ class ScopeTests(unittest.TestCase):
         next(r for r in rows if r["pr"] == n)["split"] = "holdout"
         discovery = copy.deepcopy(self.discovery)
         discovery["scope_freeze"]["exposure_sha256"] = validate.digest(exposure)
-        validate.validate_exposure(discovery, rows, exposure, self.protocol)
+        return discovery, rows, exposure, family, record
 
     def test_connected_family_cannot_straddle_splits(self):
         rows = copy.deepcopy(self.rows)
