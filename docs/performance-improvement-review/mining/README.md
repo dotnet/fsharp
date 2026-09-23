@@ -95,8 +95,14 @@ rows, duplicate numbers/nodes, changed repository/cutoff, missing memberships,
 fabricated completion, malformed JSON, optimized execution, historical-status
 non-promotion and fail-closed stages. The original corpus table parser also
 distinguishes delimiters from their later reproduction-code quotation.
+Temporary archives exercise `recover()` and the collector entry point together:
+paginated and overlapping queries, empty queries, linked PRs, historical
+development/holdout receipts, source hashes and unchanged-cache/output reuse.
+Parameterized failures cover missing, malformed, ambiguous and inconsistent
+receipts. A byte-only source change must fail the frozen seal before creating
+outputs or modifying existing ones. These tests need no workstation archive.
 
-Recovery results: 13 tests pass normally and under `python -O`; inventory passes
+Recovery results: 16 tests pass normally and under `python -O`; inventory passes
 with exactly 485 rows; `complete` exits 1 with 485 pending inspections. Offline
 reproduction reuses identical outputs with zero network requests. Frozen-file
 hashes match the starting Git blobs, and `git diff --check` passes.
