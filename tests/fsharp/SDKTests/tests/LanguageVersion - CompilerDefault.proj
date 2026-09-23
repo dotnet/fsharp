@@ -7,7 +7,7 @@
     <DisableImplicitSystemValueTupleReference>true</DisableImplicitSystemValueTupleReference>
   </PropertyGroup>
 
-  <Import Project="..\..\..\..\src\FSharp.Build\Microsoft.FSharp.NetSdk.props" />
+  <Import Project="PackageTest.props" />
 
   <Target Name="Test">
     <MSBuild Projects="$(MSBuildProjectFullPath)" Targets="Check"

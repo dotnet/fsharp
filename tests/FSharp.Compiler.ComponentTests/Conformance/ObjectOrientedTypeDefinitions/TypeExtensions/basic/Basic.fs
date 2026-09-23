@@ -111,6 +111,7 @@ module TypeExtensionsBasic =
         compilation
         |> getCompilation
         |> asExe
+        |> withLangVersion11
         |> withOptions ["--test:ErrorRanges"; "--warnaserror+"]
         |> typecheck
         |> shouldFail
