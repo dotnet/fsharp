@@ -93,7 +93,7 @@ let result = Example.Compare(5, "hi", Ok 7)
                  "module Test\ntype Tupler =\n    static member Pack<'a, 'b>(x: 'a * 'b) = \"generic\"\n    static member Pack<'b>(x: int * 'b) = \"int first\"\nlet result = Tupler.Pack((42, \"hello\"))\nif result <> \"int first\" then failwithf \"Expected 'int first' but got '%s'\" result"
         ]
 
-    // Edge-case matrix: every row is FS0041 at --langversion:default and resolves to the concrete
+    // Edge-case matrix: every row is FS0041 at --langversion:10.0 and resolves to the concrete
     // overload "c" at preview, covering the member kinds the feature must serve: naked generics,
     // constructors, extension methods, static and instance methods on a generic type, optionals,
     // and paramarray.
@@ -1313,8 +1313,10 @@ let result = wrapTwice 21
         |> shouldSucceed
         |> ignore
 
-    [<Fact>]
-    let ``LangVersion Latest - Non-generic overload preferred over generic - existing behavior`` () =
+    [<Theory>]
+    [<InlineData("11.0")>]
+    [<InlineData("latest")>]
+    let ``Non-generic overload preferred over generic - existing behavior`` langVersion =
         FSharp """
 module Test
 
@@ -1324,13 +1326,15 @@ type Example =
 
 let result = Example.Process(42)
         """
-        |> withLangVersion "latest"
+        |> withLangVersion langVersion
         |> typecheck
         |> shouldSucceed
         |> ignore
 
-    [<Fact>]
-    let ``LangVersion Latest - Non-extension method preferred over extension - existing behavior`` () =
+    [<Theory>]
+    [<InlineData("11.0")>]
+    [<InlineData("latest")>]
+    let ``Non-extension method preferred over extension - existing behavior`` langVersion =
         FSharp """
 module Test
 
@@ -1346,7 +1350,7 @@ open Extensions
 let t = MyType()
 let result = t.Invoke(42)
         """
-        |> withLangVersion "latest"
+        |> withLangVersion langVersion
         |> typecheck
         |> shouldSucceed
         |> ignore
