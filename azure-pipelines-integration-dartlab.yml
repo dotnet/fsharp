@@ -1,0 +1,95 @@
+# F# VS integration (Apex) test gate — runs against a Visual Studio installed via the VS
+# bootstrapper on internal DartLab test machines, so the VS matches what this repo targets.
+#
+# SCAFFOLD — modeled on dotnet/roslyn's azure-pipelines-integration-dartlab.yml.
+# This pipeline is INTERNAL-only and requires DevDiv/DartLab access that is not part of this
+# repo. See eng/pipelines/apex-integration/README.md for the P0 prerequisites and every
+# `# TODO(P0):` below for the real values that must be supplied before it can run.
+
+trigger: none
+pr: none
+
+resources:
+  pipelines:
+  # The VS build under test: DartLab installs the bootstrapper from this build's drop, so the
+  # installed VS matches what F# is inserted into. `trigger: none` means a new VS build does NOT
+  # auto-run this pipeline — it is started on demand by the `/pr-val` (or `/dart`) PR comment via
+  # .github/workflows/pr-validation.yml. When started that way the resource resolves to the latest
+  # DD-CB-ReleaseVS build, giving a recent matching VS.
+  # TODO(P0): confirm with the DartLab/VS team which VS build pipeline supplies the matching VS for
+  # F# (the VS release build that consumes the F# insertion). Keeping Roslyn's as a starting point.
+  - pipeline: VisualStudioBuildUnderTest
+    source: DD-CB-ReleaseVS
+    trigger: none
+  repositories:
+  # DartLab core (provides /DartLab/... templates, Scripts, etc.). Pinned to the Production tag.
+  - repository: DartLab
+    type: git
+    name: DevDiv/DartLab
+    ref: refs/tags/Production
+  - repository: DartLabTemplates
+    type: git
+    name: DevDiv/DartLab.Templates
+    ref: refs/heads/main
+  - repository: VSTemplates
+    type: git
+    name: DevDiv/VS.Templates
+    ref: refs/heads/main
+  # Internal mirror of dotnet/fsharp — confirmed to exist at
+  # https://dev.azure.com/dnceng/internal/_git/dotnet-fsharp (project `internal`, repo
+  # `dotnet-fsharp`). Reachable via the `dnceng-internal-code-access` service connection (same
+  # endpoint Roslyn uses for `internal/dotnet-roslyn`).
+  # TODO(P0): confirm the `dnceng-internal-code-access` service connection is authorized for this
+  # pipeline once it is registered.
+  - repository: FSharpMirror
+    endpoint: dnceng-internal-code-access
+    type: git
+    name: internal/dotnet-fsharp
+    ref: $(Build.SourceBranch)
+
+parameters:
+  - name: prNumber
+    type: string
+    default: 'None'
+  - name: sha
+    type: string
+    default: 'None'
+  - name: EnforceLatestCommit
+    type: boolean
+    default: true
+  # '(default)' => stage.yml resolves the bootstrapper from the VS-build-under-test drop.
+  - name: visualStudioBootstrapperURI
+    type: string
+    default: '(default)'
+  - name: testCaseFilter
+    type: string
+    default: '(all)'
+  # Set to 'stop' to keep the test machine around for investigation after the run.
+  - name: testMachineCleanUpStrategy
+    displayName: Test Machine Clean Up Strategy
+    type: string
+    default: delete
+    values:
+    - delete
+    - stop
+  # Retention period for the test machine (format "D:H:M:S").
+  - name: testMachineRetention
+    displayName: Test Machine Retention (format "D:H:M:S")
+    type: string
+    default: 1:0:0:0
+
+extends:
+  # Matches Roslyn's current entry template (they moved off real-sign.yml to build.yml).
+  template: /DartLab/1ES/pipelines/ci/build.yml@VSTemplates
+  parameters:
+    dartLabTemplatesRepositoryAlias: DartLab
+    testStages:
+    - template: /eng/pipelines/apex-integration/stage.yml@self
+      parameters:
+        prNumber: ${{ parameters.prNumber }}
+        sha: ${{ parameters.sha }}
+        EnforceLatestCommit: ${{ parameters.EnforceLatestCommit }}
+        visualStudioBootstrapperURI: ${{ parameters.visualStudioBootstrapperURI }}
+        testCaseFilter: ${{ parameters.testCaseFilter }}
+        testMachineCleanUpStrategy: ${{ parameters.testMachineCleanUpStrategy }}
+        testMachineRetention: ${{ parameters.testMachineRetention }}

@@ -1,0 +1,72 @@
+# Deploy the F# VSIX and run the Apex VS integration tests against the VS installed on this
+# DartLab machine (at C:\Test\VisualStudio). SCAFFOLD — mirrors dotnet/roslyn's
+# eng/pipelines/test-integration-job.yml, reusing this repo's existing -testApex path.
+#
+# Because the installed VS MATCHES the repo's pins, no Roslyn/System.* version override is needed
+# (the old public-CI FSHARP_APEX_ROSLYN_VERSION workaround has been removed). Only the
+# first-launch/registry prep and the /NoSigninPrompt launch arg from the public leg are reused.
+
+parameters:
+  - name: configuration
+    type: string
+    default: 'Release'
+  - name: testCaseFilter
+    type: string
+    default: ''
+
+steps:
+  # Checkout is performed by the DartLab deployAndRunTestsStepList, so skip it here.
+
+  # Point Apex at the VS the bootstrapper installed on this machine.
+  - powershell: |
+      $devenv = 'C:\Test\VisualStudio\Common7\IDE\devenv.exe'
+      if (-not (Test-Path $devenv)) { Write-Host "##vso[task.logissue type=error]devenv not found at $devenv"; exit 1 }
+      Write-Host "##vso[task.setvariable variable=VisualStudio.InstallationUnderTest.Path]$devenv"
+      Write-Host "Apex will target: $devenv"
+    displayName: Select installed VS for Apex
+
+  - task: PowerShell@2
+    displayName: Enable Long Paths
+    inputs:
+      targetType: 'inline'
+      script: reg add HKLM\SYSTEM\CurrentControlSet\Control\FileSystem /v LongPathsEnabled /t REG_DWORD /d 1 /f
+
+  # First-launch / experimental-hive registry prep + non-interactive settings import (shared with
+  # the public leg). Suppresses the sign-in ISE so devenv reaches automation-ready state.
+  - powershell: eng\SetupVSHive.ps1
+    displayName: Setup VS Hive
+
+  # Build F#, deploy the VSIX into the RoslynDev hive, and run the Apex tests via -testApex.
+  # The installed VS matches the repo pins, so no Roslyn/System.* override is applied.
+  - script: eng\CIBuildNoPublish.cmd -configuration ${{ parameters.configuration }} -deployExtensions -testApex
+    env:
+      NativeToolsOnMachine: true
+    displayName: Build, deploy extension and run Apex integration tests
+
+  - task: PublishTestResults@2
+    displayName: Publish Apex Test Results
+    inputs:
+      testResultsFormat: 'VSTest'
+      testRunTitle: 'FSharpVSIntegration ${{ parameters.configuration }}'
+      mergeTestResults: true
+      testResultsFiles: '*.trx'
+      searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/${{ parameters.configuration }}'
+    condition: succeededOrFailed()
+
+  - task: PublishBuildArtifacts@1
+    displayName: Publish Apex Test Logs
+    inputs:
+      PathtoPublish: '$(Build.SourcesDirectory)\artifacts\TestResults\${{ parameters.configuration }}'
+      ArtifactName: 'FSharp Apex ${{ parameters.configuration }} test logs $(System.JobAttempt)'
+      publishLocation: Container
+    continueOnError: true
+    condition: always()
+
+  - task: PublishBuildArtifacts@1
+    displayName: Publish Apex Build Logs
+    inputs:
+      PathToPublish: '$(Build.SourcesDirectory)\artifacts\log\${{ parameters.configuration }}'
+      ArtifactName: 'FSharp Apex ${{ parameters.configuration }} build logs $(System.JobAttempt)'
+      publishLocation: Container
+    continueOnError: true
+    condition: always()
