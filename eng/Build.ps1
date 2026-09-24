@@ -284,11 +284,10 @@ function Update-Arguments() {
 
 
 function BuildSolution([string] $solutionName, $packSolution) {
-        Write-Host "${solutionName}:"
+    Write-Host "${solutionName}:"
 
     $bl = if ($binaryLog) { "/bl:" + (Join-Path $LogDir "Build.$solutionName.binlog") } else { "" }
-
-    $projects = Join-Path $RepoRoot  $solutionName
+    $projects = Join-Path $RepoRoot $solutionName
     $officialBuildId = if ($official) { $env:BUILD_BUILDNUMBER } else { "" }
     $toolsetBuildProj = InitializeToolset
     $quietRestore = !$ci
@@ -386,7 +385,7 @@ function TestUsingMSBuild([string] $testProject, [string] $targetFramework, [str
     $xunitLogFileName = "{assembly}.{framework}.${jobName}.xml"
     $reportArgs = "--report-spekt-xunit --report-spekt-xunit-filename ""$xunitLogFileName"""
 
-    $test_args = "test $testTarget -c $configuration -f $targetFramework $reportArgs --results-directory ""$testResultsDir"" /bl:$testBinLogPath"
+    $test_args = "test $testTarget -c $configuration -f $targetFramework $reportArgs --results-directory ""$testResultsDir"" /bl:""$testBinLogPath"""
     # MTP HangDump extension replaces VSTest --blame-hang-timeout
     $test_args += " --hangdump --hangdump-timeout 5m --hangdump-type Full"
 
@@ -403,6 +402,27 @@ function TestUsingMSBuild([string] $testProject, [string] $targetFramework, [str
     Write-Host("$test_args")
 
     Exec-Console $dotnetExe $test_args
+}
+
+function TestFromManifest([string] $platform, [string] $selection = "--all") {
+    $dotnetPath = InitializeDotNetCli
+    $dotnetExe = Join-Path $dotnetPath "dotnet.exe"
+    $splitScript = Join-Path $RepoRoot "eng\tests\TestSplit.fsx"
+    $splitOutput = & $dotnetExe fsi $splitScript $selection $platform
+    if ($LASTEXITCODE -ne 0) { throw "TestSplit.fsx failed with exit code $LASTEXITCODE" }
+    $targetFramework = if ($platform -eq "desktop") { $script:desktopTargetFramework } else { $script:coreclrTargetFramework }
+    $matchCount = 0
+    foreach ($line in $splitOutput) {
+        if ([string]::IsNullOrWhiteSpace($line)) { continue }
+        if ($line -notmatch '^dotnet test (\S+) --no-build -c Release(?:\s+(.*))?$') {
+            throw "Unexpected TestSplit.fsx output: $line"
+        }
+        $projPath = Join-Path $RepoRoot ($Matches[1] -replace '/', '\')
+        $settings = if ($Matches[2]) { $Matches[2].Trim() } else { "" }
+        TestUsingMSBuild -testProject $projPath -targetFramework $targetFramework -settings $settings
+        $matchCount++
+    }
+    if ($matchCount -eq 0) { throw "No test commands parsed from TestSplit.fsx output" }
 }
 
 function Prepare-TempDir() {
@@ -600,29 +620,14 @@ try {
     $script:BuildMessage = "Failure running tests"
 
     if ($testCoreClr) {
-        TestUsingMSBuild -testProject "$RepoRoot\FSharp.slnx" -targetFramework $script:coreclrTargetFramework
+        TestFromManifest -platform coreclr
     }
 
     if ($testDesktop) {
         if ($testDesktopBatch -ne "") {
-            $dotnetPath = InitializeDotNetCli
-            $dotnetExe = Join-Path $dotnetPath "dotnet.exe"
-            $splitScript = Join-Path $RepoRoot "eng\tests\TestSplit.fsx"
-            $splitOutput = & $dotnetExe fsi $splitScript $testDesktopBatch desktop
-            if ($LASTEXITCODE -ne 0) { throw "TestSplit.fsx failed with exit code $LASTEXITCODE" }
-            $matchCount = 0
-            foreach ($line in $splitOutput) {
-                if ($line -match '^dotnet test (\S+) --no-build -c Release\s*(.*)$') {
-                    $proj = $Matches[1] -replace '/', '\'
-                    $projPath = Join-Path $RepoRoot $proj
-                    $settings = $Matches[2].Trim()
-                    TestUsingMSBuild -testProject $projPath -targetFramework $script:desktopTargetFramework -settings $settings
-                    $matchCount++
-                }
-            }
-            if ($matchCount -eq 0) { throw "No test commands parsed from TestSplit.fsx output" }
+            TestFromManifest -platform desktop -selection $testDesktopBatch
         } else {
-            TestUsingMSBuild -testProject "$RepoRoot\FSharp.slnx" -targetFramework $script:desktopTargetFramework
+            TestFromManifest -platform desktop
         }
     }
 

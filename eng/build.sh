@@ -397,34 +397,29 @@ BuildSolution
 if [[ "$test_core_clr" == true ]]; then
   coreclrtestframework=$tfm
 
-  if [[ "$test_core_clr_batch" != "" ]]; then
-    # Run batched: use TestSplit.fsx to get the commands for this batch
-    splitOutput=$("$DOTNET_INSTALL_DIR/dotnet" fsi "$scriptroot/tests/TestSplit.fsx" "$test_core_clr_batch" coreclr)
-    fsi_exit=$?
-    if [[ $fsi_exit -ne 0 ]]; then
-      echo "TestSplit.fsx failed with exit code $fsi_exit"
+  splitOutput=$("$DOTNET_INSTALL_DIR/dotnet" fsi "$scriptroot/tests/TestSplit.fsx" "${test_core_clr_batch:---all}" coreclr)
+  fsi_exit=$?
+  if [[ $fsi_exit -ne 0 ]]; then
+    echo "TestSplit.fsx failed with exit code $fsi_exit"
+    ExitWithExitCode "$fsi_exit"
+  fi
+  matchCount=0
+  commandPattern='^dotnet test ([^[:space:]]+) --no-build -c Release([[:space:]]+(.*))?$'
+  while IFS= read -r line; do
+    line="${line%$'\r'}"
+    [[ "$line" =~ ^[[:space:]]*$ ]] && continue
+    if [[ ! "$line" =~ $commandPattern ]]; then
+      echo "Unexpected TestSplit.fsx output: $line"
       ExitWithExitCode 1
     fi
-    matchCount=0
-    while IFS= read -r line; do
-      [[ "$line" =~ ^dotnet\ test ]] || continue
-      # Extract project path and extra filter args from each line
-      project=$(echo "$line" | sed 's/^dotnet test //' | sed 's/ --no-build.*//')
-      filterargs=$(echo "$line" | sed 's/^dotnet test [^ ]* --no-build -c Release *//')
-      Test --testproject "$repo_root/$project" --targetframework $coreclrtestframework --extraargs "$filterargs"
-      matchCount=$((matchCount + 1))
-    done <<< "$splitOutput"
-    if [[ $matchCount -eq 0 ]]; then
-      echo "No test commands parsed from TestSplit.fsx output"
-      ExitWithExitCode 1
-    fi
-  else
-    # Run all tests without batching
-    Test --testproject "$repo_root/tests/FSharp.Compiler.ComponentTests/FSharp.Compiler.ComponentTests.fsproj" --targetframework $coreclrtestframework
-    Test --testproject "$repo_root/tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj" --targetframework $coreclrtestframework
-    Test --testproject "$repo_root/tests/FSharp.Compiler.Private.Scripting.UnitTests/FSharp.Compiler.Private.Scripting.UnitTests.fsproj" --targetframework $coreclrtestframework
-    Test --testproject "$repo_root/tests/FSharp.Build.UnitTests/FSharp.Build.UnitTests.fsproj" --targetframework $coreclrtestframework
-    Test --testproject "$repo_root/tests/FSharp.Core.UnitTests/FSharp.Core.UnitTests.fsproj" --targetframework $coreclrtestframework
+    project="${BASH_REMATCH[1]}"
+    filterargs="${BASH_REMATCH[3]}"
+    Test --testproject "$repo_root/$project" --targetframework "$coreclrtestframework" --extraargs "$filterargs"
+    matchCount=$((matchCount + 1))
+  done <<< "$splitOutput"
+  if [[ $matchCount -eq 0 ]]; then
+    echo "No test commands parsed from TestSplit.fsx output"
+    ExitWithExitCode 1
   fi
 fi
 
