@@ -32,7 +32,7 @@ module Event =
     ///
     /// let result = Event.merge oneSecondTimer fiveSecondsTimer
     ///
-    /// result.Subscribe(fun output -> printfn $"Output - {output.SignalTime} ")
+    /// result.Subscribe(fun output -> printn $"Output - {output.SignalTime} ")
     /// |> ignore
     ///
     /// Console.ReadLine() |> ignore
@@ -71,7 +71,7 @@ module Event =
     ///
     /// let evenSecondsEvent = Event.map transformSeconds timer
     ///
-    /// evenSecondsEvent.Subscribe(fun x -> printf $"{x} ")
+    /// evenSecondsEvent.Subscribe(fun x -> print $"{x} ")
     /// |> ignore
     ///
     /// Console.ReadLine() |> ignore
@@ -107,7 +107,7 @@ module Event =
     ///
     /// let evenSecondsEvent = Event.filter getEvenSeconds timer
     ///
-    /// evenSecondsEvent.Subscribe(fun x -> printfn $"{x} ")
+    /// evenSecondsEvent.Subscribe(fun x -> printn $"{x} ")
     /// |> ignore
     ///
     /// Console.ReadLine() |> ignore
@@ -148,10 +148,10 @@ module Event =
     ///
     /// let leftPartition, rightPartition = Event.partition getEvenSeconds timer
     ///
-    /// leftPartition.Subscribe(fun x -> printfn $"Left partition: {x.SignalTime}")
+    /// leftPartition.Subscribe(fun x -> printn $"Left partition: {x.SignalTime}")
     /// |> ignore
     ///
-    /// rightPartition.Subscribe(fun x -> printfn $"Right partition: {x.SignalTime}")
+    /// rightPartition.Subscribe(fun x -> printn $"Right partition: {x.SignalTime}")
     /// |> ignore
     ///
     /// Console.ReadLine() |> ignore
@@ -195,7 +195,7 @@ module Event =
     /// let evenSplit, printOddNumbers = Event.split bySeconds timer
     ///
     /// let printOutput event functionName =
-    ///     Event.add (fun output -> printfn $"{functionName} - Split output: {output}. /// Type: {output.GetType()}") event
+    ///     Event.add (fun output -> printn $"{functionName} - Split output: {output}. /// Type: {output.GetType()}") event
     ///
     /// printOutput evenSplit (nameof evenSplit) |> ignore
     ///
@@ -240,7 +240,7 @@ module Event =
     ///
     /// let evenSecondsEvent = Event.choose getEvenSeconds timer
     ///
-    /// evenSecondsEvent.Subscribe(fun x -> printfn $"{x} ")
+    /// evenSecondsEvent.Subscribe(fun x -> printn $"{x} ")
     /// |> ignore
     ///
     /// Console.ReadLine() |> ignore
@@ -308,7 +308,7 @@ module Event =
     ///
     /// let timer = createTimer 1000
     ///
-    /// Event.add (fun (event: Timers.ElapsedEventArgs) -> printfn $"{event.SignalTime} ")  timer
+    /// Event.add (fun (event: Timers.ElapsedEventArgs) -> printn $"{event.SignalTime} ")  timer
     ///
     /// Console.ReadLine() |> ignore
     /// </code>
@@ -345,7 +345,7 @@ module Event =
     ///
     /// let extractPair (pair: Timers.ElapsedEventArgs * Timers.ElapsedEventArgs) =
     ///     let leftPair, rightPair = pair
-    ///     printfn $"(Left): {leftPair.SignalTime} (Right): {rightPair.SignalTime}"
+    ///     printn $"(Left): {leftPair.SignalTime} (Right): {rightPair.SignalTime}"
     ///
     /// pairWise.Subscribe(extractPair) |> ignore
     ///

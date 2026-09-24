@@ -253,7 +253,7 @@ module Array2D =
     /// <code lang="fsharp">
     /// let inputs = array2D [ [ 3; 4 ]; [ 13; 14 ] ]
     ///
-    /// inputs |> Array2D.iter (fun v -> printfn $"value = {v}")
+    /// inputs |> Array2D.iter (fun v -> printn $"value = {v}")
     /// </code>
     /// Evaluates to <c>unit</c> and prints
     /// <code>
@@ -277,7 +277,7 @@ module Array2D =
     /// <code lang="fsharp">
     /// let inputs = array2D [ [ 3; 4 ]; [ 13; 14 ] ]
     ///
-    /// inputs |> Array2D.iteri (fun i j v -> printfn $"value at ({i},{j}) = {v}")
+    /// inputs |> Array2D.iteri (fun i j v -> printn $"value at ({i},{j}) = {v}")
     /// </code>
     /// Evaluates to <c>unit</c> and prints
     /// <code>

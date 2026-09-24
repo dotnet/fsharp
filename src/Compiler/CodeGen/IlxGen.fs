@@ -3238,9 +3238,9 @@ and GenExprPreSteps (cenv: cenv) (cgbuf: CodeGenBuffer) eenv expr sequel =
         match cenv.namedDebugPointsForInlinedCode.TryGetValue({ Range = m; Name = debugPointName }) with
         | false, _ when String.IsNullOrEmpty(debugPointName) -> CG.EmitDebugPoint cgbuf m
         | false, _ ->
-            // printfn $"---- Unfound debug point {debugPointName} at {m}"
+            // printn $"---- Unfound debug point {debugPointName} at {m}"
             // for KeyValue(k,v) in cenv.namedDebugPointsForInlinedCode do
-            //     printfn $"{k.Range} , {k.Name} -> {v}"
+            //     printn $"{k.Range} , {k.Name} -> {v}"
             let others =
                 [
                     for k in cenv.namedDebugPointsForInlinedCode.Keys do
@@ -3255,7 +3255,7 @@ and GenExprPreSteps (cenv: cenv) (cgbuf: CodeGenBuffer) eenv expr sequel =
 
             CG.EmitDebugPoint cgbuf m
         | true, dp ->
-            // printfn $"---- Found debug point {debugPointName} at {m} --> {dp}"
+            // printn $"---- Found debug point {debugPointName} at {m} --> {dp}"
             CG.EmitDebugPoint cgbuf dp
 
         GenExpr cenv cgbuf eenv codeExpr sequel
