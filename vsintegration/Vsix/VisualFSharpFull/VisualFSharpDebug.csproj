@@ -82,6 +82,26 @@
         <VSixSubPath>Tools</VSixSubPath>
         <IncludeInVSIX>true</IncludeInVSIX>
       </Content>
+
+      <!-- The .NET fsi the F# Interactive window falls back to, laid out as the Microsoft.FSharp.Compiler
+           setup package installs it. -->
+      <Content Include="$(ArtifactsBinDir)/fsi/$(Configuration)/$(FSharpNetCoreProductTargetFramework)/*.dll;$(ArtifactsBinDir)/fsi/$(Configuration)/$(FSharpNetCoreProductTargetFramework)/fsi.runtimeconfig.json">
+        <VSixSubPath>Tools/Interactive</VSixSubPath>
+        <IncludeInVSIX>true</IncludeInVSIX>
+      </Content>
+
+      <Content Include="$(ArtifactsBinDir)/fsi/$(Configuration)/$(FSharpNetCoreProductTargetFramework)/%(_XlfLanguages.Identity)/*.resources.dll">
+        <VSixSubPath>Tools/Interactive/%(_XlfLanguages.Identity)</VSixSubPath>
+        <IncludeInVSIX>true</IncludeInVSIX>
+      </Content>
     </ItemGroup>
   </Target>
+
+  <ItemGroup>
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsi\fsiProject\fsi.fsproj"
+                      SetTargetFramework="TargetFramework=$(FSharpNetCoreProductTargetFramework)"
+                      ReferenceOutputAssembly="false"
+                      SkipGetTargetFrameworkProperties="true"
+                      Private="false" />
+  </ItemGroup>
 </Project>
