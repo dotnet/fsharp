@@ -1,0 +1,31 @@
+{
+  "mcpServers": {
+    "binlog-mcp": {
+      "type": "stdio",
+      "command": "dotnet",
+      "args": [
+        "tool",
+        "run",
+        "binlog-mcp"
+      ]
+    },
+    "F#": {
+      "type": "stdio",
+      "command": "dotnet",
+      "args": [
+        "tool",
+        "run",
+        "fslangmcp"
+      ]
+    },
+    "GitHub": {
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/",
+      "headersHelper": "pwsh -NoProfile -File .claude/scripts/github-mcp-headers.ps1"
+    },
+    "Microsoft Learn": {
+      "type": "http",
+      "url": "https://learn.microsoft.com/api/mcp"
+    }
+  }
+}
