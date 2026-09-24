@@ -85,6 +85,7 @@
     <Compile Include="SemanticClassificationServiceTests.fs" />
     <Compile Include="SyntacticColorizationServiceTests.fs" />
     <Compile Include="DocumentHighlightsServiceTests.fs" />
+    <Compile Include="InlineRenameServiceTests.fs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -94,6 +95,7 @@
   <ItemGroup>
 	<PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" />
 	<PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
+	<PackageReference Include="Microsoft.CodeAnalysis.EditorFeatures" />
 
 	<PackageReference Include="Microsoft.VisualStudio.LanguageServices.ExternalAccess" />
     <PackageReference Include="Microsoft.VisualStudio.Platform.VSEditor" />

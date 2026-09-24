@@ -4843,7 +4843,7 @@ module TcDeclarations =
                 // Only the keep the non-field-targeted attributes
                 let attribs = attribs |> List.filter (fun a -> match a.Target with Some t when t.idText = "field" -> false | _ -> true)
                 let fldId = ident (CompilerGeneratedName id.idText, mMemberPortion.MakeSynthetic())
-                let headPatIds = if isStatic then [id] else [ident ("__", mMemberPortion);id]
+                let headPatIds = if isStatic then [id] else [ident ("__", mMemberPortion.MakeSynthetic());id]
                 let headPat = SynPat.LongIdent (SynLongIdent(headPatIds, [], List.replicate headPatIds.Length None), None, Some noInferredTypars, SynArgPats.Pats [], None, mMemberPortion)
                 let memberFlags = { memberFlags with GetterOrSetterIsCompilerGenerated = true }
                 let memberFlagsForSet = { memberFlagsForSet with GetterOrSetterIsCompilerGenerated = true }
