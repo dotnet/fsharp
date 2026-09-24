@@ -9,6 +9,13 @@
     <ProjectReference Include="$(FSharpSourcesRoot)\fsc\fscAnyCpuProject\fscAnyCpu.fsproj" />
     <ProjectReference Include="$(FSharpSourcesRoot)\fsc\fscArm64Project\fscArm64.fsproj" />
     <ProjectReference Include="$(FSharpSourcesRoot)\fsi\fsiProject\fsi.fsproj" />
+    <!-- The .NET build of fsi, the only one with the JSON-RPC server the F# Interactive window drives.
+         Installed until the .NET SDK carries the server; the window prefers the SDK's `dotnet fsi`. -->
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsi\fsiProject\fsi.fsproj"
+                      SetTargetFramework="TargetFramework=$(FSharpNetCoreProductTargetFramework)"
+                      ReferenceOutputAssembly="false"
+                      SkipGetTargetFrameworkProperties="true"
+                      Private="false" />
     <ProjectReference Include="$(FSharpSourcesRoot)\fsi\fsiAnyCpuProject\fsiAnyCpu.fsproj" />
     <ProjectReference Include="$(FSharpSourcesRoot)\fsi\fsiArm64Project\fsiArm64.fsproj" />
     <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.Build\FSharp.Build.fsproj" />
@@ -40,8 +47,44 @@
     </CreateItem>
   </Target>
 
+  <PropertyGroup>
+    <_InteractiveBinaries>$(BinariesFolder)fsi\$(Configuration)\$(FSharpNetCoreProductTargetFramework)\</_InteractiveBinaries>
+    <_InteractiveInstallDir>InstallDir:Common7\IDE\CommonExtensions\Microsoft\FSharp\Tools\Interactive</_InteractiveInstallDir>
+    <_SwrNewLine><![CDATA[
+]]></_SwrNewLine>
+  </PropertyGroup>
+
+  <!-- The .NET fsi runs under `dotnet exec`. Without fsi.deps.json the host loads the assemblies next to
+       fsi.dll, so the folder is those assemblies and the runtime configuration; the apphost and the
+       build tools that share the output folder are left out. The block is built as one item, as the
+       other blocks are, because MSBuild trims the indentation from the start of each item. -->
+  <Target Name="_GenerateInteractiveSwrFileContents">
+    <ItemGroup>
+      <_InteractiveFile Include="$(_InteractiveBinaries)*.dll;$(_InteractiveBinaries)fsi.runtimeconfig.json" />
+    </ItemGroup>
+    <PropertyGroup>
+      <_InteractiveBlock>folder "$(_InteractiveInstallDir)"$(_SwrNewLine)@(_InteractiveFile->'  file source="%(FullPath)"', '$(_SwrNewLine)')$(_SwrNewLine)</_InteractiveBlock>
+    </PropertyGroup>
+    <ItemGroup>
+      <_BuiltSwrLines Include="$(_InteractiveBlock)" />
+    </ItemGroup>
+  </Target>
+
   <!-- For each localization language, include the appropriate satellite assemblies. -->
   <Target Name="_GenerateLocSwrFileContents" DependsOnTargets="_GenerateLanguageList" Outputs="%(_XlfLanguages.Identity)">
+    <PropertyGroup>
+      <_Language>%(_XlfLanguages.Identity)</_Language>
+    </PropertyGroup>
+    <ItemGroup>
+      <_InteractiveSatellite Remove="@(_InteractiveSatellite)" />
+      <_InteractiveSatellite Include="$(_InteractiveBinaries)$(_Language)\*.resources.dll" />
+    </ItemGroup>
+    <PropertyGroup>
+      <_InteractiveSatelliteBlock>folder "$(_InteractiveInstallDir)\$(_Language)"$(_SwrNewLine)@(_InteractiveSatellite->'  file source="%(FullPath)"', '$(_SwrNewLine)')$(_SwrNewLine)</_InteractiveSatelliteBlock>
+    </PropertyGroup>
+    <ItemGroup>
+      <_BuiltSwrLines Include="$(_InteractiveSatelliteBlock)" Condition="'@(_InteractiveSatellite)' != ''" />
+    </ItemGroup>
     <PropertyGroup>
       <_Line>
 <![CDATA[
@@ -64,7 +107,7 @@ folder "InstallDir:Common7\IDE\CommonExtensions\Microsoft\FSharp\Tools\%(_XlfLan
     </PropertyGroup>
   </Target>
 
-  <Target Name="_GenerateSwrFile" AfterTargets="Build" BeforeTargets="SwixBuild" DependsOnTargets="_SetSwrFilePath;_GenerateLocSwrFileContents" Outputs="$(_SwrFilePath)">
+  <Target Name="_GenerateSwrFile" AfterTargets="Build" BeforeTargets="SwixBuild" DependsOnTargets="_SetSwrFilePath;_GenerateInteractiveSwrFileContents;_GenerateLocSwrFileContents" Outputs="$(_SwrFilePath)">
 
     <PropertyGroup>
       <_Lines>
