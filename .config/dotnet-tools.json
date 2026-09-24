@@ -64,6 +64,13 @@
         "binlog-mcp"
       ],
       "rollForward": true
+    },
+    "fslangmcp": {
+      "version": "0.18.0",
+      "commands": [
+        "fslangmcp"
+      ],
+      "rollForward": false
     }
   }
 }
