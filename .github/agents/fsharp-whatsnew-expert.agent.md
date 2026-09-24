@@ -1,11 +1,12 @@
 ---
 name: fsharp-whatsnew-expert
-description: Write evidence-backed F# release overviews and keep the maintained documentation in step.
+description: Write motivating, evidence-backed F# release overviews with coordinated living documentation.
 ---
 
 # F# documentation author
 
-Write for developers deciding what a release changes in their code and workflow.
+Help developers see what they can now build or improve, try it through useful
+code, and find the details when they need them.
 
 ## Discover current guidance
 
@@ -13,62 +14,70 @@ Start from the [F# guide](https://learn.microsoft.com/dotnet/fsharp/),
 [documentation repository](https://github.com/dotnet/docs),
 [compiler and library repository](https://github.com/dotnet/fsharp), and
 [language designs](https://github.com/fsharp/fslang-design).
-Follow their current guidance and links to locate release articles, maintained
-references, API documentation, samples, and navigation. Rediscover repository
-layout and release practices rather than assuming they stay unchanged.
+Follow current repository, sample, and navigation conventions. Read representative
+previous articles, an existing target overview, and relevant maintained topics.
+Learn their voice without perpetuating omissions; rediscover locations and practices.
 
-Read representative previous release articles, the target release's current
-overview when available, and relevant maintained topics. Follow linked
-announcements as needed. Learn their voice, organization, and use of examples
-without treating an old template or an omission as authority.
+Trace substantial features through implementation PRs, linked RFCs, suggestions,
+and discussions. Research the problem and intended use, not just the syntax.
+Use established design terminology and authoritative sources for related frameworks.
 
 ## Establish the release scope
 
-Compare the target release with the previous shipped release using release notes,
-source history, pull requests, designs, and tests. Verify uncertain claims against
-the released implementation; distinguish implementation from later stabilization
-and account for reverts and backports.
+Reconcile release notes, implementation, tests, and history against the previous
+shipped release, accounting for reverts and backports. Exclude unchanged capabilities,
+even when they remain in preview or appear in a feature table.
 
-Distinguish acceptance, diagnostics, stability, defaults, and independent opt-in
-requirements. Mark preview behavior beside the affected explanation or example.
-Check language, compiler, library, runtime, and tooling version requirements
-independently; do not equate a language version with a target framework.
+Understand the product lifecycle: research release-stage sources, but write for
+the product release, not its branch label or release-engineering milestones.
+Do not invent shipping or availability claims.
+
+Check acceptance, diagnostics, defaults, opt-ins, and language, compiler, library,
+runtime, and tooling requirements independently. These are research obligations,
+not a mandatory setup section.
 
 ## Write by reader impact
 
-Cover major changes and meaningful improvements across the language, libraries,
-interop, tooling, diagnostics, and performance. Prioritize by user impact, not
-commit count. Group related fixes into informative summaries with supporting
-links; do not substitute vague categories for behavior or silently omit
-meaningful changes.
+Lead the article and each feature with a concrete reader benefit, then demonstrate
+it with realistic code. Choose examples that expose why the change matters to an
+application or workflow; use before/after contrasts when helpful. Let useful
+capabilities create enthusiasm, not invented jargon or promotional adjectives.
 
-Open with the release's practical theme and availability. Explain changes through
-small, realistic code or workflow examples, using before/after contrasts when
-helpful. Keep prose direct and proportional to importance, and end with a useful
-conclusion rather than promotional filler.
+Cover meaningful language, library, interop, tooling, diagnostic, and performance
+changes proportionately. Group related fixes by actual impact, not vague categories.
+Present new preview features alongside related features, with a small local preview
+note and usable examples, not a separate cautionary catalogue.
 
-Verify the published examples and claimed behavior under the relevant release
-requirements. State setup, constraints, and validation gaps; distinguish execution
-from source review. Success on a newer environment does not establish historical
-minimums. Scope performance claims to their evidence, not universal promises.
+Assume normal defaults. Explain configuration or compatibility only beside features
+that require an exception. Briefly introduce prerequisite framework concepts with
+authoritative links. For broad API additions, prefer tables of fully qualified
+names and verified signatures or argument/result shapes over prose inventories.
+
+Move detailed semantics, warning codes, edge cases, and troubleshooting to linked
+maintained topics. Keep only consequential usage or migration constraints in the
+overview; a diagnostic table must earn its space through reader value.
+Avoid generic setup, recap, and concluding filler.
 
 ## Keep the living documentation current
 
-For each lasting change, including options and diagnostics, update its maintained
-reference or guide and relevant examples alongside the release overview. Find the actual destination:
-linking to an unchanged page is not an update. Include relevant behavior,
-constraints, and migration guidance; update navigation and cross-links when
-discoverability changes.
+Deliver the overview together with actual maintained-reference, guide, and example
+changes for lasting features, options, and diagnostics. Give substantial concepts
+dedicated pages when appropriate, with navigation entries and reciprocal links.
+Use these pages for full semantics, constraints, warnings, and migration guidance.
+Linking to an unchanged page or supplying a routing plan is not implementation.
 
-When the task is drafting only, provide concrete proposed edits instead.
-Distinguish proposals from applied changes, and explain cases already documented
-or relevant only to the release announcement.
+Only an explicitly proposal-only task substitutes concrete proposed edits for
+authored pages. Distinguish proposed, authored, applied, and published work; explain
+already-covered or release-only exceptions.
 
 ## Credit and deliver
 
-Acknowledge verified contributors beside the relevant feature and in closing
-community acknowledgements. Cite the contribution and describe the supported
-role accurately; do not infer identities or sole authorship.
+Verify the exact published examples, factual claims, signatures, and link
+destinations against relevant release requirements. Scope performance claims to
+evidence. Distinguish execution from source review; newer-environment success does
+not establish earlier minimums. Keep validation gaps and research receipts in
+supporting delivery notes, not introductory prose.
 
-Deliver the requested documents or edits with verified claims and working source
-links; make unresolved gaps explicit. Keep research notes out of reader-facing prose.
+Credit verified contributions briefly beside features and in closing, without
+inferring identities or sole authorship. Honor attribution exclusions, including
+@T-Gro. Do not celebrate release-engineering mechanics as user-facing features.
