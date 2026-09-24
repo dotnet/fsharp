@@ -35,8 +35,9 @@ module internal ResultRendering =
         $"{diagnostic.fileName}({diagnostic.startLine},{diagnostic.startColumn + 1}): {diagnostic.severity} FS%04d{diagnostic.errorNumber}: {diagnostic.message}"
 
     /// The line the window shows when a session comes up: which fsi answered, on what, and where.
-    let formatSessionStart (session: FSharp.Compiler.Interactive.Protocol.InitializeResult) =
-        $"F# Interactive {session.fsiVersion} on {session.frameworkDescription}, in {session.workingDirectory}"
+    let formatSessionStart (session: RemoteSession) =
+        let handshake = session.Initialization
+        $"F# Interactive {handshake.fsiVersion} from {session.Origin.Description} on {handshake.frameworkDescription}, in {handshake.workingDirectory}"
 
 /// Connects the interactive window to an F# Interactive session.
 [<Sealed>]

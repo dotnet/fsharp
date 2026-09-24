@@ -28,6 +28,30 @@ type InteractiveHostOptions =
         UICultureLcid: int
     }
 
+/// Where the F# Interactive behind a session came from.
+[<RequireQualifiedAccess>]
+type internal FsiOrigin =
+    /// Named by `FSHARP_INTERACTIVE_PATH`.
+    | Override
+    /// `dotnet fsi`, the SDK the working directory's `global.json` selects.
+    | Sdk
+    /// The .NET build of fsi installed with Visual Studio, for SDKs that predate its JSON-RPC server.
+    | VisualStudio
+
+    member this.Description =
+        match this with
+        | Override -> "FSHARP_INTERACTIVE_PATH"
+        | Sdk -> ".NET SDK"
+        | VisualStudio -> "Visual Studio"
+
+/// One way to start F# Interactive.
+type internal FsiCandidate =
+    {
+        Origin: FsiOrigin
+        Executable: string
+        LeadingArguments: string list
+    }
+
 module internal FsiLocator =
 
     let private hostExecutable =
@@ -67,13 +91,14 @@ module internal FsiLocator =
 
         Path.Combine(programFiles, "dotnet", hostExecutable)
 
-    /// Names an F# Interactive to run instead of the SDK's.
-    ///
-    /// The protocol needs an fsi that understands `--fsi-server-jsonrpc`, and the fsi an installed
-    /// SDK resolves to is only as new as that SDK, so a build from this repository has to be named
-    /// explicitly until the option ships.
+    /// Names the one F# Interactive to run, instead of the SDK's or the one installed with Visual
+    /// Studio: a build from a repository, for developing either end of the protocol.
     [<Literal>]
     let OverrideVariable = "FSHARP_INTERACTIVE_PATH"
+
+    /// Where the Microsoft.FSharp.Compiler setup package puts the .NET build of fsi, relative to this
+    /// assembly's folder.
+    let private bundledRelativePath = Path.Combine("Tools", "Interactive", "fsi.dll")
 
     /// A build of fsi from a repository runs on the .NET that repository provisions, which is often
     /// newer than any machine-wide install, so look for that host beside it before falling back.
@@ -100,33 +125,73 @@ module internal FsiLocator =
                 let host = hostFor path
 
                 if File.Exists host then
-                    ValueSome(Result.Ok(host, [ "exec"; path ]))
+                    ValueSome(
+                        Result.Ok
+                            {
+                                Origin = FsiOrigin.Override
+                                Executable = host
+                                LeadingArguments = [ "exec"; path ]
+                            }
+                    )
                 else
                     ValueSome(Result.Error(VFSIstrings.SR.couldNotFindFsiExe host))
             else
-                ValueSome(Result.Ok(path, []))
+                ValueSome(
+                    Result.Ok
+                        {
+                            Origin = FsiOrigin.Override
+                            Executable = path
+                            LeadingArguments = []
+                        }
+                )
         | _ -> ValueNone
 
-    /// What to start. Apart from the override this is `dotnet fsi`: the host resolves the SDK from
-    /// the `global.json` nearest the directory the session starts in, so a session started in the
-    /// solution folder runs the same compiler bits as `dotnet build` there. Nothing here
-    /// re-implements that resolution.
-    let locate () =
+    let private tryBundled (host: string) =
+        match Path.GetDirectoryName(typeof<FsiCandidate>.Assembly.Location) with
+        | null -> ValueNone
+        | directory ->
+            let fsi = Path.Combine(directory, bundledRelativePath)
+
+            if File.Exists fsi then
+                ValueSome
+                    {
+                        Origin = FsiOrigin.VisualStudio
+                        Executable = host
+                        LeadingArguments = [ "exec"; fsi ]
+                    }
+            else
+                ValueNone
+
+    /// What to try, in order. Apart from the override this is `dotnet fsi` first: the host resolves the
+    /// SDK from the `global.json` nearest the directory the session starts in, so a session started in
+    /// the solution folder runs the same compiler bits as `dotnet build` there. An SDK too old for the
+    /// JSON-RPC server rejects the option and exits, and the fsi installed with Visual Studio is next.
+    let candidates () =
         match tryOverride () with
-        | ValueSome result -> result
+        | ValueSome(Result.Ok candidate) -> Result.Ok [ candidate ]
+        | ValueSome(Result.Error message) -> Result.Error message
         | ValueNone ->
 
         let host = findDotnetHost ()
 
         if File.Exists host then
-            Result.Ok(host, [ "fsi" ])
+            Result.Ok
+                [
+                    {
+                        Origin = FsiOrigin.Sdk
+                        Executable = host
+                        LeadingArguments = [ "fsi" ]
+                    }
+                    yield! tryBundled host |> ValueOption.toList
+                ]
         else
             Result.Error(VFSIstrings.SR.couldNotFindFsiExe host)
 
 /// One live F# Interactive process together with the control channel to it.
 [<Sealed>]
-type internal RemoteSession(session: Process, pipe: Stream, rpc: JsonRpc, initialization: InitializeResult) =
+type internal RemoteSession(origin: FsiOrigin, session: Process, pipe: Stream, rpc: JsonRpc, initialization: InitializeResult) =
 
+    member _.Origin = origin
     member _.Process = session
     member _.Rpc = rpc
     member _.Initialization = initialization
@@ -176,7 +241,13 @@ type internal InteractiveHostClient(clientProcessId: int) =
     let outputReceived = Event<string>()
     let errorOutputReceived = Event<string>()
     let processExited = Event<int>()
-    let sessionStarted = Event<InitializeResult>()
+    let sessionStarted = Event<RemoteSession>()
+
+    // The F# Interactive that last started in each working directory, tried first next time, so a
+    // reset does not pay again for an SDK that turned out to predate the JSON-RPC server. Paths on
+    // Windows are case-insensitive.
+    let workedIn =
+        System.Collections.Generic.Dictionary<string, FsiOrigin>(StringComparer.OrdinalIgnoreCase)
 
     // Read as characters rather than lines: a script prompting with `printf "name? "` writes no
     // newline, and waiting for one would hide the prompt.
@@ -212,15 +283,11 @@ type internal InteractiveHostClient(clientProcessId: int) =
         else
             argument
 
-    let createStartInfo (options: InteractiveHostOptions) (pipeName: string) =
-        match FsiLocator.locate () with
-        | Result.Error message -> Result.Error message
-        | Result.Ok(executable, leadingArguments) ->
-
+    let createStartInfo (options: InteractiveHostOptions) (candidate: FsiCandidate) (pipeName: string) =
         let arguments = ResizeArray<string>()
         let addSwitch (switch: string) = arguments.Add(quoteIfNeeded switch)
 
-        for argument in leadingArguments do
+        for argument in candidate.LeadingArguments do
             addSwitch argument
 
         addSwitch "--nologo"
@@ -249,7 +316,7 @@ type internal InteractiveHostClient(clientProcessId: int) =
 
         let startInfo =
             ProcessStartInfo(
-                FileName = executable,
+                FileName = candidate.Executable,
                 Arguments = String.Join(" ", arguments),
                 UseShellExecute = false,
                 CreateNoWindow = true,
@@ -263,28 +330,52 @@ type internal InteractiveHostClient(clientProcessId: int) =
         if Directory.Exists options.InitialWorkingDirectory then
             startInfo.WorkingDirectory <- options.InitialWorkingDirectory
 
-        Result.Ok startInfo
+        startInfo
 
-    let startAsync (options: InteractiveHostOptions) (cancellationToken: CancellationToken) =
+    /// One attempt to start a session with one F# Interactive. What the process prints is held back
+    /// until the handshake succeeds: an SDK too old for the server prints an error the user need not
+    /// see when the next candidate starts fine. `Error(exitedEarly, message, release)` hands the
+    /// held output back to the caller, who shows it only when nothing else is left to try.
+    let startAttemptAsync (options: InteractiveHostOptions) (candidate: FsiCandidate) (cancellationToken: CancellationToken) =
         task {
             let sessionId = Guid.NewGuid().ToString "N"
             let pipeName = $"FSharpInteractive.{sessionId}"
+            let startInfo = createStartInfo options candidate pipeName
 
-            match createStartInfo options pipeName with
-            | Result.Error message -> return Result.Error message
-            | Result.Ok startInfo ->
+            let outputLock = obj ()
+            let held = ResizeArray<struct (bool * string)>()
+            let mutable holding = true
+
+            let report isError (text: string) =
+                lock outputLock (fun () ->
+                    if holding then
+                        held.Add(struct (isError, text))
+                        ValueNone
+                    else
+                        ValueSome text)
+                |> ValueOption.iter (if isError then errorOutputReceived.Trigger else outputReceived.Trigger)
+
+            let release () =
+                let pending =
+                    lock outputLock (fun () ->
+                        holding <- false
+                        let pending = held.ToArray()
+                        held.Clear()
+                        pending)
+
+                for struct (isError, text) in pending do
+                    if isError then
+                        errorOutputReceived.Trigger text
+                    else
+                        outputReceived.Trigger text
+
+            let heldText () =
+                lock outputLock (fun () -> String.Join("", held |> Seq.map (fun struct (_, text) -> text)))
 
             let session = new Process(StartInfo = startInfo, EnableRaisingEvents = true)
 
-            if not (session.Start()) then
-                return Result.Error(VFSIstrings.SR.couldNotFindFsiExe startInfo.FileName)
-            else
-
-            pump session.StandardOutput outputReceived.Trigger
-            pump session.StandardError errorOutputReceived.Trigger
-
             // Without this a session that dies before the handshake leaves the connect below
-            // waiting out its whole timeout.
+            // waiting forever. Attached before the start, so an exit that comes first is not missed.
             use exitedDuringConnect = new CancellationTokenSource()
 
             session.Exited.Add(fun _ ->
@@ -292,6 +383,19 @@ type internal InteractiveHostClient(clientProcessId: int) =
                     exitedDuringConnect.Cancel()
                 with _ ->
                     ())
+
+            let started =
+                try
+                    session.Start()
+                with _ ->
+                    false
+
+            if not started then
+                return Result.Error(false, VFSIstrings.SR.couldNotFindFsiExe candidate.Executable, ignore)
+            else
+
+            pump session.StandardOutput (report false)
+            pump session.StandardError (report true)
 
             use connectCancellation =
                 CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, exitedDuringConnect.Token)
@@ -311,7 +415,7 @@ type internal InteractiveHostClient(clientProcessId: int) =
                 let! handshake =
                     rpc.InvokeWithCancellationAsync<InitializeResult>(Methods.Initialize, cancellationToken = cancellationToken)
 
-                let remote = RemoteSession(session, pipe, rpc, handshake)
+                let remote = RemoteSession(candidate.Origin, session, pipe, rpc, handshake)
 
                 session.Exited.Add(fun _ ->
                     let wasCurrent =
@@ -330,7 +434,7 @@ type internal InteractiveHostClient(clientProcessId: int) =
                                 0
                         ))
 
-                sessionStarted.Trigger handshake
+                release ()
                 return Result.Ok remote
             with e ->
                 pipe.Dispose()
@@ -341,15 +445,73 @@ type internal InteractiveHostClient(clientProcessId: int) =
                 with _ ->
                     ()
 
-                // A session that exits before the handshake usually rejected the command line —
-                // most often an fsi too old to know the protocol option.
-                let detail =
-                    if session.HasExited then
-                        $"{startInfo.FileName} exited with code {session.ExitCode} before the session was established. If it does not support '--fsi-server-jsonrpc', set {FsiLocator.OverrideVariable} to an fsi that does."
-                    else
-                        e.Message
+                // A session that exits before the handshake usually rejected the command line: an
+                // fsi too old to know the protocol option, or a runtime that is not installed.
+                let exitedEarly = session.HasExited
 
-                return Result.Error detail
+                // The pumps may still be draining what the process wrote just before it exited.
+                if exitedEarly then
+                    do! Task.Delay 200
+
+                let detail =
+                    if not exitedEarly then
+                        e.Message
+                    elif heldText().IndexOf("install or update .NET", StringComparison.Ordinal) >= 0 then
+                        $"The F# Interactive from {candidate.Origin.Description} needs a .NET runtime that is not installed; see the message above."
+                    else
+                        let commandLine = String.Join(" ", candidate.Executable :: candidate.LeadingArguments)
+
+                        $"The F# Interactive from {candidate.Origin.Description} ({commandLine}) exited with code {session.ExitCode} before the session was established."
+
+                return Result.Error(exitedEarly, detail, release)
+        }
+
+    /// Try each F# Interactive in turn, the one that last worked here first, and keep the first that
+    /// completes the handshake. Only a process that exits before the handshake moves on to the next:
+    /// any other failure is a problem with this session, not with the choice of fsi.
+    let startAsync (options: InteractiveHostOptions) (cancellationToken: CancellationToken) =
+        task {
+            match FsiLocator.candidates () with
+            | Result.Error message -> return Result.Error message
+            | Result.Ok candidates ->
+
+            let key = options.InitialWorkingDirectory
+
+            let ordered =
+                match lock workedIn (fun () -> workedIn.TryGetValue key) with
+                | true, origin ->
+                    [
+                        yield! candidates |> List.filter (fun c -> c.Origin = origin)
+                        yield! candidates |> List.filter (fun c -> c.Origin <> origin)
+                    ]
+                | _ -> candidates
+
+            // A loop rather than a recursive task: `let rec` inside resumable code cannot be compiled
+            // statically (FS3511).
+            let failures = ResizeArray<string>()
+            let mutable remaining = ordered
+            let mutable outcome = ValueNone
+
+            while outcome.IsNone do
+                match remaining with
+                | [] -> outcome <- ValueSome(Result.Error(String.Join(Environment.NewLine, failures)))
+                | candidate :: rest ->
+                    remaining <- rest
+
+                    match! startAttemptAsync options candidate cancellationToken with
+                    | Result.Ok remote ->
+                        lock workedIn (fun () -> workedIn[key] <- candidate.Origin)
+                        sessionStarted.Trigger remote
+                        outcome <- ValueSome(Result.Ok remote)
+                    | Result.Error(exitedEarly, detail, release) ->
+                        lock workedIn (fun () -> workedIn.Remove key |> ignore)
+                        failures.Add detail
+
+                        if not exitedEarly || rest.IsEmpty then
+                            release ()
+                            outcome <- ValueSome(Result.Error(String.Join(Environment.NewLine, failures)))
+
+            return outcome.Value
         }
 
     member _.OutputReceived = outputReceived.Publish
