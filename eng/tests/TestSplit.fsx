@@ -173,7 +173,7 @@ let filterArgs =
 // Output format contract: each line must be "dotnet test <project> --no-build -c Release [filterargs]".
 // Consumers: Build.ps1 and build.sh parse via regex. Keep in sync if changing format.
 if batch.IsNone || batchHasComponentAtoms || batch = Some residualBatch then
-    printfn "%s" ($"dotnet test {componentTests} --no-build -c Release {filterArgs}".TrimEnd())
+    printn ($"dotnet test {componentTests} --no-build -c Release {filterArgs}".TrimEnd())
 
 for (proj, _, _, _) in
     otherProjects
@@ -181,4 +181,4 @@ for (proj, _, _, _) in
         match batch with
         | None -> matchesPlatform unbatchedPlatform
         | Some selectedBatch -> b = selectedBatch && matchesPlatform batchedPlatform) do
-    printfn $"dotnet test {proj} --no-build -c Release"
+    printn $"dotnet test {proj} --no-build -c Release"

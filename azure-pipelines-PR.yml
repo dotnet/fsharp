@@ -469,8 +469,14 @@ stages:
           - pwsh: .\eng\MockBuild.ps1
             displayName: Build with OfficialBuildId
 
-        # Linux
+        # Linux (split into 2 batches; batch 3 is desktop-only FSharpSuite)
         - job: Linux
+          strategy:
+            matrix:
+              Batch1:
+                batchNumber: 1
+              Batch2:
+                batchNumber: 2
           pool:
             name: $(DncEngPublicBuildPool)
             demands: ImageOverride -equals $(LinuxMachineQueueName)
@@ -479,46 +485,22 @@ stages:
           - name: _SignType
             value: Test
           steps:
-          - checkout: self
-            clean: true
-          - script: ./eng/cibuild.sh --configuration $(_BuildConfig) --testcoreclr --mt true
-            displayName: Build / Test
+          - template: /eng/templates/batched-test-steps.yml
+            parameters:
+              buildCommand: ./eng/cibuild.sh --configuration $(_BuildConfig) --testcoreclrbatch $(batchNumber) --mt true
+              testRunTitlePrefix: 'Linux'
+              artifactNamePrefix: 'Linux'
+              publishBinLog: true
+              binLogPath: '$(Build.SourcesDirectory)/artifacts/log/Release/Build.binlog'
+          # Run the SDK integration once, not once per test batch.
           - script: ./eng/common/dotnet.sh fsi tests/EndToEndBuildTests/MultithreadedTasks/run.fsx -- --configuration $(_BuildConfig) --repetitions 3
             displayName: Real SDK MP / MT integration
+            condition: and(succeeded(), eq(variables['batchNumber'], '1'))
           - task: PublishPipelineArtifact@1
-            condition: always()
+            condition: and(always(), eq(variables['batchNumber'], '1'))
             inputs:
               targetPath: '$(Build.SourcesDirectory)/artifacts/MultithreadedTasks'
               artifact: Linux SDK MT evidence
-          - task: PublishTestResults@2
-            displayName: Publish Test Results
-            inputs:
-              testResultsFormat: 'XUnit'
-              testRunTitle: Linux
-              testResultsFiles: '*.xml'
-              mergeTestResults: true
-              searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
-            continueOnError: true
-            condition: succeededOrFailed()
-          - task: PublishBuildArtifacts@1
-            displayName: Publish Test Logs
-            inputs:
-              PathtoPublish: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
-              ArtifactName: 'Linux $(_BuildConfig) test logs'
-              publishLocation: Container
-            continueOnError: true
-            condition: failed()
-          - script: dotnet build $(Build.SourcesDirectory)/eng/DumpPackageRoot/DumpPackageRoot.csproj
-            displayName: Dump NuGet cache contents
-            condition: failed()
-          - task: PublishBuildArtifacts@1
-            displayName: Publish NuGet cache contents
-            inputs:
-              PathtoPublish: '$(Build.SourcesDirectory)/artifacts/NugetPackageRootContents'
-              ArtifactName: 'NuGetPackageContents Linux'
-              publishLocation: Container
-            continueOnError: true
-            condition: failed()
 
         # MacOS (split into 2 batches; batch 3 is desktop-only FSharpSuite)
         - job: MacOS
