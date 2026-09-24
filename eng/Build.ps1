@@ -83,6 +83,7 @@ $ErrorActionPreference = "Stop"
 
 $BuildCategory = ""
 $BuildMessage = ""
+$bootstrapMultiThreaded = !$PSBoundParameters.ContainsKey('msbuildMultiThreaded') -or $msbuildMultiThreaded
 
 $desktopTargetFramework = "net472"
 # Read product TFM from centralized source of truth via MSBuild
@@ -581,7 +582,7 @@ try {
 
     if ($bootstrap) {
         $script:BuildMessage = "Failure building bootstrap compiler"
-        $bootstrapDir = Make-BootstrapBuild
+        $bootstrapDir = Make-BootstrapBuild -msbuildMultiThreaded $bootstrapMultiThreaded
     }
 
     $script:BuildMessage = "Failure building product"
