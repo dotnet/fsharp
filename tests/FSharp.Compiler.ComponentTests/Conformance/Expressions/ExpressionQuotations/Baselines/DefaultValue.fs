@@ -1,4 +1,4 @@
-// #Regression #Conformance #Quotations 
+// #Regression #Conformance #Quotations
 // Regression for FSHARP1.0:5751
 open Microsoft.FSharp.Quotations
 open Microsoft.FSharp.Quotations.Patterns
@@ -8,7 +8,7 @@ open QuoteUtils
 type T =
     [<DefaultValue>]
     val data : int
-    
+
 let q = <@ T() @>
 let q' = Expr.Let(Var("x", typeof<T>), Expr.DefaultValue(typeof<T>), Expr.Value(0))
 

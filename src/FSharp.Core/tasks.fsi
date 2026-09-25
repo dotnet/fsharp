@@ -93,7 +93,7 @@ type TaskBuilderBase =
     member inline TryWith:
         body: TaskCode<'TOverall, 'T> * catch: (exn -> TaskCode<'TOverall, 'T>) -> TaskCode<'TOverall, 'T>
 
-#if NETSTANDARD2_1
+#if NETSTANDARD2_1 || NET
     /// <summary>
     /// Specifies a unit of task code which binds to the resource implementing IAsyncDisposable and disposes it asynchronously
     /// </summary>
@@ -119,9 +119,7 @@ type TaskBuilderBase =
 type TaskBuilder =
     inherit TaskBuilderBase
 
-    /// <summary>
-    /// The entry point for the dynamic implementation of the corresponding operation. Do not use directly, only used when executing quotations that involve tasks or other reflective execution of F# code.
-    /// </summary>
+    /// <include file="xmldoc/dynamic.xml" path="/dynamic/entryPoint/*"/>
     static member RunDynamic: code: TaskCode<'T, 'T> -> Task<'T>
 
     /// Hosts the task code in a state machine and starts the task.
@@ -134,9 +132,7 @@ type TaskBuilder =
 type BackgroundTaskBuilder =
     inherit TaskBuilderBase
 
-    /// <summary>
-    /// The entry point for the dynamic implementation of the corresponding operation. Do not use directly, only used when executing quotations that involve tasks or other reflective execution of F# code.
-    /// </summary>
+    /// <include file="xmldoc/dynamic.xml" path="/dynamic/entryPoint/*"/>
     static member RunDynamic: code: TaskCode<'T, 'T> -> Task<'T>
 
     /// <summary>
@@ -218,9 +214,7 @@ module LowPriority =
                 and ^Awaiter: (member get_IsCompleted: unit -> bool)
                 and ^Awaiter: (member GetResult: unit -> 'T)
 
-        /// <summary>
-        /// The entry point for the dynamic implementation of the corresponding operation. Do not use directly, only used when executing quotations that involve tasks or other reflective execution of F# code.
-        /// </summary>
+        /// <include file="xmldoc/dynamic.xml" path="/dynamic/entryPoint/*"/>
         [<NoEagerConstraintApplication>]
         static member inline BindDynamic< ^TaskLike, 'TResult1, 'TResult2, ^Awaiter, 'TOverall> :
             sm: byref<TaskStateMachine<'TOverall>> *
@@ -435,9 +429,7 @@ module HighPriority =
         /// </summary>
         member inline ReturnFrom: task: Task<'T> -> TaskCode<'T, 'T>
 
-        /// <summary>
-        /// The entry point for the dynamic implementation of the corresponding operation. Do not use directly, only used when executing quotations that involve tasks or other reflective execution of F# code.
-        /// </summary>
+        /// <include file="xmldoc/dynamic.xml" path="/dynamic/entryPoint/*"/>
         static member BindDynamic:
             sm: byref<TaskStateMachine<'TOverall>> *
             task: Task<'TResult1> *
@@ -460,8 +452,10 @@ module HighPriority =
 
 namespace Microsoft.FSharp.Control
 
+open System.Threading
 open System.Threading.Tasks
 open Microsoft.FSharp.Core
+open Microsoft.FSharp.Collections
 
 /// <summary>Contains camelCase module-level functions for <see cref="T:System.Threading.Tasks.Task`1"/> computations.</summary>
 ///
@@ -582,7 +576,126 @@ module Task =
     [<CompiledName("Empty")>]
     val empty: Task<unit>
 
-#if NETSTANDARD2_1
+    /// <summary>Creates a task that executes each of the <c>computations</c> in sequence,
+    /// returning an array of their results in order of the input sequence.</summary>
+    /// <param name="ct">A cancellation token to pass to each task factory.</param>
+    /// <param name="computations">A sequence of task start functions accepting a <see cref="T:System.Threading.CancellationToken"/>.</param>
+    /// <returns>A task yielding an array of the results of <c>computations</c> in the order they were supplied.</returns>
+    ///
+    /// <example id="task-sequential-1">
+    /// <code lang="fsharp">
+    /// task {
+    ///     return!
+    ///         seq { for i in 1..10 -> fun _ct -> Task.result (i * i) }
+    ///         |> Task.sequential CancellationToken.None
+    /// } // returns [| 1; 4; 9; 16; 25; 36; 49; 64; 81; 100 |]
+    /// </code>
+    /// </example>
+    [<CompiledName("Sequential")>]
+    val sequential: ct: CancellationToken -> computations: seq<CancellationToken -> Task<'T>> -> Task<'T[]>
+
+    /// <summary>Creates a task that executes each of the <c>computations</c> in sequence, returning <c>unit</c>.</summary>
+    /// <param name="ct">A cancellation token to pass to each task factory.</param>
+    /// <param name="computations">A sequence of unit task start functions accepting a <see cref="T:System.Threading.CancellationToken"/>.</param>
+    /// <returns>A task that runs all inputs in sequence and returns <c>unit</c>.</returns>
+    ///
+    /// <example id="task-sequentialdo-1">
+    /// <code lang="fsharp">
+    /// task {
+    ///     return!
+    ///         seq { for i in 1..10 -> fun _ct -> task { printfn "%d" i } }
+    ///         // NOTE numbers are guaranteed to be printed in order 1..10
+    ///         |> Task.sequentialDo CancellationToken.None
+    /// }
+    /// </code>
+    /// </example>
+    [<CompiledName("SequentialDo")>]
+    val sequentialDo: ct: CancellationToken -> computations: seq<CancellationToken -> Task<unit>> -> Task<unit>
+
+    /// <summary>Creates a task that executes each of the <c>computations</c> in parallel with concurrency limited
+    /// to at most <c>maxDegreeOfParallelism</c>, returning an array of their results in order of the input sequence.</summary>
+    /// <remarks>
+    /// <p>The relative start and completion order per computation is arbitrary.</p>
+    /// <p>If any of the computations Fault, the governing CancellationToken of its siblings will be Canceled.</p>
+    /// <p>Where multiple computations Fault, a single exception is propagated.</p>
+    /// </remarks>
+    /// <param name="maxDegreeOfParallelism">The maximum number of tasks to run concurrently. Must be &gt; 0.</param>
+    /// <param name="ct">An outer cancellation token used to cancel the parallel request.
+    /// When multiple tasks can run concurrently, task factories receive a linked token that is also canceled if a sibling faults;
+    /// otherwise they receive <c>ct</c> directly.</param>
+    /// <param name="computations">A sequence of task start functions accepting a <see cref="T:System.Threading.CancellationToken"/>.</param>
+    /// <returns>A task yielding an array of the results of <c>computations</c> in the order they were supplied.</returns>
+    ///
+    /// <example id="task-parallellimit-1">
+    /// <code lang="fsharp">
+    /// task {
+    ///     return!
+    ///         seq { for i in 1..10 -> fun _ct -> Task.result (i * i) }
+    ///         |> Task.parallelLimit 3 CancellationToken.None
+    /// } // returns [| 1; 4; 9; 16; 25; 36; 49; 64; 81; 100 |]
+    /// </code>
+    /// </example>
+    [<CompiledName("ParallelLimit")>]
+    val parallelLimit:
+        maxDegreeOfParallelism: int ->
+        ct: CancellationToken ->
+        computations: seq<CancellationToken -> Task<'T>> ->
+            Task<'T[]>
+
+    /// <summary>Creates a task that executes the <c>computations</c> in parallel,
+    /// with concurrency limited to at most <c>maxDegreeOfParallelism</c>.</summary>
+    /// <remarks>
+    /// <p>The relative start and completion order per computation is arbitrary.</p>
+    /// <p>If any of the computations Fault, the governing CancellationToken of its siblings will be Canceled.</p>
+    /// <p>Where multiple computations Fault, a single exception is propagated.</p>
+    /// </remarks>
+    /// <param name="maxDegreeOfParallelism">The maximum number of tasks to run concurrently. Must be &gt; 0.</param>
+    /// <param name="ct">An outer cancellation token used to cancel the parallel request.
+    /// When multiple tasks can run concurrently, task factories receive a linked token that is also canceled if a sibling faults;
+    /// otherwise they receive <c>ct</c> directly.</param>
+    /// <param name="computations">A sequence of unit task start functions accepting a <see cref="T:System.Threading.CancellationToken"/>.</param>
+    /// <returns>A task that runs all inputs with the specified parallelism limit and returns <c>unit</c>.</returns>
+    ///
+    /// <example id="task-paralleldolimit-1">
+    /// <code lang="fsharp">
+    /// task {
+    ///     return!
+    ///         seq { for i in 1..10 -> fun _ct -> task { printfn "%d" i } } // NOTE output order can vary
+    ///         |> Task.parallelDoLimit 3 CancellationToken.None
+    /// }
+    /// </code>
+    /// </example>
+    [<CompiledName("ParallelDoLimit")>]
+    val parallelDoLimit:
+        maxDegreeOfParallelism: int ->
+        ct: CancellationToken ->
+        computations: seq<CancellationToken -> Task<unit>> ->
+            Task<unit>
+
+    /// <summary>Starts the <c>computation</c> on the current thread, returning a <see cref="T:System.Threading.Tasks.Task`1"/>
+    /// that represents its result.</summary>
+    /// <remarks>The computation begins executing synchronously on the calling thread, offloading only at the point
+    /// where it first suspends (mirroring <see cref="M:Microsoft.FSharp.Control.FSharpAsync.StartImmediateAsTask``1(Microsoft.FSharp.Control.FSharpAsync{``0},Microsoft.FSharp.Core.FSharpOption{System.Threading.CancellationToken})"/>).
+    /// <c>ct</c> flows into the computation, so cancelling it cancels <c>computation</c>, and the resulting task observes
+    /// that cancellation.</remarks>
+    /// <param name="ct">A cancellation token to use for <c>computation</c>.</param>
+    /// <param name="computation">The async computation to start.</param>
+    /// <returns>A task representing the result of <c>computation</c>.</returns>
+    ///
+    /// <example id="task-startasyncimmediate-1">
+    /// <code lang="fsharp">
+    /// use cts = new CancellationTokenSource()
+    /// task {
+    ///     return!
+    ///         async { return 42 }
+    ///         |> Task.startAsyncImmediate cts.Token
+    /// } // returns 42
+    /// </code>
+    /// </example>
+    [<CompiledName("StartAsyncImmediate")>]
+    val startAsyncImmediate: ct: CancellationToken -> computation: Async<'T> -> Task<'T>
+
+#if NETSTANDARD2_1 || NET
     /// <summary>Converts a <see cref="T:System.Threading.Tasks.ValueTask`1"/> to a <see cref="T:System.Threading.Tasks.Task`1"/>.</summary>
     ///
     /// <param name="valueTask">The input value task.</param>
@@ -600,7 +713,7 @@ module Task =
     val inline ofValueTask: valueTask: ValueTask<'T> -> Task<'T>
 #endif
 
-#if NETSTANDARD2_1
+#if NETSTANDARD2_1 || NET
 /// <summary>Contains camelCase module-level functions for <see cref="T:System.Threading.Tasks.ValueTask`1"/> computations.</summary>
 ///
 /// <category index="1">Async Programming</category>

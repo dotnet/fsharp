@@ -1,7 +1,7 @@
 open Prelude
 
-module ByRefParam_ExplicitOutAttribute  = 
-    type C() = 
+module ByRefParam_ExplicitOutAttribute  =
+    type C() =
          static member M([<System.Runtime.InteropServices.Out>] x: byref<int>) = x <- 5
     let mutable res = 9
     let v =  C.M(&res)

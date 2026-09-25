@@ -1,5 +1,5 @@
-// #Conformance #SignatureFiles #Namespaces 
-// This file has been compiled with AnonModule01.fs, so 
+// #Conformance #SignatureFiles #Namespaces
+// This file has been compiled with AnonModule01.fs, so
 // open the generated anonymous module.
 
 open AnonModule01

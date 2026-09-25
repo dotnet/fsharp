@@ -1,7 +1,7 @@
-// #Regression #Conformance #PatternMatching #TypeTests 
+// #Regression #Conformance #PatternMatching #TypeTests
 
 
-// Verify error when using a dynamic type test on 
+// Verify error when using a dynamic type test on
 // type without any proper sub types.
 
 

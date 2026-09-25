@@ -2,7 +2,7 @@ open Types
 
 module CheckNewSyntax =
 
-    type MyType() = 
+    type MyType() =
         static member val StaticProperty = 0 with get, set
         static member StaticMethod0 () = 5
         static member StaticMethod1 x = x + 5
@@ -44,7 +44,7 @@ module CheckNewSyntax =
     //let inline f_set_StaticProperty2<'T when 'T : (static member StaticProperty: int with set) >() = 'T.StaticProperty <- 3
     //let inline f_set_Length2<'T when 'T : (member Length: int with set) >(x: 'T) = x.Length <- 3
     //let inline f_Item2<'T when 'T : (member Item: int -> string with get) >(x: 'T) = x[3]
-        
+
     if f_StaticMethod0<MyType>() <> 5 then
         failwith "Unexpected result"
 

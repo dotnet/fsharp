@@ -175,16 +175,21 @@ type ILThisConvention =
 
 [<StructuralEquality; StructuralComparison>]
 type ILCallingConv =
+    private
     | Callconv of ILThisConvention * ILArgConvention
 
-    member internal IsInstance: bool
-    member internal IsInstanceExplicit: bool
-    member internal IsStatic: bool
-    member internal ThisConv: ILThisConvention
-    member internal BasicConv: ILArgConvention
+    member IsInstance: bool
+    member IsInstanceExplicit: bool
+    member IsStatic: bool
+    member ThisConv: ILThisConvention
+    member BasicConv: ILArgConvention
 
     static member Instance: ILCallingConv
     static member Static: ILCallingConv
+
+    /// Returns the shared instance for this combination. Since the representation is private and there
+    /// are only 18 combinations, no calling convention is ever allocated per method signature.
+    static member Create: ILThisConvention * ILArgConvention -> ILCallingConv
 
 /// Array shapes. For most purposes the rank is the only thing that matters.
 type internal ILArrayBound = int32 option
@@ -808,6 +813,7 @@ type internal ILMethodBody =
       MaxStack: int32
       NoInlining: bool
       AggressiveInlining: bool
+      IsRuntimeAsync: bool
       Locals: ILLocals
       Code: ILCode
       DebugRange: ILDebugPoint option
@@ -914,6 +920,7 @@ type WellKnownILAttributes =
     | AttributeUsageAttribute = (1u <<< 24)
     | NotNullIfNotNullAttribute = (1u <<< 25)
     | OverloadResolutionPriorityAttribute = (1u <<< 26)
+    | RequireNamedArgumentsAttribute = (1u <<< 27)
     | NotComputed = (1u <<< 31)
 
 /// Represents the efficiency-oriented storage of ILAttributes in another item.
@@ -1242,6 +1249,8 @@ type ILMethodDef =
 
     member internal WithRuntime: bool -> ILMethodDef
 
+    member internal WithAsync: bool -> ILMethodDef
+
 /// Tables of methods.  Logically equivalent to a list of methods but
 /// the table is kept in a form optimized for looking up methods by
 /// name and arity.
@@ -1256,6 +1265,8 @@ type ILMethodDefs =
     member AsList: unit -> ILMethodDef list
 
     member FindByName: string -> ILMethodDef list
+
+    member internal FindByNameAndArity: string * int -> ILMethodDef list
 
     member TryFindInstanceByNameAndCallingSignature: string * ILCallingSignature -> ILMethodDef option
 
@@ -1498,6 +1509,7 @@ type ILTypeDefLayout =
     | Auto
     | Sequential of ILTypeDefLayoutInfo
     | Explicit of ILTypeDefLayoutInfo
+    | Extended
 
 type internal ILTypeDefLayoutInfo =
     { Size: int32 option

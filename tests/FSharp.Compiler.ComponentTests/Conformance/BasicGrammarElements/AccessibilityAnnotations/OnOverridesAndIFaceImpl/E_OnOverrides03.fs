@@ -1,4 +1,4 @@
-// #Regression #Conformance #DeclarationElements #Accessibility #Overloading 
+// #Regression #Conformance #DeclarationElements #Accessibility #Overloading
 // Regression test for FSHARP1.0:4485
 // Visibility decl on overrides (class inheritance)
 
@@ -21,7 +21,7 @@ type D2a() = class
                 override x.P  with get () = 1
                               and private set (a : int) = ()
             end
-            
+
 type D3a() = class
                 inherit D()
                 override x.P  with get () = 1

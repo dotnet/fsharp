@@ -1,4 +1,4 @@
-// #Regression #NoMT #CompilerOptions #RequiresENU 
+// #Regression #NoMT #CompilerOptions #RequiresENU
 // Test that without [--flaterrors] flag multi-line errors are emitted in a regular way, i.e. spanned to more that one line
 
 //<Expects status="success">        ''a list'</Expects>

@@ -9,7 +9,7 @@ open FSharp.Test.Compiler
 module SequenceIteration =
 
     // This test was automatically generated (moved from FSharpQA suite - Conformance/Expressions/ControlFlowExpressions/SequenceIteration)
-    
+
     [<Theory; FileInlineData("W_IncompleteMatchFor01.fs")>]
     let ``W_IncompleteMatchFor01_fs`` compilation =
         compilation

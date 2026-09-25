@@ -14,12 +14,12 @@ let decr (r: int ref)  = r.Value <- r.Value - 1
 
 let failures = ref []
 
-let report_failure (s : string) = 
+let report_failure (s : string) =
     stderr.Write" NO: "
     stderr.WriteLine s
     failures := !failures @ [s]
 
-let test (s : string) b = 
+let test (s : string) b =
     stderr.Write(s)
     if b then stderr.WriteLine " OK"
     else report_failure (s)
@@ -47,7 +47,7 @@ do test "fweoew092" (rval2.b = 2)
 do rval2.b <- 3
 do test "fweoew093" (rval2.b = 3)
 
-let f(x) = 
+let f(x) =
   { new RecordType2<'a,int> with a = x and b = 2 }
 
 do test "fweoew091" ((f(1)).a = 1)
@@ -72,10 +72,10 @@ let x0 = { new System.Object() with member __.GetHashCode() = 3 }
 
 type ClassType1 =
   class
-     inherit System.Object 
+     inherit System.Object
      val someField : string
 
-     interface IEnumerable 
+     interface IEnumerable
 
      abstract VirtualMethod1: string -> int
      abstract VirtualMethod2: string * string -> int
@@ -88,15 +88,15 @@ type ClassType1 =
   end
 
 type ClassType1
-  with 
+  with
      default x.VirtualMethod1PostHoc(s) = 3
      default x.VirtualMethod2PostHoc(s1,s2) = 3
      new(s1,s2) = { inherit System.Object(); someField = "constructor2" + s1 + s2 }
   end
 
 type ClassType1
-  with 
-     interface IEnumerable with 
+  with
+     interface IEnumerable with
         member x.GetEnumerator() = failwith "no implementation"
      end
 
@@ -104,8 +104,8 @@ type ClassType1
 
 let x2 = { new ClassType1("a") with member __.GetHashCode() = 3 }
 let x3 = { new ClassType1("a") with member __.VirtualMethod1(s) = 4 }
-let x4 = { new ClassType1("a") with 
-               member __.VirtualMethod1(s) = 5 
+let x4 = { new ClassType1("a") with
+               member __.VirtualMethod1(s) = 5
                member __.VirtualMethod2(s1,s2) = s1.Length + s2.Length }
 
 
@@ -125,7 +125,7 @@ do test "e09wckj321" (x4.VirtualMethod2("abc","d") = 4)
 
 type ClassType2 =
   class
-     inherit ClassType1 
+     inherit ClassType1
      val someField2 : string
 
      override x.VirtualMethod1(s) = 2001
@@ -138,7 +138,7 @@ type ClassType2 =
 let x22 = { new ClassType2("a") with member __.GetHashCode() = 3 }
 let x32 = { new ClassType2("abc") with member __.VirtualMethod1(s) = 4002 }
 let x42 = { new ClassType2("abcd")  with
-              member __.VirtualMethod1(s) = 5004 
+              member __.VirtualMethod1(s) = 5004
               member __.VirtualMethod2(s1,s2) = 500 + s1.Length + s2.Length }
 
 do test "e09wckj2ddwdw" (ignore(((x22 :> obj) :?> ClassType1)); true)
@@ -161,10 +161,10 @@ module AbstractClassTest = begin
     [<AbstractClass>]
     type ClassType1 =
       class
-         inherit System.Object 
+         inherit System.Object
          val someField : string
 
-         interface IEnumerable 
+         interface IEnumerable
 
          abstract AbstractMethod1: string -> int
          abstract AbstractMethod2: string * string -> int
@@ -173,8 +173,8 @@ module AbstractClassTest = begin
       end
 
     type ClassType1
-      with 
-         interface IEnumerable with 
+      with
+         interface IEnumerable with
             member x.GetEnumerator() = failwith "no implementation"
          end
 
@@ -183,8 +183,8 @@ module AbstractClassTest = begin
     //let shouldGiveError1 = { new ClassType1("a") with GetHashCode() = 3 }
     //let shouldGiveError2 = { new ClassType1("a") with AbstractMethod1(s) = 4 }
     //let shouldGiveError3a = new ClassType1("a")
-    let x4 = { new ClassType1("a") with 
-                  member __.AbstractMethod1(s) = 5 
+    let x4 = { new ClassType1("a") with
+                  member __.AbstractMethod1(s) = 5
                   member __.AbstractMethod2(s1,s2) = s1.Length + s2.Length }
 
 
@@ -197,7 +197,7 @@ module AbstractClassTest = begin
 
     type ClassType2 =
       class
-         inherit ClassType1 
+         inherit ClassType1
          val someField2 : string
 
          override x.AbstractMethod1(s) = 2001
@@ -210,7 +210,7 @@ module AbstractClassTest = begin
     let x22 = { new ClassType2("a") with member __.GetHashCode() = 3 }
     let x32 = { new ClassType2("abc") with member __.AbstractMethod1(s) = 4002 }
     let x42 = { new ClassType2("abcd")  with
-                  member __.AbstractMethod1(s) = 5004 
+                  member __.AbstractMethod1(s) = 5004
                   member __.AbstractMethod2(s1,s2) = 500 + s1.Length + s2.Length }
 
     do test "e09wckj2ddwdw" (ignore(((x22 :> obj) :?> ClassType1)); true)
@@ -264,20 +264,20 @@ end
 //     new(s: string) = { new ClassType1 with base=new Object() and x = "abc" }
 //     new(s: string) = { new ClassType1 with base=new Form() and x = "abc" }
 //     new(s: string) = ((new System.Object()) :?> ClassType1)
- 
+
 
 //-----------------------------------------
 // Thorough testing of members for records.
 
 module RecordTypeTest = begin
 
-    type AbstractType = 
+    type AbstractType =
       { instanceField: string;
         mutable mutableInstanceField: string;
         instanceArray: string array;
         instanceArray2: string array array;
         mutableInstanceArray: string array;
-        mutableInstanceArray2: string array array; 
+        mutableInstanceArray2: string array array;
         recursiveInstance: AbstractType;
         }
 
@@ -286,20 +286,20 @@ module RecordTypeTest = begin
     let staticArray = [| "staticArrayElement1"; "staticArrayElement2" |]
     let mutableStaticArray = [| "mutableStaticArrayElement1InitialValue"; "mutableStaticArrayElement2InitialValue" |]
 
-    let NewAbstractValue(s) = 
+    let NewAbstractValue(s) =
       let rec self =
         { instanceField=s;
           mutableInstanceField=s;
           instanceArray=[| s;s |];
           instanceArray2=[| [| s;s |];[| s;s |] |];
           mutableInstanceArray =[| s;s |];
-          mutableInstanceArray2 =[| [| s;s |];[| s;s |] |]; 
+          mutableInstanceArray2 =[| [| s;s |];[| s;s |] |];
           recursiveInstance=self;
-        } in 
+        } in
       self
 
-    type AbstractType 
-     with 
+    type AbstractType
+     with
       // properties
       override x.ToString() = x.instanceField
       member x.InstanceProperty = x.instanceField + ".InstanceProperty"
@@ -308,7 +308,7 @@ module RecordTypeTest = begin
       member x.MutableInstanceProperty
         with get() = x.mutableInstanceField
         and set(v:string) = x.mutableInstanceField <- v
-        
+
       member x.InstanceIndexerCount = Array.length x.instanceArray
 
       member x.InstanceIndexer
@@ -334,10 +334,10 @@ module RecordTypeTest = begin
       static member MutableStaticProperty
         with get() = !mutableStaticField
         and  set(v:string) = mutableStaticField := v
-        
+
       static member StaticIndexer
          with get(idx) = staticArray.[idx]
-         
+
       static member StaticIndexerCount = Array.length staticArray
 
       static member MutableStaticIndexer
@@ -355,7 +355,7 @@ module RecordTypeTest = begin
       member x.PrivateMutableInstanceProperty
         with get() = x.mutableInstanceField
         and  set(v:string) = x.mutableInstanceField <- v
-        
+
       member x.PrivateInstanceIndexerCount = Array.length x.instanceArray
 
       member x.PrivateInstanceIndexer
@@ -381,10 +381,10 @@ module RecordTypeTest = begin
       static member PrivateMutableStaticProperty
         with get() = !mutableStaticField
         and  set(v:string) = mutableStaticField := v
-        
+
       static member PrivateStaticIndexer
          with get(idx) = staticArray.[idx]
-         
+
       static member PrivateStaticIndexerCount = Array.length staticArray
 
       static member PrivateMutableStaticIndexer
@@ -562,8 +562,8 @@ module UnionTypeTest = begin
 
     let NewAbstractValue(s) = B(s)
 
-    type AbstractType 
-     with 
+    type AbstractType
+     with
       // properties
       override x.ToString() = match x with A _ -> "A" | B(s) -> "B"
       member x.InstanceProperty = "instanceProperty"
@@ -572,7 +572,7 @@ module UnionTypeTest = begin
       member x.MutableInstanceProperty
         with get() = x.InstanceProperty
         and  set(v:string) = Printf.printf "called MutableInstanceProperty.set\n"
-        
+
       member x.InstanceIndexerCount = 1
 
       member x.InstanceIndexer
@@ -598,10 +598,10 @@ module UnionTypeTest = begin
       static member MutableStaticProperty
         with get() = !mutableStaticField
         and  set(v:string) = mutableStaticField := v
-        
+
       static member StaticIndexer
          with get(idx) = staticArray.[idx]
-         
+
       static member StaticIndexerCount = Array.length staticArray
 
       static member MutableStaticIndexer
@@ -619,7 +619,7 @@ module UnionTypeTest = begin
       member x.PrivateMutableInstanceProperty
         with get() = "a"
         and  set(v:string) = Printf.printf "called mutator\n"
-        
+
       member x.PrivateInstanceIndexerCount = 1
 
       member x.PrivateInstanceIndexer
@@ -645,10 +645,10 @@ module UnionTypeTest = begin
       static member PrivateMutableStaticProperty
         with get() = !mutableStaticField
         and  set(v:string) = mutableStaticField := v
-        
+
       static member PrivateStaticIndexer
          with get(idx) = staticArray.[idx]
-         
+
       static member PrivateStaticIndexerCount = Array.length staticArray
 
       static member PrivateMutableStaticIndexer
@@ -816,14 +816,14 @@ end
 
 module OverrideIComparableOnClassTest = begin
 
-  type MyStringClass = 
-    class 
-      val cache: int 
-      val v: string 
-      interface IComparable with 
-         member x.CompareTo(y:obj) = compare x.v (y :?> MyStringClass).v 
-      end 
-      override x.GetHashCode() = hash(x.v) 
+  type MyStringClass =
+    class
+      val cache: int
+      val v: string
+      interface IComparable with
+         member x.CompareTo(y:obj) = compare x.v (y :?> MyStringClass).v
+      end
+      override x.GetHashCode() = hash(x.v)
       override x.Equals(y:obj) = (compare x.v (y :?> MyStringClass).v) = 0
       member x.Length = x.cache
       new(s:string) = { inherit Object(); cache=s.Length; v=s }
@@ -835,7 +835,7 @@ module OverrideIComparableOnClassTest = begin
   let s4 = new MyStringClass("abcd")
   do test "cepoiwelk" (s1.Length = 3)
   do test "cepoiwelk" (s2.Length = 3)
-  let testc (s1:MyStringClass) (s2:MyStringClass) = 
+  let testc (s1:MyStringClass) (s2:MyStringClass) =
     test "cepoiwelk1" ((s1 = s2) = (s1.v = s2.v));
     test "cepoiwelk2" ((s1 < s2) = (s1.v < s2.v));
     test "cepoiwelk3" ((s1 > s2) = (s1.v > s2.v));
@@ -845,30 +845,30 @@ module OverrideIComparableOnClassTest = begin
     Printf.printf "hash s1 = %d\n" (hash(s1));
     Printf.printf "hash s1.v = %d\n" (hash(s1.v));
     test "cepoiwelk7" (hash(s1) = hash(s1.v));
-    test "cepoiwelk8" (hash(s2) = hash(s2.v)) 
+    test "cepoiwelk8" (hash(s2) = hash(s2.v))
 
   do testc s1 s2
   do testc s1 s3
   do testc s2 s3
-  do testc s2 s1 
-  do testc s3 s1 
-  do testc s3 s2 
-  do testc s4 s2 
+  do testc s2 s1
+  do testc s3 s1
+  do testc s3 s2
+  do testc s4 s2
 end
 
 module OverrideIStructuralComparableOnClassTest = begin
 
-  type MyStringClass = 
-    class 
-      val cache: int 
-      val v: string 
-      interface IStructuralComparable with 
-         member x.CompareTo(y:obj,comp:System.Collections.IComparer) = compare x.v (y :?> MyStringClass).v 
-      end 
-      interface IStructuralEquatable with 
-         member x.GetHashCode(comp:System.Collections.IEqualityComparer) = hash(x.v) 
+  type MyStringClass =
+    class
+      val cache: int
+      val v: string
+      interface IStructuralComparable with
+         member x.CompareTo(y:obj,comp:System.Collections.IComparer) = compare x.v (y :?> MyStringClass).v
+      end
+      interface IStructuralEquatable with
+         member x.GetHashCode(comp:System.Collections.IEqualityComparer) = hash(x.v)
          member x.Equals(y:obj,comp:System.Collections.IEqualityComparer) = (compare x.v (y :?> MyStringClass).v) = 0
-      end 
+      end
       member x.Length = x.cache
       new(s:string) = { inherit Object(); cache=s.Length; v=s }
     end
@@ -879,7 +879,7 @@ module OverrideIStructuralComparableOnClassTest = begin
   let s4 = new MyStringClass("abcd")
   do test "cepoiwelk" (s1.Length = 3)
   do test "cepoiwelk" (s2.Length = 3)
-  let testc (s1:MyStringClass) (s2:MyStringClass) = 
+  let testc (s1:MyStringClass) (s2:MyStringClass) =
     test "cepoiwelk1" ((s1 = s2) = (s1.v = s2.v));
     test "cepoiwelk2" ((s1 < s2) = (s1.v < s2.v));
     test "cepoiwelk3" ((s1 > s2) = (s1.v > s2.v));
@@ -889,28 +889,28 @@ module OverrideIStructuralComparableOnClassTest = begin
     Printf.printf "hash s1 = %d\n" (hash(s1));
     Printf.printf "hash s1.v = %d\n" (hash(s1.v));
     test "cepoiwelk7" (hash(s1) = hash(s1.v));
-    test "cepoiwelk8" (hash(s2) = hash(s2.v)) 
+    test "cepoiwelk8" (hash(s2) = hash(s2.v))
 
   do testc s1 s2
   do testc s1 s3
   do testc s2 s3
-  do testc s2 s1 
-  do testc s3 s1 
-  do testc s3 s2 
-  do testc s4 s2 
+  do testc s2 s1
+  do testc s3 s1
+  do testc s3 s2
+  do testc s4 s2
 end
 
 module OverrideIComparableOnStructTest = begin
 
   [<CustomEquality; CustomComparison>]
-  type MyStringStruct = 
+  type MyStringStruct =
     struct
-      val cache: int 
-      val v: string 
-      interface IComparable with 
-         member x.CompareTo(y:obj) = compare x.v (y :?> MyStringStruct).v 
-      end 
-      override x.GetHashCode() = hash(x.v) 
+      val cache: int
+      val v: string
+      interface IComparable with
+         member x.CompareTo(y:obj) = compare x.v (y :?> MyStringStruct).v
+      end
+      override x.GetHashCode() = hash(x.v)
       override x.Equals(y:obj) = (compare x.v (y :?> MyStringStruct).v) = 0
       member x.Length = x.cache
       new(s:string) = { cache=s.Length; v=s }
@@ -922,7 +922,7 @@ module OverrideIComparableOnStructTest = begin
   let s4 = new MyStringStruct("abcd")
   do test "cepoiwelk" (s1.Length = 3)
   do test "cepoiwelk" (s2.Length = 3)
-  let testc (s1:MyStringStruct) (s2:MyStringStruct) = 
+  let testc (s1:MyStringStruct) (s2:MyStringStruct) =
     test "cepoiwelk1" ((s1 = s2) = (s1.v = s2.v));
     test "cepoiwelk2" ((s1 < s2) = (s1.v < s2.v));
     test "cepoiwelk3" ((s1 > s2) = (s1.v > s2.v));
@@ -932,31 +932,31 @@ module OverrideIComparableOnStructTest = begin
     Printf.printf "hash s1 = %d\n" (hash(s1));
     Printf.printf "hash s1.v = %d\n" (hash(s1.v));
     test "cepoiwelk7" (hash(s1) = hash(s1.v));
-    test "cepoiwelk8" (hash(s2) = hash(s2.v)) 
+    test "cepoiwelk8" (hash(s2) = hash(s2.v))
 
   do testc s1 s2
   do testc s1 s3
   do testc s2 s3
-  do testc s2 s1 
-  do testc s3 s1 
-  do testc s3 s2 
-  do testc s4 s2 
+  do testc s2 s1
+  do testc s3 s1
+  do testc s3 s2
+  do testc s4 s2
 end
 
 module OverrideIStructuralComparableOnStructTest = begin
 
   [<CustomEquality; CustomComparison>]
-  type MyStringStruct = 
+  type MyStringStruct =
     struct
-      val cache: int 
-      val v: string 
-      interface IStructuralComparable with 
-         member x.CompareTo(y:obj,comp:System.Collections.IComparer) = compare x.v (y :?> MyStringStruct).v 
-      end 
-      interface IStructuralEquatable with 
-         member x.GetHashCode(comp:System.Collections.IEqualityComparer) = hash(x.v) 
+      val cache: int
+      val v: string
+      interface IStructuralComparable with
+         member x.CompareTo(y:obj,comp:System.Collections.IComparer) = compare x.v (y :?> MyStringStruct).v
+      end
+      interface IStructuralEquatable with
+         member x.GetHashCode(comp:System.Collections.IEqualityComparer) = hash(x.v)
          member x.Equals(y:obj,comp:System.Collections.IEqualityComparer) = (compare x.v (y :?> MyStringStruct).v) = 0
-      end 
+      end
       member x.Length = x.cache
       new(s:string) = { cache=s.Length; v=s }
     end
@@ -967,7 +967,7 @@ module OverrideIStructuralComparableOnStructTest = begin
   let s4 = new MyStringStruct("abcd")
   do test "cepoiwelk" (s1.Length = 3)
   do test "cepoiwelk" (s2.Length = 3)
-  let testc (s1:MyStringStruct) (s2:MyStringStruct) = 
+  let testc (s1:MyStringStruct) (s2:MyStringStruct) =
     test "cepoiwelk1" ((s1 = s2) = (s1.v = s2.v));
     test "cepoiwelk2" ((s1 < s2) = (s1.v < s2.v));
     test "cepoiwelk3" ((s1 > s2) = (s1.v > s2.v));
@@ -977,26 +977,26 @@ module OverrideIStructuralComparableOnStructTest = begin
     Printf.printf "hash s1 = %d\n" (hash(s1));
     Printf.printf "hash s1.v = %d\n" (hash(s1.v));
     test "cepoiwelk7" (hash(s1) = hash(s1.v));
-    test "cepoiwelk8" (hash(s2) = hash(s2.v)) 
+    test "cepoiwelk8" (hash(s2) = hash(s2.v))
 
   do testc s1 s2
   do testc s1 s3
   do testc s2 s3
-  do testc s2 s1 
-  do testc s3 s1 
-  do testc s3 s2 
-  do testc s4 s2 
+  do testc s2 s1
+  do testc s3 s1
+  do testc s3 s2
+  do testc s4 s2
 end
 
 module OverrideIComparableOnRecordTest = begin
 
   [<CustomEquality; CustomComparison>]
   type MyStringRecord = { cache: int; v: string  }
-    with 
-      interface IComparable with 
-         member x.CompareTo(y:obj) = compare x.v (y :?> MyStringRecord).v 
-      end 
-      override x.GetHashCode() = hash(x.v) 
+    with
+      interface IComparable with
+         member x.CompareTo(y:obj) = compare x.v (y :?> MyStringRecord).v
+      end
+      override x.GetHashCode() = hash(x.v)
       override x.Equals(y:obj) = (compare x.v (y :?> MyStringRecord).v) = 0
       member x.Length = x.cache
       static member Create(s:string) = { cache=s.Length; v=s }
@@ -1009,7 +1009,7 @@ module OverrideIComparableOnRecordTest = begin
   let s4 = MyStringRecord.Create("abcd")
   do test "recd-cepoiwelk" (s1.Length = 3)
   do test "recd-cepoiwelk" (s2.Length = 3)
-  let testc s1 s2 = 
+  let testc s1 s2 =
     test "recd-cepoiwelk1" ((s1 = s2) = (s1.v = s2.v));
     test "recd-cepoiwelk2" ((s1 < s2) = (s1.v < s2.v));
     test "recd-cepoiwelk3" ((s1 > s2) = (s1.v > s2.v));
@@ -1019,29 +1019,29 @@ module OverrideIComparableOnRecordTest = begin
     Printf.printf "hash s1 = %d\n" (hash(s1));
     Printf.printf "hash s1.v = %d\n" (hash(s1.v));
     test "recd-cepoiwelk7" (hash(s1) = hash(s1.v));
-    test "recd-cepoiwelk8" (hash(s2) = hash(s2.v)) 
+    test "recd-cepoiwelk8" (hash(s2) = hash(s2.v))
 
   do testc s1 s2
   do testc s1 s3
   do testc s2 s3
-  do testc s2 s1 
-  do testc s3 s1 
-  do testc s3 s2 
-  do testc s4 s2 
+  do testc s2 s1
+  do testc s3 s1
+  do testc s3 s2
+  do testc s4 s2
 end
 
 module OverrideIStructuralComparableOnRecordTest = begin
 
   [<CustomEquality; CustomComparison>]
   type MyStringRecord = { cache: int; v: string  }
-    with 
-      interface IStructuralComparable with 
-         member x.CompareTo(y:obj,comp:System.Collections.IComparer) = compare x.v (y :?> MyStringRecord).v 
-      end 
-      interface IStructuralEquatable with 
-         member x.GetHashCode(comp:System.Collections.IEqualityComparer) = hash(x.v) 
+    with
+      interface IStructuralComparable with
+         member x.CompareTo(y:obj,comp:System.Collections.IComparer) = compare x.v (y :?> MyStringRecord).v
+      end
+      interface IStructuralEquatable with
+         member x.GetHashCode(comp:System.Collections.IEqualityComparer) = hash(x.v)
          member x.Equals(y:obj,comp:System.Collections.IEqualityComparer) = (compare x.v (y :?> MyStringRecord).v) = 0
-      end 
+      end
       member x.Length = x.cache
       static member Create(s:string) = { cache=s.Length; v=s }
     end
@@ -1053,7 +1053,7 @@ module OverrideIStructuralComparableOnRecordTest = begin
   let s4 = MyStringRecord.Create("abcd")
   do test "recd-cepoiwelk" (s1.Length = 3)
   do test "recd-cepoiwelk" (s2.Length = 3)
-  let testc s1 s2 = 
+  let testc s1 s2 =
     test "recd-cepoiwelk1" ((s1 = s2) = (s1.v = s2.v));
     test "recd-cepoiwelk2" ((s1 < s2) = (s1.v < s2.v));
     test "recd-cepoiwelk3" ((s1 > s2) = (s1.v > s2.v));
@@ -1063,31 +1063,31 @@ module OverrideIStructuralComparableOnRecordTest = begin
     Printf.printf "hash s1 = %d\n" (hash(s1));
     Printf.printf "hash s1.v = %d\n" (hash(s1.v));
     test "recd-cepoiwelk7" (hash(s1) = hash(s1.v));
-    test "recd-cepoiwelk8" (hash(s2) = hash(s2.v)) 
+    test "recd-cepoiwelk8" (hash(s2) = hash(s2.v))
 
   do testc s1 s2
   do testc s1 s3
   do testc s2 s3
-  do testc s2 s1 
-  do testc s3 s1 
-  do testc s3 s2 
-  do testc s4 s2 
+  do testc s2 s1
+  do testc s3 s1
+  do testc s3 s2
+  do testc s4 s2
 end
 
 module OverrideIComparableOnUnionTest = begin
 
   [<CustomEquality; CustomComparison>]
   type MyStringUnion = A of int * string | B of int * string
-    with 
-      member x.Value = match x with A(_,s) | B(_,s) -> s 
+    with
+      member x.Value = match x with A(_,s) | B(_,s) -> s
       override x.GetHashCode() =
             hash(x.Value)
       override x.Equals(y:obj) =
             x.Value = (y :?> MyStringUnion).Value
       interface IComparable with
-        member x.CompareTo(y:obj) = 
+        member x.CompareTo(y:obj) =
             compare x.Value (y :?> MyStringUnion).Value
-      end      
+      end
       member x.Length = match x with A(n,_) | B(n,_) -> n
       static member Create(s:string) = A(s.Length,s)
     end
@@ -1099,7 +1099,7 @@ module OverrideIComparableOnUnionTest = begin
   let s4 = MyStringUnion.Create("abcd")
   do test "union-cepoiwelk" (s1.Length = 3)
   do test "union-cepoiwelk" (s2.Length = 3)
-  let testc (s1:MyStringUnion) (s2:MyStringUnion) = 
+  let testc (s1:MyStringUnion) (s2:MyStringUnion) =
     test "union-cepoiwelk1" ((s1 = s2) = (s1.Value = s2.Value));
     test "union-cepoiwelk2" ((s1 < s2) = (s1.Value < s2.Value));
     test "union-cepoiwelk3" ((s1 > s2) = (s1.Value > s2.Value));
@@ -1110,18 +1110,18 @@ module OverrideIComparableOnUnionTest = begin
     Printf.printf "hash s1 = %d\n" (hash(s1));
     Printf.printf "hash s1.Value = %d\n" (hash(s1.Value));
     test "union-cepoiwelk7" (hash(s1) = hash(s1.Value));
-    test "union-cepoiwelk8" (hash(s2) = hash(s2.Value)) 
+    test "union-cepoiwelk8" (hash(s2) = hash(s2.Value))
 
   do testc s1 s2
   do testc s1 s3
   do testc s2 s3
-  do testc s2 s1 
-  do testc s3 s1 
-  do testc s3 s2 
-  do testc s4 s2 
+  do testc s2 s1
+  do testc s3 s1
+  do testc s3 s2
+  do testc s4 s2
 end
 
-module TwoCaseUnionTest = 
+module TwoCaseUnionTest =
 
   [<Struct>]
   type MyUnion = A | B
@@ -1161,7 +1161,7 @@ module ToStringOnUnionTestOverride = begin
   type MyUnion = A of string | B
     with
       override x.ToString() = expected1
-  
+
   let expected2 = "MyStructUnion"
 
   type MyStructUnion = C of string | D
@@ -1204,14 +1204,14 @@ module ToStringOnRecordTestOverride = begin
   type MyRecord = { A: string; B: int }
     with
       override x.ToString() = expected1
-  
+
   let expected2 = "MyStructRecord"
 
   [<Struct>]
   type MyStructRecord = { C: string; D: int }
     with
       override x.ToString() = expected2
-  
+
   let a1 = {A = "201"; B = 7}
   let c1 = {C = "20"; D = 17}
 
@@ -1226,18 +1226,18 @@ module OverrideIStructuralComparableOnUnionTest = begin
 
   [<CustomEquality; CustomComparison>]
   type MyStringUnion = A of int * string | B of int * string
-    with 
-      member x.Value = match x with A(_,s) | B(_,s) -> s 
+    with
+      member x.Value = match x with A(_,s) | B(_,s) -> s
       interface IStructuralEquatable with
         member x.GetHashCode(comp:System.Collections.IEqualityComparer) =
             hash(x.Value)
         member x.Equals(y:obj,comp:System.Collections.IEqualityComparer) =
             x.Value = (y :?> MyStringUnion).Value
-      end      
+      end
       interface IStructuralComparable with
-        member x.CompareTo(y:obj,comp:System.Collections.IComparer) = 
+        member x.CompareTo(y:obj,comp:System.Collections.IComparer) =
             compare x.Value (y :?> MyStringUnion).Value
-      end      
+      end
       member x.Length = match x with A(n,_) | B(n,_) -> n
       static member Create(s:string) = A(s.Length,s)
     end
@@ -1249,7 +1249,7 @@ module OverrideIStructuralComparableOnUnionTest = begin
   let s4 = MyStringUnion.Create("abcd")
   do test "union-cepoiwelk" (s1.Length = 3)
   do test "union-cepoiwelk" (s2.Length = 3)
-  let testc (s1:MyStringUnion) (s2:MyStringUnion) = 
+  let testc (s1:MyStringUnion) (s2:MyStringUnion) =
     test "union-cepoiwelk1" ((s1 = s2) = (s1.Value = s2.Value));
     //test "union-cepoiwelk2" ((s1 < s2) = (s1.Value < s2.Value));
     //test "union-cepoiwelk3" ((s1 > s2) = (s1.Value > s2.Value));
@@ -1260,25 +1260,25 @@ module OverrideIStructuralComparableOnUnionTest = begin
     Printf.printf "hash s1 = %d\n" (hash(s1));
     Printf.printf "hash s1.Value = %d\n" (hash(s1.Value));
     test "union-cepoiwelk7" (hash(s1) = hash(s1.Value));
-    test "union-cepoiwelk8" (hash(s2) = hash(s2.Value)) 
+    test "union-cepoiwelk8" (hash(s2) = hash(s2.Value))
 
   do testc s1 s2
   do testc s1 s3
   do testc s2 s3
-  do testc s2 s1 
-  do testc s3 s1 
-  do testc s3 s2 
-  do testc s4 s2 
+  do testc s2 s1
+  do testc s3 s1
+  do testc s3 s2
+  do testc s4 s2
 end
 
 //---------------------------------------------------------------------
 // Test we can define an attribute
 
 
-type DontPressThisButtonAttribute = 
-  class 
+type DontPressThisButtonAttribute =
+  class
     inherit System.Attribute
-    val v: string 
+    val v: string
     member x.Message = x.v
     new(s:string) = { inherit System.Attribute(); v=s }
   end
@@ -1292,9 +1292,9 @@ let  [<DontPressThisButton("Please don't press this again")>] button () = 1
 
 //open System.Windows.Forms
 
-//type MyCanvas2 = 
-//  class 
-//    inherit Form 
+//type MyCanvas2 =
+//  class
+//    inherit Form
 //    override x.OnPaint(args) =  Printf.printf "OnPaint\n"; base.OnPaint(args)
 
 //    new() = { inherit Form(); }
@@ -1316,16 +1316,16 @@ let (|>) x f = f x
 (*
 type MyEventListeners<'a>  =
   class
-    inherit Event<'a> 
+    inherit Event<'a>
 
-    val mutable listeners2: (Handler<'a>) list 
+    val mutable listeners2: (Handler<'a>) list
 
-    member l.Fire(x : 'a) = 
-      let arg = new SimpleEventArgs<_>(x) in 
-      l.listeners2 |> List.iter (fun d -> ignore(d.Invoke((null:obj),arg))) 
+    member l.Fire(x : 'a) =
+      let arg = new SimpleEventArgs<_>(x) in
+      l.listeners2 |> List.iter (fun d -> ignore(d.Invoke((null:obj),arg)))
 
-    new() = 
-      { inherit Event<'a>(); 
+    new() =
+      { inherit Event<'a>();
         listeners2 = [] }
 
   end
@@ -1333,8 +1333,8 @@ type MyEventListeners<'a>  =
 *)
 
 (*
-type MyCanvas2 = 
-  class 
+type MyCanvas2 =
+  class
     inherit Form
     member x.Redraw : Event<PaintEventArgs>
     new: unit -> MyCanvas2
@@ -1342,8 +1342,8 @@ type MyCanvas2 =
 *)
 
 (*
-type MyCanvas2 = 
-  class 
+type MyCanvas2 =
+  class
     inherit Form
     val redrawListeners: MyEventListeners<PaintEventArgs>
     member x.Redraw = x.redrawListeners
@@ -1355,7 +1355,7 @@ type MyCanvas2 =
 
 (*
 class MyCanvas2() =
-  let l = MyEventListeners<PaintEventArgs>() in 
+  let l = MyEventListeners<PaintEventArgs>() in
   object
     inherit Form()
     member x.Redraw = l
@@ -1363,7 +1363,7 @@ class MyCanvas2() =
   end
 
 class MyCanvas2 =
-  let l = MyEventListeners<PaintEventArgs>() in 
+  let l = MyEventListeners<PaintEventArgs>() in
   object
     inherit Form
     member x.Redraw = l
@@ -1389,9 +1389,9 @@ do Application.Run(form)
 // Test we can define an exception
 
 type MyException =
-  class 
+  class
     inherit System.Exception
-    val v: string 
+    val v: string
     override x.Message = x.v
     new(s:string) = { inherit System.Exception(); v=s }
   end
@@ -1417,7 +1417,7 @@ type IMyInterface =
 //---------------------------------------------------------------------
 // Test we can define and subscribe to a generic interface
 
-    
+
 //---------------------------------------------------------------------
 // Test we can define a struct
 
@@ -1437,8 +1437,8 @@ type MyStruct =
 //---------------------------------------------------------------------
 // Test we can define a class with no fields
 
-type NoFieldClass = 
-  class 
+type NoFieldClass =
+  class
     new() = { inherit System.Object() }
   end
 
@@ -1450,12 +1450,12 @@ module MultiInterfaceTest = begin
   type PrivateInterfaceA2 = interface abstract M2 : unit -> unit end
 
   [<Sealed>]
-  type C1 = 
-    class 
-      interface PrivateInterfaceA1 with 
+  type C1 =
+    class
+      interface PrivateInterfaceA1 with
         member x.M1() = ()
       end
-      interface PrivateInterfaceA2 with 
+      interface PrivateInterfaceA2 with
         member x.M2() = ()
       end
    end
@@ -1465,12 +1465,12 @@ module MultiInterfaceTestNameConflict = begin
   type PrivateInterfaceA1 = interface abstract M : unit -> unit end
   type PrivateInterfaceA2 = interface abstract M : unit -> unit end
   [<Sealed>]
-  type C1 = 
-    class 
-      interface PrivateInterfaceA1 with 
+  type C1 =
+    class
+      interface PrivateInterfaceA1 with
         member x.M() = ()
       end
-      interface PrivateInterfaceA2 with 
+      interface PrivateInterfaceA2 with
         member x.M() = ()
       end
    end
@@ -1481,12 +1481,12 @@ module GenericMultiInterfaceTestNameConflict = begin
   type PrivateInterfaceA1<'a> = interface abstract M : 'a -> 'a end
   type PrivateInterfaceA2<'a> = interface abstract M : 'a -> 'a end
   [<Sealed>]
-  type C1 = 
-    class 
-      interface PrivateInterfaceA1<string> with 
+  type C1 =
+    class
+      interface PrivateInterfaceA1<string> with
         member x.M(y) = y
       end
-      interface PrivateInterfaceA2<int> with 
+      interface PrivateInterfaceA2<int> with
         member x.M(y) = y
       end
    end
@@ -1498,30 +1498,30 @@ module DeepInterfaceInheritance = begin
   type InterfaceA2 = interface inherit InterfaceA1 abstract M2 : int -> int end
   type InterfaceA3 = interface inherit InterfaceA1  inherit InterfaceA2 abstract M3 : int -> int end
 
-  type C1 = 
-    class 
-      interface InterfaceA2 with 
-        member x.M1(y) = y 
-        member x.M2(y) = y + y 
+  type C1 =
+    class
+      interface InterfaceA2 with
+        member x.M1(y) = y
+        member x.M2(y) = y + y
       end
       new() = { inherit Object(); }
    end
-  type C2 = 
-    class 
-      interface InterfaceA3 with 
+  type C2 =
+    class
+      interface InterfaceA3 with
         member x.M1(y) = y
         member x.M2(y) = y + y
         member x.M3(y) = y + y + y
       end
       new() = { inherit Object(); }
    end
-  type C3 = 
-    class 
-      interface InterfaceA2 with 
+  type C3 =
+    class
+      interface InterfaceA2 with
         member x.M1(y) = y
         member x.M2(y) = y + y
       end
-      interface InterfaceA3 with 
+      interface InterfaceA3 with
         member x.M3(y) = y + y + y
       end
       new() = { inherit Object(); }
@@ -1529,19 +1529,19 @@ module DeepInterfaceInheritance = begin
 
   do test "fewopvrej1" (((new C1()) :> InterfaceA1).M1(4) = 4)
   do test "fewopvrej2" (((new C1()) :> InterfaceA2).M2(4) = 8)
-   
+
   do test "fewopvrej3" (((new C2()) :> InterfaceA1).M1(4) = 4)
   do test "fewopvrej4" (((new C2()) :> InterfaceA2).M2(4) = 8)
   do test "fewopvrej5" (((new C2()) :> InterfaceA3).M3(4) = 12)
   do test "fewopvrej6" (((new C2()) :> InterfaceA3).M1(4) = 4)
   do test "fewopvrej7" (((new C2()) :> InterfaceA3).M2(4) = 8)
-   
+
   do test "fewopvrej8" (((new C3()) :> InterfaceA1).M1(4) = 4)
   do test "fewopvrej9" (((new C3()) :> InterfaceA2).M2(4) = 8)
   do test "fewopvrej10" (((new C3()) :> InterfaceA3).M3(4) = 12)
   do test "fewopvrej11" (((new C3()) :> InterfaceA3).M1(4) = 4)
   do test "fewopvrej12" (((new C3()) :> InterfaceA3).M2(4) = 8)
-   
+
 end
 
 module DeepGenericInterfaceInheritance = begin
@@ -1549,30 +1549,30 @@ module DeepGenericInterfaceInheritance = begin
   type InterfaceA2<'b> = interface inherit InterfaceA1<'b list> abstract M2 : 'b * 'b list -> 'b list end
   type InterfaceA3 = interface inherit InterfaceA2<string>  abstract M3 : string list -> string list end
 
-  type C1 = 
-    class 
-      interface InterfaceA2<int> with 
-        member obj.M1(y) = 1::y 
+  type C1 =
+    class
+      interface InterfaceA2<int> with
+        member obj.M1(y) = 1::y
         member obj.M2(x,y) = x::y
       end
       new() = { inherit Object(); }
    end
-  type C2 = 
-    class 
-      interface InterfaceA3 with 
+  type C2 =
+    class
+      interface InterfaceA3 with
         member obj.M1(y) = "a" :: y
         member obj.M2(x,y) = x :: y
         member obj.M3(y) = "a" :: "b" :: "c" :: y
       end
       new() = { inherit Object(); }
    end
-  type C3 = 
-    class 
-      interface InterfaceA2<string> with 
+  type C3 =
+    class
+      interface InterfaceA2<string> with
         member obj.M1(y) = "a" :: y
         member obj.M2(x,y) = x :: y
       end
-      interface InterfaceA3 with 
+      interface InterfaceA3 with
         member obj.M3(y) = "a" :: "b" :: "c" :: y
       end
       new() = { inherit Object(); }
@@ -1580,21 +1580,21 @@ module DeepGenericInterfaceInheritance = begin
 
   do test "fewopvrej1" (((new C1()) :> InterfaceA1<int list>).M1([1]) = [1;1])
   do test "fewopvrej2" (((new C1()) :> InterfaceA2<int>).M2(3,[1]) = [3;1])
-   
+
   do test "fewopvrej3" (((new C2()) :> InterfaceA1<string list>).M1(["hi"]) = ["a";"hi"])
   do test "fewopvrej4" (((new C2()) :> InterfaceA2<string>).M1(["hi"]) = ["a";"hi"])
   do test "fewopvrej4" (((new C2()) :> InterfaceA2<string>).M2("a",["hi"]) = ["a";"hi"])
   do test "fewopvrej5" (((new C2()) :> InterfaceA3).M3(["hi"]) = ["a";"b";"c";"hi"])
   do test "fewopvrej6" (((new C2()) :> InterfaceA3).M1(["hi"]) = ["a";"hi"])
   do test "fewopvrej7" (((new C2()) :> InterfaceA3).M2("a",["hi"]) = ["a";"hi"])
-   
+
   do test "fewopvrej8" (((new C3()) :> InterfaceA1<string list>).M1(["hi"]) = ["a";"hi"])
   do test "fewopvrej8" (((new C3()) :> InterfaceA2<string>).M1(["hi"]) = ["a";"hi"])
   do test "fewopvrej9" (((new C3()) :> InterfaceA2<string>).M2("a",["hi"]) = ["a";"hi"])
   do test "fewopvrej10" (((new C3()) :> InterfaceA3).M3(["hi"]) = ["a";"b";"c";"hi"])
   do test "fewopvrej11" (((new C3()) :> InterfaceA3).M1(["hi"]) = ["a";"hi"])
   do test "fewopvrej12" (((new C3()) :> InterfaceA3).M2("a",["hi"]) = ["a";"hi"])
-   
+
 end
 
 
@@ -1603,7 +1603,7 @@ module PointTest = begin
 
   type Point =
    class
-     new(x_init) = { inherit System.Object(); x_init = x_init; x = x_init } 
+     new(x_init) = { inherit System.Object(); x_init = x_init; x = x_init }
      val x_init : int
      val mutable x : int
      member p.X = p.x
@@ -1621,7 +1621,7 @@ module PointTest = begin
 
   type Point_with_no_inherits_clause =
    class
-     new x_init = { x_init = x_init; x = x_init } 
+     new x_init = { x_init = x_init; x = x_init }
      val x_init : int
      val mutable x : int
      member p.X = p.x
@@ -1629,9 +1629,9 @@ module PointTest = begin
      member p.Move d1 d2 = p.x <- p.x + d1 + d2
    end
 
-  do 
-    let p = (new Point_with_no_inherits_clause(3)) in 
-    let f = p.Move 4 in 
+  do
+    let p = (new Point_with_no_inherits_clause(3)) in
+    let f = p.Move 4 in
     test "wdfjcdwkj1" (p.X = 3);
     f 4;
     test "wdfjcdwkj2" (p.X = 11);
@@ -1641,7 +1641,7 @@ module PointTest = begin
     test "wdfjcdwkj5" (Point.TwoPatternArgs [1] [2] = 3);
     test "wdfjcdwkj6" (Point.ThreeArgs 1 2 3 = 6);
     test "wdfjcdwkj7" (Point.ThreePatternArgs [1] [2] [3] = 6);
-    let p2 = (new Point(16)) in 
+    let p2 = (new Point(16)) in
     test "wdfjcdwkj4" (p2.InstanceTwoArgs 1 2 = 16 + 3);
     test "wdfjcdwkj5" (p2.InstanceTwoPatternArgs [1] [2] = 16 + 3);
     test "wdfjcdwkj6" (p2.InstanceThreeArgs 1 2 3 = 16 + 6);
@@ -1656,20 +1656,20 @@ end
 open System.Diagnostics
 
 
-type 
+type
   [<DebuggerTypeProxy(typeof<MyIntListDebugView>) >]
    MyIntList = MyNil | MyCons of int * MyIntList
 
 and MyIntListDebugView =
-   class 
+   class
      val v: MyIntList
-     new(x) = { v = x }     
-     [<DebuggerBrowsable(DebuggerBrowsableState.RootHidden)>] 
-     member x.Items = 
-        let rec length x acc = match x with MyNil -> acc | MyCons(a,b) -> length b (acc+1) in 
-        let len = length x.v 0 in 
-        let items = Array.zeroCreate len in 
-        let rec go n l = match l with MyNil -> () | MyCons(a,b) -> items.[n] <- a; go (n+1) b in 
+     new(x) = { v = x }
+     [<DebuggerBrowsable(DebuggerBrowsableState.RootHidden)>]
+     member x.Items =
+        let rec length x acc = match x with MyNil -> acc | MyCons(a,b) -> length b (acc+1) in
+        let len = length x.v 0 in
+        let items = Array.zeroCreate len in
+        let rec go n l = match l with MyNil -> () | MyCons(a,b) -> items.[n] <- a; go (n+1) b in
         go 0 x.v;
         items
    end
@@ -1689,10 +1689,10 @@ end
 
 module ThenDoTest = begin
     let res = ref 2
-    type P = 
-      class 
-        val x1: int; val x2: string; 
-        new(a,b) = {x1=a; x2=(test "ewqonce1" (!res = 2); b) } then res := !res + 1 
+    type P =
+      class
+        val x1: int; val x2: string;
+        new(a,b) = {x1=a; x2=(test "ewqonce1" (!res = 2); b) } then res := !res + 1
       end
 
     do ignore(new P(3,"5"))
@@ -1705,17 +1705,17 @@ end
 
 module ThenDoTest2 = begin
     let res = ref 2
-    type P = 
-      class 
-        val x1: int; val x2: string; 
-        new(a,b) as x = 
-           { x1= !res; 
-             x2=(test "ewqonce3" (!res = 2); b) } 
-           then 
+    type P =
+      class
+        val x1: int; val x2: string;
+        new(a,b) as x =
+           { x1= !res;
+             x2=(test "ewqonce3" (!res = 2); b) }
+           then
               test "ewqonce4" (!res = 2);
-              res := !res + 1; 
+              res := !res + 1;
               test "ewqonce5" (!res = 3);
-              test "ewqonce6" (x.x1 = 2) 
+              test "ewqonce6" (x.x1 = 2)
       end
 
     do ignore(new P(3,"5"))
@@ -1726,14 +1726,14 @@ end
 module GenericInterfaceTest = begin
 
     type Foo<'a> =
-      interface 
+      interface
           abstract fun1 : 'a -> 'a
           abstract fun2 : int -> int
       end
 
 
     type Bar<'b> =
-      class 
+      class
           val store : 'b
           interface Foo<'b> with
             member self.fun1(x) = x
@@ -1744,7 +1744,7 @@ module GenericInterfaceTest = begin
 
 
     type Bar2<'b> =
-      class 
+      class
           val store : 'b
           interface Foo<'b> with
             member self.fun1(x:'b) = x
@@ -1754,7 +1754,7 @@ module GenericInterfaceTest = begin
       end
 
     type Bar3<'b> =
-      class 
+      class
           val store : int
           interface Foo<'b> with
             member self.fun1(x) = x
@@ -1768,7 +1768,7 @@ end
 
 //---------------------------------------------------------------------
 //
-  
+
 
 
 module Inventory = begin
@@ -1776,7 +1776,7 @@ module Inventory = begin
     type item = A | B
     type image = A | B
 
-    type ItemDetails = 
+    type ItemDetails =
       { ItemIndex: item;
         InventoryImage: image;
         Name : string }
@@ -1784,21 +1784,21 @@ module Inventory = begin
     type IInventory = interface
      abstract Contains : item -> bool
      abstract Remove : item -> unit
-     abstract GetDetails : item -> ItemDetails  
-     abstract Add : ItemDetails -> unit  
-     abstract GetTuple : unit -> (item * image * string) list 
+     abstract GetDetails : item -> ItemDetails
+     abstract Add : ItemDetails -> unit
+     abstract GetTuple : unit -> (item * image * string) list
      end
 
 
-    module List = 
+    module List =
         let indexNotFound() = raise (new System.Collections.Generic.KeyNotFoundException("An index satisfying the predicate was not found in the collection"))
 
-        let rec assoc x l = 
-            match l with 
+        let rec assoc x l =
+            match l with
             | [] -> indexNotFound()
             | ((h,r)::t) -> if x = h then r else assoc x t
-        let rec remove_assoc x l = 
-            match l with 
+        let rec remove_assoc x l =
+            match l with
             | [] -> []
             | (((h,_) as p) ::t) -> if x = h then t else p:: remove_assoc x t
 
@@ -1822,21 +1822,21 @@ end
 
 module SamplerTest = begin
 
-    type Sampler<'a,'b> = 
+    type Sampler<'a,'b> =
       interface
-        abstract Sample : 'a -> unit 
+        abstract Sample : 'a -> unit
         abstract GetStatistic : unit -> 'b
       end
-      
-    let NewAverage(toFloat) = 
+
+    let NewAverage(toFloat) =
       let count = ref 0 in
-      let total = ref 0.0 in 
+      let total = ref 0.0 in
       { new Sampler<_,float> with
           member __.Sample(x) = incr count; total := !total + toFloat x
           member __.GetStatistic() = !total / float(!count) }
 
 
-    type Average<'a> = 
+    type Average<'a> =
       class
         val mutable total : float
         val mutable count : int
@@ -1855,10 +1855,10 @@ end
 // This simple case of forward-reference revealed a bug
 
 type callconv = AA
-  with 
-        member x.IsInstance         = x.ThisConv 
+  with
+        member x.IsInstance         = x.ThisConv
         member x.ThisConv           = 1
-  end 
+  end
 
 // Likewise
 
@@ -1867,7 +1867,7 @@ module OverloadZeroOneTestSoohyoung = begin
     type Point =
         class
             val mutable mx: int
-            
+
             new () = { mx = 0 }
             new (ix) = { mx = ix }
         end
@@ -1875,16 +1875,16 @@ module OverloadZeroOneTestSoohyoung = begin
 end
 
 //---------------------------------------------------------------------
-// Bad error message case 
+// Bad error message case
 
 
-module Ralf = begin 
+module Ralf = begin
 
   type Matrix = M  | N
 
   [<AbstractClass>]
-  type Distribution = 
-      class 
+  type Distribution =
+      class
         new () = { }
 
         abstract member NumberOfDimensions : unit -> int
@@ -1897,13 +1897,13 @@ module Ralf = begin
       end
 
   type Gaussian1D =
-      class 
+      class
             inherit Distribution
             val PrecisionMean : float
             val Precision : float
             new (precisionMean, precision) = { PrecisionMean = 0.0; Precision = 0.0 }
             override x.NumberOfDimensions() = 1
-            override x.Density point = 1.0 
+            override x.Density point = 1.0
             override x.AbsoluteDifference distribution = 0.0
             override x.Clone() = new Gaussian1D (0.0,0.0) :> Distribution
             override x.CloneConstant() = new Gaussian1D (x.PrecisionMean,x.Precision) :> Distribution
@@ -1955,14 +1955,14 @@ module OverloadedOperatorTests = begin
     let _ = SCGL.[0]
     let _ = SCGL.[0] <- 3
 
-    let f (x: 'a) = 
-      let SCGL = new System.Collections.Generic.List<'a>() in 
-      let _ = SCGL.Add(x) in 
-      let _ = SCGL.[0] in 
-      let _ = SCGL.[0] <- x in 
+    let f (x: 'a) =
+      let SCGL = new System.Collections.Generic.List<'a>() in
+      let _ = SCGL.Add(x) in
+      let _ = SCGL.[0] in
+      let _ = SCGL.[0] <- x in
       ()
 
-    // check we have generalized 
+    // check we have generalized
     do f 1
     do f "3"
 
@@ -1970,8 +1970,8 @@ module OverloadedOperatorTests = begin
     let _ = SCGD.Add("hello",3.0)
     let _ = SCGD.["hello"]
 
-    let g (k: 'a) (v:'b)= 
-      let SCGD = new System.Collections.Generic.Dictionary<'a,'b>() in 
+    let g (k: 'a) (v:'b)=
+      let SCGD = new System.Collections.Generic.Dictionary<'a,'b>() in
       let _ = SCGD.Add(k,v) in
       let _ = SCGD.[k] in
       let _ = SCGD.[k] <- v in
@@ -1979,20 +1979,20 @@ module OverloadedOperatorTests = begin
 
 
 
-    // check we have generalized 
+    // check we have generalized
     do g 1 "3"
     do g "3" 1
     do g "3" "1"
     do g 1 1
 
-    let h (v:'b)= 
-      let arr = [| v;v;v |] in 
-      let elem = arr.[0] in 
-      let _ = arr.[0] <- v in 
+    let h (v:'b)=
+      let arr = [| v;v;v |] in
+      let elem = arr.[0] in
+      let _ = arr.[0] <- v in
       ()
 
 
-    // check we have generalized 
+    // check we have generalized
     do h 1
     do h "3"
 
@@ -2010,7 +2010,7 @@ module PropertyOverrideTests = begin
       abstract G2 : string-> float with get
       abstract G3 : string * string -> float with get
     end
-     
+
     type IA = interface
       abstract S1 :  float with set
       abstract S2 : string-> float with set
@@ -2019,22 +2019,22 @@ module PropertyOverrideTests = begin
       abstract G2 : string-> float with get
       abstract G3 : string * string -> float with get
     end
-     
+
 
     [<AbstractClass>]
-    type CTest = 
+    type CTest =
       class
         inherit A
-        override x.S1 with  set v = () 
-        override x.S2 with  set s v = () 
-        override x.S3 with  set (s1,s2) v = () 
+        override x.S1 with  set v = ()
+        override x.S2 with  set s v = ()
+        override x.S3 with  set (s1,s2) v = ()
         override x.G1 with  get () = 1.0
         override x.G2 with  get (s:string) = 2.0
         override x.G3 with  get (s1,s2) = 3.0
-        interface IA with 
-          override x.S1 with  set v = () 
-          override x.S2 with  set s v = () 
-          override x.S3 with  set (s1,s2) v = () 
+        interface IA with
+          override x.S1 with  set v = ()
+          override x.S2 with  set s v = ()
+          override x.S3 with  set (s1,s2) v = ()
           override x.G1 with  get () = 1.0
           override x.G2 with  get (s:string) = 2.0
           override x.G3 with  get (s1,s2) = 3.0
@@ -2048,7 +2048,7 @@ module FieldsInClassesDontContributeToRecordFieldInference = begin
 
   type container = class
       val capacity : float
-      new(cap) = { capacity = cap } 
+      new(cap) = { capacity = cap }
   end
 
   type cargo = class
@@ -2065,8 +2065,8 @@ end
 module LucianRecords1 = begin
   type MyRecord1 = {a:int; x:int}
   type MyRecord2 = {a:int; y:string}
-  let f (m:MyRecord1) : MyRecord1 = {m with a=3} 
-  let g (m:MyRecord2) : MyRecord2 = {m with a=3} 
+  let f (m:MyRecord1) : MyRecord1 = {m with a=3}
+  let g (m:MyRecord2) : MyRecord2 = {m with a=3}
   let h (m:MyRecord1) = m.a
 
   type Tab = {a:string; b:string}
@@ -2088,7 +2088,7 @@ end
 //  let y2 = (f2() : int)
 //  let y3 = (f2() : DateTime)
 //  let y4 = (f2() : System.Windows.Forms.Form)
-  
+
 //end
 
 //module AccessBugOnFSharpList = begin
@@ -2097,31 +2097,31 @@ end
 //    open System.Web.Hosting
 //    open System.Data.SqlClient
 
-//    type TopicPathProvider = 
+//    type TopicPathProvider =
 //                     class
-//                                     inherit VirtualPathProvider 
-                                     
-//                                     new() = { inherit VirtualPathProvider(); }                          
-                                                      
+//                                     inherit VirtualPathProvider
+
+//                                     new() = { inherit VirtualPathProvider(); }
+
 //                                     member x.TopicExists topic =
 //                                                      let cmd = new SqlCommand() in
 //                                                      cmd.CommandText <- "SELECT COUNT(*) FROM Topic WHERE Topic.Name = @name";
 //                                                      (cmd.Parameters.Add("@name", System.Data.SqlDbType.NVarChar, 255)).Value <- topic;
 //                                                      unbox(cmd.ExecuteScalar()) > 0
-                                     
+
 //                                     override x.FileExists((virtualPath: string)) =
 //                                                      let relPath = VirtualPathUtility.ToAppRelative(virtualPath) in
 //                                                      if relPath.StartsWith("~/topic") then
 //                                                                       x.TopicExists (relPath.Substring(7))
 //                                                      else
 //                                                                       x.Previous.FileExists(virtualPath)
-                                                                       
+
 //                                     override x.DirectoryExists((virtualDir: string)) =
 //                                                      let relPath = VirtualPathUtility.ToAppRelative(virtualDir) in
 //                                                      relPath.StartsWith("~/topic") || x.DirectoryExists(virtualDir)
 //                     end
 
-//    let AppInitialize()  = 
+//    let AppInitialize()  =
 //                     let provider = new TopicPathProvider() in
 //                     HostingEnvironment.RegisterVirtualPathProvider(provider)
 
@@ -2135,9 +2135,9 @@ module TupledTests = begin
 
     let _ = C1.Foo((1,2))
 
-    
-  
-    
+
+
+
 end
 
 
@@ -2154,7 +2154,7 @@ let fails = ff.Invoke()
 
 module RecursiveClassDefinitions = begin
 
-  type t1 = 
+  type t1 =
      class
        val t2: t2
        member t1.M1(t2:t2) = t2.M2()
@@ -2163,9 +2163,9 @@ module RecursiveClassDefinitions = begin
        member t1.P1 = t1.t2.P2
        member t1.P2 = t1.P1
        member t1.P3 = t1.t2.P3 + 1
-       new() = { t2 = new t2() } 
-     end 
-  and t2 = 
+       new() = { t2 = new t2() }
+     end
+  and t2 =
      class
        val t1: t1
        member t2.M1() = t2.t1.M2()
@@ -2174,10 +2174,10 @@ module RecursiveClassDefinitions = begin
        member t2.P1 : int = t2.P2
        member t2.P2 = t2.t1.P1
        member t2.P3 = t2.P3
-       new() = { t1 = new t1() } 
-     end 
+       new() = { t1 = new t1() }
+     end
 
-  //let t2 = new t2()  
+  //let t2 = new t2()
   //let b =  (t2.P1 = 3)
 end
 
@@ -2191,7 +2191,7 @@ module RecursiveAugmentationDefinitions = begin
        member t1.P1 = t1.t2.P2
        member t1.P2 = t1.P1
        member t1.P3 = t1.t2.P3 + 1
-     end 
+     end
   and t2 = { t1:t1 }
      with
        member t2.M1() = t2.t1.M2()
@@ -2200,15 +2200,15 @@ module RecursiveAugmentationDefinitions = begin
        member t2.P1 : int = t2.P2
        member t2.P2 = t2.t1.P1
        member t2.P3 = t2.P3
-     end 
+     end
 
-  //let t2 = new t2()  
+  //let t2 = new t2()
   //let b =  (t2.P1 = 3)
 end
 
 module RecursiveAbstractClassDefinitions = begin
 
-  type t1 = 
+  type t1 =
      class
        val t2: t2
        abstract M1 : t2 -> t1
@@ -2219,21 +2219,21 @@ module RecursiveAbstractClassDefinitions = begin
        abstract P3 : int
        default t1.M1(t2:t2) = t2.M2()
        default t1.M2() = t1.M1(t1.t2)
-       default t1.M3(t2:t2) = 
+       default t1.M3(t2:t2) =
            // Note we can use object expressions within the recursive
            // definition of the type itself.  This requires real care - the
            // exact set of abstract members that still need implementing
            // must have been determined correctly before any expressions are
            // analyzed.
-           { new t1() with 
-                 member x.P1 = 4 
+           { new t1() with
+                 member x.P1 = 4
              end }
        default t1.P1 = t1.t2.P2
        default t1.P2 = t1.P1
        default t1.P3 = t1.t2.P3 + 1
        new() = { t2 = new t2() }
-     end 
-  and t2 = 
+     end
+  and t2 =
      class
        val t1: t1
        abstract M1 : unit -> t1
@@ -2249,22 +2249,22 @@ module RecursiveAbstractClassDefinitions = begin
        default t2.P2 = t2.t1.P1
        default t2.P3 = t2.P3
        new() = { t1 = new t1() }
-     end 
+     end
 end
 
 module RecursiveAbstractClassDefinitions2 = begin
 
   (* same test as above but in different order and some missing implementations *)
   [<AbstractClass>]
-  type t1 = 
+  type t1 =
      class
        val t2: t2
        default t1.M1(t2:t2) = t2.M2()
-       default x.M3(t2:t2) = { new t1() with 
-                                   member x.P1 = 4 
+       default x.M3(t2:t2) = { new t1() with
+                                   member x.P1 = 4
                                    member x.M2() = t1.MakeT1() }
-       static member MakeT1() = { new t1() with 
-                                   member x.P1 = 4 
+       static member MakeT1() = { new t1() with
+                                   member x.P1 = 4
                                    member x.M2() = t1.MakeT1() }
        default t1.P2 = t1.P1
        default t1.P3 = t1.t2.P3 + 1
@@ -2275,8 +2275,8 @@ module RecursiveAbstractClassDefinitions2 = begin
        abstract P1 : int
        abstract P2 : int
        abstract P3 : int
-     end 
-  and t2 = 
+     end
+  and t2 =
      class
        val t1: t1
        default t2.M1() = t2.t1.M2()
@@ -2292,9 +2292,9 @@ module RecursiveAbstractClassDefinitions2 = begin
        abstract P2 : int
        abstract P3 : int
        new() = { t1 = t1.MakeT1() }
-     end 
+     end
 
-  //let t2 = new t2()  
+  //let t2 = new t2()
   //let b =  (t2.P1 = 3)
 end
 
@@ -2327,8 +2327,8 @@ end
 
 
 module TestConstrainedItemProperty = begin
-    type Foo = 
-        interface 
+    type Foo =
+        interface
           abstract Item : int -> string with get
         end
 
@@ -2344,10 +2344,10 @@ module DefaultStructCtor = begin
     let i2 = new System.Nullable<bool>()
     do test "cwehoiewc" (i1.HasValue=false)
     do test "cwehoiewc" (i2.HasValue=false)
-    type S = 
-        struct 
-            new(v:int) = { v=v } 
-            val v : int  
+    type S =
+        struct
+            new(v:int) = { v=v }
+            val v : int
         end
     let i3 = new S()
     let i3b = new S(3)
@@ -2357,56 +2357,56 @@ end
 
 module MiscNullableTests = begin
  open System
- let (>=?!) (x : Nullable<'a>) (y: 'a) = 
+ let (>=?!) (x : Nullable<'a>) (y: 'a) =
     x.HasValue && x.Value >= y
 
- let (>?!) (x : Nullable<'a>) (y: 'a) = 
+ let (>?!) (x : Nullable<'a>) (y: 'a) =
     x.HasValue && x.Value > y
 
- let (<=?!) (x : Nullable<'a>) (y: 'a) = 
+ let (<=?!) (x : Nullable<'a>) (y: 'a) =
     not x.HasValue || x.Value <= y
 
- let (<?!) (x : Nullable<'a>) (y: 'a) = 
+ let (<?!) (x : Nullable<'a>) (y: 'a) =
     not x.HasValue || x.Value < y
 
- let (=?!) (x : Nullable<'a>) (y: 'a) = 
+ let (=?!) (x : Nullable<'a>) (y: 'a) =
     x.HasValue && x.Value = y
 
- let (<>?!) (x : Nullable<'a>) (y: 'a) = 
+ let (<>?!) (x : Nullable<'a>) (y: 'a) =
     not x.HasValue || x.Value <> y
 
  /// This overloaded operator divides Nullable values by non-Nullable values
  /// using the overloaded operator "/".  Inlined to allow use over any type,
  /// as this resolves the overloading on "/".
- let inline (/?!) (x : Nullable<'a>) (y: 'a) = 
+ let inline (/?!) (x : Nullable<'a>) (y: 'a) =
      if x.HasValue then new Nullable<'a>(x.Value / y)
-     else x 
+     else x
 
  /// This overloaded operator adds Nullable values by non-Nullable values
  /// using the overloaded operator "+".  Inlined to allow use over any type,
  /// as this resolves the overloading on "+".
- let inline (+?!) (x : Nullable<'a>) (y: 'a) = 
+ let inline (+?!) (x : Nullable<'a>) (y: 'a) =
      if x.HasValue then new Nullable<'a>(x.Value + y)
      else x
 
  /// This overloaded operator adds Nullable values by non-Nullable values
  /// using the overloaded operator "-".  Inlined to allow use over any type,
  /// as this resolves the overloading on "-".
- let inline (-?!) (x : Nullable<'a>) (y: 'a) = 
+ let inline (-?!) (x : Nullable<'a>) (y: 'a) =
      if x.HasValue then new Nullable<'a>(x.Value - y)
      else x
 
  /// This overloaded operator adds Nullable values by non-Nullable values
  /// using the overloaded operator "*".  Inlined to allow use over any type,
  /// as this resolves the overloading on "*".
- let inline ( *?!) (x : Nullable<'a>) (y: 'a) = 
+ let inline ( *?!) (x : Nullable<'a>) (y: 'a) =
      if x.HasValue then new Nullable<'a>(x.Value * y)
      else x
 
  /// This overloaded operator adds Nullable values by non-Nullable values
  /// using the overloaded operator "%".  Inlined to allow use over any type,
  /// as this resolves the overloading on "%".
- let inline ( %?!) (x : Nullable<'a>) (y: 'a) = 
+ let inline ( %?!) (x : Nullable<'a>) (y: 'a) =
      if x.HasValue then new Nullable<'a>(x.Value % y)
      else x
 
@@ -2421,7 +2421,7 @@ module BaseCallWorkaround = begin
     end
 
     type C2 = class
-        inherit C1 
+        inherit C1
         new() = {inherit C1()}
         override this.Blah() =
             ignore <| printf "From C2\n";
@@ -2433,7 +2433,7 @@ module BaseCallWorkaround = begin
 end
 
 module BaseCallTest = begin
-    let res = ref 0 
+    let res = ref 0
     type C1 = class
         new() = {}
         abstract Blah : unit -> unit
@@ -2443,7 +2443,7 @@ module BaseCallTest = begin
     end
 
     type C2 = class
-        inherit C1 
+        inherit C1
         new() = {inherit C1()}
         override this.Blah() =
             ignore <| printf "From C2\n";
@@ -2459,7 +2459,7 @@ module BaseCallTest = begin
 end
 
 module BaseCallTest2 = begin
-    let res = ref 0 
+    let res = ref 0
     type C1 = class
         new() = {}
         abstract Blah : unit -> unit
@@ -2474,7 +2474,7 @@ module BaseCallTest2 = begin
     end
 
     type C2 = class
-        inherit C1 
+        inherit C1
         new() = {inherit C1()}
         override this.Blah() =
             ignore <| printf "From C2b\n";
@@ -2488,7 +2488,7 @@ module BaseCallTest2 = begin
 
 
     type C3 = class
-        inherit C2 
+        inherit C2
         new() = {inherit C2()}
         override this.Blah() =
             ignore <| printf "From C3c\n";
@@ -2508,12 +2508,12 @@ end
 
 open System
 //open System.Windows.Forms
-//type Bug856 = 
-//  class 
+//type Bug856 =
+//  class
 //    inherit CheckBox
 //    new() = { inherit CheckBox(); }
 //    member x.PerformClick() = x.OnClick(new EventArgs())  // peverify failed
-//  end 
+//  end
 //do let form = new Form() in
 //   let checkBox = new Bug856(Text="Test") in
 //   form.Controls.Add(checkBox);
@@ -2524,11 +2524,11 @@ module SelfInitCalls = begin
 
     open System.IO
     type File2 = class
-      val path: string 
+      val path: string
       val innerFile: FileInfo
       // note this calls another constructor.
       new() = new File2("default.txt")
-      new(path) = 
+      new(path) =
           { path = path ;
             innerFile = new FileInfo(path) }
     end
@@ -2588,11 +2588,11 @@ end
 // Finish up
 
 
-//type SmoothForm = class 
+//type SmoothForm = class
 //  inherit Form
-//  new() as x = 
-//    { inherit Form(); } 
-//    then 
+//  new() as x =
+//    { inherit Form(); }
+//    then
 //       x.SetStyle(ControlStyles.AllPaintingInWmPaint ||| ControlStyles.Opaque, true);
 //end
 
@@ -2655,7 +2655,7 @@ end
 //        a.GetSchemaSerializable() |> ignore;
 //        t.GetSchemaSerializable() |> ignore;
 //        ()
-        
+
 
 //    end
 //end
@@ -2672,27 +2672,27 @@ module SomeMoreCtorCases = begin
     type C =
        class
            val xx : int
-           new(x,y) = 
-               if y then 
+           new(x,y) =
+               if y then
                   { xx = x}
                else
                   { xx = x+x}
-           new(x) = 
+           new(x) =
                let six = 3 + 3 in
                { xx = x}
-           static member Create() = 
+           static member Create() =
                let six = 3 + 3 in
                new C(3+3)
-           new() = 
+           new() =
                let six = 3 + 3 in
                new C(3+3)
            new(a,b,c) = new C(a+b+c)
-           new(a,b,c,d) = 
+           new(a,b,c,d) =
                new C(a+b+c+d)
                then
                  printf "hello"
        end
-       
+
 end
 
 module StillMoreCtorCases = begin
@@ -2715,9 +2715,9 @@ module StephenTolksdorfBug1112 = begin
          abstract Read4: IList<('U * 'T)> -> unit
     end
 
-    
 
-    
+
+
     /// other manifestation of the same bug
     type ITest2 = interface
        abstract Foo<'t> : 't -> 't
@@ -2746,7 +2746,7 @@ module Bug1281Test = begin
     [<Struct>]
     type node =
         struct
-        
+
            val mutable key: int
            new (keyIn) = {key=keyIn}
            member n.Item with get(i:int)   = if i=0 then 1 else
@@ -2780,7 +2780,7 @@ module Bug960Test2 = begin
       inherit B<int, int>
 
       new() = { inherit B<int,int>(3,4) }
-      
+
       override x.A
         with get() = 3
         and set(v : int) = (invalidArg "arg" "C.A.set" : unit) end
@@ -2790,24 +2790,24 @@ end
 module RandomAdditionalNameResolutionTests = begin
 
     module M = begin
-        type Foo() = 
+        type Foo() =
           class
             member x.Name = "a"
           end
-        type Foo<'a>() = 
+        type Foo<'a>() =
           class
             member x.Name = "a"
           end
-        type Goo<'a>() = 
+        type Goo<'a>() =
           class
             member x.Name = "a"
           end
-        type Goo() = 
+        type Goo() =
           class
             member x.Name = "a"
           end
     end
-    
+
     let f2 = new M.Foo()
     let f3 = new M.Foo< >()
     let f4 = new M.Foo<int>()
@@ -2894,11 +2894,11 @@ end
 
 module LeakyAbbreviation_bug1542_FSharp_1_0 = begin
 
-    type MM<'a,'b>() = 
+    type MM<'a,'b>() =
         class
             static member Create() = 1
         end
-        
+
     type Graph<'a> = MM<'a,'a>
     let g = Graph<string>.Create()
 
@@ -2906,13 +2906,13 @@ end
 
 module CheckoptionalArgumentAttributeDeclaresOptionalArgument = begin
 
-    type C() =  
+    type C() =
         class
             static member M([<OptionalArgument>] x : int option) = x
         end
-        
+
     let v = C.M(x=3)
-    
+
 end
 
 module PropertySetter_FSharp1_0_bug_1422 = begin
@@ -2923,7 +2923,7 @@ module PropertySetter_FSharp1_0_bug_1422 = begin
         end
 
     type Variable<'a>() =
-        class 
+        class
             inherit Variable()
             static member Random(y:Variable<'b>) = new Variable<'a>()
         end
@@ -2931,7 +2931,7 @@ module PropertySetter_FSharp1_0_bug_1422 = begin
     let x : Variable<int> = new Variable<int>()
     let _ = Variable.Random (x, Name = "m_")
 
-        
+
 end
 
 
@@ -2951,26 +2951,26 @@ module StructKeywordAsConstraintTest = begin
         struct
             val x : int
         end
-     
+
     type Class1<'a when 'a : struct> =
         class
             val x : int
         end
-     
+
     type Class2<'a when 'a : not struct> =
         class
             val x : int
         end
 
     let inline f<'a when 'a : null> () : 'a =  null
-    let v1 = f<string> () 
-    let v2 = f<obj> () 
-     
+    let v1 = f<string> ()
+    let v2 = f<obj> ()
+
 end
 
 module MutateStructFieldOnPropertySet = begin
 
-    type C() = class 
+    type C() = class
        [<DefaultValue>]
        val mutable F : int
     end
@@ -2986,15 +2986,15 @@ module Bug618 = begin
     type c<'a> when 'a :> c<'a> () = class end
     type d() = class inherit c<d>() end
     let x = new c<d>()
-    
+
 end
 
-(* 
+(*
 module Bug618b = begin
     type c<'a> when 'a :> c<'a>() = class end
     type d() = class inherit c<d>() end
     let x = new c<d>()
-    
+
 end
 *)
 
@@ -3053,7 +3053,7 @@ module MiscGenericMethodInference = begin
             member x.TextWriter = tw
             member x.Print fmt = Printf.fprintfn tw fmt
         end
-     
+
     let test2 () =
         let pr = Printer() in
         pr.Print "test %s" "test";
@@ -3066,24 +3066,24 @@ module CondensationTest = begin
 
     open System
     open System.Reflection
-     
+
     [<AttributeUsage(AttributeTargets.Property, AllowMultiple = false)>]
     type public APropAttribute() =
         class
-            inherit Attribute() 
+            inherit Attribute()
         end
     [<AttributeUsage(AttributeTargets.Method, AllowMultiple = false)>]
     type public AMethodAttribute() =
         class
-            inherit Attribute() 
+            inherit Attribute()
         end
-     
+
     type AType() =
         class
-        
-            [<AProp>]   
+
+            [<AProp>]
             member this.Prop   = "Hello"
-            [<AMethod>] 
+            [<AMethod>]
             member this.Meth() = "Boo"
         end
     let getAttribute<'t> (memb: MemberInfo) =
@@ -3092,16 +3092,16 @@ module CondensationTest = begin
         match attrib with
         | [| theAttrib |] -> Some(memb, (theAttrib :?> 't))
         | _ -> None
-     
+
     let hasAttribute<'t> (memb: MemberInfo) =
         match getAttribute<'t> memb with
         | Some(_) -> true
         | None -> false
-     
+
     let t = AType()
     let p = t.GetType().GetProperties() |> Array.filter (hasAttribute<APropAttribute>)
     let m = t.GetType().GetMethods() |> Array.filter (hasAttribute<AMethodAttribute>)
-     
+
 
 end
 
@@ -3109,8 +3109,8 @@ module OptionalArgumentWithSubTyping =  begin
     type Base() =
        class
        end
-    type Child() = 
-       class 
+    type Child() =
+       class
          inherit Base()
        end
 
@@ -3157,7 +3157,7 @@ module ParamArgs =  begin
     let () = check "vskncvewq" (System.String.Format("{0},{1},{2}",box 1,box 2,box 3)) "1,2,3"
     let () = check "vskncveww" (System.String.Format("{0},{1},{2},{3}",box 1,box 2,box 3,box 4)) "1,2,3,4"
     let () = check "vskncvewe" (System.String.Format("{0},{1},{2},{3},{4}",box 1,box 2,box 3,box 4,box 5)) "1,2,3,4,5"
-    
+
     type C() = class
         static member M( fmt:string, [<System.ParamArray>] args : obj[]) = System.String.Format(fmt,args)
     end
@@ -3176,7 +3176,7 @@ module ParamArgs =  begin
     let () = check "vskncvewd" (C.M("{0},{1},{2}",box 1,box 2,box 3)) "1,2,3"
     let () = check "vskncvewf" (C.M("{0},{1},{2},{3}",box 1,box 2,box 3,box 4)) "1,2,3,4"
     let () = check "vskncvewg" (C.M("{0},{1},{2},{3},{4}",box 1,box 2,box 3,box 4,box 5)) "1,2,3,4,5"
-        
+
     type C2() = class
         static member M( fmt:string, [<System.ParamArray>] args : int[]) = System.String.Format(fmt,Array.map box args)
         static member M2( fmt:string, [<System.ParamArray>] args : System.ValueType[]) = System.String.Format(fmt,Array.map box args)
@@ -3207,7 +3207,7 @@ module ParamArgs =  begin
     let () = check "vskncvewT" (C2.M3("")) ""
     let () = check "vskncvewY" (C2.M3("{0}","1")) "1"
     let () = check "vskncvewU" (C2.M3("{0},{1}","1","2")) "1,2"
-        
+
 end
 
 module MiscTest = begin
@@ -3241,7 +3241,7 @@ end
 
 module TestTupleOverloadRules_Bug5985 = begin
 
-    type C() = 
+    type C() =
         class
             member device.CheckCooperativeLevel() = true
             member device.CheckCooperativeLevel([<System.Runtime.InteropServices.OutAttribute>] x:byref<int>) = true
@@ -3250,7 +3250,7 @@ module TestTupleOverloadRules_Bug5985 = begin
     let c = C()
 
     let z = c.CheckCooperativeLevel()
-    let _ : bool =  z  
+    let _ : bool =  z
     let a,b = c.CheckCooperativeLevel()
 end
 
@@ -3259,22 +3259,22 @@ module AutoProps = begin
     type C(ppppp:int) =
         /// Test doc StaticProperty
         static let ssss = 11
-        member val Property = printfn "Property..."; ppppp 
+        member val Property = printfn "Property..."; ppppp
         member val PropertyExplicitGet = printfn "PropertyExplicitGet..."; ppppp with get
 
         static member val StaticProperty = printfn "StaticProperty..."; 3 + ssss
         static member val StaticPropertyExplicitGet = printfn "StaticPropertyExplicitGet..."; 3 + ssss with get
 
         /// Test doc SettableProperty
-        member val SettableProperty = printfn "SettableProperty..."; ppppp with get, set 
-        
+        member val SettableProperty = printfn "SettableProperty..."; ppppp with get, set
+
         /// Test doc MutableStaticProperty
-        static member val SettableStaticProperty = printfn "SettableStaticProperty..."; 4 + 5  with get, set 
+        static member val SettableStaticProperty = printfn "SettableStaticProperty..."; 4 + 5  with get, set
 
         // --- these have type definitions
 
         /// Test doc PropertyWithType
-        member val PropertyWithType : int = ppppp  
+        member val PropertyWithType : int = ppppp
         /// Test doc StaticPropertyWithType
         static member val StaticPropertyWithType : int = 6
 
@@ -3283,7 +3283,7 @@ module AutoProps = begin
         /// Test doc SettableStaticPropertyWithType
         static member val SettableStaticPropertyWithType : int = 7 + 8 with get,set
 
-        // --- use them 
+        // --- use them
 
         member this.PUse = printfn "PUse..."; this.Property + 9
         member this.PEGUse = printfn "PUse..."; this.PropertyExplicitGet + 9
@@ -3355,7 +3355,7 @@ module AutoProps_2 = begin
     let c1 = D1()
     check "autoprops_210" c1.Property 10
 
-    // override - getter 
+    // override - getter
     [<AbstractClass>]
     type C2() =
         abstract Property : int with get
@@ -3374,7 +3374,7 @@ module AutoProps_2 = begin
     let c21 = D21()
     check "autoprops_221" c21.Property 8
 
-    // override - setter 
+    // override - setter
     [<AbstractClass>]
     type C3() =
         abstract Property : int with get, set
@@ -3442,10 +3442,10 @@ module AutoProps_2 = begin
     let c61 = C6(23) :> I6
     check "autoprops_261" c61.Property 23
     c61.Property <- c61.Property + 21
-    check "autoprops_262" c61.Property 44      
+    check "autoprops_262" c61.Property 44
 end
 
-module MoreKindInferenceTests = 
+module MoreKindInferenceTests =
 
     [<Sealed;Class>]
     type C1<'a> = class member _.Foo(x:'a) = x end

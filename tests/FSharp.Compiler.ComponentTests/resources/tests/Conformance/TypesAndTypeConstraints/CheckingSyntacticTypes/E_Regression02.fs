@@ -1,4 +1,4 @@
-// #Regression #Conformance #TypeConstraints 
+// #Regression #Conformance #TypeConstraints
 // Regression test for CTP bug reported at http://cs.hubfs.net/forums/thread/9313.aspx
 // In CTP, this was a stack overflow in the compiler. Now we give 64 errors
 //<Expects id="FS0001" span="(244,23)" status="error">The type 'uint32' does not match the type 'int32'</Expects>
@@ -108,14 +108,14 @@ module SmartHashUtils =
         let ff = uint32 0xff
 
         match endian with
-            | 0 -> 
+            | 0 ->
                 let funn i n =
                     (uint32 array.[offset + i*4] &&& ff) |||
                     ((uint32 array.[offset + i*4+1] &&& ff) <<< 8) |||
                     ((uint32 array.[offset + i*4+2] &&& ff) <<< 16) |||
                     ((uint32 array.[offset + i*4+3] &&& ff) <<< 24)
                 Array.mapi funn temp
-            | _ -> 
+            | _ ->
                 let funn i n =
                     ((uint32 array.[offset + i*4] &&& ff) <<< 24) |||
                     ((uint32 array.[offset + i*4+1] &&& ff) <<< 16) |||
@@ -126,29 +126,29 @@ module SmartHashUtils =
 
     let UIntToByte (array:uint32[]) offset length endian =
         let temp:byte[] = Array.create (length * 4) (byte 0)
-        
+
         match endian with
-            | 0 -> 
-                let funn i n = byte (array.[offset + i/4] >>> (i%4 * 8))  
-                Array.mapi funn temp  
-            | _ -> 
-                let funn i n = byte (array.[offset + i/4] >>> ((3 - i%4) * 8))  
-                Array.mapi funn temp  
-                
-                
+            | 0 ->
+                let funn i n = byte (array.[offset + i/4] >>> (i%4 * 8))
+                Array.mapi funn temp
+            | _ ->
+                let funn i n = byte (array.[offset + i/4] >>> ((3 - i%4) * 8))
+                Array.mapi funn temp
+
+
     let ULongToByte (array:uint64[]) offset length endian =
         let temp:byte[] = Array.create (length * 8) (byte 0)
-        
+
         match endian with
-            | 0 -> 
-                let funn i n = byte (array.[offset + i/8] >>> (i%8 * 8))  
-                Array.mapi funn temp  
-            | _ -> 
-                let funn i n = byte (array.[offset + i/8] >>> ((7 - i%8) * 8))  
-                Array.mapi funn temp  
+            | 0 ->
+                let funn i n = byte (array.[offset + i/8] >>> (i%8 * 8))
+                Array.mapi funn temp
+            | _ ->
+                let funn i n = byte (array.[offset + i/8] >>> ((7 - i%8) * 8))
+                Array.mapi funn temp
 
 
-    let LS (x:uint32) n = uint32 ((x <<< n) ||| (x >>> (32 - n))) 
+    let LS (x:uint32) n = uint32 ((x <<< n) ||| (x >>> (32 - n)))
     let RS (x:uint32) n = uint32 ((x >>> n) ||| (x <<< (32 - n)))
 
 module SmartHashBlock =
@@ -170,13 +170,13 @@ module SmartHashBlock =
         member b.BlockSize with get() = blockSize and set(v) = blockSize <- v
         member b.BufferCount with get() = bufferCount and set(v) = bufferCount <- v
         member b.Count with get() = count and set(v) = count <- v
-        
-        default x.Initialize() = 
+
+        default x.Initialize() =
             count <- uint64 0
             bufferCount <- 0
             buffer <- Array.zeroCreate blockSize
-                
-        default x.HashCore(array, ibStart, cbSize) =        
+
+        default x.HashCore(array, ibStart, cbSize) =
             //let engineUpdate input offset' length' =
             let mutable offset = ibStart
             let mutable length = cbSize
@@ -189,29 +189,29 @@ module SmartHashBlock =
                 length <- length - off
                 bufferCount <- 0
                 x.BlockTransform (buffer, 0)
-            
+
             let numBlocks = length / blockSize
             for i in 0..(numBlocks-1) do
                 x.BlockTransform (array, (offset + i * blockSize))
-            
+
             let bytesLeft = length % blockSize
-            
+
             if (bytesLeft <> 0) then
                 Array.blit array (offset + (length - bytesLeft)) buffer bufferCount bytesLeft
                 bufferCount <- bufferCount + bytesLeft
-        
+
         abstract BlockTransform: (byte[] * int) -> unit
-        
-        member x.CreatePadding(minSize, append) = 
+
+        member x.CreatePadding(minSize, append) =
             let mutable paddingSize = x.BlockSize - ((int x.Count) % x.BlockSize)
-            
-            if (paddingSize < minSize) then paddingSize <- paddingSize + x.BlockSize    
+
+            if (paddingSize < minSize) then paddingSize <- paddingSize + x.BlockSize
 
             let Padding = Array.create paddingSize (byte 0)
             Padding.[0] <- append
             Padding
 
-module SmartHashMD5 = 
+module SmartHashMD5 =
     open SmartHashUtils
     open SmartHashBlock
 
@@ -220,12 +220,12 @@ module SmartHashMD5 =
         inherit BlockHashAlgorithm()
         ///The size in bytes of an individual block.
         let mutable state:int32[] = null
-        
+
         do this.BlockSize <- 64
         do this.HashSizeValue <- 128
         do state <- Array.zeroCreate 4
         do this.Initialize()
-        
+
         override x.Initialize() =
             base.Initialize()
             state.[0] <- 0x67452301
@@ -233,7 +233,7 @@ module SmartHashMD5 =
             state.[2] <- 0x98BADCFE
             state.[3] <- 0x10325476
 
-        member x.BlockTransform(data, iOffset) = 
+        member x.BlockTransform(data, iOffset) =
             let mutable A = state.[0]
             let mutable B = state.[3]
             let mutable C = state.[2]
@@ -241,7 +241,7 @@ module SmartHashMD5 =
 
             let X = ByteToUInt data iOffset 64 0
 
-            A <- D +  LS (P1 D C B + A + X.[0] + uint32 0xD76AA478) 7    
+            A <- D +  LS (P1 D C B + A + X.[0] + uint32 0xD76AA478) 7
             B <- A + LS(P1 A D C + B + X.[1] + uint32 0xE8C7B756) 12
             C <- B + LS(P1 B A D + C + X.[2] + uint32 0x242070DB) 17
             D <- C + LS(P1 C B A + D + X.[3] + uint32 0xC1BDCEEE) 22

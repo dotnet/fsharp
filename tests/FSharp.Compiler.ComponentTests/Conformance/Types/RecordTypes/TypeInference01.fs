@@ -1,4 +1,4 @@
-// #Conformance #TypesAndModules #Records 
+// #Conformance #TypesAndModules #Records
 
 
 // Test type inference for records

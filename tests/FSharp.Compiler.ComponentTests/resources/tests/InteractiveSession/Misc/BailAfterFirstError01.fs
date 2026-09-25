@@ -1,4 +1,4 @@
-// #NoMT #FSI 
+// #NoMT #FSI
 // Verify FSI bails after the first error it finds
 
 let x = 1

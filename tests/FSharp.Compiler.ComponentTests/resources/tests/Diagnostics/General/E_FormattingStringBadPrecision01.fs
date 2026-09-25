@@ -1,4 +1,4 @@
-// #Regression #Diagnostics 
+// #Regression #Diagnostics
 // Regression test for Dev10:907600
 //<Expects status="error" span="(5,9-5,13)" id="FS0741">Unable to parse format string 'Bad precision in format specifier'$</Expects>
 // Unable to parse format string 'Bad precision in format specifier'

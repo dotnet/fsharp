@@ -777,7 +777,9 @@ module CancellableTasks =
                     }
 
             // try not to yield if on bg thread already
-            let tcs = new TaskCompletionSource<_>(TaskCreationOptions.None)
+            let tcs =
+                new TaskCompletionSource<_>(TaskCreationOptions.RunContinuationsAsynchronously)
+
             let barrier = VolatileBarrier()
 
             let reg =
@@ -947,7 +949,7 @@ module CancellableTasks =
         ///         cancellableTask {
         ///             let! cancellationToken = CancellableTask.getCancellationToken()
         ///             do! Task.Delay(i * 1000, cancellationToken)
-        ///             printfn $"{i}"
+        ///             printn $"{i}"
         ///         }
         ///     computation tokenSource.Token |> ignore
         /// Thread.Sleep(6000)
@@ -1096,6 +1098,38 @@ module CancellableTasks =
                 let! ct = getCancellationToken ()
                 let tasks = seq { for task in tasks do yield start ct task }
                 return! Task.WhenAll (tasks)
+            }
+
+        /// Runs the given tasks concurrently, but caps concurrent work to maxDegreeOfParallelism.
+        let inline whenAllThrottled maxDegreeOfParallelism (tasks: CancellableTask<'a> seq) =
+            cancellableTask {
+                let! ct = getCancellationToken ()
+                let semaphore = new SemaphoreSlim(maxDegreeOfParallelism: int)
+
+                let started =
+                    [|
+                        for task in tasks do
+                            backgroundTask {
+                                do! semaphore.WaitAsync(ct)
+
+                                try
+                                    return! start ct task
+                                finally
+                                    semaphore.Release() |> ignore
+                            }
+                    |]
+
+                let allTask = Task.WhenAll started
+
+                allTask.ContinueWith(
+                    (fun (_: Task<'a[]>) -> semaphore.Dispose()),
+                    CancellationToken.None,
+                    TaskContinuationOptions.ExecuteSynchronously,
+                    TaskScheduler.Default
+                )
+                |> ignore
+
+                return! allTask
             }
 
         let inline whenAllTasks (tasks: CancellableTask seq) =

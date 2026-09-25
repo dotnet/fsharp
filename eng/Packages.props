@@ -3,6 +3,20 @@
      eng/Versions.props / eng/Version.Details.props. Manually-pinned, single-use packages carry
      their literal version here directly (no indirection through eng/Versions.props). -->
 <Project>
+  <!-- Evaluate these after source-build has replaced the darc versions with the live runtime package version.
+       Defining the aliases in Versions.props freezes the pre-override value and can cause CPM downgrades or
+       prebuilt package usage. The floor only affects normal builds whose flowed version is below MSBuild's
+       minimum; source-build's live version wins when it is newer. -->
+  <PropertyGroup>
+    <SystemRuntimeCentralFloorVersion>10.0.9</SystemRuntimeCentralFloorVersion>
+    <SystemSecurityCryptographyXmlCentralVersion>$(SystemSecurityCryptographyXmlVersion)</SystemSecurityCryptographyXmlCentralVersion>
+    <SystemCollectionsImmutableCentralVersion>$(SystemCollectionsImmutableVersion)</SystemCollectionsImmutableCentralVersion>
+    <SystemReflectionMetadataCentralVersion>$(SystemReflectionMetadataVersion)</SystemReflectionMetadataCentralVersion>
+    <SystemSecurityCryptographyXmlCentralVersion Condition="'$(SystemSecurityCryptographyXmlVersion)' != '' and $([MSBuild]::VersionLessThan('$(SystemSecurityCryptographyXmlVersion)', '$(SystemRuntimeCentralFloorVersion)'))">$(SystemRuntimeCentralFloorVersion)</SystemSecurityCryptographyXmlCentralVersion>
+    <SystemCollectionsImmutableCentralVersion Condition="'$(SystemCollectionsImmutableVersion)' != '' and $([MSBuild]::VersionLessThan('$(SystemCollectionsImmutableVersion)', '$(SystemRuntimeCentralFloorVersion)'))">$(SystemRuntimeCentralFloorVersion)</SystemCollectionsImmutableCentralVersion>
+    <SystemReflectionMetadataCentralVersion Condition="'$(SystemReflectionMetadataVersion)' != '' and $([MSBuild]::VersionLessThan('$(SystemReflectionMetadataVersion)', '$(SystemRuntimeCentralFloorVersion)'))">$(SystemRuntimeCentralFloorVersion)</SystemReflectionMetadataCentralVersion>
+  </PropertyGroup>
+
   <ItemGroup>
     <!-- Optimization data (MIBC) — referenced via @(MIBCPackage) in Directory.Build.targets -->
     <PackageVersion Include="optimization.windows_nt-x86.mibc.runtime" Version="$(optimizationwindows_ntx86MIBCRuntimeVersion)" />
@@ -38,7 +52,6 @@
     <PackageVersion Include="Microsoft.Net.Compilers" Version="$(MicrosoftNetCompilersVersion)" />
     <PackageVersion Include="Microsoft.NETCore.ILAsm" Version="$(MicrosoftNETCoreILAsmVersion)" />
     <PackageVersion Include="Microsoft.NETCore.ILDAsm" Version="$(MicrosoftNETCoreILDAsmVersion)" />
-    <PackageVersion Include="Microsoft.ServiceHub.Framework" Version="4.10.128" />
     <PackageVersion Include="Microsoft.Testing.Extensions.HangDump" Version="$(MicrosoftTestingExtensionsHangDumpVersion)" />
     <PackageVersion Include="Microsoft.TestPlatform.ObjectModel" Version="$(MicrosoftTestPlatformVersion)" />
     <PackageVersion Include="Microsoft.VisualFSharp.Microsoft.VisualStudio.Shell.UI.Internal" Version="17.0.0" />
@@ -74,7 +87,6 @@
     <PackageVersion Include="Microsoft.VisualStudio.ProjectSystem" Version="18.0.1237-pre" />
     <PackageVersion Include="Microsoft.VisualStudio.ProjectSystem.Managed" Version="2.3.6152103" />
     <PackageVersion Include="Microsoft.VisualStudio.ProjectSystem.Query" Version="17.13.66" />
-    <PackageVersion Include="Microsoft.VisualStudio.RpcContracts" Version="18.9.453" />
     <PackageVersion Include="Microsoft.VisualStudio.Shell.Design" Version="18.9.493" />
     <PackageVersion Include="Microsoft.VisualStudio.Shell.Immutable.10.0" Version="10.0.30319" />
     <PackageVersion Include="Microsoft.VisualStudio.Shell.Immutable.11.0" Version="11.0.50727" />
@@ -86,7 +98,7 @@
     <PackageVersion Include="Microsoft.VisualStudio.SolutionPersistence" Version="1.0.52" />
     <PackageVersion Include="Microsoft.VisualStudio.Text.UI.Wpf" Version="$(VisualStudioEditorPackagesVersion)" />
     <PackageVersion Include="Microsoft.VisualStudio.TextManager.Interop" Version="18.9.438" />
-    <PackageVersion Include="Microsoft.VisualStudio.Threading" Version="18.7.19" />
+    <PackageVersion Include="Microsoft.VisualStudio.Threading" Version="18.7.23" />
     <PackageVersion Include="Microsoft.VisualStudio.Validation" Version="18.7.1" />
     <!-- Microsoft.VSSDK.BuildTools is injected as an implicit PackageReference by Arcade's VisualStudio.targets
          (Version="$(MicrosoftVSSDKBuildToolsVersion)"); an implicit reference must not be centrally managed (NU1009). -->
@@ -95,16 +107,19 @@
     <!-- Raised from 1.3.0: Microsoft.VisualStudio.ComponentModelHost 18.9.453 (transitive via the VS SDK) requires >= 1.3.1. -->
     <PackageVersion Include="Nullable" Version="1.3.1" />
     <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.15.3" />
-    <PackageVersion Include="StreamJsonRpc" Version="2.26.5" />
     <PackageVersion Include="System.Buffers" Version="$(SystemBuffersVersion)" />
-    <PackageVersion Include="System.Collections.Immutable" Version="$(SystemCollectionsImmutableCentralVersion)" />
+    <PackageVersion Include="System.Collections.Immutable" Version="$(SystemCollectionsImmutableVersion)" />
     <PackageVersion Include="System.Composition" Version="$(SystemCompositionVersion)" />
     <PackageVersion Include="System.Diagnostics.DiagnosticSource" Version="$(SystemDiagnosticsDiagnosticSourceVersion)" />
     <PackageVersion Include="System.Memory" Version="$(SystemMemoryVersion)" />
     <PackageVersion Include="System.Reflection.Emit" Version="$(SystemReflectionEmitVersion)" />
-    <PackageVersion Include="System.Reflection.Metadata" Version="$(SystemReflectionMetadataCentralVersion)" />
+    <PackageVersion Include="System.Reflection.Metadata" Version="$(SystemReflectionMetadataVersion)" />
     <PackageVersion Include="System.Runtime.CompilerServices.Unsafe" Version="$(SystemRuntimeCompilerServicesUnsafeVersion)" />
-    <PackageVersion Include="System.Security.Cryptography.Xml" Version="$(SystemSecurityCryptographyXmlCentralVersion)" />
+    <PackageVersion Include="System.Security.Cryptography.Xml" Version="$(SystemSecurityCryptographyXmlVersion)" />
+    <!-- The JSON-RPC transport of the F# Interactive server mode and of the interactive window.
+         Pinned to the version Roslyn's packages already force into vsintegration, so that the two
+         agree and a Roslyn bump does not turn into a downgrade conflict. -->
+    <PackageVersion Include="StreamJsonRpc" Version="2.26.10" />
     <PackageVersion Include="xunit.v3.assert" Version="$(XunitVersion)" />
     <PackageVersion Include="xunit.v3.common" Version="$(XunitVersion)" />
     <PackageVersion Include="xunit.v3.extensibility.core" Version="$(XunitVersion)" />

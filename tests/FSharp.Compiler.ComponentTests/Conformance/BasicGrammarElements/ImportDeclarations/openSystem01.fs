@@ -1,4 +1,4 @@
-// #Conformance #DeclarationElements #Import 
+// #Conformance #DeclarationElements #Import
 
 
 // Open a namespace in System.dll

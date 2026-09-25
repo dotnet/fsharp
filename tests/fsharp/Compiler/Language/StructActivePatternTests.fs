@@ -88,7 +88,7 @@ match t4 with
             """
 
     [<Fact>]
-    let ``[<return:>] attribute is rotated to the return value``() = 
+    let ``[<return:>] attribute is rotated to the return value``() =
         run
             """
 open System
@@ -122,7 +122,7 @@ match ret_attrs, binding_attrs with
 | _ -> fail $"ret_attrs = {ret_attrs}, binding_attrs = {binding_attrs} method = {method}"
             """
     [<Fact>]
-    let ``Implicitly-targeted attribute on let binding do not target return``() = 
+    let ``Implicitly-targeted attribute on let binding do not target return``() =
         run
             """
 open System
@@ -173,7 +173,7 @@ let (|Foo|_|) x = ValueNone
 
     [<Fact>]
     let ``StructAttribute not allowed on other bindings than partial active pattern definitions`` () =
-        fail 
+        fail
             """
 [<return:Struct>] 
 let x = 1

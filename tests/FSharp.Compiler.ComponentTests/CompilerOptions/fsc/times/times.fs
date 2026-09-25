@@ -13,11 +13,11 @@ open System.IO
 module Times =
 
     // This test was automatically generated (moved from FSharpQA suite - CompilerOptions/fsc/times)
-    
+
     [<Theory; FileInlineData("error_01.fs")>]
     let ``times - error_01_fs - --Times`` compilation =
         compilation
-        |> getCompilation 
+        |> getCompilation
         |> asFsx
         |> withOptions ["--Times"]
         |> typecheck
@@ -27,11 +27,11 @@ module Times =
         |> ignore
 
     // This test was automatically generated (moved from FSharpQA suite - CompilerOptions/fsc/times)
-    
+
     [<Theory; FileInlineData("error_02.fs")>]
     let ``times - error_02_fs - --times-`` compilation =
         compilation
-        |> getCompilation 
+        |> getCompilation
         |> asFsx
         |> withOptions ["--times-"]
         |> typecheck
@@ -41,11 +41,11 @@ module Times =
         |> ignore
 
     // This test was automatically generated (moved from FSharpQA suite - CompilerOptions/fsc/times)
-    
+
     [<Theory; FileInlineData("error_03.fs")>]
     let ``times - error_03_fs - --times+`` compilation =
         compilation
-        |> getCompilation 
+        |> getCompilation
         |> asFsx
         |> withOptions ["--times+"]
         |> typecheck
@@ -57,12 +57,12 @@ module Times =
     [<Theory; FileInlineData("error_01.fs")>]
     let ``times - to console`` compilation =
         compilation
-        |> getCompilation 
+        |> getCompilation
         |> asFsx
         |> withBufferWidth 120
         |> withOptions ["--times"]
         |> ignoreWarnings
-        |> compile        
+        |> compile
         |> verifyOutputContains [|
             "Parse inputs"
             "Typecheck"
@@ -78,14 +78,14 @@ module Times =
                      member this.Dispose() = File.Delete(tempPath) }
 
         compilation
-        |> getCompilation 
+        |> getCompilation
         |> asFsx
         |> withOptions ["--times:"+tempPath]
-        |> ignoreWarnings     
+        |> ignoreWarnings
         |> compile
         |> shouldSucceed
         |> ignore<CompilationResult>
-        
+
         let csvContents = File.ReadAllLines(tempPath)
 
         Assert.Contains("Name,StartTime,EndTime,Duration(s),Id,ParentId,RootId",csvContents[0])

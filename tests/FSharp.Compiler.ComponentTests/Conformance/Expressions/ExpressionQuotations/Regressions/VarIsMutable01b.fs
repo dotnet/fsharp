@@ -1,4 +1,4 @@
-// #Regression #Conformance #Quotations 
+// #Regression #Conformance #Quotations
 // Regression test for FSHARP1.0:4606
 // Make sure we expose a .IsMutable property
 // isMutable = false

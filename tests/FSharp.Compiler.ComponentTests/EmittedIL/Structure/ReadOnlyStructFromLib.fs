@@ -1,4 +1,4 @@
-// #Regression #NoMT #CodeGen #Interop 
+// #Regression #NoMT #CodeGen #Interop
 // Regression for FSHARP1.0:5750
 // Code gen issues with copy of readonly struct from a separate assembly
 open ReadWriteLib

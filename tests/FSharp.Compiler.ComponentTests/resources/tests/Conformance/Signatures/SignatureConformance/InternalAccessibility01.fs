@@ -1,11 +1,11 @@
-// #Conformance #SignatureFiles 
+// #Conformance #SignatureFiles
 
 
 // Verify ability to use FSI files in conjunction with internal types
 
 module InternalAccessibility01
 
-type internal T() = 
+type internal T() =
     member x.P = 1
 
 

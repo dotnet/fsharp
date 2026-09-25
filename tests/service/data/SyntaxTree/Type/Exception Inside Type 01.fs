@@ -1,5 +1,5 @@
 // Testing: Exception inside type
 module Module
 
-type A = 
+type A =
     exception MyException

@@ -1,4 +1,4 @@
-// #Regression #Conformance #Binding 
+// #Regression #Conformance #Binding
 
 // Regression test for FSHARP1.0:1917
 // Verify that when given an ambiguous let binding we treat it as a function binding, rather than a pattern match.
@@ -20,7 +20,7 @@ let id x = x
 let Ident h = 42
 
 // Now call that function
-if (Ident ("tuple", 1)) <> 42 then 
+if (Ident ("tuple", 1)) <> 42 then
     exit 1
 
 exit 0

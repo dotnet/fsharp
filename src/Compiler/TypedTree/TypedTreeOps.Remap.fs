@@ -296,7 +296,7 @@ module internal TypeRemapping =
             | TyparConstraint.IsReferenceType _
             | TyparConstraint.RequiresDefaultConstructor _ -> Some x)
 
-    and remapTraitInfo tyenv (TTrait(tys, nm, flags, argTys, retTy, source, slnCell)) =
+    and remapTraitInfo tyenv (TTrait(tys, nm, flags, argTys, retTy, source, slnCell, traitCtxt)) =
         let slnCell =
             match slnCell.Value with
             | None -> None
@@ -341,7 +341,7 @@ module internal TypeRemapping =
         // in the same way as types
         let newSlnCell = ref slnCell
 
-        TTrait(tysR, nm, flags, argTysR, retTyR, source, newSlnCell)
+        TTrait(tysR, nm, flags, argTysR, retTyR, source, newSlnCell, traitCtxt)
 
     and bindTypars tps tyargs tpinst =
         match tps with
@@ -1485,8 +1485,8 @@ module internal TypeEquivalence =
                 typeEquivEnvEmpty
 
     let rec traitsAEquivAux erasureFlag g aenv traitInfo1 traitInfo2 =
-        let (TTrait(tys1, nm, mf1, argTys, retTy, _, _)) = traitInfo1
-        let (TTrait(tys2, nm2, mf2, argTys2, retTy2, _, _)) = traitInfo2
+        let (TTrait(tys1, nm, mf1, argTys, retTy, _, _, _)) = traitInfo1
+        let (TTrait(tys2, nm2, mf2, argTys2, retTy2, _, _, _)) = traitInfo2
 
         mf1.IsInstance = mf2.IsInstance
         && nm = nm2

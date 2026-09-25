@@ -1,11 +1,11 @@
-// #Conformance #Quotations 
+// #Conformance #Quotations
 open Microsoft.FSharp.Quotations
 open Microsoft.FSharp.Quotations.Patterns
 open QuoteUtils
 
 type t = | A of int | B of string
 let q = <@ let x, y = (A(1), B("1")) in x @>
-     
+
 let uci = Microsoft.FSharp.Reflection.FSharpType.GetUnionCases(typeof<t>)
 let q' = Expr.NewUnionCase(uci.[0], [Expr.Value(1)])
 

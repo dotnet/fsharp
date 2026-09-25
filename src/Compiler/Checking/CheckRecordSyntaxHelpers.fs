@@ -4,8 +4,6 @@ module internal FSharp.Compiler.CheckRecordSyntaxHelpers
 
 open System
 open FSharp.Compiler.CheckBasics
-open FSharp.Compiler.DiagnosticsLogger
-open FSharp.Compiler.Features
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTreeOps
@@ -121,8 +119,6 @@ let TransformAstForNestedUpdates (cenv: TcFileState) (env: TcEnv) overallTy (lid
     | _, [] -> failwith "unreachable"
     | accessIds, [ (fieldId, _) ] -> (accessIds, fieldId), exprBeingAssigned
     | accessIds, (outerFieldId, item) :: rest ->
-        checkLanguageFeatureAndRecover cenv.g.langVersion LanguageFeature.NestedCopyAndUpdate (rangeOfLid lid)
-
         CallNameResolutionSink cenv.tcSink (outerFieldId.idRange, env.NameEnv, item, [], ItemOccurrence.Use, env.AccessRights)
 
         let outerFieldId = ident (outerFieldId.idText, outerFieldId.idRange.MakeSynthetic())

@@ -1,4 +1,4 @@
-// #Regression #Conformance #DeclarationElements #Attributes 
+// #Regression #Conformance #DeclarationElements #Attributes
 // Regression test for FSharp1.0:5611
 // Title: Give an error on uses of UseNullAsTrueValue
 
@@ -12,7 +12,7 @@
 
 // expect error
 [<CompilationRepresentation(CompilationRepresentationFlags.UseNullAsTrueValue)>]
-type MyUnion = 
+type MyUnion =
     | A1
     | A
     | B of string
@@ -21,11 +21,11 @@ type MyUnion =
 [<CompilationRepresentation(CompilationRepresentationFlags.UseNullAsTrueValue)>]
 type MyUnion2 =
     | A1
-    | A 
+    | A
 
 // expect error
 [<CompilationRepresentation(CompilationRepresentationFlags.UseNullAsTrueValue)>]
-type MyUnion3 = 
+type MyUnion3 =
     | A1
 
 // expect error
@@ -34,21 +34,21 @@ type MyRecord3 = { x : int }
 
 // expect error
 [<CompilationRepresentation(CompilationRepresentationFlags.UseNullAsTrueValue)>]
-type MyClass4() = 
+type MyClass4() =
    class
       member x.P = 1
    end
 
 // expect error
 [<CompilationRepresentation(CompilationRepresentationFlags.UseNullAsTrueValue)>]
-type MyInterface5 = 
-   interface 
+type MyInterface5 =
+   interface
        abstract P : int
    end
 
 // expect error
 [<CompilationRepresentation(CompilationRepresentationFlags.UseNullAsTrueValue)>]
-type MyStruct6(x : int) = 
+type MyStruct6(x : int) =
    struct
        member __.X = x
    end

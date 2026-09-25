@@ -4,11 +4,16 @@ description: |
   state machine they define, renders Mermaid diagrams + tables in
   .github/docs/state-machine.md. Weekly. Opens PR if changed.
 
+imports:
+  - shared/model-defaults.md
+
 on:
   schedule: every 7d
   workflow_dispatch:
 
-timeout-minutes: 15
+if: github.event_name != 'schedule' || github.repository == 'dotnet/fsharp'
+
+timeout-minutes: 60
 permissions: read-all
 
 network:
@@ -261,7 +266,7 @@ You are a workflow-automation documentor. You read all workflow files in `.githu
 38. **`always()` in guard expressions MUST be preserved.** When a job `if:` uses `always() && <condition>`, the `always()` modifier is semantically significant — it means the job evaluates even when predecessors fail/are skipped. Document the FULL expression including `always()`. Dropping `always()` changes the semantics and is HIGH error.
 
 39. **gh-aw `safe-outputs:` — signature, not enumeration.** For each gh-aw `.md` workflow, document its safe-output **signature**: which action verbs it can emit (`create-pull-request`, `add-comment`, `push-to-pull-request-branch`, `add-labels`, etc.) and the distinguishing config per verb. **Do NOT exhaustively list every leaf key.** Universal defaults are suppressed: `target: "*"`, `noop.report-as-issue: false`, `draft: false`. Per-workflow blocks list only OVERRIDES + behaviorally distinguishing fields: `max`, `title-prefix`, `labels`/`allowed`, `allowed-files`, `protected-files`, `reviewers`, `auto-merge`, `hide-older-comments` (when true), `base`.
-    **Format — PREFER PER-WORKFLOW MINI-TABLES** with columns `| Workflow | Output | Max | Key Constraints |`. Tables scan faster than run-on prose for any workflow with ≥3 actions or any action with ≥3 distinguishing fields. Multi-reviewer feedback (Sonnet + GPT-5.4 + Gemini, average 2.67/5 on first pass) ranked run-on safe-output prose as the #1 readability failure mode. Example:
+    **Format — PREFER PER-WORKFLOW MINI-TABLES** with columns `| Workflow | Output | Max | Key Constraints |`. Tables scan faster than run-on prose for any workflow with ≥3 actions or any action with ≥3 distinguishing fields. Example:
     ```
     | Workflow | Output | Max | Key Constraints |
     |---|---|---|---|
@@ -306,7 +311,7 @@ You are a workflow-automation documentor. You read all workflow files in `.githu
     Place the glossary IMMEDIATELY after the title and intro paragraph, BEFORE the Overview table. A first-time reader rated 2/5 on a 5-point readability scale citing exactly these gaps. Missing glossary entry for a term used 3+ times = MAJOR. Missing emoji legend = MAJOR.
 
 45. **Self-contained — never use source-file pointers as documentation.** Any phrase like `"(see file.md L100–110)"`, `"per source line N"`, `"refer to <file>"`, or `"as defined in <other-doc>"` in PLACE of actual content is a documentation failure. Inline the content. Citations `(src Lnn)` are permitted ONLY as provenance markers AFTER the documented content, never AS the content. Example:
-    - ❌ WRONG: `RA_T2_SkipCheck --> RA_TaskFinal : ⚙️ check skip conditions (repo-assist.md L296–306)`
+    - ❌ WRONG: `RA_T2_SkipCheck --> RA_TaskFinal : ⚙️ check skip conditions (repo-assist-scheduled.md L296–306)`
     - ✅ CORRECT: `RA_T2_SkipCheck --> RA_TaskFinal : ⚙️ check 6 skip conditions` + an inline `> **Skip conditions**: 1. closed; 2. existing PR; 3. existing coverage; 4. test-link comment; 5. untestable comment; 6. human coverage comment.` callout below the diagram.
     Any source-pointer-as-content = MAJOR. Inlined skip conditions, taxonomy enumerations, and predicate lists belong in the doc itself.
 

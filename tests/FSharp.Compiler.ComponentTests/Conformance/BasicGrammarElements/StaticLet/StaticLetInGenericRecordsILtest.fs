@@ -4,9 +4,9 @@ open System
 
 [<NoComparison>]
 [<NoEquality>]
-type MyRecord<'T> = 
+type MyRecord<'T> =
     {
-        X: 'T 
+        X: 'T
     }
     // Init per typar
     static let cachedVal =

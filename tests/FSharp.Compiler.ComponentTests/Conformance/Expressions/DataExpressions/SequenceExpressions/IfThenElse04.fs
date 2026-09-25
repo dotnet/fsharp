@@ -1,4 +1,4 @@
-// #Regression #Conformance #DataExpressions #Sequences 
+// #Regression #Conformance #DataExpressions #Sequences
 // Regression test for FSHARP1.0:4527
 //<Expects status="success"></Expects>
 

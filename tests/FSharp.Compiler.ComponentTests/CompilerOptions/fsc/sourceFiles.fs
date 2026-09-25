@@ -10,7 +10,7 @@ open FSharp.Test.Compiler
 [<Fact>]
 let ``Reports duplicate sources via warning``() =
     let file = SourceCodeFileKind.Fs({FileName="test.fs"; SourceText=Some """printfn "Hello" """ })
- 
+
     fsFromString file
     |> FS
     |> asExe

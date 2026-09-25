@@ -1,4 +1,4 @@
-// #Conformance #LexFilter #Exceptions 
+// #Conformance #LexFilter #Exceptions
 
 
 [<AutoOpen>]
@@ -105,7 +105,7 @@ module BeginEnd =
         if true then x begin y = 1 end else x begin y = 2,
             z = 3
         end
-    let e1 =    
+    let e1 =
         if true then x begin y = 1,
             z = 3
         end else x begin y = 2,
@@ -2460,7 +2460,7 @@ let BeginEnd =
         if true then x begin y = 1 end else x begin y = 2,
             z = 3
         end
-    let e1 =    
+    let e1 =
         if true then x begin y = 1,
             z = 3
         end else x begin y = 2,
@@ -3467,13 +3467,13 @@ open System.IO
 type message =
 | HeatUp
 | CoolDown
- 
+
 let climateControl1 = MailboxProcessor.Start( fun inbox ->
     // NOTE compiles
     let rec heating() = async {
         printfn "Heating"
         let! msg = inbox.Receive()
-        match msg with                                                                                       
+        match msg with
         | CoolDown -> return! cooling()
         | _ -> return! heating()
     } // NOTE placement of }
@@ -3484,7 +3484,7 @@ let climateControl1 = MailboxProcessor.Start( fun inbox ->
         | HeatUp -> return! heating()
         | _ -> return! cooling()
     } // NOTE placement of }
- 
+
     heating()
 )
 
@@ -3516,12 +3516,12 @@ let climateControl3 = MailboxProcessor.Start(fun inbox ->
         | HeatUp -> return! heating()
         | _ -> return! cooling()
     } // NOTE placement of }
- 
+
     heating()
 )
 
 // https://github.com/dotnet/fsharp/issues/10852
-let f _ b = b 
+let f _ b = b
 let g _ b = b
 
 let aaaaa<'t> = f >> g
@@ -3551,25 +3551,25 @@ if System.Text.RegularExpressions.Regex.IsMatch(
     """^[a-zA-Z][a-zA-Z0-9']+$"""
    ) then
   ()
-  
+
 // https://github.com/fsharp/fslang-suggestions/issues/504
 module Q =
     module Z =
-        type Alpha< ^b, ^a 
+        type Alpha< ^b, ^a
     when ^     a    :  (member Name:string)
 and    ^a:        (member Zip
    : ^b when
 ^b : struct   )
 and             ^a
 :                 (static member(+)
-    :    'a * 'a 
--> 'a 
-) 
-         > () = 
+    :    'a * 'a
+-> 'a
+)
+         > () =
             member inline __.X = ()
         with
             static member inline Y = ()
-        
+
 type TypeWithALongName< ^a
     when ^a:(static member(+):'a * 'a -> 'a )
     and  ^a:(static member(-):'a * 'a -> 'a )
@@ -3577,17 +3577,17 @@ type TypeWithALongName< ^a
     and  ^a:(static member(/):'a * 'a -> 'a )
 > =
     static member inline X = 2
-type TypeWithALongName2< ^a 
+type TypeWithALongName2< ^a
               when ^a:(static member(+):'a * 'a -> 'a )
-              and  ^a:(static member(-):'a * 'a -> 'a )            
-              and  ^a:(static member(*):'a * 'a -> 'a )            
-              and  ^a:(static member(/):'a * 'a -> 'a )            
+              and  ^a:(static member(-):'a * 'a -> 'a )
+              and  ^a:(static member(*):'a * 'a -> 'a )
+              and  ^a:(static member(/):'a * 'a -> 'a )
     > = static member inline X = ()
-type TypeWithALongName3< 'a 
+type TypeWithALongName3< 'a
  when 'a: not struct
- and  ^a:(static member(-):'a * 'a -> 'a )            
- and  'a:> System.IDisposable      
- and  ^a:> System.Object         
+ and  ^a:(static member(-):'a * 'a -> 'a )
+ and  'a:> System.IDisposable
+ and  ^a:> System.Object
 > = static member inline X = ()
 // https://github.com/fsharp/fslang-suggestions/issues/470
 
@@ -3629,13 +3629,13 @@ let (
 ) = ignore
 
 (*
-Currently, the general rules for indentation in F# is that the code on 
-the next line should be indented further than the thing that determines 
+Currently, the general rules for indentation in F# is that the code on
+the next line should be indented further than the thing that determines
 its starting point on the previous line.
 
-There are a number of cases where this quite annoyingly means that you 
-have to indent things very far (or, to avoid that, add lots of 
-unnecessary line breaks). One example is when you have nesting in a 
+There are a number of cases where this quite annoyingly means that you
+have to indent things very far (or, to avoid that, add lots of
+unnecessary line breaks). One example is when you have nesting in a
 method call. For example:
 *)
 Chart.Geo(growth)
@@ -3645,7 +3645,7 @@ Now, there is almost no way to make this code snippet look decent. I would
 want to write something like this:
 *)
 Chart.Geo(growth)
-|> Chart.WithOptions(Options(colorAxis=ColorAxis(values=[| -100;0;100;200;1000 |], 
+|> Chart.WithOptions(Options(colorAxis=ColorAxis(values=[| -100;0;100;200;1000 |],
     colors=[| "#77D53D";"#D1C855";"#E8A958";"#EA4C41";"#930700" |])))
 (*
 But this is not allowed, because "colors" should start after the opening
@@ -3658,33 +3658,33 @@ Chart.Geo(growth)
     (Options
       (colorAxis =
         ColorAxis
-          (values=[| -100;0;100;200;1000 |], 
+          (values=[| -100;0;100;200;1000 |],
            colors=[| "#77D53D";"#D1C855";"#E8A958";"#EA4C41";"#930700" |])))
 (*
-Another example is very similar, but with list expressions. 
+Another example is very similar, but with list expressions.
 I want to write:
 *)
-// let pop2010 = series [ for c in wb.Countries -> 
+// let pop2010 = series [ for c in wb.Countries ->
 //   c.Name => c.Indicators.``CO2 emissions (kt)``.[2010]]
 // NOTE: That is probably is too much of an undentation. Try this instead:
 let pop2010 = series [
-    for c in wb.Countries -> 
+    for c in wb.Countries ->
         c.Name => c.Indicators.``CO2 emissions (kt)``.[2010]]
 
 (*
 This actually works, but it gives warning. Again, it wants me to indent the
 second line so that it is after "for", but then I'm not saving pretty much
-anything by the newline. Or, I can introduce lots of additional newlines 
+anything by the newline. Or, I can introduce lots of additional newlines
 and write:
 *)
 let pop2011 =
   series
-    [ for c in wb.Countries -> 
+    [ for c in wb.Countries ->
         c.Name => c.Indicators.``CO2 emissions (kt)``.[2010]]
 (*
-I think that in situations like these, the rules should be relaxed. 
-In particular, we should not require new line to be intended further 
-than the "starting thing" on the previous line. Just further than the 
+I think that in situations like these, the rules should be relaxed.
+In particular, we should not require new line to be intended further
+than the "starting thing" on the previous line. Just further than the
 previous line.
 *)
 
@@ -3835,7 +3835,7 @@ module M2 =
         return! messageLoop(state)
     }
 let RFC =
-    
+
     let a = id [
         1 // No longer produces warning FS0058 after [RFC FS-1054] less strict indentation on common DSL pattern
     ]
@@ -3849,7 +3849,7 @@ let RFC =
         1
     with _ -> 2 // Totally fine
     |> ignore
-    
+
     match
         1
     with _ -> 2 // error FS0010: Unexpected start of structured construct in expression
@@ -3870,7 +3870,7 @@ let RFC =
         if [3] = [
             2 // warning FS0058: Possible incorrect indentation
            ] then ()
-    
+
     let f = {
         a = 1 // Ok
     }

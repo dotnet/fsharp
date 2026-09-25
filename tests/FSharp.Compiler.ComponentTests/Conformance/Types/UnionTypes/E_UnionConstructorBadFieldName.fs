@@ -1,10 +1,10 @@
-// #Conformance #TypesAndModules #Unions 
+// #Conformance #TypesAndModules #Unions
 // Make sure we properly detect bogus named field in constructors
 
 
 
 
-type MyDU = 
+type MyDU =
     | Case1 of V1 : int * V2 : string
 
 let x = Case1(1, V3 = "")

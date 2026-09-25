@@ -1,4 +1,4 @@
-// #Conformance #ObjectOrientedTypes #InterfacesAndImplementations 
+// #Conformance #ObjectOrientedTypes #InterfacesAndImplementations
 // Aliased types should correctly unify
 
 // These errors could be improved, but verify that it errors out at all.
@@ -13,7 +13,7 @@ type MyInt = int
 
 
 type IB<'a> =
-    interface 
+    interface
         abstract X : unit -> int
     end
 
@@ -22,6 +22,6 @@ type C() =
         member x.X() = 1
     interface IB<MyInt> with
         member x.X() = 2
-    
+
 exit 1
 

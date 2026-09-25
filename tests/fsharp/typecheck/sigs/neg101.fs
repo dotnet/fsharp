@@ -4,14 +4,14 @@ open System
 type MyRec = { Foo: string }
 
 let x: int = 1
-let y = x.Foo 
+let y = x.Foo
 let f1 z = z.Foo
 let f2 (z: MyRec) = z.Foo
 
 
 // all give a warning
-let x1 = 
-   [ (1,2).Item1 
+let x1 =
+   [ (1,2).Item1
      (1,2).Item2
      (1,2,3).Item1
      (1,2,3).Item2
@@ -56,7 +56,7 @@ open System.Runtime.CompilerServices
 type TupleEx() =
     [<Extension>]
     static member inline Do((x,y): (int*string)) = ()
-    
+
 let x = 1, "2"
 
 x.Do() // no warning

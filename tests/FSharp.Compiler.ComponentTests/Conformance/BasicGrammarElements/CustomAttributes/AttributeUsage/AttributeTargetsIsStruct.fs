@@ -42,12 +42,12 @@ type StructUnionId2 = Id
 
 [<CustomStruct>]
 [<Struct>]
-type Union1 = 
+type Union1 =
     | UnionCase of a: int
     | UnionCase2 of string
 
 [<CustomStruct>]
 [<Struct>]
-type Union2 = 
+type Union2 =
     | UnionCase of a: int * b: int
     | UnionCase2 of c: string * d: string

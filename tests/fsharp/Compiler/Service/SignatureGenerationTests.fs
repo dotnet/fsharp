@@ -35,9 +35,9 @@ module SignatureGenerationTests =
             |> Array.map (fun s -> s.TrimEnd(' '))
 
         Assert.shouldBeEquivalentTo expected2 actual
-    
+
     [<Fact>]
-    let ``can generate sigs with comments`` () = 
+    let ``can generate sigs with comments`` () =
         """
 namespace Sample
 
@@ -126,9 +126,9 @@ module Inner =
       /// union member
       member Thing: int
   """
-    
+
     [<Fact>]
-    let ``can generate signatures for autoproperties`` () = 
+    let ``can generate signatures for autoproperties`` () =
         """
 namespace Sample
 
@@ -180,7 +180,7 @@ module Inner =
       member SomeAutoPropWithGetOnly: string"""
 
     [<Fact>]
-    let ``can generate attributes for implicit namespace`` () = 
+    let ``can generate attributes for implicit namespace`` () =
         """
 [<AutoOpen>]
 module A.B
@@ -204,7 +204,7 @@ module Say =
   val f: a: 'a -> 'a"""
 
     [<Fact>]
-    let ``can generate attributes for implicit namespace with multiple modules`` () = 
+    let ``can generate attributes for implicit namespace with multiple modules`` () =
         """
 [<AutoOpen>]
 module A.B.C.D

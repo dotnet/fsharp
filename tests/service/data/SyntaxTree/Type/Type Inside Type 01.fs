@@ -1,7 +1,7 @@
 // Expected: Warning for type inside type
 module Module
 
-type A = 
+type A =
     | A
-    type NestedType = 
+    type NestedType =
         | B of int

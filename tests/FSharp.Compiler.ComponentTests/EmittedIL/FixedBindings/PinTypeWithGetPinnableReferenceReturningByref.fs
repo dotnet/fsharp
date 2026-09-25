@@ -12,7 +12,7 @@ type RefField<'T>(_value) =
 let pinIt (thing: RefField<int>) =
     use ptr = fixed thing
     NativePtr.get ptr 0
-    
+
 [<EntryPoint>]
 let main _ =
     let x = RefField(42)

@@ -7,7 +7,8 @@ ImplFile
           [Types
              ([SynTypeDefn
                  (SynComponentInfo
-                    ([], None, [], [A],
+                    ([], None, [],
+                     Some (LongIdent (SynLongIdent ([A], [], [None]))),
                      PreXmlDoc ((4,0), FSharp.Compiler.Xml.XmlDocCollector),
                      false, None, (4,5--4,6)),
                   Simple (None (4,5--4,8), (4,5--4,8)), [], None, (4,5--4,8),
@@ -17,7 +18,8 @@ ImplFile
            Types
              ([SynTypeDefn
                  (SynComponentInfo
-                    ([], None, [], [B],
+                    ([], None, [],
+                     Some (LongIdent (SynLongIdent ([B], [], [None]))),
                      PreXmlDoc ((5,4), FSharp.Compiler.Xml.XmlDocCollector),
                      false, None, (5,9--5,10)),
                   Simple
@@ -29,7 +31,7 @@ ImplFile
                     WithKeyword = None })], (5,4--5,16));
            NestedModule
              (SynComponentInfo
-                ([], None, [], [C],
+                ([], None, [], Some (LongIdent (SynLongIdent ([C], [], []))),
                  PreXmlDoc ((6,4), FSharp.Compiler.Xml.XmlDocCollector), false,
                  None, (6,4--6,12)), false,
               [Expr (Const (Unit, (6,15--6,17)), (6,15--6,17))], false,
@@ -41,9 +43,11 @@ ImplFile
                    ([],
                     SynUnionCase
                       ([], SynIdent (D, None), Fields [], PreXmlDocEmpty, None,
-                       (7,14--7,15), { BarRange = None }), None,
+                       (7,14--7,15), { BarRange = None
+                                       OfKeyword = None }), None,
                     PreXmlDoc ((7,4), FSharp.Compiler.Xml.XmlDocCollector), None,
-                    (7,4--7,15)), None, [], (7,4--7,15)), (7,4--7,15))],
+                    (7,4--7,15), { ExceptionKeyword = (7,4--7,13) }), None, [],
+                 (7,4--7,15)), (7,4--7,15))],
           PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (2,0--7,15), { LeadingKeyword = Module (2,0--2,6) })], (true, true),
       { ConditionalDirectives = []

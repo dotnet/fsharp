@@ -10,17 +10,17 @@ module internal DetailedExceptions =
     open Microsoft.FSharp.Core
 
     /// takes an argument, a formatting string, a param array to splice into the formatting string
-    let inline invalidArgFmt (arg:string) (format:string) paramArray =
+    let inline invalidArgFmt (arg:string) (format:string) (paramArray: obj[]) =
         let msg = String.Format (format, paramArray)
         raise (ArgumentException(msg, arg))
 
     /// takes an argument, a formatting string, a param array to splice into the formatting string
-    let inline invalidArgOutOfRangeFmt (arg:string) (format:string) paramArray =
+    let inline invalidArgOutOfRangeFmt (arg:string) (format:string) (paramArray: obj[]) =
         let msg = String.Format (format, paramArray)
         raise (ArgumentOutOfRangeException(arg, msg))
 
     /// takes a formatting string and a param array to splice into the formatting string
-    let inline invalidOpFmt (format:string) paramArray =
+    let inline invalidOpFmt (format:string) (paramArray: obj[]) =
         let msg = String.Format (format, paramArray)
         raise (InvalidOperationException(msg))
 
@@ -87,7 +87,8 @@ open System.Collections.Generic
 
 module internal List =
 
-    let inline arrayZeroCreate (n:int) = (# "newarr !0" type ('T) n : 'T array #)
+    let inline arrayZeroCreate (n:int) : 'T array =
+        if n = 0 then [||] else (# "newarr !0" type ('T) n : 'T array #)
 
     // optimized mutation-based implementation. This code is only valid in fslib, where mutation of private
     // tail cons cells is permitted in carefully written library code.
@@ -974,11 +975,11 @@ module internal List =
             takeWhileFreshConsTail cons p xs
             cons
 
-    let rec tryLastV (list: 'T list) = 
+    let rec tryLastV (list: 'T list) =
         match list with
         | [] -> ValueNone
-        | [x] -> ValueSome x        
-        | _ :: tail -> tryLastV tail           
+        | [x] -> ValueSome x
+        | _ :: tail -> tryLastV tail
 
 module internal Array =
 
@@ -988,8 +989,9 @@ module internal Array =
         LanguagePrimitives.FastGenericComparerCanBeNull<'t>
 
     // The input parameter should be checked by callers if necessary
-    let inline zeroCreateUnchecked (count:int) =
-        (# "newarr !0" type ('T) count : 'T array #)
+    // Returns the shared empty-array singleton (via the [||] literal) when count = 0
+    let inline zeroCreateUnchecked (count: int) : 'T array =
+        if count = 0 then [||] else (# "newarr !0" type ('T) count : 'T array #)
 
     let inline init (count:int) ([<InlineIfLambda>] f: int -> 'T) =
         if count < 0 then invalidArgInputMustBeNonNegative "count" count
@@ -1085,12 +1087,12 @@ module internal Array =
             Array.Sort<_, _>(keys, array, fastComparerForArraySort())
 
     let unstableSortInPlace (array: 'T array) =
-        if array.Length > 1 then 
+        if array.Length > 1 then
             Array.Sort<_>(array, fastComparerForArraySort())
 
     let stableSortWithKeysAndComparer (cFast:IComparer<'Key> | null) (c:IComparer<'Key>) (array:array<'T>) (keys:array<'Key>)  =
 
-        // 'places' is an array or integers storing the permutation performed by the sort        
+        // 'places' is an array or integers storing the permutation performed by the sort
         let len = array.Length
         let places = zeroCreateUnchecked len
         for i = 0 to len - 1 do
@@ -1181,17 +1183,17 @@ module internal Seq =
     let tryLastV (source : seq<_>) =
         //checkNonNull "source" source //done in main Seq.tryLast
         match source with
-        | :? ('T array) as a -> 
+        | :? ('T array) as a ->
             if a.Length = 0 then ValueNone
             else ValueSome(a.[a.Length - 1])
-        
+
         | :? ('T IList) as a -> //ResizeArray and other collections
             if a.Count = 0 then ValueNone
             else ValueSome(a.[a.Count - 1])
-        
-        | :? ('T list) as a -> List.tryLastV a 
-        
-        | _ -> 
+
+        | :? ('T list) as a -> List.tryLastV a
+
+        | _ ->
             use e = source.GetEnumerator()
             if e.MoveNext() then
                 let mutable res = e.Current
