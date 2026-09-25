@@ -63,17 +63,16 @@ type public FSharpChecker =
             FSharpChecker
 
     /// <summary>
-    /// Creates an independent hot reload session (the F# analogue of Roslyn's
-    /// <c>DebuggingSession</c>): per-project committed baselines and generation chains keyed by
-    /// project identity, with session-wide capabilities and active statements. The session is
-    /// fully independent of the checker's default (process-wide) session and of other sessions;
-    /// dispose it to end it. Requires the checker to be created with
-    /// <c>keepAssemblyContents = true</c>.
+    /// Creates an independent hot reload session, the F# analogue of Roslyn's <c>DebuggingSession</c>.
+    /// The session stores per-project committed baselines and generation chains, with session-wide capabilities and active statements.
+    /// The session is independent of the checker's default session and all other sessions.
+    /// The checker requires <c>keepAssemblyContents = true</c>.
+    /// Disposal ends the session.
     /// </summary>
-    /// <param name="capabilities">Optional runtime edit-and-continue capability names (for example
-    /// <c>AddMethodToExistingType</c>), as reported by the target runtime. Unknown names are
-    /// ignored. When omitted, only baseline edits (method-body updates) are assumed supported;
-    /// use <c>FSharpHotReloadSession.UpdateCapabilities</c> when the process reports them later.</param>
+    /// <param name="capabilities">Optional runtime capability names, such as <c>AddMethodToExistingType</c>.
+    /// The session ignores unknown names.
+    /// If the argument is absent, the session supports only method-body updates.
+    /// <c>FSharpHotReloadSession.UpdateCapabilities</c> accepts capabilities after the process reports them.</param>
     [<Experimental("This FCS API is experimental and subject to change.")>]
     member CreateHotReloadSession: ?capabilities: string seq -> FSharpHotReloadSession
 

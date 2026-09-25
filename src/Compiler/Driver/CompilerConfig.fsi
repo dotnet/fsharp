@@ -289,6 +289,7 @@ type ICompilerEmitHook =
     abstract FallbackEmit: compilerGlobalState: FSharp.Compiler.CompilerGlobalState.CompilerGlobalState -> unit
 
 val defaultCompilerEmitHook: ICompilerEmitHook
+
 /// A field belongs here when two projects differing in it cannot reuse one imported form
 [<RequireQualifiedAccess>]
 type ImportReuseKey =

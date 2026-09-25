@@ -848,7 +848,16 @@ type FSharpHotReloadSession
 
     let projectKeyOfSnapshot (projectSnapshot: FSharpProjectSnapshot) =
         let identifier = projectSnapshot.Identifier
-        FSharp.Compiler.HotReloadState.HotReloadProjectKey.Project(identifier.ProjectFileName, identifier.OutputFileName)
+
+        // Snapshot identifiers omit long output options. Keep distinct outputs in separate session baselines.
+        let outputFileName =
+            if String.IsNullOrEmpty identifier.OutputFileName then
+                tryGetOutputPath projectSnapshot
+                |> Option.defaultValue identifier.OutputFileName
+            else
+                identifier.OutputFileName
+
+        FSharp.Compiler.HotReloadState.HotReloadProjectKey.Project(identifier.ProjectFileName, outputFileName)
 
     let resolveOutputPath (projectKey: FSharp.Compiler.HotReloadState.HotReloadProjectKey) (projectSnapshot: FSharpProjectSnapshot) =
         let overridePath =
