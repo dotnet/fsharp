@@ -1,7 +1,7 @@
 module MyTestModule
 
 [<NoComparison;NoEquality>]
-type MyDu = 
+type MyDu =
     | JustLabel
     | JustInt of int
     | MaybeString of nullableString:(string | null)

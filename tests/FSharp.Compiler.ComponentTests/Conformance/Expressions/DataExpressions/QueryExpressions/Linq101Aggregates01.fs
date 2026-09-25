@@ -7,7 +7,7 @@ open System.Linq
 // Count - Simple
 let factorsOf300 = [2;2;3;5;5]
 
-let uniqueFactors = 
+let uniqueFactors =
     query {
         for n in factorsOf300 do
         distinct
@@ -17,7 +17,7 @@ if uniqueFactors <> 3 then printfn "uniqueFactors failed"; exit 1
 // Sum - Simple
 let numbers = [ 5; 4; 1; 3; 9; 8; 6; 7; 2; 0 ]
 
-let numSum = 
+let numSum =
     query {
         for n in numbers do
         sumBy n
@@ -27,7 +27,7 @@ if numSum <> 45 then printfn "numSum failed"; exit 1
 // Sum - Projection
 let words = ["cherry"; "apple"; "blueberry"]
 
-let totalChars = 
+let totalChars =
     query {
         for w in words do
         sumBy (w.Length)
@@ -115,9 +115,9 @@ let averageNum = query { for n in numbers2 do averageBy n }
 if averageNum <> 4.5 then printfn "averageNum failed"; exit 1
 
 // Average - Projection
-let averageLength = 
-    query { 
-        for w in words do 
+let averageLength =
+    query {
+        for w in words do
         let wl = w.Length |> float
         averageBy wl
     }

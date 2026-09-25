@@ -16,6 +16,11 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 
+/// Concrete ITraitContext used throughout the compiler.
+type TraitContext = ITraitContext<AccessorDomain, MethInfo, InfoReader>
+
+val constraintResolutionPriority: TcGlobals -> ImportMap -> range -> formalTy: TType * actualTy: TType -> int
+
 /// Information about the context of a type equation.
 [<RequireQualifiedAccess>]
 type ContextInfo =
@@ -236,10 +241,20 @@ type ConstraintSolverState =
         /// Checks to run after all inference is complete.
         PostInferenceChecksFinal: ResizeArray<unit -> unit>
 
+        /// Union attributes awaiting a retry after the recursive group is established.
+        mutable UnionsWithDeferredAttributes: Set<Stamp>
+
+        /// Deferred union constraints not yet checked after their attributes resolved.
+        mutable DeferredUnionNullnessChecks: (TType * range) list
+
         WarnWhenUsingWithoutNullOnAWithNullTarget: string option
+
+        /// RFC FS-1043: the CCU currently being compiled, used to scope the optimizer-replay cache of
+        /// extension-member solutions to built-in-operator SRTP constraints.
+        CompilingCcu: CcuThunk option
     }
 
-    static member New: TcGlobals * ImportMap * InfoReader * TcValF -> ConstraintSolverState
+    static member New: TcGlobals * ImportMap * InfoReader * TcValF * CcuThunk option -> ConstraintSolverState
 
     /// Add a post-inference check to run at the end of inference
     member PushPostInferenceCheck: preDefaults: bool * check: (unit -> unit) -> unit
@@ -381,6 +396,19 @@ val ChooseTyparSolutionAndSolve: ConstraintSolverState -> DisplayEnv -> Typar ->
 val IsApplicableMethApprox: TcGlobals -> ImportMap -> range -> MethInfo -> TType -> bool
 
 val CanonicalizePartialInferenceProblem: ConstraintSolverState -> DisplayEnv -> range -> Typars -> unit
+
+val CanonicalizePartialInferenceProblemForExtensions: ConstraintSolverState -> DisplayEnv -> range -> Typars -> unit
+
+/// Create an ITraitContext from implementation file contents for use during optimization/codegen.
+/// earlierSignatures carries the signatures of preceding same-assembly files so their extension
+/// members are visible to trait-witness generation using the same val identity code generation binds.
+val CreateImplFileTraitContext:
+    TcGlobals -> ModuleOrNamespaceContents list -> ModuleOrNamespaceType list -> CcuThunk list -> TraitContext
+
+/// RFC FS-1043: optimizer hook returning the checker-recorded, unambiguous extension solution for a
+/// built-in-operator SRTP constraint (see ConstraintSolver.fs for the replay rationale), or None.
+val TryGetRecordedExtensionOperatorSolution:
+    g: TcGlobals -> compilingCcu: CcuThunk -> traitInfo: TraitConstraintInfo -> m: range -> TraitConstraintSln option
 
 val SolveTyparsEqualTypes:
     g: TcGlobals -> css: ConstraintSolverState -> m: range -> typars: TypeInst -> tys: TypeInst -> unit

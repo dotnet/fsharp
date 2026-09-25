@@ -1,4 +1,4 @@
-// #Regression #Conformance #LexFilter 
+// #Regression #Conformance #LexFilter
 // Verify error on unclosed let-block
 // Regression for FSB 1616
 

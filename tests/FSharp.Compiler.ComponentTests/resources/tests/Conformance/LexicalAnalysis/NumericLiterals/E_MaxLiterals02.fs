@@ -1,4 +1,4 @@
-// #Regression #Conformance #LexicalAnalysis #Constants 
+// #Regression #Conformance #LexicalAnalysis #Constants
 
 
 // Verify compile error for unsigned literals which are MaxSize + 1, MaxSize - 1

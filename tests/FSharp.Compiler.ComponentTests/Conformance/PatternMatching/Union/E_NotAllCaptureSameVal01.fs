@@ -1,4 +1,4 @@
-// #Regression #Conformance #PatternMatching #Unions 
+// #Regression #Conformance #PatternMatching #Unions
 
 
 // Verify error if not all union pattern rules capture the

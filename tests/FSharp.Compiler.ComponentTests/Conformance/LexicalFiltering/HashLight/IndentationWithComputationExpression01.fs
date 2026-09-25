@@ -1,13 +1,13 @@
-// #Regression #Conformance #LexFilter 
+// #Regression #Conformance #LexFilter
 // Regression test for FSHARP1.0:6085
 
 module M.N.A
 
 async {
     let! a = Async.StartChild(
-                async { 
+                async {
                     do! Async.Sleep(500)
-                    return 5 
+                    return 5
                 }
               )
     let! b = a

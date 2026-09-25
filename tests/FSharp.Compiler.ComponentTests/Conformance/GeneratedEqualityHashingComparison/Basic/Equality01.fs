@@ -1,4 +1,4 @@
-// #Conformance #TypesAndModules #GeneratedEqualityAndHashing 
+// #Conformance #TypesAndModules #GeneratedEqualityAndHashing
 
 
 // Sanity check generated equality

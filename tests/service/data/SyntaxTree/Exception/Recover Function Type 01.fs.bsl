@@ -21,9 +21,12 @@ ImplFile
                              PreXmlDoc ((3,17), FSharp.Compiler.Xml.XmlDocCollector),
                              None, (3,17--3,27), { LeadingKeyword = None
                                                    MutableKeyword = None })],
-                       PreXmlDocEmpty, None, (3,10--3,27), { BarRange = None }),
-                    None, PreXmlDoc ((3,0), FSharp.Compiler.Xml.XmlDocCollector),
-                    None, (3,0--3,27)), None, [], (3,0--3,27)), (3,0--3,27));
+                       PreXmlDocEmpty, None, (3,10--3,27),
+                       { BarRange = None
+                         OfKeyword = Some (3,14--3,16) }), None,
+                    PreXmlDoc ((3,0), FSharp.Compiler.Xml.XmlDocCollector), None,
+                    (3,0--3,27), { ExceptionKeyword = (3,0--3,9) }), None, [],
+                 (3,0--3,27)), (3,0--3,27));
            Exception
              (SynExceptionDefn
                 (SynExceptionDefnRepr
@@ -37,11 +40,13 @@ ImplFile
                              PreXmlDoc ((4,19), FSharp.Compiler.Xml.XmlDocCollector),
                              None, (4,19--4,22), { LeadingKeyword = None
                                                    MutableKeyword = None })],
-                       PreXmlDocEmpty, None, (4,10--4,22), { BarRange = None }),
-                    None, PreXmlDoc ((4,0), FSharp.Compiler.Xml.XmlDocCollector),
-                    None, (4,0--4,22)), None, [], (4,0--4,22)), (4,0--4,22))],
-          PreXmlDocEmpty, [], None, (1,0--4,22),
-          { LeadingKeyword = Namespace (1,0--1,9) })], (true, true),
+                       PreXmlDocEmpty, None, (4,10--4,22),
+                       { BarRange = None
+                         OfKeyword = Some (4,16--4,18) }), None,
+                    PreXmlDoc ((4,0), FSharp.Compiler.Xml.XmlDocCollector), None,
+                    (4,0--4,22), { ExceptionKeyword = (4,0--4,9) }), None, [],
+                 (4,0--4,22)), (4,0--4,22))], PreXmlDocEmpty, [], None,
+          (1,0--4,22), { LeadingKeyword = Namespace (1,0--1,9) })], (true, true),
       { ConditionalDirectives = []
         WarnDirectives = []
         CodeComments = [] }, set []))

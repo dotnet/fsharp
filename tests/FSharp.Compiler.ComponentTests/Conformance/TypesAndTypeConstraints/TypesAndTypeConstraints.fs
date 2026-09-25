@@ -684,3 +684,236 @@ module TypeParameterDefinitions =
     [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/TypesAndTypeConstraints/TypeParameterDefinitions", Includes = [| "UnitSpecialization.fs" |])>]
     let ``UnitSpecialization_fs`` compilation =
         compilation |> asExe |> typecheck |> shouldSucceed |> ignore
+
+// https://github.com/dotnet/fsharp/issues/20103
+module GenericInterfaceConstraintDependencyOrdering =
+
+    let private source = """
+module Repro
+
+type I<'a> = interface end
+
+type IServices =
+    abstract member Register<'a, 'b when 'a :> I<'b>> : ctor: (IServices -> 'a) -> unit
+
+type Foo(services: IServices) =
+    interface I<int>
+    interface I<string>
+
+let register (services: IServices) =
+    services.Register<Foo, int> Foo
+    services.Register<Foo, string> Foo
+"""
+
+    [<Theory>]
+    [<InlineData("11.0", true)>]
+    [<InlineData("10.0", false)>]
+    let ``Explicit type args are ordered by constraint dependencies only from langversion 11`` (langVersion: string) (succeeds: bool) =
+        let result = FSharp source |> asLibrary |> withLangVersion langVersion |> typecheck
+        if succeeds then result |> shouldSucceed |> ignore
+        else result |> shouldFail |> withErrorCode 1 |> ignore
+
+    let private checkIntInference langVersion source =
+        let compilation = FSharp source |> asLibrary |> withLangVersion langVersion
+        compilation
+        |> typecheck
+        |> withErrors []
+        |> withWarningCode 64
+        |> withWarningMessage "This construct causes code to be less generic than indicated by the type annotations. The type variable 'u has been constrained to be type 'int'."
+        |> ignore
+        compilation |> signaturesShouldContain "val test: outer: Outer<int> -> unit"
+
+    [<Theory>]
+    [<InlineData("10.0")>]
+    [<InlineData("11.0")>]
+    [<InlineData("preview")>]
+    let ``Newly ready constraint determines shared caller parameter before ambiguous interface`` (langVersion: string) =
+        """
+module Repro
+
+type I<'t> = interface end
+type J<'t> = interface end
+type One() =
+    interface I<int>
+type Many() =
+    interface J<int>
+    interface J<string>
+type Outer<'t>() =
+    member _.M<'a, 'b, 'c
+        when 'a :> I<'b> and 'c :> J<'t>>() = ()
+let test (outer: Outer<'u>) =
+    outer.M<One, 'u, Many>()
+"""
+        |> checkIntInference langVersion
+
+    [<Fact>]
+    let ``Less ambiguous ready constraint determines shared caller parameter`` () =
+        """
+module Repro
+
+type I<'t> = interface end
+type J<'t> = interface end
+type Many() =
+    interface I<int>
+    interface I<string>
+type One() =
+    interface J<int>
+type Outer<'t>() =
+    member _.M<'a, 'b, 'c
+        when 'a :> I<'b> and 'c :> J<'t>>() = ()
+let test (outer: Outer<'u>) =
+    outer.M<Many, 'u, One>()
+"""
+        |> checkIntInference "11.0"
+
+    [<Theory>]
+    [<InlineData("'a :> I<'c> and 'b :> J<'c> and 'd :> J<'t>", "One, Many, 'u, Many")>]
+    [<InlineData("'a :> seq<'b> and 'b :> I<'c> and 'd :> J<'t>", "One list, One, 'u, Many")>]
+    [<InlineData("'a :> I<'t> and 'b :> I<'d> and 'c :> J<'t>", "One, One, Many, 'u")>]
+    let ``Constraint ordering preserves newly ready chains and independent node order`` (constraints: string) (typeArguments: string) =
+        $"""
+module Repro
+
+type I<'t> = interface end
+type J<'t> = interface end
+type One() =
+    interface I<int>
+type Many() =
+    interface J<int>
+    interface J<string>
+type Outer<'t>() =
+    member _.M<'a, 'b, 'c, 'd
+        when {constraints}>() = ()
+let test (outer: Outer<'u>) =
+    outer.M<{typeArguments}>()
+"""
+        |> checkIntInference "11.0"
+
+    // Overloaded generic method: reordering must not disturb overload resolution (CanMemberSigsMatchUpToCheck).
+    [<Fact>]
+    let ``Overloaded generic method with a dependent constraint resolves under langversion 11`` () =
+        FSharp """
+module ReproOverload
+
+type I<'a> = interface end
+
+type Foo() =
+    interface I<int>
+    interface I<string>
+
+type C =
+    static member M<'a, 'b when 'a :> I<'b>>(x: 'a, y: 'b) = 1
+    static member M<'a, 'b when 'a :> I<'b>>(x: 'a, y: 'b, z: int) = 2
+
+let test (f: Foo) = C.M<Foo, int>(f, 0)
+"""
+        |> asLibrary
+        |> withLangVersion11
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Theory>]
+    [<InlineData("Foo, int")>]
+    [<InlineData("Foo, string")>]
+    [<InlineData("_, int")>]
+    [<InlineData("_, string")>]
+    let ``Same arity overload resolution rolls back failed candidate constraints`` (typeArguments: string) =
+        FSharp $"""
+module ReproCompetingOverloads
+
+type I<'a> = interface end
+
+type Foo() =
+    interface I<int>
+    interface I<string>
+
+type C =
+    static member M<'a, 'b when 'a :> I<'b> and 'a : struct>(x: 'a, y: obj) = 1
+    static member M<'a, 'b when 'a :> I<'b>>(x: obj, y: 'a) = 2
+
+[<EntryPoint>]
+let main _ =
+    let f = Foo()
+    let selected = C.M<{typeArguments}>(f, f)
+    if selected <> 2 then failwithf "Expected overload 2, got %%d" selected
+    0
+"""
+        |> asExe
+        |> withLangVersion11
+        |> compileExeAndRun
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``Workaround ordering keeps compiling under langversion 10`` () =
+        FSharp """
+module ReproWA
+
+type I<'a> = interface end
+
+type IServices =
+    abstract member Register<'a, 'b when 'b :> I<'a>> : ctor: (IServices -> 'b) -> unit
+
+type Foo(services: IServices) =
+    interface I<int>
+    interface I<string>
+
+let register (services: IServices) =
+    services.Register<int, Foo> Foo
+    services.Register<string, Foo> Foo
+"""
+        |> asLibrary
+        |> withLangVersion10
+        |> typecheck
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``A genuinely unsatisfiable interface argument is still rejected`` () =
+        FSharp """
+module ReproNeg
+
+type I<'a> = interface end
+
+type IServices =
+    abstract member Register<'a, 'b when 'a :> I<'b>> : ctor: (IServices -> 'a) -> unit
+
+type Foo(services: IServices) =
+    interface I<int>
+    interface I<string>
+
+let register (services: IServices) =
+    services.Register<Foo, bool> Foo
+"""
+        |> asLibrary
+        |> withLangVersion11
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 1
+        |> ignore
+
+    // Mutually-referential constraints ('a :> I<'b> and 'b :> J<'a>) form a dependency cycle; the
+    // reordering must degrade to the original order rather than loop forever (topological-sort cycle path).
+    [<Fact>]
+    let ``Cyclic constraint dependencies degrade gracefully without hanging`` () =
+        FSharp """
+module ReproCycle
+
+type I<'a> = interface end
+type J<'a> = interface end
+
+type C =
+    static member M<'a, 'b when 'a :> I<'b> and 'b :> J<'a>>() = ()
+
+type Foo() =
+    interface I<Foo>
+    interface J<Foo>
+
+let test () = C.M<Foo, Foo>()
+"""
+        |> asLibrary
+        |> withLangVersion11
+        |> typecheck
+        |> shouldSucceed
+        |> ignore

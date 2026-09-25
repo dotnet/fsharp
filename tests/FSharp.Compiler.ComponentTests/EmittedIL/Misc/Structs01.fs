@@ -1,4 +1,4 @@
-// #Regression #NoMono #NoMT #CodeGen #EmittedIL   
+// #Regression #NoMono #NoMT #CodeGen #EmittedIL
 // Regression test for FSharp1.0:5057
 // Title: Inefficient access of mutable field of struct
 

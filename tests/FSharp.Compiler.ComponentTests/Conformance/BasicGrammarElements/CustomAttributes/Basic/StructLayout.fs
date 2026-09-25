@@ -1,4 +1,4 @@
-// #Regression #Conformance #DeclarationElements #Attributes 
+// #Regression #Conformance #DeclarationElements #Attributes
 // Regression tests for FSHARP1.0:5931
 
 module M
@@ -12,7 +12,7 @@ type S =
     val v1 : int
     [<DefaultValue>]
     val v2 : int
-    
+
 // Explicit layout - will build
 [<Struct>]
 [<StructLayout(LayoutKind.Explicit)>]
@@ -22,8 +22,8 @@ type SExplicit =
     val v1 : int
     [<DefaultValue>]
     [<FieldOffset(1)>]
-    val v2 : int    
-    
+    val v2 : int
+
 // Sequential layout - will build
 [<Struct>]
 [<StructLayout(LayoutKind.Sequential)>]

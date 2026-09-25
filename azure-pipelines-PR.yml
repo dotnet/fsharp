@@ -159,6 +159,10 @@ stages:
             env:
               DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
             displayName: Validate test projects are registered in TestSplit.fsx
+          - script: ./eng/common/dotnet.sh fsi eng/tests/TestSplit.Tests.fsx
+            env:
+              DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
+            displayName: Check aggregate and batched test selection
 
         # Check whether package with current version has been published to nuget.org
         # We will try to restore both FSharp.Core and FCS and if restore is _successful_, package version needs to be bumped.
@@ -298,46 +302,29 @@ stages:
             name: $(DncEngPublicBuildPool)
             demands: ImageOverride -equals $(_WindowsMachineQueueName)
           timeoutInMinutes: 120
+          strategy:
+            matrix:
+              Batch1:
+                batchNumber: 1
+              Batch2:
+                batchNumber: 2
+              Batch3:
+                batchNumber: 3
           steps:
-          - checkout: self
-            clean: true
-
-          - script: eng\CIBuildNoPublish.cmd -compressallmetadata -buildnorealsig -testDesktop -configuration Release
-            env:
-              FSharp_CacheEvictionImmediate: true
-              DOTNET_DbgEnableMiniDump: 1
-              DOTNET_DbgMiniDumpType: 2 # 1=mini, 2=heap, 3=triage, 4=full. Heap dumps include managed object data for debugging.
-              DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\Release\$(Build.BuildId)-%e-%p-%t.dmp
-              NativeToolsOnMachine: true
-            displayName: Build
-
-          - task: PublishTestResults@2
-            displayName: Publish Test Results
-            inputs:
-              testResultsFormat: 'XUnit'
-              testRunTitle: WindowsNoRealsig_testDesktop
-              mergeTestResults: true
-              testResultsFiles: '*.xml'
-              searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/Release'
-            condition: succeededOrFailed()
-            continueOnError: true
-          - task: PublishBuildArtifacts@1
-            displayName: Publish Build BinLog
-            continueOnError: true
-            inputs:
-                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.slnx.binlog'
-                ArtifactName: 'Windows Release build binlogs'
-                ArtifactType: Container
-                parallel: true
-          - task: PublishBuildArtifacts@1
-            displayName: Publish Dumps
-            condition: failed()
-            continueOnError: true
-            inputs:
-                PathToPublish: '$(Build.SourcesDirectory)\artifacts\log\Release'
-                ArtifactName: 'Windows Release WindowsNoRealsig_testDesktop process dumps'
-                ArtifactType: Container
-                parallel: true
+          - template: /eng/templates/batched-test-steps.yml
+            parameters:
+              buildCommand: eng\CIBuildNoPublish.cmd -compressallmetadata -buildnorealsig -testDesktopBatch $(batchNumber) -configuration Release
+              buildEnv:
+                FSharp_CacheEvictionImmediate: true
+                DOTNET_DbgEnableMiniDump: 1
+                DOTNET_DbgMiniDumpType: 2
+                DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\Release\$(Build.BuildId)-%e-%p-%t.dmp
+                NativeToolsOnMachine: true
+              testRunTitlePrefix: 'WindowsNoRealsig_testDesktop'
+              artifactNamePrefix: 'WindowsNoRealsig testDesktop'
+              publishBinLog: true
+              binLogPath: '$(Build.SourcesDirectory)\artifacts\log/Release\Build.VisualFSharp.slnx.binlog'
+              publishDumps: true
 
         # Windows With Compressed Metadata
         - job: WindowsCompressedMetadata
@@ -482,8 +469,14 @@ stages:
           - pwsh: .\eng\MockBuild.ps1
             displayName: Build with OfficialBuildId
 
-        # Linux
+        # Linux (split into 2 batches; batch 3 is desktop-only FSharpSuite)
         - job: Linux
+          strategy:
+            matrix:
+              Batch1:
+                batchNumber: 1
+              Batch2:
+                batchNumber: 2
           pool:
             name: $(DncEngPublicBuildPool)
             demands: ImageOverride -equals $(LinuxMachineQueueName)
@@ -492,39 +485,22 @@ stages:
           - name: _SignType
             value: Test
           steps:
-          - checkout: self
-            clean: true
-          - script: ./eng/cibuild.sh --configuration $(_BuildConfig) --testcoreclr
-            displayName: Build / Test
-          - task: PublishTestResults@2
-            displayName: Publish Test Results
+          - template: /eng/templates/batched-test-steps.yml
+            parameters:
+              buildCommand: ./eng/cibuild.sh --configuration $(_BuildConfig) --testcoreclrbatch $(batchNumber) --mt true
+              testRunTitlePrefix: 'Linux'
+              artifactNamePrefix: 'Linux'
+              publishBinLog: true
+              binLogPath: '$(Build.SourcesDirectory)/artifacts/log/Release/Build.binlog'
+          # Run the SDK integration once, not once per test batch.
+          - script: ./eng/common/dotnet.sh fsi tests/EndToEndBuildTests/MultithreadedTasks/run.fsx -- --configuration $(_BuildConfig) --repetitions 3
+            displayName: Real SDK MP / MT integration
+            condition: and(succeeded(), eq(variables['batchNumber'], '1'))
+          - task: PublishPipelineArtifact@1
+            condition: and(always(), eq(variables['batchNumber'], '1'))
             inputs:
-              testResultsFormat: 'XUnit'
-              testRunTitle: Linux
-              testResultsFiles: '*.xml'
-              mergeTestResults: true
-              searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
-            continueOnError: true
-            condition: succeededOrFailed()
-          - task: PublishBuildArtifacts@1
-            displayName: Publish Test Logs
-            inputs:
-              PathtoPublish: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
-              ArtifactName: 'Linux $(_BuildConfig) test logs'
-              publishLocation: Container
-            continueOnError: true
-            condition: failed()
-          - script: dotnet build $(Build.SourcesDirectory)/eng/DumpPackageRoot/DumpPackageRoot.csproj
-            displayName: Dump NuGet cache contents
-            condition: failed()
-          - task: PublishBuildArtifacts@1
-            displayName: Publish NuGet cache contents
-            inputs:
-              PathtoPublish: '$(Build.SourcesDirectory)/artifacts/NugetPackageRootContents'
-              ArtifactName: 'NuGetPackageContents Linux'
-              publishLocation: Container
-            continueOnError: true
-            condition: failed()
+              targetPath: '$(Build.SourcesDirectory)/artifacts/MultithreadedTasks'
+              artifact: Linux SDK MT evidence
 
         # MacOS (split into 2 batches; batch 3 is desktop-only FSharpSuite)
         - job: MacOS
@@ -543,7 +519,7 @@ stages:
           steps:
           - template: /eng/templates/batched-test-steps.yml
             parameters:
-              buildCommand: ./eng/cibuild.sh --configuration $(_BuildConfig) --testcoreclrbatch $(batchNumber)
+              buildCommand: ./eng/cibuild.sh --configuration $(_BuildConfig) --testcoreclrbatch $(batchNumber) --mt true
               buildEnv:
                 COMPlus_DefaultStackSize: 1000000
               testRunTitlePrefix: 'MacOS'
@@ -559,11 +535,20 @@ stages:
           steps:
           - checkout: self
             clean: true
-          - script: .\Build.cmd -c Release -pack
+          - script: .\Build.cmd -ci -c Release -pack
             env:
               NativeToolsOnMachine: true
+          - script: .\eng\common\dotnet.cmd fsi .\tests\AheadOfTime\NetPackage\VerifyNetPackage.fsx -- .\artifacts\packages\Release
+            displayName: Verify FSharp.Core package assets
           - script: .\tests\EndToEndBuildTests\EndToEndBuildTests.cmd -c Release
             displayName: End to end build tests
+          - script: .\eng\common\dotnet.cmd fsi tests\EndToEndBuildTests\MultithreadedTasks\run.fsx -- --configuration Release --repetitions 3
+            displayName: Real SDK MP / MT integration
+          - task: PublishPipelineArtifact@1
+            condition: always()
+            inputs:
+              targetPath: '$(Build.SourcesDirectory)/artifacts/MultithreadedTasks'
+              artifact: Windows SDK MT evidence
           
           # Publish artifacts for regression testing
           - task: PublishPipelineArtifact@1
@@ -635,7 +620,7 @@ stages:
             clean: true
           - script: dotnet --list-sdks
             displayName: Report dotnet SDK versions
-          - script: .\eng\common\dotnet.cmd build .\FSharp.Compiler.Service.slnx /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
+          - script: .\eng\common\dotnet.cmd build .\FSharp.Compiler.Service.slnx -mt /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
             workingDirectory: $(Build.SourcesDirectory)
             displayName: Regular rebuild of FSharp.Compiler.Service.slnx
             continueOnError: false
@@ -654,7 +639,7 @@ stages:
             clean: true
           - script: dotnet --list-sdks
             displayName: Report dotnet SDK versions
-          - script: ./eng/common/dotnet.sh build ./FSharp.Compiler.Service.slnx /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
+          - script: ./eng/common/dotnet.sh build ./FSharp.Compiler.Service.slnx -mt /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
             workingDirectory: $(Build.SourcesDirectory)
             displayName: Regular rebuild of FSharp.Compiler.Service.slnx
             continueOnError: false
@@ -672,7 +657,7 @@ stages:
             clean: true
           - script: dotnet --list-sdks
             displayName: Report dotnet SDK versions
-          - script: ./eng/common/dotnet.sh build ./FSharp.Compiler.Service.slnx /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
+          - script: ./eng/common/dotnet.sh build ./FSharp.Compiler.Service.slnx -mt /bl:\"artifacts/log/$(_BuildConfig)/ServiceRegularBuild.binlog\"
             workingDirectory: $(Build.SourcesDirectory)
             displayName: Regular rebuild of FSharp.Compiler.Service.slnx
             continueOnError: false
@@ -743,6 +728,38 @@ stages:
           - pwsh: .\tests\ILVerify\ilverify.ps1
             displayName: Run ILVerify
             workingDirectory: $(Build.SourcesDirectory)
+
+          - pwsh: |
+              $ErrorActionPreference = 'Stop'
+              Write-Host "##vso[task.setvariable variable=ILVerifyActualBaselinesFound]false"
+              $source = "$(Build.SourcesDirectory)\tests\ILVerify"
+              if (-not (Test-Path -LiteralPath $source -PathType Container)) {
+                Write-Host "No ILVerify actual baselines: source directory is absent."
+                return
+              }
+              $actuals = @(Get-ChildItem -LiteralPath $source -Filter '*.bsl.actual' -File)
+              if ($actuals.Count -eq 0) {
+                Write-Host "No ILVerify actual baselines found."
+                return
+              }
+              $destination = "$(Build.ArtifactStagingDirectory)\ILVerifyActualBaselines-$(System.JobAttempt)"
+              New-Item -ItemType Directory -Path $destination | Out-Null
+              foreach ($actual in $actuals) {
+                Copy-Item -LiteralPath $actual.FullName -Destination $destination
+              }
+              Write-Host "Staged $($actuals.Count) ILVerify actual baseline(s)."
+              Write-Host "##vso[task.setvariable variable=ILVerifyActualBaselinesFound]true"
+            displayName: Stage ILVerify actual baselines
+            condition: failed()
+            continueOnError: true
+
+          - task: PublishPipelineArtifact@1
+            displayName: Publish ILVerify actual baselines
+            inputs:
+              targetPath: '$(Build.ArtifactStagingDirectory)\ILVerifyActualBaselines-$(System.JobAttempt)'
+              artifactName: 'ILVerify actual baselines Attempt $(System.JobAttempt)'
+            condition: and(failed(), eq(variables['ILVerifyActualBaselinesFound'], 'true'))
+            continueOnError: true
 
   #-------------------------------------------------------------------------------------------------------------------#
   #                              F# Compiler Regression Tests                                                         #
@@ -833,6 +850,11 @@ stages:
           buildScript: dotnet build Oxpecker.slnx -c Release
           displayName: Oxpecker_Build
           expectLocalCore: true
+        - repo: Lanayx/Oxpecker
+          commit: cb7e4b83e3f2aba7ded46b17a36d1aea8c13c292
+          buildScript: dotnet build Oxpecker.Solid.slnx -c Release
+          displayName: Oxpecker_Solid_Build
+          expectLocalCore: true
         # Design-time provider packaging oracle. Pin d8aba70 (pre-workaround base of FSharp.Data.GraphQL#583):
         # it uses the bare IsFSharpDesignTimeProvider gesture, so the client pack drops the provider without this fix.
         # Linux-only: the $PWD local feed and the grep content assertion need bash. (nupkg entry names are stored
@@ -843,3 +865,14 @@ stages:
           displayName: FSharpDataGraphQL_DesignTimeProvider_Packaging
           useVmImage: $(LinuxMachineQueueName)
           usePool: $(DncEngPublicBuildPool)
+        # Chiron (chiron-6) exercises Aether 8.2.0 inline SRTP optics, reproducing the SDK 10.0.400 legacy inline-metadata
+        # regression (#20253, fixed by #20260): the miscompile throws NotSupportedException at run time, so run the tests.
+        - repo: xyncro/chiron
+          commit: 94cf9db1793a1bd0e6e0b69efadcfb37368a6428
+          buildScript: dotnet test tests/Chiron.Tests/Chiron.Tests.fsproj -c Release -p:AssetTargetFallback=net461 -p:RollForward=Major --filter FullyQualifiedName~Optic
+          displayName: Chiron_Aether_Inline_SRTP
+        - repo: Thorium/Linq.Expression.Optimizer
+          commit: 075e20da2712ede54b3314d5b69d6789ee68eb3d
+          buildScript: dotnet test Linq.Expression.Optimizer.sln -c Release -bl
+          displayName: LinqExpressionOptimizer_Test_Release
+          expectLocalCore: true

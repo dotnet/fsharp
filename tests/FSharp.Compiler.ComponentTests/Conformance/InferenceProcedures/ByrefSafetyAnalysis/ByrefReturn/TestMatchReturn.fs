@@ -6,7 +6,7 @@ module TestMatchReturn =
 
     let f inp = match inp with 3 -> &x | _ -> &y
 
-    let test() = 
+    let test() =
         let addr = &f 3
         addr <- addr + 1
         check2 "cepojcwem2" 2 x
@@ -16,7 +16,7 @@ module TestMatchReturn =
         check2 "cepojcwem4" 2 x
         check2 "cepojcwem5" 2 y
 
-    let test2() = 
+    let test2() =
         let res = f 3
         let res2 = res + 1
         check2 "cepojcwem2b" 3 res2

@@ -1,4 +1,4 @@
-// #Conformance #LexicalAnalysis 
+// #Conformance #LexicalAnalysis
 // string embedded in a comment: legitimate escape sequence
 //<Expects status="success"></Expects>
 

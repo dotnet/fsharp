@@ -1,4 +1,4 @@
-// #Conformance #TypeInference 
+// #Conformance #TypeInference
 // Verify we allow units to be passed as values to generic functions
 
 type 'a GenericType() =

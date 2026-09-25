@@ -11,9 +11,11 @@ SigFile
                    ([],
                     SynUnionCase
                       ([], SynIdent (Foo, None), Fields [], PreXmlDocEmpty, None,
-                       (4,10--4,13), { BarRange = None }), None,
+                       (4,10--4,13), { BarRange = None
+                                       OfKeyword = None }), None,
                     PreXmlDoc ((4,0), FSharp.Compiler.Xml.XmlDocCollector), None,
-                    (4,0--4,13)), Some (4,14--4,18),
+                    (4,0--4,13), { ExceptionKeyword = (4,0--4,9) }),
+                 Some (4,14--4,18),
                  [Member
                     (SynValSig
                        ([], SynIdent (Meh, None), SynValTyparDecls (None, true),

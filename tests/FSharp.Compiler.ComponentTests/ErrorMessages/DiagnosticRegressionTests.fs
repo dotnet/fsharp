@@ -34,7 +34,7 @@ let v = d ["key"]
     |> shouldFail
     |> withErrorCode 3217
 
-    
+
 // https://github.com/dotnet/fsharp/issues/13697
 [<Fact>]
 let ``Issue 13697 - typeof with out of scope type in attribute should report FS0039`` () =

@@ -19,7 +19,7 @@ type missingInterfaceInImplementation<'t> =
 type z = A | B
 
 
-type NestedTypes = 
+type NestedTypes =
    class
        static type NestedTypesNotYetSupported = T of int
    end

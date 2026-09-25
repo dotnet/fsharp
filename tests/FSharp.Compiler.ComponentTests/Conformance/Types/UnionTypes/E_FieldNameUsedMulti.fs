@@ -1,10 +1,10 @@
-// #Conformance #TypesAndModules #Unions 
+// #Conformance #TypesAndModules #Unions
 // Make sure we properly detect field names specified multiple times
 
 
 
 
-type MyDU = 
+type MyDU =
     | Case1 of V1 : int * V2 : string
 
 let x = Case1(V1 = 1, V1 = "")

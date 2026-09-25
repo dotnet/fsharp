@@ -1,4 +1,4 @@
-// (c) Microsoft Corporation 2005-2009. 
+// (c) Microsoft Corporation 2005-2009.
 
 /// A simple command-line argument processor.
 namespace FSharp.Text
@@ -6,7 +6,7 @@ namespace FSharp.Text
 /// The spec value describes the action of the argument,
 /// and whether it expects a following parameter.
 [<Sealed>]
-type ArgType = 
+type ArgType =
     static member Clear  : bool ref         -> ArgType
     static member Float  : (float -> unit)  -> ArgType
     static member Int    : (int -> unit)    -> ArgType
@@ -15,7 +15,7 @@ type ArgType =
     static member String : (string -> unit) -> ArgType
     static member Unit   : (unit -> unit)   -> ArgType
 
-type ArgInfo = 
+type ArgInfo =
   new : name:string * action:ArgType * help:string -> ArgInfo
   /// Return the name of the argument
   member Name : string
@@ -25,7 +25,7 @@ type ArgInfo =
   member HelpText : string
 
 [<Sealed>]
-type ArgParser = 
+type ArgParser =
     #if FX_NO_COMMAND_LINE_ARGS
     #else
 

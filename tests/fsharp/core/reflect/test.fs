@@ -1,4 +1,4 @@
-// #Conformance #Reflection #Unions #Tuples 
+// #Conformance #Reflection #Unions #Tuples
 module Test
 
 #nowarn "44"

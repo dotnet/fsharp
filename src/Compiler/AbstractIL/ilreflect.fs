@@ -694,15 +694,15 @@ let envPopEntryPts emEnv =
 // convCallConv
 //----------------------------------------------------------------------------
 
-let convCallConv (Callconv(hasThis, basic)) =
+let convCallConv (callConv: ILCallingConv) =
     let ccA =
-        match hasThis with
+        match callConv.ThisConv with
         | ILThisConvention.Static -> CallingConventions.Standard
         | ILThisConvention.InstanceExplicit -> CallingConventions.ExplicitThis
         | ILThisConvention.Instance -> CallingConventions.HasThis
 
     let ccB =
-        match basic with
+        match callConv.BasicConv with
         | ILArgConvention.Default -> enum 0
         | ILArgConvention.CDecl -> enum 0
         | ILArgConvention.StdCall -> enum 0
@@ -2138,6 +2138,7 @@ let typeAttributesOfTypeLayout cenv emEnv x =
     | ILTypeDefLayout.Auto -> None
     | ILTypeDefLayout.Explicit p -> (attr 0x02 p)
     | ILTypeDefLayout.Sequential p -> (attr 0x00 p)
+    | ILTypeDefLayout.Extended -> None // No StructLayoutAttribute needed; user's ExtendedLayoutAttribute is preserved
 
 //----------------------------------------------------------------------------
 // buildTypeDefPass1 cenv
