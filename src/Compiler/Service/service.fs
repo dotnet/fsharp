@@ -492,35 +492,21 @@ type FSharpChecker
         | HotReloadError.UnsupportedEdit diagnostics -> FSharpHotReloadError.UnsupportedEdit(FSharpHotReloadRudeEditMapping.ofDiagnostics diagnostics)
         | HotReloadError.DeltaEmissionException ex -> FSharpHotReloadError.DeltaEmissionFailed ex.Message
 
-    let createBaseline (tcGlobals: TcGlobals) (ilModule: ILModuleDef) (outputPath: string) =
+    let createBaseline (_tcGlobals: TcGlobals) (ilModule: ILModuleDef) (outputPath: string) =
         let pdbPath = Path.ChangeExtension(outputPath, ".pdb")
 
-        let writerOptions: ILBinaryWriter.options =
-            {
-                ilg = tcGlobals.ilg
-                outfile = outputPath
-                pdbfile = if File.Exists(pdbPath) then Some pdbPath else None
-                emitTailcalls = false
-                deterministic = true
-                portablePDB = true
-                embeddedPDB = false
-                embedAllSource = false
-                embedSourceList = []
-                allGivenSources = []
-                sourceLink = ""
-                checksumAlgorithm = HashAlgorithm.Sha256
-                signer = None
-                dumpDebugInfo = false
-                referenceAssemblyOnly = false
-                referenceAssemblyAttribOpt = None
-                referenceAssemblySignatureHash = None
-                pathMap = PathMap.empty
-                moduleCustomDebugInfoRows = []
-                methodCustomDebugInfoRows = Map.empty
-            }
+        // The baseline maps must refer to the original disk image, not a reordered rewrite.
+        let token (table: FSharp.Compiler.AbstractIL.BinaryConstants.TableName) rowId =
+            if rowId > 0 then (table.Index <<< 24) ||| rowId else 0
 
-        let _, pdbBytesOpt, tokenMappings, _ =
-            ILBinaryWriter.WriteILBinaryInMemoryWithArtifacts(writerOptions, ilModule, id)
+        let tokenMappings: ILBinaryWriter.ILTokenMappings =
+            {
+                TypeDefTokenMap = fun (_, typeDef) -> token FSharp.Compiler.AbstractIL.BinaryConstants.TableNames.TypeDef typeDef.MetadataIndex
+                FieldDefTokenMap = fun _ fieldDef -> token FSharp.Compiler.AbstractIL.BinaryConstants.TableNames.Field fieldDef.MetadataIndex
+                MethodDefTokenMap = fun _ methodDef -> token FSharp.Compiler.AbstractIL.BinaryConstants.TableNames.Method methodDef.MetadataIndex
+                PropertyTokenMap = fun _ propertyDef -> token FSharp.Compiler.AbstractIL.BinaryConstants.TableNames.Property propertyDef.MetadataIndex
+                EventTokenMap = fun _ eventDef -> token FSharp.Compiler.AbstractIL.BinaryConstants.TableNames.Event eventDef.MetadataIndex
+            }
 
         let assemblyBytes = File.ReadAllBytes(outputPath)
 
@@ -536,18 +522,12 @@ type FSharpChecker
                 None
 
         let portablePdbSnapshot =
-            pdbBytesOpt
-            |> Option.bind (HotReloadPdb.tryCreateSnapshotForAssembly assemblyBytes)
-            |> Option.orElseWith (fun () -> siblingPdbBytes |> Option.map HotReloadPdb.createSnapshot)
+            siblingPdbBytes |> Option.map HotReloadPdb.createSnapshot
 
         let baseline =
             HotReloadBaseline.createFromEmittedArtifacts ilModule tokenMappings assemblyBytes portablePdbSnapshot None
 
-        // The in-memory rewrite above passes no hot reload CDI side channel, so its PDB
-        // never carries EnC rows or the F# synthesized-name snapshot. The on-disk PDB
-        // produced by the flag-on build is the durable source: read it as a sibling input
-        // when the rewrite yielded none. Recorded synthesized-name snapshots take
-        // precedence over IL reconstruction; absent records preserve the old fallback.
+        // Prefer the recorded name map from the matching PDB over reconstructed names.
         let baseline =
             if
                 baseline.SynthesizedNameSnapshotSource = SynthesizedNameSnapshotSource.Reconstructed
@@ -572,11 +552,7 @@ type FSharpChecker
             else
                 baseline
 
-        // The in-memory rewrite above passes no EnC CDI side channel (methodCustomDebugInfoRows =
-        // Map.empty), so its PDB never carries EnC rows. The on-disk PDB produced by the flag-on
-        // build is the durable source of the baseline EnC method debug information: read it as a
-        // sibling input when the rewrite yielded none (flag-off PDBs and PDBs without EnC rows still decode to the
-        // empty map, and the session starts fine either way).
+        // Recover EnC debug information when the initial snapshot did not include it.
         let baseline =
             if Map.isEmpty baseline.EncMethodDebugInfos && siblingPdbBytes.IsSome then
                 let baseline =
@@ -596,10 +572,7 @@ type FSharpChecker
             else
                 baseline
 
-        // Sequence-point sibling-read: the IL module is read back from disk WITHOUT debug points, so
-        // the in-memory rewrite's PDB decodes to an empty sequence-point view. The on-disk PDB
-        // written by the build is the real source of the committed lines that line-shift
-        // detection and active-statement remapping diff against.
+        // The matching PDB supplies the committed source positions for line-only edits.
         if Map.isEmpty baseline.SequencePointSnapshots && siblingPdbBytes.IsSome then
             { baseline with
                 SequencePointSnapshots = FSharp.Compiler.HotReload.ActiveStatementAnalysis.decodeMethodSequencePoints siblingPdbBytes.Value
