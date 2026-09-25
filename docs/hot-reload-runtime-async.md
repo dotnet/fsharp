@@ -1,6 +1,6 @@
 # Runtime async edits
 
-Hot reload rejects changes to the runtime-async implementation flag on an existing method. Restart the application after such an edit.
+Hot reload rejects changes to the runtime-async implementation flag on an existing method. Such an edit requires an application restart.
 
 The method signature alone does not identify this change. Both implementations return `Task<int>` in metadata, but their IL return conventions differ. Normal IL returns a task. Runtime-async IL returns its integer result and requires the `0x2000` implementation flag.
 
