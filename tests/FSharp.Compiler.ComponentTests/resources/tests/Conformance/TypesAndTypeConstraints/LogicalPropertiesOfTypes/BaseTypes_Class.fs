@@ -1,14 +1,14 @@
-// #Conformance #TypeConstraints 
+// #Conformance #TypeConstraints
 
 
-// Test the base types of F# types: Class 
+// Test the base types of F# types: Class
 
 let baseTypeName<'a> = match typeof<'a> with
                        | null -> null
                        | x when x.BaseType <> null -> x.BaseType.Name
                        | x                         -> null
 
-type ClassType = 
+type ClassType =
     class
     end
 

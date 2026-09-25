@@ -1003,12 +1003,17 @@ let appendValToLeadingKeyword mVal leadingKeyword =
     | SynLeadingKeyword.Default(mDefault) -> SynLeadingKeyword.DefaultVal(mDefault, mVal)
     | _ -> leadingKeyword
 
-let mkSynUnionCase attributes (access: SynAccess option) id kind mDecl (xmlDoc, mBar) =
+let mkSynUnionCase attributes (access: SynAccess option) id kind mOf mDecl (xmlDoc, mBar) =
     match access with
     | Some access -> errorR (Error(FSComp.SR.parsUnionCasesCannotHaveVisibilityDeclarations (), access.Range))
     | _ -> ()
 
-    let trivia: SynUnionCaseTrivia = { BarRange = Some mBar }
+    let trivia: SynUnionCaseTrivia =
+        {
+            BarRange = Some mBar
+            OfKeyword = mOf
+        }
+
     let mDecl = unionRangeWithXmlDoc xmlDoc mDecl
     SynUnionCase(attributes, id, kind, xmlDoc, None, mDecl, trivia)
 
@@ -1258,3 +1263,45 @@ let mkAbstractMember
     [
         SynMemberDefn.AbstractSlot(valSpfn, mkFlags (getSetAdjuster arity), mWhole, trivia)
     ]
+
+let mkMatchClauses patternAndGuard patternResult (mNextBar: range option) nextClauses mLastOuter =
+    let (pat: SynPat), guard = patternAndGuard
+    let (mArrow: range option), (resultExpr: SynExpr) = patternResult
+
+    fun mBar ->
+        let m = unionRanges resultExpr.Range pat.Range
+
+        let clause =
+            SynMatchClause(pat, guard, resultExpr, m, DebugPointAtTarget.Yes, { ArrowRange = mArrow; BarRange = mBar })
+
+        let clauses, mLast =
+            match nextClauses with
+            | Some patternClauses ->
+                let clauses, mLast = patternClauses mNextBar
+                clause :: clauses, mLast
+
+            | _ -> [ clause ], resultExpr.Range
+
+        clauses, mLastOuter |> Option.defaultValue mLast
+
+let mkMatchClausesRecoverMissingResult
+    (patternAndGuard: SynPat * SynExpr option)
+    exprDebugString
+    (mExpr: range option)
+    (mNextBar: range option)
+    nextClauses
+    mLastOuter
+    =
+    let pat, guard = patternAndGuard
+
+    let mBeforeResult =
+        match mExpr with
+        | Some m -> m
+        | _ ->
+
+            match guard with
+            | Some expr -> expr.Range
+            | _ -> pat.Range
+
+    let patternResult = None, arbExpr (exprDebugString, mBeforeResult.EndRange)
+    mkMatchClauses patternAndGuard patternResult (mNextBar: range option) nextClauses mLastOuter

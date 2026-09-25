@@ -36,7 +36,7 @@ module LetBindings_TypeFunctions =
         |> verifyCompileAndRun
         |> shouldSucceed
 
-    
+
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_typeof_measure_01.fs"|])>]
     let ``E_typeof_measure_01_fs`` compilation =
         compilation
@@ -59,7 +59,7 @@ module LetBindings_TypeFunctions =
             (Error 671, Line 7, Col 27, Line 7, Col 33, "A property cannot have explicit type parameters. Consider using a method instead.")
         ]
 
-    
+
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_typeof_undefined_01.fs"|])>]
     let ``E_typeof_undefined_01_fs`` compilation =
         compilation

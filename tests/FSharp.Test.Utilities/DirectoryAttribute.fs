@@ -24,16 +24,16 @@ open TestFramework
 [<NoComparison; NoEquality>]
 type DirectoryAttribute(dir: string) =
     inherit DataAttributeBase()
-    
+
     do if String.IsNullOrWhiteSpace(dir) then
             invalidArg "dir" "Directory cannot be null, empty or whitespace only."
 
     let directoryPath = normalizePathSeparator (Path.GetFullPath(dir))
     let mutable baselineSuffix = ""
     let mutable includes = Array.empty<string>
-    
+
     new([<ParamArray>] dirs: string[]) = DirectoryAttribute(Path.Combine(dirs) : string)
-    
+
     member _.BaselineSuffix with get() = baselineSuffix and set v = baselineSuffix <- v
     member _.Includes with get() = includes and set v = includes <- v
 

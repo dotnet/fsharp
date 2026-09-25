@@ -1,4 +1,4 @@
-// #Conformance #ObjectOrientedTypes #Structs 
+// #Conformance #ObjectOrientedTypes #Structs
 
 
 
@@ -8,11 +8,11 @@
 [<Struct>]
 type GenStruct<'a> =
     val Val : int
-      
+
 let f () =
   let aux = GenStruct<'a>()
   aux
-  
+
 let x : GenStruct<unit[]> = f()
 if x.Val <> 0 then exit 1
 

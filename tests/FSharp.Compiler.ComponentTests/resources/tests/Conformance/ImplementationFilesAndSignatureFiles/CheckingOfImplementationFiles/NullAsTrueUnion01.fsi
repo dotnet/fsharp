@@ -1,4 +1,4 @@
-// #Regression #Conformance #SignatureFiles 
+// #Regression #Conformance #SignatureFiles
 // Regression for FSHARP1.0:6094
 // nullary union cases and signature files
 

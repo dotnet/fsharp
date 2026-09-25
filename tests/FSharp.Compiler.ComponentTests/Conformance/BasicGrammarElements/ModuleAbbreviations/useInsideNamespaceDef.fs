@@ -1,4 +1,4 @@
-// #Conformance #DeclarationElements #Modules 
+// #Conformance #DeclarationElements #Modules
 // Use module abbreviation inside a namespace
 //<Expects status="success"></Expects>
 
@@ -8,8 +8,8 @@ namespace Faa.Bor
         module B =
             module C =
                type X = | Red  = 1
-                        | Blue = 2 
-               let DirectorySeparatorChar = System.IO.Path.DirectorySeparatorChar 
+                        | Blue = 2
+               let DirectorySeparatorChar = System.IO.Path.DirectorySeparatorChar
 
     module IO = A.B.C
 

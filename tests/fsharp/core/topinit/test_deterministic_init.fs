@@ -1,4 +1,4 @@
-// #Conformance #Interop 
+// #Conformance #Interop
 let checkNotInitialized s isInitialized = if isInitialized then (printf "FAILED: %s, expected module not to be initialized" s; exit 1)
 let checkInitialized s isInitialized = if not isInitialized then (printf "FAILED: %s, expected module to be initialized" s; exit 1)
 //-----------------

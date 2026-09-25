@@ -1,10 +1,10 @@
 open Prelude
 
-module Slot_ByRefReturn  = 
-    type I = 
+module Slot_ByRefReturn  =
+    type I =
          abstract M : x: byref<int> -> byref<int>
-    type C() = 
-         interface I with 
+    type C() =
+         interface I with
              member __.M(x: byref<int>) = x <- 5; &x
     let mutable res = 9
     let v =  (C() :> I).M(&res)

@@ -1,4 +1,4 @@
-// #Regression #Conformance #DataExpressions #ObjectConstructors 
+// #Regression #Conformance #DataExpressions #ObjectConstructors
 // FSB 1683, dispatch slot checking in object expression manages to match non-virtual member
 
 //<Expects id="FS0767" status="error" span="(11,35-11,42)">The type Foo contains the member 'MyX' but it is not a virtual or abstract method that is available to override or implement.</Expects>

@@ -1,4 +1,4 @@
-// #Conformance #SignatureFiles #Namespaces 
+// #Conformance #SignatureFiles #Namespaces
 open W_NoNamespaceModuleDec01a
 
 let methodOfTransport = GasGuzzler

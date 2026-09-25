@@ -419,6 +419,7 @@ type internal TransparentCompiler
         enableBackgroundItemKeyStoreAndSemanticClassification,
         enablePartialTypeChecking,
         parallelReferenceResolution,
+        shareImportedAssemblies,
         captureIdentifiersWhenParsing,
         getSource: (string -> Async<ISourceText option>) option,
         useChangeNotifications,
@@ -469,6 +470,7 @@ type internal TransparentCompiler
             enableBackgroundItemKeyStoreAndSemanticClassification,
             enablePartialTypeChecking,
             parallelReferenceResolution,
+            shareImportedAssemblies,
             captureIdentifiersWhenParsing,
             getSource,
             useChangeNotifications
@@ -612,8 +614,7 @@ type internal TransparentCompiler
                 tcConfig.primaryAssembly.Name,
                 tcConfig.GetTargetFrameworkDirectories(),
                 tcConfig.fsharpBinariesDir,
-                tcConfig.langVersion.SpecifiedVersion,
-                tcConfig.checkNullness
+                tcConfig.importReuseKey
             )
 
         caches.FrameworkImports.Get(
@@ -931,6 +932,7 @@ type internal TransparentCompiler
                 |> Some
 
             tcConfigB.parallelReferenceResolution <- parallelReferenceResolution
+            tcConfigB.shareImportedAssemblies <- shareImportedAssemblies
             tcConfigB.captureIdentifiersWhenParsing <- captureIdentifiersWhenParsing
 
             return tcConfigB, sourceFilesNew, loadClosureOpt
@@ -1484,7 +1486,7 @@ type internal TransparentCompiler
 
                             let partialResult, tcState = finisher tcInfo.tcState
 
-                            let tcEnv, topAttribs, _checkImplFileOpt, ccuSigForFile = partialResult
+                            let tcEnv, topAttribs, _, ccuSigForFile, _ = partialResult
 
                             let tcEnvAtEndOfFile =
                                 if keepAllBackgroundResolutions then
@@ -1530,7 +1532,7 @@ type internal TransparentCompiler
                                      parsedInput)
                                     tcInfo.tcState
 
-                            let tcEnv, topAttribs, _checkImplFileOpt, ccuSigForFile = partialResult
+                            let tcEnv, topAttribs, _, ccuSigForFile, _ = partialResult
 
                             let tcEnvAtEndOfFile =
                                 if keepAllBackgroundResolutions then
@@ -1642,7 +1644,7 @@ type internal TransparentCompiler
 
                     let! result, tcInfo = ComputeTcLastFile bootstrapInfo snapshotWithSources
 
-                    let tcEnv, _topAttribs, checkedImplFileOpt, ccuSigForFile = result
+                    let tcEnv, _topAttribs, checkedImplFileOpt, ccuSigForFile, ownSigForFile = result
 
                     let tcState = tcInfo.tcState
 
@@ -1717,6 +1719,7 @@ type internal TransparentCompiler
                             tcDiagnostics,
                             keepAssemblyContents,
                             ccuSigForFile,
+                            ownSigForFile,
                             tcState.Ccu,
                             bootstrapInfo.TcImports,
                             tcEnv.AccessRights,

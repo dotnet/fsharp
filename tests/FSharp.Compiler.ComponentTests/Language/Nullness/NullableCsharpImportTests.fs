@@ -17,7 +17,7 @@ let typeCheckWithStrictNullness cu =
 
 
 [<FactForNETCOREAPP>]
-let ``Passing null to IlGenerator BeginCatchBlock is fine`` () = 
+let ``Passing null to IlGenerator BeginCatchBlock is fine`` () =
     FSharp """module MyLibrary
 open System.Reflection.Emit
 open System
@@ -39,7 +39,7 @@ let doSomethingAboutIt (ilg:ILGenerator) =
     |> shouldSucceed
 
 [<FactForNETCOREAPP>]
-let ``Consuming C# generic API which allows struct and yet uses question mark on the typar`` () = 
+let ``Consuming C# generic API which allows struct and yet uses question mark on the typar`` () =
     FSharp """module MyLibrary
 let ec = 
     { new System.Collections.Generic.IEqualityComparer<int> with
@@ -51,7 +51,7 @@ let ec =
     |> shouldSucceed
 
 [<FactForNETCOREAPP>]
-let ``TypeBuilder CreateTypeInfo with an upcast`` () = 
+let ``TypeBuilder CreateTypeInfo with an upcast`` () =
     FSharp """module MyLibrary
 open System
 open System.Reflection.Emit
@@ -64,7 +64,7 @@ let createType (typB:TypeBuilder) : Type=
     |> shouldSucceed
 
 [<FactForNETCOREAPP>]
-let ``CurrentDomain ProcessExit add to event`` () = 
+let ``CurrentDomain ProcessExit add to event`` () =
     FSharp """module MyLibrary
 open System
 
@@ -75,7 +75,7 @@ do System.AppDomain.CurrentDomain.ProcessExit |> Event.add (fun args -> failwith
     |> shouldSucceed
 
 [<FactForNETCOREAPP>]
-let ``Consuming C# extension methods which allow nullable this`` () = 
+let ``Consuming C# extension methods which allow nullable this`` () =
     FSharp """module MyLibrary
 
 open System
@@ -95,7 +95,7 @@ let asMemoryOnNull : Memory<byte> =
     |> shouldSucceed
 
 [<FactForNETCOREAPP>]
-let ``Consuming LinkedList First and Last should warn about nullness`` () = 
+let ``Consuming LinkedList First and Last should warn about nullness`` () =
     FSharp """module MyLibrary
 
 let ll = new System.Collections.Generic.LinkedList<string>()
@@ -105,14 +105,14 @@ let y:System.Collections.Generic.LinkedListNode<string> = ll.First
     |> asLibrary
     |> typeCheckWithStrictNullness
     |> shouldFail
-    |> withDiagnostics 
+    |> withDiagnostics
          [ Error 3261, Line 4, Col 59, Line 4, Col 66, "Nullness warning: The types 'System.Collections.Generic.LinkedListNode<string>' and 'System.Collections.Generic.LinkedListNode<string> | null' do not have compatible nullability."
            Error 3261, Line 4, Col 59, Line 4, Col 66, "Nullness warning: A non-nullable 'System.Collections.Generic.LinkedListNode<string>' was expected but this expression is nullable. Consider either changing the target to also be nullable, or use pattern matching to safely handle the null case of this expression."
            Error 3261, Line 5, Col 59, Line 5, Col 67, "Nullness warning: The types 'System.Collections.Generic.LinkedListNode<string>' and 'System.Collections.Generic.LinkedListNode<string> | null' do not have compatible nullability."
            Error 3261, Line 5, Col 59, Line 5, Col 67, "Nullness warning: A non-nullable 'System.Collections.Generic.LinkedListNode<string>' was expected but this expression is nullable. Consider either changing the target to also be nullable, or use pattern matching to safely handle the null case of this expression." ]
 
 [<FactForNETCOREAPP>]
-let ``Nullable directory info show warn on prop access`` () = 
+let ``Nullable directory info show warn on prop access`` () =
     FSharp """module MyLibrary
 open System.IO
 open System
@@ -126,7 +126,7 @@ let s : string = d.Name // should warn here!!
     |> withDiagnostics [Error 3261, Line 6, Col 18, Line 6, Col 19, "Nullness warning: Possible dereference of a null value when accessing member 'Name' on the nullable value 'd' of type 'DirectoryInfo | null'."]
 
 [<Fact>]
-let ``Consumption of netstandard2 BCL api which is not annotated`` () = 
+let ``Consumption of netstandard2 BCL api which is not annotated`` () =
     FSharp """module MyLibrary
 open System.Reflection
 
@@ -225,8 +225,8 @@ let ``Consumption of nullable C# - no generics, just strings in methods and fiel
             Error 3261, Line 25, Col 85, Line 25, Col 97, "Nullness warning: A non-nullable 'string' was expected but this expression is nullable. Consider either changing the target to also be nullable, or use pattern matching to safely handle the null case of this expression."
             Error 3261, Line 28, Col 99, Line 28, Col 111, "Nullness warning: A non-nullable 'string' was expected but this expression is nullable. Consider either changing the target to also be nullable, or use pattern matching to safely handle the null case of this expression."
             Error 3261, Line 30, Col 97, Line 30, Col 109, "Nullness warning: A non-nullable 'string' was expected but this expression is nullable. Consider either changing the target to also be nullable, or use pattern matching to safely handle the null case of this expression."]
-    
-    
+
+
 [<FactForNETCOREAPP>]
 let ``Regression 17701 - Nullable value type with nested generics`` () =
     let csharpLib =
@@ -250,14 +250,75 @@ let firstString = (toOption.Value |> Seq.head)
 let lengthOfIt = firstString.Length
 
 let theOtherOne = NullableClass.nullableImmArrayOfNotNullStrings
-    """        
+    """
     |> asLibrary
     |> withReferences [csharpLib]
     |> withStrictNullness
     |> withLangVersion10
     |> compile
     |> shouldFail
-    |> withDiagnostics 
+    |> withDiagnostics
                 [Error 3261, Line 7, Col 18, Line 7, Col 29, "Nullness warning: Possible dereference of a null value when accessing member 'Length' on the nullable value 'firstString' of type 'string | null'."]
-            
-            
+
+// https://github.com/dotnet/fsharp/issues/17734#issuecomment-5197965168
+// Implementing a C#-authored interface whose member returns an unconstrained 'T | null
+// (e.g. SocketIO's IEventContext.GetValue<T>). Writing the generic member with Unchecked.defaultof
+// alone reports FS3261; withNull re-types it to the expected 'T | null without adding constraints.
+[<FactForNETCOREAPP>]
+let ``Unchecked.withNull implements an unconstrained C# nullable generic member`` () =
+    let csharpLib =
+        CSharp """
+#nullable enable
+namespace Interop {
+    public interface IEventContext {
+        T? GetValue<T>(int index);
+    }
+}""" |> withName "csEventContext"
+     |> withCSharpLanguageVersionPreview
+
+    FSharp """module MyLibrary
+open Interop
+
+let ctx =
+    { new IEventContext with
+        member _.GetValue<'T>(index: int) = Unchecked.withNull (Unchecked.defaultof<'T>) }
+"""
+    |> asLibrary
+    |> withReferences [csharpLib]
+    |> withStrictNullness
+    |> compile
+    |> shouldSucceed
+
+[<FactForNETCOREAPP>]
+let ``Unchecked.withNull null assignment through generic layers is valid IL for structs`` () =
+    FSharp """module MyProgram
+let observe (v: 'T) : objnull =
+    let mutable x = Unchecked.withNull v
+    x <- null
+    box x
+
+let forward (v: 'T) = observe v
+
+[<EntryPoint>]
+let main _ =
+    System.Console.Write(sprintf "%A %b" (forward 42) (isNull (forward "hello")))
+    0
+"""
+    |> withStrictNullness
+    |> compileExeAndRun
+    |> shouldSucceed
+    |> withStdOutContains "0 true"
+
+[<Fact>]
+let ``Unchecked.withNull does not allow assigning null to a concrete struct mutable`` () =
+    FSharp """module MyLibrary
+let f () =
+    let mutable x = Unchecked.withNull 42
+    x <- null
+"""
+    |> asLibrary
+    |> withStrictNullness
+    |> typecheck
+    |> shouldFail
+    |> withErrorCode 43
+

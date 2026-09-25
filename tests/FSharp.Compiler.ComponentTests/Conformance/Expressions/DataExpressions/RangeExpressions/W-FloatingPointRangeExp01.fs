@@ -1,11 +1,11 @@
-// #Regression #Conformance #DataExpressions 
+// #Regression #Conformance #DataExpressions
 
 
 // FSB 1005, float comprehensions of form "x0 .. dx .. x1" suffer rounding errors
 //<Expects id="FS0191" status="warning">Floating point ranges are experimental and may be deprecated in a future release</Expects>
 
 let floatingPointRange = [0.0 .. 0.01 .. 2.0]
-let lastNum, sndToLast = floatingPointRange 
+let lastNum, sndToLast = floatingPointRange
                          |> List.rev
                          |> function fst :: snd :: rest -> (fst, snd)
 

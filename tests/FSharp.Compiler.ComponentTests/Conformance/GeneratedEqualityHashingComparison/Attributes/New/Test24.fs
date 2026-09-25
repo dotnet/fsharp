@@ -1,7 +1,7 @@
-// #Regression #Conformance #TypesAndModules #GeneratedEqualityAndHashing #Attributes 
+// #Regression #Conformance #TypesAndModules #GeneratedEqualityAndHashing #Attributes
 //<Expects status="error" span="(14,12-14,14)" id="FS0001">The type 'R' does not support the 'comparison' constraint because it has the 'NoComparison' attribute$</Expects>
 
-module M24 = 
+module M24 =
   (* [<ReferenceEquality(true)>] *)
   [<NoComparisonAttribute>]
   (* [<StructuralEquality(true)>] *)

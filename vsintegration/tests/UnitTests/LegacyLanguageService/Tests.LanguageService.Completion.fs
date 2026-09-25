@@ -14,10 +14,10 @@ open UnitTests.TestLib.LanguageService
 open UnitTests.TestLib.ProjectSystem
 
 [<AutoOpen>]
-module StandardSettings = 
+module StandardSettings =
     let standard40AssemblyRefs  = [ "System"; "System.Core"; "System.Numerics" ]
     let queryAssemblyRefs = [ "System.Xml.Linq"; "System.Core" ]
-    type Expectation = 
+    type Expectation =
         | QuickInfoExpected of string * string
         | AutoCompleteExpected of string * string
         | DotCompleteExpected of string * string
@@ -25,11 +25,11 @@ module StandardSettings =
     let AC x y = AutoCompleteExpected(x,y)
     let DC x y = DotCompleteExpected(x,y)
 
-type UsingMSBuild() as this  = 
+type UsingMSBuild() as this  =
     inherit LanguageServiceBaseTests()
 
-    let createFile (code : string list) fileKind refs otherFlags = 
-        let (_, _, file) = 
+    let createFile (code : string list) fileKind refs otherFlags =
+        let (_, _, file) =
             match code with
             | [code] when code.IndexOfAny([|'\r'; '\n'|]) <> -1 ->
                 this.CreateSingleFileProject(code, fileKind = fileKind, references = refs, ?otherFlags=otherFlags)
@@ -37,12 +37,12 @@ type UsingMSBuild() as this  =
                 this.CreateSingleFileProject(code, fileKind = fileKind, references = refs, ?otherFlags=otherFlags)
         file
 
-    let DoWithAutoCompleteUsingExtraRefs refs otherFlags coffeeBreak fileKind reason (code : string list) marker f  =        
-        // Up to 2 untyped parse operations are OK: we do an initial parse to provide breakpoint validation etc. 
+    let DoWithAutoCompleteUsingExtraRefs refs otherFlags coffeeBreak fileKind reason (code : string list) marker f  =
+        // Up to 2 untyped parse operations are OK: we do an initial parse to provide breakpoint validation etc.
         // This might be before the before the background builder is ready to process the foreground typecheck.
-        // In this case the background builder calls us back when its ready, and we then request a foreground typecheck 
+        // In this case the background builder calls us back when its ready, and we then request a foreground typecheck
         let file = createFile code fileKind refs otherFlags
-            
+
         if coffeeBreak then
             TakeCoffeeBreak(this.VS)
         let gpatcc = GlobalParseAndTypeCheckCounter.StartNew(this.VS)
@@ -55,7 +55,7 @@ type UsingMSBuild() as this  =
     let DoWithAutoComplete coffeeBreak fileKind reason otherFlags (code : string list) marker f  =
         DoWithAutoCompleteUsingExtraRefs [] otherFlags coffeeBreak fileKind reason code marker f
 
-    let AssertAutoCompleteContainsAux coffeeBreak fileName reason otherFlags code marker  should shouldnot  =        
+    let AssertAutoCompleteContainsAux coffeeBreak fileName reason otherFlags code marker  should shouldnot  =
         DoWithAutoComplete coffeeBreak fileName reason otherFlags code marker (fun completions ->
             AssertCompListContainsAll(completions, should)
             AssertCompListDoesNotContainAny(completions, shouldnot))
@@ -63,54 +63,54 @@ type UsingMSBuild() as this  =
     let AssertAutoCompleteContains =
         AssertAutoCompleteContainsAux true SourceFileKind.FS BackgroundRequestReason.MemberSelect None
 
-    let AssertAutoCompleteContainsNoCoffeeBreak = 
+    let AssertAutoCompleteContainsNoCoffeeBreak =
         AssertAutoCompleteContainsAux false SourceFileKind.FS BackgroundRequestReason.MemberSelect None
 
-    let AutoCompleteInInterfaceFileContains = 
+    let AutoCompleteInInterfaceFileContains =
         AssertAutoCompleteContainsAux true SourceFileKind.FSI BackgroundRequestReason.MemberSelect None
 
-    let AssertCtrlSpaceCompleteContains = 
+    let AssertCtrlSpaceCompleteContains =
         AssertAutoCompleteContainsAux true SourceFileKind.FS BackgroundRequestReason.CompleteWord None
 
-    let AssertCtrlSpaceCompleteContainsWithOtherFlags otherFlags = 
+    let AssertCtrlSpaceCompleteContainsWithOtherFlags otherFlags =
         AssertAutoCompleteContainsAux true SourceFileKind.FS BackgroundRequestReason.CompleteWord (Some otherFlags)
 
-    let AssertCtrlSpaceCompleteContainsNoCoffeeBreak = 
+    let AssertCtrlSpaceCompleteContainsNoCoffeeBreak =
         AssertAutoCompleteContainsAux false SourceFileKind.FS BackgroundRequestReason.CompleteWord None
-    
-    let AssertCtrlSpaceCompletionListIsEmpty code marker = 
+
+    let AssertCtrlSpaceCompletionListIsEmpty code marker =
         DoWithAutoComplete true SourceFileKind.FS BackgroundRequestReason.CompleteWord None code marker AssertCompListIsEmpty
 
-    let AssertCtrlSpaceCompletionListIsEmptyNoCoffeeBreak code marker = 
+    let AssertCtrlSpaceCompletionListIsEmptyNoCoffeeBreak code marker =
         DoWithAutoComplete false SourceFileKind.FS BackgroundRequestReason.CompleteWord None code marker AssertCompListIsEmpty
 
-    let AssertAutoCompleteCompletionListIsEmpty code marker = 
+    let AssertAutoCompleteCompletionListIsEmpty code marker =
         DoWithAutoComplete true SourceFileKind.FS BackgroundRequestReason.MemberSelect None code marker AssertCompListIsEmpty
 
-    let AssertAutoCompleteCompletionListIsEmptyNoCoffeeBreak code marker = 
+    let AssertAutoCompleteCompletionListIsEmptyNoCoffeeBreak code marker =
         DoWithAutoComplete false SourceFileKind.FS BackgroundRequestReason.MemberSelect None code marker AssertCompListIsEmpty
 
     let testAutoCompleteAdjacentToDot op =
         let text = sprintf "System.Console%s" op
 
         // First, test that pressing dot works.
-        AssertAutoCompleteContainsNoCoffeeBreak 
+        AssertAutoCompleteContainsNoCoffeeBreak
           [ text ]
           "System.Console."
           [ "BackgroundColor" ] // should contain
           [ ] // should not contain
- 
+
     let testAutoCompleteAdjacentToDotNegative op =
         let text = sprintf "System.Console%s" op
 
         // Next test that there is no completion after then end.
-        AssertCtrlSpaceCompleteContainsNoCoffeeBreak 
+        AssertCtrlSpaceCompleteContainsNoCoffeeBreak
           [ text ]
           text
           [ "abs" ] // should contain (top-level autocomplete on empty identifier)
           [ "BackgroundColor" ] // should not contain (from prior System.Console)
 
-    let customOperations = 
+    let customOperations =
       [ "contains"; "count";"last"; "lastOrDefault"; "exactlyOne"; "exactlyOneOrDefault"; "headOrDefault"; "select"; "where"
         "minBy"; "maxBy"; "groupBy"; "sortBy"; "sortByDescending"; "thenBy"; "thenByDescending"; "groupValBy"; "join"
         "groupJoin"; "sumByNullable"; "minByNullable"; "maxByNullable"; "averageByNullable"; "averageBy"
@@ -121,15 +121,15 @@ type UsingMSBuild() as this  =
     let notAA l = None,l
     let stopWatch = new System.Diagnostics.Stopwatch()
     let ResetStopWatch() = stopWatch.Reset(); stopWatch.Start()
-    let time1 op a message = 
+    let time1 op a message =
         ResetStopWatch()
         let result = op a
         //printf "%s %d ms\n" message stopWatch.ElapsedMilliseconds
         result
 
-    let ShowErrors(project:OpenProject) =     
+    let ShowErrors(project:OpenProject) =
         for error in (GetErrors(project)) do
-            printf "%s\n" (error.ToString())    
+            printf "%s\n" (error.ToString())
 
 
     // There are some dot completion tests in this type as well, in the systematic tests for queries
@@ -152,7 +152,7 @@ type UsingMSBuild() as this  =
             MoveCursorToEndOfMarker(file, marker)
 
         let tooltip = time1 GetQuickInfoAtCursor file "Time of first tooltip"
-        AssertContains(tooltip, expected) 
+        AssertContains(tooltip, expected)
         gpatcc.AssertExactly(0,0)
 
     member public this.AssertQuickInfoContainsAtEndOfMarker(code,marker,expected, ?addtlRefAssy : string list) =
@@ -164,7 +164,7 @@ type UsingMSBuild() as this  =
     static member intExpectedCompletions = [
         "CompareTo"; // Members defined on System.Int32
         "GetHashCode"] // Members defined on System.Object
-    
+
     static member stringExpectedCompletions = [
         "Substring"; // Methods of System.String
         "GetHashCode"] // Methods of System.Object
@@ -181,13 +181,13 @@ type UsingMSBuild() as this  =
           shouldContain
           shouldNotContain
         let s = programText.Insert(i+2, "type:")
-        AssertCtrlSpaceCompleteContains 
+        AssertCtrlSpaceCompleteContains
           [ s ]
           "[<type:Attr"       // marker
           shouldContain // should contain
           shouldNotContain
         let s = programText.Insert(i+2, "module:")
-        AssertCtrlSpaceCompleteContains 
+        AssertCtrlSpaceCompleteContains
           [ s ]
           "[<module:Attr"       // marker
           shouldContain // should contain
@@ -199,62 +199,62 @@ type UsingMSBuild() as this  =
     member private this.testAutoCompleteAdjacentToDot op =
         let text = sprintf "System.Console%s" op
         // First, test that pressing dot works.
-        AssertAutoCompleteContainsNoCoffeeBreak 
+        AssertAutoCompleteContainsNoCoffeeBreak
           [ text ]
           "System.Console."
           [ "BackgroundColor" ] // should contain
-          [ ] // should not contain   
+          [ ] // should not contain
 
     //**Help Function for checking Ctrl-Space Completion Contains the expected value *************
-    member private this.AssertCtrlSpaceCompletionContains(fileContents : string list, marker, expected, ?addtlRefAssy: string list)  = 
+    member private this.AssertCtrlSpaceCompletionContains(fileContents : string list, marker, expected, ?addtlRefAssy: string list)  =
         this.AssertCtrlSpaceCompletion(
             fileContents,
             marker,
-            (fun completions -> 
+            (fun completions ->
                 Assert.NotEqual(0,completions.Length)
                 let found = completions |> Array.exists(fun (CompletionItem(s,_,_,_,_)) -> s = expected)
-                if not(found) then 
-                    failwithf "Expected: %A to contain %s" completions expected  
+                if not(found) then
+                    failwithf "Expected: %A to contain %s" completions expected
             ),
             ?addtlRefAssy = addtlRefAssy
         )
 
    //**Help Function for checking Ctrl-Space Completion Contains the expected value *************
-    member private this.AssertCtrlSpaceCompletion(fileContents : string list, marker, checkCompletion: (CompletionItem array -> unit), ?addtlRefAssy: string list)  = 
+    member private this.AssertCtrlSpaceCompletion(fileContents : string list, marker, checkCompletion: (CompletionItem array -> unit), ?addtlRefAssy: string list)  =
         let (_, _, file) = this.CreateSingleFileProject(fileContents, ?references = addtlRefAssy)
         MoveCursorToEndOfMarker(file,marker)
         let completions = CtrlSpaceCompleteAtCursor file
         checkCompletion completions
 
-    member private this.AutoCompletionListNotEmpty (fileContents : string list) marker  = 
+    member private this.AutoCompletionListNotEmpty (fileContents : string list) marker  =
         let (_, _, file) = this.CreateSingleFileProject(fileContents)
         MoveCursorToEndOfMarker(file,marker)
         let completions = AutoCompleteAtCursor file
         Assert.NotEqual(0,completions.Length)
 
-    member public this.TestCompletionNotShowingWhenFastUpdate (firstSrc : string list) secondSrc marker =     
+    member public this.TestCompletionNotShowingWhenFastUpdate (firstSrc : string list) secondSrc marker =
         let (_, _, file) = this.CreateSingleFileProject(firstSrc)
         MoveCursorToEndOfMarker(file,marker)
 
-        // Now delete the property and leave only dot at the end 
+        // Now delete the property and leave only dot at the end
         //  - user is typing fast so replace the content without background compilation
-        ReplaceFileInMemoryWithoutCoffeeBreak file secondSrc      
+        ReplaceFileInMemoryWithoutCoffeeBreak file secondSrc
         let completions = time1 AutoCompleteAtCursor file "Time of first autocomplete."
         AssertCompListIsEmpty(completions)
 
         // Recheck after some time - after the background compilation runs
-        TakeCoffeeBreak(this.VS)                                      
+        TakeCoffeeBreak(this.VS)
         let completions = time1 AutoCompleteAtCursor file "Time of first autocomplete."
-        AssertCompListIsEmpty(completions)      
+        AssertCompListIsEmpty(completions)
 
-   /////Helper Functions 
+   /////Helper Functions
         //DotCompList ContainAll At End Of Marker Helper Function
     member private this.VerifyDotCompListContainAllAtEndOfMarker(fileContents : string, marker : string, list : string list) =
         let (solution, project, file) = this.CreateSingleFileProject(fileContents)
         let completions = DotCompletionAtEndOfMarker file marker
         AssertCompListContainsAll(completions, list)
 
-        //DoesNotContainAny At Start Of Marker Helper Function 
+        //DoesNotContainAny At Start Of Marker Helper Function
     member private this.VerifyDotCompListDoesNotContainAnyAtStartOfMarker(fileContents : string, marker : string, list : string list, ?addtlRefAssy : string list) =
         let (solution, project, file) = this.CreateSingleFileProject(fileContents, ?references = addtlRefAssy)
 
@@ -269,40 +269,6 @@ type UsingMSBuild() as this  =
         AssertCompListIsEmpty(completions)
 
 
-                    
-                
-               
-
-
-
-    
-
-    
-
-
-    
-
-
-        
-
-
-    
-
-
-    
-    
-    
-    
-
-    
-
-    
-
-
-    
-
-
-            
 
 
 
@@ -312,7 +278,41 @@ type UsingMSBuild() as this  =
 
 
 
-    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -323,7 +323,7 @@ type UsingMSBuild() as this  =
 
     [<Fact>]
     member public this.``CtrlSpaceCompletion.Bug294974.Case1``() =
-        
+
         AssertCtrlSpaceCompleteContains
           [ """
               let xxx = [1]
@@ -346,38 +346,38 @@ type UsingMSBuild() as this  =
 
 
 
-         
-    member this.QueryExpressionFileExamples() = 
+
+    member this.QueryExpressionFileExamples() =
            [ """
                 module BasicTest
                 let x = query { for x in [1;2;3] do (*TYPING*)"""
              """
                 module BasicTest
-                let x = query { for x in [1;2;3] do (*TYPING*) }""" 
+                let x = query { for x in [1;2;3] do (*TYPING*) }"""
              """
                 module BasicTest
                 let x = query { for x in [1;2;3] do 
-                                (*TYPING*)""" 
+                                (*TYPING*)"""
              """
                 module BasicTest
                 let x = query { for x in [1;2;3] do 
                                 if x > 3 then 
-                                (*TYPING*)""" 
+                                (*TYPING*)"""
              """
                 module BasicTest
                 let x = query { for x in [1;2;3] do 
                                 where (x > 3)
-                                (*TYPING*)""" 
+                                (*TYPING*)"""
              """
                 module BasicTest
                 let x = query { for x in [1;2;3] do 
                                 sortBy x 
-                                (*TYPING*)""" 
+                                (*TYPING*)"""
              """
                 module BasicTest
                 let x = query { for x in [1;2;3] do 
                                 (*TYPING*)
-                                sortBy x """ 
+                                sortBy x """
              """
                 module BasicTest
                 let x = query { for x in [1;2;3] do 
@@ -386,14 +386,14 @@ type UsingMSBuild() as this  =
 
 
 
-    member this.WordByWordSystematicTestWithSpecificExpectations(prefix, suffixes, lines, variations, knownFailures:list<_>) = 
+    member this.WordByWordSystematicTestWithSpecificExpectations(prefix, suffixes, lines, variations, knownFailures:list<_>) =
 
         let knownFailuresDict = set knownFailures
-        printfn "Building systematic tests, excluding %d known failures" knownFailures.Length  
-        let tests = 
+        printfn "Building systematic tests, excluding %d known failures" knownFailures.Length
+        let tests =
             [ for (suffixName,suffixText) in suffixes  do
                 for builderName in variations do
-                  for (lineName, line, checks) in lines builderName do 
+                  for (lineName, line, checks) in lines builderName do
                     for check in checks do
                       let expectedToFail = knownFailuresDict.Contains (lineName, suffixName, builderName, check)
                       if not expectedToFail then yield (lineName, suffixName, suffixText, builderName, line, check, expectedToFail) ]
@@ -430,25 +430,25 @@ type UsingMSBuild() as this  =
         let nSuccess = successes.Count
         printfn "%d TESTS, %d SUCCESS, %d FAILURE, %%%2.2f success rate" (nSuccess+nFail) successes.Count nFail  (float nSuccess / float (nSuccess+nFail) * 100.0)
 
-        if failures.Count <> 0 then 
+        if failures.Count <> 0 then
             printfn "EXTRA OBSERVED FAILURES:  "
             printfn "["
             for (lineName,suffixName,builderName,check) in failures do
                 printfn "   (\"%s\", \"%s\", \"%s\", %A) " lineName suffixName builderName check
             printfn "]"
-             
-        if unexpectedSuccesses.Count <> 0 then 
+
+        if unexpectedSuccesses.Count <> 0 then
             printfn "EXTRA OBSERVED SUCCESSES:  "
             printfn "["
             for (lineName,suffixName,builderName,check) in unexpectedSuccesses do
                 printfn "   (\"%s\", \"%s\", \"%s\", %A) " lineName suffixName builderName check
             printfn "]"
 
-        if failures.Count <> 0 || unexpectedSuccesses.Count <> 0 then 
+        if failures.Count <> 0 || unexpectedSuccesses.Count <> 0 then
             raise <| new Exception("there were unexpected results, see console output for details")
 
 
-             
+
 
 
 
@@ -463,20 +463,20 @@ type UsingMSBuild() as this  =
         MoveCursorToEndOfMarker(file, marker)
         let completions = time1 CtrlSpaceCompleteAtCursor file "Time of first autocomplete."
         AssertCompListContainsAll(completions, expected)
-            
-
-                      
 
 
-    
-                                            
+
+
+
+
+
     // Another test case for the same thing - this goes through a different code path
 
 
    (* Tests for autocomplete -------------------------------------------------------------- *)
-                     
+
     member public this.TestGenericAutoComplete(line, expected) =
-        let code = 
+        let code =
          [  "type GT<'a> ="
             "  static member P = 12"
             "  static member Q = 13"
@@ -502,7 +502,7 @@ type UsingMSBuild() as this  =
 
 
 
-            
+
 
 
 
@@ -565,8 +565,8 @@ type UsingMSBuild() as this  =
 
 
     [<Fact>]
-    member public this.``OpenNamespaceOrModule.CompletionOnlyContainsNamespaceOrModule.Case1``() =        
-        AssertAutoCompleteContains 
+    member public this.``OpenNamespaceOrModule.CompletionOnlyContainsNamespaceOrModule.Case1``() =
+        AssertAutoCompleteContains
             [ "open System." ]
             "." // marker
             [ "Collections" ] // should contain (namespace)
@@ -580,34 +580,34 @@ type UsingMSBuild() as this  =
 
 
 
-          
-                                             
+
+
     [<Fact>]
-    member public this.``Expressions.Sequence``() =        
-        AssertAutoCompleteContains 
-          [  
+    member public this.``Expressions.Sequence``() =
+        AssertAutoCompleteContains
+          [
             "(seq { yield 1 })." ]
           "})."       // marker
           [ "GetEnumerator" ] // should contain
           [ ] // should not contain
-                      
-                      
-                                           
-                                          
-                                         
-                      
-                      
 
-                                        
+
+
+
+
+
+
+
+
 
 
     (* Tests for various uses of ObsoleteAttribute ----------------------------------------- *)
     (* Members marked with obsolete shouldn't be visible, but we should support              *)
     (* dot completions on them                                                               *)
- 
+
     // Obsolete and CompilerMessage(IsError=true) should not appear.
-    member public this.AutoCompleteObsoleteTest testLine appendDot should shouldnot =        
-        let code = 
+    member public this.AutoCompleteObsoleteTest testLine appendDot should shouldnot =
+        let code =
           [ "[<System.ObsoleteAttribute(\"!\", false)>]"
             "module ObsoleteTop ="
             "  let T = \"T\""
@@ -625,30 +625,30 @@ type UsingMSBuild() as this  =
             "let mutable level = \"\""
             "" ]
         let (_, _, file) = this.CreateSingleFileProject(code @ [ testLine ])
-        
+
         TakeCoffeeBreak(this.VS)
         let gpatcc = GlobalParseAndTypeCheckCounter.StartNew(this.VS)
-        if not appendDot then        
+        if not appendDot then
             // In this case, we want to check Ctrl+J completions
             // For "level <- O" this shows completions starting with O (e.g. Other)
             MoveCursorToEndOfMarker(file, testLine)
             let completions = CtrlSpaceCompleteAtCursor file
             AssertCompListContainsAll(completions, should)
-            AssertCompListDoesNotContainAny(completions, shouldnot) 
+            AssertCompListDoesNotContainAny(completions, shouldnot)
         else
             // In this case, we quickly type "." and then get dot-completions
             // For "level <- Module" this shows completions from the "Module" (e.g. "Module.Other")
             // This simulates the case when the user quickly types "dot" after the file has been TCed before.
-            ReplaceFileInMemoryWithoutCoffeeBreak file (code @ [ testLine + "." ])      
+            ReplaceFileInMemoryWithoutCoffeeBreak file (code @ [ testLine + "." ])
             MoveCursorToEndOfMarker(file, testLine + ".")
             let completions = AutoCompleteAtCursor file
             AssertCompListContainsAll(completions, should)
-            AssertCompListDoesNotContainAny(completions, shouldnot) 
+            AssertCompListDoesNotContainAny(completions, shouldnot)
         gpatcc.AssertExactly(0,0)
 
     // When the module isn't empty, we should show completion for the module
     // (and not type-inference based completion on strings - therefore test for 'Chars')
-    
+
 
 
 
@@ -657,7 +657,7 @@ type UsingMSBuild() as this  =
 
     member internal this.AutoCompleteDuplicatesTest (marker, shortName, fullName:string) =
         let code =
-            [  
+            [
                 "namespace A "
                 "module Test = "
                 "  let foo n = n + 1"
@@ -678,7 +678,7 @@ type UsingMSBuild() as this  =
         let completions = AutoCompleteAtCursor file
         let (CompletionItem(_, _, _, descrFunc, _)) = completions |> Array.find (fun (CompletionItem(name, _, _, _, _)) -> name = shortName)
         let descr = descrFunc()
-        // Check whether the description contains the name only once        
+        // Check whether the description contains the name only once
         let occurrences = ("  " + descr + "  ").Split([| fullName |], System.StringSplitOptions.None).Length - 1
         AssertEqualWithMessage(1, occurrences, "The entry for '" + fullName + "' is duplicated.")
 
@@ -687,16 +687,16 @@ type UsingMSBuild() as this  =
         let occurrences = ("  " + descr + "  ").Split([| methodName |], System.StringSplitOptions.None).Length - 1
         // This is some tag in the tooltip that also contains the overload name text
         if descr.Contains("[Signature:") then occurrences - 1 else occurrences
-                                      
 
-        
-    // FEATURE: Saving file N does not cause files 1 to N-1 to re-typecheck (but does cause files N to <end> to 
+
+
+    // FEATURE: Saving file N does not cause files 1 to N-1 to re-typecheck (but does cause files N to <end> to
     [<Fact>]
     member public this.``Performance.Bug5774``() =
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
         let project = CreateProject(solution,"testproject")
-        
+
         let file1 = AddFileFromText(project,"File1.fs", [""])
         let file1 = OpenFile(project,"File1.fs")
         //file1.
@@ -707,7 +707,7 @@ type UsingMSBuild() as this  =
         let file3 = AddFileFromText(project,"File3.fs", [""])
         let file3 = OpenFile(project,"File3.fs")
 
-        // ensure that the incremental builder is running        
+        // ensure that the incremental builder is running
         MoveCursorToEndOfMarker(file2,"x.")
         AutoCompleteAtCursor file2 |> ignore
 
@@ -715,10 +715,10 @@ type UsingMSBuild() as this  =
 
         // Start the key instrumentation
         let gpatcc = GlobalParseAndTypeCheckCounter.StartNew(this.VS)
-        
+
         // Save file2
         ReplaceFileInMemory file2 [""]
-        SaveFileToDisk file2    
+        SaveFileToDisk file2
         let file3 = OpenFile(project,"File3.fs")
         TakeCoffeeBreak(this.VS)
 
@@ -731,7 +731,7 @@ type UsingMSBuild() as this  =
         let solution = this.CreateSolution()
         let project = CreateProject(solution,"testproject")
         let file = AddFileFromText(project,"File1.fs",
-                                    [ 
+                                    [
                                      "let y = System.Deployment.Application."
                                      "()"])
         let file = OpenFile(project, "File1.fs")
@@ -739,17 +739,17 @@ type UsingMSBuild() as this  =
         let completions = AutoCompleteAtCursor(file)
         // printf "Completions=%A\n" completions
         Assert.Equal(0, completions.Length) // Expect none here because reference hasn't been added.
-        
+
         // Now, add a reference to the given assembly.
         this.AddAssemblyReference(project,"System.Deployment")
 
         TakeCoffeeBreak(this.VS)
         let completions = AutoCompleteAtCursor(file)
-        Assert.NotEqual(0, completions.Length) 
+        Assert.NotEqual(0, completions.Length)
 
     /// FEATURE: Updating the active project configuration influences the language service
     [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
-    member public this.``AfterUpdateProjectConfiguration``() = 
+    member public this.``AfterUpdateProjectConfiguration``() =
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
         let project = CreateProject(solution,"testproject")
@@ -759,7 +759,7 @@ type UsingMSBuild() as this  =
                     <Reference Include=""System.Deployment"" Condition=""'$(Configuration)'=='Foo'"" />
                 </ItemGroup>")
         let file = AddFileFromText(project,"File1.fs",
-                                    [ 
+                                    [
                                      "let y = System.Deployment.Application."
                                      "()"])
         let file = OpenFile(project, "File1.fs")
@@ -767,16 +767,16 @@ type UsingMSBuild() as this  =
         let completions = AutoCompleteAtCursor(file)
         // printf "Completions=%A\n" completions
         Assert.Equal(0, completions.Length) // Expect none here because reference hasn't been added.
-        
+
         // Now, update active configuration
         SetConfigurationAndPlatform(project, "Foo|x86")
         TakeCoffeeBreak(this.VS)
         let completions = AutoCompleteAtCursor(file)
-        Assert.NotEqual(0, completions.Length) 
+        Assert.NotEqual(0, completions.Length)
 
     /// FEATURE: Updating the active project platform influences the language service
     [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
-    member public this.``AfterUpdateProjectPlatform``() = 
+    member public this.``AfterUpdateProjectPlatform``() =
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
         let project = CreateProject(solution,"testproject")
@@ -787,7 +787,7 @@ type UsingMSBuild() as this  =
             </ItemGroup>")
         SetConfigurationAndPlatform(project, "Debug|AnyCPU")
         let file = AddFileFromText(project,"File1.fs",
-                                    [ 
+                                    [
                                      "let y = System.Deployment.Application."
                                      "()"])
         let file = OpenFile(project, "File1.fs")
@@ -795,21 +795,21 @@ type UsingMSBuild() as this  =
         let completions = AutoCompleteAtCursor(file)
         // printf "Completions=%A\n" completions
         Assert.Equal(0, completions.Length) // Expect none here because reference hasn't been added.
-        
+
         // Now, update active platform
         SetConfigurationAndPlatform(project, "Debug|x86")
         let completions = AutoCompleteAtCursor(file)
-        Assert.NotEqual(0, completions.Length) 
+        Assert.NotEqual(0, completions.Length)
 
 (*
 /// FEATURE: The fileName on disk and the fileName in the project can differ in case.
     [<Fact>]
     member this.``Filenames.MayBeDifferentlyCased``() =
-        use _guard = this.UsingNewVS() 
+        use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
         let project = CreateProject(solution,"testproject")
         let file = AddFileFromTextEx(project,"file1.fs","FILE1.FS",BuildAction.Compile,
-                                    [ 
+                                    [
                                      "let y = System.Deployment.Application."
                                      "()"])
         let file = OpenFile(project, "file1.fs")
@@ -817,39 +817,39 @@ type UsingMSBuild() as this  =
         let completions = AutoCompleteAtCursor(file)
         // printf "Completions=%A\n" completions
         Assert.Equal(0, completions.Length) // Expect none here because reference hasn't been added.
-        
+
         // Now, add a reference to the given assembly.
         this.AddAssemblyReference(project,"System.Deployment")
         let completions = AutoCompleteAtCursor(file)
-        Assert.NotEqual(0, completions.Length, "Expected some items in the list after adding a reference.") 
+        Assert.NotEqual(0, completions.Length, "Expected some items in the list after adding a reference.")
 *)
 
-        
-        
-        
-        
-        
-      
+
+
+
+
+
+
     // If there is a compile error that prevents a data tip from resolving then show that data tip.
 
     // Bunch of crud in empty list. This test asserts that unwanted things don't exist at the top level.
-              
-              
-        
-        
-               
-                            
-           
-        
+
+
+
+
+
+
+
+
     // This was a bug in which the third level of dotting was ignored.
 
     // Test completions in an incomplete computation expression (case 1: for "let")
- 
-    
-      
-    
+
+
+
+
     [<Fact>]
-    member public this.``VisualStudio.CloseAndReopenSolution``() = 
+    member public this.``VisualStudio.CloseAndReopenSolution``() =
         use _guard = this.UsingNewVS()
         // This test exposes what was once a bug, where closing a solution and then re-opening
         // it caused the old stale IProjectSiteOption (that the LanguageService had cached)
@@ -858,11 +858,11 @@ type UsingMSBuild() as this  =
         let projName = "testproject"
         let project = CreateProject(solution,projName)
         let dir = ProjectDirectory(project)
-        let file = AddFileFromText(project,"File1.fs", 
-                                    [ 
+        let file = AddFileFromText(project,"File1.fs",
+                                    [
                                      "let x = 0"
                                      "let y = x."
-                                    ]) 
+                                    ])
         let file = OpenFile(project, "File1.fs")
         MoveCursorToEndOfMarker(file,"x.")
         let completions = time1 AutoCompleteAtCursor file "Time of first autocomplete."
@@ -877,15 +877,15 @@ type UsingMSBuild() as this  =
         Assert.True(completions.Length>0)
 
     [<Fact(Skip = "https://github.com/dotnet/fsharp/issues/6166")>]
-    member this.``BadCompletionAfterQuicklyTyping.Bug72561``() =        
+    member this.``BadCompletionAfterQuicklyTyping.Bug72561``() =
         let code = [ "        " ]
         let (_, _, file) = this.CreateSingleFileProject(code)
-        
+
         TakeCoffeeBreak(this.VS)
         let gpatcc = GlobalParseAndTypeCheckCounter.StartNew(this.VS)
         // In this case, we quickly type "." and then get dot-completions
         // This simulates the case when the user quickly types "dot" after the file has been TCed before.
-        ReplaceFileInMemoryWithoutCoffeeBreak file ([ "[1]." ])      
+        ReplaceFileInMemoryWithoutCoffeeBreak file ([ "[1]." ])
         MoveCursorToEndOfMarker(file, ".")
         // Note: no TakeCoffeeBreak(this.VS)
         let completions = AutoCompleteAtCursor file
@@ -894,19 +894,19 @@ type UsingMSBuild() as this  =
         TakeCoffeeBreak(this.VS)
         let completions = AutoCompleteAtCursor file
         AssertCompListContainsAll(completions, ["Length"])
-        AssertCompListDoesNotContainAny(completions, ["AbstractClassAttribute"]) 
+        AssertCompListDoesNotContainAny(completions, ["AbstractClassAttribute"])
         gpatcc.AssertExactly(0,0)
 
     [<Fact(Skip = "https://github.com/dotnet/fsharp/issues/6166")>]
-    member this.``BadCompletionAfterQuicklyTyping.Bug72561.Noteworthy.NowWorks``() =        
+    member this.``BadCompletionAfterQuicklyTyping.Bug72561.Noteworthy.NowWorks``() =
         let code = [ "123      " ]
         let (_, _, file) = this.CreateSingleFileProject(code)
-        
+
         TakeCoffeeBreak(this.VS)
         let gpatcc = GlobalParseAndTypeCheckCounter.StartNew(this.VS)
         // In this case, we quickly type "." and then get dot-completions
         // This simulates the case when the user quickly types "dot" after the file has been TCed before.
-        ReplaceFileInMemoryWithoutCoffeeBreak file ([ "[1]." ])      
+        ReplaceFileInMemoryWithoutCoffeeBreak file ([ "[1]." ])
         MoveCursorToEndOfMarker(file, ".")
         // Note: no TakeCoffeeBreak(this.VS)
         let completions = AutoCompleteAtCursor file
@@ -916,15 +916,15 @@ type UsingMSBuild() as this  =
         let completions = AutoCompleteAtCursor file
         // ... we get the expected answer
         AssertCompListContainsAll(completions, ["Length"])
-        AssertCompListDoesNotContainAny(completions, ["AbstractClassAttribute"]) 
+        AssertCompListDoesNotContainAny(completions, ["AbstractClassAttribute"])
         gpatcc.AssertExactly(0,0)
 
     [<Fact(Skip = "https://github.com/dotnet/fsharp/issues/6166")>]
-    member this.``BadCompletionAfterQuicklyTyping.Bug130733.NowWorks``() =        
+    member this.``BadCompletionAfterQuicklyTyping.Bug130733.NowWorks``() =
         let code = [ "let someCall(x) = null"
                      "let xe = someCall(System.IO.StringReader()  "]
         let (_, _, file) = this.CreateSingleFileProject(code)
-        
+
         TakeCoffeeBreak(this.VS)
         let gpatcc = GlobalParseAndTypeCheckCounter.StartNew(this.VS)
         // In this case, we quickly type "." and then get dot-completions
@@ -946,13 +946,13 @@ type UsingMSBuild() as this  =
 //*********************************************Previous Completion test and helper*****
     member private this.VerifyCompListDoesNotContainAnyAtStartOfMarker(fileContents : string, marker : string, list : string list) =
         let (solution, project, file) = this.CreateSingleFileProject(fileContents)
-        MoveCursorToStartOfMarker(file, marker)    
+        MoveCursorToStartOfMarker(file, marker)
         let completions = AutoCompleteAtCursor(file)
         AssertCompListDoesNotContainAny(completions,list)
 
     member private this.VerifyCtrlSpaceListDoesNotContainAnyAtStartOfMarker(fileContents : string, marker : string, list : string list) =
         let (solution, project, file) = this.CreateSingleFileProject(fileContents)
-        MoveCursorToStartOfMarker(file, marker)    
+        MoveCursorToStartOfMarker(file, marker)
         let completions = CtrlSpaceCompleteAtCursor file
         AssertCompListDoesNotContainAny(completions,list)
 
@@ -970,23 +970,23 @@ type UsingMSBuild() as this  =
         let completions = CtrlSpaceCompleteAtCursor file
         AssertCompListContainsAll(completions, list)
 
-        
+
     member private this.VerifyAutoCompListIsEmptyAtEndOfMarker(fileContents : string, marker : string) =
         let (solution, project, file) = this.CreateSingleFileProject(fileContents)
         MoveCursorToEndOfMarker(file, marker)
-        let completions = AutoCompleteAtCursor(file)   
-        AssertEqual(0,completions.Length)              
+        let completions = AutoCompleteAtCursor(file)
+        AssertEqual(0,completions.Length)
 
     member private this.VerifyCtrlSpaceCompListIsEmptyAtEndOfMarker(fileContents : string, marker : string) =
         let (solution, project, file) = this.CreateSingleFileProject(fileContents)
         MoveCursorToEndOfMarker(file, marker)
-        let completions = CtrlSpaceCompleteAtCursor(file)   
-        AssertEqual(0,completions.Length)              
-                
-                    
-         
-    // Regression for bug 2116 -- Consider making selected item in completion list case-insensitive       
-      
+        let completions = CtrlSpaceCompleteAtCursor(file)
+        AssertEqual(0,completions.Length)
+
+
+
+    // Regression for bug 2116 -- Consider making selected item in completion list case-insensitive
+
 
 
 
@@ -994,7 +994,7 @@ type UsingMSBuild() as this  =
 (*------------------------------------------IDE Query automation start -------------------------------------------------*)
     member private this.AssertAutoCompletionInQuery(fileContent : string list, marker:string,contained:string list) =
         let file = createFile fileContent SourceFileKind.FS ["System.Xml.Linq"] None
-            
+
         let gpatcc = GlobalParseAndTypeCheckCounter.StartNew(this.VS)
         MoveCursorToEndOfMarker(file, marker)
         let completions = CompleteAtCursorForReason(file,BackgroundRequestReason.CompleteWord)
@@ -1003,7 +1003,7 @@ type UsingMSBuild() as this  =
 
 
 
-                    
+
 
 
 
@@ -1051,18 +1051,18 @@ type UsingMSBuild() as this  =
 
         TakeCoffeeBreak(this.VS)
         let completions = DotCompletionAtStartOfMarker file2 marker
-        AssertCompListContainsAll(completions, list) 
+        AssertCompListContainsAll(completions, list)
 
 
-    // Intellisense still appears on arguments when the operator is used in error 
-
-
-
+    // Intellisense still appears on arguments when the operator is used in error
 
 
 
-type UsingProjectSystem() = 
+
+
+
+type UsingProjectSystem() =
     inherit UsingMSBuild(VsOpts = LanguageServiceExtension.ProjectSystemTestFlavour)
 
 
-               
+

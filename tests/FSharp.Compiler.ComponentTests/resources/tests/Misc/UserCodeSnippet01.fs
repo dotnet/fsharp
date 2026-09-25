@@ -1,4 +1,4 @@
-// #Regression #Misc 
+// #Regression #Misc
 // Code snippet reported to crash the compiler (FSHARP1.0:5087)
 //<Expects span="(16,33)" status="error" id="FS0043">Method or object constructor 'op_Addition' not found</Expects>
 module TestModule

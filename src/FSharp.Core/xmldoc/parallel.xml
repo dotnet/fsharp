@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<parallel>
+  <arrayUnordered><remarks>Performs the operation in parallel using <see cref="M:System.Threading.Tasks.Parallel.For" />.
+The order in which the given function is applied to elements of the input array is not specified. This is an O(n) operation, where n is the length of the array.</remarks></arrayUnordered>
+</parallel>

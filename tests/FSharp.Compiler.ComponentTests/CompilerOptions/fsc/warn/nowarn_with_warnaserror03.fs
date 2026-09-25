@@ -1,4 +1,4 @@
-// #Regression #NoMT #CompilerOptions 
+// #Regression #NoMT #CompilerOptions
 // Regression test for FSHARP1.0:4867
 // nowarn has no effect if "Warning level = 4" and "Warnings as errors"
 //<Expects status="notin">FS0040</Expects>

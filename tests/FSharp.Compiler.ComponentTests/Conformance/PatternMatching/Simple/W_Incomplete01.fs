@@ -1,4 +1,4 @@
-// #Regression #Conformance #PatternMatching 
+// #Regression #Conformance #PatternMatching
 
 
 // Regression testcase for FSharp 1.0:2070
@@ -7,21 +7,21 @@
 
 
 module M =
-  
+
   type Id = string
-  
+
   type Field = {
     Name:string;
     mutable Type:Type;
     mutable Parent:TypeDecl;
-    IsSpec:bool;    
+    IsSpec:bool;
   }
-  
-  and TypeDecl =    
+
+  and TypeDecl =
     | Struct of Id * list<Field>
     | Union of Id * list<Field>
     | MathType of Id
-  
+
   and Type =
     | Void
     | Integer
@@ -33,31 +33,31 @@ module M =
     | Tptr
     | Map of Type * Type
 
-  
-  type VarKind =    
+
+  type VarKind =
     | Parameter
     | Local
     | Global
     | QuantBound
-    
-  type Variable = { 
-    Name:Id; 
-    Type:Type; 
-    Kind:VarKind; 
+
+  type Variable = {
+    Name:Id;
+    Type:Type;
+    Kind:VarKind;
   }
-  
+
   type Token = {
     File: string;
     Line:int;
     Column:int;
     Remarks:string;
   }
-  
+
   type ExprCommon = {
     Token:Token;
     Type:Type;
   }
-  
+
   type Function = {
     Token:Token;
     IsSpec:bool;
@@ -69,10 +69,10 @@ module M =
     Invariants:list<Expr>;
     Writes:list<Expr>;
     Reads:list<Expr>;
-  } 
-  
+  }
+
   and Expr =
-    | Ref of ExprCommon * Variable    
+    | Ref of ExprCommon * Variable
     | Prim of ExprCommon * string * list<Expr>
     | Call of ExprCommon * Function * list<Expr>
     | IntLiteral of ExprCommon * string
@@ -86,15 +86,15 @@ module M =
     | VolatileRead of ExprCommon * Expr * Expr
     | Old of ExprCommon * Expr
     | Macro of ExprCommon * string * list<Expr>
-  
-  type Expr with 
+
+  type Expr with
     member x.Common =
       match x with
         | Ref (e, _)
         | Prim (e, _, _)
         | Call (e, _, _)
         | IntLiteral (e, _)
-        | BoolLiteral (e, _) 
+        | BoolLiteral (e, _)
         | Deref (e, _)
         | Addr (e, _)
         | Dot (e, _, _)

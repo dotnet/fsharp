@@ -1,4 +1,4 @@
-// #Conformance #TypeInference #ByRef 
+// #Conformance #TypeInference #ByRef
 open System
 
 let testFunction() =
@@ -9,5 +9,5 @@ let testFunction() =
 
 do
     let result = testFunction()
-    let x = &result[0] 
+    let x = &result[0]
     if x <> 13 then failwith "Failed"

@@ -9,11 +9,11 @@ let x1 = x[0]
 let x2 = x[1]
 let y1 = y[0]
 let y2 = y[1]
-if (x1 <> y1) then 
+if (x1 <> y1) then
     printfn "x1 == y1 => %b" (x1 = y1)
     raise (new Exception("exit 1"))
 
-if (x2 <> y2) then 
+if (x2 <> y2) then
     printfn "x2 == y2 => %b" (x2 = y2)
     raise (new Exception("exit 2"))
 

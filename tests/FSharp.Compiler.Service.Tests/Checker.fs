@@ -189,7 +189,7 @@ module CheckResultsExtensions =
 
         member this.GetSymbolUse(context: ResolveContext) =
             this.GetSymbolUses(context) |> List.exactlyOne
-    
+
         member this.GetTooltip(context: ResolveContext) =
             this.GetToolTip(context.Pos.Line, context.Pos.Column, context.LineText, context.Names, FSharpTokenTag.Identifier)
 

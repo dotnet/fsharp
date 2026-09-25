@@ -42,7 +42,7 @@ type Value =
             |> asLibrary
             |> withName "module1"
 
-        let mainModule = 
+        let mainModule =
             FSharpWithFileName "Program.fs"
                 $"""
 open Module1
@@ -62,7 +62,7 @@ Value.Zero = Value.Create 0 |> ignore"""
     [<InlineData(true,  "public",   "public")>]     // RealSig, public WrapType, public visibility in IL
     [<Theory>]
     let ``Generated typed Equals`` (realsig, typeScope, targetVisibility) =
-        let library = 
+        let library =
             FSharpWithFileName "Program.fs"
                 $"""
 module Module1 =
@@ -113,7 +113,7 @@ module Module1 =
     [<Theory>]
     let ``Record with various scoped fields`` (realsig, fieldScope) =
 
-        let mainModule = 
+        let mainModule =
             FSharpWithFileName "Program.fs"
                 $$"""
 module Module1 =
@@ -176,7 +176,7 @@ module Module1 =
     [<InlineData(true,  "private", "public",   "public")>]    // private module - RealSig, public WrapType, public visibility in IL
     [<Theory>]
     let ``scoped main and scoped type Equals`` (realsig, moduleScope, argScope, targetVisibility) =
-        let mainModule = 
+        let mainModule =
             FSharpWithFileName "Program.fs"
                 $"""
 module {moduleScope} IPartialEqualityComparer =

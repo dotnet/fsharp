@@ -1,4 +1,4 @@
-// #Conformance #PatternMatching 
+// #Conformance #PatternMatching
 
 
 let rec listLength list =
@@ -8,7 +8,7 @@ let rec listLength list =
     | [_; _]        -> 2
     | [_; _; _]     -> 3
     | hd :: tl      -> 1 + listLength tl
-    
+
 if listLength [] <> 0 then exit 1
 if listLength [1] <> 1 then exit 1
 if listLength [1..2] <> 2 then exit 1

@@ -18,7 +18,7 @@ module Simple =
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Warning 25, Line 92, Col 13, Line 92, Col 14, "Incomplete pattern matches on this expression. For example, the value 'Result (_)' may indicate a case not covered by the pattern(s).")
-        
+
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Simple)
     [<Theory; FileInlineData("W_Incomplete02.fs")>]
     let ``Simple - W_Incomplete02_fs - --test:ErrorRanges`` compilation =
@@ -236,7 +236,7 @@ module Simple =
         |> withOptions ["--test:ErrorRanges"]
         |> compile
         |> shouldSucceed
-        
+
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Simple)
     [<Theory; FileInlineData("simplePatterns11.fs")>]
     let ``Simple - simplePatterns11_fs - --test:ErrorRanges`` compilation =
@@ -247,7 +247,7 @@ module Simple =
         |> compile
         |> shouldFail
         |> withSingleDiagnostic (Warning 26, Line 10, Col 7, Line 10, Col 8, "This rule will never be matched")
-        
+
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Simple)
     [<Theory; FileInlineData("simplePatterns12.fs")>]
     let ``Simple - simplePatterns12_fs - --test:ErrorRanges`` compilation =
@@ -277,7 +277,7 @@ module Simple =
         |> withOptions ["--test:ErrorRanges"]
         |> compile
         |> shouldSucceed
-        
+
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/Simple)
     [<Theory; FileInlineData("simplePatterns15.fs")>]
     let ``Simple - simplePatterns15_fs - --test:ErrorRanges`` compilation =
@@ -318,7 +318,7 @@ module Simple =
         |> withOptions ["--test:ErrorRanges";]
         |> compile
         |> shouldSucceed
-        
+
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/AsPatterns)
     [<Theory; FileInlineData("simplePatterns19.fs")>]
     let ``Simple - simplePatterns19_fs - --test:ErrorRanges`` compilation =
@@ -360,7 +360,7 @@ module Simple =
         |> shouldSucceed
 
     [<Fact>]
-    let ``Enum incompleteness check should not hide an issue with outer DU pattern matching with nowarn:104 `` () = 
+    let ``Enum incompleteness check should not hide an issue with outer DU pattern matching with nowarn:104 `` () =
         Fsx """
 type E = A = 0
 
@@ -374,13 +374,13 @@ let flub ex =
     
 flub (ExB 3)
         """
-        |> withNoWarn 104        
+        |> withNoWarn 104
         |> typecheck
         |> shouldFail
         |> withDiagnostics [Warning 25, Line 9, Col 11, Line 9, Col 13, "Incomplete pattern matches on this expression. For example, the value 'ExB (_)' may indicate a case not covered by the pattern(s)."]
 
     [<Fact>]
-    let ``Enum incompleteness check in nested scenarios should report all warnings`` () = 
+    let ``Enum incompleteness check in nested scenarios should report all warnings`` () =
         Fsx """
 type E =
     | FieldA = 1
@@ -393,10 +393,9 @@ type U =
 match CaseA with
 | CaseB E.FieldA -> ()
 | CaseB E.FieldB -> ()
-        """     
+        """
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
                 Warning 104, Line 10, Col 7, Line 10, Col 12, "Enums may take values outside known cases. For example, the value 'CaseB (enum<E> (0))' may indicate a case not covered by the pattern(s)."
                 Warning 25, Line 10, Col 7, Line 10, Col 12, "Incomplete pattern matches on this expression. For example, the value 'CaseA' may indicate a case not covered by the pattern(s)."]
-   

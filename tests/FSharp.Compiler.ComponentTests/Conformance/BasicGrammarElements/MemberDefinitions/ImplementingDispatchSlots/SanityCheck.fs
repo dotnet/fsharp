@@ -1,4 +1,4 @@
-// #Conformance #DeclarationElements #MemberDefinitions 
+// #Conformance #DeclarationElements #MemberDefinitions
 
 
 type Shape =
@@ -10,17 +10,17 @@ type CShape() =
     abstract GetKind : unit -> Shape
     default this.GetKind() = Shape.Shape
     member this.Name() = "shape"
-    
+
 type COval() =
     inherit CShape()
     override this.GetKind() = Shape.Oval
     member this.Name() = "shape.oval"
-    
+
 type CCircle() =
     inherit COval()
     override this.GetKind() = Shape.Circle
     member this.Name() = "shape.oval.circle"
-    
+
 let shape = new CShape()
 let oval = new COval()
 let circle = new CCircle()

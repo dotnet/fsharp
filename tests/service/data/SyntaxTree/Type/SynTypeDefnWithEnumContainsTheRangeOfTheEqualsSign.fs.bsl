@@ -8,7 +8,8 @@ ImplFile
           [Types
              ([SynTypeDefn
                  (SynComponentInfo
-                    ([], None, [], [Bear],
+                    ([], None, [],
+                     Some (LongIdent (SynLongIdent ([Bear], [], [None]))),
                      PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
                      false, None, (2,5--2,9)),
                   Simple

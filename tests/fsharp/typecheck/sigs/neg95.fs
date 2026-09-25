@@ -1,16 +1,16 @@
 namespace rec Neg95
 
-    module rec RecImplied = 
+    module rec RecImplied =
       let x = 1
 
 namespace Neg95B
 
-    module rec ModuleAbbreviationsAfterOpen = 
+    module rec ModuleAbbreviationsAfterOpen =
       module M = List
 
       open System
 
-    module rec ModuleAbbreviationsBeforeLet = 
+    module rec ModuleAbbreviationsBeforeLet =
 
       open System
 
@@ -19,20 +19,20 @@ namespace Neg95B
       module M = List
 
 
-    module rec OpenBeforeLet = 
+    module rec OpenBeforeLet =
 
       let x = 1
 
       open System
 
-    module rec OpenBeforeType = 
+    module rec OpenBeforeType =
 
       type C() = class end
 
       open System
 
 
-    module rec OpenBeforeException = 
+    module rec OpenBeforeException =
 
       exception E of string
 
@@ -49,4 +49,4 @@ namespace Neg95B
         }
 
     [<Struct>]
-    type StructUnion = StructUnion of float * StructUnion 
+    type StructUnion = StructUnion of float * StructUnion

@@ -1,4 +1,4 @@
-// #Regression #Conformance #ObjectOrientedTypes #Enums 
+// #Regression #Conformance #ObjectOrientedTypes #Enums
 
 
 // FSB 1574, Name resolution problem: Enum Case "Equals" not handled correctly.

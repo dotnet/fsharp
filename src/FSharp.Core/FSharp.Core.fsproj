@@ -5,7 +5,7 @@
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <TargetFrameworks Condition="'$(Configuration)' == 'Proto'">netstandard2.0</TargetFrameworks>
-    <TargetFrameworks Condition="'$(Configuration)' != 'Proto'">netstandard2.0;netstandard2.1</TargetFrameworks>
+    <TargetFrameworks Condition="'$(Configuration)' != 'Proto'">netstandard2.0;netstandard2.1;$(FSharpCoreShippedNetTargetFramework)</TargetFrameworks>
     <NoWarn>$(NoWarn);75</NoWarn> <!-- InternalCommandLineOption -->
     <NoWarn>$(NoWarn);1204</NoWarn> <!-- This construct is for use in the FSharp.Core library and should not be used directly -->
     <AllowCrossTargeting>true</AllowCrossTargeting>
@@ -36,6 +36,11 @@
     <Configurations>Debug;Release;Proto</Configurations>
   </PropertyGroup>
 
+  <!-- Surface the shipped-net pin to FSharp.Core.nuspec as a $token$. -->
+  <ItemGroup Condition="'$(Configuration)' != 'Proto'">
+    <NuspecProperty Include="FSharpCoreShippedNetTargetFramework=$(FSharpCoreShippedNetTargetFramework)" />
+  </ItemGroup>
+
     <!-- .FSharp.Core always uses the old style initialization mechanism because of SQL CLR requirements -->
   <PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' != 'true' and '$(Configuration)' != 'Proto'">
     <OtherFlags>$(OtherFlags) --realsig-</OtherFlags>
@@ -63,6 +68,12 @@
       <Link>FSCore.resx</Link>
     </EmbeddedResource>
     <EmbeddedResource Include="ILLink.Substitutions.xml" LogicalName="ILLink.Substitutions.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- XML doc fragments pulled into the .fsi files at compile time via <include> tags.
+         Referenced here so they are treated as compilation inputs (incremental build / up-to-date check). -->
+    <None Include="xmldoc/*.xml" />
+    <UpToDateCheckInput Include="xmldoc/*.xml" />
   </ItemGroup>
   <ItemGroup Condition="'$(Configuration)' == 'Proto' or '$(BUILDING_USING_DOTNET)' == 'true'">
     <!-- This can be removed once CompileBefore support is shipped in an rtm release -->

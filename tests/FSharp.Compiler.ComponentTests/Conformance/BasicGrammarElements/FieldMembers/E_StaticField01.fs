@@ -1,4 +1,4 @@
-// #Regression #Conformance #DeclarationElements #Fields #MemberDefinitions 
+// #Regression #Conformance #DeclarationElements #Fields #MemberDefinitions
 
 
 // Verify that static fields must be marked mutable.

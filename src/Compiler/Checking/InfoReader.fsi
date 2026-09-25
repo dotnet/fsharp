@@ -6,6 +6,7 @@ module internal FSharp.Compiler.InfoReader
 open Internal.Utilities.Library
 open FSharp.Compiler
 open FSharp.Compiler.AccessibilityLogic
+open FSharp.Compiler.Features
 open FSharp.Compiler.Import
 open FSharp.Compiler.Infos
 open FSharp.Compiler.TcGlobals
@@ -147,12 +148,27 @@ type InfoReader =
         ty: TType ->
             MethInfo list list
 
+    /// Read the raw property sets of a type, including inherited ones. Cache the result for monomorphic types
+    member GetRawIntrinsicPropertySetsOfType:
+        optFilter: string option *
+        ad: AccessorDomain *
+        allowMultiIntfInst: AllowMultiIntfInstantiations *
+        m: range *
+        ty: TType ->
+            PropInfo list list
+
     /// Read the record or class fields of a type, including inherited ones. Cache the result for monomorphic types.
     member GetRecordOrClassFieldsOfType:
         optFilter: string option * ad: AccessorDomain * m: range * ty: TType -> RecdFieldInfo list
 
+    /// Check if the target runtime supports default implementations of interfaces (DefaultImplementationsOfInterfaces).
+    member IsRuntimeSupportForDefaultImplementationsOfInterfaces: bool
+
+    /// Check if the target runtime supports static abstract members in interfaces (VirtualStaticsInInterfaces).
+    member IsRuntimeSupportForVirtualStaticsInInterfaces: bool
+
     /// Check if the given language feature is supported by the runtime.
-    member IsLanguageFeatureRuntimeSupported: langFeature: Features.LanguageFeature -> bool
+    member IsLanguageFeatureRuntimeSupported: langFeature: LanguageFeature -> bool
 
     /// Try and find a record or class field for a type.
     member TryFindRecdOrClassFieldInfoOfType: nm: string * m: range * ty: TType -> RecdFieldInfo voption
@@ -230,8 +246,9 @@ type InfoReader =
     /// Results are cached per interface type definition.
     member TryFindUnimplementedStaticAbstractMemberOfType: m: range -> interfaceTy: TType -> string option
 
-val checkLanguageFeatureRuntimeAndRecover:
-    infoReader: InfoReader -> langFeature: Features.LanguageFeature -> m: range -> unit
+val checkLanguageFeatureRuntimeAndRecover: infoReader: InfoReader -> langFeature: LanguageFeature -> m: range -> unit
+
+val checkRuntimeSupportForDefaultInterfaceMembersAndRecover: infoReader: InfoReader -> m: range -> unit
 
 /// Get the declared constructors of any F# type
 val GetIntrinsicConstructorInfosOfType: infoReader: InfoReader -> m: range -> ty: TType -> MethInfo list

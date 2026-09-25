@@ -1,4 +1,4 @@
-// #Conformance #ObjectOrientedTypes #Structs 
+// #Conformance #ObjectOrientedTypes #Structs
 // Verify the struct attribute works as expected
 
 [<Struct>]

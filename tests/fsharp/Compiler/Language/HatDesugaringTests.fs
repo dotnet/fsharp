@@ -19,7 +19,7 @@ let (^) (x: int) (y: int) = x + y
 if 1 ^ 2 <> 3 then failwithf "expected result to be 3 but got %i" (1 ^ 2)
 Console.WriteLine()
             """)
-    
+
     [<Fact>]
     let ``Reverse slicing should work with overloaded infix hat``() =
         CompilerAssert.CompileExeAndRunWithOptions(
@@ -47,7 +47,7 @@ let x = @1
             |]
 
     [<Fact>]
-    let ``Hat operator should not be overloadable as prefix operator``() = 
+    let ``Hat operator should not be overloadable as prefix operator``() =
         CompilerAssert.ParseWithErrors
             """
 module X

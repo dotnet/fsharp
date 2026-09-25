@@ -204,7 +204,7 @@ namespace Consumer
 }
 """
             |> withName "CSLib"
-            
+
         let fsharp =
             FSharp
                 """

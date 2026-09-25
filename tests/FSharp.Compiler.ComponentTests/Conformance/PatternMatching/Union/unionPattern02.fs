@@ -1,11 +1,11 @@
-// #Conformance #PatternMatching #Unions 
+// #Conformance #PatternMatching #Unions
 
 
 // Test a match statement with just one 'match thingy'
 type Foo = A | B of string | C of int
 
-let test x = 
-    match x with 
+let test x =
+    match x with
     | A
     | B _
     | C (_)

@@ -69,10 +69,10 @@ let x = 21+21
 let ``typecheck-only flag catches type errors in scripts with #load``() =
     withTempDirectory (fun tempDir ->
         let domainPath = writeScript tempDir "Domain.fsx" "type T = {\n    Field: string\n}\n\nprintfn \"printfn Domain.fsx\""
-        
+
         let mainContent = sprintf "#load \"%s\"\n\nopen Domain\n\nlet y = {\n    Field = 1\n}\n\nprintfn \"printfn A.fsx\"" (domainPath.Replace("\\", "\\\\"))
         let mainPath = writeScript tempDir "A.fsx" mainContent
-        
+
         FsxFromPath mainPath
         |> withOptions ["--typecheck-only"]
         |> runFsi
@@ -84,10 +84,10 @@ let ``typecheck-only flag catches type errors in scripts with #load``() =
 let ``typecheck-only flag catches type errors in loaded file``() =
     withTempDirectory (fun tempDir ->
         let domainPath = writeScript tempDir "Domain.fsx" "type T = { Field: string }\nlet x: int = \"error\"\nprintfn \"D\""
-        
+
         let mainContent = sprintf "#load \"%s\"\nopen Domain\nlet y = { Field = \"ok\" }\nprintfn \"A\"" (domainPath.Replace("\\", "\\\\"))
         let mainPath = writeScript tempDir "A.fsx" mainContent
-        
+
         FsxFromPath mainPath
         |> withOptions ["--typecheck-only"]
         |> runFsi
