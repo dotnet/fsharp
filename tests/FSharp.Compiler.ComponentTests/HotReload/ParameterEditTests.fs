@@ -305,6 +305,55 @@ module Library =
                   Assert.Equal(42, compute.Invoke(null, [| box 41 |]) :?> int)) ]
 
     [<Fact>]
+    let ``Extension receiver rename updates its Param row and method body after ApplyUpdate`` () =
+        let source receiver increment =
+            $"""
+namespace Sample
+
+type C() = class end
+
+module Extensions =
+    type C with
+        member {receiver}.M(x: int) = x + {increment}
+"""
+
+        let before = source "this" 1
+        let after = source "that" 2
+        let capabilities = [ "Baseline"; "UpdateParameters" ]
+
+        emitDeltaAndInspect capabilities "extension-receiver-metadata" before after (fun delta ->
+            use provider = MetadataReaderProvider.FromMetadataImage(ImmutableArray.CreateRange delta.Metadata)
+            let reader = provider.GetMetadataReader()
+            let parameters =
+                reader.GetEditAndContinueMapEntries()
+                |> Seq.map MetadataTokens.GetToken
+                |> Seq.filter (fun token -> token >>> 24 = 0x08)
+                |> Seq.toList
+
+            Assert.Contains(0x08000001, parameters)
+            Assert.Contains("that", System.Text.Encoding.ASCII.GetString delta.Metadata)
+            Assert.Contains("UpdateParameters", delta.RequiredCapabilities))
+
+        let extensionMethod (assembly: Assembly) =
+            assembly.GetType("Sample.Extensions", throwOnError = true).GetMethods(BindingFlags.Public ||| BindingFlags.Static ||| BindingFlags.DeclaredOnly)
+            |> Array.exactlyOne
+
+        applyGenerationsAndVerify
+            capabilities
+            "extension-receiver-runtime"
+            before
+            (fun assembly -> Assert.NotNull(extensionMethod assembly))
+            [ after,
+              (fun assembly ->
+                  let method = extensionMethod assembly
+                  let parameters = method.GetParameters()
+                  Assert.Equal(2, parameters.Length)
+                  Assert.Equal("that", parameters[0].Name)
+                  Assert.Equal("x", parameters[1].Name)
+                  let receiver = Activator.CreateInstance(assembly.GetType("Sample.C", throwOnError = true))
+                  Assert.Equal(43, method.Invoke(null, [| receiver; box 41 |]) :?> int)) ]
+
+    [<Fact>]
     let ``Parameter rename delta matches the C# row update template`` () =
         // C# 'param_rename' template: MethodDef 1 update + Param 1 update (EncMap update
         // entries, no Param adds); the Param row's name column carries the new name.
