@@ -638,3 +638,38 @@ let value (x: A.C) = x
 
         Assert.Empty(result.SemanticEdits)
         Assert.Empty(result.RudeEdits)
+
+    [<Fact>]
+    member _.``extension receiver rename reports parameter updates`` () =
+        use harness = new DiffTestHarness()
+        let source = "module Library\ntype C() = class end\nmodule Extensions =\n    type C with\n        member this.M(x: int) = x\n"
+        harness.Rewrite(source)
+        let baseline = harness.Compile()
+        harness.Rewrite(source.Replace("member this.", "member that."))
+        let updated = harness.Compile()
+
+        let result = harness.Diff baseline updated
+
+        Assert.Empty(result.RudeEdits)
+        let edit = Assert.Single(result.SemanticEdits)
+        Assert.Equal(Some 2, edit.Symbol.TotalArgCount)
+        Assert.Equal(
+            Some [ RuntimeTypeIdentity.NamedType("Library.C", []); RuntimeTypeIdentity.NamedType("System.Int32", []) ],
+            edit.Symbol.ParameterTypeIdentities)
+        Assert.Equal(Some "Library.Extensions", edit.ContainingEntity)
+        assertRequiredCapabilities [ "Baseline"; "UpdateParameters" ] result
+
+    [<Fact>]
+    member _.``constructor parameter rename reports parameter updates`` () =
+        use harness = new DiffTestHarness()
+        harness.Rewrite(Sources.moduleHeader + "type C(before: int) = class end")
+        let baseline = harness.Compile()
+        harness.Rewrite(Sources.moduleHeader + "type C(after: int) = class end")
+        let updated = harness.Compile()
+
+        let result = harness.Diff baseline updated
+
+        Assert.Empty(result.RudeEdits)
+        let edit = Assert.Single(result.SemanticEdits |> List.filter (fun edit -> edit.Symbol.CompiledName = Some ".ctor"))
+        Assert.Equal(Some 1, edit.Symbol.TotalArgCount)
+        assertRequiredCapabilities [ "Baseline"; "UpdateParameters" ] result
