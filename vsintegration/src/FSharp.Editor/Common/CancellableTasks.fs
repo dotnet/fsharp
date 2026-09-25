@@ -949,7 +949,7 @@ module CancellableTasks =
         ///         cancellableTask {
         ///             let! cancellationToken = CancellableTask.getCancellationToken()
         ///             do! Task.Delay(i * 1000, cancellationToken)
-        ///             printfn $"{i}"
+        ///             printn $"{i}"
         ///         }
         ///     computation tokenSource.Token |> ignore
         /// Thread.Sleep(6000)

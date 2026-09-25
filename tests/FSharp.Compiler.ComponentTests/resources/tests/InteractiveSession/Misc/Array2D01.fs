@@ -30,5 +30,3 @@ type Array2D1<'T> =
     };;
 
 Array2D1 (array2D [[1];[2]]) |> ignore;;
-
-#q;;

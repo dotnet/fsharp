@@ -138,7 +138,7 @@ Describe 'Per-file test result publication' {
 
 Describe 'Test result publishing pipelines' {
     It 'uses isolated publication in <File>' -TestCases @(
-        @{ File = 'azure-pipelines-PR.yml'; Calls = 3 }
+        @{ File = 'azure-pipelines-PR.yml'; Calls = 2 }
         @{ File = 'azure-pipelines.yml'; Calls = 1 }
         @{ File = 'eng\templates\batched-test-steps.yml'; Calls = 1 }
     ) {

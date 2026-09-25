@@ -14,6 +14,8 @@ on:
   schedule: every 3h
   workflow_dispatch:
 
+if: github.event_name != 'schedule' || github.repository == 'dotnet/fsharp'
+
 timeout-minutes: 90
 
 permissions: read-all
