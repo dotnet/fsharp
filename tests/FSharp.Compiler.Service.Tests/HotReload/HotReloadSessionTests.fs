@@ -1043,7 +1043,7 @@ module Contract =
 namespace IncrementalState
 
 module Contract =
-    let inline adjust value = value + {adjustment}
+    let inline adjust (value: int) = value + {adjustment}
     let private hidden value = value * {multiplier}
     let publicValue value = hidden (adjust value)
 """
