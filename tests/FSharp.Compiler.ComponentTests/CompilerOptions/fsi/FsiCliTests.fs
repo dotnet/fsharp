@@ -319,7 +319,7 @@ module FsiCliTests =
         |> Option.defaultWith (fun () ->
             failwith "AssemblyMetadata 'FsiRestoreTestPackageVersion' is missing. It should be emitted by FSharp.Compiler.ComponentTests.fsproj from the central FsCheck PackageVersion.")
 
-    [<Fact>]
+    [<FactSkipOnSignedBuild>]
     let ``FSI quiet mode suppresses NuGet restore output from stdout`` () =
         let script = $"""
 #r "nuget: {restoreTestPackageId}, {restoreTestPackageVersion}"
@@ -332,7 +332,7 @@ printfn "RESULT_MARKER_18086"
         assertStdOutDoesNotContain "Restored " result
         assertStdOutDoesNotContain "NU1" result
 
-    [<Fact>]
+    [<FactSkipOnSignedBuild>]
     let ``FSI default (non-quiet) mode still evaluates script and prints user output`` () =
         let script = $"""
 #r "nuget: {restoreTestPackageId}, {restoreTestPackageVersion}"
