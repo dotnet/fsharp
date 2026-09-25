@@ -162,6 +162,9 @@ type SynEnumCaseTrivia =
 type SynUnionCaseTrivia = { BarRange: range option }
 
 [<NoEquality; NoComparison>]
+type SynExceptionDefnReprTrivia = { ExceptionKeyword: range }
+
+[<NoEquality; NoComparison>]
 type SynPatOrTrivia = { BarRange: range }
 
 [<NoEquality; NoComparison>]

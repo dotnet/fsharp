@@ -735,11 +735,11 @@ moduleSpfn:
 
   | opt_attributes opt_access exconSpfn
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
-        let (SynExceptionSig(SynExceptionDefnRepr(cas, a, b, c, d, d2), withKeyword, members, range)) = $3
+        let (SynExceptionSig(SynExceptionDefnRepr(cas, a, b, c, d, d2, trivia), withKeyword, members, range)) = $3
         let xmlDoc = grabXmlDoc(parseState, $1, 1)
         let mDefnReprWithAttributes = (d2, $1) ||> unionRangeWithListBy (fun a -> a.Range) |> unionRangeWithXmlDoc xmlDoc
         let mWhole = (mDefnReprWithAttributes, members) ||> unionRangeWithListBy (fun (m: SynMemberSig) -> m.Range)
-        let synExnDefn = SynExceptionSig(SynExceptionDefnRepr($1@cas, a, b, xmlDoc, d, mDefnReprWithAttributes), withKeyword, members, mWhole)
+        let synExnDefn = SynExceptionSig(SynExceptionDefnRepr($1@cas, a, b, xmlDoc, d, mDefnReprWithAttributes, trivia), withKeyword, members, mWhole)
         SynModuleSigDecl.Exception(synExnDefn, mWhole) }
 
   | openDecl
@@ -1343,11 +1343,11 @@ moduleDefn:
   /* 'exception' definitions */
   | opt_attributes opt_access exconDefn
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
-        let (SynExceptionDefn(SynExceptionDefnRepr(cas, a, b, c, d, d2), withKeyword, e, f)) = $3
+        let (SynExceptionDefn(SynExceptionDefnRepr(cas, a, b, c, d, d2, trivia), withKeyword, e, f)) = $3
         let xmlDoc = grabXmlDoc(parseState, $1, 1)
         let defnReprRange = (d2, $1) ||> unionRangeWithListBy (fun a -> a.Range) |> unionRangeWithXmlDoc xmlDoc
         let mWhole = (f, $1) ||> unionRangeWithListBy (fun a -> a.Range) |> unionRangeWithXmlDoc xmlDoc
-        let synExnDefn = SynExceptionDefn(SynExceptionDefnRepr($1@cas, a, b, xmlDoc, d, defnReprRange), withKeyword, e, mWhole)
+        let synExnDefn = SynExceptionDefn(SynExceptionDefnRepr($1@cas, a, b, xmlDoc, d, defnReprRange, trivia), withKeyword, e, mWhole)
         [ SynModuleDecl.Exception(synExnDefn, mWhole) ] }
 
   /* 'module' definitions */
@@ -3073,7 +3073,8 @@ exconCore:
             match $5 with
             | None -> rhs2 parseState 1 4
             | Some p -> unionRanges (rangeOfLongIdent p) (rhs2 parseState 1 4)
-        SynExceptionDefnRepr($2, $4, $5, PreXmlDoc.Empty, $3, m) }
+        let trivia = { ExceptionKeyword = rhs parseState 1 }
+        SynExceptionDefnRepr($2, $4, $5, PreXmlDoc.Empty, $3, m, trivia) }
 
   | EXCEPTION opt_attributes opt_access recover
       { let m =
@@ -3088,7 +3089,8 @@ exconCore:
         let id = SynIdent(mkSynId m.EndRange "", None)
         let unionCase = SynUnionCase([], id, SynUnionCaseKind.Fields [], PreXmlDoc.Empty, None, m, { BarRange = None })
 
-        SynExceptionDefnRepr($2, unionCase, None, PreXmlDoc.Empty, $3, m) }
+        let trivia = { ExceptionKeyword = rhs parseState 1 }
+        SynExceptionDefnRepr($2, unionCase, None, PreXmlDoc.Empty, $3, m, trivia) }
 
 /* Part of an exception definition */
 exconIntro:

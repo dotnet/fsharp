@@ -23,7 +23,8 @@ ImplFile
                                                    MutableKeyword = None })],
                        PreXmlDocEmpty, None, (3,10--3,27), { BarRange = None }),
                     None, PreXmlDoc ((3,0), FSharp.Compiler.Xml.XmlDocCollector),
-                    None, (3,0--3,27)), None, [], (3,0--3,27)), (3,0--3,27));
+                    None, (3,0--3,27), { ExceptionKeyword = (3,0--3,9) }), None,
+                 [], (3,0--3,27)), (3,0--3,27));
            Exception
              (SynExceptionDefn
                 (SynExceptionDefnRepr
@@ -39,9 +40,9 @@ ImplFile
                                                    MutableKeyword = None })],
                        PreXmlDocEmpty, None, (4,10--4,22), { BarRange = None }),
                     None, PreXmlDoc ((4,0), FSharp.Compiler.Xml.XmlDocCollector),
-                    None, (4,0--4,22)), None, [], (4,0--4,22)), (4,0--4,22))],
-          PreXmlDocEmpty, [], None, (1,0--4,22),
-          { LeadingKeyword = Namespace (1,0--1,9) })], (true, true),
+                    None, (4,0--4,22), { ExceptionKeyword = (4,0--4,9) }), None,
+                 [], (4,0--4,22)), (4,0--4,22))], PreXmlDocEmpty, [], None,
+          (1,0--4,22), { LeadingKeyword = Namespace (1,0--1,9) })], (true, true),
       { ConditionalDirectives = []
         WarnDirectives = []
         CodeComments = [] }, set []))
