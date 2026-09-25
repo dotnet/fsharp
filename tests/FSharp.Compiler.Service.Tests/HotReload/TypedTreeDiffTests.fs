@@ -438,7 +438,7 @@ module B =
 let value (x: A.C) = x
 """
 
-        let updatedSource = baselineSource.Replace("(x: A.C)", "(x: C)")
+        let updatedSource = baselineSource.Replace("(x: A.C)", "(x: B.C)")
         harness.Rewrite(baselineSource)
         let baseline = harness.Compile()
         harness.Rewrite(updatedSource)
@@ -609,6 +609,24 @@ let value (x: A.C) = x
     member _.``unchanged abstract member metadata produces no edits`` () =
         use harness = new DiffTestHarness()
         let source = Sources.moduleHeader + "type I = abstract M: [<System.ParamArray>] xs: int[] -> int"
+        harness.Rewrite(source)
+        let baseline = harness.Compile()
+        harness.Rewrite(source)
+        let updated = harness.Compile()
+
+        let result = harness.Diff baseline updated
+
+        Assert.Empty(result.SemanticEdits)
+        Assert.Empty(result.RudeEdits)
+
+
+    [<Theory>]
+    [<InlineData("int[]")>]
+    [<InlineData("int[,]")>]
+    [<InlineData("byref<int>")>]
+    member _.``intrinsic parameter identities survive independent compilations`` (parameterType: string) =
+        use harness = new DiffTestHarness()
+        let source = Sources.moduleHeader + $"type C() = member _.M(x: {parameterType}) = ()"
         harness.Rewrite(source)
         let baseline = harness.Compile()
         harness.Rewrite(source)

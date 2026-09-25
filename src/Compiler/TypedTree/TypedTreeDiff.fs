@@ -505,13 +505,22 @@ let rec private tryTypeIdentityFromTType (g: TcGlobals) (typarOrdinals: Map<Stam
         tryTypeIdentityFromTType g typarOrdinals elementType
         |> Option.map RuntimeTypeIdentity.PointerType
     | TType_app(tcref, tinst, _) ->
-        let fullName =
-            try
-                tcref.CompiledRepresentationForNamedType.FullName
-            with _ ->
-                tcref.CompiledName
+        // Independent compilations have distinct intrinsic type references. Their IL representation stays stable.
+        match tcref.CompiledRepresentation, tinst with
+        | CompiledTypeRepr.ILAsmOpen(ILType.Array(shape, ILType.TypeVar 0us)), [ elementType ] ->
+            tryTypeIdentityFromTType g typarOrdinals elementType
+            |> Option.map (fun elementIdentity -> RuntimeTypeIdentity.ArrayType(shape.Rank, elementIdentity))
+        | CompiledTypeRepr.ILAsmOpen(ILType.Byref(ILType.TypeVar 0us)), elementType :: _ ->
+            tryTypeIdentityFromTType g typarOrdinals elementType
+            |> Option.map RuntimeTypeIdentity.ByRefType
+        | _ ->
+            let fullName =
+                try
+                    tcref.CompiledRepresentationForNamedType.FullName
+                with _ ->
+                    tcref.CompiledName
 
-        tryEncodeGenericArgs tinst |> Option.map (runtimeNamedTypeIdentity fullName)
+            tryEncodeGenericArgs tinst |> Option.map (runtimeNamedTypeIdentity fullName)
     | TType_anon(anonInfo, tys) ->
         tryEncodeGenericArgs tys
         |> Option.map (runtimeNamedTypeIdentity anonInfo.ILTypeRef.FullName)
