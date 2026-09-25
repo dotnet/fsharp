@@ -184,7 +184,9 @@ type LowerStateMachine(g: TcGlobals, outerResumableCodeDefns: ValMap<Expr>, coll
     // LoweredStateMachine for the hot reload EnC State Machine State Map. Only
     // populated when the caller requested collection (hot reload capture compiles), so
     // ordinary compiles pay nothing beyond the boolean check.
-    let resumptionPoints = ResizeArray<int * range>()
+    // Allocate capture state only when hot reload requests resumption metadata.
+    let resumptionPoints =
+        if collectResumptionPoints then Some(ResizeArray<int * range>()) else None
 
     // Record definitions for any resumable code
     let rec BindResumableCodeDefinitions (env: env) finalizing expr =
@@ -453,10 +455,9 @@ type LowerStateMachine(g: TcGlobals, outerResumableCodeDefns: ValMap<Expr>, coll
                         (moveNextThisVar, moveNextExprR),
                         (setStateMachineThisVar, setStateMachineStateVar, setStateMachineBodyR),
                         (afterCodeThisVar, afterCodeBodyR),
-                        (if collectResumptionPoints then
-                             resumptionPoints |> Seq.sortBy fst |> List.ofSeq
-                         else
-                             []))
+                        (match resumptionPoints with
+                         | Some points -> points |> Seq.sortBy fst |> List.ofSeq
+                         | None -> []))
             ValueSome (env, remake2, moveNextBody)
         | _ ->
             ValueNone
@@ -591,8 +592,9 @@ type LowerStateMachine(g: TcGlobals, outerResumableCodeDefns: ValMap<Expr>, coll
         // printfn "found sequential"
         let reenterPC = genPC()
 
-        if collectResumptionPoints then
-            resumptionPoints.Add(reenterPC, someBranchExpr.Range)
+        match resumptionPoints with
+        | Some points -> points.Add(reenterPC, someBranchExpr.Range)
+        | None -> ()
         let envSome = { env with ResumableCodeDefns = env.ResumableCodeDefns.Add someVar (mkInt g someVar.Range reenterPC) }
         let resNone = ConvertResumableCode env pcValInfo noneBranchExpr
         let resSome = ConvertResumableCode envSome pcValInfo someBranchExpr
