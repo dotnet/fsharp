@@ -7,6 +7,7 @@ open Xunit
 open FSharp.Compiler.CodeAnalysis.ProjectSnapshot
 open FSharp.Compiler.CodeAnalysis.Workspace
 open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.HotReload
 open FSharp.Test.ProjectGeneration.WorkspaceHelpers
 open OpenTelemetry
 open OpenTelemetry.Resources
@@ -56,6 +57,14 @@ type TestingWorkspace(testName) as _this =
             //tracerProvider.ForceFlush() |> ignore
             //tracerProvider.Dispose()
 
+let private fullPathEquals (left: string) (right: string) =
+    String.Equals(Path.GetFullPath(left), Path.GetFullPath(right), StringComparison.OrdinalIgnoreCase)
+
+let private findTrackedInput (trackedInputs: TrackedInputs.TrackedInput list) (path: string) =
+    trackedInputs
+    |> List.tryFind (fun input -> fullPathEquals input.Path path)
+    |> Option.defaultWith (fun () -> failwithf "Expected tracked input '%s'." path)
+
 [<Fact>]
 let ``Add project to workspace`` () =
     use workspace = new TestingWorkspace("Add project to workspace")
@@ -68,6 +77,66 @@ let ``Add project to workspace`` () =
     Assert.Equal(projectPath, projectSnapshot.ProjectFileName)
     Assert.Equal(Some outputPath, projectSnapshot.OutputFileName)
     Assert.Contains("test.fs", projectSnapshot.SourceFiles |> Seq.map (fun f -> f.FileName))
+
+[<Fact>]
+let ``Hot reload tracked inputs follow non-source command-line input timestamp changes`` () =
+    let projectDir = Path.Combine(Path.GetTempPath(), "fcs-trackedinputs-nonsource-input", Guid.NewGuid().ToString("N"))
+    Directory.CreateDirectory(projectDir) |> ignore
+
+    let inputPath = Path.Combine(projectDir, "View.xaml")
+    let projectPath = Path.Combine(projectDir, "test.fsproj")
+
+    try
+        File.WriteAllText(inputPath, "<TextBlock Text=\"one\" />")
+
+        let compilerArgs = [| inputPath |]
+
+        let trackedInputs1 = TrackedInputs.compute projectPath compilerArgs
+        let trackedInput1 = findTrackedInput trackedInputs1 inputPath
+
+        File.WriteAllText(inputPath, "<TextBlock Text=\"two\" />")
+        File.SetLastWriteTimeUtc(inputPath, DateTime.UtcNow.AddSeconds(3.0))
+
+        let trackedInputs2 = TrackedInputs.compute projectPath compilerArgs
+        let trackedInput2 = findTrackedInput trackedInputs2 inputPath
+
+        Assert.NotEqual(trackedInput1.LastModified, trackedInput2.LastModified)
+        Assert.NotEqual<TrackedInputs.TrackedInput list>(trackedInputs1, trackedInputs2)
+    finally
+        try
+            Directory.Delete(projectDir, true)
+        with _ ->
+            ()
+
+[<Fact>]
+let ``Hot reload tracked inputs follow --resource non-source input changes`` () =
+    let projectDir = Path.Combine(Path.GetTempPath(), "fcs-trackedinputs-resource-input", Guid.NewGuid().ToString("N"))
+    Directory.CreateDirectory(projectDir) |> ignore
+
+    let resourcePath = Path.Combine(projectDir, "Strings.resources")
+    let projectPath = Path.Combine(projectDir, "test.fsproj")
+
+    try
+        File.WriteAllText(resourcePath, "resource-1")
+
+        let compilerArgs = [| $"--resource:{resourcePath}" |]
+
+        let trackedInputs1 = TrackedInputs.compute projectPath compilerArgs
+        let trackedInput1 = findTrackedInput trackedInputs1 resourcePath
+
+        File.WriteAllText(resourcePath, "resource-2")
+        File.SetLastWriteTimeUtc(resourcePath, DateTime.UtcNow.AddSeconds(3.0))
+
+        let trackedInputs2 = TrackedInputs.compute projectPath compilerArgs
+        let trackedInput2 = findTrackedInput trackedInputs2 resourcePath
+
+        Assert.NotEqual(trackedInput1.LastModified, trackedInput2.LastModified)
+        Assert.NotEqual<TrackedInputs.TrackedInput list>(trackedInputs1, trackedInputs2)
+    finally
+        try
+            Directory.Delete(projectDir, true)
+        with _ ->
+            ()
 
 [<Fact>]
 let ``Open file in workspace`` () =
