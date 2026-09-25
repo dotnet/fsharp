@@ -234,6 +234,9 @@ type SynUnionCaseTrivia =
     {
         /// The syntax range of the `|` token.
         BarRange: range option
+
+        /// The syntax range of the `of` keyword.
+        OfKeyword: range option
     }
 
 /// Represents additional information for SynExceptionDefnRepr

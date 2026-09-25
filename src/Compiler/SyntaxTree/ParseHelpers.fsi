@@ -242,6 +242,7 @@ val mkSynUnionCase:
     access: SynAccess option ->
     id: SynIdent ->
     kind: SynUnionCaseKind ->
+    mOf: range option ->
     mDecl: range ->
     (PreXmlDoc * range) ->
         SynUnionCase

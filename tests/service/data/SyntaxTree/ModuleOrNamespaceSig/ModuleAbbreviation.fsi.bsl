@@ -30,18 +30,21 @@ SigFile
                                ([], SynIdent (Ex, None), Fields [],
                                 PreXmlDoc ((10,8), FSharp.Compiler.Xml.XmlDocCollector),
                                 None, (10,10--10,12),
-                                { BarRange = Some (10,8--10,9) });
+                                { BarRange = Some (10,8--10,9)
+                                  OfKeyword = None });
                              SynUnionCase
                                ([], SynIdent (Why, None), Fields [],
                                 PreXmlDoc ((11,8), FSharp.Compiler.Xml.XmlDocCollector),
                                 None, (11,10--11,13),
-                                { BarRange = Some (11,8--11,9) });
+                                { BarRange = Some (11,8--11,9)
+                                  OfKeyword = None });
                              SynUnionCase
                                ([], SynIdent (Zed, None), Fields [],
                                 PreXmlDoc ((12,8), FSharp.Compiler.Xml.XmlDocCollector),
                                 None, (12,10--12,13),
-                                { BarRange = Some (12,8--12,9) })],
-                            (10,8--12,13)), (10,8--12,13)), [], (9,9--12,13),
+                                { BarRange = Some (12,8--12,9)
+                                  OfKeyword = None })], (10,8--12,13)),
+                         (10,8--12,13)), [], (9,9--12,13),
                       { LeadingKeyword = Type (9,4--9,8)
                         EqualsRange = Some (9,11--9,12)
                         WithKeyword = None })], (9,4--12,13))], (8,0--12,13),
