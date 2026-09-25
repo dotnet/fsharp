@@ -3,14 +3,14 @@ module RuntimeAsyncAsyncLocal
 open System.Threading
 open System.Threading.Tasks
 
-open RuntimeTaskBuilder.RuntimeTask
+open RuntimeTaskBuilder
 
 let private context = AsyncLocal<string>()
 
 let private preservesValueAcrossAwait () =
     runtimeTask {
         context.Value <- "before"
-        do! Task.Delay(1)
+        do! Task.Yield()
 
         if context.Value <> "before" then
             failwith "AsyncLocal value was not preserved across await"
@@ -22,7 +22,7 @@ let private propagatesValueToNestedRuntimeTask () =
 
         let! nestedValue =
             runtimeTask {
-                do! Task.Delay(1)
+                do! Task.Yield()
                 return context.Value
             }
 

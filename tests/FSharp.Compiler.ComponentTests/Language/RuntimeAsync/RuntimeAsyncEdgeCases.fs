@@ -7,7 +7,7 @@ open System
 open System.Threading.Tasks
 open System.Runtime.CompilerServices
 open Microsoft.FSharp.Core.CompilerServices
-open RuntimeTaskBuilder.RuntimeTask
+open RuntimeTaskBuilder
 
 let private delayed v =
     Task.Delay(1).ContinueWith(fun (_: Task) -> v)
