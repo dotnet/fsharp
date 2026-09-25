@@ -513,6 +513,13 @@ let rec private tryTypeIdentityFromTType (g: TcGlobals) (typarOrdinals: Map<Stam
         | CompiledTypeRepr.ILAsmOpen(ILType.Byref(ILType.TypeVar 0us)), elementType :: _ ->
             tryTypeIdentityFromTType g typarOrdinals elementType
             |> Option.map RuntimeTypeIdentity.ByRefType
+        | CompiledTypeRepr.ILAsmOpen(ILType.Value typeSpec), [ elementType ] when
+            typeSpec.TypeRef.FullName = "System.IntPtr"
+            && tcref.LogicalName = g.nativeptr_tcr.LogicalName
+            ->
+            // nativeptr stores a native-int representation, while emitted method signatures retain the element type.
+            tryTypeIdentityFromTType g typarOrdinals elementType
+            |> Option.map RuntimeTypeIdentity.PointerType
         | _ ->
             let fullName =
                 try
@@ -619,6 +626,13 @@ let private tryGetMethodTyparOrdinalsAndGenericArity (g: TcGlobals) (var: Val) =
 let private tryGetParameterTypeIdentities (g: TcGlobals) (typarOrdinals: Map<Stamp, int>) (var: Val) =
     let parameterTypes =
         match var.MemberInfo, var.ValReprInfo with
+        | Some _, Some valReprInfo when var.IsExtensionMember ->
+            let numEnclosingTypars = CountEnclosingTyparsOfActualParentOfVal var
+
+            let _, _, argInfos, _, _ =
+                GetValReprTypeInCompiledForm g valReprInfo numEnclosingTypars var.Type var.Range
+
+            argInfos |> List.concat |> List.map fst
         | Some _, _ -> ArgInfosOfMember g (mkLocalValRef var) |> List.concat |> List.map fst
         | None, Some valReprInfo ->
             let _, argInfos, _, _ = GetValReprTypeInFSharpForm g valReprInfo var.Type var.Range
@@ -1634,10 +1648,10 @@ let private slotParameterMetadataIdentity denv (var: Val) =
     match var.ValReprInfo with
     | None -> "none"
     | Some(ValReprInfo(_, arguments, result)) ->
-        // The instance receiver has no Param row and its source name does not affect metadata.
+        // Extension receivers are real parameters of static methods and retain their metadata.
         let emittedArguments =
-            match var.MemberInfo, arguments with
-            | Some memberInfo, _ :: rest when memberInfo.MemberFlags.IsInstance -> rest
+            match arguments with
+            | _ :: rest when ValSpecIsCompiledAsInstance denv.g var -> rest
             | _ -> arguments
 
         identityNode
@@ -2348,6 +2362,21 @@ let private snapshotModuleEntity denv (moduleEntity: ModuleOrNamespace) path : E
         IsSynthesized = false
     }
 
+/// Gets the emitted receiver name when an extension method lacks a signature argument name.
+let private tryExtensionReceiverName (var: Val) expr =
+    match var.MemberInfo with
+    | Some memberInfo when var.IsExtensionMember && memberInfo.MemberFlags.IsInstance ->
+        // IlxGen.GenParams falls back to the implementation binder for unnamed signature arguments.
+        let rec receiverName expr =
+            match stripDebugPoints expr with
+            | Expr.TyLambda(_, _, body, _, _)
+            | Expr.TyChoose(_, body, _) -> receiverName body
+            | Expr.Lambda(_, _, _, receiver :: _, _, _, _) -> Some receiver.LogicalName
+            | _ -> None
+
+        receiverName expr
+    | _ -> None
+
 let rec private snapshotModuleBinding g denv (path: string list) (map, entities) binding =
     match binding with
     | ModuleOrNamespaceBinding.Binding b ->
@@ -2391,7 +2420,12 @@ and private tryGetContainingEntityFullName (var: Val) =
     match var.MemberInfo with
     | Some memberInfo ->
         try
-            let tyconRef = memberInfo.ApparentEnclosingEntity
+            let tyconRef =
+                if var.IsExtensionMember then
+                    (mkLocalValRef var).DeclaringEntity
+                else
+                    memberInfo.ApparentEnclosingEntity
+
             let ilTypeRef = tyconRef.CompiledRepresentationForNamedType
             Some(ilTypeRef.FullName)
         with _ ->
@@ -2427,10 +2461,7 @@ and private snapshotBinding g denv path (TBind(var, expr, _)) =
         with _ ->
             None
 
-    let isInstanceMember =
-        match var.MemberInfo with
-        | Some memberInfo -> memberInfo.MemberFlags.IsInstance
-        | None -> false
+    let isInstanceMember = ValRefIsCompiledAsInstanceMember g vref
 
     let totalArgCount =
         var.ValReprInfo
@@ -2460,6 +2491,11 @@ and private snapshotBinding g denv path (TBind(var, expr, _)) =
             argGroups
             |> List.collect (List.map (fun (argInfo: ArgReprInfo) -> argInfo.Name |> Option.map (fun ident -> ident.idText)))
         | None -> []
+
+    let parameterNames =
+        match parameterNames, tryExtensionReceiverName var expr with
+        | None :: rest, Some receiverName -> Some receiverName :: rest
+        | _ -> parameterNames
 
     let parameterMetadataIdentity =
         let argMetadata (argInfo: ArgReprInfo) =
