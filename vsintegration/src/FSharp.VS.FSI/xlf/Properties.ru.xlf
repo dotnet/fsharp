@@ -2,6 +2,21 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="ru" original="../Properties.resx">
     <body>
+      <trans-unit id="FSharpCompilerMisc">
+        <source>Compiler</source>
+        <target state="new">Compiler</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpCompilerUseNetSdk">
+        <source>Use the .NET SDK F# compiler for builds</source>
+        <target state="new">Use the .NET SDK F# compiler for builds</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpCompilerUseNetSdkDescr">
+        <source>When enabled (the default), Visual Studio builds F# projects with the compiler from the installed .NET SDK, matching command-line 'dotnet build'. Turn it off to build with the .NET Framework F# compiler bundled with Visual Studio - for example when a project uses a type provider that ships only a .NET Framework build. Command-line builds are unaffected. Changing this takes effect on the next (re)build.</source>
+        <target state="new">When enabled (the default), Visual Studio builds F# projects with the compiler from the installed .NET SDK, matching command-line 'dotnet build'. Turn it off to build with the .NET Framework F# compiler bundled with Visual Studio - for example when a project uses a type provider that ships only a .NET Framework build. Command-line builds are unaffected. Changing this takes effect on the next (re)build.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="FSharpInteractiveAnyCpu">
         <source>Use fsiAnyCpu.exe</source>
         <target state="translated">Использовать fsiAnyCpu.exe</target>
