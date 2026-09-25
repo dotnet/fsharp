@@ -11,6 +11,7 @@ open FSharp.Compiler.AbstractIL.ILDeltaHandles
 open FSharp.Compiler.AbstractIL.DeltaMetadataTypes
 open FSharp.Compiler.EncMethodDebugInformation
 open FSharp.Compiler.GeneratedNames
+open FSharp.Compiler.CompilerGeneratedNameMapState
 open FSharp.Compiler.IlxGen
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
