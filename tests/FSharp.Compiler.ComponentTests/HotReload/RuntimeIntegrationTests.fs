@@ -2762,6 +2762,8 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
 
                 // Build the baseline through the command-line fsc path (flag-on, on-disk
                 // dll + pdb).
+                // This baseline represents a fresh compiler process. Previous fixtures can leave a capture session.
+                FSharpEditAndContinueLanguageService.Instance.ResetSessionState()
                 checker.InvalidateAll()
                 let compileDiagnostics, _ =
                     checker.Compile(Array.concat [ [| "fsc.exe" |]; projectOptions.OtherOptions; projectOptions.SourceFiles ])
@@ -2991,6 +2993,8 @@ let probe () = List.sum (transform [ 1; 2; 3 ])
                                    "--test:HotReloadDeltas"
                                    $"--out:{dllPath}" |] }
 
+                // This baseline represents a fresh compiler process. Previous fixtures can leave a capture session.
+                FSharpEditAndContinueLanguageService.Instance.ResetSessionState()
                 checker.InvalidateAll()
                 let compileDiagnostics, _ =
                     checker.Compile(Array.concat [ [| "fsc.exe" |]; projectOptions.OtherOptions; projectOptions.SourceFiles ])
