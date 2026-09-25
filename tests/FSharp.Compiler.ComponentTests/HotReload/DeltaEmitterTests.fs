@@ -60,7 +60,8 @@ module DeltaEmitterTests =
                 let stderr = proc.StandardError.ReadToEndAsync()
                 proc.WaitForExit()
                 ValueSome (proc.ExitCode, stdout.GetAwaiter().GetResult(), stderr.GetAwaiter().GetResult())
-        with _ -> ValueNone
+        with
+        | :? System.ComponentModel.Win32Exception as error when error.NativeErrorCode = 2 -> ValueNone
 
     let private createMethod (ilg: ILGlobals) name returnValue =
         let methodBody =
