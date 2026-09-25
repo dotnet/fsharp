@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
@@ -37,44 +37,21 @@ type internal FsiCommandFilter(serviceProvider: System.IServiceProvider) =
 
     interface IOleCommandTarget with
         member x.Exec(pguidCmdGroup, nCmdId, nCmdexecopt, pvaIn, pvaOut) =
+            // Sending a selection or a line is handled by the interactive window; only debugging a
+            // selection still goes to the legacy one.
             if
-                pguidCmdGroup = VSConstants.VsStd11
-                && nCmdId = uint32 VSConstants.VSStd11CmdID.ExecuteSelectionInInteractive
-            then
-                Hooks.OnMLSend fsiPackage.Value FsiEditorSendAction.ExecuteSelection null null
-                VSConstants.S_OK
-            elif
-                pguidCmdGroup = VSConstants.VsStd11
-                && nCmdId = uint32 VSConstants.VSStd11CmdID.ExecuteLineInInteractive
-            then
-                Hooks.OnMLSend fsiPackage.Value FsiEditorSendAction.ExecuteLine null null
-                VSConstants.S_OK
-            elif
                 pguidCmdGroup = Guids.guidInteractive
                 && nCmdId = uint32 Guids.cmdIDDebugSelection
             then
                 Hooks.OnMLSend fsiPackage.Value FsiEditorSendAction.DebugSelection null null
                 VSConstants.S_OK
-            elif not (isNull nextTarget) then
-                nextTarget.Exec(&pguidCmdGroup, nCmdId, nCmdexecopt, pvaIn, pvaOut)
             else
-                VSConstants.E_FAIL
+                match nextTarget with
+                | null -> VSConstants.E_FAIL
+                | target -> target.Exec(&pguidCmdGroup, nCmdId, nCmdexecopt, pvaIn, pvaOut)
 
         member x.QueryStatus(pguidCmdGroup, cCmds, prgCmds, pCmdText) =
-            if pguidCmdGroup = VSConstants.VsStd11 then
-                for i = 0 to int cCmds - 1 do
-                    if prgCmds.[i].cmdID = uint32 VSConstants.VSStd11CmdID.ExecuteSelectionInInteractive then
-                        prgCmds.[i].cmdf <- uint32 (OLECMDF.OLECMDF_SUPPORTED ||| OLECMDF.OLECMDF_ENABLED)
-                    elif prgCmds.[i].cmdID = uint32 VSConstants.VSStd11CmdID.ExecuteLineInInteractive then
-                        prgCmds.[i].cmdf <-
-                            uint32 (
-                                OLECMDF.OLECMDF_SUPPORTED
-                                ||| OLECMDF.OLECMDF_ENABLED
-                                ||| OLECMDF.OLECMDF_DEFHIDEONCTXTMENU
-                            )
-
-                VSConstants.S_OK
-            elif pguidCmdGroup = Guids.guidInteractive then
+            if pguidCmdGroup = Guids.guidInteractive then
                 for i = 0 to int cCmds - 1 do
                     if prgCmds.[i].cmdID = uint32 Guids.cmdIDDebugSelection then
                         let dbgState = Hooks.GetDebuggerState fsiPackage.Value
@@ -85,10 +62,10 @@ type internal FsiCommandFilter(serviceProvider: System.IServiceProvider) =
                             prgCmds.[i].cmdf <- uint32 (OLECMDF.OLECMDF_SUPPORTED ||| OLECMDF.OLECMDF_ENABLED)
 
                 VSConstants.S_OK
-            elif not (isNull nextTarget) then
-                nextTarget.QueryStatus(&pguidCmdGroup, cCmds, prgCmds, pCmdText)
             else
-                VSConstants.E_FAIL
+                match nextTarget with
+                | null -> VSConstants.E_FAIL
+                | target -> target.QueryStatus(&pguidCmdGroup, cCmds, prgCmds, pCmdText)
 
 [<Export(typeof<IWpfTextViewCreationListener>)>]
 [<ContentType(FSharpConstants.FSharpContentTypeName)>]
