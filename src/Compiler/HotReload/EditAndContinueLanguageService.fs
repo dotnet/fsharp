@@ -236,8 +236,15 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
     /// modules read back from disk have no debug points, so the sibling PDB is the real
     /// source of the fresh sequence points for line-shift detection, active-statement remapping and
     /// the emitted PDB delta.
+    /// <paramref name="emittedArtifacts"/> retains original compiler bytes and matching tokens for disk-backed modules.
     /// </summary>
-    member _.EmitDelta(request: DeltaEmissionRequest, ?freshDebugPdb: byte[], ?projectKey: HotReloadState.HotReloadProjectKey) =
+    member _.EmitDelta
+        (
+            request: DeltaEmissionRequest,
+            ?freshDebugPdb: byte[],
+            ?emittedArtifacts: HotReloadEmittedArtifacts,
+            ?projectKey: HotReloadState.HotReloadProjectKey
+        ) =
         let trace = shouldTraceMetadata ()
 
         if trace then
@@ -293,7 +300,7 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
                         CurrentGeneration = session.CurrentGeneration
                         PreviousGenerationId = session.PreviousGenerationId
                         SynthesizedNames = Some synthesizedMap
-                        EmittedArtifacts = None
+                        EmittedArtifacts = emittedArtifacts
                     }
 
                 let delta =
@@ -412,6 +419,7 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
             updatedImplementation: CheckedAssemblyAfterOptimization,
             ilModule: ILModuleDef,
             ?freshDebugPdb: byte[],
+            ?emittedArtifacts: HotReloadEmittedArtifacts,
             ?projectKey: HotReloadState.HotReloadProjectKey,
             ?deferCommit: bool
         ) : Result<DeltaEmissionResult, HotReloadError> =
@@ -495,7 +503,14 @@ type internal FSharpEditAndContinueLanguageService private (getSessionStore: uni
                                 |> snd
                         }
 
-                    match this.EmitDelta(request, ?freshDebugPdb = freshDebugPdb, ?projectKey = projectKey) with
+                    match
+                        this.EmitDelta(
+                            request,
+                            ?freshDebugPdb = freshDebugPdb,
+                            ?emittedArtifacts = emittedArtifacts,
+                            ?projectKey = projectKey
+                        )
+                    with
                     | Ok result ->
                         let delta = result.Delta
 

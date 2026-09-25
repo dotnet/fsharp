@@ -465,7 +465,9 @@ type internal FSharpHotReloadService
                         | None ->
                             let ilModuleResult: Result<_, FSharpHotReloadError> =
                                 try
-                                    readIlModule outputPath |> Ok
+                                    let ilModule = readIlModule outputPath
+                                    let assemblyBytes = File.ReadAllBytes outputPath
+                                    Ok(ilModule, assemblyBytes)
                                 with ex ->
                                     Result.Error(
                                         FSharpHotReloadError.DeltaEmissionFailed(
@@ -475,7 +477,7 @@ type internal FSharpHotReloadService
 
                             match ilModuleResult with
                             | Result.Error error -> return Result.Error error
-                            | Ok ilModule ->
+                            | Ok(ilModule, assemblyBytes) ->
                                 lock hotReloadGate (fun () ->
                                     match synthesizedTypeMaps.TryGetValue projectKey with
                                     | true, map ->
@@ -499,12 +501,22 @@ type internal FSharpHotReloadService
                                     else
                                         None
 
+                                // Preserve the compiler output. A second write changes row order and tail calls,
+                                // which makes unchanged synthesized methods appear different from the baseline.
+                                let emittedArtifacts: FSharp.Compiler.IlxDeltaEmitter.HotReloadEmittedArtifacts =
+                                    {
+                                        AssemblyBytes = assemblyBytes
+                                        PdbBytes = freshDebugPdb
+                                        TokenMappings = FSharp.Compiler.HotReloadBaseline.createReadModuleTokenMappings ()
+                                    }
+
                                 match
                                     editAndContinueService.EmitDeltaForCompilation(
                                         tcGlobals,
                                         implementationFiles,
                                         ilModule,
                                         ?freshDebugPdb = freshDebugPdb,
+                                        emittedArtifacts = emittedArtifacts,
                                         projectKey = projectKey,
                                         deferCommit = true
                                     )

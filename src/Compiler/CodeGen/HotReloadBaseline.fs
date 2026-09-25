@@ -1707,6 +1707,19 @@ let attachMetadataHandlesFromBytes (bytes: byte[]) (baseline: FSharpEmitBaseline
     | :? InvalidOperationException
     | :? OverflowException -> baseline
 
+/// Maps read-back definitions to tokens from their original metadata rows.
+let createReadModuleTokenMappings () : ILTokenMappings =
+    let token (table: TableName) rowId =
+        if rowId > 0 then (table.Index <<< 24) ||| rowId else 0
+
+    {
+        TypeDefTokenMap = fun (_, typeDef) -> token TableNames.TypeDef typeDef.MetadataIndex
+        FieldDefTokenMap = fun _ fieldDef -> token TableNames.Field fieldDef.MetadataIndex
+        MethodDefTokenMap = fun _ methodDef -> token TableNames.Method methodDef.MetadataIndex
+        PropertyTokenMap = fun _ propertyDef -> token TableNames.Property propertyDef.MetadataIndex
+        EventTokenMap = fun _ eventDef -> token TableNames.Event eventDef.MetadataIndex
+    }
+
 /// <summary>
 /// Create a baseline directly from emitted assembly artifacts.
 /// Shared by CLI and checker entry points to keep token/heap capture behavior aligned.

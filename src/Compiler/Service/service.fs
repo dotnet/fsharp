@@ -365,106 +365,26 @@ type FSharpChecker
         | HotReloadError.UnsupportedEdit diagnostics -> FSharpHotReloadError.UnsupportedEdit(FSharpHotReloadRudeEditMapping.ofDiagnostics diagnostics)
         | HotReloadError.DeltaEmissionException ex -> FSharpHotReloadError.DeltaEmissionFailed ex.Message
 
-    let createBaseline (tcGlobals: TcGlobals) (ilModule: ILModuleDef) (outputPath: string) =
+    let createBaseline (_tcGlobals: TcGlobals) (ilModule: ILModuleDef) (outputPath: string) =
         let pdbPath = Path.ChangeExtension(outputPath, ".pdb")
 
-        let writerOptions: ILBinaryWriter.options =
-            {
-                ilg = tcGlobals.ilg
-                outfile = outputPath
-                pdbfile = if File.Exists(pdbPath) then Some pdbPath else None
-                emitTailcalls = false
-                deterministic = true
-                portablePDB = true
-                embeddedPDB = false
-                embedAllSource = false
-                embedSourceList = []
-                allGivenSources = []
-                sourceLink = ""
-                checksumAlgorithm = HashAlgorithm.Sha256
-                signer = None
-                dumpDebugInfo = false
-                referenceAssemblyOnly = false
-                referenceAssemblyAttribOpt = None
-                referenceAssemblySignatureHash = None
-                pathMap = PathMap.empty
-                moduleCustomDebugInfoRows = []
-                methodCustomDebugInfoRows = Map.empty
-            }
+        let portablePdbSnapshot =
+            if File.Exists pdbPath then
+                let pdbBytes = File.ReadAllBytes pdbPath
 
-        let _, pdbBytesOpt, tokenMappings, _ =
-            ILBinaryWriter.WriteILBinaryInMemoryWithArtifacts(writerOptions, ilModule, id)
-
-        let portablePdbSnapshot = pdbBytesOpt |> Option.map HotReloadPdb.createSnapshot
-        let assemblyBytes = File.ReadAllBytes(outputPath)
-
-        let baseline =
-            HotReloadBaseline.createFromEmittedArtifacts ilModule tokenMappings assemblyBytes portablePdbSnapshot None
-
-        // The in-memory rewrite above passes no hot reload CDI side channel, so its PDB
-        // never carries EnC rows or the F# synthesized-name snapshot. The on-disk PDB
-        // produced by the flag-on build is the durable source: read it as a sibling input
-        // when the rewrite yielded none. Recorded synthesized-name snapshots take
-        // precedence over IL reconstruction; absent records preserve the old fallback.
-        let baseline =
-            if
-                baseline.SynthesizedNameSnapshotSource = SynthesizedNameSnapshotSource.Reconstructed
-                && File.Exists(pdbPath)
-            then
-                match FSharp.Compiler.EncMethodDebugInformation.readSynthesizedNameSnapshotFromPortablePdb (File.ReadAllBytes pdbPath) with
-                | Some recordedSnapshot ->
-                    if isEnvVarTruthy "FSHARP_HOTRELOAD_TRACE_CLOSURENAMES" then
-                        printfn "[fsharp-hotreload][closure-names] synthesized-name snapshot source=recorded buckets=%d" (Map.count recordedSnapshot)
-
-                    { baseline with
-                        SynthesizedNameSnapshot = recordedSnapshot
-                        SynthesizedNameSnapshotSource = SynthesizedNameSnapshotSource.Recorded
-                    }
-                | None ->
-                    if isEnvVarTruthy "FSHARP_HOTRELOAD_TRACE_CLOSURENAMES" then
-                        printfn
-                            "[fsharp-hotreload][closure-names] synthesized-name snapshot source=reconstructed buckets=%d"
-                            (Map.count baseline.SynthesizedNameSnapshot)
-
-                    baseline
+                match ILBaselineReader.readPortablePdbMetadata pdbBytes with
+                | Some _ -> Some(HotReloadPdb.createSnapshot pdbBytes)
+                | None -> None
             else
-                baseline
+                None
 
-        // The in-memory rewrite above passes no EnC CDI side channel (methodCustomDebugInfoRows =
-        // Map.empty), so its PDB never carries EnC rows. The on-disk PDB produced by the flag-on
-        // build is the durable source of the baseline EnC method debug information: read it as a
-        // sibling input when the rewrite yielded none (flag-off PDBs and PDBs without EnC rows still decode to the
-        // empty map, and the session starts fine either way).
-        let baseline =
-            if Map.isEmpty baseline.EncMethodDebugInfos && File.Exists(pdbPath) then
-                let baseline =
-                    { baseline with
-                        EncMethodDebugInfos =
-                            FSharp.Compiler.EncMethodDebugInformation.readEncMethodDebugInfoFromPortablePdb (File.ReadAllBytes(pdbPath))
-                    }
-
-                // Closure mapping: the chain -> closure-name tables are a pure function
-                // of the occurrence keys just decoded (baseline names are occurrence-derived
-                // under the flag), so a session started from disk — typically in a different
-                // process than the fsc that built the baseline — reconstructs exactly the
-                // tables the emitting compile installed. Fail closed for replay-named and
-                // mid-session baselines (see deriveEncClosureNamesFromEncDebugInfos).
-                { baseline with
-                    EncClosureNames = HotReloadBaseline.deriveEncClosureNames ilModule baseline
-                }
-            else
-                baseline
-
-        // Sequence-point sibling-read: the IL module is read back from disk WITHOUT debug points, so
-        // the in-memory rewrite's PDB decodes to an empty sequence-point view. The on-disk PDB
-        // written by the build is the real source of the committed lines that line-shift
-        // detection and active-statement remapping diff against.
-        if Map.isEmpty baseline.SequencePointSnapshots && File.Exists(pdbPath) then
-            { baseline with
-                SequencePointSnapshots = FSharp.Compiler.HotReload.ActiveStatementAnalysis.decodeMethodSequencePoints (File.ReadAllBytes(pdbPath))
-            }
-        else
-            baseline
+        // A rewrite can reorder definitions. Original image bytes require tokens from the original metadata rows.
+        HotReloadBaseline.createFromEmittedArtifacts
+            ilModule
+            (HotReloadBaseline.createReadModuleTokenMappings ())
+            (File.ReadAllBytes outputPath)
+            portablePdbSnapshot
+            None
 
     let toHotReloadImplementationSnapshot (typedImplFiles: CheckedImplFile list) : CheckedAssemblyAfterOptimization =
         typedImplFiles
