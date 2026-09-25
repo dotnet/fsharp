@@ -864,6 +864,56 @@ let appValue () = "app generation {generation}"
             sessionA.Commit())
 
     [<Fact>]
+    let ``Long output options keep separate baselines for one project`` () =
+        withProjectDir "fcs-hotreload-session-long-output" (fun projectDir ->
+            let fsPath = Path.Combine(projectDir, "Library.fs")
+            let dllPathA = Path.Combine(projectDir, "LibraryA.dll")
+            let dllPathB = Path.Combine(projectDir, "LibraryB.dll")
+            File.WriteAllText(fsPath, libSource 0)
+
+            let checker = createChecker ()
+
+            let optionsFor dllPath =
+                let options = prepareProjectOptions checker fsPath dllPath (libSource 0) []
+
+                { options with
+                    OtherOptions =
+                        options.OtherOptions
+                        |> Array.map (fun option ->
+                            if option.StartsWith("-o:", StringComparison.Ordinal) then
+                                "--out:" + option.Substring(3)
+                            else
+                                option) }
+
+            let optionsA = optionsFor dllPathA
+            let optionsB = optionsFor dllPathB
+            Assert.Equal(optionsA.ProjectFileName, optionsB.ProjectFileName)
+            compileProject checker optionsA true
+            compileProject checker optionsB true
+
+            use session = checker.CreateHotReloadSession()
+            addProjectOrFail session (createProjectSnapshot optionsA)
+            addProjectOrFail session (createProjectSnapshot optionsB)
+            Assert.Equal(2, session.ProjectIdentifiers.Length)
+
+            let outputPaths =
+                session.ProjectIdentifiers
+                |> List.map (fun identifier -> identifier.OutputFileName)
+                |> Set.ofList
+
+            Assert.Equal<Set<string>>(Set.ofList [ dllPathA; dllPathB ], outputPaths)
+
+            // Both outputs share source text, but each output owns its baseline and generation chain.
+            writeAndCompile checker fsPath optionsA (libSource 1) false
+            compileProject checker optionsB false
+            let deltaA = emitOrFail session (createProjectSnapshot optionsA)
+            let deltaB = emitOrFail session (createProjectSnapshot optionsB)
+            Assert.NotEmpty(deltaA.UpdatedMethods)
+            Assert.NotEmpty(deltaB.UpdatedMethods)
+            Assert.NotEqual<Guid>(deltaA.GenerationId, deltaB.GenerationId)
+            session.Commit())
+
+    [<Fact>]
     let ``Disposing a session ends it without affecting other sessions`` () =
         withProjectDir "fcs-hotreload-session-dispose" (fun projectDir ->
             let fsPathA = Path.Combine(projectDir, "LibraryA.fs")
