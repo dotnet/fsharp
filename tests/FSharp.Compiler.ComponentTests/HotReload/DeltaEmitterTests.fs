@@ -60,7 +60,8 @@ module DeltaEmitterTests =
                 let stderr = proc.StandardError.ReadToEndAsync()
                 proc.WaitForExit()
                 ValueSome (proc.ExitCode, stdout.GetAwaiter().GetResult(), stderr.GetAwaiter().GetResult())
-        with _ -> ValueNone
+        with
+        | :? System.ComponentModel.Win32Exception as error when error.NativeErrorCode = 2 -> ValueNone
 
     let private createMethod (ilg: ILGlobals) name returnValue =
         let methodBody =
@@ -2059,6 +2060,98 @@ module DeltaEmitterTests =
         MetadataUpdater.ApplyUpdate(assembly, delta.Metadata, delta.IL, pdb)
 
         Assert.Equal(43, method.Invoke(null, [||]) :?> int)
+#else
+        ()
+#endif
+
+    /// Builds the distinct return conventions that share a Task<int> method signature.
+    let private createRuntimeAsyncModule isAsync value =
+        let ilg = PrimaryAssemblyILGlobals
+        let taskRef = mkILTyRef(ilg.typ_Int32.TypeRef.Scope, "System.Threading.Tasks.Task`1")
+        let taskType = mkILBoxedType (mkILTySpec(taskRef, [ ilg.typ_Int32 ]))
+        let instructions =
+            if isAsync then [ AI_ldc(DT_I4, ILConst.I4 value); I_ret ]
+            else [ AI_ldnull; I_ret ]
+        let body = mkMethodBody (false, [], 1, nonBranchingInstrsToCode instructions, None, None)
+        let methodDef =
+            mkILNonGenericStaticMethod ("GetValue", ILMemberAccess.Public, [], mkILReturn taskType, body)
+            |> fun methodDef -> methodDef.WithAsync(isAsync)
+        let moduleDef = createModule value
+        { moduleDef with
+            TypeDefs =
+                moduleDef.TypeDefs.AsList()
+                |> List.map (fun typeDef -> typeDef.With(methods = mkILMethods [ methodDef ]))
+                |> mkILTypeDefs }
+
+    /// Uses the same method identity for both return conventions.
+    let private runtimeAsyncRequest (baseline: FSharpEmitBaseline) isAsync value =
+        { IlxDeltaRequest.Baseline = baseline
+          UpdatedTypes = [ "Sample.Type" ]
+          UpdatedMethods = baseline.MethodTokens |> Map.toList |> List.map fst
+          UpdatedAccessors = []
+          Module = createRuntimeAsyncModule isAsync value |> TestHelpers.withDebuggableAttribute
+          SymbolChanges = None
+          CurrentGeneration = 1
+          PreviousGenerationId = None
+          SynthesizedNames = None
+          EmittedArtifacts = None }
+
+    [<Theory>]
+    [<InlineData(false, true)>]
+    [<InlineData(true, false)>]
+    let ``emitDelta rejects runtime async implementation flag transitions`` (baselineAsync, updatedAsync) =
+        let artifacts = TestHelpers.createBaselineFromModule (createRuntimeAsyncModule baselineAsync 42)
+        let request = runtimeAsyncRequest artifacts.Baseline updatedAsync 43
+        let error = Assert.Throws<HotReloadUnsupportedEditException>(fun () -> emitDelta request |> ignore)
+        Assert.Contains("runtime-async", error.Message)
+        Assert.Contains("GetValue", error.Message)
+
+    [<Theory>]
+    [<InlineData(false, true)>]
+    [<InlineData(true, false)>]
+    let ``emitDelta rejects runtime async transitions on delta-added methods`` (baselineAsync, updatedAsync) =
+        let moduleDef = createRuntimeAsyncModule baselineAsync 42
+        let emptyModule =
+            { moduleDef with
+                TypeDefs =
+                    moduleDef.TypeDefs.AsList()
+                    |> List.map (fun typeDef -> typeDef.With(methods = mkILMethods []))
+                    |> mkILTypeDefs }
+        let artifacts = TestHelpers.createBaselineFromModule emptyModule
+        let firstDelta = emitDelta (runtimeAsyncRequest artifacts.Baseline baselineAsync 42)
+        let nextBaseline = firstDelta.UpdatedBaseline.Value
+        let request =
+            { runtimeAsyncRequest nextBaseline updatedAsync 43 with
+                CurrentGeneration = 2
+                PreviousGenerationId = Some firstDelta.GenerationId }
+        let error = Assert.Throws<HotReloadUnsupportedEditException>(fun () -> emitDelta request |> ignore)
+        Assert.Contains("runtime-async", error.Message)
+
+    [<Fact>]
+    let ``emitDelta preserves runtime async flags in metadata`` () =
+        let artifacts = TestHelpers.createBaselineFromModule (createRuntimeAsyncModule true 42)
+        let delta = emitDelta (runtimeAsyncRequest artifacts.Baseline true 43)
+        use provider = MetadataReaderProvider.FromMetadataImage(ImmutableArray.CreateRange delta.Metadata)
+        let reader = provider.GetMetadataReader()
+        let row = reader.GetMethodDefinition(Assert.Single(reader.MethodDefinitions))
+        Assert.Equal(0x2000, int row.ImplAttributes &&& 0x2000)
+
+    [<FactForNETCOREAPP>]
+    let ``emitDelta preserves runtime async flags for body updates`` () =
+#if NETCOREAPP
+        Assert.SkipUnless(MetadataUpdater.IsSupported, "Set DOTNET_MODIFIABLE_ASSEMBLIES=debug to enable runtime updates.")
+        Assert.SkipUnless(Enum.IsDefined(typeof<MethodImplAttributes>, "Async"), "The runtime must expose MethodImplAttributes.Async.")
+        Assert.SkipUnless(isNull (Type.GetType("Mono.Runtime")), "This runtime-async update test requires CoreCLR.")
+        let artifacts = TestHelpers.createBaselineFromModule (createRuntimeAsyncModule true 42)
+        let assembly = Assembly.Load(File.ReadAllBytes artifacts.AssemblyPath)
+        let method = assembly.GetType("Sample.Type").GetMethod("GetValue")
+        let invoke () = (method.Invoke(null, [||]) :?> System.Threading.Tasks.Task<int>).GetAwaiter().GetResult()
+        Assert.Equal(42, invoke ())
+
+        let delta = emitDelta (runtimeAsyncRequest artifacts.Baseline true 43)
+        let pdb = delta.Pdb |> Option.defaultValue [||]
+        MetadataUpdater.ApplyUpdate(assembly, delta.Metadata, delta.IL, pdb)
+        Assert.Equal(43, invoke ())
 #else
         ()
 #endif
