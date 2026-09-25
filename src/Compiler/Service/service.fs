@@ -493,92 +493,23 @@ type FSharpChecker
         | HotReloadError.DeltaEmissionException ex -> FSharpHotReloadError.DeltaEmissionFailed ex.Message
 
     let createBaseline (_tcGlobals: TcGlobals) (ilModule: ILModuleDef) (outputPath: string) =
+        let assemblyBytes = File.ReadAllBytes outputPath
         let pdbPath = Path.ChangeExtension(outputPath, ".pdb")
 
-        // The baseline maps must refer to the original disk image, not a reordered rewrite.
-        let token (table: FSharp.Compiler.AbstractIL.BinaryConstants.TableName) rowId =
-            if rowId > 0 then (table.Index <<< 24) ||| rowId else 0
-
-        let tokenMappings: ILBinaryWriter.ILTokenMappings =
-            {
-                TypeDefTokenMap = fun (_, typeDef) -> token FSharp.Compiler.AbstractIL.BinaryConstants.TableNames.TypeDef typeDef.MetadataIndex
-                FieldDefTokenMap = fun _ fieldDef -> token FSharp.Compiler.AbstractIL.BinaryConstants.TableNames.Field fieldDef.MetadataIndex
-                MethodDefTokenMap = fun _ methodDef -> token FSharp.Compiler.AbstractIL.BinaryConstants.TableNames.Method methodDef.MetadataIndex
-                PropertyTokenMap = fun _ propertyDef -> token FSharp.Compiler.AbstractIL.BinaryConstants.TableNames.Property propertyDef.MetadataIndex
-                EventTokenMap = fun _ eventDef -> token FSharp.Compiler.AbstractIL.BinaryConstants.TableNames.Event eventDef.MetadataIndex
-            }
-
-        let assemblyBytes = File.ReadAllBytes(outputPath)
-
-        let siblingPdbBytes =
-            if File.Exists(pdbPath) then
-                let bytes = File.ReadAllBytes(pdbPath)
-
-                if HotReloadPdb.matchesAssembly assemblyBytes bytes then
-                    Some bytes
-                else
-                    None
+        let portablePdbSnapshot =
+            if File.Exists pdbPath then
+                File.ReadAllBytes pdbPath
+                |> HotReloadPdb.tryCreateSnapshotForAssembly assemblyBytes
             else
                 None
 
-        let portablePdbSnapshot =
-            siblingPdbBytes |> Option.map HotReloadPdb.createSnapshot
-
-        let baseline =
-            HotReloadBaseline.createFromEmittedArtifacts ilModule tokenMappings assemblyBytes portablePdbSnapshot None
-
-        // Prefer the recorded name map from the matching PDB over reconstructed names.
-        let baseline =
-            if
-                baseline.SynthesizedNameSnapshotSource = SynthesizedNameSnapshotSource.Reconstructed
-                && siblingPdbBytes.IsSome
-            then
-                match FSharp.Compiler.EncMethodDebugInformation.readSynthesizedNameSnapshotFromPortablePdb siblingPdbBytes.Value with
-                | Some recordedSnapshot ->
-                    if isEnvVarTruthy "FSHARP_HOTRELOAD_TRACE_CLOSURENAMES" then
-                        printfn "[fsharp-hotreload][closure-names] synthesized-name snapshot source=recorded buckets=%d" (Map.count recordedSnapshot)
-
-                    { baseline with
-                        SynthesizedNameSnapshot = recordedSnapshot
-                        SynthesizedNameSnapshotSource = SynthesizedNameSnapshotSource.Recorded
-                    }
-                | None ->
-                    if isEnvVarTruthy "FSHARP_HOTRELOAD_TRACE_CLOSURENAMES" then
-                        printfn
-                            "[fsharp-hotreload][closure-names] synthesized-name snapshot source=reconstructed buckets=%d"
-                            (Map.count baseline.SynthesizedNameSnapshot)
-
-                    baseline
-            else
-                baseline
-
-        // Recover EnC debug information when the initial snapshot did not include it.
-        let baseline =
-            if Map.isEmpty baseline.EncMethodDebugInfos && siblingPdbBytes.IsSome then
-                let baseline =
-                    { baseline with
-                        EncMethodDebugInfos = FSharp.Compiler.EncMethodDebugInformation.readEncMethodDebugInfoFromPortablePdb siblingPdbBytes.Value
-                    }
-
-                // Closure mapping: the chain -> closure-name tables are a pure function
-                // of the occurrence keys just decoded (baseline names are occurrence-derived
-                // under the flag), so a session started from disk — typically in a different
-                // process than the fsc that built the baseline — reconstructs exactly the
-                // tables the emitting compile installed. Fail closed for replay-named and
-                // mid-session baselines (see deriveEncClosureNamesFromEncDebugInfos).
-                { baseline with
-                    EncClosureNames = HotReloadBaseline.deriveEncClosureNames ilModule baseline
-                }
-            else
-                baseline
-
-        // The matching PDB supplies the committed source positions for line-only edits.
-        if Map.isEmpty baseline.SequencePointSnapshots && siblingPdbBytes.IsSome then
-            { baseline with
-                SequencePointSnapshots = FSharp.Compiler.HotReload.ActiveStatementAnalysis.decodeMethodSequencePoints siblingPdbBytes.Value
-            }
-        else
-            baseline
+        // A rewrite can reorder definitions. Original image bytes require tokens from the original metadata rows.
+        HotReloadBaseline.createFromEmittedArtifacts
+            ilModule
+            (HotReloadBaseline.createReadModuleTokenMappings ())
+            assemblyBytes
+            portablePdbSnapshot
+            None
 
     let toHotReloadImplementationSnapshot (typedImplFiles: CheckedImplFile list) : CheckedAssemblyAfterOptimization =
         typedImplFiles
@@ -1219,7 +1150,7 @@ type FSharpChecker
 
     member internal _.FrameworkImportsCache = backgroundCompiler.FrameworkImportsCache
 
-    /// Compile a DLL from cached typecheck results, skipping parse/typecheck/optimization.
+    /// Compile a DLL from cached typecheck results, with optimizer passes or a reusable optimizer prefix.
     /// For dev-loop use only. Requires keepAssemblyContents=true.
     /// Writes the assembly and portable PDB to outfile and returns the emitted module
     /// parsed back from the written bytes.
@@ -1316,6 +1247,7 @@ type FSharpChecker
             let sigDataAttributes, sigDataResources =
                 EncodeSignatureData(tcConfig, tcGlobals, exportRemapping, generatedCcu, outfile, false)
 
+            // This path follows fsc code generation after type checking resolves SRTP constraints.
             let tcVal = LightweightTcValForUsingInBuildMethodCall tcGlobals traitCtxtNone
             let importMap = tcImports.GetImportMap()
             let optEnv0 = GetInitialOptimizationEnv(tcImports, tcGlobals)
@@ -1569,18 +1501,7 @@ type FSharpChecker
             // not directly callable with the read-back IL objects used by the delta emitter. The
             // read-back objects carry metadata row ids from the same bytes, so these mappings
             // expose the actual emitted tokens without a second module write.
-            let token (table: FSharp.Compiler.AbstractIL.BinaryConstants.TableName) rowId =
-                if rowId > 0 then (table.Index <<< 24) ||| rowId else 0
-
-            let tokenMappings: ILBinaryWriter.ILTokenMappings =
-                {
-                    TypeDefTokenMap = fun (_, typeDef) -> token FSharp.Compiler.AbstractIL.BinaryConstants.TableNames.TypeDef typeDef.MetadataIndex
-                    FieldDefTokenMap = fun _ fieldDef -> token FSharp.Compiler.AbstractIL.BinaryConstants.TableNames.Field fieldDef.MetadataIndex
-                    MethodDefTokenMap = fun _ methodDef -> token FSharp.Compiler.AbstractIL.BinaryConstants.TableNames.Method methodDef.MetadataIndex
-                    PropertyTokenMap =
-                        fun _ propertyDef -> token FSharp.Compiler.AbstractIL.BinaryConstants.TableNames.Property propertyDef.MetadataIndex
-                    EventTokenMap = fun _ eventDef -> token FSharp.Compiler.AbstractIL.BinaryConstants.TableNames.Event eventDef.MetadataIndex
-                }
+            let tokenMappings = HotReloadBaseline.createReadModuleTokenMappings ()
 
             return
                 {

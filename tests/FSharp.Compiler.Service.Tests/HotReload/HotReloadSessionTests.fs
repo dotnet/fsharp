@@ -1042,7 +1042,7 @@ module Contract =
 namespace IncrementalState
 
 module Contract =
-    let inline adjust value = value + {adjustment}
+    let inline adjust (value: int) = value + {adjustment}
     let private hidden value = value * {multiplier}
     let publicValue value = hidden (adjust value)
 """
@@ -1260,6 +1260,61 @@ let current () = FileB.derived () + {generation}
                 Environment.SetEnvironmentVariable("FSHARP_HOTRELOAD_INPROCESS_COMPILE", previousFlag))
 
     [<Fact>]
+    let ``Disk baseline tokens retain original metadata order for anonymous records`` () =
+        withProjectDir "fcs-hotreload-session-original-metadata" (fun projectDir ->
+            let fsPath = Path.Combine(projectDir, "Library.fs")
+            let dllPath = Path.Combine(projectDir, "Library.dll")
+
+            let source greeting =
+                $"""
+namespace Sample
+
+type Type =
+    static member GetMessage() =
+        let value = {{| Name = "watch"; Prefix = "{greeting}" |}}
+        value.Prefix + ", " + value.Name
+"""
+
+            File.WriteAllText(fsPath, source "Hello")
+            let checker = createChecker ()
+            let options = prepareProjectOptions checker fsPath dllPath (source "Hello") []
+            compileProject checker options true
+
+            use session = checker.CreateHotReloadSession()
+            let snapshot = createProjectSnapshot options
+            addProjectOrFail session snapshot
+            let baseline = (projectViewOrFail session snapshot).Baseline
+
+            use peReader = new PEReader(ImmutableArray.CreateRange(File.ReadAllBytes dllPath))
+            let reader = peReader.GetMetadataReader()
+
+            let typeName handle =
+                let definition = reader.GetTypeDefinition handle
+                let ns = reader.GetString definition.Namespace
+                let name = reader.GetString definition.Name
+                if String.IsNullOrEmpty ns then name else ns + "." + name
+
+            for KeyValue(name, token) in baseline.TypeTokens do
+                Assert.Equal(name, typeName (MetadataTokens.TypeDefinitionHandle(token &&& 0x00ffffff)))
+
+            for KeyValue(key, token) in baseline.MethodTokens do
+                let definition = reader.GetMethodDefinition(MetadataTokens.MethodDefinitionHandle(token &&& 0x00ffffff))
+                Assert.Equal(key.DeclaringType, typeName (definition.GetDeclaringType()))
+                Assert.Equal(key.Name, reader.GetString definition.Name)
+
+            Assert.Equal<byte>(File.ReadAllBytes(Path.ChangeExtension(dllPath, ".pdb")), baseline.PortablePdb.Value.Bytes)
+
+            writeAndCompile checker fsPath options (source "Welcome") false
+            let delta = emitOrFail session (createProjectSnapshot options)
+
+            use deltaProvider = MetadataReaderProvider.FromMetadataImage(ImmutableArray.CreateRange delta.Metadata)
+            let deltaReader = deltaProvider.GetMetadataReader()
+            Assert.Equal(0, deltaReader.GetTableRowCount TableIndex.TypeSpec)
+            Assert.Equal(0, deltaReader.GetTableRowCount TableIndex.MemberRef)
+            let methodToken = Assert.Single(delta.UpdatedMethods)
+            Assert.Equal("GetMessage", reader.GetString(reader.GetMethodDefinition(MetadataTokens.MethodDefinitionHandle(methodToken &&& 0x00ffffff)).Name)))
+
+    [<Fact>]
     let ``Two independent sessions emit deltas without interference`` () =
         withProjectDir "fcs-hotreload-session-independent" (fun projectDir ->
             let fsPathA = Path.Combine(projectDir, "LibraryA.fs")
@@ -1310,6 +1365,56 @@ let current () = FileB.derived () + {generation}
             let deltaA2 = emitOrFail sessionA (createProjectSnapshot optionsA)
             Assert.Equal(deltaA1.GenerationId, deltaA2.BaseGenerationId)
             sessionA.Commit())
+
+    [<Fact>]
+    let ``Long output options keep separate baselines for one project`` () =
+        withProjectDir "fcs-hotreload-session-long-output" (fun projectDir ->
+            let fsPath = Path.Combine(projectDir, "Library.fs")
+            let dllPathA = Path.Combine(projectDir, "LibraryA.dll")
+            let dllPathB = Path.Combine(projectDir, "LibraryB.dll")
+            File.WriteAllText(fsPath, libSource 0)
+
+            let checker = createChecker ()
+
+            let optionsFor dllPath =
+                let options = prepareProjectOptions checker fsPath dllPath (libSource 0) []
+
+                { options with
+                    OtherOptions =
+                        options.OtherOptions
+                        |> Array.map (fun option ->
+                            if option.StartsWith("-o:", StringComparison.Ordinal) then
+                                "--out:" + option.Substring(3)
+                            else
+                                option) }
+
+            let optionsA = optionsFor dllPathA
+            let optionsB = optionsFor dllPathB
+            Assert.Equal(optionsA.ProjectFileName, optionsB.ProjectFileName)
+            compileProject checker optionsA true
+            compileProject checker optionsB true
+
+            use session = checker.CreateHotReloadSession()
+            addProjectOrFail session (createProjectSnapshot optionsA)
+            addProjectOrFail session (createProjectSnapshot optionsB)
+            Assert.Equal(2, session.ProjectIdentifiers.Length)
+
+            let outputPaths =
+                session.ProjectIdentifiers
+                |> List.map (fun identifier -> identifier.OutputFileName)
+                |> Set.ofList
+
+            Assert.Equal<Set<string>>(Set.ofList [ dllPathA; dllPathB ], outputPaths)
+
+            // Both outputs share source text, but each output owns its baseline and generation chain.
+            writeAndCompile checker fsPath optionsA (libSource 1) false
+            compileProject checker optionsB false
+            let deltaA = emitOrFail session (createProjectSnapshot optionsA)
+            let deltaB = emitOrFail session (createProjectSnapshot optionsB)
+            Assert.NotEmpty(deltaA.UpdatedMethods)
+            Assert.NotEmpty(deltaB.UpdatedMethods)
+            Assert.NotEqual<Guid>(deltaA.GenerationId, deltaB.GenerationId)
+            session.Commit())
 
     [<Fact>]
     let ``Disposing a session ends it without affecting other sessions`` () =

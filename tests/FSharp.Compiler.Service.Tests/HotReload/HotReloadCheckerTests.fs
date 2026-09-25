@@ -577,8 +577,12 @@ type Type =
         // Distinct projects, distinct baselines; the first session is still alive and
         // tracks exactly its own project after the second session started.
         Assert.NotEqual<Guid>(firstView.Baseline.ModuleId, secondView.Baseline.ModuleId)
-        Assert.Equal<FSharpProjectIdentifier list>([ firstSnapshot.Identifier ], firstSession.ProjectIdentifiers)
-        Assert.Equal<FSharpProjectIdentifier list>([ secondSnapshot.Identifier ], secondSession.ProjectIdentifiers)
+        Assert.Equal<FSharpProjectIdentifier list>(
+            [ FSharpProjectIdentifier(firstSnapshot.ProjectFileName, dllPath1) ],
+            firstSession.ProjectIdentifiers)
+        Assert.Equal<FSharpProjectIdentifier list>(
+            [ FSharpProjectIdentifier(secondSnapshot.ProjectFileName, dllPath2) ],
+            secondSession.ProjectIdentifiers)
 
         let firstViewAfter =
             match firstSession.TryGetProjectView(firstSnapshot) with

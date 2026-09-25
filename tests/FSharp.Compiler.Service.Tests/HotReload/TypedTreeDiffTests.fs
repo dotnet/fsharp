@@ -70,7 +70,7 @@ type internal DiffTestHarness() =
             checker.ParseAndCheckProject(projectOptions)
             |> Async.RunSynchronouslyImmediate
 
-        if projectResults.HasCriticalErrors then
+        if projectResults.Diagnostics |> Array.exists (fun diagnostic -> diagnostic.Severity = FSharpDiagnosticSeverity.Error) then
             let errors =
                 projectResults.Diagnostics
                 |> Array.choose (fun diag -> if diag.Severity = FSharpDiagnosticSeverity.Error then Some diag.Message else None)
@@ -2557,3 +2557,83 @@ let compute (x: int) =
                 "UpdateParameters"
             ]
             result
+
+
+    [<Theory>]
+    [<InlineData("type I = abstract M: int -> int", "type I = abstract M: string -> int")>]
+    [<InlineData("type I = interface end", "type I = abstract M: int -> int")>]
+    [<InlineData("type I = abstract M: int -> int", "type I = interface end")>]
+    [<InlineData("[<AbstractClass>] type C() = abstract M: int -> int", "[<AbstractClass>] type C() = abstract M: string -> int")>]
+    [<InlineData("type I = abstract M: x: int -> int", "type I = abstract M: y: int -> int")>]
+    member _.``abstract member metadata change fails closed`` (before: string, after: string) =
+        use harness = new DiffTestHarness()
+        harness.Rewrite(Sources.moduleHeader + before)
+        let baseline = harness.Compile()
+        harness.Rewrite(Sources.moduleHeader + after)
+        let updated = harness.Compile()
+
+        let result = harness.Diff baseline updated
+
+        Assert.Empty(result.SemanticEdits)
+        Assert.Contains(result.RudeEdits, fun edit -> edit.Kind = RudeEditKind.TypeLayoutChange)
+
+    [<Theory>]
+    [<InlineData("member _.M([<System.ParamArray>] xs: int[]) = xs.Length", "member _.M(xs: int[]) = xs.Length")>]
+    member _.``parameter attribute change fails closed`` (before: string, after: string) =
+        use harness = new DiffTestHarness()
+        harness.Rewrite(Sources.moduleHeader + "type C() = " + before)
+        let baseline = harness.Compile()
+        harness.Rewrite(Sources.moduleHeader + "type C() = " + after)
+        let updated = harness.Compile()
+
+        let result = harness.Diff baseline updated
+
+        Assert.Empty(result.SemanticEdits)
+        Assert.Contains(result.RudeEdits, fun edit -> edit.Kind = RudeEditKind.Unsupported)
+
+    [<Theory>]
+    [<InlineData("type R = { [<field: System.Obsolete(\"before\")>] X: int }", "type R = { [<field: System.Obsolete(\"after\")>] X: int }")>]
+    [<InlineData("type R = { [<property: System.Obsolete(\"before\")>] X: int }", "type R = { [<property: System.Obsolete(\"after\")>] X: int }")>]
+    [<InlineData("type U = | [<System.Obsolete(\"before\")>] A of int | B", "type U = | [<System.Obsolete(\"after\")>] A of int | B")>]
+    member _.``field property and union case attribute changes fail closed`` (before: string, after: string) =
+        use harness = new DiffTestHarness()
+        harness.Rewrite(Sources.moduleHeader + before)
+        let baseline = harness.Compile()
+        harness.Rewrite(Sources.moduleHeader + after)
+        let updated = harness.Compile()
+
+        let result = harness.Diff baseline updated
+
+        Assert.Contains(result.RudeEdits, fun edit -> edit.Kind = RudeEditKind.TypeLayoutChange)
+
+    [<Fact>]
+    member _.``unchanged abstract member metadata produces no edits`` () =
+        use harness = new DiffTestHarness()
+        let source = Sources.moduleHeader + "type I = abstract M: [<System.ParamArray>] xs: int[] -> int"
+        harness.Rewrite(source)
+        let baseline = harness.Compile()
+        harness.Rewrite(source)
+        let updated = harness.Compile()
+
+        let result = harness.Diff baseline updated
+
+        Assert.Empty(result.SemanticEdits)
+        Assert.Empty(result.RudeEdits)
+
+
+    [<Theory>]
+    [<InlineData("int[]")>]
+    [<InlineData("int[,]")>]
+    [<InlineData("byref<int>")>]
+    member _.``intrinsic parameter identities survive independent compilations`` (parameterType: string) =
+        use harness = new DiffTestHarness()
+        let source = Sources.moduleHeader + $"type C() = member _.M(x: {parameterType}) = ()"
+        harness.Rewrite(source)
+        let baseline = harness.Compile()
+        harness.Rewrite(source)
+        let updated = harness.Compile()
+
+        let result = harness.Diff baseline updated
+
+        Assert.Empty(result.SemanticEdits)
+        Assert.Empty(result.RudeEdits)

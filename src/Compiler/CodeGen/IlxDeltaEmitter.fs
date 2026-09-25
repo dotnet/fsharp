@@ -144,9 +144,8 @@ type IlxDelta =
         ActiveStatementUpdates: FSharp.Compiler.CodeAnalysis.FSharpActiveStatementRemapResult list
     }
 
-/// Bytes and token mappings produced by the same whole-module write that created a fresh output
-/// assembly. Callers pass None when no such write is available, preserving the legacy emitter
-/// re-serialization path.
+/// Original compiler output bytes and matching writer or reader token mappings.
+/// Callers pass None when output artifacts are unavailable and the emitter must serialize the module.
 type HotReloadEmittedArtifacts =
     {
         AssemblyBytes: byte[]
