@@ -69,19 +69,21 @@ type FsiPropertyPage() =
 type FSharpCompilerPropertyPage() =
     inherit DialogPage()
 
-    // Registry (HKCU) is the single source of truth shared with the MSBuild build process,
-    // so disable the base DialogPage storage to avoid spurious writes on VS start.
-    override _.LoadSettingsFromStorage() = ()
-    override _.SaveSettingsToStorage() = ()
+    let mutable useNetSdkCompiler =
+        RegistryHelpers.tryReadHKCU<int> fsharpCompilerRegSubKey useNetSdkCompilerRegValue <> Some 0
+
+    override _.LoadSettingsFromStorage() =
+        useNetSdkCompiler <- RegistryHelpers.tryReadHKCU<int> fsharpCompilerRegSubKey useNetSdkCompilerRegValue <> Some 0
+
+    override _.SaveSettingsToStorage() =
+        RegistryHelpers.writeHKCU fsharpCompilerRegSubKey useNetSdkCompilerRegValue (if useNetSdkCompiler then 1 else 0)
 
     [<ResourceCategory(SRProperties.FSharpCompilerMisc)>]
     [<ResourceDisplayName(SRProperties.FSharpCompilerUseNetSdk)>]
     [<ResourceDescription(SRProperties.FSharpCompilerUseNetSdkDescr)>]
     member _.UseNetSdkCompiler
-        with get () =
-            RegistryHelpers.tryReadHKCU<int> fsharpCompilerRegSubKey useNetSdkCompilerRegValue <> Some 0
-        and set v =
-            RegistryHelpers.writeHKCU fsharpCompilerRegSubKey useNetSdkCompilerRegValue (if v then 1 else 0)
+        with get () = useNetSdkCompiler
+        and set v = useNetSdkCompiler <- v
 
 // CompletionSet
 type internal FsiCompletionSet(imageList,source:Source) =

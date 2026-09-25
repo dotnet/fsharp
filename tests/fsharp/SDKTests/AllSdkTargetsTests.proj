@@ -11,7 +11,7 @@
   </ItemGroup>
 
   <Target Name="Build">
-    <MSBuild Projects="@(TestsToRun)" Targets="Test" Properties="Configuration=$(Configuration)" />
+    <MSBuild Projects="@(TestsToRun)" Targets="Test" Properties="Configuration=$(Configuration);_FSharpUseNetSdkCompilerVsOption=1" />
   </Target>
 
   <Target Name="Rebuild" />

@@ -14,10 +14,11 @@ module FSharpCompilerOptionPageTests =
     let private valueName = "UseNetSdkCompiler"
 
     // The base DialogPage constructor needs live VS services (JoinableTaskContext), which are
-    // unavailable in a headless unit-test host. The UseNetSdkCompiler get/set only touch HKCU and
-    // never read base/DialogPage state, so bypass the constructor to exercise the real property.
+    // unavailable in a headless unit-test host. Initialize the page through its storage hook.
     let private newPage () =
-        FormatterServices.GetUninitializedObject(typeof<FSharpCompilerPropertyPage>) :?> FSharpCompilerPropertyPage
+        let page = FormatterServices.GetUninitializedObject(typeof<FSharpCompilerPropertyPage>) :?> FSharpCompilerPropertyPage
+        page.LoadSettingsFromStorage()
+        page
 
     // Save/restore the real HKCU value so the test never corrupts a developer's setting.
     let private withCleanRegistry (body: unit -> unit) =
@@ -47,21 +48,33 @@ module FSharpCompilerOptionPageTests =
             // merely constructing + getting must not write anything
             Assert.Equal<int option>(None, readRaw () |> Option.map (fun o -> unbox<int> o)))
 
-    [<Fact>]
-    let ``Setting false writes DWORD 0 and get returns false`` () =
+    [<Theory>]
+    [<InlineData(-1, false)>]
+    [<InlineData(0, false)>]
+    [<InlineData(1, false)>]
+    [<InlineData(-1, true)>]
+    [<InlineData(0, true)>]
+    [<InlineData(1, true)>]
+    let ``Edits persist only when saved and reload discards unsaved edits`` (initial: int, save: bool) =
         withCleanRegistry (fun () ->
+            if initial <> -1 then
+                use k = Registry.CurrentUser.CreateSubKey(subKey)
+                k.SetValue(valueName, initial, RegistryValueKind.DWord)
+            let original = readRaw ()
             let page = newPage ()
-            page.UseNetSdkCompiler <- false
-            Assert.Equal<int option>(Some 0, readRaw () |> Option.map (fun o -> unbox<int> o))
-            Assert.False(page.UseNetSdkCompiler))
-
-    [<Fact>]
-    let ``Setting true writes DWORD 1 and get returns true`` () =
-        withCleanRegistry (fun () ->
-            let page = newPage ()
-            page.UseNetSdkCompiler <- true
-            Assert.Equal<int option>(Some 1, readRaw () |> Option.map (fun o -> unbox<int> o))
-            Assert.True(page.UseNetSdkCompiler))
+            let initialEnabled = initial <> 0
+            Assert.Equal(initialEnabled, page.UseNetSdkCompiler)
+            page.UseNetSdkCompiler <- not initialEnabled
+            Assert.Equal(not initialEnabled, page.UseNetSdkCompiler)
+            Assert.Equal<obj option>(original, readRaw ())
+            if save then
+                page.SaveSettingsToStorage()
+                Assert.Equal<int option>(Some (if initialEnabled then 0 else 1), readRaw () |> Option.map unbox<int>)
+                page.UseNetSdkCompiler <- initialEnabled
+            page.LoadSettingsFromStorage()
+            Assert.Equal((if save then not initialEnabled else initialEnabled), page.UseNetSdkCompiler)
+            if not save then
+                Assert.Equal<obj option>(original, readRaw ()))
 
     [<Fact>]
     let ``A get-only cycle does not write to the registry`` () =

@@ -8,11 +8,12 @@
 #>
 [CmdletBinding()]
 param(
-    [string] $RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..\..")).Path,
+    [string] $RepoRoot,
     [string] $DotNet = "dotnet"
 )
 
 $ErrorActionPreference = "Stop"
+if (-not $RepoRoot) { $RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..\..")).Path }
 
 $shim    = Join-Path $RepoRoot "vsintegration\shims\Microsoft.FSharp.ShimHelpers.props"
 $targets = Join-Path $RepoRoot "src\FSharp.Build\Microsoft.FSharp.Targets"
@@ -34,14 +35,15 @@ $probe = Join-Path $work "probe.proj"
 </Project>
 "@ | Set-Content -Path $probe -Encoding UTF8
 
-$regKey = "HKCU\Software\Microsoft\VisualStudio\FSharp"
+$regKey = [Microsoft.Win32.Registry]::CurrentUser.CreateSubKey("Software\Microsoft\VisualStudio\FSharp")
 $regVal = "UseNetSdkCompiler"
 
 # Save & later restore any pre-existing value so we never corrupt a developer's setting.
-$saved = (reg query $regKey /v $regVal 2>$null | Select-String $regVal)
+$saved = $regKey.GetValue($regVal, $null, [Microsoft.Win32.RegistryValueOptions]::DoNotExpandEnvironmentNames)
+if ($null -ne $saved) { $savedKind = $regKey.GetValueKind($regVal) }
 
-function Clear-Reg { reg delete $regKey /v $regVal /f 2>$null | Out-Null }
-function Set-Reg([int]$v) { reg add $regKey /v $regVal /t REG_DWORD /d $v /f | Out-Null }
+function Clear-Reg { $regKey.DeleteValue($regVal, $false) }
+function Set-Reg([int]$v) { $regKey.SetValue($regVal, $v, [Microsoft.Win32.RegistryValueKind]::DWord) }
 
 function Get-Props([string[]]$extra) {
     Push-Location $work
@@ -67,7 +69,8 @@ function Check($name, $cond, $detail) {
 
 try {
     $sdk = Get-Props @()
-    $sdkRoot = (Split-Path (Split-Path $sdk.MSBuildToolsPath -Parent) -Parent) + '\'
+    # A trailing backslash escapes the closing quote for paths with spaces in Windows PowerShell 5.1.
+    $sdkRoot = (Split-Path (Split-Path $sdk.MSBuildToolsPath -Parent) -Parent) + [System.IO.Path]::AltDirectorySeparatorChar
     $sdkVersion = Split-Path $sdk.MSBuildToolsPath -Leaf
     $sdkCases = @(
         @{ Name = 'resolved SDK'; Root = $sdkRoot; Version = $sdkVersion },
@@ -109,13 +112,13 @@ try {
         ("got: $($p | ConvertTo-Json -Compress)")
 }
 finally {
-    # restore registry
-    if ($saved) {
-        $v = ($saved -split '\s+')[-1]
-        if ($v -match '^0x') { $v = [Convert]::ToInt32($v,16) }
-        Set-Reg ([int]$v)
-    } else { Clear-Reg }
-    Remove-Item -Recurse -Force $work -ErrorAction SilentlyContinue
+    try {
+        if ($null -ne $saved) { $regKey.SetValue($regVal, $saved, $savedKind) }
+        else { Clear-Reg }
+    } finally {
+        $regKey.Dispose()
+        Remove-Item -Recurse -Force $work
+    }
 }
 
 if ($failures.Count -gt 0) { Write-Error "Registry compiler-selection matrix FAILED: $($failures -join ', ')"; exit 1 }
