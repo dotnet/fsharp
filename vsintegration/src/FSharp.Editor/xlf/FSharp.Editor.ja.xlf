@@ -140,6 +140,11 @@ Suggest names for unresolved identifiers;</source>
         <target state="translated">型の注釈を指定しないでインターフェイスを実装する</target>
         <note />
       </trans-unit>
+      <trans-unit id="InsertSnippet">
+        <source>Insert Snippet</source>
+        <target state="new">Insert Snippet</target>
+        <note />
+      </trans-unit>
       <trans-unit id="IntelliSensePageKeywords">
         <source>Completion Lists;
 Show completion list after a character is deleted;
@@ -291,6 +296,11 @@ F# 構文規則に準拠した改行を追加して、署名を指定された�
       <trans-unit id="RemoveUnusedOpens">
         <source>Remove unused open declarations</source>
         <target state="translated">未使用の Open 宣言を削除する</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SurroundWith">
+        <source>Surround With</source>
+        <target state="new">Surround With</target>
         <note />
       </trans-unit>
       <trans-unit id="UnexpectedEqualsInFieldExpectedColon">
