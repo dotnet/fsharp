@@ -403,6 +403,16 @@ F# 구문 규칙에 맞는 줄 바꿈을 추가하여 지정된 너비에 시그
         <target state="translated">'nameof' 사용</target>
         <note />
       </trans-unit>
+      <trans-unit id="UseOptionActivePatternReturn">
+        <source>Use option return for active pattern</source>
+        <target state="new">Use option return for active pattern</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UseStructActivePatternReturn">
+        <source>Use struct return for active pattern</source>
+        <target state="new">Use struct return for active pattern</target>
+        <note />
+      </trans-unit>
       <trans-unit id="UseTripleQuotedInterpolation">
         <source>Use triple quoted string interpolation.</source>
         <target state="translated">삼중 따옴표로 묶인 분자열 보간을 사용합니다.</target>
