@@ -268,18 +268,14 @@ module FsiCliTests =
     // Issue #18086: --quiet must suppress NuGet restore stdout chatter
     // ============================================================================
 
-    let private writeTempScript (content: string) : string =
-        let path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"fsi_quiet_{System.Guid.NewGuid():N}.fsx")
-        System.IO.File.WriteAllText(path, content)
-        path
-
-    let private runFsiScript (extraArgs: string list) (scriptBody: string) =
-        let scriptPath = writeTempScript scriptBody
+    let private runFsiScript (extraArgs: string list) (makeScript: DirectoryInfo -> string) =
+        let directory = TestFramework.createTemporaryDirectory()
         try
-            let result = runFsiProcess (extraArgs @ [scriptPath])
-            result
+            let scriptPath = Path.Combine(directory.FullName, "fsi quiet.fsx")
+            File.WriteAllText(scriptPath, makeScript directory)
+            runFsiProcess (extraArgs @ [$"\"{scriptPath}\""])
         finally
-            try System.IO.File.Delete(scriptPath) with _ -> ()
+            directory.Delete(true)
 
     // On failure, surface the FSI subprocess output so CI logs show what actually happened (e.g. a
     // NuGet restore error) instead of a bare "Expected 0, Actual 1". xunit's Assert.Equal/Contains do
@@ -299,15 +295,6 @@ module FsiCliTests =
         if result.StdOut.Contains(unexpected) then
             Assert.Fail($"Expected FSI stdout NOT to contain '%s{unexpected}'.\n%s{fsiDiagnostics result}")
 
-    // The FSI #r "nuget:" restore below must request a package (and closure) already in the offline
-    // restore cache on the internal signed build (which cannot restore online), and it must be a genuine
-    // third-party assembly (not in the shared framework) so that on .NET Core it resolves to a restored
-    // package rather than the framework (which would emit NU1510 and skip real nuget resolution). FsCheck
-    // fits: a real third-party library whose only dependency (FSharp.Core) is always cached and filtered
-    // from fsx resolution, centrally pinned (eng/Packages.props) and restored by FSharp.Core.UnitTests, so
-    // it restores offline-clean on both net472 and .NET Core. Read the exact pinned version baked into this
-    // test assembly via AssemblyMetadata (see FSharp.Compiler.ComponentTests.fsproj) so the request never
-    // drifts from the pin; keep the package id below in sync with that project.
     [<Literal>]
     let private restoreTestPackageId = "FsCheck"
 
@@ -319,13 +306,36 @@ module FsiCliTests =
         |> Option.defaultWith (fun () ->
             failwith "AssemblyMetadata 'FsiRestoreTestPackageVersion' is missing. It should be emitted by FSharp.Compiler.ComponentTests.fsproj from the central FsCheck PackageVersion.")
 
+    let private runFsiRestoreScript extraArgs scriptBody =
+        runFsiScript extraArgs (fun directory ->
+            let feed = directory.CreateSubdirectory("local feed")
+            let packages =
+                [ restoreTestPackageId, restoreTestPackageVersion
+#if !NETCOREAPP
+                  "Microsoft.NETFramework.ReferenceAssemblies", "1.0.0"
+                  "Microsoft.NETFramework.ReferenceAssemblies.net472", "1.0.0"
+                  "Microsoft.NETFramework.ReferenceAssemblies.net48", "1.0.0"
+#endif
+                ]
+            for packageId, version in packages do
+                let id = packageId.ToLowerInvariant()
+                let fileName = $"{id}.{version}.nupkg"
+                let package = TestFramework.requireFile (TestFramework.getPackagesDir()) (Path.Combine(id, version, fileName))
+                File.Copy(package, Path.Combine(feed.FullName, fileName))
+
+            File.WriteAllText(
+                Path.Combine(directory.FullName, "NuGet.config"),
+                "<configuration><packageSources><clear /></packageSources><auditSources><clear /></auditSources></configuration>")
+            // Sources are part of FSI's resolution-cache key; a unique feed forces a real restore.
+            let source = feed.FullName.Replace("\"", "\"\"")
+            String.concat Environment.NewLine
+                [ $"#i @\"nuget:{source}\""
+                  $"#r \"nuget: {restoreTestPackageId}, {restoreTestPackageVersion}\""
+                  scriptBody ])
+
     [<Fact>]
     let ``FSI quiet mode suppresses NuGet restore output from stdout`` () =
-        let script = $"""
-#r "nuget: {restoreTestPackageId}, {restoreTestPackageVersion}"
-printfn "RESULT_MARKER_18086"
-"""
-        let result = runFsiScript ["--quiet"] script
+        let result = runFsiRestoreScript ["--quiet"] "printfn \"RESULT_MARKER_18086\""
         assertFsiExitCode 0 result
         assertStdOutContains "RESULT_MARKER_18086" result
         assertStdOutDoesNotContain "Determining projects to restore" result
@@ -334,17 +344,13 @@ printfn "RESULT_MARKER_18086"
 
     [<Fact>]
     let ``FSI default (non-quiet) mode still evaluates script and prints user output`` () =
-        let script = $"""
-#r "nuget: {restoreTestPackageId}, {restoreTestPackageVersion}"
-printfn "RESULT_MARKER_18086_DEFAULT"
-"""
-        let result = runFsiScript [] script
+        let result = runFsiRestoreScript [] "printfn \"RESULT_MARKER_18086_DEFAULT\""
         assertFsiExitCode 0 result
         assertStdOutContains "RESULT_MARKER_18086_DEFAULT" result
 
     [<Fact>]
     let ``FSI quiet mode still prints user printfn output to stdout`` () =
         let script = """printfn "hello from quiet script" """
-        let result = runFsiScript ["--quiet"] script
+        let result = runFsiScript ["--quiet"] (fun _ -> script)
         assertFsiExitCode 0 result
         assertStdOutContains "hello from quiet script" result
