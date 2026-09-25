@@ -884,6 +884,38 @@ let private tryGetMethodGenericArity (var: Val) =
         else
             Some(max 0 (valReprInfo.NumTypars - numEnclosingTypars))
 
+/// Captures emitted argument names and attributes, including return-value attributes.
+let private parameterMetadataIdentity denv (var: Val) =
+    let argumentIdentity (argument: ArgReprInfo) =
+        identityNode
+            "argument"
+            [
+                argument.Name
+                |> Option.map (fun name -> identityNode "name" [ name.idText ])
+                |> Option.defaultValue "unnamed"
+                argument.Attribs.AsList()
+                |> List.map (attribIdentity denv)
+                |> identityNode "attributes"
+            ]
+
+    match var.ValReprInfo with
+    | None -> "none"
+    | Some(ValReprInfo(_, arguments, result)) ->
+        // The instance receiver has no Param row and its source name does not affect metadata.
+        let emittedArguments =
+            match var.MemberInfo, arguments with
+            | Some memberInfo, _ :: rest when memberInfo.MemberFlags.IsInstance -> rest
+            | _ -> arguments
+
+        identityNode
+            "parameters"
+            [
+                emittedArguments
+                |> List.map (List.map argumentIdentity >> identityNode "group")
+                |> identityNode "arguments"
+                argumentIdentity result
+            ]
+
 let private bindingMetadataIdentity denv (var: Val) =
     let memberFlags =
         match var.MemberInfo with
@@ -913,6 +945,7 @@ let private bindingMetadataIdentity denv (var: Val) =
             string var.IsCompiledAsTopLevel
             var.LiteralValue |> Option.map constDigest |> Option.defaultValue "none"
             var.Attribs |> List.map (attribIdentity denv) |> identityNode "attributes"
+            parameterMetadataIdentity denv var
         ]
 
 let rec private snapshotModuleBinding g denv (path: string list) (bindings, entities) binding =
@@ -1024,6 +1057,22 @@ and private snapshotTycon denv path (tycon: Tycon) =
         sb.Append("|attributes:").Append(tycon.Attribs |> List.map (attribIdentity denv) |> identityNode "attributes")
         |> ignore
 
+        // Abstract slots have no body binding, so the entity owns their complete metadata identity.
+        tycon.MembersOfFSharpTyconSorted
+        |> List.filter (fun memberRef -> memberRef.IsDispatchSlot)
+        |> List.map (fun memberRef ->
+            identityNode
+                "slot"
+                [
+                    memberRef.CompiledName None
+                    tyToString denv memberRef.Type
+                    typarConstraintsDigest denv memberRef.Typars
+                    bindingMetadataIdentity denv memberRef.Deref
+                ])
+        |> List.sort
+        |> identityNode "slots"
+        |> fun slots -> sb.Append("|slots:").Append(slots) |> ignore
+
         match tycon.TypeReprInfo with
         | TFSharpTyconRepr data ->
             sb.Append("|fs-kind:").Append(data.fsobjmodel_kind.ToString()) |> ignore
@@ -1037,6 +1086,8 @@ and private snapshotTycon denv path (tycon: Tycon) =
                         .Append(case.LogicalName)
                         .Append("[")
                         .Append(case.Accessibility.AsILMemberAccess().ToString())
+                        .Append(",attributes=")
+                        .Append(case.Attribs |> List.map (attribIdentity denv) |> identityNode "attributes")
                         .Append("]")
                     |> ignore
 
@@ -1053,6 +1104,18 @@ and private snapshotTycon denv path (tycon: Tycon) =
                             .Append(field.IsMutable)
                             .Append(",volatile=")
                             .Append(field.IsVolatile)
+                            .Append(",field-attributes=")
+                            .Append(
+                                field.FieldAttribs
+                                |> List.map (attribIdentity denv)
+                                |> identityNode "attributes"
+                            )
+                            .Append(",property-attributes=")
+                            .Append(
+                                field.PropertyAttribs
+                                |> List.map (attribIdentity denv)
+                                |> identityNode "attributes"
+                            )
                             .Append("]=")
                             .Append(tyToString denv field.FormalType)
                         |> ignore))
@@ -1074,6 +1137,18 @@ and private snapshotTycon denv path (tycon: Tycon) =
                         .Append(field.IsMutable)
                         .Append(",volatile=")
                         .Append(field.IsVolatile)
+                        .Append(",field-attributes=")
+                        .Append(
+                            field.FieldAttribs
+                            |> List.map (attribIdentity denv)
+                            |> identityNode "attributes"
+                        )
+                        .Append(",property-attributes=")
+                        .Append(
+                            field.PropertyAttribs
+                            |> List.map (attribIdentity denv)
+                            |> identityNode "attributes"
+                        )
                         .Append("]")
                     |> ignore
 
