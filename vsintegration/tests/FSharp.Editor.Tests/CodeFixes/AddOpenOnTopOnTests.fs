@@ -427,6 +427,52 @@ let x : RecordType = null
     Assert.Equal(expected, actual)
 
 [<Fact>]
+let ``Fixes FS0039 for missing opens - suggests the generic namespace for a generic type usage`` () =
+    let code =
+        """
+let f (enumerator: IEnumerator<int>) = ()
+"""
+
+    let expected =
+        Some
+            {
+                Message = "open System.Collections.Generic"
+                FixedCode =
+                    """
+open System.Collections.Generic
+
+let f (enumerator: IEnumerator<int>) = ()
+"""
+            }
+
+    let actual = codeFix |> tryFix code Auto
+
+    Assert.Equal(expected, actual)
+
+[<Fact>]
+let ``Fixes FS0039 for missing opens - suggests the non-generic namespace for a non-generic type usage`` () =
+    let code =
+        """
+let f (enumerator: IEnumerator) = ()
+"""
+
+    let expected =
+        Some
+            {
+                Message = "open System.Collections"
+                FixedCode =
+                    """
+open System.Collections
+
+let f (enumerator: IEnumerator) = ()
+"""
+            }
+
+    let actual = codeFix |> tryFix code Auto
+
+    Assert.Equal(expected, actual)
+
+[<Fact>]
 let ``Fixes FS0039 for missing opens - module has multiline attributes`` () =
     let code =
         """
