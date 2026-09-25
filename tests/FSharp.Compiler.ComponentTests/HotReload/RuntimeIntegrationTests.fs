@@ -1073,6 +1073,7 @@ type Type =
                 let methodType = assembly.GetType("Sample.Type", throwOnError = true)
                 let method = methodType.GetMethod("GetMessage", BindingFlags.Public ||| BindingFlags.Static)
 
+                printfn "[hotreload-runtime] %s baseline invocation: %s" testLabel runtimeDllPath
                 let baselineMessage = method.Invoke(null, [||]) :?> string
                 Assert.Equal(baselineExpected, baselineMessage)
 
@@ -1107,15 +1108,21 @@ type Type =
                     Assert.NotEmpty(delta.IL)
 
                     let pdbBytes = delta.Pdb |> Option.defaultValue Array.empty
+                    // Retain the exact applied streams when metadata diagnosis is requested.
+                    if Environment.GetEnvironmentVariable("FSHARP_HOTRELOAD_KEEP_TEST_OUTPUT") = "1" then
+                        File.WriteAllBytes(Path.Combine(projectDir, "delta.meta"), delta.Metadata)
+                        File.WriteAllBytes(Path.Combine(projectDir, "delta.il"), delta.IL)
                     MetadataUpdater.ApplyUpdate(assembly, delta.Metadata.AsSpan(), delta.IL.AsSpan(), pdbBytes.AsSpan())
 
+                    printfn "[hotreload-runtime] %s updated invocation" testLabel
                     let updatedMessage = method.Invoke(null, [||]) :?> string
                     Assert.Equal(updatedExpected, updatedMessage)
 
             finally
                 try loadContext.Unload() with _ -> ()
                 try checker.InvalidateAll() with _ -> ()
-                try Directory.Delete(projectDir, true) with _ -> ()
+                if Environment.GetEnvironmentVariable("FSHARP_HOTRELOAD_KEEP_TEST_OUTPUT") <> "1" then
+                    try Directory.Delete(projectDir, true) with _ -> ()
 
     /// Single string update against a default (baseline-only capability) session.
     let private applySingleStringUpdateAndAssertRuntimeResult testLabel baselineSource updatedSource baselineExpected updatedExpected =
