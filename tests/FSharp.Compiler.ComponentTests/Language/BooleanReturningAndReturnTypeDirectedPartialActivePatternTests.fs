@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-// Because of shared fsi session.
-[<FSharp.Test.RunTestCasesInSequence>]
+// Leverage caching/prevent concurrent mutation via long-lived fsiSession in module state
+[<Xunit.TestClass(DisableParallelization = true)>]
 module Language.BooleanReturningAndReturnTypeDirectedPartialActivePatternTests
 
 open Xunit
@@ -26,7 +26,7 @@ let ``Partial struct active pattern returns bool`` () =
     |> withLangVersion10
     |> typecheck
     |> shouldSucceed
-    
+
 [<Fact>]
 let ``Single case active pattern returning bool should success`` () =
     FSharp """
@@ -35,7 +35,7 @@ let (IsA r) = "A"
     """
     |> typecheck
     |> shouldSucceed
-    
+
 [<Fact>]
 let ``Partial struct active pattern results can be retrieved`` () =
     Fsx """

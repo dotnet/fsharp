@@ -1,7 +1,7 @@
-// #Regression #Conformance #TypesAndModules #GeneratedEqualityAndHashing #Attributes 
+// #Regression #Conformance #TypesAndModules #GeneratedEqualityAndHashing #Attributes
 //<Expects status="error" span="(14,12-14,14)" id="FS0001">The type 'R' does not support the 'comparison' constraint\. For example, it does not support the 'System\.IComparable' interface$</Expects>
 
-module M25 = 
+module M25 =
   (* [<ReferenceEquality(true)>] *)
   (* [<StructuralComparison(true)>] *)
   [<StructuralEquality>]

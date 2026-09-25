@@ -24,9 +24,9 @@ if actual <> expected then failwith $"Expected nameof({{expected}}) to be '{{exp
         |> withLangVersionPreview
         |> compileAndRun
         |> shouldSucceed
-        
+
     [<Fact>]
-    let ``nameof() with member of a generic type should return the name without types provided`` () =    
+    let ``nameof() with member of a generic type should return the name without types provided`` () =
         let source = $"""
 type A<'a>() =
     static member P = ()
@@ -41,12 +41,12 @@ if actual <> expected then failwith $"Expected nameof({{expected}}) to be '{{exp
         |> ignoreWarnings
         |> compileAndRun
         |> shouldSucceed
-        
+
     [<Theory>]
     [<InlineData(1)>]
     [<InlineData(2)>]
     [<InlineData(3)>]
-    let ``nameof() with member of a generic type should return the name`` numberOfGenericParameters =    
+    let ``nameof() with member of a generic type should return the name`` numberOfGenericParameters =
         let source = $"""
 type A<{(seq {for i in 1 .. numberOfGenericParameters -> "'a" + string i } |> String.concat ", ")}>() =
     static member P = ()
@@ -62,7 +62,7 @@ if actual <> expected then failwith $"Expected nameof({{expected}}) to be '{{exp
         |> shouldSucceed
 
     [<Fact>]
-    let ``nameof() in a pattern should return the correct type`` () =    
+    let ``nameof() in a pattern should return the correct type`` () =
         let source = $"""
 open Microsoft.FSharp.Reflection
 let f x = match x with nameof x -> true | _ -> false
@@ -86,7 +86,7 @@ if actual <> expected then failwith $"Expected type to be '{{expected}}', but go
 
 
     [<Fact>]
-    let ``nameof works for pattern matching of DU case names`` () =  
+    let ``nameof works for pattern matching of DU case names`` () =
         let source = """
 /// Simplified version of EventStore's API
 type RecordedEvent = { EventType: string; Data: string }

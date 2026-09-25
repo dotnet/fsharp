@@ -1,4 +1,4 @@
-// #Conformance #PatternMatching #TypeTests 
+// #Conformance #PatternMatching #TypeTests
 //<Expects status="success"></Expects>
 
 type Foo () = class end
@@ -13,7 +13,7 @@ let test1() =
     | false, :? Bar -> 1 // Shouldn't match, true <> false
     |     _, :? Foo -> 2 // Should return 2
     | _             -> 3 // Unexplored
-    
+
 let test2() =
     match instOfBox, true with
     | :? Bar, false -> 1 // Shouldn't match, false <> true

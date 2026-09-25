@@ -683,6 +683,9 @@ type ILCallingConv =
 
     static member Static = ILCallingConvStatics.Static
 
+    static member Create(thisConv, argConv) =
+        ILCallingConvStatics.Get(thisConv, argConv)
+
     override x.ToString() =
         if x.IsStatic then "static" else "instance"
 
@@ -693,9 +696,54 @@ and ILCallingConvStatics() =
 
     static let staticCallConv = Callconv(ILThisConvention.Static, ILArgConvention.Default)
 
+    /// Every combination, so that reading metadata never allocates a calling convention. The two
+    /// common ones above are placed in the table too, so all uses share one instance per combination.
+    static let allCallConvs =
+        let thisConvs =
+            [|
+                ILThisConvention.Instance
+                ILThisConvention.InstanceExplicit
+                ILThisConvention.Static
+            |]
+
+        let argConvs =
+            [|
+                ILArgConvention.Default
+                ILArgConvention.CDecl
+                ILArgConvention.StdCall
+                ILArgConvention.ThisCall
+                ILArgConvention.FastCall
+                ILArgConvention.VarArg
+            |]
+
+        Array.init (thisConvs.Length * argConvs.Length) (fun i ->
+            match thisConvs[i / argConvs.Length], argConvs[i % argConvs.Length] with
+            | ILThisConvention.Instance, ILArgConvention.Default -> instanceCallConv
+            | ILThisConvention.Static, ILArgConvention.Default -> staticCallConv
+            | thisConv, argConv -> Callconv(thisConv, argConv))
+
     static member Instance = instanceCallConv
 
     static member Static = staticCallConv
+
+    static member Get(thisConv, argConv) =
+        // Explicit, so adding a case to either union is a compile error here rather than a bad index.
+        let thisIdx =
+            match thisConv with
+            | ILThisConvention.Instance -> 0
+            | ILThisConvention.InstanceExplicit -> 1
+            | ILThisConvention.Static -> 2
+
+        let argIdx =
+            match argConv with
+            | ILArgConvention.Default -> 0
+            | ILArgConvention.CDecl -> 1
+            | ILArgConvention.StdCall -> 2
+            | ILArgConvention.ThisCall -> 3
+            | ILArgConvention.FastCall -> 4
+            | ILArgConvention.VarArg -> 5
+
+        allCallConvs[thisIdx * 6 + argIdx]
 
 type ILBoxity =
     | AsObject
@@ -1260,16 +1308,21 @@ type WellKnownILAttributes =
     | AttributeUsageAttribute = (1u <<< 24)
     | NotNullIfNotNullAttribute = (1u <<< 25)
     | OverloadResolutionPriorityAttribute = (1u <<< 26)
+    | RequireNamedArgumentsAttribute = (1u <<< 27)
     | NotComputed = (1u <<< 31)
 
-type internal ILAttributesStoredRepr =
-    | Reader of (int32 -> ILAttribute[])
-    | Given of ILAttributes
-
 [<Sealed; NoEquality; NoComparison>]
-type ILAttributesStored private (metadataIndex: int32, initial: ILAttributesStoredRepr) =
+type ILAttributesStored private (metadataIndex: int32, reader: int32 -> ILAttribute[], given: ILAttribute[] | null) =
+
+    /// Stands in for the reader when the attributes are already in hand, so the field can stay non-null.
+    static let noReader: int32 -> ILAttribute[] = fun _ -> [||]
+
+    // Holds the array rather than an ILAttributesStoredRepr. The reader function is shared per metadata
+    // reader per attribute table, so it is held directly; wrapping it cost one object per owner, and most
+    // owners are never forced, so most of those existed only to say "not read yet". ILAttributes is a
+    // struct over the array, so rewrapping on each read allocates nothing.
     [<VolatileField>]
-    let mutable repr = initial
+    let mutable attrArray: ILAttribute[] | null = given
 
     [<VolatileField>]
     let mutable wellKnownFlags = WellKnownILAttributes.NotComputed
@@ -1277,12 +1330,12 @@ type ILAttributesStored private (metadataIndex: int32, initial: ILAttributesStor
     member _.MetadataIndex = metadataIndex
 
     member x.CustomAttrs: ILAttributes =
-        match repr with
-        | Given a -> a
-        | Reader f ->
-            let r = ILAttributes(f metadataIndex)
-            repr <- Given r
-            r
+        match attrArray with
+        | null ->
+            let a = reader metadataIndex
+            attrArray <- a
+            ILAttributes a
+        | a -> ILAttributes a
 
     member x.HasWellKnownAttribute(flag: WellKnownILAttributes, compute: ILAttributes -> WellKnownILAttributes) : bool =
         x.GetOrComputeWellKnownFlags(compute) &&& flag <> WellKnownILAttributes.None
@@ -1298,9 +1351,10 @@ type ILAttributesStored private (metadataIndex: int32, initial: ILAttributesStor
             wellKnownFlags <- computed
             computed
 
-    static member CreateReader(idx: int32, f: int32 -> ILAttribute[]) = ILAttributesStored(idx, Reader f)
+    static member CreateReader(idx: int32, f: int32 -> ILAttribute[]) = ILAttributesStored(idx, f, null)
 
-    static member CreateGiven(attrs: ILAttributes) = ILAttributesStored(-1, Given attrs)
+    static member CreateGiven(attrs: ILAttributes) =
+        ILAttributesStored(-1, noReader, attrs.AsArray())
 
 let emptyILCustomAttrs = ILAttributes [||]
 
@@ -1586,6 +1640,7 @@ type ILMethodBody =
         MaxStack: int32
         NoInlining: bool
         AggressiveInlining: bool
+        IsRuntimeAsync: bool
         Locals: ILLocals
         Code: ILCode
         DebugRange: ILDebugPoint option
@@ -2226,6 +2281,11 @@ type ILMethodDef
     member x.WithRuntime(condition) =
         x.With(implAttributes = (x.ImplAttributes |> conditionalAdd condition MethodImplAttributes.Runtime))
 
+    member x.WithAsync(condition) =
+        // MethodImplOptions.Async is not present in all target reference assemblies.
+        let asyncFlag = enum<MethodImplAttributes> 0x2000
+        x.With(implAttributes = (x.ImplAttributes |> conditionalAdd condition asyncFlag))
+
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
 
@@ -2572,6 +2632,7 @@ type ILTypeDefLayout =
     | Auto
     | Sequential of ILTypeDefLayoutInfo
     | Explicit of ILTypeDefLayoutInfo (* REVIEW: add field info here *)
+    | Extended
 
 and ILTypeDefLayoutInfo =
     {
@@ -2685,6 +2746,9 @@ let convertLayout layout =
     | ILTypeDefLayout.Auto -> TypeAttributes.AutoLayout
     | ILTypeDefLayout.Sequential _ -> TypeAttributes.SequentialLayout
     | ILTypeDefLayout.Explicit _ -> TypeAttributes.ExplicitLayout
+    | ILTypeDefLayout.Extended ->
+        // Extended layout is represented by TypeAttributes value 0x18 (both Sequential and Explicit bits set)
+        enum<TypeAttributes> (0x18)
 
 let convertEncoding encoding =
     match encoding with
@@ -4231,6 +4295,7 @@ let mkILMethodBody (initlocals, locals, maxstack, code, tag, imports) : ILMethod
         MaxStack = maxstack
         NoInlining = false
         AggressiveInlining = false
+        IsRuntimeAsync = false
         Locals = locals
         Code = code
         DebugRange = tag

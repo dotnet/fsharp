@@ -1,4 +1,4 @@
-// #Conformance #TypeConstraints 
+// #Conformance #TypeConstraints
 // Simple baselines for unmanaged constraint
 
 let testFunc<'a when 'a:unmanaged> (x : 'a) =

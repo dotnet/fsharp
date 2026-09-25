@@ -1,4 +1,4 @@
-// #Regression #Conformance #ObjectOrientedTypes #Classes 
+// #Regression #Conformance #ObjectOrientedTypes #Classes
 // Verify you don't run into value restriction for values in class
 // constructors (both implicit and explicit constructor syntax)
 // FSB 4584

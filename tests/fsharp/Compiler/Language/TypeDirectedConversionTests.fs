@@ -89,7 +89,7 @@ let test() = Thing(Do = 100)
             """
             ]))
 
-    
+
     [<Fact>]
     let ``int32 converts to System.Nullable<float> in method call property setter``() =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions([|"--optimize-"|],
@@ -196,7 +196,7 @@ let test() = Thing.Do(true)
     'bool'    
 is not compatible with type
     'System.Nullable<float>'    
-"""       
+"""
 
     [<Fact>]
     let ``Assigning a 'T value to a System.Nullable<'T> binding succeeds``() =
@@ -210,7 +210,7 @@ let test(): System.Nullable<int> = 1
             3391
             (4, 36, 4, 37)
             """This expression uses the implicit conversion 'System.Nullable.op_Implicit(value: int) : System.Nullable<int>' to convert type 'int' to type 'System.Nullable<int>'. See https://aka.ms/fsharp-implicit-convs. This warning may be disabled using '#nowarn "3391"."""
-    
+
     [<Fact>]
     let ``Assigning an int32 to a System.Nullable<float> binding fails``() =
         CompilerAssert.TypeCheckSingleError
@@ -240,8 +240,8 @@ type M() =
 let test() =
     M.A(System.Nullable 3)
     M.A(Result<int, string>.Ok 3)
-"""     
-    
+"""
+
 
     [<Fact>]
     let ``Overloading on System.Nullable and Result produces a builtin conversion warning when Nullable is picked``() =
@@ -256,12 +256,12 @@ type M() =
 
 let test() =
     M.A(3)
-"""     
+"""
             FSharpDiagnosticSeverity.Warning
             3389
             (9, 9, 9, 10)
             """This expression uses a built-in implicit conversion to convert type 'int' to type 'System.Nullable<int>'. See https://aka.ms/fsharp-implicit-convs."""
-    
+
     [<Fact>]
     let ``Overloading on System.Nullable<int>, System.Nullable<'T> and int all work without error``() =
         CompilerAssert.RunScript
@@ -349,9 +349,9 @@ Known type of argument: 'T
 Candidates:
  - static member M2.A: n: System.Nullable<float> -> unit
  - static member M2.A: n: System.Nullable<int> -> unit
- - static member M2.A: n: int -> unit""")   
+ - static member M2.A: n: int -> unit""")
          |]
-    
+
     [<Fact>]
     let ``Ambiguous overload for typar does not pick System.Nullable<'T>``() =
         CompilerAssert.TypeCheckSingleError
@@ -377,7 +377,7 @@ Candidates:
  - static member M.A: n: System.Nullable<'T> -> unit when 'T: (new: unit -> 'T) and 'T: struct and 'T :> System.ValueType
  - static member M.A: n: float -> unit
  - static member M.A: n: int -> unit"""
-    
+
     [<Fact>]
     let ``Passing an argument in nested method call property setter works``() =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions([|"--optimize-"|],
@@ -469,7 +469,7 @@ if test() <> 2 then failwith "Incorrect overload picked"
 
     [<Fact>]
     let ``Prefer nullable conversion over op_Implicit conversion``() =
-        
+
         CompilerAssert.RunScript
             """
 type M() =

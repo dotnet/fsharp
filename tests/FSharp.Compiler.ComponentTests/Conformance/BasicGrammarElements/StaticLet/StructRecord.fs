@@ -12,14 +12,14 @@ type R =
     static let mutable mutableVal = 0
     static let incrementor() = mutableVal <- mutableVal + 1
 
-    static member IncrementAndReturn() = 
+    static member IncrementAndReturn() =
         do incrementor()
         let freshVal = factoryFunc mutableVal
         freshVal.F1 + cachedval.F1
 
 
 let mutable lastVal = 0
-for i=0 to 5 do 
+for i=0 to 5 do
     lastVal <- R.IncrementAndReturn()
 
 printfn "%i" lastVal

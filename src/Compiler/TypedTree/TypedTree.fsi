@@ -3,6 +3,7 @@ module internal rec FSharp.Compiler.TypedTree
 
 open System
 open System.Diagnostics
+open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Collections.Immutable
 open Internal.Utilities.Collections
@@ -104,7 +105,12 @@ type ValFlags =
         isGeneratedEventVal: bool ->
             ValFlags
 
-    new: flags: int64 -> ValFlags
+    /// Reconstruct flags from the F# binary metadata. PickledBits always writes
+    /// ValInline.InlinedDefinition (0x00) out as ValInline.Always (0x01), so zero inline bits
+    /// are never produced by a compiler that has this normalization. Any zero bits seen here
+    /// are therefore legacy metadata from compilers older than PR #19548, which used the same
+    /// 0x00 bits to mean ValInline.Always (ShouldInline=true), and must be imported as such.
+    static member OfPickledBits: bits: int64 -> ValFlags
 
     member WithIsCompilerGenerated: isCompGen: bool -> ValFlags
 
@@ -117,6 +123,7 @@ type ValFlags =
     member IgnoresByrefScope: bool
 
     member InlineIfLambda: bool
+    member OptimizeClosureIfNotInlined: bool
 
     member InlineInfo: ValInline
 
@@ -131,6 +138,8 @@ type ValFlags =
     member IsExtensionMember: bool
 
     member IsFixed: bool
+
+    member IsPinning: bool
 
     member IsGeneratedEventVal: bool
 
@@ -156,6 +165,7 @@ type ValFlags =
     member WithIgnoresByrefScope: ValFlags
 
     member WithInlineIfLambda: ValFlags
+    member WithOptimizeClosureIfNotInlined: ValFlags
 
     member WithInlineInfo: inlineInfo: ValInline -> ValFlags
 
@@ -166,6 +176,8 @@ type ValFlags =
     member WithIsCompiledAsStaticPropertyWithoutField: ValFlags
 
     member WithIsFixed: ValFlags
+
+    member WithIsPinning: ValFlags
 
     member WithIsMemberOrModuleBinding: ValFlags
 
@@ -278,6 +290,9 @@ type EntityFlags =
 
     new: flags: int64 -> EntityFlags
 
+    /// Mark the entity's augmentation closed
+    member WithIsAugmentationClosed: EntityFlags
+
     /// Adjust the on-demand analysis about whether the entity is assumed to be a readonly struct
     member WithIsAssumedReadOnly: flag: bool -> EntityFlags
 
@@ -305,6 +320,9 @@ type EntityFlags =
 
     /// These two bits represents the on-demand analysis about whether the entity is assumed to be a readonly struct
     member TryIsAssumedReadOnly: bool voption
+
+    /// Indicates no further members can be added to this entity's augmentation
+    member IsAugmentationClosed: bool
 
     /// These two bits represents the on-demand analysis about whether the entity has the IsByRefLike attribute
     member TryIsByRefLike: bool voption
@@ -334,13 +352,6 @@ type ModuleOrNamespaceKind =
         /// If false, this namespace was implicitly constructed during type checking.
         isExplicit: bool
 
-/// A public path records where a construct lives within the global namespace
-/// of a CCU.
-type PublicPath =
-    | PubPath of string[]
-
-    member EnclosingPath: string[]
-
 /// Represents the specified visibility of the accessibility -- used to ensure IL visibility
 [<RequireQualifiedAccess>]
 type SyntaxAccess =
@@ -358,8 +369,6 @@ type CompilationPath =
 
     member NestedCompPath: n: string -> moduleKind: ModuleOrNamespaceKind -> CompilationPath
 
-    member NestedPublicPath: id: Ident -> PublicPath
-
     member AccessPath: (string * ModuleOrNamespaceKind) list
 
     member DemangledPath: string list
@@ -371,6 +380,24 @@ type CompilationPath =
     member ParentCompPath: CompilationPath
 
     member SyntaxAccess: SyntaxAccess
+
+/// A public path records where a construct lives within the global namespace of a CCU.
+///
+/// Comparison goes through pubPathEq: derived equality would also compare the enclosing path's
+/// ILScopeRef and SyntaxAccess, besides boxing this struct.
+[<Struct; NoEquality; NoComparison>]
+type PublicPath =
+    | PubPath of enclosing: CompilationPath * name: string
+
+    member EnclosingCompilationPath: CompilationPath
+
+    member Name: string
+
+    member EnclosingPath: string[]
+
+    member FullPath: string[]
+
+    member HasEmptyEnclosingPath: bool
 
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type EntityOptionalData =
@@ -438,19 +465,16 @@ type Entity =
         mutable entity_tycon_repr: TyconRepresentation
 
         /// The methods type properties of the type
-        mutable entity_tycon_tcaug: TyconAugmentation
+        mutable entity_tycon_tcaug: TyconAugmentation | null
 
         /// This field is used when the 'tycon' is really a module definition. It holds statically nested type definitions type nested modules
         mutable entity_modul_type: MaybeLazy<ModuleOrNamespaceType>
 
         /// The stable path to the type, e.g. Microsoft.FSharp.Core.FSharpFunc`2
-        mutable entity_pubpath: PublicPath option
-
-        /// The stable path to the type, e.g. Microsoft.FSharp.Core.FSharpFunc`2
         mutable entity_cpath: CompilationPath option
 
         /// Used during codegen to hold the ILX representation indicating how to access the type
-        mutable entity_il_repr_cache: cache<CompiledTypeRepr>
+        mutable entity_il_repr_cache: cache<CompiledTypeRepr> | null
 
         mutable entity_opt_data: EntityOptionalData option
     }
@@ -483,19 +507,17 @@ type Entity =
     /// Set the custom attributes wrapper on an F# type definition.
     member SetEntityAttribs: WellKnownEntityAttribs -> unit
 
-    /// Check if this entity has a specific well-known attribute, computing and caching flags if needed.
-    member HasWellKnownAttribute:
-        flag: WellKnownEntityAttributes * computeFlags: (Attribs -> WellKnownEntityAttributes) -> bool
-
-    /// Get the computed well-known attribute flags, computing and caching if needed.
-    member GetWellKnownEntityFlags: computeFlags: (Attribs -> WellKnownEntityAttributes) -> WellKnownEntityAttributes
-
     member SetCompiledName: name: string option -> unit
 
     member SetExceptionInfo: exn_info: ExceptionInfo -> unit
 
     /// Set the on-demand analysis about whether the entity is assumed to be a readonly struct
     member SetIsAssumedReadOnly: b: bool -> unit
+
+    /// Indicates no further members can be added to this entity's augmentation
+    member IsAugmentationClosed: bool
+
+    member SetAugmentationClosed: unit -> unit
 
     /// Set the on-demand analysis about whether the entity has the IsByRefLike attribute
     member SetIsByRefLike: b: bool -> unit
@@ -762,7 +784,7 @@ type Entity =
     member PreEstablishedHasDefaultConstructor: bool
 
     /// Get a blob of data indicating how this type is nested in other namespaces, modules or types.
-    member PublicPath: PublicPath option
+    member PublicPath: PublicPath voption
 
     /// The code location where the module, namespace or type is defined.
     member Range: range
@@ -784,6 +806,9 @@ type Entity =
 
     /// These two bits represents the on-demand analysis about whether the entity is assumed to be a readonly struct
     member TryIsAssumedReadOnly: bool voption
+
+    /// Indicates no further members can be added to this entity's augmentation
+    member IsAugmentationClosed: bool
 
     /// The on-demand analysis about whether the entity has the IsByRefLike attribute
     member TryIsByRefLike: bool voption
@@ -886,7 +911,7 @@ type TyconAugmentation =
         /// Properties, methods etc. in declaration order. The boolean flag for each indicates if the
         /// member is known to be an explicit interface implementation. This must be computed and
         /// saved prior to remapping assembly information.
-        tcaug_adhoc_list: ResizeArray<bool * ValRef>
+        mutable tcaug_adhoc_list: ResizeArray<bool * ValRef> | null
 
         /// Properties, methods etc. as lookup table
         mutable tcaug_adhoc: NameMultiMap<ValRef>
@@ -897,14 +922,17 @@ type TyconAugmentation =
         /// Super type, if any
         mutable tcaug_super: TType option
 
-        /// Set to true at the end of the scope where proper augmentations are allowed
-        mutable tcaug_closed: bool
-
         /// Set to true if the type is determined to be abstract
         mutable tcaug_abstract: bool
     }
 
     static member Create: unit -> TyconAugmentation
+
+    /// Record a member in declaration order, allocating the list on first use
+    member AddAdhocMember: isExplicitImpl: bool * vref: ValRef -> unit
+
+    /// Members in declaration order, empty when the type has none
+    member AdhocMembers: (bool * ValRef) list
 
     member SetCompare: x: (ValRef * ValRef) -> unit
 
@@ -1761,6 +1789,20 @@ type TraitWitnessInfo =
     /// Get the return type recorded in the member constraint.
     member ReturnType: TType option
 
+/// Non-generic marker interface for storing in TraitConstraintInfo.
+type ITraitContext = interface end
+
+/// Generic typed interface for trait context operations.
+type ITraitContext<'AccessRights, 'MethodInfo, 'InfoReader> =
+    inherit ITraitContext
+
+    /// Select extension methods relevant to solving a trait constraint
+    abstract SelectExtensionMethods:
+        traitInfo: TraitConstraintInfo * range: Text.range * infoReader: 'InfoReader -> (TType * 'MethodInfo) list
+
+    /// Get the accessibility domain for the trait context
+    abstract AccessRights: 'AccessRights
+
 /// The specification of a member constraint that must be solved
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type TraitConstraintInfo =
@@ -1775,7 +1817,8 @@ type TraitConstraintInfo =
         objAndArgTys: TTypes *
         returnTyOpt: TType option *
         source: string option ref *
-        solution: TraitConstraintSln option ref
+        solution: TraitConstraintSln option ref *
+        traitCtxt: ITraitContext option
 
     override ToString: unit -> string
 
@@ -1805,6 +1848,9 @@ type TraitConstraintInfo =
     /// Get or set the solution of the member constraint during inference
     member Solution: TraitConstraintSln option with get, set
 
+    /// Get the trait context (extension method scope) associated with this constraint
+    member TraitContext: ITraitContext option
+
     member CloneWithFreshSolution: unit -> TraitConstraintInfo
 
     /// The member kind is irrelevant to the logical properties of a trait. However it adjusts
@@ -1814,6 +1860,8 @@ type TraitConstraintInfo =
     member WithSupportTypes: TTypes -> TraitConstraintInfo
 
     member WithMemberName: string -> TraitConstraintInfo
+
+val traitCtxtNone: ITraitContext option
 
 /// Represents the solution of a member constraint during inference.
 [<NoEquality; NoComparison>]
@@ -2012,10 +2060,6 @@ type Val =
 
     member SetValAttribs: attribs: WellKnownValAttribs -> unit
 
-    /// Check if this val has a specific well-known attribute, computing and caching flags if needed.
-    member HasWellKnownAttribute:
-        flag: WellKnownValAttributes * computeFlags: (Attribs -> WellKnownValAttributes) -> bool
-
     /// Set all the data on a value
     member SetData: tg: ValData -> unit
 
@@ -2026,6 +2070,7 @@ type Val =
     member SetIgnoresByrefScope: unit -> unit
 
     member SetInlineIfLambda: unit -> unit
+    member SetOptimizeClosureIfNotInlined: unit -> unit
 
     /// Sets the inline information for this value. Used by the type checker
     /// to downgrade an erroneously-recursive inline binding to non-inline
@@ -2041,6 +2086,8 @@ type Val =
     member SetIsCompilerGenerated: v: bool -> unit
 
     member SetIsFixed: unit -> unit
+
+    member SetIsPinning: unit -> unit
 
     member SetIsMemberOrModuleBinding: unit -> unit
 
@@ -2147,6 +2194,7 @@ type Val =
 
     /// Get the inline declaration on a parameter or other non-function-declaration value, used for optimization
     member InlineIfLambda: bool
+    member OptimizeClosureIfNotInlined: bool
 
     /// Get the inline declaration on the value
     member InlineInfo: ValInline
@@ -2202,6 +2250,9 @@ type Val =
 
     /// Indicates if the value is pinned/fixed
     member IsFixed: bool
+
+    /// Indicates if the value names a binding whose lifetime keeps a fixed value pinned
+    member IsPinning: bool
 
     /// Indicates if this is a constructor member generated from the de-sugaring of implicit constructor for a class type?
     member IsIncrClassConstructor: bool
@@ -2475,6 +2526,11 @@ type EntityRef =
     /// Set the on-demand analysis about whether the entity is assumed to be a readonly struct
     member SetIsAssumedReadOnly: b: bool -> unit
 
+    /// Indicates no further members can be added to this entity's augmentation
+    member IsAugmentationClosed: bool
+
+    member SetAugmentationClosed: unit -> unit
+
     /// Set the on-demand analysis about whether the entity has the IsByRefLike attribute
     member SetIsByRefLike: b: bool -> unit
 
@@ -2718,7 +2774,7 @@ type EntityRef =
     member PreEstablishedHasDefaultConstructor: bool
 
     /// Get a blob of data indicating how this type is nested in other namespaces, modules or types.
-    member PublicPath: PublicPath option
+    member PublicPath: PublicPath voption
 
     /// The code location where the module, namespace or type is defined.
     member Range: range
@@ -2749,6 +2805,9 @@ type EntityRef =
 
     /// The on-demand analysis about whether the entity is assumed to be a readonly struct
     member TryIsAssumedReadOnly: bool voption
+
+    /// Indicates no further members can be added to this entity's augmentation
+    member IsAugmentationClosed: bool
 
     /// The on-demand analysis about whether the entity has the IsByRefLike attribute
     member TryIsByRefLike: bool voption
@@ -2889,6 +2948,7 @@ type ValRef =
 
     /// Get the inline declaration on a parameter or other non-function-declaration value, used for optimization
     member InlineIfLambda: bool
+    member OptimizeClosureIfNotInlined: bool
 
     /// Determines if the values is implied by another construct, e.g. a `IsA` property is implied by the union case for A
     member IsImplied: bool
@@ -4228,6 +4288,10 @@ type CcuData =
 
         /// The table of .NET CLI type forwarders for this assembly
         TypeForwarders: CcuTypeForwarderTable
+
+        /// C#-style extension members of this assembly's static classes, keyed by static class stamp.
+        /// Typed as obj because MethInfo is declared after this file.
+        CSharpStyleExtensionMembersCache: ConcurrentDictionary<Stamp, obj>
         XmlDocumentationInfo: XmlDocumentationInfo option
     }
 

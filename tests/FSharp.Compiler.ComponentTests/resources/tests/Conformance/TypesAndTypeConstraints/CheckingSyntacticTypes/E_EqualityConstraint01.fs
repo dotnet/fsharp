@@ -1,4 +1,4 @@
-// #Conformance #TypeConstraints 
+// #Conformance #TypeConstraints
 //<Expects status="error" span="(14,11-14,15)" id="FS0193">The type 'S' does not support the 'equality' constraint because it has the 'NoEquality' attribute</Expects>
 
 let testFunc<'a, 'b when 'a:equality> (x : 'a) =

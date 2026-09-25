@@ -445,6 +445,13 @@ type TypeCheckingConfig =
         DumpGraph: bool
     }
 
+[<RequireQualifiedAccess>]
+type ImportReuseKey =
+    {
+        LangVersion: decimal
+        CheckNullness: bool
+    }
+
 [<NoEquality; NoComparison>]
 type TcConfigBuilder =
     {
@@ -644,6 +651,8 @@ type TcConfigBuilder =
         mutable exiter: Exiter
 
         mutable parallelReferenceResolution: ParallelReferenceResolution
+
+        mutable shareImportedAssemblies: bool
 
         mutable captureIdentifiersWhenParsing: bool
 
@@ -846,6 +855,7 @@ type TcConfigBuilder =
             xmlDocInfoLoader = None
             exiter = QuitProcessExiter
             parallelReferenceResolution = ParallelReferenceResolution.On
+            shareImportedAssemblies = true
             captureIdentifiersWhenParsing = false
             typeCheckingConfig =
                 {
@@ -1091,10 +1101,22 @@ type TcConfigBuilder =
         tcConfigB.pathMap <- tcConfigB.pathMap |> PathMap.addMapping oldPrefix newPrefix
 
     static member SplitCommandLineResourceInfo(ri: string) =
-        let p = ri.IndexOf ','
+        let quoteEnd =
+            if ri.StartsWithOrdinal("\"") then
+                ri.IndexOf('"', 1)
+            else
+                -1
+
+        let p = ri.IndexOf(',', quoteEnd + 1)
+        let file = if p <> -1 then ri.Substring(0, p) else ri
+
+        let file =
+            if quoteEnd > 0 && quoteEnd = file.Length - 1 then
+                file.Substring(1, file.Length - 2)
+            else
+                file
 
         if p <> -1 then
-            let file = String.sub ri 0 p
             let rest = String.sub ri (p + 1) (String.length ri - p - 1)
             let p = rest.IndexOf ','
 
@@ -1111,7 +1133,7 @@ type TcConfigBuilder =
             else
                 file, rest, ILResourceAccess.Public
         else
-            ri, FileSystemUtils.fileNameOfPath ri, ILResourceAccess.Public
+            file, FileSystemUtils.fileNameOfPath file, ILResourceAccess.Public
 
 //----------------------------------------------------------------------------
 // TcConfig
@@ -1400,8 +1422,16 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.xmlDocInfoLoader = data.xmlDocInfoLoader
     member _.exiter = data.exiter
     member _.parallelReferenceResolution = data.parallelReferenceResolution
+    member _.shareImportedAssemblies = data.shareImportedAssemblies
     member _.captureIdentifiersWhenParsing = data.captureIdentifiersWhenParsing
     member _.typeCheckingConfig = data.typeCheckingConfig
+
+    member _.importReuseKey =
+        {
+            ImportReuseKey.LangVersion = data.langVersion.SpecifiedVersion
+            ImportReuseKey.CheckNullness = data.checkNullness
+        }
+
     member _.dumpSignatureData = data.dumpSignatureData
     member _.realsig = data.realsig
     member _.emitHotReloadClassStateMachines = data.emitHotReloadClassStateMachines

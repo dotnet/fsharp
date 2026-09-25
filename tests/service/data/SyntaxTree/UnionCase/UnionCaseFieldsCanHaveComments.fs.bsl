@@ -7,7 +7,8 @@ ImplFile
           [Types
              ([SynTypeDefn
                  (SynComponentInfo
-                    ([], None, [], [Foo],
+                    ([], None, [],
+                     Some (LongIdent (SynLongIdent ([Foo], [], [None]))),
                      PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector),
                      false, None, (2,5--2,8)),
                   Simple
@@ -31,7 +32,8 @@ ImplFile
                                   None, (7,2--8,6), { LeadingKeyword = None
                                                       MutableKeyword = None })],
                             PreXmlDoc ((4,0), FSharp.Compiler.Xml.XmlDocCollector),
-                            None, (3,0--8,6), { BarRange = Some (4,0--4,1) })],
+                            None, (3,0--8,6), { BarRange = Some (4,0--4,1)
+                                                OfKeyword = Some (4,8--4,10) })],
                         (3,0--8,6)), (3,0--8,6)), [], None, (2,5--8,6),
                   { LeadingKeyword = Type (2,0--2,4)
                     EqualsRange = Some (2,9--2,10)

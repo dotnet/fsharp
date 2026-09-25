@@ -1,4 +1,4 @@
-// #Regression #TypeInference 
+// #Regression #TypeInference
 // Regression test for FSHARP1.0:4758
 // Type Inference
 // Check Warnings When Variables Instantiated To String
@@ -10,7 +10,7 @@
 //<Expects id="FS0064" span="(19,22-19,23)" status="warning">.+'a.+'string'</Expects>
 module M
 let forceString (x:string) = ()
- 
+
 let ffA (x:'a) = x = ""             // expect: warns 'a = string
 let ffB (x:'a) = [x;""]             // expect: warns 'a = string
 let ffC (x:'a) = forceString x      // expect: warns 'a = string

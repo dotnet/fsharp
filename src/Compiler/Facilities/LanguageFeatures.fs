@@ -16,61 +16,30 @@ module internal FSharp.Compiler.Features
 
 [<RequireQualifiedAccess>]
 type LanguageFeature =
-    | RelaxWhitespace2
-    | NameOf
-    | DotlessFloat32Literal
     | PackageManagement
     | FromEndSlicing
-    | FixedIndexSlice3d4d
     | ResumableStateMachines
-    | NullableOptionalInterop
-    | DefaultInterfaceMemberConsumption
+    | RuntimeAsync
     | WitnessPassing
     | AdditionalTypeDirectedConversions
-    | InterfacesWithMultipleGenericInstantiation
     | StringInterpolation
-    | OverloadsForCustomOperations
     | ExpandedMeasurables
     | NullnessChecking
-    | IndexerNotationWithoutDot
-    | RefCellNotationInformationals
     | UnionIsPropertiesVisible
-    | NonVariablePatternsToRightOfAsPatterns
     | AttributesToRightOfModuleKeyword
-    | BetterExceptionPrinting
-    | DelegateTypeNameResolutionFix
     | ReallyLongLists
     | ErrorOnDeprecatedRequireQualifiedAccess
-    | RequiredPropertiesSupport
-    | InitPropertiesSupport
-    | LowercaseDUWhenRequireQualifiedAccess
-    | InterfacesWithAbstractStaticMembers
     | SelfTypeConstraints
-    | AccessorFunctionShorthand
     | MatchNotAllowedForUnionCaseWithNoData
     | CSharpExtensionAttributeNotRequired
     | ErrorForNonVirtualMembersOverrides
-    | WarningWhenInliningMethodImplNoInlineMarkedFunction
-    | EscapeDotnetFormattableStrings
-    | ArithmeticInLiterals
-    | ErrorReportingOnStaticClasses
-    | TryWithInSeqExpression
     | WarningWhenCopyAndUpdateRecordChangesAllFields
-    | StaticMembersInInterfaces
     | NonInlineLiteralsAsPrintfFormat
-    | NestedCopyAndUpdate
-    | ExtendedStringInterpolation
     | WarningWhenMultipleRecdTypeChoice
-    | ImprovedImpliedArgumentNames
-    | DiagnosticForObjInference
     | ConstraintIntersectionOnFlexibleTypes
-    | StaticLetInRecordsDusEmptyTypes
     | WarningWhenTailRecAttributeButNonTailRecUsage
     | UnmanagedConstraintCsharpInterop
-    | WhileBang
     | ReuseSameFieldsInStructUnions
-    | ExtendedFixedBindings
-    | PreferStringGetPinnableReference
     | PreferExtensionMethodOverPlainProperty
     | WarningIndexedPropertiesGetSetSameType
     | WarningWhenTailCallAttrOnNonRec
@@ -100,6 +69,7 @@ type LanguageFeature =
     | MethodOverloadsCache
     | ImplicitDIMCoverage
     | PreprocessorElif
+    | ExtensionConstraintSolutions
     | ExceptionFieldSerializationSupport
     | ErrorOnMissingSignatureAttribute
     | RecordConstructorSyntax
@@ -108,6 +78,11 @@ type LanguageFeature =
     | AccessProtectedBaseFieldFromClosure
     | ImprovedImpliedArgumentNamesPartTwo
     | RecordSpreads
+    | RequireNamedArguments
+    | TypeArgumentDependencyOrdering
+    | ErrorOnBitwiseOpsOnNonIntegralEnums
+    | OptimizeClosureIfNotInlined
+    | ReraiseInComputationExpressions
 
 /// LanguageVersion management
 type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array) =
@@ -122,8 +97,9 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
     static let languageVersion90 = 9.0m
     static let languageVersion100 = 10.0m
     static let languageVersion110 = 11.0m
+    static let languageVersion112 = 11.2m
     static let previewVersion = 9999m // Language version when preview specified
-    static let defaultVersion = languageVersion110 // Language version when default specified
+    static let defaultVersion = languageVersion112 // Language version when default specified
     static let latestVersion = defaultVersion // Language version when latest specified
     static let latestMajorVersion = defaultVersion // Language version when latestmajor specified
 
@@ -141,68 +117,37 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
                 languageVersion90
                 languageVersion100
                 languageVersion110
+                languageVersion112
             |]
 
     static let features =
         dict
             [
                 // F# 5.0
-                LanguageFeature.FixedIndexSlice3d4d, languageVersion50
-                LanguageFeature.DotlessFloat32Literal, languageVersion50
-                LanguageFeature.NullableOptionalInterop, languageVersion50
-                LanguageFeature.DefaultInterfaceMemberConsumption, languageVersion50
                 LanguageFeature.PackageManagement, languageVersion50
                 LanguageFeature.WitnessPassing, languageVersion50
-                LanguageFeature.InterfacesWithMultipleGenericInstantiation, languageVersion50
-                LanguageFeature.NameOf, languageVersion50
                 LanguageFeature.StringInterpolation, languageVersion50
 
                 // F# 6.0
                 LanguageFeature.AdditionalTypeDirectedConversions, languageVersion60
-                LanguageFeature.RelaxWhitespace2, languageVersion60
-                LanguageFeature.OverloadsForCustomOperations, languageVersion60
                 LanguageFeature.ExpandedMeasurables, languageVersion60
                 LanguageFeature.ResumableStateMachines, languageVersion60
-                LanguageFeature.IndexerNotationWithoutDot, languageVersion60
-                LanguageFeature.RefCellNotationInformationals, languageVersion60
-                LanguageFeature.NonVariablePatternsToRightOfAsPatterns, languageVersion60
                 LanguageFeature.AttributesToRightOfModuleKeyword, languageVersion60
-                LanguageFeature.DelegateTypeNameResolutionFix, languageVersion60
 
                 // F# 7.0
-                LanguageFeature.BetterExceptionPrinting, languageVersion70
                 LanguageFeature.ReallyLongLists, languageVersion70
                 LanguageFeature.ErrorOnDeprecatedRequireQualifiedAccess, languageVersion70
-                LanguageFeature.RequiredPropertiesSupport, languageVersion70
-                LanguageFeature.InitPropertiesSupport, languageVersion70
-                LanguageFeature.LowercaseDUWhenRequireQualifiedAccess, languageVersion70
-                LanguageFeature.InterfacesWithAbstractStaticMembers, languageVersion70
                 LanguageFeature.SelfTypeConstraints, languageVersion70
 
                 // F# 8.0
-                LanguageFeature.AccessorFunctionShorthand, languageVersion80
                 LanguageFeature.MatchNotAllowedForUnionCaseWithNoData, languageVersion80
                 LanguageFeature.CSharpExtensionAttributeNotRequired, languageVersion80
                 LanguageFeature.ErrorForNonVirtualMembersOverrides, languageVersion80
-                LanguageFeature.WarningWhenInliningMethodImplNoInlineMarkedFunction, languageVersion80
-                LanguageFeature.EscapeDotnetFormattableStrings, languageVersion80
-                LanguageFeature.ArithmeticInLiterals, languageVersion80
-                LanguageFeature.ErrorReportingOnStaticClasses, languageVersion80
-                LanguageFeature.TryWithInSeqExpression, languageVersion80
                 LanguageFeature.WarningWhenCopyAndUpdateRecordChangesAllFields, languageVersion80
-                LanguageFeature.StaticMembersInInterfaces, languageVersion80
                 LanguageFeature.NonInlineLiteralsAsPrintfFormat, languageVersion80
-                LanguageFeature.NestedCopyAndUpdate, languageVersion80
-                LanguageFeature.ExtendedStringInterpolation, languageVersion80
                 LanguageFeature.WarningWhenMultipleRecdTypeChoice, languageVersion80
-                LanguageFeature.ImprovedImpliedArgumentNames, languageVersion80
-                LanguageFeature.DiagnosticForObjInference, languageVersion80
                 LanguageFeature.WarningWhenTailRecAttributeButNonTailRecUsage, languageVersion80
-                LanguageFeature.StaticLetInRecordsDusEmptyTypes, languageVersion80
                 LanguageFeature.ConstraintIntersectionOnFlexibleTypes, languageVersion80
-                LanguageFeature.WhileBang, languageVersion80
-                LanguageFeature.ExtendedFixedBindings, languageVersion80
-                LanguageFeature.PreferStringGetPinnableReference, languageVersion80
 
                 // F# 9.0
                 LanguageFeature.NullnessChecking, languageVersion90
@@ -234,13 +179,11 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
                 LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters, languageVersion100
                 LanguageFeature.ReturnFromFinal, languageVersion100
                 LanguageFeature.ErrorOnInvalidDeclsInTypeDefinitions, languageVersion100
-                LanguageFeature.MoreConcreteTiebreaker, previewVersion
-                LanguageFeature.OverloadResolutionPriority, previewVersion
 
                 // F# 11.0
-                // Put stabilized features here for F# 11.0 previews via .NET SDK preview channels
                 LanguageFeature.WarnWhenFunctionValueUsedAsInterpolatedStringArg, languageVersion110
                 LanguageFeature.PreprocessorElif, languageVersion110
+                LanguageFeature.ErrorOnBitwiseOpsOnNonIntegralEnums, languageVersion110
                 LanguageFeature.ExceptionFieldSerializationSupport, languageVersion110
                 LanguageFeature.NotNullIfNotNull, languageVersion110
                 LanguageFeature.ImprovedImpliedArgumentNamesPartTwo, languageVersion110
@@ -250,13 +193,19 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
                 LanguageFeature.DirectDelegateConstruction, languageVersion110
                 LanguageFeature.AccessProtectedBaseFieldFromClosure, languageVersion110 // #5302: read a protected base field from a closure
                 LanguageFeature.RecordSpreads, languageVersion110
+                LanguageFeature.TypeArgumentDependencyOrdering, languageVersion110
+                LanguageFeature.OptimizeClosureIfNotInlined, languageVersion110
 
-                // Difference between languageVersion110 and preview - 11.0 gets turned on automatically by picking a preview .NET 11 SDK
-                // previewVersion is only when "preview" is specified explicitly in project files  and users also need a preview SDK
+                // F# 11.2
+                LanguageFeature.MoreConcreteTiebreaker, languageVersion112
+                LanguageFeature.OverloadResolutionPriority, languageVersion112
+                LanguageFeature.RuntimeAsync, languageVersion112
+                LanguageFeature.RecordConstructorSyntax, languageVersion112 // Allow constructing a record via its all-fields constructor, e.g. MyRecord(a, b)
+                LanguageFeature.RequireNamedArguments, languageVersion112 // FS-1095: enforce named arguments at call sites of methods marked with RequireNamedArgumentsAttribute
+                LanguageFeature.ReraiseInComputationExpressions, languageVersion112
+                LanguageFeature.ExtensionConstraintSolutions, languageVersion112
 
                 // F# preview
-                LanguageFeature.RecordConstructorSyntax, previewVersion // Allow constructing a record via its all-fields constructor, e.g. MyRecord(a, b)
-
                 // Unfinished features that still need work before they can be assigned a release language version.
                 LanguageFeature.FromEndSlicing, previewVersion // Unfinished features --- needs work
             ]
@@ -286,6 +235,7 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
         | "10" -> languageVersion100
         | "11.0"
         | "11" -> languageVersion110
+        | "11.2" -> languageVersion112
         | _ -> 0m
 
     let specified = getVersionFromString versionText
@@ -311,11 +261,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
 
     /// Create a new LanguageVersion with updated disabled features
     member _.WithDisabledFeatures(disabled: LanguageFeature array) = LanguageVersion(versionText, disabled)
-
-    /// Has preview been explicitly specified
-    member _.IsExplicitlySpecifiedAs50OrBefore() =
-        let v = getVersionFromString versionText
-        v <> 0.0m && v <= 5.0m
 
     /// Has preview been explicitly specified
     member _.IsPreviewEnabled = specified = previewVersion
@@ -353,64 +298,31 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
     /// Get a string name for the given feature.
     static member GetFeatureString feature =
         match feature with
-        | LanguageFeature.RelaxWhitespace2 -> FSComp.SR.featureRelaxWhitespace2 ()
-        | LanguageFeature.NameOf -> FSComp.SR.featureNameOf ()
-        | LanguageFeature.DotlessFloat32Literal -> FSComp.SR.featureDotlessFloat32Literal ()
         | LanguageFeature.PackageManagement -> FSComp.SR.featurePackageManagement ()
         | LanguageFeature.FromEndSlicing -> FSComp.SR.featureFromEndSlicing ()
-        | LanguageFeature.FixedIndexSlice3d4d -> FSComp.SR.featureFixedIndexSlice3d4d ()
         | LanguageFeature.NullnessChecking -> FSComp.SR.featureNullnessChecking ()
         | LanguageFeature.ResumableStateMachines -> FSComp.SR.featureResumableStateMachines ()
-        | LanguageFeature.NullableOptionalInterop -> FSComp.SR.featureNullableOptionalInterop ()
-        | LanguageFeature.DefaultInterfaceMemberConsumption -> FSComp.SR.featureDefaultInterfaceMemberConsumption ()
+        | LanguageFeature.RuntimeAsync -> FSComp.SR.featureRuntimeAsync ()
         | LanguageFeature.WitnessPassing -> FSComp.SR.featureWitnessPassing ()
         | LanguageFeature.AdditionalTypeDirectedConversions -> FSComp.SR.featureAdditionalImplicitConversions ()
-        | LanguageFeature.InterfacesWithMultipleGenericInstantiation -> FSComp.SR.featureInterfacesWithMultipleGenericInstantiation ()
         | LanguageFeature.StringInterpolation -> FSComp.SR.featureStringInterpolation ()
-        | LanguageFeature.OverloadsForCustomOperations -> FSComp.SR.featureOverloadsForCustomOperations ()
         | LanguageFeature.ExpandedMeasurables -> FSComp.SR.featureExpandedMeasurables ()
-        | LanguageFeature.IndexerNotationWithoutDot -> FSComp.SR.featureIndexerNotationWithoutDot ()
-        | LanguageFeature.RefCellNotationInformationals -> FSComp.SR.featureRefCellNotationInformationals ()
         | LanguageFeature.UnionIsPropertiesVisible -> FSComp.SR.featureUnionIsPropertiesVisible ()
-        | LanguageFeature.NonVariablePatternsToRightOfAsPatterns -> FSComp.SR.featureNonVariablePatternsToRightOfAsPatterns ()
         | LanguageFeature.AttributesToRightOfModuleKeyword -> FSComp.SR.featureAttributesToRightOfModuleKeyword ()
-        | LanguageFeature.BetterExceptionPrinting -> FSComp.SR.featureBetterExceptionPrinting ()
-        | LanguageFeature.DelegateTypeNameResolutionFix -> FSComp.SR.featureDelegateTypeNameResolutionFix ()
         | LanguageFeature.ReallyLongLists -> FSComp.SR.featureReallyLongList ()
         | LanguageFeature.ErrorOnDeprecatedRequireQualifiedAccess -> FSComp.SR.featureErrorOnDeprecatedRequireQualifiedAccess ()
-        | LanguageFeature.RequiredPropertiesSupport -> FSComp.SR.featureRequiredProperties ()
-        | LanguageFeature.InitPropertiesSupport -> FSComp.SR.featureInitProperties ()
-        | LanguageFeature.LowercaseDUWhenRequireQualifiedAccess -> FSComp.SR.featureLowercaseDUWhenRequireQualifiedAccess ()
-        | LanguageFeature.InterfacesWithAbstractStaticMembers -> FSComp.SR.featureInterfacesWithAbstractStaticMembers ()
         | LanguageFeature.SelfTypeConstraints -> FSComp.SR.featureSelfTypeConstraints ()
-        | LanguageFeature.AccessorFunctionShorthand -> FSComp.SR.featureAccessorFunctionShorthand ()
         | LanguageFeature.MatchNotAllowedForUnionCaseWithNoData -> FSComp.SR.featureMatchNotAllowedForUnionCaseWithNoData ()
         | LanguageFeature.CSharpExtensionAttributeNotRequired -> FSComp.SR.featureCSharpExtensionAttributeNotRequired ()
         | LanguageFeature.ErrorForNonVirtualMembersOverrides -> FSComp.SR.featureErrorForNonVirtualMembersOverrides ()
-        | LanguageFeature.WarningWhenInliningMethodImplNoInlineMarkedFunction ->
-            FSComp.SR.featureWarningWhenInliningMethodImplNoInlineMarkedFunction ()
-        | LanguageFeature.EscapeDotnetFormattableStrings -> FSComp.SR.featureEscapeBracesInFormattableString ()
-        | LanguageFeature.ArithmeticInLiterals -> FSComp.SR.featureArithmeticInLiterals ()
-        | LanguageFeature.ErrorReportingOnStaticClasses -> FSComp.SR.featureErrorReportingOnStaticClasses ()
-        | LanguageFeature.TryWithInSeqExpression -> FSComp.SR.featureTryWithInSeqExpressions ()
         | LanguageFeature.WarningWhenCopyAndUpdateRecordChangesAllFields ->
             FSComp.SR.featureWarningWhenCopyAndUpdateRecordChangesAllFields ()
-        | LanguageFeature.StaticMembersInInterfaces -> FSComp.SR.featureStaticMembersInInterfaces ()
         | LanguageFeature.NonInlineLiteralsAsPrintfFormat -> FSComp.SR.featureNonInlineLiteralsAsPrintfFormat ()
-        | LanguageFeature.NestedCopyAndUpdate -> FSComp.SR.featureNestedCopyAndUpdate ()
-        | LanguageFeature.ExtendedStringInterpolation -> FSComp.SR.featureExtendedStringInterpolation ()
         | LanguageFeature.WarningWhenMultipleRecdTypeChoice -> FSComp.SR.featureWarningWhenMultipleRecdTypeChoice ()
-        | LanguageFeature.ImprovedImpliedArgumentNames -> FSComp.SR.featureImprovedImpliedArgumentNames ()
-        | LanguageFeature.DiagnosticForObjInference -> FSComp.SR.featureInformationalObjInferenceDiagnostic ()
-
-        | LanguageFeature.StaticLetInRecordsDusEmptyTypes -> FSComp.SR.featureStaticLetInRecordsDusEmptyTypes ()
         | LanguageFeature.ConstraintIntersectionOnFlexibleTypes -> FSComp.SR.featureConstraintIntersectionOnFlexibleTypes ()
         | LanguageFeature.WarningWhenTailRecAttributeButNonTailRecUsage -> FSComp.SR.featureChkNotTailRecursive ()
         | LanguageFeature.UnmanagedConstraintCsharpInterop -> FSComp.SR.featureUnmanagedConstraintCsharpInterop ()
-        | LanguageFeature.WhileBang -> FSComp.SR.featureWhileBang ()
         | LanguageFeature.ReuseSameFieldsInStructUnions -> FSComp.SR.featureReuseSameFieldsInStructUnions ()
-        | LanguageFeature.ExtendedFixedBindings -> FSComp.SR.featureExtendedFixedBindings ()
-        | LanguageFeature.PreferStringGetPinnableReference -> FSComp.SR.featurePreferStringGetPinnableReference ()
         | LanguageFeature.PreferExtensionMethodOverPlainProperty -> FSComp.SR.featurePreferExtensionMethodOverPlainProperty ()
         | LanguageFeature.WarningIndexedPropertiesGetSetSameType -> FSComp.SR.featureWarningIndexedPropertiesGetSetSameType ()
         | LanguageFeature.WarningWhenTailCallAttrOnNonRec -> FSComp.SR.featureChkTailCallAttrOnNonRec ()
@@ -445,6 +357,7 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
         | LanguageFeature.MethodOverloadsCache -> FSComp.SR.featureMethodOverloadsCache ()
         | LanguageFeature.ImplicitDIMCoverage -> FSComp.SR.featureImplicitDIMCoverage ()
         | LanguageFeature.PreprocessorElif -> FSComp.SR.featurePreprocessorElif ()
+        | LanguageFeature.ExtensionConstraintSolutions -> FSComp.SR.featureExtensionConstraintSolutions ()
         | LanguageFeature.ExceptionFieldSerializationSupport -> FSComp.SR.featureExceptionFieldSerializationSupport ()
         | LanguageFeature.ErrorOnMissingSignatureAttribute -> FSComp.SR.featureErrorOnMissingSignatureAttribute ()
         | LanguageFeature.RecordConstructorSyntax -> FSComp.SR.featureRecordConstructorSyntax ()
@@ -453,6 +366,11 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
         | LanguageFeature.AccessProtectedBaseFieldFromClosure -> FSComp.SR.featureAccessProtectedBaseFieldFromClosure ()
         | LanguageFeature.ImprovedImpliedArgumentNamesPartTwo -> FSComp.SR.featureImprovedImpliedArgumentNamesPartTwo ()
         | LanguageFeature.RecordSpreads -> FSComp.SR.featureRecordSpreads ()
+        | LanguageFeature.RequireNamedArguments -> FSComp.SR.featureRequireNamedArguments ()
+        | LanguageFeature.TypeArgumentDependencyOrdering -> FSComp.SR.featureTypeArgumentDependencyOrdering ()
+        | LanguageFeature.ErrorOnBitwiseOpsOnNonIntegralEnums -> FSComp.SR.featureErrorOnBitwiseOpsOnNonIntegralEnums ()
+        | LanguageFeature.OptimizeClosureIfNotInlined -> FSComp.SR.featureOptimizeClosureIfNotInlined ()
+        | LanguageFeature.ReraiseInComputationExpressions -> FSComp.SR.featureReraiseInComputationExpressions ()
 
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =

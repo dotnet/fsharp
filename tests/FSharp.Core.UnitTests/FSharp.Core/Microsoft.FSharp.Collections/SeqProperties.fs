@@ -24,17 +24,17 @@ type SeqProperties () =
         let indexed = xs |> Seq.indexed |> Seq.toList
         let sorted = indexed |> Seq.sortWith (fun x y -> compare (snd x) (snd y))
         isStable sorted
-    
+
     [<Fact>]
     member this.``Seq.sortWithStable is stable`` () =
         Check.QuickThrowOnFailure this.sortWithStable<int>
         Check.QuickThrowOnFailure this.sortWithStable<string>
-    
+
     member _.distinctByStable<'a when 'a : comparison> (xs : 'a []) =
         let indexed = xs |> Seq.indexed
         let sorted = indexed |> Seq.distinctBy snd
         isStable sorted
-    
+
     [<Fact>]
     member this.``Seq.distinctBy is stable`` () =
         Check.QuickThrowOnFailure this.distinctByStable<int>

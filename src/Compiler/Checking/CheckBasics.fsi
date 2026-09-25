@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 module internal FSharp.Compiler.CheckBasics
 
@@ -9,6 +9,7 @@ open Internal.Utilities.Library
 open Internal.Utilities.Collections
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.CompilerGlobalState
+open FSharp.Compiler.Infos
 open FSharp.Compiler.ConstraintSolver
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Import
@@ -128,11 +129,21 @@ type TcEnv =
         // Active arg infos in iterated lambdas , allowing us to determine the attributes of arguments
         eLambdaArgInfos: ArgReprInfo list list
 
+        /// Whether the pending member argument groups belong to an indexed setter.
+        eIsIndexerSetter: bool
+
         eIsControlFlow: bool
+
+        /// Resolving a nameof operand, rather than an executable expression.
+        eInNameOf: bool
 
         /// Are we checking the body of an object expression? Such a body has family access to the
         /// implemented type, but its closures are not nested under that type, so they cannot keep it (#5302).
         eInObjectExpr: bool
+
+        /// The value holding the exception caught by the innermost enclosing computation expression 'with' handler,
+        /// which 'reraise()' rethrows via ExceptionDispatchInfo.
+        eCaughtExceptionVal: Val voption
 
         // In order to avoid checking implicit-yield expressions multiple times, we cache the resulting checked expressions.
         // This avoids exponential behavior in the type checker when nesting implicit-yield expressions.
@@ -150,6 +161,11 @@ type TcEnv =
 
     member AccessRights: AccessorDomain
 
+    /// Makes this environment available in a form that can be stored into a trait during solving.
+    member TraitContext: ITraitContext option
+
+    interface ITraitContext<AccessorDomain, MethInfo, InfoReader>
+
 /// Represents the current environment of type variables that have implicit scope
 /// (i.e. are without explicit declaration).
 type UnscopedTyparEnv = UnscopedTyparEnv of NameMap<Typar>
@@ -159,7 +175,12 @@ type UnscopedTyparEnv = UnscopedTyparEnv of NameMap<Typar>
 ///
 /// The declared type parameters, e.g. let f<'a> (x:'a) = x, plus an indication
 /// of whether additional polymorphism may be inferred, e.g. let f<'a, ..> (x:'a) y = x
-type ExplicitTyparInfo = ExplicitTyparInfo of rigidCopyOfDeclaredTypars: Typars * declaredTypars: Typars * infer: bool
+type ExplicitTyparInfo =
+    | ExplicitTyparInfo of
+        rigidCopyOfDeclaredTypars: Typars *
+        declaredTypars: Typars *
+        infer: bool *
+        hasExplicitTyparDecls: bool
 
 type ArgAndRetAttribs = ArgAndRetAttribs of Attribs list list * Attribs
 
@@ -203,8 +224,14 @@ type TcPatPhase2Input =
 
     member WithRightPath: unit -> TcPatPhase2Input
 
-/// Represents the context flowed left-to-right through pattern checking
-type TcPatLinearEnv = TcPatLinearEnv of tpenv: UnscopedTyparEnv * names: NameMap<PrelimVal1> * takenNames: Set<string>
+/// Represents the context flowed left-to-right through pattern checking.
+/// 'usesActivePattern' is true if an active pattern occurs in the pattern; see TcLetBinding.
+type TcPatLinearEnv =
+    | TcPatLinearEnv of
+        tpenv: UnscopedTyparEnv *
+        names: NameMap<PrelimVal1> *
+        takenNames: Set<string> *
+        usesActivePattern: bool
 
 /// Represents the flags passed to TcPat regarding the binding location
 type TcPatValFlags =

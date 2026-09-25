@@ -1,8 +1,8 @@
-// #Regression #Conformance #TypesAndModules 
+// #Regression #Conformance #TypesAndModules
 // Regression test for FSharp1.0:5229
 // Title: Allow private type abbreviations
 
-module M = 
+module M =
     type private X = int * int
     let f (x:X) = x
 

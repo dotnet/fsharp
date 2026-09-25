@@ -1,4 +1,4 @@
-// #Regression #Conformance #DeclarationElements #PInvoke 
+// #Regression #Conformance #DeclarationElements #PInvoke
 // Regression for Dev11:25538, we used to only work with StdCall
 // We need to use different C libraries for x64 and x86, hence the ifdefs
 
@@ -42,7 +42,7 @@ let test2() =
 
     if (c2.im <> 8.000000 || c2.re <> 2.000000) then exit 1
 
-// This just automatically passes if we're in an invalid config 
+// This just automatically passes if we're in an invalid config
 // ex the x86 case on an x64 machine just doesn't execute the test logic (otherwise we'd get a BadImageFormatException)
 if IntPtr.Size = 8 then   // we don't use System.Environment.Is64BitOperatingSystem because it is not in NetFx2.0
 #if AMD64

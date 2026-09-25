@@ -1,4 +1,4 @@
-// #Regression #Conformance #TypeConstraints 
+// #Regression #Conformance #TypeConstraints
 // Verify the [<AllowNullLiteral>] attribute is only value on class and interface types
 
 //<Expects id="FS0934" span="(10,6-10,15)" status="error">Records, union, abbreviations and struct types cannot have the 'AllowNullLiteral' attribute</Expects>
@@ -10,7 +10,7 @@
 type DiscUnion = A | B
 
 [<AllowNullLiteral>]
-type ClassType() = 
+type ClassType() =
     class
     end
 
@@ -22,11 +22,11 @@ type Interface =
 type Record = { Field1 : int; Field2 : float }
 
 [<AllowNullLiteral>]
-type Struct = 
+type Struct =
     struct
     end
 
 [<AllowNullLiteral>]
-type TypeAbbrev = string * int 
+type TypeAbbrev = string * int
 
 exit 1

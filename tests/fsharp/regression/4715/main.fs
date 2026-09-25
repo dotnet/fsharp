@@ -15,8 +15,8 @@ let private init_dates rdate pdate =
 [<EntryPoint>]
 let main argv =
     try
-        
-        let rdate = Some (date.yesterday ()) 
+
+        let rdate = Some (date.yesterday ())
         let pdate = Some (date.today () )
         init_dates rdate pdate
     with

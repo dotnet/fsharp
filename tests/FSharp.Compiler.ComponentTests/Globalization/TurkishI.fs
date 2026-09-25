@@ -1,4 +1,4 @@
-﻿// #Globalization 
+﻿// #Globalization
 
 
 let İIıi = "İIıi"

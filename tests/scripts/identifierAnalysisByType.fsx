@@ -93,7 +93,7 @@ symbols
        printfn "    %s (%d times)" nm (Array.length entries)
        for (_, _, vUse) in entries do
            printfn "        %s" vUse
-    printfn "")
+    printn "")
 
 (*
 let isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)

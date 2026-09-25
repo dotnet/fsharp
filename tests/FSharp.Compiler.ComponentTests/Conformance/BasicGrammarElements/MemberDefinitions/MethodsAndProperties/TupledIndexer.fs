@@ -1,4 +1,4 @@
-// #Regression #Conformance #DeclarationElements #MemberDefinitions #MethodsAndProperties 
+// #Regression #Conformance #DeclarationElements #MemberDefinitions #MethodsAndProperties
 // Verify tupled parameters to properties work as expected
 // Regression for FSB 5273, ICE: Indexed properties not mixing well with tupled parameters
 

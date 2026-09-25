@@ -649,7 +649,7 @@ $ code --diff {outFile} {expectedFile}
 
     let withLangVersion10 (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--langversion:10.0" ] "withLangVersion10 is only supported on F#" cUnit
-        
+
     let withLangVersion11 (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--langversion:11.0" ] "withLangVersion11 is only supported on F#" cUnit
 
@@ -771,6 +771,15 @@ $ code --diff {outFile} {expectedFile}
         | FS fs -> FS { fs with TargetFramework = TargetFramework.NetStandard20 }
         | CS cs -> CS { cs with TargetFramework = TargetFramework.NetStandard20 }
         | IL _ ->  failwith "References are not supported in IL"
+
+    /// Compile against the current BCL but reference the shipped .NETCoreApp FSharp.Core (e.g. net10.0)
+    /// instead of the netstandard2.1 build, so tests can exercise its .NETCoreApp-only surface.
+    /// Execution runs in a new process (dotnet app.dll) with that FSharp.Core copied beside the app;
+    /// external file references (withReferences) are not copied, so keep such snippets self-contained.
+    let withFSharpCoreShippedNet (cUnit: CompilationUnit) : CompilationUnit =
+        match cUnit with
+        | FS fs -> FS { fs with TargetFramework = TargetFramework.FSharpCoreShippedNet }
+        | CS _ | IL _ -> failwith "withFSharpCoreShippedNet is only supported for F# compilations"
 
     let withPlatform (platform:ExecutionPlatform) (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
@@ -1130,10 +1139,18 @@ $ code --diff {outFile} {expectedFile}
                         | SourceCodeFileKind.Fsx _ -> true
                         | _ -> false
                     | _ -> false
-                let output = CompilerAssert.ExecuteAndReturnResult (p, isFsx, s.Dependencies, false)
+                let useShippedNetFSharpCore =
+                    match s.Compilation with
+                    | FS fs -> fs.TargetFramework = TargetFramework.FSharpCoreShippedNet
+                    | _ -> false
+                if useShippedNetFSharpCore then
+                    File.Copy(TargetFrameworkUtil.shippedNetFSharpCorePath.Value, Path.Combine(Path.GetDirectoryName p, "FSharp.Core.dll"), overwrite = true)
+                let output = CompilerAssert.ExecuteAndReturnResult (p, isFsx, s.Dependencies, useShippedNetFSharpCore)
                 let executionResult = { s with Output = Some (ExecutionOutput output) }
                 match output.Outcome with
                 | Failure _ -> CompilationResult.Failure executionResult
+                // Shipped-net runs execute a new process, so surface a non-zero exit code as failure (in-process runs keep prior behaviour).
+                | ExitCode n when n <> 0 && useShippedNetFSharpCore -> CompilationResult.Failure executionResult
                 | _  -> CompilationResult.Success executionResult
 
     let compileAndRun = compile >> run
@@ -1188,7 +1205,7 @@ $ code --diff {outFile} {expectedFile}
             evalFSharp fs script
         | _ -> failwith "Script evaluation is only supported for F#."
 
-    let internal sessionCache = 
+    let internal sessionCache =
         Collections.Concurrent.ConcurrentDictionary<Set<string> * LangVersion, FSharpScript>()
 
     let internal createSessionWithShadowedExit args version =
@@ -1198,12 +1215,12 @@ $ code --diff {outFile} {expectedFile}
 
     let getIsolatedSessionForEval args version =
         createSessionWithShadowedExit args version
-    
+
     let getSessionForEval args version =
         let key = Set args, version
         match sessionCache.TryGetValue(key) with
         | true, script -> script
-        | _ -> 
+        | _ ->
             let script = createSessionWithShadowedExit args version
             sessionCache.TryAdd(key, script) |> ignore
             script
@@ -1494,6 +1511,7 @@ $ code --diff {outFile} {expectedFile}
     | VerifyDocuments of string list
     | VerifySequencePointsInSameMethod of lines: Line list
     | VerifyNoDebuggerHiddenOnMethodWithLine of line: Line
+    | VerifyRuntimeAsyncMethodSequencePointsInSource of sourceFileName: string * startLine: int * endLine: int
     | Dummy of unit
 
     let private verifyPdbFormat (reader: MetadataReader) compilationType =
@@ -1591,6 +1609,73 @@ $ code --diff {outFile} {expectedFile}
             failwith (sprintf "Method '%s' has sequence points outside range [%d-%d]:\n%A\nAll points: %A" methodName startLine endLine outOfRange actualPoints)
         if actualPoints.IsEmpty then
             failwith (sprintf "Method '%s' has no non-hidden sequence points" methodName)
+
+    let private verifyRuntimeAsyncMethodSequencePointsInSource
+        (assemblyPath: string)
+        (pdbReader: MetadataReader)
+        (sourceFileName: string)
+        (startLine: int)
+        (endLine: int)
+        =
+        use peStream = File.OpenRead(assemblyPath)
+        use peReader = new PEReader(peStream)
+        let assemblyReader = peReader.GetMetadataReader()
+        let asyncBit = 0x2000
+
+        let methods =
+            getMethodDebugInfos assemblyReader pdbReader
+            |> List.choose (fun (typeName, methodName, methodHandle, debugInfo) ->
+                let method = assemblyReader.GetMethodDefinition methodHandle
+                let isRuntimeAsync = (int method.ImplAttributes &&& asyncBit) <> 0
+
+                let points =
+                    debugInfo.GetSequencePoints()
+                    |> Seq.filter (fun point -> not point.IsHidden)
+                    |> Seq.toList
+
+                let hasSourcePoint =
+                    points
+                    |> List.exists (fun point ->
+                        let document = pdbReader.GetDocument point.Document
+                        let documentName = pdbReader.GetString document.Name
+                        String.Equals(Path.GetFileName(documentName), sourceFileName, StringComparison.OrdinalIgnoreCase)
+                        && point.StartLine >= startLine
+                        && point.EndLine <= endLine)
+
+                if isRuntimeAsync && hasSourcePoint then
+                    Some(typeName, methodName, points)
+                else
+                    None)
+
+        if methods.Length <> 1 then
+            let names = methods |> List.map (fun (typeName, methodName, _) -> $"{typeName}.{methodName}")
+            failwith $"Expected exactly one runtime-async method with a point in {sourceFileName}:{startLine}-{endLine}, found {methods.Length}: {names}"
+
+        let typeName, methodName, points = methods.Head
+
+        let invalidPoints =
+            points
+            |> List.filter (fun point ->
+                let document = pdbReader.GetDocument point.Document
+                let documentName = pdbReader.GetString document.Name
+
+                not (
+                    String.Equals(Path.GetFileName(documentName), sourceFileName, StringComparison.OrdinalIgnoreCase)
+                    && point.StartLine >= startLine
+                    && point.EndLine <= endLine
+                ))
+
+        if not invalidPoints.IsEmpty then
+            let actual =
+                invalidPoints
+                |> List.map (fun point ->
+                    let document = pdbReader.GetDocument point.Document
+                    let documentName = pdbReader.GetString document.Name
+                    $"{Path.GetFileName(documentName)}:{point.StartLine},{point.StartColumn}-{point.EndLine},{point.EndColumn}")
+                |> String.concat "; "
+
+            failwith
+                $"Runtime-async method {typeName}.{methodName} has sequence points outside {sourceFileName}:{startLine}-{endLine}: {actual}"
 
     let private verifySequencePoints (reader: MetadataReader) expectedSequencePoints =
         let sequencePoints =
@@ -1762,6 +1847,13 @@ $ code --diff {outFile} {expectedFile}
                 verifySequencePointsInSameMethod (optOutputPath |> Option.defaultValue "") reader lines
             | VerifyNoDebuggerHiddenOnMethodWithLine line ->
                 verifyNoDebuggerHiddenOnMethodWithLine (optOutputPath |> Option.defaultValue "") reader line
+            | VerifyRuntimeAsyncMethodSequencePointsInSource(sourceFileName, startLine, endLine) ->
+                verifyRuntimeAsyncMethodSequencePointsInSource
+                    (optOutputPath |> Option.defaultValue "")
+                    reader
+                    sourceFileName
+                    startLine
+                    endLine
             | _ -> failwith $"Unknown verification option: {option.ToString()}"
 
     module private Il =
@@ -1772,17 +1864,24 @@ $ code --diff {outFile} {expectedFile}
                        | :? OpCode as op -> yield (int op.Value &&& 0xffff), op
                        | _ -> () ]
 
-        // The simple name of a type handle (TypeDef/TypeRef); "" for anything else (e.g. TypeSpec).
-        let private declaringTypeName (mdReader: MetadataReader) (handle: EntityHandle) =
+        // TypeDef/TypeRef names; "" for anything else (e.g. TypeSpec).
+        let private declaringTypeName qualified (mdReader: MetadataReader) (handle: EntityHandle) =
             if handle.IsNil then ""
             else
                 let row = MetadataTokens.GetRowNumber handle
+                let name (ns: StringHandle) (nm: StringHandle) =
+                    let ns, nm = mdReader.GetString ns, mdReader.GetString nm
+                    if qualified && ns <> "" then ns + "." + nm else nm
                 match handle.Kind with
-                | HandleKind.TypeDefinition -> mdReader.GetString (mdReader.GetTypeDefinition(MetadataTokens.TypeDefinitionHandle row)).Name
-                | HandleKind.TypeReference -> mdReader.GetString (mdReader.GetTypeReference(MetadataTokens.TypeReferenceHandle row)).Name
+                | HandleKind.TypeDefinition ->
+                    let td = mdReader.GetTypeDefinition(MetadataTokens.TypeDefinitionHandle row)
+                    name td.Namespace td.Name
+                | HandleKind.TypeReference ->
+                    let tr = mdReader.GetTypeReference(MetadataTokens.TypeReferenceHandle row)
+                    name tr.Namespace tr.Name
                 | _ -> ""
 
-        let rec private tokenName (mdReader: MetadataReader) (token: int) =
+        let rec private tokenName qualified (mdReader: MetadataReader) (token: int) =
             let handle = MetadataTokens.EntityHandle token
             let row = MetadataTokens.GetRowNumber handle
             // Qualify members with their declaring type so closure/continuation creation is visible.
@@ -1790,19 +1889,19 @@ $ code --diff {outFile} {expectedFile}
             match handle.Kind with
             | HandleKind.MethodDefinition ->
                 let md = mdReader.GetMethodDefinition(MetadataTokens.MethodDefinitionHandle row)
-                qualify (declaringTypeName mdReader (TypeDefinitionHandle.op_Implicit (md.GetDeclaringType()))) (mdReader.GetString md.Name)
+                qualify (declaringTypeName qualified mdReader (TypeDefinitionHandle.op_Implicit (md.GetDeclaringType()))) (mdReader.GetString md.Name)
             | HandleKind.MemberReference ->
                 let mr = mdReader.GetMemberReference(MetadataTokens.MemberReferenceHandle row)
-                qualify (declaringTypeName mdReader mr.Parent) (mdReader.GetString mr.Name)
+                qualify (declaringTypeName qualified mdReader mr.Parent) (mdReader.GetString mr.Name)
             | HandleKind.FieldDefinition ->
                 let fd = mdReader.GetFieldDefinition(MetadataTokens.FieldDefinitionHandle row)
-                qualify (declaringTypeName mdReader (TypeDefinitionHandle.op_Implicit (fd.GetDeclaringType()))) (mdReader.GetString fd.Name)
+                qualify (declaringTypeName qualified mdReader (TypeDefinitionHandle.op_Implicit (fd.GetDeclaringType()))) (mdReader.GetString fd.Name)
             | HandleKind.TypeReference -> mdReader.GetString (mdReader.GetTypeReference(MetadataTokens.TypeReferenceHandle row)).Name
             | HandleKind.TypeDefinition -> mdReader.GetString (mdReader.GetTypeDefinition(MetadataTokens.TypeDefinitionHandle row)).Name
-            | HandleKind.MethodSpecification -> tokenName mdReader (MetadataTokens.GetToken (mdReader.GetMethodSpecification(MetadataTokens.MethodSpecificationHandle row)).Method)
+            | HandleKind.MethodSpecification -> tokenName qualified mdReader (MetadataTokens.GetToken (mdReader.GetMethodSpecification(MetadataTokens.MethodSpecificationHandle row)).Method)
             | _ -> sprintf "0x%08x" token
 
-        let decodeMethodIL (mdReader: MetadataReader) (bytes: byte[]) =
+        let decodeMethodILWithNames qualified (mdReader: MetadataReader) (bytes: byte[]) =
             [ let mutable pos = 0
               while pos < bytes.Length do
                   let offset = pos
@@ -1826,8 +1925,65 @@ $ code --diff {outFile} {expectedFile}
                       | OperandType.InlineVar -> next 2; sprintf " %d" (int (BitConverter.ToUInt16(bytes, operand)))
                       | OperandType.InlineString -> next 4; sprintf " \"%s\"" (mdReader.GetUserString(MetadataTokens.UserStringHandle(BitConverter.ToInt32(bytes, operand))))
                       | OperandType.InlineSwitch -> next (4 + 4 * BitConverter.ToInt32(bytes, operand)); sprintf " (%d targets)" (BitConverter.ToInt32(bytes, operand))
-                      | _ -> next 4; " " + tokenName mdReader (BitConverter.ToInt32(bytes, operand))
+                      | _ -> next 4; " " + tokenName qualified mdReader (BitConverter.ToInt32(bytes, operand))
                   yield offset, op.Name + text ]
+
+        let decodeMethodIL mdReader bytes = decodeMethodILWithNames false mdReader bytes
+
+    let verifyRuntimeAsyncExceptionRegions (expectedMethods: (string * bool) list) (result: CompilationResult) =
+        let assemblyPath =
+            match result with
+            | CompilationResult.Success r -> r.OutputPath |> Option.defaultWith (fun () -> failwith "Compilation produced no output.")
+            | CompilationResult.Failure f -> failwith $"Compilation failed: {f}"
+
+        use stream = File.OpenRead assemblyPath
+        use peReader = new PEReader(stream)
+        let reader = peReader.GetMetadataReader()
+        let inspected = Collections.Generic.Dictionary<string, bool>(StringComparer.Ordinal)
+        let problems = ResizeArray<string>()
+        for handle in reader.MethodDefinitions do
+            let method = reader.GetMethodDefinition handle
+            if method.RelativeVirtualAddress <> 0 then
+                let declaringType = reader.GetTypeDefinition(method.GetDeclaringType())
+                let name = $"{reader.GetString declaringType.Name}::{reader.GetString method.Name}"
+                let body = peReader.GetMethodBody method.RelativeVirtualAddress
+                let inHandler offset (region: ExceptionRegion) =
+                    region.HandlerOffset <= offset && offset < region.HandlerOffset + region.HandlerLength
+                let mutable hasAwait = false
+                for offset, instruction in Il.decodeMethodILWithNames true reader (body.GetILBytes()) do
+                    let isSuspension =
+                        match instruction with
+                        | "call System.Runtime.CompilerServices.AsyncHelpers::Await"
+                        | "call System.Runtime.CompilerServices.AsyncHelpers::AwaitAwaiter"
+                        | "call System.Runtime.CompilerServices.AsyncHelpers::UnsafeAwaitAwaiter" -> true
+                        | _ -> false
+                    hasAwait <- hasAwait || isSuspension
+                    let orphan =
+                        instruction = "rethrow"
+                        && not (body.ExceptionRegions |> Seq.exists (fun region ->
+                            (region.Kind = ExceptionRegionKind.Catch || region.Kind = ExceptionRegionKind.Filter)
+                            && inHandler offset region))
+                    let forbiddenAwait =
+                        isSuspension
+                        && (body.ExceptionRegions |> Seq.exists (fun region ->
+                            inHandler offset region
+                            || (region.Kind = ExceptionRegionKind.Filter && region.FilterOffset <= offset && offset < region.HandlerOffset)))
+                    if orphan || forbiddenAwait then
+                        let reason = if orphan then "orphan rethrow" else "suspension in exception handler/filter"
+                        let regions =
+                            body.ExceptionRegions
+                            |> Seq.map (fun r -> r.Kind, r.TryOffset, r.TryLength, r.HandlerOffset, r.HandlerLength, r.FilterOffset)
+                            |> Seq.toList
+                        problems.Add($"{name}: {reason} at IL_%04x{offset}; regions (kind, try offset/length, handler offset/length, filter offset): %A{regions}")
+                inspected.[name] <- hasAwait && (int method.ImplAttributes &&& 0x2000) <> 0
+        for name, requiresAwait in expectedMethods do
+            match inspected.TryGetValue name with
+            | false, _ -> problems.Add($"Missing probe method body: {name}")
+            | true, false when requiresAwait -> problems.Add($"Missing runtime-async body with suspension in {name}")
+            | _ -> ()
+        if problems.Count <> 0 then
+            failwith (String.concat "\n" problems)
+        result
 
     let private formatSequencePoints (source: string) (assemblyPath: string) (pdbReader: MetadataReader) =
         let normalizedSource = source.Replace("\r\n", "\n").Replace("\r", "\n")
@@ -2019,7 +2175,7 @@ $ code --diff {outFile} {expectedFile}
                 | Some (ExecutionOutput {Outcome = Failure ex }) ->
                     failwithf $"Eval or Execution has failed (expected to succeed): %A{ex}\n{diagnostics}"
                 | _ ->
-                    
+
                     failwithf $"Operation failed (expected to succeed).\n{diagnostics} \n OUTPUTs: %A{r.Output}"
 
         let shouldFail (result: CompilationResult) : CompilationResult =
@@ -2244,10 +2400,10 @@ $ code --diff {outFile} {expectedFile}
                 let m = Regex(pattern, RegexOptions.Multiline).Match(input)
                 if m.Success then
                     m.Index
-                else 
+                else
                     -1
             | MatchStyle.Standard ->
-                input.IndexOf(pattern) 
+                input.IndexOf(pattern)
 
         let private checkOutputInOrderCore matchStyle (category: string) (substrings: string list) (selector: ExecutionOutput -> string) (result: CompilationResult) : CompilationResult =
             match result.RunOutput with
@@ -2414,3 +2570,19 @@ $ code --diff {outFile} {expectedFile}
     /// Run FSC as a subprocess with the given arguments. For CLI-level tests only (missing files, exit codes, etc.).
     let runFscProcess (args: string list) : ProcessResult =
         runToolProcess TestFramework.initialConfig.FSC args
+
+    /// Compile-and-run a compilation unit that depends on a FSharp.Core attribute
+    /// which may not yet be shipped in the SDK's NuGet package.
+    /// When the attribute is present, compiles and runs expecting success.
+    /// When absent, expects compilation failure with error 39 (undefined type).
+    let compileAndRunOrExpectMissingAttribute (fsharpCoreTypeName: string) (cu: CompilationUnit) =
+        if
+            not (
+                isNull (
+                    typeof<RequireQualifiedAccessAttribute>.Assembly.GetType(fsharpCoreTypeName)
+                )
+            )
+        then
+            cu |> compileAndRun |> shouldSucceed |> ignore
+        else
+            cu |> compile |> shouldFail |> withErrorCode 39 |> ignore

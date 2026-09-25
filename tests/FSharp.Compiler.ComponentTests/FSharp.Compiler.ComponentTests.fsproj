@@ -44,6 +44,7 @@
     <Compile Include="Conformance\BasicGrammarElements\CustomAttributes\AttributeUsage\AttributeUsage.fs" />
     <Compile Include="Conformance\BasicGrammarElements\CustomAttributes\AttributeUsage\AttributeResolutionInRecursiveScopes.fs" />
     <Compile Include="Conformance\BasicGrammarElements\CustomAttributes\Basic\Basic.fs" />
+    <Compile Include="Conformance\BasicGrammarElements\CustomAttributes\Basic\ExtendedLayout.fs" />
     <Compile Include="Conformance\BasicGrammarElements\CustomAttributes\ImportedAttributes\ImportedAttributes.fs" />
     <Compile Include="Conformance\BasicGrammarElements\CustomAttributes\ArgumentsOfAllTypes\ArgumentsOfAllTypes.fs" />
     <Compile Include="Conformance\BasicGrammarElements\DelegateTypes\DelegateDefinition.fs" />
@@ -59,6 +60,7 @@
     <Compile Include="Conformance\BasicGrammarElements\LetBindings\TypeFunctions\TypeFunctions.fs" />
     <Compile Include="Conformance\BasicGrammarElements\LetBindings\ActivePatternBindings\ActivePatternBindings.fs" />
     <Compile Include="Conformance\BasicGrammarElements\LetBindings\ExplicitTypeParameters\ExplicitTypeParameters.fs" />
+    <Compile Include="Conformance\Members\CheckEntityDefnEdgeCases.fs" />
     <Compile Include="Conformance\BasicGrammarElements\MemberDefinitions\MemberDefinitions.fs" />
     <Compile Include="Conformance\BasicGrammarElements\MemberDefinitions\ImplementingDispatchSlots\ImplementingDispatchSlots.fs" />
     <Compile Include="Conformance\BasicGrammarElements\MemberDefinitions\MethodsAndProperties\MethodsAndProperties.fs" />
@@ -84,6 +86,7 @@
     <Compile Include="Conformance\BasicGrammarElements\UseBindings\UseBangBindings.fs" />
 	<Compile Include="Conformance\BasicGrammarElements\UseBindings\UseBindingsAndExtensionMembers.fs" />
     <Compile Include="Conformance\Constraints\Unmanaged.fs" />
+    <Compile Include="Conformance\Constraints\ConstraintSyntax.fs" />
     <Compile Include="Conformance\GeneratedEqualityHashingComparison\Attributes\Diags\Attributes_Diags.fs" />
     <Compile Include="Conformance\GeneratedEqualityHashingComparison\Attributes\Legacy\Attributes_Legacy.fs" />
     <Compile Include="Conformance\GeneratedEqualityHashingComparison\Basic\Basic.fs" />
@@ -150,6 +153,7 @@
     <Compile Include="Conformance\LexicalAnalysis\IdentifiersAndKeywords.fs" />
     <Compile Include="Conformance\LexicalAnalysis\IdentifierReplacements.fs" />
     <Compile Include="Conformance\LexicalAnalysis\ConditionalCompilation.fs" />
+    <Compile Include="Conformance\LexicalAnalysis\PreprocessorElif.fs" />
     <Compile Include="Conformance\LexicalFiltering\HashLight\HashLight.fs" />
     <Compile Include="Conformance\LexicalFiltering\HighPrecedenceApplication\HighPrecedenceApplication.fs" />
     <Compile Include="Conformance\LexicalFiltering\OffsideExceptions\OffsideExceptions.fs" />
@@ -158,6 +162,7 @@
     <Compile Include="Conformance\PatternMatching\Simple\Simple.fs" />
     <Compile Include="Conformance\PatternMatching\Array\Array.fs" />
     <Compile Include="Conformance\PatternMatching\And\And.fs" />
+    <Compile Include="Conformance\PatternMatching\GuardedOrPatternComplexity.fs" />
     <Compile Include="Conformance\PatternMatching\As\As.fs" />
     <Compile Include="Conformance\PatternMatching\ConsList\ConsList.fs" />
     <Compile Include="Conformance\PatternMatching\DynamicTypeTest\DynamicTypeTest.fs" />
@@ -181,6 +186,7 @@
     <Compile Include="Conformance\Types\TypeConstraints\CheckingSyntacticTypes\CheckingSyntacticTypes.fs" />
     <Compile Include="Conformance\Types\TypeConstraints\LogicalPropertiesOfTypes\LogicalPropertiesOfTypes.fs" />
     <Compile Include="Conformance\Types\TypeConstraints\IWSAMsAndSRTPs\IWSAMsAndSRTPsTests.fs" />
+    <Compile Include="Conformance\Types\TypeConstraints\ExtensionConstraints\ExtensionConstraintsTests.fs" />
     <Compile Include="Conformance\Types\UnionTypes\UnionTypes.fs" />
     <Compile Include="Conformance\Types\UnionTypes\UnionStructTypes.fs" />
     <Compile Include="Conformance\UnitsOfMeasure\Basic\Basic.fs" />
@@ -243,7 +249,9 @@
     <Compile Include="EmittedIL\DebugPointsOnStack\DebugPointsOnStack.fs" />
     <Compile Include="EmittedIL\Enums.fs" />
     <Compile Include="EmittedIL\Literals.fs" />
+    <Compile Include="EmittedIL\PrintFunction.fs" />
     <Compile Include="EmittedIL\NoCompilerInlining.fs" />
+    <Compile Include="EmittedIL\OptimizeClosureIfNotInlined.fs" />
     <Compile Include="EmittedIL\DebugInlineAsCall.fs" />
     <Compile Include="EmittedIL\RealInternalSignature\ModuleVisibility.fs" />
     <Compile Include="EmittedIL\RealInternalSignature\ModuleInitialization.fs" />
@@ -261,6 +269,7 @@
     <Compile Include="EmittedIL\TailCalls.fs" />
     <Compile Include="EmittedIL\TupleElimination.fs" />
     <Compile Include="EmittedIL\UncheckedDefaultofOptimization.fs" />
+    <Compile Include="EmittedIL\InlineIfLambdaEtaFloat.fs" />
     <Compile Include="EmittedIL\TypeTestsInPatternMatching.fs" />
     <Compile Include="EmittedIL\WhileLoops.fs" />
     <Compile Include="EmittedIL\ArgumentNames.fs" />
@@ -283,13 +292,16 @@
     <Compile Include="EmittedIL\Inlining\Regression_TLR_RealsigPrivate.fs" />
     <Compile Include="EmittedIL\Inlining\Regression_RealsigAugmentationClosure.fs" />
     <Compile Include="EmittedIL\Inlining\Regression_Specialize_ConstraintVerification.fs" />
+    <Compile Include="EmittedIL\Inlining\Regression_RecursiveInlineMemberDependencies.fs" />
     <Compile Include="EmittedIL\Inlining\Inlining.fs" />
+    <Compile Include="EmittedIL\Inlining\InlineIfLambdaClosureForms.fs" />
     <Compile Include="EmittedIL\ListExpressionStepping\ListExpressionStepping.fs" />
     <Compile Include="EmittedIL\MethodImplAttribute\MethodImplAttribute.fs" />
     <Compile Include="EmittedIL\ByRefTests.fs" />
     <Compile Include="EmittedIL\Misc\Misc.fs" />
     <Compile Include="Misc.fs" />
     <Compile Include="Optimizations\TaskCEUnitPropertyAccess.fs" />
+    <Compile Include="Optimizations\InlineIfLambdaEtaFloat.fs" />
     <Compile Include="EmittedIL\operators\Operators.fs" />
     <Compile Include="EmittedIL\Platform\Platform.fs" />
     <Compile Include="EmittedIL\QueryExpressionStepping\QueryExpressionStepping.fs" />
@@ -364,6 +376,7 @@
     <Compile Include="ErrorMessages\NameIsBoundMultipleTimesTests.fs" />
     <Compile Include="ErrorMessages\FSharpDiagnosticTests.fs" />
     <Compile Include="Language\IndexerSetterParamArray.fs" />
+    <Compile Include="Language\IndexerSetterOptionalArguments.fs" />
     <Compile Include="Language\MultiDimensionalArrayTests.fs" />
     <Compile Include="Language\RegressionTests.fs" />
     <Compile Include="Language\AttributeCheckingTests.fs" />
@@ -391,6 +404,9 @@
     <Compile Include="Language\InterfaceTests.fs" />
     <Compile Include="Language\CopyAndUpdateTests.fs" />
     <Compile Include="Language\ConstraintIntersectionTests.fs" />
+    <Compile Include="Language\RuntimeAsyncTests.fs" />
+    <Compile Include="Language\RuntimeAsyncEdgeCaseTests.fs" />
+    <Compile Include="Language\RuntimeAsyncSequenceTests.fs" />
     <Compile Include="Language\BooleanReturningAndReturnTypeDirectedPartialActivePatternTests.fs" />
     <Compile Include="Language\Nullness\NullableLibraryConstructsTests.fs" />
     <Compile Include="Language\Nullness\NullableCsharpImportTests.fs" />
@@ -401,10 +417,13 @@
     <Compile Include="Language\IndexedSetTests.fs" />
     <Compile Include="Language\UseBindingDisposalTests.fs" />
     <Compile Include="Language\RecordSpreadsTests.fs" />
+    <Compile Include="Language\RequireNamedArgumentsTests.fs" />
+    <Compile Include="Language\ReraiseInComputationExpressionsTests.fs" />
     <Compile Include="Import\ImportTests.fs" />
     <Compile Include="ConstraintSolver\PrimitiveConstraints.fs" />
     <Compile Include="ConstraintSolver\MemberConstraints.fs" />
     <Compile Include="ConstraintSolver\ObjInference.fs" />
+    <Compile Include="ConstraintSolver\TaskCETypeInference.fs" />
     <Compile Include="Interop\DeeplyNestedCSharpClasses.fs" />
     <Compile Include="Interop\DIMSlotCoverageTests.fs" />
     <Compile Include="Interop\SimpleInteropTests.fs" />
@@ -517,6 +536,7 @@
     <Compile Include="Miscellaneous\TestUtilities.fs" />
     <Compile Include="Miscellaneous\MigratedMisc.fs" />
     <Compile Include="Libraries\NativeInterop.fs" />
+    <Compile Include="Libraries\FSharpCoreShippedNet.fs" />
     <Compile Include="Signatures\TestHelpers.fs" />
     <Compile Include="Signatures\ModuleOrNamespaceTests.fs" />
     <Compile Include="Signatures\RecordTests.fs" />

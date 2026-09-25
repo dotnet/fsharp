@@ -1252,6 +1252,26 @@ let main _ =
         |> compileAndRun
         |> verifySequencePoints
 
+    // https://github.com/dotnet/fsharp/issues/20297
+    [<Fact>]
+    let ``SRTP 39 - Captured local function, callsite in a nested closure`` () =
+        FSharp """
+let f () =
+    let tee g (x: int) = g x; x
+    let inline addEnum value = tee (fun x -> ignore (int value))
+    let pipeline v = id >> addEnum v
+    pipeline 1uy 41
+
+[<EntryPoint>]
+let main _ =
+    if f () = 41 then 0 else 1
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> asExe
+        |> compileAndRun
+        |> verifySequencePoints
+
     [<Fact>]
     let ``Member 01 - Non-generic`` () =
         FSharp """
@@ -1740,6 +1760,41 @@ let main _ =
         |> verifySequencePoints
 
     [<Fact>]
+    let ``Resumable 04 - Builder Run is inlined`` () =
+        FSharp """
+open Microsoft.FSharp.Core.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers
+
+#nowarn "3501"
+#nowarn "3513"
+
+type Builder() =
+    member inline _.Run(code: ResumableCode<unit, int>) =
+        if __useResumableCode then
+            __stateMachine<unit, int>
+                (MoveNextMethodImpl<_>(fun sm -> code.Invoke(&sm) |> ignore))
+                (SetStateMachineMethodImpl<_>(fun _ _ -> ()))
+                (AfterCode<_, _>(fun _ -> 42))
+        else
+            0
+
+let builder = Builder()
+
+[<EntryPoint>]
+let main _ =
+    let code = ResumableCode<unit, int>(fun _ -> true)
+    let result = builder.Run code
+    if result = 42 then 0 else 1
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+        |> withExitCode 0
+        |> verifySequencePoints
+
+    [<Fact>]
     let ``InlineIfLambda 01 - Debug`` () =
         FSharp """
 let inline apply ([<InlineIfLambda>] f: int -> int) (x: int) : int =
@@ -1876,4 +1931,3 @@ let main _ =
         |> asExe
         |> compileAndRun
         |> verifySequencePoints
-

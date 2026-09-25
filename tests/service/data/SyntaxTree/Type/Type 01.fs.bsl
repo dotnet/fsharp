@@ -6,7 +6,7 @@ ImplFile
           [Types
              ([SynTypeDefn
                  (SynComponentInfo
-                    ([], None, [], [],
+                    ([], None, [], None,
                      PreXmlDoc ((3,0), FSharp.Compiler.Xml.XmlDocCollector),
                      false, None, (3,5--5,0)),
                   Simple (None (3,5--5,0), (3,5--5,0)), [], None, (3,5--5,0),

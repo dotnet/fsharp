@@ -4,9 +4,9 @@ type T(x,y) =
     let mutable field = 0
     member val Property = field with get,set
     member val OtherProperty = "" with get,set
-    new(x) as this = 
+    new(x) as this =
         T(x,0)
-        then 
+        then
             this.Property <- 5
             this.OtherProperty <- "hi"
 

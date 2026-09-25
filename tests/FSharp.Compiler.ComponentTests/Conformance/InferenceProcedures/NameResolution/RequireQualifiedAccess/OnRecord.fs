@@ -1,4 +1,4 @@
-// #Conformance #TypeInference #Attributes 
+// #Conformance #TypeInference #Attributes
 // Verify the RequireQualifiedAccess attribute works on records
 
 [<RequireQualifiedAccess>]

@@ -1,6 +1,7 @@
 ---
 applyTo:
   - "src/Compiler/TypedTree/TypedTreePickle.{fs,fsi}"
+  - "src/Compiler/TypedTree/TypedTree.{fs,fsi}"
   - "src/Compiler/Driver/CompilerImports.{fs,fsi}"
 ---
 
@@ -20,6 +21,12 @@ This means:
 1. **Never remove, reorder, or reinterpret** existing serialized data. DLLs compiled with older formats exist in the wild permanently.
 2. **Additions must be invisible to old readers.** New data goes in stream B, where readers that don't know about it get `0` (the default sentinel) past end-of-stream. New readers detect presence via a tag byte they write unconditionally.
 3. **Tag values are forever.** Once a byte value means something in a reader's `match`, that meaning cannot change. Old DLLs encode that value with the old semantics.
+
+## Flag Enums: Reinterpreting a Tag Breaks Old Binaries
+
+The `ValFlags`, `EntityFlags`, and `TyparFlags` types in `TypedTree.fs` pack enum cases into bit patterns exposed as `PickledBits` and serialized verbatim. Adding a case to such an enum must **not** reuse a bit pattern that already exists in shipped metadata with different semantics. Normalizing the new case on the *write* side protects only future binaries — an older compiler already emitted the old pattern into DLLs that exist permanently. If you reuse a pattern, add matching *read*-side normalization (see `ValFlags.OfPickledBits`) that maps the legacy pattern back to its original meaning; otherwise prefer an unused pattern.
+
+For a detailed example of what goes wrong when a serialized flag pattern is reinterpreted, see `docs/postmortems/regression-legacy-inline-metadata-dynamic-invocation.md`.
 
 ## Reading and Writing Must Be Perfectly Aligned
 
