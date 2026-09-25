@@ -64,7 +64,8 @@ ImplFile
                                                    MutableKeyword = None })],
                        PreXmlDocEmpty, None, (9,14--9,33), { BarRange = None }),
                     None, PreXmlDoc ((9,4), FSharp.Compiler.Xml.XmlDocCollector),
-                    None, (9,4--9,33)), None, [], (9,4--9,33)), (9,4--9,33));
+                    None, (9,4--9,33), { ExceptionKeyword = (9,4--9,13) }), None,
+                 [], (9,4--9,33)), (9,4--9,33));
            Open
              (ModuleOrNamespace
                 (SynLongIdent

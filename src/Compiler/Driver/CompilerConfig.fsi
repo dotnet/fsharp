@@ -567,6 +567,7 @@ type TcConfigBuilder =
 
     member AddPathMapping: oldPrefix: string * newPrefix: string -> unit
 
+    /// Parse file[,name[,access]], allowing a quoted file path to contain commas.
     static member SplitCommandLineResourceInfo: string -> string * string * ILResourceAccess
 
     // Directories to start probing in for native DLLs for FSI dynamic loading

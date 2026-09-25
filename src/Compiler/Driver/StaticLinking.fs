@@ -4,6 +4,7 @@
 module internal FSharp.Compiler.StaticLinking
 
 open System
+open System.Xml.Linq
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
@@ -22,6 +23,57 @@ open FSharp.Compiler.TypedTree
 #if !NO_TYPEPROVIDERS
 open FSharp.Compiler.TypeProviders
 #endif
+
+let linkMetadataResources assemblyName (resources: (string * ILResource) list) =
+    let xname = XName.Get
+    let prefixes = ILLinkSubstitutions.names "" |> Seq.toList
+
+    let generated, retained =
+        resources
+        |> List.splitChoose (fun (owner, resource) ->
+            match resource.Location with
+            | ILResourceLocation.Local _ when resource.Name.Equals("ILLink.Substitutions.xml", StringComparison.OrdinalIgnoreCase) ->
+                try
+                    use stream = resource.GetBytes().AsStream()
+                    let xml = XElement.Load stream
+
+                    let names =
+                        [
+                            for rule in xml.Descendants(xname "resource") do
+                                if rule.IsEmpty then
+                                    rule.Value <- ""
+
+                                for name in rule.Attributes(xname "name") do
+                                    if List.exists name.Value.StartsWithOrdinal prefixes then
+                                        name.Value
+                        ]
+
+                    match resource.CustomAttrs.AsList(), XNode.DeepEquals(xml, ILLinkSubstitutions.document owner names) with
+                    | [], true -> Choice1Of2(resource, names)
+                    | _ -> Choice2Of2(true, resource)
+                with :? System.Xml.XmlException ->
+                    Choice2Of2(true, resource)
+            | _ -> Choice2Of2(false, resource))
+
+    let resources = List.map snd retained
+
+    match generated with
+    | (resource, _) :: _ when not (List.exists fst retained) ->
+        let present = resources |> List.map _.Name |> Set.ofList
+
+        let names =
+            generated |> List.collect snd |> List.filter present.Contains |> List.distinct
+
+        resources
+        @ [
+            if not names.IsEmpty then
+                let xml = ILLinkSubstitutions.document assemblyName names
+
+                { resource with
+                    Location = ILResourceLocation.Local(ByteStorage.FromByteArray(System.Text.Encoding.UTF8.GetBytes(xml.ToString())))
+                }
+        ]
+    | _ -> resources
 
 // Handles TypeForwarding for the generated IL model
 type TypeForwarding(tcImports: TcImports) =
@@ -157,51 +209,30 @@ let StaticLinkILModules
             ]
 
         let savedResources =
-            let allResources =
-                [
-                    for ccu, m in dependentILModules do
-                        for r in m.Resources.AsList() do
-                            (ccu, r)
-                ]
-            // Don't save interface, optimization or resource definitions for provider-generated assemblies.
-            // These are "fake".
-            let isProvided (ccu: CcuThunk option) =
+            [
+                for ccu, m in dependentILModules do
+                    let provided =
 #if !NO_TYPEPROVIDERS
-                match ccu with
-                | Some c -> c.IsProviderGenerated
-                | None -> false
+                        ccu |> Option.exists _.IsProviderGenerated
 #else
-                ignore ccu
-                false
+                        ignore ccu
+                        false
 #endif
+                    for r in m.Resources.AsList() do
+                        let order, enabled =
+                            if IsSignatureDataResource r || IsSignatureDataResourceB r then
+                                0, tcConfig.GenerateSignatureData
+                            elif IsOptimizationDataResource r || IsOptimizationDataResourceB r then
+                                1, tcConfig.GenerateOptimizationData
+                            else
+                                2, true
 
-            // Save only the interface/optimization attributes of generated data
-            let intfDataResources, others =
-                allResources
-                |> List.partition (fun (_, r) -> IsSignatureDataResource r || IsSignatureDataResourceB r)
-
-            let intfDataResources =
-                [
-                    for ccu, r in intfDataResources do
-                        if tcConfig.GenerateSignatureData && not (isProvided ccu) then
-                            r
-                ]
-
-            let optDataResources, others =
-                others
-                |> List.partition (fun (_, r) -> IsOptimizationDataResource r || IsOptimizationDataResourceB r)
-
-            let optDataResources =
-                [
-                    for ccu, r in optDataResources do
-                        if tcConfig.GenerateOptimizationData && not (isProvided ccu) then
-                            r
-                ]
-
-            let otherResources = others |> List.map snd
-
-            let result = intfDataResources @ optDataResources @ otherResources
-            result
+                        if enabled && (order = 2 || not provided) then
+                            yield order, (GetNameOfILModule m, r)
+            ]
+            |> List.groupBy fst
+            |> List.sortBy fst
+            |> List.collect (snd >> List.map snd)
 
         let moduls = ilxMainModule :: (List.map snd dependentILModules)
 
@@ -248,7 +279,11 @@ let StaticLinkILModules
                                 ]
                         )
                     TypeDefs = mkILTypeDefs (topTypeDef :: List.concat normalTypeDefs)
-                    Resources = mkILResources (savedResources @ ilxMainModule.Resources.AsList())
+                    Resources =
+                        savedResources
+                        @ (ilxMainModule.Resources.AsList() |> List.map (fun r -> oldManifest.Name, r))
+                        |> linkMetadataResources oldManifest.Name
+                        |> mkILResources
                     NativeResources = savedNativeResources
                 }
 

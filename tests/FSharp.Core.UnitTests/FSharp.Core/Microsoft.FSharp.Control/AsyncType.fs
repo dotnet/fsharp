@@ -84,7 +84,7 @@ type AsyncType() =
             |> Async.Parallel
             |> run
             |> Set.ofArray
-        printfn $"RunSynchronously used {usedThreads.Count} threads. Environment.ProcessorCount is {Environment.ProcessorCount}."
+        printn $"RunSynchronously used {usedThreads.Count} threads. Environment.ProcessorCount is {Environment.ProcessorCount}."
         // Some arbitrary large number but in practice it should not use more threads than there are CPU cores.
         Assert.True(usedThreads.Count < 256, $"RunSynchronously used {usedThreads.Count} threads.")
 
@@ -978,9 +978,9 @@ module AsyncAwaitStackTraceTests =
     let checkTrace totalCount (e: exn) =
         let trace = e.StackTrace
         // stacktrace should be relatively compact and not bloat the logs, so unconditionally print it to save time analyzing regressions
-        printfn "EDI trace ===="
+        printn "EDI trace ===="
         printfn "%s" trace
-        printfn "==== EDI trace"
+        printn "==== EDI trace"
         Assert.NotNull(trace)
         Assert.Contains("throwAtLevel1", trace)
         Assert.Contains("level1Task", trace)

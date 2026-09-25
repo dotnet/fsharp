@@ -597,7 +597,7 @@ module TcRecdUnionAndEnumDeclarations =
 
         let checkXmlDocs = cenv.diagnosticOptions.CheckXmlDocs
         let xmlDoc = xmldoc.ToXmlDoc(checkXmlDocs, Some names)
-        let attrs, getFinalAttrs = TcAttributesCanFail cenv env AttributeTargets.UnionCaseDecl synAttrs
+        let attrs, getFinalAttrs, _ = TcAttributesCanFail cenv env AttributeTargets.UnionCaseDecl synAttrs
         let unionCase = Construct.NewUnionCase id rfields recordTy attrs xmlDoc vis
 
         // Attribute types from the same recursive group resolve only once the group is established.
@@ -2442,7 +2442,7 @@ let CheckForDuplicateModule env nm m =
 /// Check 'exception' declarations in implementations and signatures
 module TcExceptionDeclarations =
 
-    let TcExnDefnCore_Phase1A g cenv env parent (SynExceptionDefnRepr(Attributes synAttrs, SynUnionCase(ident= SynIdent(id,_)), _, xmlDoc, vis, m)) =
+    let TcExnDefnCore_Phase1A g cenv env parent (SynExceptionDefnRepr(attributes = Attributes synAttrs; caseName = SynUnionCase(ident = SynIdent(id, _)); xmlDoc = xmlDoc; accessibility = vis; range = m)) =
         let attrs = TcAttributes cenv env AttributeTargets.ExnDecl synAttrs
         if not (String.isLeadingIdentifierCharacterUpperCase id.idText) then errorR(NotUpperCaseConstructor id.idRange)
         CheckNamespaceModuleOrTypeName g id
@@ -2456,7 +2456,7 @@ module TcExceptionDeclarations =
         let xmlDoc = xmlDoc.ToXmlDoc(checkXmlDocs, Some [])
         Construct.NewExn cpath id vis repr attrs xmlDoc
 
-    let TcExnDefnCore_Phase1G_EstablishRepresentation (cenv: cenv) (env: TcEnv) parent (exnc: Entity) (SynExceptionDefnRepr(_, SynUnionCase(caseType=args), reprIdOpt, _, _, m)) =
+    let TcExnDefnCore_Phase1G_EstablishRepresentation (cenv: cenv) (env: TcEnv) parent (exnc: Entity) (SynExceptionDefnRepr(caseName = SynUnionCase(caseType = args); longId = reprIdOpt; range = m)) =
         let g = cenv.g
         let args =
             match args with
@@ -2958,7 +2958,7 @@ module EstablishTypeDefinitionCores =
 
         // 'Check' the attributes. We return the results to avoid having to re-check them in all other phases.
         // Allow failure of constructor resolution because Vals for members in the same recursive group are not yet available
-        let attrs, getFinalAttrs = TcAttributesCanFail cenv envinner AttributeTargets.TyconDecl synAttrs
+        let attrs, getFinalAttrs, hasDeferredAttrs = TcAttributesCanFail cenv envinner AttributeTargets.TyconDecl synAttrs
         let entityFlags = computeEntityWellKnownFlags g attrs
         let hasMeasureAttr = hasFlag entityFlags WellKnownEntityAttributes.MeasureAttribute
         let hasStructAttr = hasFlag entityFlags WellKnownEntityAttributes.StructAttribute
@@ -3084,6 +3084,9 @@ module EstablishTypeDefinitionCores =
 
         // OK, now fill in the (partially computed) type representation
         tycon.entity_tycon_repr <- repr
+        tycon.entity_attribs <- WellKnownEntityAttribs.Create(attrs)
+        if hasDeferredAttrs && tycon.IsUnionTycon then
+            cenv.css.UnionsWithDeferredAttributes <- cenv.css.UnionsWithDeferredAttributes.Add tycon.Stamp
         attrs, getFinalAttrs
 
 #if !NO_TYPEPROVIDERS
@@ -3395,9 +3398,6 @@ module EstablishTypeDefinitionCores =
                 let envinner = MakeInnerEnvForTyconRef envinner tcref false
 
                 let implementedTys, _ = List.mapFold (mapFoldFst (TcTypeAndRecover cenv NoNewTypars checkConstraints ItemOccurrence.UseInType WarnOnIWSAM.No envinner)) tpenv explicitImplements
-
-                if firstPass then
-                    tycon.entity_attribs <- WellKnownEntityAttribs.Create(attrs)
 
                 let implementedTys, inheritedTys =
                     match synTyconRepr with
@@ -4527,6 +4527,8 @@ module EstablishTypeDefinitionCores =
                             let (MutRecDefnsPhase1DataForTycon(SynComponentInfo(typeParams=TyparDecls synTypars), _, _, _, _, _)) = typeDefCore
                             let fixupFinalAttrs () =
                                 tycon.entity_attribs <- WellKnownEntityAttribs.Create(getFinalAttrs())
+                                if cenv.css.UnionsWithDeferredAttributes.Contains tycon.Stamp then
+                                    cenv.css.UnionsWithDeferredAttributes <- cenv.css.UnionsWithDeferredAttributes.Remove tycon.Stamp
                                 fixupTyparAttrs cenv envForDecls synTypars tycon.Typars
                                 for fixup in fixups do fixup()
                             info, Some tycon, fixupFinalAttrs
@@ -5528,7 +5530,7 @@ and TcSignatureElementsMutRec cenv parent typeNames m mutRecNSInfo envInitial (d
                       decls, (openOk, moduleAbbrevOk)
 
                 | SynModuleSigDecl.Exception (exnSig=SynExceptionSig(exnRepr=exnRepr; withKeyword=withKeyword; members=members)) ->
-                      let ( SynExceptionDefnRepr(synAttrs, SynUnionCase(ident=SynIdent(id,_)), _, xmlDoc, vis, m)) = exnRepr
+                      let (SynExceptionDefnRepr(attributes = synAttrs; caseName = SynUnionCase(ident = SynIdent(id, _)); xmlDoc = xmlDoc; accessibility = vis; range = m)) = exnRepr
                       let synTy = Some(SynType.LongIdent(SynLongIdent([id], [], [])))
                       let compInfo = SynComponentInfo(synAttrs, None, [], synTy, xmlDoc, false, vis, id.idRange)
                       let decls = [ MutRecShape.Tycon(SynTypeDefnSig.SynTypeDefnSig(compInfo, SynTypeDefnSigRepr.Exception exnRepr, members, m, { LeadingKeyword = SynTypeDefnLeadingKeyword.Synthetic; WithKeyword = withKeyword; EqualsRange = None })) ]
@@ -5688,7 +5690,7 @@ let TcModuleOrNamespaceElementsMutRec (cenv: cenv) parent typeNames m envInitial
 
               | SynModuleDecl.Exception (SynExceptionDefn(repr, _, members, _), _m) ->
                   let members = desugarGetSetMembers members
-                  let (SynExceptionDefnRepr(synAttrs, SynUnionCase(ident=SynIdent(id,_)), _repr, xmlDoc, vis, m)) = repr
+                  let (SynExceptionDefnRepr(attributes = synAttrs; caseName = SynUnionCase(ident = SynIdent(id, _)); xmlDoc = xmlDoc; accessibility = vis; range = m)) = repr
                   let synTy = Some(SynType.LongIdent(SynLongIdent([id], [], [])))
                   let compInfo = SynComponentInfo(synAttrs, None, [], synTy, xmlDoc, false, vis, id.idRange)
                   let decls = [ MutRecShape.Tycon(SynTypeDefn(compInfo, SynTypeDefnRepr.Exception repr, members, None, m, SynTypeDefnTrivia.Zero)) ]
@@ -6092,9 +6094,11 @@ let emptyTcEnv g =
       eCtorInfo = None
       eCallerMemberName = None
       eLambdaArgInfos = []
+      eIsIndexerSetter = false
       eIsControlFlow = false
       eInNameOf = false
       eInObjectExpr = false
+      eCaughtExceptionVal = ValueNone
       eCachedImplicitYieldExpressions = HashMultiMap(HashIdentity.Structural, useConcurrentDictionary = true)
       eUseBoundValStamps = Set.empty }
 
@@ -6424,11 +6428,25 @@ let CheckOneSigFile (g, amap, thisCcu, checkForErrors, conditionalDefines, tcSin
 
     let sigFileType = moduleTyAcc.Value
 
+    do
+        for check in cenv.css.GetPostInferenceChecksPreDefaults() do
+            try
+                check()
+            with RecoverableException exn -> errorRecovery exn m
+
     if not (checkForErrors()) then
         try
             sigFileType |> IterTyconsOfModuleOrNamespaceType (fun tycon ->
                 FinalTypeDefinitionChecksAtEndOfInferenceScope(cenv.infoReader, tcEnv.NameEnv, cenv.tcSink, false, tcEnv.DisplayEnv, tycon))
         with RecoverableException exn -> errorRecovery exn sigFile.QualifiedName.Range
+
+    // Run any additional checks registered to be run at the end of inference
+    conditionallySuppressErrorReporting (checkForErrors()) (fun () ->
+        for check in cenv.css.GetPostInferenceChecksFinal() do
+            try
+                check()
+            with RecoverableException exn ->
+                errorRecovery exn m)
 
     UpdatePrettyTyparNames.updateModuleOrNamespaceType sigFileType
 

@@ -507,7 +507,7 @@ module internal FreeTypeVars =
     /// instantiation so a type parameter used in another's subtype constraint (the 'b in 'a :> I<'b>)
     /// is unified first. Returns the pairs unchanged when no such cross-reference exists.
     /// See https://github.com/dotnet/fsharp/issues/20103
-    let reorderTyArgsByConstraintDependencies (g: TcGlobals) (pairs: (TType * TType) list) =
+    let reorderTyArgsByConstraintDependencies priority (g: TcGlobals) (pairs: (TType * TType) list) =
         match pairs with
         | []
         | [ _ ] -> pairs
@@ -529,7 +529,7 @@ module internal FreeTypeVars =
                     | ValueNone -> false
 
                 nodes
-                |> List.stableTopologicalSort mustPrecede
+                |> List.stableTopologicalSortBy (fun (pair, _, _) -> priority pair) mustPrecede
                 |> List.map (fun (pair, _, _) -> pair)
 
 [<AutoOpen>]

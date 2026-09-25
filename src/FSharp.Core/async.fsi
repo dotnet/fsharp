@@ -71,16 +71,16 @@ namespace Microsoft.FSharp.Control
         /// <category index="0">Starting Async Computations</category>
         /// <example id="run-synchronously-1">
         /// <code lang="fsharp">
-        /// printfn "A" // runs on caller thread
+        /// printn "A" // runs on caller thread
         ///
         /// let result = async {
-        ///     printfn "B" // runs on a background/threadpool thread
+        ///     printn "B" // runs on a background/threadpool thread
         ///     do! Async.Sleep(1000)
-        ///     printfn "C" // continuation runs on a background/threadpool thread
+        ///     printn "C" // continuation runs on a background/threadpool thread
         ///     return 17
         /// } |> Async.RunSynchronously
         ///
-        /// printfn "D" // runs on caller thread
+        /// printn "D" // runs on caller thread
         /// </code>
         /// <p>Prints "A", "B" immediately, then "C", "D" after 1 second.</p>
         /// <p>Yields <c>result = 17</c>.</p>
@@ -113,16 +113,16 @@ namespace Microsoft.FSharp.Control
         /// <category index="0">Starting Async Computations</category>
         /// <example id="run-synchronously-immediate-1">
         /// <code lang="fsharp">
-        /// printfn "A" // runs on calling thread
+        /// printn "A" // runs on calling thread
         ///
         /// let result = async {
-        ///     printfn "B" // ALSO runs on calling thread (hence immediately)
+        ///     printn "B" // ALSO runs on calling thread (hence immediately)
         ///     do! Async.Sleep(1000)
-        ///     printfn "C" // runs in continuation context (depends on SynchronizationContext etc)
+        ///     printn "C" // runs in continuation context (depends on SynchronizationContext etc)
         ///     return 17
         /// } |> Async.RunSynchronouslyImmediate
         ///
-        /// printfn "D" // runs on calling thread
+        /// printn "D" // runs on calling thread
         /// </code>
         /// <p>Prints "A", "B" immediately, then "C", "D" after 1 second.</p>
         /// <p>Yields <c>result = 17</c>.</p>
@@ -141,15 +141,15 @@ namespace Microsoft.FSharp.Control
         ///
         /// <example id="start-1">
         /// <code lang="fsharp">
-        /// printfn "A"
+        /// printn "A"
         ///
         /// async {
-        ///     printfn "B"
+        ///     printn "B"
         ///     do! Async.Sleep(1000)
-        ///     printfn "C"
+        ///     printn "C"
         /// } |> Async.Start
         ///
-        /// printfn "D"
+        /// printn "D"
         /// </code>
         /// Prints "A", then "D", "B" quickly in any order, and then "C" in 1 second.
         /// </example>
@@ -167,18 +167,18 @@ namespace Microsoft.FSharp.Control
         ///
         /// <example id="start-as-task-1">
         /// <code lang="fsharp">
-        /// printfn "A"
+        /// printn "A"
         ///
         /// let t =
         ///     async {
-        ///         printfn "B"
+        ///         printn "B"
         ///         do! Async.Sleep(1000)
-        ///         printfn "C"
+        ///         printn "C"
         ///     } |> Async.StartAsTask
         ///
-        /// printfn "D"
+        /// printn "D"
         /// t.Wait()
-        /// printfn "E"
+        /// printn "E"
         /// </code>
         /// Prints "A", then "D", "B" quickly in any order, then "C", "E" in 1 second.
         /// </example>
@@ -213,8 +213,8 @@ namespace Microsoft.FSharp.Control
         /// |> Async.Catch
         /// |> Async.RunSynchronously
         /// |> function
-        ///     | Choice1Of2 result -> printfn $"Result: {result}"
-        ///     | Choice2Of2 e -> printfn $"Exception: {e}"
+        ///     | Choice1Of2 result -> printn $"Result: {result}"
+        ///     | Choice2Of2 e -> printn $"Exception: {e}"
         /// </code>
         /// Prints the returned value of someRiskyBusiness() or the exception if there is one.
         /// </example>
@@ -239,9 +239,9 @@ namespace Microsoft.FSharp.Control
         ///     Async.TryCancelled(
         ///         async {
         ///             do! Async.Sleep(i * 1000)
-        ///             printfn $"{i}"
+        ///             printn $"{i}"
         ///         },
-        ///         fun oce -> printfn $"Computation Cancelled: {i}")
+        ///         fun oce -> printn $"Computation Cancelled: {i}")
         ///     |> Async.Start
         ///
         /// Thread.Sleep(6000)
@@ -276,9 +276,9 @@ namespace Microsoft.FSharp.Control
         /// let primes = [ 2; 3; 5; 7; 11 ]
         /// for i in primes do
         ///     async {
-        ///         use! holder = Async.OnCancel(fun () -> printfn $"Computation Cancelled: {i}")
+        ///         use! holder = Async.OnCancel(fun () -> printn $"Computation Cancelled: {i}")
         ///         do! Async.Sleep(i * 1000)
-        ///         printfn $"{i}"
+        ///         printn $"{i}"
         ///     }
         ///     |> Async.Start
         ///
@@ -320,7 +320,7 @@ namespace Microsoft.FSharp.Control
         ///     [ for i in primes do
         ///             async {
         ///                 do! Async.Sleep(i * 1000)
-        ///                 printfn $"{i}"
+        ///                 printn $"{i}"
         ///             }
         ///     ]
         ///
@@ -330,9 +330,9 @@ namespace Microsoft.FSharp.Control
         ///
         ///     Thread.Sleep(6000)
         ///     Async.CancelDefaultToken()
-        ///     printfn $"Tasks Finished: %A{t.Result}"
+        ///     printn $"Tasks Finished: %A{t.Result}"
         /// with
-        /// | :? System.AggregateException as ae -> printfn $"Tasks Not Finished: {ae.Message}"
+        /// | :? System.AggregateException as ae -> printn $"Tasks Not Finished: {ae.Message}"
         /// </code>
         /// This will print "2" 2 seconds from start, "3" 3 seconds from start, "5" 5 seconds from start, cease computation and
         /// then print "Tasks Not Finished: One or more errors occurred. (A task was canceled.)".
@@ -353,7 +353,7 @@ namespace Microsoft.FSharp.Control
         /// for i in primes do
         ///     async {
         ///         do! Async.Sleep(i * 1000)
-        ///         printfn $"{i}"
+        ///         printn $"{i}"
         ///     }
         ///     |> Async.Start
         ///
@@ -417,7 +417,7 @@ namespace Microsoft.FSharp.Control
         ///         do! Async.Sleep 500 // Or any other async activity
         ///         let! v1 = completor1
         ///         let! v2 = completor2
-        ///         printfn $"Result: {v1 + v2}"
+        ///         printn $"Result: {v1 + v2}"
         ///     } |> Async.RunSynchronouslyImmediate
         /// </code>
         /// Will throw a <c>System.TimeoutException</c> if called with a timeout under 2000, otherwise will print "Result: 3".
@@ -451,7 +451,7 @@ namespace Microsoft.FSharp.Control
         ///             do! Async.Sleep(System.Random().Next(1000, 2000))
         ///
         ///             if i % 2 > 0 then
-        ///                 printfn $"{i}"
+        ///                 printn $"{i}"
         ///                 return true
         ///             else
         ///                 return false
@@ -461,7 +461,7 @@ namespace Microsoft.FSharp.Control
         ///     |> Async.StartAsTask
         ///
         /// t.Wait()
-        /// printfn $"%A{t.Result}"
+        /// printn $"%A{t.Result}"
         /// </code>
         /// This will print "3", "5", "7", "11" (in any order) in 1-2 seconds and then [| false; true; true; true; false; true |].
         /// </example>
@@ -496,7 +496,7 @@ namespace Microsoft.FSharp.Control
         ///
         ///             return
         ///                 if i % 2 > 0 then
-        ///                     printfn $"{i}"
+        ///                     printn $"{i}"
         ///                     true
         ///                 else
         ///                     false
@@ -507,7 +507,7 @@ namespace Microsoft.FSharp.Control
         ///     |> Async.StartAsTask
         ///
         /// t.Wait()
-        /// printfn $"%A{t.Result}"
+        /// printn $"%A{t.Result}"
         /// </code>
         /// This will print "3", "5" (in any order) in 1-2 seconds, and then "7", "11" (in any order) in 1-2 more seconds and then
         /// [| false; true; true; true; false; true |].
@@ -540,7 +540,7 @@ namespace Microsoft.FSharp.Control
         ///                 do! Async.Sleep(System.Random().Next(1000, 2000))
         ///
         ///                 if i % 2 > 0 then
-        ///                     printfn $"{i}"
+        ///                     printn $"{i}"
         ///                     return true
         ///                 else
         ///                     return false
@@ -552,7 +552,7 @@ namespace Microsoft.FSharp.Control
         ///     |> Async.StartAsTask
         ///
         /// t.Wait()
-        /// printfn $"%A{t.Result}"
+        /// printn $"%A{t.Result}"
         /// </code>
         /// This will print "3", "5", "7", "11" with ~1-2 seconds between them except for pauses where even numbers would be and then
         /// prints [| false; true; true; true; false; true |].
@@ -596,8 +596,8 @@ namespace Microsoft.FSharp.Control
         /// |> Async.Choice
         /// |> Async.RunSynchronously
         /// |> function
-        ///     | Some (i) -> printfn $"{i}"
-        ///     | None -> printfn "No Result"
+        ///     | Some (i) -> printn $"{i}"
+        ///     | None -> printn "No Result"
         /// </code>
         /// Prints one randomly selected odd number in 1-2 seconds. If the list is changed to all even numbers, it will
         /// instead print "No Result".
@@ -623,8 +623,8 @@ namespace Microsoft.FSharp.Control
         /// |> Async.Choice
         /// |> Async.RunSynchronously
         /// |> function
-        ///     | Some (i) -> printfn $"{i}"
-        ///     | None -> printfn "No Result"
+        ///     | Some (i) -> printn $"{i}"
+        ///     | None -> printn "No Result"
         /// </code>
         /// Will sometimes print one randomly selected odd number, sometimes throw System.Exception("Even numbers not supported: 2").
         /// </example>
@@ -715,9 +715,9 @@ namespace Microsoft.FSharp.Control
         ///
         /// Async.StartWithContinuations(
         ///     computation,
-        ///     (fun result -> printfn $"Result: {result}"),
-        ///     (fun e -> printfn $"Exception: {e}"),
-        ///     (fun oce -> printfn $"Cancelled: {oce}")
+        ///     (fun result -> printn $"Result: {result}"),
+        ///     (fun e -> printn $"Exception: {e}"),
+        ///     (fun oce -> printn $"Cancelled: {oce}")
         ///  )
         /// </code>
         /// This anonymous function will call someRiskyBusiness() and properly use the provided continuations
@@ -804,7 +804,7 @@ namespace Microsoft.FSharp.Control
         ///     | :? System.InvalidOperationException ->
         ///         printfn "unreachable" // will not match: exception is wrapped in AggregateException
         ///     | :? System.AggregateException as e ->
-        ///         printfn $"Caught: {e.InnerException.Message}"
+        ///         printn $"Caught: {e.InnerException.Message}"
         /// } |> Async.RunSynchronously
         /// </code>
         /// Prints <c>Caught: test</c>. The <c>InvalidOperationException</c> branch is not reached because
@@ -837,7 +837,7 @@ namespace Microsoft.FSharp.Control
         ///     | :? System.InvalidOperationException ->
         ///         printfn "unreachable" // will not match: exception is wrapped in AggregateException
         ///     | :? System.AggregateException as e ->
-        ///         printfn $"Caught: {e.InnerException.Message}"
+        ///         printn $"Caught: {e.InnerException.Message}"
         /// } |> Async.RunSynchronously
         /// </code>
         /// Prints <c>Caught: test</c>. The <c>InvalidOperationException</c> branch is not reached because
@@ -878,7 +878,7 @@ namespace Microsoft.FSharp.Control
         ///         ()
         ///     with
         ///     | :? System.InvalidOperationException as e ->
-        ///         printfn $"Caught: {e.Message}"
+        ///         printn $"Caught: {e.Message}"
         ///     | :? System.AggregateException ->
         ///         printfn "unreachable" // will not match: single exception is unwrapped
         /// } |> Async.RunSynchronously
@@ -915,7 +915,7 @@ namespace Microsoft.FSharp.Control
         ///         do! Async.Await t
         ///     with
         ///     | :? System.InvalidOperationException as e ->
-        ///         printfn $"Caught: {e.Message}"
+        ///         printn $"Caught: {e.Message}"
         ///     | :? System.AggregateException ->
         ///         printfn "unreachable" // will not match: single exception is unwrapped
         /// } |> Async.RunSynchronously
@@ -955,7 +955,7 @@ namespace Microsoft.FSharp.Control
         ///         ()
         ///     with
         ///     | :? System.InvalidOperationException as e ->
-        ///         printfn $"Caught: {e.Message}"
+        ///         printn $"Caught: {e.Message}"
         ///     | :? System.AggregateException ->
         ///         printfn "unreachable" // will not match: single exception is unwrapped
         /// } |> Async.RunSynchronously
@@ -991,7 +991,7 @@ namespace Microsoft.FSharp.Control
         ///         do! Async.Await vt
         ///     with
         ///     | :? System.InvalidOperationException as e ->
-        ///         printfn $"Caught: {e.Message}"
+        ///         printn $"Caught: {e.Message}"
         ///     | :? System.AggregateException ->
         ///         printfn "unreachable" // will not match: single exception is unwrapped
         /// } |> Async.RunSynchronously
@@ -1092,12 +1092,12 @@ namespace Microsoft.FSharp.Control
         /// <example id="sleep-1">
         /// <code lang="fsharp">
         /// async {
-        ///     printfn "A"
+        ///     printn "A"
         ///     do! Async.Sleep(1000)
-        ///     printfn "B"
+        ///     printn "B"
         /// } |> Async.Start
         ///
-        /// printfn "C"
+        /// printn "C"
         /// </code>
         /// Prints "C" and "A" quickly in any order, and then "B" 1 second later
         /// </example>
@@ -1120,11 +1120,11 @@ namespace Microsoft.FSharp.Control
         /// <example id="sleep-2">
         /// <code lang="fsharp">
         /// async {
-        ///     printfn "A"
+        ///     printn "A"
         ///     do! Async.Sleep(TimeSpan(0, 0, 1))
-        ///     printfn "B"
+        ///     printn "B"
         /// } |> Async.Start
-        /// printfn "C"
+        /// printn "C"
         /// </code>
         /// Prints "C", then "A" quickly, and then "B" 1 second later.
         /// </example>
@@ -1312,15 +1312,15 @@ namespace Microsoft.FSharp.Control
         ///
         /// <example id="start-immediate-1">
         /// <code lang="fsharp">
-        /// printfn "A"
+        /// printn "A"
         ///
         /// async {
-        ///     printfn "B"
+        ///     printn "B"
         ///     do! Async.Sleep(1000)
-        ///     printfn "C"
+        ///     printn "C"
         /// } |> Async.StartImmediate
         ///
-        /// printfn "D"
+        /// printn "D"
         /// </code>
         /// Prints "A", "B", "D" immediately, then "C" in 1 second
         /// </example>
@@ -1347,18 +1347,18 @@ namespace Microsoft.FSharp.Control
         ///
         /// <example id="start-immediate-as-task-1">
         /// <code lang="fsharp">
-        /// printfn "A"
+        /// printn "A"
         ///
         /// let t =
         ///     async {
-        ///         printfn "B"
+        ///         printn "B"
         ///         do! Async.Sleep(1000)
-        ///         printfn "C"
+        ///         printn "C"
         ///     } |> Async.StartImmediateAsTask
         ///
-        /// printfn "D"
+        /// printn "D"
         /// t.Wait()
-        /// printfn "E"
+        /// printn "E"
         /// </code>
         /// Prints "A", "B", "D" immediately, then "C", "E" in 1 second.
         /// </example>
@@ -1410,7 +1410,7 @@ namespace Microsoft.FSharp.Control
             /// let myTask = MyTask(System.Threading.Tasks.Task.FromResult 42)
             /// async {
             ///     let! result = Async.Await myTask
-            ///     printfn $"Result: {result}"
+            ///     printn $"Result: {result}"
             /// } |> Async.RunSynchronously
             /// </code>
             /// Prints <c>Result: 42</c>.
@@ -1460,7 +1460,7 @@ namespace Microsoft.FSharp.Control
             ///
             /// async {
             ///     let! html = fetchConfigured "https://example.com"
-            ///     printfn $"Downloaded {html.Length} chars"
+            ///     printn $"Downloaded {html.Length} chars"
             /// } |> Async.RunSynchronouslyImmediate
             /// </code>
             /// </example>

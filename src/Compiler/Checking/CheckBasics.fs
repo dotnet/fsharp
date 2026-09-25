@@ -239,6 +239,8 @@ type TcEnv =
       // Active arg infos in iterated lambdas , allowing us to determine the attributes of arguments
       eLambdaArgInfos: ArgReprInfo list list
 
+      eIsIndexerSetter: bool
+
       // Do we lay down an implicit debug point?
       eIsControlFlow: bool
 
@@ -247,6 +249,10 @@ type TcEnv =
       /// Are we checking the body of an object expression? Such a body has family access to the
       /// implemented type, but its closures are not nested under that type, so they cannot keep it (#5302).
       eInObjectExpr: bool
+
+      /// The value holding the exception caught by the innermost enclosing computation expression 'with' handler,
+      /// which 'reraise()' rethrows via ExceptionDispatchInfo.
+      eCaughtExceptionVal: Val voption
 
       // In order to avoid checking implicit-yield expressions multiple times, we cache the resulting checked expressions.
       // This avoids exponential behavior in the type checker when nesting implicit-yield expressions.

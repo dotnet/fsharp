@@ -1864,17 +1864,24 @@ $ code --diff {outFile} {expectedFile}
                        | :? OpCode as op -> yield (int op.Value &&& 0xffff), op
                        | _ -> () ]
 
-        // The simple name of a type handle (TypeDef/TypeRef); "" for anything else (e.g. TypeSpec).
-        let private declaringTypeName (mdReader: MetadataReader) (handle: EntityHandle) =
+        // TypeDef/TypeRef names; "" for anything else (e.g. TypeSpec).
+        let private declaringTypeName qualified (mdReader: MetadataReader) (handle: EntityHandle) =
             if handle.IsNil then ""
             else
                 let row = MetadataTokens.GetRowNumber handle
+                let name (ns: StringHandle) (nm: StringHandle) =
+                    let ns, nm = mdReader.GetString ns, mdReader.GetString nm
+                    if qualified && ns <> "" then ns + "." + nm else nm
                 match handle.Kind with
-                | HandleKind.TypeDefinition -> mdReader.GetString (mdReader.GetTypeDefinition(MetadataTokens.TypeDefinitionHandle row)).Name
-                | HandleKind.TypeReference -> mdReader.GetString (mdReader.GetTypeReference(MetadataTokens.TypeReferenceHandle row)).Name
+                | HandleKind.TypeDefinition ->
+                    let td = mdReader.GetTypeDefinition(MetadataTokens.TypeDefinitionHandle row)
+                    name td.Namespace td.Name
+                | HandleKind.TypeReference ->
+                    let tr = mdReader.GetTypeReference(MetadataTokens.TypeReferenceHandle row)
+                    name tr.Namespace tr.Name
                 | _ -> ""
 
-        let rec private tokenName (mdReader: MetadataReader) (token: int) =
+        let rec private tokenName qualified (mdReader: MetadataReader) (token: int) =
             let handle = MetadataTokens.EntityHandle token
             let row = MetadataTokens.GetRowNumber handle
             // Qualify members with their declaring type so closure/continuation creation is visible.
@@ -1882,19 +1889,19 @@ $ code --diff {outFile} {expectedFile}
             match handle.Kind with
             | HandleKind.MethodDefinition ->
                 let md = mdReader.GetMethodDefinition(MetadataTokens.MethodDefinitionHandle row)
-                qualify (declaringTypeName mdReader (TypeDefinitionHandle.op_Implicit (md.GetDeclaringType()))) (mdReader.GetString md.Name)
+                qualify (declaringTypeName qualified mdReader (TypeDefinitionHandle.op_Implicit (md.GetDeclaringType()))) (mdReader.GetString md.Name)
             | HandleKind.MemberReference ->
                 let mr = mdReader.GetMemberReference(MetadataTokens.MemberReferenceHandle row)
-                qualify (declaringTypeName mdReader mr.Parent) (mdReader.GetString mr.Name)
+                qualify (declaringTypeName qualified mdReader mr.Parent) (mdReader.GetString mr.Name)
             | HandleKind.FieldDefinition ->
                 let fd = mdReader.GetFieldDefinition(MetadataTokens.FieldDefinitionHandle row)
-                qualify (declaringTypeName mdReader (TypeDefinitionHandle.op_Implicit (fd.GetDeclaringType()))) (mdReader.GetString fd.Name)
+                qualify (declaringTypeName qualified mdReader (TypeDefinitionHandle.op_Implicit (fd.GetDeclaringType()))) (mdReader.GetString fd.Name)
             | HandleKind.TypeReference -> mdReader.GetString (mdReader.GetTypeReference(MetadataTokens.TypeReferenceHandle row)).Name
             | HandleKind.TypeDefinition -> mdReader.GetString (mdReader.GetTypeDefinition(MetadataTokens.TypeDefinitionHandle row)).Name
-            | HandleKind.MethodSpecification -> tokenName mdReader (MetadataTokens.GetToken (mdReader.GetMethodSpecification(MetadataTokens.MethodSpecificationHandle row)).Method)
+            | HandleKind.MethodSpecification -> tokenName qualified mdReader (MetadataTokens.GetToken (mdReader.GetMethodSpecification(MetadataTokens.MethodSpecificationHandle row)).Method)
             | _ -> sprintf "0x%08x" token
 
-        let decodeMethodIL (mdReader: MetadataReader) (bytes: byte[]) =
+        let decodeMethodILWithNames qualified (mdReader: MetadataReader) (bytes: byte[]) =
             [ let mutable pos = 0
               while pos < bytes.Length do
                   let offset = pos
@@ -1918,8 +1925,65 @@ $ code --diff {outFile} {expectedFile}
                       | OperandType.InlineVar -> next 2; sprintf " %d" (int (BitConverter.ToUInt16(bytes, operand)))
                       | OperandType.InlineString -> next 4; sprintf " \"%s\"" (mdReader.GetUserString(MetadataTokens.UserStringHandle(BitConverter.ToInt32(bytes, operand))))
                       | OperandType.InlineSwitch -> next (4 + 4 * BitConverter.ToInt32(bytes, operand)); sprintf " (%d targets)" (BitConverter.ToInt32(bytes, operand))
-                      | _ -> next 4; " " + tokenName mdReader (BitConverter.ToInt32(bytes, operand))
+                      | _ -> next 4; " " + tokenName qualified mdReader (BitConverter.ToInt32(bytes, operand))
                   yield offset, op.Name + text ]
+
+        let decodeMethodIL mdReader bytes = decodeMethodILWithNames false mdReader bytes
+
+    let verifyRuntimeAsyncExceptionRegions (expectedMethods: (string * bool) list) (result: CompilationResult) =
+        let assemblyPath =
+            match result with
+            | CompilationResult.Success r -> r.OutputPath |> Option.defaultWith (fun () -> failwith "Compilation produced no output.")
+            | CompilationResult.Failure f -> failwith $"Compilation failed: {f}"
+
+        use stream = File.OpenRead assemblyPath
+        use peReader = new PEReader(stream)
+        let reader = peReader.GetMetadataReader()
+        let inspected = Collections.Generic.Dictionary<string, bool>(StringComparer.Ordinal)
+        let problems = ResizeArray<string>()
+        for handle in reader.MethodDefinitions do
+            let method = reader.GetMethodDefinition handle
+            if method.RelativeVirtualAddress <> 0 then
+                let declaringType = reader.GetTypeDefinition(method.GetDeclaringType())
+                let name = $"{reader.GetString declaringType.Name}::{reader.GetString method.Name}"
+                let body = peReader.GetMethodBody method.RelativeVirtualAddress
+                let inHandler offset (region: ExceptionRegion) =
+                    region.HandlerOffset <= offset && offset < region.HandlerOffset + region.HandlerLength
+                let mutable hasAwait = false
+                for offset, instruction in Il.decodeMethodILWithNames true reader (body.GetILBytes()) do
+                    let isSuspension =
+                        match instruction with
+                        | "call System.Runtime.CompilerServices.AsyncHelpers::Await"
+                        | "call System.Runtime.CompilerServices.AsyncHelpers::AwaitAwaiter"
+                        | "call System.Runtime.CompilerServices.AsyncHelpers::UnsafeAwaitAwaiter" -> true
+                        | _ -> false
+                    hasAwait <- hasAwait || isSuspension
+                    let orphan =
+                        instruction = "rethrow"
+                        && not (body.ExceptionRegions |> Seq.exists (fun region ->
+                            (region.Kind = ExceptionRegionKind.Catch || region.Kind = ExceptionRegionKind.Filter)
+                            && inHandler offset region))
+                    let forbiddenAwait =
+                        isSuspension
+                        && (body.ExceptionRegions |> Seq.exists (fun region ->
+                            inHandler offset region
+                            || (region.Kind = ExceptionRegionKind.Filter && region.FilterOffset <= offset && offset < region.HandlerOffset)))
+                    if orphan || forbiddenAwait then
+                        let reason = if orphan then "orphan rethrow" else "suspension in exception handler/filter"
+                        let regions =
+                            body.ExceptionRegions
+                            |> Seq.map (fun r -> r.Kind, r.TryOffset, r.TryLength, r.HandlerOffset, r.HandlerLength, r.FilterOffset)
+                            |> Seq.toList
+                        problems.Add($"{name}: {reason} at IL_%04x{offset}; regions (kind, try offset/length, handler offset/length, filter offset): %A{regions}")
+                inspected.[name] <- hasAwait && (int method.ImplAttributes &&& 0x2000) <> 0
+        for name, requiresAwait in expectedMethods do
+            match inspected.TryGetValue name with
+            | false, _ -> problems.Add($"Missing probe method body: {name}")
+            | true, false when requiresAwait -> problems.Add($"Missing runtime-async body with suspension in {name}")
+            | _ -> ()
+        if problems.Count <> 0 then
+            failwith (String.concat "\n" problems)
+        result
 
     let private formatSequencePoints (source: string) (assemblyPath: string) (pdbReader: MetadataReader) =
         let normalizedSource = source.Replace("\r\n", "\n").Replace("\r", "\n")

@@ -15,7 +15,6 @@ type LanguageFeature =
     | StringInterpolation
     | ExpandedMeasurables
     | NullnessChecking
-    | RefCellNotationInformationals
     | UnionIsPropertiesVisible
     | AttributesToRightOfModuleKeyword
     | ReallyLongLists
@@ -74,6 +73,7 @@ type LanguageFeature =
     | TypeArgumentDependencyOrdering
     | ErrorOnBitwiseOpsOnNonIntegralEnums
     | OptimizeClosureIfNotInlined
+    | ReraiseInComputationExpressions
 
 /// LanguageVersion management
 type LanguageVersion =

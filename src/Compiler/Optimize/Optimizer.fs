@@ -476,6 +476,8 @@ type IncrementalOptimizationEnv =
       /// Disable method splitting in loops
       disableMethodSplitting: bool
 
+      withinExnHandler: bool
+
       /// The Val for the function binding being generated, if any.
       functionVal: (Val * ValReprInfo) option
 
@@ -517,6 +519,7 @@ type IncrementalOptimizationEnv =
           functionVal = None
           dontSplitVars = ValMap.Empty
           disableMethodSplitting = false
+          withinExnHandler = false
           localExternalVals = LayeredMap.Empty
           globalModuleInfos = LayeredMap.Empty
           methEnv = { pipelineCount = 0 }
@@ -1596,7 +1599,7 @@ let AbstractAndRemapModulInfo g (cenv: cenv) (repackage, hidden) info =
 //-------------------------------------------------------------------------
 
 /// Type applications of F# "type functions" may cause side effects, e.g.
-/// let x<'a> = printfn "hello"; typeof<'a>
+/// let x<'a> = printn "hello"; typeof<'a>
 /// In this case do not treat them as constants.
 let IsTyFuncValRefExpr = function
     | Expr.Val (fv, _, _) -> fv.IsTypeFunction
@@ -1821,6 +1824,57 @@ let AddDirectDelegateTargetToDontInlineSet cenv env (slotsig: SlotSig) tmvs body
     else
         env
 
+/// 'localloc' storage is released when the method executing it returns, so anything derived from
+/// it dangles at that method's callsite.
+let instrIsFrameLocal instr =
+    match instr with
+    | I_localloc -> true
+    | _ -> false
+
+/// Detect frame-local allocations, treating untranslated quotations conservatively.
+let ExprMayHaveFrameLocalAllocation expr =
+    let folder =
+        { ExprFolder0 with
+            exprIntercept =
+                fun recurseF noInterceptF found expr ->
+                    if found then true else
+                    match expr with
+                    | Expr.Op (TOp.ILAsm (instrs, _), _, _, _) when List.exists instrIsFrameLocal instrs -> true
+                    | Expr.Lambda _
+                    | Expr.TyLambda _ -> false
+                    | Expr.Quote (_, dataCell, _, _, _) ->
+                        match dataCell.Value with
+                        | Some ((_, _, args1, _), (_, _, args2, _)) ->
+                            List.fold recurseF (List.fold recurseF false args1) args2
+                        // Imported optimization data omits quotation conversion data; codegen recovers its runtime splices.
+                        | None -> true
+                    // These lambdas represent control-flow bodies, not separate methods.
+                    | Expr.Op ((TOp.TryWith _ | TOp.TryFinally _ | TOp.While _ | TOp.IntegerForLoop _), _, args, _) ->
+                        (false, args) ||> List.fold (fun found arg ->
+                            match arg with
+                            | Expr.Lambda (_, _, _, _, body, _, _) -> recurseF found body
+                            | _ -> recurseF found arg)
+                    | _ -> noInterceptF false expr
+            tmethodIntercept = fun _ found _ -> Some found }
+
+    FoldExpr folder false expr
+
+let rec CallableExprMayHaveFrameLocalAllocation g expr exprTy =
+    match stripDebugPoints expr with
+    | Expr.Let(_, body, _, _)
+    | Expr.LetRec(_, body, _, _)
+    | Expr.Sequential(_, body, NormalSeq, _) ->
+        CallableExprMayHaveFrameLocalAllocation g body exprTy
+    | Expr.Match(_, _, _, targets, _, _) when targets.Length <= 2 ->
+        targets
+        |> Array.exists (fun (TTarget(_, body, _)) ->
+            CallableExprMayHaveFrameLocalAllocation g body exprTy)
+    | NewDelegateExpr g (_, _, body, _, _) ->
+        ExprMayHaveFrameLocalAllocation body
+    | expr ->
+        let _, _, body, _ = stripTopLambda (expr, exprTy)
+        ExprMayHaveFrameLocalAllocation body
+
 let TryEliminateBinding cenv env bind e2 _m =
     let g = cenv.g
 
@@ -1833,6 +1887,8 @@ let TryEliminateBinding cenv env bind e2 _m =
     elif vspec1.InlineInfo = ValInline.InlinedDefinition then None
     elif vspec1.LogicalName.StartsWithOrdinal stackVarPrefix ||
          vspec1.LogicalName.Contains suffixForVariablesThatMayNotBeEliminated then None
+    elif env.withinExnHandler &&
+         CallableExprMayHaveFrameLocalAllocation g e1 vspec1.Type then None
     else
 
         // Peephole on immediate consumption of single bindings, e.g. "let x = e in x" --> "e"
@@ -2595,13 +2651,6 @@ let shouldForceInlineMembersInDebug (g: TcGlobals) (tcref: EntityRef) =
     | true, modRef -> tyconRefEq g tcref modRef
     | _ -> false
 
-/// 'localloc' storage is released when the method executing it returns, so anything derived from
-/// it dangles at that method's callsite.
-let instrIsFrameLocal instr =
-    match instr with
-    | I_localloc -> true
-    | _ -> false
-
 /// Frame-local IL and resumable templates must remain in the caller's method.
 /// Inline wrappers inherit this requirement even when they do not inherit the callee's attributes.
 let rec HasForcedInlineBody cenv env (vref: ValRef) =
@@ -2767,7 +2816,7 @@ let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
             HasEffect = true
             Info = UnknownValue }
 
-    | Expr.App (f, fty, tyargs, argsl, m) -> 
+    | Expr.App (f, fty, tyargs, argsl, m) ->
         match expr with
         | DelegateInvokeExpr g (delInvokeRef, delInvokeTy, tyargs, delExpr, delInvokeArg, m) ->
             OptimizeFSharpDelegateInvoke cenv env (delInvokeRef, delExpr, delInvokeTy, tyargs, delInvokeArg, m)
@@ -2850,6 +2899,7 @@ and OptimizeMethod cenv env baseValOpt (TObjExprMethod(slotsig, attribs, tps, vs
         { env with
             latestBoundId = Some tmethod.Id
             functionVal = None
+            withinExnHandler = false
             runtimeAsyncContext = false }
     let env = BindTyparsToUnknown tps env
     let env = BindInternalValsToUnknown cenv vs env
@@ -3334,7 +3384,7 @@ and OptimizeTryFinally cenv env (spTry, spFinally, e1, e2, m, ty) =
     let g = cenv.g
 
     let e1R, e1info = OptimizeExpr cenv env e1
-    let e2R, e2info = OptimizeExpr cenv env e2
+    let e2R, e2info = OptimizeExpr cenv { env with withinExnHandler = true } e2
 
     let info =
         { TotalSize = e1info.TotalSize + e2info.TotalSize + tryFinallySize
@@ -3364,7 +3414,7 @@ and OptimizeTryWith cenv env (e1, vf, ef, vh, eh, m, ty, spTry, spWith) =
     if cenv.settings.EliminateTryWithAndTryFinally && not e1info.HasEffect then
         e1R, e1info
     else
-        let envinner = BindInternalValToUnknown cenv vf (BindInternalValToUnknown cenv vh env)
+        let envinner = BindInternalValToUnknown cenv vf (BindInternalValToUnknown cenv vh { env with withinExnHandler = true })
         let efR, efinfo = OptimizeExpr cenv envinner ef
         let ehR, ehinfo = OptimizeExpr cenv envinner eh
 
@@ -4207,6 +4257,7 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
             | _ ->
                 let f2R = CopyExprForInlining cenv false f2 m
                 MakeApplicationAndBetaReduce g (f2R, f2ty, [tyargs], argsR, m)
+        if env.withinExnHandler && ExprMayHaveFrameLocalAllocation exprR then None else
         // Inlining: reoptimizing
         Some(OptimizeExpr cenv {env with dontInline = Map.add lambdaId [] env.dontInline} exprR)
 
@@ -4540,7 +4591,7 @@ and OptimizeLambdas (vspec: Val option) cenv env valReprInfo expr exprTy =
     match expr with
     | Expr.Lambda (lambdaId, _, _, _, _, m, _)
     | Expr.TyLambda (lambdaId, _, _, m, _) ->
-        let env = { env with methEnv = { pipelineCount = 0 }}
+        let env = { env with methEnv = { pipelineCount = 0 }; withinExnHandler = false }
         let tps, ctorThisValOpt, baseValOpt, vsl, body, bodyTy = IteratedAdjustLambdaToMatchValReprInfo g cenv.amap valReprInfo expr
         let env = { env with functionVal = (match vspec with None -> None | Some v -> Some (v, valReprInfo)) }
         let env = Option.foldBack (BindInternalValToUnknown cenv) ctorThisValOpt env
@@ -4608,6 +4659,7 @@ and OptimizeLambdas (vspec: Val option) cenv env valReprInfo expr exprTy =
 
 and OptimizeNewDelegateExpr cenv env (lambdaId, vsl, body, remake) =
     let g = cenv.g
+    let env = { env with withinExnHandler = false }
     let env = List.foldBack (BindInternalValsToUnknown cenv) vsl env
     let bodyR, bodyinfo = OptimizeExpr cenv env body
     let arities = vsl.Length

@@ -25,7 +25,6 @@ type LanguageFeature =
     | StringInterpolation
     | ExpandedMeasurables
     | NullnessChecking
-    | RefCellNotationInformationals
     | UnionIsPropertiesVisible
     | AttributesToRightOfModuleKeyword
     | ReallyLongLists
@@ -83,6 +82,7 @@ type LanguageFeature =
     | TypeArgumentDependencyOrdering
     | ErrorOnBitwiseOpsOnNonIntegralEnums
     | OptimizeClosureIfNotInlined
+    | ReraiseInComputationExpressions
 
 /// LanguageVersion management
 type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array) =
@@ -130,7 +130,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
                 LanguageFeature.AdditionalTypeDirectedConversions, languageVersion60
                 LanguageFeature.ExpandedMeasurables, languageVersion60
                 LanguageFeature.ResumableStateMachines, languageVersion60
-                LanguageFeature.RefCellNotationInformationals, languageVersion60
                 LanguageFeature.AttributesToRightOfModuleKeyword, languageVersion60
 
                 // F# 7.0
@@ -205,6 +204,7 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
                 LanguageFeature.RuntimeAsync, previewVersion
                 LanguageFeature.RecordConstructorSyntax, previewVersion // Allow constructing a record via its all-fields constructor, e.g. MyRecord(a, b)
                 LanguageFeature.RequireNamedArguments, previewVersion // FS-1095: enforce named arguments at call sites of methods marked with RequireNamedArgumentsAttribute
+                LanguageFeature.ReraiseInComputationExpressions, previewVersion
 
                 // Unfinished features that still need work before they can be assigned a release language version.
                 LanguageFeature.FromEndSlicing, previewVersion // Unfinished features --- needs work
@@ -307,7 +307,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
         | LanguageFeature.AdditionalTypeDirectedConversions -> FSComp.SR.featureAdditionalImplicitConversions ()
         | LanguageFeature.StringInterpolation -> FSComp.SR.featureStringInterpolation ()
         | LanguageFeature.ExpandedMeasurables -> FSComp.SR.featureExpandedMeasurables ()
-        | LanguageFeature.RefCellNotationInformationals -> FSComp.SR.featureRefCellNotationInformationals ()
         | LanguageFeature.UnionIsPropertiesVisible -> FSComp.SR.featureUnionIsPropertiesVisible ()
         | LanguageFeature.AttributesToRightOfModuleKeyword -> FSComp.SR.featureAttributesToRightOfModuleKeyword ()
         | LanguageFeature.ReallyLongLists -> FSComp.SR.featureReallyLongList ()
@@ -371,6 +370,7 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
         | LanguageFeature.TypeArgumentDependencyOrdering -> FSComp.SR.featureTypeArgumentDependencyOrdering ()
         | LanguageFeature.ErrorOnBitwiseOpsOnNonIntegralEnums -> FSComp.SR.featureErrorOnBitwiseOpsOnNonIntegralEnums ()
         | LanguageFeature.OptimizeClosureIfNotInlined -> FSComp.SR.featureOptimizeClosureIfNotInlined ()
+        | LanguageFeature.ReraiseInComputationExpressions -> FSComp.SR.featureReraiseInComputationExpressions ()
 
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =
