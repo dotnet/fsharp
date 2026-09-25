@@ -642,10 +642,13 @@ type internal FSharpHotReloadService
                                             | Some result ->
                                                 // In-process compile already holds the emitted module; skip the
                                                 // on-disk re-parse of the file this process just wrote.
-                                                Ok result.IlModule
+                                                Ok(result.IlModule, result.EmittedArtifacts.AssemblyBytes)
                                             | None ->
                                                 try
-                                                    timeSync "readIlModule" (fun () -> readIlModule outputPath) |> Ok
+                                                    timeSync "readIlModule" (fun () ->
+                                                        let ilModule = readIlModule outputPath
+                                                        let assemblyBytes = File.ReadAllBytes outputPath
+                                                        Ok(ilModule, assemblyBytes))
                                                 with ex ->
                                                     Result.Error(
                                                         FSharpHotReloadError.DeltaEmissionFailed(
@@ -655,7 +658,7 @@ type internal FSharpHotReloadService
 
                                         match ilModuleResult with
                                         | Result.Error error -> return Result.Error error
-                                        | Ok ilModule ->
+                                        | Ok(ilModule, assemblyBytes) ->
                                             lock hotReloadGate (fun () ->
                                                 match synthesizedTypeMaps.TryGetValue projectKey with
                                                 | true, map ->
@@ -685,8 +688,17 @@ type internal FSharpHotReloadService
                                                     else
                                                         None
 
+                                            // Both paths retain original output bytes and matching reader tokens.
+                                            // A second write changes row order and tail calls in unchanged methods.
                                             let emittedArtifacts =
-                                                inProcessCompileResult |> Option.map (fun result -> result.EmittedArtifacts)
+                                                match inProcessCompileResult with
+                                                | Some result -> result.EmittedArtifacts
+                                                | None ->
+                                                    {
+                                                        AssemblyBytes = assemblyBytes
+                                                        PdbBytes = freshDebugPdb
+                                                        TokenMappings = FSharp.Compiler.HotReloadBaseline.createReadModuleTokenMappings ()
+                                                    }
 
                                             let emitDeltaResult =
                                                 timeSync "emitDelta" (fun () ->
@@ -695,7 +707,7 @@ type internal FSharpHotReloadService
                                                         implementationFiles,
                                                         ilModule,
                                                         ?freshDebugPdb = freshDebugPdb,
-                                                        ?emittedArtifacts = emittedArtifacts,
+                                                        emittedArtifacts = emittedArtifacts,
                                                         projectKey = projectKey,
                                                         deferCommit = true
                                                     ))

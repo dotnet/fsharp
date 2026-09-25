@@ -1261,6 +1261,61 @@ let current () = FileB.derived () + {generation}
                 Environment.SetEnvironmentVariable("FSHARP_HOTRELOAD_INPROCESS_COMPILE", previousFlag))
 
     [<Fact>]
+    let ``Disk baseline tokens retain original metadata order for anonymous records`` () =
+        withProjectDir "fcs-hotreload-session-original-metadata" (fun projectDir ->
+            let fsPath = Path.Combine(projectDir, "Library.fs")
+            let dllPath = Path.Combine(projectDir, "Library.dll")
+
+            let source greeting =
+                $"""
+namespace Sample
+
+type Type =
+    static member GetMessage() =
+        let value = {{| Name = "watch"; Prefix = "{greeting}" |}}
+        value.Prefix + ", " + value.Name
+"""
+
+            File.WriteAllText(fsPath, source "Hello")
+            let checker = createChecker ()
+            let options = prepareProjectOptions checker fsPath dllPath (source "Hello") []
+            compileProject checker options true
+
+            use session = checker.CreateHotReloadSession()
+            let snapshot = createProjectSnapshot options
+            addProjectOrFail session snapshot
+            let baseline = (projectViewOrFail session snapshot).Baseline
+
+            use peReader = new PEReader(ImmutableArray.CreateRange(File.ReadAllBytes dllPath))
+            let reader = peReader.GetMetadataReader()
+
+            let typeName handle =
+                let definition = reader.GetTypeDefinition handle
+                let ns = reader.GetString definition.Namespace
+                let name = reader.GetString definition.Name
+                if String.IsNullOrEmpty ns then name else ns + "." + name
+
+            for KeyValue(name, token) in baseline.TypeTokens do
+                Assert.Equal(name, typeName (MetadataTokens.TypeDefinitionHandle(token &&& 0x00ffffff)))
+
+            for KeyValue(key, token) in baseline.MethodTokens do
+                let definition = reader.GetMethodDefinition(MetadataTokens.MethodDefinitionHandle(token &&& 0x00ffffff))
+                Assert.Equal(key.DeclaringType, typeName (definition.GetDeclaringType()))
+                Assert.Equal(key.Name, reader.GetString definition.Name)
+
+            Assert.Equal<byte>(File.ReadAllBytes(Path.ChangeExtension(dllPath, ".pdb")), baseline.PortablePdb.Value.Bytes)
+
+            writeAndCompile checker fsPath options (source "Welcome") false
+            let delta = emitOrFail session (createProjectSnapshot options)
+
+            use deltaProvider = MetadataReaderProvider.FromMetadataImage(ImmutableArray.CreateRange delta.Metadata)
+            let deltaReader = deltaProvider.GetMetadataReader()
+            Assert.Equal(0, deltaReader.GetTableRowCount TableIndex.TypeSpec)
+            Assert.Equal(0, deltaReader.GetTableRowCount TableIndex.MemberRef)
+            let methodToken = Assert.Single(delta.UpdatedMethods)
+            Assert.Equal("GetMessage", reader.GetString(reader.GetMethodDefinition(MetadataTokens.MethodDefinitionHandle(methodToken &&& 0x00ffffff)).Name)))
+
+    [<Fact>]
     let ``Two independent sessions emit deltas without interference`` () =
         withProjectDir "fcs-hotreload-session-independent" (fun projectDir ->
             let fsPathA = Path.Combine(projectDir, "LibraryA.fs")

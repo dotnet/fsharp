@@ -411,7 +411,7 @@ module MdvValidationTests =
             | null | "" -> Directory.GetCurrentDirectory()
             | value -> value
 
-        let exitCode, stdout, stderr = runProcess projectDirectory "dotnet" fullArgs
+        let exitCode, stdout, stderr = runProcess projectDirectory TestFramework.initialConfig.DotNetExe fullArgs
         if exitCode <> 0 then
             failwithf "dotnet msbuild exited with code %d.%sSTDOUT:%s%sSTDERR:%s" exitCode Environment.NewLine stdout Environment.NewLine stderr
 
