@@ -2655,7 +2655,7 @@ let compute (x: int) =
         harness.Rewrite(source.Replace("member this.", "member that."))
         let updated = harness.Compile()
 
-        let result = harness.Diff baseline updated
+        let result = harness.DiffWith (EditAndContinueCapabilities.Parse [ "Baseline"; "UpdateParameters" ]) baseline updated
 
         Assert.Empty(result.RudeEdits)
         let edit = Assert.Single(result.SemanticEdits)
@@ -2674,7 +2674,7 @@ let compute (x: int) =
         harness.Rewrite(Sources.moduleHeader + "type C(after: int) = class end")
         let updated = harness.Compile()
 
-        let result = harness.Diff baseline updated
+        let result = harness.DiffWith (EditAndContinueCapabilities.Parse [ "Baseline"; "UpdateParameters" ]) baseline updated
 
         Assert.Empty(result.RudeEdits)
         let edit = Assert.Single(result.SemanticEdits |> List.filter (fun edit -> edit.Symbol.CompiledName = Some ".ctor"))
