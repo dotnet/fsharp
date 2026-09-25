@@ -728,6 +728,7 @@ let private memberRefParentToken (parent: MemberRefParent) =
 
 let private buildUpdatedBaseline
     (updatedBaselineCore: FSharpEmitBaseline)
+    (methodDefinitionRowsSnapshot: MethodDefinitionRowInfo list)
     (parameterDefinitionRowsSnapshot: ParameterDefinitionRowInfo list)
     (memberReferenceRowList: MemberReferenceRowInfo list)
     (typeSpecificationRowList: TypeSpecificationRowInfo list)
@@ -836,6 +837,25 @@ let private buildUpdatedBaseline
                     })
             updatedBaselineCore.MetadataHandles.ParameterHandles
 
+    // Retain added methods' flags without reusing offsets from a delta's private heaps.
+    let updatedMethodHandles =
+        (updatedBaselineCore.MetadataHandles.MethodHandles, methodDefinitionRowsSnapshot)
+        ||> List.fold (fun handles row ->
+            if row.IsAdded then
+                handles
+                |> Map.add
+                    row.Key
+                    {
+                        NameOffset = None
+                        SignatureOffset = None
+                        FirstParameterRowId = None
+                        Rva = None
+                        Attributes = None
+                        ImplAttributes = Some row.ImplAttributes
+                    }
+            else
+                handles)
+
     let updatedTypeReferenceTokens =
         addedTypeReferenceTokens
         |> Seq.fold (fun acc (KeyValue(key, token)) -> acc |> Map.add key token) updatedBaselineCore.TypeReferenceTokens
@@ -889,6 +909,7 @@ let private buildUpdatedBaseline
         MetadataHandles =
             { updatedBaselineCore.MetadataHandles with
                 ParameterHandles = updatedParameterHandles
+                MethodHandles = updatedMethodHandles
             }
         TypeTokens = updatedTypeTokenMap
         SynthesizedTypeShapes = updatedSynthesizedTypeShapes
@@ -1373,7 +1394,18 @@ let private buildMethodDefinitionRowsSnapshot
 
             let resolvedImplAttributes =
                 match baselineHandles |> Option.bind (fun info -> info.ImplAttributes) with
-                | Some value -> value
+                | Some value ->
+                    // Runtime-async IL returns the task result directly. Baseline flags cannot describe the other return convention.
+                    let asyncFlag = enum<MethodImplAttributes> 0x2000
+
+                    if (value &&& asyncFlag) <> (implAttrs &&& asyncFlag) then
+                        raise (
+                            HotReloadUnsupportedEditException(
+                                $"Method '{key.DeclaringType}.{key.Name}' changed its runtime-async implementation flag. Restart the application."
+                            )
+                        )
+
+                    value
                 | None -> implAttrs
 
             let resolvedCodeRva = baselineHandles |> Option.bind (fun info -> info.Rva)
@@ -2862,6 +2894,7 @@ let private finalizeDeltaArtifacts
     let updatedBaseline =
         buildUpdatedBaseline
             updatedBaselineCore
+            methodDefinitionRowsSnapshot
             parameterDefinitionRowsSnapshot
             memberReferenceRowList
             typeSpecificationRowList
@@ -3491,9 +3524,7 @@ let private createMetadataReferenceRemapper (context: MetadataReferenceRemapCont
         RemapAssemblyRefToken = remapAssemblyRefToken
     }
 
-/// Emits the delta artifacts for a request. The current implementation populates token projections
-/// while leaving the raw metadata/IL/PDB payload empty; future work will replace the placeholders
-/// with fully emitted heaps.
+/// Emits metadata, IL, and portable PDB deltas with token mappings for the baseline and new definitions.
 ///
 /// <paramref name="freshDebugPdb"/> carries the FRESH compile's on-disk portable PDB when the
 /// caller has one and no emitted-artifact PDB is available. <c>request.EmittedArtifacts</c>
