@@ -1,4 +1,4 @@
-namespace FSharp.Compiler.Service.Tests.DeltaMetadata
+namespace FSharp.Compiler.Service.Tests.HotReload
 
 open System
 open System.IO
@@ -11,18 +11,16 @@ open FSharp.Compiler.AbstractIL.FSharpDeltaMetadataWriter
 open FSharp.Compiler.AbstractIL.DeltaMetadataTypes
 open FSharp.Compiler.AbstractIL.DeltaMetadataTables
 open FSharp.Compiler.AbstractIL.IlxDeltaStreams
-open FSharp.Compiler.AbstractIL.ILMetadataHeaps
+open FSharp.Compiler.AbstractIL.ILBinaryWriter
 open FSharp.Compiler.Service.Tests.DeltaMetadata.MetadataDeltaTestHelpers
 
-/// Tests that read the delta metadata bytes produced by FSharpDeltaMetadataWriter back with
-/// System.Reflection.Metadata's MetadataReader and check that what SRM reports (table row
-/// counts, heap sizes, EncLog/EncMap shape, the BSJB metadata-root signature) is consistent
-/// with what the writer itself recorded in its MetadataDelta result.
+/// Tests to verify that the AbstractIL delta serialization produces correct output
+/// that matches what the System.Reflection.Metadata MetadataBuilder tracks.
 ///
-/// This is reader-side parity, not a byte-for-byte golden comparison against another writer:
-/// it confirms the bytes this writer emits are well-formed ECMA-335 metadata that an
-/// independent reader can parse, not that they match a reference implementation's output.
-module SrmReaderParityTests =
+/// These tests validate row count consistency between the SRM MetadataBuilder
+/// (which is populated in parallel during emission) and the AbstractIL tables.
+/// This is critical for validating correctness before removing SRM dependencies.
+module SrmParityTests =
 
     module DeltaWriter = FSharp.Compiler.AbstractIL.FSharpDeltaMetadataWriter
 
