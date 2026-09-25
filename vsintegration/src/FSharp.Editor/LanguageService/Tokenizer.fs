@@ -11,6 +11,8 @@ open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Classification
 open Microsoft.CodeAnalysis.Text
 
+open Internal.Utilities.Library
+
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Syntax
@@ -1016,11 +1018,11 @@ module internal Tokenizer =
 
         if
             s.Length > doubledDelimiter
-            && s.StartsWith(doubleBackTickDelimiter, StringComparison.Ordinal)
-            && s.EndsWith(doubleBackTickDelimiter, StringComparison.Ordinal)
+            && s.StartsWithOrdinal doubleBackTickDelimiter
+            && s.EndsWithOrdinal doubleBackTickDelimiter
         then
             let inner = s.AsSpan(doubleBackTickDelimiter.Length, s.Length - doubledDelimiter)
-            not (inner.Contains(doubleBackTickDelimiter.AsSpan(), StringComparison.Ordinal))
+            inner.IndexOfOrdinal doubleBackTickDelimiter < 0
         else
             false
 

@@ -27,6 +27,8 @@
      <EmbeddedText Include="$(MSBuildThisFileDirectory)..\..\..\src\LegacyMSBuildResolver\LegacyResolver.txt">
       <Link>LegacyResolver.txt</Link>
     </EmbeddedText>
+    <Compile Include="$(MSBuildThisFileDirectory)..\..\..\src\Compiler\Utilities\Strings.fsi" />
+    <Compile Include="$(MSBuildThisFileDirectory)..\..\..\src\Compiler\Utilities\Strings.fs" />
     <Compile Include="Common\CancellableTasks.fs" />
     <Compile Include="Common\DocumentCache.fs" />
     <Compile Include="$(MSBuildThisFileDirectory)..\..\..\src\LegacyMSBuildResolver\LegacyMSBuildReferenceResolver.fsi" />
