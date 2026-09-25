@@ -1063,8 +1063,8 @@ let private traitIdentity denv (traitInfo: TraitConstraintInfo) =
             |> Option.defaultValue "void"
         ]
 
-let private ilCallingConventionIdentity (ILCallingConv.Callconv(thisConvention, argumentConvention)) =
-    identityNode "calling-convention" [ string thisConvention; string argumentConvention ]
+let private ilCallingConventionIdentity (callingConvention: ILCallingConv) =
+    identityNode "calling-convention" [ string callingConvention.ThisConv; string callingConvention.BasicConv ]
 
 let private ilScopeReferenceIdentity scope =
     match scope with
