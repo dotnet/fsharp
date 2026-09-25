@@ -58,6 +58,22 @@ type public FSharpChecker =
             CacheSizes ->
             FSharpChecker
 
+    /// <summary>
+    /// Creates an independent hot reload session, the F# analogue of Roslyn's <c>DebuggingSession</c>.
+    /// The session stores per-project committed baselines and generation chains, with session-wide capabilities and active statements.
+    /// The session is independent of the checker's default session and all other sessions.
+    /// The checker requires <c>keepAssemblyContents = true</c>.
+    /// Disposal ends the session.
+    /// </summary>
+    /// <param name="capabilities">Optional runtime capability names, such as <c>AddMethodToExistingType</c>.
+    /// The session ignores unknown names.
+    /// If the argument is absent, the session supports only method-body updates.
+    /// <c>FSharpHotReloadSession.UpdateCapabilities</c> accepts capabilities after the process reports them.</param>
+    [<Experimental("This FCS API is experimental and subject to change.")>]
+    member CreateHotReloadSession: ?capabilities: string seq -> FSharpHotReloadSession
+
+    member HotReloadCapabilities: FSharpHotReloadCapabilities
+
     [<Experimental("This FCS API is experimental and subject to change.")>]
     member UsesTransparentCompiler: bool
 
