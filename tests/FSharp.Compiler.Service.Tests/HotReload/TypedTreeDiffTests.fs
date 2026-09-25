@@ -2585,7 +2585,7 @@ let compute (x: int) =
 
     [<Theory>]
     [<InlineData("member _.M([<System.ParamArray>] xs: int[]) = xs.Length", "member _.M(xs: int[]) = xs.Length")>]
-    let ``parameter attribute change fails closed`` (before: string, after: string) =
+    let ``ParamArray attribute change fails closed`` (before: string, after: string) =
         use harness = new DiffTestHarness()
         harness.Rewrite(Sources.moduleHeader + "type C() = " + before)
         let baseline = harness.Compile()
