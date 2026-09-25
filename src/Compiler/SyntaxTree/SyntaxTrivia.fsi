@@ -236,6 +236,14 @@ type SynUnionCaseTrivia =
         BarRange: range option
     }
 
+/// Represents additional information for SynExceptionDefnRepr
+[<NoEquality; NoComparison>]
+type SynExceptionDefnReprTrivia =
+    {
+        /// The syntax range of the `exception` keyword.
+        ExceptionKeyword: range
+    }
+
 /// Represents additional information for SynPat.Or
 [<NoEquality; NoComparison>]
 type SynPatOrTrivia =
