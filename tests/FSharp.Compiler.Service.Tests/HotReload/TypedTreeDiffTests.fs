@@ -2565,7 +2565,7 @@ let compute (x: int) =
     [<InlineData("type I = abstract M: int -> int", "type I = interface end")>]
     [<InlineData("[<AbstractClass>] type C() = abstract M: int -> int", "[<AbstractClass>] type C() = abstract M: string -> int")>]
     [<InlineData("type I = abstract M: x: int -> int", "type I = abstract M: y: int -> int")>]
-    member _.``abstract member metadata change fails closed`` (before: string, after: string) =
+    let ``abstract member metadata change fails closed`` (before: string, after: string) =
         use harness = new DiffTestHarness()
         harness.Rewrite(Sources.moduleHeader + before)
         let baseline = harness.Compile()
@@ -2579,7 +2579,7 @@ let compute (x: int) =
 
     [<Theory>]
     [<InlineData("member _.M([<System.ParamArray>] xs: int[]) = xs.Length", "member _.M(xs: int[]) = xs.Length")>]
-    member _.``parameter attribute change fails closed`` (before: string, after: string) =
+    let ``parameter attribute change fails closed`` (before: string, after: string) =
         use harness = new DiffTestHarness()
         harness.Rewrite(Sources.moduleHeader + "type C() = " + before)
         let baseline = harness.Compile()
@@ -2595,7 +2595,7 @@ let compute (x: int) =
     [<InlineData("type R = { [<field: System.Obsolete(\"before\")>] X: int }", "type R = { [<field: System.Obsolete(\"after\")>] X: int }")>]
     [<InlineData("type R = { [<property: System.Obsolete(\"before\")>] X: int }", "type R = { [<property: System.Obsolete(\"after\")>] X: int }")>]
     [<InlineData("type U = | [<System.Obsolete(\"before\")>] A of int | B", "type U = | [<System.Obsolete(\"after\")>] A of int | B")>]
-    member _.``field property and union case attribute changes fail closed`` (before: string, after: string) =
+    let ``field property and union case attribute changes fail closed`` (before: string, after: string) =
         use harness = new DiffTestHarness()
         harness.Rewrite(Sources.moduleHeader + before)
         let baseline = harness.Compile()
@@ -2607,7 +2607,7 @@ let compute (x: int) =
         Assert.Contains(result.RudeEdits, fun edit -> edit.Kind = RudeEditKind.TypeLayoutChange)
 
     [<Fact>]
-    member _.``unchanged abstract member metadata produces no edits`` () =
+    let ``unchanged abstract member metadata produces no edits`` () =
         use harness = new DiffTestHarness()
         let source = Sources.moduleHeader + "type I = abstract M: [<System.ParamArray>] xs: int[] -> int"
         harness.Rewrite(source)
@@ -2625,7 +2625,7 @@ let compute (x: int) =
     [<InlineData("int[]")>]
     [<InlineData("int[,]")>]
     [<InlineData("byref<int>")>]
-    member _.``intrinsic parameter identities survive independent compilations`` (parameterType: string) =
+    let ``intrinsic parameter identities survive independent compilations`` (parameterType: string) =
         use harness = new DiffTestHarness()
         let source = Sources.moduleHeader + $"type C() = member _.M(x: {parameterType}) = ()"
         harness.Rewrite(source)
