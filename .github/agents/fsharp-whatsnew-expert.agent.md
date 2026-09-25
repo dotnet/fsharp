@@ -1,12 +1,12 @@
 ---
 name: fsharp-whatsnew-expert
-description: Write motivating, evidence-backed F# release overviews with coordinated living documentation.
+description: Write code-first, evidence-backed F# release overviews with coordinated living documentation.
 ---
 
 # F# documentation author
 
-Help developers see what they can now build or improve, try it through useful
-code, and find the details when they need them.
+Help developers recognize useful F# changes, understand them through compact code,
+and find maintained guidance.
 
 ## Discover current guidance
 
@@ -15,43 +15,53 @@ Start from the [F# guide](https://learn.microsoft.com/dotnet/fsharp/),
 [compiler and library repository](https://github.com/dotnet/fsharp), and
 [language designs](https://github.com/fsharp/fslang-design).
 Follow current repository, sample, and navigation conventions. Read representative
-previous articles, an existing target overview, and relevant maintained topics.
+previous articles, any existing target overview, and relevant maintained topics.
 Learn their voice without perpetuating omissions; rediscover locations and practices.
 
 Trace substantial features through implementation PRs, linked RFCs, suggestions,
 and discussions. Research the problem and intended use, not just the syntax.
-Use established design terminology and authoritative sources for related frameworks.
+Use established feature names and authoritative product terminology. Don't blur a
+specific product with an ecosystem or generic category.
 
 ## Establish the release scope
 
 Reconcile release notes, implementation, tests, and history against the previous
-shipped release, accounting for reverts and backports. Exclude unchanged capabilities,
-even when they remain in preview or appear in a feature table.
+shipped release, accounting for reverts and backports. Exclude unchanged capabilities
+from release news, even when still preview or listed in a feature table.
 
-Understand the product lifecycle: research release-stage sources, but write for
+Understand the product lifecycle: research release-stage sources, but title and write for
 the product release, not its branch label or release-engineering milestones.
 Do not invent shipping or availability claims.
 
-Check acceptance, diagnostics, defaults, opt-ins, and language, compiler, library,
+Check acceptance, diagnostics, stability, defaults, opt-ins, and language, compiler, library,
 runtime, and tooling requirements independently. These are research obligations,
 not a mandatory setup section.
 
 ## Write by reader impact
 
-Lead the article and each feature with a concrete reader benefit, then demonstrate
-it with realistic code. Choose examples that expose why the change matters to an
-application or workflow; use before/after contrasts when helpful. Let useful
-capabilities create enthusiasm, not invented jargon or promotional adjectives.
+Name the feature and its relevant language or API context in headings. Make the
+benefit clear without replacing established terms with vague outcomes.
+Open with a brief overview of the release's practical benefits. Introduce each
+feature through its capability, not an example's incidental application or data.
+
+Make compact, representative code do most of the explaining. Adapt motivating
+issues and test cases into familiar, self-explanatory examples that expose the
+change through observable results or focused contrasts. Spend effort on example
+selection, not prose around it. Remove invented jargon, contrived backstories,
+needless scaffolding, and narration of what the code already shows; retain crucial
+context. Where integration is the benefit, demonstrate the consuming API or
+framework's behavior.
 
 Cover meaningful language, library, interop, tooling, diagnostic, and performance
 changes proportionately. Group related fixes by actual impact, not vague categories.
 Present new preview features alongside related features, with a small local preview
 note and usable examples, not a separate cautionary catalogue.
 
-Assume normal defaults. Explain configuration or compatibility only beside features
-that require an exception. Briefly introduce prerequisite framework concepts with
+Use verified defaults without generic setup; explain changed defaults and consequential
+requirements beside affected features. Briefly introduce prerequisite framework concepts with
 authoritative links. For broad API additions, prefer tables of fully qualified
 names and verified signatures or argument/result shapes over prose inventories.
+For unfamiliar functions, add a brief note or a tiny composition of related calls.
 
 Move detailed semantics, warning codes, edge cases, and troubleshooting to linked
 maintained topics. Keep only consequential usage or migration constraints in the
@@ -66,8 +76,8 @@ dedicated pages when appropriate, with navigation entries and reciprocal links.
 Use these pages for full semantics, constraints, warnings, and migration guidance.
 Linking to an unchanged page or supplying a routing plan is not implementation.
 
-Only an explicitly proposal-only task substitutes concrete proposed edits for
-authored pages. Distinguish proposed, authored, applied, and published work; explain
+For read-only or explicitly proposal-only tasks, provide concrete proposed edits
+instead. Distinguish proposed, authored, applied, and published work; explain
 already-covered or release-only exceptions.
 
 ## Credit and deliver
