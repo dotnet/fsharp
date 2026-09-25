@@ -2,17 +2,20 @@
 
 namespace FSharp.Build
 
-open System
 open System.IO
-open System.Text
+open FSharp.Compiler
 open Microsoft.Build.Framework
 open Microsoft.Build.Utilities
 
 /// <summary>
 /// MSBuild task that generates ILLink.Substitutions.xml file to remove F# metadata resources during IL linking.
 /// </summary>
+[<MSBuildMultiThreadableTask>]
 type GenerateILLinkSubstitutions() =
     inherit Task()
+
+    interface IMultiThreadableTask with
+        member val TaskEnvironment = TaskEnvironment.Fallback with get, set
 
     /// <summary>
     /// Assembly name to use when generating resource names to be removed.
@@ -33,59 +36,27 @@ type GenerateILLinkSubstitutions() =
     member val GeneratedItems = [||]: ITaskItem[] with get, set
 
     override this.Execute() =
+        let rootedPath = TaskEnvironmentPaths.rootedPath this
+
         try
-            // Define the resource prefixes that need to be removed
-            let resourcePrefixes =
-                [|
-                    // Signature variants
-                    yield!
-                        [|
-                            for dataType in [| "Data"; "DataB" |] do
-                                for compression in [| ""; "Compressed" |] do
-                                    yield $"FSharpSignature{compression}{dataType}"
-                        |]
+            let xmlContent =
+                ILLinkSubstitutions.document this.AssemblyName (ILLinkSubstitutions.names this.AssemblyName)
+                |> string
 
-                    // Optimization variants
-                    yield!
-                        [|
-                            for dataType in [| "Data"; "DataB" |] do
-                                for compression in [| ""; "Compressed" |] do
-                                    yield $"FSharpOptimization{compression}{dataType}"
-                        |]
-
-                    // Info variants
-                    yield "FSharpOptimizationInfo"
-                    yield "FSharpSignatureInfo"
-                |]
-
-            // Generate the XML content
-            let sb = StringBuilder(4096) // pre-allocate capacity
-            sb.AppendLine("<?xml version=\"1.0\" encoding=\"utf-8\"?>") |> ignore
-            sb.AppendLine("<linker>") |> ignore
-            sb.AppendLine($"  <assembly fullname=\"{this.AssemblyName}\">") |> ignore
-
-            // Add each resource entry with proper closing tag on the same line
-            for prefix in resourcePrefixes do
-                sb.AppendLine($"    <resource name=\"{prefix}.{this.AssemblyName}\" action=\"remove\"></resource>")
-                |> ignore
-
-            // Close assembly and linker tags
-            sb.AppendLine("  </assembly>") |> ignore
-            sb.AppendLine("</linker>") |> ignore
-
-            let xmlContent = sb.ToString()
-
-            // Create a file in the intermediate output path
             let outputFileName =
                 Path.Combine(this.IntermediateOutputPath, "ILLink.Substitutions.xml")
 
-            Directory.CreateDirectory(this.IntermediateOutputPath) |> ignore
-            File.WriteAllText(outputFileName, xmlContent)
+            Directory.CreateDirectory(rootedPath this.IntermediateOutputPath) |> ignore
 
-            // Create a TaskItem for the generated file
-            let item = TaskItem(outputFileName) :> ITaskItem
+            let outputPath = rootedPath outputFileName
+
+            if not (File.Exists outputPath) || File.ReadAllText(outputPath) <> xmlContent then
+                File.WriteAllText(outputPath, xmlContent)
+
+            let item = TaskItem(outputFileName.Replace("%", "%25")) :> ITaskItem
             item.SetMetadata("LogicalName", "ILLink.Substitutions.xml")
-
+            item.SetMetadata("Type", "Non-Resx")
+            item.SetMetadata("WithCulture", "false")
             this.GeneratedItems <- [| item |]
             true
         with ex ->

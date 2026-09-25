@@ -1,4 +1,4 @@
-// #Regression #Conformance #DeclarationElements #Attributes 
+// #Regression #Conformance #DeclarationElements #Attributes
 // Regression test for FSHARP1.0:4673
 // Title: AttributeTargets from AttributeUsage are not being checked/honored
 // Descr: Verify an attribute targeting methods, can't be applied to any other language elements.
@@ -14,7 +14,7 @@ open System
 type MAttribute() = inherit Attribute()
 
 type A() =
-    
+
     [<M>]
     let someVal = 100
 
@@ -27,7 +27,7 @@ type A() =
     [<method: M>]
     member this.Index with [<method: M>] get () = 5
                        and [<method: M>] set (x : int) = ()
-                       
+
     [<method: M>]
     static member (+) (op1 : A, op2 : A) = new A()
 

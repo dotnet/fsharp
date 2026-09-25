@@ -1,4 +1,4 @@
-// #Regression #Conformance #TypesAndModules #Unions 
+// #Regression #Conformance #TypesAndModules #Unions
 
 
 // Verify that null is not a proper value for a Discriminated Union

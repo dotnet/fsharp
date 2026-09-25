@@ -1,4 +1,4 @@
-// #Conformance #Quotations 
+// #Conformance #Quotations
 open Microsoft.FSharp.Quotations
 open Microsoft.FSharp.Quotations.Patterns
 open Microsoft.FSharp.Quotations.DerivedPatterns
@@ -22,24 +22,24 @@ let hasMethodWithReflectedDefinition quote =
 // ensure the quotation matches and that the rebuilt quotation retained the ReflectedDefinition attribute, and check the quote's shape
 let doubleCheckReflectedDefinition (quote : Expr) (shapeString : string) =
     let qr, f = hasMethodWithReflectedDefinition quote
-    let res = 
+    let res =
         match !f with
         | true -> let qr2, f2 = hasMethodWithReflectedDefinition qr
                   if !f2 then 0 else 1
         | false -> -1
-        
+
     let shapeResult = checkQuote quote shapeString
     let shapeResult2 = checkQuote qr shapeString
-    
+
     res + shapeResult + shapeResult2
-    
+
 // test type with extension members with reflected definitions
 type System.String with
     member this.Foo = 1
-    
-    [<ReflectedDefinition>]    
+
+    [<ReflectedDefinition>]
     member this.Bar = 2
-    
+
     [<ReflectedDefinition>]
     member this.Ram x = this.Bar * x
 

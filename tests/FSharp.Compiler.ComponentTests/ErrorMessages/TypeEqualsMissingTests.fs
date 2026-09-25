@@ -16,6 +16,6 @@ open FSharp.Compiler.Diagnostics
 // type X | A | B
 //             """
 //             FSharpDiagnosticSeverity.Error
-//             10 
+//             10
 //             (2, 8, 2, 9)
 //             "Unexpected symbol '|' in type definition. Expected '=' or other token."

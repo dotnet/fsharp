@@ -1,4 +1,4 @@
-// #Conformance #TypesAndModules #Records 
+// #Conformance #TypesAndModules #Records
 
 
 // Verify ability to clone a record with mutable fields

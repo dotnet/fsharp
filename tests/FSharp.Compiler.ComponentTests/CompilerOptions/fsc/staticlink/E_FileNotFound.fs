@@ -1,4 +1,4 @@
-// #Regression #NoMT #CompilerOptions 
+// #Regression #NoMT #CompilerOptions
 // Verify error when using --standalone to reference a file
 // which doesn't exist.
 // See also FSHARP1.0:5133

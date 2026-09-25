@@ -880,7 +880,8 @@ let main3
             ApplyAllOptimizations(
                 tcConfig,
                 tcGlobals,
-                (LightweightTcValForUsingInBuildMethodCall tcGlobals),
+                // traitCtxtNone: post-typecheck codegen — SRTP constraints already resolved, no TcEnv available (audited for RFC FS-1043)
+                (LightweightTcValForUsingInBuildMethodCall tcGlobals traitCtxtNone),
                 outfile,
                 importMap,
                 false,
@@ -925,7 +926,6 @@ let main3
                     let sha256 = System.Security.Cryptography.SHA256.Create()
                     sha256.ComputeHash s)
                 |> List.sumBy (hash >> int64)
-                |> hash
 
             try
                 Fsharp.Compiler.SignatureHash.calculateSignatureHashOfFiles typedImplFiles tcGlobals observer
@@ -1030,8 +1030,15 @@ let main4
     compilerEmitHook.PrepareForCodeGeneration(tcConfig.emitCaptureArtifacts, tcGlobals, optimizedImpls)
 
     // Create the Abstract IL generator
+    // traitCtxtNone: post-typecheck codegen — SRTP constraints already resolved, no TcEnv available (audited for RFC FS-1043)
     let ilxGenerator =
-        CreateIlxAssemblyGenerator(tcConfig, tcImports, tcGlobals, (LightweightTcValForUsingInBuildMethodCall tcGlobals), generatedCcu)
+        CreateIlxAssemblyGenerator(
+            tcConfig,
+            tcImports,
+            tcGlobals,
+            (LightweightTcValForUsingInBuildMethodCall tcGlobals traitCtxtNone),
+            generatedCcu
+        )
 
     let codegenBackend =
         (if Option.isSome dynamicAssemblyCreator then

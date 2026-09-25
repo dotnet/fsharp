@@ -289,6 +289,11 @@ type ICompilerEmitHook =
     abstract FallbackEmit: compilerGlobalState: FSharp.Compiler.CompilerGlobalState.CompilerGlobalState -> unit
 
 val defaultCompilerEmitHook: ICompilerEmitHook
+/// A field belongs here when two projects differing in it cannot reuse one imported form
+[<RequireQualifiedAccess>]
+type ImportReuseKey =
+    { LangVersion: decimal
+      CheckNullness: bool }
 
 [<NoEquality; NoComparison>]
 type TcConfigBuilder =
@@ -582,6 +587,8 @@ type TcConfigBuilder =
 
         mutable parallelReferenceResolution: ParallelReferenceResolution
 
+        mutable shareImportedAssemblies: bool
+
         mutable captureIdentifiersWhenParsing: bool
 
         mutable typeCheckingConfig: TypeCheckingConfig
@@ -628,6 +635,7 @@ type TcConfigBuilder =
 
     member AddPathMapping: oldPrefix: string * newPrefix: string -> unit
 
+    /// Parse file[,name[,access]], allowing a quoted file path to contain commas.
     static member SplitCommandLineResourceInfo: string -> string * string * ILResourceAccess
 
     // Directories to start probing in for native DLLs for FSI dynamic loading
@@ -959,9 +967,13 @@ type TcConfig =
 
     member parallelReferenceResolution: ParallelReferenceResolution
 
+    member shareImportedAssemblies: bool
+
     member captureIdentifiersWhenParsing: bool
 
     member typeCheckingConfig: TypeCheckingConfig
+
+    member importReuseKey: ImportReuseKey
 
     member dumpSignatureData: bool
 

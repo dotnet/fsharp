@@ -25,7 +25,7 @@ and internal IProjectSite =
     abstract CompilationReferences: string[]
 
     /// The '-o:' output bin path, without the '-o:'
-    abstract CompilationBinOutputPath: string option
+    abstract CompilationBinOutputPath: string voption
 
     /// The name of the project file.
     abstract ProjectFileName: string

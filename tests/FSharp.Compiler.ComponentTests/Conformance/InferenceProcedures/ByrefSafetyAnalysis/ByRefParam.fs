@@ -1,7 +1,7 @@
 open Prelude
 
-module ByRefParam  = 
-    type C() = 
+module ByRefParam  =
+    type C() =
          static member M(x: byref<int>) = x <- 5
     let mutable res = 9
     let v =  C.M(&res)

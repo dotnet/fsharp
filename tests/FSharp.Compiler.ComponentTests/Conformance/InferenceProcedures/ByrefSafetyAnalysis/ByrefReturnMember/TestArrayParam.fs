@@ -2,10 +2,10 @@ open Prelude
 
 module TestArrayParam =
 
-    type C() = 
+    type C() =
         static member M (x:int[]) = &x.[0]
 
-    let test() = 
+    let test() =
         let r = [| 1 |]
         let addr = &C.M r
         addr <- addr + 1

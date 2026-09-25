@@ -1,4 +1,4 @@
-// #Regression #Conformance #ObjectOrientedTypes #Structs 
+// #Regression #Conformance #ObjectOrientedTypes #Structs
 
 
 // Verify errors associated with putting the struct attribute on non structs

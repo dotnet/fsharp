@@ -6,7 +6,7 @@ open FSharp.Test.Compiler
 open Xunit
 
 module StaticMethodResolution =
-    
+
     // Regression test for https://github.com/dotnet/fsharp/issues/19664
     //
     // When a static extension method is defined in a *different* [<AutoOpen>] module than

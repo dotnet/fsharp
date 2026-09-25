@@ -1,10 +1,10 @@
-// #Regression #Conformance #DeclarationElements #MemberDefinitions #MethodsAndProperties 
+// #Regression #Conformance #DeclarationElements #MemberDefinitions #MethodsAndProperties
 
 
 // Verify error if you declare a setter twice
 
 
-type Vector3 = 
+type Vector3 =
     | Vector3 of float * float * float
     member this.Decompose() = match this with Vector3(x, y, z) -> x, y, z
 

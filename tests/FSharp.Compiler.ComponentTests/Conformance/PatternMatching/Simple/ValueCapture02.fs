@@ -1,4 +1,4 @@
-// #Conformance #PatternMatching 
+// #Conformance #PatternMatching
 
 
 open System.Collections.Generic
@@ -10,10 +10,10 @@ let test1() =
     let x = new List<int>()
     x.Add(1)
     x.RemoveAt(0)
-    if x.Count <> 0 then exit 1  
+    if x.Count <> 0 then exit 1
 
     match x with
-    | _ as newBoundValue 
+    | _ as newBoundValue
         -> if newBoundValue <> x then exit 1
            if not <| newBoundValue.Equals(x) then exit 1
            ()
@@ -26,7 +26,7 @@ let test2() =
                             i <- 1
                             if i = newBoundValue then exit 1
                             ()
- 
+
 
 
 test1()

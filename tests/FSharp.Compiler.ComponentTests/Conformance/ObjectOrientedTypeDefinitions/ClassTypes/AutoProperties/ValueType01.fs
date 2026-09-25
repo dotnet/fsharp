@@ -1,12 +1,12 @@
 // #Conformance #ObjectOrientedTypes #Classes #MethodsAndProperties
-type T() =  
+type T() =
     member val P = 0 with get,set
 
 let t = T()
 t.P <- 3
 if t.P <> 3 then exit 1
 
-type T2() =  
+type T2() =
     member val P = 0.0M with get,set
 
 let t2 = T2()

@@ -12,9 +12,9 @@ type Matrix<'T> internal (ops: IOps<'T>, arr: 'T[,]) =
     member internal x.Data = arr;;
 
 type Matrix =
-    /// A function to capture operations 
-    static member inline private captureOps() = 
-        { new IOps<_> with 
+    /// A function to capture operations
+    static member inline private captureOps() =
+        { new IOps<_> with
             member x.Add(a,b) = a + b
             member x.Zero = LanguagePrimitives.GenericZero<_> }
 
@@ -30,5 +30,3 @@ type Array2D1<'T> =
     };;
 
 Array2D1 (array2D [[1];[2]]) |> ignore;;
-
-#q;;

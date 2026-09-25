@@ -1,4 +1,4 @@
-// #Regression #Conformance #ObjectOrientedTypes #Classes #ObjectConstructors 
+// #Regression #Conformance #ObjectOrientedTypes #Classes #ObjectConstructors
 // Regression test for FSHARP1.0:4212
 
 module M

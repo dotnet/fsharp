@@ -54,7 +54,7 @@ type DependencyManagerInteractiveTests() =
 0"""
         use script = new scriptHost()
         let _opt, errors = script.Eval(text)
-        Assert.Equal(errors.Length, 1)
+        Assert.Single(errors) |> ignore
 
     static member SdkDirOverrideTestData =
         [|
@@ -816,7 +816,7 @@ x |> Seq.iter(fun r ->
         Assert.Equal(foundWrongError, false)
         ()
 
-        
+
     [<Fact>]
     member _.``Verify that clear cache doesn't fail and clears the cache``() =
         let nativeProbingRoots () = Seq.empty<string>

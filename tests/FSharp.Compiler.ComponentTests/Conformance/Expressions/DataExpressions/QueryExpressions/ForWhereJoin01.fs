@@ -3,7 +3,7 @@
 // Note: as of 10/26/2011, it is ok to have where before join/groupJoin!
 //<Expects status="success"></Expects>
 
-let q1 = 
+let q1 =
     query {
         for i in [1..10] do
         where (i > 2)

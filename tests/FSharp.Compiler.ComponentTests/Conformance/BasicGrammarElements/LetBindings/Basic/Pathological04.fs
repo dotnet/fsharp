@@ -1,4 +1,4 @@
-// #Conformance #DeclarationElements #LetBindings 
+// #Conformance #DeclarationElements #LetBindings
 // Interesting pathological tests
 // The code is odd, but parses and typechecks fine! :)
 //<Expects status="success"></Expects>

@@ -7,7 +7,7 @@ open System.Linq
 // Count - Simple
 let factorsOf300 = [2;2;3;5;5]
 
-let uniqueFactors = 
+let uniqueFactors =
     query {
         for n in factorsOf300 do
         distinct
@@ -16,7 +16,7 @@ let uniqueFactors =
 // Sum - Simple
 let numbers = [ 5; 4; 1; 3; 9; 8; 6; 7; 2; 0 ]
 
-let numSum = 
+let numSum =
     query {
         for n in numbers do
         sumBy n
@@ -25,7 +25,7 @@ let numSum =
 // Sum - Projection
 let words = ["cherry"; "apple"; "blueberry"]
 
-let totalChars = 
+let totalChars =
     query {
         for w in words do
         sumBy (w.Length)
@@ -100,9 +100,9 @@ let numbers2 = [5.1; 4.1; 1.1; 3.1; 9.1; 8.1; 6.1; 7.1; 2.1; 0.1]
 let averageNum = query { for n in numbers2 do averageBy n }
 
 // Average - Projection
-let averageLength = 
-    query { 
-        for w in words do 
+let averageLength =
+    query {
+        for w in words do
         let wl = w.Length |> float
         averageBy wl
     }

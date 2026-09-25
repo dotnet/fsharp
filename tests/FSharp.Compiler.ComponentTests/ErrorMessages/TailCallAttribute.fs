@@ -62,7 +62,7 @@ namespace N
               Message =
                "The member or function 'fact' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
         ]
-    
+
     [<FSharp.Test.FactForNETCOREAPP>]
     let ``Warn successfully for rec call in binding`` () =
         """
@@ -81,7 +81,7 @@ namespace N
                 r + 23
         """
         |> FSharp
-        |> withLangVersion80        
+        |> withLangVersion80
         |> compile
         |> shouldFail
         |> withResults [
@@ -510,7 +510,7 @@ namespace N
               Message =
                "The member or function 'f' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
         ]
-        
+
     [<FSharp.Test.FactForNETCOREAPP>]
     let ``Don't warn for valid tailcalls in rec module`` () =
         """
@@ -574,7 +574,7 @@ namespace N
               Message =
                "The member or function 'm2func' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
         ]
-        
+
     [<FSharp.Test.FactForNETCOREAPP>]
     let ``Warn for byref parameters`` () =
         """
@@ -599,7 +599,7 @@ namespace N
               Message =
                "The member or function 'foo' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
         ]
-        
+
     [<FSharp.Test.FactForNETCOREAPP>]
     let ``Don't warn for yield! in tail position`` () =
         """
@@ -642,7 +642,7 @@ namespace N
         |> withLangVersion80
         |> compile
         |> shouldSucceed
-        
+
     [<FSharp.Test.FactForNETCOREAPP>]
     let ``Warn for calls in for and iter`` () =
         """
@@ -829,7 +829,7 @@ namespace N
         |> withLangVersion80
         |> compile
         |> shouldSucceed
-    
+
     [<FSharp.Test.FactForNETCOREAPP>]
     let ``Warn for ColonColon with inner let-bound value to rec call`` () =
         """
@@ -859,7 +859,7 @@ namespace N
               Message =
                 "The member or function 'addOne' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
         ]
-    
+
     [<FSharp.Test.FactForNETCOREAPP>]
     let ``Warn for ColonColon with rec call`` () =
         """
@@ -1081,7 +1081,7 @@ namespace N
               Message =
                 "The member or function 'gTryFinallyMatch' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
         ]
-    
+
     [<FSharp.Test.FactForNETCOREAPP>]
     let ``Warn for rec call in if-else branch in try-with`` () =
         """
@@ -1112,7 +1112,7 @@ namespace N
               Message =
                 "The member or function 'gTryWithIfElse' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
         ]
-        
+
     [<FSharp.Test.FactForNETCOREAPP>]
     let ``Warn for rec call in match branch in try-with`` () =
         """
@@ -1173,7 +1173,7 @@ namespace N
               Message =
                 "The member or function 'gWithRecCallInWith' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
         ]
-    
+
     [<FSharp.Test.FactForNETCOREAPP>]
     let ``Warn for rec call in finally`` () =
         """
@@ -1204,7 +1204,7 @@ namespace N
               Message =
                 "The member or function 'gWithRecCallInFinally' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
         ]
-        
+
     [<FSharp.Test.FactForNETCOREAPP>]
     let ``Warn for rec call inside of match lambda with closure over local function`` () =
         """
@@ -1234,7 +1234,7 @@ namespace N
               Message =
                 "The member or function 'f' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
         ]
-    
+
     [<FSharp.Test.FactForNETCOREAPP>]
     let ``Warn for rec call inside of match lambda with closure over local function using pipe`` () =
         """
@@ -1291,7 +1291,7 @@ namespace N
         |> withLangVersion80
         |> compile
         |> shouldSucceed
-    
+
     [<FSharp.Test.FactForNETCOREAPP>]
     let ``Don't warn for Continuation Passing Style func not using [<TailCall>] func in continuation lambda`` () =
         """
@@ -1318,7 +1318,7 @@ namespace N
         |> withLangVersion80
         |> compile
         |> shouldSucceed
-    
+
     [<FSharp.Test.FactForNETCOREAPP>]
     let ``Don't warn for Continuation Passing Style func using [<TailCall>] func in continuation lambda 2`` () =
         """
@@ -1350,7 +1350,7 @@ namespace N
         |> withLangVersion80
         |> compile
         |> shouldSucceed
-    
+
     [<FSharp.Test.FactForNETCOREAPP>]
     let ``Don't warn for Continuation Passing Style func using [<TailCall>] func in list of continuations`` () =
         """
@@ -1387,7 +1387,7 @@ namespace N
         |> withLangVersion80
         |> compile
         |> shouldSucceed
-    
+
     [<FSharp.Test.FactForNETCOREAPP>]
     let ``Don't warn for Continuation Passing Style func using [<TailCall>] func in object interface expression`` () =
         """
@@ -1467,7 +1467,7 @@ namespace N
         |> withDiagnostics [
             (Warning 842, Line 6, Col 11, Line 6, Col 19, "This attribute cannot be applied to property, field, return value. Valid targets are: method")
             (Warning 3861, Line 7, Col 13, Line 7, Col 18, "The TailCall attribute should only be applied to recursive functions.")
-        ] 
+        ]
 
     [<FSharp.Test.FactForNETCOREAPP>]
     let ``Error about attribute on recursive let-bound value`` () =
@@ -1789,7 +1789,7 @@ module M =
               Message =
                "The member or function 'fooArray' has the 'TailCallAttribute' attribute, but is not being used in a tail recursive way." }
         ]
-        
+
     [<FSharp.Test.FactForNETCOREAPP>]
     let ``Warn successfully in Seq-mapped recursive call`` () =
         """

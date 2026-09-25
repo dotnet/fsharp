@@ -4,21 +4,21 @@
 //    [<CSAttributes.A1("X", pa_int = 1)>]
 //    type T1() = class end
 //    let t1 = (typeof<T1>.GetCustomAttributes(false) |> Array.map (fun x -> x :?> System.Attribute)).[0]
-//    t1  
+//    t1
 //    // val it: System.Attribute =
 //    //  CSAttributes.A1Attribute {PositionalString = "X";
 //    //                            TypeId = CSAttributes.A1Attribute;
-//    //                            pa_int = 1;}  
+//    //                            pa_int = 1;}
 //
 //module OnePositionalAndByNameStringOneNamedInt =
 //    [<CSAttributes.A1(pa_string = "A", pa_int = 2)>]
 //    type T1() = class end
 //    let t1 = (typeof<T1>.GetCustomAttributes(false) |> Array.map (fun x -> x :?> System.Attribute)).[0]
-//    t1  
+//    t1
 //    // val it: System.Attribute =
 //    //  CSAttributes.A1Attribute {PositionalString = "A";
 //    //                            TypeId = CSAttributes.A1Attribute;
-//    //                            pa_int = 2;}  
+//    //                            pa_int = 2;}
 
 let attr_template = """
     [AttributeUsage(AttributeTargets.All, Inherited = false, AllowMultiple = true)]
@@ -44,7 +44,7 @@ let attr_template = """
     }}
     /* * * * */
     """
-        
+
 let attr_template_fsharp = """
 [<AttributeUsage(AttributeTargets.All, Inherited = false, AllowMultiple = true)>]
 type {1}(p1 : {0}) =
@@ -60,15 +60,15 @@ type {1}(p1 : {0}) =
     (* * * * *)
 """
 
-let types = [| 
-               ("System.Int16",           "System_Int16", "10s", "10"); 
-               ("System.Int32",           "System_Int32", "2147483647", "2147483647"); 
-               ("System.Int64",           "System_Int64", "9223372036854775807L", "9223372036854775807L"); 
-               ("System.UInt16",          "System_UInt16", "65535us", "65535"); 
-               ("System.UInt32",          "System_UInt32", "4294967295u", "4294967295"); 
-               ("System.UInt64",          "System_UInt64", "18446744073709551615UL", "18446744073709551615UL"); 
+let types = [|
+               ("System.Int16",           "System_Int16", "10s", "10");
+               ("System.Int32",           "System_Int32", "2147483647", "2147483647");
+               ("System.Int64",           "System_Int64", "9223372036854775807L", "9223372036854775807L");
+               ("System.UInt16",          "System_UInt16", "65535us", "65535");
+               ("System.UInt32",          "System_UInt32", "4294967295u", "4294967295");
+               ("System.UInt64",          "System_UInt64", "18446744073709551615UL", "18446744073709551615UL");
                ("System.Char",            "System_Char", "'A'", "'A'");
-               ("System.Byte",            "System_Byte", "255uy", "255"); 
+               ("System.Byte",            "System_Byte", "255uy", "255");
                ("System.SByte",           "System_SByte", "127y", "127");
                ("System.Single",          "System_Single", "System.Single.MaxValue", "System.Single.MaxValue");
                ("System.Double",          "System_Double", "System.Double.MaxValue", "System.Double.MaxValue");
@@ -106,14 +106,14 @@ namespace CSAttributes
     printfn "    public class ClassWithAttrs {"
 
     types |> Array.iter (fun (ty,name,_,csvalue) -> printfn "        [%s(%s, N1 = %s)]" name csvalue csvalue)
-          
+
     printfn """        public static System.Collections.Generic.IEnumerable<System.Guid?> MethodWithAttrs() {
             for(int i = 0; i< 10; i++) yield return System.Guid.Empty;
         }
 """
 
     types |> Array.iter (fun (ty,name,_,csvalue) -> printfn "        [%s(%s, N1 = %s)]" name csvalue csvalue)
-          
+
     printfn """        public static System.Type MethodWithAttrsThatReturnsAType() {
             return typeof(ClassWithAttrs);
         }
@@ -135,14 +135,14 @@ namespace CSAttributes
     printfn "    public class ClassWithAttrs {"
 
     types |> Array.iter (fun (ty,name,_,csvalue) -> printfn "        [%s(%s, N1 = %s)]" name csvalue csvalue)
-          
+
     printfn """        public static System.Collections.Generic.IEnumerable<System.Guid?> MethodWithAttrs() {
             for(int i = 0; i< 10; i++) yield return System.Guid.Empty;
         }
 """
 
     types |> Array.iter (fun (ty,name,_,csvalue) -> printfn "        [%s(%s, N1 = %s)]" name csvalue csvalue)
-          
+
     printfn """        public static System.Type MethodWithAttrsThatReturnsAType() {
             return typeof(ClassWithAttrs);
         }
@@ -166,11 +166,11 @@ open System
     printfn "type ClassWithAttrs() = "
 
     types |> Array.iter (fun (ty,name,fsvalue,_) -> printfn "    [<%s(%s, N1 = %s)>]" name fsvalue fsvalue)
-          
+
     printfn """    static member MethodWithAttrs() = seq {for i in [1 .. 10] -> System.Guid.Empty}"""
 
     types |> Array.iter (fun (ty,name,fsvalue,_) -> printfn "    [<%s(%s, N1 = %s)>]" name fsvalue fsvalue)
-          
+
     printfn """    static member MethodWithAttrsThatReturnsAType() = typeof<ClassWithAttrs>"""
 
 //    // Now same thing, with nested classes
@@ -188,14 +188,14 @@ open System
 //    printfn "    public class ClassWithAttrs {"
 //
 //    types |> Array.iter (fun (ty,name,_,csvalue) -> printfn "        [%s(%s, N1 = %s)]" name csvalue csvalue)
-//          
+//
 //    printfn """        public static System.Collections.Generic.IEnumerable<System.Guid?> MethodWithAttrs() {
 //            for(int i = 0; i< 10; i++) yield return System.Guid.Empty;
 //        }
 //"""
 //
 //    types |> Array.iter (fun (ty,name,_,csvalue) -> printfn "        [%s(%s, N1 = %s)]" name csvalue csvalue)
-//          
+//
 //    printfn """        public static System.Type MethodWithAttrsThatReturnsAType() {
 //            return typeof(ClassWithAttrs);
 //        }
@@ -203,7 +203,7 @@ open System
 //    }
 //}"""
 
-let csharpconsumercode = 
+let csharpconsumercode =
 
     use f = new System.IO.StreamWriter("CSharpConsumer.cs", false)
 

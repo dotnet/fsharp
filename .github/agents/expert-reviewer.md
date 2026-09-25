@@ -72,6 +72,8 @@ FSharp.Core is the one assembly every F# program references. Changes here have o
 - XML doc comments are mandatory for all public APIs. New API additions require an RFC.
 - Apply `InlineIfLambda` to inlined functions taking a lambda applied only once — eliminates closure allocation at call sites.
 
+For allocation, copy, sharing, or collection fast-path changes, apply **Representation-Preserving Optimizations** below. An unchanged signature and equal elements do not establish behavioral compatibility.
+
 **Severity:** Binary compat break in FSharp.Core → **critical**. Missing tests → **high**. Missing XML docs → **medium**.
 
 **Hotspots:** `src/FSharp.Core/`
@@ -139,6 +141,7 @@ Optimizer changes must preserve program semantics. Inlining and tail-call change
 - Prefer general approaches (e.g., improved inlining) that cover many cases at once over hand-implementing function-by-function optimizations.
 - Verify that expression restructuring optimizations don't regress code quality — compare IL before and after.
 - Require performance evidence for optimization changes.
+- For allocation elimination, caching, or replacement of general operations with fast paths, apply **Representation-Preserving Optimizations** below.
 
 **Severity:** Semantic-altering optimization → **critical**. Tail-call regression → **high**. Missing evidence → **medium**.
 
@@ -365,6 +368,23 @@ New features must be gated behind language version checks. Breaking changes requ
 
 ### Additional Dimensions (Evaluate When Applicable)
 
+#### Representation-Preserving Optimizations
+
+Apply to allocation/copy elimination, singleton sharing, caching, and specialized fast paths.
+
+**CHECK:**
+- Identify properties preserved by the old implementation and `.fsi` contract beyond values: runtime type, aliasing, comparer, evaluation order, and exception timing. Separate intended changes from regressions.
+- Exercise inputs whose static type hides their runtime representation (covariant arrays, interface-wrapped collections), pairing boundary and ordinary cases.
+- Compare merge-base and PR behavior using a downstream observer: runtime-type assertion, cast, mutation, comparer-sensitive lookup, or effect trace. Element equality alone is insufficient.
+- Trace affected callers and equivalent fast paths; cover shared contracts with compact parameterized tests. Require a concrete unintended behavioral difference before flagging.
+
+Example (#20388): replacing `Clone()` with an empty `'T[]` singleton changes this copy from `string[]` to `obj[]`, breaking a previously valid cast:
+
+```fsharp
+let source = box ([||] : string[]) :?> obj[]
+let recovered = box (Array.copy source) :?> string[]
+```
+
 #### Compiler Performance Measurement
 
 - Require `--times` output, benchmarks, or profiler data for performance claims.
@@ -431,7 +451,7 @@ New features must be gated behind language version checks. Breaking changes requ
 
 ## Review Workflow
 
-Execute review in five waves, each building on the previous.
+Execute review in six waves, each building on the previous.
 
 ### Wave 0: Orientation & Dimension Dispatch
 
@@ -476,34 +496,36 @@ Execute review in five waves, each building on the previous.
 
 ### Wave 5: Deliver Review as Inline Comments
 
-**This wave is mandatory.** Analysis without posting is worthless — the review MUST appear on the PR as posted inline comments at the correct file and line.
+**This wave is mandatory.** Analysis without posting is worthless — the review MUST appear on the PR as inline comments anchored to the exact file and line. A prose review body is the failure this wave exists to prevent: the author wrote the diff, so narrating it back is noise. Every review body and every comment begins with the robot+detective disclosure `🤖🕵️`.
 
-1. **Deduplicate first.** Check existing reviews to avoid duplicate content:
+1. **Deduplicate first.**
    ```bash
    gh api repos/{owner}/{repo}/pulls/{number}/reviews --jq 'length'
    ```
    If reviews from automated accounts already exist, skip posting and apply the label only.
 
-2. **Post findings as a review with inline comments** at the best-fitting file and line. Use the GitHub API to create a single review with all comments:
+2. **Findings exist → one review, inline comments only.** Every finding — *including minor and "nice to have" ones* — is its own inline comment anchored to a file+line, so each becomes an independent, resolvable thread. Never collect findings into the body.
    ```bash
    gh api repos/{owner}/{repo}/pulls/{number}/reviews \
      --method POST \
      --field event=COMMENT \
-     --field body='' \
+     --field 'body=🤖🕵️ AI review — verify independently.' \
      --field 'comments=[
-      {"path":"src/Compiler/Checking/CheckDeclarations.fs","line":2750,"body":"**[Test Coverage]** This code path lacks a test. Add a test exercising this branch."},
-      {"path":"src/Compiler/CodeGen/IlxGen.fs","line":1234,"body":"**[IL Emission]** Call `stripTyEqns` before this match to handle type abbreviations."}
+      {"path":"src/Compiler/CodeGen/IlxGen.fs","line":1234,"body":"🤖🕵️ Type abbreviation slips past the match — wrong branch taken.\n```fsharp\ntype Alias = int\nlet f (x: Alias) = ()  // reaches this case, mishandled\n```"}
      ]'
    ```
-   Each comment needs:
-   - `path`: file path relative to repo root (from the diff)
-   - `line`: line number in the **new** version of the file (right side of diff)
-   - `body`: severity tag in `**[Dimension]**` format, the issue, and suggested fix
+   - Review **`body` = one short line**, the `🤖🕵️` disclosure. Never a summary, never a finding list.
+   - `path`: file path from the diff. `line`: line in the **new** file (right side of diff); use `start_line`+`line` for a range.
+   - Comment body: `🤖🕵️` + one fragment naming the **consequence** (what breaks), then a fenced **user-code** sample — the input/usage that triggers it, or the fix. Show how the problem looks in *user* code; do not restate the product diff.
+   - **Validated, not guessed.** If you have not run it and seen the result, drop the finding. "Would allocate" / "could box" / "may cancel" without a repro → drop.
+   - At most ~6–10 comments, ranked Behavioral > Quality > Nitpick.
 
-3. **If no significant issues found**, post an approving review:
+3. **No significant issues → approve.** Body is the disclosure plus, optionally, a collapsed list of what was covered — the ONE permitted multi-line body:
    ```bash
-   gh pr review {number} --repo {owner}/{repo} --approve --body "LGTM"
+   gh pr review {number} --repo {owner}/{repo} --approve \
+     --body $'🤖🕵️ LGTM ✅\n\n<details>\n<summary>Dimensions covered (expand)</summary>\n\n- IL emission\n- Binary compatibility\n- Concurrency\n</details>'
    ```
+   The `<details>` block is a bare list of the dimensions/subagents that ran — no prose, no per-dimension write-up.
 
 4. **Apply the label and request human review:**
    ```bash
@@ -511,12 +533,12 @@ Execute review in five waves, each building on the previous.
    ```
 
 **Delivery rules:**
-- The review body MUST begin with an AI disclosure note (the `🤖` line above). This is non-negotiable — readers must know this is AI-generated, not human-written.
-- At most 10 inline comments — prioritize Behavioral over Quality over Nitpick.
-- Every comment must reference a specific file and line from the diff.
+- Every review body and every inline comment begins with `🤖🕵️`. Non-negotiable — readers must know this is AI-generated.
+- The review **body** is only ever: the one-line `🤖🕵️` disclosure (findings present), or `🤖🕵️ LGTM ✅` + the optional collapsed dimensions list (no findings). Anything else in the body — a summary, a numbered list of notes, praise, "two tiny things" — is a bug.
+- Every finding is an inline comment anchored to a specific file+line from the diff. No exception for "minor" or "nice" notes: if it is worth saying, anchor it.
+- Each comment carries a concrete **user-code** sample and describes **validated** behavior, not a guess.
+- **Banned in any body or comment:** prose summary, restating what the PR does, `**[Dimension]**`/`file:LINE` as a text header in the body, hedge/filler ("consider", "might want to", "non-blocking nit", "for consistency"), and any finding lacking a file+line or a concrete code sample.
 - Never post duplicate content if reviews already exist on the PR.
-- If the PR is too large to review fully, note skipped areas in the review body.
-- **NEVER write a wall-of-text review body.** The body is either `LGTM` (approve) or empty (with inline findings). All analysis stays in your context — only actionable findings get posted as inline comments. A review body longer than 10 characters (other than `LGTM`) is a bug.
 
 ## Folder Hotspot Mapping
 

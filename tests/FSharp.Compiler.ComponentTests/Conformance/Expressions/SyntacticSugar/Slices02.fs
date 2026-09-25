@@ -1,4 +1,4 @@
-// #Conformance #SyntacticSugar 
+// #Conformance #SyntacticSugar
 
 
 // Verify slices syntax on types with a get slice method
@@ -7,7 +7,7 @@ type Foo<'a>() =
     let mutable m_lastLB : 'a option = None
     let mutable m_lastUB : 'a option = None
 
-    member this.GetSlice(lb, ub) = 
+    member this.GetSlice(lb, ub) =
         m_lastLB <- lb
         m_lastUB <- ub
         ()

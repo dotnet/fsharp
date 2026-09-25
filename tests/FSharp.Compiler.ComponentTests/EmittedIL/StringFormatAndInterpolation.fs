@@ -176,7 +176,7 @@ IL_000d:  ret"""]
 
     [<FSharp.Test.FactForNETCOREAPP>]
     let ``Interpolated string with concat converts to span implicitly`` () =
-        let compilation = 
+        let compilation =
                 FSharp $"""
         module InterpolatedStringByefLikes
         type Foo() =

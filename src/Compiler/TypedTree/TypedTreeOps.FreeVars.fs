@@ -249,9 +249,9 @@ module internal FreeTypeVars =
         // Bound type vars form a recursively-referential set due to constraints, e.g. A: I<B>, B: I<A>
         // So collect up free vars in all constraints first, then bind all variables
         let acc =
-            List.foldBack (fun (tp: Typar) acc -> accFreeInTyparConstraints opts tp.Constraints acc) tps acc
+            ListInline.foldBack (fun (tp: Typar) acc -> accFreeInTyparConstraints opts tp.Constraints acc) tps acc
 
-        List.foldBack
+        ListInline.foldBack
             (fun tp acc ->
                 { acc with
                     FreeTypars = Zset.remove tp acc.FreeTypars
@@ -260,7 +260,7 @@ module internal FreeTypeVars =
             acc
 
     and accFreeInTyparConstraints opts cxs acc =
-        List.foldBack (accFreeInTyparConstraint opts) cxs acc
+        ListInline.foldBack (accFreeInTyparConstraint opts) cxs acc
 
     and accFreeInTyparConstraint opts tpc acc =
         match tpc with
@@ -280,7 +280,7 @@ module internal FreeTypeVars =
         | TyparConstraint.AllowsRefStruct _
         | TyparConstraint.RequiresDefaultConstructor _ -> acc
 
-    and accFreeInTrait opts (TTrait(tys, _, _, argTys, retTy, _, sln)) acc =
+    and accFreeInTrait opts (TTrait(tys, _, _, argTys, retTy, _, sln, _)) acc =
         Option.foldBack
             (accFreeInTraitSln opts)
             sln.Value
@@ -357,7 +357,7 @@ module internal FreeTypeVars =
         | TupInfo.Const _ -> acc
 
     and accFreeInMeasure opts unt acc =
-        List.foldBack (fun (tp, _) acc -> accFreeTyparRef opts tp acc) (ListMeasureVarOccsWithNonZeroExponents unt) acc
+        ListInline.foldBack (fun (tp, _) acc -> accFreeTyparRef opts tp acc) (ListMeasureVarOccsWithNonZeroExponents unt) acc
 
     and accFreeInTypes opts tys acc =
         match tys with
@@ -375,7 +375,7 @@ module internal FreeTypeVars =
         accFreeInTyparConstraints opts v emptyFreeTyvars
 
     let accFreeInTypars opts tps acc =
-        List.foldBack (accFreeTyparRef opts) tps acc
+        ListInline.foldBack (accFreeTyparRef opts) tps acc
 
     let rec addFreeInModuleTy (mtyp: ModuleOrNamespaceType) acc =
         QueueList.foldBack
@@ -403,10 +403,10 @@ module internal FreeTypeVars =
     let rec boundTyparsLeftToRight g cxFlag thruFlag acc tps =
         // Bound type vars form a recursively-referential set due to constraints, e.g. A: I<B>, B: I<A>
         // So collect up free vars in all constraints first, then bind all variables
-        List.fold (fun acc (tp: Typar) -> accFreeInTyparConstraintsLeftToRight g cxFlag thruFlag acc tp.Constraints) tps acc
+        ListInline.fold (fun acc (tp: Typar) -> accFreeInTyparConstraintsLeftToRight g cxFlag thruFlag acc tp.Constraints) tps acc
 
     and accFreeInTyparConstraintsLeftToRight g cxFlag thruFlag acc cxs =
-        List.fold (accFreeInTyparConstraintLeftToRight g cxFlag thruFlag) acc cxs
+        ListInline.fold (fun acc cx -> accFreeInTyparConstraintLeftToRight g cxFlag thruFlag acc cx) acc cxs
 
     and accFreeInTyparConstraintLeftToRight g cxFlag thruFlag acc tpc =
         match tpc with
@@ -427,7 +427,7 @@ module internal FreeTypeVars =
         | TyparConstraint.IsReferenceType _
         | TyparConstraint.RequiresDefaultConstructor _ -> acc
 
-    and accFreeInTraitLeftToRight g cxFlag thruFlag acc (TTrait(tys, _, _, argTys, retTy, _, _)) =
+    and accFreeInTraitLeftToRight g cxFlag thruFlag acc (TTrait(tys, _, _, argTys, retTy, _, _, _)) =
         let acc = accFreeInTypesLeftToRight g cxFlag thruFlag acc tys
         let acc = accFreeInTypesLeftToRight g cxFlag thruFlag acc argTys
         let acc = Option.fold (accFreeInTypeLeftToRight g cxFlag thruFlag) acc retTy
@@ -470,7 +470,7 @@ module internal FreeTypeVars =
 
         | TType_measure unt ->
             let mvars = ListMeasureVarOccsWithNonZeroExponents unt
-            List.foldBack (fun (tp, _) acc -> accFreeTyparRefLeftToRight g cxFlag thruFlag acc tp) mvars acc
+            ListInline.foldBack (fun (tp, _) acc -> accFreeTyparRefLeftToRight g cxFlag thruFlag acc tp) mvars acc
 
     and accFreeInTupInfoLeftToRight _g _cxFlag _thruFlag acc unt =
         match unt with
@@ -491,6 +491,46 @@ module internal FreeTypeVars =
 
     let freeInTypesLeftToRightSkippingConstraints g ty =
         accFreeInTypesLeftToRight g false true emptyFreeTyparsLeftToRight ty |> List.rev
+
+    /// The stamps of the sibling type parameters referenced by a type parameter's subtype (:>)
+    /// constraints — i.e. the parameters it must be unified after (the #20103 dependency).
+    let constraintDependencyStamps (g: TcGlobals) (tp: Typar) =
+        tp.Constraints
+        |> List.choose (function
+            | TyparConstraint.CoercesTo(ty, _) -> Some ty
+            | _ -> None)
+        |> freeInTypesLeftToRight g true
+        |> List.choose (fun ftp -> if ftp.Stamp = tp.Stamp then None else Some ftp.Stamp)
+        |> Set.ofList
+
+    /// Stable-sort the (formalTypar, actualType) unification pairs of an explicit generic
+    /// instantiation so a type parameter used in another's subtype constraint (the 'b in 'a :> I<'b>)
+    /// is unified first. Returns the pairs unchanged when no such cross-reference exists.
+    /// See https://github.com/dotnet/fsharp/issues/20103
+    let reorderTyArgsByConstraintDependencies priority (g: TcGlobals) (pairs: (TType * TType) list) =
+        match pairs with
+        | []
+        | [ _ ] -> pairs
+        | _ ->
+            let node pair =
+                match stripTyEqns g (fst pair) with
+                | TType_var(tp, _) -> pair, ValueSome tp.Stamp, constraintDependencyStamps g tp
+                | _ -> pair, ValueNone, Set.empty
+
+            let nodes = pairs |> List.map node
+
+            if nodes |> List.forall (fun (_, _, deps) -> Set.isEmpty deps) then
+                pairs
+            else
+                // 'a' must precede 'b' when b's subtype constraint references a's parameter.
+                let mustPrecede (_, stamp, _) (_, _, deps) =
+                    match stamp with
+                    | ValueSome s -> Set.contains s deps
+                    | ValueNone -> false
+
+                nodes
+                |> List.stableTopologicalSortBy (fun (pair, _, _) -> priority pair) mustPrecede
+                |> List.map (fun (pair, _, _) -> pair)
 
 [<AutoOpen>]
 module internal MemberRepresentation =
@@ -632,7 +672,7 @@ module internal MemberRepresentation =
 
         /// Get the key associated with the member constraint.
         member traitInfo.GetWitnessInfo() =
-            let (TTrait(tys, nm, memFlags, objAndArgTys, rty, _, _)) = traitInfo
+            let (TTrait(tys, nm, memFlags, objAndArgTys, rty, _, _, _)) = traitInfo
             TraitWitnessInfo(tys, nm, memFlags, objAndArgTys, rty)
 
     /// Get information about the trait constraints for a set of typars.
@@ -1082,19 +1122,20 @@ module internal MemberRepresentation =
     module SimplifyTypes =
 
         // CAREFUL! This function does NOT walk constraints
-        let rec foldTypeButNotConstraints f z ty =
-            let ty = stripTyparEqns ty
+        let rec foldTypeButNotConstraints normalizeType f z ty =
+            let ty = normalizeType ty
             let z = f z ty
 
             match ty with
-            | TType_forall(_, bodyTy) -> foldTypeButNotConstraints f z bodyTy
+            | TType_forall(_, bodyTy) -> foldTypeButNotConstraints normalizeType f z bodyTy
 
             | TType_app(_, tys, _)
             | TType_ucase(_, tys)
             | TType_anon(_, tys)
-            | TType_tuple(_, tys) -> List.fold (foldTypeButNotConstraints f) z tys
+            | TType_tuple(_, tys) -> List.fold (foldTypeButNotConstraints normalizeType f) z tys
 
-            | TType_fun(domainTy, rangeTy, _) -> foldTypeButNotConstraints f (foldTypeButNotConstraints f z domainTy) rangeTy
+            | TType_fun(domainTy, rangeTy, _) ->
+                foldTypeButNotConstraints normalizeType f (foldTypeButNotConstraints normalizeType f z domainTy) rangeTy
 
             | TType_var _ -> z
 
@@ -1109,7 +1150,7 @@ module internal MemberRepresentation =
         let accTyparCounts z ty =
             // Walk type to determine typars and their counts (for pprinting decisions)
             (z, ty)
-            ||> foldTypeButNotConstraints (fun z ty ->
+            ||> foldTypeButNotConstraints stripTyparEqns (fun z ty ->
                 match ty with
                 | TType_var(tp, _) when tp.Rigidity = TyparRigidity.Rigid -> incM tp z
                 | _ -> z)
@@ -1313,18 +1354,20 @@ module internal MemberRepresentation =
     let layoutOfPath p =
         sepListL SepL.dot (List.map (tagNamespace >> wordL) p)
 
-    let fullNameOfParentOfPubPath pp =
-        match pp with
-        | PubPath([| _ |]) -> ValueNone
-        | pp -> ValueSome(textOfPath pp.EnclosingPath)
+    let fullNameOfParentOfPubPath (pp: PublicPath) =
+        if pp.HasEmptyEnclosingPath then
+            ValueNone
+        else
+            ValueSome(textOfPath pp.EnclosingPath)
 
-    let fullNameOfParentOfPubPathAsLayout pp =
-        match pp with
-        | PubPath([| _ |]) -> ValueNone
-        | pp -> ValueSome(layoutOfPath (Array.toList pp.EnclosingPath))
+    let fullNameOfParentOfPubPathAsLayout (pp: PublicPath) =
+        if pp.HasEmptyEnclosingPath then
+            ValueNone
+        else
+            ValueSome(layoutOfPath pp.EnclosingCompilationPath.MangledPath)
 
-    let fullNameOfPubPath (PubPath p) = textOfPath p
-    let fullNameOfPubPathAsLayout (PubPath p) = layoutOfPath (Array.toList p)
+    let fullNameOfPubPath (pp: PublicPath) = textOfPath pp.FullPath
+    let fullNameOfPubPathAsLayout (pp: PublicPath) = layoutOfPath (Array.toList pp.FullPath)
 
     let fullNameOfParentOfNonLocalEntityRef (nlr: NonLocalEntityRef) =
         if nlr.Path.Length < 2 then
@@ -1342,16 +1385,16 @@ module internal MemberRepresentation =
         match eref with
         | ERefLocal x ->
             match x.PublicPath with
-            | None -> ValueNone
-            | Some ppath -> fullNameOfParentOfPubPath ppath
+            | ValueNone -> ValueNone
+            | ValueSome ppath -> fullNameOfParentOfPubPath ppath
         | ERefNonLocal nlr -> fullNameOfParentOfNonLocalEntityRef nlr
 
     let fullNameOfParentOfEntityRefAsLayout eref =
         match eref with
         | ERefLocal x ->
             match x.PublicPath with
-            | None -> ValueNone
-            | Some ppath -> fullNameOfParentOfPubPathAsLayout ppath
+            | ValueNone -> ValueNone
+            | ValueSome ppath -> fullNameOfParentOfPubPathAsLayout ppath
         | ERefNonLocal nlr -> fullNameOfParentOfNonLocalEntityRefAsLayout nlr
 
     let fullNameOfEntityRef nmF xref =
@@ -1529,8 +1572,8 @@ module internal MemberRepresentation =
         match tcref with
         | ERefLocal _ ->
             (match tcref.PublicPath with
-             | None -> [||]
-             | Some pp -> pp.EnclosingPath)
+             | ValueNone -> [||]
+             | ValueSome pp -> pp.EnclosingPath)
         | ERefNonLocal nlr -> nlr.EnclosingMangledPath
 
     /// generates a name like 'System.IComparable<System.Int32>.Get'

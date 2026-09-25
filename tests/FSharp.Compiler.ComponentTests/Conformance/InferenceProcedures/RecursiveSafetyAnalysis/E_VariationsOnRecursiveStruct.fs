@@ -1,4 +1,4 @@
-// #Regression #Conformance #TypeInference #Recursion 
+// #Regression #Conformance #TypeInference #Recursion
 // Regression test for FSharp1.0:4275 - still allowing variations on recursive structs
 
 

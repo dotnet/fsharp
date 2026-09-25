@@ -1,4 +1,4 @@
-// #Regression #Conformance #ObjectOrientedTypes #Structs 
+// #Regression #Conformance #ObjectOrientedTypes #Structs
 // Regression test for FSHARP1.0:3143
 //<Expects span="(7,6-7,7)" status="error" id="FS0954">This type definition involves an immediate cyclic reference through a struct field or inheritance relation$</Expects>
 //<Expects span="(7,6-7,7)" status="error" id="FS0912">This declaration element is not permitted in an augmentation$</Expects>

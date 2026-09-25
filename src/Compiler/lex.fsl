@@ -290,9 +290,7 @@ let bignum =  integer ('I'  | 'N' | 'Z' | 'Q' | 'R' | 'G')
 
 let ieee64 = float
 
-let ieee32 = float ('f' | 'F')
-
-let ieee32_dotless_no_exponent = integer ('f' | 'F')
+let ieee32 = (float | integer) ('f' | 'F')
 
 let decimal = (float | integer) ('m' | 'M')
 
@@ -476,13 +474,6 @@ rule token (args: LexArgs) (skip: bool) = parse
  | ieee32
      { IEEE32 (evalFloat args lexbuf) }
 
- | ieee32_dotless_no_exponent
-     { if lexbuf.SupportsFeature LanguageFeature.DotlessFloat32Literal then
-          IEEE32 (evalFloat args lexbuf)
-       else
-          fail args lexbuf (FSComp.SR.lexInvalidFloat()) (IEEE32 0.0f)
-     }
-
  | ieee64
      { IEEE64 (try float(lexeme lexbuf) with _ -> fail args lexbuf (FSComp.SR.lexInvalidFloat()) 0.0) }
 
@@ -620,24 +611,16 @@ rule token (args: LexArgs) (skip: bool) = parse
  | ('$'+) '"' '"' '"'
      { let buf, fin, m = startString args lexbuf
 
-       if lexbuf.SupportsFeature LanguageFeature.ExtendedStringInterpolation then
-           // Single quote in triple quote ok, others disallowed
-           match args.stringNest with
-           | _ :: _ -> errorR(Error(FSComp.SR.lexTripleQuoteInTripleQuote(), m))
-           | [] -> ()
+       // Single quote in triple quote ok, others disallowed
+       match args.stringNest with
+       | _ :: _ -> errorR(Error(FSComp.SR.lexTripleQuoteInTripleQuote(), m))
+       | [] -> ()
 
-           args.interpolationDelimiterLength <- lexeme lexbuf |> Seq.takeWhile (fun c -> c = '$') |> Seq.length
-           if not skip then
-               STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.ExtendedInterpolated, LexerStringKind.InterpolatedStringFirst, args.interpolationDelimiterLength, m))
-           else
-               extendedInterpolatedString (buf, fin, m, LexerStringKind.InterpolatedStringFirst, args) skip lexbuf
+       args.interpolationDelimiterLength <- lexeme lexbuf |> Seq.takeWhile (fun c -> c = '$') |> Seq.length
+       if not skip then
+           STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.ExtendedInterpolated, LexerStringKind.InterpolatedStringFirst, args.interpolationDelimiterLength, m))
        else
-           let result =
-             if not skip then
-                 STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.TripleQuote, LexerStringKind.InterpolatedStringFirst, args.interpolationDelimiterLength, m))
-             else
-                 tripleQuoteString (buf, fin, m, LexerStringKind.InterpolatedStringFirst, args) skip lexbuf
-           fail args lexbuf (FSComp.SR.lexExtendedStringInterpolationNotSupported()) result
+           extendedInterpolatedString (buf, fin, m, LexerStringKind.InterpolatedStringFirst, args) skip lexbuf
      }
 
  | '$' '"'

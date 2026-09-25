@@ -1,4 +1,4 @@
-// #Regression #Conformance #SignatureFiles #Namespaces #ReqNOMT 
+// #Regression #Conformance #SignatureFiles #Namespaces #ReqNOMT
 // Regression test for FSHARP1.0:4932
 
 // This is really the case behind the implementation

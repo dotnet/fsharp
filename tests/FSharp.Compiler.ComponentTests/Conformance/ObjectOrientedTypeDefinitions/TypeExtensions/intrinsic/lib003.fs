@@ -1,14 +1,14 @@
-// #Conformance #ObjectOrientedTypes #TypeExtensions 
+// #Conformance #ObjectOrientedTypes #TypeExtensions
 
 namespace NS
-    type IM = 
+    type IM =
       interface
         abstract M : int -> int
       end
-      
+
     type Lib() =
       class
         interface IM with
           member x.M i = 0
      end
- 
+

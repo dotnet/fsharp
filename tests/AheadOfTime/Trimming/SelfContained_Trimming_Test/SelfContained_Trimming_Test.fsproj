@@ -25,6 +25,8 @@
 
   <ItemGroup>
     <Compile Include="..\Program.fs" />
+    <EmbeddedResource Include="CustomSubstitutions.xml" LogicalName="ILLink.Substitutions.xml" />
+    <EmbeddedResource Include="..\Program.fs" LogicalName="custom.marker" />
   </ItemGroup>
 
   <Import Project="$(MSBuildThisFileDirectory)../../../../eng/Versions.props" />

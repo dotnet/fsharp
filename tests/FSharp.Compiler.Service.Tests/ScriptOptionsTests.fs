@@ -1,5 +1,5 @@
-// Because of script closure cache.
-[<FSharp.Test.RunTestCasesInSequence>]
+// Avoid parallelism to leverage script closure cache.
+[<Xunit.TestClass(DisableParallelization = true)>]
 module FSharp.Compiler.Service.Tests.ScriptOptionsTests
 
 open Xunit

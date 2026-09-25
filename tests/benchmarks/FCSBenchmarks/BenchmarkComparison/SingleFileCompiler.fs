@@ -58,7 +58,7 @@ type SingleFileCompiler(filePath: string, optionsCreationMethod : OptionsCreatio
         match configOpt with
         | None -> failwith "Setup not run"
         | Some {Checker = checker; Options = options} ->
-            let _, result =                                                                
+            let _, result =
                 checker.ParseAndCheckFileInProject(filePath, 0, Helpers.getFileSourceText filePath, options)
                 |> Async.RunSynchronously
             match result with

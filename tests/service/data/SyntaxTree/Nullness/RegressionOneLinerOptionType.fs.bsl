@@ -7,7 +7,9 @@ ImplFile
           [Types
              ([SynTypeDefn
                  (SynComponentInfo
-                    ([], None, [], [MyFlatOption],
+                    ([], None, [],
+                     Some
+                       (LongIdent (SynLongIdent ([MyFlatOption], [], [None]))),
                      PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector),
                      false, None, (1,5--1,17)),
                   Simple
@@ -16,7 +18,8 @@ ImplFile
                         [SynUnionCase
                            ([], SynIdent (None, None), Fields [],
                             PreXmlDoc ((1,20), FSharp.Compiler.Xml.XmlDocCollector),
-                            None, (1,20--1,24), { BarRange = None });
+                            None, (1,20--1,24), { BarRange = None
+                                                  OfKeyword = None });
                          SynUnionCase
                            ([], SynIdent (Some, None),
                             Fields
@@ -28,8 +31,10 @@ ImplFile
                                   None, (1,35--1,41), { LeadingKeyword = None
                                                         MutableKeyword = None })],
                             PreXmlDoc ((1,25), FSharp.Compiler.Xml.XmlDocCollector),
-                            None, (1,27--1,41), { BarRange = Some (1,25--1,26) })],
-                        (1,20--1,41)), (1,20--1,41)), [], None, (1,5--1,41),
+                            None, (1,27--1,41),
+                            { BarRange = Some (1,25--1,26)
+                              OfKeyword = Some (1,32--1,34) })], (1,20--1,41)),
+                     (1,20--1,41)), [], None, (1,5--1,41),
                   { LeadingKeyword = Type (1,0--1,4)
                     EqualsRange = Some (1,18--1,19)
                     WithKeyword = None })], (1,0--1,41))], PreXmlDocEmpty, [],

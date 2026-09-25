@@ -29,7 +29,7 @@ let a b c =
 [<Fact>]
 let ``Inconsistent return carriage return correct text`` () =
     let sourceText =  SourceText.ofString "let a =\r\n    // foo\n    43"
-    let m = mkRange "Sample.fs" (Position.mkPos 1 4) (Position.mkPos 3 6) 
+    let m = mkRange "Sample.fs" (Position.mkPos 1 4) (Position.mkPos 3 6)
     let v = sourceText.GetSubTextFromRange m
     let sanitized = v.Replace("\r", "")
     Assert.Equal("a =\n    // foo\n    43", sanitized)
@@ -39,7 +39,7 @@ let ``Zero range should return empty string`` () =
     let sourceText = SourceText.ofString "a"
     let v = sourceText.GetSubTextFromRange range0
     Assert.Equal(String.Empty, v)
-    
+
 [<Fact>]
 let ``Invalid range should throw argument exception`` () =
     let sourceText = SourceText.ofString "a"

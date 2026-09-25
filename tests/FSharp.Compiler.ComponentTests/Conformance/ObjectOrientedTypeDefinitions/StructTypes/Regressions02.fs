@@ -1,4 +1,4 @@
-// #Regression #Conformance #ObjectOrientedTypes #Structs 
+// #Regression #Conformance #ObjectOrientedTypes #Structs
 // Regression for 4643:
 // infinite loop in typechecker - caused by recursive struct check via self typed static field
 
@@ -10,8 +10,8 @@ type RIP(x:int) =
 
 
 [<Struct>]
-type arg_unused_is_RIP(x:RIP) = 
-    struct 
+type arg_unused_is_RIP(x:RIP) =
+    struct
     end
 
 [<Struct>]

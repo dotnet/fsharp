@@ -4,7 +4,7 @@ open Xunit
 open FSharp.Test.Compiler
 
 module ObsoleteAttributeCheckingTests =
-    
+
     [<Fact>]
     let ``Obsolete attribute is not taken into account when used on on a member and instantiate the type`` () =
         Fsx """
@@ -19,7 +19,7 @@ let c = C()
         |> ignoreWarnings
         |> compile
         |> shouldSucceed
-        
+
     [<Fact>]
     let ``Obsolete attribute warning taken into account when used instantiating a type`` () =
         Fsx """
@@ -35,7 +35,7 @@ let c = C()
         |> withDiagnostics [
             (Warning 44, Line 7, Col 9, Line 7, Col 10, "This construct is deprecated. Use B instead")
         ]
-        
+
 
     [<Fact>]
     let ``Obsolete attribute warning taken into account when used with a literal`` () =
@@ -66,7 +66,7 @@ let myRes = myLit
         |> withDiagnostics [
             (Error 101, Line 6, Col 13, Line 6, Col 18, "This construct is deprecated. Use lit2")
         ]
-    
+
     [<Fact>]
     let ``Obsolete attribute warning taken into account when used with a simple unit of measure`` () =
         Fsx """
@@ -81,7 +81,7 @@ let myCm = 3<cm>
         |> withDiagnostics [
             (Warning 44, Line 6, Col 14, Line 6, Col 16, "This construct is deprecated. Use cm2")
         ]
-        
+
     [<Fact>]
     let ``Obsolete attribute error taken into account when used with a simple unit of measure`` () =
         Fsx """
@@ -96,7 +96,7 @@ let myCm = 3<cm>
         |> withDiagnostics [
             (Error 101, Line 6, Col 14, Line 6, Col 16, "This construct is deprecated. Use cm2")
         ]
-        
+
     [<Fact>]
     let ``Obsolete attribute warning taken into account when used with a simple unit of measure type abbrev`` () =
         Fsx """
@@ -122,8 +122,8 @@ type IMl2 =
             (Warning 44, Line 11, Col 34, Line 11, Col 36, "This construct is deprecated. Use something else")
             (Warning 44, Line 11, Col 47, Line 11, Col 49, "This construct is deprecated. Use something else")
             (Warning 44, Line 11, Col 58, Line 11, Col 60, "This construct is deprecated. Use something else")
-        ]        
-            
+        ]
+
     [<Fact>]
     let ``Obsolete attribute error taken into account when used with a simple unit of measure type abbrev`` () =
         Fsx """
@@ -136,7 +136,7 @@ open System
         |> shouldFail
         |> withDiagnostics [
             (Error 101, Line 5, Col 23, Line 5, Col 25, "This construct is deprecated. Use something else")
-        ]        
+        ]
 
     [<Fact>]
     let ``Obsolete attribute warning taken into account when used with a complex unit of measure definition`` () =
@@ -159,7 +159,7 @@ type s
             (Warning 44, Line 12, Col 22, Line 12, Col 24, "This construct is deprecated. Use kg2");
             (Warning 44, Line 12, Col 29, Line 12, Col 30, "This construct is deprecated. Use s2")
         ]
-        
+
     [<Fact>]
     let ``Obsolete attribute error taken into account when used with a complex unit of measure definition`` () =
         Fsx """
@@ -180,7 +180,7 @@ type s
         |> withDiagnostics [
             (Error 101, Line 12, Col 22, Line 12, Col 24, "This construct is deprecated. Use kg2");
         ]
-    
+
     [<Fact>]
     let ``Obsolete attribute warning taken into account when used within a complex unit of measure`` () =
         Fsx """
@@ -228,7 +228,7 @@ let mPerCm = 0.01<m/cm>
             (Warning 44, Line 11, Col 19, Line 11, Col 20, "This construct is deprecated. Use m2")
             (Warning 44, Line 11, Col 21, Line 11, Col 23, "This construct is deprecated. Use cm2")
         ]
-        
+
     [<Fact>]
     let ``Obsolete attribute warning taken into account when used with a complex(multiple obsolete) unit of measure`` () =
         Fsx """
@@ -300,7 +300,7 @@ let res = System.Collections.Generic.Dictionary<int<m>,int<s>>()
             (Warning 44, Line 26, Col 53, Line 26, Col 54, "This construct is deprecated. Use m2")
             (Warning 44, Line 26, Col 60, Line 26, Col 61, "This construct is deprecated. Use s2")
         ]
-        
+
     [<Fact>]
     let ``Class- Obsolete attribute warning taken into account when used with a complex(multiple obsolete) unit of measure usages`` () =
         Fsx """
@@ -379,7 +379,7 @@ type B(x: int<m>, y: int<s>) =
             (Warning 44, Line 41, Col 15, Line 41, Col 16, "This construct is deprecated. Use m2")
             (Warning 44, Line 41, Col 26, Line 41, Col 27, "This construct is deprecated. Use s2")
         ]
-    
+
     [<Fact>]
     let ``Obsolete attribute error taken into account when used instantiating a type`` () =
         Fsx """
@@ -531,7 +531,7 @@ C.Update()
         |> withDiagnostics [
             (Error 101, Line 10, Col 1, Line 10, Col 2, "This construct is deprecated. Use B instead")
         ]
-        
+
     [<Fact>]
     let ``Obsolete attribute is taken into account when used on a record member and method invocation`` () =
         Fsx """
@@ -550,7 +550,7 @@ C.Update()
         |> withDiagnostics [
             (Error 101, Line 9, Col 3, Line 9, Col 9, "This construct is deprecated. Use B instead")
         ]
-        
+
     [<Fact>]
     let ``Obsolete attribute error is taken into account when used on a struct du and invocation`` () =
         Fsx """
@@ -638,7 +638,7 @@ let c = Color.Red
         |> withDiagnostics [
             (Error 101, Line 9, Col 9, Line 9, Col 14, "This construct is deprecated. Use B instead")
         ]
-     
+
     [<Fact>]
     let ``Obsolete attribute error is taken into account when used on an enum field and invocation`` () =
         Fsx """
@@ -941,7 +941,7 @@ b.text("Hello 2") |> ignore
         |> withDiagnostics [
             (Error 101, Line 16, Col 3, Line 16, Col 7, "This construct is deprecated. Use B instead")
         ]
-    
+
     [<Fact>]
     let ``Obsolete attribute error is taken into account when used in one the record properties`` () =
         Fsx """
@@ -955,7 +955,7 @@ let a = { DeprecatedField= "23" ; JustField = "" }
         |> withDiagnostics [
             (Error 101, Line 4, Col 11, Line 4, Col 26, "This construct is deprecated. Deprecated Field")
         ]
-        
+
     // This should only report one warning but instead show two. Related issue https://github.com/dotnet/fsharp/issues/14203
     [<Fact>]
     let ``Obsolete attribute warning is taken into account when used in one the record properties`` () =
@@ -969,7 +969,7 @@ let a = { DeprecatedField= "23" ; JustField = "" }
         |> withDiagnostics [
             (Warning 44, Line 4, Col 11, Line 4, Col 26, "This construct is deprecated. Deprecated Field")
         ]
-    
+
     [<Fact>]
     let ``Obsolete attribute warning is taken into account when used in one the class with a setter`` () =
         Fsx """
@@ -988,7 +988,7 @@ let value2 = class1.A <- 12
             (Warning 44, Line 9, Col 21, Line 9, Col 22, "This construct is deprecated. member A is deprecated");
             (Warning 44, Line 9, Col 14, Line 9, Col 28, "This construct is deprecated. member A is deprecated")
         ]
-        
+
     [<Fact>]
     let ``Obsolete attribute error is taken into account when used in one the class with a setter`` () =
         Fsx """
@@ -1006,7 +1006,7 @@ let value2 = class1.A <- 12
         |> withDiagnostics [
             (Error 101, Line 9, Col 21, Line 9, Col 22, "This construct is deprecated. member A is deprecated")
         ]
-        
+
     [<Fact>]
     let ``Obsolete attribute warning is taken into account when used in one the class with a getter`` () =
         Fsx """
@@ -1026,7 +1026,7 @@ let value2 = class1.A <- 12
            (Warning 44, Line 8, Col 14, Line 8, Col 22, "This construct is deprecated. member A is deprecated");
            (Warning 44, Line 9, Col 21, Line 9, Col 22, "This construct is deprecated. member A is deprecated")
         ]
-        
+
     [<Fact>]
     let ``Obsolete attribute error is taken into account when used in one the class with a getter`` () =
         Fsx """
@@ -1045,7 +1045,7 @@ let value2 = class1.A <- 12
             (Error 101, Line 8, Col 21, Line 8, Col 22, "This construct is deprecated. member A is deprecated")
             (Error 101, Line 9, Col 21, Line 9, Col 22, "This construct is deprecated. member A is deprecated")
         ]
-    
+
     [<Fact>]
     let ``Obsolete attribute warning is taken into account when a module is is marked as [<AutoOpen>] but not when calling a function`` () =
         Fsx """
@@ -1063,7 +1063,7 @@ testFun ()
         |> withDiagnostics [
             (Warning 44, Line 7, Col 6, Line 7, Col 14, "This construct is deprecated. This is obsolete")
         ]
-        
+
     [<Fact>]
     let ``Obsolete attribute error is taken into account when a module is is marked as [<AutoOpen>] but not when calling a function`` () =
         Fsx """
@@ -1082,7 +1082,7 @@ testFun ()
         |> withDiagnostics [
             (Error 101, Line 7, Col 6, Line 7, Col 14, "This construct is deprecated. This is obsolete")
         ]
-        
+
     [<Fact>]
     let ``Obsolete attribute warning is taken into account when used on an C# struct`` () =
         let CSLib =
@@ -1186,7 +1186,7 @@ let c2 = ObsoleteClass()
             (Error 101, Line 3, Col 9, Line 3, Col 22, "This construct is deprecated. Class is obsolete");
             (Error 101, Line 4, Col 10, Line 4, Col 23, "This construct is deprecated. Class is obsolete")
         ]
-        
+
     [<Fact>]
     let ``Obsolete attribute warning is taken into account when used on an C# interface`` () =
         let CSLib =
@@ -1376,7 +1376,7 @@ Class.ObsoleteEvent |> ignore
             (Error 101, Line 5, Col 7, Line 5, Col 23, "This construct is deprecated. Property is obsolete")
             (Error 101, Line 6, Col 7, Line 6, Col 20, "This construct is deprecated. Event is obsolete")
         ]
-        
+
     [<Fact>]
     let ``Obsolete attribute warning is taken into account when used in one the record properties with a static member when one of them is not used`` () =
         Fsx """
@@ -1558,7 +1558,7 @@ let f (x: IFirst) = x.F()
         |> withDiagnostics [
             (Error 101, Line 13, Col 23, Line 13, Col 24, "This construct is deprecated. Use G instead")
         ]
-        
+
     [<Fact>]
     let ``Obsolete attribute warning is taken into account when used in interface that is used in an object expression`` () =
         Fsx """
@@ -1582,7 +1582,7 @@ let f (x: IFirst) = x.F()
             (Warning 44, Line 13, Col 11, Line 13, Col 17, "This construct is deprecated. Use G instead")
             (Warning 44, Line 13, Col 23, Line 13, Col 24, "This construct is deprecated. Use G instead")
         ]
-        
+
     [<Fact>]
     let ``Obsolete attribute error is taken into account when used in interface that is used in an object expression`` () =
         Fsx """
@@ -1629,7 +1629,7 @@ let options2 = JsonSerializerOptions(DefaultOptions = true, DefaultOptions = fal
             (Warning 44, Line 10, Col 38, Line 10, Col 52, "This construct is deprecated. This is bad")
             (Warning 44, Line 10, Col 61, Line 10, Col 75, "This construct is deprecated. This is bad")
         ]
-        
+
     [<Fact>]
     let ``Obsolete attribute warning is not taken into account in prop setters that can be included in methods which are not constructors`` () =
         Fsx """
@@ -1674,7 +1674,7 @@ let options2 =
         |> withDiagnostics [
             (Error 101, Line 13, Col 15, Line 13, Col 29, "This construct is deprecated. This is bad")
         ]
-        
+
     [<Fact>]
     let ``Obsolete attribute error is taken into account in a constructor property assignment`` () =
         Fsx """
@@ -1695,7 +1695,7 @@ let options2 = JsonSerializerOptions(DefaultOptions = true, DefaultOptions = fal
             (Error 364, Line 10, Col 16, Line 10, Col 84, "The named argument 'DefaultOptions' has been assigned more than one value");
             (Error 101, Line 10, Col 38, Line 10, Col 52, "This construct is deprecated. This is bad")
         ]
-        
+
     [<Fact>]
     let ``Obsolete attribute warning is taken into account in a nested constructor property assignment`` () =
         Fsx """
@@ -1718,7 +1718,7 @@ let options = JsonSerializerOptions(DefaultOptions = JsonSerializer1Options(Defa
         |> withDiagnostics [
             (Warning 44, Line 14, Col 77, Line 14, Col 91, "This construct is deprecated. This is bad")
         ]
-        
+
     [<Fact>]
     let ``Obsolete attribute error is taken into account in a nested constructor property assignment`` () =
         Fsx """
@@ -1765,7 +1765,7 @@ let res = JsonProtocolTestData(IgnoreNullValues = false)
         |> withDiagnostics [
             (Warning 44, Line 3, Col 32, Line 3, Col 48, "This construct is deprecated. Use Json instead")
         ]
-        
+
     [<Fact>]
     let ``Obsolete attribute error is taken into account in a constructor property assignment from a csharp class`` () =
         let CSLib =
