@@ -37,7 +37,8 @@ let ``compiler global state only depends on generated-name abstraction`` () =
     let source = readCompilerFile "src/Compiler/TypedTree/CompilerGlobalState.fs"
 
     Assert.DoesNotContain("open FSharp.Compiler.SynthesizedTypeMaps\n", source)
-    Assert.Contains("open FSharp.Compiler.GeneratedNames\n", source)
+    // The merged foundation keeps the abstraction with its name-map state.
+    Assert.Contains("open FSharp.Compiler.CompilerGeneratedNameMapState\n", source)
     Assert.DoesNotContain("member _.CompilerGeneratedNameMap", source)
     Assert.Contains("getCompilerGeneratedNameMapAccessor", source)
 
