@@ -622,8 +622,11 @@ module RecordTypes =
     // These tests describe the target behaviour and currently FAIL (records expose no
     // F#-callable constructor; only { Field = ... } record syntax is permitted).
 
-    [<Fact>]
-    let ``Record can be constructed positionally via its all-fields constructor`` () =
+    [<Theory>]
+    [<InlineData("default")>]
+    [<InlineData("11.2")>]
+    [<InlineData("preview")>]
+    let ``Record can be constructed positionally via its all-fields constructor`` langVersion =
         Fsx """
 type Person = { Name : string; Age : int }
 let p = Person("Isaac", 21)
@@ -631,7 +634,7 @@ if p.Name <> "Isaac" then failwith "wrong Name"
 if p.Age <> 21 then failwith "wrong Age"
 if p <> { Name = "Isaac"; Age = 21 } then failwith "not equal to record-syntax value"
         """
-        |> withLangVersionPreview
+        |> withLangVersion langVersion
         |> compileExeAndRun
         |> shouldSucceed
 

@@ -32,8 +32,10 @@ SigFile
                                   None, (6,29--6,32), { LeadingKeyword = None
                                                         MutableKeyword = None })],
                             PreXmlDoc ((6,11), FSharp.Compiler.Xml.XmlDocCollector),
-                            None, (6,13--6,32), { BarRange = Some (6,11--6,12) })],
-                        (6,11--6,32)), (6,11--6,32)), [], (6,5--6,32),
+                            None, (6,13--6,32),
+                            { BarRange = Some (6,11--6,12)
+                              OfKeyword = Some (6,17--6,19) })], (6,11--6,32)),
+                     (6,11--6,32)), [], (6,5--6,32),
                   { LeadingKeyword = Type (6,0--6,4)
                     EqualsRange = Some (6,9--6,10)
                     WithKeyword = None })], (6,0--6,32))], PreXmlDocEmpty, [],

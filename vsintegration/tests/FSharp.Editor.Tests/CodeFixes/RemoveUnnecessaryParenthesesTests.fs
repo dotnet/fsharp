@@ -568,12 +568,12 @@ let _ =
             """
 
             """
-            let x = (printfn $"{y}"
+            let x = (printn $"{y}"
                      2)
             in x
             """,
             """
-            let x = printfn $"{y}"
+            let x = printn $"{y}"
                     2
             in x
             """
@@ -1189,21 +1189,21 @@ in x
 
             """
             let mutable x = 3
-            x <- (printfn $"{y}"; 3)
+            x <- (printn $"{y}"; 3)
             """,
             """
             let mutable x = 3
-            x <- (printfn $"{y}"; 3)
+            x <- (printn $"{y}"; 3)
             """
 
             """
             let mutable x = 3
-            x <- (printfn $"{y}"
+            x <- (printn $"{y}"
                   3)
             """,
             """
             let mutable x = 3
-            x <- (printfn $"{y}"
+            x <- (printn $"{y}"
                   3)
             """
 
@@ -2341,41 +2341,41 @@ let _ = (2 + 2) { return 5 }
         memberData {
             // See https://github.com/dotnet/fsharp/issues/16999
             """
-            (x) < (printfn $"{y}"
+            (x) < (printn $"{y}"
                    y)
             """,
             """
-            (x) < (printfn $"{y}"
+            (x) < (printn $"{y}"
                    y)
             """
 
             // See https://github.com/dotnet/fsharp/issues/16999
             """
-            id (x) < (printfn $"{y}"
+            id (x) < (printn $"{y}"
                       y)
             """,
             """
-            id (x) < (printfn $"{y}"
+            id (x) < (printn $"{y}"
                       y)
             """
 
             // See https://github.com/dotnet/fsharp/issues/16999
             """
-            id (id (id (x))) < (printfn $"{y}"
+            id (id (id (x))) < (printn $"{y}"
                                 y)
             """,
             """
-            id (id (id (x))) < (printfn $"{y}"
+            id (id (id (x))) < (printn $"{y}"
                                 y)
             """
 
             // See https://github.com/dotnet/fsharp/issues/16999
             """
-            (x) <> z && x < (printfn $"{y}"
+            (x) <> z && x < (printn $"{y}"
                              y)
             """,
             """
-            (x) <> z && x < (printfn $"{y}"
+            (x) <> z && x < (printn $"{y}"
                              y)
             """
 

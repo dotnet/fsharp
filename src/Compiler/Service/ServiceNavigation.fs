@@ -224,7 +224,7 @@ module NavigationImpl =
 
         // Process a class declaration or F# type declaration
         let rec processExnDefnRepr baseName nested synExnRepr =
-            let (SynExceptionDefnRepr(_, ucase, _, _, access, m)) = synExnRepr
+            let (SynExceptionDefnRepr(caseName = ucase; accessibility = access; range = m)) = synExnRepr
             let (SynUnionCase(ident = SynIdent(id, _); caseType = fldspec)) = ucase
             let mBody = fldspecRange fldspec
 
@@ -500,7 +500,9 @@ module NavigationImpl =
             item, addItemName id.idText
 
         let rec processExnRepr baseName nested inp =
-            let (SynExceptionDefnRepr(_, SynUnionCase(ident = SynIdent(id, _); caseType = fldspec), _, _, access, m)) = inp
+            let (SynExceptionDefnRepr(caseName = SynUnionCase(ident = SynIdent(id, _); caseType = fldspec); accessibility = access; range = m)) =
+                inp
+
             let mBody = fldspecRange fldspec
 
             [
@@ -811,7 +813,7 @@ module NavigateTo =
             addIdent NavigableItemKind.ModuleAbbreviation id isSig container
 
         let addExceptionRepr exnRepr isSig container =
-            let (SynExceptionDefnRepr(_, SynUnionCase(ident = SynIdent(id, _)), _, _, _, _)) = exnRepr
+            let (SynExceptionDefnRepr(caseName = SynUnionCase(ident = SynIdent(id, _)))) = exnRepr
             addIdent NavigableItemKind.Exception id isSig container
             NavigableContainer.Container(NavigableContainerType.Exception, [ id.idText ], container)
 

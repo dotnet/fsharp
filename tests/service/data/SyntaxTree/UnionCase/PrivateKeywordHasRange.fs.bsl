@@ -25,7 +25,8 @@ ImplFile
                                   None, (9,14--9,20), { LeadingKeyword = None
                                                         MutableKeyword = None })],
                             PreXmlDoc ((9,4), FSharp.Compiler.Xml.XmlDocCollector),
-                            None, (9,6--9,20), { BarRange = Some (9,4--9,5) })],
+                            None, (9,6--9,20), { BarRange = Some (9,4--9,5)
+                                                 OfKeyword = Some (9,11--9,13) })],
                         (7,4--9,20)), (7,4--9,20)), [], None, (2,5--9,20),
                   { LeadingKeyword = Type (2,0--2,4)
                     EqualsRange = Some (2,14--2,15)

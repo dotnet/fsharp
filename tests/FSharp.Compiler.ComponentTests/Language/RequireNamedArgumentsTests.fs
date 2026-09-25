@@ -294,9 +294,15 @@ let optionalOmitted = Api.Scale(x = 5)
         |> withReferences [ csAnnotatedLib ]
         |> acceptsCompiled
 
-    [<Fact>]
-    let ``Feature is off under non-preview langversion`` () =
-        withPolyfill """
+    [<Theory>]
+    [<InlineData("9.0", false)>]
+    [<InlineData("11.0", false)>]
+    [<InlineData("default", true)>]
+    [<InlineData("11.2", true)>]
+    [<InlineData("preview", true)>]
+    let ``Required named arguments follow language version`` langVersion requiresNamedArguments =
+        let result =
+            withPolyfill """
 namespace Test
 
 open System.Diagnostics.CodeAnalysis
@@ -308,10 +314,13 @@ type C =
 module Use =
     let r = C.Add(1, 2)
 """
-        |> withLangVersion "9.0"
-        |> typecheck
-        |> shouldSucceed
-        |> ignore
+            |> withLangVersion langVersion
+            |> typecheck
+
+        if requiresNamedArguments then
+            result |> shouldFail |> withErrorCode 3923 |> ignore
+        else
+            result |> shouldSucceed |> ignore
 
     [<Theory>]
     [<InlineData("MyApp", "RequireNamedArguments")>]
