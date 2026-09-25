@@ -45,7 +45,7 @@ param (
     [switch]$procdump,
     [switch]$deployExtensions,
     [switch]$prepareMachine,
-    [bool][Alias('mt')]$msbuildMultiThreaded = $false,
+    [bool][Alias('mt')]$msbuildMultiThreaded = $true,
     [bool]$nodeReuse = $false,
     [switch]$useGlobalNuGetCache = $true,
     [switch]$dontUseGlobalNuGetCache = $false,
@@ -81,6 +81,11 @@ param (
 Set-StrictMode -version 2.0
 $ErrorActionPreference = "Stop"
 
+# MSBuild's multi-threaded mode isn't run on CI unless it was explicitly requested via -msbuildMultiThreaded.
+# tools.ps1 reads $msbuildMultiThreaded, so this has to be settled before Arcade is imported.
+if ($ci -and -not $PSBoundParameters.ContainsKey('msbuildMultiThreaded')) {
+    $msbuildMultiThreaded = $false
+}
 $BuildCategory = ""
 $BuildMessage = ""
 
