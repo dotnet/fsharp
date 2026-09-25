@@ -505,13 +505,22 @@ let rec private tryTypeIdentityFromTType (g: TcGlobals) (typarOrdinals: Map<Stam
         tryTypeIdentityFromTType g typarOrdinals elementType
         |> Option.map RuntimeTypeIdentity.PointerType
     | TType_app(tcref, tinst, _) ->
-        let fullName =
-            try
-                tcref.CompiledRepresentationForNamedType.FullName
-            with _ ->
-                tcref.CompiledName
+        // Independent compilations have distinct intrinsic type references. Their IL representation stays stable.
+        match tcref.CompiledRepresentation, tinst with
+        | CompiledTypeRepr.ILAsmOpen(ILType.Array(shape, ILType.TypeVar 0us)), [ elementType ] ->
+            tryTypeIdentityFromTType g typarOrdinals elementType
+            |> Option.map (fun elementIdentity -> RuntimeTypeIdentity.ArrayType(shape.Rank, elementIdentity))
+        | CompiledTypeRepr.ILAsmOpen(ILType.Byref(ILType.TypeVar 0us)), elementType :: _ ->
+            tryTypeIdentityFromTType g typarOrdinals elementType
+            |> Option.map RuntimeTypeIdentity.ByRefType
+        | _ ->
+            let fullName =
+                try
+                    tcref.CompiledRepresentationForNamedType.FullName
+                with _ ->
+                    tcref.CompiledName
 
-        tryEncodeGenericArgs tinst |> Option.map (runtimeNamedTypeIdentity fullName)
+            tryEncodeGenericArgs tinst |> Option.map (runtimeNamedTypeIdentity fullName)
     | TType_anon(anonInfo, tys) ->
         tryEncodeGenericArgs tys
         |> Option.map (runtimeNamedTypeIdentity anonInfo.ILTypeRef.FullName)
@@ -1608,6 +1617,38 @@ let private attribIdentity denv attribute =
 let private attribsDigest (denv: DisplayEnv) (attribs: Attrib list) =
     attribs |> List.map (attribIdentity denv) |> identityNode "attributes"
 
+/// Captures emitted argument names and attributes, including return-value attributes.
+let private slotParameterMetadataIdentity denv (var: Val) =
+    let argumentIdentity (argument: ArgReprInfo) =
+        identityNode
+            "argument"
+            [
+                argument.Name
+                |> Option.map (fun name -> identityNode "name" [ name.idText ])
+                |> Option.defaultValue "unnamed"
+                argument.Attribs.AsList()
+                |> List.map (attribIdentity denv)
+                |> identityNode "attributes"
+            ]
+
+    match var.ValReprInfo with
+    | None -> "none"
+    | Some(ValReprInfo(_, arguments, result)) ->
+        // The instance receiver has no Param row and its source name does not affect metadata.
+        let emittedArguments =
+            match var.MemberInfo, arguments with
+            | Some memberInfo, _ :: rest when memberInfo.MemberFlags.IsInstance -> rest
+            | _ -> arguments
+
+        identityNode
+            "parameters"
+            [
+                emittedArguments
+                |> List.map (List.map argumentIdentity >> identityNode "group")
+                |> identityNode "arguments"
+                argumentIdentity result
+            ]
+
 let private bindingMetadataIdentity (var: Val) =
     let memberFlags =
         match var.MemberInfo with
@@ -2586,6 +2627,24 @@ and private snapshotTycon g denv path (tycon: Tycon) =
 
         sb.Append("|attributes:").Append(attribsDigest denv tycon.Attribs) |> ignore
 
+        // Abstract slots have no body binding, so the entity owns their complete metadata identity.
+        tycon.MembersOfFSharpTyconSorted
+        |> List.filter (fun memberRef -> memberRef.IsDispatchSlot)
+        |> List.map (fun memberRef ->
+            identityNode
+                "slot"
+                [
+                    memberRef.CompiledName None
+                    tyToString denv memberRef.Type
+                    typarConstraintsDigest denv memberRef.Typars
+                    bindingMetadataIdentity memberRef.Deref
+                    attribsDigest denv memberRef.Attribs
+                    slotParameterMetadataIdentity denv memberRef.Deref
+                ])
+        |> List.sort
+        |> identityNode "slots"
+        |> fun slots -> sb.Append("|slots:").Append(slots) |> ignore
+
         match tycon.TypeReprInfo with
         | TFSharpTyconRepr data ->
             sb.Append("|fs-kind:").Append(data.fsobjmodel_kind.ToString()) |> ignore
@@ -2621,6 +2680,8 @@ and private snapshotTycon g denv path (tycon: Tycon) =
                             .Append(field.IsVolatile)
                             .Append(",attributes=")
                             .Append(attribsDigest denv field.FieldAttribs)
+                            .Append(",property-attributes=")
+                            .Append(attribsDigest denv field.PropertyAttribs)
                             .Append("]=")
                         |> ignore
 
@@ -2651,6 +2712,8 @@ and private snapshotTycon g denv path (tycon: Tycon) =
                         .Append(field.IsVolatile)
                         .Append(",attributes=")
                         .Append(attribsDigest denv field.FieldAttribs)
+                        .Append(",property-attributes=")
+                        .Append(attribsDigest denv field.PropertyAttribs)
                         .Append("]=")
                     |> ignore
 
@@ -2672,6 +2735,7 @@ and private snapshotTycon g denv path (tycon: Tycon) =
                                 string field.IsMutable
                                 string field.IsVolatile
                                 attribsDigest denv field.FieldAttribs
+                                attribsDigest denv field.PropertyAttribs
                                 renderEntityType field.FormalType
                                 literalText
                             ]
