@@ -48,13 +48,18 @@ module DeltaEmitterTests =
             startInfo.RedirectStandardOutput <- true
             startInfo.RedirectStandardError <- true
             startInfo.UseShellExecute <- false
+            // The test host uses the repository SDK, which can be newer than the global tool target.
+            startInfo.EnvironmentVariables["DOTNET_ROLL_FORWARD"] <- "LatestMajor"
 
             use proc = new Process(StartInfo = startInfo)
             if not (proc.Start()) then
                 ValueNone
             else
+                // Read both streams before the wait so a complete metadata dump cannot block on a full pipe.
+                let stdout = proc.StandardOutput.ReadToEndAsync()
+                let stderr = proc.StandardError.ReadToEndAsync()
                 proc.WaitForExit()
-                ValueSome (proc.ExitCode, proc.StandardOutput.ReadToEnd(), proc.StandardError.ReadToEnd())
+                ValueSome (proc.ExitCode, stdout.GetAwaiter().GetResult(), stderr.GetAwaiter().GetResult())
         with _ -> ValueNone
 
     let private createMethod (ilg: ILGlobals) name returnValue =
@@ -1980,21 +1985,9 @@ module DeltaEmitterTests =
         Assert.Equal(2, semanticsAdds.Length)
 
     [<Fact>]
-    let ``metadata validator tool is available`` () =
-        match tryRunMdv "--version" with
-        | ValueNone ->
-            // Treat absence of the mdv CLI as a soft skip; downstream delta tests assert availability explicitly.
-            printfn "metadata-tools (mdv) CLI not found on PATH; skipping availability assertion."
-            ()
-        | ValueSome(0, _, _) -> Assert.Equal(0, 0)
-        | ValueSome(exitCode, _, stderr) ->
-            // Non-zero exit indicates mdv is installed but not runnable in this environment; treat it similarly to absence.
-            printfn "metadata-tools (mdv) CLI reported exit code %d. stderr: %s" exitCode stderr
-            ()
-
-    [<Fact>]
     let ``emitDelta metadata validates with mdv`` () =
-        let _, baseline = createBaseline ()
+        let baselineArtifacts = TestHelpers.createBaselineFromModule (createModule 42)
+        let baseline = baselineArtifacts.Baseline
         let updatedModule = createModule 43 |> TestHelpers.withDebuggableAttribute
         let request =
             {
@@ -2018,27 +2011,57 @@ module DeltaEmitterTests =
         Assert.NotEqual(System.Guid.Empty, delta.GenerationId)
         Assert.Equal(System.Guid.Empty, delta.BaseGenerationId)
 
-        match tryRunMdv "--version" with
-        | ValueNone ->
-            printfn "metadata-tools (mdv) CLI not found; skipping validation test."
-        | ValueSome(exitCode, _, _) when exitCode <> 0 ->
-            printfn "metadata-tools (mdv) CLI reported exit code %d during version check; skipping validation test." exitCode
-        | _ ->
-            let tempMeta = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".meta")
-            let tempIl = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".il")
-            try
-                File.WriteAllBytes(tempMeta, delta.Metadata)
-                File.WriteAllBytes(tempIl, delta.IL)
+        let tempMeta = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".meta")
+        let tempIl = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".il")
+        try
+            File.WriteAllBytes(tempMeta, delta.Metadata)
+            File.WriteAllBytes(tempIl, delta.IL)
 
-                let arg = $"/g:{tempMeta};{tempIl}"
-                match tryRunMdv arg with
-                | ValueSome(0, _, _) -> ()
-                | ValueSome(code, _, stderr) ->
-                    Assert.True(false, $"mdv validation failed with exit code {code}. stderr: {stderr}")
-                | ValueNone -> Assert.True(false, "mdv CLI became unavailable during validation")
-            finally
-                if File.Exists(tempMeta) then File.Delete(tempMeta)
-                if File.Exists(tempIl) then File.Delete(tempIl)
+            let arg = $"\"{baselineArtifacts.AssemblyPath}\" \"/g:{tempMeta};{tempIl}\" /stats+ /md+ /il+"
+            match tryRunMdv arg with
+            | ValueSome(0, stdout, stderr) ->
+                printfn "%s" stdout
+                Assert.DoesNotContain("<bad metadata>", stdout)
+                Assert.True(String.IsNullOrWhiteSpace stderr, $"mdv reported errors: {stderr}")
+            | ValueSome(code, _, stderr) ->
+                Assert.True(false, $"mdv validation failed with exit code {code}. stderr: {stderr}")
+            | ValueNone -> Assert.Skip("metadata-tools (mdv) CLI not found on PATH.")
+        finally
+            if File.Exists(tempMeta) then File.Delete(tempMeta)
+            if File.Exists(tempIl) then File.Delete(tempIl)
+
+    [<FactForNETCOREAPP>]
+    let ``emitDelta applies an updated method through the runtime`` () =
+#if NETCOREAPP
+        Assert.SkipUnless(MetadataUpdater.IsSupported, "Set DOTNET_MODIFIABLE_ASSEMBLIES=debug to enable runtime updates.")
+        let baselineArtifacts = TestHelpers.createBaselineFromModule (createModule 42)
+        let baseline = baselineArtifacts.Baseline
+        let request =
+            {
+                IlxDeltaRequest.Baseline = baseline
+                UpdatedTypes = [ "Sample.Type" ]
+                UpdatedMethods = [ methodKey baseline "GetValue" ]
+                UpdatedAccessors = []
+                Module = createModule 43 |> TestHelpers.withDebuggableAttribute
+                SymbolChanges = None
+                CurrentGeneration = 1
+                PreviousGenerationId = None
+                SynthesizedNames = None
+                EmittedArtifacts = None
+            }
+
+        let assembly = Assembly.Load(File.ReadAllBytes baselineArtifacts.AssemblyPath)
+        let method = assembly.GetType("Sample.Type").GetMethod("GetValue")
+        Assert.Equal(42, method.Invoke(null, [||]) :?> int)
+
+        let delta = emitDelta request
+        let pdb = delta.Pdb |> Option.defaultValue [||]
+        MetadataUpdater.ApplyUpdate(assembly, delta.Metadata, delta.IL, pdb)
+
+        Assert.Equal(43, method.Invoke(null, [||]) :?> int)
+#else
+        ()
+#endif
 
     [<Fact>]
     let ``emitDelta method body reflects updated IL`` () =

@@ -513,6 +513,13 @@ let rec private tryTypeIdentityFromTType (g: TcGlobals) (typarOrdinals: Map<Stam
         | CompiledTypeRepr.ILAsmOpen(ILType.Byref(ILType.TypeVar 0us)), elementType :: _ ->
             tryTypeIdentityFromTType g typarOrdinals elementType
             |> Option.map RuntimeTypeIdentity.ByRefType
+        | CompiledTypeRepr.ILAsmOpen(ILType.Value typeSpec), [ elementType ] when
+            typeSpec.TypeRef.FullName = "System.IntPtr"
+            && tcref.LogicalName = g.nativeptr_tcr.LogicalName
+            ->
+            // nativeptr stores a native-int representation, while emitted method signatures retain the element type.
+            tryTypeIdentityFromTType g typarOrdinals elementType
+            |> Option.map RuntimeTypeIdentity.PointerType
         | _ ->
             let fullName =
                 try

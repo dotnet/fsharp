@@ -624,6 +624,8 @@ let value (x: A.C) = x
     [<InlineData("int[]")>]
     [<InlineData("int[,]")>]
     [<InlineData("byref<int>")>]
+    [<InlineData("nativeptr<int>")>]
+    [<InlineData("nativeptr<byte>")>]
     member _.``intrinsic parameter identities survive independent compilations`` (parameterType: string) =
         use harness = new DiffTestHarness()
         let source = Sources.moduleHeader + $"type C() = member _.M(x: {parameterType}) = ()"
