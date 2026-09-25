@@ -640,3 +640,30 @@ module Library =
 
         Assert.Empty(result.SemanticEdits)
         Assert.Empty(result.RudeEdits)
+
+
+    [<Fact>]
+    member _.``extension receiver rename requires a restart`` () =
+        use harness = new DiffTestHarness()
+        let source = "module Library\ntype C() = class end\nmodule Extensions =\n    type C with\n        member this.M(x: int) = x\n"
+        harness.Rewrite(source)
+        let baseline = harness.Compile()
+        harness.Rewrite(source.Replace("member this.", "member that."))
+        let updated = harness.Compile()
+
+        let result = harness.Diff baseline updated
+
+        Assert.Empty(result.SemanticEdits)
+        Assert.Contains(result.RudeEdits, fun edit -> edit.Kind = RudeEditKind.SignatureChange)
+
+    [<Fact>]
+    member _.``constructor parameter rename requires a restart`` () =
+        use harness = new DiffTestHarness()
+        harness.Rewrite(Sources.moduleHeader + "type C(before: int) = member _.Value = before")
+        let baseline = harness.Compile()
+        harness.Rewrite(Sources.moduleHeader + "type C(after: int) = member _.Value = after")
+        let updated = harness.Compile()
+
+        let result = harness.Diff baseline updated
+
+        Assert.Contains(result.RudeEdits, fun edit -> edit.Kind = RudeEditKind.SignatureChange)

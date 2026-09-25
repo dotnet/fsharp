@@ -901,10 +901,10 @@ let private parameterMetadataIdentity denv (var: Val) =
     match var.ValReprInfo with
     | None -> "none"
     | Some(ValReprInfo(_, arguments, result)) ->
-        // The instance receiver has no Param row and its source name does not affect metadata.
+        // Extension receivers are real parameters of static methods and retain their metadata.
         let emittedArguments =
-            match var.MemberInfo, arguments with
-            | Some memberInfo, _ :: rest when memberInfo.MemberFlags.IsInstance -> rest
+            match arguments with
+            | _ :: rest when ValSpecIsCompiledAsInstance denv.g var -> rest
             | _ -> arguments
 
         identityNode
@@ -948,6 +948,21 @@ let private bindingMetadataIdentity denv (var: Val) =
             parameterMetadataIdentity denv var
         ]
 
+/// Gets the emitted receiver name when an extension method lacks a signature argument name.
+let private tryExtensionReceiverName (var: Val) expr =
+    match var.MemberInfo with
+    | Some memberInfo when var.IsExtensionMember && memberInfo.MemberFlags.IsInstance ->
+        // IlxGen.GenParams falls back to the implementation binder for unnamed signature arguments.
+        let rec receiverName expr =
+            match stripDebugPoints expr with
+            | Expr.TyLambda(_, _, body, _, _)
+            | Expr.TyChoose(_, body, _) -> receiverName body
+            | Expr.Lambda(_, _, _, receiver :: _, _, _, _) -> Some receiver.LogicalName
+            | _ -> None
+
+        receiverName expr
+    | _ -> None
+
 let rec private snapshotModuleBinding g denv (path: string list) (bindings, entities) binding =
     match binding with
     | ModuleOrNamespaceBinding.Binding b ->
@@ -977,7 +992,13 @@ and private tryGetContainingEntityFullName (var: Val) =
     match var.MemberInfo with
     | Some memberInfo ->
         try
-            Some memberInfo.ApparentEnclosingEntity.CompiledRepresentationForNamedType.FullName
+            let owner =
+                if var.IsExtensionMember then
+                    (mkLocalValRef var).DeclaringEntity
+                else
+                    memberInfo.ApparentEnclosingEntity
+
+            Some owner.CompiledRepresentationForNamedType.FullName
         with _ ->
             None
     | None -> None
@@ -995,10 +1016,7 @@ and private snapshotBinding g denv path (TBind(var, expr, _)) =
         with _ ->
             None
 
-    let isInstanceMember =
-        match var.MemberInfo with
-        | Some memberInfo -> memberInfo.MemberFlags.IsInstance
-        | None -> false
+    let isInstanceMember = ValRefIsCompiledAsInstanceMember g vref
 
     let totalArgCount =
         var.ValReprInfo
@@ -1032,7 +1050,13 @@ and private snapshotBinding g denv path (TBind(var, expr, _)) =
         InlineInfo = var.InlineInfo
         SignatureText = signature
         ConstraintsText = constraints
-        MetadataText = bindingMetadataIdentity denv var
+        MetadataText =
+            identityNode
+                "binding-metadata"
+                [
+                    bindingMetadataIdentity denv var
+                    tryExtensionReceiverName var expr |> Option.defaultValue "none"
+                ]
         BodyIdentity = bodyIdentity
         BodyHash = stableHash bodyIdentity
         IsSynthesized = var.IsCompilerGenerated
