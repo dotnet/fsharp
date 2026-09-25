@@ -264,18 +264,9 @@ stages:
               NativeToolsOnMachine: true
             displayName: Build
 
-          - task: PublishTestResults@2
-            displayName: Publish Test Results
-            inputs:
-              testResultsFormat: 'XUnit'
+          - template: /eng/templates/publish-test-results.yml
+            parameters:
               testRunTitle: WindowsNoRealsig_testCoreclr
-              # See eng/templates/batched-test-steps.yml: merging disjoint per-assembly XUnit
-              # files produces tens of thousands of "No matching test case result" warnings and
-              # can abort the publish, dropping results. Publish each file as its own run.
-              mergeTestResults: false
-              testResultsFiles: '*.xml'
-              searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/Release'
-            condition: succeededOrFailed()
 
           - task: PublishBuildArtifacts@1
             displayName: Publish Build BinLog
@@ -373,19 +364,10 @@ stages:
               NativeToolsOnMachine: true
             displayName: Build and Test $(_testKind) $(transparentCompiler)
 
-          - task: PublishTestResults@2
-            displayName: Publish Test Results
-            inputs:
-              testResultsFormat: 'XUnit'
+          - template: /eng/templates/publish-test-results.yml
+            parameters:
+              configuration: $(_configuration)
               testRunTitle: WindowsCompressedMetadata $(_testKind) $(transparentCompiler)
-              # See eng/templates/batched-test-steps.yml: publish each assembly file as its own
-              # run to avoid the merge-time "No matching test case result" warning flood and the
-              # "TestCaseTitle must be specified" abort that silently drops results.
-              mergeTestResults: false
-              testResultsFiles: '*.xml'
-              searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_configuration)'
-            continueOnError: true
-            condition: succeededOrFailed()
           - task: PublishBuildArtifacts@1
             displayName: Publish Tests BinLog
             condition: always()
@@ -468,6 +450,10 @@ stages:
           steps:
           - checkout: self
             clean: true
+          - powershell: |
+              $result = Invoke-Pester eng/tests/PublishTestResults.Tests.ps1 -PassThru
+              if ($result.FailedCount -gt 0) { exit 1 }
+            displayName: Test result publishing regression tests
           - pwsh: .\eng\MockBuild.ps1
             displayName: Build with OfficialBuildId
 
@@ -498,19 +484,10 @@ stages:
             inputs:
               targetPath: '$(Build.SourcesDirectory)/artifacts/MultithreadedTasks'
               artifact: Linux Batch$(batchNumber) SDK MT evidence
-          - task: PublishTestResults@2
-            displayName: Publish Test Results
-            inputs:
-              testResultsFormat: 'XUnit'
+          - template: /eng/templates/publish-test-results.yml
+            parameters:
+              configuration: $(_BuildConfig)
               testRunTitle: Linux Batch$(batchNumber)
-              testResultsFiles: '*.xml'
-              # See eng/templates/batched-test-steps.yml: publish each assembly file as its own
-              # run to avoid the merge-time "No matching test case result" warning flood and the
-              # "TestCaseTitle must be specified" abort that silently drops results.
-              mergeTestResults: false
-              searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
-            continueOnError: true
-            condition: succeededOrFailed()
           - task: PublishBuildArtifacts@1
             displayName: Publish Test Logs
             inputs:

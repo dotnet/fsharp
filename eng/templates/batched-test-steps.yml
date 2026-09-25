@@ -33,21 +33,10 @@ steps:
   env: ${{ parameters.buildEnv }}
   displayName: Build / Test
 
-- task: PublishTestResults@2
-  displayName: Publish Test Results
-  inputs:
-    testResultsFormat: 'XUnit'
+- template: /eng/templates/publish-test-results.yml
+  parameters:
+    configuration: ${{ parameters.configuration }}
     testRunTitle: ${{ parameters.testRunTitlePrefix }} Batch$(batchNumber)
-    # Publish each assembly's result file as its own run. Merging disjoint per-assembly
-    # XUnit files into one run makes the ADO publisher emit a "No matching test case result
-    # found on server" warning for every test in every file after the first (tens of thousands
-    # of warnings per build), and can abort with "TestCaseTitle must be specified", silently
-    # dropping a whole assembly's results.
-    mergeTestResults: false
-    testResultsFiles: '*.xml'
-    searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/${{ parameters.configuration }}'
-  continueOnError: true
-  condition: succeededOrFailed()
 
 - ${{ if parameters.publishBinLog }}:
   - task: PublishBuildArtifacts@1
