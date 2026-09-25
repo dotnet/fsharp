@@ -403,6 +403,11 @@ Afficher les notes dans Info express</target>
         <target state="translated">Utiliser « nameof »</target>
         <note />
       </trans-unit>
+      <trans-unit id="UseOptionForOptionalParameter">
+        <source>Use 'option' for optional parameter</source>
+        <target state="new">Use 'option' for optional parameter</target>
+        <note />
+      </trans-unit>
       <trans-unit id="UseTripleQuotedInterpolation">
         <source>Use triple quoted string interpolation.</source>
         <target state="translated">Utilisez l’interpolation de chaîne entre guillemets triples.</target>
@@ -426,6 +431,11 @@ Afficher les notes dans Info express</target>
       <trans-unit id="UseValueInsteadOfDeref">
         <source>Use '.Value' to dereference expression</source>
         <target state="translated">Utilisez '.Value' pour déréférencer l'expression</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UseValueOptionForOptionalParameter">
+        <source>Use 'voption' for optional parameter</source>
+        <target state="new">Use 'voption' for optional parameter</target>
         <note />
       </trans-unit>
       <trans-unit id="WrapExpressionInParentheses">
