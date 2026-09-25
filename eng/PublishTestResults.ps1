@@ -31,7 +31,12 @@ $runIds = @()
 
 foreach ($file in $files) {
     $xml = [xml](Get-Content -LiteralPath $file.FullName -Raw)
-    $expected = $xml.SelectNodes('/assemblies/assembly/collection/test').Count
+    # Azure's XUnit parser coalesces results with the same case-sensitive test name.
+    $testNames = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+    foreach ($test in $xml.SelectNodes('/assemblies/assembly/collection/test')) {
+        $null = $testNames.Add($test.GetAttribute('name'))
+    }
+    $expected = $testNames.Count
     if ($expected -eq 0) {
         throw "No test cases found in $($file.FullName)."
     }

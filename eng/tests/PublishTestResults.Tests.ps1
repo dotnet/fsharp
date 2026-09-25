@@ -21,7 +21,7 @@ Describe 'Per-file test result publication' {
                     $line.Substring($line.IndexOf(']') + 1)
                 ) | ForEach-Object { $_.Replace('%0D', "`r").Replace('%0A', "`n").Replace('%3B', ';').Replace('%5D', ']').Replace('%AZP25', '%') }
                 $xml = [xml][IO.File]::ReadAllText($file)
-                $count = $xml.SelectNodes('//test').Count
+                $count = @($xml.SelectNodes('//test') | ForEach-Object { $_.GetAttribute('name') } | Select-Object -Unique).Count
                 $publication.Runs += [pscustomobject]@{
                     id = $(if ($publication.Mode -eq 'reused') { 1 } else { $publication.Commands.Count })
                     name = $(if ($publication.Mode -eq 'suffix') { "${title}_1" } else { $title })
@@ -71,13 +71,27 @@ Describe 'Per-file test result publication' {
     It 'publishes and verifies a separate complete run for each XML (<Mode>)' -TestCases @(
         @{ Mode = 'complete' }
         @{ Mode = 'suffix' }
+        @{ Mode = 'duplicate-names' }
+        @{ Mode = 'case-distinct-names' }
     ) {
         param($Mode)
         $publication.Mode = $Mode
+        if ($Mode -in @('duplicate-names', 'case-distinct-names')) {
+            foreach ($file in Get-ChildItem $results -Filter '*.xml') {
+                $xml = [xml](Get-Content $file.FullName -Raw)
+                $test = $xml.SelectSingleNode('//test').CloneNode($true)
+                $collection = $xml.CreateElement('collection')
+                $null = $collection.AppendChild($test)
+                $null = $xml.assemblies.assembly.AppendChild($collection)
+                if ($Mode -eq 'case-distinct-names') { $test.SetAttribute('name', 'case1') }
+                $xml.Save($file.FullName)
+            }
+        }
         & $publisher -ResultsDirectory $results -RunTitle 'Linux Batch1' -TimeoutSeconds 0
         $publication.Commands.Count | Should Be 2
         @($publication.Runs.id | Select-Object -Unique).Count | Should Be 2
-        ($publication.Runs.totalTests -join ',') | Should Be '117,6175'
+        $expected = if ($Mode -eq 'case-distinct-names') { '118,6176' } else { '117,6175' }
+        ($publication.Runs.totalTests -join ',') | Should Be $expected
         foreach ($command in $publication.Commands) {
             $command | Should Match 'type=XUnit;mergeResults=false;'
             $command | Should Match 'publishRunAttachments=true;'
