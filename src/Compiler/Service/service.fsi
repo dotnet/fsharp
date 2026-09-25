@@ -533,7 +533,7 @@ type public FSharpChecker =
     member internal FrameworkImportsCache: FrameworkImportsCache
     member internal ReferenceResolver: LegacyReferenceResolver
 
-    /// Compile a DLL from cached typecheck results, skipping parse/typecheck/optimization.
+    /// Compile a DLL from cached typecheck results, with optimizer passes or a reusable optimizer prefix.
     /// For dev-loop use only. Requires keepAssemblyContents=true.
     /// Writes the assembly and portable PDB to outfile and returns the emitted module plus the
     /// bytes and token mappings from the same write for direct in-memory consumption.

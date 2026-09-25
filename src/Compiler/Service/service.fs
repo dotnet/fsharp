@@ -1233,7 +1233,7 @@ type FSharpChecker
 
     member internal _.FrameworkImportsCache = backgroundCompiler.FrameworkImportsCache
 
-    /// Compile a DLL from cached typecheck results, skipping parse/typecheck/optimization.
+    /// Compile a DLL from cached typecheck results, with optimizer passes or a reusable optimizer prefix.
     /// For dev-loop use only. Requires keepAssemblyContents=true.
     /// Writes the assembly and portable PDB to outfile and returns the emitted module
     /// parsed back from the written bytes.
@@ -1330,7 +1330,8 @@ type FSharpChecker
             let sigDataAttributes, sigDataResources =
                 EncodeSignatureData(tcConfig, tcGlobals, exportRemapping, generatedCcu, outfile, false)
 
-            let tcVal = LightweightTcValForUsingInBuildMethodCall tcGlobals
+            // This path follows fsc code generation after type checking resolves SRTP constraints.
+            let tcVal = LightweightTcValForUsingInBuildMethodCall tcGlobals traitCtxtNone
             let importMap = tcImports.GetImportMap()
             let optEnv0 = GetInitialOptimizationEnv(tcImports, tcGlobals)
 
