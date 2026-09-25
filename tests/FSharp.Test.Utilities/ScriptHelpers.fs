@@ -17,6 +17,7 @@ type LangVersion =
     | V80
     | V90
     | V10
+    | V11
     | Preview
     | Latest
 
@@ -42,6 +43,7 @@ type FSharpScript(?additionalArgs: string[], ?quiet: bool, ?langVersion: LangVer
         | LangVersion.V80 -> "--langversion:8.0"
         | LangVersion.V90 -> "--langversion:9.0"
         | LangVersion.V10 -> "--langversion:10.0"
+        | LangVersion.V11 -> "--langversion:11.0"
         |]
 
     let argv = Array.append baseArgs additionalArgs
