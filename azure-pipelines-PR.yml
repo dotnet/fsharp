@@ -268,15 +268,9 @@ stages:
               NativeToolsOnMachine: true
             displayName: Build
 
-          - task: PublishTestResults@2
-            displayName: Publish Test Results
-            inputs:
-              testResultsFormat: 'XUnit'
+          - template: /eng/templates/publish-test-results.yml
+            parameters:
               testRunTitle: WindowsNoRealsig_testCoreclr
-              mergeTestResults: true
-              testResultsFiles: '*.xml'
-              searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/Release'
-            condition: succeededOrFailed()
 
           - task: PublishBuildArtifacts@1
             displayName: Publish Build BinLog
@@ -374,16 +368,10 @@ stages:
               NativeToolsOnMachine: true
             displayName: Build and Test $(_testKind) $(transparentCompiler)
 
-          - task: PublishTestResults@2
-            displayName: Publish Test Results
-            inputs:
-              testResultsFormat: 'XUnit'
+          - template: /eng/templates/publish-test-results.yml
+            parameters:
+              configuration: $(_configuration)
               testRunTitle: WindowsCompressedMetadata $(_testKind) $(transparentCompiler)
-              mergeTestResults: true
-              testResultsFiles: '*.xml'
-              searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_configuration)'
-            continueOnError: true
-            condition: succeededOrFailed()
           - task: PublishBuildArtifacts@1
             displayName: Publish Tests BinLog
             condition: always()
@@ -466,10 +454,14 @@ stages:
           steps:
           - checkout: self
             clean: true
+          - powershell: |
+              $result = Invoke-Pester eng/tests/PublishTestResults.Tests.ps1 -PassThru
+              if ($result.FailedCount -gt 0) { exit 1 }
+            displayName: Test result publishing regression tests
           - pwsh: .\eng\MockBuild.ps1
             displayName: Build with OfficialBuildId
 
-        # Linux (split into 2 batches; batch 3 is desktop-only FSharpSuite)
+        # Linux (split into 2 batches to limit test-process memory; batch 3 is desktop-only FSharpSuite)
         - job: Linux
           strategy:
             matrix:
