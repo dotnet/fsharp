@@ -213,7 +213,8 @@ module HotReloadSession =
                                   HotReloadSession = hotReloadSession
                                   ProjectOptions = projectOptions
                                   SourcePath = sourcePath
-                                  BaselineDllPath = baselineDllPath
+                                  // mdv needs the original bytes because each edit overwrites the build output.
+                                  BaselineDllPath = runtimeDllPath
                                   RuntimeDllPath = runtimeDllPath
                                   RuntimeAssembly = runtimeAssembly
                                   LoadContext = loadContext
