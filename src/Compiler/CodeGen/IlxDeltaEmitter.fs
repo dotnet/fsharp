@@ -3491,9 +3491,7 @@ let private createMetadataReferenceRemapper (context: MetadataReferenceRemapCont
         RemapAssemblyRefToken = remapAssemblyRefToken
     }
 
-/// Emits the delta artifacts for a request. The current implementation populates token projections
-/// while leaving the raw metadata/IL/PDB payload empty; future work will replace the placeholders
-/// with fully emitted heaps.
+/// Emits metadata, IL, and portable PDB deltas with token mappings for the baseline and new definitions.
 ///
 /// <paramref name="freshDebugPdb"/> carries the FRESH compile's on-disk portable PDB when the
 /// caller has one and no emitted-artifact PDB is available. <c>request.EmittedArtifacts</c>
