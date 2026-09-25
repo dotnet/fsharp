@@ -15,7 +15,8 @@ ImplFile
                        Range = (3,10--3,15) }],
                     SynUnionCase
                       ([], SynIdent (, None), Fields [], PreXmlDocEmpty, None,
-                       (3,0--3,15), { BarRange = None }), None,
+                       (3,0--3,15), { BarRange = None
+                                      OfKeyword = None }), None,
                     PreXmlDoc ((3,0), FSharp.Compiler.Xml.XmlDocCollector), None,
                     (3,0--3,15), { ExceptionKeyword = (3,0--3,9) }), None, [],
                  (3,0--3,15)), (3,0--3,15));
@@ -25,7 +26,8 @@ ImplFile
                    ([],
                     SynUnionCase
                       ([], SynIdent (B, None), Fields [], PreXmlDocEmpty, None,
-                       (5,10--5,11), { BarRange = None }), None,
+                       (5,10--5,11), { BarRange = None
+                                       OfKeyword = None }), None,
                     PreXmlDoc ((5,0), FSharp.Compiler.Xml.XmlDocCollector), None,
                     (5,0--5,11), { ExceptionKeyword = (5,0--5,9) }), None, [],
                  (5,0--5,11)), (5,0--5,11))],
