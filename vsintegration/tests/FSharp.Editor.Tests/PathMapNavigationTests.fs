@@ -106,3 +106,32 @@ let ``a relative name is matched by whole directories, not by the tail of one`` 
     match solution.TryGetDocumentIdFromFSharpRange range with
     | Some documentId -> failwith $"{insideASegment} must not name {solution.GetDocument(documentId).FilePath}"
     | None -> ()
+
+[<Fact>]
+let ``a name this platform cannot spell names no document`` () =
+    // A declaration imported from an assembly can carry a name written on another operating system.
+    let foreign = "/home/build/a|b/Library.fs"
+    let range = Range.mkRange foreign (Position.mkPos 1 0) (Position.mkPos 1 0)
+
+    match solution.TryGetDocumentIdFromFSharpRange range with
+    | Some documentId -> failwith $"{foreign} must not name {solution.GetDocument(documentId).FilePath}"
+    | None -> ()
+
+[<Fact>]
+let ``the documents a mapped name reaches are the same on every search`` () =
+    let real = library.GetFilePath "Library"
+    let root = Path.GetDirectoryName library.ProjectDir
+
+    let relative =
+        $".\{real.Substring(root.Length).TrimStart(Path.DirectorySeparatorChar)}"
+
+    let reached name =
+        solution.GetDocumentIdsWithFSharpFileName name
+        |> List.map (fun documentId -> solution.GetDocument(documentId).FilePath)
+
+    Assert.Equal<string list>([ real ], reached relative)
+    Assert.Equal<string list>(reached relative, reached relative)
+
+    // A search asks for the same name once per project, and a name that reaches nothing is asked just as often.
+    Assert.Empty(reached ".\Nowhere\Nothing.fs")
+    Assert.Empty(reached ".\Nowhere\Nothing.fs")
