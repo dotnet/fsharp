@@ -33,8 +33,26 @@ type internal InlineRenameLocationSet
 
     inherit FSharpInlineRenameLocationSet()
 
+    // `<param name="…">` and its kin hold the bare name: no type-parameter tick, no backticks
+    static let docAttributeText (replacementText: string) =
+        let text = replacementText.TrimStart('\'', '^')
+
+        if Tokenizer.isDoubleBacktickIdent text then
+            text.Substring(2, text.Length - 4)
+        else
+            text
+
+    // A name inside a `///` comment is the only use the checker reports on such a line
+    static let isXmlDocLine (sourceText: SourceText) (span: TextSpan) =
+        sourceText.Lines
+            .GetLineFromPosition(span.Start)
+            .ToString()
+            .AsSpan()
+            .TrimStart()
+            .StartsWith("///".AsSpan(), StringComparison.Ordinal)
+
     static let rec applyChanges
-        replacementText
+        (replacementText: string)
         (solution: Solution)
         (locationsByDocument: (Document * FSharpInlineRenameLocation list) list)
         =
@@ -45,9 +63,20 @@ type internal InlineRenameLocationSet
             | [] -> return solution
             | (document, locations) :: rest ->
                 let! oldSource = document.GetTextAsync(cancellationToken)
+                let docText = docAttributeText replacementText
 
                 let newSource =
-                    oldSource.WithChanges(locations |> List.map (fun l -> TextChange(l.TextSpan, replacementText)))
+                    oldSource.WithChanges(
+                        locations
+                        |> List.map (fun l ->
+                            let text =
+                                if isXmlDocLine oldSource l.TextSpan then
+                                    docText
+                                else
+                                    replacementText
+
+                            TextChange(l.TextSpan, text))
+                    )
 
                 return! applyChanges replacementText (solution.WithDocumentText(document.Id, newSource)) rest
         }
@@ -97,8 +126,9 @@ type internal InlineRenameInfo
                 return! document.GetTextAsync(cancellationToken)
             }
 
+    // Rename follows a parameter into its `<param>`/`<typeparam>` tags, which Find All References leaves out
     let symbolUses =
-        SymbolHelpers.getSymbolUsesInSolution (symbolUse, checkFileResults, document) ct
+        SymbolHelpers.getSymbolUsesInSolution (symbolUse, checkFileResults, document, RelatedSymbolUseKind.All) ct
 
     let symbolDisplayName = symbolUse.Symbol.DisplayName
 
