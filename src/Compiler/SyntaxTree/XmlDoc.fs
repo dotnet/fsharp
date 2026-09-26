@@ -59,64 +59,95 @@ module private XmlDocRefScanner =
             String.CompareOrdinal(text, i, tag, 0, tag.Length) = 0
             && isNameEnd text (i + tag.Length))
 
-    /// The value of `attribute` between `start` and the closing `>` of the tag, as an offset and a length in `text`
+    let private skipWhiteSpace (text: string) i =
+        let mutable i = i
+
+        while i < text.Length && Char.IsWhiteSpace text[i] do
+            i <- i + 1
+
+        i
+
+    let private attributeNameEnd (text: string) i =
+        let mutable i = i
+
+        while not (isNameEnd text i) && text[i] <> '=' do
+            i <- i + 1
+
+        i
+
+    /// The quoted value of `attribute` in the tag whose attributes start at `start`, as an offset and a length in `text`.
+    /// Walks the attributes one at a time, so an attribute whose name ends in `attribute` and a `>` inside a quoted value
+    /// are not mistaken for it. A value that runs over a line break has no single-line range and is skipped.
     let private attributeValue (text: string) (attribute: string) (start: int) =
-        let close =
-            match text.IndexOf('>', start) with
-            | -1 -> text.Length
-            | i -> i
+        let rec next i =
+            let nameStart = skipWhiteSpace text i
 
-        let rec find i =
-            match text.IndexOf(attribute, i, StringComparison.Ordinal) with
-            | -1 -> ValueNone
-            | at when at >= close -> ValueNone
-            | at ->
-                let mutable j = at + attribute.Length
+            if nameStart >= text.Length || text[nameStart] = '>' || text[nameStart] = '/' then
+                ValueNone
+            else
+                let nameEnd = attributeNameEnd text nameStart
+                let equals = skipWhiteSpace text nameEnd
 
-                while j < close && Char.IsWhiteSpace text[j] do
-                    j <- j + 1
-
-                if j < close && text[j] = '=' then
-                    j <- j + 1
-
-                    while j < close && Char.IsWhiteSpace text[j] do
-                        j <- j + 1
-
-                    if j < close && (text[j] = '"' || text[j] = '\'') then
-                        match text.IndexOf(text[j], j + 1) with
-                        | -1 -> ValueNone
-                        | quoteEnd when quoteEnd > close -> ValueNone
-                        | quoteEnd -> ValueSome struct (j + 1, quoteEnd - j - 1)
-                    else
-                        find (at + 1)
+                if equals >= text.Length || text[equals] <> '=' then
+                    ValueNone
                 else
-                    find (at + 1)
+                    let quote = skipWhiteSpace text (equals + 1)
 
-        find start
+                    if quote >= text.Length || (text[quote] <> '"' && text[quote] <> '\'') then
+                        ValueNone
+                    else
+                        match text.IndexOf(text[quote], quote + 1) with
+                        | -1 -> ValueNone
+                        | quoteEnd ->
+                            let valueStart = quote + 1
+                            let valueLength = quoteEnd - valueStart
 
+                            if
+                                nameEnd - nameStart = attribute.Length
+                                && String.CompareOrdinal(text, nameStart, attribute, 0, attribute.Length) = 0
+                            then
+                                if text.IndexOf('\n', valueStart, valueLength) >= 0 then
+                                    ValueNone
+                                else
+                                    ValueSome struct (valueStart, valueLength)
+                            else
+                                next (quoteEnd + 1)
+
+        next start
+
+    /// Scans the lines as one text, since a tag and its attributes may run over several `///` lines
     let scan (lines: string[]) (lineRanges: range[]) =
+        let text = String.Join("\n", lines)
+        let lineStarts = Array.zeroCreate lines.Length
+
+        for i in 1 .. lines.Length - 1 do
+            lineStarts[i] <- lineStarts[i - 1] + lines[i - 1].Length + 1
+
         [|
-            for i in 0 .. lines.Length - 1 do
-                let text = lines[i]
-                let m = lineRanges[i]
-                let mutable lt = text.IndexOf '<'
+            let mutable lt = text.IndexOf '<'
 
-                while lt >= 0 do
-                    match tagAt text (lt + 1) with
-                    | Some(tag, kind, attribute) ->
-                        match attributeValue text attribute (lt + 1 + tag.Length) with
-                        | ValueSome struct (offset, length) ->
-                            let column = m.StartColumn + lineTextOffset + offset
+            while lt >= 0 do
+                match tagAt text (lt + 1) with
+                | Some(tag, kind, attribute) ->
+                    match attributeValue text attribute (lt + 1 + tag.Length) with
+                    | ValueSome struct (offset, length) ->
+                        let line =
+                            match Array.BinarySearch(lineStarts, offset) with
+                            | i when i >= 0 -> i
+                            | i -> ~~~i - 1
 
-                            {
-                                Kind = kind
-                                Text = text.Substring(offset, length)
-                                Range = mkFileIndexRange m.FileIndex (mkPos m.StartLine column) (mkPos m.StartLine (column + length))
-                            }
-                        | ValueNone -> ()
-                    | None -> ()
+                        let m = lineRanges[line]
+                        let column = m.StartColumn + lineTextOffset + offset - lineStarts[line]
 
-                    lt <- text.IndexOf('<', lt + 1)
+                        {
+                            Kind = kind
+                            Text = text.Substring(offset, length)
+                            Range = mkFileIndexRange m.FileIndex (mkPos m.StartLine column) (mkPos m.StartLine (column + length))
+                        }
+                    | ValueNone -> ()
+                | None -> ()
+
+                lt <- text.IndexOf('<', lt + 1)
         |]
 
 /// Represents collected XmlDoc lines
