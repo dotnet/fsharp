@@ -47,12 +47,18 @@ type internal TcInfo =
 
         stateContainsNodes: Set<NodeToTypeCheck>
 
+        /// Ids of the TcIntermediate results that were used to build this state
+        tcIntermediateIds: Set<int>
+
         sink: TcResultsSinkImpl list
     }
 
 [<NoEquality; NoComparison>]
 type internal TcIntermediate =
     {
+        /// Unique for each computation, so results computed from different upstream results can be told apart
+        id: int
+
         finisher: Finisher<NodeToTypeCheck, TcState, PartialResult>
 
         /// Disambiguation table for module names
@@ -170,7 +176,7 @@ type internal CompilerCaches =
 
     member CacheSizes: CacheSizes
 
-    member TcIntermediate: AsyncMemoize<string * FSharpProjectIdentifier, string * int, TcIntermediate>
+    member TcIntermediate: AsyncMemoize<string * FSharpProjectIdentifier, string * (int * Set<int>), TcIntermediate>
 
     member ScriptClosure: AsyncMemoize<string * FSharpProjectIdentifier, string, LoadClosure>
 
