@@ -205,6 +205,81 @@ let checkParsingErrors expected (parseResults: FSharpParseFileResults) =
         error, Line range.StartLine, Col range.StartColumn, Line range.EndLine, Col range.EndColumn, x.Message)
     |> shouldEqual expected
 
+module XmlDocRefs =
+
+    open FSharp.Compiler.Text
+    open FSharp.Compiler.Xml
+
+    /// A doc whose `///` lines start at column 4 of consecutive lines from 10, as the lexer records them
+    let private docOf (lines: string[]) =
+        let lineRanges =
+            lines
+            |> Array.mapi (fun i line ->
+                let lineNumber = 10 + i
+                Range.mkRange "test.fs" (Position.mkPos lineNumber 4) (Position.mkPos lineNumber (4 + 3 + line.Length)))
+
+        XmlDoc(lines, lineRanges, Array.reduce Range.unionRanges lineRanges)
+
+    let private refsOf lines =
+        (docOf lines).GetRefs()
+        |> Array.map (fun r -> r.Kind, r.Text, (r.Range.StartLine, r.Range.StartColumn, r.Range.EndColumn))
+        |> Array.toList
+
+    [<Fact>]
+    let ``every tag kind, with the value column offset by the three slashes`` () =
+        // `///` at column 4, so the stored text starts at column 7; ` <param name="` is 14 chars → value at 21
+        refsOf [| """ <param name="x">first</param>"""
+                  """ <paramref name="x"/>"""
+                  """ <typeparam name="T">t</typeparam>"""
+                  """ <typeparamref name="T"/>"""
+                  """ <see cref="MyType"/>"""
+                  """ <seealso cref="M:A.B.C"/>"""
+                  """ <exception cref="System.Exception">when</exception>"""
+                  """ <permission cref="P"/>""" |]
+        |> shouldEqual
+            [ XmlDocRefKind.Param, "x", (10, 21, 22)
+              XmlDocRefKind.ParamRef, "x", (11, 24, 25)
+              XmlDocRefKind.TypeParam, "T", (12, 25, 26)
+              XmlDocRefKind.TypeParamRef, "T", (13, 28, 29)
+              XmlDocRefKind.Cref, "MyType", (14, 19, 25)
+              XmlDocRefKind.Cref, "M:A.B.C", (15, 23, 30)
+              XmlDocRefKind.Cref, "System.Exception", (16, 25, 41)
+              XmlDocRefKind.Cref, "P", (17, 26, 27) ]
+
+    [<Fact>]
+    let ``attribute syntax variations`` () =
+        refsOf [| """<param   name = 'x' >spaces and single quotes</param>"""
+                  """<param foo="1" name="y" bar="2">other attributes first</param>"""
+                  """<paramref name="z" /><paramref name="w"/>two tags on one line""" |]
+        |> shouldEqual
+            [ XmlDocRefKind.Param, "x", (10, 24, 25)
+              XmlDocRefKind.Param, "y", (11, 28, 29)
+              XmlDocRefKind.ParamRef, "z", (12, 23, 24)
+              XmlDocRefKind.ParamRef, "w", (12, 44, 45) ]
+
+    [<Fact>]
+    let ``blank lines, malformed xml and unrelated tags yield nothing`` () =
+        refsOf [| ""
+                  "<summary>not a param</summary>"
+                  "<parameter name=\"x\">not one of the tags</parameter>"
+                  "<param name=\"unterminated"
+                  "<param name=x>unquoted</param>"
+                  "<param>no name</param>"
+                  "text with a < that is not a tag" |]
+        |> shouldEqual []
+
+    [<Fact>]
+    let ``a doc without line ranges has no refs`` () =
+        XmlDoc([| """<param name="x"/>""" |], Range.range0).GetRefs() |> shouldEqual [||]
+
+    [<Fact>]
+    let ``a merged doc keeps its refs when both halves have line ranges`` () =
+        let merged = XmlDoc.Merge (docOf [| """<param name="x"/>""" |]) (docOf [| """<param name="y"/>""" |])
+        merged.GetRefs() |> Array.map (fun r -> r.Text) |> shouldEqual [| "x"; "y" |]
+
+        let withoutRanges = XmlDoc.Merge (docOf [| """<param name="x"/>""" |]) (XmlDoc([| """<param name="y"/>""" |], Range.range0))
+        withoutRanges.GetRefs() |> shouldEqual [||]
+
 [<Fact>]
 let ``xml-doc eof``(): unit =
     checkSignatureAndImplementation """
