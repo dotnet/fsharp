@@ -74,6 +74,30 @@ let updated = { x with ValidationErrors = [] }
         )
     }
 
+/// (#20630) A parameter named in a `///` doc is reported as a related symbol use so that rename can
+/// rewrite it, but nothing inside a comment may be coloured, even when the caller asks for every related kind.
+[<Fact>]
+let ``XML doc param names are not classified`` () : Task =
+    task {
+        let source =
+            """
+module Test
+
+/// <param name="x">The first number.</param>
+/// <param name="y">Added to <paramref name="x"/>.</param>
+let add x y = x + y
+"""
+
+        let! items = getClassifications source
+
+        let insideDocs =
+            items
+            |> Array.filter (fun item -> item.Range.StartLine = 4 || item.Range.StartLine = 5)
+            |> Array.map (fun i -> i.Range, i.Type)
+
+        Assert.True(insideDocs.Length = 0, $"Nothing inside the doc comment should be classified, but found: %A{insideDocs}")
+    }
+
 /// (#16621) Helper: assert UnionCase classifications on expected lines.
 /// Each entry is (line, expectedCount, maxRangeWidth).
 /// maxRangeWidth guards against dot-coloring regressions (range including "x." prefix).

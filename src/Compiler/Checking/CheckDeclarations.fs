@@ -597,6 +597,16 @@ module TcRecdUnionAndEnumDeclarations =
 
         let checkXmlDocs = cenv.diagnosticOptions.CheckXmlDocs
         let xmlDoc = xmldoc.ToXmlDoc(checkXmlDocs, Some names)
+
+        match parent with
+        | Parent tcref ->
+            let fields =
+                [ for i, f in List.indexed rfields do
+                    if not f.rfield_name_generated then
+                        f.LogicalName, Item.UnionCaseField (UnionCaseInfo (thisTyInst, UnionCaseRef (tcref, id.idText)), i) ]
+            ReportXmlDocRefUses cenv.tcSink xmlDoc fields []
+        | ParentNone -> ()
+
         let attrs, getFinalAttrs, _ = TcAttributesCanFail cenv env AttributeTargets.UnionCaseDecl synAttrs
         let unionCase = Construct.NewUnionCase id rfields recordTy attrs xmlDoc vis
 
@@ -2935,6 +2945,7 @@ module EstablishTypeDefinitionCores =
 
         let checkXmlDocs = cenv.diagnosticOptions.CheckXmlDocs
         let xmlDoc = xmlDoc.ToXmlDoc(checkXmlDocs, Some paramNames )
+        ReportXmlDocRefUses cenv.tcSink xmlDoc [] [ for tp in checkedTypars -> tp.Name, Item.TypeVar(tp.Name, tp) ]
         Construct.NewTycon
             (cpath, id.idText, id.idRange, vis, visOfRepr, TyparKind.Type, LazyWithContext.NotLazy checkedTypars,
              xmlDoc, preferPostfix, preEstablishedHasDefaultCtor, hasSelfReferentialCtor, lmodTy)
