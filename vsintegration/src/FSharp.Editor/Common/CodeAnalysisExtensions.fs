@@ -17,28 +17,36 @@ let isRootedPath (path: string) =
     with :? ArgumentException ->
         false
 
+/// The tail a document's path must end with to be the file a relative name denotes: the name normalised to
+/// this platform's separator and anchored on one, so that it matches whole directories, never the tail of one.
+let mappedNameTail (fileName: string) =
+    let separator = string Path.DirectorySeparatorChar
+
+    let fromTheRoot =
+        fileName.Split([| '/'; '\\' |], StringSplitOptions.RemoveEmptyEntries)
+        |> Array.filter (fun segment -> segment <> ".")
+        |> String.concat separator
+
+    $"{separator}{fromTheRoot}"
+
+/// Whether the path ends with such a tail. The tail is built once for the name; each document of the
+/// solution is then compared against it where its own path lies.
+let endsWithMappedName (path: string) (tail: string) =
+    match path with
+    | null -> false
+    // Paths, not identifiers: the file systems this runs on do not case them.
+    | path -> path.AsSpan().EndsWith(tail.AsSpan(), StringComparison.OrdinalIgnoreCase)
+
 /// Whether the file name a compiler range carries is the file at this path. A build that maps its source
 /// paths (`DeterministicSourcePaths`) leaves that name relative to a root the assembly never records, so a
 /// relative one is matched by its tail rather than resolved against the process's current directory —
 /// which is not that root, and belongs to whatever last set it.
 let isTheFileAt (path: string) (fileName: string) =
-    // Paths, not identifiers: the file systems this runs on do not case them.
-    let comparison = StringComparison.OrdinalIgnoreCase
-
     match path, fileName with
     | null, _
     | _, null -> false
-    | path, rooted when isRootedPath rooted -> String.Equals(Path.GetFullPathSafe rooted, path, comparison)
-    | path, relative ->
-        let separator = string Path.DirectorySeparatorChar
-
-        let fromTheRoot =
-            relative.Split([| '/'; '\\' |], StringSplitOptions.RemoveEmptyEntries)
-            |> Array.filter (fun segment -> segment <> ".")
-            |> String.concat separator
-
-        // Anchored on a separator so that a name matches whole directories, never the tail of one.
-        path.EndsWith($"{separator}{fromTheRoot}", comparison)
+    | path, rooted when isRootedPath rooted -> String.Equals(Path.GetFullPathSafe rooted, path, StringComparison.OrdinalIgnoreCase)
+    | path, relative -> endsWithMappedName path (mappedNameTail relative)
 
 /// The documents of a solution whose file a mapped name reaches, kept per solution instance: a search asks
 /// for the same name once per project, and a solution is replaced rather than mutated.
@@ -136,10 +144,12 @@ type Solution with
             byName.GetOrAdd(
                 relative,
                 fun relative ->
+                    let tail = mappedNameTail relative
+
                     [
                         for project in self.Projects do
                             for document in project.Documents do
-                                if relative |> isTheFileAt document.FilePath then
+                                if endsWithMappedName document.FilePath tail then
                                     document.Id
                     ]
             )
