@@ -155,7 +155,12 @@ module FSharpFindUsagesService =
                 let span = location.Location.SourceSpan
 
                 if reported.Add(struct (location.Document.FilePath, span)) then
-                    do! onReferenceFoundAsync (FSharpSourceReferenceItem(definitionItem, FSharpDocumentSpan(location.Document, span)))
+                    // Same as the F# path above: the window throws inside Roslyn on an item it will not take,
+                    // and one such item must not end the search that found the rest.
+                    try
+                        do! onReferenceFoundAsync (FSharpSourceReferenceItem(definitionItem, FSharpDocumentSpan(location.Document, span)))
+                    with _ ->
+                        ()
         }
 
     let findReferencedSymbolsAsync
