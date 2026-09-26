@@ -343,9 +343,10 @@ type BoundModel private (
                         if not r.IsSynthetic && preventDuplicates.Add struct(r.Start, r.End) then
                             builder.Write(cnr.Range, cnr.Item))
 
+                    // A name inside a `///` comment is for rename and highlighting, not for symbol search
                     sResolutions.CapturedRelatedSymbolUses
-                    |> Seq.iter (fun (m, item, _kind) ->
-                        if not m.IsSynthetic then
+                    |> Seq.iter (fun (m, item, kind) ->
+                        if not m.IsSynthetic && kind <> RelatedSymbolUseKind.XmlDocParameter then
                             builder.Write(m, item))
 
                     let semanticClassification = sResolutions.GetSemanticClassification(tcGlobals, tcImports.GetImportMap(), sink.GetFormatSpecifierLocations(), None, RelatedSymbolUseKind.All)

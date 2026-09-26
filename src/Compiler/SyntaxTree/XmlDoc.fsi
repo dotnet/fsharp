@@ -4,11 +4,34 @@ namespace FSharp.Compiler.Xml
 
 open FSharp.Compiler.Text
 
+/// The tag an XML doc attribute value belongs to
+[<RequireQualifiedAccess>]
+type XmlDocRefKind =
+    | Param
+    | ParamRef
+    | TypeParam
+    | TypeParamRef
+    | Cref
+
+/// An attribute value in an XML doc that names something else: a `name` or a `cref`
+[<Struct>]
+type XmlDocRef =
+    {
+        Kind: XmlDocRefKind
+        /// The attribute value as written
+        Text: string
+        /// The source range of the value, without its quotes
+        Range: range
+    }
+
 /// Represents collected XmlDoc lines
 [<Class>]
 type public XmlDoc =
 
     new: unprocessedLines: string[] * range: range -> XmlDoc
+
+    /// Lines with their source ranges; one range per line, or none when the doc did not come from source
+    new: unprocessedLines: string[] * lineRanges: range[] * range: range -> XmlDoc
 
     /// Merge two XML documentation
     static member Merge: doc1: XmlDoc -> doc2: XmlDoc -> XmlDoc
@@ -36,6 +59,13 @@ type public XmlDoc =
 
     /// Indicates the overall original source range of the XmlDoc
     member Range: range
+
+    /// The source range of each unprocessed line; empty when the doc did not come from source
+    member LineRanges: range[]
+
+    /// The `name` and `cref` attribute values of `param`, `paramref`, `typeparam`, `typeparamref`,
+    /// `see`, `seealso`, `exception` and `permission` tags, with their source ranges. Empty without line ranges.
+    member GetRefs: unit -> XmlDocRef[]
 
     /// Get the lines before insertion of implicit summary tags and encoding
     member UnprocessedLines: string[]
