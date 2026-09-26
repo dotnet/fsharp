@@ -159,7 +159,7 @@ module FSharpFindUsagesService =
                             symbol.Ident.idText
                             context.OnReferenceFoundAsync
 
-                    do! SymbolHelpers.findSymbolUses symbolUse document checkFileResults onFound
+                    do! SymbolHelpers.findSymbolUses symbolUse document checkFileResults SymbolHelpers.codeSymbolUseKinds onFound
         }
 
 open FSharpFindUsagesService

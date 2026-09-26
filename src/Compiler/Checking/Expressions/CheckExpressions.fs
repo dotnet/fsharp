@@ -11759,6 +11759,18 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
             if isFixed then TcAndBuildFixedExpr cenv env (overallPatTy, rhsExprChecked, overallExprTy, mBinding)
             else rhsExprChecked
 
+        // The parameters of a function binding are the binders of its outer lambda chain
+        let rec parameterVals expr =
+            match stripDebugPoints expr with
+            | Expr.Lambda (_, _, _, vs, body, _, _) ->
+                [ for v in vs do
+                    if not (v.IsMemberThisVal || v.IsCtorThisVal || v.IsCompilerGenerated) then
+                        v.LogicalName, Item.Value(mkLocalValRef v) ]
+                @ parameterVals body
+            | _ -> []
+
+        ReportXmlDocRefUses cenv.tcSink xmlDoc (parameterVals rhsExprChecked) [ for tp in declaredTypars -> tp.Name, Item.TypeVar(tp.Name, tp) ]
+
         match apinfoOpt with
         | Some (apinfo, apOverallTy, m) ->
             let activePatResTys = NewInferenceTypes g apinfo.ActiveTags
@@ -13665,9 +13677,10 @@ let private PublishArguments (cenv: cenv) (env: TcEnv) vspec (synValSig: SynValS
         |> Seq.collect (fun x -> x ||> Seq.zip)
         |> Seq.choose (fun (synArgInfo, argInfo) -> synArgInfo.Ident |> Option.map (pair argInfo))
 
-    for (argTy, argReprInfo), ident in argData do
+    [ for (argTy, argReprInfo), ident in argData do
         let item = Item.OtherName (Some ident, argTy, Some argReprInfo, None, ident.idRange)
         CallNameResolutionSink cenv.tcSink (ident.idRange, env.NameEnv, item, emptyTyparInst, ItemOccurrence.Binding, env.AccessRights)
+        ident.idText, item ]
 
 let TcAndPublishValSpec (cenv: cenv, env, containerInfo: ContainerInfo, declKind : DeclKind, memFlagsOpt, tpenv, synValSig) =
 
@@ -13756,7 +13769,8 @@ let TcAndPublishValSpec (cenv: cenv, env, containerInfo: ContainerInfo, declKind
 
         let vspec = MakeAndPublishVal cenv env (altActualParent, true, declKind, ValNotInRecScope, valscheme, attrs, xmlDoc, literalValue, isGeneratedEventVal)
 
-        PublishArguments cenv env vspec synValSig allDeclaredTypars.Length
+        let parameters = PublishArguments cenv env vspec synValSig allDeclaredTypars.Length
+        ReportXmlDocRefUses cenv.tcSink xmlDoc parameters [ for tp in allDeclaredTypars -> tp.Name, Item.TypeVar(tp.Name, tp) ]
 
         assert(vspec.InlineInfo = inlineFlag)
 

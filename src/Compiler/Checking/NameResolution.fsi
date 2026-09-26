@@ -14,6 +14,7 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Xml
 
 exception NoConstructorsAvailableForType of TType * DisplayEnv * range
 
@@ -653,6 +654,11 @@ val internal RegisterUnionCaseTesterForProperty: TcResultsSink -> identRange: ra
 
 /// Report a related symbol use at a source range (does not affect colorization or symbol info)
 val internal CallRelatedSymbolSink: TcResultsSink -> range * Item * RelatedSymbolUseKind -> unit
+
+/// Report each `<param name>`/`<paramref name>`/`<typeparam name>`/`<typeparamref name>` of a declaration's XML doc
+/// as a related use of the parameter or type parameter it names, at the range of the attribute value.
+val internal ReportXmlDocRefUses:
+    TcResultsSink -> doc: XmlDoc -> parameters: (string * Item) list -> typars: (string * Item) list -> unit
 
 /// Report a specific name resolution at a source range
 val internal CallExprHasTypeSink: TcResultsSink -> range * NameResolutionEnv * TType * AccessorDomain -> unit

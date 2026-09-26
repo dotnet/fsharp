@@ -102,10 +102,46 @@ module internal SymbolHelpers =
                 TelemetryReporter.ReportSingleEvent(TelemetryEvents.GetSymbolUsesInProjectsFinished, props)
             }
 
+    /// The related uses that belong in a list of code references: everything but a name inside a `///` comment,
+    /// which only Rename and highlighting act on.
+    let codeSymbolUseKinds =
+        RelatedSymbolUseKind.All &&& ~~~RelatedSymbolUseKind.XmlDocParameter
+
+    /// The project-wide index behind `getSymbolUsesInProjects` leaves out names inside `///` comments, and only
+    /// a declaration carries them, so they are read from the check results of the files that declare the symbol.
+    let private findXmlDocUsesInDeclaringFiles
+        (symbol: FSharpSymbol)
+        (currentDocument: Document)
+        (onFound: Document -> range -> CancellableTask<unit>)
+        =
+        cancellableTask {
+            let declaringFiles =
+                [ symbol.DeclarationLocation; symbol.SignatureLocation ]
+                |> List.choose id
+                |> List.map _.FileName
+                |> List.distinct
+
+            for file in declaringFiles do
+                match currentDocument.Project.Solution.TryGetDocumentFromPath file with
+                | ValueSome doc ->
+                    let! _, checkFileResults = doc.GetFSharpParseAndCheckResultsAsync("findXmlDocUsesInDeclaringFiles")
+                    let codeUses = checkFileResults.GetUsesOfSymbolInFile(symbol)
+
+                    for docUse in checkFileResults.GetUsesOfSymbolInFile(symbol, relatedSymbolKinds = RelatedSymbolUseKind.XmlDocParameter) do
+                        let isCodeUse =
+                            codeUses
+                            |> Array.exists (fun codeUse -> Range.equals codeUse.Range docUse.Range)
+
+                        if not isCodeUse then
+                            do! onFound doc docUse.Range
+                | ValueNone -> ()
+        }
+
     let findSymbolUses
         (symbolUse: FSharpSymbolUse)
         (currentDocument: Document)
         (checkFileResults: FSharpCheckFileResults)
+        (relatedSymbolKinds: RelatedSymbolUseKind)
         (onFound: Document -> range -> CancellableTask<unit>)
         =
         cancellableTask {
@@ -113,7 +149,7 @@ module internal SymbolHelpers =
 
             | Some SymbolScope.CurrentDocument ->
                 let symbolUses =
-                    checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol, relatedSymbolKinds = RelatedSymbolUseKind.All)
+                    checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol, relatedSymbolKinds = relatedSymbolKinds)
 
                 do!
                     symbolUses
@@ -135,7 +171,7 @@ module internal SymbolHelpers =
                 let symbolUses =
                     (checkFileResults, currentDocument) :: otherFileCheckResults
                     |> Seq.collect (fun (checkFileResults, doc) ->
-                        checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol, relatedSymbolKinds = RelatedSymbolUseKind.All)
+                        checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol, relatedSymbolKinds = relatedSymbolKinds)
                         |> Seq.map (fun symbolUse -> (doc, symbolUse.Range)))
 
                 do! symbolUses |> Seq.map ((<||) onFound) |> CancellableTask.whenAll
@@ -170,23 +206,33 @@ module internal SymbolHelpers =
                         | None -> Seq.toList currentDocument.Project.Solution.Projects
 
                 do! getSymbolUsesInProjects (symbolUse.Symbol, projectsToCheck, onFound)
+
+                if relatedSymbolKinds.HasFlag RelatedSymbolUseKind.XmlDocParameter then
+                    do! findXmlDocUsesInDeclaringFiles symbolUse.Symbol currentDocument onFound
         }
 
-    let getSymbolUses (symbolUse: FSharpSymbolUse) (currentDocument: Document) (checkFileResults: FSharpCheckFileResults) =
+    let getSymbolUses
+        (symbolUse: FSharpSymbolUse)
+        (currentDocument: Document)
+        (checkFileResults: FSharpCheckFileResults)
+        (relatedSymbolKinds: RelatedSymbolUseKind)
+        =
         cancellableTask {
             let symbolUses = ConcurrentBag()
 
             let onFound =
                 fun document range -> cancellableTask { symbolUses.Add(document, range) }
 
-            do! findSymbolUses symbolUse currentDocument checkFileResults onFound
+            do! findSymbolUses symbolUse currentDocument checkFileResults relatedSymbolKinds onFound
 
             return symbolUses |> seq
         }
 
-    let getSymbolUsesInSolution (symbolUse: FSharpSymbolUse, checkFileResults: FSharpCheckFileResults, document: Document) =
+    let getSymbolUsesInSolution
+        (symbolUse: FSharpSymbolUse, checkFileResults: FSharpCheckFileResults, document: Document, relatedSymbolKinds: RelatedSymbolUseKind)
+        =
         cancellableTask {
-            let! symbolUses = getSymbolUses symbolUse document checkFileResults
+            let! symbolUses = getSymbolUses symbolUse document checkFileResults relatedSymbolKinds
 
             let symbolUsesWithDocumentId =
                 symbolUses |> Seq.map (fun (doc, range) -> doc.Id, range)
