@@ -1066,6 +1066,156 @@ let count = list.Count
                         $"Assembly should be a system assembly, got: {assembly.SimpleName}"))
             }
 
+/// https://github.com/dotnet/fsharp/issues/20630 https://github.com/dotnet/fsharp/issues/15134
+module XmlDocParameters =
+
+    let private rangesOf (uses: FSharpSymbolUse seq) =
+        uses
+        |> Seq.map (fun su -> su.Range.StartLine, su.Range.StartColumn, su.Range.EndColumn)
+        |> Seq.sort
+        |> Seq.toList
+
+    /// The doc `name` ranges show up only when asked for as XmlDocParameter uses, never by default
+    let private expectDocUses source (symbolAt: FSharpSymbolUse -> bool) codeRanges docRanges =
+        checkAllSymbols source (fun result allUses ->
+            let symbol = (allUses |> Seq.find symbolAt).Symbol
+
+            result.GetUsesOfSymbolInFile symbol |> rangesOf |> fun actual -> Assert.Equal<(int * int * int) list>(codeRanges, actual)
+
+            result.GetUsesOfSymbolInFile(symbol, relatedSymbolKinds = RelatedSymbolUseKind.XmlDocParameter)
+            |> rangesOf
+            |> fun actual -> Assert.Equal<(int * int * int) list>(List.sort (codeRanges @ docRanges), actual)
+
+            // A caller that asks for everything else still gets nothing from the docs
+            let otherKinds = RelatedSymbolUseKind.UnionCaseTester ||| RelatedSymbolUseKind.CopyAndUpdateRecord
+
+            result.GetUsesOfSymbolInFile(symbol, relatedSymbolKinds = otherKinds)
+            |> rangesOf
+            |> fun actual -> Assert.Equal<(int * int * int) list>(codeRanges, actual))
+
+    // SyntheticProject puts its own `module` header on line 1; a source starting with a newline begins on line 3
+    let private definitionNamed name (su: FSharpSymbolUse) =
+        su.IsFromDefinition && su.Symbol.DisplayName = name
+
+    let private definitionAt line column (su: FSharpSymbolUse) =
+        su.IsFromDefinition && su.Range.StartLine = line && su.Range.StartColumn = column
+
+    // A type parameter's declaration is reported as a use in a type, not as a definition
+    let private typarNamed name line (su: FSharpSymbolUse) =
+        match su.Symbol with
+        | :? FSharp.Compiler.Symbols.FSharpGenericParameter as p -> p.Name = name && su.Range.StartLine = line
+        | _ -> false
+
+    [<Fact>]
+    let ``param and paramref of a let-bound function`` () =
+        let source = """
+/// <summary>Adds.</summary>
+/// <param name="x">The first number.</param>
+/// <param name="y">Added to <paramref name="x"/>.</param>
+let add x y = x + y
+"""
+        expectDocUses source (definitionNamed "x") [ (6, 8, 9); (6, 14, 15) ] [ (4, 17, 18); (5, 45, 46) ]
+
+    [<Fact>]
+    let ``typeparam and typeparamref of an explicitly generic function`` () =
+        let source = """
+/// <typeparam name="T">The element type, see <typeparamref name="T"/>.</typeparam>
+/// <param name="x">The value.</param>
+let id<'T> (x: 'T) = x
+"""
+        expectDocUses source (typarNamed "T" 5) [ (5, 7, 9); (5, 15, 17) ] [ (3, 21, 22); (3, 66, 67) ]
+
+    [<Fact>]
+    let ``param of a member, not confused with this`` () =
+        let source = """
+type C() =
+    /// <param name="value">What to keep.</param>
+    member this.Keep(value: int) = value
+"""
+        expectDocUses source (definitionNamed "value") [ (5, 21, 26); (5, 35, 40) ] [ (4, 21, 26) ]
+
+    [<Fact>]
+    let ``param of a primary constructor documented on the type`` () =
+        let source = """
+/// <summary>A holder.</summary>
+/// <param name="seed">The initial value.</param>
+type Holder(seed: int) =
+    member _.Seed = seed
+"""
+        expectDocUses source (definitionNamed "seed") [ (5, 12, 16); (6, 20, 24) ] [ (4, 17, 21) ]
+
+    [<Fact>]
+    let ``typeparam of a generic type`` () =
+        let source = """
+/// <typeparam name="T">The payload.</typeparam>
+type Box<'T>(value: 'T) =
+    member _.Value = value
+"""
+        expectDocUses source (typarNamed "T" 4) [ (4, 9, 11); (4, 20, 22) ] [ (3, 21, 22) ]
+
+    [<Fact>]
+    let ``param of a union case field`` () =
+        let source = """
+type Shape =
+    /// <param name="radius">Distance from the centre.</param>
+    | Circle of radius: float
+"""
+        expectDocUses source (definitionNamed "radius") [ (5, 16, 22) ] [ (4, 21, 27) ]
+
+    [<Fact>]
+    let ``param of a signature file val is found in code but its doc stays out of find all references`` () =
+        let signature = """
+/// <param name="x">The first number.</param>
+val add: x: int -> y: int -> int
+"""
+        let implementation = "let add x y = x + y"
+        SyntheticProject.Create(
+            { sourceFile "Source" [] with Source = implementation; SignatureFile = Custom signature })
+            .Workflow {
+                placeCursor "Source" "x"
+                findAllReferences (expectToFind [
+                    "FileSource.fsi", 4, 9, 10
+                    "FileSource.fs", 2, 8, 9
+                    "FileSource.fs", 2, 14, 15
+                ])
+            }
+
+    [<Fact>]
+    let ``an unknown name in the doc reports nothing and does not break the others`` () =
+        let source = """
+/// <param name="nope">Not a parameter.</param>
+/// <param name="x">The parameter.</param>
+let f x = x
+"""
+        expectDocUses source (definitionNamed "x") [ (5, 6, 7); (5, 10, 11) ] [ (4, 17, 18) ]
+
+    [<Fact>]
+    let ``a duplicated param name reports every occurrence`` () =
+        let source = """
+/// <param name="x">Once.</param>
+/// <param name="x">Twice.</param>
+let f x = x
+"""
+        expectDocUses source (definitionNamed "x") [ (5, 6, 7); (5, 10, 11) ] [ (3, 17, 18); (4, 17, 18) ]
+
+    [<Fact>]
+    let ``a backticked parameter is matched by its bare name`` () =
+        let source = """
+/// <param name="a b">Spaced.</param>
+let f ``a b`` = ``a b``
+"""
+        expectDocUses source (definitionAt 4 6) [ (4, 6, 13); (4, 16, 23) ] [ (3, 17, 20) ]
+
+    [<Fact>]
+    let ``inheritdoc and include tags do not disturb the scan`` () =
+        let source = """
+/// <inheritdoc cref="System.Object.ToString"/>
+/// <include file="nope.xml" path="doc"/>
+/// <param name="x">Still found.</param>
+let f x = x
+"""
+        expectDocUses source (definitionNamed "x") [ (6, 6, 7); (6, 10, 11) ] [ (5, 17, 18) ]
+
 /// https://github.com/dotnet/fsharp/issues/16993
 module CSharpExtensionMethods =
 
