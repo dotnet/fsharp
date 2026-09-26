@@ -1,6 +1,7 @@
 ﻿[<AutoOpen>]
 module internal Microsoft.VisualStudio.FSharp.Editor.Symbols
 
+open System
 open System.IO
 open Microsoft.CodeAnalysis
 open FSharp.Compiler.CodeAnalysis
@@ -63,12 +64,28 @@ type FSharpSymbolUse with
                     // should be treated as an individual project
                     Some(SymbolScope.Projects([ currentDocument.Project ], isSymbolLocalForProject))
                 else
+                    let solution = currentDocument.Project.Solution
+
                     let projects =
-                        currentDocument.Project.Solution.GetDocumentIdsWithFSharpFileName loc.FileName
+                        solution.GetDocumentIdsWithFSharpFileName loc.FileName
                         |> Seq.map (fun x -> x.ProjectId)
                         |> Seq.distinct
-                        |> Seq.map currentDocument.Project.Solution.GetProject
+                        |> Seq.map solution.GetProject
                         |> Seq.toList
+
+                    let projects =
+                        if isRootedPath loc.FileName then
+                            projects
+                        else
+                            // A name a path map left relative is matched by its tail, which a file of an
+                            // unrelated project can share. Only a project that compiles the symbol's own
+                            // assembly may narrow the search; where none does, the search keeps the scope it
+                            // would have had before the name reached a document at all.
+                            let declaringAssembly = this.Symbol.Assembly.SimpleName
+
+                            projects
+                            |> List.filter (fun project ->
+                                String.Equals(project.AssemblyName, declaringAssembly, StringComparison.OrdinalIgnoreCase))
 
                     match projects with
                     | [] -> None
