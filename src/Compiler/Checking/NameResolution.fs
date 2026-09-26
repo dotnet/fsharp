@@ -4,6 +4,7 @@
 /// Name environment and name resolution
 module internal FSharp.Compiler.NameResolution
 
+open System
 open System.Collections.Generic
 
 open Internal.Utilities.Collections
@@ -33,6 +34,7 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypeHierarchy
+open FSharp.Compiler.Xml
 
 #if !NO_TYPEPROVIDERS
 open FSharp.Compiler.TypeProviders
@@ -2652,6 +2654,25 @@ let CallRelatedSymbolSink (sink: TcResultsSink) (m: range, item: Item, kind: Rel
     match sink.CurrentSink with
     | None -> ()
     | Some currentSink -> currentSink.NotifyRelatedSymbolUse(m, item, kind)
+
+/// Report each `<param name>`/`<paramref name>`/`<typeparam name>`/`<typeparamref name>` of a declaration's XML doc
+/// as a related use of the parameter or type parameter it names, at the range of the attribute value.
+let ReportXmlDocRefUses (sink: TcResultsSink) (doc: XmlDoc) (parameters: (string * Item) list) (typars: (string * Item) list) =
+    match sink.CurrentSink with
+    | Some currentSink when doc.NonEmpty && (not parameters.IsEmpty || not typars.IsEmpty) ->
+        for docRef in doc.GetRefs() do
+            let candidates =
+                match docRef.Kind with
+                | XmlDocRefKind.Param
+                | XmlDocRefKind.ParamRef -> parameters
+                | XmlDocRefKind.TypeParam
+                | XmlDocRefKind.TypeParamRef -> typars
+                | XmlDocRefKind.Cref -> []
+
+            for name, item in candidates do
+                if String.Equals(name, docRef.Text, StringComparison.Ordinal) then
+                    currentSink.NotifyRelatedSymbolUse(docRef.Range, item, RelatedSymbolUseKind.XmlDocParameter)
+    | _ -> ()
 
 /// Report a specific expression typing at a source range
 let CallExprHasTypeSink (sink: TcResultsSink) (m: range, nenv, ty, ad) =
