@@ -241,6 +241,76 @@ let ``Job is actually cancelled and restarted`` () : Task =
         Assert.Equal(1, finishedCount)
     }
 
+/// Queues tasks until RunPending is called.
+type ManualTaskScheduler() =
+    inherit TaskScheduler()
+
+    let queue = System.Collections.Concurrent.ConcurrentQueue<Task>()
+
+    member _.QueuedCount = queue.Count
+
+    member _.RunPending() =
+        let mutable task = null
+        while queue.TryDequeue &task do
+            base.TryExecuteTask task |> ignore
+
+    override _.QueueTask task = queue.Enqueue task
+    override _.TryExecuteTaskInline(task, _) = base.TryExecuteTask task
+    override _.GetScheduledTasks() = queue.ToArray()
+
+[<Fact>]
+let ``Completion of a canceled run does not complete the run that replaced it`` () : Task =
+    task {
+        let mutable runs = 0
+        let runCanComplete = [| TaskCompletionSource<unit>(); TaskCompletionSource<unit>() |]
+
+        let computation = async {
+            let run = Interlocked.Increment &runs
+            do! Async.AwaitTask runCanComplete[run - 1].Task
+            return run
+        }
+
+        let memoize = AsyncMemoize<_, int, _>()
+        let events = observe memoize
+        let key = 1
+
+        // Request the job from a task on our own scheduler. The handler that records the result of the
+        // first run is queued on it, so it only runs when we let it.
+        let scheduler = ManualTaskScheduler()
+        use cts1 = new CancellationTokenSource()
+
+        let startRequest1 =
+            Task.Factory.StartNew(
+                (fun () -> Async.StartImmediateAsTask(memoize.Get(wrapKey key, computation), cts1.Token)),
+                CancellationToken.None,
+                TaskCreationOptions.None,
+                scheduler)
+
+        scheduler.RunPending()
+        let request1 = startRequest1.Result
+        do! waitUntil events (received Started)
+
+        // The first run finishes, but the handler that records its result stays queued.
+        runCanComplete[0].SetResult()
+        Assert.True(SpinWait.SpinUntil((fun () -> scheduler.QueuedCount = 1), TimeSpan.FromSeconds 10.))
+
+        // The only request is canceled, so the first run is abandoned.
+        cts1.Cancel()
+        do! assertTaskCanceled request1
+
+        // A new request starts a second run.
+        let request2 = Async.StartAsTask(memoize.Get(wrapKey key, computation))
+        do! waitUntil events (countOf Started >> (=) 2)
+
+        // Now the handler of the abandoned first run gets to run. The second run is still going.
+        scheduler.RunPending()
+        Assert.Equal(None, memoize.TryGet(key, fun _ -> true))
+
+        runCanComplete[1].SetResult()
+        let! result2 = request2
+        Assert.Equal(2, result2)
+    }
+
 [<Fact>]
 let ``Job keeps running if only one requestor cancels`` () : Task =
     task {
