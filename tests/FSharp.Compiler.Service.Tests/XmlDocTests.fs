@@ -258,6 +258,30 @@ module XmlDocRefs =
               XmlDocRefKind.ParamRef, "w", (12, 44, 45) ]
 
     [<Fact>]
+    let ``only a whole attribute name matches, and a quoted > does not end the tag`` () =
+        refsOf [| """<param notname="wrong" name="x">suffix of another attribute</param>"""
+                  """<param foo="a>b" name="y">angle bracket in a value</param>""" |]
+        |> shouldEqual
+            [ XmlDocRefKind.Param, "x", (10, 36, 37)
+              XmlDocRefKind.Param, "y", (11, 30, 31) ]
+
+    [<Fact>]
+    let ``a tag whose attributes run over several lines`` () =
+        refsOf [| """<param"""
+                  """   name="x">on the next line</param>"""
+                  """<typeparam other="1" """
+                  """           name="T">after another attribute</typeparam>""" |]
+        |> shouldEqual
+            [ XmlDocRefKind.Param, "x", (11, 16, 17)
+              XmlDocRefKind.TypeParam, "T", (13, 24, 25) ]
+
+    [<Fact>]
+    let ``a value that runs over a line break yields nothing`` () =
+        refsOf [| """<param name="x"""
+                  """y">split value</param>""" |]
+        |> shouldEqual []
+
+    [<Fact>]
     let ``blank lines, malformed xml and unrelated tags yield nothing`` () =
         refsOf [| ""
                   "<summary>not a param</summary>"
