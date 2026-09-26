@@ -35,21 +35,28 @@ type internal InlineRenameLocationSet
 
     // `<param name="…">` and its kin hold the bare name: no type-parameter tick, no backticks
     static let docAttributeText (replacementText: string) =
-        let text = replacementText.TrimStart('\'', '^')
-
-        if Tokenizer.isDoubleBacktickIdent text then
-            text.Substring(2, text.Length - 4)
+        if
+            replacementText.StartsWith("'", StringComparison.Ordinal)
+            || replacementText.StartsWith("^", StringComparison.Ordinal)
+        then
+            replacementText.Substring(1)
+        elif Tokenizer.isDoubleBacktickIdent replacementText then
+            replacementText.Substring(2, replacementText.Length - 4)
         else
-            text
+            replacementText
 
     // A name inside a `///` comment is the only use the checker reports on such a line
     static let isXmlDocLine (sourceText: SourceText) (span: TextSpan) =
-        sourceText.Lines
-            .GetLineFromPosition(span.Start)
-            .ToString()
-            .AsSpan()
-            .TrimStart()
-            .StartsWith("///".AsSpan(), StringComparison.Ordinal)
+        let line = sourceText.Lines.GetLineFromPosition(span.Start)
+        let mutable i = line.Start
+
+        while i < line.End && Char.IsWhiteSpace sourceText[i] do
+            i <- i + 1
+
+        i + 3 <= line.End
+        && sourceText[i] = '/'
+        && sourceText[i + 1] = '/'
+        && sourceText[i + 2] = '/'
 
     static let rec applyChanges
         (replacementText: string)
