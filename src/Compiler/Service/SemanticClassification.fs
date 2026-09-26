@@ -455,7 +455,8 @@ module TcResolutionsExtensions =
                     match relatedSymbolKinds with
                     | Some kinds ->
                         for (m, item, kind) in sResolutions.CapturedRelatedSymbolUses do
-                            if kinds.HasFlag kind then
+                            // A name inside a `///` comment is never classified, whatever the caller asked for
+                            if kinds.HasFlag kind && kind <> RelatedSymbolUseKind.XmlDocParameter then
                                 match range, item with
                                 | Some r, _ when not (rangeContainsPos r m.Start || rangeContainsPos r m.End) -> ()
                                 | _, Item.UnionCase _ -> results.Add(SemanticClassificationItem((m, SemanticClassificationType.UnionCase)))

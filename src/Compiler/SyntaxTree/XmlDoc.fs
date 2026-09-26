@@ -12,10 +12,119 @@ open Internal.Utilities.Collections
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.IO
 open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Position
 open FSharp.Compiler.Text.Range
 
+/// The tag an XML doc attribute value belongs to
+[<RequireQualifiedAccess>]
+type XmlDocRefKind =
+    | Param
+    | ParamRef
+    | TypeParam
+    | TypeParamRef
+    | Cref
+
+/// An attribute value in an XML doc that names something else: a `name` or a `cref`
+[<Struct>]
+type XmlDocRef =
+    {
+        Kind: XmlDocRefKind
+        Text: string
+        Range: range
+    }
+
+module private XmlDocRefScanner =
+
+    let private tags =
+        [|
+            "typeparamref", XmlDocRefKind.TypeParamRef, "name"
+            "typeparam", XmlDocRefKind.TypeParam, "name"
+            "paramref", XmlDocRefKind.ParamRef, "name"
+            "param", XmlDocRefKind.Param, "name"
+            "permission", XmlDocRefKind.Cref, "cref"
+            "exception", XmlDocRefKind.Cref, "cref"
+            "seealso", XmlDocRefKind.Cref, "cref"
+            "see", XmlDocRefKind.Cref, "cref"
+        |]
+
+    /// The three slashes of `///` are not part of the stored line
+    let private lineTextOffset = 3
+
+    let private isNameEnd (text: string) i =
+        i >= text.Length || Char.IsWhiteSpace text[i] || text[i] = '/' || text[i] = '>'
+
+    let private tagAt (text: string) i =
+        tags
+        |> Array.tryFind (fun (tag, _, _) ->
+            String.CompareOrdinal(text, i, tag, 0, tag.Length) = 0
+            && isNameEnd text (i + tag.Length))
+
+    /// The value of `attribute` between `start` and the closing `>` of the tag, as an offset and a length in `text`
+    let private attributeValue (text: string) (attribute: string) (start: int) =
+        let close =
+            match text.IndexOf('>', start) with
+            | -1 -> text.Length
+            | i -> i
+
+        let rec find i =
+            match text.IndexOf(attribute, i, StringComparison.Ordinal) with
+            | -1 -> ValueNone
+            | at when at >= close -> ValueNone
+            | at ->
+                let mutable j = at + attribute.Length
+
+                while j < close && Char.IsWhiteSpace text[j] do
+                    j <- j + 1
+
+                if j < close && text[j] = '=' then
+                    j <- j + 1
+
+                    while j < close && Char.IsWhiteSpace text[j] do
+                        j <- j + 1
+
+                    if j < close && (text[j] = '"' || text[j] = '\'') then
+                        match text.IndexOf(text[j], j + 1) with
+                        | -1 -> ValueNone
+                        | quoteEnd when quoteEnd > close -> ValueNone
+                        | quoteEnd -> ValueSome struct (j + 1, quoteEnd - j - 1)
+                    else
+                        find (at + 1)
+                else
+                    find (at + 1)
+
+        find start
+
+    let scan (lines: string[]) (lineRanges: range[]) =
+        [|
+            for i in 0 .. lines.Length - 1 do
+                let text = lines[i]
+                let m = lineRanges[i]
+                let mutable lt = text.IndexOf '<'
+
+                while lt >= 0 do
+                    match tagAt text (lt + 1) with
+                    | Some(tag, kind, attribute) ->
+                        match attributeValue text attribute (lt + 1 + tag.Length) with
+                        | ValueSome struct (offset, length) ->
+                            let column = m.StartColumn + lineTextOffset + offset
+
+                            {
+                                Kind = kind
+                                Text = text.Substring(offset, length)
+                                Range = mkFileIndexRange m.FileIndex (mkPos m.StartLine column) (mkPos m.StartLine (column + length))
+                            }
+                        | ValueNone -> ()
+                    | None -> ()
+
+                    lt <- text.IndexOf('<', lt + 1)
+        |]
+
 /// Represents collected XmlDoc lines
-type XmlDoc(unprocessedLines: string[], range: range) =
+type XmlDoc(unprocessedLines: string[], lineRanges: range[], range: range) =
+    do
+        if lineRanges.Length <> 0 && lineRanges.Length <> unprocessedLines.Length then
+            invalidArg (nameof lineRanges) "one range per line, or none"
+
     let rec processLines (lines: string list) =
         match lines with
         | [] -> []
@@ -31,6 +140,8 @@ type XmlDoc(unprocessedLines: string[], range: range) =
                 @ (lines |> List.map Internal.Utilities.XmlAdapters.escape)
                 @ [ "</summary>" ]
 
+    new(unprocessedLines: string[], range: range) = XmlDoc(unprocessedLines, [||], range)
+
     /// Get the lines before insertion of implicit summary tags and encoding
     member _.UnprocessedLines = unprocessedLines
 
@@ -44,6 +155,16 @@ type XmlDoc(unprocessedLines: string[], range: range) =
 
     member _.Range = range
 
+    /// The source range of each unprocessed line; empty when the doc did not come from source
+    member _.LineRanges = lineRanges
+
+    /// The `name` and `cref` attribute values in the doc, with their source ranges; empty without line ranges
+    member _.GetRefs() =
+        if lineRanges.Length = 0 then
+            [||]
+        else
+            XmlDocRefScanner.scan unprocessedLines lineRanges
+
     static member Empty = XmlDocStatics.Empty
 
     member _.IsEmpty = unprocessedLines |> Array.forall String.IsNullOrWhiteSpace
@@ -56,7 +177,16 @@ type XmlDoc(unprocessedLines: string[], range: range) =
             elif doc2.IsEmpty then doc1.Range
             else unionRanges doc1.Range doc2.Range
 
-        XmlDoc(Array.append doc1.UnprocessedLines doc2.UnprocessedLines, range)
+        let lineRanges =
+            if
+                doc1.LineRanges.Length = doc1.UnprocessedLines.Length
+                && doc2.LineRanges.Length = doc2.UnprocessedLines.Length
+            then
+                Array.append doc1.LineRanges doc2.LineRanges
+            else
+                [||]
+
+        XmlDoc(Array.append doc1.UnprocessedLines doc2.UnprocessedLines, lineRanges, range)
 
     member doc.GetXmlText() =
         if doc.IsEmpty then
@@ -241,8 +371,9 @@ type PreXmlDoc =
                 XmlDoc.Empty
             else
                 let lines = Array.map fst preLines
-                let m = Array.reduce unionRanges (Array.map snd preLines)
-                let doc = XmlDoc(lines, m)
+                let lineRanges = Array.map snd preLines
+                let m = Array.reduce unionRanges lineRanges
+                let doc = XmlDoc(lines, lineRanges, m)
 
                 if check then
                     doc.Check(paramNamesOpt)
