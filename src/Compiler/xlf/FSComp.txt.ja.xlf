@@ -932,6 +932,11 @@
         <target state="translated">値 '{0}' が ' InlineIfLambda ' とマークされましたが、ラムダ値があると判断されませんでした。この警告は、情報提供のみを目的としています。</target>
         <note />
       </trans-unit>
+      <trans-unit id="optInlineMemberCannotUseBase">
+        <source>An inline member cannot use 'base' or protected members unless those uses can be eliminated before the member itself is inlined.</source>
+        <target state="new">An inline member cannot use 'base' or protected members unless those uses can be eliminated before the member itself is inlined.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsAllSigs">
         <source>Print the inferred interfaces of all compilation files to associated signature files</source>
         <target state="translated">すべてのコンパイル ファイルの推定されたインターフェイスを関連する署名ファイルに印刷します</target>

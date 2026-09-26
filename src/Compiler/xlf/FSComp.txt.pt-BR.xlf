@@ -932,6 +932,11 @@
         <target state="translated">O valor '{0}' foi marcado como 'InlineIfLambda' mas não foi determinado como tendo um valor lambda. Este aviso é apenas para fins informativos.</target>
         <note />
       </trans-unit>
+      <trans-unit id="optInlineMemberCannotUseBase">
+        <source>An inline member cannot use 'base' or protected members unless those uses can be eliminated before the member itself is inlined.</source>
+        <target state="new">An inline member cannot use 'base' or protected members unless those uses can be eliminated before the member itself is inlined.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsAllSigs">
         <source>Print the inferred interfaces of all compilation files to associated signature files</source>
         <target state="translated">Imprimir as interfaces inferidas de todos os arquivos de compilação para os arquivos de assinatura associados</target>

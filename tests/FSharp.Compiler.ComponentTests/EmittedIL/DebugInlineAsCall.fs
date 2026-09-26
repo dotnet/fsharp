@@ -309,6 +309,26 @@ let main (args: string[]) =
         |> verifyILNotPresent ["quadruple"; "double"]
 
     [<Fact>]
+    let ``Call 17 - Inline base member`` () =
+        FSharp """
+type One() =
+    member inline _.Source1 x = x
+
+type Two() =
+    inherit One()
+    member inline this.Source2 x = base.Source1 x
+
+[<EntryPoint>]
+let main _ =
+    if (Two()).Source2 42 = 42 then 0 else 1
+"""
+        |> withDebug
+        |> withNoOptimize
+        |> asExe
+        |> compileAndRun
+        |> verifySequencePoints
+
+    [<Fact>]
     let ``SRTP 01`` () =
         FSharp """
 let inline add (x: ^T) (y: ^T) =
