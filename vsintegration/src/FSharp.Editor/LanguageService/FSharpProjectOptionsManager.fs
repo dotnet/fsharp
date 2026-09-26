@@ -612,6 +612,15 @@ type internal FSharpProjectOptionsManager(checker: FSharpChecker, workspace: Wor
 
         CompilerEnvironment.GetConditionalDefinesForEditing parsingOptions, parsingOptions.LangVersionText
 
+    /// The defines and language version the document's project has produced, and nothing where it has not
+    /// produced its options yet: what the editing defaults answer there is a set no project asked for, so
+    /// anything kept under it belongs to no project either.
+    member _.TryGetCompilationDefinesAndLangVersionForEditingDocument(document: Document) =
+        match reactor.TryGetCachedOptionsByProjectId(document.Project.Id) with
+        | Some(_, parsingOptions, _) ->
+            ValueSome(struct (CompilerEnvironment.GetConditionalDefinesForEditing parsingOptions, parsingOptions.LangVersionText))
+        | _ -> ValueNone
+
     member _.TryGetOptionsByProject(project) =
         reactor.TryGetOptionsByProjectAsync(project)
 
