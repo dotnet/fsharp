@@ -3,7 +3,9 @@
 namespace FSharp.Editor.Tests
 
 open Xunit
+open System.Collections.Immutable
 open System.Threading
+open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
 open FSharp.Compiler.Text
@@ -72,3 +74,52 @@ module HeyHo =
     [<Fact>]
     let ``nested containers`` () =
         assertResultsContain "hh.a.b.g.d" "Delta"
+
+    /// A project whose options have not arrived knows neither the defines nor the language version its own
+    /// parse depends on. The editing defaults it would otherwise be keyed under are a define set a real
+    /// project has — the one that defines nothing of its own — so keying it that way lets it answer from that
+    /// project's parse, with the branch of a `#if` that project chose. It asks for the parse it cannot have.
+    [<Fact>]
+    let ``a project whose options have not arrived does not answer from another project's parse`` () =
+        let path = "C:\Shared.fs"
+        let source = "module Shared\n#if FOO\nlet fooOnly = 1\n#endif\nlet always = 2\n"
+
+        // One loader for both copies of the file, as a linked file open in the editor has: the two documents
+        // then report the same text version, which is what lets one project read the other's parse at all.
+        let loader =
+            TextLoader.From(SourceText.From(source).Container, VersionStamp.Create())
+
+        let projectOf name =
+            let projectId = ProjectId.CreateNewId()
+
+            projectId,
+            [
+                DocumentInfo.Create(DocumentId.CreateNewId projectId, path, loader = loader, filePath = path)
+            ]
+            |> RoslynTestHelpers.CreateProjectInfo projectId $"C:\{name}.fsproj"
+
+        let definesNothingId, definesNothing = projectOf "DefinesNothing"
+        let noOptionsId, noOptions = projectOf "NoOptions"
+
+        let solution = RoslynTestHelpers.CreateSolution [ definesNothing; noOptions ]
+
+        { RoslynTestHelpers.DefaultProjectOptions with
+            SourceFiles = [| path |]
+        }
+        |> RoslynTestHelpers.SetProjectOptions definesNothingId solution
+
+        let service: IFSharpNavigateToSearchService = provider.GetExportedValue()
+
+        let search (project: Project) pattern =
+            service.SearchProjectAsync(project, ImmutableArray.Empty, pattern, service.KindsProvided, CancellationToken.None).Result
+            |> Seq.map _.Name
+            |> Seq.filter ((=) pattern)
+            |> Seq.toList
+
+        // Parses the file with no defines and keeps that parse under them.
+        Assert.Equal<string list>([ "always" ], search (solution.GetProject definesNothingId) "always")
+
+        let searching =
+            Assert.ThrowsAny<exn>(fun () -> search (solution.GetProject noOptionsId) "always" |> ignore)
+
+        Assert.IsAssignableFrom<System.OperationCanceledException>(searching.GetBaseException())
