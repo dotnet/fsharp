@@ -42,7 +42,7 @@ let ``FromOptions takes reference stamps from the host, including referenced pro
         let main =
             projectOptions "Main.fsproj" [ "MainRef.dll" ] [| FSharpReferencedProject.FSharpReference("Lib.dll", lib) |]
 
-        let! snapshot = FSharpProjectSnapshot.FromOptions(main, emptySource, getReferenceStamp = (fun path -> stamps[path]))
+        let! snapshot = FSharpProjectSnapshot.FromOptionsWithReferenceStamps(main, emptySource, (fun path -> stamps[path]))
 
         let libSnapshot =
             match snapshot.ReferencedProjects with
