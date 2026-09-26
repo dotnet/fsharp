@@ -229,6 +229,59 @@ printfn $"{(SecondType ()).SecondMethod()}"
         |> compileAndRun
         |> shouldSucceed
 
+    [<Theory>]
+    [<InlineData("--optimize-")>]
+    [<InlineData("--optimize+")>]
+    let ``Issue 20614 - inline base call to inline member`` optimization =
+        let library =
+            FSharp """
+module InlineBaseCall
+
+type One() =
+    member inline _.Source1 x = x
+
+type Two() =
+    inherit One()
+    member inline this.Source2 x = base.Source1 x
+"""
+            |> withOptions [ optimization ]
+            |> asLibrary
+
+        FSharp """
+module Consumer
+
+open InlineBaseCall
+
+[<EntryPoint>]
+let main _ =
+    if (Two()).Source2 42 = 42 then 0 else 1
+"""
+        |> withReferences [ library ]
+        |> withOptions [ optimization ]
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Theory>]
+    [<InlineData("--optimize-")>]
+    [<InlineData("--optimize+")>]
+    let ``Issue 20614 - base reference cannot escape inline member`` optimization =
+        FSharp """
+module InlineBaseCall
+
+type One() =
+    member _.Value = 2
+    member inline this.Source1 x = this.Value + x
+
+type Two() =
+    inherit One()
+    member inline this.Source2 x = base.Source1 x
+"""
+        |> withOptions [ optimization ]
+        |> asLibrary
+        |> compile
+        |> shouldFail
+        |> withErrorCode 3925
 
     // Test empty string pattern optimization in inlining
     [<Theory; FileInlineData("EmptyStringPattern.fs")>]

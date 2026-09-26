@@ -932,6 +932,11 @@
         <target state="translated">值 '{0}' 已標示為 'InlineIfLambda'，但並未判定為 Lambda 值。此警告僅供參考。</target>
         <note />
       </trans-unit>
+      <trans-unit id="optInlineMemberCannotUseBase">
+        <source>An inline member cannot use 'base' or protected members unless those uses can be eliminated before the member itself is inlined.</source>
+        <target state="new">An inline member cannot use 'base' or protected members unless those uses can be eliminated before the member itself is inlined.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsAllSigs">
         <source>Print the inferred interfaces of all compilation files to associated signature files</source>
         <target state="translated">將所有編譯檔案的推斷介面列印至相關聯的簽章檔案</target>

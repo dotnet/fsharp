@@ -932,6 +932,11 @@
         <target state="translated">'{0}' 값이 'InlineIfLambda'로 표시되었지만 람다 값이 없는 것으로 확인되지 않았습니다. 이 경고는 정보 제공용입니다.</target>
         <note />
       </trans-unit>
+      <trans-unit id="optInlineMemberCannotUseBase">
+        <source>An inline member cannot use 'base' or protected members unless those uses can be eliminated before the member itself is inlined.</source>
+        <target state="new">An inline member cannot use 'base' or protected members unless those uses can be eliminated before the member itself is inlined.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsAllSigs">
         <source>Print the inferred interfaces of all compilation files to associated signature files</source>
         <target state="translated">모든 컴파일 파일의 유추된 인터페이스를 관련 서명 파일로 인쇄합니다.</target>

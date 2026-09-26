@@ -424,6 +424,8 @@ type cenv =
 
       optimizing: bool
 
+      inlineBaseCallsForExport: bool
+
       scope: CcuThunk
 
       localInternalVals: Dictionary<Stamp, ValInfo>
@@ -4364,6 +4366,13 @@ and OptimizeFuncInApplication cenv env f0 mWithArgs =
 /// Optimize/analyze an application of a function to type and term arguments
 and OptimizeApplication cenv env (f0, f0ty, tyargs, args, m) =
     let g = cenv.g
+    let cenv =
+        match f0, args with
+        | Expr.Val(vref, _, _), Expr.Val(baseVal, _, _) :: _
+            when cenv.inlineBaseCallsForExport && vref.ShouldInline && baseVal.IsBaseVal ->
+            { cenv with settings = { cenv.settings with alwaysInline = true; localOptUser = Some true } }
+        | _ -> cenv
+
     // trying to devirtualize
     match TryDevirtualizeApplication cenv env (f0, tyargs, args, m) with
     | Some res ->
@@ -4600,6 +4609,17 @@ and OptimizeLambdas (vspec: Val option) cenv env valReprInfo expr exprTy =
         let env = List.foldBack (BindInternalValsToUnknown cenv) vsl env
         let bodyR, bodyinfo = OptimizeExpr cenv env body
         let exprR = mkMemberLambdas g m tps ctorThisValOpt baseValOpt vsl (bodyR, bodyTy)
+        let inlineBodyR, inlineBodySize =
+            match baseValOpt, vspec with
+            | Some baseVal, Some v when v.ShouldInline && not cenv.settings.LocalOptimizationsEnabled ->
+                let fvs = freeInExpr CollectLocals bodyR
+                if usesMethodLocalConstructsOrProtectedField cenv fvs bodyR || fvs.FreeLocals.Contains baseVal then
+                    let inlineBodyR, inlineBodyInfo = OptimizeExpr { cenv with inlineBaseCallsForExport = true } env body
+                    inlineBodyR, inlineBodyInfo.TotalSize
+                else
+                    bodyR, bodyinfo.TotalSize
+            | _ -> bodyR, bodyinfo.TotalSize
+
         let arities = vsl.Length
         let arities = if isNil tps then arities else 1+arities
         let bsize = bodyinfo.TotalSize
@@ -4636,12 +4656,14 @@ and OptimizeLambdas (vspec: Val option) cenv env valReprInfo expr exprTy =
           match baseValOpt with
           | None -> CurriedLambdaValue (lambdaId, arities, bsize, exprR, exprTy)
           | Some baseVal ->
-              let fvs = freeInExpr CollectLocals bodyR
-              if usesMethodLocalConstructsOrProtectedField cenv fvs bodyR || fvs.FreeLocals.Contains baseVal then
+              let fvs = freeInExpr CollectLocals inlineBodyR
+              if usesMethodLocalConstructsOrProtectedField cenv fvs inlineBodyR || fvs.FreeLocals.Contains baseVal then
+                  if vspec |> Option.exists (fun v -> v.ShouldInline) then
+                      error (Error(FSComp.SR.optInlineMemberCannotUseBase(), m))
                   UnknownValue
               else
-                  let expr2 = mkMemberLambdas g m tps ctorThisValOpt None vsl (bodyR, bodyTy)
-                  CurriedLambdaValue (lambdaId, arities, bsize, expr2, exprTy)
+                  let expr2 = mkMemberLambdas g m tps ctorThisValOpt None vsl (inlineBodyR, bodyTy)
+                  CurriedLambdaValue (lambdaId, arities, inlineBodySize, expr2, exprTy)
 
         let estimatedSize =
             match vspec with
@@ -5413,6 +5435,7 @@ let OptimizeImplFile (settings, ccu, tcGlobals: TcGlobals, tcVal, importMap, opt
           g=tcGlobals
           amap=importMap
           optimizing=true
+          inlineBaseCallsForExport=false
           localInternalVals=Dictionary<Stamp, ValInfo>(10000)
           emitTailcalls=emitTailcalls
           traitCtxt=traitCtxt
