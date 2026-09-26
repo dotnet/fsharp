@@ -76,4 +76,10 @@ type internal FocusedCaretTracker() =
 
             textView.Closed.Add(fun _ ->
                 for subscription in subscriptions do
-                    subscription.Dispose())
+                    subscription.Dispose()
+
+                // The caret belongs to the buffer, which outlives the view. A view closed while it held focus
+                // would leave its line published, and the reactor would go on skipping the `#r` on a line no
+                // editor is on. A view that does not hold focus published nothing to clear.
+                if textView.HasAggregateFocus then
+                    focusedCaret.Update None)
