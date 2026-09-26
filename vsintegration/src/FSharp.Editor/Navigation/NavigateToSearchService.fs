@@ -17,14 +17,49 @@ open Microsoft.VisualStudio.LanguageServices
 open Microsoft.VisualStudio.Text.PatternMatching
 
 open FSharp.Compiler.EditorServices
+open FSharp.Compiler.Syntax
 open CancellableTasks
+
+/// Where a parse of a file is kept: under what the parse depends on besides the text. The defines are those it
+/// was parsed with, or `AnyDefines` when its tree holds no conditional directives and so reads the same under
+/// any of them; the language version decides what the parser accepts and is never shared across versions. The
+/// remaining parsing options cannot differ for one path: the editor never applies line directives, and whether
+/// a file is interactive follows from its own extension.
+[<Struct>]
+type private NavigableItemsKey =
+    {
+        Defines: string
+        LangVersion: string
+        FilePath: string
+    }
+
+/// The navigable items of one parse of a file, and the text version it was taken from.
+[<Struct>]
+type private NavigableItemsEntry =
+    {
+        Version: VersionStamp
+        Items: NavigableItem array
+    }
 
 [<Export(typeof<IFSharpNavigateToSearchService>); Shared>]
 type internal FSharpNavigateToSearchService
     [<ImportingConstructor>]
     (patternMatcherFactory: IPatternMatcherFactory, [<Import(AllowDefault = true)>] workspace: VisualStudioWorkspace) =
 
-    let cache = ConcurrentDictionary<DocumentId, VersionStamp * NavigableItem array>()
+    /// A multi-targeted project is one Roslyn project per target framework over the same files, so the same
+    /// file is searched once per instance. What that costs is the parse, and a parse whose tree holds no
+    /// conditional directives does not depend on the defines: it is stored under `AnyDefines` and every
+    /// instance reuses it. One that does hold them is stored per define set, because those instances
+    /// genuinely parse the file differently.
+    ///
+    /// The duplicate results this produces are not for this service to remove. `NavigateToSearcher` pools its
+    /// seen set with `NavigateToSearchResultComparer`, which already collapses results by file path and span.
+    let cache = ConcurrentDictionary<NavigableItemsKey, NavigableItemsEntry>()
+
+    /// The key for a parse that does not depend on the defines. Not a define set any instance can have,
+    /// since defines are identifiers — an instance with none of its own must not read this entry as its own.
+    [<Literal>]
+    let AnyDefines = "?"
 
     do
         if workspace <> null then
@@ -33,18 +68,59 @@ type internal FSharpNavigateToSearchService
                 if e.NewSolution.Id <> e.OldSolution.Id then
                     cache.Clear()
 
+    let dependsOnDefines (parseTree: ParsedInput) =
+        match parseTree with
+        | ParsedInput.ImplFile file -> not file.Trivia.ConditionalDirectives.IsEmpty
+        | ParsedInput.SigFile file -> not file.Trivia.ConditionalDirectives.IsEmpty
+
     let getNavigableItems (document: Document) =
         cancellableTask {
             let! ct = CancellableTask.getCancellationToken ()
             let! currentVersion = document.GetTextVersionAsync(ct)
 
-            match cache.TryGetValue document.Id with
-            | true, (version, items) when version = currentVersion -> return items
-            | _ ->
+            match document.FilePath, document.TryGetFSharpParsingOptionsData() with
+            // A document with no path is keyed by nothing, and one whose project has not produced its options
+            // yet knows neither the defines nor the language version its own parse depends on - an entry
+            // another instance wrote under what it really parsed with must not answer for it.
+            | null, _
+            | _, ValueNone ->
                 let! parseResults = document.GetFSharpParseResultsAsync(nameof (FSharpNavigateToSearchService))
-                let items = NavigateTo.GetNavigableItems parseResults.ParseTree
-                cache[document.Id] <- currentVersion, items
-                return items
+                return NavigateTo.GetNavigableItems parseResults.ParseTree
+            | path, ValueSome(struct (documentDefines, langVersion)) ->
+                let defines = documentDefines |> String.concat ";"
+
+                let keyOf defines =
+                    {
+                        Defines = defines
+                        LangVersion = langVersion
+                        FilePath = path
+                    }
+
+                let cached defines =
+                    match cache.TryGetValue(keyOf defines) with
+                    | true, entry when entry.Version = currentVersion -> ValueSome entry.Items
+                    | _ -> ValueNone
+
+                match cached AnyDefines, cached defines with
+                | ValueSome items, _
+                | _, ValueSome items -> return items
+                | ValueNone, ValueNone ->
+                    let! parseResults = document.GetFSharpParseResultsAsync(nameof (FSharpNavigateToSearchService))
+                    let items = NavigateTo.GetNavigableItems parseResults.ParseTree
+
+                    let key =
+                        if dependsOnDefines parseResults.ParseTree then
+                            keyOf defines
+                        else
+                            keyOf AnyDefines
+
+                    cache[key] <-
+                        {
+                            Version = currentVersion
+                            Items = items
+                        }
+
+                    return items
         }
 
     let kindsProvided =
@@ -145,71 +221,73 @@ type internal FSharpNavigateToSearchService
 
     let processDocument (tryMatch: NavigableItem -> PatternMatch voption) (kinds: IImmutableSet<string>) (document: Document) =
         cancellableTask {
-            let! ct = CancellableTask.getCancellationToken ()
-
-            let! sourceText = document.GetTextAsync ct
-
             let! items = getNavigableItems document
 
-            let processed =
+            let matches =
                 [|
                     for item in items do
-                        let contains = kinds.Contains(navigateToItemKindToRoslynKind item.Kind)
-                        let patternMatch = tryMatch item
+                        if kinds.Contains(navigateToItemKindToRoslynKind item.Kind) then
+                            match tryMatch item with
+                            | ValueSome m -> yield struct (item, m)
+                            | ValueNone -> ()
+                |]
 
-                        match contains, patternMatch with
-                        | true, ValueSome m ->
-                            let sourceSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, item.Range)
+            // The text, read from disk for a closed document, is only needed to place the matches.
+            if matches.Length = 0 then
+                return [||]
+            else
+                let! ct = CancellableTask.getCancellationToken ()
+                let! sourceText = document.GetTextAsync ct
 
-                            match sourceSpan with
+                return
+                    [|
+                        for struct (item, m) in matches do
+                            match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, item.Range) with
                             | ValueNone -> ()
                             | ValueSome sourceSpan ->
-                                let glyph = navigateToItemKindToGlyph item.Kind
-                                let kind = navigateToItemKindToRoslynKind item.Kind
-                                let additionalInfo = formatInfo item.Container document
-
                                 yield
                                     FSharpNavigateToSearchResult(
-                                        additionalInfo,
-                                        kind,
+                                        formatInfo item.Container document,
+                                        navigateToItemKindToRoslynKind item.Kind,
                                         patternMatchKindToNavigateToMatchKind m.Kind,
                                         item.Name,
                                         FSharpNavigableItem(
-                                            glyph,
+                                            navigateToItemKindToGlyph item.Kind,
                                             ImmutableArray.Create(TaggedText(TextTags.Text, item.Name)),
                                             document,
                                             sourceSpan
                                         )
                                     )
-                        | _ -> ()
-                |]
-
-            return processed
+                    |]
         }
 
     interface IFSharpNavigateToSearchService with
         member _.SearchProjectAsync
-            (project, _priorityDocuments, searchPattern, kinds, cancellationToken)
+            (project, priorityDocuments, searchPattern, kinds, cancellationToken)
             : Task<ImmutableArray<FSharpNavigateToSearchResult>> =
             cancellableTask {
                 let tryMatch = createMatcherFor searchPattern
+                let priorityIds = ImmutableHashSet.CreateRange(priorityDocuments |> Seq.map _.Id)
 
-                let tasks =
-                    [|
-                        for doc in project.Documents do
-                            yield processDocument tryMatch kinds doc
-                    |]
+                let priority, rest =
+                    project.Documents
+                    |> Seq.toArray
+                    |> Array.partition (fun document -> priorityIds.Contains document.Id)
 
-                let! results = CancellableTask.whenAll tasks
+                let search documents =
+                    documents
+                    |> Seq.map (processDocument tryMatch kinds)
+                    // Throttle to avoid launching a parse per document in the project all at once.
+                    |> CancellableTask.whenAllThrottled (max 1 Environment.ProcessorCount)
 
-                let results' = ImmutableArray.CreateBuilder()
+                // The documents the user has open go first, so they are parsed and cached before the rest of the project.
+                let! priorityResults = search priority
+                let! restResults = search rest
 
-                for navResults in results do
-                    for navResult in navResults do
-                        results'.Add navResult
-
-                return results'.ToImmutable()
-
+                return
+                    Array.append priorityResults restResults
+                    |> Array.concat
+                    |> Array.toImmutableArray
             }
             |> CancellableTask.start cancellationToken
 
