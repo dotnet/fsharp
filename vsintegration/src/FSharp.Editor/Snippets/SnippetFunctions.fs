@@ -178,21 +178,15 @@ module internal SnippetFunctionHelpers =
         else
             Seq.empty
 
-    /// The match rules covering the union or enum `$expression$` evaluates to, or ValueNone for any
-    /// other type.
-    let tryGetMatchRules (document: Document) (span: VsTextSpan) =
+    /// The match rules covering the union or enum that the expression at `range` evaluates to, or
+    /// ValueNone for any other type.
+    let tryGetMatchRulesAt (document: Document) (range: range) =
         cancellableTask {
             let! _, checkResults = document.GetFSharpParseAndCheckResultsAsync userOpName
             let! ct = CancellableTask.getCancellationToken ()
             let! sourceText = document.GetTextAsync ct
 
-            let range =
-                Range.mkRange
-                    document.FilePath
-                    (Position.mkPos (span.iStartLine + 1) span.iStartIndex)
-                    (Position.mkPos (span.iEndLine + 1) span.iEndIndex)
-
-            let position = sourceText.Lines[span.iEndLine].Start + span.iEndIndex
+            let position = sourceText.Lines[range.EndLine - 1].Start + range.EndColumn
 
             let rules =
                 match checkResults.TryGetCapturedType range with
@@ -210,6 +204,14 @@ module internal SnippetFunctionHelpers =
                 | "" -> ValueNone
                 | rules -> ValueSome rules
         }
+
+    /// `tryGetMatchRulesAt` for the span a snippet field occupies.
+    let tryGetMatchRules (document: Document) (span: VsTextSpan) =
+        Range.mkRange
+            document.FilePath
+            (Position.mkPos (span.iStartLine + 1) span.iStartIndex)
+            (Position.mkPos (span.iEndLine + 1) span.iEndIndex)
+        |> tryGetMatchRulesAt document
 
 /// One `<Function>` declared by a snippet literal. `arguments` are the raw `$field$` references the
 /// snippet passed, which is what tells us whether a field edit invalidates our value.
