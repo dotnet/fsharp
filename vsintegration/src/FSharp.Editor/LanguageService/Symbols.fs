@@ -46,7 +46,11 @@ type FSharpSymbol with
                 | docSig when value.LiteralValue.IsSome && docSig.StartsWith("P:", StringComparison.Ordinal) -> $"F:{docSig.Substring 2}"
                 | docSig -> docSig
             | :? FSharpEntity as entity -> entity.XmlDocSig
-            | :? FSharpField as field -> field.XmlDocSig
+            | :? FSharpField as field ->
+                match field.XmlDocSig with
+                // An enum case compiles to a field too, and FCS names it P: where Roslyn says F:.
+                | docSig when field.IsLiteral && docSig.StartsWith("P:", StringComparison.Ordinal) -> $"F:{docSig.Substring 2}"
+                | docSig -> docSig
             | :? FSharpUnionCase as unionCase -> unionCase.XmlDocSig
             | _ -> ""
 

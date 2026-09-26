@@ -22,7 +22,14 @@ open FSharp.Test.ProjectGeneration
 let private library =
     SyntheticProject.Create(
         { sourceFile "First" [] with
-            ExtraSource = "let twice x = x * 2\n[<Literal>]\nlet answer = 42\n"
+            ExtraSource =
+                "let twice x = x * 2
+[<Literal>]
+let answer = 42
+type Color =
+    | Red = 0
+    | Blue = 1
+"
         }
     )
 
@@ -100,6 +107,7 @@ let ``the consumer is found as a project referencing the F# assembly`` () =
 [<InlineData("twice", "M:{0}.twice(System.Int32)")>]
 [<InlineData("ModuleFirst", "T:{0}")>]
 [<InlineData("answer", "F:{0}.answer")>]
+[<InlineData("Red", "F:{0}.Color.Red")>]
 [<InlineData("x", null)>]
 let ``DocumentationCommentId is the compiled form Roslyn resolves`` (symbolName: string, expectedFormat: string) =
     let expected =
