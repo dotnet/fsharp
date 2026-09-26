@@ -779,7 +779,9 @@ module NavigateTo =
         match synType with
         | SynType.LongIdent(SynLongIdent([ id ], _, _)) -> id.idText = "unit"
         | SynType.Paren(innerType, _)
-        | SynType.WithGlobalConstraints(innerType, _, _) -> isUnitType innerType
+        | SynType.WithGlobalConstraints(innerType, _, _)
+        // `val f: u: unit -> int` names the argument the compiler drops, so the name must not hide it.
+        | SynType.SignatureParameter(usedType = innerType) -> isUnitType innerType
         | _ -> false
 
     /// The parameters of the compiled method: the parser leaves a solitary unit argument of a signature in its arity,

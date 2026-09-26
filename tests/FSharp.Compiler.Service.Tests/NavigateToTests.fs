@@ -25,6 +25,7 @@ module M
 
 val curried: int -> int -> int
 val takesUnit: unit -> int
+val takesNamedUnit: u: unit -> int
 val generic<'T> : 'T * 'T -> 'T
 
 type C<'T> =
@@ -55,6 +56,7 @@ let ``A declaration in an implementation file counts the parameters it compiles 
 [<Theory>]
 [<InlineData("curried", 2, 0)>]
 [<InlineData("takesUnit", 0, 0)>]
+[<InlineData("takesNamedUnit", 0, 0)>]
 [<InlineData("generic", 2, 1)>]
 [<InlineData("C", 0, 1)>]
 [<InlineData("Method", 2, 0)>]
