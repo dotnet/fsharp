@@ -64,7 +64,9 @@ module FSharpFindUsagesService =
             CancellableTask.singleton [||]
         else
             cancellableTask {
-                let documentIds = solution.GetDocumentIdsWithFilePath(range.FileName)
+                // A name a path map left relative reaches no document through the workspace's index of the
+                // paths on disk, so a declaration imported from such an assembly is matched by its tail.
+                let documentIds = solution.GetDocumentIdsWithFSharpFileName range.FileName
 
                 let! spans =
                     seq {
