@@ -13,5 +13,8 @@ type RelatedSymbolUseKind =
     | UnionCaseTester = 1
     /// Record type via copy-and-update expression (e.g., { r with ... } → RecordType)
     | CopyAndUpdateRecord = 2
+    /// Parameter or type parameter via the `name` of a `param`, `paramref`, `typeparam` or `typeparamref`
+    /// tag in the declaration's XML doc
+    | XmlDocParameter = 4
     /// All related symbol kinds
     | All = 0x7FFFFFFF
