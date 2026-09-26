@@ -138,12 +138,15 @@ type Document with
             | ids -> ValueSome [ for id in ids -> solution.GetDocument id ])
         |> ValueOption.defaultValue []
 
-    /// The first document with the file path, from whichever project includes it.
-    member document.TryGetSolutionDocumentFromPath(filePath: string) =
-        document.GetSolutionDocumentsWithFilePath filePath |> Seq.tryHeadV
-
     /// The document for the range's file, preferring this document's project or one it depends on.
     member document.TryGetSolutionDocumentFromFSharpRange(range: range) =
         document.TryFindInSolutions(fun solution ->
             solution.TryGetDocumentFromFSharpRange(range, document.Project.Id)
             |> ValueOption.ofOption)
+
+    /// The document with the file path, preferring this document's project or one it depends on: the
+    /// instances of a multi-targeted project hold the same file, and the file is read under the defines of
+    /// whichever instance answers, so the origin's own instance is the one that answers about its own code.
+    member document.TryGetSolutionDocumentFromPath(filePath: string) =
+        Range.mkRange filePath Position.pos0 Position.pos0
+        |> document.TryGetSolutionDocumentFromFSharpRange
