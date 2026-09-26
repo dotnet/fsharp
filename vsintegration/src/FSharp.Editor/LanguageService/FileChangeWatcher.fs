@@ -87,9 +87,15 @@ type private WatchedReference =
 [<AutoOpen>]
 module private FileChangeWatcherImpl =
 
-    // Same flags Roslyn uses for both subscribing and filtering callbacks.
+    // What a watch on a single file asks to be told about. Roslyn asks for size and time; a reference is
+    // also watched before the project that produces it has been built, and is replaced by a rename rather
+    // than a write, so its appearance and its removal have to arrive too. A directory watch takes no flags -
+    // `AdviseDirChange` reports every kind - which is why the callback filter below names all four.
     let watchFlags =
-        _VSFILECHANGEFLAGS.VSFILECHG_Size ||| _VSFILECHANGEFLAGS.VSFILECHG_Time
+        _VSFILECHANGEFLAGS.VSFILECHG_Size
+        ||| _VSFILECHANGEFLAGS.VSFILECHG_Time
+        ||| _VSFILECHANGEFLAGS.VSFILECHG_Add
+        ||| _VSFILECHANGEFLAGS.VSFILECHG_Del
 
     let relevantFlags =
         _VSFILECHANGEFLAGS.VSFILECHG_Time
