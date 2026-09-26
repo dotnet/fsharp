@@ -13,9 +13,10 @@
       "type": "stdio",
       "command": "dotnet",
       "args": [
-        "tool",
-        "run",
-        "fslangmcp"
+        "dnx",
+        "fslangmcp@0.18.0",
+        "--source",
+        "https://api.nuget.org/v3/index.json"
       ]
     },
     "GitHub": {
