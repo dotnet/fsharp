@@ -105,6 +105,34 @@ type C() =
         Assert.Equal(expected, rename source "x = this" "input")
 
     [<Fact>]
+    let ``param of a public union case field follows the field`` () =
+        let source =
+            """
+module M
+
+type Shape =
+    /// <summary>A circle.</summary>
+    /// <param name="radius">The radius.</param>
+    | Circle of radius: float
+
+let unitCircle = Circle(radius = 1.0)
+"""
+
+        let expected =
+            """
+module M
+
+type Shape =
+    /// <summary>A circle.</summary>
+    /// <param name="size">The radius.</param>
+    | Circle of size: float
+
+let unitCircle = Circle(size = 1.0)
+"""
+
+        Assert.Equal(expected, rename source "radius: float" "size")
+
+    [<Fact>]
     let ``param of a primary constructor documented on the type follows the parameter`` () =
         let source =
             """
