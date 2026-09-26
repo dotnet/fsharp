@@ -20,10 +20,18 @@ open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Syntax
 open CancellableTasks
 
-/// Where a parse of a file is kept: under the defines it was parsed with, or under `AnyDefines` when its tree
-/// holds no conditional directives and so reads the same under any of them.
+/// Where a parse of a file is kept: under what the parse depends on besides the text. The defines are those it
+/// was parsed with, or `AnyDefines` when its tree holds no conditional directives and so reads the same under
+/// any of them; the language version decides what the parser accepts and is never shared across versions. The
+/// remaining parsing options cannot differ for one path: the editor never applies line directives, and whether
+/// a file is interactive follows from its own extension.
 [<Struct>]
-type private NavigableItemsKey = { Defines: string; FilePath: string }
+type private NavigableItemsKey =
+    {
+        Defines: string
+        LangVersion: string
+        FilePath: string
+    }
 
 /// The navigable items of one parse of a file, and the text version it was taken from.
 [<Struct>]
@@ -70,15 +78,26 @@ type internal FSharpNavigateToSearchService
             let! ct = CancellableTask.getCancellationToken ()
             let! currentVersion = document.GetTextVersionAsync(ct)
 
-            match document.FilePath with
-            | null ->
+            match document.FilePath, document.TryGetFSharpParsingOptionsData() with
+            // A document with no path is keyed by nothing, and one whose project has not produced its options
+            // yet knows neither the defines nor the language version its own parse depends on - an entry
+            // another instance wrote under what it really parsed with must not answer for it.
+            | null, _
+            | _, ValueNone ->
                 let! parseResults = document.GetFSharpParseResultsAsync(nameof (FSharpNavigateToSearchService))
                 return NavigateTo.GetNavigableItems parseResults.ParseTree
-            | path ->
-                let defines = document.GetFSharpQuickDefines() |> String.concat ";"
+            | path, ValueSome(struct (documentDefines, langVersion)) ->
+                let defines = documentDefines |> String.concat ";"
 
-                let cached key =
-                    match cache.TryGetValue({ Defines = key; FilePath = path }) with
+                let keyOf defines =
+                    {
+                        Defines = defines
+                        LangVersion = langVersion
+                        FilePath = path
+                    }
+
+                let cached defines =
+                    match cache.TryGetValue(keyOf defines) with
                     | true, entry when entry.Version = currentVersion -> ValueSome entry.Items
                     | _ -> ValueNone
 
@@ -91,11 +110,11 @@ type internal FSharpNavigateToSearchService
 
                     let key =
                         if dependsOnDefines parseResults.ParseTree then
-                            defines
+                            keyOf defines
                         else
-                            AnyDefines
+                            keyOf AnyDefines
 
-                    cache[{ Defines = key; FilePath = path }] <-
+                    cache[key] <-
                         {
                             Version = currentVersion
                             Items = items
