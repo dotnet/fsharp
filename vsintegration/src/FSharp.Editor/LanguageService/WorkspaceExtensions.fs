@@ -564,6 +564,13 @@ type Document with
         let workspaceService = this.Project.Solution.GetFSharpWorkspaceService()
         workspaceService.FSharpProjectOptionsManager.GetCompilationDefinesAndLangVersionForEditingDocument(this)
 
+    /// A non-async call that gets the defines and F# language version of the given F# document, and nothing
+    /// where its project has not produced its options yet: a guess names what the project never asked for,
+    /// which a parse must not be kept under.
+    member this.TryGetFSharpParsingOptionsData() =
+        let workspaceService = this.Project.Solution.GetFSharpWorkspaceService()
+        workspaceService.FSharpProjectOptionsManager.TryGetCompilationDefinesAndLangVersionForEditingDocument(this)
+
     /// A non-async call that quickly gets the defines of the given F# document.
     /// This tries to get the defines by looking at an internal cache; if it doesn't exist in the cache it will create an inaccurate but usable form of the defines.
     member this.GetFSharpQuickDefines() =
