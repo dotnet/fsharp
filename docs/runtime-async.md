@@ -150,10 +150,10 @@ can safely move across the returned closure's construction. This handles
 computation-expression shapes where `Bind` returns a closure containing
 `Await`, and later `Combine`/`Delay` calls apply it.
 
-If a compiler-owned `InlineIfLambda` callback still contains a suspension
-after inlining, a fully rewritable, single-argument callback can be outlined
-instead. Each branch of its construction produces a callback returning
-`ValueTask<'T>`; the generated callback body contains
+If a compiler-owned `InlineIfLambda` function or delegate still contains a
+suspension after inlining, a fully rewritable, single-argument callback can
+be outlined instead. Each branch of its construction produces an F# callback
+returning `ValueTask<'T>`; the generated callback body contains
 `__runtimeAsyncReturnValueTask`, and its invocations are replaced by
 `AsyncHelpers.Await` inside the enclosing runtime-async method. The callback
 is constructed once, so conditional construction effects and state captured
@@ -165,13 +165,16 @@ shapes, and unsafe byref or pinned captures are not outlined; suspensions
 remaining in an ordinary method are still diagnosed.
 
 For a compiler-owned `InlineIfLambda` delegate invoked exactly once, the
-optimizer can instead inline its `Invoke` body into the marked method.
+optimizer first tries to inline its `Invoke` body into the marked method.
 Precomputations that capture the delegate's inputs stay at their construction
-site, so a pending operation is created once before the invocation. A delegate
-that escapes or is consumed opaquely cannot be converted this way. IlxGen
-checks each generated delegate `Invoke` as its own method: an `Await` left
-there without a return marker produces FS3918, even when the enclosing method
-is runtime-async. Exported inline definitions remain unchanged.
+site, so a pending operation is created once before the invocation. If it
+cannot be reduced and all invokes are directly rewritable, the delegate is
+outlined as above; conditional construction and repeated invokes preserve
+the same captured state. A delegate that escapes or is consumed opaquely
+cannot be converted. IlxGen checks each generated delegate `Invoke` as its
+own method: an `Await` left there without a return marker produces FS3918,
+even when the enclosing method is runtime-async. Exported inline definitions
+remain unchanged.
 
 Outlining retains the callback closure and generates an async `Invoke` method
 for each specialized callback shape. Calls now return a `ValueTask<'T>` for

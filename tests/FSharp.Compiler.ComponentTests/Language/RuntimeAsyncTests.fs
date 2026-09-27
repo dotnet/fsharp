@@ -1135,6 +1135,98 @@ let main _ =
     |> compileExeAndRun
     |> shouldSucceed
 
+[<InlineData(false)>]
+[<InlineData(true)>]
+[<Theory>]
+let ``runtime async outlines repeated conditional delegate invocations`` (optimize: bool) =
+    let library =
+        FSharp """
+module ImportedDelegateCallbacks
+open Microsoft.FSharp.Core.CompilerServices
+
+type Started<'T> = delegate of unit -> 'T
+
+let inline invokeTwice ([<InlineIfLambda>] callback: Started<int>) =
+    callback.Invoke() + callback.Invoke()
+"""
+        |> withName "ImportedDelegateCallbacks"
+        |> withLangVersionPreview
+        |> withFSharpCoreShippedNet
+
+    FSharp """
+module RuntimeAsyncRepeatedDelegate
+open System.Collections.Generic
+open System.Threading.Tasks
+open System.Runtime.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices
+open ImportedDelegateCallbacks
+
+let mutable constructions = 0
+let mutable invocations = 0
+
+let run (gate: Task) deduplicate =
+    StateMachineHelpers.__runtimeAsyncReturn (
+        invokeTwice (
+            if deduplicate then
+                constructions <- constructions + 1
+                let seen = HashSet<int>()
+                Started(fun () ->
+                    invocations <- invocations + 1
+                    let first = seen.Add 1
+                    AsyncHelpers.Await gate
+                    if first then 1 else 0)
+            else
+                Started(fun () -> 2)))
+
+[<EntryPoint>]
+let main _ =
+    let gate = TaskCompletionSource<unit>(TaskCreationOptions.RunContinuationsAsynchronously)
+    let pending = run gate.Task true
+    if pending.IsCompleted || constructions <> 1 || invocations <> 1 then
+        failwith "Callback construction or first invocation changed"
+    gate.SetResult(())
+    if pending.GetAwaiter().GetResult() <> 1 || constructions <> 1 || invocations <> 2 then
+        failwith "Repeated calls did not share callback state"
+    if (run gate.Task false).GetAwaiter().GetResult() <> 4 || constructions <> 1 then
+        failwith "Other branch changed"
+    0
+"""
+    |> withLangVersionPreview
+    |> withFSharpCoreShippedNet
+    |> withOptimization optimize
+    |> withReferences [ library ]
+    |> compileExeAndRun
+    |> shouldSucceed
+
+[<InlineData(false)>]
+[<InlineData(true)>]
+[<Theory>]
+let ``runtime async does not outline delegates passed to opaque consumers`` (optimize: bool) =
+    FSharp """
+module RuntimeAsyncOpaqueDelegate
+
+open System.Threading.Tasks
+open System.Runtime.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices
+
+type Started<'T> = delegate of unit -> 'T
+
+[<NoCompilerInlining>]
+let consume (callback: Started<int>) = callback.Invoke()
+
+let inline invoke ([<InlineIfLambda>] callback: Started<int>) =
+    StateMachineHelpers.__runtimeAsyncReturn(callback.Invoke() + consume callback)
+
+let run (gate: Task<int>) =
+    invoke (if true then Started(fun () -> AsyncHelpers.Await gate) else Started(fun () -> 0))
+"""
+    |> withLangVersionPreview
+    |> withFSharpCoreShippedNet
+    |> withOptimization optimize
+    |> compile
+    |> shouldFail
+    |> withErrorCode 3918
+
 [<InlineData(false, false)>]
 [<InlineData(false, true)>]
 [<InlineData(true, false)>]

@@ -228,7 +228,8 @@ let PreserveRuntimeAsyncCallSiteDebugPoint (g: TcGlobals) m expr =
 let OutlineRuntimeAsyncCallback (g: TcGlobals) (analyzer: RuntimeAsyncAnalyzer) runtimeAsyncContext prepareBody (expr: Expr) =
     let rec outlineBranches resultTy expr =
         match expr with
-        | Expr.Lambda(_, None, None, [ parameter ], body, m, _) ->
+        | Expr.Lambda(_, None, None, [ parameter ], body, m, _)
+        | NewDelegateExpr g (_, [ parameter ], body, m, _) ->
             let marker = g.cgh__runtimeAsyncReturnValueTask_vref
             let body = prepareBody body
 
@@ -257,6 +258,17 @@ let OutlineRuntimeAsyncCallback (g: TcGlobals) (analyzer: RuntimeAsyncAnalyzer) 
                 None
         | _ -> None
 
+    let rec tryDelegateSignature expr =
+        match expr with
+        | NewDelegateExpr g (_, [ parameter ], body, _, _) -> Some(parameter.Type, tyOfExpr g body)
+        | Expr.DebugPoint(_, rest)
+        | Expr.Sequential(_, rest, _, _)
+        | Expr.Let(_, rest, _, _) -> tryDelegateSignature rest
+        | Expr.Match(_, _, _, targets, _, _) when targets.Length > 0 ->
+            let (TTarget(_, body, _)) = targets[0]
+            tryDelegateSignature body
+        | _ -> None
+
     let rec peelDelegateConstruction expr =
         match expr with
         | Expr.DebugPoint(point, rest) ->
@@ -277,164 +289,191 @@ let OutlineRuntimeAsyncCallback (g: TcGlobals) (analyzer: RuntimeAsyncAnalyzer) 
             Some(expr, id)
         | _ -> None
 
+    let tryInlineDelegate callback construction continuation m =
+        match peelDelegateConstruction construction with
+        | None -> None
+        | Some(delegateExpr, wrap) ->
+            let freeVals = (freeInExpr CollectLocals construction).FreeLocals
+
+            let canCapture =
+                freeVals
+                |> Zset.forall (fun v -> not v.IsPinning && not (isByrefTy g v.Type || isByrefLikeTy g m v.Type))
+
+            if not canCapture then
+                None
+            else
+                let mutable invocations = 0
+                let mutable invalidUse = false
+
+                let rwenv =
+                    {
+                        PreIntercept =
+                            Some(fun rewrite expression ->
+                                match expression with
+                                | DelegateInvokeExpr g (invokeRef, invokeTy, tyargs, Expr.Val(vref, _, _), arg, callRange) when
+                                    valEq callback vref.Deref
+                                    ->
+                                    invocations <- invocations + 1
+
+                                    Some(
+                                        MakeFSharpDelegateInvokeAndTryBetaReduce
+                                            g
+                                            (invokeRef, delegateExpr, invokeTy, tyargs, rewrite arg, callRange)
+                                    )
+                                | Expr.Val(vref, _, _) when valEq callback vref.Deref ->
+                                    invalidUse <- true
+                                    Some expression
+                                | _ -> None)
+                        PreInterceptBinding = None
+                        PostTransform = (fun _ -> None)
+                        RewriteQuotations = false
+                        StackGuard = StackGuard("InlineRuntimeAsyncDelegateInvocation")
+                    }
+
+                let continuation = RewriteExpr rwenv continuation
+
+                let quotedUse =
+                    ExistsExpr
+                        (function
+                        | Expr.Quote(body, _, _, _, _) ->
+                            ExistsExpr
+                                (function
+                                | Expr.Val(vref, _, _) -> valEq callback vref.Deref
+                                | _ -> false)
+                                body
+                        | _ -> false)
+                        continuation
+
+                if invocations = 1 && not invalidUse && not quotedUse then
+                    Some(wrap continuation)
+                else
+                    None
+
     let rec outline expr =
         match expr with
-        | Expr.Let(TBind(callback, construction, _), continuation, _, _) when
-            callback.InlineIfLambda
-            && (runtimeAsyncContext || (TryGetRuntimeAsyncReturn g continuation).IsSome)
-            && isFSharpDelegateTy g callback.Type
-            && analyzer.ContainsSuspension construction
-            ->
-            match peelDelegateConstruction construction with
-            | None -> expr
-            | Some(delegateExpr, wrap) ->
-                let freeVals = (freeInExpr CollectLocals construction).FreeLocals
-
-                let canCapture =
-                    freeVals
-                    |> Zset.forall (fun v -> not v.IsPinning && not (isByrefTy g v.Type || isByrefLikeTy g expr.Range v.Type))
-
-                if not canCapture then
-                    expr
-                else
-                    let mutable invocations = 0
-                    let mutable invalidUse = false
-
-                    let rwenv =
-                        {
-                            PreIntercept =
-                                Some(fun rewrite expression ->
-                                    match expression with
-                                    | DelegateInvokeExpr g (invokeRef, invokeTy, tyargs, Expr.Val(vref, _, _), arg, callRange) when
-                                        valEq callback vref.Deref
-                                        ->
-                                        invocations <- invocations + 1
-
-                                        Some(
-                                            MakeFSharpDelegateInvokeAndTryBetaReduce
-                                                g
-                                                (invokeRef, delegateExpr, invokeTy, tyargs, rewrite arg, callRange)
-                                        )
-                                    | Expr.Val(vref, _, _) when valEq callback vref.Deref ->
-                                        invalidUse <- true
-                                        Some expression
-                                    | _ -> None)
-                            PreInterceptBinding = None
-                            PostTransform = (fun _ -> None)
-                            RewriteQuotations = false
-                            StackGuard = StackGuard("InlineRuntimeAsyncDelegateInvocation")
-                        }
-
-                    let continuation = RewriteExpr rwenv continuation
-
-                    let quotedUse =
-                        ExistsExpr
-                            (function
-                            | Expr.Quote(body, _, _, _, _) ->
-                                ExistsExpr
-                                    (function
-                                    | Expr.Val(vref, _, _) -> valEq callback vref.Deref
-                                    | _ -> false)
-                                    body
-                            | _ -> false)
-                            continuation
-
-                    if invocations = 1 && not invalidUse && not quotedUse then
-                        outline (wrap continuation)
-                    else
-                        expr
         | Expr.Let(TBind(callback, construction, point), continuation, m, _) when
             callback.InlineIfLambda && analyzer.ContainsSuspension construction
             ->
-            match tryDestFunTy g callback.Type with
-            | ValueSome(argTy, resultTy) when
-                (runtimeAsyncContext || (TryGetRuntimeAsyncReturn g continuation).IsSome)
-                && not (isByrefLikeTy g m argTy || isByrefLikeTy g m resultTy)
-                ->
-                let freeVals = (freeInExpr CollectLocals construction).FreeLocals
+            let canOutline =
+                runtimeAsyncContext || (TryGetRuntimeAsyncReturn g continuation).IsSome
 
-                let canCapture =
-                    freeVals
-                    |> Zset.forall (fun v -> not v.IsPinning && not (isByrefTy g v.Type || isByrefLikeTy g m v.Type))
+            let inlined =
+                if canOutline && isFSharpDelegateTy g callback.Type then
+                    tryInlineDelegate callback construction continuation m
+                else
+                    None
 
-                match canCapture, outlineBranches resultTy construction with
-                | true, Some construction ->
-                    let callbackTy = tyOfExpr g construction
-                    let outlined, outlinedExpr = mkCompGenLocal m "runtimeAsyncCallback" callbackTy
-                    let mutable invalidUse = false
+            match inlined with
+            | Some reduced -> outline reduced
+            | None ->
+                let shape =
+                    match tryDestFunTy g callback.Type with
+                    | ValueSome(argTy, resultTy) -> Some(argTy, resultTy, false)
+                    | ValueNone when isFSharpDelegateTy g callback.Type ->
+                        tryDelegateSignature construction
+                        |> Option.map (fun (argTy, resultTy) -> argTy, resultTy, true)
+                    | _ -> None
 
-                    let rwenv =
-                        {
-                            PreIntercept =
-                                Some(fun rewrite expression ->
-                                    match expression with
-                                    | Expr.App(Expr.Val(vref, _, _), _, [], [ arg ], callRange) when valEq callback vref.Deref ->
-                                        let invocation =
-                                            mkApps g ((outlinedExpr, callbackTy), [], [ rewrite arg ], callRange)
+                match shape with
+                | Some(argTy, resultTy, isDelegate) when canOutline && not (isByrefLikeTy g m argTy || isByrefLikeTy g m resultTy) ->
+                    let freeVals = (freeInExpr CollectLocals construction).FreeLocals
 
-                                        let resultTy = tyOfExpr g expression
-                                        let valueTaskRef = g.FindSysILTypeRef "System.Threading.Tasks.ValueTask`1"
+                    let canCapture =
+                        freeVals
+                        |> Zset.forall (fun v -> not v.IsPinning && not (isByrefTy g v.Type || isByrefLikeTy g m v.Type))
 
-                                        let awaitRef =
-                                            mkILMethRef (
-                                                g.FindSysILTypeRef "System.Runtime.CompilerServices.AsyncHelpers",
-                                                ILCallingConv.Static,
-                                                "Await",
-                                                1,
-                                                [ ILType.Value(mkILTySpec (valueTaskRef, [ mkILTyvarTy 0us ])) ],
-                                                mkILTyvarTy 0us
-                                            )
+                    match canCapture, outlineBranches resultTy construction with
+                    | true, Some construction ->
+                        let callbackTy = tyOfExpr g construction
+                        let outlined, outlinedExpr = mkCompGenLocal m "runtimeAsyncCallback" callbackTy
+                        let mutable invalidUse = false
 
-                                        Some(
-                                            Expr.Op(
-                                                TOp.ILCall(
-                                                    false,
-                                                    false,
-                                                    false,
-                                                    false,
-                                                    ValUseFlag.NormalValUse,
-                                                    false,
-                                                    false,
-                                                    awaitRef,
+                        let rwenv =
+                            {
+                                PreIntercept =
+                                    Some(fun rewrite expression ->
+                                        let call =
+                                            match expression with
+                                            | Expr.App(Expr.Val(vref, _, _), _, [], [ arg ], callRange) when
+                                                not isDelegate && valEq callback vref.Deref
+                                                ->
+                                                Some(arg, callRange)
+                                            | DelegateInvokeExpr g (_, _, _, Expr.Val(vref, _, _), arg, callRange) when
+                                                isDelegate && valEq callback vref.Deref
+                                                ->
+                                                Some(arg, callRange)
+                                            | _ -> None
+
+                                        match call with
+                                        | Some(arg, callRange) ->
+                                            let invocation =
+                                                mkApps g ((outlinedExpr, callbackTy), [], [ rewrite arg ], callRange)
+
+                                            let resultTy = tyOfExpr g expression
+                                            let valueTaskRef = g.FindSysILTypeRef "System.Threading.Tasks.ValueTask`1"
+
+                                            let awaitRef =
+                                                mkILMethRef (
+                                                    g.FindSysILTypeRef "System.Runtime.CompilerServices.AsyncHelpers",
+                                                    ILCallingConv.Static,
+                                                    "Await",
+                                                    1,
+                                                    [ ILType.Value(mkILTySpec (valueTaskRef, [ mkILTyvarTy 0us ])) ],
+                                                    mkILTyvarTy 0us
+                                                )
+
+                                            Some(
+                                                Expr.Op(
+                                                    TOp.ILCall(
+                                                        false,
+                                                        false,
+                                                        false,
+                                                        false,
+                                                        ValUseFlag.NormalValUse,
+                                                        false,
+                                                        false,
+                                                        awaitRef,
+                                                        [],
+                                                        [ resultTy ],
+                                                        [ resultTy ]
+                                                    ),
                                                     [],
-                                                    [ resultTy ],
-                                                    [ resultTy ]
-                                                ),
-                                                [],
-                                                [ invocation ],
-                                                callRange
+                                                    [ invocation ],
+                                                    callRange
+                                                )
                                             )
-                                        )
-                                    | Expr.Val(vref, _, _) when valEq callback vref.Deref ->
-                                        invalidUse <- true
-                                        Some expression
-                                    | _ -> None)
-                            PreInterceptBinding = None
-                            PostTransform = (fun _ -> None)
-                            RewriteQuotations = false
-                            StackGuard = StackGuard("OutlineRuntimeAsyncCallback")
-                        }
+                                        | None ->
+                                            match expression with
+                                            | Expr.Val(vref, _, _) when valEq callback vref.Deref ->
+                                                invalidUse <- true
+                                                Some expression
+                                            | _ -> None)
+                                PreInterceptBinding = None
+                                PostTransform = (fun _ -> None)
+                                RewriteQuotations = false
+                                StackGuard = StackGuard("OutlineRuntimeAsyncCallback")
+                            }
 
-                    let continuation = RewriteExpr rwenv continuation
+                        let continuation = RewriteExpr rwenv continuation
 
-                    let quotedUse =
-                        ExistsExpr
-                            (function
-                            | Expr.Quote(body, _, _, _, _) ->
-                                ExistsExpr
-                                    (function
-                                    | Expr.Val(vref, _, _) -> valEq callback vref.Deref
-                                    | _ -> false)
-                                    body
-                            | _ -> false)
-                            continuation
+                        let quotedUse =
+                            ExistsExpr
+                                (function
+                                | Expr.Quote(body, _, _, _, _) ->
+                                    ExistsExpr
+                                        (function
+                                        | Expr.Val(vref, _, _) -> valEq callback vref.Deref
+                                        | _ -> false)
+                                        body
+                                | _ -> false)
+                                continuation
 
-                    if invalidUse || quotedUse then
-                        expr
-                    else
-                        mkLet point m outlined construction continuation
+                        if invalidUse || quotedUse then
+                            expr
+                        else
+                            mkLet point m outlined construction continuation
+                    | _ -> expr
                 | _ -> expr
-            | _ -> expr
         | Expr.Let(binding, continuation, m, _) -> mkLetBind m binding (outline continuation)
         | _ -> expr
 
