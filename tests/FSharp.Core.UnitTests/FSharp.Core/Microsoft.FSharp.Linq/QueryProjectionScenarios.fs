@@ -44,6 +44,27 @@ let cases () =
           (customers >> Seq.map (fun c -> (c.Id, c.Name), c.Age))
 
       Scenario.rows
+          "struct tuple of two"
+          (fun db -> query { for c in db.Customers do select (struct (c.Id, c.Name)) })
+          (customers >> Seq.map (fun c -> struct (c.Id, c.Name)))
+
+      Scenario.rows
+          "struct tuple of nine"
+          (fun db ->
+              query { for c in db.Customers do select (struct (c.Id, c.Name, c.City, c.Age, c.Id + 100, c.Name.Length, c.Age * 2, c.Id * 7, c.Age - c.Id)) })
+          (customers >> Seq.map (fun c -> struct (c.Id, c.Name, c.City, c.Age, c.Id + 100, c.Name.Length, c.Age * 2, c.Id * 7, c.Age - c.Id)))
+
+      Scenario.rows
+          "struct tuple inside a tuple"
+          (fun db -> query { for c in db.Customers do select (struct (c.Id, c.Name), c.Age) })
+          (customers >> Seq.map (fun c -> struct (c.Id, c.Name), c.Age))
+
+      Scenario.rows
+          "tuple inside a struct tuple"
+          (fun db -> query { for c in db.Customers do select (struct ((c.Id, c.Name), c.Age)) })
+          (customers >> Seq.map (fun c -> struct ((c.Id, c.Name), c.Age)))
+
+      Scenario.rows
           "tuple taken apart by the next for"
           (fun db ->
               query {
@@ -53,6 +74,17 @@ let cases () =
               })
           (customers >> Seq.filter (fun c -> c.Id > 1) >> Seq.map _.Name)
       |> Scenario.violating [ Violation.ReadsUnnamedMember "Tuple`2" ]
+
+      Scenario.rows
+          "struct tuple taken apart by the next for"
+          (fun db ->
+              query {
+                  for struct (id, name) in (query { for c in db.Customers do select (struct (c.Id, c.Name)) }) do
+                  where (id > 1)
+                  select name
+              })
+          (customers >> Seq.filter (fun c -> c.Id > 1) >> Seq.map _.Name)
+      |> Scenario.violating [ Violation.ReadsUnnamedMember "ValueTuple`2" ]
 
       Scenario.rows
           "record, fields in declaration order"

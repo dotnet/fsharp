@@ -70,6 +70,12 @@ let cases () =
       |> Scenario.violating (reading "Tuple`2" @ block)
 
       Scenario.rows
+          "Where taking a struct tuple apart"
+          (fun db -> db.Customers.Select(fun c -> struct (c.Id, c.Name)).Where(fun (struct (id, _)) -> id > 1))
+          (customers >> Seq.map (fun c -> struct (c.Id, c.Name)) >> Seq.filter (fun (struct (id, _)) -> id > 1))
+      |> Scenario.violating (reading "ValueTuple`2" @ block)
+
+      Scenario.rows
           "Where taking the last of nine apart"
           (fun db ->
               db.Customers
@@ -78,6 +84,16 @@ let cases () =
                   .Select(fun (_, name, _, _, _, _, _, _, _) -> name))
           (customers >> Seq.filter (fun c -> c.Id > 1) >> Seq.map _.Name)
       |> Scenario.violating (reading "Tuple`8" @ block)
+
+      Scenario.rows
+          "Where taking the last of a struct nine apart"
+          (fun db ->
+              db.Customers
+                  .Select(fun c -> struct (c.Id + 100, c.Name, c.City, c.Age, c.Id * 7, c.Name.Length, c.City.Length, c.Age * 2, c.Id))
+                  .Where(fun (struct (_, _, _, _, _, _, _, _, last)) -> last > 1)
+                  .Select(fun (struct (_, name, _, _, _, _, _, _, _)) -> name))
+          (customers >> Seq.filter (fun c -> c.Id > 1) >> Seq.map _.Name)
+      |> Scenario.violating (reading "ValueTuple`8" @ block)
 
       Scenario.rows
           "Where over a query that selects a tuple"
