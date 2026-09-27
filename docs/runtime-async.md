@@ -164,6 +164,15 @@ that produces one. Opaque consumers, escaping callbacks, unsupported callback
 shapes, and unsafe byref or pinned captures are not outlined; suspensions
 remaining in an ordinary method are still diagnosed.
 
+For a compiler-owned `InlineIfLambda` delegate invoked exactly once, the
+optimizer can instead inline its `Invoke` body into the marked method.
+Precomputations that capture the delegate's inputs stay at their construction
+site, so a pending operation is created once before the invocation. A delegate
+that escapes or is consumed opaquely cannot be converted this way. IlxGen
+checks each generated delegate `Invoke` as its own method: an `Await` left
+there without a return marker produces FS3918, even when the enclosing method
+is runtime-async. Exported inline definitions remain unchanged.
+
 Outlining retains the callback closure and generates an async `Invoke` method
 for each specialized callback shape. Calls now return a `ValueTask<'T>` for
 the enclosing method to await, trading method code size and possible

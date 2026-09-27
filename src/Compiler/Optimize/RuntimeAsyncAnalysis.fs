@@ -225,7 +225,7 @@ let PreserveRuntimeAsyncCallSiteDebugPoint (g: TcGlobals) m expr =
 
     RewriteExpr rwenv expr
 
-let OutlineRuntimeAsyncCallback (g: TcGlobals) (analyzer: RuntimeAsyncAnalyzer) runtimeAsyncContext prepareBody expr =
+let OutlineRuntimeAsyncCallback (g: TcGlobals) (analyzer: RuntimeAsyncAnalyzer) runtimeAsyncContext prepareBody (expr: Expr) =
     let rec outlineBranches resultTy expr =
         match expr with
         | Expr.Lambda(_, None, None, [ parameter ], body, m, _) ->
@@ -257,8 +257,92 @@ let OutlineRuntimeAsyncCallback (g: TcGlobals) (analyzer: RuntimeAsyncAnalyzer) 
                 None
         | _ -> None
 
+    let rec peelDelegateConstruction expr =
+        match expr with
+        | Expr.DebugPoint(point, rest) ->
+            peelDelegateConstruction rest
+            |> Option.map (fun (delegateExpr, wrap) -> delegateExpr, (fun body -> Expr.DebugPoint(point, wrap body)))
+        | Expr.Sequential(first, rest, kind, m) ->
+            peelDelegateConstruction rest
+            |> Option.map (fun (delegateExpr, wrap) -> delegateExpr, (fun body -> Expr.Sequential(first, wrap body, kind, m)))
+        | Expr.Let(binding, rest, m, _) ->
+            peelDelegateConstruction rest
+            |> Option.map (fun (delegateExpr, wrap) -> delegateExpr, (fun body -> mkLetBind m binding (wrap body)))
+        | NewDelegateExpr g (_, [ parameter ], body, _, _) when
+            not (
+                isByrefLikeTy g expr.Range parameter.Type
+                || isByrefLikeTy g expr.Range (tyOfExpr g body)
+            )
+            ->
+            Some(expr, id)
+        | _ -> None
+
     let rec outline expr =
         match expr with
+        | Expr.Let(TBind(callback, construction, _), continuation, _, _) when
+            callback.InlineIfLambda
+            && (runtimeAsyncContext || (TryGetRuntimeAsyncReturn g continuation).IsSome)
+            && isFSharpDelegateTy g callback.Type
+            && analyzer.ContainsSuspension construction
+            ->
+            match peelDelegateConstruction construction with
+            | None -> expr
+            | Some(delegateExpr, wrap) ->
+                let freeVals = (freeInExpr CollectLocals construction).FreeLocals
+
+                let canCapture =
+                    freeVals
+                    |> Zset.forall (fun v -> not v.IsPinning && not (isByrefTy g v.Type || isByrefLikeTy g expr.Range v.Type))
+
+                if not canCapture then
+                    expr
+                else
+                    let mutable invocations = 0
+                    let mutable invalidUse = false
+
+                    let rwenv =
+                        {
+                            PreIntercept =
+                                Some(fun rewrite expression ->
+                                    match expression with
+                                    | DelegateInvokeExpr g (invokeRef, invokeTy, tyargs, Expr.Val(vref, _, _), arg, callRange) when
+                                        valEq callback vref.Deref
+                                        ->
+                                        invocations <- invocations + 1
+
+                                        Some(
+                                            MakeFSharpDelegateInvokeAndTryBetaReduce
+                                                g
+                                                (invokeRef, delegateExpr, invokeTy, tyargs, rewrite arg, callRange)
+                                        )
+                                    | Expr.Val(vref, _, _) when valEq callback vref.Deref ->
+                                        invalidUse <- true
+                                        Some expression
+                                    | _ -> None)
+                            PreInterceptBinding = None
+                            PostTransform = (fun _ -> None)
+                            RewriteQuotations = false
+                            StackGuard = StackGuard("InlineRuntimeAsyncDelegateInvocation")
+                        }
+
+                    let continuation = RewriteExpr rwenv continuation
+
+                    let quotedUse =
+                        ExistsExpr
+                            (function
+                            | Expr.Quote(body, _, _, _, _) ->
+                                ExistsExpr
+                                    (function
+                                    | Expr.Val(vref, _, _) -> valEq callback vref.Deref
+                                    | _ -> false)
+                                    body
+                            | _ -> false)
+                            continuation
+
+                    if invocations = 1 && not invalidUse && not quotedUse then
+                        outline (wrap continuation)
+                    else
+                        expr
         | Expr.Let(TBind(callback, construction, point), continuation, m, _) when
             callback.InlineIfLambda && analyzer.ContainsSuspension construction
             ->

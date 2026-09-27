@@ -993,6 +993,181 @@ let ``runtime async enumerable builder fixture executes`` (optimize: bool) =
     |> compileExeAndRun
     |> shouldSucceed
 
+[<InlineData(false, false)>]
+[<InlineData(false, true)>]
+[<InlineData(true, false)>]
+[<InlineData(true, true)>]
+[<Theory>]
+let ``runtime async delegate await does not repeat a pending sequence move`` (optimize: bool, recipe: bool) =
+    FSharp $"""
+module RuntimeAsyncDelegateAwait
+
+open System
+open System.Collections.Generic
+open System.Threading
+open System.Threading.Tasks
+open System.Runtime.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices
+
+type Started<'T> = delegate of unit -> 'T
+let mutable constructions = 0
+
+type Builder() =
+    member inline _.Delay([<InlineIfLambda>] code: unit -> 'T) = code
+    member inline _.Run([<InlineIfLambda>] code: unit -> 'T) : Task<'T> =
+        StateMachineHelpers.__runtimeAsyncReturn(code())
+    member inline _.Source(work: ValueTask<'T>) =
+        constructions <- constructions + 1
+        Started(fun () -> AsyncHelpers.Await work)
+    member inline _.Bind([<InlineIfLambda>] work: Started<'T>, [<InlineIfLambda>] next: 'T -> 'U) =
+        next (work.Invoke())
+    member inline _.While([<InlineIfLambda>] guard: unit -> bool, [<InlineIfLambda>] body: unit -> unit) =
+        while guard() do body()
+    member inline _.Zero() = ()
+    member inline _.Combine(_: unit, [<InlineIfLambda>] next: unit -> 'T) = next()
+    member inline _.Return(value) = value
+
+let builder = Builder()
+
+type GuardedEnumerator(gate: Task) =
+    let mutable active = 0
+    let mutable count = 0
+    interface IAsyncEnumerator<int> with
+        member _.Current = count
+        member _.MoveNextAsync() =
+            if Interlocked.Exchange(&active, 1) = 1 then
+                invalidOp "MoveNextAsync cannot be called concurrently."
+            StateMachineHelpers.__runtimeAsyncReturnValueTask(
+                try
+                    AsyncHelpers.Await gate
+                    count <- count + 1
+                    count = 1
+                finally
+                    Interlocked.Exchange(&active, 0) |> ignore)
+        member _.DisposeAsync() = ValueTask()
+
+let collect (e: IAsyncEnumerator<int>) =
+    builder {{
+        let values = ResizeArray()
+        while! e.MoveNextAsync() do
+            values.Add(e.Current)
+        return values.ToArray()
+    }}
+
+[<EntryPoint>]
+let main _ =
+    let gate = TaskCompletionSource<unit>(TaskCreationOptions.RunContinuationsAsynchronously)
+    let enumerator =
+        if {if recipe then "true" else "false"} then
+            let source = StateMachineHelpers.__runtimeAsyncSequence(fun () -> seq {{
+                do AsyncHelpers.Await gate.Task
+                yield 1
+            }})
+            source.GetAsyncEnumerator()
+        else
+            GuardedEnumerator(gate.Task) :> IAsyncEnumerator<int>
+    let pending = collect enumerator
+    if pending.IsCompleted then
+        pending.GetAwaiter().GetResult() |> ignore
+        failwith "Expected a pending first move"
+    if constructions <> 1 then failwith "Expected one construction before suspension"
+    gate.SetResult(())
+    if pending.GetAwaiter().GetResult() <> [| 1 |] || constructions <> 2 then
+        failwith "Unexpected sequence values or delegate constructions"
+    0
+"""
+    |> withLangVersionPreview
+    |> withFSharpCoreShippedNet
+    |> withOptimization optimize
+    |> compileExeAndRun
+    |> shouldSucceed
+
+[<InlineData(false)>]
+[<InlineData(true)>]
+[<Theory>]
+let ``runtime async inlines imported InlineIfLambda delegate invocations`` (optimize: bool) =
+    let library =
+        FSharp """
+module ImportedDelegateAwait
+open Microsoft.FSharp.Core.CompilerServices
+
+type Started<'T> = delegate of unit -> 'T
+
+let inline run ([<InlineIfLambda>] callback: Started<int>) =
+    StateMachineHelpers.__runtimeAsyncReturn(callback.Invoke())
+"""
+        |> withName "ImportedDelegateAwait"
+        |> withLangVersionPreview
+        |> withFSharpCoreShippedNet
+
+    FSharp """
+module RuntimeAsyncImportedDelegate
+open System.Threading.Tasks
+open System.Runtime.CompilerServices
+open ImportedDelegateAwait
+
+let run (gate: Task<int>) (cleanup: Task) (entered: TaskCompletionSource<unit>) =
+    ImportedDelegateAwait.run (Started(fun () ->
+        try
+            AsyncHelpers.Await gate
+        finally
+            entered.SetResult(())
+            AsyncHelpers.Await cleanup))
+
+[<EntryPoint>]
+let main _ =
+    let gate = TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously)
+    let cleanup = TaskCompletionSource<unit>(TaskCreationOptions.RunContinuationsAsynchronously)
+    let entered = TaskCompletionSource<unit>(TaskCreationOptions.RunContinuationsAsynchronously)
+    let pending = run gate.Task cleanup.Task entered
+    if pending.IsCompleted then failwith "Expected suspension"
+    gate.SetResult 42
+    if not (entered.Task.Wait(5000)) || pending.IsCompleted then
+        failwith "Cleanup must suspend before completing the delegate"
+    cleanup.SetResult(())
+    if pending.GetAwaiter().GetResult() <> 42 then failwith "Lost delegate await"
+    0
+"""
+    |> withLangVersionPreview
+    |> withFSharpCoreShippedNet
+    |> withOptimization optimize
+    |> withReferences [ library ]
+    |> compileExeAndRun
+    |> shouldSucceed
+
+[<InlineData(false, false)>]
+[<InlineData(false, true)>]
+[<InlineData(true, false)>]
+[<InlineData(true, true)>]
+[<Theory>]
+let ``runtime async rejects an unmarked delegate method`` (optimize: bool, marked: bool) =
+    let invocation = "consume (Started(fun () -> AsyncHelpers.Await gate))"
+    let body =
+        if marked then
+            $"StateMachineHelpers.__runtimeAsyncReturn ({invocation})"
+        else
+            invocation
+
+    FSharp $"""
+module RuntimeAsyncUnmarkedDelegate
+open System.Threading.Tasks
+open System.Runtime.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices
+
+type Started<'T> = delegate of unit -> 'T
+
+[<NoCompilerInlining>]
+let consume (callback: Started<int>) = callback.Invoke()
+
+let run (gate: Task<int>) = {body}
+"""
+    |> withLangVersionPreview
+    |> withFSharpCoreShippedNet
+    |> withOptimization optimize
+    |> compile
+    |> shouldFail
+    |> withErrorCode 3918
+
 [<Fact>]
 let ``runtime async enumerable CE debug points stay at call sites`` () =
     let source =
