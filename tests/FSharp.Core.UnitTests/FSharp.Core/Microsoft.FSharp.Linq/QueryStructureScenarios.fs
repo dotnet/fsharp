@@ -154,8 +154,7 @@ let private loops () =
       Scenario.value
           "exists over two for"
           (fun db -> query { for c in db.Customers do for o in c.Orders do exists (o.Total > 10.0 && c.City = "London") })
-          (fun _ -> true)
-      |> Scenario.violating [ Violation.ReadsUnnamedMember "Tuple`2" ] ]
+          (fun _ -> true) ]
 
 let private subqueries () =
     [ Scenario.rows
@@ -265,4 +264,52 @@ let private leftJoins () =
           (leftJoinedOrdersAndProducts >> Seq.filter (fun (_, _, product) -> product <> ""))
       |> Scenario.violating (nested [ "Join" ]) ]
 
-let cases () = loops () @ subqueries () @ leftJoins ()
+let private consumers () =
+    let totals (data: Data) = data.Orders |> List.map _.Total
+    let discounts (data: Data) = data.Lines |> List.filter _.Discount.HasValue |> List.map _.Discount.Value
+
+    [ Scenario.value
+          "all over two for"
+          (fun db -> query { for c in db.Customers do for o in c.Orders do all (o.Total > 4.0 || c.City = "Paris") })
+          (fun data -> data.Customers |> List.forall (fun c -> c.Orders |> Seq.forall (fun o -> o.Total > 4.0 || c.City = "Paris")))
+
+      Scenario.value "sumBy over two for" (fun db -> query { for c in db.Customers do for o in c.Orders do sumBy o.Total }) (totals >> List.sum)
+
+      Scenario.value
+          "averageBy after a join"
+          (fun db -> query { for c in db.Customers do join o in db.Orders on (c.Id = o.CustomerId); averageBy o.Total })
+          (totals >> List.average)
+
+      Scenario.value
+          "minByNullable over two for"
+          (fun db -> query { for o in db.Orders do for l in o.Lines do minByNullable l.Discount })
+          (discounts >> List.min >> System.Nullable)
+
+      Scenario.value
+          "sumByNullable after a join"
+          (fun db -> query { for o in db.Orders do join l in db.Lines on (o.Id = l.OrderId); sumByNullable l.Discount })
+          (discounts >> List.sum >> System.Nullable)
+
+      Scenario.value
+          "maxBy after a record select"
+          (fun db -> query { for c in db.Customers do select { PersonName = c.Name; PersonAge = c.Age } into p; maxBy p.PersonAge })
+          (fun data -> data.Customers |> List.map _.Age |> List.max)
+
+      Scenario.value
+          "exists after a record select"
+          (fun db -> query { for c in db.Customers do select { PersonName = c.Name; PersonAge = c.Age } into p; exists (p.PersonAge > 30) })
+          (fun _ -> true)
+
+      Scenario.value
+          "exists after a tuple select"
+          (fun db -> query { for c in db.Customers do select (c.City, c.Age) into t; exists (match t with city, age -> city = "Paris" && age < 30) })
+          (fun _ -> true)
+      |> Scenario.violating [ Violation.Statement System.Linq.Expressions.ExpressionType.Block ]
+
+      Scenario.value
+          "count after a tuple select"
+          (fun db -> query { for c in db.Customers do select (c.City, c.Age) into t; count })
+          (fun data -> data.Customers.Length)
+      |> Scenario.flat [ "Select"; "Select"; "Count" ] ]
+
+let cases () = loops () @ subqueries () @ leftJoins () @ consumers ()

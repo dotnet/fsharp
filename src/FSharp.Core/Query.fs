@@ -1836,29 +1836,43 @@ module Query =
 
         result
 
+    /// Evaluate the inner core of a query whose elements a function consumes. The function is rewritten over the
+    /// elements as the query translation produces them, so they are not converted back to immutable tuples and
+    /// records for it.
+    let EvalNonNestedInnerWithConsumer (queryProducingSequence: Expr) (immutConsumingVar: Var, immutConsumingExpr: Expr) =
+        let mutSource, _, mutConsumingVar, mutConsumingExpr =
+            TransInnerApplicativeAndCommit true queryProducingSequence (immutConsumingVar, immutConsumingExpr)
+        EvaluateQuotation (EliminateNestedQueries mutSource), mutConsumingVar, mutConsumingExpr
+
+    /// Evaluate the inner core of a query whose elements are only counted, with the type of the elements as the
+    /// query translation produces them.
+    let EvalNonNestedInnerForCount (queryProducingSequence: Expr) (immutElemTy: Type) =
+        let mutSource, conv = TransInnerAndCommit CanEliminate.Yes true queryProducingSequence
+        EvaluateQuotation (EliminateNestedQueries mutSource), ConvImmutableTypeToMutableType conv immutElemTy
+
     /// Evaluate the outer calls of a query until the inner core that actually produces a sequence of results is reached.
     let rec EvalNonNestedOuter canElim (tm: Expr) =
         match tm with
 
-        | CallMinBy (_, [srcItemTy; qTy; keyItemTy], source, Lambda(v, valSelector)) ->
-            let sourcev = EvalNonNestedInner CanEliminate.Yes source
-            CallMinBy (qTyIsIQueryable qTy, srcItemTy, keyItemTy, sourcev, keyItemTy, v, MacroExpand valSelector)
+        | CallMinBy (_, [_; qTy; keyItemTy], source, Lambda(v, valSelector)) ->
+            let sourcev, v, valSelector = EvalNonNestedInnerWithConsumer source (v, valSelector)
+            CallMinBy (qTyIsIQueryable qTy, v.Type, keyItemTy, sourcev, keyItemTy, v, valSelector)
 
-        | CallMaxBy (_, [srcItemTy; qTy; keyItemTy], source, Lambda(v, valSelector)) ->
-            let sourcev = EvalNonNestedInner CanEliminate.Yes source
-            CallMaxBy (qTyIsIQueryable qTy, srcItemTy, keyItemTy, sourcev, keyItemTy, v, MacroExpand valSelector)
+        | CallMaxBy (_, [_; qTy; keyItemTy], source, Lambda(v, valSelector)) ->
+            let sourcev, v, valSelector = EvalNonNestedInnerWithConsumer source (v, valSelector)
+            CallMaxBy (qTyIsIQueryable qTy, v.Type, keyItemTy, sourcev, keyItemTy, v, valSelector)
 
-        | CallMinByNullable (_, [srcItemTy; qTy; keyItemTy ], source, Lambda(v, valSelector)) ->
-            let sourcev = EvalNonNestedInner CanEliminate.Yes source
-            CallMinByNullable  (qTyIsIQueryable qTy, srcItemTy, keyItemTy, sourcev, MakeNullableTy keyItemTy, v, MacroExpand valSelector)
+        | CallMinByNullable (_, [_; qTy; keyItemTy ], source, Lambda(v, valSelector)) ->
+            let sourcev, v, valSelector = EvalNonNestedInnerWithConsumer source (v, valSelector)
+            CallMinByNullable  (qTyIsIQueryable qTy, v.Type, keyItemTy, sourcev, MakeNullableTy keyItemTy, v, valSelector)
 
-        | CallMaxByNullable (_, [srcItemTy; qTy; keyItemTy ], source, Lambda(v, valSelector)) ->
-            let sourcev = EvalNonNestedInner CanEliminate.Yes source
-            CallMaxByNullable  (qTyIsIQueryable qTy, srcItemTy, keyItemTy, sourcev, MakeNullableTy keyItemTy, v, MacroExpand valSelector)
+        | CallMaxByNullable (_, [_; qTy; keyItemTy ], source, Lambda(v, valSelector)) ->
+            let sourcev, v, valSelector = EvalNonNestedInnerWithConsumer source (v, valSelector)
+            CallMaxByNullable  (qTyIsIQueryable qTy, v.Type, keyItemTy, sourcev, MakeNullableTy keyItemTy, v, valSelector)
 
         | CallCount (_, [srcItemTy; qTy], source) ->
-            let sourcev = EvalNonNestedInner CanEliminate.Yes source
-            CallCount          (qTyIsIQueryable qTy, srcItemTy, sourcev)
+            let sourcev, mutSrcItemTy = EvalNonNestedInnerForCount source srcItemTy
+            CallCount          (qTyIsIQueryable qTy, mutSrcItemTy, sourcev)
 
         | CallHead (_, [srcItemTy; qTy], source) ->
             let sourcev = EvalNonNestedInner CanEliminate.Yes source
@@ -1884,29 +1898,29 @@ module Query =
             let sourcev = EvalNonNestedInner CanEliminate.Yes source
             CallSingleOrDefault(qTyIsIQueryable qTy, srcItemTy, sourcev)
 
-        | CallAverageBy (qb, [srcItemTy; qTy; resTy], source, Lambda(v, valSelector)) ->
-            let sourcev = EvalNonNestedInner CanEliminate.Yes source
-            CallAverageBy        (qb, qTyIsIQueryable qTy, srcItemTy, resTy, sourcev, resTy, v, MacroExpand valSelector)
+        | CallAverageBy (qb, [_; qTy; resTy], source, Lambda(v, valSelector)) ->
+            let sourcev, v, valSelector = EvalNonNestedInnerWithConsumer source (v, valSelector)
+            CallAverageBy        (qb, qTyIsIQueryable qTy, v.Type, resTy, sourcev, resTy, v, valSelector)
 
-        | CallAverageByNullable (qb, [srcItemTy; qTy; resTyNoNullable], source, Lambda(v, valSelector)) ->
-            let sourcev = EvalNonNestedInner CanEliminate.Yes source
-            CallAverageByNullable(qb, qTyIsIQueryable qTy, srcItemTy, resTyNoNullable, sourcev, MakeNullableTy resTyNoNullable, v, MacroExpand valSelector)
+        | CallAverageByNullable (qb, [_; qTy; resTyNoNullable], source, Lambda(v, valSelector)) ->
+            let sourcev, v, valSelector = EvalNonNestedInnerWithConsumer source (v, valSelector)
+            CallAverageByNullable(qb, qTyIsIQueryable qTy, v.Type, resTyNoNullable, sourcev, MakeNullableTy resTyNoNullable, v, valSelector)
 
-        | CallSumBy (qb, [srcItemTy; qTy; resTy], source, Lambda(v, valSelector)) ->
-            let sourcev = EvalNonNestedInner CanEliminate.Yes source
-            CallSumBy (qb, qTyIsIQueryable qTy, srcItemTy, resTy, sourcev, resTy, v, MacroExpand valSelector)
+        | CallSumBy (qb, [_; qTy; resTy], source, Lambda(v, valSelector)) ->
+            let sourcev, v, valSelector = EvalNonNestedInnerWithConsumer source (v, valSelector)
+            CallSumBy (qb, qTyIsIQueryable qTy, v.Type, resTy, sourcev, resTy, v, valSelector)
 
-        | CallSumByNullable (qb, [srcItemTy; qTy; resTyNoNullable], source, Lambda(v, valSelector)) ->
-            let sourcev = EvalNonNestedInner CanEliminate.Yes source
-            CallSumByNullable (qb, qTyIsIQueryable qTy, srcItemTy, resTyNoNullable, sourcev, MakeNullableTy resTyNoNullable, v, MacroExpand valSelector)
+        | CallSumByNullable (qb, [_; qTy; resTyNoNullable], source, Lambda(v, valSelector)) ->
+            let sourcev, v, valSelector = EvalNonNestedInnerWithConsumer source (v, valSelector)
+            CallSumByNullable (qb, qTyIsIQueryable qTy, v.Type, resTyNoNullable, sourcev, MakeNullableTy resTyNoNullable, v, valSelector)
 
-        | CallExists (_, [srcItemTy; qTy], source, Lambda(v, predicate)) ->
-            let sourcev = EvalNonNestedInner CanEliminate.Yes source
-            CallAny (qTyIsIQueryable qTy, srcItemTy, sourcev, v, MacroExpand predicate)
+        | CallExists (_, [_; qTy], source, Lambda(v, predicate)) ->
+            let sourcev, v, predicate = EvalNonNestedInnerWithConsumer source (v, predicate)
+            CallAny (qTyIsIQueryable qTy, v.Type, sourcev, v, predicate)
 
-        | CallForAll (_, [srcItemTy; qTy], source, Lambda(v, predicate)) ->
-            let sourcev = EvalNonNestedInner CanEliminate.Yes source
-            CallAll (qTyIsIQueryable qTy, srcItemTy, sourcev, v, MacroExpand predicate)
+        | CallForAll (_, [_; qTy], source, Lambda(v, predicate)) ->
+            let sourcev, v, predicate = EvalNonNestedInnerWithConsumer source (v, predicate)
+            CallAll (qTyIsIQueryable qTy, v.Type, sourcev, v, predicate)
 
         | CallFind (_, [srcItemTy; qTy], source, Lambda(v, f)) ->
             let sourcev = EvalNonNestedInner CanEliminate.Yes source
