@@ -317,6 +317,71 @@ module LeafExpressionConverter =
     let (|NullableModuloNullableQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun (x, y) -> NullableOperators.( ?%? ) x y))
     let (|ModuloNullableQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun (x, y) -> NullableOperators.( %? ) x y))
 
+    let (|FstQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun (x: int * int) -> fst x))
+    let (|SndQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun (x: int * int) -> snd x))
+    let (|IsNullQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun (x: obj) -> isNull x))
+    let (|BoxQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun (x: int) -> box x))
+
+    /// The F# math functions whose implementation for primitive types is the System.Math method of this name.
+    let mathMethodNames =
+        let byHandle =
+            [ methodhandleof (fun (x: float) -> abs x), "Abs"
+              methodhandleof (fun (x: float) -> acos x), "Acos"
+              methodhandleof (fun (x: float) -> asin x), "Asin"
+              methodhandleof (fun (x: float) -> atan x), "Atan"
+              methodhandleof (fun (x: float, y: float) -> atan2 x y), "Atan2"
+              methodhandleof (fun (x: float) -> ceil x), "Ceiling"
+              methodhandleof (fun (x: float) -> cos x), "Cos"
+              methodhandleof (fun (x: float) -> cosh x), "Cosh"
+              methodhandleof (fun (x: float) -> exp x), "Exp"
+              methodhandleof (fun (x: float) -> floor x), "Floor"
+              methodhandleof (fun (x: float) -> log x), "Log"
+              methodhandleof (fun (x: float) -> log10 x), "Log10"
+              methodhandleof (fun (x: float, y: float) -> max x y), "Max"
+              methodhandleof (fun (x: float, y: float) -> min x y), "Min"
+              methodhandleof (fun (x: float, y: float) -> x ** y), "Pow"
+              methodhandleof (fun (x: float) -> round x), "Round"
+              methodhandleof (fun (x: float) -> sign x), "Sign"
+              methodhandleof (fun (x: float) -> sin x), "Sin"
+              methodhandleof (fun (x: float) -> sinh x), "Sinh"
+              methodhandleof (fun (x: float) -> sqrt x), "Sqrt"
+              methodhandleof (fun (x: float) -> tan x), "Tan"
+              methodhandleof (fun (x: float) -> tanh x), "Tanh"
+              methodhandleof (fun (x: float) -> truncate x), "Truncate" ]
+
+        let names = Dictionary<MethodInfo, string>()
+
+        for handle, name in byHandle do
+            names.[(MethodInfo.GetMethodFromHandle handle :?> MethodInfo).GetGenericMethodDefinition()] <- name
+
+        names
+
+    /// A call of an F# math function with the System.Math method it amounts to for these argument types:
+    /// the method for exactly these types, or for float32, the one for float, as the F# functions do.
+    [<return: Struct>]
+    let (|MathFunctionQ|_|) (inp: Expr) =
+        match inp with
+        | Call(None, minfo, args) when minfo.IsGenericMethod ->
+            match mathMethodNames.TryGetValue(minfo.GetGenericMethodDefinition()) with
+            | true, name ->
+                let argTypes = [| for arg in args -> arg.Type |]
+
+                let mathMethodFor (parameterTypes: Type array) =
+                    match typeof<Math>.GetMethod(name, parameterTypes) with
+                    | null -> ValueNone
+                    | mathMethod when (mathMethod.GetParameters() |> Array.map (fun p -> p.ParameterType)) = parameterTypes -> ValueSome mathMethod
+                    | _ -> ValueNone
+
+                match mathMethodFor argTypes with
+                | ValueSome mathMethod -> ValueSome struct (mathMethod, args)
+                | ValueNone when argTypes |> Array.forall (fun ty -> Type.op_Equality(ty, typeof<float32>)) ->
+                    match mathMethodFor (argTypes |> Array.map (fun _ -> typeof<float>)) with
+                    | ValueSome mathMethod -> ValueSome struct (mathMethod, args)
+                    | ValueNone -> ValueNone
+                | ValueNone -> ValueNone
+            | _ -> ValueNone
+        | _ -> ValueNone
+
     let (|NotQ|_|) =  (|SpecificCallToMethod|_|) (methodhandleof not)
     let (|NegQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun (x:int) -> -x))
     let (|PlusQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun (x, y) -> x + y))
@@ -644,6 +709,22 @@ module LeafExpressionConverter =
             // Throw away markers inserted to satisfy C#'s design where they pass an argument
             // or type T to an argument expecting Expression<T>.
             | ImplicitExpressionConversionHelperQ (_, GenericArgs [|_|], [x1]) -> ConvExprToLinqInContext env x1
+
+            // F# functions become the nodes a C# expression lambda has for the same thing, which providers translate
+            | FstQ (_, _, [tuple]) -> ConvExprToLinqInContext env (Expr.TupleGet(tuple, 0))
+            | SndQ (_, _, [tuple]) -> ConvExprToLinqInContext env (Expr.TupleGet(tuple, 1))
+            | IsNullQ (_, _, [x]) when not x.Type.IsValueType ->
+                let xP = ConvExprToLinqInContext env x
+                Expression.ReferenceEqual(xP, Expression.Constant(null, xP.Type)) |> asExpr
+            | BoxQ (_, _, [x]) -> Expression.Convert(ConvExprToLinqInContext env x, typeof<obj>) |> asExpr
+            | MathFunctionQ (mathMethod, args) ->
+                let argsP =
+                    [| for arg, parameter in List.zip args (List.ofArray (mathMethod.GetParameters())) ->
+                        let argP = ConvExprToLinqInContext env arg
+                        if Type.op_Equality(argP.Type, parameter.ParameterType) then argP
+                        else Expression.Convert(argP, parameter.ParameterType) |> asExpr |]
+                let callP = Expression.Call(mathMethod, argsP) |> asExpr
+                if Type.op_Equality(callP.Type, inp.Type) then callP else Expression.Convert(callP, inp.Type) |> asExpr
 
             // Use witnesses if they are available
             | CallWithWitnesses (objArgOpt, _, minfo2, witnessArgs, args) ->

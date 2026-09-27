@@ -136,7 +136,6 @@ let private groupings () =
           "groupBy a tuple, element of the key"
           (fun db -> query { for c in db.Customers do groupBy (c.City, c.Age > 28) into g; select (fst g.Key, g.Count()) })
           (customers >> Seq.countBy (fun c -> c.City, c.Age > 28) >> Seq.map (fun ((city, _), count) -> city, count))
-      |> Scenario.violating [ Violation.RuntimeHelperCall "Operators.Fst" ]
 
       Scenario.rows
           "groupBy a struct tuple"
