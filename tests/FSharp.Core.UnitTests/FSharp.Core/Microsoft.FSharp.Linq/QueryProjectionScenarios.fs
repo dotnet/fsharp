@@ -2,10 +2,6 @@
 
 module FSharp.Core.UnitTests.Linq.QueryProjectionScenarios
 
-open System.Linq.Expressions
-
-let private block = [ Violation.Statement ExpressionType.Block ]
-
 let private customers (data: Data) = Seq.ofList data.Customers
 
 let cases () =
@@ -17,6 +13,11 @@ let cases () =
           "computed scalars"
           (fun db -> query { for c in db.Customers do select (c.Name + "!", c.Age + 1, (if c.Age > 28 then "senior" else "junior")) })
           (customers >> Seq.map (fun c -> c.Name + "!", c.Age + 1, (if c.Age > 28 then "senior" else "junior")))
+
+      Scenario.rows
+          "let in select"
+          (fun db -> query { for c in db.Customers do select (let upper = c.Name.ToUpper() in upper + "!") })
+          (customers >> Seq.map (fun c -> c.Name.ToUpper() + "!"))
 
       Scenario.rows
           "tuple of two"
@@ -95,13 +96,22 @@ let cases () =
           "record, fields out of declaration order"
           (fun db -> query { for c in db.Customers do select { PersonAge = c.Age; PersonName = c.Name } })
           (customers >> Seq.map (fun c -> { PersonName = c.Name; PersonAge = c.Age }))
-      |> Scenario.violating block
+
+      Scenario.rows
+          "record, fields out of declaration order, read by the next where"
+          (fun db ->
+              query {
+                  for c in db.Customers do
+                  select { PersonAge = c.Age; PersonName = c.Name } into person
+                  where (person.PersonAge > 26)
+                  select person.PersonName
+              })
+          (customers >> Seq.filter (fun c -> c.Age > 26) >> Seq.map _.Name)
 
       Scenario.rows
           "record of three, fields rotated"
           (fun db -> query { for c in db.Customers do select { Town = c.City; FullName = c.Name; Years = c.Age } })
           (customers >> Seq.map (fun c -> { FullName = c.Name; Years = c.Age; Town = c.City }))
-      |> Scenario.violating block
 
       Scenario.rows
           "record holding a tuple"
@@ -117,19 +127,27 @@ let cases () =
           "anonymous record, fields out of alphabetical order"
           (fun db -> query { for c in db.Customers do select {| Name = c.Name; Age = c.Age |} })
           (customers >> Seq.map (fun c -> {| Age = c.Age; Name = c.Name |}))
-      |> Scenario.violating block
+
+      Scenario.rows
+          "anonymous record, fields out of alphabetical order, read by the next where"
+          (fun db ->
+              query {
+                  for c in db.Customers do
+                  select {| Name = c.Name; Age = c.Age |} into person
+                  where (person.Age > 26)
+                  select person.Name
+              })
+          (customers >> Seq.filter (fun c -> c.Age > 26) >> Seq.map _.Name)
 
       Scenario.rows
           "anonymous record, method calls in fields out of order"
           (fun db -> query { for c in db.Customers do select {| Upper = c.Name.ToUpper(); City = c.City.Trim() |} })
           (customers >> Seq.map (fun c -> {| City = c.City.Trim(); Upper = c.Name.ToUpper() |}))
-      |> Scenario.violating block
 
       Scenario.rows
           "anonymous record inside an anonymous record"
           (fun db -> query { for c in db.Customers do select {| Person = {| Name = c.Name; Age = c.Age |} |} })
           (customers >> Seq.map (fun c -> {| Person = {| Age = c.Age; Name = c.Name |} |}))
-      |> Scenario.violating block
 
       Scenario.rows
           "struct anonymous record, fields in alphabetical order"
@@ -140,7 +158,6 @@ let cases () =
           "struct anonymous record, fields out of alphabetical order"
           (fun db -> query { for c in db.Customers do select (struct {| Name = c.Name; Age = c.Age |}) })
           (customers >> Seq.map (fun c -> struct {| Age = c.Age; Name = c.Name |}))
-      |> Scenario.violating block
 
       Scenario.rows
           "CLIMutable record, fields in declaration order"
@@ -151,7 +168,6 @@ let cases () =
           "CLIMutable record, fields out of declaration order"
           (fun db -> query { for c in db.Customers do select { DtoAge = c.Age; DtoName = c.Name } })
           (customers >> Seq.map (fun c -> { DtoName = c.Name; DtoAge = c.Age }))
-      |> Scenario.violating block
 
       Scenario.rows
           "class with property initializers"

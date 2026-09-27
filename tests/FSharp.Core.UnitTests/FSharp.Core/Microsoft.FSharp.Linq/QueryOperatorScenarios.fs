@@ -39,6 +39,11 @@ let private sequences () =
           (lines >> Seq.filter (fun l -> l.Discount ?> 1) >> Seq.map _.Id)
 
       Scenario.rows
+          "where with a let"
+          (fun db -> query { for c in db.Customers do where (let age = c.Age in age > 26 && age < 35); select c.Name })
+          (customers >> Seq.filter (fun c -> c.Age > 26 && c.Age < 35) >> Seq.map _.Name)
+
+      Scenario.rows
           "if then"
           (fun db -> query { for c in db.Customers do if c.Age > 26 then yield c.Name })
           (customers >> Seq.filter (fun c -> c.Age > 26) >> Seq.map _.Name)
@@ -130,6 +135,16 @@ let private values () =
     [ Scenario.value "count" (fun db -> query { for c in db.Customers do where (c.Age > 26); count }) (fun _ -> 3)
 
       Scenario.value "exists" (fun db -> query { for c in db.Customers do exists (c.City = "Paris") }) (fun _ -> true)
+
+      Scenario.value
+          "exists on a nullable property"
+          (fun db -> query { for c in db.Customers do exists (c.Registered.HasValue && c.Registered.Value.Year > 2020) })
+          (customers >> Seq.exists (fun c -> c.Registered.HasValue && c.Registered.Value.Year > 2020))
+
+      Scenario.value
+          "exists with a let"
+          (fun db -> query { for c in db.Customers do exists (let city = c.City in city = "Paris" || city = "Rome") })
+          (customers >> Seq.exists (fun c -> c.City = "Paris" || c.City = "Rome"))
 
       Scenario.value "all" (fun db -> query { for c in db.Customers do all (c.Age > 26) }) (fun _ -> false)
 
