@@ -147,7 +147,6 @@ let private loops () =
           "groupBy after two for"
           (fun db -> query { for c in db.Customers do for o in c.Orders do groupBy c.City into g; select (g.Key, g.Count()) })
           (fun data -> seq { for c in data.Customers do for _ in c.Orders -> c.City } |> Seq.countBy id)
-      |> Scenario.violating [ Violation.RuntimeHelperCall "new Grouping`2" ]
 
       Scenario.value "count over two for" (fun db -> query { for c in db.Customers do for o in c.Orders do count }) (fun _ -> 4)
 
