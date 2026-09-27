@@ -24,6 +24,18 @@ a.Equals(b)  // Was: false, Now: true
 
 ## Expression Tree Structure Changes 🟡
 
+### F# operators on primitive types become what C# has
+
+```fsharp
+<@ fun (x: float) -> abs x @>
+// Was: Call(Operators.Abs, x)
+// Now: Call(Math.Abs, x)
+```
+
+The same holds for `sqrt`, `floor`, `ceil`, `round`, `truncate`, `sign`, `exp`, `log`, `log10`, the trigonometric functions, `min`, `max` and `**`; `fst` and `snd` read `Item1` and `Item2`, `isNull` compares with a null constant, and `box` is a conversion.
+
+**Impact:** A compiled tree gives what the F# function gives in code. For `min` and `max` on `float` and `float32` that differs from before when an argument is NaN or the arguments are zeros of different sign: the tree used to call the generic comparison, where code calls `Math.Min` and `Math.Max`. A provider that translates `Math.Round` rounds midpoints its own way; SQLite rounds them away from zero.
+
 ### Let-bindings use Block instead of Lambda.Invoke
 
 ```fsharp
