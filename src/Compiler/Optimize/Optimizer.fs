@@ -2728,6 +2728,13 @@ let EtaExpandUnderAppliedValBinding g expr =
     | EtaFloatableValLet g (bind, body, m, etaExpanded) -> floatEtaCaptures bind body m etaExpanded
     | _ -> expr
 
+let PrepareRuntimeAsyncBody g (env: IncrementalOptimizationEnv) body =
+    for v in GetRuntimeAsyncNonPreservableUses g body do
+        if env.runtimeAsyncReportedRanges.Add v.Range then
+            errorR(Error(FSComp.SR.ilRuntimeAsyncLocalUsedAfterSuspension(RichText.mkText v.DisplayName), v.Range))
+
+    RewriteRuntimeAsyncExceptionHandlers g body
+
 /// Optimize/analyze an expression
 let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
     cenv.stackGuard.Guard(fun () ->
@@ -2806,11 +2813,13 @@ let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
     | Expr.App (f, fty, tyargs, _, m) when runtimeAsyncReturn.IsSome ->
         let info = runtimeAsyncReturn.Value
         let bodyR, bodyInfo = OptimizeExpr cenv { env with runtimeAsyncContext = true } info.Body
-        for v in GetRuntimeAsyncNonPreservableUses g bodyR do
-            if env.runtimeAsyncReportedRanges.Add v.Range then
-                errorR(Error(FSComp.SR.ilRuntimeAsyncLocalUsedAfterSuspension(RichText.mkText v.DisplayName), v.Range))
+        let bodyR =
+            if g.langVersion.SupportsFeature LanguageFeature.RuntimeAsync then
+                OutlineRuntimeAsyncCallback g (RuntimeAsyncAnalyzer g) true (PrepareRuntimeAsyncBody g env) bodyR
+            else
+                bodyR
 
-        let bodyR = RewriteRuntimeAsyncExceptionHandlers g bodyR
+        let bodyR = PrepareRuntimeAsyncBody g env bodyR
         Expr.App(f, fty, tyargs, [ bodyR ], m),
         { bodyInfo with
             HasEffect = true
@@ -3934,15 +3943,24 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
         | None -> false
 
     let reoptimizeRuntimeAsync reduced =
-        let reduced = InlineRuntimeAsyncLambdaArgument g containsRuntimeAsyncFragment reduced
-
-        let reduced =
-            if containsRuntimeAsyncFragment reduced then
-                fst (OptimizeExpr cenv { env with runtimeAsyncContext = true } reduced)
-            else
-                reduced
-
-        InlineRuntimeAsyncLambdaArgument g containsRuntimeAsyncFragment reduced
+        if containsRuntimeAsyncFragment reduced then
+            let preserveCallSite = not cenv.settings.LocalOptimizationsEnabled
+            let cenv =
+                { cenv with
+                    settings =
+                        { cenv.settings with
+                            alwaysInline = true
+                            localOptUser = Some true } }
+            let result = fst (OptimizeExpr cenv { env with runtimeAsyncContext = true } reduced)
+            match runtimeAsyncAnalyzer with
+            | Some analyzer ->
+                let result = ReduceRuntimeAsyncReturnedClosureApplications g analyzer result
+                let result =
+                    OutlineRuntimeAsyncCallback g analyzer env.runtimeAsyncContext (PrepareRuntimeAsyncBody g env) result
+                if preserveCallSite then PreserveRuntimeAsyncCallSiteDebugPoint g m result else result
+            | None -> result
+        else
+            reduced
 
     let mustInlineRuntimeAsync =
         match runtimeAsyncAnalyzer, stripExpr valExpr with

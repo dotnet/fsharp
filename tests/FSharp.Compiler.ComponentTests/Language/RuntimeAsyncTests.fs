@@ -1175,7 +1175,7 @@ let main _ =
 
 [<InlineData(false)>]
 [<InlineData(true)>]
-[<Theory(Skip="not fixed yet")>]
+[<Theory>]
 let ``runtime async evaluates conditional callback construction once`` (optimize: bool) =
     FSharp """
 module RuntimeAsyncConditionalCallbackConstructionTest
@@ -1219,6 +1219,195 @@ let main _ =
     |> withOptimization optimize
     |> compileExeAndRun
     |> shouldSucceed
+
+[<InlineData(false, false)>]
+[<InlineData(false, true)>]
+[<InlineData(true, false)>]
+[<InlineData(true, true)>]
+[<Theory>]
+let ``Issue 20577 preserves stateful conditional fold callbacks`` (optimize: bool, useList: bool) =
+    let source = $"""
+module RuntimeAsyncConditionalFoldTest
+
+open System.Collections.Generic
+open System.Threading.Tasks
+open RuntimeTaskBuilder.RuntimeTask
+
+let run deduplicate (ready: Task<int>) =
+    runtimeTask {{
+        let! initial = ready
+        let folder =
+            if deduplicate then
+                let seen = HashSet<int>()
+                fun total item -> if seen.Add item then total + item else total
+            else
+                fun total item -> total + item
+
+        return
+            {if useList then "List.fold folder initial [ 1; 1; 2 ]" else "Array.fold folder initial [| 1; 1; 2 |]"}
+    }}
+
+[<EntryPoint>]
+let main _ =
+    for deduplicate in [ true; false ] do
+        let gate = TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously)
+        let work = run deduplicate gate.Task
+        if work.IsCompleted then failwith "Expected suspension"
+        gate.SetResult 0
+        let expected = if deduplicate then 3 else 4
+        if work.GetAwaiter().GetResult() <> expected then failwith "Callback state was lost"
+    0
+"""
+
+    FsFromPath (Path.Combine(__SOURCE_DIRECTORY__, "RuntimeAsync", "RuntimeTaskBuilder.fs"))
+    |> withAdditionalSourceFile (FsSourceWithFileName "RuntimeAsyncConditionalFoldTest.fs" source)
+    |> withLangVersionPreview
+    |> withFSharpCoreShippedNet
+    |> withOptimization optimize
+    |> compileExeAndRun
+    |> shouldSucceed
+
+[<InlineData(false)>]
+[<InlineData(true)>]
+[<Theory>]
+let ``runtime async outlines a stateful conditional callback from an imported inline`` (optimize: bool) =
+    let library =
+        FSharp """
+module RuntimeAsyncCallbackLibrary
+
+let inline invokeTwice ([<InlineIfLambda>] callback: unit -> int) =
+    callback() + callback()
+"""
+        |> withName "RuntimeAsyncCallbackLibrary"
+        |> withLangVersionPreview
+        |> withFSharpCoreShippedNet
+
+    FSharp """
+module RuntimeAsyncImportedCallbackTest
+
+open System.Collections.Generic
+open System.Threading.Tasks
+open System.Runtime.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices
+open RuntimeAsyncCallbackLibrary
+
+let mutable constructions = 0
+let mutable invocations = 0
+
+let run (gate: Task) deduplicate =
+    StateMachineHelpers.__runtimeAsyncReturn (
+        invokeTwice (
+            if deduplicate then
+                constructions <- constructions + 1
+                let seen = HashSet<int>()
+                fun () ->
+                    invocations <- invocations + 1
+                    let first = seen.Add 1
+                    AsyncHelpers.Await gate
+                    if first then 1 else 0
+            else
+                fun () -> 2))
+
+[<EntryPoint>]
+let main _ =
+    let gate = TaskCompletionSource<unit>(TaskCreationOptions.RunContinuationsAsynchronously)
+    let work = run gate.Task true
+    if work.IsCompleted || constructions <> 1 || invocations <> 1 then
+        failwith "Callback construction or first invocation did not run before suspension"
+    gate.SetResult(())
+    if work.GetAwaiter().GetResult() <> 1 || constructions <> 1 || invocations <> 2 then
+        failwith "Callback state was not shared"
+    if (run gate.Task false).GetAwaiter().GetResult() <> 4 || constructions <> 1 || invocations <> 2 then
+        failwith "The other branch changed"
+    0
+"""
+    |> withLangVersionPreview
+    |> withFSharpCoreShippedNet
+    |> withOptimization optimize
+    |> withReferences [ library ]
+    |> compileExeAndRun
+    |> shouldSucceed
+
+[<InlineData(false)>]
+[<InlineData(true)>]
+[<Theory>]
+let ``runtime async outlined callbacks preserve cleanup after suspension`` (optimize: bool) =
+    FSharp """
+module RuntimeAsyncOutlinedCleanupTest
+
+open System.Collections.Generic
+open System.Threading.Tasks
+open System.Runtime.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices
+
+let mutable cleaned = 0
+
+let inline invokeTwice ([<InlineIfLambda>] callback: unit -> int) =
+    StateMachineHelpers.__runtimeAsyncReturn (callback() + callback())
+
+let run (gate: Task) (cleanupGate: Task) (cleanupStarted: TaskCompletionSource<unit>) =
+    invokeTwice (
+        if true then
+            let seen = HashSet<int>()
+            fun () ->
+                try
+                    let first = seen.Add 1
+                    AsyncHelpers.Await gate
+                    if first then 1 else 0
+                finally
+                    cleanupStarted.TrySetResult(()) |> ignore
+                    AsyncHelpers.Await cleanupGate
+                    cleaned <- cleaned + 1
+        else
+            fun () -> 0)
+
+[<EntryPoint>]
+let main _ =
+    let gate = TaskCompletionSource<unit>(TaskCreationOptions.RunContinuationsAsynchronously)
+    let cleanupGate = TaskCompletionSource<unit>(TaskCreationOptions.RunContinuationsAsynchronously)
+    let cleanupStarted = TaskCompletionSource<unit>(TaskCreationOptions.RunContinuationsAsynchronously)
+    let work = run gate.Task cleanupGate.Task cleanupStarted
+    if work.IsCompleted || cleaned <> 0 then failwith "Cleanup ran before suspension"
+    gate.SetResult(())
+    if not (cleanupStarted.Task.Wait(5000)) || work.IsCompleted then
+        failwith "Cleanup did not suspend"
+    cleanupGate.SetResult(())
+    if work.GetAwaiter().GetResult() <> 1 || cleaned <> 2 then
+        failwith "Cleanup or callback state was lost"
+    0
+"""
+    |> withLangVersionPreview
+    |> withFSharpCoreShippedNet
+    |> withOptimization optimize
+    |> compileExeAndRun
+    |> shouldSucceed
+
+[<InlineData(false)>]
+[<InlineData(true)>]
+[<Theory>]
+let ``runtime async does not outline opaque callback consumers`` (optimize: bool) =
+    FSharp """
+module RuntimeAsyncOpaqueCallbackTest
+
+open System.Threading.Tasks
+open System.Runtime.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices
+
+[<NoCompilerInlining>]
+let consume (callback: unit -> int) = callback()
+
+let inline invoke ([<InlineIfLambda>] callback: unit -> int) =
+    StateMachineHelpers.__runtimeAsyncReturn (consume callback)
+
+let run (gate: Task<int>) =
+    invoke (if true then fun () -> AsyncHelpers.Await gate else fun () -> 0)
+"""
+    |> withLangVersionPreview
+    |> withFSharpCoreShippedNet
+    |> withOptimization optimize
+    |> compile
+    |> shouldFail
+    |> withErrorCode 3918
 
 [<InlineData(false)>]
 [<InlineData(true)>]

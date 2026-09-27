@@ -144,25 +144,39 @@ Inline values whose bodies contain a return marker or an `AsyncHelpers`
 suspension are recursively specialized at their call sites, including when
 optimization is disabled. The analysis follows inline and local values with a
 cycle guard, and `InlineIfLambda` arguments are forced through when the caller
-is already in a runtime-async context. The optimizer follows nested inline
-calls and does not create a generated helper method for the specialized
-suspension fragment, keeping every suspension in the eventual runtime-async
-method.
+is already in a runtime-async context. Ordinary inlining is tried first;
+applications of returned lambdas are reduced when their remaining arguments
+can safely move across the returned closure's construction. This handles
+computation-expression shapes where `Bind` returns a closure containing
+`Await`, and later `Combine`/`Delay` calls apply it.
 
-After specialization, lambda arguments are substituted and their applications
-are beta-reduced before and after runtime-async reoptimization. This includes
-debug-point-wrapped lambdas, compiler-generated `let` wrappers, curried
-applications, and multi-argument lambdas.
-That step is required for computation-expression shapes where `Bind` returns a
-closure containing `Await`, and later `Combine`/`Delay` calls apply that closure.
+If a compiler-owned `InlineIfLambda` callback still contains a suspension
+after inlining, a fully rewritable, single-argument callback can be outlined
+instead. Each branch of its construction produces a callback returning
+`ValueTask<'T>`; the generated callback body contains
+`__runtimeAsyncReturnValueTask`, and its invocations are replaced by
+`AsyncHelpers.Await` inside the enclosing runtime-async method. The callback
+is constructed once, so conditional construction effects and state captured
+across repeated invocations are preserved. Only the specialized copy changes
+calling convention, not the exported inline definition or source signature.
+This applies within an existing runtime-async body or an inline expansion
+that produces one. Opaque consumers, escaping callbacks, unsupported callback
+shapes, and unsafe byref or pinned captures are not outlined; suspensions
+remaining in an ordinary method are still diagnosed.
+
+Outlining retains the callback closure and generates an async `Invoke` method
+for each specialized callback shape. Calls now return a `ValueTask<'T>` for
+the enclosing method to await, trading method code size and possible
+allocations for preservation of callback state. It does not distribute a
+continuation across conditional branches. The outlined body receives the
+same byref-use checks and exception handler rewrite as a directly marked
+runtime-async method.
 
 When runtime-async specialization is forced in a debug build, the builder
-combinator is copied with its definition-site debug ranges remarked before
-arguments are substituted. User continuation arguments keep their own ranges,
-so `let!`, `do!`, `yield`, and other
-computation-expression statements remain associated with the source that
-authored them without exposing the implementation ranges of `Run`, `Bind`,
-`Combine`, or `Yield`.
+combinator is copied with its definition-site debug ranges remarked at the
+call site. User continuation arguments keep their own ranges, and the marked
+method retains a call-site sequence point even when forced inlining reduces
+its intermediate closures.
 
 Dead branches eliminated by optimization do not reach code generation and do
 not produce a suspension-outside-runtime-async diagnostic.
@@ -235,10 +249,9 @@ body (`DecideExpr`), promoting its free mutable locals to reference cells so
 the synthesized closure and the enclosing scope share them.
 
 `InvokeFast` is not a separate runtime-async path. It is the closure-erasure
-shape for an indirect call with multiple arguments. Fragment substitution and
-beta reduction happen before closure erasure; if a suspending fragment survives
-until an indirect `InvokeFast` call, it is still outside a runtime-async method
-and is rejected by code generation.
+shape for an indirect call with multiple arguments. Forced inlining and
+eligible callback outlining happen before closure erasure; a suspension left
+behind an opaque indirect invocation is rejected by code generation.
 
 ## Runtime capability check
 
