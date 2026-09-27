@@ -1127,6 +1127,66 @@ module Query =
 
     let (|CallLeftOuterJoin|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun (query:QueryBuilder, arg1, arg2, arg3, arg4, arg5) -> query.LeftOuterJoin(arg1, arg2, arg3, arg4, arg5)))
 
+    /// A 'join', 'groupJoin' or 'leftOuterJoin'. The inner group of a 'leftOuterJoin' is already replaced by 'group.DefaultIfEmpty()'.
+    [<NoComparison; NoEquality>]
+    type JoinLike =
+        { Make: bool * Type * Type * Type * Type * Expr * Expr * Var * Expr * Var * Expr * Var * Var * Expr -> Expr
+          InnerResultConv: ConversionDescription -> ConversionDescription
+          QTy: Type
+          OuterSource: Expr
+          InnerSource: Expr
+          OuterKeyVar: Var
+          OuterKeySelector: Expr
+          InnerKeyVar: Var
+          InnerKeySelector: Expr
+          OuterResultVar: Var
+          InnerResultVar: Var
+          ElementSelector: Expr }
+
+    [<return: Struct>]
+    let (|CallJoinLike|_|) e =
+        let joinLike make innerResultConv qTy (outerSource, innerSource, outerKeyVar, outerKeySelector, innerKeyVar, innerKeySelector, outerResultVar, innerResultVar, elementSelector) =
+            ValueSome
+                { Make = make
+                  InnerResultConv = innerResultConv
+                  QTy = qTy
+                  OuterSource = outerSource
+                  InnerSource = innerSource
+                  OuterKeyVar = outerKeyVar
+                  OuterKeySelector = outerKeySelector
+                  InnerKeyVar = innerKeyVar
+                  InnerKeySelector = innerKeySelector
+                  OuterResultVar = outerResultVar
+                  InnerResultVar = innerResultVar
+                  ElementSelector = elementSelector }
+        match e with
+        | CallJoin(_, GenericArgs [_; qTy; _; _; _],
+                   [ outerSource
+                     innerSource
+                     Lambda(outerKeyVar, outerKeySelector)
+                     Lambda(innerKeyVar, innerKeySelector)
+                     LambdasNoDetupling([outerResultVar; innerResultVar], elementSelector)]) ->
+            joinLike MakeJoin id qTy (outerSource, innerSource, outerKeyVar, outerKeySelector, innerKeyVar, innerKeySelector, outerResultVar, innerResultVar, elementSelector)
+
+        | CallGroupJoin(_, GenericArgs [_; qTy; _; _; _],
+                        [ outerSource
+                          innerSource
+                          Lambda(outerKeyVar, outerKeySelector)
+                          Lambda(innerKeyVar, innerKeySelector)
+                          LambdasNoDetupling([outerResultVar; innerResultGroupVar], elementSelector)]) ->
+            joinLike MakeGroupJoin MakeSeqConv qTy (outerSource, innerSource, outerKeyVar, outerKeySelector, innerKeyVar, innerKeySelector, outerResultVar, innerResultGroupVar, elementSelector)
+
+        | CallLeftOuterJoin(_, GenericArgs [ _; qTy; innerSourceTy; _; _],
+                            [ outerSource
+                              innerSource
+                              Lambda(outerKeyVar, outerKeySelector)
+                              Lambda(innerKeyVar, innerKeySelector)
+                              LambdasNoDetupling([outerResultVar; innerResultGroupVar], elementSelector)]) ->
+            let elementSelector = elementSelector.Substitute (fun v -> if v = innerResultGroupVar then Some (MakeDefaultIfEmpty ([innerSourceTy], [Expr.Var innerResultGroupVar])) else None)
+            joinLike MakeGroupJoin id qTy (outerSource, innerSource, outerKeyVar, outerKeySelector, innerKeyVar, innerKeySelector, outerResultVar, innerResultGroupVar, elementSelector)
+
+        | _ -> ValueNone
+
     let (|CallAverageBy|_|) = (|SpecificCall2|_|) (methodhandleof (fun (query:QueryBuilder, arg1: QuerySource<double, _>, arg2:
                                                                             double->double) -> query.AverageBy(arg1, arg2)))
 
@@ -1266,6 +1326,14 @@ module Query =
         | TransInnerResult.Select(canElim, isQTy, mutSource, mutSelectorVar, mutSelectorBody) ->
             MakeSelect(canElim, isQTy, CommitTransInnerResult mutSource, mutSelectorVar, mutSelectorBody)
 
+    /// IQueryable.SelectMany expects an IEnumerable return
+    let CoerceToIEnumerable (mutElemTy: Type) (mutSource: Expr) =
+        let mutSourceTy = mutSource.Type
+        if mutSourceTy.IsGenericType && mutSourceTy.GetGenericTypeDefinition() = typedefof<IEnumerable<_>> then
+            mutSource
+        else
+            Expr.Coerce (mutSource, MakeIEnumerableTy mutElemTy)
+
     /// Given the inner of query expression in terms of query.For, query.Select, query.Yield, query.Where etc.,
     /// and including immutable tuples and immutable records, build an equivalent query expression
     /// in terms of LINQ operators, operating over mutable tuples. Return the conversion
@@ -1298,7 +1366,7 @@ module Query =
             let mutSource, sourceConv = TransInner CanEliminate.Yes check immutSource
 
             // If the body of a "For" is nothing but Yield/IfThenElse/Where, then it can be fully rewritten away.
-            let rec TransFor mutSource immutSelector =
+            let rec TransFor (mutSource, sourceConv, immutSelectorVar) immutSelector =
                 match immutSelector with
 
                 // query.For (source, (fun selectorVar -> yield res)) @>
@@ -1312,10 +1380,10 @@ module Query =
                     TransInnerResult.MakeSelect (canElim, qTyIsIQueryable qTy, mutSource, mutSelectorVar, mutSelectorBody), selectorConv
 
                 | LetExprReduction reduced ->
-                    TransFor mutSource reduced
+                    TransFor (mutSource, sourceConv, immutSelectorVar) reduced
 
                 | MacroReduction reduced ->
-                    TransFor mutSource reduced
+                    TransFor (mutSource, sourceConv, immutSelectorVar) reduced
 
                 // query.For (source, (fun selectorVar -> if g then selectorBody else query.Zero())) @>
                 //    ~~> TRANS(query.For (source.Where(fun selectorVar -> g), (fun selectorVar -> selectorBody))
@@ -1324,7 +1392,7 @@ module Query =
 
                     let mutSelectorVar, mutPredicateBody = ConvertImmutableConsumerToMutableConsumer sourceConv (immutSelectorVar, MacroExpand immutPredicateBody)
                     let mutSource = MakeWhere(qTyIsIQueryable qTy, CommitTransInnerResult mutSource, mutSelectorVar, mutPredicateBody)
-                    TransFor (TransInnerResult.Other mutSource) immutSelectorBody
+                    TransFor (TransInnerResult.Other mutSource, sourceConv, immutSelectorVar) immutSelectorBody
 
                 // query.For (source, (fun selectorVar -> immutSelectorBody)) @>
                 //    ~~> source.SelectMany(fun selectorVar -> immutSelectorBody)
@@ -1345,18 +1413,11 @@ module Query =
                             let mutTargetSelector = Expr.Var mutInterimVar
                             mutInterimSelectorBody, mutInterimVar, mutTargetSelector
 
-                    // IQueryable.SelectMany expects an IEnumerable return
-                    let mutInterimSelectorBody =
-                        let mutSelectorBodyTy = mutInterimSelectorBodyPreCoerce.Type
-                        if mutSelectorBodyTy.IsGenericType && mutSelectorBodyTy.GetGenericTypeDefinition() = typedefof<IEnumerable<_>> then
-                            mutInterimSelectorBodyPreCoerce
-                        else
-                            let mutSeqTy = MakeIEnumerableTy mutInterimVar.Type
-                            Expr.Coerce (mutInterimSelectorBodyPreCoerce, mutSeqTy)
+                    let mutInterimSelectorBody = CoerceToIEnumerable mutInterimVar.Type mutInterimSelectorBodyPreCoerce
                     TransInnerResult.Other(MakeSelectMany(qTyIsIQueryable qTy, mutElemTy, CommitTransInnerResult mutSource, mutSelectorVar, mutInterimSelectorBody, mutInterimVar, mutTargetSelector)), selectorConv
 
 
-            TransFor mutSource immutSelector
+            TransFor (mutSource, sourceConv, immutSelectorVar) immutSelector
 
         // These occur in the F# quotation form of F# sequence expressions
         | CallWhere (_, [_; qTy], immutSource, Lambda(immutSelectorVar, immutPredicateBody)) ->
@@ -1481,81 +1542,9 @@ module Query =
                 | _ -> GroupingConv (immutKeySelector.Type, immutElementSelector.Type, selectorConv)
             TransInnerResult.Other(MakeGroupValBy(qTyIsIQueryable qTy, mutVar1.Type, mutKeySelector.Type, mutElementSelector.Type, mutSource, mutVar2, mutKeySelector, mutVar1, mutElementSelector)), conv
 
-        | CallJoin(_, GenericArgs [_; qTy; _; _; _],
-                   [ immutOuterSource
-                     immutInnerSource
-                     Lambda(immutOuterKeyVar, immutOuterKeySelector)
-                     Lambda(immutInnerKeyVar, immutInnerKeySelector)
-                     LambdasNoDetupling([immutOuterResultGroupVar; immutInnerResultKeyVar], immutElementSelector)]) ->
-
-            let (mutOuterSource, outerSourceConv, mutInnerSource, innerSourceConv, mutOuterKeyVar: Var, mutOuterKeySelector, mutInnerKeyVar: Var, mutInnerKeySelector: Expr) =
-                TransJoinInputs check (immutOuterSource, immutInnerSource, immutOuterKeyVar, immutOuterKeySelector, immutInnerKeyVar, immutInnerKeySelector)
-
-            let mutOuterResultVar, mutElementSelector = ConvertImmutableConsumerToMutableConsumer outerSourceConv (immutOuterResultGroupVar, MacroExpand immutElementSelector)
-            let mutInnerResultKeyVar, mutElementSelector = ConvertImmutableConsumerToMutableConsumer innerSourceConv (immutInnerResultKeyVar, mutElementSelector)
-            let mutElementSelector, elementSelectorConv = ProduceMoreMutables TransInnerNoCheck mutElementSelector
-            let mutElementSelector = CleanupLeaf mutElementSelector
-
-            let joinExpr =
-                MakeJoin
-                    (qTyIsIQueryable qTy, mutOuterKeyVar.Type, mutInnerKeyVar.Type, mutInnerKeySelector.Type,
-                     mutElementSelector.Type, mutOuterSource, mutInnerSource, mutOuterKeyVar, mutOuterKeySelector,
-                     mutInnerKeyVar, mutInnerKeySelector, mutOuterResultVar, mutInnerResultKeyVar, mutElementSelector)
-
-            TransInnerResult.Other joinExpr, elementSelectorConv
-
-        | CallGroupJoin
-              (_, GenericArgs [_; qTy; _; _; _],
-               [ immutOuterSource
-                 immutInnerSource
-                 Lambda(immutOuterKeyVar, immutOuterKeySelector)
-                 Lambda(immutInnerKeyVar, immutInnerKeySelector)
-                 LambdasNoDetupling([immutOuterResultGroupVar; immutInnerResultGroupVar], immutElementSelector)]) ->
-
-            let (mutOuterSource, outerSourceConv, mutInnerSource, innerSourceConv, mutOuterKeyVar: Var, mutOuterKeySelector, mutInnerKeyVar: Var, mutInnerKeySelector: Expr) =
-                TransJoinInputs check (immutOuterSource, immutInnerSource, immutOuterKeyVar, immutOuterKeySelector, immutInnerKeyVar, immutInnerKeySelector)
-
-            let mutOuterResultGroupVar, mutElementSelector = ConvertImmutableConsumerToMutableConsumer outerSourceConv (immutOuterResultGroupVar, MacroExpand immutElementSelector)
-            let innerGroupConv = MakeSeqConv innerSourceConv
-            let mutInnerResultKeyVar, mutElementSelector = ConvertImmutableConsumerToMutableConsumer innerGroupConv (immutInnerResultGroupVar, mutElementSelector)
-            let mutElementSelector, elementSelectorConv = ProduceMoreMutables TransInnerNoCheck mutElementSelector
-            let mutElementSelector = CleanupLeaf mutElementSelector
-
-            let joinExpr =
-                MakeGroupJoin
-                    (qTyIsIQueryable qTy, mutOuterKeyVar.Type, mutInnerKeyVar.Type,
-                     mutInnerKeySelector.Type, mutElementSelector.Type, mutOuterSource,
-                     mutInnerSource, mutOuterKeyVar, mutOuterKeySelector, mutInnerKeyVar,
-                     mutInnerKeySelector, mutOuterResultGroupVar, mutInnerResultKeyVar, mutElementSelector)
-
-            TransInnerResult.Other joinExpr, elementSelectorConv
-
-        | CallLeftOuterJoin
-             (_, GenericArgs [ _; qTy; immutInnerSourceTy; _; _],
-              [ immutOuterSource
-                immutInnerSource
-                Lambda(immutOuterKeyVar, immutOuterKeySelector)
-                Lambda(immutInnerKeyVar, immutInnerKeySelector)
-                LambdasNoDetupling([immutOuterResultGroupVar; immutInnerResultGroupVar], immutElementSelector)]) ->
-
-            // Replace uses of 'innerResultGroupVar' with 'innerResultGroupVar.DefaultIfEmpty()' and call MakeGroupJoin
-            let immutElementSelector = immutElementSelector.Substitute (fun v -> if v = immutInnerResultGroupVar then Some (MakeDefaultIfEmpty ([immutInnerSourceTy], [Expr.Var immutInnerResultGroupVar])) else None)
-
-            let (mutOuterSource, outerSourceConv, mutInnerSource, innerSourceConv, mutOuterKeyVar: Var, mutOuterKeySelector, mutInnerKeyVar: Var, mutInnerKeySelector: Expr) =
-                TransJoinInputs check (immutOuterSource, immutInnerSource, immutOuterKeyVar, immutOuterKeySelector, immutInnerKeyVar, immutInnerKeySelector)
-
-            let mutOuterResultGroupVar, mutElementSelector = ConvertImmutableConsumerToMutableConsumer outerSourceConv (immutOuterResultGroupVar, MacroExpand immutElementSelector)
-            let mutInnerResultKeyVar, mutElementSelector = ConvertImmutableConsumerToMutableConsumer innerSourceConv (immutInnerResultGroupVar, mutElementSelector)
-            let mutElementSelector, elementSelectorConv = ProduceMoreMutables TransInnerNoCheck mutElementSelector
-            let mutElementSelector = CleanupLeaf mutElementSelector
-
-            let joinExpr =
-                MakeGroupJoin
-                    (qTyIsIQueryable qTy, mutOuterKeyVar.Type, mutInnerKeyVar.Type, mutInnerKeySelector.Type,
-                     mutElementSelector.Type, mutOuterSource, mutInnerSource, mutOuterKeyVar, mutOuterKeySelector,
-                     mutInnerKeyVar, mutInnerKeySelector, mutOuterResultGroupVar, mutInnerResultKeyVar, mutElementSelector)
-
-            TransInnerResult.Other joinExpr, elementSelectorConv
+        | CallJoinLike join ->
+            let mutOuterSource, outerSourceConv = TransInnerAndCommit CanEliminate.Yes check join.OuterSource
+            TransJoin check (qTyIsIQueryable join.QTy) (mutOuterSource, outerSourceConv) join
 
         | LetExprReduction reduced ->
             TransInner canElim check reduced
@@ -1638,19 +1627,30 @@ module Query =
         | _ ->
             e, NoConv
 
-    and TransJoinInputs check  (immutOuterSource, immutInnerSource, immutOuterKeyVar, immutOuterKeySelector, immutInnerKeyVar, immutInnerKeySelector) =
+    and TransJoin check isIQ (mutOuterSource, outerSourceConv) (join: JoinLike) =
 
-        let mutOuterSource, outerSourceConv = TransInnerAndCommit CanEliminate.Yes check immutOuterSource
-        let mutInnerSource, innerSourceConv = TransInnerAndCommit CanEliminate.Yes check immutInnerSource
-        let mutOuterKeyVar, mutOuterKeySelector = ConvertImmutableConsumerToMutableConsumer outerSourceConv (immutOuterKeyVar, MacroExpand immutOuterKeySelector)
-        let mutInnerKeyVar, mutInnerKeySelector = ConvertImmutableConsumerToMutableConsumer innerSourceConv (immutInnerKeyVar, MacroExpand immutInnerKeySelector)
+        let mutInnerSource, innerSourceConv = TransInnerAndCommit CanEliminate.Yes check join.InnerSource
+        let mutOuterKeyVar, mutOuterKeySelector = ConvertImmutableConsumerToMutableConsumer outerSourceConv (join.OuterKeyVar, MacroExpand join.OuterKeySelector)
+        let mutInnerKeyVar, mutInnerKeySelector = ConvertImmutableConsumerToMutableConsumer innerSourceConv (join.InnerKeyVar, MacroExpand join.InnerKeySelector)
 
         // Keys may be composite tuples - convert them to be mutables. Note, if there is a tuple on one side, there must be a tuple on the other side.
         let mutOuterKeySelector, _ = ProduceMoreMutables TransNone mutOuterKeySelector
         let mutOuterKeySelector = CleanupLeaf mutOuterKeySelector
         let mutInnerKeySelector, _ = ProduceMoreMutables TransNone mutInnerKeySelector
         let mutInnerKeySelector = CleanupLeaf mutInnerKeySelector
-        mutOuterSource, outerSourceConv, mutInnerSource, innerSourceConv, mutOuterKeyVar, mutOuterKeySelector, mutInnerKeyVar, mutInnerKeySelector
+
+        let mutOuterResultVar, mutElementSelector = ConvertImmutableConsumerToMutableConsumer outerSourceConv (join.OuterResultVar, MacroExpand join.ElementSelector)
+        let mutInnerResultVar, mutElementSelector = ConvertImmutableConsumerToMutableConsumer (join.InnerResultConv innerSourceConv) (join.InnerResultVar, mutElementSelector)
+        let mutElementSelector, elementSelectorConv = ProduceMoreMutables TransInnerNoCheck mutElementSelector
+        let mutElementSelector = CleanupLeaf mutElementSelector
+
+        let joinExpr =
+            join.Make
+                (isIQ, mutOuterKeyVar.Type, mutInnerKeyVar.Type, mutInnerKeySelector.Type,
+                 mutElementSelector.Type, mutOuterSource, mutInnerSource, mutOuterKeyVar, mutOuterKeySelector,
+                 mutInnerKeyVar, mutInnerKeySelector, mutOuterResultVar, mutInnerResultVar, mutElementSelector)
+
+        TransInnerResult.Other joinExpr, elementSelectorConv
 
     /// Given a query expression in terms of query.For, query.Select, query.Yield, query.Where etc.,
     /// and including immutable tuples and immutable records, build an equivalent query expression
