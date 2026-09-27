@@ -45,13 +45,13 @@ let private loops () =
           "two for"
           (fun db -> query { for c in db.Customers do for p in db.Products do select (c.Name, p.Name) })
           (fun data -> seq { for c in data.Customers do for p in data.Products -> c.Name, p.Name })
-      |> Scenario.flat [ "SelectMany"; "Select"; "Select" ]
+      |> Scenario.flat [ "SelectMany"; "Select" ]
 
       Scenario.rows
           "two for, where over both"
           (fun db -> query { for c in db.Customers do for o in db.Orders do where (o.CustomerId = c.Id); select (c.Name, o.Id) })
           customersWithOrders
-      |> Scenario.flat [ "SelectMany"; "Where"; "Select"; "Select" ]
+      |> Scenario.flat [ "SelectMany"; "Where"; "Select" ]
 
       Scenario.rows
           "for, where, for, where"
@@ -64,13 +64,13 @@ let private loops () =
                   select (c.Name, o.Id)
               })
           (fun data -> seq { for c in data.Customers do if c.Age > 26 then for o in c.Orders -> c.Name, o.Id })
-      |> Scenario.flat [ "Where"; "SelectMany"; "Where"; "Select"; "Select" ]
+      |> Scenario.flat [ "Where"; "SelectMany"; "Where"; "Select" ]
 
       Scenario.rows
           "for over a navigation collection"
           (fun db -> query { for c in db.Customers do for o in c.Orders do select (c.Name, o.Id) })
           customersWithOrders
-      |> Scenario.flat [ "SelectMany"; "Select"; "Select" ]
+      |> Scenario.flat [ "SelectMany"; "Select" ]
 
       Scenario.rows
           "for over two levels of navigation collections"
@@ -96,7 +96,7 @@ let private loops () =
           (fun db -> query { for c in db.Customers do sortBy c.Age; for p in db.Products do select (c.Name, p.Name) })
           (fun data -> seq { for c in data.Customers |> List.sortBy _.Age do for p in data.Products -> c.Name, p.Name })
       |> Scenario.ordered
-      |> Scenario.flat [ "OrderBy"; "SelectMany"; "Select"; "Select" ]
+      |> Scenario.flat [ "OrderBy"; "SelectMany"; "Select" ]
 
       Scenario.rows
           "for after join"
@@ -109,14 +109,14 @@ let private loops () =
                   select (c.Name, o.Id, l.Id)
               })
           ordersWithLines
-      |> Scenario.flat [ "Join"; "SelectMany"; "Where"; "Select"; "Select" ]
+      |> Scenario.flat [ "Join"; "SelectMany"; "Where"; "Select" ]
 
       Scenario.rows
           "let between for"
           (fun db ->
               query { for c in db.Customers do let next = c.Id + 9 in for o in db.Orders do where (o.Id = next); select (c.Name, o.Id) })
           (fun data -> seq { for c in data.Customers do for o in data.Orders do if o.Id = c.Id + 9 then yield c.Name, o.Id })
-      |> Scenario.flat [ "SelectMany"; "Where"; "Select"; "Select" ]
+      |> Scenario.flat [ "SelectMany"; "Where"; "Select" ]
 
       Scenario.rows
           "if then around for"
@@ -173,7 +173,7 @@ let private subqueries () =
                   select (c.Name, o.Id)
               })
           customersWithOrders
-      |> Scenario.flat [ "SelectMany"; "Select"; "Select" ]
+      |> Scenario.flat [ "SelectMany"; "Select" ]
 
       Scenario.rows
           "nested query in select"
@@ -204,7 +204,7 @@ let private leftJoins () =
                   select (c.Name, (if obj.ReferenceEquals(o, null) then -1 else o.Id))
               })
           leftJoinedOrders
-      |> Scenario.flat [ "GroupJoin"; "SelectMany"; "Select"; "Select" ]
+      |> Scenario.flat [ "GroupJoin"; "SelectMany"; "Select" ]
 
       Scenario.rows
           "left join spelled groupJoin and DefaultIfEmpty"
@@ -216,7 +216,7 @@ let private leftJoins () =
                   select (c.Name, (if obj.ReferenceEquals(o, null) then -1 else o.Id))
               })
           leftJoinedOrders
-      |> Scenario.flat [ "GroupJoin"; "SelectMany"; "Select"; "Select" ]
+      |> Scenario.flat [ "GroupJoin"; "SelectMany"; "Select" ]
 
       Scenario.rows
           "two left joins spelled leftOuterJoin"
@@ -265,4 +265,66 @@ let private leftJoins () =
           (leftJoinedOrdersAndProducts >> Seq.filter (fun (_, _, product) -> product <> ""))
       |> Scenario.violating (nested [ "Join" ]) ]
 
-let cases () = loops () @ subqueries () @ leftJoins ()
+let private finalProjections () =
+    let customers (data: Data) = Seq.ofList data.Customers
+
+    [ Scenario.rows
+          "tuple selected after where"
+          (fun db -> query { for c in db.Customers do where (c.Age > 26); select (c.Id, c.Name) })
+          (customers >> Seq.filter (fun c -> c.Age > 26) >> Seq.map (fun c -> c.Id, c.Name))
+      |> Scenario.flat [ "Where"; "Select" ]
+
+      Scenario.rows
+          "struct tuple selected after where"
+          (fun db -> query { for c in db.Customers do where (c.Age > 26); select (struct (c.Id, c.Name)) })
+          (customers >> Seq.filter (fun c -> c.Age > 26) >> Seq.map (fun c -> struct (c.Id, c.Name)))
+      |> Scenario.flat [ "Where"; "Select" ]
+
+      Scenario.rows
+          "record selected after sortBy"
+          (fun db -> query { for c in db.Customers do sortBy c.Age; select { PersonName = c.Name; PersonAge = c.Age } })
+          (customers >> Seq.sortBy _.Age >> Seq.map (fun c -> { PersonName = c.Name; PersonAge = c.Age }))
+      |> Scenario.ordered
+      |> Scenario.flat [ "OrderBy"; "Select" ]
+
+      Scenario.rows
+          "anonymous record selected after join"
+          (fun db -> query { for c in db.Customers do join o in db.Orders on (c.Id = o.CustomerId); select {| Name = c.Name; Total = o.Total |} })
+          (fun data -> seq { for c in data.Customers do for o in c.Orders -> {| Name = c.Name; Total = o.Total |} })
+      |> Scenario.flat [ "Join"; "Select"; "Select" ]
+
+      Scenario.rows
+          "nested tuple selected"
+          (fun db -> query { for c in db.Customers do select ((c.Id, c.Name), c.Age) })
+          (customers >> Seq.map (fun c -> (c.Id, c.Name), c.Age))
+      |> Scenario.flat [ "Select" ]
+
+      Scenario.rows
+          "tuple of nine selected"
+          (fun db -> query { for c in db.Customers do select (c.Id, c.Name, c.City, c.Age, c.Id + 100, c.Name.Length, c.Age * 2, c.Id * 7, c.Age - c.Id) })
+          (customers >> Seq.map (fun c -> c.Id, c.Name, c.City, c.Age, c.Id + 100, c.Name.Length, c.Age * 2, c.Id * 7, c.Age - c.Id))
+      |> Scenario.flat [ "Select" ]
+
+      Scenario.rows
+          "tuple selected after groupBy"
+          (fun db -> query { for c in db.Customers do groupBy c.City into g; select (g.Key, g.Count()) })
+          (customers >> Seq.countBy _.City)
+      |> Scenario.flat [ "GroupBy"; "Select" ]
+
+      Scenario.rows
+          "tuple selected before distinct"
+          (fun db -> query { for c in db.Customers do select (c.City, c.Age > 26); distinct })
+          (customers >> Seq.map (fun c -> c.City, c.Age > 26) >> Seq.distinct)
+      |> Scenario.flat [ "Select"; "Distinct"; "Select" ]
+
+      Scenario.rows
+          "sorted nested query of records selected in a tuple"
+          (fun db ->
+              query {
+                  for c in db.Customers do
+                  select (c.Name, query { for o in c.Orders do select {| Id = o.Id; Total = o.Total |} into p; sortByDescending p.Total })
+              })
+          (customers
+           >> Seq.map (fun c -> c.Name, c.Orders |> Seq.sortByDescending _.Total |> Seq.map (fun o -> {| Id = o.Id; Total = o.Total |}))) ]
+
+let cases () = loops () @ subqueries () @ leftJoins () @ finalProjections ()
