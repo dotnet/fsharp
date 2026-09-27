@@ -101,6 +101,7 @@
     <Compile Include="FSharp.Core\Microsoft.FSharp.Linq\QueryStructureScenarios.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Linq\QueryMethodSyntaxScenarios.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Linq\QueryShapeTests.fs" />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Linq\ExpressionNewMembersTests.fs" />
     <Compile Include="FSharp.Core\XmlDocumentationValidation.fs" />
     <Compile Include="Interop\CSharpCollectionExpressions.fs" />
     <Compile Include="StructTuples.fs" />
