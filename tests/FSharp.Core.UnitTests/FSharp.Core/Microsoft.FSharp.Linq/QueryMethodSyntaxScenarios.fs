@@ -11,9 +11,6 @@ let private block = [ Violation.Statement ExpressionType.Block ]
 let private blocks count =
     List.replicate count (Violation.Statement ExpressionType.Block)
 
-let private reading typeName =
-    [ Violation.ReadsUnnamedMember typeName ]
-
 let private customers (data: Data) = Seq.ofList data.Customers
 
 let cases () =
@@ -71,13 +68,75 @@ let cases () =
           "Where taking a tuple apart"
           (fun db -> db.Customers.Select(fun c -> (c.Id, c.Name)).Where(fun (id, _) -> id > 1))
           (customers >> Seq.map (fun c -> c.Id, c.Name) >> Seq.filter (fun (id, _) -> id > 1))
-      |> Scenario.violating (reading "Tuple`2" @ blocks 2)
+      |> Scenario.violating (blocks 2)
 
       Scenario.rows
           "Where taking a struct tuple apart"
           (fun db -> db.Customers.Select(fun c -> struct (c.Id, c.Name)).Where(fun (struct (id, _)) -> id > 1))
           (customers >> Seq.map (fun c -> struct (c.Id, c.Name)) >> Seq.filter (fun (struct (id, _)) -> id > 1))
-      |> Scenario.violating (reading "ValueTuple`2" @ block)
+      |> Scenario.violating block
+
+      Scenario.rows
+          "OrderBy taking a tuple apart"
+          (fun db -> db.Customers.Select(fun c -> (c.Name, c.Age)).OrderBy(fun (_, age) -> age).Select(fun (name, _) -> name))
+          (customers >> Seq.sortBy _.Age >> Seq.map _.Name)
+      |> Scenario.ordered
+      |> Scenario.violating block
+
+      Scenario.rows
+          "OrderBy taking a struct tuple apart"
+          (fun db ->
+              db.Customers.Select(fun c -> struct (c.Name, c.Age)).OrderBy(fun (struct (_, age)) -> age).Select(fun (struct (name, _)) -> name))
+          (customers >> Seq.sortBy _.Age >> Seq.map _.Name)
+      |> Scenario.ordered
+      |> Scenario.violating block
+
+      Scenario.rows
+          "GroupBy taking a tuple apart"
+          (fun db -> db.Customers.Select(fun c -> (c.City, c.Age)).GroupBy(fun (city, _) -> city).Select(fun g -> (g.Key, g.Count())))
+          (customers >> Seq.countBy _.City)
+      |> Scenario.violating block
+
+      Scenario.rows
+          "GroupBy taking a struct tuple apart"
+          (fun db ->
+              db.Customers.Select(fun c -> struct (c.City, c.Age)).GroupBy(fun (struct (city, _)) -> city).Select(fun g -> (g.Key, g.Count())))
+          (customers >> Seq.countBy _.City)
+      |> Scenario.violating block
+
+      Scenario.rows
+          "Where reading a record"
+          (fun db -> db.Customers.Select(fun c -> { PersonName = c.Name; PersonAge = c.Age }).Where(fun p -> p.PersonAge > 26))
+          (customers >> Seq.map (fun c -> { PersonName = c.Name; PersonAge = c.Age }) >> Seq.filter (fun p -> p.PersonAge > 26))
+
+      Scenario.rows
+          "OrderBy reading a record"
+          (fun db ->
+              db.Customers.Select(fun c -> { PersonName = c.Name; PersonAge = c.Age }).OrderBy(fun p -> p.PersonAge).Select(fun p -> p.PersonName))
+          (customers >> Seq.sortBy _.Age >> Seq.map _.Name)
+      |> Scenario.ordered
+
+      Scenario.rows
+          "GroupBy reading a record"
+          (fun db ->
+              db.Customers.Select(fun c -> { KeyCity = c.City; KeyAge = c.Age }).GroupBy(fun k -> k.KeyCity).Select(fun g -> (g.Key, g.Count())))
+          (customers >> Seq.countBy _.City)
+
+      Scenario.rows
+          "Where reading an anonymous record"
+          (fun db -> db.Customers.Select(fun c -> {| Age = c.Age; Name = c.Name |}).Where(fun p -> p.Age > 26))
+          (customers >> Seq.map (fun c -> {| Age = c.Age; Name = c.Name |}) >> Seq.filter (fun p -> p.Age > 26))
+
+      Scenario.rows
+          "OrderBy reading an anonymous record"
+          (fun db -> db.Customers.Select(fun c -> {| Age = c.Age; Name = c.Name |}).OrderBy(fun p -> p.Age).Select(fun p -> p.Name))
+          (customers >> Seq.sortBy _.Age >> Seq.map _.Name)
+      |> Scenario.ordered
+
+      Scenario.rows
+          "GroupBy reading an anonymous record"
+          (fun db -> db.Customers.Select(fun c -> {| Age = c.Age; City = c.City |}).GroupBy(fun p -> p.City).Select(fun g -> (g.Key, g.Count())))
+          (customers >> Seq.countBy _.City)
 
       Scenario.rows
           "Where taking the last of nine apart"
@@ -87,7 +146,7 @@ let cases () =
                   .Where(fun (_, _, _, _, _, _, _, _, last) -> last > 1)
                   .Select(fun (_, name, _, _, _, _, _, _, _) -> name))
           (customers >> Seq.filter (fun c -> c.Id > 1) >> Seq.map _.Name)
-      |> Scenario.violating (reading "Tuple`8" @ reading "Tuple`8" @ blocks 18)
+      |> Scenario.violating (blocks 18)
 
       Scenario.rows
           "Where taking the last of a struct nine apart"
@@ -97,13 +156,18 @@ let cases () =
                   .Where(fun (struct (_, _, _, _, _, _, _, _, last)) -> last > 1)
                   .Select(fun (struct (_, name, _, _, _, _, _, _, _)) -> name))
           (customers >> Seq.filter (fun c -> c.Id > 1) >> Seq.map _.Name)
-      |> Scenario.violating (reading "ValueTuple`8" @ reading "ValueTuple`8" @ blocks 2)
+      |> Scenario.violating (blocks 2)
 
       Scenario.rows
           "Where over a query that selects a tuple"
           (fun db -> (query { for c in db.Customers do select (c.Id, c.Name) }).Where(fun (id, _) -> id > 1))
           (customers >> Seq.map (fun c -> c.Id, c.Name) >> Seq.filter (fun (id, _) -> id > 1))
-      |> Scenario.violating (reading "Tuple`2" @ blocks 2)
+      |> Scenario.violating (blocks 2)
+
+      Scenario.rows
+          "Where over a query that selects a record"
+          (fun db -> (query { for c in db.Customers do select { PersonName = c.Name; PersonAge = c.Age } }).Where(fun p -> p.PersonAge > 26))
+          (customers >> Seq.map (fun c -> { PersonName = c.Name; PersonAge = c.Age }) >> Seq.filter (fun p -> p.PersonAge > 26))
 
       Scenario.rows
           "Where on a nullable property"

@@ -52,6 +52,18 @@ a.Equals(b)  // Was: false, Now: true
 // New: if (node.NodeType == ExpressionType.ArrayIndex)
 ```
 
+### Tuple and record constructions name their members
+
+Constructing a tuple, struct tuple, record or anonymous record now gives a `NewExpression` whose `Members` say which property (or `ValueTuple` field) each argument becomes, as C# anonymous types do, so providers can bind a later read such as `t.Item1` or `r.Name` to the argument.
+
+```fsharp
+<@ fun (c: Customer) -> (c.Id, c.Name) @>
+// Was: new Tuple`2(c.Id, c.Name)
+// Now: new Tuple`2(Item1 = c.Id, Item2 = c.Name)
+```
+
+A record whose fields have no public getter is still built without `Members`.
+
 ---
 
 ## IQueryable Type Preservation 🟡

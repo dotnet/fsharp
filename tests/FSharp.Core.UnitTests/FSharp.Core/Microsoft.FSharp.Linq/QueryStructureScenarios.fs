@@ -154,8 +154,7 @@ let private loops () =
       Scenario.value
           "exists over two for"
           (fun db -> query { for c in db.Customers do for o in c.Orders do exists (o.Total > 10.0 && c.City = "London") })
-          (fun _ -> true)
-      |> Scenario.violating [ Violation.ReadsUnnamedMember "Tuple`2" ] ]
+          (fun _ -> true) ]
 
 let private subqueries () =
     [ Scenario.rows
