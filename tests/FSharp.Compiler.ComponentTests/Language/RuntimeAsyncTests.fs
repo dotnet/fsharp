@@ -1085,7 +1085,7 @@ let main _ =
 [<InlineData(false)>]
 [<InlineData(true)>]
 [<Theory>]
-let ``runtime async inlines imported InlineIfLambda delegate invocations`` (optimize: bool) =
+let ``runtime async handles imported InlineIfLambda delegate invocations`` (optimize: bool) =
     let library =
         FSharp """
 module ImportedDelegateAwait
@@ -1132,6 +1132,69 @@ let main _ =
     |> withFSharpCoreShippedNet
     |> withOptimization optimize
     |> withReferences [ library ]
+    |> compileExeAndRun
+    |> shouldSucceed
+
+[<InlineData(false)>]
+[<InlineData(true)>]
+[<Theory>]
+let ``runtime async merges delegate sources`` (optimize: bool) =
+    FSharp """
+module RuntimeAsyncMergedDelegates
+open System.Threading.Tasks
+open System.Runtime.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices
+
+type Started<'T> = delegate of unit -> 'T
+
+type Builder() =
+    member inline _.Delay([<InlineIfLambda>] code: unit -> 'T) = code
+    member inline _.Source(task: Task<'T>) = Started(fun () -> AsyncHelpers.Await task)
+    member inline _.MergeSources([<InlineIfLambda>] left: Started<'A>, [<InlineIfLambda>] right: Started<'B>) =
+        Started(fun () -> struct (left.Invoke(), right.Invoke()))
+    member inline _.Bind([<InlineIfLambda>] source: Started<'T>, [<InlineIfLambda>] next: 'T -> 'U) =
+        next (source.Invoke())
+    member inline _.Return(value: 'T) = value
+    member inline _.Run([<InlineIfLambda>] code: unit -> 'T) : Task<'T> =
+        StateMachineHelpers.__runtimeAsyncReturn (code())
+
+let builder = Builder()
+
+let run (left: Task<int>) (right: Task<int>) =
+    builder {
+        let! x = left
+        and! y = right
+        return x + y
+    }
+
+let runThree (first: Task<int>) (second: Task<int>) (third: Task<int>) =
+    builder {
+        let! x = first
+        and! y = second
+        and! z = third
+        return x + y + z
+    }
+
+[<EntryPoint>]
+let main _ =
+    let left = TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously)
+    let right = TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously)
+    let pending = run left.Task right.Task
+    if pending.IsCompleted then failwith "Expected a pending result"
+    left.SetResult 1
+    if pending.IsCompleted then failwith "Right source was not awaited"
+    right.SetResult 2
+    if pending.GetAwaiter().GetResult() <> 3 then failwith "Wrong result"
+    let third = TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously)
+    let nested = runThree left.Task right.Task third.Task
+    if nested.IsCompleted then failwith "Nested merge completed before the third source"
+    third.SetResult 3
+    if nested.GetAwaiter().GetResult() <> 6 then failwith "Wrong nested result"
+    0
+"""
+    |> withLangVersionPreview
+    |> withFSharpCoreShippedNet
+    |> withOptimization optimize
     |> compileExeAndRun
     |> shouldSucceed
 
