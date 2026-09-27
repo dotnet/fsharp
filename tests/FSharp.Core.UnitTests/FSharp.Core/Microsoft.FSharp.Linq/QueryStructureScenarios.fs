@@ -76,7 +76,7 @@ let private loops () =
           "for over two levels of navigation collections"
           (fun db -> query { for c in db.Customers do for o in c.Orders do for l in o.Lines do select (c.Name, o.Id, l.Id) })
           ordersWithLines
-      |> Scenario.violating (nested [ "SelectMany" ])
+      |> Scenario.flat [ "SelectMany"; "SelectMany"; "Select"; "Select" ]
 
       Scenario.rows
           "three for"
@@ -89,7 +89,55 @@ let private loops () =
                   select (c.Name, o.Id, l.Id)
               })
           ordersWithLines
-      |> Scenario.violating (nested [ "SelectMany" ])
+      |> Scenario.flat [ "SelectMany"; "SelectMany"; "Where"; "Select"; "Select" ]
+
+      Scenario.rows
+          "four for"
+          (fun db ->
+              query {
+                  for c in db.Customers do
+                  for o in c.Orders do
+                  for l in o.Lines do
+                  for p in db.Products do
+                  where (p.Id = l.ProductId)
+                  select (c.Name, l.Id, p.Name)
+              })
+          (fun data ->
+              seq {
+                  for c in data.Customers do
+                      for o in c.Orders do
+                          for l in o.Lines do
+                              for p in data.Products do
+                                  if p.Id = l.ProductId then yield c.Name, l.Id, p.Name
+              })
+      |> Scenario.flat [ "SelectMany"; "SelectMany"; "SelectMany"; "Where"; "Select"; "Select" ]
+
+      Scenario.rows
+          "if then between three for"
+          (fun db ->
+              query {
+                  for c in db.Customers do
+                  where (c.Age > 26)
+                  for o in c.Orders do
+                  if o.Total > 4.0 then
+                      for l in o.Lines do
+                      yield (c.Name, l.Id)
+              })
+          (fun data ->
+              seq {
+                  for c in data.Customers do
+                      if c.Age > 26 then
+                          for o in c.Orders do
+                              if o.Total > 4.0 then
+                                  for l in o.Lines -> c.Name, l.Id
+              })
+      |> Scenario.flat [ "Where"; "SelectMany"; "Where"; "SelectMany"; "Select" ]
+
+      Scenario.rows
+          "yield! after two for"
+          (fun db -> query { for c in db.Customers do for o in c.Orders do yield! o.Lines })
+          (fun data -> Seq.ofList data.Lines)
+      |> Scenario.flat [ "SelectMany"; "SelectMany" ]
 
       Scenario.rows
           "for after sortBy"
@@ -250,7 +298,7 @@ let private leftJoins () =
                        (if obj.ReferenceEquals(p, null) then "" else p.Name))
               })
           leftJoinedOrdersAndProducts
-      |> Scenario.violating (nested [ "GroupJoin"; "SelectMany" ])
+      |> Scenario.flat [ "GroupJoin"; "SelectMany"; "GroupJoin"; "SelectMany"; "Select"; "Select" ]
 
       Scenario.rows
           "join after a left join"
@@ -263,6 +311,94 @@ let private leftJoins () =
                   select (c.Name, (if obj.ReferenceEquals(o, null) then -1 else o.Id), p.Name)
               })
           (leftJoinedOrdersAndProducts >> Seq.filter (fun (_, _, product) -> product <> ""))
+      |> Scenario.violating (nested [ "Join" ])
+
+      Scenario.rows
+          "two for after a left join"
+          (fun db ->
+              query {
+                  for c in db.Customers do
+                  leftOuterJoin o in db.Orders on (c.Id = o.CustomerId) into orders
+                  for o in orders do
+                  for l in db.Lines do
+                  where (not (obj.ReferenceEquals(o, null)) && l.OrderId = o.Id)
+                  select (c.Name, o.Id, l.Id)
+              })
+          ordersWithLines
+      |> Scenario.violating (nested [ "SelectMany" ])
+
+      Scenario.rows
+          "join after two for"
+          (fun db ->
+              query {
+                  for c in db.Customers do
+                  for o in c.Orders do
+                  join l in db.Lines on (o.Id = l.OrderId)
+                  select (c.Name, o.Id, l.Id)
+              })
+          ordersWithLines
+      |> Scenario.flat [ "SelectMany"; "Join"; "Select"; "Select"; "Select" ]
+
+      Scenario.rows
+          "join after a for over tuples"
+          (fun db ->
+              query {
+                  for c in db.Customers do
+                  for (o, id) in (query { for o in db.Orders do select (o, o.Id) }) do
+                  join l in db.Lines on (id = l.OrderId)
+                  where (o.CustomerId = c.Id)
+                  select (c.Name, id, l.Id)
+              })
+          ordersWithLines
+      |> Scenario.flat [ "SelectMany"; "Join"; "Select"; "Where"; "Select"; "Select" ]
+
+      Scenario.rows
+          "join on a tuple key after a for over tuples"
+          (fun db ->
+              query {
+                  for c in db.Customers do
+                  for (o, id) in (query { for o in db.Orders do select (o, o.Id) }) do
+                  join l in db.Lines on ((id, 1) = (l.OrderId, 1))
+                  where (o.CustomerId = c.Id)
+                  select (c.Name, id, l.Id)
+              })
+          ordersWithLines
+      |> Scenario.flat [ "SelectMany"; "Join"; "Select"; "Where"; "Select"; "Select" ]
+
+      Scenario.rows
+          "join whose inner key uses an earlier variable"
+          (fun db ->
+              query {
+                  for c in db.Customers do
+                  for (o, id) in (query { for o in db.Orders do select (o, o.Id) }) do
+                  join l in db.Lines on ((id, o.CustomerId) = (l.OrderId, c.Id))
+                  select (c.Name, id, l.Id)
+              })
+          ordersWithLines
+      |> Scenario.violating (nested [ "Join" ] @ [ Violation.ReadsUnnamedMember "Tuple`2"; Violation.ReadsUnnamedMember "Tuple`2" ])
+
+      Scenario.rows
+          "groupJoin after two for"
+          (fun db ->
+              query {
+                  for c in db.Customers do
+                  for o in c.Orders do
+                  groupJoin l in db.Lines on (o.Id = l.OrderId) into lines
+                  select (c.Name, o.Id, lines.Count())
+              })
+          (fun data -> seq { for c in data.Customers do for o in c.Orders -> c.Name, o.Id, o.Lines.Count })
+      |> Scenario.flat [ "SelectMany"; "GroupJoin"; "Select"; "Select"; "Select" ]
+
+      Scenario.rows
+          "join over a source that uses an earlier variable"
+          (fun db ->
+              query {
+                  for c in db.Customers do
+                  for o in c.Orders do
+                  join same in c.Orders on (o.Id = same.Id)
+                  select (c.Name, same.Id)
+              })
+          customersWithOrders
       |> Scenario.violating (nested [ "Join" ]) ]
 
 let cases () = loops () @ subqueries () @ leftJoins ()
