@@ -17,10 +17,7 @@
     }
   },
   "prs": {
-    "19774": [
-      "DiYsXeTLwx8NWUxYnA5KwwyVxqk",
-      ""
-    ],
+    "19774": {"sha": "0e262c5de4cbc31f0d594c589c0e4ac30c95c6a9", "cats": []},
     "19930": [
       "_bSfmrtVqNgauuttQVyL-dPvXF4",
       "idrt"
@@ -101,10 +98,7 @@
       "hJ3MaOg4NjR8k8-hrEDJBjvBEN4",
       "a"
     ],
-    "20403": [
-      "rXVJRbkTNIDt1CRs8Nw8v_Q0wuw",
-      ""
-    ],
+    "20403": {"sha": "ad754945b9133480edd4246cf0dc3cbff434c2ec", "cats": []},
     "20405": [
       "FsQiTw3itxHR6VL7B0Y0-qzGEB4",
       "bo"
@@ -125,10 +119,7 @@
       "_StQ6wCGNGncy5l7_QS2B1FqF3A",
       ""
     ],
-    "20418": [
-      "Njp6eY-lqBSAn0aGZPUzax5pQCY",
-      ""
-    ],
+    "20418": {"sha": "363a7a798fa5a814809f468664f5336b1e694026", "cats": []},
     "20428": [
       "rsnsf-FFi4ui46ehpY7ank9qlHw",
       "o"
@@ -221,10 +212,7 @@
       "hAxFTOVrba5yYo9_214aRUFXa5Y",
       "d"
     ],
-    "20485": [
-      "H3xmM8PSGdKdwAb-zLvinqgE3bY",
-      ""
-    ],
+    "20485": {"sha": "1f7c6633c3d219d29dc006feccbbe29ea804ddb6", "cats": []},
     "20486": [
       "3yya1Aq0za7JXL7pkcdA4oy0wqI",
       "bo"
@@ -389,10 +377,7 @@
       "YA3R7c2fncjzGxY_5qJh-RrbuDk",
       ""
     ],
-    "20563": [
-      "cDL9jrt7rm2XNvnJPTuG1q6Cv_A",
-      ""
-    ],
+    "20563": {"sha": "7032fd8ebb7bae6d9736f9c93d3b86d6ae82bff0", "cats": []},
     "20565": [
       "5FZ7rrrf7b1AtPK6bukImNy4qoI",
       "aidrt"
@@ -413,10 +398,7 @@
       "baixhXNjL5-AOcpm68jh8ZvUTO4",
       ""
     ],
-    "20574": [
-      "Czg1XnTN_M5BIbK9ZsAxtrHBUSI",
-      ""
-    ],
+    "20574": {"sha": "0b38355e74cdfcce4121b2bd66c031b6b1c15122", "cats": []},
     "20578": [
       "StTSRElQu1NiI2lR8PbyysoftIo",
       "ir"
@@ -465,10 +447,7 @@
       "I83TOSy5gT6RIMpJ-xNS5rP-W8I",
       ""
     ],
-    "20592": [
-      "gVO5YeMqXR6rQ8U0nDjPlXRMHGc",
-      ""
-    ],
+    "20592": {"sha": "8153b961e32a5d1eab43c5349c38cf95744c1c67", "cats": []},
     "20593": [
       "URdAf6WF8ymZH260nVKWU5w60zA",
       ""
@@ -612,6 +591,7 @@
     "20645": [
       "uoYi97UN7VEney77Do1UmG5sa5E",
       "dr"
-    ]
+    ],
+    "20648": {"sha": "a8ab167da23e43c8c535f64a08fd58ed9319826b", "cats": []}
   }
 }
