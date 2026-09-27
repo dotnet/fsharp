@@ -269,6 +269,93 @@ let OutlineRuntimeAsyncCallback (g: TcGlobals) (analyzer: RuntimeAsyncAnalyzer) 
             tryDelegateSignature body
         | _ -> None
 
+    let isTrivialValue =
+        function
+        | Expr.Const _ -> true
+        | Expr.Val(vref, _, _) -> vref.IsLocalRef && not vref.IsMutable && not vref.IsTypeFunction
+        | _ -> false
+
+    // Construction moves to the invocation, so its evaluation must not have observable effects.
+    let rec inlineDelegateInvoke (invokeRef, invokeTy, tyargs, arg, callRange) construction =
+        match construction with
+        | NewDelegateExpr g (_, [ _ ], _, _, _) ->
+            Some(MakeFSharpDelegateInvokeAndTryBetaReduce g (invokeRef, construction, invokeTy, tyargs, arg, callRange))
+        | Expr.DebugPoint(point, rest) ->
+            inlineDelegateInvoke (invokeRef, invokeTy, tyargs, arg, callRange) rest
+            |> Option.map (fun body -> Expr.DebugPoint(point, body))
+        | Expr.Sequential(first, rest, kind, m) when isTrivialValue first ->
+            inlineDelegateInvoke (invokeRef, invokeTy, tyargs, arg, callRange) rest
+            |> Option.map (fun body -> Expr.Sequential(first, body, kind, m))
+        | Expr.Let((TBind(_, rhs, _)) as binding, rest, m, _) when isTrivialValue rhs ->
+            inlineDelegateInvoke (invokeRef, invokeTy, tyargs, arg, callRange) rest
+            |> Option.map (mkLetBind m binding)
+        | Expr.Match(point,
+                     matchRange,
+                     (TDSwitch(Expr.Val(vref, _, _), [ TCase(_, TDSuccess([], _)) ], Some(TDSuccess([], _)), _) as tree),
+                     targets,
+                     m,
+                     _) when vref.IsLocalRef && not vref.IsMutable && not vref.IsTypeFunction ->
+            let targets =
+                targets
+                |> Array.map (fun (TTarget(vals, body, flags)) ->
+                    inlineDelegateInvoke (invokeRef, invokeTy, tyargs, arg, callRange) body
+                    |> Option.map (fun body -> TTarget(vals, body, flags)))
+
+            if targets.Length > 0 && Array.forall Option.isSome targets then
+                let targets = targets |> Array.map Option.get
+                Some(Expr.Match(point, matchRange, tree, targets, m, tyOfExpr g targets[0].TargetExpression))
+            else
+                None
+        | _ -> None
+
+    let tryInlineDelegate callback construction continuation =
+        let mutable invocations = 0
+        let mutable invalidUse = false
+
+        let rwenv =
+            {
+                PreIntercept =
+                    Some(fun rewrite expression ->
+                        match expression with
+                        | DelegateInvokeExpr g (invokeRef, invokeTy, tyargs, Expr.Val(vref, _, _), arg, callRange) when
+                            valEq callback vref.Deref
+                            ->
+                            match inlineDelegateInvoke (invokeRef, invokeTy, tyargs, rewrite arg, callRange) construction with
+                            | Some body ->
+                                invocations <- invocations + 1
+                                Some body
+                            | None ->
+                                invalidUse <- true
+                                Some expression
+                        | Expr.Val(vref, _, _) when valEq callback vref.Deref ->
+                            invalidUse <- true
+                            Some expression
+                        | _ -> None)
+                PreInterceptBinding = None
+                PostTransform = (fun _ -> None)
+                RewriteQuotations = false
+                StackGuard = StackGuard("InlineRuntimeAsyncDelegateInvocation")
+            }
+
+        let continuation = RewriteExpr rwenv continuation
+
+        let quotedUse =
+            ExistsExpr
+                (function
+                | Expr.Quote(body, _, _, _, _) ->
+                    ExistsExpr
+                        (function
+                        | Expr.Val(vref, _, _) -> valEq callback vref.Deref
+                        | _ -> false)
+                        body
+                | _ -> false)
+                continuation
+
+        if invocations = 1 && not invalidUse && not quotedUse then
+            Some continuation
+        else
+            None
+
     let rec outline expr =
         match expr with
         | Expr.Let(TBind(callback, construction, point), continuation, m, _) when
@@ -293,14 +380,23 @@ let OutlineRuntimeAsyncCallback (g: TcGlobals) (analyzer: RuntimeAsyncAnalyzer) 
                     freeVals
                     |> Zset.forall (fun v -> not v.IsPinning && not (isByrefTy g v.Type || isByrefLikeTy g m v.Type))
 
-                let outlinedConstruction =
-                    if canCapture then
-                        outlineBranches resultTy (outline construction)
+                let construction = if canCapture then outline construction else construction
+
+                let inlined =
+                    if canCapture && isDelegate then
+                        tryInlineDelegate callback construction continuation
                     else
                         None
 
-                match outlinedConstruction with
-                | Some construction ->
+                let outlinedConstruction =
+                    if canCapture && Option.isNone inlined then
+                        outlineBranches resultTy construction
+                    else
+                        None
+
+                match inlined, outlinedConstruction with
+                | Some body, _ -> outline body
+                | None, Some construction ->
                     let callbackTy = tyOfExpr g construction
                     let outlined, outlinedExpr = mkCompGenLocal m "runtimeAsyncCallback" callbackTy
                     let mutable invalidUse = false
@@ -389,7 +485,7 @@ let OutlineRuntimeAsyncCallback (g: TcGlobals) (analyzer: RuntimeAsyncAnalyzer) 
                         expr
                     else
                         mkLet point m outlined construction continuation
-                | None -> expr
+                | None, None -> expr
             | _ -> expr
         | Expr.Let(binding, continuation, m, _) -> mkLetBind m binding (outline continuation)
         | _ -> expr

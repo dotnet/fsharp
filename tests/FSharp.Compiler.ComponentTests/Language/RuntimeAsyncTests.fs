@@ -1138,6 +1138,76 @@ let main _ =
 [<InlineData(false)>]
 [<InlineData(true)>]
 [<Theory>]
+let ``runtime async inlines nested single-use delegate sources`` (optimize: bool) =
+    let source =
+        FSharp """
+module NestedDelegateSource
+open System.Threading.Tasks
+open System.Runtime.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices
+
+type Started<'T> = delegate of unit -> 'T
+let mutable constructions = 0
+
+let inline compose ([<InlineIfLambda>] source: Started<int>) =
+    Started(fun () -> source.Invoke() + 1)
+
+let inline run ([<InlineIfLambda>] code: Started<int>) =
+    StateMachineHelpers.__runtimeAsyncReturn(code.Invoke())
+
+[<MethodImpl(MethodImplOptions.NoInlining)>]
+let execute (pending: Task<int>) chooseFirst =
+    run (compose (
+        if chooseFirst then
+            Started(fun () -> AsyncHelpers.Await pending)
+        else
+            Started(fun () -> AsyncHelpers.Await pending + 1)))
+
+let inline runAfterConstruction ([<InlineIfLambda>] code: Started<int>) =
+    StateMachineHelpers.__runtimeAsyncReturn(
+        if constructions = 0 then failwith "Callback constructed after entering run"
+        code.Invoke())
+
+[<MethodImpl(MethodImplOptions.NoInlining)>]
+let executeWithConstruction (pending: Task<int>) =
+    runAfterConstruction (compose (
+        constructions <- constructions + 1
+        Started(fun () -> AsyncHelpers.Await pending)))
+
+[<EntryPoint>]
+let main _ =
+    let gate = TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously)
+    let first = execute gate.Task true
+    let second = execute gate.Task false
+    let third = executeWithConstruction gate.Task
+    if first.IsCompleted || second.IsCompleted || third.IsCompleted || constructions <> 1 then
+        failwith "Delegate construction or suspension changed"
+    gate.SetResult 41
+    if first.GetAwaiter().GetResult() <> 42 || second.GetAwaiter().GetResult() <> 43 || third.GetAwaiter().GetResult() <> 42 then
+        failwith "Nested delegate result changed"
+    0
+"""
+        |> withLangVersionPreview
+        |> withFSharpCoreShippedNet
+        |> withOptimization optimize
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    // Execution succeeds with outlining too; only the async Invoke owners distinguish the two paths.
+    source |> withMetadataReader (fun md ->
+        let asyncInvokes =
+            [ for handle in md.TypeDefinitions do
+                let ty = md.GetTypeDefinition handle
+                for methodHandle in ty.GetMethods() do
+                    let method = md.GetMethodDefinition methodHandle
+                    if md.GetString method.Name = "Invoke" && int method.ImplAttributes &&& 0x2000 <> 0 then
+                        yield md.GetString ty.Name ]
+        Assert.NotEmpty asyncInvokes
+        Assert.All(asyncInvokes, fun name -> Assert.StartsWith("executeWithConstruction@", name)))
+
+[<InlineData(false)>]
+[<InlineData(true)>]
+[<Theory>]
 let ``runtime async merges delegate sources`` (optimize: bool) =
     FSharp """
 module RuntimeAsyncMergedDelegates

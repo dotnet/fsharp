@@ -165,18 +165,19 @@ shapes, and unsafe byref or pinned captures are not outlined; suspensions
 remaining in an ordinary method are still diagnosed.
 
 The ordinary optimizer can inline an `Invoke` on a constructed delegate.
-If inlining leaves an `InlineIfLambda` delegate bound to a local, directly
-rewritable invocations use the outlining fallback instead. When the
-construction itself contains inner callback bindings, eligible inner
-callbacks are outlined before the outer delegate is marked, so each
-`Await` stays inside a runtime-async method. Precomputations that capture
-the delegate's inputs remain at its construction site, so a pending operation
-is created once before invocation; conditional construction and repeated
-invokes preserve the same captured state. A delegate that escapes or is
-consumed opaquely cannot be converted. IlxGen checks each generated delegate
-`Invoke` as its own method: an `Await` left there without a return marker
-produces FS3918, even when the enclosing method is runtime-async. Exported
-inline definitions remain unchanged.
+For a residual `InlineIfLambda` delegate bound to a local, a single direct
+invocation can also be inlined through simple, effect-free conditional
+construction. Otherwise, directly rewritable invocations use the outlining
+fallback. Inner callback bindings are processed before the outer delegate
+is marked: single-use delegates can be inlined first, and residual callbacks
+are outlined so each `Await` stays inside a runtime-async method. Effectful
+precomputations that capture a delegate's inputs are not moved to its
+invocation; outlining retains them at construction, so a pending operation
+is created once and repeated invokes share captured state. A delegate that
+escapes or is consumed opaquely cannot be converted. IlxGen checks each
+generated delegate `Invoke` as its own method: an `Await` left there without
+a return marker produces FS3918, even when the enclosing method is
+runtime-async. Exported inline definitions remain unchanged.
 
 Outlining retains the callback closure and generates an async `Invoke` method
 for each specialized callback shape. Calls now return a `ValueTask<'T>` for
