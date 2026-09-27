@@ -3,14 +3,7 @@
 module FSharp.Core.UnitTests.Linq.QueryKeyScenarios
 
 open System.Linq
-open System.Linq.Expressions
 open Microsoft.FSharp.Linq.RuntimeHelpers
-
-let private block = [ Violation.Statement ExpressionType.Block ]
-
-/// A tree is pinned with every block it has: one that goes from three to two is a change as well
-let private blocks count =
-    List.replicate count (Violation.Statement ExpressionType.Block)
 
 let private customers (data: Data) = Seq.ofList data.Customers
 
@@ -30,6 +23,12 @@ let private matchingLinesOrNone (data: Data) =
             | [] -> yield o.Id, -1
             | matches -> yield! matches
     }
+
+/// The key of a line as the join scenarios spell it, made by a function instead of written in the query.
+let lineKey (l: OrderLine) = {| Units = l.Quantity; Order = l.OrderId |}
+
+let private matchingLineCounts (data: Data) =
+    seq { for o in data.Orders -> o.Id, matchingLines data |> Seq.filter (fun (order, _) -> order = o.Id) |> Seq.length }
 
 let private joins () =
     [ Scenario.rows
@@ -72,7 +71,6 @@ let private joins () =
                   select (o.Id, l.Id)
               })
           matchingLines
-      |> Scenario.violating (blocks 2)
 
       Scenario.rows
           "join on an anonymous record, fields in alphabetical order"
@@ -93,8 +91,16 @@ let private joins () =
                   select (o.Id, l.Id)
               })
           matchingLines
-      |> Scenario.violating (blocks 2)
 
+      Scenario.rows
+          "join on an anonymous record that one side gets from a function"
+          (fun db ->
+              query {
+                  for o in db.Orders do
+                  join l in db.Lines on ({| Units = o.CustomerId; Order = o.Id |} = lineKey l)
+                  select (o.Id, l.Id)
+              })
+          matchingLines
       Scenario.rows
           "groupJoin on a tuple"
           (fun db ->
@@ -103,7 +109,27 @@ let private joins () =
                   groupJoin l in db.Lines on ((o.Id, o.CustomerId) = (l.OrderId, l.Quantity)) into lines
                   select (o.Id, lines.Count())
               })
-          (fun data -> seq { for o in data.Orders -> o.Id, matchingLines data |> Seq.filter (fun (order, _) -> order = o.Id) |> Seq.length })
+          matchingLineCounts
+
+      Scenario.rows
+          "groupJoin on a record, fields out of declaration order"
+          (fun db ->
+              query {
+                  for o in db.Orders do
+                  groupJoin l in db.Lines on ({ Units = o.CustomerId; OrderNumber = o.Id } = { Units = l.Quantity; OrderNumber = l.OrderId }) into lines
+                  select (o.Id, lines.Count())
+              })
+          matchingLineCounts
+
+      Scenario.rows
+          "groupJoin on an anonymous record, fields out of alphabetical order"
+          (fun db ->
+              query {
+                  for o in db.Orders do
+                  groupJoin l in db.Lines on ({| Units = o.CustomerId; Order = o.Id |} = {| Units = l.Quantity; Order = l.OrderId |}) into lines
+                  select (o.Id, lines.Count())
+              })
+          matchingLineCounts
 
       Scenario.rows
           "leftOuterJoin on a tuple"
@@ -111,6 +137,28 @@ let private joins () =
               query {
                   for o in db.Orders do
                   leftOuterJoin l in db.Lines on ((o.Id, o.CustomerId) = (l.OrderId, l.Quantity)) into lines
+                  for l in lines do
+                  select (o.Id, (if obj.ReferenceEquals(l, null) then -1 else l.Id))
+              })
+          matchingLinesOrNone
+
+      Scenario.rows
+          "leftOuterJoin on a record, fields out of declaration order"
+          (fun db ->
+              query {
+                  for o in db.Orders do
+                  leftOuterJoin l in db.Lines on ({ Units = o.CustomerId; OrderNumber = o.Id } = { Units = l.Quantity; OrderNumber = l.OrderId }) into lines
+                  for l in lines do
+                  select (o.Id, (if obj.ReferenceEquals(l, null) then -1 else l.Id))
+              })
+          matchingLinesOrNone
+
+      Scenario.rows
+          "leftOuterJoin on an anonymous record, fields out of alphabetical order"
+          (fun db ->
+              query {
+                  for o in db.Orders do
+                  leftOuterJoin l in db.Lines on ({| Units = o.CustomerId; Order = o.Id |} = {| Units = l.Quantity; Order = l.OrderId |}) into lines
                   for l in lines do
                   select (o.Id, (if obj.ReferenceEquals(l, null) then -1 else l.Id))
               })
@@ -152,7 +200,6 @@ let private groupings () =
           "groupBy a record, fields out of declaration order"
           (fun db -> query { for c in db.Customers do groupBy { KeyAge = c.Age / 10; KeyCity = c.City } into g; select (g.Key, g.Count()) })
           (customers >> Seq.countBy (fun c -> { KeyCity = c.City; KeyAge = c.Age / 10 }))
-      |> Scenario.violating block
 
       Scenario.rows
           "groupBy an anonymous record, fields in alphabetical order"
@@ -163,7 +210,6 @@ let private groupings () =
           "groupBy an anonymous record, fields out of alphabetical order"
           (fun db -> query { for c in db.Customers do groupBy {| Decade = c.Age / 10; City = c.City |} into g; select (g.Key, g.Count()) })
           (customers >> Seq.countBy (fun c -> {| City = c.City; Decade = c.Age / 10 |}))
-      |> Scenario.violating block
 
       Scenario.rows
           "groupValBy a tuple of values"
