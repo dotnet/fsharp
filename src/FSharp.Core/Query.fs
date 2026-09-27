@@ -1128,11 +1128,13 @@ module Query =
 
     let (|CallLeftOuterJoin|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun (query:QueryBuilder, arg1, arg2, arg3, arg4, arg5) -> query.LeftOuterJoin(arg1, arg2, arg3, arg4, arg5)))
 
-    /// A 'join', 'groupJoin' or 'leftOuterJoin'. The inner group of a 'leftOuterJoin' is already replaced by 'group.DefaultIfEmpty()'.
+    /// A 'join', 'groupJoin' or 'leftOuterJoin'
     [<NoComparison; NoEquality>]
     type JoinLike =
         { Make: bool * Type * Type * Type * Type * Expr * Expr * Var * Expr * Var * Expr * Var * Var * Expr -> Expr
           InnerResultConv: ConversionDescription -> ConversionDescription
+          /// For a 'leftOuterJoin', the element type of the group, which the query sees through 'DefaultIfEmpty'
+          DefaultedGroupElementTy: Type voption
           QTy: Type
           OuterSource: Expr
           InnerSource: Expr
@@ -1146,10 +1148,11 @@ module Query =
 
     [<return: Struct>]
     let (|CallJoinLike|_|) e =
-        let joinLike make innerResultConv qTy (outerSource, innerSource, outerKeyVar, outerKeySelector, innerKeyVar, innerKeySelector, outerResultVar, innerResultVar, elementSelector) =
+        let joinLike make innerResultConv defaultedGroupElementTy qTy (outerSource, innerSource, outerKeyVar, outerKeySelector, innerKeyVar, innerKeySelector, outerResultVar, innerResultVar, elementSelector) =
             ValueSome
                 { Make = make
                   InnerResultConv = innerResultConv
+                  DefaultedGroupElementTy = defaultedGroupElementTy
                   QTy = qTy
                   OuterSource = outerSource
                   InnerSource = innerSource
@@ -1167,7 +1170,7 @@ module Query =
                      Lambda(outerKeyVar, outerKeySelector)
                      Lambda(innerKeyVar, innerKeySelector)
                      LambdasNoDetupling([outerResultVar; innerResultVar], elementSelector)]) ->
-            joinLike MakeJoin id qTy (outerSource, innerSource, outerKeyVar, outerKeySelector, innerKeyVar, innerKeySelector, outerResultVar, innerResultVar, elementSelector)
+            joinLike MakeJoin id ValueNone qTy (outerSource, innerSource, outerKeyVar, outerKeySelector, innerKeyVar, innerKeySelector, outerResultVar, innerResultVar, elementSelector)
 
         | CallGroupJoin(_, GenericArgs [_; qTy; _; _; _],
                         [ outerSource
@@ -1175,7 +1178,7 @@ module Query =
                           Lambda(outerKeyVar, outerKeySelector)
                           Lambda(innerKeyVar, innerKeySelector)
                           LambdasNoDetupling([outerResultVar; innerResultGroupVar], elementSelector)]) ->
-            joinLike MakeGroupJoin MakeSeqConv qTy (outerSource, innerSource, outerKeyVar, outerKeySelector, innerKeyVar, innerKeySelector, outerResultVar, innerResultGroupVar, elementSelector)
+            joinLike MakeGroupJoin MakeSeqConv ValueNone qTy (outerSource, innerSource, outerKeyVar, outerKeySelector, innerKeyVar, innerKeySelector, outerResultVar, innerResultGroupVar, elementSelector)
 
         | CallLeftOuterJoin(_, GenericArgs [ _; qTy; innerSourceTy; _; _],
                             [ outerSource
@@ -1183,8 +1186,7 @@ module Query =
                               Lambda(outerKeyVar, outerKeySelector)
                               Lambda(innerKeyVar, innerKeySelector)
                               LambdasNoDetupling([outerResultVar; innerResultGroupVar], elementSelector)]) ->
-            let elementSelector = elementSelector.Substitute (fun v -> if v = innerResultGroupVar then Some (MakeDefaultIfEmpty ([innerSourceTy], [Expr.Var innerResultGroupVar])) else None)
-            joinLike MakeGroupJoin id qTy (outerSource, innerSource, outerKeyVar, outerKeySelector, innerKeyVar, innerKeySelector, outerResultVar, innerResultGroupVar, elementSelector)
+            joinLike MakeGroupJoin id (ValueSome innerSourceTy) qTy (outerSource, innerSource, outerKeyVar, outerKeySelector, innerKeyVar, innerKeySelector, outerResultVar, innerResultGroupVar, elementSelector)
 
         | _ -> ValueNone
 
@@ -1254,6 +1256,9 @@ module Query =
                 MakeSelect(CanEliminate.Yes, false, mutExpr, var, convExpr) ]
 
             Expr.Coerce (Expr.NewObject (immutGroupingTy.GetConstructors().[0], args), immutIGroupingTy)
+
+        | DefaultIfEmptyConv ->
+            MakeDefaultIfEmpty ([mutExpr.Type.GetGenericArguments().[0]], [mutExpr])
 
         | NoConv ->
             mutExpr
@@ -1354,7 +1359,8 @@ module Query =
             | ExprShape.ShapeLambda (_, body) -> ExistsInExpr predicate body
             | ExprShape.ShapeVar _ -> false)
 
-    /// Whether the elements of the source hold a group already put through 'DefaultIfEmpty', as 'leftOuterJoin' builds them.
+    /// Whether the elements of the source hold a group already put through 'DefaultIfEmpty', as 'leftOuterJoin' builds them
+    /// when it cannot hand the group on as the join produced it.
     /// EF Core translates what is nested under such a source with a lateral join where the database has one, but cannot
     /// carry that sequence along the main chain, so continuing the chain there would lose a query that works.
     let HoldsDefaultedGroup (mutSource: Expr) =
@@ -1710,10 +1716,33 @@ module Query =
         let mutInnerKeySelector, _ = ProduceMoreMutables TransNone mutInnerKeySelector
         let mutInnerKeySelector = CleanupLeaf mutInnerKeySelector
 
-        let mutOuterResultVar, mutElementSelector = ConvertImmutableConsumerToMutableConsumer outerSourceConv (join.OuterResultVar, MacroExpand join.ElementSelector)
+        // A 'leftOuterJoin' passes its group on as the join produced it, as 'groupJoin' does, and the query reads it through
+        // 'DefaultIfEmpty' where it uses it. That is where C# puts 'DefaultIfEmpty', and where a provider looks for it.
+        let immutElementSelector, passesGroupOn =
+            let elementSelector = MacroExpand join.ElementSelector
+            match join.DefaultedGroupElementTy with
+            | ValueNone -> elementSelector, []
+            | ValueSome groupElementTy ->
+                let group = join.InnerResultVar
+                let isGroup (e: Expr) =
+                    match e with
+                    | Var v -> v = group
+                    | _ -> false
+                let readDefaulted (e: Expr) = e.Substitute (fun v -> if v = group then Some (MakeDefaultIfEmpty ([groupElementTy], [Expr.Var group])) else None)
+                match elementSelector, innerSourceConv with
+                | NewTuple args, NoConv when not elementSelector.Type.IsValueType && List.exists isGroup args ->
+                    Expr.NewTuple (args |> List.map (fun arg -> if isGroup arg then arg else readDefaulted arg)), List.map isGroup args
+                | _ -> readDefaulted elementSelector, []
+
+        let mutOuterResultVar, mutElementSelector = ConvertImmutableConsumerToMutableConsumer outerSourceConv (join.OuterResultVar, immutElementSelector)
         let mutInnerResultVar, mutElementSelector = ConvertImmutableConsumerToMutableConsumer (join.InnerResultConv innerSourceConv) (join.InnerResultVar, mutElementSelector)
         let mutElementSelector, elementSelectorConv = ProduceMoreMutables TransInnerNoCheck mutElementSelector
         let mutElementSelector = CleanupLeaf mutElementSelector
+        let elementSelectorConv =
+            match elementSelectorConv with
+            | TupleConv (isStruct, convs) when not passesGroupOn.IsEmpty ->
+                TupleConv (isStruct, List.map2 (fun passesGroup conv -> if passesGroup then DefaultIfEmptyConv else conv) passesGroupOn convs)
+            | conv -> conv
 
         let joinExpr =
             join.Make

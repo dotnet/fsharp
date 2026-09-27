@@ -55,6 +55,9 @@ module internal Adapters =
         |> MethodInfo.GetMethodFromHandle
         :?> MethodInfo
 
+    let DefaultIfEmptyMeth =
+        methodhandleof Enumerable.DefaultIfEmpty |> MethodInfo.GetMethodFromHandle :?> MethodInfo
+
     // The following patterns are used to recognize object construction
     // using the 'new O(Prop1 = <e>, Prop2 = <e>)' syntax
 
@@ -197,6 +200,8 @@ module internal Adapters =
         | RecordConv of Type * ConversionDescription list
         | GroupingConv (* origKeyType: *) of Type (* origElemType: *) * Type * ConversionDescription
         | SeqConv of ConversionDescription
+        /// The group of a 'leftOuterJoin', kept as the join produced it and read through 'DefaultIfEmpty'
+        | DefaultIfEmptyConv
         | NoConv
 
     /// Given an type involving immutable tuples and records, logically corresponding to the type produced at a
@@ -236,6 +241,7 @@ module internal Adapters =
                 typedefof<IQueryable<_>>.MakeGenericType args
             else
                 typedefof<seq<_>>.MakeGenericType args
+        | DefaultIfEmptyConv
         | NoConv -> ty
 
     let IsNewAnonymousObjectHelperQ =
@@ -300,6 +306,20 @@ module internal Adapters =
         | RecordFieldGetSimplification newExpr -> newExpr
         | _ -> e
 
+    /// 'DefaultIfEmpty' over a member of an anonymous object: the group of a 'leftOuterJoin' as one tuple of the query reads it
+    /// from the one before
+    [<return: Struct>]
+    let (|ReadOfLeftOuterJoinGroup|_|) (expr: Expr) =
+        match expr with
+        | Patterns.Call(None, meth, [ Patterns.PropertyGet(Some anonymousObject, _, []) as group ]) when
+            meth.IsGenericMethod
+            && meth.GetGenericMethodDefinition() = DefaultIfEmptyMeth
+            && anonymousObject.Type.IsGenericType
+            && anonToTupleTypeMap.ContainsKey(anonymousObject.Type.GetGenericTypeDefinition())
+            ->
+            ValueSome group
+        | _ -> ValueNone
+
     /// Given the expression part of a "yield" or "select" which produces a result in terms of immutable tuples or immutable records,
     /// generate an equivalent expression yielding anonymous objects. Also return the conversion for the immutable-to-mutable correspondence
     /// so we can reverse this later.
@@ -309,7 +329,13 @@ module internal Adapters =
         // Replace immutable tuples by anonymous objects
         | Patterns.NewTuple exprs ->
             let argExprsNow, argScripts =
-                exprs |> List.map (ProduceMoreMutables tipf) |> List.unzip
+                exprs
+                |> List.map (fun arg ->
+                    match arg with
+                    // Hand the group on as the join produced it, as C# does
+                    | ReadOfLeftOuterJoinGroup group -> group, DefaultIfEmptyConv
+                    | arg -> ProduceMoreMutables tipf arg)
+                |> List.unzip
 
             NewAnonymousObject argExprsNow, TupleConv(expr.Type.IsValueType, argScripts)
 

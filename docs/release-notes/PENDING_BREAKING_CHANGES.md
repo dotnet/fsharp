@@ -66,6 +66,20 @@ query { for c in db.Customers do for o in c.Orders do for l in o.Lines do select
 **Impact:** Code that walks the expression tree of such a query sees a longer chain and no nested `SelectMany`, `Join`
 or `GroupJoin`. The rows are the same.
 
+### `leftOuterJoin` applies `DefaultIfEmpty` where the group is read
+
+```fsharp
+query { for c in db.Customers do leftOuterJoin o in db.Orders on (c.Id = o.CustomerId) into orders; for o in orders do select (c, o) }
+// Was: Customers.GroupJoin(Orders, ..., (c, orders) => new AnonymousObject(c, orders.DefaultIfEmpty())).SelectMany(t => t.Item2, ...)
+// Now: Customers.GroupJoin(Orders, ..., (c, orders) => new AnonymousObject(c, orders)).SelectMany(t => t.Item2.DefaultIfEmpty(), ...)
+```
+
+**Impact:** The tree has the shape C# produces for a left join. Code that looked for `DefaultIfEmpty` in the `GroupJoin`
+result selector finds it in the `SelectMany` collection selector, or wherever else the query reads the group. The
+elements are the same, but the group is no longer one object per joined row: each read makes its own `DefaultIfEmpty`
+sequence, so a query that compares the group itself by reference (`select g; distinct`, `groupBy g`,
+`obj.ReferenceEquals(g, g)`) over LINQ to Objects gets different rows.
+
 ---
 
 ## IQueryable Type Preservation 🟡
