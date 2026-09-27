@@ -295,6 +295,7 @@ open Microsoft.FSharp.Linq.RuntimeHelpers.LeafExpressionConverter
 open Microsoft.FSharp.Quotations
 open Microsoft.FSharp.Quotations.Patterns
 open Microsoft.FSharp.Quotations.DerivedPatterns
+open Microsoft.FSharp.Reflection
 
 open Microsoft.FSharp.Linq.QueryRunExtensions
 
@@ -1334,6 +1335,42 @@ module Query =
         else
             Expr.Coerce (mutSource, MakeIEnumerableTy mutElemTy)
 
+    /// Whether a 'for' with this body translates into nothing but 'Where' and 'Select'
+    let rec ForBodyIsProjection immutBody =
+        match immutBody with
+        | CallQueryBuilderYield _ -> true
+        | LetExprReduction reduced
+        | MacroReduction reduced -> ForBodyIsProjection reduced
+        | CallWhere (_, _, immutBody, _)
+        | IfThenElse (_, immutBody, ZeroOnElseBranch) -> ForBodyIsProjection immutBody
+        | _ -> false
+
+    let IsFreeIn (v: Var) (e: Expr) = e.GetFreeVars() |> Seq.contains v
+
+    let rec ExistsInExpr (predicate: Expr -> bool) (e: Expr) =
+        predicate e
+        || (match e with
+            | ExprShape.ShapeCombination (_, args) -> List.exists (ExistsInExpr predicate) args
+            | ExprShape.ShapeLambda (_, body) -> ExistsInExpr predicate body
+            | ExprShape.ShapeVar _ -> false)
+
+    /// Whether the elements of the source hold a group already put through 'DefaultIfEmpty', as 'leftOuterJoin' builds them.
+    /// EF Core translates what is nested under such a source with a lateral join where the database has one, but cannot
+    /// carry that sequence along the main chain, so continuing the chain there would lose a query that works.
+    let HoldsDefaultedGroup (mutSource: Expr) =
+        let isLinqCall (name: string) (e: Expr) =
+            match e with
+            | Call (None, meth, _) ->
+                String.Equals (meth.Name, name, StringComparison.Ordinal)
+                && (Type.op_Equality (meth.DeclaringType, typeof<Queryable>) || Type.op_Equality (meth.DeclaringType, typeof<Enumerable>))
+            | _ -> false
+
+        mutSource
+        |> ExistsInExpr (fun e ->
+            match e with
+            | Call (None, _, args) when isLinqCall "GroupJoin" e -> ExistsInExpr (isLinqCall "DefaultIfEmpty") (List.last args)
+            | _ -> false)
+
     /// Given the inner of query expression in terms of query.For, query.Select, query.Yield, query.Where etc.,
     /// and including immutable tuples and immutable records, build an equivalent query expression
     /// in terms of LINQ operators, operating over mutable tuples. Return the conversion
@@ -1393,6 +1430,40 @@ module Query =
                     let mutSelectorVar, mutPredicateBody = ConvertImmutableConsumerToMutableConsumer sourceConv (immutSelectorVar, MacroExpand immutPredicateBody)
                     let mutSource = MakeWhere(qTyIsIQueryable qTy, CommitTransInnerResult mutSource, mutSelectorVar, mutPredicateBody)
                     TransFor (TransInnerResult.Other mutSource, sourceConv, immutSelectorVar) immutSelectorBody
+
+                // A provider translates a join only in the main chain, so a join that follows a 'for' continues it.
+                //
+                // query.For (source, (fun selectorVar -> query.For (join (outer, inner, ...), (fun joinedVar -> body)))) @>
+                //    ~~> TRANS(query.For (join (source.SelectMany(fun selectorVar -> outer, (fun selectorVar outerVar -> (selectorVar, outerVar))), inner, ...), (fun joinedVar -> body)))
+                | CallQueryBuilderFor (_, _, [ CallJoinLike join; Lambda (immutJoinedVar, immutBody) ])
+                      when qTyIsIQueryable qTy
+                           && not (IsFreeIn immutSelectorVar join.InnerSource)
+                           && not (IsFreeIn immutSelectorVar join.InnerKeySelector)
+                           && not (IsFreeIn immutSelectorVar immutBody)
+                           && not (HoldsDefaultedGroup (CommitTransInnerResult mutSource)) ->
+
+                    let mutPairs, pairConv, immutPairVar, readFromPair = TransPairs check (mutSource, sourceConv, immutSelectorVar) (join.OuterSource, join.OuterKeyVar)
+                    // Expanded first: the lets that take a tuple of the outer element apart are only removed while they read 'tupledArg'
+                    let join =
+                        { join with
+                            OuterKeyVar = immutPairVar
+                            OuterKeySelector = readFromPair join.OuterKeyVar (MacroExpand join.OuterKeySelector)
+                            OuterResultVar = immutPairVar
+                            ElementSelector = readFromPair join.OuterResultVar (MacroExpand join.ElementSelector) }
+                    let mutJoined, joinedConv = TransJoin check true (mutPairs, pairConv) join
+                    TransFor (mutJoined, joinedConv, immutJoinedVar) immutBody
+
+                // A provider translates a 'SelectMany' nested in the collection selector of another only as a lateral join, if at all.
+                //
+                // query.For (source, (fun selectorVar -> query.For (inner, (fun innerVar -> body)))) @>, where body is more than a projection
+                //    ~~> TRANS(query.For (source.SelectMany(fun selectorVar -> inner, (fun selectorVar innerVar -> (selectorVar, innerVar))), (fun (selectorVar, innerVar) -> body)))
+                | CallQueryBuilderFor (_, _, [ immutInnerSource; Lambda (immutInnerVar, immutBody) ])
+                      when qTyIsIQueryable qTy
+                           && not (ForBodyIsProjection immutBody)
+                           && not (HoldsDefaultedGroup (CommitTransInnerResult mutSource)) ->
+
+                    let mutPairs, pairConv, immutPairVar, readFromPair = TransPairs check (mutSource, sourceConv, immutSelectorVar) (immutInnerSource, immutInnerVar)
+                    TransFor (TransInnerResult.Other mutPairs, pairConv, immutPairVar) (readFromPair immutInnerVar immutBody)
 
                 // query.For (source, (fun selectorVar -> immutSelectorBody)) @>
                 //    ~~> source.SelectMany(fun selectorVar -> immutSelectorBody)
@@ -1651,6 +1722,42 @@ module Query =
                  mutInnerKeyVar, mutInnerKeySelector, mutOuterResultVar, mutInnerResultVar, mutElementSelector)
 
         TransInnerResult.Other joinExpr, elementSelectorConv
+
+    /// source.SelectMany(fun sourceVar -> inner, (fun sourceVar innerVar -> (sourceVar, innerVar))), where 'inner' may use 'sourceVar'.
+    /// The pairs are consumed through a variable of an immutable tuple type, and the returned function rewrites a consumer
+    /// of 'sourceVar' and of a variable standing for 'innerVar' into a consumer of that pair.
+    and TransPairs check (mutSource, sourceConv, immutSourceVar: Var) (immutInnerSource, immutInnerVar: Var) =
+        let mutSourceVar, immutInnerSource = ConvertImmutableConsumerToMutableConsumer sourceConv (immutSourceVar, MacroExpand immutInnerSource)
+        let mutInnerSource, innerConv = TransInnerAndCommit CanEliminate.Yes check immutInnerSource
+        let mutInnerVar = Var (immutInnerVar.Name, ConvImmutableTypeToMutableType innerConv immutInnerVar.Type)
+
+        // The elements of a tuple go into the pair one by one, as they do after two 'for's, so a provider can drop the ones
+        // nothing reads; EF Core cannot keep the group of a 'leftOuterJoin' that a whole tuple would carry along.
+        let sourceIsStruct, sourceElementConvs, immutSourceElementTys, mutSourceElements =
+            match sourceConv with
+            | TupleConv (isStruct, convs) ->
+                ValueSome isStruct, convs, FSharpType.GetTupleElements immutSourceVar.Type |> List.ofArray,
+                convs |> List.mapi (fun i _ -> AnonymousObjectGet (Expr.Var mutSourceVar, i))
+            | _ -> ValueNone, [ sourceConv ], [ immutSourceVar.Type ], [ Expr.Var mutSourceVar ]
+
+        let mutPair = CleanupLeaf (NewAnonymousObject (mutSourceElements @ [ Expr.Var mutInnerVar ]))
+        let mutPairs = MakeSelectMany (true, mutPair.Type, CommitTransInnerResult mutSource, mutSourceVar, CoerceToIEnumerable mutInnerVar.Type mutInnerSource, mutInnerVar, mutPair)
+        let immutPairVar = Var ("pair", FSharpType.MakeTupleType (Array.ofList (immutSourceElementTys @ [ immutInnerVar.Type ])))
+
+        let sourceElementCount = immutSourceElementTys.Length
+        let immutSourceFromPair =
+            let elements = List.init sourceElementCount (fun i -> Expr.TupleGet (Expr.Var immutPairVar, i))
+            match sourceIsStruct with
+            | ValueSome true -> Expr.NewStructTuple elements
+            | ValueSome false -> Expr.NewTuple elements
+            | ValueNone -> elements.Head
+        let readFromPair (immutSecondVar: Var) (e: Expr) =
+            e.Substitute (fun v ->
+                if v = immutSourceVar then Some immutSourceFromPair
+                elif v = immutSecondVar then Some (Expr.TupleGet (Expr.Var immutPairVar, sourceElementCount))
+                else None)
+
+        mutPairs, TupleConv (false, sourceElementConvs @ [ innerConv ]), immutPairVar, readFromPair
 
     /// Given a query expression in terms of query.For, query.Select, query.Yield, query.Where etc.,
     /// and including immutable tuples and immutable records, build an equivalent query expression
