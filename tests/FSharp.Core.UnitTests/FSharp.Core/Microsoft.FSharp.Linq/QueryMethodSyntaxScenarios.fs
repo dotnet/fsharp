@@ -137,9 +137,16 @@ let cases () =
           "Where with a lambda over another source"
           (fun db -> db.Customers.Where(fun c -> db.Orders.Any(fun o -> o.CustomerId = c.Id)))
           (customers >> Seq.filter (fun c -> c.Orders.Count > 0))
-      |> Scenario.violating
-          [ Violation.RuntimeHelperCall "LeafExpressionConverter.QuotationToLambdaExpression"
-            Violation.RuntimeHelperCall "LeafExpressionConverter.SubstHelper" ]
+
+      Scenario.rows
+          "Select with a lambda over another source"
+          (fun db -> db.Customers.Select(fun c -> (c.Name, db.Orders.Where(fun o -> o.CustomerId = c.Id).Sum(fun o -> o.Total))))
+          (customers >> Seq.map (fun c -> c.Name, c.Orders |> Seq.sumBy _.Total))
+
+      Scenario.rows
+          "SelectMany with a lambda over another source"
+          (fun db -> db.Customers.SelectMany(fun c -> db.Orders.Where(fun o -> o.CustomerId = c.Id) :> seq<Order>).Select(fun o -> o.Id))
+          (fun data -> data.Orders |> Seq.map _.Id)
 
       Scenario.rows
           "OrderBy, ThenByDescending"
