@@ -987,14 +987,14 @@ module QueryExecutionOverIQueryable =
         (query { for i in db do 
                  leftOuterJoin j in db on (i.Name = j.Name) into group
                  yield group } ) 
-        "db.GroupJoin(db, i => i.Name, j => j.Name, (i, group) => new AnonymousObject`2(Item1 = i, Item2 = group.DefaultIfEmpty())).Select(_arg1 => _arg1.Item2)"
+        "db.GroupJoin(db, i => i.Name, j => j.Name, (i, group) => new AnonymousObject`2(Item1 = i, Item2 = group)).Select(_arg1 => _arg1.Item2.DefaultIfEmpty())"
 
     checkLinqQueryText "ltcnewnc06yh9Q5left1b" 
         (query { for i in db do 
                  let iname = i.Name
                  leftOuterJoin j in db on (iname = j.Name) into group
                  yield group } ) 
-        "db.Select(_arg1 => new AnonymousObject`2(Item1 = _arg1, Item2 = _arg1.Name)).GroupJoin(db, tupledArg => tupledArg.Item2, j => j.Name, (tupledArg, group) => new AnonymousObject`3(Item1 = tupledArg.Item1, Item2 = tupledArg.Item2, Item3 = group.DefaultIfEmpty())).Select(_arg2 => _arg2.Item3)"
+        "db.Select(_arg1 => new AnonymousObject`2(Item1 = _arg1, Item2 = _arg1.Name)).GroupJoin(db, tupledArg => tupledArg.Item2, j => j.Name, (tupledArg, group) => new AnonymousObject`3(Item1 = tupledArg.Item1, Item2 = tupledArg.Item2, Item3 = group)).Select(_arg2 => _arg2.Item3.DefaultIfEmpty())"
 
     check "cnewnc06yh9Q5" 
         (query { for i in db do 
