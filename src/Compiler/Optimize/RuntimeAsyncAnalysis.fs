@@ -308,6 +308,7 @@ let OutlineRuntimeAsyncCallback (g: TcGlobals) (analyzer: RuntimeAsyncAnalyzer) 
                 None
         | _ -> None
 
+    // A residual Invoke can surface after ordinary optimization; try its single use before outlining.
     let tryInlineDelegate callback construction continuation =
         let mutable invocations = 0
         let mutable invalidUse = false
