@@ -405,6 +405,8 @@ module LeafExpressionConverter =
     let (|MemberInitializationHelperQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof MemberInitializationHelper)
     let (|NewAnonymousObjectHelperQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof NewAnonymousObjectHelper)
     let (|ArrayLookupQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun (x, y) -> LanguagePrimitives.IntrinsicFunctions.GetArray x y))
+    // QuotationToLambdaExpression is defined after the converter, so it cannot be named with methodhandleof here.
+    let (|QuotationToLambdaExpressionQ|_|) = SpecificCallToMethodInfo (typeof<ConvEnv>.DeclaringType.GetMethod "QuotationToLambdaExpression")
 
     //let (|ArrayAssignQ|_|) = (|SpecificCallToMethod|_|) (methodhandleof (fun -> LanguagePrimitives.IntrinsicFunctions.SetArray : int array -> int -> int -> unit))
     //let (|ArrayTypeQ|_|) (ty:System.Type) = if ty.IsArray && ty.GetArrayRank() = 1 then Some (ty.GetElementType()) else None
@@ -723,6 +725,44 @@ module LeafExpressionConverter =
             lambdas <- lambdas - 1
             visited
 
+    /// Finds a parameter that an expression reads without being the one to bind it. The variables of the lets
+    /// around stand for values, and are no such parameters.
+    type FreeParameterFinder (letVariables: ParameterExpression list) =
+        inherit ExpressionVisitor ()
+
+        let bound = HashSet<ParameterExpression> (letVariables, HashIdentity.Reference)
+
+        member val Found = false with get, set
+
+        override _.VisitLambda<'T> (node: Expression<'T>) : Expression =
+            for parameter in node.Parameters do
+                bound.Add parameter |> ignore
+
+            base.VisitLambda node
+
+        override _.VisitBlock (node: BlockExpression) : Expression =
+            for variable in node.Variables do
+                bound.Add variable |> ignore
+
+            base.VisitBlock node
+
+        override this.VisitParameter (node: ParameterExpression) : Expression =
+            if not (bound.Contains node) then
+                this.Found <- true
+
+            node :> Expression
+
+    /// Whether the lambda reads a parameter of a lambda in the tree being built, directly or through a 'let' whose
+    /// value took its place. A lambda inside such a value has parameters of its own, as the witness of 'abs' does.
+    let usesEnclosingParameter (env: ConvEnv) (lambda: Expr) =
+        lambda.GetFreeVars()
+        |> Seq.exists (fun v ->
+            match env.varEnv.TryFind v with
+            | Some bound ->
+                let finder = FreeParameterFinder env.letVariables
+                finder.Visit bound |> ignore
+                finder.Found
+            | None -> false)
     /// Convert F# quotations to LINQ expression trees.
     /// A more polished LINQ-Quotation translator will be published
     /// concert with later versions of LINQ.
@@ -938,6 +978,19 @@ module LeafExpressionConverter =
             | ImplicitExpressionConversionHelperQ (_, GenericArgs [|_|], [x1]) ->
                 let substituteLets = (env.substituteLets || not env.inExpressionLambda) && not (hasStatements x1)
                 ConvExprToLinqInContext { env with inExpressionLambda = true; substituteLets = substituteLets } x1
+
+            // The compiler turns a lambda passed where Expression<T> is expected into a call that converts
+            // its quotation when the tree runs, with the values of the variables it captures. A provider does
+            // not run the tree, so a nested lambda that reads a parameter of the tree never gets a value:
+            // that one is quoted, as C# does. Any other keeps the call, which a provider can evaluate, and so
+            // does one that cannot be converted, whatever the conversion fails with: its call fails the same
+            // way, and only when the tree gets to run it.
+            | QuotationToLambdaExpressionQ (None, _, [ QuoteTyped (NewDelegate _ as lambda) ])
+                  when env.inExpressionLambda && usesEnclosingParameter env lambda ->
+                try
+                    Expression.Quote(ConvExprToLinqInContext env lambda) |> asExpr
+                with _ ->
+                    Expression.Call(minfo, ConvExprsToLinq env args) |> asExpr
 
             // Use witnesses if they are available
             | CallWithWitnesses (objArgOpt, _, minfo2, witnessArgs, args) ->
