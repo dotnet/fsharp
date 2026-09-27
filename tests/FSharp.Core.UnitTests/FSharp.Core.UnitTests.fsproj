@@ -100,7 +100,9 @@
     <Compile Include="FSharp.Core\Microsoft.FSharp.Linq\QueryKeyScenarios.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Linq\QueryStructureScenarios.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Linq\QueryMethodSyntaxScenarios.fs" />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Linq\QueryFSharpOperatorScenarios.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Linq\QueryShapeTests.fs" />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Linq\ExpressionFSharpOperatorTests.fs" />
     <Compile Include="FSharp.Core\XmlDocumentationValidation.fs" />
     <Compile Include="Interop\CSharpCollectionExpressions.fs" />
     <Compile Include="StructTuples.fs" />

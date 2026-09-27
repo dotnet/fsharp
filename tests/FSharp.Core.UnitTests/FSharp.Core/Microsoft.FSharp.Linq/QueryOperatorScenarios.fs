@@ -123,8 +123,7 @@ let private sequences () =
               seq {
                   for o in data.Orders do
                       if o.Lines.Count = 0 then yield o.Id, true else for _ in o.Lines -> o.Id, false
-              })
-      |> Scenario.violating [ Violation.RuntimeHelperCall "Operators.IsNull" ] ]
+              }) ]
 
 let private values () =
     [ Scenario.value "count" (fun db -> query { for c in db.Customers do where (c.Age > 26); count }) (fun _ -> 3)
