@@ -54,14 +54,8 @@
       "GE1atHqGh1Y26ObQwVn9GGaoIQw",
       "d"
     ],
-    "20113": [
-      "GrWEpXlyLwIY7SNIUFcQZI88TmI",
-      "d"
-    ],
-    "20126": [
-      "KIUChIoPtd6x34gUMMIX-YPjVPw",
-      "d"
-    ],
+    "20113": {"sha": "1ab584a579722f0218ed2348505710648f3c4e62", "cats": ["Affects-Bootstrap", "Affects-Build-Infra", "Affects-Design-Time", "Scope-Review-Needed"]},
+    "20126": {"sha": "288502848a0fb5deb1df881430c217f983e354fc", "cats": ["Affects-Design-Time", "Scope-Review-Needed"]},
     "20235": [
       "RcCkBX8b1G8fC7d_V3QnCU1Q0vc",
       "biot"
@@ -124,10 +118,7 @@
       "rsnsf-FFi4ui46ehpY7ank9qlHw",
       "o"
     ],
-    "20443": [
-      "lUaChLC10_-KxenH_ywsUXHYKVs",
-      "d"
-    ],
+    "20443": {"sha": "95468284b0b5d3ff8ac5e9c7ff2c2c5171d8295b", "cats": ["Affects-Build-Infra", "Affects-Compiler-Output", "Affects-Design-Time", "Affects-Restore"]},
     "20444": [
       "sSyzYoqSTVrI5ddylaqAW2YsY7Y",
       ""
@@ -180,10 +171,7 @@
       "7qnbpfInL30oARemnw4sF4TV8Hs",
       "idr"
     ],
-    "20465": [
-      "3kdQ_RIQ4x7Fh4NDt5Wiv7qOQY0",
-      "d"
-    ],
+    "20465": {"sha": "de4750fd1210e31ec5878343b795a2bfba8e418d", "cats": ["Affects-Build-Infra", "Affects-Design-Time"]},
     "20468": [
       "4Obt1F_JM98XTuUOuH7K2jF_Jl0",
       "d"
@@ -277,14 +265,8 @@
       "yaJnyzC1F0AlcxBjri5NTLi_kqM",
       "d"
     ],
-    "20521": [
-      "b442SdsZGYGMSEUcgvbXt0mUGqI",
-      "id"
-    ],
-    "20523": [
-      "GCan4qa5R84o46VABKEVIfxx9MA",
-      "dr"
-    ],
+    "20521": {"sha": "6f8e3649db1919818c48451c82f6d7b749941aa2", "cats": ["Affects-Bootstrap", "Affects-Build-Infra", "Affects-Design-Time", "Affects-Test-Tooling"]},
+    "20523": {"sha": "1826a7e2a6b947ce28e3a54004a11521fc71f4c0", "cats": ["Affects-Bootstrap", "Affects-Build-Infra", "Affects-Design-Time", "Affects-Restore"]},
     "20525": [
       "Ft9ybdGcjhVEz2FEYHSM0rqrjfU",
       ""
@@ -456,14 +438,8 @@
       "1bK_9i5ID61I7UhkXcXDuQYNZ4E",
       "a"
     ],
-    "20598": [
-      "NLI0rO6G4GLSuvKmscOy3IythIE",
-      ""
-    ],
-    "20599": [
-      "ydB0XDw0ehGX3fo-czkNiykcHPk",
-      "r"
-    ],
+    "20598": {"sha": "34b234acee86e062d2baf2a6b1c3b2dc8cad8481", "cats": ["Affects-Design-Time"]},
+    "20599": {"sha": "c9d0745c3c347a1197ddfa3e73390d8b291c1cf9", "cats": ["Affects-Build-Infra", "Affects-Design-Time", "Affects-Restore"]},
     "20600": [
       "V-Q-8jVde6OzG1PL24XO2TOG85o",
       ""
@@ -480,10 +456,7 @@
       "4qDKR76X13m1ymw-6GGdDQGeiNE",
       ""
     ],
-    "20604": [
-      "F4CGplxYdW4kEThfFmGw6SMrYI4",
-      "o"
-    ],
+    "20604": {"sha": "178086a65c58756e2411385f1661b0e9232b608e", "cats": ["Affects-Build-Infra", "Affects-Compiler-Output", "Affects-Design-Time"]},
     "20605": [
       "2aOy4YbiLOYkQXeQC8ixu9skhiA",
       "o"
@@ -504,10 +477,7 @@
       "lUIjxLKaZi-OMgmqCPqMQLWDsYQ",
       "b"
     ],
-    "20615": [
-      "gQrc0uLoQUGdWscPMyOUg_TyPuY",
-      "o"
-    ],
+    "20615": {"sha": "810adcd2e2e841419d5ac70f33239483f4f23ee6", "cats": ["Affects-Compiler-Output", "Affects-Design-Time"]},
     "20617": [
       "gwHD-C9ScfuZ0g-u1GWUjJtgRps",
       ""
@@ -532,10 +502,7 @@
       "_GPjln3ntruG3U5s0zmXjq8NYcc",
       ""
     ],
-    "20625": [
-      "GSLmHtmx3fj4ShwCL_-463sNWts",
-      ""
-    ],
+    "20625": {"sha": "1922e61ed9b1ddf8f84a1c022fffb8eb7b0d5adb", "cats": ["Affects-Build-Infra", "Affects-Restore", "Affects-Test-Tooling"]},
     "20626": [
       "btTAiJTfsjzIUcEW84wXOCA8XSc",
       ""
@@ -544,14 +511,8 @@
       "3nL5K49NUP4Al8bUwNVU4f5dOTA",
       ""
     ],
-    "20629": [
-      "Gbe01oxzvTnpYKlnFaCzORiU15o",
-      "ai"
-    ],
-    "20631": [
-      "-rkFwN2WHX7XfVROYj9RQ44R2aM",
-      ""
-    ],
+    "20629": {"sha": "19b7b4d68c73bd39e960a96715a0b3391894d79a", "cats": ["Affects-Agent-Config", "Affects-Build-Infra", "Affects-Restore"]},
+    "20631": {"sha": "fab905c0dd961d7ed77d544e623f51438e11d9a3", "cats": ["Affects-Design-Time"]},
     "20634": [
       "shODolVcsDIsNxDN80syAShiyZg",
       ""
@@ -560,38 +521,17 @@
       "LGhUitGpqJA5hhs7AT8AKpFdNi0",
       "b"
     ],
-    "20636": [
-      "uXxRXO8d64BunBPLGEsxPPKfX2k",
-      "i"
-    ],
-    "20637": [
-      "AIyyC93_nwzdsx_FMfz6AeFgmWg",
-      "a"
-    ],
-    "20638": [
-      "3XhxTtJWxWIgJ1rjV8guw6m_lLM",
-      "irt"
-    ],
-    "20639": [
-      "XTI0LMh7Syo9O2uD1rDkJMyUGsY",
-      ""
-    ],
+    "20636": {"sha": "b97c515cef1deb806e9c13cb184b313cf29f5f69", "cats": ["Affects-Build-Infra", "Affects-Compiler-Output"]},
+    "20637": {"sha": "008cb20bddff9f0cddb31fc531fcfa01e1609968", "cats": ["Affects-Agent-Config", "Affects-Design-Time"]},
+    "20638": {"sha": "dd78714ed256c56220275ae357c82ec3a9bf94b3", "cats": ["Affects-Build-Infra", "Affects-Design-Time", "Affects-Restore", "Affects-Test-Tooling"]},
+    "20639": {"sha": "5d32342cc87b4b2a3d3b6b83d6b0e424cc941ac6", "cats": ["Affects-Compiler-Output"]},
     "20642": [
       "U1QtLknIR0goq-fSlS7QekArv4U",
       "a"
     ],
-    "20643": [
-      "dKU0UbVLt_AfU8VLfwexbBXFP1Q",
-      ""
-    ],
-    "20644": [
-      "v6SuS2nJznAu_sNnoJu2XkTMChM",
-      ""
-    ],
-    "20645": [
-      "uoYi97UN7VEney77Do1UmG5sa5E",
-      ""
-    ],
+    "20643": {"sha": "74a53451b54bb7f01f53c54b7f07b16c15c53f54", "cats": ["Affects-Design-Time"]},
+    "20644": {"sha": "bfa4ae4b69c9ce702efec367a09bb65e44cc0a13", "cats": ["Affects-Design-Time"]},
+    "20645": {"sha": "ba8622f7b50ded51277b2efb0e8d54986e6c6b91", "cats": ["Affects-Design-Time", "Affects-Restore"]},
     "20648": {"sha": "a8ab167da23e43c8c535f64a08fd58ed9319826b", "cats": []}
   }
 }
