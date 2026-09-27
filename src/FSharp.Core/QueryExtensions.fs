@@ -128,6 +128,18 @@ module internal Adapters =
             Some(ctor, args)
         | _ -> None
 
+    /// Recognize an anonymous object construction, also inside the 'NewAnonymousObjectHelper' that CleanupLeaf wraps it in
+    [<return: Struct>]
+    let (|AnonymousObjectConstruction|_|) e =
+        match e with
+        | Patterns.Call(None, helper, [ NewAnonymousObject(_, args) ]) when
+            helper.IsGenericMethod
+            && helper.GetGenericMethodDefinition() = NewAnonymousObjectHelperMeth
+            ->
+            ValueSome args
+        | NewAnonymousObject(_, args) -> ValueSome args
+        | _ -> ValueNone
+
     let OneNewAnonymousObject (args: Expr list) =
         // Will fit into a single tuple type
         let typ = anonObjectTypes.[args.Length - 1]
@@ -154,9 +166,11 @@ module internal Adapters =
         // (may be nested e.g. TupleGet(<e>, 9) ~> <e>.Item8.Item3)
         let rec walk i (inst: Expr) (newType: Type) =
 
-            // Get property (at most the last one)
-            let propInfo = newType.GetProperty("Item" + string (1 + min i 7))
-            let res = Expr.PropertyGet(inst, propInfo)
+            // Get property (at most the last one), or the argument that constructs it
+            let res =
+                match inst with
+                | AnonymousObjectConstruction args -> args.[min i 7]
+                | _ -> Expr.PropertyGet(inst, newType.GetProperty("Item" + string (1 + min i 7)))
             // Do we need to add another property get for the last property?
             if i < 7 then
                 res
