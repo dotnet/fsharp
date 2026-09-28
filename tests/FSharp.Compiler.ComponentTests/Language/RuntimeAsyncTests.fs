@@ -1931,3 +1931,37 @@ let f : Task<int> =
     |> shouldFail
     |> withErrorCode 39
 #endif
+
+[<InlineData(false)>]
+[<InlineData(true)>]
+[<Theory>]
+let ``runtime async outlines a callback after one that cannot be outlined`` (optimize: bool) =
+    FSharp """
+module RuntimeAsyncOutlineAfterOpaqueCallback
+open System.Threading.Tasks
+open System.Runtime.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices
+
+[<NoCompilerInlining>]
+let consume (f: unit -> int) = f ()
+
+let inline invokeBoth ([<InlineIfLambda>] a: unit -> int) ([<InlineIfLambda>] b: unit -> int) =
+    consume a + b() + b()
+
+let run (gate: Task<int>) flag =
+    StateMachineHelpers.__runtimeAsyncReturn (
+        invokeBoth
+            (let v = AsyncHelpers.Await gate in fun () -> v)
+            (if flag then (fun () -> AsyncHelpers.Await gate + 1) else (fun () -> 2)))
+
+[<EntryPoint>]
+let main _ =
+    if (run (Task.FromResult 10) true).Result <> 32 then failwith "bad"
+    if (run (Task.FromResult 10) false).Result <> 14 then failwith "bad2"
+    0
+"""
+    |> withLangVersionPreview
+    |> withFSharpCoreShippedNet
+    |> withOptimization optimize
+    |> compileExeAndRun
+    |> shouldSucceed

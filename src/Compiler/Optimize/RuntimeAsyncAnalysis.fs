@@ -9,7 +9,6 @@ open Internal.Utilities.Library.Extras
 open System.Collections.Generic
 
 open FSharp.Compiler
-open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
@@ -139,6 +138,28 @@ let ShouldForceRuntimeAsyncApplication (analyzer: RuntimeAsyncAnalyzer) runtimeA
                 | _ -> false)
             args)
 
+/// Rebuilds a match with every target rewritten, or returns None if any target cannot be.
+let private tryMapMatchTargets (g: TcGlobals) (point, matchRange, tree, targets: DecisionTreeTarget array, m) mapTarget =
+    let targets =
+        targets
+        |> Array.mapi (fun i (TTarget(vals, body, flags)) -> mapTarget i body |> Option.map (fun body -> TTarget(vals, body, flags)))
+
+    if targets.Length > 0 && Array.forall Option.isSome targets then
+        let targets = Array.map Option.get targets
+        Some(Expr.Match(point, matchRange, tree, targets, m, tyOfExpr g targets[0].TargetExpression))
+    else
+        None
+
+let private isQuotationUsing (v: Val) expr =
+    match expr with
+    | Expr.Quote(body, _, _, _, _) ->
+        ExistsExpr
+            (function
+            | Expr.Val(vref, _, _) -> valEq v vref.Deref
+            | _ -> false)
+            body
+    | _ -> false
+
 let ReduceRuntimeAsyncReturnedClosureApplications (g: TcGlobals) (analyzer: RuntimeAsyncAnalyzer) expr =
     let rec effectFree expr =
         match stripExpr expr with
@@ -160,21 +181,14 @@ let ReduceRuntimeAsyncReturnedClosureApplications (g: TcGlobals) (analyzer: Runt
         | Expr.Let(binding, body, mLet, _), _ ->
             apply body (tyOfExpr g body) tyargs args m
             |> Option.map (mkLetBind mLet binding)
-        | Expr.Sequential(first, rest, kind, mSeq), _ when List.forall effectFree args ->
+        | Expr.Sequential(first, rest, NormalSeq, mSeq), _ ->
             apply rest (tyOfExpr g rest) tyargs args m
-            |> Option.map (fun rest -> Expr.Sequential(first, rest, kind, mSeq))
+            |> Option.map (fun rest -> Expr.Sequential(first, rest, NormalSeq, mSeq))
         | Expr.Match(point, matchRange, tree, targets, mMatch, _), _ when List.forall effectFree args ->
-            let targets =
-                targets
-                |> Array.map (fun (TTarget(vals, body, flags)) ->
-                    apply body (tyOfExpr g body) tyargs args m
-                    |> Option.map (fun body -> TTarget(vals, body, flags)))
-
-            if targets.Length > 0 && Array.forall Option.isSome targets then
-                let targets = targets |> Array.map Option.get
-                Some(Expr.Match(point, matchRange, tree, targets, mMatch, tyOfExpr g targets[0].TargetExpression))
-            else
-                None
+            // Each target after the first needs its own copy of any values bound by the arguments.
+            tryMapMatchTargets g (point, matchRange, tree, targets, mMatch) (fun i body ->
+                let args = if i = 0 then args else List.map (copyExpr g CloneAll) args
+                apply body (tyOfExpr g body) tyargs args m)
         | Expr.Lambda(_, _, _, [ _ ], _, _, _), first :: (_ :: _ as rest) when List.forall effectFree rest ->
             let reduced = MakeApplicationAndBetaReduce g (f, fty, [ tyargs ], [ first ], m)
 
@@ -240,29 +254,19 @@ let OutlineRuntimeAsyncCallback (g: TcGlobals) (analyzer: RuntimeAsyncAnalyzer) 
         | Expr.DebugPoint(point, body) ->
             outlineBranches resultTy body
             |> Option.map (fun body -> Expr.DebugPoint(point, body))
-        | Expr.Sequential(first, rest, kind, m) ->
+        | Expr.Sequential(first, rest, NormalSeq, m) ->
             outlineBranches resultTy rest
-            |> Option.map (fun rest -> Expr.Sequential(first, rest, kind, m))
+            |> Option.map (fun rest -> Expr.Sequential(first, rest, NormalSeq, m))
         | Expr.Let(binding, rest, m, _) -> outlineBranches resultTy rest |> Option.map (mkLetBind m binding)
         | Expr.Match(point, matchRange, tree, targets, m, _) ->
-            let targets =
-                targets
-                |> Array.map (fun (TTarget(vals, body, flags)) ->
-                    outlineBranches resultTy body
-                    |> Option.map (fun body -> TTarget(vals, body, flags)))
-
-            if targets.Length > 0 && Array.forall Option.isSome targets then
-                let targets = targets |> Array.map Option.get
-                Some(Expr.Match(point, matchRange, tree, targets, m, tyOfExpr g targets[0].TargetExpression))
-            else
-                None
+            tryMapMatchTargets g (point, matchRange, tree, targets, m) (fun _ -> outlineBranches resultTy)
         | _ -> None
 
     let rec tryDelegateSignature expr =
         match expr with
         | NewDelegateExpr g (_, [ parameter ], body, _, _) -> Some(parameter.Type, tyOfExpr g body)
         | Expr.DebugPoint(_, rest)
-        | Expr.Sequential(_, rest, _, _)
+        | Expr.Sequential(_, rest, NormalSeq, _)
         | Expr.Let(_, rest, _, _) -> tryDelegateSignature rest
         | Expr.Match(_, _, _, targets, _, _) when targets.Length > 0 ->
             let (TTarget(_, body, _)) = targets[0]
@@ -283,9 +287,9 @@ let OutlineRuntimeAsyncCallback (g: TcGlobals) (analyzer: RuntimeAsyncAnalyzer) 
         | Expr.DebugPoint(point, rest) ->
             inlineDelegateInvoke (invokeRef, invokeTy, tyargs, arg, callRange) rest
             |> Option.map (fun body -> Expr.DebugPoint(point, body))
-        | Expr.Sequential(first, rest, kind, m) when isTrivialValue first ->
+        | Expr.Sequential(first, rest, NormalSeq, m) when isTrivialValue first ->
             inlineDelegateInvoke (invokeRef, invokeTy, tyargs, arg, callRange) rest
-            |> Option.map (fun body -> Expr.Sequential(first, body, kind, m))
+            |> Option.map (fun body -> Expr.Sequential(first, body, NormalSeq, m))
         | Expr.Let((TBind(_, rhs, _)) as binding, rest, m, _) when isTrivialValue rhs ->
             inlineDelegateInvoke (invokeRef, invokeTy, tyargs, arg, callRange) rest
             |> Option.map (mkLetBind m binding)
@@ -295,17 +299,8 @@ let OutlineRuntimeAsyncCallback (g: TcGlobals) (analyzer: RuntimeAsyncAnalyzer) 
                      targets,
                      m,
                      _) when vref.IsLocalRef && not vref.IsMutable && not vref.IsTypeFunction ->
-            let targets =
-                targets
-                |> Array.map (fun (TTarget(vals, body, flags)) ->
-                    inlineDelegateInvoke (invokeRef, invokeTy, tyargs, arg, callRange) body
-                    |> Option.map (fun body -> TTarget(vals, body, flags)))
-
-            if targets.Length > 0 && Array.forall Option.isSome targets then
-                let targets = targets |> Array.map Option.get
-                Some(Expr.Match(point, matchRange, tree, targets, m, tyOfExpr g targets[0].TargetExpression))
-            else
-                None
+            tryMapMatchTargets g (point, matchRange, tree, targets, m) (fun _ ->
+                inlineDelegateInvoke (invokeRef, invokeTy, tyargs, arg, callRange))
         | _ -> None
 
     // A residual Invoke can surface after ordinary optimization; try its single use before outlining.
@@ -331,6 +326,9 @@ let OutlineRuntimeAsyncCallback (g: TcGlobals) (analyzer: RuntimeAsyncAnalyzer) 
                         | Expr.Val(vref, _, _) when valEq callback vref.Deref ->
                             invalidUse <- true
                             Some expression
+                        | Expr.Quote _ when isQuotationUsing callback expression ->
+                            invalidUse <- true
+                            Some expression
                         | _ -> None)
                 PreInterceptBinding = None
                 PostTransform = (fun _ -> None)
@@ -340,28 +338,24 @@ let OutlineRuntimeAsyncCallback (g: TcGlobals) (analyzer: RuntimeAsyncAnalyzer) 
 
         let continuation = RewriteExpr rwenv continuation
 
-        let quotedUse =
-            ExistsExpr
-                (function
-                | Expr.Quote(body, _, _, _, _) ->
-                    ExistsExpr
-                        (function
-                        | Expr.Val(vref, _, _) -> valEq callback vref.Deref
-                        | _ -> false)
-                        body
-                | _ -> false)
-                continuation
-
-        if invocations = 1 && not invalidUse && not quotedUse then
+        if invocations = 1 && not invalidUse then
             Some continuation
         else
             None
 
+    let stackGuard = StackGuard("OutlineRuntimeAsyncCallback")
+
     let rec outline expr =
+        stackGuard.Guard(fun () -> outlineCore expr)
+
+    and outlineCore expr =
         match expr with
         | Expr.Let(TBind(callback, construction, point), continuation, m, _) when
             callback.InlineIfLambda && analyzer.ContainsSuspension construction
             ->
+            let keep construction =
+                mkLetBind m (TBind(callback, construction, point)) (outline continuation)
+
             let canOutline =
                 runtimeAsyncContext || (TryGetRuntimeAsyncReturn g continuation).IsSome
 
@@ -397,8 +391,8 @@ let OutlineRuntimeAsyncCallback (g: TcGlobals) (analyzer: RuntimeAsyncAnalyzer) 
 
                 match inlined, outlinedConstruction with
                 | Some body, _ -> outline body
-                | None, Some construction ->
-                    let callbackTy = tyOfExpr g construction
+                | None, Some callbackConstruction ->
+                    let callbackTy = tyOfExpr g callbackConstruction
                     let outlined, outlinedExpr = mkCompGenLocal m "runtimeAsyncCallback" callbackTy
                     let mutable invalidUse = false
 
@@ -423,72 +417,33 @@ let OutlineRuntimeAsyncCallback (g: TcGlobals) (analyzer: RuntimeAsyncAnalyzer) 
                                         let invocation =
                                             mkApps g ((outlinedExpr, callbackTy), [], [ rewrite arg ], callRange)
 
-                                        let resultTy = tyOfExpr g expression
-                                        let valueTaskRef = g.FindSysILTypeRef "System.Threading.Tasks.ValueTask`1"
-
-                                        let awaitRef =
-                                            mkILMethRef (
-                                                g.FindSysILTypeRef "System.Runtime.CompilerServices.AsyncHelpers",
-                                                ILCallingConv.Static,
-                                                "Await",
-                                                1,
-                                                [ ILType.Value(mkILTySpec (valueTaskRef, [ mkILTyvarTy 0us ])) ],
-                                                mkILTyvarTy 0us
-                                            )
-
-                                        Some(
-                                            Expr.Op(
-                                                TOp.ILCall(
-                                                    false,
-                                                    false,
-                                                    false,
-                                                    false,
-                                                    ValUseFlag.NormalValUse,
-                                                    false,
-                                                    false,
-                                                    awaitRef,
-                                                    [],
-                                                    [ resultTy ],
-                                                    [ resultTy ]
-                                                ),
-                                                [],
-                                                [ invocation ],
-                                                callRange
-                                            )
-                                        )
+                                        Some(mkRuntimeAsyncAwaitValueTask g callRange (tyOfExpr g expression) invocation)
                                     | None ->
                                         match expression with
                                         | Expr.Val(vref, _, _) when valEq callback vref.Deref ->
+                                            invalidUse <- true
+                                            Some expression
+                                        | Expr.Quote _ when isQuotationUsing callback expression ->
                                             invalidUse <- true
                                             Some expression
                                         | _ -> None)
                             PreInterceptBinding = None
                             PostTransform = (fun _ -> None)
                             RewriteQuotations = false
-                            StackGuard = StackGuard("OutlineRuntimeAsyncCallback")
+                            StackGuard = stackGuard
                         }
 
                     let continuation = RewriteExpr rwenv continuation
 
-                    let quotedUse =
-                        ExistsExpr
-                            (function
-                            | Expr.Quote(body, _, _, _, _) ->
-                                ExistsExpr
-                                    (function
-                                    | Expr.Val(vref, _, _) -> valEq callback vref.Deref
-                                    | _ -> false)
-                                    body
-                            | _ -> false)
-                            continuation
-
-                    if invalidUse || quotedUse then
-                        expr
+                    if invalidUse then
+                        keep construction
                     else
-                        mkLet point m outlined construction continuation
-                | None, None -> expr
-            | _ -> expr
+                        mkLet point m outlined callbackConstruction (outline continuation)
+                | None, None -> keep construction
+            | _ -> keep construction
         | Expr.Let(binding, continuation, m, _) -> mkLetBind m binding (outline continuation)
+        | Expr.DebugPoint(point, inner) -> Expr.DebugPoint(point, outline inner)
+        | Expr.Sequential(first, rest, NormalSeq, m) -> Expr.Sequential(first, outline rest, NormalSeq, m)
         | _ -> expr
 
     outline expr
