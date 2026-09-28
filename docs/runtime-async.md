@@ -134,11 +134,10 @@ declaration.
 ## Optimization
 
 `Optimizer.fs` preserves the marker application as-is, optimizing its
-argument and rewriting any suspending exception handlers in that argument.
-The marked expression is forced to `HasEffect = true` and `UnknownValue`, so
-the optimizer never inlines, duplicates, or discards it. The marker therefore
-survives optimization as an ordinary `Expr.App` node; nothing else in the
-typed tree records that a method is runtime-async.
+argument. The marked expression is forced to `HasEffect = true` and
+`UnknownValue`, so the optimizer never inlines, duplicates, or discards it.
+The marker therefore survives optimization as an ordinary `Expr.App` node;
+nothing else in the typed tree records that a method is runtime-async.
 
 Inline values whose bodies contain a return marker or an `AsyncHelpers`
 suspension are recursively specialized at their call sites, including when
@@ -148,10 +147,20 @@ is already in a runtime-async context. Ordinary inlining is tried first;
 applications of returned lambdas are reduced when their remaining arguments
 can safely move across the returned closure's construction. This handles
 computation-expression shapes where `Bind` returns a closure containing
-`Await`, and later `Combine`/`Delay` calls apply it.
+`Await`, and later `Combine`/`Delay` calls apply it. Inside a runtime-async expansion, captures
+that wrap an `InlineIfLambda` lambda or delegate (`let p = (let c = e in fun
+...)`) are floated above the binding so the callback can be inlined; they are
+still evaluated at the same point.
 
-If a compiler-owned `InlineIfLambda` function or delegate still contains a
-suspension after inlining, a fully rewritable, single-argument callback can
+## Runtime-async lowering
+
+`LowerRuntimeAsync.fs` runs once per file after the first optimization loop,
+so it sees the final inlined shape rather than an intermediate optimizer
+state, and before `LowerLocalMutables`, so mutable locals captured by an
+outlined callback are promoted to reference cells. It has two steps.
+
+First, if a compiler-owned `InlineIfLambda` function or delegate still
+contains a suspension, a fully rewritable, single-argument callback can
 be outlined instead. Each branch of its construction produces an F# callback
 returning `ValueTask<'T>`; the generated callback body contains
 `__runtimeAsyncReturnValueTask`, and its invocations are replaced by
@@ -159,10 +168,11 @@ returning `ValueTask<'T>`; the generated callback body contains
 is constructed once, so conditional construction effects and state captured
 across repeated invocations are preserved. Only the specialized copy changes
 calling convention, not the exported inline definition or source signature.
-This applies within an existing runtime-async body or an inline expansion
-that produces one. Opaque consumers, escaping callbacks, unsupported callback
-shapes, and unsafe byref or pinned captures are not outlined; suspensions
-remaining in an ordinary method are still diagnosed.
+This applies within a runtime-async body or sequence recipe, and to a callback
+bound immediately before a runtime-async body together with the callbacks its
+construction captures. Opaque consumers, escaping callbacks, unsupported
+callback shapes, and unsafe byref or pinned captures are not outlined;
+suspensions remaining in an ordinary method are still diagnosed.
 
 The ordinary optimizer can inline an `Invoke` on a constructed delegate.
 For a residual `InlineIfLambda` delegate bound to a local, a single direct
@@ -183,9 +193,16 @@ Outlining retains the callback closure and generates an async `Invoke` method
 for each specialized callback shape. Calls now return a `ValueTask<'T>` for
 the enclosing method to await, trading method code size and possible
 allocations for preservation of callback state. It does not distribute a
-continuation across conditional branches. The outlined body receives the
-same byref-use checks and exception handler rewrite as a directly marked
-runtime-async method.
+continuation across conditional branches.
+
+Second, every return-marker body, including outlined callbacks, is prepared
+once after outlining, innermost first: locals that cannot be preserved across
+a suspension are reported (once per range across the compilation), and
+suspending exception handlers are rewritten. Preparing after outlining means
+an `Await` that outlining or delegate inlining moves into a handler is still
+rewritten. `__runtimeAsyncSequence` recipes are not prepared here;
+`LowerAsyncSeq` prepares their `MoveNextAsync` body after state-machine
+conversion, which is where sequence `try`/`with` is lowered.
 
 When runtime-async specialization is forced in a debug build, the builder
 combinator is copied with its definition-site debug ranges remarked at the
@@ -202,7 +219,7 @@ Runtime-async boundary recognition is centralized in
 use the shared recognizers rather than matching typed-tree shapes
 independently.
 
-The optimizer uses a context-local `RuntimeAsyncAnalyzer`. It memoizes
+The optimizer and the lowering pass use a context-local `RuntimeAsyncAnalyzer`. It memoizes
 completed expression results by reference identity and inline-value results by
 value stamp, with a visiting set for recursive inline-value graphs. The cache
 is not global: optimizer environments can provide different inline bodies, and

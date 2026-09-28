@@ -25,12 +25,7 @@ val ShouldForceRuntimeAsyncApplication:
         bool
 
 val OutlineRuntimeAsyncCallback:
-    g: TcGlobals ->
-    analyzer: RuntimeAsyncAnalyzer ->
-    runtimeAsyncContext: bool ->
-    prepareBody: (Expr -> Expr) ->
-    expr: Expr ->
-        Expr
+    g: TcGlobals -> analyzer: RuntimeAsyncAnalyzer -> runtimeAsyncContext: bool -> expr: Expr -> Expr
 
 val ReduceRuntimeAsyncReturnedClosureApplications: g: TcGlobals -> analyzer: RuntimeAsyncAnalyzer -> expr: Expr -> Expr
 

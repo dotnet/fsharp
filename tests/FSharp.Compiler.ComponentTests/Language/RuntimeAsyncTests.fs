@@ -1965,3 +1965,44 @@ let main _ =
     |> withOptimization optimize
     |> compileExeAndRun
     |> shouldSucceed
+
+[<InlineData(false)>]
+[<InlineData(true)>]
+[<Theory>]
+let ``runtime async prepares a body after a callback is inlined into its handler`` (optimize: bool) =
+    FSharp """
+module RuntimeAsyncCallbackInHandler
+open System.Threading.Tasks
+open Microsoft.FSharp.Core.CompilerServices
+
+type Started<'T> = delegate of unit -> 'T
+
+let inline run ([<InlineIfLambda>] code: Started<int>) =
+    StateMachineHelpers.__runtimeAsyncReturn (
+        try
+            failwith "boom"
+        with _ ->
+            code.Invoke())
+
+let execute (pending: Task<int>) chooseFirst =
+    run (
+        if chooseFirst then
+            Started(fun () -> System.Runtime.CompilerServices.AsyncHelpers.Await pending)
+        else
+            Started(fun () -> System.Runtime.CompilerServices.AsyncHelpers.Await pending + 1))
+
+[<EntryPoint>]
+let main _ =
+    let gate = TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously)
+    let first = execute gate.Task true
+    let second = execute gate.Task false
+    if first.IsCompleted || second.IsCompleted then failwith "Expected pending results"
+    gate.SetResult 41
+    if first.GetAwaiter().GetResult() <> 41 || second.GetAwaiter().GetResult() <> 42 then failwith "Wrong result"
+    0
+"""
+    |> withLangVersionPreview
+    |> withFSharpCoreShippedNet
+    |> withOptimization optimize
+    |> compileExeAndRun
+    |> shouldSucceed

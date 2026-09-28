@@ -239,13 +239,12 @@ let PreserveRuntimeAsyncCallSiteDebugPoint (g: TcGlobals) m expr =
 
     RewriteExpr rwenv expr
 
-let OutlineRuntimeAsyncCallback (g: TcGlobals) (analyzer: RuntimeAsyncAnalyzer) runtimeAsyncContext prepareBody (expr: Expr) =
+let OutlineRuntimeAsyncCallback (g: TcGlobals) (analyzer: RuntimeAsyncAnalyzer) runtimeAsyncContext (expr: Expr) =
     let rec outlineBranches resultTy expr =
         match expr with
         | Expr.Lambda(_, None, None, [ parameter ], body, m, _)
         | NewDelegateExpr g (_, [ parameter ], body, m, _) ->
             let marker = g.cgh__runtimeAsyncReturnValueTask_vref
-            let body = prepareBody body
 
             let markedBody =
                 primMkApp (exprForValRef m marker, marker.Type) [ resultTy ] [ body ] m
