@@ -79,11 +79,91 @@ let private testAwaitableKinds () =
                 let! asyncValue = async2 { return 3 }
                 let! customValue = CustomAwaitable 4
                 let! runtimeTaskValue = runtimeTask { return 5 }
-                yield taskValue + valueTaskValue + asyncValue + customValue + runtimeTaskValue
+                let! fsharpAsyncValue = async { return 6 }
+                yield taskValue + valueTaskValue + asyncValue + customValue + runtimeTaskValue + fsharpAsyncValue
             }
 
         let! values = collect source
-        assertEqual "awaitable kinds" [| 15 |] values
+        assertEqual "awaitable kinds" [| 21 |] values
+    }
+
+let private rejectsWith<'Error when 'Error :> exn> (move: ValueTask<bool>) =
+    try
+        move.AsTask().GetAwaiter().GetResult() |> ignore
+        false
+    with :? 'Error ->
+        true
+
+let private testCancellation () =
+    runtimeTask {
+        use cts = new CancellationTokenSource()
+        let mutable resumed = false
+
+        let source =
+            asyncSeq2 {
+                let! token = Async.CancellationToken
+                yield token = cts.Token
+                do! Async.Sleep 10_000
+                resumed <- true
+                yield false
+            }
+
+        use enumerator = source.GetAsyncEnumerator(cts.Token)
+        let! moved = enumerator.MoveNextAsync()
+        assertTrue "Async receives the enumeration token" (moved && enumerator.Current)
+        let pending = enumerator.MoveNextAsync()
+        cts.Cancel()
+        let cancelled = rejectsWith<OperationCanceledException> pending
+        assertTrue "pending Async observes enumeration cancellation" (cancelled && not resumed)
+
+        use cancelledSource = new CancellationTokenSource()
+        cancelledSource.Cancel()
+        let mutable started = false
+
+        let lazySource =
+            asyncSeq2 {
+                started <- true
+                yield 1
+            }
+
+        use cancelledEnumerator = lazySource.GetAsyncEnumerator(cancelledSource.Token)
+        let rejected = rejectsWith<OperationCanceledException> (cancelledEnumerator.MoveNextAsync())
+        assertTrue "cancelled enumeration does not start" (rejected && not started)
+    }
+
+let private testUnmatchedException () =
+    runtimeTask {
+        let mutable handled = false
+
+        let source =
+            asyncSeq2 {
+                try
+                    yield 1
+                    do! async { raise (InvalidOperationException "unmatched") }
+                    yield 2
+                with :? ArgumentException ->
+                    handled <- true
+                    yield 0
+            }
+
+        use enumerator = source.GetAsyncEnumerator()
+        let! moved = enumerator.MoveNextAsync()
+        assertTrue "value before unmatched error" (moved && enumerator.Current = 1)
+        let escaped = rejectsWith<InvalidOperationException> (enumerator.MoveNextAsync())
+        assertTrue "unmatched error escapes unwrapped" (escaped && not handled)
+    }
+
+let private testDeepNonTailYieldFrom () =
+    runtimeTask {
+        let rec loop n =
+            asyncSeq2 {
+                if n > 0 then
+                    yield! loop (n - 1)
+                    yield n
+            }
+
+        let! values = collect (loop 100_000)
+        assertEqual "deep non-tail yield!" [| 1..100_000 |] values
     }
 
 let private testMergedAwaitables () =
@@ -108,9 +188,10 @@ let private testTryWith () =
             asyncSeq2 {
                 try
                     yield 1
-                    do! Task.Delay(10)
-                    raise (InvalidOperationException("expected"))
-                with :? InvalidOperationException ->
+                    do! Task.Delay 10
+                    failwith "expected"
+                with _ ->
+                    do! Task.Delay 10
                     yield 2
             }
 
@@ -642,6 +723,7 @@ let runTests () =
     let tests: (string * Task<unit>) list =
         [ "basic sequence", testBasicSequence ()
           "awaitable kinds", testAwaitableKinds ()
+          "cancellation", testCancellation ()
           "merged awaitables", testMergedAwaitables ()
           "try/with", testTryWith ()
           "try/finally", testTryFinally ()
@@ -650,6 +732,8 @@ let runTests () =
           "yield!", testYieldFrom ()
           "tail handoff", testTailHandoff ()
           "yield! faults", testYieldFromFaults ()
+          "unmatched exception", testUnmatchedException ()
+          "deep non-tail yield!", testDeepNonTailYieldFrom ()
           "async for loop", testForAsyncEnumerable ()
           "pull-driven enumeration", testPullDrivenEnumeration ()
           "concurrent MoveNext", testConcurrentMoveNext ()

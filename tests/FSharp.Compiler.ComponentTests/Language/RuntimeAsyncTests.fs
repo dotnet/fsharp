@@ -990,6 +990,15 @@ let ``runtime async sequence builder fixture executes`` (optimize: bool) =
     |> compileExeAndRun
     |> shouldSucceed
 
+[<InlineData(false)>]
+[<InlineData(true)>]
+[<Theory>]
+let ``runtime async enumerable builder fixture executes`` (optimize: bool) =
+    withSampleBuilders [ "RuntimeAsyncEnumerableTests.fs" ]
+    |> withOptimization optimize
+    |> compileExeAndRun
+    |> shouldSucceed
+
 [<Fact>]
 let ``runtime async sequence CE debug points stay at call sites`` () =
     let source =

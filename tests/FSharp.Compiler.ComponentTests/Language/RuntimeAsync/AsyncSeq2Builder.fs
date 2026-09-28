@@ -299,6 +299,9 @@ module AsyncSeq2BuilderSourceExtensionsHighPriority =
         member inline _.Source(computation: Async2<'T>) =
             Async2BuilderSources.Cold(fun ct -> computation.StartTrampolined ct |> AsyncHelpers.Await)
 
+        member inline _.Source(computation: Async<'T>) =
+            Async2BuilderSources.Cold(fun ct -> Async.StartImmediateAsTask(computation, ct) |> AsyncHelpers.Await)
+
         member inline _.Source(source: seq<'T>) = source
         member inline _.Source(source: IAsyncEnumerable<'T>) = source
 

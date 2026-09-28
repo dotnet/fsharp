@@ -32,8 +32,10 @@ let resultOf (task: Task<'T>) = task.GetAwaiter().GetResult()
 let private delayed value =
     Task.Delay(1).ContinueWith(fun (_: Task) -> value)
 
-type DelayedAwaitable(delay: int) =
-    member _.GetAwaiter() = Task.Delay(delay).GetAwaiter()
+type GatedAwaitable(started: ResizeArray<string>, name: string, gate: Task) =
+    member _.GetAwaiter() =
+        started.Add name
+        gate.GetAwaiter()
 
 // ---------------------------------------------------------------------------
 // SmokeTestsForCompilation
@@ -199,22 +201,21 @@ let merge2tasks () =
             failwith "failed"
 
 let mergeSourcesOverlap () =
-    let delay = 250
-    let stopwatch = Stopwatch.StartNew()
+    let started = ResizeArray()
+    let left = TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously)
+    let right = TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously)
 
     let t =
         runtimeTask {
-            let! _ = DelayedAwaitable delay
-            and! _ = DelayedAwaitable delay
+            let! _ = GatedAwaitable(started, "left", left.Task)
+            and! _ = GatedAwaitable(started, "right", right.Task)
             return ()
         }
 
+    require (List.ofSeq started = [ "left"; "right" ]) "MergeSources ran sequentially"
+    right.SetResult()
+    left.SetResult()
     t.Wait()
-    stopwatch.Stop()
-
-    require
-        (stopwatch.ElapsedMilliseconds < int64 (delay * 17 / 10))
-        ($"MergeSources ran sequentially: {stopwatch.ElapsedMilliseconds} ms")
 
 let merge3tasks () =
     runtimeTask {
