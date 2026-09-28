@@ -1,0 +1,15 @@
+{
+  "timestamp": "2026-09-28T09:04:20Z",
+  "eligible_prs": [20648],
+  "actions": [],
+  "result": "no_action",
+  "details": {
+    "20648": {
+      "category": "C",
+      "checks_total": 53,
+      "review_threads": 0,
+      "mergeable_state": "blocked",
+      "note": "CI is healthy; awaiting human review or approval."
+    }
+  }
+}
