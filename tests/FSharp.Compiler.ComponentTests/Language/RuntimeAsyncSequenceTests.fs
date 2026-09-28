@@ -570,6 +570,60 @@ let main _ =
 [<Theory>]
 [<InlineData(false)>]
 [<InlineData(true)>]
+let ``runtime async sequence lowers direct try with calls`` optimized =
+    let body = """
+module M
+open System
+open System.Threading.Tasks
+open System.Runtime.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers
+
+let mutable guards = 0
+let handle (_: exn) = seq { yield 42 }
+let source (value: int) =
+    seq {
+        if value = 1 then raise (InvalidOperationException())
+        if value = 2 then raise (ArgumentException())
+        yield value
+    }
+
+let direct (value: int) (gate: Task<bool>) = __runtimeAsyncSequence(fun _ ->
+    RuntimeHelpers.EnumerateTryWith (source value) (fun e -> if AsyncHelpers.Await gate && (e :? InvalidOperationException) then 1 else 0) handle)
+
+let expression (work: Task<int>) (gate: Task<bool>) = __runtimeAsyncSequence(fun _ -> seq {
+    try
+        yield AsyncHelpers.Await work
+    with :? InvalidOperationException when (guards <- guards + 1; AsyncHelpers.Await gate) -> yield 42
+})
+
+let first (values: Collections.Generic.IAsyncEnumerable<int>) =
+    let iterator = values.GetAsyncEnumerator()
+    try
+        try
+            if iterator.MoveNextAsync().GetAwaiter().GetResult() then string iterator.Current else "end"
+        with error -> error.GetType().Name
+    finally
+        iterator.DisposeAsync().GetAwaiter().GetResult()
+
+[<EntryPoint>]
+let main _ =
+    let fault () = Task.FromException<int>(InvalidOperationException())
+    let results =
+        [ first (direct 3 (Task.FromResult true))
+          first (direct 1 (Task.FromResult true))
+          first (direct 1 (Task.FromResult false))
+          first (direct 2 (Task.FromResult true))
+          first (expression (fault ()) (Task.FromResult true)) ]
+    if results <> [ "3"; "42"; "InvalidOperationException"; "ArgumentException"; "42" ] then failwithf "%A" results
+    if guards <> 1 then failwithf "guard ran %d times" guards
+    0
+"""
+    FSharp body |> preview |> optimize optimized |> compileExeAndRun |> shouldSucceed
+
+[<Theory>]
+[<InlineData(false)>]
+[<InlineData(true)>]
 let ``runtime async sequence disposal runs pending finally blocks but no handlers`` optimized =
     let body = """
 module M

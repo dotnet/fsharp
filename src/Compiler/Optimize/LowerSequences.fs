@@ -374,18 +374,30 @@ let ConvertSequenceExprToObject g amap (runtimeAsync: RuntimeAsyncUnwind option)
         //     if disposing then goto OUTER
         //     let exn = fault
         //     fault <- null
+        //     if filter exn = 0 then rethrow exn   (omitted when the handler does its own matching)
         //     handler exn
         //   AFTER:
-        | ValApp g (FSharp.Compiler.TcGlobals.ValRefForIntrinsic g.seq_trywith_info) ([ elementTy ], [ SeqDelay g (body, _); _filter; Expr.Lambda _ as handler ], m)
+        | ValApp g (FSharp.Compiler.TcGlobals.ValRefForIntrinsic g.seq_trywith_info) ([ elementTy ], [ source; filter; handler ], m)
             when runtimeAsync.IsSome ->
             let ra = runtimeAsync.Value
             let handlerLabel = generateCodeLabel()
             let afterLabel = generateCodeLabel()
             let exnVal, exnExpr = mkCompGenLocal m "exn" g.exn_ty
+            let body = match source with SeqDelay g (body, _) -> body | _ -> source
+            let apply f = MakeApplicationAndBetaReduce g (f, tyOfExpr g f, [], [ exnExpr ], m)
+            let rethrow = mkCompGenSequential m (ra.Rethrow exnExpr) (mkCallSeqEmpty g m elementTy)
+
+            // The filter is skipped when it always matches, or when the type checker compiled it from the
+            // same clauses as the handler (both lambdas then share the 'with' range). Otherwise it runs first.
+            let handlerExpr =
+                match filter, handler with
+                | Expr.Lambda(_, _, _, _, DebugPoints(Expr.Const(Const.Int32 1, _, _), _), _, _), _ -> apply handler
+                | Expr.Lambda _, Expr.Lambda _ when Range.equals filter.Range handler.Range -> apply handler
+                | _ -> mkCond DebugPointAtBinding.NoneAtInvisible m (mkSeqTy g elementTy) (mkILAsmCeq g m (apply filter) (mkZero g m)) rethrow (apply handler)
 
             // A clause that does not match rethrows. Nested try/with handlers are rewritten when they are lowered.
             let handlerExpr =
-                MakeApplicationAndBetaReduce g (handler, tyOfExpr g handler, [], [ exnExpr ], m)
+                handlerExpr
                 |> RewriteExpr {
                     PreIntercept =
                         Some(fun _ expr ->
@@ -400,8 +412,8 @@ let ConvertSequenceExprToObject g amap (runtimeAsync: RuntimeAsyncUnwind option)
                                 targets
                                 |> Array.map (fun (TTarget(vs, target, flags) as tg) ->
                                     match target with
-                                    | Expr.Const(Const.Int32 0, m, _) ->
-                                        TTarget(vs, mkCompGenSequential m (ra.Rethrow exnExpr) (mkCallSeqEmpty g m elementTy), flags)
+                                    | Expr.Const(Const.Int32 0, _, _) ->
+                                        TTarget(vs, rethrow, flags)
                                     | Expr.Sequential(
                                         (DebugPoints(Expr.Op(TOp.ILCall(_, _, _, _, _, _, _, ilMethodRef, _, _, _), _, _, _), _) as first),
                                         Expr.Const(Const.Zero, m, _),
@@ -450,14 +462,6 @@ let ConvertSequenceExprToObject g amap (runtimeAsync: RuntimeAsyncUnwind option)
                        significantClose = true
                        asyncVars = asyncVars }
             | _ -> None
-
-        | ValApp g (FSharp.Compiler.TcGlobals.ValRefForIntrinsic g.seq_trywith_info) ([ elementTy ], [ _source; _filter; _handler ], m) as tryWithExpr
-            when runtimeAsync.IsSome ->
-            // Keep other try/with sequences as an ordinary nested source.
-            let value, valueExpr = mkCompGenLocal m "value" elementTy
-            let body = mkLambdaNoType g m value (mkCallSeqSingleton g m elementTy valueExpr)
-            let nestedFor = mkCallSeqCollect g m elementTy elementTy body tryWithExpr
-            ConvertSeqExprCode isWholeExpr isTailCall noDisposeContinuationLabel currentDisposeContinuationLabel nestedFor
 
         | SeqEmpty g m ->
             // printfn "found Seq.empty"
