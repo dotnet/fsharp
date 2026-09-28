@@ -7233,10 +7233,22 @@ and GenSequenceExpr
 
         let marker = TryGetRuntimeAsyncReturn g generateNextExpr
 
-        let body =
-            marker
-            |> Option.map (fun info -> info.Body)
-            |> Option.defaultValue generateNextExpr
+        let eenvinner, body =
+            match marker with
+            | Some info ->
+                // Release the base class move guard before the returned task completes.
+                let selfVal, selfExpr =
+                    mkCompGenLocal m "this" (g.mk_GeneratedRuntimeAsyncSequenceBase_ty seqElemTy)
+
+                let completeMove =
+                    let mspec =
+                        mkILNonGenericInstanceMethSpecInTy (ilCloBaseTy, "CompleteMoveNext", [], ILType.Void)
+
+                    mkAsmExpr ([ I_call(Normalcall, mspec, None) ], [], [ selfExpr ], [], m)
+
+                eenvinner |> AddStorageForLocalVals g [ (selfVal, Arg 0) ],
+                mkTryFinally g (info.Body, completeMove, m, tyOfExpr g info.Body, DebugPointAtTry.No, DebugPointAtFinally.No)
+            | None -> eenvinner, generateNextExpr
 
         let name = if marker.IsSome then "MoveNextAsync" else "GenerateNext"
 
@@ -7307,13 +7319,6 @@ and GenSequenceExpr
             getFreshMethod
         ]
 
-    let ilInterfaceTys =
-        if directRuntimeSequence then
-            AllInterfacesOfType g cenv.amap m AllowMultiIntfInstantiations.Yes (g.mk_IAsyncEnumerator_ty seqElemTy)
-            |> List.map (GenType cenv m eenvinner.tyenv >> InterfaceImpl.Create)
-        else
-            []
-
     let cloTypeDefs =
         GenClosureTypeDefs
             cenv
@@ -7326,7 +7331,7 @@ and GenSequenceExpr
              cloMethods,
              [],
              ilCloBaseTy,
-             ilInterfaceTys,
+             [],
              Some ilxCloSpec)
 
     for cloTypeDef in cloTypeDefs do

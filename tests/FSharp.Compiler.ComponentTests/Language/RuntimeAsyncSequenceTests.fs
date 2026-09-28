@@ -38,6 +38,40 @@ open Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers
 [<Theory>]
 [<InlineData(false)>]
 [<InlineData(true)>]
+let ``runtime async sequence reuses its first enumeration and dispatches through the base`` optimized =
+    let program = header + """
+open System
+open System.Collections.Generic
+
+let check message condition = if not condition then failwith message
+
+[<EntryPoint>]
+let main _ =
+    let source = __runtimeAsyncSequence(fun _ -> seq { yield 1 })
+    let iterator = source.GetAsyncEnumerator()
+    check "reuse first enumeration" (obj.ReferenceEquals(source, iterator))
+    let fresh = source.GetAsyncEnumerator()
+    let nested = (fresh :?> IAsyncEnumerable<int>).GetAsyncEnumerator()
+    check "fresh clones are already acquired" (not (obj.ReferenceEquals(iterator, fresh)) && not (obj.ReferenceEquals(fresh, nested)))
+    let generated = iterator.GetType()
+    for interfaceType in [ typeof<IAsyncEnumerator<int>>; typeof<IAsyncDisposable> ] do
+        let targets = generated.GetInterfaceMap(interfaceType).TargetMethods
+        check "dispatch through the base" (targets |> Array.forall (fun m -> m.DeclaringType = generated.BaseType))
+    let concurrent = __runtimeAsyncSequence(fun _ -> seq { yield 1 })
+    let iterators = Task.WhenAll(Array.init 8 (fun _ -> Task.Run(fun () -> concurrent.GetAsyncEnumerator()))).Result
+    check "independent acquisitions" (HashSet(iterators, HashIdentity.Reference).Count = 8)
+    check "one first-enumeration reuse" ((iterators |> Array.filter (fun i -> obj.ReferenceEquals(concurrent, i))).Length = 1)
+    0
+"""
+    FSharp program
+    |> preview
+    |> optimize optimized
+    |> compileExeAndRun
+    |> shouldSucceed
+
+[<Theory>]
+[<InlineData(false)>]
+[<InlineData(true)>]
 let ``runtime async input evaluation precedes throwing projections`` optimized =
     FSharp """
 module PrefixOrder
@@ -349,6 +383,45 @@ let main _ =
 [<Theory>]
 [<InlineData(false)>]
 [<InlineData(true)>]
+let ``runtime async sequence guards pending moves`` optimized =
+    let body = """
+let sequence (gate: Task) = __runtimeAsyncSequence(fun _ -> seq {
+    AsyncHelpers.Await gate
+    yield 1
+    AsyncHelpers.Await gate
+    yield 2
+})
+
+let rejects (action: unit -> unit) =
+    try action (); false with :? InvalidOperationException -> true
+
+[<EntryPoint>]
+let main _ =
+    let gate = TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously)
+    let iterator = (sequence gate.Task).GetAsyncEnumerator()
+    let move = iterator.MoveNextAsync()
+    if move.IsCompleted then failwith "move should be pending"
+    if not (rejects (fun () -> iterator.MoveNextAsync() |> ignore)) then failwith "concurrent move accepted"
+    if not (rejects (fun () -> iterator.DisposeAsync() |> ignore)) then failwith "pending disposal accepted"
+    gate.SetResult()
+    if not (move.AsTask().Result && iterator.Current = 1) then failwith "first value"
+    if not (iterator.MoveNextAsync().AsTask().Result && iterator.Current = 2) then failwith "second value"
+
+    let failing = TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously)
+    let faulted = (sequence failing.Task).GetAsyncEnumerator()
+    let move = faulted.MoveNextAsync()
+    failing.SetException(InvalidOperationException())
+    if not (rejects (fun () -> move.AsTask().GetAwaiter().GetResult() |> ignore)) then failwith "fault lost"
+    if faulted.MoveNextAsync().AsTask().Result then failwith "faulted sequence resumed"
+    faulted.DisposeAsync().AsTask().Wait()
+    iterator.DisposeAsync().AsTask().Wait()
+    0
+"""
+    FSharp(header + "open System\n" + body) |> preview |> optimize optimized |> compileExeAndRun |> shouldSucceed
+
+[<Theory>]
+[<InlineData(false)>]
+[<InlineData(true)>]
 let ``runtime async sequence handles cleanup errors in try with`` optimized =
     let body = """
 module M
@@ -547,6 +620,45 @@ let main _ =
     0
 """
     FSharp body |> preview |> optimize optimized |> compileExeAndRun |> shouldSucceed
+
+[<Theory>]
+[<InlineData(false)>]
+[<InlineData(true)>]
+let ``runtime async sequence rejects overlapping moves and releases the guard`` optimized =
+    let body = """
+open System
+open Microsoft.FSharp.Core.CompilerServices
+
+let sequence (work: Task<int>) = __runtimeAsyncSequence(fun _ -> seq {
+    yield AsyncHelpers.Await work
+})
+
+[<EntryPoint>]
+let main _ =
+    for fault in [false; true] do
+        let gate = TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously)
+        let iterator = (sequence gate.Task).GetAsyncEnumerator()
+        let pending = iterator.MoveNextAsync()
+        if pending.IsCompleted then failwith "expected pending move"
+        let rejected =
+            try iterator.MoveNextAsync() |> ignore; false
+            with :? InvalidOperationException -> true
+        if not rejected then failwith "overlapping move was accepted"
+        if fault then gate.SetException(ApplicationException("failed"))
+        else gate.SetResult 42
+        if fault then
+            try
+                pending.GetAwaiter().GetResult() |> ignore
+                failwith "expected failure"
+            with :? ApplicationException -> ()
+        elif not (pending.GetAwaiter().GetResult()) || iterator.Current <> 42 then
+            failwith "expected value"
+        if iterator.MoveNextAsync().GetAwaiter().GetResult() then
+            failwith "expected completed enumeration"
+        iterator.DisposeAsync().GetAwaiter().GetResult()
+    0
+"""
+    FSharp(header + body) |> preview |> optimize optimized |> compileExeAndRun |> shouldSucceed
 
 [<Theory>]
 [<InlineData("preview", 3922, "let opaque (recipe: unit -> seq<int>) = __runtimeAsyncSequence recipe")>]

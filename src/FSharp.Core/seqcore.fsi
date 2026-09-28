@@ -171,6 +171,9 @@ type GeneratedRuntimeAsyncSequenceBase<'T> =
     abstract MoveNextAsync: unit -> System.Threading.Tasks.ValueTask<bool>
     abstract DisposeAsync: unit -> System.Threading.Tasks.ValueTask
     abstract Current: 'T
+
+    /// <summary>The F# compiler emits calls to this member when a generated move completes. It must not be called directly.</summary>
+    member CompleteMoveNext: unit -> unit
     interface IAsyncEnumerable<'T>
     interface IAsyncEnumerator<'T>
     interface IAsyncDisposable
