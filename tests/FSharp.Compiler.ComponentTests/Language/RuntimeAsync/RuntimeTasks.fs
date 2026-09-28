@@ -16,8 +16,7 @@ open System.Threading.Tasks
 open Microsoft.FSharp.Control
 open Microsoft.FSharp.Core.CompilerServices
 
-open RuntimeTaskBuilder.RuntimeTask
-open RuntimeTaskBuilder.Extensions
+open Microsoft.FSharp.Control.AsyncSeq2Implementation
 
 exception TestException of string
 
@@ -32,6 +31,9 @@ let resultOf (task: Task<'T>) = task.GetAwaiter().GetResult()
 
 let private delayed value =
     Task.Delay(1).ContinueWith(fun (_: Task) -> value)
+
+type DelayedAwaitable(delay: int) =
+    member _.GetAwaiter() = Task.Delay(delay).GetAwaiter()
 
 // ---------------------------------------------------------------------------
 // SmokeTestsForCompilation
@@ -195,6 +197,24 @@ let merge2tasks () =
 
         if t.Result <> 3 then
             failwith "failed"
+
+let mergeSourcesOverlap () =
+    let delay = 250
+    let stopwatch = Stopwatch.StartNew()
+
+    let t =
+        runtimeTask {
+            let! _ = DelayedAwaitable delay
+            and! _ = DelayedAwaitable delay
+            return ()
+        }
+
+    t.Wait()
+    stopwatch.Stop()
+
+    require
+        (stopwatch.ElapsedMilliseconds < int64 (delay * 17 / 10))
+        ($"MergeSources ran sequentially: {stopwatch.ElapsedMilliseconds} ms")
 
 let merge3tasks () =
     runtimeTask {
@@ -1544,8 +1564,7 @@ let testTaskUsesSyncContext () = // task completes without the body observably r
         finally
             SynchronizationContext.SetSynchronizationContext oldSyncContext
 
-[<EntryPoint>]
-let main _ =
+let runAllTests () =
     tinyTask ()
     tbind ()
     tnested ()
@@ -1558,6 +1577,7 @@ let main _ =
     t68 ()
     testCompileAsyncWhileLoop ()
     merge2tasks ()
+    mergeSourcesOverlap ()
     merge3tasks ()
     mergeYieldAndTask ()
     mergeTaskAndYield ()

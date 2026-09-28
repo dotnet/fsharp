@@ -7,6 +7,8 @@ open FSharp.Test.Compiler
 open Xunit
 
 #if NETCOREAPP
+open Language.RuntimeAsyncTests
+
 let private source name = Path.Combine(__SOURCE_DIRECTORY__, "RuntimeAsync", name)
 let private preview compilation = compilation |> withLangVersionPreview |> withFSharpCoreShippedNet
 let private optimize enabled compilation = if enabled then withOptimize compilation else withOptions ["--optimize-"] compilation
@@ -17,11 +19,12 @@ let private optimize enabled compilation = if enabled then withOptimize compilat
 [<InlineData(true, false)>]
 [<InlineData(true, true)>]
 let ``runtime async sequence library executes`` (crossAssembly: bool, optimized: bool) =
-    let builder = FsFromPath(source "RuntimeAsyncSequenceBuilder.fs") |> preview |> optimize optimized |> asLibrary
+    let entry = FsSource "RuntimeAsyncSequence.run().Wait()"
     (if crossAssembly then
-         FsFromPath(source "RuntimeAsyncSequence.fs") |> withReferences [builder]
+         let builders = withSampleBuilders [] |> optimize optimized |> asLibrary
+         FsFromPath(source "RuntimeAsyncSequence.fs") |> withAdditionalSourceFile entry |> withReferences [builders]
      else
-         builder |> withAdditionalSourceFile (SourceFromPath(source "RuntimeAsyncSequence.fs")))
+         withSampleBuilders [ "RuntimeAsyncSequence.fs" ] |> withAdditionalSourceFile entry)
     |> preview
     |> optimize optimized
     |> compileExeAndRun
@@ -156,10 +159,10 @@ let ``runtime async sequence keeps source calls adjacent to awaits`` (optimized,
     let inputs =
         CSharp "public static class AwaitInputs { public static System.Threading.Tasks.Task<int> Next() => System.Threading.Tasks.Task.FromResult(42); }"
         |> withName "AwaitInputs"
-    let builder = FsFromPath(source "RuntimeAsyncSequenceBuilder.fs") |> preview |> asLibrary
+    let builders = withSampleBuilders [] |> asLibrary
     let result =
-        FSharp(header + "\nlet values () = RuntimeAsyncSequenceBuilder.runtimeAsyncSeq { let! value = AwaitInputs.Next() in yield " + resultExpression + " }")
-        |> withReferences [inputs; builder]
+        FSharp(header + "\nopen Microsoft.FSharp.Control\nlet values () = asyncSeq2 { let! value = AwaitInputs.Next() in yield " + resultExpression + " }")
+        |> withReferences [inputs; builders]
         |> preview
         |> optimize optimized
         |> compile

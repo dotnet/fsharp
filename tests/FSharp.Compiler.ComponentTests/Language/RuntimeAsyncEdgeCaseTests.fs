@@ -62,7 +62,7 @@ let private refStructAcrossAwaitCE = """
 module M
 open System
 open System.Threading.Tasks
-open RuntimeTaskBuilder.RuntimeTask
+open Microsoft.FSharp.Control.AsyncSeq2Implementation
 let f () : Task<int> =
     runtimeTask {
         let data = [| 10; 20; 30 |]
@@ -75,7 +75,7 @@ let f () : Task<int> =
 let private ceStateMachineSource = """
 module CeUser
 open System.Threading.Tasks
-open RuntimeTaskBuilder.RuntimeTask
+open Microsoft.FSharp.Control.AsyncSeq2Implementation
 let f () : Task<int> =
     runtimeTask {
         let! x = Task.FromResult 41
@@ -224,7 +224,7 @@ let private composedLayoutProgram = """
 module M
 open System
 open System.Threading.Tasks
-open RuntimeTaskBuilder.RuntimeTask
+open Microsoft.FSharp.Control.AsyncSeq2Implementation
 
 let helper x = x * 2
 
@@ -254,8 +254,12 @@ let outer (n: int) : Task<int> =
 
 // (1) `do!` suspends INSIDE the try; the finally does only arithmetic. Await in a finally is
 // forbidden (docs/runtime-async.md), so the suspension must sit in the protected region. The `use`
-// wraps it in an outer try/catch; the exhibit keeps both frames so the nesting is visible.
+// wraps it in an outer try/catch; the exhibit keeps both frames so the nesting is visible. It starts
+// at the `use` resource allocation because the checker anchors on the first line, and a bare `.try`
+// also matches the builder's own TryWith/TryFinally members.
 let private ceAwaitInsideTry = """
+      IL_0022:  newobj     instance void M/'outer@13-1'::.ctor()
+      IL_0027:  stloc.3
       .try
       {
         .try
