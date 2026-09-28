@@ -24,6 +24,7 @@ val ConvertSequenceExprToObject:
     g: TcGlobals ->
     amap: ImportMap ->
     isRuntimeAsync: bool ->
+    cancellationToken: Expr option ->
     overallExpr: Expr ->
         (ValRef * ValRef * ValRef * ValRef list * Expr * Expr * Expr * TType * range) option
 

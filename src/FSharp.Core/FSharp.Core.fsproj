@@ -243,6 +243,12 @@
     <Compile Include="tasks.fs">
       <Link>Control/tasks.fs</Link>
     </Compile>
+    <Compile Include="seqasync.fsi">
+      <Link>CompilerServices/seqasync.fsi</Link>
+    </Compile>
+    <Compile Include="seqasync.fs">
+      <Link>CompilerServices/seqasync.fs</Link>
+    </Compile>
     <Compile Include="eventmodule.fsi">
       <Link>Control/eventmodule.fsi</Link>
     </Compile>

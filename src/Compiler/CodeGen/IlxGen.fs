@@ -3282,7 +3282,7 @@ and GenExprPreSteps (cenv: cenv) (cgbuf: CodeGenBuffer) eenv expr sequel =
 
             let lowering =
                 if compileSequenceExpressions then
-                    LowerSequenceExpressions.ConvertSequenceExprToObject g cenv.amap false expr
+                    LowerSequenceExpressions.ConvertSequenceExprToObject g cenv.amap false None expr
                 else
                     None
 

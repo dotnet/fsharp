@@ -11,11 +11,13 @@ open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Infos
 open FSharp.Compiler.MethodCalls
 open FSharp.Compiler.Syntax
+open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypeHierarchy
+open FSharp.Compiler.TypeRelations
 
 //----------------------------------------------------------------------------
 // General helpers
@@ -32,6 +34,21 @@ let callNonOverloadedILMethod g amap m methName ty args =
         BuildILMethInfoCall g amap m false ilMethInfo NormalValUse  [] false args |> fst
     | _  ->
         error(InternalError("The method called '"+methName+"' resolved to a non-IL type", m))
+
+let private callAsyncAwait (g: TcGlobals) amap m resultTy awaited =
+    let helpersTy =
+        g.system_AsyncHelpers_ty
+        |> Option.defaultWith (fun () -> error (Error(FSComp.SR.ilRuntimeAsyncSequenceNotStaticallyKnown (), m)))
+    let typeArgs = if isUnitTy g resultTy then [] else [ resultTy ]
+    let methodInfo =
+        TryFindIntrinsicMethInfo (InfoReader(g, amap)) m AccessibleFromEverywhere "Await" helpersTy
+        |> List.tryFind (fun methodInfo ->
+            methodInfo.FormalMethodTypars.Length = typeArgs.Length
+            && (match methodInfo.GetParamTypes(amap, m, typeArgs) with
+                | [ [ paramTy ] ] -> typeEquiv g paramTy (tyOfExpr g awaited)
+                | _ -> false))
+        |> Option.defaultWith (fun () -> error (Error(FSComp.SR.ilRuntimeAsyncSequenceNotStaticallyKnown (), m)))
+    MakeMethInfoCall amap m methodInfo typeArgs [ awaited ] None
 
 //----------------------------------------------------------------------------
 // State machine compilation for sequence expressions
@@ -95,7 +112,7 @@ let (|SeqElemTy|_|) g amap m ty =
 /// The analysis is done in two phases. The first phase determines the state variables and state labels (as Abstract IL code labels).
 /// We then allocate an integer pc for each state label and proceed with the second phase, which builds two related state machine
 /// expressions: one for 'MoveNext' and one for 'Dispose'.
-let ConvertSequenceExprToObject g amap isRuntimeAsync overallExpr =
+let ConvertSequenceExprToObject (g: TcGlobals) amap isRuntimeAsync cancellationToken overallExpr =
     /// Implement a decision to represent a 'let' binding as a non-escaping local variable (rather than a state machine variable)
     let RepresentBindingAsLocal (bind: Binding) resBody m =
         if verbose then
@@ -339,16 +356,87 @@ let ConvertSequenceExprToObject g amap isRuntimeAsync overallExpr =
             | _ ->
                 None
 
-        | (ValApp g (FSharp.Compiler.TcGlobals.ValRefForIntrinsic g.seq_trywith_info) ([ elementTy ], [ _source; _filter; _handler ], m) as tryWithExpr)
+        | (ValApp g (FSharp.Compiler.TcGlobals.ValRefForIntrinsic g.seq_trywith_info) ([ elementTy ], [ source; filter; handler ], m) as tryWithExpr)
             when isRuntimeAsync ->
-            // Keep the try/with sequence as an ordinary nested source. Its exception and disposal
-            // semantics are implemented by EnumerateTryWith; the surrounding producer remains
-            // statically lowered.
-            let value, valueExpr = mkCompGenLocal m "value" elementTy
-            let body = mkCallSeqSingleton g m elementTy valueExpr
-            let body = mkLambdaNoType g m value body
-            let nestedFor = mkCallSeqCollect g m elementTy elementTy body tryWithExpr
-            ConvertSeqExprCode isWholeExpr isTailCall noDisposeContinuationLabel currentDisposeContinuationLabel nestedFor
+            match source, handler with
+            | SeqDelay g (sourceBody, _), Expr.Lambda _ ->
+                let makeAsyncSeq elementTy body =
+                    let marker = g.cgh__runtimeAsyncSequence_vref
+                    primMkApp
+                        (exprForValRef m marker, marker.Type)
+                        [ elementTy ]
+                        [ mkUnitDelayLambda g m body ]
+                        m
+
+                let filterVar, filterExpr = mkCompGenLocal m "filterError" g.exn_ty
+                let filterBody =
+                    MakeApplicationAndBetaReduce g (filter, tyOfExpr g filter, [], [ filterExpr ], m)
+                let asyncFilter =
+                    mkLambdaNoType g m filterVar
+                        (makeAsyncSeq g.int32_ty (mkCallSeqSingleton g m g.int32_ty filterBody))
+
+                let handlerVar, handlerExpr = mkCompGenLocal m "handlerError" g.exn_ty
+                let handlerBody =
+                    MakeApplicationAndBetaReduce g (handler, tyOfExpr g handler, [], [ handlerExpr ], m)
+                    |> RewriteExpr {
+                        PreIntercept = None
+                        PreInterceptBinding = None
+                        PostTransform = (fun expr ->
+                            match expr with
+                            | Expr.Match(sp, input, tree, targets, range, ty) when tyConfirmsToSeq g ty ->
+                                let targets =
+                                    targets
+                                    |> Array.map (fun (TTarget(vs, target, flags)) ->
+                                        match target with
+                                        | Expr.Const(Const.Int32 0, m, _) ->
+                                            TTarget(vs, mkCallSeqEmpty g m elementTy, flags)
+                                        | Expr.Sequential(
+                                            (DebugPoints(Expr.Op(TOp.ILCall(_, _, _, _, _, _, _, ilMethodRef, _, _, _), _, _, _), _) as first),
+                                            Expr.Const(Const.Zero, zeroRange, _),
+                                            kind,
+                                            targetRange) when ilMethodRef.Name = "Throw" ->
+                                            TTarget(vs, Expr.Sequential(first, mkCallSeqEmpty g zeroRange elementTy, kind, targetRange), flags)
+                                        | _ -> TTarget(vs, target, flags))
+                                Some(Expr.Match(sp, input, tree, targets, range, ty))
+                            | _ -> None)
+                        RewriteQuotations = false
+                        StackGuard = StackGuard("RuntimeAsyncSequenceHandler")
+                    }
+                let asyncHandler = mkLambdaNoType g m handlerVar (makeAsyncSeq elementTy handlerBody)
+                let wrapped =
+                    let helper = ValRefForIntrinsic g.seq_async_trywith_info
+                    mkApps g
+                        ((exprForValRef m helper, helper.Type),
+                         [ [ elementTy ] ],
+                         [ makeAsyncSeq elementTy sourceBody; asyncFilter; asyncHandler ],
+                         m)
+                let enumeratorTy = g.mk_IAsyncEnumerator_ty elementTy
+                let enumeratorVar, enumeratorExpr = mkCompGenLocal m "asyncEnumerator" enumeratorTy
+                let cancellationToken =
+                    cancellationToken
+                    |> Option.defaultWith (fun () -> error (Error(FSComp.SR.ilRuntimeAsyncSequenceNotStaticallyKnown (), m)))
+                let moveNext =
+                    callNonOverloadedILMethod g amap m "MoveNextAsync" enumeratorTy [ enumeratorExpr ]
+                    |> callAsyncAwait g amap m g.bool_ty
+                let dispose =
+                    let disposable = mkCoerceIfNeeded g g.system_IAsyncDisposable_ty enumeratorTy enumeratorExpr
+                    callNonOverloadedILMethod g amap m "DisposeAsync" g.system_IAsyncDisposable_ty [ disposable ]
+                    |> callAsyncAwait g amap m g.unit_ty
+                let body =
+                    mkInvisibleLet m enumeratorVar
+                        (callNonOverloadedILMethod g amap m "GetAsyncEnumerator" (g.mk_IAsyncEnumerable_ty elementTy) [ wrapped; cancellationToken ])
+                        (mkCallSeqFinally g m elementTy
+                            (mkCallSeqGenerated g m elementTy
+                                (mkUnitDelayLambda g m moveNext)
+                                (mkCallSeqSingleton g m elementTy
+                                    (callNonOverloadedILMethod g amap m "get_Current" enumeratorTy [ enumeratorExpr ])))
+                            (mkUnitDelayLambda g m dispose))
+                ConvertSeqExprCode false false noDisposeContinuationLabel currentDisposeContinuationLabel body
+            | _ ->
+                let value, valueExpr = mkCompGenLocal m "value" elementTy
+                let body = mkCallSeqSingleton g m elementTy valueExpr
+                let nestedFor = mkCallSeqCollect g m elementTy elementTy (mkLambdaNoType g m value body) tryWithExpr
+                ConvertSeqExprCode isWholeExpr isTailCall noDisposeContinuationLabel currentDisposeContinuationLabel nestedFor
 
         | SeqEmpty g m ->
             // printfn "found Seq.empty"

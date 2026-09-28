@@ -213,6 +213,342 @@ let main _ =
     |> shouldSucceed
 
 [<Theory>]
+[<InlineData(false)>]
+[<InlineData(true)>]
+let ``runtime async sequence awaits in producer try with`` optimized =
+    let body = """
+open System
+open Microsoft.FSharp.Core.CompilerServices
+
+let sequence (work: Task<int>) = __runtimeAsyncSequence(fun _ -> seq {
+    try
+        yield 1
+        yield AsyncHelpers.Await work
+    with :? InvalidOperationException ->
+        yield -1
+})
+
+[<EntryPoint>]
+let main _ =
+    let source = sequence (Task.FromException<int>(InvalidOperationException()))
+    let iterator = source.GetAsyncEnumerator()
+    let first = iterator.MoveNextAsync().GetAwaiter().GetResult()
+    let value = iterator.Current
+    let second = iterator.MoveNextAsync().GetAwaiter().GetResult()
+    let handled = iterator.Current
+    let done_ = iterator.MoveNextAsync().GetAwaiter().GetResult()
+    iterator.DisposeAsync().GetAwaiter().GetResult()
+    if first && value = 1 && second && handled = -1 && not done_ then 0 else 1
+"""
+    FSharp(header + body)
+    |> preview
+    |> optimize optimized
+    |> compileExeAndRun
+    |> shouldSucceed
+
+[<Theory>]
+[<InlineData(false)>]
+[<InlineData(true)>]
+let ``runtime async sequence awaits in exception handler`` optimized =
+    let body = """
+module M
+open System
+open System.Threading.Tasks
+open System.Runtime.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers
+
+let sequence (work: Task<int>) = __runtimeAsyncSequence(fun _ -> seq {
+    try
+        yield 1
+        raise (InvalidOperationException())
+    with
+    | :? InvalidOperationException ->
+        yield AsyncHelpers.Await work
+        yield 3
+})
+
+[<EntryPoint>]
+let main _ =
+    let iterator = (sequence (Task.FromResult 2)).GetAsyncEnumerator()
+    let values = ResizeArray<int>()
+    while iterator.MoveNextAsync().GetAwaiter().GetResult() do
+        values.Add(iterator.Current)
+    iterator.DisposeAsync().GetAwaiter().GetResult()
+    if Seq.toList values = [1; 2; 3] then 0 else 1
+"""
+    FSharp body |> preview |> optimize optimized |> compileExeAndRun |> shouldSucceed
+
+[<Theory>]
+[<InlineData(false)>]
+[<InlineData(true)>]
+let ``runtime async sequence preserves handler filtering and cleanup`` optimized =
+    let body = """
+module M
+open System
+open System.Threading.Tasks
+open System.Runtime.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers
+
+let mutable closed = 0
+let sequence (work: Task<int>) = __runtimeAsyncSequence(fun _ -> seq {
+    try
+        try
+            yield AsyncHelpers.Await work
+        finally
+            closed <- closed + 1
+    with
+    | :? InvalidOperationException -> yield -1
+})
+
+[<EntryPoint>]
+let main _ =
+    let source = sequence (Task.FromException<int>(InvalidOperationException()))
+    let iterator = source.GetAsyncEnumerator()
+    let moved = iterator.MoveNextAsync().GetAwaiter().GetResult()
+    let value = iterator.Current
+    iterator.DisposeAsync().GetAwaiter().GetResult()
+    if moved && value = -1 && closed = 1 then 0 else 1
+"""
+    FSharp body |> preview |> optimize optimized |> compileExeAndRun |> shouldSucceed
+
+[<Theory>]
+[<InlineData(false)>]
+[<InlineData(true)>]
+let ``runtime async sequence awaits source cleanup before handling an error`` optimized =
+    let body = """
+open System
+open Microsoft.FSharp.Core.CompilerServices
+
+let mutable closed = false
+let sequence (work: Task<int>) (cleanup: Task) = __runtimeAsyncSequence(fun _ -> seq {
+    try
+        try
+            yield AsyncHelpers.Await work
+        finally
+            AsyncHelpers.Await cleanup
+            closed <- true
+    with :? InvalidOperationException ->
+        yield -1
+})
+
+[<EntryPoint>]
+let main _ =
+    let gate = TaskCompletionSource<unit>(TaskCreationOptions.RunContinuationsAsynchronously)
+    let iterator = (sequence (Task.FromException<int>(InvalidOperationException())) gate.Task).GetAsyncEnumerator()
+    let pending = iterator.MoveNextAsync()
+    if pending.IsCompleted || closed then failwith "cleanup should be pending"
+    gate.SetResult()
+    if not (pending.GetAwaiter().GetResult()) || iterator.Current <> -1 || not closed then
+        failwith "handler ran before cleanup"
+    if iterator.MoveNextAsync().GetAwaiter().GetResult() then failwith "unexpected element"
+    iterator.DisposeAsync().GetAwaiter().GetResult()
+    0
+"""
+    FSharp(header + body) |> preview |> optimize optimized |> compileExeAndRun |> shouldSucceed
+
+[<Theory>]
+[<InlineData(false)>]
+[<InlineData(true)>]
+let ``runtime async sequence handles cleanup errors in try with`` optimized =
+    let body = """
+module M
+open System
+open System.Threading.Tasks
+open System.Runtime.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers
+
+let sequence (work: Task<int>) (cleanupError: exn) = __runtimeAsyncSequence(fun _ -> seq {
+    try
+        try
+            yield AsyncHelpers.Await work
+        finally
+            raise cleanupError
+    with
+    | :? InvalidOperationException as error -> yield if error.Message = "cleanup" then -2 else -1
+})
+
+[<EntryPoint>]
+let main _ =
+    let iterator =
+        (sequence
+            (Task.FromException<int>(InvalidOperationException("body")))
+            (InvalidOperationException("cleanup"))).GetAsyncEnumerator()
+    let moved = iterator.MoveNextAsync().GetAwaiter().GetResult()
+    let value = iterator.Current
+    iterator.DisposeAsync().GetAwaiter().GetResult()
+    if not moved || value <> -2 then failwith "matched cleanup error"
+    let iterator =
+        (sequence
+            (Task.FromException<int>(InvalidOperationException("body")))
+            (ApplicationException("cleanup"))).GetAsyncEnumerator()
+    let raised =
+        try
+            iterator.MoveNextAsync().GetAwaiter().GetResult() |> ignore
+            false
+        with :? ApplicationException as error when error.Message = "cleanup" -> true
+    iterator.DisposeAsync().GetAwaiter().GetResult()
+    if raised then 0 else 1
+"""
+    FSharp body |> preview |> optimize optimized |> compileExeAndRun |> shouldSucceed
+
+[<Theory>]
+[<InlineData(false)>]
+[<InlineData(true)>]
+let ``runtime async sequence handles suspended filter and unmatched errors`` optimized =
+    let body = """
+module M
+open System
+open System.Threading.Tasks
+open System.Runtime.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers
+
+let sequence (work: Task<int>) (guard: Task<bool>) = __runtimeAsyncSequence(fun _ -> seq {
+    try
+        yield AsyncHelpers.Await work
+    with
+    | :? InvalidOperationException when AsyncHelpers.Await guard -> yield 42
+    | :? ArgumentException -> yield -1
+})
+
+[<MethodImpl(MethodImplOptions.NoInlining)>]
+let raiseOrigin () : int = raise (InvalidOperationException("origin"))
+
+[<EntryPoint>]
+let main _ =
+    for work, guard, expected in
+        [ Task.FromResult 3, Task.FromResult true, 3
+          Task.FromException<int>(InvalidOperationException()), Task.FromResult true, 42
+          Task.FromException<int>(ArgumentException()), Task.FromResult false, -1 ] do
+        let iterator = (sequence work guard).GetAsyncEnumerator()
+        if not (iterator.MoveNextAsync().GetAwaiter().GetResult()) || iterator.Current <> expected then
+            failwith "unexpected value"
+        if iterator.MoveNextAsync().GetAwaiter().GetResult() then failwith "unexpected extra value"
+        iterator.DisposeAsync().GetAwaiter().GetResult()
+    let error =
+        try raiseOrigin () |> ignore; failwith "expected source error"
+        with :? InvalidOperationException as error -> error
+    let iterator = (sequence (Task.FromException<int> error) (Task.FromResult false)).GetAsyncEnumerator()
+    try
+        iterator.MoveNextAsync().GetAwaiter().GetResult() |> ignore
+        failwith "unmatched error was swallowed"
+    with :? InvalidOperationException as caught when obj.ReferenceEquals(error, caught) ->
+        if not (caught.StackTrace.Contains("raiseOrigin")) then failwith "lost original stack"
+    iterator.DisposeAsync().GetAwaiter().GetResult()
+    let filterGate = TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously)
+    let iterator = (sequence (Task.FromException<int>(InvalidOperationException())) filterGate.Task).GetAsyncEnumerator()
+    let pending = iterator.MoveNextAsync()
+    if pending.IsCompleted then failwith "filter should be pending"
+    filterGate.SetResult true
+    if not (pending.GetAwaiter().GetResult()) || iterator.Current <> 42 then
+        failwith "suspended filter"
+    iterator.DisposeAsync().GetAwaiter().GetResult()
+    0
+"""
+    FSharp body |> preview |> optimize optimized |> compileExeAndRun |> shouldSucceed
+
+[<Theory>]
+[<InlineData(false)>]
+[<InlineData(true)>]
+let ``runtime async try with closes its source on filter and handler faults`` optimized =
+    let body = """
+module M
+open System
+open System.Collections.Generic
+open System.Runtime.CompilerServices
+open System.Threading
+open System.Threading.Tasks
+open Microsoft.FSharp.Core.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers
+
+[<EntryPoint>]
+let main _ =
+    for mode in 0 .. 2 do
+        let mutable disposed = 0
+        let mutable moves = 0
+        let source =
+            { new IAsyncEnumerable<int> with
+                member _.GetAsyncEnumerator(_: CancellationToken) =
+                    { new IAsyncEnumerator<int> with
+                        member _.Current = 0
+                        member _.MoveNextAsync() =
+                            moves <- moves + 1
+                            ValueTask<bool>(Task.FromException<bool>(InvalidOperationException("source")))
+                        member _.DisposeAsync() =
+                            disposed <- disposed + 1
+                            ValueTask() } }
+        let filter (_: exn) =
+            __runtimeAsyncSequence(fun _ -> seq {
+                yield AsyncHelpers.Await(
+                    if mode = 0 then Task.FromException<int>(ApplicationException("filter"))
+                    else Task.FromResult(if mode = 1 then 0 else 1))
+            })
+        let handler (_: exn) =
+            __runtimeAsyncSequence(fun _ -> seq {
+                yield AsyncHelpers.Await(Task.FromException<int>(ApplicationException("handler")))
+            })
+        let iterator = (RuntimeAsyncSequenceHelpers.EnumerateTryWith source filter handler).GetAsyncEnumerator()
+        let message =
+            try
+                iterator.MoveNextAsync().GetAwaiter().GetResult() |> ignore
+                failwith "expected a fault"
+            with
+            | :? ApplicationException as error -> error.Message
+            | :? InvalidOperationException as error -> error.Message
+        let expected = [| "filter"; "source"; "handler" |].[mode]
+        if message <> expected || disposed <> 1 || moves <> 1 then failwith "incorrect fault cleanup"
+        if iterator.MoveNextAsync().GetAwaiter().GetResult() then failwith "faulted iterator restarted"
+        iterator.DisposeAsync().GetAwaiter().GetResult()
+        if disposed <> 1 || moves <> 1 then failwith "double disposal or restart"
+    0
+"""
+    FSharp body |> preview |> optimize optimized |> compileExeAndRun |> shouldSucceed
+
+[<Theory>]
+[<InlineData(false)>]
+[<InlineData(true)>]
+let ``runtime async sequence handles nested try with and early disposal`` optimized =
+    let body = """
+module M
+open System
+open System.Threading.Tasks
+open System.Runtime.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers
+
+let mutable closed = 0
+let sequence (work: Task<int>) = __runtimeAsyncSequence(fun _ -> seq {
+    try
+        try
+            try
+                yield AsyncHelpers.Await work
+            finally
+                closed <- closed + 1
+        with :? ArgumentException ->
+            yield 1
+    with :? InvalidOperationException ->
+        yield 2
+})
+
+[<EntryPoint>]
+let main _ =
+    let iterator = (sequence (Task.FromException<int>(InvalidOperationException()))).GetAsyncEnumerator()
+    if not (iterator.MoveNextAsync().GetAwaiter().GetResult()) || iterator.Current <> 2 || closed <> 1 then
+        failwith "outer handler"
+    if iterator.MoveNextAsync().GetAwaiter().GetResult() then failwith "unexpected element"
+    iterator.DisposeAsync().GetAwaiter().GetResult()
+    let iterator = (sequence (Task.FromException<int>(ArgumentException()))).GetAsyncEnumerator()
+    if not (iterator.MoveNextAsync().GetAwaiter().GetResult()) || iterator.Current <> 1 || closed <> 2 then
+        failwith "inner handler"
+    iterator.DisposeAsync().GetAwaiter().GetResult()
+    let iterator = (sequence (Task.FromResult 42)).GetAsyncEnumerator()
+    if not (iterator.MoveNextAsync().GetAwaiter().GetResult()) || iterator.Current <> 42 then
+        failwith "ordinary yield"
+    iterator.DisposeAsync().GetAwaiter().GetResult()
+    if closed <> 3 then failwith "early disposal"
+    0
+"""
+    FSharp body |> preview |> optimize optimized |> compileExeAndRun |> shouldSucceed
+
+[<Theory>]
 [<InlineData("preview", 3922, "let opaque (recipe: unit -> seq<int>) = __runtimeAsyncSequence recipe")>]
 [<InlineData("preview", 3922, "let tail (input: seq<int>) = __runtimeAsyncSequence(fun _ -> seq { yield 1; yield! input })")>]
 [<InlineData("preview", 3918, "let nested () = __runtimeAsyncSequence(fun _ -> seq { for n in seq { yield AsyncHelpers.Await(Task.FromResult 1) } do yield n })")>]

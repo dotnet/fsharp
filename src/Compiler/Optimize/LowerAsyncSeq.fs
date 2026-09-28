@@ -245,7 +245,7 @@ let TryConvert g amap (expr: Expr) =
 
         let root = mkCallSeq g m elementTy (stripRoot body)
 
-        match ConvertSequenceExprToObject g amap true root with
+        match ConvertSequenceExprToObject g amap true (Some cancellationTokenExpr) root with
         | Some(next, pc, current, stateVars, generateNext, close, checkClose, elementTy, range) when
             not ((freeInExpr CollectLocals generateNext).FreeLocals.Contains next.Deref)
             ->
