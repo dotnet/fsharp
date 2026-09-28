@@ -192,16 +192,16 @@ let factory (work: Task<int>) = __runtimeAsyncSequence(fun _ -> seq {
     result |> withMetadataReader (fun md ->
         let names = [for handle in md.MethodDefinitions -> md.GetString(md.GetMethodDefinition(handle).Name)]
         Assert.Single(names |> List.filter ((=) "MoveNextAsync")) |> ignore
-        Assert.Single(names |> List.filter ((=) "DisposeAsync")) |> ignore
+        Assert.DoesNotContain("DisposeAsync", names)
         for handle in md.MethodDefinitions do
             let method = md.GetMethodDefinition handle
             let name = md.GetString method.Name
-            if name = "MoveNextAsync" || name = "DisposeAsync" then
+            if name = "MoveNextAsync" then
                 Assert.Equal(0x2000, int method.ImplAttributes &&& 0x2000)
                 let mutable signature = md.GetBlobReader method.Signature
                 Assert.False(signature.ReadSignatureHeader().IsGeneric)
                 Assert.Equal(0, signature.ReadCompressedInteger())
-            elif name = "factory" || name = "GenerateNext" then
+            elif name = "factory" || name = "GenerateNext" || name = "Close" then
                 Assert.Equal(0, int method.ImplAttributes &&& 0x2000))
     match result with
     | CompilationResult.Success output ->
@@ -525,44 +525,33 @@ let main _ =
 [<Theory>]
 [<InlineData(false)>]
 [<InlineData(true)>]
-let ``runtime async try with closes its source on filter and handler faults`` optimized =
+let ``runtime async try with runs cleanup once on guard and handler faults`` optimized =
     let body = """
 module M
 open System
-open System.Collections.Generic
-open System.Runtime.CompilerServices
-open System.Threading
 open System.Threading.Tasks
-open Microsoft.FSharp.Core.CompilerServices
+open System.Runtime.CompilerServices
 open Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers
+
+let mutable disposed = 0
+let sequence (guard: Task<bool>) = __runtimeAsyncSequence(fun _ -> seq {
+    try
+        try
+            yield AsyncHelpers.Await(Task.FromException<int>(InvalidOperationException("source")))
+        finally
+            disposed <- disposed + 1
+    with :? InvalidOperationException when AsyncHelpers.Await guard ->
+        yield AsyncHelpers.Await(Task.FromException<int>(ApplicationException("handler")))
+})
 
 [<EntryPoint>]
 let main _ =
-    for mode in 0 .. 2 do
-        let mutable disposed = 0
-        let mutable moves = 0
-        let source =
-            { new IAsyncEnumerable<int> with
-                member _.GetAsyncEnumerator(_: CancellationToken) =
-                    { new IAsyncEnumerator<int> with
-                        member _.Current = 0
-                        member _.MoveNextAsync() =
-                            moves <- moves + 1
-                            ValueTask<bool>(Task.FromException<bool>(InvalidOperationException("source")))
-                        member _.DisposeAsync() =
-                            disposed <- disposed + 1
-                            ValueTask() } }
-        let filter (_: exn) =
-            __runtimeAsyncSequence(fun _ -> seq {
-                yield AsyncHelpers.Await(
-                    if mode = 0 then Task.FromException<int>(ApplicationException("filter"))
-                    else Task.FromResult(if mode = 1 then 0 else 1))
-            })
-        let handler (_: exn) =
-            __runtimeAsyncSequence(fun _ -> seq {
-                yield AsyncHelpers.Await(Task.FromException<int>(ApplicationException("handler")))
-            })
-        let iterator = (RuntimeAsyncSequenceHelpers.EnumerateTryWith source filter handler).GetAsyncEnumerator()
+    for guard, expected in
+        [ Task.FromException<bool>(ApplicationException("guard")), "guard"
+          Task.FromResult false, "source"
+          Task.FromResult true, "handler" ] do
+        disposed <- 0
+        let iterator = (sequence guard).GetAsyncEnumerator()
         let message =
             try
                 iterator.MoveNextAsync().GetAwaiter().GetResult() |> ignore
@@ -570,11 +559,59 @@ let main _ =
             with
             | :? ApplicationException as error -> error.Message
             | :? InvalidOperationException as error -> error.Message
-        let expected = [| "filter"; "source"; "handler" |].[mode]
-        if message <> expected || disposed <> 1 || moves <> 1 then failwith "incorrect fault cleanup"
+        if message <> expected || disposed <> 1 then failwithf "incorrect fault cleanup: %s" message
         if iterator.MoveNextAsync().GetAwaiter().GetResult() then failwith "faulted iterator restarted"
         iterator.DisposeAsync().GetAwaiter().GetResult()
-        if disposed <> 1 || moves <> 1 then failwith "double disposal or restart"
+        if disposed <> 1 then failwith "double disposal"
+    0
+"""
+    FSharp body |> preview |> optimize optimized |> compileExeAndRun |> shouldSucceed
+
+[<Theory>]
+[<InlineData(false)>]
+[<InlineData(true)>]
+let ``runtime async sequence disposal runs pending finally blocks but no handlers`` optimized =
+    let body = """
+module M
+open System
+open System.Threading.Tasks
+open System.Runtime.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers
+
+let log = ResizeArray<string>()
+let sequence (cleanup: Task) fail = __runtimeAsyncSequence(fun _ -> seq {
+    try
+        try
+            try
+                yield 1
+            finally
+                AsyncHelpers.Await cleanup
+                log.Add "inner"
+                if fail then raise (InvalidOperationException("inner"))
+        with _ ->
+            log.Add "handler"
+            yield -1
+    finally
+        log.Add "outer"
+})
+
+[<EntryPoint>]
+let main _ =
+    for fail in [ false; true ] do
+        log.Clear()
+        let gate = TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously)
+        let iterator = (sequence gate.Task fail).GetAsyncEnumerator()
+        if not (iterator.MoveNextAsync().GetAwaiter().GetResult()) || iterator.Current <> 1 then failwith "first value"
+        let disposal = iterator.DisposeAsync()
+        if disposal.IsCompleted then failwith "cleanup should be pending"
+        gate.SetResult()
+        let message =
+            try disposal.GetAwaiter().GetResult(); "" with :? InvalidOperationException as error -> error.Message
+        if message <> (if fail then "inner" else "") || List.ofSeq log <> [ "inner"; "outer" ] then
+            failwithf "disposal: %s %A" message log
+        if iterator.MoveNextAsync().GetAwaiter().GetResult() then failwith "disposed iterator resumed"
+        iterator.DisposeAsync().GetAwaiter().GetResult()
+        if log.Count <> 2 then failwith "cleanup ran twice"
     0
 """
     FSharp body |> preview |> optimize optimized |> compileExeAndRun |> shouldSucceed

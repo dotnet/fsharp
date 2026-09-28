@@ -59,7 +59,43 @@ let private rewriteCancellationToken (g: TcGlobals) tokenExpr =
             StackGuard = StackGuard("LowerAsyncSeqCancellationToken")
         }
 
-let private prepareMethods (g: TcGlobals) amap m (stateVars: ValRef list) generateNext close cancellationTokenValRef =
+let private callEdi (g: TcGlobals) amap m name resultTy (objArgs: Expr list) (args: Expr list) =
+    let ediTy =
+        g.system_ExceptionDispatchInfo_ty
+        |> Option.defaultWith (fun () -> error (Error(FSComp.SR.ilRuntimeAsyncSequenceNotStaticallyKnown (), m)))
+
+    let signature = List.map (tyOfExpr g) args @ [ resultTy ]
+
+    let methodInfo =
+        TryFindIntrinsicMethInfo (InfoReader(g, amap)) m AccessorDomain.AccessibleFromEverywhere name ediTy
+        |> List.tryFind (fun methodInfo ->
+            let methodSignature =
+                List.concat (methodInfo.GetParamTypes(amap, m, []))
+                @ [ methodInfo.GetFSharpReturnType(amap, m, []) ]
+
+            methodInfo.IsInstance = not objArgs.IsEmpty
+            && methodSignature.Length = signature.Length
+            && List.forall2 (typeEquiv g) methodSignature signature)
+        |> Option.defaultWith (fun () -> error (Error(FSComp.SR.ilRuntimeAsyncSequenceNotStaticallyKnown (), m)))
+
+    MakeMethInfoCall amap m methodInfo [] (objArgs @ args) None
+
+/// ExceptionDispatchInfo.Capture(exn).Throw()
+let private rethrow (g: TcGlobals) amap m exnExpr =
+    let edi =
+        callEdi g amap m "Capture" (Option.get g.system_ExceptionDispatchInfo_ty) [] [ exnExpr ]
+
+    callEdi g amap m "Throw" g.unit_ty [ edi ] []
+
+let private prepareMethods
+    (g: TcGlobals)
+    amap
+    m
+    (stateVars: ValRef list)
+    generateNext
+    (unwind: RuntimeAsyncUnwind)
+    cancellationTokenValRef
+    =
     for value in stateVars do
         if value.Deref.IsPinning || isByrefTy g value.Type || isByrefLikeTy g m value.Type then
             error (Error(FSComp.SR.ilRuntimeAsyncSequenceNotStaticallyKnown (), value.Range))
@@ -67,6 +103,7 @@ let private prepareMethods (g: TcGlobals) amap m (stateVars: ValRef list) genera
     let resultVar, resultExpr =
         mkMutableCompGenLocal m "__sequenceStepResult" g.int32_ty
 
+    let retryVar, retryExpr = mkMutableCompGenLocal m "__sequenceRetry" g.bool_ty
     let stepExit = generateCodeLabel ()
 
     let body =
@@ -81,6 +118,9 @@ let private prepareMethods (g: TcGlobals) amap m (stateVars: ValRef list) genera
                 )
             | _ -> None)
 
+    let faultExpr = exprForValRef m unwind.Fault
+
+    // Cleanup runs regardless of cancellation.
     let body =
         match cancellationTokenValRef with
         | Some cancellationTokenValRef ->
@@ -91,56 +131,18 @@ let private prepareMethods (g: TcGlobals) amap m (stateVars: ValRef list) genera
                 callNonOverloadedILMethod g amap m "ThrowIfCancellationRequested" g.system_CancellationToken_ty [ cancellationTokenAddress ]
                 |> wrap
 
-            mkCompGenSequential m cancellationCheck body
+            let isUnwinding =
+                mkLazyOr g m (mkNonNullTest g m faultExpr) (exprForValRef m unwind.Disposing)
+
+            mkCompGenSequential m (mkCond DebugPointAtBinding.NoneAtInvisible m g.unit_ty isUnwinding (mkUnit g m) cancellationCheck) body
         | None -> body
 
-    // Yield exits leave the protected body without running fault cleanup.
+    // Yield exits leave the protected body.
     let body = mkCompGenSequential m body (mkLabelled m stepExit (mkUnit g m))
 
-    let labels = Dictionary<ILCodeLabel, ILCodeLabel>()
-
-    let relabel label =
-        match labels.TryGetValue label with
-        | true, target -> target
-        | _ ->
-            let target = generateCodeLabel ()
-            labels.Add(label, target)
-            target
-
-    let closeOnFailure =
-        copyExpr g CloneAll close
-        |> rewrite g (function
-            | Expr.Op(TOp.Label label, tys, args, range) -> Some(Expr.Op(TOp.Label(relabel label), tys, args, range))
-            | Expr.Op(TOp.Goto label, tys, args, range) -> Some(Expr.Op(TOp.Goto(relabel label), tys, args, range))
-            | _ -> None)
-
+    // A fault runs the step again, and the jump table then goes to the innermost pending finally or handler.
     let filterVar, _ = mkLocal m "__sequenceFilter" g.exn_ty
     let errorVar, errorExpr = mkLocal m "__sequenceError" g.exn_ty
-
-    let ediTy =
-        g.system_ExceptionDispatchInfo_ty
-        |> Option.defaultWith (fun () -> error (Error(FSComp.SR.ilRuntimeAsyncSequenceNotStaticallyKnown (), m)))
-
-    let callEdi name resultTy (objArgs: Expr list) (args: Expr list) =
-        let signature = List.map (tyOfExpr g) args @ [ resultTy ]
-
-        let methodInfo =
-            TryFindIntrinsicMethInfo (InfoReader(g, amap)) m AccessorDomain.AccessibleFromEverywhere name ediTy
-            |> List.tryFind (fun methodInfo ->
-                let methodSignature =
-                    List.concat (methodInfo.GetParamTypes(amap, m, []))
-                    @ [ methodInfo.GetFSharpReturnType(amap, m, []) ]
-
-                methodInfo.IsInstance = not objArgs.IsEmpty
-                && methodSignature.Length = signature.Length
-                && List.forall2 (typeEquiv g) methodSignature signature)
-            |> Option.defaultWith (fun () -> error (Error(FSComp.SR.ilRuntimeAsyncSequenceNotStaticallyKnown (), m)))
-
-        MakeMethInfoCall amap m methodInfo [] (objArgs @ args) None
-
-    let dispatchVar, dispatchExpr = mkMutableCompGenLocal m "__sequenceException" ediTy
-    // Keep the exception out of every continuation when cleanup can suspend.
-    let preserveDispatch = RuntimeAsyncAnalyzer(g).ContainsSuspension close
 
     let guardedBody =
         mkTryWith
@@ -149,71 +151,46 @@ let private prepareMethods (g: TcGlobals) amap m (stateVars: ValRef list) genera
              filterVar,
              mkTrue g m,
              errorVar,
-             mkCompGenSequential
-                 m
-                 (mkValSet m (mkLocalValRef dispatchVar) (callEdi "Capture" ediTy [] [ errorExpr ]))
-                 (mkValSet m (mkLocalValRef resultVar) (mkInt32 g m -1)),
+             mkCompGenSequential m (mkValSet m unwind.Fault errorExpr) (mkValSet m (mkLocalValRef retryVar) (mkTrue g m)),
              m,
              g.unit_ty,
              DebugPointAtTry.No,
              DebugPointAtWith.No)
 
-    let failure =
+    let loop =
+        mkWhile
+            g
+            (DebugPointAtWhile.No,
+             NoSpecialWhileLoopMarker,
+             retryExpr,
+             mkCompGenSequential m (mkValSet m (mkLocalValRef retryVar) (mkFalse g m)) guardedBody,
+             m)
+
+    // An exception that no handler caught is rethrown once all cleanup has run.
+    let body =
         mkCompGenSequential
             m
-            closeOnFailure
-            (mkCompGenSequential m (callEdi "Throw" g.unit_ty [ dispatchExpr ] []) (mkDefault (m, g.bool_ty)))
-
-    let failure =
-        if preserveDispatch then
-            mkTryFinally
+            loop
+            (mkNonNullCond
                 g
-                (failure,
-                 mkValSet m (mkLocalValRef dispatchVar) (mkDefault (m, ediTy)),
-                 m,
-                 g.bool_ty,
-                 DebugPointAtTry.No,
-                 DebugPointAtFinally.No)
-        else
-            failure
+                m
+                g.bool_ty
+                faultExpr
+                (mkCompGenSequential m (rethrow g amap m faultExpr) (mkFalse g m))
+                (mkILAsmCeq g m resultExpr (mkInt32 g m 1)))
 
     let body =
-        let body =
-            mkCompGenSequential
-                m
-                guardedBody
-                (mkCond
-                    DebugPointAtBinding.NoneAtInvisible
-                    m
-                    g.bool_ty
-                    (mkILAsmCeq g m resultExpr (mkInt32 g m -1))
-                    failure
-                    (mkILAsmCeq g m resultExpr (mkInt32 g m 1)))
+        body
+        |> mkCompGenLet m unwind.Fault.Deref (mkNull m g.exn_ty)
+        |> mkCompGenLet m retryVar (mkTrue g m)
+        |> mkCompGenLet m resultVar (mkInt32 g m 0)
 
-        let body =
-            if preserveDispatch then
-                body
-            else
-                mkCompGenLet m dispatchVar (mkDefault (m, ediTy)) body
+    for value in GetRuntimeAsyncNonPreservableUses g body do
+        error (Error(FSComp.SR.ilRuntimeAsyncLocalUsedAfterSuspension value.DisplayName, value.Range))
 
-        mkCompGenLet m resultVar (mkInt32 g m 0) body
-
-    let envelope marker typeArgs body =
-        for value in GetRuntimeAsyncNonPreservableUses g body do
-            error (Error(FSComp.SR.ilRuntimeAsyncLocalUsedAfterSuspension value.DisplayName, value.Range))
-
-        let body = RewriteRuntimeAsyncExceptionHandlers g body
-        primMkApp (exprForValRef m marker, marker.Type) typeArgs [ body ] m
-
-    let stateVars =
-        if preserveDispatch then
-            mkLocalValRef dispatchVar :: stateVars
-        else
-            stateVars
-
-    stateVars,
-    envelope g.cgh__runtimeAsyncReturnValueTask_vref [ g.bool_ty ] body,
-    envelope g.cgh__runtimeAsyncReturnValueTaskUnit_vref [] close
+    let body = RewriteRuntimeAsyncExceptionHandlers g body
+    let marker = g.cgh__runtimeAsyncReturnValueTask_vref
+    primMkApp (exprForValRef m marker, marker.Type) [ g.bool_ty ] [ body ] m
 
 let TryConvert g amap (expr: Expr) =
     let m = expr.Range
@@ -245,19 +222,24 @@ let TryConvert g amap (expr: Expr) =
 
         let root = mkCallSeq g m elementTy (stripRoot body)
 
-        match ConvertSequenceExprToObject g amap true (Some cancellationTokenExpr) root with
+        let faultVar, _ = mkMutableCompGenLocal m "__sequenceFault" g.exn_ty
+        let disposingVar, _ = mkMutableCompGenLocal m "__disposing" g.bool_ty
+
+        let unwind =
+            {
+                Fault = mkLocalValRef faultVar
+                Disposing = mkLocalValRef disposingVar
+                Rethrow = rethrow g amap m
+            }
+
+        match ConvertSequenceExprToObject g amap (Some unwind) root with
         | Some(next, pc, current, stateVars, generateNext, close, checkClose, elementTy, range) when
             not ((freeInExpr CollectLocals generateNext).FreeLocals.Contains next.Deref)
             ->
-            let stateVars, generateNext, close =
-                prepareMethods
-                    g
-                    amap
-                    range
-                    (mkLocalValRef cancellationTokenVar :: stateVars)
-                    generateNext
-                    close
-                    (Some(mkLocalValRef cancellationTokenVar))
+            let stateVars = mkLocalValRef cancellationTokenVar :: unwind.Disposing :: stateVars
+
+            let generateNext =
+                prepareMethods g amap range stateVars generateNext unwind (Some(mkLocalValRef cancellationTokenVar))
 
             Some(
                 Sequence(

@@ -606,7 +606,6 @@ type TcGlobals(
   let fslib_MFOptionModule_nleref              = mkNestedNonLocalEntityRef fslib_MFCore_nleref "OptionModule"
   let fslib_MFStateMachineHelpers_nleref            = mkNestedNonLocalEntityRef fslib_MFCompilerServices_nleref "StateMachineHelpers"
   let fslib_MFRuntimeHelpers_nleref            = mkNestedNonLocalEntityRef fslib_MFCompilerServices_nleref "RuntimeHelpers"
-  let fslib_MFRuntimeAsyncSequenceHelpers_nleref = mkNestedNonLocalEntityRef fslib_MFCompilerServices_nleref "RuntimeAsyncSequenceHelpers"
   let fslib_MFQuotations_nleref                = mkNestedNonLocalEntityRef fslib_MF_nleref "Quotations"
 
   let fslib_MFLinqRuntimeHelpersQuotationConverter_nleref        = mkNestedNonLocalEntityRef fslib_MFLinqRuntimeHelpers_nleref "LeafExpressionConverter"
@@ -906,7 +905,6 @@ type TcGlobals(
   let v_seq_generated_info         = makeIntrinsicValRef(fslib_MFRuntimeHelpers_nleref,                        "EnumerateWhile"                       , None                 , None          , [varb],     ([[v_unit_ty --> v_bool_ty]; [mkSeqTy varbTy]], mkSeqTy varbTy))
   let v_seq_finally_info           = makeIntrinsicValRef(fslib_MFRuntimeHelpers_nleref,                        "EnumerateThenFinally"                 , None                 , None          , [varb],     ([[mkSeqTy varbTy]; [v_unit_ty --> v_unit_ty]], mkSeqTy varbTy))
   let v_seq_trywith_info           = makeIntrinsicValRef(fslib_MFRuntimeHelpers_nleref,                        "EnumerateTryWith"                     , None                 , None          , [varb],     ([[mkSeqTy varbTy]; [mkNonGenericTy v_exn_tcr --> v_int32_ty]; [mkNonGenericTy v_exn_tcr --> mkSeqTy varbTy]], mkSeqTy varbTy))
-  let v_seq_async_trywith_info = makeIntrinsicValRef(fslib_MFRuntimeAsyncSequenceHelpers_nleref, "EnumerateTryWith", None, None, [varb], ([[TType_app(v_IAsyncEnumerable_tcr, [varbTy], v_knownWithoutNull)]; [mkNonGenericTy v_exn_tcr --> TType_app(v_IAsyncEnumerable_tcr, [v_int32_ty], v_knownWithoutNull)]; [mkNonGenericTy v_exn_tcr --> TType_app(v_IAsyncEnumerable_tcr, [varbTy], v_knownWithoutNull)]], TType_app(v_IAsyncEnumerable_tcr, [varbTy], v_knownWithoutNull)))
   let v_seq_of_functions_info      = makeIntrinsicValRef(fslib_MFRuntimeHelpers_nleref,                        "EnumerateFromFunctions"               , None                 , None          , [vara;varb], ([[v_unit_ty --> varaTy]; [varaTy --> v_bool_ty]; [varaTy --> varbTy]], mkSeqTy varbTy))
   let v_create_event_info          = makeIntrinsicValRef(fslib_MFRuntimeHelpers_nleref,                        "CreateEvent"                          , None                 , None          , [vara;varb], ([[varaTy --> v_unit_ty]; [varaTy --> v_unit_ty]; [(v_obj_ty_with_null --> (varbTy --> v_unit_ty)) --> varaTy]], mkIEvent2Ty varaTy varbTy))
   let v_cgh__useResumableCode_info = makeIntrinsicValRef(fslib_MFStateMachineHelpers_nleref,                   "__useResumableCode"                   , None                 , None          , [vara],     ([[]], v_bool_ty))
@@ -1519,8 +1517,6 @@ type TcGlobals(
 
   member val system_ExceptionDispatchInfo_ty =
       tryMkSysNonGenericTy ["System"; "Runtime"; "ExceptionServices"] "ExceptionDispatchInfo"
-  member val system_AsyncHelpers_ty = tryMkSysNonGenericTy sysCompilerServices "AsyncHelpers"
-  member _.system_IAsyncDisposable_ty = mkSysNonGenericTy sys "IAsyncDisposable"
 
   member _.mk_IAsyncStateMachine_ty = mkSysNonGenericTy sysCompilerServices "IAsyncStateMachine"
 
@@ -1826,7 +1822,6 @@ type TcGlobals(
   member _.seq_generated_info         = v_seq_generated_info
   member _.seq_finally_info           = v_seq_finally_info
   member _.seq_trywith_info           = v_seq_trywith_info
-  member _.seq_async_trywith_info = v_seq_async_trywith_info
   member _.seq_of_functions_info      = v_seq_of_functions_info
   member _.seq_map_info               = v_seq_map_info
   member _.seq_singleton_info         = v_seq_singleton_info

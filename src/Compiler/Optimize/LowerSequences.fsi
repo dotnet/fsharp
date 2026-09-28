@@ -14,6 +14,19 @@ val (|SeqElemTy|_|): TcGlobals -> ImportMap -> range -> TType -> TType voption
 val callNonOverloadedILMethod:
     g: TcGlobals -> amap: ImportMap -> m: range -> methName: string -> ty: TType -> args: Exprs -> Expr
 
+/// Runtime-async sequences run their cleanup and handlers inside 'generate' (MoveNextAsync).
+type RuntimeAsyncUnwind =
+    {
+        /// Local holding the exception being unwound, or null.
+        Fault: ValRef
+
+        /// State variable set by DisposeAsync, which then drives 'generate' through the pending cleanup.
+        Disposing: ValRef
+
+        /// Rethrows the given exception, preserving its stack trace.
+        Rethrow: Expr -> Expr
+    }
+
 /// Analyze a TAST expression to detect the elaborated form of a sequence expression.
 /// Then compile it to a state machine represented as a TAST containing goto, return and label nodes.
 /// The returned state machine will also contain references to state variables (from internal 'let' bindings),
@@ -23,8 +36,7 @@ val callNonOverloadedILMethod:
 val ConvertSequenceExprToObject:
     g: TcGlobals ->
     amap: ImportMap ->
-    isRuntimeAsync: bool ->
-    cancellationToken: Expr option ->
+    runtimeAsync: RuntimeAsyncUnwind option ->
     overallExpr: Expr ->
         (ValRef * ValRef * ValRef * ValRef list * Expr * Expr * Expr * TType * range) option
 

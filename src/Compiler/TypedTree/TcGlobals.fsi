@@ -1036,7 +1036,6 @@ type internal TcGlobals =
     member seq_to_list_vref: TypedTree.ValRef
 
     member seq_trywith_info: IntrinsicValRef
-    member seq_async_trywith_info: IntrinsicValRef
 
     member seq_using_info: IntrinsicValRef
 
@@ -1095,8 +1094,6 @@ type internal TcGlobals =
     member system_Enum_ty: TypedTree.TType
 
     member system_ExceptionDispatchInfo_ty: TypedTree.TType option
-    member system_AsyncHelpers_ty: TypedTree.TType option
-    member system_IAsyncDisposable_ty: TypedTree.TType
 
     member system_FormattableStringFactory_ty: TypedTree.TType
 

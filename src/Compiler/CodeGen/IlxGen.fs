@@ -3282,7 +3282,7 @@ and GenExprPreSteps (cenv: cenv) (cgbuf: CodeGenBuffer) eenv expr sequel =
 
             let lowering =
                 if compileSequenceExpressions then
-                    LowerSequenceExpressions.ConvertSequenceExprToObject g cenv.amap false None expr
+                    LowerSequenceExpressions.ConvertSequenceExprToObject g cenv.amap None expr
                 else
                     None
 
@@ -7179,40 +7179,16 @@ and GenSequenceExpr
             )
 
     let closeMethod =
-        let marker = TryGetRuntimeAsyncReturn g closeExpr
-
-        let body =
-            marker |> Option.map (fun info -> info.Body) |> Option.defaultValue closeExpr
-
-        let name = if marker.IsSome then "DisposeAsync" else "Close"
-
-        let methodEnv =
-            { eenvinner with
-                inRuntimeAsyncMethod = marker.IsSome
-                inInlineMethod = false
-            }
-
         let ilCode =
-            CodeGenMethodForExpr cenv cgbuf.mgbuf ([], name, methodEnv, 1, None, body, discardAndReturnVoid)
-            |> fun code ->
-                { code with
-                    IsRuntimeAsync = marker.IsSome
-                }
-
-        let resultTy =
-            if marker.IsSome then
-                GenType cenv m eenvinner.tyenv (tyOfExpr g closeExpr)
-            else
-                ILType.Void
+            CodeGenMethodForExpr cenv cgbuf.mgbuf ([], "Close", eenvinner, 1, None, closeExpr, discardAndReturnVoid)
 
         mkILNonGenericVirtualInstanceMethod (
-            name,
+            "Close",
             ILMemberAccess.Public,
             [],
-            mkILReturn resultTy,
+            mkILReturn ILType.Void,
             MethodBody.IL(InterruptibleLazy.FromValue ilCode)
         )
-        |> fun methodDef -> methodDef.WithAsync(marker.IsSome)
 
     let checkCloseMethod =
         let ilCode =

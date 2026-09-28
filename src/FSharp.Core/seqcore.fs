@@ -536,7 +536,7 @@ type GeneratedRuntimeAsyncSequenceBase<'T>() =
     abstract GetFreshEnumerator: unit -> GeneratedRuntimeAsyncSequenceBase<'T>
     abstract SetCancellationToken: System.Threading.CancellationToken -> unit
     abstract MoveNextAsync: unit -> System.Threading.Tasks.ValueTask<bool>
-    abstract DisposeAsync: unit -> System.Threading.Tasks.ValueTask
+    abstract Close: unit -> unit
     abstract Current: 'T
 
     // The generated MoveNextAsync calls this from a finally block, before its result completes.
@@ -548,11 +548,19 @@ type GeneratedRuntimeAsyncSequenceBase<'T>() =
 
         x.MoveNextAsync()
 
+    // Close makes the next move run the pending finally blocks instead of resuming.
     member private x.DisposeImplAsync() =
-        if System.Threading.Volatile.Read(&x.moving) <> 0 then
+        if System.Threading.Interlocked.CompareExchange(&x.moving, 1, 0) <> 0 then
             invalidOp "DisposeAsync cannot be called while MoveNextAsync is pending."
 
-        x.DisposeAsync()
+        x.Close()
+        let move = x.MoveNextAsync()
+
+        if move.IsCompletedSuccessfully then
+            move.Result |> ignore
+            System.Threading.Tasks.ValueTask()
+        else
+            System.Threading.Tasks.ValueTask(move.AsTask())
 
     interface IAsyncEnumerable<'T> with
         member x.GetAsyncEnumerator(cancellationToken) =

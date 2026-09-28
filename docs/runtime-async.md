@@ -277,7 +277,7 @@ this diagnostic.
 
 ## Async sequences
 
-`__runtimeAsyncSequence` turns a statically known `unit -> seq<'T>` recipe into an `IAsyncEnumerable<'T>`. It reuses sequence lowering, but emits runtime-async `MoveNextAsync(): ValueTask<bool>` and `DisposeAsync(): ValueTask` methods. Awaits in the recipe stay in these methods, and yield positions persist between calls. Ordinary nested sequences remain synchronous.
+`__runtimeAsyncSequence` turns a statically known `unit -> seq<'T>` recipe into an `IAsyncEnumerable<'T>`. It reuses sequence lowering, but emits a single runtime-async `MoveNextAsync(): ValueTask<bool>` state machine. Awaits in the recipe stay in this method, and yield positions persist between calls. Ordinary nested sequences remain synchronous.
 
 ```fsharp
 let values (work: Task<int>) =
@@ -298,12 +298,15 @@ Generated types derive from `GeneratedRuntimeAsyncSequenceBase<'T>`, which imple
 * The first `GetAsyncEnumerator` reuses the sequence instance; later calls return independent clones.
 * A second `MoveNextAsync`, or a `DisposeAsync`, while a move is pending throws `InvalidOperationException`. The generated `MoveNextAsync` releases this guard through `CompleteMoveNext` before its result completes.
 
-`try/with` in a recipe is lowered to `RuntimeAsyncSequenceHelpers.EnumerateTryWith`. The protected body, filter and handler become separate runtime-async sequences, so all three can await. Cleanup inside the `try` completes before the handler runs, as in ordinary `try/with`; a cleanup failure replaces the body exception.
+`try/with` and `try/finally` blocks are part of the `MoveNextAsync` state machine, so bodies, guards, handlers and `finally` blocks can all await:
+
+* A fault runs the pending `finally` blocks, then jumps to the innermost handler. Cleanup completes before guards run, as in ordinary `try/with`; a cleanup failure replaces the original exception.
+* `DisposeAsync` marks the enumerator as disposing and runs `MoveNextAsync` once more. That run executes the pending `finally` blocks and skips handlers.
 
 Other behavior:
 
 * Recipes are normalized even with `--optimize-`. This can remove intermediate recipe locals but does not optimize surrounding code.
-* Body faults await active cleanup, then rethrow with their original dispatch information. When cleanup can suspend, the pending exception is stored on the enumerator. Successful moves allocate no exception-transport object.
+* Unhandled faults rethrow with their original dispatch information. Successful moves allocate no exception-transport object.
 * Early disposal keeps ordinary sequence precedence: an outer cleanup failure replaces an inner one.
 * Runtime-async inputs that are consumed immediately stay adjacent to their awaits, so the runtime can fuse the calls.
 * Opaque recipes are rejected.
