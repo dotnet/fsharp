@@ -1,5 +1,5 @@
 {
-  "last_run": "2026-09-27T12:59:08Z",
+  "last_run": "2026-09-28T05:00:46Z",
   "prs": {
     "19472": {
       "status": "category_c_maintainer_driven",
@@ -11,6 +11,15 @@
       "status": "category_b2_fixed",
       "last_shepherd_action": "2026-08-13T09:21:38Z",
       "note": "Changed Fact to FSharp.Test.FactForNETCOREAPP because IAsyncDisposable is unavailable on Desktop; fix and comment were pushed."
+    },
+    "20648": {
+      "status": "category_b4_ci_retriggered",
+      "last_shepherd_action": "2026-09-28T05:00:46Z",
+      "last_review_comment": null,
+      "ci_build": 1613828,
+      "ci_failure": "Build WindowsNoRealsig_testDesktop Batch2",
+      "rerun_commit": "83dca58",
+      "note": "No review feedback. New Issue 2650 tooltip test passed locally in isolation on net11.0. Azure logs were unavailable; pushed an empty commit to retrigger the single failed Windows desktop batch."
     }
   }
 }
