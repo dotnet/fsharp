@@ -156,53 +156,55 @@ still evaluated at the same point.
 
 `LowerRuntimeAsync.fs` runs once per file after the first optimization loop,
 so it sees the final inlined shape rather than an intermediate optimizer
-state, and before `LowerLocalMutables`, so mutable locals captured by an
-outlined callback are promoted to reference cells. It has two steps.
+state, and before `LowerLocalMutables`, so mutable locals it introduces that
+closures capture are promoted to reference cells. It has two steps.
 
 First, if a compiler-owned `InlineIfLambda` function or delegate still
-contains a suspension, a fully rewritable, single-argument callback can
-be outlined instead. Each branch of its construction produces an F# callback
-returning `ValueTask<'T>`; the generated callback body contains
-`__runtimeAsyncReturnValueTask`, and its invocations are replaced by
-`AsyncHelpers.Await` inside the enclosing runtime-async method. The callback
-is constructed once, so conditional construction effects and state captured
-across repeated invocations are preserved. Only the specialized copy changes
-calling convention, not the exported inline definition or source signature.
-This applies within a runtime-async body or sequence recipe, and to a callback
-bound immediately before a runtime-async body together with the callbacks its
-construction captures. Opaque consumers, escaping callbacks, unsupported
-callback shapes, and unsafe byref or pinned captures are not outlined;
-suspensions remaining in an ordinary method are still diagnosed.
+contains a suspension, a fully rewritable, single-argument callback is
+inlined into the enclosing method. The ordinary optimizer already inlines a
+callback whose construction ends in one lambda, including after `let` or
+effect prefixes and at repeated invocations. What remains is a construction
+that selects a lambda by branching (`if`/`match`). It is defunctionalized:
+the construction runs once, in place, and each lambda in tail position is
+replaced by an assignment of its branch tag and of the construction locals it
+captures to mutable locals of the enclosing method. Each invocation binds its
+argument once and dispatches on the tag to a copy of the selected lambda body.
+Construction effects happen once, captured state is shared across
+invocations, and every `Await` stays in the runtime-async method, so
+`ExecutionContext` changes such as `AsyncLocal` writes behave as in source
+order. Only the specialized copy changes, not the exported inline definition
+or source signature. This applies within a runtime-async body or sequence
+recipe, and to a callback bound immediately before a runtime-async body
+together with the callbacks its construction captures. Opaque consumers,
+escaping callbacks, unsupported callback shapes (including `try`/`with` in
+tail position), and unsafe byref or pinned captures are not rewritten;
+suspensions remaining in an ordinary method, such as a closure, are diagnosed
+with FS3918.
 
 The ordinary optimizer can inline an `Invoke` on a constructed delegate.
 For a residual `InlineIfLambda` delegate bound to a local, a single direct
 invocation can also be inlined through simple, effect-free conditional
-construction. Otherwise, directly rewritable invocations use the outlining
-fallback. Inner callback bindings are processed before the outer delegate
-is marked: single-use delegates can be inlined first, and residual callbacks
-are outlined so each `Await` stays inside a runtime-async method. Effectful
-precomputations that capture a delegate's inputs are not moved to its
-invocation; outlining retains them at construction, so a pending operation
-is created once and repeated invokes share captured state. A delegate that
-escapes or is consumed opaquely cannot be converted. IlxGen checks each
-generated delegate `Invoke` as its own method: an `Await` left there without
-a return marker produces FS3918, even when the enclosing method is
-runtime-async. Exported inline definitions remain unchanged.
+construction. Otherwise, directly rewritable invocations dispatch on the
+branch tag. Inner callback bindings are processed before the outer delegate.
+Effectful precomputations that capture a delegate's inputs are not moved to
+its invocation, so a pending operation is created once and repeated invokes
+share captured state. A delegate that escapes or is consumed opaquely cannot
+be converted. IlxGen checks each generated delegate `Invoke` as its own
+method: an `Await` left there without a return marker produces FS3918, even
+when the enclosing method is runtime-async. Exported inline definitions remain
+unchanged.
 
-Outlining retains the callback closure and generates an async `Invoke` method
-for each specialized callback shape. Calls now return a `ValueTask<'T>` for
-the enclosing method to await, trading method code size and possible
-allocations for preservation of callback state. It does not distribute a
-continuation across conditional branches.
+Each invocation copies every branch body, so code size grows with the number
+of invocations times the number of branches.
 
-Second, every return-marker body, including outlined callbacks, is prepared
-once after outlining, innermost first: locals that cannot be preserved across
-a suspension are reported (once per range across the compilation), and
-suspending exception handlers are rewritten. Preparing after outlining means
-an `Await` that outlining or delegate inlining moves into a handler is still
-rewritten. `__runtimeAsyncSequence` recipes are not prepared here;
-`LowerAsyncSeq` prepares their `MoveNextAsync` body after state-machine
-conversion, which is where sequence `try`/`with` is lowered.
+Second, every return-marker body is prepared once after callbacks are inlined,
+innermost first: locals that cannot be preserved across a suspension are
+reported (once per range across the compilation), and suspending exception
+handlers are rewritten. Preparing afterwards means an `Await` that callback
+or delegate inlining moves into a handler is still rewritten.
+`__runtimeAsyncSequence` recipes are not prepared here; `LowerAsyncSeq`
+prepares their `MoveNextAsync` body after state-machine conversion, which is
+where sequence `try`/`with` is lowered.
 
 When runtime-async specialization is forced in a debug build, the builder
 combinator is copied with its definition-site debug ranges remarked at the
@@ -282,7 +284,7 @@ the synthesized closure and the enclosing scope share them.
 
 `InvokeFast` is not a separate runtime-async path. It is the closure-erasure
 shape for an indirect call with multiple arguments. Forced inlining and
-eligible callback outlining happen before closure erasure; a suspension left
+eligible callback inlining happen before closure erasure; a suspension left
 behind an opaque indirect invocation is rejected by code generation.
 
 ## Runtime capability check

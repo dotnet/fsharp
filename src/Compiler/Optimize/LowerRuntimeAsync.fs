@@ -33,12 +33,12 @@ let private containsRuntimeAsyncEntry g implFile =
 
     FoldImplFile folder false implFile
 
-/// Outlines suspending InlineIfLambda callbacks. `inContext` is true inside a runtime-async body or
+/// Inlines suspending InlineIfLambda callbacks into the enclosing method. `inContext` is true inside a runtime-async body or
 /// sequence recipe, including nested lambdas and delegates, but not object-expression methods, which are
 /// compiled as ordinary methods.
-let private outlineCallbacks g implFile =
+let private inlineCallbacks g implFile =
     let analyzer = RuntimeAsyncAnalyzer g
-    let stackGuard = StackGuard("OutlineRuntimeAsyncCallbacks")
+    let stackGuard = StackGuard("InlineRuntimeAsyncCallbacks")
 
     let rec leadsToRuntimeAsyncReturn expr =
         match expr with
@@ -65,7 +65,7 @@ let private outlineCallbacks g implFile =
         | Expr.App(f, fty, tyargs, [ recipe ], m) when (TryGetRuntimeAsyncSequence g expr).IsSome ->
             Some(Expr.App(f, fty, tyargs, [ rewrite true recipe ], m))
         // A callback constructed for a runtime-async body that follows is lowered as part of that body,
-        // so the suspending callbacks it captures can be inlined or outlined into it.
+        // so the suspending callbacks it captures can be inlined into it.
         | Expr.Let(TBind(callback, construction, point), continuation, m, _) when
             not inContext
             && callback.InlineIfLambda
@@ -76,11 +76,11 @@ let private outlineCallbacks g implFile =
         | Expr.Obj _ when inContext -> Some(rewrite false expr)
         | _ -> None
 
-    // Bottom-up: callbacks nested in the construction or continuation are already outlined.
+    // Bottom-up: callbacks nested in the construction or continuation are already inlined.
     and postTransform inContext expr =
         match expr with
         | Expr.Let(TBind(callback, construction, _), _, _, _) when callback.InlineIfLambda && analyzer.ContainsSuspension construction ->
-            Some(OutlineRuntimeAsyncCallback g analyzer inContext expr)
+            Some(InlineRuntimeAsyncCallback g analyzer inContext expr)
         | _ -> None
 
     RewriteImplFile (rewriter false) implFile
@@ -114,7 +114,7 @@ let TransformImplFile (g: TcGlobals) reportedRanges (implFile: CheckedImplFile) 
         // Bodies inlined from an assembly compiled with the feature are still prepared.
         let implFile =
             if g.langVersion.SupportsFeature LanguageFeature.RuntimeAsync then
-                outlineCallbacks g implFile
+                inlineCallbacks g implFile
             else
                 implFile
 

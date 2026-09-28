@@ -412,7 +412,7 @@ let ApplyAllOptimizations
 
         file, prevPhase
 
-    // Must precede lowerLocalMutables: outlined callbacks become closures that can capture mutable locals.
+    // Must precede lowerLocalMutables: inlined callbacks introduce mutable locals that closures can capture.
     addPhase "lowerRuntimeAsync" lowerRuntimeAsync
 
     let lowerLocalMutables

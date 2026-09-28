@@ -10,6 +10,7 @@ open System.Collections.Generic
 
 open FSharp.Compiler
 open FSharp.Compiler.DiagnosticsLogger
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
@@ -239,28 +240,101 @@ let PreserveRuntimeAsyncCallSiteDebugPoint (g: TcGlobals) m expr =
 
     RewriteExpr rwenv expr
 
-let OutlineRuntimeAsyncCallback (g: TcGlobals) (analyzer: RuntimeAsyncAnalyzer) runtimeAsyncContext (expr: Expr) =
-    let rec outlineBranches resultTy expr =
+/// A callback construction whose branches select one of several lambdas. The construction runs once
+/// and records the selected branch and the values it captures; each invocation dispatches on the branch.
+type private CallbackBranches =
+    {
+        Construction: Expr
+        Tag: Val
+        Branches: (Val * Expr) list
+        Captures: (Val * Val) list
+    }
+
+/// Replaces each lambda in tail position of a callback construction with an assignment of its branch tag
+/// and captured locals, or returns None if a tail is not a supported single-argument lambda.
+let private tryDefunctionalizeCallback (g: TcGlobals) m construction =
+    let constructionFree = (freeInExpr CollectLocals construction).FreeLocals
+    let tag, _ = mkMutableCompGenLocal m "runtimeAsyncCallbackTag" g.int32_ty
+    let branches = ResizeArray<Val * Expr>()
+    let captures = Dictionary<Stamp, Val * Val>()
+
+    let rec defunctionalize expr =
         match expr with
         | Expr.Lambda(_, None, None, [ parameter ], body, m, _)
         | NewDelegateExpr g (_, [ parameter ], body, m, _) ->
-            let marker = g.cgh__runtimeAsyncReturnValueTask_vref
+            let captured =
+                (freeInExpr CollectLocals body).FreeLocals
+                |> Zset.elements
+                |> List.filter (fun v -> not (valEq v parameter) && not (Zset.contains v constructionFree))
 
-            let markedBody =
-                primMkApp (exprForValRef m marker, marker.Type) [ resultTy ] [ body ] m
+            if
+                captured
+                |> List.exists (fun v -> v.IsPinning || isByrefTy g v.Type || isByrefLikeTy g m v.Type)
+            then
+                None
+            else
+                let assignments =
+                    captured
+                    |> List.map (fun v ->
+                        let _, hoisted =
+                            match captures.TryGetValue v.Stamp with
+                            | true, capture -> capture
+                            | _ ->
+                                let capture = v, fst (mkMutableCompGenLocal m v.LogicalName v.Type)
+                                captures[v.Stamp] <- capture
+                                capture
 
-            Some(mkLambda m parameter (markedBody, tyOfExpr g markedBody))
-        | Expr.DebugPoint(point, body) ->
-            outlineBranches resultTy body
-            |> Option.map (fun body -> Expr.DebugPoint(point, body))
+                        mkValSet m (mkLocalValRef hoisted) (exprForVal m v))
+
+                let select = mkValSet m (mkLocalValRef tag) (mkInt32 g m branches.Count)
+                branches.Add(parameter, body)
+                Some(List.foldBack (mkCompGenSequential m) assignments select)
+        | Expr.DebugPoint(point, body) -> defunctionalize body |> Option.map (fun body -> Expr.DebugPoint(point, body))
         | Expr.Sequential(first, rest, NormalSeq, m) ->
-            outlineBranches resultTy rest
+            defunctionalize rest
             |> Option.map (fun rest -> Expr.Sequential(first, rest, NormalSeq, m))
-        | Expr.Let(binding, rest, m, _) -> outlineBranches resultTy rest |> Option.map (mkLetBind m binding)
+        | Expr.Let(binding, rest, m, _) -> defunctionalize rest |> Option.map (mkLetBind m binding)
         | Expr.Match(point, matchRange, tree, targets, m, _) ->
-            tryMapMatchTargets g (point, matchRange, tree, targets, m) (fun _ -> outlineBranches resultTy)
+            tryMapMatchTargets g (point, matchRange, tree, targets, m) (fun _ -> defunctionalize)
         | _ -> None
 
+    defunctionalize construction
+    |> Option.map (fun construction ->
+        {
+            Construction = construction
+            Tag = tag
+            Branches = List.ofSeq branches
+            Captures = List.ofSeq captures.Values
+        })
+
+/// Inlines an invocation of a defunctionalized callback: the argument is bound once, then each branch body
+/// is copied with its parameter and captured locals remapped.
+let private mkCallbackDispatch (g: TcGlobals) (callback: CallbackBranches) arg resultTy m =
+    let argVal, _ = mkCompGenLocal m "runtimeAsyncCallbackArg" (tyOfExpr g arg)
+
+    let captureRemap =
+        callback.Captures |> List.map (fun (v, hoisted) -> v, mkLocalValRef hoisted)
+
+    let branch (parameter: Val, body) =
+        let remap =
+            { emptyRemap with
+                valRemap = ValMap.OfList((parameter, mkLocalValRef argVal) :: captureRemap)
+            }
+
+        remapExpr g CloneAll remap body
+
+    let rec dispatch i branches =
+        match branches with
+        | [ last ] -> branch last
+        | first :: rest ->
+            let isSelected = mkILAsmCeq g m (exprForVal m callback.Tag) (mkInt32 g m i)
+
+            mkCond DebugPointAtBinding.NoneAtInvisible m resultTy isSelected (branch first) (dispatch (i + 1) rest)
+        | [] -> failwith "unreachable: callback without branches"
+
+    mkCompGenLet m argVal arg (dispatch 0 callback.Branches)
+
+let InlineRuntimeAsyncCallback (g: TcGlobals) (analyzer: RuntimeAsyncAnalyzer) runtimeAsyncContext (expr: Expr) =
     let rec tryDelegateSignature expr =
         match expr with
         | NewDelegateExpr g (_, [ parameter ], body, _, _) -> Some(parameter.Type, tyOfExpr g body)
@@ -302,7 +376,7 @@ let OutlineRuntimeAsyncCallback (g: TcGlobals) (analyzer: RuntimeAsyncAnalyzer) 
                 inlineDelegateInvoke (invokeRef, invokeTy, tyargs, arg, callRange))
         | _ -> None
 
-    // A residual Invoke can surface after ordinary optimization; try its single use before outlining.
+    // A residual Invoke can surface after ordinary optimization; try its single use before dispatching on branches.
     let tryInlineDelegate callback construction continuation =
         let mutable invocations = 0
         let mutable invalidUse = false
@@ -342,20 +416,20 @@ let OutlineRuntimeAsyncCallback (g: TcGlobals) (analyzer: RuntimeAsyncAnalyzer) 
         else
             None
 
-    let stackGuard = StackGuard("OutlineRuntimeAsyncCallback")
+    let stackGuard = StackGuard("InlineRuntimeAsyncCallback")
 
-    let rec outline expr =
-        stackGuard.Guard(fun () -> outlineCore expr)
+    let rec inlineCallbacks expr =
+        stackGuard.Guard(fun () -> inlineCallbacksCore expr)
 
-    and outlineCore expr =
+    and inlineCallbacksCore expr =
         match expr with
         | Expr.Let(TBind(callback, construction, point), continuation, m, _) when
             callback.InlineIfLambda && analyzer.ContainsSuspension construction
             ->
             let keep construction =
-                mkLetBind m (TBind(callback, construction, point)) (outline continuation)
+                mkLetBind m (TBind(callback, construction, point)) (inlineCallbacks continuation)
 
-            let canOutline =
+            let canInline =
                 runtimeAsyncContext || (TryGetRuntimeAsyncReturn g continuation).IsSome
 
             let shape =
@@ -367,14 +441,18 @@ let OutlineRuntimeAsyncCallback (g: TcGlobals) (analyzer: RuntimeAsyncAnalyzer) 
                 | _ -> None
 
             match shape with
-            | Some(argTy, resultTy, isDelegate) when canOutline && not (isByrefLikeTy g m argTy || isByrefLikeTy g m resultTy) ->
+            | Some(argTy, resultTy, isDelegate) when canInline && not (isByrefLikeTy g m argTy || isByrefLikeTy g m resultTy) ->
                 let freeVals = (freeInExpr CollectLocals construction).FreeLocals
 
                 let canCapture =
                     freeVals
                     |> Zset.forall (fun v -> not v.IsPinning && not (isByrefTy g v.Type || isByrefLikeTy g m v.Type))
 
-                let construction = if canCapture then outline construction else construction
+                let construction =
+                    if canCapture then
+                        inlineCallbacks construction
+                    else
+                        construction
 
                 let inlined =
                     if canCapture && isDelegate then
@@ -382,17 +460,15 @@ let OutlineRuntimeAsyncCallback (g: TcGlobals) (analyzer: RuntimeAsyncAnalyzer) 
                     else
                         None
 
-                let outlinedConstruction =
+                let callbackBranches =
                     if canCapture && Option.isNone inlined then
-                        outlineBranches resultTy construction
+                        tryDefunctionalizeCallback g m construction
                     else
                         None
 
-                match inlined, outlinedConstruction with
-                | Some body, _ -> outline body
-                | None, Some callbackConstruction ->
-                    let callbackTy = tyOfExpr g callbackConstruction
-                    let outlined, outlinedExpr = mkCompGenLocal m "runtimeAsyncCallback" callbackTy
+                match inlined, callbackBranches with
+                | Some body, _ -> inlineCallbacks body
+                | None, Some callbackBranches ->
                     let mutable invalidUse = false
 
                     let rwenv =
@@ -413,10 +489,7 @@ let OutlineRuntimeAsyncCallback (g: TcGlobals) (analyzer: RuntimeAsyncAnalyzer) 
 
                                     match call with
                                     | Some(arg, callRange) ->
-                                        let invocation =
-                                            mkApps g ((outlinedExpr, callbackTy), [], [ rewrite arg ], callRange)
-
-                                        Some(mkRuntimeAsyncAwaitValueTask g callRange (tyOfExpr g expression) invocation)
+                                        Some(mkCallbackDispatch g callbackBranches (rewrite arg) (tyOfExpr g expression) callRange)
                                     | None ->
                                         match expression with
                                         | Expr.Val(vref, _, _) when valEq callback vref.Deref ->
@@ -437,15 +510,23 @@ let OutlineRuntimeAsyncCallback (g: TcGlobals) (analyzer: RuntimeAsyncAnalyzer) 
                     if invalidUse then
                         keep construction
                     else
-                        mkLet point m outlined callbackConstruction (outline continuation)
+                        let construction =
+                            match point with
+                            | DebugPointAtBinding.Yes point -> mkDebugPoint point callbackBranches.Construction
+                            | _ -> callbackBranches.Construction
+
+                        let body = mkCompGenSequential m construction (inlineCallbacks continuation)
+
+                        (callbackBranches.Tag :: List.map snd callbackBranches.Captures, body)
+                        ||> List.foldBack (fun v body -> mkCompGenLet m v (mkDefault (m, v.Type)) body)
                 | None, None -> keep construction
             | _ -> keep construction
-        | Expr.Let(binding, continuation, m, _) -> mkLetBind m binding (outline continuation)
-        | Expr.DebugPoint(point, inner) -> Expr.DebugPoint(point, outline inner)
-        | Expr.Sequential(first, rest, NormalSeq, m) -> Expr.Sequential(first, outline rest, NormalSeq, m)
+        | Expr.Let(binding, continuation, m, _) -> mkLetBind m binding (inlineCallbacks continuation)
+        | Expr.DebugPoint(point, inner) -> Expr.DebugPoint(point, inlineCallbacks inner)
+        | Expr.Sequential(first, rest, NormalSeq, m) -> Expr.Sequential(first, inlineCallbacks rest, NormalSeq, m)
         | _ -> expr
 
-    outline expr
+    inlineCallbacks expr
 
 type private RuntimeAsyncFlowSummary =
     {

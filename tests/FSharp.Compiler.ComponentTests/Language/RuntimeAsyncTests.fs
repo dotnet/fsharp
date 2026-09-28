@@ -1193,7 +1193,8 @@ let main _ =
         |> compileExeAndRun
         |> shouldSucceed
 
-    // Execution succeeds with outlining too; only the async Invoke owners distinguish the two paths.
+    // The construction in executeWithConstruction precedes its runtime-async body, which therefore starts as
+    // a closure; callbacks are inlined, so that closure is the only async Invoke.
     source |> withMetadataReader (fun md ->
         let asyncInvokes =
             [ for handle in md.TypeDefinitions do
@@ -1202,8 +1203,8 @@ let main _ =
                     let method = md.GetMethodDefinition methodHandle
                     if md.GetString method.Name = "Invoke" && int method.ImplAttributes &&& 0x2000 <> 0 then
                         yield md.GetString ty.Name ]
-        Assert.NotEmpty asyncInvokes
-        Assert.All(asyncInvokes, fun name -> Assert.StartsWith("executeWithConstruction@", name)))
+        let asyncInvoke = Assert.Single asyncInvokes
+        Assert.StartsWith("executeWithConstruction@", asyncInvoke))
 
 [<InlineData(false)>]
 [<InlineData(true)>]
@@ -1271,7 +1272,7 @@ let main _ =
 [<InlineData(false)>]
 [<InlineData(true)>]
 [<Theory>]
-let ``runtime async outlines repeated conditional delegate invocations`` (optimize: bool) =
+let ``runtime async inlines repeated conditional delegate invocations`` (optimize: bool) =
     let library =
         FSharp """
 module ImportedDelegateCallbacks
@@ -1334,7 +1335,7 @@ let main _ =
 [<InlineData(false)>]
 [<InlineData(true)>]
 [<Theory>]
-let ``runtime async does not outline delegates passed to opaque consumers`` (optimize: bool) =
+let ``runtime async does not rewrite delegates passed to opaque consumers`` (optimize: bool) =
     FSharp """
 module RuntimeAsyncOpaqueDelegate
 
@@ -1670,7 +1671,7 @@ let main _ =
 [<InlineData(false)>]
 [<InlineData(true)>]
 [<Theory>]
-let ``runtime async outlines a stateful conditional callback from an imported inline`` (optimize: bool) =
+let ``runtime async inlines a stateful conditional callback from an imported inline`` (optimize: bool) =
     let library =
         FSharp """
 module RuntimeAsyncCallbackLibrary
@@ -1731,9 +1732,9 @@ let main _ =
 [<InlineData(false)>]
 [<InlineData(true)>]
 [<Theory>]
-let ``runtime async outlined callbacks preserve cleanup after suspension`` (optimize: bool) =
+let ``runtime async inlined conditional callbacks preserve cleanup after suspension`` (optimize: bool) =
     FSharp """
-module RuntimeAsyncOutlinedCleanupTest
+module RuntimeAsyncConditionalCallbackCleanupTest
 
 open System.Collections.Generic
 open System.Threading.Tasks
@@ -1785,7 +1786,7 @@ let main _ =
 [<InlineData(false)>]
 [<InlineData(true)>]
 [<Theory>]
-let ``runtime async does not outline opaque callback consumers`` (optimize: bool) =
+let ``runtime async does not rewrite opaque callback consumers`` (optimize: bool) =
     FSharp """
 module RuntimeAsyncOpaqueCallbackTest
 
@@ -1920,9 +1921,9 @@ let f (gate: Task<int>) : Task<int seq> =
 [<InlineData(false)>]
 [<InlineData(true)>]
 [<Theory>]
-let ``runtime async outlines a callback after one that cannot be outlined`` (optimize: bool) =
+let ``runtime async inlines a callback after one that cannot be inlined`` (optimize: bool) =
     FSharp """
-module RuntimeAsyncOutlineAfterOpaqueCallback
+module RuntimeAsyncInlineAfterOpaqueCallback
 open System.Threading.Tasks
 open System.Runtime.CompilerServices
 open Microsoft.FSharp.Core.CompilerServices
@@ -1943,6 +1944,99 @@ let run (gate: Task<int>) flag =
 let main _ =
     if (run (Task.FromResult 10) true).Result <> 32 then failwith "bad"
     if (run (Task.FromResult 10) false).Result <> 14 then failwith "bad2"
+    0
+"""
+    |> withLangVersionPreview
+    |> withFSharpCoreShippedNet
+    |> withOptimization optimize
+    |> compileExeAndRun
+    |> shouldSucceed
+
+[<InlineData(false)>]
+[<InlineData(true)>]
+[<Theory>]
+let ``runtime async inlines pattern-bound captures of a branch-selected callback`` (optimize: bool) =
+    FSharp """
+module RuntimeAsyncPatternCapturedCallback
+open System.Threading.Tasks
+open System.Runtime.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices
+
+let mutable constructions = 0
+
+let inline twice ([<InlineIfLambda>] f: int -> int) = f 1 + f 2
+
+let run (gate: Task<int>) (choice: int option) =
+    StateMachineHelpers.__runtimeAsyncReturn (
+        twice (
+            constructions <- constructions + 1
+            match choice with
+            | Some offset ->
+                let scaled = offset * 10
+                fun x -> AsyncHelpers.Await gate + scaled + x
+            | None -> fun x -> x))
+
+[<EntryPoint>]
+let main _ =
+    let gate = TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously)
+    let pending = run gate.Task (Some 4)
+    if pending.IsCompleted then failwith "Expected pending result"
+    gate.SetResult 100
+    if pending.GetAwaiter().GetResult() <> 283 then failwith "bad some"
+    if (run gate.Task None).Result <> 3 then failwith "bad none"
+    if constructions <> 2 then failwith "construction repeated"
+    0
+"""
+    |> withLangVersionPreview
+    |> withFSharpCoreShippedNet
+    |> withOptimization optimize
+    |> compileExeAndRun
+    |> shouldSucceed
+
+[<InlineData(false)>]
+[<InlineData(true)>]
+[<Theory>]
+let ``runtime async callback selected by a branch keeps AsyncLocal changes`` (optimize: bool) =
+    FSharp """
+module RuntimeAsyncBranchCallbackAsyncLocal
+open System.Threading
+open System.Threading.Tasks
+open System.Runtime.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices
+
+let context = AsyncLocal<string>()
+
+let inline invoke ([<InlineIfLambda>] f: unit -> string) =
+    let seen = f ()
+    seen + "/" + context.Value
+
+let run (gate: Task<int>) flag =
+    StateMachineHelpers.__runtimeAsyncReturn (
+        context.Value <- "outer"
+        invoke (
+            if flag then
+                (let captured = context.Value + ":"
+                 fun () ->
+                    let before = context.Value
+                    AsyncHelpers.Await gate |> ignore
+                    let after = context.Value
+                    context.Value <- "inner"
+                    captured + before + "-" + after)
+            else
+                (fun () -> "none")))
+
+[<EntryPoint>]
+let main _ =
+    let gate = TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously)
+    let pending = run gate.Task true
+    if pending.IsCompleted then failwith "Expected pending result"
+    gate.SetResult 1
+    let result = pending.GetAwaiter().GetResult()
+    if result <> "outer:outer-outer/inner" then failwithf "Unexpected: %s" result
+    let completed = (run (Task.FromResult 1) true).Result
+    if completed <> "outer:outer-outer/inner" then failwithf "Unexpected completed: %s" completed
+    if (run (Task.FromResult 1) false).Result <> "none/outer" then failwith "bad2"
+    if not (isNull context.Value) then failwith "AsyncLocal leaked to caller"
     0
 """
     |> withLangVersionPreview

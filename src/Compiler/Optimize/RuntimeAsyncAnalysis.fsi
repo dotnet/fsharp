@@ -24,7 +24,7 @@ val ShouldForceRuntimeAsyncApplication:
     args: Expr list ->
         bool
 
-val OutlineRuntimeAsyncCallback:
+val InlineRuntimeAsyncCallback:
     g: TcGlobals -> analyzer: RuntimeAsyncAnalyzer -> runtimeAsyncContext: bool -> expr: Expr -> Expr
 
 val ReduceRuntimeAsyncReturnedClosureApplications: g: TcGlobals -> analyzer: RuntimeAsyncAnalyzer -> expr: Expr -> Expr

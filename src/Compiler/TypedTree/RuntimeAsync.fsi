@@ -23,7 +23,4 @@ val IsRuntimeAsyncSuspensionExpr: g: TcGlobals -> expr: Expr -> bool
 
 val IsRuntimeAsyncBoundary: g: TcGlobals -> expr: Expr -> bool
 
-/// Builds a call to `AsyncHelpers.Await<'T>(ValueTask<'T>)`.
-val mkRuntimeAsyncAwaitValueTask: g: TcGlobals -> m: range -> resultTy: TType -> task: Expr -> Expr
-
 val ExistsExpr: predicate: (Expr -> bool) -> expr: Expr -> bool

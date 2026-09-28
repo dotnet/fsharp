@@ -60,15 +60,6 @@ let IsRuntimeAsyncSuspensionExpr (g: TcGlobals) expr =
 let IsRuntimeAsyncBoundary (g: TcGlobals) expr =
     (TryGetRuntimeAsyncReturn g expr).IsSome || IsRuntimeAsyncSuspensionExpr g expr
 
-let mkRuntimeAsyncAwaitValueTask (g: TcGlobals) m resultTy task =
-    let valueTaskTy =
-        ILType.Value(mkILTySpec (g.FindSysILTypeRef "System.Threading.Tasks.ValueTask`1", [ mkILTyvarTy 0us ]))
-
-    let awaitRef =
-        mkILMethRef (g.FindSysILTypeRef runtimeAsyncHelpersTypeName, ILCallingConv.Static, "Await", 1, [ valueTaskTy ], mkILTyvarTy 0us)
-
-    Expr.Op(TOp.ILCall(false, false, false, false, NormalValUse, false, false, awaitRef, [], [ resultTy ], [ resultTy ]), [], [ task ], m)
-
 /// Returns true when any sub-expression matches the predicate, short-circuiting at the first match.
 let ExistsExpr (predicate: Expr -> bool) expr =
     let folder =
