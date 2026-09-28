@@ -1917,21 +1917,6 @@ let f (gate: Task<int>) : Task<int seq> =
     |> shouldFail
     |> withErrorCode 3918
 
-#else
-[<Fact>]
-let ``runtime async intrinsic is only available in the shipped net FSharp.Core`` () =
-    FSharp """
-open System.Threading.Tasks
-open Microsoft.FSharp.Core.CompilerServices
-
-let f : Task<int> =
-    StateMachineHelpers.__runtimeAsyncReturn 1
-"""
-    |> typecheck
-    |> shouldFail
-    |> withErrorCode 39
-#endif
-
 [<InlineData(false)>]
 [<InlineData(true)>]
 [<Theory>]
@@ -2006,3 +1991,18 @@ let main _ =
     |> withOptimization optimize
     |> compileExeAndRun
     |> shouldSucceed
+
+#else
+[<Fact>]
+let ``runtime async intrinsic is only available in the shipped net FSharp.Core`` () =
+    FSharp """
+open System.Threading.Tasks
+open Microsoft.FSharp.Core.CompilerServices
+
+let f : Task<int> =
+    StateMachineHelpers.__runtimeAsyncReturn 1
+"""
+    |> typecheck
+    |> shouldFail
+    |> withErrorCode 39
+#endif
