@@ -195,7 +195,9 @@ when the enclosing method is runtime-async. Exported inline definitions remain
 unchanged.
 
 Each invocation copies every branch body, so code size grows with the number
-of invocations times the number of branches.
+of invocations times the number of branches. When the copies would exceed
+2000 expression nodes, the callback is left as a closure and a suspension in
+it is reported as FS3918.
 
 Second, every return-marker body is prepared once after callbacks are inlined,
 innermost first: locals that cannot be preserved across a suspension are

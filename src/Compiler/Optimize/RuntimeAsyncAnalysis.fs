@@ -307,6 +307,18 @@ let private tryDefunctionalizeCallback (g: TcGlobals) m construction =
             Captures = List.ofSeq captures.Values
         })
 
+/// Every invocation copies every branch body, so the rewrite is skipped when the copies would exceed this many
+/// expression nodes; the callback then stays a closure and a suspension left in it is reported as FS3918.
+let private maxInlinedCallbackCopySize = 2000
+
+let private exprNodeCount expr =
+    let folder =
+        { ExprFolder0 with
+            exprIntercept = fun _ noInterceptF count expr -> noInterceptF (count + 1) expr
+        }
+
+    FoldExpr folder 0 expr
+
 /// Inlines an invocation of a defunctionalized callback: the argument is bound once, then each branch body
 /// is copied with its parameter and captured locals remapped.
 let private mkCallbackDispatch (g: TcGlobals) (callback: CallbackBranches) arg resultTy m =
@@ -470,6 +482,7 @@ let InlineRuntimeAsyncCallback (g: TcGlobals) (analyzer: RuntimeAsyncAnalyzer) r
                 | Some body, _ -> inlineCallbacks body
                 | None, Some callbackBranches ->
                     let mutable invalidUse = false
+                    let mutable invocations = 0
 
                     let rwenv =
                         {
@@ -489,6 +502,7 @@ let InlineRuntimeAsyncCallback (g: TcGlobals) (analyzer: RuntimeAsyncAnalyzer) r
 
                                     match call with
                                     | Some(arg, callRange) ->
+                                        invocations <- invocations + 1
                                         Some(mkCallbackDispatch g callbackBranches (rewrite arg) (tyOfExpr g expression) callRange)
                                     | None ->
                                         match expression with
@@ -507,7 +521,10 @@ let InlineRuntimeAsyncCallback (g: TcGlobals) (analyzer: RuntimeAsyncAnalyzer) r
 
                     let continuation = RewriteExpr rwenv continuation
 
-                    if invalidUse then
+                    let copySize =
+                        invocations * List.sumBy (snd >> exprNodeCount) callbackBranches.Branches
+
+                    if invalidUse || copySize > maxInlinedCallbackCopySize then
                         keep construction
                     else
                         let construction =

@@ -1996,6 +1996,101 @@ let main _ =
 [<InlineData(false)>]
 [<InlineData(true)>]
 [<Theory>]
+let ``runtime async reconstructs a branch-selected callback on each loop iteration`` (optimize: bool) =
+    FSharp """
+module RuntimeAsyncCallbackInLoop
+open System.Threading.Tasks
+open System.Runtime.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices
+
+let inline invoke ([<InlineIfLambda>] f: int -> int) = f 1 + f 2
+
+let run (gate: Task<int>) =
+    StateMachineHelpers.__runtimeAsyncReturn (
+        let mutable total = 0
+        for i in 0 .. 2 do
+            total <-
+                total
+                + invoke (
+                    if i % 2 = 0 then
+                        (let k = i * 100 in fun x -> AsyncHelpers.Await gate + k + x)
+                    else
+                        (fun x -> x))
+        total)
+
+[<EntryPoint>]
+let main _ =
+    let result = (run (Task.FromResult 1000)).Result
+    if result <> 4409 then failwithf "Unexpected: %d" result
+    0
+"""
+    |> withLangVersionPreview
+    |> withFSharpCoreShippedNet
+    |> withOptimization optimize
+    |> compileExeAndRun
+    |> shouldSucceed
+
+[<InlineData(false)>]
+[<InlineData(true)>]
+[<Theory>]
+let ``runtime async inlines nested branch-selected callbacks`` (optimize: bool) =
+    FSharp """
+module RuntimeAsyncNestedBranchCallbacks
+open System.Threading.Tasks
+open System.Runtime.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices
+
+let inline invoke ([<InlineIfLambda>] f: int -> int) = f 1 + f 2 + f 3
+
+let inline pick flag ([<InlineIfLambda>] a: int -> int) ([<InlineIfLambda>] b: int -> int) =
+    invoke (if flag then (fun x -> a x + b x) else (fun x -> b (a x)))
+
+let run (gate: Task<int>) f1 f2 =
+    StateMachineHelpers.__runtimeAsyncReturn (
+        pick
+            f1
+            (if f2 then (fun x -> AsyncHelpers.Await gate + x) else (fun x -> x * 2))
+            (if f2 then (fun x -> x + 1) else (fun x -> AsyncHelpers.Await gate - x)))
+
+[<EntryPoint>]
+let main _ =
+    let r a b = (run (Task.FromResult 10) a b).Result
+    let results = r true true, r true false, r false true, r false false
+    if results <> (45, 36, 39, 18) then failwithf "Unexpected: %A" results
+    0
+"""
+    |> withLangVersionPreview
+    |> withFSharpCoreShippedNet
+    |> withOptimization optimize
+    |> compileExeAndRun
+    |> shouldSucceed
+
+[<Fact>]
+let ``runtime async rejects a branch-selected callback too large to copy into every invocation`` () =
+    let calls = List.init 40 (sprintf "f %d") |> String.concat " + "
+    let terms = List.init 30 (sprintf "x * %d") |> String.concat " + "
+
+    FSharp $"""
+module RuntimeAsyncOversizedCallback
+open System.Threading.Tasks
+open System.Runtime.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices
+
+let inline invoke ([<InlineIfLambda>] f: int -> int) = {calls}
+
+let run (gate: Task<int>) flag =
+    StateMachineHelpers.__runtimeAsyncReturn (
+        invoke (if flag then (fun x -> AsyncHelpers.Await gate + {terms}) else (fun x -> x)))
+"""
+    |> withLangVersionPreview
+    |> withFSharpCoreShippedNet
+    |> compile
+    |> shouldFail
+    |> withErrorCode 3918
+
+[<InlineData(false)>]
+[<InlineData(true)>]
+[<Theory>]
 let ``runtime async callback selected by a branch keeps AsyncLocal changes`` (optimize: bool) =
     FSharp """
 module RuntimeAsyncBranchCallbackAsyncLocal
