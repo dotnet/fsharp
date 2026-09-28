@@ -1,6 +1,8 @@
 // Anonymous Union Types
 // Pattern matching on anonymous union types
 
+type [<Measure>] kg
+
 let decide (x: (int8|int16|int64|string)): int =
     match x with
     | :? int8 -> 1

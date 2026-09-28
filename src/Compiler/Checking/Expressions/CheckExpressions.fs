@@ -4986,7 +4986,7 @@ and TcAnonUnionTypeOr (cenv: cenv) env (tpenv: UnscopedTyparEnv) synCases m =
     // Helper method for eliminating duplicate types from lists of types that form a union type,
     // create a disjoint set of cases
     // taking into account that a subtype is a "duplicate" of its supertype.
-    let rec addToCases (pt: TType) (list: ResizeArray<TType>) (hasNullCase: bool ref) (isNested: bool) =
+    let rec addToCases (pt: TType) (list: ResizeArray<TType>) (hasNullCase: bool ref) =
         // Check if two types are literally equivalent, not following aliases
         let rec literalTypeEquiv g ty1 ty2 =
             match ty1, ty2 with
@@ -5000,7 +5000,7 @@ and TcAnonUnionTypeOr (cenv: cenv) env (tpenv: UnscopedTyparEnv) synCases m =
         if isNullableTy g pt then
             // Error: System.Nullable cannot be a case of anon union
             error(Error(FSComp.SR.tcNullableNotAllowedInAnonymousUnion(), m))
-        elif Seq.exists (literalTypeEquiv g pt) list && not isNested then
+        elif Seq.exists (literalTypeEquiv g pt) list then
             // Error: exact duplicate type in anonymous union
             error(Error(FSComp.SR.tcAnonUnionDuplicateCaseType(NicePrint.stringOfTy env.DisplayEnv pt), m))
         elif not (Seq.exists (isObjTyAnyNullness g) list) then
@@ -5015,24 +5015,25 @@ and TcAnonUnionTypeOr (cenv: cenv) env (tpenv: UnscopedTyparEnv) synCases m =
             elif isAnonUnionTy g pt then
                 let otherUnsortedCases = tryUnsortedAnonUnionTyCases g pt |> ValueOption.defaultValue []
                 for otherCase in otherUnsortedCases
-                    do addToCases otherCase list hasNullCase true
+                    do addToCases otherCase list hasNullCase
             else
                 let mutable shouldAdd = true
                 let mutable i = 0
-                let ptS = stripMeasuresFromTy g pt
+                let ptS = eraseToRuntimeTy g pt
                 while i < list.Count && shouldAdd do
-                    let tS = stripMeasuresFromTy g list.[i]
+                    let t = list.[i]
+                    let tS = eraseToRuntimeTy g t
                     if isSubTypeOf cenv.g cenv.amap m ptS tS then
-                        // Warning: new type pt is a subtype of existing type t and will be ignored
+                        // Warning: new type pt is a subtype of existing type t in runtime and will be ignored
                         warning(Error(FSComp.SR.tcAnonUnionCaseOverlap(
-                            NicePrint.stringOfTy env.DisplayEnv ptS,
-                            NicePrint.stringOfTy env.DisplayEnv tS), m))
+                            NicePrint.stringOfTy env.DisplayEnv pt,
+                            NicePrint.stringOfTy env.DisplayEnv t), m))
                         shouldAdd <- false
                     elif isSuperTypeOf cenv.g cenv.amap m ptS tS then
-                        // Warning: existing type t is a subtype of new type pt and will be removed
+                        // Warning: existing type t is a subtype of new type pt in runtime and will be removed
                         warning(Error(FSComp.SR.tcAnonUnionCaseOverlap(
-                            NicePrint.stringOfTy env.DisplayEnv tS,
-                            NicePrint.stringOfTy env.DisplayEnv ptS), m))
+                            NicePrint.stringOfTy env.DisplayEnv t,
+                            NicePrint.stringOfTy env.DisplayEnv pt), m))
                         list.RemoveAt(i)
                         i <- i - 1 // redo this index
                     i <- i + 1
@@ -5054,10 +5055,16 @@ and TcAnonUnionTypeOr (cenv: cenv) env (tpenv: UnscopedTyparEnv) synCases m =
         if containsNestedWithNull synTy then
             // Error: "null" appearing nested in a single case
             error(Error(FSComp.SR.tcAnonUnionNullMustBeTrailing(), m))
-        let n0 = DiagnosticsThreadStatics.DiagnosticsLogger.ErrorCount
-        let tyR, _ = TcTypeAndRecover cenv NoNewTypars CheckCxs ItemOccurrence.UseInType WarnOnIWSAM.Yes env tpenv synTy
-        if DiagnosticsThreadStatics.DiagnosticsLogger.ErrorCount = n0 then
-            addToCases tyR unionTypeCases hasNullCase false
+
+        match stripParenTypes synTy with
+        | SynType.AnonUnion(_, _) ->
+            // Error: syntactically nested anonymous unions are not allowed
+            error(Error(FSComp.SR.tcAnonUnionNestedNotPermitted(), m))
+        | _ ->
+            let n0 = DiagnosticsThreadStatics.DiagnosticsLogger.ErrorCount
+            let tyR, _ = TcTypeAndRecover cenv NoNewTypars CheckCxs ItemOccurrence.UseInType WarnOnIWSAM.Yes env tpenv synTy
+            if DiagnosticsThreadStatics.DiagnosticsLogger.ErrorCount = n0 then
+                addToCases tyR unionTypeCases hasNullCase
 
     let createDisjointTypes synAnonUnionCases =
         let unionTypeCases = ResizeArray()
@@ -5081,17 +5088,14 @@ and TcAnonUnionTypeOr (cenv: cenv) env (tpenv: UnscopedTyparEnv) synCases m =
     let disjointCases, hasNullCase = createDisjointTypes synCases
 
     // Degenerate case: only one non-null case survived deduplication/collapse.
-    // Normalize to ordinary WithNull rather than producing a 1-case TType_anon_union.
+    // Normalize to ordinary case type rather than producing a 1-case TType_anon_union.
     match disjointCases, hasNullCase with
-    | [ singleTy ], true ->
-        if TypeNullNever g singleTy then
-            error(Error(FSComp.SR.tcTypeDoesNotHaveAnyNull(NicePrint.stringOfTy env.DisplayEnv singleTy), m))
-        match tryAddNullnessToTy (Nullness.Known NullnessInfo.WithNull) singleTy with
-        | Some withNullTy -> withNullTy, tpenv
-        | None -> error(Error(FSComp.SR.tcTypeDoesNotHaveAnyNull(NicePrint.stringOfTy env.DisplayEnv singleTy), m))
-    | [ singleTy ], false ->
-        warning(Error(FSComp.SR.tcAnonUnionDegraded(NicePrint.stringOfTy env.DisplayEnv singleTy), m))
-        singleTy, tpenv
+    | [ singleTy ], hasNull ->
+        let resultTy =
+            if hasNull then TcAddNullnessToAnonUnionCommonAncestor cenv env singleTy m
+            else singleTy
+        warning(Error(FSComp.SR.tcAnonUnionDegraded(NicePrint.stringOfTy env.DisplayEnv resultTy), m))
+        resultTy, tpenv
     | _ ->
         // Sort into order for ordered equality
         let sortedIndexedAnonUnionCases =

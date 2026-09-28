@@ -338,6 +338,8 @@ module internal TypeDecomposition =
 
     val stripTyEqnsAndErase: bool -> TcGlobals -> TType -> TType
 
+    val eraseToRuntimeTy: TcGlobals -> TType -> TType
+
     val stripTyEqnsAndMeasureEqns: TcGlobals -> TType -> TType
 
     type Erasure =

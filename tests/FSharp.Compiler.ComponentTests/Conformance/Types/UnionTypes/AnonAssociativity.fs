@@ -1,7 +1,10 @@
 // Anonymous Union Types
 // Anonymous union types are associative
 
-let id (x: ((int | string) | float)): (int | string | float) = x
+type IntString = (int | string)
+type StringFloat = (string | float)
 
-let y: (int | (string | float)) =  "hello"
+let id (x: (IntString | float)): (int | string | float) = x
+
+let y: (int | StringFloat) =  "hello"
 id y |> ignore

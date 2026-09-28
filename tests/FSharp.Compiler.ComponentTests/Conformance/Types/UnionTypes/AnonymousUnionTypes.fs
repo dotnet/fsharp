@@ -60,8 +60,16 @@ module AnonymousUnionTypes =
         |> verifyCompileAndRun
         |> shouldSucceed
 
-    [<Theory; FileInlineData("AnonPatternMatchingSubtypeInclusion.fs")>]
-    let ``PatternMatchingSubtypeInclusion_fs`` compilation =
+    [<Theory; FileInlineData("AnonPatternMatchingSubtypeInclusion1.fs")>]
+    let ``PatternMatchingSubtypeInclusion1_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> withLangVersionPreview
+        |> verifyCompileAndRun
+        |> shouldSucceed
+
+    [<Theory; FileInlineData("AnonPatternMatchingSubtypeInclusion2.fs")>]
+    let ``PatternMatchingSubtypeInclusion2_fs`` compilation =
         compilation
         |> getCompilation
         |> withLangVersionPreview
@@ -204,6 +212,14 @@ module AnonymousUnionTypes =
         |> verifyCompileAndRunNoOverlapAndDegradeWarning
         |> shouldSucceed
 
+    [<Theory; FileInlineData("W_AnonDegradeWithNull.fs")>]
+    let ``DegradeWithNull_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> withLangVersionPreview
+        |> verifyCompileAndRunNoOverlapAndDegradeWarning
+        |> shouldSucceed
+
     [<Theory; FileInlineData("AnonErasedType.fs")>]
     let ``ErasedType_fs`` compilation =
         compilation
@@ -245,8 +261,8 @@ module AnonymousUnionTypes =
             (Error 193, Line 7, Col 17, Line 7, Col 19, "The type 'List<'a>' is ambiguous with respect to the anonymous union type '(int list | string list)' - multiple union cases match")
         ]
 
-    [<Theory; FileInlineData("E_AnonSystemNullable1.fs")>]
-    let ``E_SystemNullable1_fs`` compilation =
+    [<Theory; FileInlineData("E_AnonSystemNullable.fs")>]
+    let ``E_SystemNullable_fs`` compilation =
         compilation
         |> getCompilation
         |> withLangVersionPreview
@@ -254,17 +270,6 @@ module AnonymousUnionTypes =
         |> shouldFail
         |> withDiagnostics [
             (Error 4501, Line 4, Col 8, Line 4, Col 37, "The type System.Nullable<'T> is not allowed in an anonymous union type. Consider adding null case instead.")
-        ]
-
-    [<Theory; FileInlineData("E_AnonSystemNullable2.fs")>]
-    let ``E_SystemNullable2_fs`` compilation =
-        compilation
-        |> getCompilation
-        |> withLangVersionPreview
-        |> verifyCompile
-        |> shouldFail
-        |> withDiagnostics [
-            (Error 4501, Line 4, Col 15, Line 4, Col 44, "The type System.Nullable<'T> is not allowed in an anonymous union type. Consider adding null case instead.")
         ]
 
     [<Theory; FileInlineData("E_AnonWithNullPosition1.fs")>]
@@ -356,8 +361,8 @@ module AnonymousUnionTypes =
             (Error 4502, Line 4, Col 8, Line 4, Col 45, "'null' may only appear as the last case of an outermost anonymous union, e.g. '(int | string | null)'.")
         ]
 
-    [<Theory; FileInlineData("E_AnonTypeInclusion1.fs")>]
-    let ``E_TypeInclusion1_fs`` compilation =
+    [<Theory; FileInlineData("E_AnonDirectlyDuplicateCases1.fs")>]
+    let ``E_DirectlyDuplicateCases1_fs`` compilation =
         compilation
         |> getCompilation
         |> withLangVersionPreview
@@ -367,8 +372,8 @@ module AnonymousUnionTypes =
             (Error 4505, Line 4, Col 8, Line 4, Col 17, "This anonymous union type has multiple cases of the same type 'int'. Duplicate case types are not permitted in a directly-written anonymous union.")
         ]
 
-    [<Theory; FileInlineData("E_AnonTypeInclusion2.fs")>]
-    let ``E_TypeInclusion2_fs`` compilation =
+    [<Theory; FileInlineData("E_AnonDirectlyDuplicateCases2.fs")>]
+    let ``E_DirectlyDuplicateCases2_fs`` compilation =
         compilation
         |> getCompilation
         |> withLangVersionPreview
@@ -376,6 +381,28 @@ module AnonymousUnionTypes =
         |> shouldFail
         |> withDiagnostics [
             (Error 4505, Line 4, Col 8, Line 4, Col 30, "This anonymous union type has multiple cases of the same type 'int'. Duplicate case types are not permitted in a directly-written anonymous union.")
+        ]
+
+    [<Theory; FileInlineData("E_AnonNested1.fs")>]
+    let ``E_Nested1_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> withLangVersionPreview
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 4507, Line 4, Col 8, Line 4, Col 28, "Anonymous union types may not be nested directly. Use a type alias for the nested anonymous union case instead.")
+        ]
+
+    [<Theory; FileInlineData("E_AnonNested2.fs")>]
+    let ``E_Nested2_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> withLangVersionPreview
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 4507, Line 4, Col 8, Line 4, Col 35, "Anonymous union types may not be nested directly. Use a type alias for the nested anonymous union case instead.")
         ]
 
     [<Theory; FileInlineData("W_AnonPatternMatching.fs")>]
@@ -389,8 +416,8 @@ module AnonymousUnionTypes =
             (Warning 25, Line 5, Col 11, Line 5, Col 12, "Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s).")
         ]
 
-    [<Theory; FileInlineData("W_AnonPatternMatchingSubtypeInclusion.fs")>]
-    let ``W_PatternMatchingSubtypeInclusion_fs`` compilation =
+    [<Theory; FileInlineData("W_AnonPatternMatchingSubtypeInclusion1.fs")>]
+    let ``W_PatternMatchingSubtypeInclusion1_fs`` compilation =
         compilation
         |> getCompilation
         |> withLangVersionPreview
@@ -398,6 +425,17 @@ module AnonymousUnionTypes =
         |> shouldFail
         |> withDiagnostics [
             (Warning 25, Line 5, Col 11, Line 5, Col 12, "Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s).")
+        ]
+
+    [<Theory; FileInlineData("W_AnonPatternMatchingSubtypeInclusion2.fs")>]
+    let ``W_PatternMatchingSubtypeInclusion2_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> withLangVersionPreview
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 26, Line 7, Col 7, Line 7, Col 19, "This rule will never be matched")
         ]
 
     [<Theory; FileInlineData("W_AnonPatternMatching2Columns.fs")>]
@@ -441,7 +479,7 @@ module AnonymousUnionTypes =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 4500, Line 4, Col 8, Line 4, Col 37, "The type 'int' is a subtype of 'System.ValueType' and will be ignored")
+            (Warning 4500, Line 4, Col 8, Line 4, Col 37, "The runtime representation of the type 'int' is a subtype of the runtime representation of 'System.ValueType' and the case will be ignored.")
         ]
 
     [<Theory; FileInlineData("W_AnonTypeInclusion2.fs")>]
@@ -452,7 +490,7 @@ module AnonymousUnionTypes =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 4500, Line 4, Col 8, Line 4, Col 17, "The type 'int' is a subtype of 'obj' and will be ignored");
+            (Warning 4500, Line 4, Col 8, Line 4, Col 17, "The runtime representation of the type 'int' is a subtype of the runtime representation of 'obj' and the case will be ignored.")
             (Warning 4506, Line 4, Col 8, Line 4, Col 17, "This anonymous union type degrades to a single type 'obj'. Consider using the underlying type directly instead of an anonymous union.")
         ]
 
@@ -464,19 +502,20 @@ module AnonymousUnionTypes =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 4500, Line 4, Col 8, Line 4, Col 37, "The type 'string' is a subtype of 'System.IComparable' and will be ignored");
+            (Warning 4500, Line 4, Col 8, Line 4, Col 37, "The runtime representation of the type 'string' is a subtype of the runtime representation of 'System.IComparable' and the case will be ignored.")
             (Warning 4506, Line 4, Col 8, Line 4, Col 37, "This anonymous union type degrades to a single type 'System.IComparable'. Consider using the underlying type directly instead of an anonymous union.")
         ]
 
-    [<Theory; FileInlineData("W_AnonTypeInclusion4.fs")>]
-    let ``W_TypeInclusion4_fs`` compilation =
+    [<Theory; FileInlineData("W_AnonTypeInclusionRuntime.fs")>]
+    let ``W_TypeInclusionRuntime_fs`` compilation =
         compilation
         |> getCompilation
         |> withLangVersionPreview
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 4500, Line 4, Col 8, Line 4, Col 26, "The type 'int' is a subtype of 'int' and will be ignored")
+            (Warning 4500, Line 5, Col 8, Line 5, Col 49, "The runtime representation of the type 'List<(float | string)>' is a subtype of the runtime representation of 'List<(int | string)>' and the case will be ignored.")
+            (Warning 4506, Line 5, Col 8, Line 5, Col 49, "This anonymous union type degrades to a single type 'List<(int | string)>'. Consider using the underlying type directly instead of an anonymous union.")
         ]
 
     [<Theory; FileInlineData("W_AnonTupleEliminationOverlap.fs")>]
@@ -487,7 +526,7 @@ module AnonymousUnionTypes =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 4500, Line 4, Col 8, Line 4, Col 45, "The type 'int * int' is a subtype of 'int * int' and will be ignored");
+            (Warning 4500, Line 4, Col 8, Line 4, Col 45, "The runtime representation of the type 'int * int' is a subtype of the runtime representation of 'int * int' and the case will be ignored.")
             (Warning 4506, Line 4, Col 8, Line 4, Col 45, "This anonymous union type degrades to a single type 'int * int'. Consider using the underlying type directly instead of an anonymous union.")
         ]
 
@@ -499,7 +538,7 @@ module AnonymousUnionTypes =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 4500, Line 4, Col 10, Line 4, Col 46, "The type 'int -> int' is a subtype of 'int -> int' and will be ignored");
+            (Warning 4500, Line 4, Col 10, Line 4, Col 46, "The runtime representation of the type 'int -> int' is a subtype of the runtime representation of 'int -> int' and the case will be ignored.")
             (Warning 4506, Line 4, Col 10, Line 4, Col 46, "This anonymous union type degrades to a single type 'int -> int'. Consider using the underlying type directly instead of an anonymous union.")
         ]
 
@@ -511,7 +550,7 @@ module AnonymousUnionTypes =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 4500, Line 5, Col 8, Line 5, Col 23, "The type 'int' is a subtype of 'int' and will be ignored");
+            (Warning 4500, Line 5, Col 8, Line 5, Col 23, "The runtime representation of the type 'int<kg>' is a subtype of the runtime representation of 'int' and the case will be ignored.")
             (Warning 4506, Line 5, Col 8, Line 5, Col 23, "This anonymous union type degrades to a single type 'int'. Consider using the underlying type directly instead of an anonymous union.")
         ]
 
@@ -523,6 +562,18 @@ module AnonymousUnionTypes =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 4500, Line 6, Col 8, Line 6, Col 13, "The type 'B' is a subtype of 'A' and will be ignored");
+            (Warning 4500, Line 6, Col 8, Line 6, Col 13, "The runtime representation of the type 'B' is a subtype of the runtime representation of 'A' and the case will be ignored.")
             (Warning 4506, Line 6, Col 8, Line 6, Col 13, "This anonymous union type degrades to a single type 'A'. Consider using the underlying type directly instead of an anonymous union.")
+        ]
+
+    [<Theory; FileInlineData("W_AnonDegradeWithNull.fs")>]
+    let ``W_DegradeWithNull_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> withLangVersionPreview
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 4500, Line 6, Col 8, Line 6, Col 18, "The runtime representation of the type 'B' is a subtype of the runtime representation of 'A' and the case will be ignored.")
+            (Warning 4506, Line 6, Col 8, Line 6, Col 18, "This anonymous union type degrades to a single type 'A | null'. Consider using the underlying type directly instead of an anonymous union.")
         ]

@@ -3,5 +3,5 @@
 
 let id (x: (int | string | float)): (int | string | float) = x
 
-let y: string =  "hello"
+let y: string = "hello"
 id y |> ignore

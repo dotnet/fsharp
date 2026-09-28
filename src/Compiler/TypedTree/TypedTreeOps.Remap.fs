@@ -1040,6 +1040,13 @@ module internal TypeDecomposition =
 
         | ty -> ty
 
+    /// Erase type recursively through type arguments
+    /// stripTyEqnsAndErase only rewrites the head.
+    let rec eraseToRuntimeTy (g: TcGlobals) ty =
+        match stripTyEqnsAndErase true g ty with
+        | TType_app(tcref, args, n) -> TType_app(tcref, List.map (eraseToRuntimeTy g) args, n)
+        | ty -> ty
+
     let stripTyEqnsAndMeasureEqns g ty = stripTyEqnsAndErase false g ty
 
     type Erasure =

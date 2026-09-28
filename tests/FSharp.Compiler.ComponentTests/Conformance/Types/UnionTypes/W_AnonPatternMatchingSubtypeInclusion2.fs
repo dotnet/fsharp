@@ -6,4 +6,4 @@ let decide (x: (int8|int16|int64)): int =
     | :? System.ValueType as y -> 0
     | :? int8 as y -> 1
 
-if not (decide s42y = 0) then failwith "Test failed"
+if not (decide 42y = 0) then failwith "Test failed"
