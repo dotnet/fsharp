@@ -239,10 +239,14 @@ module InlineBaseCall
 
 type One() =
     member inline _.Source1 x = x
+    member inline _.P = 5
 
 type Two() =
     inherit One()
     member inline this.Source2 x = base.Source1 x
+    // A generic sibling that uses 'base' wraps the members in a free-choice type binding
+    member inline this.P2 = base.P
+    member this.Generic x = base.Source1 x
 """
             |> withOptions [ optimization ]
             |> asLibrary
@@ -254,7 +258,8 @@ open InlineBaseCall
 
 [<EntryPoint>]
 let main _ =
-    if (Two()).Source2 42 = 42 then 0 else 1
+    let two = Two()
+    if two.Source2 42 = 42 && two.P2 = 5 && two.Generic "a" = "a" then 0 else 1
 """
         |> withReferences [ library ]
         |> withOptions [ optimization ]
@@ -276,12 +281,13 @@ type One() =
 type Two() =
     inherit One()
     member inline this.Source2 x = base.Source1 x
+    member inline this.Text () = base.ToString()
 """
         |> withOptions [ optimization ]
         |> asLibrary
         |> compile
         |> shouldFail
-        |> withErrorCode 3925
+        |> withErrorCodes [ 3925; 3925 ]
 
     // Test empty string pattern optimization in inlining
     [<Theory; FileInlineData("EmptyStringPattern.fs")>]

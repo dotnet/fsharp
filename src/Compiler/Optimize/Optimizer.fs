@@ -4609,16 +4609,21 @@ and OptimizeLambdas (vspec: Val option) cenv env valReprInfo expr exprTy =
         let env = List.foldBack (BindInternalValsToUnknown cenv) vsl env
         let bodyR, bodyinfo = OptimizeExpr cenv env body
         let exprR = mkMemberLambdas g m tps ctorThisValOpt baseValOpt vsl (bodyR, bodyTy)
-        let inlineBodyR, inlineBodySize =
-            match baseValOpt, vspec with
-            | Some baseVal, Some v when v.ShouldInline && not cenv.settings.LocalOptimizationsEnabled ->
-                let fvs = freeInExpr CollectLocals bodyR
-                if usesMethodLocalConstructsOrProtectedField cenv fvs bodyR || fvs.FreeLocals.Contains baseVal then
+        let usesBase baseVal expr =
+            let fvs = freeInExpr CollectLocals expr
+            usesMethodLocalConstructsOrProtectedField cenv fvs expr || fvs.FreeLocals.Contains baseVal
+
+        // (inline body, its size, whether it still uses 'base'); None when there is no 'base'
+        let inlineBodyInfo =
+            match baseValOpt with
+            | None -> None
+            | Some baseVal when not (usesBase baseVal bodyR) -> Some (bodyR, bodyinfo.TotalSize, false)
+            | Some baseVal ->
+                match vspec with
+                | Some v when v.ShouldInline && not cenv.settings.LocalOptimizationsEnabled ->
                     let inlineBodyR, inlineBodyInfo = OptimizeExpr { cenv with inlineBaseCallsForExport = true } env body
-                    inlineBodyR, inlineBodyInfo.TotalSize
-                else
-                    bodyR, bodyinfo.TotalSize
-            | _ -> bodyR, bodyinfo.TotalSize
+                    Some (inlineBodyR, inlineBodyInfo.TotalSize, usesBase baseVal inlineBodyR)
+                | _ -> Some (bodyR, bodyinfo.TotalSize, true)
 
         let arities = vsl.Length
         let arities = if isNil tps then arities else 1+arities
@@ -4653,17 +4658,19 @@ and OptimizeLambdas (vspec: Val option) cenv env valReprInfo expr exprTy =
 
         // can't inline any values with semi-recursive object references to self or base
         let value_ =
-          match baseValOpt with
+          match inlineBodyInfo with
           | None -> CurriedLambdaValue (lambdaId, arities, bsize, exprR, exprTy)
-          | Some baseVal ->
-              let fvs = freeInExpr CollectLocals inlineBodyR
-              if usesMethodLocalConstructsOrProtectedField cenv fvs inlineBodyR || fvs.FreeLocals.Contains baseVal then
-                  if vspec |> Option.exists (fun v -> v.ShouldInline) then
-                      error (Error(FSComp.SR.optInlineMemberCannotUseBase(), m))
-                  UnknownValue
-              else
-                  let expr2 = mkMemberLambdas g m tps ctorThisValOpt None vsl (inlineBodyR, bodyTy)
-                  CurriedLambdaValue (lambdaId, arities, inlineBodySize, expr2, exprTy)
+          | Some (_, _, true) ->
+              match vspec with
+              | Some v when v.ShouldInline ->
+                  errorR (Error(FSComp.SR.optInlineMemberCannotUseBase(), m))
+                  // Already reported; stop FS0073 and failed-inline errors at use sites
+                  v.SetInlineInfo ValInline.Never
+              | _ -> ()
+              UnknownValue
+          | Some (inlineBodyR, inlineBodySize, false) ->
+              let expr2 = mkMemberLambdas g m tps ctorThisValOpt None vsl (inlineBodyR, bodyTy)
+              CurriedLambdaValue (lambdaId, arities, inlineBodySize, expr2, exprTy)
 
         let estimatedSize =
             match vspec with
@@ -4675,6 +4682,10 @@ and OptimizeLambdas (vspec: Val option) cenv env valReprInfo expr exprTy =
                  HasEffect=false
                  MightMakeCriticalTailcall = false
                  Info= value_ }
+
+    // Inline instance members may be wrapped in free-choice typars; unwrap them so 'base' uses are handled above
+    | Expr.TyChoose _ when vspec |> Option.exists (fun v -> v.ShouldInline && v.IsInstanceMember) ->
+        OptimizeLambdas vspec cenv env valReprInfo (ChooseTyparSolutionsForFreeChoiceTypars g cenv.amap expr) exprTy
 
     | _ ->
         OptimizeExpr cenv env expr
