@@ -69,8 +69,11 @@ type internal FSharpExtractLetBindingRefactoring [<ImportingConstructor>] () =
                     let indentSize =
                         options.GetOption(FormattingOptions.IndentationSize, FSharpConstants.FSharpLanguageName)
 
+                    let! defines, langVersion = document.GetFsharpParsingOptionsAsync(nameof FSharpExtractLetBindingRefactoring)
                     let names = usedNames parseResults.ParseTree
-                    let literalLines = linesInsideLiterals parseResults.ParseTree
+
+                    let literalLines =
+                        linesInsideLiterals sourceText parseResults.ParseTree defines langVersion
 
                     if isSelected then
                         match anchorsOf target.Expr target.Path with
