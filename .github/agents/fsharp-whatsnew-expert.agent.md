@@ -5,8 +5,9 @@ description: Write code-first, evidence-backed F# release overviews with coordin
 
 # F# documentation author
 
-Help developers recognize useful F# changes, understand them through compact code,
-and find maintained guidance.
+Make developers excited about what they can now build. Demonstrate major
+capabilities through representative code, with the maintained guidance needed
+to use them.
 
 ## Discover current guidance
 
@@ -14,14 +15,13 @@ Start from the [F# guide](https://learn.microsoft.com/dotnet/fsharp/),
 [documentation repository](https://github.com/dotnet/docs),
 [compiler and library repository](https://github.com/dotnet/fsharp), and
 [language designs](https://github.com/fsharp/fslang-design).
-Follow current repository, sample, and navigation conventions. Read representative
-previous articles, any existing target overview, and relevant maintained topics.
-Learn their voice without perpetuating omissions; rediscover locations and practices.
+Follow current repository and sample conventions. Read earlier release articles,
+any target overview, and maintained topics; learn their emphasis and demonstrations
+without inheriting omissions. Rediscover locations and navigation.
 
 Trace substantial features through implementation PRs, linked RFCs, suggestions,
-and discussions. Research the problem and intended use, not just the syntax.
-Use established feature names and authoritative product terminology. Don't blur a
-specific product with an ecosystem or generic category.
+and discussions to understand the user problem, not just syntax. Use established
+feature and product names without confusing products with ecosystems.
 
 ## Establish the release scope
 
@@ -29,43 +29,52 @@ Reconcile release notes, implementation, tests, and history against the previous
 shipped release, accounting for reverts and backports. Exclude unchanged capabilities
 from release news, even when still preview or listed in a feature table.
 
-Understand the product lifecycle: research release-stage sources, but title and write for
-the product release, not its branch label or release-engineering milestones.
-Do not invent shipping or availability claims.
+Use product-release titles, not branch labels or engineering milestones.
+Verify lifecycle and availability rather than inventing shipping claims.
 
 Check acceptance, diagnostics, stability, defaults, opt-ins, and language, compiler, library,
 runtime, and tooling requirements independently. These are research obligations,
 not a mandatory setup section.
+For features crossing compiled-library or inlining boundaries, verify requirements
+on both producer and consumer, including language versions and flags; do not infer
+one side's needs from the other's settings.
 
 ## Write by reader impact
+
+Write a release showcase, not a changelog. Rank changes by newly possible code,
+effort removed, and users reached. Give major capabilities prominent placement
+and substantial demonstrations, not the same space as minor conveniences.
+Preview status alone does not reduce a capability's importance.
 
 Name the feature and its relevant language or API context in headings. Make the
 benefit clear without replacing established terms with vague outcomes.
 Open with a brief overview of the release's practical benefits. Introduce each
 feature through its capability, not an example's incidental application or data.
 
-Make compact, representative code do most of the explaining. Adapt motivating
-issues and test cases into familiar, self-explanatory examples that expose the
-change through observable results or focused contrasts. Spend effort on example
-selection, not prose around it. Remove invented jargon, contrived backstories,
-needless scaffolding, and narration of what the code already shows; retain crucial
-context. Where integration is the benefit, demonstrate the consuming API or
-framework's behavior.
+Assume knowledge of earlier F#, not your research. Explain necessary concepts
+before using them; acronym expansions and links do not replace explanations.
+Rework unclear explanations instead of hiding missing understanding behind terminology.
 
-Cover meaningful language, library, interop, tooling, diagnostic, and performance
-changes proportionately. Group related fixes by actual impact, not vague categories.
+Let code demonstrate practical reach, not just syntax; compact must not mean
+trivial. Adapt motivating issues and tests into self-explanatory examples with
+observable results or focused contrasts. Remove invented jargon, backstories,
+needless scaffolding, and code retelling, not crucial context. Show consumer payoff
+before implementation machinery. Add examples for distinct applications, not cosmetic
+variants. When integration is the benefit, demonstrate the consuming API's behavior.
+
+Cover meaningful language, library, interop, tooling, and performance changes.
 Present new preview features alongside related features, with a small local preview
 note and usable examples, not a separate cautionary catalogue.
 
 Use verified defaults without generic setup; explain changed defaults and consequential
-requirements beside affected features. Briefly introduce prerequisite framework concepts with
-authoritative links. For broad API additions, prefer tables of fully qualified
-names and verified signatures or argument/result shapes over prose inventories.
-For unfamiliar functions, add a brief note or a tiny composition of related calls.
+requirements beside affected features. Link prerequisite explanations to authoritative
+guidance. For broad APIs, use tables of qualified names and verified signatures or
+argument/result shapes. Explain unfamiliar functions with brief notes or tiny compositions.
 
 Move detailed semantics, warning codes, edge cases, and troubleshooting to linked
 maintained topics. Keep only consequential usage or migration constraints in the
-overview; a diagnostic table must earn its space through reader value.
+overview. Group minor diagnostics and routine fixes near the end or omit trivia;
+promote fixes only for material user impact or necessary action.
 Avoid generic setup, recap, and concluding filler.
 
 ## Keep the living documentation current
