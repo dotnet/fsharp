@@ -1,146 +1,132 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Editor.Tests
+module FSharp.Editor.Tests.SnippetIndentationTests
 
 open Xunit
 
-open FSharp.Compiler.Tokenization
-
 open Microsoft.VisualStudio.FSharp.Editor.SnippetIndentation
 
-/// Every case here is a real insertion that came out wrong at some point, recorded as the columns the
-/// expansion engine left behind and the columns the result should have.
-module SnippetIndentationTests =
+/// Each line as its kind, the indentation the engine left it at, and the indentation it should end up at.
+let private scenarios =
+    [
+        "Surround With for over two lines nests both under the loop",
+        AroundSelection(12, 4),
+        [ Template, 0, 12; SelectedFirst, 16, 16; SelectedRest, 12, 16 ]
 
-    /// The indentation each line ends up at, which is what a reader can check against F# they know.
-    let private columnsAfter placement lines =
-        let moved = deltas placement lines
+        "Surround With async keeps the wrapper at the code's column",
+        AroundSelection(20, 4),
+        [ Template, 0, 20; SelectedFirst, 24, 24; Template, 0, 20 ]
 
-        List.map2 (fun line delta -> line.Indent + delta) lines moved
+        "Surround With a directive pair pins it to column zero and does not nest",
+        AroundSelection(20, 0),
+        [ RootLevelDirective, 0, 0; SelectedFirst, 20, 20; RootLevelDirective, 0, 0 ]
 
-    let private template indent = { Kind = Template; Indent = indent }
+        "Insert Snippet leaves the opening line where the caret put it", AtCaret 8, [ Template, 8, 8; Template, 4, 12; Template, 0, 8 ]
 
-    let private directive indent =
-        {
-            Kind = RootLevelDirective
-            Indent = indent
-        }
+        "Insert Snippet after a tab nests the body by the tab's width",
+        AtCaret(advanceColumn 4 0 '\t'),
+        [ Template, 4, 4; Template, 4, 8; Template, 0, 4 ]
 
-    let private selectedFirst indent =
-        {
-            Kind = SelectedFirst
-            Indent = indent
-        }
+        "Insert Snippet still pins a directive to column zero",
+        AtCaret 8,
+        [ RootLevelDirective, 8, 0; Template, 4, 12; RootLevelDirective, 0, 0 ]
 
-    let private selectedRest indent =
-        { Kind = SelectedRest; Indent = indent }
+        "A blank line is left alone", AroundSelection(20, 4), [ Template, 0, 20; Blank, 0, 0; Template, 0, 20 ]
 
-    let private insideString indent =
-        { Kind = InsideString; Indent = indent }
+        "A selection keeps its own internal shape", AroundSelection(12, 4), [ Template, 0, 12; SelectedFirst, 16, 16; SelectedRest, 16, 20 ]
 
-    [<Fact>]
-    let ``Surround With for over two lines nests both under the loop`` () =
-        // fields = [
-        //     yield Define.Field …        <- the two selected lines, at column 12
-        //     yield Define.AsyncField …
-        // Template is `for $item$ in $collection$ do` / `    $selected$$end$`, so the engine leaves the
-        // first selected line at 4 + 12 and the second at its own 12.
-        let lines = [ template 0; selectedFirst 16; selectedRest 12 ]
+        "A line inside a string carried over from the selection is left alone",
+        AroundSelection(20, 4),
+        [ Template, 0, 20; SelectedFirst, 0, 0; InsideString, 0, 0 ]
+    ]
 
-        Assert.Equal<int list>([ 12; 16; 16 ], columnsAfter (AroundSelection(12, 4)) lines)
+let scenarioNames: obj[][] = [| for name, _, _ in scenarios -> [| name |] |]
 
-    [<Fact>]
-    let ``Surround With async keeps the wrapper at the code's column`` () =
-        // `async {` and `}` are the snippet's own lines and belong at the wrapped code's column, not at
-        // the column 0 the verbatim insertion left them at.
-        let lines = [ template 0; selectedFirst 24; template 0 ]
+let private kindsOf selectedLines lines =
+    classify 4 selectedLines lines |> List.map _.Kind
 
-        Assert.Equal<int list>([ 20; 24; 20 ], columnsAfter (AroundSelection(20, 4)) lines)
+[<Theory; MemberData(nameof scenarioNames)>]
+let ``Each line moves to where its kind and the placement put it`` (name: string) =
+    let _, placement, lines =
+        scenarios |> List.find (fun (scenario, _, _) -> scenario = name)
 
-    [<Fact>]
-    let ``Surround With a directive pair pins it to column zero and does not nest`` () =
-        // A directive wrapper - `#if`/`#endif`, or the scoped `#nowarn`/`#warnon` pair - wraps code
-        // without indenting it, so `$selected$` sits at template column 0 and the wrapped lines keep
-        // the columns they had.
-        let lines = [ directive 0; selectedFirst 20; directive 0 ]
+    let engine =
+        lines |> List.map (fun (kind, indent, _) -> { Kind = kind; Indent = indent })
 
-        Assert.Equal<int list>([ 0; 20; 0 ], columnsAfter (AroundSelection(20, 0)) lines)
+    let expected = lines |> List.map (fun (_, _, indent) -> indent)
 
-    [<Theory>]
-    [<InlineData "#if DEBUG">]
-    [<InlineData "#else">]
-    [<InlineData "#endif">]
-    [<InlineData "#nowarn 0040">]
-    [<InlineData "        #warnon 0040">]
-    let ``A directive is recognized wherever the engine left it`` (line: string) = Assert.True(isRootLevelDirective line)
+    let actual =
+        deltas placement engine
+        |> List.map2 (fun (line: Line) delta -> line.Indent + delta) engine
 
-    [<Theory>]
-    [<InlineData "async {">]
-    [<InlineData "| _ -> ()">]
-    let ``Code is not mistaken for a directive`` (line: string) = Assert.False(isRootLevelDirective line)
+    Assert.Equal<int list>(expected, actual)
 
-    [<Fact>]
-    let ``Insert Snippet leaves the opening line where the caret put it`` () =
-        // The caret positioned `async {`; the body and the closing brace follow its column.
-        let lines = [ template 8; template 4; template 0 ]
+[<Theory>]
+[<InlineData(4, 0, '\t', 4)>]
+[<InlineData(4, 1, '\t', 4)>]
+[<InlineData(4, 4, '\t', 8)>]
+[<InlineData(4, 0, 'a', 1)>]
+let ``A tab runs on to the next tab stop and any other character takes one column``
+    (tabSize: int, column: int, character: char, expected: int)
+    =
+    Assert.Equal<int>(expected, advanceColumn tabSize column character)
 
-        Assert.Equal<int list>([ 8; 12; 8 ], columnsAfter (AtCaret 8) lines)
+[<Fact>]
+let ``Indentation is measured in visual columns`` () =
+    Assert.Equal<int list>([ 6 ], classify 4 ValueNone [ "\t  x" ] |> List.map _.Indent)
 
-    [<Theory>]
-    [<InlineData(4, 0, '\t', 4)>]
-    [<InlineData(4, 1, '\t', 4)>]
-    [<InlineData(4, 4, '\t', 8)>]
-    [<InlineData(4, 0, 'a', 1)>]
-    let ``A tab runs on to the next tab stop and any other character takes one column``
-        (tabSize: int, column: int, character: char, expected: int)
-        =
-        Assert.Equal(expected, advanceColumn tabSize column character)
+[<Fact>]
+let ``A directive is recognized wherever the engine left it`` () =
+    let lines, kinds =
+        [
+            "#if DEBUG", RootLevelDirective
+            "    code", Template
+            "    #elif TRACE", RootLevelDirective
+            "    #else", RootLevelDirective
+            "    code", Template
+            "#endif", RootLevelDirective
+            "#nowarn 0040", RootLevelDirective
+            "        #warnon 0040", RootLevelDirective
+        ]
+        |> List.unzip
 
-    [<Fact>]
-    let ``Insert Snippet after a tab nests the body by the tab's width`` () =
-        // <TAB>if| + Tab: the body sits one level in from the `if`, which itself starts at column 4.
-        let column = "\t" |> Seq.fold (advanceColumn 4) 0
+    Assert.Equal<LineKind list>(kinds, kindsOf ValueNone lines)
 
-        Assert.Equal<int list>([ 4; 8; 4 ], columnsAfter (AtCaret column) [ template 4; template 4; template 0 ])
+[<Theory>]
+[<InlineData "async {">]
+[<InlineData "| _ -> ()">]
+[<InlineData "printfn \"#endif\"">]
+let ``Code is not mistaken for a directive`` (line: string) =
+    Assert.Equal<LineKind list>([ Template ], kindsOf ValueNone [ line ])
 
-    [<Fact>]
-    let ``Insert Snippet still pins a directive to column zero`` () =
-        let lines = [ directive 8; template 4; directive 0 ]
+[<Fact>]
+let ``A blank line stays blank inside a branch the lexer skips`` () =
+    Assert.Equal<LineKind list>([ RootLevelDirective; Blank; RootLevelDirective ], kindsOf ValueNone [ "#if A"; "    "; "#endif" ])
 
-        Assert.Equal<int list>([ 0; 12; 0 ], columnsAfter (AtCaret 8) lines)
+[<Theory>]
+[<InlineData("let s = \"a", "b\"")>]
+[<InlineData("let s = @\"a", "  b\"")>]
+[<InlineData("let s = \"\"\"a", "#if DEBUG")>]
+[<InlineData("let s = \"\"\"a", "\"\"\" |> ignore")>]
+[<InlineData("let s = $\"\"\"a {1}", "b\"\"\"")>]
+[<InlineData("let s = $$\"\"\"a", "b\"\"\"")>]
+let ``A selected line that continues a string is left alone, even inside a directive wrapper`` (opening: string, continuation: string) =
+    Assert.Equal<LineKind list>(
+        [ RootLevelDirective; SelectedFirst; InsideString; RootLevelDirective ],
+        kindsOf (ValueSome(1, 2)) [ "#if DEBUG"; opening; continuation; "#endif" ]
+    )
 
-    [<Fact>]
-    let ``A blank line is left alone`` () =
-        let lines = [ template 0; { Kind = Blank; Indent = 0 }; template 0 ]
+[<Theory>]
+[<InlineData("printfn \"a\"", "\"b\" |> printfn \"%s\"")>]
+[<InlineData("let s = $\"\"\"a {", "  1 } b\"\"\"")>]
+let ``A selected line that only starts with a string, or sits in an interpolation hole, is code`` (first: string, rest: string) =
+    Assert.Equal<LineKind list>([ SelectedFirst; SelectedRest ], kindsOf (ValueSome(0, 1)) [ first; rest ])
 
-        Assert.Equal<int list>([ 20; 0; 20 ], columnsAfter (AroundSelection(20, 4)) lines)
+[<Theory>]
+[<InlineData "    #endif">]
+[<InlineData "    #if NET">]
+let ``A directive the selection leaves unbalanced does not move the wrapper's own`` (selected: string) =
+    let kinds =
+        kindsOf (ValueSome(1, 2)) [ "#if DEBUG"; "    let b = 3"; selected; "#endif" ]
 
-    [<Fact>]
-    let ``A selection keeps its own internal shape`` () =
-        // A deeper second line stays one level deeper than the first.
-        let lines = [ template 0; selectedFirst 16; selectedRest 16 ]
-
-        Assert.Equal<int list>([ 12; 16; 20 ], columnsAfter (AroundSelection(12, 4)) lines)
-
-    [<Fact>]
-    let ``A line inside a string carried over from the selection is left alone`` () =
-        // captured <- """a        <- selectedFirst, untouched regardless of placement
-        // b"""                    <- selectedRest, but "b\"\"\"" is the string's own content
-        let lines = [ template 0; selectedFirst 0; insideString 0 ]
-
-        Assert.Equal<int list>([ 20; 0; 0 ], columnsAfter (AroundSelection(20, 4)) lines)
-
-    [<Theory>]
-    [<InlineData(FSharpTokenizerColorState.String)>]
-    [<InlineData(FSharpTokenizerColorState.VerbatimString)>]
-    [<InlineData(FSharpTokenizerColorState.TripleQuoteString)>]
-    let ``A string color state is recognized as a string continuation`` (state: FSharpTokenizerColorState) =
-        Assert.True(isInsideString state)
-
-    [<Theory>]
-    [<InlineData(FSharpTokenizerColorState.Token)>]
-    [<InlineData(FSharpTokenizerColorState.Comment)>]
-    [<InlineData(FSharpTokenizerColorState.SingleLineComment)>]
-    [<InlineData(FSharpTokenizerColorState.IfDefSkip)>]
-    [<InlineData(FSharpTokenizerColorState.InitialState)>]
-    let ``A non-string color state is not`` (state: FSharpTokenizerColorState) = Assert.False(isInsideString state)
+    Assert.Equal<LineKind>(RootLevelDirective, List.last kinds)
