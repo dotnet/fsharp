@@ -172,33 +172,33 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
                                 strongComp <- Unchecked.defaultof<_> // Stop strongly holding the compilation since we have a result.
                                 lastSuccessfulCompilations.[projectId] <- comp
                                 ms.Position <- 0L
-                                ms :> Stream |> ValueSome
+                                ms :> Stream |> Some
                             else
                                 strongComp <- Unchecked.defaultof<_> // Stop strongly holding the compilation since we have a result.
                                 ms.Dispose() // it failed, dispose of stream
-                                ValueNone
+                                None
                         with
                         | :? OperationCanceledException ->
                             // Since we cancelled, do not null out the strong compilation ref and update the stamp.
                             stamp <- DateTime.UtcNow
                             ms.Dispose()
-                            ValueNone
+                            None
                         | _ ->
                             strongComp <- Unchecked.defaultof<_> // Stop strongly holding the compilation since we have a result.
                             ms.Dispose() // it failed, dispose of stream
-                            ValueNone
+                            None
 
                     let resultOpt =
                         match weakComp.TryGetTarget() with
                         | true, comp -> tryStream comp
-                        | _ -> ValueNone
+                        | _ -> None
 
                     match resultOpt with
-                    | ValueSome _ -> resultOpt
+                    | Some _ -> resultOpt
                     | _ ->
                         match lastSuccessfulCompilations.TryGetValue(projectId) with
                         | true, comp -> tryStream comp
-                        | _ -> ValueNone
+                        | _ -> None
 
             let getStamp = fun () -> stamp
 
