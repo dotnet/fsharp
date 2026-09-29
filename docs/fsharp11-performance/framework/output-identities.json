@@ -1,0 +1,847 @@
+[
+  {
+    "case": "fsharp-core",
+    "payload": "old",
+    "hashes": {
+      "framework": [
+        {
+          "sha256": "0B5D6E53FDCE7F16650533AA37BE1100914F929C23EAF1F6CE5B0349E5C9891D",
+          "rounds": [
+            -2,
+            -1,
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      ],
+      "net10": [
+        {
+          "sha256": "F14663E85CCD32D726EF2F9D8501ADBD24BB4430A2A4CBA2055579C361163201",
+          "rounds": [
+            -2,
+            -1,
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      ],
+      "net11": [
+        {
+          "sha256": "F14663E85CCD32D726EF2F9D8501ADBD24BB4430A2A4CBA2055579C361163201",
+          "rounds": [
+            -2,
+            -1,
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      ]
+    },
+    "modern_outputs_identical": true
+  },
+  {
+    "case": "fsharp-core",
+    "payload": "new",
+    "hashes": {
+      "framework": [
+        {
+          "sha256": "10C476DC71C1B2F75D519FD6BDBFFFAA2DF9014B21EEBD00A9E41CE82E48292F",
+          "rounds": [
+            -2,
+            -1,
+            0,
+            1,
+            3,
+            4,
+            5,
+            6,
+            7,
+            9,
+            10,
+            11
+          ]
+        },
+        {
+          "sha256": "0DF441C9D83129014D7E481C6D786391AB7DB8AB316BDCD9A288BF6DE0C0B190",
+          "rounds": [
+            2,
+            8
+          ]
+        }
+      ],
+      "net10": [
+        {
+          "sha256": "653286FB1DC08CD50B593B874299A2C36BFD469330D6DA57BC8F45560293884C",
+          "rounds": [
+            -2,
+            -1,
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      ],
+      "net11": [
+        {
+          "sha256": "653286FB1DC08CD50B593B874299A2C36BFD469330D6DA57BC8F45560293884C",
+          "rounds": [
+            -2,
+            -1,
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      ]
+    },
+    "modern_outputs_identical": true
+  },
+  {
+    "case": "fsharp-compiler-service",
+    "payload": "old",
+    "hashes": {
+      "framework": [
+        {
+          "sha256": "1ED7DF88114632A7950CDE503F44A7C046B1716A70E6E114534D562E57D5E341",
+          "rounds": [
+            -2,
+            -1,
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      ],
+      "net10": [
+        {
+          "sha256": "A37462982EF5985A9AC0C71EEE400A6BA5D4EB9FAC444194BE06B55721F4DE6A",
+          "rounds": [
+            -2,
+            -1,
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      ],
+      "net11": [
+        {
+          "sha256": "A37462982EF5985A9AC0C71EEE400A6BA5D4EB9FAC444194BE06B55721F4DE6A",
+          "rounds": [
+            -2,
+            -1,
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      ]
+    },
+    "modern_outputs_identical": true
+  },
+  {
+    "case": "fsharp-compiler-service",
+    "payload": "new",
+    "hashes": {
+      "framework": [
+        {
+          "sha256": "A0837E28F96BA320618E369853850E55D1A041FB90FD6BEE6A0BD6304089FCF3",
+          "rounds": [
+            -2,
+            -1,
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      ],
+      "net10": [
+        {
+          "sha256": "5845B3357B5FDDC702FBF06B6969457191D37BF7298CC5FEADDBD9EED9B9A6D9",
+          "rounds": [
+            -2,
+            -1,
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      ],
+      "net11": [
+        {
+          "sha256": "5845B3357B5FDDC702FBF06B6969457191D37BF7298CC5FEADDBD9EED9B9A6D9",
+          "rounds": [
+            -2,
+            -1,
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      ]
+    },
+    "modern_outputs_identical": true
+  },
+  {
+    "case": "fstoolkit",
+    "payload": "old",
+    "hashes": {
+      "framework": [
+        {
+          "sha256": "5439594CB4E00590FFB74FDB4A8C29BB0A96CC96BA947511C0D1A01BF0823235",
+          "rounds": [
+            -2,
+            -1,
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      ],
+      "net10": [
+        {
+          "sha256": "9E45A2C3DCD7673904C286CAB7B3D4454A6317F07CC456A6E1F09717152AD514",
+          "rounds": [
+            -2,
+            -1,
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      ],
+      "net11": [
+        {
+          "sha256": "9E45A2C3DCD7673904C286CAB7B3D4454A6317F07CC456A6E1F09717152AD514",
+          "rounds": [
+            -2,
+            -1,
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      ]
+    },
+    "modern_outputs_identical": true
+  },
+  {
+    "case": "fstoolkit",
+    "payload": "new",
+    "hashes": {
+      "framework": [
+        {
+          "sha256": "7F30F28E685A3F368DEE2433FC07F7850A685C1456553D72C5B9410B5BD97048",
+          "rounds": [
+            -2,
+            -1,
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      ],
+      "net10": [
+        {
+          "sha256": "2AAB33715F93BD399A7B77BC8D7E0F8CCB4956BEFC6A6B88019C999713DB3BDE",
+          "rounds": [
+            -2,
+            -1,
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      ],
+      "net11": [
+        {
+          "sha256": "2AAB33715F93BD399A7B77BC8D7E0F8CCB4956BEFC6A6B88019C999713DB3BDE",
+          "rounds": [
+            -2,
+            -1,
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      ]
+    },
+    "modern_outputs_identical": true
+  },
+  {
+    "case": "oxpecker",
+    "payload": "old",
+    "hashes": {
+      "framework": [
+        {
+          "sha256": "A0D1DAF07ED418AE750D6A237027639ADA3BB8AF6DD0FA11E436B76168BAA753",
+          "rounds": [
+            -2,
+            -1,
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      ],
+      "net10": [
+        {
+          "sha256": "D60F8689CF4483F6012E228FD0450F8ED843285287FF76A527A36CE87F22A1BB",
+          "rounds": [
+            -2,
+            -1,
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      ],
+      "net11": [
+        {
+          "sha256": "D60F8689CF4483F6012E228FD0450F8ED843285287FF76A527A36CE87F22A1BB",
+          "rounds": [
+            -2,
+            -1,
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      ]
+    },
+    "modern_outputs_identical": true
+  },
+  {
+    "case": "oxpecker",
+    "payload": "new",
+    "hashes": {
+      "framework": [
+        {
+          "sha256": "DAD279E2BD04A740CDA2435BEEC314D03926187345F1B14417999AF8B1BD4A94",
+          "rounds": [
+            -2,
+            -1,
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      ],
+      "net10": [
+        {
+          "sha256": "5854F7E8161FE8400CDF624F3CB2DAD9D5F8A64EF0A0815D6D13E814E6C95DEE",
+          "rounds": [
+            -2,
+            -1,
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      ],
+      "net11": [
+        {
+          "sha256": "5854F7E8161FE8400CDF624F3CB2DAD9D5F8A64EF0A0815D6D13E814E6C95DEE",
+          "rounds": [
+            -2,
+            -1,
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      ]
+    },
+    "modern_outputs_identical": true
+  },
+  {
+    "case": "nu",
+    "payload": "old",
+    "hashes": {
+      "framework": [
+        {
+          "sha256": "0779103401BA2C2785D8F24A4CE1D7B8094EE2DEFC21ABDCA39F69739D54B9E2",
+          "rounds": [
+            -2,
+            -1,
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      ],
+      "net10": [
+        {
+          "sha256": "91E365B16B8CB7029456CA97B5771EA7DA32370E3A758E2A4BEF1469CF93F616",
+          "rounds": [
+            -2,
+            -1,
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      ],
+      "net11": [
+        {
+          "sha256": "91E365B16B8CB7029456CA97B5771EA7DA32370E3A758E2A4BEF1469CF93F616",
+          "rounds": [
+            -2,
+            -1,
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      ]
+    },
+    "modern_outputs_identical": true
+  },
+  {
+    "case": "nu",
+    "payload": "new",
+    "hashes": {
+      "framework": [
+        {
+          "sha256": "6783C18C195818110C45DB0E46A8B29222E1B4625DC3CB8BBDE1260F0C95B429",
+          "rounds": [
+            -2,
+            -1,
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      ],
+      "net10": [
+        {
+          "sha256": "423857D4E4B0E5DF99E560B3A6BFFB5E4B58C291B6244BAC8299D7A3CF7119C3",
+          "rounds": [
+            -2,
+            -1,
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      ],
+      "net11": [
+        {
+          "sha256": "423857D4E4B0E5DF99E560B3A6BFFB5E4B58C291B6244BAC8299D7A3CF7119C3",
+          "rounds": [
+            -2,
+            -1,
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      ]
+    },
+    "modern_outputs_identical": true
+  },
+  {
+    "case": "fsautocomplete",
+    "payload": "old",
+    "hashes": {
+      "framework": [
+        {
+          "sha256": "391C68D46647E2034C8541D7238CF2BC7FCBBC0D61418F42AA8EF4170756B4C0",
+          "rounds": [
+            -2,
+            -1,
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      ],
+      "net10": [
+        {
+          "sha256": "1FF9129AAA0CC2AAEF7F023134E9B4BAD9A76A67E9CC9FB9A7D3ADCA79BD0255",
+          "rounds": [
+            -2,
+            -1,
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      ],
+      "net11": [
+        {
+          "sha256": "1FF9129AAA0CC2AAEF7F023134E9B4BAD9A76A67E9CC9FB9A7D3ADCA79BD0255",
+          "rounds": [
+            -2,
+            -1,
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      ]
+    },
+    "modern_outputs_identical": true
+  },
+  {
+    "case": "fsautocomplete",
+    "payload": "new",
+    "hashes": {
+      "framework": [
+        {
+          "sha256": "EC93E345437FDBB957D22D764D37103C4B0BE04F787E41ECF347A4C92EFC3154",
+          "rounds": [
+            -2,
+            -1,
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      ],
+      "net10": [
+        {
+          "sha256": "C746676B42161138FDCEE3815AD9DD109BDF3BC4EE4F7F39CFCDD6D0B547BAA0",
+          "rounds": [
+            -2,
+            -1,
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      ],
+      "net11": [
+        {
+          "sha256": "C746676B42161138FDCEE3815AD9DD109BDF3BC4EE4F7F39CFCDD6D0B547BAA0",
+          "rounds": [
+            -2,
+            -1,
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      ]
+    },
+    "modern_outputs_identical": true
+  }
+]

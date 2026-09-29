@@ -1,0 +1,2780 @@
+{
+  "artifact_root": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance",
+  "frozen": {
+    "frozen_utc": "2026-09-29T09:54:48.8797385+00:00",
+    "framework_release": 533509,
+    "framework_version": "4.8.09221",
+    "files": [
+      {
+        "path": "C:\\Program Files\\dotnet\\shared\\Microsoft.NETCore.App\\11.0.0-rc.1.26425.128\\clrjit.dll",
+        "bytes": 2414376,
+        "sha256": "F253E46D9E5006429FF8B739F04B00B7C5663947C2390DE2D0E7E033CCCA3607"
+      },
+      {
+        "path": "C:\\Program Files\\dotnet\\shared\\Microsoft.NETCore.App\\11.0.0-rc.1.26425.128\\coreclr.dll",
+        "bytes": 4889936,
+        "sha256": "7931D7062E229D89E34685E295848BD4C0CF8D6B2B88058F5F18829C10F05DEE"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\collector-bin\\Release\\net10.0\\Collector.dll",
+        "bytes": 19456,
+        "sha256": "CAC8B88A9880BDC02EF939022A8DD48D75F72D87A57D9A852269E77382C17CCA"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\collector-bin\\Release\\net10.0\\Collector.dll.config",
+        "bytes": 28486,
+        "sha256": "957E03BF83261A36DCC919DCC471E65CF0EB87AE20FC399C30533D581300AE1F"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\collector-bin\\Release\\net10.0\\Collector.exe",
+        "bytes": 162304,
+        "sha256": "15A0D5E5573275729BE6BC550DE51D1918490960823CCF3FBCCFE6F750733F22"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\collector-bin\\Release\\net10.0\\Collector.runtimeconfig.json",
+        "bytes": 375,
+        "sha256": "87AA7C21398E7F7D483DFD4C547D2CF7FF1023C8A0BCB410C3881A6DA7982F56"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\collector-bin\\Release\\net472\\Collector.exe",
+        "bytes": 20992,
+        "sha256": "2372B2720FFE76CAD2BDC27249282D8D18C46C13FD08A84297968CF592CCB65F"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\collector-bin\\Release\\net472\\Collector.exe.config",
+        "bytes": 634,
+        "sha256": "989A693D3F1F751158E28E3307014944039B77C8A297F81633D9A4C6850F45AC"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\collector-bin\\Release\\net472\\Microsoft.Bcl.AsyncInterfaces.dll",
+        "bytes": 26384,
+        "sha256": "23FA57D17FFA074869331BD25ECAC07B234523124690476E24E0885884E65467"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\collector-bin\\Release\\net472\\System.Buffers.dll",
+        "bytes": 20856,
+        "sha256": "ACCCCFBE45D9F08FFEED9916E37B33E98C65BE012CFFF6E7FA7B67210CE1FEFB"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\collector-bin\\Release\\net472\\System.IO.Pipelines.dll",
+        "bytes": 84752,
+        "sha256": "AC7B789EBB910CCE0947550136CB6ACA39E0B803DF9EA9C0D80DAEE12AB80CC6"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\collector-bin\\Release\\net472\\System.Memory.dll",
+        "bytes": 142240,
+        "sha256": "BF3FB84664F4097F1A8A9BC71A51DCF8CF1A905D4080A4D290DA1730866E856F"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\collector-bin\\Release\\net472\\System.Numerics.Vectors.dll",
+        "bytes": 115856,
+        "sha256": "1D3EF8698281E7CF7371D1554AFEF5872B39F96C26DA772210A33DA041BA1183"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\collector-bin\\Release\\net472\\System.Runtime.CompilerServices.Unsafe.dll",
+        "bytes": 18024,
+        "sha256": "37768488E8EF45729BC7D9A2677633C6450042975BB96516E186DA6CB9CD0DCF"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\collector-bin\\Release\\net472\\System.Text.Encodings.Web.dll",
+        "bytes": 79632,
+        "sha256": "7BEA336A8D3C9A3C9FB6AF280391CE2ABC4724EFEB098A747B24026995FA31C3"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\collector-bin\\Release\\net472\\System.Text.Json.dll",
+        "bytes": 726808,
+        "sha256": "51BDFD754CB827A3724D1F9974836F34B493FCA0059751D9C87669A8F2F96A4C"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\collector-bin\\Release\\net472\\System.Threading.Tasks.Extensions.dll",
+        "bytes": 25984,
+        "sha256": "4F81FFD0DC7204DB75AFC35EA4291769B07C440592F28894260EEA76626A23C6"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\collector-bin\\Release\\net472\\System.ValueTuple.dll",
+        "bytes": 25232,
+        "sha256": "E905D102585B22C6DF04F219AF5CBDBFA7BC165979E9788B62DF6DCC165E10F4"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\new-payload\\FSharp.Compiler.Service.dll",
+        "bytes": 21075968,
+        "sha256": "91F5A44538690DC565B82DF6B88601FD82135965DB2C720ED7381B3D193BF8E5"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\new-payload\\FSharp.Core.dll",
+        "bytes": 2451456,
+        "sha256": "076A07FBB5ACA3D1513F3BAD29FAF8E472261920944E8D288599BC18E128628D"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\new-payload\\FSharp.DependencyManager.Nuget.dll",
+        "bytes": 131584,
+        "sha256": "23DD664914BA1F0580C1325C7E5790788D8A65A9572D5154FE025991B13C48D3"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\new-payload\\System.Buffers.dll",
+        "bytes": 23832,
+        "sha256": "AA4D023D710B7DAB42CCCE349491A4F5E2CEE51EE858FAC5E4856A72F174D433"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\new-payload\\System.Collections.Immutable.dll",
+        "bytes": 252712,
+        "sha256": "54A9889B16B5C2E2356EB2E1BB9D7E1E057C966E82432B229A8B9D47DA6D9D02"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\new-payload\\System.Diagnostics.DiagnosticSource.dll",
+        "bytes": 209744,
+        "sha256": "BDADADE4E5413528B7283572FA4EDB41F9EE7A92FF272E044460AF0EEEAB557E"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\new-payload\\System.Memory.dll",
+        "bytes": 145176,
+        "sha256": "9052F3B6F64B7B70E54FA417E46027DE1320DE0713881FCCBCB427ECEDDA287A"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\new-payload\\System.Numerics.Vectors.dll",
+        "bytes": 159496,
+        "sha256": "A87FC942C07846CA9B53119DC300A935D67F05578909987D19645F1D02764417"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\new-payload\\System.Reflection.Emit.dll",
+        "bytes": 38984,
+        "sha256": "8960FAC08425655E753F1FC1EAFE9BB81E3DC006BC560C748EC4E6EE0BC0B9EB"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\new-payload\\System.Reflection.Emit.ILGeneration.dll",
+        "bytes": 21576,
+        "sha256": "CAC0339E1222085FF8BF1E5225F4AA9559A1CE15B6CF5C2E1F65A3B4EF496A86"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\new-payload\\System.Reflection.Metadata.dll",
+        "bytes": 514896,
+        "sha256": "7B8B20735D594812786256548E91B424F56A8DD90FD1A471000685EF50A27095"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\new-payload\\System.Runtime.CompilerServices.Unsafe.dll",
+        "bytes": 19256,
+        "sha256": "FD67ABC4C4AF10AFFBCD42FD68A2A7BC361B26714AFE6965D4D0D139459D8297"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\old-payload\\cs\\FSharp.Compiler.Service.resources.dll",
+        "bytes": 375608,
+        "sha256": "5EC7497D3C1AE4CEBBF2ED60FE778590B0063B26D325F2FA26ACD4CA5A38F8D3"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\old-payload\\cs\\FSharp.Core.resources.dll",
+        "bytes": 34576,
+        "sha256": "7318DE2ABF30BAA1EE63587E442D15C78C4401E47C33D9E23814D6670E571E29"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\old-payload\\cs\\FSharp.DependencyManager.Nuget.resources.dll",
+        "bytes": 16656,
+        "sha256": "E5B0503060F686809CEDAC0C751D667B9FE7CA196F51C3D2B1EC71BC0CC9204E"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\old-payload\\de\\FSharp.Compiler.Service.resources.dll",
+        "bytes": 399160,
+        "sha256": "9354B2BECF8402C63E79D71696E9F02BB0D2EA1ABA9DBEF54E394110824339AC"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\old-payload\\de\\FSharp.Core.resources.dll",
+        "bytes": 35600,
+        "sha256": "25A1BC4C281DDB89AC949B3958A82DFEC2DAD3FE8B1AFEC8DDA30F3616A3ED14"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\old-payload\\de\\FSharp.DependencyManager.Nuget.resources.dll",
+        "bytes": 16656,
+        "sha256": "32BC3C6E4DFC71260ABC8E120A65DF8ECAD97AB34D8107766F3AACAB861C6861"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\old-payload\\es\\FSharp.Compiler.Service.resources.dll",
+        "bytes": 390416,
+        "sha256": "AAE011AE3F3CE7674E6364774D7CF1F2570A9B742847CF49D3E47628981E6466"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\old-payload\\es\\FSharp.Core.resources.dll",
+        "bytes": 34568,
+        "sha256": "4D4A88832EC67B97AC77EE1B959E11621CC9F8D472015B5F1C481C401DCA24C3"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\old-payload\\es\\FSharp.DependencyManager.Nuget.resources.dll",
+        "bytes": 16648,
+        "sha256": "11F538DCF0966E6A4316E1FD15819C7B75F2393880A5EB15A93A268200902F8E"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\old-payload\\fr\\FSharp.Compiler.Service.resources.dll",
+        "bytes": 398096,
+        "sha256": "3D4D54BDCC3C522218B858E5C774282A7F3B4372B0511CF0862144EC2942F800"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\old-payload\\fr\\FSharp.Core.resources.dll",
+        "bytes": 35088,
+        "sha256": "E1B0D1F177712CE4B372BE0807FA3590D9F29F7D3E7F3C741606006998047342"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\old-payload\\fr\\FSharp.DependencyManager.Nuget.resources.dll",
+        "bytes": 16656,
+        "sha256": "DC97166036FE06E40B5D9FCA7CCF8816C325F9555636F4927F096B4D311A6838"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\old-payload\\FSharp.Compiler.Service.dll",
+        "bytes": 19426568,
+        "sha256": "640120F960A72D2B36DB4F46F1408578F3C212FB53407C6F2502A3D6D84E0553"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\old-payload\\FSharp.Core.dll",
+        "bytes": 2387208,
+        "sha256": "B907C420D77CA09731659EFBB43B7F55477EBC2068CAA80ED7E581B66E508F88"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\old-payload\\FSharp.DependencyManager.Nuget.dll",
+        "bytes": 146744,
+        "sha256": "4C0DE90B1266CBBFC1E9A8BC434160371D390B65E50A889EDA944583FF9B509D"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\old-payload\\it\\FSharp.Compiler.Service.resources.dll",
+        "bytes": 391480,
+        "sha256": "D4964F8160B78990548223D7702FC977853A4D2375A537F15FD2185B04CBB6C6"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\old-payload\\it\\FSharp.Core.resources.dll",
+        "bytes": 34616,
+        "sha256": "9C79628174BC5F82D33A244705B74183B0701910D6084FCBE4415A34DF3DAE55"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\old-payload\\it\\FSharp.DependencyManager.Nuget.resources.dll",
+        "bytes": 16656,
+        "sha256": "933C1BA3FCEC17AA639C090579844D547C6204A1D184CB9817359E00A4EE107C"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\old-payload\\ja\\FSharp.Compiler.Service.resources.dll",
+        "bytes": 433456,
+        "sha256": "3B8E8CB4BE64FDF66AB00395C2E727696218ADA6D58BB677B565FFB97DD72A27"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\old-payload\\ja\\FSharp.Core.resources.dll",
+        "bytes": 37176,
+        "sha256": "F774DFE1A2C683C34F4425CF4540912F13692D402BDB84510C39FACB01F03F00"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\old-payload\\ja\\FSharp.DependencyManager.Nuget.resources.dll",
+        "bytes": 16656,
+        "sha256": "AE54205123FE3EFE1510A4ED820B1B441BC9AF0A48B82092869C0895C2A9E206"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\old-payload\\ko\\FSharp.Compiler.Service.resources.dll",
+        "bytes": 403720,
+        "sha256": "AC8981596E5F4ABEA724B458EE4D0E3F7256C3DE3F7FB9E5243C886CC0F1563A"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\old-payload\\ko\\FSharp.Core.resources.dll",
+        "bytes": 36152,
+        "sha256": "93008F646473801CF68D85AC29F6ABA00E1BF9ACB773A446136EE6C3152D9ED4"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\old-payload\\ko\\FSharp.DependencyManager.Nuget.resources.dll",
+        "bytes": 16656,
+        "sha256": "037C7CA4A78A459ABC89EA96B2319B59C53F2501EBC284FEFC4192FBEC68874D"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\old-payload\\OldPayload.dll",
+        "bytes": 3584,
+        "sha256": "0DAC88854F5723CADE226CA8D62482C4930E1600806C5FC9A654769BB0061693"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\old-payload\\pl\\FSharp.Compiler.Service.resources.dll",
+        "bytes": 398096,
+        "sha256": "E41B80218097EFBA8136063FF1192A486AE0969DDF03507170B0C36B5BC85678"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\old-payload\\pl\\FSharp.Core.resources.dll",
+        "bytes": 35640,
+        "sha256": "F4BB8CC78032DC06E5FEDB7B5FCAFC50A2577B9D327794C5176676F328237135"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\old-payload\\pl\\FSharp.DependencyManager.Nuget.resources.dll",
+        "bytes": 16656,
+        "sha256": "14CB8CEEF73CFD072EBAE43C322D61D32471C38F377944E48B82D70A5D80D40E"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\old-payload\\pt-BR\\FSharp.Compiler.Service.resources.dll",
+        "bytes": 383248,
+        "sha256": "10BEFA79029B7F015A837F70A768A80899FD88CC92D84E091C1F957D6AEACE06"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\old-payload\\pt-BR\\FSharp.Core.resources.dll",
+        "bytes": 34064,
+        "sha256": "18D8E6A94D13669E40F8A6411A959381542B49CDBC7727499E7C51ADB6F13E8A"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\old-payload\\pt-BR\\FSharp.DependencyManager.Nuget.resources.dll",
+        "bytes": 16688,
+        "sha256": "9C6CC3DB2A024965EB9A8EB97C19EABA48AC65265BAA346D9BFD16BC1E6E745C"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\old-payload\\ru\\FSharp.Compiler.Service.resources.dll",
+        "bytes": 522512,
+        "sha256": "277856AFAB2CFBEA3D6D239D1F52B50E34C5154D4592A55F049592F349EF28C2"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\old-payload\\ru\\FSharp.Core.resources.dll",
+        "bytes": 41264,
+        "sha256": "33258F4370357922020161FC52FB49FEEFAD0D96534A552C0177258139E09DEE"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\old-payload\\ru\\FSharp.DependencyManager.Nuget.resources.dll",
+        "bytes": 17168,
+        "sha256": "14C0DBE2AB4249B9E42614409BA66EA4DE4740AEAE57FEFA85B5B230537AFDC0"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\old-payload\\System.Buffers.dll",
+        "bytes": 23856,
+        "sha256": "3AF1E07305BED0ABE0CF32D9854E0A7F5F470216ADEE1B87D02350BE09D31B35"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\old-payload\\System.Collections.Immutable.dll",
+        "bytes": 259360,
+        "sha256": "77D705FE51F224D77B25FC06EDE39E2921F08B46A961A027D6EE49A4BB19C127"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\old-payload\\System.Diagnostics.DiagnosticSource.dll",
+        "bytes": 199944,
+        "sha256": "9C4F0069F18D0FFC71056562318D1CAEC0B60820188426D7005A39612853993C"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\old-payload\\System.Memory.dll",
+        "bytes": 145192,
+        "sha256": "B8FE216AFF0F6D162F8EEFE7BE1712162B7D8199E20CE2E70FFAC36C7CE20A4C"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\old-payload\\System.Numerics.Vectors.dll",
+        "bytes": 110344,
+        "sha256": "22C84BE385FE8BA6D0E0138952748F28D781FCE36078B5A7AED91A6104BCD99B"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\old-payload\\System.Reflection.Metadata.dll",
+        "bytes": 511240,
+        "sha256": "8FC17840E7B7DB173E84FC6C7DAAF92441069B83A07B2CB054599E7DD36AB86B"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\old-payload\\System.Runtime.CompilerServices.Unsafe.dll",
+        "bytes": 19224,
+        "sha256": "2D6F419D641682D8EFC4A40E850D2E85DE519D6823B93DAF2AEEE63206D4E32D"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\old-payload\\tr\\FSharp.Compiler.Service.resources.dll",
+        "bytes": 383752,
+        "sha256": "A004F70A266B6C9E13DE58D9742FCC2941E7654133BD9A46FB1562134A408DDF"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\old-payload\\tr\\FSharp.Core.resources.dll",
+        "bytes": 34104,
+        "sha256": "4969157529A0F40DAC333334C4665BF6D23B995AEEFB42E44498586E4CC9CE48"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\old-payload\\tr\\FSharp.DependencyManager.Nuget.resources.dll",
+        "bytes": 16688,
+        "sha256": "7D5ECDA99525902EB8E575385E1C59D914412A04D0DEA88884BD35DB33CE3EE2"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\old-payload\\zh-Hans\\FSharp.Compiler.Service.resources.dll",
+        "bytes": 342320,
+        "sha256": "3A62B5A6ACD501576833E49933C0251CDBD370AAE543B41E232A00F5A9324276"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\old-payload\\zh-Hans\\FSharp.Core.resources.dll",
+        "bytes": 32528,
+        "sha256": "06DEB6DE08C30FD37FE125E006D433B00786E1151F07FE19371C00969AC5E97C"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\old-payload\\zh-Hans\\FSharp.DependencyManager.Nuget.resources.dll",
+        "bytes": 16656,
+        "sha256": "5193A237A7EAAEFDD65F4A886C5845809E045177A9913BD5259D5C215A7FBEFB"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\old-payload\\zh-Hant\\FSharp.Compiler.Service.resources.dll",
+        "bytes": 340752,
+        "sha256": "A17BA736D1333B69A7BDF152C891D14BADA38EFDF8A7805001ACD400B3104F2A"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\old-payload\\zh-Hant\\FSharp.Core.resources.dll",
+        "bytes": 32016,
+        "sha256": "E2B6E2EC1B58C42B26030EF6C672B54442EEC306A4C66C1CC33C05A572EBC60B"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\old-payload\\zh-Hant\\FSharp.DependencyManager.Nuget.resources.dll",
+        "bytes": 16688,
+        "sha256": "77FCB2B7007D4531494FD7D9A66E0DBD71FBF5D17884A6DDA67D7EB27400C74C"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net10.0\\amd64\\KernelTraceControl.dll",
+        "bytes": 266696,
+        "sha256": "98DE2F1DE4FB1711688C04E2CB0187BF8C47E627771E8F51329671F296BFC688"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net10.0\\amd64\\msdia140.dll",
+        "bytes": 1798584,
+        "sha256": "52B87B5CACBAD5A32362EF467693DD559F380B626AF310D3875B05CB5ED81A98"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net10.0\\BenchmarkDotNet.Annotations.dll",
+        "bytes": 28672,
+        "sha256": "5A05C522B4FF2998336F19A718D0F781A4C3D51F13D6117F75C5356E3C9FF12A"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net10.0\\BenchmarkDotNet.dll",
+        "bytes": 1203712,
+        "sha256": "E89D53C63ED7C24060B35AE7F95A88543DBC4C9FD7E78427B16D1F92CF071BEF"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net10.0\\CommandLine.dll",
+        "bytes": 225280,
+        "sha256": "8A55501CD1A1590A4BD93A17C6FDD2C01A0ED5BFF1AEA9036BDC78D98C9A3FAD"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net10.0\\cs\\Microsoft.CodeAnalysis.CSharp.resources.dll",
+        "bytes": 369280,
+        "sha256": "FAEE905AAD9725EDCBCD133836CFE954560A5E53BAAD950BB7D51A07534650DB"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net10.0\\cs\\Microsoft.CodeAnalysis.resources.dll",
+        "bytes": 44672,
+        "sha256": "00A40FCF66DC3DB3DCD12D8EC33B61F141BF65CF412B5BDDBD61168E86C8D4AD"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net10.0\\de\\Microsoft.CodeAnalysis.CSharp.resources.dll",
+        "bytes": 393368,
+        "sha256": "40ECE4E695F2DEB26E8B698FB92F1EC6154E2118BA98202A956F442AAC310C5F"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net10.0\\de\\Microsoft.CodeAnalysis.resources.dll",
+        "bytes": 46720,
+        "sha256": "067FB48D020FCDB38C539E89F63F510083D48F0D65E381EF9AB4727A9B679E05"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net10.0\\Dia2Lib.dll",
+        "bytes": 59024,
+        "sha256": "6C4CAC68010FE032218EFE5E9FCF46EEF9F77BFAA5F3BD33F03C5FF77D5A8FAC"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net10.0\\es\\Microsoft.CodeAnalysis.CSharp.resources.dll",
+        "bytes": 384664,
+        "sha256": "539E05E3703FCEFDE7AF043412B51B92BE958432CA53F91CDEB245B264C4356C"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net10.0\\es\\Microsoft.CodeAnalysis.resources.dll",
+        "bytes": 46208,
+        "sha256": "F6B4385A24A0E4BC3F671D8494E406458D490E7CD9EB81589B2C88EDDCA3A879"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net10.0\\fr\\Microsoft.CodeAnalysis.CSharp.resources.dll",
+        "bytes": 393368,
+        "sha256": "D2A2C43ADCA7AFBEE8B41A0C19722237D46158716E6D2724D557A3CC5E939982"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net10.0\\fr\\Microsoft.CodeAnalysis.resources.dll",
+        "bytes": 46720,
+        "sha256": "3265E8A203F50C229453EE2DB7614726C03831B43987088DD7433B920795E759"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net10.0\\Gee.External.Capstone.dll",
+        "bytes": 289280,
+        "sha256": "6DFDA67784598DE9677173B89D0692593935F1A4024D36040C95DEA48C1B5965"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net10.0\\Iced.dll",
+        "bytes": 1867776,
+        "sha256": "0763EAF4A7A3A7798DEB16F7138D454062868914A5226EF2BF512D3D19662714"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net10.0\\it\\Microsoft.CodeAnalysis.CSharp.resources.dll",
+        "bytes": 390808,
+        "sha256": "8BD8D8C118D17588609E70A876BBB8688716D186DEEC452D924CD72077B190C0"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net10.0\\it\\Microsoft.CodeAnalysis.resources.dll",
+        "bytes": 46720,
+        "sha256": "0836CC9095B28ED0628A94522A5024847F5678B456E00FC3FABB57FBA3B26676"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net10.0\\ja\\Microsoft.CodeAnalysis.CSharp.resources.dll",
+        "bytes": 430208,
+        "sha256": "5BDC3E230A4CC2C02588BC765D682BE19719B049ABE32386831FEF1F25C6534C"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net10.0\\ja\\Microsoft.CodeAnalysis.resources.dll",
+        "bytes": 49816,
+        "sha256": "0A771069DFD38A596E0A8D7013906399066CA14ACC7A0CC39D226242FF3F5658"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net10.0\\ko\\Microsoft.CodeAnalysis.CSharp.resources.dll",
+        "bytes": 396416,
+        "sha256": "0F8AE42EA863B65D62DDC9CA68A8A8365BF5ACD1735DC5F04E3905E6A8C24ACC"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net10.0\\ko\\Microsoft.CodeAnalysis.resources.dll",
+        "bytes": 46720,
+        "sha256": "489C421AC847E06F20904E767D0531E3F2865B09EEDA519EFC536CF4469AD141"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net10.0\\Microsoft.Bcl.AsyncInterfaces.dll",
+        "bytes": 14920,
+        "sha256": "3815A1DA8AFEDA653A7A5C2A3DF98BEF61416552A5D96CD32782FF22B29E5CCE"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net10.0\\Microsoft.CodeAnalysis.CSharp.dll",
+        "bytes": 5933696,
+        "sha256": "E39E962775915C4A74B1B29ED664F352D7EDACD3E8F798F11A482F0057C08820"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net10.0\\Microsoft.CodeAnalysis.dll",
+        "bytes": 2683520,
+        "sha256": "DE51F515D2D8D7515DB4C60F1F40FAE351FAF14A4EEEA68635F19F9EF11EFC92"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net10.0\\Microsoft.Diagnostics.FastSerialization.dll",
+        "bytes": 75192,
+        "sha256": "A6D75998956876DC76610E15B3FB18BB74479338E69034A0C0364176B159A310"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net10.0\\Microsoft.Diagnostics.NETCore.Client.dll",
+        "bytes": 129912,
+        "sha256": "7BAEC46AC76A8F893348A38FAB108CE53A1F3BAAC60A99DE0C5549F702FAD50D"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net10.0\\Microsoft.Diagnostics.Runtime.dll",
+        "bytes": 544656,
+        "sha256": "600B481A55337213E91FF0494A9DE338AFF303FDA3B581E569862C4869D442C3"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net10.0\\Microsoft.Diagnostics.Tracing.TraceEvent.dll",
+        "bytes": 3162560,
+        "sha256": "BE9A0A5D2E08ECA7C23CBB8AE0573E993A25CA1005B9CE296CC32661CEB3A063"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net10.0\\Microsoft.DotNet.PlatformAbstractions.dll",
+        "bytes": 23424,
+        "sha256": "B1F4AD169FB192747F5D2D3111C01DB4257E3EC1F7F18F301F7FC4BE3B869FF3"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net10.0\\Microsoft.Extensions.Configuration.Abstractions.dll",
+        "bytes": 20472,
+        "sha256": "4CB5A4F1CEDFB8FDEE5DE6DE23B0D29AC86D9CE24DABFB9924146C7D70F3B78D"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net10.0\\Microsoft.Extensions.Configuration.Binder.dll",
+        "bytes": 25080,
+        "sha256": "43CAE0256A8BC4FD190B8397862A852AB1016FDC0C0ED6AB61C999A1A7396FBF"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net10.0\\Microsoft.Extensions.Configuration.dll",
+        "bytes": 25592,
+        "sha256": "3D5D8FDDC11B27573942D1FEBA5D8AC91E2504C82AD489003ACF3E17FDB130EC"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net10.0\\Microsoft.Extensions.DependencyInjection.Abstractions.dll",
+        "bytes": 36856,
+        "sha256": "901B7C5727F29FA4F55EB2CF9F1A44D15AFD02F1D14103EB08966DE31F5BB12F"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net10.0\\Microsoft.Extensions.Logging.Abstractions.dll",
+        "bytes": 47632,
+        "sha256": "8C7763FCE381531DDA9E9D6B533599E789F705DA613AC711B7C82F8C08185BB4"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net10.0\\Microsoft.Extensions.Logging.dll",
+        "bytes": 31736,
+        "sha256": "AA5217FAD65FD54F843C348160E02ABCE8BB321F0714577754A5995D3489896A"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net10.0\\Microsoft.Extensions.Options.dll",
+        "bytes": 40440,
+        "sha256": "1323345E21F12E5C0CD90ED2A96FC497010A94667EA4FDAF4C9BBBDB1610F148"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net10.0\\Microsoft.Extensions.Primitives.dll",
+        "bytes": 35832,
+        "sha256": "FA58254542604E4C90E9876B5A5C7653D6AC8A3164102E5604981FBA6660F750"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net10.0\\Perfolizer.dll",
+        "bytes": 198144,
+        "sha256": "C35C348400C44358FC863DABEBA25E3C8690DD8C958B0F2A8DFBF575D778111A"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net10.0\\pl\\Microsoft.CodeAnalysis.CSharp.resources.dll",
+        "bytes": 396952,
+        "sha256": "7CB72692A28B478C769E545D39C98E5AFE827785EDD3DA6A91A28C298174941F"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net10.0\\pl\\Microsoft.CodeAnalysis.resources.dll",
+        "bytes": 46720,
+        "sha256": "56909B07F731D7DB1907C6217106F76978C25065273695467655D61A18CB2B0B"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net10.0\\Programs.dll",
+        "bytes": 14848,
+        "sha256": "8F108E74C63FD97316BB1F90F6AD7AA4C82249E1585DB70A7ACFEBDA1C425B30"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net10.0\\Programs.dll.config",
+        "bytes": 34944,
+        "sha256": "C4E8B235FA3A6E1A0E7542874E51EAE241DAF354DD3A462D84BDD2E81BE8D205"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net10.0\\Programs.exe",
+        "bytes": 162304,
+        "sha256": "CFEA902437AEE2FB974275D505F2CCE121F3D7A32C6E66CAB023BA60581EEA1B"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net10.0\\Programs.runtimeconfig.json",
+        "bytes": 342,
+        "sha256": "C230A317A54DD960BCBEB5F347F52E18DC665A26F7EFDA2159FCED9A5AC7E097"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net10.0\\pt-BR\\Microsoft.CodeAnalysis.CSharp.resources.dll",
+        "bytes": 378520,
+        "sha256": "4252C1249C8D72A7DFE5969C59A651BD8EF74EFD946B3C60ACCD107BC4D7AB6B"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net10.0\\pt-BR\\Microsoft.CodeAnalysis.resources.dll",
+        "bytes": 45720,
+        "sha256": "98B8AB77ABECAAB1476049E8A0F2BD68B3CB444962F2AC2B3CC9DBB80BBD08AC"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net10.0\\ru\\Microsoft.CodeAnalysis.CSharp.resources.dll",
+        "bytes": 519832,
+        "sha256": "61D6E150F988C0A0F92678858E52ECC05C0EB5DDBFE435E840B1DEC3442EE721"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net10.0\\ru\\Microsoft.CodeAnalysis.resources.dll",
+        "bytes": 55936,
+        "sha256": "30A049BABF91EB7C76E6B501F99C74EB472DED224594CABD15053EE8125448E9"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net10.0\\runtimes\\win-arm64\\native\\capstone.dll",
+        "bytes": 5148672,
+        "sha256": "5D697C69379A679987540FE00A0136A510F3349F91B16054B6C75DF9944B9142"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net10.0\\runtimes\\win-x64\\native\\capstone.dll",
+        "bytes": 5596672,
+        "sha256": "F03321188A1615D044314B1183DCD9A7FFDA09286C31C369D109165D4892DCBB"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net10.0\\runtimes\\win-x86\\native\\capstone.dll",
+        "bytes": 4827136,
+        "sha256": "7C9688E96FB4D5819BBC8705D51F1C89BF12331200416CEBC136ED02C54F9CEB"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net10.0\\runtimes\\win\\lib\\netcoreapp2.0\\System.Management.dll",
+        "bytes": 294784,
+        "sha256": "6995BC11AA735E6772222E782EEA80238663D11FBE577435310735CE0A197335"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net10.0\\System.CodeDom.dll",
+        "bytes": 183176,
+        "sha256": "DD8764E3EEEEBBCE505C96F3C0413F2C6C506968C099DA61586FF91F1B441B4B"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net10.0\\System.Management.dll",
+        "bytes": 71048,
+        "sha256": "1EC7837B8C7F3098C4549F7FD06136BD4FF7CAD39E807FA0BEA9D2BA48281E85"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net10.0\\tr\\Microsoft.CodeAnalysis.CSharp.resources.dll",
+        "bytes": 375448,
+        "sha256": "92F1B671AB832A44A0D19EED55E1E4650FAC63EE8BA3CA4EB4F21B2192830FE4"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net10.0\\tr\\Microsoft.CodeAnalysis.resources.dll",
+        "bytes": 45184,
+        "sha256": "2255C4CAA9FFBC39D43DEED18BB379AA266E7976C17A80D408D8A3F2E9E2049E"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net10.0\\TraceReloggerLib.dll",
+        "bytes": 23216,
+        "sha256": "6830C0F1D3F3C17719181E73DD5CFA8CCBB3F3C575329D2120576545103467B5"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net10.0\\zh-Hans\\Microsoft.CodeAnalysis.CSharp.resources.dll",
+        "bytes": 335000,
+        "sha256": "B8285C748B48991205DB6057632BBF49D9CD780D34E2E211B3835CCFFF6D797E"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net10.0\\zh-Hans\\Microsoft.CodeAnalysis.resources.dll",
+        "bytes": 41072,
+        "sha256": "00F9A562427938F83486F053C035384B6F5A837723405BDC1F0ADFC27765E5BF"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net10.0\\zh-Hant\\Microsoft.CodeAnalysis.CSharp.resources.dll",
+        "bytes": 335000,
+        "sha256": "1AA294FD2B0497EB391C84206AE0C337449CCED9CF35A23C031D91D719AA07CC"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net10.0\\zh-Hant\\Microsoft.CodeAnalysis.resources.dll",
+        "bytes": 42112,
+        "sha256": "0AA5F635078EAAE4443DD521DCD88AC536FC9F91003604E5775383B58BF51DE0"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net472\\amd64\\KernelTraceControl.dll",
+        "bytes": 266696,
+        "sha256": "98DE2F1DE4FB1711688C04E2CB0187BF8C47E627771E8F51329671F296BFC688"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net472\\amd64\\msdia140.dll",
+        "bytes": 1798584,
+        "sha256": "52B87B5CACBAD5A32362EF467693DD559F380B626AF310D3875B05CB5ED81A98"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net472\\BenchmarkDotNet.Annotations.dll",
+        "bytes": 28672,
+        "sha256": "5A05C522B4FF2998336F19A718D0F781A4C3D51F13D6117F75C5356E3C9FF12A"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net472\\BenchmarkDotNet.dll",
+        "bytes": 1199104,
+        "sha256": "9353B8768E267DF6EFF58F3A721345DAEBA615570CB1E41EFE5AB3422DF1434D"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net472\\capstone.dll",
+        "bytes": 5596672,
+        "sha256": "F03321188A1615D044314B1183DCD9A7FFDA09286C31C369D109165D4892DCBB"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net472\\CommandLine.dll",
+        "bytes": 225280,
+        "sha256": "2135B40FA819E58CF1942453E4409BFDEA2BE631077A354B878DE8402BE7E026"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net472\\cs\\Microsoft.CodeAnalysis.CSharp.resources.dll",
+        "bytes": 369304,
+        "sha256": "F3BDD81C1A8C9BED64C5BF658DD6E68DCC019A416D3EE27F2A4537D764E03AD5"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net472\\cs\\Microsoft.CodeAnalysis.resources.dll",
+        "bytes": 43632,
+        "sha256": "4245BC5FD6A7177CB8B7D8D8CA97C569C613F9CC584A8C1A0C2E9DA2D8CC5B99"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net472\\de\\Microsoft.CodeAnalysis.CSharp.resources.dll",
+        "bytes": 392832,
+        "sha256": "CC8C7CAAC3AE9C75961098310AC509747203EF289FC2704AF67DBEFFB39E4A40"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net472\\de\\Microsoft.CodeAnalysis.resources.dll",
+        "bytes": 46720,
+        "sha256": "C492DC04D4EFDFB261A5196D777259A3EC5CC05BB9C9C437ECC4F756BAEECD09"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net472\\Dia2Lib.dll",
+        "bytes": 59024,
+        "sha256": "6C4CAC68010FE032218EFE5E9FCF46EEF9F77BFAA5F3BD33F03C5FF77D5A8FAC"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net472\\es\\Microsoft.CodeAnalysis.CSharp.resources.dll",
+        "bytes": 384664,
+        "sha256": "DAF3106200D52FF7C31AECE4EBED6C47F680185D4340A3B4665EC685B6D13941"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net472\\es\\Microsoft.CodeAnalysis.resources.dll",
+        "bytes": 46208,
+        "sha256": "7B3679B18055F189CF46F7695AB34151B5AA65375F922D4BBB9B7A75D8A7F22B"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net472\\fr\\Microsoft.CodeAnalysis.CSharp.resources.dll",
+        "bytes": 393344,
+        "sha256": "5FAD67A1E72CA2688A923E1AE92CFA7F84321F9272A58D1A0A5D1AF494075F04"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net472\\fr\\Microsoft.CodeAnalysis.resources.dll",
+        "bytes": 46720,
+        "sha256": "9173FF3506A2DCCB2878A0B06D97CFF25122D5C52F992FE646EB3997E321D9C7"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net472\\Gee.External.Capstone.dll",
+        "bytes": 285696,
+        "sha256": "6FB0F4BF3C1AA3FE84216DE4C4E15B32DD0D20BF626AC93EE213FCB6605B4D6D"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net472\\Iced.dll",
+        "bytes": 1866240,
+        "sha256": "981227594F263FF9CD1D9FE025CA2B2812CC4871E15C338D4C8630CBD6C42174"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net472\\it\\Microsoft.CodeAnalysis.CSharp.resources.dll",
+        "bytes": 390784,
+        "sha256": "7E377A6F3111A778EAE6F4A56CEE6638B360696B613F084E3FF90FD97D3CEBE4"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net472\\it\\Microsoft.CodeAnalysis.resources.dll",
+        "bytes": 46744,
+        "sha256": "71D80077E4ED465E2755231BC8B8E948BE319A1A00BC53DB64969BE3648F57B7"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net472\\ja\\Microsoft.CodeAnalysis.CSharp.resources.dll",
+        "bytes": 430232,
+        "sha256": "4C8A5EB31B9618FF8EE2193CA4DCD15696E99CB52D598DDEB9EDB9A63A70F945"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net472\\ja\\Microsoft.CodeAnalysis.resources.dll",
+        "bytes": 49816,
+        "sha256": "CC52E83DD3F47CD01198D9E4BDCA708551EA434F3151A68F1C581440E0098FE5"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net472\\ko\\Microsoft.CodeAnalysis.CSharp.resources.dll",
+        "bytes": 396440,
+        "sha256": "35010241AEFF2C1E7E0C3DC71290EACCAEC7ADA237EACAFFDE3A28C348B01519"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net472\\ko\\Microsoft.CodeAnalysis.resources.dll",
+        "bytes": 46744,
+        "sha256": "C6FDC849621F58D0703CC625F6661840894041F3FEF62C90C23AC46143236906"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net472\\Microsoft.Bcl.AsyncInterfaces.dll",
+        "bytes": 26384,
+        "sha256": "23FA57D17FFA074869331BD25ECAC07B234523124690476E24E0885884E65467"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net472\\Microsoft.CodeAnalysis.CSharp.dll",
+        "bytes": 6420120,
+        "sha256": "DC98E2308EA0EA762100323C9D0F9844DF0636721BFF28AD1E62FDBF83E69870"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net472\\Microsoft.CodeAnalysis.dll",
+        "bytes": 4543640,
+        "sha256": "D52491192548EF9220E739FA06726A18A3E44B45DDA1D09CFEFDF0DD2FFA737D"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net472\\Microsoft.Diagnostics.FastSerialization.dll",
+        "bytes": 75192,
+        "sha256": "A6D75998956876DC76610E15B3FB18BB74479338E69034A0C0364176B159A310"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net472\\Microsoft.Diagnostics.NETCore.Client.dll",
+        "bytes": 129936,
+        "sha256": "3D002E641764C4C066BF8CBE7D611E10833B198E80EDD1E8C90EEEC87ECEAE3E"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net472\\Microsoft.Diagnostics.Runtime.dll",
+        "bytes": 542624,
+        "sha256": "5857EF605A2C32236F3EFF475A0FF69AC9A2D04A9B5DF2228E9D216F202EF801"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net472\\Microsoft.Diagnostics.Tracing.TraceEvent.dll",
+        "bytes": 3162560,
+        "sha256": "BE9A0A5D2E08ECA7C23CBB8AE0573E993A25CA1005B9CE296CC32661CEB3A063"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net472\\Microsoft.DotNet.PlatformAbstractions.dll",
+        "bytes": 23928,
+        "sha256": "F0F60C9257297D67D8436868A4DC60A0CB3BE2E6CB9FA48322A2125A05E697A3"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net472\\Microsoft.Extensions.Configuration.Abstractions.dll",
+        "bytes": 20472,
+        "sha256": "4CB5A4F1CEDFB8FDEE5DE6DE23B0D29AC86D9CE24DABFB9924146C7D70F3B78D"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net472\\Microsoft.Extensions.Configuration.Binder.dll",
+        "bytes": 25080,
+        "sha256": "43CAE0256A8BC4FD190B8397862A852AB1016FDC0C0ED6AB61C999A1A7396FBF"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net472\\Microsoft.Extensions.Configuration.dll",
+        "bytes": 25592,
+        "sha256": "3D5D8FDDC11B27573942D1FEBA5D8AC91E2504C82AD489003ACF3E17FDB130EC"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net472\\Microsoft.Extensions.DependencyInjection.Abstractions.dll",
+        "bytes": 36856,
+        "sha256": "901B7C5727F29FA4F55EB2CF9F1A44D15AFD02F1D14103EB08966DE31F5BB12F"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net472\\Microsoft.Extensions.Logging.Abstractions.dll",
+        "bytes": 47632,
+        "sha256": "8C7763FCE381531DDA9E9D6B533599E789F705DA613AC711B7C82F8C08185BB4"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net472\\Microsoft.Extensions.Logging.dll",
+        "bytes": 31736,
+        "sha256": "AA5217FAD65FD54F843C348160E02ABCE8BB321F0714577754A5995D3489896A"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net472\\Microsoft.Extensions.Options.dll",
+        "bytes": 40440,
+        "sha256": "1323345E21F12E5C0CD90ED2A96FC497010A94667EA4FDAF4C9BBBDB1610F148"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net472\\Microsoft.Extensions.Primitives.dll",
+        "bytes": 35832,
+        "sha256": "FA58254542604E4C90E9876B5A5C7653D6AC8A3164102E5604981FBA6660F750"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net472\\Microsoft.Win32.Registry.dll",
+        "bytes": 26496,
+        "sha256": "E9A9D281C1A708AAAE366F82FD6A1742F65DA2918CC4FA5EAAAADA0BE24277D9"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net472\\Perfolizer.dll",
+        "bytes": 199168,
+        "sha256": "115CF59B5095C0C9FB32A333170925397EDEDEF8948DA23741E65C20B475EA97"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net472\\pl\\Microsoft.CodeAnalysis.CSharp.resources.dll",
+        "bytes": 396952,
+        "sha256": "A1993B99227D872ACA000BBE1A602CA647C5C8D004A6308E1F3FFF46E62DDB11"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net472\\pl\\Microsoft.CodeAnalysis.resources.dll",
+        "bytes": 46720,
+        "sha256": "712538DC9BB4D3C565822B16D89C14A7C6CF54E6607C8E4D26FE28B136B517A9"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net472\\Programs.exe",
+        "bytes": 14848,
+        "sha256": "8B3388A18900D970AAD151D9BFCEF45FBE74F0872A72EEB6C936EE2C037A5204"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net472\\Programs.exe.config",
+        "bytes": 2903,
+        "sha256": "6882C609A3F1259BABA5126FCDDDA1C69A6C64C903705BE57C09B9B16C76BB85"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net472\\pt-BR\\Microsoft.CodeAnalysis.CSharp.resources.dll",
+        "bytes": 378496,
+        "sha256": "1A41E7E119757E4DB43B15B1E26B2B94630AF9807A75115E6EF5CA5A6EF329CF"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net472\\pt-BR\\Microsoft.CodeAnalysis.resources.dll",
+        "bytes": 45696,
+        "sha256": "BAA4E736F91221A7958B0D4D6E6017ACCF1D69A34E35061C124E707F15622771"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net472\\ru\\Microsoft.CodeAnalysis.CSharp.resources.dll",
+        "bytes": 519808,
+        "sha256": "E0D3E233F6C69E0861F2E25DAD07439CC5B9746BDB758E78C92243116F418456"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net472\\ru\\Microsoft.CodeAnalysis.resources.dll",
+        "bytes": 55960,
+        "sha256": "E2BA7C41ECF9D14B86C1BA65D6B8A7A9321282A0BAA6D68170FD9BE6658E803C"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net472\\System.Buffers.dll",
+        "bytes": 20856,
+        "sha256": "ACCCCFBE45D9F08FFEED9916E37B33E98C65BE012CFFF6E7FA7B67210CE1FEFB"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net472\\System.Collections.Immutable.dll",
+        "bytes": 252696,
+        "sha256": "D5EC0837BB176ABF13DCD52C658C4E84C5264F67065B9C19679B6643F7D21564"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net472\\System.IO.Pipelines.dll",
+        "bytes": 84752,
+        "sha256": "AC7B789EBB910CCE0947550136CB6ACA39E0B803DF9EA9C0D80DAEE12AB80CC6"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net472\\System.Memory.dll",
+        "bytes": 142240,
+        "sha256": "BF3FB84664F4097F1A8A9BC71A51DCF8CF1A905D4080A4D290DA1730866E856F"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net472\\System.Numerics.Vectors.dll",
+        "bytes": 115856,
+        "sha256": "1D3EF8698281E7CF7371D1554AFEF5872B39F96C26DA772210A33DA041BA1183"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net472\\System.Reflection.Metadata.dll",
+        "bytes": 487600,
+        "sha256": "1C5350E03365AFE48300F0234AB2647E96CF3C0F4E505BB38DF62AC95F494A48"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net472\\System.Runtime.CompilerServices.Unsafe.dll",
+        "bytes": 18024,
+        "sha256": "37768488E8EF45729BC7D9A2677633C6450042975BB96516E186DA6CB9CD0DCF"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net472\\System.Security.AccessControl.dll",
+        "bytes": 33672,
+        "sha256": "1FDA491EEBDB19EA0A83CF6C16AB5DD004A1BFDFC845EDE017EBE0945BEB927F"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net472\\System.Security.Principal.Windows.dll",
+        "bytes": 18312,
+        "sha256": "B4D8E15ADC235D0E858E39B5133E5D00A4BAA8C94F4F39E3B5E791B0F9C0C806"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net472\\System.Text.Encoding.CodePages.dll",
+        "bytes": 761392,
+        "sha256": "E1091B3AF6CBC71BBA27CB5AB0C9BC204F1AF128FD3681FE60F6EC4A9D3B5345"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net472\\System.Text.Encodings.Web.dll",
+        "bytes": 79632,
+        "sha256": "7BEA336A8D3C9A3C9FB6AF280391CE2ABC4724EFEB098A747B24026995FA31C3"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net472\\System.Text.Json.dll",
+        "bytes": 726808,
+        "sha256": "51BDFD754CB827A3724D1F9974836F34B493FCA0059751D9C87669A8F2F96A4C"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net472\\System.Threading.Tasks.Extensions.dll",
+        "bytes": 25984,
+        "sha256": "4F81FFD0DC7204DB75AFC35EA4291769B07C440592F28894260EEA76626A23C6"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net472\\System.ValueTuple.dll",
+        "bytes": 25232,
+        "sha256": "E905D102585B22C6DF04F219AF5CBDBFA7BC165979E9788B62DF6DCC165E10F4"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net472\\tr\\Microsoft.CodeAnalysis.CSharp.resources.dll",
+        "bytes": 375424,
+        "sha256": "40818D1D0A9388DAC30F8DCF548AC4C21A0A66C66C0FB3FDBD9C4A81E3015698"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net472\\tr\\Microsoft.CodeAnalysis.resources.dll",
+        "bytes": 45184,
+        "sha256": "0F55A0915470ED857E16D1BC8266A125AF4A93B1D1D2F7FDAD7CF1327906C3B5"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net472\\TraceReloggerLib.dll",
+        "bytes": 23216,
+        "sha256": "6830C0F1D3F3C17719181E73DD5CFA8CCBB3F3C575329D2120576545103467B5"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net472\\zh-Hans\\Microsoft.CodeAnalysis.CSharp.resources.dll",
+        "bytes": 335000,
+        "sha256": "64420CBEE66C86200F4CFCC5A91BFB8C24E03120448D448125164E9CBEA6FFCC"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net472\\zh-Hans\\Microsoft.CodeAnalysis.resources.dll",
+        "bytes": 42112,
+        "sha256": "E33393A9168844911673260383DB0B85DDEA8F04411B080820C78F5955307906"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net472\\zh-Hant\\Microsoft.CodeAnalysis.CSharp.resources.dll",
+        "bytes": 333936,
+        "sha256": "5AC4D9961463EFF95C992107DBAAD5B07C16444FCBD33615929844B49F59B8BF"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-bin\\Release\\net472\\zh-Hant\\Microsoft.CodeAnalysis.resources.dll",
+        "bytes": 42112,
+        "sha256": "257AEE36505AE3180666046F171501FD478CAC603EE3DB2454A2A2765C86B11E"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\programs\\new\\Kernels.dll",
+        "bytes": 10240,
+        "sha256": "E3C779C0394860CDC02322649E01C6E03411E909CB6E04344E696A392C71022B"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\programs\\old\\Kernels.dll",
+        "bytes": 11264,
+        "sha256": "2DBF9DC555B21F82C4FC3937541FCEC9F9CF6A42B8BA82C0D450342D1C0C3E39"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\sdk10\\shared\\Microsoft.NETCore.App\\10.0.0\\clrjit.dll",
+        "bytes": 2204944,
+        "sha256": "DFF97430ADCCEA107E809CDEDE057B05D85D2D09706B7CD840F8E72D6D105210"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\sdk10\\shared\\Microsoft.NETCore.App\\10.0.0\\coreclr.dll",
+        "bytes": 4737808,
+        "sha256": "5201734DB1EF225D23D8EFCA6198B47CC70EDDD5A12601E16D76A7DA68C5907D"
+      },
+      {
+        "path": "C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319\\clr.dll",
+        "bytes": 10000696,
+        "sha256": "217A9B1911D3631E5B63B5146745D0FDC71C4B6AA37E550202CA0AFBA33AC79A"
+      },
+      {
+        "path": "C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319\\clrjit.dll",
+        "bytes": 1227576,
+        "sha256": "DEF132A8B03203416A86A598ACA401A86EE0A4CE2F93287B2EB76D95E1571E5D"
+      }
+    ],
+    "calibrations": [
+      {
+        "schema_version": 1,
+        "started_utc": "2026-09-29T11:52:25.6301747+02:00",
+        "case": "oxpecker",
+        "scope": "calibrate",
+        "runtime": ".NET Framework 4.8.9345.0",
+        "pid": 43960,
+        "fcs_version": "43.13.101+9cd6167a7265ce7264b22719503b7dfa9eb8f83c",
+        "core_version": "11.0.101+9cd6167a7265ce7264b22719503b7dfa9eb8f83c",
+        "fcs_path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\new-payload\\FSharp.Compiler.Service.dll",
+        "core_path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\new-payload\\FSharp.Core.dll",
+        "fcs_target_framework": ".NETStandard,Version=v2.0",
+        "core_target_framework": ".NETStandard,Version=v2.0",
+        "appdomain_id": 1,
+        "gc_server": true,
+        "visible_processors": 16,
+        "allocation_monitoring": true,
+        "input_sha256": "fa85b3aa9c5e7b1562a8dbcfe86aeaf830fc04c985afcc7bff440c0dbaaa672a",
+        "allocation_api": "AppDomain.MonitoringTotalAllocatedMemorySize (current domain, all threads)",
+        "gc_configuration": {
+          "ServerGC": true,
+          "LatencyMode": "Interactive",
+          "DATAS": "not-supported"
+        },
+        "runtime_family": "framework",
+        "thread_payload_bytes": 40960000,
+        "threads_before_gc_bytes": 42061344,
+        "threads_after_gc_bytes": 42065344,
+        "allocated_bytes": 176283096,
+        "wall_ns": 24529500,
+        "cpu_user_ns": 15625000,
+        "cpu_kernel_ns": 15625000,
+        "gen0": 2,
+        "gen1": 2,
+        "gen2": 2,
+        "peak_working_set_bytes": 212901888,
+        "peak_private_commit_bytes": 267968512,
+        "working_set_end_bytes": 212901888,
+        "private_commit_end_bytes": 267968512,
+        "exit_code": 0,
+        "error_count": 0,
+        "status": "accepted",
+        "idle_10s_working_set_bytes": 212905984,
+        "retained_heap_bytes": 519592,
+        "post_gc_working_set_bytes": 78843904,
+        "loaded_assemblies": [
+          {
+            "name": "mscorlib",
+            "path": "C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319\\mscorlib.dll"
+          },
+          {
+            "name": "Collector",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\collector-bin\\Release\\net472\\Collector.exe"
+          },
+          {
+            "name": "System.Text.Json",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\collector-bin\\Release\\net472\\System.Text.Json.dll"
+          },
+          {
+            "name": "System.Memory",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\collector-bin\\Release\\net472\\System.Memory.dll"
+          },
+          {
+            "name": "System",
+            "path": "C:\\Windows\\Microsoft.Net\\assembly\\GAC_MSIL\\System\\v4.0_4.0.0.0__b77a5c561934e089\\System.dll"
+          },
+          {
+            "name": "System.Core",
+            "path": "C:\\Windows\\Microsoft.Net\\assembly\\GAC_MSIL\\System.Core\\v4.0_4.0.0.0__b77a5c561934e089\\System.Core.dll"
+          },
+          {
+            "name": "System.Threading.Tasks.Extensions",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\collector-bin\\Release\\net472\\System.Threading.Tasks.Extensions.dll"
+          },
+          {
+            "name": "System.Buffers",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\collector-bin\\Release\\net472\\System.Buffers.dll"
+          },
+          {
+            "name": "System.Runtime.CompilerServices.Unsafe",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\collector-bin\\Release\\net472\\System.Runtime.CompilerServices.Unsafe.dll"
+          },
+          {
+            "name": "System.IO.Pipelines",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\collector-bin\\Release\\net472\\System.IO.Pipelines.dll"
+          },
+          {
+            "name": "System.Numerics.Vectors",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\collector-bin\\Release\\net472\\System.Numerics.Vectors.dll"
+          },
+          {
+            "name": "FSharp.Core",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\new-payload\\FSharp.Core.dll"
+          },
+          {
+            "name": "FSharp.Compiler.Service",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\new-payload\\FSharp.Compiler.Service.dll"
+          },
+          {
+            "name": "netstandard",
+            "path": "C:\\Windows\\Microsoft.Net\\assembly\\GAC_MSIL\\netstandard\\v4.0_2.0.0.0__cc7b13ffcd2ddd51\\netstandard.dll"
+          }
+        ],
+        "fsharp_modules": [],
+        "arm": "new-framework",
+        "round": 0,
+        "order": [
+          "old-framework",
+          "new-framework",
+          "new-net11",
+          "old-net10",
+          "old-net11",
+          "new-net10"
+        ],
+        "warmup": false,
+        "cohort": "calibration-frozen",
+        "collector_sha256": "2372B2720FFE76CAD2BDC27249282D8D18C46C13FD08A84297968CF592CCB65F",
+        "fcs_sha256": "91F5A44538690DC565B82DF6B88601FD82135965DB2C720ED7381B3D193BF8E5",
+        "core_sha256": "076A07FBB5ACA3D1513F3BAD29FAF8E472261920944E8D288599BC18E128628D",
+        "controller_wall_ns": 10525024200,
+        "parent_exit_code": 0
+      },
+      {
+        "schema_version": 1,
+        "started_utc": "2026-09-29T11:53:07.5318279+02:00",
+        "case": "oxpecker",
+        "scope": "calibrate",
+        "runtime": ".NET 10.0.0",
+        "pid": 46516,
+        "fcs_version": "43.13.101+9cd6167a7265ce7264b22719503b7dfa9eb8f83c",
+        "core_version": "11.0.101+9cd6167a7265ce7264b22719503b7dfa9eb8f83c",
+        "fcs_path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\new-payload\\FSharp.Compiler.Service.dll",
+        "core_path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\new-payload\\FSharp.Core.dll",
+        "fcs_target_framework": ".NETStandard,Version=v2.0",
+        "core_target_framework": ".NETStandard,Version=v2.0",
+        "appdomain_id": 1,
+        "gc_server": true,
+        "visible_processors": 16,
+        "allocation_monitoring": true,
+        "input_sha256": "fa85b3aa9c5e7b1562a8dbcfe86aeaf830fc04c985afcc7bff440c0dbaaa672a",
+        "allocation_api": "GC.GetTotalAllocatedBytes(precise: true)",
+        "gc_configuration": {
+          "ServerGC": true,
+          "ConcurrentGC": true,
+          "RetainVM": false,
+          "NoAffinitize": false,
+          "GCCpuGroup": false,
+          "GCLargePages": false,
+          "LOHThreshold": 85000,
+          "HeapCount": 16,
+          "MaxHeapCount": 0,
+          "GCHeapAffinitizeMask": 0,
+          "GCHeapAffinitizeRanges": "",
+          "GCHighMemPercent": 90,
+          "GCGen0MaxBudget": 209715200,
+          "GCHeapHardLimit": 0,
+          "GCHeapHardLimitPercent": 0,
+          "GCRegionRange": 274877906944,
+          "GCRegionSize": 0,
+          "UOHWaitBGCSizeIncPercent": 200,
+          "GCHeapHardLimitSOH": 0,
+          "GCHeapHardLimitLOH": 0,
+          "GCHeapHardLimitPOH": 0,
+          "GCHeapHardLimitSOHPercent": 0,
+          "GCHeapHardLimitLOHPercent": 0,
+          "GCHeapHardLimitPOHPercent": 0,
+          "GCConserveMem": 0,
+          "GCName": "",
+          "GCPath": "",
+          "GCDynamicAdaptationMode": 1,
+          "GCDTargetTCP": 2,
+          "GCDGen0GrowthPercent": 100,
+          "GCDGen0GrowthMinFactor": 100,
+          "GCDGen0GrowthMaxFactor": 10000
+        },
+        "runtime_family": "core",
+        "thread_payload_bytes": 40960000,
+        "threads_before_gc_bytes": 41924648,
+        "threads_after_gc_bytes": 41925344,
+        "allocated_bytes": 176143920,
+        "wall_ns": 94752800,
+        "cpu_user_ns": 15625000,
+        "cpu_kernel_ns": 31250000,
+        "gen0": 20,
+        "gen1": 4,
+        "gen2": 3,
+        "peak_working_set_bytes": 178466816,
+        "peak_private_commit_bytes": 187748352,
+        "working_set_end_bytes": 178466816,
+        "private_commit_end_bytes": 170864640,
+        "exit_code": 0,
+        "error_count": 0,
+        "status": "accepted",
+        "idle_10s_working_set_bytes": 178556928,
+        "retained_heap_bytes": 610192,
+        "post_gc_working_set_bytes": 42020864,
+        "loaded_assemblies": [
+          {
+            "name": "System.Private.CoreLib",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\sdk10\\shared\\Microsoft.NETCore.App\\10.0.0\\System.Private.CoreLib.dll"
+          },
+          {
+            "name": "Collector",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\collector-bin\\Release\\net10.0\\Collector.dll"
+          },
+          {
+            "name": "System.Runtime",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\sdk10\\shared\\Microsoft.NETCore.App\\10.0.0\\System.Runtime.dll"
+          },
+          {
+            "name": "System.Text.Json",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\sdk10\\shared\\Microsoft.NETCore.App\\10.0.0\\System.Text.Json.dll"
+          },
+          {
+            "name": "System.Diagnostics.Process",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\sdk10\\shared\\Microsoft.NETCore.App\\10.0.0\\System.Diagnostics.Process.dll"
+          },
+          {
+            "name": "System.ComponentModel.Primitives",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\sdk10\\shared\\Microsoft.NETCore.App\\10.0.0\\System.ComponentModel.Primitives.dll"
+          },
+          {
+            "name": "System.Security.Cryptography",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\sdk10\\shared\\Microsoft.NETCore.App\\10.0.0\\System.Security.Cryptography.dll"
+          },
+          {
+            "name": "System.Collections",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\sdk10\\shared\\Microsoft.NETCore.App\\10.0.0\\System.Collections.dll"
+          },
+          {
+            "name": "System.Threading.Thread",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\sdk10\\shared\\Microsoft.NETCore.App\\10.0.0\\System.Threading.Thread.dll"
+          },
+          {
+            "name": "System.Linq",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\sdk10\\shared\\Microsoft.NETCore.App\\10.0.0\\System.Linq.dll"
+          },
+          {
+            "name": "System.Console",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\sdk10\\shared\\Microsoft.NETCore.App\\10.0.0\\System.Console.dll"
+          },
+          {
+            "name": "System.Collections.NonGeneric",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\sdk10\\shared\\Microsoft.NETCore.App\\10.0.0\\System.Collections.NonGeneric.dll"
+          },
+          {
+            "name": "System.Memory",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\sdk10\\shared\\Microsoft.NETCore.App\\10.0.0\\System.Memory.dll"
+          },
+          {
+            "name": "System.Text.Encoding.Extensions",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\sdk10\\shared\\Microsoft.NETCore.App\\10.0.0\\System.Text.Encoding.Extensions.dll"
+          },
+          {
+            "name": "FSharp.Core",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\new-payload\\FSharp.Core.dll"
+          },
+          {
+            "name": "FSharp.Compiler.Service",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\new-payload\\FSharp.Compiler.Service.dll"
+          },
+          {
+            "name": "netstandard",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\sdk10\\shared\\Microsoft.NETCore.App\\10.0.0\\netstandard.dll"
+          },
+          {
+            "name": "System.Collections.Concurrent",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\sdk10\\shared\\Microsoft.NETCore.App\\10.0.0\\System.Collections.Concurrent.dll"
+          },
+          {
+            "name": "System.Runtime.InteropServices",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\sdk10\\shared\\Microsoft.NETCore.App\\10.0.0\\System.Runtime.InteropServices.dll"
+          },
+          {
+            "name": "Microsoft.Win32.Primitives",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\sdk10\\shared\\Microsoft.NETCore.App\\10.0.0\\Microsoft.Win32.Primitives.dll"
+          },
+          {
+            "name": "System.Threading",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\sdk10\\shared\\Microsoft.NETCore.App\\10.0.0\\System.Threading.dll"
+          },
+          {
+            "name": "System.IO.Pipelines",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\sdk10\\shared\\Microsoft.NETCore.App\\10.0.0\\System.IO.Pipelines.dll"
+          }
+        ],
+        "fsharp_modules": [
+          {
+            "name": "FSharp.Core.dll",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\new-payload\\FSharp.Core.dll"
+          },
+          {
+            "name": "FSharp.Compiler.Service.dll",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\new-payload\\FSharp.Compiler.Service.dll"
+          }
+        ],
+        "arm": "new-net10",
+        "round": 0,
+        "order": [
+          "old-framework",
+          "new-framework",
+          "new-net11",
+          "old-net10",
+          "old-net11",
+          "new-net10"
+        ],
+        "warmup": false,
+        "cohort": "calibration-frozen",
+        "collector_sha256": "CAC8B88A9880BDC02EF939022A8DD48D75F72D87A57D9A852269E77382C17CCA",
+        "fcs_sha256": "91F5A44538690DC565B82DF6B88601FD82135965DB2C720ED7381B3D193BF8E5",
+        "core_sha256": "076A07FBB5ACA3D1513F3BAD29FAF8E472261920944E8D288599BC18E128628D",
+        "controller_wall_ns": 10361283300,
+        "parent_exit_code": 0
+      },
+      {
+        "schema_version": 1,
+        "started_utc": "2026-09-29T11:52:36.1271106+02:00",
+        "case": "oxpecker",
+        "scope": "calibrate",
+        "runtime": ".NET 11.0.0-rc.1.26425.128",
+        "pid": 38256,
+        "fcs_version": "43.13.101+9cd6167a7265ce7264b22719503b7dfa9eb8f83c",
+        "core_version": "11.0.101+9cd6167a7265ce7264b22719503b7dfa9eb8f83c",
+        "fcs_path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\new-payload\\FSharp.Compiler.Service.dll",
+        "core_path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\new-payload\\FSharp.Core.dll",
+        "fcs_target_framework": ".NETStandard,Version=v2.0",
+        "core_target_framework": ".NETStandard,Version=v2.0",
+        "appdomain_id": 1,
+        "gc_server": true,
+        "visible_processors": 16,
+        "allocation_monitoring": true,
+        "input_sha256": "fa85b3aa9c5e7b1562a8dbcfe86aeaf830fc04c985afcc7bff440c0dbaaa672a",
+        "allocation_api": "GC.GetTotalAllocatedBytes(precise: true)",
+        "gc_configuration": {
+          "ServerGC": true,
+          "ConcurrentGC": true,
+          "RetainVM": false,
+          "NoAffinitize": false,
+          "GCCpuGroup": false,
+          "GCLargePages": 0,
+          "LOHThreshold": 85000,
+          "HeapCount": 16,
+          "MaxHeapCount": 0,
+          "GCHeapAffinitizeMask": 0,
+          "GCHeapAffinitizeRanges": "",
+          "GCHighMemPercent": 90,
+          "GCGen0MaxBudget": 209715200,
+          "GCHeapHardLimit": 0,
+          "GCHeapHardLimitPercent": 0,
+          "GCRegionRange": 274877906944,
+          "GCRegionSize": 0,
+          "UOHWaitBGCSizeIncPercent": 200,
+          "GCHeapHardLimitSOH": 0,
+          "GCHeapHardLimitLOH": 0,
+          "GCHeapHardLimitPOH": 0,
+          "GCHeapHardLimitSOHPercent": 0,
+          "GCHeapHardLimitLOHPercent": 0,
+          "GCHeapHardLimitPOHPercent": 0,
+          "GCConserveMem": 0,
+          "GCName": "",
+          "GCPath": "",
+          "GCDynamicAdaptationMode": 1,
+          "GCDTargetTCP": 2,
+          "GCDGen0GrowthPercent": 100,
+          "GCDGen0GrowthMinFactor": 100,
+          "GCDGen0GrowthMaxFactor": 10000
+        },
+        "runtime_family": "core",
+        "thread_payload_bytes": 40960000,
+        "threads_before_gc_bytes": 41929696,
+        "threads_after_gc_bytes": 41930392,
+        "allocated_bytes": 176148968,
+        "wall_ns": 92225700,
+        "cpu_user_ns": 15625000,
+        "cpu_kernel_ns": 31250000,
+        "gen0": 16,
+        "gen1": 5,
+        "gen2": 4,
+        "peak_working_set_bytes": 179974144,
+        "peak_private_commit_bytes": 172306432,
+        "working_set_end_bytes": 179974144,
+        "private_commit_end_bytes": 172306432,
+        "exit_code": 0,
+        "error_count": 0,
+        "status": "accepted",
+        "idle_10s_working_set_bytes": 180088832,
+        "retained_heap_bytes": 550568,
+        "post_gc_working_set_bytes": 178225152,
+        "loaded_assemblies": [
+          {
+            "name": "System.Private.CoreLib",
+            "path": "C:\\Program Files\\dotnet\\shared\\Microsoft.NETCore.App\\11.0.0-rc.1.26425.128\\System.Private.CoreLib.dll"
+          },
+          {
+            "name": "Collector",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\collector-bin\\Release\\net10.0\\Collector.dll"
+          },
+          {
+            "name": "System.Runtime",
+            "path": "C:\\Program Files\\dotnet\\shared\\Microsoft.NETCore.App\\11.0.0-rc.1.26425.128\\System.Runtime.dll"
+          },
+          {
+            "name": "System.Text.Json",
+            "path": "C:\\Program Files\\dotnet\\shared\\Microsoft.NETCore.App\\11.0.0-rc.1.26425.128\\System.Text.Json.dll"
+          },
+          {
+            "name": "System.Diagnostics.Process",
+            "path": "C:\\Program Files\\dotnet\\shared\\Microsoft.NETCore.App\\11.0.0-rc.1.26425.128\\System.Diagnostics.Process.dll"
+          },
+          {
+            "name": "System.ComponentModel.Primitives",
+            "path": "C:\\Program Files\\dotnet\\shared\\Microsoft.NETCore.App\\11.0.0-rc.1.26425.128\\System.ComponentModel.Primitives.dll"
+          },
+          {
+            "name": "System.Security.Cryptography",
+            "path": "C:\\Program Files\\dotnet\\shared\\Microsoft.NETCore.App\\11.0.0-rc.1.26425.128\\System.Security.Cryptography.dll"
+          },
+          {
+            "name": "System.Collections",
+            "path": "C:\\Program Files\\dotnet\\shared\\Microsoft.NETCore.App\\11.0.0-rc.1.26425.128\\System.Collections.dll"
+          },
+          {
+            "name": "System.Threading.Thread",
+            "path": "C:\\Program Files\\dotnet\\shared\\Microsoft.NETCore.App\\11.0.0-rc.1.26425.128\\System.Threading.Thread.dll"
+          },
+          {
+            "name": "System.Linq",
+            "path": "C:\\Program Files\\dotnet\\shared\\Microsoft.NETCore.App\\11.0.0-rc.1.26425.128\\System.Linq.dll"
+          },
+          {
+            "name": "System.Console",
+            "path": "C:\\Program Files\\dotnet\\shared\\Microsoft.NETCore.App\\11.0.0-rc.1.26425.128\\System.Console.dll"
+          },
+          {
+            "name": "System.Collections.NonGeneric",
+            "path": "C:\\Program Files\\dotnet\\shared\\Microsoft.NETCore.App\\11.0.0-rc.1.26425.128\\System.Collections.NonGeneric.dll"
+          },
+          {
+            "name": "System.Memory",
+            "path": "C:\\Program Files\\dotnet\\shared\\Microsoft.NETCore.App\\11.0.0-rc.1.26425.128\\System.Memory.dll"
+          },
+          {
+            "name": "System.Text.Encoding.Extensions",
+            "path": "C:\\Program Files\\dotnet\\shared\\Microsoft.NETCore.App\\11.0.0-rc.1.26425.128\\System.Text.Encoding.Extensions.dll"
+          },
+          {
+            "name": "FSharp.Core",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\new-payload\\FSharp.Core.dll"
+          },
+          {
+            "name": "FSharp.Compiler.Service",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\new-payload\\FSharp.Compiler.Service.dll"
+          },
+          {
+            "name": "netstandard",
+            "path": "C:\\Program Files\\dotnet\\shared\\Microsoft.NETCore.App\\11.0.0-rc.1.26425.128\\netstandard.dll"
+          },
+          {
+            "name": "System.Collections.Concurrent",
+            "path": "C:\\Program Files\\dotnet\\shared\\Microsoft.NETCore.App\\11.0.0-rc.1.26425.128\\System.Collections.Concurrent.dll"
+          },
+          {
+            "name": "System.Runtime.InteropServices",
+            "path": "C:\\Program Files\\dotnet\\shared\\Microsoft.NETCore.App\\11.0.0-rc.1.26425.128\\System.Runtime.InteropServices.dll"
+          },
+          {
+            "name": "Microsoft.Win32.Primitives",
+            "path": "C:\\Program Files\\dotnet\\shared\\Microsoft.NETCore.App\\11.0.0-rc.1.26425.128\\Microsoft.Win32.Primitives.dll"
+          },
+          {
+            "name": "System.Threading",
+            "path": "C:\\Program Files\\dotnet\\shared\\Microsoft.NETCore.App\\11.0.0-rc.1.26425.128\\System.Threading.dll"
+          },
+          {
+            "name": "System.IO.Pipelines",
+            "path": "C:\\Program Files\\dotnet\\shared\\Microsoft.NETCore.App\\11.0.0-rc.1.26425.128\\System.IO.Pipelines.dll"
+          }
+        ],
+        "fsharp_modules": [
+          {
+            "name": "FSharp.Core.dll",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\new-payload\\FSharp.Core.dll"
+          },
+          {
+            "name": "FSharp.Compiler.Service.dll",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\new-payload\\FSharp.Compiler.Service.dll"
+          }
+        ],
+        "arm": "new-net11",
+        "round": 0,
+        "order": [
+          "old-framework",
+          "new-framework",
+          "new-net11",
+          "old-net10",
+          "old-net11",
+          "new-net10"
+        ],
+        "warmup": false,
+        "cohort": "calibration-frozen",
+        "collector_sha256": "CAC8B88A9880BDC02EF939022A8DD48D75F72D87A57D9A852269E77382C17CCA",
+        "fcs_sha256": "91F5A44538690DC565B82DF6B88601FD82135965DB2C720ED7381B3D193BF8E5",
+        "core_sha256": "076A07FBB5ACA3D1513F3BAD29FAF8E472261920944E8D288599BC18E128628D",
+        "controller_wall_ns": 10315088200,
+        "parent_exit_code": 0
+      },
+      {
+        "schema_version": 1,
+        "started_utc": "2026-09-29T11:52:14.9825545+02:00",
+        "case": "oxpecker",
+        "scope": "calibrate",
+        "runtime": ".NET Framework 4.8.9345.0",
+        "pid": 39728,
+        "fcs_version": "43.10.100-rc2.25523.111+b0f34d51fccc69fd334253924abd8d6853fad7aa",
+        "core_version": "10.0.100-rc2.25523.111+b0f34d51fccc69fd334253924abd8d6853fad7aa",
+        "fcs_path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\old-payload\\FSharp.Compiler.Service.dll",
+        "core_path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\old-payload\\FSharp.Core.dll",
+        "fcs_target_framework": ".NETStandard,Version=v2.0",
+        "core_target_framework": ".NETStandard,Version=v2.0",
+        "appdomain_id": 1,
+        "gc_server": true,
+        "visible_processors": 16,
+        "allocation_monitoring": true,
+        "input_sha256": "fa85b3aa9c5e7b1562a8dbcfe86aeaf830fc04c985afcc7bff440c0dbaaa672a",
+        "allocation_api": "AppDomain.MonitoringTotalAllocatedMemorySize (current domain, all threads)",
+        "gc_configuration": {
+          "ServerGC": true,
+          "LatencyMode": "Interactive",
+          "DATAS": "not-supported"
+        },
+        "runtime_family": "framework",
+        "thread_payload_bytes": 40960000,
+        "threads_before_gc_bytes": 42061344,
+        "threads_after_gc_bytes": 42069536,
+        "allocated_bytes": 176287288,
+        "wall_ns": 24747200,
+        "cpu_user_ns": 15625000,
+        "cpu_kernel_ns": 46875000,
+        "gen0": 2,
+        "gen1": 2,
+        "gen2": 2,
+        "peak_working_set_bytes": 212189184,
+        "peak_private_commit_bytes": 267788288,
+        "working_set_end_bytes": 212189184,
+        "private_commit_end_bytes": 267788288,
+        "exit_code": 0,
+        "error_count": 0,
+        "status": "accepted",
+        "idle_10s_working_set_bytes": 212193280,
+        "retained_heap_bytes": 518008,
+        "post_gc_working_set_bytes": 78131200,
+        "loaded_assemblies": [
+          {
+            "name": "mscorlib",
+            "path": "C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319\\mscorlib.dll"
+          },
+          {
+            "name": "Collector",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\collector-bin\\Release\\net472\\Collector.exe"
+          },
+          {
+            "name": "System.Text.Json",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\collector-bin\\Release\\net472\\System.Text.Json.dll"
+          },
+          {
+            "name": "System.Memory",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\collector-bin\\Release\\net472\\System.Memory.dll"
+          },
+          {
+            "name": "System",
+            "path": "C:\\Windows\\Microsoft.Net\\assembly\\GAC_MSIL\\System\\v4.0_4.0.0.0__b77a5c561934e089\\System.dll"
+          },
+          {
+            "name": "System.Core",
+            "path": "C:\\Windows\\Microsoft.Net\\assembly\\GAC_MSIL\\System.Core\\v4.0_4.0.0.0__b77a5c561934e089\\System.Core.dll"
+          },
+          {
+            "name": "System.Threading.Tasks.Extensions",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\collector-bin\\Release\\net472\\System.Threading.Tasks.Extensions.dll"
+          },
+          {
+            "name": "System.Buffers",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\collector-bin\\Release\\net472\\System.Buffers.dll"
+          },
+          {
+            "name": "System.Runtime.CompilerServices.Unsafe",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\collector-bin\\Release\\net472\\System.Runtime.CompilerServices.Unsafe.dll"
+          },
+          {
+            "name": "System.IO.Pipelines",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\collector-bin\\Release\\net472\\System.IO.Pipelines.dll"
+          },
+          {
+            "name": "System.Numerics.Vectors",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\collector-bin\\Release\\net472\\System.Numerics.Vectors.dll"
+          },
+          {
+            "name": "FSharp.Core",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\old-payload\\FSharp.Core.dll"
+          },
+          {
+            "name": "FSharp.Compiler.Service",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\old-payload\\FSharp.Compiler.Service.dll"
+          },
+          {
+            "name": "netstandard",
+            "path": "C:\\Windows\\Microsoft.Net\\assembly\\GAC_MSIL\\netstandard\\v4.0_2.0.0.0__cc7b13ffcd2ddd51\\netstandard.dll"
+          }
+        ],
+        "fsharp_modules": [],
+        "arm": "old-framework",
+        "round": 0,
+        "order": [
+          "old-framework",
+          "new-framework",
+          "new-net11",
+          "old-net10",
+          "old-net11",
+          "new-net10"
+        ],
+        "warmup": false,
+        "cohort": "calibration-frozen",
+        "collector_sha256": "2372B2720FFE76CAD2BDC27249282D8D18C46C13FD08A84297968CF592CCB65F",
+        "fcs_sha256": "640120F960A72D2B36DB4F46F1408578F3C212FB53407C6F2502A3D6D84E0553",
+        "core_sha256": "B907C420D77CA09731659EFBB43B7F55477EBC2068CAA80ED7E581B66E508F88",
+        "controller_wall_ns": 10646503800,
+        "parent_exit_code": 0
+      },
+      {
+        "schema_version": 1,
+        "started_utc": "2026-09-29T11:52:46.7248924+02:00",
+        "case": "oxpecker",
+        "scope": "calibrate",
+        "runtime": ".NET 10.0.0",
+        "pid": 26136,
+        "fcs_version": "43.10.100-rc2.25523.111+b0f34d51fccc69fd334253924abd8d6853fad7aa",
+        "core_version": "10.0.100-rc2.25523.111+b0f34d51fccc69fd334253924abd8d6853fad7aa",
+        "fcs_path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\old-payload\\FSharp.Compiler.Service.dll",
+        "core_path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\old-payload\\FSharp.Core.dll",
+        "fcs_target_framework": ".NETStandard,Version=v2.0",
+        "core_target_framework": ".NETStandard,Version=v2.0",
+        "appdomain_id": 1,
+        "gc_server": true,
+        "visible_processors": 16,
+        "allocation_monitoring": true,
+        "input_sha256": "fa85b3aa9c5e7b1562a8dbcfe86aeaf830fc04c985afcc7bff440c0dbaaa672a",
+        "allocation_api": "GC.GetTotalAllocatedBytes(precise: true)",
+        "gc_configuration": {
+          "ServerGC": true,
+          "ConcurrentGC": true,
+          "RetainVM": false,
+          "NoAffinitize": false,
+          "GCCpuGroup": false,
+          "GCLargePages": false,
+          "LOHThreshold": 85000,
+          "HeapCount": 16,
+          "MaxHeapCount": 0,
+          "GCHeapAffinitizeMask": 0,
+          "GCHeapAffinitizeRanges": "",
+          "GCHighMemPercent": 90,
+          "GCGen0MaxBudget": 209715200,
+          "GCHeapHardLimit": 0,
+          "GCHeapHardLimitPercent": 0,
+          "GCRegionRange": 274877906944,
+          "GCRegionSize": 0,
+          "UOHWaitBGCSizeIncPercent": 200,
+          "GCHeapHardLimitSOH": 0,
+          "GCHeapHardLimitLOH": 0,
+          "GCHeapHardLimitPOH": 0,
+          "GCHeapHardLimitSOHPercent": 0,
+          "GCHeapHardLimitLOHPercent": 0,
+          "GCHeapHardLimitPOHPercent": 0,
+          "GCConserveMem": 0,
+          "GCName": "",
+          "GCPath": "",
+          "GCDynamicAdaptationMode": 1,
+          "GCDTargetTCP": 2,
+          "GCDGen0GrowthPercent": 100,
+          "GCDGen0GrowthMinFactor": 100,
+          "GCDGen0GrowthMaxFactor": 10000
+        },
+        "runtime_family": "core",
+        "thread_payload_bytes": 40960000,
+        "threads_before_gc_bytes": 41925984,
+        "threads_after_gc_bytes": 41926968,
+        "allocated_bytes": 176145256,
+        "wall_ns": 111707700,
+        "cpu_user_ns": 15625000,
+        "cpu_kernel_ns": 31250000,
+        "gen0": 15,
+        "gen1": 5,
+        "gen2": 4,
+        "peak_working_set_bytes": 180473856,
+        "peak_private_commit_bytes": 182611968,
+        "working_set_end_bytes": 180473856,
+        "private_commit_end_bytes": 165732352,
+        "exit_code": 0,
+        "error_count": 0,
+        "status": "accepted",
+        "idle_10s_working_set_bytes": 180547584,
+        "retained_heap_bytes": 609424,
+        "post_gc_working_set_bytes": 178696192,
+        "loaded_assemblies": [
+          {
+            "name": "System.Private.CoreLib",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\sdk10\\shared\\Microsoft.NETCore.App\\10.0.0\\System.Private.CoreLib.dll"
+          },
+          {
+            "name": "Collector",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\collector-bin\\Release\\net10.0\\Collector.dll"
+          },
+          {
+            "name": "System.Runtime",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\sdk10\\shared\\Microsoft.NETCore.App\\10.0.0\\System.Runtime.dll"
+          },
+          {
+            "name": "System.Text.Json",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\sdk10\\shared\\Microsoft.NETCore.App\\10.0.0\\System.Text.Json.dll"
+          },
+          {
+            "name": "System.Diagnostics.Process",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\sdk10\\shared\\Microsoft.NETCore.App\\10.0.0\\System.Diagnostics.Process.dll"
+          },
+          {
+            "name": "System.ComponentModel.Primitives",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\sdk10\\shared\\Microsoft.NETCore.App\\10.0.0\\System.ComponentModel.Primitives.dll"
+          },
+          {
+            "name": "System.Security.Cryptography",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\sdk10\\shared\\Microsoft.NETCore.App\\10.0.0\\System.Security.Cryptography.dll"
+          },
+          {
+            "name": "System.Collections",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\sdk10\\shared\\Microsoft.NETCore.App\\10.0.0\\System.Collections.dll"
+          },
+          {
+            "name": "System.Threading.Thread",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\sdk10\\shared\\Microsoft.NETCore.App\\10.0.0\\System.Threading.Thread.dll"
+          },
+          {
+            "name": "System.Linq",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\sdk10\\shared\\Microsoft.NETCore.App\\10.0.0\\System.Linq.dll"
+          },
+          {
+            "name": "System.Console",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\sdk10\\shared\\Microsoft.NETCore.App\\10.0.0\\System.Console.dll"
+          },
+          {
+            "name": "System.Collections.NonGeneric",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\sdk10\\shared\\Microsoft.NETCore.App\\10.0.0\\System.Collections.NonGeneric.dll"
+          },
+          {
+            "name": "System.Memory",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\sdk10\\shared\\Microsoft.NETCore.App\\10.0.0\\System.Memory.dll"
+          },
+          {
+            "name": "System.Text.Encoding.Extensions",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\sdk10\\shared\\Microsoft.NETCore.App\\10.0.0\\System.Text.Encoding.Extensions.dll"
+          },
+          {
+            "name": "FSharp.Core",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\old-payload\\FSharp.Core.dll"
+          },
+          {
+            "name": "FSharp.Compiler.Service",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\old-payload\\FSharp.Compiler.Service.dll"
+          },
+          {
+            "name": "netstandard",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\sdk10\\shared\\Microsoft.NETCore.App\\10.0.0\\netstandard.dll"
+          },
+          {
+            "name": "System.Collections.Concurrent",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\sdk10\\shared\\Microsoft.NETCore.App\\10.0.0\\System.Collections.Concurrent.dll"
+          },
+          {
+            "name": "System.Runtime.InteropServices",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\sdk10\\shared\\Microsoft.NETCore.App\\10.0.0\\System.Runtime.InteropServices.dll"
+          },
+          {
+            "name": "Microsoft.Win32.Primitives",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\sdk10\\shared\\Microsoft.NETCore.App\\10.0.0\\Microsoft.Win32.Primitives.dll"
+          },
+          {
+            "name": "System.Threading",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\sdk10\\shared\\Microsoft.NETCore.App\\10.0.0\\System.Threading.dll"
+          },
+          {
+            "name": "System.IO.Pipelines",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\sdk10\\shared\\Microsoft.NETCore.App\\10.0.0\\System.IO.Pipelines.dll"
+          }
+        ],
+        "fsharp_modules": [
+          {
+            "name": "FSharp.Core.dll",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\old-payload\\FSharp.Core.dll"
+          },
+          {
+            "name": "FSharp.Compiler.Service.dll",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\old-payload\\FSharp.Compiler.Service.dll"
+          }
+        ],
+        "arm": "old-net10",
+        "round": 0,
+        "order": [
+          "old-framework",
+          "new-framework",
+          "new-net11",
+          "old-net10",
+          "old-net11",
+          "new-net10"
+        ],
+        "warmup": false,
+        "cohort": "calibration-frozen",
+        "collector_sha256": "CAC8B88A9880BDC02EF939022A8DD48D75F72D87A57D9A852269E77382C17CCA",
+        "fcs_sha256": "640120F960A72D2B36DB4F46F1408578F3C212FB53407C6F2502A3D6D84E0553",
+        "core_sha256": "B907C420D77CA09731659EFBB43B7F55477EBC2068CAA80ED7E581B66E508F88",
+        "controller_wall_ns": 10456004000,
+        "parent_exit_code": 0
+      },
+      {
+        "schema_version": 1,
+        "started_utc": "2026-09-29T11:52:57.1141027+02:00",
+        "case": "oxpecker",
+        "scope": "calibrate",
+        "runtime": ".NET 11.0.0-rc.1.26425.128",
+        "pid": 39204,
+        "fcs_version": "43.10.100-rc2.25523.111+b0f34d51fccc69fd334253924abd8d6853fad7aa",
+        "core_version": "10.0.100-rc2.25523.111+b0f34d51fccc69fd334253924abd8d6853fad7aa",
+        "fcs_path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\old-payload\\FSharp.Compiler.Service.dll",
+        "core_path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\old-payload\\FSharp.Core.dll",
+        "fcs_target_framework": ".NETStandard,Version=v2.0",
+        "core_target_framework": ".NETStandard,Version=v2.0",
+        "appdomain_id": 1,
+        "gc_server": true,
+        "visible_processors": 16,
+        "allocation_monitoring": true,
+        "input_sha256": "fa85b3aa9c5e7b1562a8dbcfe86aeaf830fc04c985afcc7bff440c0dbaaa672a",
+        "allocation_api": "GC.GetTotalAllocatedBytes(precise: true)",
+        "gc_configuration": {
+          "ServerGC": true,
+          "ConcurrentGC": true,
+          "RetainVM": false,
+          "NoAffinitize": false,
+          "GCCpuGroup": false,
+          "GCLargePages": 0,
+          "LOHThreshold": 85000,
+          "HeapCount": 16,
+          "MaxHeapCount": 0,
+          "GCHeapAffinitizeMask": 0,
+          "GCHeapAffinitizeRanges": "",
+          "GCHighMemPercent": 90,
+          "GCGen0MaxBudget": 209715200,
+          "GCHeapHardLimit": 0,
+          "GCHeapHardLimitPercent": 0,
+          "GCRegionRange": 274877906944,
+          "GCRegionSize": 0,
+          "UOHWaitBGCSizeIncPercent": 200,
+          "GCHeapHardLimitSOH": 0,
+          "GCHeapHardLimitLOH": 0,
+          "GCHeapHardLimitPOH": 0,
+          "GCHeapHardLimitSOHPercent": 0,
+          "GCHeapHardLimitLOHPercent": 0,
+          "GCHeapHardLimitPOHPercent": 0,
+          "GCConserveMem": 0,
+          "GCName": "",
+          "GCPath": "",
+          "GCDynamicAdaptationMode": 1,
+          "GCDTargetTCP": 2,
+          "GCDGen0GrowthPercent": 100,
+          "GCDGen0GrowthMinFactor": 100,
+          "GCDGen0GrowthMaxFactor": 10000
+        },
+        "runtime_family": "core",
+        "thread_payload_bytes": 40960000,
+        "threads_before_gc_bytes": 41930512,
+        "threads_after_gc_bytes": 41931208,
+        "allocated_bytes": 176149784,
+        "wall_ns": 77583600,
+        "cpu_user_ns": 46875000,
+        "cpu_kernel_ns": 15625000,
+        "gen0": 18,
+        "gen1": 5,
+        "gen2": 4,
+        "peak_working_set_bytes": 180031488,
+        "peak_private_commit_bytes": 172515328,
+        "working_set_end_bytes": 180031488,
+        "private_commit_end_bytes": 172515328,
+        "exit_code": 0,
+        "error_count": 0,
+        "status": "accepted",
+        "idle_10s_working_set_bytes": 180109312,
+        "retained_heap_bytes": 558024,
+        "post_gc_working_set_bytes": 178126848,
+        "loaded_assemblies": [
+          {
+            "name": "System.Private.CoreLib",
+            "path": "C:\\Program Files\\dotnet\\shared\\Microsoft.NETCore.App\\11.0.0-rc.1.26425.128\\System.Private.CoreLib.dll"
+          },
+          {
+            "name": "Collector",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\collector-bin\\Release\\net10.0\\Collector.dll"
+          },
+          {
+            "name": "System.Runtime",
+            "path": "C:\\Program Files\\dotnet\\shared\\Microsoft.NETCore.App\\11.0.0-rc.1.26425.128\\System.Runtime.dll"
+          },
+          {
+            "name": "System.Text.Json",
+            "path": "C:\\Program Files\\dotnet\\shared\\Microsoft.NETCore.App\\11.0.0-rc.1.26425.128\\System.Text.Json.dll"
+          },
+          {
+            "name": "System.Diagnostics.Process",
+            "path": "C:\\Program Files\\dotnet\\shared\\Microsoft.NETCore.App\\11.0.0-rc.1.26425.128\\System.Diagnostics.Process.dll"
+          },
+          {
+            "name": "System.ComponentModel.Primitives",
+            "path": "C:\\Program Files\\dotnet\\shared\\Microsoft.NETCore.App\\11.0.0-rc.1.26425.128\\System.ComponentModel.Primitives.dll"
+          },
+          {
+            "name": "System.Security.Cryptography",
+            "path": "C:\\Program Files\\dotnet\\shared\\Microsoft.NETCore.App\\11.0.0-rc.1.26425.128\\System.Security.Cryptography.dll"
+          },
+          {
+            "name": "System.Collections",
+            "path": "C:\\Program Files\\dotnet\\shared\\Microsoft.NETCore.App\\11.0.0-rc.1.26425.128\\System.Collections.dll"
+          },
+          {
+            "name": "System.Threading.Thread",
+            "path": "C:\\Program Files\\dotnet\\shared\\Microsoft.NETCore.App\\11.0.0-rc.1.26425.128\\System.Threading.Thread.dll"
+          },
+          {
+            "name": "System.Linq",
+            "path": "C:\\Program Files\\dotnet\\shared\\Microsoft.NETCore.App\\11.0.0-rc.1.26425.128\\System.Linq.dll"
+          },
+          {
+            "name": "System.Console",
+            "path": "C:\\Program Files\\dotnet\\shared\\Microsoft.NETCore.App\\11.0.0-rc.1.26425.128\\System.Console.dll"
+          },
+          {
+            "name": "System.Collections.NonGeneric",
+            "path": "C:\\Program Files\\dotnet\\shared\\Microsoft.NETCore.App\\11.0.0-rc.1.26425.128\\System.Collections.NonGeneric.dll"
+          },
+          {
+            "name": "System.Memory",
+            "path": "C:\\Program Files\\dotnet\\shared\\Microsoft.NETCore.App\\11.0.0-rc.1.26425.128\\System.Memory.dll"
+          },
+          {
+            "name": "System.Text.Encoding.Extensions",
+            "path": "C:\\Program Files\\dotnet\\shared\\Microsoft.NETCore.App\\11.0.0-rc.1.26425.128\\System.Text.Encoding.Extensions.dll"
+          },
+          {
+            "name": "FSharp.Core",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\old-payload\\FSharp.Core.dll"
+          },
+          {
+            "name": "FSharp.Compiler.Service",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\old-payload\\FSharp.Compiler.Service.dll"
+          },
+          {
+            "name": "netstandard",
+            "path": "C:\\Program Files\\dotnet\\shared\\Microsoft.NETCore.App\\11.0.0-rc.1.26425.128\\netstandard.dll"
+          },
+          {
+            "name": "System.Collections.Concurrent",
+            "path": "C:\\Program Files\\dotnet\\shared\\Microsoft.NETCore.App\\11.0.0-rc.1.26425.128\\System.Collections.Concurrent.dll"
+          },
+          {
+            "name": "System.Runtime.InteropServices",
+            "path": "C:\\Program Files\\dotnet\\shared\\Microsoft.NETCore.App\\11.0.0-rc.1.26425.128\\System.Runtime.InteropServices.dll"
+          },
+          {
+            "name": "Microsoft.Win32.Primitives",
+            "path": "C:\\Program Files\\dotnet\\shared\\Microsoft.NETCore.App\\11.0.0-rc.1.26425.128\\Microsoft.Win32.Primitives.dll"
+          },
+          {
+            "name": "System.Threading",
+            "path": "C:\\Program Files\\dotnet\\shared\\Microsoft.NETCore.App\\11.0.0-rc.1.26425.128\\System.Threading.dll"
+          },
+          {
+            "name": "System.IO.Pipelines",
+            "path": "C:\\Program Files\\dotnet\\shared\\Microsoft.NETCore.App\\11.0.0-rc.1.26425.128\\System.IO.Pipelines.dll"
+          }
+        ],
+        "fsharp_modules": [
+          {
+            "name": "FSharp.Core.dll",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\old-payload\\FSharp.Core.dll"
+          },
+          {
+            "name": "FSharp.Compiler.Service.dll",
+            "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\old-payload\\FSharp.Compiler.Service.dll"
+          }
+        ],
+        "arm": "old-net11",
+        "round": 0,
+        "order": [
+          "old-framework",
+          "new-framework",
+          "new-net11",
+          "old-net10",
+          "old-net11",
+          "new-net10"
+        ],
+        "warmup": false,
+        "cohort": "calibration-frozen",
+        "collector_sha256": "CAC8B88A9880BDC02EF939022A8DD48D75F72D87A57D9A852269E77382C17CCA",
+        "fcs_sha256": "640120F960A72D2B36DB4F46F1408578F3C212FB53407C6F2502A3D6D84E0553",
+        "core_sha256": "B907C420D77CA09731659EFBB43B7F55477EBC2068CAA80ED7E581B66E508F88",
+        "controller_wall_ns": 10314157600,
+        "parent_exit_code": 0
+      }
+    ],
+    "source_vmr": "be46bdda4d6599b80dd4ccd89b2de49d96cbf36d",
+    "source_fsharp": "9cd6167a7265ce7264b22719503b7dfa9eb8f83c",
+    "package_locks": [
+      {
+        "name": "Collector.packages.lock.json",
+        "sha256": "1C77EA57EFEB8E02632DFA6443AC96F08E5B00EA7C32A94C5EE1B837204E5E36"
+      },
+      {
+        "name": "OldPayload.packages.lock.json",
+        "sha256": "A9F0AAA9C6A8A8EFDDABCE439B0F1B069C88D8CB6C0F745BFA91004A5960BEC9"
+      },
+      {
+        "name": "Programs.packages.lock.json",
+        "sha256": "05584C8383C3CBDD0BE2732CF70AE0E692417966B92A71E8EDA78FD652E059FD"
+      }
+    ]
+  },
+  "manifest_addendum": {
+    "recorded_utc": "2026-09-29T13:46:14.9917416+00:00",
+    "reason": "Deploy missing default compiler resource before restarting full FsAutoComplete cohort; binaries and inputs unchanged",
+    "files": [
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\sdk10\\sdk\\10.0.100\\FSharp\\default.win32manifest",
+        "bytes": 490,
+        "sha256": "C0085EB467D2FC9C9F395047E057183B3CD1503A4087D0DB565161C13527A76F"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\old-payload\\default.win32manifest",
+        "bytes": 490,
+        "sha256": "C0085EB467D2FC9C9F395047E057183B3CD1503A4087D0DB565161C13527A76F"
+      },
+      {
+        "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\new-payload\\default.win32manifest",
+        "bytes": 490,
+        "sha256": "C0085EB467D2FC9C9F395047E057183B3CD1503A4087D0DB565161C13527A76F"
+      }
+    ]
+  },
+  "program_launches": [
+    {
+      "arm": "old-framework",
+      "launch": 0,
+      "started_utc": "2026-09-29T09:43:45.1172006+00:00",
+      "runtime": ".NET Framework 4.8.9345.0",
+      "gc_server": false,
+      "workload_sha256": "2dbf9dc555b21f82c4fc3937541fcec9f9cf6a42b8ba82c0d450342d1c0c3e39",
+      "core_sha256": "b907c420d77ca09731659efbb43b7f55477ebc2068caa80ed7e581b66e508f88",
+      "driver_sha256": "8b3388a18900d970aad151d9bfcef45fbe74f0872a72eeb6c936ee2c037a5204",
+      "benchmarkdotnet": "0.14.0.0",
+      "raw_report_sha256": "c973d40e223f32cf5cd74da0c7b1b383352353d4a5bd5322b1bab55f7b08c218"
+    },
+    {
+      "arm": "new-framework",
+      "launch": 0,
+      "started_utc": "2026-09-29T15:24:59.2574083+00:00",
+      "runtime": ".NET Framework 4.8.9345.0",
+      "gc_server": false,
+      "workload_sha256": "e3c779c0394860cdc02322649e01c6e03411e909cb6e04344e696a392c71022b",
+      "core_sha256": "076a07fbb5aca3d1513f3bad29faf8e472261920944e8d288599bc18e128628d",
+      "driver_sha256": "8b3388a18900d970aad151d9bfcef45fbe74f0872a72eeb6c936ee2c037a5204",
+      "benchmarkdotnet": "0.14.0.0",
+      "raw_report_sha256": "1c815ec045836df2e666ae36061283c38b94775d309c781224b9381b3bf2f83a"
+    },
+    {
+      "arm": "old-net10",
+      "launch": 0,
+      "started_utc": "2026-09-29T15:31:51.1833955+00:00",
+      "runtime": ".NET 10.0.0",
+      "gc_server": false,
+      "workload_sha256": "2dbf9dc555b21f82c4fc3937541fcec9f9cf6a42b8ba82c0d450342d1c0c3e39",
+      "core_sha256": "b907c420d77ca09731659efbb43b7f55477ebc2068caa80ed7e581b66e508f88",
+      "driver_sha256": "8f108e74c63fd97316bb1f90f6ad7aa4c82249e1585db70a7acfebda1c425b30",
+      "benchmarkdotnet": "0.14.0.0",
+      "raw_report_sha256": "3763aee4ddb0126a6146ac1c8776b51f45757892fe1dfbf762d3df3d49d6a183"
+    },
+    {
+      "arm": "new-net10",
+      "launch": 0,
+      "started_utc": "2026-09-29T15:38:51.1709114+00:00",
+      "runtime": ".NET 10.0.0",
+      "gc_server": false,
+      "workload_sha256": "e3c779c0394860cdc02322649e01c6e03411e909cb6e04344e696a392c71022b",
+      "core_sha256": "076a07fbb5aca3d1513f3bad29faf8e472261920944e8d288599bc18e128628d",
+      "driver_sha256": "8f108e74c63fd97316bb1f90f6ad7aa4c82249e1585db70a7acfebda1c425b30",
+      "benchmarkdotnet": "0.14.0.0",
+      "raw_report_sha256": "929bc4fc5f066bf41776fe3fd51c4df9c6c3f574c6094f73095423b5af9ad34d"
+    },
+    {
+      "arm": "old-net11",
+      "launch": 0,
+      "started_utc": "2026-09-29T15:46:04.9036701+00:00",
+      "runtime": ".NET 11.0.0-rc.1.26425.128",
+      "gc_server": false,
+      "workload_sha256": "2dbf9dc555b21f82c4fc3937541fcec9f9cf6a42b8ba82c0d450342d1c0c3e39",
+      "core_sha256": "b907c420d77ca09731659efbb43b7f55477ebc2068caa80ed7e581b66e508f88",
+      "driver_sha256": "8f108e74c63fd97316bb1f90f6ad7aa4c82249e1585db70a7acfebda1c425b30",
+      "benchmarkdotnet": "0.14.0.0",
+      "raw_report_sha256": "7f17a9dadb51975c1e2bf38cf50618acda9397ef159c14c93d15aed2f1753583"
+    },
+    {
+      "arm": "new-net11",
+      "launch": 0,
+      "started_utc": "2026-09-29T15:52:57.1588557+00:00",
+      "runtime": ".NET 11.0.0-rc.1.26425.128",
+      "gc_server": false,
+      "workload_sha256": "e3c779c0394860cdc02322649e01c6e03411e909cb6e04344e696a392c71022b",
+      "core_sha256": "076a07fbb5aca3d1513f3bad29faf8e472261920944e8d288599bc18e128628d",
+      "driver_sha256": "8f108e74c63fd97316bb1f90f6ad7aa4c82249e1585db70a7acfebda1c425b30",
+      "benchmarkdotnet": "0.14.0.0",
+      "raw_report_sha256": "71732ef8f9d6c550e05ec8d67d445dd51611a662e30b155974da1c0bfb133ff7"
+    },
+    {
+      "arm": "old-framework",
+      "launch": 1,
+      "started_utc": "2026-09-29T16:35:17.8114731+00:00",
+      "runtime": ".NET Framework 4.8.9345.0",
+      "gc_server": false,
+      "workload_sha256": "2dbf9dc555b21f82c4fc3937541fcec9f9cf6a42b8ba82c0d450342d1c0c3e39",
+      "core_sha256": "b907c420d77ca09731659efbb43b7f55477ebc2068caa80ed7e581b66e508f88",
+      "driver_sha256": "8b3388a18900d970aad151d9bfcef45fbe74f0872a72eeb6c936ee2c037a5204",
+      "benchmarkdotnet": "0.14.0.0",
+      "raw_report_sha256": "94f91e4a2ab232f751267e21b01eb943271e5b408c514b344297cc0f4572445d"
+    },
+    {
+      "arm": "new-framework",
+      "launch": 1,
+      "started_utc": "2026-09-29T16:28:20.2850066+00:00",
+      "runtime": ".NET Framework 4.8.9345.0",
+      "gc_server": false,
+      "workload_sha256": "e3c779c0394860cdc02322649e01c6e03411e909cb6e04344e696a392c71022b",
+      "core_sha256": "076a07fbb5aca3d1513f3bad29faf8e472261920944e8d288599bc18e128628d",
+      "driver_sha256": "8b3388a18900d970aad151d9bfcef45fbe74f0872a72eeb6c936ee2c037a5204",
+      "benchmarkdotnet": "0.14.0.0",
+      "raw_report_sha256": "3579c1cbe51de9e6379ae06cdea8d12eb3bfe4bf09c48a26f4da9ccac83b62cb"
+    },
+    {
+      "arm": "old-net10",
+      "launch": 1,
+      "started_utc": "2026-09-29T16:07:38.2729754+00:00",
+      "runtime": ".NET 10.0.0",
+      "gc_server": false,
+      "workload_sha256": "2dbf9dc555b21f82c4fc3937541fcec9f9cf6a42b8ba82c0d450342d1c0c3e39",
+      "core_sha256": "b907c420d77ca09731659efbb43b7f55477ebc2068caa80ed7e581b66e508f88",
+      "driver_sha256": "8f108e74c63fd97316bb1f90f6ad7aa4c82249e1585db70a7acfebda1c425b30",
+      "benchmarkdotnet": "0.14.0.0",
+      "raw_report_sha256": "4f8827453d5d1039a73651665b38b6e9a3091e2b78271e8ea2be7ba66d7d4e68"
+    },
+    {
+      "arm": "new-net10",
+      "launch": 1,
+      "started_utc": "2026-09-29T16:00:18.9012124+00:00",
+      "runtime": ".NET 10.0.0",
+      "gc_server": false,
+      "workload_sha256": "e3c779c0394860cdc02322649e01c6e03411e909cb6e04344e696a392c71022b",
+      "core_sha256": "076a07fbb5aca3d1513f3bad29faf8e472261920944e8d288599bc18e128628d",
+      "driver_sha256": "8f108e74c63fd97316bb1f90f6ad7aa4c82249e1585db70a7acfebda1c425b30",
+      "benchmarkdotnet": "0.14.0.0",
+      "raw_report_sha256": "f0b38f19e0a9d723470b0d91aa1636cdd60771a41bac3f5467e00c50ef306a68"
+    },
+    {
+      "arm": "old-net11",
+      "launch": 1,
+      "started_utc": "2026-09-29T16:21:33.4285677+00:00",
+      "runtime": ".NET 11.0.0-rc.1.26425.128",
+      "gc_server": false,
+      "workload_sha256": "2dbf9dc555b21f82c4fc3937541fcec9f9cf6a42b8ba82c0d450342d1c0c3e39",
+      "core_sha256": "b907c420d77ca09731659efbb43b7f55477ebc2068caa80ed7e581b66e508f88",
+      "driver_sha256": "8f108e74c63fd97316bb1f90f6ad7aa4c82249e1585db70a7acfebda1c425b30",
+      "benchmarkdotnet": "0.14.0.0",
+      "raw_report_sha256": "c3123df51e2d7e5405e819b0d5f09de64fb10336122c0cb19a20d66d0af3c974"
+    },
+    {
+      "arm": "new-net11",
+      "launch": 1,
+      "started_utc": "2026-09-29T16:14:20.5653213+00:00",
+      "runtime": ".NET 11.0.0-rc.1.26425.128",
+      "gc_server": false,
+      "workload_sha256": "e3c779c0394860cdc02322649e01c6e03411e909cb6e04344e696a392c71022b",
+      "core_sha256": "076a07fbb5aca3d1513f3bad29faf8e472261920944e8d288599bc18e128628d",
+      "driver_sha256": "8f108e74c63fd97316bb1f90f6ad7aa4c82249e1585db70a7acfebda1c425b30",
+      "benchmarkdotnet": "0.14.0.0",
+      "raw_report_sha256": "09687ace6377c7bee13d7d49ad3751ba0fc1815023c6b1fb5a7b29773d3e564d"
+    },
+    {
+      "arm": "old-framework",
+      "launch": 2,
+      "started_utc": "2026-09-29T16:56:20.7282966+00:00",
+      "runtime": ".NET Framework 4.8.9345.0",
+      "gc_server": false,
+      "workload_sha256": "2dbf9dc555b21f82c4fc3937541fcec9f9cf6a42b8ba82c0d450342d1c0c3e39",
+      "core_sha256": "b907c420d77ca09731659efbb43b7f55477ebc2068caa80ed7e581b66e508f88",
+      "driver_sha256": "8b3388a18900d970aad151d9bfcef45fbe74f0872a72eeb6c936ee2c037a5204",
+      "benchmarkdotnet": "0.14.0.0",
+      "raw_report_sha256": "c3ec9d9d881753d37550d78b5f0cd43210ceaed9aa2c8aaf3760fd1da6044894"
+    },
+    {
+      "arm": "new-framework",
+      "launch": 2,
+      "started_utc": "2026-09-29T17:02:55.359027+00:00",
+      "runtime": ".NET Framework 4.8.9345.0",
+      "gc_server": false,
+      "workload_sha256": "e3c779c0394860cdc02322649e01c6e03411e909cb6e04344e696a392c71022b",
+      "core_sha256": "076a07fbb5aca3d1513f3bad29faf8e472261920944e8d288599bc18e128628d",
+      "driver_sha256": "8b3388a18900d970aad151d9bfcef45fbe74f0872a72eeb6c936ee2c037a5204",
+      "benchmarkdotnet": "0.14.0.0",
+      "raw_report_sha256": "9f499f0a43854ea9d5aea8eb4c6fcc62451521b95e6d00f91fdf11a31fa91d68"
+    },
+    {
+      "arm": "old-net10",
+      "launch": 2,
+      "started_utc": "2026-09-29T17:09:51.6880624+00:00",
+      "runtime": ".NET 10.0.0",
+      "gc_server": false,
+      "workload_sha256": "2dbf9dc555b21f82c4fc3937541fcec9f9cf6a42b8ba82c0d450342d1c0c3e39",
+      "core_sha256": "b907c420d77ca09731659efbb43b7f55477ebc2068caa80ed7e581b66e508f88",
+      "driver_sha256": "8f108e74c63fd97316bb1f90f6ad7aa4c82249e1585db70a7acfebda1c425b30",
+      "benchmarkdotnet": "0.14.0.0",
+      "raw_report_sha256": "55b876d860cc8e725b41ce7a4764d44d1c6f9cc48a1dca77be70f7acb767ae74"
+    },
+    {
+      "arm": "new-net10",
+      "launch": 2,
+      "started_utc": "2026-09-29T17:16:43.9456941+00:00",
+      "runtime": ".NET 10.0.0",
+      "gc_server": false,
+      "workload_sha256": "e3c779c0394860cdc02322649e01c6e03411e909cb6e04344e696a392c71022b",
+      "core_sha256": "076a07fbb5aca3d1513f3bad29faf8e472261920944e8d288599bc18e128628d",
+      "driver_sha256": "8f108e74c63fd97316bb1f90f6ad7aa4c82249e1585db70a7acfebda1c425b30",
+      "benchmarkdotnet": "0.14.0.0",
+      "raw_report_sha256": "15f2296a2577377c581da489810610c3153143448d1ca4237b7fb0aca5fd8804"
+    },
+    {
+      "arm": "old-net11",
+      "launch": 2,
+      "started_utc": "2026-09-29T16:42:11.6364578+00:00",
+      "runtime": ".NET 11.0.0-rc.1.26425.128",
+      "gc_server": false,
+      "workload_sha256": "2dbf9dc555b21f82c4fc3937541fcec9f9cf6a42b8ba82c0d450342d1c0c3e39",
+      "core_sha256": "b907c420d77ca09731659efbb43b7f55477ebc2068caa80ed7e581b66e508f88",
+      "driver_sha256": "8f108e74c63fd97316bb1f90f6ad7aa4c82249e1585db70a7acfebda1c425b30",
+      "benchmarkdotnet": "0.14.0.0",
+      "raw_report_sha256": "2f8b46f39e8145dcc383fe490aca1be35f5dcc6fb6243a924e0215903d363edb"
+    },
+    {
+      "arm": "new-net11",
+      "launch": 2,
+      "started_utc": "2026-09-29T16:49:03.4520377+00:00",
+      "runtime": ".NET 11.0.0-rc.1.26425.128",
+      "gc_server": false,
+      "workload_sha256": "e3c779c0394860cdc02322649e01c6e03411e909cb6e04344e696a392c71022b",
+      "core_sha256": "076a07fbb5aca3d1513f3bad29faf8e472261920944e8d288599bc18e128628d",
+      "driver_sha256": "8f108e74c63fd97316bb1f90f6ad7aa4c82249e1585db70a7acfebda1c425b30",
+      "benchmarkdotnet": "0.14.0.0",
+      "raw_report_sha256": "dc05c6c7077de418ca243fa2e7be542b88ab89ac66ace6d523cc132d084bcbae"
+    }
+  ],
+  "preparation_logs": [
+    {
+      "file": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\calibration-old-framework.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "file": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\collector-final.binlog",
+      "sha256": "75603e6d3725a2ad9b2965ea801ba81611337d895450bad3e4152dc9bd962438"
+    },
+    {
+      "file": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\collector-frozen.binlog",
+      "sha256": "e657ac6daa803aaefff0fc7b5709b1eb18f4e189144845b0ac67854a5f8c4952"
+    },
+    {
+      "file": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\collector.binlog",
+      "sha256": "301a2049116a96d758403f762a98c9f23e0d9e4961ff8f3462727088353fd79d"
+    },
+    {
+      "file": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\collector.log",
+      "sha256": "f6e40d9a74f13b9929d6cddf54175d4a6ad537e6841f37b72d2714b6869a3520"
+    },
+    {
+      "file": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\core-controller.log",
+      "sha256": "7546083e5c0097381e1e25ae0d4d8fce1e334e8db39d8fc1890e62721732b51d"
+    },
+    {
+      "file": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\fcs-controller.log",
+      "sha256": "6c5361b5192d2ca41726e16d0d244f5b15e62056faa7497ae5c51d0d0a6d3b9a"
+    },
+    {
+      "file": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\fsautocomplete-complete-controller.log",
+      "sha256": "c99a2b553709c153424174fcfed2b9f8d04baf4b0696f9010cdc2464a6b53c0f"
+    },
+    {
+      "file": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\fsautocomplete-controller.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "file": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\fsautocomplete-ide-controller.log",
+      "sha256": "e668155092433f726f15f616ab7b41407b34cbd524867c120c53afc52a95e253"
+    },
+    {
+      "file": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\fstoolkit-controller.log",
+      "sha256": "51542c49c6f39c08a32e63567471184824353fd83cedf06896983e7ee2e5bf04"
+    },
+    {
+      "file": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\monitoring-controller.log",
+      "sha256": "960db9407fd19e0852fda4bc078025d4793e0f46504b241531ea0630cccb23b9"
+    },
+    {
+      "file": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\new-payload.binlog",
+      "sha256": "e0f4361bc55c2b613c243cf59847ef125cad5c66ea5d45cc7c34460c2be5833a"
+    },
+    {
+      "file": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\new-payload.log",
+      "sha256": "ac2df7c624ddcf9e28191f51cf087870d630e255a25c717a64c14dc07634d935"
+    },
+    {
+      "file": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\nu-controller.log",
+      "sha256": "7dfd9a8c0145e64e1f98d58b8057f19c29a800ce17793c0b8c4d9b17c555a22c"
+    },
+    {
+      "file": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\old-payload.binlog",
+      "sha256": "ed5435b9276ecbd7df33ccde1b1fb7287d3d422d45fe3fd61e4966159030582e"
+    },
+    {
+      "file": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\old-payload.log",
+      "sha256": "aab293399b1e3a2a155737098c54683e3da5ee459b34688e66afa3008f613c18"
+    },
+    {
+      "file": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\oxpecker-controller.log",
+      "sha256": "50213e2a44a6245d48524b813ff6a968d1d9179f895f30e84a382fbf3c85728c"
+    },
+    {
+      "file": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\oxpecker-ide-controller.log",
+      "sha256": "9207b9eedfa6f8627b7db6dd880c9cf4e50afbb2ee873b6d97aebaa08c79c58d"
+    },
+    {
+      "file": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\program-final.binlog",
+      "sha256": "03a49208db3bdff9f0f0e941f0da22fefc8a0134b0afc2a499676dbd27c9f331"
+    },
+    {
+      "file": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\programs-build.log",
+      "sha256": "16a5752e69ebabc881b97e682c62e8c9a500831149efd103a2a45c3d756efd4b"
+    },
+    {
+      "file": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\programs-final.binlog",
+      "sha256": "61943ca6227decbd2d2da6a2af037afc4c37d61bfc7d613d8e4b791b5df454c4"
+    },
+    {
+      "file": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\programs-launch0-controller.log",
+      "sha256": "224c3c13227a9ecc99a2f0347d7d1eac2289bd5bc8ea61851f27292bf22179fd"
+    },
+    {
+      "file": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\programs-launch1-controller.log",
+      "sha256": "8a0276a6be089e5ee955ba4c20117882cf61c2f97603fc2adfbe95b2f0fa02b3"
+    },
+    {
+      "file": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\programs-launch2-controller.log",
+      "sha256": "31b44bf00bca5c531f9d30a7404b92f21226ae921afb21d812cbd6402d238d11"
+    },
+    {
+      "file": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\framework\\programs.binlog",
+      "sha256": "c7831cfabfc72a154366a4fa622938e0c5f8f857155312c8106d3e9cacd566ec"
+    }
+  ],
+  "auxiliary_files": [
+    {
+      "file": "calibration-frozen/oxpecker-calibrate-new-framework-0.json",
+      "sha256": "f93f7d08fcba10694c790302cf32d6c8cb0e5b1aa234cb86daaca32014a5cf28"
+    },
+    {
+      "file": "calibration-frozen/oxpecker-calibrate-new-framework-0.json.stderr",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6"
+    },
+    {
+      "file": "calibration-frozen/oxpecker-calibrate-new-framework-0.json.stdout",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6"
+    },
+    {
+      "file": "calibration-frozen/oxpecker-calibrate-new-net10-0.json",
+      "sha256": "72a5648e8305c7859ac5fe4c539231cccd3372db1a06715ef762649f91a0244c"
+    },
+    {
+      "file": "calibration-frozen/oxpecker-calibrate-new-net10-0.json.stderr",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6"
+    },
+    {
+      "file": "calibration-frozen/oxpecker-calibrate-new-net10-0.json.stdout",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6"
+    },
+    {
+      "file": "calibration-frozen/oxpecker-calibrate-new-net11-0.json",
+      "sha256": "aa5fb257e824c7ec7f7534b13c2d4d0d7bd982336984ba67c95987467bbdb4ae"
+    },
+    {
+      "file": "calibration-frozen/oxpecker-calibrate-new-net11-0.json.stderr",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6"
+    },
+    {
+      "file": "calibration-frozen/oxpecker-calibrate-new-net11-0.json.stdout",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6"
+    },
+    {
+      "file": "calibration-frozen/oxpecker-calibrate-old-framework-0.json",
+      "sha256": "e7a65b964ad921acdbb6aea7adaee05d9afa8681b31e2e14a8f1716e6bde543c"
+    },
+    {
+      "file": "calibration-frozen/oxpecker-calibrate-old-framework-0.json.stderr",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6"
+    },
+    {
+      "file": "calibration-frozen/oxpecker-calibrate-old-framework-0.json.stdout",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6"
+    },
+    {
+      "file": "calibration-frozen/oxpecker-calibrate-old-net10-0.json",
+      "sha256": "2d69f604ec3647312591ae95a0738078300aa5992ac6085e00c6af74d90fc272"
+    },
+    {
+      "file": "calibration-frozen/oxpecker-calibrate-old-net10-0.json.stderr",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6"
+    },
+    {
+      "file": "calibration-frozen/oxpecker-calibrate-old-net10-0.json.stdout",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6"
+    },
+    {
+      "file": "calibration-frozen/oxpecker-calibrate-old-net11-0.json",
+      "sha256": "10ca46308fcfe14419aaf6bd85e243dd7f70569dcf1bc3cb8e6e5d3897caa58b"
+    },
+    {
+      "file": "calibration-frozen/oxpecker-calibrate-old-net11-0.json.stderr",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6"
+    },
+    {
+      "file": "calibration-frozen/oxpecker-calibrate-old-net11-0.json.stdout",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6"
+    },
+    {
+      "file": "failed-warmup-manifest/fsautocomplete-compile-old-net11--2.json",
+      "sha256": "0b8d5ba61c2e88baca98d18d990f433d3548057fd17f80938269b1b127d2124e"
+    },
+    {
+      "file": "failed-warmup-manifest/fsautocomplete-compile-old-net11--2.json.stderr",
+      "sha256": "be694edebf1cac34856880162e7d3a12a14de117c9bf1eb8253e89dd6e60fc7c"
+    },
+    {
+      "file": "failed-warmup-manifest/fsautocomplete-compile-old-net11--2.json.stdout",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6"
+    },
+    {
+      "file": "manifest-replay/fsautocomplete-compile-old-net11-0.json",
+      "sha256": "cd384ef495ea6f7e7105a1a89d135202a3a68d66584c667b16c32b16256c0f08"
+    },
+    {
+      "file": "manifest-replay/fsautocomplete-compile-old-net11-0.json.stderr",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6"
+    },
+    {
+      "file": "manifest-replay/fsautocomplete-compile-old-net11-0.json.stdout",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6"
+    },
+    {
+      "file": "output-inspection/core-new-framework-1.dll.json",
+      "sha256": "774b4adb8f98ee0c128b89425c9e0a6d83f43c9642a5d1dc3d97b9d37ce8fa08"
+    },
+    {
+      "file": "output-inspection/core-new-framework-3.dll.json",
+      "sha256": "8cc94066d85b8d0a0232c7577d413955940a55b89bb3ae9b17d8dc9c810c2e36"
+    },
+    {
+      "file": "output-inspection/core-new-net10-0.dll.json",
+      "sha256": "f6b06c0404331aa37f8161f4484c5fe330ee72ee918caf73bd9923c9d2e2de3d"
+    },
+    {
+      "file": "output-inspection/core-old-net10-2.dll.json",
+      "sha256": "e22558d472b5011b486bf67cb5a99e2d9fb759621336dc8f6107b28927d64642"
+    },
+    {
+      "file": "output-inspection/fsharp-core-compile-new-framework-1.json",
+      "sha256": "d6e1db7b011b9a71f1e85acb2150bf1280976e6199fe9bbd2a8fa2fa7a719cbc"
+    },
+    {
+      "file": "output-inspection/fsharp-core-compile-new-framework-1.json.stderr",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6"
+    },
+    {
+      "file": "output-inspection/fsharp-core-compile-new-framework-1.json.stdout",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6"
+    },
+    {
+      "file": "output-inspection/fsharp-core-compile-new-framework-3.json",
+      "sha256": "16810f95b946ed9ac5a9b1e6e3ab8f103e70eb10e8e28cf3dd071c94d4a71a0a"
+    },
+    {
+      "file": "output-inspection/fsharp-core-compile-new-framework-3.json.stderr",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6"
+    },
+    {
+      "file": "output-inspection/fsharp-core-compile-new-framework-3.json.stdout",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6"
+    },
+    {
+      "file": "output-inspection/fsharp-core-compile-new-net10-0.json",
+      "sha256": "6bf2fe8dffbf350ac4b1bf82e73a4c2b6955739424e0245d97f4cb0032f62c45"
+    },
+    {
+      "file": "output-inspection/fsharp-core-compile-new-net10-0.json.stderr",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6"
+    },
+    {
+      "file": "output-inspection/fsharp-core-compile-new-net10-0.json.stdout",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6"
+    },
+    {
+      "file": "output-inspection/fsharp-core-compile-old-net10-2.json",
+      "sha256": "8f327657e6cd4aa13c20f14b4733e3dc9306a00bfa8a73042bc3325a1952bd34"
+    },
+    {
+      "file": "output-inspection/fsharp-core-compile-old-net10-2.json.stderr",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6"
+    },
+    {
+      "file": "output-inspection/fsharp-core-compile-old-net10-2.json.stdout",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6"
+    },
+    {
+      "file": "output-inspection/new-framework-image.json",
+      "sha256": "5587250f80b1a33af3ccc023d68cadd1a21f31bae85ef1547b6fe8ae3b214e6f"
+    },
+    {
+      "file": "output-inspection/new-net10-image.json",
+      "sha256": "79d4786b83096cd73e1c1be1efbce80ca147fc00edc16a47fde1da3b5ef80f2a"
+    },
+    {
+      "file": "output-inspection/old-framework-image.json",
+      "sha256": "99c4f0c318f3d361132dc915cb9c02c93202bdc2443a01e44409ef99e092eeb6"
+    },
+    {
+      "file": "output-inspection/old-net10-image.json",
+      "sha256": "022840d3ae10ed688ef8ba0215e3ceb0806ceb5a535f6e6605eb1dc3f5a083e8"
+    },
+    {
+      "file": "output-inspection/oxpecker-compile-new-framework-0.json",
+      "sha256": "c4620437cd5da2f3af88294adc27e9d8ff9aa03c938ccb44ae91bf6a5cd84986"
+    },
+    {
+      "file": "output-inspection/oxpecker-compile-new-framework-0.json.stderr",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6"
+    },
+    {
+      "file": "output-inspection/oxpecker-compile-new-framework-0.json.stdout",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6"
+    },
+    {
+      "file": "output-inspection/oxpecker-compile-new-net10-0.json",
+      "sha256": "087057b29f6cdc7aa50ef090d50b95219a70ed5ef074b0cf6ee828d0d9b8b698"
+    },
+    {
+      "file": "output-inspection/oxpecker-compile-new-net10-0.json.stderr",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6"
+    },
+    {
+      "file": "output-inspection/oxpecker-compile-new-net10-0.json.stdout",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6"
+    },
+    {
+      "file": "output-inspection/oxpecker-compile-old-framework-0.json",
+      "sha256": "469759d0520b87520e95fed93020ae9c1bdd33909958ba03a2f21f3869a711c4"
+    },
+    {
+      "file": "output-inspection/oxpecker-compile-old-framework-0.json.stderr",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6"
+    },
+    {
+      "file": "output-inspection/oxpecker-compile-old-framework-0.json.stdout",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6"
+    },
+    {
+      "file": "output-inspection/oxpecker-compile-old-net10-0.json",
+      "sha256": "587bace0bb9fbc1a15f79977283eaf5843bd37183e0b1b59446ca93df8c184f4"
+    },
+    {
+      "file": "output-inspection/oxpecker-compile-old-net10-0.json.stderr",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6"
+    },
+    {
+      "file": "output-inspection/oxpecker-compile-old-net10-0.json.stdout",
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6"
+    }
+  ],
+  "historical_inputs": "../inputs",
+  "harness": [
+    {
+      "name": "App.config",
+      "sha256": "a3a6e76d0d897eebb36459dc97377aa26c7f976cc7bb9ca082f031cc5ef2dff0"
+    },
+    {
+      "name": "App.manifest",
+      "sha256": "ffc719065405f9c9649de10cf30b15689063bbe793f16c7f3bfbe81c5f26ee6f"
+    },
+    {
+      "name": "Collector.cs",
+      "sha256": "15904f5317ac0baf4ec96340eb9ddb0721e081ba7e4070d993d3d2dbe6e14015"
+    },
+    {
+      "name": "Collector.csproj",
+      "sha256": "c358b07c7fbdc6fa1706f8074bf20420ab5861a2f03283dbfeaaa623cb3b5e02"
+    },
+    {
+      "name": "Collector.packages.lock.json",
+      "sha256": "1c77ea57efeb8e02632dfa6443ac96f08e5b00ea7c32a94c5ee1b837204e5e36"
+    },
+    {
+      "name": "Freeze.ps1",
+      "sha256": "4da8de959277d06412f5a112c9e1e4962e55da20983a76ae90462ee473a13578"
+    },
+    {
+      "name": "InspectImage.ps1",
+      "sha256": "cec7d295ba202ec329c6a0c3c7d195fe0747423ecba9a9474fdf98ecf9eeacbd"
+    },
+    {
+      "name": "Measure.ps1",
+      "sha256": "86b39b6fe08ccbf7138ef2e46793a78b36f337498ac34a095844fb9c9af249a7"
+    },
+    {
+      "name": "MonitoringControls.ps1",
+      "sha256": "ef7cc4dffdd4d547d55f132639c5b1d1311aea5f0e31aa45d7e54efdf81f0242"
+    },
+    {
+      "name": "OldPayload.csproj",
+      "sha256": "34402ad97fd2ffc8a8b88c54ec0a123587d90d201f3903a24f665372e154a928"
+    },
+    {
+      "name": "OldPayload.packages.lock.json",
+      "sha256": "a9f0aaa9c6a8a8efddabce439b0f1b069c88d8cb6c0f745bfa91004a5960bec9"
+    },
+    {
+      "name": "Programs.config",
+      "sha256": "962053fa2de248ba79242d7186f904e49fd3767ccbd3760b69fb70e4110c285f"
+    },
+    {
+      "name": "Programs.cs",
+      "sha256": "7ec25106ffb955ab5395fe3e603432426eb8dbc22d1e997c487b3f6c5b8ad76d"
+    },
+    {
+      "name": "Programs.csproj",
+      "sha256": "1695a21f3f1c5fa571246d9b1ef4b4c9352fa00bd94ff3615873cf4a1cdbb34c"
+    },
+    {
+      "name": "Programs.packages.lock.json",
+      "sha256": "05584c8383c3cbdd0be2732cf70ae0e692417966b92a71e8eda78fd652e059fd"
+    },
+    {
+      "name": "Publish.mjs",
+      "sha256": "53b1f79447d409e69f1b73eb7bd16733ae8496414e5a3e9492d91ed3e898e88e"
+    },
+    {
+      "name": "RunPrograms.ps1",
+      "sha256": "b17cd2464bf040886fb74716eea6dcf0fbc90c6a7362871f63b47ad562195a02"
+    },
+    {
+      "name": "Toolchains.ps1",
+      "sha256": "09a406f3535588f1162d88bdc08c1a1eb82a5f2c94cf8a90fd93be66818071ac"
+    },
+    {
+      "name": "Validate.mjs",
+      "sha256": "4fe2a5239883f506eb08b7d8e68286a4442a5188d9671e046a916c38b92039c0"
+    }
+  ]
+}

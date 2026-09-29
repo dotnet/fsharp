@@ -1,0 +1,110 @@
+{
+  "schema_version": 1,
+  "status": "measured",
+  "campaign": "portable-runtime-factorial",
+  "evidence_checkpoint": "3ed0c79fa",
+  "payloads": {
+    "old": {
+      "source": "FSharp.Compiler.Service 43.10.100 and FSharp.Core 10.0.100 from NuGet",
+      "informational_commit": "b0f34d51fccc69fd334253924abd8d6853fad7aa",
+      "fsharp_source": "2cb9ee0a5d63b52ad7bfbd9364b90b991a26fd72",
+      "framework": "netstandard2.0"
+    },
+    "new": {
+      "source": "Self-hosted Release build of the same pinned VMR RC2/main production source as the third-wave campaign",
+      "vmr": "be46bdda4d6599b80dd4ccd89b2de49d96cbf36d",
+      "fsharp_source": "9cd6167a7265ce7264b22719503b7dfa9eb8f83c",
+      "framework": "netstandard2.0"
+    }
+  },
+  "runtimes": {
+    "framework": {
+      "product": ".NET Framework 4.8.1",
+      "registry_release": 533509,
+      "clr_file_version": "4.8.9345.0",
+      "architecture": "x64",
+      "datas": "not supported",
+      "compiler_gc": "Server GC and very-large-object support, matching desktop fsc configuration",
+      "allocation_api": "AppDomain.MonitoringTotalAllocatedMemorySize: current compiler AppDomain, all threads; ARM enabled",
+      "path_support": "Native longPathAware manifest; required to read the unchanged 260+ character source paths. No source/path rewriting."
+    },
+    "net10": {
+      "version": "10.0.0",
+      "host": "private SDK 10.0.100"
+    },
+    "net11": {
+      "version": "11.0.0-rc.1.26425.128",
+      "host": "installed SDK 11 RC1"
+    }
+  },
+  "design": {
+    "arms": [
+      "old-framework",
+      "new-framework",
+      "old-net10",
+      "new-net10",
+      "old-net11",
+      "new-net11"
+    ],
+    "scope": "Two compatible compiler/Core payloads crossed with three runtimes. Identical payload DLLs across runtimes; same frozen compiler/IDE inputs as prior campaigns.",
+    "native_images": "IL payloads throughout this factorial: no R2R or NGen. Do not pool with shipping SDK/R2R cohorts.",
+    "rounds": 12,
+    "warmup_rounds": 2,
+    "order": "Six-treatment Williams design: base [0,1,5,2,4,3], add round modulo six to each index; two complete blocks",
+    "parallel_experiments": 1,
+    "exclusions": "One failed FsAutoComplete warmup (old-net11, round -2) is preserved separately: the NuGet FCS deployment lacked default.win32manifest. The identical SDK10 resource was deployed before restarting the complete FsAutoComplete cohort. No successful observations are excluded; pilots and calibration remain separate.",
+    "allocation_controls": "Paired ARM on/off classic-host runs, outside primary cohorts; off means allocation not collected, not zero.",
+    "applications": {
+      "source": "Unchanged Kernels.fs, eight kernels and six sizes",
+      "target": "netstandard2.0; compiled once per payload on classic Framework, then the identical DLL runs on all three runtimes",
+      "launches_per_arm": 3,
+      "launch_order": [
+        [
+          "old-framework",
+          "new-framework",
+          "old-net10",
+          "new-net10",
+          "old-net11",
+          "new-net11"
+        ],
+        [
+          "new-net10",
+          "old-net10",
+          "new-net11",
+          "old-net11",
+          "new-framework",
+          "old-framework"
+        ],
+        [
+          "old-net11",
+          "new-net11",
+          "old-framework",
+          "new-framework",
+          "old-net10",
+          "new-net10"
+        ]
+      ],
+      "warmup_iterations": 6,
+      "measured_iterations": 15,
+      "iteration_target_ms": 250,
+      "gc": "Ordinary application defaults (workstation GC); no server-GC override"
+    },
+    "qualifications": [
+      "This is an x64 FCS-host experiment, not Visual Studio or the 32-bit desktop fsc executable.",
+      "Allocation APIs differ across CLR families; calibrated known allocations and retired worker threads establish accounting bounds.",
+      "Shared-machine timings are descriptive. Framework ARM instrumentation is explicitly identified.",
+      "The new source is the previously pinned VMR-main-equivalent snapshot, not an unpinned moving main branch.",
+      "Executable compilation requires default.win32manifest beside FCS. The SDK10, new source payload and Framework fallback copies are byte-identical (SHA256 C0085EB467D2FC9C9F395047E057183B3CD1503A4087D0DB565161C13527A76F). Deployment was corrected without changing inputs, arguments or frozen binaries.",
+      "Application launch order rotates runtime pairs with old/new AB/BA/AB order; three launches do not provide full six-position balancing."
+    ]
+  },
+  "counts": {
+    "scalar": 672,
+    "measured_scalar": 576,
+    "warmup_scalar": 96,
+    "monitoring_controls": 36,
+    "program_launches": 18,
+    "program_launch_cases": 864,
+    "measured_program_iterations": 12960
+  }
+}

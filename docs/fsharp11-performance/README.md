@@ -2,6 +2,8 @@
 
 Start with [the latest three-compiler article](third-wave/article.md): SDK 10.0.100, SDK 11 RC1, and a self-hosted Release/R2R compiler from the pinned VMR RC2 source. RC2 and the pinned VMR main have identical production sources. The third payload is a local build on .NET 11 RC1, not an official RC2 SDK. [New matrices, raw observations and reproduction](third-wave/README.md) are separate from the historical data below.
 
+The [completed .NET Framework / .NET 10 / .NET 11 factorial](framework/README.md) adds the same two netstandard2.0 compiler/Core payloads on all three runtimes: 672 scalar observations, 36 instrumentation controls and 864 application launch/cases. Its [full tables](framework/tables.md) keep the IL-only runtime comparison separate from SDK/R2R results.
+
 ## Preserved first campaign
 
 [The original measured article](article.md) compares **SDK 10.0.100** with **11.0.100-rc.1.26425.128**, never 10.0.4xx. The campaign ran serially on a shared Windows VM.
