@@ -229,6 +229,12 @@ type internal RemoteSession(origin: FsiOrigin, session: Process, pipe: Stream, r
         with _ ->
             ()
 
+/// What became of a session that finished its handshake.
+type private SessionInstallation =
+    | Installed of previous: RemoteSession voption
+    | ExitedBeforeInstall of previous: RemoteSession voption
+    | Closed
+
 /// Owns the F# Interactive process behind the window.
 [<Sealed>]
 type internal InteractiveHostClient(clientProcessId: int) =
@@ -555,20 +561,39 @@ type internal InteractiveHostClient(clientProcessId: int) =
                         match! startAsync options cancellationToken with
                         | Result.Error message -> return Result.Error message
                         | Result.Ok started ->
-                            let previous =
+                            // The session's exit handler reports an exit only once the session is
+                            // current, so one that exited before this point is caught here instead,
+                            // under the same lock.
+                            let installation =
                                 lock stateLock (fun () ->
                                     if disposed then
-                                        ValueNone
+                                        Closed
                                     else
                                         let previous = current
-                                        current <- ValueSome started
-                                        ValueSome previous)
 
-                            match previous with
-                            | ValueNone ->
+                                        if started.IsAlive then
+                                            current <- ValueSome started
+                                            Installed previous
+                                        else
+                                            current <- ValueNone
+                                            ExitedBeforeInstall previous)
+
+                            match installation with
+                            | Closed ->
                                 started.Dispose()
                                 return Result.Error "The interactive window was closed while the session was starting."
-                            | ValueSome previous ->
+                            | ExitedBeforeInstall previous ->
+                                previous |> ValueOption.iter (fun session -> session.Dispose())
+
+                                let exitCode =
+                                    try
+                                        started.Process.ExitCode
+                                    with _ ->
+                                        0
+
+                                started.Dispose()
+                                return Result.Error $"F# Interactive exited with code {exitCode} as the session started."
+                            | Installed previous ->
                                 previous |> ValueOption.iter (fun session -> session.Dispose())
                                 return Result.Ok started
                 finally
