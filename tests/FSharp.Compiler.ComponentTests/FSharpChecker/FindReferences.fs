@@ -1069,98 +1069,114 @@ let count = list.Count
 /// https://github.com/dotnet/fsharp/issues/20630 https://github.com/dotnet/fsharp/issues/15134
 module XmlDocParameters =
 
+    open System
+
+    [<Literal>]
+    let private refStart = "{ref}"
+
+    [<Literal>]
+    let private refEnd = "{/ref}"
+
+    /// Removes the `{ref}…{/ref}` markers and returns the source with the `(line, startColumn, endColumn)` of each marked text
+    /// and whether it sits on a `///` line. SyntheticProject puts its own `module` header first, so a source line is one
+    /// line further down in the checked file.
+    let private extractRefs (markedSource: string) =
+        let lines = markedSource.Split('\n')
+        let refs = ResizeArray()
+
+        let source =
+            lines
+            |> Array.mapi (fun index (line: string) ->
+                let isDocLine = line.TrimStart().StartsWith("///", StringComparison.Ordinal)
+                let mutable text = line
+                let mutable start = text.IndexOf(refStart, StringComparison.Ordinal)
+
+                while start >= 0 do
+                    text <- text.Remove(start, refStart.Length)
+                    let finish = text.IndexOf(refEnd, start, StringComparison.Ordinal)
+                    text <- text.Remove(finish, refEnd.Length)
+                    refs.Add(((index + 2, start, finish), isDocLine))
+                    start <- text.IndexOf(refStart, StringComparison.Ordinal)
+
+                text)
+            |> String.concat "\n"
+
+        source, List.ofSeq refs
+
     let private rangesOf (uses: FSharpSymbolUse seq) =
         uses
         |> Seq.map (fun su -> su.Range.StartLine, su.Range.StartColumn, su.Range.EndColumn)
         |> Seq.sort
         |> Seq.toList
 
-    /// The doc `name` ranges show up only when asked for as XmlDocParameter uses, never by default
-    let private expectDocUses source (symbolAt: FSharpSymbolUse -> bool) codeRanges docRanges =
+    /// Every use of the symbol is marked `{ref}…{/ref}`; the symbol is the one used at the first mark outside the `///` lines.
+    /// The marks on `///` lines show up only for a caller that asks for the names in docs.
+    let private expectDocUses (markedSource: string) =
+        let source, refs = extractRefs markedSource
+        let codeRanges = refs |> List.filter (snd >> not) |> List.map fst |> List.sort
+        let allRanges = refs |> List.map fst |> List.sort
+
         checkAllSymbols source (fun result allUses ->
-            let symbol = (allUses |> Seq.find symbolAt).Symbol
+            let symbol = (allUses |> Seq.find (fun su -> rangesOf [ su ] = [ List.head codeRanges ])).Symbol
 
-            result.GetUsesOfSymbolInFile symbol |> rangesOf |> fun actual -> Assert.Equal<(int * int * int) list>(codeRanges, actual)
+            let usesOf kinds =
+                result.GetUsesOfSymbolInFile(symbol, relatedSymbolKinds = kinds) |> rangesOf
 
-            result.GetUsesOfSymbolInFile(symbol, relatedSymbolKinds = RelatedSymbolUseKind.XmlDocParameter)
-            |> rangesOf
-            |> fun actual -> Assert.Equal<(int * int * int) list>(List.sort (codeRanges @ docRanges), actual)
-
-            // A caller that asks for everything else still gets nothing from the docs
-            let otherKinds = RelatedSymbolUseKind.UnionCaseTester ||| RelatedSymbolUseKind.CopyAndUpdateRecord
-
-            result.GetUsesOfSymbolInFile(symbol, relatedSymbolKinds = otherKinds)
-            |> rangesOf
-            |> fun actual -> Assert.Equal<(int * int * int) list>(codeRanges, actual))
-
-    // SyntheticProject puts its own `module` header on line 1; a source starting with a newline begins on line 3
-    let private definitionNamed name (su: FSharpSymbolUse) =
-        su.IsFromDefinition && su.Symbol.DisplayName = name
-
-    let private definitionAt line column (su: FSharpSymbolUse) =
-        su.IsFromDefinition && su.Range.StartLine = line && su.Range.StartColumn = column
-
-    // A type parameter's declaration is reported as a use in a type, not as a definition
-    let private typarNamed name line (su: FSharpSymbolUse) =
-        match su.Symbol with
-        | :? FSharp.Compiler.Symbols.FSharpGenericParameter as p -> p.Name = name && su.Range.StartLine = line
-        | _ -> false
+            Assert.Equal<(int * int * int) list>(codeRanges, result.GetUsesOfSymbolInFile symbol |> rangesOf)
+            Assert.Equal<(int * int * int) list>(codeRanges, usesOf RelatedSymbolUseKind.AllInCode)
+            Assert.Equal<(int * int * int) list>(codeRanges, usesOf RelatedSymbolUseKind.All)
+            Assert.Equal<(int * int * int) list>(allRanges, usesOf RelatedSymbolUseKind.XmlDocParameter)
+            Assert.Equal<(int * int * int) list>(allRanges, usesOf RelatedSymbolUseKind.AllInCodeAndDocs))
 
     [<Fact>]
     let ``param and paramref of a let-bound function`` () =
-        let source = """
+        expectDocUses """
 /// <summary>Adds.</summary>
-/// <param name="x">The first number.</param>
-/// <param name="y">Added to <paramref name="x"/>.</param>
-let add x y = x + y
+/// <param name="{ref}x{/ref}">The first number.</param>
+/// <param name="y">Added to <paramref name="{ref}x{/ref}"/>.</param>
+let add {ref}x{/ref} y = {ref}x{/ref} + y
 """
-        expectDocUses source (definitionNamed "x") [ (6, 8, 9); (6, 14, 15) ] [ (4, 17, 18); (5, 45, 46) ]
 
     [<Fact>]
     let ``typeparam and typeparamref of an explicitly generic function`` () =
-        let source = """
-/// <typeparam name="T">The element type, see <typeparamref name="T"/>.</typeparam>
+        expectDocUses """
+/// <typeparam name="{ref}T{/ref}">The element type, see <typeparamref name="{ref}T{/ref}"/>.</typeparam>
 /// <param name="x">The value.</param>
-let id<'T> (x: 'T) = x
+let id<{ref}'T{/ref}> (x: {ref}'T{/ref}) = x
 """
-        expectDocUses source (typarNamed "T" 5) [ (5, 7, 9); (5, 15, 17) ] [ (3, 21, 22); (3, 66, 67) ]
 
     [<Fact>]
     let ``param of a member, not confused with this`` () =
-        let source = """
+        expectDocUses """
 type C() =
-    /// <param name="value">What to keep.</param>
-    member this.Keep(value: int) = value
+    /// <param name="{ref}value{/ref}">What to keep.</param>
+    member this.Keep({ref}value{/ref}: int) = {ref}value{/ref}
 """
-        expectDocUses source (definitionNamed "value") [ (5, 21, 26); (5, 35, 40) ] [ (4, 21, 26) ]
 
     [<Fact>]
     let ``param of a primary constructor documented on the type`` () =
-        let source = """
+        expectDocUses """
 /// <summary>A holder.</summary>
-/// <param name="seed">The initial value.</param>
-type Holder(seed: int) =
-    member _.Seed = seed
+/// <param name="{ref}seed{/ref}">The initial value.</param>
+type Holder({ref}seed{/ref}: int) =
+    member _.Seed = {ref}seed{/ref}
 """
-        expectDocUses source (definitionNamed "seed") [ (5, 12, 16); (6, 20, 24) ] [ (4, 17, 21) ]
 
     [<Fact>]
     let ``typeparam of a generic type`` () =
-        let source = """
-/// <typeparam name="T">The payload.</typeparam>
-type Box<'T>(value: 'T) =
+        expectDocUses """
+/// <typeparam name="{ref}T{/ref}">The payload.</typeparam>
+type Box<{ref}'T{/ref}>(value: {ref}'T{/ref}) =
     member _.Value = value
 """
-        expectDocUses source (typarNamed "T" 4) [ (4, 9, 11); (4, 20, 22) ] [ (3, 21, 22) ]
 
     [<Fact>]
     let ``param of a union case field`` () =
-        let source = """
+        expectDocUses """
 type Shape =
-    /// <param name="radius">Distance from the centre.</param>
-    | Circle of radius: float
+    /// <param name="{ref}radius{/ref}">Distance from the centre.</param>
+    | Circle of {ref}radius{/ref}: float
 """
-        expectDocUses source (definitionNamed "radius") [ (5, 16, 22) ] [ (4, 21, 27) ]
 
     [<Fact>]
     let ``param of a signature file val is found in code but its doc stays out of find all references`` () =
@@ -1182,39 +1198,50 @@ val add: x: int -> y: int -> int
 
     [<Fact>]
     let ``an unknown name in the doc reports nothing and does not break the others`` () =
-        let source = """
+        expectDocUses """
 /// <param name="nope">Not a parameter.</param>
-/// <param name="x">The parameter.</param>
-let f x = x
+/// <param name="{ref}x{/ref}">The parameter.</param>
+let f {ref}x{/ref} = {ref}x{/ref}
 """
-        expectDocUses source (definitionNamed "x") [ (5, 6, 7); (5, 10, 11) ] [ (4, 17, 18) ]
 
     [<Fact>]
     let ``a duplicated param name reports every occurrence`` () =
-        let source = """
-/// <param name="x">Once.</param>
-/// <param name="x">Twice.</param>
-let f x = x
+        expectDocUses """
+/// <param name="{ref}x{/ref}">Once.</param>
+/// <param name="{ref}x{/ref}">Twice.</param>
+let f {ref}x{/ref} = {ref}x{/ref}
 """
-        expectDocUses source (definitionNamed "x") [ (5, 6, 7); (5, 10, 11) ] [ (3, 17, 18); (4, 17, 18) ]
 
     [<Fact>]
     let ``a backticked parameter is matched by its bare name`` () =
-        let source = """
-/// <param name="a b">Spaced.</param>
-let f ``a b`` = ``a b``
+        expectDocUses """
+/// <param name="{ref}a b{/ref}">Spaced.</param>
+let f {ref}``a b``{/ref} = {ref}``a b``{/ref}
 """
-        expectDocUses source (definitionAt 4 6) [ (4, 6, 13); (4, 16, 23) ] [ (3, 17, 20) ]
 
     [<Fact>]
-    let ``inheritdoc and include tags do not disturb the scan`` () =
-        let source = """
+    let ``inheritdoc and an unexpanded include next to the tags`` () =
+        expectDocUses """
 /// <inheritdoc cref="System.Object.ToString"/>
 /// <include file="nope.xml" path="doc"/>
-/// <param name="x">Still found.</param>
-let f x = x
+/// <param name="{ref}x{/ref}">Still found.</param>
+let f {ref}x{/ref} = {ref}x{/ref}
 """
-        expectDocUses source (definitionNamed "x") [ (6, 6, 7); (6, 10, 11) ] [ (5, 17, 18) ]
+
+    [<Fact>]
+    let ``a tag inside an xml comment names nothing`` () =
+        expectDocUses """
+/// <summary>Kept.</summary>
+/// <!-- <param name="x">Commented out.</param> -->
+let f {ref}x{/ref} = {ref}x{/ref}
+"""
+
+    [<Fact>]
+    let ``a doc that starts with plain text is an escaped summary and names nothing`` () =
+        expectDocUses """
+/// Plain text first: <param name="x">Text, not a tag.</param>
+let f {ref}x{/ref} = {ref}x{/ref}
+"""
 
 /// https://github.com/dotnet/fsharp/issues/16993
 module CSharpExtensionMethods =
