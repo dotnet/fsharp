@@ -358,6 +358,106 @@ let pair = struct (1, 2)
 [<InlineData("""
 module M
 
+let make () =
+    try (1, 2)
+    finally ()
+
+let (x, y) = make ()
+""",
+             """
+module M
+
+let make () =
+    try struct (1, 2)
+    finally ()
+
+let struct (x, y) = make ()
+""")>]
+[<InlineData("""
+module M
+
+let make () =
+    try (1, 2)
+    with _ -> (0, 0)
+
+let (x, y) = make ()
+""",
+             """
+module M
+
+let make () =
+    try struct (1, 2)
+    with _ -> struct (0, 0)
+
+let struct (x, y) = make ()
+""")>]
+let ``Result flowing out of try converts every branch of it`` (reference: string, structs: string) =
+    Assert.Equal(structs, refactored reference "x, y")
+    Assert.Equal(reference, refactored structs "x, y")
+
+[<Theory>]
+[<InlineData("""
+module M
+
+let pair = (1, 2)
+let copy = match pair with | p -> p
+let (a, b) = copy
+""",
+             """
+module M
+
+let pair = struct (1, 2)
+let copy = match pair with | p -> p
+let struct (a, b) = copy
+""")>]
+[<InlineData("""
+module M
+
+let pair = (1, 2)
+let alias = pair
+let (a, b) = alias
+""",
+             """
+module M
+
+let pair = struct (1, 2)
+let alias = pair
+let struct (a, b) = alias
+""")>]
+let ``Value converts through the names it is bound to again`` (reference: string, structs: string) =
+    Assert.Equal(structs, refactored reference "1, 2")
+    Assert.Equal(reference, refactored structs "1, 2")
+    Assert.Equal(structs, refactored reference "a, b")
+    Assert.Equal(reference, refactored structs "a, b")
+
+[<Fact>]
+let ``Comment between struct and its parenthesis is kept`` () =
+    let code =
+        """
+module M
+
+type R = { Pair: struct (* note *) (int * int) }
+"""
+
+    Assert.Equal(
+        """
+module M
+
+type R = { Pair: (* note *) int * int }
+""",
+        refactored code "int * int"
+    )
+
+[<Fact>]
+let ``Struct keyword is separated from a name ending in a combining mark`` () =
+    let code = "\nmodule M\n\nlet f\u0301(a,b) = a+b\nlet x = f\u0301 (1,2)\n"
+
+    Assert.Equal("\nmodule M\n\nlet f\u0301 struct (a,b) = a+b\nlet x = f\u0301 struct (1,2)\n", refactored code "a,b")
+
+[<Theory>]
+[<InlineData("""
+module M
+
 let x = 1
 """,
              "1")>]
@@ -365,6 +465,21 @@ let x = 1
 module M
 
 let biggest = System.Math.Max(1, 2)
+""",
+             "1, 2")>]
+[<InlineData("""
+module M
+
+let biggest = System.Math.Max (1, 2)
+""",
+             "1, 2")>]
+[<InlineData("""
+module M
+
+type Calc() =
+    member _.Add(a: int, b: int) = a + b
+
+let total = Calc().Add (1, 2)
 """,
              "1, 2")>]
 [<InlineData("""
