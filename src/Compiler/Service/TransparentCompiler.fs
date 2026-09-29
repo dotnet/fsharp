@@ -2050,7 +2050,7 @@ type internal TransparentCompiler
                                 bootstrapInfo.TcImports.GetImportMap(),
                                 sink.GetFormatSpecifierLocations(),
                                 None,
-                                RelatedSymbolUseKind.All
+                                RelatedSymbolUseKind.AllInCode
                             )
 
                         let sckBuilder = SemanticClassificationKeyStoreBuilder()
@@ -2094,10 +2094,9 @@ type internal TransparentCompiler
                             if not r.IsSynthetic && preventDuplicates.Add struct (r.Start, r.End) then
                                 builder.Write(cnr.Range, cnr.Item))
 
-                        // A name inside a `///` comment is for rename and highlighting, not for symbol search
                         sResolutions.CapturedRelatedSymbolUses
-                        |> Seq.iter (fun (m, item, kind) ->
-                            if not m.IsSynthetic && kind <> RelatedSymbolUseKind.XmlDocParameter then
+                        |> Seq.iter (fun (m, item, _kind) ->
+                            if not m.IsSynthetic then
                                 builder.Write(m, item))
 
                         builder.TryBuildAndReset())
