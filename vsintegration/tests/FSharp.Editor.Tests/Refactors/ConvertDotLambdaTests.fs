@@ -26,9 +26,6 @@ let private refactored (code: string) (marker: string) =
 
     (document.GetTextAsync() |> GetTaskResult).ToString()
 
-let private actionsIn (context: TestContext) (code: string) (marker: string) =
-    tryGetRefactoringActions code (caretAt code marker) context (new FSharpConvertDotLambdaRefactoring())
-
 [<Theory>]
 [<InlineData("xs |> List.map (fun x -> x.Prop)", "xs |> List.map _.Prop")>]
 [<InlineData("List.map (fun x -> x.A.B) xs", "List.map _.A.B xs")>]
@@ -42,6 +39,7 @@ let private actionsIn (context: TestContext) (code: string) (marker: string) =
 [<InlineData("x.M(fun y -> y.P)", "x.M(_.P)")>]
 [<InlineData("fun x -> x.P", "_.P")>]
 [<InlineData("(fun x -> x.P)", "(_.P)")>]
+[<InlineData("fun x -> x .P", "_ .P")>]
 [<InlineData("""List.map (fun x ->
     x.Prop) xs""",
              "List.map _.Prop xs")>]
@@ -73,6 +71,12 @@ let ``Nested shorthand converts on its own`` () =
 [<InlineData("fun x -> x.P + 1")>]
 [<InlineData("fun x -> x.M(x)")>]
 [<InlineData("fun x -> x.M(fun x -> x)")>]
+[<InlineData("fun x -> x.M(x <- 1)")>]
+[<InlineData("fun x -> x.M(x.P <- 1)")>]
+[<InlineData("fun x -> x.M(x.Item(0) <- 1)")>]
+[<InlineData("fun x -> x.M(x.M().P <- 1)")>]
+[<InlineData("fun x -> x.M(x.Xs[0] <- 1)")>]
+[<InlineData("fun x -> x.")>]
 [<InlineData("fun x -> y.P")>]
 [<InlineData("fun x -> x")>]
 [<InlineData("fun x -> x[0]")>]
@@ -90,7 +94,7 @@ let ``No action`` (binding: string) =
         else
             "+"
 
-    Assert.Empty(actionsIn context code marker)
+    Assert.Empty(tryGetRefactoringActions code (caretAt code marker) context (new FSharpConvertDotLambdaRefactoring()))
 
 [<Fact>]
 let ``Lambda spanning multiple lines still converts to shorthand`` () =
