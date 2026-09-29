@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="1004" viewBox="0 0 1100 1004" role="img" aria-labelledby="title desc">
+<title id="title">Less compiler allocation in every workload</title><desc id="desc">Less compiler allocation in every workload. Allocation index (SDK 10 = 100). Zero baseline. FSharp.Core: SDK 10 100.0, SDK 11 RC1 99.2, Local F# 11 73.8. FSharp.Compiler.Service: SDK 10 100.0, SDK 11 RC1 92.5, Local F# 11 77.5. FsToolkit.ErrorHandling: SDK 10 100.0, SDK 11 RC1 88.3, Local F# 11 77.7. Oxpecker: SDK 10 100.0, SDK 11 RC1 61.7, Local F# 11 51.5. Nu: SDK 10 100.0, SDK 11 RC1 93.8, Local F# 11 77.4. FsAutoComplete: SDK 10 100.0, SDK 11 RC1 90.7, Local F# 11 78.0.</desc>
+<style>text{font-family:Segoe UI,Arial,sans-serif;font-size:16px;fill:#172b3a}.title{font-size:27px;font-weight:700}.label{font-weight:600}.small{font-size:14px;fill:#405466}.grid{stroke:#d7e0e6;stroke-width:1}.axis{stroke:#6b7d8a;stroke-width:1}</style>
+<rect width="1100" height="1004" fill="#fff"/>
+<text x="28" y="44" class="title" text-anchor="start">Less compiler allocation in every workload</text>
+<text x="28" y="77" class="small" text-anchor="start">Allocation index: each project has its own SDK 10 baseline of 100.</text>
+<line x1="230" y1="122" x2="230" y2="888" class="axis"/>
+<text x="230" y="112" class="small" text-anchor="middle">0</text>
+<line x1="412.5" y1="122" x2="412.5" y2="888" class="grid"/>
+<text x="412.5" y="112" class="small" text-anchor="middle">25</text>
+<line x1="595" y1="122" x2="595" y2="888" class="grid"/>
+<text x="595" y="112" class="small" text-anchor="middle">50</text>
+<line x1="777.5" y1="122" x2="777.5" y2="888" class="grid"/>
+<text x="777.5" y="112" class="small" text-anchor="middle">75</text>
+<line x1="960" y1="122" x2="960" y2="888" class="grid"/>
+<text x="960" y="112" class="small" text-anchor="middle">100</text>
+<text x="28" y="148" class="label" text-anchor="start">FSharp.Core</text>
+<text x="218" y="176" class="small" text-anchor="end">SDK 10</text>
+<rect x="230" y="160" width="730.000" height="19" fill="#64748b"/>
+<text x="969" y="176" class="label" text-anchor="start">100.0</text>
+<text x="218" y="202" class="small" text-anchor="end">SDK 11 RC1</text>
+<rect x="230" y="186" width="724.339" height="19" fill="#2563a6"/>
+<text x="963.3392649020955" y="202" class="label" text-anchor="start">99.2</text>
+<text x="218" y="228" class="small" text-anchor="end">Local F# 11</text>
+<rect x="230" y="212" width="538.537" height="19" fill="#087f73"/>
+<text x="777.5372771875191" y="228" class="label" text-anchor="start">73.8</text>
+<text x="28" y="276" class="label" text-anchor="start">FSharp.Compiler.Service</text>
+<text x="218" y="304" class="small" text-anchor="end">SDK 10</text>
+<rect x="230" y="288" width="730.000" height="19" fill="#64748b"/>
+<text x="969" y="304" class="label" text-anchor="start">100.0</text>
+<text x="218" y="330" class="small" text-anchor="end">SDK 11 RC1</text>
+<rect x="230" y="314" width="674.895" height="19" fill="#2563a6"/>
+<text x="913.8950798293661" y="330" class="label" text-anchor="start">92.5</text>
+<text x="218" y="356" class="small" text-anchor="end">Local F# 11</text>
+<rect x="230" y="340" width="565.855" height="19" fill="#087f73"/>
+<text x="804.8549020024677" y="356" class="label" text-anchor="start">77.5</text>
+<text x="28" y="404" class="label" text-anchor="start">FsToolkit.ErrorHandling</text>
+<text x="218" y="432" class="small" text-anchor="end">SDK 10</text>
+<rect x="230" y="416" width="730.000" height="19" fill="#64748b"/>
+<text x="969" y="432" class="label" text-anchor="start">100.0</text>
+<text x="218" y="458" class="small" text-anchor="end">SDK 11 RC1</text>
+<rect x="230" y="442" width="644.648" height="19" fill="#2563a6"/>
+<text x="883.6484007320715" y="458" class="label" text-anchor="start">88.3</text>
+<text x="218" y="484" class="small" text-anchor="end">Local F# 11</text>
+<rect x="230" y="468" width="567.042" height="19" fill="#087f73"/>
+<text x="806.0417211854251" y="484" class="label" text-anchor="start">77.7</text>
+<text x="28" y="532" class="label" text-anchor="start">Oxpecker</text>
+<text x="218" y="560" class="small" text-anchor="end">SDK 10</text>
+<rect x="230" y="544" width="730.000" height="19" fill="#64748b"/>
+<text x="969" y="560" class="label" text-anchor="start">100.0</text>
+<text x="218" y="586" class="small" text-anchor="end">SDK 11 RC1</text>
+<rect x="230" y="570" width="450.609" height="19" fill="#2563a6"/>
+<text x="689.6090108824955" y="586" class="label" text-anchor="start">61.7</text>
+<text x="218" y="612" class="small" text-anchor="end">Local F# 11</text>
+<rect x="230" y="596" width="376.172" height="19" fill="#087f73"/>
+<text x="615.1723334984949" y="612" class="label" text-anchor="start">51.5</text>
+<text x="28" y="660" class="label" text-anchor="start">Nu</text>
+<text x="218" y="688" class="small" text-anchor="end">SDK 10</text>
+<rect x="230" y="672" width="730.000" height="19" fill="#64748b"/>
+<text x="969" y="688" class="label" text-anchor="start">100.0</text>
+<text x="218" y="714" class="small" text-anchor="end">SDK 11 RC1</text>
+<rect x="230" y="698" width="684.792" height="19" fill="#2563a6"/>
+<text x="923.791557259808" y="714" class="label" text-anchor="start">93.8</text>
+<text x="218" y="740" class="small" text-anchor="end">Local F# 11</text>
+<rect x="230" y="724" width="565.299" height="19" fill="#087f73"/>
+<text x="804.2994012273766" y="740" class="label" text-anchor="start">77.4</text>
+<text x="28" y="788" class="label" text-anchor="start">FsAutoComplete</text>
+<text x="218" y="816" class="small" text-anchor="end">SDK 10</text>
+<rect x="230" y="800" width="730.000" height="19" fill="#64748b"/>
+<text x="969" y="816" class="label" text-anchor="start">100.0</text>
+<text x="218" y="842" class="small" text-anchor="end">SDK 11 RC1</text>
+<rect x="230" y="826" width="662.173" height="19" fill="#2563a6"/>
+<text x="901.172521656259" y="842" class="label" text-anchor="start">90.7</text>
+<text x="218" y="868" class="small" text-anchor="end">Local F# 11</text>
+<rect x="230" y="852" width="569.161" height="19" fill="#087f73"/>
+<text x="808.1606411669094" y="868" class="label" text-anchor="start">78.0</text>
+<text x="595" y="923" class="label" text-anchor="middle">Allocation index (SDK 10 = 100)</text>
+<text x="28" y="954" class="small" text-anchor="start">Lower is better. Medians of 12 measured runs per arm; no confidence interval is implied.</text>
+<text x="28" y="979" class="small" text-anchor="start">Local F# 11 = self-hosted RC2-source Release/R2R payload on .NET 11 RC1, not an official RC2 SDK.</text>
+</svg>

@@ -1,0 +1,2496 @@
+{
+  "schema_version": 1,
+  "evidence_commit": "bc90ee6637fc9c7065da173bd36c8b06e2a8d6d4",
+  "generator_sha256_lf": "4f8c94dfed5adbe2ee69120e187153833c7678c567a38c60a14bfaa40a1d2968",
+  "sources": [
+    {
+      "path": "../third-wave/results.json",
+      "sha256": "83f9405be8ec894c35c5f20c813343b4cb3f77a63be94da688c068e6eb9ef492"
+    },
+    {
+      "path": "../framework/results.json",
+      "sha256": "62dc7e4ce3920ac4ce9fbbc1545d860635e38c903dade426ca3bba8e89433b65"
+    },
+    {
+      "path": "../third-wave/experiment.json",
+      "sha256": "51960e77b6731e6f3f8522eebc3bbea7b1d52fca9f238045805eec1424aa8089"
+    },
+    {
+      "path": "../framework/experiment.json",
+      "sha256": "37fad50822b567c97d3457c8b5d892e0f0102a30ee20d9f82d7f1429bd19fcf8"
+    },
+    {
+      "path": "../third-wave/provenance.json",
+      "sha256": "3e5994f8c1d5cb4366ed9c17837a718f4d9d6e0fc0a6573ed0e438a0c5337c66"
+    },
+    {
+      "path": "../third-wave/contributions.json",
+      "sha256": "d1cda66f27b6ffd207fc29e55f95e958e764a227ae31b3e321e260908b645ec3"
+    },
+    {
+      "path": "../third-wave/vmr-audit.json",
+      "sha256": "fcd0e3fdc36ebca3864374b116b6ab9cd0a1d7172fde0ea7b1c635576740fdbd"
+    },
+    {
+      "path": "../third-wave/README.md",
+      "sha256": "1f649cac5077963c6bd45d309a99babf6c3824cc2942935ca376490af99e7d35"
+    },
+    {
+      "path": "../third-wave/compilation-matrix.csv",
+      "sha256": "f43977bdf38601347157d6a280280715f2e68e2ddf7a800399678f05b377e7d6"
+    },
+    {
+      "path": "../third-wave/ide-matrix.csv",
+      "sha256": "683120919728e68a2898bf6ff086e147b8ca52a2e4dcf50e488c4e13aa4653ee"
+    },
+    {
+      "path": "../third-wave/program-matrix.csv",
+      "sha256": "f941c1062d571d674a59ecf98cf3540fcdbeb235a6b5882c22d70fc170e481ff"
+    },
+    {
+      "path": "../framework/README.md",
+      "sha256": "d1a5e34b25d45bf0a89d7c1fba1d81678953fbc30e326498bfa096709c786e63"
+    },
+    {
+      "path": "../framework/compilation-matrix.csv",
+      "sha256": "946faf32cac68e3201aa14c19d2be15cfa3e39c985dfd4db2bfd293591a7bc5e"
+    },
+    {
+      "path": "../framework/ide-matrix.csv",
+      "sha256": "627fb660b9cad53766442aaaf2a37b3cb6b6344a8bab35fac8909ed1c6f65368"
+    },
+    {
+      "path": "../framework/program-matrix.csv",
+      "sha256": "d26786c0f84617b40f028cbc59d63721dc90ac614e075d121fe88e3112a45d67"
+    },
+    {
+      "path": "../third-wave/article.md",
+      "sha256": "175bcab0bc98e613aa3f108d6130fcd5dbe05d3b8394a2373df1f2885e051323"
+    },
+    {
+      "path": "../third-wave/tables.json",
+      "sha256": "1ac48d295d5a4ed75ac595c6b75016e19491cc0e08e7429a6e633d0e4fb758fa"
+    },
+    {
+      "path": "../third-wave/contributions.csv",
+      "sha256": "1b97f5bc98eba087c3ede48662131d9f61a5d24fcea4ad0500615c34f93f77d7"
+    },
+    {
+      "path": "../framework/provenance.json",
+      "sha256": "9afd9aa9609d4db9d2b2a0fc83b46e66310ab9329335f1140435136a95bfa952"
+    },
+    {
+      "path": "../framework/output-identities.json",
+      "sha256": "d494d1e7ba065e871405dd27740e27944d89f557969b923437567d0b101b6be2"
+    },
+    {
+      "path": "../framework/tables.md",
+      "sha256": "551937fb4f64a0a29c789833c6ed0d3e2aadc000e87a72b36b8660fa887619ab"
+    },
+    {
+      "path": "../third-wave/programs/sdk10-il.json",
+      "sha256": "81f0769821f2b9f11c572341a72f7ca0ac8fd73f9eb922f162630b273de2860f"
+    },
+    {
+      "path": "../third-wave/programs/sdk11rc1-il.json",
+      "sha256": "adc4df6774082f41c19873757c007b8548e89d7bb394ef4d160d6cd799da44bb"
+    },
+    {
+      "path": "../third-wave/programs/vmr-rc2-r2r-il.json",
+      "sha256": "7acf1d573f06bb6bf359f61e277919ebf19b907d5a70b280e4b0a3f7d8ca0188"
+    }
+  ],
+  "statistic": "Arm median; reduction = 100 * (1 - newer median / older median). No pooled cohorts or confidence claim.",
+  "units": {
+    "GiB": 1073741824,
+    "MiB": 1048576,
+    "B/op": "Managed bytes per measured application operation"
+  },
+  "identities": {
+    "sdk": {
+      "source": "RC2 VMR F# subtree, locally built; not an official RC2 SDK",
+      "rc1_vmr": "3551975be08744f0418857c5bed8ab1545c5dd47",
+      "rc2_vmr": "be46bdda4d6599b80dd4ccd89b2de49d96cbf36d",
+      "main_vmr": "0c804ec276a679143cdc4bc3391a1c2d0abfd69b",
+      "rc1_fsharp_source": "c251d06dc38db89fa6df30b0b17a233e0ffe403d",
+      "rc2_and_main_fsharp_source": "9cd6167a7265ce7264b22719503b7dfa9eb8f83c",
+      "rc1_production_tree": "2f81574628d05798d72810522d509432089fa7e2",
+      "rc2_and_main_production_tree": "7904104d6778df42799007d3e4d6e19093144325",
+      "production_path": "src/fsharp/src",
+      "reason": "RC2 and main have byte-identical production sources. Their full F# subtrees differ in build scripts, tests and documentation.",
+      "survey_merge_commits_in_rc2": 49,
+      "survey_merge_commits_total": 52,
+      "experimental_branch_merges_not_in_rc2": [
+        20424,
+        20425,
+        20439
+      ],
+      "important_fixes_after_rc1_present_in_rc2": [
+        20296,
+        20487,
+        20422,
+        20571,
+        20555
+      ]
+    },
+    "sdk_payload": {
+      "configuration": "Release",
+      "bootstrap": "Pinned RC2 sources compiled by SDK 11 RC1, then used to compile the Release product and new Core",
+      "building_with_lkg_in_final_product": false,
+      "compiler_target_framework": "net11.0",
+      "compiler_build_core": "Fresh source Core, netstandard2.1, following repository project references",
+      "deployed_core_target_framework": "net10.0",
+      "deployed_core_reason": "Match the Core variant selected for SDK tools by #20555",
+      "ready_to_run": true,
+      "composite": false,
+      "crossgen2_runtime": "11.0.0-rc.1.26425.128",
+      "static_pgo_training": "none; no custom training profile",
+      "runtime_tuning": "none",
+      "runtime_qualification": "The local RC2-source compiler runs on the exact .NET 11 RC1 runtime. It is a source-built compiler comparison, not a measurement of an official RC2 SDK/runtime bundle."
+    },
+    "portable_payloads": {
+      "old": {
+        "source": "FSharp.Compiler.Service 43.10.100 and FSharp.Core 10.0.100 from NuGet",
+        "informational_commit": "b0f34d51fccc69fd334253924abd8d6853fad7aa",
+        "fsharp_source": "2cb9ee0a5d63b52ad7bfbd9364b90b991a26fd72",
+        "framework": "netstandard2.0"
+      },
+      "new": {
+        "source": "Self-hosted Release build of the same pinned VMR RC2/main production source as the third-wave campaign",
+        "vmr": "be46bdda4d6599b80dd4ccd89b2de49d96cbf36d",
+        "fsharp_source": "9cd6167a7265ce7264b22719503b7dfa9eb8f83c",
+        "framework": "netstandard2.0"
+      }
+    },
+    "portable_runtimes": {
+      "framework": {
+        "product": ".NET Framework 4.8.1",
+        "registry_release": 533509,
+        "clr_file_version": "4.8.9345.0",
+        "architecture": "x64",
+        "datas": "not supported",
+        "compiler_gc": "Server GC and very-large-object support, matching desktop fsc configuration",
+        "allocation_api": "AppDomain.MonitoringTotalAllocatedMemorySize: current compiler AppDomain, all threads; ARM enabled",
+        "path_support": "Native longPathAware manifest; required to read the unchanged 260+ character source paths. No source/path rewriting."
+      },
+      "net10": {
+        "version": "10.0.0",
+        "host": "private SDK 10.0.100"
+      },
+      "net11": {
+        "version": "11.0.0-rc.1.26425.128",
+        "host": "installed SDK 11 RC1"
+      }
+    }
+  },
+  "counts": [
+    {
+      "campaign": "third-wave",
+      "scalar": 336,
+      "measured_scalar": 288,
+      "warmup_scalar": 48,
+      "program_launches": 9,
+      "program_launch_cases": 432,
+      "measured_program_iterations": 6480,
+      "accepted_profiles": 3
+    },
+    {
+      "campaign": "portable-runtime-factorial",
+      "scalar": 672,
+      "measured_scalar": 576,
+      "warmup_scalar": 96,
+      "monitoring_controls": 36,
+      "program_launches": 18,
+      "program_launch_cases": 864,
+      "measured_program_iterations": 12960
+    }
+  ],
+  "sdk_allocation": {
+    "cohort": "third-wave",
+    "metric": "allocated_bytes",
+    "unit": "GiB",
+    "divisor": 1073741824,
+    "arms": [
+      "sdk10",
+      "sdk11rc1",
+      "vmr-rc2-r2r"
+    ],
+    "rows": [
+      {
+        "case": "fsharp-core",
+        "label": "FSharp.Core",
+        "values": [
+          {
+            "arm": "sdk10",
+            "median": 8126978084,
+            "value": 7.568838153034449,
+            "source": "../third-wave/results.json#/scalar_statistics/fsharp-core/arms/sdk10/metrics/allocated_bytes/median"
+          },
+          {
+            "arm": "sdk11rc1",
+            "median": 8063957988,
+            "value": 7.510146114975214,
+            "source": "../third-wave/results.json#/scalar_statistics/fsharp-core/arms/sdk11rc1/metrics/allocated_bytes/median"
+          },
+          {
+            "arm": "vmr-rc2-r2r",
+            "median": 5995452944,
+            "value": 5.58370067179203,
+            "source": "../third-wave/results.json#/scalar_statistics/fsharp-core/arms/vmr-rc2-r2r/metrics/allocated_bytes/median"
+          }
+        ],
+        "baseline100": [
+          100,
+          99.22455683590348,
+          73.77222975171493
+        ],
+        "local_reduction_vs_sdk10": 26.227770248285065,
+        "local_reduction_vs_rc1": 25.651237854638488
+      },
+      {
+        "case": "fsharp-compiler-service",
+        "label": "FSharp.Compiler.Service",
+        "values": [
+          {
+            "arm": "sdk10",
+            "median": 37799356940,
+            "value": 35.203394424170256,
+            "source": "../third-wave/results.json#/scalar_statistics/fsharp-compiler-service/arms/sdk10/metrics/allocated_bytes/median"
+          },
+          {
+            "arm": "sdk11rc1",
+            "median": 34946027424,
+            "value": 32.5460242331028,
+            "source": "../third-wave/results.json#/scalar_statistics/fsharp-compiler-service/arms/sdk11rc1/metrics/allocated_bytes/median"
+          },
+          {
+            "arm": "vmr-rc2-r2r",
+            "median": 29299933448,
+            "value": 27.287689454853535,
+            "source": "../third-wave/results.json#/scalar_statistics/fsharp-compiler-service/arms/vmr-rc2-r2r/metrics/allocated_bytes/median"
+          }
+        ],
+        "baseline100": [
+          100,
+          92.4513807985433,
+          77.51437013732435
+        ],
+        "local_reduction_vs_sdk10": 22.485629862675648,
+        "local_reduction_vs_rc1": 16.156611758744322
+      },
+      {
+        "case": "fstoolkit",
+        "label": "FsToolkit.ErrorHandling",
+        "values": [
+          {
+            "arm": "sdk10",
+            "median": 2377573096,
+            "value": 2.2142874971032143,
+            "source": "../third-wave/results.json#/scalar_statistics/fstoolkit/arms/sdk10/metrics/allocated_bytes/median"
+          },
+          {
+            "arm": "sdk11rc1",
+            "median": 2099587252,
+            "value": 1.9553930051624775,
+            "source": "../third-wave/results.json#/scalar_statistics/fstoolkit/arms/sdk11rc1/metrics/allocated_bytes/median"
+          },
+          {
+            "arm": "vmr-rc2-r2r",
+            "median": 1846826220,
+            "value": 1.7199909500777721,
+            "source": "../third-wave/results.json#/scalar_statistics/fstoolkit/arms/vmr-rc2-r2r/metrics/allocated_bytes/median"
+          }
+        ],
+        "baseline100": [
+          100,
+          88.30800010028376,
+          77.67694810759248
+        ],
+        "local_reduction_vs_sdk10": 22.32305189240752,
+        "local_reduction_vs_rc1": 12.038605766882416
+      },
+      {
+        "case": "oxpecker",
+        "label": "Oxpecker",
+        "values": [
+          {
+            "arm": "sdk10",
+            "median": 1229608044,
+            "value": 1.1451617293059826,
+            "source": "../third-wave/results.json#/scalar_statistics/oxpecker/arms/sdk10/metrics/allocated_bytes/median"
+          },
+          {
+            "arm": "sdk11rc1",
+            "median": 759003376,
+            "value": 0.7068769782781601,
+            "source": "../third-wave/results.json#/scalar_statistics/oxpecker/arms/sdk11rc1/metrics/allocated_bytes/median"
+          },
+          {
+            "arm": "vmr-rc2-r2r",
+            "median": 633622640,
+            "value": 0.5901070684194565,
+            "source": "../third-wave/results.json#/scalar_statistics/oxpecker/arms/vmr-rc2-r2r/metrics/allocated_bytes/median"
+          }
+        ],
+        "baseline100": [
+          100,
+          61.727261764725405,
+          51.53045664362944
+        ],
+        "local_reduction_vs_sdk10": 48.46954335637056,
+        "local_reduction_vs_rc1": 16.51912757763544
+      },
+      {
+        "case": "nu",
+        "label": "Nu",
+        "values": [
+          {
+            "arm": "sdk10",
+            "median": 15853142292,
+            "value": 14.764389295130968,
+            "source": "../third-wave/results.json#/scalar_statistics/nu/arms/sdk10/metrics/allocated_bytes/median"
+          },
+          {
+            "arm": "sdk11rc1",
+            "median": 14871367120,
+            "value": 13.850039914250374,
+            "source": "../third-wave/results.json#/scalar_statistics/nu/arms/sdk11rc1/metrics/allocated_bytes/median"
+          },
+          {
+            "arm": "vmr-rc2-r2r",
+            "median": 12276399788,
+            "value": 11.433288257569075,
+            "source": "../third-wave/results.json#/scalar_statistics/nu/arms/vmr-rc2-r2r/metrics/allocated_bytes/median"
+          }
+        ],
+        "baseline100": [
+          100,
+          93.80706263832985,
+          77.43827414073652
+        ],
+        "local_reduction_vs_sdk10": 22.561725859263483,
+        "local_reduction_vs_rc1": 17.449420157949813
+      },
+      {
+        "case": "fsautocomplete",
+        "label": "FsAutoComplete",
+        "values": [
+          {
+            "arm": "sdk10",
+            "median": 6257894756,
+            "value": 5.828118655830622,
+            "source": "../third-wave/results.json#/scalar_statistics/fsautocomplete/arms/sdk10/metrics/allocated_bytes/median"
+          },
+          {
+            "arm": "sdk11rc1",
+            "median": 5676446508,
+            "value": 5.2866027764976025,
+            "source": "../third-wave/results.json#/scalar_statistics/fsautocomplete/arms/sdk11rc1/metrics/allocated_bytes/median"
+          },
+          {
+            "arm": "vmr-rc2-r2r",
+            "median": 4879106016,
+            "value": 4.54402157664299,
+            "source": "../third-wave/results.json#/scalar_statistics/fsautocomplete/arms/vmr-rc2-r2r/metrics/allocated_bytes/median"
+          }
+        ],
+        "baseline100": [
+          100,
+          90.70856461044644,
+          77.9672111187547
+        ],
+        "local_reduction_vs_sdk10": 22.032788881245292,
+        "local_reduction_vs_rc1": 14.046472399172306
+      }
+    ]
+  },
+  "portable_allocation": {
+    "cohort": "framework",
+    "metric": "allocated_bytes",
+    "unit": "GiB",
+    "divisor": 1073741824,
+    "arms": [
+      "old-framework",
+      "new-framework",
+      "old-net10",
+      "new-net10",
+      "old-net11",
+      "new-net11"
+    ],
+    "rows": [
+      {
+        "case": "fsharp-core",
+        "label": "FSharp.Core",
+        "values": [
+          {
+            "arm": "old-framework",
+            "median": 8304579316,
+            "value": 7.7342421896755695,
+            "source": "../framework/results.json#/scalar_statistics/fsharp-core/arms/old-framework/metrics/allocated_bytes/median"
+          },
+          {
+            "arm": "new-framework",
+            "median": 6159582464,
+            "value": 5.736558198928833,
+            "source": "../framework/results.json#/scalar_statistics/fsharp-core/arms/new-framework/metrics/allocated_bytes/median"
+          },
+          {
+            "arm": "old-net10",
+            "median": 8158737876,
+            "value": 7.598416764289141,
+            "source": "../framework/results.json#/scalar_statistics/fsharp-core/arms/old-net10/metrics/allocated_bytes/median"
+          },
+          {
+            "arm": "new-net10",
+            "median": 6026080304,
+            "value": 5.6122246235609055,
+            "source": "../framework/results.json#/scalar_statistics/fsharp-core/arms/new-net10/metrics/allocated_bytes/median"
+          },
+          {
+            "arm": "old-net11",
+            "median": 8158095948,
+            "value": 7.597818922251463,
+            "source": "../framework/results.json#/scalar_statistics/fsharp-core/arms/old-net11/metrics/allocated_bytes/median"
+          },
+          {
+            "arm": "new-net11",
+            "median": 6021336076,
+            "value": 5.607806216925383,
+            "source": "../framework/results.json#/scalar_statistics/fsharp-core/arms/new-net11/metrics/allocated_bytes/median"
+          }
+        ],
+        "comparisons": [
+          {
+            "runtime": "framework",
+            "baseline100": 74.17091498099914,
+            "reduction_percent": 25.829085019000864
+          },
+          {
+            "runtime": "net10",
+            "baseline100": 73.86044748081082,
+            "reduction_percent": 26.13955251918918
+          },
+          {
+            "runtime": "net11",
+            "baseline100": 73.8081056459769,
+            "reduction_percent": 26.191894354023106
+          }
+        ]
+      },
+      {
+        "case": "fsharp-compiler-service",
+        "label": "FSharp.Compiler.Service",
+        "values": [
+          {
+            "arm": "old-framework",
+            "median": 40119563912,
+            "value": 37.36425555497408,
+            "source": "../framework/results.json#/scalar_statistics/fsharp-compiler-service/arms/old-framework/metrics/allocated_bytes/median"
+          },
+          {
+            "arm": "new-framework",
+            "median": 30245809364,
+            "value": 28.16860504820943,
+            "source": "../framework/results.json#/scalar_statistics/fsharp-compiler-service/arms/new-framework/metrics/allocated_bytes/median"
+          },
+          {
+            "arm": "old-net10",
+            "median": 37845731064,
+            "value": 35.24658369272947,
+            "source": "../framework/results.json#/scalar_statistics/fsharp-compiler-service/arms/old-net10/metrics/allocated_bytes/median"
+          },
+          {
+            "arm": "new-net10",
+            "median": 29142607184,
+            "value": 27.14116795361042,
+            "source": "../framework/results.json#/scalar_statistics/fsharp-compiler-service/arms/new-net10/metrics/allocated_bytes/median"
+          },
+          {
+            "arm": "old-net11",
+            "median": 37849823692,
+            "value": 35.25039524957538,
+            "source": "../framework/results.json#/scalar_statistics/fsharp-compiler-service/arms/old-net11/metrics/allocated_bytes/median"
+          },
+          {
+            "arm": "new-net11",
+            "median": 29179420220,
+            "value": 27.175452765077353,
+            "source": "../framework/results.json#/scalar_statistics/fsharp-compiler-service/arms/new-net11/metrics/allocated_bytes/median"
+          }
+        ],
+        "comparisons": [
+          {
+            "runtime": "framework",
+            "baseline100": 75.38917778454042,
+            "reduction_percent": 24.61082221545958
+          },
+          {
+            "runtime": "net10",
+            "baseline100": 77.0036840739518,
+            "reduction_percent": 22.996315926048194
+          },
+          {
+            "runtime": "net11",
+            "baseline100": 77.09261860093528,
+            "reduction_percent": 22.907381399064718
+          }
+        ]
+      },
+      {
+        "case": "fstoolkit",
+        "label": "FsToolkit.ErrorHandling",
+        "values": [
+          {
+            "arm": "old-framework",
+            "median": 2413667412,
+            "value": 2.247902948409319,
+            "source": "../framework/results.json#/scalar_statistics/fstoolkit/arms/old-framework/metrics/allocated_bytes/median"
+          },
+          {
+            "arm": "new-framework",
+            "median": 1889043392,
+            "value": 1.7593087553977966,
+            "source": "../framework/results.json#/scalar_statistics/fstoolkit/arms/new-framework/metrics/allocated_bytes/median"
+          },
+          {
+            "arm": "old-net10",
+            "median": 2378473636,
+            "value": 2.2151261903345585,
+            "source": "../framework/results.json#/scalar_statistics/fstoolkit/arms/old-net10/metrics/allocated_bytes/median"
+          },
+          {
+            "arm": "new-net10",
+            "median": 1847842048,
+            "value": 1.7209370136260986,
+            "source": "../framework/results.json#/scalar_statistics/fstoolkit/arms/new-net10/metrics/allocated_bytes/median"
+          },
+          {
+            "arm": "old-net11",
+            "median": 2379668908,
+            "value": 2.2162393741309643,
+            "source": "../framework/results.json#/scalar_statistics/fstoolkit/arms/old-net11/metrics/allocated_bytes/median"
+          },
+          {
+            "arm": "new-net11",
+            "median": 1849119940,
+            "value": 1.7221271432936192,
+            "source": "../framework/results.json#/scalar_statistics/fstoolkit/arms/new-net11/metrics/allocated_bytes/median"
+          }
+        ],
+        "comparisons": [
+          {
+            "runtime": "framework",
+            "baseline100": 78.26444449671345,
+            "reduction_percent": 21.73555550328655
+          },
+          {
+            "runtime": "net10",
+            "baseline100": 77.69024722542689,
+            "reduction_percent": 22.30975277457311
+          },
+          {
+            "runtime": "net11",
+            "baseline100": 77.70492499118706,
+            "reduction_percent": 22.295075008812947
+          }
+        ]
+      },
+      {
+        "case": "oxpecker",
+        "label": "Oxpecker",
+        "values": [
+          {
+            "arm": "old-framework",
+            "median": 1239685116,
+            "value": 1.1545467339456081,
+            "source": "../framework/results.json#/scalar_statistics/oxpecker/arms/old-framework/metrics/allocated_bytes/median"
+          },
+          {
+            "arm": "new-framework",
+            "median": 636310296,
+            "value": 0.5926101431250572,
+            "source": "../framework/results.json#/scalar_statistics/oxpecker/arms/new-framework/metrics/allocated_bytes/median"
+          },
+          {
+            "arm": "old-net10",
+            "median": 1237239556,
+            "value": 1.1522691287100315,
+            "source": "../framework/results.json#/scalar_statistics/oxpecker/arms/old-net10/metrics/allocated_bytes/median"
+          },
+          {
+            "arm": "new-net10",
+            "median": 632213732,
+            "value": 0.5887949205935001,
+            "source": "../framework/results.json#/scalar_statistics/oxpecker/arms/new-net10/metrics/allocated_bytes/median"
+          },
+          {
+            "arm": "old-net11",
+            "median": 1234910312,
+            "value": 1.1500998511910439,
+            "source": "../framework/results.json#/scalar_statistics/oxpecker/arms/old-net11/metrics/allocated_bytes/median"
+          },
+          {
+            "arm": "new-net11",
+            "median": 631587276,
+            "value": 0.5882114879786968,
+            "source": "../framework/results.json#/scalar_statistics/oxpecker/arms/new-net11/metrics/allocated_bytes/median"
+          }
+        ],
+        "comparisons": [
+          {
+            "runtime": "framework",
+            "baseline100": 51.32838071438135,
+            "reduction_percent": 48.67161928561865
+          },
+          {
+            "runtime": "net10",
+            "baseline100": 51.09873257236855,
+            "reduction_percent": 48.90126742763145
+          },
+          {
+            "runtime": "net11",
+            "baseline100": 51.1443843218956,
+            "reduction_percent": 48.8556156781044
+          }
+        ]
+      },
+      {
+        "case": "nu",
+        "label": "Nu",
+        "values": [
+          {
+            "arm": "old-framework",
+            "median": 16662661672,
+            "value": 15.518312968313694,
+            "source": "../framework/results.json#/scalar_statistics/nu/arms/old-framework/metrics/allocated_bytes/median"
+          },
+          {
+            "arm": "new-framework",
+            "median": 12858131304,
+            "value": 11.97506795078516,
+            "source": "../framework/results.json#/scalar_statistics/nu/arms/new-framework/metrics/allocated_bytes/median"
+          },
+          {
+            "arm": "old-net10",
+            "median": 15820767544,
+            "value": 14.73423796147108,
+            "source": "../framework/results.json#/scalar_statistics/nu/arms/old-net10/metrics/allocated_bytes/median"
+          },
+          {
+            "arm": "new-net10",
+            "median": 12246466636,
+            "value": 11.405410837382078,
+            "source": "../framework/results.json#/scalar_statistics/nu/arms/new-net10/metrics/allocated_bytes/median"
+          },
+          {
+            "arm": "old-net11",
+            "median": 15854387444,
+            "value": 14.765548933297396,
+            "source": "../framework/results.json#/scalar_statistics/nu/arms/old-net11/metrics/allocated_bytes/median"
+          },
+          {
+            "arm": "new-net11",
+            "median": 12242524416,
+            "value": 11.401739358901978,
+            "source": "../framework/results.json#/scalar_statistics/nu/arms/new-net11/metrics/allocated_bytes/median"
+          }
+        ],
+        "comparisons": [
+          {
+            "runtime": "framework",
+            "baseline100": 77.16733110897194,
+            "reduction_percent": 22.832668891028064
+          },
+          {
+            "runtime": "net10",
+            "baseline100": 77.4075379209048,
+            "reduction_percent": 22.5924620790952
+          },
+          {
+            "runtime": "net11",
+            "baseline100": 77.21852679103733,
+            "reduction_percent": 22.781473208962666
+          }
+        ]
+      },
+      {
+        "case": "fsautocomplete",
+        "label": "FsAutoComplete",
+        "values": [
+          {
+            "arm": "old-framework",
+            "median": 6428975516,
+            "value": 5.9874500297009945,
+            "source": "../framework/results.json#/scalar_statistics/fsautocomplete/arms/old-framework/metrics/allocated_bytes/median"
+          },
+          {
+            "arm": "new-framework",
+            "median": 5002003228,
+            "value": 4.658478524535894,
+            "source": "../framework/results.json#/scalar_statistics/fsautocomplete/arms/new-framework/metrics/allocated_bytes/median"
+          },
+          {
+            "arm": "old-net10",
+            "median": 6234193076,
+            "value": 5.8060447461903095,
+            "source": "../framework/results.json#/scalar_statistics/fsautocomplete/arms/old-net10/metrics/allocated_bytes/median"
+          },
+          {
+            "arm": "new-net10",
+            "median": 4857805608,
+            "value": 4.52418402582407,
+            "source": "../framework/results.json#/scalar_statistics/fsautocomplete/arms/new-net10/metrics/allocated_bytes/median"
+          },
+          {
+            "arm": "old-net11",
+            "median": 6239474780,
+            "value": 5.810963716357946,
+            "source": "../framework/results.json#/scalar_statistics/fsautocomplete/arms/old-net11/metrics/allocated_bytes/median"
+          },
+          {
+            "arm": "new-net11",
+            "median": 4858046304,
+            "value": 4.52440819144249,
+            "source": "../framework/results.json#/scalar_statistics/fsautocomplete/arms/new-net11/metrics/allocated_bytes/median"
+          }
+        ],
+        "comparisons": [
+          {
+            "runtime": "framework",
+            "baseline100": 77.80404849188416,
+            "reduction_percent": 22.19595150811584
+          },
+          {
+            "runtime": "net10",
+            "baseline100": 77.92196277496235,
+            "reduction_percent": 22.07803722503765
+          },
+          {
+            "runtime": "net11",
+            "baseline100": 77.85985960824735,
+            "reduction_percent": 22.14014039175265
+          }
+        ]
+      }
+    ]
+  },
+  "sdk_heap": {
+    "cohort": "third-wave",
+    "metric": "retained_heap_bytes",
+    "unit": "MiB",
+    "divisor": 1048576,
+    "arms": [
+      "sdk10",
+      "sdk11rc1",
+      "vmr-rc2-r2r"
+    ],
+    "rows": [
+      {
+        "case": "fsautocomplete-ide",
+        "label": "FsAutoComplete",
+        "values": [
+          {
+            "arm": "sdk10",
+            "median": 571100224,
+            "value": 544.6436157226562,
+            "source": "../third-wave/results.json#/scalar_statistics/fsautocomplete-ide/arms/sdk10/metrics/retained_heap_bytes/median"
+          },
+          {
+            "arm": "sdk11rc1",
+            "median": 488731528,
+            "value": 466.09070587158203,
+            "source": "../third-wave/results.json#/scalar_statistics/fsautocomplete-ide/arms/sdk11rc1/metrics/retained_heap_bytes/median"
+          },
+          {
+            "arm": "vmr-rc2-r2r",
+            "median": 398605284,
+            "value": 380.13962173461914,
+            "source": "../third-wave/results.json#/scalar_statistics/fsautocomplete-ide/arms/vmr-rc2-r2r/metrics/retained_heap_bytes/median"
+          }
+        ]
+      },
+      {
+        "case": "oxpecker-ide",
+        "label": "Oxpecker",
+        "values": [
+          {
+            "arm": "sdk10",
+            "median": 113162204,
+            "value": 107.91988754272461,
+            "source": "../third-wave/results.json#/scalar_statistics/oxpecker-ide/arms/sdk10/metrics/retained_heap_bytes/median"
+          },
+          {
+            "arm": "sdk11rc1",
+            "median": 88471500,
+            "value": 84.37299728393555,
+            "source": "../third-wave/results.json#/scalar_statistics/oxpecker-ide/arms/sdk11rc1/metrics/retained_heap_bytes/median"
+          },
+          {
+            "arm": "vmr-rc2-r2r",
+            "median": 78487016,
+            "value": 74.8510513305664,
+            "source": "../third-wave/results.json#/scalar_statistics/oxpecker-ide/arms/vmr-rc2-r2r/metrics/retained_heap_bytes/median"
+          }
+        ]
+      }
+    ]
+  },
+  "portable_heap": {
+    "cohort": "framework",
+    "metric": "retained_heap_bytes",
+    "unit": "MiB",
+    "divisor": 1048576,
+    "arms": [
+      "old-framework",
+      "new-framework",
+      "old-net10",
+      "new-net10",
+      "old-net11",
+      "new-net11"
+    ],
+    "rows": [
+      {
+        "case": "fsautocomplete-ide",
+        "label": "FsAutoComplete",
+        "values": [
+          {
+            "arm": "old-framework",
+            "median": 571506404,
+            "value": 545.0309791564941,
+            "source": "../framework/results.json#/scalar_statistics/fsautocomplete-ide/arms/old-framework/metrics/retained_heap_bytes/median"
+          },
+          {
+            "arm": "new-framework",
+            "median": 399212496,
+            "value": 380.7187042236328,
+            "source": "../framework/results.json#/scalar_statistics/fsautocomplete-ide/arms/new-framework/metrics/retained_heap_bytes/median"
+          },
+          {
+            "arm": "old-net10",
+            "median": 570566384,
+            "value": 544.1345062255859,
+            "source": "../framework/results.json#/scalar_statistics/fsautocomplete-ide/arms/old-net10/metrics/retained_heap_bytes/median"
+          },
+          {
+            "arm": "new-net10",
+            "median": 398639608,
+            "value": 380.17235565185547,
+            "source": "../framework/results.json#/scalar_statistics/fsautocomplete-ide/arms/new-net10/metrics/retained_heap_bytes/median"
+          },
+          {
+            "arm": "old-net11",
+            "median": 570183704,
+            "value": 543.7695541381836,
+            "source": "../framework/results.json#/scalar_statistics/fsautocomplete-ide/arms/old-net11/metrics/retained_heap_bytes/median"
+          },
+          {
+            "arm": "new-net11",
+            "median": 398576716,
+            "value": 380.11237716674805,
+            "source": "../framework/results.json#/scalar_statistics/fsautocomplete-ide/arms/new-net11/metrics/retained_heap_bytes/median"
+          }
+        ],
+        "comparisons": [
+          {
+            "runtime": "framework",
+            "baseline100": 69.85267237705354,
+            "reduction_percent": 30.147327622946463
+          },
+          {
+            "runtime": "net10",
+            "baseline100": 69.86734921277802,
+            "reduction_percent": 30.132650787221984
+          },
+          {
+            "runtime": "net11",
+            "baseline100": 69.90321070277379,
+            "reduction_percent": 30.096789297226213
+          }
+        ]
+      },
+      {
+        "case": "oxpecker-ide",
+        "label": "Oxpecker",
+        "values": [
+          {
+            "arm": "old-framework",
+            "median": 113686300,
+            "value": 108.41970443725586,
+            "source": "../framework/results.json#/scalar_statistics/oxpecker-ide/arms/old-framework/metrics/retained_heap_bytes/median"
+          },
+          {
+            "arm": "new-framework",
+            "median": 78846848,
+            "value": 75.1942138671875,
+            "source": "../framework/results.json#/scalar_statistics/oxpecker-ide/arms/new-framework/metrics/retained_heap_bytes/median"
+          },
+          {
+            "arm": "old-net10",
+            "median": 113274312,
+            "value": 108.02680206298828,
+            "source": "../framework/results.json#/scalar_statistics/oxpecker-ide/arms/old-net10/metrics/retained_heap_bytes/median"
+          },
+          {
+            "arm": "new-net10",
+            "median": 78731500,
+            "value": 75.08420944213867,
+            "source": "../framework/results.json#/scalar_statistics/oxpecker-ide/arms/new-net10/metrics/retained_heap_bytes/median"
+          },
+          {
+            "arm": "old-net11",
+            "median": 113191068,
+            "value": 107.94741439819336,
+            "source": "../framework/results.json#/scalar_statistics/oxpecker-ide/arms/old-net11/metrics/retained_heap_bytes/median"
+          },
+          {
+            "arm": "new-net11",
+            "median": 78598336,
+            "value": 74.95721435546875,
+            "source": "../framework/results.json#/scalar_statistics/oxpecker-ide/arms/new-net11/metrics/retained_heap_bytes/median"
+          }
+        ],
+        "comparisons": [
+          {
+            "runtime": "framework",
+            "baseline100": 69.35474898910424,
+            "reduction_percent": 30.64525101089577
+          },
+          {
+            "runtime": "net10",
+            "baseline100": 69.50516724392023,
+            "reduction_percent": 30.49483275607977
+          },
+          {
+            "runtime": "net11",
+            "baseline100": 69.438638038118,
+            "reduction_percent": 30.561361961882007
+          }
+        ]
+      }
+    ]
+  },
+  "sdk_peak": {
+    "cohort": "third-wave",
+    "metric": "peak_working_set_bytes",
+    "unit": "MiB",
+    "divisor": 1048576,
+    "arms": [
+      "sdk10",
+      "sdk11rc1",
+      "vmr-rc2-r2r"
+    ],
+    "rows": [
+      {
+        "case": "fsharp-core",
+        "label": "FSharp.Core",
+        "values": [
+          {
+            "arm": "sdk10",
+            "median": 691623936,
+            "value": 659.583984375,
+            "source": "../third-wave/results.json#/scalar_statistics/fsharp-core/arms/sdk10/metrics/peak_working_set_bytes/median"
+          },
+          {
+            "arm": "sdk11rc1",
+            "median": 801247232,
+            "value": 764.12890625,
+            "source": "../third-wave/results.json#/scalar_statistics/fsharp-core/arms/sdk11rc1/metrics/peak_working_set_bytes/median"
+          },
+          {
+            "arm": "vmr-rc2-r2r",
+            "median": 808001536,
+            "value": 770.5703125,
+            "source": "../third-wave/results.json#/scalar_statistics/fsharp-core/arms/vmr-rc2-r2r/metrics/peak_working_set_bytes/median"
+          }
+        ]
+      },
+      {
+        "case": "fsharp-compiler-service",
+        "label": "FSharp.Compiler.Service",
+        "values": [
+          {
+            "arm": "sdk10",
+            "median": 2439929856,
+            "value": 2326.8984375,
+            "source": "../third-wave/results.json#/scalar_statistics/fsharp-compiler-service/arms/sdk10/metrics/peak_working_set_bytes/median"
+          },
+          {
+            "arm": "sdk11rc1",
+            "median": 3117187072,
+            "value": 2972.78125,
+            "source": "../third-wave/results.json#/scalar_statistics/fsharp-compiler-service/arms/sdk11rc1/metrics/peak_working_set_bytes/median"
+          },
+          {
+            "arm": "vmr-rc2-r2r",
+            "median": 3262144512,
+            "value": 3111.0234375,
+            "source": "../third-wave/results.json#/scalar_statistics/fsharp-compiler-service/arms/vmr-rc2-r2r/metrics/peak_working_set_bytes/median"
+          }
+        ]
+      },
+      {
+        "case": "fstoolkit",
+        "label": "FsToolkit.ErrorHandling",
+        "values": [
+          {
+            "arm": "sdk10",
+            "median": 551606272,
+            "value": 526.052734375,
+            "source": "../third-wave/results.json#/scalar_statistics/fstoolkit/arms/sdk10/metrics/peak_working_set_bytes/median"
+          },
+          {
+            "arm": "sdk11rc1",
+            "median": 575692800,
+            "value": 549.0234375,
+            "source": "../third-wave/results.json#/scalar_statistics/fstoolkit/arms/sdk11rc1/metrics/peak_working_set_bytes/median"
+          },
+          {
+            "arm": "vmr-rc2-r2r",
+            "median": 586866688,
+            "value": 559.6796875,
+            "source": "../third-wave/results.json#/scalar_statistics/fstoolkit/arms/vmr-rc2-r2r/metrics/peak_working_set_bytes/median"
+          }
+        ]
+      },
+      {
+        "case": "oxpecker",
+        "label": "Oxpecker",
+        "values": [
+          {
+            "arm": "sdk10",
+            "median": 411598848,
+            "value": 392.53125,
+            "source": "../third-wave/results.json#/scalar_statistics/oxpecker/arms/sdk10/metrics/peak_working_set_bytes/median"
+          },
+          {
+            "arm": "sdk11rc1",
+            "median": 355192832,
+            "value": 338.73828125,
+            "source": "../third-wave/results.json#/scalar_statistics/oxpecker/arms/sdk11rc1/metrics/peak_working_set_bytes/median"
+          },
+          {
+            "arm": "vmr-rc2-r2r",
+            "median": 327172096,
+            "value": 312.015625,
+            "source": "../third-wave/results.json#/scalar_statistics/oxpecker/arms/vmr-rc2-r2r/metrics/peak_working_set_bytes/median"
+          }
+        ]
+      },
+      {
+        "case": "nu",
+        "label": "Nu",
+        "values": [
+          {
+            "arm": "sdk10",
+            "median": 1394145280,
+            "value": 1329.560546875,
+            "source": "../third-wave/results.json#/scalar_statistics/nu/arms/sdk10/metrics/peak_working_set_bytes/median"
+          },
+          {
+            "arm": "sdk11rc1",
+            "median": 1439178752,
+            "value": 1372.5078125,
+            "source": "../third-wave/results.json#/scalar_statistics/nu/arms/sdk11rc1/metrics/peak_working_set_bytes/median"
+          },
+          {
+            "arm": "vmr-rc2-r2r",
+            "median": 1397454848,
+            "value": 1332.716796875,
+            "source": "../third-wave/results.json#/scalar_statistics/nu/arms/vmr-rc2-r2r/metrics/peak_working_set_bytes/median"
+          }
+        ]
+      },
+      {
+        "case": "fsautocomplete",
+        "label": "FsAutoComplete",
+        "values": [
+          {
+            "arm": "sdk10",
+            "median": 1078325248,
+            "value": 1028.37109375,
+            "source": "../third-wave/results.json#/scalar_statistics/fsautocomplete/arms/sdk10/metrics/peak_working_set_bytes/median"
+          },
+          {
+            "arm": "sdk11rc1",
+            "median": 1074921472,
+            "value": 1025.125,
+            "source": "../third-wave/results.json#/scalar_statistics/fsautocomplete/arms/sdk11rc1/metrics/peak_working_set_bytes/median"
+          },
+          {
+            "arm": "vmr-rc2-r2r",
+            "median": 987383808,
+            "value": 941.642578125,
+            "source": "../third-wave/results.json#/scalar_statistics/fsautocomplete/arms/vmr-rc2-r2r/metrics/peak_working_set_bytes/median"
+          }
+        ]
+      }
+    ]
+  },
+  "portable_peak": {
+    "cohort": "framework",
+    "metric": "peak_working_set_bytes",
+    "unit": "MiB",
+    "divisor": 1048576,
+    "arms": [
+      "old-framework",
+      "new-framework",
+      "old-net10",
+      "new-net10",
+      "old-net11",
+      "new-net11"
+    ],
+    "rows": [
+      {
+        "case": "fsharp-core",
+        "label": "FSharp.Core",
+        "values": [
+          {
+            "arm": "old-framework",
+            "median": 1795307520,
+            "value": 1712.138671875,
+            "source": "../framework/results.json#/scalar_statistics/fsharp-core/arms/old-framework/metrics/peak_working_set_bytes/median"
+          },
+          {
+            "arm": "new-framework",
+            "median": 2224287744,
+            "value": 2121.24609375,
+            "source": "../framework/results.json#/scalar_statistics/fsharp-core/arms/new-framework/metrics/peak_working_set_bytes/median"
+          },
+          {
+            "arm": "old-net10",
+            "median": 697894912,
+            "value": 665.564453125,
+            "source": "../framework/results.json#/scalar_statistics/fsharp-core/arms/old-net10/metrics/peak_working_set_bytes/median"
+          },
+          {
+            "arm": "new-net10",
+            "median": 802455552,
+            "value": 765.28125,
+            "source": "../framework/results.json#/scalar_statistics/fsharp-core/arms/new-net10/metrics/peak_working_set_bytes/median"
+          },
+          {
+            "arm": "old-net11",
+            "median": 689162240,
+            "value": 657.236328125,
+            "source": "../framework/results.json#/scalar_statistics/fsharp-core/arms/old-net11/metrics/peak_working_set_bytes/median"
+          },
+          {
+            "arm": "new-net11",
+            "median": 823615488,
+            "value": 785.4609375,
+            "source": "../framework/results.json#/scalar_statistics/fsharp-core/arms/new-net11/metrics/peak_working_set_bytes/median"
+          }
+        ]
+      },
+      {
+        "case": "fsharp-compiler-service",
+        "label": "FSharp.Compiler.Service",
+        "values": [
+          {
+            "arm": "old-framework",
+            "median": 4290000896,
+            "value": 4091.263671875,
+            "source": "../framework/results.json#/scalar_statistics/fsharp-compiler-service/arms/old-framework/metrics/peak_working_set_bytes/median"
+          },
+          {
+            "arm": "new-framework",
+            "median": 5150042112,
+            "value": 4911.462890625,
+            "source": "../framework/results.json#/scalar_statistics/fsharp-compiler-service/arms/new-framework/metrics/peak_working_set_bytes/median"
+          },
+          {
+            "arm": "old-net10",
+            "median": 2622017536,
+            "value": 2500.55078125,
+            "source": "../framework/results.json#/scalar_statistics/fsharp-compiler-service/arms/old-net10/metrics/peak_working_set_bytes/median"
+          },
+          {
+            "arm": "new-net10",
+            "median": 3202205696,
+            "value": 3053.861328125,
+            "source": "../framework/results.json#/scalar_statistics/fsharp-compiler-service/arms/new-net10/metrics/peak_working_set_bytes/median"
+          },
+          {
+            "arm": "old-net11",
+            "median": 2621413376,
+            "value": 2499.974609375,
+            "source": "../framework/results.json#/scalar_statistics/fsharp-compiler-service/arms/old-net11/metrics/peak_working_set_bytes/median"
+          },
+          {
+            "arm": "new-net11",
+            "median": 3285798912,
+            "value": 3133.58203125,
+            "source": "../framework/results.json#/scalar_statistics/fsharp-compiler-service/arms/new-net11/metrics/peak_working_set_bytes/median"
+          }
+        ]
+      },
+      {
+        "case": "fstoolkit",
+        "label": "FsToolkit.ErrorHandling",
+        "values": [
+          {
+            "arm": "old-framework",
+            "median": 1484185600,
+            "value": 1415.4296875,
+            "source": "../framework/results.json#/scalar_statistics/fstoolkit/arms/old-framework/metrics/peak_working_set_bytes/median"
+          },
+          {
+            "arm": "new-framework",
+            "median": 1034016768,
+            "value": 986.115234375,
+            "source": "../framework/results.json#/scalar_statistics/fstoolkit/arms/new-framework/metrics/peak_working_set_bytes/median"
+          },
+          {
+            "arm": "old-net10",
+            "median": 558966784,
+            "value": 533.072265625,
+            "source": "../framework/results.json#/scalar_statistics/fstoolkit/arms/old-net10/metrics/peak_working_set_bytes/median"
+          },
+          {
+            "arm": "new-net10",
+            "median": 567541760,
+            "value": 541.25,
+            "source": "../framework/results.json#/scalar_statistics/fstoolkit/arms/new-net10/metrics/peak_working_set_bytes/median"
+          },
+          {
+            "arm": "old-net11",
+            "median": 542443520,
+            "value": 517.314453125,
+            "source": "../framework/results.json#/scalar_statistics/fstoolkit/arms/old-net11/metrics/peak_working_set_bytes/median"
+          },
+          {
+            "arm": "new-net11",
+            "median": 552759296,
+            "value": 527.15234375,
+            "source": "../framework/results.json#/scalar_statistics/fstoolkit/arms/new-net11/metrics/peak_working_set_bytes/median"
+          }
+        ]
+      },
+      {
+        "case": "oxpecker",
+        "label": "Oxpecker",
+        "values": [
+          {
+            "arm": "old-framework",
+            "median": 1165232128,
+            "value": 1111.251953125,
+            "source": "../framework/results.json#/scalar_statistics/oxpecker/arms/old-framework/metrics/peak_working_set_bytes/median"
+          },
+          {
+            "arm": "new-framework",
+            "median": 568086528,
+            "value": 541.76953125,
+            "source": "../framework/results.json#/scalar_statistics/oxpecker/arms/new-framework/metrics/peak_working_set_bytes/median"
+          },
+          {
+            "arm": "old-net10",
+            "median": 414427136,
+            "value": 395.228515625,
+            "source": "../framework/results.json#/scalar_statistics/oxpecker/arms/old-net10/metrics/peak_working_set_bytes/median"
+          },
+          {
+            "arm": "new-net10",
+            "median": 337770496,
+            "value": 322.123046875,
+            "source": "../framework/results.json#/scalar_statistics/oxpecker/arms/new-net10/metrics/peak_working_set_bytes/median"
+          },
+          {
+            "arm": "old-net11",
+            "median": 418420736,
+            "value": 399.037109375,
+            "source": "../framework/results.json#/scalar_statistics/oxpecker/arms/old-net11/metrics/peak_working_set_bytes/median"
+          },
+          {
+            "arm": "new-net11",
+            "median": 337643520,
+            "value": 322.001953125,
+            "source": "../framework/results.json#/scalar_statistics/oxpecker/arms/new-net11/metrics/peak_working_set_bytes/median"
+          }
+        ]
+      },
+      {
+        "case": "nu",
+        "label": "Nu",
+        "values": [
+          {
+            "arm": "old-framework",
+            "median": 3500105728,
+            "value": 3337.9609375,
+            "source": "../framework/results.json#/scalar_statistics/nu/arms/old-framework/metrics/peak_working_set_bytes/median"
+          },
+          {
+            "arm": "new-framework",
+            "median": 3534852096,
+            "value": 3371.09765625,
+            "source": "../framework/results.json#/scalar_statistics/nu/arms/new-framework/metrics/peak_working_set_bytes/median"
+          },
+          {
+            "arm": "old-net10",
+            "median": 1318526976,
+            "value": 1257.4453125,
+            "source": "../framework/results.json#/scalar_statistics/nu/arms/old-net10/metrics/peak_working_set_bytes/median"
+          },
+          {
+            "arm": "new-net10",
+            "median": 1478371328,
+            "value": 1409.884765625,
+            "source": "../framework/results.json#/scalar_statistics/nu/arms/new-net10/metrics/peak_working_set_bytes/median"
+          },
+          {
+            "arm": "old-net11",
+            "median": 1369831424,
+            "value": 1306.373046875,
+            "source": "../framework/results.json#/scalar_statistics/nu/arms/old-net11/metrics/peak_working_set_bytes/median"
+          },
+          {
+            "arm": "new-net11",
+            "median": 1483593728,
+            "value": 1414.865234375,
+            "source": "../framework/results.json#/scalar_statistics/nu/arms/new-net11/metrics/peak_working_set_bytes/median"
+          }
+        ]
+      },
+      {
+        "case": "fsautocomplete",
+        "label": "FsAutoComplete",
+        "values": [
+          {
+            "arm": "old-framework",
+            "median": 2382964736,
+            "value": 2272.572265625,
+            "source": "../framework/results.json#/scalar_statistics/fsautocomplete/arms/old-framework/metrics/peak_working_set_bytes/median"
+          },
+          {
+            "arm": "new-framework",
+            "median": 2262284288,
+            "value": 2157.482421875,
+            "source": "../framework/results.json#/scalar_statistics/fsautocomplete/arms/new-framework/metrics/peak_working_set_bytes/median"
+          },
+          {
+            "arm": "old-net10",
+            "median": 1072871424,
+            "value": 1023.169921875,
+            "source": "../framework/results.json#/scalar_statistics/fsautocomplete/arms/old-net10/metrics/peak_working_set_bytes/median"
+          },
+          {
+            "arm": "new-net10",
+            "median": 1004013568,
+            "value": 957.501953125,
+            "source": "../framework/results.json#/scalar_statistics/fsautocomplete/arms/new-net10/metrics/peak_working_set_bytes/median"
+          },
+          {
+            "arm": "old-net11",
+            "median": 1071421440,
+            "value": 1021.787109375,
+            "source": "../framework/results.json#/scalar_statistics/fsautocomplete/arms/old-net11/metrics/peak_working_set_bytes/median"
+          },
+          {
+            "arm": "new-net11",
+            "median": 997992448,
+            "value": 951.759765625,
+            "source": "../framework/results.json#/scalar_statistics/fsautocomplete/arms/new-net11/metrics/peak_working_set_bytes/median"
+          }
+        ]
+      }
+    ]
+  },
+  "sdk_cpu": {
+    "cohort": "third-wave",
+    "metric": "cpu_ns",
+    "unit": "s",
+    "divisor": 1000000000,
+    "arms": [
+      "sdk10",
+      "sdk11rc1",
+      "vmr-rc2-r2r"
+    ],
+    "rows": [
+      {
+        "case": "fsharp-core",
+        "label": "FSharp.Core",
+        "values": [
+          {
+            "arm": "sdk10",
+            "median": 33531250000,
+            "value": 33.53125,
+            "source": "../third-wave/results.json#/scalar_statistics/fsharp-core/arms/sdk10/metrics/cpu_ns/median"
+          },
+          {
+            "arm": "sdk11rc1",
+            "median": 34101562500,
+            "value": 34.1015625,
+            "source": "../third-wave/results.json#/scalar_statistics/fsharp-core/arms/sdk11rc1/metrics/cpu_ns/median"
+          },
+          {
+            "arm": "vmr-rc2-r2r",
+            "median": 32023437500,
+            "value": 32.0234375,
+            "source": "../third-wave/results.json#/scalar_statistics/fsharp-core/arms/vmr-rc2-r2r/metrics/cpu_ns/median"
+          }
+        ]
+      },
+      {
+        "case": "fsharp-compiler-service",
+        "label": "FSharp.Compiler.Service",
+        "values": [
+          {
+            "arm": "sdk10",
+            "median": 128171875000,
+            "value": 128.171875,
+            "source": "../third-wave/results.json#/scalar_statistics/fsharp-compiler-service/arms/sdk10/metrics/cpu_ns/median"
+          },
+          {
+            "arm": "sdk11rc1",
+            "median": 244945312500,
+            "value": 244.9453125,
+            "source": "../third-wave/results.json#/scalar_statistics/fsharp-compiler-service/arms/sdk11rc1/metrics/cpu_ns/median"
+          },
+          {
+            "arm": "vmr-rc2-r2r",
+            "median": 232085937500,
+            "value": 232.0859375,
+            "source": "../third-wave/results.json#/scalar_statistics/fsharp-compiler-service/arms/vmr-rc2-r2r/metrics/cpu_ns/median"
+          }
+        ]
+      },
+      {
+        "case": "fstoolkit",
+        "label": "FsToolkit.ErrorHandling",
+        "values": [
+          {
+            "arm": "sdk10",
+            "median": 13046875000,
+            "value": 13.046875,
+            "source": "../third-wave/results.json#/scalar_statistics/fstoolkit/arms/sdk10/metrics/cpu_ns/median"
+          },
+          {
+            "arm": "sdk11rc1",
+            "median": 13843750000,
+            "value": 13.84375,
+            "source": "../third-wave/results.json#/scalar_statistics/fstoolkit/arms/sdk11rc1/metrics/cpu_ns/median"
+          },
+          {
+            "arm": "vmr-rc2-r2r",
+            "median": 12617187500,
+            "value": 12.6171875,
+            "source": "../third-wave/results.json#/scalar_statistics/fstoolkit/arms/vmr-rc2-r2r/metrics/cpu_ns/median"
+          }
+        ]
+      },
+      {
+        "case": "oxpecker",
+        "label": "Oxpecker",
+        "values": [
+          {
+            "arm": "sdk10",
+            "median": 6773437500,
+            "value": 6.7734375,
+            "source": "../third-wave/results.json#/scalar_statistics/oxpecker/arms/sdk10/metrics/cpu_ns/median"
+          },
+          {
+            "arm": "sdk11rc1",
+            "median": 5492187500,
+            "value": 5.4921875,
+            "source": "../third-wave/results.json#/scalar_statistics/oxpecker/arms/sdk11rc1/metrics/cpu_ns/median"
+          },
+          {
+            "arm": "vmr-rc2-r2r",
+            "median": 4929687500,
+            "value": 4.9296875,
+            "source": "../third-wave/results.json#/scalar_statistics/oxpecker/arms/vmr-rc2-r2r/metrics/cpu_ns/median"
+          }
+        ]
+      },
+      {
+        "case": "nu",
+        "label": "Nu",
+        "values": [
+          {
+            "arm": "sdk10",
+            "median": 64851562500,
+            "value": 64.8515625,
+            "source": "../third-wave/results.json#/scalar_statistics/nu/arms/sdk10/metrics/cpu_ns/median"
+          },
+          {
+            "arm": "sdk11rc1",
+            "median": 64500000000,
+            "value": 64.5,
+            "source": "../third-wave/results.json#/scalar_statistics/nu/arms/sdk11rc1/metrics/cpu_ns/median"
+          },
+          {
+            "arm": "vmr-rc2-r2r",
+            "median": 62343750000,
+            "value": 62.34375,
+            "source": "../third-wave/results.json#/scalar_statistics/nu/arms/vmr-rc2-r2r/metrics/cpu_ns/median"
+          }
+        ]
+      },
+      {
+        "case": "fsautocomplete",
+        "label": "FsAutoComplete",
+        "values": [
+          {
+            "arm": "sdk10",
+            "median": 41109375000,
+            "value": 41.109375,
+            "source": "../third-wave/results.json#/scalar_statistics/fsautocomplete/arms/sdk10/metrics/cpu_ns/median"
+          },
+          {
+            "arm": "sdk11rc1",
+            "median": 38109375000,
+            "value": 38.109375,
+            "source": "../third-wave/results.json#/scalar_statistics/fsautocomplete/arms/sdk11rc1/metrics/cpu_ns/median"
+          },
+          {
+            "arm": "vmr-rc2-r2r",
+            "median": 35968750000,
+            "value": 35.96875,
+            "source": "../third-wave/results.json#/scalar_statistics/fsautocomplete/arms/vmr-rc2-r2r/metrics/cpu_ns/median"
+          }
+        ]
+      }
+    ]
+  },
+  "portable_cpu": {
+    "cohort": "framework",
+    "metric": "cpu_ns",
+    "unit": "s",
+    "divisor": 1000000000,
+    "arms": [
+      "old-framework",
+      "new-framework",
+      "old-net10",
+      "new-net10",
+      "old-net11",
+      "new-net11"
+    ],
+    "rows": [
+      {
+        "case": "fsharp-core",
+        "label": "FSharp.Core",
+        "values": [
+          {
+            "arm": "old-framework",
+            "median": 39625000000,
+            "value": 39.625,
+            "source": "../framework/results.json#/scalar_statistics/fsharp-core/arms/old-framework/metrics/cpu_ns/median"
+          },
+          {
+            "arm": "new-framework",
+            "median": 39937500000,
+            "value": 39.9375,
+            "source": "../framework/results.json#/scalar_statistics/fsharp-core/arms/new-framework/metrics/cpu_ns/median"
+          },
+          {
+            "arm": "old-net10",
+            "median": 36164062500,
+            "value": 36.1640625,
+            "source": "../framework/results.json#/scalar_statistics/fsharp-core/arms/old-net10/metrics/cpu_ns/median"
+          },
+          {
+            "arm": "new-net10",
+            "median": 35101562500,
+            "value": 35.1015625,
+            "source": "../framework/results.json#/scalar_statistics/fsharp-core/arms/new-net10/metrics/cpu_ns/median"
+          },
+          {
+            "arm": "old-net11",
+            "median": 36000000000,
+            "value": 36,
+            "source": "../framework/results.json#/scalar_statistics/fsharp-core/arms/old-net11/metrics/cpu_ns/median"
+          },
+          {
+            "arm": "new-net11",
+            "median": 36273437500,
+            "value": 36.2734375,
+            "source": "../framework/results.json#/scalar_statistics/fsharp-core/arms/new-net11/metrics/cpu_ns/median"
+          }
+        ]
+      },
+      {
+        "case": "fsharp-compiler-service",
+        "label": "FSharp.Compiler.Service",
+        "values": [
+          {
+            "arm": "old-framework",
+            "median": 155093750000,
+            "value": 155.09375,
+            "source": "../framework/results.json#/scalar_statistics/fsharp-compiler-service/arms/old-framework/metrics/cpu_ns/median"
+          },
+          {
+            "arm": "new-framework",
+            "median": 184007812500,
+            "value": 184.0078125,
+            "source": "../framework/results.json#/scalar_statistics/fsharp-compiler-service/arms/new-framework/metrics/cpu_ns/median"
+          },
+          {
+            "arm": "old-net10",
+            "median": 123203125000,
+            "value": 123.203125,
+            "source": "../framework/results.json#/scalar_statistics/fsharp-compiler-service/arms/old-net10/metrics/cpu_ns/median"
+          },
+          {
+            "arm": "new-net10",
+            "median": 213742187500,
+            "value": 213.7421875,
+            "source": "../framework/results.json#/scalar_statistics/fsharp-compiler-service/arms/new-net10/metrics/cpu_ns/median"
+          },
+          {
+            "arm": "old-net11",
+            "median": 130757812500,
+            "value": 130.7578125,
+            "source": "../framework/results.json#/scalar_statistics/fsharp-compiler-service/arms/old-net11/metrics/cpu_ns/median"
+          },
+          {
+            "arm": "new-net11",
+            "median": 220359375000,
+            "value": 220.359375,
+            "source": "../framework/results.json#/scalar_statistics/fsharp-compiler-service/arms/new-net11/metrics/cpu_ns/median"
+          }
+        ]
+      },
+      {
+        "case": "fstoolkit",
+        "label": "FsToolkit.ErrorHandling",
+        "values": [
+          {
+            "arm": "old-framework",
+            "median": 20562500000,
+            "value": 20.5625,
+            "source": "../framework/results.json#/scalar_statistics/fstoolkit/arms/old-framework/metrics/cpu_ns/median"
+          },
+          {
+            "arm": "new-framework",
+            "median": 25921875000,
+            "value": 25.921875,
+            "source": "../framework/results.json#/scalar_statistics/fstoolkit/arms/new-framework/metrics/cpu_ns/median"
+          },
+          {
+            "arm": "old-net10",
+            "median": 15054687500,
+            "value": 15.0546875,
+            "source": "../framework/results.json#/scalar_statistics/fstoolkit/arms/old-net10/metrics/cpu_ns/median"
+          },
+          {
+            "arm": "new-net10",
+            "median": 15531250000,
+            "value": 15.53125,
+            "source": "../framework/results.json#/scalar_statistics/fstoolkit/arms/new-net10/metrics/cpu_ns/median"
+          },
+          {
+            "arm": "old-net11",
+            "median": 15406250000,
+            "value": 15.40625,
+            "source": "../framework/results.json#/scalar_statistics/fstoolkit/arms/old-net11/metrics/cpu_ns/median"
+          },
+          {
+            "arm": "new-net11",
+            "median": 15960937500,
+            "value": 15.9609375,
+            "source": "../framework/results.json#/scalar_statistics/fstoolkit/arms/new-net11/metrics/cpu_ns/median"
+          }
+        ]
+      },
+      {
+        "case": "oxpecker",
+        "label": "Oxpecker",
+        "values": [
+          {
+            "arm": "old-framework",
+            "median": 17179687500,
+            "value": 17.1796875,
+            "source": "../framework/results.json#/scalar_statistics/oxpecker/arms/old-framework/metrics/cpu_ns/median"
+          },
+          {
+            "arm": "new-framework",
+            "median": 20195312500,
+            "value": 20.1953125,
+            "source": "../framework/results.json#/scalar_statistics/oxpecker/arms/new-framework/metrics/cpu_ns/median"
+          },
+          {
+            "arm": "old-net10",
+            "median": 10320312500,
+            "value": 10.3203125,
+            "source": "../framework/results.json#/scalar_statistics/oxpecker/arms/old-net10/metrics/cpu_ns/median"
+          },
+          {
+            "arm": "new-net10",
+            "median": 8585937500,
+            "value": 8.5859375,
+            "source": "../framework/results.json#/scalar_statistics/oxpecker/arms/new-net10/metrics/cpu_ns/median"
+          },
+          {
+            "arm": "old-net11",
+            "median": 11187500000,
+            "value": 11.1875,
+            "source": "../framework/results.json#/scalar_statistics/oxpecker/arms/old-net11/metrics/cpu_ns/median"
+          },
+          {
+            "arm": "new-net11",
+            "median": 9156250000,
+            "value": 9.15625,
+            "source": "../framework/results.json#/scalar_statistics/oxpecker/arms/new-net11/metrics/cpu_ns/median"
+          }
+        ]
+      },
+      {
+        "case": "nu",
+        "label": "Nu",
+        "values": [
+          {
+            "arm": "old-framework",
+            "median": 72320312500,
+            "value": 72.3203125,
+            "source": "../framework/results.json#/scalar_statistics/nu/arms/old-framework/metrics/cpu_ns/median"
+          },
+          {
+            "arm": "new-framework",
+            "median": 69578125000,
+            "value": 69.578125,
+            "source": "../framework/results.json#/scalar_statistics/nu/arms/new-framework/metrics/cpu_ns/median"
+          },
+          {
+            "arm": "old-net10",
+            "median": 63992187500,
+            "value": 63.9921875,
+            "source": "../framework/results.json#/scalar_statistics/nu/arms/old-net10/metrics/cpu_ns/median"
+          },
+          {
+            "arm": "new-net10",
+            "median": 66179687500,
+            "value": 66.1796875,
+            "source": "../framework/results.json#/scalar_statistics/nu/arms/new-net10/metrics/cpu_ns/median"
+          },
+          {
+            "arm": "old-net11",
+            "median": 65914062500,
+            "value": 65.9140625,
+            "source": "../framework/results.json#/scalar_statistics/nu/arms/old-net11/metrics/cpu_ns/median"
+          },
+          {
+            "arm": "new-net11",
+            "median": 67781250000,
+            "value": 67.78125,
+            "source": "../framework/results.json#/scalar_statistics/nu/arms/new-net11/metrics/cpu_ns/median"
+          }
+        ]
+      },
+      {
+        "case": "fsautocomplete",
+        "label": "FsAutoComplete",
+        "values": [
+          {
+            "arm": "old-framework",
+            "median": 46140625000,
+            "value": 46.140625,
+            "source": "../framework/results.json#/scalar_statistics/fsautocomplete/arms/old-framework/metrics/cpu_ns/median"
+          },
+          {
+            "arm": "new-framework",
+            "median": 42890625000,
+            "value": 42.890625,
+            "source": "../framework/results.json#/scalar_statistics/fsautocomplete/arms/new-framework/metrics/cpu_ns/median"
+          },
+          {
+            "arm": "old-net10",
+            "median": 44593750000,
+            "value": 44.59375,
+            "source": "../framework/results.json#/scalar_statistics/fsautocomplete/arms/old-net10/metrics/cpu_ns/median"
+          },
+          {
+            "arm": "new-net10",
+            "median": 42765625000,
+            "value": 42.765625,
+            "source": "../framework/results.json#/scalar_statistics/fsautocomplete/arms/new-net10/metrics/cpu_ns/median"
+          },
+          {
+            "arm": "old-net11",
+            "median": 48828125000,
+            "value": 48.828125,
+            "source": "../framework/results.json#/scalar_statistics/fsautocomplete/arms/old-net11/metrics/cpu_ns/median"
+          },
+          {
+            "arm": "new-net11",
+            "median": 43640625000,
+            "value": 43.640625,
+            "source": "../framework/results.json#/scalar_statistics/fsautocomplete/arms/new-net11/metrics/cpu_ns/median"
+          }
+        ]
+      }
+    ]
+  },
+  "programs": [
+    {
+      "kernel": "Cart",
+      "label": "Cart-price List.fold",
+      "length": 4,
+      "cohorts": [
+        [
+          {
+            "arm": "sdk10",
+            "value": 24,
+            "source": "../third-wave/results.json#/program_statistics/6/bytes_per_op/median"
+          },
+          {
+            "arm": "sdk11rc1",
+            "value": 24,
+            "source": "../third-wave/results.json#/program_statistics/7/bytes_per_op/median"
+          },
+          {
+            "arm": "vmr-rc2-r2r",
+            "value": 0,
+            "source": "../third-wave/results.json#/program_statistics/8/bytes_per_op/median"
+          }
+        ],
+        [
+          {
+            "arm": "old-framework",
+            "value": 24,
+            "source": "../framework/results.json#/program_statistics/12/bytes_per_op/median"
+          },
+          {
+            "arm": "new-framework",
+            "value": 0,
+            "source": "../framework/results.json#/program_statistics/13/bytes_per_op/median"
+          },
+          {
+            "arm": "old-net10",
+            "value": 24,
+            "source": "../framework/results.json#/program_statistics/14/bytes_per_op/median"
+          },
+          {
+            "arm": "new-net10",
+            "value": 0,
+            "source": "../framework/results.json#/program_statistics/15/bytes_per_op/median"
+          },
+          {
+            "arm": "old-net11",
+            "value": 24,
+            "source": "../framework/results.json#/program_statistics/16/bytes_per_op/median"
+          },
+          {
+            "arm": "new-net11",
+            "value": 0,
+            "source": "../framework/results.json#/program_statistics/17/bytes_per_op/median"
+          }
+        ]
+      ]
+    },
+    {
+      "kernel": "Rules",
+      "label": "Access-rule exists / forall",
+      "length": 4,
+      "cohorts": [
+        [
+          {
+            "arm": "sdk10",
+            "value": 48,
+            "source": "../third-wave/results.json#/program_statistics/24/bytes_per_op/median"
+          },
+          {
+            "arm": "sdk11rc1",
+            "value": 48,
+            "source": "../third-wave/results.json#/program_statistics/25/bytes_per_op/median"
+          },
+          {
+            "arm": "vmr-rc2-r2r",
+            "value": 0,
+            "source": "../third-wave/results.json#/program_statistics/26/bytes_per_op/median"
+          }
+        ],
+        [
+          {
+            "arm": "old-framework",
+            "value": 48,
+            "source": "../framework/results.json#/program_statistics/48/bytes_per_op/median"
+          },
+          {
+            "arm": "new-framework",
+            "value": 0,
+            "source": "../framework/results.json#/program_statistics/49/bytes_per_op/median"
+          },
+          {
+            "arm": "old-net10",
+            "value": 48,
+            "source": "../framework/results.json#/program_statistics/50/bytes_per_op/median"
+          },
+          {
+            "arm": "new-net10",
+            "value": 0,
+            "source": "../framework/results.json#/program_statistics/51/bytes_per_op/median"
+          },
+          {
+            "arm": "old-net11",
+            "value": 48,
+            "source": "../framework/results.json#/program_statistics/52/bytes_per_op/median"
+          },
+          {
+            "arm": "new-net11",
+            "value": 0,
+            "source": "../framework/results.json#/program_statistics/53/bytes_per_op/median"
+          }
+        ]
+      ]
+    },
+    {
+      "kernel": "Telemetry",
+      "label": "Weighted Array.fold / fold2",
+      "length": 4,
+      "cohorts": [
+        [
+          {
+            "arm": "sdk10",
+            "value": 48,
+            "source": "../third-wave/results.json#/program_statistics/42/bytes_per_op/median"
+          },
+          {
+            "arm": "sdk11rc1",
+            "value": 48,
+            "source": "../third-wave/results.json#/program_statistics/43/bytes_per_op/median"
+          },
+          {
+            "arm": "vmr-rc2-r2r",
+            "value": 0,
+            "source": "../third-wave/results.json#/program_statistics/44/bytes_per_op/median"
+          }
+        ],
+        [
+          {
+            "arm": "old-framework",
+            "value": 48,
+            "source": "../framework/results.json#/program_statistics/84/bytes_per_op/median"
+          },
+          {
+            "arm": "new-framework",
+            "value": 0,
+            "source": "../framework/results.json#/program_statistics/85/bytes_per_op/median"
+          },
+          {
+            "arm": "old-net10",
+            "value": 48,
+            "source": "../framework/results.json#/program_statistics/86/bytes_per_op/median"
+          },
+          {
+            "arm": "new-net10",
+            "value": 0,
+            "source": "../framework/results.json#/program_statistics/87/bytes_per_op/median"
+          },
+          {
+            "arm": "old-net11",
+            "value": 48,
+            "source": "../framework/results.json#/program_statistics/88/bytes_per_op/median"
+          },
+          {
+            "arm": "new-net11",
+            "value": 0,
+            "source": "../framework/results.json#/program_statistics/89/bytes_per_op/median"
+          }
+        ]
+      ]
+    },
+    {
+      "kernel": "Option",
+      "label": "Partially applied Option.map",
+      "length": 4,
+      "cohorts": [
+        [
+          {
+            "arm": "sdk10",
+            "value": 0,
+            "source": "../third-wave/results.json#/program_statistics/60/bytes_per_op/median"
+          },
+          {
+            "arm": "sdk11rc1",
+            "value": 0,
+            "source": "../third-wave/results.json#/program_statistics/61/bytes_per_op/median"
+          },
+          {
+            "arm": "vmr-rc2-r2r",
+            "value": 0,
+            "source": "../third-wave/results.json#/program_statistics/62/bytes_per_op/median"
+          }
+        ],
+        [
+          {
+            "arm": "old-framework",
+            "value": 48,
+            "source": "../framework/results.json#/program_statistics/120/bytes_per_op/median"
+          },
+          {
+            "arm": "new-framework",
+            "value": 24,
+            "source": "../framework/results.json#/program_statistics/121/bytes_per_op/median"
+          },
+          {
+            "arm": "old-net10",
+            "value": 0,
+            "source": "../framework/results.json#/program_statistics/122/bytes_per_op/median"
+          },
+          {
+            "arm": "new-net10",
+            "value": 0,
+            "source": "../framework/results.json#/program_statistics/123/bytes_per_op/median"
+          },
+          {
+            "arm": "old-net11",
+            "value": 0,
+            "source": "../framework/results.json#/program_statistics/124/bytes_per_op/median"
+          },
+          {
+            "arm": "new-net11",
+            "value": 0,
+            "source": "../framework/results.json#/program_statistics/125/bytes_per_op/median"
+          }
+        ]
+      ]
+    },
+    {
+      "kernel": "Nested",
+      "label": "Nested group folds",
+      "length": 4,
+      "cohorts": [
+        [
+          {
+            "arm": "sdk10",
+            "value": 48,
+            "source": "../third-wave/results.json#/program_statistics/78/bytes_per_op/median"
+          },
+          {
+            "arm": "sdk11rc1",
+            "value": 48,
+            "source": "../third-wave/results.json#/program_statistics/79/bytes_per_op/median"
+          },
+          {
+            "arm": "vmr-rc2-r2r",
+            "value": 0,
+            "source": "../third-wave/results.json#/program_statistics/80/bytes_per_op/median"
+          }
+        ],
+        [
+          {
+            "arm": "old-framework",
+            "value": 48,
+            "source": "../framework/results.json#/program_statistics/156/bytes_per_op/median"
+          },
+          {
+            "arm": "new-framework",
+            "value": 0,
+            "source": "../framework/results.json#/program_statistics/157/bytes_per_op/median"
+          },
+          {
+            "arm": "old-net10",
+            "value": 48,
+            "source": "../framework/results.json#/program_statistics/158/bytes_per_op/median"
+          },
+          {
+            "arm": "new-net10",
+            "value": 0,
+            "source": "../framework/results.json#/program_statistics/159/bytes_per_op/median"
+          },
+          {
+            "arm": "old-net11",
+            "value": 48,
+            "source": "../framework/results.json#/program_statistics/160/bytes_per_op/median"
+          },
+          {
+            "arm": "new-net11",
+            "value": 0,
+            "source": "../framework/results.json#/program_statistics/161/bytes_per_op/median"
+          }
+        ]
+      ]
+    },
+    {
+      "kernel": "FilterMap",
+      "label": "Filtering and mapping",
+      "length": 4,
+      "cohorts": [
+        [
+          {
+            "arm": "sdk10",
+            "value": 146,
+            "source": "../third-wave/results.json#/program_statistics/96/bytes_per_op/median"
+          },
+          {
+            "arm": "sdk11rc1",
+            "value": 146,
+            "source": "../third-wave/results.json#/program_statistics/97/bytes_per_op/median"
+          },
+          {
+            "arm": "vmr-rc2-r2r",
+            "value": 146,
+            "source": "../third-wave/results.json#/program_statistics/98/bytes_per_op/median"
+          }
+        ],
+        [
+          {
+            "arm": "old-framework",
+            "value": 146,
+            "source": "../framework/results.json#/program_statistics/192/bytes_per_op/median"
+          },
+          {
+            "arm": "new-framework",
+            "value": 146,
+            "source": "../framework/results.json#/program_statistics/193/bytes_per_op/median"
+          },
+          {
+            "arm": "old-net10",
+            "value": 146,
+            "source": "../framework/results.json#/program_statistics/194/bytes_per_op/median"
+          },
+          {
+            "arm": "new-net10",
+            "value": 146,
+            "source": "../framework/results.json#/program_statistics/195/bytes_per_op/median"
+          },
+          {
+            "arm": "old-net11",
+            "value": 146,
+            "source": "../framework/results.json#/program_statistics/196/bytes_per_op/median"
+          },
+          {
+            "arm": "new-net11",
+            "value": 146,
+            "source": "../framework/results.json#/program_statistics/197/bytes_per_op/median"
+          }
+        ]
+      ]
+    },
+    {
+      "kernel": "Escaping",
+      "label": "Escaping callback control",
+      "length": 4,
+      "cohorts": [
+        [
+          {
+            "arm": "sdk10",
+            "value": 24,
+            "source": "../third-wave/results.json#/program_statistics/114/bytes_per_op/median"
+          },
+          {
+            "arm": "sdk11rc1",
+            "value": 24,
+            "source": "../third-wave/results.json#/program_statistics/115/bytes_per_op/median"
+          },
+          {
+            "arm": "vmr-rc2-r2r",
+            "value": 24,
+            "source": "../third-wave/results.json#/program_statistics/116/bytes_per_op/median"
+          }
+        ],
+        [
+          {
+            "arm": "old-framework",
+            "value": 24,
+            "source": "../framework/results.json#/program_statistics/228/bytes_per_op/median"
+          },
+          {
+            "arm": "new-framework",
+            "value": 24,
+            "source": "../framework/results.json#/program_statistics/229/bytes_per_op/median"
+          },
+          {
+            "arm": "old-net10",
+            "value": 24,
+            "source": "../framework/results.json#/program_statistics/230/bytes_per_op/median"
+          },
+          {
+            "arm": "new-net10",
+            "value": 24,
+            "source": "../framework/results.json#/program_statistics/231/bytes_per_op/median"
+          },
+          {
+            "arm": "old-net11",
+            "value": 24,
+            "source": "../framework/results.json#/program_statistics/232/bytes_per_op/median"
+          },
+          {
+            "arm": "new-net11",
+            "value": 24,
+            "source": "../framework/results.json#/program_statistics/233/bytes_per_op/median"
+          }
+        ]
+      ]
+    },
+    {
+      "kernel": "NonCapturing",
+      "label": "Non-capturing control",
+      "length": 4,
+      "cohorts": [
+        [
+          {
+            "arm": "sdk10",
+            "value": 0,
+            "source": "../third-wave/results.json#/program_statistics/132/bytes_per_op/median"
+          },
+          {
+            "arm": "sdk11rc1",
+            "value": 0,
+            "source": "../third-wave/results.json#/program_statistics/133/bytes_per_op/median"
+          },
+          {
+            "arm": "vmr-rc2-r2r",
+            "value": 0,
+            "source": "../third-wave/results.json#/program_statistics/134/bytes_per_op/median"
+          }
+        ],
+        [
+          {
+            "arm": "old-framework",
+            "value": 0,
+            "source": "../framework/results.json#/program_statistics/264/bytes_per_op/median"
+          },
+          {
+            "arm": "new-framework",
+            "value": 0,
+            "source": "../framework/results.json#/program_statistics/265/bytes_per_op/median"
+          },
+          {
+            "arm": "old-net10",
+            "value": 0,
+            "source": "../framework/results.json#/program_statistics/266/bytes_per_op/median"
+          },
+          {
+            "arm": "new-net10",
+            "value": 0,
+            "source": "../framework/results.json#/program_statistics/267/bytes_per_op/median"
+          },
+          {
+            "arm": "old-net11",
+            "value": 0,
+            "source": "../framework/results.json#/program_statistics/268/bytes_per_op/median"
+          },
+          {
+            "arm": "new-net11",
+            "value": 0,
+            "source": "../framework/results.json#/program_statistics/269/bytes_per_op/median"
+          }
+        ]
+      ]
+    }
+  ],
+  "function_construction_sites": [
+    {
+      "arm": "sdk10",
+      "count": 19,
+      "source": "../third-wave/programs/sdk10-il.json#/newobj_sites"
+    },
+    {
+      "arm": "sdk11rc1",
+      "count": 19,
+      "source": "../third-wave/programs/sdk11rc1-il.json#/newobj_sites"
+    },
+    {
+      "arm": "vmr-rc2-r2r",
+      "count": 11,
+      "source": "../third-wave/programs/vmr-rc2-r2r-il.json#/newobj_sites"
+    }
+  ],
+  "profiles": [
+    {
+      "arm": "sdk10",
+      "allocation_ticks": 10999,
+      "weighted_allocation_bytes": 1193701824,
+      "verified_function_weighted_bytes": 121016744,
+      "events_lost": 0,
+      "raw_trace_sha256": "2bca774acf56b3ff6bffca614081804acf8cf8104d2114d0cfa213eb48f29c95"
+    },
+    {
+      "arm": "sdk11rc1",
+      "allocation_ticks": 6786,
+      "weighted_allocation_bytes": 744856760,
+      "verified_function_weighted_bytes": 102544856,
+      "events_lost": 0,
+      "raw_trace_sha256": "6eb8f94ad9967051e179c605e9589aa9d18ac9cd155128140a508b9d5c90266c"
+    },
+    {
+      "arm": "vmr-rc2-r2r",
+      "allocation_ticks": 5789,
+      "weighted_allocation_bytes": 632164368,
+      "verified_function_weighted_bytes": 47599368,
+      "events_lost": 0,
+      "raw_trace_sha256": "5c52ca45aa87c073c8a4156771a18af48a509860372d695df99c6e0b84547418"
+    }
+  ],
+  "monitoring": [
+    {
+      "case": "oxpecker",
+      "arm": "old-framework",
+      "pairs": 6,
+      "on_vs_off_percent": {
+        "wall_ns": {
+          "n": 6,
+          "median": -0.6700393938343541,
+          "q1": -2.630801129697552,
+          "q3": 0.4522362275504538,
+          "min": -22.33777221444344,
+          "max": 2.5586522860993055
+        },
+        "peak_working_set_bytes": {
+          "n": 6,
+          "median": 0.10761290360958853,
+          "q1": -3.593922223162413,
+          "q3": 1.5716433843688704,
+          "min": -5.478430552651748,
+          "max": 6.600707578576848
+        },
+        "peak_private_commit_bytes": {
+          "n": 6,
+          "median": 0.3833909519787515,
+          "q1": -3.7650088901245353,
+          "q3": 1.4869417494668413,
+          "min": -5.55063478004133,
+          "max": 6.377668467857234
+        }
+      }
+    },
+    {
+      "case": "oxpecker",
+      "arm": "new-framework",
+      "pairs": 6,
+      "on_vs_off_percent": {
+        "wall_ns": {
+          "n": 6,
+          "median": 0.48405391106419726,
+          "q1": -0.25959293124913907,
+          "q3": 1.4450799402321135,
+          "min": -0.6836574222485403,
+          "max": 2.5053777967981583
+        },
+        "peak_working_set_bytes": {
+          "n": 6,
+          "median": -4.124230471353924,
+          "q1": -8.717816317364557,
+          "q3": 1.3508920149319117,
+          "min": -12.419730345127533,
+          "max": 37.353002839880304
+        },
+        "peak_private_commit_bytes": {
+          "n": 6,
+          "median": -3.9661419386399057,
+          "q1": -8.184890517856882,
+          "q3": -0.4811695624014263,
+          "min": -11.662404399140346,
+          "max": 2.9767878878472764
+        }
+      }
+    },
+    {
+      "case": "fsharp-compiler-service",
+      "arm": "old-framework",
+      "pairs": 3,
+      "on_vs_off_percent": {
+        "wall_ns": {
+          "n": 3,
+          "median": 0.6766932900343692,
+          "q1": 0.25462825958214585,
+          "q3": 0.9395464418008648,
+          "min": -0.16743677087007747,
+          "max": 1.2023995935673604
+        },
+        "peak_working_set_bytes": {
+          "n": 3,
+          "median": 0.29756122404709373,
+          "q1": -3.7033766224833844,
+          "q3": 1.1137157343845905,
+          "min": -7.7043144690138625,
+          "max": 1.9298702447220872
+        },
+        "peak_private_commit_bytes": {
+          "n": 3,
+          "median": -1.229099708918313,
+          "q1": -4.1410226184529115,
+          "q3": 0.19412276059040945,
+          "min": -7.052945527987509,
+          "max": 1.617345230099132
+        }
+      }
+    },
+    {
+      "case": "fsharp-compiler-service",
+      "arm": "new-framework",
+      "pairs": 3,
+      "on_vs_off_percent": {
+        "wall_ns": {
+          "n": 3,
+          "median": -1.5425690892726829,
+          "q1": -2.638642152866677,
+          "q3": -0.9988204993389593,
+          "min": -3.734715216460671,
+          "max": -0.4550719094052358
+        },
+        "peak_working_set_bytes": {
+          "n": 3,
+          "median": 3.9136906984501563,
+          "q1": 0.11842706837923433,
+          "q3": 5.2654069801616465,
+          "min": -3.6768365616916876,
+          "max": 6.617123261873137
+        },
+        "peak_private_commit_bytes": {
+          "n": 3,
+          "median": 5.26566021229995,
+          "q1": 1.3557250148781006,
+          "q3": 5.639818508975436,
+          "min": -2.554210182543748,
+          "max": 6.013976805650922
+        }
+      }
+    }
+  ],
+  "contributing_prs": [
+    {
+      "author": "auduchinok",
+      "mechanism": "Avoid eager metadata traversal and unnecessary tables or retention",
+      "prs": [
+        20090,
+        20092,
+        20249,
+        20250
+      ]
+    },
+    {
+      "author": "auduchinok",
+      "mechanism": "Share calling conventions, type references and pickled references",
+      "prs": [
+        20254,
+        20259,
+        20301
+      ]
+    },
+    {
+      "author": "auduchinok",
+      "mechanism": "Share imported assemblies across projects and prevent repeated background work",
+      "prs": [
+        20296,
+        20481
+      ]
+    },
+    {
+      "author": "T-Gro",
+      "mechanism": "Reduce hot-path and optimizer allocation, including constraint-solver and stack-guard closures",
+      "prs": [
+        20348,
+        20363,
+        20367,
+        20368
+      ]
+    },
+    {
+      "author": "T-Gro",
+      "mechanism": "Inline higher-order List/Array functions and eliminate partial-application closures",
+      "prs": [
+        20422,
+        20487
+      ]
+    },
+    {
+      "author": "T-Gro",
+      "mechanism": "Stabilize closure optimization for F# 11 and select net10.0 Core for SDK tools",
+      "prs": [
+        20571,
+        20555
+      ]
+    }
+  ]
+}

@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="492" viewBox="0 0 1100 492" role="img" aria-labelledby="title desc">
+<title id="title">Less managed heap retained after checking</title><desc id="desc">Less managed heap retained after checking. Retained managed heap (MiB). Zero baseline. FsAutoComplete: SDK 10 544.6, SDK 11 RC1 466.1, Local F# 11 380.1. Oxpecker: SDK 10 107.9, SDK 11 RC1 84.4, Local F# 11 74.9.</desc>
+<style>text{font-family:Segoe UI,Arial,sans-serif;font-size:16px;fill:#172b3a}.title{font-size:27px;font-weight:700}.label{font-weight:600}.small{font-size:14px;fill:#405466}.grid{stroke:#d7e0e6;stroke-width:1}.axis{stroke:#6b7d8a;stroke-width:1}</style>
+<rect width="1100" height="492" fill="#fff"/>
+<text x="28" y="44" class="title" text-anchor="start">Less managed heap retained after checking</text>
+<text x="28" y="77" class="small" text-anchor="start">Live managed heap after full GC; checker, project options and results remain rooted.</text>
+<line x1="230" y1="122" x2="230" y2="376" class="axis"/>
+<text x="230" y="112" class="small" text-anchor="middle">0</text>
+<line x1="351.66666666666663" y1="122" x2="351.66666666666663" y2="376" class="grid"/>
+<text x="351.66666666666663" y="112" class="small" text-anchor="middle">100</text>
+<line x1="473.3333333333333" y1="122" x2="473.3333333333333" y2="376" class="grid"/>
+<text x="473.3333333333333" y="112" class="small" text-anchor="middle">200</text>
+<line x1="595" y1="122" x2="595" y2="376" class="grid"/>
+<text x="595" y="112" class="small" text-anchor="middle">300</text>
+<line x1="716.6666666666666" y1="122" x2="716.6666666666666" y2="376" class="grid"/>
+<text x="716.6666666666666" y="112" class="small" text-anchor="middle">400</text>
+<line x1="838.3333333333334" y1="122" x2="838.3333333333334" y2="376" class="grid"/>
+<text x="838.3333333333334" y="112" class="small" text-anchor="middle">500</text>
+<line x1="960" y1="122" x2="960" y2="376" class="grid"/>
+<text x="960" y="112" class="small" text-anchor="middle">600</text>
+<text x="28" y="148" class="label" text-anchor="start">FsAutoComplete</text>
+<text x="218" y="176" class="small" text-anchor="end">SDK 10</text>
+<rect x="230" y="160" width="662.650" height="19" fill="#64748b"/>
+<text x="901.6497324625651" y="176" class="label" text-anchor="start">544.6</text>
+<text x="218" y="202" class="small" text-anchor="end">SDK 11 RC1</text>
+<rect x="230" y="186" width="567.077" height="19" fill="#2563a6"/>
+<text x="806.0770254770914" y="202" class="label" text-anchor="start">466.1</text>
+<text x="218" y="228" class="small" text-anchor="end">Local F# 11</text>
+<rect x="230" y="212" width="462.503" height="19" fill="#087f73"/>
+<text x="701.5032064437867" y="228" class="label" text-anchor="start">380.1</text>
+<text x="28" y="276" class="label" text-anchor="start">Oxpecker</text>
+<text x="218" y="304" class="small" text-anchor="end">SDK 10</text>
+<rect x="230" y="288" width="131.303" height="19" fill="#64748b"/>
+<text x="370.30252984364824" y="304" class="label" text-anchor="start">107.9</text>
+<text x="218" y="330" class="small" text-anchor="end">SDK 11 RC1</text>
+<rect x="230" y="314" width="102.654" height="19" fill="#2563a6"/>
+<text x="341.6538133621216" y="330" class="label" text-anchor="start">84.4</text>
+<text x="218" y="356" class="small" text-anchor="end">Local F# 11</text>
+<rect x="230" y="340" width="91.069" height="19" fill="#087f73"/>
+<text x="330.0687791188558" y="356" class="label" text-anchor="start">74.9</text>
+<text x="595" y="411" class="label" text-anchor="middle">Retained managed heap (MiB)</text>
+<text x="28" y="442" class="small" text-anchor="start">Lower is better. Medians of 12 measured runs per arm; no confidence interval is implied.</text>
+<text x="28" y="467" class="small" text-anchor="start">Local F# 11 = self-hosted RC2-source Release/R2R payload on .NET 11 RC1, not an official RC2 SDK.</text>
+</svg>
