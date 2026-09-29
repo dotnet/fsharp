@@ -218,7 +218,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
 
                 let focusedCaret =
                     if isScriptFile document.FilePath then
-                        FocusedCaret.TryGet sourceText
+                        FocusedCaret.TryGetOrCreate sourceText
                     else
                         ValueNone
 
@@ -590,6 +590,19 @@ type internal FSharpProjectOptionsManager(checker: FSharpChecker, workspace: Wor
             match args.Kind with
             | WorkspaceChangeKind.ProjectRemoved -> reactor.ClearOptionsByProjectId(args.ProjectId)
             | _ -> ())
+
+        // Options computed while a script was closed read its text from disk, with no buffer to follow the
+        // caret of: opening it may keep the text's version, so the cached entry would outlive the open.
+        workspace.DocumentOpened.Add(fun args ->
+            let doc = args.Document
+            let proj = doc.Project
+
+            if
+                proj.IsFSharp
+                && proj.IsFSharpMiscellaneousOrMetadata
+                && isScriptFile doc.FilePath
+            then
+                reactor.ClearSingleFileOptionsCache(doc.Id))
 
         workspace.DocumentClosed.Add(fun args ->
             let doc = args.Document

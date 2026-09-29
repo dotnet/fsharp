@@ -36,13 +36,17 @@ type internal FocusedCaret() =
         if hasLineChanged then
             lineChanged.Trigger()
 
-    static member TryGet(sourceText: SourceText) =
+    /// The one caret of a buffer, created by whichever asks first: the reactor can compute a script's options
+    /// before any editor on it exists, and must already hold the caret that editor will publish to.
+    /// The property collection is synchronized, so this is safe off the UI thread.
+    static member Of(properties: PropertyCollection) =
+        properties.GetOrCreateSingletonProperty(fun () -> FocusedCaret())
+
+    /// None for a text no buffer holds, which no editor can show.
+    static member TryGetOrCreate(sourceText: SourceText) =
         match sourceText.Container.TryGetTextBuffer() with
         | null -> ValueNone
-        | buffer ->
-            match buffer.Properties.TryGetProperty<FocusedCaret>(typeof<FocusedCaret>) with
-            | true, caret -> ValueSome caret
-            | _ -> ValueNone
+        | buffer -> ValueSome(FocusedCaret.Of buffer.Properties)
 
 [<Export(typeof<IWpfTextViewCreationListener>)>]
 [<ContentType(FSharpConstants.FSharpContentTypeName)>]
@@ -56,8 +60,7 @@ type internal FocusedCaretTracker() =
 
     interface IWpfTextViewCreationListener with
         member _.TextViewCreated(textView) =
-            let focusedCaret =
-                textView.TextBuffer.Properties.GetOrCreateSingletonProperty(fun () -> FocusedCaret())
+            let focusedCaret = FocusedCaret.Of textView.TextBuffer.Properties
 
             let publish _ =
                 focusedCaret.Update(Some(caretOf textView))
