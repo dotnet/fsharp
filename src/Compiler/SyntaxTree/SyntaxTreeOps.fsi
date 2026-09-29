@@ -43,7 +43,12 @@ val mkSynSimplePatVar: isOpt: bool -> id: Ident -> SynSimplePat
 
 val mkSynCompGenSimplePatVar: id: Ident -> SynSimplePat
 
+/// Turns the body of `_.` into the body of `fun arg -> ...` by making `arg` the root of its chain.
+/// Reports FS3584 when the body is not such a chain.
 val pushUnaryArg: expr: SynExpr -> arg: Ident -> SynExpr
+
+/// The inverse of pushUnaryArg: splits the root identifier off a body that `_.` can express.
+val tryPopUnaryArg: body: SynExpr -> struct (Ident * SynExpr) voption
 
 val inline findSynAttribute: attrName: string -> synAttrs: SynAttributes -> bool
 
