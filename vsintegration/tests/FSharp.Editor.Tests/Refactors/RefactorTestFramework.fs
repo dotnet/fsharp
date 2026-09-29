@@ -8,6 +8,8 @@ open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
 
+open FSharp.Test.ProjectGeneration
+
 open FSharp.Editor.Tests.Helpers
 open Microsoft.CodeAnalysis.CodeRefactorings
 open Microsoft.CodeAnalysis.CodeActions
@@ -31,11 +33,19 @@ type TestContext(Solution: Solution) =
         new TestContext(solution)
 
     static member CreateWithCodeAndDependency (code: string) (codeForPreviousFile: string) =
-        let mutable solution = RoslynTestHelpers.CreateSolution(codeForPreviousFile)
+        let project =
+            { SyntheticProject.Create(
+                  { sourceFile "First" [] with
+                      Source = codeForPreviousFile
+                  },
+                  { sourceFile "Second" [ "First" ] with
+                      Source = code
+                  }
+              ) with
+                AutoAddModules = false
+            }
 
-        let firstProject = solution.Projects.First()
-        solution <- solution.AddDocument(DocumentId.CreateNewId(firstProject.Id), "test2.fs", code, filePath = "C:\\test2.fs")
-
+        let solution, _ = RoslynTestHelpers.CreateSolution project
         new TestContext(solution)
 
 let tryRefactor (code: string) (cursorPosition) (context: TestContext) (refactorProvider: 'T :> CodeRefactoringProvider) =
