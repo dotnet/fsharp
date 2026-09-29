@@ -72,62 +72,7 @@ module internal PervasiveAutoOpens =
     type ReadOnlySpanCharExtensions =
 
         [<Extension>]
-        static member inline StartsWithOrdinal: str: ReadOnlySpan<char> * value: ReadOnlySpan<char> -> bool
-
-        [<Extension>]
         static member inline StartsWithOrdinal: str: ReadOnlySpan<char> * value: string -> bool
-
-        [<Extension>]
-        static member inline EndsWithOrdinal: str: ReadOnlySpan<char> * value: ReadOnlySpan<char> -> bool
-
-        [<Extension>]
-        static member inline EndsWithOrdinal: str: ReadOnlySpan<char> * value: string -> bool
-
-        [<Extension>]
-        static member inline EndsWithOrdinalIgnoreCase: str: ReadOnlySpan<char> * value: ReadOnlySpan<char> -> bool
-
-        [<Extension>]
-        static member inline EndsWithOrdinalIgnoreCase: str: ReadOnlySpan<char> * value: string -> bool
-
-        [<Extension>]
-        static member IndexOf: str: ReadOnlySpan<char> * value: char -> int
-
-        [<Extension>]
-        static member inline IndexOfOrdinal: str: ReadOnlySpan<char> * value: ReadOnlySpan<char> -> int
-
-        [<Extension>]
-        static member inline IndexOfOrdinal: str: ReadOnlySpan<char> * value: string -> int
-
-        /// <summary>
-        /// Returns a position in <paramref name="str"/>, not in the slice searched, matching the
-        /// <see cref="T:System.String"/> overloads these mirror. -1 when there is no match.
-        /// </summary>
-        [<Extension>]
-        static member inline IndexOfOrdinal:
-            str: ReadOnlySpan<char> * value: ReadOnlySpan<char> * startIndex: int -> int
-
-        /// <summary>
-        /// Returns a position in <paramref name="str"/>, not in the slice searched, matching the
-        /// <see cref="T:System.String"/> overloads these mirror. -1 when there is no match.
-        /// </summary>
-        [<Extension>]
-        static member inline IndexOfOrdinal: str: ReadOnlySpan<char> * value: string * startIndex: int -> int
-
-        /// <summary>
-        /// Returns a position in <paramref name="str"/>, not in the slice searched, matching the
-        /// <see cref="T:System.String"/> overloads these mirror. -1 when there is no match.
-        /// </summary>
-        [<Extension>]
-        static member inline IndexOfOrdinal:
-            str: ReadOnlySpan<char> * value: ReadOnlySpan<char> * startIndex: int * count: int -> int
-
-        /// <summary>
-        /// Returns a position in <paramref name="str"/>, not in the slice searched, matching the
-        /// <see cref="T:System.String"/> overloads these mirror. -1 when there is no match.
-        /// </summary>
-        [<Extension>]
-        static member inline IndexOfOrdinal:
-            str: ReadOnlySpan<char> * value: string * startIndex: int * count: int -> int
 
     type Async with
 
