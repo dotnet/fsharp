@@ -2,10 +2,6 @@
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
-// This implementation does not rely on Roslyn internals: everything Roslyn has for snippets lives in
-// `Microsoft.VisualStudio.LanguageServices.Implementation.Snippets`, which is internal and has no
-// ExternalAccess surface. Roslyn's `SnippetExpansionClient` is the design reference, not a base class.
-
 open System
 open System.Xml.Linq
 
@@ -15,17 +11,14 @@ open Microsoft.VisualStudio.FSharp.Editor.DebugHelpers
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Text
 open Microsoft.VisualStudio.Text.Editor
+open Microsoft.VisualStudio.Text.Editor.OptionsExtensionMethods
 open Microsoft.VisualStudio.TextManager.Interop
-
-open FSharp.Compiler.Tokenization
 
 open MSXML
 
 [<AutoOpen>]
 module internal SnippetExpansionHelpers =
 
-    /// Measured on the snapshot itself: the caller only needs the width, and `GetText()` would copy the
-    /// whole line to get it.
     let leadingWhitespaceOf (line: ITextSnapshotLine) =
         let snapshot = line.Snapshot
         let start = line.Start.Position
@@ -36,83 +29,16 @@ module internal SnippetExpansionHelpers =
 
         width
 
-    let tabSizeOf (options: IEditorOptions) =
-        options.GetOptionValue DefaultOptions.TabSizeOptionId
-
-    /// The column `length` characters into `line`, with tabs counted at the width they render at.
-    let visualColumnAt tabSize (line: ITextSnapshotLine) length =
-        let snapshot = line.Snapshot
-        let start = line.Start.Position
-        let mutable column = 0
-
-        for offset in 0 .. length - 1 do
-            column <- SnippetIndentation.advanceColumn tabSize column snapshot[start + offset]
-
-        column
-
-    /// Indentation spelled the way the document is configured to spell it, rather than the way this
-    /// file happens to. F# registers `DefaultToInsertSpaces`, but the setting is the user's.
     let indentTextOf (options: IEditorOptions) width =
-        if options.GetOptionValue DefaultOptions.ConvertTabsToSpacesOptionId then
+        if options.IsConvertTabsToSpacesEnabled() then
             String(' ', width)
         else
-            let tabSize = tabSizeOf options
+            let tabSize = options.GetTabSize()
             String('\t', width / tabSize) + String(' ', width % tabSize)
 
-    /// Whether the line starts a directive wrapper, asking the snapshot for the one character that
-    /// settles it before falling back to comparing the already-fetched text against known prefixes.
-    /// `leadingWhitespace` is the number of characters before the first non-blank one.
-    let startsRootLevelDirective (line: ITextSnapshotLine) leadingWhitespace (text: string) =
-        line.Snapshot[line.Start.Position + leadingWhitespace] = '#'
-        && SnippetIndentation.isRootLevelDirective text
-
-    /// Scans one line's text from `lexState`, threading the state a later line needs to know whether
-    /// it opens inside an unfinished string.
-    let rec private lexStateAfter (tokenizer: FSharpLineTokenizer) lexState =
-        match tokenizer.ScanToken lexState with
-        | None, atEndOfLine -> atEndOfLine
-        | Some _, afterToken -> lexStateAfter tokenizer afterToken
-
-    /// The kind and indentation of every line `FormatSpan` was given, threading the lexer state
-    /// across them so a `SelectedRest` line that opens inside a string - continuing one that started
-    /// on an earlier selected line - is left alone rather than reindented into the string's value.
-    let classifyLines tabSize (snapshot: ITextSnapshot) (span: VsTextSpan) selectedLines =
-        let sourceTokenizer = FSharpSourceTokenizer([], None, None)
-        let lastLine = min span.iEndLine (snapshot.LineCount - 1)
-        let mutable lexState = FSharpTokenizerLexState.Initial
-
-        [
-            for lineNumber in span.iStartLine .. lastLine ->
-                let line = snapshot.GetLineFromLineNumber lineNumber
-                let leadingWhitespace = leadingWhitespaceOf line
-                let indent = visualColumnAt tabSize line leadingWhitespace
-                let text = line.GetText()
-                let enteringLexState = lexState
-
-                lexState <- lexStateAfter (sourceTokenizer.CreateLineTokenizer text) lexState
-
-                let kind =
-                    if leadingWhitespace = line.Length then
-                        SnippetIndentation.Blank
-                    elif SnippetIndentation.isInsideString (FSharpLineTokenizer.ColorStateOfLexState enteringLexState) then
-                        SnippetIndentation.InsideString
-                    elif startsRootLevelDirective line leadingWhitespace text then
-                        SnippetIndentation.RootLevelDirective
-                    else
-                        match selectedLines with
-                        | ValueSome(first, _) when lineNumber = first -> SnippetIndentation.SelectedFirst
-                        | ValueSome(first, last) when lineNumber > first && lineNumber <= last -> SnippetIndentation.SelectedRest
-                        | _ -> SnippetIndentation.Template
-
-                {
-                    SnippetIndentation.Kind = kind
-                    SnippetIndentation.Indent = indent
-                }
-        ]
-
     /// Where `$selected$` sits in a snippet's `<Code>`: which of its lines holds the field, and the
-    /// column the template indents it to. That is the one nesting level a wrapper contributes, and the
-    /// expansion session will not report it, so it is read from the file the picker named.
+    /// column the template indents it to. The expansion session will not report it, so it is read
+    /// from the file the picker named.
     let tryReadSelectedFieldLayout (path: string) =
         try
             XDocument.Load(path).Descendants()
@@ -130,7 +56,6 @@ module internal SnippetExpansionHelpers =
             FSharpOutputPane.logException e
             ValueNone
 
-    /// Splits `GenerateMatchCases($expression$)` into its name and its `$field$` arguments.
     let tryParseFunctionCall (call: string) =
         match call.IndexOf('(') with
         | -1 -> ValueNone
@@ -156,13 +81,10 @@ type internal SurroundLayout =
         Column: int
         /// How many lines it covered.
         LineCount: int
-        /// Which line of the template holds `$selected$`, and the column it indents it to.
         FieldLine: int
         FieldIndent: int
     }
 
-/// Drives one snippet expansion in one text view. VS owns the session; this is the callback surface
-/// it drives, plus the handful of operations the command handler needs.
 type internal FSharpSnippetExpansionClient
     (textView: IWpfTextView, subjectBuffer: ITextBuffer, editorAdapters: IVsEditorAdaptersFactoryService) =
 
@@ -173,8 +95,9 @@ type internal FSharpSnippetExpansionClient
     /// after `EndExpansion` has already run.
     let mutable expansionSession: IVsExpansionSession = null
 
-    /// Set when Surround With opens the picker, before the template is known.
-    let mutable pendingSurround = ValueNone
+    /// What the open picker was invoked over, before the template is known: `(column, lineCount)`
+    /// for Surround With, ValueNone for Insert Snippet.
+    let mutable pendingSurround: (int * int) voption = ValueNone
 
     /// The same, completed with the chosen template's layout once the picker has answered. ValueNone
     /// for Insert Snippet, where the caret column is the whole answer.
@@ -188,17 +111,9 @@ type internal FSharpSnippetExpansionClient
         | null -> false
         | _ -> true
 
-    member private _.TryGetExpansion() =
-        match editorAdapters.GetBufferAdapter subjectBuffer with
-        | :? IVsExpansion as expansion -> ValueSome expansion
-        | _ -> ValueNone
-
-    /// Where the expansion goes: the caret, as an empty span.
-    ///
-    /// It must not be the selection. `tsInsertPos` is the range `InsertNamedExpansion` *replaces*, so
-    /// handing it the selection deletes the text a SurroundsWith snippet was meant to wrap. The engine
-    /// reads the selection off the view it was given in `InvokeInsertionUI` to fill `$selected$`, which
-    /// is why the legacy `ExpansionProvider.OnItemChosen` passes `GetCaretPos` and nothing else.
+    /// `tsInsertPos` is the range `InsertNamedExpansion` *replaces*, so handing it the selection
+    /// deletes the text a SurroundsWith snippet was meant to wrap. The engine reads the selection off
+    /// the view it was given in `InvokeInsertionUI` to fill `$selected$`.
     member private _.TryGetCaretSpan() =
         if not (obj.ReferenceEquals(textView.TextBuffer, subjectBuffer)) then
             // Nothing projects F# today; bail out rather than guess at a mapping.
@@ -210,13 +125,11 @@ type internal FSharpSnippetExpansionClient
 
             ValueSome(VsTextSpan(iStartLine = line.LineNumber, iStartIndex = column, iEndLine = line.LineNumber, iEndIndex = column))
 
-    member private this.InsertNamedExpansion(title, path, insertionSpan: VsTextSpan) =
-        match this.TryGetExpansion() with
-        | ValueNone -> false
-        | ValueSome expansion ->
-            // The picker has named the template, so the field's place in it can be read now.
+    member private this.InsertNamedExpansion(title, path, insertionSpan: VsTextSpan, selection) =
+        match editorAdapters.GetBufferAdapter subjectBuffer with
+        | :? IVsExpansion as expansion ->
             surround <-
-                match pendingSurround, tryReadSelectedFieldLayout path with
+                match selection, tryReadSelectedFieldLayout path with
                 | ValueSome(column, lineCount), ValueSome(fieldLine, fieldIndent) ->
                     ValueSome
                         {
@@ -228,58 +141,44 @@ type internal FSharpSnippetExpansionClient
                 | _ -> ValueNone
 
             indentPending <- true
-            let mutable session = Unchecked.defaultof<IVsExpansionSession>
 
-            let hr =
-                expansion.InsertNamedExpansion(title, path, insertionSpan, this, languageGuid, 0, &session)
+            let hr, _session =
+                expansion.InsertNamedExpansion(title, path, insertionSpan, this, languageGuid, 0)
 
-            not (ErrorHandler.Failed hr)
+            ErrorHandler.Succeeded hr
+        | _ -> false
 
-    /// Expands the snippet registered under `shortcut`, replacing `shortcutSpan`.
     member this.TryInsertExpansionForShortcut(shortcut: string, shortcutSpan: VsTextSpan) =
         match ServiceProvider.GlobalProvider.ExpansionManager, editorAdapters.GetViewAdapter textView with
         | null, _
         | _, null -> false
         | expansionManager, viewAdapter ->
-            // A cancelled Surround With never reports back, so its selection is still pending here.
-            pendingSurround <- ValueNone
-            surround <- ValueNone
-
             let spans = [| shortcutSpan |]
-            let mutable path = null
-            let mutable title = null
 
-            let hr =
-                expansionManager.GetExpansionByShortcut(this, languageGuid, shortcut, viewAdapter, spans, 0, &path, &title)
+            match expansionManager.GetExpansionByShortcut(this, languageGuid, shortcut, viewAdapter, spans, 0) with
+            | _, null, _ -> false
+            | hr, path, title ->
+                ErrorHandler.Succeeded hr
+                && this.InsertNamedExpansion(title, path, spans[0], ValueNone)
 
-            if ErrorHandler.Failed hr then
-                false
-            else
-                match path with
-                | null -> false
-                | path -> this.InsertNamedExpansion(title, path, spans[0])
-
-    /// Shows a snippet picker. It is not modal: the chosen item comes back later through `OnItemChosen`.
-    member private this.InvokeInsertionUI(types: string[], prompt) =
+    /// It is not modal: the chosen item comes back later through `OnItemChosen`.
+    member private this.InvokeInsertionUI(types: string[], prompt, selection) =
         match ServiceProvider.GlobalProvider.ExpansionManager, editorAdapters.GetViewAdapter textView with
         | null, _
         | _, null -> false
         | expansionManager, viewAdapter ->
+            pendingSurround <- selection
+
             let hr =
                 expansionManager.InvokeInsertionUI(viewAdapter, this, languageGuid, types, types.Length, 1, null, 0, 0, prompt, null)
 
             not (ErrorHandler.Failed hr)
 
     member this.TryInsertSnippet() =
-        pendingSurround <- ValueNone
-        surround <- ValueNone
-        this.InvokeInsertionUI([| "Expansion"; "SurroundsWith" |], SR.InsertSnippet())
+        this.InvokeInsertionUI([| "Expansion"; "SurroundsWith" |], SR.InsertSnippet(), ValueNone)
 
-    /// `column` is where the selected code sits and `lineCount` how many lines it covers; neither
-    /// survives the insertion, which replaces the selection.
     member this.TrySurroundWith(column: int, lineCount: int) =
-        pendingSurround <- ValueSome(column, lineCount)
-        this.InvokeInsertionUI([| "SurroundsWith" |], SR.SurroundWith())
+        this.InvokeInsertionUI([| "SurroundsWith" |], SR.SurroundWith(), ValueSome(column, lineCount))
 
     member private _.EndSession(leaveCaret) =
         match expansionSession with
@@ -321,6 +220,47 @@ type internal FSharpSnippetExpansionClient
         else
             false
 
+    member private _.Reindent(span: VsTextSpan) =
+        let snapshot = subjectBuffer.CurrentSnapshot
+        let tabSize = textView.Options.GetTabSize()
+
+        let lines =
+            [
+                for lineNumber in span.iStartLine .. min span.iEndLine (snapshot.LineCount - 1) -> snapshot.GetLineFromLineNumber lineNumber
+            ]
+
+        let texts = lines |> List.map _.GetText()
+
+        // `GetFieldSpan "selected"` does not answer for that special literal.
+        let placement, selectedLines =
+            match surround with
+            | ValueSome layout ->
+                SnippetIndentation.AroundSelection(layout.Column, layout.FieldIndent),
+                ValueSome(layout.FieldLine, layout.FieldLine + layout.LineCount - 1)
+            | ValueNone ->
+                let caretColumn =
+                    texts.Head
+                    |> Seq.take span.iStartIndex
+                    |> Seq.fold (SnippetIndentation.advanceColumn tabSize) 0
+
+                SnippetIndentation.AtCaret caretColumn, ValueNone
+
+        use edit = subjectBuffer.CreateEdit()
+
+        SnippetIndentation.classify tabSize selectedLines texts
+        |> SnippetIndentation.deltas placement
+        |> List.iter2
+            (fun (line: ITextSnapshotLine) delta ->
+                match delta with
+                | 0 -> ()
+                | indent when indent > 0 -> edit.Insert(line.Start.Position, indentTextOf textView.Options indent) |> ignore
+                // A negative delta unindents the line entirely, and the indent is measured
+                // in columns while the edit removes characters.
+                | _ -> edit.Delete(line.Start.Position, leadingWhitespaceOf line) |> ignore)
+            lines
+
+        edit.Apply() |> ignore
+
     interface IVsExpansionClient with
 
         member _.IsValidType(_buffer, _ts, _rgTypes, _iCountTypes, pfIsValidType: byref<int>) =
@@ -341,13 +281,11 @@ type internal FSharpSnippetExpansionClient
 
         member _.EndExpansion() =
             expansionSession <- null
-            pendingSurround <- ValueNone
-            surround <- ValueNone
             VSConstants.S_OK
 
         member this.OnItemChosen(pszTitle, pszPath) =
             match this.TryGetCaretSpan() with
-            | ValueSome span -> this.InsertNamedExpansion(pszTitle, pszPath, span) |> ignore
+            | ValueSome span -> this.InsertNamedExpansion(pszTitle, pszPath, span, pendingSurround) |> ignore
             | ValueNone -> ()
 
             VSConstants.S_OK
@@ -366,55 +304,9 @@ type internal FSharpSnippetExpansionClient
                 pFunc <- null
                 VSConstants.E_INVALIDARG
 
-        /// The expansion engine inserts the snippet verbatim: its first line lands at the insertion
-        /// column, every later line at the column the template spells. F# has no formatter to reflow
-        /// that, so the indentation is this method's job, and each kind of line wants a different one:
-        ///
-        ///  - a root-level directive (`#if`, `#endif`) belongs at column 0 whatever it wraps;
-        ///  - text the engine substituted into `$selected$` already carries the indentation it had in
-        ///    the buffer, and needs only the nesting the template adds around the field - except a
-        ///    line that opens inside a string continued from an earlier one, whose whitespace is the
-        ///    string's own value and is left untouched;
-        ///  - every other line is the snippet's own, and takes the column of the code it wraps -
-        ///    the caret's for Insert Snippet, the selection's for Surround With.
-        member _.FormatSpan(_buffer, ts: VsTextSpan[]) =
+        member this.FormatSpan(_buffer, ts: VsTextSpan[]) =
             if indentPending && ts.Length > 0 then
                 indentPending <- false
-                let span = ts[0]
-                let snapshot = subjectBuffer.CurrentSnapshot
-
-                // `GetFieldSpan "selected"` does not answer for that special literal, so the range is
-                // derived instead: the template says which of its lines holds the field and at what
-                // column, and the command handler counted the lines the selection covered.
-                let selectedLines =
-                    match surround with
-                    | ValueSome s -> ValueSome(span.iStartLine + s.FieldLine, span.iStartLine + s.FieldLine + s.LineCount - 1)
-                    | ValueNone -> ValueNone
-
-                let tabSize = tabSizeOf textView.Options
-
-                let placement =
-                    match surround with
-                    | ValueSome s -> SnippetIndentation.AroundSelection(s.Column, s.FieldIndent)
-                    | ValueNone ->
-                        let startLine = snapshot.GetLineFromLineNumber span.iStartLine
-                        SnippetIndentation.AtCaret(visualColumnAt tabSize startLine span.iStartIndex)
-
-                let lines = classifyLines tabSize snapshot span selectedLines
-
-                use edit = subjectBuffer.CreateEdit()
-
-                SnippetIndentation.deltas placement lines
-                |> List.iteri (fun offset delta ->
-                    let line = snapshot.GetLineFromLineNumber(span.iStartLine + offset)
-
-                    if delta > 0 then
-                        edit.Insert(line.Start.Position, indentTextOf textView.Options delta) |> ignore
-                    elif delta < 0 then
-                        // A negative delta unindents the line entirely, and the indent is measured
-                        // in columns while the edit removes characters.
-                        edit.Delete(line.Start.Position, leadingWhitespaceOf line) |> ignore)
-
-                edit.Apply() |> ignore
+                this.Reindent(ts[0])
 
             VSConstants.S_OK

@@ -14,8 +14,8 @@ open Microsoft.VisualStudio.Text
 open Microsoft.VisualStudio.TextManager.Interop
 
 open FSharp.Compiler.CodeAnalysis
-open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Symbols
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 
 open CancellableTasks
@@ -32,38 +32,25 @@ module internal SnippetFunctionHelpers =
     [<Literal>]
     let parseTimeout = 2000
 
-    let positionOf (snapshot: ITextSnapshot) line index =
-        snapshot.GetLineFromLineNumber(line).Start.Position + index
-
-    // The engine can build a snippet function before it opens the session, so both of these have to
-    // tolerate not having one yet.
-    let tryGetSnippetSpan (session: IVsExpansionSession) =
+    let private tryGetSpan (session: IVsExpansionSession) (getSpan: IVsExpansionSession -> VsTextSpan[] -> int) =
         match session with
         | null -> ValueNone
         | session ->
             let spans = Array.zeroCreate<VsTextSpan> 1
 
-            if Com.Succeeded(session.GetSnippetSpan spans) then
+            if Com.Succeeded(getSpan session spans) then
                 ValueSome spans[0]
             else
                 ValueNone
 
-    let tryGetFieldSpan (session: IVsExpansionSession) field =
-        match session with
-        | null -> ValueNone
-        | session ->
-            let spans = Array.zeroCreate<VsTextSpan> 1
+    let tryGetSnippetSpan session =
+        tryGetSpan session (fun session spans -> session.GetSnippetSpan spans)
 
-            if Com.Succeeded(session.GetFieldSpan(field, spans)) then
-                ValueSome spans[0]
-            else
-                ValueNone
+    let tryGetFieldSpan session field =
+        tryGetSpan session (fun session spans -> session.GetFieldSpan(field, spans))
 
     /// The expansion engine calls `IVsExpansionFunction` synchronously on the UI thread while the
-    /// session is live, so there is nowhere to await. `JoinableTaskFactory.Run` is the same blocking
-    /// bridge `FSharpGraphProvider` uses for the Code Map action handler; the timeout keeps a cold
-    /// project from turning that block into a hang, at the cost of falling back to the literal's
-    /// declared default.
+    /// session is live, so there is nowhere to await.
     let runSynchronously millisecondsTimeout (work: CancellableTask<'T voption>) =
         use cts = new CancellationTokenSource(millisecondsTimeout: int)
 
@@ -72,7 +59,7 @@ module internal SnippetFunctionHelpers =
         with
         | :? OperationCanceledException when cts.IsCancellationRequested -> ValueNone
         // This runs inside a COM callback, so an exception that escapes unwinds into native Visual
-        // Studio code. A snippet field is not worth taking the IDE down for.
+        // Studio code.
         | e ->
             FSharpOutputPane.logException e
             ValueNone
@@ -83,45 +70,23 @@ module internal SnippetFunctionHelpers =
         | document when document.Project.IsFSharp -> ValueSome document
         | _ -> ValueNone
 
-    /// The name of the innermost type declaration whose body contains `position`.
-    let tryGetContainingTypeName (document: Document) position =
+    let tryGetContainingTypeName (document: Document) pos =
         cancellableTask {
             let! parseResults = document.GetFSharpParseResultsAsync userOpName
-            let! ct = CancellableTask.getCancellationToken ()
-            let! sourceText = document.GetTextAsync ct
 
-            let line = sourceText.Lines.GetLineFromPosition position
-            let caret = Position.mkPos (line.LineNumber + 1) (position - line.Start)
-
-            let innermost =
-                (Navigation.getNavigation parseResults.ParseTree).Declarations
-                |> Array.fold
-                    (fun innermost topLevel ->
-                        let declaration = topLevel.Declaration
-
-                        if
-                            declaration.Kind <> NavigationItemKind.Type
-                            || not (Range.rangeContainsPos declaration.BodyRange caret)
-                        then
-                            innermost
-                        else
-                            match innermost with
-                            | ValueSome(previous: NavigationItem) when previous.BodyRange.StartLine >= declaration.BodyRange.StartLine ->
-                                innermost
-                            | _ -> ValueSome declaration)
-                    ValueNone
-
-            // `LogicalName` is qualified by every enclosing module (`Outer.C`), which does not
-            // resolve from a constructor sitting inside `C`'s own scope.
             return
-                innermost
-                |> ValueOption.map (fun declaration ->
-                    let name = declaration.LogicalName
-                    name.Substring(name.LastIndexOf('.') + 1))
+                (pos, parseResults.ParseTree)
+                ||> ParsedInput.tryPickLast (fun _ node ->
+                    match node with
+                    // The walk offers every type of a `type … and …` group, and the nearest declaration
+                    // to the left when none contains `pos`.
+                    | SyntaxNode.SynTypeDefn(SynTypeDefn(typeInfo = typeInfo; range = m))
+                    | SyntaxNode.SynTypeDefnSig(SynTypeDefnSig(typeInfo = typeInfo; range = m)) when Range.rangeContainsPos m pos ->
+                        typeInfo.LongIdent |> List.tryLast |> Option.map _.idText
+                    | _ -> None)
+                |> ValueOption.ofOption
         }
 
-    /// The qualifier `symbol`, one of `entity`'s cases, needs at `position`: none when the case is in
-    /// scope, otherwise the shortest path of enclosing names that reaches it.
     let private necessaryQualifier (checkResults: FSharpCheckFileResults) position (entity: FSharpEntity) (symbol: FSharpSymbol) =
         let path =
             match entity.TryGetFullDisplayName() with
@@ -138,14 +103,11 @@ module internal SnippetFunctionHelpers =
 
         widen (List.rev path) []
 
-    /// `symbol`'s qualifier spelled as a prefix of a pattern.
     let private qualifierPrefix checkResults position entity symbol =
         match necessaryQualifier checkResults position entity symbol with
         | [] -> ""
         | qualifier -> String.Join(".", qualifier) + "."
 
-    /// Lazy on purpose: `String.Join` is the one consumer and it materializes the text directly,
-    /// so no intermediate collection of rules is ever built.
     let private matchRulesFor checkResults position (entity: FSharpEntity) =
         if entity.IsFSharpUnion then
             let prefix =
@@ -156,9 +118,9 @@ module internal SnippetFunctionHelpers =
             entity.UnionCases
             |> Seq.map (fun case ->
                 if case.HasFields then
-                    $"| %s{prefix}%s{case.Name} _ -> ()"
+                    $"| %s{prefix}%s{case.DisplayName} _ -> ()"
                 else
-                    $"| %s{prefix}%s{case.Name} -> ()")
+                    $"| %s{prefix}%s{case.DisplayName} -> ()")
         elif entity.IsEnum then
             let literals =
                 entity.FSharpFields |> Seq.filter (fun field -> field.LiteralValue.IsSome)
@@ -170,7 +132,7 @@ module internal SnippetFunctionHelpers =
 
             seq {
                 for field in literals do
-                    $"| %s{prefix}%s{field.Name} -> ()"
+                    $"| %s{prefix}%s{field.DisplayName} -> ()"
 
                 // An enum value need not be one of the declared literals, so the wildcard is not optional.
                 "| _ -> ()"
@@ -178,49 +140,35 @@ module internal SnippetFunctionHelpers =
         else
             Seq.empty
 
-    /// The match rules covering the union or enum that the expression at `range` evaluates to, or
-    /// ValueNone for any other type.
     let tryGetMatchRulesAt (document: Document) (range: range) =
         cancellableTask {
             let! _, checkResults = document.GetFSharpParseAndCheckResultsAsync userOpName
             let! ct = CancellableTask.getCancellationToken ()
             let! sourceText = document.GetTextAsync ct
 
-            let position = sourceText.Lines[range.EndLine - 1].Start + range.EndColumn
-
             let rules =
-                match checkResults.TryGetCapturedType range with
-                | Some fsharpType ->
-                    let fsharpType = fsharpType.StripAbbreviations()
+                match checkResults.TryGetCapturedType range |> Option.map _.StripAbbreviations() with
+                | Some fsharpType when fsharpType.HasTypeDefinition -> matchRulesFor checkResults range.Start fsharpType.TypeDefinition
+                | _ -> Seq.empty
 
-                    if fsharpType.HasTypeDefinition then
-                        matchRulesFor checkResults range.Start fsharpType.TypeDefinition
-                    else
-                        Seq.empty
-                | None -> Seq.empty
+            let lineBreak =
+                sourceText.LineBreakAt(RoslynHelpers.FSharpRangeToTextSpan(sourceText, range).End)
 
             return
-                match String.Join(sourceText.LineBreakAt position, rules) with
+                match String.Join(lineBreak, rules) with
                 | "" -> ValueNone
                 | rules -> ValueSome rules
         }
 
-    /// `tryGetMatchRulesAt` for the span a snippet field occupies.
     let tryGetMatchRules (document: Document) (span: VsTextSpan) =
-        Range.mkRange
-            document.FilePath
-            (Position.mkPos (span.iStartLine + 1) span.iStartIndex)
-            (Position.mkPos (span.iEndLine + 1) span.iEndIndex)
+        Range.mkRange document.FilePath (Position.fromZ span.iStartLine span.iStartIndex) (Position.fromZ span.iEndLine span.iEndIndex)
         |> tryGetMatchRulesAt document
 
-/// One `<Function>` declared by a snippet literal. `arguments` are the raw `$field$` references the
-/// snippet passed, which is what tells us whether a field edit invalidates our value.
 [<AbstractClass>]
-type internal FSharpSnippetFunction(getSession: unit -> IVsExpansionSession, subjectBuffer: ITextBuffer, arguments: string[]) =
+type internal FSharpSnippetFunction(getSession: unit -> IVsExpansionSession, arguments: string[]) =
 
     /// The engine can build a function before it opens the session, so this is read per call.
     member _.Session = getSession ()
-    member _.SubjectBuffer = subjectBuffer
 
     abstract TryGetValue: unit -> string voption
 
@@ -263,27 +211,18 @@ type internal FSharpSnippetFunction(getSession: unit -> IVsExpansionSession, sub
 
         member _.ReleaseFunction() = VSConstants.S_OK
 
-/// `ClassName()` — the F# counterpart of the C# snippet function of the same name.
 type internal SnippetFunctionClassName(getSession, subjectBuffer: ITextBuffer, arguments) =
-    inherit FSharpSnippetFunction(getSession, subjectBuffer, arguments)
+    inherit FSharpSnippetFunction(getSession, arguments)
 
     override this.TryGetValue() =
         match tryGetDocument subjectBuffer, tryGetSnippetSpan this.Session with
         | ValueSome document, ValueSome span ->
-            let position =
-                positionOf subjectBuffer.CurrentSnapshot span.iStartLine span.iStartIndex
-
-            // Parse results are cached per document version, so the timeout only bites on the first
-            // parse of a freshly opened file.
-            runSynchronously parseTimeout (tryGetContainingTypeName document position)
+            runSynchronously parseTimeout (tryGetContainingTypeName document (Position.fromZ span.iStartLine span.iStartIndex))
         | _ -> ValueNone
 
-/// `GenerateMatchCases($field$)` — the F# counterpart of C#'s `GenerateSwitchCases`, covering
-/// discriminated unions as well as enums.
 type internal SnippetFunctionGenerateMatchCases(getSession, subjectBuffer: ITextBuffer, arguments: string[]) =
-    inherit FSharpSnippetFunction(getSession, subjectBuffer, arguments)
+    inherit FSharpSnippetFunction(getSession, arguments)
 
-    /// The single argument names the field holding the expression to match on, delimited as `$name$`.
     let matchedField =
         match arguments with
         | [| argument |] when argument.StartsWith("$", StringComparison.Ordinal) -> ValueSome(argument.Trim '$')
@@ -292,7 +231,5 @@ type internal SnippetFunctionGenerateMatchCases(getSession, subjectBuffer: IText
     override this.TryGetValue() =
         match tryGetDocument subjectBuffer, matchedField |> ValueOption.bind (tryGetFieldSpan this.Session) with
         | ValueSome document, ValueSome span ->
-            // Resolving the user's expression needs a check of the text they just typed, so there is
-            // no cached answer to fall back on - only the literal's declared default.
             runSynchronously document.Project.FSharpTimeUntilStaleCompletion (tryGetMatchRules document span)
         | _ -> ValueNone
