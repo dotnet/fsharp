@@ -51,8 +51,9 @@ benefit clear without replacing established terms with vague outcomes.
 Open with a brief overview of the release's practical benefits. Introduce each
 feature through its capability, not an example's incidental application or data.
 
-Assume knowledge of earlier F#, not your research. Explain necessary concepts
-before using them; acronym expansions and links do not replace explanations.
+Assume knowledge of earlier F#, not your research. Explain necessary concepts and
+new APIs at first use, including in notes and tables; acronym expansions and links
+do not replace explanations.
 Rework unclear explanations instead of hiding missing understanding behind terminology.
 
 Let code demonstrate practical reach, not just syntax; compact must not mean
@@ -73,7 +74,8 @@ argument/result shapes. Explain unfamiliar functions with brief notes or tiny co
 
 Move detailed semantics, warning codes, edge cases, and troubleshooting to linked
 maintained topics. Keep only consequential usage or migration constraints in the
-overview. Group minor diagnostics and routine fixes near the end or omit trivia;
+overview, identifying affected code and what users must do. Group minor diagnostics
+and routine fixes near the end or omit trivia;
 promote fixes only for material user impact or necessary action.
 Avoid generic setup, recap, and concluding filler.
 
@@ -97,6 +99,6 @@ evidence. Distinguish execution from source review; newer-environment success do
 not establish earlier minimums. Keep validation gaps and research receipts in
 supporting delivery notes, not introductory prose.
 
-Credit verified contributions briefly beside features and in closing, without
-inferring identities or sole authorship. Honor attribution exclusions, including
+Credit verified contributions briefly beside features or in closing, without
+duplicating thanks or inferring identities or sole authorship. Honor attribution exclusions, including
 @T-Gro. Do not celebrate release-engineering mechanics as user-facing features.
