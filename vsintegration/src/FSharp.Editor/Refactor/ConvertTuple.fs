@@ -54,7 +54,17 @@ type internal FSharpConvertTupleRefactoring [<ImportingConstructor>] () =
                     let linePosition = sourceText.Lines.GetLinePosition context.Span.Start
                     Position.mkPos (Line.fromZ linePosition.Line) linePosition.Character
 
-                match tryCaretNode caret parseResults.ParseTree with
+                // Telling an argument list from a tuple value takes resolving the call; skip that when no tuple is near.
+                let! found =
+                    match tryCaretNode (fun _ -> false) caret parseResults.ParseTree with
+                    | ValueNone -> CancellableTask.singleton ValueNone
+                    | ValueSome _ ->
+                        cancellableTask {
+                            let! _, checkResults = document.GetFSharpParseAndCheckResultsAsync(nameof FSharpConvertTupleRefactoring)
+                            return tryCaretNode (callsMethod sourceText checkResults) caret parseResults.ParseTree
+                        }
+
+                match found with
                 | ValueSome caretNode when not (isInQuotation caretNode) ->
                     let title =
                         if isStructNode caretNode then
