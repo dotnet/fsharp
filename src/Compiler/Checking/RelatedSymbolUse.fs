@@ -16,5 +16,9 @@ type RelatedSymbolUseKind =
     /// Parameter or type parameter via the `name` of a `param`, `paramref`, `typeparam` or `typeparamref`
     /// tag in the declaration's XML doc
     | XmlDocParameter = 4
-    /// All related symbol kinds
-    | All = 0x7FFFFFFF
+    /// Every related use in code; leaves out the names inside XML doc comments, which only a rename needs
+    | AllInCode = 3
+    /// Every related use, the names inside XML doc comments included
+    | AllInCodeAndDocs = 7
+    /// Every related use in code, the same as AllInCode
+    | All = 3
