@@ -466,27 +466,54 @@ module internal Tokenizer =
     // must be thread-safe. This only guarantees per-index atomicity, not a coherent snapshot across a
     // range of lines: concurrent scans over overlapping line ranges can still interleave, but the cache
     // self-heals on the next read via the IsValid/LexStateAtStartOfLine checks.
+    //
+    // Reads take no lock. Writes and growth are serialized, and a grown array is published only once it
+    // holds every entry of the one it replaces, so a reader sees either array whole. The slots are
+    // `option` rather than `voption` so that each one is written as a single reference and cannot tear.
     type private SourceTextData(approxLines: int) =
-        let data =
-            ConcurrentDictionary<int, SourceLineData>(Environment.ProcessorCount, approxLines)
+        let sync = obj ()
+
+        [<VolatileField>]
+        let mutable data: SourceLineData option array = Array.zeroCreate (max approxLines 1)
+
+        // Called under `sync` only.
+        let extendTo i =
+            let current = data
+
+            if i < current.Length then
+                current
+            else
+                let grown = Array.zeroCreate (max (i + 1) (current.Length * 2))
+                Array.blit current 0 grown 0 current.Length
+                data <- grown
+                grown
 
         member x.Item
             with get (i: int) =
-                match data.TryGetValue(i) with
-                | true, v -> ValueSome v
-                | _ -> ValueNone
-            and set (i: int) v =
-                match v with
-                | ValueSome v -> data.[i] <- v
-                | ValueNone -> data.TryRemove(i) |> ignore
+                let current = data
+
+                if i < current.Length then
+                    match current.[i] with
+                    | Some v -> ValueSome v
+                    | None -> ValueNone
+                else
+                    ValueNone
+            and set (i: int) (v: SourceLineData voption) =
+                let entry =
+                    match v with
+                    | ValueSome v -> Some v
+                    | ValueNone -> None
+
+                lock sync (fun () -> (extendTo i).[i] <- entry)
 
         member x.ClearFrom(n) =
-            let mutable i = n
-            let mutable cont = true
+            lock sync (fun () ->
+                let current = data
+                let mutable i = n
 
-            while cont do
-                let removed, _ = data.TryRemove(i)
-                if removed then i <- i + 1 else cont <- false
+                while i < current.Length && current.[i].IsSome do
+                    current.[i] <- None
+                    i <- i + 1)
 
     /// This saves the tokenization data for a file for as long as the DocumentId object is alive.
     /// This seems risky - if one single thing leaks a DocumentId (e.g. stores it in some global table of documents
