@@ -8,6 +8,7 @@ module FSharp.Editor.Tests.FocusedCaretTests
 open Xunit
 open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
+open Microsoft.VisualStudio.Utilities
 open FSharp.Compiler.Text
 
 let private caretWithRecordedChanges () =
@@ -60,4 +61,18 @@ let ``no editor has focus twice over is one line change`` () =
 [<Fact>]
 let ``a text with no editor behind it has no caret`` () =
     // What the reactor sees for a document Visual Studio has not opened a view on.
-    Assert.True((FocusedCaret.TryGet(SourceText.From "#r \"nuget: Newtonsoft.Json\"\n")).IsNone)
+    Assert.True((FocusedCaret.TryGetOrCreate(SourceText.From "#r \"nuget: Newtonsoft.Json\"\n")).IsNone)
+
+[<Fact>]
+let ``a caret asked for before any editor exists is the one the editor publishes to`` () =
+    // The reactor can compute a script's options while its buffer has no view yet, and subscribes then.
+    let bufferProperties = PropertyCollection()
+    let heldByReactor = FocusedCaret.Of bufferProperties
+    let changes = ResizeArray()
+    heldByReactor.LineChanged.Add(fun () -> changes.Add heldByReactor.Position)
+
+    let publishedByEditor = FocusedCaret.Of bufferProperties
+    publishedByEditor.Update(Some(Position.mkPos 3 0))
+
+    Assert.Same(heldByReactor, publishedByEditor)
+    Assert.Equal(1, changes.Count)
