@@ -22,5 +22,3 @@ let test3 x =
   match x with
   | x -> Some(x)
   | _ -> None
-
-#quit

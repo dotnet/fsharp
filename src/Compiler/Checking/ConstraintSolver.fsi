@@ -19,6 +19,8 @@ open FSharp.Compiler.TypedTreeOps
 /// Concrete ITraitContext used throughout the compiler.
 type TraitContext = ITraitContext<AccessorDomain, MethInfo, InfoReader>
 
+val constraintResolutionPriority: TcGlobals -> ImportMap -> range -> formalTy: TType * actualTy: TType -> int
+
 /// Information about the context of a type equation.
 [<RequireQualifiedAccess>]
 type ContextInfo =

@@ -1021,6 +1021,10 @@ Updated automatically, please check diffs in your pull request, changes must be 
             use errStream = new StringWriter()
             use script = new FSharpScript(additionalArgs = Array.append [| "--noninteractive" |] options, quiet = false, outWriter = outStream, errWriter = errStream)
             script.ApplyExitShadowing()
+            // Scripts written for piped stdin end with `#q;;`, which exits the process: drop that last
+            // line instead of letting it end the test host. Only the last one, so that text which merely
+            // contains it, in a string say, is left as written.
+            let source = System.Text.RegularExpressions.Regex.Replace(source, @"(?<![^\n])[ \t]*#(?:q|quit)[ \t]*(?:;;)?\s*\z", "")
             let result, errors = script.Eval(source)
 
             let errorMessages = ResizeArray(errors |> Seq.map _.Message)

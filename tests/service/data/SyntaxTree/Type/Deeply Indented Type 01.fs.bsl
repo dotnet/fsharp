@@ -78,10 +78,12 @@ ImplFile
                             SynUnionCase
                               ([], SynIdent (NestedExc, None), Fields [],
                                PreXmlDocEmpty, None, (10,22--10,31),
-                               { BarRange = None }), None,
+                               { BarRange = None
+                                 OfKeyword = None }), None,
                             PreXmlDoc ((10,12), FSharp.Compiler.Xml.XmlDocCollector),
-                            None, (10,12--10,31)), None, [], (10,12--10,31)),
-                      (10,12--10,31))], false, (5,4--10,31),
+                            None, (10,12--10,31),
+                            { ExceptionKeyword = (10,12--10,21) }), None, [],
+                         (10,12--10,31)), (10,12--10,31))], false, (5,4--10,31),
                   { ModuleKeyword = Some (5,4--5,10)
                     EqualsRange = Some (5,24--5,25) })], false, (4,0--10,31),
               { ModuleKeyword = Some (4,0--4,6)
