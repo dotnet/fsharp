@@ -2,6 +2,7 @@
 
 // Not `inline`: optimization info for anything non-public is dropped at the assembly boundary, so an
 // InternalsVisibleTo friend compiled with --optimize+ (FSharp.Editor) fails with FS1116/FS1118 on an inline member.
+// For the same reason a public `inline` function must not call these: its body would reference an internal method.
 namespace Internal.Utilities.Library
 
 open System
