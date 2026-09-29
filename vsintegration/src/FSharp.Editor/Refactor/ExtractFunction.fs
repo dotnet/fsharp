@@ -281,7 +281,11 @@ type internal FSharpExtractFunctionRefactoring [<ImportingConstructor>] () =
                             let indentSize =
                                 options.GetOption(FormattingOptions.IndentationSize, FSharpConstants.FSharpLanguageName)
 
-                            let literalLines = linesInsideLiterals parseResults.ParseTree
+                            let! defines, langVersion = document.GetFsharpParsingOptionsAsync(nameof FSharpExtractFunctionRefactoring)
+
+                            let literalLines =
+                                linesInsideLiterals sourceText parseResults.ParseTree defines langVersion
+
                             let names = usedNames parseResults.ParseTree
                             let needingType = FunctionExtraction.positionsNeedingType target.Expr
                             let setting = document.Project.FSharpExtractFunctionParameterAnnotations
