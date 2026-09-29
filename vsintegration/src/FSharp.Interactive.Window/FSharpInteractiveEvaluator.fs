@@ -171,15 +171,17 @@ type internal FSharpInteractiveEvaluator
 
         member _.ExecuteCodeAsync(text) =
             task {
+                // Taken before anything can fail, so that an origin never outlives its own
+                // submission and lands on the next text typed into the window.
+                let origin = nextSubmissionOrigin
+                nextSubmissionOrigin <- ValueNone
+
                 let! started = ensureSessionAsync ()
 
                 match started, String.IsNullOrWhiteSpace text with
                 | false, _ -> return ExecutionResult false
                 | true, true -> return ExecutionResult true
                 | true, false ->
-                    let origin = nextSubmissionOrigin
-                    nextSubmissionOrigin <- ValueNone
-
                     let submit code =
                         match origin with
                         | ValueSome(struct (sourcePath, startLine)) -> host.ExecuteAsync(code, sourcePath, startLine)
