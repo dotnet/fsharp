@@ -11,6 +11,7 @@ open Microsoft.CodeAnalysis.Text
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTrivia
 open FSharp.Compiler.Text
+open FSharp.Compiler.Tokenization
 
 /// A place in front of which a declaration used by the selected expression can be inserted.
 [<RequireQualifiedAccess; NoComparison; NoEquality>]
@@ -76,18 +77,98 @@ let restOfLineIsClosers (sourceText: SourceText) (position: pos) =
     code
     |> Seq.forall (fun c -> Char.IsWhiteSpace c || c = ')' || c = ']' || c = '}' || c = '|')
 
-let linesInsideLiterals (parseTree: ParsedInput) =
-    (HashSet<int>(), parseTree)
-    ||> ParsedInput.fold (fun lines _ node ->
-        match node with
-        | SyntaxNode.SynExpr(SynExpr.Const(range = m))
-        | SyntaxNode.SynExpr(SynExpr.InterpolatedString(range = m))
-        | SyntaxNode.SynPat(SynPat.Const(range = m)) ->
-            for line in m.StartLine + 1 .. m.EndLine do
-                lines.Add(Line.toZ line) |> ignore
-        | _ -> ()
+/// Whether a line lexed from this state starts inside a string literal.
+let private continuesString (state: FSharpTokenizerColorState) =
+    match state with
+    | FSharpTokenizerColorState.InitialState
+    | FSharpTokenizerColorState.Token
+    | FSharpTokenizerColorState.IfDefSkip
+    | FSharpTokenizerColorState.EndLineThenSkip
+    | FSharpTokenizerColorState.EndLineThenToken
+    | FSharpTokenizerColorState.Comment
+    | FSharpTokenizerColorState.SingleLineComment
+    | FSharpTokenizerColorState.StringInComment
+    | FSharpTokenizerColorState.VerbatimStringInComment
+    | FSharpTokenizerColorState.TripleQuoteStringInComment -> false
+    // String, VerbatimString, TripleQuoteString and the extended interpolated string state, which the public enum does not name.
+    | _ -> true
 
-        lines)
+let private isSkipped (state: FSharpTokenizerLexState) =
+    match FSharpLineTokenizer.ColorStateOfLexState state with
+    | FSharpTokenizerColorState.IfDefSkip
+    | FSharpTokenizerColorState.EndLineThenSkip -> true
+    | _ -> false
+
+let private startsWithDirective (code: ReadOnlySpan<char>) (keyword: string) =
+    code.StartsWith(keyword.AsSpan(), StringComparison.Ordinal)
+    && (code.Length = keyword.Length
+        || Char.IsWhiteSpace code[keyword.Length]
+        || code[keyword.Length] = '/')
+
+/// Whether the line is a directive the lexer recognizes while it skips an inactive branch.
+let private isSkippedDirective (line: string) =
+    let code = line.AsSpan().TrimStart()
+
+    startsWithDirective code "#if"
+    || startsWithDirective code "#elif"
+    || startsWithDirective code "#else"
+    || startsWithDirective code "#endif"
+
+let private scanLine (tokenizer: FSharpSourceTokenizer) (line: string) (state: FSharpTokenizerLexState) =
+    let lineTokenizer = tokenizer.CreateLineTokenizer line
+
+    let rec loop state =
+        match lineTokenizer.ScanToken state with
+        | Some _, next -> loop next
+        | None, next -> next
+
+    loop state
+
+/// Lines inside multi-line string literals of the branches of `#if` the defines leave inactive. Each run of inactive
+/// lines between two directives is lexed as the code it is when its branch is taken.
+let private linesInsideInactiveLiterals (sourceText: SourceText) (defines: string list) (langVersion: string) (lines: HashSet<int>) =
+    let fileTokenizer = FSharpSourceTokenizer(defines, None, Some langVersion)
+    let branchTokenizer = FSharpSourceTokenizer([], None, Some langVersion)
+    let mutable fileState = FSharpTokenizerLexState.Initial
+    let mutable branchState = FSharpTokenizerLexState.Initial
+
+    for line in sourceText.Lines do
+        let text = line.ToString()
+
+        if isSkipped fileState && not (isSkippedDirective text) then
+            if continuesString (FSharpLineTokenizer.ColorStateOfLexState branchState) then
+                lines.Add line.LineNumber |> ignore
+
+            branchState <- scanLine branchTokenizer text branchState
+        else
+            branchState <- FSharpTokenizerLexState.Initial
+
+        fileState <- scanLine fileTokenizer text fileState
+
+/// Lines inside multi-line string literals, including those in branches of `#if` the defines leave inactive.
+let linesInsideLiterals (sourceText: SourceText) (parseTree: ParsedInput) (defines: string list) (langVersion: string) =
+    let lines =
+        (HashSet<int>(), parseTree)
+        ||> ParsedInput.fold (fun lines _ node ->
+            match node with
+            | SyntaxNode.SynExpr(SynExpr.Const(range = m))
+            | SyntaxNode.SynExpr(SynExpr.InterpolatedString(range = m))
+            | SyntaxNode.SynPat(SynPat.Const(range = m)) ->
+                for line in m.StartLine + 1 .. m.EndLine do
+                    lines.Add(Line.toZ line) |> ignore
+            | _ -> ()
+
+            lines)
+
+    let directives =
+        match parseTree with
+        | ParsedInput.ImplFile file -> file.Trivia.ConditionalDirectives
+        | ParsedInput.SigFile file -> file.Trivia.ConditionalDirectives
+
+    if not directives.IsEmpty then
+        linesInsideInactiveLiterals sourceText defines langVersion lines
+
+    lines
 
 let usedNames (parseTree: ParsedInput) =
     (HashSet<string>(StringComparer.Ordinal), parseTree)
@@ -95,6 +176,8 @@ let usedNames (parseTree: ParsedInput) =
         match node with
         | SyntaxNode.SynExpr(SynExpr.Ident ident)
         | SyntaxNode.SynExpr(SynExpr.LongIdent(longDotId = SynLongIdent(id = ident :: _)))
+        | SyntaxNode.SynExpr(SynExpr.LongIdentSet(longDotId = SynLongIdent(id = ident :: _)))
+        | SyntaxNode.SynExpr(SynExpr.NamedIndexedPropertySet(longDotId = SynLongIdent(id = ident :: _)))
         | SyntaxNode.SynPat(SynPat.Named(ident = SynIdent(ident, _)))
         | SyntaxNode.SynPat(SynPat.LongIdent(longDotId = SynLongIdent(id = ident :: _))) -> names.Add ident.idText |> ignore
         | _ -> ()
