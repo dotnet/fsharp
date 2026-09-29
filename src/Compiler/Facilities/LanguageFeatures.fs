@@ -97,8 +97,9 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
     static let languageVersion90 = 9.0m
     static let languageVersion100 = 10.0m
     static let languageVersion110 = 11.0m
+    static let languageVersion112 = 11.2m
     static let previewVersion = 9999m // Language version when preview specified
-    static let defaultVersion = languageVersion110 // Language version when default specified
+    static let defaultVersion = languageVersion112 // Language version when default specified
     static let latestVersion = defaultVersion // Language version when latest specified
     static let latestMajorVersion = defaultVersion // Language version when latestmajor specified
 
@@ -116,6 +117,7 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
                 languageVersion90
                 languageVersion100
                 languageVersion110
+                languageVersion112
             |]
 
     static let features =
@@ -177,11 +179,8 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
                 LanguageFeature.AllowAccessModifiersToAutoPropertiesGettersAndSetters, languageVersion100
                 LanguageFeature.ReturnFromFinal, languageVersion100
                 LanguageFeature.ErrorOnInvalidDeclsInTypeDefinitions, languageVersion100
-                LanguageFeature.MoreConcreteTiebreaker, previewVersion
-                LanguageFeature.OverloadResolutionPriority, previewVersion
 
                 // F# 11.0
-                // Put stabilized features here for F# 11.0 previews via .NET SDK preview channels
                 LanguageFeature.WarnWhenFunctionValueUsedAsInterpolatedStringArg, languageVersion110
                 LanguageFeature.PreprocessorElif, languageVersion110
                 LanguageFeature.ErrorOnBitwiseOpsOnNonIntegralEnums, languageVersion110
@@ -197,18 +196,18 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
                 LanguageFeature.TypeArgumentDependencyOrdering, languageVersion110
                 LanguageFeature.OptimizeClosureIfNotInlined, languageVersion110
 
-                // Difference between languageVersion110 and preview - 11.0 gets turned on automatically by picking a preview .NET 11 SDK
-                // previewVersion is only when "preview" is specified explicitly in project files  and users also need a preview SDK
+                // F# 11.2
+                LanguageFeature.MoreConcreteTiebreaker, languageVersion112
+                LanguageFeature.OverloadResolutionPriority, languageVersion112
+                LanguageFeature.RuntimeAsync, languageVersion112
+                LanguageFeature.RecordConstructorSyntax, languageVersion112 // Allow constructing a record via its all-fields constructor, e.g. MyRecord(a, b)
+                LanguageFeature.RequireNamedArguments, languageVersion112 // FS-1095: enforce named arguments at call sites of methods marked with RequireNamedArgumentsAttribute
+                LanguageFeature.ReraiseInComputationExpressions, languageVersion112
+                LanguageFeature.ExtensionConstraintSolutions, languageVersion112
 
                 // F# preview
-                LanguageFeature.RuntimeAsync, previewVersion
-                LanguageFeature.RecordConstructorSyntax, previewVersion // Allow constructing a record via its all-fields constructor, e.g. MyRecord(a, b)
-                LanguageFeature.RequireNamedArguments, previewVersion // FS-1095: enforce named arguments at call sites of methods marked with RequireNamedArgumentsAttribute
-                LanguageFeature.ReraiseInComputationExpressions, previewVersion
-
                 // Unfinished features that still need work before they can be assigned a release language version.
                 LanguageFeature.FromEndSlicing, previewVersion // Unfinished features --- needs work
-                LanguageFeature.ExtensionConstraintSolutions, previewVersion
             ]
 
     static let defaultLanguageVersion = LanguageVersion("default")
@@ -236,6 +235,7 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
         | "10" -> languageVersion100
         | "11.0"
         | "11" -> languageVersion110
+        | "11.2" -> languageVersion112
         | _ -> 0m
 
     let specified = getVersionFromString versionText

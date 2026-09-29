@@ -43,7 +43,8 @@ ImplFile
                    ([],
                     SynUnionCase
                       ([], SynIdent (D, None), Fields [], PreXmlDocEmpty, None,
-                       (7,14--7,15), { BarRange = None }), None,
+                       (7,14--7,15), { BarRange = None
+                                       OfKeyword = None }), None,
                     PreXmlDoc ((7,4), FSharp.Compiler.Xml.XmlDocCollector), None,
                     (7,4--7,15), { ExceptionKeyword = (7,4--7,13) }), None, [],
                  (7,4--7,15)), (7,4--7,15))],

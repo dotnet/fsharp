@@ -37,9 +37,15 @@ module ExtensionConstraintsTests =
     // Positive tests: compile AND run cleanly, zero warnings
     // ========================================================================
 
-    [<Fact>]
-    let ``Extension operators solve SRTP constraints`` () =
-        compileAndRunPreview "BasicExtensionOperators.fs"
+    [<Theory>]
+    [<InlineData("default")>]
+    [<InlineData("11.2")>]
+    [<InlineData("preview")>]
+    let ``Extension operators solve SRTP constraints`` langVersion =
+        createTest "BasicExtensionOperators.fs"
+        |> withLangVersion langVersion
+        |> compileAndRun
+        |> shouldSucceed
 
     [<Fact>]
     let ``Nested Traverse-Sequence extension SRTP dispatch does not ICE and runs`` () =

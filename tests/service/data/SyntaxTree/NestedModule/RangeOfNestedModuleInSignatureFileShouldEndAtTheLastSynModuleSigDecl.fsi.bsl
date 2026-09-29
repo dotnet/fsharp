@@ -303,7 +303,8 @@ SigFile
                                         MutableKeyword = None })],
                                 PreXmlDoc ((31,6), FSharp.Compiler.Xml.XmlDocCollector),
                                 None, (30,6--31,25),
-                                { BarRange = Some (31,6--31,7) });
+                                { BarRange = Some (31,6--31,7)
+                                  OfKeyword = Some (31,19--31,21) });
                              SynUnionCase
                                ([], SynIdent (Choice2Of6, None),
                                 Fields
@@ -318,7 +319,8 @@ SigFile
                                         MutableKeyword = None })],
                                 PreXmlDoc ((33,6), FSharp.Compiler.Xml.XmlDocCollector),
                                 None, (32,6--33,25),
-                                { BarRange = Some (33,6--33,7) });
+                                { BarRange = Some (33,6--33,7)
+                                  OfKeyword = Some (33,19--33,21) });
                              SynUnionCase
                                ([], SynIdent (Choice3Of6, None),
                                 Fields
@@ -333,7 +335,8 @@ SigFile
                                         MutableKeyword = None })],
                                 PreXmlDoc ((35,6), FSharp.Compiler.Xml.XmlDocCollector),
                                 None, (34,6--35,25),
-                                { BarRange = Some (35,6--35,7) });
+                                { BarRange = Some (35,6--35,7)
+                                  OfKeyword = Some (35,19--35,21) });
                              SynUnionCase
                                ([], SynIdent (Choice4Of6, None),
                                 Fields
@@ -348,7 +351,8 @@ SigFile
                                         MutableKeyword = None })],
                                 PreXmlDoc ((37,6), FSharp.Compiler.Xml.XmlDocCollector),
                                 None, (36,6--37,25),
-                                { BarRange = Some (37,6--37,7) });
+                                { BarRange = Some (37,6--37,7)
+                                  OfKeyword = Some (37,19--37,21) });
                              SynUnionCase
                                ([], SynIdent (Choice5Of6, None),
                                 Fields
@@ -363,7 +367,8 @@ SigFile
                                         MutableKeyword = None })],
                                 PreXmlDoc ((39,6), FSharp.Compiler.Xml.XmlDocCollector),
                                 None, (38,6--39,25),
-                                { BarRange = Some (39,6--39,7) });
+                                { BarRange = Some (39,6--39,7)
+                                  OfKeyword = Some (39,19--39,21) });
                              SynUnionCase
                                ([], SynIdent (Choice6Of6, None),
                                 Fields
@@ -378,7 +383,8 @@ SigFile
                                         MutableKeyword = None })],
                                 PreXmlDoc ((41,6), FSharp.Compiler.Xml.XmlDocCollector),
                                 None, (40,6--41,25),
-                                { BarRange = Some (41,6--41,7) })],
+                                { BarRange = Some (41,6--41,7)
+                                  OfKeyword = Some (41,19--41,21) })],
                             (30,6--41,25)), (30,6--41,25)), [], (26,4--41,25),
                       { LeadingKeyword = Type (29,4--29,8)
                         EqualsRange = Some (29,41--29,42)

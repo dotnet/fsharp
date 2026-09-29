@@ -2798,23 +2798,24 @@ attrUnionCaseDecls:
 /* The core of a union case definition */
 attrUnionCaseDecl:
   | opt_attributes opt_access unionCaseName
-      { mkSynUnionCase $1 $2 $3 (SynUnionCaseKind.Fields []) (rhs2 parseState 1 3) >> Choice2Of2 }
+      { mkSynUnionCase $1 $2 $3 (SynUnionCaseKind.Fields []) None (rhs2 parseState 1 3) >> Choice2Of2 }
 
   | opt_attributes opt_access recover
-      { fun (xmlDoc, mBar) -> mkSynUnionCase $1 $2 (SynIdent(mkSynId mBar.EndRange "", None)) (SynUnionCaseKind.Fields []) mBar (xmlDoc, mBar) |> Choice2Of2 }
+      { fun (xmlDoc, mBar) -> mkSynUnionCase $1 $2 (SynIdent(mkSynId mBar.EndRange "", None)) (SynUnionCaseKind.Fields []) None mBar (xmlDoc, mBar) |> Choice2Of2 }
 
   | opt_attributes opt_access unionCaseName OF unionCaseRepr
       { let mId = rhs parseState 3
+        let mOf = rhs parseState 4
         let fields, mFields = $5
         let mWhole = unionRanges mId mFields
-        mkSynUnionCase $1 $2 $3 (SynUnionCaseKind.Fields fields) mWhole >> Choice2Of2 }
+        mkSynUnionCase $1 $2 $3 (SynUnionCaseKind.Fields fields) (Some mOf) mWhole >> Choice2Of2 }
 
   | opt_attributes opt_access unionCaseName unionCaseRepr
       { errorR (Error(FSComp.SR.parsMissingKeyword("of"), rhs2 parseState 3 4))
         let mAttributes = rhs parseState 1
         let fields, mFields = $4
         let mWhole = unionRanges mAttributes mFields
-        mkSynUnionCase $1 $2 $3 (SynUnionCaseKind.Fields fields) mWhole >> Choice2Of2 }
+        mkSynUnionCase $1 $2 $3 (SynUnionCaseKind.Fields fields) None mWhole >> Choice2Of2 }
 
   | opt_attributes opt_access OF unionCaseRepr
       { let mAttributes = rhs parseState 1
@@ -2823,23 +2824,24 @@ attrUnionCaseDecl:
         let fields, mFields = $4
         let mWhole = unionRanges mAttributes mFields
         errorR (Error(FSComp.SR.parsMissingUnionCaseName(), mOf))
-        mkSynUnionCase $1 $2 (SynIdent(mkSynId mId "", None)) (SynUnionCaseKind.Fields fields) mWhole >> Choice2Of2 }
+        mkSynUnionCase $1 $2 (SynIdent(mkSynId mId "", None)) (SynUnionCaseKind.Fields fields) (Some mOf) mWhole >> Choice2Of2 }
 
   | opt_attributes opt_access OF recover
       { let mOf = rhs parseState 3
         let mId = mOf.StartRange
         errorR (Error(FSComp.SR.parsMissingUnionCaseName(), mOf))
-        mkSynUnionCase $1 $2 (SynIdent(mkSynId mId "", None)) (SynUnionCaseKind.Fields []) (rhs2 parseState 1 3) >> Choice2Of2 }
+        mkSynUnionCase $1 $2 (SynIdent(mkSynId mId "", None)) (SynUnionCaseKind.Fields []) (Some mOf) (rhs2 parseState 1 3) >> Choice2Of2 }
 
   | opt_attributes opt_access unionCaseName OF recover
-      { mkSynUnionCase $1 $2 $3 (SynUnionCaseKind.Fields []) (rhs2 parseState 1 4) >> Choice2Of2 }
+      { let mOf = rhs parseState 4
+        mkSynUnionCase $1 $2 $3 (SynUnionCaseKind.Fields []) (Some mOf) (rhs2 parseState 1 4) >> Choice2Of2 }
 
   | opt_attributes opt_access unionCaseName COLON topType
       { let mAttributes = rhs parseState 1
         let fullType, _ = $5
         let mWhole = unionRanges mAttributes fullType.Range
         if parseState.LexBuffer.ReportLibraryOnlyFeatures then libraryOnlyWarning(lhs parseState)
-        mkSynUnionCase $1 $2 $3 (SynUnionCaseKind.FullType $5) mWhole >> Choice2Of2 }
+        mkSynUnionCase $1 $2 $3 (SynUnionCaseKind.FullType $5) None mWhole >> Choice2Of2 }
 
   | opt_attributes opt_access unionCaseName EQUALS atomicExpr
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsEnumFieldsCannotHaveVisibilityDeclarations(), rhs parseState 2))
@@ -2879,7 +2881,7 @@ unionCaseName:
 
 firstUnionCaseDeclOfMany:
   | ident opt_OBLOCKSEP
-      { let trivia: SynUnionCaseTrivia = { BarRange = None }
+      { let trivia: SynUnionCaseTrivia = { BarRange = None; OfKeyword = None }
         let xmlDoc = grabXmlDoc(parseState, [], 1)
         let mDecl = (rhs parseState 1) |> unionRangeWithXmlDoc xmlDoc
         Choice2Of2 (SynUnionCase ([], (SynIdent($1, None)), SynUnionCaseKind.Fields [], xmlDoc, None, mDecl, trivia)) }
@@ -2905,7 +2907,7 @@ firstUnionCaseDeclOfMany:
 firstUnionCaseDecl:
   | ident OF unionCaseRepr
       { let fields, mFields = $3
-        let trivia: SynUnionCaseTrivia = { BarRange = None }
+        let trivia: SynUnionCaseTrivia = { BarRange = None; OfKeyword = Some(rhs parseState 2) }
         let xmlDoc = grabXmlDoc (parseState, [], 1)
         let mId = rhs parseState 1
         let mDecl = unionRanges mId mFields |> unionRangeWithXmlDoc xmlDoc
@@ -2913,7 +2915,7 @@ firstUnionCaseDecl:
 
   | unionCaseName COLON topType
       { if parseState.LexBuffer.ReportLibraryOnlyFeatures then libraryOnlyWarning(lhs parseState)
-        let trivia: SynUnionCaseTrivia = { BarRange = None }
+        let trivia: SynUnionCaseTrivia = { BarRange = None; OfKeyword = None }
         let xmlDoc = grabXmlDoc (parseState, [], 1)
         let mId = rhs parseState 1
         let fullType, _ = $3
@@ -2921,7 +2923,7 @@ firstUnionCaseDecl:
         Choice2Of2(SynUnionCase([], $1, SynUnionCaseKind.FullType $3, xmlDoc, None, mDecl, trivia)) }
 
   | ident OF recover
-      { let trivia: SynUnionCaseTrivia = { BarRange = None }
+      { let trivia: SynUnionCaseTrivia = { BarRange = None; OfKeyword = Some(rhs parseState 2) }
         let xmlDoc = grabXmlDoc (parseState, [], 1)
         let mDecl = rhs2 parseState 1 2 |> unionRangeWithXmlDoc xmlDoc
         Choice2Of2(SynUnionCase([], SynIdent($1, None), SynUnionCaseKind.Fields [], xmlDoc, None, mDecl, trivia)) }
@@ -2932,7 +2934,7 @@ firstUnionCaseDecl:
        let fields, mFields = $2
        errorR (Error(FSComp.SR.parsMissingUnionCaseName(), mOf))
        let id = SynIdent(mkSynId mId "", None)
-       let trivia: SynUnionCaseTrivia = { BarRange = None }
+       let trivia: SynUnionCaseTrivia = { BarRange = None; OfKeyword = Some mOf }
        let xmlDoc = grabXmlDoc (parseState, [], 1)
        let mDecl = unionRanges mOf mFields |> unionRangeWithXmlDoc xmlDoc
        Choice2Of2(SynUnionCase([], id, SynUnionCaseKind.Fields fields, xmlDoc, None, mDecl, trivia)) }
@@ -3087,7 +3089,7 @@ exconCore:
             | attrs -> ((rhs parseState 1), attrs) ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range)
 
         let id = SynIdent(mkSynId m.EndRange "", None)
-        let unionCase = SynUnionCase([], id, SynUnionCaseKind.Fields [], PreXmlDoc.Empty, None, m, { BarRange = None })
+        let unionCase = SynUnionCase([], id, SynUnionCaseKind.Fields [], PreXmlDoc.Empty, None, m, { BarRange = None; OfKeyword = None })
 
         let trivia = { ExceptionKeyword = rhs parseState 1 }
         SynExceptionDefnRepr($2, unionCase, None, PreXmlDoc.Empty, $3, m, trivia) }
@@ -3095,14 +3097,16 @@ exconCore:
 /* Part of an exception definition */
 exconIntro:
   | ident
-      { SynUnionCase([], SynIdent($1, None), SynUnionCaseKind.Fields [], PreXmlDoc.Empty, None, lhs parseState, { BarRange = None }) }
+      { SynUnionCase([], SynIdent($1, None), SynUnionCaseKind.Fields [], PreXmlDoc.Empty, None, lhs parseState, { BarRange = None; OfKeyword = None }) }
 
   | ident OF unionCaseRepr
       { let fields, _ = $3
-        SynUnionCase([], SynIdent($1, None), SynUnionCaseKind.Fields fields, PreXmlDoc.Empty, None, lhs parseState, { BarRange = None }) }
+        let trivia: SynUnionCaseTrivia = { BarRange = None; OfKeyword = Some(rhs parseState 2) }
+        SynUnionCase([], SynIdent($1, None), SynUnionCaseKind.Fields fields, PreXmlDoc.Empty, None, lhs parseState, trivia) }
 
   | ident OF recover
-      { SynUnionCase([], SynIdent($1, None), SynUnionCaseKind.Fields [], PreXmlDoc.Empty, None, lhs parseState, { BarRange = None }) }
+      { let trivia: SynUnionCaseTrivia = { BarRange = None; OfKeyword = Some(rhs parseState 2) }
+        SynUnionCase([], SynIdent($1, None), SynUnionCaseKind.Fields [], PreXmlDoc.Empty, None, lhs parseState, trivia) }
 
 exconRepr:
   | /* EMPTY */

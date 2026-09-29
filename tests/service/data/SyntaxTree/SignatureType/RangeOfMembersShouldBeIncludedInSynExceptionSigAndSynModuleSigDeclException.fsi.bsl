@@ -24,9 +24,11 @@ SigFile
                              PreXmlDoc ((4,31), FSharp.Compiler.Xml.XmlDocCollector),
                              None, (4,31--4,43), { LeadingKeyword = None
                                                    MutableKeyword = None })],
-                       PreXmlDocEmpty, None, (4,10--4,43), { BarRange = None }),
-                    None, PreXmlDoc ((4,0), FSharp.Compiler.Xml.XmlDocCollector),
-                    None, (4,0--4,43), { ExceptionKeyword = (4,0--4,9) }),
+                       PreXmlDocEmpty, None, (4,10--4,43),
+                       { BarRange = None
+                         OfKeyword = Some (4,22--4,24) }), None,
+                    PreXmlDoc ((4,0), FSharp.Compiler.Xml.XmlDocCollector), None,
+                    (4,0--4,43), { ExceptionKeyword = (4,0--4,9) }),
                  Some (4,44--4,48),
                  [Member
                     (SynValSig

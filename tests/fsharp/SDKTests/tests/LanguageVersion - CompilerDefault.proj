@@ -1,0 +1,29 @@
+<Project DefaultTargets="Test" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <NETCoreSdkVersion>$(TestSdkVersion)</NETCoreSdkVersion>
+    <_NETCoreSdkIsPreview>$(TestSdkPreview)</_NETCoreSdkIsPreview>
+    <LangVersion>$(TestLangVersion)</LangVersion>
+    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+    <DisableImplicitSystemValueTupleReference>true</DisableImplicitSystemValueTupleReference>
+  </PropertyGroup>
+
+  <Import Project="PackageTest.props" />
+
+  <Target Name="Test">
+    <MSBuild Projects="$(MSBuildProjectFullPath)" Targets="Check"
+             Properties="TestSdkVersion=11.0.200-preview.1;TestSdkPreview=true" />
+    <MSBuild Projects="$(MSBuildProjectFullPath)" Targets="Check"
+             Properties="TestSdkVersion=11.0.200;TestSdkPreview=false" />
+    <MSBuild Projects="$(MSBuildProjectFullPath)" Targets="Check"
+             Properties="TestSdkVersion=11.0.200-preview.1;TestSdkPreview=true;TestLangVersion=11.0" />
+    <MSBuild Projects="$(MSBuildProjectFullPath)" Targets="Check"
+             Properties="TestSdkVersion=11.0.200-preview.1;TestSdkPreview=true;TestLangVersion=11.2" />
+    <MSBuild Projects="$(MSBuildProjectFullPath)" Targets="Check"
+             Properties="TestSdkVersion=11.0.200-preview.1;TestSdkPreview=true;TestLangVersion=preview" />
+  </Target>
+
+  <Target Name="Check">
+    <Error Condition="'$(LangVersion)' != '$(TestLangVersion)'"
+           Text="SDK $(NETCoreSdkVersion) changed LangVersion from '$(TestLangVersion)' to '$(LangVersion)'." />
+  </Target>
+</Project>
