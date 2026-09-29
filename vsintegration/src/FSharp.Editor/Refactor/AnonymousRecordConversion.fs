@@ -14,7 +14,16 @@ let private keywordChanges (sourceText: SourceText) (toStruct: bool) (isStruct: 
     match isStruct, toStruct with
     | true, true
     | false, false -> []
-    | false, true -> [ TextChange(TextSpan((spanOf sourceText m).Start, 0), "struct ") ]
+    | false, true ->
+        let start = (spanOf sourceText m).Start
+
+        let keyword =
+            if needsSpaceBefore sourceText start then
+                " struct "
+            else
+                "struct "
+
+        [ TextChange(TextSpan(start, 0), keyword) ]
     | true, false -> [ TextChange(structKeyword sourceText m, "") ]
 
 let kind: StructKind =
