@@ -455,9 +455,9 @@ stages:
           - checkout: self
             clean: true
           - powershell: |
-              $result = Invoke-Pester eng/tests/PublishTestResults.Tests.ps1 -PassThru
+              $result = Invoke-Pester eng/tests/*.Tests.ps1 -PassThru
               if ($result.FailedCount -gt 0) { exit 1 }
-            displayName: Test result publishing regression tests
+            displayName: Pipeline regression tests
           - pwsh: .\eng\MockBuild.ps1
             displayName: Build with OfficialBuildId
 
