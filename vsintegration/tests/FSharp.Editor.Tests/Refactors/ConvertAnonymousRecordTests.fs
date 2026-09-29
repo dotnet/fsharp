@@ -281,6 +281,111 @@ let point = struct {| X = 1 |}
 [<InlineData("""
 module M
 
+let make () =
+    try {| A = 1 |}
+    finally ()
+
+let copy: {| A: int |} = make ()
+""",
+             """
+module M
+
+let make () =
+    try struct {| A = 1 |}
+    finally ()
+
+let copy: struct {| A: int |} = make ()
+""")>]
+[<InlineData("""
+module M
+
+let make () =
+    try {| A = 1 |}
+    with _ -> {| A = 0 |}
+
+let copy: {| A: int |} = make ()
+""",
+             """
+module M
+
+let make () =
+    try struct {| A = 1 |}
+    with _ -> struct {| A = 0 |}
+
+let copy: struct {| A: int |} = make ()
+""")>]
+let ``Result flowing out of try converts every branch of it`` (reference: string, structs: string) =
+    Assert.Equal(structs, refactored reference "A: int")
+    Assert.Equal(reference, refactored structs "A: int")
+
+[<Theory>]
+[<InlineData("""
+module M
+
+let person = {| A = 1 |}
+let copy = match person with | p -> p
+let typed: {| A: int |} = copy
+""",
+             """
+module M
+
+let person = struct {| A = 1 |}
+let copy = match person with | p -> p
+let typed: struct {| A: int |} = copy
+""")>]
+[<InlineData("""
+module M
+
+let person = {| A = 1 |}
+let alias = person
+let typed: {| A: int |} = alias
+""",
+             """
+module M
+
+let person = struct {| A = 1 |}
+let alias = person
+let typed: struct {| A: int |} = alias
+""")>]
+let ``Value converts through the names it is bound to again`` (reference: string, structs: string) =
+    Assert.Equal(structs, refactored reference "A = 1")
+    Assert.Equal(reference, refactored structs "A = 1")
+    Assert.Equal(structs, refactored reference "A: int")
+    Assert.Equal(reference, refactored structs "A: int")
+
+[<Fact>]
+let ``Generic parameter stops the conversion`` () =
+    let reference =
+        """
+module M
+
+let identity<'T> (x: 'T) = x
+let a = identity {| A = 1 |}
+let b = identity<{| B: int |}> {| B = 2 |}
+"""
+
+    let structs =
+        """
+module M
+
+let identity<'T> (x: 'T) = x
+let a = identity struct {| A = 1 |}
+let b = identity<{| B: int |}> {| B = 2 |}
+"""
+
+    Assert.Equal(structs, refactored reference "A = 1")
+    Assert.Equal(reference, refactored structs "A = 1")
+
+[<Theory>]
+[<InlineData("\nmodule M\n\nlet x = id{| A = 1 |}\n", "\nmodule M\n\nlet x = id struct {| A = 1 |}\n")>]
+[<InlineData("\nmodule M\n\nlet f́ x = x\nlet y = f́{| A = 1 |}\n", "\nmodule M\n\nlet f́ x = x\nlet y = f́ struct {| A = 1 |}\n")>]
+let ``Struct keyword is separated from a name the record follows`` (before: string, after: string) =
+    Assert.Equal(after, refactored before "A = 1")
+
+[<Theory>]
+[<InlineData("""
+module M
+
 let x = 1
 """,
              "1")>]
