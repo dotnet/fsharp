@@ -119,7 +119,7 @@ let generateTests() =
                                                   yield "let mutable forceInit = 1";
                                                   yield "// This sets a value in another module to indicate that initialization has happened"
                                                   yield sprintf "InitFlag%d.init <- true" n.Value |])
-                  yield sprintf "//-----------------"
+                  yield "//-----------------"
                   yield sprintf "printfn \"Touching value in module Lib%d...\"" n.Value 
                   yield sprintf "printfn \"    --> Lib%d.x = %%A\" Lib%d.x" n.Value n.Value
                   if triggers1 then 

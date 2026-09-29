@@ -96,12 +96,7 @@ type internal FxResolver
                     raise (TimeoutException(sprintf "Timeout executing command '%s' '%s'" psi.FileName psi.Arguments))
                 else
                     p.WaitForExit()
-#if DEBUG
-            if workingDir.IsSome then
-                FileSystem.OpenFileForWriteShim(Path.Combine(workingDir.Value, "StandardOutput.txt")).WriteAllLines(outputList)
 
-                FileSystem.OpenFileForWriteShim(Path.Combine(workingDir.Value, "StandardError.txt")).WriteAllLines(errorsList)
-#endif
             p.ExitCode, outputList.ToArray(), errorsList.ToArray()
         else
             -1, Array.empty, Array.empty

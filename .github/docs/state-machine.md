@@ -42,10 +42,10 @@ This document maps the 16 GitHub Actions workflows and AI agents in this reposit
 | 8 | `add_to_project.yml` | 👤 issues/PR opened | none | add label, set milestone, cleanup runs |
 | 9 | `labelops-flake-fix.md` | 👤 dispatch | failing_test, affected_prs, originating_pr | create-pull-request, create-issue, add-comment |
 | 10 | `labelops-pr-maintenance.md` | ⏰ every 3h, 👤 dispatch | none | push-to-PR, add-comment, add-labels, dispatch-workflow |
-| 11 | `labelops-pr-security-scan.md` | ⏰ hourly, 👤 dispatch | none | add-labels, add-comment, repo-memory write |
+| 11 | `labelops-pr-security-scan.md` | 👤 pull_request_target (synchronize) | none | add-labels, gated add-comment, repo-memory write |
 | 12 | `msbuild-quality-review.md` | ⏰ weekly, 👤 dispatch | none | create-issue, create-pull-request (draft) |
 | 13 | `regression-pr-shepherd.md` | ⏰ every 4h, 👤 dispatch | none | push-to-PR, add-comment, remove-labels |
-| 14 | `repo-assist.md` | ⏰ every 12h, 👤 dispatch, 👤 slash_command | none | create-pull-request, add-comment, add/remove-labels, create/update-issue, push-to-PR |
+| 14 | `repo-assist-scheduled.md` | ⏰ every 12h, 👤 dispatch | none | create-pull-request, add-comment, add/remove-labels, create/update-issue, push-to-PR |
 | 15 | `repository_lockdown_check.yml` | 👤 pull_request_target | none | PR comment (lockdown warning) |
 | 16 | `skill-validation.yml` | 👤 PR, ⚙️ push (main), 👤 dispatch | none | validate skills/agents |
 
@@ -56,21 +56,21 @@ Cross-workflow interactions (producer → consumer):
 | Signal | Producer | Consumer | Mechanism |
 |--------|----------|----------|-----------|
 | `AI-Auto-Resolve-CI/Conflicts` labels | Human maintainer | `labelops-pr-maintenance` | Label filter on PR list |
-| `AI-Issue-Regression-PR` label | `repo-assist` | `regression-pr-shepherd` | Label filter on PR list |
-| `AI-thinks-issue-fixed` label | `repo-assist` | `regression-pr-shepherd` (remove) | Label on linked issue |
+| `AI-Issue-Regression-PR` label | `repo-assist-scheduled` | `regression-pr-shepherd` | Label filter on PR list |
+| `AI-thinks-issue-fixed` label | `repo-assist-scheduled` | `regression-pr-shepherd` (remove) | Label on linked issue |
 | `dispatch-workflow: labelops-flake-fix` | `labelops-pr-maintenance` | `labelops-flake-fix` | workflow_dispatch with inputs |
 | `Flaky` label | `labelops-flake-fix` | Human triage | always-applied on PR/issue |
 | `AI-needs-CI-fix-input` label | `labelops-pr-maintenance` | Human maintainer | escalation signal |
 | `⚠️ Affects-*` labels | `labelops-pr-security-scan` | Human reviewer | informational |
 | `Needs-Triage` label | `add_to_project.yml` | Human triage | imperative on new issues |
 | State-store `safety/scanned-PRs` | `labelops-pr-security-scan` | `labelops-pr-security-scan` | repo-memory persistence |
-| State-store `memory/repo-assist` | `repo-assist` | `repo-assist` | repo-memory persistence |
+| State-store `memory/repo-assist` | `repo-assist-scheduled` | `repo-assist-scheduled` | repo-memory persistence |
 
 ## Group A — LabelOps Ecosystem
 
 Workflows: `labelops-pr-maintenance` (LPM), `labelops-flake-fix` (LFF), `labelops-pr-security-scan` (LPSS).
 
-LPM dispatches LFF when proven flakes are detected. LPSS operates independently on a separate schedule scanning fork PRs.
+LPM dispatches LFF when proven flakes are detected. LPSS scans the current PR head only after a synchronize event; fork PRs get a diff scan.
 
 ```mermaid
 stateDiagram-v2
@@ -122,17 +122,23 @@ stateDiagram-v2
   }
 
   state "labelops-pr-security-scan" as LPSS {
-    [*] --> LPSS_ReadRules : ⏰ hourly / 👤 dispatch
+    [*] --> LPSS_Synchronize : 👤 pull_request_target synchronize
+    LPSS_Synchronize --> LPSS_CheckSHA : ⚙️ compare event, live, and saved full SHA
+    LPSS_CheckSHA --> [*] : ⚙️ SHA already scanned (skip activation)
+    LPSS_CheckSHA --> LPSS_ReadRules : ⚙️ new SHA
     LPSS_ReadRules --> LPSS_LoadMemory : ⚙️ read repo rules
-    LPSS_LoadMemory --> LPSS_ListPRs : ⚙️ load state.json
-    LPSS_ListPRs --> LPSS_PerPR : ⚙️ filter (date, draft, sha)
+    LPSS_LoadMemory --> LPSS_PerPR : ⚙️ load the selected PR and saved categories
     state LPSS_ForkCheck <<choice>>
     LPSS_PerPR --> LPSS_ForkCheck : ⚙️ check headRepository
     LPSS_ForkCheck --> LPSS_Bypass : ⚙️ non-fork
     LPSS_ForkCheck --> LPSS_Classify : ⚙️ fork PR
     LPSS_Bypass --> LPSS_SaveMemory : 🤖 add-labels (Bypassed)
     LPSS_Classify --> LPSS_Label : 🤖 add-labels (⚠️ categories)
-    LPSS_Label --> LPSS_SaveMemory : 🤖 add-comment (if changed)
+    state LPSS_CommentGate <<choice>>
+    LPSS_Label --> LPSS_CommentGate : ⚙️ compare sorted category sets
+    LPSS_CommentGate --> LPSS_Comment : ⚙️ non-empty categories changed
+    LPSS_CommentGate --> LPSS_SaveMemory : ⚙️ empty or unchanged categories
+    LPSS_Comment --> LPSS_SaveMemory : 🤖 add-comment (sanitized safe output)
     LPSS_SaveMemory --> [*]
   }
 
@@ -141,7 +147,7 @@ stateDiagram-v2
 
 ## Group B — Regression Test Pipeline
 
-Workflows: `repo-assist` (RA), `regression-pr-shepherd` (RPS).
+Workflows: `repo-assist-scheduled` (RA), `regression-pr-shepherd` (RPS).
 
 RA creates regression test PRs and labels issues. RPS shepherds those PRs to merge.
 
@@ -149,8 +155,8 @@ RA creates regression test PRs and labels issues. RPS shepherds those PRs to mer
 stateDiagram-v2
   direction LR
 
-  state "repo-assist" as RA {
-    [*] --> RA_FetchData : ⏰ every 12h / 👤 dispatch / 👤 slash_command
+  state "repo-assist-scheduled" as RA {
+    [*] --> RA_FetchData : ⏰ every 12h / 👤 dispatch
     RA_FetchData --> RA_Task1 : ⚙️ task selection
     RA_Task1 --> RA_Task3 : ⚙️ issue investigation
     RA_Task3 --> RA_Task2 : ⚙️ windows-only revisit
@@ -335,18 +341,18 @@ gh-aw safe-output defaults (suppressed below): `target: "*"`, `noop.report-as-is
 | `labelops-pr-maintenance` | `add-labels` | 3 | allowed: AI-needs-CI-fix-input |
 | `labelops-pr-maintenance` | `dispatch-workflow` | 3 | workflows: labelops-flake-fix |
 | `labelops-pr-security-scan` | `add-labels` | 50 | allowed: 11 labels (⚠️ Affects-* family + Suspicious-Prompting + Scope-Review-Needed + Scanned-Clean + Bypassed) |
-| `labelops-pr-security-scan` | `add-comment` | 25 | hide-older-comments: true |
+| `labelops-pr-security-scan` | `add-comment` | 25 | hide-older-comments: true; emitted only for changed non-empty categories |
 | `msbuild-quality-review` | `create-issue` | 1 | title `[msbuild-quality] `, labels: automation+Area-ProjectsAndBuild |
 | `msbuild-quality-review` | `create-pull-request` | 1 | draft: true, title `[msbuild-quality] `, protected-files: fallback-to-issue |
 | `regression-pr-shepherd` | `push-to-pull-request-branch` | 10 | allowed-files: tests/**, vsintegration/tests/** |
 | `regression-pr-shepherd` | `add-comment` | 5 | hide-older-comments: true |
 | `regression-pr-shepherd` | `remove-labels` | 5 | allowed: AI-thinks-issue-fixed |
-| `repo-assist` | `create-pull-request` | 10 | title `Add regression test: `, labels: NO_RELEASE_NOTES+AI-Issue-Regression-PR, reviewers: abonie+T-Gro, auto-merge: true |
-| `repo-assist` | `add-comment` | 10 | hide-older-comments: true |
-| `repo-assist` | `add-labels` | 30 | allowed: AI-thinks-issue-fixed, AI-thinks-windows-only |
-| `repo-assist` | `remove-labels` | 10 | allowed: AI-thinks-issue-fixed, AI-thinks-windows-only |
-| `repo-assist` | `create-issue` | 4 | title `[Repo Assist] `, labels: automation+repo-assist |
-| `repo-assist` | `push-to-pull-request-branch` | 4 | title `[Repo Assist] `, protected-files: fallback-to-issue |
+| `repo-assist-scheduled` | `create-pull-request` | 10 | title `Add regression test: `, labels: NO_RELEASE_NOTES+AI-Issue-Regression-PR, reviewers: abonie+T-Gro, auto-merge: true |
+| `repo-assist-scheduled` | `add-comment` | 10 | hide-older-comments: true |
+| `repo-assist-scheduled` | `add-labels` | 30 | allowed: AI-thinks-issue-fixed, AI-thinks-windows-only |
+| `repo-assist-scheduled` | `remove-labels` | 10 | allowed: AI-thinks-issue-fixed, AI-thinks-windows-only |
+| `repo-assist-scheduled` | `create-issue` | 4 | title `[Repo Assist] `, labels: automation+repo-assist |
+| `repo-assist-scheduled` | `push-to-pull-request-branch` | 4 | title `[Repo Assist] `, protected-files: fallback-to-issue |
 
 ## Label Index
 

@@ -87,7 +87,8 @@ open System.Collections.Generic
 
 module internal List =
 
-    let inline arrayZeroCreate (n:int) = (# "newarr !0" type ('T) n : 'T array #)
+    let inline arrayZeroCreate (n:int) : 'T array =
+        if n = 0 then [||] else (# "newarr !0" type ('T) n : 'T array #)
 
     // optimized mutation-based implementation. This code is only valid in fslib, where mutation of private
     // tail cons cells is permitted in carefully written library code.
@@ -988,8 +989,9 @@ module internal Array =
         LanguagePrimitives.FastGenericComparerCanBeNull<'t>
 
     // The input parameter should be checked by callers if necessary
-    let inline zeroCreateUnchecked (count:int) =
-        (# "newarr !0" type ('T) count : 'T array #)
+    // Returns the shared empty-array singleton (via the [||] literal) when count = 0
+    let inline zeroCreateUnchecked (count: int) : 'T array =
+        if count = 0 then [||] else (# "newarr !0" type ('T) count : 'T array #)
 
     let inline init (count:int) ([<InlineIfLambda>] f: int -> 'T) =
         if count < 0 then invalidArgInputMustBeNonNegative "count" count

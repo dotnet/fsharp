@@ -31,7 +31,8 @@ ImplFile
                                          (3,15--3,20)))], (3,9--3,20)),
                                SynValInfo ([], SynArgInfo ([], false, None))),
                             PreXmlDoc ((3,4), FSharp.Compiler.Xml.XmlDocCollector),
-                            None, (3,6--3,20), { BarRange = Some (3,4--3,5) })],
+                            None, (3,6--3,20), { BarRange = Some (3,4--3,5)
+                                                 OfKeyword = None })],
                         (3,4--3,20)), (3,4--3,20)), [], None, (2,5--3,20),
                   { LeadingKeyword = Type (2,0--2,4)
                     EqualsRange = Some (2,7--2,8)

@@ -231,8 +231,10 @@ module TcResolutionsExtensions =
                     let isDelegateInvokeMemberName name =
                         name = "Invoke" || name = "BeginInvoke" || name = "EndInvoke"
 
-                    resolutions
-                    |> Array.iter (fun cnr ->
+                    // A resolution can name a placeholder that metadata unpickling never linked; every
+                    // reference field on it is null. Losing one token beats losing the file, which is
+                    // what the enclosing DiagnosticsScope.Protect does.
+                    let classifyResolution (cnr: CapturedNameResolution) =
                         match cnr.Item, cnr.ItemOccurrence, cnr.Range with
                         | (Item.CustomBuilder _ | Item.CustomOperation _), ItemOccurrence.Use, m ->
                             add m SemanticClassificationType.ComputationExpression
@@ -440,7 +442,13 @@ module TcResolutionsExtensions =
                                 else
                                     add m SemanticClassificationType.ReferenceType
 
-                        | _, _, m -> add m SemanticClassificationType.Plaintext)
+                        | _, _, m -> add m SemanticClassificationType.Plaintext
+
+                    for cnr in resolutions do
+                        try
+                            classifyResolution cnr
+                        with RecoverableException e ->
+                            Trace.TraceInformation $"FCS: skipped one resolution in GetSemanticClassification: '%s{e.Message}'"
 
                     // Classify related symbol uses (e.g., union case testers → UnionCase).
                     // These share ranges with the corresponding property classifications, so we intentionally add a second classification.

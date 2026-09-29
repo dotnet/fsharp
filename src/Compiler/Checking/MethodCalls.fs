@@ -560,7 +560,7 @@ type CalledMeth<'T>
     let fullCurriedCalledArgs = MakeCalledArgs infoReader.amap m minfo calledTyArgs
     do assert (fullCurriedCalledArgs.Length = fullCurriedCalledArgs.Length)
 
-    // Detect the special case where an indexer setter using param aray takes 'value' argument after ParamArray arguments
+    // Indexer setters take the assignment value after the index arguments.
     let isIndexerSetter =
         match pinfoOpt with
         | Some pinfo when pinfo.HasSetter && minfo.LogicalName.StartsWithOrdinal("set_") && (List.concat fullCurriedCalledArgs).Length >= 2 -> true
@@ -625,7 +625,15 @@ type CalledMeth<'T>
                 let nUnnamedCallerArgs = unnamedCallerArgs.Length
                 let nUnnamedCalledArgs = unnamedCalledArgs.Length
                 if allowOutAndOptArgs && nUnnamedCallerArgs < nUnnamedCalledArgs then
-                    let unnamedCalledArgsTrimmed, unnamedCalledOptOrOutArgs = List.splitAt nUnnamedCallerArgs unnamedCalledArgs
+                    let indexArgs, nCallerIndexArgs, setterValueArgOpt =
+                        if isIndexerSetter && nUnnamedCallerArgs > 0 &&
+                           (List.last unnamedCalledArgs).Position = (List.last fullCalledArgs).Position then
+                            let indexArgs, valueArg = List.frontAndBack unnamedCalledArgs
+                            indexArgs, nUnnamedCallerArgs - 1, ValueSome valueArg
+                        else
+                            unnamedCalledArgs, nUnnamedCallerArgs, ValueNone
+
+                    let unnamedCalledArgsTrimmed, unnamedCalledOptOrOutArgs = List.splitAt nCallerIndexArgs indexArgs
 
                     // take the last ParamArray arg out, make it not break the optional/out params check
                     let unnamedCalledArgsTrimmed, unnamedCalledOptOrOutArgs =
@@ -639,6 +647,10 @@ type CalledMeth<'T>
                     // Check if all args are optional or byref-out args, same arg cannot be both.
                     if unnamedCalledOptOrOutArgs |> List.forall (fun x -> isOpt x <> isOut x) then
                         let unnamedCalledOptArgs, unnamedCalledOutArgs = unnamedCalledOptOrOutArgs |> List.partition isOpt
+                        let unnamedCalledArgsTrimmed =
+                            match setterValueArgOpt with
+                            | ValueSome valueArg -> unnamedCalledArgsTrimmed @ [valueArg]
+                            | ValueNone -> unnamedCalledArgsTrimmed
                         unnamedCalledArgsTrimmed, unnamedCalledOptArgs, unnamedCalledOutArgs
                     // Otherwise drop them on the floor
                     else
@@ -794,6 +806,18 @@ type CalledMeth<'T>
 
     member x.NumArgSets = x.ArgSets.Length
 
+    member x.TryGetRequireNamedArgumentsViolationName(m: range) : string option =
+        if
+            MethInfoHasWellKnownAttribute g m WellKnownILAttributes.RequireNamedArgumentsAttribute WellKnownValAttributes.RequireNamedArgumentsAttribute "System.Diagnostics.CodeAnalysis.RequireNamedArgumentsAttribute" x.Method
+            && x.AssociatedPropertyInfo.IsNone
+            && x.NumArgSets <= 1
+            && (x.TotalNumUnnamedCallerArgs > 0 || (x.ParamArrayCallerArgs |> Option.exists (fun args -> not (isNil args))))
+        then
+            let minfo = x.Method
+            Some(if minfo.IsConstructor then minfo.ApparentEnclosingTyconRef.DisplayName else minfo.LogicalName)
+        else
+            None
+
     member x.HasOptionalArgs = not (isNil x.UnnamedCalledOptArgs)
 
     member x.HasOutArgs = not (isNil x.UnnamedCalledOutArgs)
@@ -920,7 +944,7 @@ let ExamineMethodForLambdaPropagation (g: TcGlobals) m (meth: CalledMeth<SynExpr
             m
             { ILFlag = WellKnownILAttributes.NoEagerConstraintApplicationAttribute
               ValFlag = WellKnownValAttributes.NoEagerConstraintApplicationAttribute
-              AttribInfo = g.attrib_NoEagerConstraintApplicationAttribute }
+              AttributeName = "Microsoft.FSharp.Core.CompilerServices.NoEagerConstraintApplicationAttribute" }
             meth.Method
 
     // The logic associated with NoEagerConstraintApplicationAttribute is part of the
@@ -1305,10 +1329,9 @@ let ILFieldStaticChecks g amap infoReader ad m (finfo : ILFieldInfo) =
     CheckILFieldInfoAccessible g amap m ad finfo
     if not finfo.IsStatic then error (Error(FSComp.SR.tcFieldIsNotStatic(RichText.mkField finfo.FieldName), m))
 
-    // Static IL interfaces fields are not supported in lower F# versions.
+    // Static IL interface fields require target-runtime support for default interface members.
     if isInterfaceTy g finfo.ApparentEnclosingType then
-        checkLanguageFeatureRuntimeAndRecover infoReader LanguageFeature.DefaultInterfaceMemberConsumption m
-        checkLanguageFeatureAndRecover g.langVersion LanguageFeature.DefaultInterfaceMemberConsumption m
+        checkRuntimeSupportForDefaultInterfaceMembersAndRecover infoReader m
 
     CheckILFieldAttributes g finfo m
 
@@ -1798,7 +1821,6 @@ let AdjustCallerArgs tcVal tcFieldInit eCallerMemberName (infoReader: InfoReader
         // IsIndexParamArraySetter only occurs for
         //     expr.[indexes] <- value
         // where the 'value' arg to the setter is always the last unnamed argument (there is no syntax to use a named argument for it)
-        // Indeed in this case there will be no named/optional/out arguments.
         if calledMeth.IsIndexParamArraySetter && not adjustedNormalUnnamedArgs.IsEmpty then
             let a,b = List.frontAndBack adjustedNormalUnnamedArgs
             a, [b]

@@ -438,6 +438,12 @@ module internal Makers =
 
     val mkGetStringLength: TcGlobals -> range -> Expr -> Expr
 
+    /// `OptimizedClosures.FSharpFunc<argTys, retTy>.Adapt(folderExpr)`. Returns the call and its result type.
+    val mkCallOptimizedClosuresAdapt: TcGlobals -> range -> TType list -> TType -> Expr -> Expr * TType
+
+    /// `fExpr.Invoke(argExprs)` on an `OptimizedClosures.FSharpFunc<argTys, retTy>`.
+    val mkCallOptimizedClosuresInvoke: TcGlobals -> range -> TType list -> TType -> Expr -> Expr list -> Expr
+
     val mkStaticCall_String_Concat2: TcGlobals -> range -> Expr -> Expr -> Expr
 
     val mkStaticCall_String_Concat3: TcGlobals -> range -> Expr -> Expr -> Expr -> Expr

@@ -169,6 +169,49 @@ type C() =
         |> verifyILNotPresent [ "PrivateImplementationDetails" ]
 
     [<Theory; InlineData(true); InlineData(false)>]
+    let ``Namespace-level inner-rec does not trigger file initialization`` (realsig: bool) =
+        let source = """
+namespace Repro
+
+type WrappedList<'T> = Wrap of 'T list with
+    static member Exists(Wrap list: WrappedList<'T>, predicate) =
+        let rec loop list =
+            match list with
+            | [] -> false
+            | h :: t -> predicate h || loop t
+        loop list
+
+module Initialization =
+    let value: int = failwith "Unexpected file initialization"
+"""
+        let other = """
+namespace Repro
+module OtherInitialization =
+    let value: int = failwith "Unexpected initialization of another file"
+"""
+        let main = """
+module Main
+open Repro
+
+[<EntryPoint>]
+let main _ =
+    let visited = ResizeArray()
+    let _ = WrappedList<int>.Exists(Wrap [1; 2; 3], fun x -> visited.Add x; x = 2)
+    if Seq.toList visited = [1; 2] then 0 else 1
+"""
+        FSharp source
+        |> withFileName "A.fs"
+        |> withAdditionalSourceFiles [
+            FsSourceWithFileName "A$Functions.fs" other
+            FsSourceWithFileName "Main.fs" main
+        ]
+        |> withRealInternalSignature realsig
+        |> asExe
+        |> withOptimize
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<Theory; InlineData(true); InlineData(false)>]
     let ``Value recursion is not broken by TLR`` (realsig: bool) =
         """module Sample
 let run() =
@@ -179,6 +222,31 @@ let run() =
 let main _argv = if run() = 6 then 0 else 1
 """
         |> compileOptimizedAndRun realsig
+
+    [<Theory; InlineData(true, true); InlineData(true, false); InlineData(false, true); InlineData(false, false)>]
+    let ``Namespace-rec forward values are initialized`` (realsig: bool, optimize: bool) =
+        let source = """
+namespace rec Repro
+module Values =
+    let x = C(42)
+type C(value: int) =
+    member _.Value = value
+module Check =
+    do if Values.x.Value <> 42 then failwith "Not initialized"
+"""
+        let main = """
+module Main
+[<EntryPoint>]
+let main _ = Repro.Values.x.Value - 42
+"""
+        FSharp source
+        |> withAdditionalSourceFile (FsSourceWithFileName "Main.fs" main)
+        |> withRealInternalSignature realsig
+        |> withOptimization optimize
+        |> withOptions ["--nowarn:22,40"]
+        |> asExe
+        |> compile
+        |> verifyPEAndRun
 
     [<Theory; InlineData(true); InlineData(false)>]
     let ``Quotation body is not affected by TLR`` (realsig: bool) =

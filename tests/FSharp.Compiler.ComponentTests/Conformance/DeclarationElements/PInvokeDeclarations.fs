@@ -69,6 +69,7 @@ module PInvokeDeclarations =
     let ``ComVisible02_fs`` compilation =
         compilation
         |> asExe
+        |> withLangVersion11
         |> typecheck
         |> shouldFail
         |> withErrorCode 1133

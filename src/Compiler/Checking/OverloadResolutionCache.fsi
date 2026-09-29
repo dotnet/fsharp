@@ -15,7 +15,7 @@ open FSharp.Compiler.TypedTree
 type OverloadResolutionCacheKey =
     {
         /// Hash combining all method identities in the method group
-        MethodGroupHash: int
+        MethodGroupHash: int64
         /// Type structures for caller object arguments (the 'this' argument for instance/extension methods)
         /// This is critical for extension methods where the 'this' type determines the overload
         ObjArgTypeStructures: TypeStructure[]
@@ -38,7 +38,7 @@ type OverloadResolutionCacheResult =
 val getOverloadResolutionCache: (TcGlobals -> Cache<OverloadResolutionCacheKey, OverloadResolutionCacheResult>)
 
 /// Compute a hash for a method info for caching purposes
-val computeMethInfoHash: MethInfo -> int
+val computeMethInfoHash: MethInfo -> int64
 
 /// Try to get a type structure for caching in the overload resolution context.
 ///

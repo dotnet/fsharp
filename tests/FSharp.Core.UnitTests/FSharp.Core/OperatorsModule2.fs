@@ -289,7 +289,7 @@ type OperatorsModule2() =
     [<Fact>]
     member _.lock() =
         // lock
-        printfn "test8 started"
+        printn "test8 started"
         let syncRoot = System.Object()
         let mutable k = 0
         let comp _ = async { return lock syncRoot (fun () -> k <- k + 1

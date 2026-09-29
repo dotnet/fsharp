@@ -609,12 +609,13 @@ val TcAttributes:
 /// Check a set of attributes and allow failure because a later phase of type realization
 /// may successfully check the attributes (if the attribute type or its arguments is in the
 /// same recursive group)
+/// Return the checked attributes, their finalizer, and whether any checks were deferred.
 val TcAttributesCanFail:
     cenv: TcFileState ->
     env: TcEnv ->
     attrTgt: AttributeTargets ->
     synAttribs: SynAttribute list ->
-        Attrib list * (unit -> Attribs)
+        Attrib list * (unit -> Attribs) * bool
 
 /// Check a set of attributes which can only target specific elements
 val TcAttributesWithPossibleTargets:

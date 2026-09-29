@@ -1449,7 +1449,7 @@ module Seq =
     /// <code lang="fsharp">
     /// let inputs = ["a"; "b"; "c"]
     ///
-    /// inputs |> Seq.iteri (fun i v -> printfn "{i}: {v}")
+    /// inputs |> Seq.iteri (fun i v -> printn $"{i}: {v}")
     ///
     /// </code>
     /// Evaluates to <c>unit</c> and prints

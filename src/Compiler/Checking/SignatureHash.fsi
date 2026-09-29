@@ -8,7 +8,7 @@ open FSharp.Compiler.CheckDeclarations
 open Internal.Utilities.TypeHashing
 
 val calculateHashOfImpliedSignature:
-    g: TcGlobals -> observer: ObserverVisibility -> expr: ModuleOrNamespaceContents -> int
+    g: TcGlobals -> observer: ObserverVisibility -> expr: ModuleOrNamespaceContents -> int64
 
-val calculateSignatureHashOfFiles: files: CheckedImplFile list -> g: TcGlobals -> observer: ObserverVisibility -> int
-val calculateHashOfAssemblyTopAttributes: attrs: TopAttribs -> platform: ILPlatform option -> int
+val calculateSignatureHashOfFiles: files: CheckedImplFile list -> g: TcGlobals -> observer: ObserverVisibility -> int64
+val calculateHashOfAssemblyTopAttributes: attrs: TopAttribs -> platform: ILPlatform option -> int64

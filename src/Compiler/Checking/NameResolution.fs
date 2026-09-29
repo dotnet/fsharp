@@ -564,7 +564,7 @@ let IsMethInfoPlainCSharpStyleExtensionMember g m isEnclExtTy (minfo: MethInfo) 
         m
         { ILFlag = WellKnownILAttributes.ExtensionAttribute
           ValFlag = WellKnownValAttributes.ExtensionAttribute
-          AttribInfo = g.attrib_ExtensionAttribute }
+          AttributeName = "System.Runtime.CompilerServices.ExtensionAttribute" }
         minfo
 
 let GetTyconRefForExtensionMembers minfo (deref: Entity) amap m g =
@@ -3127,7 +3127,7 @@ let rec ResolveLongIdentInTypePrim (ncenv: NameResolver) nenv lookupKind (resInf
                                 // * is function type e.g.:
                                 // ```fsharp
                                 // member x.Prop with
-                                //    get () = fun a -> printfn $"{a}"
+                                //    get () = fun a -> printn $"{a}"
                                 // ```
                                 // which is called like this: obj.Prop 123
                                 if p.IsIndexer then

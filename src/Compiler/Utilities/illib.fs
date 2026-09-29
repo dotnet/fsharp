@@ -778,6 +778,28 @@ module List =
 
         go state list []
 
+    let stableTopologicalSortBy (priority: 'T -> int) (mustPrecede: 'T -> 'T -> bool) (xs: 'T list) =
+        let rec emit remaining =
+            let ready =
+                remaining
+                |> List.mapi (fun index x -> index, x)
+                |> List.filter (fun (_, x) -> remaining |> List.forall (fun y -> not (mustPrecede y x)))
+
+            match ready with
+            | [] -> remaining
+            | _ ->
+                let selectedIndex, selected =
+                    ready |> List.minBy (fun (index, x) -> priority x, index)
+
+                let rest =
+                    remaining
+                    |> List.mapi (fun index x -> index, x)
+                    |> List.choose (fun (index, x) -> if index = selectedIndex then None else Some x)
+
+                selected :: emit rest
+
+        emit xs
+
 module ResizeArray =
 
     /// Split a ResizeArray into an array of smaller chunks.

@@ -23,9 +23,7 @@ jobs:
       PR_AUTHOR: ${{ github.event.pull_request.user.login }}
       PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
       PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-      PR_LABELS: ${{ toJSON(github.event.pull_request.labels) }}
       PR_NUMBER: ${{ github.event.pull_request.number }}
-      OPT_OUT_RELEASE_NOTES: ${{ contains(github.event.pull_request.labels.*.name, 'NO_RELEASE_NOTES') }}
       VNEXT: ${{ vars.VNEXT }}
     runs-on: ubuntu-latest
     steps:
@@ -39,9 +37,6 @@ jobs:
 
         [[ "$PR_BASE_SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "::error::Unexpected base SHA: $PR_BASE_SHA"; exit 1; }
         [[ "$PR_HEAD_SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "::error::Unexpected head SHA: $PR_HEAD_SHA"; exit 1; }
-
-        echo "PR Tags: $PR_LABELS"
-        echo "Opt out of release notes: $OPT_OUT_RELEASE_NOTES"
 
         _current_head_sha=$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}" --jq '.head.sha')
 
@@ -269,31 +264,46 @@ jobs:
         if [[ $RELEASE_NOTES_MESSAGE_DETAILS == "" ]]; then
             RELEASE_NOTES_MESSAGE+=$'## :white_check_mark: No release notes required\n\n'
         else
-            RELEASE_NOTES_MESSAGE+=$'## :heavy_exclamation_mark: Release notes required\n\n'
-            RELEASE_NOTES_MESSAGE+=$"**You can open this PR in browser to add release notes: [open in github.dev](https://github.dev/dotnet/fsharp/pull/${PR_NUMBER})**"
-            RELEASE_NOTES_MESSAGE+=$'\n\n'
+            if [[ $RELEASE_NOTES_NOT_FOUND != "" ]]; then
+                RELEASE_NOTES_MESSAGE+=$'## :heavy_exclamation_mark: Release notes required\n\n'
+                RELEASE_NOTES_MESSAGE+=$"**You can open this PR in browser to add release notes: [open in github.dev](https://github.dev/dotnet/fsharp/pull/${PR_NUMBER})**"
+                RELEASE_NOTES_MESSAGE+=$'\n\n'
+            else
+                RELEASE_NOTES_MESSAGE+=$'## :white_check_mark: Release notes checked\n\n'
+            fi
             RELEASE_NOTES_MESSAGE+=$RELEASE_NOTES_MESSAGE_DETAILS
         fi
 
-        _current_head_sha=$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}" --jq '.head.sha')
+        _current_pr=$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}")
+        _current_head_sha=$(jq -r '.head.sha' <<< "$_current_pr")
 
         if [[ "$_current_head_sha" != "$PR_HEAD_SHA" ]]; then
           echo "::notice::Discarding stale release-note result for ${PR_HEAD_SHA}; current head is ${_current_head_sha}."
           exit 0
         fi
 
+        OPT_OUT_RELEASE_NOTES=$(jq -r 'any(.labels[]; .name == "NO_RELEASE_NOTES")' <<< "$_current_pr")
+        echo "Opt out of release notes: $OPT_OUT_RELEASE_NOTES"
+        RELEASE_NOTES_REQUIRED=false
+        if [[ $RELEASE_NOTES_NOT_FOUND != "" && "$OPT_OUT_RELEASE_NOTES" != true ]]; then
+            RELEASE_NOTES_REQUIRED=true
+        fi
+        RELEASE_NOTES_COMMENT_NEEDED=$RELEASE_NOTES_REQUIRED
+        if [[ "$PULL_REQUEST_FOUND" = false && "$OPT_OUT_RELEASE_NOTES" != true ]]; then
+            RELEASE_NOTES_COMMENT_NEEDED=true
+        fi
+
         {
+            echo "release-notes-comment-needed=$RELEASE_NOTES_COMMENT_NEEDED"
+            echo "release-notes-exempt=$OPT_OUT_RELEASE_NOTES"
             echo "release-notes-check-message<<$EOF"
 
             if [[ "$OPT_OUT_RELEASE_NOTES" = true ]]; then
                 echo "<!-- DO_NOT_REMOVE: release_notes_check -->"
                 echo ""
-                echo "## :warning: Release notes required, but author opted out"
+                echo "## :white_check_mark: Release-note check exempted"
                 echo ""
-                echo ""
-                echo "> [!WARNING]"
-                echo "> **Author opted out of release notes, check is disabled for this pull request.**"
-                echo "> cc @dotnet/fsharp-team-msft"
+                echo "The <kbd>NO_RELEASE_NOTES</kbd> label exempts this pull request."
             else
                 echo "${RELEASE_NOTES_MESSAGE}"
             fi
@@ -301,7 +311,7 @@ jobs:
             echo "$EOF"
         } >> "$GITHUB_OUTPUT"
 
-        if [[ $RELEASE_NOTES_NOT_FOUND != "" && ${OPT_OUT_RELEASE_NOTES} != true ]]; then
+        if [[ "$RELEASE_NOTES_REQUIRED" = true ]]; then
             exit 1
         fi
     # Keep one bot comment current without evaluating pull request content as JavaScript.
@@ -316,6 +326,8 @@ jobs:
       uses: actions/github-script@v9
       env:
         COMMENT_BODY: ${{ steps.release_notes_changes.outputs.release-notes-check-message }}
+        COMMENT_NEEDED: ${{ steps.release_notes_changes.outputs.release-notes-comment-needed }}
+        RELEASE_NOTES_EXEMPT: ${{ steps.release_notes_changes.outputs.release-notes-exempt }}
       with:
         github-token: ${{ github.token }}
         script: |
@@ -329,6 +341,24 @@ jobs:
                 });
                 const existing = comments.find(comment =>
                     comment.user?.login === 'github-actions[bot]' && comment.body?.includes(marker));
+
+                if (existing?.body === process.env.COMMENT_BODY) {
+                    return existing.id;
+                }
+                if (!existing && process.env.COMMENT_NEEDED !== 'true') {
+                    return;
+                }
+
+                const { data: current } = await github.rest.pulls.get({
+                    ...context.repo,
+                    pull_number: context.issue.number
+                });
+                const exempt = current.labels.some(label => label.name === 'NO_RELEASE_NOTES');
+                if (current.head.sha !== process.env.PR_HEAD_SHA ||
+                    String(exempt) !== process.env.RELEASE_NOTES_EXEMPT) {
+                    core.info('Skipping outdated release-note comment.');
+                    return;
+                }
 
                 if (existing) {
                     const comment = await github.rest.issues.updateComment({

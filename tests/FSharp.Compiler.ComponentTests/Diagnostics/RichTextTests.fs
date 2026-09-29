@@ -35,6 +35,23 @@ module RichTextTests =
         (RichText.ofTag TextTag.Class "").IsEmpty |> shouldBeTrue
 
     [<Fact>]
+    let ``Empty tagged text gives empty text`` () =
+        (RichText.ofTaggedText (tagged TextTag.Class "")).IsEmpty |> shouldBeTrue
+
+    [<Fact>]
+    let ``Empty layout gives empty text`` () =
+        (LayoutRender.toRichText emptyL).IsEmpty |> shouldBeTrue
+
+    [<Fact>]
+    let ``Rendering a layout skips parts with no text`` () =
+        let layout =
+            (leftL (tagged TextTag.Text "") ^^ wordL (TaggedText.tagClass "Foo"))
+            @@ wordL (TaggedText.tagText "bar")
+
+        LayoutRender.toRichText layout
+        |> assertRichTextParts [ TextTag.Class, "Foo"; TextTag.LineBreak, "\n"; TextTag.Text, "bar" ]
+
+    [<Fact>]
     let ``Parts are dumped as tag and text pairs`` () =
         RichText.ofParts
             [| tagged TextTag.Text "The type "

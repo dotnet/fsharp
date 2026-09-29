@@ -95,7 +95,7 @@ let (|SeqElemTy|_|) g amap m ty =
 /// The analysis is done in two phases. The first phase determines the state variables and state labels (as Abstract IL code labels).
 /// We then allocate an integer pc for each state label and proceed with the second phase, which builds two related state machine
 /// expressions: one for 'MoveNext' and one for 'Dispose'.
-let ConvertSequenceExprToObject g amap overallExpr =
+let ConvertSequenceExprToObject g amap isRuntimeAsync overallExpr =
     /// Implement a decision to represent a 'let' binding as a non-escaping local variable (rather than a state machine variable)
     let RepresentBindingAsLocal (bind: Binding) resBody m =
         if verbose then
@@ -338,6 +338,17 @@ let ConvertSequenceExprToObject g amap overallExpr =
                        asyncVars = asyncVars }
             | _ ->
                 None
+
+        | (ValApp g (FSharp.Compiler.TcGlobals.ValRefForIntrinsic g.seq_trywith_info) ([ elementTy ], [ _source; _filter; _handler ], m) as tryWithExpr)
+            when isRuntimeAsync ->
+            // Keep the try/with sequence as an ordinary nested source. Its exception and disposal
+            // semantics are implemented by EnumerateTryWith; the surrounding producer remains
+            // statically lowered.
+            let value, valueExpr = mkCompGenLocal m "value" elementTy
+            let body = mkCallSeqSingleton g m elementTy valueExpr
+            let body = mkLambdaNoType g m value body
+            let nestedFor = mkCallSeqCollect g m elementTy elementTy body tryWithExpr
+            ConvertSeqExprCode isWholeExpr isTailCall noDisposeContinuationLabel currentDisposeContinuationLabel nestedFor
 
         | SeqEmpty g m ->
             // printfn "found Seq.empty"
@@ -721,4 +732,3 @@ let ConvertSequenceExprToObject g amap overallExpr =
             // printfn "FAILED: no compilation found! %s" (stringOfRange m)
             None
     | _ -> None
-

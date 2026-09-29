@@ -26,36 +26,39 @@ Test::g
 
 Test::main
   (19,5-19,25)  let r = g (S<int>())
-    IL_0000:  ldloc.1
-    IL_0001:  call Test::g
-    IL_0006:  stloc.0
+    IL_0000:  ldloca.s 2
+    IL_0002:  initobj r@19
+    IL_0008:  ldloca.s 2
+    IL_000a:  stloc.3
+    IL_000b:  ldc.i4.s 42
+    IL_000d:  stloc.0
 
   (20,5-20,19)  if r = 42 then
-    IL_0007:  ldloc.0
-    IL_0008:  ldc.i4.s 42
-    IL_000a:  bne.un.s IL_000e
+    IL_000e:  ldloc.0
+    IL_000f:  ldc.i4.s 42
+    IL_0011:  bne.un.s IL_0015
 
   (20,20-20,21)  0
-    IL_000c:  ldc.i4.0
-    IL_000d:  ret
+    IL_0013:  ldc.i4.0
+    IL_0014:  ret
 
   (20,27-20,28)  1
-    IL_000e:  ldc.i4.1
-    IL_000f:  ret
+    IL_0015:  ldc.i4.1
+    IL_0016:  ret
 
 S`1::Equals
   <hidden>
     IL_0000:  ldarg.1
     IL_0001:  stloc.0
     IL_0002:  ldloc.0
-    IL_0003:  isinst 0x1b000003
+    IL_0003:  isinst 0x1b000004
     IL_0008:  ldnull
     IL_0009:  cgt.un
     IL_000b:  brfalse.s IL_001d
 
   <hidden>
     IL_000d:  ldarg.1
-    IL_000e:  unbox.any 0x1b000003
+    IL_000e:  unbox.any 0x1b000004
     IL_0013:  stloc.1
     IL_0014:  ldarg.0
     IL_0015:  ldloc.1
@@ -76,14 +79,14 @@ S`1::Equals
     IL_0000:  ldarg.1
     IL_0001:  stloc.0
     IL_0002:  ldloc.0
-    IL_0003:  isinst 0x1b000003
+    IL_0003:  isinst 0x1b000004
     IL_0008:  ldnull
     IL_0009:  cgt.un
     IL_000b:  brfalse.s IL_001c
 
   <hidden>
     IL_000d:  ldarg.1
-    IL_000e:  unbox.any 0x1b000003
+    IL_000e:  unbox.any 0x1b000004
     IL_0013:  stloc.1
     IL_0014:  ldarg.0
     IL_0015:  ldloc.1

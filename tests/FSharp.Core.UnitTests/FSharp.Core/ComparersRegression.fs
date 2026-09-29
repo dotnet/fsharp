@@ -1637,8 +1637,8 @@ module ComparersRegression =
             make_result_set f items None
             |> Seq.iteri (fun n result ->
                 if n = 0
-                    then printf "[|"
-                    else printf ";"
+                    then print "[|"
+                    else print ";"
                 if n % 40 = 0 then printf "\n   "
                 printf "%d" result)
             printfn "\n  |]\n"

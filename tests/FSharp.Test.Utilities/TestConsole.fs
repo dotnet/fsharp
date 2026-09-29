@@ -30,6 +30,12 @@ module TestConsole =
         override this.Write(value: char) =
             this.Writer.Write(value)
             original.Write(value)
+        override this.Write(value: string) =
+            this.Writer.Write(value)
+            original.Write(value)
+        override this.Write(buffer: char[], index: int, count: int) =
+            this.Writer.Write(buffer, index, count)
+            original.Write(buffer, index, count)
 
     let private localIn = new RedirectingTextReader()
     let private localOut = new RedirectingTextWriter()
@@ -53,6 +59,12 @@ module TestConsole =
         override _.Write(value: char) =
             wrapped.Write(value)
             base.Write(value)
+        override _.Write(value: string) =
+            wrapped.Write(value)
+            base.Write(value)
+        override _.Write(buffer: char[], index: int, count: int) =
+            wrapped.Write(buffer, index, count)
+            base.Write(buffer, index, count)
         override _.Dispose (disposing: bool) =
             redirecting.Writer <- wrapped
             base.Dispose(disposing: bool)

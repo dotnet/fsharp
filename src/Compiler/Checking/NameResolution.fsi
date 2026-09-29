@@ -687,6 +687,18 @@ val internal ExtensionPropInfosOfTypeInScope:
     ty: TType ->
         PropInfo list
 
+/// Get the intrinsic methods of a type (both declared and inherited), without the extension methods in
+/// scope. Callers that filter extension members out again should use this and skip the extension scan.
+val internal IntrinsicMethInfosOfType:
+    infoReader: InfoReader ->
+    optFilter: string option ->
+    ad: AccessorDomain ->
+    allowMultiIntfInst: TypeHierarchy.AllowMultiIntfInstantiations ->
+    findFlag: FindMemberFlag ->
+    m: range ->
+    ty: TType ->
+        MethInfo list
+
 /// Get the available methods of a type (both declared and inherited)
 val internal AllMethInfosOfTypeInScope:
     collectionSettings: ResultCollectionSettings ->

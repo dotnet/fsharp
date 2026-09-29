@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="cs" original="../FSComp.resx">
     <body>
@@ -130,6 +130,11 @@
       <trans-unit id="chkInterfaceWithUnimplementedStaticAbstractMemberUsedAsTypeArgument">
         <source>The interface '{0}' cannot be used as a type argument because the static abstract member '{1}' does not have a most specific implementation in the interface.</source>
         <target state="new">The interface '{0}' cannot be used as a type argument because the static abstract member '{1}' does not have a most specific implementation in the interface.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkNativePtrStackallocInHandler">
+        <source>'NativePtr.stackalloc' cannot be used inside the 'with' handler, filter or 'finally' block of a 'try' expression. The 'localloc' IL instruction this emits is rejected inside an exception-handling region, producing a 'System.InvalidProgramException' when the method is loaded.</source>
+        <target state="new">'NativePtr.stackalloc' cannot be used inside the 'with' handler, filter or 'finally' block of a 'try' expression. The 'localloc' IL instruction this emits is rejected inside an exception-handling region, producing a 'System.InvalidProgramException' when the method is loaded.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkNotTailRecursive">
@@ -352,11 +357,6 @@
         <target state="translated">Průnik omezení u flexibilních typů</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureDefaultInterfaceMemberConsumption">
-        <source>default interface member consumption</source>
-        <target state="translated">využití člena výchozího rozhraní</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureDeprecatePlacesWhereSeqCanBeOmitted">
         <source>Deprecate places where 'seq' can be omitted</source>
         <target state="new">Deprecate places where 'seq' can be omitted</target>
@@ -405,11 +405,6 @@
       <trans-unit id="featureErrorOnMissingSignatureAttribute">
         <source>error (rather than warning) when an enforced compiler-semantic attribute is present in the .fs but missing from the .fsi</source>
         <target state="new">error (rather than warning) when an enforced compiler-semantic attribute is present in the .fs but missing from the .fsi</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureErrorReportingOnStaticClasses">
-        <source>Error reporting on static classes</source>
-        <target state="translated">Vytváření sestav chyb u statických tříd</target>
         <note />
       </trans-unit>
       <trans-unit id="featureExpandedMeasurables">
@@ -477,6 +472,11 @@
         <target state="new">nullness checking</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureOptimizeClosureIfNotInlined">
+        <source>optimize a curried closure argument when its inlining fails</source>
+        <target state="new">optimize a curried closure argument when its inlining fails</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureOverloadResolutionPriority">
         <source>Support for OverloadResolutionPriorityAttribute to prioritize method overloads.</source>
         <target state="new">Support for OverloadResolutionPriorityAttribute to prioritize method overloads.</target>
@@ -527,14 +527,9 @@
         <target state="new">record type and expression spreads</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureRefCellNotationInformationals">
-        <source>informational messages related to reference cells</source>
-        <target state="translated">informační zprávy související s referenčními buňkami</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureRequiredProperties">
-        <source>support for required properties</source>
-        <target state="translated">podpora požadovaných vlastností</target>
+      <trans-unit id="featureReraiseInComputationExpressions">
+        <source>calls to 'reraise' in a computation expression handler</source>
+        <target state="new">calls to 'reraise' in a computation expression handler</target>
         <note />
       </trans-unit>
       <trans-unit id="featureResumableStateMachines">
@@ -557,6 +552,11 @@
         <target state="translated">Sdílení podkladových polí v rozlišeném sjednocení [&lt;Struct&gt;] za předpokladu, že mají stejný název a typ</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureRuntimeAsync">
+        <source>runtime async</source>
+        <target state="new">runtime async</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureScopedNowarn">
         <source>Support for scoped enabling / disabling of warnings by #warn and #nowarn directives, also inside modules</source>
         <target state="new">Support for scoped enabling / disabling of warnings by #warn and #nowarn directives, also inside modules</target>
@@ -565,11 +565,6 @@
       <trans-unit id="featureSelfTypeConstraints">
         <source>self type constraints</source>
         <target state="translated">omezení vlastního typu</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureStaticLetInRecordsDusEmptyTypes">
-        <source>Allow static let bindings in union, record, struct, non-incremental-class types</source>
-        <target state="translated">Povolit vazby statického let v typech union, record, struct a non-incremental-class</target>
         <note />
       </trans-unit>
       <trans-unit id="featureStringInterpolation">
@@ -585,6 +580,11 @@
       <trans-unit id="featureSupportWarnWhenUnitPassedToObjArg">
         <source>Warn when unit is passed to a member accepting `obj` argument, e.g. `Method(o:obj)` will warn if called via `Method()`.</source>
         <target state="new">Warn when unit is passed to a member accepting `obj` argument, e.g. `Method(o:obj)` will warn if called via `Method()`.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureTypeArgumentDependencyOrdering">
+        <source>ordering explicit type arguments by their constraint dependencies</source>
+        <target state="new">ordering explicit type arguments by their constraint dependencies</target>
         <note />
       </trans-unit>
       <trans-unit id="featureUnionIsPropertiesVisible">
@@ -682,6 +682,31 @@
         <target state="new">The type '{0}' is not a valid custom attribute argument type. Custom attribute arrays must have elements of primitive types, enums, string, System.Type, or System.Object.</target>
         <note />
       </trans-unit>
+      <trans-unit id="ilRuntimeAsyncLocalUsedAfterSuspension">
+        <source>A byref, byref-like, or pinned local '{0}' cannot be used after a runtime async suspension.</source>
+        <target state="new">A byref, byref-like, or pinned local '{0}' cannot be used after a runtime async suspension.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ilRuntimeAsyncSequenceNotStaticallyKnown">
+        <source>The runtime-async sequence recipe could not be statically lowered. Supply a statically known delayed sequence recipe through an inline builder.</source>
+        <target state="new">The runtime-async sequence recipe could not be statically lowered. Supply a statically known delayed sequence recipe through an inline builder.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ilRuntimeAsyncStackAllocation">
+        <source>Stack allocation is not permitted in a runtime async method.</source>
+        <target state="new">Stack allocation is not permitted in a runtime async method.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ilRuntimeAsyncSuspensionOutsideRuntimeAsync">
+        <source>Runtime async suspension method '{0}' may only be called from a runtime async method.</source>
+        <target state="new">Runtime async suspension method '{0}' may only be called from a runtime async method.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ilRuntimeAsyncSynchronizedMethod">
+        <source>A runtime async method cannot use MethodImplOptions.Synchronized.</source>
+        <target state="new">A runtime async method cannot use MethodImplOptions.Synchronized.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ilxGenUnknownDebugPoint">
         <source>Unknown debug point '{0}'. The available debug points are '{1}'.</source>
         <target state="translated">Neznámý bod ladění {0}. Dostupné body ladění jsou {1}.</target>
@@ -700,6 +725,11 @@
       <trans-unit id="implMissingInlineIfLambda">
         <source>The 'InlineIfLambda' attribute is present in the signature but not the implementation.</source>
         <target state="translated">Atribut InlineIfLambda se nachází v signatuře, ale ne v implementaci.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="implMissingOptimizeClosureIfNotInlined">
+        <source>The 'OptimizeClosureIfNotInlined' attribute is present in the signature but not the implementation.</source>
+        <target state="new">The 'OptimizeClosureIfNotInlined' attribute is present in the signature but not the implementation.</target>
         <note />
       </trans-unit>
       <trans-unit id="invalidXmlDocPosition">
@@ -1600,6 +1630,11 @@
       <trans-unit id="tcOnlyStructsCanHaveExtendedLayout">
         <source>Only structs may be given the 'ExtendedLayoutAttribute'</source>
         <target state="new">Only structs may be given the 'ExtendedLayoutAttribute'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcOptimizeClosureIfNotInlinedRequiresInlineIfLambdaAndMultiArg">
+        <source>The 'OptimizeClosureIfNotInlined' attribute requires 'InlineIfLambda' on a separately curried parameter of an inline function or method whose type is a curried F# function of arity 2 to 5.</source>
+        <target state="new">The 'OptimizeClosureIfNotInlined' attribute requires 'InlineIfLambda' on a separately curried parameter of an inline function or method whose type is a curried F# function of arity 2 to 5.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcOtherThenAdjacentListArgumentNeedsAdjustment">
@@ -5477,11 +5512,6 @@
         <target state="translated">Struktury nemůžou obsahovat definice hodnot, protože výchozí konstruktor pro struktury tyto vazby neprovede. Zvažte možnost přidat k primárnímu konstruktoru pro tento typ další argumenty.</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcStaticLetBindingsRequireClassesWithImplicitConstructors">
-        <source>For F#7 and lower, static 'let','do' and 'member val' definitions may only be used in types with a primary constructor ('type X(args) = ...'). To enable them in all other types, use language version '8' or higher.</source>
-        <target state="translated">Pro definice F#7 a nižší, „static let“, „do“ a „member val“ lze použít pouze v typech s primárním konstruktorem (typ X(args) = ...). Pokud je chcete povolit ve všech ostatních typech, použijte jazyk verze 8 nebo vyšší.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcMeasureDeclarationsRequireStaticMembersNotConstructors">
         <source>Measure declarations may have only static members: constructors are not available</source>
         <target state="translated">Deklarace míry můžou mít jenom statické členy: Konstruktory dostupné nejsou.</target>
@@ -8975,6 +9005,16 @@
       <trans-unit id="tcTupleTypeExtensionTooManyElements">
         <source>Tuple type extensions are supported only for tuples of up to 7 elements, but this tuple type has {0} elements. Extensions of larger tuples are not supported.</source>
         <target state="new">Tuple type extensions are supported only for tuples of up to 7 elements, but this tuple type has {0} elements. Extensions of larger tuples are not supported.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureRequireNamedArguments">
+        <source>enforce named arguments at call sites of methods annotated with RequireNamedArgumentsAttribute</source>
+        <target state="new">enforce named arguments at call sites of methods annotated with RequireNamedArgumentsAttribute</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcMethodRequiresNamedArguments">
+        <source>The method '{0}' requires named arguments. Use named-argument syntax, e.g. 'MethodName(argumentName = value)'.</source>
+        <target state="new">The method '{0}' requires named arguments. Use named-argument syntax, e.g. 'MethodName(argumentName = value)'.</target>
         <note />
       </trans-unit>
     </body>

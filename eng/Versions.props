@@ -19,11 +19,11 @@
     <!-- F# Version components -->
     <FSMajorVersion>11</FSMajorVersion>
     <FSMinorVersion>0</FSMinorVersion>
-    <FSBuildVersion>101</FSBuildVersion>
+    <FSBuildVersion>200</FSBuildVersion>
     <FSRevisionVersion>0</FSRevisionVersion>
     <!-- -->
     <!-- F# Language version -->
-    <FSLanguageVersion>$(FSMajorVersion).$(FSMinorVersion)</FSLanguageVersion>
+    <FSLanguageVersion>11.2</FSLanguageVersion>
     <!-- -->
     <!-- FSharp.Core version -->
     <!-- For FSMajorVersion 10, use MinorVersion 1 to indicate breaking changes in FSharp.Core -->

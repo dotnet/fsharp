@@ -43,9 +43,11 @@ ImplFile
                    ([],
                     SynUnionCase
                       ([], SynIdent (D, None), Fields [], PreXmlDocEmpty, None,
-                       (7,22--7,23), { BarRange = None }), None,
+                       (7,22--7,23), { BarRange = None
+                                       OfKeyword = None }), None,
                     PreXmlDoc ((7,12), FSharp.Compiler.Xml.XmlDocCollector),
-                    None, (7,12--7,23)), None, [], (7,12--7,23)), (7,12--7,23))],
+                    None, (7,12--7,23), { ExceptionKeyword = (7,12--7,21) }),
+                 None, [], (7,12--7,23)), (7,12--7,23))],
           PreXmlDoc ((2,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,
           (2,0--7,23), { LeadingKeyword = Module (2,0--2,6) })], (true, true),
       { ConditionalDirectives = []

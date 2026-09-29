@@ -54,7 +54,7 @@ type DependencyManagerInteractiveTests() =
 0"""
         use script = new scriptHost()
         let _opt, errors = script.Eval(text)
-        Assert.Equal(errors.Length, 1)
+        Assert.Single(errors) |> ignore
 
     static member SdkDirOverrideTestData =
         [|

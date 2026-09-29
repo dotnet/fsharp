@@ -2,6 +2,7 @@
 
 namespace ConstraintSolver
 
+open System.IO
 open Xunit
 open FSharp.Test
 open FSharp.Test.Compiler
@@ -17,8 +18,23 @@ module PrimitiveConstraints =
     let ``Invalid object constructor`` compilation = // Regression test for FSharp1.0:4189
         compilation
         |> getCompilation
+        |> withLangVersion11
         |> typecheck
         |> verifyBaseline
+
+    [<Theory>]
+    [<InlineData("default")>]
+    [<InlineData("11.2")>]
+    let ``Constructor tiebreaker selects the list constructor`` langVersion =
+        FSharp (File.ReadAllText(Path.Combine(__SOURCE_DIRECTORY__, "neg_invalid_constructor.fs")) + """
+let stack = ImmutableStack<int>(Seq.empty)
+let top, remaining = stack.Push(42).Pop
+let next, _ = remaining.Push(7).Pop
+if top <> 42 || next <> 7 then failwith "Incorrect stack contents"
+        """)
+        |> withLangVersion langVersion
+        |> compileExeAndRun
+        |> shouldSucceed
 
     [<Fact>]
     let ``Test primitive : constraints``() =

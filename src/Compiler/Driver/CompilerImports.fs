@@ -958,7 +958,6 @@ type TcAssemblyResolutions(tcConfig: TcConfig, results: AssemblyResolution list,
 
             r = assemblyRef)
 
-    /// Only used by F# Interactive
     member _.TryFindBySimpleAssemblyName simpleAssemName =
         results
         |> List.tryFind (fun ar ->
@@ -2803,7 +2802,11 @@ and [<Sealed>] TcImports
                     // Throw away warnings and errors - this is speculative loading
                     false
 
-            if tryFile (assemblyName + ".dll") then
+            let dllPath =
+                tcImports.TryFindExistingFullyQualifiedPathBySimpleAssemblyName assemblyName
+                |> Option.defaultValue (assemblyName + ".dll")
+
+            if tryFile dllPath then
                 ()
             else
                 tryFile (assemblyName + ".exe") |> ignore
@@ -2818,7 +2821,6 @@ and [<Sealed>] TcImports
         | _ -> None
 #endif
 
-    /// Only used by F# Interactive
     member _.TryFindExistingFullyQualifiedPathBySimpleAssemblyName simpleAssemName : string option =
         tciLock.AcquireLock(fun tcitok ->
             RequireTcImportsLock(tcitok, resolutions)
