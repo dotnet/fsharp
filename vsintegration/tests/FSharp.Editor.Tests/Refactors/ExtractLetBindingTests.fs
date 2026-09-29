@@ -309,6 +309,62 @@ let ``Lines inside a multi-line string are not re-indented`` () =
 
     Assert.Equal(expected, extracted extractToLetBinding code "String.Format(\"\"\"Hello\n{0}\"\"\", name)")
 
+[<Fact>]
+let ``Lines inside a multi-line string in an inactive branch are not re-indented`` () =
+    // The code contains a triple-quoted string, which a triple-quoted literal cannot hold.
+    let code =
+        "module M\n\nlet r = combine 1 [\n            #if ALT\n            \"\"\"first\n    preserved\n            last\"\"\"\n            #else\n            \"\"\n            #endif\n            ]\n"
+
+    let expected =
+        "module M\n\nlet r =\n    let extracted = 1\n    combine extracted [\n        #if ALT\n        \"\"\"first\n    preserved\n            last\"\"\"\n        #else\n        \"\"\n        #endif\n        ]\n"
+
+    Assert.Equal(expected, extractedAt extractToLetBinding code (TextSpan(code.IndexOf("1 [", StringComparison.Ordinal), 1)))
+
+[<Theory>]
+[<InlineData("let extracted = { Value = 0 }", "extracted.Value <- ")>]
+[<InlineData("let extracted = [| 0 |]", "extracted[0] <- ")>]
+[<InlineData("let mutable extracted = 0", "extracted <- ")>]
+let ``Name does not collide with an assignment target from another file`` (declaration: string, assignment: string) =
+    let dependency =
+        """
+module Dependency
+
+type Box = { mutable Value: int }
+
+DECLARATION
+"""
+            .Replace("DECLARATION", declaration)
+
+    let code =
+        """
+module M
+
+open Dependency
+
+let f () =
+    ASSIGNMENT({ Value = 1 }).Value
+"""
+            .Replace("ASSIGNMENT", assignment)
+
+    let expected =
+        """
+module M
+
+open Dependency
+
+let f () =
+    let extracted1 = { Value = 1 }
+    ASSIGNMENTextracted1.Value
+"""
+            .Replace("ASSIGNMENT", assignment)
+
+    use context = TestContext.CreateWithCodeAndDependency code dependency
+
+    let document =
+        refactorSpan code (selectionOf code "({ Value = 1 })") extractToLetBinding context (new FSharpExtractLetBindingRefactoring())
+
+    Assert.Equal(expected, (document.GetTextAsync() |> GetTaskResult).ToString())
+
 let private greet =
     """
 module M
