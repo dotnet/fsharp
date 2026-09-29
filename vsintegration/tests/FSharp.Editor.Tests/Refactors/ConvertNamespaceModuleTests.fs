@@ -46,6 +46,17 @@ let ``Namespace with a single nested module converts to a root module`` (marker:
 let ``Root module converts to a namespace with a nested module`` () =
     Assert.Equal(nestedHelpers, refactored rootHelpers "module")
 
+// Each contains a triple-quoted string in a branch that ALT, undefined, leaves inactive.
+[<Theory>]
+[<InlineData("namespace A.B\n\nmodule C =\n#if ALT\n    let text = \"\"\"first\n    preserved\n    last\"\"\"\n#endif\n    let x = 1\n",
+             "namespace",
+             "module A.B.C\n#if ALT\nlet text = \"\"\"first\n    preserved\n    last\"\"\"\n#endif\nlet x = 1\n")>]
+[<InlineData("module A.B.C\n#if ALT\nlet text = \"\"\"first\n    preserved\n    last\"\"\"\n#endif\nlet x = 1\n",
+             "module",
+             "namespace A.B\n\nmodule C =\n    #if ALT\n    let text = \"\"\"first\n    preserved\n    last\"\"\"\n    #endif\n    let x = 1\n")>]
+let ``Lines inside a multi-line string in an inactive branch are not re-indented`` (before: string, marker: string, after: string) =
+    Assert.Equal(after, refactored before marker)
+
 [<Theory>]
 [<InlineData("""
 namespace rec A.B
