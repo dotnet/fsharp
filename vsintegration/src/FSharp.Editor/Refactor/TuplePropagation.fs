@@ -358,7 +358,12 @@ type private Engine(solution: Solution, toStruct: bool, userOpName: string) =
             ->
             this.Retarget source container rest
             this.FlowOut source container rest
-        | SyntaxNode.SynMatchClause(SynMatchClause(resultExpr = result)) :: SyntaxNode.SynExpr(SynExpr.Match _ as container) :: rest when
+        | SyntaxNode.SynExpr(SynExpr.TryFinally(tryExpr = body) as container) :: rest when isSame body node ->
+            this.FlowOut source container rest
+        | SyntaxNode.SynExpr(SynExpr.TryWith(tryExpr = body) as container) :: rest when isSame body node ->
+            this.Retarget source container rest
+            this.FlowOut source container rest
+        | SyntaxNode.SynMatchClause(SynMatchClause(resultExpr = result)) :: SyntaxNode.SynExpr(SynExpr.Match _ | SynExpr.TryWith _ as container) :: rest when
             isSame result node
             ->
             this.Retarget source container rest
@@ -384,15 +389,7 @@ type private Engine(solution: Solution, toStruct: bool, userOpName: string) =
                 | _ -> ()
         | SyntaxNode.SynExpr(SynExpr.Match(expr = scrutinee; clauses = clauses) as matchExpr) :: rest when isSame scrutinee node ->
             for SynMatchClause(pat = pat) as clause in clauses do
-                match stripParenPats pat with
-                | SynPat.Tuple _ as tuple ->
-                    let tuplePath =
-                        match pat with
-                        | SynPat.Paren _ -> [ SyntaxNode.SynPat pat ]
-                        | _ -> [ SyntaxNode.SynMatchClause clause; SyntaxNode.SynExpr matchExpr ] @ rest
-
-                    this.AddOrFail source (tryPatChanges source.Text toStruct tuple tuplePath)
-                | _ -> ()
+                this.IntoPattern source pat (SyntaxNode.SynMatchClause clause :: SyntaxNode.SynExpr matchExpr :: rest)
         | _ -> ()
 
     /// The expression must now produce the changing kind: change what it is built from.
@@ -404,7 +401,8 @@ type private Engine(solution: Solution, toStruct: bool, userOpName: string) =
         | SynExpr.Typed(expr = inner; targetType = annotation) ->
             this.Add source (annotationChanges source.Text toStruct annotation)
             this.Retarget source inner childPath
-        | SynExpr.Tuple _ when not (isArgumentList expr path) -> this.AddOrFail source (tryExprChanges source.Text toStruct expr path)
+        | SynExpr.Tuple _ when not (isArgumentList (callsMethod source.Text source.Check) expr path) ->
+            this.AddOrFail source (tryExprChanges source.Text toStruct expr path)
         | SynExpr.Ident ident -> this.EnqueueSymbol source ident
         | SynExpr.LongIdent(longDotId = SynLongIdent(id = ids))
         | SynExpr.DotGet(longDotId = SynLongIdent(id = ids)) ->
@@ -421,6 +419,12 @@ type private Engine(solution: Solution, toStruct: bool, userOpName: string) =
         | SynExpr.Match(clauses = clauses) ->
             for SynMatchClause(resultExpr = result) as clause in clauses do
                 this.Retarget source result (SyntaxNode.SynMatchClause clause :: childPath)
+        | SynExpr.TryFinally(tryExpr = body) -> this.Retarget source body childPath
+        | SynExpr.TryWith(tryExpr = body; withCases = handlers) ->
+            this.Retarget source body childPath
+
+            for SynMatchClause(resultExpr = result) as handler in handlers do
+                this.Retarget source result (SyntaxNode.SynMatchClause handler :: childPath)
         | SynExpr.Sequential(expr2 = last) -> this.Retarget source last childPath
         | SynExpr.LetOrUse letOrUse -> this.Retarget source letOrUse.Body childPath
         | _ -> ()
@@ -435,6 +439,11 @@ type private Engine(solution: Solution, toStruct: bool, userOpName: string) =
             match node with
             | SyntaxNode.SynBinding(SynBinding(headPat = SynPat.Named(ident = SynIdent(ident, _)); expr = body)) when isDeclared ident ->
                 this.Retarget source body (node :: path)
+            | SyntaxNode.SynExpr(SynExpr.Match(expr = scrutinee; clauses = clauses)) when
+                clauses
+                |> List.exists (fun (SynMatchClause(pat = pat)) -> tryPatternIdent pat |> ValueOption.exists isDeclared)
+                ->
+                this.Retarget source scrutinee (node :: path)
             | SyntaxNode.SynPat(SynPat.Typed(pat = inner; targetType = annotation)) when
                 tryPatternIdent inner |> ValueOption.exists isDeclared
                 ->
