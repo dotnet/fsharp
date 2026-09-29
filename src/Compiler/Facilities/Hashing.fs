@@ -44,13 +44,9 @@ module internal Md5StringHasher =
 
 module internal Md5Hasher =
 
-#if NETSTANDARD2_0
     let private md5 = new ThreadLocal<_>(fun () -> MD5.Create())
 
     let computeHash (bytes: byte array) = md5.Value.ComputeHash(bytes)
-#else
-    let computeHash (bytes: byte array) = MD5.HashData(bytes)
-#endif
 
     let empty = Array.empty
 
@@ -65,15 +61,8 @@ module internal Md5Hasher =
 
         try
             encoding.GetBytes(s, 0, s.Length, rented, 0) |> ignore
-#if NETSTANDARD2_0
             let hash = md5.Value.ComputeHash(rented, 0, byteCount)
             hash.CopyTo(destination)
-#else
-            let mutable bytesWritten = 0
-
-            MD5.TryHashData(ReadOnlySpan(rented, 0, byteCount), destination, &bytesWritten)
-            |> ignore
-#endif
         finally
             System.Buffers.ArrayPool<byte>.Shared.Return(rented)
 
