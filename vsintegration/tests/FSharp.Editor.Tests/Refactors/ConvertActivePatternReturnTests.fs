@@ -297,6 +297,21 @@ module M
 let (|Even|_|) x : int list = if x % 2 = 0 then Some () else None
 """,
              "(|Even")>]
+[<InlineData("""
+module M
+
+let Some x = Some (x + 1)
+let (|P|_|) x = Some x
+printfn "%d" (match 1 with P x -> x | _ -> -1)
+""",
+             "(|P")>]
+[<InlineData("""
+module M
+
+let failwith (_: string) = Some 0
+let (|P|_|) x = if x > 0 then Some x else failwith "negative"
+""",
+             "(|P")>]
 let ``No action`` (code: string, marker: string) = Assert.Empty(actionsAt code marker)
 
 [<Fact>]

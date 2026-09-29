@@ -10,7 +10,9 @@ open Microsoft.CodeAnalysis.CodeActions
 open Microsoft.CodeAnalysis.CodeRefactorings
 open Microsoft.CodeAnalysis.Text
 
+open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Features
+open FSharp.Compiler.Symbols
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTrivia
 open FSharp.Compiler.Text
@@ -31,6 +33,7 @@ module private ActivePatternReturnConversion =
         {
             IsStruct: bool
             Cases: Ident list
+            Raises: Ident list
             Annotation: Annotation
             StructAttribute: struct (SynAttributeList * SynAttribute) voption
             Keyword: SynLeadingKeyword
@@ -39,6 +42,48 @@ module private ActivePatternReturnConversion =
 
     let private spanOf (sourceText: SourceText) (m: range) =
         RoslynHelpers.FSharpRangeToTextSpan(sourceText, m)
+
+    /// Whether the long identifier resolves to a value or union case of the FSharp.Core entity with the compiled full name.
+    let isFSharpCoreSymbol
+        (checkResults: FSharpCheckFileResults)
+        (sourceText: SourceText)
+        (entityFullName: string)
+        (longIdent: Ident list)
+        =
+        match List.tryLast longIdent with
+        | None -> false
+        | Some ident ->
+            let line = sourceText.Lines[Line.toZ ident.idRange.EndLine].ToString()
+            let names = longIdent |> List.map _.idText
+
+            match checkResults.GetSymbolUseAtLocation(ident.idRange.EndLine, ident.idRange.EndColumn, line, names) with
+            | None -> false
+            | Some symbolUse ->
+                let declaringEntityName =
+                    match symbolUse.Symbol with
+                    | :? FSharpUnionCase as case -> case.DeclaringEntity.TryFullName
+                    | :? FSharpMemberOrFunctionOrValue as value -> value.DeclaringEntity |> Option.bind _.TryFullName
+                    | _ -> None
+
+                match declaringEntityName with
+                | Some name ->
+                    String.Equals(name, entityFullName, StringComparison.Ordinal)
+                    && String.Equals(symbolUse.Symbol.Assembly.SimpleName, "FSharp.Core", StringComparison.Ordinal)
+                | None -> false
+
+    /// Whether the cases and raising functions of the target are the FSharp.Core ones their names suggest.
+    let isFromFSharpCore (isFSharpCore: string -> Ident list -> bool) (target: Target) =
+        let optionType =
+            if target.IsStruct then
+                "Microsoft.FSharp.Core.FSharpValueOption`1"
+            else
+                "Microsoft.FSharp.Core.FSharpOption`1"
+
+        target.Cases |> List.forall (fun case -> isFSharpCore optionType [ case ])
+        && target.Raises
+           |> List.forall (fun raise ->
+               isFSharpCore "Microsoft.FSharp.Core.Operators" [ raise ]
+               || isFSharpCore "Microsoft.FSharp.Core.ExtraTopLevelOperators" [ raise ])
 
     /// Whether the name is a case or type of a value option (true) or of an option (false).
     let private structnessOf (name: string) =
@@ -118,8 +163,14 @@ module private ActivePatternReturnConversion =
         | first :: _ when List.forall isRecognized heads ->
             let structness = structnessOf first.idText
 
+            let raises =
+                heads
+                |> List.choose (function
+                    | ValueSome head when raisingFunctions.Contains head.idText -> Some head
+                    | _ -> None)
+
             if cases |> List.forall (fun case -> structnessOf case.idText = structness) then
-                structness |> ValueOption.map (fun isStruct -> struct (isStruct, cases))
+                structness |> ValueOption.map (fun isStruct -> struct (isStruct, cases, raises))
             else
                 ValueNone
         | _ -> ValueNone
@@ -180,7 +231,8 @@ module private ActivePatternReturnConversion =
                     | _ -> body
 
                 match trivia.LeadingKeyword, tryCases body with
-                | (SynLeadingKeyword.Let _ | SynLeadingKeyword.LetRec _ | SynLeadingKeyword.And _), ValueSome(struct (isStruct, cases)) ->
+                | (SynLeadingKeyword.Let _ | SynLeadingKeyword.LetRec _ | SynLeadingKeyword.And _),
+                  ValueSome(struct (isStruct, cases, raises)) ->
                     let structAttribute = tryReturnStructAttribute attributes
 
                     match annotationOf isStruct returnInfo with
@@ -191,6 +243,7 @@ module private ActivePatternReturnConversion =
                             {
                                 IsStruct = isStruct
                                 Cases = cases
+                                Raises = raises
                                 Annotation = annotation
                                 StructAttribute = structAttribute
                                 Keyword = trivia.LeadingKeyword
@@ -304,19 +357,27 @@ type internal FSharpConvertActivePatternReturnRefactoring [<ImportingConstructor
                             LanguageFeature.BooleanReturningAndReturnTypeDirectedPartialActivePattern
 
                     if isSupported then
-                        let title =
-                            if target.IsStruct then
-                                SR.UseOptionActivePatternReturn()
-                            else
-                                SR.UseStructActivePatternReturn()
+                        let! _, checkResults =
+                            document.GetFSharpParseAndCheckResultsAsync(nameof FSharpConvertActivePatternReturnRefactoring)
 
-                        let changedDocument =
-                            cancellableTask {
-                                let changes = ActivePatternReturnConversion.changes sourceText target
-                                return document.WithText(sourceText.WithChanges changes)
-                            }
+                        if
+                            ActivePatternReturnConversion.isFromFSharpCore
+                                (ActivePatternReturnConversion.isFSharpCoreSymbol checkResults sourceText)
+                                target
+                        then
+                            let title =
+                                if target.IsStruct then
+                                    SR.UseOptionActivePatternReturn()
+                                else
+                                    SR.UseStructActivePatternReturn()
 
-                        context.RegisterRefactoring(CodeAction.Create(title, changedDocument, title))
+                            let changedDocument =
+                                cancellableTask {
+                                    let changes = ActivePatternReturnConversion.changes sourceText target
+                                    return document.WithText(sourceText.WithChanges changes)
+                                }
+
+                            context.RegisterRefactoring(CodeAction.Create(title, changedDocument, title))
                 | _ -> ()
         }
         |> CancellableTask.startAsTask context.CancellationToken
