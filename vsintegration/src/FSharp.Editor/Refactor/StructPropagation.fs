@@ -42,6 +42,22 @@ let private symbolUseAt (source: Source) (ident: Ident) =
     let line = source.Text.Lines[Line.toZ ident.idRange.EndLine].ToString()
     source.Check.GetSymbolUseAtLocation(ident.idRange.EndLine, ident.idRange.EndColumn, line, [ ident.idText ])
 
+/// Whether the type is or contains a generic type parameter, which other calls may instantiate with another form.
+let rec private involvesTypeParameter (ty: FSharpType) =
+    ty.IsGenericParameter || ty.GenericArguments |> Seq.exists involvesTypeParameter
+
+/// Whether the declared type of the parameter at the position involves a generic type parameter.
+let private isGenericParameter (mfv: FSharpMemberOrFunctionOrValue) (group: int) (index: int voption) =
+    if group >= mfv.CurriedParameterGroups.Count then
+        false
+    else
+        let parameters = mfv.CurriedParameterGroups[group]
+
+        match index with
+        | ValueSome index when index < parameters.Count -> involvesTypeParameter parameters[index].Type
+        | ValueSome _ -> false
+        | ValueNone -> parameters |> Seq.exists (fun parameter -> involvesTypeParameter parameter.Type)
+
 let rec private tryPatternIdent (pat: SynPat) =
     match pat with
     | SynPat.Named(ident = SynIdent(ident, _))
@@ -290,8 +306,11 @@ type private Engine(solution: Solution, toStruct: bool, userOpName: string) =
         | Some symbolUse when (tryDeclarationDocument symbolUse.Symbol).IsSome ->
             let isValue =
                 match symbolUse.Symbol with
-                | :? FSharpField -> true
-                | :? FSharpMemberOrFunctionOrValue as mfv -> not mfv.IsFunction && not mfv.IsMember
+                | :? FSharpField as field -> not (involvesTypeParameter field.FieldType)
+                | :? FSharpMemberOrFunctionOrValue as mfv ->
+                    not mfv.IsFunction
+                    && not mfv.IsMember
+                    && not (mfv.FullTypeSafe |> Option.exists involvesTypeParameter)
                 | _ -> false
 
             if isValue then
@@ -302,7 +321,10 @@ type private Engine(solution: Solution, toStruct: bool, userOpName: string) =
         match symbolUseAt source name with
         | Some functionUse when (tryDeclarationDocument functionUse.Symbol).IsSome ->
             match functionUse.Symbol with
-            | :? FSharpMemberOrFunctionOrValue as mfv when mfv.IsFunction || mfv.IsMember ->
+            | :? FSharpMemberOrFunctionOrValue as mfv when
+                (mfv.IsFunction || mfv.IsMember)
+                && not (involvesTypeParameter mfv.ReturnParameter.Type)
+                ->
                 this.Enqueue (keyOf "R" functionUse.Symbol) (Slot.Result(functionUse, source))
             | _ -> ()
         | _ -> ()
@@ -311,7 +333,7 @@ type private Engine(solution: Solution, toStruct: bool, userOpName: string) =
         match symbolUseAt source functionName with
         | Some functionUse when (tryDeclarationDocument functionUse.Symbol).IsSome ->
             match functionUse.Symbol with
-            | :? FSharpMemberOrFunctionOrValue as mfv when mfv.IsFunction || mfv.IsMember ->
+            | :? FSharpMemberOrFunctionOrValue as mfv when (mfv.IsFunction || mfv.IsMember) && not (isGenericParameter mfv group index) ->
                 let position =
                     match index with
                     | ValueSome index -> $"{group}|{index}"
