@@ -2620,6 +2620,8 @@ FSharp.Compiler.CodeAnalysis.ProjectSnapshot: FSharp.Compiler.CodeAnalysis.Proje
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot: FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ProjectConfig
 FSharp.Compiler.CodeAnalysis.ProjectSnapshot: FSharp.Compiler.CodeAnalysis.ProjectSnapshot+ReferenceOnDisk
 FSharp.Compiler.CodeAnalysis.RelatedSymbolUseKind: FSharp.Compiler.CodeAnalysis.RelatedSymbolUseKind All
+FSharp.Compiler.CodeAnalysis.RelatedSymbolUseKind: FSharp.Compiler.CodeAnalysis.RelatedSymbolUseKind AllInCode
+FSharp.Compiler.CodeAnalysis.RelatedSymbolUseKind: FSharp.Compiler.CodeAnalysis.RelatedSymbolUseKind AllInCodeAndDocs
 FSharp.Compiler.CodeAnalysis.RelatedSymbolUseKind: FSharp.Compiler.CodeAnalysis.RelatedSymbolUseKind CopyAndUpdateRecord
 FSharp.Compiler.CodeAnalysis.RelatedSymbolUseKind: FSharp.Compiler.CodeAnalysis.RelatedSymbolUseKind None
 FSharp.Compiler.CodeAnalysis.RelatedSymbolUseKind: FSharp.Compiler.CodeAnalysis.RelatedSymbolUseKind UnionCaseTester

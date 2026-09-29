@@ -207,10 +207,17 @@ let checkParsingErrors expected (parseResults: FSharpParseFileResults) =
 
 module XmlDocRefs =
 
+    open System
     open FSharp.Compiler.Text
     open FSharp.Compiler.Xml
 
-    /// A doc whose `///` lines start at column 4 of consecutive lines from 10, as the lexer records them
+    [<Literal>]
+    let private refStart = "{ref}"
+
+    [<Literal>]
+    let private refEnd = "{/ref}"
+
+    /// A doc of `///` lines that start at column 4 of consecutive lines from 10, as the lexer records them
     let private docOf (lines: string[]) =
         let lineRanges =
             lines
@@ -220,77 +227,108 @@ module XmlDocRefs =
 
         XmlDoc(lines, lineRanges, Array.reduce Range.unionRanges lineRanges)
 
-    let private refsOf lines =
-        (docOf lines).GetRefs()
-        |> Array.map (fun r -> r.Kind, r.Text, (r.Range.StartLine, r.Range.StartColumn, r.Range.EndColumn))
-        |> Array.toList
+    /// Each value marked `{ref}…{/ref}` must come back from GetRefs, in order, at its place in the source:
+    /// the stored line starts after the three slashes, 7 columns into the source line.
+    let private expectRefs (markedLines: string[]) =
+        let expected = ResizeArray()
+
+        let lines =
+            markedLines
+            |> Array.mapi (fun index (line: string) ->
+                let mutable text = line
+                let mutable start = text.IndexOf(refStart, StringComparison.Ordinal)
+
+                while start >= 0 do
+                    text <- text.Remove(start, refStart.Length)
+                    let finish = text.IndexOf(refEnd, start, StringComparison.Ordinal)
+                    text <- text.Remove(finish, refEnd.Length)
+                    expected.Add((text.Substring(start, finish - start), (10 + index, 7 + start, 7 + finish)))
+                    start <- text.IndexOf(refStart, StringComparison.Ordinal)
+
+                text)
+
+        let doc = docOf lines
+
+        doc.GetRefs()
+        |> Array.map (fun r -> r.Text, (r.Range.StartLine, r.Range.StartColumn, r.Range.EndColumn))
+        |> List.ofArray
+        |> shouldEqual (List.ofSeq expected)
+
+        doc
 
     [<Fact>]
-    let ``every tag kind, with the value column offset by the three slashes`` () =
-        // `///` at column 4, so the stored text starts at column 7; ` <param name="` is 14 chars → value at 21
-        refsOf [| """ <param name="x">first</param>"""
-                  """ <paramref name="x"/>"""
-                  """ <typeparam name="T">t</typeparam>"""
-                  """ <typeparamref name="T"/>"""
-                  """ <see cref="MyType"/>"""
-                  """ <seealso cref="M:A.B.C"/>"""
-                  """ <exception cref="System.Exception">when</exception>"""
-                  """ <permission cref="P"/>""" |]
+    let ``every tag kind`` () =
+        let doc =
+            expectRefs [| """ <summary>Every tag that names something.</summary>"""
+                          """ <param name="{ref}x{/ref}">first</param>"""
+                          """ <paramref name="{ref}x{/ref}"/>"""
+                          """ <typeparam name="{ref}T{/ref}">t</typeparam>"""
+                          """ <typeparamref name="{ref}T{/ref}"/>"""
+                          """ <see cref="{ref}MyType{/ref}"/>"""
+                          """ <seealso cref="{ref}M:A.B.C{/ref}"/>"""
+                          """ <exception cref="{ref}System.Exception{/ref}">when</exception>"""
+                          """ <permission cref="{ref}P{/ref}"/>""" |]
+
+        doc.GetRefs()
+        |> Array.map _.Kind
         |> shouldEqual
-            [ XmlDocRefKind.Param, "x", (10, 21, 22)
-              XmlDocRefKind.ParamRef, "x", (11, 24, 25)
-              XmlDocRefKind.TypeParam, "T", (12, 25, 26)
-              XmlDocRefKind.TypeParamRef, "T", (13, 28, 29)
-              XmlDocRefKind.Cref, "MyType", (14, 19, 25)
-              XmlDocRefKind.Cref, "M:A.B.C", (15, 23, 30)
-              XmlDocRefKind.Cref, "System.Exception", (16, 25, 41)
-              XmlDocRefKind.Cref, "P", (17, 26, 27) ]
+            [| XmlDocRefKind.Param
+               XmlDocRefKind.ParamRef
+               XmlDocRefKind.TypeParam
+               XmlDocRefKind.TypeParamRef
+               XmlDocRefKind.Cref
+               XmlDocRefKind.Cref
+               XmlDocRefKind.Cref
+               XmlDocRefKind.Cref |]
 
     [<Fact>]
     let ``attribute syntax variations`` () =
-        refsOf [| """<param   name = 'x' >spaces and single quotes</param>"""
-                  """<param foo="1" name="y" bar="2">other attributes first</param>"""
-                  """<paramref name="z" /><paramref name="w"/>two tags on one line""" |]
-        |> shouldEqual
-            [ XmlDocRefKind.Param, "x", (10, 24, 25)
-              XmlDocRefKind.Param, "y", (11, 28, 29)
-              XmlDocRefKind.ParamRef, "z", (12, 23, 24)
-              XmlDocRefKind.ParamRef, "w", (12, 44, 45) ]
+        expectRefs [| """<param   name = '{ref}x{/ref}' >spaces and single quotes</param>"""
+                      """<param foo="1" name="{ref}y{/ref}" bar="2">other attributes first</param>"""
+                      """<paramref name="{ref}z{/ref}" /><paramref name="{ref}w{/ref}"/>two tags on one line""" |]
+        |> ignore
 
     [<Fact>]
     let ``only a whole attribute name matches, and a quoted > does not end the tag`` () =
-        refsOf [| """<param notname="wrong" name="x">suffix of another attribute</param>"""
-                  """<param foo="a>b" name="y">angle bracket in a value</param>""" |]
-        |> shouldEqual
-            [ XmlDocRefKind.Param, "x", (10, 36, 37)
-              XmlDocRefKind.Param, "y", (11, 30, 31) ]
+        expectRefs [| """<param notname="wrong" name="{ref}x{/ref}">suffix of another attribute</param>"""
+                      """<param foo="a>b" name="{ref}y{/ref}">angle bracket in a value</param>""" |]
+        |> ignore
 
     [<Fact>]
     let ``a tag whose attributes run over several lines`` () =
-        refsOf [| """<param"""
-                  """   name="x">on the next line</param>"""
-                  """<typeparam other="1" """
-                  """           name="T">after another attribute</typeparam>""" |]
-        |> shouldEqual
-            [ XmlDocRefKind.Param, "x", (11, 16, 17)
-              XmlDocRefKind.TypeParam, "T", (13, 24, 25) ]
+        expectRefs [| """<param"""
+                      """   name="{ref}x{/ref}">on the next line</param>"""
+                      """<typeparam other="1" """
+                      """           name="{ref}T{/ref}">after another attribute</typeparam>""" |]
+        |> ignore
 
     [<Fact>]
-    let ``a value that runs over a line break yields nothing`` () =
-        refsOf [| """<param name="x"""
-                  """y">split value</param>""" |]
-        |> shouldEqual []
+    let ``leading blank lines are skipped`` () =
+        expectRefs [| ""
+                      "   "
+                      """<param name="{ref}x{/ref}">after two blank lines</param>""" |]
+        |> ignore
 
     [<Fact>]
-    let ``blank lines, malformed xml and unrelated tags yield nothing`` () =
-        refsOf [| ""
-                  "<summary>not a param</summary>"
-                  "<parameter name=\"x\">not one of the tags</parameter>"
-                  "<param name=\"unterminated"
-                  "<param name=x>unquoted</param>"
-                  "<param>no name</param>"
-                  "text with a < that is not a tag" |]
-        |> shouldEqual []
+    let ``a value that runs over a line break, xml comments and unrelated tags name nothing`` () =
+        expectRefs [| """<param name="x"""
+                      """y">split value</param>"""
+                      """<!-- <param name="z">commented out</param> -->"""
+                      """<parameter name="w">not one of the tags</parameter>"""
+                      """<param>no name</param>""" |]
+        |> ignore
+
+    [<Fact>]
+    let ``a badly formed doc names nothing`` () =
+        expectRefs [| """<param name="x">closed</param>"""
+                      """<param name="y">never closed""" |]
+        |> ignore
+
+    [<Fact>]
+    let ``a doc of plain text is an escaped summary and names nothing`` () =
+        expectRefs [| """Adds one."""
+                      """<param name="x">text, not a tag</param>""" |]
+        |> ignore
 
     [<Fact>]
     let ``a doc without line ranges has no refs`` () =
@@ -299,7 +337,7 @@ module XmlDocRefs =
     [<Fact>]
     let ``a merged doc keeps its refs when both halves have line ranges`` () =
         let merged = XmlDoc.Merge (docOf [| """<param name="x"/>""" |]) (docOf [| """<param name="y"/>""" |])
-        merged.GetRefs() |> Array.map (fun r -> r.Text) |> shouldEqual [| "x"; "y" |]
+        merged.GetRefs() |> Array.map _.Text |> shouldEqual [| "x"; "y" |]
 
         let withoutRanges = XmlDoc.Merge (docOf [| """<param name="x"/>""" |]) (XmlDoc([| """<param name="y"/>""" |], Range.range0))
         withoutRanges.GetRefs() |> shouldEqual [||]

@@ -33,31 +33,32 @@ type XmlDocRef =
         Range: range
     }
 
-module private XmlDocRefScanner =
+module private XmlDocRefs =
 
+    /// The tags that name something, with the attribute that holds the name
     let private tags =
         [|
-            "typeparamref", XmlDocRefKind.TypeParamRef, "name"
-            "typeparam", XmlDocRefKind.TypeParam, "name"
-            "paramref", XmlDocRefKind.ParamRef, "name"
             "param", XmlDocRefKind.Param, "name"
-            "permission", XmlDocRefKind.Cref, "cref"
-            "exception", XmlDocRefKind.Cref, "cref"
-            "seealso", XmlDocRefKind.Cref, "cref"
+            "paramref", XmlDocRefKind.ParamRef, "name"
+            "typeparam", XmlDocRefKind.TypeParam, "name"
+            "typeparamref", XmlDocRefKind.TypeParamRef, "name"
             "see", XmlDocRefKind.Cref, "cref"
+            "seealso", XmlDocRefKind.Cref, "cref"
+            "exception", XmlDocRefKind.Cref, "cref"
+            "permission", XmlDocRefKind.Cref, "cref"
         |]
 
     /// The three slashes of `///` are not part of the stored line
     let private lineTextOffset = 3
 
-    let private isNameEnd (text: string) i =
-        i >= text.Length || Char.IsWhiteSpace text[i] || text[i] = '/' || text[i] = '>'
+    let private isBlank (line: string) = line.AsSpan().TrimStart(' ').IsEmpty
 
-    let private tagAt (text: string) i =
-        tags
-        |> Array.tryFind (fun (tag, _, _) ->
-            String.CompareOrdinal(text, i, tag, 0, tag.Length) = 0
-            && isNameEnd text (i + tag.Length))
+    /// The line the XML of a doc starts on, or -1 for a blank doc or one of plain text, which becomes an escaped
+    /// `<summary>` and so names nothing: the rule `XmlDoc.GetElaboratedXmlLines` applies
+    let private firstXmlLine (lines: string[]) =
+        match Array.tryFindIndex (isBlank >> not) lines with
+        | Some i when lines[i].AsSpan().TrimStart(' ').StartsWith("<".AsSpan(), StringComparison.Ordinal) -> i
+        | _ -> -1
 
     let private skipWhiteSpace (text: string) i =
         let mutable i = i
@@ -67,88 +68,71 @@ module private XmlDocRefScanner =
 
         i
 
-    let private attributeNameEnd (text: string) i =
-        let mutable i = i
+    /// Where the quoted value of the attribute whose name starts at `nameStart` of `line` begins, and its length there.
+    /// A value that runs over a line break has no single-line range.
+    let private valueSpan (line: string) (nameStart: int) (attributeName: string) =
+        let equals = skipWhiteSpace line (nameStart + attributeName.Length)
 
-        while not (isNameEnd text i) && text[i] <> '=' do
-            i <- i + 1
+        if equals < line.Length && line[equals] = '=' then
+            let quote = skipWhiteSpace line (equals + 1)
 
-        i
-
-    /// The quoted value of `attribute` in the tag whose attributes start at `start`, as an offset and a length in `text`.
-    /// Walks the attributes one at a time, so an attribute whose name ends in `attribute` and a `>` inside a quoted value
-    /// are not mistaken for it. A value that runs over a line break has no single-line range and is skipped.
-    let private attributeValue (text: string) (attribute: string) (start: int) =
-        let rec next i =
-            let nameStart = skipWhiteSpace text i
-
-            if nameStart >= text.Length || text[nameStart] = '>' || text[nameStart] = '/' then
-                ValueNone
+            if quote < line.Length && (line[quote] = '"' || line[quote] = '\'') then
+                match line.IndexOf(line[quote], quote + 1) with
+                | -1 -> ValueNone
+                | close -> ValueSome struct (quote + 1, close - quote - 1)
             else
-                let nameEnd = attributeNameEnd text nameStart
-                let equals = skipWhiteSpace text nameEnd
+                ValueNone
+        else
+            ValueNone
 
-                if equals >= text.Length || text[equals] <> '=' then
-                    ValueNone
-                else
-                    let quote = skipWhiteSpace text (equals + 1)
+    /// Parses the doc's own lines, not the text with `<include>` expanded, so that every element maps back to a source line
+    let collect (lines: string[]) (lineRanges: range[]) =
+        match firstXmlLine lines with
+        | -1 -> [||]
+        | first ->
+            let text = String.Join("\n", lines, first, lines.Length - first)
 
-                    if quote >= text.Length || (text[quote] <> '"' && text[quote] <> '\'') then
+            let xml =
+                if
+                    text.AsSpan().Contains("name".AsSpan(), StringComparison.Ordinal)
+                    || text.AsSpan().Contains("cref".AsSpan(), StringComparison.Ordinal)
+                then
+                    // A badly formed doc names nothing; FS3390 reports it
+                    try
+                        ValueSome(XDocument.Parse("<doc>\n" + text + "\n</doc>", LoadOptions.SetLineInfo))
+                    with :? XmlException ->
                         ValueNone
-                    else
-                        match text.IndexOf(text[quote], quote + 1) with
-                        | -1 -> ValueNone
-                        | quoteEnd ->
-                            let valueStart = quote + 1
-                            let valueLength = quoteEnd - valueStart
+                else
+                    ValueNone
 
-                            if
-                                nameEnd - nameStart = attribute.Length
-                                && String.CompareOrdinal(text, nameStart, attribute, 0, attribute.Length) = 0
-                            then
-                                if text.IndexOf('\n', valueStart, valueLength) >= 0 then
-                                    ValueNone
-                                else
-                                    ValueSome struct (valueStart, valueLength)
-                            else
-                                next (quoteEnd + 1)
+            match xml with
+            | ValueNone -> [||]
+            | ValueSome xml ->
+                [|
+                    for element in xml.Descendants() do
+                        match tags |> Array.tryFind (fun (tag, _, _) -> element.Name = XName.Get tag) with
+                        | Some(_, kind, attributeName) ->
+                            match element.Attribute(XName.Get attributeName) with
+                            | null -> ()
+                            | attribute ->
+                                let position = attribute :> IXmlLineInfo
+                                // Line 1 of the parsed text is the wrapping `<doc>`
+                                let line = first + position.LineNumber - 2
 
-        next start
+                                match valueSpan lines[line] (position.LinePosition - 1) attributeName with
+                                | ValueSome struct (offset, length) ->
+                                    let m = lineRanges[line]
+                                    let column = m.StartColumn + lineTextOffset + offset
 
-    /// Scans the lines as one text, since a tag and its attributes may run over several `///` lines
-    let scan (lines: string[]) (lineRanges: range[]) =
-        let text = String.Join("\n", lines)
-        let lineStarts = Array.zeroCreate lines.Length
-
-        for i in 1 .. lines.Length - 1 do
-            lineStarts[i] <- lineStarts[i - 1] + lines[i - 1].Length + 1
-
-        [|
-            let mutable lt = text.IndexOf '<'
-
-            while lt >= 0 do
-                match tagAt text (lt + 1) with
-                | Some(tag, kind, attribute) ->
-                    match attributeValue text attribute (lt + 1 + tag.Length) with
-                    | ValueSome struct (offset, length) ->
-                        let line =
-                            match Array.BinarySearch(lineStarts, offset) with
-                            | i when i >= 0 -> i
-                            | i -> ~~~i - 1
-
-                        let m = lineRanges[line]
-                        let column = m.StartColumn + lineTextOffset + offset - lineStarts[line]
-
-                        {
-                            Kind = kind
-                            Text = text.Substring(offset, length)
-                            Range = mkFileIndexRange m.FileIndex (mkPos m.StartLine column) (mkPos m.StartLine (column + length))
-                        }
-                    | ValueNone -> ()
-                | None -> ()
-
-                lt <- text.IndexOf('<', lt + 1)
-        |]
+                                    {
+                                        Kind = kind
+                                        Text = attribute.Value
+                                        Range =
+                                            mkFileIndexRange m.FileIndex (mkPos m.StartLine column) (mkPos m.StartLine (column + length))
+                                    }
+                                | ValueNone -> ()
+                        | None -> ()
+                |]
 
 /// Represents collected XmlDoc lines
 type XmlDoc(unprocessedLines: string[], lineRanges: range[], range: range) =
@@ -194,7 +178,7 @@ type XmlDoc(unprocessedLines: string[], lineRanges: range[], range: range) =
         if lineRanges.Length = 0 then
             [||]
         else
-            XmlDocRefScanner.scan unprocessedLines lineRanges
+            XmlDocRefs.collect unprocessedLines lineRanges
 
     static member Empty = XmlDocStatics.Empty
 

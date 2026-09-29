@@ -441,8 +441,9 @@ type internal TcResolutions =
     /// See TypeCheckInfo.GetCapturedNameResolutions for example.
     member CapturedMethodGroupResolutions: ResizeArray<CapturedNameResolution>
 
-    /// Related symbol uses reported via NotifyRelatedSymbolUse
-    member CapturedRelatedSymbolUses: ResizeArray<range * Item * RelatedSymbolUseKind>
+    /// Related symbol uses in code reported via NotifyRelatedSymbolUse (RelatedSymbolUseKind.AllInCode).
+    /// The names inside XML doc comments are left out: only TcSymbolUses.GetUsesOfSymbol hands them out, when asked for.
+    member CapturedRelatedSymbolUses: seq<range * Item * RelatedSymbolUseKind>
 
     /// Represents the empty set of resolutions
     static member Empty: TcResolutions
