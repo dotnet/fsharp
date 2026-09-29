@@ -4,6 +4,8 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
 open System.Composition
+open System.Threading
+open System.Threading.Tasks
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.CodeActions
@@ -51,6 +53,36 @@ module private OptionalParameterDefaultValueConversion =
         String.Equals(ident.idText, text, StringComparison.Ordinal)
 
     let private isSame (expr: SynExpr) (other: SynExpr) = obj.ReferenceEquals(expr, other)
+
+    /// Whether the long identifier resolves to a value or union case of the FSharp.Core entity with the compiled full name.
+    let isFSharpCoreSymbol
+        (checkResults: FSharpCheckFileResults)
+        (sourceText: SourceText)
+        (entityFullName: string)
+        (longIdent: Ident list)
+        =
+        match List.tryLast longIdent with
+        | None -> false
+        | Some ident ->
+            let line = sourceText.Lines[Line.toZ ident.idRange.EndLine].ToString()
+            let names = longIdent |> List.map _.idText
+
+            match checkResults.GetSymbolUseAtLocation(ident.idRange.EndLine, ident.idRange.EndColumn, line, names) with
+            | None -> false
+            | Some symbolUse ->
+                let declaringEntityName =
+                    match symbolUse.Symbol with
+                    | :? FSharpUnionCase as case -> case.DeclaringEntity.TryFullName
+                    | :? FSharpMemberOrFunctionOrValue as value -> value.DeclaringEntity |> Option.bind _.TryFullName
+                    | _ -> None
+
+                match declaringEntityName with
+                | Some name ->
+                    String.Equals(name, entityFullName, StringComparison.Ordinal)
+                    && String.Equals(symbolUse.Symbol.Assembly.SimpleName, "FSharp.Core", StringComparison.Ordinal)
+                | None -> false
+
+    let private operators = "Microsoft.FSharp.Core.Operators"
 
     [<return: Struct>]
     let private (|SingleIdent|_|) (expr: SynExpr) =
@@ -172,20 +204,24 @@ module private OptionalParameterDefaultValueConversion =
             | _ -> None)
 
     /// `defaultArg x c` around a use of the parameter, with its constant and what contains it.
-    let private tryDefaultArgUse (parseTree: ParsedInput) (useRange: range) =
+    let private tryDefaultArgUse (isFSharpCore: string -> Ident list -> bool) (parseTree: ParsedInput) (useRange: range) =
         match tryUseNode parseTree useRange with
         | Some(node,
                SyntaxNode.SynExpr(SynExpr.App(isInfix = false; funcExpr = SingleIdent func; argExpr = arg) as inner) :: SyntaxNode.SynExpr(SynExpr.App(
                    isInfix = false; funcExpr = funcExpr; argExpr = (SynExpr.Const _ as defaultValue)) as application) :: rest) when
-            isSame arg node && hasText "defaultArg" func && isSame funcExpr inner
+            isSame arg node
+            && hasText "defaultArg" func
+            && isSame funcExpr inner
+            && isFSharpCore operators [ func ]
             ->
             ValueSome(struct (application, defaultValue, rest))
         | _ -> ValueNone
 
-    /// The whole line of `let x = defaultArg x c` when that line does nothing but rebind the parameter.
+    /// The whole line of `let x = defaultArg x c` when that line does nothing but rebind the parameter immutably.
     let private tryShadowingLine (sourceText: SourceText) (name: string) (application: SynExpr) (path: SyntaxVisitorPath) =
         match path with
-        | SyntaxNode.SynBinding(SynBinding(headPat = SynPat.Named(ident = SynIdent(ident, _)); expr = rhs; trivia = trivia)) :: SyntaxNode.SynExpr(SynExpr.LetOrUse letOrUse) :: _ when
+        | SyntaxNode.SynBinding(SynBinding(
+            isMutable = false; headPat = SynPat.Named(ident = SynIdent(ident, _)); expr = rhs; trivia = trivia)) :: SyntaxNode.SynExpr(SynExpr.LetOrUse letOrUse) :: _ when
             isSame rhs application
             && hasText name ident
             && not letOrUse.IsRecursive
@@ -206,18 +242,32 @@ module private OptionalParameterDefaultValueConversion =
                 ValueNone
         | _ -> ValueNone
 
-    /// `?x: T` with every use being `defaultArg x c` becomes `[<Optional; DefaultParameterValue(c)>] x: T`.
+    let rec private hasOptionalValBefore (position: pos) (pat: SynPat) =
+        match pat with
+        | SynPat.OptionalVal(range = m) -> Position.posLt m.Start position
+        | SynPat.Paren(pat = inner)
+        | SynPat.Typed(pat = inner)
+        | SynPat.Attrib(pat = inner) -> hasOptionalValBefore position inner
+        | SynPat.Tuple(elementPats = pats)
+        | SynPat.LongIdent(argPats = SynArgPats.Pats pats) -> pats |> List.exists (hasOptionalValBefore position)
+        | _ -> false
+
+    /// `?x: T` with every use being `defaultArg x c` becomes `[<Optional; DefaultParameterValue(c)>] x: T`,
+    /// unless a `?` parameter before it would then precede a non-optional one (FS1212).
     let tryToDotNetChanges
+        (isFSharpCore: string -> Ident list -> bool)
         (sourceText: SourceText)
         (parseTree: ParsedInput)
         (parameter: Parameter)
         (optionalValRange: range)
         (uses: range list)
         =
+        let (SynBinding(headPat = headPat)) = parameter.MemberBinding
+
         let found =
             (ValueSome [], uses)
             ||> List.fold (fun found useRange ->
-                match found, tryDefaultArgUse parseTree useRange with
+                match found, tryDefaultArgUse isFSharpCore parseTree useRange with
                 | ValueSome found, ValueSome defaultArgUse -> ValueSome(defaultArgUse :: found)
                 | _ -> ValueNone)
 
@@ -239,7 +289,7 @@ module private OptionalParameterDefaultValueConversion =
             | _ -> ValueNone
 
         match found, attributeText with
-        | ValueSome found, ValueSome attributeText ->
+        | ValueSome found, ValueSome attributeText when not (hasOptionalValBefore optionalValRange.Start headPat) ->
             [
                 TextChange(TextSpan((spanOf sourceText optionalValRange).Start, 1), attributeText)
 
@@ -254,17 +304,34 @@ module private OptionalParameterDefaultValueConversion =
 
     let private interopServices = [ "System"; "Runtime"; "InteropServices" ]
 
-    let private hasInteropServicesOpen (parseTree: ParsedInput) =
+    let rec private tryContainerRange (path: SyntaxVisitorPath) =
+        match path with
+        | SyntaxNode.SynModuleOrNamespace moduleOrNamespace :: _ -> ValueSome moduleOrNamespace.Range
+        | SyntaxNode.SynModule(SynModuleDecl.NestedModule(range = m)) :: _ -> ValueSome m
+        | _ :: rest -> tryContainerRange rest
+        | [] -> ValueNone
+
+    /// Whether an `open System.Runtime.InteropServices` in a module or namespace enclosing the position precedes it.
+    let private hasInteropServicesOpenAt (position: pos) (parseTree: ParsedInput) =
         (false, parseTree)
-        ||> ParsedInput.fold (fun found _ node ->
+        ||> ParsedInput.fold (fun found path node ->
             found
             || match node with
-               | SyntaxNode.SynModule(SynModuleDecl.Open(target = SynOpenDeclTarget.ModuleOrNamespace(longId = SynLongIdent(id = ids)))) ->
-                   (ids |> List.map _.idText) = interopServices
+               | SyntaxNode.SynModule(SynModuleDecl.Open(
+                   target = SynOpenDeclTarget.ModuleOrNamespace(longId = SynLongIdent(id = ids)); range = m)) when
+                   Position.posLt m.End position
+                   && ids.Length = interopServices.Length
+                   && List.forall2 hasText interopServices ids
+                   ->
+                   match tryContainerRange path with
+                   | ValueSome container ->
+                       Position.posGeq position container.Start
+                       && Position.posGeq container.End position
+                   | ValueNone -> false
                | _ -> false)
 
     let withInteropServicesOpen (parseTree: ParsedInput) (memberName: Ident) (text: SourceText) =
-        if hasInteropServicesOpen parseTree then
+        if hasInteropServicesOpenAt memberName.idRange.Start parseTree then
             text
         else
             let insertionContext =
@@ -355,6 +422,85 @@ module private OptionalParameterDefaultValueConversion =
             ]
             |> List.sortBy _.Span.Start)
 
+    let private isOperator (name: string) (expr: SynExpr) =
+        match expr with
+        | SynExpr.LongIdent(longDotId = SynLongIdent(id = [ operator ])) -> hasText name operator
+        | _ -> false
+
+    let rec private functionOf (expr: SynExpr) =
+        match expr with
+        | SynExpr.App(isInfix = false; funcExpr = funcExpr) -> functionOf funcExpr
+        | _ -> expr
+
+    let private isAtomic (expr: SynExpr) =
+        match expr with
+        | SynExpr.Ident _
+        | SynExpr.LongIdent _
+        | SynExpr.Paren _
+        | SynExpr.Const _ -> true
+        | _ -> false
+
+    /// The values passed as `?name = value` in the arguments of a call.
+    let private optionalArgumentValues (name: string) (arguments: SynExpr) =
+        let arguments =
+            match arguments with
+            | SynExpr.Paren(expr = SynExpr.Tuple(exprs = exprs)) -> exprs
+            | SynExpr.Paren(expr = single) -> [ single ]
+            | _ -> []
+
+        arguments
+        |> List.choose (function
+            | SynExpr.App(
+                isInfix = false
+                funcExpr = SynExpr.App(
+                    isInfix = true
+                    funcExpr = equals
+                    argExpr = SynExpr.LongIdent(isOptional = true; longDotId = SynLongIdent(id = [ argumentName ])))
+                argExpr = value) when isOperator "op_Equality" equals && hasText name argumentName -> Some value
+            | _ -> None)
+
+    /// `Some v` becomes `ValueSome v`, `None` becomes `ValueNone`, and any other option goes through `ValueOption.ofOption`.
+    let private valueOptionChanges (isFSharpCore: string -> Ident list -> bool) (sourceText: SourceText) (value: SynExpr) =
+        let valueSpan = spanOf sourceText value.Range
+
+        match functionOf value with
+        | SingleIdent head when
+            (hasText "Some" head || hasText "None" head)
+            && isFSharpCore "Microsoft.FSharp.Core.FSharpOption`1" [ head ]
+            ->
+            [ TextChange(TextSpan((spanOf sourceText head.idRange).Start, 0), "Value") ]
+        | _ when isAtomic value -> [ TextChange(TextSpan(valueSpan.Start, 0), "ValueOption.ofOption ") ]
+        | _ ->
+            [
+                TextChange(TextSpan(valueSpan.Start, 0), "ValueOption.ofOption (")
+                TextChange(TextSpan(valueSpan.End, 0), ")")
+            ]
+
+    /// Changes to the `?name = value` arguments of the call whose function ends at the use of the member,
+    /// for the parameter becoming a `[<Struct>] ?name`.
+    let callSiteChanges
+        (isFSharpCore: string -> Ident list -> bool)
+        (sourceText: SourceText)
+        (parseTree: ParsedInput)
+        (name: string)
+        (useRange: range)
+        =
+        let arguments =
+            (useRange.Start, parseTree)
+            ||> ParsedInput.tryPickLast (fun _ node ->
+                match node with
+                | SyntaxNode.SynExpr(SynExpr.App(isInfix = false; funcExpr = func; argExpr = arguments)) when
+                    Position.posEq func.Range.End useRange.End
+                    ->
+                    Some arguments
+                | _ -> None)
+
+        match arguments with
+        | Some arguments ->
+            optionalArgumentValues name arguments
+            |> List.collect (valueOptionChanges isFSharpCore sourceText)
+        | None -> []
+
 [<ExportCodeRefactoringProvider(FSharpConstants.FSharpLanguageName, Name = "ConvertOptionalParameterDefaultValue"); Shared>]
 type internal FSharpConvertOptionalParameterDefaultValueRefactoring [<ImportingConstructor>] () =
     inherit CodeRefactoringProvider()
@@ -378,6 +524,18 @@ type internal FSharpConvertOptionalParameterDefaultValueRefactoring [<ImportingC
                 || mfv.IsConstructor
                 || mfv.IsExtensionMember
             )
+        | _ -> false
+
+    /// `[<Optional>]` alone passes `Missing.Value` for an omitted `obj`, not the `Unchecked.defaultof` that `?` would give.
+    static let isObject (symbol: FSharpSymbol) =
+        match symbol with
+        | :? FSharpMemberOrFunctionOrValue as parameter ->
+            let parameterType = parameter.FullType.StripAbbreviations()
+
+            parameterType.HasTypeDefinition
+            && match parameterType.TypeDefinition.TryFullName with
+               | Some name -> String.Equals(name, "System.Object", StringComparison.Ordinal)
+               | None -> false
         | _ -> false
 
     override _.ComputeRefactoringsAsync context =
@@ -419,6 +577,7 @@ type internal FSharpConvertOptionalParameterDefaultValueRefactoring [<ImportingC
 
                                 match
                                     OptionalParameterDefaultValueConversion.tryToDotNetChanges
+                                        (OptionalParameterDefaultValueConversion.isFSharpCoreSymbol checkResults sourceText)
                                         sourceText
                                         parseResults.ParseTree
                                         parameter
@@ -443,16 +602,22 @@ type internal FSharpConvertOptionalParameterDefaultValueRefactoring [<ImportingC
                                 | ValueNone -> ()
                             | None -> ()
                         | OptionalParameterDefaultValueConversion.Form.DotNet(lists, defaultValue) ->
-                            let! options = document.GetOptionsAsync cancellationToken
+                            let isOmittedObject =
+                                defaultValue.IsNone
+                                && match tryGetSymbolUse checkResults sourceText parameter.Ident with
+                                   | Some parameterUse -> isObject parameterUse.Symbol
+                                   | None -> true
 
-                            let! _, langVersion =
-                                document.GetFsharpParsingOptionsAsync(nameof FSharpConvertOptionalParameterDefaultValueRefactoring)
+                            if not isOmittedObject then
+                                let! options = document.GetOptionsAsync cancellationToken
 
-                            let indentSize =
-                                options.GetOption(FormattingOptions.IndentationSize, FSharpConstants.FSharpLanguageName)
+                                let! _, langVersion =
+                                    document.GetFsharpParsingOptionsAsync(nameof FSharpConvertOptionalParameterDefaultValueRefactoring)
 
-                            let register (asStruct: bool) (title: string) =
-                                match
+                                let indentSize =
+                                    options.GetOption(FormattingOptions.IndentationSize, FSharpConstants.FSharpLanguageName)
+
+                                let tryChanges (asStruct: bool) =
                                     OptionalParameterDefaultValueConversion.tryToFSharpChanges
                                         sourceText
                                         indentSize
@@ -460,18 +625,82 @@ type internal FSharpConvertOptionalParameterDefaultValueRefactoring [<ImportingC
                                         lists
                                         defaultValue
                                         asStruct
-                                with
+
+                                match tryChanges false with
                                 | ValueSome changes ->
+                                    let title = SR.UseFSharpOptionalParameter()
+
                                     let changedDocument =
                                         cancellableTask { return document.WithText(sourceText.WithChanges changes) }
 
                                     context.RegisterRefactoring(CodeAction.Create(title, changedDocument, title))
                                 | ValueNone -> ()
 
-                            register false (SR.UseFSharpOptionalParameter())
+                                match tryChanges true with
+                                | ValueSome definitionChanges when
+                                    LanguageVersion(langVersion).SupportsFeature LanguageFeature.SupportValueOptionsAsOptionalParameters
+                                    ->
+                                    let title = SR.UseFSharpStructOptionalParameter()
 
-                            if LanguageVersion(langVersion).SupportsFeature LanguageFeature.SupportValueOptionsAsOptionalParameters then
-                                register true (SR.UseFSharpStructOptionalParameter())
+                                    // `?x = Some 1` passes an option to `[<Optional>] x`; a struct `?x` takes a value option instead.
+                                    let changedSolution =
+                                        cancellableTask {
+                                            let! cancellationToken = CancellableTask.getCancellationToken ()
+                                            let! memberUses = SymbolHelpers.getSymbolUses memberUse document checkResults
+
+                                            let usesByDocument =
+                                                memberUses
+                                                |> Seq.groupBy (fun (useDocument: Document, _) -> useDocument.Id)
+                                                |> Seq.toArray
+
+                                            let mutable solution = document.Project.Solution
+
+                                            for documentId, documentUses in usesByDocument do
+                                                let useDocument = solution.GetDocument documentId
+                                                let! text = useDocument.GetTextAsync cancellationToken
+
+                                                let! useParseResults, useCheckResults =
+                                                    useDocument.GetFSharpParseAndCheckResultsAsync(
+                                                        nameof FSharpConvertOptionalParameterDefaultValueRefactoring
+                                                    )
+
+                                                let changes =
+                                                    [
+                                                        if documentId = document.Id then
+                                                            yield! definitionChanges
+
+                                                        for _, useRange in documentUses do
+                                                            yield!
+                                                                OptionalParameterDefaultValueConversion.callSiteChanges
+                                                                    (OptionalParameterDefaultValueConversion.isFSharpCoreSymbol
+                                                                        useCheckResults
+                                                                        text)
+                                                                    text
+                                                                    useParseResults.ParseTree
+                                                                    parameter.Ident.idText
+                                                                    useRange
+                                                    ]
+                                                    |> List.distinctBy _.Span
+                                                    |> List.sortBy _.Span.Start
+
+                                                solution <- solution.WithDocumentText(documentId, text.WithChanges changes)
+
+                                            if not (usesByDocument |> Array.exists (fun (documentId, _) -> documentId = document.Id)) then
+                                                solution <- solution.WithDocumentText(document.Id, sourceText.WithChanges definitionChanges)
+
+                                            return solution
+                                        }
+
+                                    let action =
+                                        CodeAction.Create(
+                                            title,
+                                            Func<CancellationToken, Task<Solution>>(fun cancellationToken ->
+                                                CancellableTask.start cancellationToken changedSolution),
+                                            title
+                                        )
+
+                                    context.RegisterRefactoring action
+                                | _ -> ()
                     | _ -> ()
         }
         |> CancellableTask.startAsTask context.CancellationToken
