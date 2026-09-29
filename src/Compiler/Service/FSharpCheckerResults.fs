@@ -68,7 +68,7 @@ type DocumentSource =
 type DelayedILModuleReader =
     val private name: string
     val private gate: obj
-    val mutable private getStream: (CancellationToken -> Stream voption)
+    val mutable private getStream: (CancellationToken -> Stream option)
     val mutable private result: ILModuleReader | null
 
     new(name, getStream) =
@@ -95,7 +95,7 @@ type DelayedILModuleReader =
                         | null ->
                             try
                                 match this.getStream ct with
-                                | ValueSome stream ->
+                                | Some stream ->
                                     let ilReaderOptions: ILReaderOptions =
                                         {
                                             pdbDirPath = None

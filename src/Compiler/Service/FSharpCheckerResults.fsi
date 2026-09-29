@@ -36,7 +36,7 @@ type DocumentSource =
 [<Sealed>]
 type DelayedILModuleReader =
 
-    new: name: string * getStream: (CancellationToken -> Stream voption) -> DelayedILModuleReader
+    new: name: string * getStream: (CancellationToken -> Stream option) -> DelayedILModuleReader
 
     member OutputFile: string
 
