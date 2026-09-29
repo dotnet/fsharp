@@ -32,7 +32,9 @@ function Get-RoslynDevFeeds([string]$repo, [string]$version) {
         throw "$RootSuffix runs a locally built Roslyn $version, which only its own packages provide, but there is no repository at $repo; pass -RoslynRepo."
     }
 
-    $feeds = 'Shipping', 'NonShipping' | ForEach-Object { Join-Path $repo "artifacts\packages\Release\$_" }
+    # NuGet fails restore (NU1301) on a local source that does not exist, so only the folders present are feeds.
+    $feeds = @('Shipping', 'NonShipping' | ForEach-Object { Join-Path $repo "artifacts\packages\Release\$_" } |
+        Where-Object { Test-Path -LiteralPath $_ })
     $probe = "Microsoft.VisualStudio.LanguageServices.ExternalAccess.$version.nupkg"
 
     if (-not ($feeds | Where-Object { Test-Path -LiteralPath (Join-Path $_ $probe) })) {
@@ -48,7 +50,6 @@ function Get-StaleRoslynDevPackages([string[]]$feeds, [string]$version) {
     $cache = if ($env:NUGET_PACKAGES) { $env:NUGET_PACKAGES } else { Join-Path $env:USERPROFILE '.nuget\packages' }
     $suffix = ".$version.nupkg"
     foreach ($feed in $feeds) {
-        if (-not (Test-Path -LiteralPath $feed)) { continue }
         Get-ChildItem -LiteralPath $feed -Filter '*.nupkg' |
             Where-Object { $_.Name.EndsWith($suffix, [StringComparison]::OrdinalIgnoreCase) } |
             ForEach-Object { Join-Path $cache "$($_.Name.Substring(0, $_.Name.Length - $suffix.Length).ToLowerInvariant())\$($version.ToLowerInvariant())" } |
