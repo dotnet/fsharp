@@ -115,25 +115,37 @@ type internal FSharpInteractiveCommandFilter
                 | target -> target.Exec(&pguidCmdGroup, nCmdId, nCmdexecopt, pvaIn, pvaOut)
 
         member _.QueryStatus(pguidCmdGroup, cCmds, prgCmds, pCmdText) =
-            match pguidCmdGroup with
-            | group when group = VSConstants.VsStd11 ->
-                for i in 0 .. int cCmds - 1 do
-                    match group, prgCmds[i].cmdID with
-                    | SendSelection -> prgCmds[i].cmdf <- uint32 (OLECMDF.OLECMDF_SUPPORTED ||| OLECMDF.OLECMDF_ENABLED)
-                    | SendLine ->
-                        prgCmds[i].cmdf <-
-                            uint32 (
-                                OLECMDF.OLECMDF_SUPPORTED
-                                ||| OLECMDF.OLECMDF_ENABLED
-                                ||| OLECMDF.OLECMDF_DEFHIDEONCTXTMENU
-                            )
-                    | NotOurs -> ()
+            let group = pguidCmdGroup
 
-                VSConstants.S_OK
-            | _ ->
-                match nextTarget with
-                | null -> VSConstants.E_FAIL
-                | target -> target.QueryStatus(&pguidCmdGroup, cCmds, prgCmds, pCmdText)
+            let status (commandId: uint32) =
+                match group, commandId with
+                | SendSelection -> ValueSome(OLECMDF.OLECMDF_SUPPORTED ||| OLECMDF.OLECMDF_ENABLED)
+                | SendLine ->
+                    ValueSome(
+                        OLECMDF.OLECMDF_SUPPORTED
+                        ||| OLECMDF.OLECMDF_ENABLED
+                        ||| OLECMDF.OLECMDF_DEFHIDEONCTXTMENU
+                    )
+                | NotOurs -> ValueNone
+
+            let commands = int cCmds
+
+            let rec allOurs i =
+                i >= commands || ((status prgCmds[i].cmdID).IsSome && allOurs (i + 1))
+
+            let result =
+                if commands > 0 && allOurs 0 then
+                    VSConstants.S_OK
+                else
+                    match nextTarget with
+                    | null -> VSConstants.E_FAIL
+                    | target -> target.QueryStatus(&pguidCmdGroup, cCmds, prgCmds, pCmdText)
+
+            for i in 0 .. commands - 1 do
+                status prgCmds[i].cmdID
+                |> ValueOption.iter (fun flags -> prgCmds[i].cmdf <- uint32 flags)
+
+            result
 
 [<Export(typeof<IWpfTextViewCreationListener>)>]
 [<ContentType(InteractiveWindowGuids.FSharpContentTypeName)>]
