@@ -108,7 +108,16 @@ type internal FSharpVsInteractiveWindowProvider
         )
 
         let interactiveWindow = toolWindow.InteractiveWindow
-        interactiveWindow.TextView.Closed.Add(fun _ -> (created :> IDisposable).Dispose())
+        interactiveWindow.TextView.Closed.Add(fun _ ->
+            (created :> IDisposable).Dispose()
+
+            // Only this window's own fields: a close arriving late must not forget a newer window.
+            if obj.ReferenceEquals(window, toolWindow) then
+                window <- null
+
+            match evaluator with
+            | ValueSome current when obj.ReferenceEquals(current, created) -> evaluator <- ValueNone
+            | _ -> ())
         interactiveWindow.InitializeAsync() |> ignore
         toolWindow
 
