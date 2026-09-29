@@ -1,4 +1,4 @@
-под# Modernizing the F# Interactive Window: Plan
+# Modernizing the F# Interactive Window: Plan
 
 Replace the legacy `FSharp.VS.FSI` tool window with the same REPL engine that powers **C# Interactive** and **Python Interactive** in Visual Studio: the `Microsoft.VisualStudio.InteractiveWindow` / `Microsoft.VisualStudio.VsInteractiveWindow` packages (source: [microsoft/vs-interactive-window](https://github.com/microsoft/vs-interactive-window)), with a structured JSON-RPC connection to the F# Interactive process instead of the current raw stdin/stdout text protocol.
 
@@ -33,17 +33,23 @@ and contains:
   needed. The session starts in the open solution's folder, so `dotnet fsi` runs the SDK that
   folder's `global.json` resolves to.
 
-Still to do before the window can be opened in Visual Studio:
+- `FSharpVsInteractiveWindowPackage.fs` — the package that registers the tool window with the shell
+  (`ProvideInteractiveWindow`, docked with the Output window) and recreates it through
+  `IVsToolWindowFactory` when Visual Studio restores a saved layout;
+- `FSharpInteractiveCommandFilter.fs` — "Send to Interactive" (Alt+Enter) and "Send line" from an
+  F# editor, which submit to this window with the source file and line, so diagnostics land on the
+  user's own file. The "F# Interactive" command in `FSharpPackage` opens this window too, and the
+  legacy window is no longer reachable from any command.
 
-- registering the tool window with the shell. The existing F# Interactive window is registered by
-  `FSharpPackage` in `FSharp.Editor` rather than by a package of its own, and the same route is the
-  cheaper one here: a `ProvideInteractiveWindow` attribute and an `IVsToolWindowFactory` hook that
-  calls the provider, rather than a new package with its own GUID and pkgdef;
-- the `Microsoft.VisualStudio.InteractiveWindow` prerequisite entry in the VSIX manifest, and the
-  project's place in the VSIX itself. It is already in `VisualFSharp.slnx`, so it builds;
-- commands: open the window, and retargeting Alt+Enter at the new window;
-- the debugger attach/detach commands ported from the existing window. The session reports its own
-  process id in the handshake, so the attach no longer has to guess which process to target.
+The project is in the VSIX, with the `Microsoft.VisualStudio.InteractiveWindow` prerequisite in its
+manifest, and the VSIX installs the .NET build of fsi, which the window falls back to when the SDK
+`global.json` selects predates the JSON-RPC server.
+
+Still to do:
+
+- the debugger attach/detach commands and "Debug in Interactive", ported from the existing window.
+  The session reports its own process id in the handshake, so the attach no longer has to guess
+  which process to target. Until then "Debug in Interactive" stays on the legacy command filter.
 
 Everything from Phase 3 onwards (IntelliSense in the input buffer) is untouched, with one
 exception: the input and output buffers have lexical colour from a tokenizer-based classifier
