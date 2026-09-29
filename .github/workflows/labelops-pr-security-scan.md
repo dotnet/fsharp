@@ -130,7 +130,9 @@ post-steps:
         fs.writeFileSync(outputPath, `${JSON.stringify(output)}\n`);
         if (suppressedComments > 0) core.info('Removed add-comment safe outputs for empty or unchanged categories.');
 
-permissions: read-all
+permissions:
+  contents: none
+  pull-requests: read
 
 network:
   allowed:
