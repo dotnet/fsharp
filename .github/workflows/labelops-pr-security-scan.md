@@ -84,6 +84,7 @@ checkout: false
 concurrency:
   group: labelops-pr-security-scan
   cancel-in-progress: false
+  queue: max
 
 post-steps:
   - name: Suppress comments for unchanged categories
