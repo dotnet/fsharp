@@ -339,6 +339,18 @@ module AnonymousUnionTypes =
             (Error 4503, Line 5, Col 9, Line 5, Col 15, "The type 'System.ValueType' does not support 'null' because it is not a reference type. A null case may only be added to an anonymous union whose common type is a reference type.")
         ]
 
+    [<Theory; FileInlineData("E_AnonDegradeNullValueType.fs")>]
+    let ``E_DegradeNullValueType_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> withLangVersionPreview
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 4500, Line 5, Col 8, Line 5, Col 26, "The runtime representation of the type 'int<kg>' is a subtype of the runtime representation of 'int' and the case will be ignored.");
+            (Error 4503, Line 5, Col 8, Line 5, Col 26, "The type 'int' does not support 'null' because it is not a reference type. A null case may only be added to an anonymous union whose common type is a reference type.")
+        ]
+
     [<Theory; FileInlineData("E_AnonWithNullNested1.fs")>]
     let ``E_WithNullNested1_fs`` compilation =
         compilation
@@ -574,6 +586,29 @@ module AnonymousUnionTypes =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 4500, Line 6, Col 8, Line 6, Col 18, "The runtime representation of the type 'B' is a subtype of the runtime representation of 'A' and the case will be ignored.")
-            (Warning 4506, Line 6, Col 8, Line 6, Col 18, "This anonymous union type degrades to a single type 'A | null'. Consider using the underlying type directly instead of an anonymous union.")
+            (Warning 4500, Line 4, Col 8, Line 4, Col 25, "The runtime representation of the type 'string' is a subtype of the runtime representation of 'obj' and the case will be ignored.")
+            (Warning 4506, Line 4, Col 8, Line 4, Col 25, "This anonymous union type degrades to a single type 'obj | null'. Consider using the underlying type directly instead of an anonymous union.")
+        ]
+
+    [<Theory; FileInlineData("W_AnonAliasDup1.fs")>]
+    let ``W_AliasDup1_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> withLangVersionPreview
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 4500, Line 5, Col 8, Line 5, Col 15, "The runtime representation of the type 'int' is a subtype of the runtime representation of 'int' and the case will be ignored.")
+        ]
+
+
+    [<Theory; FileInlineData("W_AnonAliasDup2.fs")>]
+    let ``W_AliasDup2_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> withLangVersionPreview
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 4500, Line 5, Col 8, Line 5, Col 15, "The runtime representation of the type 'int' is a subtype of the runtime representation of 'int' and the case will be ignored.")
         ]
