@@ -3,7 +3,6 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
-open System.Collections.Generic
 open System.Composition
 
 open Microsoft.CodeAnalysis.CodeActions
@@ -12,6 +11,7 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor.Telemetry
 
 open FSharp.Compiler.Syntax
+open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.SyntaxTrivia
 open FSharp.Compiler.Text
 
@@ -31,42 +31,22 @@ module private DotLambdaConversion =
     let hasName (name: string) (ident: Ident) =
         String.Equals(ident.idText, name, StringComparison.Ordinal)
 
-    // The shapes SyntaxTreeOps.pushUnaryArg accepts under `_.`, with the parameter as the head of the chain.
-    let rec tryChainRoot expr =
-        match expr with
-        | SynExpr.LongIdent(longDotId = SynLongIdent(id = root :: _ :: _; dotRanges = dot :: _)) when
-            Position.posEq dot.Start root.idRange.End
-            ->
-            ValueSome root
-        | SynExpr.DotGet(expr = inner)
-        | SynExpr.DotIndexedGet(objectExpr = inner)
-        | SynExpr.TypeApp(expr = inner)
-        | SynExpr.App(flag = ExprAtomicFlag.Atomic; isInfix = false; funcExpr = inner) -> tryChainRoot inner
-        | _ -> ValueNone
-
-    let occurrencesOf (name: string) (body: SynExpr) =
-        (0, [ SyntaxNode.SynExpr body ])
-        ||> SyntaxNodes.fold (fun count _ node ->
+    let identifiersIn (body: SynExpr) =
+        ([], [ SyntaxNode.SynExpr body ])
+        ||> SyntaxNodes.fold (fun identifiers _ node ->
             match node with
             | SyntaxNode.SynExpr(SynExpr.Ident ident)
             | SyntaxNode.SynExpr(SynExpr.LongIdent(longDotId = SynLongIdent(id = ident :: _)))
-            | SyntaxNode.SynPat(SynPat.Named(ident = SynIdent(ident, _))) when hasName name ident -> count + 1
-            | _ -> count)
+            | SyntaxNode.SynExpr(SynExpr.LongIdentSet(longDotId = SynLongIdent(id = ident :: _)))
+            | SyntaxNode.SynExpr(SynExpr.NamedIndexedPropertySet(longDotId = SynLongIdent(id = ident :: _)))
+            | SyntaxNode.SynPat(SynPat.Named(ident = SynIdent(ident, _))) -> ident :: identifiers
+            | _ -> identifiers)
 
     let parameterNameFor (body: SynExpr) =
-        let used =
-            (HashSet<string>(StringComparer.Ordinal), [ SyntaxNode.SynExpr body ])
-            ||> SyntaxNodes.fold (fun names _ node ->
-                match node with
-                | SyntaxNode.SynExpr(SynExpr.Ident ident)
-                | SyntaxNode.SynExpr(SynExpr.LongIdent(longDotId = SynLongIdent(id = ident :: _)))
-                | SyntaxNode.SynPat(SynPat.Named(ident = SynIdent(ident, _))) -> ignore (names.Add ident.idText)
-                | _ -> ()
-
-                names)
+        let used = identifiersIn body
 
         Seq.initInfinite (fun i -> if i = 0 then "x" else $"x{i}")
-        |> Seq.find (used.Contains >> not)
+        |> Seq.find (fun name -> not (List.exists (hasName name) used))
 
     let isInQuotation (path: SyntaxVisitorPath) =
         path
@@ -81,40 +61,49 @@ module private DotLambdaConversion =
         | SyntaxNode.SynExpr(SynExpr.App(funcExpr = func)) :: _ -> obj.ReferenceEquals(func, lambda)
         | _ -> false
 
-    let spanOf (sourceText: SourceText) (m: range) =
-        RoslynHelpers.FSharpRangeToTextSpan(sourceText, m)
-
     let isBlankBetween (sourceText: SourceText) start finish =
         start <= finish
         && String.IsNullOrWhiteSpace(sourceText.ToString(TextSpan.FromBounds(start, finish)))
 
-    let toShorthand (sourceText: SourceText) (path: SyntaxVisitorPath) (lambda: SynExpr) (root: Ident) =
-        let lambdaSpan = spanOf sourceText lambda.Range
-        let rootEnd = (spanOf sourceText root.idRange).End
-
+    /// The parentheses around a lambda argument that hold nothing else, so `f (fun x -> x.P)` can become `f _.P`.
+    [<return: Struct>]
+    let (|ParenthesizedLambdaArgument|_|) (sourceText: SourceText) (lambda: SynExpr) (lambdaSpan: TextSpan) (path: SyntaxVisitorPath) =
         match path with
         | SyntaxNode.SynExpr(SynExpr.Paren(expr = inner; leftParenRange = leftParen; rightParenRange = Some rightParen; range = parenRange) as paren) :: SyntaxNode.SynExpr(SynExpr.App(
             flag = ExprAtomicFlag.NonAtomic; isInfix = false; argExpr = arg)) :: _ when
             obj.ReferenceEquals(inner, lambda)
             && obj.ReferenceEquals(arg, paren)
-            && isBlankBetween sourceText (spanOf sourceText leftParen).End lambdaSpan.Start
-            && isBlankBetween sourceText lambdaSpan.End (spanOf sourceText rightParen).Start
+            && isBlankBetween sourceText (RoslynHelpers.FSharpRangeToTextSpan(sourceText, leftParen)).End lambdaSpan.Start
+            && isBlankBetween sourceText lambdaSpan.End (RoslynHelpers.FSharpRangeToTextSpan(sourceText, rightParen)).Start
             ->
+            ValueSome(RoslynHelpers.FSharpRangeToTextSpan(sourceText, parenRange))
+        | _ -> ValueNone
+
+    let toShorthand (sourceText: SourceText) (path: SyntaxVisitorPath) (lambda: SynExpr) (root: Ident) =
+        let lambdaSpan = RoslynHelpers.FSharpRangeToTextSpan(sourceText, lambda.Range)
+        let rootEnd = RoslynHelpers.FSharpRangeToTextSpan(sourceText, root.idRange).End
+
+        match path with
+        | ParenthesizedLambdaArgument sourceText lambda lambdaSpan parenSpan ->
             let chain = sourceText.ToString(TextSpan.FromBounds(rootEnd, lambdaSpan.End))
-            TextChange(spanOf sourceText parenRange, $"_{chain}")
+            TextChange(parenSpan, $"_{chain}")
         | _ -> TextChange(TextSpan.FromBounds(lambdaSpan.Start, rootEnd), "_")
 
     let toLambda (sourceText: SourceText) (path: SyntaxVisitorPath) (body: SynExpr) (range: range) (trivia: SynExprDotLambdaTrivia) =
         let name = parameterNameFor body
         let lambda = $"fun {name} -> {name}"
-        let underscoreStart = (spanOf sourceText trivia.UnderscoreRange).Start
-        let dotStart = (spanOf sourceText trivia.DotRange).Start
+
+        let underscoreStart =
+            RoslynHelpers.FSharpRangeToTextSpan(sourceText, trivia.UnderscoreRange).Start
+
+        let dotStart =
+            RoslynHelpers.FSharpRangeToTextSpan(sourceText, trivia.DotRange).Start
 
         match path with
         | SyntaxNode.SynExpr(SynExpr.Paren _) :: _
         | SyntaxNode.SynBinding _ :: _ -> TextChange(TextSpan.FromBounds(underscoreStart, dotStart), lambda)
         | _ ->
-            let span = spanOf sourceText range
+            let span = RoslynHelpers.FSharpRangeToTextSpan(sourceText, range)
             let chain = sourceText.ToString(TextSpan.FromBounds(dotStart, span.End))
             TextChange(span, $"({lambda}{chain})")
 
@@ -127,8 +116,11 @@ module private DotLambdaConversion =
                 parsedData = Some([ SynPat.Named(ident = SynIdent(parameter, _); isThisVal = false; accessibility = None) ], body)) as lambda) when
                 not (isInQuotation path) && not (isAppliedDirectly lambda path)
                 ->
-                match tryChainRoot body with
-                | ValueSome root when hasName parameter.idText root && occurrencesOf parameter.idText body = 1 ->
+                match tryPopUnaryArg body with
+                | ValueSome(struct (root, _)) when
+                    hasName parameter.idText root
+                    && (identifiersIn body |> List.filter (hasName parameter.idText) |> List.length) = 1
+                    ->
                     Some
                         {
                             Title = SR.ConvertToShorthandLambda()
@@ -164,7 +156,7 @@ type internal FSharpConvertDotLambdaRefactoring [<ImportingConstructor>] () =
                 let! parseResults = document.GetFSharpParseResultsAsync(nameof FSharpConvertDotLambdaRefactoring)
 
                 let caret = sourceText.Lines.GetLinePosition context.Span.Start
-                let position = Position.mkPos (Line.fromZ caret.Line) caret.Character
+                let position = Position.fromZ caret.Line caret.Character
 
                 match DotLambdaConversion.tryFind sourceText position parseResults.ParseTree with
                 | Some conversion ->
