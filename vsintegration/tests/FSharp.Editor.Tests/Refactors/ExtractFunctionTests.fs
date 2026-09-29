@@ -239,3 +239,85 @@ let incr (x: byref<int>) =
 """
 
     Assert.Empty(titlesFor code "x + 1")
+
+[<Fact>]
+let ``Lines inside a multi-line string in an inactive branch are not re-indented`` () =
+    // The code contains a triple-quoted string, which a triple-quoted literal cannot hold.
+    let code =
+        "module M\n\nlet combine (n: int) (xs: string list) = n\n\nlet r = combine 1 [\n            #if ALT\n            \"\"\"first\n    preserved\n            last\"\"\"\n            #else\n            \"\"\n            #endif\n            ]\n"
+
+    let expected =
+        "module M\n\nlet combine (n: int) (xs: string list) = n\n\nlet r =\n    let extractedFunction () = 1\n    combine (extractedFunction ()) [\n        #if ALT\n        \"\"\"first\n    preserved\n            last\"\"\"\n        #else\n        \"\"\n        #endif\n        ]\n"
+
+    let selection = TextSpan(code.IndexOf("1 [", StringComparison.Ordinal), 1)
+    Assert.Equal(expected, extractedAtWith ParameterAnnotationSetting.Always extractToLocalFunction code selection)
+
+let private assignedDependency =
+    """
+module Dependency
+
+type Box = { mutable Value: int }
+
+let extractedFunction = { Value = 0 }
+let ExtractedMethod = { Value = 0 }
+"""
+
+let private extractedWithDependency (title: string) (code: string) (selected: string) =
+    use context = TestContext.CreateWithCodeAndDependency code assignedDependency
+
+    let document =
+        refactorSpan code (selectionOf code selected) title context (new FSharpExtractFunctionRefactoring())
+
+    (document.GetTextAsync() |> GetTaskResult).ToString()
+
+[<Fact>]
+let ``Local function name does not collide with an assignment target from another file`` () =
+    let code =
+        """
+module M
+
+open Dependency
+
+let f () =
+    extractedFunction.Value <- ({ Value = 1 }).Value
+"""
+
+    let expected =
+        """
+module M
+
+open Dependency
+
+let f () =
+    let extractedFunction1 () = { Value = 1 }
+    extractedFunction.Value <- (extractedFunction1 ()).Value
+"""
+
+    Assert.Equal(expected, extractedWithDependency extractToLocalFunction code "({ Value = 1 })")
+
+[<Fact>]
+let ``Member name does not collide with an assignment target from another file`` () =
+    let code =
+        """
+module M
+
+open Dependency
+
+type T() =
+    member this.Reset() =
+        ExtractedMethod.Value <- ({ Value = 1 }).Value
+"""
+
+    let expected =
+        """
+module M
+
+open Dependency
+
+type T() =
+    member this.Reset() =
+        ExtractedMethod.Value <- this.ExtractedMethod1().Value
+    member private this.ExtractedMethod1() = { Value = 1 }
+"""
+
+    Assert.Equal(expected, extractedWithDependency extractToPrivateMember code "({ Value = 1 })")
