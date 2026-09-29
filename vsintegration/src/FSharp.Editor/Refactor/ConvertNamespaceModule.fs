@@ -16,6 +16,7 @@ open Microsoft.VisualStudio.FSharp.Editor.Telemetry
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTrivia
 open FSharp.Compiler.Text
+open FSharp.Compiler.Tokenization
 
 open CancellableTasks
 
@@ -140,18 +141,98 @@ module private NamespaceModuleConversion =
         | Root(path = path) ->
             String.Format(SR.ConvertToNamespaceWithNestedModule(), dotted (List.take (path.Length - 1) path), (List.last path).idText)
 
-    let linesInsideLiterals (parseTree: ParsedInput) =
-        (HashSet<int>(), parseTree)
-        ||> ParsedInput.fold (fun lines _ node ->
-            match node with
-            | SyntaxNode.SynExpr(SynExpr.Const(range = m))
-            | SyntaxNode.SynExpr(SynExpr.InterpolatedString(range = m))
-            | SyntaxNode.SynPat(SynPat.Const(range = m)) ->
-                for line in m.StartLine + 1 .. m.EndLine do
-                    lines.Add(Line.toZ line) |> ignore
-            | _ -> ()
+    /// Whether a line lexed from this state starts inside a string literal.
+    let private continuesString (state: FSharpTokenizerColorState) =
+        match state with
+        | FSharpTokenizerColorState.InitialState
+        | FSharpTokenizerColorState.Token
+        | FSharpTokenizerColorState.IfDefSkip
+        | FSharpTokenizerColorState.EndLineThenSkip
+        | FSharpTokenizerColorState.EndLineThenToken
+        | FSharpTokenizerColorState.Comment
+        | FSharpTokenizerColorState.SingleLineComment
+        | FSharpTokenizerColorState.StringInComment
+        | FSharpTokenizerColorState.VerbatimStringInComment
+        | FSharpTokenizerColorState.TripleQuoteStringInComment -> false
+        // String, VerbatimString, TripleQuoteString and the extended interpolated string state, which the public enum does not name.
+        | _ -> true
 
-            lines)
+    let private isSkipped (state: FSharpTokenizerLexState) =
+        match FSharpLineTokenizer.ColorStateOfLexState state with
+        | FSharpTokenizerColorState.IfDefSkip
+        | FSharpTokenizerColorState.EndLineThenSkip -> true
+        | _ -> false
+
+    let private startsWithDirective (code: ReadOnlySpan<char>) (keyword: string) =
+        code.StartsWith(keyword.AsSpan(), StringComparison.Ordinal)
+        && (code.Length = keyword.Length
+            || Char.IsWhiteSpace code[keyword.Length]
+            || code[keyword.Length] = '/')
+
+    /// Whether the line is a directive the lexer recognizes while it skips an inactive branch.
+    let private isSkippedDirective (line: string) =
+        let code = line.AsSpan().TrimStart()
+
+        startsWithDirective code "#if"
+        || startsWithDirective code "#elif"
+        || startsWithDirective code "#else"
+        || startsWithDirective code "#endif"
+
+    let private scanLine (tokenizer: FSharpSourceTokenizer) (line: string) (state: FSharpTokenizerLexState) =
+        let lineTokenizer = tokenizer.CreateLineTokenizer line
+
+        let rec loop state =
+            match lineTokenizer.ScanToken state with
+            | Some _, next -> loop next
+            | None, next -> next
+
+        loop state
+
+    /// Lines inside multi-line string literals of the branches of `#if` the defines leave inactive. Each run of
+    /// inactive lines between two directives is lexed as the code it is when its branch is taken.
+    let private linesInsideInactiveLiterals (sourceText: SourceText) (defines: string list) (langVersion: string) (lines: HashSet<int>) =
+        let fileTokenizer = FSharpSourceTokenizer(defines, None, Some langVersion)
+        let branchTokenizer = FSharpSourceTokenizer([], None, Some langVersion)
+        let mutable fileState = FSharpTokenizerLexState.Initial
+        let mutable branchState = FSharpTokenizerLexState.Initial
+
+        for line in sourceText.Lines do
+            let text = line.ToString()
+
+            if isSkipped fileState && not (isSkippedDirective text) then
+                if continuesString (FSharpLineTokenizer.ColorStateOfLexState branchState) then
+                    lines.Add line.LineNumber |> ignore
+
+                branchState <- scanLine branchTokenizer text branchState
+            else
+                branchState <- FSharpTokenizerLexState.Initial
+
+            fileState <- scanLine fileTokenizer text fileState
+
+    /// Lines inside multi-line string literals, including those in branches of `#if` the defines leave inactive.
+    let linesInsideLiterals (sourceText: SourceText) (parseTree: ParsedInput) (defines: string list) (langVersion: string) =
+        let lines =
+            (HashSet<int>(), parseTree)
+            ||> ParsedInput.fold (fun lines _ node ->
+                match node with
+                | SyntaxNode.SynExpr(SynExpr.Const(range = m))
+                | SyntaxNode.SynExpr(SynExpr.InterpolatedString(range = m))
+                | SyntaxNode.SynPat(SynPat.Const(range = m)) ->
+                    for line in m.StartLine + 1 .. m.EndLine do
+                        lines.Add(Line.toZ line) |> ignore
+                | _ -> ()
+
+                lines)
+
+        let directives =
+            match parseTree with
+            | ParsedInput.ImplFile file -> file.Trivia.ConditionalDirectives
+            | ParsedInput.SigFile file -> file.Trivia.ConditionalDirectives
+
+        if not directives.IsEmpty then
+            linesInsideInactiveLiterals sourceText defines langVersion lines
+
+        lines
 
     let leadingSpaces (sourceText: SourceText) (line: TextLine) =
         let mutable position = line.Start
@@ -166,9 +247,8 @@ module private NamespaceModuleConversion =
         | 0 -> Environment.NewLine
         | length -> sourceText.ToString(TextSpan(line.End, length))
 
-    let changes (sourceText: SourceText) (parseTree: ParsedInput) (indentSize: int) shape =
+    let changes (sourceText: SourceText) (literalLines: HashSet<int>) (indentSize: int) shape =
         let lines = sourceText.Lines
-        let literalLines = linesInsideLiterals parseTree
 
         match shape with
         | Nested(
@@ -317,8 +397,14 @@ type internal FSharpConvertNamespaceModuleRefactoring [<ImportingConstructor>] (
                                 [| "name", box (nameof FSharpConvertNamespaceModuleRefactoring) |]
                             )
 
+                            let! defines, langVersion =
+                                document.GetFsharpParsingOptionsAsync(nameof FSharpConvertNamespaceModuleRefactoring)
+
+                            let literalLines =
+                                NamespaceModuleConversion.linesInsideLiterals sourceText parseResults.ParseTree defines langVersion
+
                             let changes =
-                                NamespaceModuleConversion.changes sourceText parseResults.ParseTree indentSize shape
+                                NamespaceModuleConversion.changes sourceText literalLines indentSize shape
 
                             return document.WithText(sourceText.WithChanges changes)
                         }
