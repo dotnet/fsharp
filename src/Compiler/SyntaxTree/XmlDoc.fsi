@@ -64,7 +64,8 @@ type public XmlDoc =
     member LineRanges: range[]
 
     /// The `name` and `cref` attribute values of `param`, `paramref`, `typeparam`, `typeparamref`,
-    /// `see`, `seealso`, `exception` and `permission` tags, with their source ranges. Empty without line ranges.
+    /// `see`, `seealso`, `exception` and `permission` elements, with their source ranges. The doc's own lines are
+    /// parsed as XML, `<include>` unexpanded; a doc without line ranges, of plain text or badly formed names nothing.
     member GetRefs: unit -> XmlDocRef[]
 
     /// Get the lines before insertion of implicit summary tags and encoding

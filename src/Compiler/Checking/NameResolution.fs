@@ -2342,7 +2342,9 @@ type TcResolutions
 
     member _.CapturedMethodGroupResolutions = capturedMethodGroupResolutions
 
-    member _.CapturedRelatedSymbolUses = capturedRelatedSymbolUses
+    member _.CapturedRelatedSymbolUses =
+        capturedRelatedSymbolUses
+        |> Seq.filter (fun (_, _, kind: RelatedSymbolUseKind) -> RelatedSymbolUseKind.AllInCode.HasFlag kind)
 
     static member Empty = empty
 
