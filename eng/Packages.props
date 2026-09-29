@@ -52,6 +52,8 @@
     <PackageVersion Include="Microsoft.Net.Compilers" Version="$(MicrosoftNetCompilersVersion)" />
     <PackageVersion Include="Microsoft.NETCore.ILAsm" Version="$(MicrosoftNETCoreILAsmVersion)" />
     <PackageVersion Include="Microsoft.NETCore.ILDAsm" Version="$(MicrosoftNETCoreILDAsmVersion)" />
+    <!-- Match Roslyn's ServiceHub dependency to avoid assembly-version conflicts in the legacy language service. -->
+    <PackageVersion Include="Microsoft.ServiceHub.Framework" Version="4.11.154" />
     <PackageVersion Include="Microsoft.Testing.Extensions.HangDump" Version="$(MicrosoftTestingExtensionsHangDumpVersion)" />
     <PackageVersion Include="Microsoft.TestPlatform.ObjectModel" Version="$(MicrosoftTestPlatformVersion)" />
     <PackageVersion Include="Microsoft.VisualFSharp.Microsoft.VisualStudio.Shell.UI.Internal" Version="17.0.0" />
@@ -99,7 +101,7 @@
     <PackageVersion Include="Microsoft.VisualStudio.Text.UI.Wpf" Version="$(VisualStudioEditorPackagesVersion)" />
     <PackageVersion Include="Microsoft.VisualStudio.TextManager.Interop" Version="18.9.438" />
     <PackageVersion Include="Microsoft.VisualStudio.Threading" Version="18.7.23" />
-    <PackageVersion Include="Microsoft.VisualStudio.Validation" Version="18.7.1" />
+    <PackageVersion Include="Microsoft.VisualStudio.Validation" Version="18.7.19" />
     <!-- Microsoft.VSSDK.BuildTools is injected as an implicit PackageReference by Arcade's VisualStudio.targets
          (Version="$(MicrosoftVSSDKBuildToolsVersion)"); an implicit reference must not be centrally managed (NU1009). -->
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.4" />
@@ -119,7 +121,7 @@
     <!-- The JSON-RPC transport of the F# Interactive server mode and of the interactive window.
          Pinned to the version Roslyn's packages already force into vsintegration, so that the two
          agree and a Roslyn bump does not turn into a downgrade conflict. -->
-    <PackageVersion Include="StreamJsonRpc" Version="2.26.10" />
+    <PackageVersion Include="StreamJsonRpc" Version="2.26.98" />
     <PackageVersion Include="xunit.v3.assert" Version="$(XunitVersion)" />
     <PackageVersion Include="xunit.v3.common" Version="$(XunitVersion)" />
     <PackageVersion Include="xunit.v3.extensibility.core" Version="$(XunitVersion)" />
