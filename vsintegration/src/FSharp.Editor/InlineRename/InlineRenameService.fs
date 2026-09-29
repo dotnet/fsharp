@@ -135,7 +135,7 @@ type internal InlineRenameInfo
 
     // Rename follows a parameter into its `<param>`/`<typeparam>` tags, which Find All References leaves out
     let symbolUses =
-        SymbolHelpers.getSymbolUsesInSolution (symbolUse, checkFileResults, document, RelatedSymbolUseKind.All) ct
+        SymbolHelpers.getSymbolUsesInSolution (symbolUse, checkFileResults, document, RelatedSymbolUseKind.AllInCodeAndDocs) ct
 
     let symbolDisplayName = symbolUse.Symbol.DisplayName
 

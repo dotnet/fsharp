@@ -102,11 +102,6 @@ module internal SymbolHelpers =
                 TelemetryReporter.ReportSingleEvent(TelemetryEvents.GetSymbolUsesInProjectsFinished, props)
             }
 
-    /// The related uses that belong in a list of code references: everything but a name inside a `///` comment,
-    /// which only Rename and highlighting act on.
-    let codeSymbolUseKinds =
-        RelatedSymbolUseKind.All &&& ~~~RelatedSymbolUseKind.XmlDocParameter
-
     /// The project-wide index behind `getSymbolUsesInProjects` leaves out names inside `///` comments, and only
     /// a declaration carries them, so they are read from the check results of the files that declare the symbol.
     let private findXmlDocUsesInDeclaringFiles
