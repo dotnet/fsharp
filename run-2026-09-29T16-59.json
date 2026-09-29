@@ -1,0 +1,16 @@
+{
+  "timestamp": "2026-09-29T16:59:16Z",
+  "eligible_prs": [20648],
+  "actions": [],
+  "result": "no_action",
+  "details": {
+    "20648": {
+      "category": "C",
+      "checks_total": 53,
+      "checks_successful": 53,
+      "mergeable_state": "blocked",
+      "last_review_comment": null,
+      "note": "No new activity since the prior check; CI is healthy and the PR is awaiting human review or approval."
+    }
+  }
+}
