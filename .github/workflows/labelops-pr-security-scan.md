@@ -1,46 +1,104 @@
 ---
 description: |
   PR Tooling Safety Check — labels open PRs with what phases they affect.
-  Runs hourly. Text-only — reads diffs via GitHub API, never checks out
-  or builds PR code. Labels tell maintainers what a PR touches before
-  they build, test, or load it into Copilot. Non-fork PRs (head repo is
-  dotnet/fsharp) are bypass-labeled `AI-Tooling-Check-Bypassed` without a
-  diff scan; only fork PRs get phase (`⚠️ Affects-*`) labels.
+  Runs only when a PR receives new commits. Text-only — reads diffs via
+  GitHub API, never checks out or builds PR code. Labels tell maintainers
+  what a PR touches before they build, test, or load it into Copilot.
+  Non-fork PRs (head repo is dotnet/fsharp) are bypass-labeled
+  `AI-Tooling-Check-Bypassed` without a diff scan; only fork PRs get phase
+  (`⚠️ Affects-*`) labels.
 
 imports:
   - shared/model-defaults.md
 
 on:
-  schedule: every 1h
-  workflow_dispatch:
+  pull_request_target:
+    types: [synchronize]
   permissions:
     contents: read
     pull-requests: read
   steps:
     - id: select
-      if: github.event_name != 'schedule' || github.repository == 'dotnet/fsharp'
       uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
       with:
         script: |-
+          const eventPr = context.payload.pull_request;
+          if (!eventPr) throw new Error('Expected a pull_request_target synchronize event.');
+          const { data: pr } = await github.rest.pulls.get({ ...context.repo, pull_number: eventPr.number });
+          if (pr.state !== 'open' || pr.draft || pr.head.sha !== eventPr.head.sha || pr.created_at < '2026-05-12T00:00:00Z') {
+            core.setOutput('prs', '[]');
+            return;
+          }
           const { data } = await github.rest.repos.getContent({ ...context.repo, path: 'state.json', ref: 'safety/scanned-PRs' });
           const { prs } = JSON.parse(Buffer.from(data.content, 'base64').toString('utf8'));
-          const open = await github.paginate(github.rest.pulls.list, { ...context.repo, state: 'open', per_page: 100 });
-          const pending = open.filter(pr => !pr.draft && pr.created_at >= '2026-05-12T00:00:00Z')
-            .filter(pr => !prs[pr.number] || !pr.head.sha.startsWith(prs[pr.number].sha));
-          core.setOutput('prs', JSON.stringify(pending.map(pr => ({ number: pr.number, sha: pr.head.sha, cats: prs[pr.number]?.cats ?? [] }))));
+          const previous = prs[pr.number];
+          if (previous?.sha === pr.head.sha) {
+            core.setOutput('prs', '[]');
+            return;
+          }
+          core.setOutput('prs', JSON.stringify([{ number: pr.number, sha: pr.head.sha, cats: previous?.cats ?? [] }]));
 
 jobs:
   pre-activation:
     outputs:
       prs: ${{ steps.select.outputs.prs }}
 
-if: (github.event_name != 'schedule' || github.repository == 'dotnet/fsharp') && needs.pre_activation.outputs.prs != '[]'
+if: needs.pre_activation.outputs.prs != '[]'
 
 timeout-minutes: 15
+checkout: false
 
 concurrency:
   group: labelops-pr-security-scan
   cancel-in-progress: false
+
+post-steps:
+  - name: Suppress comments for unchanged categories
+    if: always()
+    uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+    env:
+      SCANNED_PRS: ${{ needs.pre_activation.outputs.prs }}
+    with:
+      script: |
+        const fs = require('node:fs');
+        const outputPath = '/tmp/gh-aw/agent_output.json';
+        if (!fs.existsSync(outputPath)) {
+          core.info('No agent output to filter.');
+          return;
+        }
+
+        const agentOutput = fs.readFileSync(outputPath, 'utf8');
+        // Fail closed if parsing or validation below fails.
+        fs.writeFileSync(outputPath, '{"items":[]}\n');
+        const output = JSON.parse(agentOutput);
+        if (!Array.isArray(output.items)) throw new Error('Agent output has no items array.');
+        const [pr] = JSON.parse(process.env.SCANNED_PRS || '[]');
+        if (!pr || !Number.isInteger(pr.number)) throw new Error('Expected exactly one selected PR.');
+
+        const normalize = values => [...new Set(values
+          .filter(value => typeof value === 'string')
+          .map(value => value.replace(/^⚠️\s*/, ''))
+        )].sort();
+        const currentCategories = normalize(output.items
+          .filter(item => item?.type === 'add_labels')
+          .filter(item => {
+            const target = item.issue_number ?? item.item_number;
+            return target == null || Number(target) === pr.number;
+          })
+          .flatMap(item => Array.isArray(item.labels) ? item.labels : [])
+          .map(label => typeof label === 'string' ? label : label?.name)
+          .filter(label => typeof label === 'string' && label.startsWith('⚠️ ')));
+        const previousCategories = normalize(Array.isArray(pr.cats) ? pr.cats : []);
+        const unchanged = currentCategories.length === 0 ||
+          JSON.stringify(currentCategories) === JSON.stringify(previousCategories);
+        const suppressedComments = unchanged
+          ? output.items.filter(item => item?.type === 'add_comment').length
+          : 0;
+        if (unchanged) {
+          output.items = output.items.filter(item => item?.type !== 'add_comment');
+        }
+        fs.writeFileSync(outputPath, `${JSON.stringify(output)}\n`);
+        if (suppressedComments > 0) core.info('Removed add-comment safe outputs for empty or unchanged categories.');
 
 permissions: read-all
 
@@ -147,7 +205,8 @@ Read `.github/tooling-check-repo-rules.md` from the default branch for repo-spec
           Affects-Restore: <reason>
           ```
         - If the category set is **identical** → **no comment**.
-4. Merge processed results into repo-memory's `state.json`: `{"sha": "<supplied full SHA>", "cats": [...]}`. Do not prune or print the rest of the history.
+        - A deterministic post-agent step also removes comments whenever the emitted category-label set is empty or unchanged.
+4. Merge processed results into repo-memory's `state.json`: `{"sha": "<supplied full SHA>", "cats": [...]}`. Store `cats` as sorted, unique category names without the warning emoji. Do not prune or print the rest of the history.
 </process>
 
 <categories>
