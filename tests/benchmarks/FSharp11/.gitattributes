@@ -1,2 +1,2 @@
 # Historical provenance fingerprints these files byte-for-byte.
-* -text
+* -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
