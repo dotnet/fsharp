@@ -11,6 +11,7 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.FindUsages
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor.FindUsages
 
+open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Text
 open CancellableTasks
@@ -159,7 +160,7 @@ module FSharpFindUsagesService =
                             symbol.Ident.idText
                             context.OnReferenceFoundAsync
 
-                    do! SymbolHelpers.findSymbolUses symbolUse document checkFileResults SymbolHelpers.codeSymbolUseKinds onFound
+                    do! SymbolHelpers.findSymbolUses symbolUse document checkFileResults RelatedSymbolUseKind.AllInCode onFound
         }
 
 open FSharpFindUsagesService
