@@ -371,7 +371,159 @@ type C() =
     static member M(x: int) = x
 """,
              "x:")>]
+[<InlineData("""
+module M
+
+let defaultArg (x: int option) (fallback: int) = fallback
+
+type C() =
+    static member M(?x: int) = defaultArg x 0
+""",
+             "?x")>]
+[<InlineData("""
+module M
+
+open System.Runtime.InteropServices
+
+type C() =
+    static member M([<Optional>] x: obj) = x
+""",
+             "x:")>]
+[<InlineData("""
+module M
+
+type C() =
+    static member M(?x: int, ?y: int) = defaultArg x 0 + defaultArg y 1
+""",
+             "?y")>]
 let ``No action`` (code: string, marker: string) = Assert.Empty(actionsAt code marker)
+
+[<Fact>]
+let ``Mutable shadowing keeps its binding`` () =
+    let before =
+        """
+module M
+
+open System.Runtime.InteropServices
+
+type C() =
+    static member M(?x: int) =
+        let mutable x = defaultArg x 0
+        x <- x + 1
+        x
+"""
+
+    let after =
+        """
+module M
+
+open System.Runtime.InteropServices
+
+type C() =
+    static member M([<Optional; DefaultParameterValue(0)>] x: int) =
+        let mutable x = x
+        x <- x + 1
+        x
+"""
+
+    Assert.Equal(after, refactored before "?x")
+
+[<Fact>]
+let ``Open in another module does not count as in scope`` () =
+    let before =
+        """
+module M
+
+module Other =
+    open System.Runtime.InteropServices
+
+    let o = 1
+
+type C() =
+    static member M(?x: int) = defaultArg x 0
+"""
+
+    let after =
+        """
+module M
+
+open System.Runtime.InteropServices
+
+module Other =
+    open System.Runtime.InteropServices
+
+    let o = 1
+
+type C() =
+    static member M([<Optional; DefaultParameterValue(0)>] x: int) = x
+"""
+
+    Assert.Equal(after, refactored before "?x")
+
+[<Fact>]
+let ``Open in an enclosing module counts as in scope`` () =
+    let before =
+        """
+module M
+
+module Inner =
+    open System.Runtime.InteropServices
+
+    type C() =
+        static member M(?x: int) = defaultArg x 0
+"""
+
+    let after =
+        """
+module M
+
+module Inner =
+    open System.Runtime.InteropServices
+
+    type C() =
+        static member M([<Optional; DefaultParameterValue(0)>] x: int) = x
+"""
+
+    Assert.Equal(after, refactored before "?x")
+
+[<Fact>]
+let ``Converting to a struct optional parameter converts optional arguments to value options`` () =
+    let before =
+        """
+module M
+
+open System.Runtime.InteropServices
+
+type Counter() =
+    static member Next([<Optional; DefaultParameterValue(1)>] step: int) =
+        step + 1
+
+let a = Counter.Next()
+let b = Counter.Next(?step = Some 2)
+let c = Counter.Next(?step = None)
+let d (s: int option) = Counter.Next(?step = s)
+let e (s: int list) = Counter.Next(?step = List.tryHead s)
+"""
+
+    let after =
+        """
+module M
+
+open System.Runtime.InteropServices
+
+type Counter() =
+    static member Next([<Struct>] ?step: int) =
+        let step = defaultValueArg step 1
+        step + 1
+
+let a = Counter.Next()
+let b = Counter.Next(?step = ValueSome 2)
+let c = Counter.Next(?step = ValueNone)
+let d (s: int option) = Counter.Next(?step = ValueOption.ofOption s)
+let e (s: int list) = Counter.Next(?step = ValueOption.ofOption (List.tryHead s))
+"""
+
+    Assert.Equal(after, refactoredWith structTitle before "step:")
 
 [<Fact>]
 let ``No action when the file has a signature`` () =
