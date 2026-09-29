@@ -210,7 +210,54 @@ type C() =
     static member M(x: int option) = defaultArg x 0
 """,
              "x:")>]
+[<InlineData("""
+module M
+
+let defaultArg (x: int option) (fallback: int) = fallback
+
+type C() =
+    static member M(?x: int) = defaultArg x 0
+""",
+             "?x")>]
+[<InlineData("""
+module M
+
+module Option =
+    let isSome (x: int option) = true
+
+type C() =
+    static member M(?x: int) = Option.isSome x
+""",
+             "?x")>]
 let ``No action`` (code: string, marker: string) = Assert.Empty(actionsAt code marker)
+
+[<Fact>]
+let ``Shadowed Some at a call site goes through ValueOption.ofOption`` () =
+    let before =
+        """
+module M
+
+let Some x = Some (x + 1)
+
+type Counter() =
+    static member Next(?step: int) = defaultArg step 1
+
+let next = Counter.Next(?step = Some 1)
+"""
+
+    let after =
+        """
+module M
+
+let Some x = Some (x + 1)
+
+type Counter() =
+    static member Next([<Struct>] ?step: int) = defaultValueArg step 1
+
+let next = Counter.Next(?step = ValueOption.ofOption (Some 1))
+"""
+
+    Assert.Equal(after, refactored before "?step")
 
 [<Fact>]
 let ``Value option is not offered before F# 10`` () =
