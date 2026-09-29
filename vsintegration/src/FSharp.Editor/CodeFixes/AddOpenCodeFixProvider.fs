@@ -37,11 +37,13 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
 
     let fixUnderscoresInMenuText (text: string) = text.Replace("_", "__")
 
-    let qualifySymbolFix (context: CodeFixContext) (fullName, qualifier) =
+    // The qualifier stands in for the first identifier written, whichever one the diagnostic is on:
+    // choosing `N.M.T` for `M.T` rewrites `M`, not `T`.
+    let qualifySymbolFix (firstIdentSpan: TextSpan) (fullName, qualifier) =
         {
             Name = CodeFix.AddOpen
             Message = fixUnderscoresInMenuText fullName
-            Changes = [ TextChange(context.Span, qualifier) ]
+            Changes = [ TextChange(firstIdentSpan, qualifier) ]
         }
 
     let openNamespaceFix ctx name declaration multipleNames sourceText =
@@ -65,7 +67,7 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
             $"open {ns}"
 
     let getSuggestionsAsCodeFixes
-        (context: CodeFixContext)
+        (firstIdentSpan: TextSpan)
         (sourceText: SourceText)
         (candidates: (InsertionContextEntity * InsertionContext * int) list)
         =
@@ -96,7 +98,7 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
             |> Seq.distinct
             |> Seq.sort
             |> Seq.truncate maxQualifySuggestions
-            |> Seq.map (qualifySymbolFix context)
+            |> Seq.map (qualifySymbolFix firstIdentSpan)
 
         }
         |> Seq.concat
@@ -211,7 +213,9 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
                                 createEntity symbol
                                 |> Seq.map (fun (entity, ctx) -> entity, ctx, openableIdentCount))
                             |> Seq.toList
-                            |> getSuggestionsAsCodeFixes context sourceText))
+                            |> getSuggestionsAsCodeFixes
+                                (RoslynHelpers.FSharpRangeToTextSpan(sourceText, longIdent.Head.idRange))
+                                sourceText))
 
                     |> Option.defaultValue Seq.empty
             }

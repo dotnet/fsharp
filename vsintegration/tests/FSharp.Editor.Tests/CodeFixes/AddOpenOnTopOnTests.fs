@@ -595,6 +595,35 @@ let readFile () = File.ReadAllText "example.txt"
 
     Assert.Equal<string list>(expected, actual)
 
+[<Fact>] // `M` resolves to another module here, so it is `M`, not the unresolved name, that the qualifier replaces
+let ``Qualifying a partly qualified name replaces what is written before the unresolved part`` () =
+    let code =
+        """module Review
+module M = let marker = ()
+module N =
+    module M =
+        type FixTarget817() = class end
+let x = M.FixTarget817()
+"""
+
+    let expected =
+        [
+            """module Review
+module M = let marker = ()
+module N =
+    module M =
+        type FixTarget817() = class end
+let x = N.M.FixTarget817()
+"""
+        ]
+
+    let actual =
+        allFixes code Auto
+        |> List.filter (fun fix -> fix.Message = "N.M.FixTarget817")
+        |> List.map _.FixedCode
+
+    Assert.Equal<string list>(expected, actual)
+
 [<Fact>] // `WriteLine` is a static member of four different types, `System` ones offered first
 let ``Offers every type a static member can be resolved from`` () =
     let code =
