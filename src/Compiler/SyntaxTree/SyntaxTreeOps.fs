@@ -67,50 +67,47 @@ let mkSynSimplePatVar isOpt id =
 let mkSynCompGenSimplePatVar id =
     SynSimplePat.Id(id, None, true, false, false, id.idRange)
 
-let rec pushUnaryArg expr arg =
+/// The head of a chain of atomic applications, member and index lookups and type applications,
+/// and the function that rebuilds the chain around a replacement head.
+let rec private atomicChainHead expr : struct (SynExpr * (SynExpr -> SynExpr)) =
+    let inside inner wrap =
+        let struct (head, rebuild) = atomicChainHead inner
+        struct (head, rebuild >> wrap)
+
     match expr with
-    | SynExpr.App(ExprAtomicFlag.Atomic, infix, SynExpr.Ident ident, x1, m1) ->
-        SynExpr.App(
-            ExprAtomicFlag.Atomic,
-            infix,
-            SynExpr.LongIdent(false, SynLongIdent(arg :: [ ident ], [ ident.idRange ], [ None ]), None, ident.idRange),
-            x1,
-            m1
-        )
-    | SynExpr.App(ExprAtomicFlag.Atomic,
-                  infix,
-                  SynExpr.LongIdent(isOptional, SynLongIdent(id, dotRanges, trivia), altNameRefCell, range),
-                  x1,
-                  m1) ->
-        SynExpr.App(
-            ExprAtomicFlag.Atomic,
-            infix,
-            SynExpr.LongIdent(isOptional, SynLongIdent(arg :: id, dotRanges, trivia), altNameRefCell, range),
-            x1,
-            m1
-        )
-    | SynExpr.App(ExprAtomicFlag.Atomic, infix, (SynExpr.App _ as innerApp), x1, m1) ->
-        SynExpr.App(ExprAtomicFlag.Atomic, infix, (pushUnaryArg innerApp arg), x1, m1)
-    | SynExpr.App(ExprAtomicFlag.Atomic, infix, SynExpr.DotGet(synExpr, rangeOfDot, synLongIdent, range), x1, m1) ->
-        SynExpr.App(ExprAtomicFlag.Atomic, infix, SynExpr.DotGet((pushUnaryArg synExpr arg), rangeOfDot, synLongIdent, range), x1, m1)
-    | SynExpr.App(ExprAtomicFlag.Atomic, infix, innerExpr, x1, m1) ->
-        SynExpr.App(ExprAtomicFlag.Atomic, infix, pushUnaryArg innerExpr arg, x1, m1)
-    | SynExpr.Ident ident -> SynExpr.LongIdent(false, SynLongIdent(arg :: [ ident ], [ ident.idRange ], [ None ]), None, ident.idRange)
-    | SynExpr.LongIdent(isOptional, SynLongIdent(id, dotRanges, trivia), altNameRefCell, range) ->
-        SynExpr.LongIdent(isOptional, SynLongIdent(arg :: id, dotRanges, trivia), altNameRefCell, range)
-    | SynExpr.DotGet(synExpr, rangeOfDot, synLongIdent, range) -> SynExpr.DotGet(pushUnaryArg synExpr arg, rangeOfDot, synLongIdent, range)
+    | SynExpr.App(ExprAtomicFlag.Atomic, infix, funcExpr, argExpr, m) ->
+        inside funcExpr (fun funcExpr -> SynExpr.App(ExprAtomicFlag.Atomic, infix, funcExpr, argExpr, m))
+    | SynExpr.DotGet(synExpr, rangeOfDot, synLongIdent, range) ->
+        inside synExpr (fun synExpr -> SynExpr.DotGet(synExpr, rangeOfDot, synLongIdent, range))
     | SynExpr.DotIndexedGet(objectExpr, indexArgs, dotRange, range) ->
-        SynExpr.DotIndexedGet(pushUnaryArg objectExpr arg, indexArgs, dotRange, range)
+        inside objectExpr (fun objectExpr -> SynExpr.DotIndexedGet(objectExpr, indexArgs, dotRange, range))
     | SynExpr.TypeApp(innerExpr, mLess, tyargs, mCommas, mGreater, mTypars, m) ->
-        let innerExpr = pushUnaryArg innerExpr arg
-        SynExpr.TypeApp(innerExpr, mLess, tyargs, mCommas, mGreater, mTypars, m)
+        inside innerExpr (fun innerExpr -> SynExpr.TypeApp(innerExpr, mLess, tyargs, mCommas, mGreater, mTypars, m))
+    | _ -> struct (expr, id)
+
+let rec pushUnaryArg expr arg =
+    let struct (head, rebuild) = atomicChainHead expr
+
+    match head with
+    | SynExpr.Ident ident ->
+        rebuild (SynExpr.LongIdent(false, SynLongIdent(arg :: [ ident ], [ ident.idRange ], [ None ]), None, ident.idRange))
+    | SynExpr.LongIdent(isOptional, SynLongIdent(id, dotRanges, trivia), altNameRefCell, range) ->
+        rebuild (SynExpr.LongIdent(isOptional, SynLongIdent(arg :: id, dotRanges, trivia), altNameRefCell, range))
     | SynExpr.ArbitraryAfterError(_, m) when m.Start = m.End ->
-        SynExpr.DiscardAfterMissingQualificationAfterDot(SynExpr.Ident arg, m.StartRange, unionRanges arg.idRange m)
+        rebuild (SynExpr.DiscardAfterMissingQualificationAfterDot(SynExpr.Ident arg, m.StartRange, unionRanges arg.idRange m))
     | SynExpr.DiscardAfterMissingQualificationAfterDot(synExpr, dotRange, m) ->
-        SynExpr.DiscardAfterMissingQualificationAfterDot(pushUnaryArg synExpr arg, dotRange, unionRanges arg.idRange m)
+        rebuild (SynExpr.DiscardAfterMissingQualificationAfterDot(pushUnaryArg synExpr arg, dotRange, unionRanges arg.idRange m))
     | _ ->
-        errorR (Error(FSComp.SR.tcDotLambdaAtNotSupportedExpression (), expr.Range))
+        errorR (Error(FSComp.SR.tcDotLambdaAtNotSupportedExpression (), head.Range))
         expr
+
+let tryPopUnaryArg body =
+    let struct (head, rebuild) = atomicChainHead body
+
+    match head with
+    | SynExpr.LongIdent(isOptional, SynLongIdent(root :: (_ :: _ as rest), dotRanges, trivia), altNameRefCell, range) ->
+        ValueSome(struct (root, rebuild (SynExpr.LongIdent(isOptional, SynLongIdent(rest, dotRanges, trivia), altNameRefCell, range))))
+    | _ -> ValueNone
 
 /// CAUTION: This function operates over the untyped tree, so should be used only when absolutely necessary. It doesn't verify assembly origine nor does it respect type aliases.
 /// Also, keep in mind that it will only check last part of the assembly (with or without the `Attribute` suffix).
