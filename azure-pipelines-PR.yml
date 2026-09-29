@@ -159,6 +159,10 @@ stages:
             env:
               DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
             displayName: Validate test projects are registered in TestSplit.fsx
+          - script: ./eng/common/dotnet.sh fsi eng/tests/TestSplit.Tests.fsx
+            env:
+              DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
+            displayName: Check aggregate and batched test selection
 
         # Check whether package with current version has been published to nuget.org
         # We will try to restore both FSharp.Core and FCS and if restore is _successful_, package version needs to be bumped.
@@ -465,8 +469,14 @@ stages:
           - pwsh: .\eng\MockBuild.ps1
             displayName: Build with OfficialBuildId
 
-        # Linux
+        # Linux (split into 2 batches; batch 3 is desktop-only FSharpSuite)
         - job: Linux
+          strategy:
+            matrix:
+              Batch1:
+                batchNumber: 1
+              Batch2:
+                batchNumber: 2
           pool:
             name: $(DncEngPublicBuildPool)
             demands: ImageOverride -equals $(LinuxMachineQueueName)
@@ -475,46 +485,22 @@ stages:
           - name: _SignType
             value: Test
           steps:
-          - checkout: self
-            clean: true
-          - script: ./eng/cibuild.sh --configuration $(_BuildConfig) --testcoreclr --mt true
-            displayName: Build / Test
+          - template: /eng/templates/batched-test-steps.yml
+            parameters:
+              buildCommand: ./eng/cibuild.sh --configuration $(_BuildConfig) --testcoreclrbatch $(batchNumber) --mt true
+              testRunTitlePrefix: 'Linux'
+              artifactNamePrefix: 'Linux'
+              publishBinLog: true
+              binLogPath: '$(Build.SourcesDirectory)/artifacts/log/Release/Build.binlog'
+          # Run the SDK integration once, not once per test batch.
           - script: ./eng/common/dotnet.sh fsi tests/EndToEndBuildTests/MultithreadedTasks/run.fsx -- --configuration $(_BuildConfig) --repetitions 3
             displayName: Real SDK MP / MT integration
+            condition: and(succeeded(), eq(variables['batchNumber'], '1'))
           - task: PublishPipelineArtifact@1
-            condition: always()
+            condition: and(always(), eq(variables['batchNumber'], '1'))
             inputs:
               targetPath: '$(Build.SourcesDirectory)/artifacts/MultithreadedTasks'
               artifact: Linux SDK MT evidence
-          - task: PublishTestResults@2
-            displayName: Publish Test Results
-            inputs:
-              testResultsFormat: 'XUnit'
-              testRunTitle: Linux
-              testResultsFiles: '*.xml'
-              mergeTestResults: true
-              searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
-            continueOnError: true
-            condition: succeededOrFailed()
-          - task: PublishBuildArtifacts@1
-            displayName: Publish Test Logs
-            inputs:
-              PathtoPublish: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
-              ArtifactName: 'Linux $(_BuildConfig) test logs'
-              publishLocation: Container
-            continueOnError: true
-            condition: failed()
-          - script: dotnet build $(Build.SourcesDirectory)/eng/DumpPackageRoot/DumpPackageRoot.csproj
-            displayName: Dump NuGet cache contents
-            condition: failed()
-          - task: PublishBuildArtifacts@1
-            displayName: Publish NuGet cache contents
-            inputs:
-              PathtoPublish: '$(Build.SourcesDirectory)/artifacts/NugetPackageRootContents'
-              ArtifactName: 'NuGetPackageContents Linux'
-              publishLocation: Container
-            continueOnError: true
-            condition: failed()
 
         # MacOS (split into 2 batches; batch 3 is desktop-only FSharpSuite)
         - job: MacOS
@@ -742,6 +728,38 @@ stages:
           - pwsh: .\tests\ILVerify\ilverify.ps1
             displayName: Run ILVerify
             workingDirectory: $(Build.SourcesDirectory)
+
+          - pwsh: |
+              $ErrorActionPreference = 'Stop'
+              Write-Host "##vso[task.setvariable variable=ILVerifyActualBaselinesFound]false"
+              $source = "$(Build.SourcesDirectory)\tests\ILVerify"
+              if (-not (Test-Path -LiteralPath $source -PathType Container)) {
+                Write-Host "No ILVerify actual baselines: source directory is absent."
+                return
+              }
+              $actuals = @(Get-ChildItem -LiteralPath $source -Filter '*.bsl.actual' -File)
+              if ($actuals.Count -eq 0) {
+                Write-Host "No ILVerify actual baselines found."
+                return
+              }
+              $destination = "$(Build.ArtifactStagingDirectory)\ILVerifyActualBaselines-$(System.JobAttempt)"
+              New-Item -ItemType Directory -Path $destination | Out-Null
+              foreach ($actual in $actuals) {
+                Copy-Item -LiteralPath $actual.FullName -Destination $destination
+              }
+              Write-Host "Staged $($actuals.Count) ILVerify actual baseline(s)."
+              Write-Host "##vso[task.setvariable variable=ILVerifyActualBaselinesFound]true"
+            displayName: Stage ILVerify actual baselines
+            condition: failed()
+            continueOnError: true
+
+          - task: PublishPipelineArtifact@1
+            displayName: Publish ILVerify actual baselines
+            inputs:
+              targetPath: '$(Build.ArtifactStagingDirectory)\ILVerifyActualBaselines-$(System.JobAttempt)'
+              artifactName: 'ILVerify actual baselines Attempt $(System.JobAttempt)'
+            condition: and(failed(), eq(variables['ILVerifyActualBaselinesFound'], 'true'))
+            continueOnError: true
 
   #-------------------------------------------------------------------------------------------------------------------#
   #                              F# Compiler Regression Tests                                                         #

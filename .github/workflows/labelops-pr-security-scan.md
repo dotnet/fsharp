@@ -18,6 +18,7 @@ on:
     pull-requests: read
   steps:
     - id: select
+      if: github.event_name != 'schedule' || github.repository == 'dotnet/fsharp'
       uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
       with:
         script: |-
@@ -33,7 +34,7 @@ jobs:
     outputs:
       prs: ${{ steps.select.outputs.prs }}
 
-if: needs.pre_activation.outputs.prs != '[]'
+if: (github.event_name != 'schedule' || github.repository == 'dotnet/fsharp') && needs.pre_activation.outputs.prs != '[]'
 
 timeout-minutes: 15
 

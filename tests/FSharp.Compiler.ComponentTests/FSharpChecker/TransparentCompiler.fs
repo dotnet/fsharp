@@ -762,7 +762,7 @@ let Fuzzing signatureFiles : Task =
         let fileCount = 30
         let maxDepsPerFile = 3
 
-        let fileName i = sprintf $"F%03d{i}"
+        let fileName i = $"F%03d{i}"
 
         //let extraCode = __SOURCE_DIRECTORY__ ++ ".." ++ ".." ++ ".." ++ "src" ++ "Compiler" ++ "Utilities" ++ "EditDistance.fs" |> File.ReadAllLines |> Seq.skip 5 |> String.concat "\n"
         let extraCode = ""

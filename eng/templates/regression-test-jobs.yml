@@ -219,6 +219,9 @@ jobs:
         }
       displayName:  Build ${{ item.displayName }} with local F# compiler
       timeoutInMinutes:  120
+      ${{ if eq(item.repo, 'fsprojects/FSharpPlus') }}:
+        env:
+          LangVersion: '11'
 
     - pwsh:  |
         Set-Location $(Pipeline.Workspace)/TestRepo
