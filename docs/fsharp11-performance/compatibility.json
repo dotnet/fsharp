@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "fsharp_source": {
+    "commit": "2cb9ee0a5d63b52ad7bfbd9364b90b991a26fd72",
+    "applies_to_both_compilers": true,
+    "reason": "RC1 rejects the legacy ML or syntax. Existing CompiledName attributes and the boolean operation are preserved.",
+    "replacements": [
+      {
+        "file": "src/FSharp.Core/prim-types.fs",
+        "old": "let (or) e1 e2 =",
+        "new": "let ``or`` e1 e2 =",
+        "occurrences": 1
+      },
+      {
+        "file": "src/FSharp.Core/prim-types.fs",
+        "old": "notnullPrim(source) or TypeInfo",
+        "new": "notnullPrim(source) || TypeInfo",
+        "occurrences": 1
+      },
+      {
+        "file": "src/FSharp.Core/prim-types.fsi",
+        "old": "val (or): e1: bool -> e2: bool -> bool",
+        "new": "val ``or``: e1: bool -> e2: bool -> bool",
+        "occurrences": 1
+      }
+    ]
+  },
+  "oxpecker": {
+    "initial_unmeasured_commit": "e000776692a4a4b7e37730a473ce731e36e3102c",
+    "measured_commit": "5c368ffc40bd68e819a2a97c23337235a394b6af",
+    "reason": "The initial revision fails SDK 10.0.100 compilation in Multipart.fs optional value-option forwarding. The parent revision preceding addition of this API builds with both compilers.",
+    "source_revision_selected_before_measuring_either_arm": true,
+    "source_edits": []
+  },
+  "fsautocomplete": {
+    "commit": "85886b187b87834e0fe0a410cb13332d7f9757ca",
+    "files": ["paket.dependencies", "paket.lock"],
+    "old_feed": "https://api.nuget.org/v3/index.json",
+    "new_feed": "https://www.nuget.org/api/v2",
+    "reason": "The official v3 endpoint failed TLS on this host; the official v2 endpoint worked.",
+    "locked_package_versions_changed": false,
+    "paket_version": "10.3.1"
+  }
+}

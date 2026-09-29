@@ -1,0 +1,404 @@
+{
+  "types": [
+    {
+      "name": "FSharp11Kernels\u002Bescaped@5",
+      "fsharp_function": true,
+      "base_type": "Microsoft.FSharp.Core.FSharpFunc\u00602[[System.Int32, System.Private.CoreLib, Version=11.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.Int32, System.Private.CoreLib, Version=11.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+      "captured_fields": []
+    },
+    {
+      "name": "FSharp11Kernels\u002Bitems@11",
+      "fsharp_function": true,
+      "base_type": "Microsoft.FSharp.Core.OptimizedClosures\u002BFSharpFunc\u00603[[System.Int32, System.Private.CoreLib, Version=11.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.Int32, System.Private.CoreLib, Version=11.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.ValueTuple\u00602[[System.Int32, System.Private.CoreLib, Version=11.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.Int32, System.Private.CoreLib, Version=11.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]], System.Private.CoreLib, Version=11.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+      "captured_fields": []
+    },
+    {
+      "name": "FSharp11Kernels\u002Boperation@20",
+      "fsharp_function": true,
+      "base_type": "Microsoft.FSharp.Core.FSharpFunc\u00602[[System.Int32, System.Private.CoreLib, Version=11.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.Int32, System.Private.CoreLib, Version=11.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+      "captured_fields": [
+        {
+          "Name": "items",
+          "type": "Microsoft.FSharp.Collections.FSharpList\u00601[[System.ValueTuple\u00602[[System.Int32, System.Private.CoreLib, Version=11.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.Int32, System.Private.CoreLib, Version=11.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]], System.Private.CoreLib, Version=11.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]"
+        }
+      ]
+    },
+    {
+      "name": "FSharp11Kernels\u002Boperation@23-1",
+      "fsharp_function": true,
+      "base_type": "Microsoft.FSharp.Core.OptimizedClosures\u002BFSharpFunc\u00603[[System.Int32, System.Private.CoreLib, Version=11.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.ValueTuple\u00602[[System.Int32, System.Private.CoreLib, Version=11.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.Int32, System.Private.CoreLib, Version=11.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]], System.Private.CoreLib, Version=11.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.Int32, System.Private.CoreLib, Version=11.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+      "captured_fields": [
+        {
+          "Name": "discount",
+          "type": "System.Int32"
+        }
+      ]
+    },
+    {
+      "name": "FSharp11Kernels\u002Boperation@25-2",
+      "fsharp_function": true,
+      "base_type": "Microsoft.FSharp.Core.FSharpFunc\u00602[[System.Int32, System.Private.CoreLib, Version=11.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.Int32, System.Private.CoreLib, Version=11.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+      "captured_fields": [
+        {
+          "Name": "numbers",
+          "type": "Microsoft.FSharp.Collections.FSharpList\u00601[[System.Int32, System.Private.CoreLib, Version=11.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]"
+        }
+      ]
+    },
+    {
+      "name": "FSharp11Kernels\u002Bany@28",
+      "fsharp_function": true,
+      "base_type": "Microsoft.FSharp.Core.FSharpFunc\u00602[[System.Int32, System.Private.CoreLib, Version=11.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.Boolean, System.Private.CoreLib, Version=11.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+      "captured_fields": [
+        {
+          "Name": "threshold",
+          "type": "System.Int32"
+        }
+      ]
+    },
+    {
+      "name": "FSharp11Kernels\u002Ball@29",
+      "fsharp_function": true,
+      "base_type": "Microsoft.FSharp.Core.FSharpFunc\u00602[[System.Int32, System.Private.CoreLib, Version=11.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.Boolean, System.Private.CoreLib, Version=11.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+      "captured_fields": [
+        {
+          "Name": "limit",
+          "type": "System.Int32"
+        }
+      ]
+    },
+    {
+      "name": "FSharp11Kernels\u002Boperation@32-3",
+      "fsharp_function": true,
+      "base_type": "Microsoft.FSharp.Core.FSharpFunc\u00602[[System.Int32, System.Private.CoreLib, Version=11.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.Int32, System.Private.CoreLib, Version=11.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+      "captured_fields": [
+        {
+          "Name": "values",
+          "type": "System.Int32[]"
+        },
+        {
+          "Name": "weights",
+          "type": "System.Int32[]"
+        }
+      ]
+    },
+    {
+      "name": "FSharp11Kernels\u002Boperation@34-4",
+      "fsharp_function": true,
+      "base_type": "Microsoft.FSharp.Core.OptimizedClosures\u002BFSharpFunc\u00603[[System.Int32, System.Private.CoreLib, Version=11.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.Int32, System.Private.CoreLib, Version=11.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.Int32, System.Private.CoreLib, Version=11.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+      "captured_fields": [
+        {
+          "Name": "scale",
+          "type": "System.Int32"
+        }
+      ]
+    },
+    {
+      "name": "FSharp11Kernels\u002Boperation@35-5",
+      "fsharp_function": true,
+      "base_type": "Microsoft.FSharp.Core.OptimizedClosures\u002BFSharpFunc\u00604[[System.Int32, System.Private.CoreLib, Version=11.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.Int32, System.Private.CoreLib, Version=11.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.Int32, System.Private.CoreLib, Version=11.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.Int32, System.Private.CoreLib, Version=11.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+      "captured_fields": [
+        {
+          "Name": "scale",
+          "type": "System.Int32"
+        }
+      ]
+    },
+    {
+      "name": "FSharp11Kernels\u002Boperation@38-6",
+      "fsharp_function": true,
+      "base_type": "Microsoft.FSharp.Core.FSharpFunc\u00602[[System.Int32, System.Private.CoreLib, Version=11.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.Int32, System.Private.CoreLib, Version=11.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+      "captured_fields": [
+        {
+          "Name": "configuration",
+          "type": "Microsoft.FSharp.Core.FSharpOption\u00601[[System.Int32, System.Private.CoreLib, Version=11.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]"
+        }
+      ]
+    },
+    {
+      "name": "FSharp11Kernels\u002Boperation@38-7",
+      "fsharp_function": true,
+      "base_type": "Microsoft.FSharp.Core.FSharpFunc\u00602[[System.Int32, System.Private.CoreLib, Version=11.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.Int32, System.Private.CoreLib, Version=11.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+      "captured_fields": [
+        {
+          "Name": "offset",
+          "type": "System.Int32"
+        }
+      ]
+    },
+    {
+      "name": "FSharp11Kernels\u002Boperation@40-8",
+      "fsharp_function": true,
+      "base_type": "Microsoft.FSharp.Core.FSharpFunc\u00602[[System.Int32, System.Private.CoreLib, Version=11.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.Int32, System.Private.CoreLib, Version=11.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+      "captured_fields": [
+        {
+          "Name": "groups",
+          "type": "Microsoft.FSharp.Collections.FSharpList\u00601[[Microsoft.FSharp.Collections.FSharpList\u00601[[System.Int32, System.Private.CoreLib, Version=11.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]], FSharp.Core, Version=11.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a]]"
+        }
+      ]
+    },
+    {
+      "name": "FSharp11Kernels\u002Boperation@44-9",
+      "fsharp_function": true,
+      "base_type": "Microsoft.FSharp.Core.OptimizedClosures\u002BFSharpFunc\u00603[[System.Int32, System.Private.CoreLib, Version=11.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[Microsoft.FSharp.Collections.FSharpList\u00601[[System.Int32, System.Private.CoreLib, Version=11.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]], FSharp.Core, Version=11.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a],[System.Int32, System.Private.CoreLib, Version=11.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+      "captured_fields": [
+        {
+          "Name": "scale",
+          "type": "System.Int32"
+        }
+      ]
+    },
+    {
+      "name": "FSharp11Kernels\u002Boperation@44-10",
+      "fsharp_function": true,
+      "base_type": "Microsoft.FSharp.Core.OptimizedClosures\u002BFSharpFunc\u00603[[System.Int32, System.Private.CoreLib, Version=11.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.Int32, System.Private.CoreLib, Version=11.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.Int32, System.Private.CoreLib, Version=11.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+      "captured_fields": [
+        {
+          "Name": "scale",
+          "type": "System.Int32"
+        }
+      ]
+    },
+    {
+      "name": "FSharp11Kernels\u002Boperation@47-11",
+      "fsharp_function": true,
+      "base_type": "Microsoft.FSharp.Core.FSharpFunc\u00602[[System.Int32, System.Private.CoreLib, Version=11.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.Int32, System.Private.CoreLib, Version=11.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+      "captured_fields": [
+        {
+          "Name": "numbers",
+          "type": "Microsoft.FSharp.Collections.FSharpList\u00601[[System.Int32, System.Private.CoreLib, Version=11.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]"
+        }
+      ]
+    },
+    {
+      "name": "FSharp11Kernels\u002Boperation@50-13",
+      "fsharp_function": true,
+      "base_type": "Microsoft.FSharp.Core.FSharpFunc\u00602[[System.Int32, System.Private.CoreLib, Version=11.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.Boolean, System.Private.CoreLib, Version=11.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+      "captured_fields": [
+        {
+          "Name": "threshold",
+          "type": "System.Int32"
+        }
+      ]
+    },
+    {
+      "name": "FSharp11Kernels\u002Boperation@50-12",
+      "fsharp_function": true,
+      "base_type": "Microsoft.FSharp.Core.FSharpFunc\u00602[[System.Int32, System.Private.CoreLib, Version=11.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.Int32, System.Private.CoreLib, Version=11.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+      "captured_fields": [
+        {
+          "Name": "offset",
+          "type": "System.Int32"
+        }
+      ]
+    },
+    {
+      "name": "FSharp11Kernels\u002Boperation@52-14",
+      "fsharp_function": true,
+      "base_type": "Microsoft.FSharp.Core.FSharpFunc\u00602[[System.Int32, System.Private.CoreLib, Version=11.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.Int32, System.Private.CoreLib, Version=11.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+      "captured_fields": [
+        {
+          "Name": "length",
+          "type": "System.Int32"
+        }
+      ]
+    },
+    {
+      "name": "FSharp11Kernels\u002Boperation@54-15",
+      "fsharp_function": true,
+      "base_type": "Microsoft.FSharp.Core.FSharpFunc\u00602[[System.Int32, System.Private.CoreLib, Version=11.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.Int32, System.Private.CoreLib, Version=11.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+      "captured_fields": [
+        {
+          "Name": "offset",
+          "type": "System.Int32"
+        }
+      ]
+    },
+    {
+      "name": "FSharp11Kernels\u002Boperation@57-16",
+      "fsharp_function": true,
+      "base_type": "Microsoft.FSharp.Core.FSharpFunc\u00602[[System.Int32, System.Private.CoreLib, Version=11.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.Int32, System.Private.CoreLib, Version=11.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+      "captured_fields": [
+        {
+          "Name": "numbers",
+          "type": "Microsoft.FSharp.Collections.FSharpList\u00601[[System.Int32, System.Private.CoreLib, Version=11.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]"
+        }
+      ]
+    },
+    {
+      "name": "FSharp11Kernels\u002Boperation@57-17",
+      "fsharp_function": true,
+      "base_type": "Microsoft.FSharp.Core.OptimizedClosures\u002BFSharpFunc\u00603[[System.Int32, System.Private.CoreLib, Version=11.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.Int32, System.Private.CoreLib, Version=11.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.Int32, System.Private.CoreLib, Version=11.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+      "captured_fields": []
+    },
+    {
+      "name": "FSharp11Kernels\u002BCreate@60",
+      "fsharp_function": false,
+      "base_type": "System.Object",
+      "captured_fields": [
+        {
+          "Name": "operation",
+          "type": "Microsoft.FSharp.Core.FSharpFunc\u00602[[System.Int32, System.Private.CoreLib, Version=11.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.Int32, System.Private.CoreLib, Version=11.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]"
+        }
+      ]
+    }
+  ],
+  "newobj_sites": [
+    {
+      "method": "FSharp11Kernels.Create",
+      "il_offset": 66,
+      "allocated_type": "System.ArgumentException",
+      "fsharp_function": false
+    },
+    {
+      "method": "FSharp11Kernels.Create",
+      "il_offset": 198,
+      "allocated_type": "System.ArgumentException",
+      "fsharp_function": false
+    },
+    {
+      "method": "FSharp11Kernels.Create",
+      "il_offset": 277,
+      "allocated_type": "System.ArgumentNullException",
+      "fsharp_function": false
+    },
+    {
+      "method": "FSharp11Kernels.Create",
+      "il_offset": 462,
+      "allocated_type": "FSharp11Kernels\u002Boperation@20",
+      "fsharp_function": true
+    },
+    {
+      "method": "FSharp11Kernels.Create",
+      "il_offset": 472,
+      "allocated_type": "FSharp11Kernels\u002Boperation@25-2",
+      "fsharp_function": true
+    },
+    {
+      "method": "FSharp11Kernels.Create",
+      "il_offset": 482,
+      "allocated_type": "FSharp11Kernels\u002Boperation@32-3",
+      "fsharp_function": true
+    },
+    {
+      "method": "FSharp11Kernels.Create",
+      "il_offset": 492,
+      "allocated_type": "FSharp11Kernels\u002Boperation@38-6",
+      "fsharp_function": true
+    },
+    {
+      "method": "FSharp11Kernels.Create",
+      "il_offset": 502,
+      "allocated_type": "FSharp11Kernels\u002Boperation@40-8",
+      "fsharp_function": true
+    },
+    {
+      "method": "FSharp11Kernels.Create",
+      "il_offset": 512,
+      "allocated_type": "FSharp11Kernels\u002Boperation@47-11",
+      "fsharp_function": true
+    },
+    {
+      "method": "FSharp11Kernels.Create",
+      "il_offset": 521,
+      "allocated_type": "FSharp11Kernels\u002Boperation@52-14",
+      "fsharp_function": true
+    },
+    {
+      "method": "FSharp11Kernels.Create",
+      "il_offset": 531,
+      "allocated_type": "FSharp11Kernels\u002Boperation@57-16",
+      "fsharp_function": true
+    },
+    {
+      "method": "FSharp11Kernels.Create",
+      "il_offset": 545,
+      "allocated_type": "System.ArgumentException",
+      "fsharp_function": false
+    },
+    {
+      "method": "FSharp11Kernels.Create",
+      "il_offset": 555,
+      "allocated_type": "FSharp11Kernels\u002BCreate@60",
+      "fsharp_function": false
+    },
+    {
+      "method": "FSharp11Kernels.Create",
+      "il_offset": 566,
+      "allocated_type": "System.Func\u00602[[System.Int32, System.Private.CoreLib, Version=11.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.Int32, System.Private.CoreLib, Version=11.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+      "fsharp_function": false
+    },
+    {
+      "method": "FSharp11Kernels\u002Bitems@11.Invoke",
+      "il_offset": 6,
+      "allocated_type": "System.ValueTuple\u00602[[System.Int32, System.Private.CoreLib, Version=11.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.Int32, System.Private.CoreLib, Version=11.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+      "fsharp_function": false
+    },
+    {
+      "method": "FSharp11Kernels\u002Boperation@20.Invoke",
+      "il_offset": 6,
+      "allocated_type": "FSharp11Kernels\u002Boperation@23-1",
+      "fsharp_function": true
+    },
+    {
+      "method": "FSharp11Kernels\u002Boperation@25-2.Invoke",
+      "il_offset": 11,
+      "allocated_type": "FSharp11Kernels\u002Bany@28",
+      "fsharp_function": true
+    },
+    {
+      "method": "FSharp11Kernels\u002Boperation@25-2.Invoke",
+      "il_offset": 29,
+      "allocated_type": "FSharp11Kernels\u002Ball@29",
+      "fsharp_function": true
+    },
+    {
+      "method": "FSharp11Kernels\u002Boperation@32-3.Invoke",
+      "il_offset": 9,
+      "allocated_type": "FSharp11Kernels\u002Boperation@34-4",
+      "fsharp_function": true
+    },
+    {
+      "method": "FSharp11Kernels\u002Boperation@32-3.Invoke",
+      "il_offset": 27,
+      "allocated_type": "FSharp11Kernels\u002Boperation@35-5",
+      "fsharp_function": true
+    },
+    {
+      "method": "FSharp11Kernels\u002Boperation@38-6.Invoke",
+      "il_offset": 6,
+      "allocated_type": "FSharp11Kernels\u002Boperation@38-7",
+      "fsharp_function": true
+    },
+    {
+      "method": "FSharp11Kernels\u002Boperation@40-8.Invoke",
+      "il_offset": 8,
+      "allocated_type": "FSharp11Kernels\u002Boperation@44-9",
+      "fsharp_function": true
+    },
+    {
+      "method": "FSharp11Kernels\u002Boperation@44-9.Invoke",
+      "il_offset": 7,
+      "allocated_type": "FSharp11Kernels\u002Boperation@44-10",
+      "fsharp_function": true
+    },
+    {
+      "method": "FSharp11Kernels\u002Boperation@47-11.Invoke",
+      "il_offset": 11,
+      "allocated_type": "FSharp11Kernels\u002Boperation@50-12",
+      "fsharp_function": true
+    },
+    {
+      "method": "FSharp11Kernels\u002Boperation@47-11.Invoke",
+      "il_offset": 17,
+      "allocated_type": "FSharp11Kernels\u002Boperation@50-13",
+      "fsharp_function": true
+    },
+    {
+      "method": "FSharp11Kernels\u002Boperation@52-14.Invoke",
+      "il_offset": 6,
+      "allocated_type": "FSharp11Kernels\u002Boperation@54-15",
+      "fsharp_function": true
+    }
+  ]
+}

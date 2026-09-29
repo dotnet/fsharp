@@ -1,0 +1,401 @@
+{
+  "artifact_root": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance",
+  "payload": {
+    "vmr": "be46bdda4d6599b80dd4ccd89b2de49d96cbf36d",
+    "production_tree": "7904104d6778df42799007d3e4d6e19093144325",
+    "verified_production_files": 717,
+    "source_normalization": "Git text normalization (Windows archive/checkout line endings)",
+    "archive_sha256": "6DC878BB62403C61365FD9E78653FECE974B77F3FF369FF7667E08F0D39D766F",
+    "build_overlay_sha256": "816087F9415B2281C23E1EFAB1F7C9FCF414705595E558F2BE241FEAEF7306CB",
+    "runtimeconfig": {
+      "runtimeOptions": {
+        "tfm": "net11.0",
+        "framework": {
+          "name": "Microsoft.NETCore.App",
+          "version": "11.0.0-rc.1.26425.128"
+        },
+        "configProperties": {
+          "System.GC.Server": true,
+          "System.Reflection.Metadata.MetadataUpdater.IsSupported": false,
+          "System.Runtime.Serialization.EnableUnsafeBinaryFormatterSerialization": false
+        }
+      }
+    },
+    "images": [
+      {
+        "file": "fsc.dll",
+        "il": {
+          "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\rc2-release-il\\fsc.dll",
+          "bytes": 44544,
+          "sha256": "A653CF5CB96B567D3A18594156BAEBBC37E038F195BB3B0D55D8733B9F23247C",
+          "mvid": "d14f62c8-77ef-b2f0-8ddd-9a43fde35e81",
+          "framework": ".NETCoreApp,Version=v11.0",
+          "disable_optimizations": false,
+          "machine": "I386",
+          "ready_to_run": null
+        },
+        "native": {
+          "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\rc2-r2r\\fsc.dll",
+          "bytes": 94208,
+          "sha256": "EEDB5C31CA4CF04AB60E91E17855468CC437203B0927F67C403877BCF356545A",
+          "mvid": "d14f62c8-77ef-b2f0-8ddd-9a43fde35e81",
+          "framework": ".NETCoreApp,Version=v11.0",
+          "disable_optimizations": false,
+          "machine": "Amd64",
+          "ready_to_run": {
+            "minor": 1,
+            "major": 26,
+            "header_bytes": 196
+          }
+        }
+      },
+      {
+        "file": "FSharp.Compiler.Service.dll",
+        "il": {
+          "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\rc2-release-il\\FSharp.Compiler.Service.dll",
+          "bytes": 21054464,
+          "sha256": "52C87E1F7535B35D7F77B2494CFD5915F90A283036C44E441A6B6D3E3ABE6348",
+          "mvid": "b2cf77ed-3d9d-f07f-dd30-d72851e3ef5a",
+          "framework": ".NETCoreApp,Version=v11.0",
+          "disable_optimizations": false,
+          "machine": "I386",
+          "ready_to_run": null
+        },
+        "native": {
+          "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\rc2-r2r\\FSharp.Compiler.Service.dll",
+          "bytes": 43454464,
+          "sha256": "DE0F3E346C733A513EFB6820139226F4FAAFC75F2A2843CC7EAB88600EA49901",
+          "mvid": "b2cf77ed-3d9d-f07f-dd30-d72851e3ef5a",
+          "framework": ".NETCoreApp,Version=v11.0",
+          "disable_optimizations": false,
+          "machine": "Amd64",
+          "ready_to_run": {
+            "minor": 1,
+            "major": 26,
+            "header_bytes": 196
+          }
+        }
+      },
+      {
+        "file": "FSharp.Core.dll",
+        "il": {
+          "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-rc2-source\\artifacts\\bin\\FSharp.Core\\Release\\net10.0\\FSharp.Core.dll",
+          "bytes": 2477056,
+          "sha256": "A89D6E4939C8D80882DA31EA4FE63FDC135B0EB3D05694E9997845D7AF4163B2",
+          "mvid": "cd0637e4-ffbb-1bb4-ea82-6d8ec835ff58",
+          "framework": ".NETCoreApp,Version=v10.0",
+          "disable_optimizations": false,
+          "machine": "I386",
+          "ready_to_run": null
+        },
+        "native": {
+          "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\rc2-r2r\\FSharp.Core.dll",
+          "bytes": 5140480,
+          "sha256": "648FF8D455ADDE0CF41294957EE6966174673039D1910B07B67C5161C901BD59",
+          "mvid": "cd0637e4-ffbb-1bb4-ea82-6d8ec835ff58",
+          "framework": ".NETCoreApp,Version=v10.0",
+          "disable_optimizations": false,
+          "machine": "Amd64",
+          "ready_to_run": {
+            "minor": 1,
+            "major": 26,
+            "header_bytes": 196
+          }
+        }
+      }
+    ]
+  },
+  "program_launches": [
+    {
+      "arm": "sdk10",
+      "launch": 0,
+      "started_utc": "2026-09-25T13:30:07.5916396+00:00",
+      "process_id": 5392,
+      "runtime": ".NET 10.0.0",
+      "workload_sha256": "51b30185e62698ff2baee070ee9547b4d976dad9d98cc33476ea896511d63e75",
+      "core_sha256": "6a5123e5bfae4359f2d8d91e896be97a0be6682523cfb6e929007b79f99f2562",
+      "core_version": "10.0.100-rc2.25523.111+b0f34d51fccc69fd334253924abd8d6853fad7aa",
+      "driver_sha256": "77e73ede2febb1a259d08d7de200608e90b5ec15f1aa2edd81affde32ca385b8",
+      "benchmarkdotnet": "0.14.0.0",
+      "raw_report_sha256": "9643c3ce8d2580370638478b613f7a60a266dc78c739bdbe45792d57f8c1a6cd",
+      "il_inventory_sha256": "81f0769821f2b9f11c572341a72f7ca0ac8fd73f9eb922f162630b273de2860f"
+    },
+    {
+      "arm": "sdk11rc1",
+      "launch": 0,
+      "started_utc": "2026-09-25T13:36:57.1156708+00:00",
+      "process_id": 30952,
+      "runtime": ".NET 11.0.0-rc.1.26425.128",
+      "workload_sha256": "08fb1d1953dfbb6f4d1f05ebd2f6a902288c42163bf94fe8edadf36aba6279f0",
+      "core_sha256": "02d58a5ed481b162f7d1b36099c9d68b0ebe00904f8ae68d1217e03c28d5af5d",
+      "core_version": "11.0.101-rc1.26425.128+3551975be08744f0418857c5bed8ab1545c5dd47",
+      "driver_sha256": "77e73ede2febb1a259d08d7de200608e90b5ec15f1aa2edd81affde32ca385b8",
+      "benchmarkdotnet": "0.14.0.0",
+      "raw_report_sha256": "8d3875804c2dcbd0cbfe6039b2f0cffc95fa425826ea2bf3f965101ba94d4ecd",
+      "il_inventory_sha256": "adc4df6774082f41c19873757c007b8548e89d7bb394ef4d160d6cd799da44bb"
+    },
+    {
+      "arm": "vmr-rc2-r2r",
+      "launch": 0,
+      "started_utc": "2026-09-25T13:43:52.2288728+00:00",
+      "process_id": 33432,
+      "runtime": ".NET 11.0.0-rc.1.26425.128",
+      "workload_sha256": "3bb3076ee49fc55faf911dc2bf15e9f3a8e8979c3e2a3472267df2f0002e2e30",
+      "core_sha256": "648ff8d455adde0cf41294957ee6966174673039d1910b07b67c5161c901bd59",
+      "core_version": "11.0.101+9cd6167a7265ce7264b22719503b7dfa9eb8f83c",
+      "driver_sha256": "77e73ede2febb1a259d08d7de200608e90b5ec15f1aa2edd81affde32ca385b8",
+      "benchmarkdotnet": "0.14.0.0",
+      "raw_report_sha256": "9baaff1634d792c69b21bdb7928733d0e2a0298b745e2a4a44f918ab61e0f559",
+      "il_inventory_sha256": "7acf1d573f06bb6bf359f61e277919ebf19b907d5a70b280e4b0a3f7d8ca0188"
+    },
+    {
+      "arm": "sdk10",
+      "launch": 1,
+      "started_utc": "2026-09-25T13:58:21.1177037+00:00",
+      "process_id": 30548,
+      "runtime": ".NET 10.0.0",
+      "workload_sha256": "51b30185e62698ff2baee070ee9547b4d976dad9d98cc33476ea896511d63e75",
+      "core_sha256": "6a5123e5bfae4359f2d8d91e896be97a0be6682523cfb6e929007b79f99f2562",
+      "core_version": "10.0.100-rc2.25523.111+b0f34d51fccc69fd334253924abd8d6853fad7aa",
+      "driver_sha256": "77e73ede2febb1a259d08d7de200608e90b5ec15f1aa2edd81affde32ca385b8",
+      "benchmarkdotnet": "0.14.0.0",
+      "raw_report_sha256": "676cf7e44b441db7952fbf296bc4e9632e1499d4744b8f89cd89a1927a455494",
+      "il_inventory_sha256": "81f0769821f2b9f11c572341a72f7ca0ac8fd73f9eb922f162630b273de2860f"
+    },
+    {
+      "arm": "sdk11rc1",
+      "launch": 1,
+      "started_utc": "2026-09-25T14:05:12.2773724+00:00",
+      "process_id": 25172,
+      "runtime": ".NET 11.0.0-rc.1.26425.128",
+      "workload_sha256": "08fb1d1953dfbb6f4d1f05ebd2f6a902288c42163bf94fe8edadf36aba6279f0",
+      "core_sha256": "02d58a5ed481b162f7d1b36099c9d68b0ebe00904f8ae68d1217e03c28d5af5d",
+      "core_version": "11.0.101-rc1.26425.128+3551975be08744f0418857c5bed8ab1545c5dd47",
+      "driver_sha256": "77e73ede2febb1a259d08d7de200608e90b5ec15f1aa2edd81affde32ca385b8",
+      "benchmarkdotnet": "0.14.0.0",
+      "raw_report_sha256": "e6c700d3ded5f67a908a856aef4798eeca2def28b9d6a96f1e1bf6910de57abb",
+      "il_inventory_sha256": "adc4df6774082f41c19873757c007b8548e89d7bb394ef4d160d6cd799da44bb"
+    },
+    {
+      "arm": "vmr-rc2-r2r",
+      "launch": 1,
+      "started_utc": "2026-09-25T13:51:12.8580216+00:00",
+      "process_id": 12360,
+      "runtime": ".NET 11.0.0-rc.1.26425.128",
+      "workload_sha256": "3bb3076ee49fc55faf911dc2bf15e9f3a8e8979c3e2a3472267df2f0002e2e30",
+      "core_sha256": "648ff8d455adde0cf41294957ee6966174673039d1910b07b67c5161c901bd59",
+      "core_version": "11.0.101+9cd6167a7265ce7264b22719503b7dfa9eb8f83c",
+      "driver_sha256": "77e73ede2febb1a259d08d7de200608e90b5ec15f1aa2edd81affde32ca385b8",
+      "benchmarkdotnet": "0.14.0.0",
+      "raw_report_sha256": "84d36015ea452c6a1d77885b36c862b8e7a664a384d5c5db2ecb446ca24d00de",
+      "il_inventory_sha256": "7acf1d573f06bb6bf359f61e277919ebf19b907d5a70b280e4b0a3f7d8ca0188"
+    },
+    {
+      "arm": "sdk10",
+      "launch": 2,
+      "started_utc": "2026-09-25T14:26:09.8476076+00:00",
+      "process_id": 42948,
+      "runtime": ".NET 10.0.0",
+      "workload_sha256": "51b30185e62698ff2baee070ee9547b4d976dad9d98cc33476ea896511d63e75",
+      "core_sha256": "6a5123e5bfae4359f2d8d91e896be97a0be6682523cfb6e929007b79f99f2562",
+      "core_version": "10.0.100-rc2.25523.111+b0f34d51fccc69fd334253924abd8d6853fad7aa",
+      "driver_sha256": "77e73ede2febb1a259d08d7de200608e90b5ec15f1aa2edd81affde32ca385b8",
+      "benchmarkdotnet": "0.14.0.0",
+      "raw_report_sha256": "82123fd6c368720695e328e996f5fc666f5a8896587d7c1a09ebea9a04e22f14",
+      "il_inventory_sha256": "81f0769821f2b9f11c572341a72f7ca0ac8fd73f9eb922f162630b273de2860f"
+    },
+    {
+      "arm": "sdk11rc1",
+      "launch": 2,
+      "started_utc": "2026-09-25T14:12:07.0707619+00:00",
+      "process_id": 31092,
+      "runtime": ".NET 11.0.0-rc.1.26425.128",
+      "workload_sha256": "08fb1d1953dfbb6f4d1f05ebd2f6a902288c42163bf94fe8edadf36aba6279f0",
+      "core_sha256": "02d58a5ed481b162f7d1b36099c9d68b0ebe00904f8ae68d1217e03c28d5af5d",
+      "core_version": "11.0.101-rc1.26425.128+3551975be08744f0418857c5bed8ab1545c5dd47",
+      "driver_sha256": "77e73ede2febb1a259d08d7de200608e90b5ec15f1aa2edd81affde32ca385b8",
+      "benchmarkdotnet": "0.14.0.0",
+      "raw_report_sha256": "a5c5ac6dbb1368e1f4882eaad87f89515f5d7ec0380bea2db1a7ecd7f00ea2ca",
+      "il_inventory_sha256": "adc4df6774082f41c19873757c007b8548e89d7bb394ef4d160d6cd799da44bb"
+    },
+    {
+      "arm": "vmr-rc2-r2r",
+      "launch": 2,
+      "started_utc": "2026-09-25T14:18:53.874831+00:00",
+      "process_id": 12576,
+      "runtime": ".NET 11.0.0-rc.1.26425.128",
+      "workload_sha256": "3bb3076ee49fc55faf911dc2bf15e9f3a8e8979c3e2a3472267df2f0002e2e30",
+      "core_sha256": "648ff8d455adde0cf41294957ee6966174673039d1910b07b67c5161c901bd59",
+      "core_version": "11.0.101+9cd6167a7265ce7264b22719503b7dfa9eb8f83c",
+      "driver_sha256": "77e73ede2febb1a259d08d7de200608e90b5ec15f1aa2edd81affde32ca385b8",
+      "benchmarkdotnet": "0.14.0.0",
+      "raw_report_sha256": "484334aef1d8993d26a7a76cea1546af31203402f63b4cd686a4e53c3ff68b08",
+      "il_inventory_sha256": "7acf1d573f06bb6bf359f61e277919ebf19b907d5a70b280e4b0a3f7d8ca0188"
+    }
+  ],
+  "profiles": [
+    {
+      "arm": "sdk10",
+      "allocation_ticks": 10999,
+      "weighted_allocation_bytes": 1193701824,
+      "verified_function_weighted_bytes": 121016744,
+      "events_lost": 0,
+      "raw_trace_sha256": "2bca774acf56b3ff6bffca614081804acf8cf8104d2114d0cfa213eb48f29c95"
+    },
+    {
+      "arm": "sdk11rc1",
+      "allocation_ticks": 6786,
+      "weighted_allocation_bytes": 744856760,
+      "verified_function_weighted_bytes": 102544856,
+      "events_lost": 0,
+      "raw_trace_sha256": "6eb8f94ad9967051e179c605e9589aa9d18ac9cd155128140a508b9d5c90266c"
+    },
+    {
+      "arm": "vmr-rc2-r2r",
+      "allocation_ticks": 5789,
+      "weighted_allocation_bytes": 632164368,
+      "verified_function_weighted_bytes": 47599368,
+      "events_lost": 0,
+      "raw_trace_sha256": "5c52ca45aa87c073c8a4156771a18af48a509860372d695df99c6e0b84547418"
+    }
+  ],
+  "cli": [
+    {
+      "case": "fsharp-core",
+      "toolchain": "vmr-rc2-r2r",
+      "input_sha256": "953832ACE7758E0701AE6F24EA0194B18D276FA3A71D45AF00038CDA0D4F3368",
+      "response_sha256": "E11082EE0790D44799E1E83CB4E04F6C0C843E2A00C68D19E5BD4404F4BC9A22",
+      "fcs_output_sha256": "653286FB1DC08CD50B593B874299A2C36BFD469330D6DA57BC8F45560293884C",
+      "cli_output_sha256": "653286FB1DC08CD50B593B874299A2C36BFD469330D6DA57BC8F45560293884C",
+      "identical": true
+    },
+    {
+      "case": "fsharp-compiler-service",
+      "toolchain": "vmr-rc2-r2r",
+      "input_sha256": "C68930230770FD46017F26F577BBA9032B65E182CF9255424B8BBCAB4B310EF0",
+      "response_sha256": "6FDBD8286449731FF032504C8197BE7EF31E0840B4C13919083BE53556CF6264",
+      "fcs_output_sha256": "5845B3357B5FDDC702FBF06B6969457191D37BF7298CC5FEADDBD9EED9B9A6D9",
+      "cli_output_sha256": "5845B3357B5FDDC702FBF06B6969457191D37BF7298CC5FEADDBD9EED9B9A6D9",
+      "identical": true
+    },
+    {
+      "case": "fstoolkit",
+      "toolchain": "vmr-rc2-r2r",
+      "input_sha256": "2DFDBDB9FB01930C2F2689225877146E76E8F0E4741B17986361C0644325A031",
+      "response_sha256": "940BF3FF2CCE1C7615A7A0C910DFE165537FCF2C54525B837FF46E4665BF6AB9",
+      "fcs_output_sha256": "2AAB33715F93BD399A7B77BC8D7E0F8CCB4956BEFC6A6B88019C999713DB3BDE",
+      "cli_output_sha256": "2AAB33715F93BD399A7B77BC8D7E0F8CCB4956BEFC6A6B88019C999713DB3BDE",
+      "identical": true
+    },
+    {
+      "case": "oxpecker",
+      "toolchain": "vmr-rc2-r2r",
+      "input_sha256": "FA85B3AA9C5E7B1562A8DBCFE86AEAF830FC04C985AFCC7BFF440C0DBAAA672A",
+      "response_sha256": "8188E7A13DFC3B9FA386D9FB8A311C5D0D763ABC390235F4D60F7AC7ED1C3D7A",
+      "fcs_output_sha256": "5854F7E8161FE8400CDF624F3CB2DAD9D5F8A64EF0A0815D6D13E814E6C95DEE",
+      "cli_output_sha256": "5854F7E8161FE8400CDF624F3CB2DAD9D5F8A64EF0A0815D6D13E814E6C95DEE",
+      "identical": true
+    },
+    {
+      "case": "nu",
+      "toolchain": "vmr-rc2-r2r",
+      "input_sha256": "D5F5C6E100FD65691BFA7EA770953076C5FE269DDB8D9E0EC0A3C5FC8A6B20A5",
+      "response_sha256": "DECBB385423B703D43A5B0313055A2A1D48D2CC35392212952C5BA08C2875359",
+      "fcs_output_sha256": "423857D4E4B0E5DF99E560B3A6BFFB5E4B58C291B6244BAC8299D7A3CF7119C3",
+      "cli_output_sha256": "423857D4E4B0E5DF99E560B3A6BFFB5E4B58C291B6244BAC8299D7A3CF7119C3",
+      "identical": true
+    },
+    {
+      "case": "fsautocomplete",
+      "toolchain": "vmr-rc2-r2r",
+      "input_sha256": "39182076B3495A65850309729CB28B186A090DD7F3C0746CA3E7FC1089408488",
+      "response_sha256": "6D8FDD4E305E28A4F5C4145D833393D349A39BB224622284F3848037C38B5D2F",
+      "fcs_output_sha256": "C746676B42161138FDCEE3815AD9DD109BDF3BC4EE4F7F39CFCDD6D0B547BAA0",
+      "cli_output_sha256": "C746676B42161138FDCEE3815AD9DD109BDF3BC4EE4F7F39CFCDD6D0B547BAA0",
+      "identical": true
+    }
+  ],
+  "historical_evidence": "../provenance.json",
+  "vmr_audit_sha256": "fcd0e3fdc36ebca3864374b116b6ab9cd0a1d7172fde0ea7b1c635576740fdbd",
+  "contributions_sha256": "1b97f5bc98eba087c3ede48662131d9f61a5d24fcea4ad0500615c34f93f77d7",
+  "build_log_scope": "All retained preparation attempts, including failures; the native-image checks identify the final payload.",
+  "build_logs": [
+    {
+      "name": "rc2-bootstrap",
+      "binlog": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\rc2-bootstrap.binlog",
+      "binlog_sha256": "7efda0421eebfec0b7f08b6adbda085241c7c5143e081ae6948d794c39b707e4",
+      "log": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\rc2-bootstrap.log",
+      "log_sha256": "7ac5b5e37fc7ad8650cb1c736e4c7211754935ce96d5e58971044a08fb26e342"
+    },
+    {
+      "name": "rc2-core-net10",
+      "binlog": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\rc2-core-net10.binlog",
+      "binlog_sha256": "a9265e4763b021ca56c645146f68c35fe0c07b718c197e2b2dfcd454e76e1ef4",
+      "log": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\rc2-core-net10.log",
+      "log_sha256": "1f2b0b1de19106f42a96e31ca94e3d6d95df2702d1aff6fb0f03eab7cc7d2556"
+    },
+    {
+      "name": "rc2-r2r-2",
+      "binlog": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\rc2-r2r-2.binlog",
+      "binlog_sha256": "f9fb61993baf12a6caa4d9aebecda9ca8d78cf76856fc664a67aca1b1453d483",
+      "log": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\rc2-r2r-2.log",
+      "log_sha256": "65408ba035128e76bd7af4957357241f2b0eed963048facceaea371bd19ce07d"
+    },
+    {
+      "name": "rc2-r2r",
+      "binlog": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\rc2-r2r.binlog",
+      "binlog_sha256": "ce2402ed129de1948fb33916ef80c37b4b34e1c509f78f18bdcabeed57d8e35d",
+      "log": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\rc2-r2r.log",
+      "log_sha256": "3f211763596a05b44d333d6d7d904080b649b84d6cc1602397babf4fad972c5f"
+    },
+    {
+      "name": "rc2-release",
+      "binlog": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\rc2-release.binlog",
+      "binlog_sha256": "0825f4821833f70b837097663b1635fcd3c6910362448022ebecc0ef65684450",
+      "log": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\rc2-release.log",
+      "log_sha256": "e0128fdc24425b0f728ce00b8ad72e05a4c37578b0b0f58439a2c4873c0a6446"
+    }
+  ],
+  "harness": [
+    {
+      "name": "BuildLayout.props",
+      "sha256": "816087f9415b2281c23e1efab1f7c9fcf414705595e558f2be241feaef7306cb"
+    },
+    {
+      "name": "BuildPayload.ps1",
+      "sha256": "6e7b15ca0359997d97dab56b5d9973199200398c195aa47fbeb13cbda0b99137"
+    },
+    {
+      "name": "Measure.ps1",
+      "sha256": "7518e2d2e6b96ce8b4fd9ee80739f3293fe869def16faa0a2737b149506b803a"
+    },
+    {
+      "name": "Publish.mjs",
+      "sha256": "38e058d4bac4f4a8541cc290bf17f4ce844ea5cd90f43f387b44caf3cb712520"
+    },
+    {
+      "name": "ReadyToRunPayload.csproj",
+      "sha256": "7699eaae6fd2e823328b7ab8f31cb9e60f8ce77c6f6f456717ff55d299f3de4b"
+    },
+    {
+      "name": "RunPrograms.ps1",
+      "sha256": "5ee4271494b892e48c04e27f5be7cb5db0bdd2b056ee747c60b6120940c49a6a"
+    },
+    {
+      "name": "Toolchains.ps1",
+      "sha256": "cb0978679e7fa54e20753ba24a8423afe6094ff43aaf83b3889a24ac6fe2b9f0"
+    },
+    {
+      "name": "Validate.mjs",
+      "sha256": "1f5441b0475bd89d58d9f253be55a219d0c09670a32db9943968628b80e4b75b"
+    },
+    {
+      "name": "ValidateCompiler.ps1",
+      "sha256": "5c98a691b606441f045b5311d45f42e820ba4b7826d7033540925364f24eb5dd"
+    },
+    {
+      "name": "VerifyPayload.ps1",
+      "sha256": "4c01dfadebc2da84b0e63ec25b435c3709c3ddc1c33d7dc3bfb5673158885c10"
+    }
+  ]
+}

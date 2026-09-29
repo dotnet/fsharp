@@ -1,0 +1,20 @@
+[
+  {
+    "snapshot": "rc1",
+    "vmr_commit": "3551975be08744f0418857c5bed8ab1545c5dd47",
+    "fsharp_tree": "58dbf461edaffcb260ee5299bab7bb4ff9037d03",
+    "production_tree": "2f81574628d05798d72810522d509432089fa7e2"
+  },
+  {
+    "snapshot": "rc2",
+    "vmr_commit": "be46bdda4d6599b80dd4ccd89b2de49d96cbf36d",
+    "fsharp_tree": "04759ec77ecbc046c584fae636c11466fd3f32a3",
+    "production_tree": "7904104d6778df42799007d3e4d6e19093144325"
+  },
+  {
+    "snapshot": "main",
+    "vmr_commit": "0c804ec276a679143cdc4bc3391a1c2d0abfd69b",
+    "fsharp_tree": "60130114bfb4440e7db5733e638937ee9308e7ab",
+    "production_tree": "7904104d6778df42799007d3e4d6e19093144325"
+  }
+]

@@ -1,0 +1,98 @@
+{
+  "schema_version": 1,
+  "status": "measured",
+  "campaign": "third-wave",
+  "selection": {
+    "source": "RC2 VMR F# subtree, locally built; not an official RC2 SDK",
+    "rc1_vmr": "3551975be08744f0418857c5bed8ab1545c5dd47",
+    "rc2_vmr": "be46bdda4d6599b80dd4ccd89b2de49d96cbf36d",
+    "main_vmr": "0c804ec276a679143cdc4bc3391a1c2d0abfd69b",
+    "rc1_fsharp_source": "c251d06dc38db89fa6df30b0b17a233e0ffe403d",
+    "rc2_and_main_fsharp_source": "9cd6167a7265ce7264b22719503b7dfa9eb8f83c",
+    "rc1_production_tree": "2f81574628d05798d72810522d509432089fa7e2",
+    "rc2_and_main_production_tree": "7904104d6778df42799007d3e4d6e19093144325",
+    "production_path": "src/fsharp/src",
+    "reason": "RC2 and main have byte-identical production sources. Their full F# subtrees differ in build scripts, tests and documentation.",
+    "survey_merge_commits_in_rc2": 49,
+    "survey_merge_commits_total": 52,
+    "experimental_branch_merges_not_in_rc2": [
+      20424,
+      20425,
+      20439
+    ],
+    "important_fixes_after_rc1_present_in_rc2": [
+      20296,
+      20487,
+      20422,
+      20571,
+      20555
+    ]
+  },
+  "payload": {
+    "configuration": "Release",
+    "bootstrap": "Pinned RC2 sources compiled by SDK 11 RC1, then used to compile the Release product and new Core",
+    "building_with_lkg_in_final_product": false,
+    "compiler_target_framework": "net11.0",
+    "compiler_build_core": "Fresh source Core, netstandard2.1, following repository project references",
+    "deployed_core_target_framework": "net10.0",
+    "deployed_core_reason": "Match the Core variant selected for SDK tools by #20555",
+    "ready_to_run": true,
+    "composite": false,
+    "crossgen2_runtime": "11.0.0-rc.1.26425.128",
+    "static_pgo_training": "none; no custom training profile",
+    "runtime_tuning": "none",
+    "runtime_qualification": "The local RC2-source compiler runs on the exact .NET 11 RC1 runtime. It is a source-built compiler comparison, not a measurement of an official RC2 SDK/runtime bundle."
+  },
+  "measurement": {
+    "rounds": 12,
+    "warmup_rounds": 2,
+    "order": [
+      [
+        "sdk10",
+        "sdk11rc1",
+        "vmr-rc2-r2r"
+      ],
+      [
+        "sdk11rc1",
+        "vmr-rc2-r2r",
+        "sdk10"
+      ],
+      [
+        "vmr-rc2-r2r",
+        "sdk10",
+        "sdk11rc1"
+      ],
+      [
+        "vmr-rc2-r2r",
+        "sdk11rc1",
+        "sdk10"
+      ],
+      [
+        "sdk11rc1",
+        "sdk10",
+        "vmr-rc2-r2r"
+      ],
+      [
+        "sdk10",
+        "vmr-rc2-r2r",
+        "sdk11rc1"
+      ]
+    ],
+    "parallel_processes": 1,
+    "collector": "Unchanged first-campaign Collector.dll",
+    "collector_sha256": "449F9E2C9B5BD00A64B259082994945F43880D9E2E9844B164F45278576290B1",
+    "inputs": "Unchanged first-campaign source, references, arguments and IDE graphs",
+    "runtime_environment": "Remove inherited DOTNET_* and COMPlus_* variables, then set only host location and telemetry preference. Exact framework selection; no GC/JIT/DATAS overrides.",
+    "application_runtime_policy": "SDK10-generated programs on .NET10.0.0; RC1 and local RC2-generated programs on .NET11 RC1, with normal application runtime defaults.",
+    "historical_data": "First-campaign measurements, including fixed-runtime application controls, remain separate and unchanged."
+  },
+  "counts": {
+    "scalar": 336,
+    "measured_scalar": 288,
+    "warmup_scalar": 48,
+    "program_launches": 9,
+    "program_launch_cases": 432,
+    "measured_program_iterations": 6480,
+    "accepted_profiles": 3
+  }
+}

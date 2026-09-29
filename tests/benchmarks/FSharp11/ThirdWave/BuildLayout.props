@@ -1,0 +1,9 @@
+<Project>
+  <PropertyGroup>
+    <ArtifactsDir>$(MSBuildThisFileDirectory)artifacts\</ArtifactsDir>
+    <OutputPath>$(ArtifactsDir)bin\$(MSBuildProjectName)\$(Configuration)\</OutputPath>
+    <IntermediateOutputPath>$(ArtifactsDir)obj\$(MSBuildProjectName)\$(Configuration)\</IntermediateOutputPath>
+    <FsLexPath>$(ArtifactsDir)Bootstrap\fslex\fslex.dll</FsLexPath>
+    <FsYaccPath>$(ArtifactsDir)Bootstrap\fsyacc\fsyacc.dll</FsYaccPath>
+  </PropertyGroup>
+</Project>

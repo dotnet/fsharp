@@ -1,0 +1,39 @@
+<Project>
+  <PropertyGroup>
+    <ImportDirectoryBuildProps>false</ImportDirectoryBuildProps>
+    <ImportDirectoryBuildTargets>false</ImportDirectoryBuildTargets>
+    <ImportDirectoryPackagesProps>false</ImportDirectoryPackagesProps>
+  </PropertyGroup>
+  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
+  <PropertyGroup>
+    <TargetFramework>net11.0</TargetFramework>
+    <RuntimeFrameworkVersion>11.0.0-rc.1.26425.128</RuntimeFrameworkVersion>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>false</SelfContained>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <PublishReadyToRun>true</PublishReadyToRun>
+    <PublishReadyToRunComposite>false</PublishReadyToRunComposite>
+    <Crossgen2ExtraArgs>--parallelism:1</Crossgen2ExtraArgs>
+    <BuildInParallel>false</BuildInParallel>
+    <NuGetAudit>false</NuGetAudit>
+    <RestoreSources>https://www.nuget.org/api/v2</RestoreSources>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="$(CompilerPayload)\*.dll" Exclude="$(CompilerPayload)\FSharp.Core.dll">
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="FSharp.Core">
+      <HintPath>$(SdkCore)</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <None Include="$(CompilerPayload)\**\*" Exclude="$(CompilerPayload)\*.dll;$(CompilerPayload)\FSharp.Core.xml">
+      <Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </None>
+  </ItemGroup>
+  <Target Name="ValidatePayload" BeforeTargets="ResolveReferences">
+    <Error Condition="!Exists('$(CompilerPayload)\fsc.dll')" Text="CompilerPayload must contain the self-hosted Release compiler." />
+    <Error Condition="!Exists('$(SdkCore)')" Text="SdkCore must point to the newly built net10.0 FSharp.Core.dll." />
+  </Target>
+  <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
+</Project>

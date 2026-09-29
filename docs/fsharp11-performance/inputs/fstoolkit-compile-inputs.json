@@ -1,0 +1,1092 @@
+[
+  {
+    "path": "C:\\Nuget\\fsharp.core\\9.0.300\\lib\\netstandard2.1\\FSharp.Core.dll",
+    "bytes": 2314008,
+    "sha256": "CBC698896715F0BB1B49516DDEC444D84F01A8149568706FE338EAC7D2DA3C7C"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\Microsoft.CSharp.dll",
+    "bytes": 18736,
+    "sha256": "150E995A171E1EDD0D32F2AF3AB07A1B93664D1F9DB352286DB8D1ABB62BF03F"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\Microsoft.VisualBasic.Core.dll",
+    "bytes": 59696,
+    "sha256": "8FE34759CB13005200CE0EAF1D2877C880D5B0AEAE4E7B937995AF7583CA1B7E"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\Microsoft.VisualBasic.dll",
+    "bytes": 17680,
+    "sha256": "B303FCE493E42D03A9A81FE3959AEA19169853EE76EA097FD5E47A2C4F6DC2D5"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\Microsoft.Win32.Primitives.dll",
+    "bytes": 16680,
+    "sha256": "C7AA5E38BFCEF2F431E47198155DCA452A065559CB838CFF7171B2D6BF5712A2"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\Microsoft.Win32.Registry.dll",
+    "bytes": 21792,
+    "sha256": "432290851DF9CBA4D8AAA7F084AB8F298A3D161520EF6C158BBBC6130ABC082A"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\mscorlib.dll",
+    "bytes": 56080,
+    "sha256": "4222457334D049D91C842CBDB41375DFDC7BD68015B82E36C8A46A578FC6085D"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\netstandard.dll",
+    "bytes": 101160,
+    "sha256": "6DD21805F65371B582EFDA4141082DB9C24D0EA9234F8117CC7E5A2C6B181F88"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.AppContext.dll",
+    "bytes": 15624,
+    "sha256": "E5225F900A1385CB697E7EE7872BD8BAAA237AF3B32B1150A05800DC27247A69"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Buffers.dll",
+    "bytes": 15664,
+    "sha256": "6B29F79AFF590ED90A3EDA450BE419DC1E2ADF6ABEB9D5E8B5F979BABED9ED1D"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Collections.Concurrent.dll",
+    "bytes": 27944,
+    "sha256": "4988BB2F0EAAA56D92820CBA64B6F05EB002733A516323E7314FC75A4F6AE687"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Collections.dll",
+    "bytes": 56592,
+    "sha256": "D236762B7255B4AEB61F254A49B33595029AEE4ADE1609DA3EF6B6249F1228FA"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Collections.Immutable.dll",
+    "bytes": 75048,
+    "sha256": "3E2AF0085292C287E4C5284413356705E88BF71EF77F71F16F93C65F5619B9CD"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Collections.NonGeneric.dll",
+    "bytes": 23312,
+    "sha256": "E5041F75B940023805FC4AD91106B3AEB7569608E89E2495A26873930F6C042D"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Collections.Specialized.dll",
+    "bytes": 26408,
+    "sha256": "8C6B3CFA271B0D11505358DA7B2022B3F946BFFAD48DFB08434497D329AADAE3"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.ComponentModel.Annotations.dll",
+    "bytes": 32040,
+    "sha256": "818D61F47A07E666F5CC5AD5E60CC180EA42C232BFB12AED1D3688BE478F0E10"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.ComponentModel.DataAnnotations.dll",
+    "bytes": 17200,
+    "sha256": "50E56C432CE32085E617EB848BE3D628814F7E597FB24C93B7A8830FA829F7E0"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.ComponentModel.dll",
+    "bytes": 16136,
+    "sha256": "953514891039A92846CEC21CC2525A342F89A63EB7C7874222A4B3224330157B"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.ComponentModel.EventBasedAsync.dll",
+    "bytes": 19760,
+    "sha256": "93DD890BB772E78C6CB88A832DC06D6A81AEF5363AB3B3910582C8DF390DC659"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.ComponentModel.Primitives.dll",
+    "bytes": 26424,
+    "sha256": "0E918C9C4EFE3F9AE8AADC14E4CC46FC56AE7777389F54555DE7CE6F56DBD6F2"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.ComponentModel.TypeConverter.dll",
+    "bytes": 105248,
+    "sha256": "E90F78CFB5825AE9EB094DFD0650A29AA2AF2E49198E25A8212A1C09A3B69989"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Configuration.dll",
+    "bytes": 19768,
+    "sha256": "09DCF2A7C11A2A2DA684D469A9D4F13BD91BFCB5DBA567A813093FDA46CA7CFC"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Console.dll",
+    "bytes": 26920,
+    "sha256": "D2D936B9B512E3807E9B5FEEAA92146306C2432D799B6D44FCAB813F4D9EB4A4"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Core.dll",
+    "bytes": 23864,
+    "sha256": "27E0FF54824929FB81DFE4C3ECC0DD6E847F227A791F0266C72A62217300B5E1"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Data.Common.dll",
+    "bytes": 154416,
+    "sha256": "4A8ADB76E52DA53E01088926765267C54576845745BB83EBBF45DECBF6B5BB75"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Data.DataSetExtensions.dll",
+    "bytes": 16176,
+    "sha256": "43F06DB7097FBBD799D72D424A3A9E66723E4503A131131F2A0EC2547669E332"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Data.dll",
+    "bytes": 24336,
+    "sha256": "A62A7EDC8E4BD32BA1F86641D57093DC300A07CC42DFC713685F99CFDA2A4D17"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Diagnostics.Contracts.dll",
+    "bytes": 20264,
+    "sha256": "98A00527A73CC55AED3BEBA8EE016A2EBC9D5863B2CC65A84DEC8F0410176083"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Diagnostics.Debug.dll",
+    "bytes": 16144,
+    "sha256": "CE2AFB02A0C66F1AE31D7FBD19500B4657021DB287B8835D1215C83683C43970"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Diagnostics.DiagnosticSource.dll",
+    "bytes": 42792,
+    "sha256": "397EF274FEA8E3D90ADF07CAEE3F9A2A344E9D776DCC64319ADE6DC214D73473"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Diagnostics.FileVersionInfo.dll",
+    "bytes": 17192,
+    "sha256": "7FC115E3D1A21401AF8327A568378418B0A4B7C9E80EA00FEA73950D3793E8B8"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Diagnostics.Process.dll",
+    "bytes": 31496,
+    "sha256": "0B09608C31A8F81BC2FBA65132845B4E66345D895E37B833C60279F7B6507A0D"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Diagnostics.StackTrace.dll",
+    "bytes": 23304,
+    "sha256": "5689E57E47CFD65D89037E725D988299F91CC921059C62AFE5F18316C3E3C1A2"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Diagnostics.TextWriterTraceListener.dll",
+    "bytes": 18224,
+    "sha256": "1BF8993F6DB4150AB501040AA714418AF99C3D73DB4998DE9457E087B76F4A89"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Diagnostics.Tools.dll",
+    "bytes": 15664,
+    "sha256": "E22A43D230D28827B57E062D6495627833C6D30D35284EA4A209C99062FABD99"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Diagnostics.TraceSource.dll",
+    "bytes": 28456,
+    "sha256": "867DEFD29ABFFCD8B21A7A070A72499EF431B0B67B386723D0535EA1B5A85F3B"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Diagnostics.Tracing.dll",
+    "bytes": 29480,
+    "sha256": "C8291447BEC43C238282E9619CDD37D62945C06EB49769AB96C274A6E4ADE148"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.dll",
+    "bytes": 49968,
+    "sha256": "9B2357672B1039A4766C9B392DF077F2CD6544704ADAD25BCDB161ADB9586FAF"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Drawing.dll",
+    "bytes": 20744,
+    "sha256": "EB9000DDD4A9CF0E8CEDB28D91322158069953AA0986C8E1D2AFF6A4FCE18BC8"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Drawing.Primitives.dll",
+    "bytes": 36136,
+    "sha256": "FD1F14B9B4FE1EEB5B633973515B48A027D2F2E1642FB4922A79ADD7FCE9DD7F"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Dynamic.Runtime.dll",
+    "bytes": 16680,
+    "sha256": "F2FBD13C537C888FB4B0ED378D4319752C68967C33A3B2C7BC8C46A4218030D8"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Formats.Asn1.dll",
+    "bytes": 26408,
+    "sha256": "368BC314CC002C8903087F34E3E78E85E2F35659EDEC96735EFCB0D8118297C6"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Formats.Tar.dll",
+    "bytes": 20792,
+    "sha256": "CD2B244749F1AAE52356AFDBCC26BA25A2BA0C3794A62BE52F55204DE7F63926"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Globalization.Calendars.dll",
+    "bytes": 16184,
+    "sha256": "82B27B37CBC92C957B4973C013BC4EE0B1DEFD96CF3495612FA07AB9E816AE2B"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Globalization.dll",
+    "bytes": 16144,
+    "sha256": "79C229C7902E2E1D6E06A751F56FE61752C10292330E0E839DD726E97A8FA4C3"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Globalization.Extensions.dll",
+    "bytes": 15632,
+    "sha256": "8424384CCB5704D3B07DF01C1124CACD220FD56839CED0FB8BA56B8EBD98DFFE"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.IO.Compression.Brotli.dll",
+    "bytes": 18728,
+    "sha256": "B560A07DE71AD2E7F77966B224D6F65D66B46FD93353A1D2131C91027B5CE41A"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.IO.Compression.dll",
+    "bytes": 22328,
+    "sha256": "18D4E5DC01D94823EBA0189829EC194BD224943E61A8BB0632A1820179F7FA30"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.IO.Compression.FileSystem.dll",
+    "bytes": 15624,
+    "sha256": "82DF6B53BA8BD2039D83574A07D262B763501851ED0D3D872EAC13CC1C02CF89"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.IO.Compression.ZipFile.dll",
+    "bytes": 17192,
+    "sha256": "2070D5ABA2E247FD66256E5A64E49792B4082BCC37F2912EE915B287D155B5F7"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.IO.dll",
+    "bytes": 16168,
+    "sha256": "A109C78F9E3AB211BEA7AA59DC1524EF916153581552762B9432FD6146AA8587"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.IO.FileSystem.AccessControl.dll",
+    "bytes": 20752,
+    "sha256": "CB5C11FB54E30C173EF655E0C4E0DB22D12A3DFCE9EAF7766D1D335487C476F4"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.IO.FileSystem.dll",
+    "bytes": 16184,
+    "sha256": "86687014E49AB350B13AB3F5B81B41E513653380CF9375F44CF4C4007E8EE1D1"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.IO.FileSystem.DriveInfo.dll",
+    "bytes": 17680,
+    "sha256": "EAC559DDB602F42CE8A245772887C1B680D70EC069EDBE956237026D9893B08D"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.IO.FileSystem.Primitives.dll",
+    "bytes": 15672,
+    "sha256": "A7E7E321C74FEDC41B31A0B5EDF2694F5FAD248AB9CA0D93BAE447C7EBA8FCFA"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.IO.FileSystem.Watcher.dll",
+    "bytes": 21264,
+    "sha256": "2ABCBFDAEED55FDF94CFF888AF39B57FD38EB5F9B86120A7CCC9375B3020A955"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.IO.IsolatedStorage.dll",
+    "bytes": 22824,
+    "sha256": "05A8A9EB4490E776FDFD16B3283604A3C8A0C32D683632B99369ACA07ACED510"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.IO.MemoryMappedFiles.dll",
+    "bytes": 18744,
+    "sha256": "9B7076824800ECA403C0374AF4429BEBC371990505698A9889455770819EA37D"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.IO.Pipelines.dll",
+    "bytes": 20792,
+    "sha256": "192BAC9783AE16E00087899B4A1F12CADC8CCB1377D69AA751BEE115287F7345"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.IO.Pipes.AccessControl.dll",
+    "bytes": 18224,
+    "sha256": "3ECA719E84CED281E3148550D1C28FC18252EA7EC09E2F55A9B5DC88DB90BF2A"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.IO.Pipes.dll",
+    "bytes": 22280,
+    "sha256": "89AE53CAF1E66A3E3C407D852C9EEF81C2D542FE384AE1F4E86C2198EFFE2733"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.IO.UnmanagedMemoryStream.dll",
+    "bytes": 15664,
+    "sha256": "77F3216CAA9D0E9B6DAFDAA7A25265A114364BF17421DEAADBF356E5B7E86C60"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Linq.dll",
+    "bytes": 33072,
+    "sha256": "AC5CDD464CA69A70A5F8987CE8BF893B2921B01EA4A94664300EC4F96A3268D9"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Linq.Expressions.dll",
+    "bytes": 63784,
+    "sha256": "42B6F0C3C8C2F5D10A89231E0103C03EB2301D2788E28D6B6EDA7AFC278BC3ED"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Linq.Parallel.dll",
+    "bytes": 31528,
+    "sha256": "A2AD05DACF7413239E19C4A9E993BF371A7BEF9DD8469EDE12F58BBE47EEDC94"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Linq.Queryable.dll",
+    "bytes": 31504,
+    "sha256": "C80D8D37DAB3FC2E48ACD0DC44713EB96FE8470DAD6CE439F31B84BD9C14DA83"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Memory.dll",
+    "bytes": 52488,
+    "sha256": "2F7349F299137B906258FB2EEE724A512402C47E4089C125C1AF8171788A90A4"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Net.dll",
+    "bytes": 17696,
+    "sha256": "9F58A14FF8A5CEB4C36D51E222C7A8FCB8EEBC4B3EE21D05F1DB914334009794"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Net.Http.dll",
+    "bytes": 60712,
+    "sha256": "9292E689EDA24780AA613775C95F7885859FDC336AE712C4B6D35A7C800F775B"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Net.Http.Json.dll",
+    "bytes": 23848,
+    "sha256": "5463247D2E9A126A668CDD28EF5142027D50B912C7FBF8C0310D686D4E236E16"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Net.HttpListener.dll",
+    "bytes": 25896,
+    "sha256": "02A11A172638DFF31070302A8CB588E1F404808FEBB1A96780C897717CAECB26"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Net.Mail.dll",
+    "bytes": 32560,
+    "sha256": "CE47B88E4151F4F7F66FC2C00101FCE14AC49518EEB981AF3CAB454CAB30D799"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Net.NameResolution.dll",
+    "bytes": 18216,
+    "sha256": "25F317624915CD9AF5167B718AE2EEB42520AB74852203A2E05BEA779CC3F316"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Net.NetworkInformation.dll",
+    "bytes": 34088,
+    "sha256": "8BB1B67C6B977D42F55200249EA47DC79166725B2D171877183E082B440773D9"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Net.Ping.dll",
+    "bytes": 20744,
+    "sha256": "F83185474BA72AE6388FCF388DE2A5EAC9E74966160223739D831FE8F24B51D4"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Net.Primitives.dll",
+    "bytes": 36136,
+    "sha256": "24878E3375D66500F8860153D7DE25D3C7AF01D9005CF41BA82704BDB755AEF4"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Net.Quic.dll",
+    "bytes": 23824,
+    "sha256": "5E82D3A15F551ACFB22690BB40F6A543E80A0D65B34AF327D30F31CBD7B5CAAE"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Net.Requests.dll",
+    "bytes": 41256,
+    "sha256": "69B96C84E4DB3BA1A56C21F54D59ED39625DE0DD57E05CB99A1790C1C0DB1B14"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Net.Security.dll",
+    "bytes": 53032,
+    "sha256": "7247993E35300E033A413253E71CF8425DBEDE08AAE9C1385BF39D7D7F9EC9C4"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Net.ServicePoint.dll",
+    "bytes": 15664,
+    "sha256": "CF36EC7106DC7EF0B5D4770E2BDCC5DD122F7C425A757B4B9923AD715E74C004"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Net.Sockets.dll",
+    "bytes": 47920,
+    "sha256": "1D4D826A6371B2E9BAF464F595E827A5A1246F701202B863035B943032DE22FF"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Net.WebClient.dll",
+    "bytes": 27952,
+    "sha256": "C0D1CD713161CF635B767EF79234515F7CA6947A24F594966BE1EE13D040F7B8"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Net.WebHeaderCollection.dll",
+    "bytes": 19768,
+    "sha256": "75FA669EF84B57F29E5CDC26FF6DE07CB90DF3F3102406537CB3D2DB81EE2C9A"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Net.WebProxy.dll",
+    "bytes": 18216,
+    "sha256": "838348DDE06CD5C380FC4E11D0AB59CC14DFB9128994E650C07D18FC0CDA07D1"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Net.WebSockets.Client.dll",
+    "bytes": 19728,
+    "sha256": "000DA33C25303F20C526ECFC474D77B523B4F87B7E98F3E65EDFB81D7D5B6F4E"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Net.WebSockets.dll",
+    "bytes": 22800,
+    "sha256": "42F9F0937EE52BC6210AA167FC4CB31DCA16A9AFD4BDB2B7ACAD7E2167B1CE3E"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Numerics.dll",
+    "bytes": 15648,
+    "sha256": "562CD07A2228F51F27CF745D5C2DAA10E32CB7FDF9C4EDC3E2BFF3DB2A6DA7FE"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Numerics.Vectors.dll",
+    "bytes": 47912,
+    "sha256": "FC86B9F5F49A6FC4B7302A22DC152FE77A9FC7A8DBEB41BF42EFB15082F8B1D4"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.ObjectModel.dll",
+    "bytes": 23848,
+    "sha256": "5C46CFF1E29516712804E0C6F83E429510269ACA7E74DB81EA57EDDB66925BF0"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Reflection.DispatchProxy.dll",
+    "bytes": 16184,
+    "sha256": "4EA8C582E7A51E5E61DCEEFCE6B012DCCDF49154547DA3BD7E4CBDE62A82ADBD"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Reflection.dll",
+    "bytes": 16696,
+    "sha256": "01B3BF4DDCF60AF9D7657EA981E1748384BD152C134CE6C46AFC9530DCC1677F"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Reflection.Emit.dll",
+    "bytes": 44304,
+    "sha256": "2F815BFE0F48701B14ABA579885623A5B3E92E30D6D5D3CD11EB6FD1D06D056A"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Reflection.Emit.ILGeneration.dll",
+    "bytes": 21288,
+    "sha256": "F596E041474AFB22C1268E56C00A50FE4B61F7D0FCFFD9814670916DE8D2945E"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Reflection.Emit.Lightweight.dll",
+    "bytes": 19768,
+    "sha256": "BC9E8429402C67290228514469713B7B8BDF3242C17FD11B577E10E0358E3ABF"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Reflection.Extensions.dll",
+    "bytes": 15656,
+    "sha256": "879BA13919B3BCAE6FBD42FBC4EDF9791B85F1632A3201AC474FE8AE58B6E9B0"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Reflection.Metadata.dll",
+    "bytes": 122656,
+    "sha256": "B7E4A57C2EA2778B4FB8A6601C1049AE70B7E546071A552A977023BE262EB405"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Reflection.Primitives.dll",
+    "bytes": 22320,
+    "sha256": "72A5E5687ECBEFDCE8FFE5CAE137891B4A17C70EF3331398C21C99CAA8A215F0"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Reflection.TypeExtensions.dll",
+    "bytes": 19728,
+    "sha256": "66F0C1AFAD4C551A8A4DB4A13DFD8072647B70F67BA8C0B8E8CF38D8DF2DC53B"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Resources.Reader.dll",
+    "bytes": 15664,
+    "sha256": "6962254E62A757DB83FF1E9D45B560D656F5317FCEA9E5D1C6D936814F1078B3"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Resources.ResourceManager.dll",
+    "bytes": 16184,
+    "sha256": "AB4A81AD9E90F850F88B660BA08A789820D44219126CB163D102BAE58BD96CDD"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Resources.Writer.dll",
+    "bytes": 16680,
+    "sha256": "CA01295572540B7B8F4A6AEA08162F082AEF128026ACB2195921603292A57F89"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Runtime.CompilerServices.Unsafe.dll",
+    "bytes": 15632,
+    "sha256": "4305A737AD2A25BE6857722E3A08ADBE76291EA934C3D50C9E0F8EA56747B18A"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Runtime.CompilerServices.VisualC.dll",
+    "bytes": 17696,
+    "sha256": "F674672FC75FF584E4438AB1646F3075A41AE69C20BCAE5CA3DB92C28A703BB0"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Runtime.dll",
+    "bytes": 847624,
+    "sha256": "FDF970FA9CC66D1171DB856234945EB1ED77CF420A5352BE4573D763270C520B"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Runtime.Extensions.dll",
+    "bytes": 18232,
+    "sha256": "205A35A9835BF25179FF3A1A5298AE5A21332544A50DFABBDCA100F16C8861E4"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Runtime.Handles.dll",
+    "bytes": 15624,
+    "sha256": "462D0DBF5C66C1C7882D690C5AFD7F9FB34D6285E1EB386E0C225140C6384F32"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Runtime.InteropServices.dll",
+    "bytes": 99088,
+    "sha256": "9EE2C4DD1351648DD1C0F7DC51960C2D1134981F950031570AFFE0B9A0417FF5"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Runtime.InteropServices.JavaScript.dll",
+    "bytes": 26416,
+    "sha256": "9C898DA64FEBABDE24AA7DA403B80F0174AAE4E2CF448126B62086B3524862AA"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Runtime.InteropServices.RuntimeInformation.dll",
+    "bytes": 15656,
+    "sha256": "1C64DD6FCAB7741ADE0347E7D7DA3A0267EBD84AAA265AF976129EA636BA646B"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Runtime.Intrinsics.dll",
+    "bytes": 400680,
+    "sha256": "40D05BEB9D3CD45107DDEAC5830D61F3561109288A7F43DBD7708B46CC1903CE"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Runtime.Loader.dll",
+    "bytes": 19744,
+    "sha256": "DEB39193BBB79005779310C74D49A0288A24310FD099D99AB11146C7FF50B8CD"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Runtime.Numerics.dll",
+    "bytes": 36648,
+    "sha256": "F1BFB007EBF5A086FE22BDDE9662BF2C1BB7A4BD75A57DF7BAD09C45C2EC40F1"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Runtime.Serialization.dll",
+    "bytes": 17160,
+    "sha256": "A6F5DC2DF099C41F27BF2300AEF3652FC60460717CFEEA00E133C97ACD008762"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Runtime.Serialization.Formatters.dll",
+    "bytes": 23864,
+    "sha256": "ED0C4BBDEE500CD163042958B34370599B28AC0E75C0416D678E34CB8364C451"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Runtime.Serialization.Json.dll",
+    "bytes": 21264,
+    "sha256": "C3FA1662444EA8CCB5E29DCC50295FBA4D49BDA909CA5C2EEAA978FB16A936FA"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Runtime.Serialization.Primitives.dll",
+    "bytes": 20264,
+    "sha256": "EA3F99F29BEBA3FD6D7CBA83C0D15F7DD1016FFCBC5DBBAA71452C92A41982A2"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Runtime.Serialization.Xml.dll",
+    "bytes": 40208,
+    "sha256": "F9C3B974C4B7ABD449EEBD76536FCCB698B8EDBF8DDD6756D50C6E394AAC0C31"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Security.AccessControl.dll",
+    "bytes": 37640,
+    "sha256": "02D8F7E82A23EC1B53395285C06B15FE57B235066EB90C2A399B7AC20427A60E"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Security.Claims.dll",
+    "bytes": 32552,
+    "sha256": "554EC3CD3F6F2F065CE4C15D8294E28FF64466DFB30FA846846400EA72438C54"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Security.Cryptography.Algorithms.dll",
+    "bytes": 17680,
+    "sha256": "8E2F8FF7B1B50C9B26812B8277C46DA37661477901CBC95D25A20932931743F9"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Security.Cryptography.Cng.dll",
+    "bytes": 16672,
+    "sha256": "AB99C41775145163E88F678DBA259FC26D276BBF4775BBD3C7F4E775DCE9F472"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Security.Cryptography.Csp.dll",
+    "bytes": 16144,
+    "sha256": "531CBCB53324BEA7EEB9D6C59150E32D35F4AF1A3C11ACDCFFAE397113515C97"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Security.Cryptography.dll",
+    "bytes": 142640,
+    "sha256": "A5C2C2BAF10945D383F2DE537F966280836E7525C8A6A90A8B257EA83DCCAFBB"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Security.Cryptography.Encoding.dll",
+    "bytes": 16144,
+    "sha256": "425DFC8F0F409956B06E6F8B1C749F2AA0DEE4C29B2341B26688FEEE87FCB3F1"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Security.Cryptography.OpenSsl.dll",
+    "bytes": 15656,
+    "sha256": "3F77220CFCB2067924F50BC82E98FA4D7C00C3C2F32D95F3F2A608597E88468E"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Security.Cryptography.Primitives.dll",
+    "bytes": 16144,
+    "sha256": "DB0B41FF3B6166E0122214CA9836755BCE253C04B64A121BFC7B520948E472BF"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Security.Cryptography.X509Certificates.dll",
+    "bytes": 17168,
+    "sha256": "08241376C1DA2B303BC0DB9EB4BCE56E1EF7EF593D75CBA11ADD84EB6622DDA4"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Security.dll",
+    "bytes": 18704,
+    "sha256": "11D55D099C95D85BBDFAB938E1FA63CFB29940D1C5A3E7BEA135379DAE831DC4"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Security.Principal.dll",
+    "bytes": 15632,
+    "sha256": "048045DAD2019E421657871E191E13CD9ED3DD48CDDFAE9C36EC690B13CE8F82"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Security.Principal.Windows.dll",
+    "bytes": 27448,
+    "sha256": "5FA81836B77062EF3574DA55E8E2D204BD41BE99F38D552DD1ABCC2EDCB6F42E"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Security.SecureString.dll",
+    "bytes": 15664,
+    "sha256": "A156E7C3D80D3D7251EEF1DE03B7625A2486116931F8F4D5775013DC44EEF948"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.ServiceModel.Web.dll",
+    "bytes": 17160,
+    "sha256": "93BEF1B84CDCE689405507DCA969AC632EF512310DCD5E3A07D6AF5B04ED1A65"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.ServiceProcess.dll",
+    "bytes": 16176,
+    "sha256": "6E77083E4AA88A430EEDED18915059B3A23AFC7199E99296B1C4CD63843B12B8"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Text.Encoding.CodePages.dll",
+    "bytes": 16168,
+    "sha256": "000E05F3D8176EAE63F2085C07BFCEC658B83DF807A05ACA7D40EA028A154D33"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Text.Encoding.dll",
+    "bytes": 16176,
+    "sha256": "4628BC458F71632856922EFA85AB7931B61E9DAD8140D67A18A4C9AAAB3B45C3"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Text.Encoding.Extensions.dll",
+    "bytes": 21288,
+    "sha256": "F479296289EA5D7636E8D9CDA9FAE37866EB429855209779DA7EA2E22E266AD8"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Text.Encodings.Web.dll",
+    "bytes": 26416,
+    "sha256": "A3F3122E1D583FBC126D46AAA39D5B0524948303DF7B0247F1EE8A3E55F19760"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Text.Json.dll",
+    "bytes": 80688,
+    "sha256": "62939616B990353B952FF21468B24234188164C0C1B0737F67A86CDF4730656F"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Text.RegularExpressions.dll",
+    "bytes": 36640,
+    "sha256": "892708DC8B984C5B7B76523CE6924F678971A8B28B53F9E1F753391E78226E3B"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Threading.Channels.dll",
+    "bytes": 19752,
+    "sha256": "CE5CF08CC35BAD2F1F7AC9E3C0D28198191B6F459F6B2C47AEAF8242B51FBA35"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Threading.dll",
+    "bytes": 33072,
+    "sha256": "266A5D7F6E7F37E80FC5E72B4224888E1392A8E1992E2010A28C03230B0E1E0A"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Threading.Overlapped.dll",
+    "bytes": 19256,
+    "sha256": "9993040A40C8C3C892C1CFA5AF27FFBA2AA44334B2599BB367237FD5FAC85A08"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Threading.Tasks.Dataflow.dll",
+    "bytes": 32056,
+    "sha256": "686F498225D9FEEF1D3125E5F2C7DF9862D925E6C474D468B53CC278EB2EA331"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Threading.Tasks.dll",
+    "bytes": 17200,
+    "sha256": "F354C33A60CA9DEE00DFFA1B9865A99D45234A6B615D63850644117C33884FF4"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Threading.Tasks.Extensions.dll",
+    "bytes": 16176,
+    "sha256": "00AEF588AF213F11B62275650EB3C0D22CCE3EE03099288ABE0E915576D20E9E"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Threading.Tasks.Parallel.dll",
+    "bytes": 20256,
+    "sha256": "F43D3184878BC9D7916402B4BB8F3597E5134E227555C7DDD8B5D5FFA99077D4"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Threading.Thread.dll",
+    "bytes": 23848,
+    "sha256": "97B8FA3458524190695A159F9499A78C7649D3E784752E4A2412F7DC0CFF4A4F"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Threading.ThreadPool.dll",
+    "bytes": 18728,
+    "sha256": "93F986B336F9F9F67C4F2276C2C0CA31F63E46261967A248ED9BA529D8417C3A"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Threading.Timer.dll",
+    "bytes": 15632,
+    "sha256": "C2DAA90E26CF4F91BD38B1AF9141F587538AE34E48B5CE593DE87468D3E1504B"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Transactions.dll",
+    "bytes": 16688,
+    "sha256": "93571B496BA152B475D859B2494C095981480AE167412D1D5A4A39C555AAFD90"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Transactions.Local.dll",
+    "bytes": 26376,
+    "sha256": "AB707B0EE3F4AE4B8DB82AE6B5ED422DAC67ABDA07BD263796AF267E9202666A"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.ValueTuple.dll",
+    "bytes": 15656,
+    "sha256": "A54325D3F252D65C560D8B04A62F071D69852CF446789FDC69F3297D381D23A1"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Web.dll",
+    "bytes": 15624,
+    "sha256": "8959EEA37C8A286609B9862A5A93F810B00613668ECC4790F5A407067F200801"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Web.HttpUtility.dll",
+    "bytes": 17696,
+    "sha256": "675EE908309B14A1F80BB85522BD24846B16EABEA75207FA277D24A758958415"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Windows.dll",
+    "bytes": 16176,
+    "sha256": "608969C896A57375BE3394A5DCABF387FD039663E178BFBF80DA7B13FBF0D946"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Xml.dll",
+    "bytes": 23816,
+    "sha256": "8BE7D0D8CFE9CD0FFE36CEB39429F7C75A098A8A844CB90F58F7A942D6CE264C"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Xml.Linq.dll",
+    "bytes": 16144,
+    "sha256": "36BA7808412D71A25A7565179EF970B917A077C558B4F6E3C93DDD3C5893A3A9"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Xml.ReaderWriter.dll",
+    "bytes": 116000,
+    "sha256": "4ACBFE62480E5ECC2BACBC02848FBB5AF9B48AE22071461DA4677D1A8DA62325"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Xml.Serialization.dll",
+    "bytes": 16656,
+    "sha256": "B06765EF74F67254C41E7EBBD0AE8FE1B7D9DCA9D8D6E3DFC3D459310167FB49"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Xml.XDocument.dll",
+    "bytes": 34600,
+    "sha256": "CAA58C1B9462F6AD79E89A55EB025B1043FFE4F90776D85122B2032C89B4D1AC"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Xml.XmlDocument.dll",
+    "bytes": 16168,
+    "sha256": "134154B97C5D37B444138A01B60CF2259DAE96FFF3C48593545CC668A3A9E0A0"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Xml.XmlSerializer.dll",
+    "bytes": 50984,
+    "sha256": "FEA136E83390D04013AE06B3E78B1F75384EB19C821231859BD85CE58BB05D76"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Xml.XPath.dll",
+    "bytes": 17192,
+    "sha256": "11782E4FB2DC00893BB586578644EE82173C9041DADF054CA31356BFBC74DF06"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\System.Xml.XPath.XDocument.dll",
+    "bytes": 16688,
+    "sha256": "A1A9D4A2C202E3C619E046E7D64E1377FDFC4FA03F3F86FC509E28F17D05E531"
+  },
+  {
+    "path": "C:\\Nuget\\microsoft.netcore.app.ref\\9.0.11\\ref\\net9.0\\WindowsBase.dll",
+    "bytes": 16680,
+    "sha256": "7A41B603FD44A6574883D404787761C4CBB848CA8D8B0F27A486548FFF7A02F3"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fstoolkit\\FsToolkit.ErrorHandling-d482e196cc3333e820355a0e412e01111944f3a7\\src\\FsToolkit.ErrorHandling\\Array.fs",
+    "bytes": 9263,
+    "sha256": "CF666BE4784558F9FDB2290021F4F024D3F7ED712A98EC4B7E08210032F2E06F"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fstoolkit\\FsToolkit.ErrorHandling-d482e196cc3333e820355a0e412e01111944f3a7\\src\\FsToolkit.ErrorHandling\\Async.fs",
+    "bytes": 11053,
+    "sha256": "321A41517DE3C70CD1B75C868F01CF226F512071769F3EB792CD0D59CFC7FDD3"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fstoolkit\\FsToolkit.ErrorHandling-d482e196cc3333e820355a0e412e01111944f3a7\\src\\FsToolkit.ErrorHandling\\AsyncOption.fs",
+    "bytes": 5678,
+    "sha256": "C7C11F49B9A113674F1E52443BBCD958CABE330A9F0642DD23F82F215A77AC67"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fstoolkit\\FsToolkit.ErrorHandling-d482e196cc3333e820355a0e412e01111944f3a7\\src\\FsToolkit.ErrorHandling\\AsyncOptionCE.fs",
+    "bytes": 6121,
+    "sha256": "00EB1495B3D9A6616A99B809DA4FC942CCA52B4EBAF19CD0D8110B87FD72FB24"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fstoolkit\\FsToolkit.ErrorHandling-d482e196cc3333e820355a0e412e01111944f3a7\\src\\FsToolkit.ErrorHandling\\AsyncOptionOp.fs",
+    "bytes": 696,
+    "sha256": "C2476227415A2953A8AFA17CD1B8DD489DBCD3720D60927EF6F8B0620B126248"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fstoolkit\\FsToolkit.ErrorHandling-d482e196cc3333e820355a0e412e01111944f3a7\\src\\FsToolkit.ErrorHandling\\AsyncResult.fs",
+    "bytes": 18091,
+    "sha256": "DEC96520054C1ADB95086CD454138CBAE7A5468A618C9358785D736252C856E7"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fstoolkit\\FsToolkit.ErrorHandling-d482e196cc3333e820355a0e412e01111944f3a7\\src\\FsToolkit.ErrorHandling\\AsyncResultCE.fs",
+    "bytes": 6934,
+    "sha256": "995D5977612CC4372B455B160109B8B80218EC6E695A81207C083ECF583CD959"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fstoolkit\\FsToolkit.ErrorHandling-d482e196cc3333e820355a0e412e01111944f3a7\\src\\FsToolkit.ErrorHandling\\AsyncResultOp.fs",
+    "bytes": 786,
+    "sha256": "3B095E793C6561B0A63A63CA04EC2314CF58602FA2AC30E367203D1B76A21D93"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fstoolkit\\FsToolkit.ErrorHandling-d482e196cc3333e820355a0e412e01111944f3a7\\src\\FsToolkit.ErrorHandling\\AsyncResultOption.fs",
+    "bytes": 2775,
+    "sha256": "A3A8147EE89DB56F21474AA24E5214798251E2D5B5C2E1A85372D26E2101BBF7"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fstoolkit\\FsToolkit.ErrorHandling-d482e196cc3333e820355a0e412e01111944f3a7\\src\\FsToolkit.ErrorHandling\\AsyncResultOptionCE.fs",
+    "bytes": 8540,
+    "sha256": "2BA3E7773A38F8CABD67A2117BDBB5FAB51432542F52F89FE0198090963A1334"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fstoolkit\\FsToolkit.ErrorHandling-d482e196cc3333e820355a0e412e01111944f3a7\\src\\FsToolkit.ErrorHandling\\AsyncResultOptionOp.fs",
+    "bytes": 876,
+    "sha256": "F918176A74D988CB0ACD974B311482CF17FE8F63DF34E55B1FF8EC720B653A14"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fstoolkit\\FsToolkit.ErrorHandling-d482e196cc3333e820355a0e412e01111944f3a7\\src\\FsToolkit.ErrorHandling\\AsyncValidation.fs",
+    "bytes": 6151,
+    "sha256": "4CCA33869F3C2893C675425B29735049A53BA5C6056B09632400A1891D459FB4"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fstoolkit\\FsToolkit.ErrorHandling-d482e196cc3333e820355a0e412e01111944f3a7\\src\\FsToolkit.ErrorHandling\\AsyncValidationCE.fs",
+    "bytes": 6928,
+    "sha256": "72AEFDF214B54301D5E0197C4CFE0F0A46811C4C769F79283D8CA6DF1D3F5FD4"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fstoolkit\\FsToolkit.ErrorHandling-d482e196cc3333e820355a0e412e01111944f3a7\\src\\FsToolkit.ErrorHandling\\AsyncValidationOp.fs",
+    "bytes": 1318,
+    "sha256": "B3C2BDD6B6000CA67750E47315449D66E63A395EA81DD84602FE9E1A9FC9E4A6"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fstoolkit\\FsToolkit.ErrorHandling-d482e196cc3333e820355a0e412e01111944f3a7\\src\\FsToolkit.ErrorHandling\\List.fs",
+    "bytes": 9994,
+    "sha256": "975D5BF32988CAFE6F1E38A40B891FF8EE5255718EB546C154E9C9717E3C26B2"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fstoolkit\\FsToolkit.ErrorHandling-d482e196cc3333e820355a0e412e01111944f3a7\\src\\FsToolkit.ErrorHandling\\Nullness.fs",
+    "bytes": 2418,
+    "sha256": "B95996056A1A5308047D727AC18407B5E24946E3AC35EBC26106BFCB5A62A087"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fstoolkit\\FsToolkit.ErrorHandling-d482e196cc3333e820355a0e412e01111944f3a7\\src\\FsToolkit.ErrorHandling\\obj\\Release\\net9.0\\.NETCoreApp,Version=v9.0.AssemblyAttributes.fs",
+    "bytes": 191,
+    "sha256": "421FD34E0C637007CD36E24DAD8C8417E7EA6CDEC26214ADE1FD69D2CF97C3A1"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fstoolkit\\FsToolkit.ErrorHandling-d482e196cc3333e820355a0e412e01111944f3a7\\src\\FsToolkit.ErrorHandling\\obj\\Release\\net9.0\\FsToolkit.ErrorHandling.AssemblyInfo.fs",
+    "bytes": 1079,
+    "sha256": "4891C63FE406BDB023D4CEFCC7811CBD4142657ABCF7891C7CAE672144E95EC3"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fstoolkit\\FsToolkit.ErrorHandling-d482e196cc3333e820355a0e412e01111944f3a7\\src\\FsToolkit.ErrorHandling\\Option.fs",
+    "bytes": 20947,
+    "sha256": "70B78CD021D36D53443924E9FFD923C7A50B548274C38C3995D34761F98A21D9"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fstoolkit\\FsToolkit.ErrorHandling-d482e196cc3333e820355a0e412e01111944f3a7\\src\\FsToolkit.ErrorHandling\\OptionCE.fs",
+    "bytes": 4256,
+    "sha256": "25148672AD05A05691F4C42CEA69E98E4CB7C6E4098B5BC740229F5073A6CDD9"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fstoolkit\\FsToolkit.ErrorHandling-d482e196cc3333e820355a0e412e01111944f3a7\\src\\FsToolkit.ErrorHandling\\OptionOp.fs",
+    "bytes": 700,
+    "sha256": "EA90F541F853B6F2B4099C3553BF20FD8AFC202075B2CEABD6625757211404F8"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fstoolkit\\FsToolkit.ErrorHandling-d482e196cc3333e820355a0e412e01111944f3a7\\src\\FsToolkit.ErrorHandling\\ParallelAsyncResult.fs",
+    "bytes": 3565,
+    "sha256": "F0376D74A8B9FD17A9A2075E4AE39E5A44248F6EF8A6528B943FA865E5D56784"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fstoolkit\\FsToolkit.ErrorHandling-d482e196cc3333e820355a0e412e01111944f3a7\\src\\FsToolkit.ErrorHandling\\ParallelAsyncResultCE.fs",
+    "bytes": 7321,
+    "sha256": "990E4F40CA8B9E3FE229A5779BB5112846C94D115144E302C2812B0246197291"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fstoolkit\\FsToolkit.ErrorHandling-d482e196cc3333e820355a0e412e01111944f3a7\\src\\FsToolkit.ErrorHandling\\ParallelAsyncValidation.fs",
+    "bytes": 1351,
+    "sha256": "077D9EDDEB7AFA9C4E46D889009A2674530CD32C5136CCCC4A967FC67AF6239C"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fstoolkit\\FsToolkit.ErrorHandling-d482e196cc3333e820355a0e412e01111944f3a7\\src\\FsToolkit.ErrorHandling\\ParallelAsyncValidationCE.fs",
+    "bytes": 8942,
+    "sha256": "7335454FA22EE4504A87000E5D214E6F3C0D7609EFBED7815183C6A1BA40E728"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fstoolkit\\FsToolkit.ErrorHandling-d482e196cc3333e820355a0e412e01111944f3a7\\src\\FsToolkit.ErrorHandling\\Result.fs",
+    "bytes": 38423,
+    "sha256": "1754A14B3BA7597BC59DDEABFB2563B40B4236AD9B6AD1AC50FBFE7D37663D28"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fstoolkit\\FsToolkit.ErrorHandling-d482e196cc3333e820355a0e412e01111944f3a7\\src\\FsToolkit.ErrorHandling\\ResultCE.fs",
+    "bytes": 4763,
+    "sha256": "02F459E834AC4590CF177BE60AFE235B76CB1A35DD0D9BE43966A6D4F6193120"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fstoolkit\\FsToolkit.ErrorHandling-d482e196cc3333e820355a0e412e01111944f3a7\\src\\FsToolkit.ErrorHandling\\ResultOp.fs",
+    "bytes": 1869,
+    "sha256": "F08D2AF6209D82A520FA35B75CCBB7539E983DBE63D8D399F64B25BBF60BEB00"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fstoolkit\\FsToolkit.ErrorHandling-d482e196cc3333e820355a0e412e01111944f3a7\\src\\FsToolkit.ErrorHandling\\ResultOption.fs",
+    "bytes": 10386,
+    "sha256": "DF335CFBD14E92829538AD84CAC1256CF90F5AAE77EEBCBF0D2E104793D1A496"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fstoolkit\\FsToolkit.ErrorHandling-d482e196cc3333e820355a0e412e01111944f3a7\\src\\FsToolkit.ErrorHandling\\ResultOptionCE.fs",
+    "bytes": 4604,
+    "sha256": "E8569770392AA777F6139BF60F25B5DF0D554CF0407C1A7199EC98464543212F"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fstoolkit\\FsToolkit.ErrorHandling-d482e196cc3333e820355a0e412e01111944f3a7\\src\\FsToolkit.ErrorHandling\\ResultOptionOp.fs",
+    "bytes": 2711,
+    "sha256": "AB64ED7ECA5203618EC59EB21210D1AB26064C889267A0D781E04E3B2CE1DD67"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fstoolkit\\FsToolkit.ErrorHandling-d482e196cc3333e820355a0e412e01111944f3a7\\src\\FsToolkit.ErrorHandling\\Seq.fs",
+    "bytes": 21864,
+    "sha256": "E5C4FA83EEBD19EE4EBEE2B0A3DAB613A529CD3940697C1E9F63DD3EB0985205"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fstoolkit\\FsToolkit.ErrorHandling-d482e196cc3333e820355a0e412e01111944f3a7\\src\\FsToolkit.ErrorHandling\\Task.fs",
+    "bytes": 2010,
+    "sha256": "65FFEF20ACB8484F54F66185C9B763F01C10902D67A3DDF29F953B292DC0ACC8"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fstoolkit\\FsToolkit.ErrorHandling-d482e196cc3333e820355a0e412e01111944f3a7\\src\\FsToolkit.ErrorHandling\\TaskOp.fs",
+    "bytes": 271,
+    "sha256": "E42E12216093DA8AC6D2ABAEDF383738571C411489C8C694C1AA0B06E4536FF9"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fstoolkit\\FsToolkit.ErrorHandling-d482e196cc3333e820355a0e412e01111944f3a7\\src\\FsToolkit.ErrorHandling\\TaskOption.fs",
+    "bytes": 2874,
+    "sha256": "3525207CDAB0A1A58D8A42250629A12BF3E4EA96A5E1CA762B9D4FD9E45077AA"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fstoolkit\\FsToolkit.ErrorHandling-d482e196cc3333e820355a0e412e01111944f3a7\\src\\FsToolkit.ErrorHandling\\TaskOptionCE.fs",
+    "bytes": 27514,
+    "sha256": "83C2629B9769CDE4610BDD1E7D292B20EEAF02848852A9934731C25F4BD2CB5A"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fstoolkit\\FsToolkit.ErrorHandling-d482e196cc3333e820355a0e412e01111944f3a7\\src\\FsToolkit.ErrorHandling\\TaskOptionOp.fs",
+    "bytes": 302,
+    "sha256": "8CBD27026919DBAADB49755DB4FAE968AEEEAB52C7268C4B699BE8EED71EC763"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fstoolkit\\FsToolkit.ErrorHandling-d482e196cc3333e820355a0e412e01111944f3a7\\src\\FsToolkit.ErrorHandling\\TaskResult.fs",
+    "bytes": 14731,
+    "sha256": "0B6CF082FE58DC22073624AF8D246531DE661523C7C9B59AF3C592224C0E493C"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fstoolkit\\FsToolkit.ErrorHandling-d482e196cc3333e820355a0e412e01111944f3a7\\src\\FsToolkit.ErrorHandling\\TaskResultCE.fs",
+    "bytes": 27591,
+    "sha256": "CCF46F47C70A8FCF9A486A062D248A4347F6A64AF00A777F88F41849AD954975"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fstoolkit\\FsToolkit.ErrorHandling-d482e196cc3333e820355a0e412e01111944f3a7\\src\\FsToolkit.ErrorHandling\\TaskResultOp.fs",
+    "bytes": 302,
+    "sha256": "A76A5ACC41C776481FA40BF4B993FC60769C8FE9114400AAEC2B78C37353EF82"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fstoolkit\\FsToolkit.ErrorHandling-d482e196cc3333e820355a0e412e01111944f3a7\\src\\FsToolkit.ErrorHandling\\TaskResultOption.fs",
+    "bytes": 2503,
+    "sha256": "44B0656CEFA4CAA1B75E786279340E8DA0787C6A618F0F04BF85811211641040"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fstoolkit\\FsToolkit.ErrorHandling-d482e196cc3333e820355a0e412e01111944f3a7\\src\\FsToolkit.ErrorHandling\\TaskResultOptionCE.fs",
+    "bytes": 14375,
+    "sha256": "3010E1B62FF6F263CEE5BC1D5D2DC22C4192436BE7DD7C7C84CE3A2B687C9645"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fstoolkit\\FsToolkit.ErrorHandling-d482e196cc3333e820355a0e412e01111944f3a7\\src\\FsToolkit.ErrorHandling\\TaskResultOptionOp.fs",
+    "bytes": 332,
+    "sha256": "3B37F48EB50C6C8D9E0C30DD2415318C3876AD1D7AEA38F92C7C1A006EA65381"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fstoolkit\\FsToolkit.ErrorHandling-d482e196cc3333e820355a0e412e01111944f3a7\\src\\FsToolkit.ErrorHandling\\TaskValidation.fs",
+    "bytes": 13552,
+    "sha256": "068FB361F8A9BBDAD2A4AB2F8E48621B1CC41310D7943FDF89D7D67604D2DF53"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fstoolkit\\FsToolkit.ErrorHandling-d482e196cc3333e820355a0e412e01111944f3a7\\src\\FsToolkit.ErrorHandling\\TaskValidationCE.fs",
+    "bytes": 27312,
+    "sha256": "2189736419C2F9A4185A9F1FD611C628A65821081B759B271E48247640AEFE5D"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fstoolkit\\FsToolkit.ErrorHandling-d482e196cc3333e820355a0e412e01111944f3a7\\src\\FsToolkit.ErrorHandling\\TaskValidationOp.fs",
+    "bytes": 1298,
+    "sha256": "26CECC1E24E7DB18D1D9F8C61D92D31F3DD904F20BFD8AD38A84646317DB1EB1"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fstoolkit\\FsToolkit.ErrorHandling-d482e196cc3333e820355a0e412e01111944f3a7\\src\\FsToolkit.ErrorHandling\\TaskValueOption.fs",
+    "bytes": 3057,
+    "sha256": "E945199BA69A9737729CCCFBB9B87D21FBBB0CE8234C2DFBD91CA48069FD7F47"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fstoolkit\\FsToolkit.ErrorHandling-d482e196cc3333e820355a0e412e01111944f3a7\\src\\FsToolkit.ErrorHandling\\TaskValueOptionCE.fs",
+    "bytes": 28710,
+    "sha256": "3F0BF34A8DBC09355157E45B183B58E2A117EC1801ABA907D636DB26ECFD81E0"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fstoolkit\\FsToolkit.ErrorHandling-d482e196cc3333e820355a0e412e01111944f3a7\\src\\FsToolkit.ErrorHandling\\TaskValueOptionOp.fs",
+    "bytes": 327,
+    "sha256": "EB09366E14441BDC76683BFDFA358D1FE579D1C6F2AF9D9485C27005D474E7A2"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fstoolkit\\FsToolkit.ErrorHandling-d482e196cc3333e820355a0e412e01111944f3a7\\src\\FsToolkit.ErrorHandling\\Validation.fs",
+    "bytes": 6478,
+    "sha256": "CD1FC625988ACA699B67723EE50DE07272A37175F919D4767650C6774992B631"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fstoolkit\\FsToolkit.ErrorHandling-d482e196cc3333e820355a0e412e01111944f3a7\\src\\FsToolkit.ErrorHandling\\ValidationCE.fs",
+    "bytes": 5249,
+    "sha256": "47E6CCA463B9D0930E3EB900864F0A597E369D5E294B8FAEC3C7B347BA0A738E"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fstoolkit\\FsToolkit.ErrorHandling-d482e196cc3333e820355a0e412e01111944f3a7\\src\\FsToolkit.ErrorHandling\\ValidationOp.fs",
+    "bytes": 1209,
+    "sha256": "DA079834E48FC5786E59D5EEB4D71AAD735EB6148B46BAAC1D0B6E3DF18BD4C9"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fstoolkit\\FsToolkit.ErrorHandling-d482e196cc3333e820355a0e412e01111944f3a7\\src\\FsToolkit.ErrorHandling\\ValueOption.fs",
+    "bytes": 5767,
+    "sha256": "068D3BB5442EDACAEAED372790F00E0F39E538550F08D978EB159FE244333DEC"
+  }
+]

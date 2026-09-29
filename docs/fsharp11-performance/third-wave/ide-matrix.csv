@@ -1,0 +1,7 @@
+"Graph","Compiler","Projects","Allocated GiB","Peak RAM MiB","RAM after 10 s idle MiB","Live managed heap after full GC MiB","CPU / wall s"
+"FsAutoComplete","10.0.100","3","6.027","1167.1","1185.8","544.6","39.41 / 17.79"
+"FsAutoComplete","11 RC1","3","4.662","1062.9","1079.3","466.1","37.17 / 15.85"
+"FsAutoComplete","Local RC2 R2R","3","3.824","856.7","873.9","380.1","33.30 / 14.53"
+"Oxpecker","10.0.100","2","1.452","390.6","404.2","107.9","8.43 / 6.69"
+"Oxpecker","11 RC1","2","0.702","299.1","319.3","84.4","5.55 / 4.56"
+"Oxpecker","Local RC2 R2R","2","0.583","281.9","302.2","74.9","5.30 / 4.32"

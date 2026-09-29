@@ -1,0 +1,942 @@
+[
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\Microsoft.Win32.Primitives.dll",
+    "bytes": 21128,
+    "sha256": "548C3FDDB30558AD6FD9F6D0B7490D9130B5B7A28DDB3F748C7521823175651A"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\mscorlib.dll",
+    "bytes": 54408,
+    "sha256": "76B21520C37D7181C6857198C09EE896DEA574C7D907B2F4C65B2D705B1F5D71"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\netstandard.dll",
+    "bytes": 1319560,
+    "sha256": "1799854D01A89D141FECC4C4548B01E51FA57118C9B18EAC66A752F3BBE98C02"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.AppContext.dll",
+    "bytes": 21128,
+    "sha256": "03BE43F4FAA2128F2C37A6F4142E4B2A78C7347FFC3FCC4B7F2878FF4EA3F3CF"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Collections.Concurrent.dll",
+    "bytes": 21128,
+    "sha256": "4521214CC351EEA35D3AB9EE8B59B2A5C22DFE1467C434D33D23064B93440D2A"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Collections.dll",
+    "bytes": 21640,
+    "sha256": "F387CA05CE6E507E81CFBFA619B52C1823A69B9B5DD5EE251B90762F0D4B180A"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Collections.NonGeneric.dll",
+    "bytes": 21128,
+    "sha256": "C29F06343A5BE5D642853EF37AC7854004C0C74884BD1885557FC90CE6D0BA90"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Collections.Specialized.dll",
+    "bytes": 21128,
+    "sha256": "3A7B50DB13FC72AACA03F683F85455426AEDDB4E67CF1F389D25D36F6A8BCBC7"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.ComponentModel.Composition.dll",
+    "bytes": 21128,
+    "sha256": "A3F4F6323BF0C44B33E2BA16C42F8C2F700E3E94750C0F48289C0388EDF0253D"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.ComponentModel.dll",
+    "bytes": 21128,
+    "sha256": "10A1F22BC680EEDDB5F0629BB6ABC533B39540061DB2462990EE4F86E7284A31"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.ComponentModel.EventBasedAsync.dll",
+    "bytes": 21640,
+    "sha256": "C1352BCE7F739AE6E9E357DDA29832150B304BA9382EB1A5D04CAC5A114F98D7"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.ComponentModel.Primitives.dll",
+    "bytes": 21640,
+    "sha256": "CC44CE9986EC0DF0E046A86A0F1BEB0AFE27469098B7E8538690FCB1CC69FE80"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.ComponentModel.TypeConverter.dll",
+    "bytes": 22664,
+    "sha256": "EFBACD372BCACE3444CD21A32DC3ECC52B7EA4D8F10E3714533644CA391A45F9"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Console.dll",
+    "bytes": 21128,
+    "sha256": "BB558EDD9A959D8FB9788FEBCCCD16F6186A10D47A58E46B14029A885FEFAF51"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Core.dll",
+    "bytes": 26248,
+    "sha256": "66FD316A9AD1A1084AB55E63DF6EC3EFEF157E56D8AAC98B3A0C96F630B3AB63"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Data.Common.dll",
+    "bytes": 22152,
+    "sha256": "AF6BAEFEB070F1E81E60C7E97283B03012B2550F209F543060B92BDE25039D0C"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Data.dll",
+    "bytes": 25736,
+    "sha256": "7DCC20161FE2799714BD47B6D080FA7D04A1B785909FC1F2A2694A7B0B0047E3"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Diagnostics.Contracts.dll",
+    "bytes": 21640,
+    "sha256": "7EB33F956BBDCB7C7E44797496BE103B22EA20CE6BDC9F53351B5A868CC19D54"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Diagnostics.Debug.dll",
+    "bytes": 21128,
+    "sha256": "AD00C1FD56FBC9DD5A9801D74DEEF17FDF2F913E0EEA8943A7D7EB3C03F91390"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Diagnostics.FileVersionInfo.dll",
+    "bytes": 21128,
+    "sha256": "E976A1C177189587718BD2965A965793B870E43B825BAA0C035862B6C1EA5BA1"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Diagnostics.Process.dll",
+    "bytes": 21640,
+    "sha256": "3E6680EC1B89AE9BE5BF0F3487E061E595EF8D04A335FC75956B35D7611117CD"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Diagnostics.StackTrace.dll",
+    "bytes": 21128,
+    "sha256": "C9E8B82471E1832A84C4068E2EA2CC6D90BE0C5D8164D5591FB9C427C4EDACD8"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Diagnostics.TextWriterTraceListener.dll",
+    "bytes": 21128,
+    "sha256": "C56C60BD0B39141FF175D30CF7984386AB9083449A7D1C137CA6E797ACA9D512"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Diagnostics.Tools.dll",
+    "bytes": 21128,
+    "sha256": "06CBFD8B3CCF85AFE1E0631B1F6DB173C36C45B74F8742B7FC6E2B66A1B947F8"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Diagnostics.TraceSource.dll",
+    "bytes": 21640,
+    "sha256": "9AD060F843B175A8357F11A52AFF388163EA63D9E2251822BDB56DDFA4C60ACC"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Diagnostics.Tracing.dll",
+    "bytes": 21640,
+    "sha256": "5770623FB31A40CB49CC792351178A90097792ECA62E34BECFCA7B4D238F689C"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.dll",
+    "bytes": 47240,
+    "sha256": "37F473D28C96DFD316B3EB55F30791BFCCA1CDE1B0F1E01932D939F007F72361"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Drawing.dll",
+    "bytes": 21128,
+    "sha256": "5988B97C3EB512BEFB752E7DF66FF9E0620BF69F0348BD60EB030BEBFAD01409"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Drawing.Primitives.dll",
+    "bytes": 21128,
+    "sha256": "3F250CDBE1B791EACA2E8C0E562D598B415AE7E7398C7A9F9D3FA3A4F367F63D"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Dynamic.Runtime.dll",
+    "bytes": 22152,
+    "sha256": "535B47C29C69B7B936D112586371CCA83ED41A7DE8FEF99E7F9270840202E02F"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Globalization.Calendars.dll",
+    "bytes": 21640,
+    "sha256": "5B13DCE0F61BC1B927468F8127A895F251BAB0BEC405826B096E858AEACD3D3D"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Globalization.dll",
+    "bytes": 21128,
+    "sha256": "3BAB5438F831F59127FC3A2107A29EC903EBE86D7C43F0CE3A105589375DC3E9"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Globalization.Extensions.dll",
+    "bytes": 21128,
+    "sha256": "6A9106A1DB163AF79205A326612031B0B4000C61E339B8461CE5A9495EF2F9B0"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.IO.Compression.dll",
+    "bytes": 21128,
+    "sha256": "77C16C8C99FA0AF8FAEF97F69BC37FC5C1E0214A343BBC05C80C6DF830363572"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.IO.Compression.FileSystem.dll",
+    "bytes": 21128,
+    "sha256": "874A197377557404FBCBCEF4CE65EAFCE737CB0367C2E02D164846EABDCD3F71"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.IO.Compression.ZipFile.dll",
+    "bytes": 21128,
+    "sha256": "E37B6DCE4241396276E894CE6A4E9F90C5C2F6CC7675AEA4552338A22B7F7604"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.IO.dll",
+    "bytes": 21128,
+    "sha256": "EAAC1E774EF989E29E07E0D1867D3DF09DF9D5B89868326540D9392C3778E40B"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.IO.FileSystem.dll",
+    "bytes": 21128,
+    "sha256": "03B7DD0118ACD4633834715383539A939F88B2CE8C199C757D13F3C0232BD99C"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.IO.FileSystem.DriveInfo.dll",
+    "bytes": 21128,
+    "sha256": "BAECE66F4AE1BDAB2D2EAAF635FB088012FBE499476047A4F0CC342208A5F705"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.IO.FileSystem.Primitives.dll",
+    "bytes": 21128,
+    "sha256": "7CFB58882C12D4D1A06DA0BEDAEE737423845919BAAFB48D4691967534FEDBC7"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.IO.FileSystem.Watcher.dll",
+    "bytes": 21128,
+    "sha256": "800DAF635AB332ADE00A8391BE4CBCC0ED590EB7C8BF7E6AA971E3D4F4E4A617"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.IO.IsolatedStorage.dll",
+    "bytes": 21128,
+    "sha256": "85F9CF89C900081ABEEC8D80C78CBB66E85C76776E54A35A7267031AA9A542E1"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.IO.MemoryMappedFiles.dll",
+    "bytes": 21128,
+    "sha256": "C560B0586970F7635BCECF85CB3A6491FDC6FAD9D087049F461531CC1122703A"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.IO.Pipes.dll",
+    "bytes": 21128,
+    "sha256": "D1CD3B9DC20847857FBC79A190348769F041C994BD914EC84110F699F26C4231"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.IO.UnmanagedMemoryStream.dll",
+    "bytes": 21128,
+    "sha256": "C171EA075745D62147E112518D77243310DF6E7808C863016B47BB8E986C0093"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Linq.dll",
+    "bytes": 21128,
+    "sha256": "83EBFB5A373011986771F0C33826566EE1BF8BC8D59D6B98BBEC72F3A6849024"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Linq.Expressions.dll",
+    "bytes": 22152,
+    "sha256": "F4FFC1701FA0BE59FE6516D09705E2459B7C99F6A276586A5A6402FE6E9A5C75"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Linq.Parallel.dll",
+    "bytes": 21128,
+    "sha256": "12E2F57A9DBCEA22620079BB5389D6FE50319A92E78FDFE4831D59398D6BB218"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Linq.Queryable.dll",
+    "bytes": 21128,
+    "sha256": "6D2C05685AC0DA3EA878F02B15E1EB547F665C9269788313676505BF60BA295D"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Net.dll",
+    "bytes": 22664,
+    "sha256": "A99DB3C022EFD17CCD03BFCECAA97B8CFE413D589D6E21C045B9FC60E86436E0"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Net.Http.dll",
+    "bytes": 22664,
+    "sha256": "31B697FA1E85328F31C919C16CCAAF979B5D1452E57C85F389B4EFE4DE19DF5A"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Net.NameResolution.dll",
+    "bytes": 21128,
+    "sha256": "F5510CF12662EAE4BF076CB238C1FE632CC749D6D294C5B69D3C62FBBC8DDFA7"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Net.NetworkInformation.dll",
+    "bytes": 22152,
+    "sha256": "46A23DA1FEB0C432D30284AE488BC960D5E1443A8AE836F0B348F8AE18238275"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Net.Ping.dll",
+    "bytes": 21128,
+    "sha256": "E57D979336C98A35512250A52CCC62F6BC66FEB1A7BA5DEB0E456EFBDE6E5538"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Net.Primitives.dll",
+    "bytes": 22152,
+    "sha256": "C36816F947A14CC16BA6E539701198A5AF5B3E0669871EE3A28BDE4D3C6602F4"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Net.Requests.dll",
+    "bytes": 21128,
+    "sha256": "97EC4907FBB226A0FE275AECA159DDCDAD16A049E7E26FF5FCE80FEF08D7FED4"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Net.Security.dll",
+    "bytes": 21640,
+    "sha256": "02913B443B29F211134EE4FB3A100571CC72CE52DF9B3918C907B9794979A796"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Net.Sockets.dll",
+    "bytes": 21640,
+    "sha256": "F9276AA0F7FA72985D73C84D44235B22F2F11B76F866E74FD4D9AE44ABB7EE0D"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Net.WebHeaderCollection.dll",
+    "bytes": 21128,
+    "sha256": "4EA8C322C4C70C648560938B1482DFE83BE0AEADE64171B47E2160572AEF43C3"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Net.WebSockets.Client.dll",
+    "bytes": 21128,
+    "sha256": "416A1BF7D6B3841725F0924A1C8AE5773DD0D694F20D9A124EB584AE7F37FFA0"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Net.WebSockets.dll",
+    "bytes": 21128,
+    "sha256": "DCF495424661D3D6287C3FCF682449D0A5FDE8BFA0BCB7A47231D3DAF620954B"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Numerics.dll",
+    "bytes": 20616,
+    "sha256": "6EB195F7B7B457B57D4112CA6DA70388705F6D082FDB7355F1F9B20DBB941DCF"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.ObjectModel.dll",
+    "bytes": 21640,
+    "sha256": "96FFB8515DAF1229528335556FF4B661B5B08E9CADFDAFB6F9C82C75897BB859"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Reflection.dll",
+    "bytes": 22152,
+    "sha256": "608830CA1557924EB064BDFD7D96BFF451DD98F5BE27700FC3DC17DFFE4C6F29"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Reflection.Extensions.dll",
+    "bytes": 21128,
+    "sha256": "B55B22473640D3D742664DE2777D5C010E1F7ACEE570B86AAC8A4C3F0DE4FB67"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Reflection.Primitives.dll",
+    "bytes": 21640,
+    "sha256": "412F0025C810E065F4D1321D6A9818C04D22508B07F7942C3DA679BBF8D231FB"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Resources.Reader.dll",
+    "bytes": 21128,
+    "sha256": "009364C3C35CAAA3268EDCF2750836199BC60E2064E510366025CDE1FF26BF51"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Resources.ResourceManager.dll",
+    "bytes": 21128,
+    "sha256": "B1BC68928BE5E9EE081EB9A07B84F575A9F20FBC3214097D1A79CB67AE60542D"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Resources.Writer.dll",
+    "bytes": 21128,
+    "sha256": "0CB6645D832BB339C83C3B40632EDE568EC3FBF7D483573F7CEE01DBCDC2F7CB"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Runtime.CompilerServices.VisualC.dll",
+    "bytes": 21640,
+    "sha256": "D3230432E2AA60DD4C59CAC90FEFDCBA93D074C7685F25049833AA59BA907B05"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Runtime.dll",
+    "bytes": 29320,
+    "sha256": "D90393DF667EF057A1411DA6CD90AD0001468CF5CCAD9155AF216A6FD2E91304"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Runtime.Extensions.dll",
+    "bytes": 21640,
+    "sha256": "ED49CC9C0411D9195A886F43E7B7CE54916C3949232FC2B00EE172259BEC6DFA"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Runtime.Handles.dll",
+    "bytes": 21128,
+    "sha256": "ADC2CDE02F7DD1E466F825404FA1421FEF55B9707176682B7FF3AFBB63CEF825"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Runtime.InteropServices.dll",
+    "bytes": 24200,
+    "sha256": "DE66340C0AB89EA3D1EA39D25BD2269050385C075B9DB20851ABE62E7E97DE41"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Runtime.InteropServices.RuntimeInformation.dll",
+    "bytes": 21128,
+    "sha256": "8E2E73E4DC590D0E5DA1EE7F109A0FA5428A79DCE441B2AB17556579A6B57E34"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Runtime.Numerics.dll",
+    "bytes": 21128,
+    "sha256": "CA3CD25BC10B61B6F3B1FC2E1C742292600D6CF446433533224D8A91464484B5"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Runtime.Serialization.dll",
+    "bytes": 22152,
+    "sha256": "9F4DCA1345C9A6158EEBFC31EF4F71469CBB3AC007EBD942BAF31A550818BE7F"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Runtime.Serialization.Formatters.dll",
+    "bytes": 21128,
+    "sha256": "07A12EDBD5C03B57C12CD6D01F2F7F8A0FA129EBAE4F9FBB6BA8269B4ACC1384"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Runtime.Serialization.Json.dll",
+    "bytes": 21128,
+    "sha256": "FF82A7DB9B4AAE45F0868C079DA72CE49257DC3CFA2B1949EC6CDF4296527378"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Runtime.Serialization.Primitives.dll",
+    "bytes": 21640,
+    "sha256": "4A36266A5A46760293ADDB5B078BCEE2A2CA23AD8050F6AC32B380AA7FB616D4"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Runtime.Serialization.Xml.dll",
+    "bytes": 21640,
+    "sha256": "5772CD0F431123BD76375F57F6ED61522CBD116591B1B5D5034C42DEE5075C93"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Security.Claims.dll",
+    "bytes": 21128,
+    "sha256": "D544E53CC31285961A3CDE5AE1F6E1180F9E256D0FB1C8933D422761460EB2A4"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Security.Cryptography.Algorithms.dll",
+    "bytes": 21640,
+    "sha256": "40252E22CE42EC073497FC74801F484617EE9DC9727350484716807DCEA83514"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Security.Cryptography.Csp.dll",
+    "bytes": 21128,
+    "sha256": "FDA20FAD95F47EE2F998B19B5F6236BB09E635D9DC5EB5E796EFAC7300052CB7"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Security.Cryptography.Encoding.dll",
+    "bytes": 21128,
+    "sha256": "4E7B3F0015238F35087743328645C0FC8DC08867FA61DC277879E04EB511EE82"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Security.Cryptography.Primitives.dll",
+    "bytes": 21640,
+    "sha256": "A68087A0F5584956E4B4D64D2B98C5BA838089AA75017BE2449A5B1079AA1DF8"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Security.Cryptography.X509Certificates.dll",
+    "bytes": 22664,
+    "sha256": "9A74EB6A04CCD1BE17B971C7CF3A911FEB6A8246C6DEA66BCCE98AFCCB00A752"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Security.Principal.dll",
+    "bytes": 21128,
+    "sha256": "DEAC45B26217CE79300186054D6AE136870980A9CD6EB1F2E146C9E24EA024B7"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Security.SecureString.dll",
+    "bytes": 21128,
+    "sha256": "D332006AB59F7B439E0F984DDF10AD860D68F1190EA5DE737654AA2663141B0C"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.ServiceModel.Web.dll",
+    "bytes": 21128,
+    "sha256": "A64D6B7EACDC8C150803D599766105D69311F0DA4336C0B57E4AB7DFCE2E4584"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Text.Encoding.dll",
+    "bytes": 21640,
+    "sha256": "A42C8751FABE969C861E0D36AF6E5CFB6A11BA7103A83009339ACB9DA3C8D60A"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Text.Encoding.Extensions.dll",
+    "bytes": 21128,
+    "sha256": "7C503FB88EE21A14F82E73BC48B1A01DEC1EB5D9B88EEE27F8488A94A0193EFA"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Text.RegularExpressions.dll",
+    "bytes": 21128,
+    "sha256": "A08DD07C81CE700E3BD5A451551C3ECEE8952BF27402F2FF25876E8AB868FEDC"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Threading.dll",
+    "bytes": 22152,
+    "sha256": "8460BD6D2DAE27F934203B7E3276081172AEA51E36870DFEDE9100659E4EC457"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Threading.Overlapped.dll",
+    "bytes": 21128,
+    "sha256": "301662B3BDCCA9C9F6E4FE6476C98E024413684A3CB9C12D17B377F08F982A07"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Threading.Tasks.dll",
+    "bytes": 22152,
+    "sha256": "8BC6FFE40BDE4F681F8D8AB1A46DF08D5B57A5AE3BF2CCCDB8A8DAAFEF1730E7"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Threading.Tasks.Parallel.dll",
+    "bytes": 21128,
+    "sha256": "3100ABFC4ED3BF071B835085D0D593A5245F302CAD529E2496EA135F316595BA"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Threading.Thread.dll",
+    "bytes": 21128,
+    "sha256": "9F8A8CEDE31E7E62A7D84FC608A5AB3206AC30099F9DC5C46EAD2110A5070C0D"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Threading.ThreadPool.dll",
+    "bytes": 21128,
+    "sha256": "C07265FF8C2906A033C54591C6BB4832C6B4AB325060544EA8CC8576EE67A23F"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Threading.Timer.dll",
+    "bytes": 21128,
+    "sha256": "7FF2E33CE2A16FA36154CD416B0CEFDAC12598FDD69061F3F937FD2900F03B19"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Transactions.dll",
+    "bytes": 22152,
+    "sha256": "F3E4222B90CFA87955E64590A2877A9169906DA62B5E5583C2EEC2ACA5D17D99"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.ValueTuple.dll",
+    "bytes": 21128,
+    "sha256": "83EF375C550D64A941E4372EC770F68F099AA0A42291ECF08456438DB03993ED"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Web.dll",
+    "bytes": 21128,
+    "sha256": "87334668AEA76E1BBF8C45A44DD22C5C0CBFFE5D2A60D7509B438357D58003A0"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Windows.dll",
+    "bytes": 21640,
+    "sha256": "CD37EFAF7F5368C161D744147B3D0388013B1F7728F35BA12BB159ED62DF4939"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Xml.dll",
+    "bytes": 29320,
+    "sha256": "8A3390F450FC4407D723605C28AB767795CC54E9F72152DA522F93A3752FF6CC"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Xml.Linq.dll",
+    "bytes": 21640,
+    "sha256": "5D5F93ED70FAA392750C4033F806676DC88DA96109ACCFA9B0F190319D582E16"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Xml.ReaderWriter.dll",
+    "bytes": 21640,
+    "sha256": "AA697DA49BEBEA7101F2A0B085B24D2E3BECBA31B40964E13CCDA360164AAF41"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Xml.Serialization.dll",
+    "bytes": 21640,
+    "sha256": "139E9C981E15801CFCE4BAABC15F6E3ACFD11360B0E11B51EAF9B604CAD5A123"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Xml.XDocument.dll",
+    "bytes": 21640,
+    "sha256": "896DB686BBFE7472850B4B13E3B81A8A4E5DEBB7BEC64A4826BDE98A8D493D68"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Xml.XmlDocument.dll",
+    "bytes": 21640,
+    "sha256": "A8F2A56CFAE1B463A375C27FA1113D550D7F59A88663CBC78B76083C50F4D328"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Xml.XmlSerializer.dll",
+    "bytes": 21640,
+    "sha256": "3E420882723D12CA591416F305C57E368C00C58BCC3BF357FE0D405A17D632EC"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Xml.XPath.dll",
+    "bytes": 21128,
+    "sha256": "A9E91245ED7A84BAB79A801B53D4F88BA88130DAB4299FF851461091B84AE5E0"
+  },
+  {
+    "path": "C:\\Nuget\\netstandard.library\\2.0.3\\build\\netstandard2.0\\ref\\System.Xml.XPath.XDocument.dll",
+    "bytes": 21128,
+    "sha256": "76AE697AA1825C282E1EF6156358F66C502D77DFBD209312D5FCAEDEB6DFC2FD"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\artifacts\\obj\\FSharp.Core\\Release\\netstandard2.0\\.NETStandard,Version=v2.0.AssemblyAttributes.fs",
+    "bytes": 201,
+    "sha256": "A6210CD5E6A4620B34CBB2D9194FDE6789D29376565DE2E5EEE130FFDE00A78D"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\artifacts\\obj\\FSharp.Core\\Release\\netstandard2.0\\buildproperties.fs",
+    "bytes": 219,
+    "sha256": "845EB3E4FB3016F0A86E4F59CB5CB64DE51C2953E9B8A051D1F9E51C0D69D3CE"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\artifacts\\obj\\FSharp.Core\\Release\\netstandard2.0\\FSCore.fs",
+    "bytes": 22640,
+    "sha256": "D773B49B4A71F618467E6F0B3FA535882A968CB309345A93724948E379C7869D"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\artifacts\\obj\\FSharp.Core\\Release\\netstandard2.0\\FSCore.resources",
+    "bytes": 17895,
+    "sha256": "1842F56889201746DA7B651E2E1D3842FB86868ECA32A1542368AB2A7FEFD71F"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\artifacts\\obj\\FSharp.Core\\Release\\netstandard2.0\\FSharp.Core.AssemblyInfo.fs",
+    "bytes": 791,
+    "sha256": "BA92C8E4E90B5579CFD54A9E0CD943401580C30849B80E018EE8755D68643D9E"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\src\\Compiler\\Utilities\\sformat.fs",
+    "bytes": 66511,
+    "sha256": "97FA7814C16A9CD348F589E35A6DBFF1D9DB9982BC2E931B72C3DEFF0B0D9F13"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\src\\Compiler\\Utilities\\sformat.fsi",
+    "bytes": 14705,
+    "sha256": "E24C2F03FB91FDC5C80F343C26B580E4888939AEB43545900CEF48ADAE9ED44B"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\src\\FSharp.Core\\array.fs",
+    "bytes": 101691,
+    "sha256": "E26DFACB4D2CF8D42512997252F1F59025DB22CDE3DF84B54A8E8465BC62D242"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\src\\FSharp.Core\\array.fsi",
+    "bytes": 186342,
+    "sha256": "7BF602EBC13CC155025488F5424D786D493591061E3EDFCD980BC9D6D25F46AB"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\src\\FSharp.Core\\array2.fs",
+    "bytes": 7229,
+    "sha256": "B61F4FC35B384859B0347A00DE96686B7B053820FE2D4A8A87D1482A80C90F4B"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\src\\FSharp.Core\\array2.fsi",
+    "bytes": 19161,
+    "sha256": "5B0566C7E6579B8E8765158A99DFFAC6F5E48DFD8A48A5F829EF660A2A13A91A"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\src\\FSharp.Core\\array3.fs",
+    "bytes": 6205,
+    "sha256": "68680850D37DA9FCE378C8EA6994D90D935ACEBAE088A57AFC50F06336C95714"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\src\\FSharp.Core\\array3.fsi",
+    "bytes": 19057,
+    "sha256": "5FBBC5911A6BA9DEE1BEEFA98DB03E935394F38C2C752BB79A401BCDFE04B900"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\src\\FSharp.Core\\async.fs",
+    "bytes": 104841,
+    "sha256": "94E02A4F1E25B84206FDDA97CC9B1159CEAC6F3364F49C25EA814133C43D4719"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\src\\FSharp.Core\\async.fsi",
+    "bytes": 81504,
+    "sha256": "BB32B350E495178B4D63606F95D709494D2EACAADDB6F0B2576AA810889A1BD6"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\src\\FSharp.Core\\collections.fs",
+    "bytes": 2275,
+    "sha256": "49EA75EAE215FD831A3A4C86B0B47D8C6959FFAA52602D36B9A5E2F13AB29E01"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\src\\FSharp.Core\\collections.fsi",
+    "bytes": 8482,
+    "sha256": "32B50ABEB5D2CF1C8F781B1CB7BA4932190687D08C04AADADA3D46AF83DD6CEA"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\src\\FSharp.Core\\event.fs",
+    "bytes": 7543,
+    "sha256": "F9A4A771C7A81D0D44312C084FF2309E2A8D92CA0480E1B413D6E39DB9C31D2C"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\src\\FSharp.Core\\event.fsi",
+    "bytes": 3209,
+    "sha256": "CB02009E4854BBD7DCC8DDBD5FE2DBEA980E49AEF007C2503B61FCBA25B0AAAA"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\src\\FSharp.Core\\eventmodule.fs",
+    "bytes": 2952,
+    "sha256": "8578D631F3F4F72A7504AAEA490A9AADF9BB4620CF2FEE263F2D5D1431C5D28F"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\src\\FSharp.Core\\eventmodule.fsi",
+    "bytes": 15163,
+    "sha256": "5AB987B5CE4B2D9CBAF7BE9BA5AA950BDF6CCE2AD80C7DF244D54E4BA3329B0E"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\src\\FSharp.Core\\fslib-extra-pervasives.fs",
+    "bytes": 17945,
+    "sha256": "2EDB44629D39236B51CD9650D4A74AD947F67B1FEAC3E47B694CE3CEAD07754E"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\src\\FSharp.Core\\fslib-extra-pervasives.fsi",
+    "bytes": 26476,
+    "sha256": "147EF9CC954B97BA94526541300E8E4985A45C0E53301C08740CA0BB1B8D9D28"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\src\\FSharp.Core\\ILLink.Substitutions.xml",
+    "bytes": 715,
+    "sha256": "9EAD17C4E19F9D2884CC5924BAC2D66C5186A1B566CF5C7F477B07CFBFC2AFC3"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\src\\FSharp.Core\\Linq.fs",
+    "bytes": 65172,
+    "sha256": "6A24605AB51E58347F18A4C64E2267A3523604183498E2F92F8783E000CE3CCF"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\src\\FSharp.Core\\Linq.fsi",
+    "bytes": 4071,
+    "sha256": "9DED61D6B2127B24E252A15076B4D1A82F520C35EC96291DB717927845F45D94"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\src\\FSharp.Core\\list.fs",
+    "bytes": 40355,
+    "sha256": "491FCA15B53725CC47E2482A775A660CA3A10F44CCB30CE0DD71953C28B24D07"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\src\\FSharp.Core\\list.fsi",
+    "bytes": 118330,
+    "sha256": "8D1EAE50B4233B062551D5D95D7760733C987ADDA6F194A0EEF20B7E9EF30BA8"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\src\\FSharp.Core\\local.fs",
+    "bytes": 48810,
+    "sha256": "3072D5C3BDF3288BE64D51E6921D3039AC6B8D46FC595B56DABDEBBF3DFEE76A"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\src\\FSharp.Core\\local.fsi",
+    "bytes": 6008,
+    "sha256": "281C576B3A91FF7E197D623B6042D867E566DD43C48D9209272C205A70F12028"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\src\\FSharp.Core\\mailbox.fs",
+    "bytes": 21909,
+    "sha256": "BA21F6D2BBF49B2E76AF0320BEA71E5709F4BB1A15E7D52215C3C4FADB2A871B"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\src\\FSharp.Core\\mailbox.fsi",
+    "bytes": 16189,
+    "sha256": "F6754ECF841F22BF0F3257DAC40891F9E1FAC6500DB255DDE3C407801EB46148"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\src\\FSharp.Core\\map.fs",
+    "bytes": 43597,
+    "sha256": "1A8DA7721BBC577B2A723EF3D21096C978ABA878F4389729F2999BC726B1BA6B"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\src\\FSharp.Core\\map.fsi",
+    "bytes": 30963,
+    "sha256": "63FF0CE35CCE2BFD4CE5DBE63F8B241B1EAFBABB750C23B323B1DBD1C143D53D"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\src\\FSharp.Core\\math\\z.fs",
+    "bytes": 3075,
+    "sha256": "4C2829FD47C1F1C5902D2D79C96ADFCFF0761913CBDD8EDF22F1AD8C6512944B"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\src\\FSharp.Core\\math\\z.fsi",
+    "bytes": 2111,
+    "sha256": "7EAA2FCAB27FB3618FF7908638F7CF9D0A9F860CA9C58C1CE87F2926BE4C0EE9"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\src\\FSharp.Core\\MutableTuple.fs",
+    "bytes": 5919,
+    "sha256": "240B00D654A8CD19521875F14695213004EA6BCD942D8C1BDA9E0DA1E0642E4C"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\src\\FSharp.Core\\nativeptr.fs",
+    "bytes": 3969,
+    "sha256": "20207E0E2D1449DD9D063C0CD63E5F8CC4617C9F26152C7E62C621AB5DB16C79"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\src\\FSharp.Core\\nativeptr.fsi",
+    "bytes": 9180,
+    "sha256": "4F0DAD818CF4D9641C2330A9DDD318844111BF4F1E48AD9F72E775E9D06977AE"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\src\\FSharp.Core\\Nullable.fs",
+    "bytes": 8669,
+    "sha256": "42488274F1CB269EBDDEDC7A3F5A969EB9D466CB4FBFC3427F589705CC936B6C"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\src\\FSharp.Core\\Nullable.fsi",
+    "bytes": 34628,
+    "sha256": "E9650D2977AFA96FDF32CE597CF2E217D27F504F3FB56A1F68A6E9119F3E35D2"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\src\\FSharp.Core\\observable.fs",
+    "bytes": 7889,
+    "sha256": "451371EA5A7E2CE2C2349BA4C2DAC7DB3F89282D329889EC26FDF256D4A46C13"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\src\\FSharp.Core\\observable.fsi",
+    "bytes": 15540,
+    "sha256": "5564FD1C7DC0966C894D914958853A517F59F2190A529B6D89DEE69263968305"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\src\\FSharp.Core\\option.fs",
+    "bytes": 10861,
+    "sha256": "20925F5B6E0743B0A0D4FB0787F2C239EA68E84CC8D874A93235827346877268"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\src\\FSharp.Core\\option.fsi",
+    "bytes": 45589,
+    "sha256": "7C8BB98726B3AA377CB0A4FFB3B77FF0262100EF22ACD4A9DE5D00EEFCE32C9C"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\src\\FSharp.Core\\prim-types-prelude.fs",
+    "bytes": 6243,
+    "sha256": "F5F6967BFA8238B3DFDBF7831849F9F2A98B2E3F455C5DCD61F07D7E31C31495"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\src\\FSharp.Core\\prim-types-prelude.fsi",
+    "bytes": 22221,
+    "sha256": "FC9FEB232C7967DE0B739E41C8DBD1A562DE5EADCB3078C68EEFD387F667214C"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\src\\FSharp.Core\\prim-types.fs",
+    "bytes": 458125,
+    "sha256": "19096EB08F18B34ADFC33FF9AE5F19961BA1820E733938F594DBA8A75E8A22DA"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\src\\FSharp.Core\\prim-types.fsi",
+    "bytes": 328618,
+    "sha256": "7C26EC300E60A019F652E1A3B1BEB24EC2E7501ECF8FFBFB8D0A5D83C6BEBF04"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\src\\FSharp.Core\\printf.fs",
+    "bytes": 71388,
+    "sha256": "2B69053106D6423C6DEA918F260D4EC35802C71D082B6B01182F7D71BFFBB20C"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\src\\FSharp.Core\\printf.fsi",
+    "bytes": 19489,
+    "sha256": "58235B0DD407432C39F20809A5A6D3DBB857EFCC4C656A935C54F40E628D41E1"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\src\\FSharp.Core\\Query.fs",
+    "bytes": 114329,
+    "sha256": "A2E80FF3CACF8CB4D9B957C8A5DB94F13C631DB2F32C7DEE440119449063DE46"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\src\\FSharp.Core\\Query.fsi",
+    "bytes": 25166,
+    "sha256": "B8A7A3AA511130DDCC54A4DE9EAB76E201F043D614BA45040165EF02E79BF382"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\src\\FSharp.Core\\QueryExtensions.fs",
+    "bytes": 14586,
+    "sha256": "95B3D236344FDE10DAA1F19653F2A1E49916552628FBD27E982B99C7F5F58E02"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\src\\FSharp.Core\\quotations.fs",
+    "bytes": 118435,
+    "sha256": "27EB610153ECAE1C5DA5F536DC58001AAD0E387D0E8FF590E09691AD5CCE3023"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\src\\FSharp.Core\\quotations.fsi",
+    "bytes": 98233,
+    "sha256": "E3E3A038889C6DDF73747A7C10E4E1DD2448B3F11DEF61A9132D334745024412"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\src\\FSharp.Core\\Random.fs",
+    "bytes": 771,
+    "sha256": "285847ABD533CA09B0B42938C60873EF3D99EA7FE1A4DC9CF687676D1A5D37D3"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\src\\FSharp.Core\\Random.fsi",
+    "bytes": 145,
+    "sha256": "DA2D1D04D677AEE4A9470CAE654A3C1084A3F92E1290CC3ACC8CEB2F08D1DEEA"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\src\\FSharp.Core\\reflect.fs",
+    "bytes": 63123,
+    "sha256": "11FD3DFFAFA2BB41CF85BA2425BCC386BE42B138E86FDF02A91E0BEA1CAA993E"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\src\\FSharp.Core\\reflect.fsi",
+    "bytes": 51537,
+    "sha256": "B74344F14361542977B721CC3DD6042BE42A3DD2DE039DC170893EFD43BD0BC4"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\src\\FSharp.Core\\result.fs",
+    "bytes": 3369,
+    "sha256": "DADB943D17F1407194AEFA8439C3345D4C6D6BC4154DD81BF68798F92E6CBF36"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\src\\FSharp.Core\\result.fsi",
+    "bytes": 13856,
+    "sha256": "90CB521C1D1EC64A7968C9BE6B27752DC81D6CB24F155BAB2EE79E0B8AEF5F7D"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\src\\FSharp.Core\\resumable.fs",
+    "bytes": 17865,
+    "sha256": "9B623BBB4608806B826C82910B23FD1C224D29920A17257A4EF98CA222A20EE6"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\src\\FSharp.Core\\resumable.fsi",
+    "bytes": 12153,
+    "sha256": "52DB9C6F62C75F2285BF875833B5FF515E4478BA1674ABEDEE4CF862A583CB20"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\src\\FSharp.Core\\seq.fs",
+    "bytes": 72663,
+    "sha256": "93A552CC50AFF2AD9C970DDFCE153DA18F95C4C652D418235EA303A6C8A4D338"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\src\\FSharp.Core\\seq.fsi",
+    "bytes": 139989,
+    "sha256": "C00024FC6273278ADDE2139699EB85D3281B44C992068DE8A68555E482F0B6E4"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\src\\FSharp.Core\\seqcore.fs",
+    "bytes": 25383,
+    "sha256": "FF71B2F1C6F237E8AD375CBD0F4F704D5497CFCE9CEABD16FEB100BE8C935C60"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\src\\FSharp.Core\\seqcore.fsi",
+    "bytes": 8506,
+    "sha256": "4F798E2A39F8C49C5AA0D31CE7372AA8D6D6F940F17F4F2263C0E14CA9EEB5E6"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\src\\FSharp.Core\\set.fs",
+    "bytes": 39605,
+    "sha256": "A6BDEB87256CC3C048DF13E038E9399393C0A70222137C96F4B6554C145166F7"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\src\\FSharp.Core\\set.fsi",
+    "bytes": 36148,
+    "sha256": "E75B0F9FD78AF9AD1374576EF5374049F75033A5D55433F0D1F9A6712150F693"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\src\\FSharp.Core\\SI.fs",
+    "bytes": 5015,
+    "sha256": "2C3CEE6910FD9A46DC8491D21154DB78F311E14EC60385D242C8C257A835432A"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\src\\FSharp.Core\\string.fs",
+    "bytes": 6702,
+    "sha256": "9768DAFA475D3E49F42503EC14B1CE0E68C92E770AE867D53CEE1E90001E92A4"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\src\\FSharp.Core\\string.fsi",
+    "bytes": 11559,
+    "sha256": "C10880E9456B06B39BCF9E72A26CD3CC3689B8F95D6E095EEFA1DC82E79DE75A"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\src\\FSharp.Core\\tasks.fs",
+    "bytes": 32667,
+    "sha256": "8D27ACCA5D36F9B47A6FC2514CD19A0C3E0217667C543AA4150D8D22440B1582"
+  },
+  {
+    "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\fsharp-source\\src\\FSharp.Core\\tasks.fsi",
+    "bytes": 21281,
+    "sha256": "35C7A703800D6CBB4E527E0DEBC3977ED48FCD6DA7C74CF0A615B60FAFC8F948"
+  }
+]

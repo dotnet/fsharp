@@ -1,0 +1,3 @@
+# Preserve the exact bytes covered by the evidence hashes.
+* -text
+programs/*-benchmarkdotnet.json -whitespace

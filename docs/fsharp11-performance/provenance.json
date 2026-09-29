@@ -1,0 +1,579 @@
+{
+  "schema_version": 1,
+  "generated_utc": "2026-09-24T18:31:42.5740295+00:00",
+  "artifact_directory": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance",
+  "toolchains": {
+    "sdk11rc1": {
+      "runtime_directory": "C:\\Program Files\\dotnet\\shared\\Microsoft.NETCore.App\\11.0.0-rc.1.26425.128",
+      "runtime_sha256": {
+        "clrjit.dll": "F253E46D9E5006429FF8B739F04B00B7C5663947C2390DE2D0E7E033CCCA3607",
+        "System.Private.CoreLib.dll": "F167553E1196CDA38BFB0BF242C69739CB5F97955A5F7171587F82A89B8D5E0E",
+        "coreclr.dll": "7931D7062E229D89E34685E295848BD4C0CF8D6B2B88058F5F18829C10F05DEE"
+      },
+      "sha256": {
+        "fsc.runtimeconfig.json": "e347210f619ed3d12464ebbc82830ad17b344442d167be8cbef99f894fc9cd48",
+        "FSharp.Core.dll": "02d58a5ed481b162f7d1b36099c9d68b0ebe00904f8ae68d1217e03c28d5af5d",
+        "fsc.dll": "e5112e3ea6d9cfb22bf34524ae8825ee3d2c5d0936562eef7c952512673c49ec",
+        "FSharp.Compiler.Service.dll": "c637b9435da69adf66c916b90843b7ffb4c6ff94dc1f0bc0594ad8c49ef3858d"
+      },
+      "directory": "C:\\Program Files\\dotnet\\sdk\\11.0.100-rc.1.26425.128\\FSharp",
+      "host_sha256": "6682D18E2D6DD860F20BC762AD8DEED58487E7522A05FA61281B1F3DAD8F5C9D"
+    },
+    "sdk10": {
+      "runtime_directory": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\sdk10\\shared\\Microsoft.NETCore.App\\10.0.0",
+      "runtime_sha256": {
+        "clrjit.dll": "DFF97430ADCCEA107E809CDEDE057B05D85D2D09706B7CD840F8E72D6D105210",
+        "System.Private.CoreLib.dll": "98F6D0B7D327A97B68DA4C10FB5A21675ED2DEE2F2B8EBBA244B0902F3F9C8CE",
+        "coreclr.dll": "5201734DB1EF225D23D8EFCA6198B47CC70EDDD5A12601E16D76A7DA68C5907D"
+      },
+      "sha256": {
+        "fsc.runtimeconfig.json": "87aa7c21398e7f7d483dfd4c547d2cf7ff1023c8a0bcb410c3881a6da7982f56",
+        "FSharp.Core.dll": "6a5123e5bfae4359f2d8d91e896be97a0be6682523cfb6e929007b79f99f2562",
+        "fsc.dll": "d9888560eeaa4bc98743864bb1da756da1b9d73608fbc0064b605491f7b680de",
+        "FSharp.Compiler.Service.dll": "73056338064fa4aa631c5a6aa4b977447cc5ebb9b82e10c87b499a178eb95dee"
+      },
+      "directory": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\sdk10\\sdk\\10.0.100\\FSharp",
+      "host_sha256": "B74C001A6F6F5C979F88EDA19A8F782346EE17ECEA6ADD3647AD05F5C6E2B8BD"
+    }
+  },
+  "collector_sha256": "449F9E2C9B5BD00A64B259082994945F43880D9E2E9844B164F45278576290B1",
+  "program_driver_sha256": "77E73EDE2FEBB1A259D08D7DE200608E90B5EC15F1AA2EDD81AFFDE32CA385B8",
+  "profile_reader_sha256": "1FCD905275314946F993C33550E16209F497988A6005ABE0C1507DB854074DAB",
+  "harness_files": [
+    {
+      "file": ".config\\dotnet-tools.json",
+      "sha256": "3C7E5F0347FC83D8E2B92E9B4DADE540CC81BF0E933017AF94DE5157DDB0326A"
+    },
+    {
+      "file": "Capture.ps1",
+      "sha256": "50964CC4D0F44A4B263561EF1AA8BAF9AFEAD40E279641E712180BC26D8F69DA"
+    },
+    {
+      "file": "CaptureGraph.ps1",
+      "sha256": "1BFD569693E1CF68218925B4CFF9CBFE79A70731E57F4761BA41A1F47C7301B8"
+    },
+    {
+      "file": "Collector.cs",
+      "sha256": "AE25B08460E007C99BF947F84EE81E5C33FB6F897971E3C20AB932A930EC9095"
+    },
+    {
+      "file": "Collector.csproj",
+      "sha256": "0FCA83217790881474164843E44622BDA7C75EC8A20AAF64361C62192CD4B644"
+    },
+    {
+      "file": "CollectProfile.ps1",
+      "sha256": "D1BC76F33AA0F1C153DE118EF67DD59BF8408BF26F26C6EEC30EF59FB382537B"
+    },
+    {
+      "file": "Kernels.fs",
+      "sha256": "CA0B6D1DE19EC78707C8A55C9E1BA06A730A3C5B872AA05626C97CF6BA500807"
+    },
+    {
+      "file": "Measure.ps1",
+      "sha256": "B3204F45F28AD892EA5333940A99CA6E03EA1A40A6CF7EC96633D7D4B8439F28"
+    },
+    {
+      "file": "Profile.cs",
+      "sha256": "10C952DD834742D8F3E6D1E2D0C169A2FC7059696C0E3482702DFAC866AE3608"
+    },
+    {
+      "file": "Profile.csproj",
+      "sha256": "332E71730F2A44676DBF3BBC86B9907B2D2381554B81C9D7B4714FD64621C2D6"
+    },
+    {
+      "file": "Programs.cs",
+      "sha256": "F3C0188381CC7FA743DBA7229656E90A718BF4B28101A53F997AB5176BDBD940"
+    },
+    {
+      "file": "Programs.csproj",
+      "sha256": "EDF2341D22F5BFD0EE89991369C821967C8FE5AD56E60DF64DBFBA0967DD32EC"
+    },
+    {
+      "file": "PublishEvidence.ps1",
+      "sha256": "D084FAA672F49C558180F77F805B9B47BA8892C0DBA9FC90A81B63F03ABD788D"
+    },
+    {
+      "file": "README.md",
+      "sha256": "94DD27B4813E25B8238A447967EF6F9E92D5367AB4C185BB8FDBC200150A9A22"
+    },
+    {
+      "file": "RunPrograms.ps1",
+      "sha256": "E1D7C95D6533E9E7BA95A8484C663832EB33EE0389E1DC8E45FD82289769DC7F"
+    },
+    {
+      "file": "Summarize.mjs",
+      "sha256": "3F8959D12BA90C4D6BE104F6CBD7791A07695137C356B07DA60CF6CBCD3BEFD9"
+    },
+    {
+      "file": "Validate.mjs",
+      "sha256": "CECA2F592BA9D6364982344A1DC4A28C4B9E7B5B011805D2C2C1B6AA5F1DB48C"
+    },
+    {
+      "file": "VerifyCli.ps1",
+      "sha256": "B9EAE8CAACFC7CC2DD688FA50E04019DABCB860E62DD6E9ACB5402E2FDADF535"
+    }
+  ],
+  "checked_unique_input_files": 1727,
+  "input_manifests": [
+    {
+      "file": "case-fsautocomplete-ide.json",
+      "sha256": "C24F294F874FAE95D66A43E96CDDE88AD6A8359DB1E0E69F297128AF2416899A"
+    },
+    {
+      "file": "case-fsautocomplete.json",
+      "sha256": "39182076B3495A65850309729CB28B186A090DD7F3C0746CA3E7FC1089408488"
+    },
+    {
+      "file": "case-fsharp-compiler-service.json",
+      "sha256": "C68930230770FD46017F26F577BBA9032B65E182CF9255424B8BBCAB4B310EF0"
+    },
+    {
+      "file": "case-fsharp-core.json",
+      "sha256": "953832ACE7758E0701AE6F24EA0194B18D276FA3A71D45AF00038CDA0D4F3368"
+    },
+    {
+      "file": "case-fstoolkit.json",
+      "sha256": "2DFDBDB9FB01930C2F2689225877146E76E8F0E4741B17986361C0644325A031"
+    },
+    {
+      "file": "case-nu.json",
+      "sha256": "D5F5C6E100FD65691BFA7EA770953076C5FE269DDB8D9E0EC0A3C5FC8A6B20A5"
+    },
+    {
+      "file": "case-oxpecker-ide.json",
+      "sha256": "E7C8DF338977A43B6A38CE100735AE494083EA49F494DE3D609347D903626670"
+    },
+    {
+      "file": "case-oxpecker.json",
+      "sha256": "FA85B3AA9C5E7B1562A8DBCFE86AEAF830FC04C985AFCC7BFF440C0DBAAA672A"
+    },
+    {
+      "file": "fsautocomplete-compile-inputs.json",
+      "sha256": "1D0913A4FB18AA2645248FEC78F124DDA874531D238E9DFBAC2A394D1E6D3E1E"
+    },
+    {
+      "file": "fsautocomplete-ide-check-inputs.json",
+      "sha256": "F6437B96132C6189D2021EF0077FABA09922A5FDF7E136B174FE4FFD9D3D8B9A"
+    },
+    {
+      "file": "fsharp-compiler-service-compile-inputs.json",
+      "sha256": "3F35CCCB223471A21320E6E86B7194E843CB0925CA51120D47E38776C2228A9C"
+    },
+    {
+      "file": "fsharp-compiler-service-compiler-on-runtime11-compile-inputs.json",
+      "sha256": "3F35CCCB223471A21320E6E86B7194E843CB0925CA51120D47E38776C2228A9C"
+    },
+    {
+      "file": "fsharp-compiler-service-datas-compile-inputs.json",
+      "sha256": "3F35CCCB223471A21320E6E86B7194E843CB0925CA51120D47E38776C2228A9C"
+    },
+    {
+      "file": "fsharp-core-compile-inputs.json",
+      "sha256": "50835AC470A8F8B2C5D4392A86192969EB6F6EC4D01A93CCDB85F0CEEA1FD03F"
+    },
+    {
+      "file": "fstoolkit-compile-inputs.json",
+      "sha256": "B20346CBFE5EC5AC69501C6A680083360F79CA90619B7D057FF77EEC10585CD2"
+    },
+    {
+      "file": "nu-compile-inputs.json",
+      "sha256": "CC9D820685DD9144F2925E935B844F793D88726644D4C504AC884FA7C0ED2BE7"
+    },
+    {
+      "file": "oxpecker-compile-inputs.json",
+      "sha256": "DC46DDF44681E67843AC47D583AB0C84308087B24AF41B8ADEE82D85DBE43E6D"
+    },
+    {
+      "file": "oxpecker-ide-check-inputs.json",
+      "sha256": "24DA04A0E1D689BB5E413CD3EE2C2A061C853F226D8D58209F3CCB2401DB06CB"
+    }
+  ],
+  "calibration": {
+    "sdk11rc1": {
+      "schema_version": 1,
+      "started_utc": "2026-09-24T14:41:25.4856493+02:00",
+      "case": "allocation-and-peak-control",
+      "scope": "calibrate",
+      "runtime": ".NET 11.0.0-rc.1.26425.128",
+      "pid": 29348,
+      "fcs_version": "43.13.101-rc1.26425.128+3551975be08744f0418857c5bed8ab1545c5dd47",
+      "core_version": "11.0.101-rc1.26425.128+3551975be08744f0418857c5bed8ab1545c5dd47",
+      "gc_server": true,
+      "gc_configuration": {
+        "ServerGC": true,
+        "ConcurrentGC": true,
+        "RetainVM": false,
+        "NoAffinitize": false,
+        "GCCpuGroup": false,
+        "GCLargePages": 0,
+        "LOHThreshold": 85000,
+        "HeapCount": 16,
+        "MaxHeapCount": 0,
+        "GCHeapAffinitizeMask": 0,
+        "GCHeapAffinitizeRanges": "",
+        "GCHighMemPercent": 90,
+        "GCGen0MaxBudget": 209715200,
+        "GCHeapHardLimit": 0,
+        "GCHeapHardLimitPercent": 0,
+        "GCRegionRange": 274877906944,
+        "GCRegionSize": 0,
+        "UOHWaitBGCSizeIncPercent": 200,
+        "GCHeapHardLimitSOH": 0,
+        "GCHeapHardLimitLOH": 0,
+        "GCHeapHardLimitPOH": 0,
+        "GCHeapHardLimitSOHPercent": 0,
+        "GCHeapHardLimitLOHPercent": 0,
+        "GCHeapHardLimitPOHPercent": 0,
+        "GCConserveMem": 0,
+        "GCName": "",
+        "GCPath": "",
+        "GCDynamicAdaptationMode": 1,
+        "GCDTargetTCP": 2,
+        "GCDGen0GrowthPercent": 100,
+        "GCDGen0GrowthMinFactor": 100,
+        "GCDGen0GrowthMaxFactor": 10000
+      },
+      "visible_processors": 16,
+      "input_sha256": "262a846c2edafc9aca0954189a19d87b155a934bb81736a04c3eecd060e5260b",
+      "minimum_payload_bytes": 138313728,
+      "allocated_bytes": 138445464,
+      "wall_ns": 59392400,
+      "cpu_user_ns": 15625000,
+      "cpu_kernel_ns": 46875000,
+      "gen0": 2,
+      "gen1": 1,
+      "gen2": 0,
+      "peak_working_set_bytes": 175427584,
+      "peak_private_commit_bytes": 162910208,
+      "working_set_end_bytes": 175427584,
+      "private_commit_end_bytes": 162910208,
+      "working_set_start_bytes": 29708288,
+      "exit_code": 0,
+      "error_count": 0,
+      "status": "accepted",
+      "idle_10s_working_set_bytes": 175579136,
+      "idle_10s_private_commit_bytes": 162942976,
+      "retained_heap_bytes": 298536,
+      "post_gc_working_set_bytes": 176238592
+    },
+    "sdk10": {
+      "schema_version": 1,
+      "started_utc": "2026-09-24T14:41:15.1516746+02:00",
+      "case": "allocation-and-peak-control",
+      "scope": "calibrate",
+      "runtime": ".NET 10.0.0",
+      "pid": 12348,
+      "fcs_version": "43.10.100-rc2.25523.111+b0f34d51fccc69fd334253924abd8d6853fad7aa",
+      "core_version": "10.0.100-rc2.25523.111+b0f34d51fccc69fd334253924abd8d6853fad7aa",
+      "gc_server": true,
+      "gc_configuration": {
+        "ServerGC": true,
+        "ConcurrentGC": true,
+        "RetainVM": false,
+        "NoAffinitize": false,
+        "GCCpuGroup": false,
+        "GCLargePages": false,
+        "LOHThreshold": 85000,
+        "HeapCount": 16,
+        "MaxHeapCount": 0,
+        "GCHeapAffinitizeMask": 0,
+        "GCHeapAffinitizeRanges": "",
+        "GCHighMemPercent": 90,
+        "GCGen0MaxBudget": 209715200,
+        "GCHeapHardLimit": 0,
+        "GCHeapHardLimitPercent": 0,
+        "GCRegionRange": 274877906944,
+        "GCRegionSize": 0,
+        "UOHWaitBGCSizeIncPercent": 200,
+        "GCHeapHardLimitSOH": 0,
+        "GCHeapHardLimitLOH": 0,
+        "GCHeapHardLimitPOH": 0,
+        "GCHeapHardLimitSOHPercent": 0,
+        "GCHeapHardLimitLOHPercent": 0,
+        "GCHeapHardLimitPOHPercent": 0,
+        "GCConserveMem": 0,
+        "GCName": "",
+        "GCPath": "",
+        "GCDynamicAdaptationMode": 1,
+        "GCDTargetTCP": 2,
+        "GCDGen0GrowthPercent": 100,
+        "GCDGen0GrowthMinFactor": 100,
+        "GCDGen0GrowthMaxFactor": 10000
+      },
+      "visible_processors": 16,
+      "input_sha256": "262a846c2edafc9aca0954189a19d87b155a934bb81736a04c3eecd060e5260b",
+      "minimum_payload_bytes": 138313728,
+      "allocated_bytes": 138443008,
+      "wall_ns": 50356500,
+      "cpu_user_ns": 31250000,
+      "cpu_kernel_ns": 15625000,
+      "gen0": 2,
+      "gen1": 1,
+      "gen2": 0,
+      "peak_working_set_bytes": 174796800,
+      "peak_private_commit_bytes": 179339264,
+      "working_set_end_bytes": 174796800,
+      "private_commit_end_bytes": 162455552,
+      "working_set_start_bytes": 29913088,
+      "exit_code": 0,
+      "error_count": 0,
+      "status": "accepted",
+      "idle_10s_working_set_bytes": 174960640,
+      "idle_10s_private_commit_bytes": 162455552,
+      "retained_heap_bytes": 356784,
+      "post_gc_working_set_bytes": 175624192
+    }
+  },
+  "source_graph_validation": {
+    "source-edge-sdk10": {
+      "schema_version": 1,
+      "started_utc": "2026-09-24T16:50:25.2817993+02:00",
+      "case": "oxpecker-ide",
+      "scope": "check",
+      "runtime": ".NET 10.0.0",
+      "pid": 33128,
+      "fcs_version": "43.10.100-rc2.25523.111+b0f34d51fccc69fd334253924abd8d6853fad7aa",
+      "core_version": "10.0.100-rc2.25523.111+b0f34d51fccc69fd334253924abd8d6853fad7aa",
+      "gc_server": true,
+      "gc_configuration": {
+        "ServerGC": true,
+        "ConcurrentGC": true,
+        "RetainVM": false,
+        "NoAffinitize": false,
+        "GCCpuGroup": false,
+        "GCLargePages": false,
+        "LOHThreshold": 85000,
+        "HeapCount": 16,
+        "MaxHeapCount": 0,
+        "GCHeapAffinitizeMask": 0,
+        "GCHeapAffinitizeRanges": "",
+        "GCHighMemPercent": 90,
+        "GCGen0MaxBudget": 209715200,
+        "GCHeapHardLimit": 0,
+        "GCHeapHardLimitPercent": 0,
+        "GCRegionRange": 274877906944,
+        "GCRegionSize": 0,
+        "UOHWaitBGCSizeIncPercent": 200,
+        "GCHeapHardLimitSOH": 0,
+        "GCHeapHardLimitLOH": 0,
+        "GCHeapHardLimitPOH": 0,
+        "GCHeapHardLimitSOHPercent": 0,
+        "GCHeapHardLimitLOHPercent": 0,
+        "GCHeapHardLimitPOHPercent": 0,
+        "GCConserveMem": 0,
+        "GCName": "",
+        "GCPath": "",
+        "GCDynamicAdaptationMode": 1,
+        "GCDTargetTCP": 2,
+        "GCDGen0GrowthPercent": 100,
+        "GCDGen0GrowthMinFactor": 100,
+        "GCDGen0GrowthMaxFactor": 10000
+      },
+      "visible_processors": 16,
+      "input_sha256": "e7c8df338977a43b6a38ce100735ae494083ea49f494de3d609347d903626670",
+      "project_count": 2,
+      "allocated_bytes": 1558618752,
+      "wall_ns": 6776123800,
+      "cpu_user_ns": 7437500000,
+      "cpu_kernel_ns": 1093750000,
+      "gen0": 35,
+      "gen1": 13,
+      "gen2": 6,
+      "peak_working_set_bytes": 411344896,
+      "peak_private_commit_bytes": 366895104,
+      "working_set_end_bytes": 411344896,
+      "private_commit_end_bytes": 366891008,
+      "working_set_start_bytes": 30855168,
+      "exit_code": 0,
+      "error_count": 0,
+      "status": "accepted",
+      "idle_10s_working_set_bytes": 425639936,
+      "idle_10s_private_commit_bytes": 367861760,
+      "retained_heap_bytes": 113036296,
+      "post_gc_working_set_bytes": 411082752
+    },
+    "missing-edge-result": {
+      "schema_version": 1,
+      "started_utc": "2026-09-24T16:50:56.8325681+02:00",
+      "case": "oxpecker-ide",
+      "scope": "check",
+      "runtime": ".NET 10.0.0",
+      "pid": 23736,
+      "fcs_version": "43.10.100-rc2.25523.111+b0f34d51fccc69fd334253924abd8d6853fad7aa",
+      "core_version": "10.0.100-rc2.25523.111+b0f34d51fccc69fd334253924abd8d6853fad7aa",
+      "gc_server": true,
+      "gc_configuration": {
+        "ServerGC": true,
+        "ConcurrentGC": true,
+        "RetainVM": false,
+        "NoAffinitize": false,
+        "GCCpuGroup": false,
+        "GCLargePages": false,
+        "LOHThreshold": 85000,
+        "HeapCount": 16,
+        "MaxHeapCount": 0,
+        "GCHeapAffinitizeMask": 0,
+        "GCHeapAffinitizeRanges": "",
+        "GCHighMemPercent": 90,
+        "GCGen0MaxBudget": 209715200,
+        "GCHeapHardLimit": 0,
+        "GCHeapHardLimitPercent": 0,
+        "GCRegionRange": 274877906944,
+        "GCRegionSize": 0,
+        "UOHWaitBGCSizeIncPercent": 200,
+        "GCHeapHardLimitSOH": 0,
+        "GCHeapHardLimitLOH": 0,
+        "GCHeapHardLimitPOH": 0,
+        "GCHeapHardLimitSOHPercent": 0,
+        "GCHeapHardLimitLOHPercent": 0,
+        "GCHeapHardLimitPOHPercent": 0,
+        "GCConserveMem": 0,
+        "GCName": "",
+        "GCPath": "",
+        "GCDynamicAdaptationMode": 1,
+        "GCDTargetTCP": 2,
+        "GCDGen0GrowthPercent": 100,
+        "GCDGen0GrowthMinFactor": 100,
+        "GCDGen0GrowthMaxFactor": 10000
+      },
+      "visible_processors": 16,
+      "input_sha256": "c4bc1d025b736025eb73226464fe214064ddaee4fbfe558d53d05155738273da",
+      "project_count": 2,
+      "allocated_bytes": 1550773896,
+      "wall_ns": 6869064700,
+      "cpu_user_ns": 7625000000,
+      "cpu_kernel_ns": 1156250000,
+      "gen0": 35,
+      "gen1": 13,
+      "gen2": 6,
+      "peak_working_set_bytes": 423120896,
+      "peak_private_commit_bytes": 375529472,
+      "working_set_end_bytes": 408383488,
+      "private_commit_end_bytes": 360534016,
+      "working_set_start_bytes": 30818304,
+      "exit_code": 0,
+      "error_count": 17,
+      "status": "failed",
+      "idle_10s_working_set_bytes": 438009856,
+      "idle_10s_private_commit_bytes": 378028032,
+      "retained_heap_bytes": 111854024,
+      "post_gc_working_set_bytes": 423034880
+    },
+    "source-edge-sdk11rc1": {
+      "schema_version": 1,
+      "started_utc": "2026-09-24T16:50:42.3860726+02:00",
+      "case": "oxpecker-ide",
+      "scope": "check",
+      "runtime": ".NET 11.0.0-rc.1.26425.128",
+      "pid": 28444,
+      "fcs_version": "43.13.101-rc1.26425.128+3551975be08744f0418857c5bed8ab1545c5dd47",
+      "core_version": "11.0.101-rc1.26425.128+3551975be08744f0418857c5bed8ab1545c5dd47",
+      "gc_server": true,
+      "gc_configuration": {
+        "ServerGC": true,
+        "ConcurrentGC": true,
+        "RetainVM": false,
+        "NoAffinitize": false,
+        "GCCpuGroup": false,
+        "GCLargePages": 0,
+        "LOHThreshold": 85000,
+        "HeapCount": 16,
+        "MaxHeapCount": 0,
+        "GCHeapAffinitizeMask": 0,
+        "GCHeapAffinitizeRanges": "",
+        "GCHighMemPercent": 90,
+        "GCGen0MaxBudget": 209715200,
+        "GCHeapHardLimit": 0,
+        "GCHeapHardLimitPercent": 0,
+        "GCRegionRange": 274877906944,
+        "GCRegionSize": 0,
+        "UOHWaitBGCSizeIncPercent": 200,
+        "GCHeapHardLimitSOH": 0,
+        "GCHeapHardLimitLOH": 0,
+        "GCHeapHardLimitPOH": 0,
+        "GCHeapHardLimitSOHPercent": 0,
+        "GCHeapHardLimitLOHPercent": 0,
+        "GCHeapHardLimitPOHPercent": 0,
+        "GCConserveMem": 0,
+        "GCName": "",
+        "GCPath": "",
+        "GCDynamicAdaptationMode": 1,
+        "GCDTargetTCP": 2,
+        "GCDGen0GrowthPercent": 100,
+        "GCDGen0GrowthMinFactor": 100,
+        "GCDGen0GrowthMaxFactor": 10000
+      },
+      "visible_processors": 16,
+      "input_sha256": "e7c8df338977a43b6a38ce100735ae494083ea49f494de3d609347d903626670",
+      "project_count": 2,
+      "allocated_bytes": 754598000,
+      "wall_ns": 4110287600,
+      "cpu_user_ns": 4437500000,
+      "cpu_kernel_ns": 1015625000,
+      "gen0": 27,
+      "gen1": 11,
+      "gen2": 6,
+      "peak_working_set_bytes": 316698624,
+      "peak_private_commit_bytes": 282185728,
+      "working_set_end_bytes": 316698624,
+      "private_commit_end_bytes": 282185728,
+      "working_set_start_bytes": 30625792,
+      "exit_code": 0,
+      "error_count": 0,
+      "status": "accepted",
+      "idle_10s_working_set_bytes": 318050304,
+      "idle_10s_private_commit_bytes": 282337280,
+      "retained_heap_bytes": 88182984,
+      "post_gc_working_set_bytes": 310652928
+    }
+  },
+  "rejected_profiles": [
+    {
+      "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\profiles\\fcs-sdk10-rejected-mixed-profile.nettrace",
+      "sha256": "2FA759A6BF0819D9ABF27AD563143B2E5ED487A0F0381B91C23EEF106E6F5DBE",
+      "reported_events_lost": -15258,
+      "reason": "Did not pass the zero-loss integrity gate; invalid sequence/loss accounting is not interpreted as a measured object count.",
+      "file": "fcs-sdk10-rejected-mixed-profile.nettrace"
+    },
+    {
+      "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\profiles\\fcs-sdk10-rejected-gc-rundown.nettrace",
+      "sha256": "0E649ECDC7853FA84DEA061A3A5F67DA051FB05C46E1066EAEE037644A1AC02A",
+      "reported_events_lost": -15338,
+      "reason": "Did not pass the zero-loss integrity gate; invalid sequence/loss accounting is not interpreted as a measured object count.",
+      "file": "fcs-sdk10-rejected-gc-rundown.nettrace"
+    },
+    {
+      "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\profiles\\fcs-sdk10.nettrace",
+      "sha256": "EC3B690430FC6A832E1711A418600F7122ABC619A2AE642174983FDF448728A7",
+      "reported_events_lost": -15210,
+      "reason": "Did not pass the zero-loss integrity gate; invalid sequence/loss accounting is not interpreted as a measured object count.",
+      "file": "fcs-sdk10.nettrace"
+    },
+    {
+      "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\profiles\\fcs-sdk10-runtime11.nettrace",
+      "sha256": "142A8615A44413C6B76927D130871ED25C81F5A6C4A9F8C30EFEA5992C49F947",
+      "reported_events_lost": -14636,
+      "reason": "Did not pass the zero-loss integrity gate; invalid sequence/loss accounting is not interpreted as a measured object count.",
+      "file": "fcs-sdk10-runtime11.nettrace"
+    },
+    {
+      "path": "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\profiles\\fsharp-compiler-service-allocation-sdk10.nettrace",
+      "sha256": "DEECC3C4A235084F3D0D99515E0114F9BF75E1908F56A66B8859DD5CF0BCA5B5",
+      "reported_events_lost": 2147468923,
+      "reason": "Did not pass the zero-loss integrity gate; invalid sequence/loss accounting is not interpreted as a measured object count.",
+      "file": "fsharp-compiler-service-allocation-sdk10.nettrace"
+    }
+  ],
+  "superseded_program_suites": {
+    "paths": [
+      "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\programs\\sdk10\\pilot-results",
+      "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\programs\\sdk10\\results",
+      "C:\\Users\\tomasgrosup\\.copilot\\session-state\\15e1f3c5-1f0f-4308-82f7-45e8a08993bf\\files\\performance\\programs\\sdk11rc1\\results"
+    ],
+    "reason": "Pilot suites had shorter warmup/measurement counts; only launch-0/1/2 suites enter the published data."
+  },
+  "compilation_observations": 168,
+  "ide_observations": 56,
+  "control_observations": 68,
+  "generated_program_launch_cases": 288
+}
