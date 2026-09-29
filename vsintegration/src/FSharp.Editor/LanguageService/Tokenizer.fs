@@ -649,24 +649,23 @@ module internal Tokenizer =
         ) =
         [
             // Go backwards to find the last cached scanned line that is valid
-            let scanStartLine =
+            // The entry proved valid is kept rather than read again: a concurrent scan of different text
+            // can clear or replace that slot in between.
+            let struct (scanStartLine, validStart) =
                 let mutable i = startLine
+                let mutable found = ValueNone
 
-                while i > 0
-                      && (match sourceTextDataCache.[i] with
-                          | ValueSome data -> not (data.IsValid(lines.[i]))
-                          | ValueNone -> true) do
-                    i <- i - 1
+                while i > 0 && found.IsNone do
+                    match sourceTextDataCache.[i] with
+                    | ValueSome data when data.IsValid(lines.[i]) -> found <- ValueSome data
+                    | _ -> i <- i - 1
 
-                i
+                struct (i, found)
             // Rescan the lines if necessary and report the information
             let mutable lexState =
-                if scanStartLine = 0 then
-                    FSharpTokenizerLexState.Initial
-                else
-                    // scanStartLine is the entry the loop above just proved valid; scanStartLine - 1 was
-                    // never checked and can hold a stale entry from a concurrent scan of different text.
-                    sourceTextDataCache.[scanStartLine].Value.LexStateAtStartOfLine
+                match validStart with
+                | ValueSome data -> data.LexStateAtStartOfLine
+                | ValueNone -> FSharpTokenizerLexState.Initial
 
             for i = scanStartLine to endLine do
                 ct.ThrowIfCancellationRequested()
