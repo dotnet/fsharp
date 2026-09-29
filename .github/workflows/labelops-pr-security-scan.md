@@ -1,7 +1,7 @@
 ---
 description: |
   PR Tooling Safety Check — labels open PRs with what phases they affect.
-  Runs only when a PR receives new commits. Text-only — reads diffs via
+  Runs only when a new PR head is opened or receives new commits. Text-only — reads diffs via
   GitHub API, never checks out or builds PR code. Labels tell maintainers
   what a PR touches before they build, test, or load it into Copilot.
   Non-fork PRs (head repo is dotnet/fsharp) are bypass-labeled
@@ -13,7 +13,7 @@ imports:
 
 on:
   pull_request_target:
-    types: [synchronize]
+    types: [opened, synchronize]
   permissions:
     contents: read
     pull-requests: read
@@ -23,15 +23,47 @@ on:
       with:
         script: |-
           const eventPr = context.payload.pull_request;
-          if (!eventPr) throw new Error('Expected a pull_request_target synchronize event.');
+          if (!eventPr) throw new Error('Expected a pull_request_target opened or synchronize event.');
           const { data: pr } = await github.rest.pulls.get({ ...context.repo, pull_number: eventPr.number });
           if (pr.state !== 'open' || pr.draft || pr.head.sha !== eventPr.head.sha || pr.created_at < '2026-05-12T00:00:00Z') {
             core.setOutput('prs', '[]');
             return;
           }
           const { data } = await github.rest.repos.getContent({ ...context.repo, path: 'state.json', ref: 'safety/scanned-PRs' });
-          const { prs } = JSON.parse(Buffer.from(data.content, 'base64').toString('utf8'));
-          const previous = prs[pr.number];
+          const { schema, prs } = JSON.parse(Buffer.from(data.content, 'base64').toString('utf8'));
+          if (schema?.prValue?.[0] !== 'base64url-sha' || schema?.prValue?.[1] !== 'category-codes' ||
+              !schema.categoryCodes || typeof schema.categoryCodes !== 'object' || Array.isArray(schema.categoryCodes) ||
+              !prs || typeof prs !== 'object' || Array.isArray(prs)) {
+            throw new Error('Scanner state is missing its category-code schema or PR records.');
+          }
+          const stored = prs[pr.number];
+          let previous;
+          if (Array.isArray(stored)) {
+            const [encodedSha, categoryCodes] = stored;
+            if (stored.length !== 2 || typeof encodedSha !== 'string' || typeof categoryCodes !== 'string') {
+              throw new Error(`Invalid compact scanner state for PR #${pr.number}.`);
+            }
+            const shaBytes = Buffer.from(encodedSha, 'base64url');
+            if (shaBytes.length !== 20 || shaBytes.toString('base64url') !== encodedSha) {
+              throw new Error(`Invalid base64url SHA in scanner state for PR #${pr.number}.`);
+            }
+            const cats = [...categoryCodes].map(code => schema.categoryCodes[code]);
+            if (cats.some(category => typeof category !== 'string')) {
+              throw new Error(`Unknown category code in scanner state for PR #${pr.number}.`);
+            }
+            previous = { sha: shaBytes.toString('hex'), cats };
+          } else if (stored && typeof stored === 'object') {
+            if (typeof stored.sha !== 'string' || !Array.isArray(stored.cats) ||
+                stored.cats.some(category => typeof category !== 'string')) {
+              throw new Error(`Invalid legacy scanner state for PR #${pr.number}.`);
+            }
+            previous = stored;
+          } else if (stored != null) {
+            throw new Error(`Unrecognized scanner state for PR #${pr.number}.`);
+          }
+          if (previous) {
+            previous.cats = [...new Set(previous.cats.map(category => category.replace(/^⚠️\s*/, '')))].sort();
+          }
           if (previous?.sha === pr.head.sha) {
             core.setOutput('prs', '[]');
             return;
@@ -137,8 +169,8 @@ safe-outputs:
       that received `AI-Tooling-Check-Bypassed` instead of a diff scan IS a deviation
       worth flagging, since bypassing the scan on a fork is exactly the outcome an
       injected PR would try to induce.
-  # Runs hourly — a transient engine/infra crash must not open a tracking issue.
-  # Real signal is the labels this workflow applies to PRs.
+  # A transient failure should not open a tracking issue; the next PR-head event
+  # can retry the scan. Labels are the real signal from this workflow.
   report-failure-as-issue: false
   noop:
     report-as-issue: false
@@ -156,10 +188,10 @@ safe-outputs:
     - "⚠️ Suspicious-Prompting"
     - "⚠️ Scope-Review-Needed"
     max: 50
-    target: "*"
+    target: "triggering"
   add-comment:
-    max: 25
-    target: "*"
+    max: 1
+    target: "triggering"
     hide-older-comments: true
 ---
 
@@ -206,7 +238,7 @@ Read `.github/tooling-check-repo-rules.md` from the default branch for repo-spec
           ```
         - If the category set is **identical** → **no comment**.
         - A deterministic post-agent step also removes comments whenever the emitted category-label set is empty or unchanged.
-4. Merge processed results into repo-memory's `state.json`: `{"sha": "<supplied full SHA>", "cats": [...]}`. Store `cats` as sorted, unique category names without the warning emoji. Do not prune or print the rest of the history.
+4. Update repo-memory's `state.json` without changing its schema or pruning other PR records. Preserve `schema` and all other `prs` entries, and store this PR as `[<base64url SHA>, <category-code string>]` under `prs[<number>]`. Encode the supplied full SHA as base64url from its 20 raw bytes, without padding. Store the sorted, unique category names without the warning emoji by translating each through `schema.categoryCodes` and concatenating the resulting one-character codes in that same sorted-name order. Keep an empty category set as an empty string.
 </process>
 
 <categories>

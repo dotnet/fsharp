@@ -42,7 +42,7 @@ This document maps the 16 GitHub Actions workflows and AI agents in this reposit
 | 8 | `add_to_project.yml` | 👤 issues/PR opened | none | add label, set milestone, cleanup runs |
 | 9 | `labelops-flake-fix.md` | 👤 dispatch | failing_test, affected_prs, originating_pr | create-pull-request, create-issue, add-comment |
 | 10 | `labelops-pr-maintenance.md` | ⏰ every 3h, 👤 dispatch | none | push-to-PR, add-comment, add-labels, dispatch-workflow |
-| 11 | `labelops-pr-security-scan.md` | 👤 pull_request_target (synchronize) | none | add-labels, gated add-comment, repo-memory write |
+| 11 | `labelops-pr-security-scan.md` | 👤 pull_request_target (opened, synchronize) | none | add-labels, gated add-comment, repo-memory write |
 | 12 | `msbuild-quality-review.md` | ⏰ weekly, 👤 dispatch | none | create-issue, create-pull-request (draft) |
 | 13 | `regression-pr-shepherd.md` | ⏰ every 4h, 👤 dispatch | none | push-to-PR, add-comment, remove-labels |
 | 14 | `repo-assist-scheduled.md` | ⏰ every 12h, 👤 dispatch | none | create-pull-request, add-comment, add/remove-labels, create/update-issue, push-to-PR |
@@ -70,7 +70,7 @@ Cross-workflow interactions (producer → consumer):
 
 Workflows: `labelops-pr-maintenance` (LPM), `labelops-flake-fix` (LFF), `labelops-pr-security-scan` (LPSS).
 
-LPM dispatches LFF when proven flakes are detected. LPSS scans the current PR head only after a synchronize event; fork PRs get a diff scan.
+LPM dispatches LFF when proven flakes are detected. LPSS scans an unseen PR head when the PR is opened or receives new commits; fork PRs get a diff scan.
 
 ```mermaid
 stateDiagram-v2
@@ -122,8 +122,8 @@ stateDiagram-v2
   }
 
   state "labelops-pr-security-scan" as LPSS {
-    [*] --> LPSS_Synchronize : 👤 pull_request_target synchronize
-    LPSS_Synchronize --> LPSS_CheckSHA : ⚙️ compare event, live, and saved full SHA
+    [*] --> LPSS_NewHead : 👤 pull_request_target opened / synchronize
+    LPSS_NewHead --> LPSS_CheckSHA : ⚙️ compare event, live, and saved full SHA
     LPSS_CheckSHA --> [*] : ⚙️ SHA already scanned (skip activation)
     LPSS_CheckSHA --> LPSS_ReadRules : ⚙️ new SHA
     LPSS_ReadRules --> LPSS_LoadMemory : ⚙️ read repo rules
@@ -340,8 +340,8 @@ gh-aw safe-output defaults (suppressed below): `target: "*"`, `noop.report-as-is
 | `labelops-pr-maintenance` | `add-comment` | 5 | hide-older-comments: true |
 | `labelops-pr-maintenance` | `add-labels` | 3 | allowed: AI-needs-CI-fix-input |
 | `labelops-pr-maintenance` | `dispatch-workflow` | 3 | workflows: labelops-flake-fix |
-| `labelops-pr-security-scan` | `add-labels` | 50 | allowed: 11 labels (⚠️ Affects-* family + Suspicious-Prompting + Scope-Review-Needed + Scanned-Clean + Bypassed) |
-| `labelops-pr-security-scan` | `add-comment` | 25 | hide-older-comments: true; emitted only for changed non-empty categories |
+| `labelops-pr-security-scan` | `add-labels` | 50 | target: triggering; allowed: 11 labels (⚠️ Affects-* family + Suspicious-Prompting + Scope-Review-Needed + Scanned-Clean + Bypassed) |
+| `labelops-pr-security-scan` | `add-comment` | 1 | target: triggering; hide-older-comments: true; emitted only for changed non-empty categories |
 | `msbuild-quality-review` | `create-issue` | 1 | title `[msbuild-quality] `, labels: automation+Area-ProjectsAndBuild |
 | `msbuild-quality-review` | `create-pull-request` | 1 | draft: true, title `[msbuild-quality] `, protected-files: fallback-to-issue |
 | `regression-pr-shepherd` | `push-to-pull-request-branch` | 10 | allowed-files: tests/**, vsintegration/tests/** |
