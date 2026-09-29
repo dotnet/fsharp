@@ -10,65 +10,63 @@ module internal StringExtensions =
 
     type String with
 
-        member inline StartsWithOrdinal: value: string -> bool
+        member StartsWithOrdinal: value: string -> bool
 
-        member inline EndsWithOrdinal: value: string -> bool
+        member EndsWithOrdinal: value: string -> bool
 
-        member inline EndsWithOrdinalIgnoreCase: value: string -> bool
+        member EndsWithOrdinalIgnoreCase: value: string -> bool
 
-        member inline IndexOfOrdinal: value: string -> int
+        member IndexOfOrdinal: value: string -> int
 
-        member inline IndexOfOrdinal: value: string * startIndex: int -> int
+        member IndexOfOrdinal: value: string * startIndex: int -> int
 
-        member inline IndexOfOrdinal: value: string * startIndex: int * count: int -> int
+        member IndexOfOrdinal: value: string * startIndex: int * count: int -> int
 
     [<AbstractClass; Sealed; Extension>]
     type ReadOnlySpanCharExtensions =
 
         [<Extension>]
-        static member inline EqualsOrdinal: str: ReadOnlySpan<char> * value: ReadOnlySpan<char> -> bool
+        static member EqualsOrdinal: str: ReadOnlySpan<char> * value: ReadOnlySpan<char> -> bool
 
         [<Extension>]
-        static member inline EqualsOrdinal: str: ReadOnlySpan<char> * value: string -> bool
+        static member EqualsOrdinal: str: ReadOnlySpan<char> * value: string -> bool
 
         [<Extension>]
-        static member inline StartsWithOrdinal: str: ReadOnlySpan<char> * value: ReadOnlySpan<char> -> bool
+        static member StartsWithOrdinal: str: ReadOnlySpan<char> * value: ReadOnlySpan<char> -> bool
 
         [<Extension>]
-        static member inline StartsWithOrdinal: str: ReadOnlySpan<char> * value: string -> bool
+        static member StartsWithOrdinal: str: ReadOnlySpan<char> * value: string -> bool
 
         [<Extension>]
-        static member inline EndsWithOrdinal: str: ReadOnlySpan<char> * value: ReadOnlySpan<char> -> bool
+        static member EndsWithOrdinal: str: ReadOnlySpan<char> * value: ReadOnlySpan<char> -> bool
 
         [<Extension>]
-        static member inline EndsWithOrdinal: str: ReadOnlySpan<char> * value: string -> bool
+        static member EndsWithOrdinal: str: ReadOnlySpan<char> * value: string -> bool
 
         [<Extension>]
-        static member inline EndsWithOrdinalIgnoreCase: str: ReadOnlySpan<char> * value: ReadOnlySpan<char> -> bool
+        static member EndsWithOrdinalIgnoreCase: str: ReadOnlySpan<char> * value: ReadOnlySpan<char> -> bool
 
         [<Extension>]
-        static member inline EndsWithOrdinalIgnoreCase: str: ReadOnlySpan<char> * value: string -> bool
+        static member EndsWithOrdinalIgnoreCase: str: ReadOnlySpan<char> * value: string -> bool
 
         [<Extension>]
         static member IndexOf: str: ReadOnlySpan<char> * value: char -> int
 
         [<Extension>]
-        static member inline IndexOfOrdinal: str: ReadOnlySpan<char> * value: ReadOnlySpan<char> -> int
+        static member IndexOfOrdinal: str: ReadOnlySpan<char> * value: ReadOnlySpan<char> -> int
 
         [<Extension>]
-        static member inline IndexOfOrdinal: str: ReadOnlySpan<char> * value: string -> int
+        static member IndexOfOrdinal: str: ReadOnlySpan<char> * value: string -> int
 
         [<Extension>]
-        static member inline IndexOfOrdinal:
-            str: ReadOnlySpan<char> * value: ReadOnlySpan<char> * startIndex: int -> int
+        static member IndexOfOrdinal: str: ReadOnlySpan<char> * value: ReadOnlySpan<char> * startIndex: int -> int
 
         [<Extension>]
-        static member inline IndexOfOrdinal: str: ReadOnlySpan<char> * value: string * startIndex: int -> int
+        static member IndexOfOrdinal: str: ReadOnlySpan<char> * value: string * startIndex: int -> int
 
         [<Extension>]
-        static member inline IndexOfOrdinal:
+        static member IndexOfOrdinal:
             str: ReadOnlySpan<char> * value: ReadOnlySpan<char> * startIndex: int * count: int -> int
 
         [<Extension>]
-        static member inline IndexOfOrdinal:
-            str: ReadOnlySpan<char> * value: string * startIndex: int * count: int -> int
+        static member IndexOfOrdinal: str: ReadOnlySpan<char> * value: string * startIndex: int * count: int -> int
