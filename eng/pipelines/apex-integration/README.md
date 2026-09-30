@@ -1,7 +1,7 @@
-# F# Apex integration tests on DartLab
+# F# Apex integration tests on DartLab-1ES
 
-This pipeline installs Visual Studio from `DD-CB-ReleaseVS` on a disposable DartLab
-machine, builds and deploys the PR's F# VSIX, then runs the Apex tests in Release.
+This pipeline installs Visual Studio from `DD-CB-ReleaseVS` on a DartLab-1ES
+CloudTest machine, builds and deploys the PR's F# VSIX, then runs the Apex tests in Release.
 It avoids the dependency skew of older preinstalled CI images. The chosen VS drop
 must still support the PR's package pins; a recent drop is not a compatibility guarantee.
 
@@ -27,10 +27,10 @@ open and observes current head/base refs before checking out that exact merge.
 
 A conflict, missing/stale merge, changed head/base, or API/Git failure stops the run
 before building PR code. Post a new command after resolving the problem. A push
-after verification does not alter the detached commit being tested. The setup log
-records the actual merge SHA (`FSharp.PrMergeSha`); Azure DevOps `Build.SourceVersion`
-identifies the trusted YAML revision, **not** the tested PR merge. Results apply only
-to the recorded snapshot, not automatically to later PR revisions.
+after verification does not alter the detached commit being tested. The setup and
+test logs record the actual merge SHA; Azure DevOps `Build.SourceVersion` identifies
+the trusted YAML revision, **not** the tested PR merge. Results apply only to the
+recorded snapshot, not automatically to later PR revisions.
 
 ## Registration and authorization
 
@@ -41,23 +41,27 @@ Provision these before enabling requests:
    Use an approved Azure Pipelines GitHub App connection restricted to the necessary
    repository; authorize this pipeline specifically. No `dnceng-internal-code-access`
    connection is needed. Leave the existing mirror and dnceng pipelines unchanged.
-2. Authorize `DevDiv/DartLab`, `DevDiv/DartLab.Templates`, `DevDiv/VS.Templates`,
-   the `DD-CB-ReleaseVS` pipeline/artifacts, required feeds, and the `VS-Platform`
-   test pool. Complete 1ES onboarding and confirm the F# owner/areaPath in
-   [stage.yml](stage.yml). Confirm the VS drop and installed components support F#.
-3. Create the GitHub **`fsharp_pr_validation`** environment. Set its variable
+2. Authorize `DevDiv/DartLab`, `DevDiv/VS.Templates`, the `DD-CB-ReleaseVS`
+   pipeline/artifacts, required feeds, and the `DartLab-1ES` service connection.
+   The stage uses the production CloudTest templates from `DevDiv/DartLab`; it has
+   no dependency on the legacy `DevDiv/DartLab.Templates` DTL repository.
+3. Ask `vsengtest@microsoft.com` to assign an existing AMD64 CloudTest lab or
+   provision one for F#. Replace `TODO-CONFIRM-WITH-VSENG` in the pipeline only
+   after the lab name is confirmed. The owner notification alias is `fsharp`.
+   Confirm the VS drop and installed components support F#.
+4. Create the GitHub **`fsharp_pr_validation`** environment. Set its variable
    **`FSHARP_APEX_PIPELINE_ID`** to the new DevDiv pipeline's numeric ID.
    Set **`AZURE_CLIENT_ID`** and **`AZURE_TENANT_ID`** secrets for an Entra identity
    federated to `repo:dotnet/fsharp:environment:fsharp_pr_validation`.
    Grant it permission to queue this pipeline, not edit pipeline definitions.
    This flow does not require an Azure subscription.
-4. Provide **`MICROSOFT_MEMBERS_APP_ID`** and **`MICROSOFT_MEMBERS_APP_PRIVATE_KEY`**
+5. Provide **`MICROSOFT_MEMBERS_APP_ID`** and **`MICROSOFT_MEMBERS_APP_PRIVATE_KEY`**
    environment secrets for an approved GitHub App installed in `microsoft`, with
    organization **Members: read** permission. The workflow requests a short-lived
    membership-only token. The dotnet/fsharp `GITHUB_TOKEN` alone cannot be assumed
    to see private memberships in another organization. Verify lookup with a private
    member before rollout. Lookup errors fail closed; they do not prove nonmembership.
-5. Have the lab owners approve execution of fork PR code and verify effective
+6. Have the lab owners approve execution of fork PR code and verify effective
    credential/network isolation. This is a manually queued trusted-main build which
    later fetches PR source: **do not assume automatic fork-build secret restrictions
    apply**. Review job tokens, feed credentials, service connections and internal
@@ -68,7 +72,9 @@ Provision these before enabling requests:
 These are three separate identities: the Azure Pipelines GitHub source connection,
 the Entra queue identity, and the Microsoft-org membership lookup App. None replaces
 the others. Protect `main`, restrict who can edit/queue this privileged pipeline,
-keep machine deletion as the default, and authorize no signing/publishing credentials.
+keep `testMachineHoldStrategy: None` as the default, and authorize no
+signing/publishing credentials. Use `Failure` or `Completion` only for a bounded
+investigation; CloudTest held machines are accessed through the generated Bastion link.
 
 Microsoft supports [GitHub pipelines in multiple Azure DevOps organizations][github].
 Only the first organization receives automatic GitHub push/PR triggers; manual queueing
@@ -91,21 +97,26 @@ They cover command syntax, authorization of the original commenter (also on reru
 private membership lookup with the separate App token, the queued snapshot and PR feedback.
 
 After provisioning, use the Runs API's `previewRun` with the same repository
-ref/version and snapshot parameters to verify actual private-template expansion.
-Verify GitHub `self.version` pinning and test-machine working-directory behavior;
-local YAML parsing cannot establish either. Land trusted YAML/scripts on main before
-activation, and configure the environment and real pipeline ID together.
+ref/version, snapshot parameters, `DD-CB-ReleaseVS` resource pin and confirmed
+`testMachineLab` to verify actual private-template expansion. Fix every template,
+parameter, expression, service-connection and operation-expansion error before
+allocating a CloudTest machine. Verify GitHub `self.version` pinning and the
+test-machine source bootstrap; local YAML parsing cannot establish either. Land
+trusted YAML/scripts on main before activation, and configure the environment and
+real pipeline ID together.
 
 Explicitly request same-repository and fork PR smoke runs. Confirm the exact merge
-SHA, installed VS, VSIX load, Apex results and TRX/log artifacts. Exercise changed
-head/base rejection and an unauthorized request that queues no run. Verify PR edits
+SHA, installed VS, VSIX load, Azure DevOps test counts, Apex results and CloudTest
+TRX/build/setup log artifacts. Exercise changed head/base rejection and an
+unauthorized request that queues no run. Verify PR edits
 to pipeline YAML do not change the compiled trusted pipeline, and no UI overrides,
 schedules or resource triggers introduce automatic runs. Completion is not reported
 back as a new required GitHub check; the PR comment links to DevDiv results.
 
 Source-connection precedent: [NuGet/NuGet.Client#5936][nuget] introduced a self-contained
-VS-test pipeline for manual PR-branch queueing. F# retains its existing DartLab templates,
-VS-drop selection and Apex build path rather than copying NuGet's bootstrapper staging.
+VS-test pipeline for manual PR-branch queueing. F# retains its VS-drop selection and
+Apex build path while using DartLab-1ES CloudTest operations rather than legacy DTL
+agent step lists.
 
 [github]: https://learn.microsoft.com/en-us/azure/devops/pipelines/repos/github?view=azure-devops
 [runs]: https://learn.microsoft.com/en-us/rest/api/azure/devops/pipelines/runs/run-pipeline?view=azure-devops-rest-7.1

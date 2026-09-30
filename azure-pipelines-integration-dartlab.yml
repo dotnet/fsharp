@@ -12,10 +12,6 @@ resources:
     type: git
     name: DevDiv/DartLab
     ref: refs/tags/Production
-  - repository: DartLabTemplates
-    type: git
-    name: DevDiv/DartLab.Templates
-    ref: refs/heads/main
   - repository: VSTemplates
     type: git
     name: DevDiv/VS.Templates
@@ -31,20 +27,20 @@ parameters:
 - name: visualStudioBootstrapperURI
   type: string
   default: '(default)'
-- name: testCaseFilter
+- name: testMachineLab
+  displayName: DartLab-1ES Test Machine Lab
   type: string
-  default: '(all)'
-- name: testMachineCleanUpStrategy
-  displayName: Test Machine Clean Up Strategy
+  # TODO: Confirm or provision an F# AMD64 lab with vsengtest@microsoft.com.
+  default: TODO-CONFIRM-WITH-VSENG
+- name: testMachineHoldStrategy
+  displayName: Test Machine Hold Strategy
   type: string
-  default: delete
+  default: None
   values:
-  - delete
-  - stop
-- name: testMachineRetention
-  displayName: Test Machine Retention (format "D:H:M:S")
-  type: string
-  default: 1:0:0:0
+  - None
+  - Completion
+  - Failure
+  - Timeout
 
 extends:
   template: /DartLab/1ES/pipelines/ci/build.yml@VSTemplates
@@ -57,6 +53,5 @@ extends:
         headSha: ${{ parameters.headSha }}
         baseSha: ${{ parameters.baseSha }}
         visualStudioBootstrapperURI: ${{ parameters.visualStudioBootstrapperURI }}
-        testCaseFilter: ${{ parameters.testCaseFilter }}
-        testMachineCleanUpStrategy: ${{ parameters.testMachineCleanUpStrategy }}
-        testMachineRetention: ${{ parameters.testMachineRetention }}
+        testMachineLab: ${{ parameters.testMachineLab }}
+        testMachineHoldStrategy: ${{ parameters.testMachineHoldStrategy }}
