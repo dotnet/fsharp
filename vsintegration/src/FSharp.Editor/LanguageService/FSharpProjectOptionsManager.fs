@@ -142,6 +142,7 @@ type private FSharpProjectOptionsMessage =
         CancellationToken
     | ClearOptions of ProjectId
     | ClearSingleFileOptionsCache of DocumentId
+    | ClearAllSingleFileOptions
 
 [<Sealed>]
 type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
@@ -616,6 +617,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
                         checker.ClearCache([ projectOptions ])
                         disposeSingleFileCacheEntry cacheEntry
                     | _ -> ()
+                | FSharpProjectOptionsMessage.ClearAllSingleFileOptions -> clearSingleFileCache ()
         }
 
     let agent =
@@ -648,7 +650,8 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
         commandLineOptions.Clear()
         legacyProjectSites.Clear()
         cache.Clear()
-        clearSingleFileCache ()
+        // Through the agent, so no in-flight request re-adds an entry behind the drain.
+        agent.Post(FSharpProjectOptionsMessage.ClearAllSingleFileOptions)
         lastSuccessfulCompilations.Clear()
 
     member _.ScriptUpdated = scriptUpdatedEvent.Publish
@@ -659,6 +662,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
             cancellationTokenSource.Cancel()
             cancellationTokenSource.Dispose()
             (agent :> IDisposable).Dispose()
+            clearSingleFileCache ()
 
 /// Manages mappings of Roslyn workspace Projects/Documents to FCS.
 type internal FSharpProjectOptionsManager(checker: FSharpChecker, workspace: Workspace) =
