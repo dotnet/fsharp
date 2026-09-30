@@ -9,9 +9,9 @@ Create the article and its supporting presentation, not an experiment proposal o
 
 ## Editorial priorities
 
-Write for F# developers, with friendly, evidenced optimism. Use closures, lambdas, functions, collection operations, and stated input sizes, not generic "callbacks" or "kernels". Preserve technical identifiers, raw benchmark fields, and original source metadata; paraphrase display labels and PR summaries instead.
+Write an F# marketing blog post for F# programmers, not a scientific paper or benchmark report. Lead with benefits and attractive, solid numbers; use short transitions rather than narrating every table. Use closures, lambdas, functions, collection operations, and stated input sizes, not generic "callbacks" or "kernels". Preserve technical identifiers, raw benchmark fields, and original source metadata; paraphrase display labels and PR summaries instead.
 
-Do not restate basics, explain unit conversions, repeat definitions, or narrate obvious experimental controls such as "the same frozen inputs, references, and arguments". Enforce those controls internally and document them in linked methodology. Keep only caveats that change interpretation in the article, briefly: for example, retained heap is not peak RAM, compilation is not a full build, and a source-built snapshot is not a shipped SDK. Concise marketing must not conceal material limitations.
+Do not restate basics, explain unit conversions, repeat definitions, or narrate obvious experimental controls such as "the same frozen inputs, references, and arguments". Keep methodology, counters, calibration, source hashes, validation logs, and exclusion audits in linked evidence, not the article body or a collapsed appendix. No "What these measurements do and do not establish" section. A few short sentences about relevant settings and material tradeoffs are enough; do not explain every setting or qualify every win.
 
 ## Evidence behind the article
 
@@ -25,7 +25,7 @@ An intermediate prerelease is optional context, never a replacement denominator:
 
 ## Build the release story
 
-Open with a short celebration of the effort and practical benefits: a verified count of relevant merged PRs over a stated real timeframe, the measured headline improvement range, and what is already available versus coming in the next milestone or GA. Derive these claims from the evidence and release membership; never insert a canned season, count, gain, or availability promise.
+Open with a short celebration of the effort and practical benefits: a verified count of relevant merged PRs over a stated real timeframe, the measured headline improvement range, and what is already available versus coming in the next milestone or GA. When an improvement also reaches users' own applications and libraries, celebrate that in the opening: the benefit goes out into the F# ecosystem, not just the compiler or benchmarks. Derive these claims from the evidence and release membership; never insert a canned season, count, gain, or availability promise.
 
 Make the main results table the main story, followed by useful charts, then the contributing PRs. Select one or two metrics with the strongest credible gains across representative projects. Keep the representative workload set, not only successful projects. Omit inconclusive metrics from the headline, retain all underlying results, and explicitly disclose material regressions. Name the metric actually improved; a reduction in one resource does not establish that everything is faster or cheaper.
 
@@ -41,4 +41,4 @@ Use zero-based bars and honest axes. Per-workload bar scaling is acceptable if b
 
 After the measured results, provide one overall PR list ordered by actual merge time, with at most one clear release cut-line where useful. Verify that cut-line against source ancestry, not dates alone. Count distinct relevant PRs actually included in the release source; exclude experimental or unshipped branches. Group genuinely repetitive changes, but list partially unique contributions separately. Do not add together PR-local improvement percentages or assign causal shares of an aggregate gain without isolated measurements.
 
-Deliver the finished article with usable tables/charts and linked evidence, within the requested scope. Before finishing, check every headline, availability claim, PR count, and example against its source; ensure material regressions remain visible. Remove basic explanations, redundant methodology narration, and non-idiomatic F# prose without deleting interpretation-changing caveats.
+End with a warm, F#-focused closing that celebrates the benefits readers can enjoy, not a wall of qualifications. Match those benefits to the evidence without promising every program improves. Deliver the finished article with usable tables/charts and linked evidence. Before finishing, check every headline, availability claim, PR count, and example against its source; keep material regressions visible but concise.

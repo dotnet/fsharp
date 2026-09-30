@@ -49,7 +49,6 @@ const median = values => {
     return (sorted[Math.floor((sorted.length - 1) / 2)] + sorted[Math.floor(sorted.length / 2)]) / 2;
 };
 const fmt = (value, digits = 1) => value.toFixed(digits);
-const signed = value => `${value >= 0 ? '+' : ''}${fmt(value, 2)}%`;
 const reduction = (older, newer) => (1 - newer / older) * 100;
 const range = values => `${fmt(Math.min(...values))}%-${fmt(Math.max(...values))}%`;
 const table = (headers, rows) => [
@@ -138,11 +137,10 @@ for (const group of [data.framework_allocation, data.framework_heap]) {
     }
 }
 const values = row => row.values.map(v => v.value);
-const row = (group, id) => group.rows.find(r => r.case === id);
-const prLink = id => {
+const prLink = (id, label = `#${id}`) => {
     const p = prs.find(p => Number(p.number) === id);
     assert(p, `Missing PR ${id}`);
-    return `[#${id}](${p.url})`;
+    return `[${label}](${p.url})`;
 };
 const contributing = prs.filter(p => p.rc2_source_status === 'ancestor')
     .sort((a, b) => a.merged_at.localeCompare(b.merged_at));
@@ -158,40 +156,25 @@ const dateLabel = timestamp => {
     const date = new Date(timestamp);
     return `${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][date.getUTCMonth()]} ${date.getUTCDate()}`;
 };
-const sdkFcsPeak = values(row(data.sdk_peak, 'fsharp-compiler-service'));
-const sdkFcsCpu = values(row(data.sdk_cpu, 'fsharp-compiler-service'));
-const classicFcsPeak = values(row(data.framework_peak, 'fsharp-compiler-service'));
-const monitoringWall = data.monitoring.map(m => m.on_vs_off_percent.wall_ns.median);
 const blocks = {
-    opening: `F# 11 puts less pressure on the garbage collector and keeps less compiler data alive after IDE project checks. Across six real-world compilation workloads, the source-built compiler allocates **roughly 20-50% less than the compiler released in SDK 10.0.100**. Our multi-project IDE checks retain **about 30% less managed memory**.\n\nBehind this is a late-summer push: **${contributing.length} performance and supporting PRs** from auduchinok and T-Gro, merged between **${dateLabel(contributing[0].merged_at)} and ${dateLabel(contributing.at(-1).merged_at)}, 2026**. The work tackles unnecessary allocations, duplicated compiler data and memory held after typechecking. **${cutoff} changes are already in RC1**; the remaining **${contributing.length - cutoff} are in the RC2 source**, headed for .NET 11 and F# 11 GA.\n\nWe're excited to share those gains with F# developers: less allocation during compilation, less memory retained by IDE project checking, and fewer short-lived objects in your own code. One change reaches beyond the compiler: ${prLink(20422)} inlines higher-order \`FSharp.Core\` List/Array functions and their lambda arguments, so everyday code using operations such as \`List.fold\` can stop allocating a closure on every call.`,
+    opening: `F# 11 brings **roughly 20-50% less allocation during compilation** across six real-world projects and **about 30% less memory retained after IDE project checks**. **And this is a win for your F# code, too!** Better ${prLink(20422, 'inlining of `FSharp.Core` calls')} eliminates closure allocations in everyday functional code. Recompile with the new compiler and \`FSharp.Core\`, and these optimizations reach your applications and libraries, not just the compiler.\n\nBehind these gains are **${contributing.length} performance and supporting PRs** from auduchinok and T-Gro, merged between **${dateLabel(contributing[0].merged_at)} and ${dateLabel(contributing.at(-1).merged_at)}, 2026**. **${cutoff} are already in RC1**; the remaining **${contributing.length - cutoff} are in the RC2 source**, headed for .NET 11 and F# 11 GA.`,
     compilation: table(['Compilation workload', 'Old GB', 'RC1 GB', 'New GB', 'RC1 vs old: less allocation', 'New vs old: less allocation'],
         data.sdk_allocation.rows.map(r => [r.label, ...values(r).map(v => fmt(v, 3)),
             `${fmt(r.rc1_reduction_vs_old)}%`, `${fmt(r.new_reduction_vs_old)}%`])),
-    headline: `RC1 already allocates **${range(data.sdk_allocation.rows.map(r => r.rc1_reduction_vs_old))} less than the released compiler**. The source-built F# 11 compiler takes that to **${range(data.sdk_allocation.rows.map(r => r.new_reduction_vs_old))} less**, depending on the project.`,
-    'sdk-caveat': `**Lower allocation is not a promise of lower peak RAM or CPU time.** FCS's median peak resident RAM rises from **${fmt(sdkFcsPeak[0])} to ${fmt(sdkFcsPeak[2])} MB**, and CPU time from ${fmt(sdkFcsCpu[0], 2)} to ${fmt(sdkFcsCpu[2], 2)} seconds. Peak RAM is higher in ${data.sdk_peak.rows.filter(r => r.values[2].median > r.values[0].median).length} of the six workloads. [All RAM, CPU and wall-time values](../third-wave/compilation-matrix.csv) remain published.`,
+    'sdk-caveat': `Peak compilation RAM rose in ${data.sdk_peak.rows.filter(r => r.values[2].median > r.values[0].median).length} of six SDK workloads, and FCS used more CPU time. [All metrics](../third-wave/compilation-matrix.csv).`,
     framework: table(['Compilation workload', 'Old GB', 'New GB', 'New vs old: less allocation'],
         data.framework_allocation.rows.map(r => [r.label, ...values(r).map(v => fmt(v, 3)),
             `${fmt(r.new_reduction_vs_old)}%`])),
-    'framework-caveat': `The source-built compiler allocates **${range(data.framework_allocation.rows.map(r => r.new_reduction_vs_old))} less on .NET Framework**. Peak RAM does not uniformly improve here either: FCS rises from ${fmt(classicFcsPeak[0])} to ${fmt(classicFcsPeak[1])} MB.`,
     ide: table(['Project graph', 'Old MB', 'RC1 MB', 'New MB', 'New vs old: less retained memory'],
         data.sdk_heap.rows.map(r => [r.label, ...values(r).map(v => fmt(v)),
             `${fmt(reduction(r.values[0].median, r.values[2].median))}%`])),
-    'portable-ide': `On .NET Framework, retained managed memory also falls by **${range(data.framework_heap.rows.map(r => r.new_reduction_vs_old))}**. [Detailed IDE measurements](../framework/ide-matrix.csv).`,
+    'portable-ide': `On .NET Framework, retained memory falls by **${range(data.framework_heap.rows.map(r => r.new_reduction_vs_old))}** too.`,
     programs: table(['Operation', 'Old (SDK 10.0.100) B/op', 'New (source-built) B/op'],
         data.programs.map(p => [p.label, ...p.values.map(v => v.value)])),
-    mechanism: `The [generated IL inventories](../third-wave/programs/) show function-object construction sites falling from **${data.function_construction_sites[0].count} to ${data.function_construction_sites[2].count}** between old and new output. These are static sites, not allocations per call. Separately collected [Oxpecker compiler profiles](../third-wave/profiles/) estimate generated-function allocation falling from **${fmt(data.profiles[0].verified_function_weighted_bytes / 1e6)} to ${fmt(data.profiles[2].verified_function_weighted_bytes / 1e6)} MB**. Those are weighted sampled bytes, classified by resolved \`FSharpFunc\` inheritance rather than just \`@\` in a name; the accepted traces report zero lost events.`,
     contributions: [
-        `These **${contributing.length} PRs** are in the measured source snapshot, ordered by merge time. Each distinct change is listed separately; the cut-line marks RC1's source boundary.`,
-        contributing.map((p, index) => `${index === cutoff ? `\n---\n\n**RC1 cut-line: the ${cutoff} changes above are in RC1. The ${contributing.length - cutoff} below are in the RC2 source, headed for GA.**\n\n` : ''}- **${dateLabel(p.merged_at)}** - ${prLink(Number(p.number))}: ${p.title.replace(/^\[MicroPerf\]\s*(Perf:\s*)?/, '').replace(/\bopaque callbacks\b/g, 'function arguments')} (${p.author}).`).join('\n'),
-        `The experimental-branch merges ${[20424, 20425, 20439].map(prLink).join(', ')} are **absent from the selected mainline ancestry** and are not credited as shipped here. ${prLink(20506)} adds MSBuild concurrency support, but these serial compiler-only runs do **not** measure its benefit.`,
-        `The [full PR inventory](../third-wave/contributions.csv), [VMR audit](../third-wave/vmr-audit.json) and [exact source selection](../third-wave/experiment.json) retain the release boundaries. The later compiler source is \`${experiments[0].selection.rc2_and_main_fsharp_source}\`; the pinned RC2 and main production tree is \`${audit[1].production_tree}\`.`,
+        '**Already in RC1**',
+        contributing.map((p, index) => `${index === cutoff ? '\n---\n\n**In the RC2 source, headed for GA**\n\n' : ''}- **${dateLabel(p.merged_at)}** - ${prLink(Number(p.number))}: ${p.title.replace(/^\[MicroPerf\]\s*(Perf:\s*)?/, '').replace(/\bopaque callbacks\b/g, 'function arguments')} (${p.author}${Number(p.number) === 20506 ? '; concurrency benefit not measured here' : ''}).`).join('\n'),
     ].join('\n\n'),
-    instrumentation: `Allocation accounting is also explicit: modern .NET uses \`GC.GetTotalAllocatedBytes(true)\`; Framework uses \`AppDomain.MonitoringTotalAllocatedMemorySize\` for the compiler domain, including retired threads. Known-allocation calibration agreed within 2%. Framework monitoring-on/off controls have median paired wall changes from **${signed(Math.min(...monitoringWall))} to ${signed(Math.max(...monitoringWall))}**, but individual peak-RAM changes reach **${signed(Math.max(...data.monitoring.map(m => m.on_vs_off_percent.peak_working_set_bytes.max)))}**. This is not proof of zero instrumentation overhead. See [counter calibration and controls](../framework/README.md#boundaries-and-stability).`,
-    evidence: table(['Separate campaign', 'Scalar observations (measured + warmup)', 'Application launch/cases', 'Measured application iterations'],
-        experiments.map((e, i) => [`[${i ? 'Portable / Framework' : 'SDK / local R2R'}](../${i ? 'framework' : 'third-wave'}/README.md)`,
-            `${e.counts.scalar} (${e.counts.measured_scalar} + ${e.counts.warmup_scalar})`,
-            e.counts.program_launch_cases, e.counts.measured_program_iterations])) +
-        `\n\nThe portable campaign additionally retains ${portable.monitoring_controls.length} instrumentation-control records. [SDK raw results](../third-wave/results.json) and [portable raw results](../framework/results.json) include observations, warmups and all metric distributions.`,
 };
 
 const colors = ['#64748b', '#2563a6', '#087f73'];
