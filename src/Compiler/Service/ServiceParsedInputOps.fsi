@@ -133,6 +133,8 @@ type public InsertionContext =
 
         /// Where the `open` belongs (F# compiler line number): the first line inside the scope, that
         /// is, below the declaration header or below the open declarations and directives above it.
+        /// A nested module whose first declaration shares the header's line is entered at that
+        /// declaration, so there `Pos` is on the header's line, at the declaration's column.
         Pos: pos
     }
 

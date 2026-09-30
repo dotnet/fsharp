@@ -279,9 +279,9 @@ module internal OpenDeclarationHelper =
         let column = min pos.Column (line.End - line.Start)
         let trivia = sourceText.ToString(TextSpan(line.Start, column)).TrimEnd()
 
-        // Anything but whitespace before the insertion point is trivia the scope's first declaration
-        // follows on its line - a block comment closing there, say. Break the line at the declaration
-        // rather than write the open into the middle of what precedes it.
+        // Anything but whitespace before the insertion point is what the scope's first declaration
+        // follows on its line - a block comment closing there, or the header of a module declared on
+        // one line. Break the line at the declaration rather than write the open into what precedes it.
         if trivia.Length > 0 then
             TextChange(
                 TextSpan(line.Start + trivia.Length, column - trivia.Length),
