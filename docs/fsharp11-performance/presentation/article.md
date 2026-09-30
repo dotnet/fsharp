@@ -26,7 +26,7 @@ Behind these gains are **49 performance and supporting PRs** from auduchinok and
 ![Actual compiler allocation in GB for six workloads: the released SDK 10 compiler, RC1, and source-built F# 11. Each project's bar widths use their own zero-based scale.](compiler-allocation.svg)
 
 <!-- generated:sdk-caveat -->
-Peak compilation RAM rose in 4 of six SDK workloads, and FCS used more CPU time. [All metrics](../third-wave/compilation-matrix.csv).
+Peak compilation RAM rose in 4 of six SDK workloads, and FCS used more CPU time.
 <!-- /generated:sdk-caveat -->
 
 ## The allocation gains also reach .NET Framework
@@ -46,7 +46,7 @@ FCS-hosted compilation on **x64 .NET Framework 4.8.1**, comparing released and s
 
 ![Actual allocation in GB on .NET Framework, comparing the released compiler generation with source-built F# 11 for all six workloads.](runtime-allocation.svg)
 
-FCS peak RAM also increased on Framework. [All metrics](../framework/compilation-matrix.csv).
+FCS peak RAM also increased on Framework.
 
 ## Less memory held after IDE project checks
 
@@ -81,23 +81,23 @@ let discountedTotal discount prices =
 The lambda captures `discount`, but no longer needs a closure allocation on each call. [Partially applied functions benefit too](https://github.com/dotnet/fsharp/pull/20487). Here are a few everyday F# operations compiled with old and new tooling:
 
 <!-- generated:programs -->
-| Operation | Old (SDK 10.0.100) B/op | New (source-built) B/op |
+| F# code (simplified) | Old B/op | New B/op |
 | --- | ---: | ---: |
-| Cart-price List.fold | 24 | 0 |
-| Access-rule exists / forall | 48 | 0 |
-| Weighted Array.fold / fold2 | 48 | 0 |
-| Partially applied Option.map | 0 | 0 |
-| Nested group folds | 48 | 0 |
-| Filtering and mapping | 146 | 146 |
-| Escaping closure | 24 | 24 |
-| Non-capturing lambda | 0 | 0 |
+| `List.fold (fun s struct (p, q) -> s + p * q * (100 - d) / 100) 0 items` | 24 | 0 |
+| `let any = List.exists (fun x -> x > lo) xs in List.forall (fun x -> x < hi) xs && any` | 48 | 0 |
+| `Array.fold (fun s x -> s + x * k) 0 xs + Array.fold2 (fun s x w -> s + x * w * k) 0 xs ws` | 48 | 0 |
+| `Option.defaultValue 0 (Option.map (addOffset k) opt)` | 0 | 0 |
+| `List.fold (fun s xs -> s + List.fold (fun t x -> t + x * k) 0 xs) 0 groups` | 48 | 0 |
+| `List.sum (List.map (fun x -> x + k) (List.filter (fun x -> x > lo) xs))` | 146 | 146 |
+| `saved <- (fun x -> x + offset); saved n` | 24 | 24 |
+| `List.fold (+) seed xs` | 0 | 0 |
 <!-- /generated:programs -->
 
 *List and array operations use four-element collections.*
 
 Four of these operations now allocate **nothing per call**. Recompile with the new compiler and FSharp.Core to bring these improvements to your own code.
 
-No campaign forces DATAS, GC budgets, tiering or PGO. [Data, methodology and reproduction](README.md).
+No campaign forces DATAS, GC budgets, tiering or PGO.
 
 ## Contributing changes
 

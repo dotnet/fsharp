@@ -1,6 +1,8 @@
 # Presentation reproduction
 
-Read [Performance improvements in the F# 11 compiler](article.md). The comparison is the released SDK 10.0.100 compiler versus source-built F# 11, with RC1 as an intermediate compiler data point. Three charts show compiler allocation, the old/new comparison on .NET Framework, and retained IDE managed heap. The closure-allocation table compares old and new using four-element collections.
+Read [Performance improvements in the F# 11 compiler](article.md). The comparison is the released SDK 10.0.100 compiler versus source-built F# 11, with RC1 as an intermediate compiler data point. Three charts show compiler allocation, the old/new comparison on .NET Framework, and retained IDE managed heap. The application table uses one-line F# snippets, comparing old and new with four-element collections.
+
+Publish `article.md` and the three SVGs; keep the data and generation files as local working material. The article retains PR links but no supplementary-data links.
 
 ## Regenerate without running benchmarks
 
@@ -13,7 +15,7 @@ node .\docs\fsharp11-performance\presentation\generate.mjs --check
 
 The generator resolves inputs relative to itself, so it also works from another current directory. It only writes `article.md`, `compiler-allocation.svg`, `runtime-allocation.svg`, `ide-retained-heap.svg` and `chart-data.json` in this directory. Authored prose stays outside `generated` markers in the article; keep those markers when editing. `--check` writes nothing and fails on stale output, missing data, changed sample counts, inconsistent published medians or wrong portable percentage denominators.
 
-`chart-data.json` preserves exact byte medians, decimal GB/MB display values and reduction percentages, with JSON pointers back to each source value. It includes SHA-256 hashes of input evidence bytes and a hash of the generator after LF normalization, plus payload identities, counts, the chronological PR inventory and the explicitly discussed RAM/CPU regressions. Generated text is compared after LF normalization so checking works with either Git checkout line-ending convention. There are no generated timestamps, locale-dependent number formats, random numbers, or moving source references.
+`chart-data.json` preserves exact byte medians, decimal GB/MB display values and reduction percentages, with JSON pointers back to each source value. It includes the displayed F# snippets alongside their original case labels, SHA-256 hashes of input evidence bytes and a hash of the generator after LF normalization, plus payload identities, counts, the chronological PR inventory and the explicitly discussed RAM/CPU regressions. Generated text is compared after LF normalization so checking works with either Git checkout line-ending convention. There are no generated timestamps, locale-dependent number formats, random numbers, or moving source references.
 
 Scalar values come from each campaign's `scalar_statistics` and are cross-checked against its 12 non-warmup observations per cell. Application medians are checked against the three launch records. Reductions use **100 times (1 minus the candidate median divided by the released compiler median)**; positive means less allocation/retention. Both RC1 and source-built percentages use the released baseline. They are not medians of round-paired ratios. The Framework comparison keeps both compiler generations on Framework. No means across projects or pooled cohorts are reported.
 

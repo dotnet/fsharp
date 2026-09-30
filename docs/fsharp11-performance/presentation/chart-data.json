@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "evidence_commit": "bc90ee6637fc9c7065da173bd36c8b06e2a8d6d4",
-  "generator_sha256_lf": "52c89ffda9ac46250268d5e6fc89de7e4a5557183e8ce9d35fa8864379c09646",
+  "generator_sha256_lf": "e7d1df5e769d62b803f4b408770d1882fd1f03882c7dcba8607948f5b3750993",
   "sources": [
     {
       "path": "../third-wave/results.json",
@@ -1050,6 +1050,7 @@
     {
       "kernel": "Cart",
       "label": "Cart-price List.fold",
+      "code": "List.fold (fun s struct (p, q) -> s + p * q * (100 - d) / 100) 0 items",
       "length": 4,
       "values": [
         {
@@ -1067,6 +1068,7 @@
     {
       "kernel": "Rules",
       "label": "Access-rule exists / forall",
+      "code": "let any = List.exists (fun x -> x > lo) xs in List.forall (fun x -> x < hi) xs && any",
       "length": 4,
       "values": [
         {
@@ -1084,6 +1086,7 @@
     {
       "kernel": "Telemetry",
       "label": "Weighted Array.fold / fold2",
+      "code": "Array.fold (fun s x -> s + x * k) 0 xs + Array.fold2 (fun s x w -> s + x * w * k) 0 xs ws",
       "length": 4,
       "values": [
         {
@@ -1101,6 +1104,7 @@
     {
       "kernel": "Option",
       "label": "Partially applied Option.map",
+      "code": "Option.defaultValue 0 (Option.map (addOffset k) opt)",
       "length": 4,
       "values": [
         {
@@ -1118,6 +1122,7 @@
     {
       "kernel": "Nested",
       "label": "Nested group folds",
+      "code": "List.fold (fun s xs -> s + List.fold (fun t x -> t + x * k) 0 xs) 0 groups",
       "length": 4,
       "values": [
         {
@@ -1135,6 +1140,7 @@
     {
       "kernel": "FilterMap",
       "label": "Filtering and mapping",
+      "code": "List.sum (List.map (fun x -> x + k) (List.filter (fun x -> x > lo) xs))",
       "length": 4,
       "values": [
         {
@@ -1152,6 +1158,7 @@
     {
       "kernel": "Escaping",
       "label": "Escaping closure",
+      "code": "saved <- (fun x -> x + offset); saved n",
       "length": 4,
       "values": [
         {
@@ -1169,6 +1176,7 @@
     {
       "kernel": "NonCapturing",
       "label": "Non-capturing lambda",
+      "code": "List.fold (+) seed xs",
       "length": 4,
       "values": [
         {

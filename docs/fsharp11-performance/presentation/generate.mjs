@@ -35,10 +35,20 @@ const workloads = [
 ];
 const graphs = [['fsautocomplete-ide', 'FsAutoComplete'], ['oxpecker-ide', 'Oxpecker']];
 const operations = [
-    ['Cart', 'Cart-price List.fold'], ['Rules', 'Access-rule exists / forall'],
-    ['Telemetry', 'Weighted Array.fold / fold2'], ['Option', 'Partially applied Option.map'],
-    ['Nested', 'Nested group folds'], ['FilterMap', 'Filtering and mapping'],
-    ['Escaping', 'Escaping closure'], ['NonCapturing', 'Non-capturing lambda'],
+    ['Cart', 'Cart-price List.fold',
+        'List.fold (fun s struct (p, q) -> s + p * q * (100 - d) / 100) 0 items'],
+    ['Rules', 'Access-rule exists / forall',
+        'let any = List.exists (fun x -> x > lo) xs in List.forall (fun x -> x < hi) xs && any'],
+    ['Telemetry', 'Weighted Array.fold / fold2',
+        'Array.fold (fun s x -> s + x * k) 0 xs + Array.fold2 (fun s x w -> s + x * w * k) 0 xs ws'],
+    ['Option', 'Partially applied Option.map',
+        'Option.defaultValue 0 (Option.map (addOffset k) opt)'],
+    ['Nested', 'Nested group folds',
+        'List.fold (fun s xs -> s + List.fold (fun t x -> t + x * k) 0 xs) 0 groups'],
+    ['FilterMap', 'Filtering and mapping',
+        'List.sum (List.map (fun x -> x + k) (List.filter (fun x -> x > lo) xs))'],
+    ['Escaping', 'Escaping closure', 'saved <- (fun x -> x + offset); saved n'],
+    ['NonCapturing', 'Non-capturing lambda', 'List.fold (+) seed xs'],
 ];
 const sdkLabels = ['Old (SDK 10)', 'SDK 11 RC1', 'New (source)'];
 const frameworkArms = ['old-framework', 'new-framework'];
@@ -96,8 +106,8 @@ const data = {
     sdk_peak: scalarTable('third-wave', sdk, workloads, 'peak_working_set_bytes', 1e6, 'MB'),
     framework_peak: scalarTable('framework', portable, workloads, 'peak_working_set_bytes', 1e6, 'MB', frameworkArms),
     sdk_cpu: scalarTable('third-wave', sdk, workloads, 'cpu_ns', 1e9, 's'),
-    programs: operations.map(([kernel, label]) => ({
-        kernel, label, length: 4,
+    programs: operations.map(([kernel, label, code]) => ({
+        kernel, label, code, length: 4,
         values: applicationArms.map(arm => {
             const index = sdk.program_statistics.findIndex(p => p.kernel === kernel && p.length === 4 && p.arm === arm);
             const p = sdk.program_statistics[index];
@@ -161,7 +171,7 @@ const blocks = {
     compilation: table(['Compilation workload', 'Old GB', 'RC1 GB', 'New GB', 'RC1 vs old: less allocation', 'New vs old: less allocation'],
         data.sdk_allocation.rows.map(r => [r.label, ...values(r).map(v => fmt(v, 3)),
             `${fmt(r.rc1_reduction_vs_old)}%`, `${fmt(r.new_reduction_vs_old)}%`])),
-    'sdk-caveat': `Peak compilation RAM rose in ${data.sdk_peak.rows.filter(r => r.values[2].median > r.values[0].median).length} of six SDK workloads, and FCS used more CPU time. [All metrics](../third-wave/compilation-matrix.csv).`,
+    'sdk-caveat': `Peak compilation RAM rose in ${data.sdk_peak.rows.filter(r => r.values[2].median > r.values[0].median).length} of six SDK workloads, and FCS used more CPU time.`,
     framework: table(['Compilation workload', 'Old GB', 'New GB', 'New vs old: less allocation'],
         data.framework_allocation.rows.map(r => [r.label, ...values(r).map(v => fmt(v, 3)),
             `${fmt(r.new_reduction_vs_old)}%`])),
@@ -169,8 +179,8 @@ const blocks = {
         data.sdk_heap.rows.map(r => [r.label, ...values(r).map(v => fmt(v)),
             `${fmt(reduction(r.values[0].median, r.values[2].median))}%`])),
     'portable-ide': `On .NET Framework, retained memory falls by **${range(data.framework_heap.rows.map(r => r.new_reduction_vs_old))}** too.`,
-    programs: table(['Operation', 'Old (SDK 10.0.100) B/op', 'New (source-built) B/op'],
-        data.programs.map(p => [p.label, ...p.values.map(v => v.value)])),
+    programs: table(['F# code (simplified)', 'Old B/op', 'New B/op'],
+        data.programs.map(p => [`\`${p.code}\``, ...p.values.map(v => v.value)])),
     contributions: [
         '**Already in RC1**',
         contributing.map((p, index) => `${index === cutoff ? '\n---\n\n**In the RC2 source, headed for GA**\n\n' : ''}- **${dateLabel(p.merged_at)}** - ${prLink(Number(p.number))}: ${p.title.replace(/^\[MicroPerf\]\s*(Perf:\s*)?/, '').replace(/\bopaque callbacks\b/g, 'function arguments')} (${p.author}${Number(p.number) === 20506 ? '; concurrency benefit not measured here' : ''}).`).join('\n'),
