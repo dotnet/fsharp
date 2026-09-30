@@ -280,6 +280,23 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
                     return ValueSome classification
         }
 
+    // An instance its last waiter has just abandoned refuses to be joined; the next pass replaces it.
+    static let rec joinClassification (documentId: DocumentId) (version: ClassificationVersion) start cancellationToken =
+        let inFlight =
+            inFlightClassifications.AddOrUpdate(
+                documentId,
+                (fun _ -> start ()),
+                fun _ (running: InFlightClassification) ->
+                    if running.Version = version && not running.IsCancelled then
+                        running
+                    else
+                        start ()
+            )
+
+        match inFlight.TryJoin cancellationToken with
+        | ValueSome work -> struct (inFlight, work)
+        | ValueNone -> joinClassification documentId version start cancellationToken
+
     // Requests for the same version that overlap - split views, the taggers above and below the
     // viewport - share one classification instead of each walking the whole file.
     static let classifyOpenDocument (document: Document) (version: ClassificationVersion) (sourceText: SourceText) =
@@ -289,25 +306,8 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
             let start () =
                 InFlightClassification(version, classifyWholeFile document version sourceText)
 
-            // An instance its last waiter has just abandoned refuses to be joined; the next pass
-            // replaces it.
-            let rec join () =
-                let inFlight =
-                    inFlightClassifications.AddOrUpdate(
-                        document.Id,
-                        (fun _ -> start ()),
-                        fun _ running ->
-                            if running.Version = version && not running.IsCancelled then
-                                running
-                            else
-                                start ()
-                    )
-
-                match inFlight.TryJoin cancellationToken with
-                | ValueSome work -> struct (inFlight, work)
-                | ValueNone -> join ()
-
-            let struct (inFlight, work) = join ()
+            let struct (inFlight, work) =
+                joinClassification document.Id version start cancellationToken
 
             try
                 return! work
