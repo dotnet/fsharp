@@ -145,6 +145,15 @@ type T() =
     let line = findOpenInsertionLine "test.fs" source "System.IO"
     Assert.Equal(2, line)
 
+[<Fact>]  // Regression: the line below a nested module declared on one line is already past the use
+let ``Open placed at the first declaration of a nested module declared on one line`` () =
+    let source = """module Top
+
+module M = let x = System.IO.File.ReadAllText "a"
+"""
+    let pos = findOpenInsertion OpenStatementInsertionPoint.Nearest "test.fs" source "System.IO"
+    Assert.Equal((3, 11), pos)
+
 [<Fact>]  // Only #r/#load drive placement; other directives (#time/#help/#I/...) must not
 let ``Non reference directive does not drive placement in fsx`` () =
     let source = """#time "on"

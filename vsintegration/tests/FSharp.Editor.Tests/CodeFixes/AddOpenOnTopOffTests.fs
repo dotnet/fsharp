@@ -184,6 +184,28 @@ let ``Fixes FS0039 for missing opens - nested module`` () =
     Assert.Equal(expected, actual)
 
 [<Fact>]
+let ``Fixes FS0039 for missing opens - nested module declared on one line`` () =
+    let code =
+        """module Module1 = let x = Console.WriteLine 42
+"""
+
+    let expected =
+        Some
+            {
+                Message = "open System"
+                FixedCode =
+                    """module Module1 =
+                 open System
+
+                 let x = Console.WriteLine 42
+"""
+            }
+
+    let actual = codeFix |> tryFix code mode
+
+    Assert.Equal(expected, actual)
+
+[<Fact>]
 let ``Fixes FS0039 for missing opens - explicit module has attributes`` () =
     let code =
         """
