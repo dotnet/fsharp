@@ -201,6 +201,21 @@ Console.WriteLine 42
     Assert.Equal(expected, actual)
 
 [<Fact>]
+let ``Fixes FS0039 for missing opens - the open goes before a last line with no line break`` () =
+    let code = "module Module1\nConsole.WriteLine 42"
+
+    let expected =
+        Some
+            {
+                Message = "open System"
+                FixedCode = "module Module1\n\nopen System\n\nConsole.WriteLine 42"
+            }
+
+    let actual = codeFix |> tryFix code Auto
+
+    Assert.Equal(expected, actual)
+
+[<Fact>]
 let ``Fixes FS0039 for missing opens - namespace without a blank line`` () =
     let code =
         """namespace N1
