@@ -680,6 +680,28 @@ let write () = WriteLine "hi"
 
     Assert.Equal<TestCodeFix list>(expected, actual)
 
+[<Fact>] // The qualifications are capped as well, so what `System` holds goes first there too
+let ``Offers the System qualifications first`` () =
+    let code =
+        """module Module1
+
+let write () = WriteLine "hi"
+"""
+
+    let expected =
+        [
+            "System.Console.WriteLine"
+            "System.Diagnostics.Debug.WriteLine"
+            "System.Diagnostics.Trace.WriteLine"
+        ]
+
+    let actual =
+        allFixes code Auto
+        |> List.map _.Message
+        |> List.filter (fun message -> not (message.StartsWith("open ", StringComparison.Ordinal)))
+
+    Assert.Equal<string list>(expected, actual)
+
 [<Fact>] // NEGATIVE: `open type` needs the type arguments of a generic type, and the name does not carry them
 let ``Doesn't offer to open a generic type`` () =
     let code =
