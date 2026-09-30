@@ -1,6 +1,6 @@
 # Presentation reproduction
 
-Read [Performance improvements in the F# 11 compiler](article.md). The comparison is the released SDK 10.0.100 compiler versus source-built F# 11, with RC1 as an intermediate compiler data point. Three charts show compiler allocation, the same old/new comparison on .NET Framework, and retained IDE managed heap. The callback table compares only old and new across all eight length-four kernels, including unchanged controls.
+Read [Performance improvements in the F# 11 compiler](article.md). The comparison is the released SDK 10.0.100 compiler versus source-built F# 11, with RC1 as an intermediate compiler data point. Three charts show compiler allocation, the old/new comparison on .NET Framework, and retained IDE managed heap. The closure-allocation table compares old and new using four-element collections.
 
 ## Regenerate without running benchmarks
 
@@ -17,7 +17,7 @@ The generator resolves inputs relative to itself, so it also works from another 
 
 Scalar values come from each campaign's `scalar_statistics` and are cross-checked against its 12 non-warmup observations per cell. Application medians are checked against the three launch records. Reductions use **100 times (1 minus the candidate median divided by the released compiler median)**; positive means less allocation/retention. Both RC1 and source-built percentages use the released baseline. They are not medians of round-paired ratios. The Framework comparison keeps both compiler generations on Framework. No means across projects or pooled cohorts are reported.
 
-The SVGs have white backgrounds, zero baselines, directly labeled GB/MB values, accessible titles/descriptions and companion Markdown tables. GB means 1,000,000,000 bytes; MB means 1,000,000 bytes. The original raw datasets and their GiB/MiB tables are unchanged. SDK 10/old is slate, RC1 is blue, and source-built/new is teal.
+The SVGs have white backgrounds, zero baselines, directly labeled GB/MB values, accessible titles/descriptions and companion Markdown tables. The original raw datasets and their GiB/MiB tables are unchanged. SDK 10/old is slate, RC1 is blue, and source-built/new is teal.
 
 Only allocation **bar widths** scale per project: each project's largest value fills the available width, and the other versions use that same within-project scale. Displayed values are never converted into an index. The IDE chart uses a shared 0-600 MB scale. The Framework chart has only the released and source-built compiler on Framework, not the full runtime-control matrix.
 

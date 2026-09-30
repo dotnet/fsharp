@@ -34,11 +34,11 @@ const workloads = [
     ['nu', 'Nu'], ['fsautocomplete', 'FsAutoComplete'],
 ];
 const graphs = [['fsautocomplete-ide', 'FsAutoComplete'], ['oxpecker-ide', 'Oxpecker']];
-const kernels = [
+const operations = [
     ['Cart', 'Cart-price List.fold'], ['Rules', 'Access-rule exists / forall'],
     ['Telemetry', 'Weighted Array.fold / fold2'], ['Option', 'Partially applied Option.map'],
     ['Nested', 'Nested group folds'], ['FilterMap', 'Filtering and mapping'],
-    ['Escaping', 'Escaping callback control'], ['NonCapturing', 'Non-capturing control'],
+    ['Escaping', 'Escaping closure'], ['NonCapturing', 'Non-capturing lambda'],
 ];
 const sdkLabels = ['Old (SDK 10)', 'SDK 11 RC1', 'New (source)'];
 const frameworkArms = ['old-framework', 'new-framework'];
@@ -97,7 +97,7 @@ const data = {
     sdk_peak: scalarTable('third-wave', sdk, workloads, 'peak_working_set_bytes', 1e6, 'MB'),
     framework_peak: scalarTable('framework', portable, workloads, 'peak_working_set_bytes', 1e6, 'MB', frameworkArms),
     sdk_cpu: scalarTable('third-wave', sdk, workloads, 'cpu_ns', 1e9, 's'),
-    programs: kernels.map(([kernel, label]) => ({
+    programs: operations.map(([kernel, label]) => ({
         kernel, label, length: 4,
         values: applicationArms.map(arm => {
             const index = sdk.program_statistics.findIndex(p => p.kernel === kernel && p.length === 4 && p.arm === arm);
@@ -163,7 +163,7 @@ const sdkFcsCpu = values(row(data.sdk_cpu, 'fsharp-compiler-service'));
 const classicFcsPeak = values(row(data.framework_peak, 'fsharp-compiler-service'));
 const monitoringWall = data.monitoring.map(m => m.on_vs_off_percent.wall_ns.median);
 const blocks = {
-    opening: `F# 11 puts less pressure on the garbage collector and keeps less compiler data alive after IDE project checks. Across six real-world compilation workloads, the source-built compiler allocates **roughly 20-50% less than the compiler released in SDK 10.0.100**. Our multi-project IDE checks retain **about 30% less managed memory**.\n\nBehind this is a late-summer push: **${contributing.length} performance and supporting PRs** from auduchinok and T-Gro, merged between **${dateLabel(contributing[0].merged_at)} and ${dateLabel(contributing.at(-1).merged_at)}, 2026**. The work tackles unnecessary allocations, duplicated compiler data and memory held after typechecking. **${cutoff} changes are already in RC1**; the remaining **${contributing.length - cutoff} are in the RC2 source**, headed for .NET 11 and F# 11 GA.\n\nWe're excited to share those gains with F# developers: less allocation during compilation, less memory retained by IDE project checking, and fewer short-lived objects in your own code. One change reaches beyond the compiler: ${prLink(20422)} inlines higher-order \`FSharp.Core\` List/Array functions and their callbacks, so everyday code using operations such as \`List.fold\` can stop allocating a closure on every call.`,
+    opening: `F# 11 puts less pressure on the garbage collector and keeps less compiler data alive after IDE project checks. Across six real-world compilation workloads, the source-built compiler allocates **roughly 20-50% less than the compiler released in SDK 10.0.100**. Our multi-project IDE checks retain **about 30% less managed memory**.\n\nBehind this is a late-summer push: **${contributing.length} performance and supporting PRs** from auduchinok and T-Gro, merged between **${dateLabel(contributing[0].merged_at)} and ${dateLabel(contributing.at(-1).merged_at)}, 2026**. The work tackles unnecessary allocations, duplicated compiler data and memory held after typechecking. **${cutoff} changes are already in RC1**; the remaining **${contributing.length - cutoff} are in the RC2 source**, headed for .NET 11 and F# 11 GA.\n\nWe're excited to share those gains with F# developers: less allocation during compilation, less memory retained by IDE project checking, and fewer short-lived objects in your own code. One change reaches beyond the compiler: ${prLink(20422)} inlines higher-order \`FSharp.Core\` List/Array functions and their lambda arguments, so everyday code using operations such as \`List.fold\` can stop allocating a closure on every call.`,
     compilation: table(['Compilation workload', 'Old GB', 'RC1 GB', 'New GB', 'RC1 vs old: less allocation', 'New vs old: less allocation'],
         data.sdk_allocation.rows.map(r => [r.label, ...values(r).map(v => fmt(v, 3)),
             `${fmt(r.rc1_reduction_vs_old)}%`, `${fmt(r.new_reduction_vs_old)}%`])),
@@ -176,13 +176,13 @@ const blocks = {
     ide: table(['Project graph', 'Old MB', 'RC1 MB', 'New MB', 'New vs old: less retained memory'],
         data.sdk_heap.rows.map(r => [r.label, ...values(r).map(v => fmt(v)),
             `${fmt(reduction(r.values[0].median, r.values[2].median))}%`])),
-    'portable-ide': `The same old-to-new comparison on .NET Framework gives **${range(data.framework_heap.rows.map(r => r.new_reduction_vs_old))} less retained managed memory**. [The detailed IDE measurements](../framework/ide-matrix.csv) remain available.`,
-    programs: table(['Kernel, length 4', 'Old (SDK 10.0.100) B/op', 'New (source-built) B/op'],
+    'portable-ide': `On .NET Framework, retained managed memory also falls by **${range(data.framework_heap.rows.map(r => r.new_reduction_vs_old))}**. [Detailed IDE measurements](../framework/ide-matrix.csv).`,
+    programs: table(['Operation', 'Old (SDK 10.0.100) B/op', 'New (source-built) B/op'],
         data.programs.map(p => [p.label, ...p.values.map(v => v.value)])),
     mechanism: `The [generated IL inventories](../third-wave/programs/) show function-object construction sites falling from **${data.function_construction_sites[0].count} to ${data.function_construction_sites[2].count}** between old and new output. These are static sites, not allocations per call. Separately collected [Oxpecker compiler profiles](../third-wave/profiles/) estimate generated-function allocation falling from **${fmt(data.profiles[0].verified_function_weighted_bytes / 1e6)} to ${fmt(data.profiles[2].verified_function_weighted_bytes / 1e6)} MB**. Those are weighted sampled bytes, classified by resolved \`FSharpFunc\` inheritance rather than just \`@\` in a name; the accepted traces report zero lost events.`,
     contributions: [
         `These **${contributing.length} PRs** are in the measured source snapshot, ordered by merge time. Each distinct change is listed separately; the cut-line marks RC1's source boundary.`,
-        contributing.map((p, index) => `${index === cutoff ? `\n---\n\n**RC1 cut-line: the ${cutoff} changes above are in RC1. The ${contributing.length - cutoff} below are in the RC2 source, headed for GA.**\n\n` : ''}- **${dateLabel(p.merged_at)}** - ${prLink(Number(p.number))}: ${p.title.replace(/^\[MicroPerf\]\s*(Perf:\s*)?/, '')} (${p.author}).`).join('\n'),
+        contributing.map((p, index) => `${index === cutoff ? `\n---\n\n**RC1 cut-line: the ${cutoff} changes above are in RC1. The ${contributing.length - cutoff} below are in the RC2 source, headed for GA.**\n\n` : ''}- **${dateLabel(p.merged_at)}** - ${prLink(Number(p.number))}: ${p.title.replace(/^\[MicroPerf\]\s*(Perf:\s*)?/, '').replace(/\bopaque callbacks\b/g, 'function arguments')} (${p.author}).`).join('\n'),
         `The experimental-branch merges ${[20424, 20425, 20439].map(prLink).join(', ')} are **absent from the selected mainline ancestry** and are not credited as shipped here. ${prLink(20506)} adds MSBuild concurrency support, but these serial compiler-only runs do **not** measure its benefit.`,
         `The [full PR inventory](../third-wave/contributions.csv), [VMR audit](../third-wave/vmr-audit.json) and [exact source selection](../third-wave/experiment.json) retain the release boundaries. The later compiler source is \`${experiments[0].selection.rc2_and_main_fsharp_source}\`; the pinned RC2 and main production tree is \`${audit[1].production_tree}\`.`,
     ].join('\n\n'),

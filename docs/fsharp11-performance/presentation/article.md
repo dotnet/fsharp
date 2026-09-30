@@ -5,12 +5,12 @@ F# 11 puts less pressure on the garbage collector and keeps less compiler data a
 
 Behind this is a late-summer push: **49 performance and supporting PRs** from auduchinok and T-Gro, merged between **Aug 12 and Sep 21, 2026**. The work tackles unnecessary allocations, duplicated compiler data and memory held after typechecking. **12 changes are already in RC1**; the remaining **37 are in the RC2 source**, headed for .NET 11 and F# 11 GA.
 
-We're excited to share those gains with F# developers: less allocation during compilation, less memory retained by IDE project checking, and fewer short-lived objects in your own code. One change reaches beyond the compiler: [#20422](https://github.com/dotnet/fsharp/pull/20422) inlines higher-order `FSharp.Core` List/Array functions and their callbacks, so everyday code using operations such as `List.fold` can stop allocating a closure on every call.
+We're excited to share those gains with F# developers: less allocation during compilation, less memory retained by IDE project checking, and fewer short-lived objects in your own code. One change reaches beyond the compiler: [#20422](https://github.com/dotnet/fsharp/pull/20422) inlines higher-order `FSharp.Core` List/Array functions and their lambda arguments, so everyday code using operations such as `List.fold` can stop allocating a closure on every call.
 <!-- /generated:opening -->
 
 ## Less allocation during compilation
 
-**Old** is the compiler released in **SDK 10.0.100**. **RC1** is SDK 11 RC1, shown as an intermediate point. **New** is our optimized, source-built F# 11 compiler from the RC2/main source snapshot headed for GA. Both percentage columns below compare against **old**, not against each other.
+**Old** is the compiler released in **SDK 10.0.100**. **RC1** is SDK 11 RC1, shown as an intermediate point. **New** is our optimized, source-built F# 11 compiler from the RC2/main source snapshot headed for GA.
 
 <!-- generated:compilation -->
 | Compilation workload | Old GB | RC1 GB | New GB | RC1 vs old: less allocation | New vs old: less allocation |
@@ -23,7 +23,7 @@ We're excited to share those gains with F# developers: less allocation during co
 | FsAutoComplete | 6.258 | 5.676 | 4.879 | 9.3% | 22.0% |
 <!-- /generated:compilation -->
 
-**GB allocated** means cumulative managed allocation during one compilation, not RAM needed at once. Each cell is the median of 12 fresh-process runs. Percentages use unrounded medians and the released compiler as their denominator. Units here are decimal: **1 GB = 1,000,000,000 bytes; 1 MB = 1,000,000 bytes**.
+*Median managed allocation per compilation, over 12 runs per version.*
 
 <!-- generated:headline -->
 RC1 already allocates **0.8%-38.3% less than the released compiler**. The source-built F# 11 compiler takes that to **22.0%-48.5% less**, depending on the project.
@@ -31,11 +31,11 @@ RC1 already allocates **0.8%-38.3% less than the released compiler**. The source
 
 The released compiler runs on .NET 10.0.0. RC1 and the self-hosted Release/ReadyToRun source build run on .NET 11 RC1. The new column previews the compiler changes for RC2 and GA; it is **not a measurement of a final GA SDK**. Its exact source is pinned in the [build provenance](../third-wave/provenance.json).
 
-The inputs are the same frozen sources, references and compiler arguments for each workload, including the [documented compatibility edits](../compatibility.json). Dependencies are prepared beforehand. These measurements cover parsing, checking, optimization and emission through `FSharpChecker.Compile`, **not restore or end-to-end `dotnet build`**.
+Compilation is measured through `FSharpChecker.Compile`, not restore or a full `dotnet build`.
 
 ![Actual compiler allocation in GB for six workloads: the released SDK 10 compiler, RC1, and source-built F# 11. Each project's bar widths use their own zero-based scale.](compiler-allocation.svg)
 
-*The labels are actual GB. Only bar widths are scaled per project, so small and large projects are both readable. Compare versions within a project; do not compare widths across projects.*
+*Bar widths are scaled separately for each project.*
 
 <!-- generated:sdk-caveat -->
 **Lower allocation is not a promise of lower peak RAM or CPU time.** FCS's median peak resident RAM rises from **2439.9 to 3262.1 MB**, and CPU time from 128.17 to 232.09 seconds. Peak RAM is higher in 4 of the six workloads. [All RAM, CPU and wall-time values](../third-wave/compilation-matrix.csv) remain published.
@@ -43,9 +43,9 @@ The inputs are the same frozen sources, references and compiler arguments for ea
 
 ## The allocation gains also reach .NET Framework
 
-The same **released compiler versus source-built F# 11** comparison also shows lower allocation on .NET Framework. Here, both compiler versions run on **x64 .NET Framework 4.8.1**.
+The allocation gains also hold on **x64 .NET Framework 4.8.1**.
 
-The old version uses NuGet FSharp.Compiler.Service **43.10.100** and FSharp.Core **10.0.100**, matching the SDK 10.0.100 generation. The new version is built from the same F# 11 source as above. Both target netstandard2.0 and use ordinary IL, with no R2R or NGen. Sources, references and compiler arguments stay fixed.
+The old version uses NuGet FSharp.Compiler.Service **43.10.100** and FSharp.Core **10.0.100**, matching the SDK 10.0.100 generation. The new version is built from F# 11 source. Both target netstandard2.0 and use ordinary IL, with no R2R or NGen.
 
 <!-- generated:framework -->
 | Compilation workload | Old GB | New GB | New vs old: less allocation |
@@ -58,11 +58,11 @@ The old version uses NuGet FSharp.Compiler.Service **43.10.100** and FSharp.Core
 | FsAutoComplete | 6.429 | 5.002 | 22.2% |
 <!-- /generated:framework -->
 
-*All six workloads, both versions on .NET Framework. GB allocated per compilation; 12 measured runs per cell.*
+*Median managed allocation per compilation, over 12 runs per version.*
 
 ![Actual allocation in GB on .NET Framework, comparing the released compiler generation with source-built F# 11 for all six workloads.](runtime-allocation.svg)
 
-*Released compiler in gray, source-built F# 11 in teal. Labels show GB; bar widths are scaled separately for each project, from zero.*
+*Bar widths are scaled separately for each project.*
 
 <!-- generated:framework-caveat -->
 The source-built compiler allocates **21.7%-48.7% less on .NET Framework**. Peak RAM does not uniformly improve here either: FCS rises from 4290.0 to 5150.0 MB.
@@ -72,7 +72,7 @@ This is **x64 FCS-hosted compilation**, not a measurement of Visual Studio or a 
 
 ## Less managed heap retained after project checking
 
-Allocation is work performed over time. Retained heap is what remains alive. For the IDE-style experiment, one checker checks a real source-reference graph: FsAutoComplete server/Core/Logging has three projects; Oxpecker server/ViewEngine has two. The checker, project options and results remain rooted through a ten-second idle period and a forced full GC.
+We checked the FsAutoComplete server/Core/Logging graph and the Oxpecker/ViewEngine graph, then measured the managed heap with the checker and project results still alive.
 
 <!-- generated:ide -->
 | Project graph | Old MB | RC1 MB | New MB | New vs old: less retained memory |
@@ -81,31 +81,31 @@ Allocation is work performed over time. Retained heap is what remains alive. For
 | Oxpecker | 113.2 | 88.5 | 78.5 | 30.6% |
 <!-- /generated:ide -->
 
-*Median live managed heap after full GC, in MB; 12 runs per version. This is not total process RAM, memory after closing a workspace, or incremental editor latency.*
+*Managed heap after a full GC; 12 runs per version.*
 
 ![Retained managed heap in MB after a full GC: released SDK 10, RC1 and source-built F# 11. Both project graphs retain less memory. All bars share a zero-based MB axis.](ide-retained-heap.svg)
 
 <!-- generated:portable-ide -->
-The same old-to-new comparison on .NET Framework gives **30.1%-30.6% less retained managed memory**. [The detailed IDE measurements](../framework/ide-matrix.csv) remain available.
+On .NET Framework, retained managed memory also falls by **30.1%-30.6%**. [Detailed IDE measurements](../framework/ide-matrix.csv).
 <!-- /generated:portable-ide -->
 
 [Sharing imported assemblies across projects](https://github.com/dotnet/fsharp/pull/20296) avoids keeping separate copies of imported assembly structures for each project. This helps explain the result, though the measurements cover all changes together. An editor or language server must load the newer FCS package to benefit; compiling that tool with a newer SDK alone does not replace its FCS dependency.
 
-## Some compiled callbacks stop allocating per call
+## Fewer closure allocations in your F# code
 
-These improvements are not only for the compiler. [Inlining higher-order List/Array functions](https://github.com/dotnet/fsharp/pull/20422) lets the compiler put callback code directly into the caller instead of creating a function object for it. For example, this fold captures `discount`:
+These improvements are not only for the compiler. [Inlining higher-order List/Array functions](https://github.com/dotnet/fsharp/pull/20422) lets the compiler inline a lambda instead of allocating a closure for it. For example, this fold captures `discount`:
 
 ```fsharp
 let discountedTotal discount prices =
     prices |> List.fold (fun total price -> total + price * (100 - discount) / 100) 0
 ```
 
-The newer compiler/Core pair can eliminate that per-call closure allocation. [Partial-application closure elimination](https://github.com/dotnet/fsharp/pull/20487) extends the benefit to more callback shapes. Recompile with the newer compiler and FSharp.Core to benefit in your own projects.
+The newer compiler/Core pair can eliminate that per-call closure allocation. [Partial-application closure elimination](https://github.com/dotnet/fsharp/pull/20487) extends the benefit to partially applied functions. Recompile with the newer compiler and FSharp.Core to benefit in your own projects.
 
-We measured small kernels modeled on cart pricing, access rules, telemetry and nested group folds. This is simply **old (SDK 10.0.100) versus new (source-built F# 11)**. The old applications run on .NET 10; new ones run on .NET 11 RC1. Inputs are prepared outside the measurement, and captured state changes during each run.
+We measured operations from cart pricing, access rules, telemetry and nested group folds: **old (SDK 10.0.100) versus new (source-built F# 11)**. The old applications run on .NET 10; new ones run on .NET 11 RC1.
 
 <!-- generated:programs -->
-| Kernel, length 4 | Old (SDK 10.0.100) B/op | New (source-built) B/op |
+| Operation | Old (SDK 10.0.100) B/op | New (source-built) B/op |
 | --- | ---: | ---: |
 | Cart-price List.fold | 24 | 0 |
 | Access-rule exists / forall | 48 | 0 |
@@ -113,15 +113,15 @@ We measured small kernels modeled on cart pricing, access rules, telemetry and n
 | Partially applied Option.map | 0 | 0 |
 | Nested group folds | 48 | 0 |
 | Filtering and mapping | 146 | 146 |
-| Escaping callback control | 24 | 24 |
-| Non-capturing control | 0 | 0 |
+| Escaping closure | 24 | 24 |
+| Non-capturing lambda | 0 | 0 |
 <!-- /generated:programs -->
 
-*All eight kernels at length four, including unchanged controls. Bytes allocated per operation (B/op), median across three independent launches.*
+*List and array operations use four-element collections. Median bytes allocated per operation across three launches.*
 
-Four kernels reach **0 B/op** with the newer compiler/Core pair. The escaping callback and filter/map pipeline still allocate; Option.map and the non-capturing control were already allocation-free in this comparison. Zero applies to these measured operations, not their setup or all functional F# code.
+Four operations reach **0 B/op** with the newer compiler/Core pair. The escaping closure and filter/map pipeline still allocate; Option.map and the non-capturing lambda were already allocation-free in this comparison.
 
-All 48 kernel/length cases were independently checked against C# implementations with multiple state inputs. The [complete application matrix](../third-wave/program-matrix.csv) retains every tested size and launch range.
+See [all tested collection sizes and launch ranges](../third-wave/program-matrix.csv) for the complete results.
 
 <!-- generated:mechanism -->
 The [generated IL inventories](../third-wave/programs/) show function-object construction sites falling from **19 to 11** between old and new output. These are static sites, not allocations per call. Separately collected [Oxpecker compiler profiles](../third-wave/profiles/) estimate generated-function allocation falling from **121.0 to 47.6 MB**. Those are weighted sampled bytes, classified by resolved `FSharpFunc` inheritance rather than just `@` in a name; the accepted traces report zero lost events.
@@ -177,7 +177,7 @@ These **49 PRs** are in the measured source snapshot, ordered by merge time. Eac
 - **Sep 10** - [#20421](https://github.com/dotnet/fsharp/pull/20421): Drop accessibility and attribute-scan closures via ListInline (T-Gro).
 - **Sep 10** - [#20426](https://github.com/dotnet/fsharp/pull/20426): Avoid per-call FSharpFunc closure in remapVal member-info remap (T-Gro).
 - **Sep 11** - [#20487](https://github.com/dotnet/fsharp/pull/20487): Eliminate per-call closure for InlineIfLambda partial applications (T-Gro).
-- **Sep 16** - [#20422](https://github.com/dotnet/fsharp/pull/20422): Inline List/Array higher-order functions and adapt opaque callbacks (T-Gro).
+- **Sep 16** - [#20422](https://github.com/dotnet/fsharp/pull/20422): Inline List/Array higher-order functions and adapt function arguments (T-Gro).
 - **Sep 16** - [#20388](https://github.com/dotnet/fsharp/pull/20388): Share the empty-array singleton for zero-length Array results (T-Gro).
 - **Sep 17** - [#20490](https://github.com/dotnet/fsharp/pull/20490): Name resolution: CheckIWSAM only needs the intrinsic methods (auduchinok).
 - **Sep 17** - [#20489](https://github.com/dotnet/fsharp/pull/20489): IL: map the short-lived metadata-only PE reader (auduchinok).
@@ -196,7 +196,7 @@ The [full PR inventory](../third-wave/contributions.csv), [VMR audit](../third-w
 
 ## What these measurements do and do not establish
 
-Both campaigns ran serially on a shared Windows VM, with balanced run ordering, two warmups and 12 measured processes per arm/workload. Successful observations were not removed because they were slow or memory-heavy. **Timing is descriptive, not a speedup headline:** continuous host-load screening was not collected. Allocation totals, retained managed heap and peak resident RAM answer different questions; the full results retain all three, alongside CPU, wall time and GC counts.
+Measurements ran serially on a shared Windows VM. **Timing is descriptive, not a speedup headline:** host load was not continuously monitored.
 
 <details>
 <summary>Measurement boundaries, runtime policy and output qualifications</summary>
