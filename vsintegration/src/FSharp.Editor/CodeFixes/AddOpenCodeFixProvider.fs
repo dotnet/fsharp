@@ -27,14 +27,18 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
 
     // Which assembly the entity crawler reached first is no order to offer suggestions in. Sort them
     // the way Roslyn's add-import fix does: what `System` holds first, the rest alphabetically after.
-    let suggestionOrder (declaration: string) =
-        let opened = declaration.Substring(declaration.LastIndexOf ' ' + 1)
+    let systemFirst (name: ReadOnlySpan<char>) (sortText: string) =
+        let isInSystem =
+            name.Equals("System".AsSpan(), StringComparison.Ordinal)
+            || name.StartsWith("System.".AsSpan(), StringComparison.Ordinal)
 
-        let isSystem =
-            opened.Equals("System", StringComparison.Ordinal)
-            || opened.StartsWith("System.", StringComparison.Ordinal)
+        (if isInSystem then 0 else 1), sortText
 
-        (if isSystem then 0 else 1), declaration
+    let openOrder (declaration: string) =
+        systemFirst (declaration.AsSpan(declaration.LastIndexOf ' ' + 1)) declaration
+
+    let qualificationOrder (fullName: string) =
+        systemFirst (fullName.AsSpan()) fullName
 
     let fixUnderscoresInMenuText (text: string) = text.Replace("_", "__")
 
@@ -109,7 +113,7 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
                 |> Seq.distinctBy (fun (name, _) -> name)
                 |> Seq.sortBy fst
                 |> Seq.toArray)
-            |> Seq.sortBy (fst >> suggestionOrder)
+            |> Seq.sortBy (fst >> openOrder)
             |> Seq.map (fun (declaration, names) ->
                 let multipleNames = names |> Array.length > 1
                 names |> Seq.map (fun (name, ctx) -> declaration, name, ctx, multipleNames))
@@ -121,7 +125,7 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
             |> Seq.filter (fun (entity, _, _) -> not (entity.LastIdent.StartsWith "op_")) // Don't include qualified operator names. The resultant codefix won't compile because it won't be an infix operator anymore.
             |> Seq.map (fun (entity, _, _) -> entity.FullRelativeName, entity.Qualifier)
             |> Seq.distinct
-            |> Seq.sort
+            |> Seq.sortBy (fst >> qualificationOrder)
             |> Seq.truncate maxQualifySuggestions
             |> Seq.map (qualifySymbolFix firstIdentSpan)
 
