@@ -39,7 +39,6 @@ type AssemblySymbol =
     { FullName: string
       CleanedIdents: ShortIdents
       Namespace: ShortIdents option
-      OpenableIdentCount: int
       NearestRequireQualifiedAccessParent: ShortIdents option
       TopRequireQualifiedAccessParent: ShortIdents option
       AutoOpenParent: ShortIdents option
@@ -58,10 +57,7 @@ type Parent =
       TopRequiresQualifiedAccess: (* isForMemberOrValue *) bool -> ShortIdents option
       AutoOpen: ShortIdents option
       WithModuleSuffix: ShortIdents option
-      IsModule: bool
-      /// How many leading idents a plain `open` reaches. A type never extends it: everything it
-      /// contains is reached by naming the type, or by opening the type itself.
-      OpenableIdentCount: int }
+      IsModule: bool }
 
     static member Empty =
         { Namespace = None
@@ -69,13 +65,7 @@ type Parent =
           TopRequiresQualifiedAccess = fun _ -> None
           AutoOpen = None
           WithModuleSuffix = None
-          IsModule = true
-          OpenableIdentCount = 0 }
-
-    /// The reach of a plain `open` over an entity declared in this parent: the enclosing namespace
-    /// at the very least, and whatever modules the parent chain has added to it.
-    member x.OpenableIdentCountFor (ns: ShortIdents option) =
-        max x.OpenableIdentCount (ns |> Option.map Array.length |> Option.defaultValue 0)
+          IsModule = true }
 
     static member RewriteParentIdents (parentIdents: ShortIdents option) (idents: ShortIdents) =
         match parentIdents with
@@ -159,7 +149,6 @@ module AssemblyContent =
             { FullName = fullName
               CleanedIdents = cleanIdents
               Namespace = ns
-              OpenableIdentCount = parent.OpenableIdentCountFor ns
               NearestRequireQualifiedAccessParent = parent.ThisRequiresQualifiedAccess false |> Option.map parent.FixParentModuleSuffix
               TopRequireQualifiedAccessParent = topRequireQualifiedAccessParent
               AutoOpenParent = parent.AutoOpen |> Option.map parent.FixParentModuleSuffix
@@ -190,7 +179,6 @@ module AssemblyContent =
                 { FullName = fullName
                   CleanedIdents = cleanedIdents
                   Namespace = ns
-                  OpenableIdentCount = parent.OpenableIdentCountFor ns
                   NearestRequireQualifiedAccessParent = parent.ThisRequiresQualifiedAccess true |> Option.map parent.FixParentModuleSuffix
                   TopRequireQualifiedAccessParent = topRequireQualifiedAccessParent
                   AutoOpenParent = autoOpenParent
@@ -262,12 +250,7 @@ module AssemblyContent =
                             else parent.WithModuleSuffix
 
                           Namespace = ns
-                          IsModule = entity.IsFSharpModule
-
-                          OpenableIdentCount =
-                            match entity.IsNamespace || entity.IsFSharpModule, currentEntity with
-                            | true, Some e -> e.CleanedIdents.Length
-                            | _ -> parent.OpenableIdentCountFor ns }
+                          IsModule = entity.IsFSharpModule }
 
                     match entity.TryGetMembersFunctionsAndValues() with
                     | xs when xs.Count > 0 ->
