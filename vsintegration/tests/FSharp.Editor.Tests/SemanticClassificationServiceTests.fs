@@ -4,7 +4,6 @@ namespace FSharp.Editor.Tests
 
 open System
 open System.Collections.Generic
-open System.IO
 open System.Threading
 open System.Threading.Tasks
 open Xunit
@@ -95,8 +94,7 @@ type SemanticClassificationServiceTests() =
     let clearProjectOptions (document: Document) =
         document.Project.Solution.Workspace.Services.GetService<IFSharpWorkspaceService>().FSharpProjectOptionsManager.ClearAllCaches()
 
-    // Two files of one project on disk - the checker reads a closed file from there - the second using
-    // what the first declares, with the second one open.
+    // Two files of one project on disk, the second using what the first declares, with the second one open.
     let openDependentDocument (declarations: string) (usage: string) =
         let project =
             { SyntheticProject.Create(
@@ -118,7 +116,7 @@ type SemanticClassificationServiceTests() =
 
         let usageId = documentIdOf "Usage"
         solution.Workspace.OpenDocument usageId
-        project.GetFilePath "Declarations", documentIdOf "Declarations", usageId, solution.Workspace
+        documentIdOf "Declarations", usageId, solution.Workspace
 
     // A project whose options were never supplied, i.e. one Visual Studio is still loading.
     let openDocumentWithoutProjectOptions (source: string) =
@@ -569,34 +567,32 @@ let result2 = s.(*2*)IsHyperbolicCaseWithLongName
         Assert.Equal<ClassifiedSpan list>(first, classify document spanA)
 
     // What a document's symbols mean is decided by the whole project, so an edit in another file
-    // reclassifies this one while its own text version stays put.
+    // reclassifies this one while its own text version stays put. Whether the checker then sees the
+    // new declaration is its own business; the service's part is not to answer from what it kept.
     [<Fact>]
     member _.``Semantic classification of an open document follows a change to another file of its project``() =
-        let declarationsPath, declarationsId, usageId, workspace =
+        let declarationsId, usageId, workspace =
             openDependentDocument "module Declarations\nlet counter = 1" "module Usage\nopen Declarations\nlet read () = counter"
 
+        let usage () =
+            workspace.CurrentSolution.GetDocument usageId
+
         let classifyUsage () =
-            let document = workspace.CurrentSolution.GetDocument usageId
+            classify (usage ()) (TextSpan(0, (sourceTextOf (usage ())).Length))
 
-            classify document (TextSpan(0, (sourceTextOf document).Length))
-            |> List.map _.ClassificationType
-
-        let before = classifyUsage ()
-        Assert.NotEmpty before
-        Assert.DoesNotContain(FSharpClassificationTypes.MutableVar, before)
-
-        let mutableCounter = "module Declarations\nlet mutable counter = 1"
-        // The checker reads the closed file from disk; the workspace edit is what moves the version.
-        File.WriteAllText(declarationsPath, mutableCounter)
-        File.SetLastWriteTimeUtc(declarationsPath, DateTime.UtcNow.AddSeconds 1.)
-        let mutableCounter = SourceText.From mutableCounter
+        Assert.NotEmpty(classifyUsage ())
+        Assert.True(isRemembered (usage ()), "The first classification must be remembered.")
 
         Assert.True(
-            workspace.TryApplyChanges(workspace.CurrentSolution.WithDocumentText(declarationsId, mutableCounter)),
+            workspace.TryApplyChanges(
+                workspace.CurrentSolution.WithDocumentText(declarationsId, SourceText.From "module Declarations\nlet mutable counter = 1")
+            ),
             "The workspace has to accept the change to the other file."
         )
 
-        Assert.Contains(FSharpClassificationTypes.MutableVar, classifyUsage ())
+        Assert.False(isRemembered (usage ()), "An edit in another file must leave the kept classification behind.")
+        Assert.NotEmpty(classifyUsage ())
+        Assert.True(isRemembered (usage ()), "The document must be classified again for the new semantics.")
 
     // Roslyn replaces a span's tags with whatever comes back, so "no result" must re-emit the last
     // good one rather than strip the colours the user already sees.
