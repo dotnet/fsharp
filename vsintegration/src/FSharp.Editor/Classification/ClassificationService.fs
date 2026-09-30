@@ -172,9 +172,16 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
 
     // Only for the text it was computed from: the lookup names positions, so against edited text it
     // would colour the wrong characters.
+    static let tryGetLastGood (documentId: DocumentId) =
+        // Under the writer's lock: between its Remove and Add the entry is briefly missing.
+        lock lastGoodSemanticClassification (fun () ->
+            match lastGoodSemanticClassification.TryGetValue documentId with
+            | true, lastGood -> ValueSome lastGood
+            | _ -> ValueNone)
+
     static let addLastGood (documentId: DocumentId) (sourceText: SourceText) (targetSpan: TextSpan) (result: List<ClassifiedSpan>) =
-        match lastGoodSemanticClassification.TryGetValue documentId with
-        | true, lastGood when lastGood.Text.ContentEquals sourceText ->
+        match tryGetLastGood documentId with
+        | ValueSome lastGood when lastGood.Text.ContentEquals sourceText ->
             addSemanticClassificationByLookup sourceText targetSpan lastGood.Lookup result
         | _ -> ()
 
@@ -334,14 +341,15 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
                             match! document.TryGetFSharpParseAndCheckResultsAsync(nameof (IFSharpClassificationService)) with
                             | ValueNone -> addLastGood document.Id sourceText textSpan result
                             | ValueSome(struct (_, checkResults)) ->
-                                // The cache is keyed by text version only, so it has to hold the whole file:
+                                // The cache is keyed by version, not by span, so it has to hold the whole file:
                                 // the next request at this version is usually for a different span.
                                 let classificationData =
                                     checkResults.GetSemanticClassification(None, RelatedSymbolUseKind.All)
 
-                                // Every checked file resolves at least its enclosing module, so nothing here means
-                                // the classification itself failed (SemanticClassification.fs recovers with an empty
-                                // array). Caching that would pin the version to no colours.
+                                // Every checked file resolves at least its enclosing module - an implicit one as a
+                                // zero-width item - so nothing here means the classification itself failed (an
+                                // aborted check, or SemanticClassification.fs recovering with an empty array).
+                                // Caching that would pin the version to no colours.
                                 if classificationData.Length = 0 then
                                     addLastGood document.Id sourceText textSpan result
                                 else
