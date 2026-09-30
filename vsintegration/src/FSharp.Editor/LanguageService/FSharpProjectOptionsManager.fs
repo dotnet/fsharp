@@ -152,7 +152,9 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker, fileChangeWatch
     let referenceChangeTracker =
         new FSharpReferenceChangeTracker(fileChangeWatcher, ignore)
 
-    let referenceWatches = ConcurrentDictionary<ProjectId, HashSet<string>>()
+    // Updated by the agent and cleared by ClearAllCaches on the solution-close thread; every
+    // read-diff-write goes under this lock so the two cannot unbalance the tracker's ref counts.
+    let referenceWatches = Dictionary<ProjectId, HashSet<string>>()
 
     let referencePaths (projectOptions: FSharpProjectOptions) =
         let paths = HashSet<string>(StringComparer.OrdinalIgnoreCase)
@@ -166,30 +168,42 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker, fileChangeWatch
     let watchReferenceFiles (projectId: ProjectId) (projectOptions: FSharpProjectOptions) =
         let paths = referencePaths projectOptions
 
-        match referenceWatches.TryGetValue projectId with
-        | true, previous ->
-            for path in previous do
-                if not (paths.Contains path) then
-                    referenceChangeTracker.StopWatchingReference path
+        lock referenceWatches (fun () ->
+            match referenceWatches.TryGetValue projectId with
+            | true, previous ->
+                for path in previous do
+                    if not (paths.Contains path) then
+                        referenceChangeTracker.StopWatchingReference path
 
-            for path in paths do
-                if not (previous.Contains path) then
+                for path in paths do
+                    if not (previous.Contains path) then
+                        referenceChangeTracker.StartWatchingReference path
+            | _ ->
+                for path in paths do
                     referenceChangeTracker.StartWatchingReference path
-        | _ ->
-            for path in paths do
-                referenceChangeTracker.StartWatchingReference path
 
-        if paths.Count > 0 then
-            referenceWatches[projectId] <- paths
-        else
-            referenceWatches.TryRemove projectId |> ignore
+            if paths.Count > 0 then
+                referenceWatches[projectId] <- paths
+            else
+                referenceWatches.Remove projectId |> ignore)
 
     let clearReferenceWatches (projectId: ProjectId) =
-        match referenceWatches.TryRemove projectId with
-        | true, paths ->
-            for path in paths do
-                referenceChangeTracker.StopWatchingReference path
-        | _ -> ()
+        lock referenceWatches (fun () ->
+            match referenceWatches.TryGetValue projectId with
+            | true, paths ->
+                referenceWatches.Remove projectId |> ignore
+
+                for path in paths do
+                    referenceChangeTracker.StopWatchingReference path
+            | _ -> ())
+
+    let clearAllReferenceWatches () =
+        lock referenceWatches (fun () ->
+            for KeyValue(_, paths) in referenceWatches do
+                for path in paths do
+                    referenceChangeTracker.StopWatchingReference path
+
+            referenceWatches.Clear())
 
     let createPEReference (referencedProject: Project) (comp: Compilation) =
         let projectId = referencedProject.Id
@@ -642,8 +656,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker, fileChangeWatch
         singleFileCache.Clear()
         lastSuccessfulCompilations.Clear()
 
-        for projectId in referenceWatches.Keys |> Array.ofSeq do
-            clearReferenceWatches projectId
+        clearAllReferenceWatches ()
 
     member _.ScriptUpdated = scriptUpdatedEvent.Publish
 
