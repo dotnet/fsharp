@@ -2461,9 +2461,9 @@ module ParsedInput =
                             )
                     | _ -> ()
 
-        let getMinColumn decls =
+        let tryGetFirstDeclStart decls =
             match decls with
-            | [] -> None
+            | [] -> ValueNone
             | firstDecl :: _ ->
                 match firstDecl with
                 | SynModuleDecl.NestedModule(range = r)
@@ -2472,9 +2472,8 @@ module ParsedInput =
                 | SynModuleDecl.Types(range = r)
                 | SynModuleDecl.Exception(range = r)
                 | SynModuleDecl.Open(range = r)
-                | SynModuleDecl.HashDirective(range = r) -> Some r
-                | _ -> None
-                |> Option.map (fun r -> r.StartColumn)
+                | SynModuleDecl.HashDirective(range = r) -> ValueSome r.Start
+                | _ -> ValueNone
 
         // The line a declaration's header ends on: its leading keyword, the name it introduces and,
         // for a nested module, the `=`. Attributes and doc comments sit above it, the body below.
@@ -2539,10 +2538,22 @@ module ParsedInput =
                         | Some moduleKeyword -> headerEndLine moduleKeyword ident trivia.EqualsRange
                         | None -> range.StartLine // Fallback if trivia unavailable
 
-                    let moduleBodyIndentation =
-                        getMinColumn decls |> Option.defaultValue (range.StartColumn + 4)
+                    let firstDeclStart = tryGetFirstDeclStart decls
 
-                    doRange NestedModule fullIdent headerLine moduleBodyIndentation
+                    let moduleBodyIndentation =
+                        firstDeclStart
+                        |> ValueOption.map _.Column
+                        |> ValueOption.defaultValue (range.StartColumn + 4)
+
+                    // The open goes on the line below this one. A body that starts on the header's own
+                    // line (`module M = let x = 1`) is entered at its first declaration instead, since
+                    // the line below the header may already be past the use the open has to precede.
+                    let lineAboveBody =
+                        match firstDeclStart with
+                        | ValueSome start when start.Line = headerLine -> headerLine - 1
+                        | _ -> headerLine
+
+                    doRange NestedModule fullIdent lineAboveBody moduleBodyIndentation
                     List.iter (walkSynModuleDecl fullIdent) decls
             | SynModuleDecl.Open(_, range) -> doRange OpenDeclaration [] range.EndLine (range.StartColumn - 5)
             | SynModuleDecl.HashDirective(_, range) -> doRange HashDirective [] range.EndLine range.StartColumn
