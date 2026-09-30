@@ -25,8 +25,39 @@ open Microsoft.VisualStudio.TextManager.Interop
 
 #nowarn "57"
 
+/// Runs an action once no trigger has arrived for the given delay.
+[<Sealed>]
+type internal Debouncer(delay: TimeSpan, action: unit -> Task<unit>) =
+    let mutable pending: CancellationTokenSource | null = null
+
+    member _.Trigger() : Task =
+        let cts = new CancellationTokenSource()
+        let token = cts.Token
+
+        match Interlocked.Exchange(&pending, cts) with
+        | null -> ()
+        | previous ->
+            previous.Cancel()
+            previous.Dispose()
+
+        backgroundTask {
+            try
+                do! Task.Delay(delay, token)
+                do! action ()
+            with :? OperationCanceledException ->
+                ()
+        }
+
+    interface IDisposable with
+        member _.Dispose() =
+            match Interlocked.Exchange(&pending, null) with
+            | null -> ()
+            | cts ->
+                cts.Cancel()
+                cts.Dispose()
+
 [<AutoOpen>]
-module private FSharpProjectOptionsHelpers =
+module internal FSharpProjectOptionsHelpers =
 
     let mapCpsProjectToSite (project: Project, cpsCommandLineOptions: IDictionary<ProjectId, struct (string[] * string[])>) =
         let sourcePaths, referencePaths, options =
@@ -305,37 +336,18 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
 
                 let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions(projectOptions)
 
-                let mutable debounceCts: CancellationTokenSource | null = null
+                let debouncer =
+                    new Debouncer(
+                        TimeSpan.FromMilliseconds 500.,
+                        fun () ->
+                            backgroundTask {
+                                let! scriptProjectOptions, _ = getProjectOptionsFromScript textViewAndCaret
 
-                let disposeDebounceCts () =
-                    match Interlocked.Exchange(&debounceCts, null) with
-                    | null -> ()
-                    | cts ->
-                        cts.Cancel()
-                        cts.Dispose()
+                                do! checker.NotifyFileChanged(document.FilePath, scriptProjectOptions)
+                            }
+                    )
 
-                let updateProjectOptions () =
-                    let cts = new CancellationTokenSource()
-                    let debounceToken = cts.Token
-
-                    match Interlocked.Exchange(&debounceCts, cts) with
-                    | null -> ()
-                    | previousCts ->
-                        previousCts.Cancel()
-                        previousCts.Dispose()
-
-                    backgroundTask {
-                        try
-                            do! Task.Delay(500, debounceToken)
-
-                            let! scriptProjectOptions, _ = getProjectOptionsFromScript textViewAndCaret
-
-                            do! checker.NotifyFileChanged(document.FilePath, scriptProjectOptions)
-                        with
-                        | :? OperationCanceledException
-                        | :? TaskCanceledException -> ()
-                    }
-                    |> ignore
+                let updateProjectOptions () = debouncer.Trigger() |> ignore
 
                 let onChangeCaretHandler (_, _newline: int, _oldline: int) = updateProjectOptions ()
                 let onKillFocus (_) = updateProjectOptions ()
@@ -358,7 +370,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
                             { new IDisposable with
                                 member _.Dispose() =
                                     textViewSubscription |> ValueOption.iter _.Dispose()
-                                    disposeDebounceCts ()
+                                    (debouncer :> IDisposable).Dispose()
                             }
 
                     { entry with
