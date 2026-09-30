@@ -463,9 +463,8 @@ module internal Tokenizer =
                data.HashCode = lineContents.GetHashCode()
 
     // Shared by concurrent editor operations (classification and symbol lookup), so each entry access
-    // must be thread-safe. This only guarantees per-index atomicity, not a coherent snapshot across a
-    // range of lines: concurrent scans over overlapping line ranges can still interleave, but the cache
-    // self-heals on the next read via the IsValid/LexStateAtStartOfLine checks.
+    // must be thread-safe. A cached line is reused when its text and start lex state match; its start lex
+    // state is trusted to resume a scan only while no edit above it can have changed that state.
     //
     // Reads take no lock. Writes and growth are serialized, and a grown array is published only once it
     // holds every entry of the one it replaces, so a reader sees either array whole. The slots are
@@ -488,6 +487,12 @@ module internal Tokenizer =
                 data <- grown
                 grown
 
+        // The text the entries were last scanned for, a count bumped whenever it changes, and how many leading
+        // lines of it have a start lex state known to hold. Read and written under `sync` only.
+        let mutable text: SourceText voption = ValueNone
+        let mutable generation = 0
+        let mutable trustedLines = 0
+
         member x.Item
             with get (i: int) =
                 let current = data
@@ -498,13 +503,54 @@ module internal Tokenizer =
                     | None -> ValueNone
                 else
                     ValueNone
-            and set (i: int) (v: SourceLineData voption) =
-                let entry =
-                    match v with
-                    | ValueSome v -> Some v
-                    | ValueNone -> None
 
-                lock sync (fun () -> (extendTo i).[i] <- entry)
+        /// Switches the cache to `current`. Returns the generation to pass back to the members below, and how
+        /// many leading lines have a start lex state that holds for `current`.
+        member x.Enter(current: SourceText) =
+            lock sync (fun () ->
+                match text with
+                | ValueSome known when obj.ReferenceEquals(known, current) -> ()
+                | known ->
+                    // An edit can change the lex state only of the lines below the first line it touches.
+                    trustedLines <-
+                        match known with
+                        | ValueSome known ->
+                            let mutable firstEdit = Int32.MaxValue
+
+                            for change in current.GetChangeRanges known do
+                                firstEdit <- min firstEdit change.Span.Start
+
+                            if firstEdit = Int32.MaxValue then
+                                trustedLines
+                            else
+                                min trustedLines (known.Lines.GetLineFromPosition(firstEdit).LineNumber + 1)
+                        | ValueNone -> 0
+
+                    text <- ValueSome current
+                    generation <- generation + 1
+
+                struct (generation, trustedLines))
+
+        /// Whether `entry`, read at `line`, is still there in `gen`, so its start lex state can resume a scan.
+        member x.CanResumeFrom(line, entry: SourceLineData, gen) =
+            lock sync (fun () ->
+                gen = generation
+                && line < data.Length
+                && (match data.[line] with
+                    | Some cached -> obj.ReferenceEquals(cached, entry)
+                    | None -> false))
+
+        /// Stores `entry` unless the cache has moved on to another text since `gen`.
+        member x.Store(line, entry, gen) =
+            lock sync (fun () ->
+                if gen = generation then
+                    (extendTo line).[line] <- Some entry)
+
+        /// Records that a scan in `gen` has confirmed the start lex state of the first `lineCount` lines.
+        member x.Trust(lineCount, gen) =
+            lock sync (fun () ->
+                if gen = generation then
+                    trustedLines <- max trustedLines lineCount)
 
         member x.ClearFrom(n) =
             lock sync (fun () ->
@@ -640,7 +686,7 @@ module internal Tokenizer =
 
     let private getFromRefreshedTokenCache
         (
-            lines: TextLineCollection,
+            sourceText: SourceText,
             startLine: int,
             endLine: int,
             sourceTokenizer: FSharpSourceTokenizer,
@@ -648,19 +694,26 @@ module internal Tokenizer =
             ct: CancellationToken
         ) =
         [
-            // Go backwards to find the last cached scanned line that is valid
-            // The entry proved valid is kept rather than read again: a concurrent scan of different text
-            // can clear or replace that slot in between.
+            let lines = sourceText.Lines
+            let struct (generation, trustedLines) = sourceTextDataCache.Enter sourceText
+
+            // Go backwards to the last valid cached line whose start lex state still holds. A line that only
+            // looks valid can sit below an edit that kept its position but changed its lex state. The entry is
+            // kept rather than read again: a concurrent scan of other text can clear or replace that slot.
             let struct (scanStartLine, validStart) =
-                let mutable i = startLine
+                let mutable i = min startLine (trustedLines - 1)
                 let mutable found = ValueNone
 
                 while i > 0 && found.IsNone do
                     match sourceTextDataCache.[i] with
-                    | ValueSome data when data.IsValid(lines.[i]) -> found <- ValueSome data
+                    | ValueSome data when
+                        data.IsValid(lines.[i])
+                        && sourceTextDataCache.CanResumeFrom(i, data, generation)
+                        ->
+                        found <- ValueSome data
                     | _ -> i <- i - 1
 
-                struct (i, found)
+                struct (max i 0, found)
             // Rescan the lines if necessary and report the information
             let mutable lexState =
                 match validStart with
@@ -686,13 +739,15 @@ module internal Tokenizer =
                     | _ ->
                         // Otherwise, we recompute
                         let newData = scanSourceLine (sourceTokenizer, textLine, lineContents, lexState)
-                        sourceTextDataCache.[i] <- ValueSome newData
+                        sourceTextDataCache.Store(i, newData, generation)
                         newData
 
                 lexState <- lineData.LexStateAtEndOfLine
 
                 if i >= startLine then
                     yield lineData, lineContents
+
+            sourceTextDataCache.Trust(endLine + 1, generation)
 
             // If necessary, invalidate all subsequent lines after endLine
             if endLine < lines.Count - 1 then
@@ -726,7 +781,7 @@ module internal Tokenizer =
             let endLine = lines.GetLineFromPosition(textSpan.End).LineNumber
 
             let lineDataResults =
-                getFromRefreshedTokenCache (lines, startLine, endLine, sourceTokenizer, sourceTextData, cancellationToken)
+                getFromRefreshedTokenCache (sourceText, startLine, endLine, sourceTokenizer, sourceTextData, cancellationToken)
 
             for lineData, _ in lineDataResults do
                 for token in lineData.ClassifiedSpans do
@@ -932,7 +987,7 @@ module internal Tokenizer =
         let lineNo = textLinePos.Line
 
         let lineData, contents =
-            getFromRefreshedTokenCache (sourceText.Lines, lineNo, lineNo, sourceTokenizer, sourceTextData, cancellationToken)
+            getFromRefreshedTokenCache (sourceText, lineNo, lineNo, sourceTokenizer, sourceTextData, cancellationToken)
             |> List.exactlyOne
 
         lineData, textLinePos, contents
