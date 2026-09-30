@@ -10,6 +10,7 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 
 open FSharp.Compiler.EditorServices
+open FSharp.Compiler.Symbols
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 
@@ -58,24 +59,40 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
             Changes = [ change ]
         }
 
-    // A plain `open` reaches namespaces and F# modules. When the entity sits deeper than that - a type
-    // nested in a type, or a static member of one - the type itself has to be opened.
-    let openDeclaration (entity: InsertionContextEntity) openableIdentCount ns =
-        if entity.NamespaceIdentCount > openableIdentCount then
-            $"open type {ns}"
-        else
-            $"open {ns}"
+    let declaringEntity (symbol: FSharpSymbol) =
+        match symbol with
+        | :? FSharpEntity as entity -> entity.DeclaringEntity
+        | :? FSharpMemberOrFunctionOrValue as mfv -> mfv.DeclaringEntity
+        | _ -> None
+
+    // Below its namespace, each ident of a symbol's name names the module or type the next one is
+    // declared in. Finds what the first `count` of `identCount` idents name, unless that is a namespace.
+    let rec tryFindEntityNamedBy count identCount (symbol: FSharpSymbol) =
+        match declaringEntity symbol with
+        | Some parent when not parent.IsNamespace ->
+            if identCount - 1 = count then
+                ValueSome parent
+            else
+                tryFindEntityNamedBy count (identCount - 1) parent
+        | _ -> ValueNone
+
+    // A plain `open` reaches namespaces and F# modules. When the name is opened deeper than that - a
+    // type nested in a type, or a static member of one - the type itself has to be opened.
+    let openDeclaration (entity: InsertionContextEntity) (symbol: AssemblySymbol) ns =
+        match tryFindEntityNamedBy entity.NamespaceIdentCount symbol.CleanedIdents.Length symbol.Symbol with
+        | ValueSome opened when not opened.IsFSharpModule -> $"open type {ns}"
+        | _ -> $"open {ns}"
 
     let getSuggestionsAsCodeFixes
         (firstIdentSpan: TextSpan)
         (sourceText: SourceText)
-        (candidates: (InsertionContextEntity * InsertionContext * int) list)
+        (candidates: (InsertionContextEntity * InsertionContext * AssemblySymbol) list)
         =
         seq {
             candidates
-            |> Seq.choose (fun (entity, ctx, openableIdentCount) ->
+            |> Seq.choose (fun (entity, ctx, symbol) ->
                 entity.Namespace
-                |> Option.map (fun ns -> openDeclaration entity openableIdentCount ns, entity.FullDisplayName, ctx))
+                |> Option.map (fun ns -> openDeclaration entity symbol ns, entity.FullDisplayName, ctx))
             |> Seq.groupBy (fun (declaration, _, _) -> declaration)
             |> Seq.map (fun (declaration, xs) ->
                 declaration,
@@ -163,9 +180,7 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
                             assemblyContentProvider.GetAllEntitiesInProjectAndReferencedAssemblies checkResults
                             |> Array.collect (fun s ->
                                 [|
-                                    yield
-                                        s.OpenableIdentCount,
-                                        (s.TopRequireQualifiedAccessParent, s.AutoOpenParent, s.Namespace, s.CleanedIdents)
+                                    yield s, (s.TopRequireQualifiedAccessParent, s.AutoOpenParent, s.Namespace, s.CleanedIdents)
                                     if isAttribute then
                                         let lastIdent = s.CleanedIdents.[s.CleanedIdents.Length - 1]
 
@@ -174,7 +189,7 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
                                             && s.Kind LookupType.Precise = EntityKind.Attribute
                                         then
                                             yield
-                                                s.OpenableIdentCount,
+                                                s,
                                                 (s.TopRequireQualifiedAccessParent,
                                                  s.AutoOpenParent,
                                                  s.Namespace,
@@ -209,9 +224,8 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
                                     insertionPoint
 
                             entities
-                            |> Seq.collect (fun (openableIdentCount, symbol) ->
-                                createEntity symbol
-                                |> Seq.map (fun (entity, ctx) -> entity, ctx, openableIdentCount))
+                            |> Seq.collect (fun (symbol, candidate) ->
+                                createEntity candidate |> Seq.map (fun (entity, ctx) -> entity, ctx, symbol))
                             |> Seq.toList
                             |> getSuggestionsAsCodeFixes
                                 (RoslynHelpers.FSharpRangeToTextSpan(sourceText, longIdent.Head.idRange))
