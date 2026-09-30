@@ -5,9 +5,9 @@ description: Write code-first, evidence-backed F# release overviews with coordin
 
 # F# documentation author
 
-Make developers excited about what they can now build. Demonstrate major
-capabilities through representative code, with the maintained guidance needed
-to use them.
+Earn readers' interest through recognizable development needs and new possibilities,
+not hype. Connect language features to modeling and application design as well as
+shorter code.
 
 ## Discover current guidance
 
@@ -15,13 +15,15 @@ Start from the [F# guide](https://learn.microsoft.com/dotnet/fsharp/),
 [documentation repository](https://github.com/dotnet/docs),
 [compiler and library repository](https://github.com/dotnet/fsharp), and
 [language designs](https://github.com/fsharp/fslang-design).
-Follow current repository and sample conventions. Read earlier release articles,
-any target overview, and maintained topics; learn their emphasis and demonstrations
-without inheriting omissions. Rediscover locations and navigation.
+Follow current repository and sample conventions. Read earlier release summaries,
+[.NET Blog](https://devblogs.microsoft.com/dotnet/) announcements, the target overview,
+and maintained topics. Learn effective openings and structure without copying weak
+precedents or omissions. Rediscover locations and navigation.
 
-Trace substantial features through implementation PRs, linked RFCs, suggestions,
-and discussions to understand the user problem, not just syntax. Use established
-feature and product names without confusing products with ecosystems.
+Trace substantial features through implementation PRs and recursively follow relevant
+links between RFCs, suggestions, and discussions. Find the original developer need,
+alternatives, and design tradeoffs; distinguish shipped behavior from broader proposals.
+Use established feature and product names without confusing products with ecosystems.
 
 ## Establish the release scope
 
@@ -48,35 +50,41 @@ Preview status alone does not reduce a capability's importance.
 
 Name the feature and its relevant language or API context in headings. Make the
 benefit clear without replacing established terms with vague outcomes.
-Open with a brief overview of the release's practical benefits. Introduce each
-feature through its capability, not an example's incidental application or data.
+Give the release opening a concrete reason to care, not a compressed inventory.
+Before defining an unfamiliar feature, establish where it is useful: the design a
+developer wants, what gets in the way, and the new payoff. Then introduce its use
+and mechanics. A situation is not an invented backstory or incidental sample data.
 
-Assume knowledge of earlier F#, not your research. Explain necessary concepts and
-new APIs at first use, including in notes and tables; acronym expansions and links
-do not replace explanations.
+Assume knowledge of earlier F#, not your research. Prefer familiar supporting APIs
+so unrelated novelties do not interrupt examples. Explain necessary concepts and new
+APIs at first use, including in notes and tables; acronym expansions and links do
+not replace explanations.
 Rework unclear explanations instead of hiding missing understanding behind terminology.
 
-Let code demonstrate practical reach, not just syntax; compact must not mean
-trivial. Adapt motivating issues and tests into self-explanatory examples with
-observable results or focused contrasts. Remove invented jargon, backstories,
-needless scaffolding, and code retelling, not crucial context. Show consumer payoff
-before implementation machinery. Add examples for distinct applications, not cosmetic
-variants. When integration is the benefit, demonstrate the consuming API's behavior.
+Adapt motivating discussions and tests into compact examples that demonstrate practical
+reach. Show the central capability in use before helper implementation; do not make
+readers assemble scaffolding to discover the benefit. Choose outputs, type contrasts,
+consuming API behavior, or before/after code according to what they demonstrate, not
+a fixed template. Add distinct applications when needed to show a major feature's
+reach, not cosmetic variants. Remove invented jargon, boilerplate, and code retelling,
+not crucial context.
 
 Cover meaningful language, library, interop, tooling, and performance changes.
+Group related features by what users can accomplish, while making their individual
+contributions clear.
 Present new preview features alongside related features, with a small local preview
 note and usable examples, not a separate cautionary catalogue.
 
-Use verified defaults without generic setup; explain changed defaults and consequential
-requirements beside affected features. Link prerequisite explanations to authoritative
+Use verified defaults without generic setup. Explain changed defaults and consequential
+requirements where they affect the reader's next decision. Link prerequisites to authoritative
 guidance. For broad APIs, use tables of qualified names and verified signatures or
 argument/result shapes. Explain unfamiliar functions with brief notes or tiny compositions.
 
 Move detailed semantics, warning codes, edge cases, and troubleshooting to linked
 maintained topics. Keep only consequential usage or migration constraints in the
 overview, identifying affected code and what users must do. Group minor diagnostics
-and routine fixes near the end or omit trivia;
-promote fixes only for material user impact or necessary action.
+and routine fixes near the end or omit trivia; promote fixes only for material user
+impact or necessary action.
 Avoid generic setup, recap, and concluding filler.
 
 ## Keep the living documentation current
@@ -100,5 +108,6 @@ not establish earlier minimums. Keep validation gaps and research receipts in
 supporting delivery notes, not introductory prose.
 
 Credit verified contributions briefly beside features or in closing, without
-duplicating thanks or inferring identities or sole authorship. Honor attribution exclusions, including
-@T-Gro. Do not celebrate release-engineering mechanics as user-facing features.
+duplicating thanks or inferring identities or sole authorship. Honor attribution
+exclusions, including @T-Gro. Do not celebrate release-engineering mechanics as
+user-facing features.
