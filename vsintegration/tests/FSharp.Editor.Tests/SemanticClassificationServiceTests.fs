@@ -4,6 +4,7 @@ namespace FSharp.Editor.Tests
 
 open System
 open System.Collections.Generic
+open System.IO
 open System.Threading
 open System.Threading.Tasks
 open Xunit
@@ -17,6 +18,7 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Classification
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Editor.Tests.Helpers
 open FSharp.Test
+open FSharp.Test.ProjectGeneration
 open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
 
 type SemanticClassificationServiceTests() =
@@ -82,35 +84,41 @@ type SemanticClassificationServiceTests() =
             SemanticVersion = VersionStamp.Create()
         }
 
+    let joinNow (inFlight: InFlightClassification) cancellationToken =
+        match inFlight.TryJoin cancellationToken with
+        | ValueSome work -> work
+        | ValueNone -> failwith "The classification refused a waiter."
+
     let lineSpan (text: SourceText) firstLine lastLine =
         TextSpan.FromBounds(text.Lines[firstLine].Start, text.Lines[lastLine].End)
 
     let clearProjectOptions (document: Document) =
         document.Project.Solution.Workspace.Services.GetService<IFSharpWorkspaceService>().FSharpProjectOptionsManager.ClearAllCaches()
 
-    // Two files of one project, the second using what the first declares, with the second one open.
+    // Two files of one project on disk - the checker reads a closed file from there - the second using
+    // what the first declares, with the second one open.
     let openDependentDocument (declarations: string) (usage: string) =
-        let projectId = ProjectId.CreateNewId()
-        let declarationsPath = "C:\\declarations.fs"
-        let usagePath = "C:\\usage.fs"
+        let project =
+            { SyntheticProject.Create(
+                  { sourceFile "Declarations" [] with
+                      Source = declarations
+                  },
+                  { sourceFile "Usage" [ "Declarations" ] with
+                      Source = usage
+                  }
+              ) with
+                AutoAddModules = false
+            }
 
-        let declarationsInfo =
-            RoslynTestHelpers.CreateDocumentInfo projectId declarationsPath declarations
+        let solution, _ = RoslynTestHelpers.CreateSolution project
 
-        let usageInfo = RoslynTestHelpers.CreateDocumentInfo projectId usagePath usage
+        let documentIdOf fileId =
+            solution.GetDocumentIdsWithFilePath(project.GetFilePath fileId)
+            |> Seq.exactlyOne
 
-        let projectInfo =
-            RoslynTestHelpers.CreateProjectInfo projectId "C:\\test.fsproj" [ declarationsInfo; usageInfo ]
-
-        let solution = RoslynTestHelpers.CreateSolution [ projectInfo ]
-
-        { RoslynTestHelpers.DefaultProjectOptions with
-            SourceFiles = [| declarationsPath; usagePath |]
-        }
-        |> RoslynTestHelpers.SetProjectOptions projectId solution
-
-        solution.Workspace.OpenDocument usageInfo.Id
-        declarationsInfo.Id, usageInfo.Id, solution.Workspace
+        let usageId = documentIdOf "Usage"
+        solution.Workspace.OpenDocument usageId
+        project.GetFilePath "Declarations", documentIdOf "Declarations", usageId, solution.Workspace
 
     // A project whose options were never supplied, i.e. one Visual Studio is still loading.
     let openDocumentWithoutProjectOptions (source: string) =
@@ -564,8 +572,8 @@ let result2 = s.(*2*)IsHyperbolicCaseWithLongName
     // reclassifies this one while its own text version stays put.
     [<Fact>]
     member _.``Semantic classification of an open document follows a change to another file of its project``() =
-        let declarationsId, usageId, workspace =
-            openDependentDocument "module Declarations\nlet counter = 1" "open Declarations\nlet read () = counter"
+        let declarationsPath, declarationsId, usageId, workspace =
+            openDependentDocument "module Declarations\nlet counter = 1" "module Usage\nopen Declarations\nlet read () = counter"
 
         let classifyUsage () =
             let document = workspace.CurrentSolution.GetDocument usageId
@@ -577,7 +585,11 @@ let result2 = s.(*2*)IsHyperbolicCaseWithLongName
         Assert.NotEmpty before
         Assert.DoesNotContain(FSharpClassificationTypes.MutableVar, before)
 
-        let mutableCounter = SourceText.From "module Declarations\nlet mutable counter = 1"
+        let mutableCounter = "module Declarations\nlet mutable counter = 1"
+        // The checker reads the closed file from disk; the workspace edit is what moves the version.
+        File.WriteAllText(declarationsPath, mutableCounter)
+        File.SetLastWriteTimeUtc(declarationsPath, DateTime.UtcNow.AddSeconds 1.)
+        let mutableCounter = SourceText.From mutableCounter
 
         Assert.True(
             workspace.TryApplyChanges(workspace.CurrentSolution.WithDocumentText(declarationsId, mutableCounter)),
@@ -657,8 +669,8 @@ let result2 = s.(*2*)IsHyperbolicCaseWithLongName
                     gate.Task
             )
 
-        let first = inFlight.Join CancellationToken.None
-        let second = inFlight.Join CancellationToken.None
+        let first = joinNow inFlight CancellationToken.None
+        let second = joinNow inFlight CancellationToken.None
         Assert.False(first.IsCompleted || second.IsCompleted)
 
         let classification =
@@ -689,8 +701,8 @@ let result2 = s.(*2*)IsHyperbolicCaseWithLongName
 
         use first = new CancellationTokenSource()
         use second = new CancellationTokenSource()
-        let firstJoin = inFlight.Join first.Token
-        let secondJoin = inFlight.Join second.Token
+        let firstJoin = joinNow inFlight first.Token
+        let secondJoin = joinNow inFlight second.Token
 
         first.Cancel()
 
@@ -707,3 +719,19 @@ let result2 = s.(*2*)IsHyperbolicCaseWithLongName
 
         Assert.True(sharedToken.Value.IsCancellationRequested, "The last waiter leaving must cancel the work.")
         Assert.True inFlight.IsCancelled
+
+    // A caller that found the instance just before its last waiter left must not wait on the work
+    // that waiter cancelled; it is turned away and starts a classification of its own.
+    [<Fact>]
+    member _.``A shared classification its last waiter abandoned cannot be joined``() =
+        let inFlight =
+            InFlightClassification(someVersion (), fun _ -> TaskCompletionSource<OpenDocumentClassification voption>().Task)
+
+        use only = new CancellationTokenSource()
+        let onlyJoin = joinNow inFlight only.Token
+        only.Cancel()
+
+        Assert.ThrowsAny<OperationCanceledException>(fun () -> onlyJoin.GetAwaiter().GetResult() |> ignore)
+        |> ignore
+
+        Assert.True((inFlight.TryJoin CancellationToken.None).IsNone)

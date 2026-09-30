@@ -53,42 +53,61 @@ type internal OpenDocumentClassification =
 type internal ClassifyWholeFile = CancellationToken -> Task<OpenDocumentClassification voption>
 
 /// One classification of a document version, shared by every request that arrives while it runs.
-/// The computation starts with the first waiter and is cancelled only when the last one leaves.
+/// The computation starts with the first waiter and is cancelled only when the last one leaves; once
+/// it is, nobody can join it any more.
 [<Sealed>]
 type internal InFlightClassification(version: ClassificationVersion, compute: ClassifyWholeFile) =
     let cts = new CancellationTokenSource()
     let job = lazy (compute cts.Token)
+    let gate = obj ()
     let mutable waiters = 0
+    let mutable closed = false
 
     member _.Version = version
 
-    member _.IsCancelled = cts.IsCancellationRequested
+    member _.IsCancelled = lock gate (fun () -> closed)
 
     member _.IsCompleted = job.IsValueCreated && job.Value.IsCompleted
 
-    member _.Join(cancellationToken: CancellationToken) : Task<OpenDocumentClassification voption> =
-        Interlocked.Increment &waiters |> ignore
-        let job = job.Value
-        let left = ref 0
+    /// ValueNone once the last waiter has left and the work is being cancelled: start a new one.
+    member _.TryJoin(cancellationToken: CancellationToken) : Task<OpenDocumentClassification voption> voption =
+        let joined =
+            lock gate (fun () ->
+                if not closed then
+                    waiters <- waiters + 1
 
-        let leave () =
-            if
-                Interlocked.Exchange(left, 1) = 0
-                && Interlocked.Decrement &waiters = 0
-                && not job.IsCompleted
-            then
-                cts.Cancel()
+                not closed)
 
-        task {
-            use _ = cancellationToken.Register(fun () -> leave ())
+        if not joined then
+            ValueNone
+        else
+            let job = job.Value
+            let left = ref 0
 
-            try
-                let! _ = Task.WhenAny(job, Task.Delay(Timeout.Infinite, cancellationToken))
-                cancellationToken.ThrowIfCancellationRequested()
-                return! job
-            finally
-                leave ()
-        }
+            let leave () =
+                if Interlocked.Exchange(left, 1) = 0 then
+                    let cancel =
+                        lock gate (fun () ->
+                            waiters <- waiters - 1
+                            closed <- waiters = 0 && not job.IsCompleted
+                            closed)
+
+                    // Outside the lock: cancellation callbacks run synchronously.
+                    if cancel then
+                        cts.Cancel()
+
+            ValueSome(
+                task {
+                    use _ = cancellationToken.Register(fun () -> leave ())
+
+                    try
+                        let! _ = Task.WhenAny(job, Task.Delay(Timeout.Infinite, cancellationToken))
+                        cancellationToken.ThrowIfCancellationRequested()
+                        return! job
+                    finally
+                        leave ()
+                }
+            )
 
 [<Export(typeof<IFSharpClassificationService>)>]
 type internal FSharpClassificationService [<ImportingConstructor>] () =
@@ -270,19 +289,28 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
             let start () =
                 InFlightClassification(version, classifyWholeFile document version sourceText)
 
-            let inFlight =
-                inFlightClassifications.AddOrUpdate(
-                    document.Id,
-                    (fun _ -> start ()),
-                    fun _ running ->
-                        if running.Version = version && not running.IsCancelled then
-                            running
-                        else
-                            start ()
-                )
+            // An instance its last waiter has just abandoned refuses to be joined; the next pass
+            // replaces it.
+            let rec join () =
+                let inFlight =
+                    inFlightClassifications.AddOrUpdate(
+                        document.Id,
+                        (fun _ -> start ()),
+                        fun _ running ->
+                            if running.Version = version && not running.IsCancelled then
+                                running
+                            else
+                                start ()
+                    )
+
+                match inFlight.TryJoin cancellationToken with
+                | ValueSome work -> struct (inFlight, work)
+                | ValueNone -> join ()
+
+            let struct (inFlight, work) = join ()
 
             try
-                return! inFlight.Join cancellationToken
+                return! work
             finally
                 // A waiter that leaves early keeps the entry for those still waiting.
                 if inFlight.IsCompleted || inFlight.IsCancelled then
