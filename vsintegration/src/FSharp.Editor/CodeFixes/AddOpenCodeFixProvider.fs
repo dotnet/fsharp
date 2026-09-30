@@ -77,11 +77,16 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
         | _ -> ValueNone
 
     // A plain `open` reaches namespaces and F# modules. When the name is opened deeper than that - a
-    // type nested in a type, or a static member of one - the type itself has to be opened.
-    let openDeclaration (entity: InsertionContextEntity) (symbol: AssemblySymbol) ns =
+    // type nested in a type, or a static member of one - the type itself has to be opened, and a generic
+    // one cannot be: the type arguments `open type` needs are not part of the name.
+    let tryGetOpenDeclaration (entity: InsertionContextEntity) (symbol: AssemblySymbol) ns =
         match tryFindEntityNamedBy entity.NamespaceIdentCount symbol.CleanedIdents.Length symbol.Symbol with
-        | ValueSome opened when not opened.IsFSharpModule -> $"open type {ns}"
-        | _ -> $"open {ns}"
+        | ValueSome opened when not opened.IsFSharpModule ->
+            if opened.GenericParameters.Count > 0 then
+                ValueNone
+            else
+                ValueSome $"open type {ns}"
+        | _ -> ValueSome $"open {ns}"
 
     let getSuggestionsAsCodeFixes
         (firstIdentSpan: TextSpan)
@@ -90,9 +95,12 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
         =
         seq {
             candidates
-            |> Seq.choose (fun (entity, ctx, symbol) ->
-                entity.Namespace
-                |> Option.map (fun ns -> openDeclaration entity symbol ns, entity.FullDisplayName, ctx))
+            |> Seq.chooseV (fun (entity, ctx, symbol) ->
+                match entity.Namespace with
+                | Some ns ->
+                    tryGetOpenDeclaration entity symbol ns
+                    |> ValueOption.map (fun declaration -> declaration, entity.FullDisplayName, ctx)
+                | None -> ValueNone)
             |> Seq.groupBy (fun (declaration, _, _) -> declaration)
             |> Seq.map (fun (declaration, xs) ->
                 declaration,

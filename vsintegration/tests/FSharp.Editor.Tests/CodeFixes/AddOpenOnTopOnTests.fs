@@ -680,6 +680,18 @@ let write () = WriteLine "hi"
 
     Assert.Equal<TestCodeFix list>(expected, actual)
 
+[<Fact>] // NEGATIVE: `open type` needs the type arguments of a generic type, and the name does not carry them
+let ``Doesn't offer to open a generic type`` () =
+    let code =
+        """module Module1
+
+let keys (collection: KeyCollection) = collection
+"""
+
+    let actual = openFixes code Auto
+
+    Assert.Equal<TestCodeFix list>([], actual)
+
 [<Fact>] // NEGATIVE: a type sitting directly in a namespace is reached by a plain open
 let ``Fixes FS0039 with a plain open for a type in a namespace`` () =
     let code =
