@@ -125,7 +125,7 @@
     up itself - the *PageKeywords named as the last argument of each ProvideLanguageEditorOptionPage
     - come from the assembly's default resource set and stay in FSharp.Editor.resx.
   -->
-  <!-- FSharpPackage's own display name, resolved via ProvideLanguageService's languageResourceID. -->
+  <!-- Display name of the registered F# language service, resolved via ProvideLanguageService's languageResourceID. -->
   <data name="100" xml:space="preserve">
     <value>F#</value>
   </data>
