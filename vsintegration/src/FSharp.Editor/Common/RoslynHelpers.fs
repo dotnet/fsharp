@@ -247,9 +247,14 @@ module internal OpenDeclarationHelper =
         let pos = ParsedInput.AdjustInsertionPoint getLineStr ctx
         let line = sourceText.Lines[min (Line.toZ pos.Line) (sourceText.Lines.Count - 1)]
 
-        // Follow the line endings the file itself uses rather than assuming the host's.
+        let lineBreakOf (line: TextLine) =
+            sourceText.ToString(TextSpan.FromBounds(line.End, line.EndIncludingLineBreak))
+
+        // Follow the line endings the file itself uses rather than assuming the host's. Only the last
+        // line can lack a line break, and every line above it has one.
         let lineBreak =
-            match line.Text.ToString(TextSpan(line.End, line.EndIncludingLineBreak - line.End)) with
+            match lineBreakOf line with
+            | "" when line.LineNumber > 0 -> lineBreakOf sourceText.Lines[line.LineNumber - 1]
             | "" -> Environment.NewLine
             | breakChars -> breakChars
 
