@@ -1,7 +1,7 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "evidence_commit": "bc90ee6637fc9c7065da173bd36c8b06e2a8d6d4",
-  "generator_sha256_lf": "4f8c94dfed5adbe2ee69120e187153833c7678c567a38c60a14bfaa40a1d2968",
+  "generator_sha256_lf": "1fcf0c0b64943772893fc915730dfa3ecea8b3aa07bbbc1d45ca1955f4034248",
   "sources": [
     {
       "path": "../third-wave/results.json",
@@ -102,10 +102,11 @@
   ],
   "statistic": "Arm median; reduction = 100 * (1 - newer median / older median). No pooled cohorts or confidence claim.",
   "units": {
-    "GiB": 1073741824,
-    "MiB": 1048576,
+    "GB": 1000000000,
+    "MB": 1000000,
     "B/op": "Managed bytes per measured application operation"
   },
+  "allocation_chart_scale": "Bar widths scale separately within each workload from zero; labels are actual GB, never normalized values.",
   "identities": {
     "sdk": {
       "source": "RC2 VMR F# subtree, locally built; not an official RC2 SDK",
@@ -208,8 +209,8 @@
   "sdk_allocation": {
     "cohort": "third-wave",
     "metric": "allocated_bytes",
-    "unit": "GiB",
-    "divisor": 1073741824,
+    "unit": "GB",
+    "divisor": 1000000000,
     "arms": [
       "sdk10",
       "sdk11rc1",
@@ -223,29 +224,24 @@
           {
             "arm": "sdk10",
             "median": 8126978084,
-            "value": 7.568838153034449,
+            "value": 8.126978084,
             "source": "../third-wave/results.json#/scalar_statistics/fsharp-core/arms/sdk10/metrics/allocated_bytes/median"
           },
           {
             "arm": "sdk11rc1",
             "median": 8063957988,
-            "value": 7.510146114975214,
+            "value": 8.063957988,
             "source": "../third-wave/results.json#/scalar_statistics/fsharp-core/arms/sdk11rc1/metrics/allocated_bytes/median"
           },
           {
             "arm": "vmr-rc2-r2r",
             "median": 5995452944,
-            "value": 5.58370067179203,
+            "value": 5.995452944,
             "source": "../third-wave/results.json#/scalar_statistics/fsharp-core/arms/vmr-rc2-r2r/metrics/allocated_bytes/median"
           }
         ],
-        "baseline100": [
-          100,
-          99.22455683590348,
-          73.77222975171493
-        ],
-        "local_reduction_vs_sdk10": 26.227770248285065,
-        "local_reduction_vs_rc1": 25.651237854638488
+        "rc1_reduction_vs_old": 0.775443164096512,
+        "new_reduction_vs_old": 26.227770248285065
       },
       {
         "case": "fsharp-compiler-service",
@@ -254,29 +250,24 @@
           {
             "arm": "sdk10",
             "median": 37799356940,
-            "value": 35.203394424170256,
+            "value": 37.79935694,
             "source": "../third-wave/results.json#/scalar_statistics/fsharp-compiler-service/arms/sdk10/metrics/allocated_bytes/median"
           },
           {
             "arm": "sdk11rc1",
             "median": 34946027424,
-            "value": 32.5460242331028,
+            "value": 34.946027424,
             "source": "../third-wave/results.json#/scalar_statistics/fsharp-compiler-service/arms/sdk11rc1/metrics/allocated_bytes/median"
           },
           {
             "arm": "vmr-rc2-r2r",
             "median": 29299933448,
-            "value": 27.287689454853535,
+            "value": 29.299933448,
             "source": "../third-wave/results.json#/scalar_statistics/fsharp-compiler-service/arms/vmr-rc2-r2r/metrics/allocated_bytes/median"
           }
         ],
-        "baseline100": [
-          100,
-          92.4513807985433,
-          77.51437013732435
-        ],
-        "local_reduction_vs_sdk10": 22.485629862675648,
-        "local_reduction_vs_rc1": 16.156611758744322
+        "rc1_reduction_vs_old": 7.548619201456708,
+        "new_reduction_vs_old": 22.485629862675648
       },
       {
         "case": "fstoolkit",
@@ -285,29 +276,24 @@
           {
             "arm": "sdk10",
             "median": 2377573096,
-            "value": 2.2142874971032143,
+            "value": 2.377573096,
             "source": "../third-wave/results.json#/scalar_statistics/fstoolkit/arms/sdk10/metrics/allocated_bytes/median"
           },
           {
             "arm": "sdk11rc1",
             "median": 2099587252,
-            "value": 1.9553930051624775,
+            "value": 2.099587252,
             "source": "../third-wave/results.json#/scalar_statistics/fstoolkit/arms/sdk11rc1/metrics/allocated_bytes/median"
           },
           {
             "arm": "vmr-rc2-r2r",
             "median": 1846826220,
-            "value": 1.7199909500777721,
+            "value": 1.84682622,
             "source": "../third-wave/results.json#/scalar_statistics/fstoolkit/arms/vmr-rc2-r2r/metrics/allocated_bytes/median"
           }
         ],
-        "baseline100": [
-          100,
-          88.30800010028376,
-          77.67694810759248
-        ],
-        "local_reduction_vs_sdk10": 22.32305189240752,
-        "local_reduction_vs_rc1": 12.038605766882416
+        "rc1_reduction_vs_old": 11.691999899716233,
+        "new_reduction_vs_old": 22.32305189240752
       },
       {
         "case": "oxpecker",
@@ -316,29 +302,24 @@
           {
             "arm": "sdk10",
             "median": 1229608044,
-            "value": 1.1451617293059826,
+            "value": 1.229608044,
             "source": "../third-wave/results.json#/scalar_statistics/oxpecker/arms/sdk10/metrics/allocated_bytes/median"
           },
           {
             "arm": "sdk11rc1",
             "median": 759003376,
-            "value": 0.7068769782781601,
+            "value": 0.759003376,
             "source": "../third-wave/results.json#/scalar_statistics/oxpecker/arms/sdk11rc1/metrics/allocated_bytes/median"
           },
           {
             "arm": "vmr-rc2-r2r",
             "median": 633622640,
-            "value": 0.5901070684194565,
+            "value": 0.63362264,
             "source": "../third-wave/results.json#/scalar_statistics/oxpecker/arms/vmr-rc2-r2r/metrics/allocated_bytes/median"
           }
         ],
-        "baseline100": [
-          100,
-          61.727261764725405,
-          51.53045664362944
-        ],
-        "local_reduction_vs_sdk10": 48.46954335637056,
-        "local_reduction_vs_rc1": 16.51912757763544
+        "rc1_reduction_vs_old": 38.272738235274595,
+        "new_reduction_vs_old": 48.46954335637056
       },
       {
         "case": "nu",
@@ -347,29 +328,24 @@
           {
             "arm": "sdk10",
             "median": 15853142292,
-            "value": 14.764389295130968,
+            "value": 15.853142292,
             "source": "../third-wave/results.json#/scalar_statistics/nu/arms/sdk10/metrics/allocated_bytes/median"
           },
           {
             "arm": "sdk11rc1",
             "median": 14871367120,
-            "value": 13.850039914250374,
+            "value": 14.87136712,
             "source": "../third-wave/results.json#/scalar_statistics/nu/arms/sdk11rc1/metrics/allocated_bytes/median"
           },
           {
             "arm": "vmr-rc2-r2r",
             "median": 12276399788,
-            "value": 11.433288257569075,
+            "value": 12.276399788,
             "source": "../third-wave/results.json#/scalar_statistics/nu/arms/vmr-rc2-r2r/metrics/allocated_bytes/median"
           }
         ],
-        "baseline100": [
-          100,
-          93.80706263832985,
-          77.43827414073652
-        ],
-        "local_reduction_vs_sdk10": 22.561725859263483,
-        "local_reduction_vs_rc1": 17.449420157949813
+        "rc1_reduction_vs_old": 6.192937361670148,
+        "new_reduction_vs_old": 22.561725859263483
       },
       {
         "case": "fsautocomplete",
@@ -378,44 +354,35 @@
           {
             "arm": "sdk10",
             "median": 6257894756,
-            "value": 5.828118655830622,
+            "value": 6.257894756,
             "source": "../third-wave/results.json#/scalar_statistics/fsautocomplete/arms/sdk10/metrics/allocated_bytes/median"
           },
           {
             "arm": "sdk11rc1",
             "median": 5676446508,
-            "value": 5.2866027764976025,
+            "value": 5.676446508,
             "source": "../third-wave/results.json#/scalar_statistics/fsautocomplete/arms/sdk11rc1/metrics/allocated_bytes/median"
           },
           {
             "arm": "vmr-rc2-r2r",
             "median": 4879106016,
-            "value": 4.54402157664299,
+            "value": 4.879106016,
             "source": "../third-wave/results.json#/scalar_statistics/fsautocomplete/arms/vmr-rc2-r2r/metrics/allocated_bytes/median"
           }
         ],
-        "baseline100": [
-          100,
-          90.70856461044644,
-          77.9672111187547
-        ],
-        "local_reduction_vs_sdk10": 22.032788881245292,
-        "local_reduction_vs_rc1": 14.046472399172306
+        "rc1_reduction_vs_old": 9.291435389553548,
+        "new_reduction_vs_old": 22.032788881245292
       }
     ]
   },
-  "portable_allocation": {
+  "framework_allocation": {
     "cohort": "framework",
     "metric": "allocated_bytes",
-    "unit": "GiB",
-    "divisor": 1073741824,
+    "unit": "GB",
+    "divisor": 1000000000,
     "arms": [
       "old-framework",
-      "new-framework",
-      "old-net10",
-      "new-net10",
-      "old-net11",
-      "new-net11"
+      "new-framework"
     ],
     "rows": [
       {
@@ -425,57 +392,17 @@
           {
             "arm": "old-framework",
             "median": 8304579316,
-            "value": 7.7342421896755695,
+            "value": 8.304579316,
             "source": "../framework/results.json#/scalar_statistics/fsharp-core/arms/old-framework/metrics/allocated_bytes/median"
           },
           {
             "arm": "new-framework",
             "median": 6159582464,
-            "value": 5.736558198928833,
+            "value": 6.159582464,
             "source": "../framework/results.json#/scalar_statistics/fsharp-core/arms/new-framework/metrics/allocated_bytes/median"
-          },
-          {
-            "arm": "old-net10",
-            "median": 8158737876,
-            "value": 7.598416764289141,
-            "source": "../framework/results.json#/scalar_statistics/fsharp-core/arms/old-net10/metrics/allocated_bytes/median"
-          },
-          {
-            "arm": "new-net10",
-            "median": 6026080304,
-            "value": 5.6122246235609055,
-            "source": "../framework/results.json#/scalar_statistics/fsharp-core/arms/new-net10/metrics/allocated_bytes/median"
-          },
-          {
-            "arm": "old-net11",
-            "median": 8158095948,
-            "value": 7.597818922251463,
-            "source": "../framework/results.json#/scalar_statistics/fsharp-core/arms/old-net11/metrics/allocated_bytes/median"
-          },
-          {
-            "arm": "new-net11",
-            "median": 6021336076,
-            "value": 5.607806216925383,
-            "source": "../framework/results.json#/scalar_statistics/fsharp-core/arms/new-net11/metrics/allocated_bytes/median"
           }
         ],
-        "comparisons": [
-          {
-            "runtime": "framework",
-            "baseline100": 74.17091498099914,
-            "reduction_percent": 25.829085019000864
-          },
-          {
-            "runtime": "net10",
-            "baseline100": 73.86044748081082,
-            "reduction_percent": 26.13955251918918
-          },
-          {
-            "runtime": "net11",
-            "baseline100": 73.8081056459769,
-            "reduction_percent": 26.191894354023106
-          }
-        ]
+        "new_reduction_vs_old": 25.829085019000864
       },
       {
         "case": "fsharp-compiler-service",
@@ -484,57 +411,17 @@
           {
             "arm": "old-framework",
             "median": 40119563912,
-            "value": 37.36425555497408,
+            "value": 40.119563912,
             "source": "../framework/results.json#/scalar_statistics/fsharp-compiler-service/arms/old-framework/metrics/allocated_bytes/median"
           },
           {
             "arm": "new-framework",
             "median": 30245809364,
-            "value": 28.16860504820943,
+            "value": 30.245809364,
             "source": "../framework/results.json#/scalar_statistics/fsharp-compiler-service/arms/new-framework/metrics/allocated_bytes/median"
-          },
-          {
-            "arm": "old-net10",
-            "median": 37845731064,
-            "value": 35.24658369272947,
-            "source": "../framework/results.json#/scalar_statistics/fsharp-compiler-service/arms/old-net10/metrics/allocated_bytes/median"
-          },
-          {
-            "arm": "new-net10",
-            "median": 29142607184,
-            "value": 27.14116795361042,
-            "source": "../framework/results.json#/scalar_statistics/fsharp-compiler-service/arms/new-net10/metrics/allocated_bytes/median"
-          },
-          {
-            "arm": "old-net11",
-            "median": 37849823692,
-            "value": 35.25039524957538,
-            "source": "../framework/results.json#/scalar_statistics/fsharp-compiler-service/arms/old-net11/metrics/allocated_bytes/median"
-          },
-          {
-            "arm": "new-net11",
-            "median": 29179420220,
-            "value": 27.175452765077353,
-            "source": "../framework/results.json#/scalar_statistics/fsharp-compiler-service/arms/new-net11/metrics/allocated_bytes/median"
           }
         ],
-        "comparisons": [
-          {
-            "runtime": "framework",
-            "baseline100": 75.38917778454042,
-            "reduction_percent": 24.61082221545958
-          },
-          {
-            "runtime": "net10",
-            "baseline100": 77.0036840739518,
-            "reduction_percent": 22.996315926048194
-          },
-          {
-            "runtime": "net11",
-            "baseline100": 77.09261860093528,
-            "reduction_percent": 22.907381399064718
-          }
-        ]
+        "new_reduction_vs_old": 24.61082221545958
       },
       {
         "case": "fstoolkit",
@@ -543,57 +430,17 @@
           {
             "arm": "old-framework",
             "median": 2413667412,
-            "value": 2.247902948409319,
+            "value": 2.413667412,
             "source": "../framework/results.json#/scalar_statistics/fstoolkit/arms/old-framework/metrics/allocated_bytes/median"
           },
           {
             "arm": "new-framework",
             "median": 1889043392,
-            "value": 1.7593087553977966,
+            "value": 1.889043392,
             "source": "../framework/results.json#/scalar_statistics/fstoolkit/arms/new-framework/metrics/allocated_bytes/median"
-          },
-          {
-            "arm": "old-net10",
-            "median": 2378473636,
-            "value": 2.2151261903345585,
-            "source": "../framework/results.json#/scalar_statistics/fstoolkit/arms/old-net10/metrics/allocated_bytes/median"
-          },
-          {
-            "arm": "new-net10",
-            "median": 1847842048,
-            "value": 1.7209370136260986,
-            "source": "../framework/results.json#/scalar_statistics/fstoolkit/arms/new-net10/metrics/allocated_bytes/median"
-          },
-          {
-            "arm": "old-net11",
-            "median": 2379668908,
-            "value": 2.2162393741309643,
-            "source": "../framework/results.json#/scalar_statistics/fstoolkit/arms/old-net11/metrics/allocated_bytes/median"
-          },
-          {
-            "arm": "new-net11",
-            "median": 1849119940,
-            "value": 1.7221271432936192,
-            "source": "../framework/results.json#/scalar_statistics/fstoolkit/arms/new-net11/metrics/allocated_bytes/median"
           }
         ],
-        "comparisons": [
-          {
-            "runtime": "framework",
-            "baseline100": 78.26444449671345,
-            "reduction_percent": 21.73555550328655
-          },
-          {
-            "runtime": "net10",
-            "baseline100": 77.69024722542689,
-            "reduction_percent": 22.30975277457311
-          },
-          {
-            "runtime": "net11",
-            "baseline100": 77.70492499118706,
-            "reduction_percent": 22.295075008812947
-          }
-        ]
+        "new_reduction_vs_old": 21.73555550328655
       },
       {
         "case": "oxpecker",
@@ -602,57 +449,17 @@
           {
             "arm": "old-framework",
             "median": 1239685116,
-            "value": 1.1545467339456081,
+            "value": 1.239685116,
             "source": "../framework/results.json#/scalar_statistics/oxpecker/arms/old-framework/metrics/allocated_bytes/median"
           },
           {
             "arm": "new-framework",
             "median": 636310296,
-            "value": 0.5926101431250572,
+            "value": 0.636310296,
             "source": "../framework/results.json#/scalar_statistics/oxpecker/arms/new-framework/metrics/allocated_bytes/median"
-          },
-          {
-            "arm": "old-net10",
-            "median": 1237239556,
-            "value": 1.1522691287100315,
-            "source": "../framework/results.json#/scalar_statistics/oxpecker/arms/old-net10/metrics/allocated_bytes/median"
-          },
-          {
-            "arm": "new-net10",
-            "median": 632213732,
-            "value": 0.5887949205935001,
-            "source": "../framework/results.json#/scalar_statistics/oxpecker/arms/new-net10/metrics/allocated_bytes/median"
-          },
-          {
-            "arm": "old-net11",
-            "median": 1234910312,
-            "value": 1.1500998511910439,
-            "source": "../framework/results.json#/scalar_statistics/oxpecker/arms/old-net11/metrics/allocated_bytes/median"
-          },
-          {
-            "arm": "new-net11",
-            "median": 631587276,
-            "value": 0.5882114879786968,
-            "source": "../framework/results.json#/scalar_statistics/oxpecker/arms/new-net11/metrics/allocated_bytes/median"
           }
         ],
-        "comparisons": [
-          {
-            "runtime": "framework",
-            "baseline100": 51.32838071438135,
-            "reduction_percent": 48.67161928561865
-          },
-          {
-            "runtime": "net10",
-            "baseline100": 51.09873257236855,
-            "reduction_percent": 48.90126742763145
-          },
-          {
-            "runtime": "net11",
-            "baseline100": 51.1443843218956,
-            "reduction_percent": 48.8556156781044
-          }
-        ]
+        "new_reduction_vs_old": 48.67161928561865
       },
       {
         "case": "nu",
@@ -661,57 +468,17 @@
           {
             "arm": "old-framework",
             "median": 16662661672,
-            "value": 15.518312968313694,
+            "value": 16.662661672,
             "source": "../framework/results.json#/scalar_statistics/nu/arms/old-framework/metrics/allocated_bytes/median"
           },
           {
             "arm": "new-framework",
             "median": 12858131304,
-            "value": 11.97506795078516,
+            "value": 12.858131304,
             "source": "../framework/results.json#/scalar_statistics/nu/arms/new-framework/metrics/allocated_bytes/median"
-          },
-          {
-            "arm": "old-net10",
-            "median": 15820767544,
-            "value": 14.73423796147108,
-            "source": "../framework/results.json#/scalar_statistics/nu/arms/old-net10/metrics/allocated_bytes/median"
-          },
-          {
-            "arm": "new-net10",
-            "median": 12246466636,
-            "value": 11.405410837382078,
-            "source": "../framework/results.json#/scalar_statistics/nu/arms/new-net10/metrics/allocated_bytes/median"
-          },
-          {
-            "arm": "old-net11",
-            "median": 15854387444,
-            "value": 14.765548933297396,
-            "source": "../framework/results.json#/scalar_statistics/nu/arms/old-net11/metrics/allocated_bytes/median"
-          },
-          {
-            "arm": "new-net11",
-            "median": 12242524416,
-            "value": 11.401739358901978,
-            "source": "../framework/results.json#/scalar_statistics/nu/arms/new-net11/metrics/allocated_bytes/median"
           }
         ],
-        "comparisons": [
-          {
-            "runtime": "framework",
-            "baseline100": 77.16733110897194,
-            "reduction_percent": 22.832668891028064
-          },
-          {
-            "runtime": "net10",
-            "baseline100": 77.4075379209048,
-            "reduction_percent": 22.5924620790952
-          },
-          {
-            "runtime": "net11",
-            "baseline100": 77.21852679103733,
-            "reduction_percent": 22.781473208962666
-          }
-        ]
+        "new_reduction_vs_old": 22.832668891028064
       },
       {
         "case": "fsautocomplete",
@@ -720,65 +487,25 @@
           {
             "arm": "old-framework",
             "median": 6428975516,
-            "value": 5.9874500297009945,
+            "value": 6.428975516,
             "source": "../framework/results.json#/scalar_statistics/fsautocomplete/arms/old-framework/metrics/allocated_bytes/median"
           },
           {
             "arm": "new-framework",
             "median": 5002003228,
-            "value": 4.658478524535894,
+            "value": 5.002003228,
             "source": "../framework/results.json#/scalar_statistics/fsautocomplete/arms/new-framework/metrics/allocated_bytes/median"
-          },
-          {
-            "arm": "old-net10",
-            "median": 6234193076,
-            "value": 5.8060447461903095,
-            "source": "../framework/results.json#/scalar_statistics/fsautocomplete/arms/old-net10/metrics/allocated_bytes/median"
-          },
-          {
-            "arm": "new-net10",
-            "median": 4857805608,
-            "value": 4.52418402582407,
-            "source": "../framework/results.json#/scalar_statistics/fsautocomplete/arms/new-net10/metrics/allocated_bytes/median"
-          },
-          {
-            "arm": "old-net11",
-            "median": 6239474780,
-            "value": 5.810963716357946,
-            "source": "../framework/results.json#/scalar_statistics/fsautocomplete/arms/old-net11/metrics/allocated_bytes/median"
-          },
-          {
-            "arm": "new-net11",
-            "median": 4858046304,
-            "value": 4.52440819144249,
-            "source": "../framework/results.json#/scalar_statistics/fsautocomplete/arms/new-net11/metrics/allocated_bytes/median"
           }
         ],
-        "comparisons": [
-          {
-            "runtime": "framework",
-            "baseline100": 77.80404849188416,
-            "reduction_percent": 22.19595150811584
-          },
-          {
-            "runtime": "net10",
-            "baseline100": 77.92196277496235,
-            "reduction_percent": 22.07803722503765
-          },
-          {
-            "runtime": "net11",
-            "baseline100": 77.85985960824735,
-            "reduction_percent": 22.14014039175265
-          }
-        ]
+        "new_reduction_vs_old": 22.19595150811584
       }
     ]
   },
   "sdk_heap": {
     "cohort": "third-wave",
     "metric": "retained_heap_bytes",
-    "unit": "MiB",
-    "divisor": 1048576,
+    "unit": "MB",
+    "divisor": 1000000,
     "arms": [
       "sdk10",
       "sdk11rc1",
@@ -792,19 +519,19 @@
           {
             "arm": "sdk10",
             "median": 571100224,
-            "value": 544.6436157226562,
+            "value": 571.100224,
             "source": "../third-wave/results.json#/scalar_statistics/fsautocomplete-ide/arms/sdk10/metrics/retained_heap_bytes/median"
           },
           {
             "arm": "sdk11rc1",
             "median": 488731528,
-            "value": 466.09070587158203,
+            "value": 488.731528,
             "source": "../third-wave/results.json#/scalar_statistics/fsautocomplete-ide/arms/sdk11rc1/metrics/retained_heap_bytes/median"
           },
           {
             "arm": "vmr-rc2-r2r",
             "median": 398605284,
-            "value": 380.13962173461914,
+            "value": 398.605284,
             "source": "../third-wave/results.json#/scalar_statistics/fsautocomplete-ide/arms/vmr-rc2-r2r/metrics/retained_heap_bytes/median"
           }
         ]
@@ -816,37 +543,33 @@
           {
             "arm": "sdk10",
             "median": 113162204,
-            "value": 107.91988754272461,
+            "value": 113.162204,
             "source": "../third-wave/results.json#/scalar_statistics/oxpecker-ide/arms/sdk10/metrics/retained_heap_bytes/median"
           },
           {
             "arm": "sdk11rc1",
             "median": 88471500,
-            "value": 84.37299728393555,
+            "value": 88.4715,
             "source": "../third-wave/results.json#/scalar_statistics/oxpecker-ide/arms/sdk11rc1/metrics/retained_heap_bytes/median"
           },
           {
             "arm": "vmr-rc2-r2r",
             "median": 78487016,
-            "value": 74.8510513305664,
+            "value": 78.487016,
             "source": "../third-wave/results.json#/scalar_statistics/oxpecker-ide/arms/vmr-rc2-r2r/metrics/retained_heap_bytes/median"
           }
         ]
       }
     ]
   },
-  "portable_heap": {
+  "framework_heap": {
     "cohort": "framework",
     "metric": "retained_heap_bytes",
-    "unit": "MiB",
-    "divisor": 1048576,
+    "unit": "MB",
+    "divisor": 1000000,
     "arms": [
       "old-framework",
-      "new-framework",
-      "old-net10",
-      "new-net10",
-      "old-net11",
-      "new-net11"
+      "new-framework"
     ],
     "rows": [
       {
@@ -856,57 +579,17 @@
           {
             "arm": "old-framework",
             "median": 571506404,
-            "value": 545.0309791564941,
+            "value": 571.506404,
             "source": "../framework/results.json#/scalar_statistics/fsautocomplete-ide/arms/old-framework/metrics/retained_heap_bytes/median"
           },
           {
             "arm": "new-framework",
             "median": 399212496,
-            "value": 380.7187042236328,
+            "value": 399.212496,
             "source": "../framework/results.json#/scalar_statistics/fsautocomplete-ide/arms/new-framework/metrics/retained_heap_bytes/median"
-          },
-          {
-            "arm": "old-net10",
-            "median": 570566384,
-            "value": 544.1345062255859,
-            "source": "../framework/results.json#/scalar_statistics/fsautocomplete-ide/arms/old-net10/metrics/retained_heap_bytes/median"
-          },
-          {
-            "arm": "new-net10",
-            "median": 398639608,
-            "value": 380.17235565185547,
-            "source": "../framework/results.json#/scalar_statistics/fsautocomplete-ide/arms/new-net10/metrics/retained_heap_bytes/median"
-          },
-          {
-            "arm": "old-net11",
-            "median": 570183704,
-            "value": 543.7695541381836,
-            "source": "../framework/results.json#/scalar_statistics/fsautocomplete-ide/arms/old-net11/metrics/retained_heap_bytes/median"
-          },
-          {
-            "arm": "new-net11",
-            "median": 398576716,
-            "value": 380.11237716674805,
-            "source": "../framework/results.json#/scalar_statistics/fsautocomplete-ide/arms/new-net11/metrics/retained_heap_bytes/median"
           }
         ],
-        "comparisons": [
-          {
-            "runtime": "framework",
-            "baseline100": 69.85267237705354,
-            "reduction_percent": 30.147327622946463
-          },
-          {
-            "runtime": "net10",
-            "baseline100": 69.86734921277802,
-            "reduction_percent": 30.132650787221984
-          },
-          {
-            "runtime": "net11",
-            "baseline100": 69.90321070277379,
-            "reduction_percent": 30.096789297226213
-          }
-        ]
+        "new_reduction_vs_old": 30.147327622946463
       },
       {
         "case": "oxpecker-ide",
@@ -915,65 +598,25 @@
           {
             "arm": "old-framework",
             "median": 113686300,
-            "value": 108.41970443725586,
+            "value": 113.6863,
             "source": "../framework/results.json#/scalar_statistics/oxpecker-ide/arms/old-framework/metrics/retained_heap_bytes/median"
           },
           {
             "arm": "new-framework",
             "median": 78846848,
-            "value": 75.1942138671875,
+            "value": 78.846848,
             "source": "../framework/results.json#/scalar_statistics/oxpecker-ide/arms/new-framework/metrics/retained_heap_bytes/median"
-          },
-          {
-            "arm": "old-net10",
-            "median": 113274312,
-            "value": 108.02680206298828,
-            "source": "../framework/results.json#/scalar_statistics/oxpecker-ide/arms/old-net10/metrics/retained_heap_bytes/median"
-          },
-          {
-            "arm": "new-net10",
-            "median": 78731500,
-            "value": 75.08420944213867,
-            "source": "../framework/results.json#/scalar_statistics/oxpecker-ide/arms/new-net10/metrics/retained_heap_bytes/median"
-          },
-          {
-            "arm": "old-net11",
-            "median": 113191068,
-            "value": 107.94741439819336,
-            "source": "../framework/results.json#/scalar_statistics/oxpecker-ide/arms/old-net11/metrics/retained_heap_bytes/median"
-          },
-          {
-            "arm": "new-net11",
-            "median": 78598336,
-            "value": 74.95721435546875,
-            "source": "../framework/results.json#/scalar_statistics/oxpecker-ide/arms/new-net11/metrics/retained_heap_bytes/median"
           }
         ],
-        "comparisons": [
-          {
-            "runtime": "framework",
-            "baseline100": 69.35474898910424,
-            "reduction_percent": 30.64525101089577
-          },
-          {
-            "runtime": "net10",
-            "baseline100": 69.50516724392023,
-            "reduction_percent": 30.49483275607977
-          },
-          {
-            "runtime": "net11",
-            "baseline100": 69.438638038118,
-            "reduction_percent": 30.561361961882007
-          }
-        ]
+        "new_reduction_vs_old": 30.64525101089577
       }
     ]
   },
   "sdk_peak": {
     "cohort": "third-wave",
     "metric": "peak_working_set_bytes",
-    "unit": "MiB",
-    "divisor": 1048576,
+    "unit": "MB",
+    "divisor": 1000000,
     "arms": [
       "sdk10",
       "sdk11rc1",
@@ -987,19 +630,19 @@
           {
             "arm": "sdk10",
             "median": 691623936,
-            "value": 659.583984375,
+            "value": 691.623936,
             "source": "../third-wave/results.json#/scalar_statistics/fsharp-core/arms/sdk10/metrics/peak_working_set_bytes/median"
           },
           {
             "arm": "sdk11rc1",
             "median": 801247232,
-            "value": 764.12890625,
+            "value": 801.247232,
             "source": "../third-wave/results.json#/scalar_statistics/fsharp-core/arms/sdk11rc1/metrics/peak_working_set_bytes/median"
           },
           {
             "arm": "vmr-rc2-r2r",
             "median": 808001536,
-            "value": 770.5703125,
+            "value": 808.001536,
             "source": "../third-wave/results.json#/scalar_statistics/fsharp-core/arms/vmr-rc2-r2r/metrics/peak_working_set_bytes/median"
           }
         ]
@@ -1011,19 +654,19 @@
           {
             "arm": "sdk10",
             "median": 2439929856,
-            "value": 2326.8984375,
+            "value": 2439.929856,
             "source": "../third-wave/results.json#/scalar_statistics/fsharp-compiler-service/arms/sdk10/metrics/peak_working_set_bytes/median"
           },
           {
             "arm": "sdk11rc1",
             "median": 3117187072,
-            "value": 2972.78125,
+            "value": 3117.187072,
             "source": "../third-wave/results.json#/scalar_statistics/fsharp-compiler-service/arms/sdk11rc1/metrics/peak_working_set_bytes/median"
           },
           {
             "arm": "vmr-rc2-r2r",
             "median": 3262144512,
-            "value": 3111.0234375,
+            "value": 3262.144512,
             "source": "../third-wave/results.json#/scalar_statistics/fsharp-compiler-service/arms/vmr-rc2-r2r/metrics/peak_working_set_bytes/median"
           }
         ]
@@ -1035,19 +678,19 @@
           {
             "arm": "sdk10",
             "median": 551606272,
-            "value": 526.052734375,
+            "value": 551.606272,
             "source": "../third-wave/results.json#/scalar_statistics/fstoolkit/arms/sdk10/metrics/peak_working_set_bytes/median"
           },
           {
             "arm": "sdk11rc1",
             "median": 575692800,
-            "value": 549.0234375,
+            "value": 575.6928,
             "source": "../third-wave/results.json#/scalar_statistics/fstoolkit/arms/sdk11rc1/metrics/peak_working_set_bytes/median"
           },
           {
             "arm": "vmr-rc2-r2r",
             "median": 586866688,
-            "value": 559.6796875,
+            "value": 586.866688,
             "source": "../third-wave/results.json#/scalar_statistics/fstoolkit/arms/vmr-rc2-r2r/metrics/peak_working_set_bytes/median"
           }
         ]
@@ -1059,19 +702,19 @@
           {
             "arm": "sdk10",
             "median": 411598848,
-            "value": 392.53125,
+            "value": 411.598848,
             "source": "../third-wave/results.json#/scalar_statistics/oxpecker/arms/sdk10/metrics/peak_working_set_bytes/median"
           },
           {
             "arm": "sdk11rc1",
             "median": 355192832,
-            "value": 338.73828125,
+            "value": 355.192832,
             "source": "../third-wave/results.json#/scalar_statistics/oxpecker/arms/sdk11rc1/metrics/peak_working_set_bytes/median"
           },
           {
             "arm": "vmr-rc2-r2r",
             "median": 327172096,
-            "value": 312.015625,
+            "value": 327.172096,
             "source": "../third-wave/results.json#/scalar_statistics/oxpecker/arms/vmr-rc2-r2r/metrics/peak_working_set_bytes/median"
           }
         ]
@@ -1083,19 +726,19 @@
           {
             "arm": "sdk10",
             "median": 1394145280,
-            "value": 1329.560546875,
+            "value": 1394.14528,
             "source": "../third-wave/results.json#/scalar_statistics/nu/arms/sdk10/metrics/peak_working_set_bytes/median"
           },
           {
             "arm": "sdk11rc1",
             "median": 1439178752,
-            "value": 1372.5078125,
+            "value": 1439.178752,
             "source": "../third-wave/results.json#/scalar_statistics/nu/arms/sdk11rc1/metrics/peak_working_set_bytes/median"
           },
           {
             "arm": "vmr-rc2-r2r",
             "median": 1397454848,
-            "value": 1332.716796875,
+            "value": 1397.454848,
             "source": "../third-wave/results.json#/scalar_statistics/nu/arms/vmr-rc2-r2r/metrics/peak_working_set_bytes/median"
           }
         ]
@@ -1107,37 +750,33 @@
           {
             "arm": "sdk10",
             "median": 1078325248,
-            "value": 1028.37109375,
+            "value": 1078.325248,
             "source": "../third-wave/results.json#/scalar_statistics/fsautocomplete/arms/sdk10/metrics/peak_working_set_bytes/median"
           },
           {
             "arm": "sdk11rc1",
             "median": 1074921472,
-            "value": 1025.125,
+            "value": 1074.921472,
             "source": "../third-wave/results.json#/scalar_statistics/fsautocomplete/arms/sdk11rc1/metrics/peak_working_set_bytes/median"
           },
           {
             "arm": "vmr-rc2-r2r",
             "median": 987383808,
-            "value": 941.642578125,
+            "value": 987.383808,
             "source": "../third-wave/results.json#/scalar_statistics/fsautocomplete/arms/vmr-rc2-r2r/metrics/peak_working_set_bytes/median"
           }
         ]
       }
     ]
   },
-  "portable_peak": {
+  "framework_peak": {
     "cohort": "framework",
     "metric": "peak_working_set_bytes",
-    "unit": "MiB",
-    "divisor": 1048576,
+    "unit": "MB",
+    "divisor": 1000000,
     "arms": [
       "old-framework",
-      "new-framework",
-      "old-net10",
-      "new-net10",
-      "old-net11",
-      "new-net11"
+      "new-framework"
     ],
     "rows": [
       {
@@ -1147,38 +786,14 @@
           {
             "arm": "old-framework",
             "median": 1795307520,
-            "value": 1712.138671875,
+            "value": 1795.30752,
             "source": "../framework/results.json#/scalar_statistics/fsharp-core/arms/old-framework/metrics/peak_working_set_bytes/median"
           },
           {
             "arm": "new-framework",
             "median": 2224287744,
-            "value": 2121.24609375,
+            "value": 2224.287744,
             "source": "../framework/results.json#/scalar_statistics/fsharp-core/arms/new-framework/metrics/peak_working_set_bytes/median"
-          },
-          {
-            "arm": "old-net10",
-            "median": 697894912,
-            "value": 665.564453125,
-            "source": "../framework/results.json#/scalar_statistics/fsharp-core/arms/old-net10/metrics/peak_working_set_bytes/median"
-          },
-          {
-            "arm": "new-net10",
-            "median": 802455552,
-            "value": 765.28125,
-            "source": "../framework/results.json#/scalar_statistics/fsharp-core/arms/new-net10/metrics/peak_working_set_bytes/median"
-          },
-          {
-            "arm": "old-net11",
-            "median": 689162240,
-            "value": 657.236328125,
-            "source": "../framework/results.json#/scalar_statistics/fsharp-core/arms/old-net11/metrics/peak_working_set_bytes/median"
-          },
-          {
-            "arm": "new-net11",
-            "median": 823615488,
-            "value": 785.4609375,
-            "source": "../framework/results.json#/scalar_statistics/fsharp-core/arms/new-net11/metrics/peak_working_set_bytes/median"
           }
         ]
       },
@@ -1189,38 +804,14 @@
           {
             "arm": "old-framework",
             "median": 4290000896,
-            "value": 4091.263671875,
+            "value": 4290.000896,
             "source": "../framework/results.json#/scalar_statistics/fsharp-compiler-service/arms/old-framework/metrics/peak_working_set_bytes/median"
           },
           {
             "arm": "new-framework",
             "median": 5150042112,
-            "value": 4911.462890625,
+            "value": 5150.042112,
             "source": "../framework/results.json#/scalar_statistics/fsharp-compiler-service/arms/new-framework/metrics/peak_working_set_bytes/median"
-          },
-          {
-            "arm": "old-net10",
-            "median": 2622017536,
-            "value": 2500.55078125,
-            "source": "../framework/results.json#/scalar_statistics/fsharp-compiler-service/arms/old-net10/metrics/peak_working_set_bytes/median"
-          },
-          {
-            "arm": "new-net10",
-            "median": 3202205696,
-            "value": 3053.861328125,
-            "source": "../framework/results.json#/scalar_statistics/fsharp-compiler-service/arms/new-net10/metrics/peak_working_set_bytes/median"
-          },
-          {
-            "arm": "old-net11",
-            "median": 2621413376,
-            "value": 2499.974609375,
-            "source": "../framework/results.json#/scalar_statistics/fsharp-compiler-service/arms/old-net11/metrics/peak_working_set_bytes/median"
-          },
-          {
-            "arm": "new-net11",
-            "median": 3285798912,
-            "value": 3133.58203125,
-            "source": "../framework/results.json#/scalar_statistics/fsharp-compiler-service/arms/new-net11/metrics/peak_working_set_bytes/median"
           }
         ]
       },
@@ -1231,38 +822,14 @@
           {
             "arm": "old-framework",
             "median": 1484185600,
-            "value": 1415.4296875,
+            "value": 1484.1856,
             "source": "../framework/results.json#/scalar_statistics/fstoolkit/arms/old-framework/metrics/peak_working_set_bytes/median"
           },
           {
             "arm": "new-framework",
             "median": 1034016768,
-            "value": 986.115234375,
+            "value": 1034.016768,
             "source": "../framework/results.json#/scalar_statistics/fstoolkit/arms/new-framework/metrics/peak_working_set_bytes/median"
-          },
-          {
-            "arm": "old-net10",
-            "median": 558966784,
-            "value": 533.072265625,
-            "source": "../framework/results.json#/scalar_statistics/fstoolkit/arms/old-net10/metrics/peak_working_set_bytes/median"
-          },
-          {
-            "arm": "new-net10",
-            "median": 567541760,
-            "value": 541.25,
-            "source": "../framework/results.json#/scalar_statistics/fstoolkit/arms/new-net10/metrics/peak_working_set_bytes/median"
-          },
-          {
-            "arm": "old-net11",
-            "median": 542443520,
-            "value": 517.314453125,
-            "source": "../framework/results.json#/scalar_statistics/fstoolkit/arms/old-net11/metrics/peak_working_set_bytes/median"
-          },
-          {
-            "arm": "new-net11",
-            "median": 552759296,
-            "value": 527.15234375,
-            "source": "../framework/results.json#/scalar_statistics/fstoolkit/arms/new-net11/metrics/peak_working_set_bytes/median"
           }
         ]
       },
@@ -1273,38 +840,14 @@
           {
             "arm": "old-framework",
             "median": 1165232128,
-            "value": 1111.251953125,
+            "value": 1165.232128,
             "source": "../framework/results.json#/scalar_statistics/oxpecker/arms/old-framework/metrics/peak_working_set_bytes/median"
           },
           {
             "arm": "new-framework",
             "median": 568086528,
-            "value": 541.76953125,
+            "value": 568.086528,
             "source": "../framework/results.json#/scalar_statistics/oxpecker/arms/new-framework/metrics/peak_working_set_bytes/median"
-          },
-          {
-            "arm": "old-net10",
-            "median": 414427136,
-            "value": 395.228515625,
-            "source": "../framework/results.json#/scalar_statistics/oxpecker/arms/old-net10/metrics/peak_working_set_bytes/median"
-          },
-          {
-            "arm": "new-net10",
-            "median": 337770496,
-            "value": 322.123046875,
-            "source": "../framework/results.json#/scalar_statistics/oxpecker/arms/new-net10/metrics/peak_working_set_bytes/median"
-          },
-          {
-            "arm": "old-net11",
-            "median": 418420736,
-            "value": 399.037109375,
-            "source": "../framework/results.json#/scalar_statistics/oxpecker/arms/old-net11/metrics/peak_working_set_bytes/median"
-          },
-          {
-            "arm": "new-net11",
-            "median": 337643520,
-            "value": 322.001953125,
-            "source": "../framework/results.json#/scalar_statistics/oxpecker/arms/new-net11/metrics/peak_working_set_bytes/median"
           }
         ]
       },
@@ -1315,38 +858,14 @@
           {
             "arm": "old-framework",
             "median": 3500105728,
-            "value": 3337.9609375,
+            "value": 3500.105728,
             "source": "../framework/results.json#/scalar_statistics/nu/arms/old-framework/metrics/peak_working_set_bytes/median"
           },
           {
             "arm": "new-framework",
             "median": 3534852096,
-            "value": 3371.09765625,
+            "value": 3534.852096,
             "source": "../framework/results.json#/scalar_statistics/nu/arms/new-framework/metrics/peak_working_set_bytes/median"
-          },
-          {
-            "arm": "old-net10",
-            "median": 1318526976,
-            "value": 1257.4453125,
-            "source": "../framework/results.json#/scalar_statistics/nu/arms/old-net10/metrics/peak_working_set_bytes/median"
-          },
-          {
-            "arm": "new-net10",
-            "median": 1478371328,
-            "value": 1409.884765625,
-            "source": "../framework/results.json#/scalar_statistics/nu/arms/new-net10/metrics/peak_working_set_bytes/median"
-          },
-          {
-            "arm": "old-net11",
-            "median": 1369831424,
-            "value": 1306.373046875,
-            "source": "../framework/results.json#/scalar_statistics/nu/arms/old-net11/metrics/peak_working_set_bytes/median"
-          },
-          {
-            "arm": "new-net11",
-            "median": 1483593728,
-            "value": 1414.865234375,
-            "source": "../framework/results.json#/scalar_statistics/nu/arms/new-net11/metrics/peak_working_set_bytes/median"
           }
         ]
       },
@@ -1357,38 +876,14 @@
           {
             "arm": "old-framework",
             "median": 2382964736,
-            "value": 2272.572265625,
+            "value": 2382.964736,
             "source": "../framework/results.json#/scalar_statistics/fsautocomplete/arms/old-framework/metrics/peak_working_set_bytes/median"
           },
           {
             "arm": "new-framework",
             "median": 2262284288,
-            "value": 2157.482421875,
+            "value": 2262.284288,
             "source": "../framework/results.json#/scalar_statistics/fsautocomplete/arms/new-framework/metrics/peak_working_set_bytes/median"
-          },
-          {
-            "arm": "old-net10",
-            "median": 1072871424,
-            "value": 1023.169921875,
-            "source": "../framework/results.json#/scalar_statistics/fsautocomplete/arms/old-net10/metrics/peak_working_set_bytes/median"
-          },
-          {
-            "arm": "new-net10",
-            "median": 1004013568,
-            "value": 957.501953125,
-            "source": "../framework/results.json#/scalar_statistics/fsautocomplete/arms/new-net10/metrics/peak_working_set_bytes/median"
-          },
-          {
-            "arm": "old-net11",
-            "median": 1071421440,
-            "value": 1021.787109375,
-            "source": "../framework/results.json#/scalar_statistics/fsautocomplete/arms/old-net11/metrics/peak_working_set_bytes/median"
-          },
-          {
-            "arm": "new-net11",
-            "median": 997992448,
-            "value": 951.759765625,
-            "source": "../framework/results.json#/scalar_statistics/fsautocomplete/arms/new-net11/metrics/peak_working_set_bytes/median"
           }
         ]
       }
@@ -1551,721 +1046,141 @@
       }
     ]
   },
-  "portable_cpu": {
-    "cohort": "framework",
-    "metric": "cpu_ns",
-    "unit": "s",
-    "divisor": 1000000000,
-    "arms": [
-      "old-framework",
-      "new-framework",
-      "old-net10",
-      "new-net10",
-      "old-net11",
-      "new-net11"
-    ],
-    "rows": [
-      {
-        "case": "fsharp-core",
-        "label": "FSharp.Core",
-        "values": [
-          {
-            "arm": "old-framework",
-            "median": 39625000000,
-            "value": 39.625,
-            "source": "../framework/results.json#/scalar_statistics/fsharp-core/arms/old-framework/metrics/cpu_ns/median"
-          },
-          {
-            "arm": "new-framework",
-            "median": 39937500000,
-            "value": 39.9375,
-            "source": "../framework/results.json#/scalar_statistics/fsharp-core/arms/new-framework/metrics/cpu_ns/median"
-          },
-          {
-            "arm": "old-net10",
-            "median": 36164062500,
-            "value": 36.1640625,
-            "source": "../framework/results.json#/scalar_statistics/fsharp-core/arms/old-net10/metrics/cpu_ns/median"
-          },
-          {
-            "arm": "new-net10",
-            "median": 35101562500,
-            "value": 35.1015625,
-            "source": "../framework/results.json#/scalar_statistics/fsharp-core/arms/new-net10/metrics/cpu_ns/median"
-          },
-          {
-            "arm": "old-net11",
-            "median": 36000000000,
-            "value": 36,
-            "source": "../framework/results.json#/scalar_statistics/fsharp-core/arms/old-net11/metrics/cpu_ns/median"
-          },
-          {
-            "arm": "new-net11",
-            "median": 36273437500,
-            "value": 36.2734375,
-            "source": "../framework/results.json#/scalar_statistics/fsharp-core/arms/new-net11/metrics/cpu_ns/median"
-          }
-        ]
-      },
-      {
-        "case": "fsharp-compiler-service",
-        "label": "FSharp.Compiler.Service",
-        "values": [
-          {
-            "arm": "old-framework",
-            "median": 155093750000,
-            "value": 155.09375,
-            "source": "../framework/results.json#/scalar_statistics/fsharp-compiler-service/arms/old-framework/metrics/cpu_ns/median"
-          },
-          {
-            "arm": "new-framework",
-            "median": 184007812500,
-            "value": 184.0078125,
-            "source": "../framework/results.json#/scalar_statistics/fsharp-compiler-service/arms/new-framework/metrics/cpu_ns/median"
-          },
-          {
-            "arm": "old-net10",
-            "median": 123203125000,
-            "value": 123.203125,
-            "source": "../framework/results.json#/scalar_statistics/fsharp-compiler-service/arms/old-net10/metrics/cpu_ns/median"
-          },
-          {
-            "arm": "new-net10",
-            "median": 213742187500,
-            "value": 213.7421875,
-            "source": "../framework/results.json#/scalar_statistics/fsharp-compiler-service/arms/new-net10/metrics/cpu_ns/median"
-          },
-          {
-            "arm": "old-net11",
-            "median": 130757812500,
-            "value": 130.7578125,
-            "source": "../framework/results.json#/scalar_statistics/fsharp-compiler-service/arms/old-net11/metrics/cpu_ns/median"
-          },
-          {
-            "arm": "new-net11",
-            "median": 220359375000,
-            "value": 220.359375,
-            "source": "../framework/results.json#/scalar_statistics/fsharp-compiler-service/arms/new-net11/metrics/cpu_ns/median"
-          }
-        ]
-      },
-      {
-        "case": "fstoolkit",
-        "label": "FsToolkit.ErrorHandling",
-        "values": [
-          {
-            "arm": "old-framework",
-            "median": 20562500000,
-            "value": 20.5625,
-            "source": "../framework/results.json#/scalar_statistics/fstoolkit/arms/old-framework/metrics/cpu_ns/median"
-          },
-          {
-            "arm": "new-framework",
-            "median": 25921875000,
-            "value": 25.921875,
-            "source": "../framework/results.json#/scalar_statistics/fstoolkit/arms/new-framework/metrics/cpu_ns/median"
-          },
-          {
-            "arm": "old-net10",
-            "median": 15054687500,
-            "value": 15.0546875,
-            "source": "../framework/results.json#/scalar_statistics/fstoolkit/arms/old-net10/metrics/cpu_ns/median"
-          },
-          {
-            "arm": "new-net10",
-            "median": 15531250000,
-            "value": 15.53125,
-            "source": "../framework/results.json#/scalar_statistics/fstoolkit/arms/new-net10/metrics/cpu_ns/median"
-          },
-          {
-            "arm": "old-net11",
-            "median": 15406250000,
-            "value": 15.40625,
-            "source": "../framework/results.json#/scalar_statistics/fstoolkit/arms/old-net11/metrics/cpu_ns/median"
-          },
-          {
-            "arm": "new-net11",
-            "median": 15960937500,
-            "value": 15.9609375,
-            "source": "../framework/results.json#/scalar_statistics/fstoolkit/arms/new-net11/metrics/cpu_ns/median"
-          }
-        ]
-      },
-      {
-        "case": "oxpecker",
-        "label": "Oxpecker",
-        "values": [
-          {
-            "arm": "old-framework",
-            "median": 17179687500,
-            "value": 17.1796875,
-            "source": "../framework/results.json#/scalar_statistics/oxpecker/arms/old-framework/metrics/cpu_ns/median"
-          },
-          {
-            "arm": "new-framework",
-            "median": 20195312500,
-            "value": 20.1953125,
-            "source": "../framework/results.json#/scalar_statistics/oxpecker/arms/new-framework/metrics/cpu_ns/median"
-          },
-          {
-            "arm": "old-net10",
-            "median": 10320312500,
-            "value": 10.3203125,
-            "source": "../framework/results.json#/scalar_statistics/oxpecker/arms/old-net10/metrics/cpu_ns/median"
-          },
-          {
-            "arm": "new-net10",
-            "median": 8585937500,
-            "value": 8.5859375,
-            "source": "../framework/results.json#/scalar_statistics/oxpecker/arms/new-net10/metrics/cpu_ns/median"
-          },
-          {
-            "arm": "old-net11",
-            "median": 11187500000,
-            "value": 11.1875,
-            "source": "../framework/results.json#/scalar_statistics/oxpecker/arms/old-net11/metrics/cpu_ns/median"
-          },
-          {
-            "arm": "new-net11",
-            "median": 9156250000,
-            "value": 9.15625,
-            "source": "../framework/results.json#/scalar_statistics/oxpecker/arms/new-net11/metrics/cpu_ns/median"
-          }
-        ]
-      },
-      {
-        "case": "nu",
-        "label": "Nu",
-        "values": [
-          {
-            "arm": "old-framework",
-            "median": 72320312500,
-            "value": 72.3203125,
-            "source": "../framework/results.json#/scalar_statistics/nu/arms/old-framework/metrics/cpu_ns/median"
-          },
-          {
-            "arm": "new-framework",
-            "median": 69578125000,
-            "value": 69.578125,
-            "source": "../framework/results.json#/scalar_statistics/nu/arms/new-framework/metrics/cpu_ns/median"
-          },
-          {
-            "arm": "old-net10",
-            "median": 63992187500,
-            "value": 63.9921875,
-            "source": "../framework/results.json#/scalar_statistics/nu/arms/old-net10/metrics/cpu_ns/median"
-          },
-          {
-            "arm": "new-net10",
-            "median": 66179687500,
-            "value": 66.1796875,
-            "source": "../framework/results.json#/scalar_statistics/nu/arms/new-net10/metrics/cpu_ns/median"
-          },
-          {
-            "arm": "old-net11",
-            "median": 65914062500,
-            "value": 65.9140625,
-            "source": "../framework/results.json#/scalar_statistics/nu/arms/old-net11/metrics/cpu_ns/median"
-          },
-          {
-            "arm": "new-net11",
-            "median": 67781250000,
-            "value": 67.78125,
-            "source": "../framework/results.json#/scalar_statistics/nu/arms/new-net11/metrics/cpu_ns/median"
-          }
-        ]
-      },
-      {
-        "case": "fsautocomplete",
-        "label": "FsAutoComplete",
-        "values": [
-          {
-            "arm": "old-framework",
-            "median": 46140625000,
-            "value": 46.140625,
-            "source": "../framework/results.json#/scalar_statistics/fsautocomplete/arms/old-framework/metrics/cpu_ns/median"
-          },
-          {
-            "arm": "new-framework",
-            "median": 42890625000,
-            "value": 42.890625,
-            "source": "../framework/results.json#/scalar_statistics/fsautocomplete/arms/new-framework/metrics/cpu_ns/median"
-          },
-          {
-            "arm": "old-net10",
-            "median": 44593750000,
-            "value": 44.59375,
-            "source": "../framework/results.json#/scalar_statistics/fsautocomplete/arms/old-net10/metrics/cpu_ns/median"
-          },
-          {
-            "arm": "new-net10",
-            "median": 42765625000,
-            "value": 42.765625,
-            "source": "../framework/results.json#/scalar_statistics/fsautocomplete/arms/new-net10/metrics/cpu_ns/median"
-          },
-          {
-            "arm": "old-net11",
-            "median": 48828125000,
-            "value": 48.828125,
-            "source": "../framework/results.json#/scalar_statistics/fsautocomplete/arms/old-net11/metrics/cpu_ns/median"
-          },
-          {
-            "arm": "new-net11",
-            "median": 43640625000,
-            "value": 43.640625,
-            "source": "../framework/results.json#/scalar_statistics/fsautocomplete/arms/new-net11/metrics/cpu_ns/median"
-          }
-        ]
-      }
-    ]
-  },
   "programs": [
     {
       "kernel": "Cart",
       "label": "Cart-price List.fold",
       "length": 4,
-      "cohorts": [
-        [
-          {
-            "arm": "sdk10",
-            "value": 24,
-            "source": "../third-wave/results.json#/program_statistics/6/bytes_per_op/median"
-          },
-          {
-            "arm": "sdk11rc1",
-            "value": 24,
-            "source": "../third-wave/results.json#/program_statistics/7/bytes_per_op/median"
-          },
-          {
-            "arm": "vmr-rc2-r2r",
-            "value": 0,
-            "source": "../third-wave/results.json#/program_statistics/8/bytes_per_op/median"
-          }
-        ],
-        [
-          {
-            "arm": "old-framework",
-            "value": 24,
-            "source": "../framework/results.json#/program_statistics/12/bytes_per_op/median"
-          },
-          {
-            "arm": "new-framework",
-            "value": 0,
-            "source": "../framework/results.json#/program_statistics/13/bytes_per_op/median"
-          },
-          {
-            "arm": "old-net10",
-            "value": 24,
-            "source": "../framework/results.json#/program_statistics/14/bytes_per_op/median"
-          },
-          {
-            "arm": "new-net10",
-            "value": 0,
-            "source": "../framework/results.json#/program_statistics/15/bytes_per_op/median"
-          },
-          {
-            "arm": "old-net11",
-            "value": 24,
-            "source": "../framework/results.json#/program_statistics/16/bytes_per_op/median"
-          },
-          {
-            "arm": "new-net11",
-            "value": 0,
-            "source": "../framework/results.json#/program_statistics/17/bytes_per_op/median"
-          }
-        ]
+      "values": [
+        {
+          "arm": "sdk10",
+          "value": 24,
+          "source": "../third-wave/results.json#/program_statistics/6/bytes_per_op/median"
+        },
+        {
+          "arm": "vmr-rc2-r2r",
+          "value": 0,
+          "source": "../third-wave/results.json#/program_statistics/8/bytes_per_op/median"
+        }
       ]
     },
     {
       "kernel": "Rules",
       "label": "Access-rule exists / forall",
       "length": 4,
-      "cohorts": [
-        [
-          {
-            "arm": "sdk10",
-            "value": 48,
-            "source": "../third-wave/results.json#/program_statistics/24/bytes_per_op/median"
-          },
-          {
-            "arm": "sdk11rc1",
-            "value": 48,
-            "source": "../third-wave/results.json#/program_statistics/25/bytes_per_op/median"
-          },
-          {
-            "arm": "vmr-rc2-r2r",
-            "value": 0,
-            "source": "../third-wave/results.json#/program_statistics/26/bytes_per_op/median"
-          }
-        ],
-        [
-          {
-            "arm": "old-framework",
-            "value": 48,
-            "source": "../framework/results.json#/program_statistics/48/bytes_per_op/median"
-          },
-          {
-            "arm": "new-framework",
-            "value": 0,
-            "source": "../framework/results.json#/program_statistics/49/bytes_per_op/median"
-          },
-          {
-            "arm": "old-net10",
-            "value": 48,
-            "source": "../framework/results.json#/program_statistics/50/bytes_per_op/median"
-          },
-          {
-            "arm": "new-net10",
-            "value": 0,
-            "source": "../framework/results.json#/program_statistics/51/bytes_per_op/median"
-          },
-          {
-            "arm": "old-net11",
-            "value": 48,
-            "source": "../framework/results.json#/program_statistics/52/bytes_per_op/median"
-          },
-          {
-            "arm": "new-net11",
-            "value": 0,
-            "source": "../framework/results.json#/program_statistics/53/bytes_per_op/median"
-          }
-        ]
+      "values": [
+        {
+          "arm": "sdk10",
+          "value": 48,
+          "source": "../third-wave/results.json#/program_statistics/24/bytes_per_op/median"
+        },
+        {
+          "arm": "vmr-rc2-r2r",
+          "value": 0,
+          "source": "../third-wave/results.json#/program_statistics/26/bytes_per_op/median"
+        }
       ]
     },
     {
       "kernel": "Telemetry",
       "label": "Weighted Array.fold / fold2",
       "length": 4,
-      "cohorts": [
-        [
-          {
-            "arm": "sdk10",
-            "value": 48,
-            "source": "../third-wave/results.json#/program_statistics/42/bytes_per_op/median"
-          },
-          {
-            "arm": "sdk11rc1",
-            "value": 48,
-            "source": "../third-wave/results.json#/program_statistics/43/bytes_per_op/median"
-          },
-          {
-            "arm": "vmr-rc2-r2r",
-            "value": 0,
-            "source": "../third-wave/results.json#/program_statistics/44/bytes_per_op/median"
-          }
-        ],
-        [
-          {
-            "arm": "old-framework",
-            "value": 48,
-            "source": "../framework/results.json#/program_statistics/84/bytes_per_op/median"
-          },
-          {
-            "arm": "new-framework",
-            "value": 0,
-            "source": "../framework/results.json#/program_statistics/85/bytes_per_op/median"
-          },
-          {
-            "arm": "old-net10",
-            "value": 48,
-            "source": "../framework/results.json#/program_statistics/86/bytes_per_op/median"
-          },
-          {
-            "arm": "new-net10",
-            "value": 0,
-            "source": "../framework/results.json#/program_statistics/87/bytes_per_op/median"
-          },
-          {
-            "arm": "old-net11",
-            "value": 48,
-            "source": "../framework/results.json#/program_statistics/88/bytes_per_op/median"
-          },
-          {
-            "arm": "new-net11",
-            "value": 0,
-            "source": "../framework/results.json#/program_statistics/89/bytes_per_op/median"
-          }
-        ]
+      "values": [
+        {
+          "arm": "sdk10",
+          "value": 48,
+          "source": "../third-wave/results.json#/program_statistics/42/bytes_per_op/median"
+        },
+        {
+          "arm": "vmr-rc2-r2r",
+          "value": 0,
+          "source": "../third-wave/results.json#/program_statistics/44/bytes_per_op/median"
+        }
       ]
     },
     {
       "kernel": "Option",
       "label": "Partially applied Option.map",
       "length": 4,
-      "cohorts": [
-        [
-          {
-            "arm": "sdk10",
-            "value": 0,
-            "source": "../third-wave/results.json#/program_statistics/60/bytes_per_op/median"
-          },
-          {
-            "arm": "sdk11rc1",
-            "value": 0,
-            "source": "../third-wave/results.json#/program_statistics/61/bytes_per_op/median"
-          },
-          {
-            "arm": "vmr-rc2-r2r",
-            "value": 0,
-            "source": "../third-wave/results.json#/program_statistics/62/bytes_per_op/median"
-          }
-        ],
-        [
-          {
-            "arm": "old-framework",
-            "value": 48,
-            "source": "../framework/results.json#/program_statistics/120/bytes_per_op/median"
-          },
-          {
-            "arm": "new-framework",
-            "value": 24,
-            "source": "../framework/results.json#/program_statistics/121/bytes_per_op/median"
-          },
-          {
-            "arm": "old-net10",
-            "value": 0,
-            "source": "../framework/results.json#/program_statistics/122/bytes_per_op/median"
-          },
-          {
-            "arm": "new-net10",
-            "value": 0,
-            "source": "../framework/results.json#/program_statistics/123/bytes_per_op/median"
-          },
-          {
-            "arm": "old-net11",
-            "value": 0,
-            "source": "../framework/results.json#/program_statistics/124/bytes_per_op/median"
-          },
-          {
-            "arm": "new-net11",
-            "value": 0,
-            "source": "../framework/results.json#/program_statistics/125/bytes_per_op/median"
-          }
-        ]
+      "values": [
+        {
+          "arm": "sdk10",
+          "value": 0,
+          "source": "../third-wave/results.json#/program_statistics/60/bytes_per_op/median"
+        },
+        {
+          "arm": "vmr-rc2-r2r",
+          "value": 0,
+          "source": "../third-wave/results.json#/program_statistics/62/bytes_per_op/median"
+        }
       ]
     },
     {
       "kernel": "Nested",
       "label": "Nested group folds",
       "length": 4,
-      "cohorts": [
-        [
-          {
-            "arm": "sdk10",
-            "value": 48,
-            "source": "../third-wave/results.json#/program_statistics/78/bytes_per_op/median"
-          },
-          {
-            "arm": "sdk11rc1",
-            "value": 48,
-            "source": "../third-wave/results.json#/program_statistics/79/bytes_per_op/median"
-          },
-          {
-            "arm": "vmr-rc2-r2r",
-            "value": 0,
-            "source": "../third-wave/results.json#/program_statistics/80/bytes_per_op/median"
-          }
-        ],
-        [
-          {
-            "arm": "old-framework",
-            "value": 48,
-            "source": "../framework/results.json#/program_statistics/156/bytes_per_op/median"
-          },
-          {
-            "arm": "new-framework",
-            "value": 0,
-            "source": "../framework/results.json#/program_statistics/157/bytes_per_op/median"
-          },
-          {
-            "arm": "old-net10",
-            "value": 48,
-            "source": "../framework/results.json#/program_statistics/158/bytes_per_op/median"
-          },
-          {
-            "arm": "new-net10",
-            "value": 0,
-            "source": "../framework/results.json#/program_statistics/159/bytes_per_op/median"
-          },
-          {
-            "arm": "old-net11",
-            "value": 48,
-            "source": "../framework/results.json#/program_statistics/160/bytes_per_op/median"
-          },
-          {
-            "arm": "new-net11",
-            "value": 0,
-            "source": "../framework/results.json#/program_statistics/161/bytes_per_op/median"
-          }
-        ]
+      "values": [
+        {
+          "arm": "sdk10",
+          "value": 48,
+          "source": "../third-wave/results.json#/program_statistics/78/bytes_per_op/median"
+        },
+        {
+          "arm": "vmr-rc2-r2r",
+          "value": 0,
+          "source": "../third-wave/results.json#/program_statistics/80/bytes_per_op/median"
+        }
       ]
     },
     {
       "kernel": "FilterMap",
       "label": "Filtering and mapping",
       "length": 4,
-      "cohorts": [
-        [
-          {
-            "arm": "sdk10",
-            "value": 146,
-            "source": "../third-wave/results.json#/program_statistics/96/bytes_per_op/median"
-          },
-          {
-            "arm": "sdk11rc1",
-            "value": 146,
-            "source": "../third-wave/results.json#/program_statistics/97/bytes_per_op/median"
-          },
-          {
-            "arm": "vmr-rc2-r2r",
-            "value": 146,
-            "source": "../third-wave/results.json#/program_statistics/98/bytes_per_op/median"
-          }
-        ],
-        [
-          {
-            "arm": "old-framework",
-            "value": 146,
-            "source": "../framework/results.json#/program_statistics/192/bytes_per_op/median"
-          },
-          {
-            "arm": "new-framework",
-            "value": 146,
-            "source": "../framework/results.json#/program_statistics/193/bytes_per_op/median"
-          },
-          {
-            "arm": "old-net10",
-            "value": 146,
-            "source": "../framework/results.json#/program_statistics/194/bytes_per_op/median"
-          },
-          {
-            "arm": "new-net10",
-            "value": 146,
-            "source": "../framework/results.json#/program_statistics/195/bytes_per_op/median"
-          },
-          {
-            "arm": "old-net11",
-            "value": 146,
-            "source": "../framework/results.json#/program_statistics/196/bytes_per_op/median"
-          },
-          {
-            "arm": "new-net11",
-            "value": 146,
-            "source": "../framework/results.json#/program_statistics/197/bytes_per_op/median"
-          }
-        ]
+      "values": [
+        {
+          "arm": "sdk10",
+          "value": 146,
+          "source": "../third-wave/results.json#/program_statistics/96/bytes_per_op/median"
+        },
+        {
+          "arm": "vmr-rc2-r2r",
+          "value": 146,
+          "source": "../third-wave/results.json#/program_statistics/98/bytes_per_op/median"
+        }
       ]
     },
     {
       "kernel": "Escaping",
       "label": "Escaping callback control",
       "length": 4,
-      "cohorts": [
-        [
-          {
-            "arm": "sdk10",
-            "value": 24,
-            "source": "../third-wave/results.json#/program_statistics/114/bytes_per_op/median"
-          },
-          {
-            "arm": "sdk11rc1",
-            "value": 24,
-            "source": "../third-wave/results.json#/program_statistics/115/bytes_per_op/median"
-          },
-          {
-            "arm": "vmr-rc2-r2r",
-            "value": 24,
-            "source": "../third-wave/results.json#/program_statistics/116/bytes_per_op/median"
-          }
-        ],
-        [
-          {
-            "arm": "old-framework",
-            "value": 24,
-            "source": "../framework/results.json#/program_statistics/228/bytes_per_op/median"
-          },
-          {
-            "arm": "new-framework",
-            "value": 24,
-            "source": "../framework/results.json#/program_statistics/229/bytes_per_op/median"
-          },
-          {
-            "arm": "old-net10",
-            "value": 24,
-            "source": "../framework/results.json#/program_statistics/230/bytes_per_op/median"
-          },
-          {
-            "arm": "new-net10",
-            "value": 24,
-            "source": "../framework/results.json#/program_statistics/231/bytes_per_op/median"
-          },
-          {
-            "arm": "old-net11",
-            "value": 24,
-            "source": "../framework/results.json#/program_statistics/232/bytes_per_op/median"
-          },
-          {
-            "arm": "new-net11",
-            "value": 24,
-            "source": "../framework/results.json#/program_statistics/233/bytes_per_op/median"
-          }
-        ]
+      "values": [
+        {
+          "arm": "sdk10",
+          "value": 24,
+          "source": "../third-wave/results.json#/program_statistics/114/bytes_per_op/median"
+        },
+        {
+          "arm": "vmr-rc2-r2r",
+          "value": 24,
+          "source": "../third-wave/results.json#/program_statistics/116/bytes_per_op/median"
+        }
       ]
     },
     {
       "kernel": "NonCapturing",
       "label": "Non-capturing control",
       "length": 4,
-      "cohorts": [
-        [
-          {
-            "arm": "sdk10",
-            "value": 0,
-            "source": "../third-wave/results.json#/program_statistics/132/bytes_per_op/median"
-          },
-          {
-            "arm": "sdk11rc1",
-            "value": 0,
-            "source": "../third-wave/results.json#/program_statistics/133/bytes_per_op/median"
-          },
-          {
-            "arm": "vmr-rc2-r2r",
-            "value": 0,
-            "source": "../third-wave/results.json#/program_statistics/134/bytes_per_op/median"
-          }
-        ],
-        [
-          {
-            "arm": "old-framework",
-            "value": 0,
-            "source": "../framework/results.json#/program_statistics/264/bytes_per_op/median"
-          },
-          {
-            "arm": "new-framework",
-            "value": 0,
-            "source": "../framework/results.json#/program_statistics/265/bytes_per_op/median"
-          },
-          {
-            "arm": "old-net10",
-            "value": 0,
-            "source": "../framework/results.json#/program_statistics/266/bytes_per_op/median"
-          },
-          {
-            "arm": "new-net10",
-            "value": 0,
-            "source": "../framework/results.json#/program_statistics/267/bytes_per_op/median"
-          },
-          {
-            "arm": "old-net11",
-            "value": 0,
-            "source": "../framework/results.json#/program_statistics/268/bytes_per_op/median"
-          },
-          {
-            "arm": "new-net11",
-            "value": 0,
-            "source": "../framework/results.json#/program_statistics/269/bytes_per_op/median"
-          }
-        ]
+      "values": [
+        {
+          "arm": "sdk10",
+          "value": 0,
+          "source": "../third-wave/results.json#/program_statistics/132/bytes_per_op/median"
+        },
+        {
+          "arm": "vmr-rc2-r2r",
+          "value": 0,
+          "source": "../third-wave/results.json#/program_statistics/134/bytes_per_op/median"
+        }
       ]
     }
   ],
@@ -2440,57 +1355,746 @@
   ],
   "contributing_prs": [
     {
+      "number": "20090",
       "author": "auduchinok",
-      "mechanism": "Avoid eager metadata traversal and unnecessary tables or retention",
-      "prs": [
-        20090,
-        20092,
-        20249,
-        20250
-      ]
+      "title": "Import: Don't walk non-F# assemblies when labelling trait constraint sources",
+      "merged_at": "2026-08-12T08:30:10Z",
+      "url": "https://github.com/dotnet/fsharp/pull/20090",
+      "merge_commit": "623d80dc2655d64c865ae7458110f8095dd47dfe",
+      "category": "metadata-and-ide-memory",
+      "rc1_source_status": "ancestor",
+      "rc1_source_commit": "c251d06dc38db89fa6df30b0b17a233e0ffe403d",
+      "attribution": "aggregate payload comparison; no per-PR causal estimate",
+      "rc2_source_status": "ancestor",
+      "rc2_source_commit": "9cd6167a7265ce7264b22719503b7dfa9eb8f83c",
+      "experimental_merge_target": null
     },
     {
+      "number": "20088",
       "author": "auduchinok",
-      "mechanism": "Share calling conventions, type references and pickled references",
-      "prs": [
-        20254,
-        20259,
-        20301
-      ]
+      "title": "Avoid per-instance lock object in InterruptibleLazy and DelayInitArrayMap",
+      "merged_at": "2026-08-12T12:03:33Z",
+      "url": "https://github.com/dotnet/fsharp/pull/20088",
+      "merge_commit": "29718dd942497eb4e0753777e8a8e104c9abf6e3",
+      "category": "metadata-and-ide-memory",
+      "rc1_source_status": "ancestor",
+      "rc1_source_commit": "c251d06dc38db89fa6df30b0b17a233e0ffe403d",
+      "attribution": "aggregate payload comparison; no per-PR causal estimate",
+      "rc2_source_status": "ancestor",
+      "rc2_source_commit": "9cd6167a7265ce7264b22719503b7dfa9eb8f83c",
+      "experimental_merge_target": null
     },
     {
+      "number": "20092",
       "author": "auduchinok",
-      "mechanism": "Share imported assemblies across projects and prevent repeated background work",
-      "prs": [
-        20296,
-        20481
-      ]
+      "title": "IL: add ILPreNamespace, make ILPreTypeDef creation lazy",
+      "merged_at": "2026-08-12T19:39:07Z",
+      "url": "https://github.com/dotnet/fsharp/pull/20092",
+      "merge_commit": "d3fab443a1cde90f68d9a272e7e776959936a84c",
+      "category": "metadata-and-ide-memory",
+      "rc1_source_status": "ancestor",
+      "rc1_source_commit": "c251d06dc38db89fa6df30b0b17a233e0ffe403d",
+      "attribution": "aggregate payload comparison; no per-PR causal estimate",
+      "rc2_source_status": "ancestor",
+      "rc2_source_commit": "9cd6167a7265ce7264b22719503b7dfa9eb8f83c",
+      "experimental_merge_target": null
     },
     {
-      "author": "T-Gro",
-      "mechanism": "Reduce hot-path and optimizer allocation, including constraint-solver and stack-guard closures",
-      "prs": [
-        20348,
-        20363,
-        20367,
-        20368
-      ]
+      "number": "20250",
+      "author": "auduchinok",
+      "title": "IL: fix leaking binary view",
+      "merged_at": "2026-08-13T13:42:49Z",
+      "url": "https://github.com/dotnet/fsharp/pull/20250",
+      "merge_commit": "6ac056a5ee3d3dc2ff11b83b2ee09c4e6eacfdd8",
+      "category": "metadata-and-ide-memory",
+      "rc1_source_status": "ancestor",
+      "rc1_source_commit": "c251d06dc38db89fa6df30b0b17a233e0ffe403d",
+      "attribution": "aggregate payload comparison; no per-PR causal estimate",
+      "rc2_source_status": "ancestor",
+      "rc2_source_commit": "9cd6167a7265ce7264b22719503b7dfa9eb8f83c",
+      "experimental_merge_target": null
     },
     {
-      "author": "T-Gro",
-      "mechanism": "Inline higher-order List/Array functions and eliminate partial-application closures",
-      "prs": [
-        20422,
-        20487
-      ]
+      "number": "20249",
+      "author": "auduchinok",
+      "title": "IL: use empty tables for members when possible",
+      "merged_at": "2026-08-13T15:20:36Z",
+      "url": "https://github.com/dotnet/fsharp/pull/20249",
+      "merge_commit": "e09605cdcf4e98fc1380a052b11694dcd8d747a7",
+      "category": "metadata-and-ide-memory",
+      "rc1_source_status": "ancestor",
+      "rc1_source_commit": "c251d06dc38db89fa6df30b0b17a233e0ffe403d",
+      "attribution": "aggregate payload comparison; no per-PR causal estimate",
+      "rc2_source_status": "ancestor",
+      "rc2_source_commit": "9cd6167a7265ce7264b22719503b7dfa9eb8f83c",
+      "experimental_merge_target": null
     },
     {
+      "number": "20254",
+      "author": "auduchinok",
+      "title": "IL: share ILCallingConv instances",
+      "merged_at": "2026-08-19T09:45:04Z",
+      "url": "https://github.com/dotnet/fsharp/pull/20254",
+      "merge_commit": "c01bfbd46e671721501c4d68db8f8576326cf815",
+      "category": "metadata-and-ide-memory",
+      "rc1_source_status": "ancestor",
+      "rc1_source_commit": "c251d06dc38db89fa6df30b0b17a233e0ffe403d",
+      "attribution": "aggregate payload comparison; no per-PR causal estimate",
+      "rc2_source_status": "ancestor",
+      "rc2_source_commit": "9cd6167a7265ce7264b22719503b7dfa9eb8f83c",
+      "experimental_merge_target": null
+    },
+    {
+      "number": "20256",
+      "author": "auduchinok",
+      "title": "IL: cache C# extension methods per CCU",
+      "merged_at": "2026-08-19T10:06:58Z",
+      "url": "https://github.com/dotnet/fsharp/pull/20256",
+      "merge_commit": "bc50d5e744eb1b8f7931d01cd06373f73c7abe19",
+      "category": "metadata-and-ide-memory",
+      "rc1_source_status": "ancestor",
+      "rc1_source_commit": "c251d06dc38db89fa6df30b0b17a233e0ffe403d",
+      "attribution": "aggregate payload comparison; no per-PR causal estimate",
+      "rc2_source_status": "ancestor",
+      "rc2_source_commit": "9cd6167a7265ce7264b22719503b7dfa9eb8f83c",
+      "experimental_merge_target": null
+    },
+    {
+      "number": "20244",
       "author": "T-Gro",
-      "mechanism": "Stabilize closure optimization for F# 11 and select net10.0 Core for SDK tools",
-      "prs": [
-        20571,
-        20555
-      ]
+      "title": "Fix super-linear compilation of guarded shared-or active-pattern matches",
+      "merged_at": "2026-08-19T13:04:20Z",
+      "url": "https://github.com/dotnet/fsharp/pull/20244",
+      "merge_commit": "6b77e6cc133f48fc90035d25d86adf37e7993556",
+      "category": "compilation-scaling",
+      "rc1_source_status": "ancestor",
+      "rc1_source_commit": "c251d06dc38db89fa6df30b0b17a233e0ffe403d",
+      "attribution": "aggregate payload comparison; no per-PR causal estimate",
+      "rc2_source_status": "ancestor",
+      "rc2_source_commit": "9cd6167a7265ce7264b22719503b7dfa9eb8f83c",
+      "experimental_merge_target": null
+    },
+    {
+      "number": "20286",
+      "author": "auduchinok",
+      "title": "Make Entity's adhoc members list lazy",
+      "merged_at": "2026-08-20T10:11:52Z",
+      "url": "https://github.com/dotnet/fsharp/pull/20286",
+      "merge_commit": "ca730a61887fefd5ddca0a9c85f60efed047d1fd",
+      "category": "metadata-and-ide-memory",
+      "rc1_source_status": "ancestor",
+      "rc1_source_commit": "c251d06dc38db89fa6df30b0b17a233e0ffe403d",
+      "attribution": "aggregate payload comparison; no per-PR causal estimate",
+      "rc2_source_status": "ancestor",
+      "rc2_source_commit": "9cd6167a7265ce7264b22719503b7dfa9eb8f83c",
+      "experimental_merge_target": null
+    },
+    {
+      "number": "20301",
+      "author": "auduchinok",
+      "title": "IL: share the pickled references",
+      "merged_at": "2026-08-24T12:01:51Z",
+      "url": "https://github.com/dotnet/fsharp/pull/20301",
+      "merge_commit": "c1427e73e18fe3b09fc52215cad7549197d40f8a",
+      "category": "metadata-and-ide-memory",
+      "rc1_source_status": "ancestor",
+      "rc1_source_commit": "c251d06dc38db89fa6df30b0b17a233e0ffe403d",
+      "attribution": "aggregate payload comparison; no per-PR causal estimate",
+      "rc2_source_status": "ancestor",
+      "rc2_source_commit": "9cd6167a7265ce7264b22719503b7dfa9eb8f83c",
+      "experimental_merge_target": null
+    },
+    {
+      "number": "20298",
+      "author": "auduchinok",
+      "title": "Name resolution: group C#-style extension members per 'open' and extended type",
+      "merged_at": "2026-08-24T12:04:29Z",
+      "url": "https://github.com/dotnet/fsharp/pull/20298",
+      "merge_commit": "e10046541df5ca4341e260dde9dd44feadb6e732",
+      "category": "metadata-and-ide-memory",
+      "rc1_source_status": "ancestor",
+      "rc1_source_commit": "c251d06dc38db89fa6df30b0b17a233e0ffe403d",
+      "attribution": "aggregate payload comparison; no per-PR causal estimate",
+      "rc2_source_status": "ancestor",
+      "rc2_source_commit": "9cd6167a7265ce7264b22719503b7dfa9eb8f83c",
+      "experimental_merge_target": null
+    },
+    {
+      "number": "20259",
+      "author": "auduchinok",
+      "title": "IL: cache the ILTypeRef of a type def",
+      "merged_at": "2026-08-24T14:46:42Z",
+      "url": "https://github.com/dotnet/fsharp/pull/20259",
+      "merge_commit": "d8be66a022bb7a762daea3bd1bdab2468cf8795f",
+      "category": "metadata-and-ide-memory",
+      "rc1_source_status": "ancestor",
+      "rc1_source_commit": "c251d06dc38db89fa6df30b0b17a233e0ffe403d",
+      "attribution": "aggregate payload comparison; no per-PR causal estimate",
+      "rc2_source_status": "ancestor",
+      "rc2_source_commit": "9cd6167a7265ce7264b22719503b7dfa9eb8f83c",
+      "experimental_merge_target": null
+    },
+    {
+      "number": "20285",
+      "author": "auduchinok",
+      "title": "Calculate Entity.PublicPath instead of storing",
+      "merged_at": "2026-08-26T14:01:05Z",
+      "url": "https://github.com/dotnet/fsharp/pull/20285",
+      "merge_commit": "a04f7d66f6dff99e8a4ecc019a292c1449e68801",
+      "category": "metadata-and-ide-memory",
+      "rc1_source_status": "not-ancestor",
+      "rc1_source_commit": "c251d06dc38db89fa6df30b0b17a233e0ffe403d",
+      "attribution": "aggregate payload comparison; no per-PR causal estimate",
+      "rc2_source_status": "ancestor",
+      "rc2_source_commit": "9cd6167a7265ce7264b22719503b7dfa9eb8f83c",
+      "experimental_merge_target": null
+    },
+    {
+      "number": "20337",
+      "author": "T-Gro",
+      "title": "Replace the stringified pattern-match memo key with a typed one",
+      "merged_at": "2026-08-26T15:19:13Z",
+      "url": "https://github.com/dotnet/fsharp/pull/20337",
+      "merge_commit": "3402e3cbf9274ae779358dafb4bde2361e1489a6",
+      "category": "compiler-allocation-and-work",
+      "rc1_source_status": "not-ancestor",
+      "rc1_source_commit": "c251d06dc38db89fa6df30b0b17a233e0ffe403d",
+      "attribution": "aggregate payload comparison; no per-PR causal estimate",
+      "rc2_source_status": "ancestor",
+      "rc2_source_commit": "9cd6167a7265ce7264b22719503b7dfa9eb8f83c",
+      "experimental_merge_target": null
+    },
+    {
+      "number": "20255",
+      "author": "auduchinok",
+      "title": "IL: reuse the cached ILTypeRef in ILTypeInfo.FromType",
+      "merged_at": "2026-08-27T09:07:34Z",
+      "url": "https://github.com/dotnet/fsharp/pull/20255",
+      "merge_commit": "57375f68ee74696200c1da5e8063f89c2ee7a561",
+      "category": "metadata-and-ide-memory",
+      "rc1_source_status": "not-ancestor",
+      "rc1_source_commit": "c251d06dc38db89fa6df30b0b17a233e0ffe403d",
+      "attribution": "aggregate payload comparison; no per-PR causal estimate",
+      "rc2_source_status": "ancestor",
+      "rc2_source_commit": "9cd6167a7265ce7264b22719503b7dfa9eb8f83c",
+      "experimental_merge_target": null
+    },
+    {
+      "number": "20364",
+      "author": "auduchinok",
+      "title": "Unpickling: share one EntityRef per non-local reference row",
+      "merged_at": "2026-08-27T13:01:20Z",
+      "url": "https://github.com/dotnet/fsharp/pull/20364",
+      "merge_commit": "ef4f617829a82251e3472d37160181504949b7e7",
+      "category": "metadata-and-ide-memory",
+      "rc1_source_status": "not-ancestor",
+      "rc1_source_commit": "c251d06dc38db89fa6df30b0b17a233e0ffe403d",
+      "attribution": "aggregate payload comparison; no per-PR causal estimate",
+      "rc2_source_status": "ancestor",
+      "rc2_source_commit": "9cd6167a7265ce7264b22719503b7dfa9eb8f83c",
+      "experimental_merge_target": null
+    },
+    {
+      "number": "20296",
+      "author": "auduchinok",
+      "title": "Import: share assembly CCUs between projects",
+      "merged_at": "2026-08-27T22:19:12Z",
+      "url": "https://github.com/dotnet/fsharp/pull/20296",
+      "merge_commit": "e631ed7f4f210cb3dade65b1d6341bb7106e51bb",
+      "category": "metadata-and-ide-memory",
+      "rc1_source_status": "not-ancestor",
+      "rc1_source_commit": "c251d06dc38db89fa6df30b0b17a233e0ffe403d",
+      "attribution": "aggregate payload comparison; no per-PR causal estimate",
+      "rc2_source_status": "ancestor",
+      "rc2_source_commit": "9cd6167a7265ce7264b22719503b7dfa9eb8f83c",
+      "experimental_merge_target": null
+    },
+    {
+      "number": "20348",
+      "author": "T-Gro",
+      "title": "[MicroPerf] Four profiler-guided hot-path wins from self-build tracing",
+      "merged_at": "2026-08-28T13:45:06Z",
+      "url": "https://github.com/dotnet/fsharp/pull/20348",
+      "merge_commit": "7ea5992e9e104ff6b44a8c96c9cb9284e5e3df33",
+      "category": "compiler-allocation-and-work",
+      "rc1_source_status": "not-ancestor",
+      "rc1_source_commit": "c251d06dc38db89fa6df30b0b17a233e0ffe403d",
+      "attribution": "aggregate payload comparison; no per-PR causal estimate",
+      "rc2_source_status": "ancestor",
+      "rc2_source_commit": "9cd6167a7265ce7264b22719503b7dfa9eb8f83c",
+      "experimental_merge_target": null
+    },
+    {
+      "number": "20350",
+      "author": "T-Gro",
+      "title": "[MicroPerf] Avoid Choice allocation in fslib entity/val-ref equality",
+      "merged_at": "2026-08-28T14:23:09Z",
+      "url": "https://github.com/dotnet/fsharp/pull/20350",
+      "merge_commit": "a0656d10e1bcf88cc45d23f1083116b15567302f",
+      "category": "compiler-allocation-and-work",
+      "rc1_source_status": "not-ancestor",
+      "rc1_source_commit": "c251d06dc38db89fa6df30b0b17a233e0ffe403d",
+      "attribution": "aggregate payload comparison; no per-PR causal estimate",
+      "rc2_source_status": "ancestor",
+      "rc2_source_commit": "9cd6167a7265ce7264b22719503b7dfa9eb8f83c",
+      "experimental_merge_target": null
+    },
+    {
+      "number": "20351",
+      "author": "T-Gro",
+      "title": "[MicroPerf] Reduce Detuple usage-analysis allocation with a mutable Dictionary",
+      "merged_at": "2026-08-28T15:01:16Z",
+      "url": "https://github.com/dotnet/fsharp/pull/20351",
+      "merge_commit": "199945ab34433a3ec257e35e1fd30577a89ae350",
+      "category": "compiler-allocation-and-work",
+      "rc1_source_status": "not-ancestor",
+      "rc1_source_commit": "c251d06dc38db89fa6df30b0b17a233e0ffe403d",
+      "attribution": "aggregate payload comparison; no per-PR causal estimate",
+      "rc2_source_status": "ancestor",
+      "rc2_source_commit": "9cd6167a7265ce7264b22719503b7dfa9eb8f83c",
+      "experimental_merge_target": null
+    },
+    {
+      "number": "20354",
+      "author": "T-Gro",
+      "title": "[MicroPerf] Avoid redundant FreeVars record allocation for local vals",
+      "merged_at": "2026-08-31T13:06:36Z",
+      "url": "https://github.com/dotnet/fsharp/pull/20354",
+      "merge_commit": "88f0bfb471bd133a69ebe7be55a33f7cab8f176d",
+      "category": "compiler-allocation-and-work",
+      "rc1_source_status": "not-ancestor",
+      "rc1_source_commit": "c251d06dc38db89fa6df30b0b17a233e0ffe403d",
+      "attribution": "aggregate payload comparison; no per-PR causal estimate",
+      "rc2_source_status": "ancestor",
+      "rc2_source_commit": "9cd6167a7265ce7264b22719503b7dfa9eb8f83c",
+      "experimental_merge_target": null
+    },
+    {
+      "number": "20363",
+      "author": "T-Gro",
+      "title": "[MicroPerf] Fuse the optimizer inlining copy + type-instantiation passes",
+      "merged_at": "2026-08-31T14:08:03Z",
+      "url": "https://github.com/dotnet/fsharp/pull/20363",
+      "merge_commit": "05ab847b5d220a924c9293090747f81f9417c7e5",
+      "category": "compiler-allocation-and-work",
+      "rc1_source_status": "not-ancestor",
+      "rc1_source_commit": "c251d06dc38db89fa6df30b0b17a233e0ffe403d",
+      "attribution": "aggregate payload comparison; no per-PR causal estimate",
+      "rc2_source_status": "ancestor",
+      "rc2_source_commit": "9cd6167a7265ce7264b22719503b7dfa9eb8f83c",
+      "experimental_merge_target": null
+    },
+    {
+      "number": "20367",
+      "author": "T-Gro",
+      "title": "[MicroPerf] Inline TryD to remove constraint-solver closure allocations",
+      "merged_at": "2026-08-31T15:19:21Z",
+      "url": "https://github.com/dotnet/fsharp/pull/20367",
+      "merge_commit": "d1baede4f8c19f6451f53d18e10667fad7968519",
+      "category": "compiler-allocation-and-work",
+      "rc1_source_status": "not-ancestor",
+      "rc1_source_commit": "c251d06dc38db89fa6df30b0b17a233e0ffe403d",
+      "attribution": "aggregate payload comparison; no per-PR causal estimate",
+      "rc2_source_status": "ancestor",
+      "rc2_source_commit": "9cd6167a7265ce7264b22719503b7dfa9eb8f83c",
+      "experimental_merge_target": null
+    },
+    {
+      "number": "20368",
+      "author": "T-Gro",
+      "title": "[MicroPerf] Perf: eliminate per-call closure in StackGuard.Guard via InlineIfLambda",
+      "merged_at": "2026-08-31T15:26:33Z",
+      "url": "https://github.com/dotnet/fsharp/pull/20368",
+      "merge_commit": "f3807850b346c5199aeacd0b84b072c0e88f7b9a",
+      "category": "compiler-allocation-and-work",
+      "rc1_source_status": "not-ancestor",
+      "rc1_source_commit": "c251d06dc38db89fa6df30b0b17a233e0ffe403d",
+      "attribution": "aggregate payload comparison; no per-PR causal estimate",
+      "rc2_source_status": "ancestor",
+      "rc2_source_commit": "9cd6167a7265ce7264b22719503b7dfa9eb8f83c",
+      "experimental_merge_target": null
+    },
+    {
+      "number": "20287",
+      "author": "auduchinok",
+      "title": "IL: hold custom attributes in fields rather than a union case",
+      "merged_at": "2026-09-01T09:01:28Z",
+      "url": "https://github.com/dotnet/fsharp/pull/20287",
+      "merge_commit": "06d75f36025cdd73b726feaebdbf6933af6d8176",
+      "category": "metadata-and-ide-memory",
+      "rc1_source_status": "not-ancestor",
+      "rc1_source_commit": "c251d06dc38db89fa6df30b0b17a233e0ffe403d",
+      "attribution": "aggregate payload comparison; no per-PR causal estimate",
+      "rc2_source_status": "ancestor",
+      "rc2_source_commit": "9cd6167a7265ce7264b22719503b7dfa9eb8f83c",
+      "experimental_merge_target": null
+    },
+    {
+      "number": "20353",
+      "author": "T-Gro",
+      "title": "[MicroPerf] Cache IL method parameter attributes during overload resolution",
+      "merged_at": "2026-09-04T13:04:10Z",
+      "url": "https://github.com/dotnet/fsharp/pull/20353",
+      "merge_commit": "2e832b3280988b98404e6ae49dea024a213869d9",
+      "category": "compiler-allocation-and-work",
+      "rc1_source_status": "not-ancestor",
+      "rc1_source_commit": "c251d06dc38db89fa6df30b0b17a233e0ffe403d",
+      "attribution": "aggregate payload comparison; no per-PR causal estimate",
+      "rc2_source_status": "ancestor",
+      "rc2_source_commit": "9cd6167a7265ce7264b22719503b7dfa9eb8f83c",
+      "experimental_merge_target": null
+    },
+    {
+      "number": "20384",
+      "author": "T-Gro",
+      "title": "[MicroPerf] Avoid per-call closure allocation in type-hierarchy traversal",
+      "merged_at": "2026-09-04T13:13:03Z",
+      "url": "https://github.com/dotnet/fsharp/pull/20384",
+      "merge_commit": "c031dc2e5c520e1f0ed2dd43f1707bbcdfbd5748",
+      "category": "compiler-allocation-and-work",
+      "rc1_source_status": "not-ancestor",
+      "rc1_source_commit": "c251d06dc38db89fa6df30b0b17a233e0ffe403d",
+      "attribution": "aggregate payload comparison; no per-PR causal estimate",
+      "rc2_source_status": "ancestor",
+      "rc2_source_commit": "9cd6167a7265ce7264b22719503b7dfa9eb8f83c",
+      "experimental_merge_target": null
+    },
+    {
+      "number": "20385",
+      "author": "T-Gro",
+      "title": "[MicroPerf] Inline the free-variable typar foldBacks",
+      "merged_at": "2026-09-08T08:37:27Z",
+      "url": "https://github.com/dotnet/fsharp/pull/20385",
+      "merge_commit": "40bdf2fe5ff029c8662d9c974a2296df1e608fed",
+      "category": "compiler-allocation-and-work",
+      "rc1_source_status": "not-ancestor",
+      "rc1_source_commit": "c251d06dc38db89fa6df30b0b17a233e0ffe403d",
+      "attribution": "aggregate payload comparison; no per-PR causal estimate",
+      "rc2_source_status": "ancestor",
+      "rc2_source_commit": "9cd6167a7265ce7264b22719503b7dfa9eb8f83c",
+      "experimental_merge_target": null
+    },
+    {
+      "number": "20447",
+      "author": "T-Gro",
+      "title": "[MicroPerf] Remove per-call closure allocations in post-inference checks",
+      "merged_at": "2026-09-09T07:47:57Z",
+      "url": "https://github.com/dotnet/fsharp/pull/20447",
+      "merge_commit": "f1db9154f5b1cb3980ffaeda7307a52974f85da5",
+      "category": "compiler-allocation-and-work",
+      "rc1_source_status": "not-ancestor",
+      "rc1_source_commit": "c251d06dc38db89fa6df30b0b17a233e0ffe403d",
+      "attribution": "aggregate payload comparison; no per-PR causal estimate",
+      "rc2_source_status": "ancestor",
+      "rc2_source_commit": "9cd6167a7265ce7264b22719503b7dfa9eb8f83c",
+      "experimental_merge_target": null
+    },
+    {
+      "number": "20423",
+      "author": "T-Gro",
+      "title": "[MicroPerf] Eliminate closure allocations in well-known-attribute queries",
+      "merged_at": "2026-09-09T09:42:18Z",
+      "url": "https://github.com/dotnet/fsharp/pull/20423",
+      "merge_commit": "2ef03e90ae1013c97ff74f0bba633f02b6ec7cf5",
+      "category": "compiler-allocation-and-work",
+      "rc1_source_status": "not-ancestor",
+      "rc1_source_commit": "c251d06dc38db89fa6df30b0b17a233e0ffe403d",
+      "attribution": "aggregate payload comparison; no per-PR causal estimate",
+      "rc2_source_status": "ancestor",
+      "rc2_source_commit": "9cd6167a7265ce7264b22719503b7dfa9eb8f83c",
+      "experimental_merge_target": null
+    },
+    {
+      "number": "20415",
+      "author": "T-Gro",
+      "title": "[MicroPerf] Make List.vMapFold inline to drop the nullness-import closure",
+      "merged_at": "2026-09-09T09:54:03Z",
+      "url": "https://github.com/dotnet/fsharp/pull/20415",
+      "merge_commit": "a258800e730e4931134b2162aa712a6dd84228f6",
+      "category": "compiler-allocation-and-work",
+      "rc1_source_status": "not-ancestor",
+      "rc1_source_commit": "c251d06dc38db89fa6df30b0b17a233e0ffe403d",
+      "attribution": "aggregate payload comparison; no per-PR causal estimate",
+      "rc2_source_status": "ancestor",
+      "rc2_source_commit": "9cd6167a7265ce7264b22719503b7dfa9eb8f83c",
+      "experimental_merge_target": null
+    },
+    {
+      "number": "20372",
+      "author": "T-Gro",
+      "title": "[MicroPerf] Eliminate closure allocations in List.mapq and List.lengthsEqAndForall2",
+      "merged_at": "2026-09-09T12:07:04Z",
+      "url": "https://github.com/dotnet/fsharp/pull/20372",
+      "merge_commit": "5622dd6d0cb0beb2e799cab4ed02191d94e71a95",
+      "category": "compiler-allocation-and-work",
+      "rc1_source_status": "not-ancestor",
+      "rc1_source_commit": "c251d06dc38db89fa6df30b0b17a233e0ffe403d",
+      "attribution": "aggregate payload comparison; no per-PR causal estimate",
+      "rc2_source_status": "ancestor",
+      "rc2_source_commit": "9cd6167a7265ce7264b22719503b7dfa9eb8f83c",
+      "experimental_merge_target": null
+    },
+    {
+      "number": "20349",
+      "author": "T-Gro",
+      "title": "[MicroPerf] Reverse instead of sort already-ordered branch fixups in IL writer",
+      "merged_at": "2026-09-09T12:47:48Z",
+      "url": "https://github.com/dotnet/fsharp/pull/20349",
+      "merge_commit": "a2806efaa99e0821a997371609161c115b660177",
+      "category": "compiler-allocation-and-work",
+      "rc1_source_status": "not-ancestor",
+      "rc1_source_commit": "c251d06dc38db89fa6df30b0b17a233e0ffe403d",
+      "attribution": "aggregate payload comparison; no per-PR causal estimate",
+      "rc2_source_status": "ancestor",
+      "rc2_source_commit": "9cd6167a7265ce7264b22719503b7dfa9eb8f83c",
+      "experimental_merge_target": null
+    },
+    {
+      "number": "20374",
+      "author": "T-Gro",
+      "title": "[MicroPerf] Inline the static-abstract interface-constraint predicate",
+      "merged_at": "2026-09-10T09:46:45Z",
+      "url": "https://github.com/dotnet/fsharp/pull/20374",
+      "merge_commit": "b5b6e16cf6d0d28ce553eddd7a0113852f6ba4b2",
+      "category": "compiler-allocation-and-work",
+      "rc1_source_status": "not-ancestor",
+      "rc1_source_commit": "c251d06dc38db89fa6df30b0b17a233e0ffe403d",
+      "attribution": "aggregate payload comparison; no per-PR causal estimate",
+      "rc2_source_status": "ancestor",
+      "rc2_source_commit": "9cd6167a7265ce7264b22719503b7dfa9eb8f83c",
+      "experimental_merge_target": null
+    },
+    {
+      "number": "20437",
+      "author": "T-Gro",
+      "title": "[MicroPerf] Drop the per-call closure in generic type-argument codegen",
+      "merged_at": "2026-09-10T11:02:07Z",
+      "url": "https://github.com/dotnet/fsharp/pull/20437",
+      "merge_commit": "4b08cef9926d782642514face26bda1de62f7525",
+      "category": "compiler-allocation-and-work",
+      "rc1_source_status": "not-ancestor",
+      "rc1_source_commit": "c251d06dc38db89fa6df30b0b17a233e0ffe403d",
+      "attribution": "aggregate payload comparison; no per-PR causal estimate",
+      "rc2_source_status": "ancestor",
+      "rc2_source_commit": "9cd6167a7265ce7264b22719503b7dfa9eb8f83c",
+      "experimental_merge_target": null
+    },
+    {
+      "number": "20421",
+      "author": "T-Gro",
+      "title": "[MicroPerf] Drop accessibility and attribute-scan closures via ListInline",
+      "merged_at": "2026-09-10T11:03:19Z",
+      "url": "https://github.com/dotnet/fsharp/pull/20421",
+      "merge_commit": "b69ba083d531bdfb09594dca85a011ccc780815f",
+      "category": "compiler-allocation-and-work",
+      "rc1_source_status": "not-ancestor",
+      "rc1_source_commit": "c251d06dc38db89fa6df30b0b17a233e0ffe403d",
+      "attribution": "aggregate payload comparison; no per-PR causal estimate",
+      "rc2_source_status": "ancestor",
+      "rc2_source_commit": "9cd6167a7265ce7264b22719503b7dfa9eb8f83c",
+      "experimental_merge_target": null
+    },
+    {
+      "number": "20426",
+      "author": "T-Gro",
+      "title": "Avoid per-call FSharpFunc closure in remapVal member-info remap",
+      "merged_at": "2026-09-10T14:45:57Z",
+      "url": "https://github.com/dotnet/fsharp/pull/20426",
+      "merge_commit": "7ad874a23f007e5209787f87f2bbf59acfb7875c",
+      "category": "compiler-allocation-and-work",
+      "rc1_source_status": "not-ancestor",
+      "rc1_source_commit": "c251d06dc38db89fa6df30b0b17a233e0ffe403d",
+      "attribution": "aggregate payload comparison; no per-PR causal estimate",
+      "rc2_source_status": "ancestor",
+      "rc2_source_commit": "9cd6167a7265ce7264b22719503b7dfa9eb8f83c",
+      "experimental_merge_target": null
+    },
+    {
+      "number": "20487",
+      "author": "T-Gro",
+      "title": "Eliminate per-call closure for InlineIfLambda partial applications",
+      "merged_at": "2026-09-11T14:22:33Z",
+      "url": "https://github.com/dotnet/fsharp/pull/20487",
+      "merge_commit": "17f8eb7d0691d30d6fc0dbcc7977ac15f9e7d5d2",
+      "category": "generated-program-allocation",
+      "rc1_source_status": "not-ancestor",
+      "rc1_source_commit": "c251d06dc38db89fa6df30b0b17a233e0ffe403d",
+      "attribution": "aggregate payload comparison; no per-PR causal estimate",
+      "rc2_source_status": "ancestor",
+      "rc2_source_commit": "9cd6167a7265ce7264b22719503b7dfa9eb8f83c",
+      "experimental_merge_target": null
+    },
+    {
+      "number": "20422",
+      "author": "T-Gro",
+      "title": "Inline List/Array higher-order functions and adapt opaque callbacks",
+      "merged_at": "2026-09-16T09:16:57Z",
+      "url": "https://github.com/dotnet/fsharp/pull/20422",
+      "merge_commit": "ec437d5ac2f03c27eb3b4a9ec14fb829570baadf",
+      "category": "generated-program-allocation",
+      "rc1_source_status": "not-ancestor",
+      "rc1_source_commit": "c251d06dc38db89fa6df30b0b17a233e0ffe403d",
+      "attribution": "aggregate payload comparison; no per-PR causal estimate",
+      "rc2_source_status": "ancestor",
+      "rc2_source_commit": "9cd6167a7265ce7264b22719503b7dfa9eb8f83c",
+      "experimental_merge_target": null
+    },
+    {
+      "number": "20388",
+      "author": "T-Gro",
+      "title": "Share the empty-array singleton for zero-length Array results",
+      "merged_at": "2026-09-16T19:19:58Z",
+      "url": "https://github.com/dotnet/fsharp/pull/20388",
+      "merge_commit": "1636ef4b86d8197a5ee57a4edc2d37ca366cd140",
+      "category": "generated-program-allocation",
+      "rc1_source_status": "not-ancestor",
+      "rc1_source_commit": "c251d06dc38db89fa6df30b0b17a233e0ffe403d",
+      "attribution": "aggregate payload comparison; no per-PR causal estimate",
+      "rc2_source_status": "ancestor",
+      "rc2_source_commit": "9cd6167a7265ce7264b22719503b7dfa9eb8f83c",
+      "experimental_merge_target": null
+    },
+    {
+      "number": "20490",
+      "author": "auduchinok",
+      "title": "Name resolution: CheckIWSAM only needs the intrinsic methods",
+      "merged_at": "2026-09-17T10:30:21Z",
+      "url": "https://github.com/dotnet/fsharp/pull/20490",
+      "merge_commit": "1a1d96a39fbd97929029bf1985708cc03aec000c",
+      "category": "metadata-and-ide-memory",
+      "rc1_source_status": "not-ancestor",
+      "rc1_source_commit": "c251d06dc38db89fa6df30b0b17a233e0ffe403d",
+      "attribution": "aggregate payload comparison; no per-PR causal estimate",
+      "rc2_source_status": "ancestor",
+      "rc2_source_commit": "9cd6167a7265ce7264b22719503b7dfa9eb8f83c",
+      "experimental_merge_target": null
+    },
+    {
+      "number": "20489",
+      "author": "auduchinok",
+      "title": "IL: map the short-lived metadata-only PE reader",
+      "merged_at": "2026-09-17T10:36:37Z",
+      "url": "https://github.com/dotnet/fsharp/pull/20489",
+      "merge_commit": "88200f18683f639ef82dfc2c4ad2dd8798259ed0",
+      "category": "metadata-and-ide-memory",
+      "rc1_source_status": "not-ancestor",
+      "rc1_source_commit": "c251d06dc38db89fa6df30b0b17a233e0ffe403d",
+      "attribution": "aggregate payload comparison; no per-PR causal estimate",
+      "rc2_source_status": "ancestor",
+      "rc2_source_commit": "9cd6167a7265ce7264b22719503b7dfa9eb8f83c",
+      "experimental_merge_target": null
+    },
+    {
+      "number": "20486",
+      "author": "auduchinok",
+      "title": "IL: intern the attributes and type references read from metadata",
+      "merged_at": "2026-09-17T10:43:02Z",
+      "url": "https://github.com/dotnet/fsharp/pull/20486",
+      "merge_commit": "0fbe44ab3a1a9012c86f190e42f53683ea04c18a",
+      "category": "metadata-and-ide-memory",
+      "rc1_source_status": "not-ancestor",
+      "rc1_source_commit": "c251d06dc38db89fa6df30b0b17a233e0ffe403d",
+      "attribution": "aggregate payload comparison; no per-PR causal estimate",
+      "rc2_source_status": "ancestor",
+      "rc2_source_commit": "9cd6167a7265ce7264b22719503b7dfa9eb8f83c",
+      "experimental_merge_target": null
+    },
+    {
+      "number": "20481",
+      "author": "auduchinok",
+      "title": "FCS: fix races that made the background builder repeat work",
+      "merged_at": "2026-09-17T10:46:39Z",
+      "url": "https://github.com/dotnet/fsharp/pull/20481",
+      "merge_commit": "7d9d12229eaaed1f9e4a3255ceed40f39c34a252",
+      "category": "metadata-and-ide-memory",
+      "rc1_source_status": "not-ancestor",
+      "rc1_source_commit": "c251d06dc38db89fa6df30b0b17a233e0ffe403d",
+      "attribution": "aggregate payload comparison; no per-PR causal estimate",
+      "rc2_source_status": "ancestor",
+      "rc2_source_commit": "9cd6167a7265ce7264b22719503b7dfa9eb8f83c",
+      "experimental_merge_target": null
+    },
+    {
+      "number": "20494",
+      "author": "auduchinok",
+      "title": "Typed tree: create a type's augmentation on first use",
+      "merged_at": "2026-09-17T10:47:57Z",
+      "url": "https://github.com/dotnet/fsharp/pull/20494",
+      "merge_commit": "f4c72052edeec906a6a28d2cd6995ae5691df2a7",
+      "category": "metadata-and-ide-memory",
+      "rc1_source_status": "not-ancestor",
+      "rc1_source_commit": "c251d06dc38db89fa6df30b0b17a233e0ffe403d",
+      "attribution": "aggregate payload comparison; no per-PR causal estimate",
+      "rc2_source_status": "ancestor",
+      "rc2_source_commit": "9cd6167a7265ce7264b22719503b7dfa9eb8f83c",
+      "experimental_merge_target": null
+    },
+    {
+      "number": "20261",
+      "author": "auduchinok",
+      "title": "IL: fix the per-reader string cache sizing",
+      "merged_at": "2026-09-17T10:48:14Z",
+      "url": "https://github.com/dotnet/fsharp/pull/20261",
+      "merge_commit": "eb0f1377488bc860f3533516a93991f6f192fc5d",
+      "category": "metadata-and-ide-memory",
+      "rc1_source_status": "not-ancestor",
+      "rc1_source_commit": "c251d06dc38db89fa6df30b0b17a233e0ffe403d",
+      "attribution": "aggregate payload comparison; no per-PR causal estimate",
+      "rc2_source_status": "ancestor",
+      "rc2_source_commit": "9cd6167a7265ce7264b22719503b7dfa9eb8f83c",
+      "experimental_merge_target": null
+    },
+    {
+      "number": "20571",
+      "author": "T-Gro",
+      "title": "Stabilize OptimizeClosureIfNotInlined for F# 11",
+      "merged_at": "2026-09-18T12:36:51Z",
+      "url": "https://github.com/dotnet/fsharp/pull/20571",
+      "merge_commit": "52e9cea2b22bae1bba7e94b88c8d9409e0b888e4",
+      "category": "supporting",
+      "rc1_source_status": "not-ancestor",
+      "rc1_source_commit": "c251d06dc38db89fa6df30b0b17a233e0ffe403d",
+      "attribution": "aggregate payload comparison; no per-PR causal estimate",
+      "rc2_source_status": "ancestor",
+      "rc2_source_commit": "9cd6167a7265ce7264b22719503b7dfa9eb8f83c",
+      "experimental_merge_target": null
+    },
+    {
+      "number": "20555",
+      "author": "T-Gro",
+      "title": "Ship net10.0 FSharp.Core with the SDK tools",
+      "merged_at": "2026-09-18T12:36:57Z",
+      "url": "https://github.com/dotnet/fsharp/pull/20555",
+      "merge_commit": "a17252bbc3e28d52a4a326757c9d5bc913cfd553",
+      "category": "supporting",
+      "rc1_source_status": "not-ancestor",
+      "rc1_source_commit": "c251d06dc38db89fa6df30b0b17a233e0ffe403d",
+      "attribution": "aggregate payload comparison; no per-PR causal estimate",
+      "rc2_source_status": "ancestor",
+      "rc2_source_commit": "9cd6167a7265ce7264b22719503b7dfa9eb8f83c",
+      "experimental_merge_target": null
+    },
+    {
+      "number": "20506",
+      "author": "T-Gro",
+      "title": "Support multithreaded MSBuild in F# build tasks",
+      "merged_at": "2026-09-21T07:18:45Z",
+      "url": "https://github.com/dotnet/fsharp/pull/20506",
+      "merge_commit": "9f99ef07871a30b9aeb0b68f9c420c6f0b4f9a5c",
+      "category": "supporting",
+      "rc1_source_status": "not-ancestor",
+      "rc1_source_commit": "c251d06dc38db89fa6df30b0b17a233e0ffe403d",
+      "attribution": "aggregate payload comparison; no per-PR causal estimate",
+      "rc2_source_status": "ancestor",
+      "rc2_source_commit": "9cd6167a7265ce7264b22719503b7dfa9eb8f83c",
+      "experimental_merge_target": null
     }
-  ]
+  ],
+  "contribution_window": {
+    "start": "2026-08-12T08:30:10Z",
+    "end": "2026-09-21T07:18:45Z",
+    "count": 49,
+    "in_rc1": 12,
+    "after_rc1": 37
+  }
 }
