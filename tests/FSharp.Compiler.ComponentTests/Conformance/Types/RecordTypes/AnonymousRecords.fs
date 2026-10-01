@@ -9,6 +9,13 @@ module AnonymousRecord =
 
     let private structnessMismatch = "One anonymous record type is a struct, the other is a reference type"
 
+    let private checkArgumentMismatch parameterType value message =
+        Fsx $"let consume (x: {parameterType}) = ()\nlet value = {value}\nconsume value"
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 1
+        |> withMessage message
+
     [<Fact>]
     let ``Issue 6110 - mismatch original argument`` () =
         Fsx """
@@ -26,11 +33,7 @@ test struct {| IntVal=12 |}
     [<InlineData("struct {| A: int; B: string; C: bool |}", "{| B = \"b\"; C = true; A = 1 |}")>]
     [<InlineData("{| Inner: {| Value: int |} |}", "{| Inner = struct {| Value = 1 |} |}")>]
     let ``Issue 6110 - mismatch pre-bound argument`` parameterType value =
-        Fsx $"let consume (x: {parameterType}) = ()\nlet value = {value}\nconsume value"
-        |> typecheck
-        |> shouldFail
-        |> withErrorCode 1
-        |> withMessage structnessMismatch
+        checkArgumentMismatch parameterType value structnessMismatch
 
     [<Theory>]
     [<InlineData("let value = struct {| IntVal = 12 |}\nlet annotated: {| IntVal: int |} = value")>]
@@ -106,11 +109,7 @@ let converted: {targetKind} {{| IntVal: int |}} = {targetKind} {{| value with In
     [<InlineData("(int * int)", "struct (1, 2)")>]
     [<InlineData("struct (int * int)", "(1, 2)")>]
     let ``Issue 6110 - control tuple mismatch`` parameterType value =
-        Fsx $"let consume (x: {parameterType}) = ()\nlet value = {value}\nconsume value"
-        |> typecheck
-        |> shouldFail
-        |> withErrorCode 1
-        |> withMessage "One tuple type is a struct tuple, the other is a reference tuple"
+        checkArgumentMismatch parameterType value "One tuple type is a struct tuple, the other is a reference tuple"
 
     [<Fact>]
     let ``Issue 6110 - control field type mismatch`` () =
