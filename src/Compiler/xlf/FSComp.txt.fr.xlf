@@ -532,11 +532,6 @@
         <target state="new">calls to 'reraise' in a computation expression handler</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureResumableStateMachines">
-        <source>resumable state machines</source>
-        <target state="translated">ordinateurs d’état pouvant être repris</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureReturnFromFinal">
         <source>Support for ReturnFromFinal/YieldFromFinal in computation expressions to enable tailcall optimization when available on the builder.</source>
         <target state="new">Support for ReturnFromFinal/YieldFromFinal in computation expressions to enable tailcall optimization when available on the builder.</target>
@@ -1602,11 +1597,6 @@
         <target state="translated">Plusieurs correspondances de types ont été trouvées :\n{0}\nLe type « {1} » a été utilisé. En raison des noms de champs qui se chevauchent\n{2}\nenvisagez d'utiliser des annotations de type ou de modifier l'ordre des instructions ouvertes.</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcNoEagerConstraintApplicationAttribute">
-        <source>Using methods with 'NoEagerConstraintApplicationAttribute' requires /langversion:6.0 or later</source>
-        <target state="translated">L’utilisation de méthodes avec « NoEagerConstraintApplicationAttribute » requiert/langversion:6.0 ou ultérieur</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcNoStaticMemberFoundForOverride">
         <source>No static abstract member was found that corresponds to this override</source>
         <target state="translated">Désolé, nous n’avons pas pu trouver un membre abstrait statique qui corresponde à cette substitution</target>
@@ -1775,11 +1765,6 @@
       <trans-unit id="tcResumableCodeInvocation">
         <source>Resumable code invocation. Suppress this warning if you are defining new low-level resumable code in terms of existing resumable code.</source>
         <target state="translated">Appel de code pouvant être repris. Supprimez cet avertissement si vous définissez un nouveau code pouvant être repris de bas niveau en termes de code pouvant être repris existant.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcResumableCodeNotSupported">
-        <source>Using resumable code or resumable state machines requires /langversion:preview</source>
-        <target state="translated">L’utilisation de code pouvant être repris ou de machines d’état pouvant être reprises nécessite /langversion:preview</target>
         <note />
       </trans-unit>
       <trans-unit id="tcSetterForInitOnlyPropertyCannotBeCalled1">

@@ -532,11 +532,6 @@
         <target state="new">calls to 'reraise' in a computation expression handler</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureResumableStateMachines">
-        <source>resumable state machines</source>
-        <target state="translated">obnovitelné stavové stroje</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureReturnFromFinal">
         <source>Support for ReturnFromFinal/YieldFromFinal in computation expressions to enable tailcall optimization when available on the builder.</source>
         <target state="new">Support for ReturnFromFinal/YieldFromFinal in computation expressions to enable tailcall optimization when available on the builder.</target>
@@ -1602,11 +1597,6 @@
         <target state="translated">Bylo nalezeno více shod typů:\n{0}\nTyp „{1}“ byl použit. Vzhledem k překrývajícím se názvům polí\n{2}\nzvažte použití poznámek typu nebo změňte pořadí otevřených příkazů.</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcNoEagerConstraintApplicationAttribute">
-        <source>Using methods with 'NoEagerConstraintApplicationAttribute' requires /langversion:6.0 or later</source>
-        <target state="translated">Použití metod s atributem NoEagerConstraintApplicationAttribute vyžaduje /langversion:6.0 nebo novější.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcNoStaticMemberFoundForOverride">
         <source>No static abstract member was found that corresponds to this override</source>
         <target state="translated">Nenašla se žádný statický abstraktní člen, který by odpovídal tomuto přepsání.</target>
@@ -1775,11 +1765,6 @@
       <trans-unit id="tcResumableCodeInvocation">
         <source>Resumable code invocation. Suppress this warning if you are defining new low-level resumable code in terms of existing resumable code.</source>
         <target state="translated">Vyvolání obnovitelného kódu. Toto upozornění potlačte, pokud definujete nový obnovitelný kód nižší úrovně v rámci existujícího obnovitelného kódu.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcResumableCodeNotSupported">
-        <source>Using resumable code or resumable state machines requires /langversion:preview</source>
-        <target state="translated">Použití obnovitelného kódu nebo obnovitelných stavových strojů vyžaduje /langversion:preview.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcSetterForInitOnlyPropertyCannotBeCalled1">
