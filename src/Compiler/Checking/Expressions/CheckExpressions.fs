@@ -5829,10 +5829,15 @@ and TcExprUndelayedNoType (cenv: cenv) env tpenv synExpr =
 ///   - string literal expressions (though the propagation is not essential in this case)
 ///
 and TcPropagatingExprLeafThenConvert (cenv: cenv) overallTy actualTy (env: TcEnv) (* canAdhoc *) m (f: unit -> Expr * UnscopedTyparEnv) =
-    UnifyOverallType cenv env m overallTy actualTy
-    let expr, tpenv = f ()
-    let expr2 = TcAdjustExprForTypeDirectedConversions cenv overallTy actualTy env m expr
-    expr2, tpenv
+    match overallTy with
+    | MustConvertTo _ ->
+        UnifyOverallType cenv env m overallTy actualTy
+        let expr, tpenv = f ()
+        let expr2 = TcAdjustExprForTypeDirectedConversions cenv overallTy actualTy env m expr
+        expr2, tpenv
+    | MustEqual reqdTy ->
+        UnifyTypes cenv env m reqdTy actualTy
+        f ()
 
 /// Process a leaf construct, for cases where we propagate the overall type eagerly in
 /// some cases. Then apply additional type-directed conversions.
