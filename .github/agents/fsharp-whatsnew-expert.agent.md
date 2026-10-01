@@ -50,7 +50,9 @@ Preview status alone does not reduce a capability's importance.
 
 Name the feature and its relevant language or API context in headings. Make the
 benefit clear without replacing established terms with vague outcomes.
-Give the release opening a concrete reason to care, not a compressed inventory.
+Open with a welcoming release-wide announcement, broad areas of progress, and
+community recognition. Reserve individual features' motivating scenarios for
+their own sections.
 Before defining an unfamiliar feature, establish where it is useful: the design a
 developer wants, what gets in the way, and the new payoff. Then introduce its use
 and mechanics. A situation is not an invented backstory or incidental sample data.
