@@ -301,3 +301,45 @@ let f_IWSAM_flex_StaticProperty(x: #IStaticProperty<'T>) =
 
         Assert.Contains("ModuleLibrary.g", renamedText)
         Assert.EndsWith(StaleSnapshot.unsavedEdit, renamedText)
+
+    [<Fact>]
+    let ``goto definition from a signature reaches the implementation its own target instance compiles`` () =
+        let project =
+            SyntheticProject.Create(
+                "MultiTarget",
+                { sourceFile "A" [] with
+                    Source = "#if NET\nlet onlyOnNet = 1\n#endif"
+                    SignatureFile = SignatureFile.Custom "#if NET\nval onlyOnNet: int\n#endif"
+                }
+            )
+
+        let struct (solution, instances) =
+            RoslynTestHelpers.CreateMultiTargetSolution(
+                project,
+                [
+                    { Defines = []; ExcludedFileIds = [] }
+                    {
+                        Defines = [ "NET" ]
+                        ExcludedFileIds = []
+                    }
+                ]
+            )
+
+        let netInstance = solution.GetProject(List.last instances)
+
+        let signature =
+            netInstance.Documents
+            |> Seq.find (fun document -> document.FilePath = project.GetSignatureFilePath "A")
+
+        let position =
+            signature.GetTextAsync(CancellationToken.None).Result.ToString().IndexOf("onlyOnNet", StringComparison.Ordinal)
+
+        let result =
+            GoToDefinition(FSharpMetadataAsSourceService()).FindDefinitionAtPosition(signature, position)
+            |> CancellableTask.runSynchronouslyWithoutCancellation
+
+        match result with
+        | ValueSome(FSharpGoToDefinitionResult.NavigableItem item, _) ->
+            Assert.Equal(project.GetFilePath "A", item.Document.FilePath)
+            Assert.Equal(netInstance.Id, item.Document.Project.Id)
+        | result -> failwith $"expected the implementation, got %A{result}"
