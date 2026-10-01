@@ -10,7 +10,6 @@ type LanguageFeature =
     | RuntimeAsync
     | WitnessPassing
     | AdditionalTypeDirectedConversions
-    | StringInterpolation
     | ExpandedMeasurables
     | NullnessChecking
     | UnionIsPropertiesVisible

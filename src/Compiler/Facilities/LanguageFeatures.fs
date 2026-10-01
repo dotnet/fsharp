@@ -20,7 +20,6 @@ type LanguageFeature =
     | RuntimeAsync
     | WitnessPassing
     | AdditionalTypeDirectedConversions
-    | StringInterpolation
     | ExpandedMeasurables
     | NullnessChecking
     | UnionIsPropertiesVisible
@@ -121,7 +120,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
             [
                 // F# 5.0
                 LanguageFeature.WitnessPassing, languageVersion50
-                LanguageFeature.StringInterpolation, languageVersion50
 
                 // F# 6.0
                 LanguageFeature.AdditionalTypeDirectedConversions, languageVersion60
@@ -295,7 +293,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
         | LanguageFeature.RuntimeAsync -> FSComp.SR.featureRuntimeAsync ()
         | LanguageFeature.WitnessPassing -> FSComp.SR.featureWitnessPassing ()
         | LanguageFeature.AdditionalTypeDirectedConversions -> FSComp.SR.featureAdditionalImplicitConversions ()
-        | LanguageFeature.StringInterpolation -> FSComp.SR.featureStringInterpolation ()
         | LanguageFeature.ExpandedMeasurables -> FSComp.SR.featureExpandedMeasurables ()
         | LanguageFeature.UnionIsPropertiesVisible -> FSComp.SR.featureUnionIsPropertiesVisible ()
         | LanguageFeature.AttributesToRightOfModuleKeyword -> FSComp.SR.featureAttributesToRightOfModuleKeyword ()
