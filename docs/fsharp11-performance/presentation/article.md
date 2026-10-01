@@ -99,7 +99,7 @@ For operations such as `List.fold` that otherwise allocate nothing, the closure 
 
 *List and array operations use four-element collections.*
 
-Four of these operations now allocate **nothing per call**. Recompile with the new compiler and FSharp.Core to bring these improvements to your own code.
+Recompile with the new compiler and FSharp.Core to bring these improvements to your own code.
 
 No campaign forces DATAS, GC budgets, tiering or PGO.
 
