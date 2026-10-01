@@ -102,12 +102,6 @@ type internal InlineRenameInfo
 
     let symbolDisplayName = symbolUse.Symbol.DisplayName
 
-    let recordTypeName =
-        match symbolUse.Symbol with
-        | :? FSharpEntity as entity when entity.IsFSharpRecord || entity.IsOpaque ->
-            ValueSome(FSharpKeywords.NormalizeIdentifierBackticks symbolDisplayName)
-        | _ -> ValueNone
-
     override _.CanRename = true
     override _.LocalizedErrorMessage = null
     override _.TriggerSpan = triggerSpan
@@ -157,62 +151,31 @@ type internal InlineRenameInfo
         cancellableTask {
             let! symbolUsesByDocumentId = symbolUses
 
+            // Roslyn's rename session commits only documents of the solution it started from, and the search can
+            // find a document through the workspace's newer solution: such a use cannot be part of this rename.
+            let solution = document.Project.Solution
+
             let! results =
                 seq {
                     for (KeyValue(documentId, symbolUses)) in symbolUsesByDocumentId do
+                        match solution.GetDocument documentId with
+                        | null -> ()
+                        | document ->
+                            yield
+                                cancellableTask {
+                                    let! cancellationToken = CancellableTask.getCancellationToken ()
+                                    let! sourceText = document.GetTextAsync(cancellationToken)
 
-                        cancellableTask {
-                            let! cancellationToken = CancellableTask.getCancellationToken ()
-                            let document = document.Project.Solution.GetDocument(documentId)
-                            let! sourceText = document.GetTextAsync(cancellationToken)
-
-                            let! recordOptions =
-                                match recordTypeName with
-                                | ValueSome name ->
-                                    cancellableTask {
-                                        let! defines, langVersion = document.GetFsharpParsingOptionsAsync(nameof (InlineRenameInfo))
-                                        return ValueSome(defines, langVersion, name)
-                                    }
-                                | ValueNone -> CancellableTask.singleton ValueNone
-
-                            let tryGetEditSpan (textSpan: TextSpan) =
-                                match recordOptions with
-                                | ValueSome(defines, langVersion, name) when not textSpan.IsEmpty ->
-                                    // Record construction/update references can describe expressions, not type-name tokens.
-                                    match
-                                        Tokenizer.getSymbolAtPosition (
-                                            document.Id,
-                                            sourceText,
-                                            textSpan.End - 1,
-                                            document.FilePath,
-                                            defines,
-                                            SymbolLookupKind.Greedy,
-                                            false,
-                                            false,
-                                            Some langVersion,
-                                            cancellationToken
-                                        )
-                                    with
-                                    | Some token when FSharpKeywords.NormalizeIdentifierBackticks token.Ident.idText = name ->
-                                        match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, token.Range) with
-                                        | ValueSome tokenSpan when tokenSpan.End = textSpan.End && tokenSpan.Start >= textSpan.Start ->
-                                            ValueSome tokenSpan
-                                        | _ -> ValueNone
-                                    | _ -> ValueNone
-                                | ValueSome _ -> ValueNone
-                                | ValueNone -> ValueSome textSpan
-
-                            return
-                                [|
-                                    for symbolUse in symbolUses do
-                                        match
-                                            Tokenizer.TryFSharpRangeToTextSpanForEditor(sourceText, symbolUse, symbolDisplayName)
-                                            |> ValueOption.bind tryGetEditSpan
-                                        with
-                                        | ValueSome textSpan -> yield FSharpInlineRenameLocation(document, textSpan)
-                                        | _ -> ()
-                                |]
-                        }
+                                    return
+                                        [|
+                                            for symbolUse in symbolUses do
+                                                match
+                                                    Tokenizer.TryFSharpRangeToTextSpanForEditor(sourceText, symbolUse, symbolDisplayName)
+                                                with
+                                                | ValueSome textSpan -> yield FSharpInlineRenameLocation(document, textSpan)
+                                                | ValueNone -> ()
+                                        |]
+                                }
                 }
                 |> CancellableTask.whenAll
 
