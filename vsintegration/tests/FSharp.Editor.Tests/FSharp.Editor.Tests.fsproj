@@ -34,6 +34,7 @@
     <Compile Include="TaskListServiceTests.fs" />
     <Compile Include="NavigateToSearchServiceTests.fs" />
     <Compile Include="NavigateToSearchWhileLoadingTests.fs" />
+    <Compile Include="NavigateToPersistentCacheTests.fs" />
     <Compile Include="CopilotContextProviderTests.fs" />
     <Compile Include="MultiTargetNavigateToSearchTests.fs" />
     <Compile Include="CodeFixes\CodeFixTestFramework.fs" />
