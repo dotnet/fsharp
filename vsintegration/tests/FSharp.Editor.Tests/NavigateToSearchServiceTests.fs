@@ -77,3 +77,23 @@ module HeyHo =
     let ``results carry the counts Navigate To sorts equal matches by`` () =
         let result = navigateToSearch "+>" |> Seq.find (fun i -> i.Name = "+>")
         Assert.Equal((2, 0), (result.ParameterCount, result.TypeParameterCount))
+
+    /// The text the results window highlights in a result's name.
+    let matchedTextOf pattern expected =
+        let result = navigateToSearch pattern |> Seq.find (fun i -> i.Name = expected)
+
+        [
+            for span in result.NameMatchSpans -> result.Name.Substring(span.Start, span.Length)
+        ]
+
+    [<Fact>]
+    let ``the highlighted spans are the camel case humps that matched`` () =
+        Assert.Equal<string list>([ "C"; "L"; "N" ], matchedTextOf "CLN" "CamelCaseLongName")
+
+    [<Fact>]
+    let ``the highlighted spans are offsets in the name, not in the candidate the matcher saw`` () =
+        Assert.Equal<string list>([ "Delta" ], matchedTextOf "Delta" "Delta")
+
+    [<Fact>]
+    let ``a backticked identifier highlights the matched substring`` () =
+        Assert.Equal<string list>([ "few" ], matchedTextOf "few" "a few words")
