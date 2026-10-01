@@ -203,6 +203,7 @@ type TestHostServices() =
 
 /// One Roslyn project instance of a multi-targeted F# project: its extra defines and the
 /// synthetic files left out of it, as VS does per target framework.
+[<Struct>]
 type TargetInstance =
     {
         Defines: string list
@@ -383,8 +384,8 @@ type RoslynTestHelpers private () =
         let projects =
             syntheticProject.GetAllProjects()
             |> Seq.distinctBy _.Name
-            |> Seq.map (fun project -> project, ProjectId.CreateNewId())
-            |> Seq.toList
+            |> Seq.map (fun project -> struct (project, ProjectId.CreateNewId()))
+            |> Seq.toArray
 
         let projectIds = dict [ for project, id in projects -> project.Name, id ]
 
@@ -414,10 +415,15 @@ type RoslynTestHelpers private () =
             project.GetProjectOptions checker
             |> RoslynTestHelpers.SetProjectOptions id solution
 
-        solution, checker
+        struct (solution, checker)
 
+    /// <summary>
     /// One Roslyn project per target instance, all sharing the .fsproj path and the document file
     /// paths, like the per-target-framework projects VS creates for a multi-targeted project.
+    /// </summary>
+    /// <param name="syntheticProject">The project every instance is made from; it must not depend on other projects.</param>
+    /// <param name="instances">One Roslyn project per entry: its extra defines and the synthetic files left out of it.</param>
+    /// <returns>The solution and the id of each instance's project, in the order of <paramref name="instances"/>.</returns>
     static member CreateMultiTargetSolution(syntheticProject: SyntheticProject, instances: TargetInstance list) =
         assert (syntheticProject.DependsOn = [])
 
@@ -430,13 +436,13 @@ type RoslynTestHelpers private () =
                 for instance in instances ->
                     let excludedPaths =
                         HashSet(
-                            [
+                            seq {
                                 for fileId in instance.ExcludedFileIds do
                                     syntheticProject.GetFilePath fileId
 
                                     if (syntheticProject.Find fileId).HasSignatureFile then
                                         syntheticProject.GetSignatureFilePath fileId
-                            ],
+                            },
                             StringComparer.OrdinalIgnoreCase
                         )
 
@@ -468,7 +474,7 @@ type RoslynTestHelpers private () =
                                 |]
                         }
 
-                    id, projectInfo, instanceOptions
+                    struct (id, projectInfo, instanceOptions)
             ]
 
         let solution =
@@ -477,7 +483,7 @@ type RoslynTestHelpers private () =
         for id, _, instanceOptions in instances do
             RoslynTestHelpers.SetProjectOptions id solution instanceOptions
 
-        solution, [ for id, _, _ in instances -> id ]
+        struct (solution, [ for id, _, _ in instances -> id ])
 
     static member GetFsDocument(code, ?customProjectOption: string, ?customEditorOptions) =
         let customProjectOptions =

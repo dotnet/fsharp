@@ -29,7 +29,7 @@ let private project =
         }
     )
 
-let private solution, instances =
+let struct (solution, instances) =
     RoslynTestHelpers.CreateMultiTargetSolution(
         project,
         [
