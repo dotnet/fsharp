@@ -1,6 +1,6 @@
 # Presentation reproduction
 
-Read [Performance improvements in the F# 11 compiler](article.md). The comparison is the released SDK 10.0.100 compiler versus source-built F# 11, with RC1 as an intermediate compiler data point. Three charts show compiler allocation, the old/new comparison on .NET Framework, and retained IDE managed heap. The application table uses one-line F# snippets, comparing old and new with four-element collections.
+Read [Performance improvements in the F# 11 compiler](article.md). The comparison is the released SDK 10.0.100 compiler versus source-built F# 11, with RC1 as an intermediate compiler data point. Three charts show compiler allocation, the old/new comparison on .NET Framework, and retained IDE managed heap. The application table uses short F# snippets, comparing old and new with four-element collections.
 
 Publish `article.md` and the three SVGs; keep the data and generation files as local working material. The article retains PR links but no supplementary-data links.
 

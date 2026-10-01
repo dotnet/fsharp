@@ -71,25 +71,29 @@ Editors and language servers pick up these gains by updating FCS.
 
 ## Fewer closure allocations in your F# code
 
-[Better inlining of List/Array functions](https://github.com/dotnet/fsharp/pull/20422) removes closure allocations from code like this:
+A **closure** combines a function with values from surrounding code, such as `discount`, which the compiler used to store in a new object for this fold.
+[Inlining](https://github.com/dotnet/fsharp/pull/20422) replaces a function call with its body, and `[<InlineIfLambda>]` tells the compiler to inline known lambda arguments too.
 
 ```fsharp
 let discountedTotal discount prices =
     prices |> List.fold (fun total price -> total + price * (100 - discount) / 100) 0
 ```
 
-The lambda captures `discount`, but no longer needs a closure allocation on each call. [Partially applied functions benefit too](https://github.com/dotnet/fsharp/pull/20487). Here are a few everyday F# operations compiled with old and new tooling:
+For operations such as `List.fold` that otherwise allocate nothing, the closure can be their entire allocation cost.
+`List.map` and other collection builders allocate a new collection anyway, so removing a closure usually saves a smaller share.
+
+[Partially applied functions benefit too](https://github.com/dotnet/fsharp/pull/20487).
 
 <!-- generated:programs -->
 | F# code (simplified) | Old B/op | New B/op |
 | --- | ---: | ---: |
 | `List.fold (fun s struct (p, q) -> s + p * q * (100 - d) / 100) 0 items` | 24 | 0 |
-| `let any = List.exists (fun x -> x > lo) xs in List.forall (fun x -> x < hi) xs && any` | 48 | 0 |
+| `let any = List.exists (fun x -> x > lo) xs`<br>`List.forall (fun x -> x < hi) xs && any` | 48 | 0 |
 | `Array.fold (fun s x -> s + x * k) 0 xs + Array.fold2 (fun s x w -> s + x * w * k) 0 xs ws` | 48 | 0 |
 | `Option.defaultValue 0 (Option.map (addOffset k) opt)` | 0 | 0 |
 | `List.fold (fun s xs -> s + List.fold (fun t x -> t + x * k) 0 xs) 0 groups` | 48 | 0 |
 | `List.sum (List.map (fun x -> x + k) (List.filter (fun x -> x > lo) xs))` | 146 | 146 |
-| `saved <- (fun x -> x + offset); saved n` | 24 | 24 |
+| `saved <- fun x -> x + offset`<br>`saved n` | 24 | 24 |
 | `List.fold (+) seed xs` | 0 | 0 |
 <!-- /generated:programs -->
 

@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "evidence_commit": "bc90ee6637fc9c7065da173bd36c8b06e2a8d6d4",
-  "generator_sha256_lf": "e7d1df5e769d62b803f4b408770d1882fd1f03882c7dcba8607948f5b3750993",
+  "generator_sha256_lf": "96a31c1e850904ed361195425fcb8bf377d29fda9077559632051716828be72c",
   "sources": [
     {
       "path": "../third-wave/results.json",
@@ -1068,7 +1068,7 @@
     {
       "kernel": "Rules",
       "label": "Access-rule exists / forall",
-      "code": "let any = List.exists (fun x -> x > lo) xs in List.forall (fun x -> x < hi) xs && any",
+      "code": "let any = List.exists (fun x -> x > lo) xs\nList.forall (fun x -> x < hi) xs && any",
       "length": 4,
       "values": [
         {
@@ -1158,7 +1158,7 @@
     {
       "kernel": "Escaping",
       "label": "Escaping closure",
-      "code": "saved <- (fun x -> x + offset); saved n",
+      "code": "saved <- fun x -> x + offset\nsaved n",
       "length": 4,
       "values": [
         {

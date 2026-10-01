@@ -38,7 +38,7 @@ const operations = [
     ['Cart', 'Cart-price List.fold',
         'List.fold (fun s struct (p, q) -> s + p * q * (100 - d) / 100) 0 items'],
     ['Rules', 'Access-rule exists / forall',
-        'let any = List.exists (fun x -> x > lo) xs in List.forall (fun x -> x < hi) xs && any'],
+        'let any = List.exists (fun x -> x > lo) xs\nList.forall (fun x -> x < hi) xs && any'],
     ['Telemetry', 'Weighted Array.fold / fold2',
         'Array.fold (fun s x -> s + x * k) 0 xs + Array.fold2 (fun s x w -> s + x * w * k) 0 xs ws'],
     ['Option', 'Partially applied Option.map',
@@ -47,7 +47,7 @@ const operations = [
         'List.fold (fun s xs -> s + List.fold (fun t x -> t + x * k) 0 xs) 0 groups'],
     ['FilterMap', 'Filtering and mapping',
         'List.sum (List.map (fun x -> x + k) (List.filter (fun x -> x > lo) xs))'],
-    ['Escaping', 'Escaping closure', 'saved <- (fun x -> x + offset); saved n'],
+    ['Escaping', 'Escaping closure', 'saved <- fun x -> x + offset\nsaved n'],
     ['NonCapturing', 'Non-capturing lambda', 'List.fold (+) seed xs'],
 ];
 const sdkLabels = ['Old (SDK 10)', 'SDK 11 RC1', 'New (source)'];
@@ -180,7 +180,8 @@ const blocks = {
             `${fmt(reduction(r.values[0].median, r.values[2].median))}%`])),
     'portable-ide': `On .NET Framework, retained memory falls by **${range(data.framework_heap.rows.map(r => r.new_reduction_vs_old))}** too.`,
     programs: table(['F# code (simplified)', 'Old B/op', 'New B/op'],
-        data.programs.map(p => [`\`${p.code}\``, ...p.values.map(v => v.value)])),
+        data.programs.map(p => [p.code.split('\n').map(line => `\`${line}\``).join('<br>'),
+            ...p.values.map(v => v.value)])),
     contributions: [
         '**Already in RC1**',
         contributing.map((p, index) => `${index === cutoff ? '\n---\n\n**In the RC2 source, headed for GA**\n\n' : ''}- **${dateLabel(p.merged_at)}** - ${prLink(Number(p.number))}: ${p.title.replace(/^\[MicroPerf\]\s*(Perf:\s*)?/, '').replace(/\bopaque callbacks\b/g, 'function arguments')} (${p.author}${Number(p.number) === 20506 ? '; concurrency benefit not measured here' : ''}).`).join('\n'),
