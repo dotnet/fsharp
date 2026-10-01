@@ -33,7 +33,9 @@ let private app =
         OtherOptions = pathMap app
     }
 
-let struct (solution, _) = RoslynTestHelpers.CreateMultiProjectSolution app
+[<AutoOpen>]
+module private Fixture =
+    let struct (solution, _) = RoslynTestHelpers.CreateMultiProjectSolution app
 
 let private documentOf (project: SyntheticProject) fileId =
     solution.GetDocumentIdsWithFilePath(project.GetFilePath fileId)
