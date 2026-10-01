@@ -25,6 +25,10 @@ Only allocation **bar widths** scale per project: each project's largest value f
 
 The opening PR count is calculated from audited mainline ancestry and merge dates, not all search hits. Every distinct mainline PR is listed separately in merge order, with one checked RC1 membership cut-line; experimental-branch merges are excluded from that count. The wider runtime controls, application sizes and all historical observations remain linked rather than being rewritten to match the narrower presentation.
 
+`function-inlining.json` records the public API inventory, source commits and implementation/signature blob IDs. It identifies existing List/Array functions gaining `inline` plus `InlineIfLambda`, including the already-inline `Array.init` gaining the attribute; already-optimized parameters and new APIs such as `partitionWith` are excluded. This is not a claim that their results or user-supplied functions allocate nothing.
+
+The partial-application example was compiled serially with SDK 10, RC1 and the source-built compiler against the same SDK 10 Core and references. The existing IL inspector found one function-object construction site in old/RC1 output and none in the new output; the example also passed `None` and two `Some` checks. The plain-variable partial-application control was already closure-free, which is why the article uses a captured property value and does not claim that all partial applications previously failed to inline. Sources, DLLs and IL inventories are preserved under the recorded artifact root in `article-checks`; the accepted record is `captured-value-verification.json`.
+
 ## Frozen inputs, separate experiments
 
 The evidence checkpoint is `bc90ee6637fc9c7065da173bd36c8b06e2a8d6d4`. The [SDK/R2R methodology](../third-wave/README.md) and [portable-payload methodology](../framework/README.md) describe original acquisition and measurement. This presentation does not rebuild payloads, rerun measurements, republish old data or repair historical paths. The [original campaign](../README.md#preserved-first-campaign) also remains intact.

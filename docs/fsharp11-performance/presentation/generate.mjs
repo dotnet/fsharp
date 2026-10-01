@@ -28,6 +28,13 @@ for (const cohort of ['third-wave', 'framework']) {
 for (const name of ['article.md', 'tables.json', 'contributions.csv']) input('third-wave', name);
 for (const name of ['provenance.json', 'output-identities.json', 'tables.md']) input('framework', name);
 const il = sdk.arms.map(arm => input('third-wave', `programs/${arm}-il.json`));
+const functionInlining = input('presentation', 'function-inlining.json');
+assert.equal(functionInlining.baseline_fsharp_source, experiments[1].payloads.old.fsharp_source);
+assert.equal(functionInlining.candidate_fsharp_source, experiments[0].selection.rc2_and_main_fsharp_source);
+for (const group of functionInlining.groups) {
+    assert(group.functions.length > 0 && group.functions.every(name => /^[a-z]\w*$/.test(name)));
+    assert.equal(new Set(group.functions).size, group.functions.length, 'Duplicate function in inventory');
+}
 const workloads = [
     ['fsharp-core', 'FSharp.Core'], ['fsharp-compiler-service', 'FSharp.Compiler.Service'],
     ['fstoolkit', 'FsToolkit.ErrorHandling'], ['oxpecker', 'Oxpecker'],
@@ -61,9 +68,9 @@ const median = values => {
 const fmt = (value, digits = 1) => value.toFixed(digits);
 const reduction = (older, newer) => (1 - newer / older) * 100;
 const range = values => `${fmt(Math.min(...values))}%-${fmt(Math.max(...values))}%`;
-const table = (headers, rows) => [
+const table = (headers, rows, rightAlignValues = true) => [
     `| ${headers.join(' | ')} |`,
-    `| ${headers.map((_, i) => i ? '---:' : '---').join(' | ')} |`,
+    `| ${headers.map((_, i) => i && rightAlignValues ? '---:' : '---').join(' | ')} |`,
     ...rows.map(row => `| ${row.join(' | ')} |`),
 ].join('\n');
 
@@ -125,6 +132,7 @@ const data = {
     })),
     profiles: provenance.profiles,
     monitoring: portable.monitoring_statistics,
+    function_inlining: functionInlining,
 };
 assert.equal(audit[1].production_tree, audit[2].production_tree);
 for (const [i, results] of [sdk, portable].entries()) {
@@ -148,7 +156,8 @@ for (const group of [data.framework_allocation, data.framework_heap]) {
 }
 const values = row => row.values.map(v => v.value);
 const prLink = (id, label = `#${id}`) => {
-    const p = prs.find(p => Number(p.number) === id);
+    const p = prs.find(p => Number(p.number) === id) ??
+        functionInlining.changes.find(p => Number(p.number) === id);
     assert(p, `Missing PR ${id}`);
     return `[${label}](${p.url})`;
 };
@@ -182,6 +191,10 @@ const blocks = {
     programs: table(['F# code (simplified)', 'Old B/op', 'New B/op'],
         data.programs.map(p => [p.code.split('\n').map(line => `\`${line}\``).join('<br>'),
             ...p.values.map(v => v.value)])),
+    'function-inlining': `These existing functions gained explicit lambda inlining in ${prLink(20422)} and the earlier ${prLink(19869, '`Array.init` change')}:\n\n` +
+        table(['Module', 'Functions gaining explicit lambda inlining'],
+            functionInlining.groups.map(group => [`\`${group.module}\` (${group.functions.length})`,
+                group.functions.map(name => `\`${name}\``).join(', ')]), false),
     contributions: [
         '**Already in RC1**',
         contributing.map((p, index) => `${index === cutoff ? '\n---\n\n**In the RC2 source, headed for GA**\n\n' : ''}- **${dateLabel(p.merged_at)}** - ${prLink(Number(p.number))}: ${p.title.replace(/^\[MicroPerf\]\s*(Perf:\s*)?/, '').replace(/\bopaque callbacks\b/g, 'function arguments')} (${p.author}${Number(p.number) === 20506 ? '; concurrency benefit not measured here' : ''}).`).join('\n'),

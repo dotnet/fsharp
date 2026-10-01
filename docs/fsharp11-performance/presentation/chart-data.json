@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "evidence_commit": "bc90ee6637fc9c7065da173bd36c8b06e2a8d6d4",
-  "generator_sha256_lf": "96a31c1e850904ed361195425fcb8bf377d29fda9077559632051716828be72c",
+  "generator_sha256_lf": "961609dd21c82aa1cb4374a4d5dbb0b5f93012bb0288f640ddee980c687cf000",
   "sources": [
     {
       "path": "../third-wave/results.json",
@@ -98,6 +98,10 @@
     {
       "path": "../third-wave/programs/vmr-rc2-r2r-il.json",
       "sha256": "7acf1d573f06bb6bf359f61e277919ebf19b907d5a70b280e4b0a3f7d8ca0188"
+    },
+    {
+      "path": "../presentation/function-inlining.json",
+      "sha256": "071f5b20021c1dbd19c69da42110bec3f72ec665e9cab9ad06d283e1b6954156"
     }
   ],
   "statistic": "Arm median; reduction = 100 * (1 - newer median / older median). No pooled cohorts or confidence claim.",
@@ -1361,6 +1365,96 @@
       }
     }
   ],
+  "function_inlining": {
+    "schema_version": 1,
+    "baseline_fsharp_source": "2cb9ee0a5d63b52ad7bfbd9364b90b991a26fd72",
+    "baseline_provenance": "../framework/experiment.json#/payloads/old/fsharp_source",
+    "candidate_fsharp_source": "9cd6167a7265ce7264b22719503b7dfa9eb8f83c",
+    "candidate_provenance": "../third-wave/experiment.json#/selection/rc2_and_main_fsharp_source",
+    "criterion": "Existing public List/Array functions whose implementation gains inline plus InlineIfLambda, including an already-inline function newly gaining InlineIfLambda. This is a source inventory, not a per-function allocation benchmark.",
+    "exclusions": "Already-inlined lambda parameters and newly introduced APIs such as partitionWith are excluded. Removing a lambda closure does not remove collection, option, exception, or user-code allocations.",
+    "source_files": [
+      {
+        "path": "src/FSharp.Core/list.fs",
+        "baseline_blob": "7fc02845d3ac85a98f55e97934223c67c81e23eb",
+        "candidate_blob": "f02c88532338beb16920f6fdecc4305f4cc41fe2"
+      },
+      {
+        "path": "src/FSharp.Core/list.fsi",
+        "baseline_blob": "953014da50c9953e29d78184f515bcbe8c7590aa",
+        "candidate_blob": "13ae9b5a2ca6cb1522e169c8cfb440d5ce9496cd"
+      },
+      {
+        "path": "src/FSharp.Core/array.fs",
+        "baseline_blob": "358836ddf1bd9f407a84e5d11ddf5092f3973c4e",
+        "candidate_blob": "4f49603e00c293d74dfd4e2fe131edf0598d286a"
+      },
+      {
+        "path": "src/FSharp.Core/array.fsi",
+        "baseline_blob": "18a4463277ec51931cb15441a97ebd3ac59a2bc6",
+        "candidate_blob": "0f10ff5c147298741aab93a7ca46ad24b532e00e"
+      }
+    ],
+    "changes": [
+      {
+        "number": 20422,
+        "url": "https://github.com/dotnet/fsharp/pull/20422",
+        "merge_commit": "ec437d5ac2f03c27eb3b4a9ec14fb829570baadf",
+        "scope": "All listed functions except Array.init"
+      },
+      {
+        "number": 19869,
+        "url": "https://github.com/dotnet/fsharp/pull/19869",
+        "merge_commit": "80607ff42e13e0e43f2585de6a1b13d3fb9f4206",
+        "scope": "Array.init; already present in RC1, before the article's late-summer PR window"
+      }
+    ],
+    "groups": [
+      {
+        "module": "List",
+        "functions": [
+          "exists",
+          "exists2",
+          "find",
+          "findIndex",
+          "fold",
+          "fold2",
+          "forall",
+          "forall2",
+          "iter2",
+          "iteri2",
+          "pick",
+          "reduce",
+          "skipWhile",
+          "tryPick"
+        ]
+      },
+      {
+        "module": "Array",
+        "functions": [
+          "exists2",
+          "find",
+          "findBack",
+          "findIndex",
+          "findIndexBack",
+          "fold",
+          "fold2",
+          "foldBack",
+          "foldBack2",
+          "forall",
+          "forall2",
+          "init",
+          "iter2",
+          "iteri",
+          "iteri2",
+          "pick",
+          "reduce",
+          "reduceBack",
+          "tryPick"
+        ]
+      }
+    ]
+  },
   "contributing_prs": [
     {
       "number": "20090",

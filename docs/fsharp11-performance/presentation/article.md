@@ -82,8 +82,6 @@ let discountedTotal discount prices =
 For operations such as `List.fold` that otherwise allocate nothing, the closure can be their entire allocation cost.
 `List.map` and other collection builders allocate a new collection anyway, so removing a closure usually saves a smaller share.
 
-[Partially applied functions benefit too](https://github.com/dotnet/fsharp/pull/20487).
-
 <!-- generated:programs -->
 | F# code (simplified) | Old B/op | New B/op |
 | --- | ---: | ---: |
@@ -98,6 +96,34 @@ For operations such as `List.fold` that otherwise allocate nothing, the closure 
 <!-- /generated:programs -->
 
 *List and array operations use four-element collections.*
+
+### Which functions benefit?
+
+<!-- generated:function-inlining -->
+These existing functions gained explicit lambda inlining in [#20422](https://github.com/dotnet/fsharp/pull/20422) and the earlier [`Array.init` change](https://github.com/dotnet/fsharp/pull/19869):
+
+| Module | Functions gaining explicit lambda inlining |
+| --- | --- |
+| `List` (14) | `exists`, `exists2`, `find`, `findIndex`, `fold`, `fold2`, `forall`, `forall2`, `iter2`, `iteri2`, `pick`, `reduce`, `skipWhile`, `tryPick` |
+| `Array` (19) | `exists2`, `find`, `findBack`, `findIndex`, `findIndexBack`, `fold`, `fold2`, `foldBack`, `foldBack2`, `forall`, `forall2`, `init`, `iter2`, `iteri`, `iteri2`, `pick`, `reduce`, `reduceBack`, `tryPick` |
+<!-- /generated:function-inlining -->
+
+### Partially applied functions, too
+
+Previously, `InlineIfLambda` handled explicit lambdas, but some partial applications still left a closure behind.
+
+```fsharp
+type Settings(offset: int) =
+    member _.Offset = offset
+
+let add offset x = x + offset
+
+let adjust (settings: Settings) value =
+    value |> Option.map (add settings.Offset)
+```
+
+`add settings.Offset` supplies only the first argument and captures the current offset inside `adjust`, leaving a function waiting for `x`.
+The [new compiler](https://github.com/dotnet/fsharp/pull/20487) handles this partial application like a lambda and no longer generates the extra closure object.
 
 Recompile with the new compiler and FSharp.Core to bring these improvements to your own code.
 
