@@ -10,7 +10,7 @@ This document maps the 16 GitHub Actions workflows and AI agents in this reposit
 - **safe-outputs** — gh-aw's permission/rate-limit framework constraining agent side effects per run (`max:`, `allowed-files:`, `labels:`).
 - **noop** — Safe-output ending a run with no side effects. `report-as-issue: false` = silent no-op.
 - **CCA (Copilot Coding Agent)** — Hosted coding agent invoked via `create-agent-session`.
-- **state-store branch** — Git branch (e.g., `memory/repo-assist`, `safety/scanned-PRs`) for persistent JSON storage between runs.
+- **state-store branch** — Git branch used by repo-memory for persistent JSON storage between runs.
 - **flaky-test-detector** — Skill confirming flaky tests via ≥3 distinct PR failure evidence.
 - **Cat A/B/C** (RPS) — Regression PR triage: A = review feedback, B = CI/conflict, C = healthy.
 - **B0–B4** (RPS Cat B) — B0: conflict, B1: infra/flaky, B2: compile error, B3: bug NOT fixed, B4: other.
@@ -42,7 +42,7 @@ This document maps the 16 GitHub Actions workflows and AI agents in this reposit
 | 8 | `add_to_project.yml` | 👤 issues/PR opened | none | add label, set milestone, cleanup runs |
 | 9 | `labelops-flake-fix.md` | 👤 dispatch | failing_test, affected_prs, originating_pr | create-pull-request, create-issue, add-comment |
 | 10 | `labelops-pr-maintenance.md` | ⏰ every 3h, 👤 dispatch | none | push-to-PR, add-comment, add-labels, dispatch-workflow |
-| 11 | `labelops-pr-security-scan.md` | 👤 pull_request_target (opened, synchronize) | none | add-labels, gated add-comment, repo-memory write |
+| 11 | `labelops-pr-security-scan.md` | 👤 pull_request_target (opened, synchronize), ⏰ weekly cleanup | none | latest-head tooling labels, repo-memory dedup/category baseline |
 | 12 | `msbuild-quality-review.md` | ⏰ weekly, 👤 dispatch | none | create-issue, create-pull-request (draft) |
 | 13 | `regression-pr-shepherd.md` | ⏰ every 4h, 👤 dispatch | none | push-to-PR, add-comment, remove-labels |
 | 14 | `repo-assist-scheduled.md` | ⏰ every 12h, 👤 dispatch | none | create-pull-request, add-comment, add/remove-labels, create/update-issue, push-to-PR |
@@ -63,14 +63,14 @@ Cross-workflow interactions (producer → consumer):
 | `AI-needs-CI-fix-input` label | `labelops-pr-maintenance` | Human maintainer | escalation signal |
 | `⚠️ Affects-*` labels | `labelops-pr-security-scan` | Human reviewer | informational |
 | `Needs-Triage` label | `add_to_project.yml` | Human triage | imperative on new issues |
-| State-store `safety/scanned-PRs` | `labelops-pr-security-scan` | `labelops-pr-security-scan` | repo-memory persistence |
+| State-store `memory/labelops-pr-security-scan` | `labelops-pr-security-scan` | `labelops-pr-security-scan` | per-PR SHA/category shards; serialized native repo-memory writes |
 | State-store `memory/repo-assist` | `repo-assist-scheduled` | `repo-assist-scheduled` | repo-memory persistence |
 
 ## Group A — LabelOps Ecosystem
 
 Workflows: `labelops-pr-maintenance` (LPM), `labelops-flake-fix` (LFF), `labelops-pr-security-scan` (LPSS).
 
-LPM dispatches LFF when proven flakes are detected. LPSS scans an unseen PR head when the PR is opened or receives new commits; fork PRs get a diff scan.
+LPM dispatches LFF when proven flakes are detected. LPSS serializes runs because repo-memory copies whole shard files. A queued event runs only if its PR remains open at that exact head, so stale queued heads no-op. Only new PR events trigger scans; there is no backlog scan or legacy-state import. Existing warning labels supply the first comment baseline. Weekly cleanup prunes closed PR records with safe outputs in staged mode, preventing comments and labels. It rewrites emptied shards because repo-memory does not delete missing files.
 
 ```mermaid
 stateDiagram-v2
@@ -122,24 +122,17 @@ stateDiagram-v2
   }
 
   state "labelops-pr-security-scan" as LPSS {
-    [*] --> LPSS_NewHead : 👤 pull_request_target opened / synchronize
-    LPSS_NewHead --> LPSS_CheckSHA : ⚙️ compare event, live, and saved full SHA
-    LPSS_CheckSHA --> [*] : ⚙️ SHA already scanned (skip activation)
-    LPSS_CheckSHA --> LPSS_ReadRules : ⚙️ new SHA
-    LPSS_ReadRules --> LPSS_LoadMemory : ⚙️ read repo rules
-    LPSS_LoadMemory --> LPSS_PerPR : ⚙️ load the selected PR and saved categories
-    state LPSS_ForkCheck <<choice>>
-    LPSS_PerPR --> LPSS_ForkCheck : ⚙️ check headRepository
-    LPSS_ForkCheck --> LPSS_Bypass : ⚙️ non-fork
-    LPSS_ForkCheck --> LPSS_Classify : ⚙️ fork PR
-    LPSS_Bypass --> LPSS_SaveMemory : 🤖 add-labels (Bypassed)
-    LPSS_Classify --> LPSS_Label : 🤖 add-labels (⚠️ categories)
-    state LPSS_CommentGate <<choice>>
-    LPSS_Label --> LPSS_CommentGate : ⚙️ compare sorted category sets
-    LPSS_CommentGate --> LPSS_Comment : ⚙️ non-empty categories changed
-    LPSS_CommentGate --> LPSS_SaveMemory : ⚙️ empty or unchanged categories
-    LPSS_Comment --> LPSS_SaveMemory : 🤖 add-comment (sanitized safe output)
-    LPSS_SaveMemory --> [*]
+    [*] --> LPSS_Gate : 👤 pull_request_target opened
+    [*] --> LPSS_Gate : 👤 pull_request_target synchronize
+    LPSS_Gate --> [*] : ⚙️ stale full SHA or already scanned
+    LPSS_Gate --> LPSS_Classify : ⚙️ current new head
+    LPSS_Classify --> LPSS_Labels : 🤖 non-fork bypass or fork categories
+    LPSS_Labels --> LPSS_Comment : ⚙️ output filter allows new warning categories only
+    LPSS_Labels --> LPSS_Memory : ⚙️ no new warning category
+    LPSS_Comment --> LPSS_Memory : 🤖 one comment
+    LPSS_Memory --> [*] : ⚙️ save full SHA and sorted categories
+    [*] --> LPSS_Cleanup : ⏰ weekly schedule
+    LPSS_Cleanup --> [*] : ⚙️ prune closed PR rows; never read diffs or emit labels
   }
 
   LPM_DispatchFlake --> LFF_Validate : 🤖 dispatch-workflow (cross-workflow)
@@ -340,8 +333,7 @@ gh-aw safe-output defaults (suppressed below): `target: "*"`, `noop.report-as-is
 | `labelops-pr-maintenance` | `add-comment` | 5 | hide-older-comments: true |
 | `labelops-pr-maintenance` | `add-labels` | 3 | allowed: AI-needs-CI-fix-input |
 | `labelops-pr-maintenance` | `dispatch-workflow` | 3 | workflows: labelops-flake-fix |
-| `labelops-pr-security-scan` | `add-labels` | 50 | target: triggering; allowed: 11 labels (⚠️ Affects-* family + Suspicious-Prompting + Scope-Review-Needed + Scanned-Clean + Bypassed) |
-| `labelops-pr-security-scan` | `add-comment` | 1 | target: triggering; hide-older-comments: true; emitted only for changed non-empty categories |
+| `labelops-pr-security-scan` | `add-labels` / `add-comment` | 11 / 1 | triggering PR only; output filter suppresses unchanged/removal-only categories |
 | `msbuild-quality-review` | `create-issue` | 1 | title `[msbuild-quality] `, labels: automation+Area-ProjectsAndBuild |
 | `msbuild-quality-review` | `create-pull-request` | 1 | draft: true, title `[msbuild-quality] `, protected-files: fallback-to-issue |
 | `regression-pr-shepherd` | `push-to-pull-request-branch` | 10 | allowed-files: tests/**, vsintegration/tests/** |
