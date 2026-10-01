@@ -186,7 +186,8 @@ let f_IWSAM_flex_StaticProperty(x: #IStaticProperty<'T>) =
 
     /// An app project referencing a library project. The app document comes from a snapshot that
     /// predates the library's document, the way Roslyn hands out documents while a solution is
-    /// still loading, while the workspace's current solution already has it.
+    /// still loading, while the workspace's current solution already has it. The app document also
+    /// holds an edit of its buffer that the workspace has not seen.
     module internal StaleSnapshot =
 
         let library = SyntheticProject.Create("Library", sourceFile "Library" [])
@@ -204,12 +205,21 @@ let f_IWSAM_flex_StaticProperty(x: #IStaticProperty<'T>) =
         let struct (solution, _) = RoslynTestHelpers.CreateMultiProjectSolution app
         let appPath = app.GetFilePath "App"
         let libraryPath = library.GetFilePath "Library"
+        let unsavedEdit = "// not saved yet"
 
         let private documentId path =
             solution.GetDocumentIdsWithFilePath path |> Seq.exactlyOne
 
         let appDocument =
-            solution.RemoveDocument(documentId libraryPath).GetDocument(documentId appPath)
+            let appId = documentId appPath
+
+            let savedText =
+                solution.GetDocument(appId).GetTextAsync(CancellationToken.None).Result
+
+            solution
+                .RemoveDocument(documentId libraryPath)
+                .WithDocumentText(appId, SourceText.From($"{savedText}{Environment.NewLine}{unsavedEdit}"))
+                .GetDocument(appId)
 
         let appSourceText = appDocument.GetTextAsync(CancellationToken.None).Result
 
@@ -259,3 +269,35 @@ let f_IWSAM_flex_StaticProperty(x: #IStaticProperty<'T>) =
         match symbolUse.GetSymbolScope StaleSnapshot.appDocument with
         | Some(SymbolScope.Projects(projects, _)) -> Assert.Contains(StaleSnapshot.library.Name, projects |> List.map _.Name)
         | scope -> failwith $"expected a project scope, got %A{scope}"
+
+    [<Fact>]
+    let ``rename from a snapshot that predates the declaring document edits the documents of that snapshot`` () =
+        let document = StaleSnapshot.appDocument
+        let snapshot = document.Project.Solution
+
+        let renameInfo =
+            InlineRenameService().GetRenameInfoAsync(document, StaleSnapshot.positionOf "ModuleLibrary.f", CancellationToken.None).Result
+
+        Assert.NotNull renameInfo
+
+        let locations =
+            renameInfo.FindRenameLocationsAsync(false, false, CancellationToken.None).Result
+
+        Assert.All(locations.Locations, (fun location -> Assert.Same(snapshot, location.Document.Project.Solution)))
+
+        let newSolution =
+            locations.GetReplacementsAsync("g", CancellationToken.None).Result.NewSolution
+
+        // What Roslyn's rename session commits: the documents changed against the solution it started from.
+        let changedDocuments =
+            newSolution.GetChanges(snapshot).GetProjectChanges()
+            |> Seq.collect _.GetChangedDocuments()
+            |> Seq.toList
+
+        Assert.Equal<DocumentId list>([ document.Id ], changedDocuments)
+
+        let renamedText =
+            newSolution.GetDocument(document.Id).GetTextAsync(CancellationToken.None).Result.ToString()
+
+        Assert.Contains("ModuleLibrary.g", renamedText)
+        Assert.EndsWith(StaleSnapshot.unsavedEdit, renamedText)

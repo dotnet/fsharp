@@ -151,23 +151,31 @@ type internal InlineRenameInfo
         cancellableTask {
             let! symbolUsesByDocumentId = symbolUses
 
+            // Roslyn's rename session commits only documents of the solution it started from, and the search can
+            // find a document through the workspace's newer solution: such a use cannot be part of this rename.
+            let solution = document.Project.Solution
+
             let! results =
                 seq {
                     for (KeyValue(documentId, symbolUses)) in symbolUsesByDocumentId do
+                        match solution.GetDocument documentId with
+                        | null -> ()
+                        | document ->
+                            yield
+                                cancellableTask {
+                                    let! cancellationToken = CancellableTask.getCancellationToken ()
+                                    let! sourceText = document.GetTextAsync(cancellationToken)
 
-                        cancellableTask {
-                            let! cancellationToken = CancellableTask.getCancellationToken ()
-                            let document = document.Project.Solution.GetDocument(documentId)
-                            let! sourceText = document.GetTextAsync(cancellationToken)
-
-                            return
-                                [|
-                                    for symbolUse in symbolUses do
-                                        match Tokenizer.TryFSharpRangeToTextSpanForEditor(sourceText, symbolUse, symbolDisplayName) with
-                                        | ValueSome textSpan -> yield FSharpInlineRenameLocation(document, textSpan)
-                                        | ValueNone -> ()
-                                |]
-                        }
+                                    return
+                                        [|
+                                            for symbolUse in symbolUses do
+                                                match
+                                                    Tokenizer.TryFSharpRangeToTextSpanForEditor(sourceText, symbolUse, symbolDisplayName)
+                                                with
+                                                | ValueSome textSpan -> yield FSharpInlineRenameLocation(document, textSpan)
+                                                | ValueNone -> ()
+                                        |]
+                                }
                 }
                 |> CancellableTask.whenAll
 
