@@ -38,7 +38,7 @@ let private project =
     )
 
 let private solution, plainId, fooId =
-    let solution, instances =
+    let struct (solution, instances) =
         RoslynTestHelpers.CreateMultiTargetSolution(
             project,
             [
@@ -174,7 +174,7 @@ let private inferredProject =
     )
 
 let private inferredSolution, inferredPlainId =
-    let solution, instances =
+    let struct (solution, instances) =
         RoslynTestHelpers.CreateMultiTargetSolution(
             inferredProject,
             [
