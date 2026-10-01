@@ -23,7 +23,6 @@ type LanguageFeature =
     | WitnessPassing
     | AdditionalTypeDirectedConversions
     | StringInterpolation
-    | ExpandedMeasurables
     | NullnessChecking
     | UnionIsPropertiesVisible
     | AttributesToRightOfModuleKeyword
@@ -130,7 +129,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
 
                 // F# 6.0
                 LanguageFeature.AdditionalTypeDirectedConversions, languageVersion60
-                LanguageFeature.ExpandedMeasurables, languageVersion60
                 LanguageFeature.ResumableStateMachines, languageVersion60
                 LanguageFeature.AttributesToRightOfModuleKeyword, languageVersion60
 
@@ -306,7 +304,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
         | LanguageFeature.WitnessPassing -> FSComp.SR.featureWitnessPassing ()
         | LanguageFeature.AdditionalTypeDirectedConversions -> FSComp.SR.featureAdditionalImplicitConversions ()
         | LanguageFeature.StringInterpolation -> FSComp.SR.featureStringInterpolation ()
-        | LanguageFeature.ExpandedMeasurables -> FSComp.SR.featureExpandedMeasurables ()
         | LanguageFeature.UnionIsPropertiesVisible -> FSComp.SR.featureUnionIsPropertiesVisible ()
         | LanguageFeature.AttributesToRightOfModuleKeyword -> FSComp.SR.featureAttributesToRightOfModuleKeyword ()
         | LanguageFeature.ReallyLongLists -> FSComp.SR.featureReallyLongList ()

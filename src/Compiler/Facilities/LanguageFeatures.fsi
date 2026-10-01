@@ -13,7 +13,6 @@ type LanguageFeature =
     | WitnessPassing
     | AdditionalTypeDirectedConversions
     | StringInterpolation
-    | ExpandedMeasurables
     | NullnessChecking
     | UnionIsPropertiesVisible
     | AttributesToRightOfModuleKeyword
