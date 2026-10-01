@@ -482,11 +482,6 @@
         <target state="new">Support for OverloadResolutionPriorityAttribute to prioritize method overloads.</target>
         <note />
       </trans-unit>
-      <trans-unit id="featurePackageManagement">
-        <source>package management</source>
-        <target state="translated">paket yönetimi</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureParsedHashDirectiveArgumentNonString">
         <source># directives with non-quoted string arguments</source>
         <target state="translated">Tırnak içine alınmamış dize bağımsız değişkenlerine sahip # yönergeleri</target>
@@ -1060,11 +1055,6 @@
       <trans-unit id="optsWin32icon">
         <source>Specify a Win32 icon file (.ico)</source>
         <target state="translated">Win32 simge dosyası (.ico) belirtin</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="packageManagementRequiresVFive">
-        <source>The 'package management' feature requires language version 5.0 or above</source>
-        <target state="translated">‘Paket yönetimi’ özelliği, dil sürümü 5.0 veya üstünü gerektirir</target>
         <note />
       </trans-unit>
       <trans-unit id="parsConstraintIntersectionSyntaxUsedWithNonFlexibleType">
