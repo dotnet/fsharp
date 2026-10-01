@@ -2551,36 +2551,29 @@ $ code --diff {outFile} {expectedFile}
     /// Result type for CLI subprocess execution (runFsiProcess / runFscProcess).
     type ProcessResult = { ExitCode: int; StdOut: string; StdErr: string }
 
-    /// Quote an argument that contains whitespace so the child process's command line
-    /// parser sees it as a single token. Arguments routinely embed paths with spaces,
-    /// e.g. a temp directory under "C:\Users\First Last", or the .NET Framework
-    /// reference assemblies under "C:\Program Files (x86)".
-    let private quoteArg (arg: string) =
-        if arg |> Seq.exists Char.IsWhiteSpace && not (arg.StartsWith("\"", StringComparison.Ordinal)) then
-            "\"" + arg + "\""
-        else
-            arg
-
     /// Run an F# tool (FSI or FSC) as a subprocess. Shared helper for runFsiProcess / runFscProcess.
-    let private runToolProcess (toolPath: string) (args: string list) : ProcessResult =
-        let quotedArgs = args |> List.map quoteArg |> String.concat " "
+    let private runToolProcess (toolPath: string) (workingDirectory: string) (args: string list) : ProcessResult =
 #if NETCOREAPP
         let exe = TestFramework.initialConfig.DotNetExe
-        let arguments = quoteArg toolPath + " " + quotedArgs
+        let arguments = toolPath + " " + (args |> String.concat " ")
 #else
         let exe = toolPath
-        let arguments = quotedArgs
+        let arguments = args |> String.concat " "
 #endif
-        let exitCode, stdout, stderr = Commands.executeProcess exe arguments (Directory.GetCurrentDirectory())
+        let exitCode, stdout, stderr = Commands.executeProcess exe arguments workingDirectory
         { ExitCode = exitCode; StdOut = stdout; StdErr = stderr }
 
     /// Run FSI as a subprocess with the given arguments. For CLI-level tests only (--help, exit codes, etc.).
     let runFsiProcess (args: string list) : ProcessResult =
-        runToolProcess TestFramework.initialConfig.FSI args
+        runToolProcess TestFramework.initialConfig.FSI (Directory.GetCurrentDirectory()) args
+
+    /// Run FSC as a subprocess in the given directory, which the compiled assembly records as the one it was compiled in.
+    let runFscProcessIn (workingDirectory: string) (args: string list) : ProcessResult =
+        runToolProcess TestFramework.initialConfig.FSC workingDirectory args
 
     /// Run FSC as a subprocess with the given arguments. For CLI-level tests only (missing files, exit codes, etc.).
     let runFscProcess (args: string list) : ProcessResult =
-        runToolProcess TestFramework.initialConfig.FSC args
+        runFscProcessIn (Directory.GetCurrentDirectory()) args
 
     /// Compile-and-run a compilation unit that depends on a FSharp.Core attribute
     /// which may not yet be shipped in the SDK's NuGet package.

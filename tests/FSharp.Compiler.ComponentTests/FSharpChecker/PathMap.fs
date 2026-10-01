@@ -3,9 +3,13 @@ module FSharpChecker.PathMap
 open System.IO
 open System.Threading.Tasks
 open Xunit
+open FSharp.Test
+open FSharp.Test.Compiler
 open FSharp.Test.ProjectGeneration
+open FSharp.Test.Utilities
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
+open FSharp.Compiler.Symbols
 open FSharp.Compiler.Text
 
 let private checkWith (checker: FSharpChecker) (project: SyntheticProject) =
@@ -57,58 +61,84 @@ let ``a sibling's path map does not reach the ranges of a project without one`` 
         Assert.Equal(library.GetFilePath "Library", libraryFunction.Symbol.DeclarationLocation.Value.FileName)
     }
 
-/// A build that maps its source paths maps the directory it compiled in as well, so the file name of a
-/// range and that directory both reach the same root on their own. Joining them names the directory twice.
+/// Compiles the library from its own directory, as a build does: the assembly records that directory as the one it
+/// was compiled in.
+let private emitLibrary (root: string) (pathMap: string list) =
+    let projectDir = Directory.CreateDirectory(Path.Combine(root, "src", "Domain")).FullName
+    File.WriteAllText(Path.Combine(projectDir, "Library.fs"), "module Library\n\nlet f x = x + 1\n")
+
+    let result =
+        runFscProcessIn projectDir [
+            "--target:library"
+            yield! CompilerAssert.DefaultProjectOptions(TargetFramework.Current).OtherOptions
+            yield! pathMap
+            "-o:Library.dll"
+            "Library.fs"
+        ]
+
+    Assert.True((result.ExitCode = 0), $"fsc exited with {result.ExitCode}:\n{result.StdOut}\n{result.StdErr}")
+    projectDir
+
+/// Read back through the path map, a declaration names the file the library was compiled from, whatever the map.
+/// The compiler writes each name under a path map with the mapped directory it compiled in at its start; a #line
+/// name, which compilers before F# 10 wrote instead, is relative to that directory.
 [<Theory>]
-[<InlineData(false)>]
-[<InlineData(true)>]
-let ``a declaration in a project with a path map is named from the root once`` (useTransparentCompiler: bool) : Task =
+[<InlineData("")>]
+[<InlineData(".")>]
+[<InlineData("/_/")>]
+let ``a declaration in a referenced assembly names the file it was compiled from`` (mappedRoot: string) : Task =
     task {
-        let checker = FSharpChecker.Create(useTransparentCompiler = useTransparentCompiler)
-        let library = SyntheticProject.Create("MappedLibrary", sourceFile "Library" [])
-        let root = Path.GetDirectoryName library.ProjectDir
+        let root = TestFramework.createTemporaryDirectory().FullName
+        let pathMap = if mappedRoot = "" then [] else [ $"--pathmap:{root}={mappedRoot}" ]
+        let projectDir = emitLibrary root pathMap
 
-        let library =
-            { library with
-                OtherOptions = [ $"--pathmap:{root}=.{Path.DirectorySeparatorChar}" ] }
+        let usageLine = "let _ = Library.f 1"
+        let source = $"module Consumer\n{usageLine}\n"
+        let consumer = Path.Combine(root, "Consumer.fs")
+        File.WriteAllText(consumer, source)
 
-        let app =
-            { SyntheticProject.Create("MappedApp", sourceFile "App" [ "Library" ]) with
-                DependsOn = [ library ] }
+        let options =
+            let defaults = CompilerAssert.DefaultProjectOptions(TargetFramework.Current)
 
-        do! checkWith checker library
-        do! checkWith checker app
+            { defaults with
+                SourceFiles = [| consumer |]
+                OtherOptions = [| yield! defaults.OtherOptions; $"""-r:{Path.Combine(projectDir, "Library.dll")}""" |] }
 
-        let appFile = app.GetFilePath "App"
-        let appLines = File.ReadAllLines appFile
-
-        let! _, answer =
-            checker.ParseAndCheckFileInProject(
-                appFile,
-                0,
-                SourceText.ofString (File.ReadAllText appFile),
-                app.GetProjectOptions checker
-            )
+        let! _, answer = FSharpChecker.Create().ParseAndCheckFileInProject(consumer, 0, SourceText.ofString source, options)
 
         let checkResults =
             match answer with
             | FSharpCheckFileAnswer.Succeeded checkResults -> checkResults
             | FSharpCheckFileAnswer.Aborted -> failwith "the check was aborted"
 
-        let usage =
-            checkResults.GetAllUsesOfAllSymbolsInFile()
-            |> Seq.find (fun symbolUse -> symbolUse.Symbol.FullName = $"{library.Name}.ModuleLibrary.f")
+        let endOfName = usageLine.Length - " 1".Length
+        let names = [ "Library"; "f" ]
 
         let declaration =
-            checkResults.GetDeclarationLocation(
-                usage.Range.EndLine,
-                usage.Range.EndColumn,
-                appLines[usage.Range.EndLine - 1],
-                [ "ModuleLibrary"; "f" ]
-            )
+            match checkResults.GetDeclarationLocation(2, endOfName, usageLine, names) with
+            | FindDeclResult.DeclFound range -> range
+            | result -> failwith $"expected the declaration of Library.f, got %A{result}"
 
-        match declaration with
-        | FindDeclResult.DeclFound range ->
-            Assert.Equal(library.GetFilePath "Library", Path.GetFullPath(Path.Combine(root, range.FileName)))
-        | result -> failwith $"expected the declaration of ModuleLibrary.f, got %A{result}"
+        // Since F# 10 the compiler writes the real file for a #line directive, so the name an older one wrote is
+        // resolved against this assembly's recorded directory directly
+        let fromLineDirective =
+            let symbol = checkResults.GetSymbolUseAtLocation(2, endOfName, usageLine, names).Value.Symbol
+            let range = Range.mkRange "Original.fs" declaration.Start declaration.End
+            SymbolHelpers.fileNameOfItem symbol.SymbolEnv.g None range symbol.Item
+
+        // A reader that knows the map turns a name back into the file it stands for, reading a rooted name as the
+        // full path GetDeclarationLocation gives
+        let compiledFrom (fileName: string) =
+            let asRead (path: string) =
+                if Path.IsPathRooted path then Path.GetFullPath path else path
+
+            if mappedRoot = "" then
+                Path.GetFullPath fileName
+            else
+                let fileName, mappedRoot = asRead fileName, asRead mappedRoot
+                Assert.StartsWith(mappedRoot, fileName)
+                Path.GetFullPath(Path.Combine(root, fileName.Substring(mappedRoot.Length).TrimStart('/', '\\')))
+
+        Assert.Equal(Path.Combine(projectDir, "Library.fs"), compiledFrom declaration.FileName)
+        Assert.Equal(Path.Combine(projectDir, "Original.fs"), compiledFrom fromLineDirective)
     }
