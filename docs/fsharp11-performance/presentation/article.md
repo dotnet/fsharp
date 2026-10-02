@@ -3,7 +3,7 @@
 <!-- generated:opening -->
 F# 11 brings **roughly 20-50% less allocation during compilation** across six real-world projects and **about 30% less memory retained after IDE project checks**. **And this is a win for your F# code, too!** Better [inlining of `FSharp.Core` calls](https://github.com/dotnet/fsharp/pull/20422) eliminates closure allocations in everyday functional code. Recompile with the new compiler and `FSharp.Core`, and these optimizations reach your applications and libraries, not just the compiler.
 
-Behind these gains are **49 performance and supporting PRs** from auduchinok and T-Gro, merged between **Aug 12 and Sep 21, 2026**. **12 are already in RC1**; the remaining **37 are in the RC2 source**, headed for .NET 11 and F# 11 GA.
+Behind these gains are **49 performance and supporting PRs**, merged between **Aug 12 and Sep 21, 2026**. **12 are already in RC1**; the remaining **37 are in the RC2 source**, headed for .NET 11 and F# 11 GA.
 <!-- /generated:opening -->
 
 ## Less allocation during compilation
@@ -20,8 +20,6 @@ Behind these gains are **49 performance and supporting PRs** from auduchinok and
 | Nu | 15.853 | 14.871 | 12.276 | 6.2% | 22.6% |
 | FsAutoComplete | 6.258 | 5.676 | 4.879 | 9.3% | 22.0% |
 <!-- /generated:compilation -->
-
-*Medians of 12 compiler-only runs.*
 
 ![Actual compiler allocation in GB for six workloads: the released SDK 10 compiler, RC1, and source-built F# 11. Each project's bar widths use their own zero-based scale.](compiler-allocation.svg)
 
@@ -99,6 +97,8 @@ For operations such as `List.fold` that otherwise allocate nothing, the closure 
 
 ### Which functions benefit?
 
+`Option` and `ValueOption` (for `voption`) already inline lambda arguments in functions such as `map`, `bind`, and `fold`; this is not new in F# 11.
+
 <!-- generated:function-inlining -->
 These existing functions gained explicit lambda inlining in [#20422](https://github.com/dotnet/fsharp/pull/20422) and the earlier [`Array.init` change](https://github.com/dotnet/fsharp/pull/19869):
 
@@ -127,67 +127,67 @@ The [new compiler](https://github.com/dotnet/fsharp/pull/20487) handles this par
 
 Recompile with the new compiler and FSharp.Core to bring these improvements to your own code.
 
-No campaign forces DATAS, GC budgets, tiering or PGO.
-
 ## Contributing changes
 
 <!-- generated:contributions -->
 **Already in RC1**
 
-- **Aug 12** - [#20090](https://github.com/dotnet/fsharp/pull/20090): Import: Don't walk non-F# assemblies when labelling trait constraint sources (auduchinok).
-- **Aug 12** - [#20088](https://github.com/dotnet/fsharp/pull/20088): Avoid per-instance lock object in InterruptibleLazy and DelayInitArrayMap (auduchinok).
-- **Aug 12** - [#20092](https://github.com/dotnet/fsharp/pull/20092): IL: add ILPreNamespace, make ILPreTypeDef creation lazy (auduchinok).
-- **Aug 13** - [#20250](https://github.com/dotnet/fsharp/pull/20250): IL: fix leaking binary view (auduchinok).
-- **Aug 13** - [#20249](https://github.com/dotnet/fsharp/pull/20249): IL: use empty tables for members when possible (auduchinok).
-- **Aug 19** - [#20254](https://github.com/dotnet/fsharp/pull/20254): IL: share ILCallingConv instances (auduchinok).
-- **Aug 19** - [#20256](https://github.com/dotnet/fsharp/pull/20256): IL: cache C# extension methods per CCU (auduchinok).
-- **Aug 19** - [#20244](https://github.com/dotnet/fsharp/pull/20244): Fix super-linear compilation of guarded shared-or active-pattern matches (T-Gro).
-- **Aug 20** - [#20286](https://github.com/dotnet/fsharp/pull/20286): Make Entity's adhoc members list lazy (auduchinok).
-- **Aug 24** - [#20301](https://github.com/dotnet/fsharp/pull/20301): IL: share the pickled references (auduchinok).
-- **Aug 24** - [#20298](https://github.com/dotnet/fsharp/pull/20298): Name resolution: group C#-style extension members per 'open' and extended type (auduchinok).
-- **Aug 24** - [#20259](https://github.com/dotnet/fsharp/pull/20259): IL: cache the ILTypeRef of a type def (auduchinok).
+- **Aug 12** - [#20090](https://github.com/dotnet/fsharp/pull/20090): Import: Don't walk non-F# assemblies when labelling trait constraint sources.
+- **Aug 12** - [#20088](https://github.com/dotnet/fsharp/pull/20088): Avoid per-instance lock object in InterruptibleLazy and DelayInitArrayMap.
+- **Aug 12** - [#20092](https://github.com/dotnet/fsharp/pull/20092): IL: add ILPreNamespace, make ILPreTypeDef creation lazy.
+- **Aug 13** - [#20250](https://github.com/dotnet/fsharp/pull/20250): IL: fix leaking binary view.
+- **Aug 13** - [#20249](https://github.com/dotnet/fsharp/pull/20249): IL: use empty tables for members when possible.
+- **Aug 19** - [#20254](https://github.com/dotnet/fsharp/pull/20254): IL: share ILCallingConv instances.
+- **Aug 19** - [#20256](https://github.com/dotnet/fsharp/pull/20256): IL: cache C# extension methods per CCU.
+- **Aug 19** - [#20244](https://github.com/dotnet/fsharp/pull/20244): Fix super-linear compilation of guarded shared-or active-pattern matches.
+- **Aug 20** - [#20286](https://github.com/dotnet/fsharp/pull/20286): Make Entity's adhoc members list lazy.
+- **Aug 24** - [#20301](https://github.com/dotnet/fsharp/pull/20301): IL: share the pickled references.
+- **Aug 24** - [#20298](https://github.com/dotnet/fsharp/pull/20298): Name resolution: group C#-style extension members per 'open' and extended type.
+- **Aug 24** - [#20259](https://github.com/dotnet/fsharp/pull/20259): IL: cache the ILTypeRef of a type def.
 
 ---
 
 **In the RC2 source, headed for GA**
 
-- **Aug 26** - [#20285](https://github.com/dotnet/fsharp/pull/20285): Calculate Entity.PublicPath instead of storing (auduchinok).
-- **Aug 26** - [#20337](https://github.com/dotnet/fsharp/pull/20337): Replace the stringified pattern-match memo key with a typed one (T-Gro).
-- **Aug 27** - [#20255](https://github.com/dotnet/fsharp/pull/20255): IL: reuse the cached ILTypeRef in ILTypeInfo.FromType (auduchinok).
-- **Aug 27** - [#20364](https://github.com/dotnet/fsharp/pull/20364): Unpickling: share one EntityRef per non-local reference row (auduchinok).
-- **Aug 27** - [#20296](https://github.com/dotnet/fsharp/pull/20296): Import: share assembly CCUs between projects (auduchinok).
-- **Aug 28** - [#20348](https://github.com/dotnet/fsharp/pull/20348): Four profiler-guided hot-path wins from self-build tracing (T-Gro).
-- **Aug 28** - [#20350](https://github.com/dotnet/fsharp/pull/20350): Avoid Choice allocation in fslib entity/val-ref equality (T-Gro).
-- **Aug 28** - [#20351](https://github.com/dotnet/fsharp/pull/20351): Reduce Detuple usage-analysis allocation with a mutable Dictionary (T-Gro).
-- **Aug 31** - [#20354](https://github.com/dotnet/fsharp/pull/20354): Avoid redundant FreeVars record allocation for local vals (T-Gro).
-- **Aug 31** - [#20363](https://github.com/dotnet/fsharp/pull/20363): Fuse the optimizer inlining copy + type-instantiation passes (T-Gro).
-- **Aug 31** - [#20367](https://github.com/dotnet/fsharp/pull/20367): Inline TryD to remove constraint-solver closure allocations (T-Gro).
-- **Aug 31** - [#20368](https://github.com/dotnet/fsharp/pull/20368): eliminate per-call closure in StackGuard.Guard via InlineIfLambda (T-Gro).
-- **Sep 1** - [#20287](https://github.com/dotnet/fsharp/pull/20287): IL: hold custom attributes in fields rather than a union case (auduchinok).
-- **Sep 4** - [#20353](https://github.com/dotnet/fsharp/pull/20353): Cache IL method parameter attributes during overload resolution (T-Gro).
-- **Sep 4** - [#20384](https://github.com/dotnet/fsharp/pull/20384): Avoid per-call closure allocation in type-hierarchy traversal (T-Gro).
-- **Sep 8** - [#20385](https://github.com/dotnet/fsharp/pull/20385): Inline the free-variable typar foldBacks (T-Gro).
-- **Sep 9** - [#20447](https://github.com/dotnet/fsharp/pull/20447): Remove per-call closure allocations in post-inference checks (T-Gro).
-- **Sep 9** - [#20423](https://github.com/dotnet/fsharp/pull/20423): Eliminate closure allocations in well-known-attribute queries (T-Gro).
-- **Sep 9** - [#20415](https://github.com/dotnet/fsharp/pull/20415): Make List.vMapFold inline to drop the nullness-import closure (T-Gro).
-- **Sep 9** - [#20372](https://github.com/dotnet/fsharp/pull/20372): Eliminate closure allocations in List.mapq and List.lengthsEqAndForall2 (T-Gro).
-- **Sep 9** - [#20349](https://github.com/dotnet/fsharp/pull/20349): Reverse instead of sort already-ordered branch fixups in IL writer (T-Gro).
-- **Sep 10** - [#20374](https://github.com/dotnet/fsharp/pull/20374): Inline the static-abstract interface-constraint predicate (T-Gro).
-- **Sep 10** - [#20437](https://github.com/dotnet/fsharp/pull/20437): Drop the per-call closure in generic type-argument codegen (T-Gro).
-- **Sep 10** - [#20421](https://github.com/dotnet/fsharp/pull/20421): Drop accessibility and attribute-scan closures via ListInline (T-Gro).
-- **Sep 10** - [#20426](https://github.com/dotnet/fsharp/pull/20426): Avoid per-call FSharpFunc closure in remapVal member-info remap (T-Gro).
-- **Sep 11** - [#20487](https://github.com/dotnet/fsharp/pull/20487): Eliminate per-call closure for InlineIfLambda partial applications (T-Gro).
-- **Sep 16** - [#20422](https://github.com/dotnet/fsharp/pull/20422): Inline List/Array higher-order functions and adapt function arguments (T-Gro).
-- **Sep 16** - [#20388](https://github.com/dotnet/fsharp/pull/20388): Share the empty-array singleton for zero-length Array results (T-Gro).
-- **Sep 17** - [#20490](https://github.com/dotnet/fsharp/pull/20490): Name resolution: CheckIWSAM only needs the intrinsic methods (auduchinok).
-- **Sep 17** - [#20489](https://github.com/dotnet/fsharp/pull/20489): IL: map the short-lived metadata-only PE reader (auduchinok).
-- **Sep 17** - [#20486](https://github.com/dotnet/fsharp/pull/20486): IL: intern the attributes and type references read from metadata (auduchinok).
-- **Sep 17** - [#20481](https://github.com/dotnet/fsharp/pull/20481): FCS: fix races that made the background builder repeat work (auduchinok).
-- **Sep 17** - [#20494](https://github.com/dotnet/fsharp/pull/20494): Typed tree: create a type's augmentation on first use (auduchinok).
-- **Sep 17** - [#20261](https://github.com/dotnet/fsharp/pull/20261): IL: fix the per-reader string cache sizing (auduchinok).
-- **Sep 18** - [#20571](https://github.com/dotnet/fsharp/pull/20571): Stabilize OptimizeClosureIfNotInlined for F# 11 (T-Gro).
-- **Sep 18** - [#20555](https://github.com/dotnet/fsharp/pull/20555): Ship net10.0 FSharp.Core with the SDK tools (T-Gro).
-- **Sep 21** - [#20506](https://github.com/dotnet/fsharp/pull/20506): Support multithreaded MSBuild in F# build tasks (T-Gro; concurrency benefit not measured here).
+- **Aug 26** - [#20285](https://github.com/dotnet/fsharp/pull/20285): Calculate Entity.PublicPath instead of storing.
+- **Aug 26** - [#20337](https://github.com/dotnet/fsharp/pull/20337): Replace the stringified pattern-match memo key with a typed one.
+- **Aug 27** - [#20255](https://github.com/dotnet/fsharp/pull/20255): IL: reuse the cached ILTypeRef in ILTypeInfo.FromType.
+- **Aug 27** - [#20364](https://github.com/dotnet/fsharp/pull/20364): Unpickling: share one EntityRef per non-local reference row.
+- **Aug 27** - [#20296](https://github.com/dotnet/fsharp/pull/20296): Import: share assembly CCUs between projects.
+- **Aug 28** - [#20348](https://github.com/dotnet/fsharp/pull/20348): Four profiler-guided hot-path wins from self-build tracing.
+- **Aug 28** - [#20350](https://github.com/dotnet/fsharp/pull/20350): Avoid Choice allocation in fslib entity/val-ref equality.
+- **Aug 28** - [#20351](https://github.com/dotnet/fsharp/pull/20351): Reduce Detuple usage-analysis allocation with a mutable Dictionary.
+- **Aug 31** - [#20354](https://github.com/dotnet/fsharp/pull/20354): Avoid redundant FreeVars record allocation for local vals.
+- **Aug 31** - [#20363](https://github.com/dotnet/fsharp/pull/20363): Fuse the optimizer inlining copy + type-instantiation passes.
+- **Aug 31** - [#20367](https://github.com/dotnet/fsharp/pull/20367): Inline TryD to remove constraint-solver closure allocations.
+- **Aug 31** - [#20368](https://github.com/dotnet/fsharp/pull/20368): eliminate per-call closure in StackGuard.Guard via InlineIfLambda.
+- **Sep 1** - [#20287](https://github.com/dotnet/fsharp/pull/20287): IL: hold custom attributes in fields rather than a union case.
+- **Sep 4** - [#20353](https://github.com/dotnet/fsharp/pull/20353): Cache IL method parameter attributes during overload resolution.
+- **Sep 4** - [#20384](https://github.com/dotnet/fsharp/pull/20384): Avoid per-call closure allocation in type-hierarchy traversal.
+- **Sep 8** - [#20385](https://github.com/dotnet/fsharp/pull/20385): Inline the free-variable typar foldBacks.
+- **Sep 9** - [#20447](https://github.com/dotnet/fsharp/pull/20447): Remove per-call closure allocations in post-inference checks.
+- **Sep 9** - [#20423](https://github.com/dotnet/fsharp/pull/20423): Eliminate closure allocations in well-known-attribute queries.
+- **Sep 9** - [#20415](https://github.com/dotnet/fsharp/pull/20415): Make List.vMapFold inline to drop the nullness-import closure.
+- **Sep 9** - [#20372](https://github.com/dotnet/fsharp/pull/20372): Eliminate closure allocations in List.mapq and List.lengthsEqAndForall2.
+- **Sep 9** - [#20349](https://github.com/dotnet/fsharp/pull/20349): Reverse instead of sort already-ordered branch fixups in IL writer.
+- **Sep 10** - [#20374](https://github.com/dotnet/fsharp/pull/20374): Inline the static-abstract interface-constraint predicate.
+- **Sep 10** - [#20437](https://github.com/dotnet/fsharp/pull/20437): Drop the per-call closure in generic type-argument codegen.
+- **Sep 10** - [#20421](https://github.com/dotnet/fsharp/pull/20421): Drop accessibility and attribute-scan closures via ListInline.
+- **Sep 10** - [#20426](https://github.com/dotnet/fsharp/pull/20426): Avoid per-call FSharpFunc closure in remapVal member-info remap.
+- **Sep 11** - [#20487](https://github.com/dotnet/fsharp/pull/20487): Eliminate per-call closure for InlineIfLambda partial applications.
+- **Sep 16** - [#20422](https://github.com/dotnet/fsharp/pull/20422): Inline List/Array higher-order functions and adapt function arguments.
+- **Sep 16** - [#20388](https://github.com/dotnet/fsharp/pull/20388): Share the empty-array singleton for zero-length Array results.
+- **Sep 17** - [#20490](https://github.com/dotnet/fsharp/pull/20490): Name resolution: CheckIWSAM only needs the intrinsic methods.
+- **Sep 17** - [#20489](https://github.com/dotnet/fsharp/pull/20489): IL: map the short-lived metadata-only PE reader.
+- **Sep 17** - [#20486](https://github.com/dotnet/fsharp/pull/20486): IL: intern the attributes and type references read from metadata.
+- **Sep 17** - [#20481](https://github.com/dotnet/fsharp/pull/20481): FCS: fix races that made the background builder repeat work.
+- **Sep 17** - [#20494](https://github.com/dotnet/fsharp/pull/20494): Typed tree: create a type's augmentation on first use.
+- **Sep 17** - [#20261](https://github.com/dotnet/fsharp/pull/20261): IL: fix the per-reader string cache sizing.
+- **Sep 18** - [#20571](https://github.com/dotnet/fsharp/pull/20571): Stabilize OptimizeClosureIfNotInlined for F# 11.
+- **Sep 18** - [#20555](https://github.com/dotnet/fsharp/pull/20555): Ship net10.0 FSharp.Core with the SDK tools.
+- **Sep 21** - [#20506](https://github.com/dotnet/fsharp/pull/20506): Support multithreaded MSBuild in F# build tasks (concurrency benefit not measured here).
 <!-- /generated:contributions -->
 
-Thank you to everyone who helped make these improvements possible. We hope you enjoy the lower allocations, smaller IDE memory footprint, and more room for your own F# code. Keep enjoying F#!
+Special thanks to Eugene for his substantial work reducing allocations during cold compiles and IDE typechecks, and reducing the memory retained per project.
+
+We hope you enjoy the lower allocations, smaller IDE memory footprint, and more room for your own F# code. Keep enjoying F#!

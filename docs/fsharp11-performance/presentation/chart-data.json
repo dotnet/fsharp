@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "evidence_commit": "bc90ee6637fc9c7065da173bd36c8b06e2a8d6d4",
-  "generator_sha256_lf": "961609dd21c82aa1cb4374a4d5dbb0b5f93012bb0288f640ddee980c687cf000",
+  "generator_sha256_lf": "d043255971b3651f2bfc5e71c7bd9517a61fddb311dd3a2562af24c6b01bf1f2",
   "sources": [
     {
       "path": "../third-wave/results.json",
@@ -101,7 +101,7 @@
     },
     {
       "path": "../presentation/function-inlining.json",
-      "sha256": "071f5b20021c1dbd19c69da42110bec3f72ec665e9cab9ad06d283e1b6954156"
+      "sha256": "797074c3c688bbedce15cbfb3e0d962fa8ddf5cb12fa7af2b655d68e14b88554"
     }
   ],
   "statistic": "Arm median; reduction = 100 * (1 - newer median / older median). No pooled cohorts or confidence claim.",
@@ -1393,8 +1393,30 @@
         "path": "src/FSharp.Core/array.fsi",
         "baseline_blob": "18a4463277ec51931cb15441a97ebd3ac59a2bc6",
         "candidate_blob": "0f10ff5c147298741aab93a7ca46ad24b532e00e"
+      },
+      {
+        "path": "src/FSharp.Core/option.fs",
+        "baseline_blob": "ea5da774d87994a9f3ee06ad446b5e21a65d9276",
+        "candidate_blob": "ea5da774d87994a9f3ee06ad446b5e21a65d9276"
+      },
+      {
+        "path": "src/FSharp.Core/option.fsi",
+        "baseline_blob": "db381aec8ad4c27e2fdfecec50806b14fc62930d",
+        "candidate_blob": "db381aec8ad4c27e2fdfecec50806b14fc62930d"
       }
     ],
+    "previously_inlined": {
+      "modules": [
+        "Option",
+        "ValueOption"
+      ],
+      "examples": [
+        "map",
+        "bind",
+        "fold"
+      ],
+      "verification": "Each example is public inline in option.fsi and has an InlineIfLambda parameter in option.fs in both source revisions. These files are byte-identical between revisions. This is not a claim that every function has InlineIfLambda: ValueOption.defaultWith deliberately omits it."
+    },
     "changes": [
       {
         "number": 20422,

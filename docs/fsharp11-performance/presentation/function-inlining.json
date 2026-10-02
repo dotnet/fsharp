@@ -26,8 +26,23 @@
       "path": "src/FSharp.Core/array.fsi",
       "baseline_blob": "18a4463277ec51931cb15441a97ebd3ac59a2bc6",
       "candidate_blob": "0f10ff5c147298741aab93a7ca46ad24b532e00e"
+    },
+    {
+      "path": "src/FSharp.Core/option.fs",
+      "baseline_blob": "ea5da774d87994a9f3ee06ad446b5e21a65d9276",
+      "candidate_blob": "ea5da774d87994a9f3ee06ad446b5e21a65d9276"
+    },
+    {
+      "path": "src/FSharp.Core/option.fsi",
+      "baseline_blob": "db381aec8ad4c27e2fdfecec50806b14fc62930d",
+      "candidate_blob": "db381aec8ad4c27e2fdfecec50806b14fc62930d"
     }
   ],
+  "previously_inlined": {
+    "modules": ["Option", "ValueOption"],
+    "examples": ["map", "bind", "fold"],
+    "verification": "Each example is public inline in option.fsi and has an InlineIfLambda parameter in option.fs in both source revisions. These files are byte-identical between revisions. This is not a claim that every function has InlineIfLambda: ValueOption.defaultWith deliberately omits it."
+  },
   "changes": [
     {
       "number": 20422,

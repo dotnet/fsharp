@@ -176,7 +176,7 @@ const dateLabel = timestamp => {
     return `${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][date.getUTCMonth()]} ${date.getUTCDate()}`;
 };
 const blocks = {
-    opening: `F# 11 brings **roughly 20-50% less allocation during compilation** across six real-world projects and **about 30% less memory retained after IDE project checks**. **And this is a win for your F# code, too!** Better ${prLink(20422, 'inlining of `FSharp.Core` calls')} eliminates closure allocations in everyday functional code. Recompile with the new compiler and \`FSharp.Core\`, and these optimizations reach your applications and libraries, not just the compiler.\n\nBehind these gains are **${contributing.length} performance and supporting PRs** from auduchinok and T-Gro, merged between **${dateLabel(contributing[0].merged_at)} and ${dateLabel(contributing.at(-1).merged_at)}, 2026**. **${cutoff} are already in RC1**; the remaining **${contributing.length - cutoff} are in the RC2 source**, headed for .NET 11 and F# 11 GA.`,
+    opening: `F# 11 brings **roughly 20-50% less allocation during compilation** across six real-world projects and **about 30% less memory retained after IDE project checks**. **And this is a win for your F# code, too!** Better ${prLink(20422, 'inlining of `FSharp.Core` calls')} eliminates closure allocations in everyday functional code. Recompile with the new compiler and \`FSharp.Core\`, and these optimizations reach your applications and libraries, not just the compiler.\n\nBehind these gains are **${contributing.length} performance and supporting PRs**, merged between **${dateLabel(contributing[0].merged_at)} and ${dateLabel(contributing.at(-1).merged_at)}, 2026**. **${cutoff} are already in RC1**; the remaining **${contributing.length - cutoff} are in the RC2 source**, headed for .NET 11 and F# 11 GA.`,
     compilation: table(['Compilation workload', 'Old GB', 'RC1 GB', 'New GB', 'RC1 vs old: less allocation', 'New vs old: less allocation'],
         data.sdk_allocation.rows.map(r => [r.label, ...values(r).map(v => fmt(v, 3)),
             `${fmt(r.rc1_reduction_vs_old)}%`, `${fmt(r.new_reduction_vs_old)}%`])),
@@ -197,7 +197,7 @@ const blocks = {
                 group.functions.map(name => `\`${name}\``).join(', ')]), false),
     contributions: [
         '**Already in RC1**',
-        contributing.map((p, index) => `${index === cutoff ? '\n---\n\n**In the RC2 source, headed for GA**\n\n' : ''}- **${dateLabel(p.merged_at)}** - ${prLink(Number(p.number))}: ${p.title.replace(/^\[MicroPerf\]\s*(Perf:\s*)?/, '').replace(/\bopaque callbacks\b/g, 'function arguments')} (${p.author}${Number(p.number) === 20506 ? '; concurrency benefit not measured here' : ''}).`).join('\n'),
+        contributing.map((p, index) => `${index === cutoff ? '\n---\n\n**In the RC2 source, headed for GA**\n\n' : ''}- **${dateLabel(p.merged_at)}** - ${prLink(Number(p.number))}: ${p.title.replace(/^\[MicroPerf\]\s*(Perf:\s*)?/, '').replace(/\bopaque callbacks\b/g, 'function arguments')}${Number(p.number) === 20506 ? ' (concurrency benefit not measured here)' : ''}.`).join('\n'),
     ].join('\n\n'),
 };
 
