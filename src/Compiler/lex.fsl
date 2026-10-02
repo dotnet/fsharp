@@ -1292,7 +1292,7 @@ and singleQuoteString (sargs: LexerStringArgs) (skip: bool) = parse
           // * Adjust `lexInvalidCharLiteralInString` in `FSComp.txt`: remove `Note` (incl. 2nd placeholder) 
           // * uncomment `fail ...`
           addByteChar buf c
-          warning (Error(FSComp.SR.lexInvalidCharLiteralInString (s[0..3], sprintf "\\%03i" (x % 256)), lexbuf.LexemeRange))
+          warning (Error(FSComp.SR.lexInvalidCharLiteralInString (s[0..3], "\\" + (x % 256).ToString("D3", CultureInfo.InvariantCulture)), lexbuf.LexemeRange))
           //fail args lexbuf (FSComp.SR.lexInvalidCharLiteralInString (s[0..3])) ()
           result()
       else
