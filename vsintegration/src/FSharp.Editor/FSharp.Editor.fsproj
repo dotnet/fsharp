@@ -94,6 +94,9 @@
     <Compile Include="Navigation\NavigateToSearchService.fs" />
     <Compile Include="Navigation\FindUsagesService.fs" />
     <Compile Include="Navigation\FindDefinitionService.fs" />
+    <Compile Include="CodeMap\FSharpStackFrameNameParser.fs" />
+    <Compile Include="CodeMap\FSharpCallStackResolver.fs" />
+    <Compile Include="CodeMap\FSharpCallStackPlan.fs" />
     <Compile Include="QuickInfo\WpfFactories.fs" />
     <Compile Include="QuickInfo\Views.fs" />
     <Compile Include="QuickInfo\QuickInfoProvider.fs" />
@@ -169,11 +172,14 @@
   <ItemGroup>
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
+    <Reference Include="System.ComponentModel.Composition" />
     <Reference Include="System.Runtime.Caching" />
+    <!-- GraphTransactionScope has a System.Transactions.Transaction overload, so the whole ctor
+         group needs this reference even though the Code Map provider uses the parameterless one. -->
+    <Reference Include="System.Transactions" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xaml" />
     <Reference Include="WindowsBase" />
-    <Reference Include="System.ComponentModel.Composition" />
   </ItemGroup>
 
   <ItemGroup>
@@ -183,6 +189,35 @@
     <PackageReference Include="Microsoft.VisualStudio.ProjectSystem" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
     <PackageReference Include="Microsoft.VisualStudio.ProjectSystem.Managed" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
     <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Condition="'$(Configuration)' == 'Debug'" />
+  </ItemGroup>
+
+  <!-- The Progression assemblies backing Code Map ship only inside Visual Studio and have no NuGet
+       package. $(MSBuildExtensionsPath) reaches the IDE only when the IDE is doing the building -
+       under `dotnet build` it resolves into the SDK - so the Code Map provider is compiled where
+       they are present and left out where they are not. The frame parser and the call stack
+       resolver, which carry the language knowledge and the tests, never reference them. -->
+  <PropertyGroup>
+    <VisualStudioIdeDirectory>$(MSBuildExtensionsPath)\..\Common7\IDE\</VisualStudioIdeDirectory>
+    <VisualStudioIdeDirectory Condition="!Exists('$(VisualStudioIdeDirectory)') AND '$(DevEnvDir)' != ''">$(DevEnvDir)</VisualStudioIdeDirectory>
+    <ProgressionAssemblyDirectory>$(VisualStudioIdeDirectory)CommonExtensions\Microsoft\Architecture Tools\GraphProviderPackage\</ProgressionAssemblyDirectory>
+    <HasProgressionAssemblies Condition="Exists('$(ProgressionAssemblyDirectory)Microsoft.VisualStudio.Progression.Interfaces.dll')">true</HasProgressionAssemblies>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(HasProgressionAssemblies)' == 'true'">
+    <Reference Include="Microsoft.VisualStudio.Progression.Interfaces">
+      <HintPath>$(ProgressionAssemblyDirectory)Microsoft.VisualStudio.Progression.Interfaces.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Microsoft.VisualStudio.Progression.CodeSchema">
+      <HintPath>$(ProgressionAssemblyDirectory)Microsoft.VisualStudio.Progression.CodeSchema.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Microsoft.VisualStudio.GraphModel">
+      <HintPath>$(VisualStudioIdeDirectory)PublicAssemblies\Microsoft.VisualStudio.GraphModel.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <!-- Nothing compiles against the provider, so it goes last rather than beside the two files it uses. -->
+    <Compile Include="CodeMap\FSharpGraphProvider.fs" />
   </ItemGroup>
 
   <ItemGroup>
