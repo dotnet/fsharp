@@ -11,7 +11,6 @@ type LanguageFeature =
     | ResumableStateMachines
     | RuntimeAsync
     | WitnessPassing
-    | AdditionalTypeDirectedConversions
     | StringInterpolation
     | ExpandedMeasurables
     | NullnessChecking
