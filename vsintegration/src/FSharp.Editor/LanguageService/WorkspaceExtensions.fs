@@ -536,9 +536,6 @@ module private CheckerExtensions =
                         checker.ParseAndCheckDocumentWithPossibleStaleResults(document, options, allowStaleResults, userOpName = userOpName)
             }
 
-let private orRaise message =
-    ValueOption.defaultWith (fun () -> raise (OperationCanceledException(message: string)))
-
 type Document with
 
     /// Get the compilation options of the F# project that is associated with the given F# document,
@@ -639,8 +636,11 @@ type Document with
 
     /// Parses the given F# document.
     member this.GetFSharpParseResultsAsync(userOpName) =
-        this.TryGetFSharpParseResultsAsync(userOpName)
-        |> CancellableTask.map (orRaise "FSharp project options not found.")
+        cancellableTask {
+            match! this.TryGetFSharpParseResultsAsync(userOpName) with
+            | ValueSome parseResults -> return parseResults
+            | ValueNone -> return raise (OperationCanceledException("FSharp project options not found."))
+        }
 
     /// Parses and checks the given F# document; ValueNone while its project has no compilation options
     /// or the check was aborted.
