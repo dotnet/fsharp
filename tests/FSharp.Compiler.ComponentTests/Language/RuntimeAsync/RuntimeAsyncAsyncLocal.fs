@@ -3,7 +3,7 @@ module RuntimeAsyncAsyncLocal
 open System.Threading
 open System.Threading.Tasks
 
-open RuntimeTaskBuilder.RuntimeTask
+open Microsoft.FSharp.Control.AsyncSeq2Implementation
 
 let private context = AsyncLocal<string>()
 
