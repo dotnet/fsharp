@@ -42,10 +42,13 @@ jobs:
   pre-activation:
     outputs:
       prs: ${{ steps.select.outputs.prs }}
+  agent:
+    needs: [activation, pre_activation]
 
 if: needs.pre_activation.outputs.prs != '[]'
 
 timeout-minutes: 15
+# Compile with gh-aw v0.83.5 and --gh-aw-ref v0.83.5 to suppress PR checkout as well.
 checkout: false
 
 concurrency:
@@ -108,6 +111,8 @@ network:
   - github
 
 tools:
+  bash: []
+  cli-proxy: false
   github:
     toolsets: [pull_requests, repos]
     # min-integrity: none is required to read PRs from any fork/author,
