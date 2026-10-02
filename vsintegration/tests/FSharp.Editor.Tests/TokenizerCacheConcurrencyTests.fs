@@ -153,3 +153,41 @@ type TokenizerCacheConcurrencyTests() =
 
         let diverged = String.concat Environment.NewLine failures
         Assert.True(failures.IsEmpty, $"Concurrent classification diverged:{Environment.NewLine}{diverged}")
+
+    [<Fact>]
+    member _.``Concurrent scans that grow the cache of a document first seen shorter agree with a single-threaded scan``() =
+        let perLine = scanEveryLine sourceText
+        let commentedPerLine = scanEveryLine commentedText
+        let lineCount = sourceText.Lines.Count
+        let shortText = SourceText.From "let x = 1"
+        let failures = ConcurrentQueue<string>()
+
+        // A cache is sized for the first text it sees, so every round starts from one slot and the scans
+        // below race on growing it.
+        for round in 1..20 do
+            let documentId = newDocumentId ()
+            classify documentId shortText (lineSpan shortText 0 0) |> ignore
+
+            runConcurrently workerCount (fun worker ->
+                let random = Random(round * workerCount + worker)
+
+                for iteration in 1..10 do
+                    let text, expectedPerLine =
+                        if (worker + iteration) % 2 = 0 then
+                            sourceText, perLine
+                        else
+                            commentedText, commentedPerLine
+
+                    // Half the requests read from the first line, through the entries each growth copies.
+                    let endLine = random.Next lineCount
+                    let startLine = if iteration % 2 = 0 then 0 else random.Next(endLine + 1)
+
+                    let actual = classify documentId text (lineSpan text startLine endLine)
+                    let expected = expectedRange expectedPerLine startLine endLine
+
+                    if actual <> expected then
+                        failures.Enqueue
+                            $"round {round}, lines {startLine}..{endLine}\n  expected {describe expected}\n  actual   {describe actual}")
+
+        let diverged = String.concat Environment.NewLine failures
+        Assert.True(failures.IsEmpty, $"Concurrent classification diverged:{Environment.NewLine}{diverged}")
