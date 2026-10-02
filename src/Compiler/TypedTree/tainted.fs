@@ -33,8 +33,14 @@ type internal TypeProviderError
     new((errNum, msg: RichText), tpDesignation,m) =
         TypeProviderError(errNum, tpDesignation, m, [msg])
 
+    new((errNum, msg: string), tpDesignation, m) =
+        TypeProviderError(errNum, tpDesignation, m, [RichText.mkText msg])
+
     new(errNum, tpDesignation, m, messages: seq<RichText>) =
         TypeProviderError(errNum, tpDesignation, m, List.ofSeq messages, None, None)
+
+    new(errNum, tpDesignation, m, messages: seq<string>) =
+        TypeProviderError(errNum, tpDesignation, m, messages |> Seq.map RichText.mkText |> List.ofSeq, None, None)
 
     member _.Number = errNum
     member _.Range = m
@@ -50,7 +56,7 @@ type internal TypeProviderError
 
     override this.Message = this.RichMessage.Text
 
-    member _.MapText(f, tpDesignation, m) =
+    member _.MapText(f: RichText -> int * RichText, tpDesignation, m) =
         let (errNum: int), _ = f RichText.empty
         TypeProviderError(errNum, tpDesignation, m,  (Seq.map (f >> snd) errors))
 
@@ -110,11 +116,11 @@ type internal Tainted<'T> (context: TaintedContext, value: 'T) =
             | :? TypeProviderError -> reraise()
             | :? AggregateException as ae ->
                     let errNum,_ = FSComp.SR.etProviderError("", "")
-                    let messages = [for e in ae.InnerExceptions -> RichText.mkText (if isNull e.InnerException then e.Message else (e.Message + ": " + e.GetBaseException().Message))]
+                    let messages = [for e in ae.InnerExceptions -> if isNull e.InnerException then e.Message else (e.Message + ": " + e.GetBaseException().Message)]
                     raise <| TypeProviderError(errNum, this.TypeProviderDesignation, range, messages)
             | e ->
                     let errNum,_ = FSComp.SR.etProviderError("", "")
-                    let error = RichText.mkText (if isNull e.InnerException then e.Message else (e.Message + ": " + e.GetBaseException().Message))
+                    let error = if isNull e.InnerException then e.Message else (e.Message + ": " + e.GetBaseException().Message)
                     raise <| TypeProviderError((errNum, error), this.TypeProviderDesignation, range)
 
     member _.TypeProvider = Tainted<_>(context, context.TypeProvider)
