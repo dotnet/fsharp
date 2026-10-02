@@ -29,7 +29,7 @@ let private keywordChanges (sourceText: SourceText) (toStruct: bool) (isStruct: 
 let kind: StructKind =
     {
         IsExpr =
-            fun expr _ ->
+            fun _ expr _ ->
                 match expr with
                 | SynExpr.AnonRecd _ -> true
                 | _ -> false
