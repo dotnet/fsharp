@@ -105,6 +105,16 @@ Sugerir nomes para identificadores não resolvidos;</target>
         <target state="translated">Use a subtração em vez da negação</target>
         <note />
       </trans-unit>
+      <trans-unit id="ExtractToLetBinding">
+        <source>Extract to let binding</source>
+        <target state="new">Extract to let binding</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ExtractToLiteral">
+        <source>Extract to literal</source>
+        <target state="new">Extract to literal</target>
+        <note />
+      </trans-unit>
       <trans-unit id="FSharpDisposableLocalValuesClassificationType">
         <source>F# Disposable Values (locals)</source>
         <target state="translated">Valores F# Descartáveis (locais)</target>
