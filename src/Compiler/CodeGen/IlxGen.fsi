@@ -66,6 +66,15 @@ type internal IlxGenOptions =
         alwaysInline: bool
     }
 
+/// Opaque ILX code generation environment used during emission.
+type IlxGenEnv
+
+/// Opaque handle that captures the subset of `IlxGenEnv` required for hot reload baseline reuse.
+type IlxGenEnvSnapshot
+
+/// Capture the relevant parts of an ILX code generation environment for later reuse.
+val snapshotIlxGenEnv: IlxGenEnv -> IlxGenEnvSnapshot
+
 /// The results of the ILX compilation of one fragment of an assembly
 type public IlxGenResults =
     {
@@ -86,6 +95,9 @@ type public IlxGenResults =
 
         /// The generated IL/ILX resources associated with F# quotations
         quotationResourceInfo: (ILTypeRef list * byte[]) list
+        /// Snapshot of the ILX code generation environment, populated only for hot
+        /// reload baseline-capture compiles so ordinary compiles retain nothing
+        ilxGenEnvSnapshot: IlxGenEnvSnapshot option
     }
 
 /// Used to support the compilation-inversion operations "ClearGeneratedValue" and "LookupGeneratedValue"
