@@ -10,6 +10,7 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 
 open FSharp.Compiler.EditorServices
+open FSharp.Compiler.Symbols
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 
@@ -155,11 +156,39 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
                             let endPos = Position.fromZ endLinePos.Line endLinePos.Character
                             Range.mkRange context.Document.FilePath startPos endPos
 
-                        let isAttribute =
-                            ParsedInput.GetEntityKind(unresolvedIdentRange.Start, parseResults.ParseTree) = Some EntityKind.Attribute
+                        let entityKind =
+                            ParsedInput.GetEntityKind(unresolvedIdentRange.Start, parseResults.ParseTree)
+
+                        let isAttribute = entityKind = Some EntityKind.Attribute
+
+                        // When the unresolved identifier is used as a type, .NET sometimes exposes both a generic
+                        // and a non-generic type under the same short name in different namespaces (e.g.
+                        // `System.Collections.IEnumerator` vs `System.Collections.Generic.IEnumerator<'T>`). The
+                        // candidates below carry no arity information, so without this check the suggested `open`
+                        // is whichever entity happens to be enumerated first - which can open the non-generic
+                        // namespace even though the usage site has type arguments. See
+                        // https://github.com/dotnet/fsharp/issues/16155
+                        let entityArityMatches =
+                            if entityKind = Some EntityKind.Type then
+                                let hasTypeArgsAtUsage =
+                                    let mutable i = context.Span.End
+
+                                    while i < sourceText.Length && Char.IsWhiteSpace(sourceText.[i]) do
+                                        i <- i + 1
+
+                                    i < sourceText.Length && sourceText.[i] = '<'
+
+                                fun (assemblySymbol: AssemblySymbol) ->
+                                    match assemblySymbol.Symbol with
+                                    | :? FSharpEntity as fsharpEntity when not fsharpEntity.IsFSharpModule ->
+                                        (fsharpEntity.GenericParameters.Count > 0) = hasTypeArgsAtUsage
+                                    | _ -> true
+                            else
+                                fun _ -> true
 
                         let entities =
                             assemblyContentProvider.GetAllEntitiesInProjectAndReferencedAssemblies checkResults
+                            |> Array.filter entityArityMatches
                             |> Array.collect (fun s ->
                                 [|
                                     yield s.TopRequireQualifiedAccessParent, s.AutoOpenParent, s.Namespace, s.CleanedIdents
