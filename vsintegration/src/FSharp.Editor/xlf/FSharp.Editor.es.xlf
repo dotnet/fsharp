@@ -403,6 +403,11 @@ Mostrar comentarios en Información rápida</target>
         <target state="translated">Usar 'nameof'</target>
         <note />
       </trans-unit>
+      <trans-unit id="UseOptionForOptionalParameter">
+        <source>Use 'option' for optional parameter</source>
+        <target state="new">Use 'option' for optional parameter</target>
+        <note />
+      </trans-unit>
       <trans-unit id="UseTripleQuotedInterpolation">
         <source>Use triple quoted string interpolation.</source>
         <target state="translated">Use la interpolación de cadenas entre comillas triples.</target>
@@ -426,6 +431,11 @@ Mostrar comentarios en Información rápida</target>
       <trans-unit id="UseValueInsteadOfDeref">
         <source>Use '.Value' to dereference expression</source>
         <target state="translated">Usar ".Value" para desreferenciar la expresión</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UseValueOptionForOptionalParameter">
+        <source>Use 'voption' for optional parameter</source>
+        <target state="new">Use 'voption' for optional parameter</target>
         <note />
       </trans-unit>
       <trans-unit id="WrapExpressionInParentheses">
