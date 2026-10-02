@@ -253,12 +253,18 @@ type internal FSharpExtractFunctionRefactoring [<ImportingConstructor>] () =
         cancellableTask {
             let document = context.Document
 
-            if not (context.Span.IsEmpty || document.IsFSharpSignatureFile) then
+            if not document.IsFSharpSignatureFile then
                 let! cancellationToken = CancellableTask.getCancellationToken ()
                 let! sourceText = document.GetTextAsync cancellationToken
                 let! parseResults = document.GetFSharpParseResultsAsync(nameof FSharpExtractFunctionRefactoring)
 
-                match tryExtractionTarget sourceText parseResults.ParseTree context.Span with
+                let target =
+                    if context.Span.IsEmpty then
+                        tryParenthesizedLambdaAtCaret sourceText parseResults.ParseTree context.Span.Start
+                    else
+                        tryExtractionTarget sourceText parseResults.ParseTree context.Span
+
+                match target with
                 | ValueNone -> ()
                 | ValueSome target ->
                     match FunctionExtraction.enclosingScope target.Path with
