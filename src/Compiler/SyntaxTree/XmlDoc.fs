@@ -12,10 +12,134 @@ open Internal.Utilities.Collections
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.IO
 open FSharp.Compiler.Text
+open FSharp.Compiler.Text.Position
 open FSharp.Compiler.Text.Range
 
+/// The tag an XML doc attribute value belongs to
+[<RequireQualifiedAccess>]
+type XmlDocRefKind =
+    | Param
+    | ParamRef
+    | TypeParam
+    | TypeParamRef
+    | Cref
+
+/// An attribute value in an XML doc that names something else: a `name` or a `cref`
+[<Struct>]
+type XmlDocRef =
+    {
+        Kind: XmlDocRefKind
+        Text: string
+        Range: range
+    }
+
+module private XmlDocRefs =
+
+    /// The tags that name something, with the attribute that holds the name
+    let private tags =
+        [|
+            "param", XmlDocRefKind.Param, "name"
+            "paramref", XmlDocRefKind.ParamRef, "name"
+            "typeparam", XmlDocRefKind.TypeParam, "name"
+            "typeparamref", XmlDocRefKind.TypeParamRef, "name"
+            "see", XmlDocRefKind.Cref, "cref"
+            "seealso", XmlDocRefKind.Cref, "cref"
+            "exception", XmlDocRefKind.Cref, "cref"
+            "permission", XmlDocRefKind.Cref, "cref"
+        |]
+
+    /// The three slashes of `///` are not part of the stored line
+    let private lineTextOffset = 3
+
+    let private isBlank (line: string) = line.AsSpan().TrimStart(' ').IsEmpty
+
+    /// The line the XML of a doc starts on, or -1 for a blank doc or one of plain text, which becomes an escaped
+    /// `<summary>` and so names nothing: the rule `XmlDoc.GetElaboratedXmlLines` applies
+    let private firstXmlLine (lines: string[]) =
+        match Array.tryFindIndex (isBlank >> not) lines with
+        | Some i when lines[i].AsSpan().TrimStart(' ').StartsWith("<".AsSpan(), StringComparison.Ordinal) -> i
+        | _ -> -1
+
+    let private skipWhiteSpace (text: string) i =
+        let mutable i = i
+
+        while i < text.Length && Char.IsWhiteSpace text[i] do
+            i <- i + 1
+
+        i
+
+    /// Where the quoted value of the attribute whose name starts at `nameStart` of `line` begins, and its length there.
+    /// A value that runs over a line break has no single-line range.
+    let private valueSpan (line: string) (nameStart: int) (attributeName: string) =
+        let equals = skipWhiteSpace line (nameStart + attributeName.Length)
+
+        if equals < line.Length && line[equals] = '=' then
+            let quote = skipWhiteSpace line (equals + 1)
+
+            if quote < line.Length && (line[quote] = '"' || line[quote] = '\'') then
+                match line.IndexOf(line[quote], quote + 1) with
+                | -1 -> ValueNone
+                | close -> ValueSome struct (quote + 1, close - quote - 1)
+            else
+                ValueNone
+        else
+            ValueNone
+
+    /// Parses the doc's own lines, not the text with `<include>` expanded, so that every element maps back to a source line
+    let collect (lines: string[]) (lineRanges: range[]) =
+        match firstXmlLine lines with
+        | -1 -> [||]
+        | first ->
+            let text = String.Join("\n", lines, first, lines.Length - first)
+
+            let xml =
+                if
+                    text.AsSpan().Contains("name".AsSpan(), StringComparison.Ordinal)
+                    || text.AsSpan().Contains("cref".AsSpan(), StringComparison.Ordinal)
+                then
+                    // A badly formed doc names nothing; FS3390 reports it
+                    try
+                        ValueSome(XDocument.Parse("<doc>\n" + text + "\n</doc>", LoadOptions.SetLineInfo))
+                    with :? XmlException ->
+                        ValueNone
+                else
+                    ValueNone
+
+            match xml with
+            | ValueNone -> [||]
+            | ValueSome xml ->
+                [|
+                    for element in xml.Descendants() do
+                        match tags |> Array.tryFind (fun (tag, _, _) -> element.Name = XName.Get tag) with
+                        | Some(_, kind, attributeName) ->
+                            match element.Attribute(XName.Get attributeName) with
+                            | null -> ()
+                            | attribute ->
+                                let position = attribute :> IXmlLineInfo
+                                // Line 1 of the parsed text is the wrapping `<doc>`
+                                let line = first + position.LineNumber - 2
+
+                                match valueSpan lines[line] (position.LinePosition - 1) attributeName with
+                                | ValueSome struct (offset, length) ->
+                                    let m = lineRanges[line]
+                                    let column = m.StartColumn + lineTextOffset + offset
+
+                                    {
+                                        Kind = kind
+                                        Text = attribute.Value
+                                        Range =
+                                            mkFileIndexRange m.FileIndex (mkPos m.StartLine column) (mkPos m.StartLine (column + length))
+                                    }
+                                | ValueNone -> ()
+                        | None -> ()
+                |]
+
 /// Represents collected XmlDoc lines
-type XmlDoc(unprocessedLines: string[], range: range) =
+type XmlDoc(unprocessedLines: string[], lineRanges: range[], range: range) =
+    do
+        if lineRanges.Length <> 0 && lineRanges.Length <> unprocessedLines.Length then
+            invalidArg (nameof lineRanges) "one range per line, or none"
+
     let rec processLines (lines: string list) =
         match lines with
         | [] -> []
@@ -31,6 +155,8 @@ type XmlDoc(unprocessedLines: string[], range: range) =
                 @ (lines |> List.map Internal.Utilities.XmlAdapters.escape)
                 @ [ "</summary>" ]
 
+    new(unprocessedLines: string[], range: range) = XmlDoc(unprocessedLines, [||], range)
+
     /// Get the lines before insertion of implicit summary tags and encoding
     member _.UnprocessedLines = unprocessedLines
 
@@ -44,6 +170,16 @@ type XmlDoc(unprocessedLines: string[], range: range) =
 
     member _.Range = range
 
+    /// The source range of each unprocessed line; empty when the doc did not come from source
+    member _.LineRanges = lineRanges
+
+    /// The `name` and `cref` attribute values in the doc, with their source ranges; empty without line ranges
+    member _.GetRefs() =
+        if lineRanges.Length = 0 then
+            [||]
+        else
+            XmlDocRefs.collect unprocessedLines lineRanges
+
     static member Empty = XmlDocStatics.Empty
 
     member _.IsEmpty = unprocessedLines |> Array.forall String.IsNullOrWhiteSpace
@@ -56,7 +192,16 @@ type XmlDoc(unprocessedLines: string[], range: range) =
             elif doc2.IsEmpty then doc1.Range
             else unionRanges doc1.Range doc2.Range
 
-        XmlDoc(Array.append doc1.UnprocessedLines doc2.UnprocessedLines, range)
+        let lineRanges =
+            if
+                doc1.LineRanges.Length = doc1.UnprocessedLines.Length
+                && doc2.LineRanges.Length = doc2.UnprocessedLines.Length
+            then
+                Array.append doc1.LineRanges doc2.LineRanges
+            else
+                [||]
+
+        XmlDoc(Array.append doc1.UnprocessedLines doc2.UnprocessedLines, lineRanges, range)
 
     member doc.GetXmlText() =
         if doc.IsEmpty then
@@ -241,8 +386,9 @@ type PreXmlDoc =
                 XmlDoc.Empty
             else
                 let lines = Array.map fst preLines
-                let m = Array.reduce unionRanges (Array.map snd preLines)
-                let doc = XmlDoc(lines, m)
+                let lineRanges = Array.map snd preLines
+                let m = Array.reduce unionRanges lineRanges
+                let doc = XmlDoc(lines, lineRanges, m)
 
                 if check then
                     doc.Check(paramNamesOpt)

@@ -348,7 +348,7 @@ type BoundModel private (
                         if not m.IsSynthetic then
                             builder.Write(m, item))
 
-                    let semanticClassification = sResolutions.GetSemanticClassification(tcGlobals, tcImports.GetImportMap(), sink.GetFormatSpecifierLocations(), None, RelatedSymbolUseKind.All)
+                    let semanticClassification = sResolutions.GetSemanticClassification(tcGlobals, tcImports.GetImportMap(), sink.GetFormatSpecifierLocations(), None, RelatedSymbolUseKind.AllInCode)
 
                     let sckBuilder = SemanticClassificationKeyStoreBuilder()
                     sckBuilder.WriteAll semanticClassification
