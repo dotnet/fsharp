@@ -1,0 +1,32 @@
+{
+  "timestamp": "2026-10-02T04:59:27Z",
+  "eligible_prs": [20690, 20671, 20648],
+  "actions": [],
+  "result": "no_action",
+  "details": {
+    "20690": {
+      "category": "C",
+      "checks_total": 53,
+      "checks_successful": 53,
+      "mergeable_state": "blocked",
+      "last_review_comment": null,
+      "note": "CI is healthy and the PR is awaiting human review or approval."
+    },
+    "20671": {
+      "category": "C",
+      "checks_total": 53,
+      "checks_successful": 53,
+      "mergeable_state": "blocked",
+      "last_review_comment": null,
+      "note": "No new activity; CI remains healthy and the PR is awaiting human review or approval."
+    },
+    "20648": {
+      "category": "C",
+      "checks_total": 53,
+      "checks_successful": 53,
+      "mergeable_state": "blocked",
+      "last_review_comment": null,
+      "note": "No new activity; CI remains healthy and the PR is awaiting human review or approval."
+    }
+  }
+}
