@@ -242,11 +242,18 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
             openDocumentClassifications.Remove documentId |> ignore
             openDocumentClassifications.Add(documentId, classification))
 
+    static let tryGetRemembered (documentId: DocumentId) =
+        // Under the writer's lock: between its Remove and Add the entry is briefly missing.
+        lock openDocumentClassifications (fun () ->
+            match openDocumentClassifications.TryGetValue documentId with
+            | true, classification -> ValueSome classification
+            | _ -> ValueNone)
+
     // Only for the text it was computed from: the lookup names positions, so against edited text it
     // would colour the wrong characters.
     static let addLastGood (documentId: DocumentId) (sourceText: SourceText) (targetSpan: TextSpan) (result: List<ClassifiedSpan>) =
-        match openDocumentClassifications.TryGetValue documentId with
-        | true, classification when classification.Text.ContentEquals sourceText ->
+        match tryGetRemembered documentId with
+        | ValueSome classification when classification.Text.ContentEquals sourceText ->
             addSemanticClassificationByLookup sourceText targetSpan classification.Lookup result
         | _ -> ()
 
@@ -263,9 +270,10 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
                 let classificationData =
                     checkResults.GetSemanticClassification(None, RelatedSymbolUseKind.All)
 
-                // Every checked file resolves at least its enclosing module, so nothing here means
-                // the classification itself failed (SemanticClassification.fs recovers with an empty
-                // array). Remembering that would pin the version to no colours.
+                // Every checked file resolves at least its enclosing module - an implicit one as a
+                // zero-width item - so nothing here means the classification itself failed (an
+                // aborted check, or SemanticClassification.fs recovering with an empty array).
+                // Remembering that would pin the version to no colours.
                 if classificationData.Length = 0 then
                     return ValueNone
                 else
@@ -445,8 +453,8 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
                                 SemanticVersion = semanticVersion
                             }
 
-                        match openDocumentClassifications.TryGetValue document.Id with
-                        | true, classification when classification.Version = version ->
+                        match tryGetRemembered document.Id with
+                        | ValueSome classification when classification.Version = version ->
                             let eventProps: (string * obj) array =
                                 [|
                                     "context.document.project.id", document.Project.Id.Id.ToString()
