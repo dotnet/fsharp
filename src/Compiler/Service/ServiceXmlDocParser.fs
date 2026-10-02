@@ -222,7 +222,7 @@ module XmlDocComment =
         Some(res, pos + (s.Length - res.Length))
 
     let inline str (prefix: string) (s: string, pos) =
-        match s.StartsWithOrdinal(prefix) with
+        match s.StartsWith(prefix, System.StringComparison.Ordinal) with
         | true ->
             let res = s.Substring prefix.Length
             Some(res, pos + (s.Length - res.Length))
