@@ -3880,9 +3880,29 @@ FSharp.Compiler.EditorServices.ModuleKind: Int32 GetHashCode()
 FSharp.Compiler.EditorServices.ModuleKind: Int32 GetHashCode(System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.ModuleKind: System.String ToString()
 FSharp.Compiler.EditorServices.ModuleKind: Void .ctor(Boolean, Boolean)
+FSharp.Compiler.EditorServices.NavigableContainer+Container: FSharp.Compiler.EditorServices.NavigableContainer get_parent()
+FSharp.Compiler.EditorServices.NavigableContainer+Container: FSharp.Compiler.EditorServices.NavigableContainer parent
+FSharp.Compiler.EditorServices.NavigableContainer+Container: FSharp.Compiler.EditorServices.NavigableContainerType containerType
+FSharp.Compiler.EditorServices.NavigableContainer+Container: FSharp.Compiler.EditorServices.NavigableContainerType get_containerType()
+FSharp.Compiler.EditorServices.NavigableContainer+Container: Microsoft.FSharp.Collections.FSharpList`1[System.String] get_nameParts()
+FSharp.Compiler.EditorServices.NavigableContainer+Container: Microsoft.FSharp.Collections.FSharpList`1[System.String] nameParts
+FSharp.Compiler.EditorServices.NavigableContainer+File: System.String fileName
+FSharp.Compiler.EditorServices.NavigableContainer+File: System.String get_fileName()
+FSharp.Compiler.EditorServices.NavigableContainer+Tags: Int32 Container
+FSharp.Compiler.EditorServices.NavigableContainer+Tags: Int32 File
 FSharp.Compiler.EditorServices.NavigableContainer: Boolean Equals(FSharp.Compiler.EditorServices.NavigableContainer)
+FSharp.Compiler.EditorServices.NavigableContainer: Boolean Equals(FSharp.Compiler.EditorServices.NavigableContainer, System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.NavigableContainer: Boolean Equals(System.Object)
 FSharp.Compiler.EditorServices.NavigableContainer: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.EditorServices.NavigableContainer: Boolean IsContainer
+FSharp.Compiler.EditorServices.NavigableContainer: Boolean IsFile
+FSharp.Compiler.EditorServices.NavigableContainer: Boolean get_IsContainer()
+FSharp.Compiler.EditorServices.NavigableContainer: Boolean get_IsFile()
+FSharp.Compiler.EditorServices.NavigableContainer: FSharp.Compiler.EditorServices.NavigableContainer NewContainer(FSharp.Compiler.EditorServices.NavigableContainerType, Microsoft.FSharp.Collections.FSharpList`1[System.String], FSharp.Compiler.EditorServices.NavigableContainer)
+FSharp.Compiler.EditorServices.NavigableContainer: FSharp.Compiler.EditorServices.NavigableContainer NewFile(System.String)
+FSharp.Compiler.EditorServices.NavigableContainer: FSharp.Compiler.EditorServices.NavigableContainer+Container
+FSharp.Compiler.EditorServices.NavigableContainer: FSharp.Compiler.EditorServices.NavigableContainer+File
+FSharp.Compiler.EditorServices.NavigableContainer: FSharp.Compiler.EditorServices.NavigableContainer+Tags
 FSharp.Compiler.EditorServices.NavigableContainer: FSharp.Compiler.EditorServices.NavigableContainerType Type
 FSharp.Compiler.EditorServices.NavigableContainer: FSharp.Compiler.EditorServices.NavigableContainerType get_Type()
 FSharp.Compiler.EditorServices.NavigableContainer: Int32 CompareTo(FSharp.Compiler.EditorServices.NavigableContainer)
@@ -3890,6 +3910,8 @@ FSharp.Compiler.EditorServices.NavigableContainer: Int32 CompareTo(System.Object
 FSharp.Compiler.EditorServices.NavigableContainer: Int32 CompareTo(System.Object, System.Collections.IComparer)
 FSharp.Compiler.EditorServices.NavigableContainer: Int32 GetHashCode()
 FSharp.Compiler.EditorServices.NavigableContainer: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.EditorServices.NavigableContainer: Int32 Tag
+FSharp.Compiler.EditorServices.NavigableContainer: Int32 get_Tag()
 FSharp.Compiler.EditorServices.NavigableContainer: System.String FullName
 FSharp.Compiler.EditorServices.NavigableContainer: System.String Name
 FSharp.Compiler.EditorServices.NavigableContainer: System.String ToString()
@@ -4747,7 +4769,7 @@ FSharp.Compiler.EditorServices.Structure+ScopeRange: Void .ctor(Scope, Collapse,
 FSharp.Compiler.EditorServices.Structure: FSharp.Compiler.EditorServices.Structure+Collapse
 FSharp.Compiler.EditorServices.Structure: FSharp.Compiler.EditorServices.Structure+Scope
 FSharp.Compiler.EditorServices.Structure: FSharp.Compiler.EditorServices.Structure+ScopeRange
-FSharp.Compiler.EditorServices.Structure: System.Collections.Generic.IEnumerable`1[FSharp.Compiler.EditorServices.Structure+ScopeRange] getOutliningRanges(System.String[], FSharp.Compiler.Syntax.ParsedInput)
+FSharp.Compiler.EditorServices.Structure: System.Collections.Generic.IEnumerable`1[FSharp.Compiler.EditorServices.Structure+ScopeRange] getOutliningRanges(System.ReadOnlyMemory`1[System.Char][], FSharp.Compiler.Syntax.ParsedInput)
 FSharp.Compiler.EditorServices.ToolTipElement+CompositionError: System.String errorText
 FSharp.Compiler.EditorServices.ToolTipElement+CompositionError: System.String get_errorText()
 FSharp.Compiler.EditorServices.ToolTipElement+Group: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.EditorServices.ToolTipElementData] elements
