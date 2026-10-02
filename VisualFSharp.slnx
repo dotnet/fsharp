@@ -108,6 +108,9 @@
     <Project Path="vsintegration/src/FSharp.Editor/FSharp.Editor.fsproj">
       <BuildType Solution="Proto|*" Project="Release" />
     </Project>
+    <Project Path="vsintegration/src/FSharp.Interactive.Window/FSharp.Interactive.Window.fsproj">
+      <BuildType Solution="Proto|*" Project="Release" />
+    </Project>
     <Project Path="vsintegration/src/FSharp.ProjectSystem.PropertyPages/FSharp.ProjectSystem.PropertyPages.vbproj">
       <BuildType Solution="Proto|*" Project="Release" />
     </Project>

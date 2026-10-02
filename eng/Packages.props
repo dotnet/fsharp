@@ -70,6 +70,9 @@
     <PackageVersion Include="Microsoft.VisualStudio.Extensibility.Sdk" Version="17.13.39620" />
     <PackageVersion Include="Microsoft.VisualStudio.Extensibility.Testing.SourceGenerator" Version="$(MicrosoftVisualStudioExtensibilityTestingVersion)" />
     <PackageVersion Include="Microsoft.VisualStudio.Extensibility.Testing.Xunit" Version="$(MicrosoftVisualStudioExtensibilityTestingVersion)" />
+    <!-- The REPL window itself. Visual Studio installs it as a prerequisite component, and both
+         C# Interactive and Python Interactive are built on it. -->
+    <PackageVersion Include="Microsoft.VisualStudio.InteractiveWindow" Version="4.0.0" />
     <PackageVersion Include="Microsoft.VisualStudio.Language.Intellisense" Version="$(VisualStudioEditorPackagesVersion)" />
     <PackageVersion Include="Microsoft.VisualStudio.Language.StandardClassification" Version="$(VisualStudioEditorPackagesVersion)" />
     <!-- Pinned to 17.13.9 (not the projects' 17.13.6-preview floor) because Protocol.Internal 17.13.9,
@@ -88,6 +91,11 @@
     <PackageVersion Include="Microsoft.VisualStudio.ProjectSystem.Managed" Version="2.3.6152103" />
     <PackageVersion Include="Microsoft.VisualStudio.ProjectSystem.Query" Version="17.13.66" />
     <PackageVersion Include="Microsoft.VisualStudio.Shell.Design" Version="18.9.493" />
+    <!-- Supplies AsyncPackage and the tool window base types. Pinned to the version the Roslyn
+         IDE packages already resolve here transitively. -->
+    <PackageVersion Include="Microsoft.VisualStudio.Shell.15.0" Version="18.9.918" />
+    <!-- Hosts the interactive window as a Visual Studio tool window. -->
+    <PackageVersion Include="Microsoft.VisualStudio.VsInteractiveWindow" Version="4.0.0" />
     <PackageVersion Include="Microsoft.VisualStudio.Shell.Immutable.10.0" Version="10.0.30319" />
     <PackageVersion Include="Microsoft.VisualStudio.Shell.Immutable.11.0" Version="11.0.50727" />
     <PackageVersion Include="Microsoft.VisualStudio.Shell.Immutable.15.0" Version="15.0.25123-Dev15Preview" />
