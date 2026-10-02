@@ -61,6 +61,13 @@
     <Compile Include="LanguageService\LegacyProjectWorkspaceMap.fs" />
     <Compile Include="LanguageService\FSharpAnalysisSaveFileCommandHandler.fs" />
     <Compile Include="LanguageService\WorkspaceExtensions.fs" />
+    <Compile Include="DocComments\XMLDocumentation.fs" />
+    <Compile Include="ObjectBrowser\NavInfo.fs" />
+    <Compile Include="ObjectBrowser\ObjectBrowserModel.fs" />
+    <Compile Include="ObjectBrowser\ObjectBrowserItems.fs" />
+    <Compile Include="ObjectBrowser\ObjectBrowserDescription.fs" />
+    <Compile Include="ObjectBrowser\ObjectBrowserList.fs" />
+    <Compile Include="ObjectBrowser\ObjectBrowserLibrary.fs" />
     <Compile Include="LanguageService\LanguageService.fs" />
     <Compile Include="LanguageService\AssemblyContentProvider.fs" />
     <Compile Include="LanguageService\ProjectFiltering.fs" />
@@ -77,7 +84,6 @@
     <Compile Include="Diagnostics\SimplifyNameDiagnosticAnalyzer.fs" />
     <Compile Include="Diagnostics\UnusedDeclarationsAnalyzer.fs" />
     <Compile Include="Diagnostics\UnusedOpensDiagnosticAnalyzer.fs" />
-    <Compile Include="DocComments\XMLDocumentation.fs" />
     <Compile Include="TaskList\TaskListService.fs" />
     <Compile Include="Completion\CompletionUtils.fs" />
     <Compile Include="Completion\CompletionProvider.fs" />
