@@ -1392,6 +1392,11 @@
         <target state="translated">Dieser anonyme Datensatz weist ein zusätzliches Feld auf. Entfernen Sie das Feld "{0}".</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcAnonRecdStructMismatch">
+        <source>One anonymous record type is a struct, the other is a reference type</source>
+        <target state="new">One anonymous record type is a struct, the other is a reference type</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcAnonRecdTypeDuplicateFieldId">
         <source>The field '{0}' appears multiple times in this anonymous record type.</source>
         <target state="translated">Das Feld "{0}" ist in diesem anonymen Datensatztyp mehrmals vorhanden.</target>
