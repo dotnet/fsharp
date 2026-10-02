@@ -368,4 +368,10 @@ Use live (unsaved) buffers for analysis</value>
   <data name="ReturnsHeader" xml:space="preserve">
     <value>Returns:</value>
   </data>
+  <data name="ConvertToRootModule" xml:space="preserve">
+    <value>Convert to 'module {0}'</value>
+  </data>
+  <data name="ConvertToNamespaceWithNestedModule" xml:space="preserve">
+    <value>Convert to 'namespace {0}' with nested module '{1}'</value>
+  </data>
 </root>
