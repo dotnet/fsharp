@@ -20,7 +20,6 @@ open Microsoft.VisualStudio.FSharp.Editor.Extensions
 open System.Windows
 open Microsoft.VisualStudio
 open FSharp.Compiler.Text
-open Microsoft.VisualStudio.TextManager.Interop
 
 #nowarn "57"
 
@@ -107,7 +106,7 @@ type private SingleFileCacheEntry =
         FileStamp: VersionStamp
         ParsingOptions: FSharpParsingOptions
         ProjectOptions: FSharpProjectOptions
-        Subscription: ConnectionPointSubscription
+        Subscription: IDisposable voption
     }
 
 [<RequireQualifiedAccess>]
@@ -212,36 +211,29 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
         cancellableTask {
             let! ct = CancellableTask.getCancellationToken ()
             let! fileStamp = document.GetTextVersionAsync(ct)
-            let textViewAndCaret () : (IVsTextView * Position) voption = document.TryGetTextViewAndCaretPos()
 
             match singleFileCache.TryGetValue(document.Id) with
             | false, _ ->
                 let! sourceText = document.GetTextAsync(ct)
 
-                let getProjectOptionsFromScript textViewAndCaret =
-                    let caret = textViewAndCaret ()
+                // FCS reads the caret only to skip resolving the `#r "nuget: …"` line being typed, and only scripts have those.
+                let focusedCaret =
+                    if isScriptFile document.FilePath then
+                        FocusedCaret.TryGetOrCreate sourceText
+                    else
+                        ValueNone
 
-                    match caret with
-                    | ValueNone ->
-                        checker.GetProjectOptionsFromScript(
-                            document.FilePath,
-                            sourceText.ToFSharpSourceText(),
-                            previewEnabled = SessionsProperties.fsiPreview,
-                            assumeDotNetFramework = not SessionsProperties.fsiUseNetCore,
-                            userOpName = userOpName
-                        )
+                let getProjectOptionsFromScript (text: ISourceText) =
+                    checker.GetProjectOptionsFromScript(
+                        document.FilePath,
+                        text,
+                        ?caret = (focusedCaret |> ValueOption.toOption |> Option.bind _.Position),
+                        previewEnabled = SessionsProperties.fsiPreview,
+                        assumeDotNetFramework = not SessionsProperties.fsiUseNetCore,
+                        userOpName = userOpName
+                    )
 
-                    | ValueSome(_, caret) ->
-                        checker.GetProjectOptionsFromScript(
-                            document.FilePath,
-                            sourceText.ToFSharpSourceText(),
-                            caret,
-                            previewEnabled = SessionsProperties.fsiPreview,
-                            assumeDotNetFramework = not SessionsProperties.fsiUseNetCore,
-                            userOpName = userOpName
-                        )
-
-                let! scriptProjectOptions, _ = getProjectOptionsFromScript textViewAndCaret
+                let! scriptProjectOptions, _ = getProjectOptionsFromScript (sourceText.ToFSharpSourceText())
                 let project = document.Project
 
                 let otherOptions =
@@ -278,28 +270,16 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
 
                 let updateProjectOptions () =
                     async {
-                        let! scriptProjectOptions, _ = getProjectOptionsFromScript textViewAndCaret
+                        let! scriptProjectOptions, _ = getProjectOptionsFromScript (sourceText.Container.CurrentText.ToFSharpSourceText())
 
                         checker.NotifyFileChanged(document.FilePath, scriptProjectOptions)
                         |> Async.Start
                     }
                     |> Async.Start
 
-                let onChangeCaretHandler (_, _newline: int, _oldline: int) = updateProjectOptions ()
-                let onKillFocus (_) = updateProjectOptions ()
-                let onSetFocus (_) = updateProjectOptions ()
-
                 let addToCacheAndSubscribe (entry: SingleFileCacheEntry) =
                     let subscription =
-                        match textViewAndCaret () with
-                        | ValueSome(textView, _) ->
-                            subscribeToTextViewEvents (
-                                textView,
-                                (ValueSome onChangeCaretHandler),
-                                (ValueSome onKillFocus),
-                                (ValueSome onSetFocus)
-                            )
-                        | ValueNone -> ValueNone
+                        focusedCaret |> ValueOption.map _.LineChanged.Subscribe(updateProjectOptions)
 
                     { entry with
                         Subscription = subscription
@@ -609,6 +589,19 @@ type internal FSharpProjectOptionsManager(checker: FSharpChecker, workspace: Wor
             match args.Kind with
             | WorkspaceChangeKind.ProjectRemoved -> reactor.ClearOptionsByProjectId(args.ProjectId)
             | _ -> ())
+
+        // Options computed while a script was closed read its text from disk, with no buffer to follow the
+        // caret of: opening it may keep the text's version, so the cached entry would outlive the open.
+        workspace.DocumentOpened.Add(fun args ->
+            let doc = args.Document
+            let proj = doc.Project
+
+            if
+                proj.IsFSharp
+                && proj.IsFSharpMiscellaneousOrMetadata
+                && isScriptFile doc.FilePath
+            then
+                reactor.ClearSingleFileOptionsCache(doc.Id))
 
         workspace.DocumentClosed.Add(fun args ->
             let doc = args.Document
