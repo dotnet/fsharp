@@ -8,7 +8,6 @@ module internal FSharp.Compiler.Features
 type LanguageFeature =
     | PackageManagement
     | FromEndSlicing
-    | ResumableStateMachines
     | RuntimeAsync
     | WitnessPassing
     | AdditionalTypeDirectedConversions
