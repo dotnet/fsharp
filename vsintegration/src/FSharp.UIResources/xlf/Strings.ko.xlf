@@ -17,6 +17,21 @@
         <target state="translated">진단에 대한 전체 솔루션을 낮은 우선 순위 백그라운드 작업으로 계속 분석(다시 시작해야 함)</target>
         <note />
       </trans-unit>
+      <trans-unit id="Annotate_parameters_always">
+        <source>Annotate every parameter</source>
+        <target state="new">Annotate every parameter</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Annotate_parameters_never">
+        <source>Leave parameter types to type inference</source>
+        <target state="new">Leave parameter types to type inference</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Annotate_parameters_when_needed">
+        <source>Annotate parameters whose type inference cannot determine from the extracted code</source>
+        <target state="new">Annotate parameters whose type inference cannot determine from the extracted code</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Background_analysis">
         <source>Background analysis</source>
         <target state="translated">백그라운드 분석</target>
@@ -40,6 +55,11 @@
       <trans-unit id="Enable_partial_type_checking">
         <source>Enable partial type checking</source>
         <target state="translated">부분 형식 검사 사용</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Extract_function_parameter_annotations">
+        <source>Parameter types in Extract to function</source>
+        <target state="new">Parameter types in Extract to function</target>
         <note />
       </trans-unit>
       <trans-unit id="Find_References_Performance">
