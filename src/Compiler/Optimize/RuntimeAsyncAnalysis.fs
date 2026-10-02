@@ -10,6 +10,7 @@ open System.Collections.Generic
 
 open FSharp.Compiler
 open FSharp.Compiler.DiagnosticsLogger
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
@@ -138,136 +139,411 @@ let ShouldForceRuntimeAsyncApplication (analyzer: RuntimeAsyncAnalyzer) runtimeA
                 | _ -> false)
             args)
 
-let rec private IsRuntimeAsyncEffectFree expr =
-    match stripExpr expr with
-    | Expr.Const _
-    | Expr.Lambda _
-    | Expr.TyLambda _ -> true
-    | Expr.Val(vref, _, _) -> not vref.IsMutable && not vref.IsTypeFunction
-    | Expr.App(funcExpr, _, _, [], _) -> IsRuntimeAsyncEffectFree funcExpr
-    | Expr.Op(TOp.Tuple _, _, args, _)
-    | Expr.Op(TOp.AnonRecd _, _, args, _) -> List.forall IsRuntimeAsyncEffectFree args
+/// Rebuilds a match with every target rewritten, or returns None if any target cannot be.
+let private tryMapMatchTargets (g: TcGlobals) (point, matchRange, tree, targets: DecisionTreeTarget array, m) mapTarget =
+    let targets =
+        targets
+        |> Array.mapi (fun i (TTarget(vals, body, flags)) -> mapTarget i body |> Option.map (fun body -> TTarget(vals, body, flags)))
+
+    if targets.Length > 0 && Array.forall Option.isSome targets then
+        let targets = Array.map Option.get targets
+        Some(Expr.Match(point, matchRange, tree, targets, m, tyOfExpr g targets[0].TargetExpression))
+    else
+        None
+
+let private isQuotationUsing (v: Val) expr =
+    match expr with
+    | Expr.Quote(body, _, _, _, _) ->
+        ExistsExpr
+            (function
+            | Expr.Val(vref, _, _) -> valEq v vref.Deref
+            | _ -> false)
+            body
     | _ -> false
 
-let InlineRuntimeAsyncLambdaArgument (g: TcGlobals) (isRuntimeAsyncFragment: Expr -> bool) expr =
-    let rec isLambdaExpression expr =
+let ReduceRuntimeAsyncReturnedClosureApplications (g: TcGlobals) (analyzer: RuntimeAsyncAnalyzer) expr =
+    let rec effectFree expr =
         match stripExpr expr with
-        | Expr.DebugPoint(_, innerExpr) -> isLambdaExpression innerExpr
-        | Expr.Let(TBind(_, rhs, _), innerExpr, _, _) -> IsRuntimeAsyncEffectFree rhs && isLambdaExpression innerExpr
+        | Expr.Const _
         | Expr.Lambda _
         | Expr.TyLambda _ -> true
+        | Expr.Val(vref, _, _) -> not vref.IsMutable && not vref.IsTypeFunction
+        | Expr.App(funcExpr, _, _, [], _) -> effectFree funcExpr
         | _ -> false
 
-    let rec stripLambdaDebugPoints expr =
-        match expr with
-        | Expr.DebugPoint(_, innerExpr) ->
-            match stripDebugPoints innerExpr with
-            | Expr.Lambda _
-            | Expr.TyLambda _ -> stripLambdaDebugPoints innerExpr
-            | _ -> expr
-        | Expr.Lambda(unique, ctorThisValOpt, baseValOpt, valParams, bodyExpr, m, overallType) ->
-            match bodyExpr with
-            | Expr.DebugPoint(_, innerExpr) ->
-                match stripDebugPoints innerExpr with
-                | Expr.Lambda _
-                | Expr.TyLambda _ ->
-                    Expr.Lambda(unique, ctorThisValOpt, baseValOpt, valParams, stripLambdaDebugPoints bodyExpr, m, overallType)
-                | _ -> expr
-            | _ -> expr
-        | Expr.TyLambda(unique, typeParams, bodyExpr, m, overallType) ->
-            match bodyExpr with
-            | Expr.DebugPoint(_, innerExpr) ->
-                match stripDebugPoints innerExpr with
-                | Expr.Lambda _
-                | Expr.TyLambda _ -> Expr.TyLambda(unique, typeParams, stripLambdaDebugPoints bodyExpr, m, overallType)
-                | _ -> expr
-            | _ -> expr
-        | _ -> expr
+    let rec apply f fty tyargs args m =
+        match f, args with
+        | Expr.DebugPoint(_, inner), _ when
+            match stripDebugPoints inner with
+            | Expr.Lambda _ -> true
+            | _ -> false
+            ->
+            apply inner fty tyargs args m
+        | Expr.Let(binding, body, mLet, _), _ ->
+            apply body (tyOfExpr g body) tyargs args m
+            |> Option.map (mkLetBind mLet binding)
+        | Expr.Sequential(first, rest, NormalSeq, mSeq), _ ->
+            apply rest (tyOfExpr g rest) tyargs args m
+            |> Option.map (fun rest -> Expr.Sequential(first, rest, NormalSeq, mSeq))
+        | Expr.Match(point, matchRange, tree, targets, mMatch, _), _ when List.forall effectFree args ->
+            // Each target after the first needs its own copy of any values bound by the arguments.
+            tryMapMatchTargets g (point, matchRange, tree, targets, mMatch) (fun i body ->
+                let args = if i = 0 then args else List.map (copyExpr g CloneAll) args
+                apply body (tyOfExpr g body) tyargs args m)
+        | Expr.Lambda(_, _, _, [ _ ], _, _, _), first :: (_ :: _ as rest) when List.forall effectFree rest ->
+            let reduced = MakeApplicationAndBetaReduce g (f, fty, [ tyargs ], [ first ], m)
 
-    let rec betaReduceLambdaApplication expr =
-        let rec apply f fty tyargs args m =
-            match args with
-            | [] -> None
-            | firstArg :: rest ->
-                let f = stripLambdaDebugPoints f
+            let rec applyRest expr =
+                match expr with
+                | Expr.Let(binding, body, mLet, _) -> applyRest body |> Option.map (mkLetBind mLet binding)
+                | _ -> apply expr (tyOfExpr g expr) [] rest m
 
-                match f with
-                | Expr.Let(bind, body, mLet, _) -> apply body (tyOfExpr g body) tyargs args m |> Option.map (mkLetBind mLet bind)
-                | Expr.Lambda(_, _, _, valParams, body, _, _) when
-                    valParams.Length = 1
-                    && not rest.IsEmpty
-                    && (IsRuntimeAsyncEffectFree body || List.forall IsRuntimeAsyncEffectFree rest)
-                    ->
-                    let reduced = MakeApplicationAndBetaReduce g (f, fty, [ tyargs ], [ firstArg ], m)
-
-                    match reduced with
-                    | Expr.Let(bind, body, mLet, _) ->
-                        match apply body (tyOfExpr g body) [] rest m with
-                        | Some bodyR -> Some(mkLetBind mLet bind bodyR)
-                        | None -> Some(mkAppsAux g reduced (tyOfExpr g reduced) [] rest m)
-                    | _ -> Some reduced
-                | Expr.Lambda _
-                | Expr.TyLambda _ -> Some(MakeApplicationAndBetaReduce g (f, fty, [ tyargs ], args, m))
-                | _ -> None
-
-        match stripDebugPoints expr with
-        | Expr.App(f, fty, tyargs, args, m) -> apply f fty tyargs args m
+            applyRest reduced
+        | Expr.Lambda _, _ :: _ -> Some(MakeApplicationAndBetaReduce g (f, fty, [ tyargs ], args, m))
+        | _ when not (analyzer.ContainsSuspension f) && List.forall effectFree args -> Some(mkAppsAux g f fty [ tyargs ] args m)
         | _ -> None
 
-    let mkRwenv (preIntercept: (Expr -> Expr) -> Expr -> Expr option) : ExprRewritingEnv =
+    let rwenv =
         {
-            PreIntercept = Some preIntercept
+            PreIntercept = None
             PreInterceptBinding = None
-            PostTransform = betaReduceLambdaApplication
+            PostTransform =
+                (fun expression ->
+                    match expression with
+                    | Expr.App((Expr.Lambda _ | Expr.Let _ | Expr.Match _ | Expr.DebugPoint _) as f, fty, tyargs, args, m) when
+                        not args.IsEmpty && analyzer.ContainsSuspension expression
+                        ->
+                        apply f fty tyargs args m
+                    | _ -> None)
             RewriteQuotations = false
-            StackGuard = StackGuard("InlineRuntimeAsyncLambdaArgument")
+            StackGuard = StackGuard("ReduceRuntimeAsyncReturnedClosureApplications")
         }
 
-    let rec inlineBinding (boundVal: Val) boundExpr body =
-        match boundExpr with
-        | Expr.DebugPoint(point, inner) -> Expr.DebugPoint(point, inlineBinding boundVal inner body)
-        | Expr.Let(binding, rest, m, _) -> mkLetBind m binding (inlineBinding boundVal rest body)
-        | Expr.Sequential(first, rest, NormalSeq, m) -> Expr.Sequential(first, inlineBinding boundVal rest body, NormalSeq, m)
-        | _ ->
-            let rwenv =
-                mkRwenv (fun _ expr ->
-                    match betaReduceLambdaApplication expr with
-                    | Some reduced -> Some reduced
-                    | None ->
-                        match stripExpr expr with
-                        | Expr.App(f, _, tyargs, args, m) ->
-                            match stripDebugPoints f with
-                            | Expr.Val(vref, _, _) when valEq boundVal vref.Deref ->
-                                Some(
-                                    MakeApplicationAndBetaReduce
-                                        g
-                                        (copyExpr g CloneAll boundExpr, tyOfExpr g boundExpr, [ tyargs ], args, m)
-                                )
-                            | _ -> None
-                        | Expr.Val(vref, _, _) when valEq boundVal vref.Deref -> Some(copyExpr g CloneAll boundExpr)
-                        | _ -> None)
+    RewriteExpr rwenv expr
 
-            RewriteExpr rwenv body
-
+let PreserveRuntimeAsyncCallSiteDebugPoint (g: TcGlobals) m expr =
     let rwenv =
-        mkRwenv (fun cont expr ->
-            match stripExpr expr with
-            | Expr.Let(TBind(boundVal, boundExpr, _), body, _, _) when
-                (boundVal.InlineIfLambda
-                 && (isLambdaExpression boundExpr
-                     || isRuntimeAsyncFragment boundExpr
-                     || match stripExpr boundExpr with
-                        | Expr.App(_, _, _, args, _) -> List.isEmpty args
-                        | _ -> true))
-                || (isLambdaExpression boundExpr && isRuntimeAsyncFragment boundExpr)
-                ->
-                if not boundVal.InlineIfLambda then
-                    boundVal.SetInlineIfLambda()
-
-                Some(cont (inlineBinding boundVal boundExpr body))
-            | _ -> None)
+        {
+            PreIntercept = None
+            PreInterceptBinding = None
+            PostTransform =
+                (fun expression ->
+                    match expression, TryGetRuntimeAsyncReturn g expression with
+                    | Expr.App(f, fty, tyargs, [ body ], range), Some _ ->
+                        match body with
+                        | Expr.DebugPoint _ -> None
+                        | _ -> Some(Expr.App(f, fty, tyargs, [ mkDebugPoint m body ], range))
+                    | _ -> None)
+            RewriteQuotations = false
+            StackGuard = StackGuard("PreserveRuntimeAsyncCallSiteDebugPoint")
+        }
 
     RewriteExpr rwenv expr
+
+/// A callback construction whose branches select one of several lambdas. The construction runs once
+/// and records the selected branch and the values it captures; each invocation dispatches on the branch.
+type private CallbackBranches =
+    {
+        Construction: Expr
+        Tag: Val
+        Branches: (Val * Expr) list
+        Captures: (Val * Val) list
+    }
+
+/// Replaces each lambda in tail position of a callback construction with an assignment of its branch tag
+/// and captured locals, or returns None if a tail is not a supported single-argument lambda.
+let private tryDefunctionalizeCallback (g: TcGlobals) m construction =
+    let constructionFree = (freeInExpr CollectLocals construction).FreeLocals
+    let tag, _ = mkMutableCompGenLocal m "runtimeAsyncCallbackTag" g.int32_ty
+    let branches = ResizeArray<Val * Expr>()
+    let captures = Dictionary<Stamp, Val * Val>()
+
+    let rec defunctionalize expr =
+        match expr with
+        | Expr.Lambda(_, None, None, [ parameter ], body, m, _)
+        | NewDelegateExpr g (_, [ parameter ], body, m, _) ->
+            let captured =
+                (freeInExpr CollectLocals body).FreeLocals
+                |> Zset.elements
+                |> List.filter (fun v -> not (valEq v parameter) && not (Zset.contains v constructionFree))
+
+            if
+                captured
+                |> List.exists (fun v -> v.IsPinning || isByrefTy g v.Type || isByrefLikeTy g m v.Type)
+            then
+                None
+            else
+                let assignments =
+                    captured
+                    |> List.map (fun v ->
+                        let _, hoisted =
+                            match captures.TryGetValue v.Stamp with
+                            | true, capture -> capture
+                            | _ ->
+                                let capture = v, fst (mkMutableCompGenLocal m v.LogicalName v.Type)
+                                captures[v.Stamp] <- capture
+                                capture
+
+                        mkValSet m (mkLocalValRef hoisted) (exprForVal m v))
+
+                let select = mkValSet m (mkLocalValRef tag) (mkInt32 g m branches.Count)
+                branches.Add(parameter, body)
+                Some(List.foldBack (mkCompGenSequential m) assignments select)
+        | Expr.DebugPoint(point, body) -> defunctionalize body |> Option.map (fun body -> Expr.DebugPoint(point, body))
+        | Expr.Sequential(first, rest, NormalSeq, m) ->
+            defunctionalize rest
+            |> Option.map (fun rest -> Expr.Sequential(first, rest, NormalSeq, m))
+        | Expr.Let(binding, rest, m, _) -> defunctionalize rest |> Option.map (mkLetBind m binding)
+        | Expr.Match(point, matchRange, tree, targets, m, _) ->
+            tryMapMatchTargets g (point, matchRange, tree, targets, m) (fun _ -> defunctionalize)
+        | _ -> None
+
+    defunctionalize construction
+    |> Option.map (fun construction ->
+        {
+            Construction = construction
+            Tag = tag
+            Branches = List.ofSeq branches
+            Captures = List.ofSeq captures.Values
+        })
+
+/// Every invocation copies every branch body, so the rewrite is skipped when the copies would exceed this many
+/// expression nodes; the callback then stays a closure and a suspension left in it is reported as FS3918.
+let private maxInlinedCallbackCopySize = 2000
+
+let private exprNodeCount expr =
+    let folder =
+        { ExprFolder0 with
+            exprIntercept = fun _ noInterceptF count expr -> noInterceptF (count + 1) expr
+        }
+
+    FoldExpr folder 0 expr
+
+/// Inlines an invocation of a defunctionalized callback: the argument is bound once, then each branch body
+/// is copied with its parameter and captured locals remapped.
+let private mkCallbackDispatch (g: TcGlobals) (callback: CallbackBranches) arg resultTy m =
+    let argVal, _ = mkCompGenLocal m "runtimeAsyncCallbackArg" (tyOfExpr g arg)
+
+    let captureRemap =
+        callback.Captures |> List.map (fun (v, hoisted) -> v, mkLocalValRef hoisted)
+
+    let branch (parameter: Val, body) =
+        let remap =
+            { emptyRemap with
+                valRemap = ValMap.OfList((parameter, mkLocalValRef argVal) :: captureRemap)
+            }
+
+        remapExpr g CloneAll remap body
+
+    let rec dispatch i branches =
+        match branches with
+        | [ last ] -> branch last
+        | first :: rest ->
+            let isSelected = mkILAsmCeq g m (exprForVal m callback.Tag) (mkInt32 g m i)
+
+            mkCond DebugPointAtBinding.NoneAtInvisible m resultTy isSelected (branch first) (dispatch (i + 1) rest)
+        | [] -> failwith "unreachable: callback without branches"
+
+    mkCompGenLet m argVal arg (dispatch 0 callback.Branches)
+
+let InlineRuntimeAsyncCallback (g: TcGlobals) (analyzer: RuntimeAsyncAnalyzer) runtimeAsyncContext (expr: Expr) =
+    let rec tryDelegateSignature expr =
+        match expr with
+        | NewDelegateExpr g (_, [ parameter ], body, _, _) -> Some(parameter.Type, tyOfExpr g body)
+        | Expr.DebugPoint(_, rest)
+        | Expr.Sequential(_, rest, NormalSeq, _)
+        | Expr.Let(_, rest, _, _) -> tryDelegateSignature rest
+        | Expr.Match(_, _, _, targets, _, _) when targets.Length > 0 ->
+            let (TTarget(_, body, _)) = targets[0]
+            tryDelegateSignature body
+        | _ -> None
+
+    let isTrivialValue =
+        function
+        | Expr.Const _ -> true
+        | Expr.Val(vref, _, _) -> vref.IsLocalRef && not vref.IsMutable && not vref.IsTypeFunction
+        | _ -> false
+
+    // Construction moves to the invocation, so its evaluation must not have observable effects.
+    let rec inlineDelegateInvoke (invokeRef, invokeTy, tyargs, arg, callRange) construction =
+        match construction with
+        | NewDelegateExpr g (_, [ _ ], _, _, _) ->
+            Some(MakeFSharpDelegateInvokeAndTryBetaReduce g (invokeRef, construction, invokeTy, tyargs, arg, callRange))
+        | Expr.DebugPoint(point, rest) ->
+            inlineDelegateInvoke (invokeRef, invokeTy, tyargs, arg, callRange) rest
+            |> Option.map (fun body -> Expr.DebugPoint(point, body))
+        | Expr.Sequential(first, rest, NormalSeq, m) when isTrivialValue first ->
+            inlineDelegateInvoke (invokeRef, invokeTy, tyargs, arg, callRange) rest
+            |> Option.map (fun body -> Expr.Sequential(first, body, NormalSeq, m))
+        | Expr.Let((TBind(_, rhs, _)) as binding, rest, m, _) when isTrivialValue rhs ->
+            inlineDelegateInvoke (invokeRef, invokeTy, tyargs, arg, callRange) rest
+            |> Option.map (mkLetBind m binding)
+        | Expr.Match(point,
+                     matchRange,
+                     (TDSwitch(Expr.Val(vref, _, _), [ TCase(_, TDSuccess([], _)) ], Some(TDSuccess([], _)), _) as tree),
+                     targets,
+                     m,
+                     _) when vref.IsLocalRef && not vref.IsMutable && not vref.IsTypeFunction ->
+            tryMapMatchTargets g (point, matchRange, tree, targets, m) (fun _ ->
+                inlineDelegateInvoke (invokeRef, invokeTy, tyargs, arg, callRange))
+        | _ -> None
+
+    // A residual Invoke can surface after ordinary optimization; try its single use before dispatching on branches.
+    let tryInlineDelegate callback construction continuation =
+        let mutable invocations = 0
+        let mutable invalidUse = false
+
+        let rwenv =
+            {
+                PreIntercept =
+                    Some(fun rewrite expression ->
+                        match expression with
+                        | DelegateInvokeExpr g (invokeRef, invokeTy, tyargs, Expr.Val(vref, _, _), arg, callRange) when
+                            valEq callback vref.Deref
+                            ->
+                            match inlineDelegateInvoke (invokeRef, invokeTy, tyargs, rewrite arg, callRange) construction with
+                            | Some body ->
+                                invocations <- invocations + 1
+                                Some body
+                            | None ->
+                                invalidUse <- true
+                                Some expression
+                        | Expr.Val(vref, _, _) when valEq callback vref.Deref ->
+                            invalidUse <- true
+                            Some expression
+                        | Expr.Quote _ when isQuotationUsing callback expression ->
+                            invalidUse <- true
+                            Some expression
+                        | _ -> None)
+                PreInterceptBinding = None
+                PostTransform = (fun _ -> None)
+                RewriteQuotations = false
+                StackGuard = StackGuard("InlineRuntimeAsyncDelegateInvocation")
+            }
+
+        let continuation = RewriteExpr rwenv continuation
+
+        if invocations = 1 && not invalidUse then
+            Some continuation
+        else
+            None
+
+    let stackGuard = StackGuard("InlineRuntimeAsyncCallback")
+
+    let rec inlineCallbacks expr =
+        stackGuard.Guard(fun () -> inlineCallbacksCore expr)
+
+    and inlineCallbacksCore expr =
+        match expr with
+        | Expr.Let(TBind(callback, construction, point), continuation, m, _) when
+            callback.InlineIfLambda && analyzer.ContainsSuspension construction
+            ->
+            let keep construction =
+                mkLetBind m (TBind(callback, construction, point)) (inlineCallbacks continuation)
+
+            let canInline =
+                runtimeAsyncContext || (TryGetRuntimeAsyncReturn g continuation).IsSome
+
+            let shape =
+                match tryDestFunTy g callback.Type with
+                | ValueSome(argTy, resultTy) -> Some(argTy, resultTy, false)
+                | ValueNone when isFSharpDelegateTy g callback.Type ->
+                    tryDelegateSignature construction
+                    |> Option.map (fun (argTy, resultTy) -> argTy, resultTy, true)
+                | _ -> None
+
+            match shape with
+            | Some(argTy, resultTy, isDelegate) when canInline && not (isByrefLikeTy g m argTy || isByrefLikeTy g m resultTy) ->
+                let freeVals = (freeInExpr CollectLocals construction).FreeLocals
+
+                let canCapture =
+                    freeVals
+                    |> Zset.forall (fun v -> not v.IsPinning && not (isByrefTy g v.Type || isByrefLikeTy g m v.Type))
+
+                let construction =
+                    if canCapture then
+                        inlineCallbacks construction
+                    else
+                        construction
+
+                let inlined =
+                    if canCapture && isDelegate then
+                        tryInlineDelegate callback construction continuation
+                    else
+                        None
+
+                let callbackBranches =
+                    if canCapture && Option.isNone inlined then
+                        tryDefunctionalizeCallback g m construction
+                    else
+                        None
+
+                match inlined, callbackBranches with
+                | Some body, _ -> inlineCallbacks body
+                | None, Some callbackBranches ->
+                    let mutable invalidUse = false
+                    let mutable invocations = 0
+
+                    let rwenv =
+                        {
+                            PreIntercept =
+                                Some(fun rewrite expression ->
+                                    let call =
+                                        match expression with
+                                        | Expr.App(Expr.Val(vref, _, _), _, [], [ arg ], callRange) when
+                                            not isDelegate && valEq callback vref.Deref
+                                            ->
+                                            Some(arg, callRange)
+                                        | DelegateInvokeExpr g (_, _, _, Expr.Val(vref, _, _), arg, callRange) when
+                                            isDelegate && valEq callback vref.Deref
+                                            ->
+                                            Some(arg, callRange)
+                                        | _ -> None
+
+                                    match call with
+                                    | Some(arg, callRange) ->
+                                        invocations <- invocations + 1
+                                        Some(mkCallbackDispatch g callbackBranches (rewrite arg) (tyOfExpr g expression) callRange)
+                                    | None ->
+                                        match expression with
+                                        | Expr.Val(vref, _, _) when valEq callback vref.Deref ->
+                                            invalidUse <- true
+                                            Some expression
+                                        | Expr.Quote _ when isQuotationUsing callback expression ->
+                                            invalidUse <- true
+                                            Some expression
+                                        | _ -> None)
+                            PreInterceptBinding = None
+                            PostTransform = (fun _ -> None)
+                            RewriteQuotations = false
+                            StackGuard = stackGuard
+                        }
+
+                    let continuation = RewriteExpr rwenv continuation
+
+                    let copySize =
+                        invocations * List.sumBy (snd >> exprNodeCount) callbackBranches.Branches
+
+                    if invalidUse || copySize > maxInlinedCallbackCopySize then
+                        keep construction
+                    else
+                        let construction =
+                            match point with
+                            | DebugPointAtBinding.Yes point -> mkDebugPoint point callbackBranches.Construction
+                            | _ -> callbackBranches.Construction
+
+                        let body = mkCompGenSequential m construction (inlineCallbacks continuation)
+
+                        (callbackBranches.Tag :: List.map snd callbackBranches.Captures, body)
+                        ||> List.foldBack (fun v body -> mkCompGenLet m v (mkDefault (m, v.Type)) body)
+                | None, None -> keep construction
+            | _ -> keep construction
+        | Expr.Let(binding, continuation, m, _) -> mkLetBind m binding (inlineCallbacks continuation)
+        | Expr.DebugPoint(point, inner) -> Expr.DebugPoint(point, inlineCallbacks inner)
+        | Expr.Sequential(first, rest, NormalSeq, m) -> Expr.Sequential(first, inlineCallbacks rest, NormalSeq, m)
+        | _ -> expr
+
+    inlineCallbacks expr
 
 type private RuntimeAsyncFlowSummary =
     {
