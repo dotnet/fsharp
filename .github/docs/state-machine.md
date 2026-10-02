@@ -72,6 +72,8 @@ Workflows: `labelops-pr-maintenance` (LPM), `labelops-flake-fix` (LFF), `labelop
 
 LPM dispatches LFF when proven flakes are detected. LPSS scans the current PR head only after a synchronize event; fork PRs get a diff scan.
 
+LPSS selects the PR in `select_pr`, a direct dependency of both activation and the agent so its output is available to the comment filter. Regenerate its lock file with `gh-aw` v0.83.0; v0.76.1 emits a PR checkout even with `checkout: false`. Its regression tests run with `Invoke-Pester eng/tests/ToolingSafetyWorkflow.Tests.ps1 -EnableExit`.
+
 ```mermaid
 stateDiagram-v2
   direction LR

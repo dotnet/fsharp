@@ -17,33 +17,38 @@ on:
   permissions:
     contents: read
     pull-requests: read
-  steps:
-    - id: select
-      uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
-      with:
-        script: |-
-          const eventPr = context.payload.pull_request;
-          if (!eventPr) throw new Error('Expected a pull_request_target synchronize event.');
-          const { data: pr } = await github.rest.pulls.get({ ...context.repo, pull_number: eventPr.number });
-          if (pr.state !== 'open' || pr.draft || pr.head.sha !== eventPr.head.sha || pr.created_at < '2026-05-12T00:00:00Z') {
-            core.setOutput('prs', '[]');
-            return;
-          }
-          const { data } = await github.rest.repos.getContent({ ...context.repo, path: 'state.json', ref: 'safety/scanned-PRs' });
-          const { prs } = JSON.parse(Buffer.from(data.content, 'base64').toString('utf8'));
-          const previous = prs[pr.number];
-          if (previous?.sha === pr.head.sha) {
-            core.setOutput('prs', '[]');
-            return;
-          }
-          core.setOutput('prs', JSON.stringify([{ number: pr.number, sha: pr.head.sha, cats: previous?.cats ?? [] }]));
 
 jobs:
-  pre-activation:
+  select_pr:
+    needs: pre_activation
+    runs-on: ubuntu-slim
+    permissions:
+      contents: read
+      pull-requests: read
     outputs:
       prs: ${{ steps.select.outputs.prs }}
+    steps:
+      - id: select
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |-
+            const eventPr = context.payload.pull_request;
+            if (!eventPr) throw new Error('Expected a pull_request_target synchronize event.');
+            const { data: pr } = await github.rest.pulls.get({ ...context.repo, pull_number: eventPr.number });
+            if (pr.state !== 'open' || pr.draft || pr.head.sha !== eventPr.head.sha || pr.created_at < '2026-05-12T00:00:00Z') {
+              core.setOutput('prs', '[]');
+              return;
+            }
+            const { data } = await github.rest.repos.getContent({ ...context.repo, path: 'state.json', ref: 'safety/scanned-PRs' });
+            const { prs } = JSON.parse(Buffer.from(data.content, 'base64').toString('utf8'));
+            const previous = prs[pr.number];
+            if (previous?.sha === pr.head.sha) {
+              core.setOutput('prs', '[]');
+              return;
+            }
+            core.setOutput('prs', JSON.stringify([{ number: pr.number, sha: pr.head.sha, cats: previous?.cats ?? [] }]));
 
-if: needs.pre_activation.outputs.prs != '[]'
+if: needs.select_pr.outputs.prs != '[]'
 
 timeout-minutes: 15
 checkout: false
@@ -57,7 +62,7 @@ post-steps:
     if: always()
     uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
     env:
-      SCANNED_PRS: ${{ needs.pre_activation.outputs.prs }}
+      SCANNED_PRS: ${{ needs.select_pr.outputs.prs }}
     with:
       script: |
         const fs = require('node:fs');
@@ -108,6 +113,8 @@ network:
   - github
 
 tools:
+  bash: false
+  cli-proxy: false
   github:
     toolsets: [pull_requests, repos]
     # min-integrity: none is required to read PRs from any fork/author,
@@ -189,7 +196,7 @@ Read `.github/tooling-check-repo-rules.md` from the default branch for repo-spec
 
 <process>
 1. Read `.github/tooling-check-repo-rules.md` from this repo's **default branch** via `get_file_contents`. Never read this file from a PR branch — the PR could tamper with its own scan rules.
-2. Scan only these PRs: `${{ needs.pre_activation.outputs.prs }}`. Each item's `cats` is its previous result.
+2. Scan only these PRs: `${{ needs.select_pr.outputs.prs }}`. Each item's `cats` is its previous result.
 3. For each selected PR:
    a. Read its metadata. If it is now closed, draft, or its head differs from the supplied `sha`, skip it without updating memory.
    b. **Non-fork PRs** (check `headRepository` API field, not author name) → apply `AI-Tooling-Check-Bypassed` label. Record `cats: []`. **No comment.**
