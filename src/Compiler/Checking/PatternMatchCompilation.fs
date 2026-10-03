@@ -683,6 +683,17 @@ let isAnonymousUnionAndExhaustive g amap m srcTy discrims refuted path =
     | TType_anon_union(_, constituents, nullness) -> isAnonymousUnionExhaustive g amap m constituents nullness discrims refuted path
     | _ -> false)
 
+let isAnonymousUnionDiscrimImpossible g amap m discrim =
+    match discrim with
+    | DecisionTreeTest.IsInst (srcTy, tgtTy) ->
+        match stripTyEqns g srcTy with
+        | TType_anon_union(_, constituents, _) ->
+            constituents
+            |> List.forall (fun constituent ->
+                computeWhatSuccessfulTypeTestImpliesAboutTypeTest g amap m constituent tgtTy = Implication.Fails)
+        | _ -> false
+    | _ -> false
+
 /// Redundancy of 'isinst' patterns
 let isDiscrimSubsumedBy g amap m discrim taken =
     discrimsEq g discrim taken
@@ -1320,28 +1331,43 @@ let private CompilePatternBasic
                     // All these constructs should have been eliminated in BindProjectionPattern
                     failwith "Unexpected pattern"
                 else
-                    let simulSetOfEdgeDiscrims, fallthroughPathFrontiers = ChooseSimultaneousEdges frontiers path
+                    let originalFrontiers = frontiers
+                    let frontiers =
+                        originalFrontiers
+                        |> List.filter (fun (Frontier(_, active, _)) ->
+                            if isMemOfActives path active then
+                                let _, patAtActive = lookupActive path active
+                                getDiscrimOfPattern patAtActive
+                                |> Option.exists (isAnonymousUnionDiscrimImpossible g amap patAtActive.Range)
+                                |> not
+                            else
+                                true)
 
-                    let inpExprOpt, bindOpt =     ChoosePreBinder simulSetOfEdgeDiscrims subexpr
+                    if frontiers.Length <> originalFrontiers.Length then
+                        investigateMemoized refuted frontiers
+                    else
+                        let simulSetOfEdgeDiscrims, fallthroughPathFrontiers = ChooseSimultaneousEdges frontiers path
 
-                    // For each case, recursively compile the residue decision trees that result if that case successfully matches
-                    let simulSetOfCases, _ = CompileSimultaneousSet frontiers path refuted subexpr simulSetOfEdgeDiscrims inpExprOpt
+                        let inpExprOpt, bindOpt =     ChoosePreBinder simulSetOfEdgeDiscrims subexpr
 
-                    assert (not (isNil simulSetOfCases))
+                        // For each case, recursively compile the residue decision trees that result if that case successfully matches
+                        let simulSetOfCases, _ = CompileSimultaneousSet frontiers path refuted subexpr simulSetOfEdgeDiscrims inpExprOpt
 
-                    // Work out what the default/fall-through tree looks like, is any
-                    // Check if match is complete, if so optimize the default case away.
-                    let defaultTreeOpt = CompileFallThroughTree fallthroughPathFrontiers path refuted  simulSetOfCases
+                        assert (not (isNil simulSetOfCases))
 
-                    // OK, build the whole tree and whack on the binding if any
-                    let finalDecisionTree =
-                        let inpExprToSwitch = (match inpExprOpt with Some vExpr -> vExpr | None -> GetSubExprOfInput subexpr)
-                        let tree = BuildSwitch inpExprOpt g false inpExprToSwitch simulSetOfCases defaultTreeOpt mMatch
-                        match bindOpt with
-                        | None -> tree
-                        | Some bind -> TDBind (bind, tree)
+                        // Work out what the default/fall-through tree looks like, is any
+                        // Check if match is complete, if so optimize the default case away.
+                        let defaultTreeOpt = CompileFallThroughTree fallthroughPathFrontiers path refuted  simulSetOfCases
 
-                    finalDecisionTree
+                        // OK, build the whole tree and whack on the binding if any
+                        let finalDecisionTree =
+                            let inpExprToSwitch = (match inpExprOpt with Some vExpr -> vExpr | None -> GetSubExprOfInput subexpr)
+                            let tree = BuildSwitch inpExprOpt g false inpExprToSwitch simulSetOfCases defaultTreeOpt mMatch
+                            match bindOpt with
+                            | None -> tree
+                            | Some bind -> TDBind (bind, tree)
+
+                        finalDecisionTree
 
     and CompileSuccessPointAndGuard i refuted valMap rest =
         let vs2 = GetValsBoundByClause i refuted

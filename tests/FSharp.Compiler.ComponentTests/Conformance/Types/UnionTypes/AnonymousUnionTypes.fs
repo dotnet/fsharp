@@ -76,6 +76,14 @@ module AnonymousUnionTypes =
         |> verifyCompileAndRun
         |> shouldSucceed
 
+    [<Theory; FileInlineData("AnonPatternMatchingReachability.fs")>]
+    let ``PatternMatchingReachability_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> withLangVersionPreview
+        |> verifyCompileAndRun
+        |> shouldSucceed
+
     [<Theory; FileInlineData("AnonMethodOverloading.fs")>]
     let ``MethodOverloading_fs`` compilation =
         compilation
@@ -448,6 +456,17 @@ module AnonymousUnionTypes =
         |> shouldFail
         |> withDiagnostics [
             (Warning 26, Line 7, Col 7, Line 7, Col 19, "This rule will never be matched")
+        ]
+
+    [<Theory; FileInlineData("W_AnonPatternMatchingUnreachable.fs")>]
+    let ``W_PatternMatchingUnreachable_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> withLangVersionPreview
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 26, Line 6, Col 7, Line 6, Col 21, "This rule will never be matched")
         ]
 
     [<Theory; FileInlineData("W_AnonPatternMatching2Columns.fs")>]
