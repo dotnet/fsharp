@@ -425,6 +425,18 @@ module AnonymousUnionTypes =
             (Error 4507, Line 4, Col 8, Line 4, Col 35, "Anonymous union types may not be nested directly. Use a type alias for the nested anonymous union case instead.")
         ]
 
+
+    [<Theory; FileInlineData("E_AnonAsPattern.fs")>]
+    let ``E_AnonAsPattern_fs`` compilation =
+        compilation
+        |> getCompilation
+        |> withLangVersionPreview
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3062, Line 6, Col 7, Line 6, Col 23, "This type test with a provided type '(int8 | string)' is not allowed because this provided type will be erased to 'System.Object' at runtime.")
+        ]
+
     [<Theory; FileInlineData("W_AnonPatternMatching.fs")>]
     let ``W_PatternMatching_fs`` compilation =
         compilation
