@@ -366,6 +366,30 @@ module TaskModuleFunctionsTests =
             Assert.Equal(1, maxConcurrent)
         }
 
+    [<Theory; InlineData true; InlineData false>]
+    let ``Task.sequential honors cancellation even if the computations do not`` before : Task =
+        task {
+            use cts = new CancellationTokenSource()
+            let computations: (CancellationToken -> Task<int>) list =
+                if before then
+                    cts.Cancel()
+                    [ fun (_: CancellationToken) ->
+                        task { return failwith "unexpected" }]
+                else
+                    [ for i in 1..2 do
+                        fun (_: CancellationToken) ->
+                            task {
+                                // whether cancellation during the last task is honored is up to the task in question
+                                // the guarantee is that no further tasks will be started after cancellation is triggered
+                                if i = 1 then
+                                    cts.Cancel()
+                                return 42
+                            }
+                    ]
+            let run (): Task = Task.sequential cts.Token computations
+            Assert.ThrowsAsync<OperationCanceledException>(run).Result |> ignore
+        }
+
 
     [<Fact>]
     let ``Task.sequentialDo runs all tasks in order and returns unit`` () : Task =
@@ -400,7 +424,30 @@ module TaskModuleFunctionsTests =
             Assert.Equal(1, maxConcurrent)
         }
 
-    
+    [<Theory; InlineData true; InlineData false>]
+    let ``Task.sequentialDo honors cancellation even if the computations do not`` before : Task =
+        task {
+            use cts = new CancellationTokenSource()
+            let computations: (CancellationToken -> Task<unit>) list =
+                if before then
+                    cts.Cancel()
+                    [ fun (_: CancellationToken) ->
+                        task { return failwith "unexpected" }]
+                else
+                    [ for i in 1..2 do
+                        fun (_: CancellationToken) ->
+                            task {
+                                // whether cancellation during the last task is honored is up to the task in question
+                                // the guarantee is that no further tasks will be started after cancellation is triggered
+                                if i = 1 then
+                                    cts.Cancel()
+                            }
+                    ]
+            let run (): Task = Task.sequentialDo cts.Token computations
+            Assert.ThrowsAsync<OperationCanceledException>(run).Result |> ignore
+        }
+        
+
     [<Fact>]
     let ``Task.parallelLimit runs all tasks and collects results`` () : Task =
         task {

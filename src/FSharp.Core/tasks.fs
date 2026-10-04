@@ -795,6 +795,7 @@ module Task =
             let mutable results = ArrayCollector<'T>()
 
             for f in computations do
+                ct.ThrowIfCancellationRequested()
                 let! result = f ct
                 results.Add result
 
@@ -805,6 +806,7 @@ module Task =
     let sequentialDo (ct: CancellationToken) (computations: seq<CancellationToken -> Task<unit>>) : Task<unit> =
         task {
             for f in computations do
+                ct.ThrowIfCancellationRequested()
                 do! f ct
         }
 
