@@ -15,6 +15,8 @@ on:
   schedule: weekly
   workflow_dispatch:
 
+if: github.event_name != 'schedule' || github.repository == 'dotnet/fsharp'
+
 timeout-minutes: 30
 
 permissions: read-all

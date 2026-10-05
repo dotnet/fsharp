@@ -13,7 +13,7 @@
 //
 // NOTE: The original tests used `exit` to return success/failure codes. Since the ComponentTests
 // framework runs tests in-process, calling `exit` terminates the test host. These tests are
-// currently set up to verify compilation only. Full runtime verification would require either:
+// mostly set up to verify compilation only. Full runtime verification would require either:
 // 1. Modifying test files to throw exceptions instead of calling exit
 // 2. Running tests in a separate process (slower)
 // 3. Using FSI to execute tests
@@ -134,8 +134,37 @@ module QueryExpressions =
     [<Fact>]
     let ``FunctionsDefinedOutsideQuery01`` () = compileStandalone "FunctionsDefinedOutsideQuery01.fs"
 
-    [<Fact>]
-    let ``FunctionWithinTopLevelLet01`` () = compileStandalone "FunctionWithinTopLevelLet01.fs"
+    [<Theory>]
+    [<InlineData("11.0")>]
+    [<InlineData("11.2")>]
+    [<InlineData("default")>]
+    [<InlineData("preview")>]
+    let ``FunctionWithinTopLevelLet01`` langVersion =
+        Fsx (File.ReadAllText(Path.Combine(basePath, "FunctionWithinTopLevelLet01.fs")))
+        |> withLangVersion langVersion
+        |> runFsi
+        |> shouldSucceed
+
+    [<Theory>]
+    [<InlineData("11.0", false)>]
+    [<InlineData("11.2", true)>]
+    [<InlineData("preview", true)>]
+    let ``Inline arithmetic in a query is generic from 11.2`` langVersion isGeneric =
+        let result =
+            FSharp """
+let q (source: seq<int>) =
+    query {
+        for i in source do
+        let apply = let inline f x = x + 1 in f
+        select (apply i)
+    }
+"""
+            |> withLangVersion langVersion
+            |> typecheck
+        if isGeneric then
+            result |> shouldFail |> withErrorCode 1230 |> ignore
+        else
+            result |> shouldSucceed |> ignore
 
     [<Fact>]
     let ``JoinsWithInterveningExpressions01`` () = compileStandalone "JoinsWithInterveningExpressions01.fs"

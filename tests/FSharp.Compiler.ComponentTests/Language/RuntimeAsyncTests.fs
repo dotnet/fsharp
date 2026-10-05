@@ -345,7 +345,7 @@ let f (task: Task<int>) : Task<int> =
 
 #if NETCOREAPP
 [<Fact>]
-let ``runtime async requires preview language version`` () =
+let ``runtime async is unavailable in FSharp 11.0`` () =
     FSharp """
 module RuntimeAsyncPreviewTest
 
@@ -355,6 +355,7 @@ open Microsoft.FSharp.Core.CompilerServices
 let f : Task<int> =
     StateMachineHelpers.__runtimeAsyncReturn 1
 """
+    |> withLangVersion11
     |> withFSharpCoreShippedNet
     |> compile
     |> shouldFail
@@ -404,10 +405,13 @@ let result = __runtimeAsyncReturn 1
     |> typecheck
     |> shouldSucceed
 
-[<Fact>]
-let ``runtime async compiles functions and members`` () =
+[<Theory>]
+[<InlineData("default")>]
+[<InlineData("11.2")>]
+[<InlineData("preview")>]
+let ``runtime async compiles functions and members`` langVersion =
     FSharp runtimeAsyncSource
-    |> withLangVersionPreview
+    |> withLangVersion langVersion
     |> withFSharpCoreShippedNet
     |> compile
     |> shouldSucceed

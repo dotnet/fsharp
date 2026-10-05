@@ -1517,7 +1517,8 @@ type SynExceptionDefnRepr =
         longId: LongIdent option *
         xmlDoc: PreXmlDoc *
         accessibility: SynAccess option *
-        range: range
+        range: range *
+        trivia: SynExceptionDefnReprTrivia
 
     member this.Range =
         match this with

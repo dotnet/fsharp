@@ -37,6 +37,15 @@ module ``Interactive tests`` =
             (Warning 2304, Line 1, Col 3, Line 1, Col 13, "Functions with [<EntryPoint>] are not invoked in FSI. 'myFunc' was not invoked. Execute 'myFunc <args>' in order to invoke 'myFunc' with the appropriate string array of command line arguments.")
         ]
 
+    [<Fact>]
+    let ``RunScript preserves quit directives inside multiline strings`` () =
+        let _, output, _ =
+            global.FSharp.Test.CompilerAssert.RunScriptWithOptionsAndReturnResult
+                [||]
+                "let text = \"\"\"\n#quit\n\"\"\"\nprintf \"%s\" text"
+
+        Assert.Contains("#quit", output)
+
     [<Theory>]
     [<InlineData(true, true)>]
     [<InlineData(false, false)>]

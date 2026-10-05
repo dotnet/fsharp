@@ -310,6 +310,13 @@ type FsiEvaluationSession =
     /// A host calls this to get the active language ID if provided by fsi-server-lcid
     member LCID: int option
 
+    /// The named pipe requested with `--fsi-server-jsonrpc`, when a host is to drive the session over
+    /// JSON-RPC instead of standard input.
+    member JsonRpcServerPipeName: string option
+
+    /// The host process named with `--fsi-server-client-pid`, whose exit ends the session.
+    member JsonRpcClientProcessId: int option
+
     /// A host calls this to report an unhandled exception in a standard way, e.g. an exception on the GUI thread gets printed to stderr
     member ReportUnhandledException: exn: exn -> unit
 
