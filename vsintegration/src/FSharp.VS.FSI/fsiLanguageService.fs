@@ -61,6 +61,30 @@ type FsiPropertyPage() =
     [<ResourceDescription(SRProperties.FSharpInteractivePreviewModeDescr)>]
     member this.FsiPreview with get() = SessionsProperties.fsiPreview and set (x:bool) = SessionsProperties.fsiPreview <- x
 
+// FSharpCompilerPropertyPage - Tools > Options > F# Tools > Compiler
+[<ComVisible(true)>]
+[<CLSCompliant(false)>]
+[<ClassInterface(ClassInterfaceType.AutoDual)>]
+[<Guid("e63ff489-9d7c-45be-95a0-2ce82de93aad")>]
+type FSharpCompilerPropertyPage() =
+    inherit DialogPage()
+
+    let mutable useNetSdkCompiler =
+        RegistryHelpers.tryReadHKCU<int> fsharpCompilerRegSubKey useNetSdkCompilerRegValue <> Some 0
+
+    override _.LoadSettingsFromStorage() =
+        useNetSdkCompiler <- RegistryHelpers.tryReadHKCU<int> fsharpCompilerRegSubKey useNetSdkCompilerRegValue <> Some 0
+
+    override _.SaveSettingsToStorage() =
+        RegistryHelpers.writeHKCU fsharpCompilerRegSubKey useNetSdkCompilerRegValue (if useNetSdkCompiler then 1 else 0)
+
+    [<ResourceCategory(SRProperties.FSharpCompilerMisc)>]
+    [<ResourceDisplayName(SRProperties.FSharpCompilerUseNetSdk)>]
+    [<ResourceDescription(SRProperties.FSharpCompilerUseNetSdkDescr)>]
+    member _.UseNetSdkCompiler
+        with get () = useNetSdkCompiler
+        and set v = useNetSdkCompiler <- v
+
 // CompletionSet
 type internal FsiCompletionSet(imageList,source:Source) =
     inherit CompletionSet(imageList, source)
