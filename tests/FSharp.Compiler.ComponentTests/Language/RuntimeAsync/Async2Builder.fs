@@ -137,7 +137,16 @@ module internal Async2StartTrampoline =
 
         if current.IsRunning then
             let completion = TaskCompletionSource<'T>()
-            current.Queue.Enqueue(fun () -> startQueued start completion)
+            // The queue is drained after the parent has returned or suspended, so the child must
+            // run in the execution context the parent had when it asked for the start.
+            let context = ExecutionContext.Capture()
+
+            current.Queue.Enqueue(fun () ->
+                if isNull context then
+                    startQueued start completion
+                else
+                    ExecutionContext.Run(context, (fun _ -> startQueued start completion), null))
+
             completion.Task
         else
             current.IsRunning <- true
