@@ -1430,6 +1430,37 @@ let second () =
         VerifyRuntimeAsyncMethodSequencePointsInSource("RuntimeAsyncEnumerableDebug.fs", 12, 14)
     ]
 
+[<Theory>]
+[<InlineData(false)>]
+[<InlineData(true)>]
+let ``runtime async inlined InlineIfLambda callback keeps its statement debug points`` (optimize: bool) =
+    let statementPoints = [ Line 13, Col 9, Line 13, Col 45; Line 14, Col 9, Line 14, Col 27; Line 15, Col 9, Line 15, Col 18 ]
+    let callSitePoint = [ Line 12, Col 5, Line 15, Col 19 ]
+
+    FSharp """
+module CallbackDebugPoints
+
+open System.Threading.Tasks
+open System.Runtime.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices
+
+let inline run ([<InlineIfLambda>] body: unit -> int) : Task<int> =
+    StateMachineHelpers.__runtimeAsyncReturn (body ())
+
+let work (ready: Task<int>) =
+    run (fun () ->
+        let value = AsyncHelpers.Await ready
+        printfn "%d" value
+        value + 1)
+"""
+    |> withLangVersionPreview
+    |> withFSharpCoreShippedNet
+    |> withPortablePdb
+    |> withOptimization optimize
+    |> compile
+    |> shouldSucceed
+    |> verifyPdb [ VerifyMethodSequencePoints("work", (if optimize then statementPoints else callSitePoint @ statementPoints)) ]
+
 [<Fact>]
 let ``runtime async suspension in exception region executes`` () =
     Path.Combine(__SOURCE_DIRECTORY__, "RuntimeAsync", "RuntimeTasksAsyncDisposalException.fs")

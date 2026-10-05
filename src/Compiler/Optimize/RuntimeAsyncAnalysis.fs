@@ -179,6 +179,7 @@ let ReduceRuntimeAsyncReturnedClosureApplications (g: TcGlobals) (analyzer: Runt
             | _ -> false
             ->
             apply inner fty tyargs args m
+        | Expr.DebugPoint(point, inner), _ -> apply inner fty tyargs args m |> Option.map (fun r -> Expr.DebugPoint(point, r))
         | Expr.Let(binding, body, mLet, _), _ ->
             apply body (tyOfExpr g body) tyargs args m
             |> Option.map (mkLetBind mLet binding)
