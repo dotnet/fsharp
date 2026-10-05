@@ -552,11 +552,6 @@
         <target state="new">Support for scoped enabling / disabling of warnings by #warn and #nowarn directives, also inside modules</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureSelfTypeConstraints">
-        <source>self type constraints</source>
-        <target state="translated">restricciones de tipo propio</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureStringInterpolation">
         <source>string interpolation</source>
         <target state="translated">interpolación de cadena</target>
