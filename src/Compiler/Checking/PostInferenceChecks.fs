@@ -1341,7 +1341,7 @@ and CheckExpr (cenv: cenv) (env: env) origExpr (ctxt: PermitByRefExpr) : Limit =
         CheckQuoteExpr cenv env (ast, savedConv, m, ty)
 
     | StructStateMachineExpr g info ->
-        CheckStructStateMachineExpr cenv env expr info
+        CheckStructStateMachineExpr cenv env info
 
     | Expr.Obj (_, ty, basev, superInitCall, overrides, iimpls, m) ->
         CheckObjectExpr cenv env (ty, basev, superInitCall, overrides, iimpls, m)
@@ -1431,16 +1431,12 @@ and CheckQuoteExpr cenv env (ast, savedConv, m, ty) =
     CheckTypeNoByrefs cenv env m ty
     NoLimit
 
-and CheckStructStateMachineExpr cenv env expr info =
+and CheckStructStateMachineExpr cenv env info =
 
-    let g = cenv.g
     let (_dataTy,
          (moveNextThisVar, moveNextExpr),
          (setStateMachineThisVar, setStateMachineStateVar, setStateMachineBody),
          (afterCodeThisVar, afterCodeBody)) = info
-
-    if not (g.langVersion.SupportsFeature LanguageFeature.ResumableStateMachines) then
-        error(Error(FSComp.SR.tcResumableCodeNotSupported(), expr.Range))
 
     BindVals cenv env [moveNextThisVar; setStateMachineThisVar; setStateMachineStateVar; afterCodeThisVar]
     CheckExprNoByrefs cenv { env with resumableCode = Resumable.ResumableExpr true } moveNextExpr
@@ -1596,8 +1592,6 @@ and CheckMethod cenv env baseValOpt ty (TObjExprMethod(_, attribs, tps, vs, body
     let env =
         // Body of ResumableCode delegate
         if isResumableCodeTy cenv.g ty then
-           if not (cenv.g.langVersion.SupportsFeature LanguageFeature.ResumableStateMachines) then
-               error(Error(FSComp.SR.tcResumableCodeNotSupported(), m))
            { env with resumableCode = Resumable.ResumableExpr false }
         else
            { env with resumableCode = Resumable.None }
@@ -2348,13 +2342,9 @@ and CheckBinding cenv env alwaysCheckNoReraise ctxt (TBind(v, bindRhs, _) as bin
     //
     // If the method has ResumableCode return attribute we check the body w.r.t. that
     let env =
-        if cenv.reportErrors && isReturnsResumableCodeTy g v.TauType then
-            if not (g.langVersion.SupportsFeature LanguageFeature.ResumableStateMachines) then
-                error(Error(FSComp.SR.tcResumableCodeNotSupported(), bind.Var.Range))
-            if not v.ShouldInline then
-                warning(Error(FSComp.SR.tcResumableCodeFunctionMustBeInline(), v.Range))
-
         if isReturnsResumableCodeTy g v.TauType then
+            if cenv.reportErrors && not v.ShouldInline then
+                warning(Error(FSComp.SR.tcResumableCodeFunctionMustBeInline(), v.Range))
             { env with resumableCode = Resumable.ResumableExpr false }
         else
             env
