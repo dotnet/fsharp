@@ -1,1 +1,1 @@
-{"timestamp":"2026-10-05T05:18:59Z","result":"no_action","prs_processed":2,"notes":"PRs #20671 and #20648 remain eligible and healthy. Each has 53 successful checks, no review threads, unchanged heads, and is awaiting review or approval."}
+{"timestamp":"2026-10-05T09:06:14Z","result":"no_eligible_prs","prs_processed":0,"notes":"No open pull requests have the AI-Issue-Regression-PR label."}
