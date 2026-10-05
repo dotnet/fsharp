@@ -4101,9 +4101,9 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
                             specLambda
                     specLambdaR
 
-            // A local lambda is user code and keeps its debug points; an inline function's body belongs at the call site.
+            // InlineIfLambda callbacks keep their source points; forced inline helpers belong at the call site.
             let specLambdaR =
-                if mustInlineRuntimeAsync && vref.IsCompiledAsTopLevel then
+                if mustInlineRuntimeAsync && not vref.InlineIfLambda then
                     remarkExpr m specLambdaR
                 else
                     specLambdaR
