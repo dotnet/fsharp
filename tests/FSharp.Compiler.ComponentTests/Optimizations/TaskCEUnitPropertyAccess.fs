@@ -22,6 +22,23 @@ module TaskCEUnitPropertyAccess =
     [<InlineData(false)>]   // Debug
     [<InlineData(true)>]    // Release
     [<Theory>]
+    let ``TaskCE_InlineFormatCall_PreservesPrintfArguments`` (optimize: bool) =
+        run optimize """
+let inline format () =
+    let pair = 1, 2
+    let other = "c"
+    sprintf "%A %s" pair other
+
+format () |> printfn "%s"
+
+task {
+    format () |> printfn "%s"
+} |> _.Wait()
+"""
+
+    [<InlineData(false)>]   // Debug
+    [<InlineData(true)>]    // Release
+    [<Theory>]
     let ``TaskCE_UnitPropertyAccess_PreservesReceiverSideEffects`` (optimize: bool) =
         run optimize """
 type SomeOutputType() =
