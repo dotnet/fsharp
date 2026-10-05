@@ -9,7 +9,8 @@ branch, configure its insertion target, and pin its VS minor version.
 - Git, PowerShell, and an authenticated Azure CLI (`az login`).
 - Permission to read DevDiv's VS repository and dnceng/internal F# build metadata.
   Signing in alone does not grant either permission.
-- A local F# clone containing the source branch and commit being serviced.
+- A local F# clone with an `upstream` or `origin` remote containing the source
+  branch, or with the source commit already available on its local refs.
 
 ## Preview and create a branch
 
@@ -36,6 +37,19 @@ the invocation's working directory, and removes it when finished, including on
 failure. Initial depth is 100 commits; it deepens by 100 commits up to ten times.
 If the history limit is reached, supply a clone with sufficient history. Preview
 can fetch refs and use temporary disk space but does not edit the F# worktree.
+
+If the inserted build's source commit is absent from cached F# refs, the script
+fetches that source branch from configured `upstream`, then `origin` if needed.
+This updates remote-tracking refs without changing your checkout or local edits.
+Fetch failures are reported; check the remote URL and repository permissions.
+If a shallow F# clone still lacks the source commit, deepen it and retry.
+
+Progress messages appear by default on PowerShell's information stream (6),
+covering authentication, clone/fetch/deepening, build lookup, validation, edits,
+and cleanup. The final structured result is the only success-stream output, so
+assigning it to a variable or piping it to `ConvertTo-Json` still works.
+Use `6>$null` to hide progress, or `6>progress.log` to capture it separately.
+Credentials and authorization headers are not logged.
 
 The caller is responsible for choosing the correct release minor. Two VS release
 branches can legitimately target the same minor. A backport has

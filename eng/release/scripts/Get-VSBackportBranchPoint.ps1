@@ -14,6 +14,7 @@
     By default, reports the command and proposed pipeline/version edits without changing F#.
     -Execute creates and checks out the branch, updates azure-pipelines.yml, and fixes the
     caller-supplied minor in eng\Versions.props. It does not commit, push, or insert into VS.
+    Progress is displayed on the information stream (6); the final result remains on stdout.
 
 .PARAMETER VSBranch
     The Visual Studio branch whose latest F# insertion should be located.
@@ -223,6 +224,7 @@ function Resolve-VisualStudioBranch {
     $remoteBranch = Invoke-Git -RepositoryPath $RepositoryPath -Arguments @(
         "for-each-ref", "--format=%(upstream:remoteref)", $localBranchRef
     ) | Select-Object -First 1
+    Write-Information "[VS backport] Fetching VS upstream '$upstream'." -InformationAction Continue
     $null = Invoke-Git -RepositoryPath $RepositoryPath -AccessToken $AccessToken -Arguments @(
         "fetch",
         $remote,
@@ -259,6 +261,7 @@ function Get-VisualStudioInsertion {
         if (-not $Branch.Remote -or $attempt -eq $MaxDeepenAttempts) {
             throw "Insufficient Visual Studio history to prove the insertion. Deepen the local clone and retry."
         }
+        Write-Information "[VS backport] Deepening VS history by $DeepenBy commits (attempt $($attempt + 1)/$MaxDeepenAttempts)." -InformationAction Continue
         $null = Invoke-Git -RepositoryPath $RepositoryPath -AccessToken $AccessToken -Arguments @(
             "fetch", "--quiet", "--no-tags", "--deepen=$DeepenBy", $Branch.Remote, $Branch.RemoteBranch
         )
@@ -290,7 +293,22 @@ function Resolve-FSharpBranch {
         }
     }
 
-    throw "F# source commit '$Commit' was not found on a local, upstream, or origin ref for branch '$Branch'. Fetch the F# repository and try again."
+    $null = Invoke-Git -RepositoryPath $RepositoryPath -Arguments @("check-ref-format", "refs/heads/$Branch")
+    $remotes = @(Invoke-Git -RepositoryPath $RepositoryPath -Arguments @("remote"))
+    foreach ($remote in @("upstream", "origin")) {
+        if ($remote -notin $remotes) { continue }
+        $candidate = "refs/remotes/$remote/$Branch"
+        Write-Information "[VS backport] Source commit is not on a cached F# ref; fetching '$remote/$Branch'." -InformationAction Continue
+        $null = Invoke-Git -RepositoryPath $RepositoryPath -Arguments @(
+            "fetch", "--quiet", "--no-tags", $remote, "+refs/heads/${Branch}:$candidate"
+        )
+        if ((Test-GitRef -RepositoryPath $RepositoryPath -Ref $candidate) -and
+            (Test-GitAncestor -RepositoryPath $RepositoryPath -Ancestor $Commit -Descendant $candidate)) {
+            return $candidate
+        }
+    }
+
+    throw "F# source commit '$Commit' was not found on branch '$Branch' after checking local refs and fetching configured upstream/origin remotes. Check the remote URLs and deepen the F# clone if it is shallow."
 }
 
 function ConvertTo-PowerShellLiteral {
@@ -437,7 +455,10 @@ function Invoke-VSBackportBranchPoint {
         [switch]$Execute
     )
 
+    $mode = if ($Execute) { 'Execute' } else { 'Preview' }
+    Write-Information "[VS backport] $mode for VS '$VSBranch': F# branch '$NewBranchName', fixed minor $VSMinorVersion." -InformationAction Continue
     $fsharpRepository = Resolve-GitRepository -Path $FSharpRepoPath -Name "F#"
+    Write-Information "[VS backport] Using F# repository '$fsharpRepository'." -InformationAction Continue
 
     $null = Invoke-Git -RepositoryPath $fsharpRepository -Arguments @(
         "check-ref-format",
@@ -467,9 +488,11 @@ function Invoke-VSBackportBranchPoint {
 
     $ownedRepository = $null
     try {
+        Write-Information '[VS backport] Acquiring Azure DevOps credentials from Azure CLI.' -InformationAction Continue
         $accessToken = Get-AzureDevOpsToken
         if ($VSRepoPath) {
             $vsRepository = Resolve-GitRepository -Path $VSRepoPath -Name "Visual Studio"
+            Write-Information "[VS backport] Using local VS repository '$vsRepository' without changing its checkout." -InformationAction Continue
         }
         else {
             $VSBranch = $VSBranch -replace '^refs/heads/', ''
@@ -478,6 +501,7 @@ function Invoke-VSBackportBranchPoint {
             $clonePath = Join-Path (Get-Location).Path (".vs-backport-" + [Guid]::NewGuid().ToString('N'))
             $null = New-Item -ItemType Directory -Path $clonePath
             $ownedRepository = $clonePath
+            Write-Information "[VS backport] Cloning VS branch '$VSBranch' into '$ownedRepository' (depth 100, no checkout)." -InformationAction Continue
             $null = Invoke-Git -RepositoryPath $ownedRepository -AccessToken $accessToken -Arguments @(
                 "clone", "--quiet", "--depth=100", "--single-branch", "--no-tags", "--no-checkout",
                 "--branch", $VSBranch, "https://devdiv.visualstudio.com/DefaultCollection/DevDiv/_git/VS", "."
@@ -490,6 +514,7 @@ function Invoke-VSBackportBranchPoint {
         $VSBranch = $vsBranchInfo.Branch
         $vsSnapshot = Invoke-Git -RepositoryPath $vsRepository -Arguments @("rev-parse", "$vsBranchRef^{commit}") |
             Select-Object -First 1
+        Write-Information "[VS backport] Reading F# payload from VS snapshot $vsSnapshot; locating its insertion." -InformationAction Continue
 
         $componentsPath = ".corext/Configs/components.json"
         $branchComponentsJson = (Invoke-Git -RepositoryPath $vsRepository -Arguments @(
@@ -505,6 +530,7 @@ function Invoke-VSBackportBranchPoint {
 
         $insertionCommit = Get-VisualStudioInsertion -RepositoryPath $vsRepository -Snapshot $vsSnapshot `
             -PayloadUrl $fsharpComponent.url -Branch $vsBranchInfo -AccessToken $accessToken
+        Write-Information "[VS backport] Found VS insertion $insertionCommit." -InformationAction Continue
         $insertionDate = (Invoke-Git -RepositoryPath $vsRepository -Arguments @(
             "show",
             "-s",
@@ -529,6 +555,7 @@ function Invoke-VSBackportBranchPoint {
 
         $sourceBranch = [Uri]::UnescapeDataString($buildNumberMatch.Groups["sourceBranch"].Value)
         $buildNumber = $buildNumberMatch.Groups["buildNumber"].Value
+        Write-Information "[VS backport] Looking up fsharp-ci build '$buildNumber' for source branch '$sourceBranch'." -InformationAction Continue
         $build = Get-FSharpBuild -BuildNumber $buildNumber -SourceBranch $sourceBranch
         $branchPoint = $build.sourceVersion
 
@@ -540,6 +567,7 @@ function Invoke-VSBackportBranchPoint {
             -RepositoryPath $fsharpRepository `
             -Branch $sourceBranch `
             -Commit $branchPoint
+        Write-Information "[VS backport] Resolved F# source commit $branchPoint on '$fsharpBranchRef'." -InformationAction Continue
 
         $branchPointDate = (Invoke-Git -RepositoryPath $fsharpRepository -Arguments @(
             "show",
@@ -561,6 +589,7 @@ function Invoke-VSBackportBranchPoint {
         $action = "Preview"
 
         # Preflight both files at the exact source SHA, even in preview.
+        Write-Information '[VS backport] Validating pipeline mappings and fixed-minor edits at the branch point.' -InformationAction Continue
         $branchPointPipelineContent = (Invoke-Git -RepositoryPath $fsharpRepository -Arguments @(
             "show", "${branchPoint}:azure-pipelines.yml"
         )) -join "`n"
@@ -584,6 +613,7 @@ function Invoke-VSBackportBranchPoint {
                     }
                 }
             }
+            Write-Information "[VS backport] Creating and checking out '$NewBranchName' at $branchPoint." -InformationAction Continue
             $null = Invoke-Git -RepositoryPath $fsharpRepository -Arguments @(
                 "switch",
                 "--no-overwrite-ignore",
@@ -594,6 +624,7 @@ function Invoke-VSBackportBranchPoint {
 
             try {
                 foreach ($file in @("azure-pipelines.yml", "eng\Versions.props")) {
+                    Write-Information "[VS backport] Updating '$file'." -InformationAction Continue
                     $path = Join-Path $fsharpRepository $file
                     $content = [IO.File]::ReadAllText($path)
                     if ($file -eq "azure-pipelines.yml") {
@@ -614,6 +645,12 @@ function Invoke-VSBackportBranchPoint {
             $action = "Executed"
         }
 
+        if ($Execute) {
+            Write-Information '[VS backport] Branch and edits are ready; changes are uncommitted. Nothing was pushed or inserted into VS.' -InformationAction Continue
+        }
+        else {
+            Write-Information '[VS backport] Preview complete; no F# files or branches were changed. Use -Execute to apply the planned edits.' -InformationAction Continue
+        }
         [PSCustomObject]@{
             Action                    = $action
             VSBranch                  = $VSBranch
@@ -642,7 +679,10 @@ function Invoke-VSBackportBranchPoint {
         }
     }
     finally {
-        if ($ownedRepository) { Remove-Item -LiteralPath $ownedRepository -Recurse -Force }
+        if ($ownedRepository) {
+            Write-Information "[VS backport] Removing temporary VS repository '$ownedRepository'." -InformationAction Continue
+            Remove-Item -LiteralPath $ownedRepository -Recurse -Force
+        }
     }
 }
 

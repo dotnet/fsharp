@@ -136,6 +136,20 @@ Describe 'Backport Git fixtures' {
         (Invoke-Git $vsRepo @('rev-parse', 'HEAD')) | Should Be $vsHead
     }
 
+    It 'reports visible progress separately from the structured result without credentials' {
+        $output = @(Invoke-VSBackportBranchPoint @arguments 6>&1)
+        $progress = @($output | Where-Object { $_ -is [System.Management.Automation.InformationRecord] })
+        $results = @($output | Where-Object { $_ -isnot [System.Management.Automation.InformationRecord] })
+        $results.Count | Should Be 1
+        $results[0].Action | Should Be 'Preview'
+        $messages = ($progress | ForEach-Object { $_.MessageData }) -join "`n"
+        $messages | Should Match 'Acquiring Azure DevOps credentials'
+        $messages | Should Match 'Looking up fsharp-ci build'
+        $messages | Should Match 'Validating pipeline mappings'
+        $messages | Should Match 'Preview complete'
+        $messages | Should Not Match 'fixture-only-token|Authorization'
+    }
+
     It 'executes only in the fixture, preserving newlines and leaving uncommitted edits' {
         $result = Invoke-VSBackportBranchPoint @arguments -Execute
         $result.Action | Should Be 'Executed'
@@ -153,6 +167,30 @@ Describe 'Backport Git fixtures' {
         Add-Content "$fsRepo\azure-pipelines.yml" '# dirty'
         { Invoke-VSBackportBranchPoint @arguments -Execute } | Should Throw 'tracked working-tree changes'
         (Test-GitRef $fsRepo 'refs/heads/release/fixture') | Should Be $false
+    }
+
+    It 'fetches a missing F# source commit without changing checkout or edits' {
+        $publisher = Join-Path $fixtureRoot 'publisher'
+        $null = Invoke-Git $fixtureRoot @('clone', '--quiet', $fsRepo, $publisher)
+        $null = Invoke-Git $publisher @('config', 'user.name', 'Fixture')
+        $null = Invoke-Git $publisher @('config', 'user.email', 'fixture@example.invalid')
+        $null = Invoke-Git $publisher @('config', 'commit.gpgsign', 'false')
+        $null = Invoke-Git $publisher @('commit', '--quiet', '--allow-empty', '-m', 'new inserted source')
+        $newSource = Invoke-Git $publisher @('rev-parse', 'HEAD')
+        $null = Invoke-Git $fsRepo @('remote', 'add', 'upstream', $publisher)
+        [IO.File]::AppendAllText("$fsRepo\azure-pipelines.yml", '# local edit')
+        $head = Invoke-Git $fsRepo @('rev-parse', 'HEAD')
+        $content = [IO.File]::ReadAllText("$fsRepo\azure-pipelines.yml")
+        (Test-GitRef $fsRepo $newSource) | Should Be $false
+        (Resolve-FSharpBranch $fsRepo main $newSource) | Should Be 'refs/remotes/upstream/main'
+        (Test-GitRef $fsRepo $newSource) | Should Be $true
+        (Invoke-Git $fsRepo @('rev-parse', 'HEAD')) | Should Be $head
+        ([IO.File]::ReadAllText("$fsRepo\azure-pipelines.yml")) | Should Be $content
+    }
+
+    It 'does not fetch when a cached F# ref contains the source commit' {
+        $null = Invoke-Git $fsRepo @('remote', 'add', 'upstream', (Join-Path $fixtureRoot 'nonexistent-remote'))
+        (Resolve-FSharpBranch $fsRepo main $source) | Should Be 'main'
     }
 
     It 'rejects existing and invalid branch names' {
