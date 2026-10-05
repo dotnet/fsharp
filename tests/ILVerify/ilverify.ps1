@@ -86,17 +86,6 @@ foreach ($configuration in $configurations) {
     }
 }
 
-# Check if ilverify is installed and available from the tool list (using `dotnet tool list -g `), and install it globally if not found.
-Write-Host "Checking if dotnet-ilverify is installed..."
-$dotnet_ilverify = dotnet tool list -g | Select-String -SimpleMatch -CaseSensitive "dotnet-ilverify"
-
-if ([string]::IsNullOrWhiteSpace($dotnet_ilverify)) {
-    Write-Host " dotnet-ilverify is not installed. Installing..."
-    dotnet tool install dotnet-ilverify -g --prerelease
-} else {
-    Write-Host " dotnet-ilverify is installed:`n  $dotnet_ilverify"
-}
-
 # Get the path to latest currently installed runtime
 [string[]] $runtimes = @(dotnet --list-runtimes | Select-String -SimpleMatch -CaseSensitive -List "Microsoft.NETCore.App")
 if ($runtimes -eq "") {
