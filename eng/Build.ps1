@@ -86,6 +86,12 @@ $ErrorActionPreference = "Stop"
 if ($ci -and -not $PSBoundParameters.ContainsKey('msbuildMultiThreaded')) {
     $msbuildMultiThreaded = $false
 }
+
+# Capture once so restore, build and pack cannot straddle a scheduled version transition.
+if ($official -and -not $env:VSBuildTimestampUtc -and -not ($properties -match '^[-/]p:VSBuildTimestampUtc=')) {
+    $properties += "/p:VSBuildTimestampUtc=$([DateTime]::UtcNow.ToString('o', [Globalization.CultureInfo]::InvariantCulture))"
+}
+
 $BuildCategory = ""
 $BuildMessage = ""
 
