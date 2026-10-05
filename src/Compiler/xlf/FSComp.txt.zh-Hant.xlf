@@ -482,11 +482,6 @@
         <target state="new">Support for OverloadResolutionPriorityAttribute to prioritize method overloads.</target>
         <note />
       </trans-unit>
-      <trans-unit id="featurePackageManagement">
-        <source>package management</source>
-        <target state="translated">套件管理</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureParsedHashDirectiveArgumentNonString">
         <source># directives with non-quoted string arguments</source>
         <target state="translated"># 個具有非引號字串引數的指示詞</target>
@@ -1055,11 +1050,6 @@
       <trans-unit id="optsWin32icon">
         <source>Specify a Win32 icon file (.ico)</source>
         <target state="translated">指定 Win32 圖示檔 (.ico)</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="packageManagementRequiresVFive">
-        <source>The 'package management' feature requires language version 5.0 or above</source>
-        <target state="translated">「套件管理」功能需要語言版本 5.0 或更新版本</target>
         <note />
       </trans-unit>
       <trans-unit id="parsConstraintIntersectionSyntaxUsedWithNonFlexibleType">
