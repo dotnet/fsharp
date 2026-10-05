@@ -532,11 +532,6 @@
         <target state="new">calls to 'reraise' in a computation expression handler</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureResumableStateMachines">
-        <source>resumable state machines</source>
-        <target state="translated">automaty stanów z możliwością wznowienia</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureReturnFromFinal">
         <source>Support for ReturnFromFinal/YieldFromFinal in computation expressions to enable tailcall optimization when available on the builder.</source>
         <target state="new">Support for ReturnFromFinal/YieldFromFinal in computation expressions to enable tailcall optimization when available on the builder.</target>
@@ -1602,11 +1597,6 @@
         <target state="translated">Znaleziono wiele dopasowań typów:\n{0}\nUżyto typu „{1}”. Ze względu na nakładające się nazwy pól\n{2}\nrozważ użycie adnotacji typu lub zmień kolejność otwartych instrukcji.</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcNoEagerConstraintApplicationAttribute">
-        <source>Using methods with 'NoEagerConstraintApplicationAttribute' requires /langversion:6.0 or later</source>
-        <target state="translated">Używanie metod z atrybutem "NoEagerConstraintApplicationAttribute" wymaga parametru /langversion:6.0 lub nowszego</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcNoStaticMemberFoundForOverride">
         <source>No static abstract member was found that corresponds to this override</source>
         <target state="translated">Nie odnaleziono żadnego statycznego abstrakcyjnego elementu członkowskiego odpowiadającego temu przesłonięciu</target>
@@ -1775,11 +1765,6 @@
       <trans-unit id="tcResumableCodeInvocation">
         <source>Resumable code invocation. Suppress this warning if you are defining new low-level resumable code in terms of existing resumable code.</source>
         <target state="translated">Wywołanie kodu z możliwością wznowienia. Pomiń to ostrzeżenie, jeśli definiujesz nowy kod z możliwością wznowienia niskiego poziomu w terminologii istniejącego kodu z możliwością wznowienia.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcResumableCodeNotSupported">
-        <source>Using resumable code or resumable state machines requires /langversion:preview</source>
-        <target state="translated">Używanie kodu z możliwością wznowienia lub automatów stanów z możliwością wznowienia wymaga parametru /langversion: wersja zapoznawcza</target>
         <note />
       </trans-unit>
       <trans-unit id="tcSetterForInitOnlyPropertyCannotBeCalled1">

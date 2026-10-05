@@ -532,11 +532,6 @@
         <target state="new">calls to 'reraise' in a computation expression handler</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureResumableStateMachines">
-        <source>resumable state machines</source>
-        <target state="translated">可恢复状态机</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureReturnFromFinal">
         <source>Support for ReturnFromFinal/YieldFromFinal in computation expressions to enable tailcall optimization when available on the builder.</source>
         <target state="new">Support for ReturnFromFinal/YieldFromFinal in computation expressions to enable tailcall optimization when available on the builder.</target>
@@ -1602,11 +1597,6 @@
         <target state="translated">找到多个类型匹配项: \n{0}\n使用了类型“{1}”。由于字段名称重叠，\n{2}\n考虑使用类型注释或更改 open 语句的顺序。</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcNoEagerConstraintApplicationAttribute">
-        <source>Using methods with 'NoEagerConstraintApplicationAttribute' requires /langversion:6.0 or later</source>
-        <target state="translated">将方法与 “NoEagerConstraintApplicationAttribute” 配合使用需要 /langversion:6.0 或更高版本</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcNoStaticMemberFoundForOverride">
         <source>No static abstract member was found that corresponds to this override</source>
         <target state="translated">找不到与此替代对应的静态抽象成员</target>
@@ -1775,11 +1765,6 @@
       <trans-unit id="tcResumableCodeInvocation">
         <source>Resumable code invocation. Suppress this warning if you are defining new low-level resumable code in terms of existing resumable code.</source>
         <target state="translated">可恢复的代码调用。如果要根据现有可恢复代码定义新的低级别可恢复代码，请取消显示此警告。</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcResumableCodeNotSupported">
-        <source>Using resumable code or resumable state machines requires /langversion:preview</source>
-        <target state="translated">使用可恢复代码或可恢复状态机需要 /langversion:preview</target>
         <note />
       </trans-unit>
       <trans-unit id="tcSetterForInitOnlyPropertyCannotBeCalled1">
