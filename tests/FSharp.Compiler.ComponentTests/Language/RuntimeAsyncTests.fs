@@ -1671,6 +1671,60 @@ let main _ =
 [<InlineData(false)>]
 [<InlineData(true)>]
 [<Theory>]
+let ``runtime async conditional callbacks share mutable captures with closures`` (optimize: bool) =
+    FSharp """
+module RuntimeAsyncConditionalMutableCapture
+
+open System.Threading.Tasks
+open System.Runtime.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices
+
+let mutable observe = fun () -> -1
+
+let inline invoke ([<InlineIfLambda>] callback: unit -> int) =
+    StateMachineHelpers.__runtimeAsyncReturn (callback ())
+
+let run flag =
+    invoke (
+        if flag then
+            let mutable count = 0
+            observe <- fun () -> count
+            fun () ->
+                AsyncHelpers.Await(Task.FromResult 0) |> ignore
+                count <- count + 1
+                count
+        else
+            fun () -> 0)
+
+let runMultiple flag =
+    invoke (
+        if flag then
+            let mutable count = 0
+            let mutable additional = 0
+            observe <- fun () -> count + additional
+            fun () ->
+                AsyncHelpers.Await(Task.FromResult 0) |> ignore
+                count <- count + 1
+                additional <- additional + 1
+                count + additional
+        else
+            fun () -> 0)
+
+[<EntryPoint>]
+let main _ =
+    let actual = (run true).Result, observe ()
+    let multiple = (runMultiple true).Result, observe ()
+    if actual = (1, 1) && multiple = (2, 2) then 0 else 1
+"""
+    |> withLangVersionPreview
+    |> withFSharpCoreShippedNet
+    |> withOptimization optimize
+    |> compileExeAndRun
+    |> shouldSucceed
+
+[<InlineData(false)>]
+[<InlineData(true)>]
+[<Theory>]
 let ``runtime async inlines a stateful conditional callback from an imported inline`` (optimize: bool) =
     let library =
         FSharp """

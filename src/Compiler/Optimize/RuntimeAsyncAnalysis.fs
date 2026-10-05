@@ -250,6 +250,47 @@ type private CallbackBranches =
         Captures: (Val * Val) list
     }
 
+/// A captured mutable keeps a single shared home: its binding becomes an assignment to the hoisted local and
+/// every other use is redirected to it, so writes made by the inlined callback stay visible to other closures.
+/// Returns None if a captured mutable is not bound by a let in the construction.
+let private tryShareMutableCallbackCaptures (g: TcGlobals) (mutableCaptures: (Val * Val) list) construction =
+    if mutableCaptures.IsEmpty then
+        Some construction
+    else
+        let hoistedOf =
+            ValMap.OfList(mutableCaptures |> List.map (fun (v, hoisted) -> v, mkLocalValRef hoisted))
+
+        let rewritten = HashSet<Stamp>()
+
+        let rwenv =
+            {
+                PreIntercept =
+                    Some(fun rewrite expression ->
+                        match expression with
+                        | Expr.Let(TBind(v, rhs, point), body, m, _) when hoistedOf.ContainsVal v ->
+                            rewritten.Add v.Stamp |> ignore
+                            let assignment = mkValSet m hoistedOf[v] (rewrite rhs)
+
+                            let assignment =
+                                match point with
+                                | DebugPointAtBinding.Yes point -> mkDebugPoint point assignment
+                                | _ -> assignment
+
+                            Some(mkCompGenSequential m assignment (rewrite body))
+                        | _ -> None)
+                PreInterceptBinding = None
+                PostTransform = (fun _ -> None)
+                RewriteQuotations = false
+                StackGuard = StackGuard("RewriteRuntimeAsyncMutableCaptures")
+            }
+
+        let construction = RewriteExpr rwenv construction
+
+        if rewritten.Count = mutableCaptures.Length then
+            Some(remapExpr g CloneAll { emptyRemap with valRemap = hoistedOf } construction)
+        else
+            None
+
 /// Replaces each lambda in tail position of a callback construction with an assignment of its branch tag
 /// and captured locals, or returns None if a tail is not a supported single-argument lambda.
 let private tryDefunctionalizeCallback (g: TcGlobals) m construction =
@@ -284,7 +325,11 @@ let private tryDefunctionalizeCallback (g: TcGlobals) m construction =
                                 captures[v.Stamp] <- capture
                                 capture
 
-                        mkValSet m (mkLocalValRef hoisted) (exprForVal m v))
+                        if v.IsMutable then
+                            None
+                        else
+                            Some(mkValSet m (mkLocalValRef hoisted) (exprForVal m v)))
+                    |> List.choose id
 
                 let select = mkValSet m (mkLocalValRef tag) (mkInt32 g m branches.Count)
                 branches.Add(parameter, body)
@@ -299,13 +344,17 @@ let private tryDefunctionalizeCallback (g: TcGlobals) m construction =
         | _ -> None
 
     defunctionalize construction
-    |> Option.map (fun construction ->
-        {
-            Construction = construction
-            Tag = tag
-            Branches = List.ofSeq branches
-            Captures = List.ofSeq captures.Values
-        })
+    |> Option.bind (fun construction ->
+        let captures = List.ofSeq captures.Values
+
+        tryShareMutableCallbackCaptures g (captures |> List.filter (fun (v, _) -> v.IsMutable)) construction
+        |> Option.map (fun construction ->
+            {
+                Construction = construction
+                Tag = tag
+                Branches = List.ofSeq branches
+                Captures = captures
+            }))
 
 /// Every invocation copies every branch body, so the rewrite is skipped when the copies would exceed this many
 /// expression nodes; the callback then stays a closure and a suspension left in it is reported as FS3918.
