@@ -59,6 +59,10 @@ API surface change → `TEST_UPDATE_BSL=1 dotnet test tests/FSharp.Compiler.Serv
 After code changes → `dotnet fantomas .`
 When fully done → write release notes (see skill)
 
+## Shepherding PRs
+
+After PR is considered ready for review, and especially after it got any code review comments, avoid rewriting git history with rebases etc. Instead prefer merge commits.
+
 ## Visual Studio first
 
 The `vs` MCP server reaches the Visual Studio instance holding this repo's solution. Where it and the shell both work, use it — it reports what the IDE's compiler and symbol graph know, not what the text files say.
