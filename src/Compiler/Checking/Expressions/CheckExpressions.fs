@@ -7681,20 +7681,14 @@ and TcConstStringExpr cenv (overallTy: OverallTy) env m tpenv (s: string) litera
 
     let g = cenv.g
 
-
-    match isFormat g overallTy.Commit, literalType with
-    | true, LiteralArgumentType.StaticField ->
-        checkLanguageFeatureAndRecover g.langVersion LanguageFeature.NonInlineLiteralsAsPrintfFormat m
+    if isFormat g overallTy.Commit then
         TcFormatStringExpr cenv overallTy env m tpenv s literalType
-
-    | true, LiteralArgumentType.Inline ->
-        TcFormatStringExpr cenv overallTy env m tpenv s literalType
-
-    | false, LiteralArgumentType.StaticField ->
-        Expr.Const (TcFieldInit m (ILFieldInit.String s), m, g.string_ty), tpenv
-
-    | false, LiteralArgumentType.Inline ->
-        TcPropagatingExprLeafThenConvert cenv overallTy g.string_ty env (* true *) m (fun () ->
+    else
+        match literalType with
+        | LiteralArgumentType.StaticField ->
+            Expr.Const (TcFieldInit m (ILFieldInit.String s), m, g.string_ty), tpenv
+        | LiteralArgumentType.Inline ->
+            TcPropagatingExprLeafThenConvert cenv overallTy g.string_ty env (* true *) m (fun () ->
                 mkString g m s, tpenv)
 
 and TcFormatStringExpr cenv (overallTy: OverallTy) env m tpenv (fmtString: string) formatStringLiteralType =

@@ -21,7 +21,6 @@ type LanguageFeature =
     | CSharpExtensionAttributeNotRequired
     | ErrorForNonVirtualMembersOverrides
     | WarningWhenCopyAndUpdateRecordChangesAllFields
-    | NonInlineLiteralsAsPrintfFormat
     | WarningWhenMultipleRecdTypeChoice
     | ConstraintIntersectionOnFlexibleTypes
     | WarningWhenTailRecAttributeButNonTailRecUsage
