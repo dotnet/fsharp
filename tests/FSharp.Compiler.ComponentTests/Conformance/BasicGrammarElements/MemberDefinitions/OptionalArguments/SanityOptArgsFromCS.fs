@@ -1,4 +1,4 @@
-// #Conformance #DeclarationElements #MemberDefinitions #OptionalArguments  
+// #Conformance #DeclarationElements #MemberDefinitions #OptionalArguments
 // Should be no errors here
 module M
 

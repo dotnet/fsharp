@@ -1,4 +1,4 @@
-// #Regression #Conformance #SignatureFiles 
+// #Regression #Conformance #SignatureFiles
 
 
 
@@ -14,7 +14,7 @@ open Microsoft.FSharp.Core
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 /// Delayed computations.
-module Lazy = 
+module Lazy =
 
     type 'a t = Lazy<'a>
 

@@ -7,11 +7,15 @@ open System.IO
 open Microsoft.Build.Framework
 open Microsoft.Build.Utilities
 
+[<MSBuildMultiThreadableTask>]
 type SubstituteText() =
     inherit Task()
 
-    let mutable copiedFiles = new ResizeArray<ITaskItem>()
+    let copiedFiles = ResizeArray<ITaskItem>()
     let mutable embeddedResources: ITaskItem[] = [||]
+
+    interface IMultiThreadableTask with
+        member val TaskEnvironment = TaskEnvironment.Fallback with get, set
 
     [<Required>]
     member _.EmbeddedResources
@@ -21,7 +25,8 @@ type SubstituteText() =
     [<Output>]
     member _.CopiedFiles = copiedFiles.ToArray()
 
-    override _.Execute() =
+    override this.Execute() =
+        let rootedPath = TaskEnvironmentPaths.rootedPath this
         copiedFiles.Clear()
 
         if not (isNull (box embeddedResources)) then // this check can't fail, the type is non-nullable
@@ -61,22 +66,24 @@ type SubstituteText() =
                             item.ItemSpec <- targetPath
 
                             // Transform file
-                            let mutable contents = File.ReadAllText(sourcePath)
+                            let replaceFromMetadata pattern replacementName (contents: string) =
+                                if String.IsNullOrWhiteSpace pattern then
+                                    contents
+                                else
+                                    contents.Replace(pattern, item.GetMetadata replacementName)
 
-                            if not (String.IsNullOrWhiteSpace(pattern1)) then
-                                let replacement = item.GetMetadata("Replacement1")
-                                contents <- contents.Replace(pattern1, replacement)
-
-                            if not (String.IsNullOrWhiteSpace(pattern2)) then
-                                let replacement = item.GetMetadata("Replacement2")
-                                contents <- contents.Replace(pattern2, replacement)
+                            let contents =
+                                File.ReadAllText(rootedPath sourcePath)
+                                |> replaceFromMetadata pattern1 "Replacement1"
+                                |> replaceFromMetadata pattern2 "Replacement2"
 
                             let directory = Path.GetDirectoryName(targetPath)
+                            let rootedDirectory = rootedPath directory
 
-                            if not (Directory.Exists(directory)) then
-                                Directory.CreateDirectory(directory) |> ignore
+                            if not (Directory.Exists rootedDirectory) then
+                                Directory.CreateDirectory rootedDirectory |> ignore
 
-                            File.WriteAllText(targetPath, contents)
+                            File.WriteAllText(rootedPath targetPath, contents)
                         with _ ->
                             ()
 

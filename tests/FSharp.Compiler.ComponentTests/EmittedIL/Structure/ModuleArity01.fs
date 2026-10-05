@@ -1,4 +1,4 @@
-// #Regression #NoMT #CodeGen #Interop 
+// #Regression #NoMT #CodeGen #Interop
 
 // Verify the generation of module value arity
 // Regression test for FSHARP1.0:4762
@@ -58,7 +58,7 @@ module Tester =
         |> getType "Test.AModuleType"
         |> getMethod "Params1b"
         |> should takeParams [ typeof<int>; typeof<int> ]
-        
+
         System.Reflection.Assembly.GetExecutingAssembly()
         |> getType "Test.AModuleType"
         |> getMethod "Params1c"
@@ -76,6 +76,6 @@ module Tester =
 
 
     with
-    | e -> printfn "Unhandled Exception: %s" e.Message 
+    | e -> printfn "Unhandled Exception: %s" e.Message
            raise (Exception($"Oops: {e}"))
 

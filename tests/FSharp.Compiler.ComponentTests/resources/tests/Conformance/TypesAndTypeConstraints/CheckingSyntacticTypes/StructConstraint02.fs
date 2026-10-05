@@ -1,4 +1,4 @@
-// #Conformance #TypeConstraints 
+// #Conformance #TypeConstraints
 // Struct Unions should have the ValueType supertype constraint
 
 [<Struct>]

@@ -1,4 +1,4 @@
-// #Conformance #PatternMatching 
+// #Conformance #PatternMatching
 
 
 let (|MulTwo|_|)   x = if x % 2 = 0 then Some() else None

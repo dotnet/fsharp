@@ -20,7 +20,7 @@ let checkStr (inputStr:string) expectedChars expectedStr =
 
 let test (inputStr:string) expectedChars expectedStr =
     failure <- (checkStr inputStr expectedChars expectedStr) && failure
-    
+
 test "\U00002660\U00002663\U00002665\U00002666" [| 0x2660; 0x2663; 0x2665; 0x2666 |] (Some("♠♣♥♦"))
 test "\U0000D800 \U0000DBFF \U0000DC00 \U0000DFFF" [| 0xD800; 32; 0xDBFF; 32; 0xDC00; 32; 0xDFFF |] None
 test "\U00000000\U00000000\U0000FFFE\U0000FFFD\U0000FFFC" [| 0; 0; 0xFFFE; 0xFFFD; 0xFFFC |] None

@@ -1,4 +1,4 @@
-// #Regression #Conformance #LexicalAnalysis 
+// #Regression #Conformance #LexicalAnalysis
 // Regression test for FSharp1.0:2371 - Compiler should, at least, emit a better error message when trying to define a function whose name is ±, §, or §§
 //<Expects id="FS0010" span="(13,6)" status="error">Unexpected character '.+' in pattern. Expected '\)' or other token</Expects>
 //<Expects id="FS0583" span="(13,5)" status="error">Unmatched '\('</Expects>

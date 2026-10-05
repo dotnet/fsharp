@@ -13,31 +13,31 @@ open UnitTests.TestLib.ProjectSystem
 open Xunit
 
 [<AutoOpen>]
-module QuickInfoStandardSettings = 
+module QuickInfoStandardSettings =
     let standard40AssemblyRefs  = [ "System"; "System.Core"; "System.Numerics" ]
     let queryAssemblyRefs = [ "System.Xml.Linq"; "System.Core" ]
 
-type UsingMSBuild() = 
+type UsingMSBuild() =
     inherit LanguageServiceBaseTests()
 
-    // Work around an innocuous 'feature' with how QuickInfo is displayed, lines which 
+    // Work around an innocuous 'feature' with how QuickInfo is displayed, lines which
     // should have a "\r\n" just have a "\r"
-    let trimnewlines (str : string) = 
+    let trimnewlines (str : string) =
         str.Replace("\r", "").Replace("\n", "")
-    
+
     let stopWatch = new System.Diagnostics.Stopwatch()
     let ResetStopWatch() = stopWatch.Reset(); stopWatch.Start()
-    let time1 op a message = 
+    let time1 op a message =
         ResetStopWatch()
         let result = op a
         //printf "%s %d ms\n" message stopWatch.ElapsedMilliseconds
         result
 
-    let ShowErrors(project:OpenProject) =     
+    let ShowErrors(project:OpenProject) =
         for error in (GetErrors(project)) do
-            printf "%s\n" (error.ToString()) 
+            printf "%s\n" (error.ToString())
 
-    let checkTooltip expected ((tooltip, span : TextSpan), (row, col)) = 
+    let checkTooltip expected ((tooltip, span : TextSpan), (row, col)) =
         // Instrumentation: Show actual tooltip for debugging
         printfn "=== ACTUAL TOOLTIP START ==="
         printfn "%s" tooltip
@@ -57,7 +57,7 @@ type UsingMSBuild() =
         let gpatcc = GlobalParseAndTypeCheckCounter.StartNew(this.VS)
         MoveCursorToStartOfMarker(file, marker)
         let tooltip = time1 GetQuickInfoAtCursor file "Time of first tooltip"
-        AssertContains(trimnewlines tooltip, trimnewlines expected) 
+        AssertContains(trimnewlines tooltip, trimnewlines expected)
         gpatcc.AssertExactly(0,0)
 
     member public this.CheckTooltip(code : string,marker,atStart, f, ?addtlRefAssy : string list) =
@@ -72,7 +72,7 @@ type UsingMSBuild() =
         let tooltip = GetQuickInfoAndSpanAtCursor file
         f (tooltip, pos)
         gpatcc.AssertExactly(0,0)
-                         
+
     member public this.InfoInDeclarationTestQuickInfoImpl(code,marker,expected,atStart, ?addtlRefAssy : string list) =
         let check ((tooltip, _), _) = AssertContains(tooltip, expected)
         this.CheckTooltip(code, marker, atStart, check, ?addtlRefAssy=addtlRefAssy )
@@ -82,23 +82,23 @@ type UsingMSBuild() =
 
     member public this.AssertQuickInfoContainsAtStartOfMarker(code, marker, expected, ?addtlRefAssy : string list) =
         this.InfoInDeclarationTestQuickInfoImpl(code,marker,expected,true,?addtlRefAssy=addtlRefAssy)
-        
+
     member public this.VerifyQuickInfoDoesNotContainAnyAtEndOfMarker (code : string) marker notexpected =
         let (_, _, file) = this.CreateSingleFileProject(code)
-        
+
         let gpatcc = GlobalParseAndTypeCheckCounter.StartNew(this.VS)
         MoveCursorToEndOfMarker(file, marker)
         let tooltip = time1 GetQuickInfoAtCursor file "Time of first tooltip"
-        AssertNotContains(tooltip, notexpected)         
+        AssertNotContains(tooltip, notexpected)
         gpatcc.AssertExactly(0,0)
 
     member public this.VerifyQuickInfoDoesNotContainAnyAtStartOfMarker (code : string) marker notexpected =
         let (_, _, file) = this.CreateSingleFileProject(code)
-        
+
         let gpatcc = GlobalParseAndTypeCheckCounter.StartNew(this.VS)
         MoveCursorToStartOfMarker(file, marker)
         let tooltip = time1 GetQuickInfoAtCursor file "Time of first tooltip"
-        AssertNotContains(tooltip, notexpected)         
+        AssertNotContains(tooltip, notexpected)
         gpatcc.AssertExactly(0,0)
 
     member public this.AssertIdentifierInToolTipExactlyOnce (code : string) marker ident =
@@ -107,7 +107,7 @@ type UsingMSBuild() =
             let count = tooltip.Split([| '='; '.'; ' '; '\t'; '('; ':'; ')'; '\n' |]) |> Array.filter ((=) ident) |> Array.length
             if (count <> 1) then
                 Assert.Fail(sprintf "Identifier '%s' doesn't occur once in the tooltip '%s'" ident tooltip)
-        
+
         let (_, _, file) = this.CreateSingleFileProject(code)
 
         let gpatcc = GlobalParseAndTypeCheckCounter.StartNew(this.VS)
@@ -116,43 +116,43 @@ type UsingMSBuild() =
         AssertIdentifierInToolTipExactlyOnce(ident, tooltip)
         gpatcc.AssertExactly(0,0)
 
-    member this.VerifyOrderOfNestedTypesInQuickInfo (source : string, marker : string, expectedExactOrder : string list, ?extraRefs : string list) = 
+    member this.VerifyOrderOfNestedTypesInQuickInfo (source : string, marker : string, expectedExactOrder : string list, ?extraRefs : string list) =
         let (_, _, file) = this.CreateSingleFileProject(source, ?references = extraRefs)
-        
+
         let gpatcc = GlobalParseAndTypeCheckCounter.StartNew(this.VS)
         MoveCursorToStartOfMarker(file, "(*M*)")
         let tooltip = time1 GetQuickInfoAtCursor file "Time of first tooltip"
         AssertContainsInOrder(tooltip, expectedExactOrder)
 
-    
-            
-    
-
-
-    
 
 
 
-    
+
+
+
+
+
+
+
     // Regression for 2948
-    
+
 
     // Regression for 2494
-        
-
-   
-
-          
-          
-          
-          
 
 
-          
-          
-          
 
-          
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -161,8 +161,8 @@ type UsingMSBuild() =
     member public this.``JustAfterIdentifier``() =
         this.AssertQuickInfoContainsAtEndOfMarker
           ("""let f x = x + 1 ""","let f","int")
-        
-          
+
+
 
     // Disabled due to issue #11752   ---  https://github.com/dotnet/fsharp/issues/11752
     //[<Fact>]
@@ -170,7 +170,7 @@ type UsingMSBuild() =
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
         let projectLib = CreateProject(solution,"testlib")
-        let file = AddFileFromText(projectLib,"MyLibrary.fs", 
+        let file = AddFileFromText(projectLib,"MyLibrary.fs",
                       [ "module MyLibrary"
                         "let x = 1"
                         "module Nested ="
@@ -179,7 +179,7 @@ type UsingMSBuild() =
                         "        let z = 3"
                       ])
         let project = CreateProject(solution,"testapp")
-        let file = AddFileFromText(project,"App.fs", 
+        let file = AddFileFromText(project,"App.fs",
                       [ "let a = MyLibrary.Nested.Deeper.z" ])
         SetConfigurationAndPlatform(project, "Debug|AnyCPU")  // we must set config/platform when building with ProjectReferences
         SetConfigurationAndPlatform(projectLib, "Debug|AnyCPU")  // we must set config/platform when building with ProjectReferences
@@ -194,7 +194,7 @@ type UsingMSBuild() =
         ShiftKeyUp(this.VS)
         MoveCursorToEndOfMarker(file, "MyLi")
         let tooltip = time1 GetQuickInfoAtCursor file "Time of first tooltip"
-        AssertMatchesRegex '\n' "module MyLibrary[Filename:.*\\bin\\Debug\\testlib.exe]\n[Signature:T:MyLibrary]" tooltip  
+        AssertMatchesRegex '\n' "module MyLibrary[Filename:.*\\bin\\Debug\\testlib.exe]\n[Signature:T:MyLibrary]" tooltip
 
         MoveCursorToEndOfMarker(file, "Nes")
         let tooltip = time1 GetQuickInfoAtCursor file "Time of first tooltip"
@@ -223,7 +223,7 @@ type UsingMSBuild() =
     member private this.QuickInfoResolutionTest lines queries =
         let code = [ yield! lines ]
         let (_, _, file) = this.CreateSingleFileProject(code)
-        TakeCoffeeBreak(this.VS) 
+        TakeCoffeeBreak(this.VS)
 
 
         // Move along the entire length of the identifier checking that the tooltip text contains something familiar
@@ -241,42 +241,29 @@ type UsingMSBuild() =
              "let test0c = System.Collections.Generic.KeyNotFoundException()"
              "type Test0d = System.Collections.Generic.List<int>"
              "type Test0e = System.Collections.Generic.KeyNotFoundException"],
-        
+
               // The quick info specification                                    // Some of the expected quick info text
-             [("let test0 = ","System"                                           ,"namespace System"); 
-              ("let test0 = System.","Console"                                   ,"Console =");  
-              ("let test0 = System.Console.","In"                                ,"System.Console.In");  
-              ("let test0 = System.Console.","In"                                ,"TextReader");  
-              ("let test0b = ","System"                                          ,"namespace System"); 
-              ("let test0b = System.","Collections"                              ,"namespace System.Collections");  
-              ("let test0b = System.Collections.","Generic"                      ,"namespace System.Collections.Generic");  
-              ("let test0b = System.Collections.Generic.","List"                 ,"List()"); // note resolves to constructor  
-              ("let test0c = ","System"                                          ,"namespace System"); 
-              ("let test0c = System.","Collections"                              ,"namespace System.Collections");  
-              ("let test0c = System.Collections.","Generic"                      ,"namespace System.Collections.Generic");  
-              ("let test0c = System.Collections.Generic.","KeyNotFoundException" ,"KeyNotFoundException()");  // note resolves to constructor  
-              ("type Test0d = ","System"                                         ,"namespace System"); 
-              ("type Test0d = System.","Collections"                             ,"namespace System.Collections");  
-              ("type Test0d = System.Collections.","Generic"                     ,"namespace System.Collections.Generic");  
+             [("let test0 = ","System"                                           ,"namespace System");
+              ("let test0 = System.","Console"                                   ,"Console =");
+              ("let test0 = System.Console.","In"                                ,"System.Console.In");
+              ("let test0 = System.Console.","In"                                ,"TextReader");
+              ("let test0b = ","System"                                          ,"namespace System");
+              ("let test0b = System.","Collections"                              ,"namespace System.Collections");
+              ("let test0b = System.Collections.","Generic"                      ,"namespace System.Collections.Generic");
+              ("let test0b = System.Collections.Generic.","List"                 ,"List()"); // note resolves to constructor
+              ("let test0c = ","System"                                          ,"namespace System");
+              ("let test0c = System.","Collections"                              ,"namespace System.Collections");
+              ("let test0c = System.Collections.","Generic"                      ,"namespace System.Collections.Generic");
+              ("let test0c = System.Collections.Generic.","KeyNotFoundException" ,"KeyNotFoundException()");  // note resolves to constructor
+              ("type Test0d = ","System"                                         ,"namespace System");
+              ("type Test0d = System.","Collections"                             ,"namespace System.Collections");
+              ("type Test0d = System.Collections.","Generic"                     ,"namespace System.Collections.Generic");
               ("type Test0d = System.Collections.Generic.","List"                ,"Generic.List"); // note resolves to type
-              ("type Test0e = ","System"                                         ,"namespace System"); 
-              ("type Test0e = System.","Collections"                             ,"namespace System.Collections");  
-              ("type Test0e = System.Collections.","Generic"                     ,"namespace System.Collections.Generic");  
+              ("type Test0e = ","System"                                         ,"namespace System");
+              ("type Test0e = System.","Collections"                             ,"namespace System.Collections");
+              ("type Test0e = System.Collections.","Generic"                     ,"namespace System.Collections.Generic");
               ("type Test0e = System.Collections.Generic.","KeyNotFoundException","Generic.KeyNotFoundException");  // note resolves to type
              ]
-        
-
-        
-        
-
-        
-        
-        
-        
-        
-
-        
-        
 
 
 
@@ -284,28 +271,41 @@ type UsingMSBuild() =
 
 
 
-            
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     // Check to see that two distinct projects can be present
-        
+
     // In this bug, relative paths with .. in them weren't working.
 
 
-        
+
 
     /// Complete a member completion and confirm that its data tip contains the fragments
     /// in rhsContainsOrder
     member public this.AssertMemberDataTipContainsInOrder(code : string list,marker,completionName,rhsContainsOrder) =
         let code = code |> Seq.collect (fun s -> s.Split [|'\r'; '\n'|]) |> List.ofSeq
         let (_, project, file) = this.CreateSingleFileProject(code, fileKind = SourceFileKind.FSX)
-        TakeCoffeeBreak(this.VS) (* why needed? *)       
+        TakeCoffeeBreak(this.VS) (* why needed? *)
         MoveCursorToEndOfMarker(file,marker)
         let completions = CtrlSpaceCompleteAtCursor file
         match completions |> Array.tryFind (fun (CompletionItem(name, _, _, _, _)) -> name = completionName) with
         | Some(CompletionItem(_, _, _, descrFunc, _)) ->
             let descr = descrFunc()
             AssertContainsInOrder(descr,rhsContainsOrder)
-        | None -> 
+        | None ->
             ShowErrors(project)
             failwith $"Could not find completion name '{completionName}'"
 
@@ -322,7 +322,7 @@ type UsingMSBuild() =
 
 
 
-            
+
     [<Fact>]
     member public this.``Regression.OnMscorlibMethodInScript.Bug6489``() =
         this.AssertMemberDataTipContainsInOrder
@@ -334,16 +334,16 @@ type UsingMSBuild() =
                ] ,
              (* marker *)
              "actual.",
-             (* completed item *)             
-             "CopyTo", 
+             (* completed item *)
+             "CopyTo",
              (* expect to see in order... *)
              [
               "[Filename"; "Reference Assemblies\Microsoft\Framework\.NETFramework"; "mscorlib.dll]";
               "[Signature:M:System.Array.CopyTo("
              ]
-            ) 
-              
-              
+            )
+
+
 
 
 
@@ -516,7 +516,7 @@ type UsingMSBuild() =
             printf "First-%s\n" tooltip
             AssertContains(tooltip, expectedTip)
 
-                
+
 
     member private this.AssertQuickInfoInQuery(code: string, mark : string, expectedstring : string) =
         use _guard = this.UsingNewVS()
@@ -553,16 +553,16 @@ type UsingMSBuild() =
         let file2 = AddFileFromTextBlob(project,"File2.fs",code)
         let file1 = OpenFile(project,"File1.fs")
         let file2 = OpenFile(project,"File2.fs")
-        
+
         let gpatcc = GlobalParseAndTypeCheckCounter.StartNew(this.VS)
         MoveCursorToStartOfMarker(file2,mark)
         let tooltip = time1 GetQuickInfoAtCursor file2 "Time of first tooltip"
         printfn "%s" tooltip
-        AssertContains(tooltip, expectedstring) 
-        gpatcc.AssertExactly(0,0)   
+        AssertContains(tooltip, expectedstring)
+        gpatcc.AssertExactly(0,0)
 
 
 
 // Context project system
-type UsingProjectSystem() = 
+type UsingProjectSystem() =
     inherit UsingMSBuild(VsOpts = LanguageServiceExtension.ProjectSystemTestFlavour)

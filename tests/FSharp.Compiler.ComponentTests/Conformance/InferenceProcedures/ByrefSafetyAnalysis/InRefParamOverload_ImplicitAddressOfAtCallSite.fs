@@ -1,7 +1,7 @@
 open Prelude
 
-module InRefParamOverload_ImplicitAddressOfAtCallSite  = 
-    type C() = 
+module InRefParamOverload_ImplicitAddressOfAtCallSite  =
+    type C() =
          static member M(x: System.DateTime) = x.AddDays(1.0)
          static member M(x: inref<System.DateTime>) = x.AddDays(2.0)
          static member M2(x: System.DateTime, y: int) = x.AddDays(1.0)

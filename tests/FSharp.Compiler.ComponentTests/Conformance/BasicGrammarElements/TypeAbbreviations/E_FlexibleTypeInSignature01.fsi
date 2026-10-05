@@ -1,4 +1,4 @@
-// #Regression #Conformance #TypesAndModules 
+// #Regression #Conformance #TypesAndModules
 // Type abbreviation - flexible type in signature
 // Regression test for FSHARP1.0:3742
 
@@ -11,5 +11,5 @@ type C = class
 type D = class
             inherit C
          end
-         
+
 type BadType = #C           // <- flexible type (aka anonymous type with constraint)

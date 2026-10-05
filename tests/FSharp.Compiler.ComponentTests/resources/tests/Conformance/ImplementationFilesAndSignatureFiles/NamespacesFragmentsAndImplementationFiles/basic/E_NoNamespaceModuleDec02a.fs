@@ -1,4 +1,4 @@
-// #Regression #Conformance #SignatureFiles #Namespaces 
+// #Regression #Conformance #SignatureFiles #Namespaces
 // This testcase will emit a warning even though it contains a module, because
 // it is a nested module and not a 'real' module
 

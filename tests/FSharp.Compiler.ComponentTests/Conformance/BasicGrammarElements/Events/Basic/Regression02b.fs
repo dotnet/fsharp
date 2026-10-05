@@ -1,9 +1,9 @@
-// #Regression #Conformance #DeclarationElements #Events 
+// #Regression #Conformance #DeclarationElements #Events
 // Regression test for FSHARP1.0:5192
 // The following code should not ICE!
 open System.Threading
- 
-let postEventInContext,sendEventInContext = 
+
+let postEventInContext,sendEventInContext =
     let callBack (event:Event<'a>) arg =
         let f _ = event.Trigger(arg)
         new SendOrPostCallback(f)

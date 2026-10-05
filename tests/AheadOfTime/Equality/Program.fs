@@ -3,7 +3,7 @@ open NonStructuralComparison
 
 let failures = HashSet<string>()
 
-let reportFailure (s: string) = 
+let reportFailure (s: string) =
     stderr.Write " NO: "
     stderr.WriteLine s
     failures.Add s |> ignore
@@ -39,7 +39,7 @@ module Arrays =
     test "test102" [|1uy|] [|1uy|]
     test "test103" [|box 1|] [|box 1|]
 
-module Structs = 
+module Structs =
     test "test200" struct (1, 1) struct (1, 1)
     test "test201" struct (1, 1, 1) struct (1, 1, 1)
     test "test202" struct (1, 1, 1, 1) struct (1, 1, 1, 1)
@@ -48,7 +48,7 @@ module Structs =
     test "test205" struct (1, 1, 1, 1, 1, 1, 1) struct (1, 1, 1, 1, 1, 1, 1)
     test "test206" struct (1, 1, 1, 1, 1, 1, 1, 1) struct (1, 1, 1, 1, 1, 1, 1, 1)
 
-module OptionsAndCo = 
+module OptionsAndCo =
     open System
 
     test "test301" (Some 1) (Some 1)
@@ -59,19 +59,19 @@ module OptionsAndCo =
 module Enums =
     open System
 
-    type SomeEnum = 
+    type SomeEnum =
         | Case0 = 0
         | Case1 = 1
 
-    test "test401" (enum<SomeEnum>(1)) (enum<SomeEnum>(1)) 
-    test "test402" (enum<DayOfWeek>(1)) (enum<DayOfWeek>(1)) 
+    test "test401" (enum<SomeEnum>(1)) (enum<SomeEnum>(1))
+    test "test402" (enum<DayOfWeek>(1)) (enum<DayOfWeek>(1))
 
 [<EntryPoint>]
 let main _ =
-    match failures with 
-    | set when set.Count = 0 -> 
+    match failures with
+    | set when set.Count = 0 ->
         stdout.WriteLine "All tests passed"
         exit 0
-    | _ -> 
+    | _ ->
         stdout.WriteLine "Some tests failed"
         exit 1

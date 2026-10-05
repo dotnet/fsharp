@@ -1,4 +1,4 @@
-// #Conformance #PatternMatching #ActivePatterns 
+// #Conformance #PatternMatching #ActivePatterns
 
 
 // Multi-case active pattern

@@ -1,4 +1,4 @@
-// #Regression #Conformance #ObjectOrientedTypes #Structs 
+// #Regression #Conformance #ObjectOrientedTypes #Structs
 // Regression test for FSB 4654, generic structs may not have explicit layout
 
 type MultiMap<'k,'v> (x: int) = struct

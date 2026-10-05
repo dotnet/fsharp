@@ -23,8 +23,8 @@ let verify f x = f x
 /// Gets the given type from the assembly (otherwise throws)
 let getType typeName (asm : Assembly) =
     match asm.GetType(typeName, false) with
-    | null -> 
-        let allTypes = 
+    | null ->
+        let allTypes =
             asm.GetTypes()
             |> Array.map (fun ty -> ty.Name)
             |> Array.reduce (fun x y -> sprintf "%s\r%s" x y)
@@ -43,11 +43,11 @@ let getMember memberName (ty : Type) =
     | [||] -> failwithf "Error: Type did not contain member %s" memberName         // - empty array (=not found)
     | [| memberInfo |] -> memberInfo                                               // - array with 1 element (=found)
     | _ -> failwithf "Error: Multiple overloads. Use getMembers instead."          // - array with >1 elements (=multiple overloads)
-   
-/// Gets all of a type's PUBLIC members 
+
+/// Gets all of a type's PUBLIC members
 let getMembers (ty : Type) = ty.GetMembers()
 
-/// Gets a type's method 
+/// Gets a type's method
 let getMethod methodName (ty : Type) =
     match ty.GetMethod(methodName) with
     | null       -> failwithf "Error: Type did not contain member %s" methodName
@@ -76,29 +76,29 @@ let containType typeName (assembly : Assembly) =
     match assembly.GetType(typeName, false) with
     | null -> failwithf "Error: Assembly does not contain type %s" typeName
     | _    -> ()
-    
+
 /// Verify the assembly does NOT contains a type with the given name
 let notContainType typeName (assembly : Assembly) =
     match assembly.GetType(typeName, false) with
     | null -> ()
     | _    -> failwithf "Error: Assembly does, in fact, contain type %s" typeName
- 
+
 // Property
- 
-/// Verify the type contains a property with the given name       
+
+/// Verify the type contains a property with the given name
 let containProp propName (ty : Type) =
     match ty.GetProperty(propName) with
     | null -> failwithf "Error: Type %s does not contain property %s" ty.Name propName
     | _    -> ()
 
-/// Verify the type does not contain a property with the given name       
+/// Verify the type does not contain a property with the given name
 let notContainProp propName (ty : Type) =
     match ty.GetProperty(propName) with
     | null -> ()
     | _    -> failwithf "Error: Type %s does contain property %s" ty.Name propName
-      
+
 // Member
-  
+
 /// Verify the type contains a method with the given name
 let containMember membName (ty : Type) =
     match ty.GetMember(membName) with
@@ -115,51 +115,51 @@ let notContainMember membName (ty : Type) =
 let takeParams (args : Type list) (methInfo : MethodInfo) =
     let parameters = methInfo.GetParameters()
     if parameters.Length <> List.length args then
-        failwithf 
+        failwithf
             "Error: Method [%s] doesn't have expected arity. Method takes %d params, but expected %d"
             methInfo.Name
             parameters.Length
             (List.length args)
-            
+
     let verifyParamIsType (param : ParameterInfo) (ty : Type)=
         if param.ParameterType <> ty then
-            failwithf 
+            failwithf
                 "Error: Parameter is type [%s] but expected type [%s]"
                 param.ParameterType.Name
                 ty.Name
-                
+
     args |> List.iteri (fun i ty -> verifyParamIsType (parameters.[i]) ty)
 
 /// Assert the type is a Multicast delegate with the given signature.
 let beDelegate parameters (returnType : Type) (delegateType : Type) =
     // Verify the give type is, in fact, a delegate
-    if delegateType.BaseType.Name <> "MulticastDelegate" then 
-        failwithf 
-            "Error: The given type [%s] is not a MulticastDelegate, but expected to be." 
+    if delegateType.BaseType.Name <> "MulticastDelegate" then
+        failwithf
+            "Error: The given type [%s] is not a MulticastDelegate, but expected to be."
             delegateType.Name
-    
+
     // Now make sure it has the right signature, get the method info for the 'Invoke' method
     // to verify this.
     let invokeMethod = getMethod "Invoke" delegateType
     takeParams parameters invokeMethod
-    
+
     // Check the return type too...
     if invokeMethod.ReturnType <> returnType then
-        failwithf 
+        failwithf
             "Error: Return types do not match. Expected [%s] but got [%s]"
             returnType.Name
             invokeMethod.ReturnType.Name
     ()
-    
+
 /// Verifies the given event uses the specified event handler
 let useEventHandler eventHandlerType (eventInfo : EventInfo) =
     if eventInfo.EventHandlerType <> eventHandlerType then
-        failwithf 
+        failwithf
             "Error: Expected event to use handler [%s] but got [%s]"
             eventHandlerType.Name
             eventInfo.EventHandlerType.Name
-    ()  
-    
+    ()
+
 /// Verify the object contains a custom attribute with the given name. E.g. "ObsoleteAttribute"
 let haveAttribute attrName thingy =
     let containsAttrWithName attrList =
@@ -168,10 +168,10 @@ let haveAttribute attrName thingy =
         |> Array.length > 0
     let containsAttribute =
         match box thingy with
-        | :? Type as ty 
+        | :? Type as ty
             -> ty.GetCustomAttributes(false)
                |> containsAttrWithName
-        | :? MethodInfo as mi 
+        | :? MethodInfo as mi
             -> mi.GetCustomAttributes(false)
                |> containsAttrWithName
         | :? PropertyInfo as pi
@@ -189,7 +189,7 @@ let haveAttribute attrName thingy =
 /// Asserts a property's return value
 let haveType ty (propInfo : PropertyInfo) =
     if propInfo.PropertyType <> ty then
-        failwithf 
+        failwithf
             "Error: Property has type [%s] but expected[%s]"
             propInfo.PropertyType.Name
             ty.Name
@@ -203,10 +203,10 @@ let doesn'tHaveAttribute attrName thingy =
         |> Array.length = 0
     let containsAttribute =
         match box thingy with
-        | :? Type as ty 
+        | :? Type as ty
             -> ty.GetCustomAttributes(false)
                |> doesn'tContainsAttrWithName
-        | :? MethodInfo as mi 
+        | :? MethodInfo as mi
             -> mi.GetCustomAttributes(false)
                |> doesn'tContainsAttrWithName
         | :? PropertyInfo as pi

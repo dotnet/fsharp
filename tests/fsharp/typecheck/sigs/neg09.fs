@@ -5,12 +5,12 @@ let x = 1
 
 let f x = x + x
 
-  
+
 type C = class end
 
 
 module Bug1433 = begin
-    type IFoo = 
+    type IFoo =
         interface
             abstract NamedMeth1 : arg1:int * arg2:int * arg3:int * arg4:int-> float
         end
@@ -23,7 +23,7 @@ module Bug1433 = begin
     end
 
     let y = new Foo() :> IFoo
-    do y.NamedMeth1(1, arg4=1, arg2=2) 
+    do y.NamedMeth1(1, arg4=1, arg2=2)
 end
 
 module Bug1462 = begin
@@ -34,7 +34,7 @@ module Bug1462 = begin
 
   let rec expand_power (n,x) =
       if n = 0
-      then 1 
+      then 1
       else (x) * (failwith "" : Expr<int>)
 end
 

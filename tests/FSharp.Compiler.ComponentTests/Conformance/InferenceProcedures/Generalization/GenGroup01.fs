@@ -1,4 +1,4 @@
-// #Conformance #TypeInference 
+// #Conformance #TypeInference
 
 
 // Verify you generalization applies to groups of methods at once

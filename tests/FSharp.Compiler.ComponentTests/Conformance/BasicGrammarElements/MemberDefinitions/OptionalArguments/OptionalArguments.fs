@@ -560,7 +560,7 @@ let main _ =
             |> run
             |> shouldSucceed
             |> withOutputContainsAllInOrder ["VSome ValueSome 1"; "VSome ValueNone"; "VSome 1"; "VNone"]
-            
+
     [<Fact>]
     let ``Optional Arguments in constructor can't be a ValueOption+StructAttribute attribute with langversion=90`` () =
         let source =
@@ -634,7 +634,7 @@ let main _args =
         |> ILVerifierModule.verifyPEFileWithSystemDlls
         |> run
         |> verifyOutputContains [|"main;18;hello;42;"|]
-    
+
     // Regression test for https://github.com/dotnet/fsharp/issues/19711
     // `?name = expr` (explicit caller-side question-mark syntax) must accept a
     // ValueOption when the declared parameter is `[<Struct>] ?name`.

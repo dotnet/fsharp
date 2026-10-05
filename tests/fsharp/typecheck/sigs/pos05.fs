@@ -1,6 +1,6 @@
 namespace global
 
-module PrefixOperatorsDefaultPositive = 
+module PrefixOperatorsDefaultPositive =
     let f1 (x:Quotations.Expr<'T>) = <@ id %x @>  // now allowed
     let f2 (x:Quotations.Expr) = <@@ id %%x @@>   // now allowed
     let g (x:byref<int>) = x
@@ -10,7 +10,7 @@ module PrefixOperatorsDefaultPositive =
     let f4 x = let mutable v = 1 in g2 &v &v   // now allowed
     let f5 x = let mutable v = 1 in g3 &&v &&v // now allowed
 
-module PrefixOperatorsPositive = 
+module PrefixOperatorsPositive =
     // special cases:
     let (~+) x = x // keep
     let (~-) x = x // keep
@@ -59,6 +59,6 @@ type Gaussian(x:float,y:float) =
   static member ( ** ) (g: Gaussian, e: float) = g
   static member Pow (g: Gaussian, e: float) = g
 
-module M = 
+module M =
     let c1 : Gaussian = Gaussian(0.,1.) ** 3.
     let c2 = Gaussian(0.,1.) ** 3.

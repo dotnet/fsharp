@@ -7,7 +7,7 @@ type MU2<[<Measure>] 'ua, [<Measure>] 'ub> = class end
 type MT<'a> = class end
 type MT2<'a,'b> = class end
 
-type T =  
+type T =
     static member foo (l: #MT<'c>) = ()
 
     static member star (l:'a when 'a :> MT<'b>) = ()

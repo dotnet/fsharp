@@ -177,10 +177,10 @@ This will have debug points on `for i in 1 .. 10 do` and `yield 1`.
 The intended debug points for tasks is the same as for the expressions inside the constructs. For example
 
 ```fsharp
-let f() = task { for i in 1 .. 10 do printfn "hello" }
+let f() = task { for i in 1 .. 10 do printn "hello" }
 ```
 
-This will have debug points on `for i in 1 .. 10 do` and `printfn "hello"`.
+This will have debug points on `for i in 1 .. 10 do` and `printn "hello"`.
 
 > NOTE: there are glitches, see further below
 
@@ -201,7 +201,7 @@ Other computation expressions such as `async { .. }` or `builder { ... }` get de
 
 * For every `builder.TryFinally` call, a debug point covering the `try` keyword is added immediately within the body lambda expression. A debug point covering the `finally` keyword is added immediately within the finally lambda expression. No debug point is added for the `builder.TryFinally` call itself even if used in statement position.
 
-* For every `builder.Yield`, `builder.Return`, `builder.YieldFrom` or `builder.ReturnFrom` call, debug points are placed on the expression as if it were control flow. For example `yield 1` will place a debug point on `1` and `yield! printfn "hello"; [2]` will place two debug points.
+* For every `builder.Yield`, `builder.Return`, `builder.YieldFrom` or `builder.ReturnFrom` call, debug points are placed on the expression as if it were control flow. For example `yield 1` will place a debug point on `1` and `yield! printn "hello"; [2]` will place two debug points.
 
 * No debug point is added for the `builder.Run`, `builder.Run` or `builder.Delay` calls at the entrance to the computation expression, nor the `builder.Delay` calls implied by `try/with` or `try/finally` or sequential `Combine` calls.
 
@@ -226,8 +226,8 @@ type C(args) =
     member _.P = x + f 4
 
 type C(args) =        
-    do printfn "hello"         // debug point over `printfn "hello"` as side effect
-    static do printfn "hello"         // debug point over `printfn "hello"` as side effect for static init
+    do printn "hello"         // debug point over `printn "hello"` as side effect
+    static do printn "hello"         // debug point over `printn "hello"` as side effect for static init
     let f x = x + 1
     member _.P = x + f 4
 

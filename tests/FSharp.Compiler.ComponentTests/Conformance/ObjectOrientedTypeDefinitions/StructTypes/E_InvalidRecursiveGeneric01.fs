@@ -1,4 +1,4 @@
-// #Regression #Conformance #ObjectOrientedTypes #Structs 
+// #Regression #Conformance #ObjectOrientedTypes #Structs
 // Verify proper error for illegal recursive / generic structs
 // Regression for FSB 3417
 
@@ -10,11 +10,11 @@ type BadType4 =
         [<DefaultValueAttribute>]
         val mutable X : BadBox4<BadType4>
     end
-and BadBox4<'T> = 
+and BadBox4<'T> =
     struct
         val v : 'T
     end
-     
+
 let _ = BadType4()
 
 exit 1

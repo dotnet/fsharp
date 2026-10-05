@@ -9,7 +9,7 @@ type M2 = float<N>
 
 
 // See https://github.com/Microsoft/visualfsharp/issues/95
-module First = 
+module First =
   [<RequireQualifiedAccess>]
   type DU = Member of int
 

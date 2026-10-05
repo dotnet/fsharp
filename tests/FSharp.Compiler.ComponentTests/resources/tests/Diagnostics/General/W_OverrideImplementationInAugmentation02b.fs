@@ -1,4 +1,4 @@
-// #Regression #Diagnostics 
+// #Regression #Diagnostics
 // Regression test for FSHARP1.0:1273
 // Give warning on use of interface and/or override implementations in augmentations
 //
@@ -10,5 +10,5 @@ type T2 = class
             //default a.M = 3
            end
 type T2 with
-            default x.M = 0.0       // warning + error    
+            default x.M = 0.0       // warning + error
         end

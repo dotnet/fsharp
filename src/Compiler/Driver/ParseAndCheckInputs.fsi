@@ -162,7 +162,7 @@ type TcState =
 
     member CreatesGeneratedProvidedTypes: bool
 
-type PartialResult = TcEnv * TopAttribs * CheckedImplFile option * ModuleOrNamespaceType
+type PartialResult = TcEnv * TopAttribs * CheckedImplFile option * ModuleOrNamespaceType * ModuleOrNamespaceType
 
 /// Get the initial type checking state for a set of inputs
 val GetInitialTcState: range * string * TcConfig * TcGlobals * TcImports * TcEnv * OpenDeclaration list -> TcState
@@ -170,7 +170,7 @@ val GetInitialTcState: range * string * TcConfig * TcGlobals * TcImports * TcEnv
 /// Returns partial type check result for skipped implementation files.
 val SkippedImplFilePlaceholder:
     tcConfig: TcConfig * tcImports: TcImports * tcGlobals: TcGlobals * tcState: TcState * input: ParsedInput ->
-        ((TcEnv * TopAttribs * CheckedImplFile option * ModuleOrNamespaceType) * TcState) option
+        (PartialResult * TcState) option
 
 /// Check one input, returned as an Eventually computation
 val CheckOneInput:
@@ -182,7 +182,7 @@ val CheckOneInput:
     tcSink: TcResultsSink *
     tcState: TcState *
     input: ParsedInput ->
-        Cancellable<(TcEnv * TopAttribs * CheckedImplFile option * ModuleOrNamespaceType) * TcState>
+        Cancellable<PartialResult * TcState>
 
 val CheckOneInputWithCallback:
     node: NodeToTypeCheck ->
@@ -222,7 +222,7 @@ val TransformDependencyGraph: graph: Graph<FileIndex> * filePairs: FilePairMap -
 
 /// Finish the checking of multiple inputs
 val CheckMultipleInputsFinish:
-    (TcEnv * TopAttribs * 'T option * 'U) list * TcState -> (TcEnv * TopAttribs * 'T list * 'U list) * TcState
+    (TcEnv * TopAttribs * 'T option * 'U * 'V) list * TcState -> (TcEnv * TopAttribs * 'T list * 'U list) * TcState
 
 /// Finish the checking of a closed set of inputs
 val CheckClosedInputSetFinish: CheckedImplFile list * TcState -> TcState * CheckedImplFile list * ModuleOrNamespace
@@ -239,15 +239,3 @@ val CheckClosedInputSet:
     eagerFormat: (PhasedDiagnostic -> PhasedDiagnostic) *
     inputs: ParsedInput list ->
         TcState * TopAttribs * CheckedImplFile list * TcEnv
-
-/// Check a single input and finish the checking
-val CheckOneInputAndFinish:
-    checkForErrors: (unit -> bool) *
-    tcConfig: TcConfig *
-    tcImports: TcImports *
-    tcGlobals: TcGlobals *
-    prefixPathOpt: LongIdent option *
-    tcSink: TcResultsSink *
-    tcState: TcState *
-    input: ParsedInput ->
-        Cancellable<(TcEnv * TopAttribs * CheckedImplFile list * ModuleOrNamespaceType list) * TcState>

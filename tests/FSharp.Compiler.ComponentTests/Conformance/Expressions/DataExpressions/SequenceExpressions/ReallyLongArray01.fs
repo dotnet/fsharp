@@ -1,4 +1,4 @@
-// #Conformance #DataExpressions #Sequences 
+// #Conformance #DataExpressions #Sequences
 
 
 // Verify arrays can be really, really long
@@ -1158,7 +1158,7 @@ let names = [|
             "Kerrie";
             "Kerry";
             |]
-            
+
 
 if Array.length names <> 1153 then exit 1
 

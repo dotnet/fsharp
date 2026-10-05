@@ -1,4 +1,4 @@
-// #Regression #Conformance #LexicalAnalysis #Operators 
+// #Regression #Conformance #LexicalAnalysis #Operators
 // Verify the use of the dollar sign in symbolic functions is deprecated
 // Related to FSB 1684
 

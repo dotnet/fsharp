@@ -1,4 +1,4 @@
-// #Conformance #SignatureFiles 
+// #Conformance #SignatureFiles
 
 
 // Check FSI signature files for properties
@@ -19,7 +19,7 @@ type Implementation() =
         override this.GetSetProperty with get () = "things"
                                      and  set x  = ()
 
-module Test = 
+module Test =
 
     let t = new Implementation() :> AbstractPropertiesTest
 

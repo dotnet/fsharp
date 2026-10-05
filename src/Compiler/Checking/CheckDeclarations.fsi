@@ -59,7 +59,7 @@ val CheckOneImplFile:
     ModuleOrNamespaceType option *
     ParsedImplFileInput *
     FSharpDiagnosticOptions ->
-        Cancellable<TopAttribs * CheckedImplFile * TcEnv * bool>
+        Cancellable<TopAttribs * CheckedImplFile * TcEnv * bool * ModuleOrNamespaceType>
 
 val CheckOneSigFile:
     TcGlobals *

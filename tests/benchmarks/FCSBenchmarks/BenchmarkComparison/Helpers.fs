@@ -22,7 +22,7 @@ let getFileSourceText (filePath : string) =
 #endif
 
 let failOnErrors (results : FSharpCheckFileResults) =
-#if SERVICE_13_0_0 || SERVICE_30_0_0 
+#if SERVICE_13_0_0 || SERVICE_30_0_0
     if results.Errors.Length > 0 then failwithf "had errors: %A" results.Errors
 #else
     if results.Diagnostics.Length > 0 then failwithf $"had errors: %A{results.Diagnostics}"
@@ -41,7 +41,7 @@ let makeCmdlineArgsWithSystemReferences (filePath : string) =
         )
         |> Array.ofSeq
         |> Array.append [|typeof<Async>.Assembly.Location|]
-        
+
     let refs =
         assemblies
         |> Array.map (fun x ->

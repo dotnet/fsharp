@@ -1,4 +1,4 @@
-// #Regression #Conformance #DeclarationElements #MemberDefinitions #OptionalArguments  
+// #Regression #Conformance #DeclarationElements #MemberDefinitions #OptionalArguments
 // Regression for 6385
 
 type Optional() =

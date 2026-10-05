@@ -1,13 +1,13 @@
-// #Conformance #DeclarationElements #MemberDefinitions #OptionalArguments 
+// #Conformance #DeclarationElements #MemberDefinitions #OptionalArguments
 
 
 type Ballad() =
     static member MethWithOptParams (?param1:int, ?param2:string list, ?param3:int list option) =
-        let actualParam1 = 
+        let actualParam1 =
             match param1 with
             | Some x -> x
             | None   -> 0
-        let actualParam2 = 
+        let actualParam2 =
             match param2 with
             | Some(slist) -> List.length slist
             | None        -> 0

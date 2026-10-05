@@ -41,7 +41,7 @@ module Observable =
     ///
     /// let result = Observable.merge observableFirstTimer observableSecondTimer
     ///
-    /// result.Subscribe(fun output -> printfn $"Output - {output.SignalTime} ")
+    /// result.Subscribe(fun output -> printn $"Output - {output.SignalTime} ")
     /// |> ignore
     ///
     /// Console.ReadLine() |> ignore
@@ -78,7 +78,7 @@ module Observable =
     /// let multiplyByTwo = fun number -> number * 2
     /// let map = Observable.map multiplyByTwo observableNumbers
     ///
-    /// map.Subscribe(fun x -> printf $"{x} ") |> ignore
+    /// map.Subscribe(fun x -> print $"{x} ") |> ignore
     /// </code>
     /// The sample will output: <c>2 4 6 8 10</c>
     /// </example>
@@ -106,7 +106,7 @@ module Observable =
     /// let getEvenNumbers = fun number -> number % 2 = 0
     /// let map = Observable.filter multiplyByTwo observableNumbers
     ///
-    /// map.Subscribe(fun x -> printf $"{x} ") |> ignore
+    /// map.Subscribe(fun x -> print $"{x} ") |> ignore
     /// </code>
     /// The sample will output: <c>2 4</c>
     /// </example>
@@ -139,9 +139,9 @@ module Observable =
     /// let leftPartition, rightPartition =
     ///     Observable.partition isEvenNumber observableNumbers
     ///
-    /// leftPartition.Subscribe(fun x -> printfn $"Left partition: {x}") |> ignore
+    /// leftPartition.Subscribe(fun x -> printn $"Left partition: {x}") |> ignore
     ///
-    /// rightPartition.Subscribe(fun x -> printfn $"Right partition: {x}") |> ignore
+    /// rightPartition.Subscribe(fun x -> printn $"Right partition: {x}") |> ignore
     /// </code>
     /// The sample evaluates to: <c>Left partition: 2, 4, Right partition: 1, 3, 5</c>
     /// </example>
@@ -179,7 +179,7 @@ module Observable =
     /// let printOutput observable functionName =
     ///     use subscription =
     ///         Observable.subscribe
-    ///             (fun output -> printfn $"{functionName} - Split output: {output}. Type: {output.GetType()}")
+    ///             (fun output -> printn $"{functionName} - Split output: {output}. Type: {output.GetType()}")
     ///             observable
     ///
     ///     subscription
@@ -220,7 +220,7 @@ module Observable =
     ///
     /// let map = Observable.choose getOddNumbers observableNumbers
     ///
-    /// map.Subscribe(fun x -> printf $"{x} ") |> ignore
+    /// map.Subscribe(fun x -> print $"{x} ") |> ignore
     /// </code>
     /// The sample will output: <c>1 3 5</c>
     /// </example>
@@ -270,7 +270,7 @@ module Observable =
     /// open System.Reactive.Linq
     /// let numbers = seq { 1..5 }
     /// let observableNumbers = Observable.ToObservable numbers
-    /// let multiplyByTwo = fun number -> printf $"{number * 2} "
+    /// let multiplyByTwo = fun number -> print $"{number * 2} "
     /// Observable.add multiplyByTwo observableNumbers
     /// </code>
     /// The sample evaluates to: <c>2 4 6 8 10</c>
@@ -321,7 +321,7 @@ module Observable =
     ///
     /// let pairWise = Observable.pairwise observableNumbers
     ///
-    /// pairWise.Subscribe(fun pair -> printf $"{pair} ")
+    /// pairWise.Subscribe(fun pair -> print $"{pair} ")
     /// |> ignore
     /// </code>
     /// The sample evaluates to: <c>(1, 2), (2, 3), (3, 4), (4, 5)</c>

@@ -6,6 +6,6 @@ module M
 [<Struct>]
 type Foo<'T> =
     val offset : int
-    new (x:'T) = { offset = 1 } 
- 
+    new (x:'T) = { offset = 1 }
+
 let foo = Foo<int>()

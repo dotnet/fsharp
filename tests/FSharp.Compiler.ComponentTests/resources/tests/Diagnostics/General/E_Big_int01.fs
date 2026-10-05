@@ -1,4 +1,4 @@
-// #Regression #Diagnostics 
+// #Regression #Diagnostics
 // Regression test for FSHARP1.0:5860
 // Big_int module removed from PowerPack (was deprecated previously)
 //<Expects status="error" span="(7,6-7,13)" id="FS0039">The namespace or module 'Big_int' is not defined</Expects>

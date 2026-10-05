@@ -1,4 +1,4 @@
-// #Conformance #Constants #Recursion #LetBindings #MemberDefinitions #Mutable 
+// #Conformance #Constants #Recursion #LetBindings #MemberDefinitions #Mutable
 #if TESTS_AS_APP
 module Core_byrefs
 #endif
@@ -14,7 +14,7 @@ module NegativeTests =
             else
                 &x
 
-        let c = 
+        let c =
             if doIt then
                 let mutable z = 2
                 &z // not allowed
@@ -62,7 +62,7 @@ module NegativeTests =
             let x = 1
             &Coolio.Cool(&x) // not allowed
 
-        () 
+        ()
 
     let test6 () =
 
@@ -70,14 +70,14 @@ module NegativeTests =
             let mutable x = 1
             &Coolio.Cool(&x) // not allowed
 
-        () 
+        ()
 
     let test7 () =
         let mutable x = 1
         let f = fun () -> &x // not allowed
-        
+
         ()
-        
+
     type ByRefInterface =
 
         abstract Test : byref<int> * byref<int> -> byref<int>
@@ -101,7 +101,7 @@ module NegativeTests =
             let mutable y = 500
             obj.Test(&x, &y) |> ignore
             a
-            
+
     type TestDelegate = delegate of unit-> byref<int>
     let testFunction () =
         let mutable x = 1
@@ -209,4 +209,3 @@ module NegativeTests =
     let test26 () =
         let x = test24 ()
         ()
-    

@@ -1,4 +1,4 @@
-// #Regression #Conformance #ObjectOrientedTypes #Structs 
+// #Regression #Conformance #ObjectOrientedTypes #Structs
 // Regression for 4643:
 // infinite loop in typechecker - caused by recursive struct check via self typed static field
 //<Expects status="error" span="(9,23-9,24)" id="FS0881">Static 'val' fields in types must be mutable, private and marked with the '\[<DefaultValue>\]' attribute\. They are initialized to the 'null' or 'zero' value for their type\. Consider also using a 'static let mutable' binding in a class type\.$</Expects>
@@ -10,8 +10,8 @@ type RIP(x:int) =
 
 
 [<Struct>]
-type arg_unused_is_RIP(x:RIP) = 
-    struct 
+type arg_unused_is_RIP(x:RIP) =
+    struct
     end
 
 [<Struct>]

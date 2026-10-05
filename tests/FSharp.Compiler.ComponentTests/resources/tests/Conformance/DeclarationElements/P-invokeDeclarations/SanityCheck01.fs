@@ -1,4 +1,4 @@
-// #Conformance #DeclarationElements #PInvoke 
+// #Conformance #DeclarationElements #PInvoke
 
 
 // Sanity check PInvoke from F#

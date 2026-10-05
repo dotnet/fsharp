@@ -12,7 +12,7 @@ let first3Numbers =
         for n in numbers do
         take 3
     } |> Seq.toList
-if first3Numbers <> [5;4;1] then printfn "first3Numbers failed"; exit 1 
+if first3Numbers <> [5;4;1] then printfn "first3Numbers failed"; exit 1
 
 // Take - nested
 let customers = getCustomerList()
@@ -26,7 +26,7 @@ let WAOrders =
 if WAOrders |> Seq.take 3 |> Seq.toArray <> WAOrders.[0..2]  then printfn "first3WAOrders failed"; exit 1
 
 // Skip - simple
-let allButFirst4Numbers = 
+let allButFirst4Numbers =
     query {
         for n in numbers do
         skip 4
@@ -52,7 +52,7 @@ let firstNumbersLessThan6 =
 if firstNumbersLessThan6 <> [5;4;1;3] then printfn "firstNumbersLessThan6 failed"; exit 1
 
 // SkipWhile - simple
-let allButFirst3Numbers = 
+let allButFirst3Numbers =
     query {
         for n in numbers do
         skipWhile (n % 3 <> 0)

@@ -1,7 +1,7 @@
 module Test
 
-type MyDu = 
-    | A 
+type MyDu =
+    | A
     | Other
 
     static let ofString s = match s with | "A" -> A | _ -> Other

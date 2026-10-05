@@ -1,4 +1,4 @@
-// #Regression #Conformance #ObjectOrientedTypes #Structs 
+// #Regression #Conformance #ObjectOrientedTypes #Structs
 
 
 // FSB 1768, Allow the definition of immutable structs using the implicit construction syntax

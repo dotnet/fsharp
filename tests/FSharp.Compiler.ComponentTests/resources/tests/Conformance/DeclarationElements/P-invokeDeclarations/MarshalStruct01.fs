@@ -1,4 +1,4 @@
-// #Conformance #DeclarationElements #PInvoke 
+// #Conformance #DeclarationElements #PInvoke
 
 
 // Sanity check marshalling structs via PInvoke
@@ -9,10 +9,10 @@ open System.Runtime.InteropServices;
 // Define a Point using the sequential layout
 [<StructLayout(LayoutKind.Sequential)>]
 type SequentialPoint = struct
-    new (x, y) = { X = x; Y = y } 
+    new (x, y) = { X = x; Y = y }
     val X : int
     val Y : int
-end   
+end
 
 // Define the same point structure but using an explicit layout
 [<StructLayout(LayoutKind.Explicit)>]
@@ -20,7 +20,7 @@ type ExplicitPoint = struct
     // Randomize elements, the end result is:
     // [X1, X1][X2, X2][Y1][Y2][Y3][Y4]
     new (x1, x2, y1, y2, y3, y4) = { X1 = x1; X2 = x2; Y1 = y1; Y2 = y2; Y3 = y3; Y4 = y4 }
-    
+
     [<FieldOffset(4)>]
     val Y1 : byte
     [<FieldOffset(7)>]
@@ -33,7 +33,7 @@ type ExplicitPoint = struct
     val Y3 : byte
     [<FieldOffset(0)>]
     val X1 : int16
-end   
+end
 
 // Define a rectangle struct explicitly
 [<StructLayout(LayoutKind.Explicit)>]

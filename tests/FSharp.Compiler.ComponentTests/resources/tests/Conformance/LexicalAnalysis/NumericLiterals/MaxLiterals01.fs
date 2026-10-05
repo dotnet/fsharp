@@ -1,4 +1,4 @@
-// #Conformance #LexicalAnalysis #Constants 
+// #Conformance #LexicalAnalysis #Constants
 
 
 // Verify ability to specify min and max for literals

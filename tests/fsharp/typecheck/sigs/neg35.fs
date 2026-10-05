@@ -1,6 +1,6 @@
 namespace global
 
-module PrefixOperatorsNegative = 
+module PrefixOperatorsNegative =
     let (~<<) x = x // now rejected
     let (~++) x = x // now rejected
     let (~!) x = x // now rejected

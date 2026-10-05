@@ -1,4 +1,4 @@
-// #Regression #NoMT #FSI 
+// #Regression #NoMT #FSI
 // Regression test for FSharp1.0:2815 - fsi.exe underlines one too many characters for error spans (off by 1 error)
 //<Expects id="FS0025" status="warning">Incomplete pattern matches on this expression.</Expects>
 

@@ -1,8 +1,8 @@
-// #NoMono #NoMT #CodeGen #EmittedIL 
+// #NoMono #NoMT #CodeGen #EmittedIL
 
 
 let TestFunction9b(x) =
-    match x with 
+    match x with
     | [1;2] -> "three"
     | [3;4] -> "seven"
     | [a;b] when a+b = 4 -> "four"

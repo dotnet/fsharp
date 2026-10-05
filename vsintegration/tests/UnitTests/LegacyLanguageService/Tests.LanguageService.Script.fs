@@ -13,31 +13,31 @@ open UnitTests.TestLib.Utils
 open UnitTests.TestLib.LanguageService
 open UnitTests.TestLib.ProjectSystem
 
-type UsingMSBuild() as this = 
-    inherit LanguageServiceBaseTests() 
+type UsingMSBuild() as this =
+    inherit LanguageServiceBaseTests()
 
     let notAA l = None,l
 
-    let createSingleFileFsx (code : string) = 
+    let createSingleFileFsx (code : string) =
         let (_, p, f) = this.CreateSingleFileProject(code, fileKind = SourceFileKind.FSX)
         (p, f)
 
-    let createSingleFileFsxFromLines (code : string list) = 
+    let createSingleFileFsxFromLines (code : string list) =
         let (_, p, f) = this.CreateSingleFileProject(code, fileKind = SourceFileKind.FSX)
         (p, f)
 
     (* Timings ----------------------------------------------------------------------------- *)
     let stopWatch = new System.Diagnostics.Stopwatch()
     let ResetStopWatch() = stopWatch.Reset(); stopWatch.Start()
-    let time1 op a message = 
+    let time1 op a message =
         ResetStopWatch()
         let result = op a
         printf "%s %d ms\n" message stopWatch.ElapsedMilliseconds
         result
 
-    let ShowErrors(project:OpenProject) =     
+    let ShowErrors(project:OpenProject) =
         for error in (GetErrors(project)) do
-            printf "%s\n" (error.ToString())  
+            printf "%s\n" (error.ToString())
 
     let AssertListContainsInOrder(s:string list,cs:string list) =
         let s : string array = Array.ofList s
@@ -45,68 +45,68 @@ type UsingMSBuild() as this =
         AssertContainsInOrder(s,cs)
 
     /// Assert that there is no squiggle.
-    let AssertNoSquiggle(squiggleOption) = 
-        match squiggleOption with 
+    let AssertNoSquiggle(squiggleOption) =
+        match squiggleOption with
         | None -> ()
         | Some(severity,message) ->
             Assert.Fail(sprintf "Expected no squiggle but got '%A' with message: %s" severity message)
 
-    let VerifyErrorListContainedExpectedStr(expectedStr:string,project : OpenProject) = 
+    let VerifyErrorListContainedExpectedStr(expectedStr:string,project : OpenProject) =
         let errorList = GetErrors(project)
         let GetErrorMessages(errorList : Error list) =
             [ for i = 0 to errorList.Length - 1 do
                 yield errorList.[i].Message]
-            
+
         Assert.True(errorList
                           |> GetErrorMessages
                           |> Seq.exists (fun errorMessage ->
                                 errorMessage.Contains(expectedStr)))
 
-    let AssertNoErrorsOrWarnings(project:OpenProject) = 
+    let AssertNoErrorsOrWarnings(project:OpenProject) =
         let count = List.length (GetErrors(project))
         if count<>0 then
             printf "Saw %d errors and expected none.\n" count
-            printf "Errors are: \n" 
-            for e in GetErrors project do 
+            printf "Errors are: \n"
+            for e in GetErrors project do
                 printf "  path = <<<%s>>>\n" e.Path
-                printf "  message = <<<%s> \n" e.Message 
+                printf "  message = <<<%s> \n" e.Message
             AssertEqual(0,count)
 
     let AssertExactlyCountErrorSeenContaining(project:OpenProject,text,expectedCount) =
         let nMatching = (GetErrors(project)) |> List.filter (fun e ->e.ToString().Contains(text)) |> List.length
         match nMatching with
-        | 0 -> 
+        | 0 ->
             failwith (sprintf "No errors containing \"%s\"" text)
         | x when x = expectedCount -> ()
-        | _ -> 
+        | _ ->
             failwith (sprintf "Multiple errors containing \"%s\"" text)
 
     let AssertExactlyOneErrorSeenContaining(project:OpenProject,text) =
         AssertExactlyCountErrorSeenContaining(project,text,1)
 
-    /// Assert that a given squiggle is an Error (or warning) containing the given text        
-    let AssertSquiggleIsErrorContaining,AssertSquiggleIsWarningContaining, AssertSquiggleIsErrorNotContaining,AssertSquiggleIsWarningNotContaining =         
-        let AssertSquiggle expectedSeverity nameOfExpected nameOfNotExpected assertf (squiggleOption,containing) = 
+    /// Assert that a given squiggle is an Error (or warning) containing the given text
+    let AssertSquiggleIsErrorContaining,AssertSquiggleIsWarningContaining, AssertSquiggleIsErrorNotContaining,AssertSquiggleIsWarningNotContaining =
+        let AssertSquiggle expectedSeverity nameOfExpected nameOfNotExpected assertf (squiggleOption,containing) =
             match squiggleOption with
             | None -> Assert.Fail("Expected a squiggle but none was seen.")
             | Some(severity,message) ->
                 Assert.True((severity=expectedSeverity), sprintf "Expected %s but saw %s: %s" nameOfExpected nameOfNotExpected message)
-                assertf(message,containing)        
+                assertf(message,containing)
         AssertSquiggle Microsoft.VisualStudio.FSharp.LanguageService.Severity.Error    "Error"    "Warning" AssertContains,
         AssertSquiggle Microsoft.VisualStudio.FSharp.LanguageService.Severity.Warning  "Warning"  "Error"   AssertContains,
         AssertSquiggle Microsoft.VisualStudio.FSharp.LanguageService.Severity.Error    "Error"    "Warning" AssertNotContains,
-        AssertSquiggle Microsoft.VisualStudio.FSharp.LanguageService.Severity.Warning  "Warning"  "Error"   AssertNotContains 
+        AssertSquiggle Microsoft.VisualStudio.FSharp.LanguageService.Severity.Warning  "Warning"  "Error"   AssertNotContains
 
 
     //Verify the error list in fsx file contained the expected string
     member private this.VerifyFSXErrorListContainedExpectedString(fileContents : string, expectedStr : string) =
         let (_, project, file) = this.CreateSingleFileProject(fileContents, fileKind = SourceFileKind.FSX)
-        VerifyErrorListContainedExpectedStr(expectedStr,project)    
+        VerifyErrorListContainedExpectedStr(expectedStr,project)
 
-    //Verify no error list in fsx file 
+    //Verify no error list in fsx file
     member private this.VerifyFSXNoErrorList(fileContents : string) =
         let (_, project, file) = this.CreateSingleFileProject(fileContents, fileKind = SourceFileKind.FSX)
-        AssertNoErrorsOrWarnings(project)  
+        AssertNoErrorsOrWarnings(project)
     //Verify QuickInfo Contained In Fsx file
     member public this.AssertQuickInfoContainsAtEndOfMarkerInFsxFile (code : string) marker expected =
 
@@ -122,7 +122,7 @@ type UsingMSBuild() as this =
         MoveCursorToStartOfMarker(file, marker)
         let tooltip = GetQuickInfoAtCursor file
         AssertContains(tooltip, expected)
-    //Verify QuickInfo Not Contained In Fsx file     
+    //Verify QuickInfo Not Contained In Fsx file
     member public this.AssertQuickInfoNotContainsAtEndOfMarkerInFsxFile code marker notexpected =
         let (_, _, file) = this.CreateSingleFileProject((code : string), fileKind = SourceFileKind.FSX)
 
@@ -148,23 +148,23 @@ type UsingMSBuild() as this =
                                     ]
         let (_, file) = createSingleFileFsxFromLines code
         MoveCursorToEndOfMarker(file,"let xy")
-        AssertEqual(TokenType.Identifier ,GetTokenTypeAtCursor(file))  
+        AssertEqual(TokenType.Identifier ,GetTokenTypeAtCursor(file))
 
-    // Ensure that basic compile of an .fsx works        
+    // Ensure that basic compile of an .fsx works
     [<Fact>]
     member public this.``Fsx.CompileFsx_1``() =
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
         let project = CreateProject(solution,"testproject")
-        
+
         let file1 = AddFileFromTextEx(project,"Script.fsx","Script.fsx",BuildAction.Compile,
                                       ["printfn \"Hello world\""])
         let build = time1 Build project "Time to build project"
         Assert.True(build.BuildSucceeded, "Expected build to succeed")
         ShowErrors(project)
-        
 
-    // Compile a script which #loads a source file. The build can't succeed without the loaded file.      
+
+    // Compile a script which #loads a source file. The build can't succeed without the loaded file.
     [<Fact>]
     member public this.``Fsx.CompileFsx_2``() =
         use _guard = this.UsingNewVS()
@@ -179,13 +179,13 @@ type UsingMSBuild() as this =
                                       ["#load \"File.fs\""
                                        "printfn \"%d\" Namespace.Module.Value"])
         let build = time1 Build project "Time to build project"
-        if SupportsOutputWindowPane(this.VS) then 
+        if SupportsOutputWindowPane(this.VS) then
             let lines = GetOutputWindowPaneLines(this.VS)
             for line in lines do printfn "%s" line
             ()
         Assert.True(build.BuildSucceeded, "Expected build to succeed")
-        
-    // Compile a script which #loads a source file. The build can't succeed without 
+
+    // Compile a script which #loads a source file. The build can't succeed without
     [<Fact>]
     member public this.``Fsx.CompileFsx_3``() =
         use _guard = this.UsingNewVS()
@@ -199,13 +199,13 @@ type UsingMSBuild() as this =
         let fsx = AddFileFromTextEx(project,"Script.fsx","Script.fsx",BuildAction.Compile,
                                       ["#load \"File.fs\""
                                        "printfn \"%d\" Namespace.Module.Value"])
-        let build = time1 Build project "Time to build project" 
-        if SupportsOutputWindowPane(this.VS) then 
+        let build = time1 Build project "Time to build project"
+        if SupportsOutputWindowPane(this.VS) then
             let lines = GetOutputWindowPaneLines(this.VS)
             for line in lines do printfn "%s" line
             ()
-        Assert.True(build.BuildSucceeded, "Expected build to succeed")        
-        
+        Assert.True(build.BuildSucceeded, "Expected build to succeed")
+
     // Must be explicitly referenced by compile.
     [<Fact>]
     member public this.``Fsx.CompileFsx_Bug5416_1``() =
@@ -214,13 +214,13 @@ type UsingMSBuild() as this =
         let project = CreateProject(solution,"testproject")
         let fsx = AddFileFromTextEx(project,"Script.fsx","Script.fsx",BuildAction.Compile,
                                       ["let x = fsi.CommandLineArgs"])
-        let build = time1 Build project "Time to build project" 
-        if SupportsOutputWindowPane(this.VS) then 
+        let build = time1 Build project "Time to build project"
+        if SupportsOutputWindowPane(this.VS) then
             let lines = GetOutputWindowPaneLines(this.VS)
             for line in lines do printfn "%s" line
             ()
-        Assert.True(not(build.BuildSucceeded), "Expected build to fail")    
-        
+        Assert.True(not(build.BuildSucceeded), "Expected build to fail")
+
     // Must be explicitly referenced by compile.
     [<Fact(Skip = "Bug https://github.com/dotnet/fsharp/issues/17330")>]
     member public this.``Fsx.CompileFsx_Bug5416_2``() =
@@ -242,16 +242,16 @@ type UsingMSBuild() as this =
 
         let fsx = AddFileFromTextEx(project,"Script.fsx","Script.fsx",BuildAction.Compile,
                                       ["let x = fsi.CommandLineArgs"])
-        let build = time1 Build project "Time to build project" 
-        if SupportsOutputWindowPane(this.VS) then 
+        let build = time1 Build project "Time to build project"
+        if SupportsOutputWindowPane(this.VS) then
             let lines = GetOutputWindowPaneLines(this.VS)
             for line in lines do printfn "%s" line
             ()
-        if not(SupportsOutputWindowPane(this.VS)) then  
-            Assert.True(build.BuildSucceeded, "Expected build to succeed")                
-        
-        
-    // Ensure that #load order is preserved when #loading multiple files. 
+        if not(SupportsOutputWindowPane(this.VS)) then
+            Assert.True(build.BuildSucceeded, "Expected build to succeed")
+
+
+    // Ensure that #load order is preserved when #loading multiple files.
     [<Fact>]
     member public this.``Fsx.CompileFsx_5``() =
         use _guard = this.UsingNewVS()
@@ -266,20 +266,20 @@ type UsingMSBuild() as this =
                                       ["namespace Namespace"
                                        "module Module2 ="
                                        "  let Value = Module1.Value"
-                                      ])                                      
+                                      ])
         let fsx = AddFileFromTextEx(project,"Script.fsx","Script.fsx",BuildAction.Compile,
                                       [
                                        "#load \"File1.fs\""
                                        "#load \"File2.fs\""
                                        "printfn \"%d\" Namespace.Module2.Value"])
-        let build = time1 Build project "Time to build project" 
-        if SupportsOutputWindowPane(this.VS) then 
+        let build = time1 Build project "Time to build project"
+        if SupportsOutputWindowPane(this.VS) then
             let lines = GetOutputWindowPaneLines(this.VS)
             for line in lines do printfn "%s" line
             ()
-        Assert.True(build.BuildSucceeded, "Expected build to succeed")          
-        
-    // If an fs file is explicitly passed in to the compiler and also #loaded then 
+        Assert.True(build.BuildSucceeded, "Expected build to succeed")
+
+    // If an fs file is explicitly passed in to the compiler and also #loaded then
     // the command-line order is respected rather than the #load order
     [<Fact>]
     member public this.``Fsx.CompileFsx_6``() =
@@ -295,21 +295,21 @@ type UsingMSBuild() as this =
                                       ["namespace Namespace"
                                        "module Module2 ="
                                        "  let Value = Module1.Value"
-                                      ])                                      
+                                      ])
         let fsx = AddFileFromTextEx(project,"Script.fsx","Script.fsx",BuildAction.Compile,
                                       [
                                        "#load \"File2.fs\"" // Wrong order
                                        "#load \"File1.fs\""
                                        "printfn \"%d\" Namespace.Module2.Value"])
-        let build = time1 Build project "Time to build project" 
-        if SupportsOutputWindowPane(this.VS) then 
+        let build = time1 Build project "Time to build project"
+        if SupportsOutputWindowPane(this.VS) then
             let lines = GetOutputWindowPaneLines(this.VS)
             for line in lines do printfn "%s" line
             ()
-        Assert.True(build.BuildSucceeded, "Expected build to succeed") 
+        Assert.True(build.BuildSucceeded, "Expected build to succeed")
 
-        
-        
+
+
     // If a #loaded file does not exist, there should be an error
     [<Fact>]
     member public this.``Fsx.CompileFsx_7``() =
@@ -320,15 +320,15 @@ type UsingMSBuild() as this =
                                       [
                                        "#load \"NonexistentFile.fs\""
                                        ])
-        let build = time1 Build project "Time to build project" 
-        if SupportsOutputWindowPane(this.VS) then 
+        let build = time1 Build project "Time to build project"
+        if SupportsOutputWindowPane(this.VS) then
             let lines = GetOutputWindowPaneLines(this.VS)
             for line in lines do printfn "%s" line
-            AssertListContainsInOrder(lines, ["error FS0079: Could not load file"; "NonexistentFile.fs"; "because it does not exist or is inaccessible"])            
-            
-        Assert.True(not(build.BuildSucceeded), "Expected build to fail")       
-        
-        
+            AssertListContainsInOrder(lines, ["error FS0079: Could not load file"; "NonexistentFile.fs"; "because it does not exist or is inaccessible"])
+
+        Assert.True(not(build.BuildSucceeded), "Expected build to fail")
+
+
     // #r references should be respected.
     [<Fact>]
     member public this.``Fsx.CompileFsx_8``() =
@@ -340,14 +340,14 @@ type UsingMSBuild() as this =
                                        "#r \"System.Messaging\""
                                        "let a = new System.Messaging.AccessControlEntry()"
                                        ])
-        let build = time1 Build project "Time to build project" 
-        if SupportsOutputWindowPane(this.VS) then 
+        let build = time1 Build project "Time to build project"
+        if SupportsOutputWindowPane(this.VS) then
             let lines = GetOutputWindowPaneLines(this.VS)
             for line in lines do printfn "%s" line
-            
-        Assert.True(build.BuildSucceeded, "Expected build to succeed")          
-        
-        
+
+        Assert.True(build.BuildSucceeded, "Expected build to succeed")
+
+
     // Missing script file should be a reasonable failure, not a callstack.
     [<Fact>]
     member public this.``Fsx.CompileFsx_Bug5414``() =
@@ -355,21 +355,21 @@ type UsingMSBuild() as this =
         let solution = this.CreateSolution()
         let project = CreateProject(solution,"testproject")
         let fsx = AddFileFromTextEx(project,"Script.fsx","Script.fsx",BuildAction.Compile,[])
-        DeleteFileFromDisk(this.VS, fsx) 
-        
+        DeleteFileFromDisk(this.VS, fsx)
+
         let build = Build project
-        if SupportsOutputWindowPane(this.VS) then 
+        if SupportsOutputWindowPane(this.VS) then
             let lines = GetOutputWindowPaneLines(this.VS)
-            AssertListContainsInOrder(lines, 
+            AssertListContainsInOrder(lines,
                                       ["Could not find file "
-                                       "Script.fsx"])           
-            for line in lines do 
+                                       "Script.fsx"])
+            for line in lines do
                 printfn "%s" line
                 AssertNotContains(line,"error MSB") // Microsoft.FSharp.Targets(135,9): error MSB6006: "fsc.exe" exited with code -532462766.
 
-        Assert.True(not(build.BuildSucceeded), "Expected build to fail")                                  
-        
-        
+        Assert.True(not(build.BuildSucceeded), "Expected build to fail")
+
+
     member public this.TypeProviderDisposalSmokeTest(clearing) =
         use _guard = this.UsingNewVS()
         let providerAssemblyName = PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")
@@ -397,7 +397,7 @@ type UsingMSBuild() as this =
         let totalInvalidationHandlersAdded() = totalInvalidationHandlersAddedMeth.Invoke(null, [| |]) :?> int
         let totalInvalidationHandlersRemoved() = totalInvalidationHandlersRemovedMeth.Invoke(null, [| |]) :?> int
 
-         
+
         let startCreations = totalCreations()
         let startDisposals = totalDisposals()
         let startInvalidationHandlersAdded = totalInvalidationHandlersAdded()
@@ -409,12 +409,12 @@ type UsingMSBuild() as this =
 
         Assert.True(startCreations >= startDisposals, "Check0")
         Assert.True(startInvalidationHandlersAdded >= startInvalidationHandlersRemoved, "Check0")
-        for i in 1 .. 50 do 
+        for i in 1 .. 50 do
             let solution = this.CreateSolution()
-            let project = CreateProject(solution,"testproject" + string (i % 20))    
+            let project = CreateProject(solution,"testproject" + string (i % 20))
             this.AddAssemblyReference(project, PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll"))
             let fileName = sprintf "File%d.fs" i
-            let file1 = AddFileFromText(project,fileName, ["let x" + string i + " = N1.T1()" ])    
+            let file1 = AddFileFromText(project,fileName, ["let x" + string i + " = N1.T1()" ])
             let file = OpenFile(project,fileName)
             TakeCoffeeBreak(this.VS)
             AssertNoErrorsOrWarnings project   // ...and not an error on the first line.
@@ -426,9 +426,9 @@ type UsingMSBuild() as this =
             ignore (GetF1KeywordAtCursor file)
             let parmInfo = GetParameterInfoAtCursor file
 
-            let file1 = OpenFile(project,fileName)   
+            let file1 = OpenFile(project,fileName)
 
-            // The disposals should be at least one less 
+            // The disposals should be at least one less
             let c = countCreations()
             let d = countDisposals()
 
@@ -439,15 +439,15 @@ type UsingMSBuild() as this =
             // even after we've moved on from it.
             Assert.True((c >= i), "Check3, countCreations() >= i, iteration " + string i + ", countCreations() = " + string c)
 
-            if not clearing then 
+            if not clearing then
                 // By default we hold 3 build incrementalBuilderCache entries and 5 typeCheckInfo entries, so if we're not clearing
                 // there should be some roots to project builds still present
-                if i >= 3 then 
+                if i >= 3 then
                     Assert.True(c >= d + 3, "Check4a, c >= countDisposals() + 3, iteration " + string i + ", i = " + string i + ", countDisposals() = " + string d)
                     printfn "Check4a2, i = %d, countInvalidationHandlersRemoved() = %d" i (countInvalidationHandlersRemoved())
 
             // If we forcefully clear out caches and force a collection, then we can say much stronger things...
-            if clearing then 
+            if clearing then
                 ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients(this.VS)
                 let c = countCreations()
                 let d = countDisposals()
@@ -455,7 +455,7 @@ type UsingMSBuild() as this =
                 // Creations should be equal to disposals after a `ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients`
                 Assert.True((c = d), "Check4b, countCreations() = countDisposals(), iteration " + string i)
                 Assert.True((countInvalidationHandlersAdded() = countInvalidationHandlersRemoved()), "Check4b2, all invalidation handlers removed, iteration " + string i)
-        
+
         let c = countCreations()
         let d = countDisposals()
         Assert.True(c >= 50, "Check5, at end, countCreations() >= 50")
@@ -477,6 +477,6 @@ type UsingMSBuild() as this =
 
 
 // Context project system
-type UsingProjectSystem() = 
+type UsingProjectSystem() =
     inherit UsingMSBuild(VsOpts = LanguageServiceExtension.ProjectSystemTestFlavour)
 

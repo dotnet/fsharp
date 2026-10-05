@@ -31,11 +31,15 @@ type Derived() =
     override _.DoWork(x: int) = "derived"
 """
 
-    [<FactForNETCOREAPP>]
-    let ``OverloadResolutionPriority - comprehensive test`` () =
+    [<TheoryForNETCOREAPP>]
+    [<InlineData("default")>]
+    [<InlineData("latest")>]
+    [<InlineData("11.2")>]
+    [<InlineData("preview")>]
+    let ``OverloadResolutionPriority - comprehensive test`` langVersion =
         FsFromPath (__SOURCE_DIRECTORY__ ++ "ORPTestRunner.fs")
         |> withReferences [csharpPriorityLib]
-        |> withLangVersionPreview
+        |> withLangVersion langVersion
         |> asExe
         |> compileAndRun
         |> shouldSucceed

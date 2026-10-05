@@ -1,23 +1,23 @@
-// #Conformance #SyntacticSugar 
+// #Conformance #SyntacticSugar
 // Verify multiple ways to slice a type: [*,
 
 type Foo<'a>() =
     let mutable m_last1LB : 'a option = None
-    let mutable m_last1UB : 'a option = None    
-    
+    let mutable m_last1UB : 'a option = None
+
     let mutable m_last2LB1 : 'a option = None
     let mutable m_last2UB1 : 'a option = None
 
     let mutable m_last2LB2 : 'a option = None
     let mutable m_last2UB2 : 'a option = None
 
-    member this.GetSlice(lb1, ub1, lb2, ub2) = 
+    member this.GetSlice(lb1, ub1, lb2, ub2) =
         m_last2LB1 <- lb1
         m_last2UB1 <- ub1
         m_last2LB2 <- lb2
         m_last2UB2 <- ub2
         ()
-                
+
     member this.Last1LB = m_last1LB
     member this.Last1UB = m_last1UB
 

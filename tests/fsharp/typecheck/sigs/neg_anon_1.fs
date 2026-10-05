@@ -2,7 +2,7 @@
 module M
 
     // Check we get compile-time errors
-    let negTypeTest1() = ({| a = 1+1; b = 2 |} = {| a = 2 |}) 
+    let negTypeTest1() = ({| a = 1+1; b = 2 |} = {| a = 2 |})
 
     let negTypeTest2() = ({| b = 2 |} = {| a = 2 |} )
 

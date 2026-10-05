@@ -19,4 +19,3 @@ module TypeConstraint =
             (Error 10, Line 21, Col 8, Line 21, Col 10, "Unexpected symbol ':>' in pattern. Expected ')' or other token.")
             (Error 583, Line 21, Col 5, Line 21, Col 6, "Unmatched '('")
         ]
-        

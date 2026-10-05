@@ -255,6 +255,9 @@ type internal TcGlobals =
     member mk_ArrayCollector_ty: seqElemTy: TypedTree.TType -> TypedTree.TType
 
     member mk_GeneratedSequenceBase_ty: seqElemTy: TypedTree.TType -> TypedTree.TType
+    member mk_GeneratedRuntimeAsyncSequenceBase_ty: seqElemTy: TypedTree.TType -> TypedTree.TType
+    member mk_IAsyncEnumerable_ty: seqElemTy: TypedTree.TType -> TypedTree.TType
+    member mk_IAsyncEnumerator_ty: seqElemTy: TypedTree.TType -> TypedTree.TType
 
     member mk_IResumableStateMachine_ty: dataTy: TypedTree.TType -> TypedTree.TType
 
@@ -288,7 +291,11 @@ type internal TcGlobals =
 
     member ResumableCode_tcr: TypedTree.EntityRef
 
+    member ResumableStateMachine_tcr: TypedTree.EntityRef
+
     member System_Runtime_CompilerServices_RuntimeFeature_ty: TypedTree.TType option
+
+    member System_Runtime_CompilerServices_MethodImplOptions_ty: TypedTree.TType option
 
     member addrof2_vref: TypedTree.ValRef
 
@@ -456,6 +463,17 @@ type internal TcGlobals =
 
     member cgh__stateMachine_vref: TypedTree.ValRef
 
+    member cgh__runtimeAsyncReturn_vref: TypedTree.ValRef
+
+    member cgh__runtimeAsyncReturnValueTask_vref: TypedTree.ValRef
+
+    member cgh__runtimeAsyncReturnUnit_vref: TypedTree.ValRef
+
+    member cgh__runtimeAsyncReturnValueTaskUnit_vref: TypedTree.ValRef
+    member cgh__runtimeAsyncSequence_vref: TypedTree.ValRef
+
+    member cgh__runtimeAsyncSequenceCancellationToken_vref: TypedTree.ValRef
+
     member cgh__useResumableCode_vref: TypedTree.ValRef
 
     member char_operator_info: IntrinsicValRef
@@ -543,6 +561,8 @@ type internal TcGlobals =
     member failwithf_vref: TypedTree.ValRef
 
     member fastFunc_tcr: TypedTree.EntityRef
+
+    member optimizedClosures_FSharpFunc_tcref: int -> TypedTree.EntityRef
 
     member float32_operator_info: IntrinsicValRef
 
@@ -1060,6 +1080,8 @@ type internal TcGlobals =
     member system_Bool_tcref: TypedTree.EntityRef
 
     member system_Byte_tcref: TypedTree.EntityRef
+
+    member system_CancellationToken_ty: TypedTree.TType
 
     member system_Char_tcref: TypedTree.EntityRef
 

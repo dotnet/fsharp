@@ -7,7 +7,7 @@ module Regression_4688 =
         static member Empty: BMap<'v> = empty
       end
 
-    // This type is OK, note 'v instance of BMap        
+    // This type is OK, note 'v instance of BMap
     type CMap<'v> (bmap: BMap<'v>) =
       struct
         member x.bmap = bmap
@@ -18,4 +18,4 @@ module Regression_4688 =
     type DMap<'v> (bmap: BMap<'v option>) =
       struct
         member x.bmap = bmap
-      end 
+      end

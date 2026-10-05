@@ -4,7 +4,7 @@
 
 namespace BasicProvider.Helpers
 
-type SomeRuntimeHelper() = 
+type SomeRuntimeHelper() =
     static member Help() = "help"
 
 #if !IS_DESIGNTIME

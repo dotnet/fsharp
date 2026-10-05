@@ -1,4 +1,4 @@
-// #Regression #Conformance #SignatureFiles 
+// #Regression #Conformance #SignatureFiles
 module Test
 
 // Regression test for FSharp1.0:5834 - Generic constraints on explicitly specified type parameters work differently in fsi and fs

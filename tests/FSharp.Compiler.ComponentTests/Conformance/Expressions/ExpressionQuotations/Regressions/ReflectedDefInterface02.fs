@@ -1,5 +1,5 @@
 // #Regression #Conformance #Quotations #ReflectedDefinition
-// Regression for DevDiv:361318 
+// Regression for DevDiv:361318
 //<Expects status="success"></Expects>
 
 open System.Reflection
@@ -27,7 +27,7 @@ try
        for mthd in ty.GetMethods(bindingFlags) do
            match mthd with
            | MethodWithReflectedDefinition _ -> printfn "%s" mthd.Name
-           | _ -> ()        
+           | _ -> ()
     0
 with
 | _ -> printfn "FAIL: exception detected (did DevDiv:361318 regress?)"

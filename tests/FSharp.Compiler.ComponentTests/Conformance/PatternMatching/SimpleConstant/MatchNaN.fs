@@ -1,8 +1,8 @@
-// #Conformance #PatternMatching #Constants 
+// #Conformance #PatternMatching #Constants
 
 
-// Verify the ability to match against NaN. Note that 
-// this should 
+// Verify the ability to match against NaN. Note that
+// this should
 
 let rec TestIsNaN x =
     match box x with

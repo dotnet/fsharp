@@ -2,10 +2,10 @@
 
 namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
-    open Helpers 
+    open Helpers
     open System
     open System.Threading
-    open System.Reflection 
+    open System.Reflection
     open System.CodeDom
     open System.CodeDom.Compiler
     open System.Runtime.CompilerServices
@@ -46,17 +46,17 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         let mutable document : System.Xml.Linq.XDocument = null
         let mutable buffer : IVsTextLines = null
         let mutable rdtCookie : uint32 = 0u
-        
+
         member private x.InitDocData(itemid, filename) =
             let mutable hr = VSConstants.E_FAIL
             let rdt = site.GetService(typeof<SVsRunningDocumentTable>) :?> IVsRunningDocumentTable
-            
+
             let (hrres, docData, cookie) =
                 let (hrres, _, _, docData, cookie) = rdt.FindAndLockDocument(uint32 rdtFlags, filename)
                 if ErrorHandler.Failed(hrres) || docData = IntPtr.Zero then
                     // We cannot find the document. Create a resource for it and add it to the RDT.
                     if docData <> IntPtr.Zero then Marshal.Release(docData) |> ignore
-                    
+
                     let file = project.NodeFromItemId(itemid)
                     let projectResources = file :> IVsProjectResources
                     if projectResources = null then
@@ -70,10 +70,10 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                             (hrres, docData, 0u)
                 else
                     (hrres, docData, cookie)
-                
+
             hr <- hrres
             rdtCookie <- cookie
-            
+
             // If we have succeeded thus far
             if ErrorHandler.Succeeded(hr) && docData <> IntPtr.Zero then
                 try
@@ -101,7 +101,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 (hrres, lineCount, charsInLine)
             else
                 (hrres, 0, 0)
-           
+
         member private x.GetText() =
             Debug.Assert(buffer <> null, "Buffer is NULL when calling GetText")
             let (hrres, lines, index) = x.GetTextBufferExtent()
@@ -112,11 +112,11 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 (hrres, "")
 
         member x.Init(p : ProjectNode, forceCreate : bool) =
-        
+
             // We shouldn't call init more then once
             Debug.Assert(project = null && document = null && buffer = null, "Init already called?")
             let mutable hr = VSConstants.E_FAIL
-        
+
             try
                 project <- p
                 let specialFiles = p.InteropSafeIVsHierarchy :?> IVsProjectSpecialFiles
@@ -128,7 +128,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                                    else __PSFFLAGS.PSFF_FullPath
 
                     let (hrres, itemid, filename) = specialFiles.GetFile(int (__PSFFILEID.PSFFILEID_AppConfig), uint32 psfFlags)
-                    
+
                     if ErrorHandler.Succeeded(hrres) then
                         if itemid = VSConstants.VSITEMID_NIL then
                             hr <- NativeMethods.STG_E_FILENOTFOUND
@@ -145,7 +145,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                    VsShellUtilities.ShowMessageBox(site, null, e.Message, icon, buttons, defaultButton) |> ignore
                    reraise()
             hr
-            
+
         member private x.GetBufferStream() =
             Debug.Assert(buffer <> null, "Unexpected null buffer")
             let stream = buffer :?> IVsTextStream
@@ -155,7 +155,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 stream
             else
                 null
-            
+
         member x.SaveChanges() =
             Debug.Assert(buffer <> null, "Unexpected null buffer")
             Debug.Assert(document <> null, "Unexpected null document")
@@ -173,18 +173,18 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 hr
             else
                 hr
-            
+
         member x.GetXml() =
             Debug.Assert(document <> null, "Null XmlDocument?")
             document
-            
+
         interface IDisposable with
             member x.Dispose() =
                 if rdtCookie <> 0u && rdtFlags <> _VSRDTFLAGS.RDT_NoLock then
                     let rdt = site.GetService(typeof<SVsRunningDocumentTable>) :?> IVsRunningDocumentTable
                     rdt.UnlockDocument((uint32 rdtFlags) ||| (uint32 _VSRDTFLAGS.RDT_Unlock_SaveIfDirty), rdtCookie) |> ignore
                     rdtCookie <- 0u
-        
+
 
     // This type provides a wrapper around the app.config file and provides methods to update
     // the config file with framework moniker information.
@@ -192,14 +192,14 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     type internal LangConfigFile(site : System.IServiceProvider) =
         let fileHolder = new LangConfigFileHolder(site)
         let mutable isDirty = false
-        
+
         member x.Open(project : ProjectNode) =
             fileHolder.Init(project, false)
-            
+
         static member EnsureChildElement(node : System.Xml.Linq.XElement, name : string) =
             // This method will ensure that a child node named name exists under
             // node. name should not contain any XML namespace information.
-            
+
             // Let's look through the node given
             let any = node.Elements()
                       |> Seq.filter (fun n -> n.Name = (System.Xml.Linq.XName.Get(name)))
@@ -221,10 +221,10 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         //          <supportedRuntime version="2.0.50727.0" sku="client"/>
         //      </startup>
         //  </configuration>
-        // 
+        //
         // If sku is NULL, then the SKU attribute is removed from the <supportedRuntime>
         // tag.
-        
+
         static member PatchUpXml(root : System.Xml.Linq.XElement, version : string, sku : string) =
             // Ok, now that we have <configuration> and <startup> nodes, we need to ensure that
             // we have the right <supportedRuntime> element.  Our algorithm here is very simple:
@@ -236,19 +236,19 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             let APPCFG_SUPPORTED_RUNTIME = "supportedRuntime"
             let APPCFG_VERSION = "version"
             let APPCFG_SKU = "sku"
-            
+
             let mutable dirty = false
             let (startupNode, _) = LangConfigFile.EnsureChildElement(root, APPCFG_STARTUP)
-            
+
             if startupNode <> null then
                 let mutable foundExistingNode = false
-               
+
                 let fixupSku (n : System.Xml.Linq.XElement) =
                     // Figure out what to do with the SKU.  A NULL passed-in SKU parameter
                     // means to remove the SKU attribute altogether; otherwise, we set the
-                    // desired SKU attribute on the node.                                    
-                    
-                    let skuAttribute = n.Attribute(System.Xml.Linq.XName.Get(APPCFG_SKU))   
+                    // desired SKU attribute on the node.
+
+                    let skuAttribute = n.Attribute(System.Xml.Linq.XName.Get(APPCFG_SKU))
                     if sku = null  then
                         if skuAttribute <> null then
                             skuAttribute.Remove()
@@ -263,14 +263,14 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                         else
                             let newAttribute = new System.Xml.Linq.XAttribute(System.Xml.Linq.XName.Get(APPCFG_SKU), sku)
                             n.Add(newAttribute)
-                            dirty <- true                
-                
+                            dirty <- true
+
                 startupNode.Elements()
                 |> Seq.toList
                 |> Seq.filter (fun n -> n.Name = (System.Xml.Linq.XName.Get(APPCFG_SUPPORTED_RUNTIME)))
                 |> Seq.iter (fun n ->
                                 let versionAttribute = n.Attribute(System.Xml.Linq.XName.Get(APPCFG_VERSION))
-                                
+
                                 // Correct node?  If so, then keep it; otherwise, remove it.
                                 if String.Compare(versionAttribute.Value, version, true, CultureInfo.InvariantCulture) = 0  && not foundExistingNode then
                                     foundExistingNode <- true
@@ -279,14 +279,14 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                                     n.Remove()
                                     dirty <- true
                             )
-                
+
                 // Did we find a node?  If not, then we need to create one.
-                
+
                 if not foundExistingNode then
                     let (runtimeNode, _) = LangConfigFile.EnsureChildElement(startupNode, APPCFG_SUPPORTED_RUNTIME)
-                    
+
                     // Fix up the version - either add it or update it
-                    
+
                     let versionAttribute = runtimeNode.Attribute(System.Xml.Linq.XName.Get(APPCFG_VERSION))
                     if versionAttribute <> null then
                         versionAttribute.Value <- version
@@ -295,10 +295,10 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                         let versionAttribute = new System.Xml.Linq.XAttribute(System.Xml.Linq.XName.Get(APPCFG_VERSION), version)
                         runtimeNode.Add(versionAttribute)
                         dirty <- true
-                        
+
                     // fix up the sku
                     fixupSku runtimeNode
-                
+
             dirty
 
         member x.EnsureSupportedRuntimeElement(version : string, sku : string) =
@@ -323,7 +323,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                         // How to compute the binding redirects for an app.config file
                         // ===========================================================
                         //
-                        // Appconfig files appear by default in a console application and can be added to other F# projects.  
+                        // Appconfig files appear by default in a console application and can be added to other F# projects.
                         // Some test frameworks make use of the for library projects
                         // If the project property <AutoGenerateBindingRedirects> is set to true then this code is not needed
                         // However, for those projects that don't have it turned on this is how we compute the binding redirects to generate.
@@ -344,7 +344,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                         // Binding redirects are computed based on target fsharp core an fsharp core will be redirected to the target fsharp.core if it is "compatible"
                         // Each desktop fsharp.core is a superset of the previous desktop fsharp.core dll's and is thus "compatible"
                         // Each desktop fsharp.core.dll is also a superset of the portable libraries that shipped with it.
-                        // 
+                        //
                         // The table below represents the appropriate redirections
                         // If the target version is between TargetMin and TargetMax inclusive then the redirects list contains the appropriate redirects
                         //
@@ -352,13 +352,13 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                         "2.3.0.0",    "2.3.0.0",    ["2.0.0.0";    "2.3.0.0"]
                         "2.3.5.1",    "2.3.5.1",    ["2.3.5.0";    "2.3.5.1"]
                         "3.7.4.0",    "3.7.41.0",   ["3.3.1.0";    "3.7.4.0"]
-                        "3.7.41.0",   "3.7.41.0",   ["3.7.41.0"]   
+                        "3.7.41.0",   "3.7.41.0",   ["3.7.41.0"]
                         "3.47.4.0",   "3.47.41.0",  ["2.3.5.0";    "2.3.5.1";   "3.47.4.0"]
-                        "3.47.41.0",  "3.47.41.0",  ["3.47.41.0"]  
+                        "3.47.41.0",  "3.47.41.0",  ["3.47.41.0"]
                         "3.78.4.0",   "3.78.41.0",  ["3.78.3.1";   "3.78.4.0"]
-                        "3.78.41.0",  "3.78.41.0",  ["3.78.41.0"]  
+                        "3.78.41.0",  "3.78.41.0",  ["3.78.41.0"]
                         "3.259.4.0",  "3.259.41.0", ["3.259.3.1";  "3.259.4.0"]
-                        "3.259.41.0", "3.259.41.0", ["3.259.41.0"] 
+                        "3.259.41.0", "3.259.41.0", ["3.259.41.0"]
                         "4.3.0.0",    "4.4.3.0",    ["2.0.0.0";    "2.3.0.0";   "2.3.5.0";    "4.0.0.0";   "4.3.0.0"]
                         "4.3.1.0",    "4.4.3.0",    ["3.3.1.0";    "2.3.5.1";   "3.78.3.1";   "3.259.3.1"; "4.3.1.0"]
                         "4.4.0.0",    "4.4.3.0",    ["3.47.4.0";   "3.78.4.0";  "3.259.4.0";  "4.4.0.0"]
@@ -369,7 +369,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 let xname = System.Xml.Linq.XName.Get
                 let xnameAsmV1 name = xname ("{urn:schemas-microsoft-com:asm.v1}" + name)
 
-                let fsCoreAttributes = 
+                let fsCoreAttributes =
                     [
                         xname "name", "FSharp.Core"
                         xname "publicKeyToken", Microsoft.VisualStudio.FSharp.ProjectSystem.Utilities.FsCorePublicKeyToken
@@ -383,7 +383,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 let DependentAssembly = "dependentAssembly"
                 let AssemblyIdentity = "assemblyIdentity"
 
-                let create (p : System.Xml.Linq.XElement) name attrs = 
+                let create (p : System.Xml.Linq.XElement) name attrs =
                     let el = new System.Xml.Linq.XElement(name : System.Xml.Linq.XName)
                     p.Add(el)
                     for (name, value) in attrs do
@@ -408,11 +408,11 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                     let n =
                         assemblyBinding.Elements(xnameAsmV1 DependentAssembly)
                         |> Seq.tryFind(
-                            fun da -> 
+                            fun da ->
                                 match da.Element(xnameAsmV1 AssemblyIdentity) with
                                 | null -> false
-                                | x -> 
-                                    fsCoreAttributes 
+                                | x ->
+                                    fsCoreAttributes
                                     |> Seq.forall (
                                         fun (attr, value) ->
                                             match x.Attribute attr with
@@ -421,7 +421,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                                     )
                             )
                     match n with
-                    | Some el -> 
+                    | Some el ->
                         // drop existing redirects for FSharp.Core
                         let existingRedirects = el.Elements (xnameAsmV1 BindingRedirect)  |> List.ofSeq
                         for existingRedirect in existingRedirects do
@@ -434,7 +434,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
                 let redirects =
                     seq {
-                            for _,_,redirects in bindingRedirects do 
+                            for _,_,redirects in bindingRedirects do
                                 yield! redirects
                         }
 

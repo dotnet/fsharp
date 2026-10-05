@@ -1,6 +1,6 @@
 // Expected: Warning for open inside type
 module Module
 
-type A = 
+type A =
     | A
     open System

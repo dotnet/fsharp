@@ -1,15 +1,15 @@
-// #Conformance #TypesAndModules #Modules 
+// #Conformance #TypesAndModules #Modules
 
 
 // Define a simple module and access its values
 
-module MyModule = 
+module MyModule =
 
     let x = 1
 
     type Foo = A | B
 
-    module MyNestedModule = 
+    module MyNestedModule =
         let f y = y + 1
 
         type Bar = C | D

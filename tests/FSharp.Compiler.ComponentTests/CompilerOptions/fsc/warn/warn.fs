@@ -11,7 +11,7 @@ module CompilerWarningLevel =
     [<Theory; FileInlineData("warn_level0.fs")>]
     let ``warn_level0_fs --warn:0`` compilation =
         compilation
-        |> getCompilation 
+        |> getCompilation
         |> withLangVersion80
         |> asExe
         |> withOptions ["--warn:0"]
@@ -22,7 +22,7 @@ module CompilerWarningLevel =
     [<Theory;FileInlineData("warn_level1.fs")>]
     let ``warn_level1_fs --warn:1 --warnaserror:52`` compilation =
         compilation
-        |> getCompilation 
+        |> getCompilation
         |> asExe
         |> withOptions ["--warn:1"; "--warnaserror:52"]
         |> compile
@@ -31,7 +31,7 @@ module CompilerWarningLevel =
     [<Theory; FileInlineData("warn_level2.fs")>]
     let ``warn_level2_fs --warn:2 --warnaserror:52`` compilation =
         compilation
-        |> getCompilation 
+        |> getCompilation
         |> asExe
         |> withOptions ["--warn:2"; "--warnaserror:52"]
         |> compile
@@ -40,7 +40,7 @@ module CompilerWarningLevel =
     [<Theory; FileInlineData("warn_level3.fs")>]
     let ``warn_level3_fs --warn:3 --warnaserror:52`` compilation =
         compilation
-        |> getCompilation 
+        |> getCompilation
         |> asExe
         |> withOptions ["--warn:3"; "--warnaserror:52"]
         |> compile
@@ -49,7 +49,7 @@ module CompilerWarningLevel =
     [<Theory; FileInlineData("warn_level4.fs")>]
     let ``warn_level4_fs --warn:4 --warnaserror:52`` compilation =
         compilation
-        |> getCompilation 
+        |> getCompilation
         |> asExe
         |> withOptions ["--warn:4"; "--warnaserror:52"]
         |> compile
@@ -58,7 +58,7 @@ module CompilerWarningLevel =
     [<Theory; FileInlineData("warn_level5.fs")>]
     let ``warn_level5_fs --warn:5 --warnaserror:52`` compilation =
         compilation
-        |> getCompilation 
+        |> getCompilation
         |> asExe
         |> withOptions ["--warn:5"; "--warnaserror:52"]
         |> compile
@@ -70,7 +70,7 @@ module CompilerWarningLevel =
     [<Theory; FileInlineData("warn_level5.fs")>]
     let ``warn_level5_fs --warn:5`` compilation =
         compilation
-        |> getCompilation 
+        |> getCompilation
         |> asExe
         |> withOptions ["--warn:5"]
         |> compile
@@ -79,7 +79,7 @@ module CompilerWarningLevel =
         |> withDiagnosticMessageMatches "The value has been copied to ensure the original is not mutated by this operation or because the copy is implicit when returning a struct from a member and another member is then accessed$"
         |> ignore
 
-#if NETSTANDARD 
+#if NETSTANDARD
 // This test works with KeyValuePair, which is not  a 'readonly struct' in net472
     [<Theory; FileInlineData("nowarn_readonlystruct.fs")>]
     let ``no error 52 with readonly struct`` compilation =
@@ -95,7 +95,7 @@ module CompilerWarningLevel =
     [<Theory; FileInlineData("warn_level6.fs")>]
     let ``warn_level6_fs --warn:6`` compilation =
         compilation
-        |> getCompilation 
+        |> getCompilation
         |> asExe
         |> withOptions ["--warn:6"]
         |> compile
@@ -107,7 +107,7 @@ module CompilerWarningLevel =
     [<Theory; FileInlineData("nowarn.fs")>]
     let ``nowarn_fs --warnaserror`` compilation =
         compilation
-        |> getCompilation 
+        |> getCompilation
         |> asExe
         |> withOptions ["--warnaserror"]
         |> compileAndRun
@@ -117,7 +117,7 @@ module CompilerWarningLevel =
     [<Theory; FileInlineData("warn40.fs")>]
     let ``warn40_fs`` compilation =
         compilation
-        |> getCompilation 
+        |> getCompilation
         |> asExe
         |> compile
         |> shouldFail
@@ -131,7 +131,7 @@ module CompilerWarningLevel =
     [<Theory; FileInlineData("warn40.fs")>]
     let ``warn40_fs --warnaserror`` compilation =
         compilation
-        |> getCompilation 
+        |> getCompilation
         |> asExe
         |> withOptions ["--warnaserror"]
         |> compile
@@ -146,7 +146,7 @@ module CompilerWarningLevel =
     [<Theory; FileInlineData("warn40.fs")>]
     let ``warn40_fs --nowarn:40;21`` compilation =
         compilation
-        |> getCompilation 
+        |> getCompilation
         |> asExe
         |> withOptions ["--nowarn:40;21"]
         |> compileAndRun
@@ -156,7 +156,7 @@ module CompilerWarningLevel =
     [<Theory; FileInlineData("warn40.fs")>]
     let ``warn40_fs --nowarn:NU0000;FS40;NU0001`` compilation =
         compilation
-        |> getCompilation 
+        |> getCompilation
         |> asExe
         |> withOptions ["--nowarn:NU0000;FS40;NU0001;FS21"]
         |> compileAndRun
@@ -166,7 +166,7 @@ module CompilerWarningLevel =
     [<Theory; FileInlineData("warn40.fs")>]
     let ``warn40_fs --nowarn:FS0040`` compilation =
         compilation
-        |> getCompilation 
+        |> getCompilation
         |> asExe
         |> withOptions ["--nowarn:FS0040"; "--nowarn:FS0021"]
         |> compileAndRun

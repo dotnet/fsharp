@@ -25,7 +25,7 @@ let transpose (source: seq<#seq<'T>>) =
     source |> Seq.collect Seq.indexed |> Seq.groupBy fst |> Seq.map (snd >> (Seq.map snd))"""
 
     Fsi """module Program
-val transpose: source: seq<'Collection> -> seq<seq<'T>> when 'Collection :> seq<'T>""" 
+val transpose: source: seq<'Collection> -> seq<seq<'T>> when 'Collection :> seq<'T>"""
     |> withAdditionalSourceFile encodeFs
     |> withLangVersion10
     |> compile

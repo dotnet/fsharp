@@ -20,11 +20,11 @@ type XmlDocComments() =
     member public this.AssertQuickInfoContainsAtStartOfMarker code marker expected =
         let (_solution, _project, file) = this.CreateSingleFileProject(code : string)
         MoveCursorToStartOfMarker(file, marker)
-        let tooltip = GetQuickInfoAtCursor file 
+        let tooltip = GetQuickInfoAtCursor file
         printfn "%A" tooltip
-        AssertContains(trimnewlines tooltip, trimnewlines expected) 
+        AssertContains(trimnewlines tooltip, trimnewlines expected)
 
-    member private this.TestMalFormedXML(marker : string) =   
+    member private this.TestMalFormedXML(marker : string) =
         let fileContent1 = """
             namespace XML
             module Doc =
@@ -56,7 +56,7 @@ type XmlDocComments() =
         let project1 = CreateProject(solution, "FSLibrary")
         let project2 = CreateProject(solution, "FSClient")
         let file1 = AddFileFromTextBlob(project1,"File1.fs", fileContent1)
-        AddProjectReference(project2,project1)       
+        AddProjectReference(project2,project1)
         Build(project1) |> fun result -> Assert.True(result.BuildSucceeded)
 
         let file2 = AddFileFromTextBlob(project2,"File2.fs", fileContent2)
@@ -65,30 +65,30 @@ type XmlDocComments() =
         GetQuickInfoAtCursor file
 
     [<Fact(Skip = "GetQuickInfoAtCursor miss XMLDoc analyzing")>]
-    member this.``MalFormedXML.FromXMLDoc``() = 
+    member this.``MalFormedXML.FromXMLDoc``() =
         let expected = "XML comment"
         let tooltip = this.TestMalFormedXML("(*Marker1*)")
         printfn "%A" tooltip
-        AssertContains(trimnewlines tooltip, trimnewlines expected) 
+        AssertContains(trimnewlines tooltip, trimnewlines expected)
 
     [<Fact(Skip = "GetQuickInfoAtCursor miss XMLDoc analyzing")>]
-    member this.``MalFormedXML.FromCurrentProject``() = 
+    member this.``MalFormedXML.FromCurrentProject``() =
         let expected = "'summary'"
         let tooltip = this.TestMalFormedXML("(*Marker2*)")
         printfn "%A" tooltip
-        AssertContains(trimnewlines tooltip, trimnewlines expected) 
+        AssertContains(trimnewlines tooltip, trimnewlines expected)
 
     [<Fact(Skip = "GetQuickInfoAtCursor miss XMLDoc analyzing")>]
-    member this.``MalFormedXML.NoXMLComment.Bug5858``() = 
+    member this.``MalFormedXML.NoXMLComment.Bug5858``() =
         let notexpected = "summary"
         let notexpected2 = "param name="
         let tooltip = this.TestMalFormedXML("(*Marker3*)")
         printfn "%A" tooltip
-        AssertNotContains(tooltip, notexpected)   
-        AssertNotContains(tooltip, notexpected2)   
+        AssertNotContains(tooltip, notexpected)
+        AssertNotContains(tooltip, notexpected2)
 
     [<Fact(Skip = "GetQuickInfoAtCursor miss XMLDoc analyzing")>]
-    member this.Test() = 
+    member this.Test() =
         let fileContent = """
             //local custom type value
             /// <summary>

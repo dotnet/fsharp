@@ -157,7 +157,7 @@ module BindingExpressions =
         |> withDiagnostics [
             (Warning 64, Line 10, Col 32, Line 10, Col 33, "This construct causes code to be less generic than indicated by the type annotations. The type variable 'b has been constrained to be type ''a'.")
         ]
-    
+
     [<Theory; FileInlineData("UpperBindingPattern.fs")>]
     let ``UpperBindingPattern_fs v9`` compilation =
         compilation
@@ -190,12 +190,12 @@ module BindingExpressions =
             (Warning 49, Line 117, Col 37, Line 117, Col 40, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
             (Warning 49, Line 122, Col 12, Line 122, Col 15, "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.")
         ]
-        
+
     [<Theory; FileInlineData("UpperBindingPattern.fs")>]
     let ``UpperBindingPattern_fs`` compilation =
         compilation
         |> getCompilation
-        |> asExe        
+        |> asExe
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldFail

@@ -1366,7 +1366,7 @@ let add () = (1, 2) +++ (3, 4)
 
 
 // Implementation given before signature file. This scenario will not compile, but is supported.
-// Produced graph should have a necessary dependecy to trigger expected errors. 
+// Produced graph should have a necessary dependecy to trigger expected errors.
 let internal misorderedScenario =
     scenario
         "Signature file follows implementation"

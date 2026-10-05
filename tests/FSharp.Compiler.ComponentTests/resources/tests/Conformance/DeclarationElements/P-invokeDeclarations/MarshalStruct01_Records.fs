@@ -1,4 +1,4 @@
-// #Conformance #DeclarationElements #PInvoke 
+// #Conformance #DeclarationElements #PInvoke
 
 
 // copy of MarshalStruct01 test, but with struct records instead of standard structs
@@ -23,7 +23,7 @@ type ExplicitPoint =
     // Randomize elements, the end result is:
     // [X1, X1][X2, X2][Y1][Y2][Y3][Y4]
     {
-    
+
         [<FieldOffset(4)>]
         Y1 : byte
         [<FieldOffset(7)>]

@@ -1,11 +1,11 @@
-// #Conformance #DataExpressions #ComputationExpressions 
+// #Conformance #DataExpressions #ComputationExpressions
 // Verify you can customize the behavior of a workflow builder
 // through the use of generics
 
 type WorkflowBuilder<'a>() =
     member this.Return(x) = x + typeof<'a>.Name
-    
-    
+
+
 let wf1 = new WorkflowBuilder<int>()
 let result1 = wf1 { return "test1:" }
 

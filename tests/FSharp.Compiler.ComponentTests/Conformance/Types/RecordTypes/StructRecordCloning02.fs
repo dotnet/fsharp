@@ -1,4 +1,4 @@
-// #Conformance #TypesAndModules #Records 
+// #Conformance #TypesAndModules #Records
 
 
 // Verify ability to clone records when they are returned from an arbitrary expression

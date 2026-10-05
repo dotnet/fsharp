@@ -1,13 +1,13 @@
-// #Conformance #ObjectOrientedTypes #Structs 
+// #Conformance #ObjectOrientedTypes #Structs
 
 namespace NS
-  module M = 
+  module M =
     type S1 (i : int) =
       struct
         new (i : string, j : int) = S1(j)
         member x.m = i
       end
-      
+
     type S2 =
       struct
         val mutable m : int
@@ -15,10 +15,10 @@ namespace NS
       end
 
 
-  module Test = 
+  module Test =
     open M
     let mutable res = true
-    
+
     let mutable a = new S1("Hello",5)
     let b = S2(6)
 
@@ -30,5 +30,5 @@ namespace NS
       printf "Lib.MutableFields failed\n"
       res <- false
 
-    
+
     (if (res) then 0 else 1) |> exit

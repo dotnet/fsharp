@@ -2723,7 +2723,7 @@ let rec p_tycon_repr x st =
 
             let allFieldsText =
                 fields
-                |> Array.map (fun f -> f.LogicalName)
+                |> Array.map _.LogicalName
                 |> String.concat System.Environment.NewLine
 
             raise (Error(FSComp.SR.pickleFsharpCoreBackwardsCompatible ("fields in union", allFieldsText), firstFieldRange))
@@ -2826,6 +2826,9 @@ and p_rfield_table x st =
     p_array p_recdfield_spec x.FieldsByIndex st
 
 and p_entity_spec_data (x: Entity) st =
+    if not x.IsLinked then
+        pfailwith st "p_entity_spec_data: entity was never linked during unpickling"
+
     p_tyar_specs x.Typars st
     p_string x.entity_logical_name st
     p_option p_string x.EntityCompiledName st
@@ -2840,7 +2843,7 @@ and p_entity_spec_data (x: Entity) st =
     p_attribs (x.entity_attribs.AsList()) st
     let flagBit = p_tycon_repr x.entity_tycon_repr st
     p_option p_ty x.TypeAbbrev st
-    p_tcaug x.entity_tycon_tcaug st
+    p_tcaug x.TypeContents st
     p_string System.String.Empty st
     p_kind x.TypeOrMeasureKind st
 
@@ -3195,7 +3198,7 @@ and u_entity_spec_data st : Entity =
         entity_attribs = WellKnownEntityAttribs.Create(x6)
         entity_tycon_repr = x7
         entity_tycon_tcaug = x9
-        entity_flags = EntityFlags x11
+        entity_flags = (EntityFlags x11).WithIsAugmentationClosed
         entity_cpath = x12
         entity_modul_type = MaybeLazy.Lazy x13
         entity_il_repr_cache = newCache ()
@@ -3245,7 +3248,6 @@ and u_tcaug st =
         tcaug_interfaces = d
         tcaug_super = e
         // pickled type definitions are always closed (i.e. no more intrinsic members allowed)
-        tcaug_closed = true
         tcaug_abstract = g
     }
 

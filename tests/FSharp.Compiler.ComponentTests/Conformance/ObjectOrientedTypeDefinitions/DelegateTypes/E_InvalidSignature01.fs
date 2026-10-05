@@ -1,4 +1,4 @@
-// #Regression #Conformance #ObjectOrientedTypes #Delegates 
+// #Regression #Conformance #ObjectOrientedTypes #Delegates
 
 
 // Verify error when given an invalid delegate signature type

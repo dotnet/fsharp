@@ -129,11 +129,21 @@ type TcEnv =
         // Active arg infos in iterated lambdas , allowing us to determine the attributes of arguments
         eLambdaArgInfos: ArgReprInfo list list
 
+        /// Whether the pending member argument groups belong to an indexed setter.
+        eIsIndexerSetter: bool
+
         eIsControlFlow: bool
+
+        /// Resolving a nameof operand, rather than an executable expression.
+        eInNameOf: bool
 
         /// Are we checking the body of an object expression? Such a body has family access to the
         /// implemented type, but its closures are not nested under that type, so they cannot keep it (#5302).
         eInObjectExpr: bool
+
+        /// The value holding the exception caught by the innermost enclosing computation expression 'with' handler,
+        /// which 'reraise()' rethrows via ExceptionDispatchInfo.
+        eCaughtExceptionVal: Val voption
 
         // In order to avoid checking implicit-yield expressions multiple times, we cache the resulting checked expressions.
         // This avoids exponential behavior in the type checker when nesting implicit-yield expressions.
@@ -214,8 +224,14 @@ type TcPatPhase2Input =
 
     member WithRightPath: unit -> TcPatPhase2Input
 
-/// Represents the context flowed left-to-right through pattern checking
-type TcPatLinearEnv = TcPatLinearEnv of tpenv: UnscopedTyparEnv * names: NameMap<PrelimVal1> * takenNames: Set<string>
+/// Represents the context flowed left-to-right through pattern checking.
+/// 'usesActivePattern' is true if an active pattern occurs in the pattern; see TcLetBinding.
+type TcPatLinearEnv =
+    | TcPatLinearEnv of
+        tpenv: UnscopedTyparEnv *
+        names: NameMap<PrelimVal1> *
+        takenNames: Set<string> *
+        usesActivePattern: bool
 
 /// Represents the flags passed to TcPat regarding the binding location
 type TcPatValFlags =

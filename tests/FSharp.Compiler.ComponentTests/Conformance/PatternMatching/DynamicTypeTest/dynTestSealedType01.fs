@@ -1,4 +1,4 @@
-// #Conformance #PatternMatching #TypeTests 
+// #Conformance #PatternMatching #TypeTests
 
 
 // Verify result of dynamic type test on sealed type.

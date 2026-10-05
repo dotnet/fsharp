@@ -1,4 +1,4 @@
-// #Conformance #ObjectOrientedTypes #Enums 
+// #Conformance #ObjectOrientedTypes #Enums
 
 
 // FSB 531, Cannot use "A | B" in enum flags when specifying a custom attribute (not a recognised constant)
@@ -14,7 +14,7 @@ type AnEnum =
 type CustomAttribute(x : AnEnum) =
     inherit Attribute()
     member this.Value = x
-    
+
 [<CustomAttribute(AnEnum.A ||| AnEnum.B ||| AnEnum.C ||| AnEnum.D)>]
 type SomeClass() =
     override this.ToString() = "SomeClass"
@@ -28,7 +28,7 @@ let testResult =
     | null -> false
     | _    -> let typedCustAttrib = custAttrib :?> CustomAttribute
               let value = typedCustAttrib.Value
-              if (int value) <> 15 then 
+              if (int value) <> 15 then
                   false
               else
                   true

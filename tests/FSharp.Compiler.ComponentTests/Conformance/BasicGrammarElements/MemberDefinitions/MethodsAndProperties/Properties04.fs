@@ -1,9 +1,9 @@
-// #Conformance #DeclarationElements #MemberDefinitions #MethodsAndProperties 
+// #Conformance #DeclarationElements #MemberDefinitions #MethodsAndProperties
 
 
 // Verify property with both getter and setter with the setter declared first
 
-type Vector3 = 
+type Vector3 =
     | Vector3 of float * float * float
     member this.Decompose() = match this with Vector3(x, y, z) -> x, y, z
 
@@ -11,7 +11,7 @@ type Vector =
     { mutable Vector3 : Vector3 }
     member this.Length with set newLen =
                                 this.Vector3 <- Vector3(newLen, newLen, newLen)
-                         and get () = 
+                         and get () =
                                 let x,y,z = this.Vector3.Decompose()
                                 sqrt <| x * x + y * y + z * z
 

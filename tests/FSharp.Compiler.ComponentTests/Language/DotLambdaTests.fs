@@ -77,7 +77,7 @@ let ``Bug - all of these should be an error`` (code:string) =
     |> withErrorCodes [3584]
 
 [<Fact>]
-let ``Underscore Dot ToString With Space Before Parenthesis - NonAtomic`` () =    
+let ``Underscore Dot ToString With Space Before Parenthesis - NonAtomic`` () =
     Fsx """
 let x = "a" |> _.ToString () """
     |> withLangVersion80
@@ -100,7 +100,7 @@ let myFunction (x:MyRecord) = x |> _.DoStuff 1 2 3"""
     |> withLangVersion80
     |> typecheck
     |> shouldFail
-    |> withDiagnostics [ 
+    |> withDiagnostics [
             Error 3584, Line 4, Col 36, Line 4, Col 45, "Shorthand lambda syntax is only supported for atomic expressions, such as method, property, field or indexer on the implied '_' argument. For example: 'let f = _.Length'."
             Error 72, Line 4, Col 36, Line 4, Col 45, "The type of this expression could not be inferred before accessing its members. Add a type annotation, e.g. (expr: SomeType), to constrain the type before this point."
             ]
@@ -117,7 +117,7 @@ let ``Underscore Dot Lambda - Missing qualification after dot`` () =
             ]
 
 [<Fact>]
-let ``Underscore Dot Length on string`` () =         
+let ``Underscore Dot Length on string`` () =
     Fsx """ 
 let x = "a" |> _.Length
 printfn "%i" x
@@ -125,7 +125,7 @@ printfn "%i" x
     |> withLangVersion80
     |> typecheck
     |> shouldSucceed
-        
+
 [<Fact>]
 let ``Types`` () =
     Fsx """
@@ -136,7 +136,7 @@ let c = _.ToString().Length
     |> withLangVersion80
     |> typecheck
     |> shouldSucceed
-        
+
 [<Fact>]
 let ``Regression with an underscore using pattern match`` () =
             Fsx """
@@ -144,10 +144,10 @@ type MyDU = A | B
 let getnumberOutOfDU x = 
     match x with
     | A -> 42
-    | _ -> 43""" 
+    | _ -> 43"""
             |> withLangVersion80
-            |> typecheck 
-            |> shouldSucceed  
+            |> typecheck
+            |> shouldSucceed
 
 [<Fact>]
 let ``DotLambda does NOT generalize automatically to a member based SRTP`` () =
@@ -155,14 +155,14 @@ let ``DotLambda does NOT generalize automatically to a member based SRTP`` () =
     |> withLangVersion80
     |> typecheck
     |> shouldFail
-    |> withDiagnostics [(Error 72, Line 1, Col 28, Line 1, Col 47, "The type of this expression could not be inferred before accessing its members. Add a type annotation, e.g. (expr: SomeType), to constrain the type before this point.")] 
+    |> withDiagnostics [(Error 72, Line 1, Col 28, Line 1, Col 47, "The type of this expression could not be inferred before accessing its members. Add a type annotation, e.g. (expr: SomeType), to constrain the type before this point.")]
 
 [<Fact>]
 let ``DotLambda does allow member based SRTP if labelled explicitly`` () =
     Fsx "let inline myFunc<'a when 'a:(member WhatANiceProperty: int)> (x: 'a) = x |> _.WhatANiceProperty "
     |> withLangVersion80
     |> typecheck
-    |> shouldSucceed    
+    |> shouldSucceed
 
 [<Fact>]
 let ``ToString with preview version`` () =
@@ -184,7 +184,7 @@ let c = ( _ :> obj) """
         Error 10, Line 2, Col 20, Line 2, Col 21, "Unexpected symbol ')' in expression. Expected '.' or other token."
         Error 10, Line 3, Col 13, Line 3, Col 15, "Unexpected symbol ':>' in expression. Expected '.' or other token."
         Error 10, Line 4, Col 13, Line 4, Col 15, "Unexpected symbol ':>' in expression. Expected '.' or other token."]
-        
+
 [<Theory>]
 [<InlineData("let f (a, (b, c)) = _.ToString()")>]
 [<InlineData("""let c = let _ = "test" in "asd" |> _.ToString() """)>]
@@ -230,7 +230,7 @@ let a6 = [1] |> List.map _.ToString()
 [<Fact>]
 let ``Regression 16318 Error on explicit generic type argument dot dot lambda`` () =
 
-    
+
     FSharp """
 module Regression
 type A() =
@@ -244,7 +244,7 @@ let _ = [A()] |> Seq.map _.M()
     |> shouldSucceed
 
 [<Fact>]
-let ``Regression 16318 typeof dotlambda should fail`` () = 
+let ``Regression 16318 typeof dotlambda should fail`` () =
     FSharp """ let x = _.typeof<int>"""
     |> withLangVersion80
     |> typecheck
@@ -261,10 +261,10 @@ let a : string = {| Inner =  (fun x -> x.ToString()) |} |> _.Inner([5] |> _.[0])
     |> withWarnOn 3570
     |> typecheck
     |> shouldFail
-    |> withDiagnostics [ 
-        Warning 3570, Line 3, Col 75, Line 3, Col 76, "The meaning of _ is ambiguous here. It cannot be used for a discarded variable and a function shorthand in the same scope." 
+    |> withDiagnostics [
+        Warning 3570, Line 3, Col 75, Line 3, Col 76, "The meaning of _ is ambiguous here. It cannot be used for a discarded variable and a function shorthand in the same scope."
         Error 3584, Line 3, Col 77, Line 3, Col 80, "Shorthand lambda syntax is only supported for atomic expressions, such as method, property, field or indexer on the implied '_' argument. For example: 'let f = _.Length'." ]
-        
+
 [<Fact>]
 let ``Anonymous unary function shorthand with conflicting wild argument`` () =
     FSharp """
@@ -278,7 +278,7 @@ let c : string = let _ = "test" in "asd" |> _.ToString()
     |> typecheck
     |> shouldFail
     |> withSingleDiagnostic (Warning 3570, Line 3, Col 43, Line 3, Col 44, "The meaning of _ is ambiguous here. It cannot be used for a discarded variable and a function shorthand in the same scope.")
-    
+
 [<Fact>]
 let ``DotLambda selector converted to Func when used in LINQ`` () =
     FSharp """open System.Linq

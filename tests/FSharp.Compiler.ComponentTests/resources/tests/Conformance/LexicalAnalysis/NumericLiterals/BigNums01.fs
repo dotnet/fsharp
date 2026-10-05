@@ -1,15 +1,15 @@
-// #Conformance #LexicalAnalysis #Constants  
+// #Conformance #LexicalAnalysis #Constants
 // Verify ability to write custom big num libraries
 
 type DerivedFrom = FromInt32 | FromInt64 | FromString
 
 module NumericLiteralG =
     let IAmImplemented = true
-    
+
     let FromInt32(i : int)     = (i, FromInt32)
     let FromInt64(i : int64)   = (i, FromInt64)
     let FromString(s : string) = (s, FromString)
-    
+
 let int32Range      = -2147483647G
 if int32Range <> (-2147483647, FromInt32) then exit 1
 

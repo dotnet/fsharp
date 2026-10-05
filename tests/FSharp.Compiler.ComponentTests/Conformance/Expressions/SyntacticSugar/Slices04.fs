@@ -1,4 +1,4 @@
-// #Conformance #SyntacticSugar 
+// #Conformance #SyntacticSugar
 
 
 // Verify slices syntax on types with get and set slice 2D methods
@@ -19,14 +19,14 @@ type Foo<'a>() =
     let mutable m_lastV1D : 'a list = List.empty
     let mutable m_lastV2D : 'a list list = [List.empty]
 
-    member this.GetSlice(lb1, ub1, lb2, ub2) = 
+    member this.GetSlice(lb1, ub1, lb2, ub2) =
         m_lastLB1 <- lb1
         m_lastUB1 <- ub1
         m_lastLB2 <- lb2
         m_lastUB2 <- ub2
         ()
 
-    member this.SetSlice(lb1, ub1, lb2, ub2, v2D) = 
+    member this.SetSlice(lb1, ub1, lb2, ub2, v2D) =
         m_lastLB1 <- lb1
         m_lastUB1 <- ub1
         m_lastLB2 <- lb2
@@ -34,52 +34,52 @@ type Foo<'a>() =
         m_lastV2D <- v2D
         ()
 
-    member this.GetSlice(lb1, ub1, f2) = 
+    member this.GetSlice(lb1, ub1, f2) =
         m_lastLB1 <- lb1
         m_lastUB1 <- ub1
         m_lastFixed2 <- f2
         ()
 
-    member this.SetSlice(lb1, ub1, f2, v1D) = 
+    member this.SetSlice(lb1, ub1, f2, v1D) =
         m_lastLB1 <- lb1
         m_lastUB1 <- ub1
         m_lastFixed2 <- f2
         m_lastV1D <- v1D
         ()
 
-    member this.GetSlice(f1, lb2, ub2) = 
-        m_lastFixed1 <- f1
-        m_lastLB2 <- lb2
-        m_lastUB2 <- ub2        
-        ()
-
-    member this.SetSlice(f1, lb2, ub2, v1D) = 
+    member this.GetSlice(f1, lb2, ub2) =
         m_lastFixed1 <- f1
         m_lastLB2 <- lb2
         m_lastUB2 <- ub2
-        m_lastV1D <- v1D      
         ()
 
-    member this.GetSlice(i1 : seq<_>, lb2, ub2) = 
+    member this.SetSlice(f1, lb2, ub2, v1D) =
+        m_lastFixed1 <- f1
+        m_lastLB2 <- lb2
+        m_lastUB2 <- ub2
+        m_lastV1D <- v1D
+        ()
+
+    member this.GetSlice(i1 : seq<_>, lb2, ub2) =
         m_lasti1 <- i1
         m_lastLB2 <- lb2
         m_lastUB2 <- ub2
         ()
 
-    member this.SetSlice(i1 : seq<_>, lb2, ub2, v2D) = 
+    member this.SetSlice(i1 : seq<_>, lb2, ub2, v2D) =
         m_lasti1 <- i1
         m_lastLB2 <- lb2
         m_lastUB2 <- ub2
         m_lastV2D <- v2D
         ()
 
-    member this.GetSlice(lb1, ub1, i2 : seq<_>) = 
+    member this.GetSlice(lb1, ub1, i2 : seq<_>) =
         m_lastLB1 <- lb1
         m_lastUB1 <- ub1
         m_lasti2 <- i2
         ()
 
-    member this.SetSlice(lb1, ub1, i2 : seq<_>, v2D) = 
+    member this.SetSlice(lb1, ub1, i2 : seq<_>, v2D) =
         m_lastLB1 <- lb1
         m_lastUB1 <- ub1
         m_lasti2 <- i2

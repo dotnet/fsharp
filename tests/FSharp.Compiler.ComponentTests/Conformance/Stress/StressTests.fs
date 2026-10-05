@@ -25,12 +25,12 @@ module StressTests =
         let sb = StringBuilder()
         sb.AppendLine("// Stress test for FSharp1.0#2766 - Internal error on parser when given unbalanced and deeply nested parens") |> ignore
         sb.AppendLine("let x = (1 + ") |> ignore
-        
+
         for i in 0..depth-1 do
             for _ in 0..i do
                 sb.Append("    ") |> ignore
             sb.AppendLine("(1 +") |> ignore
-        
+
         sb.ToString()
 
     /// Test that parser handles deeply nested parens (expected to fail with parse error)
@@ -38,7 +38,7 @@ module StressTests =
     let ``Stress - CodeGeneratorFor2766 - deeply nested unbalanced parens`` () =
         // Generate code with depth of 100 (reduced from 500 for test speed)
         let generatedCode = generateDeeplyNestedParens 100
-        
+
         FSharp generatedCode
         |> asExe
         |> compile
@@ -50,7 +50,7 @@ module StressTests =
     [<Fact>]
     let ``Stress - CodeGeneratorFor2766 - nested parens depth 50`` () =
         let generatedCode = generateDeeplyNestedParens 50
-        
+
         FSharp generatedCode
         |> asExe
         |> compile
@@ -68,16 +68,16 @@ module StressTests =
         sb.AppendLine("let f () = ") |> ignore
         sb.AppendLine("    let i = 0") |> ignore
         sb.AppendLine("    let nestedFunction() = 0") |> ignore
-        
+
         for i in 0..count-1 do
-            let exprBody = 
+            let exprBody =
                 match i % 20 with
                 | 0 -> "    printfn \"Hello, World\""
                 | 1 -> "    1 + 3 * (int 4.3) |> ignore"
                 | 2 -> "    let nestedFunction() = i + nestedFunction()"
                 | _ -> "    do ()"
             sb.AppendLine(exprBody) |> ignore
-        
+
         sb.AppendLine("    0") |> ignore
         sb.AppendLine("") |> ignore
         sb.AppendLine("[<EntryPoint>]") |> ignore
@@ -88,7 +88,7 @@ module StressTests =
     [<Fact>]
     let ``Stress - SeqExprCapacity - 500 sequential expressions`` () =
         let generatedCode = generateSeqExprCapacity 500
-        
+
         FSharp generatedCode
         |> asExe
         |> compile
@@ -98,7 +98,7 @@ module StressTests =
     [<Fact>]
     let ``Stress - SeqExprCapacity - 1000 sequential expressions`` () =
         let generatedCode = generateSeqExprCapacity 1000
-        
+
         FSharp generatedCode
         |> asExe
         |> compile
@@ -108,7 +108,7 @@ module StressTests =
     [<Fact>]
     let ``Stress - SeqExprCapacity - run 200 sequential expressions`` () =
         let generatedCode = generateSeqExprCapacity 200
-        
+
         FSharp generatedCode
         |> asExe
         |> compileAndRun
@@ -123,15 +123,15 @@ module StressTests =
     let ``Stress - deeply nested let bindings`` () =
         let sb = StringBuilder()
         sb.AppendLine("let f () =") |> ignore
-        
+
         for i in 0..99 do
             sb.AppendLine($"    let x{i} = {i}") |> ignore
-        
+
         sb.AppendLine("    x99") |> ignore
         sb.AppendLine("") |> ignore
         sb.AppendLine("[<EntryPoint>]") |> ignore
         sb.AppendLine("let main _ = f()") |> ignore
-        
+
         FSharp (sb.ToString())
         |> asExe
         |> compileAndRun
@@ -144,14 +144,14 @@ module StressTests =
         sb.AppendLine("[<EntryPoint>]") |> ignore
         sb.AppendLine("let main _ =") |> ignore
         sb.AppendLine("    let x = 0") |> ignore
-        
+
         for i in 0..49 do
             sb.AppendLine($"    match x with") |> ignore
             sb.AppendLine($"    | {i} -> {i}") |> ignore
             sb.AppendLine($"    | _ ->") |> ignore
-        
+
         sb.AppendLine("    0") |> ignore
-        
+
         FSharp (sb.ToString())
         |> asExe
         |> compile
@@ -164,13 +164,13 @@ module StressTests =
         sb.AppendLine("[<EntryPoint>]") |> ignore
         sb.AppendLine("let main _ =") |> ignore
         sb.AppendLine("    let x = 0") |> ignore
-        
+
         for i in 0..99 do
             sb.AppendLine($"    if x = {i} then {i}") |> ignore
             sb.AppendLine($"    else") |> ignore
-        
+
         sb.AppendLine("    0") |> ignore
-        
+
         FSharp (sb.ToString())
         |> asExe
         |> compile
@@ -180,16 +180,16 @@ module StressTests =
     [<FactForNETCOREAPP>]
     let ``Stress - many type definitions`` () =
         let sb = StringBuilder()
-        
+
         for i in 0..49 do
             sb.AppendLine($"type T{i} = {{ Value{i}: int }}") |> ignore
-        
+
         sb.AppendLine("") |> ignore
         sb.AppendLine("[<EntryPoint>]") |> ignore
         sb.AppendLine("let main _ =") |> ignore
         sb.AppendLine("    let t = { Value0 = 0 }") |> ignore
         sb.AppendLine("    t.Value0") |> ignore
-        
+
         FSharp (sb.ToString())
         |> asExe
         |> compileAndRun
@@ -200,10 +200,10 @@ module StressTests =
     let ``Stress - many discriminated union cases`` () =
         let sb = StringBuilder()
         sb.AppendLine("type LargeUnion =") |> ignore
-        
+
         for i in 0..99 do
             sb.AppendLine($"    | Case{i}") |> ignore
-        
+
         sb.AppendLine("") |> ignore
         sb.AppendLine("[<EntryPoint>]") |> ignore
         sb.AppendLine("let main _ =") |> ignore
@@ -211,7 +211,7 @@ module StressTests =
         sb.AppendLine("    match u with") |> ignore
         sb.AppendLine("    | Case0 -> 0") |> ignore
         sb.AppendLine("    | _ -> 1") |> ignore
-        
+
         FSharp (sb.ToString())
         |> asExe
         |> compileAndRun

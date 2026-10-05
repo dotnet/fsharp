@@ -30,7 +30,7 @@ abs -1uy |> ignore
             1
             (2, 6, 2, 9)
             "The type 'byte' does not support the operator 'abs'"
-    
+
     [<Fact>]
     let ``Abs of uint16``() =
         CompilerAssert.TypeCheckSingleError
@@ -61,7 +61,7 @@ abs -1u |> ignore
             1
             (2, 6, 2, 8)
             "The type 'uint32' does not support the operator 'abs'"
-            
+
     [<Fact>]
     let ``Abs of unativeint``() =
         CompilerAssert.TypeCheckSingleError
@@ -72,7 +72,7 @@ abs -1un |> ignore
             1
             (2, 6, 2, 9)
             "The type 'unativeint' does not support the operator 'abs'"
-            
+
     [<Fact>]
     let ``Abs of uint64``() =
         CompilerAssert.TypeCheckSingleError
@@ -83,7 +83,7 @@ abs -1uL |> ignore
             1
             (2, 6, 2, 9)
             "The type 'uint64' does not support the operator 'abs'"
-            
+
         CompilerAssert.TypeCheckSingleError
             """
 abs -1UL |> ignore

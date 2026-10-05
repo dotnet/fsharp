@@ -1,4 +1,4 @@
-// #Regression #Conformance #ObjectOrientedTypes #Structs 
+// #Regression #Conformance #ObjectOrientedTypes #Structs
 // Verify error struct contains a field which cannot be null.
 // Verify this is chained correctly.
 //<Expects id="FS0688" span="(19,9-19,28)" status="error">The default, zero-initializing constructor of a struct type may only be used if all the fields of the struct type admit default initialization</Expects>

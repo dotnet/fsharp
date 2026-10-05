@@ -1,4 +1,4 @@
-// #Regression #Conformance #TypeConstraints 
+// #Regression #Conformance #TypeConstraints
 // Verify error when struct constraint isn't satisfied
 //<Expects id="FS0001" status="error">A generic construct requires that the type 'string' is a CLI or F# struct type</Expects>
 

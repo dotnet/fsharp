@@ -1,4 +1,4 @@
-// #Conformance #SignatureFiles 
+// #Conformance #SignatureFiles
 module A
-type C = 
+type C =
    new : unit -> C

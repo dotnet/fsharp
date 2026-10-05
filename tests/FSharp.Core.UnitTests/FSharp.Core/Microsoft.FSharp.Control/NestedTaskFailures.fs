@@ -14,7 +14,7 @@ module NestedTasksFailingStateMachine =
         let FetchInternalTransfers (includeConfirmeds: int) =
             task {
 
-                let! mapPrioritiesTransfers = 
+                let! mapPrioritiesTransfers =
                     task {
                         if includeConfirmeds > 1 then
 
@@ -106,7 +106,7 @@ module NestedTasksFailingStateMachine =
         System.Threading.Tasks.Task.WaitAll test
         let result = test.Result |> printfn "%A"
 
-type NestedStateMachineTests() = 
+type NestedStateMachineTests() =
     [<Fact>]
     member _.NestedStateMachineFailure1() =
         let test = NestedTasksFailingStateMachine.Example1.FetchInternalTransfers 2

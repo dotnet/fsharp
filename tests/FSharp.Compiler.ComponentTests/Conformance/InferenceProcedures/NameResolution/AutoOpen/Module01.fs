@@ -1,8 +1,8 @@
-// #Regression #Conformance #TypeInference #Attributes #ReqNOMT 
+// #Regression #Conformance #TypeInference #Attributes #ReqNOMT
 // Regression test for FSHARP1.0:2894
 // Auto-open of my own namespace
 // Case: no need to explicitly open XX.YY.ZZ
-//      
+//
 
 
 module XX.YY.ZZ.MM

@@ -1,5 +1,5 @@
 
-let 
+let
 #if !FOO
     inline
 #endif

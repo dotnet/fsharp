@@ -1,14 +1,14 @@
-// #Regression #Conformance #Quotations 
+// #Regression #Conformance #Quotations
 // See also FSHARP1.0:4710
 
-type C = 
-    class 
-        val x : int 
-        val mutable y : int 
+type C =
+    class
+        val x : int
+        val mutable y : int
         new () = { x = 12; y = 13 }
-    end 
+    end
 
-let c = new C() 
+let c = new C()
 
 let test1 = <@@ c.x @@>      |> sprintf "%A"
 let test2 = <@@ c.y @@>      |> sprintf "%A"

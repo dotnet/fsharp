@@ -1,4 +1,4 @@
-// #Regression #Conformance #TypesAndModules #Records 
+// #Regression #Conformance #TypesAndModules #Records
 // Verify error when trying to clone a non-record type
 
 

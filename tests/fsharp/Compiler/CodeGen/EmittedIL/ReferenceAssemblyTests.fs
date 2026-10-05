@@ -629,7 +629,7 @@ extends [runtime]System.Object
   }"""]
 
     [<Fact>]
-    let ``Cli events are emitted even for CliEvent members which are not last in a file`` () = 
+    let ``Cli events are emitted even for CliEvent members which are not last in a file`` () =
         FSharp """
 module LibraryWithTwoClassesAndTwoEvents
 open System
@@ -727,7 +727,7 @@ type MyClass2() =
 """ ]
 
     [<Fact>]
-    let ``Properties are emitted for CliMutable records`` () = 
+    let ``Properties are emitted for CliMutable records`` () =
         FSharp """
 namespace ReferenceAssembly
 type [<CLIMutable;NoComparison;NoEquality>] MyRecord = { MyId: int }"""
@@ -738,8 +738,8 @@ type [<CLIMutable;NoComparison;NoEquality>] MyRecord = { MyId: int }"""
             referenceAssemblyAttributeExpectedIL
             "      .property instance int32 MyId()"]
 
-    [<Fact>] 
-    let ``Properties are emitted even for CliMutable records which are not last in a file`` () = 
+    [<Fact>]
+    let ``Properties are emitted even for CliMutable records which are not last in a file`` () =
         FSharp """
 namespace ReferenceAssembly
 type [<CLIMutable;NoComparison;NoEquality>] MyRecord = { MyId: int }
@@ -755,7 +755,7 @@ type [<CLIMutable;NoComparison;NoEquality>] MySecondRecord = { MySecondId: strin
 
     [<Fact>] // Regression https://github.com/dotnet/fsharp/issues/14088 .
     // Generated IL was assigning properties to the last record in file instead of where they are supposed to be
-    let ``Properties are emitted for equal records in the same file`` () = 
+    let ``Properties are emitted for equal records in the same file`` () =
         FSharp """
 namespace Net7FSharpSnafu.Library
 
@@ -1012,7 +1012,7 @@ type MySecondaryAttribute() =
     } 
   } """
         ]
-    
+
     [<Fact>]
     let ``Internal and private fields are emitted for structs`` () =
         FSharp """

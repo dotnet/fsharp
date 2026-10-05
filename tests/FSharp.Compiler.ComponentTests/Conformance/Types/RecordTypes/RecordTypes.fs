@@ -443,7 +443,7 @@ module RecordTypes =
         |> withDiagnostics [
             Error 668, Line 4, Col 25, Line 4, Col 32, "The field 'B' appears multiple times in this record expression or pattern"
         ]
-        
+
     [<Fact>]
     let ``Records field appears multiple times in this record expressions 2``() =
         FSharp """
@@ -457,7 +457,7 @@ module RecordTypes =
             Error 668, Line 4, Col 25, Line 4, Col 32, "The field 'B' appears multiple times in this record expression or pattern"
             Error 668, Line 4, Col 34, Line 4, Col 41, "The field 'B' appears multiple times in this record expression or pattern"
         ]
-    
+
     [<Fact>]
     let ``Records field appears multiple times in this record expressions 3``() =
         FSharp """
@@ -471,7 +471,7 @@ module RecordTypes =
             Error 668, Line 4, Col 30, Line 4, Col 35, "The field 'A' appears multiple times in this record expression or pattern"
             Error 668, Line 4, Col 37, Line 4, Col 42, "The field 'B' appears multiple times in this record expression or pattern"
         ]
-    
+
     [<Fact>]
     let ``Records field appears multiple times in this record expressions 4``() =
         FSharp """
@@ -484,7 +484,7 @@ module RecordTypes =
         |> withDiagnostics [
             Error 668, Line 4, Col 31, Line 4, Col 36, "The field 'A' appears multiple times in this record expression or pattern"
         ]
-        
+
     [<Fact>]
     let ``Records field appears multiple times in this record expressions 5``() =
         FSharp """
@@ -498,7 +498,7 @@ module RecordTypes =
             Error 668, Line 4, Col 31, Line 4, Col 36, "The field 'A' appears multiple times in this record expression or pattern"
             Error 668, Line 4, Col 45, Line 4, Col 50, "The field 'A' appears multiple times in this record expression or pattern"
         ]
-        
+
     [<Fact>]
     let ``Records field appears multiple times in this record expressions 6``() =
         FSharp """
@@ -512,7 +512,7 @@ module RecordTypes =
             Error 668, Line 4, Col 34, Line 4, Col 39, "The field 'A' appears multiple times in this record expression or pattern"
             Error 668, Line 4, Col 41, Line 4, Col 46, "The field 'B' appears multiple times in this record expression or pattern"
         ]
-    
+
     [<Fact>]
     let ``Records field appears multiple times in this record expressions 7``() =
         FSharp """
@@ -527,7 +527,7 @@ module RecordTypes =
         |> withDiagnostics [
             (Error 668, Line 5, Col 9, Line 5, Col 10, "The field 'A' appears multiple times in this record expression or pattern")
         ]
-        
+
     [<Fact>]
     let ``Records field appears multiple times in this record expressions 8``() =
         FSharp """
@@ -543,7 +543,7 @@ module RecordTypes =
             (Error 668, Line 5, Col 9, Line 5, Col 10, "The field 'A' appears multiple times in this record expression or pattern")
             (Error 668, Line 5, Col 16, Line 5, Col 17, "The field 'A' appears multiple times in this record expression or pattern")
         ]
-        
+
     [<Fact>]
     let ``Records field appears multiple times in this record expressions 9``() =
         FSharp """
@@ -559,7 +559,7 @@ module RecordTypes =
             (Error 668, Line 5, Col 9, Line 5, Col 10, "The field 'A' appears multiple times in this record expression or pattern")
             (Error 668, Line 5, Col 16, Line 5, Col 17, "The field 'B' appears multiple times in this record expression or pattern")
         ]
-        
+
     [<Fact>]
     let ``Records field appears multiple times in this record expressions 10``() =
         FSharp """
@@ -575,7 +575,7 @@ module RecordTypes =
             (Error 668, Line 5, Col 9, Line 5, Col 10, "The field 'A' appears multiple times in this record expression or pattern")
             (Error 668, Line 5, Col 24, Line 5, Col 25, "The field 'A' appears multiple times in this record expression or pattern")
         ]
-        
+
     [<Fact>]
     let ``Records field appears multiple times in this record expressions 11``() =
         FSharp """
@@ -622,8 +622,11 @@ module RecordTypes =
     // These tests describe the target behaviour and currently FAIL (records expose no
     // F#-callable constructor; only { Field = ... } record syntax is permitted).
 
-    [<Fact>]
-    let ``Record can be constructed positionally via its all-fields constructor`` () =
+    [<Theory>]
+    [<InlineData("default")>]
+    [<InlineData("11.2")>]
+    [<InlineData("preview")>]
+    let ``Record can be constructed positionally via its all-fields constructor`` langVersion =
         Fsx """
 type Person = { Name : string; Age : int }
 let p = Person("Isaac", 21)
@@ -631,7 +634,7 @@ if p.Name <> "Isaac" then failwith "wrong Name"
 if p.Age <> 21 then failwith "wrong Age"
 if p <> { Name = "Isaac"; Age = 21 } then failwith "not equal to record-syntax value"
         """
-        |> withLangVersionPreview
+        |> withLangVersion langVersion
         |> compileExeAndRun
         |> shouldSucceed
 

@@ -9,7 +9,7 @@ open FSharp.Test
 module Unmanaged =
 
     [<Fact>]
-    let ``voidptr is unmanaged`` () = 
+    let ``voidptr is unmanaged`` () =
         Fsx """
 [<Struct>]
 type Test<'T when 'T: unmanaged> =
@@ -24,10 +24,10 @@ let _ = Test<voidptr voption>()
         |> withNoWarn 9
         |> typecheck
         |> shouldSucceed
-    
+
 
     [<Fact>]
-    let ``nativeptr of voidptr works`` () = 
+    let ``nativeptr of voidptr works`` () =
         Fsx """
 let myVal : nativeptr<voidptr> =  Unchecked.defaultof<_>
         """
@@ -35,7 +35,7 @@ let myVal : nativeptr<voidptr> =  Unchecked.defaultof<_>
         |> shouldSucceed
 
     [<Fact>]
-    let ``Struct with private field can be unmanaged`` () = 
+    let ``Struct with private field can be unmanaged`` () =
         Fsx """
 [<Struct>]
 type Test<'T when 'T: unmanaged> =
@@ -52,7 +52,7 @@ let _ = Test<DoubleType<DoubleType<byte>>>()
         |> shouldSucceed
 
     [<Fact>]
-    let ``Struct with private managed field cannot be unmanaged`` () = 
+    let ``Struct with private managed field cannot be unmanaged`` () =
         Fsx """
 [<Struct>]
 type Test<'T when 'T: unmanaged> =
@@ -70,9 +70,9 @@ let _ = Test<DoubleType<DoubleType<int option>>>()
         |> withDiagnostics [
                    Error 1, Line 10, Col 9, Line 10, Col 33, "A generic construct requires that the type 'DoubleType<string>' is an unmanaged type"
                    Error 1, Line 11, Col 9, Line 11, Col 49, "A generic construct requires that the type 'DoubleType<DoubleType<int option>>' is an unmanaged type" ]
-   
+
     [<Fact>]
-    let ``voption considered unmanaged when inner type is unmanaged`` () = 
+    let ``voption considered unmanaged when inner type is unmanaged`` () =
         Fsx """
 let test (x: 'T when 'T : unmanaged) = ()
 test (ValueSome 15)
@@ -83,7 +83,7 @@ test (ValueSome (struct {|Field = 42|}))
         |> shouldSucceed
 
     [<Fact>]
-    let ``voption not considered unmanaged when inner type is reference type`` () = 
+    let ``voption not considered unmanaged when inner type is reference type`` () =
         Fsx """
 let test (x: 'T when 'T : unmanaged) = ()
 test (ValueSome "xxx")
@@ -98,7 +98,7 @@ test (ValueSome (struct {|Field = Some 42|}))
                 Error 1, Line 5, Col 35, Line 5, Col 42, "A generic construct requires that the type ''a option' is an unmanaged type" ]
 
     [<Fact>]
-    let ``Option not considered unmanaged`` () = 
+    let ``Option not considered unmanaged`` () =
         Fsx """
 let test (x: 'T when 'T : unmanaged) = ()
 test (None)
@@ -408,7 +408,7 @@ let _ = Test<MyDu<int,MyDu<int,string voption>>>()
 
 
     [<Fact>]
-    let ``Consume C#-defined unmanaged constraint incorrectly in F# - report error`` () = 
+    let ``Consume C#-defined unmanaged constraint incorrectly in F# - report error`` () =
         let csLib =
             CSharp "namespace CsLib{ public record struct CsharpStruct<T>(T item) where T:unmanaged;}"
             |> withCSharpLanguageVersion CSharpLanguageVersion.Preview
@@ -426,7 +426,7 @@ let y = new CsharpStruct<struct(int*string)>(struct(1,"this is string"))
         |> withDiagnostics [(Error 1, Line 3, Col 13, Line 3, Col 45, "A generic construct requires that the type 'string' is an unmanaged type")]
 
     [<Fact>]
-    let ``F# can consume C#-defined unmanaged constraint and call method with modreq`` () = 
+    let ``F# can consume C#-defined unmanaged constraint and call method with modreq`` () =
         let csLib =
             CSharp """
 namespace CsLib
@@ -456,7 +456,7 @@ printf "%s" (CsharpStruct<int>.Hi<MultiCaseUnion>())
         |> verifyOutput "MultiCaseUnion"
 
     [<FactForNETCOREAPP>]
-    let ``FSharp generates modreq for CSharp to consume in preview`` () = 
+    let ``FSharp generates modreq for CSharp to consume in preview`` () =
         Fsx "let testMyFunction (x: 'TUnmanaged when 'TUnmanaged : unmanaged) = ()"
         |> withLangVersionPreview
         |> compile
@@ -472,7 +472,7 @@ printf "%s" (CsharpStruct<int>.Hi<MultiCaseUnion>())
   } """]
 
     [<FactForNETCOREAPP>]
-    let ``FSharp generates modreq for CSharp to consume in v9`` () = 
+    let ``FSharp generates modreq for CSharp to consume in v9`` () =
         Fsx "let testMyFunction (x: 'TUnmanaged when 'TUnmanaged : unmanaged) = ()"
         |> withLangVersion10
         |> compile
@@ -489,7 +489,7 @@ printf "%s" (CsharpStruct<int>.Hi<MultiCaseUnion>())
 
 
     [<Fact>]
-    let ``Unmanaged constraint in lambda reproduces issue 17509`` () = 
+    let ``Unmanaged constraint in lambda reproduces issue 17509`` () =
         // This test reproduces the issue https://github.com/dotnet/fsharp/issues/17509
         // When UnmanagedConstraintCsharpInterop is enabled, it generates invalid IL
         // causing a TypeLoadException at runtime
@@ -513,7 +513,7 @@ Main()
         |> verifyOutput "Hello: System.IntPtr is unmanagedseq [0n; 0n; 0n]"
 
     [<FactForNETCOREAPP>]
-    let ``Unmanaged constraint in lambda generates invalid IL for Specialize method with preview version`` () = 
+    let ``Unmanaged constraint in lambda generates invalid IL for Specialize method with preview version`` () =
         Fsx """
 let Main() =
     let func (x:int) : 'T when 'T : unmanaged = Unchecked.defaultof<'T>
@@ -541,7 +541,7 @@ Main()
 
     [<Fact>]
     let ``C# can consume F#-defined struct with unmanaged constraint - valid`` () =
-        let fsharpLib = 
+        let fsharpLib =
             Fs """namespace MyFsLib
 [<Struct>]
 type FsharpStructWrapper<'TInner when 'TInner: unmanaged> = 
@@ -550,7 +550,7 @@ type FsharpStructWrapper<'TInner when 'TInner: unmanaged> =
             |> asLibrary
             |> withName "fsLib"
 
-        let app = 
+        let app =
             CSharp """
     using System;
     using MyFsLib;
@@ -574,7 +574,7 @@ type FsharpStructWrapper<'TInner when 'TInner: unmanaged> =
 
     [<Fact>]
     let ``C# can consume F#-defined struct with unmanaged constraint - and report error when invalid`` () =
-        let fsharpLib = 
+        let fsharpLib =
             Fs """namespace MyFsLib
 [<Struct>]
 type FsharpStructWrapper<'T when 'T: unmanaged> = 
@@ -596,7 +596,7 @@ module FsharpPreparedData =
             |> withLangVersionPreview
             |> withName "fsLib"
 
-        let app = 
+        let app =
             CSharp """
     using System;
     using MyFsLib;

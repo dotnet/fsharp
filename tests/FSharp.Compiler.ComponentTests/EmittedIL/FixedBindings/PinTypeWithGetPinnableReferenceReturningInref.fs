@@ -12,7 +12,7 @@ type ReadonlyRefField<'T>(_value) =
 let pinIt (thing: ReadonlyRefField<int>) =
     use ptr = fixed thing
     NativePtr.get ptr 0
-    
+
 [<EntryPoint>]
 let main _ =
     let x = ReadonlyRefField(42)

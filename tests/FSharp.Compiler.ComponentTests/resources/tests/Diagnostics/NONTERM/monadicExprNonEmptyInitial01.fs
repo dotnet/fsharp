@@ -1,4 +1,4 @@
-// #Regression #Diagnostics 
+// #Regression #Diagnostics
 // Regression test for FSharp1.0:2104
 
 //<Expects span="(19,19-19,20)" status="error" id="FS0604">Unmatched '\{'$</Expects>
@@ -13,8 +13,8 @@
 
 open Microsoft.FSharp.Control
 
-let counter = 
-    MailboxProcessor.Start( fun inbox -> 
+let counter =
+    MailboxProcessor.Start( fun inbox ->
         let rec loop(n) =
             async { do printfn "n = %d, waiting..." n
                     let! msg = inbox.Receive()

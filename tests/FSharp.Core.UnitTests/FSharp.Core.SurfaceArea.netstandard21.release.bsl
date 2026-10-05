@@ -625,6 +625,9 @@ Microsoft.FSharp.Control.AsyncModule: Microsoft.FSharp.Control.FSharpAsync`1[Mic
 Microsoft.FSharp.Control.AsyncModule: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.Unit] get_Empty()
 Microsoft.FSharp.Control.AsyncModule: Microsoft.FSharp.Control.FSharpAsync`1[TResult] Bind[T,TResult](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Control.FSharpAsync`1[TResult]], Microsoft.FSharp.Control.FSharpAsync`1[T])
 Microsoft.FSharp.Control.AsyncModule: Microsoft.FSharp.Control.FSharpAsync`1[TResult] Map[T,TResult](Microsoft.FSharp.Core.FSharpFunc`2[T,TResult], Microsoft.FSharp.Control.FSharpAsync`1[T])
+Microsoft.FSharp.Control.AsyncModule: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.Unit] SequentialDo(System.Collections.Generic.IEnumerable`1[Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.Unit]])
+Microsoft.FSharp.Control.AsyncModule: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.Unit] ParallelDoLimit(Int32, System.Collections.Generic.IEnumerable`1[Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.Unit]])
+Microsoft.FSharp.Control.AsyncModule: Microsoft.FSharp.Control.FSharpAsync`1[T[]] ParallelLimit[T](Int32, System.Collections.Generic.IEnumerable`1[Microsoft.FSharp.Control.FSharpAsync`1[T]])
 Microsoft.FSharp.Control.AsyncModule: Microsoft.FSharp.Control.FSharpAsync`1[T] CatchWith[T](Microsoft.FSharp.Core.FSharpFunc`2[System.Exception,T], Microsoft.FSharp.Control.FSharpAsync`1[T])
 Microsoft.FSharp.Control.AsyncModule: Microsoft.FSharp.Control.FSharpAsync`1[T] Result[T](T)
 Microsoft.FSharp.Control.AsyncPrimitives: Microsoft.FSharp.Control.AsyncReturn Bind[T,TResult](Microsoft.FSharp.Control.AsyncActivation`1[T], Microsoft.FSharp.Control.FSharpAsync`1[TResult], Microsoft.FSharp.Core.FSharpFunc`2[TResult,Microsoft.FSharp.Control.FSharpAsync`1[T]])
@@ -831,7 +834,12 @@ Microsoft.FSharp.Control.TaskModule: System.Threading.Tasks.Task`1[TResult] Bind
 Microsoft.FSharp.Control.TaskModule: System.Threading.Tasks.Task`1[TResult] Map[T,TResult](Microsoft.FSharp.Core.FSharpFunc`2[T,TResult], System.Threading.Tasks.Task`1[T])
 Microsoft.FSharp.Control.TaskModule: System.Threading.Tasks.Task`1[T] CatchWith[T](Microsoft.FSharp.Core.FSharpFunc`2[System.Exception,T], System.Threading.Tasks.Task`1[T])
 Microsoft.FSharp.Control.TaskModule: System.Threading.Tasks.Task`1[T] OfValueTask[T](System.Threading.Tasks.ValueTask`1[T])
+Microsoft.FSharp.Control.TaskModule: System.Threading.Tasks.Task`1[Microsoft.FSharp.Core.Unit] ParallelDoLimit(Int32, System.Threading.CancellationToken, System.Collections.Generic.IEnumerable`1[Microsoft.FSharp.Core.FSharpFunc`2[System.Threading.CancellationToken,System.Threading.Tasks.Task`1[Microsoft.FSharp.Core.Unit]]])
+Microsoft.FSharp.Control.TaskModule: System.Threading.Tasks.Task`1[T[]] ParallelLimit[T](Int32, System.Threading.CancellationToken, System.Collections.Generic.IEnumerable`1[Microsoft.FSharp.Core.FSharpFunc`2[System.Threading.CancellationToken,System.Threading.Tasks.Task`1[T]]])
+Microsoft.FSharp.Control.TaskModule: System.Threading.Tasks.Task`1[Microsoft.FSharp.Core.Unit] SequentialDo(System.Threading.CancellationToken, System.Collections.Generic.IEnumerable`1[Microsoft.FSharp.Core.FSharpFunc`2[System.Threading.CancellationToken,System.Threading.Tasks.Task`1[Microsoft.FSharp.Core.Unit]]])
+Microsoft.FSharp.Control.TaskModule: System.Threading.Tasks.Task`1[T[]] Sequential[T](System.Threading.CancellationToken, System.Collections.Generic.IEnumerable`1[Microsoft.FSharp.Core.FSharpFunc`2[System.Threading.CancellationToken,System.Threading.Tasks.Task`1[T]]])
 Microsoft.FSharp.Control.TaskModule: System.Threading.Tasks.Task`1[T] Result[T](T)
+Microsoft.FSharp.Control.TaskModule: System.Threading.Tasks.Task`1[T] StartAsyncImmediate[T](System.Threading.CancellationToken, Microsoft.FSharp.Control.FSharpAsync`1[T])
 Microsoft.FSharp.Control.TaskStateMachineData`1[T]: System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1[T] MethodBuilder
 Microsoft.FSharp.Control.TaskStateMachineData`1[T]: T Result
 Microsoft.FSharp.Control.ValueTaskModule: System.Threading.Tasks.ValueTask`1[Microsoft.FSharp.Core.FSharpResult`2[T,System.Exception]] Catch[T](System.Threading.Tasks.ValueTask`1[T])
@@ -1525,6 +1533,7 @@ Microsoft.FSharp.Core.FuncConvert: Microsoft.FSharp.Core.FSharpFunc`2[T1,Microso
 Microsoft.FSharp.Core.FuncConvert: Microsoft.FSharp.Core.FSharpFunc`2[T1,Microsoft.FSharp.Core.FSharpFunc`2[T2,TResult]] FuncFromTupled[T1,T2,TResult](Microsoft.FSharp.Core.FSharpFunc`2[System.Tuple`2[T1,T2],TResult])
 Microsoft.FSharp.Core.GeneralizableValueAttribute: Void .ctor()
 Microsoft.FSharp.Core.InlineIfLambdaAttribute: Void .ctor()
+Microsoft.FSharp.Core.OptimizeClosureIfNotInlinedAttribute: Void .ctor()
 Microsoft.FSharp.Core.InterfaceAttribute: Void .ctor()
 Microsoft.FSharp.Core.LanguagePrimitives+ErrorStrings: System.String AddressOpNotFirstClassString
 Microsoft.FSharp.Core.LanguagePrimitives+ErrorStrings: System.String InputArrayEmptyString
@@ -2713,3 +2722,9 @@ Microsoft.FSharp.Reflection.UnionCaseInfo: System.String ToString()
 Microsoft.FSharp.Reflection.UnionCaseInfo: System.String get_Name()
 Microsoft.FSharp.Reflection.UnionCaseInfo: System.Type DeclaringType
 Microsoft.FSharp.Reflection.UnionCaseInfo: System.Type get_DeclaringType()
+Microsoft.FSharp.Collections.ListModule: T indexNotFound[T]()
+Microsoft.FSharp.Collections.ListModule: T emptyListError[T]()
+Microsoft.FSharp.Collections.ListModule: T differentLengthLists[T](System.String, System.String, Int32)
+Microsoft.FSharp.Collections.ListModule: T listsDifferentLengths[T]()
+Microsoft.FSharp.Collections.ArrayModule: T indexNotFound[T]()
+Microsoft.FSharp.Collections.ArrayModule: T differentLengthArrays[T](System.String, Int32, System.String, Int32)

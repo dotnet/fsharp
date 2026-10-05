@@ -5,7 +5,7 @@ open BenchmarkDotNet.Attributes
 open System
 
 [<Struct>]
-type BigStruct = 
+type BigStruct =
     val A : int64
     val B : int64
     new (a, b) = { A = a; B = b }
@@ -15,17 +15,17 @@ type Container<'a> =
     val Item : 'a
     new i = { Item = i }
 
-type RandomRecord = { 
+type RandomRecord = {
     Field1 : int
     Field2 : string
-    Field3 : byte 
+    Field3 : byte
 }
 
 [<Struct>]
-type RandomRecordStruct = { 
+type RandomRecordStruct = {
     Field1S : int
     Field2S : string
-    Field3S : byte 
+    Field3S : byte
 }
 
 type RandomGeneric<'a> = RandomGeneric of 'a * 'a
@@ -33,7 +33,7 @@ type RandomGeneric<'a> = RandomGeneric of 'a * 'a
 [<MemoryDiagnoser>]
 type Misc() =
 
-    let createBigStruct() = 
+    let createBigStruct() =
         let n = Random().NextInt64()
         Container (BigStruct (n, n))
 
@@ -46,19 +46,19 @@ type Misc() =
     [<Benchmark>]
     member _.Record() =
         let array = Array.init 1000 id
-        array |> Array.countBy (fun n -> { 
+        array |> Array.countBy (fun n -> {
             Field1 = n
             Field2 = string n
-            Field3 = byte n 
+            Field3 = byte n
         })
-    
+
     [<Benchmark>]
     member _.RecordStruct() =
         let array = Array.init 1000 id
-        array |> Array.countBy (fun n -> { 
+        array |> Array.countBy (fun n -> {
             Field1S = n
             Field2S = string n
-            Field3S = byte n 
+            Field3S = byte n
         })
 
     // BDN can't work with F# anon records yet
@@ -66,10 +66,10 @@ type Misc() =
     // [<Benchmark>]
     member _.AnonymousRecord() =
         let array = Array.init 1000 id
-        array |> Array.countBy (fun n -> {| 
+        array |> Array.countBy (fun n -> {|
             Field1A = n
             Field2A = string n
-            Field3A = byte n 
+            Field3A = byte n
         |})
 
     [<Benchmark>]

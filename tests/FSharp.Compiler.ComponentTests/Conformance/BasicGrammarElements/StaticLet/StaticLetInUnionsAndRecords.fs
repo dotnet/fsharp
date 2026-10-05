@@ -7,7 +7,7 @@ open FSharp.Test.Compiler
 [<Theory>]
 [<InlineData("8.0")>]
 [<InlineData("preview")>]
-let ``Regression in Member val  - not allowed without primary constructor``  (langVersion:string) = 
+let ``Regression in Member val  - not allowed without primary constructor``  (langVersion:string) =
     Fs """module Test
 type Bad3 = 
     member val X = 1 + 1   """
@@ -86,7 +86,7 @@ let ``Static let - lowercase DU`` compilation =
     compilation
     |> withLangVersion80
     |> typecheck
-    |> shouldSucceed    
+    |> shouldSucceed
 
 [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SimpleEmptyType.fs"|])>]
 let ``Static let in empty type`` compilation =
@@ -124,7 +124,7 @@ let ``Static let in simple union`` compilation =
 let ``Support in plain enums - typecheck should fail`` compilation =
     compilation
     |> withLangVersion80
-    |> typecheck    
+    |> typecheck
     |> shouldFail
     |> withDiagnosticMessage "Enumerations cannot have members"
 
@@ -156,7 +156,7 @@ let ``Static let in struct record`` compilation =
     |> verifyCompileAndRun
     |> shouldSucceed
     |> withStdOutContains "7"
-    
+
 [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"CreateUnionCases.fs"|])>]
 let ``Static let creating DU cases`` compilation =
     compilation
@@ -164,7 +164,7 @@ let ``Static let creating DU cases`` compilation =
     |> shouldSucceed
     |> withStdOutContains "..."
 
-    
+
 [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"UnionOrderOfExecution.fs"|])>]
 let ``Static let union - order of execution`` compilation =
     compilation
@@ -177,7 +177,7 @@ side effect in member Singleton
 calling print Case2 42
 side effect in member Singleton
 calling print Case2 42"""
-    
+
 [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"RecordOrderOfExecution.fs"|])>]
 let ``Static let record - order of execution`` compilation =
     compilation
@@ -191,7 +191,7 @@ calling print 1
 side effect in member R1
 calling print 1"""
 
-    
+
 [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"RecursiveDUs.fs"|])>]
 let ``Static let - recursive DU definitions calling each other`` compilation =
     compilation
@@ -231,7 +231,7 @@ let ``Static let extension to builtin type`` compilation =
     |> typecheck
     |> shouldFail
     |> withDiagnostics [Error 3573, Line 4, Col 5, Line 4, Col 51, "Static bindings cannot be added to extrinsic augmentations. Consider using a 'static member' instead."]
-    
+
 [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"QuotationsForStaticLetRecords.fs"|])>]
 let ``Static let - quotations support for records`` compilation =
     compilation
@@ -371,10 +371,10 @@ creating MyTypes.U.u1 now
 MyTypes module 'do' no. 2
 InnerModuleNotAccess 'do'
 Case2 1"""
-   
+
 
 [<Fact>]
-let ``Static let IL init single file test withRealInternalSignatureOff`` () = 
+let ``Static let IL init single file test withRealInternalSignatureOff`` () =
     FSharp """
 module Test
 open System
@@ -440,7 +440,7 @@ do Console.WriteLine("module after type")
 }"""]
 
 [<Fact>]
-let ``Static let IL init single file test withRealInternalSignatureOn`` () = 
+let ``Static let IL init single file test withRealInternalSignatureOn`` () =
     FSharp """
 module Test
 open System
@@ -839,7 +839,7 @@ b.ToString() |> ignore
     |> asExe
     |> ignoreWarnings
     |> compileAndRun
-    |> shouldSucceed 
+    |> shouldSucceed
 
 
 [<Theory>]
@@ -872,4 +872,4 @@ module ActualProgram =
     |> asExe
     |> ignoreWarnings
     |> compileAndRun
-    |> shouldSucceed  
+    |> shouldSucceed

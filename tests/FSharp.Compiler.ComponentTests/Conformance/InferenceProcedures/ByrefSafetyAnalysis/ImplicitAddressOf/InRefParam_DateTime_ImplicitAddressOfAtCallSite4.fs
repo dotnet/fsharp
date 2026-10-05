@@ -1,7 +1,7 @@
 open Prelude
 
-module InRefParam_DateTime_ImplicitAddressOfAtCallSite4  = 
-    type C() = 
+module InRefParam_DateTime_ImplicitAddressOfAtCallSite4  =
+    type C() =
          static member M(x: inref<System.DateTime>) = x
     let date = System.DateTime.Now.Date
     let w = [| date |]

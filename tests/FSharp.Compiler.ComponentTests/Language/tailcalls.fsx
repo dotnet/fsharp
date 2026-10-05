@@ -37,10 +37,10 @@ do
 
 
 do 
-    let sync = SyncBuilder (expect ReturnFromFinal)
+    let sync = SyncBuilder expectNone
 
     sync {
-        printf "expect ReturnFromFinal: "
+        printf "expectNone: "
         do! sync { printfn "inner" }
     } |> run
 
@@ -153,6 +153,27 @@ do
     shouldEqual result [1; 2]
     shouldEqual b.YieldFromCount 1
     shouldEqual b.YieldFromFinalCount 0
+
+// do! in final position should use Bind rather than a final YieldFrom method.
+type DoBangBuilder() =
+    member _.Bind(_: System.Threading.Tasks.Task, continuation: unit -> int list) = continuation()
+    member _.Yield(value: int) = [ value ]
+    member _.YieldFrom(_: int list) = []
+    member _.YieldFromFinal(_: int list) = []
+    member _.Return(_: unit) = []
+    member _.Combine(first: int list, second: unit -> int list) = first @ second ()
+    member _.Delay(computation: unit -> int list) = computation
+    member _.Run(computation: unit -> int list) = computation ()
+
+do
+    let builder = DoBangBuilder()
+    let result =
+        builder {
+            yield 1
+            do! System.Threading.Tasks.Task.CompletedTask
+        }
+
+    shouldEqual result [ 1 ]
 
 // yield! in try/finally body → YieldFrom (not tail), result correct
 do

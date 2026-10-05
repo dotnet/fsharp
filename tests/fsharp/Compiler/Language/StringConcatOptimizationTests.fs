@@ -241,7 +241,7 @@ let test3 () =
     IL_00f6:  call       string [mscorlib]System.String::Concat(string[])
     IL_00fb:  ret
   }"""
-  
+
         let test4Source = """
 let test4 () =
     ss 5 + ss 6 + ss 7 + String.Concat(ss 8, ss 9) + ss 10 + "_50_" + "_60_" + String.Concat(ss 100, String.Concat(ss 101, ss 102), ss 103) + String.Concat([|"_104_";"_105_"|]) + ss 106
@@ -448,7 +448,7 @@ let test4 () =
         IL_025b:  call       string [runtime]System.String::Concat(string[])
         IL_0260:  ret
   }"""
-  
+
         let test5Source = """
 let test5 () =
     ss 5 + ss 6 + ss 7 + String.Concat(ss 8, ss 9) + ss 10 + "_50_" + "_60_" + String.Concat(ss 100, (let x = String.Concat(ss 101, ss 102) in Console.WriteLine(x);x), ss 103) + String.Concat([|"_104_";"_105_"|]) + ss 106
@@ -836,7 +836,7 @@ let test9 () =
     IL_0071:  ret
   }"""
 
-        let sources = 
+        let sources =
             [
                 baseSource
                 test1Source

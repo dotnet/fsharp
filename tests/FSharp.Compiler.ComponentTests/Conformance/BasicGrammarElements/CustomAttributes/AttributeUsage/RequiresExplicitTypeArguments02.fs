@@ -1,4 +1,4 @@
-// #Regression #Conformance #DeclarationElements #Attributes 
+// #Regression #Conformance #DeclarationElements #Attributes
 // Regression for FSHARP1.0:6163
 // [<RequiresExplicitTypeArgumentsAttribute>] wasn't working on type members, make sure it's inherited too
 
@@ -15,8 +15,8 @@ type D() =
 type E() =
     inherit D()
     override x.Foo<'a>(y:'a) = "third"
-    
+
 let f (x : #D) =
     x.Foo<int>(42) + x.Foo(42, 1)
-    
+
 if f (E()) <> "thirdother" then failwith "Failed: 1" else ()

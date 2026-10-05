@@ -1,4 +1,4 @@
-// #Conformance #Quotations 
+// #Conformance #Quotations
 open Microsoft.FSharp.Quotations
 open Microsoft.FSharp.Quotations.DerivedPatterns
 open Microsoft.FSharp.Quotations.Patterns
@@ -6,12 +6,12 @@ open QuoteUtils
 
 type A() =
     member this.X = 1
-    
+
 type B() =
     inherit A()
     member this.Y = 2
-    
-    
+
+
 let q = <@ B() :> A @>
 let q' = Expr.Coerce(Expr.Value(B()), typeof<A>)
 

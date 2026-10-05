@@ -1,7 +1,7 @@
-// #Conformance #TypesAndModules #Unions  
+// #Conformance #TypesAndModules #Unions
 
 // Regression test for Bug 6308
-type BigUnion1 = 
+type BigUnion1 =
     | Case0
     | Tags of bool
     | Case11 of bool

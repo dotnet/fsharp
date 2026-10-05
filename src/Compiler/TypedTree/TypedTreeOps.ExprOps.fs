@@ -555,8 +555,7 @@ module internal ExprFolding =
         let rec exprsF z xs = List.fold exprFClosure z xs
 
         and exprF (z: 'State) (x: Expr) =
-            stackGuard.Guard
-            <| fun () -> folders.exprIntercept exprFClosure exprNoInterceptFClosure z x
+            stackGuard.Guard(fun () -> folders.exprIntercept exprFClosure exprNoInterceptFClosure z x)
 
         and exprNoInterceptF (z: 'State) (x: Expr) =
             match x with
@@ -1492,7 +1491,7 @@ module internal Makers =
         // Use "Expr.WithValue" if it exists in FSharp.Core
         match vref.TryDeref with
         | ValueSome _ ->
-            let copyOfExpr = copyExpr g ValCopyFlag.CloneAll e1
+            let copyOfExpr = copyExprKeepingRecursiveValLinks g ValCopyFlag.CloneAll e1
             let quoteOfCopyOfExpr = Expr.Quote(copyOfExpr, ref None, false, m, qty)
 
             mkApps
@@ -1576,6 +1575,56 @@ module internal Makers =
             TOp.ILCall(false, false, false, false, ValUseFlag.NormalValUse, false, false, mspec.MethodRef, [], [], [ g.string_ty ]),
             [],
             [ arg ],
+            m
+        )
+
+    let private optimizedClosureILShape (g: TcGlobals) (argTys: TType list) retTy =
+        let arity = List.length argTys
+        let formalArgTys = List.init arity (fun i -> ILType.TypeVar(uint16 i))
+        let formalRetTy = ILType.TypeVar(uint16 arity)
+
+        let optClosILTy =
+            mkILBoxedTy (g.optimizedClosures_FSharpFunc_tcref arity).CompiledRepresentationForNamedType (formalArgTys @ [ formalRetTy ])
+
+        formalArgTys, formalRetTy, optClosILTy, argTys @ [ retTy ]
+
+    let mkCallOptimizedClosuresAdapt (g: TcGlobals) m (argTys: TType list) (retTy: TType) folderExpr =
+        let formalArgTys, formalRetTy, optClosILTy, tinst =
+            optimizedClosureILShape g argTys retTy
+
+        let formalFolderTy =
+            (formalArgTys, formalRetTy)
+            ||> List.foldBack (fun dty rty -> mkILBoxedTy g.fastFunc_tcr.CompiledRepresentationForNamedType [ dty; rty ])
+
+        let mspec =
+            mkILNonGenericStaticMethSpecInTy (optClosILTy, "Adapt", [ formalFolderTy ], optClosILTy)
+
+        let resultTy =
+            mkWoNullAppTy (g.optimizedClosures_FSharpFunc_tcref argTys.Length) tinst
+
+        let call =
+            Expr.Op(
+                TOp.ILCall(false, false, false, false, ValUseFlag.NormalValUse, false, false, mspec.MethodRef, tinst, [], [ resultTy ]),
+                [],
+                [ folderExpr ],
+                m
+            )
+
+        call, resultTy
+
+    let mkCallOptimizedClosuresInvoke (g: TcGlobals) m (argTys: TType list) (retTy: TType) fExpr argExprs =
+        assert (List.length argExprs = argTys.Length)
+
+        let formalArgTys, formalRetTy, optClosILTy, tinst =
+            optimizedClosureILShape g argTys retTy
+
+        let mspec =
+            mkILNonGenericInstanceMethSpecInTy (optClosILTy, "Invoke", formalArgTys, formalRetTy)
+
+        Expr.Op(
+            TOp.ILCall(true, false, false, false, ValUseFlag.NormalValUse, false, false, mspec.MethodRef, tinst, [], [ retTy ]),
+            [],
+            fExpr :: argExprs,
             m
         )
 
@@ -1917,6 +1966,13 @@ module internal ExprTransforms =
         // Build a type-lambda expression for the toplevel value if needed...
         mkTypeLambda m tpsR (tauexpr, tauty), tpsR +-> tauty
 
+    let TryEtaExpandUnderAppliedValApp g m (vref: ValRef) flags tyargs fty args =
+        match vref.ValReprInfo with
+        | Some valReprInfo when valReprInfo.NumCurriedArgs > List.length args ->
+            let etaExpr = fst (AdjustValForExpectedValReprInfo g m vref flags valReprInfo)
+            Some(MakeApplicationAndBetaReduce g (etaExpr, fty, [ tyargs ], args, m))
+        | _ -> None
+
     let stripTupledFunTy g ty =
         let argTys, retTy = stripFunTy g ty
         let curriedArgTys = argTys |> List.map (tryDestRefTupleTy g)
@@ -2251,7 +2307,7 @@ module internal ExprTransforms =
         | None -> inputExpr
         | Some(exprR, []) -> exprR
         | Some(exprR, argsR) ->
-            //printfn "adjusted...."
+            //printn "adjusted...."
             Expr.App(exprR, tyOfExpr g exprR, [], argsR, inputExpr.Range)
 
     //---------------------------------------------------------------------------

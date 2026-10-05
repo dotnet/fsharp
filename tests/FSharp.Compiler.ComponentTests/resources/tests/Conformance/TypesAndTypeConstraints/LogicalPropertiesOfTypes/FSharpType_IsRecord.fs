@@ -1,4 +1,4 @@
-// #Conformance #TypeConstraints 
+// #Conformance #TypeConstraints
 
 
 // Test Microsoft.FSharp.Reflection.IsRecord function works properly on various types
@@ -27,7 +27,7 @@ type NonStandardType =
     | Function  = 3
 
 // Check if
-let isOK = 
+let isOK =
     not (FSharpType.IsRecord ( typeof<Color> )) &&                  // Color is not record
     not (FSharpType.IsRecord ( typeof<FTE> )) &&                    // Union type is not record
     not (FSharpType.IsRecord ( typeof<NonStandardType> )) &&        // Enum type is not record
@@ -35,10 +35,10 @@ let isOK =
     not (FSharpType.IsRecord ( typeof<Employee * Employee> )) &&    // Tuple of Records is not record
     not (FSharpType.IsRecord ( typeof<System.Object> )) &&          // Object is not record
     not (FSharpType.IsRecord ( typeof<System.ValueType> )) &&       // ValueType is not record
-         
+
          FSharpType.IsRecord ( typeof<Employee> ) &&                // Employee is record
          FSharpType.IsRecord ( typeof<SalesPerson> )                // Abbreviated SalesPerson type is record
-         
+
 if not isOK then exit 1
 
 exit 0

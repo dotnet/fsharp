@@ -3,6 +3,6 @@ module Module
 
 type MyType =
     static member StaticMethod() = 42
-    
-    module InvalidModule = 
+
+    module InvalidModule =
         let x = 1

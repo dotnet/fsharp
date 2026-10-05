@@ -65,7 +65,7 @@ let input =
 
 [<Fact>]
 let ``Test ranges - namespace`` () =
-    let res = parseAndExtractRanges input 
+    let res = parseAndExtractRanges input
     printfn "Test ranges - namespace, res = %A" res
     res |> shouldEqual [("N", ((2, 14), (2, 15))); ("Sample", ((4, 9), (4, 15)))]
 
@@ -75,7 +75,7 @@ let input2 =
 
     type Sample () = class end
     """
-    
+
 [<Fact>]
 let ``Test ranges - module`` () =
     let res = parseAndExtractRanges input2
@@ -91,6 +91,6 @@ let input3 =
 
 [<Fact>]
 let ``Test ranges - global namespace`` () =
-    let res = parseAndExtractRanges input3 
+    let res = parseAndExtractRanges input3
     printfn "Test ranges - global namespace, res = %A" res
     res |> shouldEqual [("Sample", ((4, 9), (4, 15)))]

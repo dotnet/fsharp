@@ -1,4 +1,4 @@
-// #Regression #Conformance #TypeInference #ByRef 
+// #Regression #Conformance #TypeInference #ByRef
 
 
 // Verify error when trying to use a byref<_> as generic argument.

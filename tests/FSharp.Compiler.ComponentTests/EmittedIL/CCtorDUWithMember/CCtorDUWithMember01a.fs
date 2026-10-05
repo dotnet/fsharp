@@ -1,7 +1,7 @@
-// #NoMono #NoMT #CodeGen #EmittedIL #Unions   
+// #NoMono #NoMT #CodeGen #EmittedIL #Unions
 module CCtorDUWithMember01a
-type C = 
-    | A 
+type C =
+    | A
     | B
     member x.P = 1
 

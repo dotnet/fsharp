@@ -1,4 +1,4 @@
-// #Conformance #ApplicationExpressions 
+// #Conformance #ApplicationExpressions
 // Assert expressions
 // Special cases:
 //  - assert(true)  ==> should not throw

@@ -1,4 +1,4 @@
-// #Conformance #LexicalAnalysis 
+// #Conformance #LexicalAnalysis
 
 
 // Test the backslash functionality when defining strings (continues on next line)

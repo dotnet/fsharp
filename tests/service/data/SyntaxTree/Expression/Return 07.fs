@@ -1,6 +1,6 @@
 module Module
 
 let _ =
-    async { 
+    async {
         return new MyType() :
     }

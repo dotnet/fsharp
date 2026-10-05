@@ -1,4 +1,4 @@
-// #Regression #Conformance #ObjectOrientedTypes #Classes 
+// #Regression #Conformance #ObjectOrientedTypes #Classes
 // Verify error when providing an arity-zero type instantiation (requires a space)
 // FSB 4076
 

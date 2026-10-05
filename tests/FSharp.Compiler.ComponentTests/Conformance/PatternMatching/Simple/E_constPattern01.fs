@@ -1,4 +1,4 @@
-// #Regression #Conformance #PatternMatching 
+// #Regression #Conformance #PatternMatching
 
 
 //<Status expect=warning>FS0025: Incomplete pattern matches on this expression. The value '7' will not be matched</Status>
@@ -12,5 +12,5 @@ let isWeekend day =
         -> false
     | DayOfWeek.Saturday    | DayOfWeek.Sunday
         -> true
-        
+
 exit 0

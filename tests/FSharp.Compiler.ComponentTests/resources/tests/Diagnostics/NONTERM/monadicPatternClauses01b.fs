@@ -1,4 +1,4 @@
-// #Regression #Diagnostics 
+// #Regression #Diagnostics
 // Regression test for FSharp1.0:2106
 //<Expects status="notin">NONTERM</Expects>
 //<Expects id="FS0010" status="error"></Expects>
@@ -7,14 +7,14 @@
 
 open Microsoft.FSharp.Control
 
-type internal msg = 
+type internal msg =
     | Increment of int
     | Fetch of IChannel<int>
     | Stop
-   
-type CountingAgent() = 
-    let counter = 
-        MailboxProcessor.Start( fun inbox -> 
+
+type CountingAgent() =
+    let counter =
+        MailboxProcessor.Start( fun inbox ->
             let rec loop(n) =
                 async { let! msg = inbox.Receive()
                         match msg with

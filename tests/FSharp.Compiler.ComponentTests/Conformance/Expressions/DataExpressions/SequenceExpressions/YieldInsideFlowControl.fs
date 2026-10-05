@@ -1,4 +1,4 @@
-// #Regression #Conformance #DataExpressions #Sequences 
+// #Regression #Conformance #DataExpressions #Sequences
 
 
 // Regression test for FSharp1.0:3930 - "Invalid sequence expression" error when using yield combined with if-then expressions in seq.
@@ -9,8 +9,8 @@ let evens n =
             yield 0
             yield! [2..2..n] |> Seq.ofList
     }
-    
-let odds n = 
+
+let odds n =
     seq {
         if false then
             yield! []
@@ -18,7 +18,7 @@ let odds n =
             yield 1
             yield! [3..2..n]
     }
-    
+
 if ((evens 100) |> Seq.append (odds 100) |> Seq.sum ) <> ( 100 * 101 / 2 ) then exit 1
 
 exit 0

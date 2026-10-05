@@ -33,7 +33,7 @@ type SGeneric<'T> =
    val s : int
 
 type FSharpUnion =
-| XA 
+| XA
 | XB
 | XC
 
@@ -64,14 +64,14 @@ let _ = new C<FSharpUnion>()               // Error
 let _ = new C<SGeneric<int>>()               // Error
 
 
-type CompilerMessageTest() = 
-    [<CompilerMessage("hello!", 120)>] 
+type CompilerMessageTest() =
+    [<CompilerMessage("hello!", 120)>]
     member x.P = 1
 
 let test = CompilerMessageTest().P
 
 
-type CompilerMessageTest2() = 
+type CompilerMessageTest2() =
     [<CompilerMessage("hello!", 10021, IsError=true)>]
     member x.P = 1
 

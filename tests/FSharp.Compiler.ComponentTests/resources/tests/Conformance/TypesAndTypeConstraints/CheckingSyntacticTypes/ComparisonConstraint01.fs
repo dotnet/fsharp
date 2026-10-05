@@ -1,4 +1,4 @@
-// #Conformance #TypeConstraints 
+// #Conformance #TypeConstraints
 
 open System
 
@@ -11,7 +11,7 @@ testFunc 1 |> ignore
 type S3(x : int) =
     interface IComparable with
         override this.CompareTo(o : obj) = 0
-    
+
     member this.Test = x + 1
 
 testFunc (S3(2)) |> ignore

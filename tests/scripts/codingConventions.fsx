@@ -18,14 +18,14 @@ let lines =
                     yield file, (line+1, lineText) |]
 
 
-printfn "------ LINE LENGTH ANALYSIS ----------"
+printn "------ LINE LENGTH ANALYSIS ----------"
 let totalLines = lines.Length
 let buckets = lines |> Array.groupBy (fun (_file, (_line, lineText)) -> lineText.Length / 10) |> Array.sortByDescending (fun (key, vs) -> key)
 
 for (key, sz) in buckets do
     printfn "bucket %d-%d - %%%2.1f" (key*10) (key*10+9) (double sz.Length / double totalLines * 100.0)
 
-printfn "top bucket: "
+printn "top bucket: "
 
 for (file, (line, text)) in snd buckets.[0] do   
    printfn "%s %d %s..." file line text.[0..50]
@@ -38,7 +38,7 @@ printfn "%d long lines = %2.2f%%" numLong (double numLong / double totalLines)
 printfn "%d huge lines = %2.2f%%" numHuge (double numHuge / double totalLines)
 printfn "%d humongous lines = %2.2f%%" numHumongous (double numHumongous / double totalLines)
 
-printfn "------ SPACE AFTER COMMA ANALYSIS ----------"
+printn "------ SPACE AFTER COMMA ANALYSIS ----------"
 
 let commas =
     lines
@@ -53,7 +53,7 @@ let commas =
 printfn "Top files that have commas without spaces: %A" (Array.truncate 10 commas)
 
 
-printfn "------DANGLING SEMICOLONS----------"
+printn "------DANGLING SEMICOLONS----------"
 
 let semis =
     lines
@@ -68,7 +68,7 @@ let semis =
 printfn "Top files that have semicolon at end of line: %A" (Array.truncate 10 semis)
 
 
-printfn "------NO SPACE AFTER COLON----------"
+printn "------NO SPACE AFTER COLON----------"
 
 open System.Text.RegularExpressions
 
@@ -85,7 +85,7 @@ let noSpaceAfterColons =
 
 printfn "Top files that have no space after colon:\n%A" (Array.truncate 10 noSpaceAfterColons)
 
-printfn "------ SPACE BEFORE COLON----------"
+printn "------ SPACE BEFORE COLON----------"
 
 
 let spaceBeforeColon =

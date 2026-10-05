@@ -9,19 +9,19 @@ type AttrOnGetter() = inherit System.Attribute()
 type C(x:int) =
    let mutable m_value = x
 
-   member this.ReadWrite 
-        with [<AttrOnGetter>] get() = m_value 
+   member this.ReadWrite
+        with [<AttrOnGetter>] get() = m_value
         and set x = m_value <- x
 
 open CodeGenHelper
 
-try  
+try
     System.Reflection.Assembly.GetExecutingAssembly()
     |> getType "bug1539+C"
     |> getMethod "get_ReadWrite"
     |> should haveAttribute "AttrOnGetter"
 
 with
-| e -> printfn "Unhandled Exception: %s" e.Message 
+| e -> printfn "Unhandled Exception: %s" e.Message
        raise (Exception($"Oops: {e}"))
 

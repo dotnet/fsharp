@@ -1,4 +1,4 @@
-// #Conformance #SignatureFiles 
+// #Conformance #SignatureFiles
 
 
 // Test FSI checking for public, private, and internal 'stuff'

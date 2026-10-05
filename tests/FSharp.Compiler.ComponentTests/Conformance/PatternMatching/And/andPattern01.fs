@@ -1,4 +1,4 @@
-// #Conformance #PatternMatching #PatternMatchingGuards 
+// #Conformance #PatternMatching #PatternMatchingGuards
 
 
 // Verify that and patterns must match both sides

@@ -55,25 +55,25 @@ module ComputationExpressions =
     let ``ComputationExpr04_fs`` compilation =
         compilation
         |> getCompilation
-        |> verifyCompilation 
+        |> verifyCompilation
 
     [<Theory; FileInlineData("ComputationExpr05.fs", Realsig=BooleanOptions.Both)>]
     let ``ComputationExpr05_fs`` compilation =
         compilation
         |> getCompilation
-        |> verifyCompilation 
+        |> verifyCompilation
 
     [<Theory; FileInlineData("ComputationExpr06.fs", Realsig=BooleanOptions.Both)>]
     let ``ComputationExpr06_fs`` compilation =
         compilation
         |> getCompilation
-        |> verifyCompilation 
+        |> verifyCompilation
 
     [<Theory; FileInlineData("ComputationExpr07.fs", Realsig=BooleanOptions.Both)>]
     let ``ComputationExpr07_fs`` compilation =
         compilation
         |> getCompilation
-        |> verifyCompilation 
+        |> verifyCompilation
 
     [<Theory; FileInlineData("CustomCollectionBuilderComputationExpr.fs", Optimize=BooleanOptions.Both)>]
     let ``CustomCollectionBuilderComputationExpr_fs_OptimizeOff`` compilation =

@@ -26,7 +26,7 @@ type TestFileWithAST =
         File: string
         AST: ParsedInput
     }
-    
+
     static member internal Map (x:TestFileWithAST) : FileInProject =
         {
             Idx = x.Idx

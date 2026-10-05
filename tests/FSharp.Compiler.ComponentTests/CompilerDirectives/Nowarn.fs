@@ -23,7 +23,7 @@ module Nowarn =
     let private fsSub lines = fs ("namespace A" :: "module B =" :: (lines |> List.map (fun s -> "  " + s)))
     let private fsi = String.concat Environment.NewLine >> FsiSource
     let private fsx = String.concat Environment.NewLine >> FsxSourceCode
-    
+
     let private fsiSource44 = [
         "namespace A"
         "[<System.Obsolete>]"
@@ -36,7 +36,7 @@ module Nowarn =
         "#nowarn 44"
         "type T5 = T"
     ]
-    
+
     let private fsSource44 = [
         "namespace A"
         "#nowarn 44"
@@ -47,7 +47,7 @@ module Nowarn =
         "type T4 = T"
         "type T5 = T"
     ]
-    
+
     let private testData =
         [
         vp, [], [fsMod [make20]], [W20, 2]
@@ -133,7 +133,7 @@ module Nowarn =
             print $"  actual diagnostics:"
             for d in actual do print $"    {d.Error} in line {d.Range.StartLine}"
             Assert.Fail(string sb)
-            
+
     [<MemberData(nameof testMemberData)>]
     [<Theory>]
     let testWarnScopes testId langVersion flags (sourceArray: SourceCodeFileKind array) expectedDiags =

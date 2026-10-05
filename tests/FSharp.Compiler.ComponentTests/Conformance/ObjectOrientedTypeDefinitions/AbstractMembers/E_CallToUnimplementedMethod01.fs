@@ -1,8 +1,8 @@
-// #Regression #Conformance #ObjectOrientedTypes #MethodsAndProperties #MemberDefinitions 
+// #Regression #Conformance #ObjectOrientedTypes #MethodsAndProperties #MemberDefinitions
 // Regression test for FSHARP1.0:5815
 //<Expects status="error" span="(14,19-14,28)" id="FS1201">Cannot call an abstract base member: 'f'$</Expects>
 //
- 
+
 [<AbstractClass>]
 type C1 () =
  abstract f : unit -> C1

@@ -1,3 +1,9 @@
+---
+title: Parse tree fidelity of return attributes
+category: Postmortems
+categoryindex: 550
+index: 500
+---
 # Regression: `[<return: X>]` Attributes Disappeared From the Untyped Syntax Tree
 
 ## Summary

@@ -1,4 +1,4 @@
-// #Regression #Conformance #DeclarationElements #Modules 
+// #Regression #Conformance #DeclarationElements #Modules
 // This used to be a positive test. Now it is not.
 
 

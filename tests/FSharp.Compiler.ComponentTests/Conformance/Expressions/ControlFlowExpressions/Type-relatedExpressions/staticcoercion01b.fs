@@ -1,4 +1,4 @@
-// #Conformance #TypeRelatedExpressions #TypeAnnotations 
+// #Conformance #TypeRelatedExpressions #TypeAnnotations
 
 
 [<Measure>] type s

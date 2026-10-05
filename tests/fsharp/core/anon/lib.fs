@@ -1,33 +1,33 @@
 
-module AnonLib 
+module AnonLib
 
 
 let failures = ref []
 
-let report_failure (s : string) = 
+let report_failure (s : string) =
     stderr.Write" NO: "
     stderr.WriteLine s
     failures := !failures @ [s]
 
-let test (s : string) b = 
+let test (s : string) b =
     stderr.Write(s)
     if b then stderr.WriteLine " OK"
     else report_failure (s)
 
-let check (s:string) x1 x2 = 
+let check (s:string) x1 x2 =
     stderr.Write(s)
     if (x1 = x2) then stderr.WriteLine " OK"
     else (stderr.WriteLine (sprintf " failed, expected %A, got %A" x2 x1); report_failure (s))
 
-let inline getX (x: ^TX) : ^X = 
+let inline getX (x: ^TX) : ^X =
         (^TX : (member get_X : unit -> ^X) (x))
 
 
-let inline Y (x: ^TX) : ^X = 
+let inline Y (x: ^TX) : ^X =
         (^TX : (member get_Y : unit -> ^X) (x))
 
 
-module KindB1 = 
+module KindB1 =
 
     let data1 = {| X = 1 |}
 
@@ -92,25 +92,25 @@ module KindB1 =
 
     let testConstrainedAccess = getX {| X = 0 |},  getX data1,  getX {| X = 2; Y = "2" |}
 
-    check "testConstrainedAccess1" (sprintf "%A"  testConstrainedAccess) "(0, 1, 2)" 
+    check "testConstrainedAccess1" (sprintf "%A"  testConstrainedAccess) "(0, 1, 2)"
 
     let testConstrainedAccess2 = getX (struct {| X = 0 |}),  getX data3,  getX (struct {| X = 2; Y = "2" |})
 
-    check "testConstrainedAccess2" (sprintf "%A"  testConstrainedAccess2) "(0, 1, 2)" 
+    check "testConstrainedAccess2" (sprintf "%A"  testConstrainedAccess2) "(0, 1, 2)"
 
-module TestInAttributes = 
+module TestInAttributes =
     type FooAttribute(ty: System.Type) =
         inherit System.Attribute()
         member x.Type = ty
 
     [<Foo(typeof<{| Field1: int; Field2 : string |}>)>]
-    type C() = 
+    type C() =
        member x.P = 1
     check "clkwweclk" ((typeof<C>.GetCustomAttributes(typeof<FooAttribute>,true).[0] :?> FooAttribute).Type) (typeof<{| Field1: int; Field2 : string |}>)
 
-module KindB2 = 
+module KindB2 =
 
-    // Gives object that has full C#-compatible anonymous metadata. Compiles to an instantiation of a generic type in the declaring assembly with appropriate .NET 
+    // Gives object that has full C#-compatible anonymous metadata. Compiles to an instantiation of a generic type in the declaring assembly with appropriate .NET
     // metadata (property names). The types are CLIMutable to be C#-compatible. The identity of the types are implicitly assembly-qualified.
     let data1 =   {| X = 1 |}
 
@@ -133,7 +133,7 @@ module KindB2 =
 
     printfn "{| X = 10 |} = %A" ({| X = 10 |} )
     printfn "{| X = 10 ; Y = \"abc\" |} = %A" ({| X = 10 ; Y = "abc"|} )
-    
+
     let testConstrainedAccess = getX ({| X = 0 |}),  getX data1,  getX ({| X = 2; Y = "2" |})
 
     check "cew9cwoi" testConstrainedAccess (0, 1, 2)
@@ -142,7 +142,7 @@ module KindB2 =
 
     check "cew9cwo3" testConstrainedAccess2 (0, 1, 2)
 
-module CopyAndUpdateOfAnonRecord = 
+module CopyAndUpdateOfAnonRecord =
     let data = {| X = 1 |}
     let data2 = {| data with Y = "1" |}
     let data3 = {| data with X = "3" |}
@@ -154,7 +154,7 @@ module CopyAndUpdateOfAnonRecord =
     check "fewjkvwno3443" data4.X "3"
     check "fewjkvwno3443" data4.Y "1"
 
-module CopyAndUpdateOfAnonRecordStruct = 
+module CopyAndUpdateOfAnonRecordStruct =
     let data = struct {| X = 1 |}
     let data2 = struct {| data with Y = "1" |}
     let data3 = struct {| data with X = "3" |}
@@ -166,7 +166,7 @@ module CopyAndUpdateOfAnonRecordStruct =
     check "fewjkvwno3444" data4.X "3"
     check "fewjkvwno3442" data4.Y "1"
 
-module CopyAndUpdateOfAnonRecordFromRecord = 
+module CopyAndUpdateOfAnonRecordFromRecord =
     type Base = { X : int }
     let data = { X = 1 }
     let data2 = {| data with Y = "1" |}
@@ -179,7 +179,7 @@ module CopyAndUpdateOfAnonRecordFromRecord =
     check "fewjkvwno344y" data4.X "3"
     check "fewjkvwno344b" data4.Y "1"
 
-module CopyAndUpdateOfAnonRecordFromStructRecord = 
+module CopyAndUpdateOfAnonRecordFromStructRecord =
     [<Struct>]
     type Base = { X : int }
     let data = { X = 1 }
@@ -190,7 +190,7 @@ module CopyAndUpdateOfAnonRecordFromStructRecord =
     check "fewjkvwno33ej" data2.Y "1"
     check "fewjkvwno34rs" data3.X "3"
 
-module QuotesNewRecord = 
+module QuotesNewRecord =
 
     open FSharp.Quotations
     open FSharp.Quotations.Patterns
@@ -199,9 +199,9 @@ module QuotesNewRecord =
     check "gceoijew90ewcw1"  (FSharp.Reflection.FSharpType.IsRecord(ty)) true
     check "gceoijew90ewcw2"  (FSharp.Reflection.FSharpType.GetRecordFields(ty).Length) 2
     check "gceoijew90ewcw2"  ([ for p in FSharp.Reflection.FSharpType.GetRecordFields(ty) -> p.Name ]) [ "X"; "Y" ]
-    check "gceoijew90ewcw3"  args [ <@@ 1 @@>; <@@ "two" @@> ] 
+    check "gceoijew90ewcw3"  args [ <@@ 1 @@>; <@@ "two" @@> ]
 
-module QuotesNewRecord2 = 
+module QuotesNewRecord2 =
 
     open FSharp.Quotations
     open FSharp.Quotations.Patterns
@@ -211,52 +211,52 @@ module QuotesNewRecord2 =
     check "qgceoijew90ewcw2"  (FSharp.Reflection.FSharpType.GetRecordFields(ty).Length) 2
     // Fields are sorted
     check "qgceoijew90ewcw2"  ([ for p in FSharp.Reflection.FSharpType.GetRecordFields(ty) -> p.Name ]) [ "X"; "Y" ]
-    check "qgceoijew90ewcw3"  args.[0] <@@ 1 @@> 
-    check "qgceoijew90ewcw4"  yarg <@@ "two" @@> 
+    check "qgceoijew90ewcw3"  args.[0] <@@ 1 @@>
+    check "qgceoijew90ewcw4"  yarg <@@ "two" @@>
 
-module QuotesFieldInitOrder = 
+module QuotesFieldInitOrder =
 
     let mutable x = 1
-    let test() = 
+    let test() =
         x <- 1
         {| X = (check "clwknckl1" x 1; x <- x + 1; 3)
-           Y = (check "cwkencelwe2" x 2; x <- x + 1; 2) 
+           Y = (check "cwkencelwe2" x 2; x <- x + 1; 2)
         |} |> check "ceweoiwe1" {| Y=2; X=3 |}
         x <- 1
         {| X = (check "clwknckl3" x 1; x <- x + 1; 2)
-           W = (check "cwkencelwe4" x 2; x <- x + 1; 3) 
+           W = (check "cwkencelwe4" x 2; x <- x + 1; 3)
         |} |> check "ceweoiwe2" {| W=3; X=2 |}
         x <- 1
         {| X = (check "clwknckl5" x 1; x <- x + 1; 2)
            Y = (check "clwknckl6" x 2; x <- x + 1; 3)
-           W = (check "cwkencelwe7" x 3; x <- x + 1; 4) |} 
+           W = (check "cwkencelwe7" x 3; x <- x + 1; 4) |}
           |> check "ceweoiwe" {| Y=3; X=2; W=4 |}
         x <- 1
-        let a = 
+        let a =
             {| Y = (check "clwknckl8" x 1; x <- x + 1; 2)
                X = (check "clwknckl9" x 2; x <- x + 1; 3)
-               W = (check "cwkencel10" x 3; x <- x + 1; 4) 
-            |} 
+               W = (check "cwkencel10" x 3; x <- x + 1; 4)
+            |}
         a |> check "ceweoiwe" {| Y=2; X=3; W=4 |}
         x <- 1
-        let b = 
-            {| a with 
+        let b =
+            {| a with
                  X = (check "clwknckl9" x 1; x <- x + 1; 6)
-                 W = (check "cwkencel10" x 2; x <- x + 1; 7) 
-            |} 
+                 W = (check "cwkencel10" x 2; x <- x + 1; 7)
+            |}
         b |> check "ceweoiwe87" {| Y=2; X=6; W=7 |}
         x <- 1
-        let c = 
-            {| a with 
+        let c =
+            {| a with
                  X = (check "clwknckl9" x 1; x <- x + 1; 6)
-                 A = (check "cwkencel11" x 2; x <- x + 1; 8) 
-                 W = (check "cwkencel10" x 3; x <- x + 1; 7) 
-            |} 
+                 A = (check "cwkencel11" x 2; x <- x + 1; 8)
+                 W = (check "cwkencel10" x 3; x <- x + 1; 7)
+            |}
         c |> check "ceweoiwe87" {| Y=2; X=6; W=7; A=8 |}
     test()
 
 
-module QuotesPropertyGet = 
+module QuotesPropertyGet =
 
     open FSharp.Quotations
     open FSharp.Quotations.Patterns
@@ -265,23 +265,23 @@ module QuotesPropertyGet =
     check "wgceoijew90ewcw1"  prop.Name "X"
 
 
-module SampleAPI = 
+module SampleAPI =
 
     let SampleFunction (arg : {| A: int; B: string |}) = arg.A + arg.B.Length
     let SampleFunctionAcceptingList (args : {| A: int; B: string |} list) = args |> List.map (fun arg -> arg.A + arg.B.Length)
     let SampleFunctionReturningAnonRecd () =  {| A=1; B = "abc" |}
 
-module SampleAPIStruct = 
+module SampleAPIStruct =
     let SampleFunction (arg : (struct {| A: int; B: string |})) = arg.A + arg.B.Length
     let SampleFunctionAcceptingList (args : (struct {| A: int; B: string |}) list) = args |> List.map (fun arg -> arg.A + arg.B.Length)
     let SampleFunctionReturningAnonRecd () =  struct {| A=1; B = "abc" |}
 
-module SampleAPITupleStruct = 
+module SampleAPITupleStruct =
     let SampleFunction ((a,b) : (struct (int * string))) = a + b.Length
     let SampleFunctionAcceptingList (args : (struct (int * string)) list) = args |> List.map (fun (struct (a,b)) -> a + b.Length)
     let SampleFunctionReturningStructTuple () =  struct (1, "abc")
 
-module SyntaxCornerCaseTests = 
+module SyntaxCornerCaseTests =
 
     let _ = id<{| X: int |}> {| X = 3 |}
     // Check use as type argument

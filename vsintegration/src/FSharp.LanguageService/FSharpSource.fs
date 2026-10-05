@@ -14,11 +14,11 @@ open System.Threading
 open System.Runtime.InteropServices
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.Shell
-open Microsoft.VisualStudio.Shell.Interop 
+open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.Text
 open Microsoft.VisualStudio.Text.Editor
 open Microsoft.VisualStudio.Text.Formatting
-open Microsoft.VisualStudio.TextManager.Interop 
+open Microsoft.VisualStudio.TextManager.Interop
 open Microsoft.VisualStudio.OLE.Interop
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Diagnostics
@@ -28,25 +28,25 @@ open FSharp.Compiler.Text
 #nowarn "45" // This method will be made public in the underlying IL because it may implement an interface or override a method
 
 //
-// Note: DEPRECATED CODE ONLY ACTIVE IN UNIT TESTING VIA "UNROSLYNIZED" UNIT TESTS. 
+// Note: DEPRECATED CODE ONLY ACTIVE IN UNIT TESTING VIA "UNROSLYNIZED" UNIT TESTS.
 //
 // Note: Tests using this code should either be adjusted to test the corresponding feature in
-// FSharp.Editor, or deleted.  However, the tests may be exercising underlying F# Compiler 
-// functionality and thus have considerable value, they should ony be deleted if we are sure this 
+// FSharp.Editor, or deleted.  However, the tests may be exercising underlying F# Compiler
+// functionality and thus have considerable value, they should ony be deleted if we are sure this
 // is not the case.
 //
-type internal IDependencyFileChangeNotify_DEPRECATED = 
+type internal IDependencyFileChangeNotify_DEPRECATED =
 
      abstract DependencyFileCreated : IProjectSite -> unit
 
      abstract DependencyFileChanged : string -> unit
 
 //
-// Note: DEPRECATED CODE ONLY ACTIVE IN UNIT TESTING VIA "UNROSLYNIZED" UNIT TESTS. 
+// Note: DEPRECATED CODE ONLY ACTIVE IN UNIT TESTING VIA "UNROSLYNIZED" UNIT TESTS.
 //
 // Note: Tests using this code should either be adjusted to test the corresponding feature in
-// FSharp.Editor, or deleted.  However, the tests may be exercising underlying F# Compiler 
-// functionality and thus have considerable value, they should ony be deleted if we are sure this 
+// FSharp.Editor, or deleted.  However, the tests may be exercising underlying F# Compiler
+// functionality and thus have considerable value, they should ony be deleted if we are sure this
 // is not the case.
 //
 type internal IFSharpSource_DEPRECATED =
@@ -69,59 +69,59 @@ type internal IFSharpSource_DEPRECATED =
     abstract ProjectSite : IProjectSite option with get,set
     /// Specify the files that should trigger a rebuild for the project behind this source
     abstract SetDependencyFiles : string[] -> bool
-    
-    
+
+
 
 //
-// Note: DEPRECATED CODE ONLY ACTIVE IN UNIT TESTING VIA "UNROSLYNIZED" UNIT TESTS. 
+// Note: DEPRECATED CODE ONLY ACTIVE IN UNIT TESTING VIA "UNROSLYNIZED" UNIT TESTS.
 //
 // Note: Tests using this code should either be adjusted to test the corresponding feature in
-// FSharp.Editor, or deleted.  However, the tests may be exercising underlying F# Compiler 
-// functionality and thus have considerable value, they should ony be deleted if we are sure this 
+// FSharp.Editor, or deleted.  However, the tests may be exercising underlying F# Compiler
+// functionality and thus have considerable value, they should ony be deleted if we are sure this
 // is not the case.
 //
 type internal FSharpSourceTestable_DEPRECATED
-                    (recolorizeWholeFile:unit->unit, 
-                     recolorizeLine:int->unit, 
-                     currentFileName:unit -> string, 
-                     isClosed:unit->bool, 
-                     vsFileWatch:IVsFileChangeEx, 
-                     depFileChange: IDependencyFileChangeNotify_DEPRECATED) =         
-            
+                    (recolorizeWholeFile:unit->unit,
+                     recolorizeLine:int->unit,
+                     currentFileName:unit -> string,
+                     isClosed:unit->bool,
+                     vsFileWatch:IVsFileChangeEx,
+                     depFileChange: IDependencyFileChangeNotify_DEPRECATED) =
+
         let mutable projectSite : IProjectSite option = None
 
         let mutable isDisposed = false
         let lastDependencies = new Dictionary<string,uint32>()  // file name, cookie
-        let fileChangeFlags = 
-            uint32 (_VSFILECHANGEFLAGS.VSFILECHG_Add ||| 
+        let fileChangeFlags =
+            uint32 (_VSFILECHANGEFLAGS.VSFILECHG_Add |||
                     // _VSFILECHANGEFLAGS.VSFILECHG_Del ||| // don't listen for deletes - if a file (such as a 'Clean'ed project reference) is deleted, just keep using stale info
                     _VSFILECHANGEFLAGS.VSFILECHG_Time)
-        
+
         let mutable needsVisualRefresh = true
         let mutable changeCount = 0
         let mutable dirtyTime = 0
-        
+
         let IncrementWithWrap(v:int) =
-            if v = Int32.MaxValue then 0 else v + 1    
-        
-        interface IFSharpSource_DEPRECATED with 
-            member source.RecolorizeWholeFile() = recolorizeWholeFile() 
+            if v = Int32.MaxValue then 0 else v + 1
+
+        interface IFSharpSource_DEPRECATED with
+            member source.RecolorizeWholeFile() = recolorizeWholeFile()
             member source.RecolorizeLine line = recolorizeLine line
-            
+
             member source.ChangeCount
                 with get() = changeCount
                 and set(value) = changeCount <- value
 
             member source.DirtyTime
                 with get() = dirtyTime
-                and set(value) = dirtyTime <- value   
+                and set(value) = dirtyTime <- value
 
-            member source.RecordChangeToView() = 
+            member source.RecordChangeToView() =
                 needsVisualRefresh <- true
                 dirtyTime <- System.Environment.TickCount; // NOTE: If called fast enough, it is possible for dirtyTime to have the same value as it had before.
                 changeCount <- IncrementWithWrap(changeCount)
 
-            member source.RecordViewRefreshed() = 
+            member source.RecordViewRefreshed() =
                 needsVisualRefresh <- false
 
             member source.NeedsVisualRefresh = needsVisualRefresh
@@ -133,11 +133,11 @@ type internal FSharpSourceTestable_DEPRECATED
                 and set(value) = projectSite <- value
 
             /// returns true if the set of dependency files we're watching changes, false otherwise (except that it always returns false on the first call to this method on this object)
-            member source.SetDependencyFiles(files) = 
+            member source.SetDependencyFiles(files) =
                 let changeEvents = source :> IVsFileChangeEvents
-                // Note that adding a new dependency for a file and then removing the old one (for that same file) risks missing notifications, 
+                // Note that adding a new dependency for a file and then removing the old one (for that same file) risks missing notifications,
                 // As a result, we compute the diffs, and only act on the diff.
-                
+
                 // figure out dependencies that are no longer needed
                 let mutable cookiesToRemove = []
                 let mutable filesToRemove = []
@@ -149,7 +149,7 @@ type internal FSharpSourceTestable_DEPRECATED
                 // remove from local dictionary
                 for key in filesToRemove do
                     lastDependencies.Remove(key) |> ignore
-                    
+
                 // figure out new dependencies that must be added
                 let mutable filesToAdd = []
                 for file in files do
@@ -166,7 +166,7 @@ type internal FSharpSourceTestable_DEPRECATED
                             UIThread.RunSync(fun () ->
                                 if not isDisposed then
                                     for file in filesToAdd do
-                                        if not (lastDependencies.ContainsKey file) then 
+                                        if not (lastDependencies.ContainsKey file) then
                                             try
                                                 let cookie = Com.ThrowOnFailure1(vsFileWatch.AdviseFileChange(file, fileChangeFlags, changeEvents))
                                                 lastDependencies.Add(file, cookie)
@@ -175,24 +175,24 @@ type internal FSharpSourceTestable_DEPRECATED
                                         Com.ThrowOnFailure0(vsFileWatch.UnadviseFileChange(cookie))
                             )
                             true
-                        
+
         // Hook file change events in dependency files.
-        interface IVsFileChangeEvents with 
-            member changes.FilesChanged(_count : uint32, _files: string [], changeFlags : uint32 []) = 
+        interface IVsFileChangeEvents with
+            member changes.FilesChanged(_count : uint32, _files: string [], changeFlags : uint32 []) =
                 let changeFlags = changeFlags |> Array.map int |> Array.map enum<_VSFILECHANGEFLAGS>
-        
+
                 match projectSite with
-                | Some projectSite -> 
+                | Some projectSite ->
                     depFileChange.DependencyFileChanged(currentFileName())
                     if changeFlags |> Array.exists (fun cf -> cf &&& (_VSFILECHANGEFLAGS.VSFILECHG_Add ||| _VSFILECHANGEFLAGS.VSFILECHG_Del) <> enum 0) then
-                        depFileChange.DependencyFileCreated(projectSite)                               
+                        depFileChange.DependencyFileCreated(projectSite)
                 | None -> ()
                 0
 
             member changes.DirectoryChanged(_directory: string) = 0
-            
+
         interface IDisposable with
-            member disp.Dispose() =         
+            member disp.Dispose() =
                 UIThread.MustBeCalledFromUIThread()
                 isDisposed <- true
                 match vsFileWatch with
@@ -204,11 +204,11 @@ type internal FSharpSourceTestable_DEPRECATED
 
 
 //
-// Note: DEPRECATED CODE ONLY ACTIVE IN UNIT TESTING VIA "UNROSLYNIZED" UNIT TESTS. 
+// Note: DEPRECATED CODE ONLY ACTIVE IN UNIT TESTING VIA "UNROSLYNIZED" UNIT TESTS.
 //
 // Note: Tests using this code should either be adjusted to test the corresponding feature in
-// FSharp.Editor, or deleted.  However, the tests may be exercising underlying F# Compiler 
-// functionality and thus have considerable value, they should ony be deleted if we are sure this 
+// FSharp.Editor, or deleted.  However, the tests may be exercising underlying F# Compiler
+// functionality and thus have considerable value, they should ony be deleted if we are sure this
 // is not the case.
 //
 [<AllowNullLiteralAttribute>]
@@ -219,9 +219,9 @@ type internal VSFontsAndColorsHelper private(fontFamily, pointSize, excludedCode
             let vsFontAndColorStorage = site.GetService(typeof<SVsFontAndColorStorage>) :?> IVsFontAndColorStorage
             let mutable guidTextEditorFontCategory = new Guid("A27B4E24-A735-4d1d-B8E7-9716E1E3D8E0") // Guid for the code editor font and color category. GUID_TextEditorFC
             vsFontAndColorStorage.OpenCategory(&guidTextEditorFontCategory, (uint32 __FCSTORAGEFLAGS.FCSF_LOADDEFAULTS) ||| (uint32 __FCSTORAGEFLAGS.FCSF_NOAUTOCOLORS) ||| (uint32 __FCSTORAGEFLAGS.FCSF_READONLY)) |> ignore
-            let itemInfo : ColorableItemInfo[] = Array.zeroCreate 1  
+            let itemInfo : ColorableItemInfo[] = Array.zeroCreate 1
             vsFontAndColorStorage.GetItem("Excluded Code", itemInfo) |> ignore
-            let fgColorInfo = itemInfo.[0].crForeground 
+            let fgColorInfo = itemInfo.[0].crForeground
             let winFormColor = System.Drawing.ColorTranslator.FromOle(int fgColorInfo)
             let color = System.Windows.Media.Color.FromArgb(winFormColor.A, winFormColor.R, winFormColor.G, winFormColor.B)
             let excludedCodeForegroundColorBrush = new System.Windows.Media.SolidColorBrush(color)
@@ -234,8 +234,8 @@ type internal VSFontsAndColorsHelper private(fontFamily, pointSize, excludedCode
             vsFontAndColorStorage.OpenCategory(&guidStatementCompletionFC, (uint32 __FCSTORAGEFLAGS.FCSF_LOADDEFAULTS) ||| (uint32 __FCSTORAGEFLAGS.FCSF_NOAUTOCOLORS) ||| (uint32 __FCSTORAGEFLAGS.FCSF_READONLY)) |> ignore
             let fontInfo : FontInfo[] = Array.zeroCreate 1
             vsFontAndColorStorage.GetFont(null, fontInfo) |> ignore
-            let fontFamily = fontInfo.[0].bstrFaceName 
-            let pointSize = fontInfo.[0].wPointSize 
+            let fontFamily = fontInfo.[0].bstrFaceName
+            let pointSize = fontInfo.[0].wPointSize
             vsFontAndColorStorage.CloseCategory() |> ignore
             fontFamily, pointSize, excludedCodeForegroundColorBrush, backgroundBrush
 
@@ -257,22 +257,22 @@ type internal VSFontsAndColorsHelper private(fontFamily, pointSize, excludedCode
                                                         NativeMethods.S_OK
                                                  }, &k) |> ignore
             theInstance.Contents
-           
+
 //
-// Note: DEPRECATED CODE ONLY ACTIVE IN UNIT TESTING VIA "UNROSLYNIZED" UNIT TESTS. 
+// Note: DEPRECATED CODE ONLY ACTIVE IN UNIT TESTING VIA "UNROSLYNIZED" UNIT TESTS.
 //
 // Note: Tests using this code should either be adjusted to test the corresponding feature in
-// FSharp.Editor, or deleted.  However, the tests may be exercising underlying F# Compiler 
-// functionality and thus have considerable value, they should ony be deleted if we are sure this 
+// FSharp.Editor, or deleted.  However, the tests may be exercising underlying F# Compiler
+// functionality and thus have considerable value, they should ony be deleted if we are sure this
 // is not the case.
 //
 type internal FSharpIntelliSenseToAppearAdornment_DEPRECATED(view: IWpfTextView, cursorPoint: SnapshotPoint, site: System.IServiceProvider) as this =
         let fontFamily, pointSize, excludedCodeForegroundColorBrush, backgroundBrush = VSFontsAndColorsHelper.GetContents(site)
         // TODO: We should really create our own adornment layer.  It is possible (unlikely) that preexisting layers may be re-ordered, or that
         // code 'owning' the layer will choose to clear all adornments, for example.  But creating a new adornment layer can only be done via MEF-export, and
-        // as of yet, we have not done any MEF-exporting in the language service.  So for now, use the existing VisibleWhitespace layer, and incur some risk, just to 
+        // as of yet, we have not done any MEF-exporting in the language service.  So for now, use the existing VisibleWhitespace layer, and incur some risk, just to
         // unblock the feature.
-        let layer = view.GetAdornmentLayer("VisibleWhitespace") 
+        let layer = view.GetAdornmentLayer("VisibleWhitespace")
         let tag = "FSharpIntelliSenseToAppearAdornment_DEPRECATED"
         let pointSize = float pointSize * 96.0 / 72.0  // need to convert from pt to px
         do
@@ -287,7 +287,7 @@ type internal FSharpIntelliSenseToAppearAdornment_DEPRECATED(view: IWpfTextView,
             if line.ContainsBufferPosition(cursorPoint) then
                 let i = cursorPoint.Position
                 if view.TextSnapshot.Length <> 0 then  // if there are no characters in the buffer, then there is no character to text-relative adorn
-                    let span = 
+                    let span =
                         // The cursor is just after e.g. the '.' they just pressed, so get character just before it...
                         if i-1 < 0 then
                             // ... unless we are at the very start of the buffer and there is no prior character
@@ -305,7 +305,7 @@ type internal FSharpIntelliSenseToAppearAdornment_DEPRECATED(view: IWpfTextView,
                     sp.Children.Add(new System.Windows.Controls.Canvas(Width=4.0)) |> ignore // spacing between
                     sp.Children.Add(tb) |> ignore
                     let border = new System.Windows.Controls.Border()
-                    border.BorderBrush <- System.Windows.SystemColors.ActiveBorderBrush 
+                    border.BorderBrush <- System.Windows.SystemColors.ActiveBorderBrush
                     border.BorderThickness <- System.Windows.Thickness(1.0)
                     border.Background <- backgroundBrush
                     border.Child <- sp
@@ -316,21 +316,21 @@ type internal FSharpIntelliSenseToAppearAdornment_DEPRECATED(view: IWpfTextView,
         member this.RemoveSelf() =
             layer.RemoveAdornmentsByTag(tag)
 
-/// Implements ISource, IVsTextLinesEvents, IVsHiddenTextClient, IVsUserDataEvents etc. via FSharpSourceBase_DEPRECATED by filling in the remaining functionality 
-type internal FSharpSource_DEPRECATED(service:LanguageService_DEPRECATED, textLines, colorizer, vsFileWatch:IVsFileChangeEx, depFileChange: IDependencyFileChangeNotify_DEPRECATED, getInteractiveChecker) as source = 
+/// Implements ISource, IVsTextLinesEvents, IVsHiddenTextClient, IVsUserDataEvents etc. via FSharpSourceBase_DEPRECATED by filling in the remaining functionality
+type internal FSharpSource_DEPRECATED(service:LanguageService_DEPRECATED, textLines, colorizer, vsFileWatch:IVsFileChangeEx, depFileChange: IDependencyFileChangeNotify_DEPRECATED, getInteractiveChecker) as source =
         inherit FSharpSourceBase_DEPRECATED(service, textLines, colorizer)
-        
+
         let mutable lastCommentSpan = new TextSpan()
         let mutable vsFileWatch = vsFileWatch
         let mutable textLines = textLines
 
         let mutable fileName = VsTextLines.GetFilename textLines
 
-        let recolorizeWholeFile() = 
+        let recolorizeWholeFile() =
             if source.ColorState<>null && textLines<>null then      // textlines is used by GetLineCount()
                     source.ColorState.ReColorizeLines(0, source.GetLineCount() - 1) |> ignore
 
-        let recolorizeLine(line:int) = 
+        let recolorizeLine(line:int) =
             if source.ColorState<>null && textLines<>null && line >= 0 && line < source.GetLineCount() then      // textlines is used by GetLineCount()
                     source.ColorState.ReColorizeLines(line, line) |> ignore
 
@@ -339,7 +339,7 @@ type internal FSharpSource_DEPRECATED(service:LanguageService_DEPRECATED, textLi
         override _.NormalizeErrorString(message) = FSharpDiagnostic.NormalizeErrorString message
         override _.NewlineifyErrorString(message) = FSharpDiagnostic.NewlineifyErrorString message
 
-        override _.GetExpressionAtPosition(line, col) = 
+        override _.GetExpressionAtPosition(line, col) =
             let upi = source.GetParseTree()
             match ParsedInput.TryFindExpressionIslandInPosition(Position.fromZ line col, upi.ParseTree) with
             | Some islandToEvaluate -> islandToEvaluate
@@ -347,11 +347,11 @@ type internal FSharpSource_DEPRECATED(service:LanguageService_DEPRECATED, textLi
 
         member source.GetParseTree() : FSharpParseFileResults =
             // get our hands on lss.Parser (FSharpChecker)
-            let ic : FSharpChecker = getInteractiveChecker() 
-            let flags = 
+            let ic : FSharpChecker = getInteractiveChecker()
+            let flags =
                 [|
                     match iSource.ProjectSite with
-                    | Some pi -> 
+                    | Some pi ->
                         yield! pi.CompilationOptions |> Array.filter(fun flag -> flag.StartsWith("--define:"))
                     | None -> ()
                     yield "--noframework"
@@ -359,7 +359,7 @@ type internal FSharpSource_DEPRECATED(service:LanguageService_DEPRECATED, textLi
 
                 |]
             // get a sync parse of the file
-            let co, _ = 
+            let co, _ =
                 { ProjectFileName = fileName + ".dummy.fsproj"
                   ProjectId = None
                   SourceFiles = [| fileName |]
@@ -375,14 +375,14 @@ type internal FSharpSource_DEPRECATED(service:LanguageService_DEPRECATED, textLi
 
             ic.ParseFile(fileName,  FSharp.Compiler.Text.SourceText.ofString (source.GetText()), co) |> Async.RunSynchronouslyImmediate
 
-        override _.GetCommentFormat() = 
+        override _.GetCommentFormat() =
             let mutable info = new CommentInfo()
             info.BlockEnd<-"(*"
             info.BlockStart<-"*)"
             info.UseLineComments<-true
             info.LineStart <- "//"
             info
-            
+
         member val FSharpIntelliSenseToAppearAdornment_DEPRECATED : FSharpIntelliSenseToAppearAdornment_DEPRECATED option = None with get, set
         member val CancellationTokenSource : CancellationTokenSource = null with get, set
 
@@ -392,23 +392,23 @@ type internal FSharpSource_DEPRECATED(service:LanguageService_DEPRECATED, textLi
                 source.CancellationTokenSource.Cancel()
             match source.FSharpIntelliSenseToAppearAdornment_DEPRECATED with
             | None -> ()
-            | Some a -> 
+            | Some a ->
                 a.RemoveSelf()
                 source.FSharpIntelliSenseToAppearAdornment_DEPRECATED <- None
 
         member source.AttachFSharpIntelliSenseToAppearAdornment(wpfTextView, cursorPoint, completionWasExplicitlyRequested) =
             UIThread.MustBeCalledFromUIThread()
-            source.ResetFSharpIntelliSenseToAppearAdornment() 
+            source.ResetFSharpIntelliSenseToAppearAdornment()
             let cts = new CancellationTokenSource()
             source.CancellationTokenSource <- cts
             let timeUntilPopup =
-                if not completionWasExplicitlyRequested then 
+                if not completionWasExplicitlyRequested then
                     2000 // we could always tweak this number, intent is long enough to never show up with everyday 'fast' IntelliSense on '.', but short enough so you discover that waiting may be useful
-                else 
+                else
                     500 // they explicitly pressed Ctrl-J or Ctrl-space, so we should apply the 'loading...' adornment more aggressively
             let cancelableTask =
                 async {
-                    do! Async.Sleep(timeUntilPopup)  
+                    do! Async.Sleep(timeUntilPopup)
                     UIThread.MustBeCalledFromUIThread()
                     if source.FSharpIntelliSenseToAppearAdornment_DEPRECATED.IsNone then
                         source.FSharpIntelliSenseToAppearAdornment_DEPRECATED <- Some <| new FSharpIntelliSenseToAppearAdornment_DEPRECATED(wpfTextView, cursorPoint, service.Site)
@@ -435,10 +435,10 @@ type internal FSharpSource_DEPRECATED(service:LanguageService_DEPRECATED, textLi
                 let wpfTextView = FSharpSourceBase_DEPRECATED.GetWpfTextViewFromVsTextView(textView)
                 let ss = wpfTextView.TextSnapshot
                 let tsLine = ss.GetLineFromLineNumber(!line)
-                let lineLen = tsLine.End.Position - tsLine.Start.Position 
+                let lineLen = tsLine.End.Position - tsLine.Start.Position
                 let toAdd = min lineLen !idx   // if we are in virtual whitespace after EOF, is illegal to get a snapshot point there
                 let cursorPoint = ss.GetLineFromLineNumber(!line).Start.Add(toAdd)
-                let completionWasExplicitlyRequested = 
+                let completionWasExplicitlyRequested =
                     (reason=BackgroundRequestReason.DisplayMemberList) // Ctrl-J
                     || (reason=BackgroundRequestReason.CompleteWord) // Ctrl-space
                     // Note: BackgroundRequestReason.MemberSelect is when they pressed '.' and it auto-popped up
@@ -454,10 +454,10 @@ type internal FSharpSource_DEPRECATED(service:LanguageService_DEPRECATED, textLi
                         BackgroundRequestReason.DisplayMemberList  // be like C#; convert a Ctrl-space to a Ctrl-J if the cursor is here:   class.$bar()
                     else
                         reason
-                else 
+                else
                     reason
             source.BeginBackgroundRequest(
-                !line, !idx, info, reason, textView, requireFreshResults, 
+                !line, !idx, info, reason, textView, requireFreshResults,
                 new BackgroundRequestResultHandler(source.HandleCompletionResponse)) |> ignore
 
         member source.HandleCompletionResponse(req) =
@@ -486,7 +486,7 @@ type internal FSharpSource_DEPRECATED(service:LanguageService_DEPRECATED, textLi
                                   let mutable idx = 0
                                   req.View.GetCaretPos(&line, &idx) |> NativeMethods.ThrowOnFailure |> ignore
                                   (line,idx)
-                              if decls.GetCount("") > 0 && 
+                              if decls.GetCount("") > 0 &&
                                   (source.Service.Preferences.AutoListMembers || completeWord || reason = BackgroundRequestReason.DisplayMemberList) &&
                                   line = req.Line && idx = req.Col // ensure user has not changed cursor location (note: ideally, we would allow typing if still in 'applicative span' for completion)
                                   then
@@ -494,20 +494,20 @@ type internal FSharpSource_DEPRECATED(service:LanguageService_DEPRECATED, textLi
                           source.ResetFSharpIntelliSenseToAppearAdornment()
                   } |> Async.StartImmediate
 
-        member _.PreFixupSpan(origSpan : TextSpan) =            
+        member _.PreFixupSpan(origSpan : TextSpan) =
             let mutable span = new TextSpan(iEndIndex = origSpan.iEndIndex, iEndLine = origSpan.iEndLine, iStartIndex = origSpan.iStartIndex, iStartLine = origSpan.iStartLine)
             // if at start of next line, treat like end of previous line
             if span.iEndIndex = 0 && not(span.iEndLine = span.iStartLine) then
                 span.iEndLine <- span.iEndLine - 1
             span
-            
-        member source.PostFixupSpan(origSpan : TextSpan) =            
+
+        member source.PostFixupSpan(origSpan : TextSpan) =
             let mutable span = new TextSpan(iEndIndex = origSpan.iEndIndex, iEndLine = origSpan.iEndLine, iStartIndex = origSpan.iStartIndex, iStartLine = origSpan.iStartLine)
             // move highlight to start & end of line
             span.iStartIndex <- 0
             span.iEndIndex <- source.GetLine(span.iEndLine).Length
             span
-        
+
         override source.CommentLines(origSpan, lineComment) =
             let adapter = source.getEditorAdapter()
             use edit = adapter.GetDataBuffer(textLines).CreateEdit(EditOptions.DefaultMinimalChange, Unchecked.defaultof<Nullable<int>>, None)
@@ -537,24 +537,24 @@ type internal FSharpSource_DEPRECATED(service:LanguageService_DEPRECATED, textLi
         override _.CommentSpan(span) =
             base.CommentSpan(span) |> ignore
             lastCommentSpan
-            
+
         override _.RecordChangeToView() = iSource.RecordChangeToView()
         override _.RecordViewRefreshed() = iSource.RecordViewRefreshed()
         override _.NeedsVisualRefresh = iSource.NeedsVisualRefresh
-            
+
         override _.ChangeCount
             with get() = iSource.ChangeCount
-            and set(value) = iSource.ChangeCount <- value                
-            
+            and set(value) = iSource.ChangeCount <- value
+
         override _.DirtyTime
             with get() = iSource.DirtyTime
-            and set(value) = iSource.DirtyTime <- value                
-                            
+            and set(value) = iSource.DirtyTime <- value
+
         override _.Dispose() =
-            try 
-                base.Dispose()       
+            try
+                base.Dispose()
             finally
-                ((box iSource):?>IDisposable).Dispose()       
+                ((box iSource):?>IDisposable).Dispose()
                 vsFileWatch<-null
                 textLines<-null
 
@@ -565,30 +565,30 @@ type internal FSharpSource_DEPRECATED(service:LanguageService_DEPRECATED, textLi
                 fileName <- newFileName
                 iSource.RecolorizeWholeFile()
 
-        // Just forward to IFSharpSource_DEPRECATED  
+        // Just forward to IFSharpSource_DEPRECATED
         interface IFSharpSource_DEPRECATED with
-            member source.RecolorizeWholeFile() = iSource.RecolorizeWholeFile() 
+            member source.RecolorizeWholeFile() = iSource.RecolorizeWholeFile()
             member source.RecolorizeLine line = iSource.RecolorizeLine line
             member source.RecordChangeToView() = iSource.RecordChangeToView()
             member source.RecordViewRefreshed() = iSource.RecordViewRefreshed()
             member source.NeedsVisualRefresh = iSource.NeedsVisualRefresh
             member source.IsClosed = iSource.IsClosed
             member source.ProjectSite with get() = iSource.ProjectSite and set(value) = iSource.ProjectSite <- value
-            member source.ChangeCount with get() = iSource.ChangeCount and set(value) = iSource.ChangeCount <- value                
-            member source.DirtyTime with get() = iSource.DirtyTime and set(value) = iSource.DirtyTime <- value                
+            member source.ChangeCount with get() = iSource.ChangeCount and set(value) = iSource.ChangeCount <- value
+            member source.DirtyTime with get() = iSource.DirtyTime and set(value) = iSource.DirtyTime <- value
             member source.SetDependencyFiles(files) = iSource.SetDependencyFiles(files)
-                
+
         /// Hook file change events.  It's not clear that this implementation is ever utilized, since
         /// the implementation on FSharpSourceTestable_DEPRECATED is used instead.
-        interface IVsFileChangeEvents with 
+        interface IVsFileChangeEvents with
             member changes.FilesChanged(_count : uint32, _files: string [], _changeFlags : uint32 []) = 0
             member changes.DirectoryChanged(_directory: string) = 0
-                
-module internal Source = 
-        /// This is the ideal implementation of the Source concept abstracted from MLS.  
-        let CreateSourceTestable_DEPRECATED (recolorizeWholeFile, recolorizeLine, fileName, isClosed, vsFileWatch, depFileChangeNotify) = 
+
+module internal Source =
+        /// This is the ideal implementation of the Source concept abstracted from MLS.
+        let CreateSourceTestable_DEPRECATED (recolorizeWholeFile, recolorizeLine, fileName, isClosed, vsFileWatch, depFileChangeNotify) =
             new FSharpSourceTestable_DEPRECATED(recolorizeWholeFile, recolorizeLine, fileName, isClosed, vsFileWatch, depFileChangeNotify) :> IFSharpSource_DEPRECATED
 
         let CreateSource_DEPRECATED(service, textLines, colorizer, vsFileWatch, depFileChangeNotify, getInteractiveChecker) =
             new FSharpSource_DEPRECATED(service, textLines, colorizer, vsFileWatch, depFileChangeNotify, getInteractiveChecker) :> IFSharpSource_DEPRECATED
-                
+

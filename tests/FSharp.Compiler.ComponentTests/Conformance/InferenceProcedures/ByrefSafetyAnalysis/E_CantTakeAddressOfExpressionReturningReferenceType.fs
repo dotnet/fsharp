@@ -3,7 +3,7 @@ module CantTakeAddressOfExpressionReturningReferenceType =
     open System.Collections.Generic
 
     let test1 () =
-        let aggregator = 
+        let aggregator =
             new ConcurrentDictionary<
                     string, ConcurrentDictionary<string, float array>
                     >()

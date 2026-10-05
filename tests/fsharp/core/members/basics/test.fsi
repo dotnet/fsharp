@@ -49,30 +49,30 @@ module RecordTypeTest = begin
           member InstanceIndexer2Count2: int
 
           member MutableInstanceIndexer : int -> string
-             with get,set 
+             with get,set
           member MutableInstanceIndexerCount: int
 
           member MutableInstanceIndexer2 : int * int  -> string
-             with get,set 
+             with get,set
           member MutableInstanceIndexer2Count1: int
           member MutableInstanceIndexer2Count2: int
 
           static member StaticProperty : string
-          
+
           static member MutableStaticProperty : string
              with get,set
-             
+
           static member StaticIndexer : int -> string
              with get
           static member StaticIndexerCount : int
-             
+
           static member MutableStaticIndexer: int -> string
-             with get,set 
+             with get,set
           static member MutableStaticIndexerCount : int
 
           // methods
           member InstanceMethod : string -> string
-          
+
           static member StaticMethod : string * string -> string
 
        end
@@ -82,7 +82,7 @@ end
 module UnionTypeTest = begin
 
     [<Sealed>]
-    type AbstractType = 
+    type AbstractType =
       begin
           // properties
           member InstanceProperty : string
@@ -99,31 +99,31 @@ module UnionTypeTest = begin
           member InstanceIndexer2Count2: int
 
           member MutableInstanceIndexer : int -> string
-             with get,set 
+             with get,set
           member MutableInstanceIndexerCount: int
 
           member MutableInstanceIndexer2 : int * int  -> string
-             with get,set 
+             with get,set
           member MutableInstanceIndexer2Count1: int
           member MutableInstanceIndexer2Count2: int
 
           static member StaticProperty : string
-          
-          
+
+
           static member MutableStaticProperty : string
              with get,set
-             
+
           static member StaticIndexer : int -> string
              with get
           static member StaticIndexerCount : int
-             
+
           static member MutableStaticIndexer: int -> string
-             with get,set 
+             with get,set
           static member MutableStaticIndexerCount : int
 
           // methods
           member InstanceMethod : string -> string
-          
+
           static member StaticMethod : string * string -> string
 
     end
@@ -132,10 +132,10 @@ end
 
 module ToStringOnUnionTest = begin
    type MyUnion = A of string | B
- 
+
 end
 
 module ToStringOnUnionTestOverride = begin
    type MyUnion = A of string | B
- 
+
 end

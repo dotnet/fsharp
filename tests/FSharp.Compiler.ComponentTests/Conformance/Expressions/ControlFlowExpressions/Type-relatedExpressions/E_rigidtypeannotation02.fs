@@ -1,4 +1,4 @@
-// #Regression #Conformance #TypeRelatedExpressions #TypeAnnotations 
+// #Regression #Conformance #TypeRelatedExpressions #TypeAnnotations
 // Regression test for FSHARP1.0:2346
 
 

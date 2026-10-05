@@ -1,4 +1,4 @@
-// #Regression #NoMT #Printing 
+// #Regression #NoMT #Printing
 // Regression test on FSharp1.0:5129
 // Debugger: provide a decent override of ToString on FSharpList
 

@@ -1,4 +1,4 @@
-// #Regression #Conformance #TypeInference #Recursion 
+// #Regression #Conformance #TypeInference #Recursion
 // Regression test for FSharp1.0:5423
 // Title: code sample stack overflow from fsc.exe and brings down VS2008 intellisense
 
@@ -15,10 +15,10 @@ type SfsIntTerm<'a> () =
     static member ( - ) (l: myint<'a>       , r: SfsIntTerm<'a>) = SfsModel.CreateIntConstant l  - r
     static member ( * ) (l: myint<_>        , r: SfsIntTerm<_> ) =
         let term = SfsModel.CreateIntConstant l
-        SfsModel.Product (term, r) 
+        SfsModel.Product (term, r)
     static member ( * ) (l: SfsIntTerm<'c>, r: myint<'d>) =
-        let term =  SfsModel.CreateIntConstant l 
-        SfsModel.Product (r,r) 
+        let term =  SfsModel.CreateIntConstant l
+        SfsModel.Product (r,r)
 
 and SfsModel () =
     static member CreateIntConstant (x: myint<'a>) = Unchecked.defaultof<SfsIntTerm<'a>>

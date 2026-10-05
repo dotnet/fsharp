@@ -48,10 +48,10 @@ type ListProperties () =
         Check.QuickThrowOnFailure this.windowed_and_order<NormalFloat>
 
     member _.partition_and_sort<'a when 'a : comparison> (xs : 'a list) =
-        let rec qsort xs = 
+        let rec qsort xs =
             match xs with
             | [] -> []
-            | (x:'a)::xs -> 
+            | (x:'a)::xs ->
                 let smaller,larger = List.partition (fun y -> y <= x) xs
                 qsort smaller @ [x] @ qsort larger
 
@@ -77,7 +77,7 @@ type ListProperties () =
 
     [<Fact>]
     member this.``chunkBySize produces chunks exactly of size `chunkSize`, except the last one, which can be smaller, but not empty``() =
-        let prop (a: _ list) (PositiveInt chunkSize) =   
+        let prop (a: _ list) (PositiveInt chunkSize) =
             match a |> List.chunkBySize chunkSize |> Seq.toList with
             | [] -> a = []
             | h :: [] -> h.Length <= chunkSize
@@ -181,17 +181,17 @@ type ListProperties () =
         Check.QuickThrowOnFailure prop
 
     member _.sort_and_sortby (xs : list<float>) (xs2 : list<float>) =
-        let a = List.sortBy id xs |> Seq.toArray 
+        let a = List.sortBy id xs |> Seq.toArray
         let b = List.sort xs |> Seq.toArray
         let mutable result = true
         for i in 0 .. a.Length - 1 do
             if a.[i] <> b.[i] then
                 if System.Double.IsNaN a.[i] <> System.Double.IsNaN b.[i] then
                     result <- false
-        result 
+        result
 
     [<Fact>]
-    member this.``sort behaves like sortby id`` () =   
+    member this.``sort behaves like sortby id`` () =
         Check.QuickThrowOnFailure this.sort_and_sortby
 
     member _. filter_and_except<'a when 'a : comparison>  (xs : list<'a>) (itemsToExclude : Set<'a>) =
@@ -200,10 +200,10 @@ type ListProperties () =
         a = b
 
     [<Fact>]
-    member this.``filter and except work similar`` () =   
+    member this.``filter and except work similar`` () =
         Check.QuickThrowOnFailure this.filter_and_except<int>
         Check.QuickThrowOnFailure this.filter_and_except<string>
-        Check.QuickThrowOnFailure this.filter_and_except<NormalFloat>    
+        Check.QuickThrowOnFailure this.filter_and_except<NormalFloat>
 
     member _.filter_and_where<'a when 'a : comparison>  (xs : list<'a>) predicate =
         let a = List.filter predicate xs
@@ -211,7 +211,7 @@ type ListProperties () =
         a = b
 
     [<Fact>]
-    member this.``filter and where work similar`` () =   
+    member this.``filter and where work similar`` () =
         Check.QuickThrowOnFailure this.filter_and_where<int>
         Check.QuickThrowOnFailure this.filter_and_where<string>
         Check.QuickThrowOnFailure this.filter_and_where<NormalFloat>
@@ -222,7 +222,7 @@ type ListProperties () =
         a = b
 
     [<Fact>]
-    member this.``pick works like find`` () =   
+    member this.``pick works like find`` () =
         Check.QuickThrowOnFailure this.find_and_pick<int>
         Check.QuickThrowOnFailure this.find_and_pick<string>
         Check.QuickThrowOnFailure this.find_and_pick<NormalFloat>
@@ -233,7 +233,7 @@ type ListProperties () =
         a = b
 
     [<Fact>]
-    member this.``pick works like choose + head`` () =   
+    member this.``pick works like choose + head`` () =
         Check.QuickThrowOnFailure this.choose_and_pick<int>
         Check.QuickThrowOnFailure this.choose_and_pick<string>
         Check.QuickThrowOnFailure this.choose_and_pick<NormalFloat>
@@ -245,7 +245,7 @@ type ListProperties () =
             xs = h :: t)
 
     [<Fact>]
-    member this.``head and tail gives the list`` () =   
+    member this.``head and tail gives the list`` () =
         Check.QuickThrowOnFailure this.head_and_tail<int>
         Check.QuickThrowOnFailure this.head_and_tail<string>
         Check.QuickThrowOnFailure this.head_and_tail<NormalFloat>
@@ -259,7 +259,7 @@ type ListProperties () =
             xs = h :: t
 
     [<Fact>]
-    member this.``tryHead and tail gives the list`` () =   
+    member this.``tryHead and tail gives the list`` () =
         Check.QuickThrowOnFailure this.tryHead_and_tail<int>
         Check.QuickThrowOnFailure this.tryHead_and_tail<string>
         Check.QuickThrowOnFailure this.tryHead_and_tail<NormalFloat>
@@ -273,7 +273,7 @@ type ListProperties () =
         else true
 
     [<Fact>]
-    member this.``skip and take gives the list`` () =   
+    member this.``skip and take gives the list`` () =
         Check.QuickThrowOnFailure this.skip_and_take<int>
         Check.QuickThrowOnFailure this.skip_and_take<string>
         Check.QuickThrowOnFailure this.skip_and_take<NormalFloat>
@@ -287,7 +287,7 @@ type ListProperties () =
         else true
 
     [<Fact>]
-    member this.``truncate and take work similar`` () =   
+    member this.``truncate and take work similar`` () =
         Check.QuickThrowOnFailure this.truncate_and_take<int>
         Check.QuickThrowOnFailure this.truncate_and_take<string>
         Check.QuickThrowOnFailure this.truncate_and_take<NormalFloat>
@@ -300,13 +300,13 @@ type ListProperties () =
         else true
 
     [<Fact>]
-    member this.``skipWhile and takeWhile gives the list`` () =   
+    member this.``skipWhile and takeWhile gives the list`` () =
         Check.QuickThrowOnFailure this.skipWhile_and_takeWhile<int>
         Check.QuickThrowOnFailure this.skipWhile_and_takeWhile<string>
         Check.QuickThrowOnFailure this.skipWhile_and_takeWhile<NormalFloat>
 
     member this.find_and_exists<'a when 'a : comparison>  (xs : list<'a>) f =
-        let a = 
+        let a =
             try
                 List.find f xs |> ignore
                 true
@@ -316,7 +316,7 @@ type ListProperties () =
         a = b
 
     [<Fact>]
-    member this.``find and exists work similar`` () =   
+    member this.``find and exists work similar`` () =
         Check.QuickThrowOnFailure this.find_and_exists<int>
         Check.QuickThrowOnFailure this.find_and_exists<string>
         Check.QuickThrowOnFailure this.find_and_exists<NormalFloat>
@@ -327,13 +327,13 @@ type ListProperties () =
         a = not b
 
     [<Fact>]
-    member this.``exists and forall are dual`` () =   
+    member this.``exists and forall are dual`` () =
         Check.QuickThrowOnFailure this.exists_and_forall<int>
         Check.QuickThrowOnFailure this.exists_and_forall<string>
         Check.QuickThrowOnFailure this.exists_and_forall<NormalFloat>
 
     member _.head_and_isEmpty<'a when 'a : comparison>  (xs : list<'a>) =
-        let a = 
+        let a =
             try
                 List.head xs |> ignore
                 true
@@ -344,7 +344,7 @@ type ListProperties () =
         a = not b
 
     [<Fact>]
-    member this.``head fails when list isEmpty`` () =   
+    member this.``head fails when list isEmpty`` () =
         Check.QuickThrowOnFailure this.head_and_isEmpty<int>
         Check.QuickThrowOnFailure this.head_and_isEmpty<string>
         Check.QuickThrowOnFailure this.head_and_isEmpty<NormalFloat>
@@ -355,7 +355,7 @@ type ListProperties () =
         a = b
 
     [<Fact>]
-    member this.``head is the same as last of a reversed list`` () =   
+    member this.``head is the same as last of a reversed list`` () =
         Check.QuickThrowOnFailure this.head_and_last<int>
         Check.QuickThrowOnFailure this.head_and_last<string>
         Check.QuickThrowOnFailure this.head_and_last<NormalFloat>
@@ -367,7 +367,7 @@ type ListProperties () =
         a = b
 
     [<Fact>]
-    member this.``head is the same as item 0`` () =   
+    member this.``head is the same as item 0`` () =
         Check.QuickThrowOnFailure this.head_and_item<int>
         Check.QuickThrowOnFailure this.head_and_item<string>
         Check.QuickThrowOnFailure this.head_and_item<NormalFloat>
@@ -381,7 +381,7 @@ type ListProperties () =
         | _ -> b = None
 
     [<Fact>]
-    member this.``tryItem is safe item`` () =   
+    member this.``tryItem is safe item`` () =
         Check.QuickThrowOnFailure this.item_and_tryItem<int>
         Check.QuickThrowOnFailure this.item_and_tryItem<string>
         Check.QuickThrowOnFailure this.item_and_tryItem<NormalFloat>
@@ -395,7 +395,7 @@ type ListProperties () =
         | _ -> b = None
 
     [<Fact>]
-    member this.``tryPick is safe pick`` () =   
+    member this.``tryPick is safe pick`` () =
         Check.QuickThrowOnFailure this.pick_and_tryPick<int>
         Check.QuickThrowOnFailure this.pick_and_tryPick<string>
         Check.QuickThrowOnFailure this.pick_and_tryPick<NormalFloat>
@@ -409,7 +409,7 @@ type ListProperties () =
         | _ -> b = None
 
     [<Fact>]
-    member this.``tryLast is safe last`` () =   
+    member this.``tryLast is safe last`` () =
         Check.QuickThrowOnFailure this.last_and_tryLast<int>
         Check.QuickThrowOnFailure this.last_and_tryLast<string>
         Check.QuickThrowOnFailure this.last_and_tryLast<NormalFloat>
@@ -421,7 +421,7 @@ type ListProperties () =
         a = b
 
     [<Fact>]
-    member this.``list isEmpty if and only if length is 0`` () =   
+    member this.``list isEmpty if and only if length is 0`` () =
         Check.QuickThrowOnFailure this.length_and_isEmpty<int>
         Check.QuickThrowOnFailure this.length_and_isEmpty<string>
         Check.QuickThrowOnFailure this.length_and_isEmpty<NormalFloat>
@@ -433,7 +433,7 @@ type ListProperties () =
         a = b
 
     [<Fact>]
-    member this.``min is opposite of max`` () =   
+    member this.``min is opposite of max`` () =
         Check.QuickThrowOnFailure this.min_and_max
 
     member _.minBy_and_maxBy (xs : list<int>) f =
@@ -443,7 +443,7 @@ type ListProperties () =
         a = b
 
     [<Fact>]
-    member this.``minBy is opposite of maxBy`` () =   
+    member this.``minBy is opposite of maxBy`` () =
         Check.QuickThrowOnFailure this.minBy_and_maxBy
 
     member _.minBy_and_min (xs : list<int>) =
@@ -453,7 +453,7 @@ type ListProperties () =
         a = b
 
     [<Fact>]
-    member this.``minBy id is same as min`` () =   
+    member this.``minBy id is same as min`` () =
         Check.QuickThrowOnFailure this.minBy_and_min
 
     member _.min_and_sort<'a when 'a : comparison>  (xs : list<'a>) =
@@ -463,35 +463,35 @@ type ListProperties () =
         a = b
 
     [<Fact>]
-    member this.``head element after sort is min element`` () =   
+    member this.``head element after sort is min element`` () =
         Check.QuickThrowOnFailure this.min_and_sort<int>
         Check.QuickThrowOnFailure this.min_and_sort<string>
         Check.QuickThrowOnFailure this.min_and_sort<NormalFloat>
 
     member _.pairwise<'a when 'a : comparison>  (xs : list<'a>) =
-        let xs' = List.pairwise xs 
+        let xs' = List.pairwise xs
         let f = xs' |> List.map fst
         let s = xs' |> List.map snd
         let a = List.length xs'
         let b = List.length xs
 
-        if xs = [] then 
+        if xs = [] then
             xs' = []
-        else 
+        else
             a = b - 1 &&
               f = (xs |> List.rev |> List.tail |> List.rev) && // all elements but last one
               s = (xs |> List.tail) // all elements but first one
 
     [<Fact>]
-    member this.``pairwise works as expected`` () =   
+    member this.``pairwise works as expected`` () =
         Check.QuickThrowOnFailure this.pairwise<int>
         Check.QuickThrowOnFailure this.pairwise<string>
         Check.QuickThrowOnFailure this.pairwise<NormalFloat>
 
     member _.permute<'a when 'a : comparison>  (xs' : list<int*'a>) =
         let xs = List.map snd xs'
- 
-        let permutations = 
+
+        let permutations =
             List.map fst xs'
             |> List.indexed
             |> List.sortBy snd
@@ -503,7 +503,7 @@ type ListProperties () =
 
 
         match run (fun () -> xs |> List.indexed |> List.permute permutation) with
-        | Ok s ->         
+        | Ok s ->
             let originals = s |> List.map fst
             let rs = s |> List.map snd
             for o in originals do
@@ -514,7 +514,7 @@ type ListProperties () =
         | _ -> true
 
     [<Fact>]
-    member this.``permute works as expected`` () =   
+    member this.``permute works as expected`` () =
         Check.QuickThrowOnFailure this.permute<int>
         Check.QuickThrowOnFailure this.permute<string>
         Check.QuickThrowOnFailure this.permute<NormalFloat>
@@ -530,7 +530,7 @@ type ListProperties () =
         a = b && (Seq.toList indices = [0..xs.Length-1])
 
     [<Fact>]
-    member this.``mapi behaves like map with correct order`` () =   
+    member this.``mapi behaves like map with correct order`` () =
         Check.QuickThrowOnFailure this.mapi_and_map<int>
         Check.QuickThrowOnFailure this.mapi_and_map<string>
         Check.QuickThrowOnFailure this.mapi_and_map<NormalFloat>
@@ -617,41 +617,41 @@ type ListProperties () =
         Check.QuickThrowOnFailure this.singleton_and_replicate<NormalFloat>
 
     member _.mapFold_and_map_and_fold<'a when 'a : comparison> (xs : list<'a>) mapF foldF start =
-        let f s x = 
+        let f s x =
             let x' = mapF x
             let s' = foldF s x'
             x',s'
 
         let a,ar = xs |> List.mapFold f start
-        let b = xs |> List.map mapF 
+        let b = xs |> List.map mapF
         let br = b |> List.fold foldF start
         a = b && ar = br
 
     [<Fact>]
-    member this.``mapFold works like map + fold`` () =   
+    member this.``mapFold works like map + fold`` () =
         Check.QuickThrowOnFailure this.mapFold_and_map_and_fold<int>
         Check.QuickThrowOnFailure this.mapFold_and_map_and_fold<string>
         Check.QuickThrowOnFailure this.mapFold_and_map_and_fold<NormalFloat>
 
     member _.mapFoldBack_and_map_and_foldBack<'a when 'a : comparison> (xs : list<'a>) mapF foldF start =
-        let f x s = 
+        let f x s =
             let x' = mapF x
             let s' = foldF x' s
             x',s'
 
         let a,ar = List.mapFoldBack f xs start
-        let b = xs |> List.map mapF 
+        let b = xs |> List.map mapF
         let br = List.foldBack foldF b start
         a = b && ar = br
 
     [<Fact>]
-    member this.``mapFoldBack works like map + foldBack`` () =   
+    member this.``mapFoldBack works like map + foldBack`` () =
         Check.QuickThrowOnFailure this.mapFoldBack_and_map_and_foldBack<int>
         Check.QuickThrowOnFailure this.mapFoldBack_and_map_and_foldBack<string>
         Check.QuickThrowOnFailure this.mapFoldBack_and_map_and_foldBack<NormalFloat>
 
     member _.findBack_and_exists<'a when 'a : comparison>  (xs : list<'a>) f =
-        let a = 
+        let a =
             try
                 List.findBack f xs |> ignore
                 true
@@ -661,7 +661,7 @@ type ListProperties () =
         a = b
 
     [<Fact>]
-    member this.``findBack and exists work similar`` () =   
+    member this.``findBack and exists work similar`` () =
         Check.QuickThrowOnFailure this.findBack_and_exists<int>
         Check.QuickThrowOnFailure this.findBack_and_exists<string>
         Check.QuickThrowOnFailure this.findBack_and_exists<NormalFloat>
@@ -672,7 +672,7 @@ type ListProperties () =
         a = b
 
     [<Fact>]
-    member this.``findBack and find work in reverse`` () =   
+    member this.``findBack and find work in reverse`` () =
         Check.QuickThrowOnFailure this.findBack_and_find<int>
         Check.QuickThrowOnFailure this.findBack_and_find<string>
         Check.QuickThrowOnFailure this.findBack_and_find<NormalFloat>
@@ -683,7 +683,7 @@ type ListProperties () =
         a = b
 
     [<Fact>]
-    member this.``tryFindBack and tryFind work in reverse`` () =   
+    member this.``tryFindBack and tryFind work in reverse`` () =
         Check.QuickThrowOnFailure this.tryFindBack_and_tryFind<int>
         Check.QuickThrowOnFailure this.tryFindBack_and_tryFind<string>
         Check.QuickThrowOnFailure this.tryFindBack_and_tryFind<NormalFloat>
@@ -696,7 +696,7 @@ type ListProperties () =
         | _ -> a = b
 
     [<Fact>]
-    member this.``tryFindIndexBack and tryIndexFind work in reverse`` () =   
+    member this.``tryFindIndexBack and tryIndexFind work in reverse`` () =
         Check.QuickThrowOnFailure this.tryFindIndexBack_and_tryFindIndex<int>
         Check.QuickThrowOnFailure this.tryFindIndexBack_and_tryFindIndex<string>
         Check.QuickThrowOnFailure this.tryFindIndexBack_and_tryFindIndex<NormalFloat>
@@ -709,7 +709,7 @@ type ListProperties () =
         xs |> List.rev |> List.rev = xs && Seq.toList list = List.rev xs
 
     [<Fact>]
-    member this.``rev reverses a list`` () =   
+    member this.``rev reverses a list`` () =
         Check.QuickThrowOnFailure this.rev<int>
         Check.QuickThrowOnFailure this.rev<string>
         Check.QuickThrowOnFailure this.rev<NormalFloat>
@@ -729,7 +729,7 @@ type ListProperties () =
 
     member _.skip_and_skipWhile<'a when 'a : comparison>  (xs : list<'a>) (count:NonNegativeInt) =
         let count = int count
-        count <= xs.Length ==> (lazy 
+        count <= xs.Length ==> (lazy
             let ys = List.indexed xs
             let a = runAndCheckErrorType (fun () -> List.skip count ys)
             let b = runAndCheckErrorType (fun () -> List.skipWhile (fun (p,_) -> p < count) ys)
@@ -737,7 +737,7 @@ type ListProperties () =
             a = b)
 
     [<Fact>]
-    member this.``skip and skipWhile are consistent`` () =   
+    member this.``skip and skipWhile are consistent`` () =
         Check.QuickThrowOnFailure this.skip_and_skipWhile<int>
         Check.QuickThrowOnFailure this.skip_and_skipWhile<string>
         Check.QuickThrowOnFailure this.skip_and_skipWhile<NormalFloat>
@@ -768,7 +768,7 @@ type ListProperties () =
         a = b
 
     [<Fact>]
-    member this.``sort and sortDescending work in reverse`` () =   
+    member this.``sort and sortDescending work in reverse`` () =
         Check.QuickThrowOnFailure this.sort_and_sortDescending<int>
         Check.QuickThrowOnFailure this.sort_and_sortDescending<string>
         Check.QuickThrowOnFailure this.sort_and_sortDescending<NormalFloat>
@@ -777,7 +777,7 @@ type ListProperties () =
         let indexed = xs |> Seq.indexed |> Seq.toList
         let sorted = indexed |> List.sortBy snd
         isStable sorted
-    
+
     [<Fact>]
     member this.``List.sortBy is stable`` () =
         Check.QuickThrowOnFailure this.sortByStable<int>
@@ -787,7 +787,7 @@ type ListProperties () =
         let indexed = xs |> Seq.indexed |> Seq.toList
         let sorted = indexed |> List.sortWith (fun x y -> compare (snd x) (snd y))
         isStable sorted
-    
+
     [<Fact>]
     member this.``List.sortWithStable is stable`` () =
         Check.QuickThrowOnFailure this.sortWithStable<int>
@@ -797,18 +797,18 @@ type ListProperties () =
         let indexed = xs |> Seq.indexed |> Seq.toList
         let sorted = indexed |> List.distinctBy snd
         isStable sorted
-    
+
     [<Fact>]
     member this.``List.distinctBy is stable`` () =
         Check.QuickThrowOnFailure this.distinctByStable<int>
         Check.QuickThrowOnFailure this.distinctByStable<string>
-    
+
     [<Fact>]
     member _.``List.sum calculates the sum`` () =
         let sum (xs : int list) =
             let s = List.sum xs
             let mutable r = 0
-            for x in xs do r <- r + x    
+            for x in xs do r <- r + x
             s = r
         Check.QuickThrowOnFailure sum
 
@@ -820,7 +820,7 @@ type ListProperties () =
     [<Fact>]
     member this.``List.sumBy calculates the sum of the mapped list`` () =
         Check.QuickThrowOnFailure this.sumBy<int>
-        Check.QuickThrowOnFailure this.sumBy<string> 
+        Check.QuickThrowOnFailure this.sumBy<string>
         Check.QuickThrowOnFailure this.sumBy<float>
 
     member _.allPairsCount<'a, 'b> (xs : 'a list) (ys : 'b list) =

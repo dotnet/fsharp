@@ -1,4 +1,4 @@
-// #Conformance #Constants 
+// #Conformance #Constants
 // Constant expressions
 // This is the example quoted from the specs
 // Verification:
@@ -8,5 +8,5 @@
 
 let v = 18us           // uint16
 let check(x:uint16) = true
- 
+
 exit (if check(v) then 0 else 1)

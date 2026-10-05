@@ -10,7 +10,7 @@ open FSharp.Test.Compiler
 
 module FixedBindings =
     [<Fact>]
-    let ``Pin naked array`` () = 
+    let ``Pin naked array`` () =
         FsFromPath (__SOURCE_DIRECTORY__ ++ "PinNakedArray.fs")
         |> withLangVersionPreview
         |> withNoWarn 9
@@ -55,7 +55,7 @@ module FixedBindings =
   } """ ]
 
     [<Fact>]
-    let ``Pin address of record field`` () = 
+    let ``Pin address of record field`` () =
         FsFromPath (__SOURCE_DIRECTORY__ ++ "PinAddressOfRecordField.fs")
         |> withLangVersionPreview
         |> withNoWarn 9
@@ -84,7 +84,7 @@ module FixedBindings =
   } """ ]
 
     [<Fact>]
-    let ``Pin address of explicit field on this`` () = 
+    let ``Pin address of explicit field on this`` () =
         FsFromPath (__SOURCE_DIRECTORY__ ++ "PinAddressOfExplicitFieldOnThis.fs")
         |> withLangVersionPreview
         |> withNoWarn 9
@@ -113,7 +113,7 @@ module FixedBindings =
       IL_0015:  ldobj      [System.Runtime]System.Int32
       IL_001a:  ret
     } """ ]
-        
+
     [<Fact>]
     let ``Pin address of array element`` () =
         FsFromPath (__SOURCE_DIRECTORY__ ++ "PinAddressOfArrayElement.fs")
@@ -144,7 +144,7 @@ module FixedBindings =
     IL_0016:  ldobj      [runtime]System.Char
     IL_001b:  ret
   } """ ]
-        
+
 module ExtendedFixedBindings =
     [<Theory>]
     [<InlineData("preview")>]
@@ -152,14 +152,14 @@ module ExtendedFixedBindings =
         let runtimeSupportsStringGetPinnableReference =
             typeof<string>.GetMethods()
             |> Seq.exists (fun m -> m.Name = "GetPinnableReference")
-        
+
 // Sanity check precondition: if .Net Framework were to ever get GetPinnableReference, we'll know here
 #if NETCOREAPP3_0_OR_GREATER
         Assert.True(runtimeSupportsStringGetPinnableReference)
 #else
         Assert.False(runtimeSupportsStringGetPinnableReference)
 #endif
-        
+
         FsFromPath (__SOURCE_DIRECTORY__ ++ "PinNakedString.fs")
         |> withLangVersion langVersion
         |> withNoWarn 9
@@ -227,7 +227,7 @@ module ExtendedFixedBindings =
      IL_001c:  ldobj      [runtime]System.Char
      IL_0021:  ret
    } """ ])
-    
+
     [<Theory; InlineData("preview")>]
     let ``Pin int byref of parameter`` langVersion =
         FsFromPath (__SOURCE_DIRECTORY__ ++ "PinIntByrefOfParameter.fs")
@@ -256,9 +256,9 @@ module ExtendedFixedBindings =
     IL_0010:  ldobj      [runtime]System.Int32
     IL_0015:  ret
   }  """ ]
-        
+
     [<Theory; InlineData("preview")>]
-    let ``Pin int byref of local variable`` langVersion = 
+    let ``Pin int byref of local variable`` langVersion =
         FsFromPath (__SOURCE_DIRECTORY__ ++ "PinIntByrefOfLocalVariable.fs")
         |> withLangVersion langVersion
         |> withNoWarn 9
@@ -300,7 +300,7 @@ module ExtendedFixedBindings =
 
     IL_0027:  ret
   } """ ]
-        
+
 #if NETCOREAPP
     [<Theory; InlineData("preview")>]
     let ``Pin Span via manual GetPinnableReference call`` langVersion =
@@ -394,9 +394,9 @@ module ExtendedFixedBindings =
     IL_001b:  ret
   } """ ]
 #endif
-        
+
     [<Theory; InlineData("preview")>]
-    let ``Pin type with method GetPinnableReference : unit -> byref<T>`` langVersion = 
+    let ``Pin type with method GetPinnableReference : unit -> byref<T>`` langVersion =
         FsFromPath (__SOURCE_DIRECTORY__ ++ "PinTypeWithGetPinnableReferenceReturningByref.fs")
         |> withLangVersion langVersion
         |> withNoWarn 9
@@ -430,9 +430,9 @@ module ExtendedFixedBindings =
     IL_001b:  ldobj      [runtime]System.Int32
     IL_0020:  ret
   } """ ]
-        
+
     [<Theory; InlineData("preview")>]
-    let ``Pin type with method GetPinnableReference : unit -> inref<T>`` langVersion = 
+    let ``Pin type with method GetPinnableReference : unit -> inref<T>`` langVersion =
         FsFromPath (__SOURCE_DIRECTORY__ ++ "PinTypeWithGetPinnableReferenceReturningInref.fs")
         |> withLangVersion langVersion
         |> withNoWarn 9
@@ -501,12 +501,12 @@ module ExtendedFixedBindings =
     IL_001b:  ret
   } """ ]
 #endif
-    
+
     [<Theory; InlineData("preview")>]
     let ``Pin C# type with method GetPinnableReference : unit -> byref<T>`` langVersion =
         let csLib =
             CSharpFromPath (__SOURCE_DIRECTORY__ ++ "PinCSharpTypeWithGetPinnableReferenceReturningByref.cs") |> withName "CsLib"
-        
+
         FsFromPath (__SOURCE_DIRECTORY__ ++ "PinCSharpTypeWithGetPinnableReferenceReturningByref.fs")
         |> withLangVersion langVersion
         |> withReferences [csLib]

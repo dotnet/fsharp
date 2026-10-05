@@ -1,4 +1,4 @@
-// #NoMono #NoMT #CodeGen #EmittedIL 
+// #NoMono #NoMT #CodeGen #EmittedIL
 
 match "A" with
   | "A" -> System.Console.WriteLine()

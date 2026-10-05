@@ -5,10 +5,10 @@ module TestStructParam =
     [<Struct>]
     type R = { mutable z : int }
 
-    type C() = 
+    type C() =
         static member M (x:byref<R>) = &x.z
 
-    let test() = 
+    let test() =
         let mutable r = { z = 1 }
         let addr = &C.M(&r)
         addr <- addr + 1

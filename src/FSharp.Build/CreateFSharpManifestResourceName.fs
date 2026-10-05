@@ -4,8 +4,10 @@ namespace FSharp.Build
 
 open System
 open System.IO
+open Microsoft.Build.Framework
 open Microsoft.Build.Tasks
 
+[<MSBuildMultiThreadableTask>]
 type CreateFSharpManifestResourceName public () =
     inherit CreateCSharpManifestResourceName()
 

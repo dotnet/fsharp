@@ -1,4 +1,4 @@
-// #Regression #Conformance #ObjectOrientedTypes #Classes 
+// #Regression #Conformance #ObjectOrientedTypes #Classes
 
 
 // FSB 1272, New-ing a sub class with unimplemented abstract members should not be allowed.

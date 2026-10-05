@@ -1,4 +1,4 @@
-// #Regression #Conformance #DeclarationElements #Attributes 
+// #Regression #Conformance #DeclarationElements #Attributes
 // Regression test for FSHARP1.0:1165
 // F# supports custom attributes on return type.
 // Multiple attributes on the same return value (two different attributes)
@@ -7,19 +7,19 @@
 
 
 
-type CA1 = 
+type CA1 =
     class
         inherit System.Attribute
         new (tt:string) = { t = tt }
         val t : string
-    end                       
+    end
 
-type CA2 = 
+type CA2 =
     class
         inherit System.Attribute
         new (tt:string) = { t = tt }
         val t : string
-    end                       
+    end
 
 // This is a function that has a custom attribute on the return type.
 let f(x) : [<CA1("A1")>] [<CA2("A2")>] int = x + 1

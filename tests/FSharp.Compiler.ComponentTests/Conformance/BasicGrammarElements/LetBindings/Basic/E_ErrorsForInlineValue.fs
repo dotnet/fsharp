@@ -1,4 +1,4 @@
-// #Regression #Conformance #DeclarationElements #LetBindings 
+// #Regression #Conformance #DeclarationElements #LetBindings
 
 
 // Regression test for FSharp1.0:4165

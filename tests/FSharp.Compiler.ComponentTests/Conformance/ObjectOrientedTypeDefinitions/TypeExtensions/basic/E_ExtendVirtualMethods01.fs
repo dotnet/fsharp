@@ -1,4 +1,4 @@
-// #Regression #Conformance #ObjectOrientedTypes #TypeExtensions 
+// #Regression #Conformance #ObjectOrientedTypes #TypeExtensions
 
 
 // It's error if the augmentation is of a type from a different assembly
@@ -10,7 +10,7 @@ type System.String with
     override this.ToString() = "Overridden"
 
 printfn "\"foo\".ToString() = %s" ("foo".ToString())
-    
+
 if "foo".ToString() <> "foo" then exit 1
 
 exit 0

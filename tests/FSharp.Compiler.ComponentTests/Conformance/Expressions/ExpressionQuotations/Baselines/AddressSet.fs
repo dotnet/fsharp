@@ -1,4 +1,4 @@
-// #Regression #Conformance #Quotations 
+// #Regression #Conformance #Quotations
 // Regression for FSHARP1.0:5612
 open Microsoft.FSharp.Quotations
 open Microsoft.FSharp.Quotations.Patterns
@@ -9,7 +9,7 @@ type S(z : int) =
     [<DefaultValue>] val mutable x : int
 
 //let q = <@ let mutable y = S(1).x
-//           y <- 2 @>              
+//           y <- 2 @>
 let q' = Expr.AddressSet(Expr.AddressOf(Expr.Var(Var("someVar", typeof<int>))), Expr.Value(1))
 
 //let r1 = verify q (|AddressSet|_|) "Let (y,

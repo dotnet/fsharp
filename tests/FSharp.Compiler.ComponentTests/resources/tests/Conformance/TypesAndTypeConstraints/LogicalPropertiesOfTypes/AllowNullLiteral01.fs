@@ -1,4 +1,4 @@
-// #Conformance #TypeConstraints 
+// #Conformance #TypeConstraints
 // Verify [<AllowNullLiteral>] does what it should.
 
 [<AllowNullLiteral>]

@@ -5,13 +5,13 @@ open FSharp.Compiler.QuickParse
 // Create an interactive checker instance (ignore notifications)
 let checker = FSharpChecker.Create()
 
-let parseWithTypeInfo (file, input) = 
+let parseWithTypeInfo (file, input) =
     let input = FSharp.Compiler.Text.SourceText.ofString input
     let checkOptions, _errors = checker.GetProjectOptionsFromScript(file, input) |> Async.RunSynchronously
     let parsingOptions, _errors = checker.GetParsingOptionsFromProjectOptions(checkOptions)
     let untypedRes = checker.ParseFile(file, input, parsingOptions) |> Async.RunSynchronously
-    
-    match checker.CheckFileInProject(untypedRes, file, 0, input, checkOptions) |> Async.RunSynchronously with 
+
+    match checker.CheckFileInProject(untypedRes, file, 0, input, checkOptions) |> Async.RunSynchronously with
     | FSharpCheckFileAnswer.Succeeded(res) -> untypedRes, res
     | res -> failwithf "Parsing did not finish... (%A)" res
 
@@ -19,7 +19,7 @@ let parseWithTypeInfo (file, input) =
 // Example
 // ----------------------------------------------------------------------------
 
-let input = 
+let input =
   """
   let foo() = 
     let msg = "Hello world"
@@ -39,8 +39,8 @@ printfn "%A" tip
 let partialName = GetPartialLongNameEx(inputLines.[4], 23)
 
 // Get declarations (autocomplete) for a location
-let decls = 
-    parsed.GetDeclarationListInfo(Some untyped, 5, inputLines.[4], partialName, (fun () -> [])) 
+let decls =
+    parsed.GetDeclarationListInfo(Some untyped, 5, inputLines.[4], partialName, (fun () -> []))
     |> Async.RunSynchronously
 
 for item in decls.Items do

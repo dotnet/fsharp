@@ -24,6 +24,6 @@ let main args =
         printfn "Expected: %A " args
         printfn "Actual: %A "   versions
         1
-    else 
+    else
         printf "TEST PASSED OK" ;
         0

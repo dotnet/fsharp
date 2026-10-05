@@ -11,5 +11,5 @@ let pinIt (x: int) =
     use ptr = fixed &thing
     let thingCopy = NativePtr.get ptr 0
     if thingCopy <> thing then fail ()
-    
+
 pinIt 100

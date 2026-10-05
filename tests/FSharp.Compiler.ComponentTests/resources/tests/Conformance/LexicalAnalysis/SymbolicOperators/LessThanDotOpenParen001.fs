@@ -1,9 +1,9 @@
-// #Regression #Conformance #LexicalAnalysis #Operators 
+// #Regression #Conformance #LexicalAnalysis #Operators
 // Regression test for FSHARP1.0:4805
 //<Expects status="success"></Expects>
- 
+
 type public TestType<'T,'S>() =
-    
+
     member public s.Value with get() = Unchecked.defaultof<'T>
     static member public (+++) (a : TestType<'T,'S>, b : TestType<'T,'S>) = a.Value
     static member public (+++) (a : TestType<'T,'S>, b : 'T) = b

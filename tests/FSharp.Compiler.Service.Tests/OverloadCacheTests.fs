@@ -31,7 +31,7 @@ let generateRepetitiveOverloadCalls (callCount: int) =
     let sb = StringBuilder()
     sb.AppendLine("open System") |> ignore
     sb.AppendLine() |> ignore
-    
+
     sb.AppendLine("type TestAssert =") |> ignore
     sb.AppendLine("    static member Equal(expected: int, actual: int) = expected = actual") |> ignore
     sb.AppendLine("    static member Equal(expected: string, actual: string) = expected = actual") |> ignore
@@ -42,7 +42,7 @@ let generateRepetitiveOverloadCalls (callCount: int) =
     sb.AppendLine("    static member Equal(expected: int64, actual: int64) = expected = actual") |> ignore
     sb.AppendLine("    static member Equal(expected: obj, actual: obj) = obj.Equals(expected, actual)") |> ignore
     sb.AppendLine() |> ignore
-    
+
     sb.AppendLine("let runTests() =") |> ignore
     sb.AppendLine("    let mutable x: int = 0") |> ignore
     sb.AppendLine("    let mutable y: int = 0") |> ignore
@@ -50,10 +50,10 @@ let generateRepetitiveOverloadCalls (callCount: int) =
         sb.AppendLine(sprintf "    x <- %d" i) |> ignore
         sb.AppendLine(sprintf "    y <- %d" (i + 1)) |> ignore
         sb.AppendLine("    ignore (TestAssert.Equal(x, y))") |> ignore
-    
+
     sb.AppendLine() |> ignore
     sb.AppendLine("runTests()") |> ignore
-    
+
     sb.ToString()
 
 
@@ -102,7 +102,7 @@ let s2 = Overloaded.Process("b")
 let f1 = Overloaded.Process(1.0)
 let f2 = Overloaded.Process(2.0)
 """
-    
+
     checkSourceHasNoErrors source |> ignore
 
     let after = CacheMetrics.getTotalsByName "overloadResolutionCache"
@@ -312,5 +312,5 @@ let d2 = Assert.Equal<int>(30, 40)
 let d3 = Assert.Equal<string>("x", "y")
 let d4 = Assert.Equal<string>("z", "w")
 """
-    
+
     checkSourceHasNoErrors source |> ignore

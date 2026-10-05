@@ -1,10 +1,10 @@
-// #NoMono #NoMT #CodeGen #EmittedIL   
+// #NoMono #NoMT #CodeGen #EmittedIL
 
 
-type C(x:int,y:int) = 
+type C(x:int,y:int) =
     member this.X = x
     member this.Y = y
-    
+
 let TestFunction19(inp) =
     let c1 = C(inp,inp)
     let c2 = C(inp,inp)

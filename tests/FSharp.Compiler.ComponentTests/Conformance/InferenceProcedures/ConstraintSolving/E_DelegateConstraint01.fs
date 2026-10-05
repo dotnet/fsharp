@@ -1,4 +1,4 @@
-// #Regression #Conformance #TypeInference #TypeConstraints 
+// #Regression #Conformance #TypeInference #TypeConstraints
 
 
 // Verify error message if delegate type doesn't have first parameter of type 'object'.
@@ -11,13 +11,13 @@ type CallbackAlpha = delegate of unit * unit -> int
 type CallbackBravo = delegate of unit * unit -> int
 
 type DelegateUtils<'del when 'del : delegate<unit * unit, int> and 'del :> System.Delegate> =
-    static member Invoke (x : 'del) = 
+    static member Invoke (x : 'del) =
         x.DynamicInvoke([| box (); box () |])
 
 // ---------------------------------------
 
 let lambda = fun (_ : unit) (_ : unit) -> 0
-                
+
 let alpha = new CallbackAlpha(lambda)
 let bravo = new CallbackBravo(lambda)
 

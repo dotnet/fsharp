@@ -1,4 +1,4 @@
-// #Conformance #Quotations 
+// #Conformance #Quotations
 open Microsoft.FSharp.Quotations
 open Microsoft.FSharp.Quotations.DerivedPatterns
 open Microsoft.FSharp.Quotations.Patterns
@@ -15,15 +15,15 @@ let mi = match q with
 let rd = Expr.TryGetReflectedDefinition(mi.Value)
 // Get nested call which doesn't have a reflected definition
 let mi2 = match rd.Value with
-          | Lambda (_, body) -> 
+          | Lambda (_, body) ->
               match body with
-              | Call (None, m, args) -> 
+              | Call (None, m, args) ->
                    match args.Head with
                    | Call (None, mi, _) -> Some(mi)
                    | _ -> None
               | _ -> None
           | _ -> None
-          
+
 let rd2 = Expr.TryGetReflectedDefinition(mi2.Value)
 
 exit <| match rd, rd2 with

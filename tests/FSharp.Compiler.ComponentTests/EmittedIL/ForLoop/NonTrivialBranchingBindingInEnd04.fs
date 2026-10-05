@@ -1,4 +1,4 @@
-// #Regression #CodeGen #Optimizations #ControlFlow 
+// #Regression #CodeGen #Optimizations #ControlFlow
 // Regression test for FSHARP1.0:5306
 // Bad codegen while optimizing for-loops with non-trivial branching and binding in end
 //<Expects status="success"></Expects>

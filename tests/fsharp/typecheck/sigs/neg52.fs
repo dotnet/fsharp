@@ -6,7 +6,7 @@ module Neg52
 
 open System.Collections.Generic
 
-type C<[<Measure>] 'u>() = 
+type C<[<Measure>] 'u>() =
   member this.Meth() = ()
 
 // Emit error if overloaded method signatures are not distinct wrt erasure

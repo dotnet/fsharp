@@ -33,10 +33,10 @@ module Check =
 
 
 type FSharpQuotationsTests() =
-    
+
     [<Fact>]
     member x.MethodInfoNRE() =
-        let f() = 
+        let f() =
             E.Call(null, []) |> ignore
         CheckThrowsArgumentNullException f
 
@@ -45,7 +45,7 @@ type FSharpQuotationsTests() =
         let f() =
             E.FieldGet(null) |> ignore
         CheckThrowsArgumentNullException f
-    
+
     [<Fact>]
     member x.ConstructorNRE() =
         let f() =
@@ -57,15 +57,15 @@ type FSharpQuotationsTests() =
         let f() =
             E.PropertyGet(null,[]) |> ignore
         CheckThrowsArgumentNullException f
-        
+
     [<Fact>]
     member x.UnionCaseInfoNRE() =
         let f() =
             E.NewUnionCase(Unchecked.defaultof<Microsoft.FSharp.Reflection.UnionCaseInfo>,[]) |> ignore
         CheckThrowsArgumentNullException f
-    
+
     [<Fact>]
-    member x.ReShapeTypechecking_Let() = 
+    member x.ReShapeTypechecking_Let() =
         let q0 = <@ let a = 1 in a @>
         match q0 with
         |   ExprShape.ShapeCombination(shape, [value;lambda]) ->
@@ -80,7 +80,7 @@ type FSharpQuotationsTests() =
         |   _ -> Assert.Fail()
 
     [<Fact>]
-    member x.ReShapeStaticIndexedProperties() = 
+    member x.ReShapeStaticIndexedProperties() =
         let q0 = <@ StaticIndexedPropertyTest.IdxProp 5 @>
         match q0 with
         |   ExprShape.ShapeCombination(shape, args) ->
@@ -283,20 +283,20 @@ module TestConditionalConstraints =
     let ``Anonymous record with non-alphabetical field order produces clean LINQ expression - issues 11131 and 15648`` () =
         // Non-alphabetical order - B before A
         let q = <@ fun (x: int) -> {| B = x; A = x + 1 |} @>
-        
+
         let linqExpr = LeafExpressionConverter.QuotationToExpression q
         let exprStr = linqExpr.ToString()
-        
+
         Assert.DoesNotContain(".Invoke(", exprStr)
 
     [<Fact>]
     let ``Nested anonymous record produces clean LINQ expression`` () =
         // Nested anonymous record with non-alphabetical field order
         let q = <@ fun (x: int) -> {| Outer = {| B = x; A = x + 1 |} |} @>
-        
+
         let linqExpr = LeafExpressionConverter.QuotationToExpression q
         let exprStr = linqExpr.ToString()
-        
+
         Assert.DoesNotContain(".Invoke(", exprStr)
 
     [<Fact>]
@@ -305,13 +305,13 @@ module TestConditionalConstraints =
         let qAlpha = <@ fun (x: int) -> {| A = x + 1; B = x |} @>
         // Non-alphabetical order
         let qNonAlpha = <@ fun (x: int) -> {| B = x; A = x + 1 |} @>
-        
+
         let linqAlpha = LeafExpressionConverter.QuotationToExpression qAlpha
         let linqNonAlpha = LeafExpressionConverter.QuotationToExpression qNonAlpha
-        
+
         let exprAlpha = linqAlpha.ToString()
         let exprNonAlpha = linqNonAlpha.ToString()
-        
+
         // Neither should contain Invoke
         Assert.DoesNotContain(".Invoke(", exprAlpha)
         Assert.DoesNotContain(".Invoke(", exprNonAlpha)
@@ -326,10 +326,10 @@ module TestConditionalConstraints =
     let ``Array indexing produces ArrayIndex expression not GetArray - issue 16918`` () =
         // Array access like x.u.[0] should NOT produce GetArray call
         let q = <@ fun (x: ArrayTestDoc) -> x.u.[0] @>
-        
+
         let linqExpr = LeafExpressionConverter.QuotationToExpression q
         let exprStr = linqExpr.ToString()
-        
+
         // Should NOT contain GetArray
         Assert.DoesNotContain("GetArray", exprStr)
         // Should produce x.u[0] style array index expression
@@ -339,10 +339,10 @@ module TestConditionalConstraints =
     let ``Nested array member access produces clean LINQ expression - issue 16918`` () =
         // x.u[0].c should generate proper expression tree without GetArray
         let q = <@ fun (x: ArrayTestDoc) -> x.u.[0].c @>
-        
+
         let linqExpr = LeafExpressionConverter.QuotationToExpression q
         let exprStr = linqExpr.ToString()
-        
+
         // Should NOT contain GetArray
         Assert.DoesNotContain("GetArray", exprStr)
         // Should contain array index
@@ -354,9 +354,9 @@ module TestConditionalConstraints =
     let ``Array indexing with variable index produces clean expression`` () =
         // Array access with variable index
         let q = <@ fun (x: int[]) (i: int) -> x.[i] @>
-        
+
         let linqExpr = LeafExpressionConverter.QuotationToExpression q
         let exprStr = linqExpr.ToString()
-        
+
         // Should NOT contain GetArray
         Assert.DoesNotContain("GetArray", exprStr)

@@ -1,8 +1,8 @@
-// #NoMono #NoMT #CodeGen #EmittedIL #Async   
+// #NoMono #NoMT #CodeGen #EmittedIL #Async
 module AsyncExpressionSteppingTest5         // Regression test for FSHARP1.0:4058
-module AsyncExpressionSteppingTest5 = 
+module AsyncExpressionSteppingTest5 =
     let es = [3;4;5]
-    let f7 () = 
+    let f7 () =
         async { for x in es do
                    printfn "hello"
                    printfn "hello 2"

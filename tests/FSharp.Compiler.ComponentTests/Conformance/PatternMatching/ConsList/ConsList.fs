@@ -16,7 +16,7 @@ module ConsList =
         |> withOptions ["--test:ErrorRanges"]
         |> typecheck
         |> shouldSucceed
-        
+
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/ConsList)
     [<Theory; FileInlineData("E_consOnNonList.fs")>]
     let ``ConsList - E_consOnNonList_fs - --test:ErrorRanges`` compilation =
@@ -36,7 +36,7 @@ but here has type
 but here has type
     ''a list'    "
         ]
-        
+
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/ConsList)
     [<Theory; FileInlineData("E_consPattern01.fs")>]
     let ``ConsList - E_consPattern01_fs - --test:ErrorRanges`` compilation =
@@ -50,7 +50,7 @@ but here has type
     'int'    
 but here has type
     ''a list'    ")
-        
+
     // This test was automatically generated (moved from FSharpQA suite - Conformance/PatternMatching/ConsList)
     [<Theory; FileInlineData("OutsideMatch01.fs")>]
     let ``ConsList - OutsideMatch01_fs - --test:ErrorRanges`` compilation =

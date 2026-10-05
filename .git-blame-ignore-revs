@@ -7,3 +7,6 @@
 
 # Spelling, https://github.com/dotnet/fsharp/pull/16212
 23e91e1322363a7e9c34baaeabbf0391c4b7eafd
+
+# Remove all trailing whitespaces, https://github.com/dotnet/fsharp/pull/20355
+b64623e8bb20ff2676e8c90813d2e2c72d9a81fb

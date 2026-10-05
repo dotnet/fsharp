@@ -3,6 +3,7 @@
 module internal FSharp.Compiler.Detuple
 
 open Internal.Utilities.Collections
+open System.Collections.Generic
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
@@ -17,7 +18,7 @@ module GlobalUsageAnalysis =
     type Results =
         {
             /// v -> context / APP inst args
-            Uses: Zmap<Val, (accessor list * TType list * Expr list) list>
+            Uses: Dictionary<Val, (accessor list * TType list * Expr list) list>
 
             /// v -> binding repr
             Defns: Zmap<Val, Expr>

@@ -13,7 +13,7 @@ open FSharp.Test.Compiler
 open System.IO
 
 module Regressions =
-    
+
     let private basePath = Path.Combine(__SOURCE_DIRECTORY__, "Regressions")
 
     /// Compile a C# file to a library

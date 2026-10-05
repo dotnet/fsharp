@@ -202,7 +202,7 @@ module Lib =
         let x = thing.Name
         thing.City
 """
-    
+
     [<Fact>]
     let MultipleRecdTypeChoiceWarningNotRaisedWithoutOverlapsLangPreview () =
         FSharp multipleRecdTypeChoiceWarningNotRaisedWithoutOverlapsSource
@@ -244,7 +244,7 @@ module Lib =
                 let x = thing.Name
                 thing.City
         """
-    
+
     [<Fact>]
     let MultipleRecdTypeChoiceWarningNotRaisedWithTypeAnnotationsLangPreview () =
         FSharp multipleRecdTypeChoiceWarningNotRaisedWithTypeAnnotationsSource

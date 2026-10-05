@@ -58,7 +58,7 @@ module internal IEnumerator =
 
         interface System.IDisposable with
              member _.Dispose() = ()
-            
+
     let Empty<'T> () = (new EmptyEnumerator<'T>() :> IEnumerator<'T>)
 
     [<NoEquality; NoComparison>]

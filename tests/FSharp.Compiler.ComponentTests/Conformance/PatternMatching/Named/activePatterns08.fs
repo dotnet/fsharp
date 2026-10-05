@@ -1,4 +1,4 @@
-// #Conformance #PatternMatching #ActivePatterns 
+// #Conformance #PatternMatching #ActivePatterns
 
 
 // Verify able to mix active patterns with 'regular' patterns.
@@ -7,7 +7,7 @@ let (|Odd|Even|) x = if x % 2 = 0 then Even else Odd
 let (|MultipleOf2|_|) x = if x % 2 = 0 then Some () else None
 let (|MultipleOfN|_|) (n:int) (x:int) = if x % n = 0 then Some () else None
 
-let test x = 
+let test x =
     match x with
     | MultipleOfN 33 () -> 0
     | Odd & MultipleOfN 5 () -> 1

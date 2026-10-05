@@ -15,25 +15,25 @@ namespace Microsoft.FSharp.Control
 
     /// <summary>
     /// An asynchronous computation, which, when run, will eventually produce a value  of type T, or else raises an exception.
-    /// </summary> 
+    /// </summary>
     ///
     /// <remarks>
     ///  This type has no members. Asynchronous computations are normally specified either by using an async expression
     ///  or the static methods in the <see cref="T:Microsoft.FSharp.Control.FSharpAsync`1"/> type.
     ///
     ///  See also <a href="https://learn.microsoft.com/dotnet/fsharp/language-reference/async-expressions">F# Language Guide - Async Workflows</a>.
-    /// </remarks> 
+    /// </remarks>
     ///
     /// <namespacedoc><summary>
     ///   Library functionality for asynchronous programming, events and agents. See also
-    ///   <a href="https://learn.microsoft.com/dotnet/fsharp/language-reference/async-expressions">Asynchronous Programming</a>, 
+    ///   <a href="https://learn.microsoft.com/dotnet/fsharp/language-reference/async-expressions">Asynchronous Programming</a>,
     ///   <a href="https://learn.microsoft.com/dotnet/fsharp/language-reference/members/events">Events</a> and
     ///   <a href="https://learn.microsoft.com/dotnet/fsharp/language-reference/lazy-expressions">Lazy Expressions</a> in the
     ///   F# Language Guide.
     /// </summary></namespacedoc>
     ///
     /// <category index="1">Async Programming</category>
-     
+
     [<Sealed; NoEquality; NoComparison; CompiledName("FSharpAsync`1")>]
     type Async<'T>
 
@@ -71,16 +71,16 @@ namespace Microsoft.FSharp.Control
         /// <category index="0">Starting Async Computations</category>
         /// <example id="run-synchronously-1">
         /// <code lang="fsharp">
-        /// printfn "A" // runs on caller thread
+        /// printn "A" // runs on caller thread
         ///
         /// let result = async {
-        ///     printfn "B" // runs on a background/threadpool thread
+        ///     printn "B" // runs on a background/threadpool thread
         ///     do! Async.Sleep(1000)
-        ///     printfn "C" // continuation runs on a background/threadpool thread
+        ///     printn "C" // continuation runs on a background/threadpool thread
         ///     return 17
         /// } |> Async.RunSynchronously
         ///
-        /// printfn "D" // runs on caller thread
+        /// printn "D" // runs on caller thread
         /// </code>
         /// <p>Prints "A", "B" immediately, then "C", "D" after 1 second.</p>
         /// <p>Yields <c>result = 17</c>.</p>
@@ -113,16 +113,16 @@ namespace Microsoft.FSharp.Control
         /// <category index="0">Starting Async Computations</category>
         /// <example id="run-synchronously-immediate-1">
         /// <code lang="fsharp">
-        /// printfn "A" // runs on calling thread
+        /// printn "A" // runs on calling thread
         ///
         /// let result = async {
-        ///     printfn "B" // ALSO runs on calling thread (hence immediately)
+        ///     printn "B" // ALSO runs on calling thread (hence immediately)
         ///     do! Async.Sleep(1000)
-        ///     printfn "C" // runs in continuation context (depends on SynchronizationContext etc)
+        ///     printn "C" // runs in continuation context (depends on SynchronizationContext etc)
         ///     return 17
         /// } |> Async.RunSynchronouslyImmediate
         ///
-        /// printfn "D" // runs on calling thread
+        /// printn "D" // runs on calling thread
         /// </code>
         /// <p>Prints "A", "B" immediately, then "C", "D" after 1 second.</p>
         /// <p>Yields <c>result = 17</c>.</p>
@@ -141,15 +141,15 @@ namespace Microsoft.FSharp.Control
         ///
         /// <example id="start-1">
         /// <code lang="fsharp">
-        /// printfn "A"
+        /// printn "A"
         ///
         /// async {
-        ///     printfn "B"
+        ///     printn "B"
         ///     do! Async.Sleep(1000)
-        ///     printfn "C"
+        ///     printn "C"
         /// } |> Async.Start
         ///
-        /// printfn "D"
+        /// printn "D"
         /// </code>
         /// Prints "A", then "D", "B" quickly in any order, and then "C" in 1 second.
         /// </example>
@@ -167,18 +167,18 @@ namespace Microsoft.FSharp.Control
         ///
         /// <example id="start-as-task-1">
         /// <code lang="fsharp">
-        /// printfn "A"
+        /// printn "A"
         ///
         /// let t =
         ///     async {
-        ///         printfn "B"
+        ///         printn "B"
         ///         do! Async.Sleep(1000)
-        ///         printfn "C"
+        ///         printn "C"
         ///     } |> Async.StartAsTask
         ///
-        /// printfn "D"
+        /// printn "D"
         /// t.Wait()
-        /// printfn "E"
+        /// printn "E"
         /// </code>
         /// Prints "A", then "D", "B" quickly in any order, then "C", "E" in 1 second.
         /// </example>
@@ -208,20 +208,20 @@ namespace Microsoft.FSharp.Control
         /// match DateTime.Today with
         /// | dt when dt.DayOfWeek = DayOfWeek.Monday -> failwith "Not compatible with Mondays"
         /// | dt -> dt
-        /// 
+        ///
         /// async { return someRiskyBusiness() }
         /// |> Async.Catch
         /// |> Async.RunSynchronously
         /// |> function
-        ///     | Choice1Of2 result -> printfn $"Result: {result}"
-        ///     | Choice2Of2 e -> printfn $"Exception: {e}"
+        ///     | Choice1Of2 result -> printn $"Result: {result}"
+        ///     | Choice2Of2 e -> printn $"Exception: {e}"
         /// </code>
         /// Prints the returned value of someRiskyBusiness() or the exception if there is one.
         /// </example>
         static member Catch : computation:Async<'T> -> Async<Choice<'T,exn>>
 
         /// <summary>Creates an asynchronous computation that executes <c>computation</c>.
-        /// If this computation is cancelled before it completes then the computation generated by 
+        /// If this computation is cancelled before it completes then the computation generated by
         /// running <c>compensation</c> is executed.</summary>
         ///
         /// <param name="computation">The input asynchronous computation.</param>
@@ -239,9 +239,9 @@ namespace Microsoft.FSharp.Control
         ///     Async.TryCancelled(
         ///         async {
         ///             do! Async.Sleep(i * 1000)
-        ///             printfn $"{i}"
+        ///             printn $"{i}"
         ///         },
-        ///         fun oce -> printfn $"Computation Cancelled: {i}")
+        ///         fun oce -> printn $"Computation Cancelled: {i}")
         ///     |> Async.Start
         ///
         /// Thread.Sleep(6000)
@@ -256,11 +256,11 @@ namespace Microsoft.FSharp.Control
         /// <summary>Generates a scoped, cooperative cancellation handler for use within an asynchronous workflow.</summary>
         ///
         /// <remarks>For example,
-        ///     <c>async { use! holder = Async.OnCancel interruption ... }</c> 
-        /// generates an asynchronous computation where, if a cancellation happens any time during 
-        /// the execution of the asynchronous computation in the scope of <c>holder</c>, then action 
-        /// <c>interruption</c> is executed on the thread that is performing the cancellation. This can 
-        /// be used to arrange for a computation to be asynchronously notified that a cancellation 
+        ///     <c>async { use! holder = Async.OnCancel interruption ... }</c>
+        /// generates an asynchronous computation where, if a cancellation happens any time during
+        /// the execution of the asynchronous computation in the scope of <c>holder</c>, then action
+        /// <c>interruption</c> is executed on the thread that is performing the cancellation. This can
+        /// be used to arrange for a computation to be asynchronously notified that a cancellation
         /// has occurred, e.g. by setting a flag, or deregistering a pending I/O action.</remarks>
         ///
         /// <param name="interruption">The function that is executed on the thread performing the
@@ -276,9 +276,9 @@ namespace Microsoft.FSharp.Control
         /// let primes = [ 2; 3; 5; 7; 11 ]
         /// for i in primes do
         ///     async {
-        ///         use! holder = Async.OnCancel(fun () -> printfn $"Computation Cancelled: {i}")
+        ///         use! holder = Async.OnCancel(fun () -> printn $"Computation Cancelled: {i}")
         ///         do! Async.Sleep(i * 1000)
-        ///         printfn $"{i}"
+        ///         printn $"{i}"
         ///     }
         ///     |> Async.Start
         ///
@@ -290,11 +290,11 @@ namespace Microsoft.FSharp.Control
         /// and then print "Computation Cancelled: 7", "Computation Cancelled: 11" and "Tasks Finished" in any order.
         /// </example>
         static member OnCancel : interruption: (unit -> unit) -> Async<IDisposable>
-        
-        /// <summary>Creates an asynchronous computation that returns the CancellationToken governing the execution 
+
+        /// <summary>Creates an asynchronous computation that returns the CancellationToken governing the execution
         /// of the computation.</summary>
         ///
-        /// <remarks>In <c>async { let! token = Async.CancellationToken ...}</c> token can be used to initiate other 
+        /// <remarks>In <c>async { let! token = Async.CancellationToken ...}</c> token can be used to initiate other
         /// asynchronous operations that will cancel cooperatively with this workflow.</remarks>
         ///
         /// <returns>An asynchronous computation capable of retrieving the CancellationToken from a computation
@@ -305,9 +305,9 @@ namespace Microsoft.FSharp.Control
         /// <example-tbd></example-tbd>
         static member CancellationToken : Async<CancellationToken>
 
-        /// <summary>Raises the cancellation condition for the most recent set of asynchronous computations started 
-        /// without any specific CancellationToken. Replaces the global CancellationTokenSource with a new 
-        /// global token source for any asynchronous computations created after this point without any 
+        /// <summary>Raises the cancellation condition for the most recent set of asynchronous computations started
+        /// without any specific CancellationToken. Replaces the global CancellationTokenSource with a new
+        /// global token source for any asynchronous computations created after this point without any
         /// specific CancellationToken.</summary>
         ///
         /// <category index="3">Cancellation and Exceptions</category>
@@ -320,7 +320,7 @@ namespace Microsoft.FSharp.Control
         ///     [ for i in primes do
         ///             async {
         ///                 do! Async.Sleep(i * 1000)
-        ///                 printfn $"{i}"
+        ///                 printn $"{i}"
         ///             }
         ///     ]
         ///
@@ -330,14 +330,14 @@ namespace Microsoft.FSharp.Control
         ///
         ///     Thread.Sleep(6000)
         ///     Async.CancelDefaultToken()
-        ///     printfn $"Tasks Finished: %A{t.Result}"
+        ///     printn $"Tasks Finished: %A{t.Result}"
         /// with
-        /// | :? System.AggregateException as ae -> printfn $"Tasks Not Finished: {ae.Message}"
+        /// | :? System.AggregateException as ae -> printn $"Tasks Not Finished: {ae.Message}"
         /// </code>
         /// This will print "2" 2 seconds from start, "3" 3 seconds from start, "5" 5 seconds from start, cease computation and
         /// then print "Tasks Not Finished: One or more errors occurred. (A task was canceled.)".
         /// </example>
-        static member CancelDefaultToken :  unit -> unit 
+        static member CancelDefaultToken :  unit -> unit
 
         /// <summary>Gets the default cancellation token for executing asynchronous computations.</summary>
         ///
@@ -353,7 +353,7 @@ namespace Microsoft.FSharp.Control
         /// for i in primes do
         ///     async {
         ///         do! Async.Sleep(i * 1000)
-        ///         printfn $"{i}"
+        ///         printn $"{i}"
         ///     }
         ///     |> Async.Start
         ///
@@ -368,30 +368,29 @@ namespace Microsoft.FSharp.Control
 
         //---------- Parallelism
 
-        /// <summary>Starts a child computation within an asynchronous workflow. 
+        /// <summary>Starts a child computation within an asynchronous workflow.
         /// This allows multiple asynchronous computations to be executed simultaneously.</summary>
         ///
-        /// <remarks>This method should normally be used as the immediate 
+        /// <remarks>This method should normally be used as the immediate
         /// right-hand-side of a <c>let!</c> binding in an F# asynchronous workflow, that is,
         /// <code lang="fsharp">
         ///     async { ...
-        ///            let! completor1 = childComputation1 |> Async.StartChild  
-        ///            let! completor2 = childComputation2 |> Async.StartChild  
-        ///            ... 
-        ///            let! result1 = completor1 
-        ///            let! result2 = completor2 
+        ///            let! completor1 = childComputation1 |> Async.StartChild
+        ///            let! completor2 = childComputation2 |> Async.StartChild
+        ///            ...
+        ///            let! result1 = completor1
+        ///            let! result2 = completor2
         ///            ... }
         /// </code>
         ///
-        /// When used in this way, each use of <c>StartChild</c> starts an instance of <c>childComputation</c> 
+        /// When used in this way, each use of <c>StartChild</c> starts an instance of <c>childComputation</c>
         /// and returns a completor object representing a computation to wait for the completion of the operation.
-        /// When executed, the completor awaits the completion of <c>childComputation</c>.</remarks>
+        /// When executed, the completor awaits the completion of <c>computation</c>.</remarks>
         ///
-        /// <param name="computation">The child computation.</param>
-        /// <param name="millisecondsTimeout">The timeout value in milliseconds.  If one is not provided
-        /// then the default value of -1 corresponding to <see cref="F:System.Threading.Timeout.Infinite"/>.</param>
+        /// <param name="computation">The computation to start.</param>
+        /// <param name="millisecondsTimeout">The optional timeout value in milliseconds.</param>
         ///
-        /// <returns>A new computation that waits for the input computation to finish.</returns>
+        /// <returns>A computation that waits for the child computation to be completed.</returns>
         ///
         /// <category index="0">Starting Async Computations</category>
         ///
@@ -415,23 +414,23 @@ namespace Microsoft.FSharp.Control
         ///                     return 2
         ///                  }),
         ///                 millisecondsTimeout = timeout)
-        ///
+        ///         do! Async.Sleep 500 // Or any other async activity
         ///         let! v1 = completor1
         ///         let! v2 = completor2
-        ///         printfn $"Result: {v1 + v2}"
-        ///     } |> Async.RunSynchronously
+        ///         printn $"Result: {v1 + v2}"
+        ///     } |> Async.RunSynchronouslyImmediate
         /// </code>
-        /// Will throw a System.TimeoutException if called with a timeout less than 2000, otherwise will print "Result: 3".
+        /// Will throw a <c>System.TimeoutException</c> if called with a timeout under 2000, otherwise will print "Result: 3".
         /// </example>
         static member StartChild : computation:Async<'T> * ?millisecondsTimeout : int -> Async<Async<'T>>
-                
-        /// <summary>Creates an asynchronous computation that executes all the given asynchronous computations, 
+
+        /// <summary>Creates an asynchronous computation that executes all the given asynchronous computations,
         /// initially queueing each as work items and using a fork/join pattern.</summary>
         ///
         /// <remarks>If all child computations succeed, an array of results is passed to the success continuation.
         ///
-        /// If any child computation raises an exception, then the overall computation will trigger an 
-        /// exception, and cancel the others. 
+        /// If any child computation raises an exception, then the overall computation will trigger an
+        /// exception, and cancel the others.
         ///
         /// The overall computation will respond to cancellation while executing the child computations.
         /// If cancelled, the computation will cancel any remaining child computations but will still wait
@@ -452,7 +451,7 @@ namespace Microsoft.FSharp.Control
         ///             do! Async.Sleep(System.Random().Next(1000, 2000))
         ///
         ///             if i % 2 > 0 then
-        ///                 printfn $"{i}"
+        ///                 printn $"{i}"
         ///                 return true
         ///             else
         ///                 return false
@@ -462,7 +461,7 @@ namespace Microsoft.FSharp.Control
         ///     |> Async.StartAsTask
         ///
         /// t.Wait()
-        /// printfn $"%A{t.Result}"
+        /// printn $"%A{t.Result}"
         /// </code>
         /// This will print "3", "5", "7", "11" (in any order) in 1-2 seconds and then [| false; true; true; true; false; true |].
         /// </example>
@@ -497,7 +496,7 @@ namespace Microsoft.FSharp.Control
         ///
         ///             return
         ///                 if i % 2 > 0 then
-        ///                     printfn $"{i}"
+        ///                     printn $"{i}"
         ///                     true
         ///                 else
         ///                     false
@@ -508,7 +507,7 @@ namespace Microsoft.FSharp.Control
         ///     |> Async.StartAsTask
         ///
         /// t.Wait()
-        /// printfn $"%A{t.Result}"
+        /// printn $"%A{t.Result}"
         /// </code>
         /// This will print "3", "5" (in any order) in 1-2 seconds, and then "7", "11" (in any order) in 1-2 more seconds and then
         /// [| false; true; true; true; false; true |].
@@ -541,7 +540,7 @@ namespace Microsoft.FSharp.Control
         ///                 do! Async.Sleep(System.Random().Next(1000, 2000))
         ///
         ///                 if i % 2 > 0 then
-        ///                     printfn $"{i}"
+        ///                     printn $"{i}"
         ///                     return true
         ///                 else
         ///                     return false
@@ -553,7 +552,7 @@ namespace Microsoft.FSharp.Control
         ///     |> Async.StartAsTask
         ///
         /// t.Wait()
-        /// printfn $"%A{t.Result}" 
+        /// printn $"%A{t.Result}"
         /// </code>
         /// This will print "3", "5", "7", "11" with ~1-2 seconds between them except for pauses where even numbers would be and then
         /// prints [| false; true; true; true; false; true |].
@@ -561,14 +560,14 @@ namespace Microsoft.FSharp.Control
         static member Sequential : computations:seq<Async<'T>> -> Async<'T array>
 
         /// <summary>
-        /// Creates an asynchronous computation that executes all given asynchronous computations in parallel, 
+        /// Creates an asynchronous computation that executes all given asynchronous computations in parallel,
         /// returning the result of the first succeeding computation (one whose result is 'Some x').
         /// If all child computations complete with None, the parent computation also returns None.
         /// </summary>
         ///
         /// <remarks>
-        /// If any child computation raises an exception, then the overall computation will trigger an 
-        /// exception, and cancel the others. 
+        /// If any child computation raises an exception, then the overall computation will trigger an
+        /// exception, and cancel the others.
         ///
         /// The overall computation will respond to cancellation while executing the child computations.
         /// If cancelled, the computation will cancel any remaining child computations but will still wait
@@ -597,8 +596,8 @@ namespace Microsoft.FSharp.Control
         /// |> Async.Choice
         /// |> Async.RunSynchronously
         /// |> function
-        ///     | Some (i) -> printfn $"{i}"
-        ///     | None -> printfn "No Result"
+        ///     | Some (i) -> printn $"{i}"
+        ///     | None -> printn "No Result"
         /// </code>
         /// Prints one randomly selected odd number in 1-2 seconds. If the list is changed to all even numbers, it will
         /// instead print "No Result".
@@ -624,15 +623,15 @@ namespace Microsoft.FSharp.Control
         /// |> Async.Choice
         /// |> Async.RunSynchronously
         /// |> function
-        ///     | Some (i) -> printfn $"{i}"
-        ///     | None -> printfn "No Result"
+        ///     | Some (i) -> printn $"{i}"
+        ///     | None -> printn "No Result"
         /// </code>
         /// Will sometimes print one randomly selected odd number, sometimes throw System.Exception("Even numbers not supported: 2").
         /// </example>
         static member Choice : computations:seq<Async<'T option>> -> Async<'T option>
 
         //---------- Thread Control
-        
+
         /// <summary>Creates an asynchronous computation that creates a new thread and runs
         /// its continuation in that thread.</summary>
         ///
@@ -649,8 +648,8 @@ namespace Microsoft.FSharp.Control
         /// </code>
         /// This will run someLongRunningComputation() without blocking the threads in the threadpool.
         /// </example>
-        static member SwitchToNewThread : unit -> Async<unit> 
-        
+        static member SwitchToNewThread : unit -> Async<unit>
+
         /// <summary>Creates an asynchronous computation that queues a work item that runs
         /// its continuation.</summary>
         ///
@@ -672,10 +671,10 @@ namespace Microsoft.FSharp.Control
         /// This will run someLongRunningComputation() without blocking the threads in the threadpool, and then switch to the
         /// threadpool for shorter computations.
         /// </example>
-        static member SwitchToThreadPool :  unit -> Async<unit> 
+        static member SwitchToThreadPool :  unit -> Async<unit>
 
         /// <summary>Creates an asynchronous computation that runs
-        /// its continuation using syncContext.Post. If syncContext is null 
+        /// its continuation using syncContext.Post. If syncContext is null
         /// then the asynchronous computation is equivalent to SwitchToThreadPool().</summary>
         ///
         /// <param name="syncContext">The synchronization context to accept the posted computation.</param>
@@ -685,10 +684,10 @@ namespace Microsoft.FSharp.Control
         /// <category index="4">Threads and Contexts</category>
         ///
         /// <example-tbd></example-tbd>
-        static member SwitchToContext : syncContext: SynchronizationContext | null -> Async<unit> 
+        static member SwitchToContext : syncContext: SynchronizationContext | null -> Async<unit>
 
         /// <summary>Creates an asynchronous computation that captures the current
-        /// success, exception and cancellation continuations. The callback must 
+        /// success, exception and cancellation continuations. The callback must
         /// eventually call exactly one of the given continuations.</summary>
         ///
         /// <param name="callback">The function that accepts the current success, exception, and cancellation
@@ -704,7 +703,7 @@ namespace Microsoft.FSharp.Control
         /// match DateTime.Today with
         /// | dt when dt.DayOfWeek = DayOfWeek.Monday -> failwith "Not compatible with Mondays"
         /// | dt -> dt
-        /// 
+        ///
         /// let computation =
         ///     (fun (successCont, exceptionCont, cancellationCont) ->
         ///         try
@@ -716,9 +715,9 @@ namespace Microsoft.FSharp.Control
         ///
         /// Async.StartWithContinuations(
         ///     computation,
-        ///     (fun result -> printfn $"Result: {result}"),
-        ///     (fun e -> printfn $"Exception: {e}"),
-        ///     (fun oce -> printfn $"Cancelled: {oce}")
+        ///     (fun result -> printn $"Result: {result}"),
+        ///     (fun e -> printn $"Exception: {e}"),
+        ///     (fun oce -> printn $"Cancelled: {oce}")
         ///  )
         /// </code>
         /// This anonymous function will call someRiskyBusiness() and properly use the provided continuations
@@ -726,12 +725,12 @@ namespace Microsoft.FSharp.Control
         /// </example>
         static member FromContinuations : callback:(('T -> unit) * (exn -> unit) * (OperationCanceledException -> unit) -> unit) -> Async<'T>
 
-        /// <summary>Creates an asynchronous computation that waits for a single invocation of a CLI 
-        /// event by adding a handler to the event. Once the computation completes or is 
+        /// <summary>Creates an asynchronous computation that waits for a single invocation of a CLI
+        /// event by adding a handler to the event. Once the computation completes or is
         /// cancelled, the handler is removed from the event.</summary>
         ///
-        /// <remarks>The computation will respond to cancellation while waiting for the event. If a 
-        /// cancellation occurs, and <c>cancelAction</c> is specified, then it is executed, and 
+        /// <remarks>The computation will respond to cancellation while waiting for the event. If a
+        /// cancellation occurs, and <c>cancelAction</c> is specified, then it is executed, and
         /// the computation continues to wait for the event.
         ///
         /// If <c>cancelAction</c> is not specified, then cancellation causes the computation
@@ -746,7 +745,7 @@ namespace Microsoft.FSharp.Control
         /// <category index="2">Awaiting Results</category>
         ///
         /// <example-tbd></example-tbd>
-        static member AwaitEvent: event:IEvent<'Del,'T> * ?cancelAction : (unit -> unit) -> Async<'T> when 'Del : delegate<'T,unit> and 'Del :> Delegate 
+        static member AwaitEvent: event:IEvent<'Del,'T> * ?cancelAction : (unit -> unit) -> Async<'T> when 'Del : delegate<'T,unit> and 'Del :> Delegate
 
         /// <summary>Creates an asynchronous computation that will wait on the given WaitHandle.</summary>
         ///
@@ -805,7 +804,7 @@ namespace Microsoft.FSharp.Control
         ///     | :? System.InvalidOperationException ->
         ///         printfn "unreachable" // will not match: exception is wrapped in AggregateException
         ///     | :? System.AggregateException as e ->
-        ///         printfn $"Caught: {e.InnerException.Message}"
+        ///         printn $"Caught: {e.InnerException.Message}"
         /// } |> Async.RunSynchronously
         /// </code>
         /// Prints <c>Caught: test</c>. The <c>InvalidOperationException</c> branch is not reached because
@@ -838,7 +837,7 @@ namespace Microsoft.FSharp.Control
         ///     | :? System.InvalidOperationException ->
         ///         printfn "unreachable" // will not match: exception is wrapped in AggregateException
         ///     | :? System.AggregateException as e ->
-        ///         printfn $"Caught: {e.InnerException.Message}"
+        ///         printn $"Caught: {e.InnerException.Message}"
         /// } |> Async.RunSynchronously
         /// </code>
         /// Prints <c>Caught: test</c>. The <c>InvalidOperationException</c> branch is not reached because
@@ -856,9 +855,9 @@ namespace Microsoft.FSharp.Control
         /// exception; only <see cref="T:System.AggregateException"/>s carrying multiple inner exceptions are
         /// re-raised as-is. For the legacy behavior of uniformly presenting the raw underlying
         /// <see cref="T:System.AggregateException"/>, use <c>Async.AwaitTask</c>.</p>
-        /// 
+        ///
         /// <p>If the task is canceled then <see cref="T:System.Threading.Tasks.TaskCanceledException"/> is raised.</p>
-        /// 
+        ///
         /// <p>Note the task may be governed by a different cancellation token than the overall async computation;
         /// typically tasks should be wired to the ambient cancellation token obtained via
         /// <c>let! ct = Async.CancellationToken</c>, catching <see cref="T:System.Threading.Tasks.TaskCanceledException"/>
@@ -879,7 +878,7 @@ namespace Microsoft.FSharp.Control
         ///         ()
         ///     with
         ///     | :? System.InvalidOperationException as e ->
-        ///         printfn $"Caught: {e.Message}"
+        ///         printn $"Caught: {e.Message}"
         ///     | :? System.AggregateException ->
         ///         printfn "unreachable" // will not match: single exception is unwrapped
         /// } |> Async.RunSynchronously
@@ -896,9 +895,9 @@ namespace Microsoft.FSharp.Control
         /// exception; only <see cref="T:System.AggregateException"/>s carrying multiple inner exceptions are
         /// re-raised as-is. For the legacy behavior of uniformly presenting the raw underlying
         /// <see cref="T:System.AggregateException"/>, use <c>Async.AwaitTask</c>.</p>
-        /// 
+        ///
         /// <p>If the task is canceled then <see cref="T:System.Threading.Tasks.TaskCanceledException"/> is raised.</p>
-        /// 
+        ///
         /// <p>Note the task may be governed by a different cancellation token than the overall async computation;
         /// typically tasks should be wired to the ambient cancellation token obtained via
         /// <c>let! ct = Async.CancellationToken</c>, catching <see cref="T:System.Threading.Tasks.TaskCanceledException"/>
@@ -916,7 +915,7 @@ namespace Microsoft.FSharp.Control
         ///         do! Async.Await t
         ///     with
         ///     | :? System.InvalidOperationException as e ->
-        ///         printfn $"Caught: {e.Message}"
+        ///         printn $"Caught: {e.Message}"
         ///     | :? System.AggregateException ->
         ///         printfn "unreachable" // will not match: single exception is unwrapped
         /// } |> Async.RunSynchronously
@@ -956,7 +955,7 @@ namespace Microsoft.FSharp.Control
         ///         ()
         ///     with
         ///     | :? System.InvalidOperationException as e ->
-        ///         printfn $"Caught: {e.Message}"
+        ///         printn $"Caught: {e.Message}"
         ///     | :? System.AggregateException ->
         ///         printfn "unreachable" // will not match: single exception is unwrapped
         /// } |> Async.RunSynchronously
@@ -992,7 +991,7 @@ namespace Microsoft.FSharp.Control
         ///         do! Async.Await vt
         ///     with
         ///     | :? System.InvalidOperationException as e ->
-        ///         printfn $"Caught: {e.Message}"
+        ///         printn $"Caught: {e.Message}"
         ///     | :? System.AggregateException ->
         ///         printfn "unreachable" // will not match: single exception is unwrapped
         /// } |> Async.RunSynchronously
@@ -1093,12 +1092,12 @@ namespace Microsoft.FSharp.Control
         /// <example id="sleep-1">
         /// <code lang="fsharp">
         /// async {
-        ///     printfn "A"
+        ///     printn "A"
         ///     do! Async.Sleep(1000)
-        ///     printfn "B"
+        ///     printn "B"
         /// } |> Async.Start
         ///
-        /// printfn "C"
+        /// printn "C"
         /// </code>
         /// Prints "C" and "A" quickly in any order, and then "B" 1 second later
         /// </example>
@@ -1121,24 +1120,24 @@ namespace Microsoft.FSharp.Control
         /// <example id="sleep-2">
         /// <code lang="fsharp">
         /// async {
-        ///     printfn "A"
+        ///     printn "A"
         ///     do! Async.Sleep(TimeSpan(0, 0, 1))
-        ///     printfn "B"
+        ///     printn "B"
         /// } |> Async.Start
-        /// printfn "C"
+        /// printn "C"
         /// </code>
         /// Prints "C", then "A" quickly, and then "B" 1 second later.
         /// </example>
         static member Sleep: dueTime:TimeSpan -> Async<unit>
 
         /// <summary>
-        ///  Creates an asynchronous computation in terms of a Begin/End pair of actions in 
+        ///  Creates an asynchronous computation in terms of a Begin/End pair of actions in
         ///  the style used in CLI APIs.
         /// </summary>
         ///
         /// <remarks>
         /// The computation will respond to cancellation while waiting for the completion
-        /// of the operation. If a cancellation occurs, and <c>cancelAction</c> is specified, then it is 
+        /// of the operation. If a cancellation occurs, and <c>cancelAction</c> is specified, then it is
         /// executed, and the computation continues to wait for the completion of the operation.
         ///
         /// If <c>cancelAction</c> is not specified, then cancellation causes the computation
@@ -1156,12 +1155,12 @@ namespace Microsoft.FSharp.Control
         static member FromBeginEnd : beginAction:(AsyncCallback * objnull -> IAsyncResult) * endAction:(IAsyncResult -> 'T) * ?cancelAction : (unit -> unit) -> Async<'T>
 
         /// <summary>
-        ///  Creates an asynchronous computation in terms of a Begin/End pair of actions in 
+        ///  Creates an asynchronous computation in terms of a Begin/End pair of actions in
         ///  the style used in .NET 2.0 APIs.
         /// </summary>
         ///
         /// <remarks>The computation will respond to cancellation while waiting for the completion
-        /// of the operation. If a cancellation occurs, and <c>cancelAction</c> is specified, then it is 
+        /// of the operation. If a cancellation occurs, and <c>cancelAction</c> is specified, then it is
         /// executed, and the computation continues to wait for the completion of the operation.
         ///
         ///  If <c>cancelAction</c> is not specified, then cancellation causes the computation
@@ -1181,11 +1180,11 @@ namespace Microsoft.FSharp.Control
         static member FromBeginEnd : arg:'Arg1 * beginAction:('Arg1 * AsyncCallback * objnull -> IAsyncResult) * endAction:(IAsyncResult -> 'T) * ?cancelAction : (unit -> unit) -> Async<'T>
 
         /// <summary>
-        /// Creates an asynchronous computation in terms of a Begin/End pair of actions in 
+        /// Creates an asynchronous computation in terms of a Begin/End pair of actions in
         /// the style used in .NET 2.0 APIs.</summary>
         ///
         /// <remarks>The computation will respond to cancellation while waiting for the completion
-        /// of the operation. If a cancellation occurs, and <c>cancelAction</c> is specified, then it is 
+        /// of the operation. If a cancellation occurs, and <c>cancelAction</c> is specified, then it is
         /// executed, and the computation continues to wait for the completion of the operation.
         ///
         /// If <c>cancelAction</c> is not specified, then cancellation causes the computation
@@ -1204,11 +1203,11 @@ namespace Microsoft.FSharp.Control
         /// <example-tbd></example-tbd>
         static member FromBeginEnd : arg1:'Arg1 * arg2:'Arg2 * beginAction:('Arg1 * 'Arg2 * AsyncCallback * objnull -> IAsyncResult) * endAction:(IAsyncResult -> 'T) * ?cancelAction : (unit -> unit) -> Async<'T>
 
-        /// <summary>Creates an asynchronous computation in terms of a Begin/End pair of actions in 
+        /// <summary>Creates an asynchronous computation in terms of a Begin/End pair of actions in
         /// the style used in .NET 2.0 APIs.</summary>
         ///
         /// <remarks>The computation will respond to cancellation while waiting for the completion
-        /// of the operation. If a cancellation occurs, and <c>cancelAction</c> is specified, then it is 
+        /// of the operation. If a cancellation occurs, and <c>cancelAction</c> is specified, then it is
         /// executed, and the computation continues to wait for the completion of the operation.
         ///
         /// If <c>cancelAction</c> is not specified, then cancellation causes the computation
@@ -1228,7 +1227,7 @@ namespace Microsoft.FSharp.Control
         /// <example-tbd></example-tbd>
         static member FromBeginEnd : arg1:'Arg1 * arg2:'Arg2 * arg3:'Arg3 * beginAction:('Arg1 * 'Arg2 * 'Arg3 * AsyncCallback * objnull -> IAsyncResult) * endAction:(IAsyncResult -> 'T) * ?cancelAction : (unit -> unit) -> Async<'T>
 
-        /// <summary>Creates three functions that can be used to implement the .NET 1.0 Asynchronous 
+        /// <summary>Creates three functions that can be used to implement the .NET 1.0 Asynchronous
         /// Programming Model (APM) for a given asynchronous computation.</summary>
         ///
         /// <param name="computation">A function generating the asynchronous computation to split into the traditional
@@ -1239,15 +1238,15 @@ namespace Microsoft.FSharp.Control
         /// <category index="5">Legacy .NET Async Interoperability</category>
         ///
         /// <example-tbd></example-tbd>
-        static member AsBeginEnd : computation:('Arg -> Async<'T>) -> 
+        static member AsBeginEnd : computation:('Arg -> Async<'T>) ->
                                      // The 'Begin' member
-                                     ('Arg * AsyncCallback * objnull -> IAsyncResult) * 
+                                     ('Arg * AsyncCallback * objnull -> IAsyncResult) *
                                      // The 'End' member
-                                     (IAsyncResult -> 'T) * 
+                                     (IAsyncResult -> 'T) *
                                      // The 'Cancel' member
                                      (IAsyncResult -> unit)
 
-        /// <summary>Creates an asynchronous computation that runs the given computation and ignores 
+        /// <summary>Creates an asynchronous computation that runs the given computation and ignores
         /// its result.</summary>
         ///
         /// <param name="computation">The input computation.</param>
@@ -1288,16 +1287,16 @@ namespace Microsoft.FSharp.Control
         /// <category index="0">Starting Async Computations</category>
         ///
         /// <example-tbd></example-tbd>
-        static member StartWithContinuations: 
-            computation:Async<'T> * 
-            continuation:('T -> unit) * exceptionContinuation:(exn -> unit) * cancellationContinuation:(OperationCanceledException -> unit) *  
+        static member StartWithContinuations:
+            computation:Async<'T> *
+            continuation:('T -> unit) * exceptionContinuation:(exn -> unit) * cancellationContinuation:(OperationCanceledException -> unit) *
             ?cancellationToken:CancellationToken-> unit
 
         ///
         /// <example-tbd></example-tbd>
-        static member internal StartWithContinuationsUsingDispatchInfo: 
-            computation:Async<'T> * 
-            continuation:('T -> unit) * exceptionContinuation:(ExceptionDispatchInfo -> unit) * cancellationContinuation:(OperationCanceledException -> unit) *  
+        static member internal StartWithContinuationsUsingDispatchInfo:
+            computation:Async<'T> *
+            continuation:('T -> unit) * exceptionContinuation:(ExceptionDispatchInfo -> unit) * cancellationContinuation:(OperationCanceledException -> unit) *
             ?cancellationToken:CancellationToken-> unit
 
         /// <summary>Runs an asynchronous computation, starting immediately on the current operating system
@@ -1313,19 +1312,19 @@ namespace Microsoft.FSharp.Control
         ///
         /// <example id="start-immediate-1">
         /// <code lang="fsharp">
-        /// printfn "A"
+        /// printn "A"
         ///
         /// async {
-        ///     printfn "B"
+        ///     printn "B"
         ///     do! Async.Sleep(1000)
-        ///     printfn "C"
+        ///     printn "C"
         /// } |> Async.StartImmediate
         ///
-        /// printfn "D"
+        /// printn "D"
         /// </code>
         /// Prints "A", "B", "D" immediately, then "C" in 1 second
         /// </example>
-        static member StartImmediate: 
+        static member StartImmediate:
             computation:Async<unit> * ?cancellationToken:CancellationToken-> unit
 
         /// <summary>Runs an asynchronous computation, starting immediately on the current operating system
@@ -1333,7 +1332,7 @@ namespace Microsoft.FSharp.Control
         /// </summary>
         ///
         /// <remarks>If no cancellation token is provided then the default cancellation token is used.
-        /// You may prefer using this method if you want to achieve a similar behavior to async await in C# as 
+        /// You may prefer using this method if you want to achieve a similar behavior to async await in C# as
         /// async computation starts on the current thread with an ability to return a result.
         /// </remarks>
         ///
@@ -1348,22 +1347,22 @@ namespace Microsoft.FSharp.Control
         ///
         /// <example id="start-immediate-as-task-1">
         /// <code lang="fsharp">
-        /// printfn "A"
+        /// printn "A"
         ///
         /// let t =
         ///     async {
-        ///         printfn "B"
+        ///         printn "B"
         ///         do! Async.Sleep(1000)
-        ///         printfn "C"
+        ///         printn "C"
         ///     } |> Async.StartImmediateAsTask
         ///
-        /// printfn "D"
+        /// printn "D"
         /// t.Wait()
-        /// printfn "E"
+        /// printn "E"
         /// </code>
         /// Prints "A", "B", "D" immediately, then "C", "E" in 1 second.
         /// </example>
-        static member StartImmediateAsTask: 
+        static member StartImmediateAsTask:
             computation:Async<'T> * ?cancellationToken:CancellationToken-> Task<'T>
 
 
@@ -1411,7 +1410,7 @@ namespace Microsoft.FSharp.Control
             /// let myTask = MyTask(System.Threading.Tasks.Task.FromResult 42)
             /// async {
             ///     let! result = Async.Await myTask
-            ///     printfn $"Result: {result}"
+            ///     printn $"Result: {result}"
             /// } |> Async.RunSynchronously
             /// </code>
             /// Prints <c>Result: 42</c>.
@@ -1461,7 +1460,7 @@ namespace Microsoft.FSharp.Control
             ///
             /// async {
             ///     let! html = fetchConfigured "https://example.com"
-            ///     printfn $"Downloaded {html.Length} chars"
+            ///     printn $"Downloaded {html.Length} chars"
             /// } |> Async.RunSynchronouslyImmediate
             /// </code>
             /// </example>
@@ -1588,7 +1587,7 @@ namespace Microsoft.FSharp.Control
         /// <returns>A value indicating asynchronous execution.</returns>
         val TryWith: ctxt:AsyncActivation<'T> -> computation: Async<'T> -> catchFunction: (Exception -> Async<'T> option) -> AsyncReturn
 
-        [<Sealed; AutoSerializable(false)>]        
+        [<Sealed; AutoSerializable(false)>]
         // Internals used by MailboxProcessor
         type internal ResultCell<'T> =
             new : unit -> ResultCell<'T>
@@ -1615,7 +1614,7 @@ namespace Microsoft.FSharp.Control
         ///
         /// <remarks>A cancellation check is performed on each iteration of the loop.
         ///
-        /// The existence of this method permits the use of <c>for</c> in the 
+        /// The existence of this method permits the use of <c>for</c> in the
         /// <c>async { ... }</c> computation expression syntax.</remarks>
         ///
         /// <param name="sequence">The sequence to enumerate.</param>
@@ -1632,19 +1631,19 @@ namespace Microsoft.FSharp.Control
         ///
         /// <remarks>A cancellation check is performed when the computation is executed.
         ///
-        /// The existence of this method permits the use of empty <c>else</c> branches in the 
+        /// The existence of this method permits the use of empty <c>else</c> branches in the
         /// <c>async { ... }</c> computation expression syntax.</remarks>
         /// <returns>An asynchronous computation that returns <c>()</c>.</returns>
         ///
         /// <example-tbd></example-tbd>
-        member Zero : unit -> Async<unit> 
+        member Zero : unit -> Async<unit>
 
         /// <summary>Creates an asynchronous computation that first runs <c>computation1</c>
         /// and then runs <c>computation2</c>, returning the result of <c>computation2</c>.</summary>
         ///
         /// <remarks>A cancellation check is performed when the computation is executed.
         ///
-        /// The existence of this method permits the use of expression sequencing in the 
+        /// The existence of this method permits the use of expression sequencing in the
         /// <c>async { ... }</c> computation expression syntax.</remarks>
         ///
         /// <param name="computation1">The first part of the sequenced computation.</param>
@@ -1655,12 +1654,12 @@ namespace Microsoft.FSharp.Control
         /// <example-tbd></example-tbd>
         member inline Combine : computation1:Async<unit> * computation2:Async<'T> -> Async<'T>
 
-        /// <summary>Creates an asynchronous computation that runs <c>computation</c> repeatedly 
+        /// <summary>Creates an asynchronous computation that runs <c>computation</c> repeatedly
         /// until <c>guard()</c> becomes false.</summary>
         ///
         /// <remarks>A cancellation check is performed whenever the computation is executed.
         ///
-        /// The existence of this method permits the use of <c>while</c> in the 
+        /// The existence of this method permits the use of <c>while</c> in the
         /// <c>async { ... }</c> computation expression syntax.</remarks>
         ///
         /// <param name="guard">The function to determine when to stop executing <c>computation</c>.</param>
@@ -1676,7 +1675,7 @@ namespace Microsoft.FSharp.Control
         ///
         /// <remarks>A cancellation check is performed when the computation is executed.
         ///
-        /// The existence of this method permits the use of <c>return</c> in the 
+        /// The existence of this method permits the use of <c>return</c> in the
         /// <c>async { ... }</c> computation expression syntax.</remarks>
         ///
         /// <param name="value">The value to return from the computation.</param>
@@ -1688,7 +1687,7 @@ namespace Microsoft.FSharp.Control
 
         /// <summary>Delegates to the input computation.</summary>
         ///
-        /// <remarks>The existence of this method permits the use of <c>return!</c> in the 
+        /// <remarks>The existence of this method permits the use of <c>return!</c> in the
         /// <c>async { ... }</c> computation expression syntax.</remarks>
         ///
         /// <param name="computation">The input computation.</param>
@@ -1709,13 +1708,13 @@ namespace Microsoft.FSharp.Control
         /// <example-tbd></example-tbd>
         member Delay : generator:(unit -> Async<'T>) -> Async<'T>
 
-        /// <summary>Creates an asynchronous computation that runs <c>binder(resource)</c>. 
+        /// <summary>Creates an asynchronous computation that runs <c>binder(resource)</c>.
         /// The action <c>resource.Dispose()</c> is executed as this computation yields its result
         /// or if the asynchronous computation exits by an exception or by cancellation.</summary>
         ///
         /// <remarks>A cancellation check is performed when the computation is executed.
         ///
-        /// The existence of this method permits the use of <c>use</c> and <c>use!</c> in the 
+        /// The existence of this method permits the use of <c>use</c> and <c>use!</c> in the
         /// <c>async { ... }</c> computation expression syntax.</remarks>
         ///
         /// <param name="resource">The resource to be used and disposed.</param>
@@ -1727,12 +1726,12 @@ namespace Microsoft.FSharp.Control
         /// <example-tbd></example-tbd>
         member Using: resource:'T * binder:('T -> Async<'U>) -> Async<'U> when 'T :> IDisposable|null
 
-        /// <summary>Creates an asynchronous computation that runs <c>computation</c>, and when 
+        /// <summary>Creates an asynchronous computation that runs <c>computation</c>, and when
         /// <c>computation</c> generates a result <c>T</c>, runs <c>binder res</c>.</summary>
         ///
         /// <remarks>A cancellation check is performed when the computation is executed.
         ///
-        /// The existence of this method permits the use of <c>let!</c> in the 
+        /// The existence of this method permits the use of <c>let!</c> in the
         /// <c>async { ... }</c> computation expression syntax.</remarks>
         ///
         /// <param name="computation">The computation to provide an unbound result.</param>
@@ -1743,14 +1742,14 @@ namespace Microsoft.FSharp.Control
         ///
         /// <example-tbd></example-tbd>
         member inline Bind: computation: Async<'T> * binder: ('T -> Async<'U>) -> Async<'U>
-        
-        /// <summary>Creates an asynchronous computation that runs <c>computation</c>. The action <c>compensation</c> is executed 
+
+        /// <summary>Creates an asynchronous computation that runs <c>computation</c>. The action <c>compensation</c> is executed
         /// after <c>computation</c> completes, whether <c>computation</c> exits normally or by an exception. If <c>compensation</c> raises an exception itself
         /// the original exception is discarded and the new exception becomes the overall result of the computation.</summary>
         ///
         /// <remarks>A cancellation check is performed when the computation is executed.
         ///
-        /// The existence of this method permits the use of <c>try/finally</c> in the 
+        /// The existence of this method permits the use of <c>try/finally</c> in the
         /// <c>async { ... }</c> computation expression syntax.</remarks>
         ///
         /// <param name="computation">The input computation.</param>
@@ -1768,7 +1767,7 @@ namespace Microsoft.FSharp.Control
         ///
         /// <remarks>A cancellation check is performed when the computation is executed.
         ///
-        /// The existence of this method permits the use of <c>try/with</c> in the 
+        /// The existence of this method permits the use of <c>try/with</c> in the
         /// <c>async { ... }</c> computation expression syntax.</remarks>
         ///
         /// <param name="computation">The input computation.</param>
@@ -1793,9 +1792,9 @@ namespace Microsoft.FSharp.Control
     /// <category index="1">Async Programming</category>
     [<AutoOpen>]
     module CommonExtensions =
-        
-        type System.IO.Stream with 
-            
+
+        type System.IO.Stream with
+
             /// <summary>Returns an asynchronous computation that will read from the stream into the given buffer.</summary>
             /// <param name="buffer">The buffer to read into.</param>
             /// <param name="offset">An optional offset as a number of bytes in the stream.</param>
@@ -1806,21 +1805,21 @@ namespace Microsoft.FSharp.Control
             /// <exception cref="T:System.ArgumentException">Thrown when the sum of offset and count is longer than
             /// the buffer length.</exception>
             /// <exception cref="T:System.ArgumentOutOfRangeException">Thrown when offset or count is negative.</exception>
-            /// 
+            ///
             /// <example-tbd></example-tbd>
             [<CompiledName("AsyncRead")>] // give the extension member a nice, unmangled compiled name, unique within this module
             member AsyncRead : buffer:byte array * ?offset:int * ?count:int -> Async<int>
-            
+
             /// <summary>Returns an asynchronous computation that will read the given number of bytes from the stream.</summary>
             ///
             /// <param name="count">The number of bytes to read.</param>
             ///
-            /// <returns>An asynchronous computation that returns the read byte array when run.</returns> 
-            /// 
+            /// <returns>An asynchronous computation that returns the read byte array when run.</returns>
+            ///
             /// <example-tbd></example-tbd>
             [<CompiledName("AsyncReadBytes")>] // give the extension member a nice, unmangled compiled name, unique within this module
             member AsyncRead : count:int -> Async<byte array>
-            
+
             /// <summary>Returns an asynchronous computation that will write the given bytes to the stream.</summary>
             ///
             /// <param name="buffer">The buffer to write from.</param>
@@ -1832,7 +1831,7 @@ namespace Microsoft.FSharp.Control
             /// <exception cref="T:System.ArgumentException">Thrown when the sum of offset and count is longer than
             /// the buffer length.</exception>
             /// <exception cref="T:System.ArgumentOutOfRangeException">Thrown when offset or count is negative.</exception>
-            /// 
+            ///
             /// <example-tbd></example-tbd>
             [<CompiledName("AsyncWrite")>] // give the extension member a nice, unmangled compiled name, unique within this module
             member AsyncWrite : buffer:byte array * ?offset:int * ?count:int -> Async<unit>
@@ -1844,7 +1843,7 @@ namespace Microsoft.FSharp.Control
             /// be invoked for each observation.</summary>
             ///
             /// <param name="callback">The function to be called for each observation.</param>
-            /// 
+            ///
             /// <example-tbd></example-tbd>
             [<CompiledName("AddToObservable")>] // give the extension member a nice, unmangled compiled name, unique within this module
             member Add: callback:('T -> unit) -> unit
@@ -1856,7 +1855,7 @@ namespace Microsoft.FSharp.Control
             /// <param name="callback">The function to be called for each observation.</param>
             ///
             /// <returns>An object that will remove the listener if disposed.</returns>
-            /// 
+            ///
             /// <example-tbd></example-tbd>
             [<CompiledName("SubscribeToObservable")>] // give the extension member a nice, unmangled compiled name, unique within this module
             member Subscribe: callback:('T -> unit) -> IDisposable
@@ -1865,12 +1864,12 @@ namespace Microsoft.FSharp.Control
     ///
     /// <category index="1">Async Programming</category>
     [<AutoOpen>]
-    module WebExtensions = 
+    module WebExtensions =
 
-        type System.Net.WebRequest with 
+        type System.Net.WebRequest with
             /// <summary>Returns an asynchronous computation that, when run, will wait for a response to the given WebRequest.</summary>
             /// <returns>An asynchronous computation that waits for response to the <c>WebRequest</c>.</returns>
-            /// 
+            ///
             /// <example id="get-response">
             /// <code lang="fsharp">
             /// open System.Net
@@ -1893,7 +1892,7 @@ namespace Microsoft.FSharp.Control
             /// <param name="address">The URI to retrieve.</param>
             ///
             /// <returns>An asynchronous computation that will wait for the download of the URI.</returns>
-            /// 
+            ///
             /// <example id="async-download-string">
             /// <code lang="fsharp">
             /// open System
@@ -1910,14 +1909,14 @@ namespace Microsoft.FSharp.Control
             /// <param name="address">The URI to retrieve.</param>
             ///
             /// <returns>An asynchronous computation that will wait for the download of the URI.</returns>
-            /// 
+            ///
             /// <example id="async-download-data">
             /// <code lang="fsharp">
             /// open System.Net
             /// open System.Text
             /// open System
             /// let client = new WebClient()
-            /// client.AsyncDownloadData(Uri("https://www.w3.org")) |> Async.RunSynchronously |> Encoding.ASCII.GetString 
+            /// client.AsyncDownloadData(Uri("https://www.w3.org")) |> Async.RunSynchronously |> Encoding.ASCII.GetString
             /// </code>
             /// </example>
             /// Downloads the data in bytes and decodes it to a string.
@@ -1930,7 +1929,7 @@ namespace Microsoft.FSharp.Control
             /// <param name="fileName">The file name to save download to.</param>
             ///
             /// <returns>An asynchronous computation that will wait for the download of the URI to specified file.</returns>
-            /// 
+            ///
             /// <example id="async-download-file">
             /// <code lang="fsharp">
             /// open System.Net
@@ -1944,7 +1943,7 @@ namespace Microsoft.FSharp.Control
             member AsyncDownloadFile : address:Uri * fileName: string -> Async<unit>
 
     // Internals used by MailboxProcessor
-    module internal AsyncBuilderImpl = 
+    module internal AsyncBuilderImpl =
         val async : AsyncBuilder
 
     /// <summary>Contains camelCase module-level functions for <see cref="T:Microsoft.FSharp.Control.FSharpAsync`1"/> computations.</summary>
@@ -2074,3 +2073,55 @@ namespace Microsoft.FSharp.Control
         /// </example>
         [<CompiledName("Empty")>]
         val empty: Async<unit>
+
+        /// <summary>Creates an asynchronous computation that executes each of the <c>computations</c> in sequence, returning <c>unit</c>.</summary>
+        /// <param name="computations">A sequence of unit computations to be executed in sequence.</param>
+        /// <returns>A computation that runs all inputs in sequence and returns <c>unit</c>.</returns>
+        /// <example id="async-sequentialdo-1">
+        /// <code lang="fsharp">
+        /// // NOTE numbers are guaranteed to be printed in order 1..10
+        /// seq { for i in 1..10 -> async { printfn "%d" i } }
+        /// |> Async.sequentialDo
+        /// |> Async.RunSynchronouslyImmediate
+        /// </code>
+        /// </example>
+        [<CompiledName("SequentialDo")>]
+        val sequentialDo: computations: seq<Async<unit>> -> Async<unit>
+
+        /// <summary>Creates an asynchronous computation that executes all the supplied asynchronous computations
+        /// with concurrency limited to at most <c>maxDegreeOfParallelism</c>,
+        /// and returns their results as an array in the same order as the inputs.</summary>
+        /// <remarks>While the result order matches the input order, the relative start and completion order of computations is arbitrary.</remarks>
+        /// <param name="maxDegreeOfParallelism">The maximum number of computations to run concurrently. Must be &gt; 0.</param>
+        /// <param name="computations">A sequence of computations to be parallelized.</param>
+        /// <returns>A computation that returns an array of results from the input computations in the same order they were supplied.</returns>
+        ///
+        /// <example id="async-parallellimit-1">
+        /// <code lang="fsharp">
+        /// let results =
+        ///     seq { for i in 1..10 -> async { return i * i } }
+        ///     |> Async.parallelLimit 3
+        ///     |> Async.RunSynchronouslyImmediate
+        /// results // evaluates to [| 1; 4; 9; 16; 25; 36; 49; 64; 81; 100 |]
+        /// </code>
+        /// </example>
+        [<CompiledName("ParallelLimit")>]
+        val parallelLimit: maxDegreeOfParallelism: int -> computations: seq<Async<'T>> -> Async<'T[]>
+
+        /// <summary>Creates an asynchronous computation that executes all the supplied asynchronous computations returning unit,
+        /// with concurrency limited to at most <c>maxDegreeOfParallelism</c>.</summary>
+        /// <remarks>The relative start and completion order of computations is arbitrary.</remarks>
+        /// <param name="maxDegreeOfParallelism">The maximum number of computations to run concurrently. Must be &gt; 0.</param>
+        /// <param name="computations">A sequence of unit computations to be parallelized.</param>
+        ///
+        /// <returns>A computation that runs all inputs with limited parallelism and returns <c>unit</c>.</returns>
+        ///
+        /// <example id="async-paralleldolimit-1">
+        /// <code lang="fsharp">
+        /// seq { for i in 1..10 -> async { printfn "%d" i } } // NOTE output order can vary
+        /// |> Async.parallelDoLimit 3
+        /// |> Async.RunSynchronouslyImmediate
+        /// </code>
+        /// </example>
+        [<CompiledName("ParallelDoLimit")>]
+        val parallelDoLimit: maxDegreeOfParallelism: int -> computations: seq<Async<unit>> -> Async<unit>

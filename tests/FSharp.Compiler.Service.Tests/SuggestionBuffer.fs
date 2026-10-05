@@ -6,24 +6,24 @@ open FSharp.Test
 
 module SuggestionBuffer =
     open FSharp.Compiler.DiagnosticResolutionHints
-    
+
     [<Fact>]
     let NewBufferShouldBeEmpty() =
         let buffer = SuggestionBuffer("abdef")
-    
+
         Assert.shouldBeFalse buffer.Disabled
         Assert.shouldBeEmpty buffer
-        
+
     [<Fact>]
     let BufferShouldOnlyAcceptSimilarElements() =
         let buffer = SuggestionBuffer("abcd")
         buffer.Add("abce")
         buffer.Add("somethingcompletelyunrelated")
-        
+
         let results = Array.ofSeq buffer
-        
+
         Assert.shouldBeEquivalentTo [| "abce" |] results
-    
+
     [<Fact>]
     let SmallIdentifierShouldBeIgnored() =
         let buffer = SuggestionBuffer("ab")
@@ -97,7 +97,7 @@ module SuggestionBuffer =
         buffer.Add("abc")
         buffer.Add("ab")
         buffer.Add("ad")
-        
+
         let results = Array.ofSeq buffer
-        
+
         Assert.shouldBeEquivalentTo [| "abc"; "abce" |] results

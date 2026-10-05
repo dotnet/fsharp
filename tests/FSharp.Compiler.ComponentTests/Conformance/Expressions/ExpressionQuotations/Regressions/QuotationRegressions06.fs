@@ -1,7 +1,7 @@
-// #Conformance #Quotations 
+// #Conformance #Quotations
 
 
-let quote = 
+let quote =
             <@
               let facts = function
                 | (1,"john","marge")

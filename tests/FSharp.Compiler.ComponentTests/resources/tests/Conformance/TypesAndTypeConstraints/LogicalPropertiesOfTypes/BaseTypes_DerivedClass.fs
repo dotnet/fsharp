@@ -1,4 +1,4 @@
-// #Conformance #TypeConstraints 
+// #Conformance #TypeConstraints
 
 
 // Test the base types of F# types: Derived Class
@@ -8,7 +8,7 @@ let baseTypeName<'a> = match typeof<'a> with
                        | x when x.BaseType <> null -> x.BaseType.Name
                        | x                         -> null
 
-// Abstract 
+// Abstract
 [<AbstractClass>]
 type AbstractType =
     class

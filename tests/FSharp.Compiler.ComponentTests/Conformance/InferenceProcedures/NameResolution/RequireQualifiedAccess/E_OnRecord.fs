@@ -1,4 +1,4 @@
-// #Regression #Conformance #TypeInference #Attributes 
+// #Regression #Conformance #TypeInference #Attributes
 // Verify error when not fully qualifying a record field when it
 // has the RequireQualifiedAccess attribute.
 

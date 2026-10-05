@@ -1,4 +1,4 @@
-// #Regression #Conformance #Quotations 
+// #Regression #Conformance #Quotations
 //Regression for FSHARP1.0:6030
 //Quoting a class member ? results in error about 'trait members' but quoting it as op_Dynamic is ok
 // Confirm it works fine for let bound operators

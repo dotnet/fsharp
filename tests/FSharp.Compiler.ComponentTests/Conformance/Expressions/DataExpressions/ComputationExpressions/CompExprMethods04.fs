@@ -1,4 +1,4 @@
-// #Conformance #DataExpressions #ComputationExpressions 
+// #Conformance #DataExpressions #ComputationExpressions
 // Verify the ability to define computation expression methods and
 // that they get called as part of a custom workflow builder.
 
@@ -12,7 +12,7 @@ type WorkflowBuilder() =
     member this.Items = yieldedItems |> Array.ofSeq
 
     member this.Yield(item) = yieldedItems.Add(item)
-    member this.YieldFrom(items : seq<string>) = 
+    member this.YieldFrom(items : seq<string>) =
         items |> Seq.iter (fun item -> yieldedItems.Add(item.ToUpper()))
         ()
 
@@ -31,7 +31,7 @@ let result =
         yield "foo"
         yield "bar"
         yield! [| "a"; "b"; "c" |]
-        
+
         return ()
     }
 

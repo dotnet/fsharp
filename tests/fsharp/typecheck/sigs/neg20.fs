@@ -1,27 +1,27 @@
 ﻿module Test
 
-type A() = 
+type A() =
     member x.P = 1
 
-type B() = 
+type B() =
     inherit A()
     member x.P = 1
 
-type B1() = 
+type B1() =
     inherit A()
     member x.P = 1
 
-type B2() = 
+type B2() =
     inherit A()
     member x.P = 1
-    
-    
-type C() = 
+
+
+type C() =
     inherit B()
     member x.P = 1
 
 module BiGenericStaticMemberTests =
-    type StaticClass1() = 
+    type StaticClass1() =
         static member M<'b>(c:'b, d:'b) = 1
 
     let obj = new obj()
@@ -31,8 +31,8 @@ module BiGenericStaticMemberTests =
     StaticClass1.M<string>(str,obj)
     StaticClass1.M<string>(obj,obj)
 
-    StaticClass1.M(obj,str)   // obj :> 'b  --> obj = 'b 
-    StaticClass1.M(str,obj)   // string :> 'b  --> string = 'b 
+    StaticClass1.M(obj,str)   // obj :> 'b  --> obj = 'b
+    StaticClass1.M(str,obj)   // string :> 'b  --> string = 'b
 
 module BiGenericFunctionTests =
     let M<'b>(c:'b, d:'b) = 1
@@ -44,19 +44,19 @@ module BiGenericFunctionTests =
     M<string>(str,obj)
     M<string>(obj,obj)
 
-    M(obj,str)   // obj :> 'b  --> obj = 'b 
-    M(str,obj)   // string :> 'b  --> string = 'b 
+    M(obj,str)   // obj :> 'b  --> obj = 'b
+    M(str,obj)   // string :> 'b  --> string = 'b
 
 
-module NoSubsumptionOnApplication = 
+module NoSubsumptionOnApplication =
     (fun (x:A) -> 1)  (new B())  // now permitted
     (fun (x:System.ValueType) -> 1)  1  // coercion on application!
 
 
-module NoSubsumptionForLists = 
-    type StaticClass2() = 
+module NoSubsumptionForLists =
+    type StaticClass2() =
         static member DisplayControls(controls: A list) = ()
-        
+
     let v21 = [ new B(); new A() ]
     let v22 = [ new B1(); new B2() ]
     let v2b = [ new C(); new B() ]
@@ -91,17 +91,17 @@ module NoSubsumptionForLists =
     // Q. subsumption on 'let v = expr'? Allowed
     let x76 : A = new B()
 
-module NoSubsumptionForLists2 = 
+module NoSubsumptionForLists2 =
 
-    let d1 = new B() ::  new A() :: [] 
-    let d2 = new A() ::  new B() :: [] 
+    let d1 = new B() ::  new A() :: []
+    let d2 = new A() ::  new B() :: []
 
-    let v2a = [ new B(); new A() ] // would not work! 
-        // cf. let v2b = [ (new B() :> A); new A() ] 
+    let v2a = [ new B(); new A() ] // would not work!
+        // cf. let v2b = [ (new B() :> A); new A() ]
 
     type Data = Data of A * A
     let data (x,y) = Data (x,y)
-    let pAA = (new A(),new A()) 
+    let pAA = (new A(),new A())
     let pBB = (new B(),new B())
     let pAB = (new A(),new B())
     let pBA = (new B(),new A())
@@ -112,14 +112,14 @@ module NoSubsumptionForLists2 =
     pAB |> data   // permitted
     pBA |> data   // permitted
 
-module BiGenericMethodsInGenericClassTests = 
+module BiGenericMethodsInGenericClassTests =
     type C<'a>() =
         static member M(x:'a) = 1
         static member M2<'b>(x:'b) = 1
         static member M3<'b>(x:'b,y:'b) = 1
-        
+
         static member OM3<'b>(x:'b,y:'b) = 1
-        
+
         static member OM3<'b>(x:'b,y:int) = 1
 
     let obj = new obj()
@@ -133,16 +133,16 @@ module BiGenericMethodsInGenericClassTests =
 
 
 
-module BadNumberOfGenericParameters = 
+module BadNumberOfGenericParameters =
 
-    type C<'a>() = 
+    type C<'a>() =
         member x.P = 1
         member x.M1() = 2
         member x.M2(y:int) = 2
         member x.M3(y:int,z:int) = 2
         member x.M4<'b>(y:'a,z:'b) = 2
         member x.M5<'b,'c>(y:'a,z:'b) = 2
-        
+
         static member SP = 1
         static member SM1() = 2
         static member SM2(y:int) = 2
@@ -166,15 +166,15 @@ module BadNumberOfGenericParameters =
     let _ = c.M4<int,int>(y=3,z=4) // expect error here
     let _ = c.M5<int>(y=3,z=4) // expect error here
 
-    module PositiveTests = 
+    module PositiveTests =
         let _ = C.SM4<int>(y=3,z=4) // expect NO NO NO NO NO error here
         let _ = C.SM4(y=3,z=4) // expect NO NO NO NO NO error here
         let _ = C.SM5<int,int>(y=3,z=4) // expect NO NO NO NO NO error here
         let _ = c.M4<int>(y=3,z=4) // expect NO NO NO NO NO error here
         let _ = c.M4(y=3,z=4) // expect NO NO NO NO NO error here
         let _ = c.M5<int,int>(y=3,z=4) // expect NO NO NO NO NO error here
-        
-    
+
+
 module ParamArgs =  begin
     type C2() = class
         static member M( fmt:string, [<System.ParamArray>] args : int[]) = System.String.Format(fmt,args)
@@ -243,13 +243,13 @@ module BadAttribute =  begin
   [<GeneralizableValue>]
   type C4() = class end
 
-  
-  type C5 = 
-    class 
-      [<GeneralizableValue>] val x : int 
+
+  type C5 =
+    class
+      [<GeneralizableValue>] val x : int
     end
 
-  
+
   type C6() = class end
 
   [<AutoSerializable(false)>]
@@ -268,7 +268,7 @@ module BadAttribute =  begin
   [<RequireQualifiedAccess>]
   let T14 = 1
 
-  [<AutoOpen()>]  
+  [<AutoOpen()>]
   let T15 = 1
 
 end
@@ -284,7 +284,7 @@ module DuplicateArgNames =  begin
 
   let f1 x x = ()
   let f2 x _ x = ()
-  type C() = 
+  type C() =
      member x.M(x:int)  = x + x
 end
 
@@ -340,14 +340,14 @@ type ClassWithOneConstructor(x:int) = member x.P = 1
 let ss3 = ClassWithOneConstructor
 
 
-module OverloadedTypeNamesBothHaveConstructors = 
-    type OverloadedClassName<'T>(x:int) = 
+module OverloadedTypeNamesBothHaveConstructors =
+    type OverloadedClassName<'T>(x:int) =
         new (y:string) = OverloadedClassName<'T>(1)
         member __.P = x
         static member S() = 3
 
 
-    type OverloadedClassName<'T1,'T2>(x:int) = 
+    type OverloadedClassName<'T1,'T2>(x:int) =
         new (y:string) = OverloadedClassName<'T1,'T2>(1)
         member __.P = x
         static member S() = 3
@@ -356,14 +356,14 @@ module OverloadedTypeNamesBothHaveConstructors =
     let t3s = "3" |> OverloadedClassName // expected error - multiple types exist
 
 
-module OverloadedTypeNamesSomeConstructors = 
-    type OverloadedClassName<'T>(x:int) = 
+module OverloadedTypeNamesSomeConstructors =
+    type OverloadedClassName<'T>(x:int) =
         new (y:string) = OverloadedClassName<'T>(1)
         member __.P = x
         static member S() = 3
 
 
-    type OverloadedClassName<'T1,'T2> = 
+    type OverloadedClassName<'T1,'T2> =
         member __.P = 1
         static member S() = 3
 
@@ -372,11 +372,11 @@ module OverloadedTypeNamesSomeConstructors =
     let t2s = "3" |> OverloadedClassName<int,int> //  CHANGE IN ERROR MESSAGE IN F# 4.x: Was "Invalid use of a type name", now "No constructors are available for the type 'OverloadedClassName<'a,'b>'"
     let t3s = "3" |> OverloadedClassName // expected error - multiple types exist
 
-module OverloadedTypeNamesNoConstructors = 
-    type OverloadedClassName<'T> = 
+module OverloadedTypeNamesNoConstructors =
+    type OverloadedClassName<'T> =
         static member S(x:int) = 3
 
-    type OverloadedClassName<'T1,'T2> = 
+    type OverloadedClassName<'T1,'T2> =
         static member S(x:int) = 3
 
     let t3 = 3 |> OverloadedClassName.S // expected error - multiple types exist
@@ -387,20 +387,20 @@ module OverloadedTypeNamesNoConstructors =
 
 
 
-module OverloadedTypeNamesIncludingNonGenericTypeBothHaveConstructors = 
+module OverloadedTypeNamesIncludingNonGenericTypeBothHaveConstructors =
 
-    type OverloadedClassName(x:int) = 
+    type OverloadedClassName(x:int) =
         new (y:string) = OverloadedClassName(1)
         member __.P = x
         static member S() = 3
 
-    type OverloadedClassName<'T>(x:int) = 
+    type OverloadedClassName<'T>(x:int) =
         new (y:string) = OverloadedClassName<'T>(1)
         member __.P = x
         static member S() = 3
 
 
-    type OverloadedClassName<'T1,'T2>(x:int) = 
+    type OverloadedClassName<'T1,'T2>(x:int) =
         new (y:string) = OverloadedClassName<'T1,'T2>(1)
         member __.P = x
         static member S() = 3
@@ -409,19 +409,19 @@ module OverloadedTypeNamesIncludingNonGenericTypeBothHaveConstructors =
     let t3s = "3" |> OverloadedClassName // expected error - multiple types exist
 
 
-module OverloadedTypeNamesIncludingNonGenericTypeSomeConstructors = 
-    type OverloadedClassName(x:int) = 
+module OverloadedTypeNamesIncludingNonGenericTypeSomeConstructors =
+    type OverloadedClassName(x:int) =
         new (y:string) = OverloadedClassName(1)
         member __.P = x
         static member S() = 3
 
-    type OverloadedClassName<'T>(x:int) = 
+    type OverloadedClassName<'T>(x:int) =
         new (y:string) = OverloadedClassName<'T>(1)
         member __.P = x
         static member S() = 3
 
 
-    type OverloadedClassName<'T1,'T2> = 
+    type OverloadedClassName<'T1,'T2> =
         member __.P = 1
         static member S() = 3
 
@@ -430,14 +430,14 @@ module OverloadedTypeNamesIncludingNonGenericTypeSomeConstructors =
     let t2s = "3" |> OverloadedClassName<int,int> //  CHANGE IN ERROR MESSAGE IN F# 4.x: Was "Invalid use of a type name", now "No constructors are available for the type 'OverloadedClassName<'a,'b>'"
     let t3s = "3" |> OverloadedClassName // expected error - multiple types exist
 
-module OverloadedTypeNamesIncludingNonGenericTypeNoConstructors = 
-    type OverloadedClassName = 
+module OverloadedTypeNamesIncludingNonGenericTypeNoConstructors =
+    type OverloadedClassName =
         static member S(x:int) = 3
 
-    type OverloadedClassName<'T> = 
+    type OverloadedClassName<'T> =
         static member S(x:int) = 3
 
-    type OverloadedClassName<'T1,'T2> = 
+    type OverloadedClassName<'T1,'T2> =
         static member S(x:int) = 3
 
     let t3 = 3 |> OverloadedClassName.S // NO ERROR EXPECTED
@@ -459,13 +459,13 @@ module InterfacesOfMeasureAnnotatedTypes =
         inherit IEquatable<'T>
 
     type Prim() =
-        interface IComparable with 
+        interface IComparable with
             member x.CompareTo(y) = 0
-        interface IDerivedComparable<Prim> with 
+        interface IDerivedComparable<Prim> with
             member x.CompareTo(y) = 0
-        interface IDerivedEquatable<Prim> with 
+        interface IDerivedEquatable<Prim> with
             member x.Equals(y) = true
-        interface IRandomOtherInterface<Prim> with 
+        interface IRandomOtherInterface<Prim> with
             member x.M(y) = y
         override x.Equals(y) = true
         override x.GetHashCode() = 0

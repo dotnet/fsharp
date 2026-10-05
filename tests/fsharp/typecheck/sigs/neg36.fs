@@ -1,17 +1,17 @@
 module Neg36
 
-module TestAbstractOverrides_Bug4232_Case1 = 
+module TestAbstractOverrides_Bug4232_Case1 =
     [<AbstractClass>]
-    type D<'T,'U>() = 
+    type D<'T,'U>() =
         abstract M : 'T  -> int
         abstract M : 'U -> int
-        
-    type E() = 
+
+    type E() =
         inherit D<string,string>()
         override x.M(a:string) = 1
 
-module TestAbstractOverrides_Bug4232_Case2 = 
-        
+module TestAbstractOverrides_Bug4232_Case2 =
+
     [<AbstractClass>]
     type PA() =
         abstract M : int -> unit
@@ -27,7 +27,7 @@ module TestAbstractOverrides_Bug4232_Case2 =
         // Here, PA.M amd PB<int>.M have the same signature, so PA.M is unimplementable.
         // EXPECT: friendly error at this point?
 
-    type PD() = 
+    type PD() =
         inherit PC()
         override this.M(x:int) = ()
 

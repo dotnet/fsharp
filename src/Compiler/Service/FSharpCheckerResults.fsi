@@ -256,6 +256,9 @@ type public FSharpCheckFileResults =
     /// Get a view of the contents of the assembly up to and including the file just checked
     member PartialAssemblySignature: FSharpAssemblySignature
 
+    /// Get a view of the contents of the file just checked, inferred even when a signature file hides them
+    member FileSignature: FSharpAssemblySignature
+
     /// Get the resolution of the ProjectOptions
     member ProjectContext: FSharpProjectContext
 
@@ -459,7 +462,7 @@ type public FSharpCheckFileResults =
     /// Lays out and returns the formatted signature for the typechecked file as source text.
     member GenerateSignature: ?pageWidth: int -> ISourceText option
 
-    member internal CalculateSignatureHash: unit -> int option
+    member internal CalculateSignatureHash: unit -> int64 option
 
     /// Internal constructor
     static member internal MakeEmpty:
@@ -480,6 +483,7 @@ type public FSharpCheckFileResults =
         tcErrors: FSharpDiagnostic[] *
         keepAssemblyContents: bool *
         ccuSigForFile: ModuleOrNamespaceType *
+        ownSigForFile: ModuleOrNamespaceType *
         thisCcu: CcuThunk *
         tcImports: TcImports *
         tcAccessRights: AccessorDomain *

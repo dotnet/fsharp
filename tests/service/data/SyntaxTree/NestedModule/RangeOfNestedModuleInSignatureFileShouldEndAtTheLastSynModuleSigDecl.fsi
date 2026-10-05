@@ -51,7 +51,7 @@ module Operators =
         [<CompiledName("Length1")>]
         member Length1 : int
         /// <summary>Get the length of the array in the second dimension  </summary>
-        [<CompiledName("Length2")>]        
+        [<CompiledName("Length2")>]
         member Length2 : int
         /// <summary>Get the lower bound of the array in the first dimension  </summary>
         [<CompiledName("Base1")>]

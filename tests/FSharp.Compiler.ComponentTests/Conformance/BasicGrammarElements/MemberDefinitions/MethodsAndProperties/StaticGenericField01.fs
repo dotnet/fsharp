@@ -1,12 +1,12 @@
-// #Conformance #DeclarationElements #MemberDefinitions #MethodsAndProperties 
+// #Conformance #DeclarationElements #MemberDefinitions #MethodsAndProperties
 
 
 // Verify we can handle static generic fields
 
-type Counter1<'a> = 
+type Counter1<'a> =
     static member P = sizeof<'a>
 
-type Counter2<'a>() = 
+type Counter2<'a>() =
     static let x = sizeof<'a>
     static member P = x
     member this.P2 = Counter2<'a>.P

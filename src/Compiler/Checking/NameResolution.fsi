@@ -30,8 +30,6 @@ type NameResolver =
 
     member g: TcGlobals
 
-    member languageSupportsNameOf: bool
-
 /// Get the active pattern elements defined in a module, if any. Cache in the slot in the module type.
 val ActivePatternElemsOfModuleOrNamespace: g: TcGlobals -> ModuleOrNamespaceRef -> NameMap<ActivePatternElemRef>
 
@@ -688,6 +686,18 @@ val internal ExtensionPropInfosOfTypeInScope:
     m: range ->
     ty: TType ->
         PropInfo list
+
+/// Get the intrinsic methods of a type (both declared and inherited), without the extension methods in
+/// scope. Callers that filter extension members out again should use this and skip the extension scan.
+val internal IntrinsicMethInfosOfType:
+    infoReader: InfoReader ->
+    optFilter: string option ->
+    ad: AccessorDomain ->
+    allowMultiIntfInst: TypeHierarchy.AllowMultiIntfInstantiations ->
+    findFlag: FindMemberFlag ->
+    m: range ->
+    ty: TType ->
+        MethInfo list
 
 /// Get the available methods of a type (both declared and inherited)
 val internal AllMethInfosOfTypeInScope:

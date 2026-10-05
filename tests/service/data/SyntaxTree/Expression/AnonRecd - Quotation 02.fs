@@ -1,4 +1,4 @@
-module Module 
+module Module
 
 {| A = <@@ 1 + 1 @@>|}
 

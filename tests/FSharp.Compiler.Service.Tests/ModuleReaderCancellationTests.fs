@@ -54,7 +54,7 @@ module ModuleReader =
         let parameters = []
         let ret = mkILReturn ILType.Void
         let genericParams = []
-        let customAttrs = mkILCustomAttrs [] 
+        let customAttrs = mkILCustomAttrs []
 
         let implAttributes = MethodImplAttributes.Managed
         let body = InterruptibleLazy.FromValue MethodBody.NotAvailable

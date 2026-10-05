@@ -1,4 +1,4 @@
-// #Conformance #ObjectOrientedTypes #InterfacesAndImplementations 
+// #Conformance #ObjectOrientedTypes #InterfacesAndImplementations
 
 
 // Verify you can use inheritance with interfaces
@@ -12,7 +12,7 @@ type IThing =
 type FSharpLanguage() =
     interface IThing with
         member this.GetAge() = 3
-        member this.Name = "The F# Programming Language"    
+        member this.Name = "The F# Programming Language"
 
 let test = new FSharpLanguage()
 let ia = test :> IAge

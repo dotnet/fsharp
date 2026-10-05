@@ -2,7 +2,7 @@
 
 let inline g< ^t, ^u, ^v when (^t or ^u or ^v) : (static member M : string)>() = 0
 
-type T() = 
+type T() =
     static member M = ""
 
 let _ = g<T, int, string>()

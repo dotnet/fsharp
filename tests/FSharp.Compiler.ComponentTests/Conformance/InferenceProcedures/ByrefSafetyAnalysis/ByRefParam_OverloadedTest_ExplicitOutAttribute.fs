@@ -1,7 +1,7 @@
 open Prelude
 
-module ByRefParam_OverloadedTest_ExplicitOutAttribute  = 
-    type C() = 
+module ByRefParam_OverloadedTest_ExplicitOutAttribute  =
+    type C() =
          static member M(a: int, [<System.Runtime.InteropServices.Out>] x: byref<int>) = x <- 7
          static member M(a: string, [<System.Runtime.InteropServices.Out>] x: byref<int>) = x <- 8
     let mutable res = 9

@@ -15,7 +15,7 @@ let main argv =
     p b
     p l
 
-    let tt : bool*int64 = t 
+    let tt : bool*int64 = t
 
     // Tests that a Tuple is created as needed when calling p
     p tt

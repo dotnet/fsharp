@@ -36,7 +36,7 @@ type TinyRecord = { V: int }
 
 [<MemoryDiagnoser>]
 type ExactEquals_EqualityTests() =
-    
+
     [<Benchmark>]
     member _.Struct() =
         Struct(1, 2) = Struct(2, 3)
@@ -48,7 +48,7 @@ type ExactEquals_EqualityTests() =
     [<Benchmark>]
     member _.StructRecord() =
         { V = 1; U = 2 } = { V = 2; U = 3 }
-    
+
     [<Benchmark>]
     member _.GenericStruct() =
         Struct(1, 2) = Struct(2, 3)
@@ -59,7 +59,7 @@ type ExactEquals_EqualityTests() =
 
     [<Benchmark>]
     member _.GenericStructRecord() =
-        { V = 1; U = 2 } = { V = 2; U = 3 } 
+        { V = 1; U = 2 } = { V = 2; U = 3 }
 
     [<Benchmark>]
     member _.TinyStruct() =

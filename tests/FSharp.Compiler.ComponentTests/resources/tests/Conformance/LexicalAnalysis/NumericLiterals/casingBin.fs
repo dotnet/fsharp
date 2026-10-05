@@ -1,4 +1,4 @@
-// #Conformance #LexicalAnalysis #Constants 
+// #Conformance #LexicalAnalysis #Constants
 // Number type specifier are not case-sensitive
 // Bin
 //<Expects status="success"></Expects>

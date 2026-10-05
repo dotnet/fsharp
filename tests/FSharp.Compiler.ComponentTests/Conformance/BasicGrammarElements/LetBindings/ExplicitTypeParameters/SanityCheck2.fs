@@ -1,4 +1,4 @@
-// #Conformance #DeclarationElements #LetBindings #TypeAnnotations #TypeInference #TypeConstraints 
+// #Conformance #DeclarationElements #LetBindings #TypeAnnotations #TypeInference #TypeConstraints
 let empty<'a when 'a : comparison> : ('a list * 'a Set) = ([], Set.empty)
 let empties = empty<unit option list list option>  // optional list of lists of lists of optional units
 printfn "Empties = %A" empties

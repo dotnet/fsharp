@@ -1,4 +1,4 @@
-// #Regression #Conformance #ControlFlow 
+// #Regression #Conformance #ControlFlow
 // Regression for Dev10:850869
 // Previously, using an uppercase identifier in the loop variable caused an error
 

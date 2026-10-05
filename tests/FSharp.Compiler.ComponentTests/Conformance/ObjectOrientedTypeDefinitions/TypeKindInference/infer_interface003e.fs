@@ -1,4 +1,4 @@
-// #Regression #Conformance #ObjectOrientedTypes #TypeInference 
+// #Regression #Conformance #ObjectOrientedTypes #TypeInference
 
 // attribute must match inferred type
 
@@ -10,13 +10,13 @@
 [<AbstractClass>]
 type TK_C_000 =
    abstract M : int -> int
-   
+
 [<Class>]
 type TK_I_005 =
   abstract M  : unit -> unit
 
 [<Class>]
-type TK_I_007 = 
+type TK_I_007 =
   inherit TK_C_000
-  
+
 exit 1

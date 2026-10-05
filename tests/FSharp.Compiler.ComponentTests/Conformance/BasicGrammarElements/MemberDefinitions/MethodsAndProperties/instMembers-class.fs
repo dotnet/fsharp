@@ -1,11 +1,11 @@
-// #Conformance #DeclarationElements #MemberDefinitions #MethodsAndProperties 
+// #Conformance #DeclarationElements #MemberDefinitions #MethodsAndProperties
 
 
 // Testing instance methods on regular classes
 type VanillaClass(x) =
     let mutable m_value = x
     member this.InstanceProperty with get() = m_value and set x = m_value <- x
-    
+
 let vt1 = new VanillaClass(42)
 vt1.InstanceProperty <- vt1.InstanceProperty * -1
 let vt2 = new VanillaClass(-42)

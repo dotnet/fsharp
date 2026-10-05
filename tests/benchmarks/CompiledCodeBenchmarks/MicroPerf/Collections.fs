@@ -10,56 +10,56 @@ type CollectionsBenchmark() =
     let mutable length = 0
     let mutable list = []
     let mutable array = [||]
-            
+
     [<Params(1000, 10000)>]
     member this.Length
         with get () = length
-        and set (value) = 
+        and set (value) =
             length <- value
             list <- List.init length (fun _ -> 0)
-            array <- Array.init length (fun _ -> 0)  
-          
+            array <- Array.init length (fun _ -> 0)
+
     /// List
     [<Benchmark>]
     member x.ListRemoveAtBeginning() =
         list
-        |> List.removeAt 0 
+        |> List.removeAt 0
         |> ignore
 
     [<Benchmark>]
     member x.ListRemoveAtEnd() =
         list
-        |> List.removeAt (x.Length - 1) 
+        |> List.removeAt (x.Length - 1)
         |> ignore
-        
+
     [<Benchmark>]
     member x.ListRemoveManyAtBeginning() =
         list
-        |> List.removeManyAt 0 10 
+        |> List.removeManyAt 0 10
         |> ignore
 
     [<Benchmark>]
     member x.ListRemoveManyAtEnd() =
         list
-        |> List.removeManyAt (x.Length - 11) 10 
+        |> List.removeManyAt (x.Length - 11) 10
         |> ignore
-        
+
     [<Benchmark>]
     member x.ListInsertAtBeginning() =
         list
-        |> List.insertAt 0 1 
+        |> List.insertAt 0 1
         |> ignore
 
     [<Benchmark>]
     member x.ListInsertAtEnd() =
         list
-        |> List.insertAt (x.Length - 1) 1 
+        |> List.insertAt (x.Length - 1) 1
         |> ignore
-        
+
     [<Benchmark>]
     member x.ListInsertManyAtBeginning() =
         list
-        |> List.insertManyAt 0 [1..10] 
+        |> List.insertManyAt 0 [1..10]
         |> ignore
 
     [<Benchmark>]
@@ -67,11 +67,11 @@ type CollectionsBenchmark() =
         list
         |> List.insertManyAt (x.Length - 11) [1..10]
         |> ignore
-        
+
     [<Benchmark>]
     member x.ListUpdateAtBeginning() =
         list
-        |> List.updateAt 0 1 
+        |> List.updateAt 0 1
         |> ignore
 
     [<Benchmark>]
@@ -79,48 +79,48 @@ type CollectionsBenchmark() =
         list
         |> List.updateAt (x.Length - 1) 1
         |> ignore
-        
+
     /// Array
     [<Benchmark>]
     member x.ArrayRemoveAtBeginning() =
         array
-        |> Array.removeAt 0 
+        |> Array.removeAt 0
         |> ignore
 
     [<Benchmark>]
     member x.ArrayRemoveAtEnd() =
         array
-        |> Array.removeAt (x.Length - 1) 
+        |> Array.removeAt (x.Length - 1)
         |> ignore
-        
+
     [<Benchmark>]
     member x.ArrayRemoveManyAtBeginning() =
         array
-        |> Array.removeManyAt 0 10 
+        |> Array.removeManyAt 0 10
         |> ignore
 
     [<Benchmark>]
     member x.ArrayRemoveManyAtEnd() =
         array
-        |> Array.removeManyAt (x.Length - 11) 10 
+        |> Array.removeManyAt (x.Length - 11) 10
         |> ignore
-        
+
     [<Benchmark>]
     member x.ArrayInsertAtBeginning() =
         array
-        |> Array.insertAt 0 1 
+        |> Array.insertAt 0 1
         |> ignore
 
     [<Benchmark>]
     member x.ArrayInsertAtEnd() =
         array
-        |> Array.insertAt (x.Length - 1) 1 
+        |> Array.insertAt (x.Length - 1) 1
         |> ignore
-        
+
     [<Benchmark>]
     member x.ArrayInsertManyAtBeginning() =
         array
-        |> Array.insertManyAt 0 [1..10] 
+        |> Array.insertManyAt 0 [1..10]
         |> ignore
 
     [<Benchmark>]
@@ -128,11 +128,11 @@ type CollectionsBenchmark() =
         array
         |> Array.insertManyAt (x.Length - 11) [1..10]
         |> ignore
-        
+
     [<Benchmark>]
     member x.ArrayUpdateAtBeginning() =
         array
-        |> Array.updateAt 0 1 
+        |> Array.updateAt 0 1
         |> ignore
 
     [<Benchmark>]
@@ -140,41 +140,41 @@ type CollectionsBenchmark() =
         array
         |> Array.updateAt (x.Length - 1) 1
         |> ignore
-        
+
     /// Seq
     [<Benchmark>]
     member x.SeqBaseline() =
-        array 
+        array
         |> Seq.toList
         |> ignore
-        
+
     [<Benchmark>]
     member x.SeqRemoveAtBeginning() =
         list
-        |> Seq.removeAt 0 
+        |> Seq.removeAt 0
         |> Seq.toList
         |> ignore
 
     [<Benchmark>]
     member x.SeqRemoveAtEnd() =
         list
-        |> Seq.removeAt (x.Length - 1) 
+        |> Seq.removeAt (x.Length - 1)
         |> Seq.toList
         |> ignore
-        
+
     [<Benchmark>]
     member x.SeqRemoveManyAtBeginning() =
         list
-        |> Seq.removeManyAt 0 10 
+        |> Seq.removeManyAt 0 10
         |> Seq.toList
         |> ignore
 
     [<Benchmark>]
     member x.SeqRemoveManyAtEnd() =
         list
-        |> Seq.removeManyAt (x.Length - 11) 10 
+        |> Seq.removeManyAt (x.Length - 11) 10
         |> Seq.iter ignore
-        
+
     [<Benchmark>]
     member x.SeqInsertAtBeginning() =
         list
@@ -184,13 +184,13 @@ type CollectionsBenchmark() =
     [<Benchmark>]
     member x.SeqInsertAtEnd() =
         list
-        |> Seq.insertAt (x.Length - 1) 1 
+        |> Seq.insertAt (x.Length - 1) 1
         |> Seq.iter ignore
-        
+
     [<Benchmark>]
     member x.SeqInsertManyAtBeginning() =
         list
-        |> Seq.insertManyAt 0 [1..10] 
+        |> Seq.insertManyAt 0 [1..10]
         |> Seq.iter ignore
 
     [<Benchmark>]
@@ -198,11 +198,11 @@ type CollectionsBenchmark() =
         list
         |> Seq.insertManyAt (x.Length - 11) [1..10]
         |> Seq.iter ignore
-        
+
     [<Benchmark>]
     member x.SeqUpdateAtBeginning() =
         list
-        |> Seq.updateAt 0 1 
+        |> Seq.updateAt 0 1
         |> Seq.iter ignore
 
     [<Benchmark>]

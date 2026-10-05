@@ -1,4 +1,4 @@
-// #Regression #Conformance #TypeConstraints 
+// #Regression #Conformance #TypeConstraints
 
 
 // Verify error if trying to use a failing enum type constraint
@@ -6,11 +6,11 @@
 
 let printByteEnum (e : 'a) : unit when 'a : enum<byte> = ()
 
-type ShortEnum = 
+type ShortEnum =
     | A = 0s
     | B = 1s
 
 printByteEnum (ShortEnum.A)
 
 exit 1
-    
+

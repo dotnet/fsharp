@@ -1,4 +1,4 @@
-// #Regression #Conformance #Quotations 
+// #Regression #Conformance #Quotations
 // Regression for FSHARP1.0:5859
 
 let q = <@ let mutable x = 1

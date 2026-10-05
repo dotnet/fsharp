@@ -24,14 +24,14 @@ These are **general investigation instructions** for this agent, a template for 
 
 ## Absolute Requirements
 
-- **Always use** a fresh, local F# compiler and FSharp.Core where possible. Log full paths and proof the correct compiler is used.
+- **When a fresh, local F# compiler and FSharp.Core can be prepared, use them.** Log full paths and proof the correct compiler is used; otherwise record why they could not be used.
 - **Matrix over** Debug/Release and ParallelCompilation on/off.
 - **For each build and analysis step:**
   - Record all commands, timings, and results.
   - Log all intermediate results (e.g., hot call stacks, wallclock timings, error messages) to `HOT_PATHS.md` as they are found.
 - **For every hypothesis or question:** 
   - State it in `HYPOTHESIS.md` and update with status (untested/confirmed/denied) and pointers to relevant runs/artifacts.
-- **Primary artifact must be** clear, actionable, human-written text in `INSIGHTS.md`—this should summarize what the agent has learned, not just what it ran.
+- **Primary artifact must be** clear, actionable prose for humans in `INSIGHTS.md`—this should summarize what the agent has learned, not just what it ran.
 
 ---
 
@@ -64,7 +64,7 @@ Record:
 - **HYPOTHESIS.md:** Maintain numbered/dated hypotheses about causes, behaviors, or fixes.  
   - Mark each as untested/confirmed/denied (and why/where).
   - Reference experimental runs or insights which test them.
-  - Never re-run a denied or already confirmed hypothesis: record, cross-reference, and always consult HYPOTHESIS.md on starting or resuming work.
+  - Do not re-run a denied or already confirmed hypothesis unless the hypothesis or scenario materially changes. Record and cross-reference it, and consult HYPOTHESIS.md when starting or resuming work.
 
 ### 5. Insights as Product
 
@@ -84,7 +84,7 @@ Record:
 
 ### 7. Best Practices
 
-- **If agent is interrupted:** On restart, consult `TODO.md`, `HYPOTHESIS.md`, and `INSIGHTS.md` to resume exactly where left off—never duplicate work and always cross-check hypotheses.
+- **If agent is interrupted:** On restart, consult `TODO.md`, `HYPOTHESIS.md`, and `INSIGHTS.md` to resume where work stopped. Do not duplicate work; cross-check hypotheses first.
 - **If insight contradicts previous belief:** Update both `INSIGHTS.md` and point back to affected hypotheses.
 - **If a hypothesis is tested and denied,** record why and what observation/finding proves it false (with links/log references).
 - **If unable to explain a result with current hypotheses,** propose a new one and add it as untested.
@@ -122,7 +122,7 @@ Record:
 3. Update hypothesis status in HYPOTHESIS.md
 4. Formulate/publish a new insight if progress is made
 5. Set new TODO in TODO.md, and finish session
-6. On any restart, agent must consult all MD files to avoid redundancy and repeat work only if hypothesis or scenario materially changes.
+6. On any restart, consult all investigation MD files to avoid redundancy; repeat work only if the hypothesis or scenario materially changes.
 
 ---
 
@@ -141,6 +141,6 @@ At the end of an investigation, the primary deliverables are:
 
 **This is an insight and hypothesis-driven agent for F# build perf analysis.  
 Its mission is to extract and publish meaningful, durable understanding—not just build logs or raw data.  
-The workflow is always resumable, transparent, and maximally reusable for community and future agents.**
+The workflow remains resumable and transparent, with commands, evidence, and reusable tools preserved for the community and future agents.**
 
 ---

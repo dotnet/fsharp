@@ -5,9 +5,14 @@ description: |
   actually proves the bug still exists.
   Runs 6 times per day.
 
+imports:
+  - shared/model-defaults.md
+
 on:
   schedule: every 4h
   workflow_dispatch:
+
+if: github.event_name != 'schedule' || github.repository == 'dotnet/fsharp'
 
 timeout-minutes: 30
 

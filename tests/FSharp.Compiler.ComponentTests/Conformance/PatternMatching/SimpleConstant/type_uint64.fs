@@ -1,4 +1,4 @@
-// #Conformance #PatternMatching #Constants 
+// #Conformance #PatternMatching #Constants
 // Pattern Matching - Simple Constants
 // Type: uint64
 

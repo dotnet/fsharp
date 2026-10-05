@@ -1319,7 +1319,7 @@ module TestFsiLoadOfNonExistentAssembly =
       try 
         let log4netType = System.Type.GetType("ThisTypeDoes.Not.Exist, thisAssemblyDoesNotExist")
         let exists = log4netType <> null
-        if exists then report_failure (sprintf "type existed!")
+        if exists then report_failure "type existed!"
         do printfn "%A" exists
        with e -> 
          report_failure (sprintf "exception unexpected: %s" e.Message)

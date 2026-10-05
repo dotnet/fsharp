@@ -1,4 +1,4 @@
-// #Conformance #PatternMatching #ActivePatterns 
+// #Conformance #PatternMatching #ActivePatterns
 
 
 // Single case partial active pattern
@@ -11,7 +11,7 @@ let isDayOfWeek x =
     match x with
     | DayOfWeek -> true
     | _ -> false
-    
+
 if isDayOfWeek("red") <> false then exit 1
 if isDayOfWeek("Fri") <> true then exit 1
 

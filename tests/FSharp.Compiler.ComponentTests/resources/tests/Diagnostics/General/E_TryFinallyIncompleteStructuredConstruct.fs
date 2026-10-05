@@ -1,4 +1,4 @@
-// #Regression #Diagnostics 
+// #Regression #Diagnostics
 // Regression test for FSHARP1.0:2520
 // The verification (to to speak) is to make sure we emit _at_least_ the error message ("missing qualification after '.')
 // Before the fix apparently, we were not emitting it.

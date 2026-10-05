@@ -1,4 +1,4 @@
-// #Regression #Diagnostics 
+// #Regression #Diagnostics
 //<Expects status="warning" span="(13,7-13,8)" id="FS0026">This rule will never be matched$</Expects>
 module M0
 

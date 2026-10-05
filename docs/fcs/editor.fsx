@@ -215,9 +215,7 @@ let methods =
 
 // Print concatenated parameter lists
 for mi in methods.Methods do
-    [ for p in mi.Parameters do
-          for tt in p.Display do
-              yield tt.Text ]
+    [ for p in mi.Parameters -> p.Display.Text ]
     |> String.concat ", "
     |> printfn "%s(%s)" methods.MethodName
 (**

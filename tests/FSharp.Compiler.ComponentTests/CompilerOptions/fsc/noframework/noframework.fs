@@ -13,7 +13,7 @@ module Noframework =
     [<Theory; FileInlineData("noframework02.fs")>]
     let ``noframework - noframework02_fs - --noframework`` compilation =
         compilation
-        |> getCompilation 
+        |> getCompilation
         |> asFsx
         |> withOptions ["--noframework"]
         |> compile

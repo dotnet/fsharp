@@ -139,7 +139,7 @@ module AssemblyCheck =
             printfn "All shipping assemblies had an embedded PDB."
 
         // return code is the number of failures
-        failedVersionCheck.Length + failedCommitHash.Length + failedVerifyEmbeddedPdb.Length 
+        failedVersionCheck.Length + failedCommitHash.Length + failedVerifyEmbeddedPdb.Length
 
 
 [<EntryPoint>]

@@ -8,7 +8,7 @@ let (``A B C``(k)) = 5
 if k <> 10 then exit 1
 
 // partial case
-let (|``Alpha  Beta `` |_|) (x:int) = 
+let (|``Alpha  Beta `` |_|) (x:int) =
     if x = 0 then Some() else None
 
 match 0,1 with
@@ -27,7 +27,7 @@ match 0,1,2 with
 | _ -> exit 1
 
 
-module UnitOfMeasurePrintfPositiveTests = 
+module UnitOfMeasurePrintfPositiveTests =
 
     open Microsoft.FSharp.Data.UnitSystems.SI.UnitNames
     open Microsoft.FSharp.Data.UnitSystems.SI.UnitSymbols
@@ -46,13 +46,13 @@ module UnitOfMeasurePrintfPositiveTests =
     let _ = sprintf "%g" 1.0M<metre>
     let _ = sprintf "%g" 1.0M<m>
     let _ = sprintf "%g" 1.0M<m/s>
-    
+
     let _ = sprintf "%M" 1.0M<meter>
     let _ = sprintf "%M" 1.0M<metre>
     let _ = sprintf "%M" 1.0M<m>
     let _ = sprintf "%M" 1.0M<m/s>
 
-module AllowNullLiteralWithArgumentTest = 
+module AllowNullLiteralWithArgumentTest =
 
     type A() = class end
 

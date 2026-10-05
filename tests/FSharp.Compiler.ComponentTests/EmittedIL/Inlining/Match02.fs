@@ -1,14 +1,14 @@
-// #NoMono #CodeGen #Optimizations 
+// #NoMono #CodeGen #Optimizations
 module Match02
 
 [<Struct; NoEquality; NoComparison>]
-type S = 
+type S =
     static member inline (+)(_, _ : S) = 0
     static member inline (*)(_, _ : S) = 1
     static member inline (+)(_ : S, _) = 2
     static member inline (*)(_ : S, _) = 3
 
-let testmethod () = 
+let testmethod () =
 
     let a = (1,2) + S() // should be inlined - 0
     let b = (fun x -> x + 1) + S()// should be inlined 0

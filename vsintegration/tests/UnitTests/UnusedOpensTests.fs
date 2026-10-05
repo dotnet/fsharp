@@ -11,7 +11,7 @@ open FSharp.Compiler.Text
 
 let private filePath = "C:\\test.fs"
 
-let private projectOptions : FSharpProjectOptions = 
+let private projectOptions : FSharpProjectOptions =
     { ProjectFileName = "C:\\test.fsproj"
       ProjectId = None
       SourceFiles =  [| filePath |]
@@ -30,15 +30,15 @@ let (=>) (source: string) (expectedRanges: ((*line*)int * ((*start column*)int *
     let sourceLines = source.Split ([|"\r\n"; "\n"; "\r"|], StringSplitOptions.None)
 
     let _, checkFileAnswer = checker.ParseAndCheckFileInProject(filePath, 0, FSharp.Compiler.Text.SourceText.ofString source, projectOptions) |> Async.RunSynchronously
-    
+
     let checkFileResults =
         match checkFileAnswer with
         | FSharpCheckFileAnswer.Aborted -> failwithf "ParseAndCheckFileInProject aborted"
         | FSharpCheckFileAnswer.Succeeded(checkFileResults) -> checkFileResults
 
     let unusedOpenRanges = UnusedOpens.getUnusedOpens (checkFileResults, fun lineNum -> sourceLines.[Line.toZ lineNum]) |> Async.RunSynchronously
-    
-    unusedOpenRanges 
+
+    unusedOpenRanges
     |> List.map (fun x -> x.StartLine, (x.StartColumn, x.EndColumn))
     |> fun actual -> Assert.Equal<(int * (int * int)) list>(expectedRanges, actual)
 
@@ -74,7 +74,7 @@ module Nested =
 """
     => [ 5, (9, 18) ]
 
-[<Fact>] 
+[<Fact>]
 let ``unused open declaration due to partially qualified symbol``() =
     """
 module TopModule
@@ -203,7 +203,7 @@ open NormalModule.AutoOpenModule1.NestedNormalModule
 let _ = Class()
 """
     => [ 13, (5, 52) ]
-    
+
 [<Fact>]
 let ``open declaration is not marked as unused if there is a shortened attribute symbol from it``() =
     """
@@ -212,7 +212,7 @@ open System
 type Class() = class end
 """
     => []
-    
+
 [<Fact>]
 let ``open declaration is not marked as unused if an extension property is used``() =
     """
@@ -268,7 +268,7 @@ module M =
 open M
 type Site (x: Class -> unit) = class end
 """
-    => []   
+    => []
 
 [<Fact>]
 let ``open declaration is marked as unused if nothing from it is used``() =
@@ -291,7 +291,7 @@ open Extensions
 let _ = DateTime.ExtensionMethod
 """
     => []
-    
+
 [<Fact>]
 let ``static extension property applied to a type results that both namespaces /where the type is declared and where the extension is declared/ is not marked as unused``() =
     """
@@ -328,7 +328,7 @@ let _ = func1()
 let _ = func2()
 """
     => []
-        
+
 [<Fact>]
 let ``open module with ModuleSuffix attribute value applied is not marked as unused if a symbol declared in it is used``() =
     """
@@ -461,7 +461,7 @@ module M =
     let _ = InternalModuleWithSuffix.func1()
 """
     => [ 6, (9, 33) ]
-    
+
 [<Fact>]
 let ``redundant opening a module is marks as unused``() =
     """
@@ -519,7 +519,7 @@ let ``a type which has more than one DisplayName causes the namespace it's defin
     """
 open System
 let _ = IntPtr.Zero
-""" 
+"""
     => []
 
 [<Fact>]
@@ -604,7 +604,7 @@ module Module =
     => []
 
 [<Fact>]
-let ``record fields should be taken into account``() = 
+let ``record fields should be taken into account``() =
     """
 module M1 =
     type Record = { Field: int }
@@ -615,7 +615,7 @@ module M2 =
     => []
 
 [<Fact>]
-let ``handle type alias``() = 
+let ``handle type alias``() =
     """
 module TypeAlias =
     type MyInt = int
@@ -626,7 +626,7 @@ module Usage =
     => []
 
 [<Fact>]
-let ``handle override members``() = 
+let ``handle override members``() =
     """
 type IInterface =
     abstract Property: int
@@ -668,7 +668,7 @@ open M
 let _ = 1
 """
     => [ 4, (5, 6) ]
-    
+
 [<Fact>]
 let ``type in type parameter constraint should be taken into account``() =
     """
@@ -727,8 +727,8 @@ open System.Linq
 module Test =
     let xs = []
     let _ = xs.ToList()
-""" 
-    => []      
+"""
+    => []
 
 [<Fact>]
 let ``namespace which contains types with C# extension methods is marked as unused if no extension is used``() =
@@ -737,8 +737,8 @@ open System.Linq
 
 module Test =
     let xs = []
-""" 
-    => [ 2, (5, 16) ]      
+"""
+    => [ 2, (5, 16) ]
 
 [<Fact>]
 let ``a type from an auto open module is taken into account``() =
@@ -815,7 +815,7 @@ open type System.Console
 WriteLine("Hello World")
     """
     => []
-    
+
 [<Fact>]
 let ``unused open C# type``() =
     """
@@ -824,7 +824,7 @@ open type System.Console
 printfn "%s" "Hello World"
     """
     => [2, (10, 24)]
-    
+
 [<Fact>]
 let ``used open type from module``() =
     """
@@ -837,7 +837,7 @@ open type MyModule.Thingy
 printfn "%A" Thing
     """
     => []
-        
+
 [<Fact>]
 let ``unused open type from module``() =
     """

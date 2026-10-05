@@ -20,7 +20,7 @@ namespace FSharpTest
         |> withDiagnostics [
             (Error 552, Line 3, Col 11, Line 3, Col 19, "Only class types may take value arguments")
         ]
-        
+
     [<Fact>]
     let ``Delegate definition with primary constructor no argument.`` () =
         FSharp
@@ -57,7 +57,7 @@ a.Invoke()"""
         |> compileExeAndRun
         |> shouldSucceed
         |> verifyOutput "line: 5"
-        
+
     [<Fact>]
     let ``Delegate with struct optional parameter`` () =
         FSharp """type A = delegate of [<Struct>] ?a: int -> unit
@@ -82,7 +82,7 @@ d.Invoke()"""
         |> compileExeAndRun
         |> shouldSucceed
         |> verifyOutput "line: 9"
-        
+
     [<Fact>]
     let ``Delegate with OptionalArgument and CallerFilePath`` () =
         FSharp """open System.Runtime.CompilerServices
@@ -127,4 +127,4 @@ d.Invoke(Some None)
 d.Invoke(None)"""
         |> compileExeAndRun
         |> shouldSucceed
-        |> verifyOutputContains [| "value: 42"; "inner none"; "outer none" |] 
+        |> verifyOutputContains [| "value: 42"; "inner none"; "outer none" |]

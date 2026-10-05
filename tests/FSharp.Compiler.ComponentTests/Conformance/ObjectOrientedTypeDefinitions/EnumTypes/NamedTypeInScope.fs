@@ -1,20 +1,20 @@
-// #Conformance #ObjectOrientedTypes #Enums 
+// #Conformance #ObjectOrientedTypes #Enums
 
 
-// 
+//
 namespace NS
-  module M = 
+  module M =
     type EnumType  =
       class
         static member A = 0
       end
 
   module N =
-    type EnumType = 
+    type EnumType =
         | A = 0
-    
-  module Test =    
+
+  module Test =
     let a = M.EnumType.A
     let b = int N.EnumType.A
-    
+
     (a + b) |> exit

@@ -1,13 +1,13 @@
-// #Conformance #Constants #Recursion #LetBindings #MemberDefinitions #Mutable 
+// #Conformance #Constants #Recursion #LetBindings #MemberDefinitions #Mutable
 module Core_byrefs
 
-let test s b = if b then () else failwith s 
+let test s b = if b then () else failwith s
 
 (* TEST SUITE FOR Int32 *)
 
 let out r (s:string) = r := !r @ [s]
 
-let check s actual expected = 
+let check s actual expected =
     if actual = expected then printfn "%s: OK" s
     else failwithf "%s: FAILED, expected %A, got %A" s expected actual
 
@@ -38,7 +38,7 @@ module Tests =
 
         abstract Test : byref<int> * byref<int> -> byref<int>
 
-    // This looks like it should fail, but its sig is 'val test2 : x: byref<int> -> y: byref<int> -> unit' 
+    // This looks like it should fail, but its sig is 'val test2 : x: byref<int> -> y: byref<int> -> unit'
     //     unless a signature tells it otherwise, e.g. 'val test2 : (byref<int> -> byref<int>) -> unit'
     let test2 (x: byref<int>) =
         fun (y: byref<int>) -> ()
@@ -57,4 +57,4 @@ module Tests =
     let test3 () =
         StaticTest.Test2 // is passing, but probably shouldn't be
 
-printf "TEST PASSED OK" 
+printf "TEST PASSED OK"

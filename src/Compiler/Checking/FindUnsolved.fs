@@ -42,7 +42,7 @@ let accTypeInst cenv env mFallback tyargs =
 
 /// Walk expressions, collecting type variables
 let rec accExpr (cenv: cenv) (env: env) expr =
-    cenv.stackGuard.Guard <| fun () ->
+    cenv.stackGuard.Guard(fun () ->
 
     let expr = stripExpr expr
     match expr with
@@ -125,7 +125,7 @@ let rec accExpr (cenv: cenv) (env: env) expr =
         accExpr cenv env eref.Value
 
     | Expr.DebugPoint (_, innerExpr) ->
-        accExpr cenv env innerExpr
+        accExpr cenv env innerExpr)
 
 /// Walk methods, collecting type variables
 and accMethods cenv env baseValOpt l =

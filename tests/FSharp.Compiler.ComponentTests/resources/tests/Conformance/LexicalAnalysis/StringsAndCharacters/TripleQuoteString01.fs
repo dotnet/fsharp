@@ -1,4 +1,4 @@
-// #Conformance #LexicalAnalysis 
+// #Conformance #LexicalAnalysis
 // Some basic checks duplicated from fsharp\core\libtest and then some
 
 open System

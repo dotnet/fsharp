@@ -1,4 +1,4 @@
-// #Regression #Conformance #DeclarationElements #Import 
+// #Regression #Conformance #DeclarationElements #Import
 // Verify warning when opening a non-fully qualified namespace
 
 

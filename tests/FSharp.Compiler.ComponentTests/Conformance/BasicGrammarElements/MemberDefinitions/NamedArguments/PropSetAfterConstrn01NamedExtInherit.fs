@@ -1,4 +1,4 @@
-// #Regression #Conformance #DeclarationElements #MemberDefinitions #NamedArguments 
+// #Regression #Conformance #DeclarationElements #MemberDefinitions #NamedArguments
 
 
 module GenericInheritedClass2 =
@@ -9,7 +9,7 @@ module GenericInheritedClass2 =
            new() = { w = new System.Collections.Generic.List<int>()}
         end
 
-    type S =        
+    type S =
         class
            inherit R
            val mutable x : int
@@ -23,7 +23,7 @@ module GenericInheritedClassExt2 =
         member x.A with set v = x.X  <- v + 1
         member x.B with set v = x.Y  <- v + "1"
     type GenericInheritedClass2.R with
-        member x.C with set v =  v |> Seq.iter x.w.Add 
+        member x.C with set v =  v |> Seq.iter x.w.Add
 
     // Standard construction
     let x1 = GenericInheritedClass2.S(1,"1", A = 2, B = "2",C = [ 3] )

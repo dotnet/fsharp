@@ -1,4 +1,4 @@
-// #Regression #Diagnostics 
+// #Regression #Diagnostics
 // Negative test for signature errors
 
 // This test used to be part of the FSHARP suite (fsharp\typecheck\sigs\neg06.ml)
@@ -14,5 +14,5 @@ module M
 
 [<Sealed>]
 type SealedType() =  member x.P = 1                      // a sealed class
-    
+
 let WarningOnHashOfSealedType (x: #SealedType) = x

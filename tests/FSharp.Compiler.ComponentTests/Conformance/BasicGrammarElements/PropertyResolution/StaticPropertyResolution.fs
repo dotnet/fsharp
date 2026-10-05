@@ -10,12 +10,12 @@ module StaticPropertyResolution =
     // Regression test for static property accessors (getter/setter) resolution.
     // Related to https://github.com/dotnet/fsharp/issues/19797
     //
-    // When a static extension 'set' or 'get' accessor is defined in a *different* module 
-    // than the generic type it extends, and the corresponding property has the other intrinsic 
-    // static accessor 
+    // When a static extension 'set' or 'get' accessor is defined in a *different* module
+    // than the generic type it extends, and the corresponding property has the other intrinsic
+    // static accessor
     // (i.e. the intrinsic property has a 'get' and the extension has a 'set', or vice versa)
     //
-    // For instance, resolving the assignment via explicit-type-argument syntax, 
+    // For instance, resolving the assignment via explicit-type-argument syntax,
     // where the 'set' accessor is an extension and the 'get' accessor is intrinsic,
     // Type<TArg>.Property <- value previously failed with FS0810.
     //

@@ -12,9 +12,9 @@ type Works() =
 type FailsAtRuntime() =
     [<DllImport("user32.dll")>]
     let GetCaretBlinkTime() : int = failwith ""
-    do  
+    do
         printf "%d" (GetCaretBlinkTime())   // used to throw here
-    
+
 Works() |> ignore
 FailsAtRuntime() |> ignore
 

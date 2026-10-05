@@ -12,17 +12,17 @@ open UnitTests.TestLib.Utils
 open UnitTests.TestLib.LanguageService
 open UnitTests.TestLib.ProjectSystem
 
-type UsingMSBuild()  = 
+type UsingMSBuild()  =
     inherit LanguageServiceBaseTests()
 
     //Verify the error list contained the expected string
     member private this.VerifyErrorListContainedExpectedString(fileContents : string, expectedStr : string) =
-        let (solution, project, file) = this.CreateSingleFileProject(fileContents)       
+        let (solution, project, file) = this.CreateSingleFileProject(fileContents)
         let errorList = GetErrors(project)
         let GetErrorMessages(errorList : Error list) =
             [ for i = 0 to errorList.Length - 1 do
                 yield errorList.[i].Message]
-            
+
         Assert.True(errorList
                           |> GetErrorMessages
                           |> Seq.exists (fun errorMessage ->
@@ -30,7 +30,7 @@ type UsingMSBuild()  =
 
     // Not a recovery case, but make sure we get a squiggle at the unfinished Main()
     [<Fact>]
-    member public this.``ErrorRecovery.Bug4538_4``() =  
+    member public this.``ErrorRecovery.Bug4538_4``() =
         let fileContent = """
             type MyType() = 
                 override x.ToString() = ""
@@ -41,5 +41,5 @@ type UsingMSBuild()  =
 
 
 // Context project system
-type UsingProjectSystem() = 
+type UsingProjectSystem() =
     inherit UsingMSBuild(VsOpts = LanguageServiceExtension.ProjectSystemTestFlavour)

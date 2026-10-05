@@ -1,4 +1,4 @@
-// #Conformance #ObjectOrientedTypes #Classes #Inheritance 
+// #Conformance #ObjectOrientedTypes #Classes #Inheritance
 
 
 // Verify that the 'base' keyword refers to base type
@@ -7,19 +7,19 @@ type Foo () =
    abstract DoStuff : unit -> string
    default this.DoStuff ()  = "Foo"
    override this.ToString() = "Foo"
-   
+
 type Bar () =
     inherit Foo()
-    
+
     member this.BaseDoStuff   = base.DoStuff()
     member this.BaseToStringR = base.ToString()
     member this.ThisDoStuff   = this.DoStuff()
     member this.ThisToStringR = this.ToString()
-    
+
     override this.DoStuff () = "Bar"
     override this.ToString() = "Bar"
-    
-    
+
+
 let testFoo = new Foo()
 let testBar = new Bar()
 

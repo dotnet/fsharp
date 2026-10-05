@@ -17,7 +17,7 @@ open Salsa
 module internal VsOpsUtils =
 
     // ------------------------------------------------------------------------
-    
+
     // Wrappers on top of VSOps functions, these make it easier to interact with
     // VSOps as well as enabling us to change VsOps slightly without breaking the world
 
@@ -33,9 +33,9 @@ module internal VsOpsUtils =
     val AddFileFromTextBlob               : OpenProject * string * string -> File
     val AddFileFromTextEx                 : OpenProject * string * string * Salsa.Salsa.BuildAction * string list -> File
     val AddLinkedFileFromTextEx           : OpenProject * string * string * string * string list -> File
-    val AddAssemblyReference              : OpenProject * string -> unit 
-    val AddAssemblyReferenceEx              : OpenProject * string * bool -> unit 
-    val AddProjectReference               : OpenProject * OpenProject -> unit 
+    val AddAssemblyReference              : OpenProject * string -> unit
+    val AddAssemblyReferenceEx              : OpenProject * string * bool -> unit
+    val AddProjectReference               : OpenProject * OpenProject -> unit
     val ProjectDirectory                  : OpenProject -> string
     val ProjectFile                       : OpenProject -> string
     val SetVersionFile                    : OpenProject * string -> unit
@@ -46,10 +46,10 @@ module internal VsOpsUtils =
     val BuildTarget                       : OpenProject * string -> BuildResult
     val GetMainOutputAssembly             : OpenProject -> string
     val Save                              : OpenProject -> unit
-    val GetErrors                         : OpenProject -> Error list 
-    /// Open a file outside of any project as if from File\Open\File... menu item. 
+    val GetErrors                         : OpenProject -> Error list
+    /// Open a file outside of any project as if from File\Open\File... menu item.
     val OpenFileViaOpenFile               : VisualStudio * string -> OpenFile
-    val OpenFile                          : OpenProject * string -> OpenFile 
+    val OpenFile                          : OpenProject * string -> OpenFile
     val GetOpenFiles                      : OpenProject -> OpenFile list
     val SetProjectDefines                 : OpenProject * string list -> unit
     val PlaceIntoProjectFileBeforeImport  : OpenProject * string -> unit
@@ -63,7 +63,7 @@ module internal VsOpsUtils =
     val ShiftKeyDown                      : VisualStudio -> unit
     val ShiftKeyUp                        : VisualStudio -> unit
     val ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients : VisualStudio -> unit
-    val TakeCoffeeBreak                   : VisualStudio -> unit 
+    val TakeCoffeeBreak                   : VisualStudio -> unit
     val ReplaceFileInMemory               : OpenFile -> string list -> unit
     val ReplaceFileInMemoryWithoutCoffeeBreak   : OpenFile -> string list -> unit
     val SaveFileToDisk                    : OpenFile -> unit
@@ -75,10 +75,10 @@ module internal VsOpsUtils =
     val CtrlSpaceCompleteAtCursor         : OpenFile -> CompletionItem array
     /// like AutoCompleteAtCursor, but can pass e.g. BackgroundRequestReason.CompleteWord to do Ctrl-space rather than auto-dot-popup-completion
     val CompleteAtCursorForReason         : OpenFile * Microsoft.VisualStudio.FSharp.LanguageService.BackgroundRequestReason -> CompletionItem array
-    val CompletionBestMatchAtCursorFor    : OpenFile * string * string option -> (string * bool * bool) option 
+    val CompletionBestMatchAtCursorFor    : OpenFile * string * string option -> (string * bool * bool) option
     val MoveCursorToEndOfMarker           : OpenFile * string -> unit
     val MoveCursorToStartOfMarker         : OpenFile * string -> unit
-    val GetQuickInfoAtCursor              : OpenFile -> string   
+    val GetQuickInfoAtCursor              : OpenFile -> string
     val GetQuickInfoAndSpanAtCursor       : OpenFile -> string*TextSpan
     val GetNameOfOpenFile                 : OpenFile -> string
     val GetProjectOptionsOfScript           : OpenFile -> FSharpProjectOptions
@@ -99,11 +99,11 @@ module internal VsOpsUtils =
     /// True if files outside of the project cone are added as links.
     val AutoCompleteMemberDataTipsThrowsScope : VisualStudio * string -> System.IDisposable
 
-    
+
     val CreateSingleFileProject      : VisualStudio * string -> (OpenSolution * OpenProject * OpenFile)
     val CreateNamedSingleFileProject : VisualStudio * (string * string) -> (OpenSolution * OpenProject * OpenFile)
     val GetMatchingBracesForPositionAtCursor : OpenFile -> (TextSpan * TextSpan) array
-    
+
     // ------------------------------------------------------------------------
 
     // Methods to simplify testing of specific features
@@ -116,7 +116,7 @@ module internal VsOpsUtils =
     val AssertRegionListContains        : list<(int*int)*(int*int)> * list<NewHiddenRegion> -> unit
     val AssertNavigationContains        : DropDownMember[] * string -> unit
     val AssertNavigationContainsAll     : DropDownMember[] * seq<string> -> unit
-    
+
     // Completion list
     val AssertCompListIsEmpty           : CompletionItem[] -> unit
     val AssertCompListContains          : CompletionItem[] * string -> unit
@@ -129,10 +129,10 @@ module internal VsOpsUtils =
     val DotCompletionAtMarker        : SetMarkerPoint -> OpenFile -> string -> CompletionItem[]
     val DotCompletionAtStartOfMarker : (OpenFile -> string -> CompletionItem[])
     val DotCompletionAtEndOfMarker   : (OpenFile -> string -> CompletionItem[])
-    
-    
+
+
     // Goto Definition
     val GotoDefnFailure : (string * string) option
     val GotoDefnSuccess : string -> string -> (string * string) option
-    
+
     val CheckGotoDefnResult   : (string * string) option -> OpenFile -> GotoDefnResult -> unit

@@ -184,7 +184,7 @@ and callee y = if y > 0 then caller y else 0
         let paramPattern = System.Text.RegularExpressions.Regex(@"(\w+[\w@]*)\s+\w+")
         for m in ctorPattern.Matches(actualIL) do
             let paramStr = m.Groups.[1].Value
-            let paramNames = 
+            let paramNames =
                 [ for p in paramPattern.Matches(paramStr) -> p.Groups.[1].Value ]
                 |> List.filter (fun n -> n <> "class" && n <> "int32" && n <> "object" && n <> "string" && n <> "valuetype" && n <> "void" && n <> "bool")
             let distinct = paramNames |> List.distinct

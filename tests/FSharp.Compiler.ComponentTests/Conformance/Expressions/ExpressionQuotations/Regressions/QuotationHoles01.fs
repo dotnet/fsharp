@@ -1,4 +1,4 @@
-// #Conformance #Quotations 
+// #Conformance #Quotations
 
 
 // Sanity check quotation holes
@@ -10,7 +10,7 @@ open Microsoft.FSharp.Quotations.DerivedPatterns
 let quotationWithHole x = <@ 1 + %x @>
 let q = quotationWithHole (Expr.Cast (Expr.Value(2)))
 
-let testPassed = 
+let testPassed =
     match q with
     | Call(None, methodInfo, args) ->
         let a = methodInfo.Name = "op_Addition"
@@ -24,5 +24,5 @@ let testPassed =
 if not testPassed then exit 1
 
 exit 0
-        
-        
+
+

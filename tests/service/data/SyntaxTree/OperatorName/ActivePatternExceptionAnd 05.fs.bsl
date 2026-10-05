@@ -10,9 +10,11 @@ ImplFile
                    ([],
                     SynUnionCase
                       ([], SynIdent (MyExn, None), Fields [], PreXmlDocEmpty,
-                       None, (1,10--1,15), { BarRange = None }), None,
+                       None, (1,10--1,15), { BarRange = None
+                                             OfKeyword = None }), None,
                     PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), None,
-                    (1,0--1,15)), None, [], (1,0--1,15)), (1,0--1,15));
+                    (1,0--1,15), { ExceptionKeyword = (1,0--1,9) }), None, [],
+                 (1,0--1,15)), (1,0--1,15));
            Let
              (false,
               [SynBinding

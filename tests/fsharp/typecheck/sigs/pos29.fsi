@@ -1,4 +1,4 @@
 module rec Pos29
 
-val x : A 
+val x : A
 type A = int

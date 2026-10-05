@@ -1,4 +1,4 @@
-// #Conformance #PatternMatching #TypeTests 
+// #Conformance #PatternMatching #TypeTests
 
 
 // Verify you can use a dynamic type test against unit

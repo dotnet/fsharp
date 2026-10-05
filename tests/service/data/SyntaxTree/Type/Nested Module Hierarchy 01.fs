@@ -5,5 +5,5 @@ module Level1 =
     module Level2 =
         module Level3 =
             type TypeWithInvalidModule =
-                module InvalidModule = 
+                module InvalidModule =
                     let x = 1

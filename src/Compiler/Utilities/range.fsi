@@ -195,10 +195,10 @@ module internal FileIndex =
 [<RequireQualifiedAccess>]
 module internal LineDirectives =
 
-    /// Add the line directive data of the source file of fileIndex. Each line directive is represented 
+    /// Add the line directive data of the source file of fileIndex. Each line directive is represented
     /// by the line number of the directive and the file index and line number of the target.
     val add: fileIndex: FileIndex -> lineDirectives: (int * (FileIndex * int)) list -> unit
-    
+
 module Range =
 
     /// Ordering on positions

@@ -11,7 +11,7 @@ module Applicatives =
     type Ap = Ap with
         static member inline Invoke (x:'T) : '``Applicative<'T>`` =
             let inline call (mthd : ^M, output : ^R) = ((^M or ^R) : (static member Return: _*_ -> _) output, mthd)
-            call (Ap, Unchecked.defaultof<'``Applicative<'T>``>) x 
+            call (Ap, Unchecked.defaultof<'``Applicative<'T>``>) x
         static member inline InvokeOnInstance (x:'T) = (^``Applicative<'T>`` : (static member Return: ^T -> ^``Applicative<'T>``) x)
         static member inline Return (r:'R       , _:obj) = Ap.InvokeOnInstance      :_ -> 'R
         static member        Return (_:seq<'a>  , Ap   ) = fun x -> Seq.singleton x : seq<'a>
@@ -20,7 +20,7 @@ module Applicatives =
 
     let inline result (x:'T) = Ap.Invoke x
 
-    let inline (<*>) (f:'``Applicative<'T->'U>``) (x:'``Applicative<'T>``) : '``Applicative<'U>`` = 
+    let inline (<*>) (f:'``Applicative<'T->'U>``) (x:'``Applicative<'T>``) : '``Applicative<'U>`` =
         (( ^``Applicative<'T->'U>`` or ^``Applicative<'T>`` or ^``Applicative<'U>``) : (static member (<*>): _*_ -> _) f, x)
 
     let inline (+) (a:'Num) (b:'Num) :'Num = a + b

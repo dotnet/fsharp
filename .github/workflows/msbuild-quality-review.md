@@ -8,9 +8,14 @@ description: |
   every F# project — plus the VS integration shims. Creates an issue with
   findings and can submit a draft PR for safe, low-risk fixes.
 
+imports:
+  - shared/model-defaults.md
+
 on:
   schedule: weekly
   workflow_dispatch:
+
+if: github.event_name != 'schedule' || github.repository == 'dotnet/fsharp'
 
 timeout-minutes: 30
 

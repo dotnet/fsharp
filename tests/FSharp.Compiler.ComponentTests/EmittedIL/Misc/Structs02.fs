@@ -10,9 +10,9 @@ type Repro =
         let mutable h = 0
         for i=0 to length-1 do
           h <- 26*h
-        h 
+        h
     }
 
-let test() = 
+let test() =
     let t = Repro(42)
     t.hash

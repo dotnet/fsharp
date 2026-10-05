@@ -1,7 +1,7 @@
-// #Conformance #TypesAndModules #GeneratedEqualityAndHashing #Attributes 
+// #Conformance #TypesAndModules #GeneratedEqualityAndHashing #Attributes
 //<Expects status="success"></Expects>
 
-module M15 = 
+module M15 =
   //[<ReferenceEquality(false)>]
   [<NoComparisonAttribute>]
   (* [<StructuralEquality(true)>] *)

@@ -1,4 +1,4 @@
-// #Regression #Diagnostics 
+// #Regression #Diagnostics
 // Regression test for FSHARP1.0:5259
 // Make sure we do not emit an error on "e"
 // Instead we warn on 'TException
@@ -10,8 +10,8 @@
 let main(_) =
     try
        ()
-    with 
-    | :? 'TException as e -> 
+    with
+    | :? 'TException as e ->
           let msg = e.ToString()
           ()
     0

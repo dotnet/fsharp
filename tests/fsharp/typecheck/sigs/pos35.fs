@@ -3,8 +3,8 @@ module Pos35
 // Variation on test case mentioned in https://github.com/dotnet/fsharp/pull/6805#issuecomment-580368303
 //
 // We are selecting an overloaded witness based on input type
-module SelectOverloadedWitnessBasedOnInputType = 
-    type witnesses = 
+module SelectOverloadedWitnessBasedOnInputType =
+    type witnesses =
       static member inline unsigned_witness (x : sbyte) = uint8 x
       static member inline unsigned_witness (x : byte) = x
       static member inline unsigned_witness (x : int16) = uint16 x
@@ -45,8 +45,8 @@ module SelectOverloadedWitnessBasedOnInputType =
 // Variation on the previous test case
 //
 // Note, this adds output as a selector though that shouldn't make any difference
-module SelectOverloadedWitnessBasedOnInputTypePlusNeedlessOutputTypeSelector = 
-    type witnesses = 
+module SelectOverloadedWitnessBasedOnInputTypePlusNeedlessOutputTypeSelector =
+    type witnesses =
       static member inline unsigned_witness (x : sbyte) = uint8 x
       static member inline unsigned_witness (x : byte) = x
       static member inline unsigned_witness (x : int16) = uint16 x
@@ -77,14 +77,14 @@ module SelectOverloadedWitnessBasedOnInputTypePlusNeedlessOutputTypeSelector =
     let g4 : int64 -> _ = unsigned
 
 // Variation on test case mentioned in https://github.com/dotnet/fsharp/pull/6805#issuecomment-580368303
-module SelectOverloadedWitnessBasedOnReturnTypeByPassingDummyArgumentAndUsingOutputSelector = 
+module SelectOverloadedWitnessBasedOnReturnTypeByPassingDummyArgumentAndUsingOutputSelector =
     open System
     open System.Numerics
     let _uint8max = bigint (uint32 Byte.MaxValue)
     let _uint16max = bigint (uint32 UInt16.MaxValue)
     let _uint32max = bigint UInt32.MaxValue
     let _uint64max = bigint UInt64.MaxValue
-    type witnesses = 
+    type witnesses =
       static member inline convert_witness (x : bigint, _output : int32) = int (uint32 (x &&& _uint32max))
       static member inline convert_witness (x : bigint, _output : int64) = int64 (uint64 (x &&& _uint64max))
       static member inline convert_witness (x : bigint, _output : bigint) = x
@@ -132,10 +132,10 @@ module SelectOverloadedWitnessBasedOnReturnTypeByPassingDummyArgumentAndUsingOut
     let f10 : _ -> uint64 = convert
     let f11 : _ -> float32 = convert
     let f12 : _ -> decimal = convert
-    let f13 : _ -> Complex = convert 
+    let f13 : _ -> Complex = convert
 
     // This is permitted because the ^output type is still a selector
-    // 
+    //
     // The resulting type is like this:
     //
     //     val inline inst : num:bigint -> ^output when (witnesses or bigint or ^output) : (static member convert_witness : bigint * ^output -> ^output)
@@ -158,14 +158,14 @@ module SelectOverloadedWitnessBasedOnReturnTypeByPassingDummyArgumentAndUsingOut
 // This removes ^output as a type selector for the witness, but continues to pass a dummy ^output
 //
 // This is sufficient to make the resolutions go through
-module SelectOverloadedWitnessBasedOnReturnTypeByPassingDummyArgumentNoOutputSelector = 
+module SelectOverloadedWitnessBasedOnReturnTypeByPassingDummyArgumentNoOutputSelector =
     open System
     open System.Numerics
     let _uint8max = bigint (uint32 Byte.MaxValue)
     let _uint16max = bigint (uint32 UInt16.MaxValue)
     let _uint32max = bigint UInt32.MaxValue
     let _uint64max = bigint UInt64.MaxValue
-    type witnesses = 
+    type witnesses =
       static member inline convert_witness (x : bigint, _output : int32) = int (uint32 (x &&& _uint32max))
       static member inline convert_witness (x : bigint, _output : int64) = int64 (uint64 (x &&& _uint64max))
       static member inline convert_witness (x : bigint, _output : bigint) = x
@@ -213,25 +213,25 @@ module SelectOverloadedWitnessBasedOnReturnTypeByPassingDummyArgumentNoOutputSel
     let f10 : _ -> uint64 = convert
     let f11 : _ -> float32 = convert
     let f12 : _ -> decimal = convert
-    let f13 : _ -> Complex = convert 
+    let f13 : _ -> Complex = convert
 
     // Adding this gives an error, see neg129.fs for the test for this
     // let inline inst (num: bigint) : ^output = convert num
-    
+
 // Variation on test case mentioned in https://github.com/dotnet/fsharp/pull/6805#issuecomment-580368303
-// 
+//
 // Same as SelectOverloadedWitnessBasedOnReturnTypeByPassingDummyArgumentNoOutputSelector but the output type
 // parameter is generic 'output rather than SRTP ^output
 //
 
-module SelectOverloadedWitnessBasedOnReturnTypeByPassingDummyArgumentGenericOutputType = 
+module SelectOverloadedWitnessBasedOnReturnTypeByPassingDummyArgumentGenericOutputType =
     open System
     open System.Numerics
     let _uint8max = bigint (uint32 Byte.MaxValue)
     let _uint16max = bigint (uint32 UInt16.MaxValue)
     let _uint32max = bigint UInt32.MaxValue
     let _uint64max = bigint UInt64.MaxValue
-    type witnesses = 
+    type witnesses =
       static member inline convert_witness (x : bigint, _output : int32) = int (uint32 (x &&& _uint32max))
       static member inline convert_witness (x : bigint, _output : int64) = int64 (uint64 (x &&& _uint64max))
       static member inline convert_witness (x : bigint, _output : bigint) = x
@@ -279,14 +279,14 @@ module SelectOverloadedWitnessBasedOnReturnTypeByPassingDummyArgumentGenericOutp
     let f10 : _ -> uint64 = convert
     let f11 : _ -> float32 = convert
     let f12 : _ -> decimal = convert
-    let f13 : _ -> Complex = convert 
+    let f13 : _ -> Complex = convert
 
     // Adding this gives an error, see neg128.fs for the test for this
     // let inline inst (num: bigint) : 'output = convert num
 
 
 // Reduced FSharpPlus tests case from https://github.com/dotnet/fsharp/pull/6805#issuecomment-580365649
-module PositiveTestCase3 = 
+module PositiveTestCase3 =
     [<AutoOpen>]
     module Extensions =
 
@@ -302,14 +302,14 @@ module PositiveTestCase3 =
 
     type Witnesses =
 
-        static member inline QuackWitness (x: ^a, _output: ^Output, _impl: Witnesses) : ^Output = CallQuack x  
+        static member inline QuackWitness (x: ^a, _output: ^Output, _impl: Witnesses) : ^Output = CallQuack x
         static member inline QuackWitness (x: ref<_>, _output: ^Output, _impl: Witnesses)  : ^Output = Unchecked.defaultof<_>
 
     let inline CallQuackWitness (x: ^a, output: ^Output, witnesses: ^Witnesses) =
         ((^a or ^Output or ^Witnesses) : (static member QuackWitness : _*_*_ -> _) (x, output, witnesses))
 
-    let inline call (x: seq< ^b >  ) : ^Output = 
-        CallQuackWitness (x, Unchecked.defaultof< ^Output >, Unchecked.defaultof<Witnesses>) 
+    let inline call (x: seq< ^b >  ) : ^Output =
+        CallQuackWitness (x, Unchecked.defaultof< ^Output >, Unchecked.defaultof<Witnesses>)
 
 
 

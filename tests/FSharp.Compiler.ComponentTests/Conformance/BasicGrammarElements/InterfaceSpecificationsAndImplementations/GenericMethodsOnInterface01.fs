@@ -1,4 +1,4 @@
-// #Conformance #DeclarationElements #InterfacesAndImplementations 
+// #Conformance #DeclarationElements #InterfacesAndImplementations
 
 
 // FS1 997, Unable to implement interfaces with generic methods

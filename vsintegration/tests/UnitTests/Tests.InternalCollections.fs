@@ -6,10 +6,10 @@ open System
 open System.IO
 open Xunit
 open Internal.Utilities.Collections
-       
-                
-type MruCache = 
-    new() = { }        
+
+
+type MruCache =
+    new() = { }
 
     member private rb.NumToString = function
         | 0->"Zero"  | 1->"One"
@@ -18,7 +18,7 @@ type MruCache =
         | 6->"Six"   | 7->"Seven"
         | 8->"Eight" | 9->"Nine"
         | _ -> failwith "Out of range"
-        
+
     member private rb.NumToStringBox n = box (rb.NumToString n)
 
 #if DISABLED_OLD_UNITTESTS
@@ -113,35 +113,35 @@ type MruCache =
 #endif
 
 type AccessToken() = class end
-            
-type AgedLookup() = 
+
+type AgedLookup() =
     let mutable hold197 : byte [] = null
     let mutable hold198 : byte [] = null
     let mutable hold199 : byte [] = null
 
     let atok = AccessToken()
-    let WeakRefTest n = 
+    let WeakRefTest n =
         let al = AgedLookup<AccessToken,int,byte[]>(n, (fun (x,y) -> x = y))
-            
-        let AssertCached(i,o:byte array) = 
+
+        let AssertCached(i,o:byte array) =
             match al.TryPeekKeyValue(atok,i) with
             | Some(_,x) -> Assert.True(obj.ReferenceEquals(o,x), sprintf "Object in cache (%d) does not agree with expectation (%d)" x.[0] i)
             | None -> Assert.True(false, "Object fell out of cache")
-                
-        let AssertExistsInCached(i) = 
+
+        let AssertExistsInCached(i) =
             match al.TryPeekKeyValue(atok,i) with
             | Some _ -> ()
-            | None -> Assert.True(false, "Object fell out of cache")                
-                
-        let AssertNotCached(i) = 
+            | None -> Assert.True(false, "Object fell out of cache")
+
+        let AssertNotCached(i) =
             match al.TryPeekKeyValue(atok,i) with
-            | Some _ -> Assert.True(false, "Expected key to have fallen out of cache")     
-            | None -> ()         
-            
+            | Some _ -> Assert.True(false, "Expected key to have fallen out of cache")
+            | None -> ()
+
         let f() =
             try
                 // Add some large objects
-                for i in 150..199 do 
+                for i in 150..199 do
                     let mutable large : byte array = Array.create (5 * 1024 * 1024) (byte i)
                     if i = 197 then hold197<-large
                     if i = 198 then hold198<-large
@@ -150,13 +150,13 @@ type AgedLookup() =
                     large<-null
             finally
                 printfn "ensure these objects are never on the stack of the top-level test"
-        f()    
+        f()
 
         // At this point, item 0 should be long gone.
         AssertNotCached(0)
-            
+
         // Also, hold197-hold199 may be strongly held depending on the value of 'n' passed to this test.
-        GC.Collect() 
+        GC.Collect()
         let f() =
             try
                 AssertCached(197,hold197)
@@ -164,7 +164,7 @@ type AgedLookup() =
                 AssertCached(199,hold199)
             finally
                 printfn "ensure these objects are never on the stack of the top-level test"
-        f()            
+        f()
 
         // Release a strongly held item (unless n=0) and see that it hasn't fallen out
         hold199 <- null
@@ -173,46 +173,46 @@ type AgedLookup() =
             try
                 AssertCached(197,hold197)
                 AssertCached(198,hold198)
-                if n>0 then 
+                if n>0 then
                     AssertExistsInCached(199) // hold19 should be held
-                else 
+                else
                     AssertNotCached(199)
             finally
                 printfn "ensure these objects are never on the stack of the top-level test"
-        f()            
-            
+        f()
+
         // Release a strongly held item (unless n<=1) and see that it hasn't fallen out
         hold198 <- null
         GC.Collect()
         let f() =
             try
                 AssertCached(197,hold197)
-                if n>1 then 
+                if n>1 then
                     AssertExistsInCached(198) // hold198 should be held
-                else 
-                    AssertNotCached(198)         
+                else
+                    AssertNotCached(198)
             finally
                 printfn "ensure these objects are never on the stack of the top-level test"
-        f()            
-            
+        f()
+
         // Release a strongly held item (unless n<=2) and see that it hasn't fallen out
         hold197 <- null
         GC.Collect()
         let f() =
             try
-                if n>2 then 
+                if n>2 then
                     AssertExistsInCached(197) // hold197 should be held
                 else
-                    AssertNotCached(197)      
+                    AssertNotCached(197)
             finally
                 printfn "ensure these objects are never on the stack of the top-level test"
-        f()            
-            
+        f()
+
         // Let go of everything else.
         al.Clear(atok)
         GC.Collect()
-        
-        
+
+
     [<Fact>] member public rb.WeakRef0() = WeakRefTest 0
     [<Fact>] member public rb.WeakRef1() = WeakRefTest 1
     [<Fact>] member public rb.WeakRef2() = WeakRefTest 2

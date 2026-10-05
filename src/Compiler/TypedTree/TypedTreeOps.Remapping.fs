@@ -873,26 +873,33 @@ module internal ExprFreeVars =
     let accFreevarsInTycon opts tcref acc =
         accFreeTyvars opts accFreeTycon tcref acc
 
-    let accFreevarsInVal opts v acc = accFreeTyvars opts accFreeInVal v acc
-
     let accFreeVarsInTraitSln opts tys acc =
         accFreeTyvars opts accFreeInTraitSln tys acc
 
     let accFreeVarsInTraitInfo opts tys acc =
         accFreeTyvars opts accFreeInTrait tys acc
 
+    let inline accFreeTyvarsInVal opts v ftyvs =
+        if opts.collectInTypes then
+            accFreeInVal opts v ftyvs
+        else
+            ftyvs
+
     let boundLocalVal opts v fvs =
         if not opts.includeLocals then
             fvs
         else
-            let fvs = accFreevarsInVal opts v fvs
+            let ftyvs = accFreeTyvarsInVal opts v fvs.FreeTyvars
 
-            if not (Zset.contains v fvs.FreeLocals) then
-                fvs
-            else
+            if Zset.contains v fvs.FreeLocals then
                 { fvs with
+                    FreeTyvars = ftyvs
                     FreeLocals = Zset.remove v fvs.FreeLocals
                 }
+            elif ftyvs === fvs.FreeTyvars then
+                fvs
+            else
+                { fvs with FreeTyvars = ftyvs }
 
     let boundProtect fvs =
         if fvs.UsesMethodLocalConstructs || fvs.ContainsILFieldAccess then
@@ -943,14 +950,13 @@ module internal ExprFreeVars =
         if opts.canCache then tryGetCacheValue cache else ValueNone
 
     let accFreeLocalVal opts v fvs =
-        if not opts.includeLocals then
-            fvs
-        else if Zset.contains v fvs.FreeLocals then
+        if not opts.includeLocals || Zset.contains v fvs.FreeLocals then
             fvs
         else
-            let fvs = accFreevarsInVal opts v fvs
+            let ftyvs = accFreeTyvarsInVal opts v fvs.FreeTyvars
 
             { fvs with
+                FreeTyvars = ftyvs
                 FreeLocals = Zset.add v fvs.FreeLocals
             }
 
@@ -1058,13 +1064,13 @@ module internal ExprFreeVars =
         | _ -> fvs
 
     and accFreeInMethod opts (TObjExprMethod(slotsig, _attribs, tps, tmvs, e, _)) acc =
-        accFreeInSlotSig
-            opts
-            slotsig
-            (unionFreeVars (accFreeTyvars opts boundTypars tps (List.foldBack (boundLocalVals opts) tmvs (freeInExpr opts e))) acc)
+        let boundAcc =
+            ListInline.foldBack (fun v acc -> boundLocalVals opts v acc) tmvs (freeInExpr opts e)
+
+        accFreeInSlotSig opts slotsig (unionFreeVars (accFreeTyvars opts boundTypars tps boundAcc) acc)
 
     and accFreeInMethods opts methods acc =
-        List.foldBack (accFreeInMethod opts) methods acc
+        ListInline.foldBack (fun m acc -> accFreeInMethod opts m acc) methods acc
 
     and accFreeInInterfaceImpl opts (ty, overrides) acc =
         accFreeVarsInTy opts ty (accFreeInMethods opts overrides acc)
@@ -1121,7 +1127,10 @@ module internal ExprFreeVars =
         | Expr.LetRec(binds, bodyExpr, _, cache) ->
             unionFreeVars
                 (freeVarsCacheCompute opts cache (fun () ->
-                    List.foldBack (bindLhs opts) binds (List.foldBack (accBindRhs opts) binds (freeInExpr opts bodyExpr))))
+                    ListInline.foldBack
+                        (fun b acc -> bindLhs opts b acc)
+                        binds
+                        (ListInline.foldBack (fun b acc -> accBindRhs opts b acc) binds (freeInExpr opts bodyExpr))))
                 acc
 
         | Expr.Let _ -> failwith "unreachable - linear expr"
@@ -1138,7 +1147,10 @@ module internal ExprFreeVars =
                             (accFreeInExpr
                                 opts
                                 basecall
-                                (accFreeInMethods opts overrides (List.foldBack (accFreeInInterfaceImpl opts) iimpls emptyFreeVars))))
+                                (accFreeInMethods
+                                    opts
+                                    overrides
+                                    (ListInline.foldBack (fun i acc -> accFreeInInterfaceImpl opts i acc) iimpls emptyFreeVars))))
                 ))
                 acc
 
@@ -1276,7 +1288,7 @@ module internal ExprFreeVars =
 
     and accFreeInTarget opts (TTarget(vs, expr, flags)) acc =
         match flags with
-        | None -> List.foldBack (boundLocalVal opts) vs (accFreeInExpr opts expr acc)
+        | None -> ListInline.foldBack (fun v acc -> boundLocalVal opts v acc) vs (accFreeInExpr opts expr acc)
         | Some xs ->
             List.foldBack2
                 (fun v isStateVar acc -> if isStateVar then acc else boundLocalVal opts v acc)
@@ -1285,7 +1297,7 @@ module internal ExprFreeVars =
                 (accFreeInExpr opts expr acc)
 
     and accFreeInFlatExprs opts (exprs: Exprs) acc =
-        List.foldBack (accFreeInExpr opts) exprs acc
+        ListInline.foldBack (fun e acc -> accFreeInExpr opts e acc) exprs acc
 
     and accFreeInExprs opts (exprs: Exprs) acc =
         match exprs with
@@ -1642,9 +1654,42 @@ module internal ExprRemapping =
         tps', tmenvinner
 
     type RemapContext =
-        { g: TcGlobals; stackGuard: StackGuard }
+        {
+            g: TcGlobals
+            stackGuard: StackGuard
+            // When set, an Expr.Link that refers to a recursive value still in its letrec scope is copied as a
+            // fresh link that keeps pointing at the original fixup node, rather than being inlined at copy time.
+            // This lets an auto-quoted (WithValue) copy of a recursive-value use receive the inferred type
+            // arguments that AdjustAndForgetUsesOfRecValue inserts at the letrec point. See issue #20379.
+            keepRecursiveValLinks: bool
+        }
 
-    let mkRemapContext g stackGuard = { g = g; stackGuard = stackGuard }
+    let mkRemapContext g stackGuard =
+        {
+            g = g
+            stackGuard = stackGuard
+            keepRecursiveValLinks = false
+        }
+
+    /// Detect an Expr.Link that stands for a use of a recursive *function* value which is still within its
+    /// letrec scope (and will therefore be fixed up by AdjustAndForgetUsesOfRecValue once type arguments are
+    /// inferred). Only function-valued recursive bindings are matched: they are bound as lambdas and so are
+    /// never rewritten by the lazy-initialization morph in EliminateInitializationGraphs, whereas a monomorphic
+    /// recursive *data* value would have this same shared fixup node re-mutated to a lazy 'Force', leaking that
+    /// node into the captured quotation. See issue #20379.
+    let isRecursiveValFixupLink (eref: Expr ref) =
+        match stripDebugPoints eref.Value with
+        | Expr.Val(vref, _, _)
+        // A recursive-use fixup node is always a type-only application with no value args (see mkTyAppExpr and
+        // the shape AdjustAndForgetUsesOfRecValue accepts), so match that exact shape.
+        | Expr.App(Expr.Val(vref, _, _), _, _, [], _) ->
+            match vref.RecursiveValInfo with
+            | ValInRecScope _ ->
+                match vref.ValReprInfo with
+                | Some info -> info.NumCurriedArgs > 0
+                | None -> false
+            | ValNotInRecScope -> false
+        | _ -> false
 
     let rec remapAttribImpl ctxt tmenv (Attrib(tcref, kind, args, props, isGetOrSetAttr, targets, m)) =
         Attrib(
@@ -1687,7 +1732,7 @@ module internal ExprRemapping =
 
         let memberInfoR =
             d.MemberInfo
-            |> Option.map (remapMemberInfo ctxt d.val_range valReprInfo ty tyR tmenv)
+            |> Option.map (fun mi -> remapMemberInfo ctxt d.val_range valReprInfo ty tyR tmenv mi)
 
         let attribsR = d.Attribs |> remapAttribs ctxt tmenv
 
@@ -1745,8 +1790,7 @@ module internal ExprRemapping =
     and remapExprImpl (ctxt: RemapContext) (compgen: ValCopyFlag) (tmenv: Remap) expr =
 
         // Guard against stack overflow, moving to a whole new stack if necessary
-        ctxt.stackGuard.Guard
-        <| fun () ->
+        ctxt.stackGuard.Guard(fun () ->
 
             match expr with
 
@@ -1851,7 +1895,14 @@ module internal ExprRemapping =
 
             | Expr.App(e1, e1ty, tyargs, args, m) -> remapAppExpr ctxt compgen tmenv (e1, e1ty, tyargs, args, m) expr
 
-            | Expr.Link eref -> remapExprImpl ctxt compgen tmenv eref.Value
+            | Expr.Link eref ->
+                if ctxt.keepRecursiveValLinks && isRecursiveValFixupLink eref then
+                    // Keep a fresh link that still points at the original recursive-use fixup node so the
+                    // quoted copy also receives the inferred type arguments inserted later at the letrec point,
+                    // instead of snapshotting the not-yet-generalized value. See issue #20379.
+                    Expr.Link(ref (Expr.Link eref))
+                else
+                    remapExprImpl ctxt compgen tmenv eref.Value
 
             | Expr.StaticOptimization(cs, e2, e3, m) ->
                 // note that type instantiation typically resolve the static constraints here
@@ -1865,7 +1916,7 @@ module internal ExprRemapping =
 
             | Expr.WitnessArg(traitInfo, m) ->
                 let traitInfoR = remapTraitInfo tmenv traitInfo
-                Expr.WitnessArg(traitInfoR, m)
+                Expr.WitnessArg(traitInfoR, m))
 
     and remapLambaExpr (ctxt: RemapContext) (compgen: ValCopyFlag) (tmenv: Remap) (ctorThisValOpt, baseValOpt, vs, body, m, bodyTy) =
         let ctorThisValOptR, tmenv =
@@ -2172,25 +2223,28 @@ module internal ExprRemapping =
         | TAsmRepr _ -> repr
         | TMeasureableRepr x -> TMeasureableRepr(remapType tmenv x)
 
-    and remapTyconAug tmenv (x: TyconAugmentation) =
-        { x with
-            tcaug_equals = x.tcaug_equals |> Option.map (mapPair (remapValRef tmenv, remapValRef tmenv))
-            tcaug_compare = x.tcaug_compare |> Option.map (mapPair (remapValRef tmenv, remapValRef tmenv))
-            tcaug_compare_withc = x.tcaug_compare_withc |> Option.map (remapValRef tmenv)
-            tcaug_hash_and_equals_withc =
-                x.tcaug_hash_and_equals_withc
-                |> Option.map (mapQuadruple (remapValRef tmenv, remapValRef tmenv, remapValRef tmenv, Option.map (remapValRef tmenv)))
-            tcaug_adhoc = x.tcaug_adhoc |> NameMap.map (List.map (remapValRef tmenv))
-            tcaug_adhoc_list =
-                let remapped: ResizeArray<bool * ValRef> | null =
-                    match x.tcaug_adhoc_list with
-                    | null -> null
-                    | l -> l |> ResizeArray.map (fun (flag, vref) -> (flag, remapValRef tmenv vref))
+    and remapTyconAug tmenv (x: TyconAugmentation | null) : TyconAugmentation | null =
+        match x with
+        | null -> null
+        | x ->
+            { x with
+                tcaug_equals = x.tcaug_equals |> Option.map (mapPair (remapValRef tmenv, remapValRef tmenv))
+                tcaug_compare = x.tcaug_compare |> Option.map (mapPair (remapValRef tmenv, remapValRef tmenv))
+                tcaug_compare_withc = x.tcaug_compare_withc |> Option.map (remapValRef tmenv)
+                tcaug_hash_and_equals_withc =
+                    x.tcaug_hash_and_equals_withc
+                    |> Option.map (mapQuadruple (remapValRef tmenv, remapValRef tmenv, remapValRef tmenv, Option.map (remapValRef tmenv)))
+                tcaug_adhoc = x.tcaug_adhoc |> NameMap.map (List.map (remapValRef tmenv))
+                tcaug_adhoc_list =
+                    let remapped: ResizeArray<bool * ValRef> | null =
+                        match x.tcaug_adhoc_list with
+                        | null -> null
+                        | l -> l |> ResizeArray.map (fun (flag, vref) -> (flag, remapValRef tmenv vref))
 
-                remapped
-            tcaug_super = x.tcaug_super |> Option.map (remapType tmenv)
-            tcaug_interfaces = x.tcaug_interfaces |> List.map (map1Of3 (remapType tmenv))
-        }
+                    remapped
+                tcaug_super = x.tcaug_super |> Option.map (remapType tmenv)
+                tcaug_interfaces = x.tcaug_interfaces |> List.map (map1Of3 (remapType tmenv))
+            }
 
     and remapTyconExnInfo ctxt tmenv inp =
         match inp with
@@ -2434,6 +2488,7 @@ module internal ExprRemapping =
             {
                 g = g
                 stackGuard = StackGuard("RemapExprStackGuardDepth")
+                keepRecursiveValLinks = false
             }
 
         remapAttribImpl ctxt tmenv attrib
@@ -2443,6 +2498,7 @@ module internal ExprRemapping =
             {
                 g = g
                 stackGuard = StackGuard("RemapExprStackGuardDepth")
+                keepRecursiveValLinks = false
             }
 
         remapExprImpl ctxt compgen tmenv expr
@@ -2452,6 +2508,7 @@ module internal ExprRemapping =
             {
                 g = g
                 stackGuard = StackGuard("RemapExprStackGuardDepth")
+                keepRecursiveValLinks = false
             }
 
         remapPossibleForallTyImpl ctxt tmenv ty
@@ -2461,6 +2518,7 @@ module internal ExprRemapping =
             {
                 g = g
                 stackGuard = StackGuard("RemapExprStackGuardDepth")
+                keepRecursiveValLinks = false
             }
 
         copyAndRemapAndBindModTy ctxt compgen Remap.Empty mtyp |> fst
@@ -2470,6 +2528,20 @@ module internal ExprRemapping =
             {
                 g = g
                 stackGuard = StackGuard("RemapExprStackGuardDepth")
+                keepRecursiveValLinks = false
+            }
+
+        remapExprImpl ctxt compgen Remap.Empty e
+
+    /// Copy an expression for use as the definition inside an auto-quotation (Expr.WithValue), keeping fresh
+    /// links to any recursive-value uses that are still within their letrec scope so the copy also receives
+    /// the inferred type arguments applied later by AdjustAndForgetUsesOfRecValue. See issue #20379.
+    let copyExprKeepingRecursiveValLinks g compgen e =
+        let ctxt =
+            {
+                g = g
+                stackGuard = StackGuard("RemapExprStackGuardDepth")
+                keepRecursiveValLinks = true
             }
 
         remapExprImpl ctxt compgen Remap.Empty e
@@ -2479,6 +2551,7 @@ module internal ExprRemapping =
             {
                 g = g
                 stackGuard = StackGuard("RemapExprStackGuardDepth")
+                keepRecursiveValLinks = false
             }
 
         remapImplFile ctxt compgen Remap.Empty e |> fst
@@ -2488,6 +2561,7 @@ module internal ExprRemapping =
             {
                 g = g
                 stackGuard = StackGuard("RemapExprStackGuardDepth")
+                keepRecursiveValLinks = false
             }
 
         remapExprImpl ctxt CloneAll (mkInstRemap tpinst) e
@@ -2578,7 +2652,8 @@ module internal ExprAnalysis =
     and remarkInterfaceImpl m (ty, overrides) =
         (ty, List.map (remarkObjExprMethod m) overrides)
 
-    and remarkExprs m es = es |> List.map (remarkExpr m)
+    and remarkExprs m es =
+        es |> ListInline.map (fun e -> remarkExpr m e)
 
     and remarkDecisionTree m x =
         match x with

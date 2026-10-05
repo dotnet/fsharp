@@ -8,7 +8,7 @@ val gggg2 : xx: int -> int
 val gggg3 : xxx: int -> int
 val gggg4 : xxxx: int -> int
 
-type C = 
+type C =
  new : aaa : int -> C
  member M1 : x:int -> unit
  member M2 : xx:int -> unit

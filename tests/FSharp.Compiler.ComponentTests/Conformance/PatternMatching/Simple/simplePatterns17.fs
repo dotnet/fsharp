@@ -1,15 +1,15 @@
-// #Conformance #PatternMatching 
+// #Conformance #PatternMatching
 
 
 open System
 
 let nullValue = Type.GetType("this type does not exist")
-let result = 
+let result =
     match nullValue with
     | null -> true
     | _    -> false
 
-if nullValue <> null then exit 1    
+if nullValue <> null then exit 1
 if null <> nullValue then exit 1    // This actually is a pattern match
 if result <> true then exit 1
 

@@ -1,31 +1,31 @@
-// #Regression #Conformance #ObjectOrientedTypes #InterfacesAndImplementations 
+// #Regression #Conformance #ObjectOrientedTypes #InterfacesAndImplementations
 // Verify that the same generic interface can NOT be inherited multiple times with different type parameters.
 
 //Interface - empty
 type I_000<'a> =
  interface
- end 
+ end
 
-//Interface with inherits-decl 
+//Interface with inherits-decl
 type I_001 =
  interface
   inherit I_000<char>
   inherit I_000<string>
  end
 
-//Interface with type-defn-members 
+//Interface with type-defn-members
 type I_002<'a> =
  interface
   abstract Me: 'a -> int
- end 
- 
-//Interface with inherits-decl & type-defn-members 
+ end
+
+//Interface with inherits-decl & type-defn-members
 type I_003<'a> =
  interface
   inherit I_002<string>
   inherit I_002<char>
   abstract Home: 'a -> 'a
- end 
+ end
 
 type T () =
   class
@@ -34,14 +34,14 @@ type T () =
       member x.Me (s:string) = 2
       member x.Me (c:char) = 1
   end
-  
-  
+
+
 let mutable res = true
 let t = new T()
 if (t.Me("F#") <> 2) then
   System.Console.WriteLine("t.Me(string) failed")
   res <- false
-  
+
 if (t.Me('a') <> 1) then
   System.Console.WriteLine("t.Me(char) failed")
   res <- false
@@ -50,14 +50,14 @@ if (t.Home(0) <> 0) then
   System.Console.WriteLine("t.Home failed")
   res <- false
 
-if ( {new I_003<int> with 
-        member x.Home(i) = i 
+if ( {new I_003<int> with
+        member x.Home(i) = i
       }.Home (
-        {new I_002<int> with 
+        {new I_002<int> with
           member x.Me (s:string)  = 0
           member x.Me (c:char) = 1
         }.Me(5) )  <> 0 ) then
-            System.Console.WriteLine("I_003.Home failed")         
+            System.Console.WriteLine("I_003.Home failed")
             res <- false
 
 //<Expects id="FS0039" status="error" span="(41,7-41,9)">The type 'T' does not define a field, constructor, or member named 'Me'</Expects>
