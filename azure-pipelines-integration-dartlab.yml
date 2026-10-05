@@ -30,8 +30,7 @@ parameters:
 - name: testMachineLab
   displayName: DartLab-1ES Test Machine Lab
   type: string
-  # TODO: Confirm or provision an F# AMD64 lab with vsengtest@microsoft.com.
-  default: TODO-CONFIRM-WITH-VSENG
+  default: DotNet-Project-System-AMD64
 - name: testMachineHoldStrategy
   displayName: Test Machine Hold Strategy
   type: string

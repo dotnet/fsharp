@@ -10,7 +10,7 @@ parameters:
   default: '(default)'
 - name: testMachineLab
   type: string
-  default: TODO-CONFIRM-WITH-VSENG
+  default: DotNet-Project-System-AMD64
 - name: testMachineHoldStrategy
   type: string
   default: None

@@ -45,10 +45,9 @@ Provision these before enabling requests:
    pipeline/artifacts, required feeds, and the `DartLab-1ES` service connection.
    The stage uses the production CloudTest templates from `DevDiv/DartLab`; it has
    no dependency on the legacy `DevDiv/DartLab.Templates` DTL repository.
-3. Ask `vsengtest@microsoft.com` to assign an existing AMD64 CloudTest lab or
-   provision one for F#. Replace `TODO-CONFIRM-WITH-VSENG` in the pipeline only
-   after the lab name is confirmed. The owner notification alias is `fsharp`.
-   Confirm the VS drop and installed components support F#.
+3. The DartLab team assigned the F# pipeline to the
+   **`DotNet-Project-System-AMD64`** CloudTest lab. The owner notification alias
+   is `fsharp`. Confirm the VS drop and installed components support F#.
 4. Create the GitHub **`fsharp_pr_validation`** environment. Set its variable
    **`FSHARP_APEX_PIPELINE_ID`** to the new DevDiv pipeline's numeric ID.
    Set **`AZURE_CLIENT_ID`** and **`AZURE_TENANT_ID`** secrets for an Entra identity
