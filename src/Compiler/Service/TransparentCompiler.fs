@@ -376,6 +376,8 @@ type internal CompilerCaches(cacheSizes: CacheSizes) =
 
     member val BootstrapInfo = AsyncMemoize(cs.BootstrapInfoKeepStrongly, cs.BootstrapInfoKeepWeakly, name = "BootstrapInfo")
 
+    member val ParsingTcConfig = AsyncMemoize(cs.BootstrapInfoKeepStrongly, cs.BootstrapInfoKeepWeakly, name = "ParsingTcConfig")
+
     member val TcLastFile = AsyncMemoizeDisabled(cs.TcLastFileKeepStrongly, cs.TcLastFileKeepWeakly, name = "TcLastFile")
 
     member val TcIntermediate = AsyncMemoize(cs.TcIntermediateKeepStrongly, cs.TcIntermediateKeepWeakly, name = "TcIntermediate")
@@ -401,6 +403,7 @@ type internal CompilerCaches(cacheSizes: CacheSizes) =
         this.ParseAndCheckProject.Clear(shouldClear)
         this.BootstrapInfoStatic.Clear(shouldClear)
         this.BootstrapInfo.Clear(shouldClear)
+        this.ParsingTcConfig.Clear(shouldClear)
         this.TcIntermediate.Clear(snd >> shouldClear)
         this.AssemblyData.Clear(shouldClear)
         this.SemanticClassification.Clear(snd >> shouldClear)
@@ -1170,6 +1173,41 @@ type internal TransparentCompiler
                         FSharpDiagnostic.CreateFromException(diagnostic, suggestNamesForErrors, flatErrors, None))
 
                 return bootstrapInfoOpt, diagnostics
+            }
+        )
+
+    /// The TcConfig of a project, without importing its references. That is all that parsing a file needs,
+    /// while the bootstrap info also imports the referenced assemblies and type checks the referenced projects.
+    let ComputeParsingTcConfig (projectSnapshot: ProjectSnapshot) =
+        caches.ParsingTcConfig.Get(
+            projectSnapshot.NoFileVersionsKey,
+            async {
+                use _ =
+                    Activity.start
+                        "ComputeParsingTcConfig"
+                        [|
+                            Activity.Tags.project, projectSnapshot.ProjectFileName |> Path.GetFileName |> (!!)
+                        |]
+
+                let delayedLogger = CapturingDiagnosticsLogger("ParsingTcConfig")
+                use _ = new CompilationGlobalsScope(delayedLogger, BuildPhase.Parameter)
+
+                let! tcConfigOpt =
+                    async {
+                        try
+                            let! tcConfigB, _, _ = ComputeTcConfigBuilder projectSnapshot
+                            return Some(TcConfig.Create(tcConfigB, validate = false))
+                        with exn ->
+                            errorRecoveryNoRange exn
+                            return None
+                    }
+
+                let diagnostics =
+                    delayedLogger.Diagnostics
+                    |> List.map (fun diagnostic -> FSharpDiagnostic.CreateFromException(diagnostic, suggestNamesForErrors, false, None))
+                    |> Array.ofList
+
+                return tcConfigOpt, diagnostics
             }
         )
 
@@ -2111,11 +2149,9 @@ type internal TransparentCompiler
             // TODO: might need to deal with exceptions here:
             use _ = new CompilationGlobalsScope(DiscardErrorsLogger, BuildPhase.Parse)
 
-            match! ComputeBootstrapInfo projectSnapshot with
+            match! ComputeParsingTcConfig projectSnapshot with
             | None, creationDiags -> return emptyParseResult fileName creationDiags
-            | Some bootstrapInfo, _ ->
-                let tcConfig = bootstrapInfo.TcConfig
-
+            | Some tcConfig, _ ->
                 let fileSnapshot =
                     projectSnapshot.SourceFiles |> List.find (fun f -> f.FileName = fileName)
 
