@@ -602,11 +602,6 @@
         <target state="translated">Vyvolá upozornění, pokud bylo během překladu názvů nalezeno více shod typu záznamu z důvodu překrývajících se názvů polí.</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureWitnessPassing">
-        <source>witness passing for trait constraints in F# quotations</source>
-        <target state="translated">Předávání kopie clusteru pro omezení vlastností v uvozovkách v jazyce F#</target>
-        <note />
-      </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongTypeTuple">
         <source>All branches of a pattern match expression must return values implicitly convertible to the type of the first branch, which here is a tuple of length {0} of type\n    {1}    \nThis branch returns a tuple of length {2} of type\n    {3}    \n</source>
         <target state="translated">Všechny větve výrazu shody vzoru musí vracet hodnoty implicitně převoditelné na typ první větve, což je řazená kolekce členů o délce {0} typu\n    {1}    \nTato větev vrací řazenou kolekci členů o délce {2} typu\n    {3}    \n</target>

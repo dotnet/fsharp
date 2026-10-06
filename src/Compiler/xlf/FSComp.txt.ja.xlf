@@ -602,11 +602,6 @@
         <target state="translated">フィールド名が重複しているため、名前解決中に複数のレコードの種類の一致が見つかった場合に警告を生成します。</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureWitnessPassing">
-        <source>witness passing for trait constraints in F# quotations</source>
-        <target state="translated">F# 引用での特性制約に対する監視の引き渡し</target>
-        <note />
-      </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongTypeTuple">
         <source>All branches of a pattern match expression must return values implicitly convertible to the type of the first branch, which here is a tuple of length {0} of type\n    {1}    \nThis branch returns a tuple of length {2} of type\n    {3}    \n</source>
         <target state="translated">パターン一致のすべての分岐は、最初の分岐の型に暗黙的に変換できる値を返す必要があります。これは、型の長さ {0} のタプルです\n    {1}    \nこの分岐は、型の長さ {2} のタプルを返します\n    {3}    \n</target>

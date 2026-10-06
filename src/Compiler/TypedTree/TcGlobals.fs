@@ -1915,7 +1915,7 @@ type TcGlobals(
   /// supports witness arguments.
   member g.generateWitnesses =
       compilingFSharpCore ||
-      ((ValRefForIntrinsic g.call_with_witnesses_info).TryDeref.IsSome && langVersion.SupportsFeature LanguageFeature.WitnessPassing)
+      (ValRefForIntrinsic g.call_with_witnesses_info).TryDeref.IsSome
 
   /// Indicates if we can use System.Array.Empty when emitting IL for empty array literals
   member val isArrayEmptyAvailable = v_Array_tcref.ILTyconRawMetadata.Methods.FindByName "Empty" |> List.isEmpty |> not

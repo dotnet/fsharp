@@ -602,11 +602,6 @@
         <target state="translated">필드 이름이 겹치므로 이름 확인 중에 레코드 유형 일치가 여러 개 발견되면 경고가 발생합니다.</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureWitnessPassing">
-        <source>witness passing for trait constraints in F# quotations</source>
-        <target state="translated">F# 인용의 특성 제약 조건에 대한 감시 전달</target>
-        <note />
-      </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongTypeTuple">
         <source>All branches of a pattern match expression must return values implicitly convertible to the type of the first branch, which here is a tuple of length {0} of type\n    {1}    \nThis branch returns a tuple of length {2} of type\n    {3}    \n</source>
         <target state="translated">패턴 일치 식의 모든 분기는 첫 번째 분기의 유형으로 암시적으로 변환 가능한 값을 반환해야 합니다. 여기서는 형식이 \n    {1}이고 길이가 {0}인 튜플입니다.    \n이 분기는 형식이 \n    {3}이고 길이가 {2}인 튜플을 반환합니다.    \n</target>
