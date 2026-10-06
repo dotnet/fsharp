@@ -89,6 +89,9 @@ type internal DependencyGraphType =
     /// A dependency graph for a project - it will contain all files in the project
     | Project
 
+    /// A dependency graph for a project without the implementation files that have a signature file
+    | ProjectSignatures
+
 [<System.Runtime.CompilerServices.Extension; Class>]
 type internal Extensions =
 
