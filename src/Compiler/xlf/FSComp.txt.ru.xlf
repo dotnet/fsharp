@@ -597,11 +597,6 @@
         <target state="translated">Создает предупреждения, когда выражение копирования и обновления записи изменяет все поля записи.</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureWarningWhenMultipleRecdTypeChoice">
-        <source>Raises warnings when multiple record type matches were found during name resolution because of overlapping field names.</source>
-        <target state="translated">Выдает предупреждения, когда при разрешении имен обнаружено несколько совпадений типов записи из-за перекрывающихся имен полей.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureWitnessPassing">
         <source>witness passing for trait constraints in F# quotations</source>
         <target state="translated">Передача свидетеля для ограничений признаков в цитированиях F#</target>

@@ -597,11 +597,6 @@
         <target state="translated">Gera avisos quando uma expressão de registro de cópia e atualização altera todos os campos de um registro.</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureWarningWhenMultipleRecdTypeChoice">
-        <source>Raises warnings when multiple record type matches were found during name resolution because of overlapping field names.</source>
-        <target state="translated">Gera avisos quando várias correspondências de tipo de registro foram encontradas durante a resolução de nomes devido à sobreposição de nomes de campo.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureWitnessPassing">
         <source>witness passing for trait constraints in F# quotations</source>
         <target state="translated">Passagem de testemunha para restrições de característica nas citações do F#</target>
