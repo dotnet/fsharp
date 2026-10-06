@@ -1,4 +1,19 @@
 {
-  "last_run": "2026-10-06T13:02:30Z",
-  "prs": {}
+  "last_run": "2026-10-06T20:58:27Z",
+  "prs": {
+    "20706": {
+      "category": "B3",
+      "head_sha": "a30025c3f5c947a3e35c5bc6c380a40682d3e13d",
+      "issue": 6036,
+      "last_review_comment_timestamp": null,
+      "processed_at": "2026-10-06T20:58:27Z",
+      "result": "issue-still-reproduces",
+      "actions": [
+        "removed AI-thinks-issue-fixed from issue 6036",
+        "commented on issue 6036",
+        "commented on PR 20706"
+      ],
+      "closure": "blocked: close-pull-request safe output unavailable"
+    }
+  }
 }
