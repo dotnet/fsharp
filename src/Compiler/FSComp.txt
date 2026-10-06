@@ -1566,7 +1566,6 @@ featureCSharpExtensionAttributeNotRequired,"Allow implicit Extension attribute o
 featureErrorForNonVirtualMembersOverrides,"Raises errors for non-virtual members overrides"
 featureWarningWhenCopyAndUpdateRecordChangesAllFields,"Raises warnings when an copy-and-update record expression changes all fields of a record."
 featureWarningWhenMultipleRecdTypeChoice,"Raises warnings when multiple record type matches were found during name resolution because of overlapping field names."
-featureConstraintIntersectionOnFlexibleTypes,"Constraint intersection on flexible types"
 featureChkNotTailRecursive,"Raises warnings if a member or function has the 'TailCall' attribute, but is not being used in a tail recursive way."
 featurePreferExtensionMethodOverPlainProperty,"prefer extension method over plain property"
 featureWarningIndexedPropertiesGetSetSameType,"Indexed properties getter and setter must have the same type"

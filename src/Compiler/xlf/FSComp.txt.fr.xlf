@@ -352,11 +352,6 @@
         <target state="translated">Émet des avertissements si l’attribut « TailCall » est utilisé sur des fonctions non récursives.</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureConstraintIntersectionOnFlexibleTypes">
-        <source>Constraint intersection on flexible types</source>
-        <target state="translated">Intersection de contraintes sur les types flexibles</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureDeprecatePlacesWhereSeqCanBeOmitted">
         <source>Deprecate places where 'seq' can be omitted</source>
         <target state="new">Deprecate places where 'seq' can be omitted</target>

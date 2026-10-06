@@ -22,7 +22,6 @@ type LanguageFeature =
     | ErrorForNonVirtualMembersOverrides
     | WarningWhenCopyAndUpdateRecordChangesAllFields
     | WarningWhenMultipleRecdTypeChoice
-    | ConstraintIntersectionOnFlexibleTypes
     | WarningWhenTailRecAttributeButNonTailRecUsage
     | UnmanagedConstraintCsharpInterop
     | ReuseSameFieldsInStructUnions
