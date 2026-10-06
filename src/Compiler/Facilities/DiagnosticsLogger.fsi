@@ -48,13 +48,6 @@ val StopProcessing<'T> : exn
 /// Represents a diagnostic exception whose text comes via SR.*
 exception DiagnosticWithText of number: int * message: RichText * range: range
 
-/// A diagnostic that is raised when enabled manually, or by default with a language feature
-exception DiagnosticEnabledWithLanguageFeature of
-    number: int *
-    message: RichText *
-    range: range *
-    enabledByLangFeature: bool
-
 /// Creates a diagnostic exception whose text comes via SR.*
 val Error: (int * RichText) * range -> exn
 
@@ -103,9 +96,6 @@ exception ObsoleteDiagnostic of
 
 /// Creates a DiagnosticWithSuggestions whose text comes via SR.*
 val ErrorWithSuggestions: (int * RichText) * range * string * Suggestions -> exn
-
-/// Creates a DiagnosticEnabledWithLanguageFeature whose text comes via SR.*
-val ErrorEnabledWithLanguageFeature: (int * RichText) * range * bool -> exn
 
 val inline protectAssemblyExploration: dflt: 'T -> f: (unit -> 'T) -> 'T
 

@@ -592,11 +592,6 @@
         <target state="translated">索引屬性 getter 和 setter 必須具有相同的類型</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureWarningWhenCopyAndUpdateRecordChangesAllFields">
-        <source>Raises warnings when an copy-and-update record expression changes all fields of a record.</source>
-        <target state="translated">當複製和更新記錄運算式變更記錄的所有欄位時引發警告。</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureWarningWhenMultipleRecdTypeChoice">
         <source>Raises warnings when multiple record type matches were found during name resolution because of overlapping field names.</source>
         <target state="translated">在名稱解析期間由於欄位名稱重疊而找到多個記錄類型相符項目時引發警告。</target>
