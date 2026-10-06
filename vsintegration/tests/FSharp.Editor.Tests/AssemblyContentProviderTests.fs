@@ -14,8 +14,8 @@ open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Symbols
 open FSharp.Editor.Tests.Helpers
-open FSharp.Test
 open FSharp.Test.Compiler
+open FSharp.Test.Utilities
 open Xunit
 
 let private code =
@@ -145,7 +145,7 @@ let private unrootedResult cache =
         }
 
     let _, answer =
-        checker.ParseAndCheckFileInProject(file, 0, FSharp.Compiler.Text.SourceText.ofString code, options)
+        checker.ParseAndCheckFileInProject(file, 0, global.FSharp.Compiler.Text.SourceText.ofString code, options)
         |> Async.RunSynchronously
 
     let results =
