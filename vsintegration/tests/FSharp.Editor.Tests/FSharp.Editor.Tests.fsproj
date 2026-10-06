@@ -34,7 +34,6 @@
     <Compile Include="TaskListServiceTests.fs" />
     <Compile Include="NavigateToSearchServiceTests.fs" />
     <Compile Include="CodeFixes\CodeFixTestFramework.fs" />
-    <Compile Include="ActivePatternEditorTests.fs" />
     <Compile Include="CodeFixes\AddInstanceMemberParameterTests.fs" />
     <Compile Include="CodeFixes\ConvertToAnonymousRecordTests.fs" />
     <Compile Include="CodeFixes\ChangeToUpcastTests.fs" />
