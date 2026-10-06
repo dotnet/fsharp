@@ -204,6 +204,24 @@ module Entity =
 
         candidateNs[0 .. nsCount - 1]
 
+    let getOpenableNamespace (requiresQualifiedAccessParent: ShortIdents option) autoOpenParent (candidate: ShortIdents) =
+        let openableNsCount =
+            match requiresQualifiedAccessParent with
+            | Some parent -> min parent.Length candidate.Length
+            | None -> candidate.Length
+
+        let fullOpenableNs = candidate[0 .. openableNsCount - 2]
+        struct (fullOpenableNs, cutAutoOpenModules autoOpenParent fullOpenableNs, candidate[openableNsCount - 1 ..])
+
+    let formatIdents idents =
+        idents
+        |> Array.map (fun ident ->
+            if IsOperatorDisplayName ident then
+                ident
+            else
+                NormalizeIdentifierBackticks ident)
+        |> String.concat "."
+
     let tryCreate
         (
             targetNamespace: ShortIdents option,
@@ -230,15 +248,8 @@ module Entity =
                 else
                     let identCount = parts.Length
 
-                    let fullOpenableNs, restIdents =
-                        let openableNsCount =
-                            match requiresQualifiedAccessParent with
-                            | Some parent -> min parent.Length candidate.Length
-                            | None -> candidate.Length
-
-                        candidate[0 .. openableNsCount - 2], candidate[openableNsCount - 1 ..]
-
-                    let openableNs = cutAutoOpenModules autoOpenParent fullOpenableNs
+                    let struct (fullOpenableNs, openableNs, restIdents) =
+                        getOpenableNamespace requiresQualifiedAccessParent autoOpenParent candidate
 
                     let getRelativeNs ns =
                         match targetNamespace, candidateNamespace with
@@ -258,8 +269,8 @@ module Entity =
                             match relativeNs with
                             | [||] -> None
                             | _ when identCount > 1 && relativeNs.Length >= identCount ->
-                                Some(relativeNs[0 .. relativeNs.Length - identCount] |> String.concat ".")
-                            | _ -> Some(relativeNs |> String.concat ".")
+                                Some(relativeNs[0 .. relativeNs.Length - identCount] |> formatIdents)
+                            | _ -> Some(formatIdents relativeNs)
 
                         let qualifier =
                             if fullRelativeName.Length > 1 && fullRelativeName.Length >= identCount then
@@ -269,13 +280,13 @@ module Entity =
 
                         Some
                             {
-                                FullRelativeName = String.concat "." fullRelativeName //.[0..fullRelativeName.Length - identCount - 1]
-                                Qualifier = String.concat "." qualifier
+                                FullRelativeName = formatIdents fullRelativeName
+                                Qualifier = formatIdents qualifier
                                 Namespace = ns
                                 FullDisplayName =
                                     match restIdents with
                                     | [| _ |] -> ""
-                                    | _ -> String.concat "." restIdents
+                                    | _ -> formatIdents restIdents
                                 LastIdent = Array.tryLast restIdents |> Option.defaultValue ""
                             })
 

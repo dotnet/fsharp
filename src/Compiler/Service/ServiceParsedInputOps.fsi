@@ -210,6 +210,15 @@ module public ParsedInput =
     /// Corrects insertion line number based on kind of scope and text surrounding the insertion point.
     val AdjustInsertionPoint: getLineStr: (int -> string) -> ctx: InsertionContext -> pos
 
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module internal Entity =
+
+    val getOpenableNamespace:
+        requiresQualifiedAccessParent: ShortIdents option ->
+        autoOpenParent: ShortIdents option ->
+        candidate: ShortIdents ->
+            struct (ShortIdents * ShortIdents * ShortIdents)
+
 // implementation details used by other code in the compiler
 module internal SourceFileImpl =
 

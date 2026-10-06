@@ -1238,8 +1238,9 @@ type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, i
                     item.Unresolved
                     |> Option.map (fun x -> x.Namespace)
                     |> Option.bind (fun ns ->
-                        if ns |> Array.startsWith fsharpNamespace then None
-                        else Some ns)
+                        match item.Item with
+                        | Item.ActivePatternCase _ -> Some ns
+                        | _ -> if ns |> Array.startsWith fsharpNamespace then None else Some ns)
                     |> Option.map (fun ns ->
                         match currentNamespace with
                         | Some currentNs ->
