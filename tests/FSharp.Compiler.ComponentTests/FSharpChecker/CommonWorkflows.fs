@@ -121,6 +121,7 @@ let ``Referenced project does not type check implementation files that have a si
     ProjectWorkflowBuilder(project, checker = checker, useTransparentCompiler = useTransparentCompiler) {
         checkFile "Last" expectOk
     }
+    |> ignore
 
     // Checking a file that depends on the library only needs the signature of the library.
     let library = project.DependsOn.Head
