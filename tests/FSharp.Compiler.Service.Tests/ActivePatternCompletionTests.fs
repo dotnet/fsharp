@@ -79,7 +79,11 @@ let private check markedSource =
         ParsedInput.TryFindInsertionContext context.Pos.Line parse.ParseTree partiallyQualified OpenStatementInsertionPoint.TopLevel
             (symbol.TopRequireQualifiedAccessParent, symbol.AutoOpenParent, symbol.Namespace, symbol.CleanedIdents)
         |> Assert.Single
-    struct {| Options = options; Context = context; Parse = parse; Results = results; Catalogue = catalogue; Complete = complete; Item = item; Insert = insert |}
+    let checkEdit edited =
+        let _, checkedResults = parseAndCheckFile options.SourceFiles[1] edited options
+        assertNoDiagnostics checkedResults
+        checkedResults
+    struct {| Context = context; Parse = parse; Results = results; Catalogue = catalogue; Complete = complete; Item = item; Insert = insert; CheckEdit = checkEdit |}
 
 [<Theory>]
 [<InlineData("Even", "Normal", "", "Even", "Candidates.Normal", "Candidates.Normal.Even")>]
@@ -113,7 +117,7 @@ let ``unopened cases provide compiling completion and import edits`` (caseName: 
     Assert.Equal(Some namespaceToOpen, item.NamespaceToOpen)
 
     let checkEdit insertedName openNamespace =
-        let source = test.Context.Source.Replace(sourceName, insertedName, StringComparison.Ordinal)
+        let source = test.Context.Source.Replace(sourceName, insertedName)
         let lines = SourceContext.getLines source
         let edited =
             match openNamespace with
@@ -122,8 +126,7 @@ let ``unopened cases provide compiling completion and import edits`` (caseName: 
                 Assert.Equal(Position.mkPos 2 0, pos)
                 lines |> Array.insertAt (pos.Line - 1) $"open {ns}" |> String.concat "\n"
             | None -> source
-        let _, results = parseAndCheckFile test.Options.SourceFiles[1] edited test.Options
-        Assert.Empty results.Diagnostics
+        let results = test.CheckEdit edited
         if openNamespace.IsSome then
             let unused = UnusedOpens.getUnusedOpens(results, fun line -> (SourceContext.getLines edited)[line - 1]) |> Async.RunSynchronouslyImmediate
             Assert.Empty unused
@@ -142,9 +145,8 @@ let ``unopened cases complete match binding and lambda patterns`` (body: string)
     Assert.Equal(Some "Candidates.Normal", item.NamespaceToOpen)
     let edited = $"""module Consumer
 open {item.NamespaceToOpen.Value}
-{body.Replace("{caret}", "", StringComparison.Ordinal)}"""
-    let _, results = parseAndCheckFile test.Options.SourceFiles[1] edited test.Options
-    Assert.Empty results.Diagnostics
+{body.Replace("{caret}", "")}"""
+    test.CheckEdit edited |> ignore
 
 [<Theory>]
 [<InlineData(false)>]
@@ -217,12 +219,11 @@ let ``editor RQA action keeps the qualification needed by the applied pattern`` 
     let edited =
         if canOpen then
             Assert.Equal(Some "Candidates", entity.Namespace)
-            test.Context.Source.Replace("module Consumer", "module Consumer\nopen Candidates", StringComparison.Ordinal)
+            test.Context.Source.Replace("module Consumer", "module Consumer\nopen Candidates")
         else
             Assert.Equal("Candidates.Qualified.Restricted", entity.Qualifier)
-            test.Context.Source.Replace("| Restricted n", $"| {entity.Qualifier} n", StringComparison.Ordinal)
-    let _, results = parseAndCheckFile test.Options.SourceFiles[1] edited test.Options
-    Assert.Empty results.Diagnostics
+            test.Context.Source.Replace("| Restricted n", $"| {entity.Qualifier} n")
+    test.CheckEdit edited |> ignore
 
 [<Fact>]
 let ``case completion preserves per call catalogues and distinct candidates`` () =
@@ -270,13 +271,11 @@ let ``partially qualified case uses existing import and qualification paths`` ()
         test.Insert symbol [| { Ident = "Normal"; Resolved = false }; { Ident = "Positive"; Resolved = true } |]
     Assert.Equal(Some "Candidates", entity.Namespace)
     Assert.Equal("Candidates.Normal", entity.Qualifier)
-    let edited = test.Context.Source.Replace("Normal.Positive", $"{entity.Qualifier}.Positive", StringComparison.Ordinal)
-    let _, results = parseAndCheckFile test.Options.SourceFiles[1] edited test.Options
-    Assert.Empty results.Diagnostics
-    let opened = test.Context.Source.Replace("module Consumer", "module Consumer\nopen Candidates", StringComparison.Ordinal)
-    let _, results = parseAndCheckFile test.Options.SourceFiles[1] opened test.Options
-    Assert.Empty results.Diagnostics
-    let visible = check (opened.Replace("Normal.Positive", "Normal.Positive{caret}", StringComparison.Ordinal))
+    let edited = test.Context.Source.Replace("Normal.Positive", $"{entity.Qualifier}.Positive")
+    test.CheckEdit edited |> ignore
+    let opened = test.Context.Source.Replace("module Consumer", "module Consumer\nopen Candidates")
+    test.CheckEdit opened |> ignore
+    let visible = check (opened.Replace("Normal.Positive", "Normal.Positive{caret}"))
     let item = visible.Item (fun item -> item.NameInCode = "Positive")
     Assert.Equal(None, item.NamespaceToOpen)
 
@@ -292,23 +291,18 @@ let ``FSharp namespace does not make an unopened case module visible`` () =
     let test = check "module Consumer\nlet classify value = match value with | CoreCase{caret} n -> n | _ -> 0"
     let item = test.Item (fun item -> item.NameInCode = "CoreCase")
     Assert.Equal(Some "Microsoft.FSharp.Core.Unopened", item.NamespaceToOpen)
-    let edited = test.Context.Source.Replace("module Consumer", $"module Consumer\nopen {item.NamespaceToOpen.Value}", StringComparison.Ordinal)
-    let _, results = parseAndCheckFile test.Options.SourceFiles[1] edited test.Options
-    Assert.Empty results.Diagnostics
+    let edited = test.Context.Source.Replace("module Consumer", $"module Consumer\nopen {item.NamespaceToOpen.Value}")
+    test.CheckEdit edited |> ignore
 
 [<Fact>]
 let ``FSharp namespace keeps ordinary value completion without an extra open`` () =
     let test = check "module Consumer\nopen Microsoft.FSharp.Core\nlet value = coreValue{caret}"
     let symbol = test.Catalogue |> List.find (fun symbol -> symbol.CleanedIdents = [| "Microsoft"; "FSharp"; "Core"; "Unopened"; "coreValue" |])
-    let item =
-        (test.Complete FSharpCodeCompletionOptions.Default (fun () -> test.Catalogue)).Items
-        |> Array.filter (fun item -> item.FullName = symbol.FullName)
-        |> Assert.Single
+    let item = test.Item (fun item -> item.FullName = symbol.FullName)
     Assert.Equal("Unopened.coreValue", item.NameInCode)
     Assert.Equal(None, item.NamespaceToOpen)
-    let edited = test.Context.Source.Replace("coreValue", item.NameInCode, StringComparison.Ordinal)
-    let _, results = parseAndCheckFile test.Options.SourceFiles[1] edited test.Options
-    Assert.Empty results.Diagnostics
+    let edited = test.Context.Source.Replace("coreValue", item.NameInCode)
+    test.CheckEdit edited |> ignore
 
 [<Theory>]
 [<InlineData("ordinaryValue", "let value = ordinaryValue{caret}")>]
@@ -322,10 +316,9 @@ let ``existing value type and operator import paths still compile`` (name: strin
     Assert.Equal(Some "Candidates.Normal", entity.Namespace)
     Assert.Equal($"Candidates.Normal.{name}", entity.Qualifier)
     for edited in
-        [ test.Context.Source.Replace(name, entity.Qualifier, StringComparison.Ordinal)
-          test.Context.Source.Replace("module Consumer", "module Consumer\nopen Candidates.Normal", StringComparison.Ordinal) ] do
-        let _, results = parseAndCheckFile test.Options.SourceFiles[1] edited test.Options
-        Assert.Empty results.Diagnostics
+        [ test.Context.Source.Replace(name, entity.Qualifier)
+          test.Context.Source.Replace("module Consumer", "module Consumer\nopen Candidates.Normal") ] do
+        test.CheckEdit edited |> ignore
     if name <> "(++)" then
         let item = test.Item (fun item -> item.FullName = symbol.FullName)
         Assert.Equal($"Normal.{name}", item.NameInCode)

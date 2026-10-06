@@ -212,24 +212,14 @@ let ``completion commit applies case text and avoids duplicate opens`` (nameInCo
         )
         |> CancellableTask.runSynchronouslyWithoutCancellation
         |> Seq.filter (fun item ->
-            let actual =
-                match item.Properties.TryGetValue "NameInCode" with
-                | true, value -> value
-                | _ -> item.DisplayText
+            let property name =
+                match item.Properties.TryGetValue name with
+                | true, value -> Some value
+                | _ -> None
 
-            actual = nameInCode
-            && if alreadyOpen then
-                   not (item.Properties.ContainsKey "NamespaceToOpen")
-               else
-                   match item.Properties.TryGetValue "NamespaceToOpen" with
-                   | true, value -> value = ns
-                   | _ -> false)
+            defaultArg (property "NameInCode") item.DisplayText = nameInCode
+            && property "NamespaceToOpen" = (if alreadyOpen then None else Some ns))
         |> Assert.Single
-
-    if alreadyOpen then
-        Assert.False(item.Properties.ContainsKey "NamespaceToOpen")
-    else
-        Assert.Equal(ns, item.Properties["NamespaceToOpen"])
 
     let workspace = document.Project.Solution.Workspace
 
