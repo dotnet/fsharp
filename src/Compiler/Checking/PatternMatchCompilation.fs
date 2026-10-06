@@ -1080,11 +1080,21 @@ let mkThrowUsingEDICapture (infoReader: InfoReader) tcVal m resultTy exnExpr =
     | _ ->
         mkThrow m resultTy exnExpr
 
+exception private GuardCopyBudgetExceeded
+
+[<Struct; NoEquality; NoComparison>]
+type private CompiledMatch =
+    { Tree: DecisionTree
+      Targets: DecisionTreeTarget list
+      Joins: Bindings
+      GuardCopies: int }
+
 let private CompilePatternBasic
         (g: TcGlobals) denv amap tcVal infoReader mExpr mMatch
         warnOnUnused
         warnOnIncomplete
         (joinPromotion: JoinPromotion)
+        (guardCopyBudget: int voption)
         actionOnFailure
         (origInputVal, origInputValTypars, _origInputExprOpt: Expr option)
         (clauses: MatchClause list)
@@ -1270,6 +1280,9 @@ let private CompilePatternBasic
         let idx = matchBuilder.AddTarget(TTarget(targetParams, mkApps g ((joinE, joinThunkTy), [], args, mMatch), None))
         TDSuccess(caps |> List.map (exprForVal mMatch), idx)
 
+    let guardEmitted = HashSet<ClauseNumber>()
+    let mutable guardCopies = 0
+
     let rec InvestigateFrontiers refuted frontiers =
         Cancellable.CheckAndThrow()
         stackGuard.Guard(fun () -> InvestigateFrontiersImpl refuted frontiers)
@@ -1324,6 +1337,11 @@ let private CompilePatternBasic
         match GetWhenGuardOfClause i refuted with
         | Some whenExpr ->
             let m = whenExpr.Range
+            if not (guardEmitted.Add i) then
+                guardCopies <- guardCopies + 1
+                match guardCopyBudget with
+                | ValueSome budget when guardCopies > budget -> raise GuardCopyBudgetExceeded
+                | _ -> ()
             let whenExprWithBindings = mkLetsFromBindings m (mkInvisibleBinds vs2 es2) whenExpr
             let failureTree = investigateMemoized (RefutedWhenClause :: refuted) rest
             mkBoolSwitch m whenExprWithBindings successTree failureTree
@@ -1823,7 +1841,7 @@ let private CompilePatternBasic
     if warnOnUnused then
         ReportUnusedTargets clauses dtree
 
-    dtree, matchBuilder.CloseTargets(), List.ofSeq joinBindings
+    { Tree = dtree; Targets = matchBuilder.CloseTargets(); Joins = List.ofSeq joinBindings; GuardCopies = guardCopies }
 
 // Three pattern constructs can cause significant code expansion in various combinations
 //   - Partial active patterns
@@ -1887,41 +1905,66 @@ let isProblematicClause (clause: MatchClause) =
         let ips = investigationPoints clause.Pattern
         ips.Length > 0 && Span.exists id (ips.AsSpan (0, ips.Length - 1))
 
-let rec CompilePattern  g denv amap tcVal infoReader mExpr mMatch warnOnUnused actionOnFailure (origInputVal, origInputValTypars, origInputExprOpt) (clausesL: MatchClause list) inputTy resultTy =
-    match clausesL with
-    | _ when List.exists isProblematicClause clausesL ->
+/// Extra copies of 'when' guards a decision tree may hold. A match over this budget is cut into
+/// groups, each compiled with the rest of the match as a single fall-through target.
+let private guardCopyBudget = 32
 
-        // First make sure we generate at least some of the obvious incomplete match warnings.
-        let warnOnUnused = false // we can't turn this on since we're pretending all partials fail in order to control the complexity of this.
-        let warnOnIncomplete = true
-        let clausesPretendAllPartialFail = clausesL |> List.collect (fun (MatchClause(p, whenOpt, tg, m)) -> [MatchClause(erasePartialPatterns p, whenOpt, tg, m)])
-        let _ = CompilePatternBasic g denv amap tcVal infoReader mExpr mMatch warnOnUnused warnOnIncomplete JoinPromotion.Disabled actionOnFailure (origInputVal, origInputValTypars, origInputExprOpt) clausesPretendAllPartialFail inputTy resultTy
-        let warnOnIncomplete = false
+let CompilePattern g denv amap tcVal infoReader mExpr mMatch warnOnUnused actionOnFailure (origInputVal, origInputValTypars, origInputExprOpt) (clausesL: MatchClause list) inputTy resultTy =
+    let compile warnOnUnused warnOnIncomplete joinPromotion budget clauses =
+        CompilePatternBasic g denv amap tcVal infoReader mExpr mMatch warnOnUnused warnOnIncomplete joinPromotion budget actionOnFailure (origInputVal, origInputValTypars, origInputExprOpt) clauses inputTy resultTy
 
-        // Partial and when clauses cause major code explosion if treated naively
-        // Hence treat any pattern matches with any partial clauses clause-by-clause
-        let rec atMostOneProblematicClauseAtATime clauses =
+    let restPlaceholder = MatchClause(TPat_wild mMatch, None, TTarget([], mkDefault (mMatch, resultTy), None), mMatch)
+
+    let fitsBudget clauses =
+        try
+            compile false false JoinPromotion.Enabled (ValueSome guardCopyBudget) (clauses @ [ restPlaceholder ]) |> ignore
+            true
+        with GuardCopyBudgetExceeded ->
+            false
+
+    // The longest prefix of the group that fits the budget, at least one clause.
+    let cutToBudget (group: MatchClause list) rest =
+        let rec search lo hi =
+            if lo >= hi then
+                lo
+            else
+                let mid = (lo + hi + 1) / 2
+                if fitsBudget (List.take mid group) then search mid hi else search lo (mid - 1)
+
+        if fitsBudget group then
+            group, rest
+        else
+            let k = search 1 (group.Length - 1)
+            List.take k group, List.skip k group @ rest
+
+    // Partial patterns and 'when' clauses cause major code explosion if treated naively, as every
+    // path that falls through a group would get its own copy of the clauses after it. So each group
+    // ends at a problematic clause or at the budget, and the rest of the match is compiled once.
+    // The groups report no warnings: the whole-match compile already did.
+    let rec compileGroups cutLargeGroups clauses =
+        let group, rest =
             match List.takeUntil isProblematicClause clauses with
-            | l, [] ->
-                CompilePatternBasic g denv amap tcVal infoReader mExpr mMatch warnOnUnused warnOnIncomplete JoinPromotion.Enabled actionOnFailure (origInputVal, origInputValTypars, origInputExprOpt) l inputTy resultTy
-            | l, h :: t ->
-                // Add the problematic clause.
-                doGroupWithAtMostOneProblematic (l @ [h]) t
+            | l, [] -> l, []
+            | l, h :: t -> l @ [ h ], t
 
-        and doGroupWithAtMostOneProblematic group rest =
-            // Compile the remaining clauses.
-            let decisionTree, targets, joins = atMostOneProblematicClauseAtATime rest
+        let group, rest = if cutLargeGroups then cutToBudget group rest else group, rest
 
-            // Make the expression that represents the remaining cases of the pattern match.
-            let expr = mkLetsBind mMatch joins (mkAndSimplifyMatch DebugPointAtBinding.NoneAtInvisible mExpr mMatch resultTy decisionTree targets)
-
-            // Make the clause that represents the remaining cases of the pattern match
+        match rest with
+        | [] -> compile false false JoinPromotion.Enabled ValueNone group
+        | _ ->
+            let rest = compileGroups cutLargeGroups rest
+            let expr = mkLetsBind mMatch rest.Joins (mkAndSimplifyMatch DebugPointAtBinding.NoneAtInvisible mExpr mMatch resultTy rest.Tree rest.Targets)
             let clauseForRestOfMatch = MatchClause(TPat_wild mMatch, None, TTarget(List.empty, expr, None), mMatch)
+            compile false false JoinPromotion.Enabled ValueNone (group @ [ clauseForRestOfMatch ])
 
-            CompilePatternBasic g denv amap tcVal infoReader mExpr mMatch warnOnUnused warnOnIncomplete JoinPromotion.Enabled actionOnFailure (origInputVal, origInputValTypars, origInputExprOpt) (group @ [clauseForRestOfMatch]) inputTy resultTy
+    let result =
+        if List.exists isProblematicClause clausesL then
+            // Partial patterns are treated as failing here, so unused clauses can't be reported.
+            let clausesPretendAllPartialFail = clausesL |> List.map (fun (MatchClause(p, whenOpt, tg, m)) -> MatchClause(erasePartialPatterns p, whenOpt, tg, m))
+            let whole = compile false true JoinPromotion.Disabled ValueNone clausesPretendAllPartialFail
+            compileGroups (whole.GuardCopies > guardCopyBudget) clausesL
+        else
+            let whole = compile warnOnUnused true JoinPromotion.Disabled ValueNone clausesL
+            if whole.GuardCopies > guardCopyBudget then compileGroups true clausesL else whole
 
-
-        atMostOneProblematicClauseAtATime clausesL
-
-    | _ ->
-        CompilePatternBasic g denv amap tcVal infoReader mExpr mMatch warnOnUnused true JoinPromotion.Disabled actionOnFailure (origInputVal, origInputValTypars, origInputExprOpt) clausesL inputTy resultTy
+    result.Tree, result.Targets, result.Joins
