@@ -69,11 +69,11 @@ let private withOpen atTop (ns: string) (code: string) =
 let private assertCompiles code =
     let document = RoslynTestHelpers.GetFsDocument code
 
-    let _, results =
-        document.GetFSharpParseAndCheckResultsAsync(nameof AddOpenCodeFixProvider)
+    let diagnostics =
+        FSharpDiagnostics.generate Auto document
         |> CancellableTask.runSynchronouslyWithoutCancellation
 
-    Assert.Empty results.Diagnostics
+    Assert.Empty diagnostics
 
 [<Theory>]
 [<InlineData("Even", "", "Candidates.Normal", true)>]
@@ -85,6 +85,8 @@ let private assertCompiles code =
 [<InlineData("SuffixCase", "", "Candidates.Suffix", true)>]
 [<InlineData("Internal", "", "Candidates.Normal", false)>]
 [<InlineData("``Has space``", "", "Candidates.``Space module``", true)>]
+[<InlineData("Normal.Positive", "", "Candidates", true)>]
+[<InlineData("Qualified.Restricted", "", "Candidates", true)>]
 let ``Add Open applied case uses exact target and placement`` (caseName: string, parameters: string, ns: string, atTop: bool) =
     let code =
         source $"let classify value = match value with | {caseName}{parameters} n -> n | _ -> 0"
@@ -103,26 +105,18 @@ let ``Add Open applied case uses exact target and placement`` (caseName: string,
     assertCompiles fix.FixedCode
     Assert.Equal(None, provider |> tryFix fix.FixedCode mode)
 
-[<Theory>]
-[<InlineData("Restricted", false)>]
-[<InlineData("Normal.Positive", true)>]
-[<InlineData("Qualified.Restricted", true)>]
-let ``RQA case fix supplies the qualification still required`` (pattern: string, canOpen: bool) =
+[<Fact>]
+let ``RQA bare case fix supplies the qualification still required`` () =
     let code =
-        source $"let classify value = match value with | {pattern} n -> n | _ -> 0"
+        source "let classify value = match value with | Restricted n -> n | _ -> 0"
 
     let fix =
         AddOpenCodeFixProvider(AssemblyContentProvider())
         |> tryFix code Auto
         |> Option.get
 
-    let expected =
-        if canOpen then
-            Assert.Equal("open Candidates", fix.Message)
-            withOpen true "Candidates" code
-        else
-            Assert.Equal("Candidates.Qualified.Restricted", fix.Message)
-            code.Replace("| Restricted n", "| Candidates.Qualified.Restricted n")
+    Assert.Equal("Candidates.Qualified.Restricted", fix.Message)
+    let expected = code.Replace("| Restricted n", "| Candidates.Qualified.Restricted n")
 
     Assert.Equal(expected, fix.FixedCode.Replace("\r\n", "\n"))
     assertCompiles fix.FixedCode
