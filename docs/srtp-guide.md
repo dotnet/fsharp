@@ -122,8 +122,9 @@ module Consumer =
 constraint *within a single assembly*. It is deliberately **not** serialized into compiled
 metadata (see [Binary compatibility](#binary-compatibility)), so when `multiply` lives in a
 *referenced* assembly the captured `StringOps` extension does not travel to the consumer.
-Cross-assembly, SRTP constraints are resolved from the **consumer's** scope: the consumer must
-have the extension in scope (e.g. `open StringOps` / `open type`) at its own call site.
+Across assemblies, unresolved SRTP constraints use the **consumer's** scope.
+The consumer must have the extension in scope (`open StringOps` / `open type`) at each call site.
+Already-resolved witnesses retain their selected member.
 
 ```fsharp
 // GenericLib compiled into library.dll (opens StringOps at its definition site)
@@ -144,15 +145,16 @@ let ok = multiply "ha" 3  // "hahaha"
 
 ### Binary Compatibility
 
-Extension solutions captured during constraint solving are **not** written into compiled
-metadata. A trait constraint's set of candidate extension members and its accessor domain live
-only in-process while a file is being checked; they are discarded before IL/metadata emission,
-so the on-disk pickle format is unchanged and old and new compilers interoperate.
+Captured extension scopes are **not** written into compiled metadata.
+Their candidate indexes and access rights exist only while the compiler checks the assembly.
+Selected witnesses use the existing trait-solution metadata and hidden `$W` methods.
+This preserves the pickle format and witness ABI.
 
 The practical consequence is the intra- vs cross-assembly split described under
 [Scope Capture](#scope-capture): within one assembly an inline function carries its
-definition-site extensions, but a consumer of a *compiled* inline function resolves SRTP
-constraints from its own scope and must have the relevant extensions in scope.
+definition-site extensions.
+A consumer of a *compiled* inline function resolves any unsolved SRTP constraints from its own scope.
+The consumer must have the relevant extensions in scope.
 
 ## Weak Resolution Changes
 

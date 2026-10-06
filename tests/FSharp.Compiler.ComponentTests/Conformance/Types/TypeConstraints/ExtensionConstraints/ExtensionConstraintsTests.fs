@@ -643,6 +643,231 @@ if r <> "hahaha" then failwith (sprintf "Expected 'hahaha', got '%s'" r)
                                                                                                            !!0)
           IL_000b:  call       string [runtime]System.String::Concat(string[])"""]
 
+    [<Theory>]
+    [<InlineData("--optimize+", "--realsig+", false)>]
+    [<InlineData("--optimize-", "--realsig+", false)>]
+    [<InlineData("--optimize+", "--realsig-", false)>]
+    [<InlineData("--optimize-", "--realsig-", false)>]
+    [<InlineData("--optimize+", "--realsig+", true)>]
+    [<InlineData("--optimize-", "--realsig+", true)>]
+    [<InlineData("--optimize+", "--realsig-", true)>]
+    [<InlineData("--optimize-", "--realsig-", true)>]
+    let ``Issue 20683 - extension SRTP constraints retain definition scope across files`` optimize realsig withSignature =
+        let library = """
+module Library
+type Marker = class end
+module Extensions =
+    type Marker with
+        static member Add(x: int, y: int) = x + y
+open Extensions
+let inline add x y = ((^T or Marker) : (static member Add: ^T * ^T -> ^T) (x, y))
+        """
+        let compilation =
+            if withSignature then
+                Fsi """
+module Library
+type Marker = class end
+module Extensions =
+    type Marker with
+        static member Add: x: int * y: int -> int
+open Extensions
+val inline add: x: ^T -> y: ^T -> ^T when (^T or Marker): (static member Add: ^T * ^T -> ^T)
+                """
+                |> withFileName "Library.fsi"
+                |> withAdditionalSourceFile (FsSourceWithFileName "Library.fs" library)
+            else
+                FSharpWithFileName "Library.fs" library
+
+        compilation
+        |> withAdditionalSourceFile (FsSourceWithFileName "Program.fs" """
+module Program
+module Competing =
+    type Library.Marker with
+        static member Add(x: int, y: int) = x - y
+open Competing
+[<EntryPoint>]
+let main _ =
+    let quoted = FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation <@ Library.add 1 2 @> :?> int
+    if Library.add 1 2 <> 3 || quoted <> 3 then failwith "Incorrect extension witness"
+    0
+        """)
+        |> withLangVersionPreview
+        |> withOptions [ optimize; realsig ]
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<Theory>]
+    [<InlineData("--optimize+", "--realsig+", false)>]
+    [<InlineData("--optimize-", "--realsig+", false)>]
+    [<InlineData("--optimize+", "--realsig-", false)>]
+    [<InlineData("--optimize-", "--realsig-", false)>]
+    [<InlineData("--optimize+", "--realsig+", true)>]
+    [<InlineData("--optimize-", "--realsig+", true)>]
+    [<InlineData("--optimize+", "--realsig-", true)>]
+    [<InlineData("--optimize-", "--realsig-", true)>]
+    let ``Issue 20684 - competing operator witnesses retain their identity across files`` optimize realsig openType =
+        let declaration, openScope =
+            if openType then "type Ops =", "open type Ops"
+            else "type System.String with", ""
+        FSharpWithFileName "Library.fs" $"""
+module Library
+module A =
+    {declaration}
+        static member ( * ) (s: string, n: int) = String.replicate n s
+    {openScope}
+    let inline mul x n = x * n
+module B =
+    {declaration}
+        static member ( * ) (s: string, n: int) = s + string n
+    {openScope}
+    let inline mul x n = x * n
+        """
+        |> withAdditionalSourceFile (FsSourceWithFileName "Program.fs" """
+module Program
+module Competing =
+    type System.String with
+        static member ( * ) (s: string, n: int) = string n + s
+open Competing
+[<EntryPoint>]
+let main _ =
+    let quotedA = FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation <@ Library.A.mul "a" 3 @> :?> string
+    let quotedB = FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation <@ Library.B.mul "a" 3 @> :?> string
+    if Library.A.mul "a" 3 <> "aaa" || quotedA <> "aaa" then failwith "Incorrect witness for A"
+    if Library.B.mul "a" 3 <> "a3" || quotedB <> "a3" then failwith "Incorrect witness for B"
+    0
+        """)
+        |> withLangVersionPreview
+        |> withOptions [ optimize; realsig ]
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<Theory>]
+    [<InlineData("--optimize+", "--optimize+", "--realsig+")>]
+    [<InlineData("--optimize+", "--optimize-", "--realsig+")>]
+    [<InlineData("--optimize-", "--optimize+", "--realsig+")>]
+    [<InlineData("--optimize-", "--optimize-", "--realsig+")>]
+    [<InlineData("--optimize+", "--optimize+", "--realsig-")>]
+    [<InlineData("--optimize+", "--optimize-", "--realsig-")>]
+    [<InlineData("--optimize-", "--optimize+", "--realsig-")>]
+    [<InlineData("--optimize-", "--optimize-", "--realsig-")>]
+    let ``Imported inline calls with equal types retain distinct consumer witnesses`` libraryOptimize optimize realsig =
+        let library =
+            FSharp """
+module Library
+let inline multiply x n = x * n
+let inline nested x n = multiply (multiply x n) n
+type Dispatch = Dispatch
+type Value = Value with static member Get Value = "ha"
+let inline invoke x = ((^T or Dispatch) : (static member Call: ^T -> string) x)
+let inline forward x = invoke x
+            """
+            |> withName "Library"
+            |> asLibrary
+            |> withLangVersionPreview
+            |> withOptions [ libraryOptimize; realsig ]
+
+        FSharp """
+module Consumer
+let evaluate quote = FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation quote :?> string
+module A =
+    type System.String with
+        static member (*) (s: string, n: int) = String.replicate n s
+    type Library.Dispatch with
+        static member inline Call(x: ^T) = (^T : (static member Get: ^T -> string) x) + "a"
+    let forwarded () = Library.forward Library.Value
+    let quotedForwarded () = evaluate <@ Library.forward Library.Value @>
+    let single () : string = Library.multiply "ha" 2
+    let nested () : string = Library.nested "ha" 2
+    let explicit () = Library.multiply<string, int, string> "ha" 2
+    let explicitNested () = Library.nested<string, int, string, string> "ha" 2
+    let quoted () = evaluate <@ Library.multiply "ha" 2 @>
+    let quotedNested () = evaluate <@ Library.nested "ha" 2 @>
+    let quotedExplicit () = evaluate <@ Library.multiply<string, int, string> "ha" 2 @>
+module B =
+    type System.String with
+        static member (*) (s: string, n: int) = s + string n
+    type Library.Dispatch with
+        static member inline Call(x: ^T) = (^T : (static member Get: ^T -> string) x) + "b"
+    let forwarded () = Library.forward Library.Value
+    let quotedForwarded () = evaluate <@ Library.forward Library.Value @>
+    let single () : string = Library.multiply "ha" 2
+    let nested () : string = Library.nested "ha" 2
+    let explicit () = Library.multiply<string, int, string> "ha" 2
+    let explicitNested () = Library.nested<string, int, string, string> "ha" 2
+    let quoted () = evaluate <@ Library.multiply "ha" 2 @>
+    let quotedNested () = evaluate <@ Library.nested "ha" 2 @>
+    let quotedExplicit () = evaluate <@ Library.multiply<string, int, string> "ha" 2 @>
+[<EntryPoint>]
+let main _ =
+    let results =
+        [ A.single (); B.single (); A.nested (); B.nested ()
+          A.explicit (); B.explicit (); A.explicitNested (); B.explicitNested ()
+          A.quoted (); B.quoted (); A.quotedNested (); B.quotedNested (); A.quotedExplicit (); B.quotedExplicit ()
+          A.forwarded (); B.forwarded (); A.quotedForwarded (); B.quotedForwarded () ]
+    if results <> [ "haha"; "ha2"; "hahahaha"; "ha22"; "haha"; "ha2"; "hahahaha"; "ha22"; "haha"; "ha2"; "hahahaha"; "ha22"; "haha"; "ha2"; "haa"; "hab"; "haa"; "hab" ] then
+        failwith $"Incorrect imported witnesses: {results}"
+    0
+        """
+        |> withLangVersionPreview
+        |> withNoWarn 686
+        |> withOptions [ optimize; realsig ]
+        |> withReferences [ library ]
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<Theory>]
+    [<InlineData("--optimize+")>]
+    [<InlineData("--optimize-")>]
+    let ``Self-dependent extension witnesses fail before quotation generation`` optimize =
+        FSharp """
+module RecursiveQuote
+type Loop = Loop
+module Extensions =
+    type Loop with
+        static member inline Call(x: ^T) =
+            ((^T or Loop) : (static member Call: ^T -> int) x)
+open Extensions
+let quote = <@ Loop.Call Loop @>
+        """
+        |> withLangVersionPreview
+        |> withOptions [ optimize ]
+        |> compile
+        |> shouldFail
+        |> withErrorCode 465
+
+    [<Theory>]
+    [<InlineData("--optimize+", "--realsig+")>]
+    [<InlineData("--optimize-", "--realsig+")>]
+    [<InlineData("--optimize+", "--realsig-")>]
+    [<InlineData("--optimize-", "--realsig-")>]
+    let ``Issue 20685 - generic extension forwarding retains nested SRTP constraints`` optimize realsig =
+        FSharp """
+module Program
+type Dispatch = Value with static member Get Value = 1
+type Other = Other with static member Get Other = 2
+type Direct = Direct with static member Call Direct = 3
+module Extensions =
+    type Dispatch with
+        static member inline Call(x: ^T) = (^T : (static member Get: ^T -> int) x)
+        static member inline Invoke(x: ^T) = ((^T or Dispatch) : (static member Call: ^T -> int) x)
+        static member inline Forward(x: ^T) = ((^T or Dispatch) : (static member Invoke: ^T -> int) x)
+open Extensions
+[<EntryPoint>]
+let main _ =
+    if [ Dispatch.Invoke Value; Dispatch.Invoke Other; Dispatch.Invoke Direct ] <> [ 1; 2; 3 ] then
+        failwith "Incorrect forwarded witness"
+    if [ Dispatch.Forward Value; Dispatch.Forward Other; Dispatch.Forward Direct ] <> [ 1; 2; 3 ] then
+        failwith "Incorrect nested forwarded witness"
+    let evaluate quote = FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation quote :?> int
+    if [ evaluate <@ Dispatch.Forward Value @>; evaluate <@ Dispatch.Forward Other @>; evaluate <@ Dispatch.Forward Direct @> ] <> [ 1; 2; 3 ] then
+        failwith "Incorrect quoted forwarded witness"
+    0
+        """
+        |> withLangVersionPreview
+        |> withOptions [ optimize; realsig ]
+        |> compileExeAndRun
+        |> shouldSucceed
+
     [<Fact>]
     let ``Cross-file extension operator with an explicit signature file resolves through SRTP`` () =
         // Sharpest signature/impl split: the extension is declared in an explicit .fsi, so its signature val

@@ -378,6 +378,8 @@ module internal TypedTreeCollections =
         /// Make a new map, containing a new entry for the given type definition
         member Add: TyconRef * 'T -> TyconRefMultiMap<'T>
 
+        member Remap: remapStamp: (Stamp -> Stamp) * mapping: ('T -> 'U) -> TyconRefMultiMap<'U>
+
         /// The empty map
         static member Empty: TyconRefMultiMap<'T>
 
