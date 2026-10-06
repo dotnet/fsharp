@@ -125,6 +125,8 @@ type internal DependencyGraphType =
     | File
     /// A dependency graph for a project - it will contain all files in the project
     | Project
+    /// A dependency graph for a project without the implementation files that have a signature file
+    | ProjectSignatures
 
 [<Extension>]
 type internal Extensions =
@@ -217,6 +219,7 @@ module private TypeCheckingGraphProcessing =
         (graph: Graph<NodeToTypeCheck>)
         (work: NodeToTypeCheck -> TcInfo -> Async<Finisher<NodeToTypeCheck, TcInfo, PartialResult>>)
         (emptyState: TcInfo)
+        (includeArtificialImplFiles: bool)
         : Async<(int * PartialResult) list * TcInfo> =
         async {
 
@@ -253,6 +256,20 @@ module private TypeCheckingGraphProcessing =
                 ||> Array.fold (fun (fileResults, state) (item, (_, Finisher(finisher = finisher))) ->
                     let fileResult, state = finisher state
                     (item, fileResult) :: fileResults, state)
+
+            // When the implementation files that have a signature file were not type checked, their ArtificialImplFile
+            // nodes stand in for them: they add the signature to the implementation environment.
+            // They come after the physical files, so the signatures they need are in the state.
+            let state =
+                if includeArtificialImplFiles then
+                    results
+                    |> Array.choose (fun (item, (_, finisher)) ->
+                        match item with
+                        | NodeToTypeCheck.ArtificialImplFile _ -> Some finisher
+                        | NodeToTypeCheck.PhysicalFile _ -> None)
+                    |> Array.fold (fun state (Finisher(finisher = finisher)) -> finisher state |> snd) state
+                else
+                    state
 
             return finalFileResults, state
         }
@@ -1310,7 +1327,7 @@ type internal TransparentCompiler
             return nodeGraph, graph
         }
 
-    let removeImplFilesThatHaveSignaturesExceptLastOne (projectSnapshot: ProjectSnapshotBase<_>) (graph: Graph<FileIndex>) =
+    let removeImplFilesThatHaveSignatures keepLastFile (projectSnapshot: ProjectSnapshotBase<_>) (graph: Graph<FileIndex>) =
 
         let removeIndexes =
             projectSnapshot.SourceFileNames
@@ -1328,8 +1345,12 @@ type internal TransparentCompiler
                 | [ idx1, _; idx2, _ ] -> max idx1 idx2 |> Some
                 | _ -> None)
             |> Set
-            // Don't remove the last file
-            |> Set.remove (projectSnapshot.SourceFiles.Length - 1)
+
+        let removeIndexes =
+            if keepLastFile then
+                removeIndexes |> Set.remove (projectSnapshot.SourceFiles.Length - 1)
+            else
+                removeIndexes
 
         graph
         |> Seq.filter (fun x -> not (removeIndexes.Contains x.Key))
@@ -1345,7 +1366,19 @@ type internal TransparentCompiler
             computeDependencyGraph
                 tcConfig
                 (priorSnapshot.SourceFiles |> Seq.map (fun f -> f.ParsedInput))
-                (removeImplFilesThatHaveSignaturesExceptLastOne priorSnapshot)
+                (removeImplFilesThatHaveSignatures true priorSnapshot)
+        )
+
+    let ComputeDependencyGraphForProjectSignatures (tcConfig: TcConfig) (projectSnapshot: ProjectSnapshotBase<FSharpParsedFile>) =
+
+        let key = projectSnapshot.SourceFiles.Key(DependencyGraphType.ProjectSignatures)
+
+        caches.DependencyGraph.Get(
+            key,
+            computeDependencyGraph
+                tcConfig
+                (projectSnapshot.SourceFiles |> Seq.map (fun f -> f.ParsedInput))
+                (removeImplFilesThatHaveSignatures false projectSnapshot)
         )
 
     let ComputeDependencyGraphForProject (tcConfig: TcConfig) (projectSnapshot: ProjectSnapshotBase<FSharpParsedFile>) =
@@ -1560,6 +1593,69 @@ type internal TransparentCompiler
             return ProjectSnapshotBase<_>(projectSnapshot.ProjectConfig, projectSnapshot.ReferencedProjects, parsedInputs |> Array.toList)
         }
 
+    /// Parse the files of a project, except the implementation files that have a signature file before them.
+    /// These get an empty placeholder: a project that is type checked from its signatures does not need them.
+    let parseSourceFilesExceptImplFilesWithSignatures (projectSnapshot: ProjectSnapshotWithSources) tcConfig =
+        async {
+            let sourceFiles = projectSnapshot.SourceFiles |> List.toArray
+
+            let signatureIndexes =
+                sourceFiles
+                |> Seq.mapi (fun idx file -> idx, file)
+                |> Seq.filter (fun (_, file) -> file.IsSignatureFile)
+                |> Seq.map (fun (idx, file) -> file.FileName, idx)
+                |> Map.ofSeq
+
+            let hasSignatureBefore idx (file: FSharpFileSnapshotWithSource) =
+                not file.IsSignatureFile
+                && signatureIndexes
+                   |> Map.tryFind (file.FileName + "i")
+                   |> Option.exists (fun sigIdx -> sigIdx < idx)
+
+            let! parsedFiles =
+                sourceFiles
+                |> Seq.mapi (fun idx file ->
+                    if hasSignatureBefore idx file then
+                        async.Return None
+                    else
+                        async {
+                            let! parsedFile = ComputeParseFile projectSnapshot tcConfig file
+                            return Some parsedFile
+                        })
+                |> MultipleDiagnosticsLoggers.Parallel
+
+            let signatureNames =
+                parsedFiles
+                |> Seq.choose id
+                |> Seq.filter (fun parsedFile -> parsedFile.IsSignatureFile)
+                |> Seq.map (fun parsedFile -> parsedFile.FileName, parsedFile.ParsedInput.QualifiedName)
+                |> Map.ofSeq
+
+            let parsedFiles =
+                (sourceFiles, parsedFiles)
+                ||> Array.map2 (fun file parsedFile ->
+                    match parsedFile with
+                    | Some parsedFile -> parsedFile
+                    | None ->
+                        let placeholder =
+                            ParsedInput.ImplFile(
+                                ParsedImplFileInput(
+                                    file.FileName,
+                                    false,
+                                    signatureNames[file.FileName + "i"],
+                                    [],
+                                    [],
+                                    (file.IsLastCompiland, file.IsExe),
+                                    SyntaxTrivia.ParsedInputTrivia.Empty,
+                                    Set.empty
+                                )
+                            )
+
+                        FSharpParsedFile(file.FileName, file.Version, file.Source, placeholder, [||]))
+
+            return ProjectSnapshotBase<_>(projectSnapshot.ProjectConfig, projectSnapshot.ReferencedProjects, parsedFiles |> Array.toList)
+        }
+
     // Type check file and all its dependencies
     let ComputeTcLastFile (bootstrapInfo: BootstrapInfo) (projectSnapshot: ProjectSnapshotWithSources) =
         let fileName = projectSnapshot.SourceFiles |> List.last |> (fun f -> f.FileName)
@@ -1581,6 +1677,7 @@ type internal TransparentCompiler
                         graph
                         (processGraphNode projectSnapshot bootstrapInfo dependencyFiles false)
                         bootstrapInfo.InitialTcInfo
+                        false
 
                 let lastResult = results |> List.head |> snd
 
@@ -1757,10 +1854,41 @@ type internal TransparentCompiler
                         graph
                         (processGraphNode projectSnapshot bootstrapInfo dependencyFiles true)
                         bootstrapInfo.InitialTcInfo
+                        false
 
                 return results, tcInfo, parseDiagnostics
             }
         )
+
+    /// Type check a project from its signatures: the implementation files that have a signature file are not parsed
+    /// or type checked. This is enough to produce the assembly data for a project that another project references.
+    let ComputeTypeCheckProjectSignatures (bootstrapInfo: BootstrapInfo) (projectSnapshot: ProjectSnapshotWithSources) =
+        async {
+            use _ =
+                Activity.start
+                    "ComputeTypeCheckProjectSignatures"
+                    [|
+                        Activity.Tags.project, projectSnapshot.ProjectFileName |> Path.GetFileName |> (!!)
+                    |]
+
+            let! projectSnapshot = parseSourceFilesExceptImplFilesWithSignatures projectSnapshot bootstrapInfo.TcConfig
+
+            let parseDiagnostics =
+                projectSnapshot.SourceFiles
+                |> Seq.collect (fun f -> f.ParseDiagnostics)
+                |> Seq.toArray
+
+            let! graph, dependencyFiles = ComputeDependencyGraphForProjectSignatures bootstrapInfo.TcConfig projectSnapshot
+
+            let! results, tcInfo =
+                processTypeCheckingGraph
+                    graph
+                    (processGraphNode projectSnapshot bootstrapInfo dependencyFiles false)
+                    bootstrapInfo.InitialTcInfo
+                    true
+
+            return results, tcInfo, parseDiagnostics
+        }
 
     let TryGetRecentCheckResultsForFile
         (fileName: string, projectSnapshot: FSharpProjectSnapshot, userOpName: string)
@@ -1782,9 +1910,10 @@ type internal TransparentCompiler
         | Some(parseFileResults, FSharpCheckFileAnswer.Succeeded checkFileResults) -> Some(parseFileResults, checkFileResults)
         | _ -> None
 
-    let ComputeProjectExtras (bootstrapInfo: BootstrapInfo) (projectSnapshot: ProjectSnapshotWithSources) =
-        caches.ProjectExtras.Get(
-            projectSnapshot.SignatureKey,
+    /// When signaturesOnly is set, the implementation files that have a signature file are not type checked.
+    /// The result is then only good for producing the assembly data.
+    let ComputeProjectExtras (bootstrapInfo: BootstrapInfo) (projectSnapshot: ProjectSnapshotWithSources) (signaturesOnly: bool) =
+        let computation =
             async {
                 use _ =
                     Activity.start
@@ -1793,7 +1922,11 @@ type internal TransparentCompiler
                             Activity.Tags.project, projectSnapshot.ProjectFileName |> Path.GetFileName |> (!!)
                         |]
 
-                let! results, finalInfo, parseDiagnostics = ComputeParseAndCheckAllFilesInProject bootstrapInfo projectSnapshot
+                let! results, finalInfo, parseDiagnostics =
+                    if signaturesOnly then
+                        ComputeTypeCheckProjectSignatures bootstrapInfo projectSnapshot
+                    else
+                        ComputeParseAndCheckAllFilesInProject bootstrapInfo projectSnapshot
 
                 let assemblyName = bootstrapInfo.AssemblyName
                 let tcConfig = bootstrapInfo.TcConfig
@@ -1882,7 +2015,12 @@ type internal TransparentCompiler
 
                 return finalInfo, ilAssemRef, assemblyDataResult, checkedImplFiles, parseDiagnostics
             }
-        )
+
+        if signaturesOnly then
+            // The assembly data cache holds this result.
+            computation
+        else
+            caches.ProjectExtras.Get(projectSnapshot.SignatureKey, computation)
 
     let ComputeAssemblyData (projectSnapshot: ProjectSnapshot) fileName =
         caches.AssemblyData.Get(
@@ -1929,7 +2067,9 @@ type internal TransparentCompiler
 
                             let! snapshotWithSources = LoadSources bootstrapInfo projectSnapshot
 
-                            let! _, _, assemblyDataResult, _, _ = ComputeProjectExtras bootstrapInfo snapshotWithSources
+                            let! _, _, assemblyDataResult, _, _ =
+                                ComputeProjectExtras bootstrapInfo snapshotWithSources enablePartialTypeChecking
+
                             Trace.TraceInformation($"Using in-memory project reference: {name}")
 
                             return assemblyDataResult
@@ -1952,7 +2092,7 @@ type internal TransparentCompiler
                     let! snapshotWithSources = LoadSources bootstrapInfo projectSnapshot
 
                     let! tcInfo, ilAssemRef, assemblyDataResult, checkedImplFiles, parseDiagnostics =
-                        ComputeProjectExtras bootstrapInfo snapshotWithSources
+                        ComputeProjectExtras bootstrapInfo snapshotWithSources false
 
                     let diagnosticsOptions = bootstrapInfo.TcConfig.diagnosticsOptions
                     let fileName = DummyFileNameForRangesWithoutASpecificLocation
