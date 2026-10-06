@@ -427,7 +427,7 @@ let rec CheckTypeDeep<'V when 'V :> ITypeVisitor and 'V: struct>
                 CheckTypeConstraintDeep cenv v g env cx
 
     | TType_measure _ -> ()
-    
+
     | TType_app (tcref, tinst, _) ->
         v.VisitTyconRef(typeInstParent, tcref)
 
@@ -456,7 +456,7 @@ let rec CheckTypeDeep<'V when 'V :> ITypeVisitor and 'V: struct>
         CheckTypesDeep cenv v g env tinst
 
     | TType_anon_union (_, tys, _) ->
-        CheckTypesDeep cenv f g env tys
+        CheckTypesDeep cenv v g env tys
 
     | TType_tuple (_, tys) ->
         CheckTypesDeep cenv v g env tys

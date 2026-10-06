@@ -167,6 +167,16 @@
         <target state="translated">Подписывание контейнера ключей не поддерживается на этой платформе.</target>
         <note />
       </trans-unit>
+      <trans-unit id="csAnonUnionTypeAmbiguous">
+        <source>The type '{0}' is ambiguous with respect to the anonymous union type '{1}' - multiple union cases match</source>
+        <target state="new">The type '{0}' is ambiguous with respect to the anonymous union type '{1}' - multiple union cases match</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csAnonUnionTypeNotContained">
+        <source>The type '{0}' is not compatible with the anonymous union type '{1}'</source>
+        <target state="new">The type '{0}' is not compatible with the anonymous union type '{1}'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="csAvailableOverloads">
         <source>Available overloads:\n{0}</source>
         <target state="translated">Доступные перегрузки:\n{0}</target>
@@ -310,6 +320,11 @@
       <trans-unit id="featureAllowObjectExpressionWithoutOverrides">
         <source>Allow object expressions without overrides</source>
         <target state="new">Allow object expressions without overrides</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureAnonUnions">
+        <source>anonymous unions</source>
+        <target state="new">anonymous unions</target>
         <note />
       </trans-unit>
       <trans-unit id="featureBetterAnonymousRecordParsing">
@@ -1555,6 +1570,11 @@
       <trans-unit id="tcNoStaticPropertyFoundForOverride">
         <source>No static abstract property was found that corresponds to this override</source>
         <target state="translated">Не найдено статическое абстрактное свойство, соответствующее этому переопределению.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcNullableNotAllowedInAnonymousUnion">
+        <source>The type System.Nullable&lt;'T&gt; is not allowed in an anonymous union type. Consider adding null case instead.</source>
+        <target state="new">The type System.Nullable&lt;'T&gt; is not allowed in an anonymous union type. Consider adding null case instead.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNullableToStringOverride">
