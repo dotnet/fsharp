@@ -140,15 +140,18 @@ The current schema uses these fields (extend as needed, but never remove existin
 {
   "c": 12067,                 // backlog cursor — last processed issue number (ascending order)
   "lr": "2026-03-26",        // last run date — ISO date string
+  "t1": "2026-03-26",        // last Task 1 scan date — ISO date string
   "ms": 19439,               // monthly summary issue number
   "woc": 5858,               // windows-only revisit cursor — last processed issue number
-  "rtc": 6648                // regression test cursor — last processed issue number
+  "rtc": 6648,               // regression test cursor — last processed issue number
+  "rtq": []                  // issue numbers queued by Task 3 for Task 2
 }
 ```
 
 Guidelines for memory evolution:
 - Add new fields with short keys (2-3 chars) to keep the JSON compact
 - Use issue numbers for cursors (resume from issues with number > cursor value)
+- Keep `rtq` deduplicated and remove entries after Task 2 processes them
 - Do NOT track "issues commented on" in memory — instead, check the issue's comments directly to see if Repo Assist already commented. This is authoritative and doesn't grow unboundedly.
 - The existing `cm` field is deprecated. Ignore it if present; do not add to it.
 
@@ -156,7 +159,7 @@ Read memory at the **start** of every run; update it at the **end**.
 
 **Important**: Memory may not be 100% accurate. Issues may have been created, closed, or commented on; PRs may have been created, merged, commented on, or closed since the last run. Always verify memory against current repository state — reviewing recent activity since your last run is wise before acting on stale assumptions.
 
-**Memory backlog tracking**: Before commenting on any issue, check the issue's existing comments for a Repo Assist comment (look for the `🤖` marker). To detect new human activity, compare the latest human comment timestamp against `lr`. Only re-engage if new human comments appeared after `lr`.
+**Memory backlog tracking**: Before commenting on any issue, check the issue's existing comments for a Repo Assist comment (look for the `🤖` marker). To detect new human activity in Task 1, compare the latest human comment timestamp against `t1`, falling back to `lr` when `t1` is absent. Only Task 1 updates `t1`.
 
 ## Working with Issues — Mandatory Rules
 
@@ -178,8 +181,8 @@ Read `/tmp/gh-aw/selected-task` and do exactly that numbered task. Do not do the
 
 ### Task 1: Issue Investigation and Comment
 
-1. List open issues sorted by creation date ascending (oldest first). Resume from issues with number > the `c` cursor. **Do not assess issues posted after 1/1/2024** to avoid noise from more recent issues that haven't had time for human engagement yet. When no more issues exist above `c` within the cutoff date, reset `c` to 0 at the end of this run — on the next run, the `lr`-based activity filter will prevent re-investigating stale issues.
-2. **Work through "Bug" issues in ascending order, starting from the oldest open issue.** Read the issue comments and check if Repo Assist has already commented (look for the `🤖` marker). When the cursor has reset and you're re-scanning previously visited issues, **skip issues that have no activity (no new comments) since `lr`** — they haven't changed since you last saw them.
+1. List open issues sorted by creation date ascending (oldest first). Resume from issues with number > the `c` cursor. **Do not assess issues posted after 1/1/2024** to avoid noise from more recent issues that haven't had time for human engagement yet. When no more issues exist above `c` within the cutoff date, reset `c` to 0 at the end of this run — on the next run, the `t1`-based activity filter will prevent re-investigating stale issues.
+2. **Work through "Bug" issues in ascending order, starting from the oldest open issue.** Read the issue comments and check if Repo Assist has already commented (look for the `🤖` marker). When the cursor has reset and you're re-scanning previously visited issues, **skip issues that have no activity (no new comments) since `t1`** — they haven't changed since Task 1 last ran.
 3. We want automatic analysis to focus on BUGS trying to identify issues that are fixed or issues that even after numerous rounds of trying hard are determined to be investigable Windows-only and labelling them.
 - When verification requires compiler artifacts, build only after selecting the single issue for this run. Follow the ./build.sh script at repo root, run tests, or launch fsi.exe from the artifacts folder for a quick repro.
 - Do not guess, verify. Do not ask "maintainer to verify", you verify and give high-confidence proofs about whatever you found out:
@@ -213,11 +216,11 @@ Read `/tmp/gh-aw/selected-task` and do exactly that numbered task. Do not do the
 4. Engage substantively with at most one issue per run; you may scan more to find a good candidate. **After commenting or labelling, call the safe output tool immediately** — do not defer outputs.
 5. Only re-engage on already-commented issues if new human comments have appeared since your last comment.
 6. Begin every comment with: `🤖 *This is an automated response from Repo Assist.*`
-7. Update memory with comments made and the new cursor position - and also the second cursor for "windows-only" reassessment.
+7. Update `c` and set `t1` to the current date after completing the scan.
 
 ### Task 2: Regression Test Verification
 
-Process the next open issue that carries the `AI-thinks-issue-fixed` label. For that issue, produce **exactly one** of the three outcomes below.
+Process the first issue in `rtq`; if the queue is empty, process the next open issue that carries the `AI-thinks-issue-fixed` label after `rtc`. For that issue, produce **exactly one** of the three outcomes below.
 
 #### Step A — Check for existing test coverage and PRs
 
@@ -307,7 +310,7 @@ Some issues cannot be verified with a test (e.g., documentation changes, IDE-spe
 
 #### Step D — Rate limiting and batching
 
-Process one issue per run. List all issues with the `AI-thinks-issue-fixed` label, ordered by issue number ascending. Skip issues with number ≤ `rtc`. After processing, set `rtc` to the issue number processed. Do NOT reset `rtc` to 0 — new issues that receive the label will have higher numbers and be picked up naturally.
+Process one issue per run. A queued issue takes priority regardless of `rtc`; remove it from `rtq` after it is processed or verified as already handled in Step A. Otherwise, list issues with the `AI-thinks-issue-fixed` label in ascending order, skip numbers ≤ `rtc`, and set `rtc` to the issue number processed. Do NOT reset `rtc` to 0.
 
 ### Task 3: Revisit AI-thinks-windows-only Claims
 
@@ -331,7 +334,7 @@ For the next `AI-thinks-windows-only` issue:
    - If the feature is in FCS (classification, tooltips, rename, completions, diagnostics, find references, code fixes, navigation, signature help, etc.) → **it is NOT windows-only**. Remove the `AI-thinks-windows-only` label, then:
      1. Build the compiler and attempt to reproduce the issue on Linux using the repro from the issue (and comments — see "Working with Issues" rules above)
      2. If the issue **still reproduces**: leave a comment with your repro and findings. Do not apply any "fixed" label.
-     3. If the issue **no longer reproduces**: apply `AI-thinks-issue-fixed`. The next Task 2 run will search for existing tests, run adversarial verification, and either point to an existing test or create a regression test PR.
+     3. If the issue **no longer reproduces**: apply `AI-thinks-issue-fixed` and append its issue number to `rtq` unless already present. The next Task 2 run will search for existing tests, run adversarial verification, and either point to an existing test or create a regression test PR.
 
    - If the feature is purely VS chrome (WPF rendering, project system dialogs, VSIX loading, VS-specific key bindings, FSI output pane visual rendering) → the label is correct. Leave it.
 
