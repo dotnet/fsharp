@@ -130,12 +130,19 @@ jobs:
                     attempt_number: run.run_attempt,
                     per_page: 100,
                   });
-                if (jobs.some(job =>
+                const agentCompleted = jobs.some(job =>
+                  job.name === "agent" &&
+                  job.conclusion === "success" &&
+                  job.steps?.some(step =>
+                    step.name === "Execute GitHub Copilot CLI" &&
+                    step.conclusion === "success"));
+                const outputsCompleted = jobs.some(job =>
                   job.name === "safe_outputs" &&
                   job.conclusion === "success" &&
                   job.steps?.some(step =>
                     step.name === "Process Safe Outputs" &&
-                    step.conclusion === "success"))) {
+                    step.conclusion === "success"));
+                if (agentCompleted && outputsCompleted) {
                   core.notice("This command completed publication; post a new command to rerun.");
                   core.setOutput("completed", "true");
                   return;
