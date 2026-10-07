@@ -48,6 +48,7 @@ tools:
     branch-name: memory/repo-assist
 
 safe-outputs:
+  report-failure-as-issue: false
   noop:
     report-as-issue: false
   messages:
@@ -90,97 +91,17 @@ safe-outputs:
     target: "*"
 
 steps:
-  - name: Fetch repo data for task weighting
-    env:
-      GH_TOKEN: ${{ github.token }}
+  - name: Select scheduled task
     run: |
       mkdir -p /tmp/gh-aw
-
-      # Fetch open issues with labels (up to 200, reduced from 500 to avoid DIFC proxy timeouts)
-      gh issue list --state open --limit 200 --json number,labels > /tmp/gh-aw/issues.json || echo '[]' > /tmp/gh-aw/issues.json
-
-      # Fetch open PRs with titles (up to 100, reduced from 200 to avoid DIFC proxy timeouts)
-      gh pr list --state open --limit 100 --json number,title > /tmp/gh-aw/prs.json || echo '[]' > /tmp/gh-aw/prs.json
-
-      # Compute task weights and select two tasks for this run
-      python3 - << 'EOF'
-      import json, random, os
-
-      with open('/tmp/gh-aw/issues.json') as f:
-          issues = json.load(f)
-      with open('/tmp/gh-aw/prs.json') as f:
-          prs = json.load(f)
-
-      open_issues     = len(issues)
-      unlabelled      = sum(1 for i in issues if not i.get('labels'))
-      repo_assist_prs = sum(1 for p in prs if p['title'].startswith('[Repo Assist]'))
-      other_prs       = sum(1 for p in prs if not p['title'].startswith('[Repo Assist]'))
-
-      task_names = {
-          1:  'Issue Labelling',
-          2:  'Issue Investigation and Comment',
-          3:  'Issue Investigation and Fix',
-          4:  'Engineering Investments',
-          5:  'Coding Improvements',
-          6:  'Maintain Repo Assist PRs',
-          7:  'Stale PR Nudges',
-          8:  'Performance Improvements',
-          9:  'Testing Improvements',
-          10: 'Take the Repository Forward',
-      }
-
-      weights = {
-          1:  1   + 3 * unlabelled,
-          2:  3   + 1 * open_issues,
-          3:  3   + 0.7 * open_issues,
-          4:  5   + 0.2 * open_issues,
-          5:  5   + 0.1 * open_issues,
-          6:  float(repo_assist_prs),
-          7:  0.1 * other_prs,
-          8:  3   + 0.05 * open_issues,
-          9:  3   + 0.05 * open_issues,
-          10: 3   + 0.05 * open_issues,
-      }
-
-      # Seed with run ID for reproducibility within a run
-      run_id = int(os.environ.get('GITHUB_RUN_ID', '0'))
-      rng = random.Random(run_id)
-
-      task_ids     = list(weights.keys())
-      task_weights = [weights[t] for t in task_ids]
-
-      # Weighted sample without replacement (pick 2 distinct tasks)
-      chosen, seen = [], set()
-      for t in rng.choices(task_ids, weights=task_weights, k=30):
-          if t not in seen:
-              seen.add(t)
-              chosen.append(t)
-          if len(chosen) == 2:
-              break
-
-      print('=== Repo Assist Task Selection ===')
-      print(f'Open issues       : {open_issues}')
-      print(f'Unlabelled issues : {unlabelled}')
-      print(f'Repo Assist PRs   : {repo_assist_prs}')
-      print(f'Other open PRs    : {other_prs}')
-      print()
-      print('Task weights:')
-      for t, w in weights.items():
-          tag = ' <-- SELECTED' if t in chosen else ''
-          print(f'  Task {t:2d} ({task_names[t]}): weight {w:6.1f}{tag}')
-      print()
-      print(f'Selected tasks for this run: Task {chosen[0]} ({task_names[chosen[0]]}) and Task {chosen[1]} ({task_names[chosen[1]]})')
-
-      result = {
-          'open_issues': open_issues, 'unlabelled_issues': unlabelled,
-          'repo_assist_prs': repo_assist_prs, 'other_prs': other_prs,
-          'task_names': task_names,
-          'weights': {str(k): round(v, 2) for k, v in weights.items()},
-          'selected_tasks': chosen,
-      }
-      with open('/tmp/gh-aw/task_selection.json', 'w') as f:
-          json.dump(result, f, indent=2)
-      EOF
+      slot=$(($(date -u +%s) / 43200))
+      case "$((slot % 3))" in
+        1) task=1 ;;
+        2) task=3 ;;
+        0) task=2 ;;
+      esac
+      echo "$task" > /tmp/gh-aw/selected-task
+      echo "Selected Task $task"
 
 source: githubnext/agentics/workflows/repo-assist.md@7c7feb61a52b662eb2089aa2945588b7a200d404
 ---
@@ -253,14 +174,14 @@ Before taking ANY action on an issue (commenting, labeling, creating a PR), you 
 
 ## Workflow
 
-Each run, do Task 1, Task 3, Task 2, and Task FINAL (in this order — Task 3 feeds into Task 2)
+Read `/tmp/gh-aw/selected-task` and do exactly that numbered task. Do not do the other numbered tasks. Do not spawn subagents or delegate work. After the selected task, do Task FINAL only if the selected task produced an action.
 
 ### Task 1: Issue Investigation and Comment
 
 1. List open issues sorted by creation date ascending (oldest first). Resume from issues with number > the `c` cursor. **Do not assess issues posted after 1/1/2024** to avoid noise from more recent issues that haven't had time for human engagement yet. When no more issues exist above `c` within the cutoff date, reset `c` to 0 at the end of this run — on the next run, the `lr`-based activity filter will prevent re-investigating stale issues.
 2. **Work through "Bug" issues in ascending order, starting from the oldest open issue.** Read the issue comments and check if Repo Assist has already commented (look for the `🤖` marker). When the cursor has reset and you're re-scanning previously visited issues, **skip issues that have no activity (no new comments) since `lr`** — they haven't changed since you last saw them.
 3. We want automatic analysis to focus on BUGS trying to identify issues that are fixed or issues that even after numerous rounds of trying hard are determined to be investigable Windows-only and labelling them.
-- You shall verify with fresh version of the compiler, library and tooling by following the ./build.sh script at repo root. You can build this at the start of your session, and use the same artifacts for many issues. Running tests, or even launching fsi.exe from the artifacts folder for quick repro.
+- When verification requires compiler artifacts, build only after selecting the single issue for this run. Follow the ./build.sh script at repo root, run tests, or launch fsi.exe from the artifacts folder for a quick repro.
 - Do not guess, verify. Do not ask "maintainer to verify", you verify and give high-confidence proofs about whatever you found out:
   - exact commit hash and age of repo (i.e. age of latest commit) you have used. You shall invoke fsi.exe from the artifacts folder and let it print `#version;;` and paste those results as a proof you tested on a latest version
   - exact test(s) used to prove or disprove an issue
@@ -289,14 +210,14 @@ Each run, do Task 1, Task 3, Task 2, and Task FINAL (in this order — Task 3 fe
   If you previously labelled issues as windows-only that fall into the testable category above, you were wrong. Task 3 below will systematically revisit and correct those.
 
 - Otherwise, do nothing to avoid noise. If you don't have high confidence in a fix, it's better to say nothing than to risk a false positive. If you have some other high-confidence judgement, leave a note in the "Additional observations" section of the Monthly Activity Summary. If you have written a solid reproduction not yet covered in the issue, write it down — this helps future implementers.
-4. Expect to engage substantively on 1–10 issues per run; you may scan many more to find good candidates. **After each issue where you comment or label, call the safe output tool immediately** — do not defer outputs.
+4. Engage substantively with at most one issue per run; you may scan more to find a good candidate. **After commenting or labelling, call the safe output tool immediately** — do not defer outputs.
 5. Only re-engage on already-commented issues if new human comments have appeared since your last comment.
 6. Begin every comment with: `🤖 *This is an automated response from Repo Assist.*`
 7. Update memory with comments made and the new cursor position - and also the second cursor for "windows-only" reassessment.
 
-### Task 2: Regression Test Verification (for every AI-thinks-issue-fixed claim)
+### Task 2: Regression Test Verification
 
-After Task 1 and Task 3, process every open issue that carries the `AI-thinks-issue-fixed` label (including issues that received the label during Task 1 or Task 3 in this run). For each such issue, you must produce **exactly one** of the three outcomes below. No issue may be left with the label and no verification outcome.
+Process the next open issue that carries the `AI-thinks-issue-fixed` label. For that issue, produce **exactly one** of the three outcomes below.
 
 #### Step A — Check for existing test coverage and PRs
 
@@ -386,7 +307,7 @@ Some issues cannot be verified with a test (e.g., documentation changes, IDE-spe
 
 #### Step D — Rate limiting and batching
 
-Process up to 5 issues per run. List all issues with the `AI-thinks-issue-fixed` label, ordered by issue number ascending. Skip issues with number ≤ `rtc`. After processing, set `rtc` to the highest issue number processed. Do NOT reset `rtc` to 0 — new issues that receive the label will have higher numbers and be picked up naturally.
+Process one issue per run. List all issues with the `AI-thinks-issue-fixed` label, ordered by issue number ascending. Skip issues with number ≤ `rtc`. After processing, set `rtc` to the issue number processed. Do NOT reset `rtc` to 0 — new issues that receive the label will have higher numbers and be picked up naturally.
 
 ### Task 3: Revisit AI-thinks-windows-only Claims
 
@@ -396,12 +317,12 @@ The `AI-thinks-windows-only` label was applied too eagerly in the past. Many iss
 
 1. List all open issues with the `AI-thinks-windows-only` label, ordered by issue number ascending.
 2. Skip issues with number ≤ `woc` (already processed in previous runs).
-3. Process up to 5 issues from the remaining list.
+3. Process one issue from the remaining list.
 4. After processing, set `woc` to the highest issue number you processed. Do NOT reset `woc` to 0 — once all windows-only issues have been revisited, the task naturally has nothing to do until new issues receive the label (which will have higher numbers).
 
 #### Per-issue assessment
 
-For each `AI-thinks-windows-only` issue (process up to 5 per run):
+For the next `AI-thinks-windows-only` issue:
 
 1. **Read the issue carefully.** Understand what the actual bug or feature request is about.
 
@@ -410,7 +331,7 @@ For each `AI-thinks-windows-only` issue (process up to 5 per run):
    - If the feature is in FCS (classification, tooltips, rename, completions, diagnostics, find references, code fixes, navigation, signature help, etc.) → **it is NOT windows-only**. Remove the `AI-thinks-windows-only` label, then:
      1. Build the compiler and attempt to reproduce the issue on Linux using the repro from the issue (and comments — see "Working with Issues" rules above)
      2. If the issue **still reproduces**: leave a comment with your repro and findings. Do not apply any "fixed" label.
-     3. If the issue **no longer reproduces**: apply `AI-thinks-issue-fixed` and add this issue to the Task 2 queue for the current run. Task 2 will then search for existing tests, run adversarial verification, and either point to an existing test or create a regression test PR.
+     3. If the issue **no longer reproduces**: apply `AI-thinks-issue-fixed`. The next Task 2 run will search for existing tests, run adversarial verification, and either point to an existing test or create a regression test PR.
 
    - If the feature is purely VS chrome (WPF rendering, project system dialogs, VSIX loading, VS-specific key bindings, FSI output pane visual rendering) → the label is correct. Leave it.
 
@@ -420,7 +341,7 @@ For each `AI-thinks-windows-only` issue (process up to 5 per run):
 
 Over successive runs, every `AI-thinks-windows-only` issue will be revisited. Issues that were mislabelled get the label removed and are investigated properly. Issues that are genuinely windows-only keep the label. The end state is a clean, trustworthy set of labels.
 
-### Task FINAL: Update Monthly Activity Summary Issue (ALWAYS DO THIS TASK IN ADDITION TO OTHERS)
+### Task FINAL: Update Monthly Activity Summary Issue
 
 Maintain a single open issue titled `[Repo Assist] Monthly Activity {YYYY}-{MM}` as a rolling summary of all Repo Assist activity for the current month.
 
@@ -488,8 +409,8 @@ Maintain a single open issue titled `[Repo Assist] Monthly Activity {YYYY}-{MM}`
    - PRs that should be closed (stale, superseded, etc.)
    - Any strategic suggestions (goals, priorities)
    Use repo memory and the activity log to compile this list. Include direct links for every item. Keep entries to one line each.
-5. Do not update the activity issue if nothing was done in the current run. However, if you conclude "nothing to do", first verify this by checking: (a) Are there any open issues without a Repo Assist comment? (b) Are there issues in your memory flagged for attention? (c) Are there any bugs that could be investigated or fixed? If any of these are true, go back and do that work instead of concluding with no action.
-6. **If genuinely nothing was done across all tasks**, you **must** call `noop` with a brief explanation (e.g., "All scanned issues already have Repo Assist comments and no new activity since last run"). A run with zero safe outputs is treated as a failure.
+5. Do not update the activity issue if nothing was done in the selected task.
+6. **If genuinely nothing was done**, you **must** call `noop` with a brief explanation (e.g., "No action was warranted for the selected task"). A run with zero safe outputs is treated as a failure.
 
 ## Guidelines
 
@@ -505,7 +426,7 @@ Every run **must** produce at least one safe output call. Follow these rules:
 
 1. **Produce outputs incrementally.** After completing work on each issue (commenting, labeling, creating a PR), call the safe output tool **immediately** — do not batch all outputs until the end of the run. This ensures partial work is captured even if the run is interrupted or you exhaust your context window.
 
-2. **Call `noop` if no action is warranted.** If after completing all tasks you have genuinely nothing to output (no comments, no labels, no PRs, no monthly summary update), call the `noop` tool with a brief explanation (e.g., "All scanned issues already have Repo Assist comments and no new activity since last run"). A run that produces zero safe outputs is treated as a failure by the workflow infrastructure.
+2. **Call `noop` if no action is warranted.** If after completing the selected task you have genuinely nothing to output (no comments, no labels, no PRs, no monthly summary update), call the `noop` tool with a brief explanation. A run that produces zero safe outputs is treated as a failure by the workflow infrastructure.
 
 3. **Limit iteration on any single issue.** When writing a regression test (Task 2), allow at most **3 build-and-test cycles** per issue. If the test still fails after 3 attempts, conclude that the issue is not fixed: remove the `AI-thinks-issue-fixed` label, comment with your findings and the failing test code, and move on. Do not spend unbounded time iterating on a single test.
 
