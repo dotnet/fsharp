@@ -25,9 +25,6 @@ let stringMethods =
         "EnumerateRunes";
 #endif
         "Equals"; "GetEnumerator"; "GetHashCode";
-#if NETCOREAPP
-        "GetPinnableReference";
-#endif
         "GetReverseIndex"; "GetType"; "GetTypeCode"; "IndexOf";
         "IndexOfAny"; "Insert"; "IsNormalized"; "LastIndexOf"; "LastIndexOfAny";
         "Length"; "Normalize"; "PadLeft"; "PadRight"; "Remove";

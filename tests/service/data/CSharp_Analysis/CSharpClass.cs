@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -175,5 +176,33 @@ namespace FSharp.Compiler.Service.Tests
         public static void NonObsoleteMethod() { }
         public static int NonObsoleteProperty => 2;
         public static event EventHandler NonObsoleteEvent;
+    }
+
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public class EditorBrowsableNeverClass
+    {
+        public static int Prop => 1;
+    }
+
+    [EditorBrowsable(EditorBrowsableState.Advanced)]
+    public class EditorBrowsableAdvancedClass
+    {
+    }
+
+    public class EditorBrowsableMembersClass
+    {
+        [EditorBrowsable(EditorBrowsableState.Never)] public static readonly int NeverField = 1;
+
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        public static void NeverMethod()
+        {
+        }
+
+        [EditorBrowsable(EditorBrowsableState.Never)] public static int NeverProperty => 1;
+        [EditorBrowsable(EditorBrowsableState.Never)] public static event EventHandler NeverEvent;
+
+        [EditorBrowsable(EditorBrowsableState.Advanced)] public static int AdvancedProperty => 2;
+        [EditorBrowsable] public static int AlwaysProperty => 2;
+        public static int VisibleProperty => 2;
     }
 }
