@@ -1303,6 +1303,11 @@ module internal TypeDecomposition =
     [<return: Struct>]
     let (|AppTy|_|) g ty = tryAppTy g ty
 
+    let (|NonGenericSysType|_|) g (struct (path, name)) ty =
+        match stripTyEqns g ty with
+        | TType_app(tcref, [], _) -> tyconRefEq g tcref (g.FindSysTyconRef path name)
+        | _ -> false
+
     [<return: Struct>]
     let (|RefTupleTy|_|) g ty =
         ty
