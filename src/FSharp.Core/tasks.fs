@@ -791,24 +791,30 @@ module Task =
 
     [<CompiledName("Sequential")>]
     let sequential (ct: CancellationToken) (computations: seq<CancellationToken -> Task<'T>>) : Task<'T[]> =
-        task {
-            let mutable results = ArrayCollector<'T>()
+        if ct.IsCancellationRequested then
+            Task.FromCanceled<'T[]> ct
+        else
+            task {
+                let mutable results = ArrayCollector<'T>()
 
-            for f in computations do
-                ct.ThrowIfCancellationRequested()
-                let! result = f ct
-                results.Add result
+                for f in computations do
+                    ct.ThrowIfCancellationRequested()
+                    let! result = f ct
+                    results.Add result
 
-            return results.Close()
-        }
+                return results.Close()
+            }
 
     [<CompiledName("SequentialDo")>]
     let sequentialDo (ct: CancellationToken) (computations: seq<CancellationToken -> Task<unit>>) : Task<unit> =
-        task {
-            for f in computations do
-                ct.ThrowIfCancellationRequested()
-                do! f ct
-        }
+        if ct.IsCancellationRequested then
+            Task.FromCanceled<unit> ct
+        else
+            task {
+                for f in computations do
+                    ct.ThrowIfCancellationRequested()
+                    do! f ct
+            }
 
     [<CompiledName("ParallelLimit")>]
     let parallelLimit
@@ -816,48 +822,50 @@ module Task =
         (ct: CancellationToken)
         (computations: seq<CancellationToken -> Task<'T>>)
         : Task<'T[]> =
-        if maxDegreeOfParallelism < 1 then
+        if ct.IsCancellationRequested then
+            Task.FromCanceled<'T[]> ct
+        elif maxDegreeOfParallelism < 1 then
             System.String.Format(SR.GetString(SR.maxDegreeOfParallelismNotPositive), maxDegreeOfParallelism)
             |> invalidArg (nameof maxDegreeOfParallelism)
-        // materialize first so exceptions from enumeration can't trigger ObjectDisposedException
-        // from started children touching semaphore or innerCts
-        match Seq.toArray computations with
-        | _ when ct.IsCancellationRequested -> Task.FromCanceled<'T[]> ct
-        | [||] -> result [||]
-        | req when maxDegreeOfParallelism = 1 || req.Length = 1 -> sequential ct req
-        | req ->
-            task {
-                let mutable pos = -1
-                let res = Array.zeroCreate<'T> req.Length
+        else
+            // materialize first so exceptions from enumeration can't trigger ObjectDisposedException
+            // from started children touching semaphore or innerCts
+            match Seq.toArray computations with
+            | [||] -> result [||]
+            | req when maxDegreeOfParallelism = 1 || req.Length = 1 -> sequential ct req
+            | req ->
+                task {
+                    let mutable pos = -1
+                    let res = Array.zeroCreate<'T> req.Length
 
-                use innerCts = CancellationTokenSource.CreateLinkedTokenSource ct
+                    use innerCts = CancellationTokenSource.CreateLinkedTokenSource ct
 
-                let worker () =
-                    backgroundTask {
-                        let mutable index = Interlocked.Increment &pos
+                    let worker () =
+                        backgroundTask {
+                            let mutable index = Interlocked.Increment &pos
 
-                        while index < req.Length && not innerCts.IsCancellationRequested do
-                            let mutable completed = false
+                            while index < req.Length && not innerCts.IsCancellationRequested do
+                                let mutable completed = false
 
-                            try
-                                let! r = req.[index] innerCts.Token
-                                completed <- true
-                                res[index] <- r
-                            finally
-                                if not completed then
-                                    innerCts.Cancel()
+                                try
+                                    let! r = req.[index] innerCts.Token
+                                    completed <- true
+                                    res[index] <- r
+                                finally
+                                    if not completed then
+                                        innerCts.Cancel()
 
-                            index <- Interlocked.Increment &pos
-                    }
+                                index <- Interlocked.Increment &pos
+                        }
 
-                // Awaits completion of all workers (whether through success, cancellation or faulting)
-                do! Task.WhenAll [| for _ in 1 .. min req.Length maxDegreeOfParallelism -> worker () :> Task |]
-                // Where cancellation was requested on the outer ct, but none of the inners saw and/or honored it by throwing TCE,
-                // res may only be partially complete so we certainly can't return it
-                // we instead yield a TaskCanceledException to honor standard Task Cancellation semantics
-                innerCts.Token.ThrowIfCancellationRequested()
-                return res
-            }
+                    // Awaits completion of all workers (whether through success, cancellation or faulting)
+                    do! Task.WhenAll [| for _ in 1 .. min req.Length maxDegreeOfParallelism -> worker () :> Task |]
+                    // Where cancellation was requested on the outer ct, but none of the inners saw and/or honored it by throwing TCE,
+                    // res may only be partially complete so we certainly can't return it
+                    // we instead yield a TaskCanceledException to honor standard Task Cancellation semantics
+                    innerCts.Token.ThrowIfCancellationRequested()
+                    return res
+                }
 
     [<CompiledName("ParallelDoLimit")>]
     let parallelDoLimit

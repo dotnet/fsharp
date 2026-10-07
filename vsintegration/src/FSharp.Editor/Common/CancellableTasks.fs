@@ -1102,10 +1102,7 @@ module CancellableTasks =
 
         /// Runs the given tasks concurrently, but caps concurrent work to maxDegreeOfParallelism.
         let inline whenAllThrottled maxDegreeOfParallelism (tasks: CancellableTask<'a> seq) =
-            cancellableTask {
-                let! ct = getCancellationToken ()
-                return! Task.parallelLimit maxDegreeOfParallelism ct tasks
-            }
+            fun ct -> Task.parallelLimit maxDegreeOfParallelism ct tasks
 
         let inline whenAllTasks (tasks: CancellableTask seq) =
             cancellableTask {
@@ -1115,10 +1112,7 @@ module CancellableTasks =
             }
 
         let inline sequential (tasks: CancellableTask<'a> seq) =
-            cancellableTask {
-                let! ct = getCancellationToken ()
-                return! Task.sequential ct tasks
-            }
+            fun ct -> Task.sequential ct tasks
 
         let inline ignore ([<InlineIfLambda>] ctask: CancellableTask<_>) = toUnit ctask
 
