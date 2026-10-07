@@ -259,7 +259,12 @@ module internal OpenDeclarationHelper =
         let getLineStr line =
             sourceText.Lines.[line].ToString().Trim()
 
-        let pos = ParsedInput.AdjustInsertionPoint getLineStr ctx
+        let pos =
+            match ctx.ScopeKind with
+            | ScopeKind.Namespace when (getLineStr (ctx.Pos.Line - 1)).StartsWith("namespace", StringComparison.Ordinal) ->
+                Position.mkPos (ctx.Pos.Line + 1) ctx.Pos.Column
+            | _ -> ParsedInput.AdjustInsertionPoint getLineStr ctx
+
         let docLine = Line.toZ pos.Line
         let lineStr = (String.replicate pos.Column " ") + "open " + ns
 
