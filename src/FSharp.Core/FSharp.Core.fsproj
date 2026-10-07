@@ -5,7 +5,7 @@
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <TargetFrameworks Condition="'$(Configuration)' == 'Proto'">netstandard2.0</TargetFrameworks>
-    <TargetFrameworks Condition="'$(Configuration)' != 'Proto'">netstandard2.0;netstandard2.1</TargetFrameworks>
+    <TargetFrameworks Condition="'$(Configuration)' != 'Proto'">netstandard2.0;netstandard2.1;$(FSharpCoreShippedNetTargetFramework)</TargetFrameworks>
     <NoWarn>$(NoWarn);75</NoWarn> <!-- InternalCommandLineOption -->
     <NoWarn>$(NoWarn);1204</NoWarn> <!-- This construct is for use in the FSharp.Core library and should not be used directly -->
     <AllowCrossTargeting>true</AllowCrossTargeting>
@@ -35,6 +35,11 @@
     <PackageReleaseNotes>/blob/main/docs/release-notes/.FSharp.Core/$(FSharpLibrariesChangelogVersion).md</PackageReleaseNotes>
     <Configurations>Debug;Release;Proto</Configurations>
   </PropertyGroup>
+
+  <!-- Surface the shipped-net pin to FSharp.Core.nuspec as a $token$. -->
+  <ItemGroup Condition="'$(Configuration)' != 'Proto'">
+    <NuspecProperty Include="FSharpCoreShippedNetTargetFramework=$(FSharpCoreShippedNetTargetFramework)" />
+  </ItemGroup>
 
     <!-- .FSharp.Core always uses the old style initialization mechanism because of SQL CLR requirements -->
   <PropertyGroup Condition="'$(BUILDING_USING_DOTNET)' != 'true' and '$(Configuration)' != 'Proto'">

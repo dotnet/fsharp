@@ -42,19 +42,24 @@ module FSharp.Test.SurfaceArea
             |]
         assembly, actual
 
-    // verify public surface area matches expected, handles baseline update when TEST_UPDATE_BSL is set
-    let verify assembly baselinePath : unit =
+    let private verifyWith updateBaseline lineFilter assembly baselinePath : unit =
         let normalize (s:string) = Regex.Replace(s, "(\\r\\n|\\n|\\r)+", Environment.NewLine).Trim()
         let asm, actualNotNormalized = getSurfaceAreaForAssembly (assembly)
-        let actual =
-            actualNotNormalized
+
+        let render lines =
+            lines
             |> Seq.map normalize
             |> Seq.filter (String.IsNullOrWhiteSpace >> not)
+            |> Seq.filter lineFilter
             |> Seq.sort
             |> String.concat Environment.NewLine
 
+        let actual = render actualNotNormalized
+
         let compare fileContent produced =
-            match Assert.shouldBeSameMultilineStringSets (normalize fileContent) produced with
+            let expected = Regex.Split(fileContent, "\\r\\n|\\n|\\r") |> render
+
+            match Assert.shouldBeSameMultilineStringSets expected produced with
             | None -> None
             | Some diff ->
                 Some $"""Assembly: %A{asm}
@@ -64,4 +69,16 @@ module FSharp.Test.SurfaceArea
 
                   {diff}"""
 
-        checkBaselineWith compare actual baselinePath
+        if updateBaseline then
+            checkBaselineWith compare actual baselinePath
+        else
+            match compare (File.ReadAllText baselinePath) actual with
+            | None -> ()
+            | Some diff -> failwith diff
+
+    // verify public surface area matches expected, handles baseline update when TEST_UPDATE_BSL is set
+    let verify assembly baselinePath : unit =
+        verifyWith true (fun _ -> true) assembly baselinePath
+
+    let verifyIgnoringAssemblyReferences assembly baselinePath : unit =
+        verifyWith false (fun line -> not (line.StartsWith("! AssemblyReference:", StringComparison.Ordinal))) assembly baselinePath

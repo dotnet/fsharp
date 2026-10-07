@@ -89,7 +89,7 @@ type TaskBuilderBase() =
     member inline _.For(sequence: seq<'T>, body: 'T -> TaskCode<'TOverall, unit>) : TaskCode<'TOverall, unit> =
         ResumableCode.For(sequence, body)
 
-#if NETSTANDARD2_1
+#if NETSTANDARD2_1 || NET
     member inline internal this.TryFinallyAsync
         (body: TaskCode<'TOverall, 'T>, compensation: unit -> ValueTask)
         : TaskCode<'TOverall, 'T> =
@@ -788,13 +788,13 @@ module Task =
     let catch (task: Task<'T>) : Task<Result<'T, exn>> =
         task |> map Ok |> catchWith Error
 
-#if NETSTANDARD2_1
+#if NETSTANDARD2_1 || NET
     [<CompiledName("OfValueTask")>]
     let inline ofValueTask (valueTask: ValueTask<'T>) : Task<'T> =
         valueTask.AsTask()
 #endif
 
-#if NETSTANDARD2_1
+#if NETSTANDARD2_1 || NET
 [<RequireQualifiedAccess>]
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module ValueTask =

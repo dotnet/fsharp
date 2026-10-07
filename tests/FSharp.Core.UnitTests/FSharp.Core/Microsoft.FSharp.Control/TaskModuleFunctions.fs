@@ -302,13 +302,14 @@ module TaskModuleFunctionsTests =
         Assert.Equal((), t.Result)
 
 
-#if NETSTANDARD2_1
+#if NETSTANDARD2_1 || NET
     [<Fact>]
     let ``Task.ofValueTask converts ValueTask`` () =
         let vt = ValueTask<int>(42)
         let t = Task.ofValueTask vt
         Assert.Equal(42, t.Result)
 
+    [<Fact>]
     let ``Task.ofValueTask converts faulted ValueTask`` () =
         let vt = ValueTask<int>(Task.FromException<int>(Exception "boom"))
         let t = Task.ofValueTask vt

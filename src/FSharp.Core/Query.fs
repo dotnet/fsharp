@@ -107,7 +107,7 @@ type QueryBuilder() =
     member _.Head (source: QuerySource<'T, 'Q>) =
         Enumerable.First source.Source
 
-    member _.Nth (source: QuerySource<'T, 'Q>, index) =
+    member _.Nth (source: QuerySource<'T, 'Q>, index: int) =
         Enumerable.ElementAt (source.Source, index)
 
     member _.Skip (source: QuerySource<'T, 'Q>, count) : QuerySource<'T, 'Q> =
@@ -116,7 +116,7 @@ type QueryBuilder() =
     member _.SkipWhile (source: QuerySource<'T, 'Q>, predicate) : QuerySource<'T, 'Q> =
         QuerySource (Enumerable.SkipWhile (source.Source, Func<_, _>(predicate)))
 
-    member _.Take (source: QuerySource<'T, 'Q>, count) : QuerySource<'T, 'Q> =
+    member _.Take (source: QuerySource<'T, 'Q>, count: int) : QuerySource<'T, 'Q> =
         QuerySource (Enumerable.Take (source.Source, count))
 
     member _.TakeWhile (source: QuerySource<'T, 'Q>, predicate) : QuerySource<'T, 'Q> =
@@ -246,7 +246,7 @@ type QueryBuilder() =
         QuerySource (Enumerable.GroupJoin(outerSource.Source, innerSource.Source, Func<_, _>(outerKeySelector), Func<_, _>(innerKeySelector), Func<_, _, _>(resultSelector)))
 
     member _.LeftOuterJoin (outerSource: QuerySource<_, 'Q>, innerSource: QuerySource<_, 'Q>, outerKeySelector, innerKeySelector, resultSelector: _ ->  seq<_> -> _) : QuerySource<_, 'Q> =
-        QuerySource (Enumerable.GroupJoin(outerSource.Source, innerSource.Source, Func<_, _>(outerKeySelector), Func<_, _>(innerKeySelector), Func<_, _, _>(fun x g -> resultSelector x (g.DefaultIfEmpty()))))
+        QuerySource (Enumerable.GroupJoin(outerSource.Source, innerSource.Source, Func<_, _>(outerKeySelector), Func<_, _>(innerKeySelector), Func<_, _, _>(fun x (g: seq<_>) -> resultSelector x (g.DefaultIfEmpty()))))
 
     member _.RunQueryAsValue  (q: Quotations.Expr<'T>) : 'T =
         ForwardDeclarations.Query.Execute q
@@ -475,8 +475,8 @@ module Query =
         MakeOrCallContainsOrElementAt FQ FE
 
     let MakeElementAt, CallElementAt =
-        let FQ = methodhandleof (fun (x, y) -> Queryable.ElementAt(x, y))
-        let FE = methodhandleof (fun (x, y) -> Enumerable.ElementAt(x, y))
+        let FQ = methodhandleof (fun (x, y) -> Queryable.ElementAt(x, (y: int)))
+        let FE = methodhandleof (fun (x, y) -> Enumerable.ElementAt(x, (y: int)))
         MakeOrCallContainsOrElementAt FQ FE
 
     let MakeOrCallMinByOrMaxBy FQ FE =
@@ -886,8 +886,8 @@ module Query =
 
     let MakeTake =
         MakeSkipOrTake
-            (methodhandleof (fun (x, y) -> Queryable.Take (x, y)))
-            (methodhandleof (fun (x, y) -> Enumerable.Take (x, y)))
+            (methodhandleof (fun (x, y) -> Queryable.Take (x, (y: int))))
+            (methodhandleof (fun (x, y) -> Enumerable.Take (x, (y: int))))
 
     let MakeSkipWhile =
         GenMakeSkipWhileOrTakeWhile
