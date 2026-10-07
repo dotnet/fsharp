@@ -93,8 +93,11 @@ type AsyncLazy<'t> private (initial: AsyncLazyState<'t>, cancelUnawaited: bool, 
 
     member _.Request() =
         async {
+            // Register before try/finally, whose cleanup runs even when cancellation skips its body.
+            let computation = withStateUpdate request
+
             try
-                return! withStateUpdate request
+                return! computation
             finally
                 updateState afterRequest
         }

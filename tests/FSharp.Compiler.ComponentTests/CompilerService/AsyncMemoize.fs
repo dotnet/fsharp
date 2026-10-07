@@ -283,6 +283,36 @@ let ``Job keeps running if only one requestor cancels`` () : Task =
                 Finished, key ]
     }
 
+[<Fact>]
+let ``Job keeps running when requests cancel before attaching`` () : Task =
+    task {
+        use jobStarted = new ManualResetEvent(false)
+        use jobCanComplete = new ManualResetEvent(false)
+
+        let computation = async {
+            jobStarted.Set() |> ignore
+            do! awaitHandle jobCanComplete
+            return 42
+        }
+
+        let memoize = AsyncMemoize<_, int, _>()
+        let request = memoize.Get(wrapKey 1, computation)
+        let survivor = Async.StartAsTask request
+
+        do! awaitHandle jobStarted
+
+        for delay in 0 .. 9999 do
+            use cts = new CancellationTokenSource()
+            let other = Async.StartAsTask(request, cancellationToken = cts.Token)
+            Thread.SpinWait (delay % 1000)
+            cts.Cancel()
+            do! assertTaskCanceled other
+
+        jobCanComplete.Set() |> ignore
+        let! result = survivor
+        Assert.Equal(42, result)
+    }
+
 type ExpectedException() =
     inherit Exception()
 
