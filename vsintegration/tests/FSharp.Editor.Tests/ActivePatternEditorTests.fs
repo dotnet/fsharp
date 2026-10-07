@@ -11,6 +11,7 @@ open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
 
+open FSharp.Compiler.EditorServices
 open FSharp.Editor.Tests.CodeFixes.CodeFixTestFramework
 open FSharp.Editor.Tests.Helpers
 open Xunit
@@ -239,11 +240,46 @@ let ``completion commit applies case text and avoids duplicate opens`` (nameInCo
     let expected =
         if alreadyOpen then
             committed
+        elif atTop then
+            withOpen true ns committed
         else
-            withOpen atTop ns committed
+            committed.Replace("module Use =\n\n", $"module Use =\n    open {ns}\n\n")
 
     Assert.Equal(expected, actual.Replace("\r\n", "\n"))
     assertCompiles actual
+
+[<Theory>]
+[<InlineData("DateTime", "System", false)>]
+[<InlineData("StringBuilder", "System.Text", true)>]
+let ``ordinary imports stay in the consuming namespace`` (name: string, ns: string, blankLineBeforeBody: bool) =
+    let code =
+        let code = source $"let value: {name} = Unchecked.defaultof<_>"
+
+        if blankLineBeforeBody then
+            code
+        else
+            code.Replace("module Use =\n\n", "module Use =\n")
+
+    let document = RoslynTestHelpers.GetFsDocument code
+    let text = SourceText.From code
+
+    let parse =
+        document.GetFSharpParseResultsAsync("ordinary namespace import")
+        |> CancellableTask.runSynchronouslyWithoutCancellation
+
+    let line =
+        text.Lines.GetLineFromPosition(code.IndexOf("let value", StringComparison.Ordinal))
+
+    let context =
+        ParsedInput.FindNearestPointToInsertOpenDeclaration
+            (FSharp.Compiler.Text.Line.fromZ line.LineNumber)
+            parse.ParseTree
+            ($"{ns}.{name}".Split '.')
+            OpenStatementInsertionPoint.TopLevel
+
+    let actual, _ = OpenDeclarationHelper.insertOpenDeclaration text context ns
+    Assert.Equal(withOpen true ns code, actual.ToString())
+    assertCompiles (actual.ToString())
 
 [<Theory>]
 [<InlineData("let classify value = match value with | Missing n -> n | _ -> 0", false, false)>]
