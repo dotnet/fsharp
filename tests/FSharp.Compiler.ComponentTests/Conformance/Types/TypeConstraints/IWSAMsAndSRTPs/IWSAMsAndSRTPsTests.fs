@@ -3081,6 +3081,43 @@ if f -5 <> 4 then failwith (sprintf "Expected 4 but got %d" (f -5))
         |> compileAndRun
         |> shouldSucceed
 
+    // https://github.com/dotnet/fsharp/issues/5620
+    [<Fact>]
+    let ``Issue 5620 - explicit SRTP constraints compile on inline member`` () =
+        FSharp """
+type Summer() =
+    member inline _.SumBy<'T, ^U, ^V
+                            when (^V or ^U): (static member (+): ^V * ^U -> ^V)
+                            and ^V: (static member Zero: ^V)>
+        (items: 'T seq, selector: 'T -> ^U) : ^V =
+        Seq.fold
+            (fun acc item -> acc + selector item)
+            LanguagePrimitives.GenericZero
+            items
+
+let result = Summer().SumBy([ 1; 2; 3 ], int64)
+        """
+        |> asLibrary
+        |> typecheck
+        |> shouldSucceed
+
+    // https://github.com/dotnet/fsharp/issues/5620#issuecomment-420372407
+    [<Fact>]
+    let ``Issue 5620 - explicit SRTP constraints compile on inline function`` () =
+        FSharp """
+let inline plus< ^T1, ^T2, ^T3
+                    when (^T1 or ^T2): (static member (+): ^T1 * ^T2 -> ^T3)>
+    (x: ^T1)
+    (y: ^T2)
+    : ^T3 =
+    x + y
+
+let result = plus 1 2
+        """
+        |> asLibrary
+        |> typecheck
+        |> shouldSucceed
+
 
     // https://github.com/dotnet/fsharp/issues/8098
     [<Fact>]

@@ -635,18 +635,14 @@ let PostponeOnFailedMemberConstraintResolution (csenv: ConstraintSolverEnv) (tra
             f1 csenv)
         (function
          | AbortForFailedMemberConstraintResolution ->
-            // Postponed checking of constraints for failed SRTP resolutions is supported from F# 6.0 onwards
-            // and is required for the "tasks" (aka ResumableStateMachines) feature.
-            //
             // See https://github.com/dotnet/fsharp/issues/12188
-            if csenv.g.langVersion.SupportsFeature LanguageFeature.ResumableStateMachines then
-                trace.Exec
-                    (fun () ->
-                        csenv.SolverState.PushPostInferenceCheck (preDefaults=true, check = fun () ->
-                            let csenv = { csenv with ErrorOnFailedMemberConstraintResolution = false }
-                            f1 csenv |> RaiseOperationResult))
-                    (fun () ->
-                        csenv.SolverState.PopPostInferenceCheck (preDefaults=true))
+            trace.Exec
+                (fun () ->
+                    csenv.SolverState.PushPostInferenceCheck (preDefaults=true, check = fun () ->
+                        let csenv = { csenv with ErrorOnFailedMemberConstraintResolution = false }
+                        f1 csenv |> RaiseOperationResult))
+                (fun () ->
+                    csenv.SolverState.PopPostInferenceCheck (preDefaults=true))
 
             CompleteD
          | exn -> f2 exn)

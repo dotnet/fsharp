@@ -99,8 +99,11 @@ module internal Util =
 
         /// write value to HKCU subkey, uses default .NET/registry type conversions
         let writeHKCU subkey valueName value =
-            use key = Registry.CurrentUser.OpenSubKey(subkey, true)
+            use key = Registry.CurrentUser.CreateSubKey(subkey)
             key.SetValue(valueName, value)
+
+    let fsharpCompilerRegSubKey = @"Software\Microsoft\VisualStudio\FSharp"
+    let useNetSdkCompilerRegValue = "UseNetSdkCompiler" // DWORD; absent/1 = SDK (ON), 0 = .NET Framework
 
     module ArgParsing =
         let private lastIndexOfPattern s patt =
