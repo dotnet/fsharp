@@ -4,6 +4,7 @@ open Xunit
 open FSharp.Test
 open FSharp.Test.Compiler
 open System.IO
+open System.Reflection.Metadata
 open System.Text.RegularExpressions
 
 let private runtimeAsyncSource = """
@@ -1460,6 +1461,61 @@ let work (ready: Task<int>) =
     |> compile
     |> shouldSucceed
     |> verifyPdb [ VerifyMethodSequencePoints("work", (if optimize then statementPoints else callSitePoint @ statementPoints)) ]
+
+[<Fact>]
+let ``runtime async conditional callback keeps mutable capture visible during construction`` () =
+    let result =
+        FSharp """module MissingMutableLocal
+
+open System.Threading.Tasks
+open System.Runtime.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices
+
+let inline invoke ([<InlineIfLambda>] callback: unit -> int) : Task<int> =
+    StateMachineHelpers.__runtimeAsyncReturn (callback ())
+
+let run flag (ready: Task<int>) =
+    invoke (
+        if flag then
+            let mutable count = 0
+            printfn "%d" count
+            fun () ->
+                let value = AsyncHelpers.Await ready
+                count <- count + value
+                count
+        else
+            fun () -> 0)
+"""
+        |> withLangVersionPreview
+        |> withFSharpCoreShippedNet
+        |> withPortablePdb
+        |> withNoOptimize
+        |> compile
+        |> shouldSucceed
+
+    use stream = File.OpenRead(Path.ChangeExtension(result.OutputPath.Value, "pdb"))
+    use provider = MetadataReaderProvider.FromPortablePdbStream stream
+    let pdb = provider.GetMetadataReader()
+
+    result |> withMetadataReader (fun md ->
+        let method =
+            md.MethodDefinitions
+            |> Seq.filter (fun handle -> md.GetString(md.GetMethodDefinition(handle).Name) = "run")
+            |> Assert.Single
+        let point =
+            pdb.GetMethodDebugInformation(method).GetSequencePoints()
+            |> Seq.filter (fun point -> not point.IsHidden && point.StartLine = 14)
+            |> Assert.Single
+        let local =
+            [ for handle in pdb.GetLocalScopes method do
+                let scope = pdb.GetLocalScope handle
+                if scope.StartOffset <= point.Offset && point.Offset < scope.EndOffset then
+                    for local in scope.GetLocalVariables() do
+                        let variable = pdb.GetLocalVariable local
+                        if pdb.GetString variable.Name = "count" then
+                            yield variable ]
+            |> Assert.Single
+        Assert.Equal(LocalVariableAttributes.None, local.Attributes))
 
 [<Fact>]
 let ``runtime async suspension in exception region executes`` () =

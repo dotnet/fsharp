@@ -322,7 +322,13 @@ let private tryDefunctionalizeCallback (g: TcGlobals) m construction =
                             match captures.TryGetValue v.Stamp with
                             | true, capture -> capture
                             | _ ->
-                                let capture = v, fst (mkMutableCompGenLocal m v.LogicalName v.Type)
+                                let hoisted =
+                                    if v.IsMutable then
+                                        Construct.NewModifiedVal id v
+                                    else
+                                        fst (mkMutableCompGenLocal m v.LogicalName v.Type)
+
+                                let capture = v, hoisted
                                 captures[v.Stamp] <- capture
                                 capture
 
