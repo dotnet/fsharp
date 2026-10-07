@@ -31,7 +31,10 @@ exception SyntaxError of obj (* ParseErrorContext<_> *) * range: range
 
 exception IndentationProblem of string * range
 
-let warningStringOfCoords line column = sprintf "(%d:%d)" line (column + 1)
+// Not `sprintf`: the printf machinery needs runtime code generation, which a Native AOT host of the
+// parser does not have, and this is on the path of every indentation diagnostic.
+let warningStringOfCoords (line: int) (column: int) =
+    "(" + string line + ":" + string (column + 1) + ")"
 
 let warningStringOfPos (p: pos) = warningStringOfCoords p.Line p.Column
 

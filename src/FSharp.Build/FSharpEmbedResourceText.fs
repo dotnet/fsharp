@@ -283,8 +283,6 @@ open Printf
     // BEGIN BOILERPLATE
     static let getCurrentAssembly () = System.Reflection.Assembly.GetExecutingAssembly()
 
-    static let getTypeInfo (t: System.Type) = t
-
     static let resources = lazy (new System.Resources.ResourceManager("""
         + fileName
         + @""", getCurrentAssembly()))
@@ -302,84 +300,23 @@ open Printf
     #endif
 
 
-    static let mkFunctionValue (tys: System.Type[]) (impl:objnull->objnull) =
-        FSharpValue.MakeFunction(FSharpType.MakeFunctionType(tys.[0],tys.[1]), impl)
-
-    static let funTyC = typeof<(obj -> obj)>.GetGenericTypeDefinition()
-
-    static let isNamedType(ty:System.Type) = not (ty.IsArray ||  ty.IsByRef ||  ty.IsPointer)
-    static let isFunctionType (ty1:System.Type)  =
-        isNamedType(ty1) && getTypeInfo(ty1).IsGenericType && System.Type.op_Equality(ty1.GetGenericTypeDefinition(), funTyC)
-
-    static let rec destFunTy (ty:System.Type) =
-        if isFunctionType ty then
-            ty, ty.GetGenericArguments()
-        else
-            match getTypeInfo(ty).BaseType with
-            | null -> failwith ""destFunTy: not a function type""
-            | b -> destFunTy b
-
-    static let buildFunctionForOneArgPat (ty: System.Type) impl =
-        let _,tys = destFunTy ty
-        let rty = tys.[1]
-        // PERF: this technique is a bit slow (e.g. in simple cases, like 'sprintf ""%x""')
-        mkFunctionValue tys (fun inp -> impl rty inp)
-
-    #if !NULLABLE
-    static let capture1 (fmt:string) i args ty (go: obj list -> System.Type -> int -> obj) : obj =
-    #else
-    static let capture1 (fmt:string) i args ty (go: objnull list -> System.Type -> int -> obj) : obj =
-    #endif
-        match fmt.[i] with
-        | '%' -> go args ty (i+1)
-        | 'd'
-        | 'f'
-        | 's' -> buildFunctionForOneArgPat ty (fun rty n -> go (n :: args) rty (i+1))
-        | _ -> failwith ""bad format specifier""
-
     // newlines and tabs get converted to strings when read from a resource file
     // this will preserve their original intention
     static let postProcessString (s: string) =
         s.Replace(""\\n"",""\n"").Replace(""\\t"",""\t"").Replace(""\\r"",""\r"").Replace(""\\\"""", ""\"""")
 
-    static let createMessageString (messageString: string) (fmt: Printf.StringFormat<'T>) : 'T =
-        let fmt = fmt.Value // here, we use the actual error string, as opposed to the one stored as fmt
-        let len = fmt.Length
-
-        /// Function to capture the arguments and then run.
-        let rec capture args ty i =
-            if i >= len ||  (fmt.[i] = '%' && i+1 >= len) then
-                let b = new System.Text.StringBuilder()
-                b.AppendFormat(messageString, [| for x in List.rev args -> x |]) |> ignore
-    #if !NULLABLE
-                box(b.ToString())
-    #else
-                box(b.ToString()) |> Unchecked.nonNull
-    #endif
-            // REVIEW: For these purposes, this should be a nop, but I'm leaving it
-            // in incase we ever decide to support labels for the error format string
-            // E.g., ""<name>%s<foo>%d""
-            elif System.Char.IsSurrogatePair(fmt,i) then
-                capture args ty (i+2)
-            else
-                match fmt.[i] with
-                | '%' ->
-                    let i = i+1
-                    capture1 fmt i args ty capture
-                | _ ->
-                    capture args ty (i+1)
-
-        (unbox (capture [] (typeof<'T>) 0) : 'T)
-
     static let mutable swallowResourceText = false
 
-    static let GetStringFunc((messageID: string),(fmt: Printf.StringFormat<'T>)) : 'T =
+    // Each message member hands over its arguments boxed, and the text it is reduced to when the
+    // resource text is swallowed, with every hole already formatted. The types of the holes are known
+    // when this file is generated, so nothing is built at runtime: not a curried function from the
+    // format, and not a call to printf, neither of which a Native AOT host of the compiler can run.
+    static let FormatMessage(messageID: string, args: objnull array, swallowed: unit -> string) : string =
         if swallowResourceText then
-            sprintf fmt
+            swallowed ()
         else
-            let mutable messageString = GetString(messageID)
-            messageString <- postProcessString messageString
-            createMessageString messageString fmt
+            let messageString = postProcessString (GetString messageID)
+            System.String.Format(messageString, args)
 
     static member GetTextOpt(key:string) : string option = GetString(key) |> Option.ofObj
 
@@ -549,7 +486,6 @@ open Printf
                 stringInfos
                 |> Seq.iter (fun (lineNum, (optErrNum, ident), str, holes, _netFormatString) ->
                     let formalArgs = new System.Text.StringBuilder()
-                    let actualArgs = new System.Text.StringBuilder()
                     let mutable firstTime = true
                     let mutable n = 0
                     formalArgs.Append "(" |> ignore
@@ -559,10 +495,8 @@ open Printf
                             firstTime <- false
                         else
                             formalArgs.Append ", " |> ignore
-                            actualArgs.Append " " |> ignore
 
                         formalArgs.Append(sprintf "a%d : %s" n hole) |> ignore
-                        actualArgs.Append(sprintf "a%d" n) |> ignore
                         n <- n + 1
 
                     formalArgs.Append ")" |> ignore
@@ -571,19 +505,26 @@ open Printf
                     fprintfn out "    /// (Originally from %s:%d)" fileName (lineNum + 1)
                     fprintfn outSignature "    /// (Originally from %s:%d)" fileName (lineNum + 1)
 
-                    let justPercentsFromFormatString =
-                        (holes
-                         |> Array.fold
-                             (fun acc holeType ->
-                                 acc
-                                 + match holeType with
-                                   | "System.Int32" -> ",,,%d"
-                                   | "System.UInt32" -> ",,,%x"
-                                   | "System.Double" -> ",,,%f"
-                                   | "System.String" -> ",,,%s"
-                                   | _ -> failwith "unreachable")
-                             "")
-                        + ",,,"
+                    // What the message is reduced to when the resource text is swallowed: its holes, each
+                    // written as the printf specifier the hole was declared with would have written it.
+                    let swallowedText =
+                        let formatHole index holeType =
+                            match holeType with
+                            | "System.Int32" -> sprintf "a%d.ToString(System.Globalization.CultureInfo.InvariantCulture)" index
+                            | "System.UInt32" -> sprintf "a%d.ToString(\"x\", System.Globalization.CultureInfo.InvariantCulture)" index
+                            | "System.Double" -> sprintf "a%d.ToString(\"F6\", System.Globalization.CultureInfo.InvariantCulture)" index
+                            | "System.String" -> sprintf "a%d" index
+                            | _ -> failwith "unreachable"
+
+                        holes
+                        |> Array.mapi (fun index holeType -> "\",,,\" + " + formatHole index holeType + " + ")
+                        |> String.concat ""
+                        |> fun formattedHoles -> formattedHoles + "\",,,\""
+
+                    let boxedArgs =
+                        holes
+                        |> Array.mapi (fun index _ -> sprintf "box a%d" index)
+                        |> String.concat "; "
 
                     let errPrefix =
                         match optErrNum with
@@ -598,7 +539,7 @@ open Printf
 
                     let messageExpr =
                         let getString =
-                            sprintf "GetStringFunc(\"%s\",\"%s\") %s" ident justPercentsFromFormatString (actualArgs.ToString())
+                            sprintf "FormatMessage(\"%s\", [| %s |], (fun () -> %s))" ident boxedArgs swallowedText
 
                         if numberedReturnsRichText then
                             sprintf "RichText.mkText (%s)" getString
