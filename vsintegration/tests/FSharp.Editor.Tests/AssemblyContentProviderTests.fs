@@ -188,8 +188,10 @@ let ``reference changes remain visible with a reused catalogue provider`` () =
             |> compile
             |> shouldSucceed
 
+        let document = RoslynTestHelpers.GetFsDocument code
+
         let document =
-            RoslynTestHelpers.GetFsDocument(code, customProjectOption = $"-r:{reference.OutputPath.Value}")
+            document.Project.AddMetadataReference(MetadataReference.CreateFromFile reference.OutputPath.Value).GetDocument(document.Id)
 
         let values = valuesIn "Referenced" provider (check document)
         Assert.Contains(values, fun symbol -> Array.last symbol.CleanedIdents = name)
