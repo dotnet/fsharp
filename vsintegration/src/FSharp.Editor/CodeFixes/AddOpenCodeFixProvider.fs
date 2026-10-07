@@ -261,6 +261,8 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
                                             && entity.FullDisplayName <> patternName
                                         then
                                             { entity with Namespace = None }
+                                        elif symbol.Symbol :? FSharpActivePatternCase then
+                                            { entity with FullDisplayName = "" }
                                         else
                                             entity
 

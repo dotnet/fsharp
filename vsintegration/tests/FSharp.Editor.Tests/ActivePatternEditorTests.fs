@@ -58,7 +58,8 @@ module ``Space module`` =
 """
 
 let private source (body: string) =
-    definitions + $"namespace Consumer\n\nmodule Use =\n\n    {body}\n"
+    definitions.Replace("\r\n", "\n")
+    + $"namespace Consumer\n\nmodule Use =\n\n    {body}\n"
 
 let private withOpen atTop (ns: string) (code: string) =
     if atTop then
