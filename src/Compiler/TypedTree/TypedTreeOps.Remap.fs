@@ -1301,12 +1301,7 @@ module internal TypeDecomposition =
         | _ -> None)
 
     [<return: Struct>]
-    let (|AppTy|_|) g ty =
-        ty
-        |> stripTyEqns g
-        |> (function
-        | TType_app(tcref, tinst, _) -> ValueSome(tcref, tinst)
-        | _ -> ValueNone)
+    let (|AppTy|_|) g ty = tryAppTy g ty
 
     [<return: Struct>]
     let (|RefTupleTy|_|) g ty =
