@@ -29,7 +29,7 @@ let private createSdkProjectDirectory () =
     <TargetFramework>{productTfm}</TargetFramework>
     <FSharpTargetsShim>{buildDirectory ++ "Microsoft.FSharp.NetSdk.targets"}</FSharpTargetsShim>
     <FSharpBuildAssemblyFile>{initialConfig.FSharpBuild}</FSharpBuildAssemblyFile>
-    <DotnetFscCompilerPath>"{initialConfig.FSC}"</DotnetFscCompilerPath>
+    <DotnetFscCompilerPath>"{initialConfig.DOTNETFSCCOMPILERPATH}"</DotnetFscCompilerPath>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <NuGetAudit>false</NuGetAudit>
   </PropertyGroup>
