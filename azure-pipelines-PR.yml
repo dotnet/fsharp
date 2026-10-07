@@ -34,7 +34,6 @@ pr:
     - feature/*
     - feature*
     - release/*
-    - t-gro-*
   paths:
     include:
     - '*'
