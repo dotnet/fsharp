@@ -487,11 +487,6 @@
         <target state="new">#elif preprocessor directive</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureReallyLongList">
-        <source>list literals of any size</source>
-        <target state="translated">모든 크기의 목록 리터럴</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureRecordConstructorSyntax">
         <source>Constructing a record via its all-fields constructor</source>
         <target state="new">Constructing a record via its all-fields constructor</target>
@@ -4690,11 +4685,6 @@
       <trans-unit id="tcUnableToParseFormatString">
         <source>Unable to parse format string '{0}'</source>
         <target state="translated">서식 문자열 '{0}'을(를) 구문 분석할 수 없습니다.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcListLiteralMaxSize">
-        <source>This list expression exceeds the maximum size for list literals. Use an array for larger literals and call Array.ToList.</source>
-        <target state="translated">이 목록 식은 목록 리터럴의 최대 크기를 초과합니다. 보다 큰 리터럴을 위한 배열을 사용하고 Array.ToList를 호출하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcExpressionFormRequiresObjectConstructor">

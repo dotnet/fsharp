@@ -487,11 +487,6 @@
         <target state="new">#elif preprocessor directive</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureReallyLongList">
-        <source>list literals of any size</source>
-        <target state="translated">wyświetlanie na liście literałów o dowolnym rozmiarze</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureRecordConstructorSyntax">
         <source>Constructing a record via its all-fields constructor</source>
         <target state="new">Constructing a record via its all-fields constructor</target>
@@ -4690,11 +4685,6 @@
       <trans-unit id="tcUnableToParseFormatString">
         <source>Unable to parse format string '{0}'</source>
         <target state="translated">Nie można przeanalizować ciągu formatu „{0}”</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcListLiteralMaxSize">
-        <source>This list expression exceeds the maximum size for list literals. Use an array for larger literals and call Array.ToList.</source>
-        <target state="translated">To wyrażenie listy przekracza maksymalny rozmiar literałów list. W przypadku większych literałów użyj tablicy i wywołaj element Array.ToList.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcExpressionFormRequiresObjectConstructor">
