@@ -183,6 +183,9 @@ let ReduceRuntimeAsyncReturnedClosureApplications (g: TcGlobals) (analyzer: Runt
         | Expr.Let(binding, body, mLet, _), _ ->
             apply body (tyOfExpr g body) tyargs args m
             |> Option.map (mkLetBind mLet binding)
+        | Expr.LetRec(bindings, body, mLet, _), _ ->
+            apply body (tyOfExpr g body) tyargs args m
+            |> Option.map (mkLetRecBinds mLet bindings)
         | Expr.Sequential(first, rest, NormalSeq, mSeq), _ ->
             apply rest (tyOfExpr g rest) tyargs args m
             |> Option.map (fun rest -> Expr.Sequential(first, rest, NormalSeq, mSeq))
@@ -211,7 +214,7 @@ let ReduceRuntimeAsyncReturnedClosureApplications (g: TcGlobals) (analyzer: Runt
             PostTransform =
                 (fun expression ->
                     match expression with
-                    | Expr.App((Expr.Lambda _ | Expr.Let _ | Expr.Match _ | Expr.DebugPoint _) as f, fty, tyargs, args, m) when
+                    | Expr.App((Expr.Lambda _ | Expr.Let _ | Expr.LetRec _ | Expr.Match _ | Expr.DebugPoint _) as f, fty, tyargs, args, m) when
                         not args.IsEmpty && analyzer.ContainsSuspension expression
                         ->
                         apply f fty tyargs args m

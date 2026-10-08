@@ -553,6 +553,57 @@ let main _ =
     |> compileExeAndRun
     |> shouldSucceed
 
+[<Theory>]
+[<InlineData(false, false)>]
+[<InlineData(true, false)>]
+[<InlineData(false, true)>]
+[<InlineData(true, true)>]
+let ``runtime async fuses returned closures across recursive bindings`` (optimize: bool, nestedRuntimeAsync: bool) =
+    let loopBody =
+        if nestedRuntimeAsync then
+            "__runtimeAsyncReturn (if count = 0 then AsyncHelpers.Await ready else AsyncHelpers.Await (loop (count - 1)))"
+        else
+            "if count = 0 then ready else loop (count - 1)"
+
+    FSharp $"""
+module RuntimeAsyncRecursiveReturnedClosureTest
+
+open System.Threading.Tasks
+open System.Runtime.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices.StateMachineHelpers
+
+let mutable constructions = 0
+let mutable invocations = 0
+
+let inline runBody ([<InlineIfLambda>] body: unit -> unit -> int) =
+    __runtimeAsyncReturn (body () ())
+
+let run (ready: Task<int>) =
+    runBody (fun () ->
+        constructions <- constructions + 1
+        let rec loop count : Task<int> =
+            {loopBody}
+        fun () ->
+            invocations <- invocations + 1
+            AsyncHelpers.Await (loop 2))
+
+[<EntryPoint>]
+let main _ =
+    let ready = TaskCompletionSource<int>()
+    let result = run ready.Task
+    if result.IsCompleted || constructions <> 1 || invocations <> 1 then
+        failwith "Callback evaluation or suspension was lost"
+    ready.SetResult 42
+    if result.GetAwaiter().GetResult() <> 42 || constructions <> 1 || invocations <> 1 then
+        failwith "Recursive callback returned an incorrect result"
+    0
+"""
+    |> withLangVersionPreview
+    |> withFSharpCoreShippedNet
+    |> withOptimization optimize
+    |> compileExeAndRun
+    |> shouldSucceed
+
 [<Fact>]
 let ``runtime async ignores unreachable suspension`` () =
     FSharp """
