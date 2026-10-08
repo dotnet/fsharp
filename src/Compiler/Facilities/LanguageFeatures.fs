@@ -19,7 +19,6 @@ type LanguageFeature =
     | FromEndSlicing
     | RuntimeAsync
     | WitnessPassing
-    | AdditionalTypeDirectedConversions
     | ExpandedMeasurables
     | NullnessChecking
     | UnionIsPropertiesVisible
@@ -122,7 +121,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
                 LanguageFeature.WitnessPassing, languageVersion50
 
                 // F# 6.0
-                LanguageFeature.AdditionalTypeDirectedConversions, languageVersion60
                 LanguageFeature.ExpandedMeasurables, languageVersion60
                 LanguageFeature.AttributesToRightOfModuleKeyword, languageVersion60
 
@@ -292,7 +290,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
         | LanguageFeature.NullnessChecking -> FSComp.SR.featureNullnessChecking ()
         | LanguageFeature.RuntimeAsync -> FSComp.SR.featureRuntimeAsync ()
         | LanguageFeature.WitnessPassing -> FSComp.SR.featureWitnessPassing ()
-        | LanguageFeature.AdditionalTypeDirectedConversions -> FSComp.SR.featureAdditionalImplicitConversions ()
         | LanguageFeature.ExpandedMeasurables -> FSComp.SR.featureExpandedMeasurables ()
         | LanguageFeature.UnionIsPropertiesVisible -> FSComp.SR.featureUnionIsPropertiesVisible ()
         | LanguageFeature.AttributesToRightOfModuleKeyword -> FSComp.SR.featureAttributesToRightOfModuleKeyword ()
