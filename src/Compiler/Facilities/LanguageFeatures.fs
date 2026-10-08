@@ -16,12 +16,9 @@ module internal FSharp.Compiler.Features
 
 [<RequireQualifiedAccess>]
 type LanguageFeature =
-    | PackageManagement
     | FromEndSlicing
-    | ResumableStateMachines
     | RuntimeAsync
     | WitnessPassing
-    | AdditionalTypeDirectedConversions
     | StringInterpolation
     | ExpandedMeasurables
     | NullnessChecking
@@ -29,12 +26,10 @@ type LanguageFeature =
     | AttributesToRightOfModuleKeyword
     | ReallyLongLists
     | ErrorOnDeprecatedRequireQualifiedAccess
-    | SelfTypeConstraints
     | MatchNotAllowedForUnionCaseWithNoData
     | CSharpExtensionAttributeNotRequired
     | ErrorForNonVirtualMembersOverrides
     | WarningWhenCopyAndUpdateRecordChangesAllFields
-    | NonInlineLiteralsAsPrintfFormat
     | ConstraintIntersectionOnFlexibleTypes
     | WarningWhenTailRecAttributeButNonTailRecUsage
     | UnmanagedConstraintCsharpInterop
@@ -123,27 +118,22 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
         dict
             [
                 // F# 5.0
-                LanguageFeature.PackageManagement, languageVersion50
                 LanguageFeature.WitnessPassing, languageVersion50
                 LanguageFeature.StringInterpolation, languageVersion50
 
                 // F# 6.0
-                LanguageFeature.AdditionalTypeDirectedConversions, languageVersion60
                 LanguageFeature.ExpandedMeasurables, languageVersion60
-                LanguageFeature.ResumableStateMachines, languageVersion60
                 LanguageFeature.AttributesToRightOfModuleKeyword, languageVersion60
 
                 // F# 7.0
                 LanguageFeature.ReallyLongLists, languageVersion70
                 LanguageFeature.ErrorOnDeprecatedRequireQualifiedAccess, languageVersion70
-                LanguageFeature.SelfTypeConstraints, languageVersion70
 
                 // F# 8.0
                 LanguageFeature.MatchNotAllowedForUnionCaseWithNoData, languageVersion80
                 LanguageFeature.CSharpExtensionAttributeNotRequired, languageVersion80
                 LanguageFeature.ErrorForNonVirtualMembersOverrides, languageVersion80
                 LanguageFeature.WarningWhenCopyAndUpdateRecordChangesAllFields, languageVersion80
-                LanguageFeature.NonInlineLiteralsAsPrintfFormat, languageVersion80
                 LanguageFeature.WarningWhenTailRecAttributeButNonTailRecUsage, languageVersion80
                 LanguageFeature.ConstraintIntersectionOnFlexibleTypes, languageVersion80
 
@@ -296,26 +286,21 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
     /// Get a string name for the given feature.
     static member GetFeatureString feature =
         match feature with
-        | LanguageFeature.PackageManagement -> FSComp.SR.featurePackageManagement ()
         | LanguageFeature.FromEndSlicing -> FSComp.SR.featureFromEndSlicing ()
         | LanguageFeature.NullnessChecking -> FSComp.SR.featureNullnessChecking ()
-        | LanguageFeature.ResumableStateMachines -> FSComp.SR.featureResumableStateMachines ()
         | LanguageFeature.RuntimeAsync -> FSComp.SR.featureRuntimeAsync ()
         | LanguageFeature.WitnessPassing -> FSComp.SR.featureWitnessPassing ()
-        | LanguageFeature.AdditionalTypeDirectedConversions -> FSComp.SR.featureAdditionalImplicitConversions ()
         | LanguageFeature.StringInterpolation -> FSComp.SR.featureStringInterpolation ()
         | LanguageFeature.ExpandedMeasurables -> FSComp.SR.featureExpandedMeasurables ()
         | LanguageFeature.UnionIsPropertiesVisible -> FSComp.SR.featureUnionIsPropertiesVisible ()
         | LanguageFeature.AttributesToRightOfModuleKeyword -> FSComp.SR.featureAttributesToRightOfModuleKeyword ()
         | LanguageFeature.ReallyLongLists -> FSComp.SR.featureReallyLongList ()
         | LanguageFeature.ErrorOnDeprecatedRequireQualifiedAccess -> FSComp.SR.featureErrorOnDeprecatedRequireQualifiedAccess ()
-        | LanguageFeature.SelfTypeConstraints -> FSComp.SR.featureSelfTypeConstraints ()
         | LanguageFeature.MatchNotAllowedForUnionCaseWithNoData -> FSComp.SR.featureMatchNotAllowedForUnionCaseWithNoData ()
         | LanguageFeature.CSharpExtensionAttributeNotRequired -> FSComp.SR.featureCSharpExtensionAttributeNotRequired ()
         | LanguageFeature.ErrorForNonVirtualMembersOverrides -> FSComp.SR.featureErrorForNonVirtualMembersOverrides ()
         | LanguageFeature.WarningWhenCopyAndUpdateRecordChangesAllFields ->
             FSComp.SR.featureWarningWhenCopyAndUpdateRecordChangesAllFields ()
-        | LanguageFeature.NonInlineLiteralsAsPrintfFormat -> FSComp.SR.featureNonInlineLiteralsAsPrintfFormat ()
         | LanguageFeature.ConstraintIntersectionOnFlexibleTypes -> FSComp.SR.featureConstraintIntersectionOnFlexibleTypes ()
         | LanguageFeature.WarningWhenTailRecAttributeButNonTailRecUsage -> FSComp.SR.featureChkNotTailRecursive ()
         | LanguageFeature.UnmanagedConstraintCsharpInterop -> FSComp.SR.featureUnmanagedConstraintCsharpInterop ()
