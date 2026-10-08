@@ -2406,12 +2406,23 @@ let main _ =
     |> compileExeAndRun
     |> shouldSucceed
 
-[<Fact>]
-let ``runtime async rejects a branch-selected callback too large to copy into every invocation`` () =
-    let calls = List.init 40 (sprintf "f %d") |> String.concat " + "
+[<InlineData(16, false, true)>]
+[<InlineData(17, false, false)>]
+[<InlineData(16, true, true)>]
+[<InlineData(17, true, false)>]
+[<InlineData(40, false, false)>]
+[<Theory>]
+let ``runtime async bounds branch-selected callback copies across all invocations`` (invocations: int, nested: bool, withinBudget: bool) =
+    let calls =
+        if nested then
+            [1 .. invocations] |> List.fold (fun arg _ -> $"f ({arg})") "1"
+        else
+            List.init invocations (sprintf "f %d") |> String.concat " + "
+
     let terms = List.init 30 (sprintf "x * %d") |> String.concat " + "
 
-    FSharp $"""
+    let compilation =
+        FSharp $"""
 module RuntimeAsyncOversizedCallback
 open System.Threading.Tasks
 open System.Runtime.CompilerServices
@@ -2422,12 +2433,29 @@ let inline invoke ([<InlineIfLambda>] f: int -> int) = {calls}
 let run (gate: Task<int>) flag =
     StateMachineHelpers.__runtimeAsyncReturn (
         invoke (if flag then (fun x -> AsyncHelpers.Await gate + {terms}) else (fun x -> x)))
+
+[<EntryPoint>]
+let main _ =
+    let evaluate x = List.fold (fun total n -> total + x * n) 10 [0 .. 29]
+    let expected =
+        if {nested.ToString().ToLowerInvariant()} then
+            [1 .. {invocations}] |> List.fold (fun arg _ -> evaluate arg) 1
+        else
+            [0 .. {invocations - 1}] |> List.sumBy evaluate
+    let expectedOtherBranch = if {nested.ToString().ToLowerInvariant()} then 1 else {invocations * (invocations - 1) / 2}
+    let result flag = (run (Task.FromResult 10) flag).Result
+    if result true <> expected then failwith "Unexpected suspending branch result"
+    if result false <> expectedOtherBranch then failwith "Unexpected other branch result"
+    0
 """
-    |> withLangVersionPreview
-    |> withFSharpCoreShippedNet
-    |> compile
-    |> shouldFail
-    |> withErrorCode 3918
+        |> asExe
+        |> withLangVersionPreview
+        |> withFSharpCoreShippedNet
+
+    if withinBudget then
+        compilation |> compileExeAndRun |> shouldSucceed
+    else
+        compilation |> compile |> shouldFail |> withErrorCode 3918
 
 [<InlineData(false)>]
 [<InlineData(true)>]

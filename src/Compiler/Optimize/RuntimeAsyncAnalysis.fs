@@ -251,13 +251,21 @@ let PreserveRuntimeAsyncCallSiteDebugPoint (g: TcGlobals) m expr =
 
     RewriteExpr rwenv expr
 
+type private CallbackBranch =
+    {
+        Parameter: Val
+        Body: Expr
+        Captures: Val list
+        NodeCount: int
+    }
+
 /// A callback construction whose branches select one of several lambdas. The construction runs once
 /// and records the selected branch and the values it captures; each invocation dispatches on the branch.
 type private CallbackBranches =
     {
         Construction: Expr
         Tag: Val
-        Branches: (Val * Expr) list
+        Branches: CallbackBranch list
         Captures: (Val * Val) list
     }
 
@@ -310,12 +318,20 @@ let private tryShareMutableCallbackCaptures (g: TcGlobals) (mutableCaptures: (Va
         else
             None
 
+let private exprNodeCount expr =
+    let folder =
+        { ExprFolder0 with
+            exprIntercept = fun _ noInterceptF count expr -> noInterceptF (count + 1) expr
+        }
+
+    FoldExpr folder 0 expr
+
 /// Replaces each lambda in tail position of a callback construction with an assignment of its branch tag
 /// and captured locals, or returns None if a tail is not a supported single-argument lambda.
 let private tryDefunctionalizeCallback (g: TcGlobals) m construction =
     let constructionFree = (freeInExpr CollectLocals construction).FreeLocals
     let tag, _ = mkMutableCompGenLocal m "runtimeAsyncCallbackTag" g.int32_ty
-    let branches = ResizeArray<Val * Expr>()
+    let branches = ResizeArray<CallbackBranch>()
     let captures = Dictionary<Stamp, Val * Val>()
 
     let rec defunctionalize expr =
@@ -359,7 +375,15 @@ let private tryDefunctionalizeCallback (g: TcGlobals) m construction =
                     |> List.choose id
 
                 let select = mkValSet m (mkLocalValRef tag) (mkInt32 g m branches.Count)
-                branches.Add(parameter, body)
+
+                branches.Add
+                    {
+                        Parameter = parameter
+                        Body = body
+                        Captures = captured
+                        NodeCount = exprNodeCount body
+                    }
+
                 Some(List.foldBack (mkCompGenSequential m) assignments select)
         | Expr.DebugPoint(point, body) -> defunctionalize body |> Option.map (fun body -> Expr.DebugPoint(point, body))
         | Expr.Op(TOp.DebugLocalScope _ as op, [], [ body ], m) ->
@@ -389,35 +413,28 @@ let private tryDefunctionalizeCallback (g: TcGlobals) m construction =
 /// expression nodes; the callback then stays a closure and a suspension left in it is reported as FS3918.
 let private maxInlinedCallbackCopySize = 2000
 
-let private exprNodeCount expr =
-    let folder =
-        { ExprFolder0 with
-            exprIntercept = fun _ noInterceptF count expr -> noInterceptF (count + 1) expr
-        }
-
-    FoldExpr folder 0 expr
-
 /// Inlines an invocation of a defunctionalized callback: the argument is bound once, then each branch body
 /// is copied with its parameter and captured locals remapped.
 let private mkCallbackDispatch (g: TcGlobals) (callback: CallbackBranches) arg resultTy m =
     let argVal, _ = mkCompGenLocal m "runtimeAsyncCallbackArg" (tyOfExpr g arg)
 
     let captureRemap =
-        callback.Captures |> List.map (fun (v, hoisted) -> v, mkLocalValRef hoisted)
+        callback.Captures
+        |> List.map (fun (v, hoisted) -> v, mkLocalValRef hoisted)
+        |> ValMap.OfList
 
-    let branch (parameter: Val, body) =
+    let branch branch =
         let remap =
             { emptyRemap with
-                valRemap = ValMap.OfList((parameter, mkLocalValRef argVal) :: captureRemap)
+                valRemap = captureRemap.Add branch.Parameter (mkLocalValRef argVal)
             }
 
-        let body = remapExpr g CloneAll remap body
-        let captured = (freeInExpr CollectLocals body).FreeLocals
+        let body = remapExpr g CloneAll remap branch.Body
 
-        (callback.Captures, body)
-        ||> List.foldBack (fun (v, hoisted) body ->
-            if v.IsMutable && not v.IsCompilerGenerated && Zset.contains hoisted captured then
-                Expr.Op(TOp.DebugLocalScope(mkLocalValRef hoisted, v.LogicalName), [], [ body ], m)
+        (branch.Captures, body)
+        ||> List.foldBack (fun v body ->
+            if v.IsMutable && not v.IsCompilerGenerated then
+                Expr.Op(TOp.DebugLocalScope(captureRemap[v], v.LogicalName), [], [ body ], m)
             else
                 body)
 
@@ -572,7 +589,8 @@ let InlineRuntimeAsyncCallback (g: TcGlobals) (analyzer: RuntimeAsyncAnalyzer) r
                 | Some body, _ -> inlineCallbacks body
                 | None, Some callbackBranches ->
                     let mutable invalidUse = false
-                    let mutable invocations = 0
+                    let copySize = List.sumBy _.NodeCount callbackBranches.Branches
+                    let mutable remainingCopySize = maxInlinedCallbackCopySize
 
                     let rwenv =
                         {
@@ -591,9 +609,18 @@ let InlineRuntimeAsyncCallback (g: TcGlobals) (analyzer: RuntimeAsyncAnalyzer) r
                                         | _ -> None
 
                                     match call with
+                                    | _ when invalidUse -> Some expression
+                                    | Some _ when copySize > remainingCopySize ->
+                                        invalidUse <- true
+                                        Some expression
                                     | Some(arg, callRange) ->
-                                        invocations <- invocations + 1
-                                        Some(mkCallbackDispatch g callbackBranches (rewrite arg) (tyOfExpr g expression) callRange)
+                                        remainingCopySize <- remainingCopySize - copySize
+                                        let arg = rewrite arg
+
+                                        if invalidUse then
+                                            Some expression
+                                        else
+                                            Some(mkCallbackDispatch g callbackBranches arg (tyOfExpr g expression) callRange)
                                     | None ->
                                         match expression with
                                         | Expr.Val(vref, _, _) when valEq callback vref.Deref ->
@@ -611,10 +638,7 @@ let InlineRuntimeAsyncCallback (g: TcGlobals) (analyzer: RuntimeAsyncAnalyzer) r
 
                     let continuation = RewriteExpr rwenv continuation
 
-                    let copySize =
-                        invocations * List.sumBy (snd >> exprNodeCount) callbackBranches.Branches
-
-                    if invalidUse || copySize > maxInlinedCallbackCopySize then
+                    if invalidUse then
                         keep construction
                     else
                         let construction =
