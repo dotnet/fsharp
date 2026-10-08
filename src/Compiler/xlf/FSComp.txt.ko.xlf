@@ -82,11 +82,6 @@
         <target state="translated">'{0}' 기능은 대상 런타임에서 지원되지 않습니다.</target>
         <note />
       </trans-unit>
-      <trans-unit id="chkFeatureNotSupportedInLibrary">
-        <source>Feature '{0}' requires the F# library for language version {1} or greater.</source>
-        <target state="translated">언어 버전 {1} 이상에서 '{0}' 기능을 사용하려면 F# 라이브러리가 필요합니다.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="chkImplementingInterfacesOnStaticClasses">
         <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Implementing interfaces is not allowed.</source>
         <target state="translated">형식이 [&lt;Sealed&gt;] 및 [&lt;AbstractClass&gt;] 특성을 모두 사용하는 경우 정적임을 의미합니다. 인터페이스 구현은 허용되지 않습니다.</target>
@@ -347,11 +342,6 @@
         <target state="translated">'TailCall' 특성이 비 재귀 함수에 사용되는 경우 경고를 발생합니다.</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureConstraintIntersectionOnFlexibleTypes">
-        <source>Constraint intersection on flexible types</source>
-        <target state="translated">유연한 형식의 제약 조건 교집합</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureDeprecatePlacesWhereSeqCanBeOmitted">
         <source>Deprecate places where 'seq' can be omitted</source>
         <target state="new">Deprecate places where 'seq' can be omitted</target>
@@ -375,11 +365,6 @@
       <trans-unit id="featureEnforceAttributeTargets">
         <source>Enforce AttributeTargets</source>
         <target state="translated">AttributeTargets 적용</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureErrorForNonVirtualMembersOverrides">
-        <source>Raises errors for non-virtual members overrides</source>
-        <target state="translated">비가상 멤버 재정의에 대한 오류 발생</target>
         <note />
       </trans-unit>
       <trans-unit id="featureErrorOnBitwiseOpsOnNonIntegralEnums">
@@ -497,11 +482,6 @@
         <target state="new">#elif preprocessor directive</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureReallyLongList">
-        <source>list literals of any size</source>
-        <target state="translated">모든 크기의 목록 리터럴</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureRecordConstructorSyntax">
         <source>Constructing a record via its all-fields constructor</source>
         <target state="new">Constructing a record via its all-fields constructor</target>
@@ -540,11 +520,6 @@
       <trans-unit id="featureScopedNowarn">
         <source>Support for scoped enabling / disabling of warnings by #warn and #nowarn directives, also inside modules</source>
         <target state="new">Support for scoped enabling / disabling of warnings by #warn and #nowarn directives, also inside modules</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureStringInterpolation">
-        <source>string interpolation</source>
-        <target state="translated">문자열 보간</target>
         <note />
       </trans-unit>
       <trans-unit id="featureSupportValueOptionsAsOptionalParameters">
@@ -1018,8 +993,8 @@
         <note />
       </trans-unit>
       <trans-unit id="optsUnrecognizedLanguageFeature">
-        <source>Unrecognized language feature name: '{0}'. Use a valid feature name such as 'StringInterpolation' or 'FromEndSlicing'.</source>
-        <target state="new">Unrecognized language feature name: '{0}'. Use a valid feature name such as 'StringInterpolation' or 'FromEndSlicing'.</target>
+        <source>Unrecognized language feature name: '{0}'. Use a valid feature name such as 'FromEndSlicing'.</source>
+        <target state="new">Unrecognized language feature name: '{0}'. Use a valid feature name such as 'FromEndSlicing'.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsUnrecognizedLanguageVersion">
@@ -4700,11 +4675,6 @@
       <trans-unit id="tcUnableToParseFormatString">
         <source>Unable to parse format string '{0}'</source>
         <target state="translated">서식 문자열 '{0}'을(를) 구문 분석할 수 없습니다.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcListLiteralMaxSize">
-        <source>This list expression exceeds the maximum size for list literals. Use an array for larger literals and call Array.ToList.</source>
-        <target state="translated">이 목록 식은 목록 리터럴의 최대 크기를 초과합니다. 보다 큰 리터럴을 위한 배열을 사용하고 Array.ToList를 호출하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcExpressionFormRequiresObjectConstructor">

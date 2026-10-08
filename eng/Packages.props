@@ -52,6 +52,7 @@
     <PackageVersion Include="Microsoft.Net.Compilers" Version="$(MicrosoftNetCompilersVersion)" />
     <PackageVersion Include="Microsoft.NETCore.ILAsm" Version="$(MicrosoftNETCoreILAsmVersion)" />
     <PackageVersion Include="Microsoft.NETCore.ILDAsm" Version="$(MicrosoftNETCoreILDAsmVersion)" />
+    <PackageVersion Include="Microsoft.Test.Apex.VisualStudio" Version="$(MicrosoftTestApexVisualStudioVersion)" />
     <PackageVersion Include="Microsoft.Testing.Extensions.HangDump" Version="$(MicrosoftTestingExtensionsHangDumpVersion)" />
     <PackageVersion Include="Microsoft.TestPlatform.ObjectModel" Version="$(MicrosoftTestPlatformVersion)" />
     <PackageVersion Include="Microsoft.VisualFSharp.Microsoft.VisualStudio.Shell.UI.Internal" Version="17.0.0" />
@@ -100,6 +101,8 @@
     <PackageVersion Include="Microsoft.VisualStudio.TextManager.Interop" Version="18.9.438" />
     <PackageVersion Include="Microsoft.VisualStudio.Threading" Version="18.7.23" />
     <PackageVersion Include="Microsoft.VisualStudio.Validation" Version="18.7.1" />
+    <PackageVersion Include="MSTest.TestAdapter" Version="$(MSTestVersion)" />
+    <PackageVersion Include="MSTest.TestFramework" Version="$(MSTestVersion)" />
     <!-- Microsoft.VSSDK.BuildTools is injected as an implicit PackageReference by Arcade's VisualStudio.targets
          (Version="$(MicrosoftVSSDKBuildToolsVersion)"); an implicit reference must not be centrally managed (NU1009). -->
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.4" />
