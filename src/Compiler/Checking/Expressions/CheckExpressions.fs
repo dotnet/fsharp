@@ -459,7 +459,7 @@ let nullnessContextOnly (env: TcEnv) =
 let UnifyOverallType (cenv: cenv) (env: TcEnv) m overallTy actualTy =
     let g = cenv.g
     match overallTy with
-    | MustConvertTo(isMethodArg, reqdTy) when g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions ->
+    | MustConvertTo(isMethodArg, reqdTy) ->
         let actualTy = tryNormalizeMeasureInType g actualTy
         let reqdTy = tryNormalizeMeasureInType g reqdTy
         let reqTyForUnification = reqTyForArgumentNullnessInference g actualTy reqdTy
@@ -486,8 +486,8 @@ let UnifyOverallType (cenv: cenv) (env: TcEnv) m overallTy actualTy =
             else
                 // report the error
                 UnifyTypes cenv env m reqdTy actualTy
-    | _ ->
-        UnifyTypes cenv env m overallTy.Commit actualTy
+    | MustEqual reqdTy ->
+        UnifyTypes cenv env m reqdTy actualTy
 
 let UnifyOverallTypeAndRecover (cenv: cenv) env m overallTy actualTy =
     try
@@ -4265,7 +4265,6 @@ let rec TcTyparConstraint ridx (cenv: cenv) newOk checkConstraints occ (env: TcE
         TcConstraintWhereTyparSupportsMember cenv env newOk tpenv synSupportTys synMemberSig m
 
     | SynTypeConstraint.WhereSelfConstrained(ty, m) ->
-        checkLanguageFeatureAndRecover g.langVersion LanguageFeature.SelfTypeConstraints m
         let tyR, tpenv = TcTypeAndRecover cenv newOk checkConstraints ItemOccurrence.UseInType WarnOnIWSAM.No env tpenv ty
         match tyR with
         | TType_app(tcref, tinst, _) when (tcref.IsTypeAbbrev && (isTyparTy g tcref.TypeAbbrev.Value) && tinst |> List.forall (isTyparTy g)) ->
@@ -5826,23 +5825,14 @@ and TcExprUndelayedNoType (cenv: cenv) env tpenv synExpr =
 ///   - string literal expressions (though the propagation is not essential in this case)
 ///
 and TcPropagatingExprLeafThenConvert (cenv: cenv) overallTy actualTy (env: TcEnv) (* canAdhoc *) m (f: unit -> Expr * UnscopedTyparEnv) =
-    let g = cenv.g
-
     match overallTy with
-    | MustConvertTo _ when g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions ->
-        assert (g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions)
-
-        // Compute the conversion _before_ processing the construct. We know enough to process this conversion eagerly.
+    | MustConvertTo _ ->
         UnifyOverallType cenv env m overallTy actualTy
-
-        // Process the construct
         let expr, tpenv = f ()
-
-        // Build the conversion
-        let expr2 = TcAdjustExprForTypeDirectedConversions cenv overallTy actualTy env (* canAdhoc *) m expr
+        let expr2 = TcAdjustExprForTypeDirectedConversions cenv overallTy actualTy env m expr
         expr2, tpenv
-    | _ ->
-        UnifyTypes cenv env m overallTy.Commit actualTy
+    | MustEqual reqdTy ->
+        UnifyTypes cenv env m reqdTy actualTy
         f ()
 
 /// Process a leaf construct, for cases where we propagate the overall type eagerly in
@@ -5862,7 +5852,7 @@ and TcPossiblyPropagatingExprLeafThenConvert isPropagating (cenv: cenv) (overall
     let g = cenv.g
 
     match overallTy with
-    | MustConvertTo(_, reqdTy) when g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions && not (isPropagating reqdTy) ->
+    | MustConvertTo(ty = reqdTy) when not (isPropagating reqdTy) ->
         TcNonPropagatingExprLeafThenConvert cenv overallTy env m (fun () ->
             let exprTy = NewInferenceType g
 
@@ -5896,10 +5886,10 @@ and TcAdjustExprForTypeDirectedConversions (cenv: cenv) (overallTy: OverallTy) a
     let g = cenv.g
 
     match overallTy with
-    | MustConvertTo (isMethodArg, reqdTy) when g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions || isMethodArg ->
+    | MustConvertTo(ty = reqdTy) ->
         let tcVal = LightweightTcValForUsingInBuildMethodCall g env.TraitContext
         AdjustExprForTypeDirectedConversions tcVal g cenv.amap cenv.infoReader env.AccessRights reqdTy actualTy m expr
-    | _ ->
+    | MustEqual _ ->
         expr
 
 and TcNonControlFlowExpr (env: TcEnv) f =
@@ -7679,20 +7669,14 @@ and TcConstStringExpr cenv (overallTy: OverallTy) env m tpenv (s: string) litera
 
     let g = cenv.g
 
-
-    match isFormat g overallTy.Commit, literalType with
-    | true, LiteralArgumentType.StaticField ->
-        checkLanguageFeatureAndRecover g.langVersion LanguageFeature.NonInlineLiteralsAsPrintfFormat m
+    if isFormat g overallTy.Commit then
         TcFormatStringExpr cenv overallTy env m tpenv s literalType
-
-    | true, LiteralArgumentType.Inline ->
-        TcFormatStringExpr cenv overallTy env m tpenv s literalType
-
-    | false, LiteralArgumentType.StaticField ->
-        Expr.Const (TcFieldInit m (ILFieldInit.String s), m, g.string_ty), tpenv
-
-    | false, LiteralArgumentType.Inline ->
-        TcPropagatingExprLeafThenConvert cenv overallTy g.string_ty env (* true *) m (fun () ->
+    else
+        match literalType with
+        | LiteralArgumentType.StaticField ->
+            Expr.Const (TcFieldInit m (ILFieldInit.String s), m, g.string_ty), tpenv
+        | LiteralArgumentType.Inline ->
+            TcPropagatingExprLeafThenConvert cenv overallTy g.string_ty env (* true *) m (fun () ->
                 mkString g m s, tpenv)
 
 and TcFormatStringExpr cenv (overallTy: OverallTy) env m tpenv (fmtString: string) formatStringLiteralType =
@@ -10668,11 +10652,6 @@ and TcMethodApplication_CheckArguments
                                       ValFlag = WellKnownValAttributes.NoEagerConstraintApplicationAttribute
                                       AttributeName = "Microsoft.FSharp.Core.CompilerServices.NoEagerConstraintApplicationAttribute" }
                                     meth.Method
-
-                            // The logic associated with NoEagerConstraintApplicationAttribute is part of the
-                            // Tasks and Resumable Code RFC
-                            if noEagerConstraintApplication && not (g.langVersion.SupportsFeature LanguageFeature.ResumableStateMachines) then
-                                errorR(Error(FSComp.SR.tcNoEagerConstraintApplicationAttribute(), mMethExpr))
 
                             let extraRigidTps = if noEagerConstraintApplication then Zset.ofList typarOrder (freeInTypeLeftToRight g true callerTy) else emptyFreeTypars
 
