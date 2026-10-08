@@ -353,3 +353,4 @@ type EntityCache() =
 
     member _.Clear() = dic.Clear()
     member x.Locking f = lock dic <| fun _ -> f (x :> IAssemblyContentCache)
+
