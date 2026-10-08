@@ -28,6 +28,7 @@
     <ProtoOutputPath>$(ArtifactsDir)\Bootstrap</ProtoOutputPath>
     <ValueTupleImplicitPackageVersion>4.4.0</ValueTupleImplicitPackageVersion>
     <WarningsAsErrors>0025;$(WarningsAsErrors)</WarningsAsErrors>
+    <WarningsAsErrors Condition="'$(MSBuildProjectExtension)' == '.fsproj' and '$(UseVsMicroBuildAssemblyVersion)' == 'true'">$(WarningsAsErrors);2003</WarningsAsErrors>
     <OtherFlags>$(OtherFlags) --nowarn:3384</OtherFlags>
     <OtherFlags>$(OtherFlags) --times --nowarn:75</OtherFlags>
     <OtherFlags Condition="'$(AdditionalFscCmdFlags)' != ''">$(OtherFlags) $(AdditionalFscCmdFlags)</OtherFlags>
@@ -80,7 +81,7 @@
 
   <!-- other -->
   <PropertyGroup>
-    <NoWarn Condition="'$(Language)' == 'F#'">$(NoWarn);FS2003</NoWarn><!-- warning when AssemblyInformationalVersion looks like '1.2.3-dev' -->
+    <NoWarn Condition="'$(Language)' == 'F#' and '$(UseVsMicroBuildAssemblyVersion)' != 'true'">$(NoWarn);FS2003</NoWarn>
     <NoCompilerStandardLib>true</NoCompilerStandardLib><!-- necessary for resource generation using csc.exe -->
     <DebugType>embedded</DebugType>
     <MicroBuildAssemblyFileLanguage>fs</MicroBuildAssemblyFileLanguage>

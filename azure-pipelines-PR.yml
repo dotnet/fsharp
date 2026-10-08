@@ -51,6 +51,8 @@ pr:
     - TESTGUIDE.md
 
 variables:
+  - name: VSBuildDateUtc
+    value: $[ format('{0:yyyy-MM-dd}', pipeline.startTime) ]
   - name: _TeamName
     value: FSharp
   - name: _BuildConfig
@@ -267,6 +269,9 @@ stages:
               DOTNET_DbgMiniDumpName: $(Build.SourcesDirectory)\artifacts\log\Release\$(Build.BuildId)-%e-%p-%t.dmp
               NativeToolsOnMachine: true
             displayName: Build
+
+          - script: .dotnet\dotnet.exe fsi eng\tests\VSMinorVersion.Tests.fsx
+            displayName: Check VS minor versions
 
           - task: PublishTestResults@2
             displayName: Publish Test Results

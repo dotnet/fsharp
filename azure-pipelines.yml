@@ -25,8 +25,8 @@ trigger:
     - TESTGUIDE.md
 
 variables:
-  - name: VSBuildTimestampUtc
-    value: $[ format('{0:yyyy-MM-ddTHH:mm:ss.fffffffzzz}', pipeline.startTime) ]
+  - name: VSBuildDateUtc
+    value: $[ format('{0:yyyy-MM-dd}', pipeline.startTime) ]
   # Release branch for F#
   # The future "product" gets developed in main, so should be main in main.
   # When servicing branch gets created, this should maintain the mapping between F# servicing and VS servicing branches
@@ -107,7 +107,7 @@ extends:
             platforms:
             - name: 'Managed'
               container: 'mcr.microsoft.com/dotnet-buildtools/prereqs:centos-stream9'
-              buildArguments: '--source-build /p:VSBuildTimestampUtc=$(VSBuildTimestampUtc)'
+              buildArguments: '--source-build'
           enableTelemetry: true
           helixRepo: dotnet/fsharp
           jobs:
@@ -144,7 +144,6 @@ extends:
                       /p:TeamName=$(_TeamName)
                       /p:DotNetPublishUsingPipelines=$(_PublishUsingPipelines)
                       /p:OfficialBuildId=$(BUILD.BUILDNUMBER)
-                      /p:VSBuildTimestampUtc=$(VSBuildTimestampUtc)
                       /p:VisualStudioDropName=$(VisualStudioDropName)
                       /p:GenerateSbom=true
               env:
