@@ -187,6 +187,7 @@ let ``case completion uses backing value visibility and obsolete settings`` sugg
 [<InlineData("let value = P{caret}", true)>]
 [<InlineData("let value: P{caret} = Unchecked.defaultof<_>", true)>]
 [<InlineData("let value = { P{caret} = 1 }", false)>]
+[<InlineData("[<Positive{caret}>]\ntype T = class end", true)>]
 let ``case catalogue does not leak into expressions`` (body: string, hasModule: bool) =
     let test = check $"module Consumer\n{body}"
     let info = test.Complete FSharpCodeCompletionOptions.Default (fun () -> test.Catalogue)
@@ -358,6 +359,23 @@ let ``existing value type and operator import paths still compile`` (name: strin
         let item = test.Item (fun item -> item.FullName = symbol.FullName)
         Assert.Equal($"Normal.{name}", item.NameInCode)
         Assert.Equal(Some "Candidates", item.NamespaceToOpen)
+
+[<Theory>]
+[<InlineData("(|Even|Odd|)")>]
+[<InlineData("(|Positive|_|)")>]
+let ``backing group expressions retain their catalogue and source invocation behavior`` (name: string) =
+    let test = check $"module Consumer\nlet value = {name}{{caret}} 2"
+    let symbol = test.Catalogue |> List.filter (fun symbol -> symbol.CleanedIdents = [| "Candidates"; "Normal"; name |]) |> Assert.Single
+    let value = Assert.IsType<FSharpMemberOrFunctionOrValue> symbol.Symbol
+    Assert.True value.IsActivePattern
+    Assert.Contains(test.Results.Diagnostics, fun diagnostic -> diagnostic.ErrorNumber = 39)
+    let items = (test.Complete FSharpCodeCompletionOptions.Default (fun () -> test.Catalogue)).Items
+    Assert.DoesNotContain(items, fun item -> item.FullName = symbol.FullName)
+    let opened = test.Context.Source.Replace("module Consumer", "module Consumer\nopen Candidates.Normal")
+    let results = test.CheckEdit opened
+    let unused = UnusedOpens.getUnusedOpens(results, fun line -> (SourceContext.getLines opened)[line - 1]) |> Async.RunSynchronouslyImmediate
+    Assert.Empty unused
+    test.CheckEdit (test.Context.Source.Replace(name, $"Candidates.Normal.{name}")) |> ignore
 
 [<Theory>]
 [<InlineData("", "Patterns", 4, 0, true)>]

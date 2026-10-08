@@ -2,6 +2,7 @@ module FSharp.Editor.Tests.ActivePatternEditorTests
 
 open System
 open System.Collections.Immutable
+open System.Reflection
 open System.Threading
 
 open Microsoft.CodeAnalysis
@@ -250,6 +251,7 @@ let ``RQA bare case fix supplies the qualification still required`` (body: strin
 [<InlineData("let classify value = match value with | Hidden n -> n | _ -> 0")>]
 [<InlineData("let classify value = match value with | Old n -> n | _ -> 0")>]
 [<InlineData("let Even = 1")>]
+[<InlineData("[<Positive>]\n    type T = class end")>]
 let ``Add Open does not suggest unusable case edits`` body =
     let code = source body
     let actual = AddOpenCodeFixProvider(AssemblyContentProvider()) |> tryFix code Auto
@@ -457,7 +459,7 @@ let ``completion respects pattern context and caller unopened catalogue setting`
 [<InlineData(true, false, true)>]
 [<InlineData(false, false, false)>]
 [<InlineData(false, true, true)>]
-let ``real completion service respects the editor unopened-symbol option`` (includeUnopened: bool, visible: bool, hasCase: bool) =
+let ``public completion provider respects the editor unopened-symbol option`` (includeUnopened: bool, visible: bool, hasCase: bool) =
     let pattern = if visible then "Positive" else "Missing"
 
     let code =
@@ -484,24 +486,39 @@ let ``real completion service respects the editor unopened-symbol option`` (incl
     let settings = workspace.Services.GetService<EditorOptions>()
     Assert.Equal(includeUnopened, settings.IntelliSense.IncludeSymbolsFromUnopenedNamespacesOrModules)
 
-    let service =
-        FSharpCompletionService(workspace, serviceProvider, AssemblyContentProvider(), settings)
+    let provider =
+        FSharpCompletionProvider(workspace, serviceProvider, AssemblyContentProvider(), settings)
 
     let position =
         code.IndexOf($"| {pattern} n", StringComparison.Ordinal) + $"| {pattern}".Length
 
-    let completions =
-        service.GetCompletionsAsync(document, position).GetAwaiter().GetResult()
+    let context =
+        Microsoft.CodeAnalysis.Completion.CompletionContext(
+            provider,
+            document,
+            position,
+            TextSpan(position, 0),
+            CompletionTrigger.Invoke,
+            workspace.Options,
+            CancellationToken.None
+        )
 
-    Assert.NotNull completions
-    Assert.Contains(completions.ItemsList, fun item -> item.DisplayText = "Visible")
-    Assert.Equal(hasCase, completions.ItemsList |> Seq.exists (fun item -> item.DisplayText = "Positive"))
+    provider.ProvideCompletionsAsync(context).GetAwaiter().GetResult()
+
+    let collectedItems =
+        typeof<Microsoft.CodeAnalysis.Completion.CompletionContext>.GetProperty("Items", BindingFlags.Instance ||| BindingFlags.NonPublic)
+
+    Assert.NotNull collectedItems
+
+    let items =
+        collectedItems.GetValue(context) :?> System.Collections.Generic.IReadOnlyList<CompletionItem>
+
+    Assert.Contains(items, fun item -> item.DisplayText = "Visible")
+    Assert.Equal(hasCase, items |> Seq.exists (fun item -> item.DisplayText = "Positive"))
 
     if visible then
         let item =
-            completions.ItemsList
-            |> Seq.filter (fun item -> item.DisplayText = "Positive")
-            |> Assert.Single
+            items |> Seq.filter (fun item -> item.DisplayText = "Positive") |> Assert.Single
 
         Assert.False(item.Properties.ContainsKey "NamespaceToOpen")
         assertCompiles code
