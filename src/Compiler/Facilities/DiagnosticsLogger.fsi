@@ -456,8 +456,6 @@ val checkLanguageFeatureAndRecover: langVersion: LanguageVersion -> langFeature:
 val tryLanguageFeatureErrorOption:
     langVersion: LanguageVersion -> langFeature: LanguageFeature -> m: range -> exn option
 
-val languageFeatureNotSupportedInLibraryError: langFeature: LanguageFeature -> m: range -> 'T
-
 module internal StackGuardMetrics =
     val Listen: unit -> IDisposable
     val StatsToString: unit -> string
