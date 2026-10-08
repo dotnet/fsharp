@@ -82,6 +82,11 @@
         <target state="translated">'{0}' özelliği hedef çalışma zamanı tarafından desteklenmiyor.</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkFeatureNotSupportedInLibrary">
+        <source>Feature '{0}' requires the F# library for language version {1} or greater.</source>
+        <target state="translated">'{0}' özelliği için F# kitaplığının {1} veya üstü dil sürümü gerekir.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="chkImplementingInterfacesOnStaticClasses">
         <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Implementing interfaces is not allowed.</source>
         <target state="translated">Bir tür, hem [&lt;Sealed&gt;] hem de [&lt; AbstractClass&gt;] özniteliklerini kullanıyorsa bu statik olduğu anlamına gelir. Arabirim uygulamaya izin verilmez.</target>
@@ -520,6 +525,11 @@
       <trans-unit id="featureScopedNowarn">
         <source>Support for scoped enabling / disabling of warnings by #warn and #nowarn directives, also inside modules</source>
         <target state="new">Support for scoped enabling / disabling of warnings by #warn and #nowarn directives, also inside modules</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureStringInterpolation">
+        <source>string interpolation</source>
+        <target state="translated">dizede düz metin arasına kod ekleme</target>
         <note />
       </trans-unit>
       <trans-unit id="featureSupportValueOptionsAsOptionalParameters">
@@ -993,8 +1003,8 @@
         <note />
       </trans-unit>
       <trans-unit id="optsUnrecognizedLanguageFeature">
-        <source>Unrecognized language feature name: '{0}'. Use a valid feature name such as 'FromEndSlicing'.</source>
-        <target state="new">Unrecognized language feature name: '{0}'. Use a valid feature name such as 'FromEndSlicing'.</target>
+        <source>Unrecognized language feature name: '{0}'. Use a valid feature name such as 'StringInterpolation' or 'FromEndSlicing'.</source>
+        <target state="new">Unrecognized language feature name: '{0}'. Use a valid feature name such as 'StringInterpolation' or 'FromEndSlicing'.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsUnrecognizedLanguageVersion">
