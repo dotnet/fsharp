@@ -403,6 +403,11 @@ Hinweise in QuickInfo anzeigen</target>
         <target state="translated">"nameof" verwenden</target>
         <note />
       </trans-unit>
+      <trans-unit id="UseOptionForOptionalParameter">
+        <source>Use 'option' for optional parameter</source>
+        <target state="new">Use 'option' for optional parameter</target>
+        <note />
+      </trans-unit>
       <trans-unit id="UseTripleQuotedInterpolation">
         <source>Use triple quoted string interpolation.</source>
         <target state="translated">Verwenden Sie die Interpolation von dreifachen Zeichenfolgen in Anführungszeichen.</target>
@@ -426,6 +431,11 @@ Hinweise in QuickInfo anzeigen</target>
       <trans-unit id="UseValueInsteadOfDeref">
         <source>Use '.Value' to dereference expression</source>
         <target state="translated">".Value" zum Dereferenzieren eines Ausdrucks verwenden</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UseValueOptionForOptionalParameter">
+        <source>Use 'voption' for optional parameter</source>
+        <target state="new">Use 'voption' for optional parameter</target>
         <note />
       </trans-unit>
       <trans-unit id="WrapExpressionInParentheses">

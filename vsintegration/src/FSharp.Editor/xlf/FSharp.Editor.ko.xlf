@@ -403,6 +403,11 @@ F# 구문 규칙에 맞는 줄 바꿈을 추가하여 지정된 너비에 시그
         <target state="translated">'nameof' 사용</target>
         <note />
       </trans-unit>
+      <trans-unit id="UseOptionForOptionalParameter">
+        <source>Use 'option' for optional parameter</source>
+        <target state="new">Use 'option' for optional parameter</target>
+        <note />
+      </trans-unit>
       <trans-unit id="UseTripleQuotedInterpolation">
         <source>Use triple quoted string interpolation.</source>
         <target state="translated">삼중 따옴표로 묶인 분자열 보간을 사용합니다.</target>
@@ -426,6 +431,11 @@ F# 구문 규칙에 맞는 줄 바꿈을 추가하여 지정된 너비에 시그
       <trans-unit id="UseValueInsteadOfDeref">
         <source>Use '.Value' to dereference expression</source>
         <target state="translated">식을 역참조하려면 '.Value' 사용</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UseValueOptionForOptionalParameter">
+        <source>Use 'voption' for optional parameter</source>
+        <target state="new">Use 'voption' for optional parameter</target>
         <note />
       </trans-unit>
       <trans-unit id="WrapExpressionInParentheses">
