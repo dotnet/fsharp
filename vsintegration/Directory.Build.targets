@@ -25,7 +25,7 @@
   <Target Name="LinkVSSDKEmbeddableAssemblies" AfterTargets="ResolveReferences" BeforeTargets="FindReferenceAssembliesForReferences" />
 
   <Target Name="GenerateTestCompilerBindingRedirects" AfterTargets="CopyFilesToOutputDirectory" Condition="'$(MSBuildProjectName)' == 'VisualFSharp.UnitTests' and '@(SuggestedBindingRedirects)' != ''">
-    <GenerateBindingRedirects AppConfigFile="$(TargetDir)fsc.exe.config" TargetName="fsc.exe.config" OutputAppConfigFile="$(IntermediateOutputPath)fsc.exe.config" SuggestedRedirects="@(SuggestedBindingRedirects)" />
+    <GenerateBindingRedirects AppConfigFile="$(ArtifactsDir)obj/fsc/$(Configuration)/$(TargetFramework)/fsc.exe.withSupportedRuntime.config" TargetName="fsc.exe.config" OutputAppConfigFile="$(IntermediateOutputPath)fsc.exe.config" SuggestedRedirects="@(SuggestedBindingRedirects)" />
     <Copy SourceFiles="$(IntermediateOutputPath)fsc.exe.config" DestinationFolder="$(TargetDir)" />
   </Target>
 
