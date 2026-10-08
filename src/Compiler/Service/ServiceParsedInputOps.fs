@@ -225,7 +225,7 @@ module Entity =
     let tryCreate
         (
             targetNamespace: ShortIdents option,
-            targetScope: ShortIdents,
+            targetScope: unit -> ShortIdents,
             partiallyQualifiedName: MaybeUnresolvedIdent[],
             requiresQualifiedAccessParent: ShortIdents option,
             autoOpenParent: ShortIdents option,
@@ -247,6 +247,7 @@ module Entity =
                     None
                 else
                     let identCount = parts.Length
+                    let targetScope = targetScope ()
 
                     let struct (fullOpenableNs, openableNs, restIdents) =
                         getOpenableNamespace requiresQualifiedAccessParent autoOpenParent candidate
@@ -2583,9 +2584,9 @@ module ParsedInput =
         res, modules
 
     let findBestPositionToInsertOpenDeclaration (modules: FSharpModule list) scope pos (entity: ShortIdents) =
-        match modules |> List.filter (fun x -> entity |> Array.startsWith x.Idents) with
-        | [] -> struct (scope, { ScopeKind = scope.Kind; Pos = pos })
-        | m :: _ ->
+        match modules |> List.tryFind (fun x -> entity |> Array.startsWith x.Idents) with
+        | None -> struct (scope, { ScopeKind = scope.Kind; Pos = pos })
+        | Some m ->
             //printfn "All modules: %A, Win module: %A" modules m
             let scopeKind =
                 match scope.Kind with
@@ -2631,13 +2632,15 @@ module ParsedInput =
                         ShortIdents = ns |> Option.defaultValue scope.ShortIdents
                     }
 
-                let struct (targetScope, context) =
+                let find () =
                     findBestPositionToInsertOpenDeclaration modules namingScope pos entity
 
                 let entities =
                     Entity.tryCreate (
                         ns,
-                        targetScope.ShortIdents,
+                        (fun () ->
+                            match find () with
+                            | struct (targetScope, _) -> targetScope.ShortIdents),
                         partiallyQualifiedName,
                         requiresQualifiedAccessParent,
                         autoOpenParent,
@@ -2645,7 +2648,10 @@ module ParsedInput =
                         entity
                     )
 
-                entities |> Array.map (fun e -> e, context)
+                entities
+                |> Array.map (fun e ->
+                    match find () with
+                    | struct (_, context) -> e, context)
 
     /// Corrects insertion line number based on kind of scope and text surrounding the insertion point.
     let AdjustInsertionPoint (getLineStr: int -> string) ctx =
