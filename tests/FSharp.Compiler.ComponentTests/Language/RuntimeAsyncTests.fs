@@ -1473,11 +1473,19 @@ let main _ =
     |> compileExeAndRun
     |> shouldSucceed
 
-[<InlineData(false)>]
-[<InlineData(true)>]
+[<InlineData(false, false)>]
+[<InlineData(false, true)>]
+[<InlineData(true, false)>]
+[<InlineData(true, true)>]
 [<Theory>]
-let ``runtime async does not rewrite delegates passed to opaque consumers`` (optimize: bool) =
-    FSharp """
+let ``runtime async does not rewrite delegates passed to opaque consumers`` (optimize: bool, quoted: bool) =
+    let opaqueUse =
+        if quoted then
+            "let saved = <@ callback.Invoke() @> in saved.ToString() |> ignore"
+        else
+            "consume callback |> ignore"
+
+    FSharp $"""
 module RuntimeAsyncOpaqueDelegate
 
 open System.Threading.Tasks
@@ -1490,10 +1498,13 @@ type Started<'T> = delegate of unit -> 'T
 let consume (callback: Started<int>) = callback.Invoke()
 
 let inline invoke ([<InlineIfLambda>] callback: Started<int>) =
-    StateMachineHelpers.__runtimeAsyncReturn(callback.Invoke() + consume callback)
+    StateMachineHelpers.__runtimeAsyncReturn(
+        let result = callback.Invoke()
+        {opaqueUse}
+        result)
 
-let run (gate: Task<int>) =
-    invoke (if true then Started(fun () -> AsyncHelpers.Await gate) else Started(fun () -> 0))
+let run (gate: Task<int>) flag =
+    invoke (if flag then Started(fun () -> AsyncHelpers.Await gate) else Started(fun () -> 0))
 """
     |> withLangVersionPreview
     |> withFSharpCoreShippedNet
@@ -2114,11 +2125,19 @@ let main _ =
     |> compileExeAndRun
     |> shouldSucceed
 
-[<InlineData(false)>]
-[<InlineData(true)>]
+[<InlineData(false, false)>]
+[<InlineData(false, true)>]
+[<InlineData(true, false)>]
+[<InlineData(true, true)>]
 [<Theory>]
-let ``runtime async does not rewrite opaque callback consumers`` (optimize: bool) =
-    FSharp """
+let ``runtime async does not rewrite opaque callback consumers`` (optimize: bool, quoted: bool) =
+    let opaqueUse =
+        if quoted then
+            "let saved = <@ callback() @> in saved.ToString() |> ignore"
+        else
+            "consume callback |> ignore"
+
+    FSharp $"""
 module RuntimeAsyncOpaqueCallbackTest
 
 open System.Threading.Tasks
@@ -2129,10 +2148,13 @@ open Microsoft.FSharp.Core.CompilerServices
 let consume (callback: unit -> int) = callback()
 
 let inline invoke ([<InlineIfLambda>] callback: unit -> int) =
-    StateMachineHelpers.__runtimeAsyncReturn (consume callback)
+    StateMachineHelpers.__runtimeAsyncReturn (
+        let result = callback()
+        {opaqueUse}
+        result)
 
-let run (gate: Task<int>) =
-    invoke (if true then fun () -> AsyncHelpers.Await gate else fun () -> 0)
+let run (gate: Task<int>) flag =
+    invoke (if flag then fun () -> AsyncHelpers.Await gate else fun () -> 0)
 """
     |> withLangVersionPreview
     |> withFSharpCoreShippedNet
@@ -2428,7 +2450,10 @@ open System.Threading.Tasks
 open System.Runtime.CompilerServices
 open Microsoft.FSharp.Core.CompilerServices
 
-let inline invoke ([<InlineIfLambda>] f: int -> int) = {calls}
+let inline invoke ([<InlineIfLambda>] f: int -> int) =
+    let unrelated = <@ 42 @>
+    unrelated.ToString() |> ignore
+    {calls}
 
 let run (gate: Task<int>) flag =
     StateMachineHelpers.__runtimeAsyncReturn (

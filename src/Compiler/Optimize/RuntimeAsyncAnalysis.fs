@@ -161,6 +161,39 @@ let private isQuotationUsing (v: Val) expr =
             body
     | _ -> false
 
+let private tryCallbackInvocation (g: TcGlobals) (callback: Val) isDelegate expression =
+    match expression with
+    | Expr.App(Expr.Val(vref, _, _), _, [], [ arg ], m) when not isDelegate && valEq callback vref.Deref -> ValueSome(struct (arg, m))
+    | DelegateInvokeExpr g (_, _, _, Expr.Val(vref, _, _), arg, m) when isDelegate && valEq callback vref.Deref ->
+        ValueSome(struct (arg, m))
+    | _ -> ValueNone
+
+let private tryAnalyzeCallbackUses g callback isDelegate continuation =
+    let folder =
+        { ExprFolder0 with
+            exprIntercept =
+                fun recurse noIntercept uses expression ->
+                    match uses with
+                    | ValueNone -> ValueNone
+                    | ValueSome count ->
+                        match tryCallbackInvocation g callback isDelegate expression with
+                        | ValueSome(struct (arg, _)) -> recurse (ValueSome(count + 1)) arg
+                        | ValueNone ->
+                            match expression with
+                            | Expr.Val(vref, _, _) when valEq callback vref.Deref -> ValueNone
+                            | Expr.Quote(_, dataCell, _, _, _) ->
+                                if isQuotationUsing callback expression then
+                                    ValueNone
+                                else
+                                    match dataCell.Value with
+                                    | Some((_, _, args, _), (_, _, legacyArgs, _)) ->
+                                        List.fold recurse (List.fold recurse uses args) legacyArgs
+                                    | None -> uses
+                            | _ -> noIntercept uses expression
+        }
+
+    FoldExpr folder (ValueSome 0) continuation
+
 let ReduceRuntimeAsyncReturnedClosureApplications (g: TcGlobals) (analyzer: RuntimeAsyncAnalyzer) expr =
     let rec effectFree expr =
         match stripExpr expr with
@@ -468,6 +501,20 @@ let InlineRuntimeAsyncCallback (g: TcGlobals) (analyzer: RuntimeAsyncAnalyzer) r
         | Expr.Val(vref, _, _) -> vref.IsLocalRef && not vref.IsMutable && not vref.IsTypeFunction
         | _ -> false
 
+    let rec canInlineDelegateConstruction construction =
+        match construction with
+        | NewDelegateExpr g (_, [ _ ], _, _, _) -> true
+        | Expr.DebugPoint(_, rest)
+        | Expr.Op(TOp.DebugLocalScope _, [], [ rest ], _) -> canInlineDelegateConstruction rest
+        | Expr.Sequential(first, rest, NormalSeq, _) when isTrivialValue first -> canInlineDelegateConstruction rest
+        | Expr.Let(TBind(_, rhs, _), rest, _, _) when isTrivialValue rhs -> canInlineDelegateConstruction rest
+        | Expr.Match(_, _, TDSwitch(Expr.Val(vref, _, _), [ TCase(_, TDSuccess([], _)) ], Some(TDSuccess([], _)), _), targets, _, _) when
+            vref.IsLocalRef && not vref.IsMutable && not vref.IsTypeFunction
+            ->
+            targets.Length > 0
+            && Array.forall (fun (TTarget(_, body, _)) -> canInlineDelegateConstruction body) targets
+        | _ -> false
+
     // Construction moves to the invocation, so its evaluation must not have observable effects.
     let rec inlineDelegateInvoke (invokeRef, invokeTy, tyargs, arg, callRange) construction =
         match construction with
@@ -496,10 +543,7 @@ let InlineRuntimeAsyncCallback (g: TcGlobals) (analyzer: RuntimeAsyncAnalyzer) r
         | _ -> None
 
     // A residual Invoke can surface after ordinary optimization; try its single use before dispatching on branches.
-    let tryInlineDelegate callback construction continuation =
-        let mutable invocations = 0
-        let mutable invalidUse = false
-
+    let inlineDelegate callback construction continuation =
         let rwenv =
             {
                 PreIntercept =
@@ -508,19 +552,9 @@ let InlineRuntimeAsyncCallback (g: TcGlobals) (analyzer: RuntimeAsyncAnalyzer) r
                         | DelegateInvokeExpr g (invokeRef, invokeTy, tyargs, Expr.Val(vref, _, _), arg, callRange) when
                             valEq callback vref.Deref
                             ->
-                            match inlineDelegateInvoke (invokeRef, invokeTy, tyargs, rewrite arg, callRange) construction with
-                            | Some body ->
-                                invocations <- invocations + 1
-                                Some body
-                            | None ->
-                                invalidUse <- true
-                                Some expression
-                        | Expr.Val(vref, _, _) when valEq callback vref.Deref ->
-                            invalidUse <- true
-                            Some expression
-                        | Expr.Quote _ when isQuotationUsing callback expression ->
-                            invalidUse <- true
-                            Some expression
+                            inlineDelegateInvoke (invokeRef, invokeTy, tyargs, rewrite arg, callRange) construction
+                            |> Option.defaultWith (fun () -> failwith "unreachable: validated runtime-async delegate construction")
+                            |> Some
                         | _ -> None)
                 PreInterceptBinding = None
                 PostTransform = (fun _ -> None)
@@ -528,12 +562,7 @@ let InlineRuntimeAsyncCallback (g: TcGlobals) (analyzer: RuntimeAsyncAnalyzer) r
                 StackGuard = StackGuard("InlineRuntimeAsyncDelegateInvocation")
             }
 
-        let continuation = RewriteExpr rwenv continuation
-
-        if invocations = 1 && not invalidUse then
-            Some continuation
-        else
-            None
+        RewriteExpr rwenv continuation
 
     let stackGuard = StackGuard("InlineRuntimeAsyncCallback")
 
@@ -573,63 +602,39 @@ let InlineRuntimeAsyncCallback (g: TcGlobals) (analyzer: RuntimeAsyncAnalyzer) r
                     else
                         construction
 
-                let inlined =
-                    if canCapture && isDelegate then
-                        tryInlineDelegate callback construction continuation
+                let callbackUses =
+                    if canCapture then
+                        tryAnalyzeCallbackUses g callback isDelegate continuation
                     else
-                        None
+                        ValueNone
+
+                let inlined =
+                    match callbackUses with
+                    | ValueSome 1 when isDelegate && canInlineDelegateConstruction construction ->
+                        Some(inlineDelegate callback construction continuation)
+                    | _ -> None
 
                 let callbackBranches =
-                    if canCapture && Option.isNone inlined then
+                    match callbackUses with
+                    | ValueSome invocations when Option.isNone inlined ->
                         tryDefunctionalizeCallback g m construction
-                    else
-                        None
+                        |> Option.filter (fun branches ->
+                            invocations = 0
+                            || List.sumBy _.NodeCount branches.Branches
+                               <= maxInlinedCallbackCopySize / invocations)
+                    | _ -> None
 
                 match inlined, callbackBranches with
                 | Some body, _ -> inlineCallbacks body
                 | None, Some callbackBranches ->
-                    let mutable invalidUse = false
-                    let copySize = List.sumBy _.NodeCount callbackBranches.Branches
-                    let mutable remainingCopySize = maxInlinedCallbackCopySize
-
                     let rwenv =
                         {
                             PreIntercept =
                                 Some(fun rewrite expression ->
-                                    let call =
-                                        match expression with
-                                        | Expr.App(Expr.Val(vref, _, _), _, [], [ arg ], callRange) when
-                                            not isDelegate && valEq callback vref.Deref
-                                            ->
-                                            Some(arg, callRange)
-                                        | DelegateInvokeExpr g (_, _, _, Expr.Val(vref, _, _), arg, callRange) when
-                                            isDelegate && valEq callback vref.Deref
-                                            ->
-                                            Some(arg, callRange)
-                                        | _ -> None
-
-                                    match call with
-                                    | _ when invalidUse -> Some expression
-                                    | Some _ when copySize > remainingCopySize ->
-                                        invalidUse <- true
-                                        Some expression
-                                    | Some(arg, callRange) ->
-                                        remainingCopySize <- remainingCopySize - copySize
-                                        let arg = rewrite arg
-
-                                        if invalidUse then
-                                            Some expression
-                                        else
-                                            Some(mkCallbackDispatch g callbackBranches arg (tyOfExpr g expression) callRange)
-                                    | None ->
-                                        match expression with
-                                        | Expr.Val(vref, _, _) when valEq callback vref.Deref ->
-                                            invalidUse <- true
-                                            Some expression
-                                        | Expr.Quote _ when isQuotationUsing callback expression ->
-                                            invalidUse <- true
-                                            Some expression
-                                        | _ -> None)
+                                    match tryCallbackInvocation g callback isDelegate expression with
+                                    | ValueSome(struct (arg, callRange)) ->
+                                        Some(mkCallbackDispatch g callbackBranches (rewrite arg) (tyOfExpr g expression) callRange)
+                                    | ValueNone -> None)
                             PreInterceptBinding = None
                             PostTransform = (fun _ -> None)
                             RewriteQuotations = false
@@ -638,18 +643,15 @@ let InlineRuntimeAsyncCallback (g: TcGlobals) (analyzer: RuntimeAsyncAnalyzer) r
 
                     let continuation = RewriteExpr rwenv continuation
 
-                    if invalidUse then
-                        keep construction
-                    else
-                        let construction =
-                            match point with
-                            | DebugPointAtBinding.Yes point -> mkDebugPoint point callbackBranches.Construction
-                            | _ -> callbackBranches.Construction
+                    let construction =
+                        match point with
+                        | DebugPointAtBinding.Yes point -> mkDebugPoint point callbackBranches.Construction
+                        | _ -> callbackBranches.Construction
 
-                        let body = mkCompGenSequential m construction (inlineCallbacks continuation)
+                    let body = mkCompGenSequential m construction (inlineCallbacks continuation)
 
-                        (callbackBranches.Tag :: List.map snd callbackBranches.Captures, body)
-                        ||> List.foldBack (fun v body -> mkCompGenLet m v (mkDefault (m, v.Type)) body)
+                    (callbackBranches.Tag :: List.map snd callbackBranches.Captures, body)
+                    ||> List.foldBack (fun v body -> mkCompGenLet m v (mkDefault (m, v.Type)) body)
                 | None, None -> keep construction
             | _ -> keep construction
         | Expr.Let(binding, continuation, m, _) -> mkLetBind m binding (inlineCallbacks continuation)

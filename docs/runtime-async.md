@@ -201,11 +201,13 @@ unchanged.
 
 Each invocation copies every branch body, so code size grows with the number
 of invocations times the number of branches. Branch sizes and captures are
-analyzed once. Each invocation reserves its share of the 2000-expression-node
-copy budget before rewriting its argument or copying its branches; invocations
-nested in arguments use the same budget. When the copies would exceed the
-budget, the callback is left as a closure and a suspension in it is reported
-as FS3918.
+analyzed once. Callback uses are analyzed separately before rewriting:
+opaque consumers and quotations retaining the callback reject the candidate,
+and invocations nested in arguments count towards the same
+2000-expression-node copy budget. The total cost is checked before copying any
+branch bodies. A rejected callback is left as a closure and a suspension in
+it is reported as FS3918. Single-use delegate inlining also checks use count
+and effect-free construction before rewriting its invocation.
 
 Second, every return-marker body is prepared once after callbacks are inlined,
 innermost first: locals that cannot be preserved across a suspension are
