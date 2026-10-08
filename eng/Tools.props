@@ -1,5 +1,0 @@
-<Project>
-  <ItemGroup>
-    <PackageReference Update="Microsoft.DotNet.SourceBuild.Tasks" Version="9.0.0-beta.24466.2" />
-  </ItemGroup>
-</Project>
