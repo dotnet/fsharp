@@ -421,7 +421,7 @@ let ``ordinary imports stay in the consuming namespace`` (name: string, ns: stri
 
     let context =
         ParsedInput.FindNearestPointToInsertOpenDeclaration
-            (FSharp.Compiler.Text.Line.fromZ line.LineNumber)
+            (global.FSharp.Compiler.Text.Line.fromZ line.LineNumber)
             parse.ParseTree
             ($"{ns}.{name}".Split '.')
             OpenStatementInsertionPoint.TopLevel
