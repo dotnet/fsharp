@@ -14,7 +14,6 @@ type LanguageFeature =
     | NullnessChecking
     | UnionIsPropertiesVisible
     | AttributesToRightOfModuleKeyword
-    | ReallyLongLists
     | ErrorOnDeprecatedRequireQualifiedAccess
     | MatchNotAllowedForUnionCaseWithNoData
     | CSharpExtensionAttributeNotRequired

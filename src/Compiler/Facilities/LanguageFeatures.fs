@@ -24,7 +24,6 @@ type LanguageFeature =
     | NullnessChecking
     | UnionIsPropertiesVisible
     | AttributesToRightOfModuleKeyword
-    | ReallyLongLists
     | ErrorOnDeprecatedRequireQualifiedAccess
     | MatchNotAllowedForUnionCaseWithNoData
     | CSharpExtensionAttributeNotRequired
@@ -125,7 +124,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
                 LanguageFeature.AttributesToRightOfModuleKeyword, languageVersion60
 
                 // F# 7.0
-                LanguageFeature.ReallyLongLists, languageVersion70
                 LanguageFeature.ErrorOnDeprecatedRequireQualifiedAccess, languageVersion70
 
                 // F# 8.0
@@ -292,7 +290,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
         | LanguageFeature.ExpandedMeasurables -> FSComp.SR.featureExpandedMeasurables ()
         | LanguageFeature.UnionIsPropertiesVisible -> FSComp.SR.featureUnionIsPropertiesVisible ()
         | LanguageFeature.AttributesToRightOfModuleKeyword -> FSComp.SR.featureAttributesToRightOfModuleKeyword ()
-        | LanguageFeature.ReallyLongLists -> FSComp.SR.featureReallyLongList ()
         | LanguageFeature.ErrorOnDeprecatedRequireQualifiedAccess -> FSComp.SR.featureErrorOnDeprecatedRequireQualifiedAccess ()
         | LanguageFeature.MatchNotAllowedForUnionCaseWithNoData -> FSComp.SR.featureMatchNotAllowedForUnionCaseWithNoData ()
         | LanguageFeature.CSharpExtensionAttributeNotRequired -> FSComp.SR.featureCSharpExtensionAttributeNotRequired ()
