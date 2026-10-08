@@ -20,6 +20,11 @@
     <PackageReference Update="System.Memory" Version="4.6.0" Condition="'$(MSBuildProjectName)' == 'VisualFSharp.UnitTests'" />
   </ItemGroup>
 
+  <Target Name="GenerateTestCompilerBindingRedirects" AfterTargets="CopyFilesToOutputDirectory" Condition="'$(MSBuildProjectName)' == 'VisualFSharp.UnitTests' and '@(SuggestedBindingRedirects)' != ''">
+    <GenerateBindingRedirects AppConfigFile="$(TargetDir)fsc.exe.config" TargetName="fsc.exe.config" OutputAppConfigFile="$(IntermediateOutputPath)fsc.exe.config" SuggestedRedirects="@(SuggestedBindingRedirects)" />
+    <Copy SourceFiles="$(IntermediateOutputPath)fsc.exe.config" DestinationFiles="$(TargetDir)fsc.exe.config" />
+  </Target>
+
   <!-- New VS does not allow embedded interop assemblies ... this turns off the target that turns it on -->
   <Target Name="LinkVSSDKEmbeddableAssemblies" AfterTargets="ResolveReferences" BeforeTargets="FindReferenceAssembliesForReferences" />
 
