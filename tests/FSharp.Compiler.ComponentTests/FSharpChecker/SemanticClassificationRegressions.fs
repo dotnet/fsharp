@@ -873,8 +873,9 @@ let () = r.Count <- r.Count + 1
 /// classifier) saw `Item.Value` win and `async` rendered as a regular value.
 [<Fact>]
 let ``Computation expression builder is classified as ComputationExpression (whole-file)`` () =
-    let source =
-        """
+    task {
+        let source =
+            """
 module Test
 
 let _ =
@@ -884,24 +885,25 @@ let _ =
     }
 """
 
-    let items = getClassifications source
+        let! items = getClassifications source
 
-    // Line 5 contains "    async {". Look for a classification covering 'async' (col 4..9).
-    let asyncBuilderItems =
-        items
-        |> Array.filter (fun item ->
-            item.Range.StartLine = 5
-            && item.Range.StartColumn = 4
-            && item.Range.EndColumn = 9)
+        // Line 5 contains "    async {". Look for a classification covering 'async' (col 4..9).
+        let asyncBuilderItems =
+            items
+            |> Array.filter (fun item ->
+                item.Range.StartLine = 5
+                && item.Range.StartColumn = 4
+                && item.Range.EndColumn = 9)
 
-    let computationExpressionItems =
-        asyncBuilderItems
-        |> Array.filter (fun item -> item.Type = SemanticClassificationType.ComputationExpression)
+        let computationExpressionItems =
+            asyncBuilderItems
+            |> Array.filter (fun item -> item.Type = SemanticClassificationType.ComputationExpression)
 
-    Assert.True(
-        computationExpressionItems.Length = 1,
-        sprintf
-            "Expected exactly one ComputationExpression classification for 'async' on line 5, got %d. All classifications at that span: %A"
-            computationExpressionItems.Length
-            (asyncBuilderItems |> Array.map (fun i -> i.Type))
-    )
+        Assert.True(
+            computationExpressionItems.Length = 1,
+            sprintf
+                "Expected exactly one ComputationExpression classification for 'async' on line 5, got %d. All classifications at that span: %A"
+                computationExpressionItems.Length
+                (asyncBuilderItems |> Array.map (fun i -> i.Type))
+        )
+    }

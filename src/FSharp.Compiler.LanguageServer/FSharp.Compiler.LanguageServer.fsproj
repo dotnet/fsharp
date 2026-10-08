@@ -15,11 +15,7 @@
 		<PackageReference Include="Microsoft.VisualStudio.Threading" VersionOverride="17.12.21" />
 		<!-- Direct dependency with no transitive floor and no central PackageVersion, so pin it explicitly. -->
 		<PackageReference Include="StreamJsonRpc" VersionOverride="2.26.10" />
-		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
-		<PackageReference Include="Microsoft.VisualStudio.LanguageServer.Protocol" Version="17.13.9" />
-		<PackageReference Include="Microsoft.VisualStudio.LanguageServer.Protocol.Extensions" Version="17.13.9" />
-		<PackageReference Include="Microsoft.VisualStudio.Threading" Version="17.12.21" />
-		<PackageReference Include="StreamJsonRpc" Version="2.21.3-preview" />
+		<PackageReference Include="Microsoft.VisualStudio.LanguageServer.Protocol.Extensions" />
 	</ItemGroup>
 
 	<ItemGroup>

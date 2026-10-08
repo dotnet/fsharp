@@ -316,7 +316,7 @@ type internal FSharpClassificationService [<ImportingConstructor>] (serviceProvi
                                 let classificationDataLookup = itemToSemanticClassificationLookup classificationData
                                 do! unopenedDocumentsSemanticClassificationCache.SetAsync(document, classificationDataLookup)
 
-                            addSemanticClassification sourceText textSpan classificationData result
+                                addSemanticClassification sourceText textSpan classificationData result
                 }
                 |> CancellableTask.ifCanceledReturn ()
                 |> CancellableTask.startAsTask cancellationToken

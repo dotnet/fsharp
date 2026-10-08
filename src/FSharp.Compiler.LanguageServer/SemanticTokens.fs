@@ -274,13 +274,12 @@ module LspSemanticTokens =
             | None -> [||])
 
     let fromTokenizer (parsingOptions: FSharpParsingOptions option) (fileName: string) (source: ISourceText) =
-        let defines, langVersion, strictIndentation =
+        let defines, langVersion =
             match parsingOptions with
-            | Some opts -> CompilerEnvironment.GetConditionalDefinesForEditing opts, Some opts.LangVersionText, opts.StrictIndentation
-            | None -> [], None, None
+            | Some opts -> CompilerEnvironment.GetConditionalDefinesForEditing opts, Some opts.LangVersionText
+            | None -> [], None
 
-        let tokenizer =
-            FSharpSourceTokenizer(defines, Some fileName, langVersion, strictIndentation)
+        let tokenizer = FSharpSourceTokenizer(defines, Some fileName, langVersion)
 
         let mutable state = FSharpTokenizerLexState.Initial
 

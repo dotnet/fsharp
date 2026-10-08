@@ -42,7 +42,6 @@ type internal FSharpDocumentDiagnosticAnalyzer [<ImportingConstructor>] () =
     // setting to consult here.
     let shouldProduceDiagnostics (_document: Document) = true
 
-
     // DocumentId keys survive solution snapshots, and holding them weakly means a document dropped from the
     // solution takes its cached diagnostics with it, so no eviction pass is needed on the request path.
     static let syntaxCache = ConditionalWeakTable<DocumentId, CachedDiagnostics>()
