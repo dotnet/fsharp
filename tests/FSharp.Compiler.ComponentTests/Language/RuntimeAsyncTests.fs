@@ -1602,10 +1602,11 @@ let work (ready: Task<int>) =
     |> shouldSucceed
     |> verifyPdb [ VerifyMethodSequencePoints("work", (if optimize then statementPoints else callSitePoint @ statementPoints)) ]
 
-[<Fact>]
-let ``runtime async conditional callback keeps mutable capture visible during construction`` () =
-    let result =
-        FSharp """module MissingMutableLocal
+[<Theory>]
+[<InlineData(false)>]
+[<InlineData(true)>]
+let ``runtime async conditional callback keeps mutable capture in its lexical scope`` (insideContext: bool) =
+    let source = """module MissingMutableLocal
 
 open System.Threading.Tasks
 open System.Runtime.CompilerServices
@@ -1615,8 +1616,10 @@ let inline invoke ([<InlineIfLambda>] callback: unit -> int) : Task<int> =
     StateMachineHelpers.__runtimeAsyncReturn (callback ())
 
 let run flag (ready: Task<int>) =
+    let mutable count = 99
     invoke (
         if flag then
+            printfn "outer = %d" count
             let mutable count = 0
             printfn "%d" count
             fun () ->
@@ -1624,8 +1627,20 @@ let run flag (ready: Task<int>) =
                 count <- count + value
                 count
         else
+            printfn "else = %d" count
             fun () -> 0)
 """
+    let source =
+        if insideContext then
+            source
+                .Replace(" : Task<int> =", " =")
+                .Replace("StateMachineHelpers.__runtimeAsyncReturn (callback ())", "callback ()")
+                .Replace("let run flag (ready: Task<int>) =", "let run flag (ready: Task<int>) = StateMachineHelpers.__runtimeAsyncReturn (")
+                .Replace("fun () -> 0)", "fun () -> 0))")
+        else
+            source
+    let result =
+        FSharp source
         |> withLangVersionPreview
         |> withFSharpCoreShippedNet
         |> withPortablePdb
@@ -1642,20 +1657,55 @@ let run flag (ready: Task<int>) =
             md.MethodDefinitions
             |> Seq.filter (fun handle -> md.GetString(md.GetMethodDefinition(handle).Name) = "run")
             |> Assert.Single
-        let point =
-            pdb.GetMethodDebugInformation(method).GetSequencePoints()
-            |> Seq.filter (fun point -> not point.IsHidden && point.StartLine = 14)
-            |> Assert.Single
-        let local =
+        let localsAt (method: MethodDefinitionHandle) line =
+            let point =
+                pdb.GetMethodDebugInformation(method).GetSequencePoints()
+                |> Seq.filter (fun point -> not point.IsHidden && point.StartLine = line)
+                |> Assert.Single
             [ for handle in pdb.GetLocalScopes method do
                 let scope = pdb.GetLocalScope handle
                 if scope.StartOffset <= point.Offset && point.Offset < scope.EndOffset then
                     for local in scope.GetLocalVariables() do
                         let variable = pdb.GetLocalVariable local
-                        if pdb.GetString variable.Name = "count" then
-                            yield variable ]
+                        yield pdb.GetString variable.Name, variable ]
+        let outerLocals = localsAt method 14
+        Assert.DoesNotContain("count (shadowed)", outerLocals |> List.map fst)
+        let outer =
+            outerLocals
+            |> List.filter (fun (name, _) -> name = "count")
             |> Assert.Single
-        Assert.Equal(LocalVariableAttributes.None, local.Attributes))
+            |> snd
+        let inner =
+            localsAt method 16
+            |> List.filter (fun (name, _) -> name = "count")
+            |> Assert.Single
+            |> snd
+        Assert.NotEqual(outer.Index, inner.Index)
+        Assert.Equal(LocalVariableAttributes.None, inner.Attributes)
+        let elseLocals = localsAt method 22
+        Assert.DoesNotContain("count (shadowed)", elseLocals |> List.map fst)
+        let restoredOuter =
+            elseLocals
+            |> List.filter (fun (name, _) -> name = "count")
+            |> Assert.Single
+            |> snd
+        Assert.Equal(outer.Index, restoredOuter.Index)
+        let invocationMethod =
+            md.MethodDefinitions
+            |> Seq.filter (fun handle ->
+                pdb.GetMethodDebugInformation(handle).GetSequencePoints()
+                |> Seq.exists (fun point -> not point.IsHidden && point.StartLine = 19))
+            |> Assert.Single
+        let invoked =
+            localsAt invocationMethod 19
+            |> List.filter (fun (name, _) -> name = "count")
+            |> Assert.Single
+            |> snd
+        Assert.Equal(LocalVariableAttributes.None, invoked.Attributes)
+        if insideContext then
+            Assert.Equal(inner.Index, invoked.Index))
+    if insideContext then
+        result |> verifyILNotPresent [ "FSharpRef" ]
 
 [<Fact>]
 let ``runtime async suspension in exception region executes`` () =
@@ -2314,7 +2364,7 @@ let main _ =
 [<InlineData(false)>]
 [<InlineData(true)>]
 [<Theory>]
-let ``runtime async inlines nested branch-selected callbacks`` (optimize: bool) =
+let ``runtime async inlines nested stateful branch-selected callbacks`` (optimize: bool) =
     FSharp """
 module RuntimeAsyncNestedBranchCallbacks
 open System.Threading.Tasks
@@ -2330,14 +2380,24 @@ let run (gate: Task<int>) f1 f2 =
     StateMachineHelpers.__runtimeAsyncReturn (
         pick
             f1
-            (if f2 then (fun x -> AsyncHelpers.Await gate + x) else (fun x -> x * 2))
-            (if f2 then (fun x -> x + 1) else (fun x -> AsyncHelpers.Await gate - x)))
+            (if f2 then
+                let mutable count = 0
+                fun x ->
+                    count <- count + 1
+                    AsyncHelpers.Await gate + x + count
+             else fun x -> x * 2)
+            (if f2 then fun x -> x + 1
+             else
+                let mutable count = 0
+                fun x ->
+                    count <- count + 1
+                    AsyncHelpers.Await gate - x + count))
 
 [<EntryPoint>]
 let main _ =
     let r a b = (run (Task.FromResult 10) a b).Result
     let results = r true true, r true false, r false true, r false false
-    if results <> (45, 36, 39, 18) then failwithf "Unexpected: %A" results
+    if results <> (51, 42, 45, 24) then failwithf "Unexpected: %A" results
     0
 """
     |> withLangVersionPreview

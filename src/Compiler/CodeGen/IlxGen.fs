@@ -2952,6 +2952,10 @@ type CodeGenBuffer(m: range, mgbuf: AssemblyBuilder, methodName, alreadyUsedArgs
         locals.Add((ranges, ty, isFixed, canBeReallocd))
         j
 
+    member _.AddLocalDebugRange(index, name, scopeMarks) =
+        let ranges, ty, isFixed, canBeReallocd = locals[index]
+        locals[index] <- ((name, scopeMarks) :: ranges, ty, isFixed, canBeReallocd)
+
     member cgbuf.ReallocLocal(cond, ranges, ty, isFixed, canBeReallocd) =
         match ResizeArray.tryFindIndexi cond locals with
         | Some j ->
@@ -3348,6 +3352,28 @@ and GenExprAux (cenv: cenv) (cgbuf: CodeGenBuffer) eenv expr (sequel: sequel) =
         | Expr.Const(c, m, ty) -> GenConstant cenv cgbuf eenv (c, m, ty) sequel
 
         | Expr.LetRec(binds, body, m, _) -> GenLetRec cenv cgbuf eenv (binds, body, m) sequel
+
+        | Expr.Op(TOp.DebugLocalScope(vref, name), [], [ body ], m) ->
+            if cenv.options.generateDebugSymbols then
+                let _, endMark as scopeMarks = StartLocalScope "debugLocal" cgbuf
+
+                match StorageForValRef m vref eenv with
+                | Local(index, _, _) -> cgbuf.AddLocalDebugRange(index, name, scopeMarks)
+                | _ when not cenv.options.localOptimizationsEnabled ->
+                    if vref.IsMutable && not (Optimizer.IsKnownOnlyMutableBeforeUse vref) then
+                        error (InternalError("debug local scope requires shared storage for a mutable capture", m))
+
+                    // Escaping mutables are reference cells, so the alias copies their shared home.
+                    let index =
+                        cgbuf.AllocLocal([ (name, scopeMarks) ], GenTypeOfVal cenv eenv vref.Deref, false, false)
+
+                    GenGetVal cenv cgbuf eenv (vref, m) Continue
+                    EmitSetLocal cgbuf index
+                | _ -> ()
+
+                GenExpr cenv cgbuf eenv body (EndLocalScope(sequel, endMark))
+            else
+                GenExpr cenv cgbuf eenv body sequel
 
         | Expr.Lambda _
         | Expr.TyLambda _ -> GenLambda cenv cgbuf eenv false [] expr sequel

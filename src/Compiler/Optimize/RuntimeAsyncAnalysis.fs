@@ -180,6 +180,9 @@ let ReduceRuntimeAsyncReturnedClosureApplications (g: TcGlobals) (analyzer: Runt
             ->
             apply inner fty tyargs args m
         | Expr.DebugPoint(point, inner), _ -> apply inner fty tyargs args m |> Option.map (fun r -> Expr.DebugPoint(point, r))
+        | Expr.Op(TOp.DebugLocalScope _ as op, [], [ body ], mScope), _ ->
+            apply body (tyOfExpr g body) tyargs args m
+            |> Option.map (fun body -> Expr.Op(op, [], [ body ], mScope))
         | Expr.Let(binding, body, mLet, _), _ ->
             apply body (tyOfExpr g body) tyargs args m
             |> Option.map (mkLetBind mLet binding)
@@ -214,10 +217,14 @@ let ReduceRuntimeAsyncReturnedClosureApplications (g: TcGlobals) (analyzer: Runt
             PostTransform =
                 (fun expression ->
                     match expression with
-                    | Expr.App((Expr.Lambda _ | Expr.Let _ | Expr.LetRec _ | Expr.Match _ | Expr.DebugPoint _) as f, fty, tyargs, args, m) when
-                        not args.IsEmpty && analyzer.ContainsSuspension expression
-                        ->
-                        apply f fty tyargs args m
+                    | Expr.App((Expr.Lambda _ | Expr.Let _ | Expr.LetRec _ | Expr.Match _ | Expr.DebugPoint _ | Expr.Op(TOp.DebugLocalScope _,
+                                                                                                                        _,
+                                                                                                                        _,
+                                                                                                                        _)) as f,
+                               fty,
+                               tyargs,
+                               args,
+                               m) when not args.IsEmpty && analyzer.ContainsSuspension expression -> apply f fty tyargs args m
                     | _ -> None)
             RewriteQuotations = false
             StackGuard = StackGuard("ReduceRuntimeAsyncReturnedClosureApplications")
@@ -280,7 +287,15 @@ let private tryShareMutableCallbackCaptures (g: TcGlobals) (mutableCaptures: (Va
                                 | DebugPointAtBinding.Yes point -> mkDebugPoint point assignment
                                 | _ -> assignment
 
-                            Some(mkCompGenSequential m assignment (rewrite body))
+                            let body = rewrite body
+
+                            let body =
+                                if v.IsCompilerGenerated then
+                                    body
+                                else
+                                    Expr.Op(TOp.DebugLocalScope(hoistedOf[v], v.LogicalName), [], [ body ], m)
+
+                            Some(mkCompGenSequential m assignment body)
                         | _ -> None)
                 PreInterceptBinding = None
                 PostTransform = (fun _ -> None)
@@ -327,7 +342,9 @@ let private tryDefunctionalizeCallback (g: TcGlobals) m construction =
                             | _ ->
                                 let hoisted =
                                     if v.IsMutable then
-                                        Construct.NewModifiedVal id v
+                                        let hoisted = Construct.NewModifiedVal id v
+                                        hoisted.SetIsCompilerGenerated true
+                                        hoisted
                                     else
                                         fst (mkMutableCompGenLocal m v.LogicalName v.Type)
 
@@ -345,6 +362,8 @@ let private tryDefunctionalizeCallback (g: TcGlobals) m construction =
                 branches.Add(parameter, body)
                 Some(List.foldBack (mkCompGenSequential m) assignments select)
         | Expr.DebugPoint(point, body) -> defunctionalize body |> Option.map (fun body -> Expr.DebugPoint(point, body))
+        | Expr.Op(TOp.DebugLocalScope _ as op, [], [ body ], m) ->
+            defunctionalize body |> Option.map (fun body -> Expr.Op(op, [], [ body ], m))
         | Expr.Sequential(first, rest, NormalSeq, m) ->
             defunctionalize rest
             |> Option.map (fun rest -> Expr.Sequential(first, rest, NormalSeq, m))
@@ -392,7 +411,15 @@ let private mkCallbackDispatch (g: TcGlobals) (callback: CallbackBranches) arg r
                 valRemap = ValMap.OfList((parameter, mkLocalValRef argVal) :: captureRemap)
             }
 
-        remapExpr g CloneAll remap body
+        let body = remapExpr g CloneAll remap body
+        let captured = (freeInExpr CollectLocals body).FreeLocals
+
+        (callback.Captures, body)
+        ||> List.foldBack (fun (v, hoisted) body ->
+            if v.IsMutable && not v.IsCompilerGenerated && Zset.contains hoisted captured then
+                Expr.Op(TOp.DebugLocalScope(mkLocalValRef hoisted, v.LogicalName), [], [ body ], m)
+            else
+                body)
 
     let rec dispatch i branches =
         match branches with
@@ -410,6 +437,7 @@ let InlineRuntimeAsyncCallback (g: TcGlobals) (analyzer: RuntimeAsyncAnalyzer) r
         match expr with
         | NewDelegateExpr g (_, [ parameter ], body, _, _) -> Some(parameter.Type, tyOfExpr g body)
         | Expr.DebugPoint(_, rest)
+        | Expr.Op(TOp.DebugLocalScope _, [], [ rest ], _)
         | Expr.Sequential(_, rest, NormalSeq, _)
         | Expr.Let(_, rest, _, _) -> tryDelegateSignature rest
         | Expr.Match(_, _, _, targets, _, _) when targets.Length > 0 ->
@@ -431,6 +459,9 @@ let InlineRuntimeAsyncCallback (g: TcGlobals) (analyzer: RuntimeAsyncAnalyzer) r
         | Expr.DebugPoint(point, rest) ->
             inlineDelegateInvoke (invokeRef, invokeTy, tyargs, arg, callRange) rest
             |> Option.map (fun body -> Expr.DebugPoint(point, body))
+        | Expr.Op(TOp.DebugLocalScope _ as op, [], [ rest ], m) ->
+            inlineDelegateInvoke (invokeRef, invokeTy, tyargs, arg, callRange) rest
+            |> Option.map (fun body -> Expr.Op(op, [], [ body ], m))
         | Expr.Sequential(first, rest, NormalSeq, m) when isTrivialValue first ->
             inlineDelegateInvoke (invokeRef, invokeTy, tyargs, arg, callRange) rest
             |> Option.map (fun body -> Expr.Sequential(first, body, NormalSeq, m))
@@ -599,6 +630,7 @@ let InlineRuntimeAsyncCallback (g: TcGlobals) (analyzer: RuntimeAsyncAnalyzer) r
             | _ -> keep construction
         | Expr.Let(binding, continuation, m, _) -> mkLetBind m binding (inlineCallbacks continuation)
         | Expr.DebugPoint(point, inner) -> Expr.DebugPoint(point, inlineCallbacks inner)
+        | Expr.Op(TOp.DebugLocalScope _ as op, [], [ body ], m) -> Expr.Op(op, [], [ inlineCallbacks body ], m)
         | Expr.Sequential(first, rest, NormalSeq, m) -> Expr.Sequential(first, inlineCallbacks rest, NormalSeq, m)
         | _ -> expr
 

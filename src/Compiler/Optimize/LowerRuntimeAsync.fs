@@ -44,6 +44,7 @@ let private inlineCallbacks g implFile =
         match expr with
         | Expr.Let(_, rest, _, _)
         | Expr.DebugPoint(_, rest)
+        | Expr.Op(TOp.DebugLocalScope _, [], [ rest ], _)
         | Expr.Sequential(_, rest, NormalSeq, _) -> leadsToRuntimeAsyncReturn rest
         | _ -> (TryGetRuntimeAsyncReturn g expr).IsSome
 
