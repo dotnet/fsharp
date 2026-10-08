@@ -1,0 +1,56 @@
+# Register in DevDiv with GitHub dotnet/fsharp as self. See eng/pipelines/apex-integration/README.md.
+trigger: none
+pr: none
+
+resources:
+  pipelines:
+  - pipeline: VisualStudioBuildUnderTest
+    source: DD-CB-ReleaseVS
+    trigger: none
+  repositories:
+  - repository: DartLab
+    type: git
+    name: DevDiv/DartLab
+    ref: refs/tags/Production
+  - repository: VSTemplates
+    type: git
+    name: DevDiv/VS.Templates
+    ref: refs/heads/main
+
+parameters:
+- name: prNumber
+  type: string
+- name: headSha
+  type: string
+- name: baseSha
+  type: string
+- name: visualStudioBootstrapperURI
+  type: string
+  default: '(default)'
+- name: testMachineLab
+  displayName: DartLab-1ES Test Machine Lab
+  type: string
+  default: DotNet-Project-System-AMD64
+- name: testMachineHoldStrategy
+  displayName: Test Machine Hold Strategy
+  type: string
+  default: None
+  values:
+  - None
+  - Completion
+  - Failure
+  - Timeout
+
+extends:
+  template: /DartLab/1ES/pipelines/ci/build.yml@VSTemplates
+  parameters:
+    dartLabTemplatesRepositoryAlias: DartLab
+    testStages:
+    - template: /eng/pipelines/apex-integration/stage.yml@self
+      parameters:
+        prNumber: ${{ parameters.prNumber }}
+        headSha: ${{ parameters.headSha }}
+        baseSha: ${{ parameters.baseSha }}
+        visualStudioBootstrapperURI: ${{ parameters.visualStudioBootstrapperURI }}
+        testMachineLab: ${{ parameters.testMachineLab }}
+        testMachineHoldStrategy: ${{ parameters.testMachineHoldStrategy }}
