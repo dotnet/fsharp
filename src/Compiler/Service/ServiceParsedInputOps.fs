@@ -2613,6 +2613,16 @@ module ParsedInput =
         let res, modules =
             tryFindNearestPointAndModules currentLine parsedInput insertionPoint
 
+        let res =
+            res
+            |> Option.map (fun (scope, ns, pos) ->
+                let namingScope =
+                    { scope with
+                        ShortIdents = ns |> Option.defaultValue scope.ShortIdents
+                    }
+
+                namingScope, ns, pos)
+
         fun
             (requiresQualifiedAccessParent: ShortIdents option,
              autoOpenParent: ShortIdents option,
@@ -2626,12 +2636,7 @@ module ParsedInput =
 
             match res with
             | None -> [||]
-            | Some(scope, ns, pos) ->
-                let namingScope =
-                    { scope with
-                        ShortIdents = ns |> Option.defaultValue scope.ShortIdents
-                    }
-
+            | Some(namingScope, ns, pos) ->
                 let find () =
                     findBestPositionToInsertOpenDeclaration modules namingScope pos entity
 
