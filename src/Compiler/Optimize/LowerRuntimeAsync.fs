@@ -43,8 +43,7 @@ let private inlineCallbacks g implFile =
     let rec leadsToRuntimeAsyncReturn expr =
         match expr with
         | Expr.Let(_, rest, _, _)
-        | Expr.DebugPoint(_, rest)
-        | Expr.Op(TOp.DebugLocalScope _, [], [ rest ], _)
+        | RuntimeAsyncDebugWrapper rest
         | Expr.Sequential(_, rest, NormalSeq, _) -> leadsToRuntimeAsyncReturn rest
         | _ -> (TryGetRuntimeAsyncReturn g expr).IsSome
 
@@ -73,6 +72,13 @@ let private inlineCallbacks g implFile =
             && leadsToRuntimeAsyncReturn continuation
             ->
             Some(mkLetBind m (TBind(callback, rewrite true construction, point)) (rewrite false continuation))
+        | DelegateInvokeExpr g (invokeRef, invokeTy, tyargs, receiver, arg, m) when inContext && analyzer.ContainsSuspension receiver ->
+            let callback, callbackExpr =
+                mkCompGenLocal m "runtimeAsyncDelegate" (tyOfExpr g receiver)
+
+            callback.SetInlineIfLambda()
+            let invoke = Expr.App(invokeRef, invokeTy, tyargs, [ callbackExpr; arg ], m)
+            Some(rewrite inContext (mkCompGenLet m callback receiver invoke))
         | NewDelegateExpr g _ -> None
         | Expr.Obj _ when inContext -> Some(rewrite false expr)
         | _ -> None

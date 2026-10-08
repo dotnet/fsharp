@@ -212,10 +212,10 @@ let ReduceRuntimeAsyncReturnedClosureApplications (g: TcGlobals) (analyzer: Runt
             | _ -> false
             ->
             apply inner fty tyargs args m
-        | Expr.DebugPoint(point, inner), _ -> apply inner fty tyargs args m |> Option.map (fun r -> Expr.DebugPoint(point, r))
-        | Expr.Op(TOp.DebugLocalScope _ as op, [], [ body ], mScope), _ ->
+        | Expr.DebugPoint(_, inner), _ -> apply inner fty tyargs args m |> Option.map (RebuildRuntimeAsyncDebugWrapper f)
+        | RuntimeAsyncDebugWrapper body, _ ->
             apply body (tyOfExpr g body) tyargs args m
-            |> Option.map (fun body -> Expr.Op(op, [], [ body ], mScope))
+            |> Option.map (RebuildRuntimeAsyncDebugWrapper f)
         | Expr.Let(binding, body, mLet, _), _ ->
             apply body (tyOfExpr g body) tyargs args m
             |> Option.map (mkLetBind mLet binding)
@@ -250,10 +250,7 @@ let ReduceRuntimeAsyncReturnedClosureApplications (g: TcGlobals) (analyzer: Runt
             PostTransform =
                 (fun expression ->
                     match expression with
-                    | Expr.App((Expr.Lambda _ | Expr.Let _ | Expr.LetRec _ | Expr.Match _ | Expr.DebugPoint _ | Expr.Op(TOp.DebugLocalScope _,
-                                                                                                                        _,
-                                                                                                                        _,
-                                                                                                                        _)) as f,
+                    | Expr.App((Expr.Lambda _ | Expr.Let _ | Expr.LetRec _ | Expr.Match _ | RuntimeAsyncDebugWrapper _) as f,
                                fty,
                                tyargs,
                                args,
@@ -418,9 +415,7 @@ let private tryDefunctionalizeCallback (g: TcGlobals) m construction =
                     }
 
                 Some(List.foldBack (mkCompGenSequential m) assignments select)
-        | Expr.DebugPoint(point, body) -> defunctionalize body |> Option.map (fun body -> Expr.DebugPoint(point, body))
-        | Expr.Op(TOp.DebugLocalScope _ as op, [], [ body ], m) ->
-            defunctionalize body |> Option.map (fun body -> Expr.Op(op, [], [ body ], m))
+        | RuntimeAsyncDebugWrapper body -> defunctionalize body |> Option.map (RebuildRuntimeAsyncDebugWrapper expr)
         | Expr.Sequential(first, rest, NormalSeq, m) ->
             defunctionalize rest
             |> Option.map (fun rest -> Expr.Sequential(first, rest, NormalSeq, m))
@@ -486,8 +481,7 @@ let InlineRuntimeAsyncCallback (g: TcGlobals) (analyzer: RuntimeAsyncAnalyzer) r
     let rec tryDelegateSignature expr =
         match expr with
         | NewDelegateExpr g (_, [ parameter ], body, _, _) -> Some(parameter.Type, tyOfExpr g body)
-        | Expr.DebugPoint(_, rest)
-        | Expr.Op(TOp.DebugLocalScope _, [], [ rest ], _)
+        | RuntimeAsyncDebugWrapper rest
         | Expr.Sequential(_, rest, NormalSeq, _)
         | Expr.Let(_, rest, _, _) -> tryDelegateSignature rest
         | Expr.Match(_, _, _, targets, _, _) when targets.Length > 0 ->
@@ -504,8 +498,7 @@ let InlineRuntimeAsyncCallback (g: TcGlobals) (analyzer: RuntimeAsyncAnalyzer) r
     let rec canInlineDelegateConstruction construction =
         match construction with
         | NewDelegateExpr g (_, [ _ ], _, _, _) -> true
-        | Expr.DebugPoint(_, rest)
-        | Expr.Op(TOp.DebugLocalScope _, [], [ rest ], _) -> canInlineDelegateConstruction rest
+        | RuntimeAsyncDebugWrapper rest -> canInlineDelegateConstruction rest
         | Expr.Sequential(first, rest, NormalSeq, _) when isTrivialValue first -> canInlineDelegateConstruction rest
         | Expr.Let(TBind(_, rhs, _), rest, _, _) when isTrivialValue rhs -> canInlineDelegateConstruction rest
         | Expr.Match(_, _, TDSwitch(Expr.Val(vref, _, _), [ TCase(_, TDSuccess([], _)) ], Some(TDSuccess([], _)), _), targets, _, _) when
@@ -520,12 +513,9 @@ let InlineRuntimeAsyncCallback (g: TcGlobals) (analyzer: RuntimeAsyncAnalyzer) r
         match construction with
         | NewDelegateExpr g (_, [ _ ], _, _, _) ->
             Some(MakeFSharpDelegateInvokeAndTryBetaReduce g (invokeRef, construction, invokeTy, tyargs, arg, callRange))
-        | Expr.DebugPoint(point, rest) ->
+        | RuntimeAsyncDebugWrapper rest ->
             inlineDelegateInvoke (invokeRef, invokeTy, tyargs, arg, callRange) rest
-            |> Option.map (fun body -> Expr.DebugPoint(point, body))
-        | Expr.Op(TOp.DebugLocalScope _ as op, [], [ rest ], m) ->
-            inlineDelegateInvoke (invokeRef, invokeTy, tyargs, arg, callRange) rest
-            |> Option.map (fun body -> Expr.Op(op, [], [ body ], m))
+            |> Option.map (RebuildRuntimeAsyncDebugWrapper construction)
         | Expr.Sequential(first, rest, NormalSeq, m) when isTrivialValue first ->
             inlineDelegateInvoke (invokeRef, invokeTy, tyargs, arg, callRange) rest
             |> Option.map (fun body -> Expr.Sequential(first, body, NormalSeq, m))
@@ -655,8 +645,7 @@ let InlineRuntimeAsyncCallback (g: TcGlobals) (analyzer: RuntimeAsyncAnalyzer) r
                 | None, None -> keep construction
             | _ -> keep construction
         | Expr.Let(binding, continuation, m, _) -> mkLetBind m binding (inlineCallbacks continuation)
-        | Expr.DebugPoint(point, inner) -> Expr.DebugPoint(point, inlineCallbacks inner)
-        | Expr.Op(TOp.DebugLocalScope _ as op, [], [ body ], m) -> Expr.Op(op, [], [ inlineCallbacks body ], m)
+        | RuntimeAsyncDebugWrapper body -> RebuildRuntimeAsyncDebugWrapper expr (inlineCallbacks body)
         | Expr.Sequential(first, rest, NormalSeq, m) -> Expr.Sequential(first, inlineCallbacks rest, NormalSeq, m)
         | _ -> expr
 

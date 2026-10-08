@@ -1614,49 +1614,67 @@ let work (ready: Task<int>) =
     |> verifyPdb [ VerifyMethodSequencePoints("work", (if optimize then statementPoints else callSitePoint @ statementPoints)) ]
 
 [<Theory>]
-[<InlineData(false)>]
-[<InlineData(true)>]
-let ``runtime async conditional callback keeps mutable capture in its lexical scope`` (insideContext: bool) =
-    let source = """module MissingMutableLocal
+[<InlineData(false, false)>]
+[<InlineData(false, true)>]
+[<InlineData(true, false)>]
+[<InlineData(true, true)>]
+let ``runtime async conditional callback keeps mutable capture in its lexical scope`` (insideContext: bool, asDelegate: bool) =
+    let callbackType, callbackCall, callbackStart, callbackEnd =
+        if asDelegate then "Started<int>", "callback.Invoke()", "Started(", ")"
+        else "unit -> int", "callback ()", "", ""
+
+    let source = $"""module MissingMutableLocal
 
 open System.Threading.Tasks
 open System.Runtime.CompilerServices
 open Microsoft.FSharp.Core.CompilerServices
-
-let inline invoke ([<InlineIfLambda>] callback: unit -> int) : Task<int> =
-    StateMachineHelpers.__runtimeAsyncReturn (callback ())
+type Started<'T> = delegate of unit -> 'T
+let inline invoke ([<InlineIfLambda>] callback: {callbackType}) : Task<int> =
+    StateMachineHelpers.__runtimeAsyncReturn ({callbackCall})
 
 let run flag (ready: Task<int>) =
     let mutable count = 99
     invoke (
         if flag then
-            printfn "outer = %d" count
+            printfn "outer = %%d" count
             let mutable count = 0
-            printfn "%d" count
-            fun () ->
+            printfn "%%d" count
+            {callbackStart}fun () ->
                 let value = AsyncHelpers.Await ready
                 count <- count + value
-                count
+                count{callbackEnd}
         else
-            printfn "else = %d" count
-            fun () -> 0)
+            printfn "else = %%d" count
+            {callbackStart}fun () -> 0{callbackEnd})
 """
     let source =
         if insideContext then
             source
                 .Replace(" : Task<int> =", " =")
-                .Replace("StateMachineHelpers.__runtimeAsyncReturn (callback ())", "callback ()")
+                .Replace($"StateMachineHelpers.__runtimeAsyncReturn ({callbackCall})", callbackCall)
                 .Replace("let run flag (ready: Task<int>) =", "let run flag (ready: Task<int>) = StateMachineHelpers.__runtimeAsyncReturn (")
-                .Replace("fun () -> 0)", "fun () -> 0))")
+                .Replace($"fun () -> 0{callbackEnd})", $"fun () -> 0{callbackEnd}))")
         else
             source
+    let source = source + """
+[<EntryPoint>]
+let main _ =
+    let gate = TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously)
+    let pending = run true gate.Task
+    if pending.IsCompleted then failwith "Callback did not suspend"
+    gate.SetResult 41
+    if pending.GetAwaiter().GetResult() <> 41 then failwith "Mutable capture result changed"
+    if (run false gate.Task).GetAwaiter().GetResult() <> 0 then failwith "Other branch result changed"
+    0
+"""
     let result =
         FSharp source
+        |> asExe
         |> withLangVersionPreview
         |> withFSharpCoreShippedNet
         |> withPortablePdb
         |> withNoOptimize
-        |> compile
+        |> compileExeAndRun
         |> shouldSucceed
 
     use stream = File.OpenRead(Path.ChangeExtension(result.OutputPath.Value, "pdb"))
@@ -1717,6 +1735,57 @@ let run flag (ready: Task<int>) =
             Assert.Equal(inner.Index, invoked.Index))
     if insideContext then
         result |> verifyILNotPresent [ "FSharpRef" ]
+
+[<Theory>]
+[<InlineData(false)>]
+[<InlineData(true)>]
+let ``runtime async evaluates a conditional delegate receiver before its argument`` (optimize: bool) =
+    FSharp """
+module RuntimeAsyncDelegateEvaluationOrder
+open System.Collections.Generic
+open System.Threading.Tasks
+open System.Runtime.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices
+
+type Callback = delegate of int -> int
+
+let inline invoke ([<InlineIfLambda>] callback: Callback) (trace: ResizeArray<string>) =
+    callback.Invoke(trace.Add "argument"; 3)
+
+let run (gate: Task<int>) flag (trace: ResizeArray<string>) =
+    StateMachineHelpers.__runtimeAsyncReturn (
+        invoke (
+            if flag then
+                trace.Add "construction"
+                let mutable count = 10
+                Callback(fun x ->
+                    let value = AsyncHelpers.Await gate
+                    count <- count + value + x
+                    count)
+            else
+                trace.Add "other"
+                Callback(fun x -> x * 2)) trace)
+
+[<EntryPoint>]
+let main _ =
+    let gate = TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously)
+    let trace = ResizeArray<string>()
+    let pending = run gate.Task true trace
+    if pending.IsCompleted || trace.ToArray() <> [| "construction"; "argument" |] then
+        failwith "Receiver or argument evaluation order changed"
+    gate.SetResult 41
+    if pending.GetAwaiter().GetResult() <> 54 then failwith "Mutable capture result changed"
+    trace.Clear()
+    if (run gate.Task false trace).GetAwaiter().GetResult() <> 6
+       || trace.ToArray() <> [| "other"; "argument" |] then
+        failwith "Other branch evaluation changed"
+    0
+"""
+    |> withLangVersionPreview
+    |> withFSharpCoreShippedNet
+    |> withOptimization optimize
+    |> compileExeAndRun
+    |> shouldSucceed
 
 [<Fact>]
 let ``runtime async suspension in exception region executes`` () =

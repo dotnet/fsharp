@@ -191,6 +191,9 @@ For a residual `InlineIfLambda` delegate bound to a local, a single direct
 invocation can also be inlined through simple, effect-free conditional
 construction. Otherwise, directly rewritable invocations dispatch on the
 branch tag. Inner callback bindings are processed before the outer delegate.
+If optimization leaves a construction expression directly as an `Invoke`
+receiver, it is first bound to a compiler-owned callback and lowered through
+the same path. Receiver construction still precedes argument evaluation.
 Effectful precomputations that capture a delegate's inputs are not moved to
 its invocation, so a pending operation is created once and repeated invokes
 share captured state. A delegate that escapes or is consumed opaquely cannot
@@ -223,6 +226,11 @@ combinator is copied with its definition-site debug ranges remarked at the
 call site. User continuation arguments keep their own ranges, and the marked
 method retains a call-site sequence point even when forced inlining reduces
 its intermediate closures.
+
+Callback lowering shares recognition and rebuilding of transparent debug
+points and lexical-scope annotations. Rebuilding retains the original range,
+scope name, and storage reference; a lexical scope is not discarded when
+reducing an application through its wrapper.
 
 Dead branches eliminated by optimization do not reach code generation and do
 not produce a suspension-outside-runtime-async diagnostic.
