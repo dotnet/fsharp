@@ -230,14 +230,26 @@ module internal SymbolHelpers =
     let fileNameOfItem (g: TcGlobals) qualProjectDir (m: range) h =
         let file = m.FileName
         if verbose then dprintf "file stored in metadata is '%s'\n" file
+
+        // A relative name is relative to the directory the assembly was compiled in, as the #line names that
+        // compilers before F# 10 wrote are. A path map rewrites that directory along with the files compiled
+        // from under it, though, so such a file already starts with the directory: joining them repeats it.
+        let underDirectory (dir: string) =
+            let startsWithDirectory =
+                file.Length > dir.Length
+                && file.StartsWithOrdinal dir
+                && (file[dir.Length] = '\\' || file[dir.Length] = '/')
+
+            if startsWithDirectory then file else Path.Combine(dir, file)
+
         if not (FileSystem.IsPathRootedShim file) then
             match ccuOfItem g h with
             | Some ccu ->
-                Path.Combine(ccu.SourceCodeDirectory, file)
+                underDirectory ccu.SourceCodeDirectory
             | None ->
                 match qualProjectDir with
                 | None     -> file
-                | Some dir -> Path.Combine(dir, file)
+                | Some dir -> underDirectory dir
          else file
 
     let ParamNameAndTypesOfUnaryCustomOperation g minfo =
