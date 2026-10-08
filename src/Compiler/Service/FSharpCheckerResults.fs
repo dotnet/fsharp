@@ -2246,11 +2246,15 @@ type internal TypeCheckInfo
                         | Item.ActivePatternCase case -> FSharpAccessibility(case.ActivePatternVal.Accessibility)
                         | _ -> FSharpSymbol.Create(cenv, item).Accessibility
 
-                    let currentNamespaceOrModule =
+                    let scopeInfo =
                         parseResultsOpt
                         |> Option.map (fun x -> x.ParseTree)
-                        |> Option.map (fun parsedInput ->
-                            ParsedInput.GetFullNameOfSmallestModuleOrNamespaceAtPoint(mkPos line 0, parsedInput))
+                        |> Option.map (fun parsedInput -> ParsedInput.getScopeInfo (mkPos line 0, parsedInput))
+
+                    let currentNamespaceOrModule =
+                        scopeInfo |> Option.map (fun struct (path, _) -> path)
+
+                    let currentScope = scopeInfo |> Option.map (fun struct (_, scope) -> scope)
 
                     let isAttributeApplication =
                         match ctx with
@@ -2265,6 +2269,7 @@ type internal TypeCheckInfo
                         getAccessibility,
                         items,
                         currentNamespaceOrModule,
+                        currentScope,
                         isAttributeApplication
                     ))
             (fun msg ->

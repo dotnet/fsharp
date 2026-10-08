@@ -165,6 +165,7 @@ type public DeclarationListInfo =
         getAccessibility:(Item -> FSharpAccessibility) *
         items:CompletionItem list *
         currentNamespace:string[] option *
+        currentScope:string[] option *
         isAttributeApplicationContext:bool
             -> DeclarationListInfo
 

@@ -104,6 +104,38 @@ let ``edited document result cannot reuse an old value catalogue`` () =
     Array.iter2 (fun expected actual -> Assert.Same(expected, actual)) before (valuesIn "Catalogue" provider original)
 
 [<Fact>]
+let ``renaming an active pattern changes only the new result catalogue`` () =
+    let source =
+        """module Catalogue
+module Patterns =
+    let (|CaseA|_|) (value: int) = Some value
+"""
+
+    let document = RoslynTestHelpers.GetFsDocument source
+    let provider = AssemblyContentProvider()
+
+    let cases results =
+        provider.GetAllEntitiesInProjectAndReferencedAssemblies results
+        |> Array.filter (fun symbol ->
+            symbol.Symbol :? FSharpActivePatternCase
+            && symbol.CleanedIdents[0] = "Catalogue")
+
+    let original = check document
+    Assert.Same(original, check document)
+    let before = cases original |> Assert.Single
+
+    let changed =
+        check (document.WithText(SourceText.From(source.Replace("CaseA", "Renamed"))))
+
+    Assert.NotSame(original, changed)
+    let after = cases changed |> Assert.Single
+    Assert.Equal<string array>([| "Catalogue"; "Patterns"; "CaseA" |], before.CleanedIdents)
+    Assert.Equal<string array>([| "Catalogue"; "Patterns"; "Renamed" |], after.CleanedIdents)
+    Assert.NotSame(before.Symbol, after.Symbol)
+    Assert.Same(before, cases original |> Assert.Single)
+    Assert.Same(after, cases changed |> Assert.Single)
+
+[<Fact>]
 let ``concurrent first catalogue requests publish one symbol set`` () =
     let results = check (RoslynTestHelpers.GetFsDocument code)
     let provider = AssemblyContentProvider()

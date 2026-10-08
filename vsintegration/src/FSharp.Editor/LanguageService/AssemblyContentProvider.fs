@@ -4,7 +4,6 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
 open System.ComponentModel.Composition
-open System.Runtime.CompilerServices
 
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
@@ -14,18 +13,12 @@ type internal AssemblyContentProvider() =
     let entityCache = EntityCache()
 
     let projectContent =
-        ConditionalWeakTable<FSharpCheckFileResults, Lazy<AssemblySymbol list>>()
+        Internal.Utilities.Library.Extras.WeakMap.getOrCreate (fun (results: FSharpCheckFileResults) ->
+            lazy (AssemblyContent.GetAssemblySignatureContent AssemblyContentType.Full results.PartialAssemblySignature))
 
     member _.GetAllEntitiesInProjectAndReferencedAssemblies(fileCheckResults: FSharpCheckFileResults) =
         [|
-            yield!
-                projectContent
-                    .GetValue(
-                        fileCheckResults,
-                        fun results ->
-                            lazy (AssemblyContent.GetAssemblySignatureContent AssemblyContentType.Full results.PartialAssemblySignature)
-                    )
-                    .Value
+            yield! (projectContent fileCheckResults).Value
             // FCS sometimes returns several FSharpAssembly for single referenced assembly.
             // For example, it returns two different ones for Swensen.Unquote; the first one
             // contains no useful entities, the second one does. Our cache prevents to process

@@ -182,6 +182,8 @@ module public ParsedInput =
 
     val GetEntityKind: pos: pos * parsedInput: ParsedInput -> EntityKind option
 
+    val internal getScopeInfo: pos: pos * parsedInput: ParsedInput -> struct (ShortIdents * ShortIdents)
+
     val GetFullNameOfSmallestModuleOrNamespaceAtPoint: pos: pos * parsedInput: ParsedInput -> string[]
 
     /// Returns `InsertContext` based on current position and symbol idents.
@@ -212,6 +214,7 @@ module public ParsedInput =
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module internal Entity =
+    val getRelativeNamespace: targetNs: ShortIdents -> sourceNs: ShortIdents -> ShortIdents
 
     val getOpenableNamespace:
         requiresQualifiedAccessParent: ShortIdents option ->

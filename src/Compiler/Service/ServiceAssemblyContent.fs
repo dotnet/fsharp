@@ -186,8 +186,11 @@ module AssemblyContent =
               UnresolvedSymbol = UnresolvedSymbol topRequireQualifiedAccessParent cleanedIdents fullName ns }
 
     let isPublic (symbol: FSharpSymbol) =
-        match symbol.Item with
-        | Item.ActivePatternCase case -> case.ActivePatternVal.Accessibility.IsPublic
+        match symbol with
+        | :? FSharpActivePatternCase ->
+            match symbol.Item with
+            | Item.ActivePatternCase case -> case.ActivePatternVal.Accessibility.IsPublic
+            | _ -> symbol.Accessibility.IsPublic
         | _ -> symbol.Accessibility.IsPublic
 
     let traverseMemberFunctionAndValues (createSymbol: string -> ShortIdents -> FSharpSymbol -> bool -> AssemblySymbol) (membersFunctionsAndValues: seq<FSharpMemberOrFunctionOrValue>) =

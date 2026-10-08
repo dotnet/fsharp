@@ -40,13 +40,20 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
         let insertionLineNumber = ctx.Pos.Line - 2
         let margin = String(' ', ctx.Pos.Column)
 
+        let getLineStr line =
+            sourceText.Lines[line].ToString().Trim()
+
+        let skipBlank line =
+            if getLineStr line = "" then line + 1 else line
+
         let startLineNumber, openDeclaration =
             match ctx.ScopeKind with
             | ScopeKind.TopModule ->
                 match sourceText.Lines[insertionLineNumber].ToString().Trim() with
 
                 // explicit top level module
-                | line when line.StartsWith "module" && not (line.EndsWith "=") -> insertionLineNumber + 2, $"{margin}open {ns}{br}{br}"
+                | line when line.StartsWith "module" && not (line.EndsWith "=") ->
+                    skipBlank (insertionLineNumber + 1), $"{margin}open {ns}{br}{br}"
 
                 // nested module, shouldn't be here
                 | line when line.StartsWith "module" -> insertionLineNumber, $"{margin}open {ns}{br}{br}"
@@ -54,8 +61,10 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
                 // implicit top level module
                 | _ -> insertionLineNumber, $"{margin}open {ns}{br}{br}"
 
-            | ScopeKind.Namespace -> insertionLineNumber + 3, $"{margin}open {ns}{br}{br}"
-            | ScopeKind.NestedModule -> insertionLineNumber + 2, $"{margin}open {ns}{br}{br}"
+            | ScopeKind.Namespace
+            | ScopeKind.NestedModule ->
+                let pos = OpenDeclarationHelper.getInsertionPosition getLineStr ctx
+                skipBlank (Line.toZ pos.Line), $"{margin}open {ns}{br}{br}"
             | ScopeKind.OpenDeclaration -> insertionLineNumber + 1, $"{margin}open {ns}{br}"
             | ScopeKind.HashDirective -> insertionLineNumber + 1, $"open {ns}{br}{br}"
 
