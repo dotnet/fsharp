@@ -399,18 +399,19 @@ type CapturingDiagnosticsLogger(nm, ?eagerFormat) =
             | None -> diagnostic
             | Some f -> f diagnostic
 
-        if diagnostic.Severity = FSharpDiagnosticSeverity.Error then
-            errorCount <- errorCount + 1
+        lock diagnostics (fun () ->
+            if diagnostic.Severity = FSharpDiagnosticSeverity.Error then
+                errorCount <- errorCount + 1
 
-        diagnostics.Add(diagnostic)
+            diagnostics.Add(diagnostic))
 
     override _.ErrorCount = errorCount
 
-    member _.Diagnostics = diagnostics |> Seq.toList
+    member _.Diagnostics = lock diagnostics (fun () -> List.ofSeq diagnostics)
 
     member _.CommitDelayedDiagnostics(diagnosticsLogger: DiagnosticsLogger) =
         // A sink can report back into this logger while replaying, so iterate a snapshot.
-        let snapshot = diagnostics.ToArray()
+        let snapshot = lock diagnostics diagnostics.ToArray
         snapshot |> Array.iter diagnosticsLogger.DiagnosticSink
 
 let buildPhase = AsyncLocal<BuildPhase voption>()
