@@ -28,7 +28,6 @@ type LanguageFeature =
     | ErrorOnDeprecatedRequireQualifiedAccess
     | MatchNotAllowedForUnionCaseWithNoData
     | CSharpExtensionAttributeNotRequired
-    | ErrorForNonVirtualMembersOverrides
     | WarningWhenCopyAndUpdateRecordChangesAllFields
     | WarningWhenMultipleRecdTypeChoice
     | WarningWhenTailRecAttributeButNonTailRecUsage
@@ -132,7 +131,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
                 // F# 8.0
                 LanguageFeature.MatchNotAllowedForUnionCaseWithNoData, languageVersion80
                 LanguageFeature.CSharpExtensionAttributeNotRequired, languageVersion80
-                LanguageFeature.ErrorForNonVirtualMembersOverrides, languageVersion80
                 LanguageFeature.WarningWhenCopyAndUpdateRecordChangesAllFields, languageVersion80
                 LanguageFeature.WarningWhenMultipleRecdTypeChoice, languageVersion80
                 LanguageFeature.WarningWhenTailRecAttributeButNonTailRecUsage, languageVersion80
@@ -298,7 +296,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
         | LanguageFeature.ErrorOnDeprecatedRequireQualifiedAccess -> FSComp.SR.featureErrorOnDeprecatedRequireQualifiedAccess ()
         | LanguageFeature.MatchNotAllowedForUnionCaseWithNoData -> FSComp.SR.featureMatchNotAllowedForUnionCaseWithNoData ()
         | LanguageFeature.CSharpExtensionAttributeNotRequired -> FSComp.SR.featureCSharpExtensionAttributeNotRequired ()
-        | LanguageFeature.ErrorForNonVirtualMembersOverrides -> FSComp.SR.featureErrorForNonVirtualMembersOverrides ()
         | LanguageFeature.WarningWhenCopyAndUpdateRecordChangesAllFields ->
             FSComp.SR.featureWarningWhenCopyAndUpdateRecordChangesAllFields ()
         | LanguageFeature.WarningWhenMultipleRecdTypeChoice -> FSComp.SR.featureWarningWhenMultipleRecdTypeChoice ()

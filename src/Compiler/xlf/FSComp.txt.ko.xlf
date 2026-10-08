@@ -372,11 +372,6 @@
         <target state="translated">AttributeTargets 적용</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureErrorForNonVirtualMembersOverrides">
-        <source>Raises errors for non-virtual members overrides</source>
-        <target state="translated">비가상 멤버 재정의에 대한 오류 발생</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureErrorOnBitwiseOpsOnNonIntegralEnums">
         <source>Error when bitwise operators are used on enums whose underlying type is not an integer type (e.g. char).</source>
         <target state="new">Error when bitwise operators are used on enums whose underlying type is not an integer type (e.g. char).</target>

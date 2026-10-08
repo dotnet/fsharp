@@ -18,7 +18,6 @@ type LanguageFeature =
     | ErrorOnDeprecatedRequireQualifiedAccess
     | MatchNotAllowedForUnionCaseWithNoData
     | CSharpExtensionAttributeNotRequired
-    | ErrorForNonVirtualMembersOverrides
     | WarningWhenCopyAndUpdateRecordChangesAllFields
     | WarningWhenMultipleRecdTypeChoice
     | WarningWhenTailRecAttributeButNonTailRecUsage
