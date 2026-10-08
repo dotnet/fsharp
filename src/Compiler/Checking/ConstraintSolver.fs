@@ -1823,9 +1823,7 @@ and SolveMemberConstraintImpl (csenv: ConstraintSolverEnv) ignoreUnresolvedOverl
 
             let argTys = if memFlags.IsInstance then List.tail traitObjAndArgTys else traitObjAndArgTys
 
-            let candidates = GetRelevantMethodsForTrait csenv permitWeakResolution nm traitInfo
-            let minfos = candidates.All
-            let intrinsicMinfos = candidates.Intrinsic
+            let struct (intrinsicMinfos, minfos) = GetRelevantMethodsForTrait csenv permitWeakResolution nm traitInfo
             let arithmeticMinfos =
                 match minfos, argTys with
                 | _ :: _, [argTy1; argTy2]
@@ -2380,7 +2378,7 @@ and TransactMemberConstraintSolution traitInfo (trace: OptionalTrace) sln  =
 /// Only consider overload resolution if canonicalizing or all the types are now nominal.
 /// That is, don't perform resolution if more nominal information may influence the set of available overloads
 and GetRelevantMethodsForTrait (csenv: ConstraintSolverEnv) (permitWeakResolution: PermitWeakResolution) nm traitInfo
-    : struct {| Intrinsic: (TType * MethInfo) list; All: (TType * MethInfo) list |} =
+    : struct ((TType * MethInfo) list * (TType * MethInfo) list) =
     let results =
         if permitWeakResolution.Permit || MemberConstraintSupportIsReadyForDeterminingOverloads csenv traitInfo then
             let m = csenv.m
@@ -2431,18 +2429,16 @@ and GetRelevantMethodsForTrait (csenv: ConstraintSolverEnv) (permitWeakResolutio
                 else
                     []
 
-            struct {| Intrinsic = minfos; All = [ yield! minfos; yield! extMinfos ] |}
+            struct (minfos, [ yield! minfos; yield! extMinfos ])
         else
-            struct {| Intrinsic = []; All = [] |}
+            struct ([], [])
 
     // The trait name "op_Explicit" also covers "op_Implicit", so look for that one too.
     if nm = "op_Explicit" then
         let traitInfo2 = traitInfo.WithMemberName "op_Implicit"
-        let implicitResults = GetRelevantMethodsForTrait csenv permitWeakResolution "op_Implicit" traitInfo2
-        struct {|
-            Intrinsic = [ yield! results.Intrinsic; yield! implicitResults.Intrinsic ]
-            All = [ yield! results.All; yield! implicitResults.All ]
-        |}
+        let struct (intrinsicMinfos, minfos) = results
+        let struct (implicitIntrinsicMinfos, implicitMinfos) = GetRelevantMethodsForTrait csenv permitWeakResolution "op_Implicit" traitInfo2
+        struct ([ yield! intrinsicMinfos; yield! implicitIntrinsicMinfos ], [ yield! minfos; yield! implicitMinfos ])
     else
         results
 
