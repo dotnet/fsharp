@@ -368,4 +368,13 @@ Use live (unsaved) buffers for analysis</value>
   <data name="ReturnsHeader" xml:space="preserve">
     <value>Returns:</value>
   </data>
+  <data name="UseDotNetOptionalParameter" xml:space="preserve">
+    <value>Use [&lt;Optional; DefaultParameterValue&gt;] for optional parameter</value>
+  </data>
+  <data name="UseFSharpOptionalParameter" xml:space="preserve">
+    <value>Use F# '?' optional parameter</value>
+  </data>
+  <data name="UseFSharpStructOptionalParameter" xml:space="preserve">
+    <value>Use F# '[&lt;Struct&gt;] ?' optional parameter</value>
+  </data>
 </root>
