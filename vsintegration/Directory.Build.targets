@@ -15,6 +15,9 @@
     <PackageReference Include="System.Reflection.Metadata" Version="$(SystemReflectionMetadataVersion)" PrivateAssets="all" ExcludeAssets="contentFiles;analyzers;native" />
     <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="$(SystemRuntimeCompilerServicesUnsafeVersion)" PrivateAssets="all" ExcludeAssets="contentFiles;analyzers;native" />
 	<PackageReference Include="System.Diagnostics.DiagnosticSource" Version="$(SystemDiagnosticsDiagnosticSourceVersion)" PrivateAssets="all" ExcludeAssets="contentFiles;analyzers;native" />
+    <PackageReference Update="Microsoft.Build;Microsoft.Build.Framework;Microsoft.Build.Tasks.Core;Microsoft.Build.Utilities.Core" Version="17.14.8" Condition="'$(MSBuildProjectName)' == 'VisualFSharp.UnitTests'" />
+    <PackageReference Update="System.Diagnostics.DiagnosticSource;System.Reflection.Metadata" Version="9.0.0" Condition="'$(MSBuildProjectName)' == 'VisualFSharp.UnitTests'" />
+    <PackageReference Update="System.Memory" Version="4.6.0" Condition="'$(MSBuildProjectName)' == 'VisualFSharp.UnitTests'" />
   </ItemGroup>
 
   <!-- New VS does not allow embedded interop assemblies ... this turns off the target that turns it on -->

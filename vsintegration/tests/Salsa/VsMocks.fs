@@ -1319,7 +1319,6 @@ module internal VsMocks =
             member x.UnregisterLoggers(submissionId) = 0
             member x.BeginDesignTimeBuild() =
                 muxLogger := new MuxLogger()
-                (!muxLogger).Add(new Microsoft.Build.Logging.ConsoleLogger(LoggerVerbosity.Quiet))
                 let buildParameters = new BuildParameters(Microsoft.Build.Evaluation.ProjectCollection.GlobalProjectCollection)
                 buildParameters.Loggers <- ([ ((!muxLogger) :> ILogger) ] :> System.Collections.Generic.IEnumerable<ILogger>)
                 buildParameters.HostServices <- Microsoft.Build.Evaluation.ProjectCollection.GlobalProjectCollection.HostServices
