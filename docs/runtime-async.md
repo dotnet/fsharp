@@ -134,35 +134,85 @@ declaration.
 ## Optimization
 
 `Optimizer.fs` preserves the marker application as-is, optimizing its
-argument and rewriting any suspending exception handlers in that argument.
-The marked expression is forced to `HasEffect = true` and `UnknownValue`, so
-the optimizer never inlines, duplicates, or discards it. The marker therefore
-survives optimization as an ordinary `Expr.App` node; nothing else in the
-typed tree records that a method is runtime-async.
+argument. The marked expression is forced to `HasEffect = true` and
+`UnknownValue`, so the optimizer never inlines, duplicates, or discards it.
+The marker therefore survives optimization as an ordinary `Expr.App` node;
+nothing else in the typed tree records that a method is runtime-async.
 
 Inline values whose bodies contain a return marker or an `AsyncHelpers`
 suspension are recursively specialized at their call sites, including when
 optimization is disabled. The analysis follows inline and local values with a
 cycle guard, and `InlineIfLambda` arguments are forced through when the caller
-is already in a runtime-async context. The optimizer follows nested inline
-calls and does not create a generated helper method for the specialized
-suspension fragment, keeping every suspension in the eventual runtime-async
-method.
+is already in a runtime-async context. Ordinary inlining is tried first;
+applications of returned lambdas are reduced when their remaining arguments
+can safely move across the returned closure's construction. This handles
+computation-expression shapes where `Bind` returns a closure containing
+`Await`, and later `Combine`/`Delay` calls apply it. Inside a runtime-async expansion, captures
+that wrap an `InlineIfLambda` lambda or delegate (`let p = (let c = e in fun
+...)`) are floated above the binding so the callback can be inlined; they are
+still evaluated at the same point.
 
-After specialization, lambda arguments are substituted and their applications
-are beta-reduced before and after runtime-async reoptimization. This includes
-debug-point-wrapped lambdas, compiler-generated `let` wrappers, curried
-applications, and multi-argument lambdas.
-That step is required for computation-expression shapes where `Bind` returns a
-closure containing `Await`, and later `Combine`/`Delay` calls apply that closure.
+## Runtime-async lowering
+
+`LowerRuntimeAsync.fs` runs once per file after the first optimization loop,
+so it sees the final inlined shape rather than an intermediate optimizer
+state, and before `LowerLocalMutables`, so mutable locals it introduces that
+closures capture are promoted to reference cells. It has two steps.
+
+First, if a compiler-owned `InlineIfLambda` function or delegate still
+contains a suspension, a fully rewritable, single-argument callback is
+inlined into the enclosing method. The ordinary optimizer already inlines a
+callback whose construction ends in one lambda, including after `let` or
+effect prefixes and at repeated invocations. What remains is a construction
+that selects a lambda by branching (`if`/`match`). It is defunctionalized:
+the construction runs once, in place, and each lambda in tail position is
+replaced by an assignment of its branch tag and of the construction locals it
+captures to mutable locals of the enclosing method. Each invocation binds its
+argument once and dispatches on the tag to a copy of the selected lambda body.
+Construction effects happen once, captured state is shared across
+invocations, and every `Await` stays in the runtime-async method, so
+`ExecutionContext` changes such as `AsyncLocal` writes behave as in source
+order. Only the specialized copy changes, not the exported inline definition
+or source signature. This applies within a runtime-async body or sequence
+recipe, and to a callback bound immediately before a runtime-async body
+together with the callbacks its construction captures. Opaque consumers,
+escaping callbacks, unsupported callback shapes (including `try`/`with` in
+tail position), and unsafe byref or pinned captures are not rewritten;
+suspensions remaining in an ordinary method, such as a closure, are diagnosed
+with FS3918.
+
+The ordinary optimizer can inline an `Invoke` on a constructed delegate.
+For a residual `InlineIfLambda` delegate bound to a local, a single direct
+invocation can also be inlined through simple, effect-free conditional
+construction. Otherwise, directly rewritable invocations dispatch on the
+branch tag. Inner callback bindings are processed before the outer delegate.
+Effectful precomputations that capture a delegate's inputs are not moved to
+its invocation, so a pending operation is created once and repeated invokes
+share captured state. A delegate that escapes or is consumed opaquely cannot
+be converted. IlxGen checks each generated delegate `Invoke` as its own
+method: an `Await` left there without a return marker produces FS3918, even
+when the enclosing method is runtime-async. Exported inline definitions remain
+unchanged.
+
+Each invocation copies every branch body, so code size grows with the number
+of invocations times the number of branches. When the copies would exceed
+2000 expression nodes, the callback is left as a closure and a suspension in
+it is reported as FS3918.
+
+Second, every return-marker body is prepared once after callbacks are inlined,
+innermost first: locals that cannot be preserved across a suspension are
+reported (once per range across the compilation), and suspending exception
+handlers are rewritten. Preparing afterwards means an `Await` that callback
+or delegate inlining moves into a handler is still rewritten.
+`__runtimeAsyncSequence` recipes are not prepared here; `LowerAsyncSeq`
+prepares their `MoveNextAsync` body after state-machine conversion, which is
+where sequence `try`/`with` is lowered.
 
 When runtime-async specialization is forced in a debug build, the builder
-combinator is copied with its definition-site debug ranges remarked before
-arguments are substituted. User continuation arguments keep their own ranges,
-so `let!`, `do!`, `yield`, and other
-computation-expression statements remain associated with the source that
-authored them without exposing the implementation ranges of `Run`, `Bind`,
-`Combine`, or `Yield`.
+combinator is copied with its definition-site debug ranges remarked at the
+call site. User continuation arguments keep their own ranges, and the marked
+method retains a call-site sequence point even when forced inlining reduces
+its intermediate closures.
 
 Dead branches eliminated by optimization do not reach code generation and do
 not produce a suspension-outside-runtime-async diagnostic.
@@ -173,7 +223,7 @@ Runtime-async boundary recognition is centralized in
 use the shared recognizers rather than matching typed-tree shapes
 independently.
 
-The optimizer uses a context-local `RuntimeAsyncAnalyzer`. It memoizes
+The optimizer and the lowering pass use a context-local `RuntimeAsyncAnalyzer`. It memoizes
 completed expression results by reference identity and inline-value results by
 value stamp, with a visiting set for recursive inline-value graphs. The cache
 is not global: optimizer environments can provide different inline bodies, and
@@ -235,10 +285,9 @@ body (`DecideExpr`), promoting its free mutable locals to reference cells so
 the synthesized closure and the enclosing scope share them.
 
 `InvokeFast` is not a separate runtime-async path. It is the closure-erasure
-shape for an indirect call with multiple arguments. Fragment substitution and
-beta reduction happen before closure erasure; if a suspending fragment survives
-until an indirect `InvokeFast` call, it is still outside a runtime-async method
-and is rejected by code generation.
+shape for an indirect call with multiple arguments. Forced inlining and
+eligible callback inlining happen before closure erasure; a suspension left
+behind an opaque indirect invocation is rejected by code generation.
 
 ## Runtime capability check
 

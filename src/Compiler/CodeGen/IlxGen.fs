@@ -8046,7 +8046,8 @@ and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod(slotsig, _attribs,
                                                                methInst,
                                                                leadingArgs) ->
                 if
-                    ilMethodDirectlyBindable
+                    not (IsRuntimeAsyncSuspensionMethod g ilMethRef)
+                    && ilMethodDirectlyBindable
                         (Optimizer.ExprHasEffect Optimizer.EffectContext.Emit)
                         g
                         tmvs
@@ -8135,8 +8136,14 @@ and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod(slotsig, _attribs,
         let ilDelegeeParams, ilDelegeeRet =
             GenActualSlotsig m cenv envForDelegeeUnderTypars slotsig methTyparsOfOverridingMethod tmvs
 
+        // The enclosing method's runtime-async marker does not apply to the delegate's Invoke.
         let envForDelegeeMeth =
-            AddStorageForLocalVals g (List.mapi (fun i v -> (v, Arg(i + numthis))) tmvs) envForDelegeeUnderTypars
+            let env =
+                AddStorageForLocalVals g (List.mapi (fun i v -> (v, Arg(i + numthis))) tmvs) envForDelegeeUnderTypars
+
+            { env with
+                inRuntimeAsyncMethod = false
+            }
 
         let ilMethodBody =
             CodeGenMethodForExpr
