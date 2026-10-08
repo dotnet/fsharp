@@ -89,17 +89,17 @@ let ``edited document result cannot reuse an old value catalogue`` () =
     Assert.NotSame(original, changed)
     let after = valuesIn "Catalogue" provider changed
 
-    Assert.Equal<string array>(
-        [| "Duplicate"; "Duplicate"; "Unique" |],
-        before
-        |> Array.map (fun symbol -> Array.last symbol.CleanedIdents)
-        |> Array.sort
-    )
-
-    Assert.Equal<string array>(
-        [| "Renamed"; "Renamed"; "Unique" |],
-        after |> Array.map (fun symbol -> Array.last symbol.CleanedIdents) |> Array.sort
-    )
+    for expected, symbols in
+        [
+            [| "Duplicate"; "Duplicate"; "Unique" |], before
+            [| "Renamed"; "Renamed"; "Unique" |], after
+        ] do
+        Assert.Equal<string array>(
+            expected,
+            symbols
+            |> Array.map (fun symbol -> Array.last symbol.CleanedIdents)
+            |> Array.sort
+        )
 
     Array.iter2 (fun expected actual -> Assert.Same(expected, actual)) before (valuesIn "Catalogue" provider original)
 

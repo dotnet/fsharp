@@ -1954,10 +1954,7 @@ module ParsedInput =
 
         SyntaxTraversal.Traverse(pos, parsedInput, visitor) |> ignore
 
-        let idents (path: LongIdent) =
-            path |> List.map (fun x -> x.idText) |> List.toArray
-
-        struct (idents path, idents scope)
+        struct (arrPathOfLid path, arrPathOfLid scope)
 
     let GetFullNameOfSmallestModuleOrNamespaceAtPoint (pos: pos, parsedInput: ParsedInput) =
         let struct (path, _) = getScopeInfo (pos, parsedInput)
