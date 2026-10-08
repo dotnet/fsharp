@@ -51,7 +51,7 @@ try {
         'api-head-changed' = 'PR is closed'
         'api-base-changed' = 'PR is closed'
         'api-failure' = 'GitHub unavailable'
-        'wrong-trusted-checkout' = 'trusted main checkout'
+        'wrong-reviewed-checkout' = 'reviewed PR checkout'
         'invalid-input' = 'headSha'
     }
     foreach ($case in $cases.Keys) {
@@ -62,6 +62,8 @@ try {
         Push-Location $case
         try {
             Invoke-FixtureGit config "url.$remote.insteadOf" 'https://github.com/dotnet/fsharp.git'
+            Invoke-FixtureGit fetch -q --depth=1 $remote refs/pull/1/head
+            Invoke-FixtureGit checkout -q --detach $head
             $pr = @{
                 state = 'open'
                 head = @{ sha = $head }
@@ -77,9 +79,9 @@ try {
                 'non-main' { $pr.base.ref = 'release/test' }
                 'api-head-changed' { $pr.head.sha = $later }
                 'api-base-changed' { $pr.base.sha = $later }
-                'wrong-trusted-checkout' {
-                    Invoke-FixtureGit fetch -q --depth=1 $remote refs/pull/1/head
-                    Invoke-FixtureGit checkout -q --detach $head
+                'wrong-reviewed-checkout' {
+                    Invoke-FixtureGit fetch -q --depth=1 $remote refs/heads/main
+                    Invoke-FixtureGit checkout -q --detach $base
                 }
                 'invalid-input' { $expectedHead = 'not-a-sha' }
             }

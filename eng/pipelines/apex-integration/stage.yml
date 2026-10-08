@@ -136,12 +136,15 @@ stages:
         if ($LASTEXITCODE -ne 0) { throw 'git init failed.' }
         git -C $sourceRoot remote add origin https://github.com/dotnet/fsharp.git
         if ($LASTEXITCODE -ne 0) { throw 'git remote add failed.' }
-        git -C $sourceRoot fetch --no-tags --depth=1 origin $env:TRUSTED_SOURCE_SHA
-        if ($LASTEXITCODE -ne 0) { throw 'Fetching the trusted pipeline source revision failed.' }
+        if ($env:PIPELINE_SOURCE_SHA -cne $env:HEAD_SHA) {
+            throw 'The pipeline YAML revision does not match the reviewed PR head.'
+        }
+        git -C $sourceRoot fetch --no-tags --depth=1 origin $env:PIPELINE_SOURCE_SHA
+        if ($LASTEXITCODE -ne 0) { throw 'Fetching the reviewed pipeline source revision failed.' }
         git -C $sourceRoot checkout --detach FETCH_HEAD
-        if ($LASTEXITCODE -ne 0) { throw 'Checking out the trusted pipeline source revision failed.' }
-        if ((git -C $sourceRoot rev-parse HEAD).Trim() -cne $env:TRUSTED_SOURCE_SHA) {
-            throw 'The trusted source checkout does not match Build.SourceVersion.'
+        if ($LASTEXITCODE -ne 0) { throw 'Checking out the reviewed pipeline source revision failed.' }
+        if ((git -C $sourceRoot rev-parse HEAD).Trim() -cne $env:PIPELINE_SOURCE_SHA) {
+            throw 'The reviewed source checkout does not match Build.SourceVersion.'
         }
         Push-Location $sourceRoot
         try {
@@ -151,7 +154,7 @@ stages:
             Pop-Location
         }
       environmentVariables:
-        TRUSTED_SOURCE_SHA: $(Build.SourceVersion)
+        PIPELINE_SOURCE_SHA: $(Build.SourceVersion)
         PR_NUMBER: ${{ parameters.prNumber }}
         HEAD_SHA: ${{ parameters.headSha }}
         BASE_SHA: ${{ parameters.baseSha }}

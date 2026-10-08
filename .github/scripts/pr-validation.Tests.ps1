@@ -8,8 +8,8 @@ function Assert($Condition, $Message) {
 }
 
 function Assert-Snapshot($Request) {
-    Assert ($Request.resources.repositories.self.refName -ceq 'refs/heads/main') 'Wrong YAML ref'
-    Assert ($Request.resources.repositories.self.version -ceq ('b' * 40)) 'Wrong YAML revision'
+    Assert ($Request.resources.repositories.self.refName -ceq 'refs/pull/42/head') 'Wrong YAML ref'
+    Assert ($Request.resources.repositories.self.version -ceq ('a' * 40)) 'Wrong YAML revision'
     Assert ($Request.templateParameters.prNumber -is [string] -and $Request.templateParameters.prNumber -ceq '42') 'PR number must be a string'
     Assert ($Request.templateParameters.headSha -ceq ('a' * 40)) 'Wrong head snapshot'
     Assert ($Request.templateParameters.baseSha -ceq ('b' * 40)) 'Wrong base snapshot'
@@ -35,7 +35,7 @@ function Invoke-WebRequest {
 
 function Test-Case($Name, [scriptblock]$Change = {}, $ExpectedError = '', $Mode = 'Prepare', $CallCount = -1) {
     $event = @{
-        comment = @{ body = '/dart'; user = @{ login = 'maintainer'; type = 'User' } }
+        comment = @{ body = "/dart $('a' * 40)"; user = @{ login = 'maintainer'; type = 'User' } }
         issue = @{ number = 42; pull_request = @{} }
     }
     $pr = @{
@@ -45,7 +45,7 @@ function Test-Case($Name, [scriptblock]$Change = {}, $ExpectedError = '', $Mode 
     }
     $permission = @{ permission = 'write' }
     $request = @{
-        resources = @{ repositories = @{ self = @{ refName = 'refs/heads/main'; version = 'b' * 40 } } }
+        resources = @{ repositories = @{ self = @{ refName = 'refs/pull/42/head'; version = 'a' * 40 } } }
         templateParameters = @{ prNumber = '42'; headSha = 'a' * 40; baseSha = 'b' * 40 }
     }
     $permissionUri = 'https://api.github.com/repos/dotnet/fsharp/collaborators/maintainer/permission'
@@ -100,8 +100,8 @@ function Test-Case($Name, [scriptblock]$Change = {}, $ExpectedError = '', $Mode 
                 $expected = if ($env:RUN_URL) { '[F# Apex run](https://example.invalid/run) requested by @maintainer.' }
                 else { 'F# Apex request failed. [Workflow details](https://github.com/dotnet/fsharp/actions/runs/987).' }
                 Assert ($body.StartsWith($expected)) 'Wrong PR feedback'
-                Assert ($body.Contains('`/dart`') -and $body.Contains('`/pr-val`')) 'Missing retry guidance'
-                if ($env:RUN_URL) { Assert ($body.Contains("PR head: ``$env:HEAD_SHA``") -and $body.Contains("Base: ``$env:BASE_SHA``")) 'Missing snapshot identifiers' }
+                Assert ($body.Contains('`/dart <sha>`') -and $body.Contains('`/pr-val <sha>`')) 'Missing retry guidance'
+                if ($env:RUN_URL) { Assert ($body.Contains("Reviewed PR head and pipeline YAML: ``$env:HEAD_SHA``") -and $body.Contains("Base: ``$env:BASE_SHA``")) 'Missing snapshot identifiers' }
             }
         }
         if ($CallCount -lt 0) { $CallCount = if ($Mode -eq 'Prepare') { 2 } else { 1 } }
@@ -112,13 +112,18 @@ function Test-Case($Name, [scriptblock]$Change = {}, $ExpectedError = '', $Mode 
 }
 
 try {
-    foreach ($command in '/dart', '/pr-val', " `n/pr-val `n") {
+    foreach ($command in "/dart $('a' * 40)", "/pr-val $('a' * 40)", " `n/pr-val $('a' * 40) `n") {
         foreach ($authorRepo in 'dotnet/fsharp', 'contributor/fsharp') {
             Test-Case "$command from $authorRepo" { $event.comment.body = $command; $pr.head.repo.full_name = $authorRepo }
         }
     }
-    foreach ($command in '/dart abc1234', 'please /dart', '`/dart`', "/dart`n/pr-val", '/dart-extra', '/DART', "/dart`nextra", '', $null, 42) {
+    foreach ($command in '/dart', '/pr-val', '/dart abc1234', 'please /dart', '`/dart`', "/dart`n/pr-val", '/dart-extra', '/DART', "/dart`nextra", "/dart $('A' * 40)", "/dart $('a' * 39)", "/dart $('a' * 41)", "/dart $('g' * 40)", "/dart $('a' * 40) extra", "/dart`n$('a' * 40)", "/dart  $('a' * 40)", '', $null, 42) {
         Test-Case "reject command '$command'" { $event.comment.body = $command } 'standalone' -CallCount 0
+    }
+    foreach ($alias in 'dart', 'pr-val') {
+        Test-Case "$alias rejects base SHA" { $event.comment.body = "/$alias $('b' * 40)" } 'current PR head' -CallCount 2
+        Test-Case "$alias rejects stale reviewed SHA" { $event.comment.body = "/$alias $('c' * 40)" } 'current PR head' -CallCount 2
+        Test-Case "$alias rejects updated PR head" { $event.comment.body = "/$alias $('a' * 40)"; $pr.head.sha = 'c' * 40 } 'current PR head' -CallCount 2
     }
     foreach ($access in 'write', 'maintain', 'admin') { Test-Case "permission $access" { $permission.permission = $access } }
     foreach ($access in 'read', 'triage', 'WRITE', '', $null, @('write')) { Test-Case "reject permission '$access'" { $permission.permission = $access } 'write access' -CallCount 1 }

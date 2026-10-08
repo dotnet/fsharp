@@ -35,9 +35,10 @@ if ($Mode -ne 'Queue') {
 switch ($Mode) {
     'Prepare' {
         if ($event.comment.user.type -isnot [string] -or $event.comment.user.type -cne 'User') { throw 'Only user comments can request validation.' }
-        if ($event.comment.body -isnot [string] -or $event.comment.body.Trim() -cnotmatch '\A/(dart|pr-val)\z') {
-            throw 'Use a standalone /dart or /pr-val, without a SHA argument.'
+        if ($event.comment.body -isnot [string] -or $event.comment.body.Trim() -cnotmatch '\A/(dart|pr-val) ([0-9a-f]{40})\z') {
+            throw 'Use a standalone /dart <sha> or /pr-val <sha> with the full 40-character current PR head SHA.'
         }
+        $requestedSha = $Matches[2]
         $permission = Invoke-Api "$repoApi/collaborators/$login/permission" $env:GITHUB_TOKEN
         if ($permission -is [array] -or $permission.permission -isnot [string] -or
             $permission.permission -cnotin 'write', 'maintain', 'admin') { throw 'The requester needs repository write access.' }
@@ -51,8 +52,11 @@ switch ($Mode) {
         foreach ($sha in $headSha, $baseSha) {
             if ($sha -isnot [string] -or $sha -cnotmatch '\A[0-9a-f]{40}\z') { throw 'GitHub did not return full head/base commit SHAs.' }
         }
+        if ($requestedSha -cne $headSha) {
+            throw 'The requested SHA does not match the current PR head. Review the current commit and request a new run.'
+        }
         $request = @{
-            resources = @{ repositories = @{ self = @{ refName = 'refs/heads/main'; version = $baseSha } } }
+            resources = @{ repositories = @{ self = @{ refName = "refs/pull/$prNumber/head"; version = $requestedSha } } }
             templateParameters = @{ prNumber = "$prNumber"; headSha = $headSha; baseSha = $baseSha }
         }
         $json = ConvertTo-Json -InputObject $request -Depth 10 -Compress
@@ -75,10 +79,10 @@ switch ($Mode) {
     'Report' {
         $workflowUrl = "$env:GITHUB_SERVER_URL/dotnet/fsharp/actions/runs/$env:GITHUB_RUN_ID"
         $body = if ($env:RUN_URL) {
-            "[F# Apex run]($env:RUN_URL) requested by @$($event.comment.user.login).`n`nPR head: ``$env:HEAD_SHA```nBase: ``$env:BASE_SHA```n`nThe run will fail before building if the PR merge does not match this snapshot. Changes require a new ``/dart`` or ``/pr-val`` comment."
+            "[F# Apex run]($env:RUN_URL) requested by @$($event.comment.user.login).`n`nReviewed PR head and pipeline YAML: ``$env:HEAD_SHA```nBase: ``$env:BASE_SHA```n`nThe run verifies the PR merge against this snapshot before building. Changes require review and a new ``/dart <sha>`` or ``/pr-val <sha>`` comment."
         }
         else {
-            "F# Apex request failed. [Workflow details]($workflowUrl). Use a standalone ``/dart`` or ``/pr-val`` on an open PR targeting ``main``; the requester needs repository write access and Microsoft-org membership."
+            "F# Apex request failed. [Workflow details]($workflowUrl). Use a standalone ``/dart <sha>`` or ``/pr-val <sha>`` with the full current PR head SHA after reviewing code and pipeline YAML. The PR must target ``main`` and the requester needs repository write access and Microsoft-org membership."
         }
         $null = Invoke-Api "$repoApi/issues/$prNumber/comments" $env:GITHUB_TOKEN -Method POST -Body @{ body = $body } -ExpectedStatus 201
     }

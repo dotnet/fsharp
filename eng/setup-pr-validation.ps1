@@ -24,8 +24,8 @@ function Invoke-Git {
     $output | ForEach-Object { "$_" }
 }
 
-if ((Invoke-Git rev-parse HEAD) -ne $baseSha) {
-    throw 'Expected the trusted main checkout at the captured base SHA.'
+if ((Invoke-Git rev-parse HEAD) -ne $headSha) {
+    throw 'Expected the reviewed PR checkout at the captured head SHA.'
 }
 
 $repository = 'https://github.com/dotnet/fsharp.git'
