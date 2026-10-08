@@ -298,19 +298,11 @@ open Microsoft.FSharp.Core.Operators
     static let postProcessString (s: string) =
         s.Replace(""\\n"",""\n"").Replace(""\\t"",""\t"").Replace(""\\r"",""\r"").Replace(""\\\"""", ""\"""")
 
-    static let mutable swallowResourceText = false
-
-    static let FormatMessage(messageID: string, swallowedFormat: string, args: objnull array) : string =
-        if swallowResourceText then
-            System.String.Format(System.Globalization.CultureInfo.InvariantCulture, swallowedFormat, args)
-        else
-            System.String.Format(postProcessString (GetString messageID), args)
+    static let FormatMessage(messageID: string, args: objnull array) : string =
+        System.String.Format(postProcessString (GetString messageID), args)
 
     static member GetTextOpt(key:string) : string option = GetString(key) |> Option.ofObj
 
-    /// If set to true, then all error messages will just return the filled 'holes' delimited by ',,,'s - this is for language-neutral testing (e.g. localization-invariant baselines).
-    static member SwallowResourceText with get () = swallowResourceText
-                                        and set (b) = swallowResourceText <- b
     // END BOILERPLATE
 "
 
@@ -319,8 +311,6 @@ open Microsoft.FSharp.Core.Operators
 
     static member GetTextOpt: key:string -> string option
 
-    /// If set to true, then all error messages will just return the filled 'holes' delimited by ',,,'s - this is for language-neutral testing (e.g. localization-invariant baselines).
-    static member SwallowResourceText: bool with get, set
     // END BOILERPLATE"
 
     /// Marks a generated file as having the overloads taking classified text, and brings RichText into
@@ -480,21 +470,6 @@ open Microsoft.FSharp.Core.Operators
                     fprintfn out "    /// (Originally from %s:%d)" fileName (lineNum + 1)
                     fprintfn outSignature "    /// (Originally from %s:%d)" fileName (lineNum + 1)
 
-                    let swallowedFormat =
-                        (holes
-                         |> Array.mapi (fun index holeType ->
-                             let format =
-                                 match holeType with
-                                 | "System.Int32"
-                                 | "System.String" -> ""
-                                 | "System.UInt32" -> ":x"
-                                 | "System.Double" -> ":F6"
-                                 | _ -> failwith "unreachable"
-
-                             $",,,{{{index}{format}}}")
-                         |> String.concat "")
-                        + ",,,"
-
                     let boxedArgs =
                         holes |> Array.mapi (fun index _ -> $"box a{index}") |> String.concat "; "
 
@@ -510,8 +485,7 @@ open Microsoft.FSharp.Core.Operators
                     let numberedReturnsRichText = richText && optErrNum.IsSome
 
                     let messageExpr =
-                        let getString =
-                            $"""FormatMessage("{ident}", "{swallowedFormat}", [| {boxedArgs} |])"""
+                        let getString = $"""FormatMessage("{ident}", [| {boxedArgs} |])"""
 
                         if numberedReturnsRichText then
                             sprintf "RichText.mkText (%s)" getString
