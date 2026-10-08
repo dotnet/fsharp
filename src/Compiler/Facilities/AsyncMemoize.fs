@@ -60,10 +60,11 @@ type AsyncLazy<'t> private (initial: AsyncLazyState<'t>, cancelUnawaited: bool, 
             return! work |> Async.AwaitTask
         }
 
-    let onComplete (t: Task<'t>) =
+    // Only complete the run that produced this result. The run may have been canceled and replaced by a new one.
+    let onComplete (runCts: CancellationTokenSource) (t: Task<'t>) =
         updateState
         <| function
-            | Running(computation, _, _, _) ->
+            | Running(computation, _, cts, _) when obj.ReferenceEquals(cts, runCts) ->
                 try
                     Completed t.Result
                 with exn ->
@@ -80,7 +81,7 @@ type AsyncLazy<'t> private (initial: AsyncLazyState<'t>, cancelUnawaited: bool, 
             let work =
                 Async
                     .StartAsTask(computation, cancellationToken = cts.Token)
-                    .ContinueWith(onComplete, TaskContinuationOptions.NotOnCanceled)
+                    .ContinueWith(onComplete cts, TaskContinuationOptions.NotOnCanceled)
 
             Running(computation, work, cts, 1), detachable work
         | Running(c, work, cts, count) -> Running(c, work, cts, count + 1), detachable work
