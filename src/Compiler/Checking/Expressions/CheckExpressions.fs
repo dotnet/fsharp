@@ -4268,7 +4268,6 @@ let rec TcTyparConstraint ridx (cenv: cenv) newOk checkConstraints occ (env: TcE
         TcConstraintWhereTyparSupportsMember cenv env newOk tpenv synSupportTys synMemberSig m
 
     | SynTypeConstraint.WhereSelfConstrained(ty, m) ->
-        checkLanguageFeatureAndRecover g.langVersion LanguageFeature.SelfTypeConstraints m
         let tyR, tpenv = TcTypeAndRecover cenv newOk checkConstraints ItemOccurrence.UseInType WarnOnIWSAM.No env tpenv ty
         match tyR with
         | TType_app(tcref, tinst, _) when (tcref.IsTypeAbbrev && (isTyparTy g tcref.TypeAbbrev.Value) && tinst |> List.forall (isTyparTy g)) ->
@@ -7682,20 +7681,14 @@ and TcConstStringExpr cenv (overallTy: OverallTy) env m tpenv (s: string) litera
 
     let g = cenv.g
 
-
-    match isFormat g overallTy.Commit, literalType with
-    | true, LiteralArgumentType.StaticField ->
-        checkLanguageFeatureAndRecover g.langVersion LanguageFeature.NonInlineLiteralsAsPrintfFormat m
+    if isFormat g overallTy.Commit then
         TcFormatStringExpr cenv overallTy env m tpenv s literalType
-
-    | true, LiteralArgumentType.Inline ->
-        TcFormatStringExpr cenv overallTy env m tpenv s literalType
-
-    | false, LiteralArgumentType.StaticField ->
-        Expr.Const (TcFieldInit m (ILFieldInit.String s), m, g.string_ty), tpenv
-
-    | false, LiteralArgumentType.Inline ->
-        TcPropagatingExprLeafThenConvert cenv overallTy g.string_ty env (* true *) m (fun () ->
+    else
+        match literalType with
+        | LiteralArgumentType.StaticField ->
+            Expr.Const (TcFieldInit m (ILFieldInit.String s), m, g.string_ty), tpenv
+        | LiteralArgumentType.Inline ->
+            TcPropagatingExprLeafThenConvert cenv overallTy g.string_ty env (* true *) m (fun () ->
                 mkString g m s, tpenv)
 
 and TcFormatStringExpr cenv (overallTy: OverallTy) env m tpenv (fmtString: string) formatStringLiteralType =
@@ -10671,11 +10664,6 @@ and TcMethodApplication_CheckArguments
                                       ValFlag = WellKnownValAttributes.NoEagerConstraintApplicationAttribute
                                       AttributeName = "Microsoft.FSharp.Core.CompilerServices.NoEagerConstraintApplicationAttribute" }
                                     meth.Method
-
-                            // The logic associated with NoEagerConstraintApplicationAttribute is part of the
-                            // Tasks and Resumable Code RFC
-                            if noEagerConstraintApplication && not (g.langVersion.SupportsFeature LanguageFeature.ResumableStateMachines) then
-                                errorR(Error(FSComp.SR.tcNoEagerConstraintApplicationAttribute(), mMethExpr))
 
                             let extraRigidTps = if noEagerConstraintApplication then Zset.ofList typarOrder (freeInTypeLeftToRight g true callerTy) else emptyFreeTypars
 
