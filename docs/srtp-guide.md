@@ -207,18 +207,14 @@ Without the attribute, these overloads would produce an ambiguity error. Note th
 
 ## Design Intent: Aspirational Patterns
 
-> **⚠️ MOSTLY ASPIRATIONAL**: The patterns below are taken from the RFC to illustrate the
-> long-term design intent. Except where a subsection explicitly shows a working example, they do
-> **not** compile with the current implementation. Cross-type operator extensions (e.g.,
-> `float + int`) interact with built-in operator resolution in complex ways that are not yet
-> supported. Do not rely on the aspirational snippets in production code.
+The patterns below describe RFC design goals. Only the examples marked as supported compile.
+Some cross-type operator extensions work. Other combinations fail when a built-in solution requires both operands to have one type.
 
-### Numeric Widening via Extension Operators (NOT IMPLEMENTED)
+### Numeric Widening via Extension Operators (LIMITED)
 
-The RFC describes retrofitting widening conversions onto primitive types:
+The following extension supports integer-to-floating-point addition:
 
 ```fsharp
-// ⚠️ ASPIRATIONAL — does not compile
 type System.Int32 with
     static member inline widen_to_double (a: int32) : double = double a
 
@@ -227,11 +223,12 @@ let inline widen_to_double (x: ^T) : double = (^T : (static member widen_to_doub
 type System.Double with
     static member inline (+)(a: double, b: 'T) : double = a + widen_to_double b
     static member inline (+)(a: 'T, b: double) : double = widen_to_double a + b
+
+let result = 1 + 2.0  // 3.0
 ```
 
-> **Warning**: Defining `(+)` extensions on `System.Double` would shadow built-in
-> arithmetic for all `float` operations in scope. This pattern requires careful design
-> to avoid degrading error messages and performance for existing code.
+Built-in `float + float` still takes priority over the extensions.
+Built-in integer addition rejects mixed integer operands such as `1 + 2L`.
 
 ### Defining op_Implicit via Extension Members
 
