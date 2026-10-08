@@ -1823,14 +1823,18 @@ and SolveMemberConstraintImpl (csenv: ConstraintSolverEnv) ignoreUnresolvedOverl
 
             let argTys = if memFlags.IsInstance then List.tail traitObjAndArgTys else traitObjAndArgTys
 
-            let minfos = GetRelevantMethodsForTrait csenv permitWeakResolution nm traitInfo
-
-            // Exclude extensions from built-in rules (primitives take precedence)
-            let intrinsicMinfos =
-                if extensionsEnabled then
-                    minfos |> List.filter (fun (_, minfo) -> not minfo.IsExtensionMember)
-                else
-                    minfos
+            let candidates = GetRelevantMethodsForTrait csenv permitWeakResolution nm traitInfo
+            let minfos = candidates.All
+            let intrinsicMinfos = candidates.Intrinsic
+            let arithmeticMinfos =
+                match minfos, argTys with
+                | _ :: _, [argTy1; argTy2]
+                    when extensionsEnabled &&
+                         (IsRelationalType g argTy1 || IsIntegerOrIntegerEnumTy g argTy1 ||
+                          IsRelationalType g argTy2 || IsIntegerOrIntegerEnumTy g argTy2) &&
+                         TypesFeasiblyEquivStripMeasures g amap m argTy1 argTy2 ->
+                    intrinsicMinfos
+                | _ -> minfos
 
             let! res =
                 trackErrors {
@@ -1869,10 +1873,10 @@ and SolveMemberConstraintImpl (csenv: ConstraintSolverEnv) ignoreUnresolvedOverl
                                     //   - Neither type contributes any methods OR
                                     //   - We have the special case "decimal<_> * decimal". In this case we have some
                                     //     possibly-relevant methods from "decimal" but we ignore them in this case.
-                                    (isNil minfos || (Option.isSome (getMeasureOfType g argTy1) && isDecimalTy g argTy2)) &&
+                                    (isNil arithmeticMinfos || (Option.isSome (getMeasureOfType g argTy1) && isDecimalTy g argTy2)) &&
                                     // Skip built-in rule for concrete non-numeric types when traitCtxt=None (inlined from FSharp.Core)
                                     (not extensionsEnabled ||
-                                     not (isNil minfos) ||
+                                     not (isNil arithmeticMinfos) ||
                                      isTyparTy g argTy2 || IsNumericOrIntegralEnumType g argTy2) in
 
                                 checkRuleAppliesInPreferenceToMethods argTy1 argTy2 ||
@@ -1902,7 +1906,7 @@ and SolveMemberConstraintImpl (csenv: ConstraintSolverEnv) ignoreUnresolvedOverl
 
                     | _, _, false, ("op_Addition" | "op_Subtraction" | "op_Modulus"), [argTy1;argTy2]
                         when // Ignore any explicit +/- overloads from any basic integral types
-                            (minfos |> List.forall (fun (_, minfo) -> isIntegerTy g minfo.ApparentEnclosingType ) &&
+                            (arithmeticMinfos |> List.forall (fun (_, minfo) -> isIntegerTy g minfo.ApparentEnclosingType ) &&
                                 (   IsAddSubModType nm g argTy1 && IsBinaryOpOtherArgType g permitWeakResolution argTy2
                                 || IsAddSubModType nm g argTy2 && IsBinaryOpOtherArgType g permitWeakResolution argTy1)) ->
                         do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace argTy2 argTy1
@@ -1911,7 +1915,7 @@ and SolveMemberConstraintImpl (csenv: ConstraintSolverEnv) ignoreUnresolvedOverl
 
                     | _, _, false, ("op_LessThan" | "op_LessThanOrEqual" | "op_GreaterThan" | "op_GreaterThanOrEqual" | "op_Equality" | "op_Inequality" ), [argTy1;argTy2]
                         when // Ignore any explicit overloads from any basic integral types
-                            (minfos |> List.forall (fun (_, minfo) -> isIntegerTy g minfo.ApparentEnclosingType ) &&
+                            (arithmeticMinfos |> List.forall (fun (_, minfo) -> isIntegerTy g minfo.ApparentEnclosingType ) &&
                                 (   IsRelationalType g argTy1 && IsBinaryOpOtherArgType g permitWeakResolution argTy2
                                 || IsRelationalType g argTy2 && IsBinaryOpOtherArgType g permitWeakResolution argTy1)) ->
                         do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace argTy2 argTy1
@@ -2375,7 +2379,8 @@ and TransactMemberConstraintSolution traitInfo (trace: OptionalTrace) sln  =
 
 /// Only consider overload resolution if canonicalizing or all the types are now nominal.
 /// That is, don't perform resolution if more nominal information may influence the set of available overloads
-and GetRelevantMethodsForTrait (csenv: ConstraintSolverEnv) (permitWeakResolution: PermitWeakResolution) nm traitInfo : (TType * MethInfo) list =
+and GetRelevantMethodsForTrait (csenv: ConstraintSolverEnv) (permitWeakResolution: PermitWeakResolution) nm traitInfo
+    : struct {| Intrinsic: (TType * MethInfo) list; All: (TType * MethInfo) list |} =
     let results =
         if permitWeakResolution.Permit || MemberConstraintSupportIsReadyForDeterminingOverloads csenv traitInfo then
             let m = csenv.m
@@ -2426,14 +2431,18 @@ and GetRelevantMethodsForTrait (csenv: ConstraintSolverEnv) (permitWeakResolutio
                 else
                     []
 
-            minfos @ extMinfos
+            struct {| Intrinsic = minfos; All = [ yield! minfos; yield! extMinfos ] |}
         else
-            []
+            struct {| Intrinsic = []; All = [] |}
 
     // The trait name "op_Explicit" also covers "op_Implicit", so look for that one too.
     if nm = "op_Explicit" then
         let traitInfo2 = traitInfo.WithMemberName "op_Implicit"
-        results @ GetRelevantMethodsForTrait csenv permitWeakResolution "op_Implicit" traitInfo2
+        let implicitResults = GetRelevantMethodsForTrait csenv permitWeakResolution "op_Implicit" traitInfo2
+        struct {|
+            Intrinsic = [ yield! results.Intrinsic; yield! implicitResults.Intrinsic ]
+            All = [ yield! results.All; yield! implicitResults.All ]
+        |}
     else
         results
 

@@ -1019,23 +1019,77 @@ let r2 = resolve "hello"
             (Error 1, Line 16, Col 18, Line 16, Col 25, "None of the types 'string, Default1' support the operator 'Resolve'")
         ]
 
-    [<Fact>]
-    let ``Built-in operator wins over extension on same type`` () =
-        FSharp """
-module Test
-type System.Int32 with
-    static member (+) (a: int, b: int) = a * b  // deliberately wrong
+    [<Theory>]
+    [<InlineData("--optimize+", "--realsig+", false)>]
+    [<InlineData("--optimize-", "--realsig+", false)>]
+    [<InlineData("--optimize+", "--realsig-", false)>]
+    [<InlineData("--optimize-", "--realsig-", false)>]
+    [<InlineData("--optimize+", "--realsig+", true)>]
+    [<InlineData("--optimize-", "--realsig+", true)>]
+    [<InlineData("--optimize+", "--realsig-", true)>]
+    [<InlineData("--optimize-", "--realsig-", true)>]
+    let ``Built-in operator wins over extension on same type`` optimize realsig openType =
+        let declaration ty name =
+            if openType then $"type {name} =" else $"type {ty} with"
+        let openScope =
+            if openType then "open type IntOps\nopen type StringOps\nopen type FloatOps" else ""
+        let library =
+            FSharp """
+module Library
+let inline add x y = x + y
+let inline addExplicit< ^T when ^T : (static member (+): ^T * ^T -> ^T)> (x: ^T) (y: ^T) = x + y
+let inline multiply x y = x * y
+#nowarn "77"
+let inline less x y = ((^T or ^U): (static member op_LessThan: ^T * ^U -> bool) (x, y))
+#warnon "77"
+            """
+            |> asLibrary
+            |> withName "Library"
+            |> withLangVersionPreview
+            |> withOptions [ optimize; realsig ]
 
-let r1 = 1 + 2  // built-in must win, not the extension
-if r1 <> 3 then failwith (sprintf "Expected 3, got %d" r1)
-
+        FSharp $"""
+module Consumer
+let evaluate quote = FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation quote
+{declaration "System.Int32" "IntOps"}
+    static member (+) (_: int, _: int) = -1
+{declaration "System.String" "StringOps"}
+    static member (+) (_: string, _: string) = "poison"
+    static member (+) (s: string, n: int) = System.String.Concat(s, string n)
+    static member op_LessThan(_: string, _: string) = false
+    static member op_LessThan(_: string, _: int) = true
+{declaration "System.Double" "FloatOps"}
+    static member (+) (n: float, other: int) = n + float other
+    static member (*) (_: float, _: float) = -1.0
+    static member (*) (n: float, s: string) = System.String.Concat(s, string n)
+{openScope}
 let inline addGeneric (x: ^T) (y: ^T) = x + y
-let r2 = addGeneric 1 2  // built-in must win even through SRTP
-if r2 <> 3 then failwith (sprintf "Expected 3, got %d" r2)
+[<EntryPoint>]
+let main _ =
+    if 1 + 2 <> 3 || addGeneric 1 2 <> 3 then failwith "Incorrect local integer addition"
+    let additions =
+        [ Library.add "a" "b"; Library.addExplicit<string> "a" "b"
+          evaluate <@ Library.add "a" "b" @> :?> string
+          evaluate <@ Library.addExplicit<string> "a" "b" @> :?> string ]
+    if additions <> [ "ab"; "ab"; "ab"; "ab" ] then failwith $"Incorrect built-in witnesses: {{additions}}"
+    if Library.multiply 2.0 3.0 <> 6.0 || (evaluate <@ Library.multiply 2.0 3.0 @> :?> float) <> 6.0 then
+        failwith "Incorrect floating-point multiplication"
+    if Library.add 2.0 3 <> 5.0 || (evaluate <@ Library.add 2.0 3 @> :?> float) <> 5.0 then
+        failwith "Incorrect built-in addition inside an extension"
+    if not (Library.less "a" "b") || not (evaluate <@ Library.less "a" "b" @> :?> bool) then
+        failwith "Incorrect built-in comparison"
+    if Library.add "a" 3 <> "a3" || (evaluate <@ Library.add "a" 3 @> :?> string) <> "a3" then
+        failwith "Incorrect mixed addition extension"
+    if Library.multiply 2.0 "a" <> "a2" || (evaluate <@ Library.multiply 2.0 "a" @> :?> string) <> "a2" then
+        failwith "Incorrect mixed multiplication extension"
+    if not (Library.less "a" 3) || not (evaluate <@ Library.less "a" 3 @> :?> bool) then
+        failwith "Incorrect mixed comparison extension"
+    0
         """
-        |> asExe
         |> withLangVersionPreview
-        |> compileAndRun
+        |> withOptions [ optimize; realsig ]
+        |> withReferences [ library ]
+        |> compileExeAndRun
         |> shouldSucceed
 
     // ========================================================================
