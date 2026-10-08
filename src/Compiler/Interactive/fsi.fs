@@ -44,7 +44,6 @@ open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.DiagnosticsLogger
-open FSharp.Compiler.Features
 open FSharp.Compiler.IlxGen
 open FSharp.Compiler.Interactive
 open FSharp.Compiler.InfoReader
@@ -1345,15 +1344,14 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
             """    #help "idn";;                                 // %s"""
             (FSIstrings.SR.fsiIntroTextHashhelpdocInfo ())
 
-        if tcConfigB.langVersion.SupportsFeature(LanguageFeature.PackageManagement) then
-            for msg in
-                dependencyProvider.GetRegisteredDependencyManagerHelpText(
-                    tcConfigB.compilerToolPaths,
-                    getOutputDir tcConfigB,
-                    tcConfigB.sdkDirOverride,
-                    reportError m
-                ) do
-                fsiConsoleOutput.uprintfn "%s" msg
+        for msg in
+            dependencyProvider.GetRegisteredDependencyManagerHelpText(
+                tcConfigB.compilerToolPaths,
+                getOutputDir tcConfigB,
+                tcConfigB.sdkDirOverride,
+                reportError m
+            ) do
+            fsiConsoleOutput.uprintfn "%s" msg
 
         fsiConsoleOutput.uprintfn """    #clear;;                                      // %s""" (FSIstrings.SR.fsiIntroTextHashclearInfo ())
 
@@ -2956,12 +2954,8 @@ type internal FsiDynamicCompiler
             istate, CompletedWithAlreadyReportedError
 
         | _, NonNull dependencyManager ->
-            if tcConfigB.langVersion.SupportsFeature(LanguageFeature.PackageManagement) then
-                fsiDynamicCompiler.AddDelayedDependencyManagerText(dependencyManager, directiveKind, m, path)
-                istate, Completed None
-            else
-                errorR (Error(FSComp.SR.packageManagementRequiresVFive (), m))
-                istate, Completed None
+            fsiDynamicCompiler.AddDelayedDependencyManagerText(dependencyManager, directiveKind, m, path)
+            istate, Completed None
 
         | _, _ when directiveKind = Directive.Include ->
             errorR (Error(FSComp.SR.poundiNotSupportedByRegisteredDependencyManagers (), m))

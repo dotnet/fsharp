@@ -6,12 +6,9 @@ module internal FSharp.Compiler.Features
 /// LanguageFeature enumeration
 [<RequireQualifiedAccess>]
 type LanguageFeature =
-    | PackageManagement
     | FromEndSlicing
-    | ResumableStateMachines
     | RuntimeAsync
     | WitnessPassing
-    | AdditionalTypeDirectedConversions
     | StringInterpolation
     | ExpandedMeasurables
     | NullnessChecking
@@ -19,12 +16,10 @@ type LanguageFeature =
     | AttributesToRightOfModuleKeyword
     | ReallyLongLists
     | ErrorOnDeprecatedRequireQualifiedAccess
-    | SelfTypeConstraints
     | MatchNotAllowedForUnionCaseWithNoData
     | CSharpExtensionAttributeNotRequired
     | ErrorForNonVirtualMembersOverrides
     | WarningWhenCopyAndUpdateRecordChangesAllFields
-    | NonInlineLiteralsAsPrintfFormat
     | WarningWhenMultipleRecdTypeChoice
     | ConstraintIntersectionOnFlexibleTypes
     | UnmanagedConstraintCsharpInterop
