@@ -3305,10 +3305,55 @@ let GetMethodArgs arg =
                   // do not abort overload resolution in case if named arguments are mixed with errors
                   match argExpr with
                   | SynExpr.ArbitraryAfterError _ -> None
+                  | SynExpr.Ident id ->
+                      errorR (Error(FSComp.SR.tcNameArgumentsMustAppearLast(), argExpr.Range))
+                      Some(false, id, SynExpr.ArbitraryAfterError("namedArgWithoutValue", id.idRange.EndRange))
                   | _ -> error(Error(FSComp.SR.tcNameArgumentsMustAppearLast(), argExpr.Range))
               | namedArg -> namedArg)
 
     unnamedCallerArgs, namedCallerArgs
+
+let RecordNamedArgsOfMethodApplication (cenv: cenv) (env: TcEnv) (ad: AccessorDomain) (calledMeth: CalledMeth<'T>) =
+    let container = ArgumentContainer.Method calledMeth.Method
+
+    for argSet in calledMeth.ArgSets do
+        for assignedArg in argSet.AssignedNamedArgs do
+            match assignedArg.NamedArgIdOpt with
+            | None -> ()
+            | Some id ->
+                let calledArgId = defaultArg assignedArg.CalledArg.NameOpt id
+                let item = Item.OtherName (Some calledArgId, assignedArg.CalledArg.CalledArgumentType, None, Some container, calledArgId.idRange)
+                CallNameResolutionSink cenv.tcSink (id.idRange, env.NameEnv, item, emptyTyparInst, ItemOccurrence.Use, ad)
+
+let RecordFailedMethodApplication (cenv: cenv) (env: TcEnv) (ad: AccessorDomain) afterResolution (calledMethGroup: CalledMeth<'T> list) =
+    match cenv.tcSink.CurrentSink, calledMethGroup with
+    | None, _ -> ()
+    | Some _, [] ->
+        match afterResolution with
+        | AfterResolution.RecordResolution(_, _, _, onFailure) -> onFailure()
+        | AfterResolution.DoNothing -> ()
+    | Some _, _ ->
+        let calledMeth =
+            calledMethGroup
+            |> List.maxBy (fun calledMeth ->
+                calledMeth.TotalNumUnnamedCalledArgs >= calledMeth.TotalNumUnnamedCallerArgs,
+                calledMeth.TotalNumAssignedNamedArgs + calledMeth.NumAssignedProps)
+
+        match afterResolution with
+        | AfterResolution.RecordResolution(_, _, callSink, _) -> callSink (calledMeth.Method, calledMeth.AssociatedPropertyInfo, calledMeth.CalledTyparInst)
+        | AfterResolution.DoNothing -> ()
+
+        RecordNamedArgsOfMethodApplication cenv env ad calledMeth
+
+        // TcSetterArgExpr does not run for an unresolved call
+        for AssignedItemSetter(id, setter, _) in calledMeth.AssignedItemSetters do
+            let defnItem =
+                match setter with
+                | AssignedPropSetter (_, pinfo, _, _) -> Item.Property (pinfo.PropertyName, [pinfo], None)
+                | AssignedILFieldSetter finfo -> Item.ILField finfo
+                | AssignedRecdFieldSetter rfinfo -> Item.RecdField rfinfo
+
+            CallNameResolutionSink cenv.tcSink (id.idRange, env.NameEnv, Item.SetterArg (id, defnItem), emptyTyparInst, ItemOccurrence.Use, ad)
 
 let NotNullIfNotNullParamNames g (minfo: MethInfo) =
     match minfo with
@@ -10771,18 +10816,15 @@ and TcMethodApplication
     let unnamedCurriedCallerArgs, namedCurriedCallerArgs, lambdaVars, returnTy, tpenv =
         TcMethodApplication_CheckArguments cenv env exprTy curriedCallerArgsOpt candidates preArgumentTypeCheckingCalledMethGroup callerObjArgTys ad mMethExpr mItem tpenv
 
-    let preArgumentTypeCheckingCalledMethGroup =
-       preArgumentTypeCheckingCalledMethGroup |> List.map (fun cmeth -> (cmeth.Method, cmeth.CalledTyArgs, cmeth.AssociatedPropertyInfo, cmeth.UsesParamArrayConversion))
-
     let uniquelyResolved =
         match uniquelyResolved with
-        | ErrorResult _ ->
-            match afterResolution with
-            | AfterResolution.DoNothing -> ()
-            | AfterResolution.RecordResolution(_, _, _, onFailure) -> onFailure()
+        | ErrorResult _ -> RecordFailedMethodApplication cenv env ad afterResolution preArgumentTypeCheckingCalledMethGroup
         | _ -> ()
 
         uniquelyResolved |> CommitOperationResult
+
+    let preArgumentTypeCheckingCalledMethGroup =
+       preArgumentTypeCheckingCalledMethGroup |> List.map (fun cmeth -> (cmeth.Method, cmeth.CalledTyArgs, cmeth.AssociatedPropertyInfo, cmeth.UsesParamArrayConversion))
 
     // STEP 3. Resolve overloading
     /// Select the called method that's the result of overload resolution
@@ -10870,8 +10912,8 @@ and TcMethodApplication
         | AfterResolution.RecordResolution(_, _, callSink, _), Some result ->
             (result.Method, result.AssociatedPropertyInfo, result.CalledTyparInst) |> callSink
 
-        | AfterResolution.RecordResolution(_, _, _, onFailure), None ->
-            onFailure()
+        | AfterResolution.RecordResolution _, None ->
+            RecordFailedMethodApplication cenv env ad afterResolution postArgumentTypeCheckingCalledMethGroup
 
         // Raise the errors from the constraint solving
         RaiseOperationResult errors
@@ -10910,23 +10952,11 @@ and TcMethodApplication
 
     /// STEP 5. Build the argument list. Adjust for optional arguments, byref arguments and coercions.
 
-    let objArgPreBinder, objArgs, allArgsPreBinders, allArgs, allArgsCoerced, optArgPreBinder, paramArrayPreBinders, outArgExprs, outArgTmpBinds =
+    let objArgPreBinder, objArgs, allArgsPreBinders, allArgsCoerced, optArgPreBinder, paramArrayPreBinders, outArgExprs, outArgTmpBinds =
         let tcVal = LightweightTcValForUsingInBuildMethodCall g env.TraitContext
         AdjustCallerArgs tcVal TcFieldInit env.eCallerMemberName cenv.infoReader ad finalCalledMeth objArgs lambdaVars mItem mMethExpr
 
-    // Record the resolution of the named argument for the Language Service
-    allArgs |> List.iter (fun assignedArg ->
-        match assignedArg.NamedArgIdOpt with
-        | None -> ()
-        | Some id ->
-            let idOpt = Some (defaultArg assignedArg.CalledArg.NameOpt id)
-            let m =
-                match assignedArg.CalledArg.NameOpt with
-                | Some id -> id.idRange
-                | None -> id.idRange
-            let container = ArgumentContainer.Method finalCalledMethInfo
-            let item = Item.OtherName (idOpt, assignedArg.CalledArg.CalledArgumentType, None, Some container, m)
-            CallNameResolutionSink cenv.tcSink (id.idRange, env.NameEnv, item, emptyTyparInst, ItemOccurrence.Use, ad))
+    RecordNamedArgsOfMethodApplication cenv env ad finalCalledMeth
 
     /// STEP 6. Build the call expression, then adjust for byref-returns, out-parameters-as-tuples, post-hoc property assignments, methods-as-first-class-value,
 
