@@ -4,8 +4,8 @@ run-name: "Build failure analysis command ${{ github.event.comment.id }}"
 description: >-
   Reruns build-failure analysis when a maintainer comments
   `/analyze-build-failure` on a pull request. It analyzes only that PR's newest
-  completed, failed `fsharp-ci` build and attempts a checked fix on an eligible
-  same-repository PR branch.
+  completed, failed `fsharp-ci` build and attempts a checked branch fix or a
+  contributor-reviewable patch.
 
 on:
   slash_command:
@@ -216,7 +216,10 @@ safe-outputs:
       fix_status:
         type: string
         enum: [validated, failed, blocked, not-needed]
-    required: [workflow_artifact, artifact_kind, fix_status]
+      fix_delivery:
+        type: string
+        enum: [push, patch, none]
+    required: [workflow_artifact, artifact_kind, fix_status, fix_delivery]
     additionalProperties: false
   report-failure-as-issue: false
   add-comment:
@@ -230,6 +233,11 @@ safe-outputs:
     fallback-as-pull-request: false
     protected-files: blocked
     max-patch-size: 64
+  create-pull-request-review-comment:
+    max: 3
+    target: ${{ needs.fetch-binlog.outputs.pr-number }}
+    side: RIGHT
+    commit-id: ${{ needs.fetch-binlog.outputs.pr-head-sha }}
   noop:
     max: 1
     report-as-issue: false

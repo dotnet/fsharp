@@ -1,23 +1,11 @@
 name: Build failure workflow tests
 
+# PR authors repair failures before merge; @dotnet/fsharp-team-msft owns triage
+# under CODEOWNERS. build-failure-analysis-test-failure.yml notifies them.
 on:
   pull_request:
-    paths:
-      - .github/agents/build-failure-analyst.agent.md
-      - .github/workflows/build-failure-analysis*
-      - .github/workflows/shared/build-failure-analysis-shared.md
-      - .github/workflows/scripts/fetch-build-binlogs.fsx
-      - .github/workflows/tests/**
-      - .github/aw/actions-lock.json
   push:
     branches: [main]
-    paths:
-      - .github/agents/build-failure-analyst.agent.md
-      - .github/workflows/build-failure-analysis*
-      - .github/workflows/shared/build-failure-analysis-shared.md
-      - .github/workflows/scripts/fetch-build-binlogs.fsx
-      - .github/workflows/tests/**
-      - .github/aw/actions-lock.json
   schedule:
     - cron: "23 6 * * 1"
   workflow_dispatch:

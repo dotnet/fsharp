@@ -17,15 +17,19 @@ const input = JSON.parse(fs.readFileSync(0, "utf8"));
 const outputs = {};
 const context = {
   repo: {owner: "dotnet", repo: "test"},
-  payload: {comment: {id: 123, created_at: "2026-10-01T00:00:00Z"}},
+  payload: {comment: {id: input.request ?? 123, created_at: "2026-10-01T00:00:00Z"}, issue: {number: 7}},
 };
-const core = {setOutput: (key, value) => outputs[key] = value, notice() {}};
+const core = {setOutput: (key, value) => outputs[key] = value, notice() {}, info() {}};
 const github = {
-  rest: {actions: {listJobsForWorkflowRunAttempt: "jobs",
+  rest: {issues: {listComments: "comments"}, pulls: {listReviewComments: "reviews"},
+    actions: {listJobsForWorkflowRunAttempt: "jobs",
     async listWorkflowRuns() {
       return {data: {total_count: input.runs.length, workflow_runs: input.runs}};
     }}},
   async paginate(method, options) {
+    if (method === "comments" || method === "reviews") {
+      return input[method] || [];
+    }
     return input.jobs[`${options.run_id}:${options.attempt_number}`] || [];
   },
 };
@@ -124,8 +128,8 @@ class CommandPublicationTests(unittest.TestCase):
             self.check["with"]["script"].strip(),
         )
 
-    def test_fix_publication_requires_checked_same_repository_changes(self):
-        def summary(status):
+    def test_fix_delivery_requires_validation_and_blocks_fork_pushes(self):
+        def summary(status, delivery=None):
             return {
                 "type": "add_comment",
                 "body": "Build failure",
@@ -133,6 +137,7 @@ class CommandPublicationTests(unittest.TestCase):
                     "workflow_artifact": "build-failure-analysis",
                     "artifact_kind": "analysis",
                     "fix_status": status,
+                    "fix_delivery": delivery or ("push" if status == "validated" else "none"),
                 },
             }
 
@@ -142,6 +147,10 @@ class CommandPublicationTests(unittest.TestCase):
             ("checked-fix", [push, summary("validated")], "dotnet/test", True),
             ("unverified-fix", [push, summary("failed")], "dotnet/test", False),
             ("fork-fix", [push, summary("validated")], "contributor/test", False),
+            ("fork-patch", [summary("validated", "patch")], "contributor/test", True),
+            ("same-repo-patch", [summary("validated", "patch")], "dotnet/test", True),
+            ("unverified-patch", [summary("failed", "patch")], "contributor/test", False),
+            ("mixed-delivery", [push, summary("validated", "patch")], "dotnet/test", False),
             ("missing-push", [summary("validated")], "dotnet/test", False),
             ("missing-summary", [push], "dotnet/test", False),
             ("multiple-pushes", [push, push, summary("validated")], "dotnet/test", False),
@@ -168,6 +177,55 @@ class CommandPublicationTests(unittest.TestCase):
                 if accepted:
                     published = json.loads(output.read_text(encoding="utf-8"))
                     self.assertIn("Structured data:", published["items"][-1]["body"])
+
+    def test_suggestions_require_one_validated_surgical_patch(self):
+        data = {
+            "workflow_artifact": "build-failure-analysis",
+            "artifact_kind": "analysis",
+            "fix_status": "validated",
+            "fix_delivery": "patch",
+        }
+        summary = {"type": "add_comment", "body": "Checked patch", "data": data}
+        suggestion = {
+            "type": "create_pull_request_review_comment",
+            "path": "Source.fs",
+            "line": 2,
+            "body": "```suggestion\nlet value = 1\n```",
+            "data": data,
+        }
+        cases = (
+            ("single", [summary, suggestion], True),
+            ("multi-line", [summary, {**suggestion, "line": 3, "start_line": 2}], True),
+            ("twenty-lines", [summary, {**suggestion, "line": 21, "start_line": 2,
+                                        "body": "```suggestion\n" + "\n".join(["x"] * 20) + "\n```"}], True),
+            ("missing-summary", [suggestion], False),
+            ("missing-metadata", [summary, {**suggestion, "data": None}], False),
+            ("multiple-files", [summary, suggestion, {**suggestion, "path": "Other.fs"}], False),
+            ("too-many", [summary, *[suggestion] * 4], False),
+            ("old-side", [summary, {**suggestion, "side": "LEFT"}], False),
+            ("invalid-line", [summary, {**suggestion, "line": 0}], False),
+            ("too-wide", [summary, {**suggestion, "line": 22, "start_line": 2}], False),
+            ("too-large", [summary, {**suggestion, "body": "```suggestion\n" + "x\n" * 21 + "```"}], False),
+            ("not-a-suggestion", [summary, {**suggestion, "body": "Please fix this"}], False),
+        )
+        for name, items, accepted in cases:
+            with self.subTest(name=name), tempfile.TemporaryDirectory() as directory:
+                output = Path(directory) / "output.json"
+                output.write_text(json.dumps({"items": items}), encoding="utf-8")
+                result = subprocess.run(
+                    ["node", "-e", HARNESS],
+                    input=json.dumps({"script": self.metadata}),
+                    capture_output=True,
+                    text=True,
+                    env={
+                        **os.environ,
+                        "GH_AW_AGENT_OUTPUT": str(output),
+                        "EXPECTED_HEAD_REPO": "contributor/test",
+                        "GITHUB_REPOSITORY": "dotnet/test",
+                    },
+                    timeout=15,
+                )
+                self.assertEqual(result.returncode == 0, accepted, result.stderr)
 
 
 if __name__ == "__main__":

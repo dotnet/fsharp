@@ -3,7 +3,8 @@ name: "Build Failure Analysis"
 description: >-
   When the Azure Pipelines PR build (`fsharp-ci`) fails, downloads binary logs
   produced by its failed or canceled jobs, diagnoses the failure, and attempts
-  a minimal, checked fix on the validated same-repository PR branch.
+  a minimal, checked fix: a branch update for eligible same-repository PRs,
+  or a reviewable patch for contributor forks.
 
 on:
   check_run:
@@ -138,7 +139,10 @@ safe-outputs:
       fix_status:
         type: string
         enum: [validated, failed, blocked, not-needed]
-    required: [workflow_artifact, artifact_kind, fix_status]
+      fix_delivery:
+        type: string
+        enum: [push, patch, none]
+    required: [workflow_artifact, artifact_kind, fix_status, fix_delivery]
     additionalProperties: false
   report-failure-as-issue: false
   add-comment:
@@ -152,6 +156,11 @@ safe-outputs:
     fallback-as-pull-request: false
     protected-files: blocked
     max-patch-size: 64
+  create-pull-request-review-comment:
+    max: 3
+    target: ${{ needs.fetch-binlog.outputs.pr-number }}
+    side: RIGHT
+    commit-id: ${{ needs.fetch-binlog.outputs.pr-head-sha }}
   noop:
     max: 1
     report-as-issue: false
