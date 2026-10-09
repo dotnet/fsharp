@@ -34,6 +34,7 @@ open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.AbstractIL.ILBinaryWriter
 open FSharp.Compiler.AbstractIL.ILDynamicAssemblyWriter
 open FSharp.Compiler.AccessibilityLogic
+open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CheckExpressions
 open FSharp.Compiler.CodeAnalysis
@@ -4599,7 +4600,7 @@ type FsiInteractionProcessor
                 rangeStdin0
                 ad
                 lid
-                false
+                UnseenItems.None
 
         let names = nItems |> List.map (fun d -> d.DisplayName)
         let names = names |> List.filter (fun name -> name.StartsWithOrdinal(stem))
