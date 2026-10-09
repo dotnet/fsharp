@@ -31,7 +31,7 @@ exception SyntaxError of obj (* ParseErrorContext<_> *) * range: range
 
 exception IndentationProblem of string * range
 
-let warningStringOfCoords line column = sprintf "(%d:%d)" line (column + 1)
+let warningStringOfCoords (line: int) (column: int) = $"({line}:{column + 1})"
 
 let warningStringOfPos (p: pos) = warningStringOfCoords p.Line p.Column
 

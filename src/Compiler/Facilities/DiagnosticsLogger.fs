@@ -890,11 +890,6 @@ let internal tryCheckLanguageFeatureAndRecover langVersion langFeature m =
 let internal checkLanguageFeatureAndRecover langVersion langFeature m =
     tryCheckLanguageFeatureAndRecover langVersion langFeature m |> ignore
 
-let internal languageFeatureNotSupportedInLibraryError (langFeature: LanguageFeature) (m: range) =
-    let featureStr = LanguageVersion.GetFeatureString langFeature
-    let suggestedVersionStr = LanguageVersion.GetFeatureVersionString langFeature
-    error (Error(FSComp.SR.chkFeatureNotSupportedInLibrary (featureStr, suggestedVersionStr), m))
-
 module StackGuardMetrics =
 
     let meter = FSharp.Compiler.Diagnostics.Metrics.Meter
