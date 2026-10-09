@@ -14,10 +14,8 @@ type LanguageFeature =
     | UnionIsPropertiesVisible
     | AttributesToRightOfModuleKeyword
     | ErrorOnDeprecatedRequireQualifiedAccess
-    | MatchNotAllowedForUnionCaseWithNoData
     | CSharpExtensionAttributeNotRequired
     | WarningWhenMultipleRecdTypeChoice
-    | WarningWhenTailRecAttributeButNonTailRecUsage
     | UnmanagedConstraintCsharpInterop
     | ReuseSameFieldsInStructUnions
     /// RFC-1137
