@@ -9,7 +9,11 @@ neg45.fs(25,8,25,11): typecheck error FS0685: The generic function 'Foo' must be
 
 neg45.fs(34,25,34,26): typecheck error FS0465: Type inference problem too complicated (maximum iteration depth reached). Consider adding further type annotations.
 
-neg45.fs(34,27,34,28): typecheck error FS0465: Type inference problem too complicated (maximum iteration depth reached). Consider adding further type annotations.
+neg45.fs(34,25,34,26): typecheck error FS0465: Type inference problem too complicated (maximum iteration depth reached). Consider adding further type annotations.
+
+neg45.fs(34,25,34,26): typecheck error FS0465: Type inference problem too complicated (maximum iteration depth reached). Consider adding further type annotations.
+
+neg45.fs(34,25,34,26): typecheck error FS0465: Type inference problem too complicated (maximum iteration depth reached). Consider adding further type annotations.
 
 neg45.fs(41,24,41,33): typecheck error FS0827: '(|Foo|Bir|)' is not a valid method name. Use a 'let' binding instead.
 

@@ -12,10 +12,8 @@ type LanguageFeature =
     | ExpandedMeasurables
     | NullnessChecking
     | UnionIsPropertiesVisible
-    | ErrorOnDeprecatedRequireQualifiedAccess
     | CSharpExtensionAttributeNotRequired
     | WarningWhenCopyAndUpdateRecordChangesAllFields
-    | WarningWhenMultipleRecdTypeChoice
     | UnmanagedConstraintCsharpInterop
     | ReuseSameFieldsInStructUnions
     /// RFC-1137
