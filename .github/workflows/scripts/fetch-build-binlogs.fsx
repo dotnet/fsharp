@@ -309,9 +309,7 @@ let collect directory =
     let buildHead, buildMerge = validateBuild prNumber buildId build
     let head, merge, branch, headRepo = validatePr buildHead buildMerge (pull prNumber)
 
-    let records =
-        ado $"/{buildId}/timeline?api-version=7.1"
-        |> fun timeline -> items timeline?records
+    let records = items (ado $"/{buildId}/timeline?api-version=7.1")?records
 
     let jobs =
         records
@@ -324,11 +322,8 @@ let collect directory =
 
     ensure (not jobs.IsEmpty) "No failed or canceled timeline jobs"
 
-    let artifacts =
-        ado $"/{buildId}/artifacts?api-version=7.1" |> fun result -> items result?value
-
     let selected =
-        artifacts
+        items (ado $"/{buildId}/artifacts?api-version=7.1")?value
         |> Array.choose (fun artifact ->
             let name = text artifact?name
 
@@ -338,16 +333,12 @@ let collect directory =
                 || Regex.IsMatch(name, "(?:binlogs|binarylogs)$", RegexOptions.IgnoreCase)
 
             match Guid.TryParse(text artifact?source) with
-            | true, job when shape && jobs.ContainsKey job ->
-                Some
-                    {| Name = name
-                       Job = job
-                       Url = text artifact?resource?downloadUrl |}
+            | true, job when shape && jobs.ContainsKey job -> Some(name, job, text artifact?resource?downloadUrl)
             | _ -> None)
-        |> Array.sortBy (fun artifact -> artifact.Name, artifact.Job, artifact.Url)
-        |> Array.distinctBy (fun artifact -> artifact.Name, artifact.Job)
+        |> Array.sort
+        |> Array.distinctBy (fun (name, job, _) -> name, job)
 
-    let expected = selected |> Seq.map _.Job |> Set.ofSeq
+    let expected = set [ for _, job, _ in selected -> job ]
 
     let published =
         records
@@ -373,40 +364,35 @@ let collect directory =
     let archive = Path.GetTempFileName()
 
     try
-        for index, artifact in Array.indexed selected do
+        for index, (name, job, url) in Array.indexed selected do
             try
-                require (trustedUrl artifact.Url) "Untrusted or missing artifact download URL"
+                require (trustedUrl url) "Untrusted or missing artifact download URL"
                 let limit = min 3221225472L (compressed.Value + 2147483648L)
 
-                fetch false artifact.Url 120. (fun response cancellation ->
+                fetch false url 120. (fun response cancellation ->
                     use source = Response.toStream response
                     use output = File.Create archive
 
                     copy compressed limit cancellation source output)
 
                 let count, written =
-                    extract archive directory (string (index + 1)) (4294967296L - extracted) artifact.Name
+                    extract archive directory (string (index + 1)) (4294967296L - extracted) name
 
                 require (count > 0) "No regular binlogs in the artifact"
                 extracted <- extracted + written
-                staged.Add artifact.Job |> ignore
+                staged.Add job |> ignore
 
-                printfn
-                    $"Extracted {count} binlogs ({written} bytes) from {sanitize artifact.Name} for {sanitize jobs[artifact.Job]}"
+                printfn $"Extracted {count} binlogs ({written} bytes) from {sanitize name} for {sanitize jobs[job]}"
             with error ->
-                printfn "::warning::%s: %s" (sanitize artifact.Name) (error.Message.ReplaceLineEndings(" "))
+                printfn "::warning::%s: %s" (sanitize name) (error.Message.ReplaceLineEndings(" "))
     finally
         File.Delete archive
 
     ensure (expected |> Set.forall staged.Contains) "Incomplete binlogs for failed artifact-producing jobs"
-    let hashes = HashSet<string>(StringComparer.Ordinal)
+    let hashes = HashSet<string>()
 
     for path in Directory.GetFiles(directory, "*.binlog") |> Array.sort do
-        use file = File.OpenRead path
-        let hash = Convert.ToHexString(SHA256.HashData file)
-        file.Dispose()
-
-        if not (hashes.Add hash) then
+        if not (hashes.Add(using (File.OpenRead path) SHA256.HashData |> Convert.ToHexString)) then
             File.Delete path
 
     ensure (hashes.Count > 0) "No usable binlogs recovered"
