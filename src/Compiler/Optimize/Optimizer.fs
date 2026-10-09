@@ -4015,11 +4015,10 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
                         dontInline = Map.add origLambdaId types argEnv.dontInline }
                 OptimizeExpr cenv env specLambda |> fst
 
-            // Equal types do not imply equal consumer-selected extension witnesses.
+            // The type-only cache key does not include selected SRTP witnesses.
             let canCacheSpecialization =
                 allTyargsAreConcrete &&
-                (not (g.langVersion.SupportsFeature LanguageFeature.ExtensionConstraintSolutions) ||
-                 traits |> List.forall (fun traitInfo -> traitInfo.TraitContext.IsSome))
+                (hasNoTraits || not (g.langVersion.SupportsFeature LanguageFeature.ExtensionConstraintSolutions))
 
             let specLambdaR =
                 if canCacheSpecialization then

@@ -697,18 +697,30 @@ let main _ =
         |> shouldSucceed
 
     [<Theory>]
-    [<InlineData("--optimize+", "--realsig+", false)>]
-    [<InlineData("--optimize-", "--realsig+", false)>]
-    [<InlineData("--optimize+", "--realsig-", false)>]
-    [<InlineData("--optimize-", "--realsig-", false)>]
-    [<InlineData("--optimize+", "--realsig+", true)>]
-    [<InlineData("--optimize-", "--realsig+", true)>]
-    [<InlineData("--optimize+", "--realsig-", true)>]
-    [<InlineData("--optimize-", "--realsig-", true)>]
-    let ``Issue 20684 - competing operator witnesses retain their identity across files`` optimize realsig openType =
+    [<InlineData("--optimize+", "--realsig+", false, false)>]
+    [<InlineData("--optimize-", "--realsig+", false, false)>]
+    [<InlineData("--optimize+", "--realsig-", false, false)>]
+    [<InlineData("--optimize-", "--realsig-", false, false)>]
+    [<InlineData("--optimize+", "--realsig+", true, false)>]
+    [<InlineData("--optimize-", "--realsig+", true, false)>]
+    [<InlineData("--optimize+", "--realsig-", true, false)>]
+    [<InlineData("--optimize-", "--realsig-", true, false)>]
+    [<InlineData("--optimize+", "--realsig+", false, true)>]
+    [<InlineData("--optimize-", "--realsig+", false, true)>]
+    [<InlineData("--optimize+", "--realsig-", false, true)>]
+    [<InlineData("--optimize-", "--realsig-", false, true)>]
+    [<InlineData("--optimize+", "--realsig+", true, true)>]
+    [<InlineData("--optimize-", "--realsig+", true, true)>]
+    [<InlineData("--optimize+", "--realsig-", true, true)>]
+    [<InlineData("--optimize-", "--realsig-", true, true)>]
+    let ``Issue 20684 - competing operator witnesses retain their identity across files`` optimize realsig openType aFirst =
         let declaration, openScope =
             if openType then "type Ops =", "open type Ops"
             else "type System.String with", ""
+        let checkA = """if Library.A.mul "a" 3 <> "aaa" then failwith "Incorrect witness for A" """
+        let nestedResult = if openType then """("a3", "aaa")""" else """("a3", "a3")"""
+        let checkB = $"""if Library.B.nested "a" 3 <> {nestedResult} then failwith "Incorrect nested witness for B" """
+        let firstCheck, secondCheck = if aFirst then checkA, checkB else checkB, checkA
         FSharpWithFileName "Library.fs" $"""
 module Library
 module A =
@@ -721,8 +733,11 @@ module B =
         static member ( * ) (s: string, n: int) = s + string n
     {openScope}
     let inline mul x n = x * n
+    let inline nested x n =
+        let first = x * n
+        first, A.mul x n
         """
-        |> withAdditionalSourceFile (FsSourceWithFileName "Program.fs" """
+        |> withAdditionalSourceFile (FsSourceWithFileName "Program.fs" $"""
 module Program
 module Competing =
     type System.String with
@@ -730,6 +745,8 @@ module Competing =
 open Competing
 [<EntryPoint>]
 let main _ =
+    {firstCheck}
+    {secondCheck}
     let quotedA = FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation <@ Library.A.mul "a" 3 @> :?> string
     let quotedB = FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation <@ Library.B.mul "a" 3 @> :?> string
     if Library.A.mul "a" 3 <> "aaa" || quotedA <> "aaa" then failwith "Incorrect witness for A"
