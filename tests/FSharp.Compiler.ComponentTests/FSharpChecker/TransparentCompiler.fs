@@ -1214,6 +1214,77 @@ module TestsMutatingFileSystem =
                 FileSystemAutoOpens.FileSystem <- currentFileSystem
         }
 
+/// Writes a.fsx, which loads b.fsx, to disk and returns both paths.
+let private createScriptThatLoadsFile () =
+    let directory = TestFramework.createTemporaryDirectory ()
+    let a = Path.Combine(directory.FullName, "a.fsx")
+    let b = Path.Combine(directory.FullName, "b.fsx")
+    File.WriteAllText(a, "#load \"b.fsx\"")
+    File.WriteAllText(b, "let onDisk = 1")
+    a, b
+
+let private getLoadedFile (checker: FSharpChecker) (documentSource: DocumentSource option) (script: string) (loadedFile: string) =
+    async {
+        let! snapshot, _ =
+            checker.GetProjectSnapshotFromScript(script, SourceTextNew.ofString (File.ReadAllText script), ?documentSource = documentSource)
+        return snapshot.SourceFiles |> List.find (fun file -> file.FileName = loadedFile)
+    }
+
+let private getText (file: ProjectSnapshot.FSharpFileSnapshot) =
+    task {
+        let! source = file.GetSource()
+        return source.GetSubTextString(0, source.Length)
+    }
+
+[<Theory>]
+[<InlineData(false)>]
+[<InlineData(true)>]
+let ``GetProjectSnapshotFromScript uses the document source of the checker`` useTransparentCompiler =
+    task {
+        let a, b = createScriptThatLoadsFile ()
+        let getSource fileName = async { return if fileName = b then Some(SourceText.ofString "let inEditor = 1") else None }
+        let checker = FSharpChecker.Create(useTransparentCompiler = useTransparentCompiler, documentSource = DocumentSource.Custom getSource)
+
+        let! loadedFile = getLoadedFile checker None a b
+        let! text = getText loadedFile
+        Assert.Equal("let inEditor = 1", text)
+    }
+
+[<Theory>]
+[<InlineData(false)>]
+[<InlineData(true)>]
+let ``A custom document source gives a file the same version until its text changes`` useTransparentCompiler =
+    task {
+        let a, b = createScriptThatLoadsFile ()
+        let mutable textOfB = "let inEditor = 1"
+        let getSource fileName = async { return if fileName = b then Some(SourceText.ofString textOfB) else None }
+        let documentSource = Some(DocumentSource.Custom getSource)
+        let checker = FSharpChecker.Create(useTransparentCompiler = useTransparentCompiler)
+
+        let! first = getLoadedFile checker documentSource a b
+        let! second = getLoadedFile checker documentSource a b
+        Assert.Equal(first.Version, second.Version)
+
+        textOfB <- "let inEditor = 2"
+        let! third = getLoadedFile checker documentSource a b
+        Assert.NotEqual<string>(first.Version, third.Version)
+    }
+
+[<Theory>]
+[<InlineData(false)>]
+[<InlineData(true)>]
+let ``A custom document source that returns None reads the file from disk`` useTransparentCompiler =
+    task {
+        let a, b = createScriptThatLoadsFile ()
+        let getSource (_: string) = async { return None }
+        let documentSource = Some(DocumentSource.Custom getSource)
+        let checker = FSharpChecker.Create(useTransparentCompiler = useTransparentCompiler)
+
+        let! loadedFile = getLoadedFile checker documentSource a b
+        let! text = getText loadedFile
+        Assert.Equal("let onDisk = 1", text)
+    }
+
 [<Fact>]
 let ``Parsing without cache and without project snapshot`` () =
     async {
