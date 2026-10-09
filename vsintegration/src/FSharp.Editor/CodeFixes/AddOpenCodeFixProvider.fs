@@ -2,7 +2,6 @@
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
-open System
 open System.Composition
 open System.Collections.Immutable
 
@@ -19,8 +18,6 @@ open CancellableTasks
 type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentProvider: AssemblyContentProvider) =
     inherit CodeFixProvider()
 
-    static let br = Environment.NewLine
-
     let fixUnderscoresInMenuText (text: string) = text.Replace("_", "__")
 
     let qualifySymbolFix (context: CodeFixContext) (fullName, qualifier) =
@@ -30,39 +27,10 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
             Changes = [ TextChange(context.Span, qualifier) ]
         }
 
-    // With the fix in ServiceParsedInputOps, the InsertionContext now correctly
-    // points to the line after the module/namespace keyword (excluding attributes).
-    // However, we still need to handle implicit top-level modules and nested modules.
-    let getOpenDeclaration (sourceText: SourceText) (ctx: InsertionContext) (ns: string) =
-        // insertion context counts from 2, make the world sane
-        let insertionLineNumber = ctx.Pos.Line - 2
-        let margin = String(' ', ctx.Pos.Column)
-
-        let startLineNumber, openDeclaration =
-            match ctx.ScopeKind with
-            | ScopeKind.TopModule ->
-                match sourceText.Lines[insertionLineNumber].ToString().Trim() with
-
-                // explicit top level module
-                | line when line.StartsWith "module" && not (line.EndsWith "=") -> insertionLineNumber + 2, $"{margin}open {ns}{br}{br}"
-
-                // nested module, shouldn't be here
-                | line when line.StartsWith "module" -> insertionLineNumber, $"{margin}open {ns}{br}{br}"
-
-                // implicit top level module
-                | _ -> insertionLineNumber, $"{margin}open {ns}{br}{br}"
-
-            | ScopeKind.Namespace -> insertionLineNumber + 3, $"{margin}open {ns}{br}{br}"
-            | ScopeKind.NestedModule -> insertionLineNumber + 2, $"{margin}open {ns}{br}{br}"
-            | ScopeKind.OpenDeclaration -> insertionLineNumber + 1, $"{margin}open {ns}{br}"
-            | ScopeKind.HashDirective -> insertionLineNumber + 1, $"open {ns}{br}{br}"
-
-        let start = sourceText.Lines[startLineNumber].Start
-        TextChange(TextSpan(start, 0), openDeclaration)
-
     let openNamespaceFix ctx name ns multipleNames sourceText =
         let displayText = $"open {ns}" + (if multipleNames then " (" + name + ")" else "")
-        let change = getOpenDeclaration sourceText ctx ns
+
+        let change = OpenDeclarationHelper.getOpenDeclarationChange sourceText ctx ns
 
         {
             Name = CodeFix.AddOpen
