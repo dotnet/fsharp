@@ -48,12 +48,14 @@ instructions, including before `ConfigureAwait`. These casts prevent the runtime
 from incorrectly optimizing a generic task-producing call followed by a
 non-generic await.
 
-Known runtime restrictions (currently **not** diagnosed by the F# compiler):
+Runtime restrictions and their compiler handling:
 
-* `tail.` and `localloc` are forbidden.
-* generated suspension points cannot occur inside exception-handling regions.
-  Awaiting in a protected `try` body now works on the current runtime. Direct
-  intrinsic bodies rewrite suspending `try/with` handlers and filters, and
+* `tail.` is forbidden; runtime-async methods suppress tail-call prefixes.
+* `localloc` is forbidden and reported as FS3920, even without a suspension.
+* `MethodImplOptions.Synchronized` is rejected with FS3921.
+* Suspension cannot occur inside exception handlers, filters, or `finally`
+  blocks. Awaiting in a protected `try` body is supported. Return-marker
+  bodies rewrite suspending `try/with` handlers and filters, and
   `try/finally` compensations, so the suspension runs outside the EH region.
 
   C# avoids this by rewriting EH-region awaits at lowering time (see the
@@ -64,8 +66,11 @@ Known runtime restrictions (currently **not** diagnosed by the F# compiler):
   runs `DisposeAsync` (possibly suspending) *outside* the `try`, then restores
   the pending exception. This makes `use` on an `IAsyncDisposable` work under
   runtime async.
+
 Byref, byref-like, and pinned locals that are used after a suspension are
-rejected with diagnostic FS3917.
+rejected with diagnostic FS3919 when their non-preservable provenance is
+tracked. Pinned provenance is not currently propagated through ref cells or
+captured delegates, so those uses are not reliably diagnosed.
 
 Calls to `AsyncHelpers` suspension methods emitted outside a runtime-async
 method are rejected during code generation. Explicitly `inline` method bodies
@@ -85,14 +90,14 @@ val __runtimeAsyncReturnUnit : unit -> System.Threading.Tasks.Task
 val __runtimeAsyncReturnValueTaskUnit : unit -> System.Threading.Tasks.ValueTask
 ```
 
-Their FSharp.Core implementations throw; the compiler consumes every
-occurrence before code generation, so those bodies are never executed. They
-are marked `NoInlining` so a missed consumption does not silently fold into a
-caller.
+Their FSharp.Core implementations throw; code generation consumes recognized
+marker applications instead of emitting calls to those stubs. They are marked
+`NoInlining` so a missed consumption does not silently fold into a caller.
 
-The feature is gated on `langversion:preview`
-(`LanguageFeature.RuntimeAsync`) and on the target reference assemblies
-exposing `MethodImplOptions.Async` (see "Runtime capability check" below).
+The feature is available from F# 11.2, including `default`, `latest`, and
+`preview` (`LanguageFeature.RuntimeAsync`), and gated on the target reference
+assemblies exposing `MethodImplOptions.Async` (see "Runtime capability check"
+below).
 Without the language version the checker reports error 3350; without runtime
 support it reports 3351.
 
@@ -139,35 +144,114 @@ declaration.
 ## Optimization
 
 `Optimizer.fs` preserves the marker application as-is, optimizing its
-argument and rewriting any suspending exception handlers in that argument.
-The marked expression is forced to `HasEffect = true` and `UnknownValue`, so
-the optimizer never inlines, duplicates, or discards it. The marker therefore
-survives optimization as an ordinary `Expr.App` node; nothing else in the
-typed tree records that a method is runtime-async.
+argument. The marked expression is forced to `HasEffect = true` and
+`UnknownValue`, so ordinary value propagation cannot treat it as a pure result.
+The marker therefore survives optimization as an ordinary `Expr.App` node;
+nothing else in the typed tree records that a method is runtime-async.
 
 Inline values whose bodies contain a return marker or an `AsyncHelpers`
 suspension are recursively specialized at their call sites, including when
 optimization is disabled. The analysis follows inline and local values with a
 cycle guard, and `InlineIfLambda` arguments are forced through when the caller
-is already in a runtime-async context. The optimizer follows nested inline
-calls and does not create a generated helper method for the specialized
-suspension fragment, keeping every suspension in the eventual runtime-async
-method.
+is already in a runtime-async context. Ordinary inlining is tried first;
+applications of returned lambdas are reduced when their remaining arguments
+can safely move across the returned closure's construction. This handles
+computation-expression shapes where `Bind` returns a closure containing
+`Await`, and later `Combine`/`Delay` calls apply it. Inside a runtime-async expansion, captures
+that wrap an `InlineIfLambda` lambda or delegate (`let p = (let c = e in fun
+...)`) are floated above the binding so the callback can be inlined; they are
+still evaluated at the same point.
 
-After specialization, lambda arguments are substituted and their applications
-are beta-reduced before and after runtime-async reoptimization. This includes
-debug-point-wrapped lambdas, compiler-generated `let` wrappers, curried
-applications, and multi-argument lambdas.
-That step is required for computation-expression shapes where `Bind` returns a
-closure containing `Await`, and later `Combine`/`Delay` calls apply that closure.
+## Runtime-async lowering
+
+`LowerRuntimeAsync.fs` runs once per file after the first optimization loop,
+so it sees the final inlined shape rather than an intermediate optimizer
+state, and before `LowerLocalMutables`, so captured mutable locals receive
+the ordinary shared reference-cell representation. It has two steps.
+
+Callback-use analysis, outlining, and invocation rewriting live in
+`LowerRuntimeAsync.fs`. `RuntimeAsyncAnalysis.fs` supplies fragment detection,
+optimizer-side returned-closure reduction, and suspension-lifetime analysis.
+Both transformations share match-target rebuilding from
+`TypedTree/RuntimeAsync.fs`.
+
+First, if a compiler-owned `InlineIfLambda` function or delegate still
+contains a suspension, a fully rewritable, single-argument callback is
+outlined as a separate runtime-async closure. The ordinary optimizer already inlines a
+callback whose construction ends in one lambda, including after `let` or
+effect prefixes and at repeated invocations. What remains is a construction
+that selects a lambda by branching (`if`/`match`). Construction effects and
+branch selection stay at the original binding; each invocation calls the
+selected closure and awaits its outcome before continuing. Callback bodies
+are not copied into each invocation, so there is no callback-copy budget.
+Only the specialized copy changes, not the exported inline definition or
+source signature. This applies within a runtime-async body or sequence
+recipe, and to a callback bound immediately before a runtime-async body
+together with the callbacks its construction captures. Opaque consumers,
+escaping callbacks, unsupported callback shapes (including `try`/`with` in
+tail position), and unsafe byref or pinned captures are not rewritten;
+suspensions remaining in an ordinary method, such as a closure, are diagnosed
+with FS3918.
+
+Inner callback bindings are processed before the outer delegate.
+If optimization leaves a construction expression directly as an `Invoke`
+receiver, it is first bound to a compiler-owned callback and lowered through
+the same path. Receiver construction still precedes argument evaluation.
+Effectful precomputations that capture a delegate's inputs are not moved to
+its invocation, so a pending operation is created once and repeated invokes
+share captured state. Captured mutable locals
+retain their identities and are handled by ordinary closure conversion, not
+copied into and out of each fragment. Callback uses are checked before
+rewriting; opaque consumers and quotations retaining the callback reject the
+candidate. IlxGen checks each generated closure or delegate `Invoke` as its
+own method: an `Await` left there without a return marker produces FS3918,
+even when the enclosing method is runtime-async.
+
+### Context handoff
+
+The `net10.0` FSharp.Core asset supplies an inline
+`StateMachineHelpers.__runtimeAsyncOutline` template. It wraps a callback
+in a `__runtimeAsyncReturnValueTask` lambda, captures success or
+`ExceptionDispatchInfo` on failure, and constructs a
+`RuntimeAsyncFragmentResult` holding the final execution context,
+synchronization context, and flow-suppression state. Lowering expands this
+template through the existing expression optimizer rather than generating
+the exception and context protocol itself.
+
+At each invocation the compiler constructs a `RuntimeAsyncFragmentAwaiter`,
+uses the runtime's ordinary `AwaitAwaiter` entry point if the fragment is
+incomplete, then calls its synchronous `GetResult`. Completed fragments do
+not introduce an additional suspension. Core restores the captured contexts
+before returning the value or rethrowing. Restoration therefore executes in the
+parent, not in another async method whose return would undo it.
+
+This preserves final context values but is not transparent: returning from
+the child and reinstalling its context produces additional `AsyncLocal`
+context-change notifications. Unlike an inlined callback, an outlined
+callback can allocate a closure and shared reference cells. Captured locals
+are represented as closure fields at invocation rather than aliases to
+locals in the parent method; their original construction scopes remain in
+the PDB.
+
+### Body preparation
+
+Second, every return-marker body is prepared once after callbacks are outlined,
+innermost first: locals that cannot be preserved across a suspension are
+reported (once per range across the compilation), and suspending exception
+handlers are rewritten. Preparing afterwards means an `Await` that callback
+or delegate inlining moves into a handler is still rewritten.
+`__runtimeAsyncSequence` recipes are not prepared here; `LowerAsyncSeq`
+prepares their `MoveNextAsync` body after state-machine conversion, which is
+where sequence `try`/`with` is lowered.
 
 When runtime-async specialization is forced in a debug build, the builder
-combinator is copied with its definition-site debug ranges remarked before
-arguments are substituted. User continuation arguments keep their own ranges,
-so `let!`, `do!`, `yield`, and other
-computation-expression statements remain associated with the source that
-authored them without exposing the implementation ranges of `Run`, `Bind`,
-`Combine`, or `Yield`.
+combinator is copied with its definition-site debug ranges remarked at the
+call site. User continuation arguments keep their own ranges, and the marked
+method retains a call-site sequence point even when forced inlining reduces
+its intermediate closures.
+
+Callback lowering retains source debug points when rebuilding construction
+wrappers. Outlined methods keep the callback body's statement points.
 
 Dead branches eliminated by optimization do not reach code generation and do
 not produce a suspension-outside-runtime-async diagnostic.
@@ -178,12 +262,19 @@ Runtime-async boundary recognition is centralized in
 use the shared recognizers rather than matching typed-tree shapes
 independently.
 
-The optimizer uses a context-local `RuntimeAsyncAnalyzer`. It memoizes
+The optimizer and the lowering pass use a context-local `RuntimeAsyncAnalyzer`. It memoizes
 completed expression results by reference identity and inline-value results by
 value stamp, with a visiting set for recursive inline-value graphs. The cache
 is not global: optimizer environments can provide different inline bodies, and
 optimization creates new expression trees. Context-dependent decisions such as
 `runtimeAsyncContext` remain outside the cached facts.
+
+An optimizer analyzer lives for one application-inlining attempt; callback
+lowering shares an analyzer for one implementation file, and exception
+rewriting creates one per body. Flow-summary caches are also per body.
+Custom recursive analysis and callback reconstruction use stack guards,
+including traversals between inline-value bodies and through decision trees.
+Callback capture analysis uses the guarded free-variable collector.
 
 ## Code generation
 
@@ -197,9 +288,10 @@ shared runtime-async boundary contract, which strips `DebugPoint` wrappers:
    assemblies do not define the enum member).
 2. **Closure body** (`GenClosureAsLocalTypeFunction` and
    `GenClosureAsFirstClassFunction`): the same unwrapping marks the closure
-   `Invoke` method's IL body (`ILMethodBody.IsRuntimeAsync`).
-   `EraseClosures.convIlxClosureDef` copies that flag onto the emitted
-   method.
+   method's IL body (`ILMethodBody.IsRuntimeAsync`). Local type functions
+   mark `DirectInvoke` explicitly; for first-class closures,
+   `EraseClosures.convIlxClosureDef` copies the flag onto the emitted
+   `Invoke` method.
 3. **Any other expression position** (`GenRuntimeAsyncReturnAsStartedTask`), e.g.
    a `let`-bound value initializer: the marker application is wrapped in a
    fresh `fun () -> ...` lambda that is immediately applied to `unit` and
@@ -208,6 +300,10 @@ shared runtime-async boundary contract, which strips `DebugPoint` wrappers:
    relies on `GenApp` never beta-reducing a lambda application (it always
    emits a closure plus an indirect call); see the comment at
    `GenRuntimeAsyncReturnAsStartedTask`.
+
+Named methods, closures, and sequence methods share marker unwrapping and
+unit-return classification. Both closure emission paths also share captured
+value validation, runtime-async environment setup, and IL-body marking.
 
 A marker that ends up wrapped in anything other than `DebugPoint` at the top
 of a method or closure body is not detected there, but still reaches the
@@ -240,10 +336,9 @@ body (`DecideExpr`), promoting its free mutable locals to reference cells so
 the synthesized closure and the enclosing scope share them.
 
 `InvokeFast` is not a separate runtime-async path. It is the closure-erasure
-shape for an indirect call with multiple arguments. Fragment substitution and
-beta reduction happen before closure erasure; if a suspending fragment survives
-until an indirect `InvokeFast` call, it is still outside a runtime-async method
-and is rejected by code generation.
+shape for an indirect call with multiple arguments. Forced inlining and
+eligible callback inlining happen before closure erasure; a suspension left
+behind an opaque indirect invocation is rejected by code generation.
 
 ## Runtime capability check
 
@@ -329,12 +424,12 @@ Builder-generated `MoveNextAsync` can lose visible sequence points. The optimize
 
 This is a proposal, not a drop-in TaskSeq replacement. Producer `try/with` is lowered through an ordinary nested sequence, while runtime-async suspensions inside that handler remain unsupported. Opaque recipes and optimized tail handoff are rejected. Early disposal retains ordinary sequence exception precedence: an outer cleanup failure replaces an inner cleanup failure. Concurrent move/dispose calls are unsupported. Awaiting a non-cancellable operation does not make it cancellable. Performance qualification must include genuinely pending operations, not only completed awaits.
 
-Build and run the small [usage and lifecycle example](../tests/FSharp.Compiler.ComponentTests/Language/RuntimeAsync/RuntimeAsyncSequence.fs) with the matching preview SDK:
+Build and run the small [usage and lifecycle example](../tests/FSharp.Compiler.ComponentTests/Language/RuntimeAsync/RuntimeAsyncSequence.fs) with the matching SDK:
 
 ```sh
 ./build.sh -c Release
 dotnet test --project tests/FSharp.Compiler.ComponentTests/FSharp.Compiler.ComponentTests.fsproj \
-  -c Release --no-build --filter-class 'Language.RuntimeAsyncSequenceTests'
+  -c Release --no-build -- --filter-class 'Language.RuntimeAsyncSequenceTests'
 ```
 
 The tests compile the library and consumer together and separately, with optimization enabled and disabled.
@@ -344,20 +439,20 @@ The tests compile the library and consumer together and separately, with optimiz
 An inline fragment that escapes as a first-class value, is passed to a
 non-inline function, or is dynamically dispatched cannot be preserved as a
 runtime-async suspension fragment. If the suspension remains in the generated
-non-runtime-async method, code generation reports FS3916 rather than emitting
+non-runtime-async method, code generation reports FS3918 rather than emitting
 an unsafe closure. Fragments in statically eliminated branches do not trigger
 this diagnostic.
 
 ## Not yet implemented
 
-* Complete diagnostics for runtime restrictions. The optimizer rewrites
+* Complete diagnostics for runtime restrictions. Runtime-async lowering rewrites
   suspending `try/with` handlers and filters, and `try/finally` compensations,
   so they execute outside exception-handling regions. There is no general
   diagnostic for runtime-contract violations in other generated or imported
-  shapes, and `localloc` has no dedicated diagnostic. Runtime-async methods
-  suppress `tail.` emission rather than reporting it.
+  shapes. Stack allocation has a dedicated diagnostic (FS3920), and
+  runtime-async methods suppress `tail.` emission rather than reporting it.
 * A builder in FSharp.Core; builders using the feature are currently
   application/library code.
-* Compile-time enforcement that the marker was actually consumed before
-  code generation (a missed marker throws only when its FSharp.Core stub is
-  reached at run time, or produces invalid IL as described above).
+* Compile-time enforcement that every marker use was consumed during code
+  generation (a missed marker throws only when its FSharp.Core stub is reached
+  at run time).
