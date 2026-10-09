@@ -41,13 +41,16 @@ Describe 'Per-file test result publication' {
             }
             if ($publication.Polls -eq 1) {
                 if ($publication.Mode -eq 'null-response') { return $null }
-                if ($publication.Mode -eq 'missing-value') { return @{} }
             }
             if ($publication.Mode -eq 'missing' -or ($publication.Mode -eq 'late' -and $publication.Polls -eq 1)) {
                 return @{ value = @() }
             }
             if ($publication.Mode -eq 'ambiguous') {
                 return @{ value = @($publication.Runs[0], @{ id = 99; name = "$($publication.Runs[0].name)_1" }) }
+            }
+            if ($publication.Mode -eq 'array-response') {
+                Write-Output -NoEnumerate @([pscustomobject]@{ value = $publication.Runs })
+                return
             }
             return @{ value = $publication.Runs }
         }
@@ -77,6 +80,7 @@ Describe 'Per-file test result publication' {
         @{ Mode = 'suffix' }
         @{ Mode = 'duplicate-names' }
         @{ Mode = 'case-distinct-names' }
+        @{ Mode = 'array-response' }
     ) {
         param($Mode)
         $publication.Mode = $Mode
@@ -123,7 +127,6 @@ Describe 'Per-file test result publication' {
         @{ Mode = 'delayed' }
         @{ Mode = 'late' }
         @{ Mode = 'null-response' }
-        @{ Mode = 'missing-value' }
     ) {
         param($Mode)
         $publication.Mode = $Mode
