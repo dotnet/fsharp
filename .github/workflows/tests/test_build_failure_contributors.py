@@ -260,7 +260,7 @@ class ContributorTests(unittest.TestCase):
                 harness.write_text(LOCAL_HARNESS, encoding="utf-8")
                 fixture = root / "fixture.json"
                 fixture.write_text(json.dumps(data), encoding="utf-8")
-                env = {**os.environ, "TEMP": directory, "TMP": directory}
+                env = {**os.environ, "TEMP": directory, "TMP": directory, "TMPDIR": directory}
                 env.pop("GH_TOKEN", None)
                 if "token" in data:
                     env["GH_TOKEN"] = data["token"]
@@ -275,7 +275,9 @@ class ContributorTests(unittest.TestCase):
                 if error is not None:
                     self.assertIn(error, result.stderr)
                 else:
-                    context = json.loads(Path(result.stdout.strip()).read_text(encoding="utf-8-sig"))
+                    context_path = Path(result.stdout.strip())
+                    self.assertTrue(context_path.parent.parent.samefile(root))
+                    context = json.loads(context_path.read_text(encoding="utf-8-sig"))
                     self.assertEqual(context["GH_AW_PR_NUMBER"], "7")
                     self.assertEqual(context["GH_AW_PR_HEAD_REPO"], "contributor/fsharp")
                     self.assertTrue(Path(context["GH_AW_BINLOG_PATH"]).is_file())
