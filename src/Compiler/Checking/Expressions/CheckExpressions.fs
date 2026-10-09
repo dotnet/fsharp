@@ -2892,6 +2892,8 @@ let TcVal (cenv: cenv) env (tpenv: UnscopedTyparEnv) (vref: ValRef) instantiatio
 
                                 TcValEarlyGeneralizationConsistencyCheck cenv env (v, valRecInfo, tinst, vTy, vTauTy, m)
 
+                                // Preserve the instantiated constraint cells, as inferred type arguments do.
+                                let tinst = if g.langVersion.SupportsFeature LanguageFeature.ExtensionConstraintSolutions then tpTys else tinst
                                 vTypars, vrefFlags, tinst, vTauTy, tpenv
 
                   let exprForVal = Expr.Val (vref, vrefFlags, m)
