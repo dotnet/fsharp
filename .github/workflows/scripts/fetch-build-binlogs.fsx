@@ -21,6 +21,7 @@ open FsHttp
 Fsi.disableDebugLogs ()
 
 exception Skip of string
+exception Status of int
 
 let env name =
     Environment.GetEnvironmentVariable name
@@ -31,7 +32,10 @@ let ensure condition message =
     if not condition then
         raise (Skip message)
 
-let invalid message = raise (InvalidDataException message)
+let require condition message =
+    if not condition then
+        raise (InvalidDataException message)
+
 let digits (value: string) = Regex.IsMatch(value, "^[0-9]+$")
 let sha (value: string) = Regex.IsMatch(value, "^[0-9a-f]{40}$")
 
@@ -40,9 +44,7 @@ let sanitize (value: string) =
     name.Substring(0, min 80 name.Length)
 
 let (?) (json: JsonValue) name =
-    match json with
-    | JsonValue.Record _ -> json.TryGetProperty name |> Option.defaultValue JsonValue.Null
-    | _ -> JsonValue.Null
+    defaultArg (json.TryGetProperty name) JsonValue.Null
 
 let text (json: JsonValue) =
     match json with
@@ -54,7 +56,7 @@ let items =
     function
     | JsonValue.Array values -> values
     | JsonValue.Null -> [||]
-    | _ -> invalid "Expected a JSON array"
+    | _ -> raise (InvalidDataException "Expected a JSON array")
 
 let trustedUrl (url: string) =
     match Uri.TryCreate(url, UriKind.Absolute) with
@@ -108,21 +110,18 @@ let fetch github (url: string) seconds read =
         | 303
         | 307
         | 308 when not github ->
-            if redirects = 5 || isNull response.headers.Location then
-                invalid "Artifact redirect limit or missing location"
+            require
+                (redirects < 5 && not (isNull response.headers.Location))
+                "Artifact redirect limit or missing location"
 
             let next = Uri(Uri url, response.headers.Location).AbsoluteUri
-
-            if not (trustedUrl next) then
-                invalid "Artifact redirect is outside dnceng-public/public"
-
+            require (trustedUrl next) "Artifact redirect is outside dnceng-public/public"
             response.dispose ()
             send (redirects + 1) next cancellation
         | _ ->
-            response
-            |> Response.toResult
-            |> Result.map (fun response -> read response cancellation)
-            |> Result.mapError (fun response -> int response.statusCode)
+            match Response.toResult response with
+            | Ok response -> read response cancellation
+            | Error response -> raise (Status(int response.statusCode))
 
     let rec attempt number =
         if number > 1 then
@@ -130,15 +129,13 @@ let fetch github (url: string) seconds read =
 
         try
             use cancellation = new CancellationTokenSource(TimeSpan.FromSeconds seconds)
-
-            match send 0 url cancellation.Token with
-            | Ok value -> value
-            | Error(408 | 429 | 500 | 502 | 503 | 504) when number < 3 -> attempt (number + 1)
-            | Error status -> raise (Skip $"HTTP {status} fetching build/PR data")
+            send 0 url cancellation.Token
         with
-        | :? InvalidDataException -> reraise ()
-        | (:? OperationCanceledException | :? HttpRequestException | :? IOException) when number < 3 ->
-            attempt (number + 1)
+        | Status(408 | 429 | 500 | 502 | 503 | 504)
+        | :? OperationCanceledException
+        | :? HttpRequestException
+        | :? IOException when number < 3 -> attempt (number + 1)
+        | Status code -> raise (Skip $"HTTP {code} fetching build/PR data")
 
     attempt 1
 
@@ -150,14 +147,15 @@ let json github url =
 let adoApi = "https://dev.azure.com/dnceng-public/public/_apis/build/builds"
 let ado path = json false $"{adoApi}{path}"
 
-let copy consume cancellation (source: Stream) (destination: Stream) =
+let copy (total: int64 ref) limit cancellation (source: Stream) (destination: Stream) =
     let buffer = Array.zeroCreate<byte> (1 <<< 20)
 
     let mutable count =
         source.ReadAsync(buffer, 0, buffer.Length, cancellation).GetAwaiter().GetResult()
 
     while count > 0 do
-        consume (int64 count)
+        total.Value <- total.Value + int64 count
+        require (total.Value <= limit) "Compressed or extracted size budget exceeded"
         destination.WriteAsync(buffer, 0, count, cancellation).GetAwaiter().GetResult()
         count <- source.ReadAsync(buffer, 0, buffer.Length, cancellation).GetAwaiter().GetResult()
 
@@ -175,9 +173,7 @@ type MetadataStream(source: Stream) =
         and set value = source.Position <- value
 
     override _.Read(buffer, offset, count) =
-        if count > 0 && remaining = 0L then
-            invalid "Archive metadata exceeds 16 MiB"
-
+        require (count <= 0 || remaining > 0L) "Archive metadata exceeds 16 MiB"
         let read = source.Read(buffer, offset, int (min (int64 count) remaining))
         remaining <- remaining - int64 read
         read
@@ -188,43 +184,34 @@ type MetadataStream(source: Stream) =
     override _.Write(_, _, _) = raise (NotSupportedException())
 
 let extract archive destination prefix budget label =
-    if prefix = "" || sanitize prefix <> prefix then
-        invalid "Unsafe output prefix"
-
+    require (prefix <> "" && sanitize prefix = prefix) "Unsafe output prefix"
     use source = File.OpenRead archive
     use metadata = new MetadataStream(source)
     use zip = new ZipArchive(metadata, ZipArchiveMode.Read)
 
-    if zip.Entries.Count > 65536 then
-        invalid "Archive exceeds 65536 entries"
-
+    require (zip.Entries.Count <= 65536) "Archive exceeds 65536 entries"
     metadata.Complete()
 
-    for entry in zip.Entries do
-        let kind = (entry.ExternalAttributes >>> 16) &&& 0xF000
-
-        if
-            Regex.IsMatch(entry.FullName, @"(^[\\/]|(^|[\\/])\.\.([\\/]|$)|^[A-Za-z]:|\x00)")
-            || not (List.contains kind [ 0; 0x8000; 0x4000 ])
-        then
-            invalid "Archive entry has an unsafe path or unsupported type"
-
     let selected =
-        zip.Entries
-        |> Seq.filter (fun entry ->
-            (entry.ExternalAttributes >>> 16) &&& 0xF000 <> 0x4000
-            && entry.Name <> ""
-            && not (entry.FullName.EndsWith("/", StringComparison.Ordinal))
-            && entry.FullName.EndsWith(".binlog", StringComparison.OrdinalIgnoreCase)
-            && not (entry.FullName.EndsWith(".proto.binlog", StringComparison.OrdinalIgnoreCase)))
-        |> Seq.toArray
+        [| for entry in zip.Entries do
+               let kind = (entry.ExternalAttributes >>> 16) &&& 0xF000
 
-    if selected.Length > 256 then
-        invalid "Archive exceeds 256 binlogs"
+               require
+                   (not (Regex.IsMatch(entry.FullName, @"(^[\\/]|(^|[\\/])\.\.([\\/]|$)|^[A-Za-z]:|\x00)"))
+                    && List.contains kind [ 0; 0x8000; 0x4000 ])
+                   "Archive entry has an unsafe path or unsupported type"
 
+               if
+                   kind <> 0x4000
+                   && entry.FullName.EndsWith(".binlog", StringComparison.OrdinalIgnoreCase)
+                   && not (entry.FullName.EndsWith(".proto.binlog", StringComparison.OrdinalIgnoreCase))
+               then
+                   entry |]
+
+    require (selected.Length <= 256) "Archive exceeds 256 binlogs"
     Directory.CreateDirectory destination |> ignore
     let created = ResizeArray<string>()
-    let mutable written = 0L
+    let written = ref 0L
 
     try
         for index, entry in Array.indexed selected do
@@ -237,22 +224,11 @@ let extract archive destination prefix budget label =
             use input = entry.Open()
             use output = new FileStream(path, FileMode.CreateNew, FileAccess.Write)
             created.Add path
+            copy written budget CancellationToken.None input output
 
-            copy
-                (fun count ->
-                    written <- written + count
-
-                    if written > budget then
-                        invalid "Extracted binlogs exceed the remaining budget")
-                CancellationToken.None
-                input
-                output
-
-        selected.Length, written
+        selected.Length, written.Value
     with _ ->
-        for path in created do
-            File.Delete path
-
+        Seq.iter File.Delete created
         reraise ()
 
 let validateBuild prNumber buildId build =
@@ -323,11 +299,9 @@ let collect directory =
                 ado
                     $"?definitions=90&branchName=refs/pull/{prNumber}/merge&queryOrder=queueTimeDescending&$top=1&api-version=7.1"
 
-            let newest =
-                items builds?value |> Array.tryHead |> Option.defaultValue JsonValue.Null
-
-            ensure (text newest?status = "completed") "Newest fsharp-ci build is missing or still running"
-            text newest?id
+            match items builds?value |> Array.tryHead with
+            | Some newest when text newest?status = "completed" -> text newest?id
+            | _ -> raise (Skip "Newest fsharp-ci build is missing or still running")
         | mode -> raise (Skip $"Unknown RESOLVE_MODE '{mode}'")
 
     ensure (digits buildId) "Missing or invalid Azure build id"
@@ -344,38 +318,36 @@ let collect directory =
         |> Array.choose (fun record ->
             match text record?``type``, text record?result, Guid.TryParse(text record?id) with
             | "Job", ("failed" | "canceled"), (true, id) when not (String.IsNullOrWhiteSpace(text record?name)) ->
-                Some {| Id = id; Name = text record?name |}
+                Some(id, text record?name)
             | _ -> None)
+        |> Map.ofArray
 
-    ensure (jobs.Length > 0) "No failed or canceled timeline jobs"
+    ensure (not jobs.IsEmpty) "No failed or canceled timeline jobs"
 
     let artifacts =
         ado $"/{buildId}/artifacts?api-version=7.1" |> fun result -> items result?value
 
     let selected =
-        jobs
-        |> Array.collect (fun job ->
-            artifacts
-            |> Array.choose (fun artifact ->
-                let name = text artifact?name
-                let matches = Guid.TryParse(text artifact?source) = (true, job.Id)
+        artifacts
+        |> Array.choose (fun artifact ->
+            let name = text artifact?name
 
-                let shape =
-                    (text artifact?resource?``type`` = "PipelineArtifact"
-                     && Regex.IsMatch(name, "_Attempt[0-9]+$", RegexOptions.IgnoreCase))
-                    || Regex.IsMatch(name, "(?:binlogs|binarylogs)$", RegexOptions.IgnoreCase)
+            let shape =
+                (text artifact?resource?``type`` = "PipelineArtifact"
+                 && Regex.IsMatch(name, "_Attempt[0-9]+$", RegexOptions.IgnoreCase))
+                || Regex.IsMatch(name, "(?:binlogs|binarylogs)$", RegexOptions.IgnoreCase)
 
-                if matches && shape && not (String.IsNullOrWhiteSpace name) then
-                    Some
-                        {| Name = name
-                           Job = job
-                           Url = text artifact?resource?downloadUrl |}
-                else
-                    None))
-        |> Array.distinctBy _.Name
-        |> Array.sortBy _.Name
+            match Guid.TryParse(text artifact?source) with
+            | true, job when shape && jobs.ContainsKey job ->
+                Some
+                    {| Name = name
+                       Job = job
+                       Url = text artifact?resource?downloadUrl |}
+            | _ -> None)
+        |> Array.sortBy (fun artifact -> artifact.Name, artifact.Job, artifact.Url)
+        |> Array.distinctBy (fun artifact -> artifact.Name, artifact.Job)
 
-    let expected = selected |> Seq.map _.Job.Id |> Set.ofSeq
+    let expected = selected |> Seq.map _.Job |> Set.ofSeq
 
     let published =
         records
@@ -384,68 +356,47 @@ let collect directory =
 
             match text record?``type``, text record?result, Guid.TryParse(text record?parentId) with
             | "Task", ("succeeded" | "succeededWithIssues"), (true, parent) when
-                name.StartsWith("Publish", StringComparison.Ordinal)
+                jobs.ContainsKey parent
+                && name.StartsWith("Publish", StringComparison.Ordinal)
                 && name.EndsWith("Logs", StringComparison.Ordinal)
                 ->
                 Some parent
             | _ -> None)
         |> Set.ofSeq
 
-    ensure
-        (jobs
-         |> Array.forall (fun job -> not (Set.contains job.Id published) || Set.contains job.Id expected))
-        "A failed job published logs but has no matching build-log artifact"
+    ensure (published.IsSubsetOf expected) "A failed job published logs but has no matching build-log artifact"
 
     ensure (not expected.IsEmpty) "No build-log artifacts from failed jobs"
     let staged = HashSet<Guid>()
-    let mutable compressed = 0L
+    let compressed = ref 0L
     let mutable extracted = 0L
-    let temporary = Directory.CreateTempSubdirectory("binlog-fetch-").FullName
-    let archive = Path.Combine(temporary, "artifact.zip")
+    let archive = Path.GetTempFileName()
 
     try
         for index, artifact in Array.indexed selected do
             try
-                if not (trustedUrl artifact.Url) then
-                    invalid "Untrusted or missing artifact download URL"
-
-                let mutable artifactBytes = 0L
+                require (trustedUrl artifact.Url) "Untrusted or missing artifact download URL"
+                let limit = min 3221225472L (compressed.Value + 2147483648L)
 
                 fetch false artifact.Url 120. (fun response cancellation ->
                     use source = Response.toStream response
                     use output = File.Create archive
 
-                    copy
-                        (fun count ->
-                            artifactBytes <- artifactBytes + count
-                            compressed <- compressed + count
-
-                            if artifactBytes > 2147483648L || compressed > 3221225472L then
-                                invalid "Compressed artifact budget exceeded")
-                        cancellation
-                        source
-                        output)
+                    copy compressed limit cancellation source output)
 
                 let count, written =
                     extract archive directory (string (index + 1)) (4294967296L - extracted) artifact.Name
 
-                if count = 0 then
-                    invalid "No regular binlogs in the artifact"
-
+                require (count > 0) "No regular binlogs in the artifact"
                 extracted <- extracted + written
-                staged.Add artifact.Job.Id |> ignore
+                staged.Add artifact.Job |> ignore
 
                 printfn
-                    "Extracted %d binlogs (%d bytes) from %s for %s"
-                    count
-                    written
-                    (sanitize artifact.Name)
-                    (sanitize artifact.Job.Name)
+                    $"Extracted {count} binlogs ({written} bytes) from {sanitize artifact.Name} for {sanitize jobs[artifact.Job]}"
             with error ->
                 printfn "::warning::%s: %s" (sanitize artifact.Name) (error.Message.ReplaceLineEndings(" "))
     finally
         File.Delete archive
-        Directory.Delete temporary
 
     ensure (expected |> Set.forall staged.Contains) "Incomplete binlogs for failed artifact-producing jobs"
     let hashes = HashSet<string>(StringComparer.Ordinal)
@@ -477,17 +428,13 @@ let collect directory =
 let main arguments =
     try
         match arguments with
-        | [| "--validate-url"; url |] ->
-            if trustedUrl url then
-                0
-            else
-                eprintfn "Untrusted artifact URL"
-                1
-        | [| "--extract"; archive; destination; prefix; budget |] ->
-            let count, written = extract archive destination prefix (Int64.Parse budget) ""
-            printfn "%d %d" count written
-            0
-        | [| "--extract"; archive; destination; prefix; budget; label |] ->
+        | [| "--validate-url"; url |] when trustedUrl url -> 0
+        | [| "--validate-url"; _ |] ->
+            eprintfn "Untrusted artifact URL"
+            1
+        | [| "--extract"; archive; destination; prefix; budget |]
+        | [| "--extract"; archive; destination; prefix; budget; _ |] ->
+            let label = defaultArg (Array.tryItem 5 arguments) ""
             let count, written = extract archive destination prefix (Int64.Parse budget) label
             printfn "%d %d" count written
             0
@@ -496,10 +443,7 @@ let main arguments =
             File.AppendAllText(output, "binlog-found=false\n")
             let directory = env "BINLOG_DIR"
 
-            ensure
-                (directory <> "" && not (Directory.Exists directory || File.Exists directory))
-                "BINLOG_DIR is unset or already exists"
-
+            ensure (directory <> "" && not (Path.Exists directory)) "BINLOG_DIR is unset or already exists"
             Directory.CreateDirectory directory |> ignore
             File.AppendAllText(output, collect directory + "\n")
             0

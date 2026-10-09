@@ -62,13 +62,13 @@ class FetchBuildBinlogsTests(unittest.TestCase):
             timeout=120,
         )
 
-    def extract(self, entries, budget=1024 * 1024, label="../../Leg"):
+    def extract(self, entries, budget=1024 * 1024, label="../../Leg", prefix="7"):
         with tempfile.TemporaryDirectory(prefix="fsharp-binlog-extract-") as directory:
             root = Path(directory)
             archive = root / "artifact.zip"
             destination = root / "output"
             write_archive(archive, entries)
-            result = self.run_script(root, "--extract", archive, destination, "7", budget, label)
+            result = self.run_script(root, "--extract", archive, destination, prefix, budget, label)
             files = {
                 path.name: path.read_bytes()
                 for path in destination.glob("*")
@@ -109,6 +109,13 @@ class FetchBuildBinlogsTests(unittest.TestCase):
                 result, files = self.extract([(entry, mode, b"target")])
                 self.assertNotEqual(result.returncode, 0)
                 self.assertEqual(files, {})
+
+    def test_preserves_validated_output_prefixes(self):
+        for prefix in ("artifact-1", "007", "2147483648", "-1"):
+            with self.subTest(prefix=prefix):
+                result, files = self.extract([("x.binlog", stat.S_IFREG | 0o644, b"x")], prefix=prefix)
+                self.assertEqual(result.returncode == 0, prefix != "-1", result.stderr)
+                self.assertEqual(files, {} if prefix == "-1" else {f"{prefix}_0_Leg.binlog": b"x"})
 
     def test_budget_failure_removes_partial_outputs(self):
         result, files = self.extract(
@@ -216,7 +223,7 @@ class FetchBuildBinlogsTests(unittest.TestCase):
             )
 
     def test_http_redirect_retry_and_body_deadline(self):
-        for scenario in ("redirect", "retry", "deadline"):
+        for scenario in ("redirect", "retry", "deadline", "mixed-retry"):
             with self.subTest(scenario=scenario), tempfile.TemporaryDirectory() as directory:
                 requests = []
 
@@ -226,12 +233,12 @@ class FetchBuildBinlogsTests(unittest.TestCase):
                         if scenario == "redirect" and self.path != "/escaped":
                             self.send_response(302)
                             self.send_header("Location", f"http://127.0.0.1:{self.server.server_port}/escaped")
-                        elif scenario == "retry" and len(requests) < 3:
+                        elif scenario in ("retry", "mixed-retry") and len(requests) < 3:
                             self.send_response(503)
                         else:
                             self.send_response(200)
                         self.end_headers()
-                        if scenario == "deadline":
+                        if scenario == "deadline" or (scenario == "mixed-retry" and len(requests) >= 3):
                             self.wfile.flush()
                             time.sleep(3)
                         elif scenario != "redirect" or self.path == "/escaped":
