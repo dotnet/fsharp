@@ -92,6 +92,21 @@ let private withOpen atTop (ns: string) (code: string) =
     else
         code.Replace("module Use =\n\n", $"module Use =\n\n    open {ns}\n\n")
 
+let private placement atTop =
+    { CodeFixesOptions.Default with
+        AlwaysPlaceOpensAtTopLevel = atTop
+    }
+
+let private assertCleanAndUsed (text: string) (results: global.FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults) =
+    Assert.Empty results.Diagnostics
+    let sourceText = SourceText.From text
+
+    let unused =
+        UnusedOpens.getUnusedOpens (results, fun line -> sourceText.Lines[line - 1].ToString())
+        |> Async.RunSynchronously
+
+    Assert.Empty unused
+
 let private assertCompiles code =
     let document = RoslynTestHelpers.GetFsDocument code
 
@@ -99,14 +114,11 @@ let private assertCompiles code =
         document.GetFSharpParseAndCheckResultsAsync("test")
         |> CancellableTask.runSynchronouslyWithoutCancellation
 
-    Assert.Empty results.Diagnostics
-    let text = SourceText.From code
+    assertCleanAndUsed code results
 
-    let unused =
-        UnusedOpens.getUnusedOpens (results, fun line -> text.Lines[line - 1].ToString())
-        |> Async.RunSynchronously
-
-    Assert.Empty unused
+let private assertFixedCode (expected: string) (actual: string) =
+    Assert.Equal(expected, actual.Replace("\r\n", "\n"))
+    assertCompiles actual
 
 [<Theory>]
 [<InlineData("Even", "", "Candidates.Normal", true)>]
@@ -134,16 +146,11 @@ let ``Add Open applied case uses exact target and placement`` (caseName: string,
 
     let provider = AddOpenCodeFixProvider(AssemblyContentProvider())
 
-    let mode =
-        WithSettings
-            { CodeFixesOptions.Default with
-                AlwaysPlaceOpensAtTopLevel = atTop
-            }
+    let mode = WithSettings(placement atTop)
 
     let fix = provider |> tryFix code mode |> Option.get
     Assert.Equal($"open {ns}", fix.Message)
-    Assert.Equal(withOpen atTop ns code, fix.FixedCode.Replace("\r\n", "\n"))
-    assertCompiles fix.FixedCode
+    assertFixedCode (withOpen atTop ns code) fix.FixedCode
     Assert.Equal(None, provider |> tryFix fix.FixedCode mode)
 
 [<Theory>]
@@ -170,11 +177,7 @@ let ``Add Open supports adjacent headers without changing existing spacing``
 
     let provider = AddOpenCodeFixProvider(AssemblyContentProvider())
 
-    let mode =
-        WithSettings
-            { CodeFixesOptions.Default with
-                AlwaysPlaceOpensAtTopLevel = atTop
-            }
+    let mode = WithSettings(placement atTop)
 
     let fix = provider |> tryFix code mode |> Option.get
     Assert.Equal($"open {ns}", fix.Message)
@@ -191,8 +194,7 @@ let ``Add Open supports adjacent headers without changing existing spacing``
         else
             code.Replace("module Use =\n", $"module Use =\n    open {ns}\n\n")
 
-    Assert.Equal(expected, fix.FixedCode.Replace("\r\n", "\n"))
-    assertCompiles fix.FixedCode
+    assertFixedCode expected fix.FixedCode
     Assert.Equal(None, provider |> tryFix fix.FixedCode mode)
 
 [<Theory>]
@@ -202,11 +204,7 @@ let ``Add Open supports a top module header without a blank line`` (atTop: bool)
     let code =
         "module Consumer\nlet value: DateTime = Unchecked.defaultof<_>\nlet other = 1\n"
 
-    let mode =
-        WithSettings
-            { CodeFixesOptions.Default with
-                AlwaysPlaceOpensAtTopLevel = atTop
-            }
+    let mode = WithSettings(placement atTop)
 
     let fix =
         AddOpenCodeFixProvider(AssemblyContentProvider())
@@ -215,12 +213,7 @@ let ``Add Open supports a top module header without a blank line`` (atTop: bool)
 
     Assert.Equal("open System", fix.Message)
 
-    Assert.Equal(
-        "module Consumer\nopen System\n\nlet value: DateTime = Unchecked.defaultof<_>\nlet other = 1\n",
-        fix.FixedCode.Replace("\r\n", "\n")
-    )
-
-    assertCompiles fix.FixedCode
+    assertFixedCode "module Consumer\nopen System\n\nlet value: DateTime = Unchecked.defaultof<_>\nlet other = 1\n" fix.FixedCode
 
 [<Theory>]
 [<InlineData("let classify value = match value with | Restricted n -> n | _ -> 0", "Candidates.Qualified.Restricted")>]
@@ -241,8 +234,7 @@ let ``RQA bare case fix supplies the qualification still required`` (body: strin
         else
             withOpen true "Candidates.``(=)``" code
 
-    Assert.Equal(expected, fix.FixedCode.Replace("\r\n", "\n"))
-    assertCompiles fix.FixedCode
+    assertFixedCode expected fix.FixedCode
 
 [<Theory>]
 [<InlineData("let value = Positive 1")>]
@@ -334,13 +326,7 @@ let ``completion commit applies case text and avoids duplicate opens``
     let code = if alreadyOpen then withOpen atTop ns initial else initial
 
     let document =
-        RoslynTestHelpers.GetFsDocument(
-            code,
-            customEditorOptions =
-                { CodeFixesOptions.Default with
-                    AlwaysPlaceOpensAtTopLevel = atTop
-                }
-        )
+        RoslynTestHelpers.GetFsDocument(code, customEditorOptions = placement atTop)
 
     let catalogue = AssemblyContentProvider()
     let position = code.IndexOf(placeholder, StringComparison.Ordinal)
@@ -396,8 +382,7 @@ let ``completion commit applies case text and avoids duplicate opens``
         else
             committed.Replace("module Use =\n\n", $"module Use =\n    open {ns}\n\n")
 
-    Assert.Equal(expected, actual.Replace("\r\n", "\n"))
-    assertCompiles actual
+    assertFixedCode expected actual
 
 [<Theory>]
 [<InlineData("DateTime", "System", false)>]
@@ -535,13 +520,7 @@ let ``referenced case Add Open uses the nearest physical scope without self-qual
         "namespace N\nmodule Outer =\n    module Use =\n        let classify value = match value with | Case n -> n | _ -> 0\n"
 
     let document =
-        RoslynTestHelpers.GetFsDocument(
-            code,
-            customEditorOptions =
-                { CodeFixesOptions.Default with
-                    AlwaysPlaceOpensAtTopLevel = false
-                }
-        )
+        RoslynTestHelpers.GetFsDocument(code, customEditorOptions = placement false)
 
     let solution =
         document.Project.AddMetadataReference(MetadataReference.CreateFromFile reference.OutputPath.Value).Solution
@@ -581,13 +560,7 @@ let ``referenced case Add Open uses the nearest physical scope without self-qual
         document.WithText(SourceText.From actual).GetFSharpParseAndCheckResultsAsync("referenced AP edit")
         |> CancellableTask.runSynchronouslyWithoutCancellation
 
-    Assert.Empty results.Diagnostics
-    let editedText = SourceText.From actual
-
-    Assert.Empty(
-        UnusedOpens.getUnusedOpens (results, fun line -> editedText.Lines[line - 1].ToString())
-        |> Async.RunSynchronously
-    )
+    assertCleanAndUsed actual results
 
     Assert.Contains(results.ProjectContext.GetReferencedAssemblies(), fun assembly -> assembly.FileName = reference.OutputPath)
 

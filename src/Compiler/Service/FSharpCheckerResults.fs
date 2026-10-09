@@ -1851,7 +1851,6 @@ type internal TypeCheckInfo
 
         let pos = mkPos line colAtEndOfNamesAndResidue
 
-        // Look for a "special" completion context
         let completionContext =
             // If the completion context we have computed higher up the stack is for the same position,
             // reuse it, otherwise recompute

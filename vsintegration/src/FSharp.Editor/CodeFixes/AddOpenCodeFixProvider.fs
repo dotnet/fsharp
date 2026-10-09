@@ -32,9 +32,6 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
             Changes = [ TextChange(context.Span, qualifier) ]
         }
 
-    // With the fix in ServiceParsedInputOps, the InsertionContext now correctly
-    // points to the line after the module/namespace keyword (excluding attributes).
-    // However, we still need to handle implicit top-level modules and nested modules.
     let getOpenDeclaration (sourceText: SourceText) (ctx: InsertionContext) (ns: string) =
         // insertion context counts from 2, make the world sane
         let insertionLineNumber = ctx.Pos.Line - 2
@@ -49,7 +46,7 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
         let startLineNumber, openDeclaration =
             match ctx.ScopeKind with
             | ScopeKind.TopModule ->
-                match sourceText.Lines[insertionLineNumber].ToString().Trim() with
+                match getLineStr insertionLineNumber with
 
                 // explicit top level module
                 | line when line.StartsWith "module" && not (line.EndsWith "=") ->
@@ -264,14 +261,11 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
                                 createEntity (symbol.TopRequireQualifiedAccessParent, symbol.AutoOpenParent, symbol.Namespace, idents)
                                 |> Seq.map (fun (entity, insertionContext) ->
                                     let entity =
-                                        if
-                                            symbol.Symbol :? FSharpActivePatternCase
-                                            && entity.FullDisplayName <> ""
-                                            && entity.FullDisplayName <> patternName
-                                        then
-                                            { entity with Namespace = None }
-                                        elif symbol.Symbol :? FSharpActivePatternCase then
-                                            { entity with FullDisplayName = "" }
+                                        if symbol.Symbol :? FSharpActivePatternCase then
+                                            if entity.FullDisplayName <> "" && entity.FullDisplayName <> patternName then
+                                                { entity with Namespace = None }
+                                            else
+                                                { entity with FullDisplayName = "" }
                                         else
                                             entity
 
