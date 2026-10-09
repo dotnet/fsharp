@@ -16,7 +16,8 @@ ImplFile
                     (Named (SynIdent (exn, None), false, None, (4,5--4,8)), None,
                      Const (Unit, (6,4--6,6)), (4,5--6,6), Yes,
                      { ArrowRange = Some (4,9--4,11)
-                       BarRange = None })], (2,0--6,6), Yes (2,0--2,3),
+                       BarRange = None
+                       WhenKeyword = None })], (2,0--6,6), Yes (2,0--2,3),
                  Yes (4,0--4,4), { TryKeyword = (2,0--2,3)
                                    TryToWithRange = (2,0--4,4)
                                    WithKeyword = (4,0--4,4)
