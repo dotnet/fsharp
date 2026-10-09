@@ -27,7 +27,6 @@ type LanguageFeature =
     | CSharpExtensionAttributeNotRequired
     | WarningWhenCopyAndUpdateRecordChangesAllFields
     | WarningWhenMultipleRecdTypeChoice
-    | WarningWhenTailRecAttributeButNonTailRecUsage
     | UnmanagedConstraintCsharpInterop
     | ReuseSameFieldsInStructUnions
     | PreferExtensionMethodOverPlainProperty
@@ -127,7 +126,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
                 LanguageFeature.CSharpExtensionAttributeNotRequired, languageVersion80
                 LanguageFeature.WarningWhenCopyAndUpdateRecordChangesAllFields, languageVersion80
                 LanguageFeature.WarningWhenMultipleRecdTypeChoice, languageVersion80
-                LanguageFeature.WarningWhenTailRecAttributeButNonTailRecUsage, languageVersion80
 
                 // F# 9.0
                 LanguageFeature.NullnessChecking, languageVersion90
@@ -290,7 +288,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
         | LanguageFeature.WarningWhenCopyAndUpdateRecordChangesAllFields ->
             FSComp.SR.featureWarningWhenCopyAndUpdateRecordChangesAllFields ()
         | LanguageFeature.WarningWhenMultipleRecdTypeChoice -> FSComp.SR.featureWarningWhenMultipleRecdTypeChoice ()
-        | LanguageFeature.WarningWhenTailRecAttributeButNonTailRecUsage -> FSComp.SR.featureChkNotTailRecursive ()
         | LanguageFeature.UnmanagedConstraintCsharpInterop -> FSComp.SR.featureUnmanagedConstraintCsharpInterop ()
         | LanguageFeature.ReuseSameFieldsInStructUnions -> FSComp.SR.featureReuseSameFieldsInStructUnions ()
         | LanguageFeature.PreferExtensionMethodOverPlainProperty -> FSComp.SR.featurePreferExtensionMethodOverPlainProperty ()

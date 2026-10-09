@@ -17,7 +17,6 @@ type LanguageFeature =
     | CSharpExtensionAttributeNotRequired
     | WarningWhenCopyAndUpdateRecordChangesAllFields
     | WarningWhenMultipleRecdTypeChoice
-    | WarningWhenTailRecAttributeButNonTailRecUsage
     | UnmanagedConstraintCsharpInterop
     | ReuseSameFieldsInStructUnions
     /// RFC-1137
