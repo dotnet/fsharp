@@ -608,7 +608,7 @@ type internal FSharpProjectOptionsManager(checker: FSharpChecker, workspace: Wor
                     IsInteractive = CompilerEnvironment.IsScriptFile document.Name
                 }
 
-        CompilerEnvironment.GetConditionalDefinesForEditing parsingOptions, parsingOptions.LangVersionText, parsingOptions.StrictIndentation
+        CompilerEnvironment.GetConditionalDefinesForEditing parsingOptions, parsingOptions.LangVersionText
 
     member _.TryGetOptionsByProject(project) =
         reactor.TryGetOptionsByProjectAsync(project)

@@ -220,7 +220,7 @@ let CheckForNonTailRecCall (cenv: cenv) expr (tailCall: TailCall) =
             // ``Warn successfully in match clause``
             // ``Warn for byref parameters``
             if not canTailCall then
-                warning (Error(FSComp.SR.chkNotTailRecursive vref.DisplayName, m))
+                warning (Error(FSComp.SR.chkNotTailRecursive (richTextOfValName g vref.Deref), m))
         | _ -> ()
     | _ -> ()
 
@@ -780,7 +780,7 @@ let CheckModuleBinding cenv (isRec: bool) (TBind _ as bind) =
                 match expr with
                 | Expr.Val(valRef = valRef; range = m) ->
                     if isRec && insideSubBindingOrTry && cenv.mustTailCall.Contains valRef.Deref then
-                        warning (Error(FSComp.SR.chkNotTailRecursive valRef.DisplayName, m))
+                        warning (Error(FSComp.SR.chkNotTailRecursive (richTextOfValName cenv.g valRef.Deref), m))
                 | Expr.App(funcExpr = funcExpr; args = argExprs) ->
                     checkTailCall insideSubBindingOrTry funcExpr
                     argExprs |> List.iter (checkTailCall insideSubBindingOrTry)

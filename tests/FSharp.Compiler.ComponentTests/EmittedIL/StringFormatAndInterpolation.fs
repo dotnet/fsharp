@@ -90,6 +90,90 @@ IL_0014:  call       string [runtime]System.String::Concat(string,
                                                                   string)
 IL_0019:  ret"""]
 
+    [<Fact>]
+    let ``Interpolated string with more than 4 parts is lowered to a System.String.Concat array`` () =
+        FSharp """
+module StringFormatAndInterpolation
+
+let f (a: string, b: string, c: string, d: string, e: string) = $"{a}{b}{c}{d}{e}"
+        """
+        |> compile
+        |> shouldSucceed
+        |> verifyIL ["""
+IL_0000:  ldc.i4.5
+IL_0001:  newarr     [runtime]System.String
+IL_0006:  dup
+IL_0007:  ldc.i4.0
+IL_0008:  ldarg.0
+IL_0009:  stelem     [runtime]System.String
+IL_000e:  dup
+IL_000f:  ldc.i4.1
+IL_0010:  ldarg.1
+IL_0011:  stelem     [runtime]System.String
+IL_0016:  dup
+IL_0017:  ldc.i4.2
+IL_0018:  ldarg.2
+IL_0019:  stelem     [runtime]System.String
+IL_001e:  dup
+IL_001f:  ldc.i4.3
+IL_0020:  ldarg.3
+IL_0021:  stelem     [runtime]System.String
+IL_0026:  dup
+IL_0027:  ldc.i4.4
+IL_0028:  ldarg.s    e
+IL_002a:  stelem     [runtime]System.String
+IL_002f:  call       string [runtime]System.String::Concat(string[])
+IL_0034:  ret"""]
+
+    [<Fact>]
+    let ``String-typed interpolation holes are concatenated directly, with no string conversion or null check`` () =
+        FSharp """
+module StringFormatAndInterpolation
+
+let f (a: string, b: string) = $"{a}{b.ToLower()}"
+        """
+        |> compile
+        |> shouldSucceed
+        |> verifyIL ["""
+IL_0000:  ldarg.0
+IL_0001:  ldarg.1
+IL_0002:  callvirt   instance string [runtime]System.String::ToLower()
+IL_0007:  call       string [runtime]System.String::Concat(string,
+                                                                  string)
+IL_000c:  ret"""]
+
+    [<Fact>]
+    let ``Interpolated string with a single float hole is rendered via an invariant-culture ToString`` () =
+        FSharp """
+module StringFormatAndInterpolation
+
+let f (x: float) = $"{x}"
+        """
+        |> compile
+        |> shouldSucceed
+        |> verifyIL ["""
+IL_0000:  ldarga.s   x
+IL_0002:  ldnull
+IL_0003:  call       class [netstandard]System.Globalization.CultureInfo [netstandard]System.Globalization.CultureInfo::get_InvariantCulture()
+IL_0008:  call       instance string [netstandard]System.Double::ToString(string,
+                                                                            class [netstandard]System.IFormatProvider)
+IL_000d:  ret"""]
+
+    [<Fact>]
+    let ``Interpolated string with a single bool hole is rendered via ToString`` () =
+        FSharp """
+module StringFormatAndInterpolation
+
+let f (x: bool) = $"{x}"
+        """
+        |> compile
+        |> shouldSucceed
+        |> verifyIL ["""
+IL_0000:  ldarga.s   x
+IL_0002:  constrained. [runtime]System.Boolean
+IL_0008:  callvirt   instance string [netstandard]System.Object::ToString()
+IL_000d:  ret"""]
+
     [<FSharp.Test.FactForNETCOREAPP>]
     let ``Interpolated string with concat converts to span implicitly`` () =
         let compilation = 

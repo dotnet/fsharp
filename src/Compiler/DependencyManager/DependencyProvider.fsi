@@ -5,7 +5,7 @@ namespace FSharp.Compiler.DependencyManager
 
 open System
 open System.Runtime.InteropServices
-open Internal.Utilities.Library
+open FSharp.Compiler.Text
 
 /// The results of ResolveDependencies
 type IResolveDependenciesResult =
@@ -114,7 +114,7 @@ type DependencyProvider =
 
     /// Returns a formatted error message for the host to present
     member CreatePackageManagerUnknownError:
-        string seq * string * sdkDirOverride: string option * string * ResolvingErrorReport -> int * string
+        string seq * string * sdkDirOverride: string option * string * ResolvingErrorReport -> int * RichText
 
     /// Resolve reference for a list of package manager lines
     member Resolve:

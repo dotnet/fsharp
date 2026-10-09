@@ -69,6 +69,7 @@ type TextTag =
     | Punctuation
     | UnknownType
     | UnknownEntity
+    | UnresolvedName
 
 /// Represents text with a tag
 type public TaggedText =
@@ -159,6 +160,7 @@ module internal TaggedText =
     val internal tagUnion: string -> TaggedText
     val internal tagMember: string -> TaggedText
     val internal tagUnknownEntity: string -> TaggedText
+    val internal tagUnresolvedName: string -> TaggedText
     val internal tagUnknownType: string -> TaggedText
 
     val internal leftAngle: TaggedText

@@ -26,13 +26,13 @@ open type System.MemoryExtensions
 
 /// Exception raised when a pattern match is incomplete.
 /// Fields: isComputationExpression * (counterExample * isShownAsFieldPattern) option * range
-exception MatchIncomplete of bool * (string * bool) option * range
+exception MatchIncomplete of bool * (RichText * bool) option * range
 
 /// Wrapper that adds a for-loop hint to an existing MatchIncomplete diagnostic.
 exception MatchIncompleteForLoopHint of exn
 
 exception RuleNeverMatched of range
-exception EnumMatchIncomplete of bool * (string * bool) option * range
+exception EnumMatchIncomplete of bool * (RichText * bool) option * range
 
 type ActionOnFailure =
     | ThrowIncompleteMatchException
@@ -371,7 +371,7 @@ let ShowCounterExample g denv m refuted =
             | (r, eck) :: t ->
                 ((r, eck), t) ||> List.fold (fun (rAcc, eckAcc) (r, eck) ->
                     CombineRefutations g rAcc r, eckAcc.Combine(eck))
-        let text = LayoutRender.showL (NicePrint.dataExprL denv counterExample)
+        let text = LayoutRender.toRichText (NicePrint.dataExprL denv counterExample)
         let failingWhenClause = refuted |> List.exists (function RefutedWhenClause -> true | _ -> false)
         Some(text, failingWhenClause, enumCoversKnown)
 

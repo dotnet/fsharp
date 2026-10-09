@@ -17,7 +17,7 @@ module CompilerDiagnostics =
         match diagnosticKind with
         | FSharpDiagnosticKind.AddIndexerDot -> FSComp.SR.addIndexerDot ()
         | FSharpDiagnosticKind.ReplaceWithSuggestion s -> FSComp.SR.replaceWithSuggestion s
-        | FSharpDiagnosticKind.RemoveIndexerDot -> FSComp.SR.tcIndexNotationDeprecated () |> snd
+        | FSharpDiagnosticKind.RemoveIndexerDot -> (FSComp.SR.tcIndexNotationDeprecated () |> snd).Text
 
     let GetSuggestedNames (suggestionsF: FSharp.Compiler.DiagnosticsLogger.Suggestions) (unresolvedIdentifier: string) =
         let buffer = SuggestionBuffer(unresolvedIdentifier)

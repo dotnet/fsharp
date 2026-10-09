@@ -24,8 +24,6 @@ open FSharp.Compiler.Tokenization
 
 module internal TaggedText =
     let appendTo (sb: System.Text.StringBuilder) (t: TaggedText) = sb.Append t.Text |> ignore 
-    let toString (tts: TaggedText[]) =
-        tts |> Array.map (fun tt -> tt.Text) |> String.concat ""
  
 // Note: DEPRECATED CODE ONLY ACTIVE IN UNIT TESTING VIA "UNROSLYNIZED" UNIT TESTS. 
 //
@@ -80,12 +78,12 @@ type internal FSharpMethodListForAMethodTip_DEPRECATED(documentationBuilder: IDo
         buf.ToString()
         )
             
-    override x.GetReturnTypeText(methodIndex) = safe methodIndex "" (fun m -> m.ReturnTypeText |> TaggedText.toString)
+    override x.GetReturnTypeText(methodIndex) = safe methodIndex "" (fun m -> m.ReturnTypeText.Text)
 
     override x.GetParameterCount(methodIndex) =  safe methodIndex 0 (fun m -> getParameters(m).Length)
             
     override x.GetParameterInfo(methodIndex, parameterIndex, nameOut, displayOut, descriptionOut) =
-        let name,display = safe methodIndex ("","") (fun m -> let p = getParameters(m).[parameterIndex] in p.ParameterName, TaggedText.toString p.Display )
+        let name,display = safe methodIndex ("","") (fun m -> let p = getParameters(m).[parameterIndex] in p.ParameterName, p.Display.Text )
            
         nameOut <- name
         displayOut <- display

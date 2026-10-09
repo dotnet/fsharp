@@ -10,6 +10,7 @@ open Internal.Utilities.Library.Extras
 open FSharp.Core.Printf
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.Diagnostics
+open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Infos
@@ -21,6 +22,7 @@ open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Text.Layout
 open FSharp.Compiler.Text.TaggedText
 open FSharp.Compiler.Xml
+open FSharp.Compiler.XmlDocInheritance
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
@@ -69,6 +71,7 @@ module internal SymbolHelpers =
                 |> Option.orElseWith (fun () -> Some(rangeOfEntityRef preferFlag minfo.DeclaringTyconRef))
 #endif
         |   DefaultStructCtor(_, AppTy g (tcref, _)) -> Some(rangeOfEntityRef preferFlag tcref)
+        |   RecdCtor(_, AppTy g (tcref, _)) -> Some(rangeOfEntityRef preferFlag tcref)
         |   _ -> minfo.ArbitraryValRef |> Option.map (rangeOfValRef preferFlag)
 
     let rangeOfEventInfo preferFlag (einfo: EventInfo) =
@@ -345,11 +348,172 @@ module internal SymbolHelpers =
 
         |> GetXmlDocFromLoader infoReader
 
+    /// Computes the implicit inherit target for an Item at the tooltip/completion/signature-help
+    /// layer (Path B): a cref token plus the base type/member's raw XML doc text, read directly
+    /// from the in-memory typed tree. Returns None when no base is readily computable, in which
+    /// case a naked <inheritdoc/> silently expands to nothing.
+    ///
+    /// Only the headline Item kinds are supported here: types (base class or first interface) and
+    /// overriding methods/properties. All other kinds return None. This mirrors the Path A helpers
+    /// getImplicitTargetCrefForEntity / getImplicitTargetCrefForMember in Symbols.fs, but reads the
+    /// base doc directly (the InfoReader layer has no SymbolEnv/CCU walk to resolve arbitrary crefs).
+    ///
+    /// The returned cref token is only ever compared for equality against itself by the resolver
+    /// built in GetXmlCommentForItemAux, so its exact spelling does not need to match a real cref.
+    let private tryGetImplicitInheritTarget (infoReader: InfoReader) m (d: Item) : (string * string) option =
+        let g = infoReader.g
+        let amap = infoReader.amap
+
+        let docTextOf (xmlDoc: XmlDoc) =
+            if xmlDoc.IsEmpty then None else Some(xmlDoc.GetXmlText())
+
+        // Base class (skipping obj) or, failing that, the first implemented interface of a type.
+        // NOTE (intentional deviation from Roslyn): Roslyn inherits System.Object's documentation
+        // for a class whose only supertype is object; F# instead falls through to the first
+        // interface (or nothing) to avoid surfacing System.Object's summary as tooltip noise.
+        let tryBaseTypeTarget (ty: TType) =
+            // Roslyn GetCandidateSymbol: structs, enums and delegates have no inheritance candidate.
+            if isStructTy g ty || isEnumTy g ty || isDelegateTy g ty then
+                None
+            else
+
+            let baseTyOpt =
+                match GetSuperTypeOfType g amap m ty with
+                | Some baseTy when not (isObjTyAnyNullness g baseTy) -> Some baseTy
+                | _ ->
+                    match GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g amap m ty with
+                    | intfTy :: _ -> Some intfTy
+                    | [] -> None
+
+            match baseTyOpt with
+            | Some baseTy ->
+                match tryTcrefOfAppTy g baseTy with
+                | ValueSome tcref ->
+                    docTextOf tcref.XmlDoc
+                    |> Option.map (fun xmlText -> "T:" + tcref.CompiledRepresentationForNamedType.FullName, xmlText)
+                | ValueNone -> None
+            | None -> None
+
+        // Candidate declaring types to look for the overridden member on: the declaring types of the
+        // implemented slot signatures come first (these locate a member declared on a GRANDPARENT that
+        // an intermediate base does not redeclare, and are already instantiated for generic bases), then
+        // the direct base type as a fallback for overrides that record no F# slot signature (e.g. an
+        // override of a base-CLASS virtual such as ToString). Both are only used after the caller has
+        // confirmed a genuine F# override, so ImplementedSlotSignatures is safe to read.
+        let overriddenMemberBaseTypes (slotSigs: SlotSig list) (apparentEnclosingTy: TType) =
+            let fromSlots = slotSigs |> List.map (fun slot -> slot.DeclaringType)
+
+            let fromDirectBase =
+                match GetSuperTypeOfType g amap m apparentEnclosingTy with
+                | Some baseTy when not (isObjTyAnyNullness g baseTy) -> [ baseTy ]
+                | _ -> []
+
+            fromSlots @ fromDirectBase
+
+        // For an OVERRIDE, the overridden base member with a matching signature. Only genuine
+        // overrides inherit (Roslyn GetCandidateSymbol: a non-override method inherits only from an
+        // interface implementation, which is not resolvable at this InfoReader layer). Signature
+        // matching disambiguates overloaded base members so the correct overload's docs are used.
+        let tryBaseMethodTarget (minfo: MethInfo) =
+            if not minfo.IsDefiniteFSharpOverride then
+                None
+            else
+                overriddenMemberBaseTypes minfo.ImplementedSlotSignatures minfo.ApparentEnclosingType
+                |> List.tryPick (fun baseTy ->
+                    GetImmediateIntrinsicMethInfosOfType (Some minfo.LogicalName, AccessibleFromSomeFSharpCode) g amap m baseTy
+                    |> List.filter (fun baseMinfo -> MethInfosEquivByNameAndSig EraseNone true g amap m minfo baseMinfo)
+                    |> List.tryPick (fun baseMinfo -> docTextOf baseMinfo.XmlDoc |> Option.map (fun xmlText -> "M:" + minfo.LogicalName, xmlText)))
+
+        let tryBasePropertyTarget (pinfo: PropInfo) =
+            if not pinfo.IsDefiniteFSharpOverride then
+                None
+            else
+                overriddenMemberBaseTypes pinfo.ImplementedSlotSignatures pinfo.ApparentEnclosingType
+                |> List.tryPick (fun baseTy ->
+                    GetImmediateIntrinsicPropInfosOfType (Some pinfo.PropertyName, AccessibleFromSomeFSharpCode) g amap m baseTy
+                    |> List.filter (fun basePinfo -> PropInfosEquivByNameAndSig EraseNone g amap m pinfo basePinfo)
+                    |> List.tryPick (fun basePinfo -> docTextOf basePinfo.XmlDoc |> Option.map (fun xmlText -> "P:" + pinfo.PropertyName, xmlText)))
+
+        // For a CONSTRUCTOR, the base-type constructor with a matching parameter signature (Roslyn
+        // GetCandidateSymbol matches constructors by signature). Constructors are not overrides, so
+        // there is no override gate. Parameter-only matching (MethInfosEquivByNameAndPartialSig) is
+        // used deliberately: a constructor's logical return type is its own declaring type, so the
+        // full-signature comparer would never match a base constructor. Structs/enums/delegates have
+        // no inheritance candidate.
+        let tryBaseCtorTarget (minfo: MethInfo) =
+            let enclTy = minfo.ApparentEnclosingType
+
+            if isStructTy g enclTy || isEnumTy g enclTy || isDelegateTy g enclTy then
+                None
+            else
+                match GetSuperTypeOfType g amap m enclTy with
+                | Some baseTy when not (isObjTyAnyNullness g baseTy) ->
+                    GetIntrinsicConstructorInfosOfType infoReader m baseTy
+                    |> List.filter (fun baseCtor -> MethInfosEquivByNameAndPartialSig EraseNone true g amap m minfo baseCtor)
+                    |> List.tryPick (fun baseCtor -> docTextOf baseCtor.XmlDoc |> Option.map (fun xmlText -> "M:" + minfo.LogicalName, xmlText))
+                | _ -> None
+
+        try
+            match d with
+            | Item.DelegateCtor ty
+            | Item.Types(_, ty :: _) -> tryBaseTypeTarget ty
+            | Item.UnqualifiedType(tcref :: _) -> tryBaseTypeTarget (generalizedTyconRef g tcref)
+            | Item.MethodGroup(_, minfo :: _, _) -> tryBaseMethodTarget minfo
+            | Item.CtorGroup(_, minfo :: _) -> tryBaseCtorTarget minfo
+            | Item.Property(info = pinfo :: _) -> tryBasePropertyTarget pinfo
+            | _ -> None
+        with _ ->
+            None
+
     /// Produce an XmlComment with a signature or raw text, given the F# comment and the item
     let GetXmlCommentForItemAux (xmlDoc: XmlDoc option) (infoReader: InfoReader) m d =
         match xmlDoc with
-        | Some xmlDoc when not xmlDoc.IsEmpty  ->
-            FSharpXmlDoc.FromXmlText xmlDoc
+        | Some xmlDoc when not xmlDoc.IsEmpty ->
+            // Fast path: scan the raw (unelaborated) lines for "<inheritdoc" before paying for a
+            // GetXmlText() elaboration + concat. This runs on every documented tooltip/completion/
+            // signature-help item, and the overwhelming majority of docs contain no <inheritdoc>.
+            // processLines leaves docs whose first line starts with '<' unchanged, so a genuine
+            // <inheritdoc> tag is always present in UnprocessedLines; the rare case where the raw
+            // text merely mentions "<inheritdoc" but it gets XML-escaped into an implicit <summary>
+            // is caught by the precise GetXmlText() check below.
+            let mightContainInheritDoc =
+                xmlDoc.UnprocessedLines
+                |> Array.exists (fun line -> line.IndexOf("<inheritdoc", System.StringComparison.Ordinal) >= 0)
+
+            if not mightContainInheritDoc then
+                FSharpXmlDoc.FromXmlText xmlDoc
+            else
+
+            let xmlText = xmlDoc.GetXmlText()
+
+            if xmlText.IndexOf("<inheritdoc", System.StringComparison.Ordinal) < 0 then
+                FSharpXmlDoc.FromXmlText xmlDoc
+            else
+                // Only implicit <inheritdoc/> is resolvable at this layer (no SymbolEnv/CCU walk to
+                // resolve explicit crefs). Compute the base target and expand against it.
+                let implicitTargetCrefOpt, resolveCref =
+                    match tryGetImplicitInheritTarget infoReader m d with
+                    | Some(baseCref, baseXmlText) ->
+                        let resolve cref =
+                            if System.String.Equals(cref, baseCref, System.StringComparison.Ordinal) then
+                                Some baseXmlText
+                            else
+                                None
+
+                        Some baseCref, resolve
+                    | None -> None, (fun _ -> None)
+
+                let expandedText =
+                    expandInheritDocFromXmlText resolveCref implicitTargetCrefOpt Set.empty xmlText
+
+                if System.String.Equals(xmlText, expandedText, System.StringComparison.Ordinal) then
+                    FSharpXmlDoc.FromXmlText xmlDoc
+                else
+                    // The engine returns already-elaborated XML text (its first line is the <doc>
+                    // wrapper's leading whitespace). Split it back into lines so XmlDoc's elaboration
+                    // sees the leading '<' and passes it through verbatim instead of re-wrapping the
+                    // whole thing in an implicit <summary> and XML-escaping the inherited markup.
+                    FSharpXmlDoc.FromXmlText(XmlDoc(expandedText.Split('\n'), xmlDoc.Range))
         | _ -> GetXmlDocHelpSigOfItemForLookup infoReader m d
 
     let GetXmlCommentForMethInfoItem infoReader m d (minfo: MethInfo) =
@@ -819,6 +983,7 @@ module internal SymbolHelpers =
 
             | MethInfoWithModifiedReturnType(mi,_) -> getKeywordForMethInfo mi
             | DefaultStructCtor _  -> None
+            | RecdCtor _  -> None
 #if !NO_TYPEPROVIDERS
             | ProvidedMeth _ -> None
 #endif

@@ -83,10 +83,11 @@ exception OverrideDoesntOverride of DisplayEnv * OverrideInfo * MethInfo option 
 
 module DispatchSlotChecking =
     /// Format the signature of an override as a string as part of an error message
-    val FormatOverride: denv: DisplayEnv -> d: OverrideInfo -> string
+    val FormatOverride: denv: DisplayEnv -> d: OverrideInfo -> RichText
 
     /// Format the signature of a MethInfo as a string as part of an error message
-    val FormatMethInfoSig: g: TcGlobals -> amap: ImportMap -> m: range -> denv: DisplayEnv -> d: MethInfo -> string
+    val FormatMethInfoSig:
+        g: TcGlobals -> amap: ImportMap -> m: range -> denv: DisplayEnv -> minfo: MethInfo -> RichText
 
     /// Get the override information for an object expression method being used to implement dispatch slots
     val GetObjectExprOverrideInfo:

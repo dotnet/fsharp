@@ -953,14 +953,21 @@ type InfoReader(g: TcGlobals, amap: ImportMap) as this =
             else
                 match tryTcrefOfAppTy g metadataTy with
                 | ValueNone -> []
-                | ValueSome tcref -> 
-                    tcref.MembersOfFSharpTyconByName 
-                    |> NameMultiMap.find ".ctor"
-                    |> List.choose(fun vref -> 
-                        match vref.MemberInfo with 
-                        | Some membInfo when (membInfo.MemberFlags.MemberKind = SynMemberKind.Constructor) -> Some vref 
-                        | _ -> None) 
-                    |> List.map (fun x -> FSMeth(g, origTy, x, None)) 
+                | ValueSome tcref ->
+                    let declaredCtors =
+                        tcref.MembersOfFSharpTyconByName
+                        |> NameMultiMap.find ".ctor"
+                        |> List.choose(fun vref ->
+                            match vref.MemberInfo with
+                            | Some membInfo when (membInfo.MemberFlags.MemberKind = SynMemberKind.Constructor) -> Some vref
+                            | _ -> None)
+                        |> List.map (fun x -> FSMeth(g, origTy, x, None))
+                    // Gate on the langversion here, not only at the call site, so the synthesized constructor
+                    // stays out of signature generation and name resolution when the feature is off.
+                    if g.langVersion.SupportsFeature LanguageFeature.RecordConstructorSyntax && tcref.IsRecordTycon then
+                        declaredCtors @ [ RecdCtor(g, origTy) ]
+                    else
+                        declaredCtors
       )    
 
     static member ExcludeHiddenOfMethInfos g amap m minfos = 
@@ -1031,7 +1038,7 @@ type InfoReader(g: TcGlobals, amap: ImportMap) as this =
 let checkLanguageFeatureRuntimeAndRecover (infoReader: InfoReader) langFeature m =
     if not (infoReader.IsLanguageFeatureRuntimeSupported langFeature) then
         let featureStr = LanguageVersion.GetFeatureString langFeature
-        errorR (Error(FSComp.SR.chkFeatureNotRuntimeSupported featureStr, m))
+        errorR (Error(FSComp.SR.chkFeatureNotRuntimeSupported (RichText.mkText featureStr), m))
 
 let GetIntrinsicConstructorInfosOfType (infoReader: InfoReader) m ty = 
     infoReader.GetIntrinsicConstructorInfosOfTypeAux m ty ty
@@ -1264,6 +1271,11 @@ let rec GetXmlDocSigOfMethInfo (infoReader: InfoReader)  m (minfo: MethInfo) =
         | ValueSome tcref ->
             Some(None, $"M:{tcref.CompiledRepresentationForNamedType.FullName}.#ctor")
         | _ -> None
+    | RecdCtor(g, ty) ->
+        match tryTcrefOfAppTy g ty with
+        | ValueSome tcref ->
+            Some(None, $"M:{tcref.CompiledRepresentationForNamedType.FullName}.#ctor")
+        | ValueNone -> None
 
 #if !NO_TYPEPROVIDERS
     | ProvidedMeth _ -> None

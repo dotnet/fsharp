@@ -13,27 +13,14 @@ type LexBuffer<'char> with
     member GetLocalData<'T when 'T: not null> : key: string * initializer: (unit -> 'T) -> 'T
     member TryGetLocalData<'T when 'T: not null> : key: string -> 'T option
 
-val StringAsLexbuf:
-    reportLibraryOnlyFeatures: bool * langVersion: LanguageVersion * strictIndentation: bool option * string -> Lexbuf
+val StringAsLexbuf: reportLibraryOnlyFeatures: bool * langVersion: LanguageVersion * string -> Lexbuf
 
 val FunctionAsLexbuf:
-    reportLibraryOnlyFeatures: bool *
-    langVersion: LanguageVersion *
-    strictIndentation: bool option *
-    bufferFiller: (char[] * int * int -> int) ->
-        Lexbuf
+    reportLibraryOnlyFeatures: bool * langVersion: LanguageVersion * bufferFiller: (char[] * int * int -> int) -> Lexbuf
 
 val SourceTextAsLexbuf:
-    reportLibraryOnlyFeatures: bool *
-    langVersion: LanguageVersion *
-    strictIndentation: bool option *
-    sourceText: ISourceText ->
-        Lexbuf
+    reportLibraryOnlyFeatures: bool * langVersion: LanguageVersion * sourceText: ISourceText -> Lexbuf
 
 /// Will not dispose of the stream reader.
 val StreamReaderAsLexbuf:
-    reportLibraryOnlyFeatures: bool *
-    langVersion: LanguageVersion *
-    strictIndentation: bool option *
-    reader: StreamReader ->
-        Lexbuf
+    reportLibraryOnlyFeatures: bool * langVersion: LanguageVersion * reader: StreamReader -> Lexbuf

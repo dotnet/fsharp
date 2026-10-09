@@ -2170,7 +2170,6 @@ type internal TransparentCompiler
                                 yield options.ApplyLineDirectives
                                 yield options.DiagnosticOptions.GlobalWarnAsError
                                 yield options.IsInteractive
-                                yield! (Option.toList options.StrictIndentation)
                                 yield options.CompilingFSharpCore
                                 yield options.IsExe
                             ]

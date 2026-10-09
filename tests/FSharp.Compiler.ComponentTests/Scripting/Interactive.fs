@@ -358,3 +358,26 @@ asm.GetCustomAttributes(typeof<System.Diagnostics.DebuggableAttribute>, false)
                 | Result.Error ex -> raise ex
 
             Assert.Equal(1, flags.Length)
+
+    // https://github.com/dotnet/fsharp/issues/14454
+    [<FSharp.Test.FactForNETCOREAPP>]
+    let ``Issue 14454 - IAsyncDisposable use in task CE`` () =
+        Fsx
+            """
+open System
+open System.Threading.Tasks
+
+let asyncDisposable =
+    { new IAsyncDisposable with
+        member _.DisposeAsync() = ValueTask() }
+
+let t =
+    task {
+        use d = asyncDisposable
+        return ()
+    }
+
+t.Wait()
+            """
+        |> eval
+        |> shouldSucceed

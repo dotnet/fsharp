@@ -58,3 +58,25 @@ module QuotationRendering =
     [<Fact>]
     let Decimal () =
         quoteShouldRender "Decimal" """<@ fun (x: decimal) -> match x with 1m -> "a" | _ -> "b" @>"""
+
+    // FS-1073: a positional record-constructor call must quote identically to record syntax. Both lower to
+    // the same NewRecord node before quotation translation, so the quotation contains no constructor call -
+    // it renders exactly like { A = 1; B = 2 }.
+    [<Fact>]
+    let RecordConstructor () =
+        let source = """
+type R = { A: int; B: int }
+let viaCtor = <@ R(1, 2) @>
+let viaRecord = <@ { A = 1; B = 2 } @>
+System.Console.WriteLine(viaCtor.ToString())
+System.Console.WriteLine(viaCtor.ToString() = viaRecord.ToString())
+"""
+        let result =
+            Fsx source
+            |> evalInSharedSession fsiSession
+            |> shouldSucceed
+        match result.RunOutput with
+        | Some (EvalOutput e) ->
+            checkBaseline (e.StdOut |> normalizeNewlines) (Path.Combine(baselineDir, "RecordConstructor.bsl"))
+        | _ ->
+            failwith "Expected eval output from shared FSI session."

@@ -8,6 +8,7 @@ open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Runtime.CompilerServices
 
+/// Do not lock on these objects.
 [<Class>]
 type InterruptibleLazy<'T> =
     new: valueFactory: (unit -> 'T) -> InterruptibleLazy<'T>
@@ -70,7 +71,7 @@ module internal PervasiveAutoOpens =
     type Async with
 
         /// Runs the computation synchronously, always starting on the current thread.
-        static member RunImmediate: computation: Async<'T> * ?cancellationToken: CancellationToken -> 'T
+        static member RunSynchronouslyImmediate: computation: Async<'T> * ?cancellationToken: CancellationToken -> 'T
 
     val foldOn: p: ('a -> 'b) -> f: ('c -> 'b -> 'd) -> z: 'c -> x: 'a -> 'd
 
@@ -84,6 +85,16 @@ type DelayInitArrayMap<'T, 'TDictKey, 'TDictValue> =
     member GetDictionary: unit -> IDictionary<'TDictKey, 'TDictValue>
 
     abstract CreateDictionary: 'T[] -> IDictionary<'TDictKey, 'TDictValue>
+
+/// Computes a value once, in place: an unforced value costs one object rather than a lazy plus its closure.
+[<AbstractClass>]
+type internal DelayInitValue<'T when 'T: not null and 'T: not struct> =
+    new: unit -> DelayInitValue<'T>
+
+    member Value: 'T
+
+    /// Called at most once, under the instance's lock. An exception is not cached: the next access retries.
+    abstract Compute: unit -> 'T
 
 module internal Order =
 

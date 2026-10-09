@@ -1,0 +1,25 @@
+module DelegateUnitReturn
+
+open System
+
+// Target returns unit, compiled to void; delegate (Action) returns void.
+let returnsUnit (x: int) (y: int) : unit = ()
+
+// 26. non-eta unit-returning member (compiled to void)
+let voidNonEta () = Action<int, int>(returnsUnit)
+
+// 10. eta unit-returning member
+let voidEta () = Action<int, int>(fun a b -> returnsUnit a b)
+
+type C =
+    // Generic method returning its own type variable; instantiated to unit below. The compiled method
+    // returns the type variable (System.Unit once instantiated), not void - a distinct case from the
+    // void-returning member above.
+    static member Echo<'T>(x: 'T) : 'T = x
+
+// Generic return type variable instantiated to unit; the delegate likewise returns unit.
+// 27. non-eta generic return tyvar instantiated to unit (compiled return is Unit, not void)
+let unitGenericReturnNonEta () = Func<unit, unit>(C.Echo<unit>)
+
+// 11. eta generic unit-returning method
+let unitGenericReturnEta () = Func<unit, unit>(fun (x: unit) -> C.Echo<unit> x)

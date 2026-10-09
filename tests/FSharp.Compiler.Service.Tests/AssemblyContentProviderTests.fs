@@ -30,7 +30,7 @@ let private assertAreEqual (expected, actual) =
 let private checkFile (source: string) = 
     let _, checkFileAnswer = 
         checker.ParseAndCheckFileInProject(filePath, 0, FSharp.Compiler.Text.SourceText.ofString source, projectOptions) 
-        |> Async.RunImmediate
+        |> Async.RunSynchronouslyImmediate
 
     match checkFileAnswer with
     | FSharpCheckFileAnswer.Aborted -> failwithf "ParseAndCheckFileInProject aborted"

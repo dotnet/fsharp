@@ -28,7 +28,7 @@ module internal LayoutRender =
 
     val internal toArray: Layout -> TaggedText[]
 
-    val internal emitL: (TaggedText -> unit) -> Layout -> unit
+    val internal toRichText: Layout -> RichText
 
     val internal mkNav: range -> TaggedText -> TaggedText
 

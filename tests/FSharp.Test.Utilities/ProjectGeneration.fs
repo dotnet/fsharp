@@ -155,25 +155,34 @@ module ReferenceHelpers =
             |> Seq.map (fun (name, runtimes) -> name, runtimes |> Seq.map snd |> Seq.toList)
             |> Map
 
+        let preferReleased candidates =
+            let released, previews =
+                candidates |> List.partition (fun ((r: Runtime), _) -> not (r.Version.Contains "preview"))
+
+            let newestFirst = List.sortByDescending (fun ((r: Runtime), _) -> r.Version)
+            newestFirst released @ newestFirst previews
+
         runTimeLoadScripts
         |> Map.tryFind reference.Name
         |> Option.map (
             List.filter (fun (r, _) ->
                 match reference.Version with
                 | Some v -> r.Version = v
-                | None -> not (r.Version.Contains "preview"))
-            >> List.sortByDescending (fun (r, _) -> r.Version)
+                | None -> true)
+            >> preferReleased
         )
         |> Option.bind List.tryHead
         |> Option.map snd
         |> Option.defaultWith (fun () ->
-            failwith $"Couldn't find framework reference {reference.Name} {reference.Version}. Available Runtimes: \n"
-            + (runTimeLoadScripts
-               |> Map.toSeq
-               |> Seq.map snd
-               |> Seq.collect (List.map fst)
-               |> Seq.map (fun r -> $"{r.Name} {r.Version}")
-               |> String.concat "\n"))
+            let available =
+                runTimeLoadScripts
+                |> Map.toSeq
+                |> Seq.map snd
+                |> Seq.collect (List.map fst)
+                |> Seq.map (fun r -> $"{r.Name} {r.Version}")
+                |> String.concat "\n"
+
+            failwith $"Couldn't find framework reference {reference.Name} {reference.Version}. Available Runtimes: \n{available}")
 
 
 open ReferenceHelpers
@@ -328,7 +337,7 @@ type SyntheticProject =
                     SourceText.ofString referenceScript,
                     assumeDotNetFramework = false
                 )
-                |> Async.RunImmediate
+                |> Async.RunSynchronouslyImmediate
 
             {
                 ProjectFileName = this.ProjectFileName

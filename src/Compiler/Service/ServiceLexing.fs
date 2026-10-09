@@ -63,6 +63,7 @@ module FSharpTokenTag =
     let DOT = tagOfToken DOT
     let DOT_DOT = tagOfToken DOT_DOT
     let DOT_DOT_HAT = tagOfToken DOT_DOT_HAT
+    let DOT_DOT_DOT = tagOfToken DOT_DOT_DOT
     let INT32_DOT_DOT = tagOfToken (INT32_DOT_DOT(0, true))
     let UNDERSCORE = tagOfToken UNDERSCORE
     let BAR = tagOfToken BAR
@@ -233,7 +234,8 @@ module internal TokenClassifications =
         | INFIX_AMP_OP _ -> (FSharpTokenColorKind.Operator, FSharpTokenCharKind.Operator, FSharpTokenTriggerClass.None)
 
         | DOT_DOT
-        | DOT_DOT_HAT -> (FSharpTokenColorKind.Operator, FSharpTokenCharKind.Operator, FSharpTokenTriggerClass.MemberSelect)
+        | DOT_DOT_HAT
+        | DOT_DOT_DOT -> (FSharpTokenColorKind.Operator, FSharpTokenCharKind.Operator, FSharpTokenTriggerClass.MemberSelect)
 
         | COMMA -> (FSharpTokenColorKind.Punctuation, FSharpTokenCharKind.Delimiter, FSharpTokenTriggerClass.ParamNext)
 
@@ -1130,8 +1132,7 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf, maxLength: int option, fi
         }
 
 [<Sealed>]
-type FSharpSourceTokenizer
-    (conditionalDefines: string list, fileName: string option, langVersion: string option, strictIndentation: bool option) =
+type FSharpSourceTokenizer(conditionalDefines: string list, fileName: string option, langVersion: string option) =
 
     let langVersion =
         langVersion
@@ -1149,13 +1150,13 @@ type FSharpSourceTokenizer
 
     member _.CreateLineTokenizer(lineText: string) =
         let lexbuf =
-            UnicodeLexing.StringAsLexbuf(reportLibraryOnlyFeatures, langVersion, strictIndentation, lineText)
+            UnicodeLexing.StringAsLexbuf(reportLibraryOnlyFeatures, langVersion, lineText)
 
         FSharpLineTokenizer(lexbuf, Some lineText.Length, fileName, lexargs)
 
     member _.CreateBufferTokenizer bufferFiller =
         let lexbuf =
-            UnicodeLexing.FunctionAsLexbuf(reportLibraryOnlyFeatures, langVersion, strictIndentation, bufferFiller)
+            UnicodeLexing.FunctionAsLexbuf(reportLibraryOnlyFeatures, langVersion, bufferFiller)
 
         FSharpLineTokenizer(lexbuf, None, fileName, lexargs)
 
@@ -1322,6 +1323,7 @@ type FSharpTokenKind =
     | End
     | DotDot
     | DotDotHat
+    | DotDotDot
     | BarBar
     | Upcast
     | Downcast
@@ -1521,6 +1523,7 @@ type FSharpToken =
         | END -> FSharpTokenKind.End
         | DOT_DOT -> FSharpTokenKind.DotDot
         | DOT_DOT_HAT -> FSharpTokenKind.DotDotHat
+        | DOT_DOT_DOT -> FSharpTokenKind.DotDotDot
         | BAR_BAR -> FSharpTokenKind.BarBar
         | UPCAST -> FSharpTokenKind.Upcast
         | DOWNCAST -> FSharpTokenKind.Downcast
@@ -1731,7 +1734,6 @@ module FSharpLexerImpl =
         (flags: FSharpLexerFlags)
         reportLibraryOnlyFeatures
         langVersion
-        strictIndentation
         diagnosticsLogger
         onToken
         pathMap
@@ -1750,7 +1752,7 @@ module FSharpLexerImpl =
             (flags &&& FSharpLexerFlags.UseLexFilter) = FSharpLexerFlags.UseLexFilter
 
         let lexbuf =
-            UnicodeLexing.SourceTextAsLexbuf(reportLibraryOnlyFeatures, langVersion, strictIndentation, text)
+            UnicodeLexing.SourceTextAsLexbuf(reportLibraryOnlyFeatures, langVersion, text)
 
         let applyLineDirectives = isCompiling
 
@@ -1776,7 +1778,7 @@ module FSharpLexerImpl =
             ct.ThrowIfCancellationRequested()
             onToken (getNextToken lexbuf) lexbuf.LexemeRange
 
-    let lex text conditionalDefines flags reportLibraryOnlyFeatures langVersion strictIndentation lexCallback pathMap ct =
+    let lex text conditionalDefines flags reportLibraryOnlyFeatures langVersion lexCallback pathMap ct =
         let diagnosticsLogger =
             CompilationDiagnosticLogger("Lexer", FSharpDiagnosticOptions.Default)
 
@@ -1786,7 +1788,6 @@ module FSharpLexerImpl =
             flags
             reportLibraryOnlyFeatures
             langVersion
-            strictIndentation
             diagnosticsLogger
             lexCallback
             pathMap
@@ -1795,9 +1796,7 @@ module FSharpLexerImpl =
 [<AbstractClass; Sealed>]
 type FSharpLexer =
 
-    static member Tokenize
-        (text: ISourceText, tokenCallback, ?langVersion, ?strictIndentation, ?filePath: string, ?conditionalDefines, ?flags, ?pathMap, ?ct)
-        =
+    static member Tokenize(text: ISourceText, tokenCallback, ?langVersion, ?filePath: string, ?conditionalDefines, ?flags, ?pathMap, ?ct) =
         let langVersion = defaultArg langVersion "latestmajor" |> LanguageVersion
         let flags = defaultArg flags FSharpLexerFlags.Default
         ignore filePath // can be removed at later point
@@ -1817,4 +1816,4 @@ type FSharpLexer =
             | _ -> tokenCallback fsTok
 
         let reportLibraryOnlyFeatures = true
-        lex text conditionalDefines flags reportLibraryOnlyFeatures langVersion strictIndentation onToken pathMap ct
+        lex text conditionalDefines flags reportLibraryOnlyFeatures langVersion onToken pathMap ct
