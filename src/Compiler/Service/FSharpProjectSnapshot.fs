@@ -88,24 +88,21 @@ type FSharpFileSnapshot(FileName: string, Version: string, GetSource: unit -> Ta
                 |> Task.FromResult
         )
 
-    static member CreateFromDocumentSource(fileName: string, documentSource: DocumentSource) =
+    /// A custom source gets the file text now and uses its checksum as the version,
+    /// so a file that did not change keeps its version. When it returns None, the file is read from disk.
+    static member CreateFromDocumentSource(fileName: string, documentSource: DocumentSource) : Async<FSharpFileSnapshot> =
+        async {
+            match documentSource with
+            | DocumentSource.Custom f ->
+                match! f fileName with
+                | Some source ->
+                    let source = SourceTextNew.ofISourceText source
+                    let version = source.GetChecksum().ToBuilder().ToArray() |> Md5Hasher.toString
+                    return FSharpFileSnapshot(fileName, version, fun () -> Task.FromResult source)
+                | None -> return FSharpFileSnapshot.CreateFromFileSystem fileName
 
-        match documentSource with
-        | DocumentSource.Custom f ->
-            let version = DateTime.Now.Ticks.ToString()
-
-            FSharpFileSnapshot(
-                fileName,
-                version,
-                fun () ->
-                    task {
-                        match! f fileName |> Async.StartAsTask with
-                        | Some source -> return SourceTextNew.ofISourceText source
-                        | None -> return failwith $"Couldn't get source for file {fileName}"
-                    }
-            )
-
-        | DocumentSource.FileSystem -> FSharpFileSnapshot.CreateFromFileSystem fileName
+            | DocumentSource.FileSystem -> return FSharpFileSnapshot.CreateFromFileSystem fileName
+        }
 
     member public _.FileName = FileName
     member _.Version = Version
@@ -713,12 +710,7 @@ and [<Experimental("This FCS API is experimental and subject to change.")>] FSha
         }
 
     static member FromOptions(options: FSharpProjectOptions, documentSource: DocumentSource) =
-        FSharpProjectSnapshot.FromOptions(
-            options,
-            fun _ fileName ->
-                FSharpFileSnapshot.CreateFromDocumentSource(fileName, documentSource)
-                |> async.Return
-        )
+        FSharpProjectSnapshot.FromOptions(options, fun _ fileName -> FSharpFileSnapshot.CreateFromDocumentSource(fileName, documentSource))
 
     static member FromOptions
         (options: FSharpProjectOptions, fileName: string, fileVersion: int, sourceText: ISourceText, documentSource: DocumentSource)
@@ -731,9 +723,9 @@ and [<Experimental("This FCS API is experimental and subject to change.")>] FSha
                     $"{fileVersion}{sourceText.GetHashCode().ToString()}",
                     fun () -> Task.FromResult(SourceTextNew.ofISourceText sourceText)
                 )
+                |> async.Return
             else
                 FSharpFileSnapshot.CreateFromDocumentSource(fName, documentSource)
-            |> async.Return
 
         FSharpProjectSnapshot.FromOptions(options, getFileSnapshot)
 
