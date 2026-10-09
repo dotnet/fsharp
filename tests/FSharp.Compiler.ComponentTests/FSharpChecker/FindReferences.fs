@@ -1066,6 +1066,183 @@ let count = list.Count
                         $"Assembly should be a system assembly, got: {assembly.SimpleName}"))
             }
 
+/// https://github.com/dotnet/fsharp/issues/20630 https://github.com/dotnet/fsharp/issues/15134
+module XmlDocParameters =
+
+    open System
+
+    [<Literal>]
+    let private refStart = "{ref}"
+
+    [<Literal>]
+    let private refEnd = "{/ref}"
+
+    /// Removes the `{ref}…{/ref}` markers and returns the source with the `(line, startColumn, endColumn)` of each marked text
+    /// and whether it sits on a `///` line. SyntheticProject puts its own `module` header first, so a source line is one
+    /// line further down in the checked file.
+    let private extractRefs (markedSource: string) =
+        let lines = markedSource.Split('\n')
+        let refs = ResizeArray()
+
+        let source =
+            lines
+            |> Array.mapi (fun index (line: string) ->
+                let isDocLine = line.TrimStart().StartsWith("///", StringComparison.Ordinal)
+                let mutable text = line
+                let mutable start = text.IndexOf(refStart, StringComparison.Ordinal)
+
+                while start >= 0 do
+                    text <- text.Remove(start, refStart.Length)
+                    let finish = text.IndexOf(refEnd, start, StringComparison.Ordinal)
+                    text <- text.Remove(finish, refEnd.Length)
+                    refs.Add(((index + 2, start, finish), isDocLine))
+                    start <- text.IndexOf(refStart, StringComparison.Ordinal)
+
+                text)
+            |> String.concat "\n"
+
+        source, List.ofSeq refs
+
+    let private rangesOf (uses: FSharpSymbolUse seq) =
+        uses
+        |> Seq.map (fun su -> su.Range.StartLine, su.Range.StartColumn, su.Range.EndColumn)
+        |> Seq.sort
+        |> Seq.toList
+
+    /// Every use of the symbol is marked `{ref}…{/ref}`; the symbol is the one used at the first mark outside the `///` lines.
+    /// The marks on `///` lines show up only for a caller that asks for the names in docs.
+    let private expectDocUses (markedSource: string) =
+        let source, refs = extractRefs markedSource
+        let codeRanges = refs |> List.filter (snd >> not) |> List.map fst |> List.sort
+        let allRanges = refs |> List.map fst |> List.sort
+
+        checkAllSymbols source (fun result allUses ->
+            let symbol = (allUses |> Seq.find (fun su -> rangesOf [ su ] = [ List.head codeRanges ])).Symbol
+
+            let usesOf kinds =
+                result.GetUsesOfSymbolInFile(symbol, relatedSymbolKinds = kinds) |> rangesOf
+
+            Assert.Equal<(int * int * int) list>(codeRanges, result.GetUsesOfSymbolInFile symbol |> rangesOf)
+            Assert.Equal<(int * int * int) list>(codeRanges, usesOf RelatedSymbolUseKind.AllInCode)
+            Assert.Equal<(int * int * int) list>(codeRanges, usesOf RelatedSymbolUseKind.All)
+            Assert.Equal<(int * int * int) list>(allRanges, usesOf RelatedSymbolUseKind.XmlDocParameter)
+            Assert.Equal<(int * int * int) list>(allRanges, usesOf RelatedSymbolUseKind.AllInCodeAndDocs))
+
+    [<Fact>]
+    let ``param and paramref of a let-bound function`` () =
+        expectDocUses """
+/// <summary>Adds.</summary>
+/// <param name="{ref}x{/ref}">The first number.</param>
+/// <param name="y">Added to <paramref name="{ref}x{/ref}"/>.</param>
+let add {ref}x{/ref} y = {ref}x{/ref} + y
+"""
+
+    [<Fact>]
+    let ``typeparam and typeparamref of an explicitly generic function`` () =
+        expectDocUses """
+/// <typeparam name="{ref}T{/ref}">The element type, see <typeparamref name="{ref}T{/ref}"/>.</typeparam>
+/// <param name="x">The value.</param>
+let id<{ref}'T{/ref}> (x: {ref}'T{/ref}) = x
+"""
+
+    [<Fact>]
+    let ``param of a member, not confused with this`` () =
+        expectDocUses """
+type C() =
+    /// <param name="{ref}value{/ref}">What to keep.</param>
+    member this.Keep({ref}value{/ref}: int) = {ref}value{/ref}
+"""
+
+    [<Fact>]
+    let ``param of a primary constructor documented on the type`` () =
+        expectDocUses """
+/// <summary>A holder.</summary>
+/// <param name="{ref}seed{/ref}">The initial value.</param>
+type Holder({ref}seed{/ref}: int) =
+    member _.Seed = {ref}seed{/ref}
+"""
+
+    [<Fact>]
+    let ``typeparam of a generic type`` () =
+        expectDocUses """
+/// <typeparam name="{ref}T{/ref}">The payload.</typeparam>
+type Box<{ref}'T{/ref}>(value: {ref}'T{/ref}) =
+    member _.Value = value
+"""
+
+    [<Fact>]
+    let ``param of a union case field`` () =
+        expectDocUses """
+type Shape =
+    /// <param name="{ref}radius{/ref}">Distance from the centre.</param>
+    | Circle of {ref}radius{/ref}: float
+"""
+
+    [<Fact>]
+    let ``param of a signature file val is found in code but its doc stays out of find all references`` () =
+        let signature = """
+/// <param name="x">The first number.</param>
+val add: x: int -> y: int -> int
+"""
+        let implementation = "let add x y = x + y"
+        SyntheticProject.Create(
+            { sourceFile "Source" [] with Source = implementation; SignatureFile = Custom signature })
+            .Workflow {
+                placeCursor "Source" "x"
+                findAllReferences (expectToFind [
+                    "FileSource.fsi", 4, 9, 10
+                    "FileSource.fs", 2, 8, 9
+                    "FileSource.fs", 2, 14, 15
+                ])
+            }
+
+    [<Fact>]
+    let ``an unknown name in the doc reports nothing and does not break the others`` () =
+        expectDocUses """
+/// <param name="nope">Not a parameter.</param>
+/// <param name="{ref}x{/ref}">The parameter.</param>
+let f {ref}x{/ref} = {ref}x{/ref}
+"""
+
+    [<Fact>]
+    let ``a duplicated param name reports every occurrence`` () =
+        expectDocUses """
+/// <param name="{ref}x{/ref}">Once.</param>
+/// <param name="{ref}x{/ref}">Twice.</param>
+let f {ref}x{/ref} = {ref}x{/ref}
+"""
+
+    [<Fact>]
+    let ``a backticked parameter is matched by its bare name`` () =
+        expectDocUses """
+/// <param name="{ref}a b{/ref}">Spaced.</param>
+let f {ref}``a b``{/ref} = {ref}``a b``{/ref}
+"""
+
+    [<Fact>]
+    let ``inheritdoc and an unexpanded include next to the tags`` () =
+        expectDocUses """
+/// <inheritdoc cref="System.Object.ToString"/>
+/// <include file="nope.xml" path="doc"/>
+/// <param name="{ref}x{/ref}">Still found.</param>
+let f {ref}x{/ref} = {ref}x{/ref}
+"""
+
+    [<Fact>]
+    let ``a tag inside an xml comment names nothing`` () =
+        expectDocUses """
+/// <summary>Kept.</summary>
+/// <!-- <param name="x">Commented out.</param> -->
+let f {ref}x{/ref} = {ref}x{/ref}
+"""
+
+    [<Fact>]
+    let ``a doc that starts with plain text is an escaped summary and names nothing`` () =
+        expectDocUses """
+/// Plain text first: <param name="x">Text, not a tag.</param>
+let f {ref}x{/ref} = {ref}x{/ref}
+"""
+
 /// https://github.com/dotnet/fsharp/issues/16993
 module CSharpExtensionMethods =
 

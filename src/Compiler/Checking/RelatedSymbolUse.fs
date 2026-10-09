@@ -13,5 +13,12 @@ type RelatedSymbolUseKind =
     | UnionCaseTester = 1
     /// Record type via copy-and-update expression (e.g., { r with ... } → RecordType)
     | CopyAndUpdateRecord = 2
-    /// All related symbol kinds
-    | All = 0x7FFFFFFF
+    /// Parameter or type parameter via the `name` of a `param`, `paramref`, `typeparam` or `typeparamref`
+    /// tag in the declaration's XML doc
+    | XmlDocParameter = 4
+    /// Every related use in code; leaves out the names inside XML doc comments, which only a rename needs
+    | AllInCode = 3
+    /// Every related use, the names inside XML doc comments included
+    | AllInCodeAndDocs = 7
+    /// Every related use in code, the same as AllInCode
+    | All = 3
