@@ -27,6 +27,10 @@
           DependsOnTargets="PrepareInnerSourceBuildRepoRoot"
           BeforeTargets="RunInnerSourceBuildCommand"
           Condition="'$(DotNetBuildSourceOnly)' == 'true'">
+
+    <MSBuild Projects="$(MSBuildProjectDirectory)/Tools.proj" Targets="CollectSourceBuildIntermediateNupkgDependencies;Restore"
+             Properties="RepoRoot=$(InnerSourceBuildRepoRoot)/;SourceBuildOutputDir=$(SourceBuildOutputDir);BaseIntermediateOutputPath=$(ArtifactsToolsetDir)SourceBuildBootstrap/;_NuGetRestoreTargets=$(MSBuildToolsPath)/NuGet.targets;SetUpSourceBuildIntermediateNupkgCache=true"
+             Condition="'$(DotNetBuildOrchestrator)' != 'true'" />
           
     <PropertyGroup>
       <SourceBuildBootstrapTfmArg Condition="$(SourceBuildBootstrapTfm) != ''">--tfm $(SourceBuildBootstrapTfm)</SourceBuildBootstrapTfmArg>

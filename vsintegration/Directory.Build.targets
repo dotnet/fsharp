@@ -15,9 +15,18 @@
     <PackageReference Include="System.Reflection.Metadata" Version="$(SystemReflectionMetadataVersion)" PrivateAssets="all" ExcludeAssets="contentFiles;analyzers;native" />
     <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="$(SystemRuntimeCompilerServicesUnsafeVersion)" PrivateAssets="all" ExcludeAssets="contentFiles;analyzers;native" />
 	<PackageReference Include="System.Diagnostics.DiagnosticSource" Version="$(SystemDiagnosticsDiagnosticSourceVersion)" PrivateAssets="all" ExcludeAssets="contentFiles;analyzers;native" />
+    <PackageReference Update="Microsoft.Build;Microsoft.Build.Framework;Microsoft.Build.Tasks.Core;Microsoft.Build.Utilities.Core" Version="17.14.8" Condition="'$(MSBuildProjectName)' == 'VisualFSharp.UnitTests'" />
+    <PackageReference Update="System.Diagnostics.DiagnosticSource;System.Reflection.Metadata" Version="9.0.0" Condition="'$(MSBuildProjectName)' == 'VisualFSharp.UnitTests'" />
+    <PackageReference Update="System.Memory;System.Buffers" Version="4.6.0" Condition="'$(MSBuildProjectName)' == 'VisualFSharp.UnitTests'" />
+    <PackageReference Update="System.Runtime.CompilerServices.Unsafe" Version="6.1.0" Condition="'$(MSBuildProjectName)' == 'VisualFSharp.UnitTests'" />
   </ItemGroup>
 
   <!-- New VS does not allow embedded interop assemblies ... this turns off the target that turns it on -->
   <Target Name="LinkVSSDKEmbeddableAssemblies" AfterTargets="ResolveReferences" BeforeTargets="FindReferenceAssembliesForReferences" />
+
+  <Target Name="GenerateTestCompilerBindingRedirects" AfterTargets="CopyFilesToOutputDirectory" Condition="'$(MSBuildProjectName)' == 'VisualFSharp.UnitTests' and '@(SuggestedBindingRedirects)' != ''">
+    <GenerateBindingRedirects AppConfigFile="$(ArtifactsDir)obj/fsc/$(Configuration)/$(TargetFramework)/fsc.exe.withSupportedRuntime.config" TargetName="fsc.exe.config" OutputAppConfigFile="$(IntermediateOutputPath)fsc.exe.config" SuggestedRedirects="@(SuggestedBindingRedirects)" />
+    <Copy SourceFiles="$(IntermediateOutputPath)fsc.exe.config" DestinationFolder="$(TargetDir)" />
+  </Target>
 
 </Project>

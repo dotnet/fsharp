@@ -72,6 +72,7 @@
     <!-- PR builds should explicitly specify a version number -->
   </PropertyGroup>
   <PropertyGroup>
+    <MicrosoftDotNetSourceBuildTasksVersion Condition="'$(ArcadeInnerBuildFromSource)' != 'true' and '$(DotNetBuildInnerRepo)' != 'true'">9.0.0-beta.24466.2</MicrosoftDotNetSourceBuildTasksVersion>
     <!-- System.* packages -->
     <!-- If a System.* package is stuck on version 4.3.x, targets .NET Standard 1.x and hasn't been
     updated in years, you most likely DON'T need it, please exercise caution when adding it to the list. -->

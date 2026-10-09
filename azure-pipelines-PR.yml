@@ -454,6 +454,10 @@ stages:
             displayName: Setup VS Hive
             condition: or(eq(variables['_testKind'], 'testVs'), eq(variables['_testKind'], 'testIntegration'))
 
+          - powershell: eng\common\init-tools-native.ps1 -InstallDirectory "$(Build.SourcesDirectory)\.tools"
+            displayName: Install QA native tools
+            condition: and(succeeded(), eq(variables['_testKind'], 'testFSharpQA'))
+
           # yes, this is miserable, but - https://github.com/dotnet/arcade/issues/13239
           - script: eng\CIBuild.cmd -compressallmetadata -configuration $(_configuration) -$(_testKind)
             env:
@@ -585,7 +589,7 @@ stages:
         # MacOS
         - job: MacOS
           pool:
-            vmImage: macos-12
+            vmImage: macos-15
           timeoutInMinutes: 120
           variables:
           - name: _SignType
@@ -721,7 +725,7 @@ stages:
         # Plain FCS build Mac
         - job: Plain_Build_MacOS
           pool:
-            vmImage: macos-12
+            vmImage: macos-15
           variables:
           - name: _BuildConfig
             value: Debug
