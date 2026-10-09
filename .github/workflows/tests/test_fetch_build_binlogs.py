@@ -28,11 +28,32 @@ for case in cases.AsArray() do
 FETCH = LOAD_SCRIPT + r"""
 try
     fetch false fsi.CommandLineArgs[1] 2. (fun response cancellation ->
+        if fsi.CommandLineArgs.Length = 3 then
+            use source = FsHttp.Response.toStream response
+            use destination = new System.IO.MemoryStream()
+            copy (ref 0L) 0L cancellation source destination
         response.content.ReadAsStringAsync(cancellation).GetAwaiter().GetResult())
     |> printfn "%s"
 with error ->
     eprintfn "%s" error.Message
     exit 1
+"""
+COPY = LOAD_SCRIPT + r"""
+for limit in [2147483648L; 3221225472L] do
+    let total = ref (limit - 1L)
+    for index in 0..2 do
+        use source = new System.IO.MemoryStream([|1uy|])
+        use destination = new System.IO.MemoryStream()
+        let accepted =
+            try
+                copy total limit System.Threading.CancellationToken.None source destination
+                true
+            with :? System.IO.InvalidDataException -> false
+        if accepted <> (index = 0) ||
+           destination.Length <> (if accepted then 1L else 0L) ||
+           total.Value <> limit + int64 index then
+            failwith "Budget boundary, write ordering or failed-attempt accounting changed"
+printfn "budgets verified"
 """
 
 
@@ -222,8 +243,17 @@ class FetchBuildBinlogsTests(unittest.TestCase):
                 [f"{name} {str(name == 'current').lower()}" for name, *_ in cases],
             )
 
+    def test_exact_copy_budgets_charge_failed_attempts_before_writing(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            harness = root / "copy.fsx"
+            harness.write_text(COPY, encoding="utf-8")
+            result = self.run_script(root, script=harness)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(result.stdout.strip(), "budgets verified")
+
     def test_http_redirect_retry_and_body_deadline(self):
-        for scenario in ("redirect", "retry", "deadline", "mixed-retry"):
+        for scenario in ("redirect", "retry", "deadline", "mixed-retry", "budget"):
             with self.subTest(scenario=scenario), tempfile.TemporaryDirectory() as directory:
                 requests = []
 
@@ -256,15 +286,18 @@ class FetchBuildBinlogsTests(unittest.TestCase):
                     harness.write_text(FETCH, encoding="utf-8")
                     result = self.run_script(
                         root, f"http://127.0.0.1:{server.server_port}/start",
+                        *(("budget",) if scenario == "budget" else ()),
                         script=harness, env={**os.environ, "GH_TOKEN": "fixture-token"},
                     )
                     self.assertEqual(result.returncode == 0, scenario == "retry", result.stderr)
-                    self.assertEqual(len(requests), 1 if scenario == "redirect" else 3)
+                    self.assertEqual(len(requests), 1 if scenario in ("redirect", "budget") else 3)
                     self.assertTrue(all("Authorization" not in headers for headers in requests))
                     if scenario == "redirect":
                         self.assertIn("outside dnceng-public/public", result.stderr)
                     elif scenario == "retry":
                         self.assertEqual(result.stdout.strip(), "recovered")
+                    elif scenario == "budget":
+                        self.assertIn("size budget", result.stderr.lower())
                 finally:
                     server.shutdown()
                     server.server_close()
