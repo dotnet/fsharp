@@ -48,12 +48,14 @@ instructions, including before `ConfigureAwait`. These casts prevent the runtime
 from incorrectly optimizing a generic task-producing call followed by a
 non-generic await.
 
-Known runtime restrictions (currently **not** diagnosed by the F# compiler):
+Runtime restrictions and their compiler handling:
 
-* `tail.` and `localloc` are forbidden.
-* generated suspension points cannot occur inside exception-handling regions.
-  Awaiting in a protected `try` body now works on the current runtime. Direct
-  intrinsic bodies rewrite suspending `try/with` handlers and filters, and
+* `tail.` is forbidden; runtime-async methods suppress tail-call prefixes.
+* `localloc` is forbidden and reported as FS3920, even without a suspension.
+* `MethodImplOptions.Synchronized` is rejected with FS3921.
+* Suspension cannot occur inside exception handlers, filters, or `finally`
+  blocks. Awaiting in a protected `try` body is supported. Return-marker
+  bodies rewrite suspending `try/with` handlers and filters, and
   `try/finally` compensations, so the suspension runs outside the EH region.
 
   C# avoids this by rewriting EH-region awaits at lowering time (see the
@@ -64,8 +66,11 @@ Known runtime restrictions (currently **not** diagnosed by the F# compiler):
   runs `DisposeAsync` (possibly suspending) *outside* the `try`, then restores
   the pending exception. This makes `use` on an `IAsyncDisposable` work under
   runtime async.
+
 Byref, byref-like, and pinned locals that are used after a suspension are
-rejected with diagnostic FS3917.
+rejected with diagnostic FS3919 when their non-preservable provenance is
+tracked. Pinned provenance is not currently propagated through ref cells or
+captured delegates, so those uses are not reliably diagnosed.
 
 Calls to `AsyncHelpers` suspension methods emitted outside a runtime-async
 method are rejected during code generation. Explicitly `inline` method bodies
@@ -85,14 +90,14 @@ val __runtimeAsyncReturnUnit : unit -> System.Threading.Tasks.Task
 val __runtimeAsyncReturnValueTaskUnit : unit -> System.Threading.Tasks.ValueTask
 ```
 
-Their FSharp.Core implementations throw; the compiler consumes every
-occurrence before code generation, so those bodies are never executed. They
-are marked `NoInlining` so a missed consumption does not silently fold into a
-caller.
+Their FSharp.Core implementations throw; code generation consumes recognized
+marker applications instead of emitting calls to those stubs. They are marked
+`NoInlining` so a missed consumption does not silently fold into a caller.
 
-The feature is gated on `langversion:preview`
-(`LanguageFeature.RuntimeAsync`) and on the target reference assemblies
-exposing `MethodImplOptions.Async` (see "Runtime capability check" below).
+The feature is available from F# 11.2, including `default`, `latest`, and
+`preview` (`LanguageFeature.RuntimeAsync`), and gated on the target reference
+assemblies exposing `MethodImplOptions.Async` (see "Runtime capability check"
+below).
 Without the language version the checker reports error 3350; without runtime
 support it reports 3351.
 
@@ -140,7 +145,7 @@ declaration.
 
 `Optimizer.fs` preserves the marker application as-is, optimizing its
 argument. The marked expression is forced to `HasEffect = true` and
-`UnknownValue`, so the optimizer never inlines, duplicates, or discards it.
+`UnknownValue`, so ordinary value propagation cannot treat it as a pure result.
 The marker therefore survives optimization as an ordinary `Expr.App` node;
 nothing else in the typed tree records that a method is runtime-async.
 
@@ -403,12 +408,12 @@ Builder-generated `MoveNextAsync` can lose visible sequence points. The optimize
 
 This is a proposal, not a drop-in TaskSeq replacement. Producer `try/with` is lowered through an ordinary nested sequence, while runtime-async suspensions inside that handler remain unsupported. Opaque recipes and optimized tail handoff are rejected. Early disposal retains ordinary sequence exception precedence: an outer cleanup failure replaces an inner cleanup failure. Concurrent move/dispose calls are unsupported. Awaiting a non-cancellable operation does not make it cancellable. Performance qualification must include genuinely pending operations, not only completed awaits.
 
-Build and run the small [usage and lifecycle example](../tests/FSharp.Compiler.ComponentTests/Language/RuntimeAsync/RuntimeAsyncSequence.fs) with the matching preview SDK:
+Build and run the small [usage and lifecycle example](../tests/FSharp.Compiler.ComponentTests/Language/RuntimeAsync/RuntimeAsyncSequence.fs) with the matching SDK:
 
 ```sh
 ./build.sh -c Release
 dotnet test --project tests/FSharp.Compiler.ComponentTests/FSharp.Compiler.ComponentTests.fsproj \
-  -c Release --no-build --filter-class 'Language.RuntimeAsyncSequenceTests'
+  -c Release --no-build -- --filter-class 'Language.RuntimeAsyncSequenceTests'
 ```
 
 The tests compile the library and consumer together and separately, with optimization enabled and disabled.
@@ -418,20 +423,20 @@ The tests compile the library and consumer together and separately, with optimiz
 An inline fragment that escapes as a first-class value, is passed to a
 non-inline function, or is dynamically dispatched cannot be preserved as a
 runtime-async suspension fragment. If the suspension remains in the generated
-non-runtime-async method, code generation reports FS3916 rather than emitting
+non-runtime-async method, code generation reports FS3918 rather than emitting
 an unsafe closure. Fragments in statically eliminated branches do not trigger
 this diagnostic.
 
 ## Not yet implemented
 
-* Complete diagnostics for runtime restrictions. The optimizer rewrites
+* Complete diagnostics for runtime restrictions. Runtime-async lowering rewrites
   suspending `try/with` handlers and filters, and `try/finally` compensations,
   so they execute outside exception-handling regions. There is no general
   diagnostic for runtime-contract violations in other generated or imported
-  shapes, and `localloc` has no dedicated diagnostic. Runtime-async methods
-  suppress `tail.` emission rather than reporting it.
+  shapes. Stack allocation has a dedicated diagnostic (FS3920), and
+  runtime-async methods suppress `tail.` emission rather than reporting it.
 * A builder in FSharp.Core; builders using the feature are currently
   application/library code.
-* Compile-time enforcement that the marker was actually consumed before
-  code generation (a missed marker throws only when its FSharp.Core stub is
-  reached at run time, or produces invalid IL as described above).
+* Compile-time enforcement that every marker use was consumed during code
+  generation (a missed marker throws only when its FSharp.Core stub is reached
+  at run time).
