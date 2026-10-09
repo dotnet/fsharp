@@ -459,7 +459,7 @@ let nullnessContextOnly (env: TcEnv) =
 let UnifyOverallType (cenv: cenv) (env: TcEnv) m overallTy actualTy =
     let g = cenv.g
     match overallTy with
-    | MustConvertTo(isMethodArg, reqdTy) when g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions ->
+    | MustConvertTo(isMethodArg, reqdTy) ->
         let actualTy = tryNormalizeMeasureInType g actualTy
         let reqdTy = tryNormalizeMeasureInType g reqdTy
         let reqTyForUnification = reqTyForArgumentNullnessInference g actualTy reqdTy
@@ -486,8 +486,8 @@ let UnifyOverallType (cenv: cenv) (env: TcEnv) m overallTy actualTy =
             else
                 // report the error
                 UnifyTypes cenv env m reqdTy actualTy
-    | _ ->
-        UnifyTypes cenv env m overallTy.Commit actualTy
+    | MustEqual reqdTy ->
+        UnifyTypes cenv env m reqdTy actualTy
 
 let UnifyOverallTypeAndRecover (cenv: cenv) env m overallTy actualTy =
     try
@@ -4268,7 +4268,6 @@ let rec TcTyparConstraint ridx (cenv: cenv) newOk checkConstraints occ (env: TcE
         TcConstraintWhereTyparSupportsMember cenv env newOk tpenv synSupportTys synMemberSig m
 
     | SynTypeConstraint.WhereSelfConstrained(ty, m) ->
-        checkLanguageFeatureAndRecover g.langVersion LanguageFeature.SelfTypeConstraints m
         let tyR, tpenv = TcTypeAndRecover cenv newOk checkConstraints ItemOccurrence.UseInType WarnOnIWSAM.No env tpenv ty
         match tyR with
         | TType_app(tcref, tinst, _) when (tcref.IsTypeAbbrev && (isTyparTy g tcref.TypeAbbrev.Value) && tinst |> List.forall (isTyparTy g)) ->
@@ -5829,23 +5828,14 @@ and TcExprUndelayedNoType (cenv: cenv) env tpenv synExpr =
 ///   - string literal expressions (though the propagation is not essential in this case)
 ///
 and TcPropagatingExprLeafThenConvert (cenv: cenv) overallTy actualTy (env: TcEnv) (* canAdhoc *) m (f: unit -> Expr * UnscopedTyparEnv) =
-    let g = cenv.g
-
     match overallTy with
-    | MustConvertTo _ when g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions ->
-        assert (g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions)
-
-        // Compute the conversion _before_ processing the construct. We know enough to process this conversion eagerly.
+    | MustConvertTo _ ->
         UnifyOverallType cenv env m overallTy actualTy
-
-        // Process the construct
         let expr, tpenv = f ()
-
-        // Build the conversion
-        let expr2 = TcAdjustExprForTypeDirectedConversions cenv overallTy actualTy env (* canAdhoc *) m expr
+        let expr2 = TcAdjustExprForTypeDirectedConversions cenv overallTy actualTy env m expr
         expr2, tpenv
-    | _ ->
-        UnifyTypes cenv env m overallTy.Commit actualTy
+    | MustEqual reqdTy ->
+        UnifyTypes cenv env m reqdTy actualTy
         f ()
 
 /// Process a leaf construct, for cases where we propagate the overall type eagerly in
@@ -5865,7 +5855,7 @@ and TcPossiblyPropagatingExprLeafThenConvert isPropagating (cenv: cenv) (overall
     let g = cenv.g
 
     match overallTy with
-    | MustConvertTo(_, reqdTy) when g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions && not (isPropagating reqdTy) ->
+    | MustConvertTo(ty = reqdTy) when not (isPropagating reqdTy) ->
         TcNonPropagatingExprLeafThenConvert cenv overallTy env m (fun () ->
             let exprTy = NewInferenceType g
 
@@ -5899,10 +5889,10 @@ and TcAdjustExprForTypeDirectedConversions (cenv: cenv) (overallTy: OverallTy) a
     let g = cenv.g
 
     match overallTy with
-    | MustConvertTo (isMethodArg, reqdTy) when g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions || isMethodArg ->
+    | MustConvertTo(ty = reqdTy) ->
         let tcVal = LightweightTcValForUsingInBuildMethodCall g env.TraitContext
         AdjustExprForTypeDirectedConversions tcVal g cenv.amap cenv.infoReader env.AccessRights reqdTy actualTy m expr
-    | _ ->
+    | MustEqual _ ->
         expr
 
 and TcNonControlFlowExpr (env: TcEnv) f =
@@ -5971,7 +5961,6 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
 
     | SynExpr.InterpolatedString (parts, _, m) ->
         TcNonControlFlowExpr env <| fun env ->
-        checkLanguageFeatureAndRecover g.langVersion LanguageFeature.StringInterpolation m
         CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy.Commit, env.AccessRights)
         TcInterpolatedStringExpr cenv overallTy env m tpenv parts
 
@@ -7682,20 +7671,14 @@ and TcConstStringExpr cenv (overallTy: OverallTy) env m tpenv (s: string) litera
 
     let g = cenv.g
 
-
-    match isFormat g overallTy.Commit, literalType with
-    | true, LiteralArgumentType.StaticField ->
-        checkLanguageFeatureAndRecover g.langVersion LanguageFeature.NonInlineLiteralsAsPrintfFormat m
+    if isFormat g overallTy.Commit then
         TcFormatStringExpr cenv overallTy env m tpenv s literalType
-
-    | true, LiteralArgumentType.Inline ->
-        TcFormatStringExpr cenv overallTy env m tpenv s literalType
-
-    | false, LiteralArgumentType.StaticField ->
-        Expr.Const (TcFieldInit m (ILFieldInit.String s), m, g.string_ty), tpenv
-
-    | false, LiteralArgumentType.Inline ->
-        TcPropagatingExprLeafThenConvert cenv overallTy g.string_ty env (* true *) m (fun () ->
+    else
+        match literalType with
+        | LiteralArgumentType.StaticField ->
+            Expr.Const (TcFieldInit m (ILFieldInit.String s), m, g.string_ty), tpenv
+        | LiteralArgumentType.Inline ->
+            TcPropagatingExprLeafThenConvert cenv overallTy g.string_ty env (* true *) m (fun () ->
                 mkString g m s, tpenv)
 
 and TcFormatStringExpr cenv (overallTy: OverallTy) env m tpenv (fmtString: string) formatStringLiteralType =
@@ -7865,7 +7848,7 @@ and TcInterpolatedStringExpr cenv (overallTy: OverallTy) env m tpenv (parts: Syn
     let newFormatMethod =
         match GetIntrinsicConstructorInfosOfType cenv.infoReader m formatTy |> List.filter (fun minfo -> minfo.NumArgs = [3]) with
         | [ctorInfo] -> ctorInfo
-        | _ -> languageFeatureNotSupportedInLibraryError LanguageFeature.StringInterpolation m
+        | _ -> error (Error(FSComp.SR.csMethodNotFound(RichText.mkMethod "Microsoft.FSharp.Core.PrintfFormat.ctor"), m))
 
     let stringKind =
         // If this is an interpolated string then try to force the result to be a string
@@ -7892,15 +7875,9 @@ and TcInterpolatedStringExpr cenv (overallTy: OverallTy) env m tpenv (parts: Syn
             UnifyTypes cenv env m printerResultTy overallTy.Commit
 
             // Find the FormattableStringFactor.Create method in the .NET libraries
-            let ad = env.eAccessRights
-            let createMethodOpt =
-                match TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AllResults cenv env m ad "Create" g.system_FormattableStringFactory_ty with
-                | [x] -> Some x
-                | _ -> None
-
-            match createMethodOpt with
-            | Some createMethod -> Choice2Of2 createMethod
-            | None -> languageFeatureNotSupportedInLibraryError LanguageFeature.StringInterpolation m
+            match TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AllResults cenv env m env.eAccessRights "Create" g.system_FormattableStringFactory_ty with
+            | [createMethod] -> Choice2Of2 createMethod
+            | _ -> error (Error(FSComp.SR.csMethodNotFound(RichText.mkMethod "System.Runtime.CompilerServices.FormattableStringFactory.Create"), m))
 
         // ... or if that fails then may be a PrintfFormat by a type-directed rule....
         elif not (isObjTyAnyNullness g overallTy.Commit) && AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy.Commit formatTy then
@@ -10672,11 +10649,6 @@ and TcMethodApplication_CheckArguments
                                       AttributeName = "Microsoft.FSharp.Core.CompilerServices.NoEagerConstraintApplicationAttribute" }
                                     meth.Method
 
-                            // The logic associated with NoEagerConstraintApplicationAttribute is part of the
-                            // Tasks and Resumable Code RFC
-                            if noEagerConstraintApplication && not (g.langVersion.SupportsFeature LanguageFeature.ResumableStateMachines) then
-                                errorR(Error(FSComp.SR.tcNoEagerConstraintApplicationAttribute(), mMethExpr))
-
                             let extraRigidTps = if noEagerConstraintApplication then Zset.ofList typarOrder (freeInTypeLeftToRight g true callerTy) else emptyFreeTypars
 
                             AddCxTypeMustSubsumeTypeMatchingOnlyUndoIfFailed denv cenv.css mMethExpr extraRigidTps calledTy callerTy) then
@@ -12494,10 +12466,7 @@ and ApplyAbstractSlotInference (cenv: cenv) (envinner: TcEnv) (_: Val option) (a
         match memberFlags.MemberKind with
         | SynMemberKind.Member ->
              let dispatchSlots, dispatchSlotsArityMatch =
-                if g.langVersion.SupportsFeature(LanguageFeature.ErrorForNonVirtualMembersOverrides) then
-                    GetAbstractMethInfosForSynMethodDecl(cenv.infoReader, ad, memberId, m, typToSearchForAbstractMembers, valSynData, memberFlags, DiscardOnFirstNonOverride)
-                else
-                    GetAbstractMethInfosForSynMethodDecl(cenv.infoReader, ad, memberId, m, typToSearchForAbstractMembers, valSynData, memberFlags,IgnoreOverrides)
+                 GetAbstractMethInfosForSynMethodDecl(cenv.infoReader, ad, memberId, m, typToSearchForAbstractMembers, valSynData, memberFlags)
 
              let uniqueAbstractMethSigs =
                  match dispatchSlots with

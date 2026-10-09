@@ -82,11 +82,6 @@
         <target state="translated">Das Feature "{0}" wird von der Zielruntime nicht unterstützt.</target>
         <note />
       </trans-unit>
-      <trans-unit id="chkFeatureNotSupportedInLibrary">
-        <source>Feature '{0}' requires the F# library for language version {1} or greater.</source>
-        <target state="translated">Für das Feature "{0}" ist die F#-Bibliothek für die Sprachversion {1} oder höher erforderlich.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="chkImplementingInterfacesOnStaticClasses">
         <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Implementing interfaces is not allowed.</source>
         <target state="translated">Wenn ein Typ sowohl das Attribute [&lt;Sealed&gt;] wie auch [&lt;AbstractClass&gt;] verwendet, bedeutet dies, dass er statisch ist. Das Implementieren von Schnittstellen ist nicht zulässig.</target>
@@ -302,11 +297,6 @@
         <target state="new">Access a protected base-class field from a closure inside a member</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureAdditionalImplicitConversions">
-        <source>additional type-directed conversions</source>
-        <target state="translated">zusätzliche typgesteuerte Konvertierungen</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureAllowAccessModifiersToAutoPropertiesGettersAndSetters">
         <source>Allow access modifiers to auto properties getters and setters</source>
         <target state="new">Allow access modifiers to auto properties getters and setters</target>
@@ -352,11 +342,6 @@
         <target state="translated">Löst Warnungen aus, wenn das Attribut "TailCall" für nicht rekursive Funktionen verwendet wird.</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureConstraintIntersectionOnFlexibleTypes">
-        <source>Constraint intersection on flexible types</source>
-        <target state="translated">Einschränkungsüberschneidung für flexible Typen</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureDeprecatePlacesWhereSeqCanBeOmitted">
         <source>Deprecate places where 'seq' can be omitted</source>
         <target state="new">Deprecate places where 'seq' can be omitted</target>
@@ -380,11 +365,6 @@
       <trans-unit id="featureEnforceAttributeTargets">
         <source>Enforce AttributeTargets</source>
         <target state="translated">AttributeTargets erzwingen</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureErrorForNonVirtualMembersOverrides">
-        <source>Raises errors for non-virtual members overrides</source>
-        <target state="translated">Löst Fehler für Außerkraftsetzungen nicht virtueller Member aus.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureErrorOnBitwiseOpsOnNonIntegralEnums">
@@ -457,11 +437,6 @@
         <target state="new">Use 'most concrete' tiebreaker for overload resolution when methods differ only by type parameter concreteness.</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureNonInlineLiteralsAsPrintfFormat">
-        <source>String values marked as literals and IL constants as printf format</source>
-        <target state="translated">Zeichenfolgenwerte, die als Literale und IL-Konstanten als printf-Format markiert sind</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureNotNullIfNotNull">
         <source>honor the 'NotNullIfNotNull' attribute on a method's return value</source>
         <target state="new">honor the 'NotNullIfNotNull' attribute on a method's return value</target>
@@ -480,11 +455,6 @@
       <trans-unit id="featureOverloadResolutionPriority">
         <source>Support for OverloadResolutionPriorityAttribute to prioritize method overloads.</source>
         <target state="new">Support for OverloadResolutionPriorityAttribute to prioritize method overloads.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featurePackageManagement">
-        <source>package management</source>
-        <target state="translated">Paketverwaltung</target>
         <note />
       </trans-unit>
       <trans-unit id="featureParsedHashDirectiveArgumentNonString">
@@ -512,11 +482,6 @@
         <target state="new">#elif preprocessor directive</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureReallyLongList">
-        <source>list literals of any size</source>
-        <target state="translated">Literale beliebiger Größe auflisten</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureRecordConstructorSyntax">
         <source>Constructing a record via its all-fields constructor</source>
         <target state="new">Constructing a record via its all-fields constructor</target>
@@ -530,11 +495,6 @@
       <trans-unit id="featureReraiseInComputationExpressions">
         <source>calls to 'reraise' in a computation expression handler</source>
         <target state="new">calls to 'reraise' in a computation expression handler</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureResumableStateMachines">
-        <source>resumable state machines</source>
-        <target state="translated">Fortsetzbarer Zustand-Maschinen</target>
         <note />
       </trans-unit>
       <trans-unit id="featureReturnFromFinal">
@@ -560,16 +520,6 @@
       <trans-unit id="featureScopedNowarn">
         <source>Support for scoped enabling / disabling of warnings by #warn and #nowarn directives, also inside modules</source>
         <target state="new">Support for scoped enabling / disabling of warnings by #warn and #nowarn directives, also inside modules</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureSelfTypeConstraints">
-        <source>self type constraints</source>
-        <target state="translated">Selbsttypeinschränkungen</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureStringInterpolation">
-        <source>string interpolation</source>
-        <target state="translated">Zeichenfolgeninterpolation</target>
         <note />
       </trans-unit>
       <trans-unit id="featureSupportValueOptionsAsOptionalParameters">
@@ -1043,8 +993,8 @@
         <note />
       </trans-unit>
       <trans-unit id="optsUnrecognizedLanguageFeature">
-        <source>Unrecognized language feature name: '{0}'. Use a valid feature name such as 'StringInterpolation' or 'FromEndSlicing'.</source>
-        <target state="new">Unrecognized language feature name: '{0}'. Use a valid feature name such as 'StringInterpolation' or 'FromEndSlicing'.</target>
+        <source>Unrecognized language feature name: '{0}'. Use a valid feature name such as 'FromEndSlicing'.</source>
+        <target state="new">Unrecognized language feature name: '{0}'. Use a valid feature name such as 'FromEndSlicing'.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsUnrecognizedLanguageVersion">
@@ -1060,11 +1010,6 @@
       <trans-unit id="optsWin32icon">
         <source>Specify a Win32 icon file (.ico)</source>
         <target state="translated">Win32-Symboldatei (ICO) angeben</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="packageManagementRequiresVFive">
-        <source>The 'package management' feature requires language version 5.0 or above</source>
-        <target state="translated">Für das „Paketverwaltungsfeature“ ist Sprachversion 5.0 oder höher erforderlich</target>
         <note />
       </trans-unit>
       <trans-unit id="parsConstraintIntersectionSyntaxUsedWithNonFlexibleType">
@@ -1602,11 +1547,6 @@
         <target state="translated">Es wurden mehrere Typentsprechungen gefunden:\n{0}\nDer Typ "{1}" wurde verwendet. Ziehen Sie aufgrund der überlappenden Feldnamen\n{2}\ndie Verwendung von Typanmerkungen in Betracht, oder ändern Sie die Reihenfolge der open-Anweisungen.</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcNoEagerConstraintApplicationAttribute">
-        <source>Using methods with 'NoEagerConstraintApplicationAttribute' requires /langversion:6.0 or later</source>
-        <target state="translated">Die Verwendung von Methoden mit "NoEagerConstraintApplicationAttribute" erfordert /langversion:6.0 oder höher.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcNoStaticMemberFoundForOverride">
         <source>No static abstract member was found that corresponds to this override</source>
         <target state="translated">Es wurde kein abstrakter Member gefunden, der dieser Überschreibung entspricht.</target>
@@ -1775,11 +1715,6 @@
       <trans-unit id="tcResumableCodeInvocation">
         <source>Resumable code invocation. Suppress this warning if you are defining new low-level resumable code in terms of existing resumable code.</source>
         <target state="translated">Fortsetzbarer Codeaufruf. Unterdrücken Sie diese Warnung, wenn Sie einen neuen fortsetzbaren Code auf niedriger Ebene in Bezug auf bereits vorhandenen fortsetzbaren Code definieren.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcResumableCodeNotSupported">
-        <source>Using resumable code or resumable state machines requires /langversion:preview</source>
-        <target state="translated">Die Verwendung von Fortsetzbarem Code oder fortsetzbaren Zustandscomputern erfordert /langversion:preview</target>
         <note />
       </trans-unit>
       <trans-unit id="tcSetterForInitOnlyPropertyCannotBeCalled1">
@@ -4740,11 +4675,6 @@
       <trans-unit id="tcUnableToParseFormatString">
         <source>Unable to parse format string '{0}'</source>
         <target state="translated">Formatzeichenfolge "{0}" kann nicht analysiert werden.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcListLiteralMaxSize">
-        <source>This list expression exceeds the maximum size for list literals. Use an array for larger literals and call Array.ToList.</source>
-        <target state="translated">Dieser Listenausdruck übersteigt die maximale Größe für Listenliterale. Verwenden Sie für umfangreichere Literale ein Array, und rufen Sie "Array.ToList" auf.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcExpressionFormRequiresObjectConstructor">

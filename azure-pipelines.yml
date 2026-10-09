@@ -148,14 +148,11 @@ extends:
                   NativeToolsOnMachine: true
                   FSHARP_CACHE_OVERRIDE: 256
                   FSharp_CacheEvictionImmediate: true
-            - task: PublishTestResults@2
-              displayName: Publish Test Results
-              inputs:
-                testResultsFormat: 'XUnit'
-                testResultsFiles: '*.xml'
-                searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
-              continueOnError: true
-              condition: ne(variables['SkipTests'], 'true')
+            - template: /eng/templates/publish-test-results.yml
+              parameters:
+                configuration: $(_BuildConfig)
+                testRunTitle: Official $(_BuildConfig)
+                condition: ne(variables['SkipTests'], 'true')
             - task: 1ES.PublishPipelineArtifact@1
               displayName: Publish Test Logs
               inputs:
@@ -232,4 +229,3 @@ extends:
         insertTeamEmail: fsharpteam@microsoft.com
         insertTeamName: 'F#'
         completeInsertion: 'auto'
-

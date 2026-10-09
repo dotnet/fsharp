@@ -635,18 +635,14 @@ let PostponeOnFailedMemberConstraintResolution (csenv: ConstraintSolverEnv) (tra
             f1 csenv)
         (function
          | AbortForFailedMemberConstraintResolution ->
-            // Postponed checking of constraints for failed SRTP resolutions is supported from F# 6.0 onwards
-            // and is required for the "tasks" (aka ResumableStateMachines) feature.
-            //
             // See https://github.com/dotnet/fsharp/issues/12188
-            if csenv.g.langVersion.SupportsFeature LanguageFeature.ResumableStateMachines then
-                trace.Exec
-                    (fun () ->
-                        csenv.SolverState.PushPostInferenceCheck (preDefaults=true, check = fun () ->
-                            let csenv = { csenv with ErrorOnFailedMemberConstraintResolution = false }
-                            f1 csenv |> RaiseOperationResult))
-                    (fun () ->
-                        csenv.SolverState.PopPostInferenceCheck (preDefaults=true))
+            trace.Exec
+                (fun () ->
+                    csenv.SolverState.PushPostInferenceCheck (preDefaults=true, check = fun () ->
+                        let csenv = { csenv with ErrorOnFailedMemberConstraintResolution = false }
+                        f1 csenv |> RaiseOperationResult))
+                (fun () ->
+                    csenv.SolverState.PopPostInferenceCheck (preDefaults=true))
 
             CompleteD
          | exn -> f2 exn)
@@ -3442,13 +3438,13 @@ and CanMemberSigsMatchUpToCheck
                     match reqdRetTyOpt with
                     | Some _  when ( (* minfo.IsConstructor || *) not alwaysCheckReturn && isNil unnamedCalledOutArgs) ->
                         ResultD TypeDirectedConversionUsed.No
-                    | Some (MustConvertTo(isMethodArg, reqdTy)) when g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions ->
+                    | Some (MustConvertTo(isMethodArg, reqdTy)) ->
                         let methodRetTy = calledMeth.CalledReturnTypeAfterOutArgTupling
                         subsumeOrConvertTypes isMethodArg reqdTy methodRetTy
-                    | Some reqdRetTy ->
+                    | Some (MustEqual reqdTy) ->
                         let methodRetTy = calledMeth.CalledReturnTypeAfterOutArgTupling
-                        unifyTypes reqdRetTy.Commit methodRetTy
-                    | _ ->
+                        unifyTypes reqdTy methodRetTy
+                    | None ->
                         ResultD TypeDirectedConversionUsed.No
                 return Array.reduce TypeDirectedConversionUsed.Combine [| usesTDC1; usesTDC2; usesTDC3; usesTDC4; usesTDC5; usesTDC6; usesTDC7 |]
         }
@@ -4022,11 +4018,11 @@ and ResolveOverloading
                                     return! ErrorD(Error(FSComp.SR.tcByrefReturnImplicitlyDereferenced(), m))
                                 else
                                     match reqdRetTy with
-                                    | MustConvertTo(isMethodArg, reqdRetTy) when g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions ->
+                                    | MustConvertTo(isMethodArg, reqdRetTy) ->
                                         let! _usesTDC = ReturnTypesMustSubsumeOrConvert csenv ad ndeep trace cxsln isMethodArg m isMethodArg reqdRetTy actualRetTy
                                         return ()
-                                    | _ ->
-                                        let! _usesTDC = TypesEquiv csenv ndeep trace cxsln reqdRetTy.Commit actualRetTy
+                                    | MustEqual reqdRetTy ->
+                                        let! _usesTDC = TypesEquiv csenv ndeep trace cxsln reqdRetTy actualRetTy
                                         return ()
 
         }

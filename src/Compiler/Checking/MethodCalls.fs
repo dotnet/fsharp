@@ -176,56 +176,53 @@ let AdjustDelegateTy (infoReader: InfoReader) actualTy reqdTy m =
 let TryFindRelevantImplicitConversion (infoReader: InfoReader) ad reqdTy actualTy m =
     let g = infoReader.g
     let amap = infoReader.amap
-    if g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions then
 
-        // shortcut
-        if typeEquiv g reqdTy actualTy then None else
-        let reqdTy2 =
-            if isTyparTy g reqdTy then
-                let tp = destTyparTy g reqdTy
-                match tp.Constraints |> List.choose (function TyparConstraint.CoercesTo (tgtTy, _) -> Some tgtTy | _ -> None) with
-                | [reqdTy2] when tp.Rigidity = TyparRigidity.Flexible -> reqdTy2
-                | _ -> reqdTy
-            else reqdTy
+    // shortcut
+    if typeEquiv g reqdTy actualTy then None else
+    let reqdTy2 =
+        if isTyparTy g reqdTy then
+            let tp = destTyparTy g reqdTy
+            match tp.Constraints |> List.choose (function TyparConstraint.CoercesTo (tgtTy, _) -> Some tgtTy | _ -> None) with
+            | [reqdTy2] when tp.Rigidity = TyparRigidity.Flexible -> reqdTy2
+            | _ -> reqdTy
+        else reqdTy
 
-        // Implicit conversions only activate if a precise implicit conversion exists and:
-        //   1. no feasible subtype relationship between X and Y (an approximation), OR
-        //   2. T --> some-type-containing-precisely-T
-        // Note that even for (2) implicit conversions are still only activated if the
-        // types *precisely* and *completely* match based on *known* type information at the point of resolution.
+    // Implicit conversions only activate if a precise implicit conversion exists and:
+    //   1. no feasible subtype relationship between X and Y (an approximation), OR
+    //   2. T --> some-type-containing-precisely-T
+    // Note that even for (2) implicit conversions are still only activated if the
+    // types *precisely* and *completely* match based on *known* type information at the point of resolution.
 
-        if not (isTyparTy g reqdTy2) &&
-           (not (TypeFeasiblySubsumesType 0 g amap m reqdTy2 CanCoerce actualTy) ||
-            isTyparTy g actualTy && (let ftyvs = freeInType CollectAll reqdTy2 in ftyvs.FreeTypars.Contains(destTyparTy g actualTy))) then
+    if not (isTyparTy g reqdTy2) &&
+       (not (TypeFeasiblySubsumesType 0 g amap m reqdTy2 CanCoerce actualTy) ||
+        isTyparTy g actualTy && (let ftyvs = freeInType CollectAll reqdTy2 in ftyvs.FreeTypars.Contains(destTyparTy g actualTy))) then
 
-            let implicits =
-                [ for conv in infoReader.FindImplicitConversions m ad actualTy do
-                    (conv, actualTy)
-                  for conv in infoReader.FindImplicitConversions m ad reqdTy2 do
-                    (conv, reqdTy2) ]
+        let implicits =
+            [ for conv in infoReader.FindImplicitConversions m ad actualTy do
+                (conv, actualTy)
+              for conv in infoReader.FindImplicitConversions m ad reqdTy2 do
+                (conv, reqdTy2) ]
 
-            let implicits =
-                implicits |> List.filter (fun (minfo, _staticTy) ->
-                    not minfo.IsInstance &&
-                    minfo.FormalMethodTyparInst.IsEmpty &&
-                    (match minfo.GetParamTypes(amap, m, []) with
-                     | [[a]] -> typeEquiv g a actualTy
-                     | _ -> false) &&
-                    (let retTy = minfo.GetFSharpReturnType(amap, m, [])
-                     typeEquiv g retTy reqdTy2)
-                )
+        let implicits =
+            implicits |> List.filter (fun (minfo, _staticTy) ->
+                not minfo.IsInstance &&
+                minfo.FormalMethodTyparInst.IsEmpty &&
+                (match minfo.GetParamTypes(amap, m, []) with
+                 | [[a]] -> typeEquiv g a actualTy
+                 | _ -> false) &&
+                (let retTy = minfo.GetFSharpReturnType(amap, m, [])
+                 typeEquiv g retTy reqdTy2)
+            )
 
-            match implicits with
-            | [(minfo, staticTy) ] ->
-                Some (minfo, staticTy, (reqdTy, reqdTy2, ignore))
-            | (minfo, staticTy) :: _ ->
-                Some (minfo, staticTy, (reqdTy, reqdTy2, fun denv ->
-                         let reqdTy2Text, actualTyText, _cxs = NicePrint.minimalRichTextsOfTwoTypes denv reqdTy2 actualTy
-                         let implicitsText = NicePrint.multiLineRichTextOfMethInfos infoReader m denv (List.map fst implicits)
-                         errorR(Error(FSComp.SR.tcAmbiguousImplicitConversion(actualTyText, reqdTy2Text, implicitsText), m))))
-            | _ -> None
-        else
-            None
+        match implicits with
+        | [(minfo, staticTy) ] ->
+            Some (minfo, staticTy, (reqdTy, reqdTy2, ignore))
+        | (minfo, staticTy) :: _ ->
+            Some (minfo, staticTy, (reqdTy, reqdTy2, fun denv ->
+                     let reqdTy2Text, actualTyText, _cxs = NicePrint.minimalRichTextsOfTwoTypes denv reqdTy2 actualTy
+                     let implicitsText = NicePrint.multiLineRichTextOfMethInfos infoReader m denv (List.map fst implicits)
+                     errorR(Error(FSComp.SR.tcAmbiguousImplicitConversion(actualTyText, reqdTy2Text, implicitsText), m))))
+        | _ -> None
     else
         None
 
@@ -285,15 +282,15 @@ let rec AdjustRequiredTypeForTypeDirectedConversions (infoReader: InfoReader) ad
         AdjustRequiredTypeForTypeDirectedConversions infoReader ad isMethodArg isConstraint delegateTy actualTy m
 
     // Adhoc int32 --> int64
-    elif g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions && typeEquiv g g.int64_ty reqdTy && typeEquiv g g.int32_ty actualTy then
+    elif typeEquiv g g.int64_ty reqdTy && typeEquiv g g.int32_ty actualTy then
         g.int32_ty, TypeDirectedConversionUsed.Yes(warn TypeDirectedConversion.BuiltIn, false, false), None
 
     // Adhoc int32 --> nativeint
-    elif g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions && typeEquiv g g.nativeint_ty reqdTy && typeEquiv g g.int32_ty actualTy then
+    elif typeEquiv g g.nativeint_ty reqdTy && typeEquiv g g.int32_ty actualTy then
         g.int32_ty, TypeDirectedConversionUsed.Yes(warn TypeDirectedConversion.BuiltIn, false, false), None
 
     // Adhoc int32 --> float64
-    elif g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions && typeEquiv g g.float_ty reqdTy && typeEquiv g g.int32_ty actualTy then
+    elif typeEquiv g g.float_ty reqdTy && typeEquiv g g.int32_ty actualTy then
         g.int32_ty, TypeDirectedConversionUsed.Yes(warn TypeDirectedConversion.BuiltIn, false, false), None
 
     elif isMethodArg && isNullableTy g reqdTy && not (isNullableTy g actualTy) then
@@ -310,12 +307,10 @@ let rec AdjustRequiredTypeForTypeDirectedConversions (infoReader: InfoReader) ad
 
     // Adhoc based on op_Implicit, perhaps returning a new equational type constraint to
     // eliminate artificial constrained type variables.
-    elif g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions then
+    else
          match TryFindRelevantImplicitConversion infoReader ad reqdTy actualTy m with
          | Some (minfo, _staticTy, eqn) -> actualTy, TypeDirectedConversionUsed.Yes(warn (TypeDirectedConversion.Implicit minfo), false, false), Some eqn
          | None -> reqdTy, TypeDirectedConversionUsed.No, None
-
-    else reqdTy, TypeDirectedConversionUsed.No, None
 
 // If the called method argument is a delegate type, and the caller is known to be a function type, then the caller may provide a function
 // If the called method argument is an Expression<T> type, and the caller is known to be a function type, then the caller may provide a T
@@ -947,11 +942,6 @@ let ExamineMethodForLambdaPropagation (g: TcGlobals) m (meth: CalledMeth<SynExpr
               AttributeName = "Microsoft.FSharp.Core.CompilerServices.NoEagerConstraintApplicationAttribute" }
             meth.Method
 
-    // The logic associated with NoEagerConstraintApplicationAttribute is part of the
-    // Tasks and Resumable Code RFC
-    if noEagerConstraintApplication && not (g.langVersion.SupportsFeature LanguageFeature.ResumableStateMachines) then
-        errorR(Error(FSComp.SR.tcNoEagerConstraintApplicationAttribute(), m))
-
     let unnamedInfo = meth.AssignedUnnamedArgs |> List.mapSquared (ExamineArgumentForLambdaPropagation meth.infoReader ad noEagerConstraintApplication)
     let namedInfo = meth.AssignedNamedArgs |> List.mapSquared (fun arg -> (arg.NamedArgIdOpt.Value, ExamineArgumentForLambdaPropagation meth.infoReader ad noEagerConstraintApplication arg))
     if unnamedInfo |> List.existsSquared (function CallerLambdaHasArgTypes _ -> true | _ -> false) ||
@@ -1465,24 +1455,15 @@ let rec AdjustExprForTypeDirectedConversions tcVal (g: TcGlobals) amap infoReade
        mkCallQuoteToLinqLambdaExpression g m delegateTy (Expr.Quote (expr2, ref None, false, m, mkQuotedExprTy g delegateTy))
 
    // Adhoc int32 --> int64
-   elif g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions &&
-        typeEquiv g g.int64_ty reqdTy &&
-        typeEquiv g g.int32_ty actualTy then
-
+   elif typeEquiv g g.int64_ty reqdTy && typeEquiv g g.int32_ty actualTy then
        mkCallToInt64Operator g m actualTy expr
 
    // Adhoc int32 --> nativeint
-   elif g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions &&
-        typeEquiv g g.nativeint_ty reqdTy &&
-        typeEquiv g g.int32_ty actualTy then
-
+   elif typeEquiv g g.nativeint_ty reqdTy && typeEquiv g g.int32_ty actualTy then
        mkCallToIntPtrOperator g m actualTy expr
 
    // Adhoc int32 --> float64
-   elif g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions &&
-        typeEquiv g g.float_ty reqdTy &&
-        typeEquiv g g.int32_ty actualTy then
-
+   elif typeEquiv g g.float_ty reqdTy && typeEquiv g g.int32_ty actualTy then
        mkCallToDoubleOperator g m actualTy expr
 
    elif isNullableTy g reqdTy && not (isNullableTy g actualTy) then

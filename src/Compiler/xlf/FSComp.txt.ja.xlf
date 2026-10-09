@@ -82,11 +82,6 @@
         <target state="translated">機能 '{0}' は、ターゲット ランタイムではサポートされていません。</target>
         <note />
       </trans-unit>
-      <trans-unit id="chkFeatureNotSupportedInLibrary">
-        <source>Feature '{0}' requires the F# library for language version {1} or greater.</source>
-        <target state="translated">機能 '{0}' を使用するには、言語バージョン {1} 以上の F# ライブラリが必要です。</target>
-        <note />
-      </trans-unit>
       <trans-unit id="chkImplementingInterfacesOnStaticClasses">
         <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Implementing interfaces is not allowed.</source>
         <target state="translated">型が [&lt;Sealed&gt;] と [&lt;AbstractClass&gt;] の両方の属性を使用する場合、それは静的であることを意味します。インターフェイスの実装は許可されません。</target>
@@ -302,11 +297,6 @@
         <target state="new">Access a protected base-class field from a closure inside a member</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureAdditionalImplicitConversions">
-        <source>additional type-directed conversions</source>
-        <target state="translated">その他の型指定された変換</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureAllowAccessModifiersToAutoPropertiesGettersAndSetters">
         <source>Allow access modifiers to auto properties getters and setters</source>
         <target state="new">Allow access modifiers to auto properties getters and setters</target>
@@ -352,11 +342,6 @@
         <target state="translated">'TailCall' 属性が再帰関数以外で使用されている場合、警告が発せられます。</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureConstraintIntersectionOnFlexibleTypes">
-        <source>Constraint intersection on flexible types</source>
-        <target state="translated">フレキシブル型の制約積集合</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureDeprecatePlacesWhereSeqCanBeOmitted">
         <source>Deprecate places where 'seq' can be omitted</source>
         <target state="new">Deprecate places where 'seq' can be omitted</target>
@@ -380,11 +365,6 @@
       <trans-unit id="featureEnforceAttributeTargets">
         <source>Enforce AttributeTargets</source>
         <target state="translated">AttributeTargets を適用する</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureErrorForNonVirtualMembersOverrides">
-        <source>Raises errors for non-virtual members overrides</source>
-        <target state="translated">仮想メンバー以外のオーバーライドに対してエラーを発生させます</target>
         <note />
       </trans-unit>
       <trans-unit id="featureErrorOnBitwiseOpsOnNonIntegralEnums">
@@ -457,11 +437,6 @@
         <target state="new">Use 'most concrete' tiebreaker for overload resolution when methods differ only by type parameter concreteness.</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureNonInlineLiteralsAsPrintfFormat">
-        <source>String values marked as literals and IL constants as printf format</source>
-        <target state="translated">リテラルとしてマークされた文字列値およびprintf 形式としてマークされた IL 定数</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureNotNullIfNotNull">
         <source>honor the 'NotNullIfNotNull' attribute on a method's return value</source>
         <target state="new">honor the 'NotNullIfNotNull' attribute on a method's return value</target>
@@ -480,11 +455,6 @@
       <trans-unit id="featureOverloadResolutionPriority">
         <source>Support for OverloadResolutionPriorityAttribute to prioritize method overloads.</source>
         <target state="new">Support for OverloadResolutionPriorityAttribute to prioritize method overloads.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featurePackageManagement">
-        <source>package management</source>
-        <target state="translated">パッケージの管理</target>
         <note />
       </trans-unit>
       <trans-unit id="featureParsedHashDirectiveArgumentNonString">
@@ -512,11 +482,6 @@
         <target state="new">#elif preprocessor directive</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureReallyLongList">
-        <source>list literals of any size</source>
-        <target state="translated">任意のサイズのリテラルを一覧表示する</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureRecordConstructorSyntax">
         <source>Constructing a record via its all-fields constructor</source>
         <target state="new">Constructing a record via its all-fields constructor</target>
@@ -530,11 +495,6 @@
       <trans-unit id="featureReraiseInComputationExpressions">
         <source>calls to 'reraise' in a computation expression handler</source>
         <target state="new">calls to 'reraise' in a computation expression handler</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureResumableStateMachines">
-        <source>resumable state machines</source>
-        <target state="translated">再開可能なステート マシン</target>
         <note />
       </trans-unit>
       <trans-unit id="featureReturnFromFinal">
@@ -560,16 +520,6 @@
       <trans-unit id="featureScopedNowarn">
         <source>Support for scoped enabling / disabling of warnings by #warn and #nowarn directives, also inside modules</source>
         <target state="new">Support for scoped enabling / disabling of warnings by #warn and #nowarn directives, also inside modules</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureSelfTypeConstraints">
-        <source>self type constraints</source>
-        <target state="translated">自己型制約</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureStringInterpolation">
-        <source>string interpolation</source>
-        <target state="translated">文字列の補間</target>
         <note />
       </trans-unit>
       <trans-unit id="featureSupportValueOptionsAsOptionalParameters">
@@ -1043,8 +993,8 @@
         <note />
       </trans-unit>
       <trans-unit id="optsUnrecognizedLanguageFeature">
-        <source>Unrecognized language feature name: '{0}'. Use a valid feature name such as 'StringInterpolation' or 'FromEndSlicing'.</source>
-        <target state="new">Unrecognized language feature name: '{0}'. Use a valid feature name such as 'StringInterpolation' or 'FromEndSlicing'.</target>
+        <source>Unrecognized language feature name: '{0}'. Use a valid feature name such as 'FromEndSlicing'.</source>
+        <target state="new">Unrecognized language feature name: '{0}'. Use a valid feature name such as 'FromEndSlicing'.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsUnrecognizedLanguageVersion">
@@ -1060,11 +1010,6 @@
       <trans-unit id="optsWin32icon">
         <source>Specify a Win32 icon file (.ico)</source>
         <target state="translated">Win32 アイコン ファイル (.ico) を指定する</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="packageManagementRequiresVFive">
-        <source>The 'package management' feature requires language version 5.0 or above</source>
-        <target state="translated">'package management' (パッケージ管理) 機能には、言語バージョン 5.0 以降が必要です</target>
         <note />
       </trans-unit>
       <trans-unit id="parsConstraintIntersectionSyntaxUsedWithNonFlexibleType">
@@ -1602,11 +1547,6 @@
         <target state="translated">複数の型の一致が見つかりました:\n{0}\n型 '{1}' が使用されました。フィールド名が重複しているため、\n{2}\n型注釈を使用するか、オープン ステートメントの順序を変更してください。</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcNoEagerConstraintApplicationAttribute">
-        <source>Using methods with 'NoEagerConstraintApplicationAttribute' requires /langversion:6.0 or later</source>
-        <target state="translated">'NoEagerConstraintApplicationAttribute' を指定してメソッドを使用するには、/langversion:6.0 以降が必要です</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcNoStaticMemberFoundForOverride">
         <source>No static abstract member was found that corresponds to this override</source>
         <target state="translated">このオーバーライドに対応する静的抽象メンバーが見つかりませんでした</target>
@@ -1775,11 +1715,6 @@
       <trans-unit id="tcResumableCodeInvocation">
         <source>Resumable code invocation. Suppress this warning if you are defining new low-level resumable code in terms of existing resumable code.</source>
         <target state="translated">再開可能なコード呼び出しです。既存の再開可能なコードに関して、新しい低レベルの再開可能なコードを定義する場合は、この警告を表示しないようにします。</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcResumableCodeNotSupported">
-        <source>Using resumable code or resumable state machines requires /langversion:preview</source>
-        <target state="translated">再開可能なコードまたは再開可能なステート マシンを使用するには、/langversion:preview が必要です</target>
         <note />
       </trans-unit>
       <trans-unit id="tcSetterForInitOnlyPropertyCannotBeCalled1">
@@ -4740,11 +4675,6 @@
       <trans-unit id="tcUnableToParseFormatString">
         <source>Unable to parse format string '{0}'</source>
         <target state="translated">書式指定文字列 '{0}' を解析できません</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcListLiteralMaxSize">
-        <source>This list expression exceeds the maximum size for list literals. Use an array for larger literals and call Array.ToList.</source>
-        <target state="translated">このリスト式は、リスト リテラルの最大サイズを超えています。より大きなリテラルの配列を使用し、Array.ToList を呼び出してください。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcExpressionFormRequiresObjectConstructor">
