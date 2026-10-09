@@ -2,6 +2,7 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import tempfile
 import unittest
 
 import yaml
@@ -9,6 +10,7 @@ import yaml
 
 WORKFLOWS = Path(__file__).resolve().parents[1]
 WORKFLOW_NAME = "build-failure-analysis-command"
+SHARED = WORKFLOWS / "shared" / "build-failure-analysis-shared.md"
 HARNESS = r"""
 const fs = require("node:fs");
 const input = JSON.parse(fs.readFileSync(0, "utf8"));
@@ -67,6 +69,7 @@ class CommandPublicationTests(unittest.TestCase):
             for step in cls.workflow["jobs"]["fetch-binlog"]["steps"]
             if step.get("id") == "command"
         )
+        cls.metadata = load(SHARED)["safe-outputs"]["steps"][0]["with"]["script"]
 
     def run_check(self, jobs, title="Build failure analysis command 123"):
         fixture = {
@@ -120,6 +123,51 @@ class CommandPublicationTests(unittest.TestCase):
             compiled["with"]["script"].strip(),
             self.check["with"]["script"].strip(),
         )
+
+    def test_fix_publication_requires_checked_same_repository_changes(self):
+        def summary(status):
+            return {
+                "type": "add_comment",
+                "body": "Build failure",
+                "data": {
+                    "workflow_artifact": "build-failure-analysis",
+                    "artifact_kind": "analysis",
+                    "fix_status": status,
+                },
+            }
+
+        push = {"type": "push_to_pull_request_branch"}
+        cases = (
+            ("blocked-analysis", [summary("blocked")], "dotnet/test", True),
+            ("checked-fix", [push, summary("validated")], "dotnet/test", True),
+            ("unverified-fix", [push, summary("failed")], "dotnet/test", False),
+            ("fork-fix", [push, summary("validated")], "contributor/test", False),
+            ("missing-push", [summary("validated")], "dotnet/test", False),
+            ("missing-summary", [push], "dotnet/test", False),
+            ("multiple-pushes", [push, push, summary("validated")], "dotnet/test", False),
+            ("missing-metadata", [{"type": "add_comment", "body": "Missing"}], "dotnet/test", False),
+        )
+        for name, items, head_repo, accepted in cases:
+            with self.subTest(name=name), tempfile.TemporaryDirectory() as directory:
+                output = Path(directory) / "output.json"
+                output.write_text(json.dumps({"items": items}), encoding="utf-8")
+                result = subprocess.run(
+                    ["node", "-e", HARNESS],
+                    input=json.dumps({"script": self.metadata}),
+                    capture_output=True,
+                    text=True,
+                    env={
+                        **os.environ,
+                        "GH_AW_AGENT_OUTPUT": str(output),
+                        "EXPECTED_HEAD_REPO": head_repo,
+                        "GITHUB_REPOSITORY": "dotnet/test",
+                    },
+                    timeout=15,
+                )
+                self.assertEqual(result.returncode == 0, accepted, result.stderr)
+                if accepted:
+                    published = json.loads(output.read_text(encoding="utf-8"))
+                    self.assertIn("Structured data:", published["items"][-1]["body"])
 
 
 if __name__ == "__main__":

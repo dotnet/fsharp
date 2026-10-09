@@ -1,5 +1,5 @@
-# gh-aw-metadata: {"schema_version":"v4","frontmatter_hash":"8ff6ff8ec1bb2c23ed84807ae64ad9b745e3e661fbb9a67483073b3dd3e1e399","body_hash":"453991c2592434b66e957e52f49be793b2a36eb0c55a30662e6939b8b9eb79cf","compiler_version":"v0.89.21","strict":true,"agent_id":"copilot","agent_model":"gpt-5.6-sol","engine_versions":{"copilot":"1.0.87"}}
-# gh-aw-manifest: {"version":1,"secrets":["COPILOT_GITHUB_TOKEN","GH_AW_DEFAULT_OTLP_ENDPOINT","GH_AW_DEFAULT_OTLP_HEADERS","GH_AW_GITHUB_MCP_SERVER_TOKEN","GH_AW_GITHUB_TOKEN","GITHUB_TOKEN"],"actions":[{"repo":"actions/checkout","sha":"3d3c42e5aac5ba805825da76410c181273ba90b1","version":"v7.0.1"},{"repo":"actions/download-artifact","sha":"3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c","version":"v8.0.1"},{"repo":"actions/github-script","sha":"3a2844b7e9c422d3c10d287c895573f7108da1b3","version":"v9.0.0"},{"repo":"actions/setup-node","sha":"820762786026740c76f36085b0efc47a31fe5020","version":"v7.0.0"},{"repo":"actions/upload-artifact","sha":"043fb46d1a93c77aae656e7c1c64a875d1fc6a0a","version":"v7.0.1"},{"repo":"github/gh-aw-actions/setup","sha":"924af5fdc64061cfbf66fb584c8b07e2ac230c60","version":"v0.89.21"}],"containers":[{"image":"ghcr.io/github/gh-aw-firewall/agent:0.28.23","digest":"sha256:2c78aaba1c108e130e2d6d01e4f2cca334ea04c53e6f258913ac34173fe7e3b2","pinned_image":"ghcr.io/github/gh-aw-firewall/agent:0.28.23@sha256:2c78aaba1c108e130e2d6d01e4f2cca334ea04c53e6f258913ac34173fe7e3b2"},{"image":"ghcr.io/github/gh-aw-firewall/api-proxy:0.28.23","digest":"sha256:c15c3d1208df10c5b588a3657be53742aa982ae0909d1eb1812525268794ca64","pinned_image":"ghcr.io/github/gh-aw-firewall/api-proxy:0.28.23@sha256:c15c3d1208df10c5b588a3657be53742aa982ae0909d1eb1812525268794ca64"},{"image":"ghcr.io/github/gh-aw-firewall/squid:0.28.23","digest":"sha256:02ffc56dd40158223064ef03a78c2d9717473c93723b4e403d455ea6f0b09ae0","pinned_image":"ghcr.io/github/gh-aw-firewall/squid:0.28.23@sha256:02ffc56dd40158223064ef03a78c2d9717473c93723b4e403d455ea6f0b09ae0"},{"image":"ghcr.io/github/gh-aw-mcpg:v0.4.25","digest":"sha256:9be0a86220e807a0ecc89e53d7453468f7a53fbc6b3d1efd2299025ffe01d086","pinned_image":"ghcr.io/github/gh-aw-mcpg:v0.4.25@sha256:9be0a86220e807a0ecc89e53d7453468f7a53fbc6b3d1efd2299025ffe01d086"},{"image":"ghcr.io/github/gh-aw-node","digest":"sha256:11c2c544876cdbaffefe0f7f1283b74838c209654b4934a78e23ed11f750490f","pinned_image":"ghcr.io/github/gh-aw-node@sha256:11c2c544876cdbaffefe0f7f1283b74838c209654b4934a78e23ed11f750490f"},{"image":"ghcr.io/github/github-mcp-server:v1.12.2","digest":"sha256:508a0857ec762b1ab1cece29193345b501fab1dd9d1228a7b617062954cecac6","pinned_image":"ghcr.io/github/github-mcp-server:v1.12.2@sha256:508a0857ec762b1ab1cece29193345b501fab1dd9d1228a7b617062954cecac6"},{"image":"mcr.microsoft.com/dotnet-buildtools/prereqs:azurelinux-3.0-binlog-mcp-amd64","digest":"sha256:ca760fd18bf8e6168d9b304d65c5d2340e4135fc9080c6e2f2eb4800368e3df4","pinned_image":"mcr.microsoft.com/dotnet-buildtools/prereqs:azurelinux-3.0-binlog-mcp-amd64@sha256:ca760fd18bf8e6168d9b304d65c5d2340e4135fc9080c6e2f2eb4800368e3df4"}],"mcp_servers":[{"name":"binlog-mcp","tools":["binlog_analyzer_summary","binlog_assembly_conflicts","binlog_build_graph","binlog_capabilities","binlog_compare","binlog_compiler","binlog_diagnose","binlog_double_writes","binlog_errors","binlog_evaluation_global_properties","binlog_evaluation_properties","binlog_evaluations","binlog_expensive_analyzers","binlog_expensive_projects","binlog_expensive_targets","binlog_expensive_tasks","binlog_explain_property","binlog_files","binlog_imports","binlog_incremental_analysis","binlog_items","binlog_nuget","binlog_overview","binlog_project_target_times","binlog_project_targets","binlog_projects","binlog_properties","binlog_search","binlog_search_files","binlog_search_targets","binlog_target_graph","binlog_target_reasons","binlog_task_details","binlog_tasks_in_target","binlog_warnings"]},{"name":"github","tools":["get_commit","get_file_contents","get_latest_release","get_pull_request","get_pull_request_comments","get_pull_request_diff","get_pull_request_files","get_pull_request_review_comments","get_pull_request_reviews","get_pull_request_status","get_release_by_tag","get_tag","list_branches","list_commits","list_pull_requests","list_releases","list_starred_repositories","list_tags","pull_request_read","search_code","search_pull_requests","search_repositories"]},{"name":"safeoutputs","tools":["add_comment","create_pull_request_review_comment","missing_data","missing_tool","noop"]}]}
+# gh-aw-metadata: {"schema_version":"v4","frontmatter_hash":"0a7192415a931b96e9c777004b5e1d3880892c34005424c9e414e5f981eb31a4","body_hash":"fab313687481496c7dd667598ea5b3b858e2171cf11ab949706675ae0b7b7f45","compiler_version":"v0.89.21","strict":true,"agent_id":"copilot","agent_model":"gpt-5.6-sol","engine_versions":{"copilot":"1.0.87"}}
+# gh-aw-manifest: {"version":1,"secrets":["COPILOT_GITHUB_TOKEN","GH_AW_CI_TRIGGER_TOKEN","GH_AW_DEFAULT_OTLP_ENDPOINT","GH_AW_DEFAULT_OTLP_HEADERS","GH_AW_GITHUB_MCP_SERVER_TOKEN","GH_AW_GITHUB_TOKEN","GITHUB_TOKEN"],"actions":[{"repo":"actions/checkout","sha":"3d3c42e5aac5ba805825da76410c181273ba90b1","version":"v7.0.1"},{"repo":"actions/download-artifact","sha":"3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c","version":"v8.0.1"},{"repo":"actions/github-script","sha":"3a2844b7e9c422d3c10d287c895573f7108da1b3","version":"v9.0.0"},{"repo":"actions/setup-node","sha":"820762786026740c76f36085b0efc47a31fe5020","version":"v7.0.0"},{"repo":"actions/upload-artifact","sha":"043fb46d1a93c77aae656e7c1c64a875d1fc6a0a","version":"v7.0.1"},{"repo":"github/gh-aw-actions/setup","sha":"924af5fdc64061cfbf66fb584c8b07e2ac230c60","version":"v0.89.21"}],"containers":[{"image":"ghcr.io/github/gh-aw-firewall/agent:0.28.23","digest":"sha256:2c78aaba1c108e130e2d6d01e4f2cca334ea04c53e6f258913ac34173fe7e3b2","pinned_image":"ghcr.io/github/gh-aw-firewall/agent:0.28.23@sha256:2c78aaba1c108e130e2d6d01e4f2cca334ea04c53e6f258913ac34173fe7e3b2"},{"image":"ghcr.io/github/gh-aw-firewall/api-proxy:0.28.23","digest":"sha256:c15c3d1208df10c5b588a3657be53742aa982ae0909d1eb1812525268794ca64","pinned_image":"ghcr.io/github/gh-aw-firewall/api-proxy:0.28.23@sha256:c15c3d1208df10c5b588a3657be53742aa982ae0909d1eb1812525268794ca64"},{"image":"ghcr.io/github/gh-aw-firewall/squid:0.28.23","digest":"sha256:02ffc56dd40158223064ef03a78c2d9717473c93723b4e403d455ea6f0b09ae0","pinned_image":"ghcr.io/github/gh-aw-firewall/squid:0.28.23@sha256:02ffc56dd40158223064ef03a78c2d9717473c93723b4e403d455ea6f0b09ae0"},{"image":"ghcr.io/github/gh-aw-mcpg:v0.4.25","digest":"sha256:9be0a86220e807a0ecc89e53d7453468f7a53fbc6b3d1efd2299025ffe01d086","pinned_image":"ghcr.io/github/gh-aw-mcpg:v0.4.25@sha256:9be0a86220e807a0ecc89e53d7453468f7a53fbc6b3d1efd2299025ffe01d086"},{"image":"ghcr.io/github/gh-aw-node","digest":"sha256:11c2c544876cdbaffefe0f7f1283b74838c209654b4934a78e23ed11f750490f","pinned_image":"ghcr.io/github/gh-aw-node@sha256:11c2c544876cdbaffefe0f7f1283b74838c209654b4934a78e23ed11f750490f"},{"image":"ghcr.io/github/github-mcp-server:v1.12.2","digest":"sha256:508a0857ec762b1ab1cece29193345b501fab1dd9d1228a7b617062954cecac6","pinned_image":"ghcr.io/github/github-mcp-server:v1.12.2@sha256:508a0857ec762b1ab1cece29193345b501fab1dd9d1228a7b617062954cecac6"},{"image":"mcr.microsoft.com/dotnet-buildtools/prereqs:azurelinux-3.0-binlog-mcp-amd64","digest":"sha256:ca760fd18bf8e6168d9b304d65c5d2340e4135fc9080c6e2f2eb4800368e3df4","pinned_image":"mcr.microsoft.com/dotnet-buildtools/prereqs:azurelinux-3.0-binlog-mcp-amd64@sha256:ca760fd18bf8e6168d9b304d65c5d2340e4135fc9080c6e2f2eb4800368e3df4"}],"mcp_servers":[{"name":"binlog-mcp","tools":["binlog_analyzer_summary","binlog_assembly_conflicts","binlog_build_graph","binlog_capabilities","binlog_compare","binlog_compiler","binlog_diagnose","binlog_double_writes","binlog_errors","binlog_evaluation_global_properties","binlog_evaluation_properties","binlog_evaluations","binlog_expensive_analyzers","binlog_expensive_projects","binlog_expensive_targets","binlog_expensive_tasks","binlog_explain_property","binlog_files","binlog_imports","binlog_incremental_analysis","binlog_items","binlog_nuget","binlog_overview","binlog_project_target_times","binlog_project_targets","binlog_projects","binlog_properties","binlog_search","binlog_search_files","binlog_search_targets","binlog_target_graph","binlog_target_reasons","binlog_task_details","binlog_tasks_in_target","binlog_warnings"]},{"name":"github","tools":["get_commit","get_file_contents","get_latest_release","get_pull_request","get_pull_request_comments","get_pull_request_diff","get_pull_request_files","get_pull_request_review_comments","get_pull_request_reviews","get_pull_request_status","get_release_by_tag","get_tag","list_branches","list_commits","list_pull_requests","list_releases","list_starred_repositories","list_tags","pull_request_read","search_code","search_pull_requests","search_repositories"]},{"name":"safeoutputs","tools":["add_comment","missing_data","missing_tool","noop","push_to_pull_request_branch"]}]}
 # This file was automatically generated by gh-aw (v0.89.21). DO NOT EDIT. To debug this workflow, load the skill at https://github.com/github/gh-aw/blob/main/debug.md
 #
 #    ___                   _   _
@@ -23,7 +23,7 @@
 #
 # For more information: https://github.github.com/gh-aw/introduction/overview/
 #
-# Reruns build-failure analysis when a maintainer comments `/analyze-build-failure` on a pull request. It analyzes only that PR's newest `fsharp-ci` build, and only when the newest build is completed and failed.
+# Reruns build-failure analysis when a maintainer comments `/analyze-build-failure` on a pull request. It analyzes only that PR's newest completed, failed `fsharp-ci` build and attempts a checked fix on an eligible same-repository PR branch.
 #
 # Resolved workflow manifest:
 #   Imports:
@@ -31,6 +31,7 @@
 #
 # Secrets used:
 #   - COPILOT_GITHUB_TOKEN
+#   - GH_AW_CI_TRIGGER_TOKEN
 #   - GH_AW_DEFAULT_OTLP_ENDPOINT
 #   - GH_AW_DEFAULT_OTLP_HEADERS
 #   - GH_AW_GITHUB_MCP_SERVER_TOKEN
@@ -327,7 +328,7 @@ jobs:
           GH_AW_ACTIONS_DIR: ${{ runner.temp }}/gh-aw/actions
           GH_AW_PROMPT: ${{ runner.temp }}/gh-aw/aw-prompts/prompt.txt
           GH_AW_SAFE_OUTPUTS: ${{ runner.temp }}/gh-aw/safeoutputs/outputs.jsonl
-          GH_AW_PROMPT_CONFIG: "{\"items\":[{\"content_env\":\"GH_AW_PROMPT_CONTENT_0000\"},{\"file\":\"xpia.md\"},{\"file\":\"temp_folder_prompt.md\"},{\"file\":\"markdown.md\"},{\"file\":\"safe_outputs_prompt.md\"},{\"content_env\":\"GH_AW_PROMPT_CONTENT_0001\"},{\"content_env\":\"GH_AW_PROMPT_CONTENT_0002\"},{\"file\":\"mcp_cli_tools_with_safeoutputs_prompt.md\"},{\"content_env\":\"GH_AW_PROMPT_CONTENT_0003\"},{\"file\":\"github_mcp_tools_with_safeoutputs_prompt.md\"},{\"file\":\"pr_context_prompt.md\",\"condition_env\":\"GH_AW_INCLUDE_PR_CONTEXT\"},{\"content_env\":\"GH_AW_PROMPT_CONTENT_0004\"},{\"content_env\":\"GH_AW_PROMPT_CONTENT_0005\"},{\"content_env\":\"GH_AW_PROMPT_CONTENT_0006\"}]}"
+          GH_AW_PROMPT_CONFIG: "{\"items\":[{\"content_env\":\"GH_AW_PROMPT_CONTENT_0000\"},{\"file\":\"xpia.md\"},{\"file\":\"temp_folder_prompt.md\"},{\"file\":\"markdown.md\"},{\"file\":\"safe_outputs_prompt.md\"},{\"content_env\":\"GH_AW_PROMPT_CONTENT_0001\"},{\"file\":\"safe_outputs_push_to_pr_branch.md\"},{\"content_env\":\"GH_AW_PROMPT_CONTENT_0002\"},{\"file\":\"mcp_cli_tools_with_safeoutputs_prompt.md\"},{\"content_env\":\"GH_AW_PROMPT_CONTENT_0003\"},{\"file\":\"github_mcp_tools_with_safeoutputs_prompt.md\"},{\"file\":\"pr_context_prompt.md\",\"condition_env\":\"GH_AW_INCLUDE_PR_CONTEXT\"},{\"file\":\"pr_context_push_to_pr_branch_guidance.md\",\"condition_env\":\"GH_AW_INCLUDE_PR_CONTEXT\"},{\"content_env\":\"GH_AW_PROMPT_CONTENT_0004\"},{\"content_env\":\"GH_AW_PROMPT_CONTENT_0005\"},{\"content_env\":\"GH_AW_PROMPT_CONTENT_0006\"}]}"
           GH_AW_EXPR_1A3A194A: ${{ github.event.discussion.number || (fromJSON(github.event.inputs.aw_context || github.event.client_payload.aw_context || '{}').item_type == 'discussion' && fromJSON(github.event.inputs.aw_context || github.event.client_payload.aw_context || '{}').item_number) }}
           GH_AW_EXPR_463A214A: ${{ github.event.pull_request.number || (fromJSON(github.event.inputs.aw_context || github.event.client_payload.aw_context || '{}').item_type == 'pull_request' && fromJSON(github.event.inputs.aw_context || github.event.client_payload.aw_context || '{}').item_number) }}
           GH_AW_EXPR_802A9F6A: ${{ github.event.issue.number || (fromJSON(github.event.inputs.aw_context || github.event.client_payload.aw_context || '{}').item_type == 'issue' && fromJSON(github.event.inputs.aw_context || github.event.client_payload.aw_context || '{}').item_number) }}
@@ -338,9 +339,9 @@ jobs:
           GH_AW_GITHUB_WORKSPACE: ${{ github.workspace }}
           GH_AW_INCLUDE_PR_CONTEXT: ${{ (github.event_name == 'issue_comment' && github.event.issue.pull_request != null) || github.event_name == 'pull_request_review_comment' || github.event_name == 'pull_request_review' }}
           GH_AW_PROMPT_CONTENT_0000: "<system>\n"
-          GH_AW_PROMPT_CONTENT_0001: "<safe-output-tools>\nTools: add_comment, create_pull_request_review_comment(max:25), missing_tool, missing_data, noop\n"
+          GH_AW_PROMPT_CONTENT_0001: "<safe-output-tools>\nTools: add_comment, push_to_pull_request_branch, missing_tool, missing_data, noop\n"
           GH_AW_PROMPT_CONTENT_0002: "</safe-output-tools>\n"
-          GH_AW_PROMPT_CONTENT_0003: "<github-context>\nThe following GitHub context information is available for this workflow:\n{{#if github.actor}}\n- **actor**: __GH_AW_GITHUB_ACTOR__\n{{/if}}\n{{#if github.repository}}\n- **repository**: __GH_AW_GITHUB_REPOSITORY__\n{{/if}}\n{{#if github.workspace}}\n- **workspace**: __GH_AW_GITHUB_WORKSPACE__\n{{/if}}\n{{#if github.event.issue.number || (github.aw.context.item_type == 'issue' && github.aw.context.item_number)}}\n- **issue-number**: #__GH_AW_EXPR_802A9F6A__\n{{/if}}\n{{#if github.event.discussion.number || (github.aw.context.item_type == 'discussion' && github.aw.context.item_number)}}\n- **discussion-number**: #__GH_AW_EXPR_1A3A194A__\n{{/if}}\n{{#if github.event.pull_request.number || (github.aw.context.item_type == 'pull_request' && github.aw.context.item_number)}}\n- **pull-request-number**: #__GH_AW_EXPR_463A214A__\n{{/if}}\n{{#if github.event.comment.id || github.aw.context.comment_id}}\n- **comment-id**: __GH_AW_EXPR_FF1D34CE__\n{{/if}}\n{{#if github.run_id}}\n- **workflow-run-id**: __GH_AW_GITHUB_RUN_ID__\n{{/if}}\n</github-context>\n\n"
+          GH_AW_PROMPT_CONTENT_0003: "<github-context>\nThe following GitHub context information is available for this workflow:\n{{#if github.actor}}\n- **actor**: __GH_AW_GITHUB_ACTOR__\n{{/if}}\n{{#if github.repository}}\n- **repository**: __GH_AW_GITHUB_REPOSITORY__\n{{/if}}\n{{#if github.workspace}}\n- **workspace**: __GH_AW_GITHUB_WORKSPACE__\n{{/if}}\n{{#if github.event.issue.number || (github.aw.context.item_type == 'issue' && github.aw.context.item_number)}}\n- **issue-number**: #__GH_AW_EXPR_802A9F6A__\n{{/if}}\n{{#if github.event.discussion.number || (github.aw.context.item_type == 'discussion' && github.aw.context.item_number)}}\n- **discussion-number**: #__GH_AW_EXPR_1A3A194A__\n{{/if}}\n{{#if github.event.pull_request.number || (github.aw.context.item_type == 'pull_request' && github.aw.context.item_number)}}\n- **pull-request-number**: #__GH_AW_EXPR_463A214A__\n{{/if}}\n{{#if github.event.comment.id || github.aw.context.comment_id}}\n- **comment-id**: __GH_AW_EXPR_FF1D34CE__\n{{/if}}\n{{#if github.run_id}}\n- **workflow-run-id**: __GH_AW_GITHUB_RUN_ID__\n{{/if}}\n- **checkouts**: The following repositories have been checked out and are available in the workspace:\n  - repo `__GH_AW_GITHUB_REPOSITORY__` → `__GH_AW_GITHUB_WORKSPACE__` (cwd) [full history, all branches available as remote-tracking refs]\n  - **Note**: The workspace path reported above may contain a separate shallow, credential-free checkout of the host repository. Use the exact checkout path shown for the repository you need. Before concluding that a branch is unavailable, confirm your working directory matches that path and inspect refs there. If the branch is not present in that checkout and is not listed as an additional fetched ref, it has NOT been checked out. For private repositories you cannot fetch it. If the branch is required and not available, exit with an error and ask the user to add it to the `fetch:` option of the `checkout:` configuration (e.g., `fetch: [\"refs/pulls/open/*\"]` for all open PR refs, or `fetch: [\"main\", \"feature/my-branch\"]` for specific branches).\n  - **Warning: No git credentials are available to the agent.** Credentials are\n    intentionally removed after the checkout step for security. This means any git\n    operation that needs to authenticate to the remote will fail. In private repositories, that includes:\n    - `git fetch`, `git pull`, `git clone`, and `git push` (direct push, not via safe-output tools)\n    - Checking out or switching to a remote branch that is not already fetched\n    - Deepening a shallow clone (`git fetch --unshallow`)\n    - On-demand blob fetches in partial/blobless clones (operations on files not in the initial checkout)\n    Do NOT attempt to configure credentials, run `git credential fill`, or modify `.gitconfig` —\n    authentication will not succeed. If you encounter credential prompts or authentication errors,\n    stop immediately and report the limitation rather than spending turns trying to work around it.\n</github-context>\n\n"
           GH_AW_PROMPT_CONTENT_0004: "</system>\n"
           GH_AW_PROMPT_CONTENT_0005: "{{#runtime-import .github/workflows/shared/build-failure-analysis-shared.md}}\n"
           GH_AW_PROMPT_CONTENT_0006: "{{#runtime-import .github/workflows/build-failure-analysis-command.md}}\n"
@@ -529,6 +530,8 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          ref: ${{ needs.fetch-binlog.outputs.pr-head-sha }}
+          fetch-depth: 0
       - name: Initialize agent execution evidence
         run: |
           mkdir -p "/tmp/gh-aw"
@@ -555,11 +558,13 @@ jobs:
           GH_AW_ADO_BUILD_URL_VALUE: ${{ needs.fetch-binlog.outputs.ado-build-url }}
           GH_AW_BINLOG_FOUND_VALUE: ${{ needs.fetch-binlog.outputs.binlog-found }}
           GH_AW_GITHUB_WORKSPACE: ${{ github.workspace }}
+          GH_AW_PR_HEAD_REF_VALUE: ${{ needs.fetch-binlog.outputs.pr-head-ref }}
+          GH_AW_PR_HEAD_REPO_VALUE: ${{ needs.fetch-binlog.outputs.pr-head-repo }}
           GH_AW_PR_HEAD_SHA_VALUE: ${{ needs.fetch-binlog.outputs.pr-head-sha }}
           GH_AW_PR_MERGE_SHA_VALUE: ${{ needs.fetch-binlog.outputs.pr-merge-sha }}
           GH_AW_PR_NUMBER_VALUE: ${{ needs.fetch-binlog.outputs.pr-number }}
         name: Export agent context
-        run: "BINLOG_DIR=\"/data/binlogs\"\nLIST=\"\"\nif [ \"${GH_AW_BINLOG_FOUND_VALUE:-false}\" = \"true\" ] && [ -d /tmp/binlogs ]; then\n  for f in /tmp/binlogs/*.binlog; do\n    [ -f \"$f\" ] || continue\n    LIST=\"${LIST}${BINLOG_DIR}/$(basename \"$f\")\"$'\\n'\n  done\nfi\nFIRST=${LIST%%$'\\n'*}\n{\n  echo \"GH_AW_BUILD_OUTCOME=failure\"\n  echo \"GH_AW_BINLOG_DIR=${BINLOG_DIR}\"\n  echo \"GH_AW_BINLOG_PATH=${FIRST}\"\n  echo \"GH_AW_BINLOG_HOST_PATH=${GH_AW_ADO_BUILD_URL_VALUE}\"\n  echo \"GH_AW_PR_NUMBER=${GH_AW_PR_NUMBER_VALUE}\"\n  echo \"GH_AW_PR_HEAD_SHA=${GH_AW_PR_HEAD_SHA_VALUE}\"\n  echo \"GH_AW_PR_MERGE_SHA=${GH_AW_PR_MERGE_SHA_VALUE}\"\n  echo \"GH_AW_WORKSPACE=${GH_AW_GITHUB_WORKSPACE}\"\n  echo \"GH_AW_BINLOG_LIST<<GH_AW_EOF\"\n  printf '%s' \"$LIST\"\n  echo \"GH_AW_EOF\"\n} >> \"$GITHUB_ENV\"\n"
+        run: "BINLOG_DIR=\"/data/binlogs\"\nLIST=\"\"\nif [ \"${GH_AW_BINLOG_FOUND_VALUE:-false}\" = \"true\" ] && [ -d /tmp/binlogs ]; then\n  for f in /tmp/binlogs/*.binlog; do\n    [ -f \"$f\" ] || continue\n    LIST=\"${LIST}${BINLOG_DIR}/$(basename \"$f\")\"$'\\n'\n  done\nfi\nFIRST=${LIST%%$'\\n'*}\n{\n  echo \"GH_AW_BUILD_OUTCOME=failure\"\n  echo \"GH_AW_BINLOG_DIR=${BINLOG_DIR}\"\n  echo \"GH_AW_BINLOG_PATH=${FIRST}\"\n  echo \"GH_AW_BINLOG_HOST_PATH=${GH_AW_ADO_BUILD_URL_VALUE}\"\n  echo \"GH_AW_PR_NUMBER=${GH_AW_PR_NUMBER_VALUE}\"\n  echo \"GH_AW_PR_HEAD_SHA=${GH_AW_PR_HEAD_SHA_VALUE}\"\n  echo \"GH_AW_PR_MERGE_SHA=${GH_AW_PR_MERGE_SHA_VALUE}\"\n  echo \"GH_AW_PR_HEAD_REF=${GH_AW_PR_HEAD_REF_VALUE}\"\n  echo \"GH_AW_PR_HEAD_REPO=${GH_AW_PR_HEAD_REPO_VALUE}\"\n  echo \"GH_AW_WORKSPACE=${GH_AW_GITHUB_WORKSPACE}\"\n  echo \"GH_AW_BINLOG_LIST<<GH_AW_EOF\"\n  printf '%s' \"$LIST\"\n  echo \"GH_AW_EOF\"\n} >> \"$GITHUB_ENV\"\n"
         shell: bash
 
       - name: Configure Git credentials
@@ -638,7 +643,7 @@ jobs:
         env:
           GH_AW_FILE_ROOT: "${{ runner.temp }}/gh-aw"
           GH_AW_FILE_CONFIG: "{\"files\":[{\"path\":\"safeoutputs/config.json\",\"content_env\":\"GH_AW_SAFE_OUTPUTS_CONFIG\"}]}"
-          GH_AW_SAFE_OUTPUTS_CONFIG: "{\"add_comment\":{\"data_enabled\":true,\"data_schema\":{\"additionalProperties\":false,\"properties\":{\"artifact_kind\":{\"enum\":[\"analysis\"],\"type\":\"string\"},\"workflow_artifact\":{\"enum\":[\"build-failure-analysis\"],\"type\":\"string\"}},\"required\":[\"artifact_kind\",\"workflow_artifact\"],\"type\":\"object\"},\"hide_older_comments\":true,\"max\":1,\"target\":\"\"},\"create_pull_request_review_comment\":{\"commit_id\":\"\",\"data_enabled\":true,\"data_schema\":{\"additionalProperties\":false,\"properties\":{\"artifact_kind\":{\"enum\":[\"analysis\"],\"type\":\"string\"},\"workflow_artifact\":{\"enum\":[\"build-failure-analysis\"],\"type\":\"string\"}},\"required\":[\"artifact_kind\",\"workflow_artifact\"],\"type\":\"object\"},\"max\":25,\"side\":\"RIGHT\",\"target\":\"\"},\"create_report_incomplete_issue\":{},\"missing_data\":{},\"missing_tool\":{},\"noop\":{\"max\":1,\"report-as-issue\":\"false\"},\"report_incomplete\":{}}"
+          GH_AW_SAFE_OUTPUTS_CONFIG: "{\"add_comment\":{\"data_enabled\":true,\"data_schema\":{\"additionalProperties\":false,\"properties\":{\"artifact_kind\":{\"enum\":[\"analysis\"],\"type\":\"string\"},\"fix_status\":{\"enum\":[\"validated\",\"failed\",\"blocked\",\"not-needed\"],\"type\":\"string\"},\"workflow_artifact\":{\"enum\":[\"build-failure-analysis\"],\"type\":\"string\"}},\"required\":[\"artifact_kind\",\"fix_status\",\"workflow_artifact\"],\"type\":\"object\"},\"hide_older_comments\":true,\"max\":1,\"target\":\"\"},\"create_report_incomplete_issue\":{},\"missing_data\":{},\"missing_tool\":{},\"noop\":{\"max\":1,\"report-as-issue\":\"false\"},\"push_to_pull_request_branch\":{\"fallback_as_pull_request\":false,\"if_no_changes\":\"error\",\"max\":1,\"max_patch_size\":64,\"protect_top_level_dot_folders\":true,\"protected_files\":[\"package.json\",\"bun.lockb\",\"bunfig.toml\",\"deno.json\",\"deno.jsonc\",\"deno.lock\",\"global.json\",\"NuGet.Config\",\"Directory.Packages.props\",\"mix.exs\",\"mix.lock\",\"go.mod\",\"go.sum\",\"stack.yaml\",\"stack.yaml.lock\",\"pom.xml\",\"build.gradle\",\"build.gradle.kts\",\"settings.gradle\",\"settings.gradle.kts\",\"gradle.properties\",\"package-lock.json\",\"yarn.lock\",\"pnpm-lock.yaml\",\"npm-shrinkwrap.json\",\"requirements.txt\",\"Pipfile\",\"Pipfile.lock\",\"pyproject.toml\",\"setup.py\",\"setup.cfg\",\"Gemfile\",\"Gemfile.lock\",\"uv.lock\",\"CODEOWNERS\",\"DESIGN.md\",\"README.md\",\"CONTRIBUTING.md\",\"SECURITY.md\",\"CODE_OF_CONDUCT.md\",\"AGENTS.md\"],\"protected_files_policy\":\"blocked\",\"target\":\"\"},\"report_incomplete\":{}}"
         with:
           script: |
             const path = require('path');
@@ -653,7 +658,7 @@ jobs:
             {
               "description_suffixes": {
                 "add_comment": " CONSTRAINTS: Maximum 1 comment(s) can be added. Target: ${GH_AW_EXPR_B041244B}. Supports reply_to_id for discussion threading.",
-                "create_pull_request_review_comment": " CONSTRAINTS: Maximum 25 review comment(s) can be created. Comments will be on the RIGHT side of the diff."
+                "push_to_pull_request_branch": " CONSTRAINTS: Maximum 1 push(es) can be made."
               },
               "repo_params": {},
               "dynamic_tools": [],
@@ -668,6 +673,15 @@ jobs:
                         ],
                         "type": "string"
                       },
+                      "fix_status": {
+                        "enum": [
+                          "validated",
+                          "failed",
+                          "blocked",
+                          "not-needed"
+                        ],
+                        "type": "string"
+                      },
                       "workflow_artifact": {
                         "enum": [
                           "build-failure-analysis"
@@ -677,6 +691,7 @@ jobs:
                     },
                     "required": [
                       "artifact_kind",
+                      "fix_status",
                       "workflow_artifact"
                     ],
                     "type": "object"
@@ -692,6 +707,15 @@ jobs:
                         ],
                         "type": "string"
                       },
+                      "fix_status": {
+                        "enum": [
+                          "validated",
+                          "failed",
+                          "blocked",
+                          "not-needed"
+                        ],
+                        "type": "string"
+                      },
                       "workflow_artifact": {
                         "enum": [
                           "build-failure-analysis"
@@ -701,6 +725,7 @@ jobs:
                     },
                     "required": [
                       "artifact_kind",
+                      "fix_status",
                       "workflow_artifact"
                     ],
                     "type": "object"
@@ -716,6 +741,15 @@ jobs:
                         ],
                         "type": "string"
                       },
+                      "fix_status": {
+                        "enum": [
+                          "validated",
+                          "failed",
+                          "blocked",
+                          "not-needed"
+                        ],
+                        "type": "string"
+                      },
                       "workflow_artifact": {
                         "enum": [
                           "build-failure-analysis"
@@ -725,6 +759,7 @@ jobs:
                     },
                     "required": [
                       "artifact_kind",
+                      "fix_status",
                       "workflow_artifact"
                     ],
                     "type": "object"
@@ -740,6 +775,15 @@ jobs:
                         ],
                         "type": "string"
                       },
+                      "fix_status": {
+                        "enum": [
+                          "validated",
+                          "failed",
+                          "blocked",
+                          "not-needed"
+                        ],
+                        "type": "string"
+                      },
                       "workflow_artifact": {
                         "enum": [
                           "build-failure-analysis"
@@ -749,6 +793,7 @@ jobs:
                     },
                     "required": [
                       "artifact_kind",
+                      "fix_status",
                       "workflow_artifact"
                     ],
                     "type": "object"
@@ -764,6 +809,15 @@ jobs:
                         ],
                         "type": "string"
                       },
+                      "fix_status": {
+                        "enum": [
+                          "validated",
+                          "failed",
+                          "blocked",
+                          "not-needed"
+                        ],
+                        "type": "string"
+                      },
                       "workflow_artifact": {
                         "enum": [
                           "build-failure-analysis"
@@ -773,6 +827,7 @@ jobs:
                     },
                     "required": [
                       "artifact_kind",
+                      "fix_status",
                       "workflow_artifact"
                     ],
                     "type": "object"
@@ -788,6 +843,15 @@ jobs:
                         ],
                         "type": "string"
                       },
+                      "fix_status": {
+                        "enum": [
+                          "validated",
+                          "failed",
+                          "blocked",
+                          "not-needed"
+                        ],
+                        "type": "string"
+                      },
                       "workflow_artifact": {
                         "enum": [
                           "build-failure-analysis"
@@ -797,6 +861,7 @@ jobs:
                     },
                     "required": [
                       "artifact_kind",
+                      "fix_status",
                       "workflow_artifact"
                     ],
                     "type": "object"
@@ -856,63 +921,12 @@ jobs:
                       ],
                       "type": "string"
                     },
-                    "workflow_artifact": {
+                    "fix_status": {
                       "enum": [
-                        "build-failure-analysis"
-                      ],
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "artifact_kind",
-                    "workflow_artifact"
-                  ],
-                  "type": "object"
-                }
-              },
-              "create_pull_request_review_comment": {
-                "defaultMax": 1,
-                "fields": {
-                  "body": {
-                    "required": true,
-                    "type": "string",
-                    "sanitize": true,
-                    "maxLength": 65000
-                  },
-                  "line": {
-                    "required": true,
-                    "positiveInteger": true
-                  },
-                  "path": {
-                    "required": true,
-                    "type": "string"
-                  },
-                  "pull_request_number": {
-                    "optionalPositiveInteger": true
-                  },
-                  "repo": {
-                    "type": "string",
-                    "maxLength": 256
-                  },
-                  "side": {
-                    "type": "string",
-                    "enum": [
-                      "LEFT",
-                      "RIGHT"
-                    ]
-                  },
-                  "start_line": {
-                    "optionalPositiveInteger": true
-                  }
-                },
-                "customValidation": "startLineLessOrEqualLine",
-                "dataEnabled": true,
-                "dataSchema": {
-                  "additionalProperties": false,
-                  "properties": {
-                    "artifact_kind": {
-                      "enum": [
-                        "analysis"
+                        "validated",
+                        "failed",
+                        "blocked",
+                        "not-needed"
                       ],
                       "type": "string"
                     },
@@ -925,6 +939,7 @@ jobs:
                   },
                   "required": [
                     "artifact_kind",
+                    "fix_status",
                     "workflow_artifact"
                   ],
                   "type": "object"
@@ -984,6 +999,29 @@ jobs:
                     "type": "string",
                     "sanitize": true,
                     "maxLength": 65000
+                  }
+                }
+              },
+              "push_to_pull_request_branch": {
+                "defaultMax": 1,
+                "fields": {
+                  "branch": {
+                    "type": "string",
+                    "sanitize": true,
+                    "maxLength": 256
+                  },
+                  "message": {
+                    "required": true,
+                    "type": "string",
+                    "sanitize": true,
+                    "maxLength": 65000
+                  },
+                  "pull_request_number": {
+                    "issueOrPRNumber": true
+                  },
+                  "repo": {
+                    "type": "string",
+                    "maxLength": 256
                   }
                 }
               },
@@ -1255,11 +1293,23 @@ jobs:
         # --allow-tool binlog-mcp(binlog_warnings)
         # --allow-tool github
         # --allow-tool safeoutputs
+        # --allow-tool shell(./build.sh:*)
+        # --allow-tool shell(./eng/common/dotnet.sh:*)
         # --allow-tool shell(binlog-mcp:*)
         # --allow-tool shell(cat)
         # --allow-tool shell(date)
+        # --allow-tool shell(dotnet:*)
         # --allow-tool shell(echo)
         # --allow-tool shell(find)
+        # --allow-tool shell(git add:*)
+        # --allow-tool shell(git branch:*)
+        # --allow-tool shell(git checkout:*)
+        # --allow-tool shell(git commit:*)
+        # --allow-tool shell(git merge:*)
+        # --allow-tool shell(git rm:*)
+        # --allow-tool shell(git status)
+        # --allow-tool shell(git switch:*)
+        # --allow-tool shell(git:*)
         # --allow-tool shell(github:*)
         # --allow-tool shell(grep)
         # --allow-tool shell(head)
@@ -1269,9 +1319,11 @@ jobs:
         # --allow-tool shell(safeoutputs:*)
         # --allow-tool shell(sort)
         # --allow-tool shell(tail)
+        # --allow-tool shell(timeout:*)
         # --allow-tool shell(uniq)
         # --allow-tool shell(wc)
         # --allow-tool shell(yq)
+        # --allow-tool write
         timeout-minutes: 30
         run: |
           set -o pipefail
@@ -1332,7 +1384,7 @@ jobs:
           GH_AW_AWF_ATTEMPT_LOG_NAME=copilot \
           bash "${RUNNER_TEMP}/gh-aw/actions/run_awf_with_startup_retries.sh" -- \
             awf --config "${RUNNER_TEMP}/gh-aw/awf-config.json" --container-workdir "${GITHUB_WORKSPACE}" --mount "${RUNNER_TEMP}/gh-aw:${RUNNER_TEMP}/gh-aw:ro" --mount "${RUNNER_TEMP}/gh-aw:/host${RUNNER_TEMP}/gh-aw:ro" ${GH_AW_TOOL_CACHE_MOUNT:+--mount "$GH_AW_TOOL_CACHE_MOUNT"} ${GH_AW_DOCKER_HOST:+--docker-host "$GH_AW_DOCKER_HOST"} --env-all --exclude-env ACTIONS_ID_TOKEN_REQUEST_TOKEN --exclude-env ACTIONS_ID_TOKEN_REQUEST_URL --exclude-env COPILOT_GITHUB_TOKEN --exclude-env GITHUB_MCP_SERVER_TOKEN --exclude-env MCP_GATEWAY_AGENT_ID --mount /tmp/gh-aw:/tmp/gh-aw:rw --log-level info --skip-pull \
-            -- /bin/bash -c 'set +o histexpand; export PATH="${RUNNER_TEMP}/gh-aw/mcp-cli/bin:$PATH" && : "${RUNNER_TOOL_CACHE:?RUNNER_TOOL_CACHE must be set}"; GH_AW_TOOL_CACHE="$RUNNER_TOOL_CACHE"; GH_AW_TOOL_BINS="$(find "$GH_AW_TOOL_CACHE" -maxdepth 5 -type d -name bin 2>/dev/null | tr '\''\n'\'' '\'':'\'')"; GH_AW_TOOL_BINS="${GH_AW_TOOL_BINS%:}"; export PATH="$PATH${GH_AW_TOOL_BINS:+:}$GH_AW_TOOL_BINS"; [ -n "$GOROOT" ] && export PATH="$GOROOT/bin:$PATH" || true; [ -n "$ERLANG_HOME" ] && export PATH="$ERLANG_HOME/bin:$PATH" || true && GH_AW_NODE_EXEC="${GH_AW_NODE_BIN:-}"; if [ -z "$GH_AW_NODE_EXEC" ] || [ ! -x "$GH_AW_NODE_EXEC" ]; then GH_AW_NODE_EXEC="$(command -v node 2>/dev/null || true)"; fi; if [ -z "$GH_AW_NODE_EXEC" ]; then echo "node runtime missing on this runner — check runtimes.node in workflow YAML" >&2; exit 127; fi; GH_AW_NPM_GLOBAL_ROOT="$(npm root -g 2>/dev/null || true)"; if [ -n "$GH_AW_NPM_GLOBAL_ROOT" ]; then export NODE_PATH="${GH_AW_NPM_GLOBAL_ROOT}${NODE_PATH:+:${NODE_PATH}}"; fi; "$GH_AW_NODE_EXEC" "${RUNNER_TEMP}/gh-aw/actions/copilot_harness.cjs" "${RUNNER_TEMP}/gh-aw/bin/copilot" --add-dir /tmp/gh-aw/ --log-level all --log-dir /tmp/gh-aw/sandbox/agent/logs/ --disable-builtin-mcps --no-ask-user --allow-tool binlog-mcp --allow-tool '\''binlog-mcp(binlog_analyzer_summary)'\'' --allow-tool '\''binlog-mcp(binlog_assembly_conflicts)'\'' --allow-tool '\''binlog-mcp(binlog_build_graph)'\'' --allow-tool '\''binlog-mcp(binlog_capabilities)'\'' --allow-tool '\''binlog-mcp(binlog_compare)'\'' --allow-tool '\''binlog-mcp(binlog_compiler)'\'' --allow-tool '\''binlog-mcp(binlog_diagnose)'\'' --allow-tool '\''binlog-mcp(binlog_double_writes)'\'' --allow-tool '\''binlog-mcp(binlog_errors)'\'' --allow-tool '\''binlog-mcp(binlog_evaluation_global_properties)'\'' --allow-tool '\''binlog-mcp(binlog_evaluation_properties)'\'' --allow-tool '\''binlog-mcp(binlog_evaluations)'\'' --allow-tool '\''binlog-mcp(binlog_expensive_analyzers)'\'' --allow-tool '\''binlog-mcp(binlog_expensive_projects)'\'' --allow-tool '\''binlog-mcp(binlog_expensive_targets)'\'' --allow-tool '\''binlog-mcp(binlog_expensive_tasks)'\'' --allow-tool '\''binlog-mcp(binlog_explain_property)'\'' --allow-tool '\''binlog-mcp(binlog_files)'\'' --allow-tool '\''binlog-mcp(binlog_imports)'\'' --allow-tool '\''binlog-mcp(binlog_incremental_analysis)'\'' --allow-tool '\''binlog-mcp(binlog_items)'\'' --allow-tool '\''binlog-mcp(binlog_nuget)'\'' --allow-tool '\''binlog-mcp(binlog_overview)'\'' --allow-tool '\''binlog-mcp(binlog_project_target_times)'\'' --allow-tool '\''binlog-mcp(binlog_project_targets)'\'' --allow-tool '\''binlog-mcp(binlog_projects)'\'' --allow-tool '\''binlog-mcp(binlog_properties)'\'' --allow-tool '\''binlog-mcp(binlog_search)'\'' --allow-tool '\''binlog-mcp(binlog_search_files)'\'' --allow-tool '\''binlog-mcp(binlog_search_targets)'\'' --allow-tool '\''binlog-mcp(binlog_target_graph)'\'' --allow-tool '\''binlog-mcp(binlog_target_reasons)'\'' --allow-tool '\''binlog-mcp(binlog_task_details)'\'' --allow-tool '\''binlog-mcp(binlog_tasks_in_target)'\'' --allow-tool '\''binlog-mcp(binlog_warnings)'\'' --allow-tool github --allow-tool safeoutputs --allow-tool '\''shell(binlog-mcp:*)'\'' --allow-tool '\''shell(cat)'\'' --allow-tool '\''shell(date)'\'' --allow-tool '\''shell(echo)'\'' --allow-tool '\''shell(find)'\'' --allow-tool '\''shell(github:*)'\'' --allow-tool '\''shell(grep)'\'' --allow-tool '\''shell(head)'\'' --allow-tool '\''shell(ls)'\'' --allow-tool '\''shell(printf)'\'' --allow-tool '\''shell(pwd)'\'' --allow-tool '\''shell(safeoutputs:*)'\'' --allow-tool '\''shell(sort)'\'' --allow-tool '\''shell(tail)'\'' --allow-tool '\''shell(uniq)'\'' --allow-tool '\''shell(wc)'\'' --allow-tool '\''shell(yq)'\'' --add-dir "${GITHUB_WORKSPACE}" --prompt-file /tmp/gh-aw/aw-prompts/prompt.txt'
+            -- /bin/bash -c 'set +o histexpand; export PATH="${RUNNER_TEMP}/gh-aw/mcp-cli/bin:$PATH" && : "${RUNNER_TOOL_CACHE:?RUNNER_TOOL_CACHE must be set}"; GH_AW_TOOL_CACHE="$RUNNER_TOOL_CACHE"; GH_AW_TOOL_BINS="$(find "$GH_AW_TOOL_CACHE" -maxdepth 5 -type d -name bin 2>/dev/null | tr '\''\n'\'' '\'':'\'')"; GH_AW_TOOL_BINS="${GH_AW_TOOL_BINS%:}"; export PATH="$PATH${GH_AW_TOOL_BINS:+:}$GH_AW_TOOL_BINS"; [ -n "$GOROOT" ] && export PATH="$GOROOT/bin:$PATH" || true; [ -n "$ERLANG_HOME" ] && export PATH="$ERLANG_HOME/bin:$PATH" || true && GH_AW_NODE_EXEC="${GH_AW_NODE_BIN:-}"; if [ -z "$GH_AW_NODE_EXEC" ] || [ ! -x "$GH_AW_NODE_EXEC" ]; then GH_AW_NODE_EXEC="$(command -v node 2>/dev/null || true)"; fi; if [ -z "$GH_AW_NODE_EXEC" ]; then echo "node runtime missing on this runner — check runtimes.node in workflow YAML" >&2; exit 127; fi; GH_AW_NPM_GLOBAL_ROOT="$(npm root -g 2>/dev/null || true)"; if [ -n "$GH_AW_NPM_GLOBAL_ROOT" ]; then export NODE_PATH="${GH_AW_NPM_GLOBAL_ROOT}${NODE_PATH:+:${NODE_PATH}}"; fi; "$GH_AW_NODE_EXEC" "${RUNNER_TEMP}/gh-aw/actions/copilot_harness.cjs" "${RUNNER_TEMP}/gh-aw/bin/copilot" --add-dir /tmp/gh-aw/ --log-level all --log-dir /tmp/gh-aw/sandbox/agent/logs/ --disable-builtin-mcps --no-ask-user --allow-tool binlog-mcp --allow-tool '\''binlog-mcp(binlog_analyzer_summary)'\'' --allow-tool '\''binlog-mcp(binlog_assembly_conflicts)'\'' --allow-tool '\''binlog-mcp(binlog_build_graph)'\'' --allow-tool '\''binlog-mcp(binlog_capabilities)'\'' --allow-tool '\''binlog-mcp(binlog_compare)'\'' --allow-tool '\''binlog-mcp(binlog_compiler)'\'' --allow-tool '\''binlog-mcp(binlog_diagnose)'\'' --allow-tool '\''binlog-mcp(binlog_double_writes)'\'' --allow-tool '\''binlog-mcp(binlog_errors)'\'' --allow-tool '\''binlog-mcp(binlog_evaluation_global_properties)'\'' --allow-tool '\''binlog-mcp(binlog_evaluation_properties)'\'' --allow-tool '\''binlog-mcp(binlog_evaluations)'\'' --allow-tool '\''binlog-mcp(binlog_expensive_analyzers)'\'' --allow-tool '\''binlog-mcp(binlog_expensive_projects)'\'' --allow-tool '\''binlog-mcp(binlog_expensive_targets)'\'' --allow-tool '\''binlog-mcp(binlog_expensive_tasks)'\'' --allow-tool '\''binlog-mcp(binlog_explain_property)'\'' --allow-tool '\''binlog-mcp(binlog_files)'\'' --allow-tool '\''binlog-mcp(binlog_imports)'\'' --allow-tool '\''binlog-mcp(binlog_incremental_analysis)'\'' --allow-tool '\''binlog-mcp(binlog_items)'\'' --allow-tool '\''binlog-mcp(binlog_nuget)'\'' --allow-tool '\''binlog-mcp(binlog_overview)'\'' --allow-tool '\''binlog-mcp(binlog_project_target_times)'\'' --allow-tool '\''binlog-mcp(binlog_project_targets)'\'' --allow-tool '\''binlog-mcp(binlog_projects)'\'' --allow-tool '\''binlog-mcp(binlog_properties)'\'' --allow-tool '\''binlog-mcp(binlog_search)'\'' --allow-tool '\''binlog-mcp(binlog_search_files)'\'' --allow-tool '\''binlog-mcp(binlog_search_targets)'\'' --allow-tool '\''binlog-mcp(binlog_target_graph)'\'' --allow-tool '\''binlog-mcp(binlog_target_reasons)'\'' --allow-tool '\''binlog-mcp(binlog_task_details)'\'' --allow-tool '\''binlog-mcp(binlog_tasks_in_target)'\'' --allow-tool '\''binlog-mcp(binlog_warnings)'\'' --allow-tool github --allow-tool safeoutputs --allow-tool '\''shell(./build.sh:*)'\'' --allow-tool '\''shell(./eng/common/dotnet.sh:*)'\'' --allow-tool '\''shell(binlog-mcp:*)'\'' --allow-tool '\''shell(cat)'\'' --allow-tool '\''shell(date)'\'' --allow-tool '\''shell(dotnet:*)'\'' --allow-tool '\''shell(echo)'\'' --allow-tool '\''shell(find)'\'' --allow-tool '\''shell(git add:*)'\'' --allow-tool '\''shell(git branch:*)'\'' --allow-tool '\''shell(git checkout:*)'\'' --allow-tool '\''shell(git commit:*)'\'' --allow-tool '\''shell(git merge:*)'\'' --allow-tool '\''shell(git rm:*)'\'' --allow-tool '\''shell(git status)'\'' --allow-tool '\''shell(git switch:*)'\'' --allow-tool '\''shell(git:*)'\'' --allow-tool '\''shell(github:*)'\'' --allow-tool '\''shell(grep)'\'' --allow-tool '\''shell(head)'\'' --allow-tool '\''shell(ls)'\'' --allow-tool '\''shell(printf)'\'' --allow-tool '\''shell(pwd)'\'' --allow-tool '\''shell(safeoutputs:*)'\'' --allow-tool '\''shell(sort)'\'' --allow-tool '\''shell(tail)'\'' --allow-tool '\''shell(timeout:*)'\'' --allow-tool '\''shell(uniq)'\'' --allow-tool '\''shell(wc)'\'' --allow-tool '\''shell(yq)'\'' --allow-tool write --allow-all-paths --add-dir "${GITHUB_WORKSPACE}" --prompt-file /tmp/gh-aw/aw-prompts/prompt.txt'
         env:
           AWF_REFLECT_ENABLED: 1
           COPILOT_AGENT_RUNNER_TYPE: STANDALONE
@@ -1580,6 +1632,7 @@ jobs:
     runs-on: ubuntu-slim
     permissions:
       actions: read
+      contents: write
       issues: write
       pull-requests: write
     concurrency:
@@ -1807,6 +1860,8 @@ jobs:
           GH_AW_MISSING_MODEL_PRICING_MODEL_NAME: ${{ needs.agent.outputs.missing_model_pricing_model_name }}
           GH_AW_SHELL_EXPANSION_GUARD_REJECTED: ${{ needs.agent.outputs.shell_expansion_guard_rejected }}
           GH_AW_ENGINE_API_HOSTS: "api.enterprise.githubcopilot.com,api.githubcopilot.com,api.business.githubcopilot.com,api.individual.githubcopilot.com"
+          GH_AW_CODE_PUSH_FAILURE_ERRORS: ${{ needs.safe_outputs.outputs.code_push_failure_errors }}
+          GH_AW_CODE_PUSH_FAILURE_COUNT: ${{ needs.safe_outputs.outputs.code_push_failure_count }}
           GH_AW_LOCKDOWN_CHECK_FAILED: ${{ needs.activation.outputs.lockdown_check_failed }}
           GH_AW_OAUTH_TOKEN_CHECK_FAILED: ${{ needs.activation.outputs.oauth_token_check_failed }}
           GH_AW_STALE_LOCK_FILE_FAILED: ${{ needs.activation.outputs.stale_lock_file_failed }}
@@ -1977,7 +2032,7 @@ jobs:
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
           WORKFLOW_NAME: "Build Failure Analysis (command)"
-          WORKFLOW_DESCRIPTION: "Reruns build-failure analysis when a maintainer comments `/analyze-build-failure` on a pull request. It analyzes only that PR's newest `fsharp-ci` build, and only when the newest build is completed and failed."
+          WORKFLOW_DESCRIPTION: "Reruns build-failure analysis when a maintainer comments `/analyze-build-failure` on a pull request. It analyzes only that PR's newest completed, failed `fsharp-ci` build and attempts a checked fix on an eligible same-repository PR branch."
           HAS_PATCH: ${{ needs.agent.outputs.has_patch }}
           GH_AW_DETECTION_CONTINUE_ON_ERROR: "true"
           GH_AW_DETECTION_SKIP_PROMPT_SUMMARY: "true"
@@ -2046,7 +2101,7 @@ jobs:
           RUNNER_TEMP: ${{ runner.temp }}
           TRACEPARENT: ${{ env.GITHUB_AW_OTEL_TRACE_ID != '' && env.GITHUB_AW_OTEL_PARENT_SPAN_ID != '' && format('00-{0}-{1}-01', env.GITHUB_AW_OTEL_TRACE_ID, env.GITHUB_AW_OTEL_PARENT_SPAN_ID) || '' }}
           WORKFLOW_NAME: "Build Failure Analysis (command)"
-          WORKFLOW_DESCRIPTION: "Reruns build-failure analysis when a maintainer comments `/analyze-build-failure` on a pull request. It analyzes only that PR's newest `fsharp-ci` build, and only when the newest build is completed and failed."
+          WORKFLOW_DESCRIPTION: "Reruns build-failure analysis when a maintainer comments `/analyze-build-failure` on a pull request. It analyzes only that PR's newest completed, failed `fsharp-ci` build and attempts a checked fix on an eligible same-repository PR branch."
           HAS_PATCH: ${{ needs.agent.outputs.has_patch }}
           GH_AW_DETECTION_CONTINUE_ON_ERROR: "true"
         run: |
@@ -2173,6 +2228,8 @@ jobs:
       ado-build-id: ${{ steps.fetch.outputs.ado-build-id }}
       ado-build-url: ${{ steps.fetch.outputs.ado-build-url }}
       binlog-found: ${{ steps.upload.outcome == 'success' && steps.upload.outputs.artifact-id != '' }}
+      pr-head-ref: ${{ steps.fetch.outputs.pr-head-ref }}
+      pr-head-repo: ${{ steps.fetch.outputs.pr-head-repo }}
       pr-head-sha: ${{ steps.fetch.outputs.pr-head-sha }}
       pr-merge-sha: ${{ steps.fetch.outputs.pr-merge-sha }}
       pr-number: ${{ steps.fetch.outputs.pr-number }}
@@ -2291,7 +2348,7 @@ jobs:
       - name: Download binlogs from the PR's latest failed Azure Pipelines build
         id: fetch
         if: steps.command.outputs.completed == 'false'
-        run: cd "${RUNNER_TEMP:-/tmp}" && timeout 600 dotnet run --file "${SCRIPT_DIR}/fetch-build-binlogs.cs" -p:ImportDirectoryBuildProps=false -p:ImportDirectoryBuildTargets=false -p:ImportDirectoryPackagesProps=false
+        run: cd "${RUNNER_TEMP:-/tmp}" && timeout 600 dotnet fsi --exec "${SCRIPT_DIR}/fetch-build-binlogs.fsx"
         env:
           BINLOG_DIR: /tmp/binlogs
           GH_AW_REPO: ${{ github.repository }}
@@ -2304,6 +2361,9 @@ jobs:
       - name: Report an incomplete fetch
         if: steps.fetch.outcome == 'failure'
         run: echo "::warning::Binlog fetch did not complete; skipping analysis for this command."
+      - name: Stage the trusted analyst playbook
+        if: steps.fetch.outputs.binlog-found == 'true'
+        run: cp .github/agents/build-failure-analyst.agent.md /tmp/binlogs/
       - name: Upload analysis artifact
         id: upload
         if: steps.fetch.outputs.binlog-found == 'true'
@@ -2378,6 +2438,7 @@ jobs:
     if: (!cancelled()) && needs.agent.result != 'skipped' && needs.detection.result == 'success'
     runs-on: ubuntu-slim
     permissions:
+      contents: write
       issues: write
       pull-requests: write
     timeout-minutes: 45
@@ -2413,6 +2474,8 @@ jobs:
       process_safe_outputs_items_warnings: ${{ steps.process_safe_outputs.outputs.items_warnings }}
       process_safe_outputs_processed_count: ${{ steps.process_safe_outputs.outputs.processed_count }}
       process_safe_outputs_status: ${{ steps.process_safe_outputs.outputs.status }}
+      push_commit_sha: ${{ steps.process_safe_outputs.outputs.push_commit_sha }}
+      push_commit_url: ${{ steps.process_safe_outputs.outputs.push_commit_url }}
     steps:
       - name: Setup Scripts
         id: setup
@@ -2447,6 +2510,27 @@ jobs:
           if [ -f "/tmp/gh-aw/agent_output.json" ]; then
             echo "GH_AW_AGENT_OUTPUT=/tmp/gh-aw/agent_output.json" >> "$GITHUB_OUTPUT"
           fi
+      - name: Download patch artifact
+        continue-on-error: true
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: agent
+          path: /tmp/gh-aw/
+      - name: Checkout repository
+        if: (!cancelled()) && needs.agent.result != 'skipped' && contains(needs.agent.outputs.output_types, 'push_to_pull_request_branch')
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: true
+          ref: ${{ needs.fetch-binlog.outputs.pr-head-sha }}
+          fetch-depth: 0
+          token: ${{ secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+      - name: Configure Git credentials
+        if: (!cancelled()) && needs.agent.result != 'skipped' && contains(needs.agent.outputs.output_types, 'push_to_pull_request_branch')
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_SERVER_URL: ${{ github.server_url }}
+          GIT_TOKEN: ${{ secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+        run: bash "${RUNNER_TEMP}/gh-aw/actions/configure_git_credentials.sh"
       - name: Configure GH_HOST for enterprise compatibility
         id: ghes-host-config
         shell: bash
@@ -2460,6 +2544,7 @@ jobs:
         if: steps.download-agent-output.outcome == 'success'
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
+          EXPECTED_HEAD_REPO: ${{ needs.fetch-binlog.outputs.pr-head-repo }}
           GH_AW_AGENT_OUTPUT: ${{ steps.setup-agent-output-env.outputs.GH_AW_AGENT_OUTPUT }}
         with:
           script: |
@@ -2469,19 +2554,27 @@ jobs:
             if (!Array.isArray(output.items)) {
               throw new Error("Build-analysis output must contain an items array.");
             }
+            const pushes = output.items.filter(item => item.type === "push_to_pull_request_branch");
+            const summaries = output.items.filter(item => item.type === "add_comment");
+            if (pushes.length > 1 ||
+                (pushes.length && process.env.EXPECTED_HEAD_REPO !== process.env.GITHUB_REPOSITORY)) {
+              throw new Error("Only one fix to the validated same-repository PR is permitted.");
+            }
+            if (pushes.length && (summaries.length !== 1 || summaries[0].data?.fix_status !== "validated")) {
+              throw new Error("A fix push requires one summary with successful validation.");
+            }
             for (const item of output.items) {
-              if (item.type !== "add_comment" && item.type !== "create_pull_request_review_comment") {
+              if (item.type !== "add_comment") {
                 continue;
               }
               if (typeof item.body !== "string") {
                 throw new Error("Build-analysis comments must have a string body.");
               }
-              if (item.data === undefined) {
-                item.data = { workflow_artifact: "build-failure-analysis", artifact_kind: "analysis" };
-              } else if (item.data === null || Array.isArray(item.data) ||
-                         Object.keys(item.data).length !== 2 ||
-                         item.data.workflow_artifact !== "build-failure-analysis" ||
-                         item.data.artifact_kind !== "analysis") {
+              if (!item.data || Array.isArray(item.data) || Object.keys(item.data).length !== 3 ||
+                  item.data.workflow_artifact !== "build-failure-analysis" ||
+                  item.data.artifact_kind !== "analysis" ||
+                  !["validated", "failed", "blocked", "not-needed"].includes(item.data.fix_status) ||
+                  (item.data.fix_status === "validated" && pushes.length !== 1)) {
                 throw new Error("Build-analysis comment metadata does not match the workflow schema.");
               }
               const block = "Structured data:\n```json\n" + JSON.stringify(item.data, null, 2) + "\n```";
@@ -2514,27 +2607,12 @@ jobs:
             const comments = await github.paginate(github.rest.issues.listComments, {
               ...context.repo, issue_number: pullNumber, per_page: 100,
             });
-            const reviews = await github.paginate(github.rest.pulls.listReviews, {
-              ...context.repo, pull_number: pullNumber, per_page: 100,
-            });
-            const inline = await github.paginate(github.rest.pulls.listReviewComments, {
-              ...context.repo, pull_number: pullNumber, per_page: 100,
-            });
             const isBot = item => item.user?.login === "github-actions[bot]" && item.user?.type === "Bot";
-            const submitted = reviews.filter(
-              review => isBot(review) && review.state !== "PENDING" && review.submitted_at);
-            const reviewIds = new Set(submitted.map(review => review.id));
-            const published = [
-              ...comments.filter(isBot),
-              ...submitted,
-              ...inline.filter(item => isBot(item) && reviewIds.has(item.pull_request_review_id)),
-            ];
-            const markers = new Set(published.flatMap(item =>
+            const markers = new Set(comments.filter(isBot).flatMap(item =>
               [...(item.body || "").matchAll(/^Build-analysis output: `(\d+:[a-f0-9]{64})`$/gm)]
                 .map(match => match[1])));
             output.items = output.items.filter(item => {
-              if (item.type !== "add_comment" &&
-                  item.type !== "create_pull_request_review_comment") {
+              if (item.type !== "add_comment") {
                 return true;
               }
               if (typeof item.body !== "string") {
@@ -2544,20 +2622,8 @@ jobs:
                 .replace(/^Build-analysis output: `\d+:[a-f0-9]{64}`\n\n/, "")
                 .replace(/\r\n/g, "\n")
                 .trim();
-              const identity = item.type === "add_comment"
-                ? [request, head, item.type]
-                : [
-                    request,
-                    head,
-                    item.type,
-                    item.path,
-                    Number(item.line),
-                    item.side || "RIGHT",
-                    item.start_line ? Number(item.start_line) : null,
-                    body,
-                  ];
               const key = `${request}:${createHash("sha256")
-                .update(JSON.stringify(identity))
+                .update(JSON.stringify([request, head, item.type]))
                 .digest("hex")}`;
               if (markers.has(key)) {
                 core.info(`Skipping previously published ${item.type} (${key}).`);
@@ -2611,7 +2677,8 @@ jobs:
           GH_AW_ALLOWED_DOMAINS: "*.vsblob.vsassets.io,api.nuget.org,api.snapcraft.io,archive.ubuntu.com,azure.archive.ubuntu.com,azuresearch-usnc.nuget.org,azuresearch-ussc.nuget.org,builds.dotnet.microsoft.com,ci.dot.net,crl.geotrust.com,crl.globalsign.com,crl.identrust.com,crl.sectigo.com,crl.thawte.com,crl.usertrust.com,crl.verisign.com,crl3.digicert.com,crl4.digicert.com,crls.ssl.com,dc.services.visualstudio.com,dev.azure.com,dist.nuget.org,dot.net,dotnet.microsoft.com,dotnetcli.blob.core.windows.net,json-schema.org,json.schemastore.org,keyserver.ubuntu.com,nuget.org,nuget.pkg.github.com,nugetregistryv2prod.blob.core.windows.net,ocsp.digicert.com,ocsp.geotrust.com,ocsp.globalsign.com,ocsp.identrust.com,ocsp.sectigo.com,ocsp.ssl.com,ocsp.thawte.com,ocsp.usertrust.com,ocsp.verisign.com,oneocsp.microsoft.com,packagecloud.io,packages.cloud.google.com,packages.microsoft.com,pkgs.dev.azure.com,ppa.launchpad.net,s.symcb.com,s.symcd.com,security.ubuntu.com,ts-crl.ws.symantec.com,ts-ocsp.ws.symantec.com,www.googleapis.com,www.microsoft.com"
           GITHUB_SERVER_URL: ${{ github.server_url }}
           GITHUB_API_URL: ${{ github.api_url }}
-          GH_AW_SAFE_OUTPUTS_HANDLER_CONFIG: "{\"add_comment\":{\"hide_older_comments\":true,\"max\":1,\"target\":\"${{ needs.fetch-binlog.outputs.pr-number }}\"},\"create_pull_request_review_comment\":{\"commit_id\":\"${{ needs.fetch-binlog.outputs.pr-head-sha }}\",\"max\":25,\"side\":\"RIGHT\",\"target\":\"${{ needs.fetch-binlog.outputs.pr-number }}\"},\"create_report_incomplete_issue\":{},\"missing_data\":{},\"missing_tool\":{},\"noop\":{\"max\":1,\"report-as-issue\":\"false\"},\"report_incomplete\":{}}"
+          GH_AW_SAFE_OUTPUTS_HANDLER_CONFIG: "{\"add_comment\":{\"hide_older_comments\":true,\"max\":1,\"target\":\"${{ needs.fetch-binlog.outputs.pr-number }}\"},\"create_report_incomplete_issue\":{},\"missing_data\":{},\"missing_tool\":{},\"noop\":{\"max\":1,\"report-as-issue\":\"false\"},\"push_to_pull_request_branch\":{\"fallback_as_pull_request\":false,\"if_no_changes\":\"error\",\"max\":1,\"max_patch_size\":64,\"protect_top_level_dot_folders\":true,\"protected_files\":[\"package.json\",\"bun.lockb\",\"bunfig.toml\",\"deno.json\",\"deno.jsonc\",\"deno.lock\",\"global.json\",\"NuGet.Config\",\"Directory.Packages.props\",\"mix.exs\",\"mix.lock\",\"go.mod\",\"go.sum\",\"stack.yaml\",\"stack.yaml.lock\",\"pom.xml\",\"build.gradle\",\"build.gradle.kts\",\"settings.gradle\",\"settings.gradle.kts\",\"gradle.properties\",\"package-lock.json\",\"yarn.lock\",\"pnpm-lock.yaml\",\"npm-shrinkwrap.json\",\"requirements.txt\",\"Pipfile\",\"Pipfile.lock\",\"pyproject.toml\",\"setup.py\",\"setup.cfg\",\"Gemfile\",\"Gemfile.lock\",\"uv.lock\",\"CODEOWNERS\",\"DESIGN.md\",\"README.md\",\"CONTRIBUTING.md\",\"SECURITY.md\",\"CODE_OF_CONDUCT.md\",\"AGENTS.md\"],\"protected_files_policy\":\"blocked\",\"target\":\"${{ needs.fetch-binlog.outputs.pr-number }}\"},\"report_incomplete\":{}}"
+          GH_AW_CI_TRIGGER_TOKEN: ${{ secrets.GH_AW_CI_TRIGGER_TOKEN }}
         with:
           github-token: ${{ secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
           script: |
