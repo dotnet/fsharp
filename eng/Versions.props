@@ -63,6 +63,12 @@
     <!-- These have to be in sync with latest release branch -->
     <VSMajorVersion>18</VSMajorVersion>
     <VSMinorVersion>8</VSMinorVersion>
+    <UseVSScheduledMinorVersion Condition="'$(UseVSScheduledMinorVersion)' == ''">true</UseVSScheduledMinorVersion>
+  </PropertyGroup>
+
+  <Import Project="VSMinorVersion.props" />
+
+  <PropertyGroup>
     <VSGeneralVersion>$(VSMajorVersion).0</VSGeneralVersion>
     <VSAssemblyVersionPrefix>$(VSMajorVersion).$(VSMinorVersion).0</VSAssemblyVersionPrefix>
     <VSAssemblyVersion>$(VSAssemblyVersionPrefix).0</VSAssemblyVersion>
