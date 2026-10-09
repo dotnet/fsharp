@@ -14,7 +14,6 @@ type LanguageFeature =
     | UnionIsPropertiesVisible
     | AttributesToRightOfModuleKeyword
     | ErrorOnDeprecatedRequireQualifiedAccess
-    | MatchNotAllowedForUnionCaseWithNoData
     | CSharpExtensionAttributeNotRequired
     | WarningWhenCopyAndUpdateRecordChangesAllFields
     | WarningWhenMultipleRecdTypeChoice
