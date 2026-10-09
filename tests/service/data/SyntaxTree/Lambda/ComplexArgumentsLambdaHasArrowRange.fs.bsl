@@ -72,11 +72,13 @@ ImplFile
                                               (6,4--6,9)), (6,4--6,11)), Ident z,
                                         (6,4--6,13)), (4,5--4,19), No,
                                      { ArrowRange = None
-                                       BarRange = None })], (4,5--6,13),
+                                       BarRange = None
+                                       WhenKeyword = None })], (4,5--6,13),
                                  { MatchKeyword = (4,5--6,13)
                                    WithKeyword = (4,5--6,13) }), (3,5--3,17), No,
                               { ArrowRange = None
-                                BarRange = None })], (3,5--6,13),
+                                BarRange = None
+                                WhenKeyword = None })], (3,5--6,13),
                           { MatchKeyword = (3,5--6,13)
                             WithKeyword = (3,5--6,13) }), None, (2,0--6,13),
                        { ArrowRange = Some (5,4--5,6) }), None, (2,0--6,13),
@@ -158,13 +160,15 @@ ImplFile
                                               (6,4--6,7)), Ident y, (6,4--6,9)),
                                         (6,4--6,11)), Ident z, (6,4--6,13)),
                                   (4,5--4,19), No, { ArrowRange = None
-                                                     BarRange = None })],
+                                                     BarRange = None
+                                                     WhenKeyword = None })],
                               (4,5--6,13), { MatchKeyword = (4,5--6,13)
                                              WithKeyword = (4,5--6,13) }),
                            (3,5--3,17), No, { ArrowRange = None
-                                              BarRange = None })], (3,5--6,13),
-                       { MatchKeyword = (3,5--6,13)
-                         WithKeyword = (3,5--6,13) })), (2,0--6,13),
+                                              BarRange = None
+                                              WhenKeyword = None })],
+                       (3,5--6,13), { MatchKeyword = (3,5--6,13)
+                                      WithKeyword = (3,5--6,13) })), (2,0--6,13),
                  { ArrowRange = Some (5,4--5,6) }), (2,0--6,13))],
           PreXmlDocEmpty, [], None, (2,0--7,0), { LeadingKeyword = None })],
       (true, true), { ConditionalDirectives = []
