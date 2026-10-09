@@ -17,7 +17,8 @@ ImplFile
                            { ParenRange = (4,3--4,11) }), None, (4,2--4,11)),
                      None, Const (Int32 2, (4,15--4,16)), (4,2--4,16), Yes,
                      { ArrowRange = Some (4,12--4,14)
-                       BarRange = Some (4,0--4,1) })], (3,0--4,16),
+                       BarRange = Some (4,0--4,1)
+                       WhenKeyword = None })], (3,0--4,16),
                  { MatchKeyword = (3,0--3,5)
                    WithKeyword = (3,8--3,12) }), (3,0--4,16))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,

@@ -20,7 +20,8 @@ ImplFile
                         { ColonColonRange = (3,9--3,11) }), None,
                      Const (Unit, (3,22--3,24)), (3,2--3,24), Yes,
                      { ArrowRange = Some (3,19--3,21)
-                       BarRange = Some (3,0--3,1) })], (2,0--3,24),
+                       BarRange = Some (3,0--3,1)
+                       WhenKeyword = None })], (2,0--3,24),
                  { MatchKeyword = (2,0--2,5)
                    WithKeyword = (2,8--2,12) }), (2,0--3,24))], PreXmlDocEmpty,
           [], None, (2,0--4,0), { LeadingKeyword = None })], (true, true),

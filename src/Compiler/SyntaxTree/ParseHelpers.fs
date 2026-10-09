@@ -1265,14 +1265,21 @@ let mkAbstractMember
     ]
 
 let mkMatchClauses patternAndGuard patternResult (mNextBar: range option) nextClauses mLastOuter =
-    let (pat: SynPat), guard = patternAndGuard
+    let (pat: SynPat), (mWhen: range option), guard = patternAndGuard
     let (mArrow: range option), (resultExpr: SynExpr) = patternResult
 
     fun mBar ->
         let m = unionRanges resultExpr.Range pat.Range
 
+        let trivia =
+            {
+                ArrowRange = mArrow
+                BarRange = mBar
+                WhenKeyword = mWhen
+            }
+
         let clause =
-            SynMatchClause(pat, guard, resultExpr, m, DebugPointAtTarget.Yes, { ArrowRange = mArrow; BarRange = mBar })
+            SynMatchClause(pat, guard, resultExpr, m, DebugPointAtTarget.Yes, trivia)
 
         let clauses, mLast =
             match nextClauses with
@@ -1285,14 +1292,14 @@ let mkMatchClauses patternAndGuard patternResult (mNextBar: range option) nextCl
         clauses, mLastOuter |> Option.defaultValue mLast
 
 let mkMatchClausesRecoverMissingResult
-    (patternAndGuard: SynPat * SynExpr option)
+    (patternAndGuard: SynPat * range option * SynExpr option)
     exprDebugString
     (mExpr: range option)
     (mNextBar: range option)
     nextClauses
     mLastOuter
     =
-    let pat, guard = patternAndGuard
+    let pat, _, guard = patternAndGuard
 
     let mBeforeResult =
         match mExpr with
