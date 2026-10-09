@@ -238,12 +238,14 @@ type RoslynTestHelpers private () =
         | _ -> failwith "not supported"
 
     static member CreateSolution projects =
+        RoslynTestHelpers.CreateSolutionAt "test.sln" projects
+
+    static member CreateSolutionAt (filePath: string) projects =
         let workspace = new AdhocWorkspace(TestHostServices())
         let id = SolutionId.CreateNewId()
         let versionStamp = VersionStamp.Create(DateTime.UtcNow)
-        let slnPath = "test.sln"
 
-        let solutionInfo = SolutionInfo.Create(id, versionStamp, slnPath, projects)
+        let solutionInfo = SolutionInfo.Create(id, versionStamp, filePath, projects)
         let solution = workspace.AddSolution(solutionInfo)
         solution
 
