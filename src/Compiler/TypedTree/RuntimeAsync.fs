@@ -22,6 +22,19 @@ let RebuildRuntimeAsyncDebugWrapper wrapper body =
     | Expr.Op(TOp.DebugLocalScope _ as op, [], [ _ ], m) -> Expr.Op(op, [], [ body ], m)
     | _ -> failwith "unreachable: expression is not a runtime-async debug wrapper"
 
+let TryMapRuntimeAsyncMatchTargets (g: TcGlobals) matchInfo mapTarget =
+    let point, matchRange, tree, (targets: DecisionTreeTarget array), m = matchInfo
+
+    let targets =
+        targets
+        |> Array.mapi (fun i (TTarget(vals, body, flags)) -> mapTarget i body |> Option.map (fun body -> TTarget(vals, body, flags)))
+
+    if targets.Length > 0 && Array.forall Option.isSome targets then
+        let targets = Array.map Option.get targets
+        Some(Expr.Match(point, matchRange, tree, targets, m, tyOfExpr g targets[0].TargetExpression))
+    else
+        None
+
 let (|RuntimeAsyncReturn|_|) (g: TcGlobals) (vref: ValRef) =
     valRefEq g vref g.cgh__runtimeAsyncReturn_vref
     || valRefEq g vref g.cgh__runtimeAsyncReturnValueTask_vref

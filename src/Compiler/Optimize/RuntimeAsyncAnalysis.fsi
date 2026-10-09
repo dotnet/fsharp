@@ -24,9 +24,6 @@ val ShouldForceRuntimeAsyncApplication:
     args: Expr list ->
         bool
 
-val InlineRuntimeAsyncCallback:
-    g: TcGlobals -> analyzer: RuntimeAsyncAnalyzer -> runtimeAsyncContext: bool -> expr: Expr -> Expr
-
 val ReduceRuntimeAsyncReturnedClosureApplications: g: TcGlobals -> analyzer: RuntimeAsyncAnalyzer -> expr: Expr -> Expr
 
 val PreserveRuntimeAsyncCallSiteDebugPoint: g: TcGlobals -> m: FSharp.Compiler.Text.range -> expr: Expr -> Expr

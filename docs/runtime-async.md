@@ -169,6 +169,12 @@ so it sees the final inlined shape rather than an intermediate optimizer
 state, and before `LowerLocalMutables`, so mutable locals it introduces that
 closures capture are promoted to reference cells. It has two steps.
 
+Callback-use analysis, capture hoisting, and invocation rewriting live in
+`LowerRuntimeAsync.fs`. `RuntimeAsyncAnalysis.fs` supplies fragment detection,
+optimizer-side returned-closure reduction, and suspension-lifetime analysis.
+Both transformations share debug-wrapper and match-target rebuilding helpers
+from `TypedTree/RuntimeAsync.fs`.
+
 First, if a compiler-owned `InlineIfLambda` function or delegate still
 contains a suspension, a fully rewritable, single-argument callback is
 inlined into the enclosing method. The ordinary optimizer already inlines a
@@ -214,8 +220,11 @@ opaque consumers and quotations retaining the callback reject the candidate,
 and invocations nested in arguments count towards the same
 2000-expression-node copy budget. The total cost is checked before copying any
 branch bodies. A rejected callback is left as a closure and a suspension in
-it is reported as FS3918. Single-use delegate inlining also checks use count
-and effect-free construction before rewriting its invocation.
+it is reported as FS3918. Single-use delegate inlining checks use count, then
+analyzes effect-free construction once to prepare its invocation rewrite.
+The prepared rewrite rebuilds expressions only after the entire construction
+has been accepted, so eligibility and rewriting cannot disagree about
+supported construction shapes.
 
 Second, every return-marker body is prepared once after callbacks are inlined,
 innermost first: locals that cannot be preserved across a suspension are
