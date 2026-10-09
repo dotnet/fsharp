@@ -417,38 +417,85 @@ let ``runtime async compiles functions and members`` langVersion =
     |> compile
     |> shouldSucceed
 
-[<Fact>]
-let ``runtime async supports Task and ValueTask return intrinsics`` () =
-    FSharp """
+[<Theory>]
+[<InlineData(false, false)>]
+[<InlineData(false, true)>]
+[<InlineData(true, false)>]
+[<InlineData(true, true)>]
+let ``runtime async supports Task and ValueTask return intrinsics`` (optimize: bool, asClosure: bool) =
+    let prefix, suffix = if asClosure then "invoke (fun () -> ", ")" else "", ""
+    let result =
+        FSharp $"""
 module RuntimeAsyncReturnShapesTest
 
 open System.Threading.Tasks
+open System.Runtime.CompilerServices
 open Microsoft.FSharp.Core.CompilerServices
 
-let taskResult () : Task<int> =
-    StateMachineHelpers.__runtimeAsyncReturn 1
+[<NoCompilerInlining>]
+let invoke callback = callback ()
 
-let valueTaskResult () : ValueTask<int> =
-    StateMachineHelpers.__runtimeAsyncReturnValueTask 1
+[<NoCompilerInlining>]
+let taskResult (gate: Task<int>) : Task<int> =
+    {prefix}StateMachineHelpers.__runtimeAsyncReturn (AsyncHelpers.Await gate + 1){suffix}
 
-let taskUnit () : Task =
-    StateMachineHelpers.__runtimeAsyncReturnUnit ()
+[<NoCompilerInlining>]
+let valueTaskResult (gate: Task<int>) : ValueTask<int> =
+    {prefix}StateMachineHelpers.__runtimeAsyncReturnValueTask (AsyncHelpers.Await gate + 1){suffix}
 
-let valueTaskUnit () : ValueTask =
-    StateMachineHelpers.__runtimeAsyncReturnValueTaskUnit ()
+[<NoCompilerInlining>]
+let taskUnit (gate: Task<int>) : Task =
+    {prefix}StateMachineHelpers.__runtimeAsyncReturnUnit (AsyncHelpers.Await gate |> ignore){suffix}
+
+[<NoCompilerInlining>]
+let valueTaskUnit (gate: Task<int>) : ValueTask =
+    {prefix}StateMachineHelpers.__runtimeAsyncReturnValueTaskUnit (AsyncHelpers.Await gate |> ignore){suffix}
+
+[<NoCompilerInlining>]
+let taskGenericUnit (gate: Task<int>) : Task<unit> =
+    {prefix}StateMachineHelpers.__runtimeAsyncReturn (AsyncHelpers.Await gate |> ignore){suffix}
+
+[<NoCompilerInlining>]
+let valueTaskGenericUnit (gate: Task<int>) : ValueTask<unit> =
+    {prefix}StateMachineHelpers.__runtimeAsyncReturnValueTask (AsyncHelpers.Await gate |> ignore){suffix}
 
 [<EntryPoint>]
 let main _ =
-    taskUnit().Wait()
-    taskResult().Result |> ignore
-    valueTaskResult().Result |> ignore
-    valueTaskUnit().AsTask().Wait()
+    let gate = TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously)
+    let taskValue = taskResult gate.Task
+    let valueTaskValue = valueTaskResult gate.Task
+    let taskVoid = taskUnit gate.Task
+    let valueTaskVoid = valueTaskUnit gate.Task
+    let taskUnitValue = taskGenericUnit gate.Task
+    let valueTaskUnitValue = valueTaskGenericUnit gate.Task
+    if taskValue.IsCompleted || valueTaskValue.IsCompleted || taskVoid.IsCompleted
+       || valueTaskVoid.IsCompleted || taskUnitValue.IsCompleted || valueTaskUnitValue.IsCompleted then
+        failwith "Return marker did not suspend"
+    gate.SetResult 41
+    if taskValue.GetAwaiter().GetResult() <> 42 || valueTaskValue.AsTask().GetAwaiter().GetResult() <> 42 then
+        failwith "Generic result changed"
+    taskVoid.GetAwaiter().GetResult()
+    valueTaskVoid.AsTask().GetAwaiter().GetResult()
+    taskUnitValue.GetAwaiter().GetResult()
+    valueTaskUnitValue.AsTask().GetAwaiter().GetResult()
     0
 """
-    |> withLangVersionPreview
-    |> withFSharpCoreShippedNet
-    |> compileExeAndRun
-    |> shouldSucceed
+        |> withLangVersionPreview
+        |> withFSharpCoreShippedNet
+        |> withOptimization optimize
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    result |> withMetadataReader (fun md ->
+        let asyncMethods =
+            [ for handle in md.MethodDefinitions do
+                let method = md.GetMethodDefinition handle
+                if int method.ImplAttributes &&& 0x2000 <> 0 then
+                    yield md.GetString method.Name ]
+        let expected =
+            if asClosure then List.replicate 6 "Invoke"
+            else [ "taskResult"; "valueTaskResult"; "taskUnit"; "valueTaskUnit"; "taskGenericUnit"; "valueTaskGenericUnit" ]
+        Assert.Equal<string list>(List.sort expected, List.sort asyncMethods))
 
 [<Theory>]
 [<InlineData(false, "Task")>]

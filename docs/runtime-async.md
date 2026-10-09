@@ -260,9 +260,10 @@ shared runtime-async boundary contract, which strips `DebugPoint` wrappers:
    assemblies do not define the enum member).
 2. **Closure body** (`GenClosureAsLocalTypeFunction` and
    `GenClosureAsFirstClassFunction`): the same unwrapping marks the closure
-   `Invoke` method's IL body (`ILMethodBody.IsRuntimeAsync`).
-   `EraseClosures.convIlxClosureDef` copies that flag onto the emitted
-   method.
+   method's IL body (`ILMethodBody.IsRuntimeAsync`). Local type functions
+   mark `DirectInvoke` explicitly; for first-class closures,
+   `EraseClosures.convIlxClosureDef` copies the flag onto the emitted
+   `Invoke` method.
 3. **Any other expression position** (`GenRuntimeAsyncReturnAsStartedTask`), e.g.
    a `let`-bound value initializer: the marker application is wrapped in a
    fresh `fun () -> ...` lambda that is immediately applied to `unit` and
@@ -271,6 +272,10 @@ shared runtime-async boundary contract, which strips `DebugPoint` wrappers:
    relies on `GenApp` never beta-reducing a lambda application (it always
    emits a closure plus an indirect call); see the comment at
    `GenRuntimeAsyncReturnAsStartedTask`.
+
+Named methods, closures, and sequence methods share marker unwrapping and
+unit-return classification. Both closure emission paths also share captured
+value validation, runtime-async environment setup, and IL-body marking.
 
 A marker that ends up wrapped in anything other than `DebugPoint` at the top
 of a method or closure body is not detected there, but still reaches the
