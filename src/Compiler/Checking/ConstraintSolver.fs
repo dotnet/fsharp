@@ -1265,7 +1265,7 @@ and SolveTyparsEqualTypesAux (csenv: ConstraintSolverEnv) ndeep m2 (trace: Optio
 
 and SolveAnonInfoEqualsAnonInfo (csenv: ConstraintSolverEnv) m2 (anonInfo1: AnonRecdTypeInfo) (anonInfo2: AnonRecdTypeInfo) =
     if evalTupInfoIsStruct anonInfo1.TupInfo <> evalTupInfoIsStruct anonInfo2.TupInfo then
-        ErrorD (ConstraintSolverError(RichText.mkText (FSComp.SR.tcTupleStructMismatch()), csenv.m,m2))
+        ErrorD (ConstraintSolverError(RichText.mkText (FSComp.SR.tcAnonRecdStructMismatch()), csenv.m,m2))
     else
         trackErrors {
             if not (ccuEq anonInfo1.Assembly anonInfo2.Assembly) then

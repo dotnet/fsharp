@@ -7,6 +7,121 @@ open FSharp.Test.Compiler
 
 module AnonymousRecord =
 
+    let private structnessMismatch = "One anonymous record type is a struct, the other is a reference type"
+
+    let private checkArgumentMismatch parameterType value message =
+        Fsx $"let consume (x: {parameterType}) = ()\nlet value = {value}\nconsume value"
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 1
+        |> withMessage message
+
+    [<Fact>]
+    let ``Issue 6110 - mismatch original argument`` () =
+        Fsx """
+let test (ar: {| IntVal: int |}) = printfn "%d" ar.IntVal
+
+test struct {| IntVal=12 |}
+"""
+        |> typecheck
+        |> shouldFail
+        |> withSingleDiagnostic (Error 1, Line 4, Col 6, Line 4, Col 28, structnessMismatch)
+
+    [<Theory>]
+    [<InlineData("struct {| IntVal: int |}", "{| IntVal = 12 |}")>]
+    [<InlineData("{| A: int; B: string; C: bool |}", "struct {| C = true; A = 1; B = \"b\" |}")>]
+    [<InlineData("struct {| A: int; B: string; C: bool |}", "{| B = \"b\"; C = true; A = 1 |}")>]
+    [<InlineData("{| Inner: {| Value: int |} |}", "{| Inner = struct {| Value = 1 |} |}")>]
+    let ``Issue 6110 - mismatch pre-bound argument`` parameterType value =
+        checkArgumentMismatch parameterType value structnessMismatch
+
+    [<Theory>]
+    [<InlineData("let value = struct {| IntVal = 12 |}\nlet annotated: {| IntVal: int |} = value")>]
+    [<InlineData("let reference = {||}\nlet value = struct {||}\nlet same = reference = value")>]
+    [<InlineData("let reference = {||}\nlet value = struct {||}\nlet same = value = reference")>]
+    [<InlineData("let value = struct {| Value = 1 |}\nlet values: {| Value: int |} list = [value]")>]
+    [<InlineData("module Consumer =\n    let consume (x: {| Value: int |}) = ()\nlet value = struct {| Value = 1 |}\nConsumer.consume value")>]
+    let ``Issue 6110 - mismatch unification`` source =
+        Fsx source
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 1
+        |> withMessage structnessMismatch
+
+    let private genericConsumerSource kind typeName payload =
+        $"""
+let consume<'T> (x: {{| Value: 'T |}}) = ()
+let value = {kind} {{| Value = {payload} |}}
+consume<{typeName}> value
+"""
+
+    [<Theory>]
+    [<InlineData("int", "1")>]
+    [<InlineData("string", "\"text\"")>]
+    let ``Issue 6110 - mismatch generic argument`` typeName payload =
+        Fsx (genericConsumerSource "struct" typeName payload)
+        |> typecheck
+        |> shouldFail
+        |> withErrorCode 1
+        |> withMessage structnessMismatch
+
+    [<Theory>]
+    [<InlineData("", "{| IntVal: int |}", "{| IntVal = 12 |}")>]
+    [<InlineData("struct", "{| IntVal: int |}", "{| IntVal = 12 |}")>]
+    [<InlineData("", "{| Inner: {| Value: int |} |}", "{| Inner = {| Value = 1 |} |}")>]
+    [<InlineData("struct", "{| Inner: struct {| Value: int |} |}", "{| Inner = struct {| Value = 1 |} |}")>]
+    [<InlineData("", "(int * int)", "(1, 2)")>]
+    [<InlineData("struct", "(int * int)", "(1, 2)")>]
+    let ``Issue 6110 - control matching kinds`` kind parameterType value =
+        Fsx $"let consume (x: {kind} {parameterType}) = ()\nlet value = {kind} {value}\nconsume value"
+        |> typecheck
+        |> shouldSucceed
+
+    [<Theory>]
+    [<InlineData("int", "1")>]
+    [<InlineData("string", "\"text\"")>]
+    let ``Issue 6110 - control matching generic argument`` typeName payload =
+        Fsx (genericConsumerSource "" typeName payload)
+        |> typecheck
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Issue 6110 - control fresh literal inference`` () =
+        Fsx """
+let consume (x: struct {| IntVal: int |}) = ()
+consume {| IntVal = 12 |}
+"""
+        |> typecheck
+        |> shouldSucceed
+
+    [<Theory>]
+    [<InlineData("", "struct")>]
+    [<InlineData("struct", "")>]
+    let ``Issue 6110 - control explicit copy conversion`` sourceKind targetKind =
+        Fsx $"""
+let value = {sourceKind} {{| IntVal = 1 |}}
+let converted: {targetKind} {{| IntVal: int |}} = {targetKind} {{| value with IntVal = 2 |}}
+"""
+        |> typecheck
+        |> shouldSucceed
+
+    [<Theory>]
+    [<InlineData("(int * int)", "struct (1, 2)")>]
+    [<InlineData("struct (int * int)", "(1, 2)")>]
+    let ``Issue 6110 - control tuple mismatch`` parameterType value =
+        checkArgumentMismatch parameterType value "One tuple type is a struct tuple, the other is a reference tuple"
+
+    [<Fact>]
+    let ``Issue 6110 - control field type mismatch`` () =
+        Fsx """
+let consume (x: {| IntVal: int |}) = ()
+let value = {| IntVal = "wrong" |}
+consume value
+"""
+        |> typecheck
+        |> shouldFail
+        |> withSingleDiagnostic (Error 1, Line 4, Col 9, Line 4, Col 14, "Type mismatch. Expecting a\n    '{| IntVal: int |}'    \nbut given a\n    '{| IntVal: string |}'    \nThe type 'int' does not match the type 'string'")
+
     [<Fact>]
     let ``Anonymous Records with duplicate labels`` () =
         FSharp """
