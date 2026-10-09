@@ -542,11 +542,6 @@
         <target state="translated">Методы получения и установки индексированных свойств должны иметь один и тот же тип.</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureWarningWhenCopyAndUpdateRecordChangesAllFields">
-        <source>Raises warnings when an copy-and-update record expression changes all fields of a record.</source>
-        <target state="translated">Создает предупреждения, когда выражение копирования и обновления записи изменяет все поля записи.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureWitnessPassing">
         <source>witness passing for trait constraints in F# quotations</source>
         <target state="translated">Передача свидетеля для ограничений признаков в цитированиях F#</target>

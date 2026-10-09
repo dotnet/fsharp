@@ -542,11 +542,6 @@
         <target state="translated">El captador y el establecedor de propiedades indexadas deben tener el mismo tipo.</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureWarningWhenCopyAndUpdateRecordChangesAllFields">
-        <source>Raises warnings when an copy-and-update record expression changes all fields of a record.</source>
-        <target state="translated">Emite advertencias cuando una expresión de copiar y actualizar registros cambia todos los campos de un registro.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureWitnessPassing">
         <source>witness passing for trait constraints in F# quotations</source>
         <target state="translated">Paso de testigo para las restricciones de rasgos en las expresiones de código delimitadas de F#</target>

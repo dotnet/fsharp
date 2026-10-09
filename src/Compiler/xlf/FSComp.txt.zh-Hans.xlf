@@ -542,11 +542,6 @@
         <target state="translated">索引属性 getter 和 setter 必须具有相同的类型</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureWarningWhenCopyAndUpdateRecordChangesAllFields">
-        <source>Raises warnings when an copy-and-update record expression changes all fields of a record.</source>
-        <target state="translated">复制和更新记录表达式更改记录的所有字段时引发警告。</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureWitnessPassing">
         <source>witness passing for trait constraints in F# quotations</source>
         <target state="translated">F# 引号中特征约束的见证传递</target>

@@ -542,11 +542,6 @@
         <target state="translated">Metoda pobierająca i metoda ustawiająca właściwości indeksowanych muszą mieć taki sam typ.</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureWarningWhenCopyAndUpdateRecordChangesAllFields">
-        <source>Raises warnings when an copy-and-update record expression changes all fields of a record.</source>
-        <target state="translated">Zgłasza ostrzeżenia, gdy wyrażenie rekordu kopiowania i aktualizacji zmieni wszystkie pola rekordu.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureWitnessPassing">
         <source>witness passing for trait constraints in F# quotations</source>
         <target state="translated">monitor, który przekazuje ograniczenia cech języka F#</target>

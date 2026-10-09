@@ -542,11 +542,6 @@
         <target state="translated">Il getter e il setter delle proprietà indicizzate devono avere lo stesso tipo</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureWarningWhenCopyAndUpdateRecordChangesAllFields">
-        <source>Raises warnings when an copy-and-update record expression changes all fields of a record.</source>
-        <target state="translated">Genera avvisi quando un'espressione di record di copia e aggiornamento modifica tutti i campi di un record.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureWitnessPassing">
         <source>witness passing for trait constraints in F# quotations</source>
         <target state="translated">Passaggio del testimone per vincoli di tratto in quotation F#</target>

@@ -542,11 +542,6 @@
         <target state="translated">인덱싱된 속성 getter와 setter의 형식이 같아야 합니다.</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureWarningWhenCopyAndUpdateRecordChangesAllFields">
-        <source>Raises warnings when an copy-and-update record expression changes all fields of a record.</source>
-        <target state="translated">레코드 복사 및 업데이트 식이 레코드의 모든 필드를 변경할 때 경고를 발생합니다.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureWitnessPassing">
         <source>witness passing for trait constraints in F# quotations</source>
         <target state="translated">F# 인용의 특성 제약 조건에 대한 감시 전달</target>

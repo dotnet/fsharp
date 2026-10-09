@@ -542,11 +542,6 @@
         <target state="translated">Metoda getter a setter indexované vlastnosti musí mít stejný typ.</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureWarningWhenCopyAndUpdateRecordChangesAllFields">
-        <source>Raises warnings when an copy-and-update record expression changes all fields of a record.</source>
-        <target state="translated">Vyvolá upozornění, když výraz záznamu kopírování a aktualizace změní všechna pole záznamu.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureWitnessPassing">
         <source>witness passing for trait constraints in F# quotations</source>
         <target state="translated">Předávání kopie clusteru pro omezení vlastností v uvozovkách v jazyce F#</target>

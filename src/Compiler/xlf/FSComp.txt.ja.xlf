@@ -542,11 +542,6 @@
         <target state="translated">インデックス付きプロパティのゲッターとセッターの型は同じである必要があります</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureWarningWhenCopyAndUpdateRecordChangesAllFields">
-        <source>Raises warnings when an copy-and-update record expression changes all fields of a record.</source>
-        <target state="translated">copy-and-update レコード式によってレコードのすべてのフィールドが変更されたときに警告を表示します。</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureWitnessPassing">
         <source>witness passing for trait constraints in F# quotations</source>
         <target state="translated">F# 引用での特性制約に対する監視の引き渡し</target>

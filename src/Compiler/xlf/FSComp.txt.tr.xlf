@@ -542,11 +542,6 @@
         <target state="translated">Dizini oluşturulmuş özelliklerin alıcısı ve ayarlayıcısı aynı türde olmalıdır</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureWarningWhenCopyAndUpdateRecordChangesAllFields">
-        <source>Raises warnings when an copy-and-update record expression changes all fields of a record.</source>
-        <target state="translated">Bir kopyalama ve güncelleştirme kayıt ifadesi bir kaydın tüm alanlarını değiştirdiğinde uyarı oluşturur.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureWitnessPassing">
         <source>witness passing for trait constraints in F# quotations</source>
         <target state="translated">F# alıntılarındaki nitelik kısıtlamaları için tanık geçirme</target>

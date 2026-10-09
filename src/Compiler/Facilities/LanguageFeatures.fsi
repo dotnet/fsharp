@@ -13,7 +13,6 @@ type LanguageFeature =
     | UnionIsPropertiesVisible
     | AttributesToRightOfModuleKeyword
     | CSharpExtensionAttributeNotRequired
-    | WarningWhenCopyAndUpdateRecordChangesAllFields
     | UnmanagedConstraintCsharpInterop
     | ReuseSameFieldsInStructUnions
     /// RFC-1137
