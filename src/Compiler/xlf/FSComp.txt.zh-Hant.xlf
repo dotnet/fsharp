@@ -332,11 +332,6 @@
         <target state="translated">允許宣告類型、模組上的隱含擴充屬性</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureChkNotTailRecursive">
-        <source>Raises warnings if a member or function has the 'TailCall' attribute, but is not being used in a tail recursive way.</source>
-        <target state="translated">如果成員或函式具有 'TailCall' 屬性，但未以尾遞迴方式使用，則引發警告。</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureChkTailCallAttrOnNonRec">
         <source>Raises warnings if the 'TailCall' attribute is used on non-recursive functions.</source>
         <target state="translated">如果 'TailCall' 屬性用於非遞迴函數，則引發警告。</target>
@@ -420,11 +415,6 @@
       <trans-unit id="featureLowerSimpleMappingsInComprehensionsToFastLoops">
         <source>Lowers [for x in xs -&gt; f x] and [|for x in xs -&gt; f x|] to fast loops when xs is a list or an array, respectively.</source>
         <target state="new">Lowers [for x in xs -&gt; f x] and [|for x in xs -&gt; f x|] to fast loops when xs is a list or an array, respectively.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureMatchNotAllowedForUnionCaseWithNoData">
-        <source>Pattern match discard is not allowed for union case that takes no data.</source>
-        <target state="translated">不接受資料的聯集案例不允許模式比對捨棄。</target>
         <note />
       </trans-unit>
       <trans-unit id="featureMoreConcreteTiebreaker">
