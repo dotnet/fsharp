@@ -47,6 +47,20 @@ GetErrors -Ping           # liveness check, no side effects
 GetErrors -Shutdown
 ```
 
+## Cached test runs
+
+`dotnet test` builds dependencies automatically. Use cached compilation for development only, not for shipping.
+
+```pwsh
+dotnet test tests\FSharp.Compiler.ComponentTests\FSharp.Compiler.ComponentTests.fsproj -c Release /p:FastBuildFromCache=true
+```
+
+To compile directly from cached project results:
+
+```pwsh
+GetErrors -Compile src\Compiler\FSharp.Compiler.Service.fsproj artifacts\FSharp.Compiler.Service.dll
+```
+
 ## Timing
 
 - First real call after a fresh clone: server build + in-memory warmup, 5–15 min → `initial_wait=1200`.
