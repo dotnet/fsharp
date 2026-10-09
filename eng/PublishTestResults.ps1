@@ -11,6 +11,27 @@ function ConvertTo-VsoValue([string]$Value) {
     $Value.Replace('%', '%AZP25').Replace("`r", '%0D').Replace("`n", '%0A').Replace(';', '%3B').Replace(']', '%5D')
 }
 
+function Get-TestRunResponse([string]$Uri, [datetime]$Deadline) {
+    $timeout = 30
+    for ($attempt = 1; $attempt -le 3; $attempt++) {
+        try {
+            return Invoke-RestMethod -Uri $Uri -Headers $headers -TimeoutSec $timeout
+        }
+        catch [System.Net.Http.HttpRequestException] {
+            $cause = $_.Exception.GetBaseException()
+            if ($cause -isnot [System.Net.Sockets.SocketException] -or
+                $cause.SocketErrorCode -ne [System.Net.Sockets.SocketError]::HostNotFound -or
+                $attempt -eq 3 -or [DateTime]::UtcNow.AddSeconds(5) -ge $Deadline) {
+                throw
+            }
+            Write-Warning "DNS failure while verifying test results. Retrying within the existing deadline: $($_.Exception.Message)"
+            Start-Sleep -Seconds 5
+            $timeout = [Math]::Min(30, [Math]::Floor(($Deadline - [DateTime]::UtcNow).TotalSeconds))
+            if ($timeout -lt 1) { throw }
+        }
+    }
+}
+
 $files = @(if (Test-Path -LiteralPath $ResultsDirectory) {
     Get-ChildItem -LiteralPath $ResultsDirectory -Filter '*.xml' -File | Sort-Object Name
 })
@@ -51,13 +72,13 @@ foreach ($file in $files) {
 
     $deadline = [DateTime]::UtcNow.AddSeconds($TimeoutSeconds)
     do {
-        $response = Invoke-RestMethod -Uri "${runsUrl}?buildUri=$build&`$top=10000&api-version=7.1" -Headers $headers -TimeoutSec 30
+        $response = Get-TestRunResponse "${runsUrl}?buildUri=$build&`$top=10000&api-version=7.1" $deadline
         $runs = @($response.value | Where-Object { $_.name -eq $title -or $_.name -eq "${title}_1" })
         if ($runs.Count -gt 1) {
             throw "Multiple test runs found for $($file.Name)."
         }
         if ($runs.Count -eq 1) {
-            $run = Invoke-RestMethod -Uri "$runsUrl/$($runs[0].id)?api-version=7.1" -Headers $headers -TimeoutSec 30
+            $run = Get-TestRunResponse "$runsUrl/$($runs[0].id)?api-version=7.1" $deadline
             if ($runIds -contains $run.id) {
                 throw "Test run $($run.id) was reused for $($file.Name)."
             }
