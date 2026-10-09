@@ -557,11 +557,6 @@
         <target state="translated">copy-and-update レコード式によってレコードのすべてのフィールドが変更されたときに警告を表示します。</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureWarningWhenMultipleRecdTypeChoice">
-        <source>Raises warnings when multiple record type matches were found during name resolution because of overlapping field names.</source>
-        <target state="translated">フィールド名が重複しているため、名前解決中に複数のレコードの種類の一致が見つかった場合に警告を生成します。</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureWitnessPassing">
         <source>witness passing for trait constraints in F# quotations</source>
         <target state="translated">F# 引用での特性制約に対する監視の引き渡し</target>
