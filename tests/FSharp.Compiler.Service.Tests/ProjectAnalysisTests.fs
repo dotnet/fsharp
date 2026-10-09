@@ -108,6 +108,21 @@ let ``Test project1 whole project errors`` () =
     wholeProjectResults.Diagnostics[0].Range.StartColumn |> shouldEqual 43
     wholeProjectResults.Diagnostics[0].Range.EndColumn |> shouldEqual 44
 
+[<Fact>]
+let ``Issue 6036 - project check reports namespace-module collision`` () =
+    let options =
+        createProjectOptions
+            [ "namespace A\nmodule B = begin end"
+              "namespace A.B\ntype DU = X of float | Y of float" ]
+            []
+
+    let results = checker.ParseAndCheckProject(options) |> Async.RunSynchronouslyImmediate
+    let diagnostic = results.Diagnostics |> Array.exactlyOne
+
+    diagnostic.ErrorNumber |> shouldEqual 247
+    diagnostic.Message
+    |> shouldEqual "The name 'A.B' is used as both a namespace and a module in this assembly. Rename one of them to avoid the conflict."
+
 [<Collection(nameof NotThreadSafeResourceCollection)>]
 module ClearLanguageServiceRootCachesTest =
     [<Fact>]

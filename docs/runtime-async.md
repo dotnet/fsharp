@@ -43,6 +43,11 @@ call Task<int32> SomeAsyncMethod(...)
 call int32 AsyncHelpers::Await<int32>(Task<int32>)
 ```
 
+In runtime-async bodies, the compiler emits `Task` upcasts as `castclass`
+instructions, including before `ConfigureAwait`. These casts prevent the runtime
+from incorrectly optimizing a generic task-producing call followed by a
+non-generic await.
+
 Known runtime restrictions (currently **not** diagnosed by the F# compiler):
 
 * `tail.` and `localloc` are forbidden.

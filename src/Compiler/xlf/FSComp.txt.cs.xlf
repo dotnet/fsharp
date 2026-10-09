@@ -82,11 +82,6 @@
         <target state="translated">Cílový modul runtime nepodporuje funkci {0}.</target>
         <note />
       </trans-unit>
-      <trans-unit id="chkFeatureNotSupportedInLibrary">
-        <source>Feature '{0}' requires the F# library for language version {1} or greater.</source>
-        <target state="translated">Funkce {0} vyžaduje knihovnu F# pro verzi jazyka {1} nebo novější.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="chkImplementingInterfacesOnStaticClasses">
         <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Implementing interfaces is not allowed.</source>
         <target state="translated">Pokud typ používá atributy [&lt;Sealed&gt;] i [&lt;AbstractClass&gt;], znamená to, že je statický. Implementace rozhraní není povolena.</target>
@@ -302,11 +297,6 @@
         <target state="new">Access a protected base-class field from a closure inside a member</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureAdditionalImplicitConversions">
-        <source>additional type-directed conversions</source>
-        <target state="translated">další převody orientované na typ</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureAllowAccessModifiersToAutoPropertiesGettersAndSetters">
         <source>Allow access modifiers to auto properties getters and setters</source>
         <target state="new">Allow access modifiers to auto properties getters and setters</target>
@@ -352,11 +342,6 @@
         <target state="translated">Vyvolá upozornění, pokud je atribut TailCall použit u nerekurzivních funkcí.</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureConstraintIntersectionOnFlexibleTypes">
-        <source>Constraint intersection on flexible types</source>
-        <target state="translated">Průnik omezení u flexibilních typů</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureDeprecatePlacesWhereSeqCanBeOmitted">
         <source>Deprecate places where 'seq' can be omitted</source>
         <target state="new">Deprecate places where 'seq' can be omitted</target>
@@ -380,11 +365,6 @@
       <trans-unit id="featureEnforceAttributeTargets">
         <source>Enforce AttributeTargets</source>
         <target state="translated">Vynutit AttributeTargets</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureErrorForNonVirtualMembersOverrides">
-        <source>Raises errors for non-virtual members overrides</source>
-        <target state="translated">Vyvolá chyby pro přepsání jiných než virtuálních členů</target>
         <note />
       </trans-unit>
       <trans-unit id="featureErrorOnBitwiseOpsOnNonIntegralEnums">
@@ -502,11 +482,6 @@
         <target state="new">#elif preprocessor directive</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureReallyLongList">
-        <source>list literals of any size</source>
-        <target state="translated">vypsat literály libovolné velikosti</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureRecordConstructorSyntax">
         <source>Constructing a record via its all-fields constructor</source>
         <target state="new">Constructing a record via its all-fields constructor</target>
@@ -545,11 +520,6 @@
       <trans-unit id="featureScopedNowarn">
         <source>Support for scoped enabling / disabling of warnings by #warn and #nowarn directives, also inside modules</source>
         <target state="new">Support for scoped enabling / disabling of warnings by #warn and #nowarn directives, also inside modules</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureStringInterpolation">
-        <source>string interpolation</source>
-        <target state="translated">interpolace řetězce</target>
         <note />
       </trans-unit>
       <trans-unit id="featureSupportValueOptionsAsOptionalParameters">
@@ -1023,8 +993,8 @@
         <note />
       </trans-unit>
       <trans-unit id="optsUnrecognizedLanguageFeature">
-        <source>Unrecognized language feature name: '{0}'. Use a valid feature name such as 'StringInterpolation' or 'FromEndSlicing'.</source>
-        <target state="new">Unrecognized language feature name: '{0}'. Use a valid feature name such as 'StringInterpolation' or 'FromEndSlicing'.</target>
+        <source>Unrecognized language feature name: '{0}'. Use a valid feature name such as 'FromEndSlicing'.</source>
+        <target state="new">Unrecognized language feature name: '{0}'. Use a valid feature name such as 'FromEndSlicing'.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsUnrecognizedLanguageVersion">
@@ -4705,11 +4675,6 @@
       <trans-unit id="tcUnableToParseFormatString">
         <source>Unable to parse format string '{0}'</source>
         <target state="translated">Formátovací řetězec {0} se nedá parsovat.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcListLiteralMaxSize">
-        <source>This list expression exceeds the maximum size for list literals. Use an array for larger literals and call Array.ToList.</source>
-        <target state="translated">Tento výraz seznamu překračuje maximální velikost literálů seznamu. Použijte pole pro rozsáhlejší literály a volejte metodu Array.ToList.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcExpressionFormRequiresObjectConstructor">

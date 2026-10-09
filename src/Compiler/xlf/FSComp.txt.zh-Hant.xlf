@@ -82,11 +82,6 @@
         <target state="translated">目標執行階段不支援功能 '{0}'。</target>
         <note />
       </trans-unit>
-      <trans-unit id="chkFeatureNotSupportedInLibrary">
-        <source>Feature '{0}' requires the F# library for language version {1} or greater.</source>
-        <target state="translated">功能 '{0}' 需要語言版本 {1} 或更高的 F# 程式庫。</target>
-        <note />
-      </trans-unit>
       <trans-unit id="chkImplementingInterfacesOnStaticClasses">
         <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Implementing interfaces is not allowed.</source>
         <target state="translated">如果類型同時使用 [&lt;Sealed&gt;] 和 [&lt;AbstractClass&gt;] 屬性，表示其為靜態。不允許實作介面。</target>
@@ -302,11 +297,6 @@
         <target state="new">Access a protected base-class field from a closure inside a member</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureAdditionalImplicitConversions">
-        <source>additional type-directed conversions</source>
-        <target state="translated">其他類型導向轉換</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureAllowAccessModifiersToAutoPropertiesGettersAndSetters">
         <source>Allow access modifiers to auto properties getters and setters</source>
         <target state="new">Allow access modifiers to auto properties getters and setters</target>
@@ -352,11 +342,6 @@
         <target state="translated">如果 'TailCall' 屬性用於非遞迴函數，則引發警告。</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureConstraintIntersectionOnFlexibleTypes">
-        <source>Constraint intersection on flexible types</source>
-        <target state="translated">彈性類型上的條件約束交集</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureDeprecatePlacesWhereSeqCanBeOmitted">
         <source>Deprecate places where 'seq' can be omitted</source>
         <target state="new">Deprecate places where 'seq' can be omitted</target>
@@ -380,11 +365,6 @@
       <trans-unit id="featureEnforceAttributeTargets">
         <source>Enforce AttributeTargets</source>
         <target state="translated">強制使用 AttributeTargets</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureErrorForNonVirtualMembersOverrides">
-        <source>Raises errors for non-virtual members overrides</source>
-        <target state="translated">引發非虛擬成員覆寫的錯誤</target>
         <note />
       </trans-unit>
       <trans-unit id="featureErrorOnBitwiseOpsOnNonIntegralEnums">
@@ -502,11 +482,6 @@
         <target state="new">#elif preprocessor directive</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureReallyLongList">
-        <source>list literals of any size</source>
-        <target state="translated">列出任何大小的常值</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureRecordConstructorSyntax">
         <source>Constructing a record via its all-fields constructor</source>
         <target state="new">Constructing a record via its all-fields constructor</target>
@@ -545,11 +520,6 @@
       <trans-unit id="featureScopedNowarn">
         <source>Support for scoped enabling / disabling of warnings by #warn and #nowarn directives, also inside modules</source>
         <target state="new">Support for scoped enabling / disabling of warnings by #warn and #nowarn directives, also inside modules</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureStringInterpolation">
-        <source>string interpolation</source>
-        <target state="translated">字串內插補點</target>
         <note />
       </trans-unit>
       <trans-unit id="featureSupportValueOptionsAsOptionalParameters">
@@ -1023,8 +993,8 @@
         <note />
       </trans-unit>
       <trans-unit id="optsUnrecognizedLanguageFeature">
-        <source>Unrecognized language feature name: '{0}'. Use a valid feature name such as 'StringInterpolation' or 'FromEndSlicing'.</source>
-        <target state="new">Unrecognized language feature name: '{0}'. Use a valid feature name such as 'StringInterpolation' or 'FromEndSlicing'.</target>
+        <source>Unrecognized language feature name: '{0}'. Use a valid feature name such as 'FromEndSlicing'.</source>
+        <target state="new">Unrecognized language feature name: '{0}'. Use a valid feature name such as 'FromEndSlicing'.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsUnrecognizedLanguageVersion">
@@ -4705,11 +4675,6 @@
       <trans-unit id="tcUnableToParseFormatString">
         <source>Unable to parse format string '{0}'</source>
         <target state="translated">無法剖析格式字串 '{0}'</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcListLiteralMaxSize">
-        <source>This list expression exceeds the maximum size for list literals. Use an array for larger literals and call Array.ToList.</source>
-        <target state="translated">這個清單運算式已超過清單常值的大小上限。請使用供較大常值使用的陣列，並呼叫 Array.ToList。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcExpressionFormRequiresObjectConstructor">
