@@ -6,15 +6,22 @@ open System
 open System.IO
 open System.Reflection
 open System.Linq
+open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Collections.Immutable
+open System.Threading
+open System.Threading.Tasks
 open Microsoft.CodeAnalysis
+open Microsoft.CodeAnalysis.CSharp
+open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor.FindUsages
+open Microsoft.CodeAnalysis.ExternalAccess.FSharp.FindUsages
 open Microsoft.VisualStudio.Composition
 open Microsoft.CodeAnalysis.Host
 open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.CodeAnalysis.Host.Mef
 open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Diagnostics
 open FSharp.Test.ProjectGeneration
 
 [<AutoOpen>]
@@ -27,6 +34,7 @@ module MefHelpers =
         let imports =
             [|
                 "Microsoft.CodeAnalysis.Workspaces.dll"
+                "Microsoft.CodeAnalysis.CSharp.Workspaces.dll"
                 "Microsoft.VisualStudio.Shell.15.0.dll"
                 "Microsoft.VisualStudio.Platform.VSEditor.dll"
                 "FSharp.Editor.dll"
@@ -170,8 +178,7 @@ type TestHostWorkspaceServices(hostServices: HostServices, workspace: Workspace)
         |> Seq.distinctBy (fun x -> x.Key)
         |> System.Collections.Concurrent.ConcurrentDictionary
 
-    let langServices =
-        new TestHostLanguageServices(this, LanguageNames.FSharp, exportProvider)
+    let languageServices = ConcurrentDictionary<string, HostLanguageServices>()
 
     override _.Workspace = workspace
 
@@ -189,9 +196,10 @@ type TestHostWorkspaceServices(hostServices: HostServices, workspace: Workspace)
     override _.FindLanguageServices(_filter) = Seq.empty
 
     override _.GetLanguageServices(languageName) =
-        match languageName with
-        | LanguageNames.FSharp -> langServices :> HostLanguageServices
-        | _ -> raise (NotSupportedException(sprintf "Language '%s' not supported in FSharp VS tests." languageName))
+        languageServices.GetOrAdd(
+            languageName,
+            (fun language -> new TestHostLanguageServices(this, language, exportProvider) :> HostLanguageServices)
+        )
 
     override _.HostServices = hostServices
 
@@ -233,7 +241,8 @@ type RoslynTestHelpers private () =
 
         match extension with
         | ".fsx" -> SourceCodeKind.Script
-        | ".fsi" -> SourceCodeKind.Regular
+        | ".fsi"
+        | ".cs" -> SourceCodeKind.Regular
         | ".fs" -> SourceCodeKind.Regular
         | _ -> failwith "not supported"
 
@@ -305,6 +314,92 @@ type RoslynTestHelpers private () =
 
     static member SetEditorOptions (solution: Solution) options =
         solution.Workspace.Services.GetService<EditorOptions>().With(options)
+
+    static member CreateFindUsagesContext() =
+        let foundDefinitions = ConcurrentBag<FSharpDefinitionItem>()
+        let foundReferences = ConcurrentBag<FSharpSourceReferenceItem>()
+
+        let context =
+            { new IFSharpFindUsagesContext with
+                member _.OnDefinitionFoundAsync definition =
+                    foundDefinitions.Add definition
+                    Task.CompletedTask
+
+                member _.OnReferenceFoundAsync reference =
+                    foundReferences.Add reference
+                    Task.CompletedTask
+
+                member _.ReportMessageAsync _ = Task.CompletedTask
+                member _.ReportProgressAsync(_, _) = Task.CompletedTask
+                member _.SetSearchTitleAsync _ = Task.CompletedTask
+                member _.CancellationToken = CancellationToken.None
+            }
+
+        context, foundDefinitions, foundReferences
+
+    /// Compiles the synthetic project to its OutputFilename with the options the checker sees.
+    static member CompileToAssembly(syntheticProject: SyntheticProject, checker: FSharpChecker) =
+        let options = syntheticProject.GetProjectOptions checker
+
+        let diagnostics, exn =
+            checker.Compile
+                [|
+                    "fsc.exe"
+                    "--target:library"
+                    $"-o:{syntheticProject.OutputFilename}"
+                    yield! options.OtherOptions
+                    yield! options.SourceFiles
+                |]
+            |> Async.RunSynchronously
+
+        exn |> Option.iter raise
+
+        match
+            diagnostics
+            |> Array.filter (fun d -> d.Severity = FSharpDiagnosticSeverity.Error)
+        with
+        | [||] -> syntheticProject.OutputFilename
+        | errors -> failwith $"Compilation of {syntheticProject.Name} failed: %A{errors}"
+
+    /// Adds a C# library that references the framework of `options` and the given assemblies, the way
+    /// VS references an F# project from C# through its built assembly.
+    static member AddCSharpProject
+        (solution: Solution, name: string, source: string, options: FSharpProjectOptions, referencedAssemblies: string list)
+        =
+        let projectId = ProjectId.CreateNewId()
+        let projectDir = $"C:\\{name}"
+
+        let projectInfo =
+            ProjectInfo.Create(
+                projectId,
+                VersionStamp.Create(DateTime.UtcNow),
+                name,
+                name,
+                LanguageNames.CSharp,
+                filePath = Path.Combine(projectDir, $"{name}.csproj"),
+                compilationOptions = CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary),
+                documents =
+                    [
+                        RoslynTestHelpers.CreateDocumentInfo projectId (Path.Combine(projectDir, "Program.cs")) source
+                    ],
+                metadataReferences = RoslynTestHelpers.MetadataReferencesOf(options, [])
+            )
+
+        let workspace = solution.Workspace :?> AdhocWorkspace
+        let project = workspace.AddProject projectInfo
+
+        // AdhocWorkspace.AddProject turns a reference to another project's output into a project reference,
+        // whereas VS keeps a C# → F# reference as metadata; the assemblies are added afterwards.
+        let withAssemblies =
+            referencedAssemblies
+            |> List.fold
+                (fun (project: Project) assembly -> project.AddMetadataReference(MetadataReference.CreateFromFile assembly))
+                project
+
+        if not (workspace.TryApplyChanges withAssemblies.Solution) then
+            failwith $"Could not add the references of {name}"
+
+        workspace.CurrentSolution
 
     static member CreateSolution(source, ?options: FSharpProjectOptions, ?extraFSharpProjectOtherOptions: string array, ?editorOptions) =
         let projId = ProjectId.CreateNewId()
