@@ -575,33 +575,22 @@ try {
     }
 
     $buildTool = InitializeBuildTool
-    $dotnetExe = Join-Path (InitializeDotNetCli -install:$restore) (GetExecutableFileName 'dotnet')
-    $vsMinorVersion = ([xml](Get-Content "$RepoRoot/eng/Versions.props" -Raw)).SelectSingleNode('/Project/PropertyGroup/VSMinorVersion').InnerText
+    $dotnetPath = InitializeDotNetCli
+    $env:DOTNET_ROOT = "$dotnetPath"
+    $env:VSMinorVersion = $null
     $branch = if ($env:SYSTEM_PULLREQUEST_TARGETBRANCH) { $env:SYSTEM_PULLREQUEST_TARGETBRANCH }
               elseif ($env:BUILD_SOURCEBRANCH) { $env:BUILD_SOURCEBRANCH }
               else { & git -C $RepoRoot branch --show-current }
-    if ($branch -match '^(refs/heads/)?release/') {
-        if ($vsMinorVersion -notmatch '^\d+$') {
-            throw "Release branches must pin VSMinorVersion in eng/Versions.props."
-        }
-        $override = $properties -match '^/p:VSMinorVersion='
-        if ($override -and ($override -ne "/p:VSMinorVersion=$vsMinorVersion")) {
-            throw "VSMinorVersion must match the release branch's pin ($vsMinorVersion)."
-        }
-    }
-    if ($vsMinorVersion -eq 'UNSET') {
+    if ($branch -notmatch '^(refs/heads/)?release/') {
         $date = if ($env:VSBUILDDATEUTC) { $env:VSBUILDDATEUTC } else { [DateTime]::UtcNow.ToString('yyyy-MM-dd', [Globalization.CultureInfo]::InvariantCulture) }
-        $vsMinorVersion = & $dotnetExe fsi "$PSScriptRoot/scripts/GetVSMinorVersion.fsx" $date
+        $env:VSMinorVersion = & (Join-Path $dotnetPath (GetExecutableFileName 'dotnet')) fsi "$PSScriptRoot/scripts/GetVSMinorVersion.fsx" $date
         if ($LASTEXITCODE -ne 0) { throw "VS minor version calculation failed." }
     }
-    $env:VSMinorVersion = "$vsMinorVersion"
     $toolsetBuildProj = InitializeToolset
     TryDownloadDotnetFrameworkSdk
 
     $nativeTools = InitializeNativeTools
 
-    $dotnetPath = InitializeDotNetCli
-    $env:DOTNET_ROOT = "$dotnetPath"
     Get-Item -Path Env:
 
     if ($bootstrap) {

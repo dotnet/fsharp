@@ -365,17 +365,14 @@ As you would expect, doing this requires both Windows and Visual Studio are inst
 
 See [Developing on Windows](#Developing-on-Windows) for instructions to install what is needed; it's the same prerequisites.
 
-`Build.cmd` and `build.sh` set `VSMinorVersion` from the UTC date. CI uses the pipeline start date through `VSBuildDateUtc`.
+`Build.cmd` sets `VSMinorVersion` from the UTC date. CI uses the pipeline start date through `VSBuildDateUtc`.
 The estimate changes on the Friday before the first Tuesday of each month. September 2025 corresponds to minor 0.
 On release branches, replace the conditional `UNSET` in `eng/Versions.props` with an unconditional numeric pin.
 
-For direct VS-project builds or IDE builds, set the version before starting MSBuild or Visual Studio:
-
+For direct VS-project or IDE builds, set the version before starting MSBuild or Visual Studio:
 ```powershell
 $env:VSMinorVersion = & .\.dotnet\dotnet.exe fsi .\eng\scripts\GetVSMinorVersion.fsx ([DateTime]::UtcNow.ToString('yyyy-MM-dd', [Globalization.CultureInfo]::InvariantCulture))
 ```
-
-VS builds without a valid version fail. Unrelated compiler, Core, and test projects do not need this property.
 
 ### Quickly see your changes locally
 

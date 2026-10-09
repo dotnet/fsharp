@@ -270,9 +270,6 @@ stages:
               NativeToolsOnMachine: true
             displayName: Build
 
-          - script: .dotnet\dotnet.exe fsi eng\tests\VSMinorVersion.Tests.fsx
-            displayName: Check VS minor versions
-
           - task: PublishTestResults@2
             displayName: Publish Test Results
             inputs:

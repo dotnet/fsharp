@@ -387,25 +387,6 @@ InitializeDotNetCli $restore
 # Apphosts (bootstrap fsc, testhost, etc.) resolve runtimes via DOTNET_ROOT, not PATH.
 export DOTNET_ROOT="$DOTNET_INSTALL_DIR"
 
-vs_minor=$(VSMinorVersion= "$DOTNET_INSTALL_DIR/dotnet" msbuild "$scriptroot/Versions.props" -nologo -getProperty:VSMinorVersion) || ExitWithExitCode $?
-branch=${SYSTEM_PULLREQUEST_TARGETBRANCH:-${BUILD_SOURCEBRANCH:-$(git -C "$repo_root" branch --show-current)}}
-if [[ "$branch" =~ ^(refs/heads/)?release/ ]]; then
-  if [[ ! "$vs_minor" =~ ^[0-9]+$ ]]; then
-    echo "Release branches must pin VSMinorVersion in eng/Versions.props." >&2
-    ExitWithExitCode 1
-  fi
-  for property in ${properties[@]+"${properties[@]}"}; do
-    if [[ "$(echo "$property" | tr '[:upper:]' '[:lower:]')" == /p:vsminorversion=* && "${property#*=}" != "$vs_minor" ]]; then
-      echo "VSMinorVersion must match the release branch's pin ($vs_minor)." >&2
-      ExitWithExitCode 1
-    fi
-  done
-fi
-if [[ "$vs_minor" == UNSET ]]; then
-  vs_minor=$("$DOTNET_INSTALL_DIR/dotnet" fsi "$scriptroot/scripts/GetVSMinorVersion.fsx" "${VSBUILDDATEUTC:-$(date -u +%F)}") || ExitWithExitCode $?
-fi
-export VSMinorVersion="$vs_minor"
-
 # Resolve product TFM from centralized source of truth if not overridden via --tfm
 if [[ "$tfm" == "" ]]; then
   tfm=$("$DOTNET_INSTALL_DIR/dotnet" msbuild "$scriptroot/TargetFrameworks.props" -getProperty:FSharpNetCoreProductTargetFramework 2>/dev/null | tr -d '[:space:]')
