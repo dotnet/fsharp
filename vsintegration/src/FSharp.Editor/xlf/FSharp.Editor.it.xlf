@@ -140,6 +140,11 @@ Suggerisci i nomi per gli identificatori non risolti;</target>
         <target state="translated">Implementa l'interfaccia senza annotazione di tipo</target>
         <note />
       </trans-unit>
+      <trans-unit id="InsertSnippet">
+        <source>Insert Snippet</source>
+        <target state="new">Insert Snippet</target>
+        <note />
+      </trans-unit>
       <trans-unit id="IntelliSensePageKeywords">
         <source>Completion Lists;
 Show completion list after a character is deleted;
@@ -291,6 +296,11 @@ Mostra i commenti in Informazioni rapide</target>
       <trans-unit id="RemoveUnusedOpens">
         <source>Remove unused open declarations</source>
         <target state="translated">Rimuovi dichiarazioni OPEN inutilizzate</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SurroundWith">
+        <source>Surround With</source>
+        <target state="new">Surround With</target>
         <note />
       </trans-unit>
       <trans-unit id="UnexpectedEqualsInFieldExpectedColon">

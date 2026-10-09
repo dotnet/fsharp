@@ -154,6 +154,25 @@
 "RequestStockColors"=dword:00000001
 @="{35a5e6b8-4012-41fc-a652-2cdc56d74e9f}"
 
+; Code snippets. The default value is the GUID FSharpSnippetExpansionClient passes to
+; InvokeInsertionUI and GetExpansionByShortcut, "LangStringID" has to match every snippet's
+; <Code Language="...">, and "DisplayName" resolves against the package named below.
+; Only 1033 ships, so the paths name it outright: registering both %LCID% and a literal 1033
+; would enumerate every snippet twice on an English VS.
+[$RootKey$\Languages\CodeExpansions\FSharp]
+@="{bc6dd5a5-d4d6-4dab-a00d-a51242dbaf1b}"
+"Package"="{871d2a70-12a2-4e42-9440-425dd92a4116}"
+"DisplayName"="#100"
+"LangStringID"="FSharp"
+"IndexPath"="$PackageFolder$\Snippets\1033\SnippetsIndex.xml"
+"ShowRoots"=dword:00000000
+
+[$RootKey$\Languages\CodeExpansions\FSharp\Paths]
+"Visual F#"="$PackageFolder$\Snippets\1033\FSharp\;%MyDocs%\Code Snippets\Visual F#\My Code Snippets\"
+
+[$RootKey$\Languages\CodeExpansions\FSharp\ForceCreateDirs]
+"Visual F#"="%MyDocs%\Code Snippets\Visual F#\My Code Snippets\"
+
 [$RootKey$\FontAndColors\FSharpInteractive]
 "Category"="{00CCEE86-3140-4E06-A65A-A92665A40D6F}"  
 "Package"="{F5E7E71D-1401-11D1-883B-0000F87579D2}"  

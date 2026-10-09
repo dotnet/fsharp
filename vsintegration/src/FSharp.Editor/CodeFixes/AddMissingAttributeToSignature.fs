@@ -94,27 +94,6 @@ type internal AddMissingAttributeToSignatureCodeFixProvider [<ImportingConstruct
 
         line.Substring(0, i)
 
-    // Match the .fsi's existing newline; fall back to Environment.NewLine.
-    let lineBreakAt (sigSourceText: SourceText) (lineStart: int) =
-        let inline lineBreakOf (line: TextLine) =
-            let lbLen = line.EndIncludingLineBreak - line.End
-
-            if lbLen > 0 then
-                Some(sigSourceText.ToString(TextSpan(line.End, lbLen)))
-            else
-                None
-
-        let lines = sigSourceText.Lines
-        let startLineNo = lines.GetLineFromPosition(lineStart).LineNumber
-        let mutable result: string option = None
-        let mutable i = startLineNo
-
-        while result.IsNone && i >= 0 do
-            result <- lineBreakOf lines.[i]
-            i <- i - 1
-
-        result |> Option.defaultValue Environment.NewLine
-
     // Returns None if the .fsi was truncated between registration and apply.
     let tryFSharpRangeToTextSpan (text: SourceText) (range: FSharp.Compiler.Text.range) =
         try
@@ -204,7 +183,7 @@ type internal AddMissingAttributeToSignatureCodeFixProvider [<ImportingConstruct
                                     | Some currentSigSpan ->
                                         let currentLineStart = current.Lines.GetLineFromPosition(currentSigSpan.Start).Start
                                         let currentIndent = indentOfLine current currentLineStart
-                                        let currentLineBreak = lineBreakAt current currentLineStart
+                                        let currentLineBreak = current.LineBreakAt currentLineStart
                                         let currentInsertion = $"{currentIndent}{bracketed}{currentLineBreak}"
 
                                         let updated =
