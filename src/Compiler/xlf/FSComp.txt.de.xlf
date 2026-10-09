@@ -82,11 +82,6 @@
         <target state="translated">Das Feature "{0}" wird von der Zielruntime nicht unterstützt.</target>
         <note />
       </trans-unit>
-      <trans-unit id="chkFeatureNotSupportedInLibrary">
-        <source>Feature '{0}' requires the F# library for language version {1} or greater.</source>
-        <target state="translated">Für das Feature "{0}" ist die F#-Bibliothek für die Sprachversion {1} oder höher erforderlich.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="chkImplementingInterfacesOnStaticClasses">
         <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Implementing interfaces is not allowed.</source>
         <target state="translated">Wenn ein Typ sowohl das Attribute [&lt;Sealed&gt;] wie auch [&lt;AbstractClass&gt;] verwendet, bedeutet dies, dass er statisch ist. Das Implementieren von Schnittstellen ist nicht zulässig.</target>
@@ -347,11 +342,6 @@
         <target state="translated">Löst Warnungen aus, wenn das Attribut "TailCall" für nicht rekursive Funktionen verwendet wird.</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureConstraintIntersectionOnFlexibleTypes">
-        <source>Constraint intersection on flexible types</source>
-        <target state="translated">Einschränkungsüberschneidung für flexible Typen</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureDeprecatePlacesWhereSeqCanBeOmitted">
         <source>Deprecate places where 'seq' can be omitted</source>
         <target state="new">Deprecate places where 'seq' can be omitted</target>
@@ -375,11 +365,6 @@
       <trans-unit id="featureEnforceAttributeTargets">
         <source>Enforce AttributeTargets</source>
         <target state="translated">AttributeTargets erzwingen</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureErrorForNonVirtualMembersOverrides">
-        <source>Raises errors for non-virtual members overrides</source>
-        <target state="translated">Löst Fehler für Außerkraftsetzungen nicht virtueller Member aus.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureErrorOnBitwiseOpsOnNonIntegralEnums">
@@ -492,11 +477,6 @@
         <target state="new">#elif preprocessor directive</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureReallyLongList">
-        <source>list literals of any size</source>
-        <target state="translated">Literale beliebiger Größe auflisten</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureRecordConstructorSyntax">
         <source>Constructing a record via its all-fields constructor</source>
         <target state="new">Constructing a record via its all-fields constructor</target>
@@ -535,11 +515,6 @@
       <trans-unit id="featureScopedNowarn">
         <source>Support for scoped enabling / disabling of warnings by #warn and #nowarn directives, also inside modules</source>
         <target state="new">Support for scoped enabling / disabling of warnings by #warn and #nowarn directives, also inside modules</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureStringInterpolation">
-        <source>string interpolation</source>
-        <target state="translated">Zeichenfolgeninterpolation</target>
         <note />
       </trans-unit>
       <trans-unit id="featureSupportValueOptionsAsOptionalParameters">
@@ -1013,8 +988,8 @@
         <note />
       </trans-unit>
       <trans-unit id="optsUnrecognizedLanguageFeature">
-        <source>Unrecognized language feature name: '{0}'. Use a valid feature name such as 'StringInterpolation' or 'FromEndSlicing'.</source>
-        <target state="new">Unrecognized language feature name: '{0}'. Use a valid feature name such as 'StringInterpolation' or 'FromEndSlicing'.</target>
+        <source>Unrecognized language feature name: '{0}'. Use a valid feature name such as 'FromEndSlicing'.</source>
+        <target state="new">Unrecognized language feature name: '{0}'. Use a valid feature name such as 'FromEndSlicing'.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsUnrecognizedLanguageVersion">
@@ -4695,11 +4670,6 @@
       <trans-unit id="tcUnableToParseFormatString">
         <source>Unable to parse format string '{0}'</source>
         <target state="translated">Formatzeichenfolge "{0}" kann nicht analysiert werden.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcListLiteralMaxSize">
-        <source>This list expression exceeds the maximum size for list literals. Use an array for larger literals and call Array.ToList.</source>
-        <target state="translated">Dieser Listenausdruck übersteigt die maximale Größe für Listenliterale. Verwenden Sie für umfangreichere Literale ein Array, und rufen Sie "Array.ToList" auf.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcExpressionFormRequiresObjectConstructor">

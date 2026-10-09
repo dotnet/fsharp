@@ -433,6 +433,8 @@ module internal TypeDecomposition =
     [<return: Struct>]
     val (|AppTy|_|): TcGlobals -> TType -> (TyconRef * TypeInst) voption
 
+    val (|NonGenericSysType|_|): TcGlobals -> struct (string list * string) -> TType -> bool
+
     [<return: Struct>]
     val (|RefTupleTy|_|): TcGlobals -> TType -> TTypes voption
 
