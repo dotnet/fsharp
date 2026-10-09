@@ -4207,12 +4207,19 @@ and GenCoerce cenv cgbuf eenv (e, tgtTy, m, srcTy) sequel =
         // Do an extra check - should not be needed
         TypeFeasiblySubsumesType 0 g cenv.amap m tgtTy NoCoerce srcTy
     then
-        if isInterfaceTy g tgtTy then
+        let preserveTaskUpcast =
+            eenv.inRuntimeAsyncMethod
+            && (match tgtTy with
+                | NonGenericSysType g (struct ([ "System"; "Threading"; "Tasks" ], "Task")) -> true
+                | _ -> false)
+
+        if isInterfaceTy g tgtTy || preserveTaskUpcast then
             GenExpr cenv cgbuf eenv e Continue
             let ilToTy = GenType cenv m eenv.tyenv tgtTy
+            let coercion = if preserveTaskUpcast then [ I_castclass ilToTy ] else []
             // Section "III.1.8.1.3 Merging stack states" of ECMA-335 implies that no unboxing
             // is required, but we still push the coerced type on to the code gen buffer.
-            CG.EmitInstrs cgbuf (pop 1) (Push [ ilToTy ]) []
+            CG.EmitInstrs cgbuf (pop 1) (Push [ ilToTy ]) coercion
             GenSequel cenv eenv.cloc cgbuf sequel
         else
             GenExpr cenv cgbuf eenv e sequel
