@@ -12,6 +12,7 @@ open System.Collections.Immutable
 open System.Text
 open Xunit
 open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.AbstractIL.ILBinaryWriter
 open FSharp.Compiler.AbstractIL.ILMetadataHeaps
 open FSharp.Compiler.AbstractIL.ILPdbWriter
 open FSharp.Compiler.AbstractIL.BinaryConstants

@@ -11,8 +11,9 @@ module internal FSharp.Compiler.AbstractIL.DeltaIndexSizing
 
 open FSharp.Compiler.AbstractIL.BinaryConstants
 open FSharp.Compiler.AbstractIL.ILDeltaHandles
-open FSharp.Compiler.AbstractIL.ILMetadataHeaps
 open FSharp.Compiler.AbstractIL.DeltaMetadataEncoding
+
+type MetadataHeapSizes = FSharp.Compiler.AbstractIL.ILBinaryWriter.MetadataHeapSizes
 
 /// Holds computed "bigness" flags for all coded index types.
 /// When true, the index requires 4 bytes; when false, 2 bytes suffice.
