@@ -248,6 +248,13 @@ is not global: optimizer environments can provide different inline bodies, and
 optimization creates new expression trees. Context-dependent decisions such as
 `runtimeAsyncContext` remain outside the cached facts.
 
+An optimizer analyzer lives for one application-inlining attempt; callback
+lowering shares an analyzer for one implementation file, and exception
+rewriting creates one per body. Flow-summary caches are also per body.
+Custom recursive analysis and callback reconstruction use stack guards,
+including traversals between inline-value bodies and through decision trees.
+Callback capture analysis uses the guarded free-variable collector.
+
 ## Code generation
 
 `IlxGen.fs` recognises the return-marker family in three placements through the

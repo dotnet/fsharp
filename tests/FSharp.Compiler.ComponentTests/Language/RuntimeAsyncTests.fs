@@ -2544,6 +2544,77 @@ let main _ =
     |> compileExeAndRun
     |> shouldSucceed
 
+[<Theory>]
+[<InlineData(false, false)>]
+[<InlineData(false, true)>]
+[<InlineData(true, false)>]
+[<InlineData(true, true)>]
+let ``runtime async lowers deeply nested callback constructions`` (optimize: bool, asDelegate: bool) =
+    let depth = 1500
+    let statements = String.replicate depth "            touch ()\n"
+    let callbackType, invocation, wrap =
+        if asDelegate then
+            "Callback", "callback.Invoke", fun body -> $"Callback(fun x -> {body})"
+        else
+            "int -> int", "callback", fun body -> $"(fun x -> {body})"
+
+    let source = $"""
+module RuntimeAsyncDeepConstruction
+open System
+open System.Threading.Tasks
+open System.Runtime.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices
+
+type Callback = delegate of int -> int
+let mutable constructions = 0
+[<NoCompilerInlining>]
+let touch () = constructions <- constructions + 1
+let inline twice ([<InlineIfLambda>] callback: {callbackType}) = {invocation} 1 + {invocation} 2
+
+[<NoCompilerInlining>]
+let run (gate: Task<int>) flag =
+    StateMachineHelpers.__runtimeAsyncReturn (
+        twice (
+{statements}            let offset = 7
+            if flag then {wrap "AsyncHelpers.Await gate + offset + x"}
+            else {wrap "offset + x"}))
+
+[<EntryPoint>]
+let main _ =
+    let gate = TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously)
+    let pending = run gate.Task true
+    if pending.IsCompleted then failwith "Expected pending result"
+    if constructions <> {depth} then failwith "Construction was not evaluated once"
+    gate.SetResult 41
+    if pending.GetAwaiter().GetResult() <> 99 then failwith "Suspending branch changed"
+    if (run gate.Task false).Result <> 17 then failwith "Non-suspending branch changed"
+    if constructions <> {2 * depth} then failwith "Construction was repeated"
+    0
+"""
+    let result =
+        FSharp source
+        |> withLangVersionPreview
+        |> withFSharpCoreShippedNet
+        |> withOptimization optimize
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    // In-process compilation can have a larger stack than command-line compilation.
+    let outputDirectory = result.Output.OutputPath |> Option.get |> Path.GetDirectoryName
+    let sourcePath = Path.Combine(outputDirectory, "DeepConstruction.fs")
+    let outputPath = Path.Combine(outputDirectory, "DeepConstruction.exe")
+    File.WriteAllText(sourcePath, source)
+    let cliResult =
+        runFscProcess [
+            yield! CompilerAssert.DefaultProjectOptions(Utilities.TargetFramework.FSharpCoreShippedNet).OtherOptions
+            yield "--target:exe"
+            yield "--langversion:preview"
+            yield if optimize then "--optimize+" else "--optimize-"
+            yield $"-o:\"{outputPath}\""
+            yield $"\"{sourcePath}\""
+        ]
+    Assert.True(cliResult.ExitCode = 0, $"{cliResult.StdOut}\n{cliResult.StdErr}")
+
 [<InlineData(16, false, true)>]
 [<InlineData(17, false, false)>]
 [<InlineData(16, true, true)>]

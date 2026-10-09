@@ -33,6 +33,7 @@ type RuntimeAsyncAnalyzer(g: TcGlobals, getLambdaBody: ValRef -> Expr option) =
     let suspensionCache = Dictionary<Expr, bool>(HashIdentity.Reference)
     let valueCache = Dictionary<Stamp, bool>()
     let visitingValues = HashSet<Stamp>()
+    let stackGuard = StackGuard("RuntimeAsyncAnalyzer")
 
     let rec containsValue (vref: ValRef) =
         match valueCache.TryGetValue vref.Stamp with
@@ -54,6 +55,9 @@ type RuntimeAsyncAnalyzer(g: TcGlobals, getLambdaBody: ValRef -> Expr option) =
             result, complete
 
     and containsExpression expr =
+        stackGuard.Guard(fun () -> containsExpressionCore expr)
+
+    and containsExpressionCore expr =
         match expressionCache.TryGetValue expr with
         | true, result -> result, true
         | _ ->
@@ -91,6 +95,9 @@ type RuntimeAsyncAnalyzer(g: TcGlobals, getLambdaBody: ValRef -> Expr option) =
     member _.ContainsFragment expr = containsExpression expr |> fst
 
     member this.ContainsSuspension expr =
+        stackGuard.Guard(fun () -> this.ContainsSuspensionCore expr)
+
+    member private this.ContainsSuspensionCore expr =
         match suspensionCache.TryGetValue expr with
         | true, result -> result
         | _ ->
@@ -195,6 +202,8 @@ let private tryAnalyzeCallbackUses g callback isDelegate continuation =
     FoldExpr folder (ValueSome 0) continuation
 
 let ReduceRuntimeAsyncReturnedClosureApplications (g: TcGlobals) (analyzer: RuntimeAsyncAnalyzer) expr =
+    let stackGuard = StackGuard("ReduceRuntimeAsyncReturnedClosureApplications")
+
     let rec effectFree expr =
         match stripExpr expr with
         | Expr.Const _
@@ -205,6 +214,9 @@ let ReduceRuntimeAsyncReturnedClosureApplications (g: TcGlobals) (analyzer: Runt
         | _ -> false
 
     let rec apply f fty tyargs args m =
+        stackGuard.Guard(fun () -> applyCore f fty tyargs args m)
+
+    and applyCore f fty tyargs args m =
         match f, args with
         | Expr.DebugPoint(_, inner), _ when
             match stripDebugPoints inner with
@@ -232,13 +244,7 @@ let ReduceRuntimeAsyncReturnedClosureApplications (g: TcGlobals) (analyzer: Runt
                 apply body (tyOfExpr g body) tyargs args m)
         | Expr.Lambda(_, _, _, [ _ ], _, _, _), first :: (_ :: _ as rest) when List.forall effectFree rest ->
             let reduced = MakeApplicationAndBetaReduce g (f, fty, [ tyargs ], [ first ], m)
-
-            let rec applyRest expr =
-                match expr with
-                | Expr.Let(binding, body, mLet, _) -> applyRest body |> Option.map (mkLetBind mLet binding)
-                | _ -> apply expr (tyOfExpr g expr) [] rest m
-
-            applyRest reduced
+            apply reduced (tyOfExpr g reduced) [] rest m
         | Expr.Lambda _, _ :: _ -> Some(MakeApplicationAndBetaReduce g (f, fty, [ tyargs ], args, m))
         | _ when not (analyzer.ContainsSuspension f) && List.forall effectFree args -> Some(mkAppsAux g f fty [ tyargs ] args m)
         | _ -> None
@@ -257,7 +263,7 @@ let ReduceRuntimeAsyncReturnedClosureApplications (g: TcGlobals) (analyzer: Runt
                                m) when not args.IsEmpty && analyzer.ContainsSuspension expression -> apply f fty tyargs args m
                     | _ -> None)
             RewriteQuotations = false
-            StackGuard = StackGuard("ReduceRuntimeAsyncReturnedClosureApplications")
+            StackGuard = stackGuard
         }
 
     RewriteExpr rwenv expr
@@ -358,18 +364,22 @@ let private exprNodeCount expr =
 
 /// Replaces each lambda in tail position of a callback construction with an assignment of its branch tag
 /// and captured locals, or returns None if a tail is not a supported single-argument lambda.
-let private tryDefunctionalizeCallback (g: TcGlobals) m construction =
-    let constructionFree = (freeInExpr CollectLocals construction).FreeLocals
+let private tryDefunctionalizeCallback (g: TcGlobals) (stackGuard: StackGuard) m construction =
+    let freeVarOptions = CollectLocalsWithStackGuard()
+    let constructionFree = (freeInExpr freeVarOptions construction).FreeLocals
     let tag, _ = mkMutableCompGenLocal m "runtimeAsyncCallbackTag" g.int32_ty
     let branches = ResizeArray<CallbackBranch>()
     let captures = Dictionary<Stamp, Val * Val>()
 
     let rec defunctionalize expr =
+        stackGuard.Guard(fun () -> defunctionalizeCore expr)
+
+    and defunctionalizeCore expr =
         match expr with
         | Expr.Lambda(_, None, None, [ parameter ], body, m, _)
         | NewDelegateExpr g (_, [ parameter ], body, m, _) ->
             let captured =
-                (freeInExpr CollectLocals body).FreeLocals
+                (freeInExpr freeVarOptions body).FreeLocals
                 |> Zset.elements
                 |> List.filter (fun v -> not (valEq v parameter) && not (Zset.contains v constructionFree))
 
@@ -443,7 +453,7 @@ let private maxInlinedCallbackCopySize = 2000
 
 /// Inlines an invocation of a defunctionalized callback: the argument is bound once, then each branch body
 /// is copied with its parameter and captured locals remapped.
-let private mkCallbackDispatch (g: TcGlobals) (callback: CallbackBranches) arg resultTy m =
+let private mkCallbackDispatch (g: TcGlobals) (stackGuard: StackGuard) (callback: CallbackBranches) arg resultTy m =
     let argVal, _ = mkCompGenLocal m "runtimeAsyncCallbackArg" (tyOfExpr g arg)
 
     let captureRemap =
@@ -467,6 +477,9 @@ let private mkCallbackDispatch (g: TcGlobals) (callback: CallbackBranches) arg r
                 body)
 
     let rec dispatch i branches =
+        stackGuard.Guard(fun () -> dispatchCore i branches)
+
+    and dispatchCore i branches =
         match branches with
         | [ last ] -> branch last
         | first :: rest ->
@@ -478,6 +491,9 @@ let private mkCallbackDispatch (g: TcGlobals) (callback: CallbackBranches) arg r
     mkCompGenLet m argVal arg (dispatch 0 callback.Branches)
 
 let InlineRuntimeAsyncCallback (g: TcGlobals) (analyzer: RuntimeAsyncAnalyzer) runtimeAsyncContext (expr: Expr) =
+    let stackGuard = StackGuard("InlineRuntimeAsyncCallback")
+    let freeVarOptions = CollectLocalsWithStackGuard()
+
     let rec tryDelegateSignature expr =
         match expr with
         | NewDelegateExpr g (_, [ parameter ], body, _, _) -> Some(parameter.Type, tyOfExpr g body)
@@ -496,6 +512,9 @@ let InlineRuntimeAsyncCallback (g: TcGlobals) (analyzer: RuntimeAsyncAnalyzer) r
         | _ -> false
 
     let rec canInlineDelegateConstruction construction =
+        stackGuard.Guard(fun () -> canInlineDelegateConstructionCore construction)
+
+    and canInlineDelegateConstructionCore construction =
         match construction with
         | NewDelegateExpr g (_, [ _ ], _, _, _) -> true
         | RuntimeAsyncDebugWrapper rest -> canInlineDelegateConstruction rest
@@ -510,6 +529,9 @@ let InlineRuntimeAsyncCallback (g: TcGlobals) (analyzer: RuntimeAsyncAnalyzer) r
 
     // Construction moves to the invocation, so its evaluation must not have observable effects.
     let rec inlineDelegateInvoke (invokeRef, invokeTy, tyargs, arg, callRange) construction =
+        stackGuard.Guard(fun () -> inlineDelegateInvokeCore (invokeRef, invokeTy, tyargs, arg, callRange) construction)
+
+    and inlineDelegateInvokeCore (invokeRef, invokeTy, tyargs, arg, callRange) construction =
         match construction with
         | NewDelegateExpr g (_, [ _ ], _, _, _) ->
             Some(MakeFSharpDelegateInvokeAndTryBetaReduce g (invokeRef, construction, invokeTy, tyargs, arg, callRange))
@@ -549,12 +571,10 @@ let InlineRuntimeAsyncCallback (g: TcGlobals) (analyzer: RuntimeAsyncAnalyzer) r
                 PreInterceptBinding = None
                 PostTransform = (fun _ -> None)
                 RewriteQuotations = false
-                StackGuard = StackGuard("InlineRuntimeAsyncDelegateInvocation")
+                StackGuard = stackGuard
             }
 
         RewriteExpr rwenv continuation
-
-    let stackGuard = StackGuard("InlineRuntimeAsyncCallback")
 
     let rec inlineCallbacks expr =
         stackGuard.Guard(fun () -> inlineCallbacksCore expr)
@@ -580,7 +600,7 @@ let InlineRuntimeAsyncCallback (g: TcGlobals) (analyzer: RuntimeAsyncAnalyzer) r
 
             match shape with
             | Some(argTy, resultTy, isDelegate) when canInline && not (isByrefLikeTy g m argTy || isByrefLikeTy g m resultTy) ->
-                let freeVals = (freeInExpr CollectLocals construction).FreeLocals
+                let freeVals = (freeInExpr freeVarOptions construction).FreeLocals
 
                 let canCapture =
                     freeVals
@@ -607,7 +627,7 @@ let InlineRuntimeAsyncCallback (g: TcGlobals) (analyzer: RuntimeAsyncAnalyzer) r
                 let callbackBranches =
                     match callbackUses with
                     | ValueSome invocations when Option.isNone inlined ->
-                        tryDefunctionalizeCallback g m construction
+                        tryDefunctionalizeCallback g stackGuard m construction
                         |> Option.filter (fun branches ->
                             invocations = 0
                             || List.sumBy _.NodeCount branches.Branches
@@ -623,7 +643,15 @@ let InlineRuntimeAsyncCallback (g: TcGlobals) (analyzer: RuntimeAsyncAnalyzer) r
                                 Some(fun rewrite expression ->
                                     match tryCallbackInvocation g callback isDelegate expression with
                                     | ValueSome(struct (arg, callRange)) ->
-                                        Some(mkCallbackDispatch g callbackBranches (rewrite arg) (tyOfExpr g expression) callRange)
+                                        Some(
+                                            mkCallbackDispatch
+                                                g
+                                                stackGuard
+                                                callbackBranches
+                                                (rewrite arg)
+                                                (tyOfExpr g expression)
+                                                callRange
+                                        )
                                     | ValueNone -> None)
                             PreInterceptBinding = None
                             PostTransform = (fun _ -> None)
@@ -703,12 +731,13 @@ let private TryGetRuntimeAsyncNonPreservableAlias (g: TcGlobals) expr =
 
 let private analyzeRuntimeAsyncExpr (g: TcGlobals) expr =
     let cache = Dictionary<Expr, RuntimeAsyncFlowSummary>(HashIdentity.Reference)
+    let stackGuard = StackGuard("AnalyzeRuntimeAsyncFlow")
 
     let rec analyzeExpr expr =
         match cache.TryGetValue expr with
         | true, summary -> summary
         | _ ->
-            let summary = analyzeExprCore expr
+            let summary = stackGuard.Guard(fun () -> analyzeExprCore expr)
             cache[expr] <- summary
             summary
 
@@ -884,6 +913,9 @@ let private analyzeRuntimeAsyncExpr (g: TcGlobals) expr =
             analyzeExpr targetExpr |> removeRuntimeAsyncBoundVals boundVals
 
         let rec analyzeTree tree =
+            stackGuard.Guard(fun () -> analyzeTreeCore tree)
+
+        and analyzeTreeCore tree =
             match tree with
             | TDSuccess(results, targetNum) ->
                 let resultSummary =
