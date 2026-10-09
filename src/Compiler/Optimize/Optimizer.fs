@@ -436,6 +436,8 @@ type cenv =
 
       specializedInlineVals: HashMultiMap<Stamp, TType * Expr>
 
+      forcedInlineVals: Dictionary<Stamp, bool>
+
       signatureHidingInfo: SignatureHidingInfo
     }
 
@@ -621,20 +623,21 @@ let BindTyparsToUnknown (tps: Typar list) env =
 let BindCcu (ccu: CcuThunk) mval env (_g: TcGlobals) = 
     { env with globalModuleInfos=env.globalModuleInfos.Add(ccu.AssemblyName, mval) }
 
-/// Lookup information about values 
-let GetInfoForLocalValue cenv env (v: Val) m = 
-    // Abstract slots do not have values 
-    if v.IsDispatchSlot then UnknownValInfo 
+let TryGetInfoForLocalValue cenv env (v: Val) =
+    if v.IsDispatchSlot then None
     else
         match cenv.localInternalVals.TryGetValue v.Stamp with
-        | true, res -> res
-        | _ ->
-            match env.localExternalVals.TryFind v.Stamp with 
-            | Some vval -> vval
-            | None -> 
-                if v.ShouldInline then
-                    errorR(Error(FSComp.SR.optValueMarkedInlineButWasNotBoundInTheOptEnv(fullDisplayTextOfValRef (mkLocalValRef v)), m))
-                UnknownValInfo 
+        | true, res -> Some res
+        | _ -> env.localExternalVals.TryFind v.Stamp
+
+/// Lookup information about values
+let GetInfoForLocalValue cenv env (v: Val) m =
+    match TryGetInfoForLocalValue cenv env v with
+    | Some vval -> vval
+    | None ->
+        if not v.IsDispatchSlot && v.ShouldInline then
+            errorR(Error(FSComp.SR.optValueMarkedInlineButWasNotBoundInTheOptEnv(fullDisplayTextOfValRef (mkLocalValRef v)), m))
+        UnknownValInfo
 
 let TryGetInfoForCcu env (ccu: CcuThunk) = env.globalModuleInfos.TryFind(ccu.AssemblyName)
 
@@ -2388,11 +2391,53 @@ let shouldForceInlineMembersInDebug (g: TcGlobals) (tcref: EntityRef) =
     | true, modRef -> tyconRefEq g tcref modRef 
     | _ -> false
 
-let shouldForceInlineInDebug (g: TcGlobals) (vref: ValRef) : bool =
+// Resumable templates and their code arguments must remain in the caller's method.
+let rec HasForcedInlineBody cenv env (vref: ValRef) =
+    let stamp = vref.Stamp
+
+    match cenv.forcedInlineVals.TryGetValue stamp with
+    | true, res -> res
+    | _ ->
+        // The expression walk also visits local bindings whose optimization info is not available yet.
+        let info =
+            if vref.IsLocalRef then
+                TryGetInfoForLocalValue cenv env vref.binding
+            else
+                Some(GetInfoForNonLocalVal cenv env vref)
+
+        match info |> Option.map (fun info -> stripValue info.ValExprInfo) with
+        | Some(CurriedLambdaValue (_, _, _, body, _)) ->
+            cenv.forcedInlineVals[stamp] <- false // Break cycles while the body is inspected
+            let res = ExprNeedsForcedInlining cenv env body
+            cenv.forcedInlineVals[stamp] <- res
+            res
+        | _ -> false
+
+and ExprNeedsForcedInlining cenv env expr =
+    let folder =
+        { ExprFolder0 with
+            exprIntercept =
+                fun _ noInterceptF acc expr ->
+                    if acc then true else
+
+                    match expr with
+                    | StructStateMachineExpr cenv.g _ -> true
+                    | Expr.Val (vref, _, _) when vref.ShouldInline -> HasForcedInlineBody cenv env vref
+                    | _ -> noInterceptF acc expr }
+
+    FoldExpr folder false expr
+
+let shouldForceInlineInDebug cenv env (vref: ValRef) : bool =
+    let g = cenv.g
+
     ValHasWellKnownAttribute g WellKnownValAttributes.NoDynamicInvocationAttribute_True vref.Deref ||
     ValHasWellKnownAttribute g WellKnownValAttributes.NoDynamicInvocationAttribute_False vref.Deref ||
 
-    vref.HasDeclaringEntity && shouldForceInlineMembersInDebug g vref.DeclaringEntity
+    (vref.HasDeclaringEntity && shouldForceInlineMembersInDebug g vref.DeclaringEntity) ||
+
+    isReturnsResumableCodeTy g vref.TauType ||
+
+    HasForcedInlineBody cenv env vref
 
 /// Optimize/analyze an expression
 let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
@@ -3148,7 +3193,7 @@ and TryOptimizeVal cenv env (vOpt: ValRef option, shouldInline, inlineIfLambda, 
         Some (remarkExpr m (copyExpr g CloneAllAndMarkExprValsAsCompilerGenerated expr))
 
     | CurriedLambdaValue (_, _, _, expr, _) when
-            shouldInline && (cenv.settings.alwaysInline || Option.exists (shouldForceInlineInDebug cenv.g) vOpt) ||
+            shouldInline && (cenv.settings.alwaysInline || Option.exists (shouldForceInlineInDebug cenv env) vOpt) ||
             inlineIfLambda && cenv.settings.alwaysInline ->
         let fvs = freeInExpr CollectLocals expr
         if usesMethodLocalConstructsOrProtectedField cenv fvs expr then
@@ -3503,7 +3548,7 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
     let g = cenv.g
 
     match cenv.settings.alwaysInline, stripExpr valExpr with
-    | false, Expr.Val(vref, _, _) when vref.ShouldInline && not (shouldForceInlineInDebug cenv.g vref) ->
+    | false, Expr.Val(vref, _, _) when vref.ShouldInline && not (shouldForceInlineInDebug cenv env vref) ->
         let hasNoTraits =
             let tps, _ = tryDestForallTy g vref.Type
             GetTraitConstraintInfosOfTypars g tps |> List.isEmpty
@@ -3538,6 +3583,18 @@ and TryInlineApplication cenv env finfo (valExpr: Expr) (tyargs: TType list, arg
             let f2R = CopyExprForInlining cenv true origLambda m
             let specLambda = MakeApplicationAndBetaReduce g (f2R, origLambdaTy, [tyargs], [], m)
             let specLambdaTy = tyOfExpr g specLambda
+
+            let hasStateMachineTemplate =
+                (false, specLambdaTy)
+                ||> SimplifyTypes.foldTypeButNotConstraints (stripTyEqns g) (fun found ty ->
+                    found ||
+                    (tryTcrefOfAppTy g ty |> ValueOption.exists (tyconRefEq g g.ResumableStateMachine_tcr)))
+
+            // A separate helper loses type parameters of the struct that replaces this template during lowering.
+            if hasStateMachineTemplate then
+                let cenv = { cenv with settings = { cenv.settings with alwaysInline = true } }
+                Some(OptimizeApplication cenv env (valExpr, vref.Type, tyargs, argsR, m))
+            else
 
             // Typars that flow in from the enclosing scope when tyargs are non-concrete. A tyarg can reach
             // only the body, and typars left unabstracted below are erased to 'object'.
@@ -4671,6 +4728,7 @@ let OptimizeImplFile (settings, ccu, tcGlobals, tcVal, importMap, optEnv, isIncr
           stackGuard = StackGuard("OptimizerStackGuardDepth")
           realsig = tcGlobals.realsig
           specializedInlineVals = HashMultiMap(HashIdentity.Structural, true)
+          forcedInlineVals = Dictionary<Stamp, bool>()
           signatureHidingInfo = SignatureHidingInfo.Empty
         }
 

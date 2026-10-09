@@ -1082,19 +1082,20 @@ module internal MemberRepresentation =
     module SimplifyTypes =
 
         // CAREFUL! This function does NOT walk constraints
-        let rec foldTypeButNotConstraints f z ty =
-            let ty = stripTyparEqns ty
+        let rec foldTypeButNotConstraints normalizeType f z ty =
+            let ty = normalizeType ty
             let z = f z ty
 
             match ty with
-            | TType_forall(_, bodyTy) -> foldTypeButNotConstraints f z bodyTy
+            | TType_forall(_, bodyTy) -> foldTypeButNotConstraints normalizeType f z bodyTy
 
             | TType_app(_, tys, _)
             | TType_ucase(_, tys)
             | TType_anon(_, tys)
-            | TType_tuple(_, tys) -> List.fold (foldTypeButNotConstraints f) z tys
+            | TType_tuple(_, tys) -> List.fold (foldTypeButNotConstraints normalizeType f) z tys
 
-            | TType_fun(domainTy, rangeTy, _) -> foldTypeButNotConstraints f (foldTypeButNotConstraints f z domainTy) rangeTy
+            | TType_fun(domainTy, rangeTy, _) ->
+                foldTypeButNotConstraints normalizeType f (foldTypeButNotConstraints normalizeType f z domainTy) rangeTy
 
             | TType_var _ -> z
 
@@ -1109,7 +1110,7 @@ module internal MemberRepresentation =
         let accTyparCounts z ty =
             // Walk type to determine typars and their counts (for pprinting decisions)
             (z, ty)
-            ||> foldTypeButNotConstraints (fun z ty ->
+            ||> foldTypeButNotConstraints stripTyparEqns (fun z ty ->
                 match ty with
                 | TType_var(tp, _) when tp.Rigidity = TyparRigidity.Rigid -> incM tp z
                 | _ -> z)
