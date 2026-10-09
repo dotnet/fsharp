@@ -21,11 +21,10 @@ type internal TypeProviderLock =
 type internal TypeProviderError =
     inherit System.Exception
 
-    /// creates new instance of TypeProviderError that represents one error
     new: (int * RichText) * string * range -> TypeProviderError
-
-    /// creates new instance of TypeProviderError that represents collection of errors
+    new: (int * string) * string * range -> TypeProviderError
     new: int * string * range * seq<RichText> -> TypeProviderError
+    new: int * string * range * seq<string> -> TypeProviderError
 
     member Number: int
 
