@@ -454,35 +454,112 @@ module internal Tokenizer =
         member val ClassifiedSpans = classifiedSpans
         member val SavedTokens = savedTokens
 
+        member data.IsValid(textLine: TextLine, lineContents: string) =
+            data.LineStart = textLine.Start && data.HashCode = lineContents.GetHashCode()
+
         member data.IsValid(textLine: TextLine) =
             data.LineStart = textLine.Start
             && let lineContents = textLine.Text.ToString(textLine.Span) in
                data.HashCode = lineContents.GetHashCode()
 
+    // Shared by concurrent editor operations (classification and symbol lookup), so each entry access
+    // must be thread-safe. A cached line is reused when its text and start lex state match; its start lex
+    // state is trusted to resume a scan only while no edit above it can have changed that state.
+    //
+    // Reads take no lock. Writes and growth are serialized, and a grown array is published only once it
+    // holds every entry of the one it replaces, so a reader sees either array whole. The slots are
+    // `option` rather than `voption` so that each one is written as a single reference and cannot tear.
     type private SourceTextData(approxLines: int) =
-        let data = ResizeArray<SourceLineData option>(approxLines)
+        let sync = obj ()
 
+        [<VolatileField>]
+        let mutable data: SourceLineData option array = Array.zeroCreate (max approxLines 1)
+
+        // Called under `sync` only.
         let extendTo i =
-            if i >= data.Count then
-                data.Capacity <- i + 1
+            let current = data
 
-                for j in data.Count .. i do
-                    data.Add(None)
+            if i < current.Length then
+                current
+            else
+                let grown = Array.zeroCreate (max (i + 1) (current.Length * 2))
+                Array.blit current 0 grown 0 current.Length
+                data <- grown
+                grown
+
+        // The text the entries were last scanned for, a count bumped whenever it changes, and how many leading
+        // lines of it have a start lex state known to hold. Read and written under `sync` only.
+        let mutable text: SourceText voption = ValueNone
+        let mutable generation = 0
+        let mutable trustedLines = 0
 
         member x.Item
             with get (i: int) =
-                extendTo i
-                data.[i]
-            and set (i: int) v =
-                extendTo i
-                data.[i] <- v
+                let current = data
+
+                if i < current.Length then
+                    match current.[i] with
+                    | Some v -> ValueSome v
+                    | None -> ValueNone
+                else
+                    ValueNone
+
+        /// Switches the cache to `current`. Returns the generation to pass back to the members below, and how
+        /// many leading lines have a start lex state that holds for `current`.
+        member x.Enter(current: SourceText) =
+            lock sync (fun () ->
+                match text with
+                | ValueSome known when obj.ReferenceEquals(known, current) -> ()
+                | known ->
+                    // An edit can change the lex state only of the lines below the first line it touches.
+                    trustedLines <-
+                        match known with
+                        | ValueSome known ->
+                            let mutable firstEdit = Int32.MaxValue
+
+                            for change in current.GetChangeRanges known do
+                                firstEdit <- min firstEdit change.Span.Start
+
+                            if firstEdit = Int32.MaxValue then
+                                trustedLines
+                            else
+                                min trustedLines (known.Lines.GetLineFromPosition(firstEdit).LineNumber + 1)
+                        | ValueNone -> 0
+
+                    text <- ValueSome current
+                    generation <- generation + 1
+
+                struct (generation, trustedLines))
+
+        /// Whether `entry`, read at `line`, is still there in `gen`, so its start lex state can resume a scan.
+        member x.CanResumeFrom(line, entry: SourceLineData, gen) =
+            lock sync (fun () ->
+                gen = generation
+                && line < data.Length
+                && (match data.[line] with
+                    | Some cached -> obj.ReferenceEquals(cached, entry)
+                    | None -> false))
+
+        /// Stores `entry` unless the cache has moved on to another text since `gen`.
+        member x.Store(line, entry, gen) =
+            lock sync (fun () ->
+                if gen = generation then
+                    (extendTo line).[line] <- Some entry)
+
+        /// Records that a scan in `gen` has confirmed the start lex state of the first `lineCount` lines.
+        member x.Trust(lineCount, gen) =
+            lock sync (fun () ->
+                if gen = generation then
+                    trustedLines <- max trustedLines lineCount)
 
         member x.ClearFrom(n) =
-            let mutable i = n
+            lock sync (fun () ->
+                let current = data
+                let mutable i = n
 
-            while i < data.Count && data.[i].IsSome do
-                data.[i] <- None
-                i <- i + 1
+                while i < current.Length && current.[i].IsSome do
+                    current.[i] <- None
+                    i <- i + 1)
 
     /// This saves the tokenization data for a file for as long as the DocumentId object is alive.
     /// This seems risky - if one single thing leaks a DocumentId (e.g. stores it in some global table of documents
@@ -513,66 +590,54 @@ module internal Tokenizer =
         let colorMap = Array.create textLine.Span.Length ClassificationTypeNames.Text
         let lineTokenizer = sourceTokenizer.CreateLineTokenizer(lineContents)
         let tokens = ResizeArray<SavedTokenInfo>()
-        let mutable tokenInfoOption = None
         let mutable previousLexState = lexState
 
-        let processToken () =
-            let classificationType =
-                compilerTokenToRoslynToken (tokenInfoOption.Value.ColorClass)
+        let processToken token =
+            let classificationType = compilerTokenToRoslynToken token.ColorClass
 
-            for i = tokenInfoOption.Value.LeftColumn to tokenInfoOption.Value.RightColumn do
+            for i = token.LeftColumn to token.RightColumn do
                 Array.set colorMap i classificationType
 
-            let token = tokenInfoOption.Value
-            let savedToken = SavedTokenInfo.Create token
-
-            tokens.Add savedToken
+            tokens.Add(SavedTokenInfo.Create token)
 
         let scanAndColorNextToken () =
-            let info, nextLexState = lineTokenizer.ScanToken(previousLexState)
-            tokenInfoOption <- info
+            let struct (info, nextLexState) = lineTokenizer.ScanTokenValue(previousLexState)
             previousLexState <- nextLexState
 
             // Apply some hacks to clean up the token stream (we apply more later)
             match info with
-            | Some info when info.Tag = FSharpTokenTag.INT32_DOT_DOT ->
-                tokenInfoOption <-
-                    Some
-                        {
-                            LeftColumn = info.LeftColumn
-                            RightColumn = info.RightColumn - 2
-                            ColorClass = FSharpTokenColorKind.Number
-                            CharClass = FSharpTokenCharKind.Literal
-                            FSharpTokenTriggerClass = info.FSharpTokenTriggerClass
-                            Tag = info.Tag
-                            TokenName = "INT32"
-                            FullMatchedLength = info.FullMatchedLength - 2
-                        }
+            | ValueSome info when info.Tag = FSharpTokenTag.INT32_DOT_DOT ->
+                processToken
+                    {
+                        LeftColumn = info.LeftColumn
+                        RightColumn = info.RightColumn - 2
+                        ColorClass = FSharpTokenColorKind.Number
+                        CharClass = FSharpTokenCharKind.Literal
+                        FSharpTokenTriggerClass = info.FSharpTokenTriggerClass
+                        Tag = info.Tag
+                        TokenName = "INT32"
+                        FullMatchedLength = info.FullMatchedLength - 2
+                    }
 
-                processToken ()
+                processToken
+                    {
+                        LeftColumn = info.RightColumn - 1
+                        RightColumn = info.RightColumn
+                        ColorClass = FSharpTokenColorKind.Operator
+                        CharClass = FSharpTokenCharKind.Operator
+                        FSharpTokenTriggerClass = info.FSharpTokenTriggerClass
+                        Tag = FSharpTokenTag.DOT_DOT
+                        TokenName = "DOT_DOT"
+                        FullMatchedLength = 2
+                    }
 
-                tokenInfoOption <-
-                    Some
-                        {
-                            LeftColumn = info.RightColumn - 1
-                            RightColumn = info.RightColumn
-                            ColorClass = FSharpTokenColorKind.Operator
-                            CharClass = FSharpTokenCharKind.Operator
-                            FSharpTokenTriggerClass = info.FSharpTokenTriggerClass
-                            Tag = FSharpTokenTag.DOT_DOT
-                            TokenName = "DOT_DOT"
-                            FullMatchedLength = 2
-                        }
-
-                processToken ()
-
-            | Some _ -> processToken ()
+            | ValueSome info -> processToken info
             | _ -> ()
 
-        scanAndColorNextToken ()
+            info.IsSome
 
-        while tokenInfoOption.IsSome do
-            scanAndColorNextToken ()
+        while scanAndColorNextToken () do
+            ()
 
         let mutable startPosition = 0
         let mutable endPosition = startPosition
@@ -621,7 +686,7 @@ module internal Tokenizer =
 
     let private getFromRefreshedTokenCache
         (
-            lines: TextLineCollection,
+            sourceText: SourceText,
             startLine: int,
             endLine: int,
             sourceTokenizer: FSharpSourceTokenizer,
@@ -629,23 +694,31 @@ module internal Tokenizer =
             ct: CancellationToken
         ) =
         [
-            // Go backwards to find the last cached scanned line that is valid
-            let scanStartLine =
-                let mutable i = startLine
+            let lines = sourceText.Lines
+            let struct (generation, trustedLines) = sourceTextDataCache.Enter sourceText
 
-                while i > 0
-                      && (match sourceTextDataCache.[i] with
-                          | Some data -> not (data.IsValid(lines.[i]))
-                          | None -> true) do
-                    i <- i - 1
+            // Go backwards to the last valid cached line whose start lex state still holds. A line that only
+            // looks valid can sit below an edit that kept its position but changed its lex state. The entry is
+            // kept rather than read again: a concurrent scan of other text can clear or replace that slot.
+            let struct (scanStartLine, validStart) =
+                let mutable i = min startLine (trustedLines - 1)
+                let mutable found = ValueNone
 
-                i
+                while i > 0 && found.IsNone do
+                    match sourceTextDataCache.[i] with
+                    | ValueSome data when
+                        data.IsValid(lines.[i])
+                        && sourceTextDataCache.CanResumeFrom(i, data, generation)
+                        ->
+                        found <- ValueSome data
+                    | _ -> i <- i - 1
+
+                struct (max i 0, found)
             // Rescan the lines if necessary and report the information
             let mutable lexState =
-                if scanStartLine = 0 then
-                    FSharpTokenizerLexState.Initial
-                else
-                    sourceTextDataCache.[scanStartLine - 1].Value.LexStateAtEndOfLine
+                match validStart with
+                | ValueSome data -> data.LexStateAtStartOfLine
+                | ValueNone -> FSharpTokenizerLexState.Initial
 
             for i = scanStartLine to endLine do
                 ct.ThrowIfCancellationRequested()
@@ -658,11 +731,15 @@ module internal Tokenizer =
                     //   2. the hash codes match
                     //   3. the start-of-line lex states are the same
                     match sourceTextDataCache.[i] with
-                    | Some data when data.IsValid(textLine) && data.LexStateAtStartOfLine.Equals(lexState) -> data
+                    | ValueSome data when
+                        data.IsValid(textLine, lineContents)
+                        && data.LexStateAtStartOfLine.Equals(lexState)
+                        ->
+                        data
                     | _ ->
                         // Otherwise, we recompute
                         let newData = scanSourceLine (sourceTokenizer, textLine, lineContents, lexState)
-                        sourceTextDataCache.[i] <- Some newData
+                        sourceTextDataCache.Store(i, newData, generation)
                         newData
 
                 lexState <- lineData.LexStateAtEndOfLine
@@ -670,13 +747,15 @@ module internal Tokenizer =
                 if i >= startLine then
                     yield lineData, lineContents
 
+            sourceTextDataCache.Trust(endLine + 1, generation)
+
             // If necessary, invalidate all subsequent lines after endLine
             if endLine < lines.Count - 1 then
                 match sourceTextDataCache.[endLine + 1] with
-                | Some data ->
+                | ValueSome data ->
                     if not (data.LexStateAtStartOfLine.Equals(lexState)) then
                         sourceTextDataCache.ClearFrom(endLine + 1)
-                | None -> ()
+                | ValueNone -> ()
         ]
 
     /// Generates a list of Classified Spans for tokens which undergo syntactic classification (i.e., are not typechecked).
@@ -702,7 +781,7 @@ module internal Tokenizer =
             let endLine = lines.GetLineFromPosition(textSpan.End).LineNumber
 
             let lineDataResults =
-                getFromRefreshedTokenCache (lines, startLine, endLine, sourceTokenizer, sourceTextData, cancellationToken)
+                getFromRefreshedTokenCache (sourceText, startLine, endLine, sourceTokenizer, sourceTextData, cancellationToken)
 
             for lineData, _ in lineDataResults do
                 for token in lineData.ClassifiedSpans do
@@ -844,14 +923,10 @@ module internal Tokenizer =
                 | SymbolLookupKind.Precise -> 0
                 | SymbolLookupKind.Greedy -> 1
 
-            [
-                for x in draftTokens do
-                    if
-                        x.LeftColumn <= linePos.Character
-                        && (x.RightColumn + rightColumnCorrection) >= linePos.Character
-                    then
-                        yield x
-            ]
+            draftTokens
+            |> List.filter (fun x ->
+                x.LeftColumn <= linePos.Character
+                && (x.RightColumn + rightColumnCorrection) >= linePos.Character)
 
         // Select IDENT token. If failed, select OPERATOR token.
         let symbol =
@@ -912,7 +987,7 @@ module internal Tokenizer =
         let lineNo = textLinePos.Line
 
         let lineData, contents =
-            getFromRefreshedTokenCache (sourceText.Lines, lineNo, lineNo, sourceTokenizer, sourceTextData, cancellationToken)
+            getFromRefreshedTokenCache (sourceText, lineNo, lineNo, sourceTokenizer, sourceTextData, cancellationToken)
             |> List.exactlyOne
 
         lineData, textLinePos, contents
@@ -1024,6 +1099,9 @@ module internal Tokenizer =
         else
             false
 
+    let private forbiddenSymbolNameChars =
+        [| '.'; '+'; '$'; '&'; '['; ']'; '/'; '\\'; '*'; '"' |]
+
     let isValidNameForSymbol (lexerSymbolKind: LexerSymbolKind, symbol: FSharpSymbol, name: string) : bool =
 
         let inline isIdentifier (ident: string) =
@@ -1042,11 +1120,9 @@ module internal Tokenizer =
             not (String.IsNullOrEmpty s)
             && FSharpKeywords.NormalizeIdentifierBackticks s |> isIdentifier
 
-        let forbiddenChars = [| '.'; '+'; '$'; '&'; '['; ']'; '/'; '\\'; '*'; '\"' |]
-
         let inline isTypeNameIdent (s: string) =
             not (String.IsNullOrEmpty s)
-            && s.IndexOfAny forbiddenChars = -1
+            && s.IndexOfAny forbiddenSymbolNameChars = -1
             && isFixableIdentifier s
 
         let inline isUnionCaseIdent (s: string) =
