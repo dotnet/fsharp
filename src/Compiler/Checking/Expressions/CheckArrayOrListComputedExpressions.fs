@@ -9,8 +9,6 @@ open FSharp.Compiler.CheckExpressionsOps
 open FSharp.Compiler.CheckExpressions
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.TypedTreeOps
-open FSharp.Compiler.Features
-open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.CheckSequenceExpressions
 
@@ -56,61 +54,49 @@ let TcArrayOrListComputedExpression (cenv: TcFileState) env (overallTy: OverallT
         match comp with
         | SimpleSemicolonSequence cenv false elems ->
             let replacementExpr =
-                if isArray then
-                    // This are to improve parsing/processing speed for parser tables by converting to an array blob ASAP
-                    let nelems = elems.Length
-
-                    if
-                        nelems > 0
-                        && List.forall
-                            (function
-                            | SynExpr.Const(SynConst.UInt16 _, _) -> true
-                            | _ -> false)
-                            elems
-                    then
-                        SynExpr.Const(
-                            SynConst.UInt16s(
-                                Array.ofList (
-                                    List.map
-                                        (function
-                                        | SynExpr.Const(SynConst.UInt16 x, _) -> x
-                                        | _ -> failwith "unreachable")
-                                        elems
-                                )
+                // This are to improve parsing/processing speed for parser tables by converting to an array blob ASAP
+                match isArray, elems with
+                | true, _ :: _ when
+                    List.forall
+                        (function
+                        | SynExpr.Const(SynConst.UInt16 _, _) -> true
+                        | _ -> false)
+                        elems
+                    ->
+                    SynExpr.Const(
+                        SynConst.UInt16s(
+                            Array.ofList (
+                                List.map
+                                    (function
+                                    | SynExpr.Const(SynConst.UInt16 x, _) -> x
+                                    | _ -> failwith "unreachable")
+                                    elems
+                            )
+                        ),
+                        m
+                    )
+                | true, _ :: _ when
+                    List.forall
+                        (function
+                        | SynExpr.Const(SynConst.Byte _, _) -> true
+                        | _ -> false)
+                        elems
+                    ->
+                    SynExpr.Const(
+                        SynConst.Bytes(
+                            Array.ofList (
+                                List.map
+                                    (function
+                                    | SynExpr.Const(SynConst.Byte x, _) -> x
+                                    | _ -> failwith "unreachable")
+                                    elems
                             ),
+                            SynByteStringKind.Regular,
                             m
-                        )
-                    elif
-                        nelems > 0
-                        && List.forall
-                            (function
-                            | SynExpr.Const(SynConst.Byte _, _) -> true
-                            | _ -> false)
-                            elems
-                    then
-                        SynExpr.Const(
-                            SynConst.Bytes(
-                                Array.ofList (
-                                    List.map
-                                        (function
-                                        | SynExpr.Const(SynConst.Byte x, _) -> x
-                                        | _ -> failwith "unreachable")
-                                        elems
-                                ),
-                                SynByteStringKind.Regular,
-                                m
-                            ),
-                            m
-                        )
-                    else
-                        SynExpr.ArrayOrList(isArray, elems, m)
-                else if cenv.g.langVersion.SupportsFeature(LanguageFeature.ReallyLongLists) then
-                    SynExpr.ArrayOrList(isArray, elems, m)
-                else
-                    if elems.Length > 500 then
-                        error (Error(FSComp.SR.tcListLiteralMaxSize (), m))
-
-                    SynExpr.ArrayOrList(isArray, elems, m)
+                        ),
+                        m
+                    )
+                | _ -> SynExpr.ArrayOrList(isArray, elems, m)
 
             TcExprUndelayed cenv overallTy env tpenv replacementExpr
         | _ ->

@@ -6,6 +6,7 @@ open FSharp.Test
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Symbols
+open FSharp.Compiler.Text
 open FSharp.Compiler.Tokenization
 
 [<Fact>]
@@ -143,6 +144,43 @@ let ``Fsx.Bug5073`` () =
 [<FactForDESKTOP>]
 let ``Fsx.HashR_QuickInfo.BugDefaultReferenceFileIsAlsoResolved`` () =
     assertReferenceTooltipContains "System.dll" (markAtEndOfMarker "#r \"System\" " "#r \"Syst")
+
+[<Theory>]
+[<InlineData(0, false)>]
+[<InlineData(4, true)>]
+[<InlineData(80, false)>]
+let ``Reference tooltip survives script closure collection and eviction`` (otherScripts: int, collect: bool) =
+    let checker = FSharpChecker.Create(projectCacheSize = 1)
+    let fileName () = System.IO.Path.Combine(System.IO.Path.GetTempPath(), Guid.NewGuid().ToString("N") + ".fsx")
+    let file = fileName ()
+    let source = SourceText.ofString "#r \"System\"\nlet value = 1"
+    let options, _ = checker.GetProjectOptionsFromScript(file, source) |> Async.RunSynchronously
+    let options =
+        { options with
+            SourceFiles = Array.copy options.SourceFiles
+            OtherOptions = Array.copy options.OtherOptions }
+
+    for _ in 1 .. otherScripts do
+        checker.GetProjectOptionsFromScript(fileName (), SourceText.ofString "let other = 1")
+        |> Async.RunSynchronously
+        |> ignore
+
+    if collect then
+        GC.Collect()
+        GC.WaitForPendingFinalizers()
+        GC.Collect()
+
+    let checkTooltip () =
+        let _, result = checker.ParseAndCheckFileInProject(file, 0, source, options) |> Async.RunSynchronously
+        match result with
+        | FSharpCheckFileAnswer.Aborted -> failwith "Script checking was aborted"
+        | FSharpCheckFileAnswer.Succeeded results ->
+            let tooltip = results.GetToolTip(1, 8, "#r \"System\"", [], FSharpTokenTag.String) |> foldToolTip
+            Assert.Contains("System.dll", tooltip)
+
+    checkTooltip ()
+    checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
+    checkTooltip ()
 
 [<FactForDESKTOP>]
 let ``Fsx.HashR_QuickInfo.DoubleReference`` () =
