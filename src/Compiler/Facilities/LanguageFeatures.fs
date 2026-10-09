@@ -19,7 +19,6 @@ type LanguageFeature =
     | FromEndSlicing
     | RuntimeAsync
     | WitnessPassing
-    | ExpandedMeasurables
     | NullnessChecking
     | UnionIsPropertiesVisible
     | CSharpExtensionAttributeNotRequired
@@ -111,9 +110,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
             [
                 // F# 5.0
                 LanguageFeature.WitnessPassing, languageVersion50
-
-                // F# 6.0
-                LanguageFeature.ExpandedMeasurables, languageVersion60
 
                 // F# 8.0
                 LanguageFeature.CSharpExtensionAttributeNotRequired, languageVersion80
@@ -272,7 +268,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
         | LanguageFeature.NullnessChecking -> FSComp.SR.featureNullnessChecking ()
         | LanguageFeature.RuntimeAsync -> FSComp.SR.featureRuntimeAsync ()
         | LanguageFeature.WitnessPassing -> FSComp.SR.featureWitnessPassing ()
-        | LanguageFeature.ExpandedMeasurables -> FSComp.SR.featureExpandedMeasurables ()
         | LanguageFeature.UnionIsPropertiesVisible -> FSComp.SR.featureUnionIsPropertiesVisible ()
         | LanguageFeature.CSharpExtensionAttributeNotRequired -> FSComp.SR.featureCSharpExtensionAttributeNotRequired ()
         | LanguageFeature.WarningWhenCopyAndUpdateRecordChangesAllFields ->

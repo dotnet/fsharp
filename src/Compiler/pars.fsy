@@ -5126,7 +5126,8 @@ withPatternClauses:
 
 patternAndGuard:
   | parenPattern patternGuard
-      { $1, $2 }
+      { let mWhen, guard = $2
+        $1, mWhen, guard }
 
 patternClauses:
   | patternAndGuard patternResult %prec prec_pat_pat_action
@@ -5164,37 +5165,37 @@ patternClauses:
      { mkMatchClausesRecoverMissingResult $1 "patternClauses2" None None None None }
 
   | parenPattern WHEN patternResult %prec prec_recover
-     { let patternAndGuard = $1, None
-       let mWhen = rhs parseState 2
+     { let mWhen = rhs parseState 2
+       let patternAndGuard = $1, Some mWhen, None
        reportParseErrorAt mWhen (FSComp.SR.parsExpectingExpression ())
        mkMatchClauses patternAndGuard $3 None None None }
 
   | parenPattern WHEN %prec prec_recover
-     { let patternAndGuard = $1, None
-       let mWhen = rhs parseState 2
+     { let mWhen = rhs parseState 2
+       let patternAndGuard = $1, Some mWhen, None
        reportParseErrorAt mWhen (FSComp.SR.parsExpectingExpression ())
        mkMatchClausesRecoverMissingResult patternAndGuard "patternClauses3" (Some mWhen) None None None }
 
   | parenPattern WHEN barCanBeRightBeforeNull patternClauses %prec prec_recover
-     { let patternAndGuard = $1, None
-       let mWhen = rhs parseState 2
+     { let mWhen = rhs parseState 2
+       let patternAndGuard = $1, Some mWhen, None
        reportParseErrorAt mWhen (FSComp.SR.parsExpectingExpression ())
        let mNextBar = rhs parseState 3 |> Some
        mkMatchClausesRecoverMissingResult patternAndGuard "patternClauses4" (Some mWhen) mNextBar (Some $4) None }
 
   | parenPattern WHEN barCanBeRightBeforeNull %prec prec_recover
-     { let patternAndGuard = $1, None
-       let mWhen = rhs parseState 2
+     { let mWhen = rhs parseState 2
+       let patternAndGuard = $1, Some mWhen, None
        reportParseErrorAt mWhen (FSComp.SR.parsExpectingExpression ())
        let mLast = rhs parseState 3 |> Some
        mkMatchClausesRecoverMissingResult patternAndGuard "patternClauses5" (Some mWhen) None None mLast }
 
 patternGuard:
   | WHEN declExpr
-     { Some $2 }
+     { Some(rhs parseState 1), Some $2 }
 
   | /* EMPTY */
-     { None }
+     { None, None }
 
 patternResult:
   | RARROW typedSequentialExprBlockR

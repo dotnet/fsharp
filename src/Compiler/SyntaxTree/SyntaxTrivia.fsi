@@ -213,6 +213,9 @@ type SynMatchClauseTrivia =
 
         /// The syntax range of the `|` token.
         BarRange: range option
+
+        /// The syntax range of the `when` keyword.
+        WhenKeyword: range option
     }
 
     static member Zero: SynMatchClauseTrivia

@@ -15,7 +15,8 @@ ImplFile
                         { BarRange = (2,12--2,13) }), None,
                      Const (Unit, (2,22--2,24)), (2,2--2,24), Yes,
                      { ArrowRange = Some (2,19--2,21)
-                       BarRange = Some (2,0--2,1) })], (1,0--2,24),
+                       BarRange = Some (2,0--2,1)
+                       WhenKeyword = None })], (1,0--2,24),
                  { MatchKeyword = (1,0--1,5)
                    WithKeyword = (1,8--1,12) }), (1,0--2,24))], PreXmlDocEmpty,
           [], None, (1,0--3,0), { LeadingKeyword = None })], (true, true),

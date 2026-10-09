@@ -14,10 +14,11 @@ ImplFile
                           [Named (SynIdent (bar, None), false, None, (3,6--3,9))],
                         None, (3,2--3,9)), None, Const (Unit, (3,13--3,15)),
                      (3,2--3,15), Yes, { ArrowRange = Some (3,10--3,12)
-                                         BarRange = Some (3,0--3,1) })],
-                 (2,0--3,15), { MatchKeyword = (2,0--2,5)
-                                WithKeyword = (2,10--2,14) }), (2,0--3,15))],
-          PreXmlDocEmpty, [], None, (2,0--4,0), { LeadingKeyword = None })],
-      (true, true), { ConditionalDirectives = []
-                      WarnDirectives = []
-                      CodeComments = [] }, set []))
+                                         BarRange = Some (3,0--3,1)
+                                         WhenKeyword = None })], (2,0--3,15),
+                 { MatchKeyword = (2,0--2,5)
+                   WithKeyword = (2,10--2,14) }), (2,0--3,15))], PreXmlDocEmpty,
+          [], None, (2,0--4,0), { LeadingKeyword = None })], (true, true),
+      { ConditionalDirectives = []
+        WarnDirectives = []
+        CodeComments = [] }, set []))

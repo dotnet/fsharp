@@ -372,11 +372,6 @@
         <target state="new">error (rather than warning) when an enforced compiler-semantic attribute is present in the .fs but missing from the .fsi</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureExpandedMeasurables">
-        <source>more types support units of measure</source>
-        <target state="translated">другие типы поддерживают единицы измерения</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureExtensionConstraintSolutions">
         <source>Allow extension members to participate in SRTP constraint resolution</source>
         <target state="new">Allow extension members to participate in SRTP constraint resolution</target>
