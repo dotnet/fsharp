@@ -8,7 +8,6 @@ module internal FSharp.Compiler.Features
 type LanguageFeature =
     | FromEndSlicing
     | RuntimeAsync
-    | WitnessPassing
     | ExpandedMeasurables
     | NullnessChecking
     | UnionIsPropertiesVisible

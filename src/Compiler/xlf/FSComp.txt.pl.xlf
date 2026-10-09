@@ -562,11 +562,6 @@
         <target state="translated">Zgłasza ostrzeżenia, gdy znaleziono wiele dopasowań typów rekordów podczas rozpoznawania nazw z powodu nakładających się nazw pól.</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureWitnessPassing">
-        <source>witness passing for trait constraints in F# quotations</source>
-        <target state="translated">monitor, który przekazuje ograniczenia cech języka F#</target>
-        <note />
-      </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongTypeTuple">
         <source>All branches of a pattern match expression must return values implicitly convertible to the type of the first branch, which here is a tuple of length {0} of type\n    {1}    \nThis branch returns a tuple of length {2} of type\n    {3}    \n</source>
         <target state="translated">Wszystkie gałęzie wyrażenia dopasowania wzorca muszą zwracać wartości niejawnie konwertowalne na typ pierwszej gałęzi, oto krotka o długości {0} typu\n    {1}    \nTa Gałąź zwraca krotki o długości {2} typu\n    {3}    \n</target>
