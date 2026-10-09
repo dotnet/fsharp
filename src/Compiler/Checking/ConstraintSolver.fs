@@ -64,6 +64,7 @@ open FSharp.Compiler.Syntax
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.TraitConstraintScope
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
@@ -294,6 +295,8 @@ type ConstraintSolverState =
       /// The function used to freshen values we encounter during trait constraint solving
       TcVal: TcValF
 
+      StackGuard: StackGuard
+
       /// This table stores all unsolved, ungeneralized trait constraints, indexed by free type variable.
       /// That is, there will be one entry in this table for each free type variable in
       /// each outstanding, unsolved, ungeneralized trait constraint. Constraints are removed from the table and resolved
@@ -312,24 +315,20 @@ type ConstraintSolverState =
 
       WarnWhenUsingWithoutNullOnAWithNullTarget: string option
 
-      /// RFC FS-1043: the CCU currently being compiled, used to scope the optimizer-replay cache of
-      /// extension-member solutions to built-in-operator SRTP constraints. None on codegen/approx paths
-      /// that never record solutions.
-      CompilingCcu: CcuThunk option
     }
 
-    static member New(g, amap, infoReader, tcVal, compilingCcu) =
+    static member New(g, amap, infoReader, tcVal) =
         { g = g
           amap = amap
           ExtraCxs = HashMultiMap(10, HashIdentity.Structural)
           InfoReader = infoReader
           TcVal = tcVal
+          StackGuard = StackGuard("ConstraintSolver")
           PostInferenceChecksPreDefaults = ResizeArray()
           PostInferenceChecksFinal = ResizeArray()
           UnionsWithDeferredAttributes = Set.empty
           DeferredUnionNullnessChecks = []
-          WarnWhenUsingWithoutNullOnAWithNullTarget = None
-          CompilingCcu = compilingCcu }
+          WarnWhenUsingWithoutNullOnAWithNullTarget = None }
 
     member this.PushPostInferenceCheck (preDefaults, check) =
         if preDefaults then
@@ -545,25 +544,26 @@ type OptionalTrace =
 
     member t.CollectThenUndoOrCommit predicate f =
         let newTrace = Trace.New()
-        let res = f newTrace
-        match predicate res, t with
-        | false, _           -> newTrace.Undo()
-        | true, WithTrace t -> t.actions <- newTrace.actions @ t.actions
-        | true, NoTrace     -> ()
-        res
+        let mutable committed = false
+        try
+            let res = f newTrace
+            if predicate res then
+                match t with
+                | WithTrace t -> t.actions <- newTrace.actions @ t.actions
+                | NoTrace -> ()
+                committed <- true
+            res
+        finally
+            if not committed then
+                newTrace.Undo()
 
 let CollectThenUndo f =
-    let trace = Trace.New()
-    let res = f trace
-    trace.Undo()
-    res
+    NoTrace.CollectThenUndoOrCommit (fun _ -> false) f
 
 let FilterEachThenUndo f meths =
     meths
     |> List.choose (fun calledMeth ->
-        let trace = Trace.New()
-        let res = f trace calledMeth
-        trace.Undo()
+        let struct(trace, res) = CollectThenUndo (fun trace -> struct(trace, f trace calledMeth))
         match CheckNoErrorsAndGetWarnings res with
         | None -> None
         | Some (warns, res) -> Some (calledMeth, warns, trace, res))
@@ -997,70 +997,35 @@ let CheckWarnIfRigid (csenv: ConstraintSolverEnv) ty1 (r: Typar) ty =
     else
         CompleteD
 
-/// RFC FS-1043: encode a list of fully-concrete nominal types as a stable, injective sequence of tycon
-/// stamps and arities. Returns None on any free type variable or non-app shape at any depth, so
-/// polymorphic/exotic constraints fall back to file-global resolution instead of an instantiation-blind
-/// match between type-checking and optimization. Shared by the sink key and the solution identity.
-let private tryEncodeConcreteTypesForExtOperatorKey (g: TcGlobals) tys =
-    let rec tryEncode ty (acc: int64 list) =
-        match stripTyEqnsAndMeasureEqns g ty with
-        | TType_app(tcref, tinst, _) ->
-            let acc = int64 tinst.Length :: tcref.Stamp :: acc
-            (Some acc, tinst) ||> List.fold (fun st ty -> match st with Some a -> tryEncode ty a | None -> None)
-        | _ -> None
-    (Some [], tys) ||> List.fold (fun st ty -> match st with Some a -> tryEncode ty a | None -> None)
+let private TryGetSelectedTraitSolution g (traitInfo: TraitConstraintInfo) =
+    // Stripping type equations would discard the application's selected constraint cells.
+    traitInfo.SupportTypes
+    |> List.tryPick (function
+        | TType_var(tp, _) ->
+            tp.Constraints
+            |> List.tryPick (function
+                | TyparConstraint.MayResolveMember(selected, _) when
+                    traitsAEquiv g TypeEquivEnv.EmptyIgnoreNulls traitInfo selected ->
+                    selected.Solution
+                | _ -> None)
+        | _ -> None)
 
-/// RFC FS-1043: solution-identity used to detect when two *different* extension members (or the same
-/// member at a different instantiation) are recorded for one key across call sites, which must disable
-/// optimizer replay. Includes the method instantiation so any instantiation difference degrades to a
-/// safe fallback rather than a wrong replay. ValueNone for non-method solutions, which are never recorded.
-let private ExtensionOperatorSolutionIdentity g sln =
-    let instTag minst =
-        match tryEncodeConcreteTypesForExtOperatorKey g minst with
-        | Some ks -> String.concat "," (List.map string ks)
-        | None -> "poly"
-    match sln with
-    | FSMethSln(_, vref, minst, _) -> ValueSome("F:" + string vref.Stamp + "@" + instTag minst)
-    | ILMethSln(_, _, ilMethodRef, minst, _) ->
-        ValueSome("I:" + ilMethodRef.DeclaringTypeRef.BasicQualifiedName + "::" + ilMethodRef.Name + "@" + instTag minst)
-    | _ -> ValueNone
-
-/// RFC FS-1043: key for the compilation-scoped extension-operator solution sink, or None when the
-/// operator name is not a logical operator or any support/argument/return type is not fully concrete.
-/// The encoding records each nominal type's tycon stamp and arity recursively so different
-/// instantiations (e.g. list<int> vs list<string>) produce different keys, and bails to None on any
-/// free type variable or non-app shape at any depth — such shapes safely fall back to file-global
-/// resolution rather than risk an instantiation-blind match between type-checking and optimization.
-let TryComputeExtensionOperatorSolutionKey (g: TcGlobals) (traitInfo: TraitConstraintInfo) =
-    let nm = traitInfo.MemberLogicalName
-    if not (IsLogicalOpName nm) then None
+let GetTraitConstraintForCodegen (g: TcGlobals) (traitInfo: TraitConstraintInfo) =
+    if traitInfo.Solution.IsSome || traitInfo.TraitContext.IsSome ||
+       not (g.langVersion.SupportsFeature LanguageFeature.ExtensionConstraintSolutions) then
+        traitInfo
     else
-        // Encode the argument types together with the return type, so operators that differ only by a
-        // return-type-determined instantiation (e.g. -> ResizeArray<int> vs -> ResizeArray<string>) get
-        // distinct keys and each site records and replays its own correct instantiation.
-        let argAndRetTys =
-            match traitInfo.CompiledReturnType with
-            | Some retTy -> traitInfo.CompiledObjectAndArgumentTypes @ [ retTy ]
-            | None -> traitInfo.CompiledObjectAndArgumentTypes
-        // Canonicalize the support types exactly as SolveMemberConstraint does before recording
-        // (ListSet.setify over type-equivalence). A binary operator constraint like (^T1 or ^T2 : ...)
-        // whose operands unify to one concrete type has support [T; T] at the inlined trait node but is
-        // deduplicated to [T] during checking. Without matching that here the record key ([T]) and the
-        // optimizer replay key ([T; T]) never match, the recorded scope-aware solution is lost, and the
-        // built-in operator falls back to its throwing dynamic stub (NotSupportedException at runtime).
-        let supportTys = ListSet.setify (typeAEquiv g TypeEquivEnv.EmptyIgnoreNulls) traitInfo.SupportTypes
-        match tryEncodeConcreteTypesForExtOperatorKey g supportTys,
-              tryEncodeConcreteTypesForExtOperatorKey g argAndRetTys with
-        | Some supportKey, Some argRetKey -> Some(struct (nm, supportKey, argRetKey))
-        | _ -> None
+        match TryGetSelectedTraitSolution g traitInfo with
+        | None -> traitInfo
+        | Some solution ->
+            let traitInfo = traitInfo.CloneWithFreshSolution()
+            traitInfo.Solution <- Some solution
+            traitInfo
 
-/// RFC FS-1043: retrieve the checker's unambiguous extension-member solution recorded for a built-in
-/// operator SRTP constraint (used by the optimizer to honor scope-aware resolution across the inline
-/// boundary), or None when there is no unique recorded solution.
-let TryGetRecordedExtensionOperatorSolution (g: TcGlobals) (compilingCcu: CcuThunk) (traitInfo: TraitConstraintInfo) (m: range) : TraitConstraintSln option =
-    match TryComputeExtensionOperatorSolutionKey g traitInfo with
-    | Some key -> g.TryGetExtensionOperatorSolution(compilingCcu, key, m)
-    | None -> None
+let private IsTraitMethodOnSupportType g (traitInfo: TraitConstraintInfo) (minfo: MethInfo) =
+    let tcref = tcrefOfAppTy g minfo.ApparentEnclosingType
+    traitInfo.SupportTypes
+    |> List.exists (tryTcrefOfAppTy g >> ValueOption.exists (tyconRefEq g tcref))
 
 /// Add the constraint "ty1 = ty" to the constraint problem, where ty1 is a type variable.
 /// Propagate all effects of adding this constraint, e.g. to solve other variables
@@ -1804,6 +1769,10 @@ and SolveDimensionlessNumericType (csenv: ConstraintSolverEnv) ndeep m2 trace ty
 ///
 /// 2. Some additional solutions are forced prior to generalization (permitWeakResolution= Yes or YesDuringCodeGen). See above
 and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload permitWeakResolution ndeep m2 trace traitInfo : OperationResult<bool> =
+    csenv.SolverState.StackGuard.Guard(fun () ->
+        SolveMemberConstraintImpl csenv ignoreUnresolvedOverload permitWeakResolution ndeep m2 trace traitInfo)
+
+and SolveMemberConstraintImpl (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload permitWeakResolution ndeep m2 trace traitInfo : OperationResult<bool> =
     trackErrors {
         let (TTrait(supportTys, nm, memFlags, traitObjAndArgTys, retTy, source, sln, traitCtxt)) = traitInfo
         // Do not re-solve if already solved
@@ -1854,14 +1823,16 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
 
             let argTys = if memFlags.IsInstance then List.tail traitObjAndArgTys else traitObjAndArgTys
 
-            let minfos = GetRelevantMethodsForTrait csenv permitWeakResolution nm traitInfo
-
-            // Exclude extensions from built-in rules (primitives take precedence)
-            let intrinsicMinfos =
-                if extensionsEnabled then
-                    minfos |> List.filter (fun (_, minfo) -> not minfo.IsExtensionMember)
-                else
-                    minfos
+            let struct (intrinsicMinfos, minfos) = GetRelevantMethodsForTrait csenv permitWeakResolution nm traitInfo
+            let arithmeticMinfos =
+                match minfos, argTys with
+                | _ :: _, [argTy1; argTy2]
+                    when extensionsEnabled &&
+                         (IsRelationalType g argTy1 || IsIntegerOrIntegerEnumTy g argTy1 ||
+                          IsRelationalType g argTy2 || IsIntegerOrIntegerEnumTy g argTy2) &&
+                         TypesFeasiblyEquivStripMeasures g amap m argTy1 argTy2 ->
+                    intrinsicMinfos
+                | _ -> minfos
 
             let! res =
                 trackErrors {
@@ -1900,10 +1871,10 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
                                     //   - Neither type contributes any methods OR
                                     //   - We have the special case "decimal<_> * decimal". In this case we have some
                                     //     possibly-relevant methods from "decimal" but we ignore them in this case.
-                                    (isNil minfos || (Option.isSome (getMeasureOfType g argTy1) && isDecimalTy g argTy2)) &&
+                                    (isNil arithmeticMinfos || (Option.isSome (getMeasureOfType g argTy1) && isDecimalTy g argTy2)) &&
                                     // Skip built-in rule for concrete non-numeric types when traitCtxt=None (inlined from FSharp.Core)
                                     (not extensionsEnabled ||
-                                     not (isNil minfos) ||
+                                     not (isNil arithmeticMinfos) ||
                                      isTyparTy g argTy2 || IsNumericOrIntegralEnumType g argTy2) in
 
                                 checkRuleAppliesInPreferenceToMethods argTy1 argTy2 ||
@@ -1933,7 +1904,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
 
                     | _, _, false, ("op_Addition" | "op_Subtraction" | "op_Modulus"), [argTy1;argTy2]
                         when // Ignore any explicit +/- overloads from any basic integral types
-                            (minfos |> List.forall (fun (_, minfo) -> isIntegerTy g minfo.ApparentEnclosingType ) &&
+                            (arithmeticMinfos |> List.forall (fun (_, minfo) -> isIntegerTy g minfo.ApparentEnclosingType ) &&
                                 (   IsAddSubModType nm g argTy1 && IsBinaryOpOtherArgType g permitWeakResolution argTy2
                                 || IsAddSubModType nm g argTy2 && IsBinaryOpOtherArgType g permitWeakResolution argTy1)) ->
                         do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace argTy2 argTy1
@@ -1942,7 +1913,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
 
                     | _, _, false, ("op_LessThan" | "op_LessThanOrEqual" | "op_GreaterThan" | "op_GreaterThanOrEqual" | "op_Equality" | "op_Inequality" ), [argTy1;argTy2]
                         when // Ignore any explicit overloads from any basic integral types
-                            (minfos |> List.forall (fun (_, minfo) -> isIntegerTy g minfo.ApparentEnclosingType ) &&
+                            (arithmeticMinfos |> List.forall (fun (_, minfo) -> isIntegerTy g minfo.ApparentEnclosingType ) &&
                                 (   IsRelationalType g argTy1 && IsBinaryOpOtherArgType g permitWeakResolution argTy2
                                 || IsRelationalType g argTy2 && IsBinaryOpOtherArgType g permitWeakResolution argTy1)) ->
                         do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace argTy2 argTy1
@@ -2323,14 +2294,6 @@ and RecordMemberConstraintSolution css m trace traitInfo traitConstraintSln =
 
     | TTraitSolved (minfo, minst, staticTyOpt) ->
         let sln = MemberConstraintSolutionOfMethInfo css m minfo minst staticTyOpt
-        // RFC FS-1043: when an in-scope extension member solves a built-in operator constraint at a
-        // concrete call site, record the scope-aware decision so the optimizer can honor it after the
-        // trait context is lost across FSharp.Core's inline-operator boundary.
-        if minfo.IsExtensionMember && css.g.langVersion.SupportsFeature LanguageFeature.ExtensionConstraintSolutions then
-            match css.CompilingCcu, TryComputeExtensionOperatorSolutionKey css.g traitInfo, ExtensionOperatorSolutionIdentity css.g sln with
-            | Some compilingCcu, Some key, ValueSome identity ->
-                css.g.RecordExtensionOperatorSolution(compilingCcu, key, m, identity, sln)
-            | _ -> ()
         TransactMemberConstraintSolution traitInfo trace sln
         ResultD true
 
@@ -2414,7 +2377,8 @@ and TransactMemberConstraintSolution traitInfo (trace: OptionalTrace) sln  =
 
 /// Only consider overload resolution if canonicalizing or all the types are now nominal.
 /// That is, don't perform resolution if more nominal information may influence the set of available overloads
-and GetRelevantMethodsForTrait (csenv: ConstraintSolverEnv) (permitWeakResolution: PermitWeakResolution) nm traitInfo : (TType * MethInfo) list =
+and GetRelevantMethodsForTrait (csenv: ConstraintSolverEnv) (permitWeakResolution: PermitWeakResolution) nm traitInfo
+    : struct ((TType * MethInfo) list * (TType * MethInfo) list) =
     let results =
         if permitWeakResolution.Permit || MemberConstraintSupportIsReadyForDeterminingOverloads csenv traitInfo then
             let m = csenv.m
@@ -2465,14 +2429,16 @@ and GetRelevantMethodsForTrait (csenv: ConstraintSolverEnv) (permitWeakResolutio
                 else
                     []
 
-            minfos @ extMinfos
+            struct (minfos, [ yield! minfos; yield! extMinfos ])
         else
-            []
+            struct ([], [])
 
     // The trait name "op_Explicit" also covers "op_Implicit", so look for that one too.
     if nm = "op_Explicit" then
         let traitInfo2 = traitInfo.WithMemberName "op_Implicit"
-        results @ GetRelevantMethodsForTrait csenv permitWeakResolution "op_Implicit" traitInfo2
+        let struct (intrinsicMinfos, minfos) = results
+        let struct (implicitIntrinsicMinfos, implicitMinfos) = GetRelevantMethodsForTrait csenv permitWeakResolution "op_Implicit" traitInfo2
+        struct ([ yield! intrinsicMinfos; yield! implicitIntrinsicMinfos ], [ yield! minfos; yield! implicitMinfos ])
     else
         results
 
@@ -4457,25 +4423,24 @@ let ApplyTyparDefaultAtPriority denv css priority (tp: Typar) =
         | _ -> ())
 
 let CreateCodegenState tcVal g amap =
-    { g = g
-      amap = amap
-      TcVal = tcVal
-      ExtraCxs = HashMultiMap(10, HashIdentity.Structural)
-      InfoReader = InfoReader(g, amap)
-      PostInferenceChecksPreDefaults = ResizeArray()
-      PostInferenceChecksFinal = ResizeArray()
-      UnionsWithDeferredAttributes = Set.empty
-      DeferredUnionNullnessChecks = []
-      WarnWhenUsingWithoutNullOnAWithNullTarget = None
-      CompilingCcu = None }
+    ConstraintSolverState.New(g, amap, InfoReader(g, amap), tcVal)
+
+let SolveMemberConstraintForCodegen tcVal g amap m (traitInfo: TraitConstraintInfo) =
+    match traitInfo.Solution with
+    | Some _ -> ResultD true
+    | None ->
+        let css = CreateCodegenState tcVal g amap
+        let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m (DisplayEnv.Empty g)
+        // Failed probes must not persist provisional solutions in generic inline bodies.
+        NoTrace.CollectThenUndoOrCommit
+            (fun (res: OperationResult<_>) -> res.IsOkResult)
+            (fun trace -> SolveMemberConstraint csenv true PermitWeakResolution.Yes 0 m (WithTrace trace) traitInfo)
 
 /// Determine if a codegen witness for a trait will require witness args to be available, e.g. in generic code
 let CodegenWitnessExprForTraitConstraintWillRequireWitnessArgs tcVal g amap m (traitInfo:TraitConstraintInfo) =
+    let traitInfo = GetTraitConstraintForCodegen g traitInfo
     trackErrors {
-        let css = CreateCodegenState tcVal g amap
-        let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m (DisplayEnv.Empty g)
-
-        let! _res = SolveMemberConstraint csenv true PermitWeakResolution.Yes 0 m NoTrace traitInfo
+        let! _res = SolveMemberConstraintForCodegen tcVal g amap m traitInfo
 
         let res =
             match traitInfo.Solution with
@@ -4487,31 +4452,40 @@ let CodegenWitnessExprForTraitConstraintWillRequireWitnessArgs tcVal g amap m (t
 
 /// Generate a witness expression if none is otherwise available, e.g. in legacy non-witness-passing code
 let CodegenWitnessExprForTraitConstraint tcVal g amap m (traitInfo:TraitConstraintInfo) argExprs =
+    let traitInfo = GetTraitConstraintForCodegen g traitInfo
     trackErrors {
-        let css = CreateCodegenState tcVal g amap
-        let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m (DisplayEnv.Empty g)
-        let! _res = SolveMemberConstraint csenv true PermitWeakResolution.Yes 0 m NoTrace traitInfo
+        let! _res = SolveMemberConstraintForCodegen tcVal g amap m traitInfo
         return GenWitnessExpr amap g m traitInfo argExprs
     }
 
 /// Generate the lambda argument passed for a use of a generic construct that accepts trait witnesses
-let CodegenWitnessesForTyparInst tcVal g amap m typars tyargs =
+let CodegenWitnessesForTyparInstWith tcVal g amap m typars tyargs f =
     trackErrors {
         let css = CreateCodegenState tcVal g amap
         let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m (DisplayEnv.Empty g)
-        // traitCtxtNone: codegen witness generation — constraints already resolved at this point (audited for RFC FS-1043)
         let ftps, _renaming, tinst = FreshenTypeInst g traitCtxtNone m typars
         let traitInfos = GetTraitConstraintInfosOfTypars g ftps
+        if not traitInfos.IsEmpty && g.langVersion.SupportsFeature LanguageFeature.ExtensionConstraintSolutions then
+            let actualInst = mkTyparInst ftps tyargs
+            for tp in ftps do
+                for cx in tp.Constraints do
+                    match cx with
+                    | TyparConstraint.MayResolveMember(traitInfo, _) when traitInfo.Solution.IsNone ->
+                        // Unification strips the actual type arguments' call-owned constraint cells.
+                        traitInfo.Solution <- TryGetSelectedTraitSolution g (instTrait actualInst traitInfo)
+                    | _ -> ()
         let! _res = SolveTyparsEqualTypesAux csenv 0 m NoTrace tinst tyargs
-        return GenWitnessArgs amap g m traitInfos
+        return [ for traitInfo in traitInfos -> f traitInfo (GenWitnessExprLambda amap g m traitInfo) ]
     }
+
+let CodegenWitnessesForTyparInst tcVal g amap m typars tyargs =
+    CodegenWitnessesForTyparInstWith tcVal g amap m typars tyargs (fun _ -> id)
 
 /// Generate the lambda argument passed for a use of a generic construct that accepts trait witnesses
 let CodegenWitnessArgForTraitConstraint tcVal g amap m traitInfo =
+    let traitInfo = GetTraitConstraintForCodegen g traitInfo
     trackErrors {
-        let css = CreateCodegenState tcVal g amap
-        let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m (DisplayEnv.Empty g)
-        let! _res = SolveMemberConstraint csenv true PermitWeakResolution.Yes 0 m NoTrace traitInfo
+        let! _res = SolveMemberConstraintForCodegen tcVal g amap m traitInfo
         return GenWitnessExprLambda amap g m traitInfo
     }
 
@@ -4606,30 +4580,33 @@ let CanonicalizePartialInferenceProblemForExtensions css denv m tps =
 
 /// Create an ITraitContext from the expression tree contents of implementation files.
 let CreateImplFileTraitContext (g: TcGlobals) (implFileContents: ModuleOrNamespaceContents list) (earlierSignatures: ModuleOrNamespaceType list) (referencedCcus: CcuThunk list) : TraitContext =
-    let extensionVals =
+    let nenv =
         lazy
-            (let result = HashMultiMap<Stamp, ValRef>(10, HashIdentity.Structural)
+            (let mutable indexed = TyconRefMultiMap<ExtensionMember>.Empty
+             let mutable operators = Map.empty
+             let collectVal (vref: ValRef) =
+                 let v = vref.Deref
+                 if v.MemberInfo.IsSome then
+                     let tcref = v.MemberInfo.Value.ApparentEnclosingEntity
+                     if v.IsExtensionMember then
+                         indexed <- indexed.Add(tcref, FSExtMem(vref, 0UL))
+                     elif not v.IsInstanceMember && IsLogicalOpName v.LogicalName then
+                         let minfo = FSMeth(g, generalizedTyconRef g tcref, vref, None)
+                         operators <- NameMultiMap.add v.LogicalName minfo operators
 
              for contents in implFileContents do
                  for v in allValsOfModDef contents do
-                     if v.IsExtensionMember && v.MemberInfo.IsSome then
-                         let vref = mkLocalValRef v
-                         let tcref = v.MemberInfo.Value.ApparentEnclosingEntity
-                         result.Add(tcref.Stamp, vref)
+                     collectVal (mkLocalValRef v)
 
              let rec collectFromModuleOrNamespaceType (mty: ModuleOrNamespaceType) =
                  for v in mty.AllValsAndMembers do
-                     if v.IsExtensionMember && v.MemberInfo.IsSome && v.HasDeclaringEntity then
-                         let vref = mkNestedValRef v.DeclaringEntity v
-                         let tcref = v.MemberInfo.Value.ApparentEnclosingEntity
-                         result.Add(tcref.Stamp, vref)
+                     if v.HasDeclaringEntity then
+                         collectVal (mkNestedValRef v.DeclaringEntity v)
                  for entity in mty.AllEntities do
                      if entity.IsModuleOrNamespace then
                          collectFromModuleOrNamespaceType entity.ModuleOrNamespaceType
 
-             // Earlier same-assembly files contribute their signature vals — the same val identity
-             // that later files see in scope during code generation — so trait witnesses reference
-             // the val IlxGen binds, mirroring the referenced-assembly path below.
+             // Cross-file witnesses must use the signature values that IlxGen binds.
              for signature in earlierSignatures do
                  collectFromModuleOrNamespaceType signature
 
@@ -4637,82 +4614,16 @@ let CreateImplFileTraitContext (g: TcGlobals) (implFileContents: ModuleOrNamespa
                  try collectFromModuleOrNamespaceType ccu.Contents.ModuleOrNamespaceType
                  with RecoverableException _ -> ()
 
-             result)
-
-    // Collect static operator methods from all types (not just extension members).
-    // These are needed for 'open type' SRTP resolution where operators are intrinsic
-    // members of a helper type, not extension members of the target type.
-    let staticOperatorsByName =
-        lazy
-            (let result = HashMultiMap<string, TyconRef * ValRef>(10, HashIdentity.Structural)
-
-             for contents in implFileContents do
-                 for v in allValsOfModDef contents do
-                     if v.MemberInfo.IsSome && not v.IsInstanceMember && not v.IsExtensionMember && IsLogicalOpName v.LogicalName then
-                         let vref = mkLocalValRef v
-                         let tcref = v.MemberInfo.Value.ApparentEnclosingEntity
-                         result.Add(v.LogicalName, (tcref, vref))
-
-             let rec collectFromModuleOrNamespaceType (mty: ModuleOrNamespaceType) =
-                 for v in mty.AllValsAndMembers do
-                     if v.MemberInfo.IsSome && not v.IsInstanceMember && not v.IsExtensionMember && v.HasDeclaringEntity && IsLogicalOpName v.LogicalName then
-                         let vref = mkNestedValRef v.DeclaringEntity v
-                         let tcref = v.MemberInfo.Value.ApparentEnclosingEntity
-                         result.Add(v.LogicalName, (tcref, vref))
-                 for entity in mty.AllEntities do
-                     if entity.IsModuleOrNamespace then
-                         collectFromModuleOrNamespaceType entity.ModuleOrNamespaceType
-
-             for signature in earlierSignatures do
-                 collectFromModuleOrNamespaceType signature
-
-             for ccu in referencedCcus do
-                 try collectFromModuleOrNamespaceType ccu.Contents.ModuleOrNamespaceType
-                 with RecoverableException _ -> ()
-
-             result)
-
-    { new TraitContext with
-        member _.SelectExtensionMethods(traitInfo, _m, _infoReader) =
-            let nm = traitInfo.MemberLogicalName
-
-            let extResults =
-                [ for supportTy in traitInfo.SupportTypes do
-                      match tryTcrefOfAppTy g supportTy with
-                      | ValueSome tcref ->
-                          for vref in extensionVals.Value.FindAll(tcref.Stamp) do
-                              if vref.LogicalName = nm then
-                                  let minfo = MethInfo.FSMeth(g, supportTy, vref, None)
-                                  yield (supportTy, minfo)
-                      | _ -> () ]
-
-            // For operator names, also search static operator methods on all types.
-            // Skip operators whose enclosing type is already a support type — those are
-            // found as intrinsic members by GetIntrinsicMethInfosOfType and must not be
-            // duplicated here, because returning them as "extension" candidates changes
-            // resolution priority (extensions beat intrinsics for SRTP).
-            let opResults =
-                if IsLogicalOpName nm then
-                    match traitInfo.SupportTypes with
-                    | firstSupportTy :: _ ->
-                        [ for (tcref, vref) in staticOperatorsByName.Value.FindAll(nm) do
-                              let isOnSupportType =
-                                  traitInfo.SupportTypes
-                                  |> List.exists (fun sty ->
-                                      match tryTcrefOfAppTy g sty with
-                                      | ValueSome stcref -> tyconRefEq g tcref stcref
-                                      | _ -> false)
-
-                              if not isOnSupportType then
-                                  let enclosingTy = generalizedTyconRef g tcref
-                                  let minfo = MethInfo.FSMeth(g, enclosingTy, vref, None)
-                                  yield (firstSupportTy, minfo) ]
-                    | [] -> []
-                else []
-
-            extResults @ opResults
-
-        member _.AccessRights = AccessibleFromEverywhere }
+             { NameResolutionEnv.Empty g with
+                 eIndexedExtensionMembers = indexed
+                 eOpenedTypeOperators = operators })
+    let selectExtensionMethods (traitInfo, m, nenv, infoReader) =
+        SelectExtensionMethInfosForTrait(traitInfo, m, nenv, infoReader)
+        |> List.filter (fun (_, minfo) ->
+            minfo.IsExtensionMember ||
+            // The fallback must not expose explicit interface implementations as ordinary operators.
+            not (IsTraitMethodOnSupportType g traitInfo minfo))
+    CreateTraitContext selectExtensionMethods nenv AccessibleFromEverywhere
 
 /// An approximation used during name resolution for intellisense to eliminate extension members which will not
 /// apply to a particular object argument. This is given as the isApplicableMeth argument to the partial name resolution
@@ -4722,17 +4633,7 @@ let IsApplicableMethApprox g amap m (minfo: MethInfo) availObjTy =
     // If it's an instance method, then try to match the object argument against the required object argument
     if minfo.IsExtensionMember then
         let css =
-            { g = g
-              amap = amap
-              TcVal = (fun _ -> failwith "should not be called")
-              ExtraCxs = HashMultiMap(10, HashIdentity.Structural)
-              InfoReader = InfoReader(g, amap)
-              PostInferenceChecksPreDefaults = ResizeArray()
-              PostInferenceChecksFinal = ResizeArray()
-              UnionsWithDeferredAttributes = Set.empty
-              DeferredUnionNullnessChecks = []
-              WarnWhenUsingWithoutNullOnAWithNullTarget = None
-              CompilingCcu = None }
+            ConstraintSolverState.New(g, amap, InfoReader(g, amap), (fun _ -> failwith "should not be called"))
         let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m (DisplayEnv.Empty g)
         let minst = FreshenMethInfo g traitCtxtNone m minfo
         match minfo.GetObjArgTypes(amap, m, minst) with

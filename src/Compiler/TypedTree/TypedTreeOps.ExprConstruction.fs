@@ -580,6 +580,9 @@ module internal TypedTreeCollections =
         member m.Add(v, x) =
             TyconRefMultiMap<'T>(contents.Add v (x :: m.Find v))
 
+        member _.Remap(remapStamp, mapping) =
+            TyconRefMultiMap(contents.Map(remapStamp, List.map mapping))
+
         static member Empty = TyconRefMultiMap<'T>(TyconRefMap<_>.Empty)
 
         static member OfList vs =
