@@ -688,22 +688,19 @@ and TcPatLongIdentUnionCaseOrExnCase warnOnUpper cenv env ad vFlags patEnv ty (m
 
     let mkf, argTys, argNames = ApplyUnionCaseOrExn m cenv env ty item
     let numArgTys = argTys.Length
-    let warnOnUnionWithNoData =
-        g.langVersion.SupportsFeature(LanguageFeature.MatchNotAllowedForUnionCaseWithNoData)
 
     let args, extraPatternsFromNames =
         match args with
         | SynArgPats.Pats args ->
-            if warnOnUnionWithNoData then
-                match args with
-                | [ SynPat.Wild _ ] when argNames.IsEmpty  ->
-                    // Here we only care about the cases where the user has written the wildcard pattern explicitly
-                    // | Case _ -> ...
-                    // let myDiscardedArgFunc(Case _) = ..."""
-                    // This needs to be a warning because it was a valid pattern in version 7.0 and earlier and we don't want to break existing code.
-                    // The rest of the cases will still be reported as FS0725
-                    warning(Error(FSComp.SR.matchNotAllowedForUnionCaseWithNoData(), m))
-                | _ -> ()
+            match args with
+            | [ SynPat.Wild _ ] when argNames.IsEmpty  ->
+                // Here we only care about the cases where the user has written the wildcard pattern explicitly
+                // | Case _ -> ...
+                // let myDiscardedArgFunc(Case _) = ..."""
+                // This needs to be a warning because it was a valid pattern in version 7.0 and earlier and we don't want to break existing code.
+                // The rest of the cases will still be reported as FS0725
+                warning(Error(FSComp.SR.matchNotAllowedForUnionCaseWithNoData(), m))
+            | _ -> ()
             args, []
         | SynArgPats.NamePatPairs (pairs, m, _) ->
             // rewrite patterns from the form (name-N = pat-N; ...) to (..._, pat-N, _...)

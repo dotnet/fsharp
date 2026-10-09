@@ -13,11 +13,9 @@ type LanguageFeature =
     | NullnessChecking
     | UnionIsPropertiesVisible
     | AttributesToRightOfModuleKeyword
-    | MatchNotAllowedForUnionCaseWithNoData
     | CSharpExtensionAttributeNotRequired
     | WarningWhenCopyAndUpdateRecordChangesAllFields
     | WarningWhenMultipleRecdTypeChoice
-    | WarningWhenTailRecAttributeButNonTailRecUsage
     | UnmanagedConstraintCsharpInterop
     | ReuseSameFieldsInStructUnions
     /// RFC-1137

@@ -332,11 +332,6 @@
         <target state="translated">Consentire l'attributo estensione implicito per i tipi dichiarabili, i moduli</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureChkNotTailRecursive">
-        <source>Raises warnings if a member or function has the 'TailCall' attribute, but is not being used in a tail recursive way.</source>
-        <target state="translated">Genera un avviso se un membro o una funzione ha l'attributo "TailCall", ma non è in uso in modo ricorsivo finale.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureChkTailCallAttrOnNonRec">
         <source>Raises warnings if the 'TailCall' attribute is used on non-recursive functions.</source>
         <target state="translated">Genera avvisi se l'attributo 'TailCall' viene utilizzato in funzioni non ricorsive.</target>
@@ -420,11 +415,6 @@
       <trans-unit id="featureLowerSimpleMappingsInComprehensionsToFastLoops">
         <source>Lowers [for x in xs -&gt; f x] and [|for x in xs -&gt; f x|] to fast loops when xs is a list or an array, respectively.</source>
         <target state="new">Lowers [for x in xs -&gt; f x] and [|for x in xs -&gt; f x|] to fast loops when xs is a list or an array, respectively.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureMatchNotAllowedForUnionCaseWithNoData">
-        <source>Pattern match discard is not allowed for union case that takes no data.</source>
-        <target state="translated">L'eliminazione della corrispondenza dei criteri non è consentita per case di unione che non accetta dati.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureMoreConcreteTiebreaker">
