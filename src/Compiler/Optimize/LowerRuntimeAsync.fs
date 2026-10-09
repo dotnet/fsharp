@@ -3,7 +3,6 @@
 module internal FSharp.Compiler.LowerRuntimeAsync
 
 open System.Collections.Concurrent
-open System.Collections.Generic
 
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
@@ -44,239 +43,36 @@ let private tryCallbackInvocation (g: TcGlobals) (callback: Val) isDelegate expr
         ValueSome(struct (arg, m))
     | _ -> ValueNone
 
-let private tryAnalyzeCallbackUses g callback isDelegate continuation =
+let private canRewriteCallbackUses g callback isDelegate continuation =
     let folder =
         { ExprFolder0 with
             exprIntercept =
-                fun recurse noIntercept uses expression ->
-                    match uses with
-                    | ValueNone -> ValueNone
-                    | ValueSome count ->
+                fun recurse noIntercept valid expression ->
+                    if not valid then
+                        false
+                    else
                         match tryCallbackInvocation g callback isDelegate expression with
-                        | ValueSome(struct (arg, _)) -> recurse (ValueSome(count + 1)) arg
+                        | ValueSome(struct (arg, _)) -> recurse true arg
                         | ValueNone ->
                             match expression with
-                            | Expr.Val(vref, _, _) when valEq callback vref.Deref -> ValueNone
+                            | Expr.Val(vref, _, _) when valEq callback vref.Deref -> false
                             | Expr.Quote(_, dataCell, _, _, _) ->
                                 if isQuotationUsing callback expression then
-                                    ValueNone
+                                    false
                                 else
                                     match dataCell.Value with
                                     | Some((_, _, args, _), (_, _, legacyArgs, _)) ->
-                                        List.fold recurse (List.fold recurse uses args) legacyArgs
-                                    | None -> uses
-                            | _ -> noIntercept uses expression
+                                        List.fold recurse (List.fold recurse true args) legacyArgs
+                                    | None -> true
+                            | _ -> noIntercept true expression
         }
 
-    FoldExpr folder (ValueSome 0) continuation
-
-type private CallbackBranch =
-    {
-        Parameter: Val
-        Body: Expr
-        Captures: Val list
-        NodeCount: int
-    }
-
-/// A callback construction whose branches select one of several lambdas. The construction runs once
-/// and records the selected branch and the values it captures; each invocation dispatches on the branch.
-type private CallbackBranches =
-    {
-        Construction: Expr
-        Tag: Val
-        Branches: CallbackBranch list
-        Captures: (Val * Val) list
-    }
-
-/// A captured mutable keeps a single shared home: its binding becomes an assignment to the hoisted local and
-/// every other use is redirected to it, so writes made by the inlined callback stay visible to other closures.
-/// Returns None if a captured mutable is not bound by a let in the construction.
-let private tryShareMutableCallbackCaptures (g: TcGlobals) (mutableCaptures: (Val * Val) list) construction =
-    if mutableCaptures.IsEmpty then
-        Some construction
-    else
-        let hoistedOf =
-            ValMap.OfList(mutableCaptures |> List.map (fun (v, hoisted) -> v, mkLocalValRef hoisted))
-
-        let rewritten = HashSet<Stamp>()
-
-        let rwenv =
-            {
-                PreIntercept =
-                    Some(fun rewrite expression ->
-                        match expression with
-                        | Expr.Let(TBind(v, rhs, point), body, m, _) when hoistedOf.ContainsVal v ->
-                            rewritten.Add v.Stamp |> ignore
-                            let assignment = mkValSet m hoistedOf[v] (rewrite rhs)
-
-                            let assignment =
-                                match point with
-                                | DebugPointAtBinding.Yes point -> mkDebugPoint point assignment
-                                | _ -> assignment
-
-                            let body = rewrite body
-
-                            let body =
-                                if v.IsCompilerGenerated then
-                                    body
-                                else
-                                    Expr.Op(TOp.DebugLocalScope(hoistedOf[v], v.LogicalName), [], [ body ], m)
-
-                            Some(mkCompGenSequential m assignment body)
-                        | _ -> None)
-                PreInterceptBinding = None
-                PostTransform = (fun _ -> None)
-                RewriteQuotations = false
-                StackGuard = StackGuard("RewriteRuntimeAsyncMutableCaptures")
-            }
-
-        let construction = RewriteExpr rwenv construction
-
-        if rewritten.Count = mutableCaptures.Length then
-            Some(remapExpr g CloneAll { emptyRemap with valRemap = hoistedOf } construction)
-        else
-            None
-
-let private exprNodeCount expr =
-    let folder =
-        { ExprFolder0 with
-            exprIntercept = fun _ noInterceptF count expr -> noInterceptF (count + 1) expr
-        }
-
-    FoldExpr folder 0 expr
-
-/// Replaces each lambda in tail position of a callback construction with an assignment of its branch tag
-/// and captured locals, or returns None if a tail is not a supported single-argument lambda.
-let private tryDefunctionalizeCallback (g: TcGlobals) (stackGuard: StackGuard) m construction =
-    let freeVarOptions = CollectLocalsWithStackGuard()
-    let constructionFree = (freeInExpr freeVarOptions construction).FreeLocals
-    let tag, _ = mkMutableCompGenLocal m "runtimeAsyncCallbackTag" g.int32_ty
-    let branches = ResizeArray<CallbackBranch>()
-    let captures = Dictionary<Stamp, Val * Val>()
-
-    let rec defunctionalize expr =
-        stackGuard.Guard(fun () -> defunctionalizeCore expr)
-
-    and defunctionalizeCore expr =
-        match expr with
-        | Expr.Lambda(_, None, None, [ parameter ], body, m, _)
-        | NewDelegateExpr g (_, [ parameter ], body, m, _) ->
-            let captured =
-                (freeInExpr freeVarOptions body).FreeLocals
-                |> Zset.elements
-                |> List.filter (fun v -> not (valEq v parameter) && not (Zset.contains v constructionFree))
-
-            if
-                captured
-                |> List.exists (fun v -> v.IsPinning || isByrefTy g v.Type || isByrefLikeTy g m v.Type)
-            then
-                None
-            else
-                let assignments =
-                    captured
-                    |> List.map (fun v ->
-                        let _, hoisted =
-                            match captures.TryGetValue v.Stamp with
-                            | true, capture -> capture
-                            | _ ->
-                                let hoisted =
-                                    if v.IsMutable then
-                                        let hoisted = Construct.NewModifiedVal id v
-                                        hoisted.SetIsCompilerGenerated true
-                                        hoisted
-                                    else
-                                        fst (mkMutableCompGenLocal m v.LogicalName v.Type)
-
-                                let capture = v, hoisted
-                                captures[v.Stamp] <- capture
-                                capture
-
-                        if v.IsMutable then
-                            None
-                        else
-                            Some(mkValSet m (mkLocalValRef hoisted) (exprForVal m v)))
-                    |> List.choose id
-
-                let select = mkValSet m (mkLocalValRef tag) (mkInt32 g m branches.Count)
-
-                branches.Add
-                    {
-                        Parameter = parameter
-                        Body = body
-                        Captures = captured
-                        NodeCount = exprNodeCount body
-                    }
-
-                Some(List.foldBack (mkCompGenSequential m) assignments select)
-        | RuntimeAsyncDebugWrapper body -> defunctionalize body |> Option.map (RebuildRuntimeAsyncDebugWrapper expr)
-        | Expr.Sequential(first, rest, NormalSeq, m) ->
-            defunctionalize rest
-            |> Option.map (fun rest -> Expr.Sequential(first, rest, NormalSeq, m))
-        | Expr.Let(binding, rest, m, _) -> defunctionalize rest |> Option.map (mkLetBind m binding)
-        | Expr.Match(point, matchRange, tree, targets, m, _) ->
-            TryMapRuntimeAsyncMatchTargets g (point, matchRange, tree, targets, m) (fun _ -> defunctionalize)
-        | _ -> None
-
-    defunctionalize construction
-    |> Option.bind (fun construction ->
-        let captures = List.ofSeq captures.Values
-
-        tryShareMutableCallbackCaptures g (captures |> List.filter (fun (v, _) -> v.IsMutable)) construction
-        |> Option.map (fun construction ->
-            {
-                Construction = construction
-                Tag = tag
-                Branches = List.ofSeq branches
-                Captures = captures
-            }))
-
-/// Every invocation copies every branch body, so the rewrite is skipped when the copies would exceed this many
-/// expression nodes; the callback then stays a closure and a suspension left in it is reported as FS3918.
-let private maxInlinedCallbackCopySize = 2000
-
-/// Inlines an invocation of a defunctionalized callback: the argument is bound once, then each branch body
-/// is copied with its parameter and captured locals remapped.
-let private mkCallbackDispatch (g: TcGlobals) (stackGuard: StackGuard) (callback: CallbackBranches) arg resultTy m =
-    let argVal, _ = mkCompGenLocal m "runtimeAsyncCallbackArg" (tyOfExpr g arg)
-
-    let captureRemap =
-        callback.Captures
-        |> List.map (fun (v, hoisted) -> v, mkLocalValRef hoisted)
-        |> ValMap.OfList
-
-    let branch branch =
-        let remap =
-            { emptyRemap with
-                valRemap = captureRemap.Add branch.Parameter (mkLocalValRef argVal)
-            }
-
-        let body = remapExpr g CloneAll remap branch.Body
-
-        (branch.Captures, body)
-        ||> List.foldBack (fun v body ->
-            if v.IsMutable && not v.IsCompilerGenerated then
-                Expr.Op(TOp.DebugLocalScope(captureRemap[v], v.LogicalName), [], [ body ], m)
-            else
-                body)
-
-    let rec dispatch i branches =
-        stackGuard.Guard(fun () -> dispatchCore i branches)
-
-    and dispatchCore i branches =
-        match branches with
-        | [ last ] -> branch last
-        | first :: rest ->
-            let isSelected = mkILAsmCeq g m (exprForVal m callback.Tag) (mkInt32 g m i)
-
-            mkCond DebugPointAtBinding.NoneAtInvisible m resultTy isSelected (branch first) (dispatch (i + 1) rest)
-        | [] -> failwith "unreachable: callback without branches"
-
-    mkCompGenLet m argVal arg (dispatch 0 callback.Branches)
+    FoldExpr folder true continuation
 
 let rec private tryDelegateSignature g expr =
     match expr with
     | NewDelegateExpr g (_, [ parameter ], body, _, _) -> Some(parameter.Type, tyOfExpr g body)
-    | RuntimeAsyncDebugWrapper rest
+    | Expr.DebugPoint(_, rest)
     | Expr.Sequential(_, rest, NormalSeq, _)
     | Expr.Let(_, rest, _, _) -> tryDelegateSignature g rest
     | Expr.Match(_, _, _, targets, _, _) when targets.Length > 0 ->
@@ -284,8 +80,50 @@ let rec private tryDelegateSignature g expr =
         tryDelegateSignature g body
     | _ -> None
 
+let private awaitFragment (g: TcGlobals) amap resultTy invocation m =
+    let awaiterTy = mkWoNullAppTy g.runtimeAsyncFragmentAwaiter_tcref [ resultTy ]
+    let infoReader = InfoReader(g, amap)
+
+    let constructor =
+        match GetIntrinsicConstructorInfosOfType infoReader m awaiterTy with
+        | [ constructor ] -> constructor
+        | _ -> error (InternalError("runtime-async fragment awaiter constructor not found", m))
+
+    let awaiter, awaiterExpr = mkCompGenLocal m "runtimeAsyncFragmentAwaiter" awaiterTy
+    let createAwaiter = MakeMethInfoCall amap m constructor [] [ invocation ] None
+
+    let awaitRef =
+        mkILMethRef (
+            g.FindSysILTypeRef "System.Runtime.CompilerServices.AsyncHelpers",
+            ILCallingConv.Static,
+            "AwaitAwaiter",
+            1,
+            [ mkILTyvarTy 0us ],
+            ILType.Void
+        )
+
+    let suspend =
+        Expr.Op(TOp.ILCall(false, false, false, false, NormalValUse, false, false, awaitRef, [], [ awaiterTy ], []), [], [ awaiterExpr ], m)
+
+    let callAwaiterMember name =
+        let methodInfo =
+            match TryFindIntrinsicMethInfo infoReader m AccessorDomain.AccessibleFromEverywhere name awaiterTy with
+            | [ methodInfo ] -> methodInfo
+            | _ -> error (InternalError($"runtime-async fragment awaiter {name} not found", m))
+
+        let wrap, address, _, _ =
+            mkExprAddrOfExpr g true false NeverMutates awaiterExpr None m
+
+        MakeMethInfoCall amap m methodInfo [] [ address ] None |> wrap
+
+    let suspend =
+        mkCond DebugPointAtBinding.NoneAtInvisible m g.unit_ty (callAwaiterMember "get_IsCompleted") (mkUnit g m) suspend
+
+    let result = callAwaiterMember "GetResult"
+    mkCompGenLet m awaiter createAwaiter (mkCompGenSequential m suspend result)
+
 let private outlineCallback (g: TcGlobals) amap optimizeExpr (analyzer: RuntimeAsyncAnalyzer) runtimeAsyncContext expr =
-    let stackGuard = StackGuard("OutlineRuntimeAsyncCallbackPrototype")
+    let stackGuard = StackGuard("OutlineRuntimeAsyncCallback")
     let freeVarOptions = CollectLocalsWithStackGuard()
 
     let rec outlineBranches resultTy expr =
@@ -296,14 +134,12 @@ let private outlineCallback (g: TcGlobals) amap optimizeExpr (analyzer: RuntimeA
                 let helper = g.cgh__runtimeAsyncOutline_vref
                 let callback = mkLambda m parameter (body, resultTy)
 
-                let outlined =
-                    primMkApp (exprForValRef m helper, helper.Type) [ parameter.Type; resultTy ] [ callback ] m
-                    |> optimizeExpr true
-
-                Some outlined
-            | RuntimeAsyncDebugWrapper body ->
+                primMkApp (exprForValRef m helper, helper.Type) [ parameter.Type; resultTy ] [ callback ] m
+                |> optimizeExpr true
+                |> Some
+            | Expr.DebugPoint(point, body) ->
                 outlineBranches resultTy body
-                |> Option.map (RebuildRuntimeAsyncDebugWrapper expr)
+                |> Option.map (fun body -> Expr.DebugPoint(point, body))
             | Expr.Sequential(first, rest, NormalSeq, m) ->
                 outlineBranches resultTy rest
                 |> Option.map (fun rest -> Expr.Sequential(first, rest, NormalSeq, m))
@@ -338,14 +174,12 @@ let private outlineCallback (g: TcGlobals) amap optimizeExpr (analyzer: RuntimeA
                         (freeInExpr freeVarOptions construction).FreeLocals
                         |> Zset.forall (fun v -> not v.IsPinning && not (isByrefTy g v.Type || isByrefLikeTy g m v.Type))
 
-                    match
-                        if canCapture then
-                            tryAnalyzeCallbackUses g callback isDelegate continuation
-                        else
-                            ValueNone
-                    with
-                    | ValueNone -> keep construction
-                    | ValueSome _ ->
+                    if
+                        not canCapture
+                        || not (canRewriteCallbackUses g callback isDelegate continuation)
+                    then
+                        keep construction
+                    else
                         let construction = outline construction
 
                         match outlineBranches resultTy construction with
@@ -364,86 +198,7 @@ let private outlineCallback (g: TcGlobals) amap optimizeExpr (analyzer: RuntimeA
                                                     let invocation =
                                                         mkApps g ((outlinedExpr, callbackTy), [], [ rewrite arg ], callRange)
 
-                                                    let awaiterTy = mkWoNullAppTy g.runtimeAsyncFragmentAwaiter_tcref [ resultTy ]
-                                                    let infoReader = InfoReader(g, amap)
-
-                                                    let constructor =
-                                                        match GetIntrinsicConstructorInfosOfType infoReader callRange awaiterTy with
-                                                        | [ constructor ] -> constructor
-                                                        | _ ->
-                                                            error (
-                                                                InternalError(
-                                                                    "runtime-async fragment awaiter constructor not found",
-                                                                    callRange
-                                                                )
-                                                            )
-
-                                                    let awaiter, awaiterExpr =
-                                                        mkCompGenLocal callRange "runtimeAsyncFragmentAwaiter" awaiterTy
-
-                                                    let createAwaiter =
-                                                        MakeMethInfoCall amap callRange constructor [] [ invocation ] None
-
-                                                    let awaitRef =
-                                                        mkILMethRef (
-                                                            g.FindSysILTypeRef "System.Runtime.CompilerServices.AsyncHelpers",
-                                                            ILCallingConv.Static,
-                                                            "AwaitAwaiter",
-                                                            1,
-                                                            [ mkILTyvarTy 0us ],
-                                                            ILType.Void
-                                                        )
-
-                                                    let suspend =
-                                                        Expr.Op(
-                                                            TOp.ILCall(
-                                                                false,
-                                                                false,
-                                                                false,
-                                                                false,
-                                                                NormalValUse,
-                                                                false,
-                                                                false,
-                                                                awaitRef,
-                                                                [],
-                                                                [ awaiterTy ],
-                                                                []
-                                                            ),
-                                                            [],
-                                                            [ awaiterExpr ],
-                                                            callRange
-                                                        )
-
-                                                    let getResult =
-                                                        match
-                                                            TryFindIntrinsicMethInfo
-                                                                infoReader
-                                                                callRange
-                                                                AccessorDomain.AccessibleFromEverywhere
-                                                                "GetResult"
-                                                                awaiterTy
-                                                        with
-                                                        | [ methodInfo ] -> methodInfo
-                                                        | _ ->
-                                                            error (
-                                                                InternalError(
-                                                                    "runtime-async fragment awaiter GetResult not found",
-                                                                    callRange
-                                                                )
-                                                            )
-
-                                                    let wrap, address, _, _ =
-                                                        mkExprAddrOfExpr g true false NeverMutates awaiterExpr None callRange
-
-                                                    let result = MakeMethInfoCall amap callRange getResult [] [ address ] None |> wrap
-
-                                                    Some(
-                                                        mkCompGenLet
-                                                            callRange
-                                                            awaiter
-                                                            createAwaiter
-                                                            (mkCompGenSequential callRange suspend result)
-                                                    )
+                                                    Some(awaitFragment g amap resultTy invocation callRange)
                                                 | ValueNone -> None)
                                         PreInterceptBinding = None
                                         PostTransform = (fun _ -> None)
@@ -455,189 +210,11 @@ let private outlineCallback (g: TcGlobals) amap optimizeExpr (analyzer: RuntimeA
                             mkLet point m outlined construction (outline continuation)
                 | _ -> keep construction
             | Expr.Let(binding, continuation, m, _) -> mkLetBind m binding (outline continuation)
-            | RuntimeAsyncDebugWrapper body -> RebuildRuntimeAsyncDebugWrapper expr (outline body)
+            | Expr.DebugPoint(point, body) -> Expr.DebugPoint(point, outline body)
             | Expr.Sequential(first, rest, NormalSeq, m) -> Expr.Sequential(first, outline rest, NormalSeq, m)
             | _ -> expr)
 
     outline expr
-
-let private inlineCallback (g: TcGlobals) (analyzer: RuntimeAsyncAnalyzer) runtimeAsyncContext (expr: Expr) =
-    let stackGuard = StackGuard("InlineRuntimeAsyncCallback")
-    let freeVarOptions = CollectLocalsWithStackGuard()
-
-    let isTrivialValue =
-        function
-        | Expr.Const _ -> true
-        | Expr.Val(vref, _, _) -> vref.IsLocalRef && not vref.IsMutable && not vref.IsTypeFunction
-        | _ -> false
-
-    // Construction moves to the invocation, so its evaluation must not have observable effects.
-    let rec tryPrepareDelegateInvocation construction =
-        stackGuard.Guard(fun () ->
-            let prepared =
-                match construction with
-                | NewDelegateExpr g (_, [ _ ], _, _, _) ->
-                    ValueSome(fun (invokeRef, invokeTy, tyargs, arg, callRange) ->
-                        MakeFSharpDelegateInvokeAndTryBetaReduce g (invokeRef, construction, invokeTy, tyargs, arg, callRange))
-                | RuntimeAsyncDebugWrapper rest ->
-                    tryPrepareDelegateInvocation rest
-                    |> ValueOption.map (fun invoke -> invoke >> RebuildRuntimeAsyncDebugWrapper construction)
-                | Expr.Sequential(first, rest, NormalSeq, m) when isTrivialValue first ->
-                    tryPrepareDelegateInvocation rest
-                    |> ValueOption.map (fun invoke -> fun args -> Expr.Sequential(first, invoke args, NormalSeq, m))
-                | Expr.Let((TBind(_, rhs, _)) as binding, rest, m, _) when isTrivialValue rhs ->
-                    tryPrepareDelegateInvocation rest
-                    |> ValueOption.map (fun invoke -> invoke >> mkLetBind m binding)
-                | Expr.Match(point,
-                             matchRange,
-                             (TDSwitch((Expr.Val _ as input), [ TCase(_, TDSuccess([], _)) ], Some(TDSuccess([], _)), _) as tree),
-                             targets,
-                             m,
-                             _) when isTrivialValue input ->
-                    let invocations =
-                        targets
-                        |> Array.map (fun (TTarget(_, body, _)) -> tryPrepareDelegateInvocation body)
-
-                    if targets.Length > 0 && Array.forall ValueOption.isSome invocations then
-                        let invocations = Array.map ValueOption.get invocations
-
-                        ValueSome(fun args ->
-                            let targets =
-                                (targets, invocations)
-                                ||> Array.map2 (fun (TTarget(vals, _, flags)) invoke -> TTarget(vals, invoke args, flags))
-
-                            Expr.Match(point, matchRange, tree, targets, m, tyOfExpr g targets[0].TargetExpression))
-                    else
-                        ValueNone
-                | _ -> ValueNone
-
-            prepared
-            |> ValueOption.map (fun invoke -> fun args -> stackGuard.Guard(fun () -> invoke args)))
-
-    // A residual Invoke can surface after ordinary optimization; try its single use before dispatching on branches.
-    let inlineDelegate callback invoke continuation =
-        let rwenv =
-            {
-                PreIntercept =
-                    Some(fun rewrite expression ->
-                        match expression with
-                        | DelegateInvokeExpr g (invokeRef, invokeTy, tyargs, Expr.Val(vref, _, _), arg, callRange) when
-                            valEq callback vref.Deref
-                            ->
-                            Some(invoke (invokeRef, invokeTy, tyargs, rewrite arg, callRange))
-                        | _ -> None)
-                PreInterceptBinding = None
-                PostTransform = (fun _ -> None)
-                RewriteQuotations = false
-                StackGuard = stackGuard
-            }
-
-        RewriteExpr rwenv continuation
-
-    let rec inlineCallbacks expr =
-        stackGuard.Guard(fun () -> inlineCallbacksCore expr)
-
-    and inlineCallbacksCore expr =
-        match expr with
-        | Expr.Let(TBind(callback, construction, point), continuation, m, _) when
-            callback.InlineIfLambda && analyzer.ContainsSuspension construction
-            ->
-            let keep construction =
-                mkLetBind m (TBind(callback, construction, point)) (inlineCallbacks continuation)
-
-            let canInline =
-                runtimeAsyncContext || (TryGetRuntimeAsyncReturn g continuation).IsSome
-
-            let shape =
-                match tryDestFunTy g callback.Type with
-                | ValueSome(argTy, resultTy) -> Some(argTy, resultTy, false)
-                | ValueNone when isFSharpDelegateTy g callback.Type ->
-                    tryDelegateSignature g construction
-                    |> Option.map (fun (argTy, resultTy) -> argTy, resultTy, true)
-                | _ -> None
-
-            match shape with
-            | Some(argTy, resultTy, isDelegate) when canInline && not (isByrefLikeTy g m argTy || isByrefLikeTy g m resultTy) ->
-                let freeVals = (freeInExpr freeVarOptions construction).FreeLocals
-
-                let canCapture =
-                    freeVals
-                    |> Zset.forall (fun v -> not v.IsPinning && not (isByrefTy g v.Type || isByrefLikeTy g m v.Type))
-
-                let construction =
-                    if canCapture then
-                        inlineCallbacks construction
-                    else
-                        construction
-
-                let callbackUses =
-                    if canCapture then
-                        tryAnalyzeCallbackUses g callback isDelegate continuation
-                    else
-                        ValueNone
-
-                let inlined =
-                    match callbackUses with
-                    | ValueSome 1 when isDelegate ->
-                        tryPrepareDelegateInvocation construction
-                        |> ValueOption.map (fun invoke -> inlineDelegate callback invoke continuation)
-                        |> ValueOption.toOption
-                    | _ -> None
-
-                let callbackBranches =
-                    match callbackUses with
-                    | ValueSome invocations when Option.isNone inlined ->
-                        tryDefunctionalizeCallback g stackGuard m construction
-                        |> Option.filter (fun branches ->
-                            invocations = 0
-                            || List.sumBy _.NodeCount branches.Branches
-                               <= maxInlinedCallbackCopySize / invocations)
-                    | _ -> None
-
-                match inlined, callbackBranches with
-                | Some body, _ -> inlineCallbacks body
-                | None, Some callbackBranches ->
-                    let rwenv =
-                        {
-                            PreIntercept =
-                                Some(fun rewrite expression ->
-                                    match tryCallbackInvocation g callback isDelegate expression with
-                                    | ValueSome(struct (arg, callRange)) ->
-                                        Some(
-                                            mkCallbackDispatch
-                                                g
-                                                stackGuard
-                                                callbackBranches
-                                                (rewrite arg)
-                                                (tyOfExpr g expression)
-                                                callRange
-                                        )
-                                    | ValueNone -> None)
-                            PreInterceptBinding = None
-                            PostTransform = (fun _ -> None)
-                            RewriteQuotations = false
-                            StackGuard = stackGuard
-                        }
-
-                    let continuation = RewriteExpr rwenv continuation
-
-                    let construction =
-                        match point with
-                        | DebugPointAtBinding.Yes point -> mkDebugPoint point callbackBranches.Construction
-                        | _ -> callbackBranches.Construction
-
-                    let body = mkCompGenSequential m construction (inlineCallbacks continuation)
-
-                    (callbackBranches.Tag :: List.map snd callbackBranches.Captures, body)
-                    ||> List.foldBack (fun v body -> mkCompGenLet m v (mkDefault (m, v.Type)) body)
-                | None, None -> keep construction
-            | _ -> keep construction
-        | Expr.Let(binding, continuation, m, _) -> mkLetBind m binding (inlineCallbacks continuation)
-        | RuntimeAsyncDebugWrapper body -> RebuildRuntimeAsyncDebugWrapper expr (inlineCallbacks body)
-        | Expr.Sequential(first, rest, NormalSeq, m) -> Expr.Sequential(first, inlineCallbacks rest, NormalSeq, m)
-        | _ -> expr
-
-    inlineCallbacks expr
 
 let private isRuntimeAsyncEntry g expr =
     (TryGetRuntimeAsyncReturn g expr).IsSome
@@ -656,20 +233,15 @@ let private containsRuntimeAsyncEntry g implFile =
 
     FoldImplFile folder false implFile
 
-/// Inlines suspending InlineIfLambda callbacks into the enclosing method. `inContext` is true inside a runtime-async body or
-/// sequence recipe, including nested lambdas and delegates, but not object-expression methods, which are
-/// compiled as ordinary methods.
-let private inlineCallbacks g amap optimizeExpr implFile =
+/// `inContext` follows runtime-async bodies and sequence recipes, but not ordinary object-expression methods.
+let private outlineCallbacks g amap optimizeExpr implFile =
     let analyzer = RuntimeAsyncAnalyzer g
-    let stackGuard = StackGuard("InlineRuntimeAsyncCallbacks")
-
-    let outliningPrototype =
-        System.Environment.GetEnvironmentVariable("FSHARP_RUNTIME_ASYNC_OUTLINING_PROTOTYPE") = "1"
+    let stackGuard = StackGuard("OutlineRuntimeAsyncCallbacks")
 
     let rec leadsToRuntimeAsyncReturn expr =
         match expr with
         | Expr.Let(_, rest, _, _)
-        | RuntimeAsyncDebugWrapper rest
+        | Expr.DebugPoint(_, rest)
         | Expr.Sequential(_, rest, NormalSeq, _) -> leadsToRuntimeAsyncReturn rest
         | _ -> (TryGetRuntimeAsyncReturn g expr).IsSome
 
@@ -690,8 +262,6 @@ let private inlineCallbacks g amap optimizeExpr implFile =
             Some(Expr.App(f, fty, tyargs, [ rewrite true body ], m))
         | Expr.App(f, fty, tyargs, [ recipe ], m) when (TryGetRuntimeAsyncSequence g expr).IsSome ->
             Some(Expr.App(f, fty, tyargs, [ rewrite true recipe ], m))
-        // A callback constructed for a runtime-async body that follows is lowered as part of that body,
-        // so the suspending callbacks it captures can be inlined into it.
         | Expr.Let(TBind(callback, construction, point), continuation, m, _) when
             not inContext
             && callback.InlineIfLambda
@@ -709,16 +279,10 @@ let private inlineCallbacks g amap optimizeExpr implFile =
         | Expr.Obj _ when inContext -> Some(rewrite false expr)
         | _ -> None
 
-    // Bottom-up: callbacks nested in the construction or continuation are already inlined.
     and postTransform inContext expr =
         match expr with
         | Expr.Let(TBind(callback, construction, _), _, _, _) when callback.InlineIfLambda && analyzer.ContainsSuspension construction ->
-            Some(
-                if outliningPrototype then
-                    outlineCallback g amap optimizeExpr analyzer inContext expr
-                else
-                    inlineCallback g analyzer inContext expr
-            )
+            Some(outlineCallback g amap optimizeExpr analyzer inContext expr)
         | _ -> None
 
     RewriteImplFile (rewriter false) implFile
@@ -752,7 +316,7 @@ let TransformImplFile (g: TcGlobals) amap optimizeExpr reportedRanges (implFile:
         // Bodies inlined from an assembly compiled with the feature are still prepared.
         let implFile =
             if g.langVersion.SupportsFeature LanguageFeature.RuntimeAsync then
-                inlineCallbacks g amap optimizeExpr implFile
+                outlineCallbacks g amap optimizeExpr implFile
             else
                 implFile
 

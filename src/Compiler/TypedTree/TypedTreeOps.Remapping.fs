@@ -1272,8 +1272,7 @@ module internal ExprFreeVars =
                 sln.Value
                 (accFreeVarsInTys opts tys (accFreeVarsInTys opts argTys (Option.foldBack (accFreeVarsInTy opts) retTy acc)))
 
-        | TOp.LValueOp(_, vref)
-        | TOp.DebugLocalScope(vref, _) -> accFreeValRef opts vref acc
+        | TOp.LValueOp(_, vref) -> accFreeValRef opts vref acc
 
         | TOp.ILCall(_, isProtected, _, _, valUseFlag, _, _, _, enclTypeInst, methInst, retTypes) ->
             accFreeVarsInTys
@@ -2062,7 +2061,6 @@ module internal ExprRemapping =
                 TOp.ILAsm(instrs, retTypes2)
         | TOp.TraitCall traitInfo -> TOp.TraitCall(remapTraitInfo tmenv traitInfo)
         | TOp.LValueOp(kind, lvr) -> TOp.LValueOp(kind, remapValRef tmenv lvr)
-        | TOp.DebugLocalScope(vref, name) -> TOp.DebugLocalScope(remapValRef tmenv vref, name)
         | TOp.ILCall(isVirtual,
                      isProtected,
                      isStruct,
@@ -2773,7 +2771,6 @@ module internal ExprAnalysis =
         | Expr.DebugPoint(_, e)
         | Expr.StaticOptimization(_, _, e, _)
         | Expr.LetRec(_, e, _, _) -> tyOfExpr g e
-        | Expr.Op(TOp.DebugLocalScope _, _, [ body ], _) -> tyOfExpr g body
         | Expr.Op(op, tinst, _, _) ->
             match op with
             | TOp.Coerce ->
@@ -2828,7 +2825,6 @@ module internal ExprAnalysis =
                 (match tinst with
                  | [ rtn_ty ] -> rtn_ty
                  | _ -> failwith "bad TOp.Reraise node")
-            | TOp.DebugLocalScope _ -> failwith "bad TOp.DebugLocalScope node"
             | TOp.Goto _
             | TOp.Label _
             | TOp.Return ->

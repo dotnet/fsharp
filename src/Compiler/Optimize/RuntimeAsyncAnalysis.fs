@@ -165,10 +165,9 @@ let ReduceRuntimeAsyncReturnedClosureApplications (g: TcGlobals) (analyzer: Runt
             | _ -> false
             ->
             apply inner fty tyargs args m
-        | Expr.DebugPoint(_, inner), _ -> apply inner fty tyargs args m |> Option.map (RebuildRuntimeAsyncDebugWrapper f)
-        | RuntimeAsyncDebugWrapper body, _ ->
-            apply body (tyOfExpr g body) tyargs args m
-            |> Option.map (RebuildRuntimeAsyncDebugWrapper f)
+        | Expr.DebugPoint(point, inner), _ ->
+            apply inner fty tyargs args m
+            |> Option.map (fun body -> Expr.DebugPoint(point, body))
         | Expr.Let(binding, body, mLet, _), _ ->
             apply body (tyOfExpr g body) tyargs args m
             |> Option.map (mkLetBind mLet binding)
@@ -197,11 +196,10 @@ let ReduceRuntimeAsyncReturnedClosureApplications (g: TcGlobals) (analyzer: Runt
             PostTransform =
                 (fun expression ->
                     match expression with
-                    | Expr.App((Expr.Lambda _ | Expr.Let _ | Expr.LetRec _ | Expr.Match _ | RuntimeAsyncDebugWrapper _) as f,
-                               fty,
-                               tyargs,
-                               args,
-                               m) when not args.IsEmpty && analyzer.ContainsSuspension expression -> apply f fty tyargs args m
+                    | Expr.App((Expr.Lambda _ | Expr.Let _ | Expr.LetRec _ | Expr.Match _ | Expr.DebugPoint _) as f, fty, tyargs, args, m) when
+                        not args.IsEmpty && analyzer.ContainsSuspension expression
+                        ->
+                        apply f fty tyargs args m
                     | _ -> None)
             RewriteQuotations = false
             StackGuard = stackGuard

@@ -145,10 +145,6 @@ let DecideImplFile g amap implFile =
 let TransformExpr g (heapValMap: ValMap<_>) exprF expr =
 
     match expr with
-    | Expr.Op (TOp.DebugLocalScope (ValDeref(v), name), [], [body], m) when heapValMap.ContainsVal v ->
-       let nv, _ = heapValMap[v]
-       Some (Expr.Op (TOp.DebugLocalScope (mkLocalValRef nv, name), [], [exprF body], m))
-
     // Rewrite uses of mutable values
     | Expr.Val (ValDeref(v), _, m) when heapValMap.ContainsVal v ->
 

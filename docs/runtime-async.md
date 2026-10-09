@@ -166,30 +166,26 @@ still evaluated at the same point.
 
 `LowerRuntimeAsync.fs` runs once per file after the first optimization loop,
 so it sees the final inlined shape rather than an intermediate optimizer
-state, and before `LowerLocalMutables`, so mutable locals it introduces that
-closures capture are promoted to reference cells. It has two steps.
+state, and before `LowerLocalMutables`, so captured mutable locals receive
+the ordinary shared reference-cell representation. It has two steps.
 
-Callback-use analysis, capture hoisting, and invocation rewriting live in
+Callback-use analysis, outlining, and invocation rewriting live in
 `LowerRuntimeAsync.fs`. `RuntimeAsyncAnalysis.fs` supplies fragment detection,
 optimizer-side returned-closure reduction, and suspension-lifetime analysis.
-Both transformations share debug-wrapper and match-target rebuilding helpers
-from `TypedTree/RuntimeAsync.fs`.
+Both transformations share match-target rebuilding from
+`TypedTree/RuntimeAsync.fs`.
 
 First, if a compiler-owned `InlineIfLambda` function or delegate still
 contains a suspension, a fully rewritable, single-argument callback is
-inlined into the enclosing method. The ordinary optimizer already inlines a
+outlined as a separate runtime-async closure. The ordinary optimizer already inlines a
 callback whose construction ends in one lambda, including after `let` or
 effect prefixes and at repeated invocations. What remains is a construction
-that selects a lambda by branching (`if`/`match`). It is defunctionalized:
-the construction runs once, in place, and each lambda in tail position is
-replaced by an assignment of its branch tag and of the construction locals it
-captures to mutable locals of the enclosing method. Each invocation binds its
-argument once and dispatches on the tag to a copy of the selected lambda body.
-Construction effects happen once, captured state is shared across
-invocations, and every `Await` stays in the runtime-async method, so
-`ExecutionContext` changes such as `AsyncLocal` writes behave as in source
-order. Only the specialized copy changes, not the exported inline definition
-or source signature. This applies within a runtime-async body or sequence
+that selects a lambda by branching (`if`/`match`). Construction effects and
+branch selection stay at the original binding; each invocation calls the
+selected closure and awaits its outcome before continuing. Callback bodies
+are not copied into each invocation, so there is no callback-copy budget.
+Only the specialized copy changes, not the exported inline definition or
+source signature. This applies within a runtime-async body or sequence
 recipe, and to a callback bound immediately before a runtime-async body
 together with the callbacks its construction captures. Opaque consumers,
 escaping callbacks, unsupported callback shapes (including `try`/`with` in
@@ -197,43 +193,21 @@ tail position), and unsafe byref or pinned captures are not rewritten;
 suspensions remaining in an ordinary method, such as a closure, are diagnosed
 with FS3918.
 
-The ordinary optimizer can inline an `Invoke` on a constructed delegate.
-For a residual `InlineIfLambda` delegate bound to a local, a single direct
-invocation can also be inlined through simple, effect-free conditional
-construction. Otherwise, directly rewritable invocations dispatch on the
-branch tag. Inner callback bindings are processed before the outer delegate.
+Inner callback bindings are processed before the outer delegate.
 If optimization leaves a construction expression directly as an `Invoke`
 receiver, it is first bound to a compiler-owned callback and lowered through
 the same path. Receiver construction still precedes argument evaluation.
 Effectful precomputations that capture a delegate's inputs are not moved to
 its invocation, so a pending operation is created once and repeated invokes
-share captured state. A delegate that escapes or is consumed opaquely cannot
-be converted. IlxGen checks each generated delegate `Invoke` as its own
-method: an `Await` left there without a return marker produces FS3918, even
-when the enclosing method is runtime-async. Exported inline definitions remain
-unchanged.
-
-Each invocation copies every branch body, so code size grows with the number
-of invocations times the number of branches. Branch sizes and captures are
-analyzed once. Callback uses are analyzed separately before rewriting:
-opaque consumers and quotations retaining the callback reject the candidate,
-and invocations nested in arguments count towards the same
-2000-expression-node copy budget. The total cost is checked before copying any
-branch bodies. A rejected callback is left as a closure and a suspension in
-it is reported as FS3918. Single-use delegate inlining checks use count, then
-analyzes effect-free construction once to prepare its invocation rewrite.
-The prepared rewrite rebuilds expressions only after the entire construction
-has been accepted, so eligibility and rewriting cannot disagree about
-supported construction shapes.
-
-### Opt-in outlining experiment
-
-`FSHARP_RUNTIME_ASYNC_OUTLINING_PROTOTYPE=1` replaces residual callback
-inlining with outlining. The default remains the lowering described above.
-Construction effects and branch selection stay at the original binding;
-the selected closure is shared across invocations. Captured mutable locals
+share captured state. Captured mutable locals
 retain their identities and are handled by ordinary closure conversion, not
-copied into and out of each fragment.
+copied into and out of each fragment. Callback uses are checked before
+rewriting; opaque consumers and quotations retaining the callback reject the
+candidate. IlxGen checks each generated closure or delegate `Invoke` as its
+own method: an `Await` left there without a return marker produces FS3918,
+even when the enclosing method is runtime-async.
+
+### Context handoff
 
 The `net10.0` FSharp.Core asset supplies an inline
 `StateMachineHelpers.__runtimeAsyncOutline` template. It wraps a callback
@@ -245,19 +219,23 @@ template through the existing expression optimizer rather than generating
 the exception and context protocol itself.
 
 At each invocation the compiler constructs a `RuntimeAsyncFragmentAwaiter`,
-uses the runtime's ordinary `AwaitAwaiter` entry point, then calls its
-synchronous `GetResult`. Core restores the captured contexts before
-returning the value or rethrowing. Restoration therefore executes in the
+uses the runtime's ordinary `AwaitAwaiter` entry point if the fragment is
+incomplete, then calls its synchronous `GetResult`. Completed fragments do
+not introduce an additional suspension. Core restores the captured contexts
+before returning the value or rethrowing. Restoration therefore executes in the
 parent, not in another async method whose return would undo it.
 
 This preserves final context values but is not transparent: returning from
 the child and reinstalling its context produces additional `AsyncLocal`
-context-change notifications. It also changes closure allocation and
-debugger-local representation. The experiment is not the default design.
+context-change notifications. Unlike an inlined callback, an outlined
+callback can allocate a closure and shared reference cells. Captured locals
+are represented as closure fields at invocation rather than aliases to
+locals in the parent method; their original construction scopes remain in
+the PDB.
 
 ### Body preparation
 
-Second, every return-marker body is prepared once after callbacks are inlined,
+Second, every return-marker body is prepared once after callbacks are outlined,
 innermost first: locals that cannot be preserved across a suspension are
 reported (once per range across the compilation), and suspending exception
 handlers are rewritten. Preparing afterwards means an `Await` that callback
@@ -272,10 +250,8 @@ call site. User continuation arguments keep their own ranges, and the marked
 method retains a call-site sequence point even when forced inlining reduces
 its intermediate closures.
 
-Callback lowering shares recognition and rebuilding of transparent debug
-points and lexical-scope annotations. Rebuilding retains the original range,
-scope name, and storage reference; a lexical scope is not discarded when
-reducing an application through its wrapper.
+Callback lowering retains source debug points when rebuilding construction
+wrappers. Outlined methods keep the callback body's statement points.
 
 Dead branches eliminated by optimization do not reach code generation and do
 not produce a suspension-outside-runtime-async diagnostic.

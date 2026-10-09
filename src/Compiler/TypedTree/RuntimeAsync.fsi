@@ -10,11 +10,6 @@ open FSharp.Compiler.TypedTree
 
 type RuntimeAsyncReturnInfo = { Body: Expr; TypeArgs: TType list }
 
-val (|RuntimeAsyncDebugWrapper|_|): expr: Expr -> Expr voption
-
-/// Retains the original debug range or lexical scope when rebuilding a matched wrapper.
-val RebuildRuntimeAsyncDebugWrapper: wrapper: Expr -> body: Expr -> Expr
-
 /// Rebuilds a match with every target rewritten, or returns None if any target cannot be.
 val TryMapRuntimeAsyncMatchTargets:
     g: TcGlobals ->

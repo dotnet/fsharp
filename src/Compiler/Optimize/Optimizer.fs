@@ -1739,7 +1739,6 @@ and BindingHasEffect context g bind = bind.Expr |> ExprHasEffect context g
 
 and OpHasEffect context g m op tyargs =
     match op with
-    | TOp.DebugLocalScope _ -> false
     | TOp.Tuple _ -> false
     | TOp.AnonRecd _ -> false
     | TOp.Recd (ctor, tcref) ->
@@ -3099,7 +3098,6 @@ and OptimizeExprOpFallback cenv env (op, tyargs, argsR, m) arginfos value_ =
     let effect = OpHasEffect (effectContextOf cenv) g m op tyargs
     let cost, value_ =
       match op with
-      | TOp.DebugLocalScope _ -> 0, argValues[0]
       | TOp.UnionCase c -> 2, MakeValueInfoForUnionCase c (Array.ofList argValues)
       | TOp.ExnConstr _ -> 2, value_
 

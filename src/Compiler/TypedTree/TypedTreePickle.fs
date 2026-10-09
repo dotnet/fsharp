@@ -3666,8 +3666,7 @@ and p_op x st =
         p_int n st
     | TOp.Goto _
     | TOp.Label _
-    | TOp.Return
-    | TOp.DebugLocalScope _ -> failwith "unexpected backend construct in pickled TAST"
+    | TOp.Return -> failwith "unexpected backend construct in pickled TAST"
 
 and u_op st =
     let tag = u_byte st

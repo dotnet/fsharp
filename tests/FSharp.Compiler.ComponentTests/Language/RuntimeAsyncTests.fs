@@ -1985,13 +1985,13 @@ let main _ =
             ]
         Assert.True(cliResult.ExitCode = 0, $"{cliResult.StdOut}\n{cliResult.StdErr}")
 
-    [<InlineData(16, false, true)>]
-    [<InlineData(17, false, false)>]
-    [<InlineData(16, true, true)>]
-    [<InlineData(17, true, false)>]
-    [<InlineData(40, false, false)>]
+    [<InlineData(16, false)>]
+    [<InlineData(17, false)>]
+    [<InlineData(16, true)>]
+    [<InlineData(17, true)>]
+    [<InlineData(40, false)>]
     [<Theory>]
-    let ``runtime async bounds branch-selected callback copies across all invocations`` (invocations: int, nested: bool, withinBudget: bool) =
+    let ``runtime async outlines branch-selected callbacks without copying bodies per invocation`` (invocations: int, nested: bool) =
         let calls =
             if nested then
                 [1 .. invocations] |> List.fold (fun arg _ -> $"f ({arg})") "1"
@@ -2034,10 +2034,17 @@ let main _ =
             |> withLangVersionPreview
             |> withFSharpCoreShippedNet
 
-        if withinBudget then
-            compilation |> compileExeAndRun |> shouldSucceed
-        else
-            compilation |> compile |> shouldFail |> withErrorCode 3918
+        compilation
+        |> compileExeAndRun
+        |> shouldSucceed
+        |> withMetadataReader (fun md ->
+            let asyncInvokes =
+                md.MethodDefinitions
+                |> Seq.filter (fun handle ->
+                    let method = md.GetMethodDefinition handle
+                    md.GetString method.Name = "Invoke" && int method.ImplAttributes &&& 0x2000 <> 0)
+                |> Seq.length
+            Assert.Equal(4, asyncInvokes))
 
     [<InlineData(false)>]
     [<InlineData(true)>]
@@ -2221,19 +2228,18 @@ let main _ =
             |> compileExeAndRun
             |> shouldSucceed
 
-        if System.Environment.GetEnvironmentVariable("FSHARP_RUNTIME_ASYNC_OUTLINING_PROTOTYPE") = "1" then
-            result
-            |> verifyILContains [
-                "call       instance !0 valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.RuntimeAsyncFragmentAwaiter`1<int32>::GetResult()"
-            ]
-            |> ignore
+        result
+        |> verifyILContains [
+            "call       instance !0 valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.RuntimeAsyncFragmentAwaiter`1<int32>::GetResult()"
+        ]
+        |> ignore
 
     [<Theory>]
     [<InlineData(false, false)>]
     [<InlineData(false, true)>]
     [<InlineData(true, false)>]
     [<InlineData(true, true)>]
-    let ``runtime async callback does not add context change notifications`` (optimize: bool, pending: bool) =
+    let ``runtime async outlined callback reports child context exit and restoration`` (optimize: bool, pending: bool) =
         let result =
             FSharp $"""
 module RuntimeAsyncContextNotifications
@@ -2272,8 +2278,8 @@ let run (gate: Task) flag =
                     fun () -> 0)
         recording <- false
         if context.Value <> "inner" then failwith "Incorrect final context"
-        if trace.ToArray() <> [| "outer->inner:False" |] then
-            failwithf "Additional context notifications: %%A" (trace.ToArray())
+        if trace.ToArray() <> [| "outer->inner:False"; "inner->outer:True"; "outer->inner:True" |] then
+            failwithf "Unexpected context notifications: %%A" (trace.ToArray())
         value)
 
 [<EntryPoint>]
@@ -2281,6 +2287,7 @@ let main _ =
     let gate = TaskCompletionSource<unit>(TaskCreationOptions.RunContinuationsAsynchronously)
     if {if pending then "false" else "true"} then gate.SetResult(())
     let result = run gate.Task true
+    if {if pending then "false" else "true"} && not result.IsCompleted then failwith "Completed callback suspended"
     gate.TrySetResult(()) |> ignore
     if result.GetAwaiter().GetResult() <> 41 then failwith "Incorrect result"
     0
@@ -2291,12 +2298,11 @@ let main _ =
             |> compileExeAndRun
             |> shouldSucceed
 
-        if System.Environment.GetEnvironmentVariable("FSHARP_RUNTIME_ASYNC_OUTLINING_PROTOTYPE") = "1" then
-            result
-            |> verifyILContains [
-                "call       instance !0 valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.RuntimeAsyncFragmentAwaiter`1<int32>::GetResult()"
-            ]
-            |> ignore
+        result
+        |> verifyILContains [
+            "call       instance !0 valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.RuntimeAsyncFragmentAwaiter`1<int32>::GetResult()"
+        ]
+        |> ignore
 
     [<InlineData(false)>]
     [<InlineData(true)>]
@@ -2539,7 +2545,7 @@ let main _ =
     [<InlineData(false)>]
     [<InlineData(true)>]
     [<Theory>]
-    let ``runtime async inlines nested single-use delegate sources`` (optimize: bool) =
+    let ``runtime async outlines nested single-use delegate sources`` (optimize: bool) =
         let source =
             FSharp """
 module NestedDelegateSource
@@ -2594,8 +2600,6 @@ let main _ =
             |> compileExeAndRun
             |> shouldSucceed
 
-        // The construction in executeWithConstruction precedes its runtime-async body, which therefore starts as
-        // a closure; callbacks are inlined, so that closure is the only async Invoke.
         source |> withMetadataReader (fun md ->
             let asyncInvokes =
                 [ for handle in md.TypeDefinitions do
@@ -2604,8 +2608,8 @@ let main _ =
                         let method = md.GetMethodDefinition methodHandle
                         if md.GetString method.Name = "Invoke" && int method.ImplAttributes &&& 0x2000 <> 0 then
                             yield md.GetString ty.Name ]
-            let asyncInvoke = Assert.Single asyncInvokes
-            Assert.StartsWith("executeWithConstruction@", asyncInvoke))
+            Assert.Equal(4, asyncInvokes.Length)
+            Assert.Contains(asyncInvokes, fun name -> name.StartsWith("executeWithConstruction@", System.StringComparison.Ordinal)))
 
     [<InlineData(false)>]
     [<InlineData(true)>]
@@ -3045,14 +3049,16 @@ let main _ =
                     pdb.GetMethodDebugInformation(handle).GetSequencePoints()
                     |> Seq.exists (fun point -> not point.IsHidden && point.StartLine = 19))
                 |> Assert.Single
-            let invoked =
-                localsAt invocationMethod 19
-                |> List.filter (fun (name, _) -> name = "count")
-                |> Assert.Single
-                |> snd
-            Assert.Equal(LocalVariableAttributes.None, invoked.Attributes)
-            if insideContext then
-                Assert.Equal(inner.Index, invoked.Index))
-        if insideContext then
-            result |> verifyILNotPresent [ "FSharpRef" ]
+            if invocationMethod = method then
+                let invoked =
+                    localsAt invocationMethod 19
+                    |> List.filter (fun (name, _) -> name = "count")
+                    |> Assert.Single
+                    |> snd
+                Assert.Equal(LocalVariableAttributes.None, invoked.Attributes)
+                Assert.Equal(inner.Index, invoked.Index)
+            else
+                let closure = md.GetTypeDefinition(md.GetMethodDefinition(invocationMethod).GetDeclaringType())
+                let fields = closure.GetFields() |> Seq.map (fun handle -> md.GetString(md.GetFieldDefinition(handle).Name))
+                Assert.Contains("count", fields))
 #endif

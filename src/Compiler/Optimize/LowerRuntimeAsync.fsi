@@ -2,8 +2,8 @@
 
 /// Post-optimization lowering for runtime-async bodies.
 ///
-/// Runs after the first optimization loop and before LowerLocalMutables. It inlines suspending
-/// InlineIfLambda callbacks that the optimizer could not inline into the enclosing method, then
+/// Runs after the first optimization loop and before LowerLocalMutables. It outlines suspending
+/// InlineIfLambda callbacks that the optimizer could not inline, using the Core context-handoff template, then
 /// prepares every `__runtimeAsyncReturn*` body exactly once (non-preservable local diagnostics and
 /// exception-handler rewriting). `__runtimeAsyncSequence` recipes are not prepared here: LowerAsyncSeq
 /// prepares their MoveNextAsync body after state-machine conversion.
