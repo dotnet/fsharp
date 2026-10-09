@@ -24,7 +24,6 @@ stages:
     testMachineLab: ${{ parameters.testMachineLab }}
     testMachineHoldStrategy: ${{ parameters.testMachineHoldStrategy }}
     templateContext:
-      owner: fsharp
       areaPath: DevDiv\NET Developer Experience\FSharp
     testExecutablePath: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe
     testExecutableArguments: >-
