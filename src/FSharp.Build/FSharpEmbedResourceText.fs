@@ -265,14 +265,9 @@ errNum,ident,\"string\""
     let stringBoilerPlatePrefix =
         @"
 open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
-open Microsoft.FSharp.Reflection
-open System.Reflection
 // (namespaces below for specific case of using the tool to compile FSharp.Core itself)
 open Microsoft.FSharp.Core
 open Microsoft.FSharp.Core.Operators
-open Microsoft.FSharp.Text
-open Microsoft.FSharp.Collections
-open Printf
 
 #nowarn ""1182"" // Generated boilerplate may include helper functions not referenced when the resource file has no entries
 #nowarn ""3262"" // The call to Option.ofObj below is applied in multiple compilation modes for GetString, sometimes the value is typed as a non-nullable string
@@ -281,19 +276,15 @@ open Printf
     let StringBoilerPlate fileName =
         @"
     // BEGIN BOILERPLATE
-    static let getCurrentAssembly () = System.Reflection.Assembly.GetExecutingAssembly()
-
-    static let getTypeInfo (t: System.Type) = t
-
     static let resources = lazy (new System.Resources.ResourceManager("""
         + fileName
-        + @""", getCurrentAssembly()))
+        + @""", System.Reflection.Assembly.GetExecutingAssembly()))
 
     static let GetString(name:string) =
         let s = resources.Value.GetString(name, System.Globalization.CultureInfo.CurrentUICulture)
     #if DEBUG
         if isNull s then
-            System.Diagnostics.Debug.Assert(false, sprintf ""**RESOURCE ERROR**: Resource token %s does not exist!"" name)
+            System.Diagnostics.Debug.Assert(false, $""**RESOURCE ERROR**: Resource token {name} does not exist!"")
     #endif
     #if NULLABLE
         Unchecked.nonNull s
@@ -302,84 +293,18 @@ open Printf
     #endif
 
 
-    static let mkFunctionValue (tys: System.Type[]) (impl:objnull->objnull) =
-        FSharpValue.MakeFunction(FSharpType.MakeFunctionType(tys.[0],tys.[1]), impl)
-
-    static let funTyC = typeof<(obj -> obj)>.GetGenericTypeDefinition()
-
-    static let isNamedType(ty:System.Type) = not (ty.IsArray ||  ty.IsByRef ||  ty.IsPointer)
-    static let isFunctionType (ty1:System.Type)  =
-        isNamedType(ty1) && getTypeInfo(ty1).IsGenericType && System.Type.op_Equality(ty1.GetGenericTypeDefinition(), funTyC)
-
-    static let rec destFunTy (ty:System.Type) =
-        if isFunctionType ty then
-            ty, ty.GetGenericArguments()
-        else
-            match getTypeInfo(ty).BaseType with
-            | null -> failwith ""destFunTy: not a function type""
-            | b -> destFunTy b
-
-    static let buildFunctionForOneArgPat (ty: System.Type) impl =
-        let _,tys = destFunTy ty
-        let rty = tys.[1]
-        // PERF: this technique is a bit slow (e.g. in simple cases, like 'sprintf ""%x""')
-        mkFunctionValue tys (fun inp -> impl rty inp)
-
-    #if !NULLABLE
-    static let capture1 (fmt:string) i args ty (go: obj list -> System.Type -> int -> obj) : obj =
-    #else
-    static let capture1 (fmt:string) i args ty (go: objnull list -> System.Type -> int -> obj) : obj =
-    #endif
-        match fmt.[i] with
-        | '%' -> go args ty (i+1)
-        | 'd'
-        | 'f'
-        | 's' -> buildFunctionForOneArgPat ty (fun rty n -> go (n :: args) rty (i+1))
-        | _ -> failwith ""bad format specifier""
-
     // newlines and tabs get converted to strings when read from a resource file
     // this will preserve their original intention
     static let postProcessString (s: string) =
         s.Replace(""\\n"",""\n"").Replace(""\\t"",""\t"").Replace(""\\r"",""\r"").Replace(""\\\"""", ""\"""")
 
-    static let createMessageString (messageString: string) (fmt: Printf.StringFormat<'T>) : 'T =
-        let fmt = fmt.Value // here, we use the actual error string, as opposed to the one stored as fmt
-        let len = fmt.Length
-
-        /// Function to capture the arguments and then run.
-        let rec capture args ty i =
-            if i >= len ||  (fmt.[i] = '%' && i+1 >= len) then
-                let b = new System.Text.StringBuilder()
-                b.AppendFormat(messageString, [| for x in List.rev args -> x |]) |> ignore
-    #if !NULLABLE
-                box(b.ToString())
-    #else
-                box(b.ToString()) |> Unchecked.nonNull
-    #endif
-            // REVIEW: For these purposes, this should be a nop, but I'm leaving it
-            // in incase we ever decide to support labels for the error format string
-            // E.g., ""<name>%s<foo>%d""
-            elif System.Char.IsSurrogatePair(fmt,i) then
-                capture args ty (i+2)
-            else
-                match fmt.[i] with
-                | '%' ->
-                    let i = i+1
-                    capture1 fmt i args ty capture
-                | _ ->
-                    capture args ty (i+1)
-
-        (unbox (capture [] (typeof<'T>) 0) : 'T)
-
     static let mutable swallowResourceText = false
 
-    static let GetStringFunc((messageID: string),(fmt: Printf.StringFormat<'T>)) : 'T =
+    static let FormatMessage(messageID: string, swallowedFormat: string, args: objnull array) : string =
         if swallowResourceText then
-            sprintf fmt
+            System.String.Format(System.Globalization.CultureInfo.InvariantCulture, swallowedFormat, args)
         else
-            let mutable messageString = GetString(messageID)
-            messageString <- postProcessString messageString
-            createMessageString messageString fmt
+            System.String.Format(postProcessString (GetString messageID), args)
 
     static member GetTextOpt(key:string) : string option = GetString(key) |> Option.ofObj
 
@@ -548,42 +473,30 @@ open Printf
                 // gen each resource method
                 stringInfos
                 |> Seq.iter (fun (lineNum, (optErrNum, ident), str, holes, _netFormatString) ->
-                    let formalArgs = new System.Text.StringBuilder()
-                    let actualArgs = new System.Text.StringBuilder()
-                    let mutable firstTime = true
-                    let mutable n = 0
-                    formalArgs.Append "(" |> ignore
+                    let parameters = holes |> Array.mapi (fun index holeType -> $"a{index}: {holeType}")
 
-                    for hole in holes do
-                        if firstTime then
-                            firstTime <- false
-                        else
-                            formalArgs.Append ", " |> ignore
-                            actualArgs.Append " " |> ignore
-
-                        formalArgs.Append(sprintf "a%d : %s" n hole) |> ignore
-                        actualArgs.Append(sprintf "a%d" n) |> ignore
-                        n <- n + 1
-
-                    formalArgs.Append ")" |> ignore
                     fprintfn out "    /// %s" str
                     fprintfn outSignature "    /// %s" str
                     fprintfn out "    /// (Originally from %s:%d)" fileName (lineNum + 1)
                     fprintfn outSignature "    /// (Originally from %s:%d)" fileName (lineNum + 1)
 
-                    let justPercentsFromFormatString =
+                    let swallowedFormat =
                         (holes
-                         |> Array.fold
-                             (fun acc holeType ->
-                                 acc
-                                 + match holeType with
-                                   | "System.Int32" -> ",,,%d"
-                                   | "System.UInt32" -> ",,,%x"
-                                   | "System.Double" -> ",,,%f"
-                                   | "System.String" -> ",,,%s"
-                                   | _ -> failwith "unreachable")
-                             "")
+                         |> Array.mapi (fun index holeType ->
+                             let format =
+                                 match holeType with
+                                 | "System.Int32"
+                                 | "System.String" -> ""
+                                 | "System.UInt32" -> ":x"
+                                 | "System.Double" -> ":F6"
+                                 | _ -> failwith "unreachable"
+
+                             $",,,{{{index}{format}}}")
+                         |> String.concat "")
                         + ",,,"
+
+                    let boxedArgs =
+                        holes |> Array.mapi (fun index _ -> $"box a{index}") |> String.concat "; "
 
                     let errPrefix =
                         match optErrNum with
@@ -598,14 +511,14 @@ open Printf
 
                     let messageExpr =
                         let getString =
-                            sprintf "GetStringFunc(\"%s\",\"%s\") %s" ident justPercentsFromFormatString (actualArgs.ToString())
+                            $"""FormatMessage("{ident}", "{swallowedFormat}", [| {boxedArgs} |])"""
 
                         if numberedReturnsRichText then
                             sprintf "RichText.mkText (%s)" getString
                         else
                             getString
 
-                    fprintfn out "    static member %s%s = (%s%s)" ident (formalArgs.ToString()) errPrefix messageExpr
+                    fprintfn out "    static member %s(%s) = (%s%s)" ident (String.concat ", " parameters) errPrefix messageExpr
 
                     let signatureMember =
                         let returnType =
@@ -617,8 +530,7 @@ open Printf
                         if Array.isEmpty holes then
                             sprintf "    static member %s: unit -> %s" ident returnType
                         else
-                            holes
-                            |> Array.mapi (fun idx holeType -> sprintf "a%i: %s" idx holeType)
+                            parameters
                             |> String.concat " * "
                             |> fun parameters -> sprintf "    static member %s: %s -> %s" ident parameters returnType
 
@@ -635,10 +547,8 @@ open Printf
                             else
                                 holeType
 
-                        let richFormalArgs =
-                            holes
-                            |> Array.mapi (fun idx holeType -> sprintf "a%d : %s" idx (richHole holeType))
-                            |> String.concat ", "
+                        let richParameters =
+                            holes |> Array.mapi (fun index holeType -> $"a{index}: {richHole holeType}")
 
                         let richActualArgs =
                             holes
@@ -661,20 +571,15 @@ open Printf
                             out
                             "    static member %s(%s) = RichMessage.%s (fun rich -> SR.%s(%s))"
                             ident
-                            richFormalArgs
+                            (String.concat ", " richParameters)
                             format
                             ident
                             richActualArgs
 
-                        let richParameters =
-                            holes
-                            |> Array.mapi (fun idx holeType -> sprintf "a%i: %s" idx (richHole holeType))
-                            |> String.concat " * "
-
                         fprintfn outSignature "    /// %s" str
                         fprintfn outSignature "    /// (Originally from %s:%d)" fileName (lineNum + 1)
 
-                        fprintfn outSignature "    static member %s: %s -> %s" ident richParameters richReturnType)
+                        fprintfn outSignature "    static member %s: %s -> %s" ident (String.concat " * " richParameters) richReturnType)
 
                 printMessage "Generating .resx for %s" outFileName
                 fprintfn out ""
