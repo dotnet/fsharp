@@ -817,9 +817,6 @@ let TcConst (cenv: cenv) (overallTy: TType) m env synConst =
             | _ -> mkWoNullAppTy tcr [TType_measure(Measure.One m)]
         unif measureTy
 
-    let expandedMeasurablesEnabled =
-        g.langVersion.SupportsFeature LanguageFeature.ExpandedMeasurables
-
     match synConst with
     | SynConst.Unit ->
         unif g.unit_ty
@@ -887,22 +884,22 @@ let TcConst (cenv: cenv) (overallTy: TType) m env synConst =
     | SynConst.Measure(constant = SynConst.Int64 i) ->
         unifyMeasureArg (i=0L) g.pint64_tcr
         Const.Int64 i
-    | SynConst.Measure(constant = SynConst.IntPtr i) when expandedMeasurablesEnabled ->
+    | SynConst.Measure(constant = SynConst.IntPtr i) ->
         unifyMeasureArg (i=0L) g.pnativeint_tcr
         Const.IntPtr i
-    | SynConst.Measure(constant = SynConst.Byte i) when expandedMeasurablesEnabled ->
+    | SynConst.Measure(constant = SynConst.Byte i) ->
         unifyMeasureArg (i=0uy) g.puint8_tcr
         Const.Byte i
-    | SynConst.Measure(constant = SynConst.UInt16 i) when expandedMeasurablesEnabled ->
+    | SynConst.Measure(constant = SynConst.UInt16 i) ->
         unifyMeasureArg (i=0us) g.puint16_tcr
         Const.UInt16 i
-    | SynConst.Measure(constant = SynConst.UInt32 i) when expandedMeasurablesEnabled ->
+    | SynConst.Measure(constant = SynConst.UInt32 i) ->
         unifyMeasureArg (i=0u) g.puint_tcr
         Const.UInt32 i
-    | SynConst.Measure(constant = SynConst.UInt64 i) when expandedMeasurablesEnabled ->
+    | SynConst.Measure(constant = SynConst.UInt64 i) ->
         unifyMeasureArg (i=0UL) g.puint64_tcr
         Const.UInt64 i
-    | SynConst.Measure(constant = SynConst.UIntPtr i) when expandedMeasurablesEnabled ->
+    | SynConst.Measure(constant = SynConst.UIntPtr i) ->
         unifyMeasureArg (i=0UL) g.punativeint_tcr
         Const.UIntPtr i
     | SynConst.Char c ->
