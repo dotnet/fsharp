@@ -181,3 +181,48 @@ let main _ =
         |> compileExeAndRun
         |> shouldSucceed
         |> withStdOutContains "mismatches=0 small=true"
+
+    // https://github.com/dotnet/fsharp/pull/20718#discussion_r4219278089
+    // A failed guard that writes the data the match tests must not change which later rule matches.
+    let private guardWritesTestedDataSource =
+        let matchOn header write (pat: string -> string -> string) =
+            [ yield header
+              yield $"""    | %s{pat "0" "0"} when (%s{write}; false) -> 0"""
+              for c in 0..7 -> $"""    | %s{pat "_" (string c)} when col <= %d{c} -> 1%d{c}"""
+              for t in 1..7 -> $"""    | %s{pat (string t) "_"} -> %d{t}"""
+              yield "    | _ -> -1" ]
+            |> String.concat "\n"
+
+        let pair =
+            matchOn "let pair (value: byref<Pair>) col =\n    match value with" "value <- Pair (7, 7)" (fun t c -> $"Pair (%s{t}, %s{c})")
+
+        let array =
+            matchOn "let array (arr: int[]) col =\n    match arr with" "arr.[0] <- 7; arr.[1] <- 7" (fun t c -> $"[| %s{t}; %s{c} |]")
+
+        let record =
+            matchOn "let record (r: R) col =\n    match r with" "r.T <- 7; r.C <- 7" (fun t c -> $"{{ T = %s{t}; C = %s{c} }}")
+
+        $"""module Test
+[<Struct>]
+type Pair = Pair of token: int * context: int
+type R = {{ mutable T: int; mutable C: int }}
+{pair}
+{array}
+{record}
+[<EntryPoint>]
+let main _ =
+    let mutable input = Pair (0, 0)
+    printfn "pair=%%d array=%%d record=%%d" (pair &input 100) (array [| 0; 0 |] 100) (record {{ T = 0; C = 0 }} 100)
+    0
+"""
+
+    [<Theory>]
+    [<InlineData(false)>]
+    [<InlineData(true)>]
+    let ``Guards that write the tested data keep the rule the whole match would pick`` optimize =
+        guardWritesTestedDataSource
+        |> FSharp
+        |> (if optimize then withOptimize else withNoOptimize)
+        |> compileExeAndRun
+        |> shouldSucceed
+        |> withStdOutContains "pair=-1 array=-1 record=-1"

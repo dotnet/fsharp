@@ -1082,6 +1082,36 @@ let mkThrowUsingEDICapture (infoReader: InfoReader) tcVal m resultTy exnExpr =
 
 exception private GuardCopyBudgetExceeded
 
+/// Whether the input is read through an immutable byref. A struct union input read this way is tested
+/// in place, not through a copy.
+let private isCopyableInputExpr origInputExpr =
+    match origInputExpr with
+    | Expr.Op (TOp.LValueOp (LByrefGet, v), [], [], _) when not v.IsMutable -> true
+    | _ -> false
+
+/// Whether the pattern tests an array element or a mutable record field, which a 'when' guard can write.
+let rec private testsMutableData inpPat =
+    match inpPat with
+    | TPat_array _ -> true
+    | TPat_recd (tcref, _, subPats, _) ->
+        (tcref.TrueInstanceFieldsAsList, subPats)
+        ||> List.exists2 (fun field subPat ->
+            match subPat with
+            | TPat_wild _ -> false
+            | _ -> field.IsMutable || testsMutableData subPat)
+    | TPat_query (_, subPat, _)
+    | TPat_as (subPat, _, _) -> testsMutableData subPat
+    | TPat_disjs (subPats, _)
+    | TPat_conjs (subPats, _)
+    | TPat_tuple (_, subPats, _, _)
+    | TPat_exnconstr (_, subPats, _)
+    | TPat_unioncase (_, _, subPats, _) -> List.exists testsMutableData subPats
+    | TPat_isinst (_, _, subPatOpt, _) -> Option.exists testsMutableData subPatOpt
+    | TPat_const _
+    | TPat_wild _
+    | TPat_null _
+    | TPat_error _ -> false
+
 [<Struct; NoEquality; NoComparison>]
 type private CompiledMatch =
     { Tree: DecisionTree
@@ -1406,11 +1436,6 @@ let private CompilePatternBasic
             else
                 None)
 
-    and IsCopyableInputExpr origInputExpr =
-        match origInputExpr with
-        | Expr.Op (TOp.LValueOp (LByrefGet, v), [], [], _) when not v.IsMutable -> true
-        | _ -> false
-
     and ChoosePreBinder simulSetOfEdgeDiscrims subexpr =
          match simulSetOfEdgeDiscrims with
           // Very simple 'isinst' tests: put the result of 'isinst' in a local variable
@@ -1442,7 +1467,7 @@ let private CompilePatternBasic
              let argExpr = GetSubExprOfInput subexpr
              let argExpr =
                  match argExpr, _origInputExprOpt with
-                 | Expr.Val (v1, _, _), Some origInputExpr when valEq origInputVal v1.Deref && IsCopyableInputExpr origInputExpr -> origInputExpr
+                 | Expr.Val (v1, _, _), Some origInputExpr when valEq origInputVal v1.Deref && isCopyableInputExpr origInputExpr -> origInputExpr
                  | _ -> argExpr
              let vOpt, addrExp, _readonly, _writeonly = mkExprAddrOfExprAux g true false NeverMutates argExpr None mMatch
              match vOpt with
@@ -1957,14 +1982,20 @@ let CompilePattern g denv amap tcVal infoReader mExpr mMatch warnOnUnused action
             let clauseForRestOfMatch = MatchClause(TPat_wild mMatch, None, TTarget(List.empty, expr, None), mMatch)
             compile false false JoinPromotion.Enabled ValueNone (group @ [ clauseForRestOfMatch ])
 
+    // The rest of a cut match tests the input again, and sees what a failed guard wrote to it, where
+    // the whole tree would not. So only a match whose tested data no guard can write is cut by the budget.
+    let canRetestInput () =
+        not (Option.exists isCopyableInputExpr origInputExprOpt)
+        && not (clausesL |> List.exists (fun clause -> testsMutableData clause.Pattern))
+
     let result =
         if List.exists isProblematicClause clausesL then
             // Partial patterns are treated as failing here, so unused clauses can't be reported.
             let clausesPretendAllPartialFail = clausesL |> List.map (fun (MatchClause(p, whenOpt, tg, m)) -> MatchClause(erasePartialPatterns p, whenOpt, tg, m))
             let whole = compile false true JoinPromotion.Disabled ValueNone clausesPretendAllPartialFail
-            compileGroups (whole.GuardCopies > guardCopyBudget) clausesL
+            compileGroups (whole.GuardCopies > guardCopyBudget && canRetestInput ()) clausesL
         else
             let whole = compile warnOnUnused true JoinPromotion.Disabled ValueNone clausesL
-            if whole.GuardCopies > guardCopyBudget then compileGroups true clausesL else whole
+            if whole.GuardCopies > guardCopyBudget && canRetestInput () then compileGroups true clausesL else whole
 
     result.Tree, result.Targets, result.Joins
