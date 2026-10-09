@@ -10,8 +10,12 @@ open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 
 open FSharp.Compiler
+open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Features
+open FSharp.Compiler.InfoReader
+open FSharp.Compiler.MethodCalls
 open FSharp.Compiler.RuntimeAsync
 open FSharp.Compiler.RuntimeAsyncAnalysis
 open FSharp.Compiler.RuntimeAsyncExceptionRewrite
@@ -269,20 +273,197 @@ let private mkCallbackDispatch (g: TcGlobals) (stackGuard: StackGuard) (callback
 
     mkCompGenLet m argVal arg (dispatch 0 callback.Branches)
 
+let rec private tryDelegateSignature g expr =
+    match expr with
+    | NewDelegateExpr g (_, [ parameter ], body, _, _) -> Some(parameter.Type, tyOfExpr g body)
+    | RuntimeAsyncDebugWrapper rest
+    | Expr.Sequential(_, rest, NormalSeq, _)
+    | Expr.Let(_, rest, _, _) -> tryDelegateSignature g rest
+    | Expr.Match(_, _, _, targets, _, _) when targets.Length > 0 ->
+        let (TTarget(_, body, _)) = targets[0]
+        tryDelegateSignature g body
+    | _ -> None
+
+let private outlineCallback (g: TcGlobals) amap optimizeExpr (analyzer: RuntimeAsyncAnalyzer) runtimeAsyncContext expr =
+    let stackGuard = StackGuard("OutlineRuntimeAsyncCallbackPrototype")
+    let freeVarOptions = CollectLocalsWithStackGuard()
+
+    let rec outlineBranches resultTy expr =
+        stackGuard.Guard(fun () ->
+            match expr with
+            | Expr.Lambda(_, None, None, [ parameter ], body, m, _)
+            | NewDelegateExpr g (_, [ parameter ], body, m, _) ->
+                let helper = g.cgh__runtimeAsyncOutline_vref
+                let callback = mkLambda m parameter (body, resultTy)
+
+                let outlined =
+                    primMkApp (exprForValRef m helper, helper.Type) [ parameter.Type; resultTy ] [ callback ] m
+                    |> optimizeExpr true
+
+                Some outlined
+            | RuntimeAsyncDebugWrapper body ->
+                outlineBranches resultTy body
+                |> Option.map (RebuildRuntimeAsyncDebugWrapper expr)
+            | Expr.Sequential(first, rest, NormalSeq, m) ->
+                outlineBranches resultTy rest
+                |> Option.map (fun rest -> Expr.Sequential(first, rest, NormalSeq, m))
+            | Expr.Let(binding, rest, m, _) -> outlineBranches resultTy rest |> Option.map (mkLetBind m binding)
+            | Expr.Match(point, matchRange, tree, targets, m, _) ->
+                TryMapRuntimeAsyncMatchTargets g (point, matchRange, tree, targets, m) (fun _ -> outlineBranches resultTy)
+            | _ -> None)
+
+    let rec outline expr =
+        stackGuard.Guard(fun () ->
+            match expr with
+            | Expr.Let(TBind(callback, construction, point), continuation, m, _) when
+                callback.InlineIfLambda && analyzer.ContainsSuspension construction
+                ->
+                let keep construction =
+                    mkLetBind m (TBind(callback, construction, point)) (outline continuation)
+
+                let shape =
+                    match tryDestFunTy g callback.Type with
+                    | ValueSome(argTy, resultTy) -> Some(argTy, resultTy, false)
+                    | ValueNone when isFSharpDelegateTy g callback.Type ->
+                        tryDelegateSignature g construction
+                        |> Option.map (fun (argTy, resultTy) -> argTy, resultTy, true)
+                    | _ -> None
+
+                match shape with
+                | Some(argTy, resultTy, isDelegate) when
+                    (runtimeAsyncContext || (TryGetRuntimeAsyncReturn g continuation).IsSome)
+                    && not (isByrefLikeTy g m argTy || isByrefLikeTy g m resultTy)
+                    ->
+                    let canCapture =
+                        (freeInExpr freeVarOptions construction).FreeLocals
+                        |> Zset.forall (fun v -> not v.IsPinning && not (isByrefTy g v.Type || isByrefLikeTy g m v.Type))
+
+                    match
+                        if canCapture then
+                            tryAnalyzeCallbackUses g callback isDelegate continuation
+                        else
+                            ValueNone
+                    with
+                    | ValueNone -> keep construction
+                    | ValueSome _ ->
+                        let construction = outline construction
+
+                        match outlineBranches resultTy construction with
+                        | None -> keep construction
+                        | Some construction ->
+                            let callbackTy = tyOfExpr g construction
+                            let outlined, outlinedExpr = mkCompGenLocal m "runtimeAsyncFragment" callbackTy
+
+                            let continuation =
+                                RewriteExpr
+                                    {
+                                        PreIntercept =
+                                            Some(fun rewrite expression ->
+                                                match tryCallbackInvocation g callback isDelegate expression with
+                                                | ValueSome(struct (arg, callRange)) ->
+                                                    let invocation =
+                                                        mkApps g ((outlinedExpr, callbackTy), [], [ rewrite arg ], callRange)
+
+                                                    let awaiterTy = mkWoNullAppTy g.runtimeAsyncFragmentAwaiter_tcref [ resultTy ]
+                                                    let infoReader = InfoReader(g, amap)
+
+                                                    let constructor =
+                                                        match GetIntrinsicConstructorInfosOfType infoReader callRange awaiterTy with
+                                                        | [ constructor ] -> constructor
+                                                        | _ ->
+                                                            error (
+                                                                InternalError(
+                                                                    "runtime-async fragment awaiter constructor not found",
+                                                                    callRange
+                                                                )
+                                                            )
+
+                                                    let awaiter, awaiterExpr =
+                                                        mkCompGenLocal callRange "runtimeAsyncFragmentAwaiter" awaiterTy
+
+                                                    let createAwaiter =
+                                                        MakeMethInfoCall amap callRange constructor [] [ invocation ] None
+
+                                                    let awaitRef =
+                                                        mkILMethRef (
+                                                            g.FindSysILTypeRef "System.Runtime.CompilerServices.AsyncHelpers",
+                                                            ILCallingConv.Static,
+                                                            "AwaitAwaiter",
+                                                            1,
+                                                            [ mkILTyvarTy 0us ],
+                                                            ILType.Void
+                                                        )
+
+                                                    let suspend =
+                                                        Expr.Op(
+                                                            TOp.ILCall(
+                                                                false,
+                                                                false,
+                                                                false,
+                                                                false,
+                                                                NormalValUse,
+                                                                false,
+                                                                false,
+                                                                awaitRef,
+                                                                [],
+                                                                [ awaiterTy ],
+                                                                []
+                                                            ),
+                                                            [],
+                                                            [ awaiterExpr ],
+                                                            callRange
+                                                        )
+
+                                                    let getResult =
+                                                        match
+                                                            TryFindIntrinsicMethInfo
+                                                                infoReader
+                                                                callRange
+                                                                AccessorDomain.AccessibleFromEverywhere
+                                                                "GetResult"
+                                                                awaiterTy
+                                                        with
+                                                        | [ methodInfo ] -> methodInfo
+                                                        | _ ->
+                                                            error (
+                                                                InternalError(
+                                                                    "runtime-async fragment awaiter GetResult not found",
+                                                                    callRange
+                                                                )
+                                                            )
+
+                                                    let wrap, address, _, _ =
+                                                        mkExprAddrOfExpr g true false NeverMutates awaiterExpr None callRange
+
+                                                    let result = MakeMethInfoCall amap callRange getResult [] [ address ] None |> wrap
+
+                                                    Some(
+                                                        mkCompGenLet
+                                                            callRange
+                                                            awaiter
+                                                            createAwaiter
+                                                            (mkCompGenSequential callRange suspend result)
+                                                    )
+                                                | ValueNone -> None)
+                                        PreInterceptBinding = None
+                                        PostTransform = (fun _ -> None)
+                                        RewriteQuotations = false
+                                        StackGuard = stackGuard
+                                    }
+                                    continuation
+
+                            mkLet point m outlined construction (outline continuation)
+                | _ -> keep construction
+            | Expr.Let(binding, continuation, m, _) -> mkLetBind m binding (outline continuation)
+            | RuntimeAsyncDebugWrapper body -> RebuildRuntimeAsyncDebugWrapper expr (outline body)
+            | Expr.Sequential(first, rest, NormalSeq, m) -> Expr.Sequential(first, outline rest, NormalSeq, m)
+            | _ -> expr)
+
+    outline expr
+
 let private inlineCallback (g: TcGlobals) (analyzer: RuntimeAsyncAnalyzer) runtimeAsyncContext (expr: Expr) =
     let stackGuard = StackGuard("InlineRuntimeAsyncCallback")
     let freeVarOptions = CollectLocalsWithStackGuard()
-
-    let rec tryDelegateSignature expr =
-        match expr with
-        | NewDelegateExpr g (_, [ parameter ], body, _, _) -> Some(parameter.Type, tyOfExpr g body)
-        | RuntimeAsyncDebugWrapper rest
-        | Expr.Sequential(_, rest, NormalSeq, _)
-        | Expr.Let(_, rest, _, _) -> tryDelegateSignature rest
-        | Expr.Match(_, _, _, targets, _, _) when targets.Length > 0 ->
-            let (TTarget(_, body, _)) = targets[0]
-            tryDelegateSignature body
-        | _ -> None
 
     let isTrivialValue =
         function
@@ -371,7 +552,7 @@ let private inlineCallback (g: TcGlobals) (analyzer: RuntimeAsyncAnalyzer) runti
                 match tryDestFunTy g callback.Type with
                 | ValueSome(argTy, resultTy) -> Some(argTy, resultTy, false)
                 | ValueNone when isFSharpDelegateTy g callback.Type ->
-                    tryDelegateSignature construction
+                    tryDelegateSignature g construction
                     |> Option.map (fun (argTy, resultTy) -> argTy, resultTy, true)
                 | _ -> None
 
@@ -478,9 +659,12 @@ let private containsRuntimeAsyncEntry g implFile =
 /// Inlines suspending InlineIfLambda callbacks into the enclosing method. `inContext` is true inside a runtime-async body or
 /// sequence recipe, including nested lambdas and delegates, but not object-expression methods, which are
 /// compiled as ordinary methods.
-let private inlineCallbacks g implFile =
+let private inlineCallbacks g amap optimizeExpr implFile =
     let analyzer = RuntimeAsyncAnalyzer g
     let stackGuard = StackGuard("InlineRuntimeAsyncCallbacks")
+
+    let outliningPrototype =
+        System.Environment.GetEnvironmentVariable("FSHARP_RUNTIME_ASYNC_OUTLINING_PROTOTYPE") = "1"
 
     let rec leadsToRuntimeAsyncReturn expr =
         match expr with
@@ -529,7 +713,12 @@ let private inlineCallbacks g implFile =
     and postTransform inContext expr =
         match expr with
         | Expr.Let(TBind(callback, construction, _), _, _, _) when callback.InlineIfLambda && analyzer.ContainsSuspension construction ->
-            Some(inlineCallback g analyzer inContext expr)
+            Some(
+                if outliningPrototype then
+                    outlineCallback g amap optimizeExpr analyzer inContext expr
+                else
+                    inlineCallback g analyzer inContext expr
+            )
         | _ -> None
 
     RewriteImplFile (rewriter false) implFile
@@ -558,12 +747,12 @@ let private prepareBodies g (reportedRanges: ConcurrentDictionary<range, unit>) 
         }
         implFile
 
-let TransformImplFile (g: TcGlobals) reportedRanges (implFile: CheckedImplFile) =
+let TransformImplFile (g: TcGlobals) amap optimizeExpr reportedRanges (implFile: CheckedImplFile) =
     if containsRuntimeAsyncEntry g implFile then
         // Bodies inlined from an assembly compiled with the feature are still prepared.
         let implFile =
             if g.langVersion.SupportsFeature LanguageFeature.RuntimeAsync then
-                inlineCallbacks g implFile
+                inlineCallbacks g amap optimizeExpr implFile
             else
                 implFile
 

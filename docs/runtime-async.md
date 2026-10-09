@@ -226,6 +226,37 @@ The prepared rewrite rebuilds expressions only after the entire construction
 has been accepted, so eligibility and rewriting cannot disagree about
 supported construction shapes.
 
+### Opt-in outlining experiment
+
+`FSHARP_RUNTIME_ASYNC_OUTLINING_PROTOTYPE=1` replaces residual callback
+inlining with outlining. The default remains the lowering described above.
+Construction effects and branch selection stay at the original binding;
+the selected closure is shared across invocations. Captured mutable locals
+retain their identities and are handled by ordinary closure conversion, not
+copied into and out of each fragment.
+
+The `net10.0` FSharp.Core asset supplies an inline
+`StateMachineHelpers.__runtimeAsyncOutline` template. It wraps a callback
+in a `__runtimeAsyncReturnValueTask` lambda, captures success or
+`ExceptionDispatchInfo` on failure, and constructs a
+`RuntimeAsyncFragmentResult` holding the final execution context,
+synchronization context, and flow-suppression state. Lowering expands this
+template through the existing expression optimizer rather than generating
+the exception and context protocol itself.
+
+At each invocation the compiler constructs a `RuntimeAsyncFragmentAwaiter`,
+uses the runtime's ordinary `AwaitAwaiter` entry point, then calls its
+synchronous `GetResult`. Core restores the captured contexts before
+returning the value or rethrowing. Restoration therefore executes in the
+parent, not in another async method whose return would undo it.
+
+This preserves final context values but is not transparent: returning from
+the child and reinstalling its context produces additional `AsyncLocal`
+context-change notifications. It also changes closure allocation and
+debugger-local representation. The experiment is not the default design.
+
+### Body preparation
+
 Second, every return-marker body is prepared once after callbacks are inlined,
 innermost first: locals that cannot be preserved across a suspension are
 reported (once per range across the compilation), and suspending exception

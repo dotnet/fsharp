@@ -2091,6 +2091,262 @@ let main _ =
         |> compileExeAndRun
         |> shouldSucceed
 
+    [<Theory>]
+    [<InlineData(false, false)>]
+    [<InlineData(false, true)>]
+    [<InlineData(true, false)>]
+    [<InlineData(true, true)>]
+    let ``runtime async Core outlining helper preserves context and shared mutation`` (optimize: bool, pending: bool) =
+        FSharp $"""
+module RuntimeAsyncCoreOutline
+open System.Threading
+open System.Threading.Tasks
+open System.Runtime.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices
+
+let context = AsyncLocal<string>()
+
+[<NoCompilerInlining>]
+let run (gate: Task) =
+    StateMachineHelpers.__runtimeAsyncReturn(
+        context.Value <- "outer"
+        let mutable count = 0
+        let observe () = count
+        let fragment =
+            StateMachineHelpers.__runtimeAsyncOutline (fun increment ->
+                AsyncHelpers.Await gate
+                count <- count + increment
+                context.Value <- "inner"
+                count)
+        let first = RuntimeAsyncFragmentAwaiter(fragment 2)
+        AsyncHelpers.AwaitAwaiter first
+        if first.GetResult() <> 2 || observe() <> 2 || context.Value <> "inner" then
+            failwith "First fragment lost context or shared state"
+        let second = RuntimeAsyncFragmentAwaiter(fragment 3)
+        AsyncHelpers.AwaitAwaiter second
+        if second.GetResult() <> 5 || observe() <> 5 || context.Value <> "inner" then
+            failwith "Repeated fragment lost context or shared state"
+        count)
+
+[<EntryPoint>]
+let main _ =
+    let gate = TaskCompletionSource<unit>(TaskCreationOptions.RunContinuationsAsynchronously)
+    if {if pending then "false" else "true"} then gate.SetResult(())
+    let result = run gate.Task
+    if not (isNull context.Value) then failwith "Context leaked to caller"
+    gate.TrySetResult(()) |> ignore
+    if result.GetAwaiter().GetResult() <> 5 then failwith "Incorrect result"
+    0
+"""
+        |> withLangVersionPreview
+        |> withFSharpCoreShippedNet
+        |> withOptimization optimize
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<Theory>]
+    [<InlineData(false, false)>]
+    [<InlineData(false, true)>]
+    [<InlineData(true, false)>]
+    [<InlineData(true, true)>]
+    let ``runtime async callback preserves final context on success and failure`` (optimize: bool, pending: bool) =
+        let result =
+            FSharp $"""
+module RuntimeAsyncContextHandoff
+open System
+open System.Threading
+open System.Threading.Tasks
+open System.Runtime.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices
+
+let context = AsyncLocal<string>()
+let synchronizationContext = SynchronizationContext()
+let expectedError = InvalidOperationException("fragment")
+
+let inline invoke ([<InlineIfLambda>] callback: unit -> int) =
+    let seen = callback()
+    seen + context.Value.Length
+
+[<NoCompilerInlining>]
+let run (gate: Task) (next: Task) flag fail suppress =
+    StateMachineHelpers.__runtimeAsyncReturn(
+        context.Value <- "outer"
+        let value =
+            try
+                invoke (
+                    if flag then
+                        let captured = context.Value + ":"
+                        fun () ->
+                            AsyncHelpers.Await gate
+                            if captured <> "outer:" then failwith "Captured state changed"
+                            context.Value <- "inner"
+                            SynchronizationContext.SetSynchronizationContext(synchronizationContext)
+                            if suppress then ExecutionContext.SuppressFlow() |> ignore
+                            if fail then raise expectedError
+                            36
+                    else
+                        fun () -> 0)
+            with error when obj.ReferenceEquals(error, expectedError) && context.Value = "inner" ->
+                42
+        if context.Value <> "inner" then failwith "Fragment context was not restored"
+        if not (obj.ReferenceEquals(SynchronizationContext.Current, synchronizationContext)) then
+            failwith "Synchronization context was not restored"
+        if ExecutionContext.IsFlowSuppressed() <> suppress then failwith "Suppression state was not restored"
+        if suppress then ExecutionContext.RestoreFlow()
+        SynchronizationContext.SetSynchronizationContext(null)
+        AsyncHelpers.Await next
+        if context.Value <> "inner" then failwith "Context was lost at a subsequent await"
+        value)
+
+[<EntryPoint>]
+let main _ =
+    for fail in [false; true] do
+        for suppress in [false; true] do
+            let gate = TaskCompletionSource<unit>(TaskCreationOptions.RunContinuationsAsynchronously)
+            let next = TaskCompletionSource<unit>(TaskCreationOptions.RunContinuationsAsynchronously)
+            if {if pending then "false" else "true"} then gate.SetResult(())
+            let result = run gate.Task next.Task true fail suppress
+            if result.IsCompleted then failwith "Expected a pending result"
+            if not (isNull context.Value) || not (isNull SynchronizationContext.Current) then
+                failwith "Fragment context leaked to the outer caller"
+            gate.TrySetResult(()) |> ignore
+            next.SetResult(())
+            let expected = if fail then 42 else 41
+            if result.GetAwaiter().GetResult() <> expected then failwith "Incorrect fragment outcome"
+    0
+"""
+            |> withLangVersionPreview
+            |> withFSharpCoreShippedNet
+            |> withOptimization optimize
+            |> compileExeAndRun
+            |> shouldSucceed
+
+        if System.Environment.GetEnvironmentVariable("FSHARP_RUNTIME_ASYNC_OUTLINING_PROTOTYPE") = "1" then
+            result
+            |> verifyILContains [
+                "call       instance !0 valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.RuntimeAsyncFragmentAwaiter`1<int32>::GetResult()"
+            ]
+            |> ignore
+
+    [<Theory>]
+    [<InlineData(false, false)>]
+    [<InlineData(false, true)>]
+    [<InlineData(true, false)>]
+    [<InlineData(true, true)>]
+    let ``runtime async callback does not add context change notifications`` (optimize: bool, pending: bool) =
+        let result =
+            FSharp $"""
+module RuntimeAsyncContextNotifications
+open System.Collections.Generic
+open System.Threading
+open System.Threading.Tasks
+open System.Runtime.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices
+
+let trace = ResizeArray<string>()
+let mutable recording = false
+let context =
+    AsyncLocal<string>(fun change ->
+        if recording then
+            trace.Add($"{{change.PreviousValue}}->{{change.CurrentValue}}:{{change.ThreadContextChanged}}"))
+
+let inline invoke ([<InlineIfLambda>] callback: unit -> int) =
+    let seen = callback()
+    seen + context.Value.Length
+
+[<NoCompilerInlining>]
+let run (gate: Task) flag =
+    StateMachineHelpers.__runtimeAsyncReturn(
+        context.Value <- "outer"
+        let value =
+            invoke (
+                if flag then
+                    let captured = context.Value + ":"
+                    fun () ->
+                        AsyncHelpers.Await gate
+                        if captured <> "outer:" then failwith "Captured state changed"
+                        recording <- true
+                        context.Value <- "inner"
+                        36
+                else
+                    fun () -> 0)
+        recording <- false
+        if context.Value <> "inner" then failwith "Incorrect final context"
+        if trace.ToArray() <> [| "outer->inner:False" |] then
+            failwithf "Additional context notifications: %%A" (trace.ToArray())
+        value)
+
+[<EntryPoint>]
+let main _ =
+    let gate = TaskCompletionSource<unit>(TaskCreationOptions.RunContinuationsAsynchronously)
+    if {if pending then "false" else "true"} then gate.SetResult(())
+    let result = run gate.Task true
+    gate.TrySetResult(()) |> ignore
+    if result.GetAwaiter().GetResult() <> 41 then failwith "Incorrect result"
+    0
+"""
+            |> withLangVersionPreview
+            |> withFSharpCoreShippedNet
+            |> withOptimization optimize
+            |> compileExeAndRun
+            |> shouldSucceed
+
+        if System.Environment.GetEnvironmentVariable("FSHARP_RUNTIME_ASYNC_OUTLINING_PROTOTYPE") = "1" then
+            result
+            |> verifyILContains [
+                "call       instance !0 valuetype [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.RuntimeAsyncFragmentAwaiter`1<int32>::GetResult()"
+            ]
+            |> ignore
+
+    [<InlineData(false)>]
+    [<InlineData(true)>]
+    [<Theory>]
+    let ``runtime async callback preserves context exception filter ordering`` (optimize: bool) =
+        FSharp """
+module RuntimeAsyncContextExceptionFilter
+open System.Threading.Tasks
+open System.Runtime.CompilerServices
+open Microsoft.FSharp.Core.CompilerServices
+
+let mutable finallyRan = false
+let mutable filterSawFinally = false
+let inline invoke ([<InlineIfLambda>] callback: unit -> int) =
+    let value = callback()
+    value + 1
+
+[<NoCompilerInlining>]
+let run flag =
+    StateMachineHelpers.__runtimeAsyncReturn(
+        try
+            invoke (
+                if flag then
+                    let captured = System.DateTime.UtcNow.Ticks
+                    fun () ->
+                        AsyncHelpers.Await Task.CompletedTask
+                        try
+                            failwithf "fragment %d" captured
+                        finally
+                            finallyRan <- true
+                else
+                    fun () -> 0)
+        with error when (
+            filterSawFinally <- finallyRan
+            error.Message.StartsWith("fragment", System.StringComparison.Ordinal)) ->
+                42)
+
+[<EntryPoint>]
+let main _ =
+    if (run true).GetAwaiter().GetResult() <> 42 then failwith "Incorrect exception outcome"
+    if not finallyRan then failwith "Fragment finally did not run"
+    if not filterSawFinally then failwith "Parent exception filter ran before the fragment finally"
+    0
+"""
+        |> withLangVersionPreview
+        |> withFSharpCoreShippedNet
+        |> withOptimization optimize
+        |> compileExeAndRun
+        |> shouldSucceed
+
     [<InlineData(false)>]
     [<InlineData(true)>]
     [<Theory>]
