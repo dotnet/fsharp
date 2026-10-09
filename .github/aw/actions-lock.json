@@ -35,10 +35,22 @@
       "version": "v0.76.1",
       "sha": "46d564922b082d0db93244972e8005ea6904ee5f"
     },
+    "github/gh-aw-actions/setup@v0.89.21": {
+      "repo": "github/gh-aw-actions/setup",
+      "version": "v0.89.21",
+      "sha": "924af5fdc64061cfbf66fb584c8b07e2ac230c60"
+    },
     "github/gh-aw/actions/setup@v0.67.2": {
       "repo": "github/gh-aw/actions/setup",
       "version": "v0.67.2",
       "sha": "5fb582bad4dfee2841251e97f9d22caa7eb3c82d"
+    }
+  },
+  "containers": {
+    "mcr.microsoft.com/dotnet-buildtools/prereqs:azurelinux-3.0-binlog-mcp-amd64": {
+      "image": "mcr.microsoft.com/dotnet-buildtools/prereqs:azurelinux-3.0-binlog-mcp-amd64",
+      "digest": "sha256:ca760fd18bf8e6168d9b304d65c5d2340e4135fc9080c6e2f2eb4800368e3df4",
+      "pinned_image": "mcr.microsoft.com/dotnet-buildtools/prereqs:azurelinux-3.0-binlog-mcp-amd64@sha256:ca760fd18bf8e6168d9b304d65c5d2340e4135fc9080c6e2f2eb4800368e3df4"
     }
   }
 }
