@@ -1383,6 +1383,7 @@ tcGlobalsSystemTypeNotFound,"The system type '%s' was required but no referenced
 3214,methodIsNotStatic,"Method or object constructor '%s' is not static"
 3215,parsUnexpectedSymbolEqualsInsteadOfIn,"Unexpected symbol '=' in expression. Did you intend to use 'for x in y .. z do' instead?"
 tcAnonRecdInvalid,"Invalid Anonymous Record type declaration."
+tcAnonRecdStructMismatch,"One anonymous record type is a struct, the other is a reference type"
 tcAnonRecdCcuMismatch,"Two anonymous record types are from different assemblies '%s' and '%s'"
 tcAnonRecdFieldNameMismatch,"This anonymous record does not exactly match the expected shape. Add the missing fields %s and remove the extra fields %s."
 tcAnonRecdSingleFieldNameSubset,"This anonymous record is missing field '%s'."
