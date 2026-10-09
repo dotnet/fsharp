@@ -9,18 +9,14 @@ type LanguageFeature =
     | FromEndSlicing
     | RuntimeAsync
     | WitnessPassing
-    | StringInterpolation
     | ExpandedMeasurables
     | NullnessChecking
     | UnionIsPropertiesVisible
     | AttributesToRightOfModuleKeyword
-    | ReallyLongLists
     | ErrorOnDeprecatedRequireQualifiedAccess
     | MatchNotAllowedForUnionCaseWithNoData
     | CSharpExtensionAttributeNotRequired
-    | ErrorForNonVirtualMembersOverrides
     | WarningWhenCopyAndUpdateRecordChangesAllFields
-    | ConstraintIntersectionOnFlexibleTypes
     | WarningWhenTailRecAttributeButNonTailRecUsage
     | UnmanagedConstraintCsharpInterop
     | ReuseSameFieldsInStructUnions

@@ -2618,13 +2618,11 @@ typarDecl:
       { SynTyparDecl($1, $2, [], SynTyparDeclTrivia.Zero) }
 
   | typar AMP intersectionConstraints
-      { parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.ConstraintIntersectionOnFlexibleTypes (rhs2 parseState 2 3)
-        let constraints, mAmpersands = $3
+      { let constraints, mAmpersands = $3
         SynTyparDecl([], $1, List.rev constraints, { AmpersandRanges = rhs parseState 2 :: List.rev mAmpersands }) }
 
   | attributes typar AMP intersectionConstraints
-      { parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.ConstraintIntersectionOnFlexibleTypes (rhs2 parseState 3 4)
-        let constraints, mAmpersands = $4
+      { let constraints, mAmpersands = $4
         SynTyparDecl($1, $2, List.rev constraints, { AmpersandRanges = rhs parseState 3 :: List.rev mAmpersands }) }
 
 /* Any tokens in this grammar must be added to the lex filter rule 'peekAdjacentTypars' */
@@ -6614,8 +6612,7 @@ appTypeWithoutNull:
       { $1 }
 
   | intersectionType
-      { parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.ConstraintIntersectionOnFlexibleTypes (lhs parseState)
-        $1 }
+      { $1 }
 
   | typar COLON_GREATER typ
       { let tp, typ = $1, $3

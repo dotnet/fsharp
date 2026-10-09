@@ -1,0 +1,17 @@
+parameters:
+  configuration: 'Release'
+  testRunTitle: ''
+  condition: succeededOrFailed()
+
+steps:
+- task: PowerShell@2
+  displayName: Publish and verify test results
+  inputs:
+    pwsh: true
+    filePath: 'eng/PublishTestResults.ps1'
+    arguments: >-
+      -ResultsDirectory "$(Build.SourcesDirectory)/artifacts/TestResults/${{ parameters.configuration }}"
+      -RunTitle "${{ parameters.testRunTitle }}"
+  env:
+    SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+  condition: ${{ parameters.condition }}
