@@ -3729,6 +3729,8 @@ FSharp.Compiler.EditorServices.InsertionContextEntity: Int32 CompareTo(System.Ob
 FSharp.Compiler.EditorServices.InsertionContextEntity: Int32 CompareTo(System.Object, System.Collections.IComparer)
 FSharp.Compiler.EditorServices.InsertionContextEntity: Int32 GetHashCode()
 FSharp.Compiler.EditorServices.InsertionContextEntity: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.EditorServices.InsertionContextEntity: Int32 NamespaceIdentCount
+FSharp.Compiler.EditorServices.InsertionContextEntity: Int32 get_NamespaceIdentCount()
 FSharp.Compiler.EditorServices.InsertionContextEntity: Microsoft.FSharp.Core.FSharpOption`1[System.String] Namespace
 FSharp.Compiler.EditorServices.InsertionContextEntity: Microsoft.FSharp.Core.FSharpOption`1[System.String] get_Namespace()
 FSharp.Compiler.EditorServices.InsertionContextEntity: System.String FullDisplayName
@@ -3740,7 +3742,7 @@ FSharp.Compiler.EditorServices.InsertionContextEntity: System.String get_FullDis
 FSharp.Compiler.EditorServices.InsertionContextEntity: System.String get_FullRelativeName()
 FSharp.Compiler.EditorServices.InsertionContextEntity: System.String get_LastIdent()
 FSharp.Compiler.EditorServices.InsertionContextEntity: System.String get_Qualifier()
-FSharp.Compiler.EditorServices.InsertionContextEntity: Void .ctor(System.String, System.String, Microsoft.FSharp.Core.FSharpOption`1[System.String], System.String, System.String)
+FSharp.Compiler.EditorServices.InsertionContextEntity: Void .ctor(System.String, System.String, Microsoft.FSharp.Core.FSharpOption`1[System.String], Int32, System.String, System.String)
 FSharp.Compiler.EditorServices.InterfaceData+Interface: FSharp.Compiler.Syntax.SynType get_interfaceType()
 FSharp.Compiler.EditorServices.InterfaceData+Interface: FSharp.Compiler.Syntax.SynType interfaceType
 FSharp.Compiler.EditorServices.InterfaceData+Interface: Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynMemberDefn]] get_memberDefns()
