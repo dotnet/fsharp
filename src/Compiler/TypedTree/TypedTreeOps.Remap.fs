@@ -77,6 +77,8 @@ module internal TypeRemapping =
 
     [<NoEquality; NoComparison; Sealed>]
     type TyconRefMap<'T>(imap: StampMap<'T>) =
+        member _.Contents = imap
+
         member _.Item
             with get (tcref: TyconRef) = imap[tcref.Stamp]
 
@@ -86,6 +88,15 @@ module internal TypeRemapping =
         member _.Remove(tcref: TyconRef) = TyconRefMap(imap.Remove tcref.Stamp)
         member _.IsEmpty = imap.IsEmpty
         member _.TryGetValue(tcref: TyconRef) = imap.TryGetValue tcref.Stamp
+
+        member _.Map(remapStamp, mapping) =
+            let remapped =
+                Map.fold (fun acc stamp value -> Map.add (remapStamp stamp) (mapping value) acc) Map.empty imap
+
+            if remapped.Count <> imap.Count then
+                invalidOp "Non-injective type constructor stamp remapping"
+
+            TyconRefMap remapped
 
         static member Empty: TyconRefMap<'T> = TyconRefMap Map.empty
 
@@ -330,6 +341,19 @@ module internal TypeRemapping =
         let tysR = remapTypesAux tyenv tys
         let argTysR = remapTypesAux tyenv argTys
         let retTyR = Option.map (remapTypeAux tyenv) retTy
+
+        let traitCtxt =
+            if tyenv.tyconRefRemap.IsEmpty && tyenv.valRemap.IsEmpty then
+                traitCtxt
+            else
+                traitCtxt
+                |> Option.map (fun ctxt ->
+                    let remapStamp stamp =
+                        match tyenv.tyconRefRemap.Contents.TryFind stamp with
+                        | Some tcref -> tcref.Stamp
+                        | None -> stamp
+
+                    ctxt.Remap(remapTypeAux tyenv, remapValRef tyenv, remapStamp))
 
         // Note: we reallocate a new solution cell on every traversal of a trait constraint
         // This feels incorrect for trait constraints that are quantified: it seems we should have

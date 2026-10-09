@@ -367,11 +367,6 @@
         <target state="new">Error when bitwise operators are used on enums whose underlying type is not an integer type (e.g. char).</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureErrorOnDeprecatedRequireQualifiedAccess">
-        <source>give error on deprecated access of construct with RequireQualifiedAccess attribute</source>
-        <target state="translated">errore durante l'accesso deprecato del costrutto con l'attributo RequireQualifiedAccess</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureErrorOnInvalidDeclsInTypeDefinitions">
         <source>Error when invalid declarations are used in type definitions.</source>
         <target state="new">Error when invalid declarations are used in type definitions.</target>
@@ -380,11 +375,6 @@
       <trans-unit id="featureErrorOnMissingSignatureAttribute">
         <source>error (rather than warning) when an enforced compiler-semantic attribute is present in the .fs but missing from the .fsi</source>
         <target state="new">error (rather than warning) when an enforced compiler-semantic attribute is present in the .fs but missing from the .fsi</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureExpandedMeasurables">
-        <source>more types support units of measure</source>
-        <target state="translated">più tipi supportano le unità di misura</target>
         <note />
       </trans-unit>
       <trans-unit id="featureExtensionConstraintSolutions">
@@ -550,11 +540,6 @@
       <trans-unit id="featureWarningIndexedPropertiesGetSetSameType">
         <source>Indexed properties getter and setter must have the same type</source>
         <target state="translated">Il getter e il setter delle proprietà indicizzate devono avere lo stesso tipo</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureWarningWhenMultipleRecdTypeChoice">
-        <source>Raises warnings when multiple record type matches were found during name resolution because of overlapping field names.</source>
-        <target state="translated">Genera avvisi quando sono state trovate più corrispondenze del tipo di record durante la risoluzione dei nomi a causa di nomi di campi sovrapposti.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWitnessPassing">

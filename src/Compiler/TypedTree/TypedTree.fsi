@@ -1789,8 +1789,12 @@ type TraitWitnessInfo =
     /// Get the return type recorded in the member constraint.
     member ReturnType: TType option
 
-/// Non-generic marker interface for storing in TraitConstraintInfo.
-type ITraitContext = interface end
+/// Non-generic interface for storing in TraitConstraintInfo.
+type ITraitContext =
+    /// Remap the extension scope when its types and values are copied.
+    abstract Remap:
+        remapType: (TType -> TType) * remapValRef: (ValRef -> ValRef) * remapTyconStamp: (Stamp -> Stamp) ->
+            ITraitContext
 
 /// Generic typed interface for trait context operations.
 type ITraitContext<'AccessRights, 'MethodInfo, 'InfoReader> =
