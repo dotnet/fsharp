@@ -583,7 +583,9 @@ let GenerateIlxCode
             isInteractive = tcConfig.isInteractive
             isInteractiveItExpr = isInteractiveItExpr
             alwaysCallVirt = tcConfig.alwaysCallVirt
-            parallelIlxGenEnabled = tcConfig.parallelIlxGen
+            // Hot reload capture/replay installs a compiler emit hook. Keep IlxGen sequential
+            // even when an immutable FCS TcConfig was created before fsc applied its builder pins.
+            parallelIlxGenEnabled = tcConfig.parallelIlxGen && tcConfig.compilerEmitHook.IsNone
             alwaysInline = tcConfig.alwaysInline
         }
 
