@@ -2,7 +2,7 @@
 
 Describe 'Per-file test result publication' {
     BeforeEach {
-        $script:publication = @{ Commands = @(); Runs = @(); Mode = 'complete'; Polls = 0 }
+        $script:publication = @{ Commands = @(); Runs = @(); Mode = 'complete'; Polls = 0; TransportAt = ''; TransportFailures = 0; TransportKind = 'dns' }
         $script:publisher = Join-Path $PSScriptRoot '..\PublishTestResults.ps1'
         $script:results = Join-Path $TestDrive 'results'
         New-Item $results -ItemType Directory -Force | Out-Null
@@ -33,6 +33,17 @@ Describe 'Per-file test result publication' {
         }
         Mock Invoke-RestMethod {
             $publication.Polls++
+            $detail = $Uri -match '/runs/\d+\?'
+            if ($publication.TransportFailures -gt 0 -and (($publication.TransportAt -eq 'list' -and !$detail) -or ($publication.TransportAt -eq 'detail' -and $detail))) {
+                $publication.TransportFailures--
+                if ($publication.TransportKind -eq 'permanent') {
+                    throw [System.Net.Http.HttpRequestException]::new('Unauthorized verification read')
+                }
+                throw [System.Net.Http.HttpRequestException]::new(
+                    'nodename nor servname provided, or not known',
+                    [System.Net.Sockets.SocketException]::new([int][System.Net.Sockets.SocketError]::HostNotFound)
+                )
+            }
             if ($publication.Mode -ne 'stuck' -and ($publication.Mode -ne 'delayed' -or $publication.Polls -gt 2)) {
                 $publication.Runs | ForEach-Object { $_.state = 'Completed' }
             }
@@ -124,6 +135,48 @@ Describe 'Per-file test result publication' {
         & $publisher -ResultsDirectory $results -RunTitle 'Linux Batch1'
         Assert-MockCalled Start-Sleep -Times 1 -Exactly -Scope It
         $publication.Commands.Count | Should Be 2
+    }
+
+    It 'retries a DNS failure in the <At> verification without republishing' -TestCases @(
+        @{ At = 'list' }
+        @{ At = 'detail' }
+    ) {
+        param($At)
+        Mock Write-Warning {}
+        $publication.TransportAt = $At
+        $publication.TransportFailures = 1
+        & $publisher -ResultsDirectory $results -RunTitle 'DNS verification' -TimeoutSeconds 20
+        $publication.Commands.Count | Should Be 2
+        ($publication.Runs.totalTests -join ',') | Should Be '117,6175'
+        Assert-MockCalled Start-Sleep -Times 1 -Exactly -Scope It
+        Assert-MockCalled Write-Warning -Times 1 -Exactly -Scope It
+        Assert-MockCalled Invoke-RestMethod -Times 1 -Exactly -Scope It -ParameterFilter { $TimeoutSec -ge 1 -and $TimeoutSec -lt 30 }
+    }
+
+    It 'keeps DNS retries bounded and permanent failures fatal (<Reason>)' -TestCases @(
+        @{ Reason = 'exhausted'; Failures = 9; Kind = 'dns'; Timeout = 300; Calls = 3; Sleeps = 2 }
+        @{ Reason = 'deadline'; Failures = 1; Kind = 'dns'; Timeout = 0; Calls = 1; Sleeps = 0 }
+        @{ Reason = 'permanent'; Failures = 1; Kind = 'permanent'; Timeout = 300; Calls = 1; Sleeps = 0 }
+    ) {
+        param($Reason, $Failures, $Kind, $Timeout, $Calls, $Sleeps)
+        Mock Write-Warning {}
+        $publication.TransportAt = 'list'
+        $publication.TransportFailures = $Failures
+        $publication.TransportKind = $Kind
+        { & $publisher -ResultsDirectory $results -RunTitle 'Failed verification' -TimeoutSeconds $Timeout } | Should Throw
+        $publication.Commands.Count | Should Be 1
+        Assert-MockCalled Invoke-RestMethod -Times $Calls -Exactly -Scope It
+        Assert-MockCalled Start-Sleep -Times $Sleeps -Exactly -Scope It
+        Assert-MockCalled Write-Warning -Times $Sleeps -Exactly -Scope It
+    }
+
+    It 'still rejects a wrong count after a successful DNS retry' {
+        $publication.Mode = 'truncated'
+        $publication.TransportAt = 'list'
+        $publication.TransportFailures = 1
+        { & $publisher -ResultsDirectory $results -RunTitle 'Wrong count' } | Should Throw 'expected 117'
+        $publication.Commands.Count | Should Be 1
+        Assert-MockCalled Start-Sleep -Times 1 -Exactly -Scope It
     }
 
     It 'escapes logging command properties and file names' {

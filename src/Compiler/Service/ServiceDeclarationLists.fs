@@ -1075,8 +1075,9 @@ type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, i
     member _.IsError = isError
 
     // Make a 'Declarations' object for a set of selected items
-    static member Create(infoReader:InfoReader, ad, m: range, denv, getAccessibility: Item -> FSharpAccessibility, items: CompletionItem list, currentNamespace: string[] option, isAttributeApplicationContext: bool) =
+    static member Create(infoReader:InfoReader, ad, m: range, denv, getAccessibility: Item -> FSharpAccessibility, items: CompletionItem list, currentNamespace: string[] option, currentScope: string[] option, isAttributeApplicationContext: bool) =
         let g = infoReader.g
+        let currentScope = currentScope |> Option.map (Array.map NormalizeIdentifierBackticks)
         let isForType = items |> List.exists (fun x -> x.Type.IsSome || (x.Item |> function Item.AnonRecdField _ -> true | _ -> false))
         let items = items |> RemoveExplicitlySuppressedCompletionItems g
 
@@ -1238,15 +1239,24 @@ type DeclarationListInfo(declarations: DeclarationListItem[], isForType: bool, i
                     item.Unresolved
                     |> Option.map (fun x -> x.Namespace)
                     |> Option.bind (fun ns ->
-                        if ns |> Array.startsWith fsharpNamespace then None
-                        else Some ns)
+                        match item.Item with
+                        | Item.ActivePatternCase _ -> Some ns
+                        | _ -> if ns |> Array.startsWith fsharpNamespace then None else Some ns)
                     |> Option.map (fun ns ->
-                        match currentNamespace with
-                        | Some currentNs ->
-                            if ns |> Array.startsWith currentNs then
-                                ns[currentNs.Length..]
-                            else ns
-                        | None -> ns)
+                        let relativeNs =
+                            match currentNamespace with
+                            | Some currentNs when ns |> Array.startsWith currentNs -> ns[currentNs.Length..]
+                            | _ -> ns
+
+                        match item.Item, currentScope, currentNamespace with
+                        | Item.ActivePatternCase case, Some scope, Some currentNs when
+                            relativeNs.Length > 0
+                            && case.ActivePatternVal.DefinitionRange.FileName = m.FileName
+                            && rangeBeforePos case.ActivePatternVal.DefinitionRange m.Start
+                            && (ns |> Array.startsWith (Array.map NormalizeIdentifierBackticks currentNs))
+                            ->
+                            FSharp.Compiler.EditorServices.Entity.getRelativeNamespace scope ns
+                        | _ -> relativeNs)
                     |> Option.bind (function
                         | [||] -> None
                         | ns -> Some (System.String.Join(".", ns)))
