@@ -4,7 +4,7 @@ open System
 open System.Collections.Generic
 open System.IO
 open System.Text
-open FSharp.Compiler.AbstractIL.ILMetadataHeaps
+open FSharp.Compiler.AbstractIL.ILBinaryWriter
 open FSharp.Compiler.AbstractIL.BinaryConstants
 open FSharp.Compiler.AbstractIL.ILDeltaHandles
 open FSharp.Compiler.AbstractIL.DeltaMetadataTables
