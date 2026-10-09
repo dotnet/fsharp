@@ -87,15 +87,16 @@ let private check markedSource =
         (complete FSharpCodeCompletionOptions.Default (fun () -> catalogue)).Items
         |> Array.filter predicate
         |> Assert.Single
-    let insert (symbol: AssemblySymbol) partiallyQualified =
-        ParsedInput.TryFindInsertionContext context.Pos.Line parse.ParseTree partiallyQualified OpenStatementInsertionPoint.TopLevel
+    let insertAt mode (symbol: AssemblySymbol) partiallyQualified =
+        ParsedInput.TryFindInsertionContext context.Pos.Line parse.ParseTree partiallyQualified mode
             (symbol.TopRequireQualifiedAccessParent, symbol.AutoOpenParent, symbol.Namespace, symbol.CleanedIdents)
         |> Assert.Single
+    let insert = insertAt OpenStatementInsertionPoint.TopLevel
     let checkEdit edited =
         let _, checkedResults = parseAndCheckFile options.SourceFiles[1] edited options
         assertNoDiagnostics checkedResults
         checkedResults
-    struct {| Context = context; Parse = parse; Results = results; Catalogue = catalogue; Complete = complete; Item = item; Insert = insert; CheckEdit = checkEdit |}
+    struct {| Context = context; Parse = parse; Results = results; Catalogue = catalogue; Complete = complete; Item = item; Insert = insert; InsertAt = insertAt; CheckEdit = checkEdit |}
 
 let private assertNoUnusedOpens (results: FSharpCheckFileResults) (source: string) =
     Assert.Empty(UnusedOpens.getUnusedOpens(results, fun line -> (SourceContext.getLines source)[line - 1]) |> Async.RunSynchronouslyImmediate)
@@ -412,10 +413,7 @@ let ``same-file case names agree with their after-definition insertion scope`` (
     Assert.Equal("Case", item.NameInCode)
     Assert.Equal(Some ns, item.NamespaceToOpen)
     let mode = if atTop then OpenStatementInsertionPoint.TopLevel else OpenStatementInsertionPoint.Nearest
-    let entity, context =
-        ParsedInput.TryFindInsertionContext test.Context.Pos.Line test.Parse.ParseTree [| { Ident = "Case"; Resolved = false } |] mode
-            (symbol.TopRequireQualifiedAccessParent, symbol.AutoOpenParent, symbol.Namespace, symbol.CleanedIdents)
-        |> Assert.Single
+    let entity, context = test.InsertAt mode symbol [| { Ident = "Case"; Resolved = false } |]
     Assert.Equal(Some ns, entity.Namespace)
     Assert.Equal($"{ns}.Case", entity.Qualifier)
     Assert.Equal(Position.mkPos insertionLine column, context.Pos)
@@ -445,10 +443,7 @@ let ``nested ordinary completion keeps its existing namespace projection`` atTop
     Assert.Equal("Outer.Patterns.Thing", item.NameInCode)
     Assert.Equal(None, item.NamespaceToOpen)
     let mode = if atTop then OpenStatementInsertionPoint.TopLevel else OpenStatementInsertionPoint.Nearest
-    let entity, context =
-        ParsedInput.TryFindInsertionContext test.Context.Pos.Line test.Parse.ParseTree [| { Ident = "Thing"; Resolved = false } |] mode
-            (symbol.TopRequireQualifiedAccessParent, symbol.AutoOpenParent, symbol.Namespace, symbol.CleanedIdents)
-        |> Assert.Single
+    let entity, context = test.InsertAt mode symbol [| { Ident = "Thing"; Resolved = false } |]
     Assert.Equal(Some "Patterns", entity.Namespace)
     Assert.Equal("Patterns.Thing", entity.Qualifier)
     Assert.Equal(Position.mkPos 5 4, context.Pos)

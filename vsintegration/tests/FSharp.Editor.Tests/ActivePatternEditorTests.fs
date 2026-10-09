@@ -120,6 +120,9 @@ let private assertFixedCode (expected: string) (actual: string) =
     Assert.Equal(expected, actual.Replace("\r\n", "\n"))
     assertCompiles actual
 
+let private addOpenFix code mode =
+    AddOpenCodeFixProvider(AssemblyContentProvider()) |> tryFix code mode
+
 [<Theory>]
 [<InlineData("Even", "", "Candidates.Normal", true)>]
 [<InlineData("Odd", "", "Candidates.Normal", false)>]
@@ -206,10 +209,7 @@ let ``Add Open supports a top module header without a blank line`` (atTop: bool)
 
     let mode = WithSettings(placement atTop)
 
-    let fix =
-        AddOpenCodeFixProvider(AssemblyContentProvider())
-        |> tryFix code mode
-        |> Option.get
+    let fix = addOpenFix code mode |> Option.get
 
     Assert.Equal("open System", fix.Message)
 
@@ -221,10 +221,7 @@ let ``Add Open supports a top module header without a blank line`` (atTop: bool)
 let ``RQA bare case fix supplies the qualification still required`` (body: string, message: string) =
     let code = source body
 
-    let fix =
-        AddOpenCodeFixProvider(AssemblyContentProvider())
-        |> tryFix code Auto
-        |> Option.get
+    let fix = addOpenFix code Auto |> Option.get
 
     Assert.Equal(message, fix.Message)
 
@@ -246,7 +243,7 @@ let ``RQA bare case fix supplies the qualification still required`` (body: strin
 [<InlineData("[<Positive>]\n    type T = class end")>]
 let ``Add Open does not suggest unusable case edits`` body =
     let code = source body
-    let actual = AddOpenCodeFixProvider(AssemblyContentProvider()) |> tryFix code Auto
+    let actual = addOpenFix code Auto
     Assert.Equal(None, actual)
 
     if body = "let Even = 1" then
@@ -259,7 +256,7 @@ let ``Add Open does not duplicate an already visible case open`` () =
         |> withOpen true "Candidates.Normal"
 
     assertCompiles code
-    Assert.Equal(None, AddOpenCodeFixProvider(AssemblyContentProvider()) |> tryFix code Auto)
+    Assert.Equal(None, addOpenFix code Auto)
 
 let private serviceProvider =
     let xmlIndex =
