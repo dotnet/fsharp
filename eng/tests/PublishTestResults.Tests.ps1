@@ -39,6 +39,10 @@ Describe 'Per-file test result publication' {
             if ($Uri -match '/runs/(\d+)\?') {
                 return $publication.Runs | Where-Object id -eq $Matches[1] | Select-Object -Last 1
             }
+            if ($publication.Polls -eq 1) {
+                if ($publication.Mode -eq 'null-response') { return $null }
+                if ($publication.Mode -eq 'missing-value') { return @{} }
+            }
             if ($publication.Mode -eq 'missing' -or ($publication.Mode -eq 'late' -and $publication.Polls -eq 1)) {
                 return @{ value = @() }
             }
@@ -118,6 +122,8 @@ Describe 'Per-file test result publication' {
     It 'waits for <Mode> runs before publishing the next file' -TestCases @(
         @{ Mode = 'delayed' }
         @{ Mode = 'late' }
+        @{ Mode = 'null-response' }
+        @{ Mode = 'missing-value' }
     ) {
         param($Mode)
         $publication.Mode = $Mode

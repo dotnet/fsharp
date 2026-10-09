@@ -52,7 +52,20 @@ foreach ($file in $files) {
     $deadline = [DateTime]::UtcNow.AddSeconds($TimeoutSeconds)
     do {
         $response = Invoke-RestMethod -Uri "${runsUrl}?buildUri=$build&`$top=10000&api-version=7.1" -Headers $headers -TimeoutSec 30
-        $runs = @($response.value | Where-Object { $_.name -eq $title -or $_.name -eq "${title}_1" })
+        # The test-runs endpoint can transiently return no collection while the asynchronous publication is materializing.
+        $responseRuns = if ($null -eq $response) {
+            @()
+        }
+        elseif ($response -is [Collections.IDictionary]) {
+            if ($response.Contains('value')) { @($response['value']) } else { @() }
+        }
+        elseif ($null -ne $response.PSObject.Properties['value']) {
+            @($response.value)
+        }
+        else {
+            @()
+        }
+        $runs = @($responseRuns | Where-Object { $_.name -eq $title -or $_.name -eq "${title}_1" })
         if ($runs.Count -gt 1) {
             throw "Multiple test runs found for $($file.Name)."
         }
