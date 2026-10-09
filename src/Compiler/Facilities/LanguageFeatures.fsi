@@ -13,7 +13,6 @@ type LanguageFeature =
     | NullnessChecking
     | UnionIsPropertiesVisible
     | AttributesToRightOfModuleKeyword
-    | ErrorOnDeprecatedRequireQualifiedAccess
     | CSharpExtensionAttributeNotRequired
     | WarningWhenCopyAndUpdateRecordChangesAllFields
     | UnmanagedConstraintCsharpInterop

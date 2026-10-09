@@ -23,7 +23,6 @@ type LanguageFeature =
     | NullnessChecking
     | UnionIsPropertiesVisible
     | AttributesToRightOfModuleKeyword
-    | ErrorOnDeprecatedRequireQualifiedAccess
     | CSharpExtensionAttributeNotRequired
     | WarningWhenCopyAndUpdateRecordChangesAllFields
     | UnmanagedConstraintCsharpInterop
@@ -117,9 +116,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
                 // F# 6.0
                 LanguageFeature.ExpandedMeasurables, languageVersion60
                 LanguageFeature.AttributesToRightOfModuleKeyword, languageVersion60
-
-                // F# 7.0
-                LanguageFeature.ErrorOnDeprecatedRequireQualifiedAccess, languageVersion70
 
                 // F# 8.0
                 LanguageFeature.CSharpExtensionAttributeNotRequired, languageVersion80
@@ -281,7 +277,6 @@ type LanguageVersion(versionText, ?disabledFeaturesArray: LanguageFeature array)
         | LanguageFeature.ExpandedMeasurables -> FSComp.SR.featureExpandedMeasurables ()
         | LanguageFeature.UnionIsPropertiesVisible -> FSComp.SR.featureUnionIsPropertiesVisible ()
         | LanguageFeature.AttributesToRightOfModuleKeyword -> FSComp.SR.featureAttributesToRightOfModuleKeyword ()
-        | LanguageFeature.ErrorOnDeprecatedRequireQualifiedAccess -> FSComp.SR.featureErrorOnDeprecatedRequireQualifiedAccess ()
         | LanguageFeature.CSharpExtensionAttributeNotRequired -> FSComp.SR.featureCSharpExtensionAttributeNotRequired ()
         | LanguageFeature.WarningWhenCopyAndUpdateRecordChangesAllFields ->
             FSComp.SR.featureWarningWhenCopyAndUpdateRecordChangesAllFields ()
