@@ -97,6 +97,13 @@ let private check markedSource =
         checkedResults
     struct {| Context = context; Parse = parse; Results = results; Catalogue = catalogue; Complete = complete; Item = item; Insert = insert; CheckEdit = checkEdit |}
 
+let private assertNoUnusedOpens (results: FSharpCheckFileResults) (source: string) =
+    Assert.Empty(UnusedOpens.getUnusedOpens(results, fun line -> (SourceContext.getLines source)[line - 1]) |> Async.RunSynchronouslyImmediate)
+
+let private assertCaseUsed (results: FSharpCheckFileResults) (symbol: AssemblySymbol) =
+    Assert.Contains(results.GetAllUsesOfAllSymbolsInFile(), fun usage ->
+        usage.Symbol :? FSharpActivePatternCase && usage.Symbol.FullName = symbol.FullName && not usage.IsFromDefinition)
+
 [<Theory>]
 [<InlineData("Even", "Normal", "", "Even", "Candidates.Normal", "Candidates.Normal.Even")>]
 [<InlineData("Odd", "Normal", "", "Odd", "Candidates.Normal", "Candidates.Normal.Odd")>]
@@ -145,8 +152,7 @@ let ``unopened cases provide compiling completion and import edits`` (caseName: 
             | None -> source
         let results = test.CheckEdit edited
         if openNamespace.IsSome then
-            let unused = UnusedOpens.getUnusedOpens(results, fun line -> (SourceContext.getLines edited)[line - 1]) |> Async.RunSynchronouslyImmediate
-            Assert.Empty unused
+            assertNoUnusedOpens results edited
     checkEdit item.NameInCode item.NamespaceToOpen
     checkEdit entity.Qualifier None
 
@@ -373,8 +379,7 @@ let ``backing group expressions retain their catalogue and source invocation beh
     Assert.DoesNotContain(items, fun item -> item.FullName = symbol.FullName)
     let opened = test.Context.Source.Replace("module Consumer", "module Consumer\nopen Candidates.Normal")
     let results = test.CheckEdit opened
-    let unused = UnusedOpens.getUnusedOpens(results, fun line -> (SourceContext.getLines opened)[line - 1]) |> Async.RunSynchronouslyImmediate
-    Assert.Empty unused
+    assertNoUnusedOpens results opened
     test.CheckEdit (test.Context.Source.Replace(name, $"Candidates.Normal.{name}")) |> ignore
 
 [<Theory>]
@@ -424,9 +429,8 @@ let ``same-file case names agree with their after-definition insertion scope`` (
         |> Array.insertAt (insertionLine - 1) $"{margin}open {item.NamespaceToOpen.Value}"
         |> String.concat "\n"
     let results = test.CheckEdit edited
-    Assert.Empty(UnusedOpens.getUnusedOpens(results, fun line -> (SourceContext.getLines edited)[line - 1]) |> Async.RunSynchronouslyImmediate)
-    Assert.Contains(results.GetAllUsesOfAllSymbolsInFile(), fun usage ->
-        usage.Symbol :? FSharpActivePatternCase && usage.Symbol.FullName = symbol.FullName && not usage.IsFromDefinition)
+    assertNoUnusedOpens results edited
+    assertCaseUsed results symbol
     test.CheckEdit(test.Context.Source.Replace("| Case n ->", $"| {entity.Qualifier} n ->")) |> ignore
 
 [<Theory>]
@@ -451,7 +455,7 @@ let ``nested ordinary completion keeps its existing namespace projection`` atTop
     Assert.Equal([| "N" |], ParsedInput.GetFullNameOfSmallestModuleOrNamespaceAtPoint(test.Context.Pos, test.Parse.ParseTree))
     let opened = test.Context.Source.Replace("    module Use =\n", "    open Patterns\n    module Use =\n")
     let results = test.CheckEdit opened
-    Assert.Empty(UnusedOpens.getUnusedOpens(results, fun line -> (SourceContext.getLines opened)[line - 1]) |> Async.RunSynchronouslyImmediate)
+    assertNoUnusedOpens results opened
     test.CheckEdit(test.Context.Source.Replace("let value: Thing =", $"let value: {entity.Qualifier} =")) |> ignore
 
 [<Fact>]
@@ -470,9 +474,8 @@ let ``same-file cases in a different namespace keep the full import path`` () =
         [ test.Context.Source.Replace("namespace N.B\n", $"namespace N.B\nopen {item.NamespaceToOpen.Value}\n")
           test.Context.Source.Replace("| Case n", $"| {entity.Qualifier} n") ] do
         let results = test.CheckEdit edited
-        Assert.Empty(UnusedOpens.getUnusedOpens(results, fun line -> (SourceContext.getLines edited)[line - 1]) |> Async.RunSynchronouslyImmediate)
-        Assert.Contains(results.GetAllUsesOfAllSymbolsInFile(), fun usage ->
-            usage.Symbol :? FSharpActivePatternCase && usage.Symbol.FullName = symbol.FullName && not usage.IsFromDefinition)
+        assertNoUnusedOpens results edited
+        assertCaseUsed results symbol
 
 [<Theory>]
 [<InlineData("Case", true, "Outer.Patterns", "Outer.Patterns.Case")>]
@@ -523,6 +526,5 @@ let ``referenced case names retain the namespace-level insertion scope`` (patter
           context.Source.Replace($"| {pattern} n ->", $"| {qualifiedPattern} n ->") ] do
         let _, checkedResults = checkSource edited
         assertNoDiagnostics checkedResults
-        Assert.Empty(UnusedOpens.getUnusedOpens(checkedResults, fun line -> (SourceContext.getLines edited)[line - 1]) |> Async.RunSynchronouslyImmediate)
-        Assert.Contains(checkedResults.GetAllUsesOfAllSymbolsInFile(), fun usage ->
-            usage.Symbol :? FSharpActivePatternCase && usage.Symbol.FullName = symbol.FullName && not usage.IsFromDefinition)
+        assertNoUnusedOpens checkedResults edited
+        assertCaseUsed checkedResults symbol
