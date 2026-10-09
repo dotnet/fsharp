@@ -488,8 +488,13 @@ stages:
           - script: ./eng/common/dotnet.sh fsi tests/EndToEndBuildTests/MultithreadedTasks/run.fsx -- --configuration $(_BuildConfig) --repetitions 3
             displayName: Real SDK MP / MT integration
             condition: and(succeeded(), eq(variables['batchNumber'], '1'))
-          - task: PublishPipelineArtifact@1
+          - pwsh: |
+              $exists = Test-Path -LiteralPath "$(Build.SourcesDirectory)/artifacts/MultithreadedTasks" -PathType Container
+              Write-Host "##vso[task.setvariable variable=SdkMtEvidenceAvailable]$exists"
+            displayName: Check SDK MT evidence
             condition: and(always(), eq(variables['batchNumber'], '1'))
+          - task: PublishPipelineArtifact@1
+            condition: and(always(), eq(variables['batchNumber'], '1'), eq(variables['SdkMtEvidenceAvailable'], 'true'))
             inputs:
               targetPath: '$(Build.SourcesDirectory)/artifacts/MultithreadedTasks'
               artifact: Linux SDK MT evidence
@@ -536,8 +541,13 @@ stages:
             displayName: End to end build tests
           - script: .\eng\common\dotnet.cmd fsi tests\EndToEndBuildTests\MultithreadedTasks\run.fsx -- --configuration Release --repetitions 3
             displayName: Real SDK MP / MT integration
-          - task: PublishPipelineArtifact@1
+          - pwsh: |
+              $exists = Test-Path -LiteralPath "$(Build.SourcesDirectory)/artifacts/MultithreadedTasks" -PathType Container
+              Write-Host "##vso[task.setvariable variable=SdkMtEvidenceAvailable]$exists"
+            displayName: Check SDK MT evidence
             condition: always()
+          - task: PublishPipelineArtifact@1
+            condition: and(always(), eq(variables['SdkMtEvidenceAvailable'], 'true'))
             inputs:
               targetPath: '$(Build.SourcesDirectory)/artifacts/MultithreadedTasks'
               artifact: Windows SDK MT evidence
