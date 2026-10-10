@@ -1,4 +1,4 @@
-module internal CompilerService.Caches
+module CompilerService.Caches
 
 open FSharp.Compiler.Caches
 open Xunit
@@ -14,7 +14,66 @@ let shouldNeverTimeout = 15_000
 let shouldNeverTimeout = 200_000
 #endif
 
-let defaultStructural() = CacheOptions.getDefault HashIdentity.Structural
+let private defaultStructural() = CacheOptions.getDefault HashIdentity.Structural
+
+[<System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)>]
+let private createIdleCache useMailbox =
+    let options =
+        { defaultStructural() with
+            TotalCapacity = 1
+            HeadroomPercentage = 0
+            EvictionMode = if useMailbox then EvictionMode.MailboxProcessor else EvictionMode.Immediate }
+    let cache = new Cache<string, obj>(options, name = "Idle cache collection")
+    let payload = obj()
+    let evicted = TaskCompletionSource<unit>()
+    cache.Evicted.Add evicted.SetResult
+    cache.TryAdd("first", obj()) |> shouldBeTrue
+    cache.TryAdd("last", payload) |> shouldBeTrue
+    evicted.Task.Wait shouldNeverTimeout |> shouldBeTrue
+    struct {| Cache = WeakReference(cache); Payload = WeakReference(payload) |}
+
+[<Theory>]
+[<InlineData(false)>]
+[<InlineData(true)>]
+let ``Idle cache and contents are collected without explicit disposal`` useMailbox =
+    let references = createIdleCache useMailbox
+    let collected =
+        System.Threading.SpinWait.SpinUntil(
+            (fun () ->
+                GC.Collect()
+                GC.WaitForPendingFinalizers()
+                GC.Collect()
+                not references.Cache.IsAlive && not references.Payload.IsAlive),
+            shouldNeverTimeout)
+    collected |> shouldBeTrue
+
+[<Theory>]
+[<InlineData(false)>]
+[<InlineData(true)>]
+let ``Disposing or faulting one cache does not stop eviction for another`` faultFirst =
+    let options =
+        { defaultStructural() with
+            TotalCapacity = 1
+            HeadroomPercentage = 0
+            EvictionMode = EvictionMode.MailboxProcessor }
+    use first = new Cache<string, obj>(options, name = "First cache isolation")
+    if faultFirst then
+        first.Evicted.Add(fun () -> raise (InvalidOperationException("Eviction subscriber failed")))
+    else
+        (first :> IDisposable).Dispose()
+    first.TryAdd("first", obj()) |> shouldBeTrue
+    first.TryAdd("last", obj()) |> shouldBeTrue
+
+    use second = new Cache<string, int>(options, name = "Second cache isolation")
+    let evicted = TaskCompletionSource<unit>()
+    second.Evicted.Add evicted.SetResult
+    second.TryAdd("first", 1) |> shouldBeTrue
+    second.TryAdd("last", 2) |> shouldBeTrue
+    evicted.Task.Wait shouldNeverTimeout |> shouldBeTrue
+    let mutable value = 0
+    second.TryGetValue("first", &value) |> shouldBeFalse
+    second.TryGetValue("last", &value) |> shouldBeTrue
+    value |> shouldEqual 2
 
 // Metrics assertions below read absolute per-name totals via CacheMetrics.getTotalsByName. Those totals
 // are aggregated process-globally while a CacheMetrics.ListenToAll() listener is running. This works
