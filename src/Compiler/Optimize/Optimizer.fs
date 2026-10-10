@@ -513,7 +513,6 @@ type IncrementalOptimizationEnv =
           methEnv = { pipelineCount = 0 }
           referencedCcus = []
           earlierImplFileSignatures = []
-          debugInlineCallSite = None
           runtimeAsyncContext = false }
 
     override x.ToString() = "<IncrementalOptimizationEnv>"
