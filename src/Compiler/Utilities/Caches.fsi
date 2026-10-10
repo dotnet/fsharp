@@ -61,8 +61,6 @@ type internal Cache<'Key, 'Value when 'Key: not null> =
     member GetOrAdd: key: 'Key * valueFactory: ('Key -> 'Value) -> 'Value
     member AddOrUpdate: key: 'Key * value: 'Value -> unit
 
-    interface IDisposable
-
     /// For testing only.
     member Evicted: IEvent<unit>
     /// For testing only.

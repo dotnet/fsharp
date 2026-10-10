@@ -47,24 +47,20 @@ let ``Idle cache and contents are collected without explicit disposal`` useMailb
             shouldNeverTimeout)
     collected |> shouldBeTrue
 
-[<Theory>]
-[<InlineData(false)>]
-[<InlineData(true)>]
-let ``Disposing or faulting one cache does not stop eviction for another`` faultFirst =
+[<Fact>]
+let ``Faulting one cache does not stop eviction for another`` () =
     let options =
         { defaultStructural() with
             TotalCapacity = 1
             HeadroomPercentage = 0
             EvictionMode = EvictionMode.MailboxProcessor }
-    use first = new Cache<string, obj>(options, name = "First cache isolation")
-    if faultFirst then
-        first.Evicted.Add(fun () -> raise (InvalidOperationException("Eviction subscriber failed")))
-    else
-        (first :> IDisposable).Dispose()
+    let first = new Cache<string, obj>(options, name = "First cache isolation")
+    first.Evicted.Add(fun () -> raise (InvalidOperationException("Eviction subscriber failed")))
+
     first.TryAdd("first", obj()) |> shouldBeTrue
     first.TryAdd("last", obj()) |> shouldBeTrue
 
-    use second = new Cache<string, int>(options, name = "Second cache isolation")
+    let second = new Cache<string, int>(options, name = "Second cache isolation")
     let evicted = TaskCompletionSource<unit>()
     second.Evicted.Add evicted.SetResult
     second.TryAdd("first", 1) |> shouldBeTrue
@@ -81,20 +77,12 @@ let ``Disposing or faulting one cache does not stop eviction for another`` fault
 // assembly, so nothing else increments those names. A second concurrently-active listener would
 // double-count every measurement, so keep it that way.
 
-[<Fact>]
-let ``Create and dispose many`` () =
-    let caches =
-        [ for _  in 1 .. 100 do
-            new Cache<string, int>(defaultStructural(), name = "Create and dispose many") :> IDisposable ]
-
-    for c in caches do
-        c.Dispose()
 
 [<Fact>]
 let ``Basic add and retrieve`` () =
     let name = "Basic_add_and_retrieve"
     use _ = CacheMetrics.ListenToAll()
-    use cache = new Cache<string, int>(defaultStructural(), name = name)
+    let cache = new Cache<string, int>(defaultStructural(), name = name)
 
     cache.TryAdd("key1", 1) |> shouldBeTrue
     cache.TryAdd("key2", 2) |> shouldBeTrue
@@ -117,7 +105,7 @@ let ``Basic add and retrieve`` () =
 let ``Eviction of least recently used`` () =
     let name = "Eviction_of_least_recently_used"
     use _ = CacheMetrics.ListenToAll()
-    use cache = new Cache<string, int>({ defaultStructural() with TotalCapacity = 2; HeadroomPercentage = 0 }, name = name)
+    let cache = new Cache<string, int>({ defaultStructural() with TotalCapacity = 2; HeadroomPercentage = 0 }, name = name)
 
     cache.TryAdd("key1", 1) |> shouldBeTrue
     cache.TryAdd("key2", 2) |> shouldBeTrue
@@ -151,7 +139,7 @@ let ``Stress test evictions`` () =
     let name = "Stress test evictions"
 
     use _ = CacheMetrics.ListenToAll()
-    use cache = new Cache<string, int>({ defaultStructural() with TotalCapacity = cacheSize; HeadroomPercentage = 0 }, name = name)
+    let cache = new Cache<string, int>({ defaultStructural() with TotalCapacity = cacheSize; HeadroomPercentage = 0 }, name = name)
 
     let evictionsCompleted = new TaskCompletionSource<unit>()
     let expectedEvictions = iterations - cacheSize
@@ -186,7 +174,7 @@ let ``Stress test evictions`` () =
 let ``Metrics can be retrieved`` () =
     let name = "test_metrics"
     use _ = CacheMetrics.ListenToAll()
-    use cache = new Cache<string, int>({ defaultStructural() with TotalCapacity = 2; HeadroomPercentage = 0 }, name = name)
+    let cache = new Cache<string, int>({ defaultStructural() with TotalCapacity = 2; HeadroomPercentage = 0 }, name = name)
 
     cache.TryAdd("key1", 1) |> shouldBeTrue
     cache.TryAdd("key2", 2) |> shouldBeTrue
@@ -211,7 +199,7 @@ let ``Metrics can be retrieved`` () =
 let ``GetOrAdd basic usage`` () =
     let cacheName = "GetOrAdd_basic_usage"
     use _ = CacheMetrics.ListenToAll()
-    use cache = new Cache<string, int>(defaultStructural(), name = cacheName)
+    let cache = new Cache<string, int>(defaultStructural(), name = cacheName)
     let mutable factoryCalls = 0
     let factory k = factoryCalls <- factoryCalls + 1; String.length k
     let v1 = cache.GetOrAdd("abc", factory)
@@ -233,7 +221,7 @@ let ``GetOrAdd basic usage`` () =
 let ``AddOrUpdate basic usage`` () =
     let cacheName = "AddOrUpdate_basic_usage"
     use _ = CacheMetrics.ListenToAll()
-    use cache = new Cache<string, int>(defaultStructural(), name = cacheName)
+    let cache = new Cache<string, int>(defaultStructural(), name = cacheName)
     cache.AddOrUpdate("x", 1)
     let mutable value = 0
     cache.TryGetValue("x", &value) |> shouldBeTrue
@@ -258,7 +246,7 @@ type BoxedKey = BoxedKey of int * int
 let ``GetOrAdd with reference identity`` () =
     let cacheName = "GetOrAdd_with_Reference"
     use _ = CacheMetrics.ListenToAll()
-    use cache = new Cache<BoxedKey, int>(CacheOptions.getReferenceIdentity(), cacheName)
+    let cache = new Cache<BoxedKey, int>(CacheOptions.getReferenceIdentity(), cacheName)
     let t1 = BoxedKey (1, 2)
     let t2 = BoxedKey (1, 2)
     let t3 = BoxedKey (1, 2)
@@ -295,7 +283,7 @@ let ``GetOrAdd with reference identity`` () =
 let ``AddOrUpdate with reference identity`` () =
     let cacheName = "AddOrUpdate_with_Reference"
     use _ = CacheMetrics.ListenToAll()
-    use cache = new Cache<obj, int>(CacheOptions.getReferenceIdentity(), name = cacheName)
+    let cache = new Cache<obj, int>(CacheOptions.getReferenceIdentity(), name = cacheName)
     let t1 = box (3, 4)
     let t2 = box (3, 4)
     cache.AddOrUpdate(t1, 7)

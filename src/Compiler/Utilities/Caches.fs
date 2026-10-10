@@ -5,7 +5,6 @@ open System
 open System.Collections.Generic
 open System.Collections.Concurrent
 open System.Threading
-open System.Threading.Tasks
 open System.Diagnostics
 open System.Diagnostics.Metrics
 
@@ -21,7 +20,6 @@ module CacheMetrics =
     let allCounters = [ adds; updates; hits; misses; evictions; evictionFails ]
 
     let creations = Meter.CreateCounter<int64>("creations", "count")
-    let disposals = Meter.CreateCounter<int64>("disposals", "count")
 
     let mkTags (name: string) =
         // Avoid TagList(ReadOnlySpan<...>) to support net472 runtime
@@ -38,7 +36,6 @@ module CacheMetrics =
     let Eviction (tags: inref<TagList>) = evictions.Add(1L, &tags)
     let EvictionFail (tags: inref<TagList>) = evictionFails.Add(1L, &tags)
     let Created (tags: inref<TagList>) = creations.Add(1L, &tags)
-    let Disposed (tags: inref<TagList>) = disposals.Add(1L, &tags)
 
     type Stats() =
         let totals = Map [ for counter in allCounters -> counter.Name, ref 0L ]
@@ -203,10 +200,8 @@ type CachedEntity<'Key, 'Value> =
 
     override this.ToString() = $"{this.Key}"
 
-type EvictionQueueMessageHandler<'Entity, 'Target> =
-    abstract member Handle: 'Entity * 'Target -> unit
-
-and [<Struct>] EvictionQueueMessage<'Entity, 'Target> =
+[<Struct>]
+type EvictionQueueMessage<'Entity, 'Target> =
     | Add of 'Entity * 'Target
     | Update of 'Entity
 
@@ -218,7 +213,7 @@ module private EvictionProcessor =
                 let rec processNext () =
                     async {
                         let! work = inbox.Receive()
-                        work ()
+                        try work () with _ -> () // Think where to report a failure.
                         return! processNext ()
                     }
 
@@ -379,10 +374,6 @@ type Cache<'Key, 'Value when 'Key: not null> internal (options: CacheOptions<'Ke
         else
             CacheMetrics.Update &tags
             post (EvictionQueueMessage.Update result)
-
-    interface IDisposable with
-        member this.Dispose() =
-            CacheMetrics.Disposed &tags
 
 
 #if DEBUG
