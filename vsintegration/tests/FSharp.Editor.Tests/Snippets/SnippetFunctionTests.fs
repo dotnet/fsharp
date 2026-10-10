@@ -83,6 +83,18 @@ let matchCases: obj[][] =
             "| ``A B`` -> ()\n| C -> ()"
         |]
         [|
+            "a union case named like an encoded operator"
+            "[<RequireQualifiedAccess>]\ntype U = op_Nil | B\nlet value = U.B"
+            "value"
+            "| U.op_Nil -> ()\n| U.B -> ()"
+        |]
+        [|
+            "an enum case that needs backticks"
+            "type E = | ``A B`` = 1 | C = 2\nlet value = E.C"
+            "value"
+            "| E.``A B`` -> ()\n| E.C -> ()\n| _ -> ()"
+        |]
+        [|
             "a RequireQualifiedAccess union in scope"
             "[<RequireQualifiedAccess>]\ntype U = A | B\nlet value = U.B"
             "value"

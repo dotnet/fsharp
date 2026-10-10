@@ -117,6 +117,15 @@ let ``A selected line that continues a string is left alone, even inside a direc
     )
 
 [<Theory>]
+[<InlineData("let text = \"\"\"", "\"\"\"")>]
+[<InlineData("let text = @\"", "\"")>]
+let ``Selected lines a snippet puts inside its own string are that string's content`` (opening: string, closing: string) =
+    Assert.Equal<LineKind list>(
+        [ Template; InsideString; InsideString; InsideString; Template ],
+        kindsOf (ValueSome(1, 2)) [ opening; "    ()"; "()"; closing; "()" ]
+    )
+
+[<Theory>]
 [<InlineData("printfn \"a\"", "\"b\" |> printfn \"%s\"")>]
 [<InlineData("let s = $\"\"\"a {", "  1 } b\"\"\"")>]
 let ``A selected line that only starts with a string, or sits in an interpolation hole, is code`` (first: string, rest: string) =

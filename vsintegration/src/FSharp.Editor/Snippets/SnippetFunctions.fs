@@ -108,6 +108,14 @@ module internal SnippetFunctionHelpers =
         | [] -> ""
         | qualifier -> String.Join(".", qualifier) + "."
 
+    /// A case is declared as an identifier, so a name that is not a plain one is quoted. `DisplayName` would
+    /// spell a case named `op_Nil` as the operator it encodes.
+    let private patternNameOf (name: string) =
+        if PrettyNaming.IsIdentifierName name then
+            name
+        else
+            $"``%s{name}``"
+
     let private matchRulesFor checkResults position (entity: FSharpEntity) =
         if entity.IsFSharpUnion then
             let prefix =
@@ -118,9 +126,9 @@ module internal SnippetFunctionHelpers =
             entity.UnionCases
             |> Seq.map (fun case ->
                 if case.HasFields then
-                    $"| %s{prefix}%s{case.DisplayName} _ -> ()"
+                    $"| %s{prefix}%s{patternNameOf case.Name} _ -> ()"
                 else
-                    $"| %s{prefix}%s{case.DisplayName} -> ()")
+                    $"| %s{prefix}%s{patternNameOf case.Name} -> ()")
         elif entity.IsEnum then
             let literals =
                 entity.FSharpFields |> Seq.filter (fun field -> field.LiteralValue.IsSome)
@@ -132,7 +140,7 @@ module internal SnippetFunctionHelpers =
 
             seq {
                 for field in literals do
-                    $"| %s{prefix}%s{field.DisplayName} -> ()"
+                    $"| %s{prefix}%s{patternNameOf field.Name} -> ()"
 
                 // An enum value need not be one of the declared literals, so the wildcard is not optional.
                 "| _ -> ()"
