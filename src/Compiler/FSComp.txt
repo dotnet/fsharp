@@ -1806,3 +1806,5 @@ featureTypeArgumentDependencyOrdering,"ordering explicit type arguments by their
 3923,tcMethodRequiresNamedArguments,"The method '%s' requires named arguments. Use named-argument syntax, e.g. 'MethodName(argumentName = value)'."
 3924,chkNativePtrStackallocInHandler,"'NativePtr.stackalloc' cannot be used inside the 'with' handler, filter or 'finally' block of a 'try' expression. The 'localloc' IL instruction this emits is rejected inside an exception-handling region, producing a 'System.InvalidProgramException' when the method is loaded."
 featureReraiseInComputationExpressions,"calls to 'reraise' in a computation expression handler"
+3925,tcConstantInterpolatedStringHole,"This interpolated string is a constant, so each hole must be a non-null constant string, integer, decimal, character or Boolean, with no alignment and no format specifier other than '%%s' for a string."
+featureConstantInterpolatedStrings,"interpolated strings in constant expressions"
