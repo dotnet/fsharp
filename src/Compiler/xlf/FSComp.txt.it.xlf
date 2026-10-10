@@ -337,6 +337,11 @@
         <target state="translated">Genera avvisi se l'attributo 'TailCall' viene utilizzato in funzioni non ricorsive.</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureConstantInterpolatedStrings">
+        <source>interpolated strings in constant expressions</source>
+        <target state="new">interpolated strings in constant expressions</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureDeprecatePlacesWhereSeqCanBeOmitted">
         <source>Deprecate places where 'seq' can be omitted</source>
         <target state="new">Deprecate places where 'seq' can be omitted</target>
@@ -1335,6 +1340,11 @@
       <trans-unit id="tcAugmentationsCannotHaveAttributes">
         <source>Attributes cannot be applied to type extensions.</source>
         <target state="translated">Gli attributi non possono essere applicati a estensioni di tipo.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcConstantInterpolatedStringHole">
+        <source>This interpolated string is a constant, so each hole must be a non-null constant expression of type 'string' without alignment or format specifiers.</source>
+        <target state="new">This interpolated string is a constant, so each hole must be a non-null constant expression of type 'string' without alignment or format specifiers.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCopyAndUpdateRecordChangesAllFields">

@@ -337,6 +337,11 @@
         <target state="translated">Выдает предупреждения, если атрибут TailCall используется в нерекурсивных функциях.</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureConstantInterpolatedStrings">
+        <source>interpolated strings in constant expressions</source>
+        <target state="new">interpolated strings in constant expressions</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureDeprecatePlacesWhereSeqCanBeOmitted">
         <source>Deprecate places where 'seq' can be omitted</source>
         <target state="new">Deprecate places where 'seq' can be omitted</target>
@@ -1335,6 +1340,11 @@
       <trans-unit id="tcAugmentationsCannotHaveAttributes">
         <source>Attributes cannot be applied to type extensions.</source>
         <target state="translated">Атрибуты не могут быть применены к расширениям типа.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcConstantInterpolatedStringHole">
+        <source>This interpolated string is a constant, so each hole must be a non-null constant expression of type 'string' without alignment or format specifiers.</source>
+        <target state="new">This interpolated string is a constant, so each hole must be a non-null constant expression of type 'string' without alignment or format specifiers.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCopyAndUpdateRecordChangesAllFields">

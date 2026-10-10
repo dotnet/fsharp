@@ -5048,7 +5048,7 @@ and TcStaticConstantParameter (cenv: cenv) (env: TcEnv) tpenv kind (StripParenTy
     | SynType.StaticConstantExpr(e, _ ) ->
 
         // If an error occurs, don't try to recover, since the constant expression will be nothing like what we need
-        let te, tpenv' = TcExprNoRecover cenv (MustEqual kind) env tpenv e
+        let te, tpenv' = TcExprNoRecover cenv (MustEqual kind) { env with eInConstantContext = true } tpenv e
 
         // Evaluate the constant expression using static attribute argument rules
         let te = EvalLiteralExprOrAttribArg g te
@@ -7803,6 +7803,38 @@ and TcInterpolatedStringViaConcat (cenv: cenv, overallTy: OverallTy, env: TcEnv,
 
     TcPropagatingExprLeafThenConvert cenv overallTy g.string_ty env m (fun () -> resultExpr, tpenv)
 
+/// Fold a string-typed interpolated string in a constant context to its text (RFC FS-1352). Each hole must be
+/// a non-null constant string without alignment or format specifiers.
+and TcConstantInterpolatedString (cenv: cenv, overallTy: OverallTy, env: TcEnv, m: range, tpenv: UnscopedTyparEnv, parts: SynInterpolatedStringPart list) =
+    let g = cenv.g
+    checkLanguageFeatureAndRecover g.langVersion LanguageFeature.ConstantInterpolatedStrings m
+
+    let holeText (fill: Expr) (formatting: SynInterpolationFormatting) (mHole: range) =
+        let invalidHole () =
+            errorR (Error(FSComp.SR.tcConstantInterpolatedStringHole (), mHole))
+            ""
+
+        match formatting with
+        | SynInterpolationFormatting.DotNet(None, None) when isStringTy g (tyOfExpr g fill) ->
+            match EvalLiteralExprOrAttribArg g fill with
+            | Expr.Const(Const.String text, _, _) -> text
+            | Expr.Const(Const.Zero, _, _) -> invalidHole ()
+            | _ -> "" // EvalLiteralExprOrAttribArg has reported that the hole is not a constant
+        | _ -> invalidHole ()
+
+    let text = Text.StringBuilder()
+    let mutable tpenvAcc = tpenv
+
+    for part in parts do
+        match part with
+        | SynInterpolatedStringPart.String(s, _) -> text.Append(s.Replace("%%", "%")) |> ignore
+        | SynInterpolatedStringPart.FillExpr(synFill, formatting) ->
+            let fill, tpenvAfter = TcExprFlex2 cenv (NewInferenceType g) env false tpenvAcc synFill
+            tpenvAcc <- tpenvAfter
+            text.Append(holeText fill formatting synFill.Range) |> ignore
+
+    TcPropagatingExprLeafThenConvert cenv overallTy g.string_ty env m (fun () -> mkString g m (text.ToString()), tpenvAcc)
+
 /// Check an interpolated string expression
 and [<TailCall>] warnForFunctionValuesInFillExprs (g: TcGlobals) argTys synFillExprs =
     match argTys, synFillExprs with
@@ -7950,6 +7982,8 @@ and TcInterpolatedStringExpr cenv (overallTy: OverallTy) env m tpenv (parts: Syn
             else
                 let str = mkString g m printfFormatString
                 mkCallNewFormat g m printerTy printerArgTy printerResidueTy printerResultTy printerTupleTy str, tpenv
+        elif isString && env.eInConstantContext then
+            TcConstantInterpolatedString (cenv, overallTy, env, m, tpenv, parts)
         elif isString then
             // String-typed interpolation: lower to a reflection-free System.String.Concat of the parts,
             // type-checking each hole in place (no separate batch, no flat fill-expression list).
@@ -11806,7 +11840,7 @@ and TcLiteral (cenv: cenv) overallTy env tpenv (attrs, synLiteralValExpr) =
         hasFlag valFlags WellKnownValAttributes.LiteralAttribute
 
     if hasLiteralAttr then
-        let literalValExpr, _ = TcExpr cenv (MustEqual overallTy) env tpenv synLiteralValExpr
+        let literalValExpr, _ = TcExpr cenv (MustEqual overallTy) { env with eInConstantContext = true } tpenv synLiteralValExpr
         match EvalLiteralExprOrAttribArg g literalValExpr with
         | Expr.Const (c, _, ty) ->
             if c = Const.Zero && isStructTy g ty then
@@ -12012,7 +12046,7 @@ and TcAttributeEx canFail (cenv: cenv) (env: TcEnv) attrTgt attrEx (synAttr: Syn
                 let meths = minfos |> List.map (fun minfo -> minfo, None)
                 let afterResolution = ForNewConstructors cenv.tcSink env tyId.idRange methodName minfos
                 let (expr, attributeAssignedNamedItems, _), _ =
-                  TcMethodApplication true cenv env tpenv None [] mAttr mAttr methodName None ad PossiblyMutates false meths afterResolution NormalValUse [arg] (MustEqual ty) None []
+                  TcMethodApplication true cenv { env with eInConstantContext = true } tpenv None [] mAttr mAttr methodName None ad PossiblyMutates false meths afterResolution NormalValUse [arg] (MustEqual ty) None []
 
                 UnifyTypes cenv env mAttr ty (tyOfExpr g expr)
 
