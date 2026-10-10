@@ -1343,8 +1343,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcConstantInterpolatedStringHole">
-        <source>This interpolated string is a constant, so each hole must be a non-null constant expression of type 'string' without alignment or format specifiers.</source>
-        <target state="new">This interpolated string is a constant, so each hole must be a non-null constant expression of type 'string' without alignment or format specifiers.</target>
+        <source>This interpolated string is a constant, so each hole must be a non-null constant string, integer, decimal, character or Boolean, with no alignment and no format specifier other than '%s' for a string.</source>
+        <target state="new">This interpolated string is a constant, so each hole must be a non-null constant string, integer, decimal, character or Boolean, with no alignment and no format specifier other than '%s' for a string.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCopyAndUpdateRecordChangesAllFields">

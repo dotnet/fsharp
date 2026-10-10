@@ -7803,24 +7803,41 @@ and TcInterpolatedStringViaConcat (cenv: cenv, overallTy: OverallTy, env: TcEnv,
 
     TcPropagatingExprLeafThenConvert cenv overallTy g.string_ty env m (fun () -> resultExpr, tpenv)
 
-/// Fold a string-typed interpolated string in a constant context to its text (RFC FS-1352). Each hole must be
-/// a non-null constant string without alignment or format specifiers.
+/// Fold a string-typed interpolated string in a constant context to its text (RFC FS-1352). Each hole must be a
+/// non-null constant string, integer, decimal, character or Boolean, with no alignment and no format specifier but '%s'.
 and TcConstantInterpolatedString (cenv: cenv, overallTy: OverallTy, env: TcEnv, m: range, tpenv: UnscopedTyparEnv, parts: SynInterpolatedStringPart list) =
     let g = cenv.g
     checkLanguageFeatureAndRecover g.langVersion LanguageFeature.ConstantInterpolatedStrings m
 
-    let holeText (fill: Expr) (formatting: SynInterpolationFormatting) (mHole: range) =
-        let invalidHole () =
-            errorR (Error(FSComp.SR.tcConstantInterpolatedStringHole (), mHole))
-            ""
+    let invalidHole (mHole: range) =
+        errorR (Error(FSComp.SR.tcConstantInterpolatedStringHole (), mHole))
+        ""
 
-        match formatting with
-        | SynInterpolationFormatting.DotNet(None, None) when isStringTy g (tyOfExpr g fill) ->
-            match EvalLiteralExprOrAttribArg g fill with
-            | Expr.Const(Const.String text, _, _) -> text
-            | Expr.Const(Const.Zero, _, _) -> invalidHole ()
-            | _ -> "" // EvalLiteralExprOrAttribArg has reported that the hole is not a constant
-        | _ -> invalidHole ()
+    // The text 'string' gives at run time. Floats are excluded: their text depends on the runtime the compiler runs on.
+    let constantText (c: Const) =
+        let invariant = Globalization.CultureInfo.InvariantCulture
+
+        match c with
+        | Const.SByte n -> ValueSome(n.ToString invariant)
+        | Const.Int16 n -> ValueSome(n.ToString invariant)
+        | Const.Int32 n -> ValueSome(n.ToString invariant)
+        | Const.Int64 n -> ValueSome(n.ToString invariant)
+        | Const.Byte n -> ValueSome(n.ToString invariant)
+        | Const.UInt16 n -> ValueSome(n.ToString invariant)
+        | Const.UInt32 n -> ValueSome(n.ToString invariant)
+        | Const.UInt64 n -> ValueSome(n.ToString invariant)
+        | Const.Decimal n -> ValueSome(n.ToString invariant)
+        | Const.Char c -> ValueSome(string c)
+        | Const.Bool b -> ValueSome(string b)
+        | _ -> ValueNone
+
+    let holeText (fill: Expr) (formatting: SynInterpolationFormatting) (mHole: range) =
+        match formatting, EvalLiteralExprOrAttribArg g fill with
+        | (SynInterpolationFormatting.DotNet(None, None) | SynInterpolationFormatting.Printf("%s", _)), Expr.Const(Const.String text, _, _) -> text
+        | SynInterpolationFormatting.DotNet(None, None), Expr.Const(c, _, ty) when not (isEnumTy g ty) ->
+            constantText c |> ValueOption.defaultWith (fun () -> invalidHole mHole)
+        | _, Expr.Const _ -> invalidHole mHole
+        | _ -> "" // EvalLiteralExprOrAttribArg has reported that the hole is not a constant
 
     let text = Text.StringBuilder()
     let mutable tpenvAcc = tpenv

@@ -30,6 +30,15 @@ let CountFormat = $"{Items}: %%d"
 [<Literal>]
 let Verbatim = $@"\{nameof Root}" + $"{Root}"
 
+[<Literal>]
+let Version = 2
+
+[<Literal>]
+let Scalars = $"v{Version}{'-'}{true}|{-1L}|{18446744073709551615UL}|{-12.3400m}|%s{Root}"
+
+let root, version = Root, Version
+let scalarsAtRunTime = $"v{version}{'-'}{true}|{-1L}|{18446744073709551615UL}|{-12.3400m}|%s{root}"
+
 type TagAttribute(tags: string[]) =
     inherit System.Attribute()
     member _.Tags = tags
@@ -46,12 +55,14 @@ let quotation =
     | _ -> "not folded"
 
 printfn "%s|%s|%s|%s" Items ItemById Verbatim (sprintf CountFormat 3)
+printfn "%s|%b" Scalars (Scalars = scalarsAtRunTime)
 printfn "%s|%s|%s" (String.concat "," tag.Tags) tag.Name quotation
 """
         |> asExe
         |> compileExeAndRun
         |> shouldSucceed
         |> withStdOutContains @"api/v2/items|api/v2/items/{id}|\Rootapi/v2|api/v2/items: 3"
+        |> withStdOutContains "v2-True|-1|18446744073709551615|-12.3400|api/v2|true"
         |> withStdOutContains "api/v2/a,api/v2/b|api/v2!|not folded"
 
     [<Fact>]
@@ -88,7 +99,10 @@ let item = getItem 1
         |> shouldSucceed
 
     [<Fact>]
-    let ``Each hole must be a non-null constant string without alignment or format specifiers`` () =
+    let ``Each hole must be a non-null constant string, integer, decimal, character or Boolean without alignment or format specifiers`` () =
+        let holeError =
+            "This interpolated string is a constant, so each hole must be a non-null constant string, integer, decimal, character or Boolean, with no alignment and no format specifier other than '%s' for a string."
+
         preview """
 module Program
 
@@ -101,24 +115,27 @@ let NoValue: string = null
 let dir = "data"
 
 [<Literal>]
-let A = $"v{Version}"
+let A = $"{1.5}"
 [<Literal>]
 let B = $"{Root,10}"
 [<Literal>]
-let C = $"%s{Root}"
+let C = $"%d{Version}"
 [<Literal>]
 let D = $"{dir}/x"
 [<Literal>]
 let E = $"{NoValue}/x"
+[<Literal>]
+let F = $"{System.DayOfWeek.Monday}"
 """
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 3925, Line 13, Col 13, Line 13, Col 20, "This interpolated string is a constant, so each hole must be a non-null constant expression of type 'string' without alignment or format specifiers.")
-            (Error 3925, Line 15, Col 12, Line 15, Col 16, "This interpolated string is a constant, so each hole must be a non-null constant expression of type 'string' without alignment or format specifiers.")
-            (Error 3925, Line 17, Col 14, Line 17, Col 18, "This interpolated string is a constant, so each hole must be a non-null constant expression of type 'string' without alignment or format specifiers.")
+            (Error 3925, Line 13, Col 12, Line 13, Col 15, holeError)
+            (Error 3925, Line 15, Col 12, Line 15, Col 16, holeError)
+            (Error 3925, Line 17, Col 14, Line 17, Col 21, holeError)
             (Error 267, Line 19, Col 12, Line 19, Col 15, "This is not a valid constant expression or custom attribute value")
-            (Error 3925, Line 21, Col 12, Line 21, Col 19, "This interpolated string is a constant, so each hole must be a non-null constant expression of type 'string' without alignment or format specifiers.")
+            (Error 3925, Line 21, Col 12, Line 21, Col 19, holeError)
+            (Error 3925, Line 23, Col 12, Line 23, Col 35, holeError)
         ]
 
     [<Fact>]
