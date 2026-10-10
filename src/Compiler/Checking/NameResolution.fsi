@@ -2,6 +2,8 @@
 
 module internal FSharp.Compiler.NameResolution
 
+open System.Collections.Immutable
+
 open Internal.Utilities.Library
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.AttributeChecking
@@ -444,7 +446,7 @@ type internal TcResolutions =
 
     /// Related symbol uses in code reported via NotifyRelatedSymbolUse (RelatedSymbolUseKind.AllInCode).
     /// The names inside XML doc comments are left out: only TcSymbolUses.GetUsesOfSymbol hands them out, when asked for.
-    member CapturedRelatedSymbolUses: seq<range * Item * RelatedSymbolUseKind>
+    member CapturedRelatedSymbolUses: seq<struct (range * Item * RelatedSymbolUseKind)>
 
     /// Represents the empty set of resolutions
     static member Empty: TcResolutions
@@ -657,10 +659,26 @@ val internal RegisterUnionCaseTesterForProperty: TcResultsSink -> identRange: ra
 /// Report a related symbol use at a source range (does not affect colorization or symbol info)
 val internal CallRelatedSymbolSink: TcResultsSink -> range * Item * RelatedSymbolUseKind -> unit
 
+/// The type parameters of a declaration, as what a `<typeparam name>` or `<typeparamref name>` of its XML doc can name
+val internal XmlDocTyparCandidates: typars: Typars -> ImmutableArray<struct (string * Item)>
+
+/// Report each of `docRefs` that names one of the candidates as a related use of it, at the range of the attribute value
+val internal ReportXmlDocRefs:
+    currentSink: ITypecheckResultsSink ->
+    docRefs: ImmutableArray<XmlDocRef> ->
+    parameters: ImmutableArray<struct (string * Item)> ->
+    typars: ImmutableArray<struct (string * Item)> ->
+        unit
+
 /// Report each `<param name>`/`<paramref name>`/`<typeparam name>`/`<typeparamref name>` of a declaration's XML doc
-/// as a related use of the parameter or type parameter it names, at the range of the attribute value.
-val internal ReportXmlDocRefUses:
-    TcResultsSink -> doc: XmlDoc -> parameters: (string * Item) list -> typars: (string * Item) list -> unit
+/// as a related use of the parameter or type parameter it names.
+/// The candidates are asked for only when there is a sink and the doc names something, so batch compilation builds neither.
+val inline internal ReportXmlDocRefUses:
+    sink: TcResultsSink ->
+    doc: XmlDoc ->
+    [<InlineIfLambda>] parameters: (unit -> ImmutableArray<struct (string * Item)>) ->
+    [<InlineIfLambda>] typars: (unit -> ImmutableArray<struct (string * Item)>) ->
+        unit
 
 /// Report a specific name resolution at a source range
 val internal CallExprHasTypeSink: TcResultsSink -> range * NameResolutionEnv * TType * AccessorDomain -> unit

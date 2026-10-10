@@ -600,11 +600,17 @@ module TcRecdUnionAndEnumDeclarations =
 
         match parent with
         | Parent tcref ->
-            let fields =
-                [ for i, f in List.indexed rfields do
+            let fieldCandidates () =
+                let candidates = ImmutableArrayBuilder.create rfields.Length
+
+                rfields
+                |> List.iteri (fun i f ->
                     if not f.rfield_name_generated then
-                        f.LogicalName, Item.UnionCaseField (UnionCaseInfo (thisTyInst, UnionCaseRef (tcref, id.idText)), i) ]
-            ReportXmlDocRefUses cenv.tcSink xmlDoc fields []
+                        candidates.Add(struct (f.LogicalName, Item.UnionCaseField (UnionCaseInfo (thisTyInst, UnionCaseRef (tcref, id.idText)), i))))
+
+                candidates.ToImmutable()
+
+            ReportXmlDocRefUses cenv.tcSink xmlDoc fieldCandidates (fun () -> ImmutableArray.empty)
         | ParentNone -> ()
 
         let attrs, getFinalAttrs, _ = TcAttributesCanFail cenv env AttributeTargets.UnionCaseDecl synAttrs
@@ -2937,7 +2943,7 @@ module EstablishTypeDefinitionCores =
 
         let checkXmlDocs = cenv.diagnosticOptions.CheckXmlDocs
         let xmlDoc = xmlDoc.ToXmlDoc(checkXmlDocs, Some paramNames )
-        ReportXmlDocRefUses cenv.tcSink xmlDoc [] [ for tp in checkedTypars -> tp.Name, Item.TypeVar(tp.Name, tp) ]
+        ReportXmlDocRefUses cenv.tcSink xmlDoc (fun () -> ImmutableArray.empty) (fun () -> XmlDocTyparCandidates checkedTypars)
         Construct.NewTycon
             (cpath, id.idText, id.idRange, vis, visOfRepr, TyparKind.Type, LazyWithContext.NotLazy checkedTypars,
              xmlDoc, preferPostfix, preEstablishedHasDefaultCtor, hasSelfReferentialCtor, lmodTy)

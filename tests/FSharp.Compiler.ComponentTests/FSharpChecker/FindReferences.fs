@@ -1191,7 +1191,8 @@ module XmlDocParameters =
 
             Assert.Equal<(int * int * int) list>(codeRanges, result.GetUsesOfSymbolInFile symbol |> rangesOf)
             Assert.Equal<(int * int * int) list>(codeRanges, usesOf RelatedSymbolUseKind.AllInCode)
-            Assert.Equal<(int * int * int) list>(codeRanges, usesOf RelatedSymbolUseKind.All)
+            // An assembly compiled when `All` was every bit still passes that mask, and it meant the uses in code
+            Assert.Equal<(int * int * int) list>(codeRanges, usesOf (enum<RelatedSymbolUseKind> 0x7FFFFFFF))
             Assert.Equal<(int * int * int) list>(allRanges, usesOf RelatedSymbolUseKind.XmlDocParameter)
             Assert.Equal<(int * int * int) list>(allRanges, usesOf RelatedSymbolUseKind.AllInCodeAndDocs))
 
@@ -1202,6 +1203,14 @@ module XmlDocParameters =
 /// <param name="{ref}x{/ref}">The first number.</param>
 /// <param name="y">Added to <paramref name="{ref}x{/ref}"/>.</param>
 let add {ref}x{/ref} y = {ref}x{/ref} + y
+"""
+
+    [<Fact>]
+    let ``a param name on the line after its attribute`` () =
+        expectDocUses """
+/// <param name=
+/// "{ref}x{/ref}"/>
+let f {ref}x{/ref} = {ref}x{/ref}
 """
 
     [<Fact>]
