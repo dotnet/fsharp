@@ -8,19 +8,20 @@ open System.Collections.Concurrent
 open System.Collections.Immutable
 open System.IO
 open System.Linq
-open Microsoft.CodeAnalysis
+open System.Runtime.CompilerServices
+open System.Threading
+open System.Windows
 open FSharp.Compiler
 open FSharp.Compiler.CodeAnalysis
-open Microsoft.VisualStudio.FSharp.Editor
-open System.Threading
-open Microsoft.VisualStudio.FSharp.Interactive.Session
-open System.Runtime.CompilerServices
-open CancellableTasks
-open Microsoft.VisualStudio.FSharp.Editor.Extensions
-open System.Windows
-open Microsoft.VisualStudio
 open FSharp.Compiler.Text
+open Microsoft.CodeAnalysis
+open Microsoft.VisualStudio
+open Microsoft.VisualStudio.FSharp.Editor
+open Microsoft.VisualStudio.FSharp.Interactive.Session
+open Microsoft.VisualStudio.FSharp.Editor.Extensions
 open Microsoft.VisualStudio.TextManager.Interop
+
+open CancellableTasks
 
 #nowarn "57"
 
@@ -125,7 +126,7 @@ type private FSharpProjectOptionsMessage =
     | ClearSingleFileOptionsCache of DocumentId
 
 [<Sealed>]
-type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
+type private FSharpProjectOptionsReactor(checker: FSharpChecker, fileChangeWatcher: IFSharpFileChangeWatcher) =
     let cancellationTokenSource = new CancellationTokenSource()
 
     // Store command line options
@@ -144,6 +145,65 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
     let lastSuccessfulCompilations = ConcurrentDictionary<ProjectId, Compilation>()
 
     let scriptUpdatedEvent = Event<FSharpProjectOptions>()
+
+    // The '-r:' set of each project is watched for the reference stamps the snapshot-reuse
+    // guard reads; invalidating the FCS build on a change is Roslyn's job (it swaps the
+    // MetadataReference and bumps Project.Version, which reaches tryComputeOptions).
+    let referenceChangeTracker =
+        new FSharpReferenceChangeTracker(fileChangeWatcher, ignore)
+
+    // Updated by the agent and cleared by ClearAllCaches on the solution-close thread; every
+    // read-diff-write goes under this lock so the two cannot unbalance the tracker's ref counts.
+    let referenceWatches = Dictionary<ProjectId, HashSet<string>>()
+
+    let referencePaths (projectOptions: FSharpProjectOptions) =
+        let paths = HashSet<string>(StringComparer.OrdinalIgnoreCase)
+
+        for option in projectOptions.OtherOptions do
+            if option.StartsWith("-r:", StringComparison.Ordinal) then
+                paths.Add(option.Substring "-r:".Length) |> ignore
+
+        paths
+
+    let watchReferenceFiles (projectId: ProjectId) (projectOptions: FSharpProjectOptions) =
+        let paths = referencePaths projectOptions
+
+        lock referenceWatches (fun () ->
+            match referenceWatches.TryGetValue projectId with
+            | true, previous ->
+                for path in previous do
+                    if not (paths.Contains path) then
+                        referenceChangeTracker.StopWatchingReference path
+
+                for path in paths do
+                    if not (previous.Contains path) then
+                        referenceChangeTracker.StartWatchingReference path
+            | _ ->
+                for path in paths do
+                    referenceChangeTracker.StartWatchingReference path
+
+            if paths.Count > 0 then
+                referenceWatches[projectId] <- paths
+            else
+                referenceWatches.Remove projectId |> ignore)
+
+    let clearReferenceWatches (projectId: ProjectId) =
+        lock referenceWatches (fun () ->
+            match referenceWatches.TryGetValue projectId with
+            | true, paths ->
+                referenceWatches.Remove projectId |> ignore
+
+                for path in paths do
+                    referenceChangeTracker.StopWatchingReference path
+            | _ -> ())
+
+    let clearAllReferenceWatches () =
+        lock referenceWatches (fun () ->
+            for KeyValue(_, paths) in referenceWatches do
+                for path in paths do
+                    referenceChangeTracker.StopWatchingReference path
+
+            referenceWatches.Clear())
 
     let createPEReference (referencedProject: Project) (comp: Compilation) =
         let projectId = referencedProject.Id
@@ -440,7 +500,9 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
 
                             if not (Seq.isEmpty projectsToClearCache) then
                                 projectsToClearCache
-                                |> Seq.iter (fun pair -> cache.TryRemove pair.Key |> ignore)
+                                |> Seq.iter (fun pair ->
+                                    cache.TryRemove pair.Key |> ignore
+                                    clearReferenceWatches pair.Key)
 
                                 let options =
                                     projectsToClearCache
@@ -460,6 +522,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
                             let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions(projectOptions)
 
                             cache.[projectId] <- struct (project, parsingOptions, projectOptions)
+                            watchReferenceFiles projectId projectOptions
 
                             return ValueSome struct (parsingOptions, projectOptions)
 
@@ -546,6 +609,7 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
                     | _ -> ()
 
                     legacyProjectSites.TryRemove(projectId) |> ignore
+                    clearReferenceWatches projectId
                 | FSharpProjectOptionsMessage.ClearSingleFileOptionsCache(documentId) ->
                     match singleFileCache.TryRemove(documentId) with
                     | true,
@@ -592,18 +656,23 @@ type private FSharpProjectOptionsReactor(checker: FSharpChecker) =
         singleFileCache.Clear()
         lastSuccessfulCompilations.Clear()
 
+        clearAllReferenceWatches ()
+
     member _.ScriptUpdated = scriptUpdatedEvent.Publish
+
+    member _.ReferenceStamps = referenceChangeTracker :> IReferenceStamps
 
     interface IDisposable with
         member _.Dispose() =
+            referenceChangeTracker.Dispose()
             cancellationTokenSource.Cancel()
             cancellationTokenSource.Dispose()
-            (agent :> IDisposable).Dispose()
+            agent.Dispose()
 
 /// Manages mappings of Roslyn workspace Projects/Documents to FCS.
-type internal FSharpProjectOptionsManager(checker: FSharpChecker, workspace: Workspace) =
+type internal FSharpProjectOptionsManager(checker: FSharpChecker, workspace: Workspace, fileChangeWatcher: IFSharpFileChangeWatcher) =
 
-    let reactor = new FSharpProjectOptionsReactor(checker)
+    let reactor = new FSharpProjectOptionsReactor(checker, fileChangeWatcher)
 
     do
         // We need to listen to this event for lifecycle purposes.
@@ -671,5 +740,7 @@ type internal FSharpProjectOptionsManager(checker: FSharpChecker, workspace: Wor
         reactor.SetCommandLineOptions(projectId, sourcePaths, options.ToArray())
 
     member _.ClearAllCaches() = reactor.ClearAllCaches()
+
+    member _.ReferenceStamps = reactor.ReferenceStamps
 
     member _.Checker = checker
