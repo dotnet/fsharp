@@ -403,6 +403,16 @@ Mostrar os comentários nas Informações Rápidas</target>
         <target state="translated">Usar 'nameof'</target>
         <note />
       </trans-unit>
+      <trans-unit id="UseOptionActivePatternReturn">
+        <source>Use option return for active pattern</source>
+        <target state="new">Use option return for active pattern</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UseStructActivePatternReturn">
+        <source>Use struct return for active pattern</source>
+        <target state="new">Use struct return for active pattern</target>
+        <note />
+      </trans-unit>
       <trans-unit id="UseTripleQuotedInterpolation">
         <source>Use triple quoted string interpolation.</source>
         <target state="translated">Usar interpolação de cadeia de caracteres entre aspas triplas.</target>
