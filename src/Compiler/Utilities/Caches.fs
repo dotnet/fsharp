@@ -201,26 +201,23 @@ type CachedEntity<'Key, 'Value> =
     override this.ToString() = $"{this.Key}"
 
 [<Struct>]
-type EvictionQueueMessage<'Entity, 'Target> =
-    | Add of 'Entity * 'Target
-    | Update of 'Entity
+type EvictionQueueMessage<'Key, 'Value when 'Key: not null> =
+    | Add of CachedEntity<'Key, 'Value> * ConcurrentDictionary<'Key, CachedEntity<'Key, 'Value>>
+    | Update of CachedEntity<'Key, 'Value>
 
-module private EvictionProcessor =
-
-    let private processor =
+type EvictionProcessor<'Key, 'Value when 'Key: not null> =
+    static let instance =
         MailboxProcessor.Start(
             (fun inbox ->
                 let rec processNext () =
                     async {
-                        let! work = inbox.Receive()
-                        try work () with _ -> () // Think where to report a failure.
+                        let! struct(handle, message: EvictionQueueMessage<'Key, 'Value>) = inbox.Receive()
+                        try handle message with _ -> () // Think where to report a failure.
                         return! processNext ()
                     }
 
                 processNext ()))
-
-
-    let post work = processor.Post work
+    static member Instance = instance
 
 [<Sealed; NoComparison; NoEquality>]
 [<DebuggerDisplay("{DebugDisplay()}")>]
@@ -267,7 +264,7 @@ type Cache<'Key, 'Value when 'Key: not null> internal (options: CacheOptions<'Ke
 
     let processEvictionMessage msg =
         match msg with
-        | EvictionQueueMessage.Add(entity: CachedEntity<_, _>, target) when isNull entity.Node.List ->
+        | EvictionQueueMessage.Add(entity, target) when isNull entity.Node.List ->
             evictionQueue.AddLast(entity.Node)
             // store has been rebuilt while this message was in the queue.
             if store <> target then
@@ -302,7 +299,7 @@ type Cache<'Key, 'Value when 'Key: not null> internal (options: CacheOptions<'Ke
         lock evictionQueue <| fun () -> processEvictionMessage msg
 
     let queued msg =
-        EvictionProcessor.post <| fun () -> processEvictionMessage msg
+        EvictionProcessor<'Key, 'Value>.Instance.Post(struct(processEvictionMessage, msg))
 
     let post =
         match options.EvictionMode with
