@@ -269,7 +269,12 @@ let private mkCallbackDispatch (g: TcGlobals) (stackGuard: StackGuard) (callback
 
     mkCompGenLet m argVal arg (dispatch 0 callback.Branches)
 
-let private inlineCallback (g: TcGlobals) (analyzer: RuntimeAsyncAnalyzer) runtimeAsyncContext (expr: Expr) =
+type private CallbackRewrite =
+    | KeepCallback
+    | InlineDelegate of (Expr * TType * TType list * Expr * range -> Expr)
+    | DispatchBranches of isDelegate: bool * branches: CallbackBranches
+
+let private inlineCallback (g: TcGlobals) runtimeAsyncContext (expr: Expr) =
     let stackGuard = StackGuard("InlineRuntimeAsyncCallback")
     let freeVarOptions = CollectLocalsWithStackGuard()
 
@@ -353,110 +358,84 @@ let private inlineCallback (g: TcGlobals) (analyzer: RuntimeAsyncAnalyzer) runti
 
         RewriteExpr rwenv continuation
 
-    let rec inlineCallbacks expr =
-        stackGuard.Guard(fun () -> inlineCallbacksCore expr)
+    let chooseRewrite (callback: Val) construction continuation m =
+        let canInline =
+            runtimeAsyncContext || (TryGetRuntimeAsyncReturn g continuation).IsSome
 
-    and inlineCallbacksCore expr =
-        match expr with
-        | Expr.Let(TBind(callback, construction, point), continuation, m, _) when
-            callback.InlineIfLambda && analyzer.ContainsSuspension construction
-            ->
-            let keep construction =
-                mkLetBind m (TBind(callback, construction, point)) (inlineCallbacks continuation)
+        let shape =
+            match tryDestFunTy g callback.Type with
+            | ValueSome(argTy, resultTy) -> Some(argTy, resultTy, false)
+            | ValueNone when isFSharpDelegateTy g callback.Type ->
+                tryDelegateSignature construction
+                |> Option.map (fun (argTy, resultTy) -> argTy, resultTy, true)
+            | _ -> None
 
-            let canInline =
-                runtimeAsyncContext || (TryGetRuntimeAsyncReturn g continuation).IsSome
+        match shape with
+        | Some(argTy, resultTy, isDelegate) when canInline && not (isByrefLikeTy g m argTy || isByrefLikeTy g m resultTy) ->
+            let freeVals = (freeInExpr freeVarOptions construction).FreeLocals
 
-            let shape =
-                match tryDestFunTy g callback.Type with
-                | ValueSome(argTy, resultTy) -> Some(argTy, resultTy, false)
-                | ValueNone when isFSharpDelegateTy g callback.Type ->
-                    tryDelegateSignature construction
-                    |> Option.map (fun (argTy, resultTy) -> argTy, resultTy, true)
-                | _ -> None
+            let canCapture =
+                freeVals
+                |> Zset.forall (fun v -> not v.IsPinning && not (isByrefTy g v.Type || isByrefLikeTy g m v.Type))
 
-            match shape with
-            | Some(argTy, resultTy, isDelegate) when canInline && not (isByrefLikeTy g m argTy || isByrefLikeTy g m resultTy) ->
-                let freeVals = (freeInExpr freeVarOptions construction).FreeLocals
+            let callbackUses =
+                if canCapture then
+                    tryAnalyzeCallbackUses g callback isDelegate continuation
+                else
+                    ValueNone
 
-                let canCapture =
-                    freeVals
-                    |> Zset.forall (fun v -> not v.IsPinning && not (isByrefTy g v.Type || isByrefLikeTy g m v.Type))
+            let delegateInvocation =
+                match callbackUses with
+                | ValueSome 1 when isDelegate -> tryPrepareDelegateInvocation construction
+                | _ -> ValueNone
 
-                let construction =
-                    if canCapture then
-                        inlineCallbacks construction
-                    else
-                        construction
+            match delegateInvocation, callbackUses with
+            | ValueSome invoke, _ -> InlineDelegate invoke
+            | ValueNone, ValueSome invocations ->
+                tryDefunctionalizeCallback g stackGuard m construction
+                |> Option.filter (fun branches ->
+                    invocations = 0
+                    || List.sumBy _.NodeCount branches.Branches
+                       <= maxInlinedCallbackCopySize / invocations)
+                |> Option.map (fun branches -> DispatchBranches(isDelegate, branches))
+                |> Option.defaultValue KeepCallback
+            | ValueNone, ValueNone -> KeepCallback
+        | _ -> KeepCallback
 
-                let callbackUses =
-                    if canCapture then
-                        tryAnalyzeCallbackUses g callback isDelegate continuation
-                    else
-                        ValueNone
+    match expr with
+    | Expr.Let(TBind(callback, construction, point), continuation, m, _) ->
+        match chooseRewrite callback construction continuation m with
+        | KeepCallback -> None
+        | InlineDelegate invoke -> Some(inlineDelegate callback invoke continuation)
+        | DispatchBranches(isDelegate, callbackBranches) ->
+            let rwenv =
+                {
+                    PreIntercept =
+                        Some(fun rewrite expression ->
+                            match tryCallbackInvocation g callback isDelegate expression with
+                            | ValueSome(struct (arg, callRange)) ->
+                                Some(mkCallbackDispatch g stackGuard callbackBranches (rewrite arg) (tyOfExpr g expression) callRange)
+                            | ValueNone -> None)
+                    PreInterceptBinding = None
+                    PostTransform = (fun _ -> None)
+                    RewriteQuotations = false
+                    StackGuard = stackGuard
+                }
 
-                let inlined =
-                    match callbackUses with
-                    | ValueSome 1 when isDelegate ->
-                        tryPrepareDelegateInvocation construction
-                        |> ValueOption.map (fun invoke -> inlineDelegate callback invoke continuation)
-                        |> ValueOption.toOption
-                    | _ -> None
+            let continuation = RewriteExpr rwenv continuation
 
-                let callbackBranches =
-                    match callbackUses with
-                    | ValueSome invocations when Option.isNone inlined ->
-                        tryDefunctionalizeCallback g stackGuard m construction
-                        |> Option.filter (fun branches ->
-                            invocations = 0
-                            || List.sumBy _.NodeCount branches.Branches
-                               <= maxInlinedCallbackCopySize / invocations)
-                    | _ -> None
+            let construction =
+                match point with
+                | DebugPointAtBinding.Yes point -> mkDebugPoint point callbackBranches.Construction
+                | _ -> callbackBranches.Construction
 
-                match inlined, callbackBranches with
-                | Some body, _ -> inlineCallbacks body
-                | None, Some callbackBranches ->
-                    let rwenv =
-                        {
-                            PreIntercept =
-                                Some(fun rewrite expression ->
-                                    match tryCallbackInvocation g callback isDelegate expression with
-                                    | ValueSome(struct (arg, callRange)) ->
-                                        Some(
-                                            mkCallbackDispatch
-                                                g
-                                                stackGuard
-                                                callbackBranches
-                                                (rewrite arg)
-                                                (tyOfExpr g expression)
-                                                callRange
-                                        )
-                                    | ValueNone -> None)
-                            PreInterceptBinding = None
-                            PostTransform = (fun _ -> None)
-                            RewriteQuotations = false
-                            StackGuard = stackGuard
-                        }
+            let body = mkCompGenSequential m construction continuation
 
-                    let continuation = RewriteExpr rwenv continuation
-
-                    let construction =
-                        match point with
-                        | DebugPointAtBinding.Yes point -> mkDebugPoint point callbackBranches.Construction
-                        | _ -> callbackBranches.Construction
-
-                    let body = mkCompGenSequential m construction (inlineCallbacks continuation)
-
-                    (callbackBranches.Tag :: List.map snd callbackBranches.Captures, body)
-                    ||> List.foldBack (fun v body -> mkCompGenLet m v (mkDefault (m, v.Type)) body)
-                | None, None -> keep construction
-            | _ -> keep construction
-        | Expr.Let(binding, continuation, m, _) -> mkLetBind m binding (inlineCallbacks continuation)
-        | RuntimeAsyncDebugWrapper body -> RebuildRuntimeAsyncDebugWrapper expr (inlineCallbacks body)
-        | Expr.Sequential(first, rest, NormalSeq, m) -> Expr.Sequential(first, inlineCallbacks rest, NormalSeq, m)
-        | _ -> expr
-
-    inlineCallbacks expr
+            Some(
+                (callbackBranches.Tag :: List.map snd callbackBranches.Captures, body)
+                ||> List.foldBack (fun v body -> mkCompGenLet m v (mkDefault (m, v.Type)) body)
+            )
+    | _ -> None
 
 let private isRuntimeAsyncEntry g expr =
     (TryGetRuntimeAsyncReturn g expr).IsSome
@@ -525,11 +504,11 @@ let private inlineCallbacks g implFile =
         | Expr.Obj _ when inContext -> Some(rewrite false expr)
         | _ -> None
 
-    // Bottom-up: callbacks nested in the construction or continuation are already inlined.
+    // Substitution can make an enclosing callback eligible, so revisit successful replacements.
     and postTransform inContext expr =
         match expr with
         | Expr.Let(TBind(callback, construction, _), _, _, _) when callback.InlineIfLambda && analyzer.ContainsSuspension construction ->
-            Some(inlineCallback g analyzer inContext expr)
+            inlineCallback g inContext expr |> Option.map (rewrite inContext)
         | _ -> None
 
     RewriteImplFile (rewriter false) implFile

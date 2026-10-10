@@ -185,10 +185,12 @@ closures capture are promoted to reference cells. It has two steps.
 First, it applies the callback rewrites listed above to compiler-owned,
 single-argument `InlineIfLambda` functions and delegates within runtime-async
 bodies or sequence recipes, including callbacks bound immediately before a
-runtime-async body and those captured by their construction. Inner callbacks
-are processed first. A suspending construction used directly as an `Invoke`
-receiver is bound to a compiler-owned callback before lowering; receiver
-evaluation still precedes argument evaluation.
+runtime-async body and those captured by their construction. The outer pass
+normalizes children bottom-up, then selects and applies one callback rewrite.
+Successful replacements are revisited because substitution can make enclosing
+callbacks eligible; rejected candidates are left unchanged. A suspending
+construction used directly as an `Invoke` receiver is bound to a compiler-owned
+callback before lowering; receiver evaluation still precedes argument evaluation.
 
 Eligibility, captures, branch sizes, and use counts are checked before
 rewriting. Escaping callbacks, opaque consumers, quotations retaining the
