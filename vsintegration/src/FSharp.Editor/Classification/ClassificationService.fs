@@ -4,10 +4,13 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
 open System.Composition
+open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Collections.Immutable
 open System.Threading
+open System.Threading.Tasks
 open System.Runtime.Caching
+open System.Runtime.CompilerServices
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Classification
@@ -29,6 +32,82 @@ open Microsoft.VisualStudio.FSharp.Editor.Telemetry
 
 type SemanticClassificationData = SemanticClassificationView
 type SemanticClassificationLookup = IReadOnlyDictionary<int, ResizeArray<SemanticClassificationItem>>
+
+/// What a classification answers for: the text it colours and the semantics it was checked against.
+/// An edit elsewhere in the project reclassifies this document without touching its text.
+[<Struct>]
+type internal ClassificationVersion =
+    {
+        TextVersion: VersionStamp
+        SemanticVersion: VersionStamp
+    }
+
+/// The whole-file semantic classification of one version of an open document.
+type internal OpenDocumentClassification =
+    {
+        Version: ClassificationVersion
+        Text: SourceText
+        Lookup: SemanticClassificationLookup
+    }
+
+type internal ClassifyWholeFile = CancellationToken -> Task<OpenDocumentClassification voption>
+
+/// One classification of a document version, shared by every request that arrives while it runs.
+/// The computation starts with the first waiter and is cancelled only when the last one leaves; once
+/// it is, nobody can join it any more.
+[<Sealed>]
+type internal InFlightClassification(version: ClassificationVersion, compute: ClassifyWholeFile) =
+    let cts = new CancellationTokenSource()
+    let job = lazy (compute cts.Token)
+    let gate = obj ()
+    let mutable waiters = 0
+    let mutable closed = false
+
+    member _.Version = version
+
+    member _.IsCancelled = lock gate (fun () -> closed)
+
+    member _.IsCompleted = job.IsValueCreated && job.Value.IsCompleted
+
+    /// ValueNone once the last waiter has left and the work is being cancelled: start a new one.
+    member _.TryJoin(cancellationToken: CancellationToken) : Task<OpenDocumentClassification voption> voption =
+        let joined =
+            lock gate (fun () ->
+                if not closed then
+                    waiters <- waiters + 1
+
+                not closed)
+
+        if not joined then
+            ValueNone
+        else
+            let job = job.Value
+            let left = ref 0
+
+            let leave () =
+                if Interlocked.Exchange(left, 1) = 0 then
+                    let cancel =
+                        lock gate (fun () ->
+                            waiters <- waiters - 1
+                            closed <- waiters = 0 && not job.IsCompleted
+                            closed)
+
+                    // Outside the lock: cancellation callbacks run synchronously.
+                    if cancel then
+                        cts.Cancel()
+
+            ValueSome(
+                task {
+                    use _ = cancellationToken.Register(fun () -> leave ())
+
+                    try
+                        let! _ = Task.WhenAny(job, Task.Delay(Timeout.Infinite, cancellationToken))
+                        cancellationToken.ThrowIfCancellationRequested()
+                        return! job
+                    finally
+                        leave ()
+                }
+            )
 
 [<Export(typeof<IFSharpClassificationService>)>]
 type internal FSharpClassificationService [<ImportingConstructor>] () =
@@ -146,8 +225,113 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
     static let unopenedDocumentsSemanticClassificationCache =
         new DocumentCache<SemanticClassificationLookup>("fsharp-unopened-documents-semantic-classification-cache", 5.)
 
-    static let openedDocumentsSemanticClassificationCache =
-        new DocumentCache<SemanticClassificationLookup>("fsharp-opened-documents-semantic-classification-cache", 2.)
+    // The classification of an open document's latest checked version. Roslyn asks for it span by span
+    // for as long as that version is on screen, and replaces a span's semantic tags with whatever comes
+    // back - so it is kept for the life of the document rather than expiring, and when the checker
+    // cannot answer (project loading or reloading, a superseded check) it is re-emitted rather than
+    // answering "nothing", which would strip the colours the user already sees.
+    static let openDocumentClassifications =
+        ConditionalWeakTable<DocumentId, OpenDocumentClassification>()
+
+    static let inFlightClassifications =
+        ConcurrentDictionary<DocumentId, InFlightClassification>()
+
+    static let remember (documentId: DocumentId) (classification: OpenDocumentClassification) =
+        // net472 has no ConditionalWeakTable.AddOrUpdate.
+        lock openDocumentClassifications (fun () ->
+            openDocumentClassifications.Remove documentId |> ignore
+            openDocumentClassifications.Add(documentId, classification))
+
+    static let tryGetRemembered (documentId: DocumentId) =
+        // Under the writer's lock: between its Remove and Add the entry is briefly missing.
+        lock openDocumentClassifications (fun () ->
+            match openDocumentClassifications.TryGetValue documentId with
+            | true, classification -> ValueSome classification
+            | _ -> ValueNone)
+
+    // Only for the text it was computed from: the lookup names positions, so against edited text it
+    // would colour the wrong characters.
+    static let addLastGood (documentId: DocumentId) (sourceText: SourceText) (targetSpan: TextSpan) (result: List<ClassifiedSpan>) =
+        match tryGetRemembered documentId with
+        | ValueSome classification when classification.Text.ContentEquals sourceText ->
+            addSemanticClassificationByLookup sourceText targetSpan classification.Lookup result
+        | _ -> ()
+
+    static let addLastGoodForCurrentText (document: Document) (targetSpan: TextSpan) (result: List<ClassifiedSpan>) =
+        match document.TryGetText() with
+        | true, sourceText -> addLastGood document.Id sourceText targetSpan result
+        | _ -> ()
+
+    static let classifyWholeFile (document: Document) (version: ClassificationVersion) (sourceText: SourceText) =
+        cancellableTask {
+            match! document.TryGetFSharpParseAndCheckResultsAsync(nameof (IFSharpClassificationService)) with
+            | ValueNone -> return ValueNone
+            | ValueSome(struct (_, checkResults)) ->
+                let classificationData =
+                    checkResults.GetSemanticClassification(None, RelatedSymbolUseKind.All)
+
+                // Every checked file resolves at least its enclosing module - an implicit one as a
+                // zero-width item - so nothing here means the classification itself failed (an
+                // aborted check, or SemanticClassification.fs recovering with an empty array).
+                // Remembering that would pin the version to no colours.
+                if classificationData.Length = 0 then
+                    return ValueNone
+                else
+                    let classification =
+                        {
+                            Version = version
+                            Text = sourceText
+                            Lookup = itemToSemanticClassificationLookup classificationData
+                        }
+
+                    remember document.Id classification
+                    return ValueSome classification
+        }
+
+    // An instance its last waiter has just abandoned refuses to be joined; the next pass replaces it.
+    static let rec joinClassification (documentId: DocumentId) (version: ClassificationVersion) start cancellationToken =
+        let inFlight =
+            inFlightClassifications.AddOrUpdate(
+                documentId,
+                (fun _ -> start ()),
+                fun _ (running: InFlightClassification) ->
+                    if running.Version = version && not running.IsCancelled then
+                        running
+                    else
+                        start ()
+            )
+
+        match inFlight.TryJoin cancellationToken with
+        | ValueSome work -> struct (inFlight, work)
+        | ValueNone -> joinClassification documentId version start cancellationToken
+
+    // Requests for the same version that overlap - split views, the taggers above and below the
+    // viewport - share one classification instead of each walking the whole file.
+    static let classifyOpenDocument (document: Document) (version: ClassificationVersion) (sourceText: SourceText) =
+        cancellableTask {
+            let! cancellationToken = CancellableTask.getCancellationToken ()
+
+            let start () =
+                InFlightClassification(version, classifyWholeFile document version sourceText)
+
+            let struct (inFlight, work) =
+                joinClassification document.Id version start cancellationToken
+
+            try
+                return! work
+            finally
+                // A waiter that leaves early keeps the entry for those still waiting.
+                if inFlight.IsCompleted || inFlight.IsCancelled then
+                    (inFlightClassifications :> ICollection<KeyValuePair<_, _>>).Remove(KeyValuePair(document.Id, inFlight))
+                    |> ignore
+        }
+
+    // Which store a document lands in is not observable from its classifications - a miss only costs
+    // a recheck - so tests reach them directly to tell the branches apart.
+    static member internal OpenDocumentClassifications = openDocumentClassifications
+
+    static member internal UnopenedDocumentsSemanticClassificationCache =
+        unopenedDocumentsSemanticClassificationCache
 
     interface IFSharpClassificationService with
         // Do not perform classification if we don't have project options (#defines matter)
@@ -252,15 +436,25 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
                             use _eventDuration =
                                 TelemetryReporter.ReportSingleEventWithDuration(TelemetryEvents.AddSemanticClassifications, eventProps)
 
-                            let! classificationData = document.GetFSharpSemanticClassificationAsync(nameof (FSharpClassificationService))
-
-                            let classificationDataLookup = toSemanticClassificationLookup classificationData
-                            do! unopenedDocumentsSemanticClassificationCache.SetAsync(document, classificationDataLookup)
-                            addSemanticClassificationByLookup sourceText textSpan classificationDataLookup result
+                            match! document.TryGetFSharpSemanticClassificationAsync(nameof (FSharpClassificationService)) with
+                            | ValueNone -> ()
+                            | ValueSome classificationData ->
+                                let classificationDataLookup = toSemanticClassificationLookup classificationData
+                                do! unopenedDocumentsSemanticClassificationCache.SetAsync(document, classificationDataLookup)
+                                addSemanticClassificationByLookup sourceText textSpan classificationDataLookup result
                     else
 
-                        match! openedDocumentsSemanticClassificationCache.TryGetValueAsync document with
-                        | ValueSome classificationDataLookup ->
+                        let! textVersion = document.GetTextVersionAsync(cancellationToken)
+                        let! semanticVersion = document.Project.GetDependentSemanticVersionAsync(cancellationToken)
+
+                        let version =
+                            {
+                                TextVersion = textVersion
+                                SemanticVersion = semanticVersion
+                            }
+
+                        match tryGetRemembered document.Id with
+                        | ValueSome classification when classification.Version = version ->
                             let eventProps: (string * obj) array =
                                 [|
                                     "context.document.project.id", document.Project.Id.Id.ToString()
@@ -273,8 +467,8 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
                             use _eventDuration =
                                 TelemetryReporter.ReportSingleEventWithDuration(TelemetryEvents.AddSemanticClassifications, eventProps)
 
-                            addSemanticClassificationByLookup sourceText textSpan classificationDataLookup result
-                        | ValueNone ->
+                            addSemanticClassificationByLookup sourceText textSpan classification.Lookup result
+                        | _ ->
 
                             let eventProps: (string * obj) array =
                                 [|
@@ -288,21 +482,13 @@ type internal FSharpClassificationService [<ImportingConstructor>] () =
                             use _eventDuration =
                                 TelemetryReporter.ReportSingleEventWithDuration(TelemetryEvents.AddSemanticClassifications, eventProps)
 
-                            let! _, checkResults = document.GetFSharpParseAndCheckResultsAsync(nameof (IFSharpClassificationService))
-
-                            let targetRange =
-                                RoslynHelpers.TextSpanToFSharpRange(document.FilePath, textSpan, sourceText)
-
-                            let classificationData =
-                                checkResults.GetSemanticClassification(Some targetRange, RelatedSymbolUseKind.All)
-
-                            if classificationData.Length > 0 then
-                                let classificationDataLookup = itemToSemanticClassificationLookup classificationData
-                                do! unopenedDocumentsSemanticClassificationCache.SetAsync(document, classificationDataLookup)
-
-                                addSemanticClassification sourceText textSpan classificationData result
+                            match! classifyOpenDocument document version sourceText with
+                            | ValueSome classification -> addSemanticClassificationByLookup sourceText textSpan classification.Lookup result
+                            | ValueNone -> addLastGood document.Id sourceText textSpan result
                 }
-                |> CancellableTask.ifCanceledReturn ()
+                // A cancellation that is not Roslyn's own (a superseded or aborted check surfaces as one)
+                // must not turn into an empty answer, which Roslyn would paint as "no colours".
+                |> CancellableTask.ifCanceledThen (fun () -> addLastGoodForCurrentText document textSpan result)
                 |> CancellableTask.startAsTask cancellationToken
 
         // Do not perform classification if we don't have project options (#defines matter)
