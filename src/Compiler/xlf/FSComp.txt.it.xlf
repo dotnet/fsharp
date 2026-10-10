@@ -82,11 +82,6 @@
         <target state="translated">La funzionalità '{0}' non è supportata dal runtime di destinazione.</target>
         <note />
       </trans-unit>
-      <trans-unit id="chkFeatureNotSupportedInLibrary">
-        <source>Feature '{0}' requires the F# library for language version {1} or greater.</source>
-        <target state="translated">Con la funzionalità '{0}' è richiesta la libreria F# per la versione {1} o successiva del linguaggio.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="chkImplementingInterfacesOnStaticClasses">
         <source>If a type uses both [&lt;Sealed&gt;] and [&lt;AbstractClass&gt;] attributes, it means it is static. Implementing interfaces is not allowed.</source>
         <target state="translated">Se un tipo usa entrambi gli attributi [&lt;Sealed&gt;] e [&lt;AbstractClass&gt;], significa che è statico. Non è consentita l'implementazione di interfacce.</target>
@@ -337,19 +332,9 @@
         <target state="translated">Consentire l'attributo estensione implicito per i tipi dichiarabili, i moduli</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureChkNotTailRecursive">
-        <source>Raises warnings if a member or function has the 'TailCall' attribute, but is not being used in a tail recursive way.</source>
-        <target state="translated">Genera un avviso se un membro o una funzione ha l'attributo "TailCall", ma non è in uso in modo ricorsivo finale.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureChkTailCallAttrOnNonRec">
         <source>Raises warnings if the 'TailCall' attribute is used on non-recursive functions.</source>
         <target state="translated">Genera avvisi se l'attributo 'TailCall' viene utilizzato in funzioni non ricorsive.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureConstraintIntersectionOnFlexibleTypes">
-        <source>Constraint intersection on flexible types</source>
-        <target state="translated">Intersezione di vincoli su tipi flessibili</target>
         <note />
       </trans-unit>
       <trans-unit id="featureDeprecatePlacesWhereSeqCanBeOmitted">
@@ -377,19 +362,9 @@
         <target state="translated">Imponi destinazioni attributo</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureErrorForNonVirtualMembersOverrides">
-        <source>Raises errors for non-virtual members overrides</source>
-        <target state="translated">Genera errori per gli override dei membri non virtuali</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureErrorOnBitwiseOpsOnNonIntegralEnums">
         <source>Error when bitwise operators are used on enums whose underlying type is not an integer type (e.g. char).</source>
         <target state="new">Error when bitwise operators are used on enums whose underlying type is not an integer type (e.g. char).</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureErrorOnDeprecatedRequireQualifiedAccess">
-        <source>give error on deprecated access of construct with RequireQualifiedAccess attribute</source>
-        <target state="translated">errore durante l'accesso deprecato del costrutto con l'attributo RequireQualifiedAccess</target>
         <note />
       </trans-unit>
       <trans-unit id="featureErrorOnInvalidDeclsInTypeDefinitions">
@@ -400,11 +375,6 @@
       <trans-unit id="featureErrorOnMissingSignatureAttribute">
         <source>error (rather than warning) when an enforced compiler-semantic attribute is present in the .fs but missing from the .fsi</source>
         <target state="new">error (rather than warning) when an enforced compiler-semantic attribute is present in the .fs but missing from the .fsi</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureExpandedMeasurables">
-        <source>more types support units of measure</source>
-        <target state="translated">più tipi supportano le unità di misura</target>
         <note />
       </trans-unit>
       <trans-unit id="featureExtensionConstraintSolutions">
@@ -440,11 +410,6 @@
       <trans-unit id="featureLowerSimpleMappingsInComprehensionsToFastLoops">
         <source>Lowers [for x in xs -&gt; f x] and [|for x in xs -&gt; f x|] to fast loops when xs is a list or an array, respectively.</source>
         <target state="new">Lowers [for x in xs -&gt; f x] and [|for x in xs -&gt; f x|] to fast loops when xs is a list or an array, respectively.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureMatchNotAllowedForUnionCaseWithNoData">
-        <source>Pattern match discard is not allowed for union case that takes no data.</source>
-        <target state="translated">L'eliminazione della corrispondenza dei criteri non è consentita per case di unione che non accetta dati.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureMoreConcreteTiebreaker">
@@ -497,11 +462,6 @@
         <target state="new">#elif preprocessor directive</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureReallyLongList">
-        <source>list literals of any size</source>
-        <target state="translated">elenca valori letterali di qualsiasi dimensione</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureRecordConstructorSyntax">
         <source>Constructing a record via its all-fields constructor</source>
         <target state="new">Constructing a record via its all-fields constructor</target>
@@ -540,11 +500,6 @@
       <trans-unit id="featureScopedNowarn">
         <source>Support for scoped enabling / disabling of warnings by #warn and #nowarn directives, also inside modules</source>
         <target state="new">Support for scoped enabling / disabling of warnings by #warn and #nowarn directives, also inside modules</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureStringInterpolation">
-        <source>string interpolation</source>
-        <target state="translated">interpolazione di stringhe</target>
         <note />
       </trans-unit>
       <trans-unit id="featureSupportValueOptionsAsOptionalParameters">
@@ -590,11 +545,6 @@
       <trans-unit id="featureWarningWhenCopyAndUpdateRecordChangesAllFields">
         <source>Raises warnings when an copy-and-update record expression changes all fields of a record.</source>
         <target state="translated">Genera avvisi quando un'espressione di record di copia e aggiornamento modifica tutti i campi di un record.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="featureWarningWhenMultipleRecdTypeChoice">
-        <source>Raises warnings when multiple record type matches were found during name resolution because of overlapping field names.</source>
-        <target state="translated">Genera avvisi quando sono state trovate più corrispondenze del tipo di record durante la risoluzione dei nomi a causa di nomi di campi sovrapposti.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWitnessPassing">
@@ -1018,8 +968,8 @@
         <note />
       </trans-unit>
       <trans-unit id="optsUnrecognizedLanguageFeature">
-        <source>Unrecognized language feature name: '{0}'. Use a valid feature name such as 'StringInterpolation' or 'FromEndSlicing'.</source>
-        <target state="new">Unrecognized language feature name: '{0}'. Use a valid feature name such as 'StringInterpolation' or 'FromEndSlicing'.</target>
+        <source>Unrecognized language feature name: '{0}'. Use a valid feature name such as 'FromEndSlicing'.</source>
+        <target state="new">Unrecognized language feature name: '{0}'. Use a valid feature name such as 'FromEndSlicing'.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsUnrecognizedLanguageVersion">
@@ -4700,11 +4650,6 @@
       <trans-unit id="tcUnableToParseFormatString">
         <source>Unable to parse format string '{0}'</source>
         <target state="translated">Non è possibile analizzare la stringa di formato '{0}'</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcListLiteralMaxSize">
-        <source>This list expression exceeds the maximum size for list literals. Use an array for larger literals and call Array.ToList.</source>
-        <target state="translated">Questa espressione elenco supera la dimensione massima per i valori letterali di elenco. Usare una matrice per valori letterali più grandi e chiamare Array.ToList.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcExpressionFormRequiresObjectConstructor">

@@ -60,6 +60,7 @@
     <Compile Include="XmlDocTests - Units of Measure.fs" />
     <Compile Include="RangeTests.fs" />
     <Compile Include="CompilerGlobalStateTests.fs" />
+    <Compile Include="ConstraintSolverTests.fs" />
     <Compile Include="TooltipTests.fs" />
     <Compile Include="XmlDocInheritanceTests.fs" />
     <Compile Include="TypeChecker\TypeCheckerRecoveryTests.fs" />

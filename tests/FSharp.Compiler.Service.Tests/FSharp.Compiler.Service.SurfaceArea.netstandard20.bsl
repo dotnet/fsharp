@@ -10962,10 +10962,12 @@ FSharp.Compiler.SyntaxTrivia.SynMatchClauseTrivia: FSharp.Compiler.SyntaxTrivia.
 FSharp.Compiler.SyntaxTrivia.SynMatchClauseTrivia: FSharp.Compiler.SyntaxTrivia.SynMatchClauseTrivia get_Zero()
 FSharp.Compiler.SyntaxTrivia.SynMatchClauseTrivia: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] ArrowRange
 FSharp.Compiler.SyntaxTrivia.SynMatchClauseTrivia: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] BarRange
+FSharp.Compiler.SyntaxTrivia.SynMatchClauseTrivia: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] WhenKeyword
 FSharp.Compiler.SyntaxTrivia.SynMatchClauseTrivia: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] get_ArrowRange()
 FSharp.Compiler.SyntaxTrivia.SynMatchClauseTrivia: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] get_BarRange()
+FSharp.Compiler.SyntaxTrivia.SynMatchClauseTrivia: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] get_WhenKeyword()
 FSharp.Compiler.SyntaxTrivia.SynMatchClauseTrivia: System.String ToString()
-FSharp.Compiler.SyntaxTrivia.SynMatchClauseTrivia: Void .ctor(Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range])
+FSharp.Compiler.SyntaxTrivia.SynMatchClauseTrivia: Void .ctor(Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range])
 FSharp.Compiler.SyntaxTrivia.SynMeasureConstantTrivia: FSharp.Compiler.Text.Range GreaterRange
 FSharp.Compiler.SyntaxTrivia.SynMeasureConstantTrivia: FSharp.Compiler.Text.Range LessRange
 FSharp.Compiler.SyntaxTrivia.SynMeasureConstantTrivia: FSharp.Compiler.Text.Range get_GreaterRange()

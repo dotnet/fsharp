@@ -1,0 +1,160 @@
+parameters:
+- name: prNumber
+  type: string
+- name: headSha
+  type: string
+- name: baseSha
+  type: string
+- name: visualStudioBootstrapperURI
+  type: string
+  default: '(default)'
+- name: testMachineLab
+  type: string
+  default: DotNet-Project-System-AMD64
+- name: testMachineHoldStrategy
+  type: string
+  default: None
+
+stages:
+- template: /templates/stages/single-executable.yml@DartLab
+  parameters:
+    name: FSharpVSIntegration
+    displayName: F# VS Integration (Apex)
+    owner: fsharp
+    testMachineLab: ${{ parameters.testMachineLab }}
+    testMachineHoldStrategy: ${{ parameters.testMachineHoldStrategy }}
+    templateContext:
+      areaPath: DevDiv\NET Developer Experience\FSharp
+    testExecutablePath: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe
+    testExecutableArguments: >-
+      -NoProfile
+      -ExecutionPolicy Bypass
+      -File C:\Test\FSharp\eng\pipelines\apex-integration\run-apex.ps1
+      -Configuration Release
+    testRunName: F# Apex integration tests
+    testRunTimeout: 0:4:0:0
+    testResultType: TRX
+    testMachineEnvironmentVariables:
+      NativeToolsOnMachine: 'true'
+      VisualStudio.InstallationUnderTest.Path: C:\Test\VisualStudio\Common7\IDE\devenv.exe
+    testMachineTotalCount: '1'
+    testMachineFilesToUpload:
+    - CopyDirectory: C:\Test\FSharp\artifacts
+      Subdirectory: FSharp
+      IncludeFilePatterns:
+      - TestResults\Release\**\*
+      - log\Release\**\*
+      ExcludeFilePatterns: []
+      Timeout: 0:0:10:0
+    preTestMachineConfigurationSteps:
+    - checkout: none
+    - task: DownloadBuildArtifacts@1
+      displayName: Download Visual Studio build artifacts
+      inputs:
+        buildType: specific
+        project: $(resources.pipeline.VisualStudioBuildUnderTest.projectID)
+        definition: $(resources.pipeline.VisualStudioBuildUnderTest.pipelineID)
+        buildVersionToDownload: specific
+        buildId: $(resources.pipeline.VisualStudioBuildUnderTest.runID)
+        downloadType: specific
+        artifactName: BuildArtifacts
+        downloadPath: $(Pipeline.Workspace)\VisualStudioBuildUnderTest
+    - task: PowerShell@2
+      name: SetProductsDropName
+      displayName: Set 'VisualStudio.BuildUnderTest.ProductsDropName'
+      inputs:
+        filePath: $(DartLab.Path)\Scripts\VisualStudio\Build\Get-VisualStudioDropName.ps1
+        arguments: -DropNamePrefix 'Products' -VstsDropUrlsJson '$(Pipeline.Workspace)\VisualStudioBuildUnderTest\BuildArtifacts\VstsDropUrls.json' -OutVariableName 'VisualStudio.BuildUnderTest.ProductsDropName'
+    preOperationsSteps:
+    - template: /templates/steps/powershell/execute-script.yml@DartLab
+      parameters:
+        displayName: Set 'VisualStudio.InstallationUnderTest.Signing'
+        filePath: $(DartLab.Path)\Scripts\VisualStudio\Signing\Get-VisualStudioSigning.ps1
+        arguments: -BootstrapperURI '${{ iif(eq(parameters.visualStudioBootstrapperURI, '(default)'), 'https://vsdrop.corp.microsoft.com/file/v1/$(VisualStudio.BuildUnderTest.ProductsDropName);bootstrappers/Enterprise/vs_enterprise.exe', parameters.visualStudioBootstrapperURI) }}' -OutVariableName 'VisualStudio.InstallationUnderTest.Signing' -ServiceConnectionTenantID $env:AZURESUBSCRIPTION_TENANT_ID -ServiceConnectionClientID $env:AZURESUBSCRIPTION_CLIENT_ID -ServiceConnectionID $env:AZURESUBSCRIPTION_SERVICE_CONNECTION_ID
+        serviceConnectionName: DartLab-1ES
+    checkpointOperations:
+    - operation: executePowerShellScript
+      displayName: Initialize Visual Studio Automation
+      scriptPath: C:\DartLab\Scripts\VisualStudio\Initialize-VisualStudioAutomation.ps1
+      scriptParameters: -Signing '$(VisualStudio.InstallationUnderTest.Signing)' -LogsDirectory '[LoggingDirectory]'
+      timeout: 0:0:7:0
+    - operation: checkpoint
+      displayName: Initialize Visual Studio Environment Checkpoint
+      capabilities:
+        CheckpointID: d1c386cf-b987-4186-829f-405d45e97ef3
+        Signing: $(VisualStudio.InstallationUnderTest.Signing)
+    preDeployAndRunTestsOperations:
+    - operation: executePowerShellScript
+      displayName: Install VSTest
+      scriptPath: C:\DartLab\Scripts\Test\Platform\Install-VisualStudioTest.ps1
+      scriptParameters: -DestinationDirectory 'C:\VSTest' -Version 'latest' -OutputEnvironmentVariableName 'DartVSTestExecutablePath'
+      timeout: 0:0:10:0
+    - operation: executePowerShellScript
+      displayName: Install Visual Studio Under Test
+      scriptPath: C:\DartLab\Scripts\VisualStudio\Installation\Install-VisualStudio.ps1
+      scriptParameters: >-
+        -BootstrapperURI '${{ iif(eq(parameters.visualStudioBootstrapperURI, '(default)'), 'https://vsdrop.corp.microsoft.com/file/v1/$(VisualStudio.BuildUnderTest.ProductsDropName);bootstrappers/Enterprise/vs_enterprise.exe', parameters.visualStudioBootstrapperURI) }}'
+        -InstallationParameters '--add Microsoft.VisualStudio.Component.CoreEditor --add Microsoft.VisualStudio.Workload.CoreEditor --add Microsoft.Component.MSBuild --add Microsoft.NetCore.Component.SDK --add Microsoft.NetCore.Component.Runtime.8.0 --add Microsoft.NetCore.Component.DevelopmentTools --add Microsoft.Net.Component.4.7.2.TargetingPack --add Microsoft.Net.Component.4.8.SDK --add Microsoft.VisualStudio.Component.Roslyn.Compiler --add Microsoft.VisualStudio.Component.Roslyn.LanguageServices --add Microsoft.VisualStudio.Component.FSharp --add Microsoft.VisualStudio.Component.FSharp.Desktop --add Microsoft.VisualStudio.Component.ManagedDesktop.Core --add Microsoft.VisualStudio.Component.ManagedDesktop.Prerequisites --add Microsoft.VisualStudio.Workload.ManagedDesktop --add Microsoft.Component.CodeAnalysis.SDK --add Microsoft.VisualStudio.Component.VSSDK --add Microsoft.VisualStudio.ComponentGroup.VisualStudioExtension.Prerequisites --add Microsoft.VisualStudio.Workload.VisualStudioExtension --installPath "C:\Test\VisualStudio" --quiet --norestart --wait'
+        -LogsDirectory '[LoggingDirectory]'
+        -ManagedIdentityClientID '$(DartLab.1ES.ManagedIdentity.ClientID)'
+        -Timeout '2:0:0'
+      timeout: 2:0:0
+      timeoutBuffer: 0:0:5:0
+    - operation: executePowerShellScript
+      displayName: Initialize Visual Studio User Automation
+      scriptPath: C:\DartLab\Scripts\VisualStudio\Initialize-VisualStudioUserAutomation.ps1
+      scriptParameters: -UserName 'cloudtest'
+      timeout: 0:0:5:0
+    - operation: executePowerShellScript
+      displayName: Initialize Visual Studio Telemetry
+      scriptPath: C:\DartLab\Scripts\VisualStudio\Initialize-VisualStudioTelemetry.ps1
+      scriptParameters: -UserName 'cloudtest'
+      timeout: 0:0:7:0
+    - operation: restartMachine
+      displayName: Restart after Visual Studio installation
+    - operation: executePowerShellScript
+      displayName: Validate Visual Studio Setup
+      scriptPath: C:\DartLab\Scripts\Test\Invoke-VisualStudioTest.ps1
+      scriptParameters: -TestFileNames 'C:\DartLab\Tests\VisualStudio\DartLab.Tests.VisualStudio.dll' -TestAdapterPaths 'C:\DartLab\Tests' -Settings 'C:\DartLab\Tests\VisualStudio\VisualStudio.runsettings' -TestCaseFilter 'TestCategory=Default' -Diag '[LoggingDirectory]\Logs\Validate-VisualStudio\vsdiag.txt' -ResultsDirectory '[LoggingDirectory]\Logs\Validate-VisualStudio' -VSTestConsoleExePath $env:DartVSTestExecutablePath -TestRunParameters @{ ExpectedNumberOfVisualStudioInstallations = '1'; ResetPauseDuration = '00:00:00:20' }
+      environmentVariables:
+        VisualStudio.InstallationUnderTest.Path: C:\Test\VisualStudio
+      timeout: 0:0:10:0
+    - operation: executePowerShellInline
+      displayName: Enable Long Paths
+      scriptBlock: reg add HKLM\SYSTEM\CurrentControlSet\Control\FileSystem /v LongPathsEnabled /t REG_DWORD /d 1 /f
+      timeout: 0:0:1:0
+    - operation: executePowerShellInline
+      displayName: Verify and check out PR snapshot
+      scriptBlock: |
+        $ErrorActionPreference = 'Stop'
+        $sourceRoot = 'C:\Test\FSharp'
+        if (Test-Path -LiteralPath $sourceRoot) {
+            throw "$sourceRoot already exists; refusing to reuse an unverified checkout."
+        }
+        git init $sourceRoot
+        if ($LASTEXITCODE -ne 0) { throw 'git init failed.' }
+        git -C $sourceRoot remote add origin https://github.com/dotnet/fsharp.git
+        if ($LASTEXITCODE -ne 0) { throw 'git remote add failed.' }
+        if ($env:PIPELINE_SOURCE_SHA -cne $env:HEAD_SHA) {
+            throw 'The pipeline YAML revision does not match the reviewed PR head.'
+        }
+        git -C $sourceRoot fetch --no-tags --depth=1 origin $env:PIPELINE_SOURCE_SHA
+        if ($LASTEXITCODE -ne 0) { throw 'Fetching the reviewed pipeline source revision failed.' }
+        git -C $sourceRoot checkout --detach FETCH_HEAD
+        if ($LASTEXITCODE -ne 0) { throw 'Checking out the reviewed pipeline source revision failed.' }
+        if ((git -C $sourceRoot rev-parse HEAD).Trim() -cne $env:PIPELINE_SOURCE_SHA) {
+            throw 'The reviewed source checkout does not match Build.SourceVersion.'
+        }
+        Push-Location $sourceRoot
+        try {
+            & .\eng\setup-pr-validation.ps1 -prNumber $env:PR_NUMBER -headSha $env:HEAD_SHA -baseSha $env:BASE_SHA
+        }
+        finally {
+            Pop-Location
+        }
+      environmentVariables:
+        PIPELINE_SOURCE_SHA: $(Build.SourceVersion)
+        PR_NUMBER: ${{ parameters.prNumber }}
+        HEAD_SHA: ${{ parameters.headSha }}
+        BASE_SHA: ${{ parameters.baseSha }}
+      timeout: 0:0:10:0

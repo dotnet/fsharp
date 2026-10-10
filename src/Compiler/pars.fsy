@@ -2618,13 +2618,11 @@ typarDecl:
       { SynTyparDecl($1, $2, [], SynTyparDeclTrivia.Zero) }
 
   | typar AMP intersectionConstraints
-      { parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.ConstraintIntersectionOnFlexibleTypes (rhs2 parseState 2 3)
-        let constraints, mAmpersands = $3
+      { let constraints, mAmpersands = $3
         SynTyparDecl([], $1, List.rev constraints, { AmpersandRanges = rhs parseState 2 :: List.rev mAmpersands }) }
 
   | attributes typar AMP intersectionConstraints
-      { parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.ConstraintIntersectionOnFlexibleTypes (rhs2 parseState 3 4)
-        let constraints, mAmpersands = $4
+      { let constraints, mAmpersands = $4
         SynTyparDecl($1, $2, List.rev constraints, { AmpersandRanges = rhs parseState 3 :: List.rev mAmpersands }) }
 
 /* Any tokens in this grammar must be added to the lex filter rule 'peekAdjacentTypars' */
@@ -5134,7 +5132,8 @@ withPatternClauses:
 
 patternAndGuard:
   | parenPattern patternGuard
-      { $1, $2 }
+      { let mWhen, guard = $2
+        $1, mWhen, guard }
 
 patternClauses:
   | patternAndGuard patternResult %prec prec_pat_pat_action
@@ -5172,37 +5171,37 @@ patternClauses:
      { mkMatchClausesRecoverMissingResult $1 "patternClauses2" None None None None }
 
   | parenPattern WHEN patternResult %prec prec_recover
-     { let patternAndGuard = $1, None
-       let mWhen = rhs parseState 2
+     { let mWhen = rhs parseState 2
+       let patternAndGuard = $1, Some mWhen, None
        reportParseErrorAt mWhen (FSComp.SR.parsExpectingExpression ())
        mkMatchClauses patternAndGuard $3 None None None }
 
   | parenPattern WHEN %prec prec_recover
-     { let patternAndGuard = $1, None
-       let mWhen = rhs parseState 2
+     { let mWhen = rhs parseState 2
+       let patternAndGuard = $1, Some mWhen, None
        reportParseErrorAt mWhen (FSComp.SR.parsExpectingExpression ())
        mkMatchClausesRecoverMissingResult patternAndGuard "patternClauses3" (Some mWhen) None None None }
 
   | parenPattern WHEN barCanBeRightBeforeNull patternClauses %prec prec_recover
-     { let patternAndGuard = $1, None
-       let mWhen = rhs parseState 2
+     { let mWhen = rhs parseState 2
+       let patternAndGuard = $1, Some mWhen, None
        reportParseErrorAt mWhen (FSComp.SR.parsExpectingExpression ())
        let mNextBar = rhs parseState 3 |> Some
        mkMatchClausesRecoverMissingResult patternAndGuard "patternClauses4" (Some mWhen) mNextBar (Some $4) None }
 
   | parenPattern WHEN barCanBeRightBeforeNull %prec prec_recover
-     { let patternAndGuard = $1, None
-       let mWhen = rhs parseState 2
+     { let mWhen = rhs parseState 2
+       let patternAndGuard = $1, Some mWhen, None
        reportParseErrorAt mWhen (FSComp.SR.parsExpectingExpression ())
        let mLast = rhs parseState 3 |> Some
        mkMatchClausesRecoverMissingResult patternAndGuard "patternClauses5" (Some mWhen) None None mLast }
 
 patternGuard:
   | WHEN declExpr
-     { Some $2 }
+     { Some(rhs parseState 1), Some $2 }
 
   | /* EMPTY */
-     { None }
+     { None, None }
 
 patternResult:
   | RARROW typedSequentialExprBlockR
@@ -6614,8 +6613,7 @@ appTypeWithoutNull:
       { $1 }
 
   | intersectionType
-      { parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.ConstraintIntersectionOnFlexibleTypes (lhs parseState)
-        $1 }
+      { $1 }
 
   | typar COLON_GREATER typ
       { let tp, typ = $1, $3

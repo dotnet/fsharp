@@ -10,7 +10,8 @@ ImplFile
                     (Named (SynIdent (e, None), false, None, (4,2--4,3)), None,
                      Const (Unit, (4,7--4,9)), (4,2--4,9), Yes,
                      { ArrowRange = Some (4,4--4,6)
-                       BarRange = Some (4,0--4,1) })], (3,0--4,9),
+                       BarRange = Some (4,0--4,1)
+                       WhenKeyword = None })], (3,0--4,9),
                  { MatchKeyword = (3,0--3,5)
                    WithKeyword = (3,8--3,12) }), (3,0--4,9))],
           PreXmlDoc ((1,0), FSharp.Compiler.Xml.XmlDocCollector), [], None,

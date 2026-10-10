@@ -9,20 +9,11 @@ type LanguageFeature =
     | FromEndSlicing
     | RuntimeAsync
     | WitnessPassing
-    | StringInterpolation
-    | ExpandedMeasurables
     | NullnessChecking
     | UnionIsPropertiesVisible
     | AttributesToRightOfModuleKeyword
-    | ReallyLongLists
-    | ErrorOnDeprecatedRequireQualifiedAccess
-    | MatchNotAllowedForUnionCaseWithNoData
     | CSharpExtensionAttributeNotRequired
-    | ErrorForNonVirtualMembersOverrides
     | WarningWhenCopyAndUpdateRecordChangesAllFields
-    | WarningWhenMultipleRecdTypeChoice
-    | ConstraintIntersectionOnFlexibleTypes
-    | WarningWhenTailRecAttributeButNonTailRecUsage
     | UnmanagedConstraintCsharpInterop
     | ReuseSameFieldsInStructUnions
     /// RFC-1137
