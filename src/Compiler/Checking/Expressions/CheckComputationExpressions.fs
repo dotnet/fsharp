@@ -2396,6 +2396,8 @@ let rec TryTranslateComputationExpression
             Some(translatedCtxt callExpr)
 
         | SynExpr.YieldOrReturnFrom((true, _), synYieldExpr, mFull, { YieldOrReturnFromKeyword = m }) ->
+            let synYieldExpr = rewriteYieldFromRange cenv synYieldExpr
+
             let yieldFromExpr =
                 mkSourceExpr synYieldExpr ceenv.sourceMethInfo ceenv.builderValName
 
@@ -2451,6 +2453,14 @@ let rec TryTranslateComputationExpression
             Some(translatedCtxt returnFromCall)
 
         | SynExpr.YieldOrReturn((isYield, _), synYieldOrReturnExpr, mFull, { YieldOrReturnKeyword = m }) ->
+            // A range is not yielded or returned as one value (FS-1031); recover with the range as a sequence.
+            let synYieldOrReturnExpr =
+                match synYieldOrReturnExpr with
+                | BareRangeExpr rangeExpr when cenv.g.langVersion.SupportsFeature LanguageFeature.AllowMixedRangesAndValuesInSeqExpressions ->
+                    errorR (Error(FSComp.SR.tcRangeIsNotASingleValue (), synYieldOrReturnExpr.Range))
+                    rangeExpr
+                | _ -> synYieldOrReturnExpr
+
             let methName = (if isYield then "Yield" else "Return")
 
             if ceenv.isQuery && not isYield then
@@ -2468,6 +2478,8 @@ let rec TryTranslateComputationExpression
                     SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes(false, mFull), false, yieldOrReturnCall)
 
             Some(translatedCtxt yieldOrReturnCall)
+
+        | BareRangeExpr _ -> TryTranslateComputationExpression ceenv firstTry q varSpace (mkRangeSplice comp) translatedCtxt
 
         | _ -> None)
 
@@ -2878,6 +2890,7 @@ and isSimpleExpr ceenv comp =
     | SynExpr.YieldOrReturnFrom _ -> false
     | SynExpr.YieldOrReturn _ -> false
     | SynExpr.DoBang _ -> false
+    | BareRangeExpr _ -> false
     | _ -> true
 
 and TranslateComputationExpression (ceenv: ComputationExpressionContext<'a>) firstTry q varSpace comp translatedCtxt =

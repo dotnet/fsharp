@@ -18,6 +18,7 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.SyntaxTreeOps
+open FSharp.Compiler.SyntaxTrivia
 
 let TryAllowFlexibleNullnessInControlFlow isFirst (g: TcGlobals.TcGlobals) ty =
     match isFirst, g.checkNullness, GetTyparTyIfSupportsNull g ty with
@@ -181,6 +182,30 @@ let RewriteRangeExpr synExpr =
         Some otherExpr
     | _ -> None
 
+/// A closed range 'e1..e2' or 'e1..e2..e3' that is not parenthesized, as a call to '(..)' or '(.. ..)'.
+[<return: Struct>]
+let (|BareRangeExpr|_|) synExpr =
+    match synExpr with
+    | SynExpr.IndexRange _ ->
+        match RewriteRangeExpr synExpr with
+        | Some rangeExpr -> ValueSome rangeExpr
+        | None -> ValueNone
+    | _ -> ValueNone
+
+/// A range in element position of a list, array, sequence or computation expression
+/// splices its elements, as 'yield! e1..e2' does (FS-1031).
+let mkRangeSplice (synRange: SynExpr) =
+    let m = synRange.Range
+    SynExpr.YieldOrReturnFrom((true, false), synRange, m, { YieldOrReturnFromKeyword = m })
+
+/// The source of 'yield! e1..e2' is '(..) e1 e2' (FS-1031).
+let rewriteYieldFromRange (cenv: TcFileState) synExpr =
+    match synExpr with
+    | BareRangeExpr rangeExpr ->
+        checkLanguageFeatureAndRecover cenv.g.langVersion LanguageFeature.AllowMixedRangesAndValuesInSeqExpressions synExpr.Range
+        rangeExpr
+    | _ -> synExpr
+
 /// Check if a computation or sequence expression is syntactically free of 'yield' (though not yield!)
 let YieldFree (_cenv: TcFileState) expr =
     let rec YieldFree expr =
@@ -223,7 +248,8 @@ let inline IsSimpleSemicolonSequenceElement expr cenv acceptDeprecated =
     | SynExpr.Do _
     | SynExpr.MatchBang _
     | SynExpr.While _
-    | SynExpr.WhileBang _ -> false
+    | SynExpr.WhileBang _
+    | BareRangeExpr _ -> false
     | _ -> true
 
 [<TailCall>]
@@ -246,6 +272,37 @@ let rec TryGetSimpleSemicolonSequenceOfComprehension expr acc cenv acceptDepreca
 [<return: Struct>]
 let (|SimpleSemicolonSequence|_|) cenv acceptDeprecated cexpr =
     TryGetSimpleSemicolonSequenceOfComprehension cexpr [] cenv acceptDeprecated
+
+/// A flat list or array of values with at least one range, such as '[ 0; 1..3; 10 ]' (FS-1031),
+/// as '[ yield 0; 1..3; yield 10 ]': every value stays an element, as in a list literal.
+[<return: Struct>]
+let (|SimpleSemicolonSequenceWithRanges|_|) cenv cexpr =
+    let yieldElement (e: SynExpr) =
+        SynExpr.YieldOrReturn((true, false), e, e.Range, { YieldOrReturnKeyword = e.Range })
+
+    let rec collectReversed expr acc hasRange =
+        match expr with
+        | SynExpr.Sequential(isTrueSeq = true; expr1 = BareRangeExpr _ as e1; expr2 = e2) -> collectReversed e2 (e1 :: acc) true
+        | SynExpr.Sequential(isTrueSeq = true; expr1 = e1; expr2 = e2) when IsSimpleSemicolonSequenceElement e1 cenv false ->
+            collectReversed e2 (yieldElement e1 :: acc) hasRange
+        | BareRangeExpr _ -> ValueSome(expr :: acc)
+        | _ when hasRange && IsSimpleSemicolonSequenceElement expr cenv false -> ValueSome(yieldElement expr :: acc)
+        | _ -> ValueNone
+
+    match collectReversed cexpr [] false with
+    | ValueSome(last :: before) ->
+        let mkSequential (tail: SynExpr) (e: SynExpr) =
+            SynExpr.Sequential(
+                DebugPointAtSequential.SuppressNeither,
+                true,
+                e,
+                tail,
+                unionRanges e.Range tail.Range,
+                SynExprSequentialTrivia.Zero
+            )
+
+        ValueSome(List.fold mkSequential last before)
+    | _ -> ValueNone
 
 let elimFastIntegerForLoop (spFor, spTo, id, start: SynExpr, dir, finish: SynExpr, innerExpr, m: range) =
     let mOp = (unionRanges start.Range finish.Range).MakeSynthetic()

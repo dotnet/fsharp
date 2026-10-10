@@ -1729,6 +1729,7 @@ featureUseBangBindingValueDiscard,"Allows use! _ = ... in computation expression
 featureBetterAnonymousRecordParsing,"Support for better anonymous record parsing"
 featureScopedNowarn,"Support for scoped enabling / disabling of warnings by #warn and #nowarn directives, also inside modules"
 featureErrorOnInvalidDeclsInTypeDefinitions,"Error when invalid declarations are used in type definitions."
+featureAllowMixedRangesAndValuesInSeqExpressions,"Allow mixed ranges and values in sequence expressions, e.g. seq {{ 1..10; 20 }}"
 featureAllowLetOrUseBangTypeAnnotationWithoutParens,"Allow let! and use! type annotations without requiring parentheses"
 3874,lexWarnDirectiveMustBeFirst,"#nowarn/#warnon directives must appear as the first non-whitespace characters on a line"
 3875,lexWarnDirectiveMustHaveArgs,"Warn directives must have warning number(s) as argument(s)"
@@ -1803,4 +1804,5 @@ featureTypeArgumentDependencyOrdering,"ordering explicit type arguments by their
 3923,tcMethodRequiresNamedArguments,"The method '%s' requires named arguments. Use named-argument syntax, e.g. 'MethodName(argumentName = value)'."
 3924,chkNativePtrStackallocInHandler,"'NativePtr.stackalloc' cannot be used inside the 'with' handler, filter or 'finally' block of a 'try' expression. The 'localloc' IL instruction this emits is rejected inside an exception-handling region, producing a 'System.InvalidProgramException' when the method is loaded."
 3925,optInlineMemberCannotUseBase,"An inline member cannot use 'base' or protected members unless those uses can be eliminated before the member itself is inlined."
+3926,tcRangeIsNotASingleValue,"A range expression cannot be used as a single value here. Use 'yield!' to splice the range, or wrap it in a list or sequence expression to use it as one value."
 featureReraiseInComputationExpressions,"calls to 'reraise' in a computation expression handler"
