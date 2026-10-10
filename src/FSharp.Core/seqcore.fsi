@@ -169,8 +169,13 @@ type GeneratedRuntimeAsyncSequenceBase<'T> =
     abstract GetFreshEnumerator: unit -> GeneratedRuntimeAsyncSequenceBase<'T>
     abstract SetCancellationToken: System.Threading.CancellationToken -> unit
     abstract MoveNextAsync: unit -> System.Threading.Tasks.ValueTask<bool>
-    abstract DisposeAsync: unit -> System.Threading.Tasks.ValueTask
+
+    /// <summary>The F# compiler emits implementations of this member. DisposeAsync calls it, then runs MoveNextAsync to execute the pending cleanup.</summary>
+    abstract Close: unit -> unit
     abstract Current: 'T
+
+    /// <summary>The F# compiler emits calls to this member when a generated move completes. It must not be called directly.</summary>
+    member CompleteMoveNext: unit -> unit
     interface IAsyncEnumerable<'T>
     interface IAsyncEnumerator<'T>
     interface IAsyncDisposable

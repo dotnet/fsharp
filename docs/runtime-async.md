@@ -269,75 +269,7 @@ type RuntimeTaskBuilder() =
         continuation (AsyncHelpers.Await task)
 ```
 
-`Bind`, `ReturnFrom`, and `MergeSources` can use `Await` for known
-`Task`/`ValueTask` types and SRTP awaiter operations for arbitrary task-like
-values. `MergeSources` awaits its already-started sources sequentially.
-`Async<'T>` can be adapted with `Async.StartImmediateAsTask`.
-
-An async-sequence builder can use the same pattern to produce
-`IAsyncEnumerable<'T>`. Its `Run` creates a producer that is started when
-`GetAsyncEnumerator` is called. A `ManualResetValueTaskSourceCore` handshake
-makes enumeration pull-driven: `yield` publishes one item and waits for the
-next `MoveNextAsync` request. `yield!` and `for` can consume synchronous or
-asynchronous enumerables, and nested async enumerables receive the caller's
-cancellation token. A single active `MoveNextAsync` is enforced. A builder may
-also hand off directly between compatible producers for `YieldFromFinal`,
-avoiding a second enumeration handshake.
-
-These builders are examples rather than FSharp.Core APIs. Applications can
-define their own inline builders over the same intrinsics, subject to the
-runtime-async restrictions and inline-fragment rules described above.
-
-### Direct async-sequence proposal
-
-`__runtimeAsyncSequence` consumes a statically known `unit -> seq<'T>` recipe. It reuses sequence lowering, but emits runtime-async `MoveNextAsync(): ValueTask<bool>` and `DisposeAsync(): ValueTask` methods on a reference type. Each resume checks the enumeration's cancellation token before running recipe code. User awaits remain in these methods. Yield positions persist between calls. Ordinary nested sequences remain synchronous.
-
-Generated types implement the enumerator interfaces directly, without base-class forwarding. The first acquisition reuses the factory instance. Later acquisitions return independent, already-acquired clones. Immediately consumed runtime-async inputs remain adjacent to their awaits so the runtime can fuse the calls.
-
-The [example builder](../tests/FSharp.Compiler.ComponentTests/Language/RuntimeAsync/RuntimeAsyncSequenceBuilder.fs) uses existing sequence combinators. Its `Bind` supports tasks, value tasks, and typed custom/configured awaiters. `For` and `YieldFrom` select synchronous or asynchronous enumeration through library overloads, not compiler syntax cases.
-
-```fsharp
-let values (work: Task<int>) (resource: IAsyncDisposable) =
-    runtimeAsyncSeq {
-        use cleanup = resource
-        let! value = work
-        for offset in [1; 2] do
-            yield value + offset
-        yield! [10]
-        for value in runtimeAsyncSeq { yield 11 } do
-            yield value
-        yield! runtimeAsyncSeq { yield 12 }
-    }
-```
-
-The reference builder uses the compiler-recognized `cancellationToken()` helper to pass the current enumeration token to nested `IAsyncEnumerable` sources. Recipes can call the same helper for explicit cancellation checks without taking a token parameter. The `withCancellation (fun token -> runtimeAsyncSeq { ... })` adapter remains available when the recipe needs to capture the enumeration token explicitly.
-
-```fsharp
-let tokens =
-    runtimeAsyncSeq {
-        let token = cancellationToken()
-        token.ThrowIfCancellationRequested()
-        yield token
-    }
-```
-
-Recipes undergo mandatory local normalization even with `--optimize-`. This does not enable optimization for surrounding code. It can remove intermediate recipe locals. Body faults await active cleanup before rethrowing with their original dispatch information. Successful moves do not allocate an exception-transport object.
-
-When cleanup can suspend, the saved exception lives on the iterator instead of enlarging every runtime continuation. The failure path clears it even if cleanup throws.
-
-Builder-generated `MoveNextAsync` can lose visible sequence points. The optimized control has no visible points, and its nonoptimized form omits the terminal yield's range. Direct-intrinsic and ordinary-sequence controls retain their ranges. This proposal does not guarantee complete source stepping.
-
-This is a proposal, not a drop-in TaskSeq replacement. Producer `try/with` is lowered through an ordinary nested sequence, while runtime-async suspensions inside that handler remain unsupported. Opaque recipes and optimized tail handoff are rejected. Early disposal retains ordinary sequence exception precedence: an outer cleanup failure replaces an inner cleanup failure. Concurrent move/dispose calls are unsupported. Awaiting a non-cancellable operation does not make it cancellable. Performance qualification must include genuinely pending operations, not only completed awaits.
-
-Build and run the small [usage and lifecycle example](../tests/FSharp.Compiler.ComponentTests/Language/RuntimeAsync/RuntimeAsyncSequence.fs) with the matching preview SDK:
-
-```sh
-./build.sh -c Release
-dotnet test --project tests/FSharp.Compiler.ComponentTests/FSharp.Compiler.ComponentTests.fsproj \
-  -c Release --no-build --filter-class 'Language.RuntimeAsyncSequenceTests'
-```
-
-The tests compile the library and consumer together and separately, with optimization enabled and disabled.
+Sample builders for tasks (`runtimeTask`), cancellable computations (`async2`) and async sequences (`asyncSeq2`) live with the [component tests](../tests/FSharp.Compiler.ComponentTests/Language/RuntimeAsync/README.md). They are examples, not FSharp.Core APIs.
 
 ### Unsupported inline-fragment positions
 
@@ -347,6 +279,52 @@ runtime-async suspension fragment. If the suspension remains in the generated
 non-runtime-async method, code generation reports FS3916 rather than emitting
 an unsafe closure. Fragments in statically eliminated branches do not trigger
 this diagnostic.
+
+## Async sequences
+
+`__runtimeAsyncSequence` turns a statically known `unit -> seq<'T>` recipe into an `IAsyncEnumerable<'T>`. It reuses sequence lowering, but emits a single runtime-async `MoveNextAsync(): ValueTask<bool>` state machine. Awaits in the recipe stay in this method, and yield positions persist between calls. Ordinary nested sequences remain synchronous.
+
+```fsharp
+let values (work: Task<int>) =
+    __runtimeAsyncSequence (fun () -> seq {
+        yield AsyncHelpers.Await work
+        try
+            yield AsyncHelpers.Await work + 1
+        with _ ->
+            AsyncHelpers.Await(Task.Delay 10)
+            yield -1
+    })
+```
+
+`__runtimeAsyncSequenceCancellationToken()` returns the token passed to `GetAsyncEnumerator`. Each resume checks this token before running recipe code; awaiting a non-cancellable operation does not make it cancellable.
+
+Generated types derive from `GeneratedRuntimeAsyncSequenceBase<'T>`, which implements the enumerator interfaces:
+
+* The first `GetAsyncEnumerator` reuses the sequence instance; later calls return independent clones.
+* A second `MoveNextAsync`, or a `DisposeAsync`, while a move is pending throws `InvalidOperationException`. The generated `MoveNextAsync` releases this guard through `CompleteMoveNext` before its result completes.
+
+`try/with` and `try/finally` blocks are part of the `MoveNextAsync` state machine, so bodies, guards, handlers and `finally` blocks can all await:
+
+* A fault runs the pending `finally` blocks, then jumps to the innermost handler. Cleanup completes before guards run, as in ordinary `try/with`; a cleanup failure replaces the original exception.
+* `DisposeAsync` marks the enumerator as disposing and runs `MoveNextAsync` once more. That run executes the pending `finally` blocks and skips handlers.
+
+Other behavior:
+
+* Recipes are normalized even with `--optimize-`. This can remove intermediate recipe locals but does not optimize surrounding code.
+* Unhandled faults rethrow with their original dispatch information. Successful moves allocate no exception-transport object.
+* Early disposal keeps ordinary sequence precedence: an outer cleanup failure replaces an inner one.
+* Runtime-async inputs that are consumed immediately stay adjacent to their awaits, so the runtime can fuse the calls.
+* Opaque recipes are rejected.
+* The compiler does not hand off tail `yield!` calls; a builder can, as the sample `asyncSeq2` does.
+* Builder-generated `MoveNextAsync` methods can lose sequence points, so source stepping is not guaranteed.
+
+Run the async-sequence tests with:
+
+```sh
+./build.sh -c Release
+dotnet test --project tests/FSharp.Compiler.ComponentTests/FSharp.Compiler.ComponentTests.fsproj \
+  -c Release --no-build --filter-class 'Language.RuntimeAsyncSequenceTests'
+```
 
 ## Not yet implemented
 

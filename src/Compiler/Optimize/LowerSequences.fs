@@ -36,6 +36,13 @@ let callNonOverloadedILMethod g amap m methName ty args =
 //----------------------------------------------------------------------------
 // State machine compilation for sequence expressions
 
+type RuntimeAsyncUnwind =
+    {
+      Fault: ValRef
+      Disposing: ValRef
+      Rethrow: Expr -> Expr
+    }
+
 type LoweredSeqFirstPhaseResult =
    {
      /// The second phase of the transformation.  This rebuilds the 'generate', 'dispose' and 'checkDispose' expressions for the
@@ -95,7 +102,14 @@ let (|SeqElemTy|_|) g amap m ty =
 /// The analysis is done in two phases. The first phase determines the state variables and state labels (as Abstract IL code labels).
 /// We then allocate an integer pc for each state label and proceed with the second phase, which builds two related state machine
 /// expressions: one for 'MoveNext' and one for 'Dispose'.
-let ConvertSequenceExprToObject g amap isRuntimeAsync overallExpr =
+let ConvertSequenceExprToObject g amap (runtimeAsync: RuntimeAsyncUnwind option) overallExpr =
+    // Runtime-async sequences run cleanup and handlers inside 'generate'. While unwinding after a
+    // fault or a dispose request, the jump table sends each 'pc' to its innermost pending finally or handler.
+    let unwindTargets = System.Collections.Generic.Dictionary<ILCodeLabel, ILCodeLabel>()
+
+    let isUnwinding (ra: RuntimeAsyncUnwind) m =
+        mkLazyOr g m (mkNonNullTest g m (exprForValRef m ra.Fault)) (exprForValRef m ra.Disposing)
+
     /// Implement a decision to represent a 'let' binding as a non-escaping local variable (rather than a state machine variable)
     let RepresentBindingAsLocal (bind: Binding) resBody m =
         if verbose then
@@ -163,6 +177,7 @@ let ConvertSequenceExprToObject g amap isRuntimeAsync overallExpr =
                  //return true
                  //NEXT:
             let label = generateCodeLabel()
+            unwindTargets[label] <- currentDisposeContinuationLabel
             Some { phase2 = (fun (pcVar, currVar, _nextv, pcMap) ->
                         let generate =
                             mkSequential m
@@ -287,6 +302,7 @@ let ConvertSequenceExprToObject g amap isRuntimeAsync overallExpr =
 
         | SeqTryFinally g (e1, compensation, spTry, spFinally, m) ->
             let innerDisposeContinuationLabel = generateCodeLabel()
+            unwindTargets[innerDisposeContinuationLabel] <- innerDisposeContinuationLabel
             let resBody = ConvertSeqExprCode false false noDisposeContinuationLabel innerDisposeContinuationLabel e1
             match resBody with
             | Some res1  ->
@@ -304,6 +320,15 @@ let ConvertSequenceExprToObject g amap isRuntimeAsync overallExpr =
                             let generate =
                                 // copy the compensation expression - one copy for the success continuation and one for the exception
                                 let compensation = copyExpr g CloneAllAndMarkExprValsAsCompilerGenerated compensation
+                                // when unwinding, continue with the next pending finally or handler
+                                let compensation =
+                                    match runtimeAsync with
+                                    | Some ra ->
+                                        mkCompGenSequential m compensation
+                                            (mkCond DebugPointAtBinding.NoneAtInvisible m g.unit_ty (isUnwinding ra m)
+                                                (Expr.Op (TOp.Goto currentDisposeContinuationLabel, [], [], m))
+                                                (mkUnit g m))
+                                    | None -> compensation
                                 mkSequential m
                                     // set the PC to the inner finally, so that if an exception happens we run the right finally
                                     (mkSequential m
@@ -339,16 +364,104 @@ let ConvertSequenceExprToObject g amap isRuntimeAsync overallExpr =
             | _ ->
                 None
 
-        | (ValApp g (FSharp.Compiler.TcGlobals.ValRefForIntrinsic g.seq_trywith_info) ([ elementTy ], [ _source; _filter; _handler ], m) as tryWithExpr)
-            when isRuntimeAsync ->
-            // Keep the try/with sequence as an ordinary nested source. Its exception and disposal
-            // semantics are implemented by EnumerateTryWith; the surrounding producer remains
-            // statically lowered.
-            let value, valueExpr = mkCompGenLocal m "value" elementTy
-            let body = mkCallSeqSingleton g m elementTy valueExpr
-            let body = mkLambdaNoType g m value body
-            let nestedFor = mkCallSeqCollect g m elementTy elementTy body tryWithExpr
-            ConvertSeqExprCode isWholeExpr isTailCall noDisposeContinuationLabel currentDisposeContinuationLabel nestedFor
+        // try/with in a runtime-async sequence:
+        //     pc <- HANDLER
+        //     body
+        //     pc <- OUTER
+        //     goto AFTER
+        //   HANDLER:                      (reached only while unwinding)
+        //     pc <- OUTER
+        //     if disposing then goto OUTER
+        //     let exn = fault
+        //     fault <- null
+        //     if filter exn = 0 then rethrow exn   (omitted when the handler does its own matching)
+        //     handler exn
+        //   AFTER:
+        | ValApp g (FSharp.Compiler.TcGlobals.ValRefForIntrinsic g.seq_trywith_info) ([ elementTy ], [ source; filter; handler ], m)
+            when runtimeAsync.IsSome ->
+            let ra = runtimeAsync.Value
+            let handlerLabel = generateCodeLabel()
+            let afterLabel = generateCodeLabel()
+            let exnVal, exnExpr = mkCompGenLocal m "exn" g.exn_ty
+            let body = match source with SeqDelay g (body, _) -> body | _ -> source
+            let apply f = MakeApplicationAndBetaReduce g (f, tyOfExpr g f, [], [ exnExpr ], m)
+            let rethrow = mkCompGenSequential m (ra.Rethrow exnExpr) (mkCallSeqEmpty g m elementTy)
+
+            // The filter is skipped when it always matches, or when the type checker compiled it from the
+            // same clauses as the handler (both lambdas then share the 'with' range). Otherwise it runs first.
+            let handlerExpr =
+                match filter, handler with
+                | Expr.Lambda(_, _, _, _, DebugPoints(Expr.Const(Const.Int32 1, _, _), _), _, _), _ -> apply handler
+                | Expr.Lambda _, Expr.Lambda _ when Range.equals filter.Range handler.Range -> apply handler
+                | _ -> mkCond DebugPointAtBinding.NoneAtInvisible m (mkSeqTy g elementTy) (mkILAsmCeq g m (apply filter) (mkZero g m)) rethrow (apply handler)
+
+            // A clause that does not match rethrows. Nested try/with handlers are rewritten when they are lowered.
+            let handlerExpr =
+                handlerExpr
+                |> RewriteExpr {
+                    PreIntercept =
+                        Some(fun _ expr ->
+                            match expr with
+                            | ValApp g (FSharp.Compiler.TcGlobals.ValRefForIntrinsic g.seq_trywith_info) _ -> Some expr
+                            | _ -> None)
+                    PreInterceptBinding = None
+                    PostTransform = (fun expr ->
+                        match expr with
+                        | Expr.Match(sp, input, tree, targets, range, ty) when tyConfirmsToSeq g ty ->
+                            let targets =
+                                targets
+                                |> Array.map (fun (TTarget(vs, target, flags) as tg) ->
+                                    match target with
+                                    | Expr.Const(Const.Int32 0, _, _) ->
+                                        TTarget(vs, rethrow, flags)
+                                    | Expr.Sequential(
+                                        (DebugPoints(Expr.Op(TOp.ILCall(_, _, _, _, _, _, _, ilMethodRef, _, _, _), _, _, _), _) as first),
+                                        Expr.Const(Const.Zero, m, _),
+                                        kind,
+                                        range) when ilMethodRef.Name = "Throw" ->
+                                        TTarget(vs, Expr.Sequential(first, mkCallSeqEmpty g m elementTy, kind, range), flags)
+                                    | _ -> tg)
+                            Some(Expr.Match(sp, input, tree, targets, range, ty))
+                        | _ -> None)
+                    RewriteQuotations = false
+                    StackGuard = StackGuard("RuntimeAsyncSequenceHandler")
+                }
+                |> fun handlerExpr ->
+                    mkCompGenLet m exnVal (exprForValRef m ra.Fault)
+                        (mkCompGenSequential m (mkValSet m ra.Fault (mkNull m g.exn_ty)) handlerExpr)
+
+            let resBody = ConvertSeqExprCode false false noDisposeContinuationLabel handlerLabel body
+            let resHandler = ConvertSeqExprCode false false noDisposeContinuationLabel currentDisposeContinuationLabel handlerExpr
+            match resBody, resHandler with
+            | Some resBody, Some resHandler ->
+                unwindTargets[handlerLabel] <- handlerLabel
+                let asyncVars =
+                    let asyncVars = unionFreeVars resBody.asyncVars resHandler.asyncVars
+                    if resBody.entryPoints.IsEmpty then asyncVars
+                    else unionFreeVars asyncVars (freeInExpr CollectLocals handlerExpr)
+
+                Some { phase2 = (fun (pcVar, _, _, pcMap as ctxt) ->
+                            let generateBody, disposeBody, checkDisposeBody = resBody.phase2 ctxt
+                            let generateHandler, disposeHandler, checkDisposeHandler = resHandler.phase2 ctxt
+                            let setPc label = mkValSet m pcVar (mkInt32 g m pcMap[label])
+                            let goto label = Expr.Op (TOp.Goto label, [], [], m)
+                            let generate =
+                                mkSequentials g m [
+                                    setPc handlerLabel
+                                    generateBody
+                                    setPc currentDisposeContinuationLabel
+                                    goto afterLabel
+                                    mkLabelled m handlerLabel (setPc currentDisposeContinuationLabel)
+                                    mkCond DebugPointAtBinding.NoneAtInvisible m g.unit_ty (exprForValRef m ra.Disposing)
+                                        (goto currentDisposeContinuationLabel) (mkUnit g m)
+                                    generateHandler
+                                    Expr.Op (TOp.Label afterLabel, [], [], m) ]
+                            generate, mkSequential m disposeBody disposeHandler, mkSequential m checkDisposeBody checkDisposeHandler)
+                       entryPoints = handlerLabel :: resBody.entryPoints @ resHandler.entryPoints
+                       stateVars = resBody.stateVars @ resHandler.stateVars
+                       significantClose = true
+                       asyncVars = asyncVars }
+            | _ -> None
 
         | SeqEmpty g m ->
             // printfn "found Seq.empty"
@@ -577,16 +690,22 @@ let ConvertSequenceExprToObject g amap isRuntimeAsync overallExpr =
             //       current <- null
             //       return 0
             let generateExprWithCleanup =
+                // unwinding jumps straight to 'noDispose'
+                let finish =
+                    if runtimeAsync.IsSome then
+                        mkCompGenSequential m (mkValSet m pcVarRef (mkInt32 g m pcDone))
+                    else
+                        id
                 mkCompGenSequential m
                     generateExprCore
                     (mkCompGenSequential m
                         // set the pc to "finished"
                         (mkValSet m pcVarRef (mkInt32 g m pcDone))
                         (mkLabelled m noDisposeContinuationLabel
-                            (mkCompGenSequential m
+                            (finish (mkCompGenSequential m
                                 // zero out the current value to free up its memory
                                 (mkValSet m currVarRef (mkDefault (m, currVarRef.Type)))
-                                (Expr.Op (TOp.Return, [], [mkZero g m], m)))))
+                                (Expr.Op (TOp.Return, [], [mkZero g m], m))))))
 
             // Add on the final label to the 'CheckDispose' method
             //    checkDisposeExprCore
@@ -599,7 +718,7 @@ let ConvertSequenceExprToObject g amap isRuntimeAsync overallExpr =
                         (Expr.Op (TOp.Return, [], [mkFalse g m], m)))
 
             // A utility to add a jump table to the three generated methods
-            let addJumpTable isDisposal expr =
+            let jumpTable isDisposal target =
                 let mbuilder = MatchBuilder(DebugPointAtBinding.NoneAtInvisible, m )
                 let mkGotoLabelTarget lab = mbuilder.AddResultTarget(Expr.Op (TOp.Goto lab, [], [], m))
                 let dtree =
@@ -612,15 +731,17 @@ let ConvertSequenceExprToObject g amap isRuntimeAsync overallExpr =
 
                         // Yield one target for each PC, where the action of the target is to goto the appropriate label
                         for pc in pcs do
-                            yield mkCase(DecisionTreeTest.Const(Const.Int32 pc), mkGotoLabelTarget pc2lab[pc])
+                            yield mkCase(DecisionTreeTest.Const(Const.Int32 pc), mkGotoLabelTarget (target pc2lab[pc]))
 
                         // Yield one target for the 'done' program counter, where the action of the target is to continuation label
                         yield mkCase(DecisionTreeTest.Const(Const.Int32 pcDone), mkGotoLabelTarget noDisposeContinuationLabel) ],
                       Some(mkGotoLabelTarget pc2lab[pcInit]),
                       m)
 
-                let table = mbuilder.Close(dtree, m, g.int_ty)
-                mkCompGenSequential m table (mkLabelled m initLabel expr)
+                mbuilder.Close(dtree, m, g.int_ty)
+
+            let addJumpTable isDisposal expr =
+                mkCompGenSequential m (jumpTable isDisposal id) (mkLabelled m initLabel expr)
 
             // A utility to handle the cases where exceptions are raised by the disposal logic.
             // We wrap the disposal state machine in a loop that repeatedly drives the disposal logic of the
@@ -701,11 +822,24 @@ let ConvertSequenceExprToObject g amap isRuntimeAsync overallExpr =
 
             // Add the jump table to the GenerateNext method
             let generateExprWithJumpTable =
-                addJumpTable false generateExprWithCleanup
+                match runtimeAsync with
+                | Some ra ->
+                    let unwindTarget lab =
+                        match unwindTargets.TryGetValue lab with
+                        | true, target -> target
+                        | _ -> noDisposeContinuationLabel
+                    mkCompGenSequential m
+                        (mkCond DebugPointAtBinding.NoneAtInvisible m g.int_ty (isUnwinding ra m) (jumpTable true unwindTarget) (jumpTable false id))
+                        (mkLabelled m initLabel generateExprWithCleanup)
+                | None -> addJumpTable false generateExprWithCleanup
 
             // Add the jump table to the Dispose method
             let disposalExprWithJumpTable =
-                if res.significantClose then
+                match runtimeAsync with
+                | Some ra ->
+                    // DisposeAsync then runs the pending cleanup through 'generate'
+                    mkValSet m ra.Disposing (mkTrue g m)
+                | None when res.significantClose ->
                     let disposalExpr =
                         mkCompGenSequential m
                             disposalExprCore
@@ -718,7 +852,7 @@ let ConvertSequenceExprToObject g amap isRuntimeAsync overallExpr =
                     disposalExpr
                     |> addJumpTable true
                     |> handleExceptionsInDispose
-                else
+                | None ->
                     mkValSet m pcVarRef (mkInt32 g m pcDone)
 
             // Add the jump table to the CheckDispose method
