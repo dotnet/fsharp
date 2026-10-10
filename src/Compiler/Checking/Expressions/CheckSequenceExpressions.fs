@@ -7,6 +7,7 @@ open FSharp.Compiler.CheckBasics
 open FSharp.Compiler.CheckExpressions
 open FSharp.Compiler.CheckExpressionsOps
 open FSharp.Compiler.ConstraintSolver
+open FSharp.Compiler.Features
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.PatternMatchCompilation
 open FSharp.Compiler.Syntax
@@ -379,6 +380,13 @@ let TcSequenceExpression (cenv: TcFileState) env tpenv comp (overallTy: OverallT
 
         | SynExpr.YieldOrReturnFrom(flags = (isYield, _); expr = synYieldExpr; trivia = { YieldOrReturnFromKeyword = m }) ->
             let env = { env with eIsControlFlow = false }
+
+            let synYieldExpr =
+                if isYield then
+                    rewriteYieldFromRange cenv synYieldExpr
+                else
+                    synYieldExpr
+
             let resultExpr, genExprTy, tpenv = TcExprOfUnknownType cenv env tpenv synYieldExpr
 
             if not isYield then
@@ -396,6 +404,17 @@ let TcSequenceExpression (cenv: TcFileState) env tpenv comp (overallTy: OverallT
                     mkDebugPoint resultExpr.Range resultExpr
 
             Some(resultExpr, tpenv)
+
+        // A range is not yielded or returned as one value (FS-1031); recover as 'yield! e1..e2'.
+        | SynExpr.YieldOrReturn(flags = (isYield, _); expr = BareRangeExpr _ as synRange; range = m) when
+            g.langVersion.SupportsFeature LanguageFeature.AllowMixedRangesAndValuesInSeqExpressions
+            ->
+            if isYield then
+                errorR (Error(FSComp.SR.tcRangeIsNotASingleValue (), synRange.Range))
+            else
+                errorR (Error(FSComp.SR.tcSeqResultsUseYield (), m))
+
+            tryTcSequenceExprBody env genOuterTy tpenv (mkRangeSplice synRange)
 
         | SynExpr.YieldOrReturn(flags = (isYield, _); expr = synYieldExpr; range = m) ->
             let env = { env with eIsControlFlow = false }
@@ -417,6 +436,8 @@ let TcSequenceExpression (cenv: TcFileState) env tpenv comp (overallTy: OverallT
                     mkDebugPoint m resultExpr
 
             Some(resultExpr, tpenv)
+
+        | BareRangeExpr _ -> tryTcSequenceExprBody env genOuterTy tpenv (mkRangeSplice comp)
 
         | _ -> None
 
