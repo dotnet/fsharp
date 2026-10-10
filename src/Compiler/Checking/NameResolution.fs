@@ -6,6 +6,7 @@ module internal FSharp.Compiler.NameResolution
 
 open System
 open System.Collections.Generic
+open System.Collections.Immutable
 
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
@@ -2330,7 +2331,7 @@ type TcResolutions
      capturedExprTypes: ResizeArray<TType * NameResolutionEnv * AccessorDomain * range>,
      capturedNameResolutions: ResizeArray<CapturedNameResolution>,
      capturedMethodGroupResolutions: ResizeArray<CapturedNameResolution>,
-     capturedRelatedSymbolUses: ResizeArray<range * Item * RelatedSymbolUseKind>) =
+     capturedRelatedSymbolUses: ResizeArray<struct (range * Item * RelatedSymbolUseKind)>) =
 
     static let empty = TcResolutions(ResizeArray 0, ResizeArray 0, ResizeArray 0, ResizeArray 0, ResizeArray 0)
 
@@ -2344,7 +2345,7 @@ type TcResolutions
 
     member _.CapturedRelatedSymbolUses =
         capturedRelatedSymbolUses
-        |> Seq.filter (fun (_, _, kind: RelatedSymbolUseKind) -> RelatedSymbolUseKind.AllInCode.HasFlag kind)
+        |> Seq.filter (fun struct (_, _, kind: RelatedSymbolUseKind) -> RelatedSymbolUseKind.AllInCode.HasFlag kind)
 
     static member Empty = empty
 
@@ -2355,12 +2356,16 @@ type TcSymbolUseData =
      DisplayEnv: DisplayEnv
      Range: range }
 
+/// `RelatedSymbolUseKind.All` was every bit until the names inside XML doc comments became a kind of their own.
+/// An enum value is compiled into its caller, so an assembly built against that `All` still passes this mask.
+let legacyAllRelatedSymbolUseKinds = enum<RelatedSymbolUseKind> 0x7FFFFFFF
+
 /// Represents container for all name resolutions that were met so far when typechecking some particular file
 ///
 /// This is a memory-critical data structure - allocations of this data structure and its immediate contents
 /// is one of the highest memory long-lived data structures in typical uses of IDEs. Not many of these objects
 /// are allocated (one per file), but they are large because the allUsesOfAllSymbols array is large.
-type TcSymbolUses(g, capturedNameResolutions: ResizeArray<CapturedNameResolution>, capturedRelatedSymbolUses: ResizeArray<range * Item * RelatedSymbolUseKind>, formatSpecifierLocations: (range * int)[]) =
+type TcSymbolUses(g, capturedNameResolutions: ResizeArray<CapturedNameResolution>, capturedRelatedSymbolUses: ResizeArray<struct (range * Item * RelatedSymbolUseKind)>, formatSpecifierLocations: (range * int)[]) =
 
     let toSymbolUseData (cnr: CapturedNameResolution) =
         { ItemWithInst = cnr.ItemWithInst; ItemOccurrence = cnr.ItemOccurrence; DisplayEnv = cnr.DisplayEnv; Range = cnr.Range }
@@ -2375,14 +2380,20 @@ type TcSymbolUses(g, capturedNameResolutions: ResizeArray<CapturedNameResolution
 
     let relatedSymbolUses =
         capturedRelatedSymbolUses
-        |> ResizeArray.mapToSmallArrayChunks (fun (m, item, kind) ->
+        |> ResizeArray.mapToSmallArrayChunks (fun struct (m, item, kind) ->
             struct ({ ItemWithInst = { Item = item; TyparInstantiation = emptyTyparInst }; ItemOccurrence = ItemOccurrence.Use; DisplayEnv = DisplayEnv.Empty g; Range = m }, kind))
 
     let capturedRelatedSymbolUses = ()
     do capturedRelatedSymbolUses // don't capture this!
 
     member _.GetUsesOfSymbol(item, ?relatedSymbolKinds: RelatedSymbolUseKind) =
-        let kinds = defaultArg relatedSymbolKinds RelatedSymbolUseKind.None
+        let kinds =
+            match relatedSymbolKinds with
+            // A caller compiled when `All` was every bit still passes that mask, and must keep getting the uses in code only
+            | Some kinds when kinds = legacyAllRelatedSymbolUseKinds -> RelatedSymbolUseKind.AllInCode
+            | Some kinds -> kinds
+            | None -> RelatedSymbolUseKind.None
+
         [| for symbolUseChunk in allUsesOfSymbols do
             for symbolUse in symbolUseChunk do
                 if protectAssemblyExploration false (fun () -> ItemsAreEffectivelyEqual g item symbolUse.ItemWithInst.Item) then
@@ -2406,7 +2417,7 @@ type TcResultsSinkImpl(tcGlobals, ?sourceText: ISourceText) =
     let capturedExprTypings = ResizeArray<_>()
     let capturedNameResolutions = ResizeArray<CapturedNameResolution>()
     let capturedMethodGroupResolutions = ResizeArray<CapturedNameResolution>()
-    let capturedRelatedSymbolUses = ResizeArray<range * Item * RelatedSymbolUseKind>()
+    let capturedRelatedSymbolUses = ResizeArray<struct (range * Item * RelatedSymbolUseKind)>()
     let capturedOpenDeclarations = ResizeArray<OpenDeclaration>()
     let capturedFormatSpecifierLocations = ResizeArray<_>()
 
@@ -2518,7 +2529,7 @@ type TcResultsSinkImpl(tcGlobals, ?sourceText: ISourceText) =
 
         member sink.NotifyRelatedSymbolUse(m, item, kind) =
             if allowedRange m then
-                capturedRelatedSymbolUses.Add((m, item, kind))
+                capturedRelatedSymbolUses.Add(struct (m, item, kind))
 
         member sink.NotifyOpenDeclaration openDeclaration =
             capturedOpenDeclarations.Add openDeclaration
@@ -2655,23 +2666,50 @@ let CallRelatedSymbolSink (sink: TcResultsSink) (m: range, item: Item, kind: Rel
     | None -> ()
     | Some currentSink -> currentSink.NotifyRelatedSymbolUse(m, item, kind)
 
-/// Report each `<param name>`/`<paramref name>`/`<typeparam name>`/`<typeparamref name>` of a declaration's XML doc
-/// as a related use of the parameter or type parameter it names, at the range of the attribute value.
-let ReportXmlDocRefUses (sink: TcResultsSink) (doc: XmlDoc) (parameters: (string * Item) list) (typars: (string * Item) list) =
-    match sink.CurrentSink with
-    | Some currentSink when doc.NonEmpty && (not parameters.IsEmpty || not typars.IsEmpty) ->
-        for docRef in doc.GetRefs() do
-            let candidates =
-                match docRef.Kind with
-                | XmlDocRefKind.Param
-                | XmlDocRefKind.ParamRef -> parameters
-                | XmlDocRefKind.TypeParam
-                | XmlDocRefKind.TypeParamRef -> typars
-                | XmlDocRefKind.Cref -> []
+/// The type parameters of a declaration, as what a `<typeparam name>` or `<typeparamref name>` of its XML doc can name
+let XmlDocTyparCandidates (typars: Typars) =
+    let candidates = ImmutableArrayBuilder.create typars.Length
 
-            for name, item in candidates do
-                if String.Equals(name, docRef.Text, StringComparison.Ordinal) then
-                    currentSink.NotifyRelatedSymbolUse(docRef.Range, item, RelatedSymbolUseKind.XmlDocParameter)
+    for tp in typars do
+        candidates.Add(struct (tp.Name, Item.TypeVar(tp.Name, tp)))
+
+    candidates.MoveToImmutable()
+
+/// Report each of `docRefs` that names one of the candidates as a related use of it, at the range of the attribute value
+let ReportXmlDocRefs
+    (currentSink: ITypecheckResultsSink)
+    (docRefs: ImmutableArray<XmlDocRef>)
+    (parameters: ImmutableArray<struct (string * Item)>)
+    (typars: ImmutableArray<struct (string * Item)>)
+    =
+    for docRef in docRefs do
+        let candidates =
+            match docRef.Kind with
+            | XmlDocRefKind.Param
+            | XmlDocRefKind.ParamRef -> parameters
+            | XmlDocRefKind.TypeParam
+            | XmlDocRefKind.TypeParamRef -> typars
+            | XmlDocRefKind.Cref -> ImmutableArray.empty
+
+        for struct (name, item) in candidates do
+            if String.Equals(name, docRef.Text, StringComparison.Ordinal) then
+                currentSink.NotifyRelatedSymbolUse(docRef.Range, item, RelatedSymbolUseKind.XmlDocParameter)
+
+/// Report each `<param name>`/`<paramref name>`/`<typeparam name>`/`<typeparamref name>` of a declaration's XML doc
+/// as a related use of the parameter or type parameter it names.
+/// The candidates are asked for only when there is a sink and the doc names something, so batch compilation builds neither.
+let inline ReportXmlDocRefUses
+    (sink: TcResultsSink)
+    (doc: XmlDoc)
+    ([<InlineIfLambda>] parameters: unit -> ImmutableArray<struct (string * Item)>)
+    ([<InlineIfLambda>] typars: unit -> ImmutableArray<struct (string * Item)>)
+    =
+    match sink.CurrentSink with
+    | Some currentSink when doc.NonEmpty ->
+        let docRefs = doc.GetRefs()
+
+        if not docRefs.IsEmpty then
+            ReportXmlDocRefs currentSink docRefs (parameters ()) (typars ())
     | _ -> ()
 
 /// Report a specific expression typing at a source range

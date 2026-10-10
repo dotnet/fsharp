@@ -113,7 +113,7 @@ module internal SymbolHelpers =
 
             | Some SymbolScope.CurrentDocument ->
                 let symbolUses =
-                    checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol, relatedSymbolKinds = RelatedSymbolUseKind.All)
+                    checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol, relatedSymbolKinds = RelatedSymbolUseKind.AllInCode)
 
                 do!
                     symbolUses
@@ -135,7 +135,7 @@ module internal SymbolHelpers =
                 let symbolUses =
                     (checkFileResults, currentDocument) :: otherFileCheckResults
                     |> Seq.collect (fun (checkFileResults, doc) ->
-                        checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol, relatedSymbolKinds = RelatedSymbolUseKind.All)
+                        checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol, relatedSymbolKinds = RelatedSymbolUseKind.AllInCode)
                         |> Seq.map (fun symbolUse -> (doc, symbolUse.Range)))
 
                 do! symbolUses |> Seq.map ((<||) onFound) |> CancellableTask.whenAll

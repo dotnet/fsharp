@@ -208,6 +208,7 @@ let checkParsingErrors expected (parseResults: FSharpParseFileResults) =
 module XmlDocRefs =
 
     open System
+    open System.Collections.Immutable
     open FSharp.Compiler.Text
     open FSharp.Compiler.Xml
 
@@ -221,11 +222,12 @@ module XmlDocRefs =
     let private docOf (lines: string[]) =
         let lineRanges =
             lines
-            |> Array.mapi (fun i line ->
+            |> Seq.mapi (fun i line ->
                 let lineNumber = 10 + i
                 Range.mkRange "test.fs" (Position.mkPos lineNumber 4) (Position.mkPos lineNumber (4 + 3 + line.Length)))
+            |> ImmutableArray.CreateRange
 
-        XmlDoc(lines, lineRanges, Array.reduce Range.unionRanges lineRanges)
+        XmlDoc(lines, lineRanges, Seq.reduce Range.unionRanges lineRanges)
 
     /// Each value marked `{ref}…{/ref}` must come back from GetRefs, in order, at its place in the source:
     /// the stored line starts after the three slashes, 7 columns into the source line.
@@ -249,10 +251,11 @@ module XmlDocRefs =
 
         let doc = docOf lines
 
-        doc.GetRefs()
-        |> Array.map (fun r -> r.Text, (r.Range.StartLine, r.Range.StartColumn, r.Range.EndColumn))
-        |> List.ofArray
-        |> shouldEqual (List.ofSeq expected)
+        Assert.Equal<string * (int * int * int)>(
+            expected,
+            doc.GetRefs()
+            |> Seq.map (fun r -> r.Text, (r.Range.StartLine, r.Range.StartColumn, r.Range.EndColumn))
+        )
 
         doc
 
@@ -269,9 +272,7 @@ module XmlDocRefs =
                           """ <exception cref="{ref}System.Exception{/ref}">when</exception>"""
                           """ <permission cref="{ref}P{/ref}"/>""" |]
 
-        doc.GetRefs()
-        |> Array.map _.Kind
-        |> shouldEqual
+        Assert.Equal<XmlDocRefKind>(
             [| XmlDocRefKind.Param
                XmlDocRefKind.ParamRef
                XmlDocRefKind.TypeParam
@@ -279,7 +280,9 @@ module XmlDocRefs =
                XmlDocRefKind.Cref
                XmlDocRefKind.Cref
                XmlDocRefKind.Cref
-               XmlDocRefKind.Cref |]
+               XmlDocRefKind.Cref |],
+            doc.GetRefs() |> Seq.map _.Kind
+        )
 
     [<Fact>]
     let ``attribute syntax variations`` () =
@@ -300,6 +303,15 @@ module XmlDocRefs =
                       """   name="{ref}x{/ref}">on the next line</param>"""
                       """<typeparam other="1" """
                       """           name="{ref}T{/ref}">after another attribute</typeparam>""" |]
+        |> ignore
+
+    [<Fact>]
+    let ``a value on a later line than its attribute name`` () =
+        expectRefs [| "<param name="
+                      "\"{ref}x{/ref}\"/>"
+                      "<param name"
+                      "  ="
+                      "  '{ref}y{/ref}'>the equals sign and the value each on a line of their own</param>" |]
         |> ignore
 
     [<Fact>]
@@ -332,15 +344,16 @@ module XmlDocRefs =
 
     [<Fact>]
     let ``a doc without line ranges has no refs`` () =
-        XmlDoc([| """<param name="x"/>""" |], Range.range0).GetRefs() |> shouldEqual [||]
+        Assert.Empty(XmlDoc([| """<param name="x"/>""" |], Range.range0).GetRefs())
+        Assert.Empty(XmlDoc([| """<param name="x"/>""" |], Unchecked.defaultof<ImmutableArray<range>>, Range.range0).GetRefs())
 
     [<Fact>]
     let ``a merged doc keeps its refs when both halves have line ranges`` () =
         let merged = XmlDoc.Merge (docOf [| """<param name="x"/>""" |]) (docOf [| """<param name="y"/>""" |])
-        merged.GetRefs() |> Array.map _.Text |> shouldEqual [| "x"; "y" |]
+        Assert.Equal<string>([| "x"; "y" |], merged.GetRefs() |> Seq.map _.Text)
 
         let withoutRanges = XmlDoc.Merge (docOf [| """<param name="x"/>""" |]) (XmlDoc([| """<param name="y"/>""" |], Range.range0))
-        withoutRanges.GetRefs() |> shouldEqual [||]
+        Assert.Empty(withoutRanges.GetRefs())
 
 [<Fact>]
 let ``xml-doc eof``(): unit =

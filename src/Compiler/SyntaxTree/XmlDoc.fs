@@ -4,6 +4,7 @@ namespace FSharp.Compiler.Xml
 
 open System
 open System.Collections.Generic
+open System.Collections.Immutable
 open System.IO
 open System.Xml
 open System.Xml.Linq
@@ -35,18 +36,25 @@ type XmlDocRef =
 
 module private XmlDocRefs =
 
-    /// The tags that name something, with the attribute that holds the name
-    let private tags =
-        [|
-            "param", XmlDocRefKind.Param, "name"
-            "paramref", XmlDocRefKind.ParamRef, "name"
-            "typeparam", XmlDocRefKind.TypeParam, "name"
-            "typeparamref", XmlDocRefKind.TypeParamRef, "name"
-            "see", XmlDocRefKind.Cref, "cref"
-            "seealso", XmlDocRefKind.Cref, "cref"
-            "exception", XmlDocRefKind.Cref, "cref"
-            "permission", XmlDocRefKind.Cref, "cref"
-        |]
+    let private nameAttribute = XName.Get "name"
+
+    let private crefAttribute = XName.Get "cref"
+
+    /// What an element names and the attribute that holds the name, for the elements that name something
+    let private refOf (element: XElement) =
+        if element.Name.NamespaceName.Length <> 0 then
+            ValueNone
+        else
+            match element.Name.LocalName with
+            | "param" -> ValueSome struct (XmlDocRefKind.Param, nameAttribute)
+            | "paramref" -> ValueSome struct (XmlDocRefKind.ParamRef, nameAttribute)
+            | "typeparam" -> ValueSome struct (XmlDocRefKind.TypeParam, nameAttribute)
+            | "typeparamref" -> ValueSome struct (XmlDocRefKind.TypeParamRef, nameAttribute)
+            | "see"
+            | "seealso"
+            | "exception"
+            | "permission" -> ValueSome struct (XmlDocRefKind.Cref, crefAttribute)
+            | _ -> ValueNone
 
     /// The three slashes of `///` are not part of the stored line
     let private lineTextOffset = 3
@@ -68,27 +76,31 @@ module private XmlDocRefs =
 
         i
 
-    /// Where the quoted value of the attribute whose name starts at `nameStart` of `line` begins, and its length there.
-    /// A value that runs over a line break has no single-line range.
-    let private valueSpan (line: string) (nameStart: int) (attributeName: string) =
-        let equals = skipWhiteSpace line (nameStart + attributeName.Length)
+    /// Where the quoted value of the attribute whose name starts at `nameStart` begins in `text`, and its length.
+    /// The `=` and the opening quote may follow on later lines; a value that itself runs over a line break
+    /// has no single-line range.
+    let private valueSpan (text: string) (nameStart: int) (attributeName: string) =
+        let equals = skipWhiteSpace text (nameStart + attributeName.Length)
 
-        if equals < line.Length && line[equals] = '=' then
-            let quote = skipWhiteSpace line (equals + 1)
+        if equals < text.Length && text[equals] = '=' then
+            let quote = skipWhiteSpace text (equals + 1)
 
-            if quote < line.Length && (line[quote] = '"' || line[quote] = '\'') then
-                match line.IndexOf(line[quote], quote + 1) with
+            if quote < text.Length && (text[quote] = '"' || text[quote] = '\'') then
+                let start = quote + 1
+
+                match text.IndexOf(text[quote], start) with
                 | -1 -> ValueNone
-                | close -> ValueSome struct (quote + 1, close - quote - 1)
+                | close when text.IndexOf('\n', start, close - start) >= 0 -> ValueNone
+                | close -> ValueSome struct (start, close - start)
             else
                 ValueNone
         else
             ValueNone
 
     /// Parses the doc's own lines, not the text with `<include>` expanded, so that every element maps back to a source line
-    let collect (lines: string[]) (lineRanges: range[]) =
+    let collect (lines: string[]) (lineRanges: ImmutableArray<range>) =
         match firstXmlLine lines with
-        | -1 -> [||]
+        | -1 -> ImmutableArray.empty
         | first ->
             let text = String.Join("\n", lines, first, lines.Length - first)
 
@@ -106,36 +118,59 @@ module private XmlDocRefs =
                     ValueNone
 
             match xml with
-            | ValueNone -> [||]
+            | ValueNone -> ImmutableArray.empty
             | ValueSome xml ->
-                [|
-                    for element in xml.Descendants() do
-                        match tags |> Array.tryFind (fun (tag, _, _) -> element.Name = XName.Get tag) with
-                        | Some(_, kind, attributeName) ->
-                            match element.Attribute(XName.Get attributeName) with
-                            | null -> ()
-                            | attribute ->
-                                let position = attribute :> IXmlLineInfo
-                                // Line 1 of the parsed text is the wrapping `<doc>`
-                                let line = first + position.LineNumber - 2
+                // Where each of the parsed lines starts in `text`
+                let lineStarts = Array.zeroCreate (lines.Length - first)
 
-                                match valueSpan lines[line] (position.LinePosition - 1) attributeName with
-                                | ValueSome struct (offset, length) ->
-                                    let m = lineRanges[line]
-                                    let column = m.StartColumn + lineTextOffset + offset
+                for i in 1 .. lineStarts.Length - 1 do
+                    lineStarts[i] <- lineStarts[i - 1] + lines[first + i - 1].Length + 1
 
+                let refs = ImmutableArray.CreateBuilder()
+
+                for element in xml.Descendants() do
+                    match refOf element with
+                    | ValueSome struct (kind, attributeName) ->
+                        match element.Attribute attributeName with
+                        | null -> ()
+                        | attribute ->
+                            let position = attribute :> IXmlLineInfo
+                            // Line 1 of the parsed text is the wrapping `<doc>`
+                            let nameLine = position.LineNumber - 2
+                            let nameStart = lineStarts[nameLine] + position.LinePosition - 1
+
+                            match valueSpan text nameStart attributeName.LocalName with
+                            | ValueSome struct (start, length) ->
+                                // A line break before or after the `=` puts the value on a later line than the name
+                                let mutable line = nameLine
+
+                                while line + 1 < lineStarts.Length && lineStarts[line + 1] <= start do
+                                    line <- line + 1
+
+                                let m = lineRanges[first + line]
+                                let column = m.StartColumn + lineTextOffset + start - lineStarts[line]
+
+                                refs.Add
                                     {
                                         Kind = kind
                                         Text = attribute.Value
                                         Range =
                                             mkFileIndexRange m.FileIndex (mkPos m.StartLine column) (mkPos m.StartLine (column + length))
                                     }
-                                | ValueNone -> ()
-                        | None -> ()
-                |]
+                            | ValueNone -> ()
+                    | ValueNone -> ()
+
+                refs.ToImmutable()
 
 /// Represents collected XmlDoc lines
-type XmlDoc(unprocessedLines: string[], lineRanges: range[], range: range) =
+type XmlDoc(unprocessedLines: string[], lineRanges: ImmutableArray<range>, range: range) =
+    // A `default` array from a caller has no lines, like an empty one
+    let lineRanges =
+        if lineRanges.IsDefault then
+            ImmutableArray.empty
+        else
+            lineRanges
+
     do
         if lineRanges.Length <> 0 && lineRanges.Length <> unprocessedLines.Length then
             invalidArg (nameof lineRanges) "one range per line, or none"
@@ -155,7 +190,7 @@ type XmlDoc(unprocessedLines: string[], lineRanges: range[], range: range) =
                 @ (lines |> List.map Internal.Utilities.XmlAdapters.escape)
                 @ [ "</summary>" ]
 
-    new(unprocessedLines: string[], range: range) = XmlDoc(unprocessedLines, [||], range)
+    new(unprocessedLines: string[], range: range) = XmlDoc(unprocessedLines, ImmutableArray.empty, range)
 
     /// Get the lines before insertion of implicit summary tags and encoding
     member _.UnprocessedLines = unprocessedLines
@@ -175,8 +210,8 @@ type XmlDoc(unprocessedLines: string[], lineRanges: range[], range: range) =
 
     /// The `name` and `cref` attribute values in the doc, with their source ranges; empty without line ranges
     member _.GetRefs() =
-        if lineRanges.Length = 0 then
-            [||]
+        if lineRanges.IsEmpty then
+            ImmutableArray.empty
         else
             XmlDocRefs.collect unprocessedLines lineRanges
 
@@ -197,9 +232,9 @@ type XmlDoc(unprocessedLines: string[], lineRanges: range[], range: range) =
                 doc1.LineRanges.Length = doc1.UnprocessedLines.Length
                 && doc2.LineRanges.Length = doc2.UnprocessedLines.Length
             then
-                Array.append doc1.LineRanges doc2.LineRanges
+                doc1.LineRanges.AddRange doc2.LineRanges
             else
-                [||]
+                ImmutableArray.empty
 
         XmlDoc(Array.append doc1.UnprocessedLines doc2.UnprocessedLines, lineRanges, range)
 
@@ -386,8 +421,8 @@ type PreXmlDoc =
                 XmlDoc.Empty
             else
                 let lines = Array.map fst preLines
-                let lineRanges = Array.map snd preLines
-                let m = Array.reduce unionRanges lineRanges
+                let lineRanges = ImmutableArray.init preLines.Length (fun i -> snd preLines[i])
+                let m = ImmutableArray.fold unionRanges lineRanges[0] lineRanges
                 let doc = XmlDoc(lines, lineRanges, m)
 
                 if check then
