@@ -56,6 +56,7 @@ type LanguageFeature =
     | ErrorOnBitwiseOpsOnNonIntegralEnums
     | OptimizeClosureIfNotInlined
     | ReraiseInComputationExpressions
+    | ConstantInterpolatedStrings
 
 /// LanguageVersion management
 type LanguageVersion =
