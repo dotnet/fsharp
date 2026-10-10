@@ -12741,18 +12741,18 @@ FSharp.Compiler.Xml.XmlDoc: Boolean get_IsEmpty()
 FSharp.Compiler.Xml.XmlDoc: Boolean get_NonEmpty()
 FSharp.Compiler.Xml.XmlDoc: FSharp.Compiler.Text.Range Range
 FSharp.Compiler.Xml.XmlDoc: FSharp.Compiler.Text.Range get_Range()
-FSharp.Compiler.Xml.XmlDoc: FSharp.Compiler.Text.Range[] LineRanges
-FSharp.Compiler.Xml.XmlDoc: FSharp.Compiler.Text.Range[] get_LineRanges()
 FSharp.Compiler.Xml.XmlDoc: FSharp.Compiler.Xml.XmlDoc Empty
 FSharp.Compiler.Xml.XmlDoc: FSharp.Compiler.Xml.XmlDoc Merge(FSharp.Compiler.Xml.XmlDoc, FSharp.Compiler.Xml.XmlDoc)
 FSharp.Compiler.Xml.XmlDoc: FSharp.Compiler.Xml.XmlDoc get_Empty()
-FSharp.Compiler.Xml.XmlDoc: FSharp.Compiler.Xml.XmlDocRef[] GetRefs()
+FSharp.Compiler.Xml.XmlDoc: System.Collections.Immutable.ImmutableArray`1[FSharp.Compiler.Text.Range] LineRanges
+FSharp.Compiler.Xml.XmlDoc: System.Collections.Immutable.ImmutableArray`1[FSharp.Compiler.Text.Range] get_LineRanges()
+FSharp.Compiler.Xml.XmlDoc: System.Collections.Immutable.ImmutableArray`1[FSharp.Compiler.Xml.XmlDocRef] GetRefs()
 FSharp.Compiler.Xml.XmlDoc: System.String GetXmlText()
 FSharp.Compiler.Xml.XmlDoc: System.String[] GetElaboratedXmlLines()
 FSharp.Compiler.Xml.XmlDoc: System.String[] UnprocessedLines
 FSharp.Compiler.Xml.XmlDoc: System.String[] get_UnprocessedLines()
 FSharp.Compiler.Xml.XmlDoc: Void .ctor(System.String[], FSharp.Compiler.Text.Range)
-FSharp.Compiler.Xml.XmlDoc: Void .ctor(System.String[], FSharp.Compiler.Text.Range[], FSharp.Compiler.Text.Range)
+FSharp.Compiler.Xml.XmlDoc: Void .ctor(System.String[], System.Collections.Immutable.ImmutableArray`1[FSharp.Compiler.Text.Range], FSharp.Compiler.Text.Range)
 FSharp.Compiler.Xml.XmlDocRef: Boolean Equals(FSharp.Compiler.Xml.XmlDocRef)
 FSharp.Compiler.Xml.XmlDocRef: Boolean Equals(FSharp.Compiler.Xml.XmlDocRef, System.Collections.IEqualityComparer)
 FSharp.Compiler.Xml.XmlDocRef: Boolean Equals(System.Object)

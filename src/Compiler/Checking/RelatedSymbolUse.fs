@@ -21,4 +21,4 @@ type RelatedSymbolUseKind =
     /// Every related use, the names inside XML doc comments included
     | AllInCodeAndDocs = 7
     /// Every related use in code, the same as AllInCode
-    | All = 3
+    | [<System.Obsolete("Use AllInCode, which this equals, or AllInCodeAndDocs to also get the names inside XML doc comments.")>] All = 3

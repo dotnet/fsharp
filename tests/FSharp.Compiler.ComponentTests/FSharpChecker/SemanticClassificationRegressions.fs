@@ -11,13 +11,16 @@ open FSharp.Test.ProjectGeneration.Helpers
 #nowarn "57"
 
 /// Get semantic classification items for a single-file source using the transparent compiler.
-let getClassifications (source: string) =
+let getClassificationsOf (relatedSymbolKinds: RelatedSymbolUseKind) (source: string) =
     async {
         let! fileName, snapshot, checker = singleFileChecker source
         let! results = checker.ParseAndCheckFileInProject(fileName, snapshot)
         let checkResults = getTypeCheckResult results
-        return checkResults.GetSemanticClassification(None, RelatedSymbolUseKind.All)
+        return checkResults.GetSemanticClassification(None, relatedSymbolKinds)
     }
+
+let getClassifications (source: string) =
+    getClassificationsOf RelatedSymbolUseKind.AllInCode source
 
 /// Extract the source substring covered by a classification item's range (single-line ranges).
 let private substringOfRange (source: string) (r: Range) =
@@ -88,14 +91,15 @@ module Test
 let add x y = x + y
 """
 
-        let! items = getClassifications source
+        let! items = getClassificationsOf RelatedSymbolUseKind.AllInCodeAndDocs source
 
         let insideDocs =
             items
-            |> Array.filter (fun item -> item.Range.StartLine = 4 || item.Range.StartLine = 5)
-            |> Array.map (fun i -> i.Range, i.Type)
+            |> Seq.filter (fun item -> item.Range.StartLine = 4 || item.Range.StartLine = 5)
+            |> Seq.map (fun i -> i.Range, i.Type)
+            |> Seq.toArray
 
-        Assert.True(insideDocs.Length = 0, $"Nothing inside the doc comment should be classified, but found: %A{insideDocs}")
+        Assert.Empty insideDocs
     }
 
 /// (#16621) Helper: assert UnionCase classifications on expected lines.
