@@ -454,7 +454,7 @@ module TcResolutionsExtensions =
                     // These share ranges with the corresponding property classifications, so we intentionally add a second classification.
                     match relatedSymbolKinds with
                     | Some kinds ->
-                        for (m, item, kind) in sResolutions.CapturedRelatedSymbolUses do
+                        for struct (m, item, kind) in sResolutions.CapturedRelatedSymbolUses do
                             if kinds.HasFlag kind then
                                 match range, item with
                                 | Some r, _ when not (rangeContainsPos r m.Start || rangeContainsPos r m.End) -> ()

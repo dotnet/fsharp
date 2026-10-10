@@ -2,6 +2,8 @@
 
 namespace FSharp.Compiler.Xml
 
+open System.Collections.Immutable
+
 open FSharp.Compiler.Text
 
 /// The tag an XML doc attribute value belongs to
@@ -31,7 +33,7 @@ type public XmlDoc =
     new: unprocessedLines: string[] * range: range -> XmlDoc
 
     /// Lines with their source ranges; one range per line, or none when the doc did not come from source
-    new: unprocessedLines: string[] * lineRanges: range[] * range: range -> XmlDoc
+    new: unprocessedLines: string[] * lineRanges: ImmutableArray<range> * range: range -> XmlDoc
 
     /// Merge two XML documentation
     static member Merge: doc1: XmlDoc -> doc2: XmlDoc -> XmlDoc
@@ -61,12 +63,12 @@ type public XmlDoc =
     member Range: range
 
     /// The source range of each unprocessed line; empty when the doc did not come from source
-    member LineRanges: range[]
+    member LineRanges: ImmutableArray<range>
 
     /// The `name` and `cref` attribute values of `param`, `paramref`, `typeparam`, `typeparamref`,
     /// `see`, `seealso`, `exception` and `permission` elements, with their source ranges. The doc's own lines are
     /// parsed as XML, `<include>` unexpanded; a doc without line ranges, of plain text or badly formed names nothing.
-    member GetRefs: unit -> XmlDocRef[]
+    member GetRefs: unit -> ImmutableArray<XmlDocRef>
 
     /// Get the lines before insertion of implicit summary tags and encoding
     member UnprocessedLines: string[]

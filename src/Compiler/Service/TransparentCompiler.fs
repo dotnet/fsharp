@@ -2284,7 +2284,7 @@ type internal TransparentCompiler
                                 builder.Write(cnr.Range, cnr.Item))
 
                         sResolutions.CapturedRelatedSymbolUses
-                        |> Seq.iter (fun (m, item, _kind) ->
+                        |> Seq.iter (fun struct (m, item, _kind) ->
                             if not m.IsSynthetic then
                                 builder.Write(m, item))
 
