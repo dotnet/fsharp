@@ -101,6 +101,11 @@ let TcArrayOrListComputedExpression (cenv: TcFileState) env (overallTy: OverallT
             TcExprUndelayed cenv overallTy env tpenv replacementExpr
         | _ ->
 
+            let comp =
+                match comp with
+                | SimpleSemicolonSequenceWithRanges cenv valuesAndRanges -> valuesAndRanges
+                | _ -> comp
+
             let genCollElemTy = NewInferenceType g
 
             let genCollTy = (if isArray then mkArrayType else mkListTy) cenv.g genCollElemTy
