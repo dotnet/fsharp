@@ -312,11 +312,6 @@
         <target state="new">Allow object expressions without overrides</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureAttributesToRightOfModuleKeyword">
-        <source>attributes to the right of the 'module' keyword</source>
-        <target state="translated">'module' 키워드 오른쪽에 있는 특성</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureBetterAnonymousRecordParsing">
         <source>Support for better anonymous record parsing</source>
         <target state="new">Support for better anonymous record parsing</target>
