@@ -229,6 +229,8 @@ type ConstraintSolverState =
         /// The function used to freshen values we encounter during trait constraint solving
         TcVal: TcValF
 
+        StackGuard: StackGuard
+
         /// This table stores all unsolved, ungeneralized trait constraints, indexed by free type variable.
         /// That is, there will be one entry in this table for each free type variable in
         /// each outstanding, unsolved, ungeneralized trait constraint. Constraints are removed from the table and resolved
@@ -249,12 +251,9 @@ type ConstraintSolverState =
 
         WarnWhenUsingWithoutNullOnAWithNullTarget: string option
 
-        /// RFC FS-1043: the CCU currently being compiled, used to scope the optimizer-replay cache of
-        /// extension-member solutions to built-in-operator SRTP constraints.
-        CompilingCcu: CcuThunk option
     }
 
-    static member New: TcGlobals * ImportMap * InfoReader * TcValF * CcuThunk option -> ConstraintSolverState
+    static member New: TcGlobals * ImportMap * InfoReader * TcValF -> ConstraintSolverState
 
     /// Add a post-inference check to run at the end of inference
     member PushPostInferenceCheck: preDefaults: bool * check: (unit -> unit) -> unit
@@ -268,11 +267,21 @@ type ConstraintSolverState =
 val BakedInTraitConstraintNames: Set<string>
 
 [<Sealed; NoEquality; NoComparison>]
-type Trace
+type Trace =
+    static member New: unit -> Trace
+    member Undo: unit -> unit
 
 type OptionalTrace =
     | NoTrace
     | WithTrace of Trace
+
+    member Exec: (unit -> unit) -> (unit -> unit) -> unit
+    member AddFromReplay: Trace -> unit
+    member CollectThenUndoOrCommit: ('T -> bool) -> (Trace -> 'T) -> 'T
+
+val CollectThenUndo: (Trace -> 'T) -> 'T
+
+val FilterEachThenUndo: (Trace -> 'T -> OperationResult<'U>) -> 'T list -> ('T * exn list * Trace * 'U) list
 
 val SimplifyMeasuresInTypeScheme: TcGlobals -> bool -> Typars -> TType -> TyparConstraint list -> Typars
 
@@ -369,7 +378,17 @@ val CodegenWitnessExprForTraitConstraint:
 val CodegenWitnessExprForTraitConstraintWillRequireWitnessArgs:
     TcValF -> TcGlobals -> ImportMap -> range -> TraitConstraintInfo -> OperationResult<bool>
 
-/// Generate the arguments passed when using a generic construct that accepts traits witnesses
+/// Retain selected solutions from the actual type arguments before solving fresh constraints.
+val CodegenWitnessesForTyparInstWith:
+    TcValF ->
+    TcGlobals ->
+    ImportMap ->
+    range ->
+    Typars ->
+    TType list ->
+    (TraitConstraintInfo -> Choice<TraitConstraintInfo, Expr> -> 'T) ->
+        OperationResult<'T list>
+
 val CodegenWitnessesForTyparInst:
     TcValF ->
     TcGlobals ->
@@ -405,10 +424,8 @@ val CanonicalizePartialInferenceProblemForExtensions: ConstraintSolverState -> D
 val CreateImplFileTraitContext:
     TcGlobals -> ModuleOrNamespaceContents list -> ModuleOrNamespaceType list -> CcuThunk list -> TraitContext
 
-/// RFC FS-1043: optimizer hook returning the checker-recorded, unambiguous extension solution for a
-/// built-in-operator SRTP constraint (see ConstraintSolver.fs for the replay rationale), or None.
-val TryGetRecordedExtensionOperatorSolution:
-    g: TcGlobals -> compilingCcu: CcuThunk -> traitInfo: TraitConstraintInfo -> m: range -> TraitConstraintSln option
+/// Preserve the selected witness retained by the application's unstripped support types.
+val GetTraitConstraintForCodegen: g: TcGlobals -> traitInfo: TraitConstraintInfo -> TraitConstraintInfo
 
 val SolveTyparsEqualTypes:
     g: TcGlobals -> css: ConstraintSolverState -> m: range -> typars: TypeInst -> tys: TypeInst -> unit
