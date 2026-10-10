@@ -54,20 +54,6 @@ module internal PervasiveAutoOpens =
     /// Get an initialization hole
     val getHole: r: 'a option ref -> 'a
 
-    type String with
-
-        member inline StartsWithOrdinal: value: string -> bool
-
-        member inline EndsWithOrdinal: value: string -> bool
-
-        member inline EndsWithOrdinalIgnoreCase: value: string -> bool
-
-        member inline IndexOfOrdinal: value: string -> int
-
-        member inline IndexOfOrdinal: value: string * startIndex: int -> int
-
-        member inline IndexOfOrdinal: value: string * startIndex: int * count: int -> int
-
     type Async with
 
         /// Runs the computation synchronously, always starting on the current thread.
