@@ -81,7 +81,8 @@ module internal SnippetIndentation =
         endState
 
     /// `selectedLines` are the first and last index filled from `$selected$`. Those lines are lexed apart from the
-    /// snippet's own, so a directive or string one of them leaves open does not reach into the other.
+    /// snippet's own, so a directive or string one of them leaves open does not reach into the other - except a
+    /// string the snippet itself opens around the field, which the selected lines are the content of.
     let classify tabSize selectedLines (lines: string list) =
         let tokenizer = FSharpSourceTokenizer([], None, None)
 
@@ -89,12 +90,13 @@ module internal SnippetIndentation =
         |> List.indexed
         |> List.mapFold
             (fun struct (template, selection) (index, text) ->
-                match originOf selectedLines index with
-                | Template ->
-                    let line, template = classifyLine tokenizer tabSize Template template text
+                let origin = originOf selectedLines index
+
+                if origin.IsTemplate || isInsideString tokenizer template then
+                    let line, template = classifyLine tokenizer tabSize origin template text
                     line, struct (template, selection)
-                | selected ->
-                    let line, selection = classifyLine tokenizer tabSize selected selection text
+                else
+                    let line, selection = classifyLine tokenizer tabSize origin selection text
                     line, struct (template, selection))
             struct (FSharpTokenizerLexState.Initial, FSharpTokenizerLexState.Initial)
         |> fst
