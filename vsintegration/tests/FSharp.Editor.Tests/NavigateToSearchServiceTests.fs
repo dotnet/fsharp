@@ -4,6 +4,7 @@ namespace FSharp.Editor.Tests
 
 open Xunit
 open System.Collections.Immutable
+open System.Diagnostics
 open System.Threading
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
@@ -123,3 +124,49 @@ module HeyHo =
             Assert.ThrowsAny<exn>(fun () -> search (solution.GetProject noOptionsId) "always" |> ignore)
 
         Assert.IsAssignableFrom<System.OperationCanceledException>(searching.GetBaseException())
+
+    /// A standalone script has its options kept per document, so its project never has any to key the script's
+    /// parse by. The parse is kept under the document itself instead.
+    [<Fact>]
+    let ``a repeated search of an unchanged standalone script does not parse it again`` () =
+        let path = "C:\\Standalone.fsx"
+        let projectId = ProjectId.CreateNewId()
+
+        let solution =
+            [
+                RoslynTestHelpers.CreateDocumentInfo projectId path "let standaloneValue = 1\n"
+            ]
+            |> RoslynTestHelpers.CreateProjectInfo projectId FSharpConstants.FSharpMiscellaneousFilesName
+            |> List.singleton
+            |> RoslynTestHelpers.CreateSolution
+
+        let parseRequests = ref 0
+
+        use listener =
+            new ActivityListener(
+                ShouldListenTo = (fun source -> source.Name = FSharp.Compiler.Diagnostics.ActivityNames.FscSourceName),
+                Sample = (fun _ -> ActivitySamplingResult.AllData),
+                ActivityStarted =
+                    (fun activity ->
+                        if
+                            activity.OperationName = "BackgroundCompiler.ParseFile"
+                            && activity.Tags |> Seq.exists (fun tag -> tag.Value = path)
+                        then
+                            Interlocked.Increment(&parseRequests.contents) |> ignore)
+            )
+
+        ActivitySource.AddActivityListener listener
+
+        let service: IFSharpNavigateToSearchService = provider.GetExportedValue()
+        let project = solution.GetProject projectId
+
+        let search () =
+            service
+                .SearchProjectAsync(project, ImmutableArray.Empty, "standaloneValue", service.KindsProvided, CancellationToken.None)
+                .Result
+            |> Seq.map _.Name
+            |> Seq.toList
+
+        Assert.Equal<string list>([ "standaloneValue" ], search ())
+        Assert.Equal<string list>([ "standaloneValue" ], search ())
+        Assert.Equal(1, parseRequests.Value)
