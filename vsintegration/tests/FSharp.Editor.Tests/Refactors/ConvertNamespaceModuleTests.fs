@@ -8,8 +8,11 @@ open Microsoft.CodeAnalysis.CodeRefactorings
 open Microsoft.CodeAnalysis.Text
 
 open Microsoft.VisualStudio.FSharp.Editor
+open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
 
 open Xunit
+
+open FSharp.Compiler.Diagnostics
 
 open FSharp.Editor.Tests.Helpers
 open FSharp.Editor.Tests.Refactors.RefactorTestFramework
@@ -22,6 +25,15 @@ let private refactored (code: string) (marker: string) =
 
     let document =
         tryRefactor code (caretAt code marker) context (new FSharpConvertNamespaceModuleRefactoring())
+
+    let _, checkResults =
+        document.GetFSharpParseAndCheckResultsAsync "test"
+        |> CancellableTask.runSynchronouslyWithoutCancellation
+
+    Assert.Empty(
+        checkResults.Diagnostics
+        |> Array.filter (fun diagnostic -> diagnostic.Severity = FSharpDiagnosticSeverity.Error)
+    )
 
     (document.GetTextAsync() |> GetTaskResult).ToString()
 
@@ -54,6 +66,12 @@ let ``Root module converts to a namespace with a nested module`` () =
 [<InlineData("module A.B.C\n#if ALT\nlet text = \"\"\"first\n    preserved\n    last\"\"\"\n#endif\nlet x = 1\n",
              "module",
              "namespace A.B\n\nmodule C =\n    #if ALT\n    let text = \"\"\"first\n    preserved\n    last\"\"\"\n    #endif\n    let x = 1\n")>]
+[<InlineData("namespace A.B\n\nmodule C =\n#if ALT\n    let text = \"\"\"first\n#if INNER\n    preserved\n#endif\n    last\"\"\"\n#endif\n    let x = 1\n",
+             "namespace",
+             "module A.B.C\n#if ALT\nlet text = \"\"\"first\n#if INNER\n    preserved\n#endif\n    last\"\"\"\n#endif\nlet x = 1\n")>]
+[<InlineData("module A.B.C\n#if ALT\nlet text = \"\"\"first\n#if INNER\n    preserved\n#endif\n    last\"\"\"\n#endif\nlet x = 1\n",
+             "module",
+             "namespace A.B\n\nmodule C =\n    #if ALT\n    let text = \"\"\"first\n#if INNER\n    preserved\n#endif\n    last\"\"\"\n    #endif\n    let x = 1\n")>]
 let ``Lines inside a multi-line string in an inactive branch are not re-indented`` (before: string, marker: string, after: string) =
     Assert.Equal(after, refactored before marker)
 
@@ -185,6 +203,76 @@ open System.Text
 
 let x = 1
 """)>]
+[<InlineData("""
+namespace A.B
+
+open System // explanation
+open System.Text
+
+module C =
+    let x = 1
+""",
+             """
+module A.B.C
+
+open System // explanation
+open System.Text
+
+let x = 1
+""")>]
+[<InlineData("""
+namespace A.B
+
+open System
+
+[<AutoOpen; RequireQualifiedAccess>]
+module C =
+    let x = 1
+""",
+             """
+[<AutoOpen; RequireQualifiedAccess>]
+module A.B.C
+
+open System
+
+let x = 1
+""")>]
+[<InlineData("""
+namespace A.B
+
+open System.ComponentModel
+
+[<System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)>]
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module C =
+    let x = 1
+""",
+             """
+[<System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)>]
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module A.B.C
+
+open System.ComponentModel
+
+let x = 1
+""")>]
+[<InlineData("""
+namespace A.B
+
+open System
+
+[<CompilerMessage("Not for " + "general use.", 9999, IsHidden = true)>]
+module C =
+    let x = 1
+""",
+             """
+[<CompilerMessage("Not for " + "general use.", 9999, IsHidden = true)>]
+module A.B.C
+
+open System
+
+let x = 1
+""")>]
 let ``Nested module converts to a root module`` (before: string, after: string) =
     Assert.Equal(after, refactored before "namespace")
 
@@ -232,6 +320,16 @@ module C = // header
     let x = 1
 """)>]
 [<InlineData("module A.B.C\r\nlet x = 1\r\n", "namespace A.B\r\n\r\nmodule C =\r\n    let x = 1\r\n")>]
+[<InlineData("""
+module A.B
+let x = 1
+""",
+             """
+namespace A
+
+module B =
+    let x = 1
+""")>]
 let ``Root module converts to a nested module`` (before: string, after: string) =
     Assert.Equal(after, refactored before "module")
 
@@ -326,6 +424,47 @@ open System
 
 type T = int
 
+module C =
+    let x = 1
+""",
+             "namespace")>]
+[<InlineData("""
+namespace A.B
+
+#if ALT
+type T = int
+#endif
+
+module C =
+    let x = 1
+""",
+             "namespace")>]
+[<InlineData("""
+namespace A.B
+
+#if ALT
+open System
+#endif
+
+module C =
+    let x = 1
+""",
+             "namespace")>]
+[<InlineData("""
+namespace A.B
+
+open System (* explanation *)
+
+module C =
+    let x = 1
+""",
+             "namespace")>]
+[<InlineData("""
+namespace A.B
+
+open System.ComponentModel
+
+[<EditorBrowsable(EditorBrowsableState.Never)>]
 module C =
     let x = 1
 """,
