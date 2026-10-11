@@ -9,6 +9,7 @@ open Microsoft.VisualStudio.FSharp.Editor.CancellableTasks
 
 open Xunit
 
+open FSharp.Editor.Tests.Helpers
 open FSharp.Editor.Tests.Refactors.RefactorTestFramework
 
 let private extractToLetBinding = "Extract to let binding"
@@ -41,10 +42,19 @@ let private titlesAt (code: string) (span: TextSpan) =
 
     tryGetRefactoringActionsForSpan code span context (new FSharpExtractLetBindingRefactoring())
     |> Seq.map _.Title
-    |> List.ofSeq
+    |> Seq.toList
 
 let private titlesFor (code: string) (selected: string) =
     titlesAt code (selectionOf code selected)
+
+let private assertTypeChecks (code: string) =
+    use context = TestContext.CreateWithCode code
+
+    let _, checkResults =
+        (RoslynTestHelpers.GetLastDocument context.Solution).GetFSharpParseAndCheckResultsAsync "test"
+        |> CancellableTask.runSynchronouslyWithoutCancellation
+
+    Assert.Empty(checkResults.Diagnostics)
 
 let private area =
     """
@@ -264,6 +274,76 @@ let r = xs |> List.map (fun x ->
 
     Assert.Equal(expected, extracted extractToLetBinding code "x + 1")
 
+[<Theory>]
+[<InlineData("""
+module M
+
+let f x = match x with _ -> 1 + 2
+""",
+             "1 + 2",
+             """
+module M
+
+let f x = match x with _ ->
+              let extracted = 1 + 2
+              extracted
+""")>]
+[<InlineData("""
+module M
+
+let g c = if c then printfn "%d" (1 + 2)
+""",
+             "(1 + 2)",
+             """
+module M
+
+let g c = if c then
+              let extracted = 1 + 2
+              printfn "%d" extracted
+""")>]
+[<InlineData("""
+namespace N
+module M = let f () = 42
+""",
+             "42",
+             """
+namespace N
+module M = let f () =
+               let extracted = 42
+               extracted
+""")>]
+let ``Body moved under its keyword is indented from the construct that starts inside the line``
+    (code: string, selected: string, expected: string)
+    =
+    Assert.Equal(expected, extracted extractToLetBinding code selected)
+
+[<Fact>]
+let ``Expression in a finally block is bound inside the block`` () =
+    let code =
+        """
+module M
+
+let f (stream: System.IO.Stream) =
+    try
+        stream.WriteByte(1uy)
+    finally
+        stream.Dispose()
+"""
+
+    let expected =
+        """
+module M
+
+let f (stream: System.IO.Stream) =
+    try
+        stream.WriteByte(1uy)
+    finally
+        let extracted = stream.Dispose()
+        extracted
+"""
+
+    Assert.Equal(expected, extracted extractToLetBinding code "stream.Dispose()")
+
 [<Fact>]
 let ``Name does not collide with an existing identifier`` () =
     let code =
@@ -437,6 +517,90 @@ let f x = g (x + 1)
     Assert.Equal<string list>([ extractToLetBinding ], titlesFor memberConstant "42")
     Assert.Equal<string list>([ extractToLetBinding ], titlesFor expression "x + 1")
 
+[<Fact>]
+let ``Decimal constant becomes a literal`` () =
+    let code =
+        """
+module M
+
+let f () = id 1.5m
+"""
+
+    let expected =
+        """
+module M
+
+[<Literal>]
+let ExtractedConstant = 1.5m
+
+let f () = id ExtractedConstant
+"""
+
+    let result = extracted extractToLiteral code "1.5m"
+    Assert.Equal(expected, result)
+    assertTypeChecks result
+
+[<Theory>]
+[<InlineData("1n")>]
+[<InlineData("1un")>]
+let ``Native integer does not become a literal`` (constant: string) =
+    let code = moduleConstant.Replace("42", constant)
+
+    Assert.Equal<string list>([ extractToLetBinding ], titlesFor code constant)
+    Assert.Empty(titlesAt code (caretAt code constant))
+
+[<Fact>]
+let ``Literal attribute is qualified where another LiteralAttribute hides it`` () =
+    let code =
+        """
+module M
+
+type LiteralAttribute(required: int) =
+    inherit System.Attribute()
+
+let x = 42
+"""
+
+    let expected =
+        """
+module M
+
+type LiteralAttribute(required: int) =
+    inherit System.Attribute()
+
+[<global.Microsoft.FSharp.Core.Literal>]
+let ExtractedConstant = 42
+
+let x = ExtractedConstant
+"""
+
+    let result = extracted extractToLiteral code "42"
+    Assert.Equal(expected, result)
+    assertTypeChecks result
+
+[<Fact>]
+let ``Literal is not offered where the declaration does not start its line`` () =
+    let code =
+        """
+namespace N
+module M = let f () = 42
+"""
+
+    Assert.Equal<string list>([ extractToLetBinding ], titlesFor code "42")
+    Assert.Empty(titlesAt code (caretAt code "42"))
+
+[<Fact>]
+let ``Operand of nameof is not extracted where the nameof expression is`` () =
+    let code =
+        """
+module M
+
+let name = nameof System.String.Empty
+"""
+
+    Assert.Empty(titlesFor code "System.String.Empty")
+    Assert.Equal<string list>([ extractToLetBinding ], titlesFor code "nameof System.String.Empty")
+
 let private mapIncrement =
     """
 module M
@@ -456,12 +620,71 @@ let ``Caret in the header of a parenthesized lambda extracts the lambda`` (marke
 module M
 
 let f xs =
-    let extracted = fun x -> x + 1
+    let extracted: int -> int = fun x -> x + 1
     xs |> List.map extracted
 """
 
     Assert.Equal<string list>([ extractToLetBinding ], titlesAt mapIncrement (caretAt mapIncrement marker))
     Assert.Equal(expected, extractedAt extractToLetBinding mapIncrement (caretAt mapIncrement marker))
+
+[<Theory>]
+[<InlineData("""
+module M
+
+let f: string -> int = (fun x -> x.Length)
+""",
+             "(fun x -> x.Length)",
+             """
+module M
+
+let f: string -> int =
+    let extracted: string -> int = fun x -> x.Length
+    extracted
+""")>]
+[<InlineData("""
+module M
+
+let f (xs: 'T list) = xs |> List.map (fun x -> [ x ])
+""",
+             "(fun x -> [ x ])",
+             """
+module M
+
+let f (xs: 'T list) =
+    let extracted: 'T -> 'T list = fun x -> [ x ]
+    xs |> List.map extracted
+""")>]
+[<InlineData("""
+module M
+
+let f xs = xs |> List.map (fun x -> [ x ])
+""",
+             "(fun x -> [ x ])",
+             """
+module M
+
+let f xs =
+    let extracted = fun x -> [ x ]
+    xs |> List.map extracted
+""")>]
+[<InlineData("""
+module M
+
+let f: string option -> int = (function Some x -> x.Length | None -> 0)
+""",
+             "(function Some x -> x.Length | None -> 0)",
+             """
+module M
+
+let f: string option -> int =
+    let extracted: string option -> int = function Some x -> x.Length | None -> 0
+    extracted
+""")>]
+let ``Extracted function expression keeps the type its context gave it`` (code: string, selected: string, expected: string) =
+    let result = extracted extractToLetBinding code selected
+
+    Assert.Equal(expected, result)
+    assertTypeChecks result
 
 [<Theory>]
 [<InlineData("x + 1)")>]
@@ -587,6 +810,36 @@ module M
 let f (a: bool) (s: string) = a && s.Length > 0
 """,
              "s.Length > 0")>]
+[<InlineData("""
+module M
+
+let f check x =
+    assert (check (x + 1))
+""",
+             "check (x + 1)")>]
+[<InlineData("""
+module M
+
+[<Struct>]
+type S =
+    val mutable X: int
+    new(x) = { X = x }
+    member s.Inc() = s.X <- s.X + 1
+
+let f () =
+    let mutable s = S(1)
+    (s).Inc()
+    s.X
+""",
+             "(s)")>]
+[<InlineData("""
+module M
+
+let f () =
+    let mutable x = 0
+    System.Threading.Interlocked.Increment(&x)
+""",
+             "(&x)")>]
 [<InlineData("""
 module M
 
