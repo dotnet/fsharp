@@ -4,6 +4,7 @@ namespace FSharp.Editor.Tests
 
 open System
 open System.Collections.Concurrent
+open System.Runtime.CompilerServices
 open System.Threading
 open System.Threading.Tasks
 open Microsoft.CodeAnalysis
@@ -139,6 +140,44 @@ type TokenizerCacheConcurrencyTests() =
             classify documentId commentedText (lineSpan commentedText lastLine lastLine)
 
         Assert.Equal<(string * TextSpan)[]>(expected, actual)
+
+    /// Scans a text under the given defines and then deletes all of it, as emptying a large file does.
+    /// A frame of its own: once it returns, the test holds the deleted text only weakly.
+    [<MethodImpl(MethodImplOptions.NoInlining)>]
+    static member private ScanThenDeleteEverything(scan: string list -> SourceText -> unit, defines: string list) =
+        let deleted = SourceText.From("let x = 1\n" + String(' ', 1 <<< 20))
+        scan defines deleted
+
+        struct (WeakReference deleted, deleted.WithChanges(TextChange(TextSpan(0, deleted.Length), "let z = 0")))
+
+    // Each define set of a document has a cache of its own, and one the project no longer uses stays for
+    // as long as the document is scanned under another. It must not keep the text it last saw alive.
+    [<Fact>]
+    member _.``The cache of a define set no longer scanned does not keep its last text alive``() =
+        let documentId = newDocumentId ()
+
+        let scan defines (text: SourceText) =
+            Tokenizer.classifySpans (
+                documentId,
+                text,
+                lineSpan text 0 0,
+                Some fileName,
+                defines,
+                langVersion,
+                ResizeArray(),
+                CancellationToken.None
+            )
+
+        let struct (deleted, remaining) =
+            TokenizerCacheConcurrencyTests.ScanThenDeleteEverything(scan, [ "OLD" ])
+
+        scan [ "NEW" ] remaining
+        GC.Collect()
+        GC.WaitForPendingFinalizers()
+        GC.Collect()
+
+        Assert.False(deleted.IsAlive, "The cache of the abandoned define set still holds the deleted text.")
+        GC.KeepAlive remaining
 
     [<Fact>]
     member _.``Concurrent reads of two versions of a document keep invalidating the cache correctly``() =

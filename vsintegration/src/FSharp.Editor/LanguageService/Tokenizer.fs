@@ -489,7 +489,10 @@ module internal Tokenizer =
 
         // The text the entries were last scanned for, a count bumped whenever it changes, and how many leading
         // lines of it have a start lex state known to hold. Read and written under `sync` only.
-        let mutable text: SourceText voption = ValueNone
+        //
+        // The text is held weakly. The entries of a define set the project no longer uses stay for as long as
+        // the document is scanned under another one, and would keep a whole snapshot alive with them.
+        let text = WeakReference<SourceText>(null)
         let mutable generation = 0
         let mutable trustedLines = 0
 
@@ -508,13 +511,13 @@ module internal Tokenizer =
         /// many leading lines have a start lex state that holds for `current`.
         member x.Enter(current: SourceText) =
             lock sync (fun () ->
-                match text with
-                | ValueSome known when obj.ReferenceEquals(known, current) -> ()
-                | known ->
+                match text.TryGetTarget() with
+                | true, known when obj.ReferenceEquals(known, current) -> ()
+                | isKnown, known ->
                     // An edit can change the lex state only of the lines below the first line it touches.
+                    // What was edited since a text that is gone cannot be told, so nothing is trusted.
                     trustedLines <-
-                        match known with
-                        | ValueSome known ->
+                        if isKnown then
                             let mutable firstEdit = Int32.MaxValue
 
                             for change in current.GetChangeRanges known do
@@ -524,9 +527,10 @@ module internal Tokenizer =
                                 trustedLines
                             else
                                 min trustedLines (known.Lines.GetLineFromPosition(firstEdit).LineNumber + 1)
-                        | ValueNone -> 0
+                        else
+                            0
 
-                    text <- ValueSome current
+                    text.SetTarget current
                     generation <- generation + 1
 
                 struct (generation, trustedLines))
