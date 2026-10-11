@@ -481,12 +481,22 @@ let rec private hasInferredTypeVariable (ty: FSharpType) =
         not ty.IsMeasureType
         && ty.GenericArguments |> Seq.exists hasInferredTypeVariable
 
-/// The type the checker gave the expression at the range, as the source can write it. Unavailable when the type has a
-/// variable that inference introduced, which has no name in the source.
-let tryTypeText (checkResults: FSharpCheckFileResults) (m: range) =
-    match checkResults.TryGetCapturedType m, checkResults.TryGetCapturedDisplayContext m with
-    | Some ty, Some displayContext when not (hasInferredTypeVariable ty) -> ValueSome(ty.Format displayContext)
-    | _ -> ValueNone
+/// The type the checker gave the parenthesized lambda or `function` the target is, as the source can write it. The
+/// checker records no type for one without parentheses. A type with a variable that inference introduced has no name
+/// in the source.
+let tryFunctionTypeText (checkResults: FSharpCheckFileResults) (target: ExtractionTarget) =
+    let parentheses =
+        match target.Expr, target.Path with
+        | SynExpr.Paren(expr = SynExpr.Lambda _ | SynExpr.MatchLambda _; range = m), _
+        | (SynExpr.Lambda _ | SynExpr.MatchLambda _), SyntaxNode.SynExpr(SynExpr.Paren(range = m)) :: _ -> ValueSome m
+        | _ -> ValueNone
+
+    parentheses
+    |> ValueOption.bind (fun m ->
+        match checkResults.TryGetCapturedType m, checkResults.TryGetCapturedDisplayContext m with
+        | Some ty, Some displayContext when ty.StripAbbreviations().IsFunctionType && not (hasInferredTypeVariable ty) ->
+            ValueSome(ty.Format displayContext)
+        | _ -> ValueNone)
 
 /// `Literal`, with its namespace where the name alone does not reach the FSharp.Core attribute from the position.
 let literalAttributeAt (checkResults: FSharpCheckFileResults) (position: pos) =

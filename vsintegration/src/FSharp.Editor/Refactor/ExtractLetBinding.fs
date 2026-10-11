@@ -76,24 +76,13 @@ type internal FSharpExtractLetBindingRefactoring [<ImportingConstructor>] () =
                     let literalLines =
                         linesInsideLiterals sourceText parseResults.ParseTree defines langVersion
 
-                    let content =
-                        match target.Expr with
-                        | SynExpr.Paren(expr = inner) -> inner
-                        | expr -> expr
-
                     if isSelected then
                         match anchorsOf target.Expr target.Path with
                         | anchor :: _ ->
                             let name = uniqueName "extracted" names
 
-                            let functionType =
-                                match content with
-                                | SynExpr.Lambda _
-                                | SynExpr.MatchLambda _ -> tryTypeText checkResults target.Expr.Range
-                                | _ -> ValueNone
-
                             let header =
-                                match functionType with
+                                match tryFunctionTypeText checkResults target with
                                 | ValueSome functionType -> $"let {name}: {functionType}"
                                 | ValueNone -> $"let {name}"
 
@@ -102,7 +91,12 @@ type internal FSharpExtractLetBindingRefactoring [<ImportingConstructor>] () =
                             | ValueNone -> ()
                         | [] -> ()
 
-                    if isLiteralConstant content then
+                    let constant =
+                        match target.Expr with
+                        | SynExpr.Paren(expr = inner) -> inner
+                        | expr -> expr
+
+                    if isLiteralConstant constant then
                         let name = uniqueName "ExtractedConstant" names
                         let attribute = literalAttributeAt checkResults target.Expr.Range.Start
 
