@@ -17,17 +17,26 @@ let isRootedPath (path: string) =
     with :? ArgumentException ->
         false
 
-/// The tail a document's path must end with to be the file a relative name denotes: the name normalised to
-/// this platform's separator and anchored on one, so that it matches whole directories, never the tail of one.
+/// The tail a document's path must end with to be the file a relative name denotes: the name with its `.` and
+/// `..` segments resolved, in this platform's separator and anchored on one, so that it matches whole
+/// directories, never the tail of one. A name that climbs above where it starts has no such tail: what it
+/// denotes depends on the root, which the assembly never records.
 let mappedNameTail (fileName: string) =
-    let separator = string Path.DirectorySeparatorChar
+    let segments = ResizeArray<string>()
+    let mutable climbsAboveItsStart = false
 
-    let fromTheRoot =
-        fileName.Split([| '/'; '\\' |], StringSplitOptions.RemoveEmptyEntries)
-        |> Array.filter (fun segment -> segment <> ".")
-        |> String.concat separator
+    for segment in fileName.Split([| '/'; '\\' |], StringSplitOptions.RemoveEmptyEntries) do
+        match segment with
+        | "." -> ()
+        | ".." when segments.Count > 0 -> segments.RemoveAt(segments.Count - 1)
+        | ".." -> climbsAboveItsStart <- true
+        | segment -> segments.Add segment
 
-    $"{separator}{fromTheRoot}"
+    if climbsAboveItsStart || segments.Count = 0 then
+        ValueNone
+    else
+        let separator = string Path.DirectorySeparatorChar
+        ValueSome $"{separator}{String.Join(separator, segments)}"
 
 /// Whether the path ends with such a tail. The tail is built once for the name; each document of the
 /// solution is then compared against it where its own path lies.
@@ -46,12 +55,37 @@ let isTheFileAt (path: string) (fileName: string) =
     | null, _
     | _, null -> false
     | path, rooted when isRootedPath rooted -> String.Equals(Path.GetFullPathSafe rooted, path, StringComparison.OrdinalIgnoreCase)
-    | path, relative -> endsWithMappedName path (mappedNameTail relative)
+    | path, relative ->
+        match mappedNameTail relative with
+        | ValueSome tail -> endsWithMappedName path tail
+        | ValueNone -> false
 
-/// The documents of a solution whose file a mapped name reaches, kept per solution instance: a search asks
-/// for the same name once per project, and a solution is replaced rather than mutated.
+/// The documents of a solution whose path ends the way a mapped name does, kept per solution instance: a search
+/// asks for the same name once per project, and a solution is replaced rather than mutated.
 let private documentsByMappedName =
     ConditionalWeakTable<Solution, ConcurrentDictionary<string, DocumentId list>>()
+
+/// The documents whose path ends the way a name a path map left relative does. They are candidates only: the
+/// path of an unrelated file can end the same way.
+let private candidatesForMappedName (solution: Solution) (relative: string) =
+    // The scan walks every document of the solution, and Find All References asks for the same name
+    // once per project it searches, so the answer - including the empty one - is kept for the solution.
+    let byName =
+        documentsByMappedName.GetValue(solution, fun _ -> ConcurrentDictionary(StringComparer.OrdinalIgnoreCase))
+
+    byName.GetOrAdd(
+        relative,
+        fun relative ->
+            match mappedNameTail relative with
+            | ValueNone -> []
+            | ValueSome tail ->
+                [
+                    for project in solution.Projects do
+                        for document in project.Documents do
+                            if endsWithMappedName document.FilePath tail then
+                                document.Id
+                ]
+    )
 
 type Project with
 
@@ -128,36 +162,44 @@ type Solution with
     member self.GetAllProjectsThisProjectDependsOn(projectId: ProjectId) =
         self.GetProjectIdsOfAllProjectReferences projectId |> Seq.map self.GetProject
 
-    /// The documents whose file is the one a compiler range names. A name a path map left relative
-    /// reaches no document through the workspace's index, which is keyed by the paths on disk, so it
-    /// is matched against those paths one by one instead.
-    member self.GetDocumentIdsWithFSharpFileName(fileName: string) =
-        match fileName with
-        | null -> []
-        | rooted when isRootedPath rooted -> self.GetDocumentIdsWithFilePath(Path.GetFullPathSafe rooted) |> List.ofSeq
-        | relative ->
-            // The scan walks every document of the solution, and Find All References asks for the same name
-            // once per project it searches, so the answer - including the empty one - is kept for the solution.
-            let byName =
-                documentsByMappedName.GetValue(self, fun _ -> ConcurrentDictionary(StringComparer.OrdinalIgnoreCase))
+    /// The documents whose file is the one a compiler range names. A rooted name is that file's path. A name a
+    /// path map left relative only ends the way the path does, as the path of an unrelated file can, so it
+    /// names a file only for a declaration whose assembly is given, and only where the projects compiling that
+    /// assembly hold exactly one file ending that way. Otherwise it names none, and the declaration stays
+    /// external.
+    member self.GetDocumentIdsWithFSharpFileName(fileName: string, ?declaringAssembly: string) =
+        match fileName, declaringAssembly with
+        | null, _ -> []
+        | rooted, _ when isRootedPath rooted -> self.GetDocumentIdsWithFilePath(Path.GetFullPathSafe rooted) |> List.ofSeq
+        | _, None -> []
+        | relative, Some declaringAssembly ->
+            let ofTheAssembly =
+                candidatesForMappedName self relative
+                |> List.filter (fun documentId ->
+                    String.Equals(
+                        self.GetProject(documentId.ProjectId).AssemblyName,
+                        declaringAssembly,
+                        StringComparison.OrdinalIgnoreCase
+                    ))
 
-            byName.GetOrAdd(
-                relative,
-                fun relative ->
-                    let tail = mappedNameTail relative
+            match ofTheAssembly with
+            | [] -> []
+            | first :: others ->
+                let path = self.GetDocument(first).FilePath
 
-                    [
-                        for project in self.Projects do
-                            for document in project.Documents do
-                                if endsWithMappedName document.FilePath tail then
-                                    document.Id
-                    ]
-            )
+                let isTheSameFile (documentId: DocumentId) =
+                    String.Equals(self.GetDocument(documentId).FilePath, path, StringComparison.OrdinalIgnoreCase)
+
+                if List.forall isTheSameFile others then
+                    ofTheAssembly
+                else
+                    []
 
     /// Try to retrieve the corresponding DocumentId for the range's file in the solution
     /// and if a projectId is provided, only try to find the document within that project
-    /// or a project referenced by that project
-    member self.TryGetDocumentIdFromFSharpRange(range: range, ?projectId: ProjectId) =
+    /// or a project referenced by that project. The range of a declaration in another assembly needs
+    /// that assembly's name: see GetDocumentIdsWithFSharpFileName.
+    member self.TryGetDocumentIdFromFSharpRange(range: range, ?projectId: ProjectId, ?declaringAssembly: string) =
 
         let checkProjectId (docId: DocumentId) =
             if projectId.IsSome then
@@ -179,13 +221,12 @@ type Solution with
                         matchingDoc tail
                 | None -> Some docId
 
-        self.GetDocumentIdsWithFSharpFileName range.FileName |> matchingDoc
+        self.GetDocumentIdsWithFSharpFileName(range.FileName, ?declaringAssembly = declaringAssembly)
+        |> matchingDoc
 
     /// Try to retrieve the corresponding Document for the range's file in the solution
     /// and if a projectId is provided, only try to find the document within that project
     /// or a project referenced by that project
-    member self.TryGetDocumentFromFSharpRange(range: range, ?projectId: ProjectId) =
-        match projectId with
-        | Some projectId -> self.TryGetDocumentIdFromFSharpRange(range, projectId)
-        | None -> self.TryGetDocumentIdFromFSharpRange range
+    member self.TryGetDocumentFromFSharpRange(range: range, ?projectId: ProjectId, ?declaringAssembly: string) =
+        self.TryGetDocumentIdFromFSharpRange(range, ?projectId = projectId, ?declaringAssembly = declaringAssembly)
         |> Option.map self.GetDocument
