@@ -7,6 +7,7 @@ open System.Composition
 open System.Collections.Generic
 open System.Collections.Immutable
 open System.Runtime.CompilerServices
+open System.Threading
 
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
@@ -240,12 +241,14 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
 
     // Asked of every module in reach whenever a member access fails, so kept per module: the modules of
     // referenced assemblies are cached along with them, for as long as the assembly does not change.
-    let getExtensionMembers (moduleEntity: FSharpEntity) =
+    let getExtensionMembers (cancellationToken: CancellationToken) (moduleEntity: FSharpEntity) =
         moduleExtensionMembers.GetValue(
             moduleEntity,
             fun moduleEntity ->
                 moduleEntity.TryGetMembersFunctionsAndValues()
                 |> Seq.filter (fun mfv ->
+                    cancellationToken.ThrowIfCancellationRequested()
+
                     mfv.IsExtensionMember
                     && not mfv.IsPropertyGetterMethod
                     && not mfv.IsPropertySetterMethod)
@@ -276,6 +279,7 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
         (receiver: MemberReceiver)
         (name: string)
         (symbols: AssemblySymbol[])
+        (cancellationToken: CancellationToken)
         =
         let extensibleTypes =
             match receiver with
@@ -299,6 +303,8 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
             | ValueSome _, Some staticClass ->
                 staticClass.TryGetMembersFunctionsAndValues()
                 |> Seq.exists (fun overload ->
+                    cancellationToken.ThrowIfCancellationRequested()
+
                     isNamed overload
                     && isCSharpStyleExtension overload
                     && extendsAny extensibleTypes overload)
@@ -306,6 +312,8 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
 
         [|
             for symbol in symbols do
+                cancellationToken.ThrowIfCancellationRequested()
+
                 match symbol.Symbol with
                 | :? FSharpMemberOrFunctionOrValue as method when
                     receiver.IsValue
@@ -318,7 +326,7 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
                     | None -> ()
                 | :? FSharpEntity as moduleEntity when
                     moduleEntity.IsFSharpModule
-                    && getExtensionMembers moduleEntity
+                    && getExtensionMembers cancellationToken moduleEntity
                        |> Array.exists (fun extension -> isNamed extension && appliesToReceiver extension)
                     ->
                     for target in getModuleOpenTargets symbol moduleEntity do
@@ -491,8 +499,11 @@ type internal AddOpenCodeFixProvider [<ImportingConstructor>] (assemblyContentPr
                                             [| { Ident = name; Resolved = false } |]
                                             insertionPoint
 
+                                    let targets =
+                                        getExtensionOpenTargets checkResults receiver name symbols context.CancellationToken
+
                                     [
-                                        for struct (symbol, target) in getExtensionOpenTargets checkResults receiver name symbols do
+                                        for struct (symbol, target) in targets do
                                             for entity, ctx in createEntity (None, None, symbol.Namespace, Array.append target [| name |]) do
                                                 match entity.Namespace with
                                                 | Some ns -> $"open {ns}", entity.FullDisplayName, ctx
