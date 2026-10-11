@@ -41,21 +41,32 @@ module PublicationGateTests =
         use clearing = new ManualResetEventSlim(false)
         use release = new ManualResetEventSlim(false)
 
+        // Threads of their own: in a full test run the pool can take longer to start work than any timeout.
         let bump =
-            Task.Run(fun () ->
-                gate.Bump(fun () ->
-                    clearing.Set()
-                    release.Wait()))
+            Thread(
+                (fun () ->
+                    gate.Bump(fun () ->
+                        clearing.Set()
+                        release.Wait())),
+                IsBackground = true
+            )
 
-        Assert.True(clearing.Wait(TimeSpan.FromSeconds 10.))
+        bump.Start()
+        Assert.True(clearing.Wait(TimeSpan.FromSeconds 30.))
 
         // A publication that started under the old epoch waits for the clear, then sees the epoch moved.
-        let publish = Task.Run(fun () -> gate.TryPublish(epoch, ignore))
-        Assert.False(publish.Wait(TimeSpan.FromMilliseconds 200.))
+        let published = ref true
+
+        let publish =
+            Thread((fun () -> published.Value <- gate.TryPublish(epoch, ignore)), IsBackground = true)
+
+        publish.Start()
+        Assert.False(publish.Join(TimeSpan.FromMilliseconds 200.))
 
         release.Set()
-        bump.Wait()
-        Assert.False publish.Result
+        bump.Join()
+        publish.Join()
+        Assert.False published.Value
 
 /// The reactor through its manager, with the mock watcher from FileChangeWatcherTests standing in for
 /// the VS file change service. The MEF-created service hard-wires the real watcher, so these tests
@@ -161,7 +172,7 @@ module FSharpProjectOptionsManagerWatchTests =
             Assert.True(workspace.TryApplyChanges(workspace.CurrentSolution.RemoveProject project.Id))
 
             // The manager's workspace handler posts ClearOptions to the agent; the watch is gone once that ran.
-            Assert.True(SpinWait.SpinUntil((fun () -> List.isEmpty (watchedFiles watcher)), TimeSpan.FromSeconds 10.))
+            Assert.True(SpinWait.SpinUntil((fun () -> List.isEmpty (watchedFiles watcher)), TimeSpan.FromSeconds 60.))
 
             let! options = manager.TryGetOptionsByProject(project, CancellationToken.None)
             Assert.True options.IsNone
