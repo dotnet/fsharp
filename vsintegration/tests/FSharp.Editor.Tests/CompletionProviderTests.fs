@@ -149,6 +149,68 @@ module CompletionProviderTests =
 
         Assert.Equal(expected, sourceText.ToString(resultSpan))
 
+    /// Verify the text that committing an item from a namespace that is not opened leaves, the `open` included.
+    let VerifyCompletionWithOpen (fileContents: string, marker: string, itemName: string, expected: string) =
+        let caretPosition = fileContents.IndexOf(marker) + marker.Length
+
+        let document =
+            RoslynTestHelpers.CreateSolution(fileContents)
+            |> RoslynTestHelpers.GetSingleDocument
+
+        let sourceText = SourceText.From(fileContents)
+
+        let span =
+            CompletionUtils.getDefaultCompletionListSpan (
+                sourceText,
+                caretPosition,
+                document.Id,
+                filePath,
+                [],
+                None,
+                CancellationToken.None
+            )
+
+        let assemblyContentProvider = AssemblyContentProvider()
+
+        // A completion item gets its span from the context it is added to.
+        let context =
+            let provider =
+                { new CompletionProvider() with
+                    member _.ProvideCompletionsAsync _ = Tasks.Task.CompletedTask
+                }
+
+            CompletionContext(provider, document, caretPosition, span, CompletionTrigger.Invoke, null, CancellationToken.None)
+
+        let change =
+            let task =
+                cancellableTask {
+                    let! items =
+                        FSharpCompletionProvider.ProvideCompletionsAsyncAux(
+                            document,
+                            caretPosition,
+                            assemblyContentProvider.GetAllEntitiesInProjectAndReferencedAssemblies,
+                            false
+                        )
+
+                    let item =
+                        items
+                        |> Seq.find (fun item -> item.DisplayText = itemName && item.Properties.ContainsKey "NamespaceToOpen")
+
+                    context.AddItem item
+
+                    return!
+                        FSharpCompletionProvider.GetChangeAsyncAux(
+                            document,
+                            item,
+                            FSharp.Compiler.EditorServices.OpenStatementInsertionPoint.Nearest
+                        )
+                }
+                |> CancellableTask.start CancellationToken.None
+
+            task.Result
+
+        Assert.Equal(expected, sourceText.WithChanges(change.TextChange).ToString())
+
     [<Fact>]
     let ShouldTriggerCompletionAtCorrectMarkers () =
         let testCases =
@@ -2167,3 +2229,22 @@ let _ =
                 ]
             |> Map.ofList
         )
+
+    [<Fact>]
+    let ``Completion that adds an open keeps it out of a nested module declared on one line`` () =
+        let fileContents =
+            """module Top
+let x = Console.WriteLine 42
+[<Obsolete>] module M = let y = 1
+"""
+
+        let expected =
+            """module Top
+
+open System
+
+let x = Console.WriteLine 42
+[<Obsolete>] module M = let y = 1
+"""
+
+        VerifyCompletionWithOpen(fileContents, "[<Obsol", "Obsolete", expected)
